@@ -1,0 +1,70 @@
+# This .gitignore file is mostly a copy of the .gitignore used by the Windows main
+# repository. 
+# Currently SymCrypt is built with the Windows build system which generates many 
+# transient files. This .gitignore file ignores these transient files.
+
+
+# TimeBuild log files
+/build.resolve
+build.timehistory
+build.*.time
+
+# Build temporary files
+_objects.mac
+*.ncb
+*.edb
+~
+acl.txt
+build.log
+build.err
+build*.metadata
+buildchk.dbb
+buildchk.err
+buildchk.evt
+buildchk.ipc
+buildchk.log
+buildchk.prf
+buildchk.rec
+buildchk.trc
+buildchk.wrn
+buildchk.rec_dbg
+buildfre.dbb
+buildfre.err
+buildfre.evt
+buildfre.ipc
+buildfre.log
+buildfre.prf
+buildfre.rec
+buildfre.trc
+buildfre.wrn
+buildfre.rec_dbg
+tmp*.xml
+
+[Pp]ass*-buildfre.dbb
+[Pp]ass*-buildfre.evt
+[Pp]ass*-buildfre.log
+[Pp]ass*-buildfre.metadata
+[Pp]ass*-buildfre.prf
+[Pp]ass*-buildfre.trc
+[Pp]ass*-buildchk.dbb
+[Pp]ass*-buildchk.evt
+[Pp]ass*-buildchk.log
+[Pp]ass*-buildchk.metadata
+[Pp]ass*-buildchk.prf
+[Pp]ass*-buildchk.trc
+
+validate-pushrelease*.log
+
+
+# VSCode uses a .vscode directory to store extension data.
+.vscode/
+
+# Visual Studio 2017 uses a .vs directory to store language service database and other files
+.vs/
+*.VC.db
+*.VC.opendb
+
+#  Visual Studio creates cache files for the solution view that are written to the source tree:
+*CompileInputs.cache
+*AssemblyReference.cache
+
