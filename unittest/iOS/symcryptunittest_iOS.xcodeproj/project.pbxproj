@@ -1,0 +1,502 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 46;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		1A0F628A1B44C4F4003E026D /* main.mm in Sources */ = {isa = PBXBuildFile; fileRef = 1A0F62891B44C4F4003E026D /* main.mm */; };
+		1A10CA271B4DC17400FA1526 /* helper.mm in Sources */ = {isa = PBXBuildFile; fileRef = 1A10CA261B4DC17400FA1526 /* helper.mm */; };
+		1A5838A91B44BDD7002F4614 /* AppDelegate.m in Sources */ = {isa = PBXBuildFile; fileRef = 1A5838A81B44BDD7002F4614 /* AppDelegate.m */; };
+		1A5838AC1B44BDD7002F4614 /* ViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = 1A5838AB1B44BDD7002F4614 /* ViewController.m */; };
+		1A5838AF1B44BDD7002F4614 /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 1A5838AD1B44BDD7002F4614 /* Main.storyboard */; };
+		1A5838B11B44BDD7002F4614 /* Images.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 1A5838B01B44BDD7002F4614 /* Images.xcassets */; };
+		1A5838B41B44BDD8002F4614 /* LaunchScreen.xib in Resources */ = {isa = PBXBuildFile; fileRef = 1A5838B21B44BDD8002F4614 /* LaunchScreen.xib */; };
+		1A8E0FDE1B44C19200E5DCDC /* kat_authenc.dat in Resources */ = {isa = PBXBuildFile; fileRef = 1A8E0FD51B44C19200E5DCDC /* kat_authenc.dat */; };
+		1A8E0FDF1B44C19200E5DCDC /* kat_blockcipher.dat in Resources */ = {isa = PBXBuildFile; fileRef = 1A8E0FD61B44C19200E5DCDC /* kat_blockcipher.dat */; };
+		1A8E0FE01B44C19200E5DCDC /* kat_hash_long.dat in Resources */ = {isa = PBXBuildFile; fileRef = 1A8E0FD71B44C19200E5DCDC /* kat_hash_long.dat */; };
+		1A8E0FE11B44C19200E5DCDC /* kat_hash.dat in Resources */ = {isa = PBXBuildFile; fileRef = 1A8E0FD81B44C19200E5DCDC /* kat_hash.dat */; };
+		1A8E0FE21B44C19200E5DCDC /* kat_kdf.dat in Resources */ = {isa = PBXBuildFile; fileRef = 1A8E0FD91B44C19200E5DCDC /* kat_kdf.dat */; };
+		1A8E0FE31B44C19200E5DCDC /* kat_mac.dat in Resources */ = {isa = PBXBuildFile; fileRef = 1A8E0FDA1B44C19200E5DCDC /* kat_mac.dat */; };
+		1A8E0FE41B44C19200E5DCDC /* kat_rng.dat in Resources */ = {isa = PBXBuildFile; fileRef = 1A8E0FDB1B44C19200E5DCDC /* kat_rng.dat */; };
+		1A8E0FE51B44C19200E5DCDC /* kat_streamcipher.dat in Resources */ = {isa = PBXBuildFile; fileRef = 1A8E0FDC1B44C19200E5DCDC /* kat_streamcipher.dat */; };
+		1A8E0FE61B44C19200E5DCDC /* kat_xts.dat in Resources */ = {isa = PBXBuildFile; fileRef = 1A8E0FDD1B44C19200E5DCDC /* kat_xts.dat */; };
+		1A8E10031B44C25000E5DCDC /* env_SymCryptUnittest.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 1A8E0FE81B44C25000E5DCDC /* env_SymCryptUnittest.cpp */; };
+		1A8E10041B44C25000E5DCDC /* kat.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 1A8E0FE91B44C25000E5DCDC /* kat.cpp */; };
+		1A8E10051B44C25000E5DCDC /* main.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 1A8E0FEB1B44C25000E5DCDC /* main.cpp */; };
+		1A8E10061B44C25000E5DCDC /* perfPrint.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 1A8E0FEC1B44C25000E5DCDC /* perfPrint.cpp */; };
+		1A8E10071B44C25000E5DCDC /* printtable.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 1A8E0FEF1B44C25000E5DCDC /* printtable.cpp */; };
+		1A8E10081B44C25000E5DCDC /* resultMerge.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 1A8E0FF11B44C25000E5DCDC /* resultMerge.cpp */; };
+		1A8E10091B44C25000E5DCDC /* rng.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 1A8E0FF31B44C25000E5DCDC /* rng.cpp */; };
+		1A8E100A1B44C25000E5DCDC /* sc_implementations.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 1A8E0FF51B44C25000E5DCDC /* sc_implementations.cpp */; };
+		1A8E100B1B44C25000E5DCDC /* testAesCtrDrbg.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 1A8E0FF71B44C25000E5DCDC /* testAesCtrDrbg.cpp */; };
+		1A8E100C1B44C25000E5DCDC /* testAuthEnc.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 1A8E0FF81B44C25000E5DCDC /* testAuthEnc.cpp */; };
+		1A8E100D1B44C25000E5DCDC /* testBlockCiphers.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 1A8E0FF91B44C25000E5DCDC /* testBlockCiphers.cpp */; };
+		1A8E100E1B44C25000E5DCDC /* testhash.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 1A8E0FFA1B44C25000E5DCDC /* testhash.cpp */; };
+		1A8E100F1B44C25000E5DCDC /* testKdf.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 1A8E0FFB1B44C25000E5DCDC /* testKdf.cpp */; };
+		1A8E10101B44C25000E5DCDC /* testMac.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 1A8E0FFC1B44C25000E5DCDC /* testMac.cpp */; };
+		1A8E10121B44C25000E5DCDC /* testSelftest.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 1A8E0FFE1B44C25000E5DCDC /* testSelftest.cpp */; };
+		1A8E10131B44C25000E5DCDC /* testStreamCipher.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 1A8E0FFF1B44C25000E5DCDC /* testStreamCipher.cpp */; };
+		1A8E10151B44C25000E5DCDC /* testWipe.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 1A8E10011B44C25000E5DCDC /* testWipe.cpp */; };
+		1A8E10161B44C25000E5DCDC /* testXts.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 1A8E10021B44C25000E5DCDC /* testXts.cpp */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXFileReference section */
+		1A0F62891B44C4F4003E026D /* main.mm */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.objcpp; path = main.mm; sourceTree = "<group>"; };
+		1A10CA261B4DC17400FA1526 /* helper.mm */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.objcpp; path = helper.mm; sourceTree = "<group>"; };
+		1A5838A01B44BDD7002F4614 /* symcryptunittest_iOS.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = symcryptunittest_iOS.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		1A5838A41B44BDD7002F4614 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		1A5838A71B44BDD7002F4614 /* AppDelegate.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = AppDelegate.h; sourceTree = "<group>"; };
+		1A5838A81B44BDD7002F4614 /* AppDelegate.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = AppDelegate.m; sourceTree = "<group>"; };
+		1A5838AA1B44BDD7002F4614 /* ViewController.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = ViewController.h; sourceTree = "<group>"; };
+		1A5838AB1B44BDD7002F4614 /* ViewController.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = ViewController.m; sourceTree = "<group>"; };
+		1A5838AE1B44BDD7002F4614 /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/Main.storyboard; sourceTree = "<group>"; };
+		1A5838B01B44BDD7002F4614 /* Images.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Images.xcassets; sourceTree = "<group>"; };
+		1A5838B31B44BDD8002F4614 /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.xib; name = Base; path = Base.lproj/LaunchScreen.xib; sourceTree = "<group>"; };
+		1A8E0FCE1B44C14600E5DCDC /* symcrypt_inline.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = symcrypt_inline.h; path = ../../inc/symcrypt_inline.h; sourceTree = "<group>"; };
+		1A8E0FCF1B44C14600E5DCDC /* symcrypt_internal.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = symcrypt_internal.h; path = ../../inc/symcrypt_internal.h; sourceTree = "<group>"; };
+		1A8E0FD01B44C14600E5DCDC /* symcrypt_no_sal.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = symcrypt_no_sal.h; path = ../../inc/symcrypt_no_sal.h; sourceTree = "<group>"; };
+		1A8E0FD11B44C14600E5DCDC /* symcrypt_types.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = symcrypt_types.h; path = ../../inc/symcrypt_types.h; sourceTree = "<group>"; };
+		1A8E0FD21B44C14600E5DCDC /* symcrypt.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = symcrypt.h; path = ../../inc/symcrypt.h; sourceTree = "<group>"; };
+		1A8E0FD51B44C19200E5DCDC /* kat_authenc.dat */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; name = kat_authenc.dat; path = ../kat_authenc.dat; sourceTree = "<group>"; };
+		1A8E0FD61B44C19200E5DCDC /* kat_blockcipher.dat */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; name = kat_blockcipher.dat; path = ../kat_blockcipher.dat; sourceTree = "<group>"; };
+		1A8E0FD71B44C19200E5DCDC /* kat_hash_long.dat */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; name = kat_hash_long.dat; path = ../kat_hash_long.dat; sourceTree = "<group>"; };
+		1A8E0FD81B44C19200E5DCDC /* kat_hash.dat */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; name = kat_hash.dat; path = ../kat_hash.dat; sourceTree = "<group>"; };
+		1A8E0FD91B44C19200E5DCDC /* kat_kdf.dat */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; name = kat_kdf.dat; path = ../kat_kdf.dat; sourceTree = "<group>"; };
+		1A8E0FDA1B44C19200E5DCDC /* kat_mac.dat */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; name = kat_mac.dat; path = ../kat_mac.dat; sourceTree = "<group>"; };
+		1A8E0FDB1B44C19200E5DCDC /* kat_rng.dat */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; name = kat_rng.dat; path = ../kat_rng.dat; sourceTree = "<group>"; };
+		1A8E0FDC1B44C19200E5DCDC /* kat_streamcipher.dat */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; name = kat_streamcipher.dat; path = ../kat_streamcipher.dat; sourceTree = "<group>"; };
+		1A8E0FDD1B44C19200E5DCDC /* kat_xts.dat */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; name = kat_xts.dat; path = ../kat_xts.dat; sourceTree = "<group>"; };
+		1A8E0FE71B44C25000E5DCDC /* algorithm_base.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = algorithm_base.h; path = ../algorithm_base.h; sourceTree = "<group>"; };
+		1A8E0FE81B44C25000E5DCDC /* env_SymCryptUnittest.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = env_SymCryptUnittest.cpp; path = ../env_SymCryptUnittest.cpp; sourceTree = "<group>"; };
+		1A8E0FE91B44C25000E5DCDC /* kat.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = kat.cpp; path = ../kat.cpp; sourceTree = "<group>"; };
+		1A8E0FEA1B44C25000E5DCDC /* kat.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = kat.h; path = ../kat.h; sourceTree = "<group>"; };
+		1A8E0FEB1B44C25000E5DCDC /* main.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = main.cpp; path = ../main.cpp; sourceTree = "<group>"; };
+		1A8E0FEC1B44C25000E5DCDC /* perfPrint.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = perfPrint.cpp; path = ../perfPrint.cpp; sourceTree = "<group>"; };
+		1A8E0FED1B44C25000E5DCDC /* perfprint.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = perfprint.h; path = ../perfprint.h; sourceTree = "<group>"; };
+		1A8E0FEE1B44C25000E5DCDC /* precomp.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = precomp.h; path = ../precomp.h; sourceTree = "<group>"; };
+		1A8E0FEF1B44C25000E5DCDC /* printtable.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = printtable.cpp; path = ../printtable.cpp; sourceTree = "<group>"; };
+		1A8E0FF01B44C25000E5DCDC /* printtable.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = printtable.h; path = ../printtable.h; sourceTree = "<group>"; };
+		1A8E0FF11B44C25000E5DCDC /* resultMerge.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = resultMerge.cpp; path = ../resultMerge.cpp; sourceTree = "<group>"; };
+		1A8E0FF21B44C25000E5DCDC /* resultMerge.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = resultMerge.h; path = ../resultMerge.h; sourceTree = "<group>"; };
+		1A8E0FF31B44C25000E5DCDC /* rng.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = rng.cpp; path = ../rng.cpp; sourceTree = "<group>"; };
+		1A8E0FF41B44C25000E5DCDC /* rng.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = rng.h; path = ../rng.h; sourceTree = "<group>"; };
+		1A8E0FF51B44C25000E5DCDC /* sc_implementations.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = sc_implementations.cpp; path = ../sc_implementations.cpp; sourceTree = "<group>"; };
+		1A8E0FF61B44C25000E5DCDC /* sc_implementations.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = sc_implementations.h; path = ../sc_implementations.h; sourceTree = "<group>"; };
+		1A8E0FF71B44C25000E5DCDC /* testAesCtrDrbg.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = testAesCtrDrbg.cpp; path = ../testAesCtrDrbg.cpp; sourceTree = "<group>"; };
+		1A8E0FF81B44C25000E5DCDC /* testAuthEnc.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = testAuthEnc.cpp; path = ../testAuthEnc.cpp; sourceTree = "<group>"; };
+		1A8E0FF91B44C25000E5DCDC /* testBlockCiphers.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = testBlockCiphers.cpp; path = ../testBlockCiphers.cpp; sourceTree = "<group>"; };
+		1A8E0FFA1B44C25000E5DCDC /* testhash.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = testhash.cpp; path = ../testhash.cpp; sourceTree = "<group>"; };
+		1A8E0FFB1B44C25000E5DCDC /* testKdf.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = testKdf.cpp; path = ../testKdf.cpp; sourceTree = "<group>"; };
+		1A8E0FFC1B44C25000E5DCDC /* testMac.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = testMac.cpp; path = ../testMac.cpp; sourceTree = "<group>"; };
+		1A8E0FFE1B44C25000E5DCDC /* testSelftest.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = testSelftest.cpp; path = ../testSelftest.cpp; sourceTree = "<group>"; };
+		1A8E0FFF1B44C25000E5DCDC /* testStreamCipher.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = testStreamCipher.cpp; path = ../testStreamCipher.cpp; sourceTree = "<group>"; };
+		1A8E10011B44C25000E5DCDC /* testWipe.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = testWipe.cpp; path = ../testWipe.cpp; sourceTree = "<group>"; };
+		1A8E10021B44C25000E5DCDC /* testXts.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = testXts.cpp; path = ../testXts.cpp; sourceTree = "<group>"; };
+		1A8E10181B44C26C00E5DCDC /* precomp_iOS.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = precomp_iOS.h; sourceTree = "<group>"; };
+		1A8E101A1B44C2AF00E5DCDC /* sc_lib-testhooks.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = "sc_lib-testhooks.h"; path = "../../lib/sc_lib-testhooks.h"; sourceTree = "<group>"; };
+		1AF55A4F1B44CF7F006234C7 /* symcrypt.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = symcrypt.a; path = "../../Build_iOS/Products/Debug-iphonesimulator/symcrypt.a"; sourceTree = "<group>"; };
+		1AF55A511B44CF92006234C7 /* symcrypt.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = symcrypt.a; path = "../../Build_iOS/Products/Debug-iphoneos/symcrypt.a"; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		1A58389D1B44BDD7002F4614 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		1A5838971B44BDD7002F4614 = {
+			isa = PBXGroup;
+			children = (
+				1A8E0FCD1B44C13500E5DCDC /* Resources */,
+				1A8E0FCC1B44C12B00E5DCDC /* Library */,
+				1A8E0FCB1B44C12200E5DCDC /* Sources */,
+				1A8E0FCA1B44C11800E5DCDC /* Headers */,
+				1A5838A21B44BDD7002F4614 /* symcryptunittest_iOS */,
+				1A5838A11B44BDD7002F4614 /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		1A5838A11B44BDD7002F4614 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				1A5838A01B44BDD7002F4614 /* symcryptunittest_iOS.app */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		1A5838A21B44BDD7002F4614 /* symcryptunittest_iOS */ = {
+			isa = PBXGroup;
+			children = (
+				1A5838A71B44BDD7002F4614 /* AppDelegate.h */,
+				1A5838A81B44BDD7002F4614 /* AppDelegate.m */,
+				1A5838AA1B44BDD7002F4614 /* ViewController.h */,
+				1A5838AB1B44BDD7002F4614 /* ViewController.m */,
+				1A5838AD1B44BDD7002F4614 /* Main.storyboard */,
+				1A5838B01B44BDD7002F4614 /* Images.xcassets */,
+				1A5838B21B44BDD8002F4614 /* LaunchScreen.xib */,
+				1A5838A31B44BDD7002F4614 /* Supporting Files */,
+			);
+			path = symcryptunittest_iOS;
+			sourceTree = "<group>";
+		};
+		1A5838A31B44BDD7002F4614 /* Supporting Files */ = {
+			isa = PBXGroup;
+			children = (
+				1A0F62891B44C4F4003E026D /* main.mm */,
+				1A5838A41B44BDD7002F4614 /* Info.plist */,
+			);
+			name = "Supporting Files";
+			sourceTree = "<group>";
+		};
+		1A8E0FCA1B44C11800E5DCDC /* Headers */ = {
+			isa = PBXGroup;
+			children = (
+				1A8E0FCE1B44C14600E5DCDC /* symcrypt_inline.h */,
+				1A8E0FCF1B44C14600E5DCDC /* symcrypt_internal.h */,
+				1A8E0FD01B44C14600E5DCDC /* symcrypt_no_sal.h */,
+				1A8E0FD11B44C14600E5DCDC /* symcrypt_types.h */,
+				1A8E0FD21B44C14600E5DCDC /* symcrypt.h */,
+			);
+			name = Headers;
+			sourceTree = "<group>";
+		};
+		1A8E0FCB1B44C12200E5DCDC /* Sources */ = {
+			isa = PBXGroup;
+			children = (
+				1A10CA261B4DC17400FA1526 /* helper.mm */,
+				1A8E101A1B44C2AF00E5DCDC /* sc_lib-testhooks.h */,
+				1A8E10181B44C26C00E5DCDC /* precomp_iOS.h */,
+				1A8E0FE71B44C25000E5DCDC /* algorithm_base.h */,
+				1A8E0FE81B44C25000E5DCDC /* env_SymCryptUnittest.cpp */,
+				1A8E0FE91B44C25000E5DCDC /* kat.cpp */,
+				1A8E0FEA1B44C25000E5DCDC /* kat.h */,
+				1A8E0FEB1B44C25000E5DCDC /* main.cpp */,
+				1A8E0FEC1B44C25000E5DCDC /* perfPrint.cpp */,
+				1A8E0FED1B44C25000E5DCDC /* perfprint.h */,
+				1A8E0FEE1B44C25000E5DCDC /* precomp.h */,
+				1A8E0FEF1B44C25000E5DCDC /* printtable.cpp */,
+				1A8E0FF01B44C25000E5DCDC /* printtable.h */,
+				1A8E0FF11B44C25000E5DCDC /* resultMerge.cpp */,
+				1A8E0FF21B44C25000E5DCDC /* resultMerge.h */,
+				1A8E0FF31B44C25000E5DCDC /* rng.cpp */,
+				1A8E0FF41B44C25000E5DCDC /* rng.h */,
+				1A8E0FF51B44C25000E5DCDC /* sc_implementations.cpp */,
+				1A8E0FF61B44C25000E5DCDC /* sc_implementations.h */,
+				1A8E0FF71B44C25000E5DCDC /* testAesCtrDrbg.cpp */,
+				1A8E0FF81B44C25000E5DCDC /* testAuthEnc.cpp */,
+				1A8E0FF91B44C25000E5DCDC /* testBlockCiphers.cpp */,
+				1A8E0FFA1B44C25000E5DCDC /* testhash.cpp */,
+				1A8E0FFB1B44C25000E5DCDC /* testKdf.cpp */,
+				1A8E0FFC1B44C25000E5DCDC /* testMac.cpp */,
+				1A8E0FFE1B44C25000E5DCDC /* testSelftest.cpp */,
+				1A8E0FFF1B44C25000E5DCDC /* testStreamCipher.cpp */,
+				1A8E10011B44C25000E5DCDC /* testWipe.cpp */,
+				1A8E10021B44C25000E5DCDC /* testXts.cpp */,
+			);
+			name = Sources;
+			sourceTree = "<group>";
+		};
+		1A8E0FCC1B44C12B00E5DCDC /* Library */ = {
+			isa = PBXGroup;
+			children = (
+				1AF55A4E1B44CF55006234C7 /* Debug-iphonesimulator */,
+				1AF55A4D1B44CF3E006234C7 /* Debug-iphoneos */,
+			);
+			name = Library;
+			sourceTree = "<group>";
+		};
+		1A8E0FCD1B44C13500E5DCDC /* Resources */ = {
+			isa = PBXGroup;
+			children = (
+				1A8E0FD51B44C19200E5DCDC /* kat_authenc.dat */,
+				1A8E0FD61B44C19200E5DCDC /* kat_blockcipher.dat */,
+				1A8E0FD71B44C19200E5DCDC /* kat_hash_long.dat */,
+				1A8E0FD81B44C19200E5DCDC /* kat_hash.dat */,
+				1A8E0FD91B44C19200E5DCDC /* kat_kdf.dat */,
+				1A8E0FDA1B44C19200E5DCDC /* kat_mac.dat */,
+				1A8E0FDB1B44C19200E5DCDC /* kat_rng.dat */,
+				1A8E0FDC1B44C19200E5DCDC /* kat_streamcipher.dat */,
+				1A8E0FDD1B44C19200E5DCDC /* kat_xts.dat */,
+			);
+			name = Resources;
+			sourceTree = "<group>";
+		};
+		1AF55A4D1B44CF3E006234C7 /* Debug-iphoneos */ = {
+			isa = PBXGroup;
+			children = (
+				1AF55A511B44CF92006234C7 /* symcrypt.a */,
+			);
+			name = "Debug-iphoneos";
+			sourceTree = "<group>";
+		};
+		1AF55A4E1B44CF55006234C7 /* Debug-iphonesimulator */ = {
+			isa = PBXGroup;
+			children = (
+				1AF55A4F1B44CF7F006234C7 /* symcrypt.a */,
+			);
+			name = "Debug-iphonesimulator";
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		1A58389F1B44BDD7002F4614 /* symcryptunittest_iOS */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 1A5838C31B44BDD8002F4614 /* Build configuration list for PBXNativeTarget "symcryptunittest_iOS" */;
+			buildPhases = (
+				1A58389C1B44BDD7002F4614 /* Sources */,
+				1A58389D1B44BDD7002F4614 /* Frameworks */,
+				1A58389E1B44BDD7002F4614 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = symcryptunittest_iOS;
+			productName = symcryptunittest_iOS;
+			productReference = 1A5838A01B44BDD7002F4614 /* symcryptunittest_iOS.app */;
+			productType = "com.apple.product-type.application";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		1A5838981B44BDD7002F4614 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				LastUpgradeCheck = 0620;
+				ORGANIZATIONNAME = Microsoft;
+				TargetAttributes = {
+					1A58389F1B44BDD7002F4614 = {
+						CreatedOnToolsVersion = 6.2;
+					};
+				};
+			};
+			buildConfigurationList = 1A58389B1B44BDD7002F4614 /* Build configuration list for PBXProject "symcryptunittest_iOS" */;
+			compatibilityVersion = "Xcode 3.2";
+			developmentRegion = English;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				en,
+				Base,
+			);
+			mainGroup = 1A5838971B44BDD7002F4614;
+			productRefGroup = 1A5838A11B44BDD7002F4614 /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				1A58389F1B44BDD7002F4614 /* symcryptunittest_iOS */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		1A58389E1B44BDD7002F4614 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				1A8E0FE11B44C19200E5DCDC /* kat_hash.dat in Resources */,
+				1A8E0FE51B44C19200E5DCDC /* kat_streamcipher.dat in Resources */,
+				1A8E0FE01B44C19200E5DCDC /* kat_hash_long.dat in Resources */,
+				1A8E0FE31B44C19200E5DCDC /* kat_mac.dat in Resources */,
+				1A5838AF1B44BDD7002F4614 /* Main.storyboard in Resources */,
+				1A8E0FDF1B44C19200E5DCDC /* kat_blockcipher.dat in Resources */,
+				1A8E0FDE1B44C19200E5DCDC /* kat_authenc.dat in Resources */,
+				1A8E0FE41B44C19200E5DCDC /* kat_rng.dat in Resources */,
+				1A8E0FE61B44C19200E5DCDC /* kat_xts.dat in Resources */,
+				1A5838B41B44BDD8002F4614 /* LaunchScreen.xib in Resources */,
+				1A8E0FE21B44C19200E5DCDC /* kat_kdf.dat in Resources */,
+				1A5838B11B44BDD7002F4614 /* Images.xcassets in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		1A58389C1B44BDD7002F4614 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				1A8E100D1B44C25000E5DCDC /* testBlockCiphers.cpp in Sources */,
+				1A8E100F1B44C25000E5DCDC /* testKdf.cpp in Sources */,
+				1A8E100B1B44C25000E5DCDC /* testAesCtrDrbg.cpp in Sources */,
+				1A10CA271B4DC17400FA1526 /* helper.mm in Sources */,
+				1A8E10031B44C25000E5DCDC /* env_SymCryptUnittest.cpp in Sources */,
+				1A8E10091B44C25000E5DCDC /* rng.cpp in Sources */,
+				1A8E10081B44C25000E5DCDC /* resultMerge.cpp in Sources */,
+				1A5838AC1B44BDD7002F4614 /* ViewController.m in Sources */,
+				1A8E10051B44C25000E5DCDC /* main.cpp in Sources */,
+				1A8E100E1B44C25000E5DCDC /* testhash.cpp in Sources */,
+				1A8E10061B44C25000E5DCDC /* perfPrint.cpp in Sources */,
+				1A8E10071B44C25000E5DCDC /* printtable.cpp in Sources */,
+				1A8E10121B44C25000E5DCDC /* testSelftest.cpp in Sources */,
+				1A0F628A1B44C4F4003E026D /* main.mm in Sources */,
+				1A8E10041B44C25000E5DCDC /* kat.cpp in Sources */,
+				1A8E10151B44C25000E5DCDC /* testWipe.cpp in Sources */,
+				1A8E100C1B44C25000E5DCDC /* testAuthEnc.cpp in Sources */,
+				1A8E10161B44C25000E5DCDC /* testXts.cpp in Sources */,
+				1A5838A91B44BDD7002F4614 /* AppDelegate.m in Sources */,
+				1A8E100A1B44C25000E5DCDC /* sc_implementations.cpp in Sources */,
+				1A8E10131B44C25000E5DCDC /* testStreamCipher.cpp in Sources */,
+				1A8E10101B44C25000E5DCDC /* testMac.cpp in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin PBXVariantGroup section */
+		1A5838AD1B44BDD7002F4614 /* Main.storyboard */ = {
+			isa = PBXVariantGroup;
+			children = (
+				1A5838AE1B44BDD7002F4614 /* Base */,
+			);
+			name = Main.storyboard;
+			sourceTree = "<group>";
+		};
+		1A5838B21B44BDD8002F4614 /* LaunchScreen.xib */ = {
+			isa = PBXVariantGroup;
+			children = (
+				1A5838B31B44BDD8002F4614 /* Base */,
+			);
+			name = LaunchScreen.xib;
+			sourceTree = "<group>";
+		};
+/* End PBXVariantGroup section */
+
+/* Begin XCBuildConfiguration section */
+		1A5838C11B44BDD8002F4614 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++0x";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "iPhone Developer";
+				COPY_PHASE_STRIP = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu99;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"DEBUG=1",
+					"$(inherited)",
+				);
+				GCC_SYMBOLS_PRIVATE_EXTERN = NO;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 8.2;
+				MTL_ENABLE_DEBUG_INFO = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				SDKROOT = iphoneos;
+			};
+			name = Debug;
+		};
+		1A5838C21B44BDD8002F4614 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++0x";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "iPhone Developer";
+				COPY_PHASE_STRIP = NO;
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu99;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 8.2;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				SDKROOT = iphoneos;
+				VALIDATE_PRODUCT = YES;
+			};
+			name = Release;
+		};
+		1A5838C41B44BDD8002F4614 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++0x";
+				GCC_C_LANGUAGE_STANDARD = gnu99;
+				INFOPLIST_FILE = symcryptunittest_iOS/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks";
+				LIBRARY_SEARCH_PATHS = "$(inherited)";
+				"OTHER_LDFLAGS[sdk=iphoneos*]" = "../../Build/Products/Debug-iphoneos/symcrypt.a";
+				"OTHER_LDFLAGS[sdk=iphonesimulator*]" = "../../Build/Products/Debug-iphonesimulator/symcrypt.a";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+			};
+			name = Debug;
+		};
+		1A5838C51B44BDD8002F4614 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++0x";
+				GCC_C_LANGUAGE_STANDARD = gnu99;
+				INFOPLIST_FILE = symcryptunittest_iOS/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks";
+				LIBRARY_SEARCH_PATHS = "$(inherited)";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		1A58389B1B44BDD7002F4614 /* Build configuration list for PBXProject "symcryptunittest_iOS" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				1A5838C11B44BDD8002F4614 /* Debug */,
+				1A5838C21B44BDD8002F4614 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		1A5838C31B44BDD8002F4614 /* Build configuration list for PBXNativeTarget "symcryptunittest_iOS" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				1A5838C41B44BDD8002F4614 /* Debug */,
+				1A5838C51B44BDD8002F4614 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = 1A5838981B44BDD7002F4614 /* Project object */;
+}

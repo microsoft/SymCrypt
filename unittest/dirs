@@ -1,0 +1,14 @@
+DIRS = \
+    lib \
+    exe_test \
+    exe_Win7nLater \
+    exe_Win8_1nLater \
+    exe_legacy \
+    sys_test \
+    sys_Win7nLater \
+    sys_legacy \
+
+
+
+    
+

@@ -1,0 +1,6 @@
+TARGETNAME=symcryptunittest_Win7nLater
+
+C_DEFINES=$(C_DEFINES) -DTESTDRIVER_NAME=\"SymCryptDriver_win7nlater.sys\"
+!include ..\sources_exe.inc
+
+_NT_TARGET_VERSION=$(_NT_TARGET_VERSION_WIN7)

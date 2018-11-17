@@ -1,0 +1,63 @@
+#
+# Known answer test vectors for IEEE 802.11 SAE Custom functions
+#
+# Binary data fields can be one of the following formats
+# - string of hex characters
+# - Double-quoted string for ASCII strings (no terminating zero is added to the data)
+# - 'repeat(<int)' followed by a data field
+# 
+
+
+
+[IEEE802_11SaeCustom]
+
+# sae 2 case from OidTest.exe
+password        = "Admin!98"
+MACa            = 9cda3ef27dd5
+MACb            = 3413e8bc4d32
+count           = 2
+random          = 781fe26354041421e8c8e1ca5ceb4522a2d9fca6fd4fb931cdbbe0d44a3e5773
+mask            = e621811ddea6de28b511447fbca6375f1223a858294de7630f732151e9f52d60
+commitScalar    = 5e41638232aaf2499dda264a19917c81f816aa517f86020fe975376337d05f82
+commitElement   = b2673d35f1de77912176eb746ae3a76ecee660fa086b4693e8ac1b5af9e7386f9fbad6401c105ed947d1cb76522bb5b145969a1849c3a6ef933fec3596890294
+peerScalar      = d0c16dc659c85f15a5dcf37b7a64f7badcd8c5356b6bc0bda91fb90ea5d5494f
+peerElement     = c296950aff00f02af401e5aba24eecc219032a430524ddb5d879eaec903200ab6c9119ae493d89384c97c23c69522d2428ef4947f1002e2c324f3889b3cf1243
+scalarSum       = 2f02d1498c73515e43b719c593f6743d180874d943da24489edb25aee1428380
+sharedSecret    = 1ba49bfd41bc1a65abeb6945c4c399dc884a7d5ce6d1c4f2e5a353b1b9de37fc
+
+
+# sae 3 case from OidTest.exe
+password        = "Admin!98"
+MACa            = 9cda3ef27dd5
+MACb            = 3413e8bc4d32
+count           = 2
+random          = 528b7eae49677a6497476100595786b23dfdd5bfadc310448db30ce5b83c91ff
+mask            = 91678733812acd18c8eaffdf17ca8179aa2c1a5fb96138f86bd9b0c9920ae2af
+commitScalar    = e3f305e1ca92477d603260df7122082be829f01f6724493cf98cbdaf4a4774ae
+commitElement   = 8796d7d7abe3026efb885d6fc305d02cd07d516ba8680b3cbe63493f798bda9c470fbc3ecf6efed2aaba374b8c8d8d089f960a80a4aab5a89f760c8743b7f44b
+peerScalar      = b529285eed665408dac46bb864820f161ad7f00326ae962cc91a5e70b6656e36
+peerElement     = a0190c315dbebaf4e635d6507559501121ace4e425b5368ea1e2fa75db7edcbcd9bab22174f8515161d8bff7e1e51cf521be842eb471aa0f8f070ccf8591b01b
+sharedSecret    = 7fd1db140f1e935db49d22eb91ee57321ce567dc95b72387a4989e49b7660d9a
+scalarSum       = 991c2e41b7f89b853af6cc97d5a41742461ae574e6bb40e4ceed515d0449bd93
+
+#sae 4 case from OidTest.exe
+password        = "Admin!98-1"
+MACa            = 9cda3ef27dd5
+MACb            = 3413e8bc4d32
+count           = 3
+random          = d2e6ccfcf833126ae6675c3f02d9d173f822f48fc5e5d1b3d62a0e0e1cfe44a3
+mask            = 76755fb628b9b77f019bd0c18ad17c1d34da0c4621b5865e37560080428e7fb1
+commitScalar    = 495c2cb420ecc9e8e8032d008dab4d91701606284083b98d19c643cb63299f03
+commitElement   = 132efc90b9d7b5c12a1de9059cb3bac8a693ffbf2302423e58c20d0010e844609dfc345e988ef2126724d080fb2f1e7ae654010050d4fe664762c03c9f7a1027
+peerScalar      = 934889ab386b72d5ff0d3caa095650202bd03e2696b5905f7b495f3b7dc35b48
+peerElement     = 58545e6ca0e886effb052afb632ca2195bb0b0a825e59dba6baa0e93af046ef4c9455fec43fe5eb02a6b8abc8fd70787873dd1d5d7fde3073a4cf3c2c76f595c
+sharedSecret    = b6790fc6d842a66a37d8921312ff28f44b30db710d83fda1ce3a37f536c2b4dd
+scalarSum       = dca4b65f59583cbee71069aa97019db19be6444ed73949ec950fa306e0ecfa4b
+
+
+# Neagative test case, invalid peer Element
+NegativeTest    = 1
+peerElement     = 5d901c4a9b7f11e7935adeb7a4bac40c5172604f1c1a1a42dbca4753f695aa5ad01e1f8b812f01a3631a79dab001b372a185535b77e38a46a6faeeffffffffff
+
+# run the self-consistency checks
+selfconsistent = 1

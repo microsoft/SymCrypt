@@ -1,0 +1,7 @@
+DIRS = \
+    lib \
+    unittest \
+    gen{amd64} \
+
+    
+

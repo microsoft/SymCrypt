@@ -1,0 +1,1010 @@
+> ScBuild
+SymCrypt build tool version 1.0
+Start time = 2018-11-16 16:18:14.83
+Checking that we run in a Windows Razzle environment... Ok
+Checking for presence of symcrypt enlistment in windows enlistment... Ok
+.> git status .
+> c:\windows\system32\cmd.exe /c "cd . && git status ."
+  On branch master
+  Your branch is up-to-date with 'origin/master'.
+  Untracked files:
+    (use "git add <file>..." to include in what will be committed)
+  	ScBuild.log
+  	dirs
+  	gen/
+  	inc/
+  	lib/
+  	scbuild.cmd
+  	scbuild/
+  	unittest/
+  nothing added to commit but untracked files present (use "git add" to track)
+...ignoring directory '.' not in sync
+> findstr -spr "\<_KERNEL_MODE\>" *.c *.h *.cs *.cpp
+> c:\windows\system32\cmd.exe /c "findstr -spr "\<_KERNEL_MODE\>" *.c *.h *.cs *.cpp"
+New SymCrypt version number: Release = 86, Private =  1
+...Not updating version number
+> rmdir ..\symcrypt\release /s /q
+> c:\windows\system32\cmd.exe /c "rmdir ..\symcrypt\release /s /q"
+> mkdir release
+> c:\windows\system32\cmd.exe /c "mkdir release"
+> mkdir release\buildlogs
+> c:\windows\system32\cmd.exe /c "mkdir release\buildlogs"
+> mkdir release\lib\amd64chk
+> c:\windows\system32\cmd.exe /c "mkdir release\lib\amd64chk"
+> mkdir release\lib\amd64fre
+> c:\windows\system32\cmd.exe /c "mkdir release\lib\amd64fre"
+> mkdir release\lib\x86chk
+> c:\windows\system32\cmd.exe /c "mkdir release\lib\x86chk"
+> mkdir release\lib\x86fre
+> c:\windows\system32\cmd.exe /c "mkdir release\lib\x86fre"
+> mkdir release\lib\armchk
+> c:\windows\system32\cmd.exe /c "mkdir release\lib\armchk"
+> mkdir release\lib\armfre
+> c:\windows\system32\cmd.exe /c "mkdir release\lib\armfre"
+> mkdir release\lib\arm64chk
+> c:\windows\system32\cmd.exe /c "mkdir release\lib\arm64chk"
+> mkdir release\lib\arm64fre
+> c:\windows\system32\cmd.exe /c "mkdir release\lib\arm64fre"
+> mkdir release\inc
+> c:\windows\system32\cmd.exe /c "mkdir release\inc"
+> razzle amd64chk no_oacr exec build -c -z
+> c:\windows\system32\cmd.exe /c "razzle amd64chk no_oacr exec build -c -z"
+* VPack.exe: Information: Virtualization infrastructure was already installed.
+* '∩╗┐' is not recognized as an internal or external command,
+* operable program or batch file.
+  Bitlocker is properly enabled for s:. Thanks!
+  Registering per-enlistment data (and elevating RazzleReg.exe if necessary)
+  Installing certificates (and elevating if necessary)
+  Setting up strong-name bypass
+   
+* BUILD: TARGETS: AMD64
+* BUILD: MODE: Generate Headers, Compile, Link, Post
+* BUILD: LOG: s:\os\src\symcrypt\buildchk.log
+* BUILD: Start time: Fri Nov 16 16:18:23 2018
+*  
+* 1>Merging config files 
+* 1>Performing pregraph steps... 
+* Examining s:\os\src\symcrypt (directory tree)
+*     s:\os\src\symcrypt\lib
+*     s:\os\src\symcrypt\unittest
+*     s:\os\src\symcrypt\unittest\lib
+*     s:\os\src\symcrypt\unittest\exe_test
+*     s:\os\src\symcrypt\unittest\exe_win7nlater
+*     s:\os\src\symcrypt\unittest\exe_win8_1nlater
+*     s:\os\src\symcrypt\unittest\exe_legacy
+*     s:\os\src\symcrypt\unittest\sys_test
+*     s:\os\src\symcrypt\unittest\sys_win7nlater
+*     s:\os\src\symcrypt\gen
+* Installing certificates
+* Updating build/qfe numbers
+* Updating build/qfe numbers
+* making check_blddate
+* making bldnumpmk.inc
+* 1>Preprocessing - s:\os\obj\amd64chk\temp\bldnumpmk.inc1
+* making SpecialVer.inc
+* 1>Preprocessing - s:\os\obj\amd64chk\temp\specialver.inc1
+* making wsverpmk.inc
+* 1>Preprocessing - s:\os\obj\amd64chk\temp\wsverpmk.inc1
+* making ieverpmk.inc
+* 1>Preprocessing - s:\os\obj\amd64chk\temp\ieverpmk.inc1
+* Checking LNM replica state
+* BUILD: rmdir /q/s s:\os\obj\amd64chk\symcrypt
+* BUILD: Processing dependencies...
+* 1>Compiling s:\os\src\symcrypt\lib [11%]
+* 2>Compiling s:\os\src\symcrypt\unittest\sys_test [16%]
+* 3>Compiling s:\os\src\symcrypt\unittest\sys_legacy [16%]
+* 4>Compiling s:\os\src\symcrypt\unittest\exe_legacy [22%]
+* 5>Compiling s:\os\src\symcrypt\unittest\exe_win8_1nlater [27%]
+* 6>Compiling s:\os\src\symcrypt\unittest\exe_win7nlater [33%]
+* 7>Compiling s:\os\src\symcrypt\unittest\sys_win7nlater [38%]
+* 8>Compiling s:\os\src\symcrypt\unittest\lib [44%]
+* 9>Compiling s:\os\src\symcrypt\gen [50%]
+* 10>Compiling s:\os\src\symcrypt\unittest\exe_test [55%]
+* 3>Compiling - unittest\sys_legacy\main_sys.cpp
+* 2>Compiling - unittest\sys_test\main_sys.cpp
+* 7>Compiling - unittest\sys_win7nlater\main_sys.cpp
+* 1>Compiling - lib\marvin32.c
+* 1>Building Library - s:\os\obj\amd64chk\symcrypt\lib\objchk\amd64\symcrypt.lib
+* 9>Compiling - gen\main_gen.cpp
+* 4>Precompiling - unittest\exe_legacy\precomp.h
+* 4>Compiling - unittest\exe_legacy\main_exe.cpp
+* 5>Precompiling - unittest\exe_win8_1nlater\precomp.h
+* 5>Compiling - unittest\exe_win8_1nlater\main_exe.cpp
+* 6>Precompiling - unittest\exe_win7nlater\precomp.h
+* 6>Compiling - unittest\exe_win7nlater\main_exe.cpp
+* 10>Precompiling - unittest\exe_test\precomp.h
+* 10>Compiling - unittest\exe_test\main_exe.cpp
+* 8>Precompiling - unittest\lib\precomp.h
+* 8>Assembling - unittest\lib\amd64\saveymm.asm
+* 8>Compiling - unittest\lib\main.cpp
+* 8>Compiling - unittest\lib\testaesctrdrbg.cpp
+* 8>Compiling - unittest\lib\kat.cpp
+* 8>Compiling - unittest\lib\rng.cpp
+* 8>Compiling - unittest\lib\perfprint.cpp
+* 8>Compiling - unittest\lib\printtable.cpp
+* 8>Compiling - unittest\lib\resultmerge.cpp
+* 8>Compiling - unittest\lib\sc_implementations.cpp
+* 8>Compiling - unittest\lib\rsa32_implementations.cpp
+* 8>Compiling - unittest\lib\capi_implementations.cpp
+* 8>Compiling - unittest\lib\cng_implementations.cpp
+* 8>Compiling - unittest\lib\msbignum_implementations.cpp
+* 8>Compiling - unittest\lib\ref_implementations.cpp
+* 8>Compiling - unittest\lib\testhash.cpp
+* 8>Compiling - unittest\lib\perf.cpp
+* 8>Compiling - unittest\lib\testselftest.cpp
+* 8>Compiling - unittest\lib\testmac.cpp
+* 8>Compiling - unittest\lib\testblockciphers.cpp
+* 8>Compiling - unittest\lib\testxts.cpp
+* 8>Compiling - unittest\lib\testauthenc.cpp
+* 8>Compiling - unittest\lib\teststreamcipher.cpp
+* 8>Compiling - unittest\lib\testwipe.cpp
+* 8>Compiling - unittest\lib\testutil.cpp
+* 8>Compiling - unittest\lib\testkdf.cpp
+* 8>Compiling - unittest\lib\testtlscbchmac.cpp
+* 8>Compiling - unittest\lib\env_symcryptunittest.cpp
+* 8>Compiling - unittest\lib\testmultithread.cpp
+* 8>Compiling - unittest\lib\rnddriver.cpp
+* 8>Compiling - unittest\lib\testarithmetic.cpp
+* 8>Compiling - unittest\lib\testecc.cpp
+* 8>Compiling - unittest\lib\testinterop.cpp
+* 8>Compiling - unittest\lib\testrsa.cpp
+* 8>Compiling - unittest\lib\testrsa_sc.cpp
+* 8>Compiling - unittest\lib\testrsa_msbignum.cpp
+* 8>Compiling - unittest\lib\testrsa_cng.cpp
+* 8>Compiling - unittest\lib\testdl.cpp
+* 8>Compiling - unittest\lib\testdl_sc.cpp
+* 8>Compiling - unittest\lib\testdl_msbignum.cpp
+* 8>Compiling - unittest\lib\testdl_cng.cpp
+* 8>Compiling - unittest\lib\callback.cpp
+* 8>Compiling - unittest\lib\testmontgomery.cpp
+* 8>Compiling - unittest\lib\testscstable.cpp
+* 8>Compiling - unittest\lib\testieee802_11saecustom.cpp
+* 8>Compiling resources - unittest\symcryptunittest.rc
+* 8>Building Library - s:\os\obj\amd64chk\symcrypt\unittest\lib\objchk\amd64\symcryptunittest_lib.lib
+* 1>Linking for s:\os\src\symcrypt\unittest\sys_test [61%]
+* 2>Linking for s:\os\src\symcrypt\unittest\sys_legacy [66%]
+* 3>Linking for s:\os\src\symcrypt\unittest\exe_legacy [72%]
+* 4>Linking for s:\os\src\symcrypt\unittest\exe_win8_1nlater [77%]
+* 5>Linking for s:\os\src\symcrypt\unittest\exe_win7nlater [83%]
+* 6>Linking for s:\os\src\symcrypt\unittest\sys_win7nlater [88%]
+* 7>Linking for s:\os\src\symcrypt\gen [94%]
+* 8>Linking for s:\os\src\symcrypt\unittest\exe_test [100%]
+* 7>Linking Executable - s:\os\obj\amd64chk\symcrypt\gen\objchk\amd64\symcryptconstantgen.exe
+* 7>LN_MUI_STS: LGNSTS_MUIOFF symcryptConstantGen.exe 
+* 1>Linking Executable - s:\os\obj\amd64chk\symcrypt\unittest\sys_test\objchk\amd64\symcryptdriver_test.sys
+* 1>LN_MUI_STS: LGNSTS_MUIOFF SymCryptDriver_test.sys 
+* 2>Linking Executable - s:\os\obj\amd64chk\symcrypt\unittest\sys_legacy\objchk\amd64\symcryptdriver_legacy.sys
+* 2>LN_MUI_STS: LGNSTS_MUIOFF SymCryptDriver_legacy.sys 
+* 6>Linking Executable - s:\os\obj\amd64chk\symcrypt\unittest\sys_win7nlater\objchk\amd64\symcryptdriver_win7nlater.sys
+* 6>LN_MUI_STS: LGNSTS_MUIOFF SymCryptDriver_Win7nLater.sys 
+* 4>Compiling resources - unittest\exe_win8_1nlater\symcryptunittest.rc
+* 4>Linking Executable - s:\os\obj\amd64chk\symcrypt\unittest\exe_win8_1nlater\objchk\amd64\symcryptunittest_win8_1nlater.exe
+* 4>LN_MUI_STS: LGNSTS_MUIOFF symcryptunittest_Win8_1nLater.exe 
+* 3>Compiling resources - unittest\symcryptunittest.rc
+* 3>Linking Executable - s:\os\obj\amd64chk\symcrypt\unittest\exe_legacy\objchk\amd64\symcryptunittest_legacy.exe
+* 3>LN_MUI_STS: LGNSTS_MUIOFF symcryptunittest_legacy.exe 
+* 8>Compiling resources - unittest\exe_test\symcryptunittest.rc
+* 8>Linking Executable - s:\os\obj\amd64chk\symcrypt\unittest\exe_test\objchk\amd64\symcryptunittest.exe
+* 8>LN_MUI_STS: LGNSTS_MUIOFF symcryptunittest.exe 
+* 5>Compiling resources - unittest\exe_win7nlater\symcryptunittest.rc
+* 5>Linking Executable - s:\os\obj\amd64chk\symcrypt\unittest\exe_win7nlater\objchk\amd64\symcryptunittest_win7nlater.exe
+* 5>LN_MUI_STS: LGNSTS_MUIOFF symcryptunittest_Win7nLater.exe 
+* Running analyzer on build trace...
+*  
+* BUILD: Finish time: Fri Nov 16 16:19:00 2018
+* BUILD: Done
+*     88 files compiled
+*     2 libraries built
+*     8 executables built
+> move buildchk.log release\buildlogs\buildamd64chk.log
+> c:\windows\system32\cmd.exe /c "move buildchk.log release\buildlogs\buildamd64chk.log"
+          1 file(s) moved.
+> copy s:\os\obj\amd64chk\symcrypt\lib\objchk\amd64\symcrypt.lib release\lib\amd64chk\symcrypt.lib
+> c:\windows\system32\cmd.exe /c "copy s:\os\obj\amd64chk\symcrypt\lib\objchk\amd64\symcrypt.lib release\lib\amd64chk\symcrypt.lib"
+          1 file(s) copied.
+> copy s:\os\obj\amd64chk\symcrypt\unittest\exe_test\objchk\amd64\symcryptunittest.exe release\lib\amd64chk\symcryptunittest.exe
+> c:\windows\system32\cmd.exe /c "copy s:\os\obj\amd64chk\symcrypt\unittest\exe_test\objchk\amd64\symcryptunittest.exe release\lib\amd64chk\symcryptunittest.exe"
+          1 file(s) copied.
+> copy s:\os\obj\amd64chk\symcrypt\unittest\exe_test\objchk\amd64\symcryptunittest.pdb release\lib\amd64chk\symcryptunittest.pdb
+> c:\windows\system32\cmd.exe /c "copy s:\os\obj\amd64chk\symcrypt\unittest\exe_test\objchk\amd64\symcryptunittest.pdb release\lib\amd64chk\symcryptunittest.pdb"
+          1 file(s) copied.
+> copy s:\os\obj\amd64chk\symcrypt\unittest\exe_win7nlater\objchk\amd64\symcryptunittest_win7nlater.exe release\lib\amd64chk\symcryptunittest_win7nlater.exe
+> c:\windows\system32\cmd.exe /c "copy s:\os\obj\amd64chk\symcrypt\unittest\exe_win7nlater\objchk\amd64\symcryptunittest_win7nlater.exe release\lib\amd64chk\symcryptunittest_win7nlater.exe"
+          1 file(s) copied.
+> copy s:\os\obj\amd64chk\symcrypt\unittest\exe_win7nlater\objchk\amd64\symcryptunittest_win7nlater.pdb release\lib\amd64chk\symcryptunittest_win7nlater.pdb
+> c:\windows\system32\cmd.exe /c "copy s:\os\obj\amd64chk\symcrypt\unittest\exe_win7nlater\objchk\amd64\symcryptunittest_win7nlater.pdb release\lib\amd64chk\symcryptunittest_win7nlater.pdb"
+          1 file(s) copied.
+> copy s:\os\obj\amd64chk\symcrypt\unittest\exe_win8_1nlater\objchk\amd64\symcryptunittest_win8_1nlater.exe release\lib\amd64chk\symcryptunittest_win8_1nlater.exe
+> c:\windows\system32\cmd.exe /c "copy s:\os\obj\amd64chk\symcrypt\unittest\exe_win8_1nlater\objchk\amd64\symcryptunittest_win8_1nlater.exe release\lib\amd64chk\symcryptunittest_win8_1nlater.exe"
+          1 file(s) copied.
+> copy s:\os\obj\amd64chk\symcrypt\unittest\exe_win8_1nlater\objchk\amd64\symcryptunittest_win8_1nlater.pdb release\lib\amd64chk\symcryptunittest_win8_1nlater.pdb
+> c:\windows\system32\cmd.exe /c "copy s:\os\obj\amd64chk\symcrypt\unittest\exe_win8_1nlater\objchk\amd64\symcryptunittest_win8_1nlater.pdb release\lib\amd64chk\symcryptunittest_win8_1nlater.pdb"
+          1 file(s) copied.
+> copy s:\os\obj\amd64chk\symcrypt\unittest\exe_legacy\objchk\amd64\symcryptunittest_legacy.exe release\lib\amd64chk\symcryptunittest_legacy.exe
+> c:\windows\system32\cmd.exe /c "copy s:\os\obj\amd64chk\symcrypt\unittest\exe_legacy\objchk\amd64\symcryptunittest_legacy.exe release\lib\amd64chk\symcryptunittest_legacy.exe"
+          1 file(s) copied.
+> copy s:\os\obj\amd64chk\symcrypt\unittest\exe_legacy\objchk\amd64\symcryptunittest_legacy.pdb release\lib\amd64chk\symcryptunittest_legacy.pdb
+> c:\windows\system32\cmd.exe /c "copy s:\os\obj\amd64chk\symcrypt\unittest\exe_legacy\objchk\amd64\symcryptunittest_legacy.pdb release\lib\amd64chk\symcryptunittest_legacy.pdb"
+          1 file(s) copied.
+> release\lib\amd64chk\symcryptunittest -savexmmnofail
+> c:\windows\system32\cmd.exe /c "release\lib\amd64chk\symcryptunittest -savexmmnofail"
+  SymCrypt unit test program, Built 1 1
+  Copyright (c) Microsoft Corp, all rights reserved 
+  System information amd64Chk, Windows 0a00
+  CPU "GenuineIntel", Fam = 0x06, Model = 0x4f 
+  Hardware CPU features:  sse2,ssse3,aesni,pclmulqdq,rdrand,rdseed,avx2,savexmmnofail,adx,bmi2
+  Options:  -savexmmnofail
+  Modified System information for this test amd64Chk, Windows 0a00
+  CPU "GenuineIntel", Fam = 0x06, Model = 0x4f 
+  Modified CPU features for this test:  sse2,ssse3,aesni,pclmulqdq,rdrand,rdseed,avx2,adx,bmi2
+  Test Rng seed = f7b7b690
+  Functional tests:
+  RDRAND present F
+  RDSEED present [
+      wipe
+      utilities
+      Md2, Md4, Md5, Sha1, Sha256, Sha384, Sha512
+      ParSha256, ParSha384, ParSha512
+      AesEcb, AesCbc, AesCfb, DesEcb, DesCbc, DesCfb, Des2Ecb, Des2Cbc, Des2Cfb, Des3Ecb, Des3Cbc, Des3Cfb, DesxEcb, DesxCbc, DesxCfb, Rc2Ecb, Rc2Cbc, Rc2Cfb
+      HmacMd5, HmacSha1, HmacSha256, HmacSha384, HmacSha512, AesCmac, Marvin32, Poly1305
+      Rc4, ChaCha20
+      Pbkdf2HmacMd5, Pbkdf2HmacSha1, Pbkdf2HmacSha256, Pbkdf2HmacSha384, Pbkdf2HmacSha512, Pbkdf2AesCmac, Sp800_108HmacMd5, Sp800_108HmacSha1, Sp800_108HmacSha256, Sp800_108HmacSha384, Sp800_108HmacSha512, Sp800_108AesCmac, TlsPrf1_1HmacMd5, TlsPrf1_2HmacSha256, TlsPrf1_2HmacSha384, TlsPrf1_2HmacSha512, HkdfHmacSha256, HkdfHmacSha1
+      AesGcm, AesCcm
+      AesCtrDrbg, AesCtrF142
+      XtsAes
+      TlsCbcHmacSha1, TlsCbcHmacSha256, TlsCbcHmacSha384
+      Arithmetic
+               IntObjectLifetime : 4709
+                         IntCopy : 867
+               IntBitsizeOfValue : 9233
+                IntCopyMixedSize : 9298
+                     IntSetValue : 18359
+               IntSetValueUint32 : 9278
+                     IntGetValue : 9201
+                IntGetValueLsb32 : 4769
+                    IntAddUint32 : 9249
+                  IntAddSameSize : 9100
+                 IntAddMixedSize : 9239
+                    IntSubUint32 : 9213
+                  IntSubSameSize : 9324
+                 IntSubMixedSize : 9049
+                          IntNeg : 2682
+                      IntGetBits : 9151
+                      IntSetBits : 9150
+                      IntMulPow2 : 9256
+                      IntModPow2 : 9136
+                      IntDivPow2 : 9222
+                IntIsEqualUint32 : 4625
+                      IntIsEqual : 4489
+                   IntIsLessThan : 4680
+                    IntMulUint32 : 9211
+                  IntMulSameSize : 9190
+                 IntMulMixedSize : 9274
+                       IntSquare : 9053
+           DivisorObjectLifetime : 4675
+                     DivisorCopy : 894
+                       IntDivMod : 9287
+                        IntGcdEx : 989
+                IntPrimalityTest : 878
+           ModulusObjectLifetime : 4707
+                     ModulusCopy : 831
+        ModElementObjectLifetime : 4604
+                  ModElementCopy : 929
+              ModElementSetValue : 856
+        ModElementSetValueUint32 : 972
+     ModElementSetValueNegUint32 : 926
+                          ModAdd : 9213
+                          ModSub : 9279
+                          ModNeg : 9129
+                          ModMul : 9232
+                       ModSquare : 9123
+                      ModDivPow2 : 2734
+                      ModIsEqual : 9210
+                          ModInv : 843
+                          ModExp : 925
+                     ModMultiExp : 866
+                    ModSetRandom : 9284
+                   TrialDivision : 4607
+  Trial division limits:
+      1 -> 3413
+      2 -> 15277
+      3 -> 21841
+      ScsTable
+      RSA
+      Total Verified Interop Samples
+      ==============================
+         Algorithm/FromImpl   #
+         RsaEncRaw/SymCrypt : 1620
+         RsaEncRaw/MsBignum : 540
+         RsaEncRaw/Cng      : 540
+       RsaEncPkcs1/SymCrypt : 1080
+       RsaEncPkcs1/Cng      : 540
+        RsaEncOaep/SymCrypt : 1080
+        RsaEncOaep/Cng      : 540
+      RsaSignPkcs1/SymCrypt : 540
+      RsaSignPkcs1/Cng      : 540
+        RsaSignPss/SymCrypt : 780
+        RsaSignPss/Cng      : 240
+      Discrete Log (DSA and DH)
+      Total Verified Interop Samples
+      ==============================
+         Algorithm/FromImpl   #
+           DsaSign/SymCrypt : 1080
+           DsaSign/MsBignum : 360
+           DsaSign/Cng      : 360
+                Dh/SymCrypt : 720
+                Dh/Cng      : 360
+      Elliptic Curve Crypto
+      > Functional testing: nistP192, nistP224, nistP256, nistP384, nistP521, numsP256t1, numsP384t1, numsP512t1, curve25519
+      > KAT testing       : EcdsaSign, EcdsaVerify, Ecdh
+          Total samples: 183 EcdsaSign, 300 EcdsaVerify, 128 Ecdh
+      IEEE802_11SaeCustom
+  Functional testing done.
+  Number of verified results:
+                         Capi    Cng   Ref SymCrypt
+  =================================================
+               AesCbc:   6986  18797          18797
+               AesCcm:          3008           5512
+               AesCfb:   1073  20843          20843
+              AesCmac:         30027          30027
+           AesCtrDrbg:                           90
+           AesCtrF142:                           45
+               AesEcb:   6879  24542          24542
+               AesGcm:          3024           5521
+             ChaCha20:                        30189
+              Des2Cbc:   4029   6039           6039
+              Des2Cfb:    568   3871           3871
+              Des2Ecb:   4090   5980           5980
+              Des3Cbc:   3937   6003           6003
+              Des3Cfb:    590   3829           3829
+              Des3Ecb:   3989   5919           5919
+               DesCbc:   4037   6137           6137
+               DesCfb:    615   3931           3931
+               DesEcb:   3991   6945           6945
+              DesxCbc:          6037           6037
+              DesxCfb:          3910           3910
+              DesxEcb:          6013           6013
+         HkdfHmacSha1:                            4
+       HkdfHmacSha256:                            3
+              HmacMd5:  95011 100017         100017
+             HmacSha1:  95116 100153         100153
+           HmacSha256:  95034 100153         100153
+           HmacSha384:  96639 100153         100153
+           HmacSha512:  96588 100153         100153
+  IEEE802_11SaeCustom:                          107
+             Marvin32:                       100019
+                  Md2:  10018  10018          10019
+                  Md4: 100021 100021         100184
+                  Md5: 100021 100021         100184
+            ParSha256:         52253          52253
+            ParSha384:         52441          52441
+            ParSha512:         53142          53142
+        Pbkdf2AesCmac:          2001           2001
+        Pbkdf2HmacMd5:          2000           2000
+       Pbkdf2HmacSha1:         10004          10004
+     Pbkdf2HmacSha256:         10006          10006
+     Pbkdf2HmacSha384:          2000           2000
+     Pbkdf2HmacSha512:          2000           2000
+             Poly1305:               10067    10067
+               Rc2Cbc:   4014   5716           6011
+               Rc2Cfb:    575   3760           3965
+               Rc2Ecb:   4002   5651           5991
+                  Rc4:   1289  30230          30230
+                 Sha1: 100149 100149         100312
+               Sha256: 100149 100149         100312
+               Sha384: 100277 100277         100440
+               Sha512: 100277 100277         100440
+     Sp800_108AesCmac:          2000           2000
+     Sp800_108HmacMd5:          2000           2000
+    Sp800_108HmacSha1:          2000           2000
+  Sp800_108HmacSha256:          2000           2000
+  Sp800_108HmacSha384:          2000           2000
+  Sp800_108HmacSha512:          2000           2000
+       TlsCbcHmacSha1:          2000           2000
+     TlsCbcHmacSha256:          2000           2000
+     TlsCbcHmacSha384:          2000           2000
+     TlsPrf1_1HmacMd5:            20             20
+  TlsPrf1_2HmacSha256:            20             20
+  TlsPrf1_2HmacSha384:            20             20
+  TlsPrf1_2HmacSha512:            20             20
+               XtsAes:         23188          23188
+  Starting performance measurements....t.
+  Performance measurement overhead = 10.2 cycles...done
+  Unit of performance measurement: cycles
+      frequency = 3592 MHz (vs. tickCtr) / 3592 MHz (vs. perfCtr)
+  Wipe performance for each len & alignment:
+        0   1   2   3   4   5   6   7   8   9  10  11  12  13  14  15
+  ===================================================================
+   0:   5   5   5   6   5   5   5   5   5   5   6   6   5   5   6   5
+   1:   5   4   5   5   4   5   5   4   5   5   5   5   5   5   5   5
+   2:   4   4   4   4   4   4   4   4   4   4   4   4   4   4   4   4
+   3:   4   4   4   4   4   4   4   4   4   4   4   4   4   4   4   4
+   4:   2   2   2   2   2   2   2   2   2   2   2   2   2   2   2   2
+   5:   2   2   2   2   2   2   2   2   2   2   2   2   2   2   2   2
+   6:   2   2   2   2   2   2   2   2   2   2   2   2   2   2   2   2
+   7:   2   2   2   2   2   2   2   2   2   2   2   2   2   2   2   2
+   8:   2   1   1   1   1   1   2   1   2   1   1   2   2   1   2   1
+   9:   1   1   1   1   1   1   1   1   2   1   1   1   2   1   1   1
+  10:   1   1   1   1   2   1   2   1   1   2   1   1   1   1   2   1
+  11:   1   1   1   1   2   1   1   1   1   1   1   1   1   1   2   1
+  12:   1   1   1   1   2   1   1   1   1   1   2   1   1   1   1   2
+  13:   1   1   1   1   1   1   1   1   1   1   2   2   1   1   1   1
+  14:   1   1   1   1   1   1   1   1   1   1   1   2   1   1   1   2
+  15:   1   1   1   1   1   1   1   1   1   1   1   1   2   1   1   2
+  16:   2   3   3   3   3   3   3   3   3   3   3   3   3   3   3   3
+  17:   3   3   3   3   3   3   3   3   3   3   3   3   3   3   3   4
+  18:   3   3   3   3   3   3   3   3   3   3   3   3   3   3   4   5
+  19:   3   3   3   3   3   3   3   3   3   3   3   3   3   5   5   5
+  20:   3   3   3   3   3   3   3   3   3   3   3   3   4   5   5   5
+  21:   3   3   3   3   3   3   3   3   3   3   3   5   6   5   5   5
+  22:   3   3   3   3   3   3   3   3   3   3   4   5   6   5   5   5
+  23:   3   3   3   3   3   3   3   3   3   4   5   6   5   5   6   5
+  24:   3   3   3   3   3   3   3   3   4   5   6   5   6   5   6   5
+  25:   3   3   3   3   3   3   3   5   5   5   6   6   5   5   5   5
+  26:   3   3   3   3   3   3   5   5   5   5   5   6   6   5   5   6
+  27:   3   3   3   3   3   4   5   5   5   5   5   5   6   6   5   6
+  28:   3   3   3   3   4   5   6   6   5   6   5   5   5   6   5   5
+  29:   3   3   3   5   5   5   6   6   5   5   6   5   5   5   5   5
+  30:   3   3   4   5   6   6   5   5   5   5   6   6   5   6   5   5
+  31:   3   5   5   6   5   6   5   5   5   5   5   6   6   6   6   5
+  32:   3   5   5   5   5   5   5   5   6   5   5   5   6   5   6   5
+  33:   3   5   5   5   5   5   5   5   6   5   5   5   5   6   6   5
+  34:   3   5   6   5   6   5   5   5   5   5   6   6   5   6   5   6
+  35:   3   5   5   5   6   5   6   5   5   5   6   5   5   5   6   5
+  36:   3   5   5   5   6   5   5   5   5   5   6   6   5   5   6   5
+  37:   3   5   6   5   5   5   5   5   5   6   5   5   6   6   6   6
+  38:   3   5   5   5   5   5   5   5   5   6   5   5   6   6   6   5
+  39:   3   5   5   5   5   5   5   5   5   5   5   5   5   6   5   5
+  40:   3   5   5   5   5   5   5   5   5   5   6   5   5   5   5   5
+  41:   3   6   5   5   5   6   5   5   5   5   6   6   5   6   5   5
+  42:   3   5   5   5   5   5   5   5   6   5   6   5   6   5   5   5
+  43:   3   5   5   5   5   5   5   5   6   6   5   6   5   5   5   5
+  44:   3   5   5   5   5   5   5   5   6   6   5   5   5   5   6   5
+  45:   3   5   5   5   5   5   5   5   5   6   6   6   5   6   5   5
+  46:   3   5   5   5   5   5   6   5   5   6   5   6   5   5   5   5
+  47:   3   5   5   6   6   5   6   5   5   6   5   6   6   5   5   6
+  48:   3   5   6   5   6   5   5   5   5   6   5   5   6   6   5   5
+  49:   3   5   5   5   5   5   5   6   5   6   5   5   6   5   5   5
+  50:   3   5   5   5   5   5   5   5   6   6   6   5   5   5   5   5
+  51:   3   5   6   5   5   5   5   5   5   6   6   6   5   5   5   5
+  52:   3   5   5   5   5   6   5   5   5   6   6   6   5   6   5   5
+  53:   3   6   5   6   5   5   5   5   5   6   6   5   6   5   5   5
+  54:   3   5   5   5   5   5   6   5   5   6   5   5   5   5   5   6
+  55:   3   5   6   5   6   5   5   5   6   5   6   5   5   5   6   5
+  56:   3   5   5   5   5   5   5   5   5   6   6   6   5   5   5   5
+  57:   3   5   5   5   5   5   6   5   5   6   5   6   6   5   5   5
+  58:   3   5   5   6   6   5   5   5   5   6   5   6   6   6   5   6
+  59:   3   5   5   5   5   5   5   5   5   6   5   5   6   5   5   5
+  60:   3   5   6   5   5   6   5   5   5   6   6   5   5   5   6   5
+  61:   3   5   6   5   5   5   5   6   5   6   6   5   5   5   5   5
+  62:   3   6   5   5   5   5   5   5   5   6   5   6   5   5   5   5
+  63:   3   5   5   5   5   6   5   5   5   6   6   5   5   6   5   5
+  64:   5   6   5   6   5   6   5   5   5   6   5   5   5   5   5   5
+  Performance for n-byte message/key:
+                                              Capi             Cng MsBignum            Ref       SymCrypt
+  =======================================================================================================
+                   AesCbc- 128 dec:  0.62 n+  376    0.64 n+  138                           0.64 n+   21 
+                   AesCbc- 128 enc:  4.35 n+  621    4.32 n+  131                           4.32 n+   26 
+                   AesCbc- 128 key:          2115             511                                    345 
+                   AesCbc- 192 dec:  0.74 n+  354    0.75 n+  136                           0.78 n+    8 
+                   AesCbc- 192 enc:  5.40 n+  315    5.13 n+  291                           5.39 n+   23 
+                   AesCbc- 192 key:          2084             472                                    298 
+                   AesCbc- 256 dec:  0.90 n+  357    0.91 n+  108                           0.87 n+   33 
+                   AesCbc- 256 enc:  5.94 n+  618    5.97 n+  322                           5.90 n+  283 
+                   AesCbc- 256 key:          2166             619                                    451 
+                   AesCcm- 128 dec:                  5.21 n+  725                           5.03 n+  571 
+                   AesCcm- 128 enc:                  5.23 n+  617                           4.97 n+  545 
+                   AesCcm- 128 key:                           646                                    327 
+                   AesCcm- 192 dec:                  6.16 n+  752                           5.92 n+  627 
+                   AesCcm- 192 enc:                  6.17 n+  681                           5.86 n+  611 
+                   AesCcm- 192 key:                           563                                    299 
+                   AesCcm- 256 dec:                  7.12 n+  771                           6.83 n+  650 
+                   AesCcm- 256 enc:                  7.12 n+  706                           6.71 n+  879 
+                   AesCcm- 256 key:                           736                                    428 
+                   AesCfb- 128 dec:  90.6 n+  794    87.8 n+  690                           86.5 n+  684 
+                   AesCfb- 128 enc:   103 n+  756    98.9 n+  758                            104 n+   31 
+                   AesCfb- 128 key:          2797             508                                    327 
+                   AesCfb- 192 dec:  99.4 n+  965     100 n+  773                           99.3 n+  710 
+                   AesCfb- 192 enc:   111 n+ 1602     111 n+ 1171                            111 n+  606 
+                   AesCfb- 192 key:          2752             469                                    314 
+                   AesCfb- 256 dec:   111 n+ 1013     112 n+  753                              117 n     
+                   AesCfb- 256 enc:   123 n+  922     124 n+  640                            124 n+  662 
+                   AesCfb- 256 key:          2696             552                                    429 
+                  AesCmac- 128    :                  4.09 n+  610                           4.06 n+  667 
+                  AesCmac- 128 key:                           735                                    533 
+                  AesCmac- 192    :                  5.12 n+  672                           4.85 n+  632 
+                  AesCmac- 192 key:                           760                                    517 
+                  AesCmac- 256    :                  5.68 n+  608                           5.64 n+  660 
+                  AesCmac- 256 key:                           817                                    732 
+                    AesCtrDrbg    :                  1.31 n+  834                           1.45 n+  747 
+                    AesCtrDrbg key:                                                                 3423 
+                    AesCtrF142    :                                                         1.55 n+  800 
+                    AesCtrF142 key:                                                                 4136 
+                   AesEcb- 128 dec:  1.26 n+  358    1.27 n+  157                             1.69 n     
+                   AesEcb- 128 enc:  0.63 n+  346    0.68 n+  116                           0.63 n+   14 
+                   AesEcb- 128 key:          2621             529                                    327 
+                   AesEcb- 192 dec:  1.45 n+  455    1.56 n+  153                           1.93 n+   12 
+                   AesEcb- 192 enc:  0.75 n+  344    0.79 n+  116                           0.76 n+    5 
+                   AesEcb- 192 key:          2590             493                                    298 
+                   AesEcb- 256 dec:  1.77 n+  472    1.89 n+  164                           2.16 n+   23 
+                   AesEcb- 256 enc:  0.85 n+  375    0.91 n+  130                           0.87 n+    8 
+                   AesEcb- 256 key:          2685             615                                    427 
+                   AesGcm- 128 dec:                  1.26 n+  505                           20.7 n+ 1196 
+                   AesGcm- 128 enc:                  1.26 n+  471                           20.6 n+ 1195 
+                   AesGcm- 128 key:                          1559                                   1245 
+                   AesGcm- 192 dec:                  1.30 n+  521                           20.8 n+ 1216 
+                   AesGcm- 192 enc:                  1.38 n+  479                           20.7 n+ 1201 
+                   AesGcm- 192 key:                          1570                                   1154 
+                   AesGcm- 256 dec:                  1.49 n+  535                           20.8 n+ 1892 
+                   AesGcm- 256 enc:                  1.41 n+  537                           20.8 n+ 1324 
+                   AesGcm- 256 key:                          1662                                   1373 
+                      ChaCha20    :                                                         7.37 n+   95 
+                      ChaCha20 key:                                                                    4 
+                       Des2Cbc dec:   104 n+  765     105 n+  687                            105 n+  530 
+                       Des2Cbc enc:   106 n+  723     107 n+  691                            106 n+  634 
+                       Des2Cbc key:          3031            1500                                   1306 
+                       Des2Cfb dec:   895 n+ 1465       898 n                                847 n+ 2482 
+                       Des2Cfb enc:     901 n           901 n                                858 n+ 1121 
+                       Des2Cfb key:          3386            1501                                   1242 
+                       Des2Ecb dec:   102 n+  704     105 n+  416                            103 n+  725 
+                       Des2Ecb enc:   102 n+  724     104 n+  631                            108 n+  101 
+                       Des2Ecb key:          3522            1426                                   1242 
+                       Des3Cbc dec:   105 n+  998     109 n+  598                            105 n+  469 
+                       Des3Cbc enc:   106 n+  938     111 n+  558                            106 n+  445 
+                       Des3Cbc key:          3028            1420                                   1242 
+                       Des3Cfb dec:   900 n+ 1379     897 n+  204                            845 n+ 1558 
+                       Des3Cfb enc:     900 n           906 n                                858 n+ 1073 
+                       Des3Cfb key:          3561            1505                                   1307 
+                       Des3Ecb dec:   102 n+  742     103 n+  634                            103 n+  479 
+                       Des3Ecb enc:   102 n+  740     102 n+  769                            103 n+  441 
+                       Des3Ecb key:          3352            1494                                   1242 
+                        DesCbc dec:   104 n+  891     104 n+  789                            106 n+  470 
+                        DesCbc enc:   106 n+  747     106 n+  584                            106 n+  469 
+                        DesCbc key:          3025            1492                                   1251 
+                        DesCfb dec:     876 n           895 n                                851 n+  966 
+                        DesCfb enc:   861 n+ 1695     869 n+ 1258                              884 n     
+                        DesCfb key:          3556            1433                                   1249 
+                        DesEcb dec:   103 n+  726     103 n+  566                            104 n+  650 
+                        DesEcb enc:   102 n+  730     103 n+  681                            103 n+  482 
+                        DesEcb key:          3340            1434                                   1250 
+                       DesxCbc dec:                   107 n+  713                            109 n+  467 
+                       DesxCbc enc:                   108 n+  823                            108 n+  530 
+                       DesxCbc key:                          1430                                   1319 
+                       DesxCfb dec:                   885 n+ 2200                            872 n+ 1199 
+                       DesxCfb enc:                   935 n+  344                            883 n+ 1224 
+                       DesxCfb key:                          1511                                   1258 
+                       DesxEcb dec:                   111 n+  564                            107 n+  429 
+                       DesxEcb enc:                   110 n+  575                            106 n+  438 
+                       DesxEcb key:                          1506                                   1253 
+                       Dh- 512    :                                                                 57.0k
+                       Dh-1024    :                                                                  154k
+                       Dh-2048    :                                                                  873k
+                  DsaSign- 512    :                                   99.8k                          134k
+                  DsaSign-1024    :                                    428k                          241k
+                  DsaSign-2048    :                                   1856k                          999k
+                DsaVerify- 512    :                                    122k                          138k
+                DsaVerify-1024    :                                    528k                          258k
+                DsaVerify-2048    :                                   2198k                         1114k
+                     Ecdh- 192 nst:                                                                  497k
+                     Ecdh- 224 nst:                                                                  566k
+                     Ecdh- 256 c25:                                                                  516k
+                     Ecdh- 256 nms:                                                                  546k
+                     Ecdh- 256 nst:                                                                  648k
+                     Ecdh- 384 nms:                                                                 1769k
+                     Ecdh- 384 nst:                                                                 2348k
+                     Ecdh- 512 nms:                                                                 2338k
+                     Ecdh- 528 nst:                                                                 5771k
+                EcdsaSign- 192 nst:                                    727k                          561k
+                EcdsaSign- 224 nst:                                    868k                          647k
+                EcdsaSign- 256 nms:                                    834k                          676k
+                EcdsaSign- 256 nst:                                   1030k                          773k
+                EcdsaSign- 384 nms:                                   2121k                         1900k
+                EcdsaSign- 384 nst:                                   2611k                         2504k
+                EcdsaSign- 512 nms:                                   3934k                         2543k
+                EcdsaSign- 528 nst:                                   5581k                         6113k
+              EcdsaVerify- 192 nst:                                    801k                          612k
+              EcdsaVerify- 224 nst:                                    960k                          703k
+              EcdsaVerify- 256 nms:                                   1647k                          704k
+              EcdsaVerify- 256 nst:                                   1096k                          832k
+              EcdsaVerify- 384 nms:                                   4316k                         2050k
+              EcdsaVerify- 384 nst:                                   2649k                         2729k
+              EcdsaVerify- 512 nms:                                   7830k                         2713k
+              EcdsaVerify- 528 nst:                                   5874k                         6670k
+               EcpointAdd- 192 nst:                                                                 5450 
+               EcpointAdd- 224 nst:                                                                 5223 
+               EcpointAdd- 256 nms:                                                                 1510 
+               EcpointAdd- 256 nst:                                                                 5480 
+               EcpointAdd- 384 nms:                                                                 3702 
+               EcpointAdd- 384 nst:                                                                 12.6k
+               EcpointAdd- 512 nms:                                                                 3756 
+               EcpointAdd- 528 nst:                                                                 24.0k
+         EcpointAddDiffNz- 192 nst:                                                                 2014 
+         EcpointAddDiffNz- 224 nst:                                                                 2091 
+         EcpointAddDiffNz- 256 nms:                                                                 1440 
+         EcpointAddDiffNz- 256 nst:                                                                 1989 
+         EcpointAddDiffNz- 384 nms:                                                                 3912 
+         EcpointAddDiffNz- 384 nst:                                                                 5865 
+         EcpointAddDiffNz- 512 nms:                                                                 3708 
+         EcpointAddDiffNz- 528 nst:                                                                 11.0k
+            EcpointDouble- 192 nst:                                                                 1480 
+            EcpointDouble- 224 nst:                                                                 1552 
+            EcpointDouble- 256 nms:                                                                 1181 
+            EcpointDouble- 256 nst:                                                                 1478 
+            EcpointDouble- 384 nms:                                                                 3282 
+            EcpointDouble- 384 nst:                                                                 4313 
+            EcpointDouble- 512 nms:                                                                 3118 
+            EcpointDouble- 528 nst:                                                                 7650 
+           EcpointIsEqual- 192 nst:                                                                 1047 
+           EcpointIsEqual- 224 nst:                                                                 1098 
+           EcpointIsEqual- 256 nms:                                                                  691 
+           EcpointIsEqual- 256 nst:                                                                 1045 
+           EcpointIsEqual- 384 nms:                                                                 1337 
+           EcpointIsEqual- 384 nst:                                                                 2400 
+           EcpointIsEqual- 512 nms:                                                                 1401 
+           EcpointIsEqual- 528 nst:                                                                 5184 
+            EcpointIsZero- 192 nst:                                     25                            41 
+            EcpointIsZero- 224 nst:                                     25                            39 
+            EcpointIsZero- 256 nms:                                     25                            74 
+            EcpointIsZero- 256 nst:                                     23                            41 
+            EcpointIsZero- 384 nms:                                     25                            70 
+            EcpointIsZero- 384 nst:                                     23                            39 
+            EcpointIsZero- 512 nms:                                     25                            70 
+            EcpointIsZero- 528 nst:                                     23                            55 
+           EcpointOnCurve- 192 nst:                                   1276                           962 
+           EcpointOnCurve- 224 nst:                                   1360                           961 
+           EcpointOnCurve- 256 nms:                                   1731                           917 
+           EcpointOnCurve- 256 nst:                                   1360                           989 
+           EcpointOnCurve- 384 nms:                                   2574                          2316 
+           EcpointOnCurve- 384 nst:                                   1912                          2745 
+           EcpointOnCurve- 512 nms:                                   3404                          2323 
+           EcpointOnCurve- 528 nst:                                   3425                          5639 
+         EcpointScalarMul- 192 nst:                                    737k                          410k
+         EcpointScalarMul- 224 nst:                                    984k                          468k
+         EcpointScalarMul- 256 c25:                                    393k                          403k
+         EcpointScalarMul- 256 nms:                                    799k                          431k
+         EcpointScalarMul- 256 nst:                                    982k                          552k
+         EcpointScalarMul- 384 nms:                                   2037k                         1592k
+         EcpointScalarMul- 384 nst:                                   2502k                         2165k
+         EcpointScalarMul- 512 nms:                                   3746k                         2111k
+         EcpointScalarMul- 528 nst:                                   6179k                         5420k
+  EcpointSetDistinguished- 192 nst:                                                                   48 
+  EcpointSetDistinguished- 224 nst:                                                                   48 
+  EcpointSetDistinguished- 256 nms:                                                                   60 
+  EcpointSetDistinguished- 256 nst:                                                                   48 
+  EcpointSetDistinguished- 384 nms:                                                                   60 
+  EcpointSetDistinguished- 384 nst:                                                                   48 
+  EcpointSetDistinguished- 512 nms:                                                                   60 
+  EcpointSetDistinguished- 528 nst:                                                                   71 
+         EcpointSetRandom- 192 nst:                                                                  399k
+         EcpointSetRandom- 224 nst:                                                                  460k
+         EcpointSetRandom- 256 c25:                                                                  291k
+         EcpointSetRandom- 256 nms:                                                                  411k
+         EcpointSetRandom- 256 nst:                                                                  532k
+         EcpointSetRandom- 384 nms:                                                                 1555k
+         EcpointSetRandom- 384 nst:                                                                 2086k
+         EcpointSetRandom- 512 nms:                                                                 2047k
+         EcpointSetRandom- 528 nst:                                                                 5237k
+           EcpointSetZero- 192 nst:                                                                  508 
+           EcpointSetZero- 224 nst:                                                                  508 
+           EcpointSetZero- 256 nms:                                                                  666 
+           EcpointSetZero- 256 nst:                                                                  508 
+           EcpointSetZero- 384 nms:                                                                 1324 
+           EcpointSetZero- 384 nst:                                                                 1012 
+           EcpointSetZero- 512 nms:                                                                 1327 
+           EcpointSetZero- 528 nst:                                                                 2009 
+           EcurveAllocate- 192 nst:                                   10.7k                         48.6k
+           EcurveAllocate- 224 nst:                                   12.2k                         47.3k
+           EcurveAllocate- 256 c25:                                   12.4k                         16.7k
+           EcurveAllocate- 256 nms:                                   12.5k                         41.7k
+           EcurveAllocate- 256 nst:                                   12.3k                         47.6k
+           EcurveAllocate- 384 nms:                                   17.7k                         80.9k
+           EcurveAllocate- 384 nst:                                   18.6k                          104k
+           EcurveAllocate- 512 nms:                                   24.2k                         79.5k
+           EcurveAllocate- 528 nst:                                   29.1k                          205k
+                  HkdfHmacSha1    :                                                         54.5 n+  517 
+                  HkdfHmacSha1 key:                                                                 3099 
+                HkdfHmacSha256    :                                                           98.3 n     
+                HkdfHmacSha256 key:                                                                 6857 
+                       HmacMd5    :  6.11 n+ 6504    6.18 n+ 1349                           6.17 n+ 1198 
+                       HmacMd5 key:          4347            1189                                   1003 
+                      HmacSha1    :  6.06 n+ 6606    5.83 n+ 1396                           5.76 n+ 1350 
+                      HmacSha1 key:          4545            1100                                    943 
+                    HmacSha256    :  13.1 n+ 10.0k   13.3 n+ 3413                           14.9 n+ 2818 
+                    HmacSha256 key:          4183            2540                                   2152 
+                    HmacSha384    :  8.25 n+ 10.6k   8.44 n+ 3270                           8.89 n+ 3104 
+                    HmacSha384 key:          3871            2970                                   2772 
+                    HmacSha512    :  8.79 n+ 10.1k   8.42 n+ 3247                           8.40 n+ 3328 
+                    HmacSha512 key:          3870            2817                                   2776 
+           IEEE802_11SaeCustom dec:                                                                 1263k
+           IEEE802_11SaeCustom enc:                                                                  657k
+           IEEE802_11SaeCustom key:                                                                 1820k
+                   IntAdd- 256    :                                                                   16 
+                   IntAdd- 512    :                                                                   16 
+                   IntAdd-1024    :                                                                   26 
+                   IntAdd-2048    :                                                                   47 
+                   IntAdd-4096    :                                                                   90 
+                   IntAdd-8192    :                                                                  177 
+                IntDivMod- 256    :                                                                 2668 
+                IntDivMod- 512    :                                                                 3034 
+                IntDivMod-1024    :                                                                 10.5k
+                IntDivMod-2048    :                                                                 35.7k
+                IntDivMod-4096    :                                                                  135k
+                IntDivMod-8192    :                                                                  522k
+                   IntMul- 256    :                                                                  153 
+                   IntMul- 512    :                                                                  154 
+                   IntMul-1024    :                                                                  440 
+                   IntMul-2048    :                                                                 1615 
+                   IntMul-4096    :                                                                 6273 
+                   IntMul-8192    :                                                                 23.6k
+                IntSquare- 256    :                                                                  105 
+                IntSquare- 512    :                                                                  105 
+                IntSquare-1024    :                                                                  277 
+                IntSquare-2048    :                                                                  927 
+                IntSquare-4096    :                                                                 3381 
+                IntSquare-8192    :                                                                 12.9k
+                   IntSub- 256    :                                                                   16 
+                   IntSub- 512    :                                                                   16 
+                   IntSub-1024    :                                                                   26 
+                   IntSub-2048    :                                                                   48 
+                   IntSub-4096    :                                                                   90 
+                   IntSub-8192    :                                                                  176 
+                      Marvin32    :                                                         1.25 n+    7 
+                      Marvin32 key:                                                                    3 
+                           Md2    :   411 n+ 12.2k    418 n+ 9181                            402 n+ 10.0k
+                           Md2 key:                           209                                     23 
+                           Md4    :  3.86 n+ 2531    3.87 n+  535                           3.84 n+  558 
+                           Md4 key:                           212                                      7 
+                           Md5    :  6.12 n+ 2828    6.15 n+  764                           6.10 n+  765 
+                           Md5 key:                           199                                      8 
+                   ModAdd- 192 pn :                                     54                            22 
+                   ModAdd- 192 po :                                     57                            22 
+                   ModAdd- 192 s  :                                     54                            98 
+                   ModAdd- 256 pm :                                     33                            22 
+                   ModAdd- 256 pn :                                     33                            22 
+                   ModAdd- 256 po :                                     33                            22 
+                   ModAdd- 256 s  :                                     36                            98 
+                   ModAdd- 384 pm :                                     93                            98 
+                   ModAdd- 384 pn :                                     92                            98 
+                   ModAdd- 384 po :                                     92                            93 
+                   ModAdd- 384 s  :                                     93                            98 
+                   ModAdd- 512 pm :                                    115                            93 
+                   ModAdd- 512 po :                                    122                            92 
+                   ModAdd- 512 s  :                                    116                            93 
+                   ModAdd- 528 pn :                                    127                           119 
+                   ModAdd-1024 po :                                    219                           132 
+                   ModAdd-2048 po :                                    425                           226 
+                   ModExp- 192 p P:                                    144k                         32.2k
+                   ModExp- 256 p P:                                    199k                         39.9k
+                   ModExp- 384 p P:                                    813k                          137k
+                   ModExp- 512 p P:                                   1727k                          181k
+                   ModExp-1024 p P:                                   12.1M                          951k
+                   ModExp-2048 p P:                                   88.1M                         6654k
+                   ModInv- 192 p P:                                                                 85.5k
+                   ModInv- 256 p P:                                                                  110k
+                   ModInv- 384 p P:                                                                  168k
+                   ModInv- 512 p P:                                                                  222k
+                   ModMul- 192 pn :                                    127                           102 
+                   ModMul- 192 po :                                    127                           103 
+                   ModMul- 192 s  :                                    557                          2609 
+                   ModMul- 256 pm :                                    173                           103 
+                   ModMul- 256 pn :                                    173                           103 
+                   ModMul- 256 po :                                    173                           103 
+                   ModMul- 256 s  :                                    575                          2775 
+                   ModMul- 384 pm :                                    312                           270 
+                   ModMul- 384 pn :                                    312                           270 
+                   ModMul- 384 po :                                    316                           270 
+                   ModMul- 384 s  :                                   1757                          3103 
+                   ModMul- 512 pm :                                    463                           270 
+                   ModMul- 512 po :                                    463                           270 
+                   ModMul- 512 s  :                                   2879                          3162 
+                   ModMul- 528 pn :                                    556                           575 
+                   ModMul-1024 po :                                   1455                           878 
+                   ModMul-1024 s  :                                   10.3k                         10.9k
+                   ModMul-2048 po :                                   5988                          3295 
+                   ModMul-2048 s  :                                   35.6k                         37.1k
+                   ModMul-3072 po :                                   13.2k                         7203 
+                ModSquare- 192 pn :                                    127                            93 
+                ModSquare- 192 po :                                    127                            93 
+                ModSquare- 192 s  :                                    560                          2580 
+                ModSquare- 256 pm :                                    182                            93 
+                ModSquare- 256 pn :                                    172                            93 
+                ModSquare- 256 po :                                    173                            93 
+                ModSquare- 256 s  :                                    579                          2775 
+                ModSquare- 384 pm :                                    328                           238 
+                ModSquare- 384 pn :                                    311                           233 
+                ModSquare- 384 po :                                    311                           240 
+                ModSquare- 384 s  :                                   1664                          3063 
+                ModSquare- 512 pm :                                    463                           239 
+                ModSquare- 512 po :                                    463                           239 
+                ModSquare- 512 s  :                                   2976                          3215 
+                ModSquare- 528 pn :                                    556                           568 
+                ModSquare-1024 po :                                   1456                           739 
+                ModSquare-1024 s  :                                   10.7k                         10.9k
+                ModSquare-2048 po :                                   6009                          2679 
+                ModSquare-2048 s  :                                   35.3k                         37.1k
+                ModSquare-3072 po :                                   13.1k                         5744 
+                   ModSub- 192 pn :                                     51                            18 
+                   ModSub- 192 po :                                     51                            16 
+                   ModSub- 192 s  :                                     51                            97 
+                   ModSub- 256 pm :                                     24                            18 
+                   ModSub- 256 pn :                                     23                            16 
+                   ModSub- 256 po :                                     23                            18 
+                   ModSub- 256 s  :                                     22                           103 
+                   ModSub- 384 pm :                                     89                            92 
+                   ModSub- 384 pn :                                     89                            98 
+                   ModSub- 384 po :                                     89                            98 
+                   ModSub- 384 s  :                                     89                            98 
+                   ModSub- 512 pm :                                    112                            93 
+                   ModSub- 512 po :                                    112                            98 
+                   ModSub- 512 s  :                                    112                            97 
+                   ModSub- 528 pn :                                    124                           113 
+                   ModSub-1024 po :                                    212                           150 
+                   ModSub-2048 po :                                    434                           227 
+                     ParSha256    :                  2.89 n+ 3652                           2.89 n+ 3880 
+                     ParSha256 key:                           399                                     66 
+                     ParSha384    :                  3.44 n+ 6724                           3.61 n+ 7079 
+                     ParSha384 key:                           426                                     86 
+                     ParSha512    :                  3.41 n+ 7357                           3.43 n+ 6722 
+                     ParSha512 key:                           603                                     80 
+                 Pbkdf2AesCmac    :                  57.9 n+ 1929                           21.3 n+   93 
+                 Pbkdf2AesCmac key:                           392                                    544 
+                 Pbkdf2HmacMd5    :                   130 n+ 2394                           63.5 n+  203 
+                 Pbkdf2HmacMd5 key:                           402                                    978 
+                Pbkdf2HmacSha1    :                  99.2 n+ 4279                           51.7 n+  302 
+                Pbkdf2HmacSha1 key:                           383                                   1021 
+              Pbkdf2HmacSha256    :                   132 n+ 4161                           68.3 n+  975 
+              Pbkdf2HmacSha256 key:                           380                                   2188 
+              Pbkdf2HmacSha512    :                  77.3 n+ 2746                           42.5 n+  242 
+              Pbkdf2HmacSha512 key:                           401                                   2657 
+                      Poly1305    :                                          93.4 n+ 9622   2.83 n+   98 
+                   Rc2Cbc-  64 dec:  34.3 n+  665    35.5 n+  408                           34.6 n+  169 
+                   Rc2Cbc-  64 enc:  65.9 n+  644    65.7 n+  230                           62.4 n+  328 
+                   Rc2Cbc-  64 key:          4468            3331                                   2916 
+                   Rc2Cbc- 128 dec:  34.0 n+  643    35.6 n+  399                           34.5 n+  176 
+                   Rc2Cbc- 128 enc:  63.1 n+  694    66.0 n+  417                           62.5 n+  269 
+                   Rc2Cbc- 128 key:          4386            3309                                   2743 
+                   Rc2Cfb-  64 dec:   501 n+ 1774     525 n+  472                              526 n     
+                   Rc2Cfb-  64 enc:   514 n+ 1270     513 n+ 1741                            512 n+  957 
+                   Rc2Cfb-  64 key:          5230            3317                                   2917 
+                   Rc2Cfb- 128 dec:   501 n+ 1681     526 n+  729                            500 n+ 1077 
+                   Rc2Cfb- 128 enc:   514 n+ 1466     540 n+  773                            512 n+  959 
+                   Rc2Cfb- 128 key:          5138            3146                                   2743 
+                   Rc2Ecb-  64 dec:  32.2 n+  478    32.2 n+  288                           33.1 n+  128 
+                   Rc2Ecb-  64 enc:  58.9 n+  642    59.1 n+  444                           59.5 n+  402 
+                   Rc2Ecb-  64 key:          5185            3490                                   2916 
+                   Rc2Ecb- 128 dec:  33.8 n+  369    33.8 n+  189                           33.1 n+  123 
+                   Rc2Ecb- 128 enc:  59.1 n+  686    61.8 n+  219                           59.5 n+  253 
+                   Rc2Ecb- 128 key:          5105            3310                                   2743 
+                           Rc4    :  7.92 n+  311    8.29 n+  105                           8.10 n+   59 
+                           Rc4 key:          4026            2670                                   2354 
+               RsaDecOaep-1024    :                           360k                                   397k
+               RsaDecOaep-2048    :                          1961k                                  2044k
+               RsaDecOaep-3072    :                          6055k                                  6194k
+               RsaDecOaep-4096    :                          13.4M                                  13.9M
+              RsaDecPkcs1-1024    :                           353k                                   378k
+              RsaDecPkcs1-2048    :                          1885k                                  2034k
+              RsaDecPkcs1-3072    :                          5905k                                  6188k
+              RsaDecPkcs1-4096    :                          13.4M                                  13.8M
+                RsaDecRaw-1024    :                           354k     607k                          370k
+                RsaDecRaw-2048    :                          1952k    3504k                         2031k
+                RsaDecRaw-3072    :                          6105k    12.7M                         6186k
+                RsaDecRaw-4096    :                          13.2M    29.0M                         13.9M
+               RsaEncOaep-1024    :                          26.1k                                  28.5k
+               RsaEncOaep-2048    :                          69.0k                                  72.7k
+               RsaEncOaep-3072    :                           134k                                   141k
+               RsaEncOaep-4096    :                           223k                                   229k
+              RsaEncPkcs1-1024    :                          17.7k                                  19.4k
+              RsaEncPkcs1-2048    :                          55.3k                                  58.6k
+              RsaEncPkcs1-3072    :                           120k                                   119k
+              RsaEncPkcs1-4096    :                           197k                                   201k
+                RsaEncRaw-1024    :                          17.5k    35.2k                         20.0k
+                RsaEncRaw-2048    :                          55.4k     135k                         60.3k
+                RsaEncRaw-3072    :                           122k     297k                          119k
+                RsaEncRaw-4096    :                           197k     548k                          201k
+             RsaSignPkcs1-1024    :                           364k                                   372k
+             RsaSignPkcs1-2048    :                          1905k                                  2031k
+             RsaSignPkcs1-3072    :                          6128k                                  6170k
+             RsaSignPkcs1-4096    :                          13.5M                                  13.9M
+               RsaSignPss-1024    :                           364k                                   395k
+               RsaSignPss-2048    :                          1955k                                  2036k
+               RsaSignPss-3072    :                          6038k                                  6228k
+               RsaSignPss-4096    :                          13.3M                                  13.9M
+           RsaVerifyPkcs1-1024    :                          18.6k                                  19.3k
+           RsaVerifyPkcs1-2048    :                          56.5k                                  58.1k
+           RsaVerifyPkcs1-3072    :                           116k                                   120k
+           RsaVerifyPkcs1-4096    :                           198k                                   202k
+             RsaVerifyPss-1024    :                          23.9k                                  26.0k
+             RsaVerifyPss-2048    :                          64.8k                                  72.2k
+             RsaVerifyPss-3072    :                           129k                                   141k
+             RsaVerifyPss-4096    :                           216k                                   222k
+                 ScsTable- 256    :                                    206                           183 
+                 ScsTable- 512    :                                    340                           314 
+                 ScsTable-1024    :                                    363                           395 
+                 ScsTable-2048    :                                    990                           988 
+                          Sha1    :  6.05 n+ 3151    5.79 n+  823                           5.74 n+  797 
+                          Sha1 key:                           214                                     12 
+                        Sha256    :  13.2 n+ 4348    13.3 n+ 2104                           14.1 n+ 1747 
+                        Sha256 key:                           208                                     11 
+                        Sha384    :  8.37 n+ 3950    8.81 n+ 1759                           8.43 n+ 1813 
+                        Sha384 key:                           204                                     21 
+                        Sha512    :  8.33 n+ 4081    8.46 n+ 1813                           8.42 n+ 1873 
+                        Sha512 key:                           208                                     17 
+              Sp800_108AesCmac    :                  21.5 n+ 2533                           25.9 n+  105 
+              Sp800_108AesCmac key:                           397                                    542 
+              Sp800_108HmacMd5    :                  61.5 n+ 3096                             72.6 n     
+              Sp800_108HmacMd5 key:                           400                                    979 
+             Sp800_108HmacSha1    :                  49.5 n+ 4966                           55.9 n+  348 
+             Sp800_108HmacSha1 key:                           405                                   1018 
+           Sp800_108HmacSha256    :                  66.6 n+ 6632                           71.2 n+ 1056 
+           Sp800_108HmacSha256 key:                           401                                   2192 
+           Sp800_108HmacSha512    :                  38.8 n+ 4851                           43.5 n+  322 
+           Sp800_108HmacSha512 key:                           379                                   2656 
+                TlsCbcHmacSha1 dec:                  6.14 n+ 2176                           6.10 n+ 2334 
+                TlsCbcHmacSha1 enc:                  5.81 n+ 1613                           6.07 n+ 1461 
+                TlsCbcHmacSha1 key:                          1273                                    997 
+              TlsCbcHmacSha256 dec:                  13.4 n+ 4559                           14.9 n+ 3708 
+              TlsCbcHmacSha256 enc:                  13.9 n+ 3097                           14.1 n+ 3302 
+              TlsCbcHmacSha256 key:                          2602                                   2154 
+              TlsCbcHmacSha384 dec:                  8.55 n+ 4458                           8.90 n+ 4353 
+              TlsCbcHmacSha384 enc:                  8.40 n+ 3371                           8.88 n+ 3331 
+              TlsCbcHmacSha384 key:                          2985                                   2773 
+              TlsPrf1_1HmacMd5    :                - 0.00 n+   93                            221 n+ 4593 
+              TlsPrf1_1HmacMd5 key:                           402                                   1912 
+           TlsPrf1_2HmacSha256    :                - 0.00 n+  110                            168 n+ 3058 
+           TlsPrf1_2HmacSha256 key:                           384                                   2306 
+           TlsPrf1_2HmacSha384    :                - 0.00 n+  109                            110 n+ 5781 
+           TlsPrf1_2HmacSha384 key:                           388                                   2653 
+           TlsPrf1_2HmacSha512    :                - 0.00 n+  113                           79.8 n+ 3615 
+           TlsPrf1_2HmacSha512 key:                           394                                   2798 
+            TrialDivision- 256 dec:                                                                 40.6k
+            TrialDivision- 256 enc:                                                                 21.4k
+            TrialDivision- 512 dec:                                                                 38.7k
+            TrialDivision- 512 enc:                                                                 20.4k
+            TrialDivision-1024 dec:                                                                 53.0k
+            TrialDivision-1024 enc:                                                                 35.1k
+            TrialDivision-2048 dec:                                                                 82.7k
+            TrialDivision-2048 enc:                                                                 66.9k
+            TrialDivision-4096 dec:                                                                  145k
+            TrialDivision-4096 enc:                                                                  131k
+            TrialDivision-8192 dec:                                                                  289k
+            TrialDivision-8192 enc:                                                                  275k
+     TrialDivisionContext- 256    :                                                                 90.3k
+     TrialDivisionContext- 512    :                                                                 90.3k
+     TrialDivisionContext-1024    :                                                                  390k
+     TrialDivisionContext-2048    :                                                                  962k
+     TrialDivisionContext-4096    :                                                                 5368k
+     TrialDivisionContext-8192    :                                                                 20.3M
+                   XtsAes- 256 dec:                  0.91 n+  158                           0.86 n+  327 
+                   XtsAes- 256 enc:                  0.91 n+  282                           0.85 n+  309 
+                   XtsAes- 256 key:                           936                                    663 
+                   XtsAes- 384 dec:                  1.03 n+  366                           1.03 n+   73 
+                   XtsAes- 384 enc:                  0.98 n+  508                           1.02 n+  201 
+                   XtsAes- 384 key:                           912                                    537 
+                   XtsAes- 512 dec:                  1.11 n+  601                           1.15 n+  387 
+                   XtsAes- 512 enc:                  1.15 n+  549                           1.07 n+  568 
+                   XtsAes- 512 key:                          1119                                    874 
+  Multi-thread test... done. 65721152 tests run.
+  Testing self tests:
+      Md2, Md4, Md5, Sha1, Sha256, Sha384, Sha512, HmacMd5, HmacSha1, HmacSha256, HmacSha384, HmacSha512, AesCmac, Marvin32, Aes, Des, 3Des, Desx, Rc2, Ccm, Gcm, Rc4, ChaCha20, Poly1305, AesCtrDrbgInstantiate, AesCtrDrbgReseed, AesCtrDrbgGenerate, Pbkdf2_HmacSha1, Pbkdf2_HmacSha256, SP800-108_HmacSha1, SP800-108_HmacSha256, TLS PRF 1.1, TLS PRF 1.2, HKDF, Xts-Aes, ParallelSha256, ParallelSha384, ParallelSha512
+  ...SymCrypt unit test done
+Copying header files to release directory...
+> copy inc\symcrypt.h release\inc\symcrypt.h
+> c:\windows\system32\cmd.exe /c "copy inc\symcrypt.h release\inc\symcrypt.h"
+          1 file(s) copied.
+> copy inc\symcrypt_low_level.h release\inc\symcrypt_low_level.h
+> c:\windows\system32\cmd.exe /c "copy inc\symcrypt_low_level.h release\inc\symcrypt_low_level.h"
+          1 file(s) copied.
+> copy inc\symcrypt_inline.h release\inc\symcrypt_inline.h
+> c:\windows\system32\cmd.exe /c "copy inc\symcrypt_inline.h release\inc\symcrypt_inline.h"
+          1 file(s) copied.
+> copy inc\symcrypt_internal.h release\inc\symcrypt_internal.h
+> c:\windows\system32\cmd.exe /c "copy inc\symcrypt_internal.h release\inc\symcrypt_internal.h"
+          1 file(s) copied.
+> copy inc\symcrypt_types.h release\inc\symcrypt_types.h
+> c:\windows\system32\cmd.exe /c "copy inc\symcrypt_types.h release\inc\symcrypt_types.h"
+          1 file(s) copied.
+> copy inc\symcrypt_version.inc release\inc\symcrypt_version.inc
+> c:\windows\system32\cmd.exe /c "copy inc\symcrypt_version.inc release\inc\symcrypt_version.inc"
+          1 file(s) copied.
+Closing log file and creating CAB...
+Current time = 2018-11-16 16:20:20.81

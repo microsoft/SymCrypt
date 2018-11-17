@@ -1,0 +1,8 @@
+TARGETNAME=symcryptunittest_legacy
+
+C_DEFINES=$(C_DEFINES) -DTESTDRIVER_NAME=\"SymCryptDriver_legacy.sys\"
+
+!include ..\sources_exe.inc
+
+_NT_TARGET_VERSION=$(_NT_TARGET_VERSION_VISTA)
+

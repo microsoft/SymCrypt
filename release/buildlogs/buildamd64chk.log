@@ -1,0 +1,3484 @@
+LOG: s:\os\src\symcrypt\buildchk.log
+BUILD COMMAND: s:\os\tools\CoreBuild\amd64\build.exe  -c -z
+
+Start time: Fri Nov 16 16:18:23 2018
+Launching process: s:\os\tools\CoreBuild\amd64\tracer.exe  -f:.\buildchk.trc -guid:s:\os\src\registered_data.ini /c:"s:\os\tools\CoreBuild\amd64\buildc.exe /hideinfo" /s:localhost:29784   
+1>  *************
+1>'s:\os\tools\CoreBuild\amd64\tracer.exe  -f:.\buildchk.trc -guid:s:\os\src\registered_data.ini /c:"s:\os\tools\CoreBuild\amd64\buildc.exe /hideinfo" /s:localhost:29784   '
+1>Microsoft (R) Build Tracer
+1>Copyright (C) Microsoft Corporation. All rights reserved.
+1>Starting Realtime Build Trace File Logger c54a74e4-7083-4900-8183-27fecef0f31f...
+1>Enabling trace provider...
+1>Processing Build Trace File Logger c54a74e4-7083-4900-8183-27fecef0f31f
+1>Launching: "s:\os\tools\corebuild\amd64\buildc.exe /hideinfo /hostname localhost /hostport 29784"
+Merging config files using BUILD_CONFIG_FILE=s:\os\obj\amd64chk\objchk\amd64\build-exe-merged.config
+BUILD: (ActiveWorkLoad)*, ElapsedTime(s),Counter,Available Memory (%),Disk I/O (ms),Disk Usage (%),CPU (%),Previous,New,Last Max,Permitted Threads,Submitted Thread,Running Threads,WorkItems (Available), WorkItems (Waiting),Pass,Priority,Directory,MachineName
+1>Merging config files  *************
+1>'mergeconfigfilesforbuildexe.cmd '
+1>MergeConfigFilesForBuildExe.cmd: Merged config file current: [s:\os\obj\amd64chk\objchk\amd64\build-exe-merged.config].
+1>MergeConfigFilesForBuildExe.cmd: Filtered config file is up to date [s:\os\obj\amd64chk\objchk\amd64\build-exe-filtered.config].
+Executing PreGraph commands  *************
+1>Performing pregraph steps...  *************
+1>'build_pre_graph -c'
+1>build_pre_graph.cmd: nmake.exe /nologo /f %RazzleToolPath%\PreGraph.nmake
+1>(build_pre_graph.cmd) Setting preliminary ancestor branch to 'rs_onecore_ens'
+1>(build_pre_graph.cmd) Ancestor branch with any vPack information is 'rs_onecore'
+1>(build_pre_graph.cmd) Using vPack from ancestor branch 'rs_onecore'
+1>(build_pre_graph.cmd) Not pulling vpack cdg.rs_onecore.amd64chk because it is up-to-date (matches the marker file at s:\os\cdg\Target.cdg-amd64chk.man).
+Executing prebuild commands  *************
+1>(build_pre_process.cmd) Setting preliminary ancestor branch to 'rs_onecore_ens'
+1>(build_pre_process.cmd) Ancestor branch with any vPack information is 'rs_onecore_ens'
+1>(build_pre_process.cmd) Ancestor branch vPack version information: major=18283, minor=1000, patch=1811131327
+1>(build_pre_process.cmd) Current official branch vPack version information: major=18283, minor=1001, patch=1811151214
+1>(build_pre_process.cmd) Ancestor and current have the same major version [18283] ... 
+1>(build_pre_process.cmd)  ... Using vPack from current official - it has a greater or equal patch version than ancestor [1811151214 >= 1811131327]
+1>(build_pre_process.cmd) Not pulling vpack publics.rs_onecore_ens_id.amd64 because it is up-to-date (matches the marker file at s:\os\pubpkg\Target.publics-amd64.man).
+1>(UPDATE_PUBLIC) exiting with 0; elapsed time 1 seconds
+1>build_pre_process.cmd: nmake.exe /nologo /f s:\os\src\tools\PreProcess.nmake
+1>makefile.def: TEMP=s:\os\out\Temp\amd64chk
+1>makefile.def: BUILDINGINDATT=
+1>makefile.def: TEMP=s:\os\obj\amd64chk\Temp
+1>makefile.def: BUILDINGINDATT=
+1>Skipping pull of Xbox BBT manifest
+1>Skipping PE binaries list on non-MPDGEN build.
+1>Skipping PGI instrumentation.
+1> set BUILDMSG=Installing certificates
+1> s:\os\src\tools\signer.cmd bootstrapcerts
+1> set BUILDMSG=Updating build/qfe numbers
+1> s:\os\src\tools\perl\bin\perl.exe -S s:\os\src\tools\UpdateBldnump.pl
+1> set _createfile=s:\os\obj\amd64chk\objchk\amd64\UpdateBldNump
+1> set BUILDMSG=Updating build/qfe numbers
+1> s:\os\src\tools\perl\bin\perl.exe -S s:\os\src\tools\UpdateBldnump.pl
+1> set _createfile=s:\os\obj\amd64chk\objchk\amd64\UpdateBldNump
+1> set BUILDMSG=making check_blddate
+1> set _createfile=s:\os\obj\amd64chk\objchk\amd64\check_blddate
+1> s:\os\src\tools\perl\bin\perl.exe -S s:\os\src\tools\set_build_date.pl /builddate:180926-1430
+1>(set_build_date.pl) ABOUT TO GET buildnum
+1>(set_build_date.pl) s:\os\obj\amd64chk\objchk\amd64\__blddate__ current, leaving alone
+1>(set_build_date.pl) s:\os\obj\amd64chk\objchk\amd64\__blddate__.props current, leaving alone
+1>(set_build_date.pl) s:\os\obj\amd64chk\objchk\amd64\__bldinfo__ current, leaving alone
+1>(set_build_date.pl) s:\os\obj\amd64chk\objchk\amd64\__bldinfo__.props current, leaving alone
+1>(set_build_date.pl) s:\os\obj\amd64chk\objchk\amd64\__blddetails__ current, leaving alone
+1>(set_build_date.pl) s:\os\obj\amd64chk\objchk\amd64\__blddetails__.props current, leaving alone
+1>(set_build_date.pl) s:\os\obj\amd64chk\objchk\amd64\__bldbranch__ current, leaving alone
+1>(set_build_date.pl) s:\os\obj\amd64chk\objchk\amd64\__bldbranch__.props current, leaving alone
+1>(set_build_date.pl) s:\os\obj\amd64chk\objchk\amd64\buildname.txt current, leaving alone
+1>(set_build_date.pl) s:\os\obj\amd64chk\objchk\amd64\buildversion.txt current, leaving alone
+1>(set_build_date.pl) s:\os\obj\amd64chk\objchk\amd64\__bldnum__ current, leaving alone
+1>(set_build_date.pl) WBA_BUILDGUID is not set; skipping s:\os\obj\amd64chk\objchk\amd64\__bldguid__
+1>(set_build_date.pl) WBA_BUILDPLATFORMGUID is not set; skipping s:\os\obj\amd64chk\objchk\amd64\__bldplatformguid__
+1>(set_build_date.pl) s:\os\obj\amd64chk\objchk\amd64\__lkginfo__ current, leaving alone
+1>(set_build_date.pl) s:\os\obj\amd64chk\objchk\amd64\__lkginfo__.props current, leaving alone
+1>(set_build_date.pl) s:\os\obj\amd64chk\DominoSpecs\MsWin.Build.Makefil0.ds current, leaving alone
+1>(set_build_date.pl) s:\os\obj\amd64chk\DominoSpecs\MsWin.Build.Makefil0.bp current, leaving alone
+1>(set_build_date.pl) s:\os\obj\amd64chk\objchk\amd64\__bldmachine__ current, leaving alone
+1>(set_build_date.pl) s:\os\obj\amd64chk\objchk\amd64\__bldmachine__.props current, leaving alone
+1>(set_build_date.pl) s:\os\obj\amd64chk\objchk\amd64\__bldusername__ current, leaving alone
+1>(set_build_date.pl) s:\os\obj\amd64chk\objchk\amd64\__bldusername__.props current, leaving alone
+1>(set_build_date.pl) s:\os\obj\amd64chk\objchk\amd64\__bldlanguage__.props current, leaving alone
+1>(set_build_date.pl) s:\os\obj\amd64chk\objchk\amd64\__bldlanguageoverride__.props current, leaving alone
+1> set BUILDMSG=making bldnumpmk.inc
+1> s:\os\src\tools\icmd.cmd del s:\os\obj\amd64chk\objchk\amd64\bldnumpmk.inc s:\os\obj\amd64chk\Temp\bldnumpmk.inc 2>nul s:\os\obj\amd64chk\Temp\bldnumpmk.inc1 s:\os\obj\amd64chk\objchk\amd64\bldnumpmk.inc.pl s:\os\obj\amd64chk\objchk\amd64\bldnumpmk.inc.c
+1> s:\os\tools\vc\HostX86\amd64\cl /nologo /EP s:\os\obj\amd64chk\objchk\amd64\bldnumpmk.inc.c >s:\os\obj\amd64chk\Temp\bldnumpmk.inc1
+1>bldnumpmk.inc.c
+1> s:\os\src\tools\perl\bin\perl.exe < s:\os\obj\amd64chk\Temp\bldnumpmk.inc1 s:\os\obj\amd64chk\objchk\amd64\bldnumpmk.inc.pl >s:\os\obj\amd64chk\Temp\bldnumpmk.inc
+1> copy s:\os\obj\amd64chk\Temp\bldnumpmk.inc s:\os\obj\amd64chk\objchk\amd64\bldnumpmk.inc >nul
+1> type s:\os\obj\amd64chk\objchk\amd64\bldnumpmk.inc
+1>VER_PRODUCTBUILD=18283
+1>VER_PRODUCTBUILD_QFE=1001
+1>VER_PACKAGEBUILD_QFE=1782
+1>VER_PRODUCTBUILD_BUILDQFE_STRING=18283.1001
+1> set BUILDMSG=making SpecialVer.inc
+1> s:\os\src\tools\icmd.cmd del s:\os\obj\amd64chk\objchk\amd64\SpecialVer.inc s:\os\obj\amd64chk\Temp\SpecialVer.inc 2>nul s:\os\obj\amd64chk\Temp\SpecialVer.inc1 s:\os\obj\amd64chk\objchk\amd64\SpecialVer.inc.pl s:\os\obj\amd64chk\objchk\amd64\SpecialVer.inc.c
+1> s:\os\tools\vc\HostX86\amd64\cl /nologo /EP s:\os\obj\amd64chk\objchk\amd64\SpecialVer.inc.c >s:\os\obj\amd64chk\Temp\SpecialVer.inc1
+1>SpecialVer.inc.c
+1> s:\os\src\tools\perl\bin\perl.exe < s:\os\obj\amd64chk\Temp\SpecialVer.inc1 s:\os\obj\amd64chk\objchk\amd64\SpecialVer.inc.pl >s:\os\obj\amd64chk\Temp\SpecialVer.inc
+1> copy s:\os\obj\amd64chk\Temp\SpecialVer.inc s:\os\obj\amd64chk\objchk\amd64\SpecialVer.inc >nul
+1> type s:\os\obj\amd64chk\objchk\amd64\SpecialVer.inc
+1>VER_PRODUCTBUILD=18283
+1>VER_PRODUCTBUILD_QFE=1001
+1>VER_PACKAGEBUILD_QFE=1782
+1>VER_PRODUCTBUILD_BUILDQFE_STRING=18283.1001
+1> set BUILDMSG=making wsverpmk.inc
+1> s:\os\src\tools\icmd.cmd del s:\os\obj\amd64chk\objchk\amd64\wsverpmk.inc s:\os\obj\amd64chk\Temp\wsverpmk.inc 2>nul s:\os\obj\amd64chk\Temp\wsverpmk.inc1 s:\os\obj\amd64chk\objchk\amd64\wsverpmk.inc.pl s:\os\obj\amd64chk\objchk\amd64\wsverpmk.inc.c
+1> s:\os\tools\vc\HostX86\amd64\cl /nologo /EP /I s:\os\public\amd64chk\shared\inc /I s:\os\public\amd64chk\sdk\inc\ s:\os\obj\amd64chk\objchk\amd64\wsverpmk.inc.c >s:\os\obj\amd64chk\Temp\wsverpmk.inc1
+1>wsverpmk.inc.c
+1> s:\os\src\tools\perl\bin\perl.exe < s:\os\obj\amd64chk\Temp\wsverpmk.inc1 s:\os\obj\amd64chk\objchk\amd64\wsverpmk.inc.pl >s:\os\obj\amd64chk\Temp\wsverpmk.inc
+1> copy s:\os\obj\amd64chk\Temp\wsverpmk.inc s:\os\obj\amd64chk\objchk\amd64\wsverpmk.inc >nul
+1> type s:\os\obj\amd64chk\objchk\amd64\wsverpmk.inc
+1>VER_WSMAJORVERSION=7
+1>VER_WSMINORVERSION=0
+1>VER_WSBUILDVERSION=18283
+1>VER_WSQFEVERSION=1001
+1>VER_WSVERSION_STR=7.0.18283.1001
+1>VER_WSVERSION_STRING=7.0
+1> set BUILDMSG=making ieverpmk.inc
+1> s:\os\src\tools\icmd.cmd del s:\os\obj\amd64chk\objchk\amd64\ieverpmk.inc s:\os\obj\amd64chk\Temp\ieverpmk.inc 2>nul s:\os\obj\amd64chk\Temp\ieverpmk.inc1 s:\os\obj\amd64chk\objchk\amd64\ieverpmk.inc.pl s:\os\obj\amd64chk\objchk\amd64\ieverpmk.inc.c
+1> s:\os\tools\vc\HostX86\amd64\cl /nologo /EP /I s:\os\public\amd64chk\shared\inc /I s:\os\public\amd64chk\sdk\inc\ s:\os\obj\amd64chk\objchk\amd64\ieverpmk.inc.c >s:\os\obj\amd64chk\Temp\ieverpmk.inc1
+1>ieverpmk.inc.c
+1> s:\os\src\tools\perl\bin\perl.exe < s:\os\obj\amd64chk\Temp\ieverpmk.inc1 s:\os\obj\amd64chk\objchk\amd64\ieverpmk.inc.pl >s:\os\obj\amd64chk\Temp\ieverpmk.inc
+1> copy s:\os\obj\amd64chk\Temp\ieverpmk.inc s:\os\obj\amd64chk\objchk\amd64\ieverpmk.inc >nul
+1> type s:\os\obj\amd64chk\objchk\amd64\ieverpmk.inc
+1>#pragma warning(push)
+1>#pragma warning(disable:4001) 
+1>#pragma warning(push)
+1>#pragma warning(disable:4001) 
+1>#pragma warning(pop)
+1>#pragma warning(pop)
+1>#pragma region Desktop Family
+1>#pragma endregion
+1>VER_IEMAJORVERSION   =11
+1>VER_IEMINORVERSION   =0
+1>VER_IEBUILDVERSION   =18283
+1>VER_IEQFEVERSION     =1001
+1>VER_IEPACKAGEVERSION =0
+1>VER_IEVERSION_STR    =11.0.18283.1001
+1>VER_IEVERSION_STRING =11.0
+1> set BUILDMSG=Checking LNM replica state
+1> s:\os\src\tools\xbox\ReplicaTool.cmd -verify -focusdir:s:\os\src\symcrypt -useobjproj
+1>(ReplicaTool.cmd) [11/16/18 16:18:32] Starting execution
+1>(ReplicaTool.cmd)   Full LNM replica verification is active -- 'disable.lnm.replicas' build setting is not set / set to false.
+1>(ReplicaTool.cmd)   Tool will verify that files are in sync
+1>(ReplicaTool.cmd) Reading replica map...
+1>(ReplicaTool.cmd)   Ignoring per-path exclusion for [onecoreuap\xbox\devices\...]
+1>(ReplicaTool.cmd) now focusing s:\os\src\symcrypt
+1>(ReplicaTool.cmd) Filtering replica map through focused dir [s:\os\src\symcrypt]...
+1>(ReplicaTool.cmd) The replica map does not affect the focused dir.
+1>(ReplicaTool.cmd) [11/16/18 16:18:32] Finishing execution
+Scanning focus directories completed in [0:00:06.094]
+Processing time to write metadata log file .\buildchk.metadata = 0.000 Secs
+1>BUILDMSG: Processing s:\os\src\symcrypt\lib
+1>Compiling s:\os\src\symcrypt\lib *************
+1>'s:\os\src\tools\amd64\nmake.exe /nologo BUILDMSG=Stop. /nologo /f s:\os\src\tools\makefile.def BUILD_PASS=PASS1 NOLINK=1 MAKEDIR_RELATIVE_TO_BASEDIR=symcrypt\lib TARGET_PLATFORM=windows CODE_SETS_BUILDING=cs_windows,cs_xbox,cs_phone,cs_azure,cs_domino'
+2>BUILDMSG: Processing s:\os\src\symcrypt\unittest\sys_test
+2>Compiling s:\os\src\symcrypt\unittest\sys_test *************
+2>'s:\os\src\tools\amd64\nmake.exe /nologo BUILDMSG=Stop. /nologo /f s:\os\src\tools\makefile.def BUILD_PASS=PASS1 NOLINK=1 TEST_CODE=1 MAKEDIR_RELATIVE_TO_BASEDIR=symcrypt\unittest\sys_test TARGET_PLATFORM=windows CODE_SETS_BUILDING=cs_windows,cs_xbox,cs_phone,cs_azure,cs_domino'
+3>BUILDMSG: Processing s:\os\src\symcrypt\unittest\sys_legacy
+3>Compiling s:\os\src\symcrypt\unittest\sys_legacy *************
+3>'s:\os\src\tools\amd64\nmake.exe /nologo BUILDMSG=Stop. /nologo /f s:\os\src\tools\makefile.def BUILD_PASS=PASS1 NOLINK=1 TEST_CODE=1 MAKEDIR_RELATIVE_TO_BASEDIR=symcrypt\unittest\sys_legacy TARGET_PLATFORM=windows CODE_SETS_BUILDING=cs_windows,cs_xbox,cs_phone,cs_azure,cs_domino'
+4>BUILDMSG: Processing s:\os\src\symcrypt\unittest\exe_legacy
+4>Compiling s:\os\src\symcrypt\unittest\exe_legacy *************
+4>'s:\os\src\tools\amd64\nmake.exe /nologo BUILDMSG=Stop. /nologo /f s:\os\src\tools\makefile.def BUILD_PASS=PASS1 NOLINK=1 TEST_CODE=1 MAKEDIR_RELATIVE_TO_BASEDIR=symcrypt\unittest\exe_legacy TARGET_PLATFORM=windows CODE_SETS_BUILDING=cs_windows,cs_xbox,cs_phone,cs_azure,cs_domino'
+5>BUILDMSG: Processing s:\os\src\symcrypt\unittest\exe_win8_1nlater
+5>Compiling s:\os\src\symcrypt\unittest\exe_win8_1nlater *************
+5>'s:\os\src\tools\amd64\nmake.exe /nologo BUILDMSG=Stop. /nologo /f s:\os\src\tools\makefile.def BUILD_PASS=PASS1 NOLINK=1 TEST_CODE=1 MAKEDIR_RELATIVE_TO_BASEDIR=symcrypt\unittest\exe_win8_1nlater TARGET_PLATFORM=windows CODE_SETS_BUILDING=cs_windows,cs_xbox,cs_phone,cs_azure,cs_domino'
+6>BUILDMSG: Processing s:\os\src\symcrypt\unittest\exe_win7nlater
+6>Compiling s:\os\src\symcrypt\unittest\exe_win7nlater *************
+6>'s:\os\src\tools\amd64\nmake.exe /nologo BUILDMSG=Stop. /nologo /f s:\os\src\tools\makefile.def BUILD_PASS=PASS1 NOLINK=1 TEST_CODE=1 MAKEDIR_RELATIVE_TO_BASEDIR=symcrypt\unittest\exe_win7nlater TARGET_PLATFORM=windows CODE_SETS_BUILDING=cs_windows,cs_xbox,cs_phone,cs_azure,cs_domino'
+7>BUILDMSG: Processing s:\os\src\symcrypt\unittest\sys_win7nlater
+7>Compiling s:\os\src\symcrypt\unittest\sys_win7nlater *************
+7>'s:\os\src\tools\amd64\nmake.exe /nologo BUILDMSG=Stop. /nologo /f s:\os\src\tools\makefile.def BUILD_PASS=PASS1 NOLINK=1 TEST_CODE=1 MAKEDIR_RELATIVE_TO_BASEDIR=symcrypt\unittest\sys_win7nlater TARGET_PLATFORM=windows CODE_SETS_BUILDING=cs_windows,cs_xbox,cs_phone,cs_azure,cs_domino'
+8>BUILDMSG: Processing s:\os\src\symcrypt\unittest\lib
+8>Compiling s:\os\src\symcrypt\unittest\lib *************
+8>'s:\os\src\tools\amd64\nmake.exe /nologo BUILDMSG=Stop. /nologo /f s:\os\src\tools\makefile.def BUILD_PASS=PASS1 NOLINK=1 TEST_CODE=1 MAKEDIR_RELATIVE_TO_BASEDIR=symcrypt\unittest\lib TARGET_PLATFORM=windows CODE_SETS_BUILDING=cs_windows,cs_xbox,cs_phone,cs_azure,cs_domino'
+9>BUILDMSG: Processing s:\os\src\symcrypt\gen
+9>Compiling s:\os\src\symcrypt\gen *************
+9>'s:\os\src\tools\amd64\nmake.exe /nologo BUILDMSG=Stop. /nologo /f s:\os\src\tools\makefile.def BUILD_PASS=PASS1 NOLINK=1 TEST_CODE=1 MAKEDIR_RELATIVE_TO_BASEDIR=symcrypt\gen TARGET_PLATFORM=windows CODE_SETS_BUILDING=cs_windows,cs_xbox,cs_phone,cs_azure,cs_domino'
+10>BUILDMSG: Processing s:\os\src\symcrypt\unittest\exe_test
+10>Compiling s:\os\src\symcrypt\unittest\exe_test *************
+10>'s:\os\src\tools\amd64\nmake.exe /nologo BUILDMSG=Stop. /nologo /f s:\os\src\tools\makefile.def BUILD_PASS=PASS1 NOLINK=1 TEST_CODE=1 MAKEDIR_RELATIVE_TO_BASEDIR=symcrypt\unittest\exe_test TARGET_PLATFORM=windows CODE_SETS_BUILDING=cs_windows,cs_xbox,cs_phone,cs_azure,cs_domino'
+BUILD: (ActiveWorkLoad)*,7.75,DISK I/O,48,76,66,14,12,10,9,0,0,0,0,0, PASS1,0,symcrypt\lib,NIELS-5810
+BUILD: (ActiveWorkLoad),7.75,,48,76,66,14,10,10,9,1,1,1,1,0, PASS1,0,symcrypt\unittest\sys_test,NIELS-5810
+BUILD: (ActiveWorkLoad),7.77,,48,76,66,14,10,10,9,2,2,2,0,0, PASS1,0,symcrypt\unittest\sys_legacy,NIELS-5810
+BUILD: (ActiveWorkLoad),7.77,,48,76,66,14,10,10,9,3,3,3,0,0, PASS1,0,symcrypt\unittest\exe_legacy,NIELS-5810
+BUILD: (ActiveWorkLoad),7.77,,48,76,66,14,10,10,9,4,4,4,0,0, PASS1,0,symcrypt\unittest\exe_win8_1nlater,NIELS-5810
+BUILD: (ActiveWorkLoad),7.77,,48,76,66,14,10,10,9,5,5,5,1,0, PASS1,0,symcrypt\unittest\exe_win7nlater,NIELS-5810
+BUILD: (ActiveWorkLoad),7.77,,48,76,66,14,10,10,9,6,6,6,1,0, PASS1,0,symcrypt\unittest\sys_win7nlater,NIELS-5810
+BUILD: (ActiveWorkLoad),7.78,,48,76,66,14,10,10,9,7,7,7,1,0, PASS1,0,symcrypt\unittest\lib,NIELS-5810
+BUILD: (ActiveWorkLoad),7.78,,48,76,66,14,10,10,9,8,8,8,1,0, PASS1,0,symcrypt\gen,NIELS-5810
+BUILD: (ActiveWorkLoad),7.78,,48,76,66,14,10,10,9,9,9,9,0,0, PASS1,0,symcrypt\unittest\exe_test,NIELS-5810
+1>TRACER (subdepot): reading projects from s:\os\src\tools\subdepot_projects.txt
+3>s:\os\src\symcrypt\unittest\sys_legacy building test code in dev tree
+3> set > s:\os\obj\amd64chk\symcrypt\unittest\sys_legacy\objchk\amd64\_PASS1_Marker.log
+3> s:\os\tools\vc\HostX86\amd64\cl.exe @s:\os\obj\amd64chk\Temp\symcrypt\unittest\sys_legacy\cl_1.rsp
+3>Microsoft (R) C/C++ Optimizing Compiler Version 19.15.26715 for x64
+3>Copyright (C) Microsoft Corporation.  All rights reserved.
+3>cl /Fo"s:\os\obj\amd64chk\symcrypt\unittest\sys_legacy\objchk\amd64/"
+3>   /FC
+3>   /Iamd64\
+3>   /I.
+3>   /Is:\os\src\data\MSRC
+3>   /I..\..\..\released\windows\ntrsa32\inc
+3>   /Is:\os\public\amd64chk\internal\DS\inc
+3>   /I..\..\inc
+3>   /I..\lib
+3>   /I..\inc
+3>   /Is:\os\public\amd64chk\ddk\inc
+3>   /Is:\os\obj\amd64chk\symcrypt\unittest\sys_legacy\objchk\amd64
+3>   /Is:\os\public\amd64chk\oak\inc
+3>   /Is:\os\public\amd64chk\shared\inc
+3>   /Is:\os\public\amd64chk\onecore\external\shared\inc
+3>   /Is:\os\public\amd64chk\shared\inc\minwin
+3>   /Is:\os\public\amd64chk\onecore\external\shared\inc\minwin
+3>   /Is:\os\public\amd64chk\shared\inc\mincore
+3>   /Is:\os\public\amd64chk\onecore\external\shared\inc\mincore
+3>   /Is:\os\public\amd64chk\shared\inc\clientcore
+3>   /Is:\os\public\amd64chk\onecore\external\shared\inc\clientcore
+3>   /Is:\os\public\amd64chk\shared\inc\moderncore
+3>   /Is:\os\public\amd64chk\onecore\external\shared\inc\moderncore
+3>   /Is:\os\public\amd64chk\sdk\inc
+3>   /Is:\os\public\amd64chk\onecore\external\sdk\inc
+3>   /Is:\os\public\amd64chk\sdk\inc\minwin
+3>   /Is:\os\public\amd64chk\onecore\private\sdk\inc\minwin
+3>   /Is:\os\public\amd64chk\onecore\internal\sdk\inc\minwin
+3>   /Is:\os\public\amd64chk\sdk\inc\mincore
+3>   /Is:\os\public\amd64chk\onecore\internal\sdk\inc\mincore
+3>   /Is:\os\public\amd64chk\sdk\inc\clientcore
+3>   /Is:\os\public\amd64chk\onecore\internal\sdk\inc\clientcore
+3>   /Is:\os\public\amd64chk\sdk\inc\moderncore
+3>   /Is:\os\public\amd64chk\onecore\internal\sdk\inc\moderncore
+3>   /Is:\os\public\amd64chk\shared\inc
+3>   /Is:\os\public\amd64chk\onecore\external\shared\inc
+3>   /Is:\os\public\amd64chk\ddk\inc
+3>   /Is:\os\public\amd64chk\onecore\external\ddk\inc
+3>   /Is:\os\public\amd64chk\ddk\inc\wdm
+3>   /Is:\os\public\amd64chk\internal\sdk\inc
+3>   /Is:\os\public\amd64chk\onecore\private\sdk\inc
+3>   /Is:\os\public\amd64chk\onecore\internal\sdk\inc
+3>   /Is:\os\public\amd64chk\onecoreuap\private\sdk\inc
+3>   /Is:\os\public\amd64chk\internal\sdk\inc\minwin
+3>   /Is:\os\public\amd64chk\onecore\internal\sdk\inc\minwin
+3>   /Is:\os\public\amd64chk\internal\sdk\inc\minwin\fs
+3>   /Is:\os\public\amd64chk\onecore\internal\sdk\inc\minwin\fs
+3>   /Is:\os\public\amd64chk\internal\sdk\inc\mincore
+3>   /Is:\os\public\amd64chk\onecore\internal\sdk\inc\mincore
+3>   /Is:\os\public\amd64chk\internal\sdk\inc\clientcore
+3>   /Is:\os\public\amd64chk\onecore\internal\sdk\inc\clientcore
+3>   /Is:\os\public\amd64chk\internal\sdk\inc\moderncore
+3>   /Is:\os\public\amd64chk\onecore\internal\sdk\inc\moderncore
+3>   /Is:\os\public\amd64chk\internal\oak\inc
+3>   /Is:\os\public\amd64chk\internal\ddk\inc
+3>   /Is:\os\public\amd64chk\onecore\private\ddk\inc
+3>   /Is:\os\public\amd64chk\sdk\inc\crt
+3>   /D_WIN64
+3>   /D_AMD64_
+3>   /DAMD64
+3>   /DCONDITION_HANDLING=1
+3>   /DNT_UP=1
+3>   /DNT_INST=0
+3>   /DWIN32=100
+3>   /D_NT1X_=100
+3>   /DWINNT=1
+3>   /D_WIN32_WINNT=0x0600
+3>   /DWINVER=0x0600
+3>   /D_WIN32_IE=0x0700
+3>   /DWIN32_LEAN_AND_MEAN=1
+3>   /DDEVL=1
+3>   /DDBG=1
+3>   /D_DLL=1
+3>   /DNDEBUG
+3>   /D_USE_DEV11_CRT
+3>   /DTEST_CODE
+3>   -D_APISET_WINDOWS_VERSION=0x601
+3>   -D_APISET_MINWIN_VERSION=0x0100
+3>   -D_APISET_MINCORE_VERSION=0x0100
+3>   /DNTDDI_VERSION=0x06000100
+3>   /DWINBLUE_KBSPRING14
+3>   /DBUILD_WINDOWS
+3>   /D__WRL_CONFIGURATION_LEGACY__
+3>   /DBUILD_UMS_ENABLED=1
+3>   /DBUILD_WOW64_ENABLED=1
+3>   -D_USE_DECLSPECS_FOR_SAL=1
+3>   /c
+3>   /Zc:wchar_t-
+3>   /Zl
+3>   /Zp8
+3>   /Gy
+3>   /W4
+3>   /d1import_no_registry
+3>   /EHs-c-
+3>   /GR-
+3>   /GF
+3>   /GS
+3>   /kernel
+3>   -d2epilogunwindrequirev2
+3>   -d2jumptablerdata
+3>   /Z7
+3>   /Oxs
+3>   /GL
+3>   /Z7
+3>   -Zc:alignedNew-
+3>   /d2NoSmallFunctionOpt
+3>   -Zc:noexceptTypes-
+3>   /w15043
+3>   /D_CRT_STDIO_IMP=
+3>   /D_CRT_STDIO_IMP_ALT=
+3>   /D_FULL_IOBUF
+3>   /d1trimfile:s:\os\src\=BASEDIR
+3>   /d1trimfile:s:\os\public\amd64chk\=PUBLIC_ROOT
+3>   /d1trimfile:s:\os\obj\amd64chk\=OBJECT_ROOT
+3>   /d1trimfile:s:\os\bin\amd64chk\=_NTTREE
+3>   /d2AllowCompatibleILVersions
+3>   /d2Zi+
+3>   /ZH:SHA_256
+3>   /wd4986
+3>   /wd4987
+3>   /wd4471
+3>   /wd4369
+3>   /wd4309
+3>   /wd4754
+3>   /wd4427
+3>   /d2Qvec-mathlib-
+3>   /d2Qvec-sse2only
+3>   /Gw
+3>   /d1ignorePragmaWarningError
+3>   /wd4316
+3>   /wd4973
+3>   /DDONT_DISABLE_PCH_WARNINGS_IN_WARNING_H
+3>   /Brepro
+3>   -D_HAS_MAGIC_STATICS=1
+3>   -Zc:sizedDealloc-
+3>   /Wv:19.11
+3>   -d1vc7dname
+3>   /Qspectre
+3>   /d2guardretpoline
+3>   /wd4273
+3>   /homeparams
+3>   /FIs:\os\public\amd64chk\internal\sdk\inc\warning.h
+3>   /FIs:\os\public\amd64chk\internal\onecoresdktools\inc\testcode.h
+3>   .\main_sys.cpp 
+3>main_sys.cpp
+2>STL version 70 used in "s:\os\src\symcrypt\unittest\sys_test" (STL_VER_TELEMETRY)
+2>s:\os\src\symcrypt\unittest\sys_test building test code in dev tree
+2>warning: USE_RTTI is incompatible with kernel mode targets
+2> set > s:\os\obj\amd64chk\symcrypt\unittest\sys_test\objchk\amd64\_PASS1_Marker.log
+2> s:\os\tools\vc\HostX86\amd64\cl.exe @s:\os\obj\amd64chk\Temp\symcrypt\unittest\sys_test\cl_1.rsp
+2>Microsoft (R) C/C++ Optimizing Compiler Version 19.15.26715 for x64
+2>Copyright (C) Microsoft Corporation.  All rights reserved.
+2>cl /Fo"s:\os\obj\amd64chk\symcrypt\unittest\sys_test\objchk\amd64/"
+2>   /FC
+2>   /Iamd64\
+2>   /I.
+2>   /Is:\os\src\data\MSRC
+2>   /I..\..\..\released\windows\ntrsa32\inc
+2>   /Is:\os\public\amd64chk\internal\DS\inc
+2>   /I..\..\inc
+2>   /I..\lib
+2>   /I..\inc
+2>   /Is:\os\public\amd64chk\ddk\inc
+2>   /Is:\os\obj\amd64chk\symcrypt\unittest\sys_test\objchk\amd64
+2>   /Is:\os\public\amd64chk\oak\inc
+2>   /Is:\os\public\amd64chk\shared\inc
+2>   /Is:\os\public\amd64chk\onecore\external\shared\inc
+2>   /Is:\os\public\amd64chk\shared\inc\minwin
+2>   /Is:\os\public\amd64chk\onecore\external\shared\inc\minwin
+2>   /Is:\os\public\amd64chk\shared\inc\mincore
+2>   /Is:\os\public\amd64chk\onecore\external\shared\inc\mincore
+2>   /Is:\os\public\amd64chk\shared\inc\clientcore
+2>   /Is:\os\public\amd64chk\onecore\external\shared\inc\clientcore
+2>   /Is:\os\public\amd64chk\shared\inc\moderncore
+2>   /Is:\os\public\amd64chk\onecore\external\shared\inc\moderncore
+2>   /Is:\os\public\amd64chk\sdk\inc
+2>   /Is:\os\public\amd64chk\onecore\external\sdk\inc
+2>   /Is:\os\public\amd64chk\sdk\inc\minwin
+2>   /Is:\os\public\amd64chk\onecore\private\sdk\inc\minwin
+2>   /Is:\os\public\amd64chk\onecore\internal\sdk\inc\minwin
+2>   /Is:\os\public\amd64chk\sdk\inc\mincore
+2>   /Is:\os\public\amd64chk\onecore\internal\sdk\inc\mincore
+2>   /Is:\os\public\amd64chk\sdk\inc\clientcore
+2>   /Is:\os\public\amd64chk\onecore\internal\sdk\inc\clientcore
+2>   /Is:\os\public\amd64chk\sdk\inc\moderncore
+2>   /Is:\os\public\amd64chk\onecore\internal\sdk\inc\moderncore
+2>   /Is:\os\public\amd64chk\shared\inc
+2>   /Is:\os\public\amd64chk\onecore\external\shared\inc
+2>   /Is:\os\public\amd64chk\ddk\inc
+2>   /Is:\os\public\amd64chk\onecore\external\ddk\inc
+2>   /Is:\os\public\amd64chk\ddk\inc\wdm
+2>   /Is:\os\public\amd64chk\internal\sdk\inc
+2>   /Is:\os\public\amd64chk\onecore\private\sdk\inc
+2>   /Is:\os\public\amd64chk\onecore\internal\sdk\inc
+2>   /Is:\os\public\amd64chk\onecoreuap\private\sdk\inc
+2>   /Is:\os\public\amd64chk\internal\sdk\inc\minwin
+2>   /Is:\os\public\amd64chk\onecore\internal\sdk\inc\minwin
+2>   /Is:\os\public\amd64chk\internal\sdk\inc\minwin\fs
+2>   /Is:\os\public\amd64chk\onecore\internal\sdk\inc\minwin\fs
+2>   /Is:\os\public\amd64chk\internal\sdk\inc\mincore
+2>   /Is:\os\public\amd64chk\onecore\internal\sdk\inc\mincore
+2>   /Is:\os\public\amd64chk\internal\sdk\inc\clientcore
+2>   /Is:\os\public\amd64chk\onecore\internal\sdk\inc\clientcore
+2>   /Is:\os\public\amd64chk\internal\sdk\inc\moderncore
+2>   /Is:\os\public\amd64chk\onecore\internal\sdk\inc\moderncore
+2>   /Is:\os\public\amd64chk\internal\oak\inc
+2>   /Is:\os\public\amd64chk\internal\ddk\inc
+2>   /Is:\os\public\amd64chk\onecore\private\ddk\inc
+2>   /Is:\os\public\amd64chk\sdk\inc\crt
+2>   /Is:\os\public\amd64chk\sdk\inc\crt\stl70
+2>   /D_WIN64
+2>   /D_AMD64_
+2>   /DAMD64
+2>   /DCONDITION_HANDLING=1
+2>   /DNT_UP=1
+2>   /DNT_INST=0
+2>   /DWIN32=100
+2>   /D_NT1X_=100
+2>   /DWINNT=1
+2>   /D_WIN32_WINNT=0x0A00
+2>   /DWINVER=0x0A00
+2>   /D_WIN32_IE=0x0A00
+2>   /DWIN32_LEAN_AND_MEAN=1
+2>   /DDEVL=1
+2>   /DDBG=1
+2>   /D_DLL=1
+2>   /DNDEBUG
+2>   /D_USE_DEV11_CRT
+2>   /DTEST_CODE
+2>   -D_APISET_WINDOWS_VERSION=0x601
+2>   -D_APISET_MINWIN_VERSION=0x010A
+2>   -D_APISET_MINCORE_VERSION=0x0109
+2>   /DNTDDI_VERSION=0x0A000006
+2>   /DWINBLUE_KBSPRING14
+2>   /DBUILD_WINDOWS
+2>   /D__WRL_CONFIGURATION_LEGACY__
+2>   /DBUILD_UMS_ENABLED=1
+2>   /DBUILD_WOW64_ENABLED=1
+2>   -D_USE_DECLSPECS_FOR_SAL=1
+2>   /c
+2>   /Zc:wchar_t-
+2>   /Zl
+2>   /Zp8
+2>   /Gy
+2>   /W4
+2>   /d1import_no_registry
+2>   /EHsc
+2>   /GR-
+2>   /GF
+2>   /GS
+2>   /kernel
+2>   -d2epilogunwindrequirev2
+2>   -d2jumptablerdata
+2>   /Z7
+2>   /Oxs
+2>   /GL
+2>   /Z7
+2>   -Zc:alignedNew-
+2>   /d2NoSmallFunctionOpt
+2>   -Zc:noexceptTypes-
+2>   /w15043
+2>   /D_CRT_STDIO_IMP=
+2>   /D_CRT_STDIO_IMP_ALT=
+2>   /D_FULL_IOBUF
+2>   /d1trimfile:s:\os\src\=BASEDIR
+2>   /d1trimfile:s:\os\public\amd64chk\=PUBLIC_ROOT
+2>   /d1trimfile:s:\os\obj\amd64chk\=OBJECT_ROOT
+2>   /d1trimfile:s:\os\bin\amd64chk\=_NTTREE
+2>   /d2AllowCompatibleILVersions
+2>   /d2Zi+
+2>   /ZH:SHA_256
+2>   /wd4986
+2>   /wd4987
+2>   /wd4471
+2>   /wd4369
+2>   /wd4309
+2>   /wd4754
+2>   /wd4427
+2>   /d2Qvec-mathlib-
+2>   /d2Qvec-sse2only
+2>   /Gw
+2>   /d1ignorePragmaWarningError
+2>   /wd4316
+2>   /wd4973
+2>   /DDONT_DISABLE_PCH_WARNINGS_IN_WARNING_H
+2>   /Brepro
+2>   -D_HAS_MAGIC_STATICS=1
+2>   -Zc:sizedDealloc-
+2>   /Wv:19.11
+2>   -d1vc7dname
+2>   /Qspectre
+2>   /d2guardretpoline
+2>   /wd4273
+2>   /homeparams
+2>   /FIs:\os\public\amd64chk\internal\sdk\inc\warning.h
+2>   /FIs:\os\public\amd64chk\internal\onecoresdktools\inc\testcode.h
+2>   .\main_sys.cpp 
+2>main_sys.cpp
+7>s:\os\src\symcrypt\unittest\sys_win7nlater building test code in dev tree
+7> set > s:\os\obj\amd64chk\symcrypt\unittest\sys_win7nlater\objchk\amd64\_PASS1_Marker.log
+7> s:\os\tools\vc\HostX86\amd64\cl.exe @s:\os\obj\amd64chk\Temp\symcrypt\unittest\sys_win7nlater\cl_1.rsp
+7>Microsoft (R) C/C++ Optimizing Compiler Version 19.15.26715 for x64
+7>Copyright (C) Microsoft Corporation.  All rights reserved.
+7>cl /Fo"s:\os\obj\amd64chk\symcrypt\unittest\sys_win7nlater\objchk\amd64/"
+7>   /FC
+7>   /Iamd64\
+7>   /I.
+7>   /Is:\os\src\data\MSRC
+7>   /I..\..\..\released\windows\ntrsa32\inc
+7>   /Is:\os\public\amd64chk\internal\DS\inc
+7>   /I..\..\inc
+7>   /I..\lib
+7>   /I..\inc
+7>   /Is:\os\public\amd64chk\ddk\inc
+7>   /Is:\os\obj\amd64chk\symcrypt\unittest\sys_win7nlater\objchk\amd64
+7>   /Is:\os\public\amd64chk\oak\inc
+7>   /Is:\os\public\amd64chk\shared\inc
+7>   /Is:\os\public\amd64chk\onecore\external\shared\inc
+7>   /Is:\os\public\amd64chk\shared\inc\minwin
+7>   /Is:\os\public\amd64chk\onecore\external\shared\inc\minwin
+7>   /Is:\os\public\amd64chk\shared\inc\mincore
+7>   /Is:\os\public\amd64chk\onecore\external\shared\inc\mincore
+7>   /Is:\os\public\amd64chk\shared\inc\clientcore
+7>   /Is:\os\public\amd64chk\onecore\external\shared\inc\clientcore
+7>   /Is:\os\public\amd64chk\shared\inc\moderncore
+7>   /Is:\os\public\amd64chk\onecore\external\shared\inc\moderncore
+7>   /Is:\os\public\amd64chk\sdk\inc
+7>   /Is:\os\public\amd64chk\onecore\external\sdk\inc
+7>   /Is:\os\public\amd64chk\sdk\inc\minwin
+7>   /Is:\os\public\amd64chk\onecore\private\sdk\inc\minwin
+7>   /Is:\os\public\amd64chk\onecore\internal\sdk\inc\minwin
+7>   /Is:\os\public\amd64chk\sdk\inc\mincore
+7>   /Is:\os\public\amd64chk\onecore\internal\sdk\inc\mincore
+7>   /Is:\os\public\amd64chk\sdk\inc\clientcore
+7>   /Is:\os\public\amd64chk\onecore\internal\sdk\inc\clientcore
+7>   /Is:\os\public\amd64chk\sdk\inc\moderncore
+7>   /Is:\os\public\amd64chk\onecore\internal\sdk\inc\moderncore
+7>   /Is:\os\public\amd64chk\shared\inc
+7>   /Is:\os\public\amd64chk\onecore\external\shared\inc
+7>   /Is:\os\public\amd64chk\ddk\inc
+7>   /Is:\os\public\amd64chk\onecore\external\ddk\inc
+7>   /Is:\os\public\amd64chk\ddk\inc\wdm
+7>   /Is:\os\public\amd64chk\internal\sdk\inc
+7>   /Is:\os\public\amd64chk\onecore\private\sdk\inc
+7>   /Is:\os\public\amd64chk\onecore\internal\sdk\inc
+7>   /Is:\os\public\amd64chk\onecoreuap\private\sdk\inc
+7>   /Is:\os\public\amd64chk\internal\sdk\inc\minwin
+7>   /Is:\os\public\amd64chk\onecore\internal\sdk\inc\minwin
+7>   /Is:\os\public\amd64chk\internal\sdk\inc\minwin\fs
+7>   /Is:\os\public\amd64chk\onecore\internal\sdk\inc\minwin\fs
+7>   /Is:\os\public\amd64chk\internal\sdk\inc\mincore
+7>   /Is:\os\public\amd64chk\onecore\internal\sdk\inc\mincore
+7>   /Is:\os\public\amd64chk\internal\sdk\inc\clientcore
+7>   /Is:\os\public\amd64chk\onecore\internal\sdk\inc\clientcore
+7>   /Is:\os\public\amd64chk\internal\sdk\inc\moderncore
+7>   /Is:\os\public\amd64chk\onecore\internal\sdk\inc\moderncore
+7>   /Is:\os\public\amd64chk\internal\oak\inc
+7>   /Is:\os\public\amd64chk\internal\ddk\inc
+7>   /Is:\os\public\amd64chk\onecore\private\ddk\inc
+7>   /Is:\os\public\amd64chk\sdk\inc\crt
+7>   /D_WIN64
+7>   /D_AMD64_
+7>   /DAMD64
+7>   /DCONDITION_HANDLING=1
+7>   /DNT_UP=1
+7>   /DNT_INST=0
+7>   /DWIN32=100
+7>   /D_NT1X_=100
+7>   /DWINNT=1
+7>   /D_WIN32_WINNT=0x0601
+7>   /DWINVER=0x0601
+7>   /D_WIN32_IE=0x0800
+7>   /DWIN32_LEAN_AND_MEAN=1
+7>   /DDEVL=1
+7>   /DDBG=1
+7>   /D_DLL=1
+7>   /DNDEBUG
+7>   /D_USE_DEV11_CRT
+7>   /DTEST_CODE
+7>   -D_APISET_WINDOWS_VERSION=0x601
+7>   -D_APISET_MINWIN_VERSION=0x0100
+7>   -D_APISET_MINCORE_VERSION=0x0100
+7>   /DNTDDI_VERSION=0x06010000
+7>   /DWINBLUE_KBSPRING14
+7>   /DBUILD_WINDOWS
+7>   /D__WRL_CONFIGURATION_LEGACY__
+7>   /DBUILD_UMS_ENABLED=1
+7>   /DBUILD_WOW64_ENABLED=1
+7>   -D_USE_DECLSPECS_FOR_SAL=1
+7>   /c
+7>   /Zc:wchar_t-
+7>   /Zl
+7>   /Zp8
+7>   /Gy
+7>   /W4
+7>   /d1import_no_registry
+7>   /EHs-c-
+7>   /GR-
+7>   /GF
+7>   /GS
+7>   /kernel
+7>   -d2epilogunwindrequirev2
+7>   -d2jumptablerdata
+7>   /Z7
+7>   /Oxs
+7>   /GL
+7>   /Z7
+7>   -Zc:alignedNew-
+7>   /d2NoSmallFunctionOpt
+7>   -Zc:noexceptTypes-
+7>   /w15043
+7>   /D_CRT_STDIO_IMP=
+7>   /D_CRT_STDIO_IMP_ALT=
+7>   /D_FULL_IOBUF
+7>   /d1trimfile:s:\os\src\=BASEDIR
+7>   /d1trimfile:s:\os\public\amd64chk\=PUBLIC_ROOT
+7>   /d1trimfile:s:\os\obj\amd64chk\=OBJECT_ROOT
+7>   /d1trimfile:s:\os\bin\amd64chk\=_NTTREE
+7>   /d2AllowCompatibleILVersions
+7>   /d2Zi+
+7>   /ZH:SHA_256
+7>   /wd4986
+7>   /wd4987
+7>   /wd4471
+7>   /wd4369
+7>   /wd4309
+7>   /wd4754
+7>   /wd4427
+7>   /d2Qvec-mathlib-
+7>   /d2Qvec-sse2only
+7>   /Gw
+7>   /d1ignorePragmaWarningError
+7>   /wd4316
+7>   /wd4973
+7>   /DDONT_DISABLE_PCH_WARNINGS_IN_WARNING_H
+7>   /Brepro
+7>   -D_HAS_MAGIC_STATICS=1
+7>   -Zc:sizedDealloc-
+7>   /Wv:19.11
+7>   -d1vc7dname
+7>   /Qspectre
+7>   /d2guardretpoline
+7>   /wd4273
+7>   /homeparams
+7>   /FIs:\os\public\amd64chk\internal\sdk\inc\warning.h
+7>   /FIs:\os\public\amd64chk\internal\onecoresdktools\inc\testcode.h
+7>   .\main_sys.cpp 
+7>main_sys.cpp
+1> set > s:\os\obj\amd64chk\symcrypt\lib\objchk\amd64\_PASS1_Marker.log
+1> preprocessor -o s:\os\obj\amd64chk\symcrypt\lib\objchk\amd64\mui_drv.rcc -i s:\os\src\tools\mui_drv.rcconfig 
+1> s:\os\tools\vc\HostX86\amd64\cl.exe @s:\os\obj\amd64chk\Temp\symcrypt\lib\cl_1.rsp
+1>Microsoft (R) C/C++ Optimizing Compiler Version 19.15.26715 for x64
+1>Copyright (C) Microsoft Corporation.  All rights reserved.
+1>cl /Fo"s:\os\obj\amd64chk\symcrypt\lib\objchk\amd64/"
+1>   /FC
+1>   /MT
+1>   /U_MT
+1>   /Iamd64\
+1>   /I.
+1>   /Is:\os\src\data\MSRC
+1>   /I..\inc
+1>   /Is:\os\public\amd64chk\internal\DS\inc\crypto
+1>   /Is:\os\public\amd64chk\ifskit\inc
+1>   /Is:\os\public\amd64chk\internal\minwin\priv_sdk\inc\boot
+1>   /Is:\os\obj\amd64chk\symcrypt\lib\objchk\amd64
+1>   /Is:\os\public\amd64chk\oak\inc
+1>   /Is:\os\public\amd64chk\shared\inc
+1>   /Is:\os\public\amd64chk\onecore\external\shared\inc
+1>   /Is:\os\public\amd64chk\shared\inc\minwin
+1>   /Is:\os\public\amd64chk\onecore\external\shared\inc\minwin
+1>   /Is:\os\public\amd64chk\shared\inc\mincore
+1>   /Is:\os\public\amd64chk\onecore\external\shared\inc\mincore
+1>   /Is:\os\public\amd64chk\shared\inc\clientcore
+1>   /Is:\os\public\amd64chk\onecore\external\shared\inc\clientcore
+1>   /Is:\os\public\amd64chk\shared\inc\moderncore
+1>   /Is:\os\public\amd64chk\onecore\external\shared\inc\moderncore
+1>   /Is:\os\public\amd64chk\sdk\inc
+1>   /Is:\os\public\amd64chk\onecore\external\sdk\inc
+1>   /Is:\os\public\amd64chk\sdk\inc\minwin
+1>   /Is:\os\public\amd64chk\onecore\private\sdk\inc\minwin
+1>   /Is:\os\public\amd64chk\onecore\internal\sdk\inc\minwin
+1>   /Is:\os\public\amd64chk\sdk\inc\mincore
+1>   /Is:\os\public\amd64chk\onecore\internal\sdk\inc\mincore
+1>   /Is:\os\public\amd64chk\sdk\inc\clientcore
+1>   /Is:\os\public\amd64chk\onecore\internal\sdk\inc\clientcore
+1>   /Is:\os\public\amd64chk\sdk\inc\moderncore
+1>   /Is:\os\public\amd64chk\onecore\internal\sdk\inc\moderncore
+1>   /Is:\os\public\amd64chk\shared\inc
+1>   /Is:\os\public\amd64chk\onecore\external\shared\inc
+1>   /Is:\os\public\amd64chk\ddk\inc
+1>   /Is:\os\public\amd64chk\onecore\external\ddk\inc
+1>   /Is:\os\public\amd64chk\ddk\inc\wdm
+1>   /Is:\os\public\amd64chk\internal\sdk\inc
+1>   /Is:\os\public\amd64chk\onecore\private\sdk\inc
+1>   /Is:\os\public\amd64chk\onecore\internal\sdk\inc
+1>   /Is:\os\public\amd64chk\onecoreuap\private\sdk\inc
+1>   /Is:\os\public\amd64chk\internal\sdk\inc\minwin
+1>   /Is:\os\public\amd64chk\onecore\internal\sdk\inc\minwin
+1>   /Is:\os\public\amd64chk\internal\sdk\inc\minwin\fs
+1>   /Is:\os\public\amd64chk\onecore\internal\sdk\inc\minwin\fs
+1>   /Is:\os\public\amd64chk\internal\sdk\inc\mincore
+1>   /Is:\os\public\amd64chk\onecore\internal\sdk\inc\mincore
+1>   /Is:\os\public\amd64chk\internal\sdk\inc\clientcore
+1>   /Is:\os\public\amd64chk\onecore\internal\sdk\inc\clientcore
+1>   /Is:\os\public\amd64chk\internal\sdk\inc\moderncore
+1>   /Is:\os\public\amd64chk\onecore\internal\sdk\inc\moderncore
+1>   /Is:\os\public\amd64chk\internal\oak\inc
+1>   /Is:\os\public\amd64chk\sdk\inc\crt
+1>   /D_WIN64
+1>   /D_AMD64_
+1>   /DAMD64
+1>   /DCONDITION_HANDLING=1
+1>   /DNT_UP=1
+1>   /DNT_INST=0
+1>   /DWIN32=100
+1>   /D_NT1X_=100
+1>   /DWINNT=1
+1>   /D_WIN32_WINNT=0x0A00
+1>   /DWINVER=0x0A00
+1>   /D_WIN32_IE=0x0A00
+1>   /DWIN32_LEAN_AND_MEAN=1
+1>   /DDEVL=1
+1>   /DDBG=1
+1>   /D_USE_DEV11_CRT
+1>   -D_APISET_WINDOWS_VERSION=0x601
+1>   -D_APISET_MINWIN_VERSION=0x010A
+1>   -D_APISET_MINCORE_VERSION=0x0109
+1>   /DNTDDI_VERSION=0x0A000006
+1>   /DWINBLUE_KBSPRING14
+1>   /DBUILD_WINDOWS
+1>   /D__WRL_CONFIGURATION_LEGACY__
+1>   /DBUILD_UMS_ENABLED=1
+1>   /DBUILD_WOW64_ENABLED=1
+1>   -D_USE_DECLSPECS_FOR_SAL=1
+1>   -D_CONTROL_FLOW_GUARD=1
+1>   -D_CONTROL_FLOW_GUARD_SVCTAB=1
+1>   /c
+1>   /Zc:wchar_t-
+1>   /Zl
+1>   /Zp8
+1>   /Gy
+1>   /W4
+1>   /d1import_no_registry
+1>   /EHs-c-
+1>   /GR-
+1>   /GF
+1>   /GS
+1>   /kernel
+1>   -d2epilogunwindrequirev2
+1>   -d2jumptablerdata
+1>   /Z7
+1>   /Oxs
+1>   /GL
+1>   /Z7
+1>   -Zc:alignedNew-
+1>   /d2NoSmallFunctionOpt
+1>   -Zc:noexceptTypes-
+1>   /w15043
+1>   /D_CRT_STDIO_IMP=
+1>   /D_CRT_STDIO_IMP_ALT=
+1>   /D_FULL_IOBUF
+1>   /d1trimfile:s:\os\src\=BASEDIR
+1>   /d1trimfile:s:\os\public\amd64chk\=PUBLIC_ROOT
+1>   /d1trimfile:s:\os\obj\amd64chk\=OBJECT_ROOT
+1>   /d1trimfile:s:\os\bin\amd64chk\=_NTTREE
+1>   /d2AllowCompatibleILVersions
+1>   /d2Zi+
+1>   /ZH:SHA_256
+1>   /wd4986
+1>   /wd4987
+1>   /wd4471
+1>   /wd4369
+1>   /wd4309
+1>   /wd4754
+1>   /wd4427
+1>   /d2Qvec-mathlib-
+1>   /d2Qvec-sse2only
+1>   /Gw
+1>   /d1ignorePragmaWarningError
+1>   /wd4316
+1>   /wd4973
+1>   /DDONT_DISABLE_PCH_WARNINGS_IN_WARNING_H
+1>   /Brepro
+1>   -D_HAS_MAGIC_STATICS=1
+1>   -Zc:sizedDealloc-
+1>   /Wv:19.11
+1>   -d1vc7dname
+1>   /Qspectre
+1>   /d2guardretpoline
+1>   /d2guard4
+1>   /d2nocfgrngchk
+1>   /d2guardcfgfuncptr
+1>   /d2psvcallopt150000
+1>   /homeparams
+1>   /FIs:\os\public\amd64chk\internal\sdk\inc\warning.h
+1>   .\marvin32.c 
+1>marvin32.c
+1> s:\os\tools\vc\HostX64\amd64\link.exe /lib /out:s:\os\obj\amd64chk\symcrypt\lib\objchk\amd64\symcrypt.lib /IGNORE:4078,4221,4281,4198   /nodefaultlib /machine:amd64 /ltcg /Brepro @s:\os\obj\amd64chk\Temp\symcrypt\lib\lib_1.rsp
+1>Microsoft (R) Library Manager Version 14.15.26715.3
+1>Copyright (C) Microsoft Corporation.  All rights reserved.
+1>s:\os\obj\amd64chk\symcrypt\lib\objchk\amd64\marvin32.obj 
+9>STL version 70 used in "s:\os\src\symcrypt\gen" (STL_VER_TELEMETRY)
+9>s:\os\src\symcrypt\gen building test code in dev tree
+9> set > s:\os\obj\amd64chk\symcrypt\gen\objchk\amd64\_PASS1_Marker.log
+9> s:\os\tools\vc\HostX86\amd64\cl.exe @s:\os\obj\amd64chk\Temp\symcrypt\gen\cl_1.rsp
+9>Microsoft (R) C/C++ Optimizing Compiler Version 19.15.26715 for x64
+9>Copyright (C) Microsoft Corporation.  All rights reserved.
+9>cl /Fo"s:\os\obj\amd64chk\symcrypt\gen\objchk\amd64/"
+9>   /FC
+9>   /Iamd64\
+9>   /I.
+9>   /Is:\os\src\data\MSRC
+9>   /Is:\os\public\amd64chk\internal\DS\inc
+9>   /I..\lib
+9>   /I..\inc
+9>   /Is:\os\public\amd64chk\ddk\inc
+9>   /Is:\os\obj\amd64chk\symcrypt\gen\objchk\amd64
+9>   /Is:\os\public\amd64chk\oak\inc
+9>   /Is:\os\public\amd64chk\shared\inc
+9>   /Is:\os\public\amd64chk\onecore\external\shared\inc
+9>   /Is:\os\public\amd64chk\shared\inc\minwin
+9>   /Is:\os\public\amd64chk\onecore\external\shared\inc\minwin
+9>   /Is:\os\public\amd64chk\shared\inc\mincore
+9>   /Is:\os\public\amd64chk\onecore\external\shared\inc\mincore
+9>   /Is:\os\public\amd64chk\shared\inc\clientcore
+9>   /Is:\os\public\amd64chk\onecore\external\shared\inc\clientcore
+9>   /Is:\os\public\amd64chk\shared\inc\moderncore
+9>   /Is:\os\public\amd64chk\onecore\external\shared\inc\moderncore
+9>   /Is:\os\public\amd64chk\sdk\inc
+9>   /Is:\os\public\amd64chk\onecore\external\sdk\inc
+9>   /Is:\os\public\amd64chk\sdk\inc\minwin
+9>   /Is:\os\public\amd64chk\onecore\private\sdk\inc\minwin
+9>   /Is:\os\public\amd64chk\onecore\internal\sdk\inc\minwin
+9>   /Is:\os\public\amd64chk\sdk\inc\mincore
+9>   /Is:\os\public\amd64chk\onecore\internal\sdk\inc\mincore
+9>   /Is:\os\public\amd64chk\sdk\inc\clientcore
+9>   /Is:\os\public\amd64chk\onecore\internal\sdk\inc\clientcore
+9>   /Is:\os\public\amd64chk\sdk\inc\moderncore
+9>   /Is:\os\public\amd64chk\onecore\internal\sdk\inc\moderncore
+9>   /Is:\os\public\amd64chk\shared\inc
+9>   /Is:\os\public\amd64chk\onecore\external\shared\inc
+9>   /Is:\os\public\amd64chk\ddk\inc
+9>   /Is:\os\public\amd64chk\onecore\external\ddk\inc
+9>   /Is:\os\public\amd64chk\ddk\inc\wdm
+9>   /Is:\os\public\amd64chk\internal\sdk\inc
+9>   /Is:\os\public\amd64chk\onecore\private\sdk\inc
+9>   /Is:\os\public\amd64chk\onecore\internal\sdk\inc
+9>   /Is:\os\public\amd64chk\onecoreuap\private\sdk\inc
+9>   /Is:\os\public\amd64chk\internal\sdk\inc\minwin
+9>   /Is:\os\public\amd64chk\onecore\internal\sdk\inc\minwin
+9>   /Is:\os\public\amd64chk\internal\sdk\inc\minwin\fs
+9>   /Is:\os\public\amd64chk\onecore\internal\sdk\inc\minwin\fs
+9>   /Is:\os\public\amd64chk\internal\sdk\inc\mincore
+9>   /Is:\os\public\amd64chk\onecore\internal\sdk\inc\mincore
+9>   /Is:\os\public\amd64chk\internal\sdk\inc\clientcore
+9>   /Is:\os\public\amd64chk\onecore\internal\sdk\inc\clientcore
+9>   /Is:\os\public\amd64chk\internal\sdk\inc\moderncore
+9>   /Is:\os\public\amd64chk\onecore\internal\sdk\inc\moderncore
+9>   /Is:\os\public\amd64chk\internal\oak\inc
+9>   /Is:\os\public\amd64chk\sdk\inc\crt
+9>   /Is:\os\public\amd64chk\sdk\inc\crt\stl70
+9>   /D_WIN64
+9>   /D_AMD64_
+9>   /DAMD64
+9>   /DCONDITION_HANDLING=1
+9>   /DNT_UP=1
+9>   /DNT_INST=0
+9>   /DWIN32=100
+9>   /D_NT1X_=100
+9>   /DWINNT=1
+9>   /D_WIN32_WINNT=0x0A00
+9>   /DWINVER=0x0A00
+9>   /D_WIN32_IE=0x0A00
+9>   /DWIN32_LEAN_AND_MEAN=1
+9>   /DDEVL=1
+9>   /DDBG=1
+9>   /D_STATIC_CPPLIB
+9>   /D_STL70_
+9>   /D_DLL=1
+9>   /D_MT=1
+9>   /D_USE_DEV11_CRT
+9>   /DTEST_CODE
+9>   -D_APISET_WINDOWS_VERSION=0x601
+9>   -D_APISET_MINWIN_VERSION=0x010A
+9>   -D_APISET_MINCORE_VERSION=0x0109
+9>   /DNTDDI_VERSION=0x0A000006
+9>   /DWINBLUE_KBSPRING14
+9>   /DBUILD_WINDOWS
+9>   /D__WRL_CONFIGURATION_LEGACY__
+9>   /DBUILD_UMS_ENABLED=1
+9>   /DBUILD_WOW64_ENABLED=1
+9>   -D_USE_DECLSPECS_FOR_SAL=1
+9>   -D_CONTROL_FLOW_GUARD=1
+9>   -D_CONTROL_FLOW_GUARD_SVCTAB=1
+9>   /c
+9>   /Zc:wchar_t-
+9>   /Zl
+9>   /Zp8
+9>   /Gy
+9>   /W4
+9>   /d1import_no_registry
+9>   /EHsc
+9>   /GR-
+9>   /GF
+9>   /GS
+9>   /Z7
+9>   /Oxs
+9>   /GL
+9>   /Z7
+9>   -Zc:alignedNew-
+9>   /d2NoSmallFunctionOpt
+9>   -Zc:noexceptTypes-
+9>   /w15043
+9>   /D_CRT_STDIO_IMP=
+9>   /D_CRT_STDIO_IMP_ALT=
+9>   /D_FULL_IOBUF
+9>   /d1trimfile:s:\os\src\=BASEDIR
+9>   /d1trimfile:s:\os\public\amd64chk\=PUBLIC_ROOT
+9>   /d1trimfile:s:\os\obj\amd64chk\=OBJECT_ROOT
+9>   /d1trimfile:s:\os\bin\amd64chk\=_NTTREE
+9>   /d2AllowCompatibleILVersions
+9>   /d2Zi+
+9>   /ZH:SHA_256
+9>   /wd4986
+9>   /wd4987
+9>   /wd4471
+9>   /wd4369
+9>   /wd4309
+9>   /wd4754
+9>   /wd4427
+9>   /d2Qvec-mathlib-
+9>   /d2Qvec-sse2only
+9>   /Gw
+9>   /d1ignorePragmaWarningError
+9>   /wd4316
+9>   /wd4973
+9>   /DDONT_DISABLE_PCH_WARNINGS_IN_WARNING_H
+9>   /Brepro
+9>   -D_HAS_MAGIC_STATICS=1
+9>   -Zc:sizedDealloc-
+9>   /Wv:19.11
+9>   -d1vc7dname
+9>   /Qspectre
+9>   /d2guard4
+9>   /d2nocfgrngchk
+9>   /d2guardcfgfuncptr
+9>   /d2psvcallopt150000
+9>   /homeparams
+9>   /FIs:\os\public\amd64chk\internal\sdk\inc\warning.h
+9>   /FIs:\os\public\amd64chk\internal\onecoresdktools\inc\testcode.h
+9>   .\main_gen.cpp 
+9>main_gen.cpp
+4>STL version 70 used in "s:\os\src\symcrypt\unittest\exe_legacy" (STL_VER_TELEMETRY)
+4>s:\os\src\symcrypt\unittest\exe_legacy building test code in dev tree
+4> set > s:\os\obj\amd64chk\symcrypt\unittest\exe_legacy\objchk\amd64\_PASS1_Marker.log
+4>s:\os\tools\vc\HostX86\amd64\cl.exe /Iamd64\ /I. /Is:\os\src\data\MSRC /Is:\os\src\onecore\ds\security\cryptoapi\inc\cryptolegacy /Is:\os\public\amd64chk\internal\DS\inc /Is:\os\public\amd64chk\internal\DS\inc\crypto /Is:\os\public\amd64chk\internal\onecoreds\inc\crypto /Is:\os\public\amd64chk\onecore\private\ds\inc\crypto /I..\..\inc /I..\inc /I..\lib /Is:\os\public\amd64chk\ddk\inc /Is:\os\obj\amd64chk\symcrypt\unittest\exe_legacy\objchk\amd64 /Is:\os\public\amd64chk\oak\inc /Is:\os\public\amd64chk\shared\inc /Is:\os\public\amd64chk\onecore\external\shared\inc /Is:\os\public\amd64chk\shared\inc\minwin /Is:\os\public\amd64chk\onecore\external\shared\inc\minwin /Is:\os\public\amd64chk\shared\inc\mincore /Is:\os\public\amd64chk\onecore\external\shared\inc\mincore /Is:\os\public\amd64chk\shared\inc\clientcore /Is:\os\public\amd64chk\onecore\external\shared\inc\clientcore /Is:\os\public\amd64chk\shared\inc\moderncore /Is:\os\public\amd64chk\onecore\external\shared\inc\moderncore /Is:\os\public\amd64chk\sdk\inc /Is:\os\public\amd64chk\onecore\external\sdk\inc /Is:\os\public\amd64chk\sdk\inc\minwin /Is:\os\public\amd64chk\onecore\private\sdk\inc\minwin /Is:\os\public\amd64chk\onecore\internal\sdk\inc\minwin /Is:\os\public\amd64chk\sdk\inc\mincore /Is:\os\public\amd64chk\onecore\internal\sdk\inc\mincore /Is:\os\public\amd64chk\sdk\inc\clientcore /Is:\os\public\amd64chk\onecore\internal\sdk\inc\clientcore /Is:\os\public\amd64chk\sdk\inc\moderncore /Is:\os\public\amd64chk\onecore\internal\sdk\inc\moderncore /Is:\os\public\amd64chk\shared\inc /Is:\os\public\amd64chk\onecore\external\shared\inc /Is:\os\public\amd64chk\ddk\inc /Is:\os\public\amd64chk\onecore\external\ddk\inc /Is:\os\public\amd64chk\ddk\inc\wdm /Is:\os\public\amd64chk\internal\sdk\inc /Is:\os\public\amd64chk\onecore\private\sdk\inc /Is:\os\public\amd64chk\onecore\internal\sdk\inc /Is:\os\public\amd64chk\onecoreuap\private\sdk\inc /Is:\os\public\amd64chk\internal\sdk\inc\minwin /Is:\os\public\amd64chk\onecore\internal\sdk\inc\minwin /Is:\os\public\amd64chk\internal\sdk\inc\minwin\fs /Is:\os\public\amd64chk\onecore\internal\sdk\inc\minwin\fs /Is:\os\public\amd64chk\internal\sdk\inc\mincore /Is:\os\public\amd64chk\onecore\internal\sdk\inc\mincore /Is:\os\public\amd64chk\internal\sdk\inc\clientcore /Is:\os\public\amd64chk\onecore\internal\sdk\inc\clientcore /Is:\os\public\amd64chk\internal\sdk\inc\moderncore /Is:\os\public\amd64chk\onecore\internal\sdk\inc\moderncore /Is:\os\public\amd64chk\internal\oak\inc /Is:\os\public\amd64chk\sdk\inc\crt /Is:\os\public\amd64chk\sdk\inc\crt\stl70 /D_WIN64 /D_AMD64_ /DAMD64 /DCONDITION_HANDLING=1 /DNT_UP=1 /DNT_INST=0 /DWIN32=100 /D_NT1X_=100 /DWINNT=1 /D_WIN32_WINNT=0x0600 /DWINVER=0x0600 /D_WIN32_IE=0x0700 /DWIN32_LEAN_AND_MEAN=1 /DDEVL=1 /DDBG=1 /D_STATIC_CPPLIB /D_STL70_ /D_DLL=1 /D_MT=1 -DTESTDRIVER_NAME=\"SymCryptDriver_legacy.sys\" /D_USE_DEV11_CRT /DTEST_CODE -D_APISET_WINDOWS_VERSION=0x601 -D_APISET_MINWIN_VERSION=0x0100 -D_APISET_MINCORE_VERSION=0x0100 /DNTDDI_VERSION=0x06000100 /DWINBLUE_KBSPRING14 /DBUILD_WINDOWS /D__WRL_CONFIGURATION_LEGACY__ /DBUILD_UMS_ENABLED=1 /DBUILD_WOW64_ENABLED=1 -D_USE_DECLSPECS_FOR_SAL=1 -D_CONTROL_FLOW_GUARD=1 -D_CONTROL_FLOW_GUARD_SVCTAB=1 /c /Zc:wchar_t- /Zl /Zp8 /Gy /W4 /d1import_no_registry /EHsc /GR /GF /GS /Z7 /Oxs /GL /Z7 -Zc:alignedNew- /d2NoSmallFunctionOpt -Zc:noexceptTypes- /w15043 /D_CRT_STDIO_IMP= /D_CRT_STDIO_IMP_ALT= /D_FULL_IOBUF /d1trimfile:s:\os\src\=BASEDIR /d1trimfile:s:\os\public\amd64chk\=PUBLIC_ROOT /d1trimfile:s:\os\obj\amd64chk\=OBJECT_ROOT /d1trimfile:s:\os\bin\amd64chk\=_NTTREE /d2AllowCompatibleILVersions /d2Zi+ /ZH:SHA_256 /wd4986 /wd4987 /wd4471 /wd4369 /wd4309 /wd4754 /wd4427 /d2Qvec-mathlib- /d2Qvec-sse2only /Gw /d1ignorePragmaWarningError /wd4316 /wd4973 /DDONT_DISABLE_PCH_WARNINGS_IN_WARNING_H /Brepro -D_HAS_MAGIC_STATICS=1 -Zc:sizedDealloc- /Wv:19.11 -d1vc7dname /Qspectre /d2guard4 /d2nocfgrngchk /d2guardcfgfuncptr /d2psvcallopt150000 /homeparams /FIs:\os\public\amd64chk\internal\sdk\inc\warning.h /FIs:\os\public\amd64chk\internal\onecoresdktools\inc\testcode.h /Ylsymcryptunittest_legacy /Ycprecomp.h /Fps:\os\obj\amd64chk\symcrypt\unittest\exe_legacy\objchk\amd64\precomp.pch /Fo"s:\os\obj\amd64chk\symcrypt\unittest\exe_legacy\objchk\amd64\precomp.obj" /Tp
+4>#include "precomp.h"
+4>Microsoft (R) C/C++ Optimizing Compiler Version 19.15.26715 for x64
+4>Copyright (C) Microsoft Corporation.  All rights reserved.
+4>cl 
+4>   /Iamd64\
+4>   /I.
+4>   /Is:\os\src\data\MSRC
+4>   /Is:\os\src\onecore\ds\security\cryptoapi\inc\cryptolegacy
+4>   /Is:\os\public\amd64chk\internal\DS\inc
+4>   /Is:\os\public\amd64chk\internal\DS\inc\crypto
+4>   /Is:\os\public\amd64chk\internal\onecoreds\inc\crypto
+4>   /Is:\os\public\amd64chk\onecore\private\ds\inc\crypto
+4>   /I..\..\inc
+4>   /I..\inc
+4>   /I..\lib
+4>   /Is:\os\public\amd64chk\ddk\inc
+4>   /Is:\os\obj\amd64chk\symcrypt\unittest\exe_legacy\objchk\amd64
+4>   /Is:\os\public\amd64chk\oak\inc
+4>   /Is:\os\public\amd64chk\shared\inc
+4>   /Is:\os\public\amd64chk\onecore\external\shared\inc
+4>   /Is:\os\public\amd64chk\shared\inc\minwin
+4>   /Is:\os\public\amd64chk\onecore\external\shared\inc\minwin
+4>   /Is:\os\public\amd64chk\shared\inc\mincore
+4>   /Is:\os\public\amd64chk\onecore\external\shared\inc\mincore
+4>   /Is:\os\public\amd64chk\shared\inc\clientcore
+4>   /Is:\os\public\amd64chk\onecore\external\shared\inc\clientcore
+4>   /Is:\os\public\amd64chk\shared\inc\moderncore
+4>   /Is:\os\public\amd64chk\onecore\external\shared\inc\moderncore
+4>   /Is:\os\public\amd64chk\sdk\inc
+4>   /Is:\os\public\amd64chk\onecore\external\sdk\inc
+4>   /Is:\os\public\amd64chk\sdk\inc\minwin
+4>   /Is:\os\public\amd64chk\onecore\private\sdk\inc\minwin
+4>   /Is:\os\public\amd64chk\onecore\internal\sdk\inc\minwin
+4>   /Is:\os\public\amd64chk\sdk\inc\mincore
+4>   /Is:\os\public\amd64chk\onecore\internal\sdk\inc\mincore
+4>   /Is:\os\public\amd64chk\sdk\inc\clientcore
+4>   /Is:\os\public\amd64chk\onecore\internal\sdk\inc\clientcore
+4>   /Is:\os\public\amd64chk\sdk\inc\moderncore
+4>   /Is:\os\public\amd64chk\onecore\internal\sdk\inc\moderncore
+4>   /Is:\os\public\amd64chk\shared\inc
+4>   /Is:\os\public\amd64chk\onecore\external\shared\inc
+4>   /Is:\os\public\amd64chk\ddk\inc
+4>   /Is:\os\public\amd64chk\onecore\external\ddk\inc
+4>   /Is:\os\public\amd64chk\ddk\inc\wdm
+4>   /Is:\os\public\amd64chk\internal\sdk\inc
+4>   /Is:\os\public\amd64chk\onecore\private\sdk\inc
+4>   /Is:\os\public\amd64chk\onecore\internal\sdk\inc
+4>   /Is:\os\public\amd64chk\onecoreuap\private\sdk\inc
+4>   /Is:\os\public\amd64chk\internal\sdk\inc\minwin
+4>   /Is:\os\public\amd64chk\onecore\internal\sdk\inc\minwin
+4>   /Is:\os\public\amd64chk\internal\sdk\inc\minwin\fs
+4>   /Is:\os\public\amd64chk\onecore\internal\sdk\inc\minwin\fs
+4>   /Is:\os\public\amd64chk\internal\sdk\inc\mincore
+4>   /Is:\os\public\amd64chk\onecore\internal\sdk\inc\mincore
+4>   /Is:\os\public\amd64chk\internal\sdk\inc\clientcore
+4>   /Is:\os\public\amd64chk\onecore\internal\sdk\inc\clientcore
+4>   /Is:\os\public\amd64chk\internal\sdk\inc\moderncore
+4>   /Is:\os\public\amd64chk\onecore\internal\sdk\inc\moderncore
+4>   /Is:\os\public\amd64chk\internal\oak\inc
+4>   /Is:\os\public\amd64chk\sdk\inc\crt
+4>   /Is:\os\public\amd64chk\sdk\inc\crt\stl70
+4>   /D_WIN64
+4>   /D_AMD64_
+4>   /DAMD64
+4>   /DCONDITION_HANDLING=1
+4>   /DNT_UP=1
+4>   /DNT_INST=0
+4>   /DWIN32=100
+4>   /D_NT1X_=100
+4>   /DWINNT=1
+4>   /D_WIN32_WINNT=0x0600
+4>   /DWINVER=0x0600
+4>   /D_WIN32_IE=0x0700
+4>   /DWIN32_LEAN_AND_MEAN=1
+4>   /DDEVL=1
+4>   /DDBG=1
+4>   /D_STATIC_CPPLIB
+4>   /D_STL70_
+4>   /D_DLL=1
+4>   /D_MT=1
+4>   -DTESTDRIVER_NAME=\"SymCryptDriver_legacy.sys\"
+4>   /D_USE_DEV11_CRT
+4>   /DTEST_CODE
+4>   -D_APISET_WINDOWS_VERSION=0x601
+4>   -D_APISET_MINWIN_VERSION=0x0100
+4>   -D_APISET_MINCORE_VERSION=0x0100
+4>   /DNTDDI_VERSION=0x06000100
+4>   /DWINBLUE_KBSPRING14
+4>   /DBUILD_WINDOWS
+4>   /D__WRL_CONFIGURATION_LEGACY__
+4>   /DBUILD_UMS_ENABLED=1
+4>   /DBUILD_WOW64_ENABLED=1
+4>   -D_USE_DECLSPECS_FOR_SAL=1
+4>   -D_CONTROL_FLOW_GUARD=1
+4>   -D_CONTROL_FLOW_GUARD_SVCTAB=1
+4>   /c
+4>   /Zc:wchar_t-
+4>   /Zl
+4>   /Zp8
+4>   /Gy
+4>   /W4
+4>   /d1import_no_registry
+4>   /EHsc
+4>   /GR
+4>   /GF
+4>   /GS
+4>   /Z7
+4>   /Oxs
+4>   /GL
+4>   /Z7
+4>   -Zc:alignedNew-
+4>   /d2NoSmallFunctionOpt
+4>   -Zc:noexceptTypes-
+4>   /w15043
+4>   /D_CRT_STDIO_IMP=
+4>   /D_CRT_STDIO_IMP_ALT=
+4>   /D_FULL_IOBUF
+4>   /d1trimfile:s:\os\src\=BASEDIR
+4>   /d1trimfile:s:\os\public\amd64chk\=PUBLIC_ROOT
+4>   /d1trimfile:s:\os\obj\amd64chk\=OBJECT_ROOT
+4>   /d1trimfile:s:\os\bin\amd64chk\=_NTTREE
+4>   /d2AllowCompatibleILVersions
+4>   /d2Zi+
+4>   /ZH:SHA_256
+4>   /wd4986
+4>   /wd4987
+4>   /wd4471
+4>   /wd4369
+4>   /wd4309
+4>   /wd4754
+4>   /wd4427
+4>   /d2Qvec-mathlib-
+4>   /d2Qvec-sse2only
+4>   /Gw
+4>   /d1ignorePragmaWarningError
+4>   /wd4316
+4>   /wd4973
+4>   /DDONT_DISABLE_PCH_WARNINGS_IN_WARNING_H
+4>   /Brepro
+4>   -D_HAS_MAGIC_STATICS=1
+4>   -Zc:sizedDealloc-
+4>   /Wv:19.11
+4>   -d1vc7dname
+4>   /Qspectre
+4>   /d2guard4
+4>   /d2nocfgrngchk
+4>   /d2guardcfgfuncptr
+4>   /d2psvcallopt150000
+4>   /homeparams
+4>   /FIs:\os\public\amd64chk\internal\sdk\inc\warning.h
+4>   /FIs:\os\public\amd64chk\internal\onecoresdktools\inc\testcode.h
+4>   /Ylsymcryptunittest_legacy /Ycprecomp.h /Fps:\os\obj\amd64chk\symcrypt\unittest\exe_legacy\objchk\amd64\precomp.pch /Fo"s:\os\obj\amd64chk\symcrypt\unittest\exe_legacy\objchk\amd64\precomp.obj"
+4>pch_hdr.src
+4> s:\os\tools\vc\HostX86\amd64\cl.exe @s:\os\obj\amd64chk\Temp\symcrypt\unittest\exe_legacy\cl_1.rsp
+4>Microsoft (R) C/C++ Optimizing Compiler Version 19.15.26715 for x64
+4>Copyright (C) Microsoft Corporation.  All rights reserved.
+4>cl /Fo"s:\os\obj\amd64chk\symcrypt\unittest\exe_legacy\objchk\amd64/"
+4>   /FC
+4>   /Iamd64\
+4>   /I.
+4>   /Is:\os\src\data\MSRC
+4>   /Is:\os\src\onecore\ds\security\cryptoapi\inc\cryptolegacy
+4>   /Is:\os\public\amd64chk\internal\DS\inc
+4>   /Is:\os\public\amd64chk\internal\DS\inc\crypto
+4>   /Is:\os\public\amd64chk\internal\onecoreds\inc\crypto
+4>   /Is:\os\public\amd64chk\onecore\private\ds\inc\crypto
+4>   /I..\..\inc
+4>   /I..\inc
+4>   /I..\lib
+4>   /Is:\os\public\amd64chk\ddk\inc
+4>   /Is:\os\obj\amd64chk\symcrypt\unittest\exe_legacy\objchk\amd64
+4>   /Is:\os\public\amd64chk\oak\inc
+4>   /Is:\os\public\amd64chk\shared\inc
+4>   /Is:\os\public\amd64chk\onecore\external\shared\inc
+4>   /Is:\os\public\amd64chk\shared\inc\minwin
+4>   /Is:\os\public\amd64chk\onecore\external\shared\inc\minwin
+4>   /Is:\os\public\amd64chk\shared\inc\mincore
+4>   /Is:\os\public\amd64chk\onecore\external\shared\inc\mincore
+4>   /Is:\os\public\amd64chk\shared\inc\clientcore
+4>   /Is:\os\public\amd64chk\onecore\external\shared\inc\clientcore
+4>   /Is:\os\public\amd64chk\shared\inc\moderncore
+4>   /Is:\os\public\amd64chk\onecore\external\shared\inc\moderncore
+4>   /Is:\os\public\amd64chk\sdk\inc
+4>   /Is:\os\public\amd64chk\onecore\external\sdk\inc
+4>   /Is:\os\public\amd64chk\sdk\inc\minwin
+4>   /Is:\os\public\amd64chk\onecore\private\sdk\inc\minwin
+4>   /Is:\os\public\amd64chk\onecore\internal\sdk\inc\minwin
+4>   /Is:\os\public\amd64chk\sdk\inc\mincore
+4>   /Is:\os\public\amd64chk\onecore\internal\sdk\inc\mincore
+4>   /Is:\os\public\amd64chk\sdk\inc\clientcore
+4>   /Is:\os\public\amd64chk\onecore\internal\sdk\inc\clientcore
+4>   /Is:\os\public\amd64chk\sdk\inc\moderncore
+4>   /Is:\os\public\amd64chk\onecore\internal\sdk\inc\moderncore
+4>   /Is:\os\public\amd64chk\shared\inc
+4>   /Is:\os\public\amd64chk\onecore\external\shared\inc
+4>   /Is:\os\public\amd64chk\ddk\inc
+4>   /Is:\os\public\amd64chk\onecore\external\ddk\inc
+4>   /Is:\os\public\amd64chk\ddk\inc\wdm
+4>   /Is:\os\public\amd64chk\internal\sdk\inc
+4>   /Is:\os\public\amd64chk\onecore\private\sdk\inc
+4>   /Is:\os\public\amd64chk\onecore\internal\sdk\inc
+4>   /Is:\os\public\amd64chk\onecoreuap\private\sdk\inc
+4>   /Is:\os\public\amd64chk\internal\sdk\inc\minwin
+4>   /Is:\os\public\amd64chk\onecore\internal\sdk\inc\minwin
+4>   /Is:\os\public\amd64chk\internal\sdk\inc\minwin\fs
+4>   /Is:\os\public\amd64chk\onecore\internal\sdk\inc\minwin\fs
+4>   /Is:\os\public\amd64chk\internal\sdk\inc\mincore
+4>   /Is:\os\public\amd64chk\onecore\internal\sdk\inc\mincore
+4>   /Is:\os\public\amd64chk\internal\sdk\inc\clientcore
+4>   /Is:\os\public\amd64chk\onecore\internal\sdk\inc\clientcore
+4>   /Is:\os\public\amd64chk\internal\sdk\inc\moderncore
+4>   /Is:\os\public\amd64chk\onecore\internal\sdk\inc\moderncore
+4>   /Is:\os\public\amd64chk\internal\oak\inc
+4>   /Is:\os\public\amd64chk\sdk\inc\crt
+4>   /Is:\os\public\amd64chk\sdk\inc\crt\stl70
+4>   /D_WIN64
+4>   /D_AMD64_
+4>   /DAMD64
+4>   /DCONDITION_HANDLING=1
+4>   /DNT_UP=1
+4>   /DNT_INST=0
+4>   /DWIN32=100
+4>   /D_NT1X_=100
+4>   /DWINNT=1
+4>   /D_WIN32_WINNT=0x0600
+4>   /DWINVER=0x0600
+4>   /D_WIN32_IE=0x0700
+4>   /DWIN32_LEAN_AND_MEAN=1
+4>   /DDEVL=1
+4>   /DDBG=1
+4>   /D_STATIC_CPPLIB
+4>   /D_STL70_
+4>   /D_DLL=1
+4>   /D_MT=1
+4>   -DTESTDRIVER_NAME=\"SymCryptDriver_legacy.sys\"
+4>   /D_USE_DEV11_CRT
+4>   /DTEST_CODE
+4>   -D_APISET_WINDOWS_VERSION=0x601
+4>   -D_APISET_MINWIN_VERSION=0x0100
+4>   -D_APISET_MINCORE_VERSION=0x0100
+4>   /DNTDDI_VERSION=0x06000100
+4>   /DWINBLUE_KBSPRING14
+4>   /DBUILD_WINDOWS
+4>   /D__WRL_CONFIGURATION_LEGACY__
+4>   /DBUILD_UMS_ENABLED=1
+4>   /DBUILD_WOW64_ENABLED=1
+4>   -D_USE_DECLSPECS_FOR_SAL=1
+4>   -D_CONTROL_FLOW_GUARD=1
+4>   -D_CONTROL_FLOW_GUARD_SVCTAB=1
+4>   /c
+4>   /Zc:wchar_t-
+4>   /Zl
+4>   /Zp8
+4>   /Gy
+4>   /W4
+4>   /d1import_no_registry
+4>   /EHsc
+4>   /GR
+4>   /GF
+4>   /GS
+4>   /Z7
+4>   /Oxs
+4>   /GL
+4>   /Z7
+4>   -Zc:alignedNew-
+4>   /d2NoSmallFunctionOpt
+4>   -Zc:noexceptTypes-
+4>   /w15043
+4>   /D_CRT_STDIO_IMP=
+4>   /D_CRT_STDIO_IMP_ALT=
+4>   /D_FULL_IOBUF
+4>   /d1trimfile:s:\os\src\=BASEDIR
+4>   /d1trimfile:s:\os\public\amd64chk\=PUBLIC_ROOT
+4>   /d1trimfile:s:\os\obj\amd64chk\=OBJECT_ROOT
+4>   /d1trimfile:s:\os\bin\amd64chk\=_NTTREE
+4>   /d2AllowCompatibleILVersions
+4>   /d2Zi+
+4>   /ZH:SHA_256
+4>   /wd4986
+4>   /wd4987
+4>   /wd4471
+4>   /wd4369
+4>   /wd4309
+4>   /wd4754
+4>   /wd4427
+4>   /d2Qvec-mathlib-
+4>   /d2Qvec-sse2only
+4>   /Gw
+4>   /d1ignorePragmaWarningError
+4>   /wd4316
+4>   /wd4973
+4>   /DDONT_DISABLE_PCH_WARNINGS_IN_WARNING_H
+4>   /Brepro
+4>   -D_HAS_MAGIC_STATICS=1
+4>   -Zc:sizedDealloc-
+4>   /Wv:19.11
+4>   -d1vc7dname
+4>   /Qspectre
+4>   /d2guard4
+4>   /d2nocfgrngchk
+4>   /d2guardcfgfuncptr
+4>   /d2psvcallopt150000
+4>   /homeparams
+4>   /FIs:\os\public\amd64chk\internal\sdk\inc\warning.h
+4>   /FIs:\os\public\amd64chk\internal\onecoresdktools\inc\testcode.h
+4>   /Yuprecomp.h
+4>   /Fps:\os\obj\amd64chk\symcrypt\unittest\exe_legacy\objchk\amd64\precomp.pch
+4>   .\main_exe.cpp 
+4>main_exe.cpp
+5>STL version 70 used in "s:\os\src\symcrypt\unittest\exe_win8_1nlater" (STL_VER_TELEMETRY)
+5>s:\os\src\symcrypt\unittest\exe_win8_1nlater building test code in dev tree
+5> set > s:\os\obj\amd64chk\symcrypt\unittest\exe_win8_1nlater\objchk\amd64\_PASS1_Marker.log
+5>s:\os\tools\vc\HostX86\amd64\cl.exe /Iamd64\ /I. /Is:\os\src\data\MSRC /Is:\os\src\onecore\ds\security\cryptoapi\inc\cryptolegacy /Is:\os\public\amd64chk\internal\DS\inc /Is:\os\public\amd64chk\internal\DS\inc\crypto /Is:\os\public\amd64chk\internal\onecoreds\inc\crypto /Is:\os\public\amd64chk\onecore\private\ds\inc\crypto /I..\..\inc /I..\inc /I..\lib /Is:\os\public\amd64chk\ddk\inc /Is:\os\obj\amd64chk\symcrypt\unittest\exe_win8_1nlater\objchk\amd64 /Is:\os\public\amd64chk\oak\inc /Is:\os\public\amd64chk\shared\inc /Is:\os\public\amd64chk\onecore\external\shared\inc /Is:\os\public\amd64chk\shared\inc\minwin /Is:\os\public\amd64chk\onecore\external\shared\inc\minwin /Is:\os\public\amd64chk\shared\inc\mincore /Is:\os\public\amd64chk\onecore\external\shared\inc\mincore /Is:\os\public\amd64chk\shared\inc\clientcore /Is:\os\public\amd64chk\onecore\external\shared\inc\clientcore /Is:\os\public\amd64chk\shared\inc\moderncore /Is:\os\public\amd64chk\onecore\external\shared\inc\moderncore /Is:\os\public\amd64chk\sdk\inc /Is:\os\public\amd64chk\onecore\external\sdk\inc /Is:\os\public\amd64chk\sdk\inc\minwin /Is:\os\public\amd64chk\onecore\private\sdk\inc\minwin /Is:\os\public\amd64chk\onecore\internal\sdk\inc\minwin /Is:\os\public\amd64chk\sdk\inc\mincore /Is:\os\public\amd64chk\onecore\internal\sdk\inc\mincore /Is:\os\public\amd64chk\sdk\inc\clientcore /Is:\os\public\amd64chk\onecore\internal\sdk\inc\clientcore /Is:\os\public\amd64chk\sdk\inc\moderncore /Is:\os\public\amd64chk\onecore\internal\sdk\inc\moderncore /Is:\os\public\amd64chk\shared\inc /Is:\os\public\amd64chk\onecore\external\shared\inc /Is:\os\public\amd64chk\ddk\inc /Is:\os\public\amd64chk\onecore\external\ddk\inc /Is:\os\public\amd64chk\ddk\inc\wdm /Is:\os\public\amd64chk\internal\sdk\inc /Is:\os\public\amd64chk\onecore\private\sdk\inc /Is:\os\public\amd64chk\onecore\internal\sdk\inc /Is:\os\public\amd64chk\onecoreuap\private\sdk\inc /Is:\os\public\amd64chk\internal\sdk\inc\minwin /Is:\os\public\amd64chk\onecore\internal\sdk\inc\minwin /Is:\os\public\amd64chk\internal\sdk\inc\minwin\fs /Is:\os\public\amd64chk\onecore\internal\sdk\inc\minwin\fs /Is:\os\public\amd64chk\internal\sdk\inc\mincore /Is:\os\public\amd64chk\onecore\internal\sdk\inc\mincore /Is:\os\public\amd64chk\internal\sdk\inc\clientcore /Is:\os\public\amd64chk\onecore\internal\sdk\inc\clientcore /Is:\os\public\amd64chk\internal\sdk\inc\moderncore /Is:\os\public\amd64chk\onecore\internal\sdk\inc\moderncore /Is:\os\public\amd64chk\internal\oak\inc /Is:\os\public\amd64chk\sdk\inc\crt /Is:\os\public\amd64chk\sdk\inc\crt\stl70 /D_WIN64 /D_AMD64_ /DAMD64 /DCONDITION_HANDLING=1 /DNT_UP=1 /DNT_INST=0 /DWIN32=100 /D_NT1X_=100 /DWINNT=1 /D_WIN32_WINNT=0x0603 /DWINVER=0x0603 /D_WIN32_IE=0x0A00 /DWIN32_LEAN_AND_MEAN=1 /DDEVL=1 /DDBG=1 /D_STATIC_CPPLIB /D_STL70_ /D_DLL=1 /D_MT=1 -DTESTDRIVER_NAME=\"SymCryptDriver_win7nlater.sys\" /D_USE_DEV11_CRT /DTEST_CODE -D_APISET_WINDOWS_VERSION=0x601 -D_APISET_MINWIN_VERSION=0x0102 -D_APISET_MINCORE_VERSION=0x0101 /DNTDDI_VERSION=0x06030000 /DWINBLUE_KBSPRING14 /DBUILD_WINDOWS /D__WRL_CONFIGURATION_LEGACY__ /DBUILD_UMS_ENABLED=1 /DBUILD_WOW64_ENABLED=1 -D_USE_DECLSPECS_FOR_SAL=1 -D_CONTROL_FLOW_GUARD=1 -D_CONTROL_FLOW_GUARD_SVCTAB=1 /c /Zc:wchar_t- /Zl /Zp8 /Gy /W4 /d1import_no_registry /EHsc /GR /GF /GS /Z7 /Oxs /GL /Z7 -Zc:alignedNew- /d2NoSmallFunctionOpt -Zc:noexceptTypes- /w15043 /D_CRT_STDIO_IMP= /D_CRT_STDIO_IMP_ALT= /D_FULL_IOBUF /d1trimfile:s:\os\src\=BASEDIR /d1trimfile:s:\os\public\amd64chk\=PUBLIC_ROOT /d1trimfile:s:\os\obj\amd64chk\=OBJECT_ROOT /d1trimfile:s:\os\bin\amd64chk\=_NTTREE /d2AllowCompatibleILVersions /d2Zi+ /ZH:SHA_256 /wd4986 /wd4987 /wd4471 /wd4369 /wd4309 /wd4754 /wd4427 /d2Qvec-mathlib- /d2Qvec-sse2only /Gw /d1ignorePragmaWarningError /wd4316 /wd4973 /DDONT_DISABLE_PCH_WARNINGS_IN_WARNING_H /Brepro -D_HAS_MAGIC_STATICS=1 -Zc:sizedDealloc- /Wv:19.11 -d1vc7dname /Qspectre /d2guard4 /d2nocfgrngchk /d2guardcfgfuncptr /d2psvcallopt150000 /homeparams /FIs:\os\public\amd64chk\internal\sdk\inc\warning.h /FIs:\os\public\amd64chk\internal\onecoresdktools\inc\testcode.h /Ylsymcryptunittest_Win8_1nLater /Ycprecomp.h /Fps:\os\obj\amd64chk\symcrypt\unittest\exe_win8_1nlater\objchk\amd64\precomp.pch /Fo"s:\os\obj\amd64chk\symcrypt\unittest\exe_win8_1nlater\objchk\amd64\precomp.obj" /Tp
+5>#include "precomp.h"
+5>Microsoft (R) C/C++ Optimizing Compiler Version 19.15.26715 for x64
+5>Copyright (C) Microsoft Corporation.  All rights reserved.
+5>cl 
+5>   /Iamd64\
+5>   /I.
+5>   /Is:\os\src\data\MSRC
+5>   /Is:\os\src\onecore\ds\security\cryptoapi\inc\cryptolegacy
+5>   /Is:\os\public\amd64chk\internal\DS\inc
+5>   /Is:\os\public\amd64chk\internal\DS\inc\crypto
+5>   /Is:\os\public\amd64chk\internal\onecoreds\inc\crypto
+5>   /Is:\os\public\amd64chk\onecore\private\ds\inc\crypto
+5>   /I..\..\inc
+5>   /I..\inc
+5>   /I..\lib
+5>   /Is:\os\public\amd64chk\ddk\inc
+5>   /Is:\os\obj\amd64chk\symcrypt\unittest\exe_win8_1nlater\objchk\amd64
+5>   /Is:\os\public\amd64chk\oak\inc
+5>   /Is:\os\public\amd64chk\shared\inc
+5>   /Is:\os\public\amd64chk\onecore\external\shared\inc
+5>   /Is:\os\public\amd64chk\shared\inc\minwin
+5>   /Is:\os\public\amd64chk\onecore\external\shared\inc\minwin
+5>   /Is:\os\public\amd64chk\shared\inc\mincore
+5>   /Is:\os\public\amd64chk\onecore\external\shared\inc\mincore
+5>   /Is:\os\public\amd64chk\shared\inc\clientcore
+5>   /Is:\os\public\amd64chk\onecore\external\shared\inc\clientcore
+5>   /Is:\os\public\amd64chk\shared\inc\moderncore
+5>   /Is:\os\public\amd64chk\onecore\external\shared\inc\moderncore
+5>   /Is:\os\public\amd64chk\sdk\inc
+5>   /Is:\os\public\amd64chk\onecore\external\sdk\inc
+5>   /Is:\os\public\amd64chk\sdk\inc\minwin
+5>   /Is:\os\public\amd64chk\onecore\private\sdk\inc\minwin
+5>   /Is:\os\public\amd64chk\onecore\internal\sdk\inc\minwin
+5>   /Is:\os\public\amd64chk\sdk\inc\mincore
+5>   /Is:\os\public\amd64chk\onecore\internal\sdk\inc\mincore
+5>   /Is:\os\public\amd64chk\sdk\inc\clientcore
+5>   /Is:\os\public\amd64chk\onecore\internal\sdk\inc\clientcore
+5>   /Is:\os\public\amd64chk\sdk\inc\moderncore
+5>   /Is:\os\public\amd64chk\onecore\internal\sdk\inc\moderncore
+5>   /Is:\os\public\amd64chk\shared\inc
+5>   /Is:\os\public\amd64chk\onecore\external\shared\inc
+5>   /Is:\os\public\amd64chk\ddk\inc
+5>   /Is:\os\public\amd64chk\onecore\external\ddk\inc
+5>   /Is:\os\public\amd64chk\ddk\inc\wdm
+5>   /Is:\os\public\amd64chk\internal\sdk\inc
+5>   /Is:\os\public\amd64chk\onecore\private\sdk\inc
+5>   /Is:\os\public\amd64chk\onecore\internal\sdk\inc
+5>   /Is:\os\public\amd64chk\onecoreuap\private\sdk\inc
+5>   /Is:\os\public\amd64chk\internal\sdk\inc\minwin
+5>   /Is:\os\public\amd64chk\onecore\internal\sdk\inc\minwin
+5>   /Is:\os\public\amd64chk\internal\sdk\inc\minwin\fs
+5>   /Is:\os\public\amd64chk\onecore\internal\sdk\inc\minwin\fs
+5>   /Is:\os\public\amd64chk\internal\sdk\inc\mincore
+5>   /Is:\os\public\amd64chk\onecore\internal\sdk\inc\mincore
+5>   /Is:\os\public\amd64chk\internal\sdk\inc\clientcore
+5>   /Is:\os\public\amd64chk\onecore\internal\sdk\inc\clientcore
+5>   /Is:\os\public\amd64chk\internal\sdk\inc\moderncore
+5>   /Is:\os\public\amd64chk\onecore\internal\sdk\inc\moderncore
+5>   /Is:\os\public\amd64chk\internal\oak\inc
+5>   /Is:\os\public\amd64chk\sdk\inc\crt
+5>   /Is:\os\public\amd64chk\sdk\inc\crt\stl70
+5>   /D_WIN64
+5>   /D_AMD64_
+5>   /DAMD64
+5>   /DCONDITION_HANDLING=1
+5>   /DNT_UP=1
+5>   /DNT_INST=0
+5>   /DWIN32=100
+5>   /D_NT1X_=100
+5>   /DWINNT=1
+5>   /D_WIN32_WINNT=0x0603
+5>   /DWINVER=0x0603
+5>   /D_WIN32_IE=0x0A00
+5>   /DWIN32_LEAN_AND_MEAN=1
+5>   /DDEVL=1
+5>   /DDBG=1
+5>   /D_STATIC_CPPLIB
+5>   /D_STL70_
+5>   /D_DLL=1
+5>   /D_MT=1
+5>   -DTESTDRIVER_NAME=\"SymCryptDriver_win7nlater.sys\"
+5>   /D_USE_DEV11_CRT
+5>   /DTEST_CODE
+5>   -D_APISET_WINDOWS_VERSION=0x601
+5>   -D_APISET_MINWIN_VERSION=0x0102
+5>   -D_APISET_MINCORE_VERSION=0x0101
+5>   /DNTDDI_VERSION=0x06030000
+5>   /DWINBLUE_KBSPRING14
+5>   /DBUILD_WINDOWS
+5>   /D__WRL_CONFIGURATION_LEGACY__
+5>   /DBUILD_UMS_ENABLED=1
+5>   /DBUILD_WOW64_ENABLED=1
+5>   -D_USE_DECLSPECS_FOR_SAL=1
+5>   -D_CONTROL_FLOW_GUARD=1
+5>   -D_CONTROL_FLOW_GUARD_SVCTAB=1
+5>   /c
+5>   /Zc:wchar_t-
+5>   /Zl
+5>   /Zp8
+5>   /Gy
+5>   /W4
+5>   /d1import_no_registry
+5>   /EHsc
+5>   /GR
+5>   /GF
+5>   /GS
+5>   /Z7
+5>   /Oxs
+5>   /GL
+5>   /Z7
+5>   -Zc:alignedNew-
+5>   /d2NoSmallFunctionOpt
+5>   -Zc:noexceptTypes-
+5>   /w15043
+5>   /D_CRT_STDIO_IMP=
+5>   /D_CRT_STDIO_IMP_ALT=
+5>   /D_FULL_IOBUF
+5>   /d1trimfile:s:\os\src\=BASEDIR
+5>   /d1trimfile:s:\os\public\amd64chk\=PUBLIC_ROOT
+5>   /d1trimfile:s:\os\obj\amd64chk\=OBJECT_ROOT
+5>   /d1trimfile:s:\os\bin\amd64chk\=_NTTREE
+5>   /d2AllowCompatibleILVersions
+5>   /d2Zi+
+5>   /ZH:SHA_256
+5>   /wd4986
+5>   /wd4987
+5>   /wd4471
+5>   /wd4369
+5>   /wd4309
+5>   /wd4754
+5>   /wd4427
+5>   /d2Qvec-mathlib-
+5>   /d2Qvec-sse2only
+5>   /Gw
+5>   /d1ignorePragmaWarningError
+5>   /wd4316
+5>   /wd4973
+5>   /DDONT_DISABLE_PCH_WARNINGS_IN_WARNING_H
+5>   /Brepro
+5>   -D_HAS_MAGIC_STATICS=1
+5>   -Zc:sizedDealloc-
+5>   /Wv:19.11
+5>   -d1vc7dname
+5>   /Qspectre
+5>   /d2guard4
+5>   /d2nocfgrngchk
+5>   /d2guardcfgfuncptr
+5>   /d2psvcallopt150000
+5>   /homeparams
+5>   /FIs:\os\public\amd64chk\internal\sdk\inc\warning.h
+5>   /FIs:\os\public\amd64chk\internal\onecoresdktools\inc\testcode.h
+5>   /Ylsymcryptunittest_Win8_1nLater /Ycprecomp.h /Fps:\os\obj\amd64chk\symcrypt\unittest\exe_win8_1nlater\objchk\amd64\precomp.pch /Fo"s:\os\obj\amd64chk\symcrypt\unittest\exe_win8_1nlater\objchk\amd64\precomp.obj"
+5>pch_hdr.src
+5> s:\os\tools\vc\HostX86\amd64\cl.exe @s:\os\obj\amd64chk\Temp\symcrypt\unittest\exe_win8_1nlater\cl_1.rsp
+5>Microsoft (R) C/C++ Optimizing Compiler Version 19.15.26715 for x64
+5>Copyright (C) Microsoft Corporation.  All rights reserved.
+5>cl /Fo"s:\os\obj\amd64chk\symcrypt\unittest\exe_win8_1nlater\objchk\amd64/"
+5>   /FC
+5>   /Iamd64\
+5>   /I.
+5>   /Is:\os\src\data\MSRC
+5>   /Is:\os\src\onecore\ds\security\cryptoapi\inc\cryptolegacy
+5>   /Is:\os\public\amd64chk\internal\DS\inc
+5>   /Is:\os\public\amd64chk\internal\DS\inc\crypto
+5>   /Is:\os\public\amd64chk\internal\onecoreds\inc\crypto
+5>   /Is:\os\public\amd64chk\onecore\private\ds\inc\crypto
+5>   /I..\..\inc
+5>   /I..\inc
+5>   /I..\lib
+5>   /Is:\os\public\amd64chk\ddk\inc
+5>   /Is:\os\obj\amd64chk\symcrypt\unittest\exe_win8_1nlater\objchk\amd64
+5>   /Is:\os\public\amd64chk\oak\inc
+5>   /Is:\os\public\amd64chk\shared\inc
+5>   /Is:\os\public\amd64chk\onecore\external\shared\inc
+5>   /Is:\os\public\amd64chk\shared\inc\minwin
+5>   /Is:\os\public\amd64chk\onecore\external\shared\inc\minwin
+5>   /Is:\os\public\amd64chk\shared\inc\mincore
+5>   /Is:\os\public\amd64chk\onecore\external\shared\inc\mincore
+5>   /Is:\os\public\amd64chk\shared\inc\clientcore
+5>   /Is:\os\public\amd64chk\onecore\external\shared\inc\clientcore
+5>   /Is:\os\public\amd64chk\shared\inc\moderncore
+5>   /Is:\os\public\amd64chk\onecore\external\shared\inc\moderncore
+5>   /Is:\os\public\amd64chk\sdk\inc
+5>   /Is:\os\public\amd64chk\onecore\external\sdk\inc
+5>   /Is:\os\public\amd64chk\sdk\inc\minwin
+5>   /Is:\os\public\amd64chk\onecore\private\sdk\inc\minwin
+5>   /Is:\os\public\amd64chk\onecore\internal\sdk\inc\minwin
+5>   /Is:\os\public\amd64chk\sdk\inc\mincore
+5>   /Is:\os\public\amd64chk\onecore\internal\sdk\inc\mincore
+5>   /Is:\os\public\amd64chk\sdk\inc\clientcore
+5>   /Is:\os\public\amd64chk\onecore\internal\sdk\inc\clientcore
+5>   /Is:\os\public\amd64chk\sdk\inc\moderncore
+5>   /Is:\os\public\amd64chk\onecore\internal\sdk\inc\moderncore
+5>   /Is:\os\public\amd64chk\shared\inc
+5>   /Is:\os\public\amd64chk\onecore\external\shared\inc
+5>   /Is:\os\public\amd64chk\ddk\inc
+5>   /Is:\os\public\amd64chk\onecore\external\ddk\inc
+5>   /Is:\os\public\amd64chk\ddk\inc\wdm
+5>   /Is:\os\public\amd64chk\internal\sdk\inc
+5>   /Is:\os\public\amd64chk\onecore\private\sdk\inc
+5>   /Is:\os\public\amd64chk\onecore\internal\sdk\inc
+5>   /Is:\os\public\amd64chk\onecoreuap\private\sdk\inc
+5>   /Is:\os\public\amd64chk\internal\sdk\inc\minwin
+5>   /Is:\os\public\amd64chk\onecore\internal\sdk\inc\minwin
+5>   /Is:\os\public\amd64chk\internal\sdk\inc\minwin\fs
+5>   /Is:\os\public\amd64chk\onecore\internal\sdk\inc\minwin\fs
+5>   /Is:\os\public\amd64chk\internal\sdk\inc\mincore
+5>   /Is:\os\public\amd64chk\onecore\internal\sdk\inc\mincore
+5>   /Is:\os\public\amd64chk\internal\sdk\inc\clientcore
+5>   /Is:\os\public\amd64chk\onecore\internal\sdk\inc\clientcore
+5>   /Is:\os\public\amd64chk\internal\sdk\inc\moderncore
+5>   /Is:\os\public\amd64chk\onecore\internal\sdk\inc\moderncore
+5>   /Is:\os\public\amd64chk\internal\oak\inc
+5>   /Is:\os\public\amd64chk\sdk\inc\crt
+5>   /Is:\os\public\amd64chk\sdk\inc\crt\stl70
+5>   /D_WIN64
+5>   /D_AMD64_
+5>   /DAMD64
+5>   /DCONDITION_HANDLING=1
+5>   /DNT_UP=1
+5>   /DNT_INST=0
+5>   /DWIN32=100
+5>   /D_NT1X_=100
+5>   /DWINNT=1
+5>   /D_WIN32_WINNT=0x0603
+5>   /DWINVER=0x0603
+5>   /D_WIN32_IE=0x0A00
+5>   /DWIN32_LEAN_AND_MEAN=1
+5>   /DDEVL=1
+5>   /DDBG=1
+5>   /D_STATIC_CPPLIB
+5>   /D_STL70_
+5>   /D_DLL=1
+5>   /D_MT=1
+5>   -DTESTDRIVER_NAME=\"SymCryptDriver_win7nlater.sys\"
+5>   /D_USE_DEV11_CRT
+5>   /DTEST_CODE
+5>   -D_APISET_WINDOWS_VERSION=0x601
+5>   -D_APISET_MINWIN_VERSION=0x0102
+5>   -D_APISET_MINCORE_VERSION=0x0101
+5>   /DNTDDI_VERSION=0x06030000
+5>   /DWINBLUE_KBSPRING14
+5>   /DBUILD_WINDOWS
+5>   /D__WRL_CONFIGURATION_LEGACY__
+5>   /DBUILD_UMS_ENABLED=1
+5>   /DBUILD_WOW64_ENABLED=1
+5>   -D_USE_DECLSPECS_FOR_SAL=1
+5>   -D_CONTROL_FLOW_GUARD=1
+5>   -D_CONTROL_FLOW_GUARD_SVCTAB=1
+5>   /c
+5>   /Zc:wchar_t-
+5>   /Zl
+5>   /Zp8
+5>   /Gy
+5>   /W4
+5>   /d1import_no_registry
+5>   /EHsc
+5>   /GR
+5>   /GF
+5>   /GS
+5>   /Z7
+5>   /Oxs
+5>   /GL
+5>   /Z7
+5>   -Zc:alignedNew-
+5>   /d2NoSmallFunctionOpt
+5>   -Zc:noexceptTypes-
+5>   /w15043
+5>   /D_CRT_STDIO_IMP=
+5>   /D_CRT_STDIO_IMP_ALT=
+5>   /D_FULL_IOBUF
+5>   /d1trimfile:s:\os\src\=BASEDIR
+5>   /d1trimfile:s:\os\public\amd64chk\=PUBLIC_ROOT
+5>   /d1trimfile:s:\os\obj\amd64chk\=OBJECT_ROOT
+5>   /d1trimfile:s:\os\bin\amd64chk\=_NTTREE
+5>   /d2AllowCompatibleILVersions
+5>   /d2Zi+
+5>   /ZH:SHA_256
+5>   /wd4986
+5>   /wd4987
+5>   /wd4471
+5>   /wd4369
+5>   /wd4309
+5>   /wd4754
+5>   /wd4427
+5>   /d2Qvec-mathlib-
+5>   /d2Qvec-sse2only
+5>   /Gw
+5>   /d1ignorePragmaWarningError
+5>   /wd4316
+5>   /wd4973
+5>   /DDONT_DISABLE_PCH_WARNINGS_IN_WARNING_H
+5>   /Brepro
+5>   -D_HAS_MAGIC_STATICS=1
+5>   -Zc:sizedDealloc-
+5>   /Wv:19.11
+5>   -d1vc7dname
+5>   /Qspectre
+5>   /d2guard4
+5>   /d2nocfgrngchk
+5>   /d2guardcfgfuncptr
+5>   /d2psvcallopt150000
+5>   /homeparams
+5>   /FIs:\os\public\amd64chk\internal\sdk\inc\warning.h
+5>   /FIs:\os\public\amd64chk\internal\onecoresdktools\inc\testcode.h
+5>   /Yuprecomp.h
+5>   /Fps:\os\obj\amd64chk\symcrypt\unittest\exe_win8_1nlater\objchk\amd64\precomp.pch
+5>   .\main_exe.cpp 
+5>main_exe.cpp
+6>STL version 70 used in "s:\os\src\symcrypt\unittest\exe_win7nlater" (STL_VER_TELEMETRY)
+6>s:\os\src\symcrypt\unittest\exe_win7nlater building test code in dev tree
+6> set > s:\os\obj\amd64chk\symcrypt\unittest\exe_win7nlater\objchk\amd64\_PASS1_Marker.log
+6>s:\os\tools\vc\HostX86\amd64\cl.exe /Iamd64\ /I. /Is:\os\src\data\MSRC /Is:\os\src\onecore\ds\security\cryptoapi\inc\cryptolegacy /Is:\os\public\amd64chk\internal\DS\inc /Is:\os\public\amd64chk\internal\DS\inc\crypto /Is:\os\public\amd64chk\internal\onecoreds\inc\crypto /Is:\os\public\amd64chk\onecore\private\ds\inc\crypto /I..\..\inc /I..\inc /I..\lib /Is:\os\public\amd64chk\ddk\inc /Is:\os\obj\amd64chk\symcrypt\unittest\exe_win7nlater\objchk\amd64 /Is:\os\public\amd64chk\oak\inc /Is:\os\public\amd64chk\shared\inc /Is:\os\public\amd64chk\onecore\external\shared\inc /Is:\os\public\amd64chk\shared\inc\minwin /Is:\os\public\amd64chk\onecore\external\shared\inc\minwin /Is:\os\public\amd64chk\shared\inc\mincore /Is:\os\public\amd64chk\onecore\external\shared\inc\mincore /Is:\os\public\amd64chk\shared\inc\clientcore /Is:\os\public\amd64chk\onecore\external\shared\inc\clientcore /Is:\os\public\amd64chk\shared\inc\moderncore /Is:\os\public\amd64chk\onecore\external\shared\inc\moderncore /Is:\os\public\amd64chk\sdk\inc /Is:\os\public\amd64chk\onecore\external\sdk\inc /Is:\os\public\amd64chk\sdk\inc\minwin /Is:\os\public\amd64chk\onecore\private\sdk\inc\minwin /Is:\os\public\amd64chk\onecore\internal\sdk\inc\minwin /Is:\os\public\amd64chk\sdk\inc\mincore /Is:\os\public\amd64chk\onecore\internal\sdk\inc\mincore /Is:\os\public\amd64chk\sdk\inc\clientcore /Is:\os\public\amd64chk\onecore\internal\sdk\inc\clientcore /Is:\os\public\amd64chk\sdk\inc\moderncore /Is:\os\public\amd64chk\onecore\internal\sdk\inc\moderncore /Is:\os\public\amd64chk\shared\inc /Is:\os\public\amd64chk\onecore\external\shared\inc /Is:\os\public\amd64chk\ddk\inc /Is:\os\public\amd64chk\onecore\external\ddk\inc /Is:\os\public\amd64chk\ddk\inc\wdm /Is:\os\public\amd64chk\internal\sdk\inc /Is:\os\public\amd64chk\onecore\private\sdk\inc /Is:\os\public\amd64chk\onecore\internal\sdk\inc /Is:\os\public\amd64chk\onecoreuap\private\sdk\inc /Is:\os\public\amd64chk\internal\sdk\inc\minwin /Is:\os\public\amd64chk\onecore\internal\sdk\inc\minwin /Is:\os\public\amd64chk\internal\sdk\inc\minwin\fs /Is:\os\public\amd64chk\onecore\internal\sdk\inc\minwin\fs /Is:\os\public\amd64chk\internal\sdk\inc\mincore /Is:\os\public\amd64chk\onecore\internal\sdk\inc\mincore /Is:\os\public\amd64chk\internal\sdk\inc\clientcore /Is:\os\public\amd64chk\onecore\internal\sdk\inc\clientcore /Is:\os\public\amd64chk\internal\sdk\inc\moderncore /Is:\os\public\amd64chk\onecore\internal\sdk\inc\moderncore /Is:\os\public\amd64chk\internal\oak\inc /Is:\os\public\amd64chk\sdk\inc\crt /Is:\os\public\amd64chk\sdk\inc\crt\stl70 /D_WIN64 /D_AMD64_ /DAMD64 /DCONDITION_HANDLING=1 /DNT_UP=1 /DNT_INST=0 /DWIN32=100 /D_NT1X_=100 /DWINNT=1 /D_WIN32_WINNT=0x0601 /DWINVER=0x0601 /D_WIN32_IE=0x0800 /DWIN32_LEAN_AND_MEAN=1 /DDEVL=1 /DDBG=1 /D_STATIC_CPPLIB /D_STL70_ /D_DLL=1 /D_MT=1 -DTESTDRIVER_NAME=\"SymCryptDriver_win7nlater.sys\" /D_USE_DEV11_CRT /DTEST_CODE -D_APISET_WINDOWS_VERSION=0x601 -D_APISET_MINWIN_VERSION=0x0100 -D_APISET_MINCORE_VERSION=0x0100 /DNTDDI_VERSION=0x06010000 /DWINBLUE_KBSPRING14 /DBUILD_WINDOWS /D__WRL_CONFIGURATION_LEGACY__ /DBUILD_UMS_ENABLED=1 /DBUILD_WOW64_ENABLED=1 -D_USE_DECLSPECS_FOR_SAL=1 -D_CONTROL_FLOW_GUARD=1 -D_CONTROL_FLOW_GUARD_SVCTAB=1 /c /Zc:wchar_t- /Zl /Zp8 /Gy /W4 /d1import_no_registry /EHsc /GR /GF /GS /Z7 /Oxs /GL /Z7 -Zc:alignedNew- /d2NoSmallFunctionOpt -Zc:noexceptTypes- /w15043 /D_CRT_STDIO_IMP= /D_CRT_STDIO_IMP_ALT= /D_FULL_IOBUF /d1trimfile:s:\os\src\=BASEDIR /d1trimfile:s:\os\public\amd64chk\=PUBLIC_ROOT /d1trimfile:s:\os\obj\amd64chk\=OBJECT_ROOT /d1trimfile:s:\os\bin\amd64chk\=_NTTREE /d2AllowCompatibleILVersions /d2Zi+ /ZH:SHA_256 /wd4986 /wd4987 /wd4471 /wd4369 /wd4309 /wd4754 /wd4427 /d2Qvec-mathlib- /d2Qvec-sse2only /Gw /d1ignorePragmaWarningError /wd4316 /wd4973 /DDONT_DISABLE_PCH_WARNINGS_IN_WARNING_H /Brepro -D_HAS_MAGIC_STATICS=1 -Zc:sizedDealloc- /Wv:19.11 -d1vc7dname /Qspectre /d2guard4 /d2nocfgrngchk /d2guardcfgfuncptr /d2psvcallopt150000 /homeparams /FIs:\os\public\amd64chk\internal\sdk\inc\warning.h /FIs:\os\public\amd64chk\internal\onecoresdktools\inc\testcode.h /Ylsymcryptunittest_Win7nLater /Ycprecomp.h /Fps:\os\obj\amd64chk\symcrypt\unittest\exe_win7nlater\objchk\amd64\precomp.pch /Fo"s:\os\obj\amd64chk\symcrypt\unittest\exe_win7nlater\objchk\amd64\precomp.obj" /Tp
+6>#include "precomp.h"
+6>Microsoft (R) C/C++ Optimizing Compiler Version 19.15.26715 for x64
+6>Copyright (C) Microsoft Corporation.  All rights reserved.
+6>cl 
+6>   /Iamd64\
+6>   /I.
+6>   /Is:\os\src\data\MSRC
+6>   /Is:\os\src\onecore\ds\security\cryptoapi\inc\cryptolegacy
+6>   /Is:\os\public\amd64chk\internal\DS\inc
+6>   /Is:\os\public\amd64chk\internal\DS\inc\crypto
+6>   /Is:\os\public\amd64chk\internal\onecoreds\inc\crypto
+6>   /Is:\os\public\amd64chk\onecore\private\ds\inc\crypto
+6>   /I..\..\inc
+6>   /I..\inc
+6>   /I..\lib
+6>   /Is:\os\public\amd64chk\ddk\inc
+6>   /Is:\os\obj\amd64chk\symcrypt\unittest\exe_win7nlater\objchk\amd64
+6>   /Is:\os\public\amd64chk\oak\inc
+6>   /Is:\os\public\amd64chk\shared\inc
+6>   /Is:\os\public\amd64chk\onecore\external\shared\inc
+6>   /Is:\os\public\amd64chk\shared\inc\minwin
+6>   /Is:\os\public\amd64chk\onecore\external\shared\inc\minwin
+6>   /Is:\os\public\amd64chk\shared\inc\mincore
+6>   /Is:\os\public\amd64chk\onecore\external\shared\inc\mincore
+6>   /Is:\os\public\amd64chk\shared\inc\clientcore
+6>   /Is:\os\public\amd64chk\onecore\external\shared\inc\clientcore
+6>   /Is:\os\public\amd64chk\shared\inc\moderncore
+6>   /Is:\os\public\amd64chk\onecore\external\shared\inc\moderncore
+6>   /Is:\os\public\amd64chk\sdk\inc
+6>   /Is:\os\public\amd64chk\onecore\external\sdk\inc
+6>   /Is:\os\public\amd64chk\sdk\inc\minwin
+6>   /Is:\os\public\amd64chk\onecore\private\sdk\inc\minwin
+6>   /Is:\os\public\amd64chk\onecore\internal\sdk\inc\minwin
+6>   /Is:\os\public\amd64chk\sdk\inc\mincore
+6>   /Is:\os\public\amd64chk\onecore\internal\sdk\inc\mincore
+6>   /Is:\os\public\amd64chk\sdk\inc\clientcore
+6>   /Is:\os\public\amd64chk\onecore\internal\sdk\inc\clientcore
+6>   /Is:\os\public\amd64chk\sdk\inc\moderncore
+6>   /Is:\os\public\amd64chk\onecore\internal\sdk\inc\moderncore
+6>   /Is:\os\public\amd64chk\shared\inc
+6>   /Is:\os\public\amd64chk\onecore\external\shared\inc
+6>   /Is:\os\public\amd64chk\ddk\inc
+6>   /Is:\os\public\amd64chk\onecore\external\ddk\inc
+6>   /Is:\os\public\amd64chk\ddk\inc\wdm
+6>   /Is:\os\public\amd64chk\internal\sdk\inc
+6>   /Is:\os\public\amd64chk\onecore\private\sdk\inc
+6>   /Is:\os\public\amd64chk\onecore\internal\sdk\inc
+6>   /Is:\os\public\amd64chk\onecoreuap\private\sdk\inc
+6>   /Is:\os\public\amd64chk\internal\sdk\inc\minwin
+6>   /Is:\os\public\amd64chk\onecore\internal\sdk\inc\minwin
+6>   /Is:\os\public\amd64chk\internal\sdk\inc\minwin\fs
+6>   /Is:\os\public\amd64chk\onecore\internal\sdk\inc\minwin\fs
+6>   /Is:\os\public\amd64chk\internal\sdk\inc\mincore
+6>   /Is:\os\public\amd64chk\onecore\internal\sdk\inc\mincore
+6>   /Is:\os\public\amd64chk\internal\sdk\inc\clientcore
+6>   /Is:\os\public\amd64chk\onecore\internal\sdk\inc\clientcore
+6>   /Is:\os\public\amd64chk\internal\sdk\inc\moderncore
+6>   /Is:\os\public\amd64chk\onecore\internal\sdk\inc\moderncore
+6>   /Is:\os\public\amd64chk\internal\oak\inc
+6>   /Is:\os\public\amd64chk\sdk\inc\crt
+6>   /Is:\os\public\amd64chk\sdk\inc\crt\stl70
+6>   /D_WIN64
+6>   /D_AMD64_
+6>   /DAMD64
+6>   /DCONDITION_HANDLING=1
+6>   /DNT_UP=1
+6>   /DNT_INST=0
+6>   /DWIN32=100
+6>   /D_NT1X_=100
+6>   /DWINNT=1
+6>   /D_WIN32_WINNT=0x0601
+6>   /DWINVER=0x0601
+6>   /D_WIN32_IE=0x0800
+6>   /DWIN32_LEAN_AND_MEAN=1
+6>   /DDEVL=1
+6>   /DDBG=1
+6>   /D_STATIC_CPPLIB
+6>   /D_STL70_
+6>   /D_DLL=1
+6>   /D_MT=1
+6>   -DTESTDRIVER_NAME=\"SymCryptDriver_win7nlater.sys\"
+6>   /D_USE_DEV11_CRT
+6>   /DTEST_CODE
+6>   -D_APISET_WINDOWS_VERSION=0x601
+6>   -D_APISET_MINWIN_VERSION=0x0100
+6>   -D_APISET_MINCORE_VERSION=0x0100
+6>   /DNTDDI_VERSION=0x06010000
+6>   /DWINBLUE_KBSPRING14
+6>   /DBUILD_WINDOWS
+6>   /D__WRL_CONFIGURATION_LEGACY__
+6>   /DBUILD_UMS_ENABLED=1
+6>   /DBUILD_WOW64_ENABLED=1
+6>   -D_USE_DECLSPECS_FOR_SAL=1
+6>   -D_CONTROL_FLOW_GUARD=1
+6>   -D_CONTROL_FLOW_GUARD_SVCTAB=1
+6>   /c
+6>   /Zc:wchar_t-
+6>   /Zl
+6>   /Zp8
+6>   /Gy
+6>   /W4
+6>   /d1import_no_registry
+6>   /EHsc
+6>   /GR
+6>   /GF
+6>   /GS
+6>   /Z7
+6>   /Oxs
+6>   /GL
+6>   /Z7
+6>   -Zc:alignedNew-
+6>   /d2NoSmallFunctionOpt
+6>   -Zc:noexceptTypes-
+6>   /w15043
+6>   /D_CRT_STDIO_IMP=
+6>   /D_CRT_STDIO_IMP_ALT=
+6>   /D_FULL_IOBUF
+6>   /d1trimfile:s:\os\src\=BASEDIR
+6>   /d1trimfile:s:\os\public\amd64chk\=PUBLIC_ROOT
+6>   /d1trimfile:s:\os\obj\amd64chk\=OBJECT_ROOT
+6>   /d1trimfile:s:\os\bin\amd64chk\=_NTTREE
+6>   /d2AllowCompatibleILVersions
+6>   /d2Zi+
+6>   /ZH:SHA_256
+6>   /wd4986
+6>   /wd4987
+6>   /wd4471
+6>   /wd4369
+6>   /wd4309
+6>   /wd4754
+6>   /wd4427
+6>   /d2Qvec-mathlib-
+6>   /d2Qvec-sse2only
+6>   /Gw
+6>   /d1ignorePragmaWarningError
+6>   /wd4316
+6>   /wd4973
+6>   /DDONT_DISABLE_PCH_WARNINGS_IN_WARNING_H
+6>   /Brepro
+6>   -D_HAS_MAGIC_STATICS=1
+6>   -Zc:sizedDealloc-
+6>   /Wv:19.11
+6>   -d1vc7dname
+6>   /Qspectre
+6>   /d2guard4
+6>   /d2nocfgrngchk
+6>   /d2guardcfgfuncptr
+6>   /d2psvcallopt150000
+6>   /homeparams
+6>   /FIs:\os\public\amd64chk\internal\sdk\inc\warning.h
+6>   /FIs:\os\public\amd64chk\internal\onecoresdktools\inc\testcode.h
+6>   /Ylsymcryptunittest_Win7nLater /Ycprecomp.h /Fps:\os\obj\amd64chk\symcrypt\unittest\exe_win7nlater\objchk\amd64\precomp.pch /Fo"s:\os\obj\amd64chk\symcrypt\unittest\exe_win7nlater\objchk\amd64\precomp.obj"
+6>pch_hdr.src
+6> s:\os\tools\vc\HostX86\amd64\cl.exe @s:\os\obj\amd64chk\Temp\symcrypt\unittest\exe_win7nlater\cl_1.rsp
+6>Microsoft (R) C/C++ Optimizing Compiler Version 19.15.26715 for x64
+6>Copyright (C) Microsoft Corporation.  All rights reserved.
+6>cl /Fo"s:\os\obj\amd64chk\symcrypt\unittest\exe_win7nlater\objchk\amd64/"
+6>   /FC
+6>   /Iamd64\
+6>   /I.
+6>   /Is:\os\src\data\MSRC
+6>   /Is:\os\src\onecore\ds\security\cryptoapi\inc\cryptolegacy
+6>   /Is:\os\public\amd64chk\internal\DS\inc
+6>   /Is:\os\public\amd64chk\internal\DS\inc\crypto
+6>   /Is:\os\public\amd64chk\internal\onecoreds\inc\crypto
+6>   /Is:\os\public\amd64chk\onecore\private\ds\inc\crypto
+6>   /I..\..\inc
+6>   /I..\inc
+6>   /I..\lib
+6>   /Is:\os\public\amd64chk\ddk\inc
+6>   /Is:\os\obj\amd64chk\symcrypt\unittest\exe_win7nlater\objchk\amd64
+6>   /Is:\os\public\amd64chk\oak\inc
+6>   /Is:\os\public\amd64chk\shared\inc
+6>   /Is:\os\public\amd64chk\onecore\external\shared\inc
+6>   /Is:\os\public\amd64chk\shared\inc\minwin
+6>   /Is:\os\public\amd64chk\onecore\external\shared\inc\minwin
+6>   /Is:\os\public\amd64chk\shared\inc\mincore
+6>   /Is:\os\public\amd64chk\onecore\external\shared\inc\mincore
+6>   /Is:\os\public\amd64chk\shared\inc\clientcore
+6>   /Is:\os\public\amd64chk\onecore\external\shared\inc\clientcore
+6>   /Is:\os\public\amd64chk\shared\inc\moderncore
+6>   /Is:\os\public\amd64chk\onecore\external\shared\inc\moderncore
+6>   /Is:\os\public\amd64chk\sdk\inc
+6>   /Is:\os\public\amd64chk\onecore\external\sdk\inc
+6>   /Is:\os\public\amd64chk\sdk\inc\minwin
+6>   /Is:\os\public\amd64chk\onecore\private\sdk\inc\minwin
+6>   /Is:\os\public\amd64chk\onecore\internal\sdk\inc\minwin
+6>   /Is:\os\public\amd64chk\sdk\inc\mincore
+6>   /Is:\os\public\amd64chk\onecore\internal\sdk\inc\mincore
+6>   /Is:\os\public\amd64chk\sdk\inc\clientcore
+6>   /Is:\os\public\amd64chk\onecore\internal\sdk\inc\clientcore
+6>   /Is:\os\public\amd64chk\sdk\inc\moderncore
+6>   /Is:\os\public\amd64chk\onecore\internal\sdk\inc\moderncore
+6>   /Is:\os\public\amd64chk\shared\inc
+6>   /Is:\os\public\amd64chk\onecore\external\shared\inc
+6>   /Is:\os\public\amd64chk\ddk\inc
+6>   /Is:\os\public\amd64chk\onecore\external\ddk\inc
+6>   /Is:\os\public\amd64chk\ddk\inc\wdm
+6>   /Is:\os\public\amd64chk\internal\sdk\inc
+6>   /Is:\os\public\amd64chk\onecore\private\sdk\inc
+6>   /Is:\os\public\amd64chk\onecore\internal\sdk\inc
+6>   /Is:\os\public\amd64chk\onecoreuap\private\sdk\inc
+6>   /Is:\os\public\amd64chk\internal\sdk\inc\minwin
+6>   /Is:\os\public\amd64chk\onecore\internal\sdk\inc\minwin
+6>   /Is:\os\public\amd64chk\internal\sdk\inc\minwin\fs
+6>   /Is:\os\public\amd64chk\onecore\internal\sdk\inc\minwin\fs
+6>   /Is:\os\public\amd64chk\internal\sdk\inc\mincore
+6>   /Is:\os\public\amd64chk\onecore\internal\sdk\inc\mincore
+6>   /Is:\os\public\amd64chk\internal\sdk\inc\clientcore
+6>   /Is:\os\public\amd64chk\onecore\internal\sdk\inc\clientcore
+6>   /Is:\os\public\amd64chk\internal\sdk\inc\moderncore
+6>   /Is:\os\public\amd64chk\onecore\internal\sdk\inc\moderncore
+6>   /Is:\os\public\amd64chk\internal\oak\inc
+6>   /Is:\os\public\amd64chk\sdk\inc\crt
+6>   /Is:\os\public\amd64chk\sdk\inc\crt\stl70
+6>   /D_WIN64
+6>   /D_AMD64_
+6>   /DAMD64
+6>   /DCONDITION_HANDLING=1
+6>   /DNT_UP=1
+6>   /DNT_INST=0
+6>   /DWIN32=100
+6>   /D_NT1X_=100
+6>   /DWINNT=1
+6>   /D_WIN32_WINNT=0x0601
+6>   /DWINVER=0x0601
+6>   /D_WIN32_IE=0x0800
+6>   /DWIN32_LEAN_AND_MEAN=1
+6>   /DDEVL=1
+6>   /DDBG=1
+6>   /D_STATIC_CPPLIB
+6>   /D_STL70_
+6>   /D_DLL=1
+6>   /D_MT=1
+6>   -DTESTDRIVER_NAME=\"SymCryptDriver_win7nlater.sys\"
+6>   /D_USE_DEV11_CRT
+6>   /DTEST_CODE
+6>   -D_APISET_WINDOWS_VERSION=0x601
+6>   -D_APISET_MINWIN_VERSION=0x0100
+6>   -D_APISET_MINCORE_VERSION=0x0100
+6>   /DNTDDI_VERSION=0x06010000
+6>   /DWINBLUE_KBSPRING14
+6>   /DBUILD_WINDOWS
+6>   /D__WRL_CONFIGURATION_LEGACY__
+6>   /DBUILD_UMS_ENABLED=1
+6>   /DBUILD_WOW64_ENABLED=1
+6>   -D_USE_DECLSPECS_FOR_SAL=1
+6>   -D_CONTROL_FLOW_GUARD=1
+6>   -D_CONTROL_FLOW_GUARD_SVCTAB=1
+6>   /c
+6>   /Zc:wchar_t-
+6>   /Zl
+6>   /Zp8
+6>   /Gy
+6>   /W4
+6>   /d1import_no_registry
+6>   /EHsc
+6>   /GR
+6>   /GF
+6>   /GS
+6>   /Z7
+6>   /Oxs
+6>   /GL
+6>   /Z7
+6>   -Zc:alignedNew-
+6>   /d2NoSmallFunctionOpt
+6>   -Zc:noexceptTypes-
+6>   /w15043
+6>   /D_CRT_STDIO_IMP=
+6>   /D_CRT_STDIO_IMP_ALT=
+6>   /D_FULL_IOBUF
+6>   /d1trimfile:s:\os\src\=BASEDIR
+6>   /d1trimfile:s:\os\public\amd64chk\=PUBLIC_ROOT
+6>   /d1trimfile:s:\os\obj\amd64chk\=OBJECT_ROOT
+6>   /d1trimfile:s:\os\bin\amd64chk\=_NTTREE
+6>   /d2AllowCompatibleILVersions
+6>   /d2Zi+
+6>   /ZH:SHA_256
+6>   /wd4986
+6>   /wd4987
+6>   /wd4471
+6>   /wd4369
+6>   /wd4309
+6>   /wd4754
+6>   /wd4427
+6>   /d2Qvec-mathlib-
+6>   /d2Qvec-sse2only
+6>   /Gw
+6>   /d1ignorePragmaWarningError
+6>   /wd4316
+6>   /wd4973
+6>   /DDONT_DISABLE_PCH_WARNINGS_IN_WARNING_H
+6>   /Brepro
+6>   -D_HAS_MAGIC_STATICS=1
+6>   -Zc:sizedDealloc-
+6>   /Wv:19.11
+6>   -d1vc7dname
+6>   /Qspectre
+6>   /d2guard4
+6>   /d2nocfgrngchk
+6>   /d2guardcfgfuncptr
+6>   /d2psvcallopt150000
+6>   /homeparams
+6>   /FIs:\os\public\amd64chk\internal\sdk\inc\warning.h
+6>   /FIs:\os\public\amd64chk\internal\onecoresdktools\inc\testcode.h
+6>   /Yuprecomp.h
+6>   /Fps:\os\obj\amd64chk\symcrypt\unittest\exe_win7nlater\objchk\amd64\precomp.pch
+6>   .\main_exe.cpp 
+6>main_exe.cpp
+10>STL version 70 used in "s:\os\src\symcrypt\unittest\exe_test" (STL_VER_TELEMETRY)
+10>s:\os\src\symcrypt\unittest\exe_test building test code in dev tree
+10> set > s:\os\obj\amd64chk\symcrypt\unittest\exe_test\objchk\amd64\_PASS1_Marker.log
+10>s:\os\tools\vc\HostX86\amd64\cl.exe /Iamd64\ /I. /Is:\os\src\data\MSRC /Is:\os\src\onecore\ds\security\cryptoapi\inc\cryptolegacy /Is:\os\public\amd64chk\internal\DS\inc /Is:\os\public\amd64chk\internal\DS\inc\crypto /Is:\os\public\amd64chk\internal\onecoreds\inc\crypto /Is:\os\public\amd64chk\onecore\private\ds\inc\crypto /I..\..\inc /I..\inc /I..\lib /Is:\os\public\amd64chk\ddk\inc /Is:\os\obj\amd64chk\symcrypt\unittest\exe_test\objchk\amd64 /Is:\os\public\amd64chk\oak\inc /Is:\os\public\amd64chk\shared\inc /Is:\os\public\amd64chk\onecore\external\shared\inc /Is:\os\public\amd64chk\shared\inc\minwin /Is:\os\public\amd64chk\onecore\external\shared\inc\minwin /Is:\os\public\amd64chk\shared\inc\mincore /Is:\os\public\amd64chk\onecore\external\shared\inc\mincore /Is:\os\public\amd64chk\shared\inc\clientcore /Is:\os\public\amd64chk\onecore\external\shared\inc\clientcore /Is:\os\public\amd64chk\shared\inc\moderncore /Is:\os\public\amd64chk\onecore\external\shared\inc\moderncore /Is:\os\public\amd64chk\sdk\inc /Is:\os\public\amd64chk\onecore\external\sdk\inc /Is:\os\public\amd64chk\sdk\inc\minwin /Is:\os\public\amd64chk\onecore\private\sdk\inc\minwin /Is:\os\public\amd64chk\onecore\internal\sdk\inc\minwin /Is:\os\public\amd64chk\sdk\inc\mincore /Is:\os\public\amd64chk\onecore\internal\sdk\inc\mincore /Is:\os\public\amd64chk\sdk\inc\clientcore /Is:\os\public\amd64chk\onecore\internal\sdk\inc\clientcore /Is:\os\public\amd64chk\sdk\inc\moderncore /Is:\os\public\amd64chk\onecore\internal\sdk\inc\moderncore /Is:\os\public\amd64chk\shared\inc /Is:\os\public\amd64chk\onecore\external\shared\inc /Is:\os\public\amd64chk\ddk\inc /Is:\os\public\amd64chk\onecore\external\ddk\inc /Is:\os\public\amd64chk\ddk\inc\wdm /Is:\os\public\amd64chk\internal\sdk\inc /Is:\os\public\amd64chk\onecore\private\sdk\inc /Is:\os\public\amd64chk\onecore\internal\sdk\inc /Is:\os\public\amd64chk\onecoreuap\private\sdk\inc /Is:\os\public\amd64chk\internal\sdk\inc\minwin /Is:\os\public\amd64chk\onecore\internal\sdk\inc\minwin /Is:\os\public\amd64chk\internal\sdk\inc\minwin\fs /Is:\os\public\amd64chk\onecore\internal\sdk\inc\minwin\fs /Is:\os\public\amd64chk\internal\sdk\inc\mincore /Is:\os\public\amd64chk\onecore\internal\sdk\inc\mincore /Is:\os\public\amd64chk\internal\sdk\inc\clientcore /Is:\os\public\amd64chk\onecore\internal\sdk\inc\clientcore /Is:\os\public\amd64chk\internal\sdk\inc\moderncore /Is:\os\public\amd64chk\onecore\internal\sdk\inc\moderncore /Is:\os\public\amd64chk\internal\oak\inc /Is:\os\public\amd64chk\sdk\inc\crt /Is:\os\public\amd64chk\sdk\inc\crt\stl70 /D_WIN64 /D_AMD64_ /DAMD64 /DCONDITION_HANDLING=1 /DNT_UP=1 /DNT_INST=0 /DWIN32=100 /D_NT1X_=100 /DWINNT=1 /D_WIN32_WINNT=0x0A00 /DWINVER=0x0A00 /D_WIN32_IE=0x0A00 /DWIN32_LEAN_AND_MEAN=1 /DDEVL=1 /DDBG=1 /D_STATIC_CPPLIB /D_STL70_ /D_DLL=1 /D_MT=1 -DTESTDRIVER_NAME=\"SymCryptDriver_test.sys\" /D_USE_DEV11_CRT /DTEST_CODE -D_APISET_WINDOWS_VERSION=0x601 -D_APISET_MINWIN_VERSION=0x0104 -D_APISET_MINCORE_VERSION=0x0103 /DNTDDI_VERSION=0x0A000000 /DWINBLUE_KBSPRING14 /DBUILD_WINDOWS /D__WRL_CONFIGURATION_LEGACY__ /DBUILD_UMS_ENABLED=1 /DBUILD_WOW64_ENABLED=1 -D_USE_DECLSPECS_FOR_SAL=1 -D_CONTROL_FLOW_GUARD=1 -D_CONTROL_FLOW_GUARD_SVCTAB=1 /c /Zc:wchar_t- /Zl /Zp8 /Gy /W4 /d1import_no_registry /EHsc /GR /GF /GS /Z7 /Oxs /GL /Z7 -Zc:alignedNew- /d2NoSmallFunctionOpt -Zc:noexceptTypes- /w15043 /D_CRT_STDIO_IMP= /D_CRT_STDIO_IMP_ALT= /D_FULL_IOBUF /d1trimfile:s:\os\src\=BASEDIR /d1trimfile:s:\os\public\amd64chk\=PUBLIC_ROOT /d1trimfile:s:\os\obj\amd64chk\=OBJECT_ROOT /d1trimfile:s:\os\bin\amd64chk\=_NTTREE /d2AllowCompatibleILVersions /d2Zi+ /ZH:SHA_256 /wd4986 /wd4987 /wd4471 /wd4369 /wd4309 /wd4754 /wd4427 /d2Qvec-mathlib- /d2Qvec-sse2only /Gw /d1ignorePragmaWarningError /wd4316 /wd4973 /DDONT_DISABLE_PCH_WARNINGS_IN_WARNING_H /Brepro -D_HAS_MAGIC_STATICS=1 -Zc:sizedDealloc- /Wv:19.11 -d1vc7dname /Qspectre /d2guard4 /d2nocfgrngchk /d2guardcfgfuncptr /d2psvcallopt150000 /homeparams /FIs:\os\public\amd64chk\internal\sdk\inc\warning.h /FIs:\os\public\amd64chk\internal\onecoresdktools\inc\testcode.h /Ylsymcryptunittest /Ycprecomp.h /Fps:\os\obj\amd64chk\symcrypt\unittest\exe_test\objchk\amd64\precomp.pch /Fo"s:\os\obj\amd64chk\symcrypt\unittest\exe_test\objchk\amd64\precomp.obj" /Tp
+10>#include "precomp.h"
+10>Microsoft (R) C/C++ Optimizing Compiler Version 19.15.26715 for x64
+10>Copyright (C) Microsoft Corporation.  All rights reserved.
+10>cl 
+10>   /Iamd64\
+10>   /I.
+10>   /Is:\os\src\data\MSRC
+10>   /Is:\os\src\onecore\ds\security\cryptoapi\inc\cryptolegacy
+10>   /Is:\os\public\amd64chk\internal\DS\inc
+10>   /Is:\os\public\amd64chk\internal\DS\inc\crypto
+10>   /Is:\os\public\amd64chk\internal\onecoreds\inc\crypto
+10>   /Is:\os\public\amd64chk\onecore\private\ds\inc\crypto
+10>   /I..\..\inc
+10>   /I..\inc
+10>   /I..\lib
+10>   /Is:\os\public\amd64chk\ddk\inc
+10>   /Is:\os\obj\amd64chk\symcrypt\unittest\exe_test\objchk\amd64
+10>   /Is:\os\public\amd64chk\oak\inc
+10>   /Is:\os\public\amd64chk\shared\inc
+10>   /Is:\os\public\amd64chk\onecore\external\shared\inc
+10>   /Is:\os\public\amd64chk\shared\inc\minwin
+10>   /Is:\os\public\amd64chk\onecore\external\shared\inc\minwin
+10>   /Is:\os\public\amd64chk\shared\inc\mincore
+10>   /Is:\os\public\amd64chk\onecore\external\shared\inc\mincore
+10>   /Is:\os\public\amd64chk\shared\inc\clientcore
+10>   /Is:\os\public\amd64chk\onecore\external\shared\inc\clientcore
+10>   /Is:\os\public\amd64chk\shared\inc\moderncore
+10>   /Is:\os\public\amd64chk\onecore\external\shared\inc\moderncore
+10>   /Is:\os\public\amd64chk\sdk\inc
+10>   /Is:\os\public\amd64chk\onecore\external\sdk\inc
+10>   /Is:\os\public\amd64chk\sdk\inc\minwin
+10>   /Is:\os\public\amd64chk\onecore\private\sdk\inc\minwin
+10>   /Is:\os\public\amd64chk\onecore\internal\sdk\inc\minwin
+10>   /Is:\os\public\amd64chk\sdk\inc\mincore
+10>   /Is:\os\public\amd64chk\onecore\internal\sdk\inc\mincore
+10>   /Is:\os\public\amd64chk\sdk\inc\clientcore
+10>   /Is:\os\public\amd64chk\onecore\internal\sdk\inc\clientcore
+10>   /Is:\os\public\amd64chk\sdk\inc\moderncore
+10>   /Is:\os\public\amd64chk\onecore\internal\sdk\inc\moderncore
+10>   /Is:\os\public\amd64chk\shared\inc
+10>   /Is:\os\public\amd64chk\onecore\external\shared\inc
+10>   /Is:\os\public\amd64chk\ddk\inc
+10>   /Is:\os\public\amd64chk\onecore\external\ddk\inc
+10>   /Is:\os\public\amd64chk\ddk\inc\wdm
+10>   /Is:\os\public\amd64chk\internal\sdk\inc
+10>   /Is:\os\public\amd64chk\onecore\private\sdk\inc
+10>   /Is:\os\public\amd64chk\onecore\internal\sdk\inc
+10>   /Is:\os\public\amd64chk\onecoreuap\private\sdk\inc
+10>   /Is:\os\public\amd64chk\internal\sdk\inc\minwin
+10>   /Is:\os\public\amd64chk\onecore\internal\sdk\inc\minwin
+10>   /Is:\os\public\amd64chk\internal\sdk\inc\minwin\fs
+10>   /Is:\os\public\amd64chk\onecore\internal\sdk\inc\minwin\fs
+10>   /Is:\os\public\amd64chk\internal\sdk\inc\mincore
+10>   /Is:\os\public\amd64chk\onecore\internal\sdk\inc\mincore
+10>   /Is:\os\public\amd64chk\internal\sdk\inc\clientcore
+10>   /Is:\os\public\amd64chk\onecore\internal\sdk\inc\clientcore
+10>   /Is:\os\public\amd64chk\internal\sdk\inc\moderncore
+10>   /Is:\os\public\amd64chk\onecore\internal\sdk\inc\moderncore
+10>   /Is:\os\public\amd64chk\internal\oak\inc
+10>   /Is:\os\public\amd64chk\sdk\inc\crt
+10>   /Is:\os\public\amd64chk\sdk\inc\crt\stl70
+10>   /D_WIN64
+10>   /D_AMD64_
+10>   /DAMD64
+10>   /DCONDITION_HANDLING=1
+10>   /DNT_UP=1
+10>   /DNT_INST=0
+10>   /DWIN32=100
+10>   /D_NT1X_=100
+10>   /DWINNT=1
+10>   /D_WIN32_WINNT=0x0A00
+10>   /DWINVER=0x0A00
+10>   /D_WIN32_IE=0x0A00
+10>   /DWIN32_LEAN_AND_MEAN=1
+10>   /DDEVL=1
+10>   /DDBG=1
+10>   /D_STATIC_CPPLIB
+10>   /D_STL70_
+10>   /D_DLL=1
+10>   /D_MT=1
+10>   -DTESTDRIVER_NAME=\"SymCryptDriver_test.sys\"
+10>   /D_USE_DEV11_CRT
+10>   /DTEST_CODE
+10>   -D_APISET_WINDOWS_VERSION=0x601
+10>   -D_APISET_MINWIN_VERSION=0x0104
+10>   -D_APISET_MINCORE_VERSION=0x0103
+10>   /DNTDDI_VERSION=0x0A000000
+10>   /DWINBLUE_KBSPRING14
+10>   /DBUILD_WINDOWS
+10>   /D__WRL_CONFIGURATION_LEGACY__
+10>   /DBUILD_UMS_ENABLED=1
+10>   /DBUILD_WOW64_ENABLED=1
+10>   -D_USE_DECLSPECS_FOR_SAL=1
+10>   -D_CONTROL_FLOW_GUARD=1
+10>   -D_CONTROL_FLOW_GUARD_SVCTAB=1
+10>   /c
+10>   /Zc:wchar_t-
+10>   /Zl
+10>   /Zp8
+10>   /Gy
+10>   /W4
+10>   /d1import_no_registry
+10>   /EHsc
+10>   /GR
+10>   /GF
+10>   /GS
+10>   /Z7
+10>   /Oxs
+10>   /GL
+10>   /Z7
+10>   -Zc:alignedNew-
+10>   /d2NoSmallFunctionOpt
+10>   -Zc:noexceptTypes-
+10>   /w15043
+10>   /D_CRT_STDIO_IMP=
+10>   /D_CRT_STDIO_IMP_ALT=
+10>   /D_FULL_IOBUF
+10>   /d1trimfile:s:\os\src\=BASEDIR
+10>   /d1trimfile:s:\os\public\amd64chk\=PUBLIC_ROOT
+10>   /d1trimfile:s:\os\obj\amd64chk\=OBJECT_ROOT
+10>   /d1trimfile:s:\os\bin\amd64chk\=_NTTREE
+10>   /d2AllowCompatibleILVersions
+10>   /d2Zi+
+10>   /ZH:SHA_256
+10>   /wd4986
+10>   /wd4987
+10>   /wd4471
+10>   /wd4369
+10>   /wd4309
+10>   /wd4754
+10>   /wd4427
+10>   /d2Qvec-mathlib-
+10>   /d2Qvec-sse2only
+10>   /Gw
+10>   /d1ignorePragmaWarningError
+10>   /wd4316
+10>   /wd4973
+10>   /DDONT_DISABLE_PCH_WARNINGS_IN_WARNING_H
+10>   /Brepro
+10>   -D_HAS_MAGIC_STATICS=1
+10>   -Zc:sizedDealloc-
+10>   /Wv:19.11
+10>   -d1vc7dname
+10>   /Qspectre
+10>   /d2guard4
+10>   /d2nocfgrngchk
+10>   /d2guardcfgfuncptr
+10>   /d2psvcallopt150000
+10>   /homeparams
+10>   /FIs:\os\public\amd64chk\internal\sdk\inc\warning.h
+10>   /FIs:\os\public\amd64chk\internal\onecoresdktools\inc\testcode.h
+10>   /Ylsymcryptunittest /Ycprecomp.h /Fps:\os\obj\amd64chk\symcrypt\unittest\exe_test\objchk\amd64\precomp.pch /Fo"s:\os\obj\amd64chk\symcrypt\unittest\exe_test\objchk\amd64\precomp.obj"
+10>pch_hdr.src
+10> s:\os\tools\vc\HostX86\amd64\cl.exe @s:\os\obj\amd64chk\Temp\symcrypt\unittest\exe_test\cl_1.rsp
+10>Microsoft (R) C/C++ Optimizing Compiler Version 19.15.26715 for x64
+10>Copyright (C) Microsoft Corporation.  All rights reserved.
+10>cl /Fo"s:\os\obj\amd64chk\symcrypt\unittest\exe_test\objchk\amd64/"
+10>   /FC
+10>   /Iamd64\
+10>   /I.
+10>   /Is:\os\src\data\MSRC
+10>   /Is:\os\src\onecore\ds\security\cryptoapi\inc\cryptolegacy
+10>   /Is:\os\public\amd64chk\internal\DS\inc
+10>   /Is:\os\public\amd64chk\internal\DS\inc\crypto
+10>   /Is:\os\public\amd64chk\internal\onecoreds\inc\crypto
+10>   /Is:\os\public\amd64chk\onecore\private\ds\inc\crypto
+10>   /I..\..\inc
+10>   /I..\inc
+10>   /I..\lib
+10>   /Is:\os\public\amd64chk\ddk\inc
+10>   /Is:\os\obj\amd64chk\symcrypt\unittest\exe_test\objchk\amd64
+10>   /Is:\os\public\amd64chk\oak\inc
+10>   /Is:\os\public\amd64chk\shared\inc
+10>   /Is:\os\public\amd64chk\onecore\external\shared\inc
+10>   /Is:\os\public\amd64chk\shared\inc\minwin
+10>   /Is:\os\public\amd64chk\onecore\external\shared\inc\minwin
+10>   /Is:\os\public\amd64chk\shared\inc\mincore
+10>   /Is:\os\public\amd64chk\onecore\external\shared\inc\mincore
+10>   /Is:\os\public\amd64chk\shared\inc\clientcore
+10>   /Is:\os\public\amd64chk\onecore\external\shared\inc\clientcore
+10>   /Is:\os\public\amd64chk\shared\inc\moderncore
+10>   /Is:\os\public\amd64chk\onecore\external\shared\inc\moderncore
+10>   /Is:\os\public\amd64chk\sdk\inc
+10>   /Is:\os\public\amd64chk\onecore\external\sdk\inc
+10>   /Is:\os\public\amd64chk\sdk\inc\minwin
+10>   /Is:\os\public\amd64chk\onecore\private\sdk\inc\minwin
+10>   /Is:\os\public\amd64chk\onecore\internal\sdk\inc\minwin
+10>   /Is:\os\public\amd64chk\sdk\inc\mincore
+10>   /Is:\os\public\amd64chk\onecore\internal\sdk\inc\mincore
+10>   /Is:\os\public\amd64chk\sdk\inc\clientcore
+10>   /Is:\os\public\amd64chk\onecore\internal\sdk\inc\clientcore
+10>   /Is:\os\public\amd64chk\sdk\inc\moderncore
+10>   /Is:\os\public\amd64chk\onecore\internal\sdk\inc\moderncore
+10>   /Is:\os\public\amd64chk\shared\inc
+10>   /Is:\os\public\amd64chk\onecore\external\shared\inc
+10>   /Is:\os\public\amd64chk\ddk\inc
+10>   /Is:\os\public\amd64chk\onecore\external\ddk\inc
+10>   /Is:\os\public\amd64chk\ddk\inc\wdm
+10>   /Is:\os\public\amd64chk\internal\sdk\inc
+10>   /Is:\os\public\amd64chk\onecore\private\sdk\inc
+10>   /Is:\os\public\amd64chk\onecore\internal\sdk\inc
+10>   /Is:\os\public\amd64chk\onecoreuap\private\sdk\inc
+10>   /Is:\os\public\amd64chk\internal\sdk\inc\minwin
+10>   /Is:\os\public\amd64chk\onecore\internal\sdk\inc\minwin
+10>   /Is:\os\public\amd64chk\internal\sdk\inc\minwin\fs
+10>   /Is:\os\public\amd64chk\onecore\internal\sdk\inc\minwin\fs
+10>   /Is:\os\public\amd64chk\internal\sdk\inc\mincore
+10>   /Is:\os\public\amd64chk\onecore\internal\sdk\inc\mincore
+10>   /Is:\os\public\amd64chk\internal\sdk\inc\clientcore
+10>   /Is:\os\public\amd64chk\onecore\internal\sdk\inc\clientcore
+10>   /Is:\os\public\amd64chk\internal\sdk\inc\moderncore
+10>   /Is:\os\public\amd64chk\onecore\internal\sdk\inc\moderncore
+10>   /Is:\os\public\amd64chk\internal\oak\inc
+10>   /Is:\os\public\amd64chk\sdk\inc\crt
+10>   /Is:\os\public\amd64chk\sdk\inc\crt\stl70
+10>   /D_WIN64
+10>   /D_AMD64_
+10>   /DAMD64
+10>   /DCONDITION_HANDLING=1
+10>   /DNT_UP=1
+10>   /DNT_INST=0
+10>   /DWIN32=100
+10>   /D_NT1X_=100
+10>   /DWINNT=1
+10>   /D_WIN32_WINNT=0x0A00
+10>   /DWINVER=0x0A00
+10>   /D_WIN32_IE=0x0A00
+10>   /DWIN32_LEAN_AND_MEAN=1
+10>   /DDEVL=1
+10>   /DDBG=1
+10>   /D_STATIC_CPPLIB
+10>   /D_STL70_
+10>   /D_DLL=1
+10>   /D_MT=1
+10>   -DTESTDRIVER_NAME=\"SymCryptDriver_test.sys\"
+10>   /D_USE_DEV11_CRT
+10>   /DTEST_CODE
+10>   -D_APISET_WINDOWS_VERSION=0x601
+10>   -D_APISET_MINWIN_VERSION=0x0104
+10>   -D_APISET_MINCORE_VERSION=0x0103
+10>   /DNTDDI_VERSION=0x0A000000
+10>   /DWINBLUE_KBSPRING14
+10>   /DBUILD_WINDOWS
+10>   /D__WRL_CONFIGURATION_LEGACY__
+10>   /DBUILD_UMS_ENABLED=1
+10>   /DBUILD_WOW64_ENABLED=1
+10>   -D_USE_DECLSPECS_FOR_SAL=1
+10>   -D_CONTROL_FLOW_GUARD=1
+10>   -D_CONTROL_FLOW_GUARD_SVCTAB=1
+10>   /c
+10>   /Zc:wchar_t-
+10>   /Zl
+10>   /Zp8
+10>   /Gy
+10>   /W4
+10>   /d1import_no_registry
+10>   /EHsc
+10>   /GR
+10>   /GF
+10>   /GS
+10>   /Z7
+10>   /Oxs
+10>   /GL
+10>   /Z7
+10>   -Zc:alignedNew-
+10>   /d2NoSmallFunctionOpt
+10>   -Zc:noexceptTypes-
+10>   /w15043
+10>   /D_CRT_STDIO_IMP=
+10>   /D_CRT_STDIO_IMP_ALT=
+10>   /D_FULL_IOBUF
+10>   /d1trimfile:s:\os\src\=BASEDIR
+10>   /d1trimfile:s:\os\public\amd64chk\=PUBLIC_ROOT
+10>   /d1trimfile:s:\os\obj\amd64chk\=OBJECT_ROOT
+10>   /d1trimfile:s:\os\bin\amd64chk\=_NTTREE
+10>   /d2AllowCompatibleILVersions
+10>   /d2Zi+
+10>   /ZH:SHA_256
+10>   /wd4986
+10>   /wd4987
+10>   /wd4471
+10>   /wd4369
+10>   /wd4309
+10>   /wd4754
+10>   /wd4427
+10>   /d2Qvec-mathlib-
+10>   /d2Qvec-sse2only
+10>   /Gw
+10>   /d1ignorePragmaWarningError
+10>   /wd4316
+10>   /wd4973
+10>   /DDONT_DISABLE_PCH_WARNINGS_IN_WARNING_H
+10>   /Brepro
+10>   -D_HAS_MAGIC_STATICS=1
+10>   -Zc:sizedDealloc-
+10>   /Wv:19.11
+10>   -d1vc7dname
+10>   /Qspectre
+10>   /d2guard4
+10>   /d2nocfgrngchk
+10>   /d2guardcfgfuncptr
+10>   /d2psvcallopt150000
+10>   /homeparams
+10>   /FIs:\os\public\amd64chk\internal\sdk\inc\warning.h
+10>   /FIs:\os\public\amd64chk\internal\onecoresdktools\inc\testcode.h
+10>   /Yuprecomp.h
+10>   /Fps:\os\obj\amd64chk\symcrypt\unittest\exe_test\objchk\amd64\precomp.pch
+10>   .\main_exe.cpp 
+10>main_exe.cpp
+8>STL version 70 used in "s:\os\src\symcrypt\unittest\lib" (STL_VER_TELEMETRY)
+8>s:\os\src\symcrypt\unittest\lib building test code in dev tree
+8> set > s:\os\obj\amd64chk\symcrypt\unittest\lib\objchk\amd64\_PASS1_Marker.log
+8>s:\os\tools\vc\HostX86\amd64\cl.exe /Iamd64\ /I. /Is:\os\src\data\MSRC /Is:\os\src\onecore\ds\security\cryptoapi\inc\cryptolegacy /Is:\os\public\amd64chk\internal\DS\inc /Is:\os\public\amd64chk\internal\DS\inc\crypto /Is:\os\public\amd64chk\internal\onecoreds\inc\crypto /Is:\os\public\amd64chk\onecore\private\ds\inc\crypto /I..\..\inc /I..\inc /I..\..\lib /Is:\os\public\amd64chk\ddk\inc /Is:\os\obj\amd64chk\symcrypt\unittest\lib\objchk\amd64 /Is:\os\public\amd64chk\oak\inc /Is:\os\public\amd64chk\shared\inc /Is:\os\public\amd64chk\onecore\external\shared\inc /Is:\os\public\amd64chk\shared\inc\minwin /Is:\os\public\amd64chk\onecore\external\shared\inc\minwin /Is:\os\public\amd64chk\shared\inc\mincore /Is:\os\public\amd64chk\onecore\external\shared\inc\mincore /Is:\os\public\amd64chk\shared\inc\clientcore /Is:\os\public\amd64chk\onecore\external\shared\inc\clientcore /Is:\os\public\amd64chk\shared\inc\moderncore /Is:\os\public\amd64chk\onecore\external\shared\inc\moderncore /Is:\os\public\amd64chk\sdk\inc /Is:\os\public\amd64chk\onecore\external\sdk\inc /Is:\os\public\amd64chk\sdk\inc\minwin /Is:\os\public\amd64chk\onecore\private\sdk\inc\minwin /Is:\os\public\amd64chk\onecore\internal\sdk\inc\minwin /Is:\os\public\amd64chk\sdk\inc\mincore /Is:\os\public\amd64chk\onecore\internal\sdk\inc\mincore /Is:\os\public\amd64chk\sdk\inc\clientcore /Is:\os\public\amd64chk\onecore\internal\sdk\inc\clientcore /Is:\os\public\amd64chk\sdk\inc\moderncore /Is:\os\public\amd64chk\onecore\internal\sdk\inc\moderncore /Is:\os\public\amd64chk\shared\inc /Is:\os\public\amd64chk\onecore\external\shared\inc /Is:\os\public\amd64chk\ddk\inc /Is:\os\public\amd64chk\onecore\external\ddk\inc /Is:\os\public\amd64chk\ddk\inc\wdm /Is:\os\public\amd64chk\internal\sdk\inc /Is:\os\public\amd64chk\onecore\private\sdk\inc /Is:\os\public\amd64chk\onecore\internal\sdk\inc /Is:\os\public\amd64chk\onecoreuap\private\sdk\inc /Is:\os\public\amd64chk\internal\sdk\inc\minwin /Is:\os\public\amd64chk\onecore\internal\sdk\inc\minwin /Is:\os\public\amd64chk\internal\sdk\inc\minwin\fs /Is:\os\public\amd64chk\onecore\internal\sdk\inc\minwin\fs /Is:\os\public\amd64chk\internal\sdk\inc\mincore /Is:\os\public\amd64chk\onecore\internal\sdk\inc\mincore /Is:\os\public\amd64chk\internal\sdk\inc\clientcore /Is:\os\public\amd64chk\onecore\internal\sdk\inc\clientcore /Is:\os\public\amd64chk\internal\sdk\inc\moderncore /Is:\os\public\amd64chk\onecore\internal\sdk\inc\moderncore /Is:\os\public\amd64chk\internal\oak\inc /Is:\os\public\amd64chk\sdk\inc\crt /Is:\os\public\amd64chk\sdk\inc\crt\stl70 /D_WIN64 /D_AMD64_ /DAMD64 /DCONDITION_HANDLING=1 /DNT_UP=1 /DNT_INST=0 /DWIN32=100 /D_NT1X_=100 /DWINNT=1 /D_WIN32_WINNT=0x0600 /DWINVER=0x0600 /D_WIN32_IE=0x0700 /DWIN32_LEAN_AND_MEAN=1 /DDEVL=1 /DDBG=1 /D_STATIC_CPPLIB /D_STL70_ /D_DLL=1 /D_MT=1 /D_USE_DEV11_CRT /DTEST_CODE -D_APISET_WINDOWS_VERSION=0x601 -D_APISET_MINWIN_VERSION=0x0100 -D_APISET_MINCORE_VERSION=0x0100 /DNTDDI_VERSION=0x06000100 /DWINBLUE_KBSPRING14 /DBUILD_WINDOWS /D__WRL_CONFIGURATION_LEGACY__ /DBUILD_UMS_ENABLED=1 /DBUILD_WOW64_ENABLED=1 -D_USE_DECLSPECS_FOR_SAL=1 -D_CONTROL_FLOW_GUARD=1 -D_CONTROL_FLOW_GUARD_SVCTAB=1 /c /Zc:wchar_t- /Zl /Zp8 /Gy /W4 /d1import_no_registry /EHsc /GR /GF /GS /Z7 /Oxs /GL /Z7 -Zc:alignedNew- /d2NoSmallFunctionOpt -Zc:noexceptTypes- /w15043 /D_CRT_STDIO_IMP= /D_CRT_STDIO_IMP_ALT= /D_FULL_IOBUF /d1trimfile:s:\os\src\=BASEDIR /d1trimfile:s:\os\public\amd64chk\=PUBLIC_ROOT /d1trimfile:s:\os\obj\amd64chk\=OBJECT_ROOT /d1trimfile:s:\os\bin\amd64chk\=_NTTREE /d2AllowCompatibleILVersions /d2Zi+ /ZH:SHA_256 /wd4986 /wd4987 /wd4471 /wd4369 /wd4309 /wd4754 /wd4427 /d2Qvec-mathlib- /d2Qvec-sse2only /Gw /d1ignorePragmaWarningError /wd4316 /wd4973 /DDONT_DISABLE_PCH_WARNINGS_IN_WARNING_H /Brepro -D_HAS_MAGIC_STATICS=1 -Zc:sizedDealloc- /Wv:19.11 -d1vc7dname /Qspectre /d2guard4 /d2nocfgrngchk /d2guardcfgfuncptr /d2psvcallopt150000 /homeparams /FIs:\os\public\amd64chk\internal\sdk\inc\warning.h /FIs:\os\public\amd64chk\internal\onecoresdktools\inc\testcode.h /Ylsymcryptunittest_lib /Ycprecomp.h /Fps:\os\obj\amd64chk\symcrypt\unittest\lib\objchk\amd64\precomp.pch /Fo"s:\os\obj\amd64chk\symcrypt\unittest\lib\objchk\amd64\precomp.obj" /Tp
+8>#include "precomp.h"
+8>Microsoft (R) C/C++ Optimizing Compiler Version 19.15.26715 for x64
+8>Copyright (C) Microsoft Corporation.  All rights reserved.
+8>cl 
+8>   /Iamd64\
+8>   /I.
+8>   /Is:\os\src\data\MSRC
+8>   /Is:\os\src\onecore\ds\security\cryptoapi\inc\cryptolegacy
+8>   /Is:\os\public\amd64chk\internal\DS\inc
+8>   /Is:\os\public\amd64chk\internal\DS\inc\crypto
+8>   /Is:\os\public\amd64chk\internal\onecoreds\inc\crypto
+8>   /Is:\os\public\amd64chk\onecore\private\ds\inc\crypto
+8>   /I..\..\inc
+8>   /I..\inc
+8>   /I..\..\lib
+8>   /Is:\os\public\amd64chk\ddk\inc
+8>   /Is:\os\obj\amd64chk\symcrypt\unittest\lib\objchk\amd64
+8>   /Is:\os\public\amd64chk\oak\inc
+8>   /Is:\os\public\amd64chk\shared\inc
+8>   /Is:\os\public\amd64chk\onecore\external\shared\inc
+8>   /Is:\os\public\amd64chk\shared\inc\minwin
+8>   /Is:\os\public\amd64chk\onecore\external\shared\inc\minwin
+8>   /Is:\os\public\amd64chk\shared\inc\mincore
+8>   /Is:\os\public\amd64chk\onecore\external\shared\inc\mincore
+8>   /Is:\os\public\amd64chk\shared\inc\clientcore
+8>   /Is:\os\public\amd64chk\onecore\external\shared\inc\clientcore
+8>   /Is:\os\public\amd64chk\shared\inc\moderncore
+8>   /Is:\os\public\amd64chk\onecore\external\shared\inc\moderncore
+8>   /Is:\os\public\amd64chk\sdk\inc
+8>   /Is:\os\public\amd64chk\onecore\external\sdk\inc
+8>   /Is:\os\public\amd64chk\sdk\inc\minwin
+8>   /Is:\os\public\amd64chk\onecore\private\sdk\inc\minwin
+8>   /Is:\os\public\amd64chk\onecore\internal\sdk\inc\minwin
+8>   /Is:\os\public\amd64chk\sdk\inc\mincore
+8>   /Is:\os\public\amd64chk\onecore\internal\sdk\inc\mincore
+8>   /Is:\os\public\amd64chk\sdk\inc\clientcore
+8>   /Is:\os\public\amd64chk\onecore\internal\sdk\inc\clientcore
+8>   /Is:\os\public\amd64chk\sdk\inc\moderncore
+8>   /Is:\os\public\amd64chk\onecore\internal\sdk\inc\moderncore
+8>   /Is:\os\public\amd64chk\shared\inc
+8>   /Is:\os\public\amd64chk\onecore\external\shared\inc
+8>   /Is:\os\public\amd64chk\ddk\inc
+8>   /Is:\os\public\amd64chk\onecore\external\ddk\inc
+8>   /Is:\os\public\amd64chk\ddk\inc\wdm
+8>   /Is:\os\public\amd64chk\internal\sdk\inc
+8>   /Is:\os\public\amd64chk\onecore\private\sdk\inc
+8>   /Is:\os\public\amd64chk\onecore\internal\sdk\inc
+8>   /Is:\os\public\amd64chk\onecoreuap\private\sdk\inc
+8>   /Is:\os\public\amd64chk\internal\sdk\inc\minwin
+8>   /Is:\os\public\amd64chk\onecore\internal\sdk\inc\minwin
+8>   /Is:\os\public\amd64chk\internal\sdk\inc\minwin\fs
+8>   /Is:\os\public\amd64chk\onecore\internal\sdk\inc\minwin\fs
+8>   /Is:\os\public\amd64chk\internal\sdk\inc\mincore
+8>   /Is:\os\public\amd64chk\onecore\internal\sdk\inc\mincore
+8>   /Is:\os\public\amd64chk\internal\sdk\inc\clientcore
+8>   /Is:\os\public\amd64chk\onecore\internal\sdk\inc\clientcore
+8>   /Is:\os\public\amd64chk\internal\sdk\inc\moderncore
+8>   /Is:\os\public\amd64chk\onecore\internal\sdk\inc\moderncore
+8>   /Is:\os\public\amd64chk\internal\oak\inc
+8>   /Is:\os\public\amd64chk\sdk\inc\crt
+8>   /Is:\os\public\amd64chk\sdk\inc\crt\stl70
+8>   /D_WIN64
+8>   /D_AMD64_
+8>   /DAMD64
+8>   /DCONDITION_HANDLING=1
+8>   /DNT_UP=1
+8>   /DNT_INST=0
+8>   /DWIN32=100
+8>   /D_NT1X_=100
+8>   /DWINNT=1
+8>   /D_WIN32_WINNT=0x0600
+8>   /DWINVER=0x0600
+8>   /D_WIN32_IE=0x0700
+8>   /DWIN32_LEAN_AND_MEAN=1
+8>   /DDEVL=1
+8>   /DDBG=1
+8>   /D_STATIC_CPPLIB
+8>   /D_STL70_
+8>   /D_DLL=1
+8>   /D_MT=1
+8>   /D_USE_DEV11_CRT
+8>   /DTEST_CODE
+8>   -D_APISET_WINDOWS_VERSION=0x601
+8>   -D_APISET_MINWIN_VERSION=0x0100
+8>   -D_APISET_MINCORE_VERSION=0x0100
+8>   /DNTDDI_VERSION=0x06000100
+8>   /DWINBLUE_KBSPRING14
+8>   /DBUILD_WINDOWS
+8>   /D__WRL_CONFIGURATION_LEGACY__
+8>   /DBUILD_UMS_ENABLED=1
+8>   /DBUILD_WOW64_ENABLED=1
+8>   -D_USE_DECLSPECS_FOR_SAL=1
+8>   -D_CONTROL_FLOW_GUARD=1
+8>   -D_CONTROL_FLOW_GUARD_SVCTAB=1
+8>   /c
+8>   /Zc:wchar_t-
+8>   /Zl
+8>   /Zp8
+8>   /Gy
+8>   /W4
+8>   /d1import_no_registry
+8>   /EHsc
+8>   /GR
+8>   /GF
+8>   /GS
+8>   /Z7
+8>   /Oxs
+8>   /GL
+8>   /Z7
+8>   -Zc:alignedNew-
+8>   /d2NoSmallFunctionOpt
+8>   -Zc:noexceptTypes-
+8>   /w15043
+8>   /D_CRT_STDIO_IMP=
+8>   /D_CRT_STDIO_IMP_ALT=
+8>   /D_FULL_IOBUF
+8>   /d1trimfile:s:\os\src\=BASEDIR
+8>   /d1trimfile:s:\os\public\amd64chk\=PUBLIC_ROOT
+8>   /d1trimfile:s:\os\obj\amd64chk\=OBJECT_ROOT
+8>   /d1trimfile:s:\os\bin\amd64chk\=_NTTREE
+8>   /d2AllowCompatibleILVersions
+8>   /d2Zi+
+8>   /ZH:SHA_256
+8>   /wd4986
+8>   /wd4987
+8>   /wd4471
+8>   /wd4369
+8>   /wd4309
+8>   /wd4754
+8>   /wd4427
+8>   /d2Qvec-mathlib-
+8>   /d2Qvec-sse2only
+8>   /Gw
+8>   /d1ignorePragmaWarningError
+8>   /wd4316
+8>   /wd4973
+8>   /DDONT_DISABLE_PCH_WARNINGS_IN_WARNING_H
+8>   /Brepro
+8>   -D_HAS_MAGIC_STATICS=1
+8>   -Zc:sizedDealloc-
+8>   /Wv:19.11
+8>   -d1vc7dname
+8>   /Qspectre
+8>   /d2guard4
+8>   /d2nocfgrngchk
+8>   /d2guardcfgfuncptr
+8>   /d2psvcallopt150000
+8>   /homeparams
+8>   /FIs:\os\public\amd64chk\internal\sdk\inc\warning.h
+8>   /FIs:\os\public\amd64chk\internal\onecoresdktools\inc\testcode.h
+8>   /Ylsymcryptunittest_lib /Ycprecomp.h /Fps:\os\obj\amd64chk\symcrypt\unittest\lib\objchk\amd64\precomp.pch /Fo"s:\os\obj\amd64chk\symcrypt\unittest\lib\objchk\amd64\precomp.obj"
+8>pch_hdr.src
+8> ml64 /c /Cx /nologo /Iamd64\ /I. /Is:\os\src\data\MSRC /Is:\os\src\onecore\ds\security\cryptoapi\inc\cryptolegacy /Is:\os\public\amd64chk\internal\DS\inc /Is:\os\public\amd64chk\internal\DS\inc\crypto /Is:\os\public\amd64chk\internal\onecoreds\inc\crypto /Is:\os\public\amd64chk\onecore\private\ds\inc\crypto /I..\..\inc /I..\inc /I..\..\lib /Is:\os\public\amd64chk\ddk\inc /Is:\os\obj\amd64chk\symcrypt\unittest\lib\objchk\amd64 /Is:\os\public\amd64chk\oak\inc /Is:\os\public\amd64chk\shared\inc /Is:\os\public\amd64chk\onecore\external\shared\inc /Is:\os\public\amd64chk\shared\inc\minwin /Is:\os\public\amd64chk\onecore\external\shared\inc\minwin /Is:\os\public\amd64chk\shared\inc\mincore /Is:\os\public\amd64chk\onecore\external\shared\inc\mincore /Is:\os\public\amd64chk\shared\inc\clientcore /Is:\os\public\amd64chk\onecore\external\shared\inc\clientcore /Is:\os\public\amd64chk\shared\inc\moderncore /Is:\os\public\amd64chk\onecore\external\shared\inc\moderncore /Is:\os\public\amd64chk\sdk\inc /Is:\os\public\amd64chk\onecore\external\sdk\inc /Is:\os\public\amd64chk\sdk\inc\minwin /Is:\os\public\amd64chk\onecore\private\sdk\inc\minwin /Is:\os\public\amd64chk\onecore\internal\sdk\inc\minwin /Is:\os\public\amd64chk\sdk\inc\mincore /Is:\os\public\amd64chk\onecore\internal\sdk\inc\mincore /Is:\os\public\amd64chk\sdk\inc\clientcore /Is:\os\public\amd64chk\onecore\internal\sdk\inc\clientcore /Is:\os\public\amd64chk\sdk\inc\moderncore /Is:\os\public\amd64chk\onecore\internal\sdk\inc\moderncore /Is:\os\public\amd64chk\shared\inc /Is:\os\public\amd64chk\onecore\external\shared\inc /Is:\os\public\amd64chk\ddk\inc /Is:\os\public\amd64chk\onecore\external\ddk\inc /Is:\os\public\amd64chk\ddk\inc\wdm /Is:\os\public\amd64chk\internal\sdk\inc /Is:\os\public\amd64chk\onecore\private\sdk\inc /Is:\os\public\amd64chk\onecore\internal\sdk\inc /Is:\os\public\amd64chk\onecoreuap\private\sdk\inc /Is:\os\public\amd64chk\internal\sdk\inc\minwin /Is:\os\public\amd64chk\onecore\internal\sdk\inc\minwin /Is:\os\public\amd64chk\internal\sdk\inc\minwin\fs /Is:\os\public\amd64chk\onecore\internal\sdk\inc\minwin\fs /Is:\os\public\amd64chk\internal\sdk\inc\mincore /Is:\os\public\amd64chk\onecore\internal\sdk\inc\mincore /Is:\os\public\amd64chk\internal\sdk\inc\clientcore /Is:\os\public\amd64chk\onecore\internal\sdk\inc\clientcore /Is:\os\public\amd64chk\internal\sdk\inc\moderncore /Is:\os\public\amd64chk\onecore\internal\sdk\inc\moderncore /Is:\os\public\amd64chk\internal\oak\inc /Is:\os\public\amd64chk\sdk\inc\crt /Is:\os\public\amd64chk\sdk\inc\crt\stl70  /Zi /Zi /D_WIN64 /D_AMD64_ /DAMD64   /DCONDITION_HANDLING=1 /DNT_UP=1  /DNT_INST=0 /DWIN32=100 /D_NT1X_=100 /DWINNT=1 /D_WIN32_WINNT=0x0600 /DWINVER=0x0600 /D_WIN32_IE=0x0700    /DWIN32_LEAN_AND_MEAN=1   /DDEVL=1 /DDBG=1  /ZH:SHA_256 -D_CONTROL_FLOW_GUARD=1 -D_CONTROL_FLOW_GUARD_SVCTAB=1 /Brepro /trimfile:s:\os\obj\amd64chk\ /trimfile:s:\os\src\ /trimfile:s:\os\public\amd64chk\ /Fos:\os\obj\amd64chk\symcrypt\unittest\lib\objchk\amd64\saveymm.obj amd64\saveymm.asm
+8> Assembling: amd64\saveymm.asm
+8> s:\os\tools\vc\HostX86\amd64\cl.exe @s:\os\obj\amd64chk\Temp\symcrypt\unittest\lib\cl_1.rsp
+8>Microsoft (R) C/C++ Optimizing Compiler Version 19.15.26715 for x64
+8>Copyright (C) Microsoft Corporation.  All rights reserved.
+8>cl /Fo"s:\os\obj\amd64chk\symcrypt\unittest\lib\objchk\amd64/"
+8>   /FC
+8>   /Iamd64\
+8>   /I.
+8>   /Is:\os\src\data\MSRC
+8>   /Is:\os\src\onecore\ds\security\cryptoapi\inc\cryptolegacy
+8>   /Is:\os\public\amd64chk\internal\DS\inc
+8>   /Is:\os\public\amd64chk\internal\DS\inc\crypto
+8>   /Is:\os\public\amd64chk\internal\onecoreds\inc\crypto
+8>   /Is:\os\public\amd64chk\onecore\private\ds\inc\crypto
+8>   /I..\..\inc
+8>   /I..\inc
+8>   /I..\..\lib
+8>   /Is:\os\public\amd64chk\ddk\inc
+8>   /Is:\os\obj\amd64chk\symcrypt\unittest\lib\objchk\amd64
+8>   /Is:\os\public\amd64chk\oak\inc
+8>   /Is:\os\public\amd64chk\shared\inc
+8>   /Is:\os\public\amd64chk\onecore\external\shared\inc
+8>   /Is:\os\public\amd64chk\shared\inc\minwin
+8>   /Is:\os\public\amd64chk\onecore\external\shared\inc\minwin
+8>   /Is:\os\public\amd64chk\shared\inc\mincore
+8>   /Is:\os\public\amd64chk\onecore\external\shared\inc\mincore
+8>   /Is:\os\public\amd64chk\shared\inc\clientcore
+8>   /Is:\os\public\amd64chk\onecore\external\shared\inc\clientcore
+8>   /Is:\os\public\amd64chk\shared\inc\moderncore
+8>   /Is:\os\public\amd64chk\onecore\external\shared\inc\moderncore
+8>   /Is:\os\public\amd64chk\sdk\inc
+8>   /Is:\os\public\amd64chk\onecore\external\sdk\inc
+8>   /Is:\os\public\amd64chk\sdk\inc\minwin
+8>   /Is:\os\public\amd64chk\onecore\private\sdk\inc\minwin
+8>   /Is:\os\public\amd64chk\onecore\internal\sdk\inc\minwin
+8>   /Is:\os\public\amd64chk\sdk\inc\mincore
+8>   /Is:\os\public\amd64chk\onecore\internal\sdk\inc\mincore
+8>   /Is:\os\public\amd64chk\sdk\inc\clientcore
+8>   /Is:\os\public\amd64chk\onecore\internal\sdk\inc\clientcore
+8>   /Is:\os\public\amd64chk\sdk\inc\moderncore
+8>   /Is:\os\public\amd64chk\onecore\internal\sdk\inc\moderncore
+8>   /Is:\os\public\amd64chk\shared\inc
+8>   /Is:\os\public\amd64chk\onecore\external\shared\inc
+8>   /Is:\os\public\amd64chk\ddk\inc
+8>   /Is:\os\public\amd64chk\onecore\external\ddk\inc
+8>   /Is:\os\public\amd64chk\ddk\inc\wdm
+8>   /Is:\os\public\amd64chk\internal\sdk\inc
+8>   /Is:\os\public\amd64chk\onecore\private\sdk\inc
+8>   /Is:\os\public\amd64chk\onecore\internal\sdk\inc
+8>   /Is:\os\public\amd64chk\onecoreuap\private\sdk\inc
+8>   /Is:\os\public\amd64chk\internal\sdk\inc\minwin
+8>   /Is:\os\public\amd64chk\onecore\internal\sdk\inc\minwin
+8>   /Is:\os\public\amd64chk\internal\sdk\inc\minwin\fs
+8>   /Is:\os\public\amd64chk\onecore\internal\sdk\inc\minwin\fs
+8>   /Is:\os\public\amd64chk\internal\sdk\inc\mincore
+8>   /Is:\os\public\amd64chk\onecore\internal\sdk\inc\mincore
+8>   /Is:\os\public\amd64chk\internal\sdk\inc\clientcore
+8>   /Is:\os\public\amd64chk\onecore\internal\sdk\inc\clientcore
+8>   /Is:\os\public\amd64chk\internal\sdk\inc\moderncore
+8>   /Is:\os\public\amd64chk\onecore\internal\sdk\inc\moderncore
+8>   /Is:\os\public\amd64chk\internal\oak\inc
+8>   /Is:\os\public\amd64chk\sdk\inc\crt
+8>   /Is:\os\public\amd64chk\sdk\inc\crt\stl70
+8>   /D_WIN64
+8>   /D_AMD64_
+8>   /DAMD64
+8>   /DCONDITION_HANDLING=1
+8>   /DNT_UP=1
+8>   /DNT_INST=0
+8>   /DWIN32=100
+8>   /D_NT1X_=100
+8>   /DWINNT=1
+8>   /D_WIN32_WINNT=0x0600
+8>   /DWINVER=0x0600
+8>   /D_WIN32_IE=0x0700
+8>   /DWIN32_LEAN_AND_MEAN=1
+8>   /DDEVL=1
+8>   /DDBG=1
+8>   /D_STATIC_CPPLIB
+8>   /D_STL70_
+8>   /D_DLL=1
+8>   /D_MT=1
+8>   /D_USE_DEV11_CRT
+8>   /DTEST_CODE
+8>   -D_APISET_WINDOWS_VERSION=0x601
+8>   -D_APISET_MINWIN_VERSION=0x0100
+8>   -D_APISET_MINCORE_VERSION=0x0100
+8>   /DNTDDI_VERSION=0x06000100
+8>   /DWINBLUE_KBSPRING14
+8>   /DBUILD_WINDOWS
+8>   /D__WRL_CONFIGURATION_LEGACY__
+8>   /DBUILD_UMS_ENABLED=1
+8>   /DBUILD_WOW64_ENABLED=1
+8>   -D_USE_DECLSPECS_FOR_SAL=1
+8>   -D_CONTROL_FLOW_GUARD=1
+8>   -D_CONTROL_FLOW_GUARD_SVCTAB=1
+8>   /c
+8>   /Zc:wchar_t-
+8>   /Zl
+8>   /Zp8
+8>   /Gy
+8>   /W4
+8>   /d1import_no_registry
+8>   /EHsc
+8>   /GR
+8>   /GF
+8>   /GS
+8>   /Z7
+8>   /Oxs
+8>   /GL
+8>   /Z7
+8>   -Zc:alignedNew-
+8>   /d2NoSmallFunctionOpt
+8>   -Zc:noexceptTypes-
+8>   /w15043
+8>   /D_CRT_STDIO_IMP=
+8>   /D_CRT_STDIO_IMP_ALT=
+8>   /D_FULL_IOBUF
+8>   /d1trimfile:s:\os\src\=BASEDIR
+8>   /d1trimfile:s:\os\public\amd64chk\=PUBLIC_ROOT
+8>   /d1trimfile:s:\os\obj\amd64chk\=OBJECT_ROOT
+8>   /d1trimfile:s:\os\bin\amd64chk\=_NTTREE
+8>   /d2AllowCompatibleILVersions
+8>   /d2Zi+
+8>   /ZH:SHA_256
+8>   /wd4986
+8>   /wd4987
+8>   /wd4471
+8>   /wd4369
+8>   /wd4309
+8>   /wd4754
+8>   /wd4427
+8>   /d2Qvec-mathlib-
+8>   /d2Qvec-sse2only
+8>   /Gw
+8>   /d1ignorePragmaWarningError
+8>   /wd4316
+8>   /wd4973
+8>   /DDONT_DISABLE_PCH_WARNINGS_IN_WARNING_H
+8>   /Brepro
+8>   -D_HAS_MAGIC_STATICS=1
+8>   -Zc:sizedDealloc-
+8>   /Wv:19.11
+8>   -d1vc7dname
+8>   /Qspectre
+8>   /d2guard4
+8>   /d2nocfgrngchk
+8>   /d2guardcfgfuncptr
+8>   /d2psvcallopt150000
+8>   /homeparams
+8>   /FIs:\os\public\amd64chk\internal\sdk\inc\warning.h
+8>   /FIs:\os\public\amd64chk\internal\onecoresdktools\inc\testcode.h
+8>   /Yuprecomp.h
+8>   /Fps:\os\obj\amd64chk\symcrypt\unittest\lib\objchk\amd64\precomp.pch
+8>   .\main.cpp .\testaesctrdrbg.cpp .\kat.cpp .\rng.cpp .\perfprint.cpp .\printtable.cpp .\resultmerge.cpp .\sc_implementations.cpp .\rsa32_implementations.cpp .\capi_implementations.cpp .\cng_implementations.cpp .\msbignum_implementations.cpp .\ref_implementations.cpp .\testhash.cpp .\perf.cpp .\testselftest.cpp .\testmac.cpp .\testblockciphers.cpp .\testxts.cpp .\testauthenc.cpp .\teststreamcipher.cpp .\testwipe.cpp .\testutil.cpp .\testkdf.cpp .\testtlscbchmac.cpp .\env_symcryptunittest.cpp .\testmultithread.cpp .\rnddriver.cpp .\testarithmetic.cpp .\testecc.cpp .\testinterop.cpp .\testrsa.cpp .\testrsa_sc.cpp .\testrsa_msbignum.cpp .\testrsa_cng.cpp .\testdl.cpp .\testdl_sc.cpp .\testdl_msbignum.cpp .\testdl_cng.cpp .\callback.cpp .\testmontgomery.cpp .\testscstable.cpp .\testieee802_11saecustom.cpp 
+8>main.cpp
+8>testaesctrdrbg.cpp
+8>kat.cpp
+8>rng.cpp
+8>perfprint.cpp
+8>printtable.cpp
+8>resultmerge.cpp
+8>sc_implementations.cpp
+8>rsa32_implementations.cpp
+8>capi_implementations.cpp
+8>cng_implementations.cpp
+8>msbignum_implementations.cpp
+8>ref_implementations.cpp
+8>testhash.cpp
+8>perf.cpp
+8>testselftest.cpp
+8>testmac.cpp
+8>testblockciphers.cpp
+8>testxts.cpp
+8>testauthenc.cpp
+8>Compiling...
+8>teststreamcipher.cpp
+8>testwipe.cpp
+8>testutil.cpp
+8>testkdf.cpp
+8>testtlscbchmac.cpp
+8>env_symcryptunittest.cpp
+8>testmultithread.cpp
+8>rnddriver.cpp
+8>testarithmetic.cpp
+8>testecc.cpp
+8>testinterop.cpp
+8>testrsa.cpp
+8>testrsa_sc.cpp
+8>testrsa_msbignum.cpp
+8>testrsa_cng.cpp
+8>testdl.cpp
+8>testdl_sc.cpp
+8>testdl_msbignum.cpp
+8>testdl_cng.cpp
+8>callback.cpp
+8>Compiling...
+8>testmontgomery.cpp
+8>testscstable.cpp
+8>testieee802_11saecustom.cpp
+8> C:\WINDOWS\system32\cmd.exe /c type s:\os\obj\amd64chk\Temp\symcrypt\unittest\lib\echo_1.msg
+8>    rc.exe -l 409 -DSXS_PROCESSOR_ARCHITECTURE="""amd64"""  -DSXS_TARGET="""symcryptunittest_lib.dll"""   -DSYSTEM_COMPATIBLE_ASSEMBLY_NAME="""Microsoft.Windows.SystemCompatible"""  -DLSYSTEM_COMPATIBLE_ASSEMBLY_NAME=L"""Microsoft.Windows.SystemCompatible"""   -DSXS_ASSEMBLY_VERSION="""""" -z "MS Sans Serif,Helv/MS Shell Dlg"   /D__BUILDDATE__=180926-1430 /D__BUILDMACHINE__=GitEnlistment(niels) /r /fo s:\os\obj\amd64chk\symcrypt\unittest\lib\objchk\amd64\symcryptunittest.res /D_WIN64 /D_AMD64_ /DAMD64   /DCONDITION_HANDLING=1 /DNT_UP=1  /DNT_INST=0 /DWIN32=100 /D_NT1X_=100 /DWINNT=1 /D_WIN32_WINNT=0x0600 /DWINVER=0x0600 /D_WIN32_IE=0x0700    /DWIN32_LEAN_AND_MEAN=1  /DDEVL=1 /DDBG=1   /D_STATIC_CPPLIB /D_STL70_ /D_DLL=1 /D_MT=1  /D_USE_DEV11_CRT /DTEST_CODE -D_APISET_WINDOWS_VERSION=0x601 -D_APISET_MINWIN_VERSION=0x0100 -D_APISET_MINCORE_VERSION=0x0100 /DNTDDI_VERSION=0x06000100 /DWINBLUE_KBSPRING14 /DBUILD_WINDOWS /D__WRL_CONFIGURATION_LEGACY__ /DBUILD_UMS_ENABLED=1 /DBUILD_WOW64_ENABLED=1 -D_USE_DECLSPECS_FOR_SAL=1 -D_CONTROL_FLOW_GUARD=1 -D_CONTROL_FLOW_GUARD_SVCTAB=1   /Is:\os\src\data\MSRC /Is:\os\src\onecore\ds\security\cryptoapi\inc\cryptolegacy /Is:\os\public\amd64chk\internal\DS\inc /Is:\os\public\amd64chk\internal\DS\inc\crypto /Is:\os\public\amd64chk\internal\onecoreds\inc\crypto /Is:\os\public\amd64chk\onecore\private\ds\inc\crypto /I..\..\inc /I..\inc /I..\..\lib /Is:\os\public\amd64chk\ddk\inc /Is:\os\obj\amd64chk\symcrypt\unittest\lib\objchk\amd64 /Is:\os\public\amd64chk\oak\inc /Is:\os\public\amd64chk\shared\inc /Is:\os\public\amd64chk\onecore\external\shared\inc /Is:\os\public\amd64chk\shared\inc\minwin /Is:\os\public\amd64chk\onecore\external\shared\inc\minwin /Is:\os\public\amd64chk\shared\inc\mincore /Is:\os\public\amd64chk\onecore\external\shared\inc\mincore /Is:\os\public\amd64chk\shared\inc\clientcore /Is:\os\public\amd64chk\onecore\external\shared\inc\clientcore /Is:\os\public\amd64chk\shared\inc\moderncore /Is:\os\public\amd64chk\onecore\external\shared\inc\moderncore /Is:\os\public\amd64chk\sdk\inc /Is:\os\public\amd64chk\onecore\external\sdk\inc /Is:\os\public\amd64chk\sdk\inc\minwin /Is:\os\public\amd64chk\onecore\private\sdk\inc\minwin /Is:\os\public\amd64chk\onecore\internal\sdk\inc\minwin /Is:\os\public\amd64chk\sdk\inc\mincore /Is:\os\public\amd64chk\onecore\internal\sdk\inc\mincore /Is:\os\public\amd64chk\sdk\inc\clientcore /Is:\os\public\amd64chk\onecore\internal\sdk\inc\clientcore /Is:\os\public\amd64chk\sdk\inc\moderncore /Is:\os\public\amd64chk\onecore\internal\sdk\inc\moderncore /Is:\os\public\amd64chk\shared\inc /Is:\os\public\amd64chk\onecore\external\shared\inc /Is:\os\public\amd64chk\ddk\inc /Is:\os\public\amd64chk\onecore\external\ddk\inc /Is:\os\public\amd64chk\ddk\inc\wdm /Is:\os\public\amd64chk\internal\sdk\inc /Is:\os\public\amd64chk\onecore\private\sdk\inc /Is:\os\public\amd64chk\onecore\internal\sdk\inc /Is:\os\public\amd64chk\onecoreuap\private\sdk\inc /Is:\os\public\amd64chk\internal\sdk\inc\minwin /Is:\os\public\amd64chk\onecore\internal\sdk\inc\minwin /Is:\os\public\amd64chk\internal\sdk\inc\minwin\fs /Is:\os\public\amd64chk\onecore\internal\sdk\inc\minwin\fs /Is:\os\public\amd64chk\internal\sdk\inc\mincore /Is:\os\public\amd64chk\onecore\internal\sdk\inc\mincore /Is:\os\public\amd64chk\internal\sdk\inc\clientcore /Is:\os\public\amd64chk\onecore\internal\sdk\inc\clientcore /Is:\os\public\amd64chk\internal\sdk\inc\moderncore /Is:\os\public\amd64chk\onecore\internal\sdk\inc\moderncore /Is:\os\public\amd64chk\internal\oak\inc /Is:\os\public\amd64chk\sdk\inc\crt /Is:\os\public\amd64chk\sdk\inc\crt\stl70 ..\symcryptunittest.rc
+8>Microsoft (R) Windows (R) Resource Compiler Version 10.0.10011.16384
+8>Copyright (C) Microsoft Corporation.  All rights reserved.
+8> s:\os\tools\vc\HostX64\amd64\link.exe /lib /out:s:\os\obj\amd64chk\symcrypt\unittest\lib\objchk\amd64\symcryptunittest_lib.lib /IGNORE:4078,4221,4281,4198   /nodefaultlib /machine:amd64 /ltcg /Brepro @s:\os\obj\amd64chk\Temp\symcrypt\unittest\lib\lib_1.rsp
+8>Microsoft (R) Library Manager Version 14.15.26715.3
+8>Copyright (C) Microsoft Corporation.  All rights reserved.
+8>s:\os\obj\amd64chk\symcrypt\unittest\lib\objchk\amd64\precomp.obj 
+8>s:\os\obj\amd64chk\symcrypt\unittest\lib\objchk\amd64\saveymm.obj 
+8>s:\os\obj\amd64chk\symcrypt\unittest\lib\objchk\amd64\main.obj 
+8>s:\os\obj\amd64chk\symcrypt\unittest\lib\objchk\amd64\testaesctrdrbg.obj 
+8>s:\os\obj\amd64chk\symcrypt\unittest\lib\objchk\amd64\kat.obj 
+8>s:\os\obj\amd64chk\symcrypt\unittest\lib\objchk\amd64\rng.obj 
+8>s:\os\obj\amd64chk\symcrypt\unittest\lib\objchk\amd64\perfprint.obj 
+8>s:\os\obj\amd64chk\symcrypt\unittest\lib\objchk\amd64\printtable.obj 
+8>s:\os\obj\amd64chk\symcrypt\unittest\lib\objchk\amd64\resultmerge.obj 
+8>s:\os\obj\amd64chk\symcrypt\unittest\lib\objchk\amd64\sc_implementations.obj 
+8>s:\os\obj\amd64chk\symcrypt\unittest\lib\objchk\amd64\rsa32_implementations.obj 
+8>s:\os\obj\amd64chk\symcrypt\unittest\lib\objchk\amd64\capi_implementations.obj 
+8>s:\os\obj\amd64chk\symcrypt\unittest\lib\objchk\amd64\cng_implementations.obj 
+8>s:\os\obj\amd64chk\symcrypt\unittest\lib\objchk\amd64\msbignum_implementations.obj 
+8>s:\os\obj\amd64chk\symcrypt\unittest\lib\objchk\amd64\ref_implementations.obj 
+8>s:\os\obj\amd64chk\symcrypt\unittest\lib\objchk\amd64\testhash.obj 
+8>s:\os\obj\amd64chk\symcrypt\unittest\lib\objchk\amd64\perf.obj 
+8>s:\os\obj\amd64chk\symcrypt\unittest\lib\objchk\amd64\testselftest.obj 
+8>s:\os\obj\amd64chk\symcrypt\unittest\lib\objchk\amd64\testmac.obj 
+8>s:\os\obj\amd64chk\symcrypt\unittest\lib\objchk\amd64\testblockciphers.obj 
+8>s:\os\obj\amd64chk\symcrypt\unittest\lib\objchk\amd64\testxts.obj 
+8>s:\os\obj\amd64chk\symcrypt\unittest\lib\objchk\amd64\testauthenc.obj 
+8>s:\os\obj\amd64chk\symcrypt\unittest\lib\objchk\amd64\teststreamcipher.obj 
+8>s:\os\obj\amd64chk\symcrypt\unittest\lib\objchk\amd64\testwipe.obj 
+8>s:\os\obj\amd64chk\symcrypt\unittest\lib\objchk\amd64\testutil.obj 
+8>s:\os\obj\amd64chk\symcrypt\unittest\lib\objchk\amd64\testkdf.obj 
+8>s:\os\obj\amd64chk\symcrypt\unittest\lib\objchk\amd64\testtlscbchmac.obj 
+8>s:\os\obj\amd64chk\symcrypt\unittest\lib\objchk\amd64\env_symcryptunittest.obj 
+8>s:\os\obj\amd64chk\symcrypt\unittest\lib\objchk\amd64\testmultithread.obj 
+8>s:\os\obj\amd64chk\symcrypt\unittest\lib\objchk\amd64\rnddriver.obj 
+8>s:\os\obj\amd64chk\symcrypt\unittest\lib\objchk\amd64\testarithmetic.obj 
+8>s:\os\obj\amd64chk\symcrypt\unittest\lib\objchk\amd64\testecc.obj 
+8>s:\os\obj\amd64chk\symcrypt\unittest\lib\objchk\amd64\testinterop.obj 
+8>s:\os\obj\amd64chk\symcrypt\unittest\lib\objchk\amd64\testrsa.obj 
+8>s:\os\obj\amd64chk\symcrypt\unittest\lib\objchk\amd64\testrsa_sc.obj 
+8>s:\os\obj\amd64chk\symcrypt\unittest\lib\objchk\amd64\testrsa_msbignum.obj 
+8>s:\os\obj\amd64chk\symcrypt\unittest\lib\objchk\amd64\testrsa_cng.obj 
+8>s:\os\obj\amd64chk\symcrypt\unittest\lib\objchk\amd64\testdl.obj 
+8>s:\os\obj\amd64chk\symcrypt\unittest\lib\objchk\amd64\testdl_sc.obj 
+8>s:\os\obj\amd64chk\symcrypt\unittest\lib\objchk\amd64\testdl_msbignum.obj 
+8>s:\os\obj\amd64chk\symcrypt\unittest\lib\objchk\amd64\testdl_cng.obj 
+8>s:\os\obj\amd64chk\symcrypt\unittest\lib\objchk\amd64\callback.obj 
+8>s:\os\obj\amd64chk\symcrypt\unittest\lib\objchk\amd64\testmontgomery.obj 
+8>s:\os\obj\amd64chk\symcrypt\unittest\lib\objchk\amd64\testscstable.obj 
+8>s:\os\obj\amd64chk\symcrypt\unittest\lib\objchk\amd64\testieee802_11saecustom.obj 
+BUILD: Pass complete => PASS1
+1>BUILDMSG: Processing s:\os\src\symcrypt\unittest\sys_test
+1>Linking for s:\os\src\symcrypt\unittest\sys_test *************
+1>'s:\os\src\tools\amd64\nmake.exe /nologo BUILDMSG=Stop. /nologo /f s:\os\src\tools\makefile.def BUILD_PASS=PASS2 LINKONLY=1 NOPASS0=1 TEST_CODE=1 MAKEDIR_RELATIVE_TO_BASEDIR=symcrypt\unittest\sys_test TARGET_PLATFORM=windows CODE_SETS_BUILDING=cs_windows,cs_xbox,cs_phone,cs_azure,cs_domino'
+2>BUILDMSG: Processing s:\os\src\symcrypt\unittest\sys_legacy
+2>Linking for s:\os\src\symcrypt\unittest\sys_legacy *************
+2>'s:\os\src\tools\amd64\nmake.exe /nologo BUILDMSG=Stop. /nologo /f s:\os\src\tools\makefile.def BUILD_PASS=PASS2 LINKONLY=1 NOPASS0=1 TEST_CODE=1 MAKEDIR_RELATIVE_TO_BASEDIR=symcrypt\unittest\sys_legacy TARGET_PLATFORM=windows CODE_SETS_BUILDING=cs_windows,cs_xbox,cs_phone,cs_azure,cs_domino'
+3>BUILDMSG: Processing s:\os\src\symcrypt\unittest\exe_legacy
+3>Linking for s:\os\src\symcrypt\unittest\exe_legacy *************
+3>'s:\os\src\tools\amd64\nmake.exe /nologo BUILDMSG=Stop. /nologo /f s:\os\src\tools\makefile.def BUILD_PASS=PASS2 LINKONLY=1 NOPASS0=1 TEST_CODE=1 MAKEDIR_RELATIVE_TO_BASEDIR=symcrypt\unittest\exe_legacy TARGET_PLATFORM=windows CODE_SETS_BUILDING=cs_windows,cs_xbox,cs_phone,cs_azure,cs_domino'
+4>BUILDMSG: Processing s:\os\src\symcrypt\unittest\exe_win8_1nlater
+4>Linking for s:\os\src\symcrypt\unittest\exe_win8_1nlater *************
+4>'s:\os\src\tools\amd64\nmake.exe /nologo BUILDMSG=Stop. /nologo /f s:\os\src\tools\makefile.def BUILD_PASS=PASS2 LINKONLY=1 NOPASS0=1 TEST_CODE=1 MAKEDIR_RELATIVE_TO_BASEDIR=symcrypt\unittest\exe_win8_1nlater TARGET_PLATFORM=windows CODE_SETS_BUILDING=cs_windows,cs_xbox,cs_phone,cs_azure,cs_domino'
+5>BUILDMSG: Processing s:\os\src\symcrypt\unittest\exe_win7nlater
+5>Linking for s:\os\src\symcrypt\unittest\exe_win7nlater *************
+5>'s:\os\src\tools\amd64\nmake.exe /nologo BUILDMSG=Stop. /nologo /f s:\os\src\tools\makefile.def BUILD_PASS=PASS2 LINKONLY=1 NOPASS0=1 TEST_CODE=1 MAKEDIR_RELATIVE_TO_BASEDIR=symcrypt\unittest\exe_win7nlater TARGET_PLATFORM=windows CODE_SETS_BUILDING=cs_windows,cs_xbox,cs_phone,cs_azure,cs_domino'
+6>BUILDMSG: Processing s:\os\src\symcrypt\unittest\sys_win7nlater
+6>Linking for s:\os\src\symcrypt\unittest\sys_win7nlater *************
+6>'s:\os\src\tools\amd64\nmake.exe /nologo BUILDMSG=Stop. /nologo /f s:\os\src\tools\makefile.def BUILD_PASS=PASS2 LINKONLY=1 NOPASS0=1 TEST_CODE=1 MAKEDIR_RELATIVE_TO_BASEDIR=symcrypt\unittest\sys_win7nlater TARGET_PLATFORM=windows CODE_SETS_BUILDING=cs_windows,cs_xbox,cs_phone,cs_azure,cs_domino'
+7>BUILDMSG: Processing s:\os\src\symcrypt\gen
+7>Linking for s:\os\src\symcrypt\gen *************
+7>'s:\os\src\tools\amd64\nmake.exe /nologo BUILDMSG=Stop. /nologo /f s:\os\src\tools\makefile.def BUILD_PASS=PASS2 LINKONLY=1 NOPASS0=1 TEST_CODE=1 MAKEDIR_RELATIVE_TO_BASEDIR=symcrypt\gen TARGET_PLATFORM=windows CODE_SETS_BUILDING=cs_windows,cs_xbox,cs_phone,cs_azure,cs_domino'
+8>BUILDMSG: Processing s:\os\src\symcrypt\unittest\exe_test
+8>Linking for s:\os\src\symcrypt\unittest\exe_test *************
+8>'s:\os\src\tools\amd64\nmake.exe /nologo BUILDMSG=Stop. /nologo /f s:\os\src\tools\makefile.def BUILD_PASS=PASS2 LINKONLY=1 NOPASS0=1 TEST_CODE=1 MAKEDIR_RELATIVE_TO_BASEDIR=symcrypt\unittest\exe_test TARGET_PLATFORM=windows CODE_SETS_BUILDING=cs_windows,cs_xbox,cs_phone,cs_azure,cs_domino'
+BUILD: (ActiveWorkLoad),14.78,,48,2,23,17,12,0,9,0,0,0,0,0, PASS2,0,symcrypt\unittest\sys_test,NIELS-5810
+BUILD: (ActiveWorkLoad),14.80,,48,2,23,17,12,12,9,1,1,1,0,0, PASS2,0,symcrypt\unittest\sys_legacy,NIELS-5810
+BUILD: (ActiveWorkLoad),14.80,,48,2,23,17,12,12,9,2,2,2,0,0, PASS2,0,symcrypt\unittest\exe_legacy,NIELS-5810
+BUILD: (ActiveWorkLoad),14.80,,48,2,23,17,12,12,9,3,3,3,0,0, PASS2,0,symcrypt\unittest\exe_win8_1nlater,NIELS-5810
+BUILD: (ActiveWorkLoad),14.80,,48,2,23,17,12,12,9,4,4,4,0,0, PASS2,0,symcrypt\unittest\exe_win7nlater,NIELS-5810
+BUILD: (ActiveWorkLoad),14.81,,48,2,23,17,12,12,9,5,5,5,0,0, PASS2,0,symcrypt\unittest\sys_win7nlater,NIELS-5810
+BUILD: (ActiveWorkLoad),14.81,,48,2,23,17,12,12,9,6,6,6,0,0, PASS2,0,symcrypt\gen,NIELS-5810
+BUILD: (ActiveWorkLoad),14.81,,48,2,23,17,12,12,9,7,7,7,0,0, PASS2,0,symcrypt\unittest\exe_test,NIELS-5810
+7>STL version 70 used in "s:\os\src\symcrypt\gen" (STL_VER_TELEMETRY)
+7>s:\os\src\symcrypt\gen building test code in dev tree
+7> set > s:\os\obj\amd64chk\symcrypt\gen\objchk\amd64\_PASS2_Marker.log
+7> s:\os\tools\vc\HostX64\amd64\link.exe /out:s:\os\obj\amd64chk\symcrypt\gen\objchk\amd64\symcryptConstantGen.exe  /machine:amd64 @s:\os\obj\amd64chk\Temp\symcrypt\gen\lnk.rsp
+7>Microsoft (R) Incremental Linker Version 14.15.26715.3
+7>Copyright (C) Microsoft Corporation.  All rights reserved.
+7>/NOVCFEATURE 
+7>/d2:-NoSmallFunctionOpt 
+7>/RunBelow4GB 
+7>-d2:-TypeProp- 
+7>-d2:-SpecDevirt- 
+7>/RetryOnFileOpenFailure 
+7>-ignore:4199 
+7>/MERGE:_PAGE=PAGE 
+7>/MERGE:_TEXT=.text 
+7>/MERGE:_RDATA=.rdata 
+7>/OPT:REF 
+7>/OPT:ICF 
+7>/IGNORE:4078,4221,4281,4198 
+7>/INCREMENTAL:NO 
+7>/release 
+7>/NODEFAULTLIB 
+7>/debug 
+7>/debugtype:cv,fixup,pdata 
+7>/version:10.0 
+7>/osversion:10.0 
+7>/ltcg 
+7>/Brepro 
+7>/functionpadmin:6 
+7>/MERGE:.orpc=.text 
+7>/d2:-guardspecload 
+7>/merge:.gfids=.rdata 
+7>/guard:export 
+7>/guard:mixed 
+7>/d2:-guard4 
+7>/d2:-nocfgrngchk 
+7>/d2:-guardcfgfuncptr 
+7>/d2:-guardcfgdispatch 
+7>/d2:-guardlongjmp 
+7>/guard:longjmp 
+7>/guard:exportsuppressinfo 
+7>/guard:addrtakeniat 
+7>/d2:-psvcallopt150000 
+7>/pdbcompress 
+7>/STACK:0x80000,0x2000 
+7>/tsaware 
+7>/dynamicbase 
+7>/highentropyva 
+7>/subsystem:console,10.00 
+7>/entry:mainCRTStartup 
+7>s:\os\obj\amd64chk\symcrypt\gen\objchk\amd64\main_gen.obj 
+7>s:\os\public\amd64chk\sdk\lib\amd64\ntstc_msvcrt.lib 
+7>s:\os\public\amd64chk\sdk\lib\amd64\msvcrt.lib 
+7>s:\os\public\amd64chk\internal\sdk\lib\amd64\ucrtshims_msvcrt.lib 
+7>s:\os\public\amd64chk\sdk\lib\minwin\amd64\ntdll.lib 
+7>s:\os\public\amd64chk\sdk\lib\amd64\powrprof.lib 
+7>s:\os\public\amd64chk\sdk\lib\amd64\bcrypt.lib 
+7>s:\os\public\amd64chk\sdk\lib\mincore\amd64\mincore.lib 
+7>s:\os\public\amd64chk\sdk\lib\mincore\amd64\mincore_legacy.lib 
+7>s:\os\public\amd64chk\sdk\lib\mincore\amd64\mincore_obsolete.lib 
+7>Generating code
+7>Finished generating code
+7> C:\WINDOWS\system32\cmd.exe /c del s:\os\obj\amd64chk\symcrypt\gen\objchk\amd64\symcryptConstantGen.ilk.persistent s:\os\obj\amd64chk\symcrypt\gen\objchk\amd64\symcryptConstantGen.exe.persistent s:\os\obj\amd64chk\symcrypt\gen\objchk\amd64\symcryptConstantGen.pdb.persistent 2>nul
+7> FixTsVersionStringAppend /pe=s:\os\obj\amd64chk\symcrypt\gen\objchk\amd64\symcryptConstantGen.exe
+7>s:\os\src\symcrypt\gen>s:\os\tools\FixTsVersionStringAppend\FixTsVersionStringAppend.exe /pe=s:\os\obj\amd64chk\symcrypt\gen\objchk\amd64\symcryptConstantGen.exe 
+7>[s:\os\obj\amd64chk\symcrypt\gen\objchk\amd64\symcryptConstantGen.exe]
+7>No version resources present.
+7>  C:\WINDOWS\system32\cmd.exe /c if not exist s:\os\obj\amd64chk\symcrypt\gen\objchk\amd64\symcryptConstantGen.exe.mui (  echo Build_Status  LN_MUI_STS: LGNSTS_MUIOFF symcryptConstantGen.exe  )
+7>Build_Status LN_MUI_STS: LGNSTS_MUIOFF symcryptConstantGen.exe 
+7> C:\WINDOWS\system32\cmd.exe /c if exist s:\os\obj\amd64chk\Temp\symcrypt\gen\post_link_concurrent.rsp contool.exe @s:\os\obj\amd64chk\Temp\symcrypt\gen\post_link_concurrent.rsp
+7> C:\WINDOWS\system32\cmd.exe /c if exist s:\os\obj\amd64chk\Temp\symcrypt\gen\post_link_concurrent2.rsp contool.exe @s:\os\obj\amd64chk\Temp\symcrypt\gen\post_link_concurrent2.rsp
+1>STL version 70 used in "s:\os\src\symcrypt\unittest\sys_test" (STL_VER_TELEMETRY)
+1>s:\os\src\symcrypt\unittest\sys_test building test code in dev tree
+1>warning: USE_RTTI is incompatible with kernel mode targets
+1> set > s:\os\obj\amd64chk\symcrypt\unittest\sys_test\objchk\amd64\_PASS2_Marker.log
+1> s:\os\tools\vc\HostX64\amd64\link.exe /out:s:\os\obj\amd64chk\symcrypt\unittest\sys_test\objchk\amd64\SymCryptDriver_test.sys  /machine:amd64 @s:\os\obj\amd64chk\Temp\symcrypt\unittest\sys_test\lnk.rsp
+1>Microsoft (R) Incremental Linker Version 14.15.26715.3
+1>Copyright (C) Microsoft Corporation.  All rights reserved.
+1>/NOVCFEATURE 
+1>/d2:-NoSmallFunctionOpt 
+1>/RunBelow4GB 
+1>-d2:-TypeProp- 
+1>-d2:-SpecDevirt- 
+1>/RetryOnFileOpenFailure 
+1>-ignore:4199 
+1>/MERGE:_PAGE=PAGE 
+1>/MERGE:_TEXT=.text 
+1>/MERGE:_RDATA=.rdata 
+1>/OPT:REF 
+1>/OPT:ICF 
+1>/IGNORE:4078,4221,4281,4198 
+1>/INCREMENTAL:NO 
+1>/release 
+1>/NODEFAULTLIB 
+1>/debug 
+1>/debugtype:cv,fixup,pdata 
+1>/version:10.0 
+1>/osversion:10.0 
+1>/ltcg 
+1>/Brepro 
+1>/functionpadmin:6 
+1>/MERGE:.orpc=.text 
+1>/d2:-guardspecload 
+1>/d2:-guardretpoline 
+1>/guard:retpoline 
+1>/d2:-guardcfgdispatch 
+1>/d2:-guard4 
+1>/d2:-nocfgrngchk 
+1>/d2:-guardlongjmp 
+1>/d2:-guardcfgfuncptr 
+1>/nooptidata 
+1>/guard:mixed 
+1>/guard:addrtakeniat 
+1>/guard:export 
+1>/guard:exportsuppress 
+1>/guard:exportsuppressinfo 
+1>/guard:longjmp 
+1>/merge:.gfids=GFIDS 
+1>/section:GFIDS,d 
+1>/pdbcompress 
+1>/STACK:0x40000,0x1000 
+1>/driver /kernel 
+1>/base:0x1C0000000 
+1>/subsystem:native,10.00 
+1>/entry:GsDriverEntry 
+1>/out:s:\os\obj\amd64chk\symcrypt\unittest\sys_test\objchk\amd64\SymCryptDriver_test.sys 
+1>s:\os\obj\amd64chk\symcrypt\unittest\sys_test\objchk\amd64\main_sys.obj 
+1>s:\os\public\amd64chk\ddk\lib\amd64\BufferOverflowFastFailK.lib 
+1>s:\os\public\amd64chk\ddk\lib\amd64\ntoskrnl.lib 
+1>s:\os\public\amd64chk\ddk\lib\amd64\hal.lib 
+1>s:\os\public\amd64chk\ddk\lib\amd64\wmilib.lib 
+1>s:\os\public\amd64chk\ddk\lib\amd64\cng.lib 
+1>s:\os\public\amd64chk\internal\minwin\priv_sdk\lib\amd64\symcrypt-chk.lib 
+1>s:\os\obj\amd64chk\symcrypt\lib\objchk\amd64\symcrypt.lib 
+1>Generating code
+1>Finished generating code
+1> FixTsVersionStringAppend /pe=s:\os\obj\amd64chk\symcrypt\unittest\sys_test\objchk\amd64\SymCryptDriver_test.sys
+1>s:\os\src\symcrypt\unittest\sys_test>s:\os\tools\FixTsVersionStringAppend\FixTsVersionStringAppend.exe /pe=s:\os\obj\amd64chk\symcrypt\unittest\sys_test\objchk\amd64\SymCryptDriver_test.sys 
+1>[s:\os\obj\amd64chk\symcrypt\unittest\sys_test\objchk\amd64\SymCryptDriver_test.sys]
+1>No version resources present.
+1> s:\os\src\tools\perl\bin\perl.exe -S s:\os\src\tools\analyzeNearJump.pl /file:s:\os\obj\amd64chk\symcrypt\unittest\sys_test\objchk\amd64\SymCryptDriver_test.sys
+1>(analyzeNearJump.pl) [11/16/18 16:18:41] Starting near jump analysis.
+1>(analyzeNearJump.pl) [11/16/18 16:18:41] Relative path is: 'symcrypt\unittest\sys_test\SymCryptDriver_test.sys'
+1>(analyzeNearJump.pl) [11/16/18 16:18:41] Dump command line: s:\os\tools\dump\dump.exe /dumpNearJumpsCSV s:\os\obj\amd64chk\symcrypt\unittest\sys_test\objchk\amd64\SymCryptDriver_test.sys.dump.csv s:\os\obj\amd64chk\symcrypt\unittest\sys_test\objchk\amd64\SymCryptDriver_test.sys 2>&1
+1>(analyzeNearJump.pl) [11/16/18 16:18:41] Dump output:
+1>Microsoft (R) Vulcan Driver 2.64.26828.9996 (Aug 27 2018 17:57:55) (CPPTEST-72-11)
+1>Microsoft (R) Vulcan 2.64.26828.9996 (Aug 27 2018 17:52:21) (CPPTEST-72-11)
+1>Copyright (C) 2008 Microsoft Corporation. All rights reserved.
+1>Microsoft Confidential - For Internal Use Only
+1>DUMP: Analyzing 's:\os\obj\amd64chk\symcrypt\unittest\sys_test\objchk\amd64\SymCryptDriver_test.sys'
+1>DUMP: InputType is PEAMD64
+1>========================================================
+1>DUMP: Imports (without building IR): (0=Nat; 1=Delay; 2=PInvoke; 3=MEP
+1>DUMP: Warning: BB0049: The block '1C0018CD0' is considered as both a code block and a data block, assume code block.
+1>     Block summary by type
+1>     Code:              2609 Blocks, Total Size 0x00016240
+1>     Data:               373 Blocks, Total Size 0x00006EBE
+1>     Dead Code:            0 Blocks, Total Size 0x00000000
+1>     Dead Data:           37 Blocks, Total Size 0x00000EFE
+1>     Dead Unknown:       334 Blocks, Total Size 0x000026EE
+1>     -----------------------------------------------------
+1>     Total:             3353 Blocks, Total Size 0x000206EA
+1>Total imports = 25
+1>========================================================
+1>DUMP: Binary [s:\os\obj\amd64chk\symcrypt\unittest\sys_test\objchk\amd64\SymCryptDriver_test.sys] is Driver
+1>DUMP: InputType is PEAMD64
+1>DUMP: Native Platform type AMD64
+1>DUMP: IR Platform type AMD64
+1>HeaderBlock address = 1C0000000
+1>Base Address: 1C0000000
+1>DUMP: EntryPoints:
+1> 1C0024010
+1>DUMP: Solo entry points (using Vulcan API):
+1> 1C0024010
+1>(analyzeNearJump.pl) [11/16/18 16:18:41] dump.exe output for 'symcrypt\unittest\sys_test\SymCryptDriver_test.sys' contains no lines.
+1>(analyzeNearJump.pl) [11/16/18 16:18:41] Near jump binary analysis PASSED.
+1> s:\os\src\tools\signer.cmd authenticode -nosigninfo -type testsignonly -s WindowsSystemComponent -f s:\os\obj\amd64chk\symcrypt\unittest\sys_test\objchk\amd64\SymCryptDriver_test.sys
+1>Signing infra using config file:s:\os\obj\amd64chk\objchk\amd64\build-exe-merged.config
+1>Beginning authenticode signing process for TestSignOnly
+1>Starting execution with the following command: 's:\os\tools\signing\signtool.exe sign /nph /a /sha1 3A2B9897844266CCD4DBFCE83FBA3F1B8E1E28BF /fd Sha256 /s my /sa 1.3.6.1.4.1.311.10.3.28 a8DweF+e3Ai8n1wPx3u8BnRT2kWYM80piG1mnRvkXJ0= "\\?\s:\os\obj\amd64chk\symcrypt\unittest\sys_test\objchk\amd64\SymCryptDriver_test.sys"'
+1>Test signing file time: 995 milliseconds for sign /nph /a /sha1 3A2B9897844266CCD4DBFCE83FBA3F1B8E1E28BF /fd Sha256 /s my /sa 1.3.6.1.4.1.311.10.3.28 a8DweF+e3Ai8n1wPx3u8BnRT2kWYM80piG1mnRvkXJ0= "\\?\s:\os\obj\amd64chk\symcrypt\unittest\sys_test\objchk\amd64\SymCryptDriver_test.sys".
+1>Ending test signing : 1071 milliseconds.
+1>Authenticode signing process completed successfully.
+1>Authenticode signing elapsed execution time: 1125.9989 ms
+1>Signer.exe authenticode signing will return exit code '0' for files 's:\os\obj\amd64chk\symcrypt\unittest\sys_test\objchk\amd64\SymCryptDriver_test.sys'.
+1>  C:\WINDOWS\system32\cmd.exe /c if not exist s:\os\obj\amd64chk\symcrypt\unittest\sys_test\objchk\amd64\SymCryptDriver_test.sys.mui (  echo Build_Status  LN_MUI_STS: LGNSTS_MUIOFF SymCryptDriver_test.sys  )
+1>Build_Status LN_MUI_STS: LGNSTS_MUIOFF SymCryptDriver_test.sys 
+1> C:\WINDOWS\system32\cmd.exe /c if exist s:\os\obj\amd64chk\Temp\symcrypt\unittest\sys_test\post_link_concurrent.rsp contool.exe @s:\os\obj\amd64chk\Temp\symcrypt\unittest\sys_test\post_link_concurrent.rsp
+1> C:\WINDOWS\system32\cmd.exe /c if exist s:\os\obj\amd64chk\Temp\symcrypt\unittest\sys_test\post_link_concurrent2.rsp contool.exe @s:\os\obj\amd64chk\Temp\symcrypt\unittest\sys_test\post_link_concurrent2.rsp
+2>s:\os\src\symcrypt\unittest\sys_legacy building test code in dev tree
+2> set > s:\os\obj\amd64chk\symcrypt\unittest\sys_legacy\objchk\amd64\_PASS2_Marker.log
+2> s:\os\tools\vc\HostX64\amd64\link.exe /out:s:\os\obj\amd64chk\symcrypt\unittest\sys_legacy\objchk\amd64\SymCryptDriver_legacy.sys  /machine:amd64 @s:\os\obj\amd64chk\Temp\symcrypt\unittest\sys_legacy\lnk.rsp
+2>Microsoft (R) Incremental Linker Version 14.15.26715.3
+2>Copyright (C) Microsoft Corporation.  All rights reserved.
+2>/NOVCFEATURE 
+2>/d2:-NoSmallFunctionOpt 
+2>/RunBelow4GB 
+2>-d2:-TypeProp- 
+2>-d2:-SpecDevirt- 
+2>/RetryOnFileOpenFailure 
+2>-ignore:4199 
+2>/MERGE:_PAGE=PAGE 
+2>/MERGE:_TEXT=.text 
+2>/MERGE:_RDATA=.rdata 
+2>/OPT:REF 
+2>/OPT:ICF 
+2>/IGNORE:4078,4221,4281,4198 
+2>/INCREMENTAL:NO 
+2>/release 
+2>/NODEFAULTLIB 
+2>/debug 
+2>/debugtype:cv,fixup,pdata 
+2>/version:10.0 
+2>/osversion:10.0 
+2>/ltcg 
+2>/Brepro 
+2>/functionpadmin:6 
+2>/MERGE:.orpc=.text 
+2>/d2:-guardspecload 
+2>/d2:-guardretpoline 
+2>/guard:retpoline 
+2>/d2:-guardcfgdispatch 
+2>/d2:-guard4 
+2>/d2:-nocfgrngchk 
+2>/d2:-guardlongjmp 
+2>/d2:-guardcfgfuncptr 
+2>/nooptidata 
+2>/guard:mixed 
+2>/guard:addrtakeniat 
+2>/guard:export 
+2>/guard:exportsuppress 
+2>/guard:exportsuppressinfo 
+2>/guard:longjmp 
+2>/merge:.gfids=GFIDS 
+2>/section:GFIDS,d 
+2>/pdbcompress 
+2>/STACK:0x40000,0x1000 
+2>/driver /kernel 
+2>/base:0x1C0000000 
+2>/subsystem:native,6.00 
+2>/entry:GsDriverEntry 
+2>/out:s:\os\obj\amd64chk\symcrypt\unittest\sys_legacy\objchk\amd64\SymCryptDriver_legacy.sys 
+2>s:\os\obj\amd64chk\symcrypt\unittest\sys_legacy\objchk\amd64\main_sys.obj 
+2>s:\os\public\amd64chk\sdk\lib\amd64\BufferOverflowK.lib 
+2>s:\os\public\amd64chk\ddk\lib\amd64\ntoskrnl.lib 
+2>s:\os\public\amd64chk\ddk\lib\amd64\hal.lib 
+2>s:\os\public\amd64chk\ddk\lib\amd64\wmilib.lib 
+2>s:\os\public\amd64chk\ddk\lib\amd64\ksecdd.lib 
+2>s:\os\public\amd64chk\internal\minwin\priv_sdk\lib\amd64\symcrypt-chk.lib 
+2>s:\os\obj\amd64chk\symcrypt\lib\objchk\amd64\symcrypt.lib 
+2>Generating code
+2>Finished generating code
+2> FixTsVersionStringAppend /pe=s:\os\obj\amd64chk\symcrypt\unittest\sys_legacy\objchk\amd64\SymCryptDriver_legacy.sys
+2>s:\os\src\symcrypt\unittest\sys_legacy>s:\os\tools\FixTsVersionStringAppend\FixTsVersionStringAppend.exe /pe=s:\os\obj\amd64chk\symcrypt\unittest\sys_legacy\objchk\amd64\SymCryptDriver_legacy.sys 
+2>[s:\os\obj\amd64chk\symcrypt\unittest\sys_legacy\objchk\amd64\SymCryptDriver_legacy.sys]
+2>No version resources present.
+2> s:\os\src\tools\perl\bin\perl.exe -S s:\os\src\tools\analyzeNearJump.pl /file:s:\os\obj\amd64chk\symcrypt\unittest\sys_legacy\objchk\amd64\SymCryptDriver_legacy.sys
+2>(analyzeNearJump.pl) [11/16/18 16:18:41] Starting near jump analysis.
+2>(analyzeNearJump.pl) [11/16/18 16:18:41] Relative path is: 'symcrypt\unittest\sys_legacy\SymCryptDriver_legacy.sys'
+2>(analyzeNearJump.pl) [11/16/18 16:18:41] Dump command line: s:\os\tools\dump\dump.exe /dumpNearJumpsCSV s:\os\obj\amd64chk\symcrypt\unittest\sys_legacy\objchk\amd64\SymCryptDriver_legacy.sys.dump.csv s:\os\obj\amd64chk\symcrypt\unittest\sys_legacy\objchk\amd64\SymCryptDriver_legacy.sys 2>&1
+2>(analyzeNearJump.pl) [11/16/18 16:18:42] Dump output:
+2>Microsoft (R) Vulcan Driver 2.64.26828.9996 (Aug 27 2018 17:57:55) (CPPTEST-72-11)
+2>Microsoft (R) Vulcan 2.64.26828.9996 (Aug 27 2018 17:52:21) (CPPTEST-72-11)
+2>Copyright (C) 2008 Microsoft Corporation. All rights reserved.
+2>Microsoft Confidential - For Internal Use Only
+2>DUMP: Analyzing 's:\os\obj\amd64chk\symcrypt\unittest\sys_legacy\objchk\amd64\SymCryptDriver_legacy.sys'
+2>DUMP: InputType is PEAMD64
+2>========================================================
+2>DUMP: Imports (without building IR): (0=Nat; 1=Delay; 2=PInvoke; 3=MEP
+2>DUMP: Warning: BB0049: The block '1C0014F10' is considered as both a code block and a data block, assume code block.
+2>     Block summary by type
+2>     Code:              2184 Blocks, Total Size 0x00012591
+2>     Data:               341 Blocks, Total Size 0x00006B50
+2>     Dead Code:            0 Blocks, Total Size 0x00000000
+2>     Dead Data:           32 Blocks, Total Size 0x00000DAE
+2>     Dead Unknown:       310 Blocks, Total Size 0x000025F9
+2>     -----------------------------------------------------
+2>     Total:             2867 Blocks, Total Size 0x0001C488
+2>Total imports = 20
+2>========================================================
+2>DUMP: Binary [s:\os\obj\amd64chk\symcrypt\unittest\sys_legacy\objchk\amd64\SymCryptDriver_legacy.sys] is Driver
+2>DUMP: InputType is PEAMD64
+2>DUMP: Native Platform type AMD64
+2>DUMP: IR Platform type AMD64
+2>HeaderBlock address = 1C0000000
+2>Base Address: 1C0000000
+2>DUMP: EntryPoints:
+2> 1C0020010
+2>DUMP: Solo entry points (using Vulcan API):
+2> 1C0020010
+2>(analyzeNearJump.pl) [11/16/18 16:18:42] dump.exe output for 'symcrypt\unittest\sys_legacy\SymCryptDriver_legacy.sys' contains no lines.
+2>(analyzeNearJump.pl) [11/16/18 16:18:42] Near jump binary analysis PASSED.
+2> s:\os\src\tools\signer.cmd authenticode -nosigninfo -type testsignonly -s WindowsSystemComponent -f s:\os\obj\amd64chk\symcrypt\unittest\sys_legacy\objchk\amd64\SymCryptDriver_legacy.sys
+2>Signing infra using config file:s:\os\obj\amd64chk\objchk\amd64\build-exe-merged.config
+2>Beginning authenticode signing process for TestSignOnly
+2>Starting execution with the following command: 's:\os\tools\signing\signtool.exe sign /nph /a /sha1 3A2B9897844266CCD4DBFCE83FBA3F1B8E1E28BF /fd Sha256 /s my /sa 1.3.6.1.4.1.311.10.3.28 a8DweF+e3Ai8n1wPx3u8BnRT2kWYM80piG1mnRvkXJ0= "\\?\s:\os\obj\amd64chk\symcrypt\unittest\sys_legacy\objchk\amd64\SymCryptDriver_legacy.sys"'
+2>Test signing file time: 639 milliseconds for sign /nph /a /sha1 3A2B9897844266CCD4DBFCE83FBA3F1B8E1E28BF /fd Sha256 /s my /sa 1.3.6.1.4.1.311.10.3.28 a8DweF+e3Ai8n1wPx3u8BnRT2kWYM80piG1mnRvkXJ0= "\\?\s:\os\obj\amd64chk\symcrypt\unittest\sys_legacy\objchk\amd64\SymCryptDriver_legacy.sys".
+2>Ending test signing : 695 milliseconds.
+2>Authenticode signing process completed successfully.
+2>Authenticode signing elapsed execution time: 718.0016 ms
+2>Signer.exe authenticode signing will return exit code '0' for files 's:\os\obj\amd64chk\symcrypt\unittest\sys_legacy\objchk\amd64\SymCryptDriver_legacy.sys'.
+2>  C:\WINDOWS\system32\cmd.exe /c if not exist s:\os\obj\amd64chk\symcrypt\unittest\sys_legacy\objchk\amd64\SymCryptDriver_legacy.sys.mui (  echo Build_Status  LN_MUI_STS: LGNSTS_MUIOFF SymCryptDriver_legacy.sys  )
+2>Build_Status LN_MUI_STS: LGNSTS_MUIOFF SymCryptDriver_legacy.sys 
+2> s:\os\src\tools\check_imports.cmd s:\os\obj\amd64chk\symcrypt\unittest\sys_legacy\objchk\amd64\SymCryptDriver_legacy.sys
+2>(check_imports) Command: check_imports s:\os\obj\amd64chk\symcrypt\unittest\sys_legacy\objchk\amd64\symcryptdriver_legacy.sys
+2>(check_imports) Started at Fri Nov 16 16:18:52 2018
+2>(check_imports) Ended at Fri Nov 16 16:18:52 2018 with ExitCode:0
+2>(check_imports) Elapsed time 0 seconds
+2> C:\WINDOWS\system32\cmd.exe /c if exist s:\os\obj\amd64chk\Temp\symcrypt\unittest\sys_legacy\post_link_concurrent.rsp contool.exe @s:\os\obj\amd64chk\Temp\symcrypt\unittest\sys_legacy\post_link_concurrent.rsp
+2> C:\WINDOWS\system32\cmd.exe /c if exist s:\os\obj\amd64chk\Temp\symcrypt\unittest\sys_legacy\post_link_concurrent2.rsp contool.exe @s:\os\obj\amd64chk\Temp\symcrypt\unittest\sys_legacy\post_link_concurrent2.rsp
+6>s:\os\src\symcrypt\unittest\sys_win7nlater building test code in dev tree
+6> set > s:\os\obj\amd64chk\symcrypt\unittest\sys_win7nlater\objchk\amd64\_PASS2_Marker.log
+6> s:\os\tools\vc\HostX64\amd64\link.exe /out:s:\os\obj\amd64chk\symcrypt\unittest\sys_win7nlater\objchk\amd64\SymCryptDriver_Win7nLater.sys  /machine:amd64 @s:\os\obj\amd64chk\Temp\symcrypt\unittest\sys_win7nlater\lnk.rsp
+6>Microsoft (R) Incremental Linker Version 14.15.26715.3
+6>Copyright (C) Microsoft Corporation.  All rights reserved.
+6>/NOVCFEATURE 
+6>/d2:-NoSmallFunctionOpt 
+6>/RunBelow4GB 
+6>-d2:-TypeProp- 
+6>-d2:-SpecDevirt- 
+6>/RetryOnFileOpenFailure 
+6>-ignore:4199 
+6>/MERGE:_PAGE=PAGE 
+6>/MERGE:_TEXT=.text 
+6>/MERGE:_RDATA=.rdata 
+6>/OPT:REF 
+6>/OPT:ICF 
+6>/IGNORE:4078,4221,4281,4198 
+6>/INCREMENTAL:NO 
+6>/release 
+6>/NODEFAULTLIB 
+6>/debug 
+6>/debugtype:cv,fixup,pdata 
+6>/version:10.0 
+6>/osversion:10.0 
+6>/ltcg 
+6>/Brepro 
+6>/functionpadmin:6 
+6>/MERGE:.orpc=.text 
+6>/d2:-guardspecload 
+6>/d2:-guardretpoline 
+6>/guard:retpoline 
+6>/d2:-guardcfgdispatch 
+6>/d2:-guard4 
+6>/d2:-nocfgrngchk 
+6>/d2:-guardlongjmp 
+6>/d2:-guardcfgfuncptr 
+6>/nooptidata 
+6>/guard:mixed 
+6>/guard:addrtakeniat 
+6>/guard:export 
+6>/guard:exportsuppress 
+6>/guard:exportsuppressinfo 
+6>/guard:longjmp 
+6>/merge:.gfids=GFIDS 
+6>/section:GFIDS,d 
+6>/pdbcompress 
+6>/STACK:0x40000,0x1000 
+6>/driver /kernel 
+6>/base:0x1C0000000 
+6>/subsystem:native,6.01 
+6>/entry:GsDriverEntry 
+6>/out:s:\os\obj\amd64chk\symcrypt\unittest\sys_win7nlater\objchk\amd64\SymCryptDriver_Win7nLater.sys 
+6>s:\os\obj\amd64chk\symcrypt\unittest\sys_win7nlater\objchk\amd64\main_sys.obj 
+6>s:\os\public\amd64chk\sdk\lib\amd64\BufferOverflowK.lib 
+6>s:\os\public\amd64chk\ddk\lib\amd64\ntoskrnl.lib 
+6>s:\os\public\amd64chk\ddk\lib\amd64\hal.lib 
+6>s:\os\public\amd64chk\ddk\lib\amd64\wmilib.lib 
+6>s:\os\public\amd64chk\ddk\lib\amd64\ksecdd.lib 
+6>s:\os\public\amd64chk\internal\minwin\priv_sdk\lib\amd64\symcrypt-chk.lib 
+6>s:\os\obj\amd64chk\symcrypt\lib\objchk\amd64\symcrypt.lib 
+6>Generating code
+6>Finished generating code
+6> FixTsVersionStringAppend /pe=s:\os\obj\amd64chk\symcrypt\unittest\sys_win7nlater\objchk\amd64\SymCryptDriver_Win7nLater.sys
+6>s:\os\src\symcrypt\unittest\sys_win7nlater>s:\os\tools\FixTsVersionStringAppend\FixTsVersionStringAppend.exe /pe=s:\os\obj\amd64chk\symcrypt\unittest\sys_win7nlater\objchk\amd64\SymCryptDriver_Win7nLater.sys 
+6>[s:\os\obj\amd64chk\symcrypt\unittest\sys_win7nlater\objchk\amd64\SymCryptDriver_Win7nLater.sys]
+6>No version resources present.
+6> s:\os\src\tools\perl\bin\perl.exe -S s:\os\src\tools\analyzeNearJump.pl /file:s:\os\obj\amd64chk\symcrypt\unittest\sys_win7nlater\objchk\amd64\SymCryptDriver_Win7nLater.sys
+6>(analyzeNearJump.pl) [11/16/18 16:18:41] Starting near jump analysis.
+6>(analyzeNearJump.pl) [11/16/18 16:18:41] Relative path is: 'symcrypt\unittest\sys_win7nlater\SymCryptDriver_Win7nLater.sys'
+6>(analyzeNearJump.pl) [11/16/18 16:18:41] Dump command line: s:\os\tools\dump\dump.exe /dumpNearJumpsCSV s:\os\obj\amd64chk\symcrypt\unittest\sys_win7nlater\objchk\amd64\SymCryptDriver_Win7nLater.sys.dump.csv s:\os\obj\amd64chk\symcrypt\unittest\sys_win7nlater\objchk\amd64\SymCryptDriver_Win7nLater.sys 2>&1
+6>(analyzeNearJump.pl) [11/16/18 16:18:42] Dump output:
+6>Microsoft (R) Vulcan Driver 2.64.26828.9996 (Aug 27 2018 17:57:55) (CPPTEST-72-11)
+6>Microsoft (R) Vulcan 2.64.26828.9996 (Aug 27 2018 17:52:21) (CPPTEST-72-11)
+6>Copyright (C) 2008 Microsoft Corporation. All rights reserved.
+6>Microsoft Confidential - For Internal Use Only
+6>DUMP: Analyzing 's:\os\obj\amd64chk\symcrypt\unittest\sys_win7nlater\objchk\amd64\SymCryptDriver_Win7nLater.sys'
+6>DUMP: InputType is PEAMD64
+6>========================================================
+6>DUMP: Imports (without building IR): (0=Nat; 1=Delay; 2=PInvoke; 3=MEP
+6>DUMP: Warning: BB0049: The block '1C0018D00' is considered as both a code block and a data block, assume code block.
+6>     Block summary by type
+6>     Code:              2613 Blocks, Total Size 0x00016298
+6>     Data:               374 Blocks, Total Size 0x00006ED2
+6>     Dead Code:            0 Blocks, Total Size 0x00000000
+6>     Dead Data:           37 Blocks, Total Size 0x00000F1A
+6>     Dead Unknown:       334 Blocks, Total Size 0x00002706
+6>     -----------------------------------------------------
+6>     Total:             3358 Blocks, Total Size 0x0002078A
+6>Total imports = 25
+6>========================================================
+6>DUMP: Binary [s:\os\obj\amd64chk\symcrypt\unittest\sys_win7nlater\objchk\amd64\SymCryptDriver_Win7nLater.sys] is Driver
+6>DUMP: InputType is PEAMD64
+6>DUMP: Native Platform type AMD64
+6>DUMP: IR Platform type AMD64
+6>HeaderBlock address = 1C0000000
+6>Base Address: 1C0000000
+6>DUMP: EntryPoints:
+6> 1C0024010
+6>DUMP: Solo entry points (using Vulcan API):
+6> 1C0024010
+6>(analyzeNearJump.pl) [11/16/18 16:18:42] dump.exe output for 'symcrypt\unittest\sys_win7nlater\SymCryptDriver_Win7nLater.sys' contains no lines.
+6>(analyzeNearJump.pl) [11/16/18 16:18:42] Near jump binary analysis PASSED.
+6> s:\os\src\tools\signer.cmd authenticode -nosigninfo -type testsignonly -s WindowsSystemComponent -f s:\os\obj\amd64chk\symcrypt\unittest\sys_win7nlater\objchk\amd64\SymCryptDriver_Win7nLater.sys
+6>Signing infra using config file:s:\os\obj\amd64chk\objchk\amd64\build-exe-merged.config
+6>Beginning authenticode signing process for TestSignOnly
+6>Starting execution with the following command: 's:\os\tools\signing\signtool.exe sign /nph /a /sha1 3A2B9897844266CCD4DBFCE83FBA3F1B8E1E28BF /fd Sha256 /s my /sa 1.3.6.1.4.1.311.10.3.28 a8DweF+e3Ai8n1wPx3u8BnRT2kWYM80piG1mnRvkXJ0= "\\?\s:\os\obj\amd64chk\symcrypt\unittest\sys_win7nlater\objchk\amd64\SymCryptDriver_Win7nLater.sys"'
+6>Test signing file time: 618 milliseconds for sign /nph /a /sha1 3A2B9897844266CCD4DBFCE83FBA3F1B8E1E28BF /fd Sha256 /s my /sa 1.3.6.1.4.1.311.10.3.28 a8DweF+e3Ai8n1wPx3u8BnRT2kWYM80piG1mnRvkXJ0= "\\?\s:\os\obj\amd64chk\symcrypt\unittest\sys_win7nlater\objchk\amd64\SymCryptDriver_Win7nLater.sys".
+6>Ending test signing : 715 milliseconds.
+6>Authenticode signing process completed successfully.
+6>Authenticode signing elapsed execution time: 738.9969 ms
+6>Signer.exe authenticode signing will return exit code '0' for files 's:\os\obj\amd64chk\symcrypt\unittest\sys_win7nlater\objchk\amd64\SymCryptDriver_Win7nLater.sys'.
+6>  C:\WINDOWS\system32\cmd.exe /c if not exist s:\os\obj\amd64chk\symcrypt\unittest\sys_win7nlater\objchk\amd64\SymCryptDriver_Win7nLater.sys.mui (  echo Build_Status  LN_MUI_STS: LGNSTS_MUIOFF SymCryptDriver_Win7nLater.sys  )
+6>Build_Status LN_MUI_STS: LGNSTS_MUIOFF SymCryptDriver_Win7nLater.sys 
+6> s:\os\src\tools\check_imports.cmd s:\os\obj\amd64chk\symcrypt\unittest\sys_win7nlater\objchk\amd64\SymCryptDriver_Win7nLater.sys
+6>(check_imports) Command: check_imports s:\os\obj\amd64chk\symcrypt\unittest\sys_win7nlater\objchk\amd64\symcryptdriver_win7nlater.sys
+6>(check_imports) Started at Fri Nov 16 16:18:52 2018
+6>(check_imports) Ended at Fri Nov 16 16:18:52 2018 with ExitCode:0
+6>(check_imports) Elapsed time 0 seconds
+6> C:\WINDOWS\system32\cmd.exe /c if exist s:\os\obj\amd64chk\Temp\symcrypt\unittest\sys_win7nlater\post_link_concurrent.rsp contool.exe @s:\os\obj\amd64chk\Temp\symcrypt\unittest\sys_win7nlater\post_link_concurrent.rsp
+6> C:\WINDOWS\system32\cmd.exe /c if exist s:\os\obj\amd64chk\Temp\symcrypt\unittest\sys_win7nlater\post_link_concurrent2.rsp contool.exe @s:\os\obj\amd64chk\Temp\symcrypt\unittest\sys_win7nlater\post_link_concurrent2.rsp
+4>STL version 70 used in "s:\os\src\symcrypt\unittest\exe_win8_1nlater" (STL_VER_TELEMETRY)
+4>s:\os\src\symcrypt\unittest\exe_win8_1nlater building test code in dev tree
+4> set > s:\os\obj\amd64chk\symcrypt\unittest\exe_win8_1nlater\objchk\amd64\_PASS2_Marker.log
+4> C:\WINDOWS\system32\cmd.exe /c type s:\os\obj\amd64chk\Temp\symcrypt\unittest\exe_win8_1nlater\echo_2.msg
+4>    rc.exe -l 409 -DSXS_PROCESSOR_ARCHITECTURE="""amd64"""  -DSXS_TARGET="""symcryptunittest_Win8_1nLater.exe"""   -DSYSTEM_COMPATIBLE_ASSEMBLY_NAME="""Microsoft.Windows.SystemCompatible"""  -DLSYSTEM_COMPATIBLE_ASSEMBLY_NAME=L"""Microsoft.Windows.SystemCompatible"""   -DSXS_ASSEMBLY_VERSION="""""" -z "MS Sans Serif,Helv/MS Shell Dlg"   /D__BUILDDATE__=180926-1430 /D__BUILDMACHINE__=GitEnlistment(niels) /r /fo s:\os\obj\amd64chk\symcrypt\unittest\exe_win8_1nlater\objchk\amd64\symcryptunittest.res /D_WIN64 /D_AMD64_ /DAMD64   /DCONDITION_HANDLING=1 /DNT_UP=1  /DNT_INST=0 /DWIN32=100 /D_NT1X_=100 /DWINNT=1 /D_WIN32_WINNT=0x0603 /DWINVER=0x0603 /D_WIN32_IE=0x0A00    /DWIN32_LEAN_AND_MEAN=1  /DDEVL=1 /DDBG=1   /D_STATIC_CPPLIB /D_STL70_ /D_DLL=1 /D_MT=1  -DTESTDRIVER_NAME=\"SymCryptDriver_win7nlater.sys\" /D_USE_DEV11_CRT /DTEST_CODE -D_APISET_WINDOWS_VERSION=0x601 -D_APISET_MINWIN_VERSION=0x0102 -D_APISET_MINCORE_VERSION=0x0101 /DNTDDI_VERSION=0x06030000 /DWINBLUE_KBSPRING14 /DBUILD_WINDOWS /D__WRL_CONFIGURATION_LEGACY__ /DBUILD_UMS_ENABLED=1 /DBUILD_WOW64_ENABLED=1 -D_USE_DECLSPECS_FOR_SAL=1 -D_CONTROL_FLOW_GUARD=1 -D_CONTROL_FLOW_GUARD_SVCTAB=1   /Is:\os\src\data\MSRC /Is:\os\src\onecore\ds\security\cryptoapi\inc\cryptolegacy /Is:\os\public\amd64chk\internal\DS\inc /Is:\os\public\amd64chk\internal\DS\inc\crypto /Is:\os\public\amd64chk\internal\onecoreds\inc\crypto /Is:\os\public\amd64chk\onecore\private\ds\inc\crypto /I..\..\inc /I..\inc /I..\lib /Is:\os\public\amd64chk\ddk\inc /Is:\os\obj\amd64chk\symcrypt\unittest\exe_win8_1nlater\objchk\amd64 /Is:\os\public\amd64chk\oak\inc /Is:\os\public\amd64chk\shared\inc /Is:\os\public\amd64chk\onecore\external\shared\inc /Is:\os\public\amd64chk\shared\inc\minwin /Is:\os\public\amd64chk\onecore\external\shared\inc\minwin /Is:\os\public\amd64chk\shared\inc\mincore /Is:\os\public\amd64chk\onecore\external\shared\inc\mincore /Is:\os\public\amd64chk\shared\inc\clientcore /Is:\os\public\amd64chk\onecore\external\shared\inc\clientcore /Is:\os\public\amd64chk\shared\inc\moderncore /Is:\os\public\amd64chk\onecore\external\shared\inc\moderncore /Is:\os\public\amd64chk\sdk\inc /Is:\os\public\amd64chk\onecore\external\sdk\inc /Is:\os\public\amd64chk\sdk\inc\minwin /Is:\os\public\amd64chk\onecore\private\sdk\inc\minwin /Is:\os\public\amd64chk\onecore\internal\sdk\inc\minwin /Is:\os\public\amd64chk\sdk\inc\mincore /Is:\os\public\amd64chk\onecore\internal\sdk\inc\mincore /Is:\os\public\amd64chk\sdk\inc\clientcore /Is:\os\public\amd64chk\onecore\internal\sdk\inc\clientcore /Is:\os\public\amd64chk\sdk\inc\moderncore /Is:\os\public\amd64chk\onecore\internal\sdk\inc\moderncore /Is:\os\public\amd64chk\shared\inc /Is:\os\public\amd64chk\onecore\external\shared\inc /Is:\os\public\amd64chk\ddk\inc /Is:\os\public\amd64chk\onecore\external\ddk\inc /Is:\os\public\amd64chk\ddk\inc\wdm /Is:\os\public\amd64chk\internal\sdk\inc /Is:\os\public\amd64chk\onecore\private\sdk\inc /Is:\os\public\amd64chk\onecore\internal\sdk\inc /Is:\os\public\amd64chk\onecoreuap\private\sdk\inc /Is:\os\public\amd64chk\internal\sdk\inc\minwin /Is:\os\public\amd64chk\onecore\internal\sdk\inc\minwin /Is:\os\public\amd64chk\internal\sdk\inc\minwin\fs /Is:\os\public\amd64chk\onecore\internal\sdk\inc\minwin\fs /Is:\os\public\amd64chk\internal\sdk\inc\mincore /Is:\os\public\amd64chk\onecore\internal\sdk\inc\mincore /Is:\os\public\amd64chk\internal\sdk\inc\clientcore /Is:\os\public\amd64chk\onecore\internal\sdk\inc\clientcore /Is:\os\public\amd64chk\internal\sdk\inc\moderncore /Is:\os\public\amd64chk\onecore\internal\sdk\inc\moderncore /Is:\os\public\amd64chk\internal\oak\inc /Is:\os\public\amd64chk\sdk\inc\crt /Is:\os\public\amd64chk\sdk\inc\crt\stl70 .\symcryptunittest.rc
+4>Microsoft (R) Windows (R) Resource Compiler Version 10.0.10011.16384
+4>Copyright (C) Microsoft Corporation.  All rights reserved.
+4> s:\os\tools\vc\HostX64\amd64\link.exe /out:s:\os\obj\amd64chk\symcrypt\unittest\exe_win8_1nlater\objchk\amd64\symcryptunittest_Win8_1nLater.exe  /machine:amd64 @s:\os\obj\amd64chk\Temp\symcrypt\unittest\exe_win8_1nlater\lnk.rsp
+4>Microsoft (R) Incremental Linker Version 14.15.26715.3
+4>Copyright (C) Microsoft Corporation.  All rights reserved.
+4>/NOVCFEATURE 
+4>/d2:-NoSmallFunctionOpt 
+4>/RunBelow4GB 
+4>-d2:-TypeProp- 
+4>-d2:-SpecDevirt- 
+4>/RetryOnFileOpenFailure 
+4>-ignore:4199 
+4>/MERGE:_PAGE=PAGE 
+4>/MERGE:_TEXT=.text 
+4>/MERGE:_RDATA=.rdata 
+4>/OPT:REF 
+4>/OPT:ICF 
+4>/IGNORE:4078,4221,4281,4198 
+4>/INCREMENTAL:NO 
+4>/release 
+4>/NODEFAULTLIB 
+4>/debug 
+4>/debugtype:cv,fixup,pdata 
+4>/version:10.0 
+4>/osversion:10.0 
+4>/ltcg 
+4>/Brepro 
+4>/functionpadmin:6 
+4>/MERGE:.orpc=.text 
+4>/d2:-guardspecload 
+4>/merge:.gfids=.rdata 
+4>/guard:export 
+4>/guard:mixed 
+4>/d2:-guard4 
+4>/d2:-nocfgrngchk 
+4>/d2:-guardcfgfuncptr 
+4>/d2:-guardcfgdispatch 
+4>/d2:-guardlongjmp 
+4>/guard:longjmp 
+4>/guard:exportsuppressinfo 
+4>/guard:addrtakeniat 
+4>/d2:-psvcallopt150000 
+4>/pdbcompress 
+4>/STACK:0x80000,0x2000 
+4>/tsaware 
+4>/dynamicbase 
+4>/highentropyva 
+4>/subsystem:console,6.03 
+4>/entry:mainCRTStartup 
+4>s:\os\obj\amd64chk\symcrypt\unittest\exe_win8_1nlater\objchk\amd64\precomp.obj 
+4>s:\os\obj\amd64chk\symcrypt\unittest\exe_win8_1nlater\objchk\amd64\symcryptunittest.res 
+4>s:\os\obj\amd64chk\symcrypt\unittest\exe_win8_1nlater\objchk\amd64\main_exe.obj 
+4>s:\os\public\amd64chk\sdk\lib\amd64\advapi32.lib 
+4>s:\os\public\amd64chk\sdk\lib\amd64\kernel32.lib 
+4>s:\os\public\amd64chk\sdk\lib\amd64\ntstc_msvcrt.lib 
+4>s:\os\public\amd64chk\sdk\lib\amd64\msvcrt.lib 
+4>s:\os\public\amd64chk\internal\sdk\lib\amd64\ucrtshims_msvcrt.lib 
+4>s:\os\public\amd64chk\sdk\lib\minwin\amd64\ntdll.lib 
+4>s:\os\public\amd64chk\internal\DS\lib\amd64\rsa32.lib 
+4>s:\os\public\amd64chk\internal\onecoreds\lib\amd64\msbignum.lib 
+4>s:\os\public\amd64chk\sdk\lib\amd64\powrprof.lib 
+4>s:\os\public\amd64chk\sdk\lib\amd64\bcrypt.lib 
+4>s:\os\public\amd64chk\internal\minwin\priv_sdk\lib\amd64\symcrypt-chk.lib 
+4>s:\os\obj\amd64chk\symcrypt\lib\objchk\amd64\symcrypt.lib 
+4>s:\os\obj\amd64chk\symcrypt\unittest\lib\objchk\amd64\symcryptunittest_lib.lib 
+4>Generating code
+4>Finished generating code
+4> C:\WINDOWS\system32\cmd.exe /c del s:\os\obj\amd64chk\symcrypt\unittest\exe_win8_1nlater\objchk\amd64\symcryptunittest_Win8_1nLater.ilk.persistent s:\os\obj\amd64chk\symcrypt\unittest\exe_win8_1nlater\objchk\amd64\symcryptunittest_Win8_1nLater.exe.persistent s:\os\obj\amd64chk\symcrypt\unittest\exe_win8_1nlater\objchk\amd64\symcryptunittest_Win8_1nLater.pdb.persistent 2>nul
+4> FixTsVersionStringAppend /pe=s:\os\obj\amd64chk\symcrypt\unittest\exe_win8_1nlater\objchk\amd64\symcryptunittest_Win8_1nLater.exe
+4>s:\os\src\symcrypt\unittest\exe_win8_1nlater>s:\os\tools\FixTsVersionStringAppend\FixTsVersionStringAppend.exe /pe=s:\os\obj\amd64chk\symcrypt\unittest\exe_win8_1nlater\objchk\amd64\symcryptunittest_Win8_1nLater.exe 
+4>[s:\os\obj\amd64chk\symcrypt\unittest\exe_win8_1nlater\objchk\amd64\symcryptunittest_Win8_1nLater.exe]
+4>No version resources present.
+4>  C:\WINDOWS\system32\cmd.exe /c if not exist s:\os\obj\amd64chk\symcrypt\unittest\exe_win8_1nlater\objchk\amd64\symcryptunittest_Win8_1nLater.exe.mui (  echo Build_Status  LN_MUI_STS: LGNSTS_MUIOFF symcryptunittest_Win8_1nLater.exe  )
+4>Build_Status LN_MUI_STS: LGNSTS_MUIOFF symcryptunittest_Win8_1nLater.exe 
+4> C:\WINDOWS\system32\cmd.exe /c if exist s:\os\obj\amd64chk\Temp\symcrypt\unittest\exe_win8_1nlater\post_link_concurrent.rsp contool.exe @s:\os\obj\amd64chk\Temp\symcrypt\unittest\exe_win8_1nlater\post_link_concurrent.rsp
+4> C:\WINDOWS\system32\cmd.exe /c if exist s:\os\obj\amd64chk\Temp\symcrypt\unittest\exe_win8_1nlater\post_link_concurrent2.rsp contool.exe @s:\os\obj\amd64chk\Temp\symcrypt\unittest\exe_win8_1nlater\post_link_concurrent2.rsp
+3>STL version 70 used in "s:\os\src\symcrypt\unittest\exe_legacy" (STL_VER_TELEMETRY)
+3>s:\os\src\symcrypt\unittest\exe_legacy building test code in dev tree
+3> set > s:\os\obj\amd64chk\symcrypt\unittest\exe_legacy\objchk\amd64\_PASS2_Marker.log
+3> C:\WINDOWS\system32\cmd.exe /c type s:\os\obj\amd64chk\Temp\symcrypt\unittest\exe_legacy\echo_2.msg
+3>    rc.exe -l 409 -DSXS_PROCESSOR_ARCHITECTURE="""amd64"""  -DSXS_TARGET="""symcryptunittest_legacy.exe"""   -DSYSTEM_COMPATIBLE_ASSEMBLY_NAME="""Microsoft.Windows.SystemCompatible"""  -DLSYSTEM_COMPATIBLE_ASSEMBLY_NAME=L"""Microsoft.Windows.SystemCompatible"""   -DSXS_ASSEMBLY_VERSION="""""" -z "MS Sans Serif,Helv/MS Shell Dlg"   /D__BUILDDATE__=180926-1430 /D__BUILDMACHINE__=GitEnlistment(niels) /r /fo s:\os\obj\amd64chk\symcrypt\unittest\exe_legacy\objchk\amd64\symcryptunittest.res /D_WIN64 /D_AMD64_ /DAMD64   /DCONDITION_HANDLING=1 /DNT_UP=1  /DNT_INST=0 /DWIN32=100 /D_NT1X_=100 /DWINNT=1 /D_WIN32_WINNT=0x0600 /DWINVER=0x0600 /D_WIN32_IE=0x0700    /DWIN32_LEAN_AND_MEAN=1  /DDEVL=1 /DDBG=1   /D_STATIC_CPPLIB /D_STL70_ /D_DLL=1 /D_MT=1  -DTESTDRIVER_NAME=\"SymCryptDriver_legacy.sys\" /D_USE_DEV11_CRT /DTEST_CODE -D_APISET_WINDOWS_VERSION=0x601 -D_APISET_MINWIN_VERSION=0x0100 -D_APISET_MINCORE_VERSION=0x0100 /DNTDDI_VERSION=0x06000100 /DWINBLUE_KBSPRING14 /DBUILD_WINDOWS /D__WRL_CONFIGURATION_LEGACY__ /DBUILD_UMS_ENABLED=1 /DBUILD_WOW64_ENABLED=1 -D_USE_DECLSPECS_FOR_SAL=1 -D_CONTROL_FLOW_GUARD=1 -D_CONTROL_FLOW_GUARD_SVCTAB=1   /Is:\os\src\data\MSRC /Is:\os\src\onecore\ds\security\cryptoapi\inc\cryptolegacy /Is:\os\public\amd64chk\internal\DS\inc /Is:\os\public\amd64chk\internal\DS\inc\crypto /Is:\os\public\amd64chk\internal\onecoreds\inc\crypto /Is:\os\public\amd64chk\onecore\private\ds\inc\crypto /I..\..\inc /I..\inc /I..\lib /Is:\os\public\amd64chk\ddk\inc /Is:\os\obj\amd64chk\symcrypt\unittest\exe_legacy\objchk\amd64 /Is:\os\public\amd64chk\oak\inc /Is:\os\public\amd64chk\shared\inc /Is:\os\public\amd64chk\onecore\external\shared\inc /Is:\os\public\amd64chk\shared\inc\minwin /Is:\os\public\amd64chk\onecore\external\shared\inc\minwin /Is:\os\public\amd64chk\shared\inc\mincore /Is:\os\public\amd64chk\onecore\external\shared\inc\mincore /Is:\os\public\amd64chk\shared\inc\clientcore /Is:\os\public\amd64chk\onecore\external\shared\inc\clientcore /Is:\os\public\amd64chk\shared\inc\moderncore /Is:\os\public\amd64chk\onecore\external\shared\inc\moderncore /Is:\os\public\amd64chk\sdk\inc /Is:\os\public\amd64chk\onecore\external\sdk\inc /Is:\os\public\amd64chk\sdk\inc\minwin /Is:\os\public\amd64chk\onecore\private\sdk\inc\minwin /Is:\os\public\amd64chk\onecore\internal\sdk\inc\minwin /Is:\os\public\amd64chk\sdk\inc\mincore /Is:\os\public\amd64chk\onecore\internal\sdk\inc\mincore /Is:\os\public\amd64chk\sdk\inc\clientcore /Is:\os\public\amd64chk\onecore\internal\sdk\inc\clientcore /Is:\os\public\amd64chk\sdk\inc\moderncore /Is:\os\public\amd64chk\onecore\internal\sdk\inc\moderncore /Is:\os\public\amd64chk\shared\inc /Is:\os\public\amd64chk\onecore\external\shared\inc /Is:\os\public\amd64chk\ddk\inc /Is:\os\public\amd64chk\onecore\external\ddk\inc /Is:\os\public\amd64chk\ddk\inc\wdm /Is:\os\public\amd64chk\internal\sdk\inc /Is:\os\public\amd64chk\onecore\private\sdk\inc /Is:\os\public\amd64chk\onecore\internal\sdk\inc /Is:\os\public\amd64chk\onecoreuap\private\sdk\inc /Is:\os\public\amd64chk\internal\sdk\inc\minwin /Is:\os\public\amd64chk\onecore\internal\sdk\inc\minwin /Is:\os\public\amd64chk\internal\sdk\inc\minwin\fs /Is:\os\public\amd64chk\onecore\internal\sdk\inc\minwin\fs /Is:\os\public\amd64chk\internal\sdk\inc\mincore /Is:\os\public\amd64chk\onecore\internal\sdk\inc\mincore /Is:\os\public\amd64chk\internal\sdk\inc\clientcore /Is:\os\public\amd64chk\onecore\internal\sdk\inc\clientcore /Is:\os\public\amd64chk\internal\sdk\inc\moderncore /Is:\os\public\amd64chk\onecore\internal\sdk\inc\moderncore /Is:\os\public\amd64chk\internal\oak\inc /Is:\os\public\amd64chk\sdk\inc\crt /Is:\os\public\amd64chk\sdk\inc\crt\stl70 ..\symcryptunittest.rc
+3>Microsoft (R) Windows (R) Resource Compiler Version 10.0.10011.16384
+3>Copyright (C) Microsoft Corporation.  All rights reserved.
+3> s:\os\tools\vc\HostX64\amd64\link.exe /out:s:\os\obj\amd64chk\symcrypt\unittest\exe_legacy\objchk\amd64\symcryptunittest_legacy.exe  /machine:amd64 @s:\os\obj\amd64chk\Temp\symcrypt\unittest\exe_legacy\lnk.rsp
+3>Microsoft (R) Incremental Linker Version 14.15.26715.3
+3>Copyright (C) Microsoft Corporation.  All rights reserved.
+3>/NOVCFEATURE 
+3>/d2:-NoSmallFunctionOpt 
+3>/RunBelow4GB 
+3>-d2:-TypeProp- 
+3>-d2:-SpecDevirt- 
+3>/RetryOnFileOpenFailure 
+3>-ignore:4199 
+3>/MERGE:_PAGE=PAGE 
+3>/MERGE:_TEXT=.text 
+3>/MERGE:_RDATA=.rdata 
+3>/OPT:REF 
+3>/OPT:ICF 
+3>/IGNORE:4078,4221,4281,4198 
+3>/INCREMENTAL:NO 
+3>/release 
+3>/NODEFAULTLIB 
+3>/debug 
+3>/debugtype:cv,fixup,pdata 
+3>/version:10.0 
+3>/osversion:10.0 
+3>/ltcg 
+3>/Brepro 
+3>/functionpadmin:6 
+3>/MERGE:.orpc=.text 
+3>/d2:-guardspecload 
+3>/merge:.gfids=.rdata 
+3>/guard:export 
+3>/guard:mixed 
+3>/d2:-guard4 
+3>/d2:-nocfgrngchk 
+3>/d2:-guardcfgfuncptr 
+3>/d2:-guardcfgdispatch 
+3>/d2:-guardlongjmp 
+3>/guard:longjmp 
+3>/guard:exportsuppressinfo 
+3>/guard:addrtakeniat 
+3>/d2:-psvcallopt150000 
+3>/pdbcompress 
+3>/STACK:0x80000,0x2000 
+3>/tsaware 
+3>/dynamicbase 
+3>/highentropyva 
+3>/subsystem:console,6.00 
+3>/entry:mainCRTStartup 
+3>s:\os\obj\amd64chk\symcrypt\unittest\exe_legacy\objchk\amd64\precomp.obj 
+3>s:\os\obj\amd64chk\symcrypt\unittest\exe_legacy\objchk\amd64\symcryptunittest.res 
+3>s:\os\obj\amd64chk\symcrypt\unittest\exe_legacy\objchk\amd64\main_exe.obj 
+3>s:\os\public\amd64chk\sdk\lib\amd64\advapi32.lib 
+3>s:\os\public\amd64chk\sdk\lib\amd64\kernel32.lib 
+3>s:\os\public\amd64chk\sdk\lib\amd64\ntstc_msvcrt.lib 
+3>s:\os\public\amd64chk\sdk\lib\amd64\msvcrt.lib 
+3>s:\os\public\amd64chk\internal\sdk\lib\amd64\ucrtshims_msvcrt.lib 
+3>s:\os\public\amd64chk\sdk\lib\minwin\amd64\ntdll.lib 
+3>s:\os\public\amd64chk\internal\DS\lib\amd64\rsa32.lib 
+3>s:\os\public\amd64chk\internal\onecoreds\lib\amd64\msbignum.lib 
+3>s:\os\public\amd64chk\sdk\lib\amd64\powrprof.lib 
+3>s:\os\public\amd64chk\sdk\lib\amd64\bcrypt.lib 
+3>s:\os\public\amd64chk\internal\minwin\priv_sdk\lib\amd64\symcrypt-chk.lib 
+3>s:\os\obj\amd64chk\symcrypt\lib\objchk\amd64\symcrypt.lib 
+3>s:\os\obj\amd64chk\symcrypt\unittest\lib\objchk\amd64\symcryptunittest_lib.lib 
+3>Generating code
+3>Finished generating code
+3> C:\WINDOWS\system32\cmd.exe /c del s:\os\obj\amd64chk\symcrypt\unittest\exe_legacy\objchk\amd64\symcryptunittest_legacy.ilk.persistent s:\os\obj\amd64chk\symcrypt\unittest\exe_legacy\objchk\amd64\symcryptunittest_legacy.exe.persistent s:\os\obj\amd64chk\symcrypt\unittest\exe_legacy\objchk\amd64\symcryptunittest_legacy.pdb.persistent 2>nul
+3> FixTsVersionStringAppend /pe=s:\os\obj\amd64chk\symcrypt\unittest\exe_legacy\objchk\amd64\symcryptunittest_legacy.exe
+3>s:\os\src\symcrypt\unittest\exe_legacy>s:\os\tools\FixTsVersionStringAppend\FixTsVersionStringAppend.exe /pe=s:\os\obj\amd64chk\symcrypt\unittest\exe_legacy\objchk\amd64\symcryptunittest_legacy.exe 
+3>[s:\os\obj\amd64chk\symcrypt\unittest\exe_legacy\objchk\amd64\symcryptunittest_legacy.exe]
+3>No version resources present.
+3>  C:\WINDOWS\system32\cmd.exe /c if not exist s:\os\obj\amd64chk\symcrypt\unittest\exe_legacy\objchk\amd64\symcryptunittest_legacy.exe.mui (  echo Build_Status  LN_MUI_STS: LGNSTS_MUIOFF symcryptunittest_legacy.exe  )
+3>Build_Status LN_MUI_STS: LGNSTS_MUIOFF symcryptunittest_legacy.exe 
+3> s:\os\src\tools\check_imports.cmd s:\os\obj\amd64chk\symcrypt\unittest\exe_legacy\objchk\amd64\symcryptunittest_legacy.exe
+3>(check_imports) Command: check_imports s:\os\obj\amd64chk\symcrypt\unittest\exe_legacy\objchk\amd64\symcryptunittest_legacy.exe
+3>(check_imports) Started at Fri Nov 16 16:18:55 2018
+3>(check_imports) Ended at Fri Nov 16 16:18:55 2018 with ExitCode:0
+3>(check_imports) Elapsed time 0 seconds
+3> C:\WINDOWS\system32\cmd.exe /c if exist s:\os\obj\amd64chk\Temp\symcrypt\unittest\exe_legacy\post_link_concurrent.rsp contool.exe @s:\os\obj\amd64chk\Temp\symcrypt\unittest\exe_legacy\post_link_concurrent.rsp
+3> C:\WINDOWS\system32\cmd.exe /c if exist s:\os\obj\amd64chk\Temp\symcrypt\unittest\exe_legacy\post_link_concurrent2.rsp contool.exe @s:\os\obj\amd64chk\Temp\symcrypt\unittest\exe_legacy\post_link_concurrent2.rsp
+8>STL version 70 used in "s:\os\src\symcrypt\unittest\exe_test" (STL_VER_TELEMETRY)
+8>s:\os\src\symcrypt\unittest\exe_test building test code in dev tree
+8> set > s:\os\obj\amd64chk\symcrypt\unittest\exe_test\objchk\amd64\_PASS2_Marker.log
+8> C:\WINDOWS\system32\cmd.exe /c type s:\os\obj\amd64chk\Temp\symcrypt\unittest\exe_test\echo_2.msg
+8>    rc.exe -l 409 -DSXS_PROCESSOR_ARCHITECTURE="""amd64"""  -DSXS_TARGET="""symcryptunittest.exe"""   -DSYSTEM_COMPATIBLE_ASSEMBLY_NAME="""Microsoft.Windows.SystemCompatible"""  -DLSYSTEM_COMPATIBLE_ASSEMBLY_NAME=L"""Microsoft.Windows.SystemCompatible"""   -DSXS_ASSEMBLY_VERSION="""""" -z "MS Sans Serif,Helv/MS Shell Dlg"   /D__BUILDDATE__=180926-1430 /D__BUILDMACHINE__=GitEnlistment(niels) /r /fo s:\os\obj\amd64chk\symcrypt\unittest\exe_test\objchk\amd64\symcryptunittest.res /D_WIN64 /D_AMD64_ /DAMD64   /DCONDITION_HANDLING=1 /DNT_UP=1  /DNT_INST=0 /DWIN32=100 /D_NT1X_=100 /DWINNT=1 /D_WIN32_WINNT=0x0A00 /DWINVER=0x0A00 /D_WIN32_IE=0x0A00    /DWIN32_LEAN_AND_MEAN=1  /DDEVL=1 /DDBG=1   /D_STATIC_CPPLIB /D_STL70_ /D_DLL=1 /D_MT=1  -DTESTDRIVER_NAME=\"SymCryptDriver_test.sys\" /D_USE_DEV11_CRT /DTEST_CODE -D_APISET_WINDOWS_VERSION=0x601 -D_APISET_MINWIN_VERSION=0x0104 -D_APISET_MINCORE_VERSION=0x0103 /DNTDDI_VERSION=0x0A000000 /DWINBLUE_KBSPRING14 /DBUILD_WINDOWS /D__WRL_CONFIGURATION_LEGACY__ /DBUILD_UMS_ENABLED=1 /DBUILD_WOW64_ENABLED=1 -D_USE_DECLSPECS_FOR_SAL=1 -D_CONTROL_FLOW_GUARD=1 -D_CONTROL_FLOW_GUARD_SVCTAB=1   /Is:\os\src\data\MSRC /Is:\os\src\onecore\ds\security\cryptoapi\inc\cryptolegacy /Is:\os\public\amd64chk\internal\DS\inc /Is:\os\public\amd64chk\internal\DS\inc\crypto /Is:\os\public\amd64chk\internal\onecoreds\inc\crypto /Is:\os\public\amd64chk\onecore\private\ds\inc\crypto /I..\..\inc /I..\inc /I..\lib /Is:\os\public\amd64chk\ddk\inc /Is:\os\obj\amd64chk\symcrypt\unittest\exe_test\objchk\amd64 /Is:\os\public\amd64chk\oak\inc /Is:\os\public\amd64chk\shared\inc /Is:\os\public\amd64chk\onecore\external\shared\inc /Is:\os\public\amd64chk\shared\inc\minwin /Is:\os\public\amd64chk\onecore\external\shared\inc\minwin /Is:\os\public\amd64chk\shared\inc\mincore /Is:\os\public\amd64chk\onecore\external\shared\inc\mincore /Is:\os\public\amd64chk\shared\inc\clientcore /Is:\os\public\amd64chk\onecore\external\shared\inc\clientcore /Is:\os\public\amd64chk\shared\inc\moderncore /Is:\os\public\amd64chk\onecore\external\shared\inc\moderncore /Is:\os\public\amd64chk\sdk\inc /Is:\os\public\amd64chk\onecore\external\sdk\inc /Is:\os\public\amd64chk\sdk\inc\minwin /Is:\os\public\amd64chk\onecore\private\sdk\inc\minwin /Is:\os\public\amd64chk\onecore\internal\sdk\inc\minwin /Is:\os\public\amd64chk\sdk\inc\mincore /Is:\os\public\amd64chk\onecore\internal\sdk\inc\mincore /Is:\os\public\amd64chk\sdk\inc\clientcore /Is:\os\public\amd64chk\onecore\internal\sdk\inc\clientcore /Is:\os\public\amd64chk\sdk\inc\moderncore /Is:\os\public\amd64chk\onecore\internal\sdk\inc\moderncore /Is:\os\public\amd64chk\shared\inc /Is:\os\public\amd64chk\onecore\external\shared\inc /Is:\os\public\amd64chk\ddk\inc /Is:\os\public\amd64chk\onecore\external\ddk\inc /Is:\os\public\amd64chk\ddk\inc\wdm /Is:\os\public\amd64chk\internal\sdk\inc /Is:\os\public\amd64chk\onecore\private\sdk\inc /Is:\os\public\amd64chk\onecore\internal\sdk\inc /Is:\os\public\amd64chk\onecoreuap\private\sdk\inc /Is:\os\public\amd64chk\internal\sdk\inc\minwin /Is:\os\public\amd64chk\onecore\internal\sdk\inc\minwin /Is:\os\public\amd64chk\internal\sdk\inc\minwin\fs /Is:\os\public\amd64chk\onecore\internal\sdk\inc\minwin\fs /Is:\os\public\amd64chk\internal\sdk\inc\mincore /Is:\os\public\amd64chk\onecore\internal\sdk\inc\mincore /Is:\os\public\amd64chk\internal\sdk\inc\clientcore /Is:\os\public\amd64chk\onecore\internal\sdk\inc\clientcore /Is:\os\public\amd64chk\internal\sdk\inc\moderncore /Is:\os\public\amd64chk\onecore\internal\sdk\inc\moderncore /Is:\os\public\amd64chk\internal\oak\inc /Is:\os\public\amd64chk\sdk\inc\crt /Is:\os\public\amd64chk\sdk\inc\crt\stl70 .\symcryptunittest.rc
+8>Microsoft (R) Windows (R) Resource Compiler Version 10.0.10011.16384
+8>Copyright (C) Microsoft Corporation.  All rights reserved.
+8> s:\os\tools\vc\HostX64\amd64\link.exe /out:s:\os\obj\amd64chk\symcrypt\unittest\exe_test\objchk\amd64\symcryptunittest.exe  /machine:amd64 @s:\os\obj\amd64chk\Temp\symcrypt\unittest\exe_test\lnk.rsp
+8>Microsoft (R) Incremental Linker Version 14.15.26715.3
+8>Copyright (C) Microsoft Corporation.  All rights reserved.
+8>/NOVCFEATURE 
+8>/d2:-NoSmallFunctionOpt 
+8>/RunBelow4GB 
+8>-d2:-TypeProp- 
+8>-d2:-SpecDevirt- 
+8>/RetryOnFileOpenFailure 
+8>-ignore:4199 
+8>/MERGE:_PAGE=PAGE 
+8>/MERGE:_TEXT=.text 
+8>/MERGE:_RDATA=.rdata 
+8>/OPT:REF 
+8>/OPT:ICF 
+8>/IGNORE:4078,4221,4281,4198 
+8>/INCREMENTAL:NO 
+8>/release 
+8>/NODEFAULTLIB 
+8>/debug 
+8>/debugtype:cv,fixup,pdata 
+8>/version:10.0 
+8>/osversion:10.0 
+8>/ltcg 
+8>/Brepro 
+8>/functionpadmin:6 
+8>/MERGE:.orpc=.text 
+8>/d2:-guardspecload 
+8>/merge:.gfids=.rdata 
+8>/guard:export 
+8>/guard:mixed 
+8>/d2:-guard4 
+8>/d2:-nocfgrngchk 
+8>/d2:-guardcfgfuncptr 
+8>/d2:-guardcfgdispatch 
+8>/d2:-guardlongjmp 
+8>/guard:longjmp 
+8>/guard:exportsuppressinfo 
+8>/guard:addrtakeniat 
+8>/d2:-psvcallopt150000 
+8>/pdbcompress 
+8>/STACK:0x80000,0x2000 
+8>/tsaware 
+8>/dynamicbase 
+8>/highentropyva 
+8>/subsystem:console,10.00 
+8>/entry:mainCRTStartup 
+8>s:\os\obj\amd64chk\symcrypt\unittest\exe_test\objchk\amd64\precomp.obj 
+8>s:\os\obj\amd64chk\symcrypt\unittest\exe_test\objchk\amd64\symcryptunittest.res 
+8>s:\os\obj\amd64chk\symcrypt\unittest\exe_test\objchk\amd64\main_exe.obj 
+8>s:\os\public\amd64chk\sdk\lib\amd64\ntstc_msvcrt.lib 
+8>s:\os\public\amd64chk\sdk\lib\amd64\msvcrt.lib 
+8>s:\os\public\amd64chk\internal\sdk\lib\amd64\ucrtshims_msvcrt.lib 
+8>s:\os\public\amd64chk\sdk\lib\minwin\amd64\ntdll.lib 
+8>s:\os\public\amd64chk\internal\DS\lib\amd64\rsa32.lib 
+8>s:\os\public\amd64chk\internal\onecoreds\lib\amd64\msbignum.lib 
+8>s:\os\public\amd64chk\sdk\lib\amd64\powrprof.lib 
+8>s:\os\public\amd64chk\sdk\lib\amd64\bcrypt.lib 
+8>s:\os\public\amd64chk\internal\minwin\priv_sdk\lib\amd64\symcrypt-chk.lib 
+8>s:\os\obj\amd64chk\symcrypt\lib\objchk\amd64\symcrypt.lib 
+8>s:\os\obj\amd64chk\symcrypt\unittest\lib\objchk\amd64\symcryptunittest_lib.lib 
+8>s:\os\public\amd64chk\sdk\lib\mincore\amd64\mincore.lib 
+8>s:\os\public\amd64chk\sdk\lib\mincore\amd64\mincore_legacy.lib 
+8>s:\os\public\amd64chk\sdk\lib\mincore\amd64\mincore_obsolete.lib 
+8>s:\os\public\amd64chk\onecore\internal\minwin\priv_sdk\lib\amd64\api-ms-win-security-cryptoapi-l1-1-0.lib 
+8>Generating code
+8>Finished generating code
+8> C:\WINDOWS\system32\cmd.exe /c del s:\os\obj\amd64chk\symcrypt\unittest\exe_test\objchk\amd64\symcryptunittest.ilk.persistent s:\os\obj\amd64chk\symcrypt\unittest\exe_test\objchk\amd64\symcryptunittest.exe.persistent s:\os\obj\amd64chk\symcrypt\unittest\exe_test\objchk\amd64\symcryptunittest.pdb.persistent 2>nul
+8> FixTsVersionStringAppend /pe=s:\os\obj\amd64chk\symcrypt\unittest\exe_test\objchk\amd64\symcryptunittest.exe
+8>s:\os\src\symcrypt\unittest\exe_test>s:\os\tools\FixTsVersionStringAppend\FixTsVersionStringAppend.exe /pe=s:\os\obj\amd64chk\symcrypt\unittest\exe_test\objchk\amd64\symcryptunittest.exe 
+8>[s:\os\obj\amd64chk\symcrypt\unittest\exe_test\objchk\amd64\symcryptunittest.exe]
+8>No version resources present.
+8>  C:\WINDOWS\system32\cmd.exe /c if not exist s:\os\obj\amd64chk\symcrypt\unittest\exe_test\objchk\amd64\symcryptunittest.exe.mui (  echo Build_Status  LN_MUI_STS: LGNSTS_MUIOFF symcryptunittest.exe  )
+8>Build_Status LN_MUI_STS: LGNSTS_MUIOFF symcryptunittest.exe 
+8> C:\WINDOWS\system32\cmd.exe /c if exist s:\os\obj\amd64chk\Temp\symcrypt\unittest\exe_test\post_link_concurrent.rsp contool.exe @s:\os\obj\amd64chk\Temp\symcrypt\unittest\exe_test\post_link_concurrent.rsp
+8> C:\WINDOWS\system32\cmd.exe /c if exist s:\os\obj\amd64chk\Temp\symcrypt\unittest\exe_test\post_link_concurrent2.rsp contool.exe @s:\os\obj\amd64chk\Temp\symcrypt\unittest\exe_test\post_link_concurrent2.rsp
+5>STL version 70 used in "s:\os\src\symcrypt\unittest\exe_win7nlater" (STL_VER_TELEMETRY)
+5>s:\os\src\symcrypt\unittest\exe_win7nlater building test code in dev tree
+5> set > s:\os\obj\amd64chk\symcrypt\unittest\exe_win7nlater\objchk\amd64\_PASS2_Marker.log
+5> C:\WINDOWS\system32\cmd.exe /c type s:\os\obj\amd64chk\Temp\symcrypt\unittest\exe_win7nlater\echo_2.msg
+5>    rc.exe -l 409 -DSXS_PROCESSOR_ARCHITECTURE="""amd64"""  -DSXS_TARGET="""symcryptunittest_Win7nLater.exe"""   -DSYSTEM_COMPATIBLE_ASSEMBLY_NAME="""Microsoft.Windows.SystemCompatible"""  -DLSYSTEM_COMPATIBLE_ASSEMBLY_NAME=L"""Microsoft.Windows.SystemCompatible"""   -DSXS_ASSEMBLY_VERSION="""""" -z "MS Sans Serif,Helv/MS Shell Dlg"   /D__BUILDDATE__=180926-1430 /D__BUILDMACHINE__=GitEnlistment(niels) /r /fo s:\os\obj\amd64chk\symcrypt\unittest\exe_win7nlater\objchk\amd64\symcryptunittest.res /D_WIN64 /D_AMD64_ /DAMD64   /DCONDITION_HANDLING=1 /DNT_UP=1  /DNT_INST=0 /DWIN32=100 /D_NT1X_=100 /DWINNT=1 /D_WIN32_WINNT=0x0601 /DWINVER=0x0601 /D_WIN32_IE=0x0800    /DWIN32_LEAN_AND_MEAN=1  /DDEVL=1 /DDBG=1   /D_STATIC_CPPLIB /D_STL70_ /D_DLL=1 /D_MT=1  -DTESTDRIVER_NAME=\"SymCryptDriver_win7nlater.sys\" /D_USE_DEV11_CRT /DTEST_CODE -D_APISET_WINDOWS_VERSION=0x601 -D_APISET_MINWIN_VERSION=0x0100 -D_APISET_MINCORE_VERSION=0x0100 /DNTDDI_VERSION=0x06010000 /DWINBLUE_KBSPRING14 /DBUILD_WINDOWS /D__WRL_CONFIGURATION_LEGACY__ /DBUILD_UMS_ENABLED=1 /DBUILD_WOW64_ENABLED=1 -D_USE_DECLSPECS_FOR_SAL=1 -D_CONTROL_FLOW_GUARD=1 -D_CONTROL_FLOW_GUARD_SVCTAB=1   /Is:\os\src\data\MSRC /Is:\os\src\onecore\ds\security\cryptoapi\inc\cryptolegacy /Is:\os\public\amd64chk\internal\DS\inc /Is:\os\public\amd64chk\internal\DS\inc\crypto /Is:\os\public\amd64chk\internal\onecoreds\inc\crypto /Is:\os\public\amd64chk\onecore\private\ds\inc\crypto /I..\..\inc /I..\inc /I..\lib /Is:\os\public\amd64chk\ddk\inc /Is:\os\obj\amd64chk\symcrypt\unittest\exe_win7nlater\objchk\amd64 /Is:\os\public\amd64chk\oak\inc /Is:\os\public\amd64chk\shared\inc /Is:\os\public\amd64chk\onecore\external\shared\inc /Is:\os\public\amd64chk\shared\inc\minwin /Is:\os\public\amd64chk\onecore\external\shared\inc\minwin /Is:\os\public\amd64chk\shared\inc\mincore /Is:\os\public\amd64chk\onecore\external\shared\inc\mincore /Is:\os\public\amd64chk\shared\inc\clientcore /Is:\os\public\amd64chk\onecore\external\shared\inc\clientcore /Is:\os\public\amd64chk\shared\inc\moderncore /Is:\os\public\amd64chk\onecore\external\shared\inc\moderncore /Is:\os\public\amd64chk\sdk\inc /Is:\os\public\amd64chk\onecore\external\sdk\inc /Is:\os\public\amd64chk\sdk\inc\minwin /Is:\os\public\amd64chk\onecore\private\sdk\inc\minwin /Is:\os\public\amd64chk\onecore\internal\sdk\inc\minwin /Is:\os\public\amd64chk\sdk\inc\mincore /Is:\os\public\amd64chk\onecore\internal\sdk\inc\mincore /Is:\os\public\amd64chk\sdk\inc\clientcore /Is:\os\public\amd64chk\onecore\internal\sdk\inc\clientcore /Is:\os\public\amd64chk\sdk\inc\moderncore /Is:\os\public\amd64chk\onecore\internal\sdk\inc\moderncore /Is:\os\public\amd64chk\shared\inc /Is:\os\public\amd64chk\onecore\external\shared\inc /Is:\os\public\amd64chk\ddk\inc /Is:\os\public\amd64chk\onecore\external\ddk\inc /Is:\os\public\amd64chk\ddk\inc\wdm /Is:\os\public\amd64chk\internal\sdk\inc /Is:\os\public\amd64chk\onecore\private\sdk\inc /Is:\os\public\amd64chk\onecore\internal\sdk\inc /Is:\os\public\amd64chk\onecoreuap\private\sdk\inc /Is:\os\public\amd64chk\internal\sdk\inc\minwin /Is:\os\public\amd64chk\onecore\internal\sdk\inc\minwin /Is:\os\public\amd64chk\internal\sdk\inc\minwin\fs /Is:\os\public\amd64chk\onecore\internal\sdk\inc\minwin\fs /Is:\os\public\amd64chk\internal\sdk\inc\mincore /Is:\os\public\amd64chk\onecore\internal\sdk\inc\mincore /Is:\os\public\amd64chk\internal\sdk\inc\clientcore /Is:\os\public\amd64chk\onecore\internal\sdk\inc\clientcore /Is:\os\public\amd64chk\internal\sdk\inc\moderncore /Is:\os\public\amd64chk\onecore\internal\sdk\inc\moderncore /Is:\os\public\amd64chk\internal\oak\inc /Is:\os\public\amd64chk\sdk\inc\crt /Is:\os\public\amd64chk\sdk\inc\crt\stl70 .\symcryptunittest.rc
+5>Microsoft (R) Windows (R) Resource Compiler Version 10.0.10011.16384
+5>Copyright (C) Microsoft Corporation.  All rights reserved.
+5> s:\os\tools\vc\HostX64\amd64\link.exe /out:s:\os\obj\amd64chk\symcrypt\unittest\exe_win7nlater\objchk\amd64\symcryptunittest_Win7nLater.exe  /machine:amd64 @s:\os\obj\amd64chk\Temp\symcrypt\unittest\exe_win7nlater\lnk.rsp
+5>Microsoft (R) Incremental Linker Version 14.15.26715.3
+5>Copyright (C) Microsoft Corporation.  All rights reserved.
+5>/NOVCFEATURE 
+5>/d2:-NoSmallFunctionOpt 
+5>/RunBelow4GB 
+5>-d2:-TypeProp- 
+5>-d2:-SpecDevirt- 
+5>/RetryOnFileOpenFailure 
+5>-ignore:4199 
+5>/MERGE:_PAGE=PAGE 
+5>/MERGE:_TEXT=.text 
+5>/MERGE:_RDATA=.rdata 
+5>/OPT:REF 
+5>/OPT:ICF 
+5>/IGNORE:4078,4221,4281,4198 
+5>/INCREMENTAL:NO 
+5>/release 
+5>/NODEFAULTLIB 
+5>/debug 
+5>/debugtype:cv,fixup,pdata 
+5>/version:10.0 
+5>/osversion:10.0 
+5>/ltcg 
+5>/Brepro 
+5>/functionpadmin:6 
+5>/MERGE:.orpc=.text 
+5>/d2:-guardspecload 
+5>/merge:.gfids=.rdata 
+5>/guard:export 
+5>/guard:mixed 
+5>/d2:-guard4 
+5>/d2:-nocfgrngchk 
+5>/d2:-guardcfgfuncptr 
+5>/d2:-guardcfgdispatch 
+5>/d2:-guardlongjmp 
+5>/guard:longjmp 
+5>/guard:exportsuppressinfo 
+5>/guard:addrtakeniat 
+5>/d2:-psvcallopt150000 
+5>/pdbcompress 
+5>/STACK:0x80000,0x2000 
+5>/tsaware 
+5>/dynamicbase 
+5>/highentropyva 
+5>/subsystem:console,6.01 
+5>/entry:mainCRTStartup 
+5>s:\os\obj\amd64chk\symcrypt\unittest\exe_win7nlater\objchk\amd64\precomp.obj 
+5>s:\os\obj\amd64chk\symcrypt\unittest\exe_win7nlater\objchk\amd64\symcryptunittest.res 
+5>s:\os\obj\amd64chk\symcrypt\unittest\exe_win7nlater\objchk\amd64\main_exe.obj 
+5>s:\os\public\amd64chk\sdk\lib\amd64\advapi32.lib 
+5>s:\os\public\amd64chk\sdk\lib\amd64\kernel32.lib 
+5>s:\os\public\amd64chk\sdk\lib\amd64\ntstc_msvcrt.lib 
+5>s:\os\public\amd64chk\sdk\lib\amd64\msvcrt.lib 
+5>s:\os\public\amd64chk\internal\sdk\lib\amd64\ucrtshims_msvcrt.lib 
+5>s:\os\public\amd64chk\sdk\lib\minwin\amd64\ntdll.lib 
+5>s:\os\public\amd64chk\internal\DS\lib\amd64\rsa32.lib 
+5>s:\os\public\amd64chk\internal\onecoreds\lib\amd64\msbignum.lib 
+5>s:\os\public\amd64chk\sdk\lib\amd64\powrprof.lib 
+5>s:\os\public\amd64chk\sdk\lib\amd64\bcrypt.lib 
+5>s:\os\public\amd64chk\internal\minwin\priv_sdk\lib\amd64\symcrypt-chk.lib 
+5>s:\os\obj\amd64chk\symcrypt\lib\objchk\amd64\symcrypt.lib 
+5>s:\os\obj\amd64chk\symcrypt\unittest\lib\objchk\amd64\symcryptunittest_lib.lib 
+5>Generating code
+5>Finished generating code
+5> C:\WINDOWS\system32\cmd.exe /c del s:\os\obj\amd64chk\symcrypt\unittest\exe_win7nlater\objchk\amd64\symcryptunittest_Win7nLater.ilk.persistent s:\os\obj\amd64chk\symcrypt\unittest\exe_win7nlater\objchk\amd64\symcryptunittest_Win7nLater.exe.persistent s:\os\obj\amd64chk\symcrypt\unittest\exe_win7nlater\objchk\amd64\symcryptunittest_Win7nLater.pdb.persistent 2>nul
+5> FixTsVersionStringAppend /pe=s:\os\obj\amd64chk\symcrypt\unittest\exe_win7nlater\objchk\amd64\symcryptunittest_Win7nLater.exe
+5>s:\os\src\symcrypt\unittest\exe_win7nlater>s:\os\tools\FixTsVersionStringAppend\FixTsVersionStringAppend.exe /pe=s:\os\obj\amd64chk\symcrypt\unittest\exe_win7nlater\objchk\amd64\symcryptunittest_Win7nLater.exe 
+5>[s:\os\obj\amd64chk\symcrypt\unittest\exe_win7nlater\objchk\amd64\symcryptunittest_Win7nLater.exe]
+5>No version resources present.
+5>  C:\WINDOWS\system32\cmd.exe /c if not exist s:\os\obj\amd64chk\symcrypt\unittest\exe_win7nlater\objchk\amd64\symcryptunittest_Win7nLater.exe.mui (  echo Build_Status  LN_MUI_STS: LGNSTS_MUIOFF symcryptunittest_Win7nLater.exe  )
+5>Build_Status LN_MUI_STS: LGNSTS_MUIOFF symcryptunittest_Win7nLater.exe 
+5> s:\os\src\tools\check_imports.cmd s:\os\obj\amd64chk\symcrypt\unittest\exe_win7nlater\objchk\amd64\symcryptunittest_Win7nLater.exe
+5>(check_imports) Command: check_imports s:\os\obj\amd64chk\symcrypt\unittest\exe_win7nlater\objchk\amd64\symcryptunittest_win7nlater.exe
+5>(check_imports) Started at Fri Nov 16 16:18:56 2018
+5>(check_imports) Ended at Fri Nov 16 16:18:56 2018 with ExitCode:0
+5>(check_imports) Elapsed time 0 seconds
+5> C:\WINDOWS\system32\cmd.exe /c if exist s:\os\obj\amd64chk\Temp\symcrypt\unittest\exe_win7nlater\post_link_concurrent.rsp contool.exe @s:\os\obj\amd64chk\Temp\symcrypt\unittest\exe_win7nlater\post_link_concurrent.rsp
+5> C:\WINDOWS\system32\cmd.exe /c if exist s:\os\obj\amd64chk\Temp\symcrypt\unittest\exe_win7nlater\post_link_concurrent2.rsp contool.exe @s:\os\obj\amd64chk\Temp\symcrypt\unittest\exe_win7nlater\post_link_concurrent2.rsp
+BUILD: Pass complete => PASS2
+
+PERF: Waiting for performance monitor thread to terminate.
+PERF: Terminating perf data collector thread.
+TP: Threadpool cleanup.
+1>Disabling trace provider...
+1>TRACER (event): ETW Trace Session
+1>TRACER (event): =================
+1>TRACER (event): Buffers Allocated: 24
+1>TRACER (event): Buffers Written: 115
+1>Stopping Build Trace File Logger c54a74e4-7083-4900-8183-27fecef0f31f...
+1>Finalizing...
+1>Total Files = 978
+1>Total Processes = 44
+1>Total Accesses = 2927
+1>Total Process time = 10.531s (Logging time = 0.468s, Detour time = 0.690s)
+1>Running analyzer on build trace...
+  *************
+1>'s:\os\tools\CoreBuild\amd64\analyzer.exe -merge:s:\os\obj\amd64chk\objchk\amd64\build.ldg -reportconfig:s:\os\src\tools\dbb_report_config.xml -in:bin s:\os\src\symcrypt\buildchk.trc'
+1>Microsoft (R) Build Trace Analyzer
+1>Copyright (C) Microsoft Corporation. All rights reserved.
+1>Processing s:\os\src\tools\dbb_report_config.xml
+1>Processing s:\os\src\tools\dbb_report_baselines.xml
+1>Processing s:\os\src\tools\dbb_exclusions.xml
+1>Processing s:\os\src\symcrypt\buildchk.trc
+1>ANALYZER (subdepot): reading projects from s:\os\src\tools\subdepot_projects.txt
+1>Trace start time: 11/16/2018 04:18:24 PM
+1>Finalizing...
+1>Total Files = 978
+1>Total Processes = 44
+1>Total Accesses = 2864
+1>Parse time = 0.008s
+1>Processing s:\os\obj\amd64chk\objchk\amd64\build.ldg
+1>Parse time (s:\os\obj\amd64chk\objchk\amd64\build.ldg) = 0.002s
+1>Merge time = 0.002s
+1>Finalizing...
+1>Total Files = 1880
+1>Total Accesses = 2864
+1>Analysis time = 0.002s
+1>Write time (s:\os\obj\amd64chk\objchk\amd64\build.ldg) = 0.005s
+1>Generating reports...
+1>Processing s:\os\cdg\amd64chk\build.cdg
+1>TRACEREPORT (subdepot): reading projects from s:\os\src\tools\subdepot_projects.txt
+1>Finalizing...
+1>Total Files = 177398
+1>Report time (badpublish) = 0.000s
+1>Processing s:\os\src\tools\dbb_build_rules.xml
+1>Processing s:\os\src\tools\dbb_build_rules_onecore.xml
+1>Processing s:\os\src\tools\dbb_build_rules_onecoreuap.xml
+1>Processing s:\os\src\tools\dbb_build_rules_shellcommon.xml
+1>Processing s:\os\src\tools\dbb_build_rules_analog.xml
+1>Processing s:\os\src\tools\dbb_build_rules_shellcommondesktopbase.xml
+1>Report time (buildrules) = 0.010s
+1>Report time (checkdep) = 0.002s
+1>Report time (crossdepot) = 0.000s
+1>Report time (deprecateddependency) = 0.002s
+1>Report time (includes) = 0.000s
+1>TRACEREPORT (multiwrite): Is Partial Build: false 
+1>TRACEREPORT (multiwrite): Pass3 for partial build enabled: false 
+1>TRACEREPORT (multiwrite): Is Pass3 enabled: true 
+1>Report time (multiwrite) = 0.002s
+1>Report time (nttree) = 0.000s
+1>Report time (objroot) = 0.000s
+1>Report time (readwrite) = 0.000s
+1>Report time (sdxwrite) = 0.000s
+1>Report time (sourcesdep) = 0.003s
+1>Report time (tools) = 0.000s
+1>Report time (unc) = 0.001s
+1>Report time = 3.523s
+TP: Threadpool cleanup.
+Finish time: Fri Nov 16 16:19:00 2018
+BUILD: Done
+
+    88 files compiled
+    2 libraries built
+    8 executables built

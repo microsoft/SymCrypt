@@ -1,0 +1,21 @@
+//
+// Resource file to add our KAT data directly into our binary.
+//
+// Copyright (c) Microsoft Corporation.  All rights reserved.
+//
+
+kat_hash.dat                    KAT_HASH                        "..\kat_hash.dat"
+kat_mac.dat                     KAT_MAC                         "..\kat_mac.dat"
+kat_blockcipher.dat             KAT_BLOCK_CIPHER                "..\kat_blockcipher.dat"
+kat_authenc.dat                 KAT_AUTHENC                     "..\kat_authenc.dat"
+kat_streamcipher.dat            KAT_STREAM_CIPHER               "..\kat_streamcipher.dat"
+kat_rng.dat                     KAT_RNG                         "..\kat_rng.dat"
+kat_kdf.dat                     KAT_KDF                         "..\kat_kdf.dat"
+kat_xts.dat                     KAT_XTS                         "..\kat_xts.dat"
+kat_ecdsa.dat                   KAT_ECDSA                       "..\kat_ecdsa.dat"
+kat_IEEE802_11SaeCustom.dat	KAT_SAE_CUSTOM			"..\kat_IEEE802_11SaeCustom.dat"
+
+
+
+
+
