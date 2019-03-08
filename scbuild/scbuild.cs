@@ -404,15 +404,9 @@ class ScBuild
     void CheckToolsSynced()
     {
         // Removed this check as it does not work on Git enlistments.
-        // We could write code to make this check on Git, but 
-        // in Git, the working directory is easily up-to-date with the branch, so this
-        // check is not very useful.
-        // The real problem is that the working branch might be out of date with the 'main' branch.
-        // Unfortunately, there is no way to know what the 'main' branch is, so
-        // there is no way to automate this check.
-        // Users will have to merge the main branch into the working branch before running scbuild.
-
-        // CheckRelDirSynced( @"..\..\tools" );
+        // We build Git from a Git repo enlisted in parallel to an OS repo, and use
+        // the OS tools. We don't even know what branch the OS repo is on.
+        // We have few tool changes anyway, so we drop this check.
     }
 
     void CheckSymCryptSynced()
@@ -796,7 +790,7 @@ class ScBuild
 
     public void CreateGitTag()
     {
-        // Our code still used 'label' in many places, as that is the tag conceptin Source Depot
+        // Our code still used 'label' in many places, as that is the tag concept in Source Depot
         if( !m_option_release || m_option_no_tag )
         {
             return;

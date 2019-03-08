@@ -1,0 +1,19 @@
+ Volume in drive S is DataDisk
+ Volume Serial Number is 5A89-DDF9
+
+ Directory of s:\os\src\symcrypt\scbuild
+
+03/06/2019  04:20 PM    <DIR>          .
+03/06/2019  04:20 PM    <DIR>          ..
+03/06/2019  02:42 PM                82 buildchk.dbb
+03/06/2019  02:43 PM             6,365 buildchk.evt
+03/06/2019  02:43 PM           228,869 buildchk.log
+03/06/2019  02:35 PM                61 buildchk.metadata
+03/06/2019  02:42 PM             2,560 buildchk.prf
+03/06/2019  02:42 PM            31,961 buildchk.trc
+11/16/2018  04:17 PM            32,026 scbuild.cs
+03/06/2019  04:20 PM               388 sources
+03/06/2019  02:44 PM                 0 test.t
+03/06/2019  04:20 PM                 0 test.t2
+              10 File(s)        302,312 bytes
+               2 Dir(s)  738,004,824,064 bytes free

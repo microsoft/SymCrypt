@@ -19,10 +19,13 @@ INCLUDES= \
     $(DS_INC_PATH)\crypto; \
     $(ONECOREDS_INC_PATH)\crypto; \
     $(ONECOREDS_PRIVATE_INC_PATH_L)\crypto; \
-#    $(ONECORE_PRIVATE_PATH)\ds\inc\crypto; \
-    ..\..\inc ; \
-    ..\inc ; \
-    ..\lib ; \
+    $(ONECOREDS_INTERNAL_INC_PATH_L)\crypto; \
+    $(MINWIN_PRIV_SDK_INC_PATH)\crypto; \
+#   $(ONECORE_PRIVATE_PATH)\ds\inc\crypto; \
+    ..\inc; \
+    ..\..\inc; \
+    ..\lib; \
+    ..\..\..\..\public.symcrypt\inc\; \
     $(DDK_INC_PATH); \
 
 SOURCES= \
@@ -36,18 +39,20 @@ SOURCES= \
 TARGETLIBS= \
 #    $(MINCORE_SDK_LIB_PATH)\mincore.lib \
     $(MINWIN_SDK_LIB_PATH)\ntdll.lib \
-!if EXIST( $(PROJECT_OBJ_ROOT)\released\windows\ntrsa32\umode\$(O)\rsa32.lib )
-    $(PROJECT_OBJ_ROOT)\released\windows\ntrsa32\umode\$(O)\rsa32.lib \
+!if EXIST( ..\..\..\..\public.symcrypt\lib\$(O)\rsa32.lib )
+    ..\..\..\..\public.symcrypt\lib\$(O)\rsa32.lib \
 !endif
-    $(DS_LIB_PATH)\rsa32.lib \
+    $(ONECOREDS_INTERNAL_LIB_PATH_L)\rsa32k.lib \
+#    $(DS_LIB_PATH)\rsa32.lib \
 !if EXIST( $(PROJECT_OBJ_ROOT)\released\windows\bignum\winnt\$(O)\msbignum.lib )
     $(PROJECT_OBJ_ROOT)\released\windows\bignum\winnt\$(O)\msbignum.lib \
 !endif
-    $(ONECOREDS_LIB_PATH)\msbignum.lib \
+    $(MINWIN_PRIVATE_PRIV_SDK_LIB_PATH_L)\msbignum.lib \
+# $(ONECORE_DS_LIB_PATH)\msbignum.lib \
     $(SDK_LIB_PATH)\powrprof.lib \
     $(SDK_LIB_PATH)\bcrypt.lib \
 #***** REMOVE NEXT LINE BEFORE SHIP *****
-    $(MINWIN_PRIV_SDK_LIB_PATH)\symcrypt-$(BUILD_TYPE).lib \
+#    $(MINWIN_PRIV_SDK_LIB_PATH)\symcrypt-$(BUILD_TYPE).lib \
     $(OBJECT_ROOT)\symcrypt\lib\$(O)\symcrypt.lib \
     $(OBJECT_ROOT)\symcrypt\unittest\lib\$(O)\symcryptunittest_lib.lib \
 	

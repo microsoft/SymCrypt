@@ -18,10 +18,13 @@ INCLUDES= \
     $(DS_INC_PATH)\crypto; \
     $(ONECOREDS_INC_PATH)\crypto; \
     $(ONECOREDS_PRIVATE_INC_PATH_L)\crypto; \
-#    $(ONECORE_PRIVATE_PATH)\ds\inc\crypto; \
-    ..\..\inc ; \
-    ..\inc ; \
-    ..\..\lib ; \
+    $(ONECOREDS_INTERNAL_INC_PATH_L)\crypto; \
+    $(MINWIN_PRIV_SDK_INC_PATH)\crypto; \
+#   $(ONECORE_PRIVATE_PATH)\ds\inc\crypto; \
+    ..\inc; \
+    ..\..\inc; \
+    ..\..\lib; \
+    ..\..\..\..\public.symcrypt\inc\; \
     $(DDK_INC_PATH); \
 
 SOURCES= \

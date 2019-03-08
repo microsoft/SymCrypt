@@ -68,3 +68,5 @@ validate-pushrelease*.log
 *CompileInputs.cache
 *AssemblyReference.cache
 
+release/
+scbuild.log
