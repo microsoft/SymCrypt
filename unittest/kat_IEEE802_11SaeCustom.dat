@@ -57,7 +57,19 @@ scalarSum       = dca4b65f59583cbee71069aa97019db19be6444ed73949ec950fa306e0ecfa
 
 # Neagative test case, invalid peer Element
 NegativeTest    = 1
+peerScalar      = 934889ab386b72d5ff0d3caa095650202bd03e2696b5905f7b495f3b7dc35b48
 peerElement     = 5d901c4a9b7f11e7935adeb7a4bac40c5172604f1c1a1a42dbca4753f695aa5ad01e1f8b812f01a3631a79dab001b372a185535b77e38a46a6faeeffffffffff
+
+# Negative test case, invalid peer Scalar = 0
+NegativeTest    = 1
+peerScalar      = 0000000000000000000000000000000000000000000000000000000000000000
+peerElement     = 58545e6ca0e886effb052afb632ca2195bb0b0a825e59dba6baa0e93af046ef4c9455fec43fe5eb02a6b8abc8fd70787873dd1d5d7fde3073a4cf3c2c76f595c
+
+# Negative test case, invalid peer Scalar = group order
+NegativeTest    = 1
+peerScalar      = FFFFFFFF00000000FFFFFFFFFFFFFFFFBCE6FAADA7179E84F3B9CAC2FC632551
+peerElement     = 58545e6ca0e886effb052afb632ca2195bb0b0a825e59dba6baa0e93af046ef4c9455fec43fe5eb02a6b8abc8fd70787873dd1d5d7fde3073a4cf3c2c76f595c
+
 
 # run the self-consistency checks
 selfconsistent = 1

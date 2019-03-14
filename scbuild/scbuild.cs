@@ -671,11 +671,10 @@ class ScBuild
 
     string [] m_option_flavors = null;
     static string [] m_all_flavors = new string [] {
-        "amd64chk",
-//                                                        "x86chk", "x86fre",
-//                                                        "amd64chk", "amd64fre",
-//                                                        "armchk", "armfre",
-//                                                        "arm64chk", "arm64fre",
+                                                        "amd64chk", "amd64fre",
+                                                        "x86chk", "x86fre",
+                                                        "arm64chk", "arm64fre",
+                                                        "armchk", "armfre",
                                                     };
     bool m_option_ignore_sync = false;
     bool m_option_ignore_writable = false;
