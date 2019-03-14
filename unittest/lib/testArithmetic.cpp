@@ -1026,21 +1026,24 @@ cleanup:
 }
 
 VOID
-testIntGetValueLsb32()
+testIntGetValueLsbits()
 {
     BYTE                    buf[MAX_INT_BYTES];
     SIZE_T                  nD = g_rng.sizet(1, g_digitLimit );
     SYMCRYPT_ERROR          scError;
     UINT32                  v;
+    UINT64                  v64;
     
     ArithInt *pSrc = randomArithInt( nD );
 
     v = SymCryptIntGetValueLsbits32( pSrc->m_pScInt );
+    v64 = SymCryptIntGetValueLsbits64( pSrc->m_pScInt );
 
     scError = SymCryptIntGetValue( pSrc->m_pScInt, buf, sizeof(buf), SYMCRYPT_NUMBER_FORMAT_LSB_FIRST );
     CHECK( scError == SYMCRYPT_NO_ERROR, "?" );
 
     CHECK( v == SYMCRYPT_LOAD_LSBFIRST32( buf ), "IntGetValueLsb32 mismatch" );
+    CHECK( v64 == SYMCRYPT_LOAD_LSBFIRST64( buf ), "IntGetValueLsb64 mismatch" );
 }
 
 VOID
@@ -3652,7 +3655,7 @@ debugtestPrimeGeneration()
 
     // Generate a prime
     UINT32 maxTries = 100 * SymCryptIntBitsizeOfValue( piHigh );
-    scError = SymCryptIntGenerateRandomPrime( piLow, piHigh, maxTries, 0, piDst, pbTmp, SYMCRYPT_SCRATCH_BYTES_FOR_INT_PRIME_GEN(nD));
+    scError = SymCryptIntGenerateRandomPrime( piLow, piHigh, NULL, 0, maxTries, 0, piDst, pbTmp, SYMCRYPT_SCRATCH_BYTES_FOR_INT_PRIME_GEN(nD));
     CHECK3( scError == SYMCRYPT_NO_ERROR, "Error prime generation: %x", scError );
 
     // Print the result
@@ -3745,7 +3748,7 @@ testArithmetic()
     rnddRegisterTestFunction( testIntSetValue, "IntSetValue", 20 );             // More frequent to generate corner-case values
     rnddRegisterTestFunction( testIntSetValueUint32, "IntSetValueUint32", 10 );
     rnddRegisterTestFunction( testIntGetValue, "IntGetValue", 10 );
-    rnddRegisterTestFunction( testIntGetValueLsb32, "IntGetValueLsb32", 5 );
+    rnddRegisterTestFunction( testIntGetValueLsbits, "IntGetValueLsbits", 5 );
     rnddRegisterTestFunction( testIntAddUint32, "IntAddUint32", 10 );
     rnddRegisterTestFunction( testIntAddSameSize, "IntAddSameSize", 10 );
     rnddRegisterTestFunction( testIntAddMixedSize, "IntAddMixedSize", 10 );

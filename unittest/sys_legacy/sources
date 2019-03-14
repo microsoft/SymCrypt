@@ -27,7 +27,7 @@ TARGETLIBS= \
 #    $(SDK_LIB_PATH)\powrprof.lib \
     $(DDK_LIB_PATH)\ksecdd.lib \
 #***** REMOVE NEXT LINE BEFORE SHIP *****
-    $(MINWIN_PRIV_SDK_LIB_PATH)\symcrypt-$(BUILD_TYPE).lib \
+    $(MINWIN_INTERNAL_PRIV_SDK_LIB_PATH_L)\symcrypt-$(BUILD_TYPE).lib \
     $(OBJECT_ROOT)\symcrypt\lib\$(O)\symcrypt.lib \
 	
 !IF "$(386)" ==  "1"

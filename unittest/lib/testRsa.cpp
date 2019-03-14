@@ -170,6 +170,7 @@ testRsaGenerateOneKey( UINT32 iSize, UINT32 iImpl )
     {
         // SymCrypt
         case 0:
+        {
             rsaParams.version = 1;
             rsaParams.nBitsOfModulus = g_BitSizeEntries[iSize].nBitsOfModulus;
             rsaParams.nPrimes = 2;
@@ -178,13 +179,25 @@ testRsaGenerateOneKey( UINT32 iSize, UINT32 iImpl )
             pkSymCryptKey = SymCryptRsakeyAllocate( &rsaParams, 0 );
             CHECK( pkSymCryptKey != NULL, "?" );
 
-            scError = SymCryptRsakeyGenerate( pkSymCryptKey, NULL, 0, 0 );
+            // pick a random pubexp size
+            SIZE_T nPubBits = g_rng.sizet( 2, 33 ); // **** fix 33->65 when CNG can handle it... 2 .. 64
+            CHECK( nPubBits <= 64, "?" );
+
+            // Generate an odd public exponent 
+            UINT64 pubExp;
+            ntStatus = BCryptGenRandom( BCRYPT_RNG_ALG_HANDLE, (PBYTE)&pubExp, sizeof( pubExp ), 0 );
+            CHECK( NT_SUCCESS(ntStatus), "?" );
+            pubExp >>= (64 - nPubBits);
+            pubExp |= (UINT64)1 << (nPubBits - 1);
+            pubExp |= 1;
+
+            scError = SymCryptRsakeyGenerate( pkSymCryptKey, &pubExp, 1, 0 );
             CHECK( scError == SYMCRYPT_NO_ERROR, "?" );
 
             pRes = (PBYTE) pkSymCryptKey;
 
             break;
-
+        }
         // MsBignum
         case 1:
             pkMsBignumKey = (PRSA_PRIVATE_KEY) SymCryptCallbackAlloc(sizeof(RSA_PRIVATE_KEY));
@@ -267,6 +280,9 @@ testRsaGenerateFunkyKey(
     UINT32 cbPrime1 = 0;
     UINT32 cbPrime2 = 0;
 
+    // Set the public exponent to the default 65537
+    UINT64 pubExp = (1 << 16) + 1;
+
     PSYMCRYPT_INT piModulus = NULL;
     PSYMCRYPT_INT piPrime1 = NULL;
     PSYMCRYPT_INT piPrime2 = NULL;
@@ -326,6 +342,8 @@ testRsaGenerateFunkyKey(
         scError = SymCryptIntGenerateRandomPrime(
                             piLow,
                             piHigh,
+                            &pubExp,
+                            1,
                             100*nBitsOfPrime1,
                             0,
                             piPrime1,
@@ -343,6 +361,8 @@ testRsaGenerateFunkyKey(
         scError = SymCryptIntGenerateRandomPrime(
                             piLow,
                             piHigh,
+                            &pubExp,
+                            1,
                             100*nBitsOfPrime2,
                             0,
                             piPrime2,
@@ -372,11 +392,8 @@ testRsaGenerateFunkyKey(
     scError = SymCryptIntGetValue( piPrime2, pbPrime2, *pcbPrime2, SYMCRYPT_NUMBER_FORMAT_MSB_FIRST );
     CHECK(scError==SYMCRYPT_NO_ERROR, "?");
 
-    // Set the public exponent to the default 65537
-    *pcbPubExp = 3;
-    pbPubExp[0]=0x01;
-    pbPubExp[1]=0x00;
-    pbPubExp[2]=0x01;
+    *pcbPubExp = SymCryptUint64Bytesize( pubExp );
+    SymCryptStoreMsbFirstUint64( pubExp, pbPubExp, *pcbPubExp );
 
     SymCryptWipe( pbScratch, cbScratch );
     SymCryptCallbackFree( pbScratch );
@@ -400,7 +417,7 @@ testRsaExportOneKey(
     PSYMCRYPT_RSAKEY pkSymCryptKey = NULL;
     PBYTE ppPrimes[] = { NULL, NULL, };
     SIZE_T pcbPrimes[] = { 0, 0, };
-    UINT32 pubExp;
+    UINT64 pubExp;
     UINT32 cbPubExp;
 
     BOOL success = FALSE;
@@ -459,8 +476,8 @@ testRsaExportOneKey(
 
             memcpy( pbModulus, &rbKeyBlob[cbTmp], *pcbModulus ); cbTmp += *pcbModulus;
 
-            cbPubExp = SymCryptUint32Bytesize( pubExp );
-            scError = SymCryptStoreMsbFirstUint32( pubExp, pbPubExp, cbPubExp );
+            cbPubExp = SymCryptUint64Bytesize( pubExp );
+            scError = SymCryptStoreMsbFirstUint64( pubExp, pbPubExp, cbPubExp );
             CHECK( scError == SYMCRYPT_NO_ERROR, "?" );
             *pcbPubExp = cbPubExp;
 
@@ -564,7 +581,7 @@ testRsaImportOneKey(
     SYMCRYPT_ERROR scError = SYMCRYPT_NO_ERROR;
     SYMCRYPT_RSA_PARAMS rsaParams = { 0 };
     PSYMCRYPT_RSAKEY pkSymCryptKey = NULL;
-    UINT32 pubExp;
+    UINT64 pubExp;
     PCBYTE ppPrimes[] = { NULL, NULL, };
     SIZE_T pcbPrimes[] = { 0, 0, };
 
@@ -600,7 +617,7 @@ testRsaImportOneKey(
             pcbPrimes[0] = cbPrime1;
             pcbPrimes[1] = cbPrime2;
 
-            scError = SymCryptLoadMsbFirstUint32( pbPubExp, cbPubExp, &pubExp );
+            scError = SymCryptLoadMsbFirstUint64( pbPubExp, cbPubExp, &pubExp );
             CHECK( scError == SYMCRYPT_NO_ERROR, "?" );
 
             // Import
@@ -636,7 +653,7 @@ testRsaImportOneKey(
                         pkMsBignumKey,
                         TRUE,
                         &bignumCtx);
-            CHECK( success, "?" );
+            CHECK( success, "Bignum failed to import RSA key" );
 
             pRes = (PBYTE) pkMsBignumKey;
 

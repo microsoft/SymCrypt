@@ -51,7 +51,7 @@ SymCryptFatal( UINT32 fatalCode );
 #define SYMCRYPT_EXTERN_C extern "C" {
 #define SYMCRYPT_EXTERN_C_END }
 #else
-#define SYMCRYPT_EXTERN_C 
+#define SYMCRYPT_EXTERN_C
 #define SYMCRYPT_EXTERN_C_END
 #endif
 
@@ -84,9 +84,20 @@ typedef struct _SYMCRYPT_EXTENDED_SAVE_DATA      SYMCRYPT_EXTENDED_SAVE_DATA, *P
 
 #else
 
-#define SYMCRYPT_ENVIRONMENT_DEFS_SAVEYMM( envName ) 
-#define SYMCRYPT_ENVIRONMENT_DEFS_SAVEXMM( envName ) 
+#define SYMCRYPT_ENVIRONMENT_DEFS_SAVEYMM( envName )
+#define SYMCRYPT_ENVIRONMENT_DEFS_SAVEXMM( envName )
 
+#endif
+
+// Environment forwarding functions.
+// CPUIDEX is only forwarded on CPUs that have it.
+#if SYMCRYPT_CPU_AMD64 | SYMCRYPT_CPU_X86 
+#define SYMCRYPT_ENVIRONMENT_FORWARD_CPUIDEX( envName ) \
+    VOID SYMCRYPT_CALL SymCryptCpuidExFuncEnv##envName( int cpuInfo[4], int function_id, int subfunction_id ); \
+    VOID SYMCRYPT_CALL SymCryptCpuidExFunc( int cpuInfo[4], int function_id, int subfunction_id ) \
+        { SymCryptCpuidExFuncEnv##envName( cpuInfo, function_id, subfunction_id ); }
+#else
+#define SYMCRYPT_ENVIRONMENT_FORWARD_CPUIDEX( envName )
 #endif
 
 #define SYMCRYPT_ENVIRONMENT_DEFS( envName ) \
@@ -108,6 +119,7 @@ SYMCRYPT_EXTERN_C \
     VOID SYMCRYPT_CALL SymCryptTestInjectErrorEnv##envName( PBYTE pbBuf, SIZE_T cbBuf ); \
     VOID SYMCRYPT_CALL SymCryptInjectError( PBYTE pbBuf, SIZE_T cbBuf ) \
         { SymCryptTestInjectErrorEnv##envName( pbBuf, cbBuf ); } \
+    SYMCRYPT_ENVIRONMENT_FORWARD_CPUIDEX( envName ) \
 SYMCRYPT_EXTERN_C_END
 
 //
@@ -153,6 +165,9 @@ SYMCRYPT_EXTERN_C_END
 #define SYMCRYPT_ENVIRONMENT_WINDOWS_USERMODE_WIN8_1_N_LATER    SYMCRYPT_ENVIRONMENT_DEFS( WindowsUsermodeWin8_1nLater )
 #endif
 
+#if (NTDDI_VERSION >= NTDDI_WIN10)
+#define SYMCRYPT_ENVIRONMENT_WINDOWS_USERMODE_WIN10_SGX         SYMCRYPT_ENVIRONMENT_DEFS( Win10Sgx )
+#endif
 
 #define SYMCRYPT_ENVIRONMENT_WINDOWS_USERMODE_LATEST            SYMCRYPT_ENVIRONMENT_WINDOWS_USERMODE_WIN8_1_N_LATER
 
@@ -200,7 +215,7 @@ SymCryptWipeKnownSize( _Out_writes_bytes_( cbData ) PVOID pbData, SIZE_T cbData 
     if( cbData > SYMCRYPT_WIPE_FUNCTION_LIMIT )
     {
         SymCryptWipe( pbData, cbData );
-    } else 
+    } else
     {
         //
         // We assume that pb is aligned, so we wipe from the end to the front to keep alignment.

@@ -134,6 +134,68 @@ testLoadStore()
 
 }
 
+VOID
+testUint64Gcd()
+{
+    UINT64 a;
+    UINT64 b;
+    UINT64 gcd;
+    UINT64 t;
+
+    // First we just test that the GCD result is a divisor of both inputs
+    // The probability that a GCD != 1 is about 40% so we will hit this
+    for( int i=0; i<64*64; i++ )
+    {
+        GENRANDOM( &a, sizeof( a ) );
+        GENRANDOM( &b, sizeof( b ) );
+
+        // Check different sizes, we just try all combinations.
+        a >>= i % 64;
+        b >>= (i/64) % 64;
+
+        if( ((a | b) & 1) == 0 )
+        {
+            // make one of them odd, re-using a bit of a for the random selection
+            t = (a >> 14) & 1;
+            a |= t;
+            b |= 1-t;
+        }
+
+        gcd = SymCryptUint64Gcd( a, b, SYMCRYPT_FLAG_GCD_INPUTS_NOT_BOTH_EVEN );
+
+        CHECK( gcd != 0 && a % gcd == 0 && b % gcd == 0, "Wrong GCD output from SymCryptUint64Gcd()" );
+    }
+
+    // Now we check that any common factors are in fact found
+    for( int i=0; i<64 * 64; i++ )
+    {
+        // Generate a random joint factor, which must be odd (as one input must be odd)
+        GENRANDOM( &t, sizeof( t ) );
+        t >>= (i % 64);
+        t |= 1;
+
+        // Generate a & b until at least one of them is odd
+        do {
+            GENRANDOM( &a, sizeof( a ) );
+            GENRANDOM( &b, sizeof( b ) );
+
+            // make a and b a multiple of t
+            a -= a % t;
+            b -= b % t;
+        } while( ((a | b) & 1) == 0 );
+
+        gcd = SymCryptUint64Gcd( a, b, SYMCRYPT_FLAG_GCD_INPUTS_NOT_BOTH_EVEN );
+
+        // Check that the factor t was found; there might be other common factors.
+        CHECK( gcd >= t && gcd % t == 0, "SymCryptUint64Gcd did not detect a common factor" );
+    }
+
+    // Test a usecase that uses the max # iterations
+    // This case uses 63 iterations to change 1<<63 to 1,
+    // Another 63 to reduce the 2nd number to 1, and one more to get (0,1)
+    CHECK( SymCryptUint64Gcd( (UINT64)1 << 63, ((UINT64)1 << 31) + 1, SYMCRYPT_FLAG_GCD_INPUTS_NOT_BOTH_EVEN) == 1, "Wrong uint64GCD result" );
+}
+
 
 VOID
 testUtil()
@@ -143,6 +205,8 @@ testUtil()
     testBitByteSize();
 
     testLoadStore();
+
+    testUint64Gcd();
     
     print ( "\n" );
 }

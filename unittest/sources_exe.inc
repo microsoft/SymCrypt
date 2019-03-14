@@ -14,7 +14,6 @@ LINK_TIME_CODE_GENERATION = 1
 INCLUDES= \
 #    ..\..\..\released\windows\ntrsa32\inc; \
 #    ..\..\..\released\windows\bignum; \
-    $(BASEDIR)\onecore\ds\security\cryptoapi\inc\cryptolegacy; \
     $(DS_INC_PATH);                 \
     $(DS_INC_PATH)\crypto; \
     $(ONECOREDS_INC_PATH)\crypto; \
@@ -25,34 +24,22 @@ INCLUDES= \
     ..\inc; \
     ..\..\inc; \
     ..\lib; \
-    ..\..\..\..\public.symcrypt\inc\; \
+    $(OBJECT_ROOT)\SymCrypt\Publics\$(O); \
     $(DDK_INC_PATH); \
 
 SOURCES= \
     main_exe.cpp \
     symcryptunittest.rc \
         
-#
-# We link RSA32 and msbignum twice, once from the Enigma build location, and once from windows.
-# This works in either state.
-#
 TARGETLIBS= \
 #    $(MINCORE_SDK_LIB_PATH)\mincore.lib \
     $(MINWIN_SDK_LIB_PATH)\ntdll.lib \
-!if EXIST( ..\..\..\..\public.symcrypt\lib\$(O)\rsa32.lib )
-    ..\..\..\..\public.symcrypt\lib\$(O)\rsa32.lib \
-!endif
-    $(ONECOREDS_INTERNAL_LIB_PATH_L)\rsa32k.lib \
-#    $(DS_LIB_PATH)\rsa32.lib \
-!if EXIST( $(PROJECT_OBJ_ROOT)\released\windows\bignum\winnt\$(O)\msbignum.lib )
-    $(PROJECT_OBJ_ROOT)\released\windows\bignum\winnt\$(O)\msbignum.lib \
-!endif
-    $(MINWIN_PRIVATE_PRIV_SDK_LIB_PATH_L)\msbignum.lib \
-# $(ONECORE_DS_LIB_PATH)\msbignum.lib \
+    $(OBJECT_ROOT)\SymCrypt\Publics\$(O)\rsa32.lib \
+    $(OBJECT_ROOT)\SymCrypt\Publics\$(O)\msbignum.lib \
     $(SDK_LIB_PATH)\powrprof.lib \
     $(SDK_LIB_PATH)\bcrypt.lib \
 #***** REMOVE NEXT LINE BEFORE SHIP *****
-#    $(MINWIN_PRIV_SDK_LIB_PATH)\symcrypt-$(BUILD_TYPE).lib \
+    $(MINWIN_INTERNAL_PRIV_SDK_LIB_PATH_L)\symcrypt-$(BUILD_TYPE).lib \
     $(OBJECT_ROOT)\symcrypt\lib\$(O)\symcrypt.lib \
     $(OBJECT_ROOT)\symcrypt\unittest\lib\$(O)\symcryptunittest_lib.lib \
 	

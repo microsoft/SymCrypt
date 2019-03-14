@@ -1,4 +1,5 @@
 DIRS = \
+    publics \
     lib \
     unittest \
     gen{amd64} \

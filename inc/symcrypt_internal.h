@@ -1597,9 +1597,13 @@ SYMCRYPT_ALIGN struct _SYMCRYPT_MODELEMENT {
                  SYMCRYPT_FDEF_SCRATCH_BYTES_FOR_INT_MILLER_RABIN( _nDigits ) ))
 
 #define SYMCRYPT_FDEF_SCRATCH_BYTES_FOR_INT_PRIME_GEN( _nDigits ) ( \
+            SYMCRYPT_RSAKEY_MAX_NUMOF_PUBEXPS * SYMCRYPT_FDEF_SIZEOF_DIVISOR_FROM_DIGITS( 1 ) + \
+            SYMCRYPT_FDEF_SIZEOF_INT_FROM_DIGITS( 1 ) + \
+            max( SYMCRYPT_FDEF_SCRATCH_BYTES_FOR_INT_TO_DIVISOR( 1 ), \
+            max( SYMCRYPT_FDEF_SCRATCH_BYTES_FOR_INT_DIVMOD( _nDigits, 1 ), \
             max( SYMCRYPT_FDEF_SIZEOF_INT_FROM_DIGITS( _nDigits ), \
             max( SYMCRYPT_FDEF_SCRATCH_BYTES_FOR_INT_IS_POTENTIAL_PRIME( _nDigits ), \
-                 SYMCRYPT_FDEF_SCRATCH_BYTES_FOR_INT_MILLER_RABIN( _nDigits ) ) ))
+                 SYMCRYPT_FDEF_SCRATCH_BYTES_FOR_INT_MILLER_RABIN( _nDigits ) )))))
 
 //
 // Upper bound for SYMCRYPT_FDEF_SCRATCH_BYTES_FOR_MODMULTIEXP
@@ -1720,7 +1724,7 @@ typedef SYMCRYPT_ASYM_ALIGN struct _SYMCRYPT_RSAKEY {
                                                             // Number of digits of each prime object
                     UINT32              nMaxDigitsOfPrimes; // Maximum number of digits in nDigitsOfPrimes
 
-                    UINT32              au32PubExp[SYMCRYPT_RSAKEY_MAX_NUMOF_PUBEXPS];
+                    UINT64              au64PubExp[SYMCRYPT_RSAKEY_MAX_NUMOF_PUBEXPS];
                     // SYMCRYPT_ASYM_ALIGN'ed buffers that point to memory allocated for each object
                     PBYTE               pbPrimes[SYMCRYPT_RSAKEY_MAX_NUMOF_PRIMES];
                     PBYTE               pbCrtInverses[SYMCRYPT_RSAKEY_MAX_NUMOF_PRIMES];

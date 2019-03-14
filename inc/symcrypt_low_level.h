@@ -603,6 +603,16 @@ SymCryptIntSetValueUint32(
 // This always succeeds as R >= 2^32 on all implementations.
 //
 
+VOID
+SYMCRYPT_CALL
+SymCryptIntSetValueUint64( 
+            UINT64          u64Src, 
+    _Out_   PSYMCRYPT_INT   piDst );
+//
+// Dst = Src
+// This always succeeds as R >= 2^64 on all implementations.
+//
+
 
 //========================================================================================
 // Read/write INTegers in defined formats
@@ -667,6 +677,16 @@ SymCryptIntGetValueLsbits32( _In_  PCSYMCRYPT_INT piSrc );
 //
 // Usecase: there are many number-theoretic algorithms where the algorithm
 // depends on (n mod 8) or similar values. 
+//
+
+UINT64
+SYMCRYPT_CALL
+SymCryptIntGetValueLsbits64( _In_  PCSYMCRYPT_INT piSrc );
+//
+// Returns Src mod 2^64
+//
+// Usecase: RSA public exponents can be 64 bits, and validating that
+// a candidate prime is suitable uses this function
 //
 
 UINT32
@@ -1135,15 +1155,37 @@ SymCryptIntExtendedGcd(
 // The restriction that Src2 must be odd can be removed in a future version.
 // The SYMCRYPT_FLAG_DATA_PUBLIC flag signals that the inputs are public information and do not have
 // to be side-channel protected.
-// The SYMCRYPT_FLAG_EXGDC_INPUTS_NOT_BOTH_EVEN signals that at least one input is odd. This speeds up the
+// The SYMCRYPT_FLAG_GCD_INPUTS_NOT_BOTH_EVEN signals that at least one input is odd. This speeds up the
 // side-channel safe implementation; this flag is not needed if the inputs are signaled as public as the code can then
 // afford to check that condition and change use a optimized algorithm.
-// The SYMCRYPT_FLAG_EXGCD_GCD_PUBLIC signals that the GCD value is public. This can make some computations
+// The SYMCRYPT_FLAG_GCD_PUBLIC signals that the GCD value is public. This can make some computations
 // (of the inverses) more efficient when GCD = 1.
 //
 
-#define SYMCRYPT_FLAG_EXGCD_INPUTS_NOT_BOTH_EVEN    (0x02)
-#define SYMCRYPT_FLAG_EXGCD_GCD_PUBLIC              (0x04)
+#define SYMCRYPT_FLAG_GCD_INPUTS_NOT_BOTH_EVEN      (0x02)
+#define SYMCRYPT_FLAG_GCD_PUBLIC                    (0x04)
+
+
+UINT64 
+SYMCRYPT_CALL
+SymCryptUint64Gcd( UINT64 a, UINT64 b, UINT32 flags );
+//
+// Return GCD of two 64-bit positive integers.
+//  a, b : inputs to the GCD
+//  flags: 
+//      - SYMCRYPT_FLAG_DATA_PUBLIC signals that a and b are public values (w.r.t. side-channel safety)
+//          This may improve performance.
+//      - SYMCRYPT_FLAG_GCD_INPUTS_NOT_BOTH_EVEN: signals that at least one of (a,b) is odd. This
+//          simplifies & speeds up the GCD computation.
+//
+// Requirements:
+//  - a > 0
+//  - b > 0
+//
+// Note:
+// The current implementation requires that the INPUTS_NOT_BOTH_EVEN flag is set (and at least one input be odd).
+//
+
 
 #define SYMCRYPT_SCRATCH_BYTES_FOR_CRT_GENERATION( _nDigits )  SYMCRYPT_INTERNAL_SCRATCH_BYTES_FOR_CRT_GENERATION( _nDigits )
 
@@ -1312,6 +1354,8 @@ SYMCRYPT_CALL
 SymCryptIntGenerateRandomPrime(
     _In_                            PCSYMCRYPT_INT      piLow,
     _In_                            PCSYMCRYPT_INT      piHigh,
+    _In_reads_opt_( nPubExp )       PCUINT64            pu64PubExp,
+                                    UINT32              nPubExp,
                                     UINT32              nTries,
                                     UINT32              flags,
     _Out_                           PSYMCRYPT_INT       piDst,
@@ -1321,21 +1365,24 @@ SymCryptIntGenerateRandomPrime(
 // This function generates a random prime Dst such that
 //          Dst == 3 mod 4      and
 //          Low <= Dst < High
+//          for e in PubExp[]: GCD( Dst - 1, e ) == 1
 //
+// (pu64PubExp, nPubExp) can be (NULL, 0) if no pubexp restriction is needed. 
 // The nTries parameter specifies the maximum number of candidate numbers
 // until a prime number is found satisfying the above restrictions.
 // If the function cannot find one after nTries, it returns SYMCRYPT_INVALID_ARGUMENT
 // (For example, if the caller passes in a Low bound bigger than the High bound,
 // or if there are no primes between Low and High).
 //
-// The values of piLow and piHigh are public.
+// The values of the pubexps, piLow and piHigh are public.
 //
 // flags: None
 //
 // Requirements:
 //  - SymCryptIntBitsizeOfValue( piHigh ) <= SymCryptIntBitsizeOfObject(piDst)
 //  - piLow > 3
-//  - cbScratch >=  SYMCRYPT_SCRATCH_BYTES_FOR_INT_PRIME_GEN( Src.nDigits )
+//  - 0 <= nPubExp <= SYMCRYPT_RSAKEY_MAX_NUMOF_PUBEXPS
+//  - cbScratch >=  SYMCRYPT_SCRATCH_BYTES_FOR_INT_PRIME_GEN( Dst.nDigits )
 //
 
 //=====================================================

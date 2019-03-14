@@ -4820,7 +4820,7 @@ SYMCRYPT_ERROR
 SYMCRYPT_CALL
 SymCryptRsakeyGenerate(
     _Inout_                     PSYMCRYPT_RSAKEY    pkRsakey,
-    _In_reads_opt_( nPubExp )   PCUINT32            pu32PubExp,
+    _In_reads_opt_( nPubExp )   PCUINT64            pu64PubExp,
                                 UINT32              nPubExp,
     _In_                        UINT32              flags );
 //
@@ -4840,7 +4840,7 @@ SYMCRYPT_CALL
 SymCryptRsakeySetValue(
     _In_reads_bytes_( cbModulus )   PCBYTE                  pbModulus,
                                     SIZE_T                  cbModulus,
-    _In_reads_( nPubExp )           PCUINT32                pu32PubExp,
+    _In_reads_( nPubExp )           PCUINT64                pu64PubExp,
                                     UINT32                  nPubExp,
     _In_                            PCBYTE *                ppPrimes,
     _In_                            SIZE_T *                pcbPrimes,
@@ -4851,7 +4851,7 @@ SymCryptRsakeySetValue(
 //
 // Import key material to an RSAKEY object. The arguments are the following:
 //  - pbModulus is a pointer to a byte buffer of cbModulus bytes. It cannot be NULL.
-//  - pu32PubExp is a pointer to an array of nPubExp UINT32 exponent values.
+//  - pu32PubExp is a pointer to an array of nPubExp UINT64 exponent values.
 //    nPubExp must match the RSA parameters used to create the key object.
 //  - ppPrimes is an array of nPrimes pointers that point to byte buffers storing
 //    the primes. pcbPrimes is an array of nPrimes sizes such that
@@ -4880,7 +4880,7 @@ SymCryptRsakeyGetValue(
     _In_                            PCSYMCRYPT_RSAKEY       pkRsakey,
     _Out_writes_bytes_( cbModulus ) PBYTE                   pbModulus,
                                     SIZE_T                  cbModulus,
-    _Out_writes_( nPubExp )         PUINT32                 pu32PubExp,
+    _Out_writes_( nPubExp )         PUINT64                 pu64PubExp,
                                     UINT32                  nPubExp,
     _Out_opt_                       PBYTE *                 ppPrimes,
     _In_opt_                        SIZE_T *                pcbPrimes,
@@ -4890,7 +4890,7 @@ SymCryptRsakeyGetValue(
 //
 // Export key material from an RSAKEY object. The arguments are the following:
 //  - pbModulus is a pointer to a byte buffer of cbModulus bytes.
-//  - pu32PubExp is an pointer to an array of nPubExp elements that receives the public exponent values.
+//  - pu64PubExp is an pointer to an array of nPubExp elements that receives the public exponent values.
 //    nPubExp must match the # public exponents in pkRsaKey.
 //  - ppPrimes is an array of nPrimes pointers that point to byte buffers storing
 //    the primes. pcbPrimes is an array of nPrimes sizes such that

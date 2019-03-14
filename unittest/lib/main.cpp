@@ -1616,12 +1616,37 @@ __m128i g_xmmTestState[8];
 VOID
 verifyXmmRegisters()
 {
+    BOOL difference = FALSE;
     if( TestSaveXmmEnabled && SYMCRYPT_CPU_FEATURES_PRESENT( SYMCRYPT_CPU_FEATURE_SSE2 ) && !SYMCRYPT_CPU_FEATURES_PRESENT( SYMCRYPT_CPU_FEATURE_SAVEXMM_NOFAIL ) )
     {
         memset( g_xmmTestState, 0, sizeof( g_xmmTestState ) );
         SymCryptEnvUmSaveXmmRegistersAsm( g_xmmTestState );
 
-        if( memcmp( g_xmmTestState, g_xmmStartState, sizeof( g_xmmStartState ) ) != 0 )
+        difference = memcmp( g_xmmTestState, g_xmmStartState, sizeof( g_xmmStartState ) ) != 0;
+
+        if( difference )
+        {
+            //
+            // Starting late 2018 our compiler & CRT are now using XMM registers for transient things.
+            // In particular, the compiler calls memset() on a large local struct to wipe the memory.
+            // (Part of the security mitigations against leaking data from uninitialized stack variables.)
+            // The CRT in turn uses XMM0 to wipe more efficiently.
+            // This is indistinguishable from a SymCrypt bug where we use XMM registers in X86 code without
+            // proper save/restore logic.
+            // In short: we cannot test this anymore in user mode. We'd have to compile for Win7 kernel mode
+            // to even run this test.
+            // For now we will relax this test to not be triggered by the compiler/CRT. This means that we
+            // no longer test this property, but we can at least detect some violations, which is better
+            // than none.
+            //
+            if( (g_xmmTestState[0].m128i_u64[0] | g_xmmTestState[0].m128i_u64[1]) == 0 &&
+                memcmp( &g_xmmTestState[1], &g_xmmStartState[1], 7 * sizeof( g_xmmStartState[0] ) ) == 0 )
+            {
+                difference = FALSE;
+            }
+        }
+
+        if( difference )
         {
             print( "\n" );
             print( "Registers different: " );

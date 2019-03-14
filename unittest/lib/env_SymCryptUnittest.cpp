@@ -385,6 +385,16 @@ SymCryptEnvUnittestDetectCpuFeatures( ULONG flags )
 #endif    
 }
 
+#if SYMCRYPT_CPU_AMD64 | SYMCRYPT_CPU_X86
+
+VOID
+SYMCRYPT_CALL
+SymCryptCpuidExFuncEnvUnittest( int cpuInfo[4], int function_id, int subfunction_id )
+{
+    __cpuidex( cpuInfo, function_id, subfunction_id );
+}
+
+#endif
 }   // extern "C"
 
 

@@ -114,7 +114,8 @@ testSaeCustomConsistency( ArithImplementation * pAlgImp )
 VOID
 testSaeCustomNegative( 
                     ArithImplementation *   pAlgImp,
-    _In_reads_(64)  PCBYTE                  pbCommitElement )
+    _In_reads_(32)  PCBYTE                  pbPeerScalar,
+    _In_reads_(64)  PCBYTE                  pbPeerElement )
 {
     BYTE abMac1[6];
     BYTE abMac2[6];
@@ -126,7 +127,6 @@ testSaeCustomNegative(
 
     BYTE abCommitScalarA[ 32 ];
     BYTE abCommitElementA[ 64 ];
-    BYTE abCommitScalarB[ 32 ];
     BYTE abSharedA[ 32 ];
     BYTE abSumA[ 32 ];
 
@@ -141,10 +141,9 @@ testSaeCustomNegative(
     SymCrypt802_11SaeCustomCommitCreate( &stateA, abCommitScalarA, abCommitElementA );
 
     // Process the fake reply
-    GENRANDOM( abCommitScalarB, sizeof( abCommitScalarB ) );
-    scError = SymCrypt802_11SaeCustomCommitProcess( &stateA, abCommitScalarB, pbCommitElement, abSharedA, abSumA );
+    scError = SymCrypt802_11SaeCustomCommitProcess( &stateA, pbPeerScalar, pbPeerElement, abSharedA, abSumA );
 
-    CHECK( scError != SYMCRYPT_NO_ERROR, "No error when receiving invalid peer commit element" );
+    CHECK( scError != SYMCRYPT_NO_ERROR, "No error when receiving invalid peer commit scalar or element" );
 
     pAlgImp->m_nResults++;
 }
@@ -226,9 +225,13 @@ testIEEE802_11SaeCustomKats()
             } 
             else if( katIsFieldPresent( katItem, "negativetest" ) )
             {
+                BString peerScalar = katParseData( katItem, "peerscalar" );
                 BString peerElement = katParseData( katItem, "peerelement" );
+
+                CHECK3( peerScalar.size()    == 32, "Invalid length for peerScalar at line %lld", katData->m_line );
                 CHECK3( peerElement.size()   == 64, "Invalid length for peerElement at line %lld", katData->m_line );
-                testSaeCustomNegative( *(ImpPtrVector.begin()), peerElement.data() );
+
+                testSaeCustomNegative( *(ImpPtrVector.begin()), peerScalar.data(), peerElement.data() );
             } 
             else
             {

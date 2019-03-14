@@ -31,9 +31,9 @@ TARGETLIBS= \
 #    $(PROJECT_OBJ_ROOT)\released\windows\ntrsa32\umode\$(O)\rsa32.lib \
 !endif
 #    $(DS_LIB_PATH)\rsa32.lib \
-!if EXIST( $(PROJECT_OBJ_ROOT)\released\windows\bignum\winnt\$(O)\msbignum.lib )
+#!if EXIST( $(PROJECT_OBJ_ROOT)\released\windows\bignum\winnt\$(O)\msbignum.lib )
 #    $(PROJECT_OBJ_ROOT)\released\windows\bignum\winnt\$(O)\msbignum.lib \
-!endif
+#!endif
 #    $(DS_LIB_PATH)\msbignum.lib \
     $(SDK_LIB_PATH)\powrprof.lib \
     $(SDK_LIB_PATH)\bcrypt.lib \
