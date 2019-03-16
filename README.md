@@ -33,5 +33,8 @@ Cryptographic code is considered highly sensitive by many of our large customers
 We have some very big customers who put great value in the assurance of the crypto code used in their organization.
 By restricting the coding to a handful of employees we can greatly reduce the (perceived) risk of malicious contributions.
 
-TBD: what else? Email address? 
+This project has adopted the [Microsoft Open Source Code of Conduct](https://opensource.microsoft.com/codeofconduct/).
+For more information see the [Code of Conduct FAQ](https://opensource.microsoft.com/codeofconduct/faq/) or
+contact [opencode@microsoft.com](mailto:opencode@microsoft.com) with any additional questions or comments.
+
 
