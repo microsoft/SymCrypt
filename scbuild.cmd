@@ -15,7 +15,7 @@ if ERRORLEVEL 1 goto :BuildError
 rem We make a copy of the binary so that the later build can remove the binary in the OBJ dir.
 
 rem
-rem We have to construct the directory name where teh resulting binary can be found
+rem We have to construct the directory name where the resulting binary can be found
 rem
 if /I "%_BuildArch%" ==  "x86" (
 	set ScBuildTmp=i386
