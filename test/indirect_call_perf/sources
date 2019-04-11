@@ -1,0 +1,37 @@
+TARGETTYPE=PROGRAM
+TARGETNAME=Indirect_call_perf
+
+MSC_WARNING_LEVEL=/W4 /WX
+#MSC_OPTIMIZATION=/Ox /Oi /Fa		# /Fa generates ASM listing files.
+
+UMTYPE=console
+
+# mark this as test code, as that re-enabled the __DATE__ and __TIME__ macros in the compiler.
+TEST_CODE= 1
+
+INCLUDES=   $(DS_INC_PATH);                 \
+            $(DS_INC_PATH)\crypto; \
+            ..\..\inc ; \
+            $(DDK_INC_PATH); \
+
+SOURCES= \
+	main.cpp \
+        
+
+TARGETLIBS= \
+
+UNICODE = 1
+
+USE_MSVCRT=1
+
+BUFFER_OVERFLOW_CHECKS=1
+
+#PRECOMPILED_INCLUDE = precomp.h
+#PRECOMPILED_CXX = 1
+#USE_RTTI = 1
+
+NT_SIGNCODE = 1
+
+
+MUI = 0
+MUI_COMMENT = Unittest only, this is never localized
