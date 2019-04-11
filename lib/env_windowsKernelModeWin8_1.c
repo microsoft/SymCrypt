@@ -7,7 +7,7 @@
 // for optimal performance. It also supports the use of PCLMULQDQ for GHASH as 
 // that can only be used if the SaveXmm routine never fails.
 //
-// Copyright (c) Microsoft Corporation.  All rights reserved.
+// Copyright (c) Microsoft Corporation. Licensed under the MIT license.
 //
 
 

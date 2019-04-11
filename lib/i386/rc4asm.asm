@@ -1,7 +1,7 @@
 ;
 ;     rc4asm.asm
 ;
-; Copyright (c) Microsoft Corporation.  All rights reserved.
+; Copyright (c) Microsoft Corporation. Licensed under the MIT license.
 ;
 ;       RC4 implementation in x86 assembler
 ;       This is a new RC4 implementation for SymCrypt.

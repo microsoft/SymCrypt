@@ -1,7 +1,7 @@
 //
 // rdseed.c  Support for RdSeed instruction
 //
-// Copyright (c) Microsoft Corporation.  All rights reserved.
+// Copyright (c) Microsoft Corporation. Licensed under the MIT license.
 //
 
 #include "precomp.h"

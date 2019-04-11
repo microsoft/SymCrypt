@@ -1,7 +1,7 @@
 //
 // Pattern file for the Symcrypt hash implementations.
 //
-// Copyright (c) Microsoft Corporation.  All rights reserved.
+// Copyright (c) Microsoft Corporation. Licensed under the MIT license. 
 //
 
 template<> VOID algImpKeyPerfFunction<ImpXxx, AlgXxx, BaseAlgXxx>( PBYTE buf1, PBYTE buf2, PBYTE buf3, SIZE_T keySize );

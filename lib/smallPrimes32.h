@@ -1,6 +1,6 @@
 //
 // Parameters for trial division mechanism
-// Copyright (c) Microsoft corp, all rights reserved
+// Copyright (c) Microsoft Corporation. Licensed under the MIT license.
 // GENERATED FILE, DO NOT EDIT.
 //
 

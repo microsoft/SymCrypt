@@ -1,7 +1,7 @@
 //
 // IEEE802_11SaeCustom.c  Implementation of the custom crypto of IEEE 802.11 SAE
 //
-// Copyright (c) Microsoft Corporation.  All rights reserved.
+// Copyright (c) Microsoft Corporation. Licensed under the MIT license.
 //
 // 
 

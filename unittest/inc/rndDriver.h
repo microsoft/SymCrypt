@@ -1,7 +1,7 @@
 //
 // rndDriver.h Header file for random test driver
 //
-// Copyright (c) Microsoft Corporation.  All rights reserved.
+// Copyright (c) Microsoft Corporation. Licensed under the MIT license. 
 //
 
 typedef VOID (* RNDD_TEST_FN)();

@@ -1,7 +1,7 @@
 //
 // ec_internal_curves.c   Parameters for internally supported curves.
 //
-// Copyright (c) Microsoft Corporation.  All rights reserved.
+// Copyright (c) Microsoft Corporation. Licensed under the MIT license.
 //
 //
 

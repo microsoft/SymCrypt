@@ -1,7 +1,7 @@
 //
 // a_dispatch.c   Dispatch between different arithmetic format implementations.
 //
-// Copyright (c) Microsoft Corporation.  All rights reserved.
+// Copyright (c) Microsoft Corporation. Licensed under the MIT license.
 //
 // SymCrypt can have multiple implementations of the arithmetic operations, and these can
 // have incompatible formats used to store the integers.

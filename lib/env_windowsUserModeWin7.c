@@ -2,7 +2,7 @@
 // env_windowsUserMode.c
 // Platform-specific code for windows user mode.
 //
-// Copyright (c) Microsoft Corporation.  All rights reserved.
+// Copyright (c) Microsoft Corporation. Licensed under the MIT license.
 //
 
 #include "precomp.h"

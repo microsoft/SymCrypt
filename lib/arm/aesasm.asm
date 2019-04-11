@@ -1,7 +1,7 @@
 ;
 ;  AesAsm.asm   Assembler code for fast AES on ARM
 ;
-; Copyright (c) Microsoft Corporation.  All rights reserved.
+; Copyright (c) Microsoft Corporation. Licensed under the MIT license.
 ;
 ; This code is derived from the AMD64 version of the AesFast 
 ; implemenation, developed by Niels Ferguson. For questions

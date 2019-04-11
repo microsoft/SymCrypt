@@ -1,7 +1,7 @@
 //
 // ec_short_weierstrass.c   ECPOINT functions for short Weierstrass curves.
 //
-// Copyright (c) Microsoft Corporation.  All rights reserved.
+// Copyright (c) Microsoft Corporation. Licensed under the MIT license.
 //
 //
 

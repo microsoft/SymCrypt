@@ -8,7 +8,7 @@
 // Note: we no longer support the use of a guarded region. That is only needed
 // on XP and Vista, and we simply don't use XMM 
 //
-// Copyright (c) Microsoft Corporation.  All rights reserved.
+// Copyright (c) Microsoft Corporation. Licensed under the MIT license.
 //
 
 

@@ -1,7 +1,7 @@
 //
 // equal.c  Memory comparison routine that is safe against side channels.
 //
-// Copyright (c) Microsoft Corporation.  All rights reserved.
+// Copyright (c) Microsoft Corporation. Licensed under the MIT license.
 //
 
 #include "precomp.h"

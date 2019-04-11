@@ -1,7 +1,7 @@
 //
 // gen_int.c   Generic integer algorithms (not tied to low-level implementations)
 //
-// Copyright (c) Microsoft Corporation.  All rights reserved.
+// Copyright (c) Microsoft Corporation. Licensed under the MIT license.
 //
 
 #include "precomp.h"

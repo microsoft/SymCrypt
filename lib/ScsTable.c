@@ -2,7 +2,7 @@
 // ScsTable.c 
 // Side-channel safe table
 //
-// Copyright (c) Microsoft Corporation.  All rights reserved.
+// Copyright (c) Microsoft Corporation. Licensed under the MIT license.
 //
 //
 // These functions implement an table of large elements.

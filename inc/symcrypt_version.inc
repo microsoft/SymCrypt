@@ -1,6 +1,6 @@
 ;/*
 ; SymCrypt_version.inc
-; Copyright (c) Microsoft Corporation.  All rights reserved.
+; Copyright (c) Microsoft Corporation. Licensed under the MIT license.
 ;
 ; This is the file that contains the SymCrypt version information. It is updated by the build system 
 ; so that each version of the library has a unique version number.

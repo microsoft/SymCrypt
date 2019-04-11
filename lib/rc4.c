@@ -1,7 +1,7 @@
 //
 // Rc4.c
 //
-// Copyright (c) Microsoft Corporation.  All rights reserved.
+// Copyright (c) Microsoft Corporation. Licensed under the MIT license.
 //
 // This is a new implementation, NOT based on the existing ones in RSA32.lib.
 // The algorithm specification is taken from "ARCFOUR Algorithm" internet

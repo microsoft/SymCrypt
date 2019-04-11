@@ -1,7 +1,7 @@
 //
 // aes-neon.c   code for AES implementation
 //
-// Copyright (c) Microsoft Corporation.  All rights reserved.
+// Copyright (c) Microsoft Corporation. Licensed under the MIT license.
 //
 // All NEON-based code for AES operations
 //

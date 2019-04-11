@@ -2,7 +2,7 @@
 // env_windowsBootLib.c
 // Platform-specific code for windows boot library environment.
 //
-// Copyright (c) Microsoft Corporation.  All rights reserved.
+// Copyright (c) Microsoft Corporation. Licensed under the MIT license.
 //
 
 #include <ntddk.h>

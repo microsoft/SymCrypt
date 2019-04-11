@@ -7,7 +7,7 @@
 // This implementation was done by Niels Ferguson for the RSA32.lib library in 2008,
 // and adapted to the SymCrypt library in 2009. 
 // 
-// Copyright (c) Microsoft Corp, all rights reserved.
+// Copyright (c) Microsoft Corporation. Licensed under the MIT license.
 //
 
 #include "precomp.h" 

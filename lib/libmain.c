@@ -2,7 +2,7 @@
 // libmain.c    
 // General routines for the SymCrypt library
 //
-// Copyright (c) Microsoft Corporation.  All rights reserved.
+// Copyright (c) Microsoft Corporation. Licensed under the MIT license.
 //
 
 #include "precomp.h"

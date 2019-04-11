@@ -1,5 +1,6 @@
 //
 // Test program to investigate performance of indirect function calls.
+// Copyright (c) Microsoft Corporation. Licensed under the MIT license.
 //
 // We've had some conflicting information about the perf effects of using indirect function calls.
 // This program measures the actual performance in varying situations to help us diagnose the issue.
@@ -107,7 +108,7 @@ main( int argc, _In_reads_( argc ) LPSTR * argv[] )
     UNREFERENCED_PARAMETER( argv );
 
     printf( "Indirect call performance test program\n"
-        "Copyright (c) 2013 Microsoft Corp. All rights reserved.\n"
+        "Copyright (c) Microsoft Corporation. Licensed under the MIT license.\n"
         "\n" );
 
     if( argc != 32178 )

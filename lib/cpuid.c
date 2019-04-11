@@ -1,7 +1,7 @@
 //
 // cpuid.c   code for CPU feature detection based on CPUID
 //
-// Copyright (c) Microsoft Corporation.  All rights reserved.
+// Copyright (c) Microsoft Corporation. Licensed under the MIT license.
 //
 
 

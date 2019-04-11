@@ -1,7 +1,7 @@
 //
 // cpuid_um.c   code for CPU feature detection based on CPUID
 //
-// Copyright (c) Microsoft Corporation.  All rights reserved.
+// Copyright (c) Microsoft Corporation. Licensed under the MIT license.
 //
 // This file contains the CPUID code that is only compiled for user-mode.
 // The IsProcessorFeaturePresent API is only in UM, so linking any code out of

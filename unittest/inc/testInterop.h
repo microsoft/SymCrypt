@@ -1,7 +1,7 @@
 //
 // testInterop.h    Header file for SymCrypt RSA, DSA, and DH Interop tests
 //
-// Copyright (c) Microsoft Corporation.  All rights reserved.
+// Copyright (c) Microsoft Corporation. Licensed under the MIT license. 
 //
 
 #include "sc_implementations.h"

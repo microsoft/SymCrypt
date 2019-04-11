@@ -1,7 +1,7 @@
 //
 // Test of SP 800-90 AES_CTR_DRGB
 //
-// Copyright (c) Microsoft Corporation.  All rights reserved.
+// Copyright (c) Microsoft Corporation. Licensed under the MIT license. 
 //
 
 #include "precomp.h"

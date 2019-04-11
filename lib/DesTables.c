@@ -1,7 +1,7 @@
 //
 // DesTables.c  static lookup tables for DES
 //
-// Copyright (c) Microsoft Corporation.  All rights reserved.
+// Copyright (c) Microsoft Corporation. Licensed under the MIT license.
 //
 //
 // These tables were copies

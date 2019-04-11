@@ -2,7 +2,7 @@
 // env_Win10Sgx.c
 // Platform-specific code for windows 10 SGX user mode.
 //
-// Copyright (c) Microsoft Corporation.  All rights reserved.
+// Copyright (c) Microsoft Corporation. Licensed under the MIT license.
 //
 
 #include "precomp.h"

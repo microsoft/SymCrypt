@@ -1,7 +1,7 @@
 ;
 ;  fdef_asm.asm   Assembler code for large integer arithmetic in the default data format for the arm architecture
 ;
-; Copyright (c) Microsoft Corporation.  All rights reserved.
+; Copyright (c) Microsoft Corporation. Licensed under the MIT license.
 ;
 
 #include "ksarm.h"

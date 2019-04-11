@@ -2,7 +2,7 @@
 // cpuid_notry.c   code for CPU feature detection based on CPUID for ARM64
 //	           without the try except structure (used in boot environment)
 //
-// Copyright (c) Microsoft Corporation.  All rights reserved.
+// Copyright (c) Microsoft Corporation. Licensed under the MIT license.
 //
 
 

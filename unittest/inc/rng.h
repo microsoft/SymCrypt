@@ -1,7 +1,7 @@
 //
 // rng.h Header file for test RNG
 //
-// Copyright (c) Microsoft Corporation.  All rights reserved.
+// Copyright (c) Microsoft Corporation. Licensed under the MIT license. 
 //
 // We use our own predictable RNG so that we can be repeatable.
 //

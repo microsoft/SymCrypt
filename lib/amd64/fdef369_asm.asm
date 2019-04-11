@@ -12,7 +12,7 @@
 ; We read the 'ndigit' value. If it is 1 digit, the values are 6 64-bit words, if it is 2 the values
 ; are 9 64-bit words. As we compute in groups of 3, our loop counters are one more than nDigit
 ;
-; Copyright (c) Microsoft Corporation.  All rights reserved.
+; Copyright (c) Microsoft Corporation. Licensed under the MIT license.
 ;
 
 include ksamd64.inc

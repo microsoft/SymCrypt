@@ -1,7 +1,7 @@
 //
 // ec_mul.c   Generic multiplication algorithms for elliptic curves
 //
-// Copyright (c) Microsoft Corporation.  All rights reserved.
+// Copyright (c) Microsoft Corporation. Licensed under the MIT license.
 //
 //
 

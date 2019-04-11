@@ -1,5 +1,6 @@
 ;
 ; Macros for the multiplication routines in amd64
+; Copyright (c) Microsoft Corporation. Licensed under the MIT license.
 ;
 
 ; General multiplication

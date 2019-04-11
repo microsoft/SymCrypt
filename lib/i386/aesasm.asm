@@ -1,7 +1,7 @@
 ;
 ;  AesAsm.asm   Assembler code for fast AES on the x86
 ;
-; Copyright (c) Microsoft Corporation.  All rights reserved.
+; Copyright (c) Microsoft Corporation. Licensed under the MIT license.
 ;
 ; This code is derived from the AesFast implemenation that
 ; Niels Ferguson wrote from scratch for BitLocker during Vista.

@@ -1,7 +1,7 @@
 //
 // aes.c   code for AES implementation
 //
-// Copyright (c) Microsoft Corporation.  All rights reserved.
+// Copyright (c) Microsoft Corporation. Licensed under the MIT license.
 //
 // The actual encryption and decryption routines here are not nearly as fast as the
 // assembler ones. They are used on platforms that don't have assembler implementations

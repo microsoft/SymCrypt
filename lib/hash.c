@@ -1,6 +1,6 @@
 //
 // hash.c generic code used in many hash implementations.
-// Copyright (c) Microsoft Corporation.  All rights reserved.
+// Copyright (c) Microsoft Corporation. Licensed under the MIT license.
 //
 
 #include "precomp.h"

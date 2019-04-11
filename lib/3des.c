@@ -1,7 +1,7 @@
 //
 // 3des.c Routines for DES and 3DES
 //
-// Copyright (c) Microsoft Corporation.  All rights reserved.
+// Copyright (c) Microsoft Corporation. Licensed under the MIT license.
 //
 // This is an updated implementation that is carefully reviewed to be fully copyrighted by
 // Microsoft. Our previous implementation was partially based on a very old public domain

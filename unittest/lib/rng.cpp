@@ -1,7 +1,7 @@
 //
 // rng.cpp Implementation of test RNG
 //
-// Copyright (c) Microsoft Corporation.  All rights reserved.
+// Copyright (c) Microsoft Corporation. Licensed under the MIT license. 
 //
 // THIS IS NOT A CRYPTOGRAPHIC RNG.
 // We use it only to generate pseudo-random test cases.
