@@ -103,8 +103,8 @@ popd
 goto noRefCopy
 )
 
-set ScReferenceCopy=\\winsect\scratch\symcrypt\SymCrypt_Windows_Latest
-set ScCabCopy=\\winsect\scratch\symcrypt\SymCryptCabs
+set ScReferenceCopy=\\fsu\shares\SymCrypt\SymCrypt_Windows_Latest
+set ScCabCopy=\\fsu\shares\SymCrypt\SymCryptCabs
 
 copy %1 %ScCabCopy%
 
