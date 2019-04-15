@@ -2,7 +2,7 @@
 // Main.cpp
 // Main file for SymCrypt unit test program
 //
-// Copyright (c) Microsoft Corporation.  All rights reserved.
+// Copyright (c) Microsoft Corporation. Licensed under the MIT license. 
 //
 
 #include "precomp.h"
@@ -1087,7 +1087,7 @@ initTestInfrastructure( int argc, _In_reads_( argc ) char * argv[] )
 {
     iprint( "SymCrypt unit test program, " 
              "Built " __DATE__ " " __TIME__ "\n"
-             "Copyright (c) Microsoft Corp, all rights reserved \n");
+             "Copyright (c) Microsoft Corporation. Licensed under the MIT license.\n");
 
 #define SYMCRYPT_CHECK_ASM_OFFSET( a, b ) CHECK4( (a) == (b), "Assembler offset incorrect: %s should be %d", #a, (b) );
     SYMCRYPT_CHECK_ASM_OFFSETS;

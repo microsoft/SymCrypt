@@ -14,6 +14,10 @@ LINK_TIME_CODE_GENERATION = 1
 INCLUDES= \
 #    ..\..\..\released\windows\ntrsa32\inc; \
 #    ..\..\..\released\windows\bignum; \
+    ..\inc; \
+    ..\..\inc; \
+    ..\lib; \
+    $(OBJECT_ROOT)\SymCrypt\Publics\$(O); \
     $(DS_INC_PATH);                 \
     $(DS_INC_PATH)\crypto; \
     $(ONECOREDS_INC_PATH)\crypto; \
@@ -21,10 +25,6 @@ INCLUDES= \
     $(ONECOREDS_INTERNAL_INC_PATH_L)\crypto; \
     $(MINWIN_PRIV_SDK_INC_PATH)\crypto; \
 #   $(ONECORE_PRIVATE_PATH)\ds\inc\crypto; \
-    ..\inc; \
-    ..\..\inc; \
-    ..\lib; \
-    $(OBJECT_ROOT)\SymCrypt\Publics\$(O); \
     $(DDK_INC_PATH); \
 
 SOURCES= \
@@ -38,8 +38,6 @@ TARGETLIBS= \
     $(OBJECT_ROOT)\SymCrypt\Publics\$(O)\msbignum.lib \
     $(SDK_LIB_PATH)\powrprof.lib \
     $(SDK_LIB_PATH)\bcrypt.lib \
-#***** REMOVE NEXT LINE BEFORE SHIP *****
-    $(MINWIN_INTERNAL_PRIV_SDK_LIB_PATH_L)\symcrypt-$(BUILD_TYPE).lib \
     $(OBJECT_ROOT)\symcrypt\lib\$(O)\symcrypt.lib \
     $(OBJECT_ROOT)\symcrypt\unittest\lib\$(O)\symcryptunittest_lib.lib \
 	

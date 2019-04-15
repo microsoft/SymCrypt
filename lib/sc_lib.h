@@ -1,7 +1,7 @@
 //
 // sc_lib.h
 //
-// Copyright (c) Microsoft Corporation.  All rights reserved.
+// Copyright (c) Microsoft Corporation. Licensed under the MIT license.
 //
 
 
@@ -807,6 +807,9 @@ VOID
 SYMCRYPT_CALL
 SymCryptDetectCpuFeaturesFromIsProcessorFeaturePresent();
 
+VOID
+SYMCRYPT_CALL
+SymCryptCpuidExFunc( int cpuInfo[4], int function_id, int subfunction_id );
 
 ////////////////////////////////////////////////////////////////////////////
 // Export blob formats
@@ -1703,6 +1706,12 @@ SymCryptFdefIntSetValueUint32(
             UINT32          u32Src, 
     _Out_   PSYMCRYPT_INT   piDst );
 
+VOID
+SYMCRYPT_CALL
+SymCryptFdefIntSetValueUint64( 
+            UINT64          u64Src, 
+    _Out_   PSYMCRYPT_INT   piDst );
+
 SYMCRYPT_ERROR
 SYMCRYPT_CALL
 SymCryptFdefIntSetValue( 
@@ -1722,6 +1731,10 @@ SymCryptFdefIntGetValue(
 UINT32
 SYMCRYPT_CALL
 SymCryptFdefIntGetValueLsbits32( _In_  PCSYMCRYPT_INT piSrc );
+
+UINT64
+SYMCRYPT_CALL
+SymCryptFdefIntGetValueLsbits64( _In_  PCSYMCRYPT_INT piSrc );
 
 UINT32
 SYMCRYPT_CALL

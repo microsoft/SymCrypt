@@ -1,7 +1,7 @@
 //
 // Pattern file for the Symcrypt TLS PRF 1.1 implementations.
 //
-// Copyright (c) Microsoft Corporation.  All rights reserved.
+// Copyright (c) Microsoft Corporation. Licensed under the MIT license. 
 //
 
 //

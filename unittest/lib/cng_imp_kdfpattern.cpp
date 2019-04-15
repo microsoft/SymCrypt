@@ -1,7 +1,7 @@
 //
 // Pattern file for the Symcrypt hash implementations.
 //
-// Copyright (c) Microsoft Corporation.  All rights reserved.
+// Copyright (c) Microsoft Corporation. Licensed under the MIT license. 
 //
 
 BCRYPT_ALG_HANDLE KdfImpState<ImpXxx, AlgXxx, BaseAlgXxx>::hAlg;

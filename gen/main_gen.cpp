@@ -1,7 +1,7 @@
 /*
 SymCrypt main_gen.cpp
 Program to generate the various constants & tables for the SymCrypt code
-Copyright (c) Microsoft Corp, all rights reserved
+Copyright (c) Microsoft Corporation. Licensed under the MIT license.
 */
 
 #include <ntstatus.h>
@@ -112,7 +112,7 @@ printSmallPrimes( FILE * f, UINT32 primeLimit )
 {
     fprintf( f, "//\n" );
     fprintf( f, "// Table of small primes <= %d\n", primeLimit );
-    fprintf( f, "// Copyright (c) Microsoft corp, all rights reserved\n" );
+    fprintf( f, "// Copyright (c) Microsoft Corporation. Licensed under the MIT license.\n" );
     fprintf( f, "//\n" );
     fprintf( f, "\n" );
     fprintf( f, "const %s g_smallPrimes[] = {", primeLimit <= 65535 ? "UINT16" : "UINT32" );
@@ -138,7 +138,7 @@ printFileHeader( FILE * f )
     fprintf( f, 
         "//\n"
         "// Parameters for trial division mechanism\n"
-        "// Copyright (c) Microsoft corp, all rights reserved\n"
+        "// Copyright (c) Microsoft Corporation. Licensed under the MIT license.\n"
         "// GENERATED FILE, DO NOT EDIT.\n"
         "//\n"
         "\n" );
@@ -150,7 +150,7 @@ printSmallPrimeDifferences( FILE * f, UINT32 primeLimit )
     fprintf( f, 
         "//\n"
         "// Table of small primes differences for primes <= %d\n"
-        "// Copyright (c) Microsoft corp, all rights reserved\n"
+        "// Copyright (c) Microsoft Corporation. Licensed under the MIT license.\n"
         "// GENERATED FILE, DO NOT EDIT.\n"
         "//\n"
         "// Table encodes small primes except 2, 3, 5, and 17 which are handled separately\n"
@@ -429,7 +429,7 @@ printIfxTpmWeakKeyTable( FILE * f )
         "// modulo any of the first 126 primes, is a power of 65537\n"
         "// These keys are insecure.\n"
         "// This file contains information used to detect the modulus of these weak keys.\n"
-        "// Copyright (c) Microsoft corp, all rights reserved\n"
+        "// Copyright (c) Microsoft Corporation. Licensed under the MIT license.\n"
         "// GENERATED FILE, DO NOT EDIT.\n"
         "//\n"
         "\n" 

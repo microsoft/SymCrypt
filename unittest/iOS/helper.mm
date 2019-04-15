@@ -1,5 +1,6 @@
 //
 //  Helper functions for the iOS environment
+// Copyright (c) Microsoft Corporation. Licensed under the MIT license.
 //
 
 #import <UIKit/UIKit.h>

@@ -1,6 +1,6 @@
 ;/*
 ; C_asm_shared.inc  file to synchronize C and Asm information
-; Copyright (c) Microsoft Corporation.  All rights reserved.
+; Copyright (c) Microsoft Corporation. Licensed under the MIT license.
 
 ; This is a file that compiles both in C and ASM to define values in a way that is guaranteed to be the same on both sides.
 ; We use this to define the structure offsets that the ASM code uses.

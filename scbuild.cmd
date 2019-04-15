@@ -1,6 +1,6 @@
 rem 
 rem First stage of SymCrypt build process
-rem Copyright (c) Microsoft Corporation.  All rights reserved.
+rem Copyright (c) Microsoft Corporation. Licensed under the MIT license.
 rem
 
 

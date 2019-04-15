@@ -1,7 +1,7 @@
 //
 // cng_imp_blockcipherpattern.cpp
 //
-// Copyright (c) Microsoft Corporation.  All rights reserved.
+// Copyright (c) Microsoft Corporation. Licensed under the MIT license. 
 //
 
 BCRYPT_ALG_HANDLE BlockCipherImpState<ImpXxx, AlgXxx, ModeXxx>::hAlg;

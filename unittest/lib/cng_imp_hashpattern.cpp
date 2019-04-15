@@ -1,7 +1,7 @@
 //
 // Cng_imp_hashpattern.cpp
 //
-// Copyright (c) Microsoft Corporation.  All rights reserved.
+// Copyright (c) Microsoft Corporation. Licensed under the MIT license. 
 //
 
 BCRYPT_ALG_HANDLE HashImpState<ImpXxx, AlgXxx>::hAlg;

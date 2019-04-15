@@ -1,7 +1,7 @@
 //
 // KAT file infrastructure
 //
-// Copyright (c) Microsoft Corporation.  All rights reserved.
+// Copyright (c) Microsoft Corporation. Licensed under the MIT license. 
 //
 // Our KAT files have the following generic format:
 //

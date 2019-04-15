@@ -1,7 +1,7 @@
 //
 // ref_implementations.h Header file for reference implementations
 //
-// Copyright (c) Microsoft Corporation.  All rights reserved.
+// Copyright (c) Microsoft Corporation. Licensed under the MIT license. 
 //
 
 //
