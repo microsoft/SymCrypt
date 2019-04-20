@@ -17,11 +17,13 @@ extern "C" {
 
 //
 // This is the header file for the SymCrypt library which contains
-// implementations of symmetric cryptographic algorithms.
+// implementations of cryptographic algorithms.
 //
 // All API information is in this file. Information in the
 // other include files (symcrypt_internal.h & symcrypt_inline.h) is subject
 // to change at any time. Please use only the information in this file.
+// The header file symcrypt_low_level contains low-level API functions that
+// are sometimes needed. That API surface is not stable across releases.
 //
 
 ;   // <-- non-functional semicolon that makes the editor's indent work properly.
@@ -31,9 +33,7 @@ extern "C" {
 //
 //
 // CPU
-// This library is available for a number of CPUs: X86, AMD64, and ARM.
-// ARM64 will be supported in the future.
-//
+// This library is built and tested for: X86, AMD64, ARM, and ARM64.
 //
 // ENVIRONMENT
 // SymCrypt can run in different environments, such as kernel mode, user mode,
@@ -51,6 +51,8 @@ extern "C" {
 //      SYMCRYPT_SELECT_SHA256_COMPACT
 // to indicate that the environment is kernel mode and the compact SHA-256 implementation is to 
 // be used.
+// There are optimized environments for various Windows use cases. 
+// At the moment there is no Linux port of SymCrypt.
 //
 //
 // CHECKED BUILDS
@@ -61,7 +63,7 @@ extern "C" {
 //
 //
 // MEMORY STRUCTURES
-// The SymCrypt never allocates any memory; all memory is provided by the caller.
+// Most SymCrypt funcitons do not allocate any memory; all memory is provided by the caller.
 // However, callers may not copy, move, or otherwise manipulate the SymCrypt
 // data structures. In particular, a memcpy of a SymCrypt data structure is not allowed.
 // When necessary SymCrypt provides functions to perform the necessary manipulations.
@@ -109,7 +111,7 @@ extern "C" {
 //
 // FATAL ERRORS
 // This is a high-performance library with a minimum of error checking. 
-// Most functions do not return an error code; this avoids the cost of
+// Many functions do not return an error code; this avoids the cost of
 // having any error checking on the caller's side for error situations that
 // can never occur. However, this does assume that the caller is calling
 // SymCrypt using a valid calling sequence with proper parameters.

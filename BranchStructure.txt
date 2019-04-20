@@ -1,5 +1,5 @@
 Branch structure used for SymCrypt.
-Niels Ferguson, 20190408
+Niels Ferguson, 20190417
 
 BRANCH NAMES:
 master	The latest fully validated Symcrypt library.
@@ -17,23 +17,23 @@ CONF	Branch that combines master and all the CONF-* branches for testing.
 WORK FLOW for normal feature work:
 - Create a <alias>-* branch off master for the work
 - Do the development work on that branch
-- Build a test-release out of the private branch (which runs all tests)
+- Run scBuild out of the private branch (which runs all tests)
 - Use a PR to merge the change into master
-- Build a release out of master.
+- Run scBuild on master to ensure that it is still consistent
 
 
 WORK FLOW for confidential changes:
-- Create the CONF-* branch off master
+- Create a CONF-* branch off master
 - develop the fix inside that branch (or use sub-branches for more complex changes)
 - DO NOT merge this into master
 - For testing, merge the change into the CONF branch, and build out of that branch
   (If only one CONF-* branch is active, you can use that to build and test.)
 
-- When the change is no longer confidential, use a PR to merge the chagne into master  
-  delete the CONF-* branch.
+- When the change is no longer confidential, use a PR to merge the change into master  
+  and delete the CONF-* branch.
 
 - To keep the CONF-* branches current they have to be rebased to the top of master 
-  whenever necessary.
+  at suitable intervals.
 
 - The CONF branch should be rebuilt at regular intervals to keep it in sync with 
   master by:
@@ -44,10 +44,10 @@ WORK FLOW for confidential changes:
 Confidential changes should be relatively rare, so much of the time we won't even 
 have a CONF branch, and multiple CONF-* branches should be very rare.
 However, this structure allows us to add new confidential 
-changes and later publish each change without any restriction to order. 
+changes and later publish each confidential change without any restriction to order. 
 
 Note: the reason for having confidential changes is that a fix for a security 
-weakness cannot be published until the fix is available and deployed for all
+weakness cannot be published until the patch is available and deployed for all
 downlevel platforms. As soon as the fix is deployed, the confidential change
 must be merged into master so that it can be published.
 
