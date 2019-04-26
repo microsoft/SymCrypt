@@ -1083,8 +1083,22 @@ SymCryptFdefMontgomeryReduceAsmMaskedCopyLoop:
         mov     r14, [rdx + 48]
         mov     r15, [rdx + 56]
 
-        jmp     SymCryptFdefMontgomerReduce256AsmInternal
 
+        ; Normal code doesn't jump from the body of one function to the body of another function.
+        ; Here we have ensured that our stack frames are identical, so it is safe.
+        ; We just have to convince the other system components that this works...
+
+        ; Use conditional jump so that stack unwinder doesn't think it is an epilogue
+        test    rsp,rsp
+        jne     SymCryptFdefMontgomerReduce256AsmInternal       ; jumps always
+
+        int     3       ; Dummy instruction because the debugger seems to have an off-by-one
+                        ; error and still see the (wrong) epilogue when on the JNE instruction
+                        ; Best guess: the debugger starts the stack trace *after* the current instruction
+
+        ; And then we need a dummy epilogue to keep the assembler happy
+        BEGIN_EPILOGUE
+        ret
 
         NESTED_END      SymCryptFdefMontgomeryReduce256Asm, _TEXT
 
@@ -1193,7 +1207,14 @@ SymCryptFdefMontgomeryReduceAsmMaskedCopyLoop:
         adc     r14, rax
         adc     r15, rdx
 
-        jmp     SymCryptFdefMontgomerReduce256AsmInternal
+        ; See SymCryptFdefMontgomeryReduce256Asm for a discussion of this strange epilogue sequence
+        test    rsp,rsp
+        jne     SymCryptFdefMontgomerReduce256AsmInternal       ; jumps always
+
+        int     3
+
+        BEGIN_EPILOGUE
+        ret
 
         NESTED_END      SymCryptFdefModSquareMontgomery256Asm, _TEXT
 
