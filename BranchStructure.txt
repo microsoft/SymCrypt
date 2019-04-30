@@ -52,7 +52,7 @@ downlevel platforms. As soon as the fix is deployed, the confidential change
 must be merged into master so that it can be published.
 
 
-WORK FOW for publishing:
+WORK FLOW for publishing:
 The publish branch only ever takes merges from master, and never from anywhere
 else. The publishing workflow is
 - Merge master into publish 
