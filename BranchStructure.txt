@@ -9,7 +9,7 @@ publish	This branch gets published to the public GitHub repo as the master branc
 
 <alias>-* Working branch names for each contributor
 
-CONF-*	Branch names for temporarilly confidential changes. One CONF-* branch per change.
+CONF-*	Branch names for temporarily confidential changes. One CONF-* branch per change.
 
 CONF	Branch that combines master and all the CONF-* branches for testing.
 
@@ -52,8 +52,8 @@ downlevel platforms. As soon as the fix is deployed, the confidential change
 must be merged into master so that it can be published.
 
 
-WORK FOW for publishing:
-The publish branch only ever takes merges from master, and nevery from anywhere
+WORK FLOW for publishing:
+The publish branch only ever takes merges from master, and never from anywhere
 else. The publishing workflow is
 - Merge master into publish 
 - Use the script to push the publish branch to Github
