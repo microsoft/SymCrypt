@@ -27,6 +27,10 @@ The SymCrypt unit test is in the `\unittest` directory. It runs extensive functi
 library, as well as on other implementations such as the Windows APIs CNG and CAPI, and the older crypto libraries 
 rsa32 and msbignum. It also provides detailed performance information.
 
+# Security Bugs
+If you believe you have found a problem that affects the security of this code, please do NOT create an issue
+or pull request, but instead email your comments to secure@microsoft.com. 
+
 # Contribute
 We love to receive comments and suggestions. Unfortunately we cannot accept external code contributions at this time.
 Cryptographic code is considered highly sensitive by many of our large customers.
