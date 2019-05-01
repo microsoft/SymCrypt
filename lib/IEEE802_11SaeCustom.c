@@ -128,10 +128,9 @@ SymCrypt802_11SaeCustomInit(
     notFoundMask = (UINT32)-1;
     counter = 0;
 
-    // We exit the loop only when counter is a multiple of 32
+    // We exit the loop only after 40 or more iterations
     // This greatly reduces the side-channel of how often we run this loop.
-    // Only about 2^-32 of calls fail to exit at counter = 32
-    while( (notFoundMask | (counter & 31)) != 0 ) 
+    while( notFoundMask != 0 || counter < 40 ) 
     {
         counter += 1;
         SYMCRYPT_HARD_ASSERT( counter != 0 );
