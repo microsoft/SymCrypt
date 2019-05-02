@@ -565,21 +565,15 @@ class ScBuild
         string[] res = RunCmd( "", "git commit -m \"Updating symcrypt_version.inc\" " + versionFileName );
 
         bool foundChange = false;
-        bool foundCreate = false;
         foreach( string line in res )
         {
             if (Regex.IsMatch(line, @"1 file changed"))
             {
                 foundChange = true;
             }
-
-            if( Regex.IsMatch( line, @"create mode" ) )
-            {
-                foundCreate = true;
-            }
         }
 
-        if( !foundChange | !foundCreate )
+        if( !foundChange )
         {
             Fatal( @"Cound not commit file '{0}'", versionFileName );
         }
