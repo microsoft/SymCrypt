@@ -73,6 +73,8 @@ class ScBuild
     public IDictionary m_environment;
     public string m_SymCryptDir;
 
+    string m_currentBranch;
+
     public static void Print( params object[] args )
     {
         Output.Print( args );
@@ -353,14 +355,28 @@ class ScBuild
 
 
     
-    public void CheckRelDirSynced( string relDir )
+    public string CheckRelDirSynced( string relDir )
+    // Returns the name of the current branch
     {
         string [] res = RunCmd( relDir, "git status ." );
+        string branch = null;
 
         bool unSync = false;
         bool Sync = false;
         foreach( string resLine in res )
         {
+            Match match = Regex.Match( resLine, @"^\s*On branch (?<branch>\S+)");
+            // Print( "{0} -> {1}\n", resLine, match.Success );
+
+            if( match.Success )
+            {
+                if( branch != null )
+                {
+                    Fatal( "Found two branch names, '{0}' and '{1}'", branch, match.Groups[ "branch" ].Value );
+                }
+                branch = match.Groups[ "branch" ].Value;
+            }
+
             if( Regex.IsMatch( resLine, @"nothing to commit, working tree clean" ) )
             {
                 Sync = true;
@@ -399,6 +415,8 @@ class ScBuild
                 Fatal( "Could not validate/recognize that directory '{0}' is in sync", relDir );
             }
         }
+
+        return branch;
     }
 
     void CheckToolsSynced()
@@ -409,11 +427,14 @@ class ScBuild
         // We have few tool changes anyway, so we drop this check.
     }
 
-    void CheckSymCryptSynced()
+    string CheckSymCryptSynced()
     {
-        CheckRelDirSynced( "." );
-    }
+        string branch =  CheckRelDirSynced( "." );
 
+        Print( "Using branch '{0}'\n", branch );
+
+        return branch;
+    }
 
     void CheckWriteableFiles()
     {
@@ -559,8 +580,14 @@ class ScBuild
             return;
         }
 
-        File.WriteAllLines(versionFileName, lines);
+        // We don't allow the version number to be updated outside the master branch because it creates merge
+        // conflicts and the version numbers wouldn't be unique anymore.
+        if( m_currentBranch != "master" )
+        {
+            Fatal( "Version number update not supported except on branch master. Currently on '{0}'\n", m_currentBranch );
+        }
 
+        File.WriteAllLines(versionFileName, lines);
 
         string[] res = RunCmd( "", "git commit -m \"Updating symcrypt_version.inc\" " + versionFileName );
 
@@ -861,7 +888,7 @@ class ScBuild
             fileNameWarning = "_not_for_release";
         }
         
-        string cabFileName = "SymCrypt" + fileNameWarning + "_v" + m_releaseVersion + "." + m_privateVersion + ".cab";
+        string cabFileName = "SymCrypt" + fileNameWarning + "_v" + m_releaseVersion + "." + m_privateVersion + "_" + m_currentBranch + ".cab";
 
         string [] res = RunCmd( "release", "cabarc -r -p n " + cabFileName + " *.*" );
         if( !Regex.IsMatch( res[ res.Length - 1 ], "Completed successfully" ) )
@@ -934,7 +961,7 @@ class ScBuild
         CheckSymCryptEnlistmentPresent();
 
         CheckToolsSynced();
-        CheckSymCryptSynced();
+        m_currentBranch = CheckSymCryptSynced();
 
         // In Git, all files are writable, so this check is not useful.
         // CheckWriteableFiles();
