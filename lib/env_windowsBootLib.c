@@ -38,7 +38,7 @@ SYMCRYPT_CPU_FEATURES SYMCRYPT_CALL SymCryptCpuFeaturesNeverPresentEnvWindowsBoo
 SYMCRYPT_NOINLINE
 VOID
 SYMCRYPT_CALL
-SymCryptInitEnvWindowsBootlibrary()
+SymCryptInitEnvWindowsBootlibrary( UINT32 version )
 {
     if( g_SymCryptFlags & SYMCRYPT_FLAG_LIB_INITIALIZED )
     {
@@ -61,7 +61,7 @@ SymCryptInitEnvWindowsBootlibrary()
     SymCryptDetectCpuFeaturesFromRegistersNoTry();
 #endif    
 
-    SymCryptInitEnvCommon();
+    SymCryptInitEnvCommon( version );
 }
 
 _Analysis_noreturn_

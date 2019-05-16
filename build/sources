@@ -1,0 +1,3 @@
+TARGETTYPE= NOTARGET
+
+NTTARGETFILE0= $(OBJECT_ROOT)\SymCrypt\build\$(O)\buildInfo.h

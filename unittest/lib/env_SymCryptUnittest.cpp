@@ -46,7 +46,7 @@ SYMCRYPT_CPU_FEATURES SYMCRYPT_CALL SymCryptCpuFeaturesNeverPresentEnvUnittest()
 
 VOID
 SYMCRYPT_CALL
-SymCryptInitEnvUnittest()
+SymCryptInitEnvUnittest( UINT32 version )
 {
     if( g_SymCryptFlags & SYMCRYPT_FLAG_LIB_INITIALIZED )
     {
@@ -80,7 +80,7 @@ SymCryptInitEnvUnittest()
 
 #endif    
 
-    SymCryptInitEnvCommon();
+    SymCryptInitEnvCommon( version );
 }
 
 _Analysis_noreturn_

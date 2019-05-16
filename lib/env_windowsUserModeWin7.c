@@ -33,7 +33,7 @@ SYMCRYPT_CPU_FEATURES SYMCRYPT_CALL SymCryptCpuFeaturesNeverPresentEnvWindowsUse
 
 VOID
 SYMCRYPT_CALL
-SymCryptInitEnvWindowsUsermodeWin7nLater()
+SymCryptInitEnvWindowsUsermodeWin7nLater( UINT32 version )
 {
 
     if( g_SymCryptFlags & SYMCRYPT_FLAG_LIB_INITIALIZED )
@@ -64,7 +64,7 @@ SymCryptInitEnvWindowsUsermodeWin7nLater()
 
 #endif    
 
-    SymCryptInitEnvCommon();
+    SymCryptInitEnvCommon( version );
 }
 
 _Analysis_noreturn_

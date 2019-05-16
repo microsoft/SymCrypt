@@ -22,7 +22,7 @@ SYMCRYPT_CPU_FEATURES SYMCRYPT_CALL SymCryptCpuFeaturesNeverPresentEnvGeneric()
 
 VOID
 SYMCRYPT_CALL
-SymCryptInitEnvGeneric()
+SymCryptInitEnvGeneric( UINT32 version )
 {
     if( g_SymCryptFlags & SYMCRYPT_FLAG_LIB_INITIALIZED )
     {
@@ -41,7 +41,7 @@ SymCryptInitEnvGeneric()
     // All Neon operations are locked out by the static NeverPresent value.
 #endif    
 
-    SymCryptInitEnvCommon();
+    SymCryptInitEnvCommon( version );
 }
 
 _Analysis_noreturn_

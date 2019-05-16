@@ -35,7 +35,7 @@ SYMCRYPT_CPU_FEATURES SYMCRYPT_CALL SymCryptCpuFeaturesNeverPresentEnvWindowsKer
 
 VOID
 SYMCRYPT_CALL
-SymCryptInitEnvWindowsKernelmodeWin7nLater()
+SymCryptInitEnvWindowsKernelmodeWin7nLater( UINT32 version )
 {
     RTL_OSVERSIONINFOW  verInfo;
 #if SYMCRYPT_CPU_X86 | SYMCRYPT_CPU_AMD64 
@@ -83,7 +83,7 @@ SymCryptInitEnvWindowsKernelmodeWin7nLater()
 
 #endif    
 
-    SymCryptInitEnvCommon();
+    SymCryptInitEnvCommon( version );
 }
 
 _Analysis_noreturn_

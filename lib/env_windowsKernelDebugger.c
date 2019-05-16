@@ -16,7 +16,7 @@ SYMCRYPT_CPU_FEATURES SYMCRYPT_CALL SymCryptCpuFeaturesNeverPresentEnvWindowsKer
 
 VOID
 SYMCRYPT_CALL
-SymCryptInitEnvWindowsKernelDebugger()
+SymCryptInitEnvWindowsKernelDebugger( UINT32 version )
 {
     if( g_SymCryptFlags & SYMCRYPT_FLAG_LIB_INITIALIZED )
     {
@@ -29,7 +29,7 @@ SymCryptInitEnvWindowsKernelDebugger()
 
     g_SymCryptCpuFeaturesNotPresent = (SYMCRYPT_CPU_FEATURES) ~0;
 
-    SymCryptInitEnvCommon();
+    SymCryptInitEnvCommon( version );
 }
 
 _Analysis_noreturn_
