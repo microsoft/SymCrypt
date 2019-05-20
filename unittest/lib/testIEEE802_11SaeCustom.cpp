@@ -115,7 +115,8 @@ VOID
 testSaeCustomNegative( 
                     ArithImplementation *   pAlgImp,
     _In_reads_(32)  PCBYTE                  pbPeerScalar,
-    _In_reads_(64)  PCBYTE                  pbPeerElement )
+    _In_reads_(64)  PCBYTE                  pbPeerElement,
+                    LONGLONG                line )
 {
     BYTE abMac1[6];
     BYTE abMac2[6];
@@ -143,7 +144,7 @@ testSaeCustomNegative(
     // Process the fake reply
     scError = SymCrypt802_11SaeCustomCommitProcess( &stateA, pbPeerScalar, pbPeerElement, abSharedA, abSumA );
 
-    CHECK( scError != SYMCRYPT_NO_ERROR, "No error when receiving invalid peer commit scalar or element" );
+    CHECK3( scError != SYMCRYPT_NO_ERROR, "No error when receiving invalid peer commit scalar or element at line %lld", line );
 
     pAlgImp->m_nResults++;
 }
@@ -164,6 +165,7 @@ testIEEE802_11SaeCustomKats()
     while( 1 )
     {
         katData->getKatItem( & katItem );
+        LONGLONG line = katItem.line;
         if( katItem.type == KAT_TYPE_END )
         {
             break;
@@ -200,16 +202,16 @@ testIEEE802_11SaeCustomKats()
                 BString sharedSecret = katParseData( katItem, "sharedsecret" );
                 BString scalarSum = katParseData( katItem, "scalarsum" );
 
-                CHECK3( MACa.size() == 6, "Inavlid length for MACa at line %lld", katData->m_line );
-                CHECK3( MACb.size() == 6, "Invalid length for MACb at line %lld", katData->m_line );
-                CHECK3( random.size() == 32, "Invalid length for random at line %lld", katData->m_line );
-                CHECK3( mask.size() == 32, "Invalid length for mask at line %lld", katData->m_line );
-                CHECK3( commitScalar.size()  == 32, "Invalid length for commitScalar at line %lld", katData->m_line );
-                CHECK3( commitElement.size() == 64, "Invalid length for commitElement at line %lld", katData->m_line );
-                CHECK3( peerScalar.size()    == 32, "Invalid length for peerScalar at line %lld", katData->m_line );
-                CHECK3( peerElement.size()   == 64, "Invalid length for peerElement at line %lld", katData->m_line );
-                CHECK3( sharedSecret.size() == 32, "Invalid length for sharedSecret at line %lld", katData->m_line );
-                CHECK3( scalarSum.size() == 32, "Invalid length for scalarSum at line %lld", katData->m_line );
+                CHECK3( MACa.size() == 6, "Inavlid length for MACa at line %lld", line );
+                CHECK3( MACb.size() == 6, "Invalid length for MACb at line %lld", line );
+                CHECK3( random.size() == 32, "Invalid length for random at line %lld", line );
+                CHECK3( mask.size() == 32, "Invalid length for mask at line %lld", line );
+                CHECK3( commitScalar.size()  == 32, "Invalid length for commitScalar at line %lld", line );
+                CHECK3( commitElement.size() == 64, "Invalid length for commitElement at line %lld", line );
+                CHECK3( peerScalar.size()    == 32, "Invalid length for peerScalar at line %lld", line );
+                CHECK3( peerElement.size()   == 64, "Invalid length for peerElement at line %lld", line );
+                CHECK3( sharedSecret.size() == 32, "Invalid length for sharedSecret at line %lld", line );
+                CHECK3( scalarSum.size() == 32, "Invalid length for scalarSum at line %lld", line );
 
                 CHECK3( counter <= 0xff, "Invalid counter at line %lld", katItem.line );
 
@@ -228,14 +230,14 @@ testIEEE802_11SaeCustomKats()
                 BString peerScalar = katParseData( katItem, "peerscalar" );
                 BString peerElement = katParseData( katItem, "peerelement" );
 
-                CHECK3( peerScalar.size()    == 32, "Invalid length for peerScalar at line %lld", katData->m_line );
-                CHECK3( peerElement.size()   == 64, "Invalid length for peerElement at line %lld", katData->m_line );
+                CHECK3( peerScalar.size()    == 32, "Invalid length for peerScalar at line %lld", line );
+                CHECK3( peerElement.size()   == 64, "Invalid length for peerElement at line %lld", line );
 
-                testSaeCustomNegative( *(ImpPtrVector.begin()), peerScalar.data(), peerElement.data() );
+                testSaeCustomNegative( *(ImpPtrVector.begin()), peerScalar.data(), peerElement.data(), line );
             } 
             else
             {
-                FATAL2( "Unknown data record ending at line %lld", katItem.line );
+                FATAL2( "Unknown data record ending at line %lld", line );
             }
         }
     }
