@@ -416,8 +416,14 @@ SymCryptEcpointTransform(
             }
 
             // Calculation
-            SymCryptModInv( pCurve->FMod, peSrc, peT[0], flags, pbScratch, cbScratch );           // T0 := 1  / Z
-            SymCryptModMul( pCurve->FMod, peT[0], peT[0], peT[1], pbScratch, cbScratch );     // T1 := T0 * T0 = 1/Z^2
+            // T0 := 1  / Z
+            scError = SymCryptModInv( pCurve->FMod, peSrc, peT[0], flags, pbScratch, cbScratch ); 
+            if( scError != SYMCRYPT_NO_ERROR )
+            {
+                goto cleanup;
+            }
+
+            SymCryptModMul( pCurve->FMod, peT[0], peT[0], peT[1], pbScratch, cbScratch );           // T1 := T0 * T0 = 1/Z^2
 
             // Get the X coordinates
             peSrc = SYMCRYPT_INTERNAL_ECPOINT_COORDINATE( 0, pCurve, poSrc );
@@ -474,7 +480,11 @@ SymCryptEcpointTransform(
             }
 
             // peT[0] = 1 / Z
-            SymCryptModInv( pCurve->FMod, peSrc, peT[0], flags, pbScratch, cbScratch );
+            scError = SymCryptModInv( pCurve->FMod, peSrc, peT[0], flags, pbScratch, cbScratch );
+            if( scError != SYMCRYPT_NO_ERROR )
+            {
+                goto cleanup;
+            }
 
             // Get the X coordinates
             peSrc = SYMCRYPT_INTERNAL_ECPOINT_COORDINATE( 0, pCurve, poSrc );
@@ -529,7 +539,11 @@ SymCryptEcpointTransform(
             }
 
             // Calculation
-            SymCryptModInv( pCurve->FMod, peSrc, peT[0], flags, pbScratch, cbScratch );              // T0 := 1 / Y
+            scError = SymCryptModInv( pCurve->FMod, peSrc, peT[0], flags, pbScratch, cbScratch );              // T0 := 1 / Y
+            if( scError != SYMCRYPT_NO_ERROR )
+            {
+                goto cleanup;
+            }
 
             // Get the X coordinates
             peSrc = SYMCRYPT_INTERNAL_ECPOINT_COORDINATE( 0, pCurve, poSrc );

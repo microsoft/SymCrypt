@@ -262,13 +262,17 @@ SymCryptDsaSignEx(
                 cbScratchInternal );
 
         // Invert k mod q
-        SymCryptModInv(
+        scError = SymCryptModInv(
                 pDlgroup->pmQ,
                 peK,
                 peK,    // In place
                 0, 
                 pbScratchInternal,
                 cbScratchInternal );
+        if( scError != SYMCRYPT_NO_ERROR )
+        {
+            goto cleanup;
+        }
 
         // Get the private key X to modelement
         // *** We are sure here that the digit
@@ -533,7 +537,11 @@ SymCryptDsaVerify(
     // S is part of the signature and therefore not a secret.
     // We mark it public to avoid the use of random blinding, which would require a source of randomness
     // just to verify a DSA signature.
-    SymCryptModInv( pDlgroup->pmQ, peS, peS, SYMCRYPT_FLAG_DATA_PUBLIC, pbScratchInternal, cbScratchInternal );
+    scError = SymCryptModInv( pDlgroup->pmQ, peS, peS, SYMCRYPT_FLAG_DATA_PUBLIC, pbScratchInternal, cbScratchInternal );
+    if( scError != SYMCRYPT_NO_ERROR )
+    {
+        goto cleanup;
+    }
 
     // Get the message into a modelement
     scError = SymCryptDsaTruncateHash(

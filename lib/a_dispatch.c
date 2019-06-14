@@ -712,6 +712,19 @@ SymCryptIntToModulus(
     _Out_writes_bytes_( cbScratch ) PBYTE               pbScratch,
                                     SIZE_T              cbScratch )
 {
+    // Some sanity checks
+    if( (flags & SYMCRYPT_FLAG_MODULUS_PRIME) != 0)
+    {
+        // The claim is that the modulus is prime, and we'll verify that it is 2 or odd
+        // (Some inversion algorithms fail hard when one input isn't 2 or odd.)
+        // We are constant-time w.r.t. piSrc being odd or =2. We don't hide the size of any input,
+        // but inputs 2 and 3 are handled with the same code path.
+        if( ((SymCryptIntGetValueLsbits32( piSrc ) & 1) | SymCryptIntIsEqualUint32( piSrc, 2 )) == 0 )
+        {
+            SymCryptFatal( 'mdfl' );
+        }
+    }
+
     SymCryptFdefIntToModulus( piSrc, pmDst, averageOperations, flags, pbScratch, cbScratch );
 }
 
@@ -914,7 +927,7 @@ SymCryptModDivPow2(
 }
 
 SYMCRYPT_DISABLE_CFG
-VOID
+SYMCRYPT_ERROR
 SYMCRYPT_CALL
 SymCryptModInv(
     _In_                            PCSYMCRYPT_MODULUS      pmMod,
@@ -924,7 +937,7 @@ SymCryptModInv(
     _Out_writes_bytes_( cbScratch ) PBYTE                   pbScratch,
                                     SIZE_T                  cbScratch )
 {
-    SYMCRYPT_MOD_CALL( pmMod ) modInv( pmMod, peSrc, peDst, flags, pbScratch, cbScratch );
+    return SYMCRYPT_MOD_CALL( pmMod ) modInv( pmMod, peSrc, peDst, flags, pbScratch, cbScratch );
 }
 
 VOID

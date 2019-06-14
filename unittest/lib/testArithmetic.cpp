@@ -2966,6 +2966,7 @@ testModInv()
     ArithModulus *pMod;
     ArithModElement *pSrc;
     ArithModElement *pDst;
+    SYMCRYPT_ERROR scError;
 
     // Pick a random digit size that allows primes
     do {
@@ -2991,12 +2992,13 @@ testModInv()
     pDst->checkValue();
 
     // Pass a random value for the source_public flag
-    SymCryptModInv( pMod->m_pScModulus, 
-                    pSrc->m_pScModElement, 
-                    pDst->m_pScModElement, 
-                    (0 - (g_rng.byte() & 1)) & SYMCRYPT_FLAG_DATA_PUBLIC,
-                    g_scratch, 
-                    SYMCRYPT_SCRATCH_BYTES_FOR_MODINV( nD ) );
+    scError = SymCryptModInv( pMod->m_pScModulus, 
+                                pSrc->m_pScModElement, 
+                                pDst->m_pScModElement, 
+                                (0 - (g_rng.byte() & 1)) & SYMCRYPT_FLAG_DATA_PUBLIC,
+                                g_scratch, 
+                                SYMCRYPT_SCRATCH_BYTES_FOR_MODINV( nD ) );
+    CHECK( scError == SYMCRYPT_NO_ERROR, "Modular inverse error" );
     
     // Be careful in computing the result. We can only use Dst->Tmp1, and Dst->Tmp2 because pSrc == pDst is allowed.
     SymCryptModElementToInt( pMod->m_pScModulus, pDst->m_pScModElement, pDst->m_pScTmp1, g_scratch, SYMCRYPT_SCRATCH_BYTES_FOR_COMMON_MOD_OPERATIONS( nD ) );
@@ -3573,7 +3575,7 @@ debugtestModInv()
     pEl = SymCryptModElementAllocate( pMod );
     SymCryptModElementSetValueUint32( 3, pMod, pEl, g_scratch, SYMCRYPT_SCRATCH_BYTES_FOR_COMMON_MOD_OPERATIONS( 1 ) );
 
-    SymCryptModInv( pMod, pEl, pEl, 0, g_scratch, SYMCRYPT_SCRATCH_BYTES_FOR_MODINV( 1 ) );
+    CHECK( SymCryptModInv( pMod, pEl, pEl, 0, g_scratch, SYMCRYPT_SCRATCH_BYTES_FOR_MODINV( 1 ) ) == SYMCRYPT_NO_ERROR, "?" );
 
     SymCryptModElementFree( pMod, pEl );
     SymCryptModulusFree( pMod );
@@ -3670,6 +3672,109 @@ debugtestPrimeGeneration()
     SymCryptWipe(pbScratch,cbScratch);
     SymCryptCallbackFree(pbScratch);
 }
+
+UINT32 GcdUint32( UINT32 a, UINT32 b )
+{
+    UINT32 t;
+
+    while( a != 0 )
+    {
+        t = b % a;  // GCD( a, b ) == GCD( a, t )
+
+        // Move the bigger term into b, the smaller into a
+        b = a;
+        a = t;
+    }
+
+    return b;
+}
+
+VOID testCompositeModInv()
+{
+    // We just check that ModInv works properly with weird inputs
+    PSYMCRYPT_MODULUS pMod = SymCryptModulusAllocate( 1 );
+    PSYMCRYPT_MODELEMENT pEl = SymCryptModElementAllocate( pMod );
+    PSYMCRYPT_MODELEMENT pInv = SymCryptModElementAllocate( pMod );
+    SIZE_T cbScratch = 1 << 20;
+    PBYTE pbScratch = (PBYTE) malloc( cbScratch );
+    SYMCRYPT_ERROR scError;
+
+    CHECK( pMod != NULL && pEl != NULL && pbScratch != NULL, "Out of memory" );
+
+    for( int cnt = 0; cnt < 1000; cnt++ )
+    {
+        UINT32 mod = (UINT32) g_rng.sizet( 2, (1<<16) );
+
+        // Must be 2 or odd to even pass the sanity checks for prime moduli
+        if( mod != 2 )
+        {
+            mod |= 1;
+        }
+
+        UINT32 x = (UINT32) g_rng.sizet( mod );
+        CHECK( x < mod, "?" );
+        SymCryptIntSetValueUint32( mod, SymCryptIntFromModulus( pMod ) );
+
+        // Our current code requires the PRIME and DATA_PUBLIC flags.
+
+        UINT32 modFlags = 0;
+        BYTE b = g_rng.byte();
+
+        /* Code to generat random flags (for when we support them)
+        if( b & 1 )
+        {
+            if( b & 2 )
+            {
+                modFlags |= SYMCRYPT_FLAG_DATA_PUBLIC;
+            } else {
+                modFlags |= SYMCRYPT_FLAG_MODULUS_PARITY_PUBLIC;
+            }
+        }
+        if( (b & 4) != 0 && (mod == 2 || (mod &  1) != 0 )  )
+        {
+            // We deliberately limit ourselves to only checking for oddness in primes
+            // as our RSA/DSA code doesn't check for primality when receiving parameters from 
+            // outside parties.
+            modFlags |= SYMCRYPT_FLAG_MODULUS_PRIME;
+        }
+        */
+        modFlags = SYMCRYPT_FLAG_DATA_PUBLIC | SYMCRYPT_FLAG_MODULUS_PRIME;
+
+        SymCryptIntToModulus( SymCryptIntFromModulus( pMod ), pMod, g_rng.byte(), modFlags, pbScratch, cbScratch );
+
+        SymCryptModElementSetValueUint32( x, pMod, pEl, pbScratch, cbScratch );
+
+        // We must use DATA_PUBLIC, otherwise the modinv routine blinds the input which
+        // can introduce errors when the modulus isn't prime, and that makes our test
+        // less sensitive.
+        UINT32 opFlags = SYMCRYPT_FLAG_DATA_PUBLIC;
+
+        scError = SymCryptModInv( pMod, pEl, pInv, opFlags, pbScratch, cbScratch );
+
+        // Check that the result is correct when we get no error
+        if( scError == SYMCRYPT_NO_ERROR )
+        {
+            SymCryptModMul( pMod, pEl, pInv, pInv, pbScratch, cbScratch );
+            SYMCRYPT_ERROR scError2 = SymCryptModElementGetValue( pMod, pInv, &b, 1, SYMCRYPT_NUMBER_FORMAT_LSB_FIRST, pbScratch, cbScratch );
+            CHECK( scError2 == SYMCRYPT_NO_ERROR && b == 1, "ModInv * input is not 1" );
+        }
+
+        BOOL coPrime = GcdUint32( x, mod ) == 1;
+
+        CHECK( coPrime || scError != SYMCRYPT_NO_ERROR, "No error for modinv that does not exist" );
+
+        CHECK( (modFlags & SYMCRYPT_FLAG_DATA_PUBLIC) == 0 ||
+                (modFlags & SYMCRYPT_FLAG_MODULUS_PRIME) == 0 ||
+                !coPrime ||
+                scError == SYMCRYPT_NO_ERROR, "Unexpected error for modinverse" );
+    }
+
+    free( pbScratch );
+    SymCryptModElementFree( pMod, pEl );
+    SymCryptModElementFree( pMod, pInv );
+    SymCryptModulusFree( pMod );
+}
+
 
 VOID
 testArithmetic()
@@ -3813,5 +3918,9 @@ testArithmetic()
     CHECK3( g_nOutstandingCheckedAllocs == 0, "Memory leak, %d outstanding", (unsigned) g_nOutstandingCheckedAllocs );
 
     // iprint( "ModIsEqual globals: EQ = %x, NEQ = %x\n", modIsEqual, modIsNotEqual );
+
+
+    testCompositeModInv();
+
     iprint( "\n" );
 }

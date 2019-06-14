@@ -1762,7 +1762,7 @@ SymCryptModDivPow2(
 // Marking the source value as public has very little effect on performance, but it removes the random blinding used.
 // The main goal of this flag is to allow ECDSA verification without a source of random numbers.
 
-VOID
+SYMCRYPT_ERROR
 SYMCRYPT_CALL
 SymCryptModInv(
     _In_                            PCSYMCRYPT_MODULUS      pmMod,
@@ -1774,14 +1774,16 @@ SymCryptModInv(
 //
 // Dst = 1/Src mod Mod.
 //
-// Requirements:
-//  - GCD( Src, Mod ) == 1
-//  - cbScratch >= SYMCRYPT_SCRATCH_BYTES_FOR_MODINV( Mod.nDigits )
+// - pmMod: Modulus, must have the SYMCRYPT_FLAG_MODULUS_PRIME and SYMCRYPT_FLAG_DATA_PUBLIC flag set.
+//      Non-prime or non-public moduli are currently not supported.
+// - peSrc: Source value, modulu pmMod
+// - peDst: Destination value, mod element modulu pmMod
+// - flags: SYMCRYPT_FLAG_DATA_PUBLIC signals that peSrc is a public value.
+// - pbScatch/cbScratch: scratch space >= SYMCRYPT_SCRATCH_BYTES_FOR_MODINV( nDigits( pmMod ) )
 //
-// Currently only supports modulus objects that have the SYMCRYPT_FLAG_MODULUS_PRIME and SYMCRYPT_FLAG_DATA_PUBLIC flag set, 
-// and where the modulus is odd (i.e. not equal to 2)
+// Returns an error if
+//  - GCD( Src, Mod ) != 1
 //
-
 
 #define SYMCRYPT_SCRATCH_BYTES_FOR_MODEXP( _nDigits ) SYMCRYPT_INTERNAL_SCRATCH_BYTES_FOR_MODEXP( _nDigits )
 

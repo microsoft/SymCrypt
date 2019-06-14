@@ -241,7 +241,7 @@ SymCryptMontgomeryPointScalarMul(
     if ((flags & ~SYMCRYPT_FLAG_ECC_LL_COFACTOR_MUL) != 0)
     {
         scError = SYMCRYPT_INVALID_ARGUMENT;
-        goto exit;
+        goto cleanup;
     }
 
     if (poSrc == NULL)
@@ -299,7 +299,12 @@ SymCryptMontgomeryPointScalarMul(
     if (!poSrc->normalized)
     {
         peResult = SYMCRYPT_INTERNAL_ECPOINT_COORDINATE( 1, pCurve, poSrc);
-        SymCryptModInv( pmMod, peResult, peResult, 0, pbScratch, cbScratch );           // 1/Z
+        scError = SymCryptModInv( pmMod, peResult, peResult, 0, pbScratch, cbScratch ); // 1/Z
+        if( scError != SYMCRYPT_NO_ERROR )
+        {
+            goto cleanup;
+        }
+
         SymCryptModMul( pmMod, peX1, peResult, peX1, pbScratch, cbScratch );            // X = X/Z
         SymCryptModElementSetValueUint32( 1, pmMod, peResult, pbScratch, cbScratch );   // Set Z to 1
     }
@@ -359,6 +364,6 @@ SymCryptMontgomeryPointScalarMul(
 
     scError = SYMCRYPT_NO_ERROR;
 
-exit:
+cleanup:
     return scError;
 }

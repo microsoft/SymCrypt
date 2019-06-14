@@ -193,7 +193,7 @@ SymCryptFdef369RawMul(
     SymCryptFdef369RawMulAsm( pSrc1, nDigits1, pSrc2, nDigits2, pDst );
 }
 
-VOID 
+SYMCRYPT_ERROR
 SYMCRYPT_CALL 
 SymCryptFdef369ModInvMontgomery(
     _In_                            PCSYMCRYPT_MODULUS      pmMod,
@@ -203,6 +203,7 @@ SymCryptFdef369ModInvMontgomery(
     _Out_writes_bytes_( cbScratch ) PBYTE                   pbScratch,
                                     SIZE_T                  cbScratch )
 {
+    SYMCRYPT_ERROR scError = SYMCRYPT_NO_ERROR;
     UINT32 nDigits = pmMod->nDigits;
     UINT32 nBytes = SYMCRYPT_FDEF369_DIGITS_TO_NUINT32( nDigits ) * sizeof( UINT32 );
     PUINT32 pTmp = (PUINT32) pbScratch;
@@ -221,7 +222,9 @@ SymCryptFdef369ModInvMontgomery(
     SymCryptWipe( (PBYTE)pTmp + nBytes, nBytes );
     SymCryptFdef369MontgomeryReduce( pmMod, pTmp, &peDst->d.uint32[0] );
 
-    SymCryptFdefModInvGeneric( pmMod, peDst, peDst, flags, pbScratch, cbScratch );
+    scError = SymCryptFdefModInvGeneric( pmMod, peDst, peDst, flags, pbScratch, cbScratch );
+
+    return scError;
 }
 
 

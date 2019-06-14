@@ -3420,12 +3420,14 @@ VOID
 algImpDataPerfFunction< ImpSc, AlgModInv>( PBYTE buf1, PBYTE buf2, PBYTE buf3, SIZE_T dataSize )
 {
     UNREFERENCED_PARAMETER( dataSize );
-    SymCryptModInv( *(PSYMCRYPT_MODULUS *) buf1, 
-                    ((PSYMCRYPT_MODELEMENT *) buf2)[0], 
-                    ((PSYMCRYPT_MODELEMENT *) buf3)[0],  
-                    0,
-                    buf3 + SCRATCH_BUF_OFFSET, 
-                    SCRATCH_BUF_SIZE );
+    SYMCRYPT_ERROR scError;
+    scError = SymCryptModInv(   *(PSYMCRYPT_MODULUS *) buf1, 
+                                ((PSYMCRYPT_MODELEMENT *) buf2)[0], 
+                                ((PSYMCRYPT_MODELEMENT *) buf3)[0],  
+                                0,
+                                buf3 + SCRATCH_BUF_OFFSET, 
+                                SCRATCH_BUF_SIZE );
+    CHECK( scError == SYMCRYPT_NO_ERROR, "Error in perf test case" );
 }
 
 

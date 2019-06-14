@@ -872,7 +872,7 @@ SymCryptFdefModSquareGeneric(
     SymCryptFdefRawDivMod( pTmp, 2*nDigits, &pmMod->Divisor, NULL, &peDst->d.uint32[0], pbScratch + scratchOffset, cbScratch - scratchOffset );
 }
 
-VOID
+SYMCRYPT_ERROR
 SYMCRYPT_CALL
 SymCryptFdefModInvGeneric(
     _In_                            PCSYMCRYPT_MODULUS      pmMod,
@@ -882,12 +882,13 @@ SymCryptFdefModInvGeneric(
     _Out_writes_bytes_( cbScratch ) PBYTE                   pbScratch,
                                     SIZE_T                  cbScratch )
 {
+    SYMCRYPT_ERROR scError = SYMCRYPT_NO_ERROR;
     UINT32 nDigits = pmMod->nDigits;
     UINT32 nBytes;
     UINT32 c;
 
     //
-    // This function is called on Montgomery moduli, so it is very careful to only use the specific generic modular operations.
+    // This function is called on Montgomery moduli, so it is very careful to only use the generic modular operations.
     //
 
     SYMCRYPT_ASSERT( cbScratch >= SYMCRYPT_SCRATCH_BYTES_FOR_MODINV( nDigits ) );
@@ -925,7 +926,7 @@ SymCryptFdefModInvGeneric(
     //      if( A == 0 ): error (not co-prime)
 
     nBytes = SymCryptSizeofModElementFromModulus( pmMod );
-	// dcl - Perhaps this should be checked in release as well?
+	
     SYMCRYPT_ASSERT( cbScratch >= 4*nBytes );
     PSYMCRYPT_MODELEMENT peR = SymCryptModElementCreate( pbScratch, nBytes, pmMod );
     pbScratch += nBytes;
@@ -963,14 +964,18 @@ SymCryptFdefModInvGeneric(
         SymCryptFdefModElementCopy( pmMod, peSrc, peX );
     }
 
+    // Set up piA and piB
     SymCryptFdefModElementToIntGeneric( pmMod, &peX->d.uint32[0], piA, pbScratch, cbScratch );   // A = X
-
-    if( SymCryptIntIsEqualUint32( piA, 0 ) )
-    {
-        SymCryptFatal( 'zero' );
-    }
-
     SymCryptIntCopy( SymCryptIntFromModulus( (PSYMCRYPT_MODULUS) pmMod ), piB );          // B = Mod
+
+    // Reject if A = 0, B = 0, or A and B both even
+    if( SymCryptIntIsEqualUint32( piA, 0 ) | 
+        SymCryptIntIsEqualUint32( piB, 0 ) | 
+        (((SymCryptIntGetValueLsbits32( piA ) | SymCryptIntGetValueLsbits32( piB )) & 1) ^ 1) )
+    {
+        scError = SYMCRYPT_INVALID_ARGUMENT;
+        goto cleanup;
+    }
 
     if( SymCryptIntIsEqualUint32( piB, 2 ) )
     {
@@ -985,7 +990,8 @@ SymCryptFdefModInvGeneric(
 
     for(;;)
     {
-        // invariant: A = Va*X (mod Mod), B = Vb*X (mod Mod), 
+        // invariant: A = Va*X (mod Mod), B = Vb*X (mod Mod), A != 0, B > 1.
+        // Remove factors of 2 from A. This loop terminates because A != 0
         // We can speed this up by counting how many times we will do this loop, and then updating A and VA once
         while( (SymCryptIntGetValueLsbits32( piA ) & 1) == 0 )
         {
@@ -995,11 +1001,18 @@ SymCryptFdefModInvGeneric(
 
         if( SymCryptIntIsEqualUint32( piA, 1 ) )
         {
+            // A = 1 = Va * X (mod Mod), so Va is the inverse of X
             break;
         }
 
         c = SymCryptIntSubSameSize( piB, piA, piT );
-        SYMCRYPT_ASSERT( !SymCryptIntIsEqualUint32( piT, 0 ) );
+
+        // If A != 1 and A=B, then A is the GCD of the original inputs, and there is no inverse
+        if( SymCryptIntIsEqualUint32( piT, 0 ) )
+        {
+            scError = SYMCRYPT_INVALID_ARGUMENT;
+            goto cleanup;
+        }
 
         if( c == 0 )
         {
@@ -1034,7 +1047,7 @@ SymCryptFdefModInvGeneric(
     }
 
 cleanup:
-    ;
+    return scError;
 }
 
 
@@ -1329,7 +1342,7 @@ SymCryptFdefModSquareMontgomeryMulx1024(
 }
 #endif
 
-VOID 
+SYMCRYPT_ERROR
 SYMCRYPT_CALL 
 SymCryptFdefModInvMontgomery(
     _In_                            PCSYMCRYPT_MODULUS      pmMod,
@@ -1339,6 +1352,7 @@ SymCryptFdefModInvMontgomery(
     _Out_writes_bytes_( cbScratch ) PBYTE                   pbScratch,
                                     SIZE_T                  cbScratch )
 {
+    SYMCRYPT_ERROR scError = SYMCRYPT_NO_ERROR;
     UINT32 nDigits = pmMod->nDigits;
     UINT32 nBytes = nDigits * SYMCRYPT_FDEF_DIGIT_SIZE;
     PUINT32 pTmp = (PUINT32) pbScratch;
@@ -1349,7 +1363,7 @@ SymCryptFdefModInvMontgomery(
     // We have R*X; we first apply the montgomery reduction twice to get X/R, and then invert that
     // using the generic inversion to get R/X.
     //
-	// dcl - missing assert, possibly unsafe?
+	SYMCRYPT_ASSERT( cbScratch >= 2 * nBytes );
     memcpy( pTmp, &peSrc->d.uint32[0], nBytes );
 
     SymCryptWipe( (PBYTE)pTmp + nBytes, nBytes );
@@ -1358,7 +1372,9 @@ SymCryptFdefModInvMontgomery(
     SymCryptWipe( (PBYTE)pTmp + nBytes, nBytes );
     SymCryptFdefMontgomeryReduce( pmMod, pTmp, &peDst->d.uint32[0] );
 
-    SymCryptFdefModInvGeneric( pmMod, peDst, peDst, flags, pbScratch, cbScratch );
+    scError = SymCryptFdefModInvGeneric( pmMod, peDst, peDst, flags, pbScratch, cbScratch );
+
+    return scError;
 }
 
 #if SYMCRYPT_CPU_AMD64
@@ -1437,7 +1453,7 @@ SymCryptFdefModSquareMontgomery256(
     SymCryptFdefModMulMontgomery256Asm( pmMod, peSrc, peSrc, peDst, pbScratch, cbScratch );
 }
 
-VOID 
+SYMCRYPT_ERROR
 SYMCRYPT_CALL 
 SymCryptFdefModInvMontgomery256(
     _In_                            PCSYMCRYPT_MODULUS      pmMod,
@@ -1447,6 +1463,7 @@ SymCryptFdefModInvMontgomery256(
     _Out_writes_bytes_( cbScratch ) PBYTE                   pbScratch,
                                     SIZE_T                  cbScratch )
 {
+    SYMCRYPT_ERROR scError = SYMCRYPT_NO_ERROR;
     UINT32 nBytes = 32;
     PUINT32 pTmp = (PUINT32) pbScratch;
 
@@ -1456,6 +1473,7 @@ SymCryptFdefModInvMontgomery256(
     // We have R*X; we first apply the montgomery reduction twice to get X/R, and then invert that
     // using the generic inversion to get R/X.
     //
+    SYMCRYPT_ASSERT( cbScratch >= 2 * nBytes );
     memcpy( pTmp, &peSrc->d.uint32[0], nBytes );
 
     SymCryptWipe( (PBYTE)pTmp + nBytes, nBytes );
@@ -1464,7 +1482,9 @@ SymCryptFdefModInvMontgomery256(
     SymCryptWipe( (PBYTE)pTmp + nBytes, nBytes );
     SymCryptFdefMontgomeryReduce256Asm( pmMod, pTmp, &peDst->d.uint32[0] );
 
-    SymCryptFdefModInvGeneric( pmMod, peDst, peDst, flags, pbScratch, cbScratch );
+    scError = SymCryptFdefModInvGeneric( pmMod, peDst, peDst, flags, pbScratch, cbScratch );
+
+    return scError;
 }
 
 VOID 
