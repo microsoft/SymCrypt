@@ -26,7 +26,7 @@ SOURCES= \
 #
 TARGETLIBS= \
 #    $(MINCORE_SDK_LIB_PATH)\mincore.lib \
-    $(MINWIN_SDK_LIB_PATH)\ntdll.lib \
+    $(MINWIN_EXTERNAL_SDK_LIB_PATH_L)\ntdll.lib \
 !if EXIST( $(PROJECT_OBJ_ROOT)\released\windows\ntrsa32\umode\$(O)\rsa32.lib )
 #    $(PROJECT_OBJ_ROOT)\released\windows\ntrsa32\umode\$(O)\rsa32.lib \
 !endif
@@ -35,8 +35,8 @@ TARGETLIBS= \
 #    $(PROJECT_OBJ_ROOT)\released\windows\bignum\winnt\$(O)\msbignum.lib \
 #!endif
 #    $(DS_LIB_PATH)\msbignum.lib \
-    $(SDK_LIB_PATH)\powrprof.lib \
-    $(SDK_LIB_PATH)\bcrypt.lib \
+    $(ONECORE_EXTERNAL_SDK_LIB_PATH)\powrprof.lib \
+    $(ONECORE_EXTERNAL_SDK_LIB_PATH)\bcrypt.lib \
 #    $(PROJECT_OBJ_ROOT)\symcrypt\lib\$(O)\symcrypt.lib \
 #    $(PROJECT_OBJ_ROOT)\symcrypt\unittest\lib\$(O)\symcryptunittest_lib.lib \
 	
@@ -60,8 +60,8 @@ BUILD_FOR_CORESYSTEM=1
 
 TARGETLIBS= \
     $(TARGETLIBS) \
-    $(MINCORE_SDK_LIB_PATH)\mincore.lib \
-    $(MINCORE_SDK_LIB_PATH)\mincore_legacy.lib \
-    $(MINCORE_SDK_LIB_PATH)\mincore_obsolete.lib \
+    $(MINCORE_EXTERNAL_SDK_LIB_VPATH_L)\mincore.lib \
+    $(MINCORE_EXTERNAL_SDK_LIB_VPATH_L)\mincore_legacy.lib \
+    $(MINCORE_EXTERNAL_SDK_LIB_VPATH_L)\mincore_obsolete.lib \
 #    $(MINWIN_PRIV_SDK_LIB_VPATH)\api-ms-win-security-cryptoapi-l1.lib \
 

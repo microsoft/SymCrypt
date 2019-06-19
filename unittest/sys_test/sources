@@ -25,7 +25,7 @@ SOURCES= \
 TARGETLIBS= \
 #    $(DS_LIB_PATH)\rsa32.lib \
 #    $(SDK_LIB_PATH)\powrprof.lib \
-    $(DDK_LIB_PATH)\cng.lib \
+    $(ONECORE_EXTERNAL_DDK_LIB_PATH)\cng.lib \
     $(OBJECT_ROOT)\symcrypt\lib\$(O)\symcrypt.lib \
 	
 

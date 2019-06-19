@@ -33,11 +33,11 @@ SOURCES= \
         
 TARGETLIBS= \
 #    $(MINCORE_SDK_LIB_PATH)\mincore.lib \
-    $(MINWIN_SDK_LIB_PATH)\ntdll.lib \
+    $(MINWIN_EXTERNAL_SDK_LIB_PATH_L)\ntdll.lib \
     $(OBJECT_ROOT)\SymCrypt\Publics\$(O)\rsa32.lib \
     $(OBJECT_ROOT)\SymCrypt\Publics\$(O)\msbignum.lib \
-    $(SDK_LIB_PATH)\powrprof.lib \
-    $(SDK_LIB_PATH)\bcrypt.lib \
+    $(ONECORE_EXTERNAL_SDK_LIB_PATH)\powrprof.lib \
+    $(ONECORE_EXTERNAL_SDK_LIB_PATH)\bcrypt.lib \
     $(OBJECT_ROOT)\symcrypt\lib\$(O)\symcrypt.lib \
     $(OBJECT_ROOT)\symcrypt\unittest\lib\$(O)\symcryptunittest_lib.lib \
 	

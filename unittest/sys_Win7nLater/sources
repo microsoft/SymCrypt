@@ -25,13 +25,13 @@ SOURCES= \
 TARGETLIBS= \
 #    $(DS_LIB_PATH)\rsa32.lib \
 #    $(SDK_LIB_PATH)\powrprof.lib \
-    $(DDK_LIB_PATH)\ksecdd.lib \
+    $(ONECORE_EXTERNAL_DDK_LIB_PATH)\ksecdd.lib \
     $(OBJECT_ROOT)\symcrypt\lib\$(O)\symcrypt.lib \
 	
 !IF "$(386)" ==  "1"
 # Link to memcmp.lib before TARGETLIBS in order to avoid linking memcmp from ntoskrnl (not available downlevel)
 DRIVERLIBS=\
-    $(DDK_LIB_PATH)\memcmp.lib \
+    $(ONECORE_EXTERNAL_DDK_LIB_PATH)\memcmp.lib \
 !ENDIF
 
 UNICODE = 1
