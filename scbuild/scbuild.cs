@@ -578,13 +578,13 @@ class ScBuild
         m_apiVersion = newApi;
         m_minorVersion = newMinor;
 
-        Print( "New SymCrypt version number {0}.{1}\n", newApi, newMinor );
-
         if( !m_option_inc_version )
         {
             Print( "...Not updating version number\n" );
             return;
         }
+
+        Print( "New SymCrypt version number {0}.{1}\n", newApi, newMinor );
 
         File.WriteAllLines(versionFileName, lines);
 
@@ -689,10 +689,10 @@ class ScBuild
                                                     };
 
     bool m_option_inc_version = false;
+    bool m_option_no_tag = false;
 
     bool m_option_ignore_sync = false;
     bool m_option_ignore_writable = false;
-    bool m_option_ignore_opened = false;
 
     string m_argumentsString = "";  // normalized argument string
 
@@ -719,7 +719,7 @@ class ScBuild
             {
                 if (opt.Length == 2)
                 {
-                    ProcessOptions(new string[] { "-iswo", });
+                    ProcessOptions(new string[] { "-is", });
                 }
                 else
                 {
@@ -728,8 +728,7 @@ class ScBuild
                         switch (opt[j])
                         {
                             case 's': m_option_ignore_sync = true; break;
-                            case 'w': m_option_ignore_writable = true; break;
-                            case 'o': m_option_ignore_opened = true; break;
+                            // case 'w': m_option_ignore_writable = true; break;
                             default: Fatal("Unknown ignore letter {0} in option {1}", opt[j], opt); break;
                         }
                     }
@@ -750,6 +749,10 @@ class ScBuild
             else if (opt == "-version" )
             {
                 m_option_inc_version = true;
+            }
+            else if (opt == "-notag" )
+            {
+                m_option_no_tag = true;
             }
             else
             {
@@ -786,58 +789,59 @@ class ScBuild
     {
         Print( "Usage: scbuild <options...>\n"
             + "Options:\n"
-            + "-r          Build a release version (checks for open files)\n"
-            + "-t          Build a test version\n"
-            + "-i[swo]     Ignore Sync/Writable/Opened file issues\n"
-            + "                -i is equivalent to -iswo\n"
+            + "-r          Build a release version (checks for open files/create tag)\n"
+            + "-t          Build a test version (default)\n"
+            + "-is         Ignore Sync issues\n"
+            + "                -i is equivalent to -is\n"
             + "-f<...>     Specify flavors to build in comma-separated list\n"
             + "            Flavors: x86chk, x86fre, amd64chk, amd64fre, armchk, armfre,\n"
             + "                arm64chk, arm64fre\n"
+            + "-notag      Skip tag creation\n"
             + "-version    Increment the minor version in inc\\symcrypt_version.h\n"
             );
     }
 
-    public void CreateGitTag()
+    public void CreateGitTag( string tagName )
     {
-        // In Git it doesn't work to change the repo in the build tool. 
-        // We no longer use this code, but keep it around for now in case we need it in the future.
-        Debug.Assert( false );
-        /*
-
         // Our code still used 'label' in many places, as that is the tag concept in Source Depot
         if( !m_option_release || m_option_no_tag )
         {
             return;
         }
         
-        if( m_option_ignore_opened || m_option_ignore_sync || m_option_ignore_writable || m_option_version_noupdate )
+        if( m_option_ignore_sync )
         {
             Print( "Label creation disabled while any -i option is used\n" );
             return;
         }
 
-        if( m_releaseVersion < 0 || m_privateVersion < 0 )
-        {
-            Fatal( "Invalid version number found when trying to create Git tag for release" );
-        }
-
-        string labelNumber = "" + m_releaseVersion + "." + m_privateVersion;
-        string labelName = "SymCrypt_v" + labelNumber;
-        
         string [] res;
-        res = RunCmd( "", "git tag -a -m \"Release of " + labelName + "\" " + labelName );
+        res = RunCmd( "", "git tag -a -m \"Creation of "+ tagName + ".cab\" " + tagName );
     
         if( res.Length != 0 )
         {
             Fatal("Unexpected output from tag command");
         }
 
-        res = RunCmd("", "git tag -l " + labelName);
-        if( res.Length != 1 || !Regex.IsMatch( res[0], labelName) )
+        res = RunCmd("", "git tag -l " + tagName);
+        if( res.Length != 1 || !Regex.IsMatch( res[0], tagName) )
         {
             Fatal("Could not verify that tag was properly created");
         }
-        */
+
+        bool pushOk = false;
+        res = RunCmd( "", "git push origin " + tagName );
+        foreach( string line in res )
+        {
+            if( Regex.IsMatch( line, "new tag.*" + tagName ))
+            {
+                pushOk = true;
+            }
+        }
+        if( !pushOk )
+        {
+            Fatal( "Could not verify that tag was pushed to remote" );
+        }
     }
 
     public string GetCommitInfo()
@@ -882,9 +886,7 @@ class ScBuild
 
         string fileNameWarning = "";
         if( m_option_flavors != null || 
-            m_option_ignore_opened || 
             m_option_ignore_sync ||
-            m_option_ignore_writable ||
             m_option_inc_version ||
             !m_option_release
             )
@@ -892,13 +894,16 @@ class ScBuild
             fileNameWarning = "_not_for_release";
         }
         
-        string cabFileName = "SymCrypt" + fileNameWarning + "_v" + m_apiVersion + "." + m_minorVersion + "_" + m_currentBranch + "_" + GetCommitInfo() + ".cab";
+        string releaseName = "SymCrypt" + fileNameWarning + "_v" + m_apiVersion + "." + m_minorVersion + "_" + m_currentBranch + "_" + GetCommitInfo();
+        string cabFileName =  releaseName + ".cab";
 
         string [] res = RunCmd( "release", "cabarc -r -p n " + cabFileName + " *.*" );
         if( !Regex.IsMatch( res[ res.Length - 1 ], "Completed successfully" ) )
         {
             Fatal( "Could not validate success of cab creation" );
         }
+
+        CreateGitTag( releaseName );
     }
 
     public void CleanReleaseDirectory()
