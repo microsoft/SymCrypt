@@ -90,6 +90,8 @@ SymCryptEcDhSecretAgreement(
     SYMCRYPT_ASSERT( poQ != NULL);
 
     // Make sure that the public key is not the zero point
+    // No need to check that the point is on the curve; that check is done when the 
+    // public key is created. 
     if (SymCryptEcpointIsZero(pCurve, pkPublic->poPublicKey, pbScratch, cbScratchInternal))
     {
         scError = SYMCRYPT_INVALID_ARGUMENT;
