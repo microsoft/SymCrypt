@@ -1,0 +1,380 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="Source Files">
+      <UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier>
+      <Extensions>cpp;c;cc;cxx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
+    </Filter>
+    <Filter Include="Resource Files">
+      <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
+      <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
+    </Filter>
+    <Filter Include="Source Files\i386">
+      <UniqueIdentifier>{a14f784b-a0ab-43e3-89b4-969ca5876caf}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\amd64">
+      <UniqueIdentifier>{6a8c502b-9153-46b6-a468-f504746de476}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\arm">
+      <UniqueIdentifier>{f38a8285-3b64-40c0-bed8-9a525c071a10}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\arm64">
+      <UniqueIdentifier>{4be2d7cd-45ca-4c72-85ac-60f75f89eb0a}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files">
+      <UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier>
+      <Extensions>h;hh;hpp;hxx;hm;inl;inc;ipp;xsd</Extensions>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="blockciphermodes.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="hash.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="parhash.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="ccm.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="ghash.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="gcm.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="aes-default.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="aes-default-bc.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="aes-key.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="aes-c.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="aes-asm.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="aes-xmm.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="aes-neon.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="aes-selftest.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="aesTables.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="aescmac.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="xtsaes.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="3des.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="desTables.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="desx.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="rc2.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="rc4.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="sha1.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="sha256.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="sha512.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="md5.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="md4.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="md2.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="hmacmd5.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="hmacsha1.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="hmacsha256.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="hmacsha384.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="hmacsha512.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="tlsCbcVerify.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="aesCtrDrbg.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="libmain.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="equal.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="env_windowsUserModeWin7.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="env_generic.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="env_win10Sgx.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="fatalIntercept.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="selftest.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="rdrand.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="rdseed.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="sha256Par.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="sha512Par.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="marvin32.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="cpuid.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="cpuid_um.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="cpuid_notry.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="pbkdf2.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="pbkdf2_hmacsha1.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="pbkdf2_hmacsha256.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="sp800_108.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="sp800_108_hmacsha1.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="sp800_108_hmacsha256.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="tlsprf.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="tlsprf_selftest.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="hkdf.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="hkdf_selftest.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="chacha20.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="poly1305.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="a_dispatch.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="fdef_general.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="fdef_int.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="fdef_mod.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="fdef369_mod.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="ecpoint.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="ecurve.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="eckey.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="ec_dispatch.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="ec_short_weierstrass.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="ec_internal_curves.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="ec_dsa.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="ec_dh.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="ec_montgomery.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="ec_twisted_edwards.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="ec_mul.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="ScsTable.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="primes.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="modexp.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="gen_int.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="crt.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="rsakey.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="rsa_enc.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="rsa_padding.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="dlgroup.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="dlkey.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="dsa.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="dh.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="recoding.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="IEEE802_11SaeCustom.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="env_windowsUserModeWin8_1.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="precomp.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <MASM Include="i386\aesasm.asm">
+      <Filter>Source Files\i386</Filter>
+    </MASM>
+    <MASM Include="i386\fdef_asm.asm">
+      <Filter>Source Files\i386</Filter>
+    </MASM>
+    <MASM Include="amd64\aesasm.asm">
+      <Filter>Source Files\amd64</Filter>
+    </MASM>
+    <MASM Include="amd64\fdef_asm.asm">
+      <Filter>Source Files\amd64</Filter>
+    </MASM>
+    <MASM Include="amd64\fdef_mulx.asm">
+      <Filter>Source Files\amd64</Filter>
+    </MASM>
+    <MASM Include="amd64\fdef369_asm.asm">
+      <Filter>Source Files\amd64</Filter>
+    </MASM>
+    <MASM Include="i386\wipe.asm">
+      <Filter>Source Files\i386</Filter>
+    </MASM>
+    <MASM Include="amd64\wipe.asm">
+      <Filter>Source Files\amd64</Filter>
+    </MASM>
+    <MASM Include="arm\aesasm.asm">
+      <Filter>Source Files\arm</Filter>
+    </MASM>
+    <MASM Include="arm\fdef_asm.asm">
+      <Filter>Source Files\arm</Filter>
+    </MASM>
+    <MASM Include="arm\wipe.asm">
+      <Filter>Source Files\arm</Filter>
+    </MASM>
+    <MASM Include="arm64\fdef_asm.asm">
+      <Filter>Source Files\arm64</Filter>
+    </MASM>
+    <MASM Include="arm64\fdef369_asm.asm">
+      <Filter>Source Files\arm64</Filter>
+    </MASM>
+    <MASM Include="arm64\wipe.asm">
+      <Filter>Source Files\arm64</Filter>
+    </MASM>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\inc\symcrypt.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\inc\symcrypt_inline.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\inc\symcrypt_internal.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\inc\symcrypt_low_level.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\inc\symcrypt_no_sal.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\inc\symcrypt_types.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="precomp.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+  </ItemGroup>
+</Project>

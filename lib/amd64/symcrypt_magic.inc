@@ -10,7 +10,7 @@
 
 SYMCRYPT_MAGIC_FIELD    MACRO
 
-        if      DBG
+        ifdef      DBG
         magic   dq      ?
         endif
         
@@ -21,7 +21,7 @@ SYMCRYPT_MAGIC_CONSTANT EQU     ('S1mv' + SYMCRYPT_CODE_VERSION)
 
 SYMCRYPT_CHECK_MAGIC    MACRO   ptr, struct_name
 
-        if      DBG
+        ifdef      DBG
 
         mov     rax, [ptr + struct_name.magic]
         sub     rax, ptr
