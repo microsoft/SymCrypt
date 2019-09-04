@@ -1698,9 +1698,9 @@ SYMCRYPT_ALIGN struct _SYMCRYPT_MODELEMENT {
 #define SYMCRYPT_RSAKEY_MAX_NUMOF_PRIMES            (2)
 #define SYMCRYPT_RSAKEY_MAX_NUMOF_PUBEXPS           (1)
 
-#define SYMCRYPT_RSAKEY_MIN_BITSIZE_MODULUS         (64)                // Just to avoid weird small-int cases
+#define SYMCRYPT_RSAKEY_MIN_BITSIZE_MODULUS         (256)               // Some of our SCS code requires at least 32 bytes...
 #define SYMCRYPT_RSAKEY_MAX_BITSIZE_MODULUS         (1 << 16)           // Avoid any integer overflows in size calculations
-#define SYMCRYPT_RSAKEY_MIN_BITSIZE_PRIME           (32)
+#define SYMCRYPT_RSAKEY_MIN_BITSIZE_PRIME           (128)
 #define SYMCRYPT_RSAKEY_MAX_BITSIZE_PRIME           (SYMCRYPT_RSAKEY_MAX_BITSIZE_MODULUS / 2)
 
 // Minimum allowable bit sizes for generated and imported parameters for

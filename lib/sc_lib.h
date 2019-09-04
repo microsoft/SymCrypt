@@ -23,7 +23,7 @@
 #pragma prefast( disable:28112 )
 #pragma prefast( disable:28113 )
 #pragma warning( disable: 4702 )        // unreachable code. The compilers are not equally smart, and some complain 
-                                        // aobut 'function must return a value' and some about 'unreachable code'
+                                        // about 'function must return a value' and some about 'unreachable code'
 
 
 //
@@ -247,8 +247,6 @@ SymCryptCheckLibraryInitialized()
 
 
 #define SYMCRYPT_ARRAY_SIZE(_x)     (sizeof(_x)/sizeof(_x[0]))
-
-
 
 enum{
     STATE_NEXT = 0,         // starting state = 0, set by structure wipe.

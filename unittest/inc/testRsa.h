@@ -15,7 +15,7 @@
 #define TEST_RSA_MIN_NUMOF_BYTES        (64)    // Cng does not accept less than 512 bits (not even imported keys)
 #define TEST_RSA_MAX_NUMOF_BYTES        (256)
 #define TEST_RSA_NUMOF_IMPS             (3)     // SymCrypt, MsBignum, Cng
-#define TEST_RSA_MIN_NUMOF_PRIME_BITS   (64)    // Minimum size of bits for each prime
+#define TEST_RSA_MIN_NUMOF_PRIME_BITS   (128)   // Minimum size of bits for each prime
 
 typedef struct {
     UINT32  nBitsOfModulus;

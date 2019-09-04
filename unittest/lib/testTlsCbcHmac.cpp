@@ -163,36 +163,8 @@ testTlsCbcHmacSingle(
 }
 
 VOID
-testVariableRotate( UINT32 bufSize )
-// Quick test of the variable rotate function
-{
-    BYTE buf[64];
-
-    SYMCRYPT_ASSERT( bufSize <= sizeof( buf ) );
-
-    for( UINT32 s = 0; s < bufSize; s ++ )
-    {
-        for( UINT32 i = 0; i < bufSize; i++ )
-        {
-            buf[i] = (BYTE)((i - s) % bufSize);
-        }
-
-        SymCryptRotateBufferScs( buf, bufSize, s );
-
-        for( UINT32 i = 0; i < bufSize; i++ )
-        {
-            CHECK4( buf[i] == i, "Buffer rotation error %d, %d", bufSize, s );
-        }
-    }
-
-}
-
-VOID
 testTlsCbcHmacAlgorithms()
 {
-    testVariableRotate( 32 );
-    testVariableRotate( 64 );
-
     std::auto_ptr<TlsCbcHmacMultiImp> pImp;
        
     char * sep = "    ";

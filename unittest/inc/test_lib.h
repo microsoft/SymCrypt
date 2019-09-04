@@ -930,6 +930,9 @@ VOID
 testScsTable();
 
 VOID
+testScsTools();
+
+VOID
 testEcc();
 
 VOID
@@ -1436,15 +1439,4 @@ runRsaAverageKeyGenPerf();
 #define PERF_RSA_HASH_ALG_SIZE              (SYMCRYPT_SHA256_RESULT_SIZE)
 
 #define PERF_RSA_OAEP_LESS_BYTES            (2 + 2*SYMCRYPT_SHA256_RESULT_SIZE)
-
-
-// We have a special test for this internal function to help with debugging.
-extern "C" {
-VOID
-SYMCRYPT_CALL
-SymCryptRotateBufferScs( 
-    _Inout_updates_( cbBuffer ) PBYTE   pbBuffer,
-    SIZE_T  cbBuffer,
-    SIZE_T  lshift );
-}
 

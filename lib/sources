@@ -127,6 +127,7 @@ SOURCES= \
     dh.c \
     recoding.c \
     IEEE802_11SaeCustom.c \
+    scsTools.c \
 
 AMD64_SOURCES = \
 #    sha1asm.asm \
