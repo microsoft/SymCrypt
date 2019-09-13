@@ -1235,6 +1235,13 @@ SymCryptDlgroupSetValue(
         goto cleanup;
     }
 
+    if( (SymCryptIntGetValueLsbits32( SymCryptIntFromModulus( pDlgroup->pmP ) ) & 1) == 0 )
+    {
+        // P is even, when it should be a prime of at least 32 bits
+        scError = SYMCRYPT_INVALID_ARGUMENT;
+        goto cleanup;
+    }
+
     // Set the bitsize and bytesize of the value
     pDlgroup->nBitsOfP = nBitsOfP;
     pDlgroup->cbPrimeP = (nBitsOfP + 7)/8;
@@ -1286,6 +1293,15 @@ SymCryptDlgroupSetValue(
         if (nBitsOfQ < SYMCRYPT_DLGROUP_MIN_BITSIZE_Q)
         {
             scError = SYMCRYPT_WRONG_KEY_SIZE;
+            goto cleanup;
+        }
+
+        if( (SymCryptIntGetValueLsbits32( piTempQ ) & 1) == 0 )
+        {
+            // Some of our modinv algorithms require odd inputs, and Q should be odd as it
+            // claims to be a prime.
+            // (Q can't be 2 as it must be at least 32 bits long.)
+            scError = SYMCRYPT_INVALID_ARGUMENT;
             goto cleanup;
         }
 

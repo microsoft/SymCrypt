@@ -289,7 +289,11 @@ SymCryptEcDsaSignEx(
             }
         }
 
-        SymCryptModInv( pCurve->GOrd, peTmp, peTmp, 0, pbScratch, cbScratchInternal );              // Invert k
+        scError = SymCryptModInv( pCurve->GOrd, peTmp, peTmp, 0, pbScratch, cbScratchInternal );              // Invert k
+        if ( scError != SYMCRYPT_NO_ERROR )
+        {
+            goto cleanup;
+        }
 
         // Get the x coordinates from KG
         scError = SymCryptEcpointGetValue( 
@@ -545,7 +549,11 @@ SymCryptEcDsaVerify(
     // The D value is not secret; it is part of the signature.
     // We mark it public to avoid the use of random blinding, which would require a source of randomness
     // just to verify an ECDSA signature.
-    SymCryptModInv( pCurve->GOrd, peSigD, peSigD, SYMCRYPT_FLAG_DATA_PUBLIC, pbScratch, cbScratchInternal );
+    scError = SymCryptModInv( pCurve->GOrd, peSigD, peSigD, SYMCRYPT_FLAG_DATA_PUBLIC, pbScratch, cbScratchInternal );
+    if( scError != SYMCRYPT_NO_ERROR )
+    {
+        goto cleanup;
+    }
 
     // Truncate the message according to the flags
     scError = SymCryptEcDsaTruncateHash(

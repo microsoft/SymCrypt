@@ -65,9 +65,24 @@ NegativeTest    = 1
 peerScalar      = 0000000000000000000000000000000000000000000000000000000000000000
 peerElement     = 58545e6ca0e886effb052afb632ca2195bb0b0a825e59dba6baa0e93af046ef4c9455fec43fe5eb02a6b8abc8fd70787873dd1d5d7fde3073a4cf3c2c76f595c
 
+# Negative test case, invalid peer Scalar = 1
+NegativeTest    = 1
+peerScalar      = 0000000000000000000000000000000000000000000000000000000000000001
+peerElement     = 58545e6ca0e886effb052afb632ca2195bb0b0a825e59dba6baa0e93af046ef4c9455fec43fe5eb02a6b8abc8fd70787873dd1d5d7fde3073a4cf3c2c76f595c
+
 # Negative test case, invalid peer Scalar = group order
 NegativeTest    = 1
 peerScalar      = FFFFFFFF00000000FFFFFFFFFFFFFFFFBCE6FAADA7179E84F3B9CAC2FC632551
+peerElement     = 58545e6ca0e886effb052afb632ca2195bb0b0a825e59dba6baa0e93af046ef4c9455fec43fe5eb02a6b8abc8fd70787873dd1d5d7fde3073a4cf3c2c76f595c
+
+# Negative test case, invalid peer Scalar = group order + 1
+NegativeTest    = 1
+peerScalar      = FFFFFFFF00000000FFFFFFFFFFFFFFFFBCE6FAADA7179E84F3B9CAC2FC632552
+peerElement     = 58545e6ca0e886effb052afb632ca2195bb0b0a825e59dba6baa0e93af046ef4c9455fec43fe5eb02a6b8abc8fd70787873dd1d5d7fde3073a4cf3c2c76f595c
+
+# Negative test case, invalid peer Scalar > group order + 1
+NegativeTest    = 1
+peerScalar      = FFFFFFFF00000000FFFFFFFFFFFFFFFFBCE6FAADA7179E84F3B9CAC2FC632559
 peerElement     = 58545e6ca0e886effb052afb632ca2195bb0b0a825e59dba6baa0e93af046ef4c9455fec43fe5eb02a6b8abc8fd70787873dd1d5d7fde3073a4cf3c2c76f595c
 
 

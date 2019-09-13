@@ -75,7 +75,7 @@ The high bit restrictions specification takes the following form:
     - Bit position of the lowest bit to be specified (starting from 0 for the LSB)
     - The bit values
 The bits that are specified refer to the relevant secret key format.
-For Canonincal and DivH formats the total number of bits is the # bits of GOrd-1.
+For Canonical and DivH formats the total number of bits is the # bits of GOrd-1.
 For DivHTimesH and TimesH formats the total number of bits is the # bits of |E|-1.
 
 Note: as GOrd must be prime, #bits(Gord) == #bits(Gord-1). The same is true
@@ -89,10 +89,10 @@ The ECDH algorithm can handle improper public keys in three ways.
         (This reveals the private key modulo h to an observer.)
     - Clear the co-factor component of the public key, and check that the result is nonzero.
       Use the cleared public key for further computations.
-Note that these aproaches are equivalent for PPKs, but differ in the result they produce for 
+Note that these approaches are equivalent for PPKs, but differ in the result they produce for 
 improper public keys.
 An improper public key can be written as (Hi + Hp) where Hp is in <G> (a PPK) and Hi is in E/<G>.
-Let x be the private key. If the DH exchange reveales x*H = x*(Hi + Hp) = x*Hi + x*Hp then the
+Let x be the private key. If the DH exchange reveals x*H = x*(Hi + Hp) = x*Hi + x*Hp then the
 attacker can multiply by T:=|<G>| and get T * x * Hi + x * (T * Hp) = x * (T * Hi) which reveals
 (x mod h) by inspection as (T*Hi) is known to the attacker (and h is typically small).
 The third option simply discards the Hi component of the improper public key and uses only Hp.

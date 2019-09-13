@@ -13,7 +13,7 @@ extern "C" {
 
 #include "symcrypt_version.inc"
 
-#define SYMCRYPT_CODE_VERSION ((SYMCRYPT_CODE_VERSION_RELEASE << 16) | SYMCRYPT_CODE_VERSION_PRIVATE)
+#define SYMCRYPT_API_VERSION ((SYMCRYPT_CODE_VERSION_API << 16) | SYMCRYPT_CODE_VERSION_MINOR)
 
 //
 // This is the header file for the SymCrypt library which contains
@@ -195,7 +195,7 @@ extern "C" {
 //
 typedef enum {
     SYMCRYPT_NO_ERROR = 0,
-    SYMCRYPT_UNUSED = SYMCRYPT_CODE_VERSION << 5,    // This value changes all the time!
+    SYMCRYPT_UNUSED = SYMCRYPT_API_VERSION << 5,    // This value changes all the time!
     SYMCRYPT_WRONG_KEY_SIZE,
     SYMCRYPT_WRONG_BLOCK_SIZE,
     SYMCRYPT_WRONG_DATA_SIZE,

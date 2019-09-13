@@ -70,8 +70,12 @@ class ScBuild
 {
     string LogDateTimeFormat = "yyyy-MM-dd HH:mm:ss.ff";
     
+    Random m_random;
+
     public IDictionary m_environment;
     public string m_SymCryptDir;
+
+    string m_currentBranch;
 
     public static void Print( params object[] args )
     {
@@ -352,15 +356,28 @@ class ScBuild
     public static IList RunStderr = ArrayList.Synchronized( new ArrayList() );
 
 
-    
-    public void CheckRelDirSynced( string relDir )
+    public string CheckRelDirSynced( string relDir )
+    // Returns the name of the current branch
     {
         string [] res = RunCmd( relDir, "git status ." );
+        string branch = null;
 
         bool unSync = false;
         bool Sync = false;
         foreach( string resLine in res )
         {
+            Match match = Regex.Match( resLine, @"^\s*On branch (?<branch>\S+)");
+            // Print( "{0} -> {1}\n", resLine, match.Success );
+
+            if( match.Success )
+            {
+                if( branch != null )
+                {
+                    Fatal( "Found two branch names, '{0}' and '{1}'", branch, match.Groups[ "branch" ].Value );
+                }
+                branch = match.Groups[ "branch" ].Value;
+            }
+
             if( Regex.IsMatch( resLine, @"nothing to commit, working tree clean" ) )
             {
                 Sync = true;
@@ -399,6 +416,8 @@ class ScBuild
                 Fatal( "Could not validate/recognize that directory '{0}' is in sync", relDir );
             }
         }
+
+        return branch;
     }
 
     void CheckToolsSynced()
@@ -409,14 +428,22 @@ class ScBuild
         // We have few tool changes anyway, so we drop this check.
     }
 
-    void CheckSymCryptSynced()
+    string CheckSymCryptSynced()
     {
-        CheckRelDirSynced( "." );
-    }
+        string branch =  CheckRelDirSynced( "." );
 
+        Print( "Using branch '{0}'\n", branch );
+
+        return branch;
+    }
 
     void CheckWriteableFiles()
     {
+        // This code is no longer used as on Git all files are writable.
+        // Keeping the code for now in case we need it
+
+        Debug.Assert( false );
+
         string [] res = RunCmd( "", "dir /a-r-d /s /b" );
 
         foreach( string r in res )
@@ -461,8 +488,8 @@ class ScBuild
         }
     }
 
-    int m_releaseVersion = -1;
-    int m_privateVersion = -1;
+    int m_apiVersion = -1;
+    int m_minorVersion = -1;
 
     void UpdateVersionNumber()
     {
@@ -474,16 +501,16 @@ class ScBuild
             Fatal( "Could not read file '{0}'", versionFileName );
         }
 
-        int vRelease = -1;
-        int nRelease = 0;
-        int vPrivate = -1;
-        int nPrivate = 0;
-        int newRelease = -1;
-        int newPrivate = -1;
+        int vApi = -1;
+        int nApi = 0;
+        int vMinor = -1;
+        int nMinor = 0;
+        int newApi = -1;
+        int newMinor = -1;
         for( int i=0; i<lines.Length; i++ )
         {
             string line = lines[i];
-            if( line.Contains( "SYMCRYPT_CODE_VERSION_RELEASE" ) )
+            if( line.Contains( "SYMCRYPT_CODE_VERSION_API" ) )
             {
                 MatchCollection matches = Regex.Matches( line, @"\d+" );
                 if( matches.Count != 1 )
@@ -492,55 +519,55 @@ class ScBuild
                 }
                 Match m = matches[0];
                 string digits = m.Value;
-                int releaseVersion = Convert.ToInt32( digits );
+                int apiVersion = Convert.ToInt32( digits );
 
-                if( vRelease >= 0 && vRelease != releaseVersion )
+                if( vApi >= 0 && vApi != apiVersion )
                 {
-                    Fatal( "Inconsistent release versions in symcrypt_version.inc file {0} {1} {2}", vRelease, releaseVersion, line );
+                    Fatal( "Inconsistent API versions in symcrypt_version.inc({0}) : {1} {2}", line, vApi, apiVersion );
                 }
-                vRelease = releaseVersion;
-                newRelease = vRelease;
-                if( m_option_release )
-                {
-                    newRelease++;
-                    line = line.Replace( digits, newRelease.ToString() );
-                    lines[i] = line;
-                }
-                nRelease++;
-                
+                vApi = apiVersion;
+                newApi = vApi;
+                //if( false  )        // never auto-increment API version #
+                //{
+                //    newApi++;
+                //    line = line.Replace( digits, newApi.ToString() );
+                //    lines[i] = line;
+                //}
+                nApi++;
             }
-            if( line.Contains( "SYMCRYPT_CODE_VERSION_PRIVATE" ) )
+
+            if( line.Contains( "SYMCRYPT_CODE_VERSION_MINOR" ) )
             {
                 MatchCollection matches = Regex.Matches( line, @"\d+" );
                 if( matches.Count != 1 )
                 { 
-                    Fatal( "Did not find a single integer in a Private version line '{0}'", line );
+                    Fatal( "Did not find a single integer in a minor version line '{0}'", line );
                 }
                 Match m = matches[0];
                 string digits = m.Value;
-                int privateVersion = Convert.ToInt32( digits );
+                int minorVersion = Convert.ToInt32( digits );
 
-                if( vPrivate >= 0 && vPrivate != privateVersion )
+                if( vMinor >= 0 && vMinor != minorVersion )
                 {
-                    Fatal( "Inconsistent private versions in symcrypt_version.inc file" );
+                    Fatal( "Inconsistent minor versions in symcrypt_version.inc file" );
                 }
-                vPrivate = privateVersion;
+                vMinor = minorVersion;
 
-                newPrivate = vPrivate + 1;
-                if( m_option_release )
+                newMinor = vMinor;
+                if( m_option_inc_version )
                 {
-                    newPrivate = 0;
+                    newMinor = vMinor + 1;
+                    line = line.Replace( digits, newMinor.ToString() );
+                    lines[i] = line;
                 }
-                line = line.Replace( digits, newPrivate.ToString() );
-                lines[i] = line;
 
-                nPrivate++;
+                nMinor++;
             }
         }
 
-        if( nPrivate != 2 || nRelease != 2 )
+        if( nApi != 2 || nMinor != 2 )
         {
-            Fatal( "symcrypt_version.inc file has unexepected number of release or private version-containing lines" );
+            Fatal( "symcrypt_version.inc file has unexepected number of API and minor version-containing lines" );
         }
 
         foreach( string l in lines )
@@ -548,41 +575,20 @@ class ScBuild
             //Print( l + "\n" );
         }
 
-        m_releaseVersion = newRelease;
-        m_privateVersion = newPrivate;
+        m_apiVersion = newApi;
+        m_minorVersion = newMinor;
 
-        Print( "New SymCrypt version number: Release = {0}, Private =  {1}\n", newRelease, newPrivate );
-
-        if( m_option_version_noupdate )
+        if( !m_option_inc_version )
         {
             Print( "...Not updating version number\n" );
             return;
         }
 
+        Print( "New SymCrypt version number {0}.{1}\n", newApi, newMinor );
+
         File.WriteAllLines(versionFileName, lines);
 
-
-        string[] res = RunCmd( "", "git commit -m \"Updating symcrypt_version.inc\" " + versionFileName );
-
-        bool foundChange = false;
-        bool foundCreate = false;
-        foreach( string line in res )
-        {
-            if (Regex.IsMatch(line, @"1 file changed"))
-            {
-                foundChange = true;
-            }
-
-            if( Regex.IsMatch( line, @"create mode" ) )
-            {
-                foundCreate = true;
-            }
-        }
-
-        if( !foundChange | !foundCreate )
-        {
-            Fatal( @"Cound not commit file '{0}'", versionFileName );
-        }
+        // We do not commit any data so that we can always build without touching the repo state.
     }
 
 
@@ -631,7 +637,13 @@ class ScBuild
         
         if( arch.StartsWith( "x86" ) || arch.StartsWith( "amd64" ) )
         {
-            string [] res = RunCmd( "", @"release\lib\" + arch + @"\" + @"symcryptunittest -savexmmnofail" );
+            string command = @"release\lib\" + arch + @"\" + @"symcryptunittest";
+            // Use the savexmmnofail option only somtimes
+            if( m_random.Next(2) == 0 )
+            {
+                command += " -savexmmnofail";
+            }
+            string [] res = RunCmd( "", command );
             if( !Regex.IsMatch( res[ res.Length - 1 ], "...SymCrypt unit test done" ) )
             {
                 Fatal( "Did not detect that SymCrypt unit test succeeded" );
@@ -666,9 +678,8 @@ class ScBuild
     
 
     bool m_option_release = false;
-    bool m_option_private = false;
     bool m_option_test = false;
-
+    
     string [] m_option_flavors = null;
     static string [] m_all_flavors = new string [] {
                                                         "amd64chk", "amd64fre",
@@ -676,12 +687,14 @@ class ScBuild
                                                         "arm64chk", "arm64fre",
                                                         "armchk", "armfre",
                                                     };
+
+    bool m_option_inc_version = false;
+    bool m_option_no_tag = false;
+
     bool m_option_ignore_sync = false;
     bool m_option_ignore_writable = false;
-    bool m_option_ignore_opened = false;
-    bool m_option_version_noupdate = false;
-    bool m_option_no_tag = false;
-    string m_argumentsString = "";
+
+    string m_argumentsString = "";  // normalized argument string
 
     public bool ProcessOptions( string [] args )
     {
@@ -696,24 +709,17 @@ class ScBuild
                 m_option_release = true;
             }
 
-            else if (opt == "-p")
-            {
-                m_option_private = true;
-            }
-
             else if (opt == "-t")
             {
                 m_option_test = true;
                 ProcessOptions(new string[] { "-i", });
-                m_option_version_noupdate = true;
-                m_option_no_tag = true;
             }
 
             else if (opt.StartsWith("-i"))
             {
                 if (opt.Length == 2)
                 {
-                    ProcessOptions(new string[] { "-iswo", });
+                    ProcessOptions(new string[] { "-is", });
                 }
                 else
                 {
@@ -722,8 +728,7 @@ class ScBuild
                         switch (opt[j])
                         {
                             case 's': m_option_ignore_sync = true; break;
-                            case 'w': m_option_ignore_writable = true; break;
-                            case 'o': m_option_ignore_opened = true; break;
+                            // case 'w': m_option_ignore_writable = true; break;
                             default: Fatal("Unknown ignore letter {0} in option {1}", opt[j], opt); break;
                         }
                     }
@@ -740,6 +745,14 @@ class ScBuild
                     }
                 }
                 m_option_flavors = fls;
+            }
+            else if (opt == "-version" )
+            {
+                m_option_inc_version = true;
+            }
+            else if (opt == "-notag" )
+            {
+                m_option_no_tag = true;
             }
             else
             {
@@ -762,13 +775,13 @@ class ScBuild
 
     public void CheckOptionConsistency()
     {
-        if (BoolToInt(m_option_release) + BoolToInt(m_option_private) + BoolToInt(m_option_test) == 0)
+        if (BoolToInt(m_option_release) + BoolToInt(m_option_test) == 0)
         {
             ProcessOptions( new string [] {"-t"} );
         }
-        if (BoolToInt(m_option_release) + BoolToInt(m_option_private) + BoolToInt(m_option_test) != 1)
+        if (BoolToInt(m_option_release) + BoolToInt(m_option_test) != 1)
         {
-            Fatal("Cannot specify more than one of -r -p -t");
+            Fatal("Cannot specify more than one of -r -t");
         }
     }
 
@@ -776,18 +789,19 @@ class ScBuild
     {
         Print( "Usage: scbuild <options...>\n"
             + "Options:\n"
-            + "-r          Build a release version (increments release version number)\n"
-            + "-p          Build a private version (increments private version number)\n" 
-            + "-t          Build a test version (no changes to git repo)\n"
-            + "-i[swo]     Ignore Sync/Writable/Opened file issues\n"
-            + "                -i is equivalent to -iswo\n"
+            + "-r          Build a release version (checks for open files/create tag)\n"
+            + "-t          Build a test version (default)\n"
+            + "-is         Ignore Sync issues\n"
+            + "                -i is equivalent to -is\n"
             + "-f<...>     Specify flavors to build in comma-separated list\n"
             + "            Flavors: x86chk, x86fre, amd64chk, amd64fre, armchk, armfre,\n"
             + "                arm64chk, arm64fre\n"
+            + "-notag      Skip tag creation\n"
+            + "-version    Increment the minor version in inc\\symcrypt_version.h\n"
             );
     }
 
-    public void CreateGitTag()
+    public void CreateGitTag( string tagName )
     {
         // Our code still used 'label' in many places, as that is the tag concept in Source Depot
         if( !m_option_release || m_option_no_tag )
@@ -795,34 +809,50 @@ class ScBuild
             return;
         }
         
-        if( m_option_ignore_opened || m_option_ignore_sync || m_option_ignore_writable || m_option_version_noupdate )
+        if( m_option_ignore_sync )
         {
             Print( "Label creation disabled while any -i option is used\n" );
             return;
         }
 
-        if( m_releaseVersion < 0 || m_privateVersion < 0 )
-        {
-            Fatal( "Invalid version number found when trying to create Git tag for release" );
-        }
-
-        string labelNumber = "" + m_releaseVersion + "." + m_privateVersion;
-        string labelName = "SymCrypt_v" + labelNumber;
-        
         string [] res;
-        res = RunCmd( "", "git tag -a -m \"Release of " + labelName + "\" " + labelName );
+        res = RunCmd( "", "git tag -a -m \"Creation of "+ tagName + ".cab\" " + tagName );
     
         if( res.Length != 0 )
         {
             Fatal("Unexpected output from tag command");
         }
 
-        res = RunCmd("", "git tag -l " + labelName);
-        if( res.Length != 1 || !Regex.IsMatch( res[0], labelName) )
+        res = RunCmd("", "git tag -l " + tagName);
+        if( res.Length != 1 || !Regex.IsMatch( res[0], tagName) )
         {
             Fatal("Could not verify that tag was properly created");
         }
+
+        bool pushOk = false;
+        res = RunCmd( "", "git push origin " + tagName );
+        foreach( string line in res )
+        {
+            if( Regex.IsMatch( line, "new tag.*" + tagName ))
+            {
+                pushOk = true;
+            }
+        }
+        if( !pushOk )
+        {
+            Fatal( "Could not verify that tag was pushed to remote" );
+        }
     }
+
+    public string GetCommitInfo()
+    {
+        string [] reslines = RunCmd( ".", @"git log -n 1 --date=iso-strict-local --format=%cd_%h" );
+        string res = reslines[0];
+        res = res.Trim();
+        res = res.Replace( ":", "" );       // colons are not valid in file names
+        return res;
+    }
+    
 
     public void CreateCab()
     {
@@ -849,31 +879,31 @@ class ScBuild
         Output.CloseLogFile();
         MoveFile( "scbuild.log", @"release\scbuild.log" );
 
-        if( m_releaseVersion < 0 || m_privateVersion < 0 )
+        if( m_apiVersion < 0 || m_minorVersion < 0 )
         {
-            Fatal( "Cannot generate CAB file without version number {0} {1}", m_releaseVersion, m_privateVersion );
+            Fatal( "Cannot generate CAB file without version number {0} {1}", m_apiVersion, m_minorVersion );
         }
 
         string fileNameWarning = "";
         if( m_option_flavors != null || 
-            m_option_ignore_opened || 
             m_option_ignore_sync ||
-            m_option_ignore_writable ||
-            m_option_no_tag ||
-            m_option_version_noupdate ||
+            m_option_inc_version ||
             !m_option_release
             )
         {
             fileNameWarning = "_not_for_release";
         }
         
-        string cabFileName = "SymCrypt" + fileNameWarning + "_v" + m_releaseVersion + "." + m_privateVersion + ".cab";
+        string releaseName = "SymCrypt" + fileNameWarning + "_v" + m_apiVersion + "." + m_minorVersion + "_" + m_currentBranch + "_" + GetCommitInfo();
+        string cabFileName =  releaseName + ".cab";
 
         string [] res = RunCmd( "release", "cabarc -r -p n " + cabFileName + " *.*" );
         if( !Regex.IsMatch( res[ res.Length - 1 ], "Completed successfully" ) )
         {
             Fatal( "Could not validate success of cab creation" );
         }
+
+        CreateGitTag( releaseName );
     }
 
     public void CleanReleaseDirectory()
@@ -930,6 +960,8 @@ class ScBuild
 
         Print( "Start time = {0}\n", DateTime.Now.ToString( LogDateTimeFormat ) );
 
+        m_random = new Random();
+
         if( !ProcessOptions( args ) )
         {
             return;
@@ -940,18 +972,25 @@ class ScBuild
         CheckSymCryptEnlistmentPresent();
 
         CheckToolsSynced();
-        CheckSymCryptSynced();
+        m_currentBranch = CheckSymCryptSynced();
 
         // In Git, all files are writable, so this check is not useful.
         // CheckWriteableFiles();
         
         CheckForBannedSymbols();
 
-        UpdateVersionNumber();
+        UpdateVersionNumber();      // retrieve & update if needed
+
+        if( m_option_inc_version )
+        {
+            // Incrementing the version # should be followed by a checkin of the new #,
+            // so we don't build after the change.
+            return;
+        }
 
         CleanReleaseDirectory();
         
-        CreateGitTag();
+        // CreateGitTag();
 
         BuildAndUnitTest();
 
@@ -962,7 +1001,7 @@ class ScBuild
     public static int Main( string[] args )
     {
         int res = 0;
-        
+
         try 
         {
             new ScBuild( args );

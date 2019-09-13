@@ -126,58 +126,55 @@ _Success_(return == SYMCRYPT_NO_ERROR)
 SYMCRYPT_ERROR
 SYMCRYPT_CALL
 SymCryptRsaPkcs1ApplyEncryptionPadding(
-    _In_reads_bytes_( cbPlaintext )
-                                PCBYTE      pbPlaintext,
-                                SIZE_T      cbPlaintext,
-                                UINT32      flags,
-    _Out_writes_bytes_( cbPKCS1Format )
-                                PBYTE       pbPKCS1Format,
-                                SIZE_T      cbPKCS1Format )
+    _In_reads_bytes_( cbPlaintext )     PCBYTE      pbPlaintext,
+                                        SIZE_T      cbPlaintext,
+    _Out_writes_bytes_( cbPKCS1Format ) PBYTE       pbPkcs1Format,
+                                        SIZE_T      cbPkcs1Format )
 {
     SYMCRYPT_ERROR scError = SYMCRYPT_NO_ERROR;
 
-    SIZE_T cbTmp = 0;
+    // Format: 00 02 <PS> 00 <M>
+    // <PS> 8 or more padding bytes, random, all nonzero
+    // <M> message, length between 0 and cbPKCS1Format - 11.
+    // See RFC 3447 for more details.
 
-	// dcl - it would be nice to document what flags are, and why for now only 0 is allowed
-	// also, why is 11 a magic number? It would be better if it had a descriptive name.
-    if ( (flags != 0) ||
-         ((cbPlaintext + 11) > cbPKCS1Format) )
+    SIZE_T cbPS;
+    SIZE_T i;
+
+    // ensure output buffer is big enough (padding has 11 bytes overhead)
+    if( cbPkcs1Format < (cbPlaintext + 11) )
     {
         scError = SYMCRYPT_INVALID_ARGUMENT;
         goto cleanup;
     }
 
-	// dcl - why is 3 a magic number?
-    cbTmp = cbPKCS1Format - (cbPlaintext + 3);
+    cbPS = cbPkcs1Format - (cbPlaintext + 3);
 
-    pbPKCS1Format[0] = 0x00;
-    pbPKCS1Format[1] = PKCS_BLOCKTYPE_2;
+    pbPkcs1Format[0] = 0x00;
+    pbPkcs1Format[1] = PKCS_BLOCKTYPE_2;
 
-    scError = SymCryptCallbackRandom( &pbPKCS1Format[2], cbTmp );
-    if (scError != SYMCRYPT_NO_ERROR)
+    scError = SymCryptCallbackRandom( &pbPkcs1Format[2], cbPS );
+    if( scError != SYMCRYPT_NO_ERROR )
     {
         goto cleanup;
     }
 
-    // Make sure that none of the bytes in PS is zero
-	// dcl - why?
-    for (SIZE_T i = 0; i < cbTmp; i++)
+    // Make sure that none of the bytes in PS is zero (as per specs)
+    for( i = 0; i < cbPS; i++ )
     {
-        while (pbPKCS1Format[2 + i] == 0x00)
+        while( pbPkcs1Format[2 + i] == 0x00 )
         {
-            scError = SymCryptCallbackRandom( &pbPKCS1Format[2+i], 1 );
-            if (scError != SYMCRYPT_NO_ERROR)
+            scError = SymCryptCallbackRandom( &pbPkcs1Format[2+i], 1 );
+            if( scError != SYMCRYPT_NO_ERROR )
             {
                 goto cleanup;
             }
         }
     }
 
-    pbPKCS1Format[2 + cbTmp] = 0x00;
+    pbPkcs1Format[2 + cbPS] = 0x00;
 
-    memcpy(pbPKCS1Format + 3 + cbTmp, pbPlaintext, cbPlaintext);
-
-    scError = SYMCRYPT_NO_ERROR;
+    memcpy(pbPkcs1Format + 3 + cbPS, pbPlaintext, cbPlaintext);
 
 cleanup:
     return scError;
@@ -187,69 +184,98 @@ _Success_(return == SYMCRYPT_NO_ERROR)
 SYMCRYPT_ERROR
 SYMCRYPT_CALL
 SymCryptRsaPkcs1RemoveEncryptionPadding(
-    _In_reads_bytes_( cbPKCS1Format )
-                                PCBYTE      pbPKCS1Format,
-                                SIZE_T      cbPKCS1Format,
-                                UINT32      flags,
-    _Out_writes_bytes_opt_( cbPlaintext )
-                                PBYTE       pbPlaintext,
-                                SIZE_T      cbPlaintext,
-    _Out_                       SIZE_T      *pcbPlaintext )
+    _Inout_updates_bytes_( cbPkcs1Buffer )  PBYTE       pbPkcs1Format,
+                                            SIZE_T      cbPkcs1Format,
+                                            SIZE_T      cbPkcs1Buffer,
+    _Out_writes_bytes_opt_( cbPlaintext )   PBYTE       pbPlaintext,
+                                            SIZE_T      cbPlaintext,
+    _Out_                                   SIZE_T     *pcbPlaintext )
 {
     SYMCRYPT_ERROR scError = SYMCRYPT_NO_ERROR;
 
-    BOOLEAN bValidPadding = TRUE;
-    UINT32 i = 0;
+    UINT32 cbPlaintextResult = 0;
+    UINT32 mPaddingError = 0;
+    UINT32 i;
+    UINT32 mByteIsZero;
+    UINT32 mLengthFound;
+    UINT32 iFirstZero;
 
-    if ( (flags != 0) || (cbPKCS1Format < 2) )
+    SYMCRYPT_ASSERT( cbPkcs1Buffer >= cbPkcs1Format );
+    SYMCRYPT_ASSERT( (cbPkcs1Buffer & (cbPkcs1Buffer - 1)) == 0 );  // must be a power of 2
+    SYMCRYPT_ASSERT( cbPkcs1Buffer <= (1 << 30 ));                  // Ensure we can use 31-bit masking operations
+
+    // Format: 00 02 <PS> 00 <M>
+    // <PS> 8 or more padding bytes, random, all nonzero
+    // <M> message, length between 0 and cbPKCS1Format - 11.
+    // See RFC 3447 for more details.
+    // We do not reveal the buffer contents through side-channels to avoid Bleichenbacher-style attacks
+    // This includes the plaintext length, which is determined by the location of the 00 byte
+
+    if ( cbPkcs1Format < 11 )
     {
+        // cbPKCS1Format is public, so the if() is safe. 11 is the total overhead
         scError = SYMCRYPT_INVALID_ARGUMENT;
         goto cleanup;
     }
+    // this also implies that cbPkcs1Buffer >= 16
 
-    // Just check that the appropriate bytes are set correctly
-    // but don't exit out immediately to avoid leaking timing
-    // information on padding oracle attacks.
-    bValidPadding &= (pbPKCS1Format[0] == 0x00);
-    bValidPadding &= (pbPKCS1Format[1] == PKCS_BLOCKTYPE_2);
+    // Check the leading bytes 
+    mPaddingError |= SymCryptMask32IsNonzeroU31( pbPkcs1Format[0] ); // First byte must be = 0
+    mPaddingError |= SymCryptMask32NeqU31( pbPkcs1Format[1], PKCS_BLOCKTYPE_2 ); // First byte must be = 0
 
-    for (i = 2; i < cbPKCS1Format; i++)
+    iFirstZero = 0;
+    mLengthFound = 0;
+    for (i = 2; i < cbPkcs1Format; i++)
     {
-        if (pbPKCS1Format[i] == 0x00)
-        {
-            break;
-        }
+        mByteIsZero = SymCryptMask32IsZeroU31( pbPkcs1Format[i] );
+
+        // remember the index of the first zero byte
+        iFirstZero |= i & mByteIsZero & ~mLengthFound;
+        mLengthFound |= mByteIsZero;
     }
+    mPaddingError |= ~mLengthFound;
 
-    bValidPadding &= (i < cbPKCS1Format);
+    // At this point:
+    // - iFirstZero points to the first zero byte, or is 0 if there is no zero byte
+    // - mPaddingError is set if no zero byte was found
 
-    if (!bValidPadding)
+    // It is an error if the first zero is at index < 10 as <PS> needs to be at least 8 bytes
+    mPaddingError |= SymCryptMask32LtU31( iFirstZero, 10 );
+
+    // Compute the # bytes of the message; 0 if there was a padding error
+    cbPlaintextResult = ~mPaddingError & (cbPkcs1Format - iFirstZero - 1);
+
+    // We're done if the caller didn't want the actual message, but only the size.
+    if( pbPlaintext == NULL )
     {
-        scError = SYMCRYPT_INVALID_ARGUMENT;
+        // Condition is public.
+        // No output required.
         goto cleanup;
     }
-    i++;
 
-    *pcbPlaintext = cbPKCS1Format - i;
-
-    if (pbPlaintext == NULL)
+    if( cbPlaintext == 0 )
     {
-        scError = SYMCRYPT_NO_ERROR;
+        // Condition is public
+        // We can't produce any output, so we're done, but
+        // we should return an error if the message doesn't fit in a 0-sized output buffer.
+        mPaddingError |= SymCryptMask32IsNonzeroU31( cbPlaintextResult );
         goto cleanup;
     }
 
-    if (cbPlaintext < *pcbPlaintext)
-    {
-        scError = SYMCRYPT_BUFFER_TOO_SMALL;
-        goto cleanup;
-    }
+    // The message starts at iFirstZero + 1, which is a variable location so we can't just memcpy it without
+    // revealing information through side channels.
+    // Instead we rotate the buffer left (side-channel safe) so that the message appears at the front.
+    // Rotation constant is such that the message appears at the start.
+    SymCryptScsRotateBuffer( pbPkcs1Format, cbPkcs1Buffer, (iFirstZero + 1) & (cbPkcs1Buffer - 1) );
 
-    memcpy(pbPlaintext, pbPKCS1Format + i, *pcbPlaintext);
-
-    scError = SYMCRYPT_NO_ERROR;
+    SymCryptScsCopy( pbPkcs1Format, cbPlaintextResult, pbPlaintext, cbPlaintext );
 
 cleanup:
+    // If scError == SYMCRYPT_NO_ERROR && we had a padding error THEN scError = INVALID_ARGUMENT
+    // Note: scError could in future be a 32-bit value, so we need the mask function for 32-bit inputs
+    scError ^= mPaddingError & SymCryptMask32EqU32( scError, SYMCRYPT_NO_ERROR ) & (SYMCRYPT_NO_ERROR ^ SYMCRYPT_INVALID_ARGUMENT);
 
+    *pcbPlaintext = cbPlaintextResult;
     return scError;
 }
 
@@ -272,26 +298,23 @@ cleanup:
 //         EM =  |00|maskedSeed|          maskedDB          |
 //               +--+----------+----------------------------+
 //
+// PS = zero or more bytes 0x00 || 0x01
+//
 _Success_(return == SYMCRYPT_NO_ERROR)
 SYMCRYPT_ERROR
 SYMCRYPT_CALL
 SymCryptRsaOaepApplyEncryptionPadding(
-    _In_reads_bytes_( cbPlaintext )
-                                PCBYTE                      pbPlaintext,
-                                SIZE_T                      cbPlaintext,
-    _In_                        PCSYMCRYPT_HASH             hashAlgorithm,
-    _In_reads_bytes_( cbLabel ) PCBYTE                      pbLabel,
-                                SIZE_T                      cbLabel,
-    _In_reads_bytes_opt_( cbSeed )
-                                PCBYTE                      pbSeed,
-                                SIZE_T                      cbSeed,
-                                UINT32                      flags,
-    _Out_writes_bytes_( cbOAEPFormat )
-                                PBYTE                       pbOAEPFormat,
-                                SIZE_T                      cbOAEPFormat,
-    _Out_writes_bytes_( cbScratch )
-                                PBYTE                       pbScratch,
-                                SIZE_T                      cbScratch )
+    _In_reads_bytes_( cbPlaintext )     PCBYTE          pbPlaintext,
+                                        SIZE_T          cbPlaintext,
+    _In_                                PCSYMCRYPT_HASH hashAlgorithm,
+    _In_reads_bytes_( cbLabel )         PCBYTE          pbLabel,
+                                        SIZE_T          cbLabel,
+    _In_reads_bytes_opt_( cbSeed )      PCBYTE          pbSeed,
+                                        SIZE_T          cbSeed,
+    _Out_writes_bytes_( cbOAEPFormat )  PBYTE           pbOaepFormat,
+                                        SIZE_T          cbOaepFormat,
+    _Out_writes_bytes_( cbScratch )     PBYTE           pbScratch,
+                                        SIZE_T          cbScratch )
 {
     SYMCRYPT_ERROR scError = SYMCRYPT_NO_ERROR;
 
@@ -305,45 +328,44 @@ SymCryptRsaOaepApplyEncryptionPadding(
     SIZE_T  cbDB;
     SIZE_T  cbPS;
 
-    SIZE_T  cbHashAlg = SymCryptHashResultSize( hashAlgorithm );
+    SIZE_T  cbHash = SymCryptHashResultSize( hashAlgorithm );
     SIZE_T  cbHashState = SymCryptHashStateSize( hashAlgorithm );
 
     UNREFERENCED_PARAMETER( cbScratch );
 
-	// dcl - document why we are checking these
-    if ( (flags != 0) ||
-         (cbOAEPFormat < (cbPlaintext + (cbHashAlg * 2) + 2))    ||
-         ((pbSeed!=NULL) && (cbSeed>cbHashAlg))    ||
+    // OAEP overhead is 2 + 2 * size of hash result
+    if(  cbOaepFormat < (cbPlaintext + (cbHash * 2) + 2) ||
+         ((pbSeed!=NULL) && (cbSeed>cbHash)) ||
          ((pbSeed==NULL) && (cbSeed!=0)) )
     {
         scError = SYMCRYPT_INVALID_ARGUMENT;
         goto cleanup;
     }
 
-    cbPS = cbOAEPFormat - (cbPlaintext + (cbHashAlg * 2) + 2);
-    cbDB = cbOAEPFormat - (cbHashAlg + 1);
+    cbPS = cbOaepFormat - (cbPlaintext + (cbHash * 2) + 2);
+    cbDB = cbOaepFormat - (cbHash + 1);
 
-    SYMCRYPT_ASSERT( cbScratch >= cbHashState + (cbHashAlg * 2) + (cbDB * 2) );
+    SYMCRYPT_ASSERT( cbScratch >= cbHashState + (cbHash * 2) + (cbDB * 2) );
 
     pHashState = (PVOID) pbScratch;
     pbSeedInternal = pbScratch + cbHashState;
-    pbSeedMask = pbSeedInternal + cbHashAlg;
-    pbDB = pbSeedMask + cbHashAlg;
+    pbSeedMask = pbSeedInternal + cbHash;
+    pbDB = pbSeedMask + cbHash;
     pbDBMask = pbDB + cbDB;
 
     // hash the label
-    SymCryptHash( hashAlgorithm, pbLabel, cbLabel, pbDB, cbHashAlg );
+    SymCryptHash( hashAlgorithm, pbLabel, cbLabel, pbDB, cbHash );
 
-    SymCryptWipe(pbDB + cbHashAlg, cbPS);
-    pbDB[cbHashAlg + cbPS] = 0x01;
+    SymCryptWipe(pbDB + cbHash, cbPS);
+    pbDB[cbHash + cbPS] = 0x01;
 
 	// dcl - are we quite sure that none of these numbers are under attacker control?
-    memcpy(pbDB + cbHashAlg + cbPS + 1, pbPlaintext, cbPlaintext);
+    memcpy(pbDB + cbHash + cbPS + 1, pbPlaintext, cbPlaintext);
 
     if (NULL == pbSeed)
     {
         // generate the random seed (same length as the hash result)
-        scError = SymCryptCallbackRandom( pbSeedInternal, cbHashAlg );
+        scError = SymCryptCallbackRandom( pbSeedInternal, cbHash );
         if (scError != SYMCRYPT_NO_ERROR)
         {
             goto cleanup;
@@ -351,7 +373,7 @@ SymCryptRsaOaepApplyEncryptionPadding(
     }
     else
     {
-        SymCryptWipe( pbSeedInternal, cbHashAlg );
+        SymCryptWipe( pbSeedInternal, cbHash );
         memcpy(pbSeedInternal, pbSeed, cbSeed);
     }
 
@@ -360,32 +382,32 @@ SymCryptRsaOaepApplyEncryptionPadding(
                             hashAlgorithm,
                             pHashState,
                             pbSeedInternal,
-                            cbHashAlg,
+                            cbHash,
                             pbDBMask,
                             cbDB);
 
     // set the most significant byte to 0x00
-    pbOAEPFormat[0] = 0x00;
+    pbOaepFormat[0] = 0x00;
 
     // XOR the DB and the mask MGF(seed)
     for (UINT32 i = 0; i < cbDB; i++)
     {
-        pbOAEPFormat[cbHashAlg + 1 + i] = pbDB[i] ^ pbDBMask[i];
+        pbOaepFormat[cbHash + 1 + i] = pbDB[i] ^ pbDBMask[i];
     }
 
     // MGF(masked DB)
     SymCryptRsaPaddingMaskGeneration(
                             hashAlgorithm,
                             pHashState,
-                            pbOAEPFormat + cbHashAlg + 1,
+                            pbOaepFormat + cbHash + 1,
                             cbDB,
                             pbSeedMask,
-                            cbHashAlg);
+                            cbHash);
 
     // XOR the seed and the seed mask MGF(masked DB)
-    for (UINT32 i = 0; i < cbHashAlg; i++)
+    for (UINT32 i = 0; i < cbHash; i++)
     {
-        pbOAEPFormat[1 + i] = pbSeedInternal[i] ^ pbSeedMask[i];
+        pbOaepFormat[1 + i] = pbSeedInternal[i] ^ pbSeedMask[i];
     }
 
     scError = SYMCRYPT_NO_ERROR;
@@ -423,6 +445,7 @@ SymCryptRsaOaepRemoveEncryptionPadding(
     PBYTE   pbDBMask;
     PBYTE   pbDB;
     PBYTE   pbLabelHash;
+    UINT32  mPaddingError;
 
     SIZE_T  cbDB;
 
@@ -440,7 +463,10 @@ SymCryptRsaOaepRemoveEncryptionPadding(
     }
 
     // check if the most significant byte is set to 0x00
-    if ((cbOAEPFormat < (cbHashAlg + 1)) || (pbOAEPFormat[0] != 0x00))
+    mPaddingError = SymCryptMask32IsNonzeroU31( pbOAEPFormat[0] );
+
+    // Padding overhead is 2 hash values plus 2 bytes
+    if( cbOAEPFormat < (2*cbHashAlg + 2) )
     {
         scError = SYMCRYPT_INVALID_ARGUMENT;
         goto cleanup;
@@ -491,13 +517,28 @@ SymCryptRsaOaepRemoveEncryptionPadding(
     SymCryptHash( hashAlgorithm, pbLabel, cbLabel, pbLabelHash, cbHashAlg );
 
     // check the label hash
-    for(UINT32 i = 0; i < cbHashAlg; i++)
+    mPaddingError |= SymCryptMask32IsZeroU31( SymCryptEqual( pbLabelHash, pbDB, cbHashAlg ) );
+
+    //
+    // At this point we have verified the leading 0 byte and the label hash, with any
+    // errors in mPaddingError. We could continue to make the entire padding removal
+    // side-channel safe like we do in the PKCS1 padding case, but that is not necessary.
+    // The side-channel only leaks data if the attacker can trigger two different behaviours
+    // and derive information from the difference. 
+    // This is relatively easy to do with something like a match on 1 or 2 bytes because the 
+    // chance of satisfying the check on a random input is still useful. But here we have
+    // matched 33 bytes (assuming a 32-byte hash) and the Bleichenbacher style attacks don't
+    // work beyond this point. Basically, these attacks produce ciphertexts without knowing
+    // the corresponding plaintext, and the chance of the label hash matching is something 
+    // like 2^{-256}. So these ciphertexts will always fail right here, and there is no
+    // difference of behaviour that leaks data to the attacker.
+    // Thus, we can switch back to normal processing of the errors here. 
+    // 
+
+    if( mPaddingError != 0 )
     {
-        if (pbLabelHash[i] != pbDB[i])
-        {
-            scError = SYMCRYPT_INVALID_ARGUMENT;
-            goto cleanup;
-        }
+        scError = SYMCRYPT_INVALID_ARGUMENT;
+        goto cleanup;
     }
 
     // check the PS

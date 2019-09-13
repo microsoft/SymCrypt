@@ -11,6 +11,14 @@
 extern "C" {
 #endif
 
+//=======================================================================================
+// WARNING: The low-level APIs are not stable, and can change from release to release.
+// The low-level APIs are only provided for certain exceptional use cases.
+// All aspects of the low-level API can change in any release.
+// Users are strongly advised to only rely on the API surface defined in symcrypt.h 
+//=======================================================================================
+
+
 //
 // Low level asymmetric algorithm API. This is not to be used by external callers.
 //
@@ -283,8 +291,9 @@ typedef const SYMCRYPT_ECPOINT * PCSYMCRYPT_ECPOINT;
 // The maximum number of bits in any integer value that the library supports. If the
 // caller's input exceed this bound then the result of the application will be
 // to hard fail.
+// The primary purpose of this limit is to avoid integer overlows in size computations.
+// Having a reasonable upper bound avoids all size overflows, even on 32-bit CPUs
 #define SYMCRYPT_INT_MAX_BITS               ((UINT32)(1 << 20))
-
 
 UINT32
 SymCryptDigitsFromBits( UINT32 nBits );
@@ -1762,7 +1771,7 @@ SymCryptModDivPow2(
 // Marking the source value as public has very little effect on performance, but it removes the random blinding used.
 // The main goal of this flag is to allow ECDSA verification without a source of random numbers.
 
-VOID
+SYMCRYPT_ERROR
 SYMCRYPT_CALL
 SymCryptModInv(
     _In_                            PCSYMCRYPT_MODULUS      pmMod,
@@ -1774,14 +1783,16 @@ SymCryptModInv(
 //
 // Dst = 1/Src mod Mod.
 //
-// Requirements:
-//  - GCD( Src, Mod ) == 1
-//  - cbScratch >= SYMCRYPT_SCRATCH_BYTES_FOR_MODINV( Mod.nDigits )
+// - pmMod: Modulus, must have the SYMCRYPT_FLAG_MODULUS_PRIME and SYMCRYPT_FLAG_DATA_PUBLIC flag set.
+//      Non-prime or non-public moduli are currently not supported.
+// - peSrc: Source value, modulu pmMod
+// - peDst: Destination value, mod element modulu pmMod
+// - flags: SYMCRYPT_FLAG_DATA_PUBLIC signals that peSrc is a public value.
+// - pbScatch/cbScratch: scratch space >= SYMCRYPT_SCRATCH_BYTES_FOR_MODINV( nDigits( pmMod ) )
 //
-// Currently only supports modulus objects that have the SYMCRYPT_FLAG_MODULUS_PRIME and SYMCRYPT_FLAG_DATA_PUBLIC flag set, 
-// and where the modulus is odd (i.e. not equal to 2)
+// Returns an error if
+//  - GCD( Src, Mod ) != 1
 //
-
 
 #define SYMCRYPT_SCRATCH_BYTES_FOR_MODEXP( _nDigits ) SYMCRYPT_INTERNAL_SCRATCH_BYTES_FOR_MODEXP( _nDigits )
 
@@ -1862,7 +1873,11 @@ SymCryptModMultiExp(
 //
 
 // =========================================
-// Side-channel safe lookup table
+// Tools for side-channel safety
+// ========================================
+
+//
+//Side-channel safe lookup table
 //
 
 typedef struct _SYMCRYPT_SCSTABLE {
@@ -1927,6 +1942,94 @@ SymCryptScsTableWipe(
     _Inout_ PSYMCRYPT_SCSTABLE pScsTable );
 // Wipes the part of the buffer that the table used
 
+// Other Side-channel safety tools
+
+VOID
+SYMCRYPT_CALL
+SymCryptScsRotateBuffer( 
+    _Inout_updates_( cbBuffer ) PBYTE   pbBuffer,
+                                SIZE_T  cbBuffer,
+                                SIZE_T  lshift );
+// Rotates buffer left by lshift without revealing lshift
+// through side channels.
+// - pbBuffer/cbBuffer: buffer to rotate
+//   pbBuffer must be aligned to the native integer of the platform (4 or 8 bytes)
+//   cbBuffer must be a power of two >= 32
+// - lshift: # bytes to left rotate the buffer
+//      pbBuffer[0] will get the value pbBuffer[ lshift % cbBuffer ]
+
+VOID
+SYMCRYPT_CALL
+SymCryptScsCopy(
+    _In_reads_( cbDst )     PCBYTE  pbSrc,
+                            SIZE_T  cbSrc,
+    _Out_writes_( cbDst )   PBYTE   pbDst,
+                            SIZE_T  cbDst );
+// Copy cbSrc bytes of pbSrc into pbDst without revealing cbSrc
+// through side channels.
+//
+// WARNING: pbSrc buffer must be at least cbDst bytes long; not cbSrc!
+//  
+// - pbSrc  pointer to buffer to copy data from
+//          This buffer must be at least cbDst bytes long
+// - cbSrc  number of bytes to be copied, must be <= 2^31
+// - pbDst  destination buffer
+// - pbDst  size of the destination buffer, must be <= 2^31
+// Equivalent to:
+//      n = min( cbSrc, cbDst )
+//      pbDst[ 0.. n-1 ] = pbSrc[ 0 .. n - 1 ]
+// cbSrc is protected from side-channels; cbDst is public.
+
+
+//
+// Mask generation functions. 
+// All these functions are side-channel safe in all parameters.
+// Naming convention:
+// SymCrypt <MaskType> <Op> <ParameterType>
+// <MaskType> is the type of the function result:
+//      Mask32      UINT32 mask that is 0 or -1
+//      Mask64      UINT64 mask that is 0 or -1
+// <Op> is the boolean operation performed on the parameters
+//      IsZero      v == 0
+//      IsNonzero   v != 0
+//      Eq          a == b
+//      Neq         a != b
+// <ParameterType> is an indication of the parameter type supported.
+//      U31     UINT32 which is limited to values < 2^31
+//              This allows more efficient masking functions.
+//      U32     UINT32
+// Other mask types, operations, and paramter types may be defined in future.
+//
+
+UINT32
+SYMCRYPT_CALL
+SymCryptMask32IsZeroU31( UINT32 v );
+
+UINT32
+SYMCRYPT_CALL
+SymCryptMask32IsNonzeroU31( UINT32 v );
+
+
+UINT32
+SYMCRYPT_CALL
+SymCryptMask32EqU32( UINT32 a, UINT32 b );
+
+UINT32
+SYMCRYPT_CALL
+SymCryptMask32NeqU31( UINT32 a, UINT32 b );
+
+UINT32
+SYMCRYPT_CALL
+SymCryptMask32LtU31( UINT32 a, UINT32 b );
+
+
+//
+// Other helper funcions
+//
+SIZE_T
+SYMCRYPT_CALL
+SymCryptRoundUpPow2Sizet( SIZE_T v );
+// Round up to the next power of 2
 
 
 
@@ -1940,41 +2043,40 @@ _Success_(return == SYMCRYPT_NO_ERROR)
 SYMCRYPT_ERROR
 SYMCRYPT_CALL
 SymCryptRsaPkcs1ApplyEncryptionPadding(
-    _In_reads_bytes_( cbPlaintext )
-                                PCBYTE      pbPlaintext,
-                                SIZE_T      cbPlaintext,
-                                UINT32      flags,
-    _Out_writes_bytes_( cbPKCS1Format )
-                                PBYTE       pbPKCS1Format,
-                                SIZE_T      cbPKCS1Format );
+    _In_reads_bytes_( cbPlaintext )     PCBYTE      pbPlaintext,
+                                        SIZE_T      cbPlaintext,
+    _Out_writes_bytes_( cbPKCS1Format ) PBYTE       pbPkcs1Format,
+                                        SIZE_T      cbPkcs1Format );
 //
 // Applies the RSA PKCS1 v1.5 encryption padding to the plaintext buffer.
-//
-// Allowed flags:
-//      None
+// - Plaintext      buffer containing plaintext to be encoded
+// - Pkcs1Format    Output buffer, typicaly the size of the RSA modulus
+// Requirement: cbPkcs1Format >= cbPlaintext + 11 due to the PKCS1 overhead.
 //
 
 _Success_(return == SYMCRYPT_NO_ERROR)
 SYMCRYPT_ERROR
 SYMCRYPT_CALL
 SymCryptRsaPkcs1RemoveEncryptionPadding(
-    _In_reads_bytes_( cbPKCS1Format )
-                                PCBYTE      pbPKCS1Format,
-                                SIZE_T      cbPKCS1Format,
-                                UINT32      flags,
-    _Out_writes_bytes_opt_( cbPlaintext )
-                                PBYTE       pbPlaintext,
-                                SIZE_T      cbPlaintext,
-    _Out_                       SIZE_T      *pcbPlaintext );
+    _Inout_updates_bytes_( cbPkcs1Buffer )  PBYTE       pbPkcs1Format,
+                                            SIZE_T      cbPkcs1Format,
+                                            SIZE_T      cbPkcs1Buffer,
+    _Out_writes_bytes_opt_( cbPlaintext )   PBYTE       pbPlaintext,
+                                            SIZE_T      cbPlaintext,
+    _Out_                                   SIZE_T     *pcbPlaintext );
 //
-// Removes the RSA PKCS1 v1.5 encryption padding from the PKCS1 formatted buffer
-// after it checks the validity of the format.
-//
-// *pcbPlaintext is the number of bytes output. If pbPlaintext == NULL then this
-// is the only output value.
-//
-// Allowed flags:
-//      None
+// Remove the PKCS1 encryption padding and extract the message plaintext.
+// This function is side-channel safe w.r.t. the data in the Pkcs1Format buffer.
+// - pbPkcs1Format points to a buffer containing the raw RSA decrypted data.
+//      This buffer will be modified by this function.
+// - cbPkcs1Format is the # bytes of the buffer that were decrypted with raw RSA
+// - cbPkcs1Buffer is the size of the buffer that pbPkcs1Format points to
+//      cbPkcs1Buffer must be a power of 2 and >= cbPkcs1Format and >= 32
+//      cbPkcs1Buffer must be <= 2^30
+// - pbPlaintext/cbPlaintext is the output buffer that will receive the data.
+//      if pbPlaintext == NULL no message is output, but *pcbPlaintext is still set.
+// - pcbPlaintext receives the # bytes in the actual decrypted message.
+//      set to 0 if an error occurred.
 //
 
 #define SYMCRYPT_SCRATCH_BYTES_FOR_RSA_OAEP( _hashAlgorithm, _nBytesOAEP )      SYMCRYPT_INTERNAL_SCRATCH_BYTES_FOR_RSA_OAEP( _hashAlgorithm, _nBytesOAEP )
@@ -1983,31 +2085,28 @@ _Success_(return == SYMCRYPT_NO_ERROR)
 SYMCRYPT_ERROR
 SYMCRYPT_CALL
 SymCryptRsaOaepApplyEncryptionPadding(
-    _In_reads_bytes_( cbPlaintext )
-                                PCBYTE                      pbPlaintext,
-                                SIZE_T                      cbPlaintext,
-    _In_                        PCSYMCRYPT_HASH             hashAlgorithm,
-    _In_reads_bytes_( cbLabel ) PCBYTE                      pbLabel,
-                                SIZE_T                      cbLabel,
-    _In_reads_bytes_opt_( cbSeed )  
-                                PCBYTE                      pbSeed,
-                                SIZE_T                      cbSeed,
-                                UINT32                      flags,
-    _Out_writes_bytes_( cbOAEPFormat )
-                                PBYTE                       pbOAEPFormat,
-                                SIZE_T                      cbOAEPFormat,
-    _Out_writes_bytes_( cbScratch )
-                                PBYTE                       pbScratch,
-                                SIZE_T                      cbScratch );
+    _In_reads_bytes_( cbPlaintext )     PCBYTE          pbPlaintext,
+                                        SIZE_T          cbPlaintext,
+    _In_                                PCSYMCRYPT_HASH hashAlgorithm,
+    _In_reads_bytes_( cbLabel )         PCBYTE          pbLabel,
+                                        SIZE_T          cbLabel,
+    _In_reads_bytes_opt_( cbSeed )      PCBYTE          pbSeed,
+                                        SIZE_T          cbSeed,
+    _Out_writes_bytes_( cbOAEPFormat )  PBYTE           pbOaepFormat,
+                                        SIZE_T          cbOaepFormat,
+    _Out_writes_bytes_( cbScratch )     PBYTE           pbScratch,
+                                        SIZE_T          cbScratch );
 //
-// Applies the RSA OAEP encryption padding to the plaintext buffer.
+// Apply the RSA OAEP encryption padding to the plaintext buffer.
+// - Plaintext      Plaintext to be encoded
+// - hashAlgorithm  Hash algorithm to use during padding
+// - Label          Label input for OAEP
+// - Seed           Specified seed value. 0 <= cbSeed < hash size
+// - OaepFormat     Output buffer, typically the size of the RSA modulus
 //
 // Remarks:
 //      - If pbSeed == NULL and cbSeed != 0, then the function picks
 //        a uniformly random seed of size cbSeed bytes.
-//
-// Allowed flags:
-//      None
 //
 // Requirements:
 //      cbScratch >= SYMCRYPT_SCRATCH_BYTES_FOR_RSA_OAEP( hashAlgorithm, cbOAEPFormat )

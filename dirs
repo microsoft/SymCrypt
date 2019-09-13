@@ -1,4 +1,5 @@
 DIRS = \
+    build \
     publics \
     lib \
     unittest \

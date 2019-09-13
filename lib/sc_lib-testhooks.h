@@ -49,7 +49,7 @@ SymCryptDetectCpuFeaturesFromRegistersNoTry();
 
 VOID
 SYMCRYPT_CALL
-SymCryptInitEnvCommon();
+SymCryptInitEnvCommon( UINT32 version );
 
 _Analysis_noreturn_
 VOID

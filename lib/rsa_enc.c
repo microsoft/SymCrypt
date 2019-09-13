@@ -25,6 +25,7 @@ SymCryptRsaCoreVerifyInput(
     _In_                        PCSYMCRYPT_RSAKEY           pkRsakey,
     _In_reads_bytes_( cbSrc )   PCBYTE                      pbSrc,
                                 SIZE_T                      cbSrc,
+                                SYMCRYPT_NUMBER_FORMAT      numFormat,
                                 SIZE_T                      cbDst,
     _Out_writes_bytes_( cbScratch )
                                 PBYTE                       pbScratch,
@@ -37,22 +38,22 @@ SymCryptRsaCoreVerifyInput(
     UNREFERENCED_PARAMETER( cbScratch );
 
     if ( cbSrc > SymCryptRsakeySizeofModulus(pkRsakey) ||
-         cbDst > SymCryptRsakeySizeofModulus(pkRsakey) )
+         cbDst < SymCryptRsakeySizeofModulus(pkRsakey) )
     {
         scError = SYMCRYPT_INVALID_ARGUMENT;
         goto cleanup;
     }
 
-    // We need check if pbSrc is less than modulus
-	// dcl - if cbSrc != SymCryptRsakeySizeofModulus(pkRsakey)
-	// then you do nothing, and return SYMCRYPT_NO_ERROR
-	// this seems like a bad design. Or at the least, add a comment explaining why this is by design.
+    // It is an error of value(pbSrc) >= modulus
+    // We already know that cbSrc <= sizeof( modulus ) so we only have to run this check
+    // if cbSrc == sizeof( modulus )
+    // No side channel issues here: we are only comparing the input to the public part of the key.
     if (cbSrc == SymCryptRsakeySizeofModulus(pkRsakey))
     {
         cbTmpInteger = SymCryptSizeofIntFromDigits( pkRsakey->nDigitsOfModulus );
         piTmpInteger = SymCryptIntCreate( pbScratch, cbTmpInteger, pkRsakey->nDigitsOfModulus );
 
-        scError = SymCryptIntSetValue( pbSrc, cbSrc, SYMCRYPT_NUMBER_FORMAT_MSB_FIRST, piTmpInteger );
+        scError = SymCryptIntSetValue( pbSrc, cbSrc, numFormat, piTmpInteger );
         if (scError != SYMCRYPT_NO_ERROR)
         {
            goto cleanup;
@@ -93,12 +94,12 @@ SymCryptRsaCoreEnc(
     PBYTE   pbFnScratch = NULL;
     SIZE_T  cbFnScratch = 0;
 
-    BYTE    abExpIntBuffer[ SYMCRYPT_SIZEOF_INT_FROM_BITS( 32 ) + SYMCRYPT_ASYM_ALIGN_VALUE];
+    BYTE    abExpIntBuffer[ SYMCRYPT_SIZEOF_INT_FROM_BITS( 64 ) + SYMCRYPT_ASYM_ALIGN_VALUE];
     PSYMCRYPT_INT piExp = NULL;
 
     UNREFERENCED_PARAMETER( flags );
 
-    scError = SymCryptRsaCoreVerifyInput(pkRsakey, pbSrc, cbSrc, cbDst, pbScratch, cbScratch);
+    scError = SymCryptRsaCoreVerifyInput(pkRsakey, pbSrc, cbSrc, numFormat, cbDst, pbScratch, cbScratch);
     if (scError != SYMCRYPT_NO_ERROR)
     {
         goto cleanup;
@@ -242,7 +243,7 @@ SymCryptRsaCoreDecCrt(
         goto cleanup;
     }
 
-    scError = SymCryptRsaCoreVerifyInput(pkRsakey, pbSrc, cbSrc, cbDst, pbScratch, cbScratch);
+    scError = SymCryptRsaCoreVerifyInput(pkRsakey, pbSrc, cbSrc, numFormat, cbDst, pbScratch, cbScratch);
     if (scError != SYMCRYPT_NO_ERROR)
     {
         goto cleanup;
@@ -654,7 +655,6 @@ SymCryptRsaPkcs1Encrypt(
     scError = SymCryptRsaPkcs1ApplyEncryptionPadding(
                     pbSrc,
                     cbSrc,
-                    flags,
                     pbTmp,
                     cbTmp );
     if (scError != SYMCRYPT_NO_ERROR)
@@ -715,7 +715,8 @@ SymCryptRsaPkcs1Decrypt(
     SIZE_T  cbScratch = 0;
 
     PBYTE   pbTmp = NULL;
-    SIZE_T  cbTmp = SymCryptRsakeySizeofModulus(pkRsakey);
+    SIZE_T  cbModulus = SymCryptRsakeySizeofModulus(pkRsakey);
+    SIZE_T  cbTmp = SymCryptRoundUpPow2Sizet( cbModulus );      // tmp buffer needs to be a power of 2
 
     // Make sure that the key has a private key
     if (!pkRsakey->hasPrivateKey)
@@ -756,7 +757,7 @@ SymCryptRsaPkcs1Decrypt(
                 SYMCRYPT_NUMBER_FORMAT_MSB_FIRST,
                 flags,
                 pbTmp,
-                cbTmp,
+                cbModulus,
                 pbScratch,
                 cbScratch - cbTmp );
 #else
@@ -767,7 +768,7 @@ SymCryptRsaPkcs1Decrypt(
                 SYMCRYPT_NUMBER_FORMAT_MSB_FIRST,
                 flags,
                 pbTmp,
-                cbTmp,
+                cbModulus,
                 pbScratch,
                 cbScratch - cbTmp );
 #endif
@@ -778,17 +779,14 @@ SymCryptRsaPkcs1Decrypt(
 
     scError = SymCryptRsaPkcs1RemoveEncryptionPadding(
                 pbTmp,
+                cbModulus,
                 cbTmp,
-                flags,
                 pbDst,
                 cbDst,
                 pcbDst );
-    if (scError != SYMCRYPT_NO_ERROR)
-    {
-        goto cleanup;
-    }
-
-    scError = SYMCRYPT_NO_ERROR;
+    // The error that is returned from the encryption padding is confidential data
+    // due to Bleichenbacher-style attacks.
+    // Make sure we don't create a side-channel leak for it.
 
 cleanup:
     if (pbScratch!=NULL)
@@ -855,7 +853,6 @@ SymCryptRsaOaepEncrypt(
                     cbLabel,
                     NULL,               // Seed
                     0,                  // cbSeed
-                    flags,
                     pbTmp,
                     cbTmp,
                     pbScratch,

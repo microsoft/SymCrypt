@@ -11,7 +11,22 @@
 #include "symcrypt.h"
 #include "sc_lib.h"
 
-#include "blstatus.h"
+//
+// The BlStatusError function, part of the bootlib, is normally defined in blstatus.h
+// We can't include that header file from outside the onecore codebase.
+// We copied the definition here.
+//
+
+VOID
+BlStatusError (
+    __in ULONG ErrorCode,
+    __in ULONG_PTR ErrorParameter1,
+    __in ULONG_PTR ErrorParameter2,
+    __in ULONG_PTR ErrorParameter3,
+    __in ULONG_PTR ErrorParameter4
+    );
+
+
 
 SYMCRYPT_CPU_FEATURES SYMCRYPT_CALL SymCryptCpuFeaturesNeverPresentEnvWindowsBootlibrary()
 {
@@ -38,7 +53,7 @@ SYMCRYPT_CPU_FEATURES SYMCRYPT_CALL SymCryptCpuFeaturesNeverPresentEnvWindowsBoo
 SYMCRYPT_NOINLINE
 VOID
 SYMCRYPT_CALL
-SymCryptInitEnvWindowsBootlibrary()
+SymCryptInitEnvWindowsBootlibrary( UINT32 version )
 {
     if( g_SymCryptFlags & SYMCRYPT_FLAG_LIB_INITIALIZED )
     {
@@ -61,7 +76,7 @@ SymCryptInitEnvWindowsBootlibrary()
     SymCryptDetectCpuFeaturesFromRegistersNoTry();
 #endif    
 
-    SymCryptInitEnvCommon();
+    SymCryptInitEnvCommon( version );
 }
 
 _Analysis_noreturn_

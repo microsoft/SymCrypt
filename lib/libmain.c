@@ -9,6 +9,9 @@
 
 #define EQU =
 #include "C_asm_shared.inc"
+#undef EQU
+
+#include "buildInfo.h"
 
 // The following global g_SymCryptFlags has to be at least 32 
 // bits because the iOS environment has interlocked function 
@@ -31,12 +34,24 @@ SymCryptLibraryWasNotInitialized()
 
 #endif
 
+CHAR * SymCryptBuildString = 
+        "v" SYMCRYPT_BUILD_INFO_VERSION 
+        "_" SYMCRYPT_BUILD_INFO_BRANCH 
+        "_" SYMCRYPT_BUILD_INFO_COMMIT
+        "_" SYMCRYPT_BUILD_INFO_TIMESTAMP;
+
 VOID
 SYMCRYPT_CALL
-SymCryptInitEnvCommon()
+SymCryptInitEnvCommon( UINT32 version )
 // Returns TRUE if the initializatoin steps have to be performed.
 {
     UINT32 tmp;
+
+    CHAR * p;
+
+    // Assertion that verifies that the calling application was compiled with
+    // the same version header files as the library.
+    SYMCRYPT_HARD_ASSERT( version == SYMCRYPT_API_VERSION );
 
     //
     // Use an interlocked to set the flag in case we add other flags
@@ -49,7 +64,18 @@ SymCryptInitEnvCommon()
     // version is part of the binary, so we can look at a binary and figure
     // out which version of SymCrypt it was linked with.
     //
-    SYMCRYPT_FORCE_WRITE32( &tmp, SYMCRYPT_CODE_VERSION );
+    SYMCRYPT_FORCE_WRITE32( &tmp, SYMCRYPT_API_VERSION );
+
+    // 
+    // Force the build string to be in memory, because otherwise the
+    // compiler might get smart and remove it.
+    // This ensures we can always track back to the SymCrypt source code from
+    // any binary that links this library
+    //
+    for( p = SymCryptBuildString; *p!=0; p++ )
+    {
+        SYMCRYPT_FORCE_WRITE8( (PBYTE) &tmp, *p );
+    }
 
     //
     // Make an inverted copy of the CPU detection results.

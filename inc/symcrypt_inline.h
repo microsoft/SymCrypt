@@ -102,9 +102,9 @@ typedef struct _SYMCRYPT_EXTENDED_SAVE_DATA      SYMCRYPT_EXTENDED_SAVE_DATA, *P
 
 #define SYMCRYPT_ENVIRONMENT_DEFS( envName ) \
 SYMCRYPT_EXTERN_C \
-    VOID SYMCRYPT_CALL SymCryptInitEnv##envName(); \
+    VOID SYMCRYPT_CALL SymCryptInitEnv##envName( UINT32 version ); \
     VOID SYMCRYPT_CALL SymCryptInit() \
-        { SymCryptInitEnv##envName(); } \
+        { SymCryptInitEnv##envName( SYMCRYPT_API_VERSION ); } \
     \
     _Analysis_noreturn_ VOID SYMCRYPT_CALL SymCryptFatalEnv##envName( UINT32 fatalCode ); \
     _Analysis_noreturn_ VOID SYMCRYPT_CALL SymCryptFatal( UINT32 fatalCode ) \

@@ -26,6 +26,7 @@ INCLUDES=  \
     $(DS_INC_PATH)\crypto; \
     $(IFSKIT_INC_PATH); \
     $(MINWIN_INTERNAL_PRIV_SDK_INC_PATH_L)\boot; \
+    $(OBJECT_ROOT)\SymCrypt\build\$(O); \
 
 SOURCES= \
     blockciphermodes.c \
@@ -126,6 +127,7 @@ SOURCES= \
     dh.c \
     recoding.c \
     IEEE802_11SaeCustom.c \
+    scsTools.c \
 
 AMD64_SOURCES = \
 #    sha1asm.asm \

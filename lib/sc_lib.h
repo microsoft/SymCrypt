@@ -23,7 +23,7 @@
 #pragma prefast( disable:28112 )
 #pragma prefast( disable:28113 )
 #pragma warning( disable: 4702 )        // unreachable code. The compilers are not equally smart, and some complain 
-                                        // aobut 'function must return a value' and some about 'unreachable code'
+                                        // about 'function must return a value' and some about 'unreachable code'
 
 
 //
@@ -247,8 +247,6 @@ SymCryptCheckLibraryInitialized()
 
 
 #define SYMCRYPT_ARRAY_SIZE(_x)     (sizeof(_x)/sizeof(_x[0]))
-
-
 
 enum{
     STATE_NEXT = 0,         // starting state = 0, set by structure wipe.
@@ -1396,7 +1394,7 @@ typedef VOID (SYMCRYPT_CALL * SYMCRYPT_MOD_UNARY_OP_FN)(
     _Out_writes_bytes_( cbScratch ) PBYTE                   pbScratch,
                                     SIZE_T                  cbScratch );
 
-typedef VOID (SYMCRYPT_CALL * SYMCRYPT_MOD_UNARY_FLAG_OP_FN)(
+typedef SYMCRYPT_ERROR (SYMCRYPT_CALL * SYMCRYPT_MOD_UNARY_OP_FLAG_STATUS_FN)(
     _In_                            PCSYMCRYPT_MODULUS      pmMod,
     _In_                            PCSYMCRYPT_MODELEMENT   peSrc,
     _Out_                           PSYMCRYPT_MODELEMENT    peDst,
@@ -1446,17 +1444,17 @@ typedef VOID (SYMCRYPT_CALL * SYMCRYPT_MODULUS_INIT_FN)(
 //
 
 typedef struct _SYMCRYPT_MODULAR_FUNCTIONS {
-    SYMCRYPT_MOD_BINARY_OP_FN       modAdd;
-    SYMCRYPT_MOD_BINARY_OP_FN       modSub;
-    SYMCRYPT_MOD_UNARY_OP_FN        modNeg;
-    SYMCRYPT_MOD_BINARY_OP_FN       modMul;
-    SYMCRYPT_MOD_UNARY_OP_FN        modSquare;
-    SYMCRYPT_MOD_UNARY_FLAG_OP_FN   modInv;
-    SYMCRYPT_MOD_SET_POST_FN        modSetPost;
-    SYMCRYPT_MOD_PRE_GET_FN         modPreGet;
-    SYMCRYPT_MODULUS_COPYFIXUP_FN   modulusCopyFixup;   // non-genric fixup after memcpy
-    SYMCRYPT_MODULUS_INIT_FN        modulusInit;
-    PVOID                           slack[6];
+    SYMCRYPT_MOD_BINARY_OP_FN               modAdd;
+    SYMCRYPT_MOD_BINARY_OP_FN               modSub;
+    SYMCRYPT_MOD_UNARY_OP_FN                modNeg;
+    SYMCRYPT_MOD_BINARY_OP_FN               modMul;
+    SYMCRYPT_MOD_UNARY_OP_FN                modSquare;
+    SYMCRYPT_MOD_UNARY_OP_FLAG_STATUS_FN    modInv;
+    SYMCRYPT_MOD_SET_POST_FN                modSetPost;
+    SYMCRYPT_MOD_PRE_GET_FN                 modPreGet;
+    SYMCRYPT_MODULUS_COPYFIXUP_FN           modulusCopyFixup;   // non-genric fixup after memcpy
+    SYMCRYPT_MODULUS_INIT_FN                modulusInit;
+    PVOID                                   slack[6];
 } SYMCRYPT_MODULAR_FUNCTIONS;
 
 #define SYMCRYPT_MODULAR_FUNCTIONS_SIZE    (sizeof( SYMCRYPT_MODULAR_FUNCTIONS ) )
@@ -2624,7 +2622,7 @@ SymCryptFdefModDivPow2(
     _Out_writes_bytes_( cbScratch ) PBYTE                   pbScratch,
                                     SIZE_T                  cbScratch );
 
-VOID
+SYMCRYPT_ERROR
 SYMCRYPT_CALL
 SymCryptFdefModInvGeneric(
     _In_                            PCSYMCRYPT_MODULUS      pMod,
@@ -2634,7 +2632,7 @@ SymCryptFdefModInvGeneric(
     _Out_writes_bytes_( cbScratch ) PBYTE                   pbScratch,
                                     SIZE_T                  cbScratch );
 
-VOID
+SYMCRYPT_ERROR
 SYMCRYPT_CALL
 SymCryptFdefModInvMontgomery(
     _In_                            PCSYMCRYPT_MODULUS      pMod,
@@ -2644,7 +2642,7 @@ SymCryptFdefModInvMontgomery(
     _Out_writes_bytes_( cbScratch ) PBYTE                   pbScratch,
                                     SIZE_T                  cbScratch );
 
-VOID
+SYMCRYPT_ERROR
 SYMCRYPT_CALL
 SymCryptFdefModInvMontgomery256(
     _In_                            PCSYMCRYPT_MODULUS      pMod,
@@ -2654,7 +2652,7 @@ SymCryptFdefModInvMontgomery256(
     _Out_writes_bytes_( cbScratch ) PBYTE                   pbScratch,
                                     SIZE_T                  cbScratch );
 
-VOID
+SYMCRYPT_ERROR
 SYMCRYPT_CALL
 SymCryptFdef369ModInvMontgomery(
     _In_                            PCSYMCRYPT_MODULUS      pMod,

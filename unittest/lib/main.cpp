@@ -1432,6 +1432,8 @@ runFunctionalTests()
 
     testScsTable();
 
+    testScsTools();
+
     testRsa();
 
     testDl();

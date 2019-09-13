@@ -68,7 +68,8 @@ SOURCES= \
     testMontgomery.cpp \
     testScsTable.cpp \
     testIEEE802_11SaeCustom.cpp \
-        
+    testScsTools.cpp \
+
 I386_SOURCES = \
     savexmm.asm \
 

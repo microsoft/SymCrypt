@@ -228,6 +228,13 @@ SymCryptEcurveAllocate(
         goto cleanup;
     }
 
+    if( (SymCryptIntGetValueLsbits32( pTempInt ) & 1) == 0 )
+    {
+        // 'prime' must be odd to avoid fatal errors
+        scError = SYMCRYPT_INVALID_ARGUMENT;
+        goto cleanup;
+    }
+
     // IntToModulus requirement:
     //      FModBitsize >= SYMCRYPT_ECURVE_MIN_BITSIZE_FMOD --> pTempInt > 0
     SymCryptIntToModulus(
@@ -311,6 +318,13 @@ SymCryptEcurveAllocate(
     if (pCurve->GOrdBitsize < SYMCRYPT_ECURVE_MIN_BITSIZE_GORD)
     {
         scError = SYMCRYPT_WRONG_KEY_SIZE;
+        goto cleanup;
+    }
+
+    if( (SymCryptIntGetValueLsbits32( pTempInt ) & 1) == 0 )
+    {
+        // 'Prime' must be odd to avoid fatal errors
+        scError = SYMCRYPT_INVALID_ARGUMENT;
         goto cleanup;
     }
 

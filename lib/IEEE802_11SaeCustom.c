@@ -515,20 +515,16 @@ SymCrypt802_11SaeCustomCommitProcess(
         goto cleanup;
     }
 
-    // The Standard requires a check that the Peer commit value must be 0 < peer-commit < r where r is the group order.
-    // The value 0 (mod r) could harm security as it makes the output of this function independent of the password.
-    // Values > r are harmless; they are functionally equivalent to the same value modulo r.
-    // For simplicity we only check that the peer commit element != 0 modulo r. 
-    // If the peer commit element > r then we simply use it, which is equivalent to using
-    // the peer commit element minus r which is an acceptable value that the other side could validly have sent anyway.
-    // (Note: due to the 32-byte size & the value of r the peer commit value cannot be >= 2r.)
-
-    SymCryptIntToModElement( piTmp, pCurve->GOrd, peCommitScalarSum, pbScratch, cbScratch );
-    if( SymCryptModElementIsZero( pCurve->GOrd, peCommitScalarSum ) )
+    // The Standard requires a check that the Peer commit value must be 1 < peer-commit < r where r is the group order.
+    if( !SymCryptIntIsLessThan( piTmp, SymCryptIntFromModulus( pCurve->GOrd ) ) ||
+        SymCryptIntIsEqualUint32( piTmp, 0 ) ||
+        SymCryptIntIsEqualUint32( piTmp, 1 ) )
     {
         scError = SYMCRYPT_INVALID_ARGUMENT;
         goto cleanup;
     }
+
+    SymCryptIntToModElement( piTmp, pCurve->GOrd, peCommitScalarSum, pbScratch, cbScratch );
 
     // Now compute the sum of the scalar commit values
     SymCryptModAdd( pCurve->GOrd, peCommitScalarSum, pState->peRand, peCommitScalarSum, pbScratch, cbScratch );
