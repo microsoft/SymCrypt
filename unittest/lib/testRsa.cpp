@@ -986,6 +986,117 @@ VOID testRsaPrintResults()
     }
 }
 
+VOID
+testRsaPkcs1Errors()
+{
+    // We check various PKCS1 padding errors 
+    SYMCRYPT_ERROR scError;
+    SYMCRYPT_RSA_PARAMS params;
+    PSYMCRYPT_RSAKEY pKey;
+
+    BYTE paddedData[256];
+    BYTE ciphertext[256];
+    BYTE res[256];
+    SIZE_T cbRes;
+    BYTE b;
+    UINT32 i;
+
+    UINT32 cbitModulus = 512 + g_rng.uint32() % 1024;
+    UINT32 cbModulus = (cbitModulus + 7) / 8;
+
+    // Create a 2048-bit key
+    params.version = 1;
+    params.nBitsOfModulus = cbitModulus;
+    params.nPrimes = 2;
+    params.nPubExp = 1;
+
+    pKey = SymCryptRsakeyAllocate( &params, 0 );
+    CHECK( pKey != 0, "?" );
+
+    scError = SymCryptRsakeyGenerate( pKey, 0, 0, 0 );
+    CHECK( scError == SYMCRYPT_NO_ERROR, "Error generating pkcs1 key" );
+
+    for( i=0; i<sizeof( paddedData ); i++ )
+    {
+        do {
+            paddedData[i] = g_rng.byte();
+        } while( paddedData[i] == 0 );
+    }
+
+    paddedData[0] = 0;
+    paddedData[1] = 2;
+    paddedData[cbModulus - 1] = 0;
+
+    scError = SymCryptRsaRawEncrypt( pKey, paddedData, cbModulus, SYMCRYPT_NUMBER_FORMAT_MSB_FIRST, 0, ciphertext, cbModulus );
+    CHECK( scError == SYMCRYPT_NO_ERROR, "?" );
+
+    scError = SymCryptRsaPkcs1Decrypt( pKey, ciphertext, cbModulus, SYMCRYPT_NUMBER_FORMAT_MSB_FIRST, 0, res, cbModulus, &cbRes );
+    CHECK( scError == SYMCRYPT_NO_ERROR && cbRes == 0, "?" );
+
+    // Test first byte not zero
+    if( cbitModulus % 8 != 1 )
+    {
+        // Setting the first byte to 1 might now work if the modulus starts with 0x01, 0x00, ...
+        paddedData[0]++;
+        scError = SymCryptRsaRawEncrypt( pKey, paddedData, cbModulus, SYMCRYPT_NUMBER_FORMAT_MSB_FIRST, 0, ciphertext, cbModulus );
+        CHECK( scError == SYMCRYPT_NO_ERROR, "?" );
+        scError = SymCryptRsaPkcs1Decrypt( pKey, ciphertext, cbModulus, SYMCRYPT_NUMBER_FORMAT_MSB_FIRST, 0, res, cbModulus, &cbRes );
+        CHECK( scError == SYMCRYPT_INVALID_ARGUMENT, "?" );
+        paddedData[0]--;
+    }
+
+    // pick random nonzero b
+    do{ b = g_rng.byte(); } while( b==0 );
+
+    // Test second byte not 2
+    paddedData[1] ^= b;    
+    scError = SymCryptRsaRawEncrypt( pKey, paddedData, cbModulus, SYMCRYPT_NUMBER_FORMAT_MSB_FIRST, 0, ciphertext, cbModulus );
+    CHECK( scError == SYMCRYPT_NO_ERROR, "?" );
+    scError = SymCryptRsaPkcs1Decrypt( pKey, ciphertext, cbModulus, SYMCRYPT_NUMBER_FORMAT_MSB_FIRST, 0, res, cbModulus, &cbRes );
+    CHECK( scError == SYMCRYPT_INVALID_ARGUMENT, "?" );
+    paddedData[1] ^= b;    
+
+    // Test no zero byte 
+    paddedData[cbModulus - 1] ^= b;
+    scError = SymCryptRsaRawEncrypt( pKey, paddedData, cbModulus, SYMCRYPT_NUMBER_FORMAT_MSB_FIRST, 0, ciphertext, cbModulus );
+    CHECK( scError == SYMCRYPT_NO_ERROR, "?" );
+    scError = SymCryptRsaPkcs1Decrypt( pKey, ciphertext, cbModulus, SYMCRYPT_NUMBER_FORMAT_MSB_FIRST, 0, res, cbModulus, &cbRes );
+    CHECK( scError == SYMCRYPT_INVALID_ARGUMENT, "?" );
+    paddedData[cbModulus - 1] ^= b;
+
+    // Set each subsequent byte to 0 and check result
+    for( UINT32 i = 2; i < cbModulus; i++ )
+    {
+        b = paddedData[ i ];
+        paddedData[i] = 0;
+        scError = SymCryptRsaRawEncrypt( pKey, paddedData, cbModulus, SYMCRYPT_NUMBER_FORMAT_MSB_FIRST, 0, ciphertext, cbModulus );
+        CHECK( scError == SYMCRYPT_NO_ERROR, "?" );
+        scError = SymCryptRsaPkcs1Decrypt( pKey, ciphertext, cbModulus, SYMCRYPT_NUMBER_FORMAT_MSB_FIRST, 0, res, cbModulus, &cbRes );
+        if( i <= 9 )
+        {
+            CHECK( scError == SYMCRYPT_INVALID_ARGUMENT, "No error when pkcs1 padding is too short" );
+        } else {
+            CHECK5( scError == SYMCRYPT_NO_ERROR && cbRes == cbModulus - i - 1, "Wrong length %d %d %d", cbModulus, i, cbRes );
+
+            // Now check for the buffer-too-small error
+            scError = SymCryptRsaPkcs1Decrypt( pKey, ciphertext, cbModulus, SYMCRYPT_NUMBER_FORMAT_MSB_FIRST, 0, res, cbRes, &cbRes );
+            CHECK( scError == SYMCRYPT_NO_ERROR, "?" );
+            if( cbRes > 0 )
+            {
+                scError = SymCryptRsaPkcs1Decrypt( pKey, ciphertext, cbModulus, SYMCRYPT_NUMBER_FORMAT_MSB_FIRST, 0, res, cbRes-1, &cbRes );
+                CHECK( scError == SYMCRYPT_BUFFER_TOO_SMALL, "No buffer-too-small error message" );
+            }
+        }
+
+        paddedData[i] = b;
+    }
+
+//cleanup:
+    SymCryptRsakeyFree( pKey );
+    pKey = NULL;
+
+}
+
 VOID testRsa()
 {
     static BOOL hasRun = FALSE;
@@ -1034,5 +1145,7 @@ VOID testRsa()
 
     testRsaPrintResults();
 
+    testRsaPkcs1Errors();
+    
     iprint( "\n" );
 }

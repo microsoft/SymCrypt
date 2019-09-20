@@ -192,15 +192,18 @@ SymCryptRsaPkcs1RemoveEncryptionPadding(
     _Out_                                   SIZE_T     *pcbPlaintext )
 {
     SYMCRYPT_ERROR scError = SYMCRYPT_NO_ERROR;
+    UINT32 mPaddingError = 0;
+    UINT32 mBufferSizeError = 0;
 
     UINT32 cbPlaintextResult = 0;
-    UINT32 mPaddingError = 0;
     UINT32 i;
     UINT32 mByteIsZero;
     UINT32 mLengthFound;
     UINT32 iFirstZero;
+    UINT32 cbPlaintextTruncated;
 
     SYMCRYPT_ASSERT( cbPkcs1Buffer >= cbPkcs1Format );
+    SYMCRYPT_ASSERT( cbPkcs1Buffer >= 32 );                         // Requiremenst for SymcryptScsRotateBuffer
     SYMCRYPT_ASSERT( (cbPkcs1Buffer & (cbPkcs1Buffer - 1)) == 0 );  // must be a power of 2
     SYMCRYPT_ASSERT( cbPkcs1Buffer <= (1 << 30 ));                  // Ensure we can use 31-bit masking operations
 
@@ -221,7 +224,7 @@ SymCryptRsaPkcs1RemoveEncryptionPadding(
 
     // Check the leading bytes 
     mPaddingError |= SymCryptMask32IsNonzeroU31( pbPkcs1Format[0] ); // First byte must be = 0
-    mPaddingError |= SymCryptMask32NeqU31( pbPkcs1Format[1], PKCS_BLOCKTYPE_2 ); // First byte must be = 0
+    mPaddingError |= SymCryptMask32NeqU31( pbPkcs1Format[1], PKCS_BLOCKTYPE_2 ); // Second byte must be = 2
 
     iFirstZero = 0;
     mLengthFound = 0;
@@ -245,20 +248,20 @@ SymCryptRsaPkcs1RemoveEncryptionPadding(
     // Compute the # bytes of the message; 0 if there was a padding error
     cbPlaintextResult = ~mPaddingError & (cbPkcs1Format - iFirstZero - 1);
 
+    // Checking that the output buffer is large enough is a bit tricky as we have a SIZE_T as
+    // buffer size, but we like to work on 31-bit integers as they have better mask algorithm perf.
+    // We can truncate the SIZE_T and check for equality, which is side-channel safe.
+    cbPlaintextTruncated = ((UINT32) cbPlaintext) & 0x7fffffff;                 // Truncate to 31 bits
+    if( cbPlaintextTruncated == cbPlaintext )
+    {
+        // Condition is public as we write the whole plaintext buffer anyway.
+        mBufferSizeError = SymCryptMask32LtU31( cbPlaintextTruncated, cbPlaintextResult );
+    }
+
     // We're done if the caller didn't want the actual message, but only the size.
     if( pbPlaintext == NULL )
     {
         // Condition is public.
-        // No output required.
-        goto cleanup;
-    }
-
-    if( cbPlaintext == 0 )
-    {
-        // Condition is public
-        // We can't produce any output, so we're done, but
-        // we should return an error if the message doesn't fit in a 0-sized output buffer.
-        mPaddingError |= SymCryptMask32IsNonzeroU31( cbPlaintextResult );
         goto cleanup;
     }
 
@@ -267,13 +270,12 @@ SymCryptRsaPkcs1RemoveEncryptionPadding(
     // Instead we rotate the buffer left (side-channel safe) so that the message appears at the front.
     // Rotation constant is such that the message appears at the start.
     SymCryptScsRotateBuffer( pbPkcs1Format, cbPkcs1Buffer, (iFirstZero + 1) & (cbPkcs1Buffer - 1) );
-
     SymCryptScsCopy( pbPkcs1Format, cbPlaintextResult, pbPlaintext, cbPlaintext );
 
 cleanup:
-    // If scError == SYMCRYPT_NO_ERROR && we had a padding error THEN scError = INVALID_ARGUMENT
-    // Note: scError could in future be a 32-bit value, so we need the mask function for 32-bit inputs
-    scError ^= mPaddingError & SymCryptMask32EqU32( scError, SYMCRYPT_NO_ERROR ) & (SYMCRYPT_NO_ERROR ^ SYMCRYPT_INVALID_ARGUMENT);
+    // Update scError with the two error masks. Padding error given highest priority.
+    scError ^= mBufferSizeError & (scError ^ SYMCRYPT_BUFFER_TOO_SMALL);
+    scError ^= mPaddingError & (scError ^ SYMCRYPT_INVALID_ARGUMENT);
 
     *pcbPlaintext = cbPlaintextResult;
     return scError;
