@@ -1,7 +1,7 @@
 //
 // env_SymCryptUnitTest
 // Non-standard environment to support the unit test
-// 
+//
 
 #include "precomp.h"
 
@@ -33,7 +33,7 @@ BYTE TestErrorInjectionSeed[ SYMCRYPT_SHA1_RESULT_SIZE ] = {0};
 
 extern "C" {
 ;
-    
+
 
 ///////////////////////////////////////////////////////
 // Start of the actual fake environment code
@@ -53,7 +53,7 @@ SymCryptInitEnvUnittest( UINT32 version )
         return;
     }
 
-#if SYMCRYPT_CPU_X86 | SYMCRYPT_CPU_AMD64 
+#if SYMCRYPT_CPU_X86 | SYMCRYPT_CPU_AMD64
     SymCryptDetectCpuFeaturesByCpuid( SYMCRYPT_CPUID_DETECT_FLAG_CHECK_OS_SUPPORT_FOR_YMM );
 
     if( (GetEnabledXStateFeatures() & XSTATE_MASK_AVX) == 0 )
@@ -70,7 +70,7 @@ SymCryptInitEnvUnittest( UINT32 version )
     //
     g_SymCryptCpuFeaturesNotPresent &= ~SYMCRYPT_CPU_FEATURE_SAVEXMM_NOFAIL;
 
-#elif SYMCRYPT_CPU_ARM 
+#elif SYMCRYPT_CPU_ARM
 
     g_SymCryptCpuFeaturesNotPresent = (SYMCRYPT_CPU_FEATURES) ~SYMCRYPT_CPU_FEATURE_NEON;
 
@@ -78,14 +78,14 @@ SymCryptInitEnvUnittest( UINT32 version )
 
     SymCryptDetectCpuFeaturesFromIsProcessorFeaturePresent();
 
-#endif    
+#endif
 
     SymCryptInitEnvCommon( version );
 }
 
 _Analysis_noreturn_
-VOID 
-SYMCRYPT_CALL 
+VOID
+SYMCRYPT_CALL
 SymCryptFatalEnvUnittest( ULONG fatalCode )
 {
     if( TestSelftestsEnabled )
@@ -133,7 +133,7 @@ VOID free_align32( PVOID p )
     free( *(PVOID *) ((PBYTE)p - 8) );
 }
 
-#if SYMCRYPT_CPU_AMD64 | SYMCRYPT_CPU_X86 
+#if SYMCRYPT_CPU_AMD64 | SYMCRYPT_CPU_X86
 
 char g_saveInProgressType = 0;
 PVOID g_savePtr = NULL;
@@ -152,7 +152,7 @@ ULONG g_nSaves = 0;
 
 #pragma warning(push)
 #pragma warning(disable:4359)
-typedef SYMCRYPT_ALIGN struct _SYMCRYPT_ENV_XMM_SAVE_DATA_REGS { 
+typedef SYMCRYPT_ALIGN struct _SYMCRYPT_ENV_XMM_SAVE_DATA_REGS {
     //
     // The alignment on x86 is only 4, so we can't align the __m128i fields properly.
     // We add some padding and let the assembler code adjust the alignmetn of the actual data.
@@ -173,7 +173,7 @@ SYMCRYPT_ERROR
 SYMCRYPT_CALL
 SymCryptSaveXmmEnvUnittest( _Out_ PSYMCRYPT_EXTENDED_SAVE_DATA pSaveData )
 {
-    PSYMCRYPT_ENV_XMM_SAVE_DATA         p = (PSYMCRYPT_ENV_XMM_SAVE_DATA) pSaveData;    
+    PSYMCRYPT_ENV_XMM_SAVE_DATA         p = (PSYMCRYPT_ENV_XMM_SAVE_DATA) pSaveData;
     PSYMCRYPT_ENV_XMM_SAVE_DATA_REGS    pRegs;
     __m128i regs[8];
 
@@ -217,7 +217,7 @@ VOID
 SYMCRYPT_CALL
 SymCryptRestoreXmmEnvUnittest( _Inout_ PSYMCRYPT_EXTENDED_SAVE_DATA pSaveData )
 {
-    PSYMCRYPT_ENV_XMM_SAVE_DATA         p = (PSYMCRYPT_ENV_XMM_SAVE_DATA) pSaveData;    
+    PSYMCRYPT_ENV_XMM_SAVE_DATA         p = (PSYMCRYPT_ENV_XMM_SAVE_DATA) pSaveData;
     PSYMCRYPT_ENV_XMM_SAVE_DATA_REGS    pRegs;
 
     __m128i regs[8];
@@ -264,7 +264,7 @@ SymCryptRestoreXmmEnvUnittest( _Inout_ PSYMCRYPT_EXTENDED_SAVE_DATA pSaveData )
 }
 
 
-#endif    
+#endif
 
 #if SYMCRYPT_CPU_AMD64 | SYMCRYPT_CPU_X86
 
@@ -274,8 +274,8 @@ SymCryptRestoreXmmEnvUnittest( _Inout_ PSYMCRYPT_EXTENDED_SAVE_DATA pSaveData )
 // We can disable these tests through a flag to get reasonable performance measurements on the same code.
 //
 
-typedef __declspec( align(32) ) struct _SYMCRYPT_ENV_YMM_SAVE_DATA_REGS { 
-    __m256i ymm[16];         // 16 for the XMM registers 
+typedef SYMCRYPT_ALIGN_AT(32) struct _SYMCRYPT_ENV_YMM_SAVE_DATA_REGS {
+    __m256i ymm[16];         // 16 for the XMM registers
     SYMCRYPT_MAGIC_FIELD
 } SYMCRYPT_ENV_YMM_SAVE_DATA_REGS, *PSYMCRYPT_ENV_YMM_SAVE_DATA_REGS;
 
@@ -288,7 +288,7 @@ SYMCRYPT_ERROR
 SYMCRYPT_CALL
 SymCryptSaveYmmEnvUnittest( _Out_ PSYMCRYPT_EXTENDED_SAVE_DATA pSaveData )
 {
-    PSYMCRYPT_ENV_YMM_SAVE_DATA         p = (PSYMCRYPT_ENV_YMM_SAVE_DATA) pSaveData;    
+    PSYMCRYPT_ENV_YMM_SAVE_DATA         p = (PSYMCRYPT_ENV_YMM_SAVE_DATA) pSaveData;
     PSYMCRYPT_ENV_YMM_SAVE_DATA_REGS    pRegs;
     __m256i regs[16];
 
@@ -340,7 +340,7 @@ VOID
 SYMCRYPT_CALL
 SymCryptRestoreYmmEnvUnittest( _Inout_ PSYMCRYPT_EXTENDED_SAVE_DATA pSaveData )
 {
-    PSYMCRYPT_ENV_YMM_SAVE_DATA         p = (PSYMCRYPT_ENV_YMM_SAVE_DATA) pSaveData;    
+    PSYMCRYPT_ENV_YMM_SAVE_DATA         p = (PSYMCRYPT_ENV_YMM_SAVE_DATA) pSaveData;
     PSYMCRYPT_ENV_YMM_SAVE_DATA_REGS    pRegs;
     __m256i regs[16];
 
@@ -374,7 +374,7 @@ VOID
 SYMCRYPT_CALL
 SymCryptEnvUnittestDetectCpuFeatures( ULONG flags )
 {
-#if SYMCRYPT_CPU_X86 | SYMCRYPT_CPU_AMD64 
+#if SYMCRYPT_CPU_X86 | SYMCRYPT_CPU_AMD64
     SymCryptDetectCpuFeaturesByCpuid( flags );
 #elif SYMCRYPT_CPU_ARM | SYMCRYPT_CPU_ARM64
     UNREFERENCED_PARAMETER( flags );
@@ -382,7 +382,7 @@ SymCryptEnvUnittestDetectCpuFeatures( ULONG flags )
 #else
     UNREFERENCED_PARAMETER( flags );
     g_SymCryptCpuFeaturesNotPresent = (SYMCRYPT_CPU_FEATURES) (-1);
-#endif    
+#endif
 }
 
 #if SYMCRYPT_CPU_AMD64 | SYMCRYPT_CPU_X86

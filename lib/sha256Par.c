@@ -10,7 +10,7 @@
 
 #include "precomp.h"
 
-extern __declspec( align( 256 ) ) const UINT32 SymCryptSha256K[64];
+extern SYMCRYPT_ALIGN_AT( 256 ) const UINT32 SymCryptSha256K[64];
 
 #define PAR_SCRATCH_ELEMENTS    (4+8+64)        // # scratch elements our parallel impementations need
 
@@ -40,7 +40,7 @@ extern __declspec( align( 256 ) ) const UINT32 SymCryptSha256K[64];
 
 VOID
 SYMCRYPT_CALL
-SymCryptParallelSha256AppendBytes_serial( 
+SymCryptParallelSha256AppendBytes_serial(
     _Inout_updates_( nPar )                 PSYMCRYPT_PARALLEL_HASH_SCRATCH_STATE * pWork,
     _In_range_(1, MAX_PARALLEL)             SIZE_T                                  nPar,
                                             SIZE_T                                  nBytes );
@@ -100,9 +100,9 @@ SymCryptParallelSha256Process(
 BOOLEAN
 SYMCRYPT_CALL
 SymCryptParallelSha256Result1(
-    _In_    PCSYMCRYPT_PARALLEL_HASH pParHash, 
-    _Inout_ PSYMCRYPT_COMMON_HASH_STATE pState, 
-    _Inout_ PSYMCRYPT_PARALLEL_HASH_SCRATCH_STATE pScratch,    
+    _In_    PCSYMCRYPT_PARALLEL_HASH pParHash,
+    _Inout_ PSYMCRYPT_COMMON_HASH_STATE pState,
+    _Inout_ PSYMCRYPT_PARALLEL_HASH_SCRATCH_STATE pScratch,
     _Out_   BOOLEAN *pRes)
 {
     UINT32 bytesInBuffer = pState->bytesInBuffer;
@@ -135,9 +135,9 @@ SymCryptParallelSha256Result1(
 BOOLEAN
 SYMCRYPT_CALL
 SymCryptParallelSha256Result2(
-    _In_    PCSYMCRYPT_PARALLEL_HASH                pParHash, 
-    _Inout_ PSYMCRYPT_COMMON_HASH_STATE             pState, 
-    _Inout_ PSYMCRYPT_PARALLEL_HASH_SCRATCH_STATE   pScratch,    
+    _In_    PCSYMCRYPT_PARALLEL_HASH                pParHash,
+    _Inout_ PSYMCRYPT_COMMON_HASH_STATE             pState,
+    _Inout_ PSYMCRYPT_PARALLEL_HASH_SCRATCH_STATE   pScratch,
     _Out_   BOOLEAN *pRes)
 {
     UNREFERENCED_PARAMETER( pParHash );
@@ -153,11 +153,11 @@ SymCryptParallelSha256Result2(
     return TRUE;
 }
 
-VOID 
-SYMCRYPT_CALL 
+VOID
+SYMCRYPT_CALL
 SymCryptParallelSha256ResultDone(
-    _In_    PCSYMCRYPT_PARALLEL_HASH            pParHash, 
-    _Inout_ PSYMCRYPT_COMMON_HASH_STATE         pState, 
+    _In_    PCSYMCRYPT_PARALLEL_HASH            pParHash,
+    _Inout_ PSYMCRYPT_COMMON_HASH_STATE         pState,
     _In_    PCSYMRYPT_PARALLEL_HASH_OPERATION   pOp)
 {
     PSYMCRYPT_SHA256_STATE  pSha256State = (PSYMCRYPT_SHA256_STATE) pState;
@@ -199,7 +199,7 @@ SymCryptParallelSha256SetNextWork( PSYMCRYPT_PARALLEL_HASH_SCRATCH_STATE pScratc
         // STATE_NEXT: cbData == 0 and we have to process the remaining operations.
         // STATE_DATA_START: We are working on the next operation; the first BytesAlreadyProcessed have been hashed,
         //                      and the hash state has an empty buffer.
-        // STATE_DATA_END: We are working on the next operation (an append), and pbData/cbData have whatever partial block remains 
+        // STATE_DATA_END: We are working on the next operation (an append), and pbData/cbData have whatever partial block remains
         //                  after all the whole blocks have been processed.
         // STATE_PAD2:      We are working on the next operation (a result), and have processed the first half of a 2-block padding.
         // STATE_RESULT:    We are working on the next operation (a result), and have processed all the padding.
@@ -232,7 +232,7 @@ SymCryptParallelSha256SetNextWork( PSYMCRYPT_PARALLEL_HASH_SCRATCH_STATE pScratc
                     if( pState->bytesInBuffer == SYMCRYPT_SHA256_INPUT_BLOCK_SIZE )
                     {
                         //
-                        // We filled the buffer; set it for processing. 
+                        // We filled the buffer; set it for processing.
                         // Remember the # bytes we did and set the next state to process the rest of the request.
                         //
                         pScratch->pbData = &pState->buffer[0];
@@ -283,7 +283,7 @@ SymCryptParallelSha256SetNextWork( PSYMCRYPT_PARALLEL_HASH_SCRATCH_STATE pScratc
                 }
             } else {
                 SYMCRYPT_ASSERT( pOp->hashOperation == SYMCRYPT_HASH_OPERATION_RESULT );
-                
+
                 pState->buffer[bytesInBuffer++] = 0x80;
                 SymCryptWipe( &pState->buffer[bytesInBuffer], SYMCRYPT_SHA256_INPUT_BLOCK_SIZE - bytesInBuffer );
 
@@ -353,7 +353,7 @@ SymCryptParallelSha256SetNextWork( PSYMCRYPT_PARALLEL_HASH_SCRATCH_STATE pScratc
             SymCryptUint32ToMsbFirst( &pState->chain.H[0], pOp->pbBuffer, 8 );
             SymCryptWipeKnownSize( pState, sizeof( *pState ));
             SymCryptSha256Init( pState );
-            
+
             pScratch->next = pOp->next;
             pScratch->processingState = STATE_NEXT;
             continue;
@@ -393,7 +393,7 @@ SymCryptParallelSha256SetNextWork( PSYMCRYPT_PARALLEL_HASH_SCRATCH_STATE pScratc
                 //
                 if( (pState->internalState.hashState.dataLength & (SYMCRYPT_SHA256_INPUT_BLOCK_SIZE - 1)) == 0 )
                 {
-                    SymCryptSha256AppendBlocks( &pState->internalState.hashState.chain, 
+                    SymCryptSha256AppendBlocks( &pState->internalState.hashState.chain,
                                                 &pState->internalState.hashState.buffer[0],
                                                 SYMCRYPT_SHA256_INPUT_BLOCK_SIZE );
                 }
@@ -405,13 +405,13 @@ SymCryptParallelSha256SetNextWork( PSYMCRYPT_PARALLEL_HASH_SCRATCH_STATE pScratc
                 // We have more bytes to do; this means that the internal buffer is empty.
                 // Set the data blocks up for processing. We increment the dataLength here
                 // as that is part of this function, not of the processing code.
-                // 
+                //
                 pState->internalState.processingState = DATA;
                 pState->internalState.hashState.dataLength += pState->cbData & ~(SYMCRYPT_SHA256_INPUT_BLOCK_SIZE - 1);
                 return TRUE;
             }
 
-        } 
+        }
 
         //
         // FALL THROUGH TO THE DATA PROCESSING
@@ -421,7 +421,7 @@ SymCryptParallelSha256SetNextWork( PSYMCRYPT_PARALLEL_HASH_SCRATCH_STATE pScratc
         // - We have no bytes left to hash, but the internal buffer might contain data.
         // The first case is exactly what we get after DATA processing.
         // The second case is trivially handled by the same code paths as the first one.
-        // Instead of duplicating the code, 
+        // Instead of duplicating the code,
         // we fall through to the DATA section.
         //
 
@@ -583,7 +583,7 @@ SymCryptParallelSha256Process(
 }
 
 
-#if  SYMCRYPT_CPU_X86 | SYMCRYPT_CPU_AMD64 
+#if  SYMCRYPT_CPU_X86 | SYMCRYPT_CPU_AMD64
 //
 // Code that uses the XMM registers.
 //
@@ -629,7 +629,7 @@ SymCryptParallelSha256Process(
 
 VOID
 SYMCRYPT_CALL
-SymCryptParallelSha256AppendBlocks_xmm( 
+SymCryptParallelSha256AppendBlocks_xmm(
     _Inout_updates_( 4 )                                PSYMCRYPT_SHA256_CHAINING_STATE   * pChain,
     _Inout_updates_( 4 )                                PCBYTE                            * ppByte,
                                                         SIZE_T                              nBytes,
@@ -697,7 +697,7 @@ SymCryptParallelSha256AppendBlocks_xmm(
 
             //
             // Macro for one word of message expansion.
-            // Invariant: 
+            // Invariant:
             // on entry: a = W[r-1], b = W[r-2], d = W[r-16]
             // on exit:  W[r] computed, a = W[r-1], b = W[r], c = W[r-15]
             //
@@ -720,15 +720,15 @@ SymCryptParallelSha256AppendBlocks_xmm(
         for( r=0; r<64; r += 4 )
         {
             //
-            // Loop invariant: 
+            // Loop invariant:
             // A, B, C, and D are the a,b,c,d values of the current state.
             // W[r] is the next expanded message word to be processed.
-            // W[r-8 .. r-5] contain the current state words h, g, f, e. 
+            // W[r-8 .. r-5] contain the current state words h, g, f, e.
             //
 
             //
             // Macro to compute one round
-            // 
+            //
             #define DO_ROUND( a, b, c, d, t, r ) \
                 t = W[r]; \
                 t = _mm_add_epi32( t, CSIGMA1XMM( W[r-5] ) ); \
@@ -807,7 +807,7 @@ SymCryptParallelSha256AppendBlocks_xmm(
 //
 // Transpose macro, convert S0..S7 into R0..R7; R0 is the lane 0, R3 is lane 7.
 //
-// 
+//
 // S0 = S00, S01, S02, S03,  S04, S05, S06, S07
 // S1 = S10, S11, S12, S13,  S14, S15, S16, S17
 // S2 = S20, S21, S22, S23,  S24, S25, S26, S27
@@ -834,7 +834,7 @@ SymCryptParallelSha256AppendBlocks_xmm(
 // U5 = S41, S51, S61, S71,  S45, S55, S65, S75
 // U6 = S42, S52, S62, S72,  S46, S56, S66, S76
 // U7 = S43, S53, S63, S73,  S47, S47, S67, S77
-// 
+//
 // R0 = s00, s10, s20, s30,  s40, s50, s60, s70
 // R1 = s01, s11, s21, s31,  s41, s51, s61, s71
 // R2 = s02, s12, s22, s32,  s42, s52, s62, s72
@@ -843,7 +843,7 @@ SymCryptParallelSha256AppendBlocks_xmm(
 // R5 = s05, s15, s25, s35,  s45, s55, s65, s75
 // R6 = s06, s16, s26, s36,  s46, s56, s66, s76
 // R7 = s07, s17, s27, s37,  s47, s57, s67, s77
-// 
+//
 #define YMM_TRANSPOSE_32( _R0, _R1, _R2, _R3, _R4, _R5, _R6, _R7, _S0, _S1, _S2, _S3, _S4, _S5, _S6, _S7 ) \
     {\
         __m256i _T0, _T1, _T2, _T3, _T4, _T5, _T6, _T7;\
@@ -866,7 +866,7 @@ SymCryptParallelSha256AppendBlocks_xmm(
 
 VOID
 SYMCRYPT_CALL
-SymCryptParallelSha256AppendBlocks_ymm( 
+SymCryptParallelSha256AppendBlocks_ymm(
     _Inout_updates_( 8 )                                PSYMCRYPT_SHA256_CHAINING_STATE   * pChain,
     _Inout_updates_( 8 )                                PCBYTE                            * ppByte,
                                                         SIZE_T                              nBytes,
@@ -938,7 +938,7 @@ SymCryptParallelSha256AppendBlocks_ymm(
 
             //
             // Macro for one word of message expansion.
-            // Invariant: 
+            // Invariant:
             // on entry: a = W[r-1], b = W[r-2], d = W[r-16]
             // on exit:  W[r] computed, a = W[r-1], b = W[r], c = W[r-15]
             //
@@ -961,15 +961,15 @@ SymCryptParallelSha256AppendBlocks_ymm(
         for( r=0; r<64; r += 4 )
         {
             //
-            // Loop invariant: 
+            // Loop invariant:
             // A, B, C, and D are the a,b,c,d values of the current state.
             // W[r] is the next expanded message word to be processed.
-            // W[r-8 .. r-5] contain the current state words h, g, f, e. 
+            // W[r-8 .. r-5] contain the current state words h, g, f, e.
             //
 
             //
             // Macro to compute one round
-            // 
+            //
             #define DO_ROUND( a, b, c, d, t, r ) \
                 t = W[r]; \
                 t = _mm256_add_epi32( t, CSIGMA1YMM( W[r-5] ) ); \
@@ -1051,7 +1051,7 @@ SymCryptParallelSha256AppendBlocks_ymm(
 
 VOID
 SYMCRYPT_CALL
-SymCryptParallelSha256AppendBlocks_neon( 
+SymCryptParallelSha256AppendBlocks_neon(
     _Inout_updates_( 4 )                                PSYMCRYPT_SHA256_CHAINING_STATE   * pChain,
     _Inout_updates_( 4 )                                PCBYTE                            * ppByte,
                                                         SIZE_T                              nBytes,
@@ -1145,7 +1145,7 @@ SymCryptParallelSha256AppendBlocks_neon(
 
             //
             // Macro for one word of message expansion.
-            // Invariant: 
+            // Invariant:
             // on entry: a = W[r-1], b = W[r-2], d = W[r-16]
             // on exit:  W[r] computed, a = W[r-1], b = W[r], c = W[r-15]
             //
@@ -1168,15 +1168,15 @@ SymCryptParallelSha256AppendBlocks_neon(
         for( r=0; r<64; r += 4 )
         {
             //
-            // Loop invariant: 
+            // Loop invariant:
             // A, B, C, and D are the a,b,c,d values of the current state.
             // W[r] is the next expanded message word to be processed.
-            // W[r-8 .. r-5] contain the current state words h, g, f, e. 
+            // W[r-8 .. r-5] contain the current state words h, g, f, e.
             //
 
             //
             // Macro to compute one round
-            // 
+            //
             #define DO_ROUND( a, b, c, d, t, r ) \
                 t = W[r]; \
                 t = vaddq_u32( t, CSIGMA1( W[r-5] ) ); \
@@ -1209,7 +1209,7 @@ SymCryptParallelSha256AppendBlocks_neon(
     //
     // Copy the chaining state back into the hash structure
     //
-   
+
     pChain[0]->H[0] = ha[7].n128_u32[0];
     pChain[1]->H[0] = ha[7].n128_u32[1];
     pChain[2]->H[0] = ha[7].n128_u32[2];
@@ -1268,7 +1268,7 @@ SymCryptParallelSha256AppendBlocks_neon(
 
 VOID
 SYMCRYPT_CALL
-SymCryptParallelSha256AppendBytes_serial( 
+SymCryptParallelSha256AppendBytes_serial(
     _Inout_updates_( nPar )                 PSYMCRYPT_PARALLEL_HASH_SCRATCH_STATE * pWork,
     _In_range_(1, MAX_PARALLEL)             SIZE_T                                  nPar,
                                             SIZE_T                                  nBytes )
@@ -1291,11 +1291,11 @@ SymCryptParallelSha256AppendBytes_serial(
 
 VOID
 SYMCRYPT_CALL
-SymCryptParallelSha256Append( 
+SymCryptParallelSha256Append(
     _Inout_updates_( nPar )                 PSYMCRYPT_PARALLEL_HASH_SCRATCH_STATE * pWork,
     _In_range_(1, MAX_PARALLEL)             SIZE_T                                  nPar,
                                             SIZE_T                                  nBytes,
-    _Out_writes_to_( SYMCRYPT_SIMD_ELEMENT_SIZE * PAR_SCRATCH_ELEMENTS, 0 ) 
+    _Out_writes_to_( SYMCRYPT_SIMD_ELEMENT_SIZE * PAR_SCRATCH_ELEMENTS, 0 )
                                             PBYTE                                   pbSimdScratch,
                                             SIZE_T                                  cbSimdScratch )
 {
@@ -1304,7 +1304,7 @@ SymCryptParallelSha256Append(
     SIZE_T                          i;
     UINT32                          maxParallel;
 
-    UNREFERENCED_PARAMETER( cbSimdScratch );        // not referenced on FRE builds 
+    UNREFERENCED_PARAMETER( cbSimdScratch );        // not referenced on FRE builds
     SYMCRYPT_ASSERT( cbSimdScratch >= PAR_SCRATCH_ELEMENTS * SYMCRYPT_SIMD_ELEMENT_SIZE );
     SYMCRYPT_ASSERT( ((UINT_PTR)pbSimdScratch & (SYMCRYPT_SIMD_ELEMENT_SIZE - 1)) == 0 );
 
@@ -1380,7 +1380,7 @@ cleanup:
 /*
 VOID
 SYMCRYPT_CALL
-SymCryptParallelSha256AppendBlocks( 
+SymCryptParallelSha256AppendBlocks(
     _Inout_updates_( nWork )    PSYMCRYPT_PARALLEL_SHA256_STATE *   pWork,
                                 SIZE_T                              nWork,
                                 SIZE_T                              nBytes )
@@ -1399,7 +1399,7 @@ SymCryptParallelSha256AppendBlocks(
 }
 
 */
-        
+
 #endif // SUPPORT_PARALLEL
 
 #if SUPPORT_PARALLEL

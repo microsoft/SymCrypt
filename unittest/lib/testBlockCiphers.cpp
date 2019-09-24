@@ -1,5 +1,5 @@
 //
-// Copyright (c) Microsoft Corporation. Licensed under the MIT license. 
+// Copyright (c) Microsoft Corporation. Licensed under the MIT license.
 //
 
 #include "precomp.h"
@@ -28,14 +28,14 @@ public:
 
     BlockCipherImpPtrVector m_comps;                   // Subset of m_imps; set of ongoing computations
 
-    
+
 };
 
 BlockCipherMultiImp::BlockCipherMultiImp( String algName )
 {
     getAllImplementations<BlockCipherImplementation>( algName, &m_imps );
     m_algorithmName = algName;
-    
+
     String sumImpName;
     char * sepStr = "<";
 
@@ -105,7 +105,7 @@ NTSTATUS BlockCipherMultiImp::setKey( PCBYTE pbKey, SIZE_T cbKey )
     // copy list of implementations to the ongoing computation list
     //
     m_comps.clear();
-    
+
     for( BlockCipherImpPtrVector::const_iterator i = m_imps.begin(); i != m_imps.end(); ++i )
     {
         if( (*i)->setKey( pbKey, cbKey ) == 0 )
@@ -116,7 +116,7 @@ NTSTATUS BlockCipherMultiImp::setKey( PCBYTE pbKey, SIZE_T cbKey )
     return m_comps.size() == 0 ? STATUS_NOT_SUPPORTED : STATUS_SUCCESS;
 }
 
-VOID 
+VOID
 BlockCipherMultiImp::encrypt( PBYTE pbChain, SIZE_T cbChain, PCBYTE pbSrc, PBYTE pbDst, SIZE_T cbData )
 {
     BYTE bufData[512];
@@ -135,12 +135,12 @@ BlockCipherMultiImp::encrypt( PBYTE pbChain, SIZE_T cbChain, PCBYTE pbSrc, PBYTE
         resData.addResult( (*i), bufData, cbData );
         resChain.addResult( (*i), bufChain, cbChain );
     }
-    
+
     resChain.getResult( pbChain, cbChain, FALSE );
     resData.getResult( pbDst, cbData );
 }
 
-VOID 
+VOID
 BlockCipherMultiImp::decrypt( PBYTE pbChain, SIZE_T cbChain, PCBYTE pbSrc, PBYTE pbDst, SIZE_T cbData )
 {
     BYTE bufData[512];
@@ -159,21 +159,21 @@ BlockCipherMultiImp::decrypt( PBYTE pbChain, SIZE_T cbChain, PCBYTE pbSrc, PBYTE
         resData.addResult( (*i), bufData, cbData );
         resChain.addResult( (*i), bufChain, cbChain );
     }
-    
+
     resChain.getResult( pbChain, cbChain, FALSE );
     resData.getResult( pbDst, cbData );
 }
 
 
 VOID
-katBlockCipherSingle( 
-                                BlockCipherImplementation * pImp, 
+katBlockCipherSingle(
+                                BlockCipherImplementation * pImp,
     _In_reads_( cbKey )         PCBYTE                      pbKey,
                                 SIZE_T                      cbKey,
     _In_reads_opt_( cbChain )   PBYTE                       pbChain,
                                 SIZE_T                      cbChain,
-    _In_reads_( cbPlaintext )   PCBYTE                      pbPlaintext, 
-                                SIZE_T                      cbPlaintext, 
+    _In_reads_( cbPlaintext )   PCBYTE                      pbPlaintext,
+                                SIZE_T                      cbPlaintext,
     _In_reads_( cbCiphertext )  PCBYTE                      pbCiphertext,
                                 SIZE_T                      cbCiphertext,
                                 ULONGLONG                   line)
@@ -185,7 +185,7 @@ katBlockCipherSingle(
     CHECK3( cbPlaintext < sizeof( bufData ), "Buffer too small, need %lld bytes", cbPlaintext );
     CHECK( cbChain <= sizeof( bufChain ), "?" );
     CHECK3( cbPlaintext == cbCiphertext, "Plaintext/Ciphertext size mismatch in line %lld", line );
-    
+
     CHECK( pImp->setKey( pbKey, cbKey ) == 0, "Error in setting key" );
 
     //
@@ -193,7 +193,7 @@ katBlockCipherSingle(
     //
     memset( bufData, 0, sizeof( bufData ) );
     memcpy( bufChain, pbChain, cbChain );
-    
+
     pImp->encrypt( bufChain, cbChain, pbPlaintext, bufData, cbPlaintext );
     CHECK3( memcmp( bufData, pbCiphertext, cbPlaintext ) == 0, "Ciphertext mismatch in line %lld", line );
 
@@ -205,19 +205,19 @@ katBlockCipherSingle(
     SIZE_T offset = 0;
     while( offset < cbPlaintext )
     {
-        SIZE_T nBytes = g_rng.sizetNonUniform( (cbPlaintext - offset)/msgBlockLen + 1, 4, 1 ) * msgBlockLen; 
+        SIZE_T nBytes = g_rng.sizetNonUniform( (cbPlaintext - offset)/msgBlockLen + 1, 4, 1 ) * msgBlockLen;
         pImp->encrypt( bufChain, cbChain, pbPlaintext + offset, bufData + offset, nBytes );
         offset += nBytes;
     }
     CHECK3( memcmp( bufData, pbCiphertext, cbPlaintext ) == 0, "Ciphertext 2 mismatch in line %lld", line );
 
-    // 
+    //
     // Do single decryption
     //
 
     memcpy( bufChain, pbChain, cbChain );
     pImp->decrypt( bufChain, cbChain, pbCiphertext, bufData, cbCiphertext );
-    CHECK3( memcmp( bufData, pbPlaintext, cbCiphertext ) == 0, "Plaintext mismatch in line %lld", line );        
+    CHECK3( memcmp( bufData, pbPlaintext, cbCiphertext ) == 0, "Plaintext mismatch in line %lld", line );
 
     //
     // Do piecewise decryption
@@ -227,12 +227,12 @@ katBlockCipherSingle(
     offset = 0;
     while( offset < cbPlaintext )
     {
-        SIZE_T nBytes = g_rng.sizetNonUniform( (cbPlaintext - offset)/msgBlockLen + 1, 4, 1 ) * msgBlockLen; 
+        SIZE_T nBytes = g_rng.sizetNonUniform( (cbPlaintext - offset)/msgBlockLen + 1, 4, 1 ) * msgBlockLen;
         pImp->decrypt( bufChain, cbChain, pbCiphertext + offset, bufData + offset, nBytes );
         offset += nBytes;
     }
     CHECK3( memcmp( bufData, pbPlaintext, cbPlaintext ) == 0, "Plaintext 2 mismatch in line %lld", line );
-    
+
 }
 
 
@@ -260,9 +260,9 @@ testBlockCipherRandom( BlockCipherMultiImp * pImp, int rrep, SIZE_T keyLen, PCBY
     CHECK( bufSize > keyLen, "?" );
     CHECK( bufSize > chainBlockLen, "?" );
     CHECK( bufSize > msgBlockLen, "?" );
-    
+
     memset( buf, 0, sizeof( buf ) );
-    
+
     SIZE_T keyIdx = 0;
     SIZE_T chainIdx = 0;
     SIZE_T nPieces;
@@ -290,7 +290,7 @@ testBlockCipherRandom( BlockCipherMultiImp * pImp, int rrep, SIZE_T keyLen, PCBY
         nPieces = rng.byte();
         fEncrypt = ((nPieces & 1) != 0);
         nPieces = 1 + nPieces % 5;
-        
+
         if( fEncrypt ) cntEnc++;
         cntPc[nPieces-1]++;
 
@@ -329,7 +329,7 @@ testBlockCipherRandom( BlockCipherMultiImp * pImp, int rrep, SIZE_T keyLen, PCBY
     CHECK3( cbResult == coreBlockLen, "Result size is wrong in line %lld", line );
     if( memcmp( chainBuf, pbResult, coreBlockLen ) != 0 )
     {
-            
+
         print( "Wrong blockcipher result in line %lld. \n"
             "Expected ", line );
         printHex( pbResult, cbResult );
@@ -354,7 +354,7 @@ testBlockCipherKats()
     BOOL skipData = TRUE;
     String sep = "    ";
     BOOL doneAnything = FALSE;
-    
+
     std::auto_ptr<BlockCipherMultiImp> pBlockCipherMultiImp;
 
     while( 1 )
@@ -362,7 +362,7 @@ testBlockCipherKats()
         katBlockCipher->getKatItem( & katItem );
         ULONGLONG line = katItem.line;
 
-        
+
         if( katItem.type == KAT_TYPE_END )
         {
             break;
@@ -372,7 +372,7 @@ testBlockCipherKats()
         {
             g_currentCategory = katItem.categoryName;
             pBlockCipherMultiImp.reset( new BlockCipherMultiImp( g_currentCategory ) );
-            
+
             //
             // If we have no algorithms, we skip all the data until the next category
             //
@@ -396,11 +396,11 @@ testBlockCipherKats()
             {
                 g_modeCfbShiftParam = (SIZE_T) katParseInteger( katItem, "shift" );
             }
-            
+
             if( katIsFieldPresent( katItem, "ciphertext" ) )
             {
                 BYTE chainBuf[32];
-                
+
                 BString katKey = katParseData( katItem, "key" );
                 BString katPlaintext = katParseData( katItem, "plaintext" );
                 BString katCiphertext = katParseData( katItem, "ciphertext" );
@@ -411,22 +411,22 @@ testBlockCipherKats()
                     CHECK( katChain.size() <= sizeof( chainBuf ), "IV too long" );
                     memcpy( chainBuf, katChain.data(), katChain.size() );
 
-                    katBlockCipherSingle( pBlockCipherMultiImp.get(), 
-                                            katKey.data(), katKey.size(), 
+                    katBlockCipherSingle( pBlockCipherMultiImp.get(),
+                                            katKey.data(), katKey.size(),
                                             chainBuf, katChain.size(),
-                                            katPlaintext.data(), katPlaintext.size(), 
+                                            katPlaintext.data(), katPlaintext.size(),
                                             katCiphertext.data(), katCiphertext.size(),
                                             line );
                 } else
                 {
-                    katBlockCipherSingle( pBlockCipherMultiImp.get(), 
-                                            katKey.data(), katKey.size(), 
-                                            NULL, 0, 
-                                            katPlaintext.data(), katPlaintext.size(), 
+                    katBlockCipherSingle( pBlockCipherMultiImp.get(),
+                                            katKey.data(), katKey.size(),
+                                            NULL, 0,
+                                            katPlaintext.data(), katPlaintext.size(),
                                             katCiphertext.data(), katCiphertext.size(),
                                             line );
                 }
-                
+
             }
             else if( katIsFieldPresent( katItem, "rnd" ) )
             {
@@ -439,7 +439,7 @@ testBlockCipherKats()
             {
                 FATAL2( "Unknown data record ending at line %lld", line );
             }
-            
+
             g_rc2EffectiveKeyLength = 0;
             g_modeCfbShiftParam = 1;
         }

@@ -1,7 +1,7 @@
 //
 // PrintTable.cpp   Print pretty tables
 //
-// Copyright (c) Microsoft Corporation. Licensed under the MIT license. 
+// Copyright (c) Microsoft Corporation. Licensed under the MIT license.
 //
 
 #include "precomp.h"
@@ -74,7 +74,7 @@ PrintTable::addItem( String row, String col, double perByte, double overhead, do
     if( perByte != 0.0 )
     {
         //
-        // We want to have a fixed width 
+        // We want to have a fixed width
         // and fixed precision for the clocks per byte value
         // There is no easy way to do this with format specifiers
         //
@@ -84,7 +84,7 @@ PrintTable::addItem( String row, String col, double perByte, double overhead, do
             perByte = -perByte;
             SNPRINTF_S( buf1, sizeof( buf1 ), _TRUNCATE, "-%1d.%02dn",
                 (int)floor(perByte), (int) ( 100.0 * fmod( perByte, 1 ) ) );
-        } 
+        }
         else if( perByte < 99.99 )
         {
             SNPRINTF_S( buf1, sizeof( buf1 ), _TRUNCATE, "%2d.%02dn",
@@ -126,9 +126,9 @@ PrintTable::addItem( String row, String col, double perByte, double overhead, do
             data = data + "      ";
         }
     }
-    
+
     addItem( row, col, data );
-        
+
 }
 
 VOID
@@ -180,7 +180,7 @@ PrintTable::print( String heading )
     ::print( "\n" );
     ::print( heading );
     ::print( ":\n" );
-    
+
     //
     // Print column headers
     //

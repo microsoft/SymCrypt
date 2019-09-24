@@ -13,12 +13,12 @@
 
 //
 // Static vs. dynamically generated tables.
-// 
+//
 // AES uses about 13 kB of tables; it turns out that most of these tables can be generated
-// algorithmically much faster than they can be read off the disk. 
+// algorithmically much faster than they can be read off the disk.
 // This implementation does not do so.
 // The reason is that generated tables live in the modifyable data segment, which means
-// that they are not shared between different instances of a DLL. 
+// that they are not shared between different instances of a DLL.
 // Static tables are shared. Especially for applications that have a very large number
 // of processes (e.g. Terminal Servers) the extra cost of generating and storing a
 // per-process copy of these tables is higher then the cost of loading it a few times
@@ -33,10 +33,10 @@
 //
 
 //extern BYTE SymCryptAesSbox[256];                   // Basic S-box, not used
-extern __declspec(align( 256)) BYTE SymCryptAesInvSbox[256];                // For final round in decryption
-extern __declspec(align(1024)) BYTE SymCryptAesSboxMatrixMult[4][256][4];   // Main encryption tables
-extern __declspec(align(1024)) BYTE SymCryptAesInvSboxMatrixMult[4][256][4];// Main decryption tables
-extern __declspec(align(1024)) BYTE SymCryptAesInvMatrixMult[4][256][4];    // For computing decryption round keys
+extern SYMCRYPT_ALIGN_AT( 256) BYTE SymCryptAesInvSbox[256];                // For final round in decryption
+extern SYMCRYPT_ALIGN_AT(1024) BYTE SymCryptAesSboxMatrixMult[4][256][4];   // Main encryption tables
+extern SYMCRYPT_ALIGN_AT(1024) BYTE SymCryptAesInvSboxMatrixMult[4][256][4];// Main decryption tables
+extern SYMCRYPT_ALIGN_AT(1024) BYTE SymCryptAesInvMatrixMult[4][256][4];    // For computing decryption round keys
 
 //
 // Throughout this implementation we use UINT32s to access byte arrays. The AES
@@ -60,7 +60,7 @@ extern __declspec(align(1024)) BYTE SymCryptAesInvMatrixMult[4][256][4];    // F
 VOID
 SYMCRYPT_CALL
 SymCryptAes4SboxC(
-    _In_reads_(4)   PCBYTE  pIn, 
+    _In_reads_(4)   PCBYTE  pIn,
     _Out_writes_(4) PBYTE   pOut )
 //
 // Perform 4 S-box lookups.
@@ -78,8 +78,8 @@ SymCryptAes4SboxC(
 
 VOID
 SYMCRYPT_CALL
-SymCryptAesCreateDecryptionRoundKeyC( 
-    _In_reads_(16)     PCBYTE  pEncryptionRoundKey, 
+SymCryptAesCreateDecryptionRoundKeyC(
+    _In_reads_(16)     PCBYTE  pEncryptionRoundKey,
     _Out_writes_(16)    PBYTE   pDecryptionRoundKey )
 //
 // Convert an encryption round key to a decryption round key by applying the inverse
@@ -93,7 +93,7 @@ SymCryptAesCreateDecryptionRoundKeyC(
     PCBYTE q = pEncryptionRoundKey;
 
     for( i=0; i<4; i++ ) {
-        *(UINT32 *)p = 
+        *(UINT32 *)p =
             *(UINT32 *)SymCryptAesInvMatrixMult[0][q[0]] ^
             *(UINT32 *)SymCryptAesInvMatrixMult[1][q[1]] ^
             *(UINT32 *)SymCryptAesInvMatrixMult[2][q[2]] ^
@@ -249,7 +249,7 @@ SymCryptAesDecryptC(
 
     const BYTE (*keyPtr)[4][4];
     const BYTE (*keyLimit)[4][4];
-    
+
 #if NEED_ALIGN
     SYMCRYPT_ALIGN BYTE   alignBuffer[SYMCRYPT_AES_BLOCK_SIZE];
 #endif
@@ -358,7 +358,7 @@ SymCryptAesDecryptC(
 
 VOID
 SYMCRYPT_CALL
-SymCryptAesEcbEncryptC( 
+SymCryptAesEcbEncryptC(
     _In_                                        PCSYMCRYPT_AES_EXPANDED_KEY pExpandedKey,
     _In_reads_( cbData )                        PCBYTE                      pbSrc,
     _Out_writes_( cbData )                      PBYTE                       pbDst,
@@ -382,7 +382,7 @@ SymCryptAesEcbEncryptC(
 
 VOID
 SYMCRYPT_CALL
-SymCryptAesEcbDecryptC( 
+SymCryptAesEcbDecryptC(
     _In_                                        PCSYMCRYPT_AES_EXPANDED_KEY pExpandedKey,
     _In_reads_( cbData )                        PCBYTE                      pbSrc,
     _Out_writes_( cbData )                      PBYTE                       pbDst,

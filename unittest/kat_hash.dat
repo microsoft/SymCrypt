@@ -8,7 +8,7 @@
 # - string of hex characters
 # - Double-quoted string for ASCII strings (no terminating zero is added to the data)
 # - 'repeat(<int)' followed by a data field
-# 
+#
 
 [Md2]
 # test vectors from RFC 1319
@@ -16,7 +16,7 @@
 Msg = ""
 MD = 8350e5a3e24c153df2275c9f80692773
 
-Msg = "a" 
+Msg = "a"
 MD = 32ec01ec4a6dac72c0ab96fb34c0b5d1
 
 Msg = "abc"
@@ -107,7 +107,7 @@ MD = d174ab98d277d9f5a5611c2c9f419d9f
 Msg = "12345678901234567890123456789012345678901234567890123456789012345678901234567890"
 MD = 57edf4a22be3c955ac49da2e2107b67a
 
- 
+
 Msg = repeat( 1000000 ) "a"
 MD = 7707d6ae4e027c70eea2a935c2296f21
 

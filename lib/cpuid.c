@@ -7,6 +7,10 @@
 
 #include "precomp.h"
 
+#if (SYMCRYPT_CPU_ARM | SYMCRYPT_CPU_ARM64) & SYMCRYPT_MS_VC
+#include <excpt.h>
+#endif
+
 #if SYMCRYPT_CPU_X86 | SYMCRYPT_CPU_AMD64
 
 //

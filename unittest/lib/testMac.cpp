@@ -1,7 +1,7 @@
 //
 // TestMac.cpp
 //
-// Copyright (c) Microsoft Corporation. Licensed under the MIT license. 
+// Copyright (c) Microsoft Corporation. Licensed under the MIT license.
 //
 
 #include "precomp.h"
@@ -41,7 +41,7 @@ MacMultiImp::MacMultiImp( String algName )
 {
     getAllImplementations<MacImplementation>( algName, &m_imps );
     m_algorithmName = algName;
-    
+
     String sumImpName;
     char * sepStr = "<";
 
@@ -100,7 +100,7 @@ NTSTATUS MacMultiImp::mac( PCBYTE pbKey, SIZE_T cbKey, PCBYTE pbData, SIZE_T cbD
     int nSuccess = 0;
 
     CHECK( cbResult <= sizeof( buf ), "??" );
-    
+
     for( MacImpPtrVector::const_iterator i = m_imps.begin(); i != m_imps.end(); ++i )
     {
         SymCryptWipe( buf, cbResult );
@@ -119,7 +119,7 @@ NTSTATUS MacMultiImp::mac( PCBYTE pbKey, SIZE_T cbKey, PCBYTE pbData, SIZE_T cbD
     res.getResult( pbResult, cbResult );
 
     return STATUS_SUCCESS;
-   
+
 }
 
 
@@ -129,7 +129,7 @@ NTSTATUS MacMultiImp::init( PCBYTE pbKey, SIZE_T cbKey )
     // copy list of implementations to the ongoing computation list
     //
     m_comps.clear();
-    
+
     for( MacImpPtrVector::const_iterator i = m_imps.begin(); i != m_imps.end(); ++i )
     {
         if( (*i)->init( pbKey, cbKey ) == 0 )
@@ -146,7 +146,7 @@ VOID MacMultiImp::append( PCBYTE pbData, SIZE_T cbData )
    {
         (*i)->append( pbData, cbData );
    }
- 
+
 }
 
 VOID MacMultiImp::result( PBYTE pbResult, SIZE_T cbResult )
@@ -155,7 +155,7 @@ VOID MacMultiImp::result( PBYTE pbResult, SIZE_T cbResult )
    ResultMerge res;
 
    CHECK( cbResult <= sizeof( buf ), "?" );
-   
+
    for( MacImpPtrVector::const_iterator i = m_comps.begin(); i != m_comps.end(); ++i )
    {
        SymCryptWipe( buf, cbResult );
@@ -167,9 +167,9 @@ VOID MacMultiImp::result( PBYTE pbResult, SIZE_T cbResult )
 }
 
 NTSTATUS
-MacImplementation::mac( 
-    _In_reads_( cbKey )      PCBYTE pbKey,   SIZE_T cbKey, 
-    _In_reads_( cbData )     PCBYTE pbData,  SIZE_T cbData, 
+MacImplementation::mac(
+    _In_reads_( cbKey )      PCBYTE pbKey,   SIZE_T cbKey,
+    _In_reads_( cbData )     PCBYTE pbData,  SIZE_T cbData,
     _Out_writes_( cbResult )  PBYTE pbResult, SIZE_T cbResult )
 {
     NTSTATUS status;
@@ -178,7 +178,7 @@ MacImplementation::mac(
     {
         return status;
     }
-  
+
     append( pbData, cbData );
     result( pbResult, cbResult );
 
@@ -187,12 +187,12 @@ MacImplementation::mac(
 
 
 VOID
-testMacSingle(                         
+testMacSingle(
                             MacImplementation     * pMac,
     _In_reads_( cbKey )    PCBYTE                  pbKey,
                             SIZE_T                  cbKey,
-    _In_reads_( cbData )   PCBYTE                  pbData, 
-                            SIZE_T                  cbData, 
+    _In_reads_( cbData )   PCBYTE                  pbData,
+                            SIZE_T                  cbData,
     _In_reads_( cbResult ) PCBYTE                  pbResult,
                             SIZE_T                  cbResult,
                             ULONGLONG               line)
@@ -237,7 +237,7 @@ testMacSingle(
     {
         return;
     }
-    
+
     PCBYTE pbDataLeft = pbData;
     SIZE_T bytesLeft = cbData;
 
@@ -258,7 +258,7 @@ testMacSingle(
         print( "\nGot      " );
         printHex( res, cbResult );
         print( "\n" );
-        
+
         pMac->m_nErrorKatFailure++;
     }
 
@@ -274,7 +274,7 @@ testMacRandom( MacMultiImp * pMac, int rrep, SIZE_T keyLen, PCBYTE pbResult, SIZ
     BYTE res[64];
     NTSTATUS status;
     Rng rng;
-   
+
     //
     // Seed our RNG with the algorithm name
     //
@@ -282,7 +282,7 @@ testMacRandom( MacMultiImp * pMac, int rrep, SIZE_T keyLen, PCBYTE pbResult, SIZ
 
     const SIZE_T bufSize = max( 64, pMac->inputBlockLen() * 4);
     CHECK( bufSize <= sizeof( buf ), "Input block len too large" );
-    
+
     // We used to set the buffer to 0 at the start, but Poly1305 has a fixed-point at 0
     // If the key is all-zero, the output is also zero
     // So we now set the buffer to a nonzero value.
@@ -300,7 +300,7 @@ testMacRandom( MacMultiImp * pMac, int rrep, SIZE_T keyLen, PCBYTE pbResult, SIZ
     {
         //
         // We first find where the key is
-        // 
+        //
         keyIdx = rng.sizet( bufSize );
 
         if( keyLen == -1 )
@@ -346,7 +346,7 @@ testMacRandom( MacMultiImp * pMac, int rrep, SIZE_T keyLen, PCBYTE pbResult, SIZ
             memcpy( &buf[destIdx], res, len );
             memcpy( &buf[0], &res[len], cbMac - len );
         }
-        
+
     }
 
     CHECK( pMac->mac( &buf[0], keyLen == -1 ? 0 : keyLen, &buf[0], bufSize, res, cbMac ) == 0, "MAC failure" );
@@ -355,7 +355,7 @@ testMacRandom( MacMultiImp * pMac, int rrep, SIZE_T keyLen, PCBYTE pbResult, SIZ
         CHECK5( cbResult == cbMac, "Wrong result length in line %lld, expected %d, got %d", line, cbMac, cbResult );
         if( memcmp( res, pbResult, cbMac ) != 0 )
         {
-            
+
         print( "Wrong hash result in line %lld. \n"
             "Expected ", line );
         printHex( pbResult, cbResult );
@@ -364,9 +364,9 @@ testMacRandom( MacMultiImp * pMac, int rrep, SIZE_T keyLen, PCBYTE pbResult, SIZ
         print( "\n" );
 
         pMac->m_nErrorKatFailure++;
-       
+
         }
-        
+
     }
 
 }
@@ -374,13 +374,13 @@ testMacRandom( MacMultiImp * pMac, int rrep, SIZE_T keyLen, PCBYTE pbResult, SIZ
 VOID
 testMacConsistency( MacMultiImp * pMac, SIZE_T cbKey, LONGLONG megaBytes, LONGLONG line )
 {
-    // 
+    //
     // Poly1305 uses modular arithmetic, and there is a risk of 2^-32 probability error in
     // things like carry handling. The fixed set of test vectors is unlikely to find this.
     // (Even the 'random' test is a fixed set of values with a known answer.)
     // The consistency check just runs random data through all implementations to check that they
     // are consistent with each other. Our reference implementation is based on general modular
-    // arithmetic which is tested elsewhere, so this gives us confidence that our Poly1305 
+    // arithmetic which is tested elsewhere, so this gives us confidence that our Poly1305
     // implementation is correct in this respect
     //
 
@@ -396,7 +396,7 @@ testMacConsistency( MacMultiImp * pMac, SIZE_T cbKey, LONGLONG megaBytes, LONGLO
 
     for( i=0; i<megaBytes; i++ )
     {
-        BCryptGenRandom( BCRYPT_RNG_ALG_HANDLE, pbBuf, (ULONG) cbBuf, 0 );
+        GENRANDOM( pbBuf, (ULONG) cbBuf );
 
         pMac->mac( pbBuf, cbKey, pbBuf + cbKey, cbBuf - cbKey, pbBuf, pMac->resultLen() );
 
@@ -419,14 +419,14 @@ testMacKats()
     BOOL skipData = TRUE;
     String sep = "    ";
     BOOL doneAnything = FALSE;
-    
+
     std::auto_ptr<MacMultiImp> pMacMultiImp;
 
     while( 1 )
     {
         katMac->getKatItem( & katItem );
         ULONGLONG line = katItem.line;
-        
+
         if( katItem.type == KAT_TYPE_END )
         {
             break;
@@ -436,7 +436,7 @@ testMacKats()
         {
             g_currentCategory = katItem.categoryName;
             pMacMultiImp.reset( new MacMultiImp( g_currentCategory ) );
-            
+
             //
             // If we have no algorithms, we skip all the data until the next category
             //
@@ -455,7 +455,7 @@ testMacKats()
             {
                 SIZE_T nFields = 3;
                 int katKlen = -1;
-                
+
                 if( katIsFieldPresent( katItem, "klen" ) )
                 {
                     katKlen = (int) katParseInteger( katItem, "klen" );
@@ -472,7 +472,7 @@ testMacKats()
                     // We ignore this field
                     nFields++;
                 }
-                
+
                 CHECK3( katItem.dataItems.size() == nFields, "Too many items in MD record at line %lld", line );
                 BString katMsg = katParseData( katItem, "msg" );
                 BString katMac = katParseData( katItem, "mac" );
@@ -492,7 +492,7 @@ testMacKats()
                 if( katIsFieldPresent( katItem, "keylen" ) )
                 {
                     keyLen = (SIZE_T) katParseInteger( katItem, "keylen" );
-                } 
+                }
                 else
                 {
                     CHECK3( katItem.dataItems.size() == 2, "Unknown item in RNG record at line %lld", line );
@@ -509,7 +509,7 @@ testMacKats()
                 if( katIsFieldPresent( katItem, "keylen" ) )
                 {
                     keyLen = (SIZE_T) katParseInteger( katItem, "keylen" );
-                } 
+                }
                 else
                 {
                     CHECK3( katItem.dataItems.size() == 2, "Unknown item in consistency record at line %lld", line );
@@ -517,11 +517,11 @@ testMacKats()
                 testMacConsistency( pMacMultiImp.get(), keyLen, megabytes, line );
                 continue;
             }
-                    
+
             FATAL2( "Unknown data record at line %lld", line );
         }
     }
-    
+
     if( doneAnything )
     {
         iprint( "\n" );

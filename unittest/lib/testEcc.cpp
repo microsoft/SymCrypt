@@ -1,5 +1,5 @@
 //
-// Copyright (c) Microsoft Corporation. Licensed under the MIT license. 
+// Copyright (c) Microsoft Corporation. Licensed under the MIT license.
 //
 
 #include "precomp.h"
@@ -162,7 +162,7 @@ testEccArithmetic( _In_ PCSYMCRYPT_ECURVE pCurve )
     cbIntLargeSize = SymCryptSizeofIntFromDigits( SymCryptEcurveDigitsofScalarMultiplier(pCurve) + 1 );
     cbEckeySize = SymCryptSizeofEckeyFromCurve( pCurve );
 
-    cbScratch = max( SYMCRYPT_SCRATCH_BYTES_FOR_COMMON_ECURVE_OPERATIONS( pCurve ), 
+    cbScratch = max( SYMCRYPT_SCRATCH_BYTES_FOR_COMMON_ECURVE_OPERATIONS( pCurve ),
                 SYMCRYPT_SCRATCH_BYTES_FOR_INT_DIVMOD( SymCryptEcurveDigitsofScalarMultiplier(pCurve) + 1, pCurve->GOrdDigits ) );
     cbScratchMul = SYMCRYPT_SCRATCH_BYTES_FOR_SCALAR_ECURVE_OPERATIONS( pCurve );
     cbScratchMultiMul = SYMCRYPT_SCRATCH_BYTES_FOR_MULTI_SCALAR_ECURVE_OPERATIONS( pCurve, MULTIMUL_POINTS );
@@ -1061,7 +1061,7 @@ testEccEcdsaKats()
             for( i=0; i < NUM_OF_INTERNAL_CURVES; i++ )
             {
                 // Compare with the curve name excluding the first and last character (they are ")
-                if ( lstrcmp( pKatCurve->data.substr(1,pKatCurve->data.size()-2).c_str(), rgbInternalCurves[i].pszCurveName ) == 0 )
+                if ( strcmp( pKatCurve->data.substr(1,pKatCurve->data.size()-2).c_str(), rgbInternalCurves[i].pszCurveName ) == 0 )
                 {
                     bCurveFound = TRUE;
                     break;
@@ -1090,7 +1090,7 @@ testEccEcdsaKats()
                 bHashFound = FALSE;
                 for( i=0; i < NUM_OF_ECC_HASH_ALGORITHMS; i++ )
                 {
-                    if ( lstrcmp( pKatHash->data.substr(1,pKatHash->data.size()-2).c_str(), rgbHashAlgorithms[i].pszHashName ) == 0 )
+                    if ( strcmp( pKatHash->data.substr(1,pKatHash->data.size()-2).c_str(), rgbHashAlgorithms[i].pszHashName ) == 0 )
                     {
                         bHashFound = TRUE;
                         break;
@@ -1169,7 +1169,7 @@ testEccEcdsaKats()
                 bHashFound = FALSE;
                 for( i=0; i < NUM_OF_ECC_HASH_ALGORITHMS; i++ )
                 {
-                    if ( lstrcmp( pKatHash->data.substr(1,pKatHash->data.size()-2).c_str(), rgbHashAlgorithms[i].pszHashName ) == 0 )
+                    if ( strcmp( pKatHash->data.substr(1,pKatHash->data.size()-2).c_str(), rgbHashAlgorithms[i].pszHashName ) == 0 )
                     {
                         bHashFound = TRUE;
                         break;

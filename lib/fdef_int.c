@@ -909,7 +909,7 @@ SymCryptFdefIntToDivisor(
     _Out_writes_bytes_( cbScratch ) PBYTE               pbScratch,
                                     SIZE_T              cbScratch )
 {
-    ULONG32     W;
+    UINT32      W;
     UINT32      nBits;
     UINT32      nWords;
     UINT32      bitToTest;

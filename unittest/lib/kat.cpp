@@ -1,6 +1,6 @@
 //
 // Kat implementation file
-// Copyright (c) Microsoft Corporation. Licensed under the MIT license. 
+// Copyright (c) Microsoft Corporation. Licensed under the MIT license.
 //
 
 #include "precomp.h"
@@ -42,19 +42,19 @@ KatData::line()
     return m_line;
 }
 
-int 
+int
 KatData::next()
 {
     return * m_pbData;
 }
 
-BOOL 
+BOOL
 KatData::isEmpty()
 {
     return m_pbData >= m_pbEnd;
 }
 
-VOID 
+VOID
 KatData::advance()
 {
     if( !isEmpty() )
@@ -67,7 +67,7 @@ KatData::advance()
     }
 }
 
-VOID 
+VOID
 KatData::skipSpace()
 {
     //
@@ -90,7 +90,7 @@ KatData::skipSpace()
     }
 }
 
-VOID 
+VOID
 KatData::skipNewlines()
 {
     while( !isEmpty() && atEol() )
@@ -99,14 +99,14 @@ KatData::skipNewlines()
     }
 }
 
-BOOL 
+BOOL
 KatData::atEol()
 {
     return isEmpty() || next() == '\r' || next() == '\n';
 }
 
 
-VOID 
+VOID
 KatData::getKatItem( PKAT_ITEM pKatItem )
 {
     BOOL inDataSet = FALSE;
@@ -120,13 +120,13 @@ KatData::getKatItem( PKAT_ITEM pKatItem )
             //
             if( inDataSet )
             {
-                // 
+                //
                 // Found end of data set, return
                 //
                 skipNewlines();
                 pKatItem->type = KAT_TYPE_DATASET;
                 break;
-            } 
+            }
             else
             {
                 //
@@ -146,7 +146,7 @@ KatData::getKatItem( PKAT_ITEM pKatItem )
                 skipNewlines();
                 continue;
             }
-                
+
         }
 
         if( next() == '[' )
@@ -158,7 +158,7 @@ KatData::getKatItem( PKAT_ITEM pKatItem )
             {
                 FATAL2( "Missing blank line before category [...] marker on line %lld", line() );
             }
-            
+
             PCCHAR pbStart = m_pbData;
             LONGLONG startLine = m_line;
             while( !atEol() && next() != ']' )
@@ -173,7 +173,7 @@ KatData::getKatItem( PKAT_ITEM pKatItem )
 
             PCCHAR pbEnd = m_pbData;
             advance();      // skip ']'
-    
+
             skipSpace();
             if( !atEol() )
             {
@@ -189,7 +189,7 @@ KatData::getKatItem( PKAT_ITEM pKatItem )
 
         {
             //
-            // We must have a <id> = <data> pair 
+            // We must have a <id> = <data> pair
             //
             PCCHAR nameStart = m_pbData;
             LONGLONG startLine = m_line;
@@ -257,7 +257,7 @@ KatData::getKatItem( PKAT_ITEM pKatItem )
                 advance();
             }
         }
-            
+
     }
 }
 
@@ -285,7 +285,7 @@ BYTE hexToByte( _In_reads_( 2 ) char * in, LONGLONG line )
 
 BString katParseData( String data, LONGLONG line )
 {
-    
+
     SIZE_T len = data.size();
     BString result;
 
@@ -298,24 +298,24 @@ BString katParseData( String data, LONGLONG line )
     if( data.find( "repeat" ) == 0 )
     {
         SIZE_T iOpen = data.find( '(' );
-        
+
         SIZE_T iClose = data.find( ')' );
         if( iOpen + 1 >= iClose || iOpen == data.npos || iClose == data.npos )
         {
 
             FATAL3( "Wrong parenthesis in repeat format, line %lld = %s", line, data.c_str() )
         }
-        
+
         String repeatStr = strip( data.substr( iOpen + 1, iClose ) );
-        
+
         int repValue = atoi( repeatStr.c_str() );
-        
+
         BString repData = katParseData( strip( data.substr( iClose+1 ) ), line );
         SIZE_T repLen = repData.size();
 
         PBYTE pResult = new BYTE[ repLen * repValue ];
         CHECK( pResult != NULL, "Out of memory" );
-      
+
         for( int i=0; i<repValue; i++ )
         {
             memcpy( pResult + i*repLen, repData.data(), repLen );
@@ -324,9 +324,9 @@ BString katParseData( String data, LONGLONG line )
         BString result( pResult, repLen * repValue );
 
         delete [] pResult;
-        
+
         return result;
-        
+
     }
 
     if( (len & 1) != 0 )
@@ -375,7 +375,7 @@ LONGLONG katParseInteger( KAT_ITEM &item, LPCSTR name )
     data = dataItem->data.c_str();
     if( data[0] == '0' && data[1] == 'x' )
     {
-        sscanf( data, "0x%llx", &res );
+        sscanf( data, "0x%" PRIx64, &res );
     } else {
         res = atol( data );
     }

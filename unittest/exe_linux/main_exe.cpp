@@ -6,30 +6,30 @@
 //
 
 #include "precomp.h"
-#include "msbignum_implementations.h"
-#include "rsa32_implementations.h"
-#include "capi_implementations.h"
-#include "cng_implementations.h"
+// #include "msbignum_implementations.h"
+// #include "rsa32_implementations.h"
+// #include "capi_implementations.h"
+// #include "cng_implementations.h"
 #include "sc_implementations.h"
 #include "ref_implementations.h"
 
-SYMCRYPT_ENVIRONMENT_DEFS( Unittest );
+SYMCRYPT_ENVIRONMENT_GENERIC;
 
 const char * g_implementationNames[] =
 {
     ImpSc::name,
-    ImpRsa32::name,
-    ImpRsa32b::name,
-    ImpCapi::name,
-    ImpCng::name,
-    ImpMsBignum::name,
+    // ImpRsa32::name,
+    // ImpRsa32b::name,
+    // ImpCapi::name,
+    // ImpCng::name,
+    // ImpMsBignum::name,
     ImpRef::name,
     NULL,
 };
 
-#include "main_exe_common.cpp"
+// #include "main_exe_common.cpp"
 
-int __cdecl
+int
 main( int argc, _In_reads_( argc ) char * argv[] )
 {
 
@@ -38,10 +38,10 @@ main( int argc, _In_reads_( argc ) char * argv[] )
     TestSaveXmmEnabled = TRUE;
     TestSaveYmmEnabled = TRUE;
 
-    addCapiAlgs();
-    addRsa32Algs();
-    addCngAlgs();
-    addMsBignumAlgs();
+    // addCapiAlgs();
+    // addRsa32Algs();
+    // addCngAlgs();
+    // addMsBignumAlgs();
     addSymCryptAlgs();
     addRefAlgs();
 
@@ -55,15 +55,15 @@ main( int argc, _In_reads_( argc ) char * argv[] )
 
     if (g_profile)
     {
-        runProfiling();
+        // runProfiling();
     }
     else
     {
-        runPerfTests();
+        // runPerfTests();
 
-        testMultiThread();
+        // testMultiThread();
 
-        testSelftest();
+        // testSelftest();
     }
 
     exitTestInfrastructure();

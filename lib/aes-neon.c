@@ -45,8 +45,8 @@ SymCryptAes4SboxNeon( _In_reads_(4) PCBYTE pIn, _Out_writes_(4) PBYTE pOut )
 
 VOID
 SYMCRYPT_CALL
-SymCryptAesCreateDecryptionRoundKeyNeon( 
-    _In_reads_(16)      PCBYTE  pEncryptionRoundKey, 
+SymCryptAesCreateDecryptionRoundKeyNeon(
+    _In_reads_(16)      PCBYTE  pEncryptionRoundKey,
     _Out_writes_(16)    PBYTE   pDecryptionRoundKey )
 {
     *(__n128 *) pDecryptionRoundKey = aesimc_u8( *(__n128 *)pEncryptionRoundKey );
@@ -277,7 +277,7 @@ SymCryptAesCreateDecryptionRoundKeyNeon(
 
 VOID
 SYMCRYPT_CALL
-SymCryptAesEncryptNeon( 
+SymCryptAesEncryptNeon(
     _In_                                    PCSYMCRYPT_AES_EXPANDED_KEY pExpandedKey,
     _In_reads_( SYMCRYPT_AES_BLOCK_SIZE )   PCBYTE                      pbSrc,
     _Out_writes_( SYMCRYPT_AES_BLOCK_SIZE ) PBYTE                       pbDst )
@@ -293,7 +293,7 @@ SymCryptAesEncryptNeon(
 
 VOID
 SYMCRYPT_CALL
-SymCryptAesDecryptNeon( 
+SymCryptAesDecryptNeon(
     _In_                                    PCSYMCRYPT_AES_EXPANDED_KEY pExpandedKey,
     _In_reads_( SYMCRYPT_AES_BLOCK_SIZE )   PCBYTE                      pbSrc,
     _Out_writes_( SYMCRYPT_AES_BLOCK_SIZE ) PBYTE                       pbDst )
@@ -310,7 +310,7 @@ SymCryptAesDecryptNeon(
 
 VOID
 SYMCRYPT_CALL
-SymCryptAesCbcEncryptNeon( 
+SymCryptAesCbcEncryptNeon(
     _In_                                    PCSYMCRYPT_AES_EXPANDED_KEY pExpandedKey,
     _In_reads_( SYMCRYPT_AES_BLOCK_SIZE )   PBYTE                       pbChainingValue,
     _In_reads_( cbData )                    PCBYTE                      pbSrc,
@@ -338,7 +338,7 @@ SymCryptAesCbcEncryptNeon(
 #pragma warning( disable: 6001 4701 ) // use of uninitialized values, but that is by designs
 VOID
 SYMCRYPT_CALL
-SymCryptAesCbcDecryptNeon( 
+SymCryptAesCbcDecryptNeon(
     _In_                                    PCSYMCRYPT_AES_EXPANDED_KEY pExpandedKey,
     _In_reads_( SYMCRYPT_AES_BLOCK_SIZE )   PBYTE                       pbChainingValue,
     _In_reads_( cbData )                    PCBYTE                      pbSrc,
@@ -405,7 +405,7 @@ SymCryptAesCbcDecryptNeon(
         //
         // There is remaining work to be done
         //
-        d0 = c0 = pSrc[0]; 
+        d0 = c0 = pSrc[0];
         if( cData >= 2 )
         {
         d1 = c1 = pSrc[1];
@@ -445,7 +445,7 @@ SymCryptAesCbcDecryptNeon(
             c4 = veorq_u8( c4, d3 );
             c5 = veorq_u8( c5, d4 );
             c6 = veorq_u8( c6, d5 );
-        } 
+        }
         else if( cData > 1 )
         {
             AES_DECRYPT_4( pExpandedKey, c0, c1, c2, c3 );
@@ -522,7 +522,7 @@ SymCryptAesCbcMacNeon(
 #pragma warning( disable: 6001 4701 ) // use of uninitialized values, but that is by designs
 VOID
 SYMCRYPT_CALL
-SymCryptAesEcbEncryptNeon( 
+SymCryptAesEcbEncryptNeon(
     _In_                                        PCSYMCRYPT_AES_EXPANDED_KEY pExpandedKey,
     _In_reads_( cbData )                        PCBYTE                      pbSrc,
     _Out_writes_( cbData )                      PBYTE                       pbDst,
@@ -593,11 +593,11 @@ SymCryptAesEcbEncryptNeon(
     if( cbData >= 5 * SYMCRYPT_AES_BLOCK_SIZE )
     {
         AES_ENCRYPT_8( pExpandedKey, c0, c1, c2, c3, c4, c5, c6, c7 );
-    } 
+    }
     else if( cbData >= 2 * SYMCRYPT_AES_BLOCK_SIZE )
     {
         AES_ENCRYPT_4( pExpandedKey, c0, c1, c2, c3 );
-    } 
+    }
     else
     {
         AES_ENCRYPT_1( pExpandedKey, c0 );
@@ -637,7 +637,7 @@ SymCryptAesEcbEncryptNeon(
 
 VOID
 SYMCRYPT_CALL
-SymCryptAesCtrMsb64Neon( 
+SymCryptAesCtrMsb64Neon(
     _In_                                    PCSYMCRYPT_AES_EXPANDED_KEY pExpandedKey,
     _In_reads_( SYMCRYPT_AES_BLOCK_SIZE )   PBYTE                       pbChainingValue,
     _In_reads_( cbData )                    PCBYTE                      pbSrc,
@@ -712,7 +712,7 @@ SymCryptAesCtrMsb64Neon(
         }
 
         pDst[0] = veorq_u64( pSrc[0], c0 ); __prefetch( &pSrc[ 8] );
-        pDst[1] = veorq_u64( pSrc[1], c1 ); 
+        pDst[1] = veorq_u64( pSrc[1], c1 );
         pDst[2] = veorq_u64( pSrc[2], c2 ); __prefetch( &pSrc[10] );
         pDst[3] = veorq_u64( pSrc[3], c3 );
         pDst[4] = veorq_u64( pSrc[4], c4 ); __prefetch( &pSrc[12] );
@@ -755,7 +755,7 @@ SymCryptAesCtrMsb64Neon(
             pDst[6] = veorq_u64( pSrc[6], c6 );
                 }
             }
-        } 
+        }
         else if( cbData >= 2 * SYMCRYPT_AES_BLOCK_SIZE )
         {
             // Produce 4 blocks of key stream
@@ -786,7 +786,7 @@ SymCryptAesCtrMsb64Neon(
                 }
             }
         }
-        else 
+        else
         {
             // Exactly 1 block to process
             c0 = chain;
@@ -838,7 +838,7 @@ SymCryptAesCtrMsb64Neon(
 // and an AND to mask the modulo reduction and the extraneous bits in the other bytes at the same time.
 // vAlphaMask = (1, 1, ..., 1, 0x87 )
 //
-__declspec( align( 16 ) ) const BYTE g_SymCryptXtsNeonAlphaMask[16] = {0x87, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,};
+SYMCRYPT_ALIGN_AT( 16 ) const BYTE g_SymCryptXtsNeonAlphaMask[16] = {0x87, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,};
 
 #define XTS_MUL_ALPHA( _in, _res ) \
 {\

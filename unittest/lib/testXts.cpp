@@ -1,5 +1,5 @@
 //
-// Copyright (c) Microsoft Corporation. Licensed under the MIT license. 
+// Copyright (c) Microsoft Corporation. Licensed under the MIT license.
 //
 
 #include "precomp.h"
@@ -17,18 +17,18 @@ private:
 public:
     virtual NTSTATUS setKey( PCBYTE pbKey, SIZE_T cbKey );
 
-    virtual VOID encrypt( 
+    virtual VOID encrypt(
                                         SIZE_T      cbDataUnit,
                                         ULONGLONG   tweak,
-        _In_reads_( cbData )            PCBYTE      pbSrc, 
-        _Out_writes_( cbData )          PBYTE       pbDst, 
+        _In_reads_( cbData )            PCBYTE      pbSrc,
+        _Out_writes_( cbData )          PBYTE       pbDst,
                                         SIZE_T      cbData );
 
-    virtual VOID decrypt( 
+    virtual VOID decrypt(
                                         SIZE_T      cbDataUnit,
                                         ULONGLONG   tweak,
-        _In_reads_( cbData )            PCBYTE      pbSrc, 
-        _Out_writes_( cbData )          PBYTE       pbDst, 
+        _In_reads_( cbData )            PCBYTE      pbSrc,
+        _Out_writes_( cbData )          PBYTE       pbDst,
                                         SIZE_T      cbData );
 
     typedef std::vector<XtsImplementation *> XtsImpPtrVector;
@@ -36,14 +36,14 @@ public:
     XtsImpPtrVector m_imps;                    // Implementations we use
 
     XtsImpPtrVector m_comps;                   // Subset of m_imps; set of ongoing computations
-   
+
 };
 
 XtsMultiImp::XtsMultiImp( String algName )
 {
     getAllImplementations<XtsImplementation>( algName, &m_imps );
     m_algorithmName = algName;
-    
+
     String sumImpName;
     char * sepStr = "<";
 
@@ -72,7 +72,7 @@ NTSTATUS XtsMultiImp::setKey( PCBYTE pbKey, SIZE_T cbKey )
     // copy list of implementations to the ongoing computation list
     //
     m_comps.clear();
-    
+
     for( XtsImpPtrVector::const_iterator i = m_imps.begin(); i != m_imps.end(); ++i )
     {
         if( (*i)->setKey( pbKey, cbKey ) == 0 )
@@ -83,12 +83,12 @@ NTSTATUS XtsMultiImp::setKey( PCBYTE pbKey, SIZE_T cbKey )
     return m_comps.size() == 0 ? STATUS_NOT_SUPPORTED : STATUS_SUCCESS;
 }
 
-VOID 
-XtsMultiImp::encrypt( 
+VOID
+XtsMultiImp::encrypt(
                                         SIZE_T      cbDataUnit,
                                         ULONGLONG   tweak,
-        _In_reads_( cbData )            PCBYTE      pbSrc, 
-        _Out_writes_( cbData )          PBYTE       pbDst, 
+        _In_reads_( cbData )            PCBYTE      pbSrc,
+        _Out_writes_( cbData )          PBYTE       pbDst,
                                         SIZE_T      cbData )
 {
     BYTE        bufData[1 << 14];
@@ -104,12 +104,12 @@ XtsMultiImp::encrypt(
     resData.getResult( pbDst, cbData );
 }
 
-VOID 
-XtsMultiImp::decrypt( 
+VOID
+XtsMultiImp::decrypt(
                                         SIZE_T      cbDataUnit,
                                         ULONGLONG   tweak,
-        _In_reads_( cbData )            PCBYTE      pbSrc, 
-        _Out_writes_( cbData )          PBYTE       pbDst, 
+        _In_reads_( cbData )            PCBYTE      pbSrc,
+        _Out_writes_( cbData )          PBYTE       pbDst,
                                         SIZE_T      cbData )
 {
     BYTE        bufData[1 << 14];
@@ -127,14 +127,14 @@ XtsMultiImp::decrypt(
 
 
 VOID
-katXtsSingle( 
-                                XtsMultiImp               * pImp, 
+katXtsSingle(
+                                XtsMultiImp               * pImp,
     _In_reads_( cbKey )         PCBYTE                      pbKey,
                                 SIZE_T                      cbKey,
                                 ULONGLONG                   cbDataUnit,
                                 ULONGLONG                   tweak,
-    _In_reads_( cbPlaintext )   PCBYTE                      pbPlaintext, 
-                                SIZE_T                      cbPlaintext, 
+    _In_reads_( cbPlaintext )   PCBYTE                      pbPlaintext,
+                                SIZE_T                      cbPlaintext,
     _In_reads_( cbCiphertext )  PCBYTE                      pbCiphertext,
                                 SIZE_T                      cbCiphertext,
                                 ULONGLONG                   line)
@@ -144,7 +144,7 @@ katXtsSingle(
     CHECK3( cbPlaintext <= sizeof( bufData ), "Buffer too small, need %lld bytes", cbPlaintext );
     CHECK3( cbPlaintext == cbCiphertext, "Plaintext/Ciphertext size mismatch in line %lld", line );
     CHECK3( cbDataUnit <= (1 << 16), "cbDataUnit too large in line %lld", line )
-    
+
     CHECK( pImp->setKey( pbKey, cbKey ) == 0, "Error in setting key" );
     CHECK3( (cbDataUnit & (cbDataUnit - 1) ) == 0, "Data unit size is not a power of 2 in line %lld", line );
 
@@ -152,7 +152,7 @@ katXtsSingle(
     // Do single encryption
     //
     memset( bufData, 0, sizeof( bufData ) );
-    
+
     pImp->encrypt( (SIZE_T) cbDataUnit, tweak, pbPlaintext, bufData, cbPlaintext );
     CHECK3( memcmp( bufData, pbCiphertext, cbPlaintext ) == 0, "Ciphertext mismatch in line %lld", line );
 
@@ -160,14 +160,14 @@ katXtsSingle(
     // We don't do piece-wise encryption/decryption here; we do that in the random test.
     //
 
-    // 
+    //
     // Do single decryption
     //
 
     memset( bufData, 0, sizeof( bufData ) );
     pImp->decrypt( (SIZE_T) cbDataUnit, tweak, pbCiphertext, bufData, cbCiphertext );
-    CHECK3( memcmp( bufData, pbPlaintext, cbCiphertext ) == 0, "Plaintext mismatch in line %lld", line );        
-   
+    CHECK3( memcmp( bufData, pbPlaintext, cbCiphertext ) == 0, "Plaintext mismatch in line %lld", line );
+
 }
 
 
@@ -191,9 +191,9 @@ testXtsRandom( XtsMultiImp * pImp, int rrep, SIZE_T keyLen, PCBYTE pbResult, SIZ
 
     const SIZE_T bufSize = sizeof( buf1 );
     CHECK( bufSize > keyLen, "?" );
-    
+
     memset( buf1, 0, sizeof( buf1 ) );
-    
+
     SIZE_T keyIdx = 0;
 
     for( int i=0; i<rrep; i++ )
@@ -275,7 +275,7 @@ testXtsKats()
     BOOL skipData = TRUE;
     String sep = "    ";
     BOOL doneAnything = FALSE;
-    
+
     std::auto_ptr<XtsMultiImp> pXtsMultiImp;
 
     while( 1 )
@@ -292,7 +292,7 @@ testXtsKats()
         {
             g_currentCategory = katItem.categoryName;
             pXtsMultiImp.reset( new XtsMultiImp( g_currentCategory ) );
-            
+
             //
             // If we have no algorithms, we skip all the data until the next category
             //
@@ -309,17 +309,17 @@ testXtsKats()
         {
             if( katIsFieldPresent( katItem, "ciphertext" ) )
             {
-                
+
                 BString katKey = katParseData( katItem, "key" );
                 BString katPlaintext = katParseData( katItem, "plaintext" );
                 BString katCiphertext = katParseData( katItem, "ciphertext" );
                 ULONGLONG tweak = katParseInteger( katItem, "tweak" );
 
                 katXtsSingle(   pXtsMultiImp.get(),
-                                katKey.data(), katKey.size(), 
+                                katKey.data(), katKey.size(),
                                 katPlaintext.size(),
                                 tweak,
-                                katPlaintext.data(), katPlaintext.size(), 
+                                katPlaintext.data(), katPlaintext.size(),
                                 katCiphertext.data(), katCiphertext.size(),
                                 line );
             }

@@ -25,7 +25,8 @@ INCLUDES=  \
     ..\inc; \
     $(DS_INC_PATH)\crypto; \
     $(IFSKIT_INC_PATH); \
-    $(MINWIN_INTERNAL_PRIV_SDK_INC_PATH_L)\boot; \
+#    $(MINWIN_PRIVATE_PRIV_SDK_INC_PATH_L)\boot; \
+    $(OBJECT_ROOT)\SymCrypt\Publics\$(O); \
     $(OBJECT_ROOT)\SymCrypt\build\$(O); \
 
 SOURCES= \
@@ -153,13 +154,13 @@ ARM64_SOURCES = \
     fdef_asm.asm \
     fdef369_asm.asm \
     wipe.asm \
-    
-   
+
+
 BUFFER_OVERFLOW_CHECKS=1
 
 MSC_WARNING_LEVEL= /W4 /WX
 
-ENABLE_ISO_VOLATILE_WARNING=1 
+ENABLE_ISO_VOLATILE_WARNING=1
 
 #PRECOMPILED_INCLUDE = ..\precomp.h
 #PRECOMPILED_CXX = 1

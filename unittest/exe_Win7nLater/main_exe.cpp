@@ -2,7 +2,7 @@
 // Main_test.cpp
 // Main file for SymCrypt unit test program
 //
-// Copyright (c) Microsoft Corporation. Licensed under the MIT license. 
+// Copyright (c) Microsoft Corporation. Licensed under the MIT license.
 //
 
 #include "precomp.h"
@@ -14,7 +14,7 @@
 
 SYMCRYPT_ENVIRONMENT_WINDOWS_USERMODE_WIN7_N_LATER;
 
-char * g_implementationNames[] = 
+const char * g_implementationNames[] =
 {
     ImpSc::name,
     ImpRsa32::name,
@@ -49,7 +49,7 @@ main( int argc, _In_reads_( argc ) char * argv[] )
 
         testMultiThread();
 
-        runPerfTests();   
+        runPerfTests();
     }
 
     exitTestInfrastructure();

@@ -861,9 +861,7 @@ class ScBuild
         string[] filesToCopy = new string[] {
             @"symcrypt.h",
             @"symcrypt_low_level.h",
-            @"symcrypt_inline.h",
             @"symcrypt_internal.h",
-            @"symcrypt_types.h",
             @"symcrypt_version.inc",
         };
 

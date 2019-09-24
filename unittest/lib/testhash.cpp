@@ -1,7 +1,7 @@
 //
 // TestHash.cpp
 //
-// Copyright (c) Microsoft Corporation. Licensed under the MIT license. 
+// Copyright (c) Microsoft Corporation. Licensed under the MIT license.
 //
 
 //
@@ -43,9 +43,9 @@ public:
     virtual void result( PBYTE pbResult, SIZE_T cbResult );
     virtual NTSTATUS initWithLongMessage( ULONGLONG nBytes );
     virtual VOID hash( PCBYTE pbData, SIZE_T cbData, PBYTE pbResult, SIZE_T cbResult );
-    virtual NTSTATUS exportSymCryptFormat( 
-            _Out_writes_bytes_to_( cbResultBufferSize, *pcbResult ) PBYTE   pbResult, 
-            _In_                                                    SIZE_T  cbResultBufferSize, 
+    virtual NTSTATUS exportSymCryptFormat(
+            _Out_writes_bytes_to_( cbResultBufferSize, *pcbResult ) PBYTE   pbResult,
+            _In_                                                    SIZE_T  cbResultBufferSize,
             _Out_                                                   SIZE_T *pcbResult );
 };
 
@@ -122,7 +122,7 @@ VOID HashMultiImp::hash( PCBYTE pbData, SIZE_T cbData, PBYTE pbResult, SIZE_T cb
     ResultMerge res;
 
     CHECK( cbResult <= sizeof( buf ), "??" );
-    
+
     for( HashImpPtrVector::const_iterator i = m_imps.begin(); i != m_imps.end(); ++i )
     {
         SymCryptWipe( buf, cbResult );
@@ -131,7 +131,7 @@ VOID HashMultiImp::hash( PCBYTE pbData, SIZE_T cbData, PBYTE pbResult, SIZE_T cb
     }
 
     res.getResult( pbResult, cbResult );
-   
+
 }
 
 
@@ -141,12 +141,12 @@ VOID HashMultiImp::init()
     // copy list of implementations to the ongoing computation list
     //
     m_comps.assign( m_imps.begin(), m_imps.end() );
-    
+
     for( HashImpPtrVector::const_iterator i = m_comps.begin(); i != m_comps.end(); ++i )
     {
         (*i)->init();
     }
- 
+
 }
 
 VOID HashMultiImp::append( PCBYTE pbData, SIZE_T cbData )
@@ -155,7 +155,7 @@ VOID HashMultiImp::append( PCBYTE pbData, SIZE_T cbData )
    {
         (*i)->append( pbData, cbData );
    }
- 
+
 }
 
 VOID HashMultiImp::result( PBYTE pbResult, SIZE_T cbResult )
@@ -164,7 +164,7 @@ VOID HashMultiImp::result( PBYTE pbResult, SIZE_T cbResult )
    ResultMerge res;
 
    CHECK( cbResult <= sizeof( buf ), "?" );
-   
+
    for( HashImpPtrVector::const_iterator i = m_comps.begin(); i != m_comps.end(); ++i )
    {
        SymCryptWipe( buf, cbResult );
@@ -182,7 +182,7 @@ HashMultiImp::initWithLongMessage( ULONGLONG nBytes )
     // copy list of implementations to the ongoing computation list
     //
     m_comps.clear();
-    
+
     for( HashImpPtrVector::const_iterator i = m_imps.begin(); i != m_imps.end(); ++i )
     {
         if( (*i)->initWithLongMessage( nBytes ) == 0 )
@@ -194,10 +194,10 @@ HashMultiImp::initWithLongMessage( ULONGLONG nBytes )
     return m_comps.size() == 0 ? STATUS_NOT_SUPPORTED : STATUS_SUCCESS;
 }
 
-NTSTATUS 
-HashMultiImp::exportSymCryptFormat( 
-    _Out_writes_bytes_to_( cbResultBufferSize, *pcbResult ) PBYTE   pbResult, 
-    _In_                                                    SIZE_T  cbResultBufferSize, 
+NTSTATUS
+HashMultiImp::exportSymCryptFormat(
+    _Out_writes_bytes_to_( cbResultBufferSize, *pcbResult ) PBYTE   pbResult,
+    _In_                                                    SIZE_T  cbResultBufferSize,
     _Out_                                                   SIZE_T *pcbResult )
 {
     BYTE buf[1024];
@@ -222,7 +222,7 @@ HashMultiImp::exportSymCryptFormat(
 
    *pcbResult = size;
    res.getResult( pbResult, size );
-    
+
    return STATUS_SUCCESS;
 }
 
@@ -246,12 +246,12 @@ public:
     virtual PCSYMCRYPT_HASH SymCryptHash();
 
     virtual SIZE_T resultLen();
-        
+
     virtual SIZE_T inputBlockLen();
 
     virtual VOID init( SIZE_T nHashes );
-        
-    virtual VOID process( 
+
+    virtual VOID process(
         _In_reads_( nOperations )   BCRYPT_MULTI_HASH_OPERATION *   pOperations,
                                     SIZE_T                          nOperations );
 
@@ -321,7 +321,7 @@ ParallelHashMultiImp::inputBlockLen()
     return res;
 }
 
-PCSYMCRYPT_HASH 
+PCSYMCRYPT_HASH
 ParallelHashMultiImp::SymCryptHash()
 {
     PCSYMCRYPT_HASH res;
@@ -350,12 +350,12 @@ ParallelHashMultiImp::init( SIZE_T nHashes )
     // copy list of implementations to the ongoing computation list
     //
     m_comps.assign( m_imps.begin(), m_imps.end() );
-    
+
     for( ParallelHashImpPtrVector::const_iterator i = m_comps.begin(); i != m_comps.end(); ++i )
     {
         (*i)->init( nHashes );
     }
- 
+
 }
 
 VOID
@@ -417,7 +417,7 @@ ParallelHashMultiImp::initWithLongMessage( ULONGLONG nBytes )
     // copy list of implementations to the ongoing computation list
     //
     m_comps.clear();
-    
+
     for( ParallelHashImpPtrVector::const_iterator i = m_imps.begin(); i != m_imps.end(); ++i )
     {
         if( (*i)->initWithLongMessage( nBytes ) == 0 )
@@ -443,8 +443,8 @@ HashImplementation::hash( PCBYTE pbData, SIZE_T cbData, PBYTE pbResult, SIZE_T c
 
 VOID
 testHashSingle(                         HashImplementation *    pHash,
-               _In_reads_( cbData )     PCBYTE                  pbData, 
-                                        SIZE_T                  cbData, 
+               _In_reads_( cbData )     PCBYTE                  pbData,
+                                        SIZE_T                  cbData,
                _In_reads_( cbResult )   PCBYTE                  pbResult,
                                         SIZE_T                  cbResult,
                                         LONGLONG                line)
@@ -477,7 +477,7 @@ testHashSingle(                         HashImplementation *    pHash,
 
     memset( res, 0, resultLen );
     pHash->init();
-    
+
     PCBYTE pbDataLeft = pbData;
     SIZE_T bytesLeft = cbData;
 
@@ -498,7 +498,7 @@ testHashSingle(                         HashImplementation *    pHash,
         print( "\nGot      " );
         printHex( res, cbResult );
         print( "\n" );
-        
+
         pHash->m_nErrorKatFailure++;
     }
 
@@ -520,7 +520,7 @@ testHashRandom( HashMultiImp * pHash, int rrep, PCBYTE pbResult, SIZE_T cbResult
 
     const SIZE_T bufSize = pHash->inputBlockLen() * 4;
     CHECK( bufSize <= sizeof( buf ), "Input block len too large" );
-    
+
     memset( buf, 0, sizeof( buf ) );
     SIZE_T destIdx = 0;
     SIZE_T nAppends;
@@ -572,7 +572,7 @@ testHashRandom( HashMultiImp * pHash, int rrep, PCBYTE pbResult, SIZE_T cbResult
         CHECK5( cbResult == cbHash, "Wrong result length in line %lld, expected %d, got %d", line, cbHash, cbResult );
         if( memcmp( res, pbResult, cbHash ) != 0 )
         {
-            
+
         print( "Wrong hash result in line %lld. \n"
             "Expected ", line );
         printHex( pbResult, cbResult );
@@ -581,9 +581,9 @@ testHashRandom( HashMultiImp * pHash, int rrep, PCBYTE pbResult, SIZE_T cbResult
         print( "\n" );
 
         pHash->m_nErrorKatFailure++;
-       
+
         }
-        
+
     }
 
 }
@@ -598,14 +598,14 @@ testLongMessage( HashMultiImp * pHash, int maxLen, PCBYTE pbResult, SIZE_T cbRes
 
     SIZE_T blockSize = pHash->inputBlockLen();
     SIZE_T resultLen = pHash->resultLen();
-    
+
     CHECK( resultLen <= MAX_HASH_SIZE, "Result size too large" );
     CHECK3( resultLen == cbResult, "Incorrect result length in line %lld", line );
     CHECK( blockSize <= MAX_INPUT_BLOCK_SIZE, "Input block len too large" );
 
     memset( data, 'a', sizeof( data ) );
-    
-    
+
+
     //
     // maxLen is the maximum 2-log of the length
     //
@@ -641,7 +641,7 @@ testLongMessage( HashMultiImp * pHash, int maxLen, PCBYTE pbResult, SIZE_T cbRes
         results.append( res, cbResult );
     }
     pHash->hash( (PCBYTE) results.data(), results.size(), res, cbResult );
-    
+
     if( memcmp( res, pbResult, cbResult ) != 0 )
     {
         print( "Wrong %s result for long message test in line %lld. \n"
@@ -724,14 +724,14 @@ testExport( HashMultiImp * pHash, PCBYTE pbExport, SIZE_T cbExport, LONGLONG lin
     BYTE msg2[1234];
     BYTE exportBlob[1024];
     SIZE_T exportLen;
-    
+
     UNREFERENCED_PARAMETER( line );
 
     for( int i=0; i<sizeof( msg1 ); i++ )
     {
         msg1[i] = (BYTE) (i & 0xff);
     }
-    
+
     CHECK( NT_SUCCESS( GENRANDOM(msg2, sizeof( msg2 )) ), "?" );
 
     pHash->init();
@@ -762,14 +762,15 @@ testExport( HashMultiImp * pHash, PCBYTE pbExport, SIZE_T cbExport, LONGLONG lin
 VOID
 testHashKats()
 {
-    std::auto_ptr<KatData> katHash( getCustomResource( "kat_hash.dat", "KAT_HASH" ) );
+    // fix this.
+    KatData *katHash = getCustomResource( "kat_hash.dat", "KAT_HASH" );
     KAT_ITEM katItem;
 
     static String g_currentCategory;
     BOOL skipData = TRUE;
     String sep = "    ";
     BOOL doneAnything = FALSE;
-    
+
     std::auto_ptr<HashMultiImp> pHashMultiImp;
 
     while( 1 )
@@ -784,7 +785,7 @@ testHashKats()
         {
             g_currentCategory = katItem.categoryName;
             pHashMultiImp.reset( new HashMultiImp( g_currentCategory ) );
-            
+
             //
             // If we have no algorithms, we skip all the data until the next category
             //
@@ -848,7 +849,7 @@ testHashKats()
                 testExport( pHashMultiImp.get(), exportBlob.data(), exportBlob.size(), katHash->m_line );
                 continue;
             }
-                    
+
             FATAL2( "Unknown data record ending at line %lld", katHash->m_line );
         }
     }
@@ -857,6 +858,8 @@ testHashKats()
     {
         iprint( "\n" );
     }
+
+    delete katHash;
 }
 
 #define MAX_PAR_HASHES  MAX_PARALLEL_HASH_STATES
@@ -897,7 +900,7 @@ testParallelHash( String &sep, String algName )
     }
 
     pBuf = new BYTE[BUF_SIZE];
-    
+
     CHECK( NT_SUCCESS( GENRANDOM(pBuf, BUF_SIZE) ), "?" );
 
     cbResult = (ULONG) pParHash->resultLen();
@@ -934,9 +937,9 @@ testParallelHash( String &sep, String algName )
     op[1].cbBuffer = (ULONG) cbResult;
     pParHash->process( op, 2 );
     SymCryptHash( pHash, NULL, 0, &expected[0][0], cbResult );
-    
+
     CHECK( memcmp( result[0], expected[0], cbResult ) == 0, "Test case 1 failure");
-    
+
     //
     // Test: 8-parallel, short message, all identical.
     //
@@ -1080,7 +1083,7 @@ testParallelHash( String &sep, String algName )
             op[2*i+1].cbBuffer = cbResult;
             SymCryptHash( pHash, op[2*i].pbBuffer, op[2*i].cbBuffer, &expected[i][0], cbResult );
         }
-        
+
         pParHash->process( op, 2*nHashes );
 
         for( i=0; i<nHashes; i++ )
@@ -1329,8 +1332,8 @@ hashSetIntermediateState( ALG_IMP_ID alg, _Inout_ HASH_STATE * state, ULONGLONG 
 //
 VOID
 hashSimpleTest( ALG_IMP_ID alg,
-               _In_reads_( cbData )    PCBYTE pbData, 
-                                        SIZE_T cbData, 
+               _In_reads_( cbData )    PCBYTE pbData,
+                                        SIZE_T cbData,
                _In_reads_( cbResult )  PCBYTE pbResult,
                                         SIZE_T cbResult )
 {
@@ -1423,14 +1426,14 @@ hashManyAsTest(                         ALG_IMP_ID alg,
 //
 // A self-driven pseudo-random test for a hash function
 // This test is geared towards finding errors in the internal buffering
-// and actual hash algorithm. 
+// and actual hash algorithm.
 //
 // This uses a single 1kB buffer and runs a load of hash operations on it.
 //
 VOID
-hashRandomTest(                         ALG_IMP_ID  alg, 
+hashRandomTest(                         ALG_IMP_ID  alg,
                                         SIZE_T      bufSize,
-                                        ULONG       iterations, 
+                                        ULONG       iterations,
                 _In_reads_( cbResult ) PCBYTE      pbResult,
                                         SIZE_T      cbResult )
 {
@@ -1500,7 +1503,7 @@ hashRandomTest(                         ALG_IMP_ID  alg,
 // hashLongMessageTest
 //
 // X_n is defined as an n-byte string (where n is a multiple of the input block size)
-// that results in the chaining state being all 'b' bytes after 
+// that results in the chaining state being all 'b' bytes after
 // X_n has been processed.
 //
 // The test takes n as input and hashes X_n followed by 1000 bytes 'a'.
@@ -1520,7 +1523,7 @@ hashLongMessageTest( ALG_IMP_ID  alg,
     CHECK( cbResult == hashResultSize( alg ), "Long message length is not multiple of input block size" );
 
     //
-    // Only Symcrypt and RSA32 implementations can run this test. 
+    // Only Symcrypt and RSA32 implementations can run this test.
     // Compute the set of result algorithms we expect.
     //
     algExpected = alg & (IMP_SYMCRYPT | IMP_RSA32 | ALG_MASK);

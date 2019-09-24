@@ -5,7 +5,6 @@
 //
 
 
-#include <string.h>             // memcpy, memcmp
 #include <libkern/OSAtomic.h>   // atomic operations
 
 // Ingnore the incompatible pointer types void * to PSYMCRYPT_XXX
@@ -15,7 +14,7 @@
 #define UNREFERENCED_PARAMETER(x)   (x)
 
 #define FAST_FAIL_CRYPTO_LIBRARY    22
-#define __fastfail(x)               (*((volatile int *)(0)) = (int) (x)) 
+#define __fastfail(x)               (*((volatile int *)(0)) = (int) (x))
 
 #if !defined min
 #define min(a,b) \

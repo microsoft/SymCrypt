@@ -31,11 +31,11 @@ const SYMCRYPT_BLOCKCIPHER SymCryptAesBlockCipherNoOpt = {
     NULL,
     NULL,
     NULL,
-    NULL,                
+    NULL,
     NULL,                   // PSYMCRYPT_BLOCKCIPHER_CRYPT_XTS     xtsEncFunc;
     NULL,                   // PSYMCRYPT_BLOCKCIPHER_CRYPT_XTS     xtsDecFunc;
 
-    SYMCRYPT_AES_BLOCK_SIZE,         
+    SYMCRYPT_AES_BLOCK_SIZE,
     sizeof( SYMCRYPT_AES_EXPANDED_KEY ),
 };
 
@@ -65,8 +65,8 @@ SymCryptAes4Sbox( _In_reads_(4) PCBYTE pIn, _Out_writes_(4) PBYTE pOut, BOOL Use
 
 VOID
 SYMCRYPT_CALL
-SymCryptAesCreateDecryptionRoundKey( 
-    _In_reads_(16)      PCBYTE  pEncryptionRoundKey, 
+SymCryptAesCreateDecryptionRoundKey(
+    _In_reads_(16)      PCBYTE  pEncryptionRoundKey,
     _Out_writes_(16)    PBYTE   pDecryptionRoundKey,
                         BOOL    UseSimd )
 {
@@ -170,7 +170,7 @@ SymCryptAesDecrypt(
 
 VOID
 SYMCRYPT_CALL
-SymCryptAesCbcEncrypt( 
+SymCryptAesCbcEncrypt(
     _In_                                        PCSYMCRYPT_AES_EXPANDED_KEY pExpandedKey,
     _Inout_updates_( SYMCRYPT_AES_BLOCK_SIZE )  PBYTE                       pbChainingValue,
     _In_reads_( cbData )                        PCBYTE                      pbSrc,
@@ -211,7 +211,7 @@ SymCryptAesCbcEncrypt(
 
 VOID
 SYMCRYPT_CALL
-SymCryptAesCbcDecrypt( 
+SymCryptAesCbcDecrypt(
     _In_                                        PCSYMCRYPT_AES_EXPANDED_KEY pExpandedKey,
     _Inout_updates_( SYMCRYPT_AES_BLOCK_SIZE )  PBYTE                       pbChainingValue,
     _In_reads_( cbData )                        PCBYTE                      pbSrc,
@@ -252,7 +252,7 @@ SymCryptAesCbcDecrypt(
 
 VOID
 SYMCRYPT_CALL
-SymCryptAesEcbEncrypt( 
+SymCryptAesEcbEncrypt(
     _In_                                        PCSYMCRYPT_AES_EXPANDED_KEY pExpandedKey,
     _In_reads_( cbData )                        PCBYTE                      pbSrc,
     _Out_writes_( cbData )                      PBYTE                       pbDst,
@@ -292,7 +292,7 @@ SymCryptAesEcbEncrypt(
 
 VOID
 SYMCRYPT_CALL
-SymCryptAesEcbDecrypt( 
+SymCryptAesEcbDecrypt(
     _In_                                        PCSYMCRYPT_AES_EXPANDED_KEY pExpandedKey,
     _In_reads_( cbData )                        PCBYTE                      pbSrc,
     _Out_writes_( cbData )                      PBYTE                       pbDst,
@@ -358,7 +358,7 @@ SymCryptAesCbcMac(
 
 VOID
 SYMCRYPT_CALL
-SymCryptAesCtrMsb64( 
+SymCryptAesCtrMsb64(
     _In_                                        PCSYMCRYPT_AES_EXPANDED_KEY pExpandedKey,
     _Inout_updates_( SYMCRYPT_AES_BLOCK_SIZE )  PBYTE                       pbChainingValue,
     _In_reads_( cbData )                        PCBYTE                      pbSrc,

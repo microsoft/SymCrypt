@@ -1,6 +1,6 @@
 # This .gitignore file is mostly a copy of the .gitignore used by the Windows main
-# repository. 
-# Currently SymCrypt is built with the Windows build system which generates many 
+# repository.
+# Currently SymCrypt is built with the Windows build system which generates many
 # transient files. This .gitignore file ignores these transient files.
 
 
@@ -70,3 +70,6 @@ validate-pushrelease*.log
 
 release/
 scbuild.log
+
+# Cmake output
+/out

@@ -19,7 +19,7 @@
 // We have one extra value at the end to allow an XMM read from each element
 // of the array.
 //
-__declspec( align( 64 ) ) const  UINT64 SymCryptSha512K[81] = {
+SYMCRYPT_ALIGN_AT( 64 ) const  UINT64 SymCryptSha512K[81] = {
     0x428a2f98d728ae22UL, 0x7137449123ef65cdUL,
     0xb5c0fbcfec4d3b2fUL, 0xe9b5dba58189dbbcUL,
     0x3956c25bf348b538UL, 0x59f111f1b605d019UL,
@@ -89,7 +89,7 @@ const UINT64 SymCryptSha384InitialState[8] = {
 
 
 //
-// Todo: this structure pulls in the SHA284 code anytime someone uses 
+// Todo: this structure pulls in the SHA284 code anytime someone uses
 // SHA-512; should be split into a separate file.
 //
 const SYMCRYPT_HASH SymCryptSha384Algorithm_default = {
@@ -144,7 +144,7 @@ SYMCRYPT_CALL
 SymCryptSha512Init( _Out_ PSYMCRYPT_SHA512_STATE pState )
 {
     SYMCRYPT_SET_MAGIC( pState );
-    
+
     pState->dataLengthH = 0;
     pState->dataLengthL = 0;
     pState->bytesInBuffer = 0;
@@ -181,7 +181,7 @@ SymCryptSha384Init( _Out_ PSYMCRYPT_SHA384_STATE pState )
 SYMCRYPT_NOINLINE
 VOID
 SYMCRYPT_CALL
-SymCryptSha512Append( 
+SymCryptSha512Append(
     _Inout_                 PSYMCRYPT_SHA512_STATE  pState,
     _In_reads_( cbData )    PCBYTE                  pbData,
                             SIZE_T                  cbData )
@@ -191,7 +191,7 @@ SymCryptSha512Append(
     SIZE_T tmp;
 
     SYMCRYPT_CHECK_MAGIC( pState );
-    
+
     pState->dataLengthL += cbData;
     if( pState->dataLengthL < cbData ) {
         pState->dataLengthH++;
@@ -211,7 +211,7 @@ SymCryptSha512Append(
         {
             //
             // All the data will fit in the buffer.
-            // We don't do anything here. 
+            // We don't do anything here.
             // As cbData < inputBlockSize the bulk data processing is skipped,
             // and the data will be copied to the buffer at the end
             // of this code.
@@ -223,7 +223,7 @@ SymCryptSha512Append(
             pbData += freeInBuffer;
             cbData -= freeInBuffer;
             SymCryptSha512AppendBlocks( &pState->chain, &pState->buffer[0], SYMCRYPT_SHA512_INPUT_BLOCK_SIZE, &tmp );
-            
+
             bytesInBuffer = 0;
         }
     }
@@ -325,7 +325,7 @@ SymCryptSha512Result(
 SYMCRYPT_NOINLINE
 VOID
 SYMCRYPT_CALL
-SymCryptSha384Result(   
+SymCryptSha384Result(
     _Inout_                                     PSYMCRYPT_SHA384_STATE  pState,
     _Out_writes_( SYMCRYPT_SHA384_RESULT_SIZE ) PBYTE                   pbResult )
 {
@@ -396,7 +396,7 @@ SymCryptSha512StateExport(
 {
     SymCryptSha512StateExportCore( pState, pbBlob, SymCryptBlobTypeSha512State );
 }
-    
+
 VOID
 SYMCRYPT_CALL
 SymCryptSha384StateExport(
@@ -405,7 +405,7 @@ SymCryptSha384StateExport(
 {
     SymCryptSha512StateExportCore( (PCSYMCRYPT_SHA512_STATE)pState, pbBlob, SymCryptBlobTypeSha384State );
 }
-    
+
 
 _Success_(return == SYMCRYPT_NO_ERROR)
 SYMCRYPT_ERROR
@@ -499,7 +499,7 @@ SymCryptSha512Selftest()
     SymCryptSha512( SymCryptTestMsg3, sizeof( SymCryptTestMsg3 ), result );
 
     SymCryptInjectError( result, sizeof( result ) );
-    
+
     if( memcmp( result, SymCryptSha512KATAnswer, sizeof( result ) ) != 0 ) {
         SymCryptFatal( 'SH51' );
     }
@@ -530,7 +530,7 @@ SymCryptSha384Selftest()
     SymCryptSha384( SymCryptTestMsg3, sizeof( SymCryptTestMsg3 ), result );
 
     SymCryptInjectError( result, sizeof( result ) );
-    
+
     if( memcmp( result, SymCryptSha384KATAnswer, sizeof( result ) ) != 0 ) {
         SymCryptFatal( 'SH38' );
     }
@@ -576,7 +576,7 @@ SymCryptSha384Selftest()
 // We have unrolled the loop 16 times. This makes both the indices into
 // the ah array constant, and it makes the message addressing constant.
 // This provides a significant speed improvement, at the cost of making
-// the main loop about 4 kB in code. 
+// the main loop about 4 kB in code.
 //
 // Initial round; r16 is the round number mod 16
 // ah[ r16   &7] = h
@@ -604,7 +604,7 @@ SymCryptSha384Selftest()
 }
 
 //
-// Initial round that reads the message. 
+// Initial round that reads the message.
 // r is the round number 0..15
 //
 #define IROUND( a, b, c, d, e, f, g, h, r ) {\
@@ -612,8 +612,8 @@ SymCryptSha384Selftest()
     CROUND( a, b, c, d, e, f, g, h, r, r);\
     }
 //
-// Subsequent rounds. 
-// r is the round number, r16 is the round number mod 16. 
+// Subsequent rounds.
+// r is the round number, r16 is the round number mod 16.
 // These are separate as typically r is run-time and r16 is compile time constant.
 //
 #define FROUND( a, b, c, d, e, f, g, h, r, r16 ) {                                      \
@@ -628,7 +628,7 @@ SymCryptSha384Selftest()
 //
 VOID
 SYMCRYPT_CALL
-SymCryptSha512AppendBlocks_ull( 
+SymCryptSha512AppendBlocks_ull(
     _Inout_                 SYMCRYPT_SHA512_CHAINING_STATE  *   pChain,
     _In_reads_(cbData)      PCBYTE                              pbData,
                             SIZE_T                              cbData,
@@ -722,10 +722,10 @@ SymCryptSha512AppendBlocks_ull(
 }
 
 //
-// UINT64 based implementation that 
+// UINT64 based implementation that
 // first computes the expanded message, and then the
 // actual hash computation.
-// It tries to use fewer registers; this is probably a good approach for CPUs with only 8 
+// It tries to use fewer registers; this is probably a good approach for CPUs with only 8
 // 64-bit registers; which is what you would use on x86 XMM, but we have XMM code below.
 // This uses more memory, but might allow better register re-use and thereby
 // reduce the number of load/stores.
@@ -733,7 +733,7 @@ SymCryptSha512AppendBlocks_ull(
 
 VOID
 SYMCRYPT_CALL
-SymCryptSha512AppendBlocks_ull2( 
+SymCryptSha512AppendBlocks_ull2(
     _Inout_                 SYMCRYPT_SHA512_CHAINING_STATE  *   pChain,
     _In_reads_(cbData)      PCBYTE                              pbData,
                             SIZE_T                              cbData,
@@ -778,7 +778,7 @@ SymCryptSha512AppendBlocks_ull2(
 
             //
             // Macro for one word of message expansion.
-            // Invariant: 
+            // Invariant:
             // on entry: a = W[r-1], b = W[r-2], d = W[r-16]
             // on exit:  W[r] computed, a = W[r-1], b = W[r], c = W[r-15]
             //
@@ -801,19 +801,19 @@ SymCryptSha512AppendBlocks_ull2(
         for( r=0; r<80; r += 4 )
         {
             //
-            // Loop invariant: 
+            // Loop invariant:
             // A, B, C, and D are the a,b,c,d values of the current state.
             // W[r] is the next expanded message word to be processed.
-            // W[r-8 .. r-5] contain the current state words h, g, f, e. 
+            // W[r-8 .. r-5] contain the current state words h, g, f, e.
             //
 
             //
             // Macro to compute one round
-            // 
+            //
             #define DO_ROUND( a, b, c, d, t, r ) \
                 t = W[r] + CSIGMA1( W[r-5] ) + W[r-8] + CH( W[r-5], W[r-6], W[r-7] ) + SymCryptSha512K[r]; \
                 W[r-4] = t + d; \
-                d = t + CSIGMA0( a ) + MAJ( c, b, a ); 
+                d = t + CSIGMA0( a ) + MAJ( c, b, a );
 
             DO_ROUND( A, B, C, D, T, r );
             DO_ROUND( D, A, B, C, T, (r+1) );
@@ -859,7 +859,7 @@ SymCryptSha512AppendBlocks_ull2(
 }
 
 //
-// UINT64 based implementation that 
+// UINT64 based implementation that
 // first computes the expanded message, and then the
 // actual hash computation.
 // This one uses more registers than the previous one.
@@ -867,7 +867,7 @@ SymCryptSha512AppendBlocks_ull2(
 
 VOID
 SYMCRYPT_CALL
-SymCryptSha512AppendBlocks_ull3( 
+SymCryptSha512AppendBlocks_ull3(
     _Inout_                 SYMCRYPT_SHA512_CHAINING_STATE  *   pChain,
     _In_reads_(cbData)      PCBYTE                              pbData,
                             SIZE_T                              cbData,
@@ -878,10 +878,10 @@ SymCryptSha512AppendBlocks_ull3(
     UINT64 A, B, C, D, E, F, G, H;
     int r;
 
-    ha[7] = pChain->H[0]; 
-    ha[6] = pChain->H[1]; 
-    ha[5] = pChain->H[2]; 
-    ha[4] = pChain->H[3]; 
+    ha[7] = pChain->H[0];
+    ha[6] = pChain->H[1];
+    ha[5] = pChain->H[2];
+    ha[4] = pChain->H[3];
     ha[3] = pChain->H[4];
     ha[2] = pChain->H[5];
     ha[1] = pChain->H[6];
@@ -911,7 +911,7 @@ SymCryptSha512AppendBlocks_ull3(
 
             //
             // Macro for one word of message expansion.
-            // Invariant: 
+            // Invariant:
             // on entry: a = W[r-1], b = W[r-2], d = W[r-16]
             // on exit:  W[r] computed, a = W[r-1], b = W[r], c = W[r-15]
             //
@@ -938,18 +938,18 @@ SymCryptSha512AppendBlocks_ull3(
         for( r=0; r<80; r += 8 )
         {
             //
-            // Loop invariant: 
+            // Loop invariant:
             // A, B, C, and D, E, F, G, H, are the values of the current state.
             // W[r] is the next expanded message word to be processed.
             //
 
             //
             // Macro to compute one round
-            // 
+            //
             #define DO_ROUND( a, b, c, d, e, f, g, h, r ) \
                 h += W[r] + CSIGMA1( e ) + CH( e, f, g ) + SymCryptSha512K[r]; \
                 d += h; \
-                h += CSIGMA0( a ) + MAJ( c, b, a ); 
+                h += CSIGMA0( a ) + MAJ( c, b, a );
 
             DO_ROUND( A, B, C, D, E, F, G, H, (r  ) );
             DO_ROUND( H, A, B, C, D, E, F, G, (r+1) );
@@ -1024,7 +1024,7 @@ SymCryptSha512AppendBlocks_ull3(
 #define XMMXOR( _a, _b ) _mm_xor_si128((_a), (_b))
 #define XMMTO_UINT64( _a ) ((_a).m128i_u64[0])
 
-#define XMMMAJ( x, y, z )  XMMOR( XMMAND( XMMOR( (z), (y)), (x)), XMMAND( (z), (y) ) )   
+#define XMMMAJ( x, y, z )  XMMOR( XMMAND( XMMOR( (z), (y)), (x)), XMMAND( (z), (y) ) )
 #define XMMCH(  x, y, z )  XMMXOR( XMMAND( XMMXOR( (z), (y) ), (x)), (z))
 #define XMMCSIGMA0( x )    XMMXOR( XMMXOR( XMMROR((x), 28), XMMROR((x), 34)), XMMROR((x), 39))
 #define XMMCSIGMA1( x )    XMMXOR( XMMXOR( XMMROR((x), 14), XMMROR((x), 18)), XMMROR((x), 41))
@@ -1032,7 +1032,7 @@ SymCryptSha512AppendBlocks_ull3(
 #define XMMLSIGMA1( x )    XMMXOR( XMMXOR( XMMROR((x), 19), XMMROR((x), 61)), XMMSHR((x), 6))
 
 //
-// Core round takes two arguments: r16 = round number modulo 16, r = round number - r16. 
+// Core round takes two arguments: r16 = round number modulo 16, r = round number - r16.
 // On entry, Wt must be equal to the sum of the round constant and the expanded message word for this round.
 // Only the lower word of each Xmm register is used.
 //
@@ -1088,7 +1088,7 @@ SymCryptSha512AppendBlocks_ull3(
 
 VOID
 SYMCRYPT_CALL
-SymCryptSha512AppendBlocks_xmm( 
+SymCryptSha512AppendBlocks_xmm(
     _Inout_                 SYMCRYPT_SHA512_CHAINING_STATE  *   pChain,
     _In_reads_(cbData)      PCBYTE                              pbData,
                             SIZE_T                              cbData,
@@ -1102,16 +1102,16 @@ SymCryptSha512AppendBlocks_xmm(
     const __m128i BYTE_REVERSE_64 = _mm_set_epi8( 8, 9, 10, 11, 12, 13, 14, 15, 0, 1, 2, 3, 4, 5, 6, 7 );
 
     Wt = _mm_loadu_si128( (__m128i *) &pChain->H[0] );
-    feedf[7] = ah[7] = Wt; 
+    feedf[7] = ah[7] = Wt;
     feedf[6] = ah[6] = _mm_srli_si128( Wt, 8 );
     Wt = _mm_loadu_si128( (__m128i *) &pChain->H[2] );
-    feedf[5] = ah[5] = Wt; 
+    feedf[5] = ah[5] = Wt;
     feedf[4] = ah[4] = _mm_srli_si128( Wt, 8 );
     Wt = _mm_loadu_si128( (__m128i *) &pChain->H[4] );
-    feedf[3] = ah[3] = Wt; 
+    feedf[3] = ah[3] = Wt;
     feedf[2] = ah[2] = _mm_srli_si128( Wt, 8 );
     Wt = _mm_loadu_si128( (__m128i *) &pChain->H[6] );
-    feedf[1] = ah[1] = Wt; 
+    feedf[1] = ah[1] = Wt;
     feedf[0] = ah[0] = _mm_srli_si128( Wt, 8 );
 
     while( cbData >= 128 )
@@ -1170,7 +1170,7 @@ SymCryptSha512AppendBlocks_xmm(
         cbData -= 128;
 
     }
-    
+
     pChain->H[0] = XMMTO_UINT64( ah[7] );
     pChain->H[1] = XMMTO_UINT64( ah[6] );
     pChain->H[2] = XMMTO_UINT64( ah[5] );
@@ -1179,7 +1179,7 @@ SymCryptSha512AppendBlocks_xmm(
     pChain->H[5] = XMMTO_UINT64( ah[2] );
     pChain->H[6] = XMMTO_UINT64( ah[1] );
     pChain->H[7] = XMMTO_UINT64( ah[0] );
-    
+
     *pcbRemaining = cbData;
 
     //
@@ -1194,12 +1194,12 @@ SymCryptSha512AppendBlocks_xmm(
 
 #endif
 
-    
-    
+
+
 //======================================================================================
 // Implementation using NEON registers
 //
-#if SYMCRYPT_CPU_ARM 
+#if SYMCRYPT_CPU_ARM
 
 
 #define ROR( _a, _n ) vorr_u64( vshl_n_u64( _a, 64 - _n ), vshr_n_u64( _a, _n ) )
@@ -1223,7 +1223,7 @@ SymCryptSha512AppendBlocks_xmm(
 }
 
 //
-// Initial round that reads the message. 
+// Initial round that reads the message.
 // r is the round number 0..15
 //
 #define IROUND( a, b, c, d, e, f, g, h, r ) {\
@@ -1231,8 +1231,8 @@ SymCryptSha512AppendBlocks_xmm(
     CROUND( a, b, c, d, e, f, g, h, r, r);\
     }
 //
-// Subsequent rounds. 
-// r is the round number, r16 is the round number mod 16. 
+// Subsequent rounds.
+// r is the round number, r16 is the round number mod 16.
 // These are separate as typically r is run-time and r16 is compile time constant.
 //
 #define FROUND( a, b, c, d, e, f, g, h, r, r16 ) {                                      \
@@ -1246,7 +1246,7 @@ SymCryptSha512AppendBlocks_xmm(
 //
 VOID
 SYMCRYPT_CALL
-SymCryptSha512AppendBlocks_neon( 
+SymCryptSha512AppendBlocks_neon(
     _Inout_                 SYMCRYPT_SHA512_CHAINING_STATE  *   pChain,
     _In_reads_(cbData)      PCBYTE                              pbData,
                             SIZE_T                              cbData,
@@ -1341,7 +1341,7 @@ SymCryptSha512AppendBlocks_neon(
 }
 
 #endif
-                     
+
 //======================================================================================
 //
 // Switch between different implementations of compression function
@@ -1349,7 +1349,7 @@ SymCryptSha512AppendBlocks_neon(
 //FORCEINLINE
 VOID
 SYMCRYPT_CALL
-SymCryptSha512AppendBlocks( 
+SymCryptSha512AppendBlocks(
     _Inout_                 SYMCRYPT_SHA512_CHAINING_STATE *    pChain,
     _In_reads_( cbData )    PCBYTE                              pbData,
                             SIZE_T                              cbData,
@@ -1358,22 +1358,22 @@ SymCryptSha512AppendBlocks(
 #if SYMCRYPT_CPU_AMD64
 
     SymCryptSha512AppendBlocks_ull( pChain, pbData, cbData, pcbRemaining );       // core2: 10.66 c/B
-    //SymCryptSha512AppendBlocks_ull2( pChain, pbData, cbData, pcbRemaining );      // core2: 11.53 c/B  
+    //SymCryptSha512AppendBlocks_ull2( pChain, pbData, cbData, pcbRemaining );      // core2: 11.53 c/B
     //SymCryptSha512AppendBlocks_ull3( pChain, pbData, cbData, pcbRemaining );      // core2: 11.07 c/B
 
 #elif SYMCRYPT_CPU_ARM
 
     if( SYMCRYPT_CPU_FEATURES_PRESENT( SYMCRYPT_CPU_FEATURE_NEON ) )
     {
-        SymCryptSha512AppendBlocks_neon( pChain, pbData, cbData, pcbRemaining );      // Tegra T3: 48 c/B 
+        SymCryptSha512AppendBlocks_neon( pChain, pbData, cbData, pcbRemaining );      // Tegra T3: 48 c/B
     } else {
         SymCryptSha512AppendBlocks_ull( pChain, pbData, cbData, pcbRemaining );       // Tegra T3: 65.34 c/B
-        //SymCryptSha512AppendBlocks_ull2( pChain, pbData, cbData, pcbRemaining );      // Tegra T3: 77.4 c/B  
+        //SymCryptSha512AppendBlocks_ull2( pChain, pbData, cbData, pcbRemaining );      // Tegra T3: 77.4 c/B
         //SymCryptSha512AppendBlocks_ull3( pChain, pbData, cbData, pcbRemaining );      // Tegra T3: 71.6 c/B
     }
 
 #elif SYMCRYPT_CPU_X86
-   
+
     SYMCRYPT_EXTENDED_SAVE_DATA SaveData;
 
     if( SYMCRYPT_CPU_FEATURES_PRESENT( SYMCRYPT_CPU_FEATURE_SSSE3 ) && SymCryptSaveXmm( &SaveData ) == SYMCRYPT_NO_ERROR )
@@ -1382,7 +1382,7 @@ SymCryptSha512AppendBlocks(
         SymCryptRestoreXmm( &SaveData );
     } else {
         SymCryptSha512AppendBlocks_ull( pChain, pbData, cbData, pcbRemaining );       // core2: 36.40 c/B
-        //SymCryptSha512AppendBlocks_ull2( pChain, pbData, cbData, pcbRemaining );      // core2: 49.09 c/B  
+        //SymCryptSha512AppendBlocks_ull2( pChain, pbData, cbData, pcbRemaining );      // core2: 49.09 c/B
         //SymCryptSha512AppendBlocks_ull3( pChain, pbData, cbData, pcbRemaining );      // core2: 38.29 c/B
     }
 
