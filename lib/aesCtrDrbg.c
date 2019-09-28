@@ -304,8 +304,8 @@ SymCryptRngAesAreBlocksIdentical(
 // return 1 if the blocks are identical, 0 if they are different.
 //
 {
-    UNALIGNED const SIZE_T * p1 = (UNALIGNED const SIZE_T *) pSrc1;
-    UNALIGNED const SIZE_T * p2 = (UNALIGNED const SIZE_T *) pSrc2;
+    SYMCRYPT_UNALIGNED const SIZE_T * p1 = (SYMCRYPT_UNALIGNED const SIZE_T *) pSrc1;
+    SYMCRYPT_UNALIGNED const SIZE_T * p2 = (SYMCRYPT_UNALIGNED const SIZE_T *) pSrc2;
 
     SIZE_T tmp;
 

@@ -3,4 +3,4 @@ set(SOURCES
   )
 
 add_executable(symcryptunittest ${SOURCES})
-target_link_libraries(symcryptunittest symcryptunittest_lib symcrypt)
+target_link_libraries(symcryptunittest symcryptunittest_lib symcrypt_generic)

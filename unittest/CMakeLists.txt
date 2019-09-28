@@ -68,12 +68,23 @@ function(create_resource_h data_files)
 endfunction()
 
 file(GLOB DATA_FILES *.dat)
-dat_to_h("${DATA_FILES}")
-create_resource_h("${DATA_FILES}")
+
+if(NOT WIN32)
+    dat_to_h("${DATA_FILES}")
+    create_resource_h("${DATA_FILES}")
+endif()
 
 include_directories(${CMAKE_SOURCE_DIR}/unittest/inc)
 include_directories(${CMAKE_SOURCE_DIR}/unittest/lib)
 include_directories(${CMAKE_SOURCE_DIR}/unittest/resource)
 
 add_subdirectory(lib)
-add_subdirectory(exe_linux)
+
+if(WIN32)
+    add_subdirectory(exe_test)
+    add_subdirectory(exe_legacy)
+    add_subdirectory(exe_Win7nlater)
+    add_subdirectory(exe_Win8_1nLater)
+else()
+    add_subdirectory(exe_linux)
+endif()

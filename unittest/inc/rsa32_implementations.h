@@ -7,26 +7,24 @@
 //
 // Header files for RSA32.lib
 //
-//#include <modes.h>
 #include <aes.h>
-#include "aesfast.h"
-#include "sha.h"
-#include "sha2.h"
-#include "md5.h"
-#include "md4.h"
-#include "md2.h"
-#include "hmac.h"
-#include "modes.h"
-#include "aesfast.h"
-#include "des.h"
-#include "tripldes.h"
-#include "rc2.h"
-#include "hmac.h"
-#include "aes_ccm.h"
+#include <aesfast.h>
+#include <sha.h>
+#include <sha2.h>
+#include <md5.h>
+#include <md4.h>
+#include <md2.h>
+#include <hmac.h>
+#include <modes.h>
+#include <des.h>
+#include <tripldes.h>
+#include <rc2.h>
+#include <hmac.h>
+#include <aes_ccm.h>
 extern "C" {
-    #include "aes_gcm.h"
+    #include <aes_gcm.h>
 }
-#include "rc4.h"
+#include <rc4.h>
 
 
 //

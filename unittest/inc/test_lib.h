@@ -163,7 +163,11 @@
     #include <ntstatus.h>
     #pragma prefast(push)
     #pragma prefast(disable: 26071, "Avoid error in validation of RtlULongLongMult")
-    #include <ntintsafe.h>
+    #ifdef CMAKE_COMPILE
+        #include <../km/ntintsafe.h>
+    #else
+        #include <ntintsafe.h>
+    #endif
     #pragma prefast(pop)
 
     // Ensure that windows.h doesn't re-define the status_* symbols
@@ -209,7 +213,7 @@
 #include "symcrypt_low_level.h"
 
 #if !SYMCRYPT_APPLE_CC
-    #include "ioctldefs.h"
+    #include "ioctlDefs.h"
 #else
     VOID GenRandom( PBYTE  pbBuf, SIZE_T cbBuf );
 #endif
@@ -981,7 +985,7 @@ extern const char * g_implementationNames[];
 //#include "cng_implementations.h"
 #include "printtable.h"
 
-#include "rnddriver.h"
+#include "rndDriver.h"
 
 extern Rng g_rng;
 

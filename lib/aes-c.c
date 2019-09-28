@@ -51,7 +51,7 @@ extern SYMCRYPT_ALIGN_AT(1024) BYTE SymCryptAesInvMatrixMult[4][256][4];    // F
 
 //
 // Only need to enforce alignment on platforms that are not x86 or x64
-// Future improvement: should switch to using UNALIGNED pointer accesses
+// Future improvement: should switch to using unaligned pointer accesses
 // on some platforms.
 //
 #define NEED_ALIGN (!(SYMCRYPT_CPU_X86 | SYMCRYPT_CPU_AMD64 | SYMCRYPT_CPU_ARM | SYMCRYPT_CPU_ARM64))
