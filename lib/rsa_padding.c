@@ -248,6 +248,15 @@ SymCryptRsaPkcs1RemoveEncryptionPadding(
     // Compute the # bytes of the message; 0 if there was a padding error
     cbPlaintextResult = ~mPaddingError & (cbPkcs1Format - iFirstZero - 1);
 
+    // We're done if the caller didn't want the actual message, but only the size.
+    // We do that before checking the size of the plaintext buffer so that callers who
+    // only want the size do not get an error.
+    if( pbPlaintext == NULL )
+    {
+        // Condition is public.
+        goto cleanup;
+    }
+
     // Checking that the output buffer is large enough is a bit tricky as we have a SIZE_T as
     // buffer size, but we like to work on 31-bit integers as they have better mask algorithm perf.
     // We can truncate the SIZE_T and check for equality, which is side-channel safe.
@@ -256,13 +265,6 @@ SymCryptRsaPkcs1RemoveEncryptionPadding(
     {
         // Condition is public as we write the whole plaintext buffer anyway.
         mBufferSizeError = SymCryptMask32LtU31( cbPlaintextTruncated, cbPlaintextResult );
-    }
-
-    // We're done if the caller didn't want the actual message, but only the size.
-    if( pbPlaintext == NULL )
-    {
-        // Condition is public.
-        goto cleanup;
     }
 
     // The message starts at iFirstZero + 1, which is a variable location so we can't just memcpy it without

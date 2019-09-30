@@ -5551,12 +5551,19 @@ SymCryptRsaPkcs1Decrypt(
                                 SIZE_T                      cbDst,
     _Out_                       SIZE_T                      *pcbDst );
 //
-// This function decrypts the buffer pbSrc with the pkRsakey key using RSA PKSC1 v1.5.
-// The output is stored in the pbDst buffer and the number of bytes written in *pcbDst.
+// Perform an RSA-PKCS1 decryption.
+//  - pbSrc/cbSrc: source buffer
+//  - nfSrc: format of source buffer
+//  - flags: must be 0
+//  - pbDst/cbDst: destination buffer
+//  - pcbDst: receives the size of the decrypted data.
 //
-// If pbDst == NULL then only the *pcbDst is output.
-//
-// nfSrc is the number format of the ciphertext (i.e. the pbSrc buffer).
+// If the data in improperly formatted, an error is returned.
+// If pbDst == NULL, then *pcbDst is set to the decrypted data length, and the functions succeeds.
+//      This is not recommended as retrieving the actual data requires a second RSA decryption, 
+//      which is expensive. We recommend that callers provide a large enough buffer the first time.
+// If pbDst != NULL and cbDst is too small, then *pcbDst is set to the required size of pbDst
+//      and SYMCRYPT_BUFFER_TOO_SMALL is returned.
 //
 // Allowed flags:
 //      None

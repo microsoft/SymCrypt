@@ -1086,6 +1086,10 @@ testRsaPkcs1Errors()
                 scError = SymCryptRsaPkcs1Decrypt( pKey, ciphertext, cbModulus, SYMCRYPT_NUMBER_FORMAT_MSB_FIRST, 0, res, cbRes-1, &cbRes );
                 CHECK( scError == SYMCRYPT_BUFFER_TOO_SMALL, "No buffer-too-small error message" );
             }
+
+            cbRes = 1<<30;  // Big value to check that cbRes is actually being written to.
+            scError = SymCryptRsaPkcs1Decrypt( pKey, ciphertext, cbModulus, SYMCRYPT_NUMBER_FORMAT_MSB_FIRST, 0, NULL, g_rng.byte(), &cbRes );
+            CHECK( scError == SYMCRYPT_NO_ERROR && cbRes == cbModulus - i - 1, "Error when querying PKCS1 decryption length" );
         }
 
         paddedData[i] = b;
