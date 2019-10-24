@@ -56,10 +56,10 @@ SOURCES= \
     testArithmetic.cpp \
     testEcc.cpp \
     testInterop.cpp \
-    testRsa.cpp \
-    testRsa_sc.cpp \
-    testRsa_msbignum.cpp \
-    testRsa_cng.cpp \
+#    testRsa.cpp \
+#    testRsa_sc.cpp \
+#    testRsa_msbignum.cpp \
+#    testRsa_cng.cpp \
     testDl.cpp \
     testDl_sc.cpp \
     testDl_msbignum.cpp \
@@ -69,6 +69,8 @@ SOURCES= \
     testScsTable.cpp \
     testIEEE802_11SaeCustom.cpp \
     testScsTools.cpp \
+    testRsaSign.cpp \
+    testRsaEnc.cpp \
 
 I386_SOURCES = \
     savexmm.asm \

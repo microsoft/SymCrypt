@@ -5,6 +5,58 @@
 
 PSTR testDriverName = TESTDRIVER_NAME;
 
+const char * g_implementationNames[] = 
+{
+    ImpSc::name,
+#if INCLUDE_IMPL_RSA32    
+    ImpRsa32::name,
+    ImpRsa32b::name,
+#endif
+#if INCLUDE_IMPL_CAPI    
+    ImpCapi::name,
+#endif
+#if INCLUDE_IMPL_CNG    
+    ImpCng::name,
+#endif
+#if INCLUDE_IMPL_REF
+    ImpRef::name,
+#endif
+#if INCLUDE_IMPL_MSBIGNUM
+    ImpMsBignum::name,
+#endif    
+    NULL,
+};
+
+VOID 
+addAllAlgs()
+{
+    addSymCryptAlgs();
+
+    if( !g_sgx )
+    {
+        // SGX mode cares about testing BCrypt functions in enclaves, so ignores CAPI and RSA32 tests
+        // which are identical to normal mode. SymCrypt provides implementations for all algs, 
+        // so they must run because the test fails if there are algorithms where no implementations were tested.
+#if INCLUDE_IMPL_RSA32
+        addRsa32Algs();
+#endif
+#if INCLUDE_IMPL_CAPI
+        addCapiAlgs();
+#endif            
+    }
+
+#if INCLUDE_IMPL_CNG
+    addCngAlgs();
+#endif
+#if INCLUDE_IMPL_REF
+    addRefAlgs();
+#endif
+#if INCLUDE_IMPL_MSBIGNUM
+    addMsBignumAlgs();
+#endif        
+}
+
+
 DWORD WINAPI umThreadFunc( LPVOID param )
 {
     runTestThread( param );

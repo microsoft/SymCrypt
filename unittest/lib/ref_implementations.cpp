@@ -5,7 +5,8 @@
 //
 
 #include "precomp.h"
-#include "ref_implementations.h"
+
+#if INCLUDE_IMPL_REF
 
 char * ImpRef::name = "Ref";
 
@@ -256,3 +257,5 @@ addRefAlgs()
 
     addImplementationToGlobalList<MacImp<ImpRef, AlgPoly1305>>();
 }
+
+#endif //INCLUDE_IMPL_REF

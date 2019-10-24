@@ -38,10 +38,12 @@ developertest()
 //
 // Special extern declarations to allow us to disable AES-NI on the RSA32 library
 //
+#if INCLUDE_IMPL_RSA32
 extern "C" {
 extern BYTE AesUseXmm;
 extern BOOL AesDetectXmmDone;
 }
+#endif
 
 const char * AlgMd2::name = "Md2";
 
@@ -154,23 +156,23 @@ const char * AlgWipe::name = "Wipe";
 
 const char * AlgRsaEncRaw::name = "RsaEncRaw";
 
-const char * AlgRsaDecRaw::name = "RsaDecRaw";
+//const char * AlgRsaDecRaw::name = "RsaDecRaw";
 
 const char * AlgRsaEncPkcs1::name = "RsaEncPkcs1";
 
-const char * AlgRsaDecPkcs1::name = "RsaDecPkcs1";
+//const char * AlgRsaDecPkcs1::name = "RsaDecPkcs1";
 
 const char * AlgRsaEncOaep::name = "RsaEncOaep";
 
-const char * AlgRsaDecOaep::name = "RsaDecOaep";
+//const char * AlgRsaDecOaep::name = "RsaDecOaep";
 
 const char * AlgRsaSignPkcs1::name = "RsaSignPkcs1";
 
-const char * AlgRsaVerifyPkcs1::name = "RsaVerifyPkcs1";
+//const char * AlgRsaVerifyPkcs1::name = "RsaVerifyPkcs1";
 
 const char * AlgRsaSignPss::name = "RsaSignPss";
 
-const char * AlgRsaVerifyPss::name = "RsaVerifyPss";
+//const char * AlgRsaVerifyPss::name = "RsaVerifyPss";
 
 const char * AlgDsaSign::name = "DsaSign";
 
@@ -484,15 +486,15 @@ const char * g_algorithmNames[] = {
     AlgTrialDivisionContext::name,
     AlgWipe::name,
     AlgRsaEncRaw::name,
-    AlgRsaDecRaw::name,
+    //AlgRsaDecRaw::name,
     AlgRsaEncPkcs1::name,
-    AlgRsaDecPkcs1::name,
+    //AlgRsaDecPkcs1::name,
     AlgRsaEncOaep::name,
-    AlgRsaDecOaep::name,
+    //AlgRsaDecOaep::name,
     AlgRsaSignPkcs1::name,
-    AlgRsaVerifyPkcs1::name,
+    //AlgRsaVerifyPkcs1::name,
     AlgRsaSignPss::name,
-    AlgRsaVerifyPss::name,
+    //AlgRsaVerifyPss::name,
     AlgDsaSign::name,
     AlgDsaVerify::name,
     AlgDh::name,
@@ -648,7 +650,7 @@ processSingleOption( _In_ PSTR option )
     {
         if( STRICMP( &option[0], "-aesni" ) == 0 )
         {
-#if SYMCRYPT_CPU_X86 | SYMCRYPT_CPU_AMD64
+#if INCLUDE_IMPL_RSA32 & (SYMCRYPT_CPU_X86 | SYMCRYPT_CPU_AMD64)
             //
             // Disable AES-NI for RSA32 and SymCrypt
             //
@@ -1094,12 +1096,18 @@ testpbkdf2()
 }
 #endif
 
+//
+// Reach into the internals of Symcrypt to retrieve the build string
+extern "C" {
+extern const CHAR * SymCryptBuildString;
+};
+
 VOID
 initTestInfrastructure( int argc, _In_reads_( argc ) char * argv[] )
 {
-    iprint( "SymCrypt unit test program, "
-             "Built " __DATE__ " " __TIME__ "\n"
-             "Copyright (c) Microsoft Corporation. Licensed under the MIT license.\n");
+    iprint( "SymCrypt unit test program, " 
+             "Library version %s\n"
+             "Copyright (c) Microsoft Corporation. Licensed under the MIT license.\n", SymCryptBuildString );
 
 #define SYMCRYPT_CHECK_ASM_OFFSET( a, b ) CHECK4( (a) == (b), "Assembler offset incorrect: %s should be %d", #a, (b) );
     SYMCRYPT_CHECK_ASM_OFFSETS;
@@ -1447,10 +1455,15 @@ runFunctionalTests()
     testScsTable();
 
     testScsTools();
+
+    testRsaSignAlgorithms();
+
+    testRsaEncAlgorithms();
+
     // need these two
 #if SYMCRYPT_MS_VC
 
-    testRsa();
+    // testRsa();
 
     testDl();
 #endif
@@ -1818,6 +1831,16 @@ printHexArray( PCBYTE pData, SIZE_T nElements, SIZE_T elementSize )
         }
         print( "\n" );
     }
+}
+
+VOID
+fprintHex( FILE * f, PCBYTE pbData, SIZE_T cbData )
+{
+    for( SIZE_T i=0; i<cbData; i++ )
+    {
+        fprintf( f, "%02x", pbData[i] );
+    }
+    fprintf( f, "\n" );
 }
 
 #if SYMCRYPT_CPU_X86

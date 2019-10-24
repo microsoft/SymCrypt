@@ -5745,18 +5745,23 @@ SymCryptRsaPssSign(
                                         SIZE_T                      cbSignature,
     _Out_                               SIZE_T                      *pcbSignature );
 //
-// This function signs a message (its hash value is stored in pbHashValue) with
-// the pkRsakey key using RSA PSS. The signature is stored in the pbSignature
-// buffer and the number of bytes written in *pcbSignature.
+// Sign a message using RSA-PSS
+// - pkRsaKey: Key to sign with; must contain a private key
+// - pbHashValue/cbHashValue: Value to sign
+// - hashAlgorithm: Hash algorithm to use in the MGF of PSS
+// - cbSalt: # bytes of salt to use (typically equal to size of hash value)
+// - flags: must be 0
+// - nfSignature: Number format of signature. Typically SYMCRYPT_NUMBER_FORMAT_MSB_FIRST
+// - pbSignature/cbSignature: buffer that receives the signature.
+//              If pbSignature == NULL< only *pcbSignature is returned.
+//              Note: pbSignature receives an integer, so if the buffer is larger than the modulus size
+//              it will be padded with zeroes. For MSB-first format the zeroes are at the start of the buffer.
+//              Typically this buffer is the same size as the RSA modulus.
+// - pcbSignature: receives the size of the signature.
 //
-// If pbSignature == NULL then only the *pcbSignature is output.
-//
-// nfSignature is the number format of the signature (i.e. the pbSignature buffer). Currently
-// only SYMCRYPT_NUMBER_FORMAT_MSB_FIRST is supported.
-//
-// Requirement:
-//  - cbHashValue <= SymCryptRsakeySizeofModulus( pkRsakey ). Otherwise the function
-//    returns SYMCRYPT_INVALID_ARGUMENT.
+// Return value:
+//  If cbHashValue + cbSalt is too large (abover modulus size minus 2 or 3 depending on details) then
+//  signature generation fails.
 //
 // Allowed flags:
 //      None

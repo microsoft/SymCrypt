@@ -644,6 +644,10 @@ class ScBuild
                 command += " -savexmmnofail";
             }
             string [] res = RunCmd( "", command );
+            if( res.Length == 0 )
+            {
+                Fatal( "No output detected from running SymCryptUnitTest" );
+            }
             if( !Regex.IsMatch( res[ res.Length - 1 ], "...SymCrypt unit test done" ) )
             {
                 Fatal( "Did not detect that SymCrypt unit test succeeded" );

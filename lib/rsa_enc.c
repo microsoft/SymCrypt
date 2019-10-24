@@ -913,6 +913,7 @@ SymCryptRsaOaepDecrypt(
     _Out_                       SIZE_T                      *pcbDst )
 {
     SYMCRYPT_ERROR  scError = SYMCRYPT_NO_ERROR;
+    SIZE_T  cbDstResult = 0;        // We always return a value into *pcbDst
 
     PBYTE   pbScratch = NULL;
     SIZE_T  cbScratch = 0;
@@ -997,7 +998,7 @@ SymCryptRsaOaepDecrypt(
                     flags,
                     pbDst,
                     cbDst,
-                    pcbDst,
+                    &cbDstResult,
                     pbScratch,
                     cbScratch - cbTmp );
     if (scError != SYMCRYPT_NO_ERROR)
@@ -1013,6 +1014,8 @@ cleanup:
         SymCryptWipe(pbScratch,cbScratch);
         SymCryptCallbackFree(pbScratch);
     }
+
+    *pcbDst = cbDstResult;
 
     return scError;
 }

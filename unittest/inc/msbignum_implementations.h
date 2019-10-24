@@ -10,10 +10,18 @@
 
 
 #include <msbignum.h>
+#include <ms_rsa.h>
 #include <ecurve.h>
 #include <ms_generic_ecc.h>
 
 class ImpMsBignum{
 public:
     static char * name;
+};
+
+template<>
+class RsaEncImpState<ImpMsBignum, AlgRsaEncRaw> {
+public:
+    SIZE_T      cbKey;      // Size of modulus
+    RSA_PRIVATE_KEY key;
 };

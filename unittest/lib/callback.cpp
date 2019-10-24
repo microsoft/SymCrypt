@@ -5,9 +5,6 @@
 //
 
 #include "precomp.h"
-#if SYMCRYPT_MS_VC
-#include "msbignum_implementations.h"
-#endif
 
 //
 // Format of checked allocation:
@@ -150,7 +147,9 @@ SymCryptCallbackRandom(
     return NT_SUCCESS( status ) ? SYMCRYPT_NO_ERROR : SYMCRYPT_EXTERNAL_FAILURE;
 }
 
-#if SYMCRYPT_MS_VC
+#if INCLUDE_IMPL_MSBIGNUM
+
+
 //
 // Callback functions for MsBignum
 //
@@ -212,6 +211,8 @@ void SetMpErrno_clue1(__in mp_errno_tc code, __in_opt const char *hint, PBIGCTX_
     SetMpErrno(code, PBIGCTX_PASS);
 }
 
+#endif // INCLUDE_IMPL_MSBIGNUM
+
 #if defined(__cplusplus)
 extern "C" {
 #endif
@@ -256,5 +257,4 @@ cleanup:
 
 #if defined(__cplusplus)
 }
-#endif
 #endif

@@ -128,3 +128,34 @@ public:
     //
 };
 
+template<>
+class RsaSignImpState<ImpCng, AlgRsaSignPkcs1> {
+public:
+    BCRYPT_KEY_HANDLE   hKey;
+};
+
+template<>
+class RsaSignImpState<ImpCng, AlgRsaSignPss> {
+public:
+    BCRYPT_KEY_HANDLE   hKey;
+};
+
+template<>
+class RsaEncImpState<ImpCng, AlgRsaEncRaw> {
+public:
+    BCRYPT_KEY_HANDLE   hKey;
+};
+
+template<>
+class RsaEncImpState<ImpCng, AlgRsaEncPkcs1> {
+public:
+    BCRYPT_KEY_HANDLE   hKey;
+};
+
+template<>
+class RsaEncImpState<ImpCng, AlgRsaEncOaep> {
+public:
+    BCRYPT_KEY_HANDLE   hKey;
+};
+
+

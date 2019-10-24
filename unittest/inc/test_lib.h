@@ -412,6 +412,27 @@ extern "C" {
 
 #endif
 
+#if !defined( INCLUDE_IMPL_RSA32 )
+#define INCLUDE_IMPL_RSA32     (1)
+#endif
+
+#if !defined( INCLUDE_IMPL_MSBIGNUM )
+#define INCLUDE_IMPL_MSBIGNUM  (1)
+#endif
+
+#if !defined( INCLUDE_IMPL_CAPI )
+#define INCLUDE_IMPL_CAPI      (1)
+#endif
+
+#if !defined( INCLUDE_IMPL_CNG )
+#define INCLUDE_IMPL_CNG       (1)
+#endif
+
+#if !defined( INCLUDE_IMPL_REF )
+#define INCLUDE_IMPL_REF       (1)
+#endif
+
+
 
 //
 // Our own header info
@@ -793,17 +814,7 @@ public:
     const static char * name;
 };
 
-class AlgRsaDecRaw{
-public:
-    const static char * name;
-};
-
 class AlgRsaEncPkcs1{
-public:
-    const static char * name;
-};
-
-class AlgRsaDecPkcs1{
 public:
     const static char * name;
 };
@@ -813,27 +824,12 @@ public:
     const static char * name;
 };
 
-class AlgRsaDecOaep{
-public:
-    const static char * name;
-};
-
 class AlgRsaSignPkcs1{
 public:
     const static char * name;
 };
 
-class AlgRsaVerifyPkcs1{
-public:
-    const static char * name;
-};
-
 class AlgRsaSignPss{
-public:
-    const static char * name;
-};
-
-class AlgRsaVerifyPss{
 public:
     const static char * name;
 };
@@ -979,10 +975,34 @@ BOOL setContainsPrefix( const StringSet & set, const std::string & str );
 
 extern const char * g_implementationNames[];
 
-//#include "sc_implementations.h"
-//#include "rsa32_implementations.h"
-//#include "capi_implementations.h"
-//#include "cng_implementations.h"
+//
+// Include the info from the implementations we support on this compilation
+//
+
+// We always include the SymCrypt implementation
+#include "sc_implementations.h"
+
+#if INCLUDE_IMPL_CAPI
+#include "capi_implementations.h"
+#endif
+
+#if INCLUDE_IMPL_CNG
+#include "cng_implementations.h"
+#endif
+
+#if INCLUDE_IMPL_MSBIGNUM
+#include "msbignum_implementations.h"
+#endif
+
+#if INCLUDE_IMPL_REF
+#include "ref_implementations.h"
+#endif
+
+#if INCLUDE_IMPL_RSA32
+#include "rsa32_implementations.h"
+#endif
+
+
 #include "printtable.h"
 
 #include "rndDriver.h"
@@ -1102,6 +1122,12 @@ testRsa();
 VOID
 testDl();
 
+VOID
+testRsaSignAlgorithms();
+
+VOID
+testRsaEncAlgorithms();
+
 KatData *
 getCustomResource( _In_ PSTR resourceName, _In_ PSTR resourceType );
 
@@ -1140,6 +1166,9 @@ initYmmRegisters();
 VOID
 verifyYmmRegisters();
 
+
+VOID 
+addAllAlgs();
 
 VOID
 addCapiAlgs();
@@ -1598,6 +1627,26 @@ runRsaAverageKeyGenPerf();
 #define PERF_RSA_HASH_ALG_SC                (SymCryptSha256Algorithm)
 #define PERF_RSA_HASH_ALG_CNG               (BCRYPT_SHA256_ALGORITHM)
 #define PERF_RSA_HASH_ALG_SIZE              (SYMCRYPT_SHA256_RESULT_SIZE)
+#define PERF_RSA_HASH_ALG_OIDS_SC           (SymCryptSha256OidList)
+#define PERF_RSA_HASH_ALG_NOIDS_SC          (SYMCRYPT_SHA256_OID_COUNT)
 
 #define PERF_RSA_OAEP_LESS_BYTES            (2 + 2*SYMCRYPT_SHA256_RESULT_SIZE)
 
+
+#define MAX_RSA_TESTKEYS    (50)
+extern RSAKEY_TESTBLOB g_RsaTestKeys[ MAX_RSA_TESTKEYS ];
+extern UINT32 g_nRsaTestKeys;
+
+VOID
+fprintHex( FILE * f, PCBYTE pbData, SIZE_T cbData );
+
+VOID rsaTestKeysGenerate();
+
+PSYMCRYPT_RSAKEY
+rsaKeyFromTestBlob( PCRSAKEY_TESTBLOB pBlob );
+
+PSYMCRYPT_RSAKEY
+rsaTestKeyRandom();
+
+PSYMCRYPT_RSAKEY
+rsaTestKeyForSize( SIZE_T nBits );

@@ -34,9 +34,9 @@ SymCryptLibraryWasNotInitialized()
 
 #endif
 
-CHAR * SymCryptBuildString =
-        "v" SYMCRYPT_BUILD_INFO_VERSION
-        "_" SYMCRYPT_BUILD_INFO_BRANCH
+const CHAR * SymCryptBuildString = 
+        "v" SYMCRYPT_BUILD_INFO_VERSION 
+        "_" SYMCRYPT_BUILD_INFO_BRANCH 
         "_" SYMCRYPT_BUILD_INFO_COMMIT
         "_" SYMCRYPT_BUILD_INFO_TIMESTAMP;
 
@@ -47,7 +47,7 @@ SymCryptInitEnvCommon( UINT32 version )
 {
     UINT32 tmp;
 
-    CHAR * p;
+    const CHAR * p;
 
     // Assertion that verifies that the calling application was compiled with
     // the same version header files as the library.

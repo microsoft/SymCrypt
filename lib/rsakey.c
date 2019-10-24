@@ -259,6 +259,13 @@ SymCryptRsakeySizeofModulus( _In_ PCSYMCRYPT_RSAKEY pkRsakey )
 
 UINT32
 SYMCRYPT_CALL
+SymCryptRsakeyModulusBits( _In_ PCSYMCRYPT_RSAKEY pkRsakey )
+{
+    return pkRsakey->nBitsOfModulus;
+}
+
+UINT32
+SYMCRYPT_CALL
 SymCryptRsakeySizeofPublicExponent(
     _In_    PCSYMCRYPT_RSAKEY pRsakey,
             UINT32            index )

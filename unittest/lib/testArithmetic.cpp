@@ -3,10 +3,6 @@
 //
 
 #include "precomp.h"
-#if SYMCRYPT_MS_VC
-#include "msbignum_implementations.h"
-#endif
-
 
 #if 0
 #define TEST_CHECK_WOOP( p )    {(p)->checkWoop();}
@@ -3703,7 +3699,7 @@ VOID testCompositeModInv()
     PSYMCRYPT_MODELEMENT pEl = SymCryptModElementAllocate( pMod );
     PSYMCRYPT_MODELEMENT pInv = SymCryptModElementAllocate( pMod );
     SIZE_T cbScratch = 1 << 20;
-    PBYTE pbScratch = (PBYTE) malloc( cbScratch );
+    PBYTE pbScratch = (PBYTE) SymCryptCallbackAlloc( cbScratch );   // this allocator provides the necessary alignment
     SYMCRYPT_ERROR scError;
 
     CHECK( pMod != NULL && pEl != NULL && pbScratch != NULL, "Out of memory" );
@@ -3776,7 +3772,8 @@ VOID testCompositeModInv()
                 scError == SYMCRYPT_NO_ERROR, "Unexpected error for modinverse" );
     }
 
-    free( pbScratch );
+    SymCryptWipe(pbScratch,cbScratch);
+    SymCryptCallbackFree(pbScratch);
     SymCryptModElementFree( pMod, pEl );
     SymCryptModElementFree( pMod, pInv );
     SymCryptModulusFree( pMod );

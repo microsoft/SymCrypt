@@ -5,7 +5,8 @@
 //
 
 #include "precomp.h"
-#include "capi_implementations.h"
+
+#if INCLUDE_IMPL_CAPI
 
 HCRYPTPROV g_capiProvider;
 
@@ -543,7 +544,7 @@ addCapiAlgs()
     addImplementationToGlobalList<StreamCipherImp<ImpCapi, AlgRc4>>();
 }
 
-
+#endif //INCLUDE_IMPL_CAPI
 
 
 

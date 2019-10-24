@@ -486,7 +486,95 @@ private:
 public:
 };
 
+// We need an implementation-independent way to store RSA keys
+// As RSA key gen is so expensive, we generate a bunch of keys up front and use
+// them for all tests.
+
+#define RSAKEY_MAXKEYSIZE   (1024)  // 8192 bits = 1024 bytes
+typedef struct _RSAKEY_TESTBLOB {
+    UINT32  nBitsModulus;
+    UINT64  u64PubExp;
+    UINT32  cbModulus;
+    UINT32  cbPrime1;
+    UINT32  cbPrime2;
+    BYTE    abModulus[RSAKEY_MAXKEYSIZE];
+    BYTE    abPrime1[RSAKEY_MAXKEYSIZE];
+    BYTE    abPrime2[RSAKEY_MAXKEYSIZE];
+
+    // And some fields to make debugging easier
+    const char *    pcstrSource;    // Where did this key come from
+    INT64  u64Line;                 // line # of test vector file (if applicable)
+} RSAKEY_TESTBLOB, *PRSAKEY_TESTBLOB;
+typedef const RSAKEY_TESTBLOB * PCRSAKEY_TESTBLOB;
+
+class RsaSignImplementation: public AlgorithmImplementation
+{
+public:
+    RsaSignImplementation() {};
+    virtual ~RsaSignImplementation() {};
+
+private:
+    RsaSignImplementation( const RsaSignImplementation & );
+    VOID operator=( const RsaSignImplementation & );
+
+public:
+    virtual NTSTATUS setKey( PCRSAKEY_TESTBLOB pcKeyBlob ) = 0; // Returns an error if this key can't be handled.
+    
+    // This is the abstraction that covers both PKCS1 and PSS. Both take a hash alg as parameter.
+    // We also add a salt size used for PSS.
+    virtual NTSTATUS sign(
+        _In_reads_( cbHash)     PCBYTE  pbHash, 
+                                SIZE_T  cbHash,
+                                PCSTR   pcstrHashAlgName,
+                                UINT32  u32Other,
+        _Out_writes_( cbSig )   PBYTE   pbSig,
+                                SIZE_T  cbSig ) = 0;        // cbSig == cbModulus of key
+
+    virtual NTSTATUS verify( 
+        _In_reads_( cbHash)     PCBYTE  pbHash, 
+                                SIZE_T  cbHash,
+        _In_reads_( cbSig )     PCBYTE  pbSig,
+                                SIZE_T  cbSig,
+                                PCSTR   pcstrHashAlgName,
+                                UINT32  u32Other ) = 0;
+};
+
+class RsaEncImplementation: public AlgorithmImplementation
+{
+public:
+    RsaEncImplementation() {};
+    virtual ~RsaEncImplementation() {};
+
+private:
+    RsaEncImplementation( const RsaEncImplementation & );
+    VOID operator=( const RsaEncImplementation & );
+
+public:
+    virtual NTSTATUS setKey( PCRSAKEY_TESTBLOB pcKeyBlob ) = 0; // Returns an error if this key can't be handled.
+    
+    // This is the abstraction that covers RAW, PKCS1 and OAEP. 
+    virtual NTSTATUS encrypt(
+        _In_reads_( cbMsg )             PCBYTE  pbMsg, 
+                                        SIZE_T  cbMsg,
+                                        PCSTR   pcstrHashAlgName,
+                                        PCBYTE  pbLabel,
+                                        SIZE_T  cbLabel,
+        _Out_writes_( cbCiphertext )    PBYTE   pbCiphertext,
+                                        SIZE_T  cbCiphertext ) = 0;        // == cbModulus of key
+
+    virtual NTSTATUS decrypt( 
+        _In_reads_( cbCiphertext )      PCBYTE  pbCiphertext,
+                                        SIZE_T  cbCiphertext,
+                                        PCSTR   pcstrHashAlgName,
+                                        PCBYTE  pbLabel,
+                                        SIZE_T  cbLabel,
+        _Out_writes_to_(cbMsg,*pcbMsg)  PBYTE   pbMsg,
+                                        SIZE_T  cbMsg,
+                                        SIZE_T *pcbMsg ) = 0;
+};
+
 // RsaImplementation class is only used for performance measurements of RSA
+/*
 class RsaImplementation: public AlgorithmImplementation
 {
 public:
@@ -499,6 +587,7 @@ private:
 
 public:
 };
+*/
 
 // DlImplementation class is only used for performance measurements of Discrete Log group algorithms
 class DlImplementation: public AlgorithmImplementation
@@ -961,6 +1050,7 @@ public:
     static const String s_algName;
 };
 
+/*
 template< class Implementation, class Algorithm>
 class RsaImp: public RsaImplementation
 {
@@ -977,6 +1067,7 @@ public:
     static const String s_modeName;
     static const String s_algName;
 };
+*/
 
 template< class Implementation, class Algorithm>
 class DlImp: public DlImplementation
@@ -994,6 +1085,90 @@ public:
     static const String s_modeName;
     static const String s_algName;
 };
+
+template< class Implementation, class Algorithm > class RsaSignImpState;
+
+template< class Implementation, class Algorithm>
+class RsaSignImp: public RsaSignImplementation
+{
+public:
+    RsaSignImp();
+    virtual ~RsaSignImp();
+
+private:
+    RsaSignImp( const RsaSignImp & );
+    VOID operator=( const RsaSignImp & );
+
+public:
+    static const String s_algName;             // Algorithm name
+    static const String s_modeName;
+    static const String s_impName;             // Implementation name
+
+    virtual NTSTATUS setKey( PCRSAKEY_TESTBLOB pcKeyBlob );
+
+    virtual NTSTATUS sign(
+        _In_reads_( cbHash)     PCBYTE  pbHash, 
+                                SIZE_T  cbHash,
+                                PCSTR   pcstrHashAlgName,
+                                UINT32  u32Other,
+        _Out_writes_( cbSig )   PBYTE   pbSig,
+                                SIZE_T  cbSig );
+
+    virtual NTSTATUS verify( 
+        _In_reads_( cbHash)     PCBYTE  pbHash, 
+                                SIZE_T  cbHash,
+        _In_reads_( cbSig )     PCBYTE  pbSig,
+                                SIZE_T  cbSig,
+                                PCSTR   pcstrHashAlgName,
+                                UINT32  u32Other );
+
+    RsaSignImpState<Implementation,Algorithm> state;
+};
+
+
+
+template< class Implementation, class Algorithm > class RsaEncImpState;
+
+template< class Implementation, class Algorithm>
+class RsaEncImp: public RsaEncImplementation
+{
+public:
+    RsaEncImp();
+    virtual ~RsaEncImp();
+
+private:
+    RsaEncImp( const RsaEncImp & );
+    VOID operator=( const RsaEncImp & );
+
+public:
+    static const String s_algName;             // Algorithm name
+    static const String s_modeName;
+    static const String s_impName;             // Implementation name
+
+    virtual NTSTATUS setKey( PCRSAKEY_TESTBLOB pcKeyBlob );
+    
+    virtual NTSTATUS encrypt(
+        _In_reads_( cbMsg )             PCBYTE  pbMsg, 
+                                        SIZE_T  cbMsg,
+                                        PCSTR   pcstrHashAlgName,
+                                        PCBYTE  pbLabel,
+                                        SIZE_T  cbLabel,
+        _Out_writes_( cbCiphertext )    PBYTE   pbCiphertext,
+                                        SIZE_T  cbCiphertext );        // == cbModulus of key
+
+    virtual NTSTATUS decrypt( 
+        _In_reads_( cbCiphertext )      PCBYTE  pbCiphertext,
+                                        SIZE_T  cbCiphertext,
+                                        PCSTR   pcstrHashAlgName,
+                                        PCBYTE  pbLabel,
+                                        SIZE_T  cbLabel,
+        _Out_writes_to_(cbMsg,*pcbMsg)  PBYTE   pbMsg,
+                                        SIZE_T  cbMsg,
+                                        SIZE_T *pcbMsg );
+
+    RsaEncImpState<Implementation,Algorithm> state;
+};
+
 
 template< class Implementation, class Algorithm>
 class EccImp: public EccImplementation
@@ -1109,12 +1284,14 @@ const String ArithImp<Implementation, Algorithm>::s_algName = Algorithm::name;
 template< class Implementation, class Algorithm>
 const String ArithImp<Implementation, Algorithm>::s_modeName;
 
+/*
 template< class Implementation, class Algorithm>
 const String RsaImp<Implementation, Algorithm>::s_impName = Implementation::name;
 template< class Implementation, class Algorithm>
 const String RsaImp<Implementation, Algorithm>::s_algName = Algorithm::name;
 template< class Implementation, class Algorithm>
 const String RsaImp<Implementation, Algorithm>::s_modeName;
+*/
 
 template< class Implementation, class Algorithm>
 const String DlImp<Implementation, Algorithm>::s_impName = Implementation::name;
@@ -1129,6 +1306,20 @@ template< class Implementation, class Algorithm>
 const String EccImp<Implementation, Algorithm>::s_algName = Algorithm::name;
 template< class Implementation, class Algorithm>
 const String EccImp<Implementation, Algorithm>::s_modeName;
+
+template< class Imp, class Alg>
+const String RsaSignImp<Imp,Alg>::s_impName = Imp::name;
+template< class Imp, class Alg>
+const String RsaSignImp<Imp,Alg>::s_algName = Alg::name;
+template< class Imp, class Alg>
+const String RsaSignImp<Imp,Alg>::s_modeName;
+
+template< class Imp, class Alg>
+const String RsaEncImp<Imp,Alg>::s_impName = Imp::name;
+template< class Imp, class Alg>
+const String RsaEncImp<Imp,Alg>::s_algName = Alg::name;
+template< class Imp, class Alg>
+const String RsaEncImp<Imp,Alg>::s_modeName;
 
 //
 // Template declaration for performance functions (for those implementations that wish to use them)

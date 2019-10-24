@@ -5,7 +5,6 @@
 //
 
 #include "precomp.h"
-#include "sc_implementations.h"
 
 //
 // These ECB functions are not confused with the ones in Symcrypt.h because they have the pbChainingValue
@@ -3727,6 +3726,7 @@ ArithImp<ImpSc, AlgTrialDivisionContext>::~ArithImp()
 {
 }
 
+
 //============================
 
 // Table with the RSA keys' sizes and pointers to keys
@@ -3750,8 +3750,6 @@ SetupRsaKey( PBYTE buf1, SIZE_T keySize )
     BOOLEAN bFound = FALSE;
 
     SYMCRYPT_ERROR scError = SYMCRYPT_NO_ERROR;
-    SYMCRYPT_RSA_PARAMS rsaParams = { 0 };
-    PSYMCRYPT_RSAKEY pkRsakey = NULL;
 
     for( i=0; i < ARRAY_SIZE(g_precomputedRsaKeys); i++ )
     {
@@ -3761,6 +3759,9 @@ SetupRsaKey( PBYTE buf1, SIZE_T keySize )
 
             if ( g_precomputedRsaKeys[i].pkRsakey == NULL )
             {
+                SYMCRYPT_RSA_PARAMS rsaParams = { 0 };
+                PSYMCRYPT_RSAKEY pkRsakey = NULL;
+
                 // Set the parameters
                 rsaParams.version = 1;
                 rsaParams.nBitsOfModulus = ((UINT32)keySize) * 8;
@@ -3797,6 +3798,494 @@ sc_RsaKeyPerf( PBYTE buf1, PBYTE buf2, SIZE_T keySize )
     CHECK( scError == SYMCRYPT_NO_ERROR, "?" );
 }
 
+//================================================
+
+typedef struct _HASH_INFO {
+    PCSTR   name;
+    PCSYMCRYPT_HASH pcHash;
+    PCSYMCRYPT_OID  pcOids;
+    UINT32          nOids;
+} HASH_INFO;
+typedef const HASH_INFO * PCHASH_INFO;
+
+const HASH_INFO hashInfoTable[] = {
+    {   "MD5",      SymCryptMd5Algorithm,       SymCryptMd5OidList,     SYMCRYPT_MD5_OID_COUNT },
+    {   "SHA1",     SymCryptSha1Algorithm,      SymCryptSha1OidList,    SYMCRYPT_SHA1_OID_COUNT},
+    {   "SHA256",   SymCryptSha256Algorithm,    SymCryptSha256OidList,  SYMCRYPT_SHA256_OID_COUNT},
+    {   "SHA384",   SymCryptSha384Algorithm,    SymCryptSha384OidList,  SYMCRYPT_SHA384_OID_COUNT},
+    {   "SHA512",   SymCryptSha512Algorithm,    SymCryptSha512OidList,  SYMCRYPT_SHA512_OID_COUNT},
+    { NULL },
+};
+
+PCHASH_INFO getHashInfo( PCSTR pcstrName )
+{
+    for( int i=0; hashInfoTable[i].name != NULL; i++ )
+    {
+        if( STRICMP( pcstrName, hashInfoTable[i].name ) == 0 )
+        {
+            return &hashInfoTable[i];
+        }
+    }
+    CHECK( FALSE, "?" );
+    return NULL;
+}
+
+
+// Rsa Pkcs1 Sign
+template<>
+VOID
+algImpKeyPerfFunction<ImpSc, AlgRsaSignPkcs1>( PBYTE buf1, PBYTE buf2, PBYTE buf3, SIZE_T keySize )
+{
+    SYMCRYPT_ERROR scError = SYMCRYPT_NO_ERROR;
+    SIZE_T cbDst = 0;
+
+    sc_RsaKeyPerf( buf1, buf2, keySize );
+
+    scError = SymCryptRsaPkcs1Sign(
+                    *((PSYMCRYPT_RSAKEY *) buf1),
+                    buf2,
+                    PERF_RSA_HASH_ALG_SIZE,
+                    PERF_RSA_HASH_ALG_OIDS_SC,
+                    PERF_RSA_HASH_ALG_NOIDS_SC,
+                    0,
+                    SYMCRYPT_NUMBER_FORMAT_MSB_FIRST,
+                    buf3,
+                    keySize,
+                    &cbDst );
+    CHECK( scError == SYMCRYPT_NO_ERROR, "?" );
+    CHECK( cbDst == keySize, "?" );
+
+    scError = SymCryptRsaPkcs1Verify(
+                    *((PSYMCRYPT_RSAKEY *) buf1),
+                    buf2,
+                    PERF_RSA_HASH_ALG_SIZE,
+                    buf3,
+                    keySize,
+                    SYMCRYPT_NUMBER_FORMAT_MSB_FIRST,
+                    PERF_RSA_HASH_ALG_OIDS_SC,
+                    PERF_RSA_HASH_ALG_NOIDS_SC,
+                    0 );
+    CHECK( scError == SYMCRYPT_NO_ERROR, "?" );
+}
+
+template<>
+VOID
+algImpCleanPerfFunction<ImpSc, AlgRsaSignPkcs1>( PBYTE buf1, PBYTE buf2, PBYTE buf3 )
+{
+    UNREFERENCED_PARAMETER( buf1 );
+    UNREFERENCED_PARAMETER( buf2 );
+    UNREFERENCED_PARAMETER( buf3 );
+}
+
+template<>
+VOID
+algImpDataPerfFunction< ImpSc, AlgRsaSignPkcs1>( PBYTE buf1, PBYTE buf2, PBYTE buf3, SIZE_T dataSize )
+{
+    SIZE_T cbDst = 0;
+
+    SymCryptRsaPkcs1Sign(
+            *((PSYMCRYPT_RSAKEY *) buf1),
+            buf2,
+            PERF_RSA_HASH_ALG_SIZE,
+            PERF_RSA_HASH_ALG_OIDS_SC,
+            PERF_RSA_HASH_ALG_NOIDS_SC,
+            0,
+            SYMCRYPT_NUMBER_FORMAT_MSB_FIRST,
+            buf3,
+            dataSize,
+            &cbDst );
+}
+
+template<>
+VOID
+algImpDecryptPerfFunction< ImpSc, AlgRsaSignPkcs1>( PBYTE buf1, PBYTE buf2, PBYTE buf3, SIZE_T dataSize )
+{
+    SYMCRYPT_ERROR scError;
+    
+    scError = SymCryptRsaPkcs1Verify(
+                    *((PSYMCRYPT_RSAKEY *) buf1),
+                    buf2,
+                    PERF_RSA_HASH_ALG_SIZE,
+                    buf3,
+                    dataSize,
+                    SYMCRYPT_NUMBER_FORMAT_MSB_FIRST,
+                    PERF_RSA_HASH_ALG_OIDS_SC,
+                    PERF_RSA_HASH_ALG_NOIDS_SC,
+                    0 );
+    CHECK( scError == SYMCRYPT_NO_ERROR, "?" );
+}
+
+template<>
+RsaSignImp<ImpSc, AlgRsaSignPkcs1>::RsaSignImp()
+{
+    m_perfDataFunction      = &algImpDataPerfFunction <ImpSc, AlgRsaSignPkcs1>;
+    m_perfDecryptFunction   = &algImpDecryptPerfFunction< ImpSc, AlgRsaSignPkcs1>;
+    m_perfKeyFunction       = &algImpKeyPerfFunction  <ImpSc, AlgRsaSignPkcs1>;
+    m_perfCleanFunction     = &algImpCleanPerfFunction<ImpSc, AlgRsaSignPkcs1>;
+
+    state.pKey = NULL;
+}
+
+template<>
+RsaSignImp<ImpSc, AlgRsaSignPkcs1>::~RsaSignImp()
+{
+    if( state.pKey != NULL )
+    {
+        SymCryptRsakeyFree( state.pKey );
+        state.pKey = NULL;
+    }
+}
+
+template<>
+NTSTATUS 
+RsaSignImp<ImpSc, AlgRsaSignPkcs1>::setKey( PCRSAKEY_TESTBLOB pcKeyBlob )
+{
+    SYMCRYPT_ERROR scError;
+
+    if( state.pKey != NULL )
+    {
+        SymCryptRsakeyFree( state.pKey );
+        state.pKey = NULL;
+    }
+
+    if( pcKeyBlob == NULL )
+    {
+        // Just used to clear the key state to do leak detection
+        return STATUS_SUCCESS;
+    }
+
+    SYMCRYPT_RSA_PARAMS params;
+    params.version = 1;
+    params.nBitsOfModulus = pcKeyBlob->nBitsModulus;
+    params.nPrimes = 2;
+    params.nPubExp = 1;
+
+    state.pKey = SymCryptRsakeyAllocate( &params, 0 );
+    CHECK( state.pKey != NULL, "?" );
+
+    PCBYTE ppPrime[2] = {&pcKeyBlob->abPrime1[0], &pcKeyBlob->abPrime2[0] };
+    SIZE_T cbPrime[2] = {pcKeyBlob->cbPrime1, pcKeyBlob->cbPrime2 };
+
+    scError = SymCryptRsakeySetValue(
+        &pcKeyBlob->abModulus[0], pcKeyBlob->cbModulus,
+        &pcKeyBlob->u64PubExp, 1,
+        ppPrime, cbPrime, 2,
+        SYMCRYPT_NUMBER_FORMAT_MSB_FIRST,
+        0, 
+        state.pKey );
+    CHECK( scError == SYMCRYPT_NO_ERROR, "?" );
+
+    return STATUS_SUCCESS;
+}
+
+template<>
+NTSTATUS 
+RsaSignImp<ImpSc, AlgRsaSignPkcs1>::sign(
+    _In_reads_( cbHash)     PCBYTE  pbHash, 
+                            SIZE_T  cbHash,
+                            PCSTR   pcstrHashAlgName,
+                            UINT32  u32Other,
+    _Out_writes_( cbSig )   PBYTE   pbSig,
+                            SIZE_T  cbSig )
+{
+    PCHASH_INFO pInfo;
+    SYMCRYPT_ERROR scError;
+    SIZE_T cbTmp;
+    
+    UNREFERENCED_PARAMETER( u32Other );
+
+    pInfo = getHashInfo( pcstrHashAlgName);
+    scError = SymCryptRsaPkcs1Sign( 
+                    state.pKey,
+                    pbHash,
+                    cbHash,
+                    pInfo->pcOids,
+                    pInfo->nOids,
+                    0,
+                    SYMCRYPT_NUMBER_FORMAT_MSB_FIRST,
+                    pbSig,
+                    cbSig,
+                    &cbTmp );
+    CHECK( scError == SYMCRYPT_NO_ERROR && cbTmp == cbSig, "?" );
+
+    return STATUS_SUCCESS;
+}                            
+
+template<>
+NTSTATUS
+RsaSignImp<ImpSc, AlgRsaSignPkcs1>::verify(
+    _In_reads_( cbHash)     PCBYTE  pbHash, 
+                            SIZE_T  cbHash,
+    _In_reads_( cbSig )     PCBYTE  pbSig,
+                            SIZE_T  cbSig,
+                            PCSTR   pcstrHashAlgName,
+                            UINT32  u32Other )
+{
+    SYMCRYPT_ERROR scError;
+    NTSTATUS ntStatus;
+    PCHASH_INFO pInfo;
+
+    UNREFERENCED_PARAMETER( u32Other );
+
+    pInfo = getHashInfo( pcstrHashAlgName);
+    scError = SymCryptRsaPkcs1Verify(
+                    state.pKey,
+                    pbHash,
+                    cbHash,
+                    pbSig,
+                    cbSig,
+                    SYMCRYPT_NUMBER_FORMAT_MSB_FIRST,
+                    pInfo->pcOids,
+                    pInfo->nOids,
+                    0 );
+
+    switch( scError )
+    {
+    case SYMCRYPT_NO_ERROR: 
+        ntStatus = STATUS_SUCCESS; 
+        break;
+    case SYMCRYPT_SIGNATURE_VERIFICATION_FAILURE: 
+        ntStatus = STATUS_INVALID_SIGNATURE; 
+        break;
+    case SYMCRYPT_INVALID_ARGUMENT:
+        ntStatus = STATUS_INVALID_PARAMETER;
+        break;
+    default: 
+        iprint( "Unexpected SymCrypt error %08x, %d, %d, %s\n", scError, cbHash, cbSig, pcstrHashAlgName );
+        CHECK( FALSE, "?" );
+        ntStatus = STATUS_UNSUCCESSFUL;
+    }
+
+    return ntStatus;
+}
+
+
+// Rsa Pss Sign
+template<>
+VOID
+algImpKeyPerfFunction<ImpSc, AlgRsaSignPss>( PBYTE buf1, PBYTE buf2, PBYTE buf3, SIZE_T keySize )
+{
+    SYMCRYPT_ERROR scError = SYMCRYPT_NO_ERROR;
+    SIZE_T cbDst = 0;
+
+    sc_RsaKeyPerf( buf1, buf2, keySize );
+
+    scError = SymCryptRsaPssSign(
+                    *((PSYMCRYPT_RSAKEY *) buf1),
+                    buf2,
+                    PERF_RSA_HASH_ALG_SIZE,
+                    PERF_RSA_HASH_ALG_SC,
+                    PERF_RSA_HASH_ALG_SIZE,
+                    0,
+                    SYMCRYPT_NUMBER_FORMAT_MSB_FIRST,
+                    buf3,
+                    keySize,
+                    &cbDst );
+    CHECK( scError == SYMCRYPT_NO_ERROR, "?" );
+    CHECK( cbDst == keySize, "?" );
+
+    scError = SymCryptRsaPssVerify(
+                    *((PSYMCRYPT_RSAKEY *) buf1),
+                    buf2,
+                    PERF_RSA_HASH_ALG_SIZE,
+                    buf3,
+                    keySize,
+                    SYMCRYPT_NUMBER_FORMAT_MSB_FIRST,
+                    PERF_RSA_HASH_ALG_SC,
+                    PERF_RSA_HASH_ALG_SIZE,
+                    0 );
+    CHECK( scError == SYMCRYPT_NO_ERROR, "?" );
+}
+
+template<>
+VOID
+algImpCleanPerfFunction<ImpSc, AlgRsaSignPss>( PBYTE buf1, PBYTE buf2, PBYTE buf3 )
+{
+    UNREFERENCED_PARAMETER( buf1 );
+    UNREFERENCED_PARAMETER( buf2 );
+    UNREFERENCED_PARAMETER( buf3 );
+}
+
+template<>
+VOID
+algImpDataPerfFunction< ImpSc, AlgRsaSignPss>( PBYTE buf1, PBYTE buf2, PBYTE buf3, SIZE_T dataSize )
+{
+    SIZE_T cbDst = 0;
+
+    SymCryptRsaPssSign(
+        *((PSYMCRYPT_RSAKEY *) buf1),
+        buf2,
+        PERF_RSA_HASH_ALG_SIZE,
+        PERF_RSA_HASH_ALG_SC,
+        PERF_RSA_HASH_ALG_SIZE,
+        0,
+        SYMCRYPT_NUMBER_FORMAT_MSB_FIRST,
+        buf3,
+        dataSize,
+        &cbDst );
+}
+
+template<>
+VOID
+algImpDecryptPerfFunction< ImpSc, AlgRsaSignPss>( PBYTE buf1, PBYTE buf2, PBYTE buf3, SIZE_T dataSize )
+{
+    SYMCRYPT_ERROR scError;
+    
+    scError = SymCryptRsaPssVerify(
+                    *((PSYMCRYPT_RSAKEY *) buf1),
+                    buf2,
+                    PERF_RSA_HASH_ALG_SIZE,
+                    buf3,
+                    dataSize,
+                    SYMCRYPT_NUMBER_FORMAT_MSB_FIRST,
+                    PERF_RSA_HASH_ALG_SC,
+                    PERF_RSA_HASH_ALG_SIZE,
+                    0 );
+    CHECK( scError == SYMCRYPT_NO_ERROR, "?" );
+}
+
+template<>
+RsaSignImp<ImpSc, AlgRsaSignPss>::RsaSignImp()
+{
+    m_perfDataFunction      = &algImpDataPerfFunction <ImpSc, AlgRsaSignPss>;
+    m_perfDecryptFunction   = &algImpDecryptPerfFunction< ImpSc, AlgRsaSignPss>;
+    m_perfKeyFunction       = &algImpKeyPerfFunction  <ImpSc, AlgRsaSignPss>;
+    m_perfCleanFunction     = &algImpCleanPerfFunction<ImpSc, AlgRsaSignPss>;
+
+    state.pKey = NULL;
+}
+
+template<>
+RsaSignImp<ImpSc, AlgRsaSignPss>::~RsaSignImp()
+{
+    if( state.pKey != NULL )
+    {
+        SymCryptRsakeyFree( state.pKey );
+        state.pKey = NULL;
+    }
+}
+
+template<>
+NTSTATUS 
+RsaSignImp<ImpSc, AlgRsaSignPss>::setKey( PCRSAKEY_TESTBLOB pcKeyBlob )
+{
+    SYMCRYPT_ERROR scError;
+
+    if( state.pKey != NULL )
+    {
+        SymCryptRsakeyFree( state.pKey );
+        state.pKey = NULL;
+    }
+
+    if( pcKeyBlob == NULL )
+    {
+        // Just used to clear the key state to do leak detection
+        return STATUS_SUCCESS;
+    }
+
+    SYMCRYPT_RSA_PARAMS params;
+    params.version = 1;
+    params.nBitsOfModulus = pcKeyBlob->nBitsModulus;
+    params.nPrimes = 2;
+    params.nPubExp = 1;
+
+    state.pKey = SymCryptRsakeyAllocate( &params, 0 );
+    CHECK( state.pKey != NULL, "?" );
+
+    PCBYTE ppPrime[2] = {&pcKeyBlob->abPrime1[0], &pcKeyBlob->abPrime2[0] };
+    SIZE_T cbPrime[2] = {pcKeyBlob->cbPrime1, pcKeyBlob->cbPrime2 };
+
+    scError = SymCryptRsakeySetValue(
+        &pcKeyBlob->abModulus[0], pcKeyBlob->cbModulus,
+        &pcKeyBlob->u64PubExp, 1,
+        ppPrime, cbPrime, 2,
+        SYMCRYPT_NUMBER_FORMAT_MSB_FIRST,
+        0, 
+        state.pKey );
+    CHECK( scError == SYMCRYPT_NO_ERROR, "?" );
+
+    return STATUS_SUCCESS;
+}
+
+template<>
+NTSTATUS 
+RsaSignImp<ImpSc, AlgRsaSignPss>::sign(
+    _In_reads_( cbHash)     PCBYTE  pbHash, 
+                            SIZE_T  cbHash,
+                            PCSTR   pcstrHashAlgName,
+                            UINT32  u32Other,
+    _Out_writes_( cbSig )   PBYTE   pbSig,
+                            SIZE_T  cbSig )
+{
+    PCHASH_INFO pInfo;
+    SYMCRYPT_ERROR scError;
+    SIZE_T cbTmp;
+    
+    pInfo = getHashInfo( pcstrHashAlgName);
+    scError = SymCryptRsaPssSign( 
+                    state.pKey,
+                    pbHash,
+                    cbHash,
+                    pInfo->pcHash,
+                    u32Other,
+                    0,
+                    SYMCRYPT_NUMBER_FORMAT_MSB_FIRST,
+                    pbSig,
+                    cbSig,
+                    &cbTmp );
+    CHECK( scError == SYMCRYPT_NO_ERROR && cbTmp == cbSig, "?" );
+
+    return STATUS_SUCCESS;
+}                            
+
+template<>
+NTSTATUS
+RsaSignImp<ImpSc, AlgRsaSignPss>::verify(
+    _In_reads_( cbHash)     PCBYTE  pbHash, 
+                            SIZE_T  cbHash,
+    _In_reads_( cbSig )     PCBYTE  pbSig,
+                            SIZE_T  cbSig,
+                            PCSTR   pcstrHashAlgName,
+                            UINT32  u32Other )
+{
+    SYMCRYPT_ERROR scError;
+    NTSTATUS ntStatus;
+    PCHASH_INFO pInfo;
+
+    pInfo = getHashInfo( pcstrHashAlgName);
+    scError = SymCryptRsaPssVerify(
+                    state.pKey,
+                    pbHash,
+                    cbHash,
+                    pbSig,
+                    cbSig,
+                    SYMCRYPT_NUMBER_FORMAT_MSB_FIRST,
+                    pInfo->pcHash,
+                    u32Other,
+                    0 );
+
+    switch( scError )
+    {
+    case SYMCRYPT_NO_ERROR: 
+        ntStatus = STATUS_SUCCESS; 
+        break;
+    case SYMCRYPT_SIGNATURE_VERIFICATION_FAILURE: 
+        ntStatus = STATUS_INVALID_SIGNATURE; 
+        break;
+    case SYMCRYPT_INVALID_ARGUMENT:
+        ntStatus = STATUS_INVALID_PARAMETER;
+        break;
+    default: 
+        iprint( "Unexpected SymCrypt error %08x, %d, %d, %s\n", scError, cbHash, cbSig, pcstrHashAlgName );
+        CHECK( FALSE, "?" );
+        ntStatus = STATUS_UNSUCCESSFUL;
+    }
+
+    return ntStatus;
+}
+
+
+
 // Rsa Encryption
 
 template<>
@@ -3804,7 +4293,6 @@ VOID
 algImpKeyPerfFunction<ImpSc, AlgRsaEncRaw>( PBYTE buf1, PBYTE buf2, PBYTE buf3, SIZE_T keySize )
 {
     SYMCRYPT_ERROR scError = SYMCRYPT_NO_ERROR;
-    BYTE rbResult[1024] = { 0 };
 
     sc_RsaKeyPerf( buf1, buf2, keySize );
 
@@ -3818,18 +4306,16 @@ algImpKeyPerfFunction<ImpSc, AlgRsaEncRaw>( PBYTE buf1, PBYTE buf2, PBYTE buf3, 
                     keySize );
     CHECK( scError == SYMCRYPT_NO_ERROR, "?" );
 
-    CHECK( sizeof(rbResult) >= keySize, "?" );
-
     scError = SymCryptRsaRawDecrypt(
                     *((PSYMCRYPT_RSAKEY *) buf1),
                     buf3,
                     keySize,
                     SYMCRYPT_NUMBER_FORMAT_MSB_FIRST,
                     0,
-                    rbResult,
+                    buf2 + keySize,
                     keySize );
     CHECK( scError == SYMCRYPT_NO_ERROR, "?" );
-    CHECK( memcmp(buf2, rbResult, keySize) == 0, "?" );
+    CHECK( memcmp(buf2, buf2 + keySize, keySize) == 0, "?" );
 }
 
 template<>
@@ -3856,56 +4342,157 @@ algImpDataPerfFunction< ImpSc, AlgRsaEncRaw>( PBYTE buf1, PBYTE buf2, PBYTE buf3
 }
 
 template<>
-RsaImp<ImpSc, AlgRsaEncRaw>::RsaImp()
+VOID
+algImpDecryptPerfFunction< ImpSc, AlgRsaEncRaw>( PBYTE buf1, PBYTE buf2, PBYTE buf3, SIZE_T dataSize )
+{
+    SYMCRYPT_ERROR scError;
+    
+    scError = SymCryptRsaRawDecrypt(
+                    *((PSYMCRYPT_RSAKEY *) buf1),
+                    buf3,
+                    dataSize,
+                    SYMCRYPT_NUMBER_FORMAT_MSB_FIRST,
+                    0,
+                    buf2 + dataSize,
+                    dataSize );
+    CHECK( scError == SYMCRYPT_NO_ERROR, "?" );
+}
+
+
+template<>
+RsaEncImp<ImpSc, AlgRsaEncRaw>::RsaEncImp()
 {
     m_perfDataFunction      = &algImpDataPerfFunction <ImpSc, AlgRsaEncRaw>;
-    m_perfDecryptFunction   = NULL;
+    m_perfDecryptFunction   = &algImpDecryptPerfFunction<ImpSc, AlgRsaEncRaw>;
     m_perfKeyFunction       = &algImpKeyPerfFunction  <ImpSc, AlgRsaEncRaw>;
     m_perfCleanFunction     = &algImpCleanPerfFunction<ImpSc, AlgRsaEncRaw>;
+
+    state.pKey = NULL;
 }
 
 template<>
-RsaImp<ImpSc, AlgRsaEncRaw>::~RsaImp()
+RsaEncImp<ImpSc, AlgRsaEncRaw>::~RsaEncImp()
 {
-}
-
-// Rsa Decryption (only the Data perf function is new)
-
-template<>
-VOID
-algImpDataPerfFunction< ImpSc, AlgRsaDecRaw>( PBYTE buf1, PBYTE buf2, PBYTE buf3, SIZE_T dataSize )
-{
-    SymCryptRsaRawDecrypt(
-            *((PSYMCRYPT_RSAKEY *) buf1),
-            buf3,
-            dataSize,
-            SYMCRYPT_NUMBER_FORMAT_MSB_FIRST,
-            0,
-            buf2,
-            dataSize );
+    if( state.pKey != NULL )
+    {
+        SymCryptRsakeyFree( state.pKey );
+        state.pKey = NULL;
+    }
 }
 
 template<>
-RsaImp<ImpSc, AlgRsaDecRaw>::RsaImp()
+NTSTATUS 
+RsaEncImp<ImpSc, AlgRsaEncRaw>::setKey( PCRSAKEY_TESTBLOB pcKeyBlob )
 {
-    m_perfDataFunction      = &algImpDataPerfFunction <ImpSc, AlgRsaDecRaw>;
-    m_perfDecryptFunction   = NULL;
-    m_perfKeyFunction       = &algImpKeyPerfFunction  <ImpSc, AlgRsaEncRaw>;
-    m_perfCleanFunction     = &algImpCleanPerfFunction<ImpSc, AlgRsaEncRaw>;
+    SYMCRYPT_ERROR scError;
+
+    if( state.pKey != NULL )
+    {
+        SymCryptRsakeyFree( state.pKey );
+        state.pKey = NULL;
+    }
+
+    if( pcKeyBlob == NULL )
+    {
+        // Just used to clear the key state to do leak detection
+        return STATUS_SUCCESS;
+    }
+
+    SYMCRYPT_RSA_PARAMS params;
+    params.version = 1;
+    params.nBitsOfModulus = pcKeyBlob->nBitsModulus;
+    params.nPrimes = 2;
+    params.nPubExp = 1;
+
+    state.pKey = SymCryptRsakeyAllocate( &params, 0 );
+    CHECK( state.pKey != NULL, "?" );
+
+    PCBYTE ppPrime[2] = {&pcKeyBlob->abPrime1[0], &pcKeyBlob->abPrime2[0] };
+    SIZE_T cbPrime[2] = {pcKeyBlob->cbPrime1, pcKeyBlob->cbPrime2 };
+
+    scError = SymCryptRsakeySetValue(
+        &pcKeyBlob->abModulus[0], pcKeyBlob->cbModulus,
+        &pcKeyBlob->u64PubExp, 1,
+        ppPrime, cbPrime, 2,
+        SYMCRYPT_NUMBER_FORMAT_MSB_FIRST,
+        0, 
+        state.pKey );
+    CHECK( scError == SYMCRYPT_NO_ERROR, "?" );
+
+    return STATUS_SUCCESS;
 }
 
 template<>
-RsaImp<ImpSc, AlgRsaDecRaw>::~RsaImp()
+NTSTATUS 
+RsaEncImp<ImpSc, AlgRsaEncRaw>::encrypt(
+    _In_reads_( cbMsg )             PCBYTE  pbMsg, 
+                                    SIZE_T  cbMsg,
+                                    PCSTR   pcstrHashAlgName,
+                                    PCBYTE  pbLabel,
+                                    SIZE_T  cbLabel,
+    _Out_writes_( cbCiphertext )    PBYTE   pbCiphertext,
+                                    SIZE_T  cbCiphertext )
 {
+    SYMCRYPT_ERROR scError;
+
+    UNREFERENCED_PARAMETER( pcstrHashAlgName );
+    UNREFERENCED_PARAMETER( pbLabel );
+    UNREFERENCED_PARAMETER( cbLabel );
+
+    SIZE_T cbKey = SymCryptRsakeySizeofModulus( state.pKey );
+    CHECK( cbCiphertext == cbKey, "Wrong ciphertext size" );
+    CHECK( cbMsg == cbKey, "Wrong message size" );
+
+    scError = SymCryptRsaRawEncrypt(    state.pKey,
+                                        pbMsg, cbMsg,
+                                        SYMCRYPT_NUMBER_FORMAT_MSB_FIRST,
+                                        0,
+                                        pbCiphertext, cbCiphertext );
+
+    return scError == SYMCRYPT_NO_ERROR ? STATUS_SUCCESS : STATUS_UNSUCCESSFUL;
 }
 
-// Rsa Pkcs1 Encryption
+template<>
+NTSTATUS
+RsaEncImp<ImpSc, AlgRsaEncRaw>::decrypt(
+        _In_reads_( cbCiphertext )      PCBYTE  pbCiphertext,
+                                        SIZE_T  cbCiphertext,
+                                        PCSTR   pcstrHashAlgName,
+                                        PCBYTE  pbLabel,
+                                        SIZE_T  cbLabel,
+        _Out_writes_to_(cbMsg,*pcbMsg)  PBYTE   pbMsg,
+                                        SIZE_T  cbMsg,
+                                        SIZE_T *pcbMsg )
+{
+    SYMCRYPT_ERROR scError;
+
+    UNREFERENCED_PARAMETER( pcstrHashAlgName );
+    UNREFERENCED_PARAMETER( pbLabel );
+    UNREFERENCED_PARAMETER( cbLabel );
+
+    SIZE_T cbKey = SymCryptRsakeySizeofModulus( state.pKey );
+    CHECK( cbCiphertext == cbKey, "Wrong ciphertext size" );
+    CHECK( cbMsg >= cbKey, "Wrong message size" );
+
+    scError = SymCryptRsaRawDecrypt(    state.pKey,
+                                        pbCiphertext, cbCiphertext,
+                                        SYMCRYPT_NUMBER_FORMAT_MSB_FIRST,
+                                        0,
+                                        pbMsg, cbKey );
+
+    *pcbMsg = cbKey;
+
+    return scError == SYMCRYPT_NO_ERROR ? STATUS_SUCCESS : STATUS_UNSUCCESSFUL;
+}                                        
+
+
+// RSA PKCS1 encryption
+
 template<>
 VOID
 algImpKeyPerfFunction<ImpSc, AlgRsaEncPkcs1>( PBYTE buf1, PBYTE buf2, PBYTE buf3, SIZE_T keySize )
 {
     SYMCRYPT_ERROR scError = SYMCRYPT_NO_ERROR;
-    BYTE rbResult[1024] = { 0 };
     SIZE_T cbDst = 0;
 
     sc_RsaKeyPerf( buf1, buf2, keySize );
@@ -3922,20 +4509,18 @@ algImpKeyPerfFunction<ImpSc, AlgRsaEncPkcs1>( PBYTE buf1, PBYTE buf2, PBYTE buf3
     CHECK( scError == SYMCRYPT_NO_ERROR, "?" );
     CHECK( cbDst == keySize, "?" );
 
-    CHECK( sizeof(rbResult) >= keySize, "?" );
-
     scError = SymCryptRsaPkcs1Decrypt(
                     *((PSYMCRYPT_RSAKEY *) buf1),
                     buf3,
                     keySize,
                     SYMCRYPT_NUMBER_FORMAT_MSB_FIRST,
                     0,
-                    rbResult,
+                    buf2 + keySize,
                     keySize,
                     &cbDst );
     CHECK( scError == SYMCRYPT_NO_ERROR, "?" );
     CHECK( cbDst == keySize - PERF_RSA_PKCS1_LESS_BYTES, "?" );
-    CHECK( memcmp(buf2, rbResult, cbDst) == 0, "?" );
+    CHECK( memcmp(buf2, buf2 + keySize, cbDst) == 0, "?" );
 }
 
 template<>
@@ -3964,6 +4549,397 @@ algImpDataPerfFunction< ImpSc, AlgRsaEncPkcs1>( PBYTE buf1, PBYTE buf2, PBYTE bu
             &cbDst );
 }
 
+template<>
+VOID
+algImpDecryptPerfFunction< ImpSc, AlgRsaEncPkcs1>( PBYTE buf1, PBYTE buf2, PBYTE buf3, SIZE_T dataSize )
+{
+    SYMCRYPT_ERROR scError;
+    SIZE_T cbDst;
+    
+    scError = SymCryptRsaPkcs1Decrypt(
+                    *((PSYMCRYPT_RSAKEY *) buf1),
+                    buf3,
+                    dataSize,
+                    SYMCRYPT_NUMBER_FORMAT_MSB_FIRST,
+                    0,
+                    buf2 + dataSize,
+                    dataSize,
+                    &cbDst );
+    CHECK( scError == SYMCRYPT_NO_ERROR, "?" );
+    CHECK( cbDst == dataSize - PERF_RSA_PKCS1_LESS_BYTES, "?" );
+}
+
+
+template<>
+RsaEncImp<ImpSc, AlgRsaEncPkcs1>::RsaEncImp()
+{
+    m_perfDataFunction      = &algImpDataPerfFunction <ImpSc, AlgRsaEncPkcs1>;
+    m_perfDecryptFunction   = &algImpDecryptPerfFunction<ImpSc, AlgRsaEncPkcs1>;
+    m_perfKeyFunction       = &algImpKeyPerfFunction  <ImpSc, AlgRsaEncPkcs1>;
+    m_perfCleanFunction     = &algImpCleanPerfFunction<ImpSc, AlgRsaEncPkcs1>;
+
+    state.pKey = NULL;
+}
+
+template<>
+RsaEncImp<ImpSc, AlgRsaEncPkcs1>::~RsaEncImp()
+{
+    if( state.pKey != NULL )
+    {
+        SymCryptRsakeyFree( state.pKey );
+        state.pKey = NULL;
+    }
+}
+
+template<>
+NTSTATUS 
+RsaEncImp<ImpSc, AlgRsaEncPkcs1>::setKey( PCRSAKEY_TESTBLOB pcKeyBlob )
+{
+    SYMCRYPT_ERROR scError;
+
+    if( state.pKey != NULL )
+    {
+        SymCryptRsakeyFree( state.pKey );
+        state.pKey = NULL;
+    }
+
+    if( pcKeyBlob == NULL )
+    {
+        // Just used to clear the key state to do leak detection
+        return STATUS_SUCCESS;
+    }
+
+    SYMCRYPT_RSA_PARAMS params;
+    params.version = 1;
+    params.nBitsOfModulus = pcKeyBlob->nBitsModulus;
+    params.nPrimes = 2;
+    params.nPubExp = 1;
+
+    state.pKey = SymCryptRsakeyAllocate( &params, 0 );
+    CHECK( state.pKey != NULL, "?" );
+
+    PCBYTE ppPrime[2] = {&pcKeyBlob->abPrime1[0], &pcKeyBlob->abPrime2[0] };
+    SIZE_T cbPrime[2] = {pcKeyBlob->cbPrime1, pcKeyBlob->cbPrime2 };
+
+    scError = SymCryptRsakeySetValue(
+        &pcKeyBlob->abModulus[0], pcKeyBlob->cbModulus,
+        &pcKeyBlob->u64PubExp, 1,
+        ppPrime, cbPrime, 2,
+        SYMCRYPT_NUMBER_FORMAT_MSB_FIRST,
+        0, 
+        state.pKey );
+    CHECK( scError == SYMCRYPT_NO_ERROR, "?" );
+
+    return STATUS_SUCCESS;
+}
+
+template<>
+NTSTATUS 
+RsaEncImp<ImpSc, AlgRsaEncPkcs1>::encrypt(
+    _In_reads_( cbMsg )             PCBYTE  pbMsg, 
+                                    SIZE_T  cbMsg,
+                                    PCSTR   pcstrHashAlgName,
+                                    PCBYTE  pbLabel,
+                                    SIZE_T  cbLabel,
+    _Out_writes_( cbCiphertext )    PBYTE   pbCiphertext,
+                                    SIZE_T  cbCiphertext )
+{
+    SYMCRYPT_ERROR scError;
+    SIZE_T cbResult;
+
+    UNREFERENCED_PARAMETER( pcstrHashAlgName );
+    UNREFERENCED_PARAMETER( pbLabel );
+    UNREFERENCED_PARAMETER( cbLabel );
+
+    SIZE_T cbKey = SymCryptRsakeySizeofModulus( state.pKey );
+    CHECK( cbCiphertext == cbKey, "Wrong ciphertext size" );
+
+    scError = SymCryptRsaPkcs1Encrypt(  state.pKey,
+                                        pbMsg, cbMsg,
+                                        0,
+                                        SYMCRYPT_NUMBER_FORMAT_MSB_FIRST,
+                                        pbCiphertext, cbCiphertext,
+                                        &cbResult );
+
+    CHECK( cbResult == cbKey, "Unexpected ciphertext size" );
+
+    return scError == SYMCRYPT_NO_ERROR ? STATUS_SUCCESS : STATUS_UNSUCCESSFUL;
+}
+
+template<>
+NTSTATUS
+RsaEncImp<ImpSc, AlgRsaEncPkcs1>::decrypt(
+        _In_reads_( cbCiphertext )      PCBYTE  pbCiphertext,
+                                        SIZE_T  cbCiphertext,
+                                        PCSTR   pcstrHashAlgName,
+                                        PCBYTE  pbLabel,
+                                        SIZE_T  cbLabel,
+        _Out_writes_to_(cbMsg,*pcbMsg)  PBYTE   pbMsg,
+                                        SIZE_T  cbMsg,
+                                        SIZE_T *pcbMsg )
+{
+    SYMCRYPT_ERROR scError;
+    SIZE_T cbResult;
+
+    UNREFERENCED_PARAMETER( pcstrHashAlgName );
+    UNREFERENCED_PARAMETER( pbLabel );
+    UNREFERENCED_PARAMETER( cbLabel );
+
+    SIZE_T cbKey = SymCryptRsakeySizeofModulus( state.pKey );
+    CHECK( cbCiphertext == cbKey, "Wrong ciphertext size" );
+
+    scError = SymCryptRsaPkcs1Decrypt(  state.pKey,
+                                        pbCiphertext, cbCiphertext,
+                                        SYMCRYPT_NUMBER_FORMAT_MSB_FIRST,
+                                        0,
+                                        pbMsg, cbMsg, 
+                                        &cbResult );
+
+    *pcbMsg = cbResult;
+
+    return scError == SYMCRYPT_NO_ERROR ? STATUS_SUCCESS : STATUS_UNSUCCESSFUL;
+}                                        
+
+// RSA OAEP encryption
+
+template<>
+VOID
+algImpKeyPerfFunction<ImpSc, AlgRsaEncOaep>( PBYTE buf1, PBYTE buf2, PBYTE buf3, SIZE_T keySize )
+{
+    SYMCRYPT_ERROR scError = SYMCRYPT_NO_ERROR;
+    SIZE_T cbDst = 0;
+
+    sc_RsaKeyPerf( buf1, buf2, keySize );
+
+    scError = SymCryptRsaOaepEncrypt(
+                    *((PSYMCRYPT_RSAKEY *) buf1),
+                    buf2,
+                    keySize - PERF_RSA_OAEP_LESS_BYTES, // This is the maximum size for OAEP
+                    PERF_RSA_HASH_ALG_SC,
+                    buf2 + keySize,                     // Use buf2 bytes as the label
+                    PERF_RSA_LABEL_LENGTH,
+                    0,
+                    SYMCRYPT_NUMBER_FORMAT_MSB_FIRST,
+                    buf3,
+                    keySize,
+                    &cbDst );
+    CHECK( scError == SYMCRYPT_NO_ERROR, "?" );
+    CHECK( cbDst == keySize, "?" );
+
+    scError = SymCryptRsaOaepDecrypt(
+                    *((PSYMCRYPT_RSAKEY *) buf1),
+                    buf3,
+                    keySize,
+                    SYMCRYPT_NUMBER_FORMAT_MSB_FIRST,
+                    PERF_RSA_HASH_ALG_SC,
+                    buf2 + keySize,
+                    PERF_RSA_LABEL_LENGTH,
+                    0,
+                    buf3 + keySize,
+                    keySize,
+                    &cbDst );
+    CHECK( scError == SYMCRYPT_NO_ERROR, "?" );
+    CHECK( cbDst == keySize - PERF_RSA_OAEP_LESS_BYTES, "?" );
+    CHECK( memcmp(buf2, buf3 + keySize, cbDst) == 0, "?" );
+}
+
+template<>
+VOID
+algImpCleanPerfFunction<ImpSc, AlgRsaEncOaep>( PBYTE buf1, PBYTE buf2, PBYTE buf3 )
+{
+    UNREFERENCED_PARAMETER( buf1 );
+    UNREFERENCED_PARAMETER( buf2 );
+    UNREFERENCED_PARAMETER( buf3 );
+}
+
+template<>
+VOID
+algImpDataPerfFunction< ImpSc, AlgRsaEncOaep>( PBYTE buf1, PBYTE buf2, PBYTE buf3, SIZE_T dataSize )
+{
+    SIZE_T cbDst = 0;
+    SYMCRYPT_ERROR scError;
+
+    scError = SymCryptRsaOaepEncrypt(
+                    *((PSYMCRYPT_RSAKEY *) buf1),
+                    buf2,
+                    dataSize - PERF_RSA_OAEP_LESS_BYTES, // This is the maximum size for OAEP
+                    PERF_RSA_HASH_ALG_SC,
+                    buf2 + dataSize,                     // Use buf2 bytes as the label
+                    PERF_RSA_LABEL_LENGTH,
+                    0,
+                    SYMCRYPT_NUMBER_FORMAT_MSB_FIRST,
+                    buf3,
+                    dataSize,
+                    &cbDst );
+    CHECK( scError == SYMCRYPT_NO_ERROR, "?" );
+    CHECK( cbDst == dataSize, "?" );
+}
+
+template<>
+VOID
+algImpDecryptPerfFunction< ImpSc, AlgRsaEncOaep>( PBYTE buf1, PBYTE buf2, PBYTE buf3, SIZE_T dataSize )
+{
+    SYMCRYPT_ERROR scError;
+    SIZE_T cbDst;
+    
+    scError = SymCryptRsaOaepDecrypt(
+                    *((PSYMCRYPT_RSAKEY *) buf1),
+                    buf3,
+                    dataSize,
+                    SYMCRYPT_NUMBER_FORMAT_MSB_FIRST,
+                    PERF_RSA_HASH_ALG_SC,
+                    buf2 + dataSize,    // label
+                    PERF_RSA_LABEL_LENGTH,
+                    0,
+                    buf3 + dataSize,
+                    dataSize,
+                    &cbDst );
+    CHECK( scError == SYMCRYPT_NO_ERROR, "?" );
+    CHECK( cbDst == dataSize - PERF_RSA_OAEP_LESS_BYTES, "?" );
+}
+
+
+template<>
+RsaEncImp<ImpSc, AlgRsaEncOaep>::RsaEncImp()
+{
+    m_perfDataFunction      = &algImpDataPerfFunction <ImpSc, AlgRsaEncOaep>;
+    m_perfDecryptFunction   = &algImpDecryptPerfFunction<ImpSc, AlgRsaEncOaep>;
+    m_perfKeyFunction       = &algImpKeyPerfFunction  <ImpSc, AlgRsaEncOaep>;
+    m_perfCleanFunction     = &algImpCleanPerfFunction<ImpSc, AlgRsaEncOaep>;
+
+    state.pKey = NULL;
+}
+
+template<>
+RsaEncImp<ImpSc, AlgRsaEncOaep>::~RsaEncImp()
+{
+    if( state.pKey != NULL )
+    {
+        SymCryptRsakeyFree( state.pKey );
+        state.pKey = NULL;
+    }
+}
+
+template<>
+NTSTATUS 
+RsaEncImp<ImpSc, AlgRsaEncOaep>::setKey( PCRSAKEY_TESTBLOB pcKeyBlob )
+{
+    SYMCRYPT_ERROR scError;
+
+    if( state.pKey != NULL )
+    {
+        SymCryptRsakeyFree( state.pKey );
+        state.pKey = NULL;
+    }
+
+    if( pcKeyBlob == NULL )
+    {
+        // Just used to clear the key state to do leak detection
+        return STATUS_SUCCESS;
+    }
+
+    SYMCRYPT_RSA_PARAMS params;
+    params.version = 1;
+    params.nBitsOfModulus = pcKeyBlob->nBitsModulus;
+    params.nPrimes = 2;
+    params.nPubExp = 1;
+
+    state.pKey = SymCryptRsakeyAllocate( &params, 0 );
+    CHECK( state.pKey != NULL, "?" );
+
+    PCBYTE ppPrime[2] = {&pcKeyBlob->abPrime1[0], &pcKeyBlob->abPrime2[0] };
+    SIZE_T cbPrime[2] = {pcKeyBlob->cbPrime1, pcKeyBlob->cbPrime2 };
+
+    scError = SymCryptRsakeySetValue(
+        &pcKeyBlob->abModulus[0], pcKeyBlob->cbModulus,
+        &pcKeyBlob->u64PubExp, 1,
+        ppPrime, cbPrime, 2,
+        SYMCRYPT_NUMBER_FORMAT_MSB_FIRST,
+        0, 
+        state.pKey );
+    CHECK( scError == SYMCRYPT_NO_ERROR, "?" );
+
+    return STATUS_SUCCESS;
+}
+
+template<>
+NTSTATUS 
+RsaEncImp<ImpSc, AlgRsaEncOaep>::encrypt(
+    _In_reads_( cbMsg )             PCBYTE  pbMsg, 
+                                    SIZE_T  cbMsg,
+                                    PCSTR   pcstrHashAlgName,
+                                    PCBYTE  pbLabel,
+                                    SIZE_T  cbLabel,
+    _Out_writes_( cbCiphertext )    PBYTE   pbCiphertext,
+                                    SIZE_T  cbCiphertext )
+{
+    SYMCRYPT_ERROR scError;
+    SIZE_T cbResult;
+    PCHASH_INFO pInfo;
+
+    UNREFERENCED_PARAMETER( pcstrHashAlgName );
+    UNREFERENCED_PARAMETER( pbLabel );
+    UNREFERENCED_PARAMETER( cbLabel );
+
+    SIZE_T cbKey = SymCryptRsakeySizeofModulus( state.pKey );
+    CHECK( cbCiphertext == cbKey, "Wrong ciphertext size" );
+
+    pInfo = getHashInfo( pcstrHashAlgName);
+    scError = SymCryptRsaOaepEncrypt(   state.pKey,
+                                        pbMsg, cbMsg,
+                                        pInfo->pcHash,
+                                        pbLabel, cbLabel,
+                                        0,
+                                        SYMCRYPT_NUMBER_FORMAT_MSB_FIRST,
+                                        pbCiphertext, cbCiphertext,
+                                        &cbResult );
+
+    CHECK( cbResult == cbKey, "Unexpected ciphertext size" );
+
+    return scError == SYMCRYPT_NO_ERROR ? STATUS_SUCCESS : STATUS_UNSUCCESSFUL;
+}
+
+template<>
+NTSTATUS
+RsaEncImp<ImpSc, AlgRsaEncOaep>::decrypt(
+        _In_reads_( cbCiphertext )      PCBYTE  pbCiphertext,
+                                        SIZE_T  cbCiphertext,
+                                        PCSTR   pcstrHashAlgName,
+                                        PCBYTE  pbLabel,
+                                        SIZE_T  cbLabel,
+        _Out_writes_to_(cbMsg,*pcbMsg)  PBYTE   pbMsg,
+                                        SIZE_T  cbMsg,
+                                        SIZE_T *pcbMsg )
+{
+    SYMCRYPT_ERROR scError;
+    SIZE_T cbResult;
+    PCHASH_INFO pInfo;
+
+    UNREFERENCED_PARAMETER( pcstrHashAlgName );
+    UNREFERENCED_PARAMETER( pbLabel );
+    UNREFERENCED_PARAMETER( cbLabel );
+
+    SIZE_T cbKey = SymCryptRsakeySizeofModulus( state.pKey );
+    CHECK( cbCiphertext == cbKey, "Wrong ciphertext size" );
+
+    pInfo = getHashInfo( pcstrHashAlgName);
+    scError = SymCryptRsaOaepDecrypt(   state.pKey,
+                                        pbCiphertext, cbCiphertext,
+                                        SYMCRYPT_NUMBER_FORMAT_MSB_FIRST,
+                                        pInfo->pcHash,
+                                        pbLabel, cbLabel,
+                                        0,
+                                        pbMsg, cbMsg, 
+                                        &cbResult );
+
+    *pcbMsg = cbResult;
+
+    return scError == SYMCRYPT_NO_ERROR ? STATUS_SUCCESS : STATUS_UNSUCCESSFUL;
+}                                        
+
+
+// Rsa Pkcs1 Encryption
+/*
 template<>
 RsaImp<ImpSc, AlgRsaEncPkcs1>::RsaImp()
 {
@@ -4010,8 +4986,10 @@ template<>
 RsaImp<ImpSc, AlgRsaDecPkcs1>::~RsaImp()
 {
 }
+*/
 
 // Rsa Oaep Encryption
+/*
 template<>
 VOID
 algImpKeyPerfFunction<ImpSc, AlgRsaEncOaep>( PBYTE buf1, PBYTE buf2, PBYTE buf3, SIZE_T keySize )
@@ -4084,7 +5062,9 @@ algImpDataPerfFunction< ImpSc, AlgRsaEncOaep>( PBYTE buf1, PBYTE buf2, PBYTE buf
             dataSize,
             &cbDst );
 }
+*/
 
+/*
 template<>
 RsaImp<ImpSc, AlgRsaEncOaep>::RsaImp()
 {
@@ -4135,87 +5115,6 @@ RsaImp<ImpSc, AlgRsaDecOaep>::~RsaImp()
 {
 }
 
-// Rsa Pkcs1 Sign
-template<>
-VOID
-algImpKeyPerfFunction<ImpSc, AlgRsaSignPkcs1>( PBYTE buf1, PBYTE buf2, PBYTE buf3, SIZE_T keySize )
-{
-    SYMCRYPT_ERROR scError = SYMCRYPT_NO_ERROR;
-    SIZE_T cbDst = 0;
-
-    PBYTE pTmp = NULL;
-    PSYMCRYPT_OID pOid = NULL;
-
-    // The first OID for the SHA256 algorithm (PERF_RSA_HASH_ALG_SC)used by Cng
-    BYTE rbOid[] = { 0x06, 0x09, 0x60, 0x86, 0x48, 0x01, 0x65, 0x03, 0x04, 0x02, 0x01, 0x05, 0x00 };
-
-    sc_RsaKeyPerf( buf1, buf2, keySize );
-
-    // Create an OID in the last bytes of buf2
-    pTmp = buf2 + PERF_RSA_HASH_ALG_SIZE;
-    pOid = (PSYMCRYPT_OID) pTmp;
-
-    pTmp += sizeof(SYMCRYPT_OID);
-    pOid->cbOID = sizeof(rbOid);
-    pOid->pbOID = pTmp;
-    memcpy( pTmp, rbOid, sizeof(rbOid));
-
-    scError = SymCryptRsaPkcs1Sign(
-                    *((PSYMCRYPT_RSAKEY *) buf1),
-                    buf2,
-                    PERF_RSA_HASH_ALG_SIZE,
-                    (PSYMCRYPT_OID) (buf2+PERF_RSA_HASH_ALG_SIZE),
-                    1,
-                    0,
-                    SYMCRYPT_NUMBER_FORMAT_MSB_FIRST,
-                    buf3,
-                    keySize,
-                    &cbDst );
-    CHECK( scError == SYMCRYPT_NO_ERROR, "?" );
-    CHECK( cbDst == keySize, "?" );
-
-    scError = SymCryptRsaPkcs1Verify(
-                    *((PSYMCRYPT_RSAKEY *) buf1),
-                    buf2,
-                    PERF_RSA_HASH_ALG_SIZE,
-                    buf3,
-                    keySize,
-                    SYMCRYPT_NUMBER_FORMAT_MSB_FIRST,
-                    (PSYMCRYPT_OID) (buf2+PERF_RSA_HASH_ALG_SIZE),
-                    1,
-                    0 );
-    CHECK( scError == SYMCRYPT_NO_ERROR, "?" );
-
-}
-
-template<>
-VOID
-algImpCleanPerfFunction<ImpSc, AlgRsaSignPkcs1>( PBYTE buf1, PBYTE buf2, PBYTE buf3 )
-{
-    UNREFERENCED_PARAMETER( buf1 );
-    UNREFERENCED_PARAMETER( buf2 );
-    UNREFERENCED_PARAMETER( buf3 );
-}
-
-template<>
-VOID
-algImpDataPerfFunction< ImpSc, AlgRsaSignPkcs1>( PBYTE buf1, PBYTE buf2, PBYTE buf3, SIZE_T dataSize )
-{
-    SIZE_T cbDst = 0;
-
-    SymCryptRsaPkcs1Sign(
-            *((PSYMCRYPT_RSAKEY *) buf1),
-            buf2,
-            PERF_RSA_HASH_ALG_SIZE,
-            (PSYMCRYPT_OID) (buf2+PERF_RSA_HASH_ALG_SIZE),
-            1,
-            0,
-            SYMCRYPT_NUMBER_FORMAT_MSB_FIRST,
-            buf3,
-            dataSize,
-            &cbDst );
-}
-
 template<>
 RsaImp<ImpSc, AlgRsaSignPkcs1>::RsaImp()
 {
@@ -4260,72 +5159,6 @@ RsaImp<ImpSc, AlgRsaVerifyPkcs1>::RsaImp()
 template<>
 RsaImp<ImpSc, AlgRsaVerifyPkcs1>::~RsaImp()
 {
-}
-
-// Rsa Pss Sign
-template<>
-VOID
-algImpKeyPerfFunction<ImpSc, AlgRsaSignPss>( PBYTE buf1, PBYTE buf2, PBYTE buf3, SIZE_T keySize )
-{
-    SYMCRYPT_ERROR scError = SYMCRYPT_NO_ERROR;
-    SIZE_T cbDst = 0;
-
-    sc_RsaKeyPerf( buf1, buf2, keySize );
-
-    scError = SymCryptRsaPssSign(
-                    *((PSYMCRYPT_RSAKEY *) buf1),
-                    buf2,
-                    PERF_RSA_HASH_ALG_SIZE,
-                    PERF_RSA_HASH_ALG_SC,
-                    PERF_RSA_SALT_LENGTH,
-                    0,
-                    SYMCRYPT_NUMBER_FORMAT_MSB_FIRST,
-                    buf3,
-                    keySize,
-                    &cbDst );
-    CHECK( scError == SYMCRYPT_NO_ERROR, "?" );
-    CHECK( cbDst == keySize, "?" );
-
-    scError = SymCryptRsaPssVerify(
-                    *((PSYMCRYPT_RSAKEY *) buf1),
-                    buf2,
-                    PERF_RSA_HASH_ALG_SIZE,
-                    buf3,
-                    keySize,
-                    SYMCRYPT_NUMBER_FORMAT_MSB_FIRST,
-                    PERF_RSA_HASH_ALG_SC,
-                    PERF_RSA_SALT_LENGTH,
-                    0 );
-    CHECK( scError == SYMCRYPT_NO_ERROR, "?" );
-
-}
-
-template<>
-VOID
-algImpCleanPerfFunction<ImpSc, AlgRsaSignPss>( PBYTE buf1, PBYTE buf2, PBYTE buf3 )
-{
-    UNREFERENCED_PARAMETER( buf1 );
-    UNREFERENCED_PARAMETER( buf2 );
-    UNREFERENCED_PARAMETER( buf3 );
-}
-
-template<>
-VOID
-algImpDataPerfFunction< ImpSc, AlgRsaSignPss>( PBYTE buf1, PBYTE buf2, PBYTE buf3, SIZE_T dataSize )
-{
-    SIZE_T cbDst = 0;
-
-    SymCryptRsaPssSign(
-            *((PSYMCRYPT_RSAKEY *) buf1),
-            buf2,
-            PERF_RSA_HASH_ALG_SIZE,
-            PERF_RSA_HASH_ALG_SC,
-            PERF_RSA_SALT_LENGTH,
-            0,
-            SYMCRYPT_NUMBER_FORMAT_MSB_FIRST,
-            buf3,
-            dataSize,
-            &cbDst );
 }
 
 template<>
@@ -4373,6 +5206,7 @@ template<>
 RsaImp<ImpSc, AlgRsaVerifyPss>::~RsaImp()
 {
 }
+*/
 
 //============================
 
@@ -5658,17 +6492,24 @@ addSymCryptAlgs()
 
     addImplementationToGlobalList<ArithImp<ImpSc, AlgScsTable>>();
 
-    addImplementationToGlobalList<RsaImp<ImpSc, AlgRsaEncRaw>>();
-    addImplementationToGlobalList<RsaImp<ImpSc, AlgRsaDecRaw>>();
-    addImplementationToGlobalList<RsaImp<ImpSc, AlgRsaEncPkcs1>>();
-    addImplementationToGlobalList<RsaImp<ImpSc, AlgRsaDecPkcs1>>();
-    addImplementationToGlobalList<RsaImp<ImpSc, AlgRsaEncOaep>>();
-    addImplementationToGlobalList<RsaImp<ImpSc, AlgRsaDecOaep>>();
+    //addImplementationToGlobalList<RsaImp<ImpSc, AlgRsaEncRaw>>();
+    //addImplementationToGlobalList<RsaImp<ImpSc, AlgRsaDecRaw>>();
+    //addImplementationToGlobalList<RsaImp<ImpSc, AlgRsaEncPkcs1>>();
+    //addImplementationToGlobalList<RsaImp<ImpSc, AlgRsaDecPkcs1>>();
+    //addImplementationToGlobalList<RsaImp<ImpSc, AlgRsaEncOaep>>();
+    //addImplementationToGlobalList<RsaImp<ImpSc, AlgRsaDecOaep>>();
 
-    addImplementationToGlobalList<RsaImp<ImpSc, AlgRsaSignPkcs1>>();
-    addImplementationToGlobalList<RsaImp<ImpSc, AlgRsaVerifyPkcs1>>();
-    addImplementationToGlobalList<RsaImp<ImpSc, AlgRsaSignPss>>();
-    addImplementationToGlobalList<RsaImp<ImpSc, AlgRsaVerifyPss>>();
+    addImplementationToGlobalList<RsaSignImp<ImpSc, AlgRsaSignPkcs1>>();
+    addImplementationToGlobalList<RsaSignImp<ImpSc, AlgRsaSignPss>>();
+
+    addImplementationToGlobalList<RsaEncImp<ImpSc, AlgRsaEncRaw>>();
+    addImplementationToGlobalList<RsaEncImp<ImpSc, AlgRsaEncPkcs1>>();
+    addImplementationToGlobalList<RsaEncImp<ImpSc, AlgRsaEncOaep>>();
+    
+    //addImplementationToGlobalList<RsaImp<ImpSc, AlgRsaSignPkcs1>>();
+    //addImplementationToGlobalList<RsaImp<ImpSc, AlgRsaVerifyPkcs1>>();
+    //addImplementationToGlobalList<RsaImp<ImpSc, AlgRsaSignPss>>();
+    //addImplementationToGlobalList<RsaImp<ImpSc, AlgRsaVerifyPss>>();
 
     addImplementationToGlobalList<DlImp<ImpSc, AlgDsaSign>>();
     addImplementationToGlobalList<DlImp<ImpSc, AlgDsaVerify>>();

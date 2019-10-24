@@ -5,7 +5,9 @@
 //
 
 #include "precomp.h"
-#include "rsa32_implementations.h"
+
+#if INCLUDE_IMPL_RSA32
+
 
 
 char * ImpRsa32::name = "Rsa32";
@@ -3157,6 +3159,7 @@ addRsa32Algs()
     addImplementationToGlobalList<StreamCipherImp<ImpRsa32, AlgRc4>>();
 }
 
+#endif //INCLUDE_IMPL_RSA32
 
 
 
