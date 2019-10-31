@@ -1634,8 +1634,8 @@ runRsaAverageKeyGenPerf();
 
 
 #define MAX_RSA_TESTKEYS    (50)
-extern RSAKEY_TESTBLOB g_RsaTestKeys[ MAX_RSA_TESTKEYS ];
-extern UINT32 g_nRsaTestKeys;
+extern RSAKEY_TESTBLOB g_RsaTestKeyBlobs[ MAX_RSA_TESTKEYS ];
+extern UINT32 g_nRsaTestKeyBlobs;
 
 VOID
 fprintHex( FILE * f, PCBYTE pbData, SIZE_T cbData );

@@ -14,8 +14,8 @@ kat_kdf.dat                     KAT_KDF                         "..\kat_kdf.dat"
 kat_xts.dat                     KAT_XTS                         "..\kat_xts.dat"
 kat_ecdsa.dat                   KAT_ECDSA                       "..\kat_ecdsa.dat"
 kat_IEEE802_11SaeCustom.dat     KAT_SAE_CUSTOM                  "..\kat_IEEE802_11SaeCustom.dat"
-kat_rsaSign.dat			        KAT_RSA_SIGN			        "..\kat_rsaSign.dat"
-kat_rsaEnc.dat			        KAT_RSA_ENC			            "..\kat_rsaEnc.dat"
+kat_rsaSign.dat                 KAT_RSA_SIGN                    "..\kat_rsaSign.dat"
+kat_rsaEnc.dat                  KAT_RSA_ENC                     "..\kat_rsaEnc.dat"
 
 
 

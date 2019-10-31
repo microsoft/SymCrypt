@@ -11,8 +11,8 @@
 #include "precomp.h"
 
 #define MAX_RSA_TESTKEYS    (50)
-RSAKEY_TESTBLOB g_RsaTestKeys[ MAX_RSA_TESTKEYS ] = {0};
-UINT32 g_nRsaTestKeys = 0;
+RSAKEY_TESTBLOB g_RsaTestKeyBlobs[ MAX_RSA_TESTKEYS ] = {0};
+UINT32 g_nRsaTestKeyBlobs = 0;
 
 // RSA test keys for all RSA tests
 
@@ -48,7 +48,8 @@ rsaTestKeysAddOneFunky( UINT32 nBitsOfModulus )
     PSYMCRYPT_INT piLow = NULL;
     PSYMCRYPT_INT piHigh = NULL;
 
-    PRSAKEY_TESTBLOB pBlob = &g_RsaTestKeys[ g_nRsaTestKeys++ ]; 
+    CHECK( g_nRsaTestKeyBlobs < MAX_RSA_TESTKEYS, "?" );
+    PRSAKEY_TESTBLOB pBlob = &g_RsaTestKeyBlobs[ g_nRsaTestKeyBlobs++ ]; 
     SymCryptWipe( (PBYTE) pBlob, sizeof( *pBlob ) );
 
     // Calculate the needed sizes
@@ -165,7 +166,7 @@ VOID
 rsaTestKeysAddOne( UINT32 bitSize )
 {
     //iprint( "RSA key gen %d\n", bitSize );
-    CHECK( g_nRsaTestKeys < MAX_RSA_TESTKEYS, "?" );
+    CHECK( g_nRsaTestKeyBlobs < MAX_RSA_TESTKEYS, "?" );
 
     SYMCRYPT_ERROR scError;
     SYMCRYPT_RSA_PARAMS params;
@@ -199,7 +200,7 @@ rsaTestKeysAddOne( UINT32 bitSize )
     scError = SymCryptRsakeyGenerate( pKey, &u64PubExp, 1, 0 );
     CHECK( scError == SYMCRYPT_NO_ERROR, "?" );
 
-    PRSAKEY_TESTBLOB pBlob = &g_RsaTestKeys[ g_nRsaTestKeys++ ]; 
+    PRSAKEY_TESTBLOB pBlob = &g_RsaTestKeyBlobs[ g_nRsaTestKeyBlobs++ ]; 
     SymCryptWipe( (PBYTE) pBlob, sizeof( *pBlob ) );
 
     pBlob->nBitsModulus = SymCryptRsakeyModulusBits( pKey );
@@ -219,7 +220,7 @@ rsaTestKeysAddOne( UINT32 bitSize )
 VOID rsaTestKeysGenerate()
 {
     // Fill up our array of key blobs with generated keys
-    UINT32 desiredFixedKeySizes[] = {
+    const UINT32 desiredFixedKeySizes[] = {
         (8192 << 16) + 1, // 1 key of 8192 bits
         (4096 << 16) + 2, // 2 keys of 4096 bits
         (3072 << 16) + 3,
@@ -235,7 +236,7 @@ VOID rsaTestKeysGenerate()
     char * sep = "    RSA test key gen: ";
     UINT32 previousSize = 0;
 
-    if( g_nRsaTestKeys >= MAX_RSA_TESTKEYS )
+    if( g_nRsaTestKeyBlobs >= MAX_RSA_TESTKEYS )
     {
         goto cleanup;
     }
@@ -244,7 +245,7 @@ VOID rsaTestKeysGenerate()
     {
         bitSize = desiredFixedKeySizes[i] >> 16;
         int n = desiredFixedKeySizes[i] & 0xff;
-        while( n-- && g_nRsaTestKeys < MAX_RSA_TESTKEYS )
+        while( n-- && g_nRsaTestKeyBlobs < MAX_RSA_TESTKEYS )
         {
             if( bitSize == previousSize )
             {
@@ -262,7 +263,7 @@ VOID rsaTestKeysGenerate()
     // And we fill the rest with randomly-sized keys
     // For performance we favor the smaller key sizes.
     // The last 10% of the keys are reserved for funky keys
-    while( g_nRsaTestKeys < MAX_RSA_TESTKEYS - MAX_RSA_TESTKEYS / 10 )
+    while( g_nRsaTestKeyBlobs < MAX_RSA_TESTKEYS - MAX_RSA_TESTKEYS / 10 )
     {
         UINT32 r = g_rng.uint32();
         // We use prime moduli as they are almost independent
@@ -288,7 +289,7 @@ VOID rsaTestKeysGenerate()
         rsaTestKeysAddOne( bitSize );
     }
 
-    while( g_nRsaTestKeys < MAX_RSA_TESTKEYS )
+    while( g_nRsaTestKeyBlobs < MAX_RSA_TESTKEYS )
     {
         bitSize = (UINT32) g_rng.sizet( 3 * 512, 6 * 512 );
         iprint( ", F%d", bitSize );
@@ -333,17 +334,17 @@ rsaKeyFromTestBlob( PCRSAKEY_TESTBLOB pBlob )
 PSYMCRYPT_RSAKEY
 rsaTestKeyRandom()
 {
-    return rsaKeyFromTestBlob( &g_RsaTestKeys[ g_rng.uint32() % ARRAY_SIZE( g_RsaTestKeys ) ] );
+    return rsaKeyFromTestBlob( &g_RsaTestKeyBlobs[ g_rng.uint32() % ARRAY_SIZE( g_RsaTestKeyBlobs ) ] );
 }
 
 PSYMCRYPT_RSAKEY
 rsaTestKeyForSize( SIZE_T nBits )
 {
-    for( UINT32 i=0; i<g_nRsaTestKeys; i++ )
+    for( UINT32 i=0; i<g_nRsaTestKeyBlobs; i++ )
     {
-        if( g_RsaTestKeys[i].nBitsModulus == nBits )
+        if( g_RsaTestKeyBlobs[i].nBitsModulus == nBits )
         {
-            return rsaKeyFromTestBlob( &g_RsaTestKeys[i] );
+            return rsaKeyFromTestBlob( &g_RsaTestKeyBlobs[i] );
         }
     }
     return NULL;
@@ -632,9 +633,11 @@ createKatFileRsaSign()
                 );
     fprintf( f, "[RsaSignPkcs1]\n\n" );
 
+    rsaTestKeysGenerate();
+
     for( int i=0; i<MAX_RSA_TESTKEYS; i++ )
     {
-        PRSAKEY_TESTBLOB pBlob = &g_RsaTestKeys[ i ];
+        PRSAKEY_TESTBLOB pBlob = &g_RsaTestKeyBlobs[ i ];
 
         switch( g_rng.byte() % 5 )
         {
@@ -652,7 +655,7 @@ createKatFileRsaSign()
 
     for( int i=0; i<MAX_RSA_TESTKEYS; i++ )
     {
-        PRSAKEY_TESTBLOB pBlob = &g_RsaTestKeys[ i ];
+        PRSAKEY_TESTBLOB pBlob = &g_RsaTestKeyBlobs[ i ];
 
         switch( g_rng.byte() % 5 )
         {
@@ -735,9 +738,11 @@ testRsaSignTestkeys(
 
     UNREFERENCED_PARAMETER( line );
 
+    rsaTestKeysGenerate();
+
     for( int i=0; i<MAX_RSA_TESTKEYS; i++ )
     {
-        PRSAKEY_TESTBLOB pBlob = &g_RsaTestKeys[ i ]; 
+        PRSAKEY_TESTBLOB pBlob = &g_RsaTestKeyBlobs[ i ]; 
         ntStatus = pRsaSign->setKey( pBlob );
         CHECK( ntStatus == STATUS_SUCCESS, "Error setting key" );
     
@@ -1002,10 +1007,6 @@ testRsaSignPss()
 VOID
 testRsaSignAlgorithms()
 {
-    String sep;
-
-    rsaTestKeysGenerate();
-
     // Uncomment this function to generate a new KAT file
     // createKatFileRsaSign();
 

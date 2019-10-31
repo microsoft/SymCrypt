@@ -4711,20 +4711,22 @@ SymCryptEcurveAllocate(
 // Allocate memory and create an ECURVE object which is defined
 // by the parameters in pParams.
 //
-// flags: enable different features/tradeoffs.
-//   Currently no tradeoffs are defined, but there are a number of interesting
-//   memory/speed/pre-computation cost trades that can be made.
-//   For example, pre-computing multiples of the distinguished point, or
-//   (parallel?) pre-computation of (r, rG) pairs for random r values.
+// - pParams: parameters that define the curve
+// - flags: Not used, must be zero.
 //
-// Requirement:
-//  The pParams parameters define a suitable elliptic curve with consistent parameters.
-//  The parameters are trusted; there is no verification on the consistency of the parameter
-//  structure, or its security.
-//  If hostile parameters are received, all functions are guaranteed to not throw an exception, but
-//  either return a result or an error. However, no security is provided when hostile parameters are used.
+// Future versions might use the flags to enable different features/tradeoffs.
+// There are a number of interesting memory/speed/pre-computation cost trades that can be made.
+// For example, pre-computing multiples of the distinguished point, or (parallel?) pre-computation 
+// of (r, rG) pairs for random r values.
 //
-// Returns NULL if out of memory.
+// This function applies limited validation of the pParams. The validation is intended to eliminate
+// the threat of denial-of-service when hostile parameters are presented. It does not ensure that
+// the parameters make sense, define a proper curve, or that any elliptic-curve operations made on
+// the curve built from these parameters will fail, succeed or provide any security. 
+// The only guarantee provided for invalid parameters is that all operations on this curve will
+// not crash and will return in some reasonable amount of time.
+//
+// Returns NULL if out of memory or the parameters are deemed invalid.
 // If the return value is not NULL, the object must later be freed with SymCryptEcurveFree().
 //
 

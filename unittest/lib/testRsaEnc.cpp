@@ -439,9 +439,11 @@ createKatFileRsaEnc()
 
     fprintf( f, "\n\n[RsaEncRaw]\n\n" );
 
+    rsaTestKeysGenerate();
+
     for( int i=0; i<MAX_RSA_TESTKEYS; i++ )
     {
-        PRSAKEY_TESTBLOB pBlob = &g_RsaTestKeys[ i ];
+        PRSAKEY_TESTBLOB pBlob = &g_RsaTestKeyBlobs[ i ];
         createKatFileSingleRawEnc( f, pBlob );
     }
 
@@ -451,7 +453,7 @@ createKatFileRsaEnc()
 
     for( int i=0; i<MAX_RSA_TESTKEYS; i++ )
     {
-        PRSAKEY_TESTBLOB pBlob = &g_RsaTestKeys[ i ];
+        PRSAKEY_TESTBLOB pBlob = &g_RsaTestKeyBlobs[ i ];
         createKatFileSinglePkcs1Enc( f, pBlob );
     }
 
@@ -461,7 +463,7 @@ createKatFileRsaEnc()
 
     for( int i=0; i<MAX_RSA_TESTKEYS; i++ )
     {
-        PRSAKEY_TESTBLOB pBlob = &g_RsaTestKeys[ i ];
+        PRSAKEY_TESTBLOB pBlob = &g_RsaTestKeyBlobs[ i ];
 
         switch( g_rng.byte() % 5 )
         {
@@ -548,9 +550,11 @@ testRsaEncTestkeys(
 
     UNREFERENCED_PARAMETER( line );
 
+    rsaTestKeysGenerate();
+
     for( int i=0; i<MAX_RSA_TESTKEYS; i++ )
     {
-        PRSAKEY_TESTBLOB pBlob = &g_RsaTestKeys[ i ]; 
+        PRSAKEY_TESTBLOB pBlob = &g_RsaTestKeyBlobs[ i ]; 
         ntStatus = pRsaEnc->setKey( pBlob );
         CHECK( ntStatus == STATUS_SUCCESS, "Error setting key" );
     
@@ -716,7 +720,7 @@ testRsaEncRaw()
 
     // Choose a random test key
     rsaTestKeysGenerate();
-    PCRSAKEY_TESTBLOB pBlob = &g_RsaTestKeys[ g_rng.uint32() % ARRAY_SIZE( g_RsaTestKeys ) ];
+    PCRSAKEY_TESTBLOB pBlob = &g_RsaTestKeyBlobs[ g_rng.uint32() % ARRAY_SIZE( g_RsaTestKeyBlobs ) ];
 
     pRsaEncMultiImp->setKey( pBlob );
 
@@ -782,7 +786,7 @@ testRsaEncPkcs1Errors()
 
     // Choose a random test key
     rsaTestKeysGenerate();
-    PCRSAKEY_TESTBLOB pBlob = &g_RsaTestKeys[ g_rng.uint32() % ARRAY_SIZE( g_RsaTestKeys ) ];
+    PCRSAKEY_TESTBLOB pBlob = &g_RsaTestKeyBlobs[ g_rng.uint32() % ARRAY_SIZE( g_RsaTestKeyBlobs ) ];
 
     UINT32 cbitModulus = pBlob->nBitsModulus;
     UINT32 cbModulus = pBlob->cbModulus;
@@ -891,7 +895,7 @@ testRsaEncOaep()
 
     // Choose a random test key
     rsaTestKeysGenerate();
-    PCRSAKEY_TESTBLOB pBlob = &g_RsaTestKeys[ g_rng.uint32() % ARRAY_SIZE( g_RsaTestKeys ) ];
+    PCRSAKEY_TESTBLOB pBlob = &g_RsaTestKeyBlobs[ g_rng.uint32() % ARRAY_SIZE( g_RsaTestKeyBlobs ) ];
 
     pRsaEncMultiImp->setKey( pBlob );
 
@@ -938,9 +942,6 @@ VOID
 testRsaEncAlgorithms()
 {
     String sep;
-
-    // Generate our test keys if they haven't been generated before.
-    rsaTestKeysGenerate();
 
     // Uncomment this function to generate a new KAT file
     // createKatFileRsaEnc();

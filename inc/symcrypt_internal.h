@@ -2062,7 +2062,7 @@ typedef enum _SYMCRYPT_ECPOINT_COORDINATES {
     SYMCRYPT_ECPOINT_COORDINATES_AFFINE              = 0x22,   // Affine representation (X,Y)
     SYMCRYPT_ECPOINT_COORDINATES_PROJECTIVE          = 0x33,   // Three equally-sized values where the triple (X,Y,Z) represents the affine point (X/Z, Y/Z)
     SYMCRYPT_ECPOINT_COORDINATES_JACOBIAN            = 0x43,   // Three equally-sized values where the triple (X,Y,Z) represents the affine point (X/Z^2, Y/Z^3)
-    SYMCRYPT_ECPOINT_COORDINATES_EXTENDED_PROJECTIVE = 0x54,   // Four equally-sized values where (X,Y,Z,T) represents the affine point (X/Z, Y/Z)
+    SYMCRYPT_ECPOINT_COORDINATES_EXTENDED_PROJECTIVE = 0x54,   // Four equally-sized values where (X,Y,Z,T) represents the affine point (X/Z, Y/Z) with T=X*Y*Z
     SYMCRYPT_ECPOINT_COORDINATES_SINGLE_PROJECTIVE   = 0x62,   // Two equally-sized values where (X,Z) represents the point (X/Z)
 } SYMCRYPT_ECPOINT_COORDINATES;
 
