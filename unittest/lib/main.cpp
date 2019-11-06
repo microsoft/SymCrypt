@@ -855,7 +855,10 @@ void getPlatformInformation()
 
     versionInfo.dwOSVersionInfoSize = sizeof( versionInfo );
 
+    #pragma warning(push)
+    #pragma warning(disable:4996) // GetVersionEx is deprecated
     CHECK( GetVersionEx( &versionInfo ), "Failed to get OS version info" );
+    #pragma warning(pop)
 
     g_osVersion = (versionInfo.dwMajorVersion << 8) + (versionInfo.dwMinorVersion & 0xff);
 }

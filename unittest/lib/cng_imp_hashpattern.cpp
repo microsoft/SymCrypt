@@ -7,7 +7,7 @@
 BCRYPT_ALG_HANDLE HashImpState<ImpXxx, AlgXxx>::hAlg;
 
 
-HashImp<ImpXxx, AlgXxx>::HashImp<ImpXxx, AlgXxx>()
+HashImp<ImpXxx, AlgXxx>::HashImp()
 {
     CHECK( CngOpenAlgorithmProviderFn( &state.hAlg, LSTRING( ALG_NAME ), NULL, bcoapReusableFlag() ) == STATUS_SUCCESS, 
         "Could not open CNG/" STRING( ALG_Name ) );
@@ -18,7 +18,7 @@ HashImp<ImpXxx, AlgXxx>::HashImp<ImpXxx, AlgXxx>()
 }
 
 template<>
-HashImp<ImpXxx, AlgXxx>::~HashImp<ImpXxx, AlgXxx>()
+HashImp<ImpXxx, AlgXxx>::~HashImp()
 {
     CHECK( state.hHash == 0, "Handle leak" );
     

@@ -2645,7 +2645,7 @@ algImpCleanPerfFunction<ImpRsa32,AlgAes, ModeCcm>( PBYTE buf1, PBYTE buf2, PBYTE
 }
 
 
-AuthEncImp<ImpRsa32, AlgAes, ModeCcm>::AuthEncImp<ImpRsa32, AlgAes, ModeCcm>()
+AuthEncImp<ImpRsa32, AlgAes, ModeCcm>::AuthEncImp()
 {
     m_perfKeyFunction     = &algImpKeyPerfFunction    <ImpRsa32, AlgAes, ModeCcm>;
     m_perfCleanFunction   = &algImpCleanPerfFunction  <ImpRsa32, AlgAes, ModeCcm>;
@@ -2654,7 +2654,7 @@ AuthEncImp<ImpRsa32, AlgAes, ModeCcm>::AuthEncImp<ImpRsa32, AlgAes, ModeCcm>()
 }
 
 template<>
-AuthEncImp<ImpRsa32, AlgAes, ModeCcm>::~AuthEncImp<ImpRsa32, AlgAes, ModeCcm>()
+AuthEncImp<ImpRsa32, AlgAes, ModeCcm>::~AuthEncImp()
 {
 }
 
@@ -2854,7 +2854,7 @@ algImpCleanPerfFunction<ImpRsa32,AlgAes, ModeGcm>( PBYTE buf1, PBYTE buf2, PBYTE
 }
 
 
-AuthEncImp<ImpRsa32, AlgAes, ModeGcm>::AuthEncImp<ImpRsa32, AlgAes, ModeGcm>()
+AuthEncImp<ImpRsa32, AlgAes, ModeGcm>::AuthEncImp()
 {
     m_perfKeyFunction     = &algImpKeyPerfFunction    <ImpRsa32, AlgAes, ModeGcm>;
     m_perfCleanFunction   = &algImpCleanPerfFunction  <ImpRsa32, AlgAes, ModeGcm>;
@@ -2863,7 +2863,7 @@ AuthEncImp<ImpRsa32, AlgAes, ModeGcm>::AuthEncImp<ImpRsa32, AlgAes, ModeGcm>()
 }
 
 template<>
-AuthEncImp<ImpRsa32, AlgAes, ModeGcm>::~AuthEncImp<ImpRsa32, AlgAes, ModeGcm>()
+AuthEncImp<ImpRsa32, AlgAes, ModeGcm>::~AuthEncImp()
 {
 }
 
@@ -3035,7 +3035,7 @@ algImpCleanPerfFunction<ImpRsa32,AlgRc4>( PBYTE buf1, PBYTE buf2, PBYTE buf3 )
 }
 
 
-StreamCipherImp<ImpRsa32, AlgRc4>::StreamCipherImp<ImpRsa32, AlgRc4>()
+StreamCipherImp<ImpRsa32, AlgRc4>::StreamCipherImp()
 {
     m_perfKeyFunction     = &algImpKeyPerfFunction    <ImpRsa32, AlgRc4>;
     m_perfCleanFunction   = &algImpCleanPerfFunction  <ImpRsa32, AlgRc4>;
@@ -3043,7 +3043,7 @@ StreamCipherImp<ImpRsa32, AlgRc4>::StreamCipherImp<ImpRsa32, AlgRc4>()
 }
 
 template<>
-StreamCipherImp<ImpRsa32, AlgRc4>::~StreamCipherImp<ImpRsa32, AlgRc4>()
+StreamCipherImp<ImpRsa32, AlgRc4>::~StreamCipherImp()
 {
     RtlSecureZeroMemory( &state.state, sizeof( state.state ) ); 
 }

@@ -80,7 +80,7 @@ algImpDecryptPerfFunction<ImpXxx, AlgXxx, ModeXxx>(PBYTE buf1, PBYTE buf2, PBYTE
 
 
 
-BlockCipherImp<ImpXxx, AlgXxx, ModeXxx>::BlockCipherImp<ImpXxx, AlgXxx, ModeXxx>()
+BlockCipherImp<ImpXxx, AlgXxx, ModeXxx>::BlockCipherImp()
 {
     state.hKey = 0;
 
@@ -93,7 +93,7 @@ BlockCipherImp<ImpXxx, AlgXxx, ModeXxx>::BlockCipherImp<ImpXxx, AlgXxx, ModeXxx>
 }
 
 template<>
-BlockCipherImp<ImpXxx, AlgXxx, ModeXxx>::~BlockCipherImp<ImpXxx, AlgXxx, ModeXxx>()
+BlockCipherImp<ImpXxx, AlgXxx, ModeXxx>::~BlockCipherImp()
 {
     if( state.hKey != 0 )
     {

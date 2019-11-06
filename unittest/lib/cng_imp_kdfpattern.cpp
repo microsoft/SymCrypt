@@ -10,7 +10,7 @@ BCRYPT_ALG_HANDLE KdfImpState<ImpXxx, AlgXxx, BaseAlgXxx>::hAlg;
 // Empty constructor. 
 //
 template<>
-KdfImp<ImpXxx, AlgXxx, BaseAlgXxx>::KdfImp<ImpXxx, AlgXxx, BaseAlgXxx>()
+KdfImp<ImpXxx, AlgXxx, BaseAlgXxx>::KdfImp()
 {
     CHECK( CngOpenAlgorithmProviderFn( &state.hAlg, PROVIDER_NAME( ALG_NAME ), NULL, 0 ) == STATUS_SUCCESS, 
         "Could not open CNG/" STRING( ALG_Name ) );
@@ -24,7 +24,7 @@ KdfImp<ImpXxx, AlgXxx, BaseAlgXxx>::KdfImp<ImpXxx, AlgXxx, BaseAlgXxx>()
 }
 
 template<>
-KdfImp<ImpXxx, AlgXxx, BaseAlgXxx>::~KdfImp<ImpXxx, AlgXxx, BaseAlgXxx>()
+KdfImp<ImpXxx, AlgXxx, BaseAlgXxx>::~KdfImp()
 {
     CHECK3( NT_SUCCESS( CngCloseAlgorithmProviderFn( state.hAlg    , 0 )), "Could not close CNG/%s", STRING( ALG_Name ) );
     CHECK3( NT_SUCCESS( CngCloseAlgorithmProviderFn( state.hBaseAlg, 0 )), "Could not close CNG/%s", CNG_XXX_HASH_ALG_NAMEU );

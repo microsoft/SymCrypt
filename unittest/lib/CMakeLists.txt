@@ -26,6 +26,8 @@ set(SOURCES
     testEcc.cpp
     callback.cpp
     testMontgomery.cpp
+    testRsaSign.cpp
+    testRsaEnc.cpp
     testScsTable.cpp
     testScsTools.cpp
     testIEEE802_11SaeCustom.cpp
@@ -40,10 +42,10 @@ if(WIN32)
         msbignum_implementations.cpp
         perf.cpp
         testInterop.cpp
-        testRsa.cpp
-        testRsa_sc.cpp
-        testRsa_msbignum.cpp
-        testRsa_cng.cpp
+        # testRsa.cpp
+        # testRsa_sc.cpp
+        # testRsa_msbignum.cpp
+        # testRsa_cng.cpp
         testDl.cpp
         testDl_sc.cpp
         testDl_msbignum.cpp
@@ -53,13 +55,14 @@ endif()
 
 # Need to include an asm file from here.
 include_directories(${CMAKE_SOURCE_DIR}/lib)
-include_directories(${CMAKE_SOURCE_DIR}/../symcryptpublics)
+include_directories(${CMAKE_SOURCE_DIR}/SymCryptDependencies/inc)
 
 if(WIN32)
     # DNDEBUG is required to link with msbignum. This should eventually be removed.
     add_compile_options(-DNDEBUG)
     # Workaround for including ntintsafe.h
     add_compile_options(-DCMAKE_COMPILE)
+    add_compile_options(-D_CRT_SECURE_NO_WARNINGS)
 else()
     add_compile_options(-Wno-write-strings)
 endif()

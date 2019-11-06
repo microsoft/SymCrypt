@@ -645,7 +645,7 @@ algImpCleanPerfFunction<ImpCng,AlgRc4>( PBYTE buf1, PBYTE buf2, PBYTE buf3 )
 }
 
 
-StreamCipherImp<ImpCng, AlgRc4>::StreamCipherImp<ImpCng, AlgRc4>()
+StreamCipherImp<ImpCng, AlgRc4>::StreamCipherImp()
 {
     CHECK( CngOpenAlgorithmProviderFn( &state.hAlg, PROVIDER_NAME( RC4 ), NULL, 0 ) == STATUS_SUCCESS, 
         "Could not open CNG/" STRING( ALG_Name ) );
@@ -657,7 +657,7 @@ StreamCipherImp<ImpCng, AlgRc4>::StreamCipherImp<ImpCng, AlgRc4>()
 }
 
 template<>
-StreamCipherImp<ImpCng, AlgRc4>::~StreamCipherImp<ImpCng, AlgRc4>()
+StreamCipherImp<ImpCng, AlgRc4>::~StreamCipherImp()
 {
     if( state.hKey != 0 )
     {
@@ -776,13 +776,13 @@ algImpDataPerfFunction<ImpCng,AlgAesCtrDrbg>( PBYTE buf1, PBYTE buf2, PBYTE buf3
 }
 
 template<>
-RngSp800_90Imp<ImpCng, AlgAesCtrDrbg>::RngSp800_90Imp<ImpCng, AlgAesCtrDrbg>()
+RngSp800_90Imp<ImpCng, AlgAesCtrDrbg>::RngSp800_90Imp()
 {
     m_perfDataFunction    = &algImpDataPerfFunction   <ImpCng, AlgAesCtrDrbg>;
 }
 
 template<>
-RngSp800_90Imp<ImpCng, AlgAesCtrDrbg>::~RngSp800_90Imp<ImpCng, AlgAesCtrDrbg>()
+RngSp800_90Imp<ImpCng, AlgAesCtrDrbg>::~RngSp800_90Imp()
 {
 }
 
@@ -862,7 +862,7 @@ algImpCleanPerfFunction<ImpCng,AlgXtsAes>( PBYTE buf1, PBYTE buf2, PBYTE buf3 )
 
 
 template<>
-XtsImp<ImpCng, AlgXtsAes>::XtsImp<ImpCng, AlgXtsAes>()
+XtsImp<ImpCng, AlgXtsAes>::XtsImp()
 {
     DWORD res;
 
@@ -878,7 +878,7 @@ XtsImp<ImpCng, AlgXtsAes>::XtsImp<ImpCng, AlgXtsAes>()
 }
 
 template<>
-XtsImp<ImpCng, AlgXtsAes>::~XtsImp<ImpCng, AlgXtsAes>()
+XtsImp<ImpCng, AlgXtsAes>::~XtsImp()
 {
     if( state.hKey != 0 )
     {

@@ -9,7 +9,7 @@
 // The RSA32 API is not structured enough to create a generic implementation.
 //
 
-MacImp<ImpXxx, AlgXxx>::MacImp<ImpXxx, AlgXxx>()
+MacImp<ImpXxx, AlgXxx>::MacImp()
 {
     m_perfDataFunction = &algImpDataPerfFunction <ImpXxx, AlgXxx>;
     m_perfKeyFunction  = &algImpKeyPerfFunction  <ImpXxx, AlgXxx>;
@@ -17,7 +17,7 @@ MacImp<ImpXxx, AlgXxx>::MacImp<ImpXxx, AlgXxx>()
 }
 
 template<>
-MacImp<ImpXxx, AlgXxx>::~MacImp<ImpXxx, AlgXxx>()
+MacImp<ImpXxx, AlgXxx>::~MacImp()
 {
 }
 

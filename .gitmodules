@@ -1,0 +1,3 @@
+[submodule "SymCryptDependencies"]
+	path = SymCryptDependencies
+	url = https://microsoft.visualstudio.com/DefaultCollection/SymCryptDependencies/_git/SymCryptDependencies
