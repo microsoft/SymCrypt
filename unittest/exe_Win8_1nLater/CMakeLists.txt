@@ -7,9 +7,6 @@ set_source_files_properties(symcryptunittest.rc PROPERTIES LANGUAGE RC)
 
 add_compile_options(-DTESTDRIVER_NAME=\"SymCryptDriver_win7nlater.sys\")
 
-# Workaround for including ntintsafe.h
-add_compile_options(-DCMAKE_COMPILE)
-
 include_directories(${CMAKE_SOURCE_DIR}/SymCryptDependencies/inc)
 
 add_executable(symcryptunittest_win8_1nlater ${SOURCES})

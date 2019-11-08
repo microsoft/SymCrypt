@@ -161,14 +161,6 @@
     #define Sleep(x) sleep((x)/1000)
 #else
     #include <ntstatus.h>
-    #pragma prefast(push)
-    #pragma prefast(disable: 26071, "Avoid error in validation of RtlULongLongMult")
-    #ifdef CMAKE_COMPILE
-        #include <../km/ntintsafe.h>
-    #else
-        #include <ntintsafe.h>
-    #endif
-    #pragma prefast(pop)
 
     // Ensure that windows.h doesn't re-define the status_* symbols
     #define WIN32_NO_STATUS
@@ -244,11 +236,6 @@ extern "C"
 //#include <ntrtl.h>
 //#include <nturtl.h>
 #include <ntstatus.h>
-
-#pragma prefast(push)
-#pragma prefast(disable: 26071, "Avoid error in validation of RtlULongLongMult")
-#include <ntintsafe.h>
-#pragma prefast(pop)
 
 // Ensure that windows.h doesn't re-define the status_* symbols
 #define WIN32_NO_STATUS

@@ -60,8 +60,6 @@ include_directories(${CMAKE_SOURCE_DIR}/SymCryptDependencies/inc)
 if(WIN32)
     # DNDEBUG is required to link with msbignum. This should eventually be removed.
     add_compile_options(-DNDEBUG)
-    # Workaround for including ntintsafe.h
-    add_compile_options(-DCMAKE_COMPILE)
     add_compile_options(-D_CRT_SECURE_NO_WARNINGS)
 else()
     add_compile_options(-Wno-write-strings)

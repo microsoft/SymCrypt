@@ -1,0 +1,29 @@
+trigger:
+- master
+
+pr:
+- master
+
+jobs:
+- job: Windows
+  pool:
+    vmImage: 'windows-2019'
+  steps:
+  - checkout: self  # self represents the repo where the initial Pipelines YAML file was found
+    submodules: recursive 
+  # Initialize CMake
+  - task: CMake@1
+    inputs:
+      workingDirectory: 'bin'
+      cmakeArgs: '..'
+  # Build with CMake
+  - task: CMake@1
+    inputs:
+      workingDirectory: 'bin'
+      cmakeArgs: '--build .'
+  - script: |
+      cd bin\unittest\exe_test\Debug
+      .\symcryptunittest_generic.exe
+    displayName: 'Execute generic unit test'
+    name: 'WindowsGenericUnitTest'
+

@@ -5,10 +5,6 @@ Copyright (c) Microsoft Corporation. Licensed under the MIT license.
 */
 
 #include <ntstatus.h>
-#pragma prefast(push)
-#pragma prefast(disable: 26071, "Avoid error in validation of RtlULongLongMult")
-#include <ntintsafe.h>
-#pragma prefast(pop)
 
 // Ensure that windows.h doesn't re-define the status_* symbols
 #define WIN32_NO_STATUS
