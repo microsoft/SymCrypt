@@ -4,7 +4,7 @@
 // Copyright (c) Microsoft Corporation. Licensed under the MIT license. 
 //
 
-
+#pragma once
 
 #include <wincrypt.h>
 extern HCRYPTPROV g_capiProvider;

@@ -50,7 +50,7 @@ function(create_resource_h data_files)
     get_filename_component(basename ${f} NAME)
     make_cxx_name(${basename} cxx_name)
     file(APPEND ${resource_file}
-      "${t}if (strcmp(resourceName, \"${basename}\") == 0) {\n"
+      "${t}if (strcasecmp(resourceName, \"${basename}\") == 0) {\n"
       )
     file(APPEND ${resource_file}
       "${t}${t}*bytes = ${cxx_name};\n"

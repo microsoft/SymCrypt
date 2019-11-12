@@ -6,12 +6,6 @@
 //
 
 #include "precomp.h"
-// #include "msbignum_implementations.h"
-// #include "rsa32_implementations.h"
-// #include "capi_implementations.h"
-// #include "cng_implementations.h"
-#include "sc_implementations.h"
-#include "ref_implementations.h"
 
 SYMCRYPT_ENVIRONMENT_GENERIC;
 

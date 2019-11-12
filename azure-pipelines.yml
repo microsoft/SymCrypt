@@ -14,16 +14,59 @@ jobs:
   # Initialize CMake
   - task: CMake@1
     inputs:
-      workingDirectory: 'bin'
-      cmakeArgs: '..'
+      workingDirectory: '$(Build.SourcesDirectory)'
+      cmakeArgs: '.'
   # Build with CMake
   - task: CMake@1
     inputs:
-      workingDirectory: 'bin'
+      workingDirectory: '$(Build.SourcesDirectory)'
       cmakeArgs: '--build .'
-  - script: |
-      cd bin\unittest\exe_test\Debug
-      .\symcryptunittest_generic.exe
-    displayName: 'Execute generic unit test'
-    name: 'WindowsGenericUnitTest'
+  # Execute unit tests
+  #- script: |
+  #    cd bin\exe\Debug
+  #    .\symcryptunittest_generic.exe
+  #  displayName: 'Execute generic unit test'
+  #  name: 'WindowsGenericUnitTest'
+  - task: CopyFiles@2
+    inputs:
+      SourceFolder: 'bin'
+      Contents: '**'
+      TargetFolder: '$(build.artifactstagingdirectory)'
+  - task: PublishBuildArtifacts@1
+    inputs:
+      PathtoPublish: '$(Build.ArtifactStagingDirectory)'
+      ArtifactName: 'drop-Windows-Generic'
+      publishLocation: 'Container'
 
+- job: Linux
+  pool:
+    vmImage: 'ubuntu-18.04'
+  steps:
+  - checkout: self  # self represents the repo where the initial Pipelines YAML file was found
+    submodules: recursive 
+  # Initialize CMake
+  - task: CMake@1
+    inputs:
+      workingDirectory: '$(Build.SourcesDirectory)'
+      cmakeArgs: '.'
+  # Build with CMake
+  - task: CMake@1
+    inputs:
+      workingDirectory: '$(Build.SourcesDirectory)'
+      cmakeArgs: '--build .'
+  # Execute unit tests
+  #- script: |
+  #    cd bin/exe
+  #    ./symcryptunittest
+  #  displayName: 'Execute generic unit test'
+  #  name: 'LinuxGenericUnitTest'
+  - task: CopyFiles@2
+    inputs:
+      SourceFolder: 'bin'
+      Contents: '**'
+      TargetFolder: '$(build.artifactstagingdirectory)'
+  - task: PublishBuildArtifacts@1
+    inputs:
+      PathtoPublish: '$(Build.ArtifactStagingDirectory)'
+      ArtifactName: 'drop-Linux-Generic'
+      publishLocation: 'Container'

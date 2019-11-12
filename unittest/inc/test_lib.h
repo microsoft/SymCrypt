@@ -90,6 +90,9 @@
     #define LPVOID      PVOID
     #define NTSTATUS    INT32
 
+    #define STATUS_INVALID_SIGNATURE         ((NTSTATUS)0xC000A000L)
+    #define STATUS_INVALID_PARAMETER         ((NTSTATUS)0xC000000DL)
+    #define STATUS_NO_MEMORY                 ((NTSTATUS)0xC0000017L)
     #define STATUS_NOT_SUPPORTED             ((NTSTATUS)0xC00000BBL)
     #define STATUS_UNSUCCESSFUL              ((NTSTATUS)0xC0000001L)
     #define STATUS_SUCCESS                   ((NTSTATUS)0x00000000L)

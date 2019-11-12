@@ -19,6 +19,7 @@
 #define __in
 #define __in_opt
 #define __inout_ecount(x)
+#define __out_ecount(x)
 
 #define _In_
 #define _In_z_

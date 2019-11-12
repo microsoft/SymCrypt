@@ -67,7 +67,7 @@ release/
 scbuild.log
 
 # Cmake output
-out/
+bin/
 CMakeFiles
 CMakeCache.txt
 **/cmake_install.*

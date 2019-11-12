@@ -865,11 +865,12 @@ void getPlatformInformation()
 #elif SYMCRYPT_GNUC
 #include "resource.h"
 KatData *
-getCustomResource( _In_ PSTR resourceName, _In_ PSTR resourceType )
+getCustomResource( _In_ PSTR resourceName, _In_ PSTR /* resourceType */)
 {
-    (void)resourceType;
     PCCHAR pbData = nullptr;
     SIZE_T cbData = GetResourceBytes((const char *)resourceName, &pbData);
+    CHECK( cbData != 0, "Resource not found" );
+
     return new KatData( resourceName, pbData, cbData - 1 );
 }
 

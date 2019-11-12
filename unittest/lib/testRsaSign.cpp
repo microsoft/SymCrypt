@@ -507,6 +507,7 @@ createKatFileSinglePkcs1( FILE * f, PCRSAKEY_TESTBLOB pBlob, PCSTR hashName, UIN
     BYTE hash[64];
     BYTE sig[1024];
     SIZE_T cbSig;
+    SIZE_T cbTmp;
     SYMCRYPT_ERROR scError;
     PSYMCRYPT_RSAKEY pKey = NULL;
 
@@ -523,7 +524,7 @@ createKatFileSinglePkcs1( FILE * f, PCRSAKEY_TESTBLOB pBlob, PCSTR hashName, UIN
     fprintf( f, "N = " );
     fprintHex( f, pBlob->abModulus, pBlob->cbModulus );
 
-    SIZE_T cbTmp = SymCryptUint64Bytesize( pBlob->u64PubExp );
+    cbTmp = SymCryptUint64Bytesize( pBlob->u64PubExp );
     SymCryptStoreMsbFirstUint64( pBlob->u64PubExp, sig, cbTmp );    
     fprintf( f, "e = "  );
     fprintHex( f, sig, cbTmp );
@@ -564,6 +565,7 @@ createKatFileSinglePss( FILE * f, PCRSAKEY_TESTBLOB pBlob, PCSTR hashName, PCSYM
     BYTE salt[64];
     BYTE sig[1024];
     SIZE_T cbSig;
+    SIZE_T cbTmp;
     SYMCRYPT_ERROR scError;
     PSYMCRYPT_RSAKEY pKey = NULL;
 
@@ -580,7 +582,7 @@ createKatFileSinglePss( FILE * f, PCRSAKEY_TESTBLOB pBlob, PCSTR hashName, PCSYM
     fprintf( f, "N = " );
     fprintHex( f, pBlob->abModulus, pBlob->cbModulus );
 
-    SIZE_T cbTmp = SymCryptUint64Bytesize( pBlob->u64PubExp );
+    cbTmp = SymCryptUint64Bytesize( pBlob->u64PubExp );
     SymCryptStoreMsbFirstUint64( pBlob->u64PubExp, sig, cbTmp );    
     fprintf( f, "e = "  );
     fprintHex( f, sig, cbTmp );

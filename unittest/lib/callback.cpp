@@ -211,12 +211,9 @@ void SetMpErrno_clue1(__in mp_errno_tc code, __in_opt const char *hint, PBIGCTX_
     SetMpErrno(code, PBIGCTX_PASS);
 }
 
-#endif // INCLUDE_IMPL_MSBIGNUM
-
 #if defined(__cplusplus)
 extern "C" {
 #endif
-
 
 BOOL_SUCCESS WINAPI random_bytes(
   __out_ecount(nbyte)  BYTE   *barray,
@@ -258,3 +255,5 @@ cleanup:
 #if defined(__cplusplus)
 }
 #endif
+
+#endif // INCLUDE_IMPL_MSBIGNUM
