@@ -22,11 +22,11 @@ jobs:
       workingDirectory: '$(Build.SourcesDirectory)'
       cmakeArgs: '--build .'
   # Execute unit tests
-  #- script: |
-  #    cd bin\exe\Debug
-  #    .\symcryptunittest_generic.exe
-  #  displayName: 'Execute generic unit test'
-  #  name: 'WindowsGenericUnitTest'
+  - script: |
+      cd bin\exe\Debug
+      .\symcryptunittest_generic.exe
+    displayName: 'Execute generic unit test'
+    name: 'WindowsGenericUnitTest'
   - task: CopyFiles@2
     inputs:
       SourceFolder: 'bin'
@@ -55,11 +55,11 @@ jobs:
       workingDirectory: '$(Build.SourcesDirectory)'
       cmakeArgs: '--build .'
   # Execute unit tests
-  #- script: |
-  #    cd bin/exe
-  #    ./symcryptunittest
-  #  displayName: 'Execute generic unit test'
-  #  name: 'LinuxGenericUnitTest'
+  - script: |
+      cd bin/exe
+      ./symcryptunittest
+    displayName: 'Execute generic unit test'
+    name: 'LinuxGenericUnitTest'
   - task: CopyFiles@2
     inputs:
       SourceFolder: 'bin'

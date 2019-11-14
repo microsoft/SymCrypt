@@ -777,9 +777,9 @@ testRsaEncPkcs1Errors()
     SYMCRYPT_ERROR scError;
     PSYMCRYPT_RSAKEY pKey = NULL;
 
-    BYTE paddedData[256];
-    BYTE ciphertext[256];
-    BYTE res[256];
+    BYTE paddedData[RSAKEY_MAXKEYSIZE];
+    BYTE ciphertext[RSAKEY_MAXKEYSIZE];
+    BYTE res[RSAKEY_MAXKEYSIZE];
     SIZE_T cbRes;
     BYTE b;
     UINT32 i;
