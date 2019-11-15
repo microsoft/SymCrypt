@@ -5210,6 +5210,37 @@ RsaImp<ImpSc, AlgRsaVerifyPss>::~RsaImp()
 
 //============================
 
+VOID
+DlgroupSetup( PBYTE buf1, SIZE_T keySize )
+{
+    SYMCRYPT_ERROR scError;
+
+    PCDLGROUP_TESTBLOB pBlob = dlgroupForSize( keySize * 8 );
+
+    CHECK( pBlob != NULL, "?" );
+
+    PSYMCRYPT_DLGROUP pGroup = SymCryptDlgroupCreate( buf1 + 64, PERF_BUFFER_SIZE/2, pBlob->nBitsP, 8*pBlob->cbPrimeQ );
+
+    CHECK( pGroup != NULL, "Could not create group" );
+
+    scError = SymCryptDlgroupSetValue(
+        &pBlob->abPrimeP[0], pBlob->cbPrimeP,
+        pBlob->cbPrimeQ == 0 ? NULL : &pBlob->abPrimeQ[0], pBlob->cbPrimeQ,
+        &pBlob->abGenG[0], pBlob->cbPrimeP,
+        SYMCRYPT_NUMBER_FORMAT_MSB_FIRST,
+        pBlob->pHashAlgorithm,
+        &pBlob->abSeed[0], pBlob->cbSeed,
+        pBlob->genCounter,
+        pBlob->fipsStandard,
+        pGroup );
+
+    CHECK( scError == SYMCRYPT_NO_ERROR, "Error setting group values" );
+
+    *((PSYMCRYPT_DLGROUP *) buf1) = pGroup;
+}
+
+
+
 // Table with the DL groups sizes and pointers to the groups
 struct {
     SIZE_T              keySize;        // Always equal to cbPrimeP
@@ -5330,6 +5361,7 @@ algImpKeyPerfFunction<ImpSc, AlgDsaSign>( PBYTE buf1, PBYTE buf2, PBYTE buf3, SI
     UNREFERENCED_PARAMETER( buf3 );
 
     SetupDlGroup( buf1, keySize );
+
     SetupSymCryptDsaAndDh( buf1, buf2, buf3 );
 }
 
@@ -5428,15 +5460,51 @@ DlImp<ImpSc, AlgDsaVerify>::~DlImp()
 
 //============================
 
+PSYMCRYPT_DLKEY
+dlkeyObjectFromTestBlob( PCSYMCRYPT_DLGROUP pGroup, PCDLKEY_TESTBLOB pBlob )
+{
+    PSYMCRYPT_DLKEY pRes;
+    SYMCRYPT_ERROR scError;
+
+    pRes = SymCryptDlkeyAllocate( pGroup );
+    CHECK( pRes != NULL, "?" );
+
+    scError = SymCryptDlkeySetValue(    &pBlob->abPrivKey[0], pBlob->cbPrivKey,
+                                        &pBlob->abPubKey[0], pBlob->pGroup->cbPrimeP,
+                                        SYMCRYPT_NUMBER_FORMAT_MSB_FIRST,
+                                        SYMCRYPT_FLAG_DLKEY_VERIFY,     // Verify the key is correct
+                                        pRes );
+    CHECK( scError == SYMCRYPT_NO_ERROR, "Error importing key" );
+
+    return pRes;
+}
+
 template<>
 VOID
 algImpKeyPerfFunction<ImpSc, AlgDh>( PBYTE buf1, PBYTE buf2, PBYTE buf3, SIZE_T keySize )
 {
-    UNREFERENCED_PARAMETER( buf2 );
+    SYMCRYPT_ERROR scError;
+    
     UNREFERENCED_PARAMETER( buf3 );
 
-    SetupDlGroup( buf1, keySize );
-    SetupSymCryptDsaAndDh( buf1, buf2, buf3 );
+    DlgroupSetup( buf1, keySize );
+
+    // Set up two keys in buf2 
+    PSYMCRYPT_DLGROUP pGroup = *(PSYMCRYPT_DLGROUP *) buf1;
+
+    PSYMCRYPT_DLKEY pKey1 = SymCryptDlkeyCreate( buf2 + 64, PERF_BUFFER_SIZE/4, pGroup );
+    PSYMCRYPT_DLKEY pKey2 = SymCryptDlkeyCreate( buf2 + 64 + PERF_BUFFER_SIZE/4, PERF_BUFFER_SIZE/4, pGroup );
+
+    CHECK( pKey1 != NULL && pKey2 != NULL, "Failed to create keys" );
+
+    scError = SymCryptDlkeyGenerate( 0, pKey1 );
+    CHECK( scError == SYMCRYPT_NO_ERROR, "?" );
+    
+    scError = SymCryptDlkeyGenerate( 0, pKey2 );
+    CHECK( scError == SYMCRYPT_NO_ERROR, "?" );
+    
+    ((PSYMCRYPT_DLKEY *) buf2)[0] = pKey1;
+    ((PSYMCRYPT_DLKEY *) buf2)[1] = pKey2;
 }
 
 template<>
@@ -5448,9 +5516,31 @@ algImpCleanPerfFunction<ImpSc, AlgDh>( PBYTE buf1, PBYTE buf2, PBYTE buf3 )
     UNREFERENCED_PARAMETER( buf3 );
 }
 
+
 template<>
 VOID
 algImpDataPerfFunction< ImpSc, AlgDh>( PBYTE buf1, PBYTE buf2, PBYTE buf3, SIZE_T dataSize )
+{
+    SYMCRYPT_ERROR scError;
+
+    UNREFERENCED_PARAMETER( buf2 );
+    UNREFERENCED_PARAMETER( dataSize );
+
+    PSYMCRYPT_DLGROUP pGroup = *(PSYMCRYPT_DLGROUP *) buf1;
+
+    PSYMCRYPT_DLKEY pKey = SymCryptDlkeyCreate( buf3, (1 << 16), pGroup );
+    CHECK( pKey != NULL, "?" );
+    
+    scError = SymCryptDlkeyGenerate( 0, pKey );
+    CHECK( scError == SYMCRYPT_NO_ERROR, "?" );
+
+    scError = SymCryptDlkeyGetValue( pKey, NULL, 0, buf3 + (1 << 16), pGroup->cbPrimeP, SYMCRYPT_NUMBER_FORMAT_MSB_FIRST, 0 );
+    CHECK( scError == SYMCRYPT_NO_ERROR, "?" );
+}
+
+template<>
+VOID
+algImpDecryptPerfFunction< ImpSc, AlgDh>( PBYTE buf1, PBYTE buf2, PBYTE buf3, SIZE_T dataSize )
 {
     UNREFERENCED_PARAMETER( buf1 );
 
@@ -5459,9 +5549,251 @@ algImpDataPerfFunction< ImpSc, AlgDh>( PBYTE buf1, PBYTE buf2, PBYTE buf3, SIZE_
                 ((PSYMCRYPT_DLKEY *) buf2)[1],
                 SYMCRYPT_NUMBER_FORMAT_MSB_FIRST,
                 0,
-                buf3 + sizeof(UINT32),
+                buf3,
                 dataSize );     // This will be the same as the key size
 }
+
+template<>
+DhImp<ImpSc, AlgDh>::DhImp()
+{
+    m_perfDataFunction      = &algImpDataPerfFunction <ImpSc, AlgDh>;
+    m_perfDecryptFunction   = &algImpDecryptPerfFunction< ImpSc, AlgDh>;
+    m_perfKeyFunction       = &algImpKeyPerfFunction  <ImpSc, AlgDh>;
+    m_perfCleanFunction     = &algImpCleanPerfFunction<ImpSc, AlgDh>;
+
+    state.pGroup = NULL;
+    state.pKey = NULL;
+}
+
+template<>
+DhImp<ImpSc, AlgDh>::~DhImp()
+{
+    if( state.pKey != NULL )
+    {
+        SymCryptDlkeyFree( state.pKey );
+        state.pKey = NULL;
+    }
+    if( state.pGroup != NULL )
+    {
+        SymCryptDlgroupFree( state.pGroup );
+        state.pGroup = NULL;
+    }
+}
+
+template<>
+NTSTATUS
+DhImp<ImpSc, AlgDh>::setKey( _In_    PCDLKEY_TESTBLOB    pcKeyBlob )
+{
+    if( state.pKey != NULL )
+    {
+        SymCryptDlkeyFree( state.pKey );
+        state.pKey = NULL;
+    }
+    if( state.pGroup != NULL )
+    {
+        SymCryptDlgroupFree( state.pGroup );
+        state.pGroup = NULL;
+    }
+
+    if( pcKeyBlob != NULL )
+    {
+        state.pGroup = dlgroupObjectFromTestBlob( pcKeyBlob->pGroup );
+        state.pKey = dlkeyObjectFromTestBlob( state.pGroup, pcKeyBlob );
+
+        CHECK( state.pGroup != NULL && state.pKey != NULL, "?" );
+    }
+
+    return STATUS_SUCCESS;
+}
+
+template<>
+NTSTATUS
+DhImp<ImpSc, AlgDh>::sharedSecret(
+        _In_                        PCDLKEY_TESTBLOB    pcPubkey, 
+        _Out_writes_( cbSecret )    PBYTE               pbSecret,
+                                    SIZE_T              cbSecret )
+{
+    PSYMCRYPT_DLKEY pKey2;
+    SYMCRYPT_ERROR scError;
+
+    pKey2 = dlkeyObjectFromTestBlob( state.pGroup, pcPubkey );
+    CHECK( pKey2 != NULL, "?")
+
+    scError = SymCryptDhSecretAgreement(    state.pKey,
+                                            pKey2,
+                                            SYMCRYPT_NUMBER_FORMAT_MSB_FIRST,
+                                            0,
+                                            pbSecret, cbSecret );  
+
+    SymCryptDlkeyFree( pKey2 );
+
+    return scError == SYMCRYPT_NO_ERROR ? STATUS_SUCCESS : STATUS_UNSUCCESSFUL;
+}
+
+
+template<>
+VOID
+algImpKeyPerfFunction<ImpSc, AlgDsa>( PBYTE buf1, PBYTE buf2, PBYTE buf3, SIZE_T keySize )
+{
+    SYMCRYPT_ERROR scError;
+    
+    UNREFERENCED_PARAMETER( buf3 );
+
+    DlgroupSetup( buf1, keySize );  // Set buf1 to contain a DL group of size keySize
+
+    // Set up a keys in buf2 
+    PSYMCRYPT_DLGROUP pGroup = *(PSYMCRYPT_DLGROUP *) buf1;
+
+    PSYMCRYPT_DLKEY pKey = SymCryptDlkeyCreate( buf2 + 64, PERF_BUFFER_SIZE/4, pGroup );
+
+    CHECK( pKey != NULL, "Failed to create key" );
+
+    scError = SymCryptDlkeyGenerate( 0, pKey );
+    CHECK( scError == SYMCRYPT_NO_ERROR, "?" );
+    
+    ((PSYMCRYPT_DLKEY *) buf2)[0] = pKey;
+}
+
+template<>
+VOID
+algImpCleanPerfFunction<ImpSc, AlgDsa>( PBYTE buf1, PBYTE buf2, PBYTE buf3 )
+{
+    UNREFERENCED_PARAMETER( buf1 );
+    UNREFERENCED_PARAMETER( buf2 );
+    UNREFERENCED_PARAMETER( buf3 );
+}
+
+
+template<>
+VOID
+algImpDataPerfFunction< ImpSc, AlgDsa>( PBYTE buf1, PBYTE buf2, PBYTE buf3, SIZE_T dataSize )
+{
+    SYMCRYPT_ERROR scError;
+
+    UNREFERENCED_PARAMETER( dataSize );
+
+    PSYMCRYPT_DLKEY pKey = *(PSYMCRYPT_DLKEY *) buf2;
+    PSYMCRYPT_DLGROUP pGroup = *(PSYMCRYPT_DLGROUP *) buf1;
+
+    scError = SymCryptDsaSign(  pKey,
+                                buf3, 32,
+                                SYMCRYPT_NUMBER_FORMAT_MSB_FIRST,
+                                0,
+                                buf3 + 64, 2 * pGroup->cbPrimeQ );
+    CHECK( scError == SYMCRYPT_NO_ERROR, "?" );
+}
+
+template<>
+VOID
+algImpDecryptPerfFunction< ImpSc, AlgDsa>( PBYTE buf1, PBYTE buf2, PBYTE buf3, SIZE_T dataSize )
+{
+    SYMCRYPT_ERROR scError;
+
+    UNREFERENCED_PARAMETER( dataSize );
+
+    PSYMCRYPT_DLKEY pKey = *(PSYMCRYPT_DLKEY *) buf2;
+    PSYMCRYPT_DLGROUP pGroup = *(PSYMCRYPT_DLGROUP *) buf1;
+
+    scError = SymCryptDsaVerify(pKey,
+                                buf3, 32,
+                                buf3 + 64, 2 * pGroup->cbPrimeQ,
+                                SYMCRYPT_NUMBER_FORMAT_MSB_FIRST,
+                                0 );
+    CHECK( scError == SYMCRYPT_NO_ERROR, "?" );
+}
+
+template<>
+DsaImp<ImpSc, AlgDsa>::DsaImp()
+{
+    m_perfDataFunction      = &algImpDataPerfFunction <ImpSc, AlgDsa>;
+    m_perfDecryptFunction   = &algImpDecryptPerfFunction< ImpSc, AlgDsa>;
+    m_perfKeyFunction       = &algImpKeyPerfFunction  <ImpSc, AlgDsa>;
+    m_perfCleanFunction     = &algImpCleanPerfFunction<ImpSc, AlgDsa>;
+
+    state.pGroup = NULL;
+    state.pKey = NULL;
+}
+
+template<>
+DsaImp<ImpSc, AlgDsa>::~DsaImp()
+{
+    if( state.pKey != NULL )
+    {
+        SymCryptDlkeyFree( state.pKey );
+        state.pKey = NULL;
+    }
+    if( state.pGroup != NULL )
+    {
+        SymCryptDlgroupFree( state.pGroup );
+        state.pGroup = NULL;
+    }
+}
+
+template<>
+NTSTATUS
+DsaImp<ImpSc, AlgDsa>::setKey( _In_    PCDLKEY_TESTBLOB    pcKeyBlob )
+{
+    if( state.pKey != NULL )
+    {
+        SymCryptDlkeyFree( state.pKey );
+        state.pKey = NULL;
+    }
+    if( state.pGroup != NULL )
+    {
+        SymCryptDlgroupFree( state.pGroup );
+        state.pGroup = NULL;
+    }
+
+    if( pcKeyBlob != NULL )
+    {
+        state.pGroup = dlgroupObjectFromTestBlob( pcKeyBlob->pGroup );
+        state.pKey = dlkeyObjectFromTestBlob( state.pGroup, pcKeyBlob );
+
+        CHECK( state.pGroup != NULL && state.pKey != NULL, "?" );
+    }
+
+    return STATUS_SUCCESS;
+}
+
+template<>
+NTSTATUS
+DsaImp<ImpSc, AlgDsa>::sign(
+        _In_reads_( cbHash)     PCBYTE  pbHash, 
+                                SIZE_T  cbHash,             // Can be any size, but often = size of Q
+        _Out_writes_( cbSig )   PBYTE   pbSig,
+                                SIZE_T  cbSig )
+{
+    SYMCRYPT_ERROR scError;
+
+    scError = SymCryptDsaSign(  state.pKey,
+                                pbHash, cbHash,
+                                SYMCRYPT_NUMBER_FORMAT_MSB_FIRST,
+                                0,
+                                pbSig, cbSig );
+    
+    return scError == SYMCRYPT_NO_ERROR ? STATUS_SUCCESS : STATUS_UNSUCCESSFUL;
+}                                
+
+template<>
+NTSTATUS
+DsaImp<ImpSc, AlgDsa>::verify(
+    _In_reads_( cbHash)     PCBYTE  pbHash, 
+                            SIZE_T  cbHash,
+    _In_reads_( cbSig )     PCBYTE  pbSig,
+                            SIZE_T  cbSig )
+{
+    SYMCRYPT_ERROR scError;
+
+    scError = SymCryptDsaVerify(    state.pKey,
+                                    pbHash, cbHash,
+                                    pbSig, cbSig,
+                                    SYMCRYPT_NUMBER_FORMAT_MSB_FIRST,
+                                    0 );
+
+    return scError == SYMCRYPT_NO_ERROR ? STATUS_SUCCESS : STATUS_UNSUCCESSFUL;
+}                            
+
+
 
 template<>
 DlImp<ImpSc, AlgDh>::DlImp()
@@ -6511,9 +6843,12 @@ addSymCryptAlgs()
     //addImplementationToGlobalList<RsaImp<ImpSc, AlgRsaSignPss>>();
     //addImplementationToGlobalList<RsaImp<ImpSc, AlgRsaVerifyPss>>();
 
-    addImplementationToGlobalList<DlImp<ImpSc, AlgDsaSign>>();
-    addImplementationToGlobalList<DlImp<ImpSc, AlgDsaVerify>>();
-    addImplementationToGlobalList<DlImp<ImpSc, AlgDh>>();
+    addImplementationToGlobalList<DhImp<ImpSc, AlgDh>>();
+    addImplementationToGlobalList<DsaImp<ImpSc, AlgDsa>>();
+
+    //addImplementationToGlobalList<DlImp<ImpSc, AlgDsaSign>>();
+    //addImplementationToGlobalList<DlImp<ImpSc, AlgDsaVerify>>();
+    //addImplementationToGlobalList<DlImp<ImpSc, AlgDh>>();
 
     addImplementationToGlobalList<ArithImp<ImpSc, AlgTrialDivisionContext>>();
     addImplementationToGlobalList<ArithImp<ImpSc, AlgTrialDivision>>();

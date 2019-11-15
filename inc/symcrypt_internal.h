@@ -1986,44 +1986,44 @@ SymCryptTestTrialdivisionMaxSmallPrime( PCSYMCRYPT_TRIALDIVISION_CONTEXT pContex
 // Q primes.
 
 typedef SYMCRYPT_ASYM_ALIGN struct _SYMCRYPT_DLGROUP {
-                    UINT32                  cbTotalSize;    // Total size of the dl group object
-                    BOOLEAN                 fHasPrimeQ;     // Flag that specifies whether the object has a Q parameter
+    UINT32                  cbTotalSize;    // Total size of the dl group object
+    BOOLEAN                 fHasPrimeQ;     // Flag that specifies whether the object has a Q parameter
 
-                    UINT32                  nBitsOfP;       // Number of bits of the value of P (not the object's size)
-                    UINT32                  cbPrimeP;       // Number of bytes of the value of P (not the object's size), equal to ceil(nBitsOfP/8)
-                    UINT32                  nDigitsOfP;     // Number of digits of the object of prime P
-                    UINT32                  nMaxBitsOfP;    // Maximum number of bits of the value of P
+    UINT32                  nBitsOfP;       // Number of bits of the value of P (not the object's size)
+    UINT32                  cbPrimeP;       // Number of bytes of the value of P (not the object's size), equal to ceil(nBitsOfP/8)
+    UINT32                  nDigitsOfP;     // Number of digits of the object of prime P
+    UINT32                  nMaxBitsOfP;    // Maximum number of bits of the value of P
 
-                    UINT32                  nBitsOfQ;       // Number of bits of the value of Q (not the object's bits)
-                    UINT32                  cbPrimeQ;       // Number of bytes of the value of Q (not the object's size), equal to ceil(nBitsOfQ/8)
-                    UINT32                  nDigitsOfQ;     // Number of digits of the object of prime Q
-                    UINT32                  nMaxBitsOfQ;    // Maximum number of bits of the value of Q
+    UINT32                  nBitsOfQ;       // Number of bits of the value of Q (not the object's bits)
+    UINT32                  cbPrimeQ;       // Number of bytes of the value of Q (not the object's size), equal to ceil(nBitsOfQ/8)
+    UINT32                  nDigitsOfQ;     // Number of digits of the object of prime Q
+    UINT32                  nMaxBitsOfQ;    // Maximum number of bits of the value of Q
 
-                    UINT32                  nBitsOfSeed;    // Number of bits of the seed used for generation (seedlen in FIPS 186-3)
-                    UINT32                  cbSeed;         // Number of bytes of the seed, equal to ceil(nBitsOfSeed/8)
+    UINT32                  nBitsOfSeed;    // Number of bits of the seed used for generation (seedlen in FIPS 186-3)
+    UINT32                  cbSeed;         // Number of bytes of the seed, equal to ceil(nBitsOfSeed/8)
 
-                    SYMCRYPT_DLGROUP_FIPS   eFipsStandard;  // Code specifying the FIPS standard used to create the keys. If 0 the group is unverified.
+    SYMCRYPT_DLGROUP_FIPS   eFipsStandard;  // Code specifying the FIPS standard used to create the keys. If 0 the group is unverified.
 
-                    PCSYMCRYPT_HASH         pHashAlgorithm; // Hash algorithm used for the generation of parameters
-                    UINT32                  dwGenCounter;   // Number of iterations used for the generation of parameters
-                    BYTE                    bIndexGenG;     // Index for the generation of generator G (FIPS 186-3) (Always 1 for now)
+    PCSYMCRYPT_HASH         pHashAlgorithm; // Hash algorithm used for the generation of parameters
+    UINT32                  dwGenCounter;   // Number of iterations used for the generation of parameters
+    BYTE                    bIndexGenG;     // Index for the generation of generator G (FIPS 186-3) (Always 1 for now)
 
-                    PBYTE                   pbQ;            // SYMCRYPT_ASYM_ALIGN'ed buffer that points to the memory allocated for modulus Q
+    PBYTE                   pbQ;            // SYMCRYPT_ASYM_ALIGN'ed buffer that points to the memory allocated for modulus Q
 
-                    PSYMCRYPT_MODULUS       pmP;            // Pointer to the prime P
-                    PSYMCRYPT_MODULUS       pmQ;            // Pointer to the prime Q
+    PSYMCRYPT_MODULUS       pmP;            // Pointer to the prime P
+    PSYMCRYPT_MODULUS       pmQ;            // Pointer to the prime Q
 
-                    PSYMCRYPT_MODELEMENT    peG;            // Pointer to the generator G
+    PSYMCRYPT_MODELEMENT    peG;            // Pointer to the generator G
 
-                    PBYTE                   pbSeed;         // Buffer that will hold the seed (this is padded at the end so that the entire structure
-                                                            // has size a multiple of SYMCRYPT_ASYM_ALIGN_VALUE)
+    PBYTE                   pbSeed;         // Buffer that will hold the seed (this is padded at the end so that the entire structure
+                                            // has size a multiple of SYMCRYPT_ASYM_ALIGN_VALUE)
 
-                    SYMCRYPT_MAGIC_FIELD
+    SYMCRYPT_MAGIC_FIELD
 
-                    // P
-                    // Q
-                    // G
-                    // Seed
+    // P
+    // Q
+    // G
+    // Seed
 } SYMCRYPT_DLGROUP;
 typedef       SYMCRYPT_DLGROUP * PSYMCRYPT_DLGROUP;
 typedef const SYMCRYPT_DLGROUP * PCSYMCRYPT_DLGROUP;

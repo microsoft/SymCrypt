@@ -845,6 +845,7 @@ SymCryptDlgroupGenerate(
         fipsStandard = SYMCRYPT_DLGROUP_FIPS_LATEST;
     }
 
+    // Numbered comments refer to the steps in the FIPS standard
     // 1. Check that L,N is in the list of acceptable pairs
     //      => Skipped as SymCrypt supports more sizes
 

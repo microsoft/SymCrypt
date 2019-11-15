@@ -302,3 +302,17 @@ class RsaEncImpState<ImpSc, AlgRsaEncOaep> {
 public:
     PSYMCRYPT_RSAKEY    pKey;
 };
+
+template<>
+class DhImpState<ImpSc, AlgDh> {
+public:
+    PSYMCRYPT_DLGROUP   pGroup;
+    PSYMCRYPT_DLKEY     pKey;
+};
+
+template<>
+class DsaImpState<ImpSc, AlgDsa> {
+public:
+    PSYMCRYPT_DLGROUP   pGroup;
+    PSYMCRYPT_DLKEY     pKey;
+};

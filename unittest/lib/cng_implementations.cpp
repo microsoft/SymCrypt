@@ -2577,6 +2577,722 @@ RsaEncImp<ImpCng, AlgRsaEncOaep>::decrypt(
 }                                        
 
 
+
+//================================================
+// Diffie Hellman
+
+template<>
+VOID
+algImpKeyPerfFunction<ImpCng, AlgDh>( PBYTE buf1, PBYTE buf2, PBYTE buf3, SIZE_T keySize )
+{
+    PCDLGROUP_TESTBLOB pGroupBlob;
+    NTSTATUS ntStatus;
+    BCRYPT_KEY_HANDLE hKey1, hKey2;
+    BCRYPT_DH_PARAMETER_HEADER * pParams;
+
+    UNREFERENCED_PARAMETER( buf3 );
+
+    pGroupBlob = dlgroupForSize( 8*keySize );
+    CHECK( pGroupBlob != NULL, "Could not find DH group of right size" );
+    CHECK( pGroupBlob->cbPrimeP == keySize, "?" );
+
+    ntStatus = BCryptGenerateKeyPair(   BCRYPT_DH_ALG_HANDLE,
+                                        &hKey1,
+                                        8 * (ULONG) keySize,
+                                        0 );
+    CHECK( NT_SUCCESS( ntStatus ), "Failed to generate DH key object" );
+
+    ntStatus = BCryptGenerateKeyPair(   BCRYPT_DH_ALG_HANDLE,
+                                        &hKey2,
+                                        8 * (ULONG) keySize,
+                                        0 );
+    CHECK( NT_SUCCESS( ntStatus ), "Failed to generate DH key object" );
+
+    // Set up the BCRYPT_DH_PARAMETER_HEADER in buf2
+    pParams = (BCRYPT_DH_PARAMETER_HEADER *) buf2;
+    pParams->cbLength = sizeof( BCRYPT_DH_PARAMETER_HEADER) + 2 * (UINT32)keySize;
+    pParams->dwMagic = BCRYPT_DH_PARAMETERS_MAGIC;
+    pParams->cbKeyLength = (UINT32)keySize;
+    memcpy( (PBYTE)(pParams + 1), &pGroupBlob->abPrimeP, keySize );
+    memcpy( (PBYTE)(pParams + 1) + keySize, &pGroupBlob->abGenG, keySize );
+
+    ntStatus = BCryptSetProperty(   hKey1,
+                                    BCRYPT_DH_PARAMETERS,
+                                    buf2, sizeof( *pParams ) + 2 * (ULONG)keySize,
+                                    0 );
+    CHECK( NT_SUCCESS( ntStatus ), "Failed to set DH group parameters" );
+
+    ntStatus = BCryptSetProperty(   hKey2,
+                                    BCRYPT_DH_PARAMETERS,
+                                    buf2, sizeof( *pParams ) + 2 * (ULONG)keySize,
+                                    0 );
+    CHECK( NT_SUCCESS( ntStatus ), "Failed to set DH group parameters" );
+
+    ntStatus = BCryptFinalizeKeyPair( hKey1, 0 );
+    CHECK( NT_SUCCESS( ntStatus ), "Failed to set finalize DH key" );
+
+    ntStatus = BCryptFinalizeKeyPair( hKey2, 0 );
+    CHECK( NT_SUCCESS( ntStatus ), "Failed to set finalize DH key" );
+
+    ((BCRYPT_KEY_HANDLE *)buf1)[0] = hKey1;
+    ((BCRYPT_KEY_HANDLE *)buf1)[1] = hKey2;
+}
+
+template<>
+VOID
+algImpCleanPerfFunction<ImpCng, AlgDh>( PBYTE buf1, PBYTE buf2, PBYTE buf3 )
+{
+    NTSTATUS ntStatus;
+
+    UNREFERENCED_PARAMETER( buf2 );
+    UNREFERENCED_PARAMETER( buf3 );
+
+    ntStatus = BCryptDestroyKey( ((BCRYPT_KEY_HANDLE *)buf1)[0] );
+    CHECK( NT_SUCCESS( ntStatus ), "?" );
+    ntStatus = BCryptDestroyKey( ((BCRYPT_KEY_HANDLE *)buf1)[1] );
+    CHECK( NT_SUCCESS( ntStatus ), "?" );
+}
+
+template<>
+VOID
+algImpDataPerfFunction< ImpCng, AlgDh>( PBYTE buf1, PBYTE buf2, PBYTE buf3, SIZE_T dataSize )
+{
+    PCDLGROUP_TESTBLOB pGroupBlob;
+    NTSTATUS ntStatus;
+    BCRYPT_KEY_HANDLE hKey;
+    ULONG cbResult;
+    BCRYPT_DH_PARAMETER_HEADER * pParams;
+
+    UNREFERENCED_PARAMETER( buf1 );
+    UNREFERENCED_PARAMETER( buf3 );
+
+    pGroupBlob = dlgroupForSize( 8* dataSize );
+    CHECK( pGroupBlob != NULL, "Could not find DH group of right size" );
+    CHECK( pGroupBlob->cbPrimeP == dataSize, "?" );
+
+    ntStatus = BCryptGenerateKeyPair(   BCRYPT_DH_ALG_HANDLE,
+                                        &hKey,
+                                        8 * (ULONG) dataSize,
+                                        0 );
+    CHECK( NT_SUCCESS( ntStatus ), "Failed to generate DH key object" );
+
+    // Set up the BCRYPT_DH_PARAMETER_HEADER in buf2
+    pParams = (BCRYPT_DH_PARAMETER_HEADER *) buf2;
+    pParams->cbLength = sizeof( BCRYPT_DH_PARAMETER_HEADER) + 2 * (UINT32)dataSize;
+    pParams->dwMagic = BCRYPT_DH_PARAMETERS_MAGIC;
+    pParams->cbKeyLength = (UINT32)dataSize;
+    memcpy( (PBYTE)(pParams + 1), &pGroupBlob->abPrimeP, dataSize );
+    memcpy( (PBYTE)(pParams + 1) + dataSize, &pGroupBlob->abGenG, dataSize );
+
+    ntStatus = BCryptSetProperty(   hKey,
+                                    BCRYPT_DH_PARAMETERS,
+                                    buf2, sizeof( *pParams ) + 2 * (ULONG)dataSize,
+                                    0 );
+    CHECK( NT_SUCCESS( ntStatus ), "Failed to set DH group parameters" );
+
+    ntStatus = BCryptFinalizeKeyPair( hKey, 0 );
+    CHECK( NT_SUCCESS( ntStatus ), "Failed to set finalize DH key" );
+
+    ntStatus = BCryptExportKey( hKey,
+                                NULL,
+                                BCRYPT_DH_PUBLIC_BLOB,
+                                buf2,
+                                10 * (ULONG)dataSize,
+                                &cbResult,
+                                0 );
+    CHECK( NT_SUCCESS( ntStatus ), "Failed to set finalize DH key" );
+}
+
+template<>
+VOID
+algImpDecryptPerfFunction< ImpCng, AlgDh>( PBYTE buf1, PBYTE buf2, PBYTE buf3, SIZE_T dataSize )
+{
+    BCRYPT_SECRET_HANDLE hSecret;
+    NTSTATUS ntStatus;
+    ULONG cbResult;
+
+    UNREFERENCED_PARAMETER( buf3 );
+
+    ntStatus = BCryptSecretAgreement(   ((BCRYPT_KEY_HANDLE *)buf1)[0],
+                                        ((BCRYPT_KEY_HANDLE *)buf1)[1],
+                                        &hSecret,
+                                        0 );
+    CHECK( NT_SUCCESS( ntStatus ), "?" );
+
+    ntStatus = BCryptDeriveKey( hSecret,
+                                BCRYPT_KDF_RAW_SECRET,  // This exists from BLUE and above
+                                NULL,
+                                buf2,
+                                (ULONG)dataSize,      
+                                &cbResult,
+                                0 );
+    CHECK( NT_SUCCESS( ntStatus ), "?" );
+    CHECK( cbResult == dataSize, "Wrong result size" );
+
+    ntStatus = BCryptDestroySecret( hSecret );
+    CHECK( NT_SUCCESS( ntStatus ), "?" );
+}
+
+template<>
+DhImp<ImpCng, AlgDh>::DhImp()
+{
+    m_perfDataFunction      = &algImpDataPerfFunction <ImpCng, AlgDh>;
+    m_perfDecryptFunction   = &algImpDecryptPerfFunction< ImpCng, AlgDh>;
+    m_perfKeyFunction       = &algImpKeyPerfFunction  <ImpCng, AlgDh>;
+    m_perfCleanFunction     = &algImpCleanPerfFunction<ImpCng, AlgDh>;
+
+    state.hKey = NULL;
+}
+
+template<>
+DhImp<ImpCng, AlgDh>::~DhImp()
+{
+    if( state.hKey != NULL )
+    {
+        CHECK( NT_SUCCESS( BCryptDestroyKey( state.hKey ) ), "?" );
+        state.hKey = NULL;
+    }
+}
+
+template<>
+NTSTATUS 
+DhImp<ImpCng, AlgDh>::setKey( PCDLKEY_TESTBLOB pcKeyBlob )
+{
+    NTSTATUS ntStatus = STATUS_SUCCESS;
+    BYTE blobBuf[sizeof( BCRYPT_DH_KEY_BLOB) + 4 * DLKEY_MAXKEYSIZE];
+    BCRYPT_DH_KEY_BLOB * pBlob = (BCRYPT_DH_KEY_BLOB *) blobBuf;
+    PBYTE p;
+    UINT32 cbP;
+
+    if( state.hKey != NULL )
+    {
+        CHECK( NT_SUCCESS( BCryptDestroyKey( state.hKey )), "?" );
+        state.hKey = NULL;
+    }
+
+    if( pcKeyBlob == NULL )
+    {
+        goto cleanup;
+    }
+
+    cbP = pcKeyBlob->pGroup->cbPrimeP;
+
+    pBlob->dwMagic = BCRYPT_DH_PRIVATE_MAGIC;
+    pBlob->cbKey = cbP;
+    p = (PBYTE) (pBlob + 1);
+
+    memcpy( p, pcKeyBlob->pGroup->abPrimeP, cbP ); 
+    p += cbP;
+    memcpy( p, pcKeyBlob->pGroup->abGenG, cbP );
+    p += cbP;
+    memcpy( p, pcKeyBlob->abPubKey, cbP );
+    p += cbP;
+    SymCryptWipe( p, cbP );
+    memcpy( p + cbP - pcKeyBlob->cbPrivKey, pcKeyBlob->abPrivKey, pcKeyBlob->cbPrivKey );
+    p += cbP;
+
+    ntStatus = BCryptImportKeyPair( BCRYPT_DH_ALG_HANDLE,
+                                    NULL,
+                                    BCRYPT_DH_PRIVATE_BLOB,
+                                    &state.hKey,
+                                    blobBuf,
+                                    (UINT32)(p - blobBuf),
+                                    0 );
+    CHECK( NT_SUCCESS( ntStatus ), "?" );
+
+cleanup:
+    return ntStatus;
+}
+
+template<>
+NTSTATUS 
+DhImp<ImpCng,AlgDh>::sharedSecret(
+        _In_                        PCDLKEY_TESTBLOB    pcPubkey,   // Must be on same group object
+        _Out_writes_( cbSecret )    PBYTE               pbSecret,
+                                    SIZE_T              cbSecret )
+{
+    NTSTATUS ntStatus = STATUS_SUCCESS;
+    BYTE blobBuf[sizeof( BCRYPT_DH_KEY_BLOB) + 4 * DLKEY_MAXKEYSIZE];
+    BCRYPT_DH_KEY_BLOB * pBlob = (BCRYPT_DH_KEY_BLOB *) blobBuf;
+    PBYTE p;
+    UINT32 cbP;
+    BCRYPT_KEY_HANDLE hKey;
+    BCRYPT_SECRET_HANDLE hSecret;
+    ULONG cbResult;
+
+    cbP = pcPubkey->pGroup->cbPrimeP;
+    
+    pBlob->dwMagic = BCRYPT_DH_PUBLIC_MAGIC;
+    pBlob->cbKey = cbP;
+    p = (PBYTE) (pBlob + 1);
+
+    memcpy( p, pcPubkey->pGroup->abPrimeP, cbP ); 
+    p += cbP;
+    memcpy( p, pcPubkey->pGroup->abGenG, cbP );
+    p += cbP;
+    memcpy( p, pcPubkey->abPubKey, cbP );
+    p += cbP;
+
+    ntStatus = BCryptImportKeyPair( BCRYPT_DH_ALG_HANDLE,
+                                    NULL,
+                                    BCRYPT_DH_PUBLIC_BLOB,
+                                    &hKey,
+                                    blobBuf,
+                                    (UINT32)(p - blobBuf),
+                                    0 );
+    CHECK( NT_SUCCESS( ntStatus ), "?" );
+
+    ntStatus = BCryptSecretAgreement(   state.hKey,
+                                        hKey,
+                                        &hSecret,
+                                        0 );
+    CHECK4( NT_SUCCESS( ntStatus ), "Error during secret agreement %08x %08x", state.hKey, ntStatus );
+
+
+    ntStatus = BCryptDeriveKey( hSecret,
+                                BCRYPT_KDF_RAW_SECRET,  // This exists from BLUE and above
+                                NULL,
+                                blobBuf,
+                                (ULONG) cbSecret,
+                                &cbResult,
+                                0 );
+    CHECK( ntStatus == STATUS_SUCCESS, "BCryptDeriveKey failed." );
+    CHECK( cbResult == cbSecret, "BCryptDeriveKey output wrong size");
+
+    ReverseMemCopy( pbSecret, blobBuf, cbSecret );
+
+    ntStatus = BCryptDestroySecret( hSecret );
+    CHECK( NT_SUCCESS( ntStatus ), "?" );
+
+    ntStatus = BCryptDestroyKey( hKey );
+    CHECK( NT_SUCCESS( ntStatus ), "?" );
+
+    return STATUS_SUCCESS;
+}
+
+
+// DSA start
+
+BCRYPT_KEY_HANDLE
+DsaKeyBlobToHandle( PCDLKEY_TESTBLOB pcKeyBlob, BYTE * pbTmp )
+{
+    // Convert a test key blob to a CNG handle, or NULL
+    PCDLGROUP_TESTBLOB pGroupBlob = pcKeyBlob->pGroup;
+    UINT32 cbP = pGroupBlob->cbPrimeP;
+    PBYTE pNext;
+    BCRYPT_KEY_HANDLE hKey = NULL;
+    SIZE_T blobSize = 0;
+    BOOL predictSuccess;
+    NTSTATUS ntStatus;
+
+    // DSA key import is a bit weird due to the way the API grew over time.
+    //  There are two blob formats, one for keys <= 1024 bits ane one is for keys > 1024 bits.
+    // There are also other restriction 
+    // - bitsize of the key must be a multiple of 64 between 512 and 3072.
+    // - group size must be 160 bits for keys <= 1024 bits, and 256 bits for keys > 1024 bits
+
+    predictSuccess = (cbP % 8) == 0;
+    predictSuccess &= cbP >= 512 / 8;       // Min key size for CNG
+    predictSuccess &= cbP <= 3072 / 8;      // Max key size for CNG
+    if( cbP <= 1024/8 )
+    {
+        // BCRYPT_DSA_KEY_BLOB for a group with size cbKey bytes is followed by
+        // - Group Modulus P, cbKey bytes long
+        // - Group Generator G, cbKey bytes long
+        // - Public key H, cbKey bytes long
+        // - private key X, optional, 20 bytes long
+        if( pGroupBlob->cbPrimeQ != 20 )
+        {  
+            // Wrong group size for CNG, we can't deal with this key
+            goto cleanup;
+        }        
+        BCRYPT_DSA_KEY_BLOB * pHeader = (BCRYPT_DSA_KEY_BLOB *) pbTmp;
+        pNext = (PBYTE) (pHeader + 1);
+
+        // Set the header fields.
+        pHeader->dwMagic = BCRYPT_DSA_PRIVATE_MAGIC;
+        pHeader->cbKey = cbP;
+        SymCryptWipe( &pHeader->Count, 4 );
+        SymCryptWipe( &pHeader->Seed, 20 );     // We don't have a seed, use 0 and don't ask for a key validation
+        memcpy( pHeader->q, pGroupBlob->abPrimeQ, 20 );     // Prime P is always 20 bytes
+
+        memcpy( pNext, pGroupBlob->abPrimeP, cbP );
+        pNext += cbP;
+        memcpy( pNext, pGroupBlob->abGenG, cbP );
+        pNext += cbP;
+        memcpy( pNext, pcKeyBlob->abPubKey, cbP );
+        pNext += cbP;
+        memcpy( pNext, pcKeyBlob->abPrivKey, 20 );       // Private key is always 160 bits for this blob type
+        pNext += 20;
+        blobSize = pNext - pbTmp;
+    } else {
+        // BCRYPT_DSA_KEY_BLOB_V2 requires that
+        // 
+        if( pGroupBlob->cbPrimeQ != 32 )
+        {
+            // Wrong size for CNG, can't deal with this key
+            goto cleanup;
+        }
+        const UINT32 cbQ = 32;
+
+        BCRYPT_DSA_KEY_BLOB_V2 * pHeader = (BCRYPT_DSA_KEY_BLOB_V2 *) pbTmp;
+        pNext = (PBYTE) (pHeader + 1);
+
+        pHeader->dwMagic = BCRYPT_DSA_PRIVATE_MAGIC_V2;
+        pHeader->cbKey = cbP;
+        pHeader->hashAlgorithm = DSA_HASH_ALGORITHM_SHA256;
+        pHeader->standardVersion = DSA_FIPS186_3;
+        pHeader->cbSeedLength = cbQ;
+        pHeader->cbGroupSize = cbQ;
+        SymCryptWipe( pHeader->Count, 4 );
+
+        SymCryptWipe( pNext, cbQ );  // Seed
+        pNext += cbQ;
+
+        memcpy( pNext, pGroupBlob->abPrimeQ, cbQ );
+        pNext += cbQ;
+
+        memcpy( pNext, pGroupBlob->abPrimeP, cbP );
+        pNext += cbP;
+
+        memcpy( pNext, pGroupBlob->abGenG, cbP );
+        pNext += cbP;
+
+        memcpy( pNext, pcKeyBlob->abPubKey, cbP );
+        pNext += cbP;
+
+        memcpy( pNext, pcKeyBlob->abPrivKey, cbQ );
+        pNext += cbQ;
+
+        blobSize = pNext - pbTmp;
+    }
+
+    ntStatus = BCryptImportKeyPair( BCRYPT_DSA_ALG_HANDLE, 
+                                    NULL, 
+                                    BCRYPT_DSA_PRIVATE_BLOB,
+                                    &hKey,
+                                    pbTmp, (UINT32) blobSize,
+                                    BCRYPT_NO_KEY_VALIDATION );
+    CHECK( NT_SUCCESS( ntStatus ) == predictSuccess, "Unexpected BCryptImportKeyPair(DSA) result" );
+
+cleanup:
+    return hKey;
+}
+
+
+template<>
+VOID
+algImpKeyPerfFunction<ImpCng, AlgDsa>( PBYTE buf1, PBYTE buf2, PBYTE buf3, SIZE_T keySize )
+{
+    NTSTATUS ntStatus;
+    BCRYPT_KEY_HANDLE hKey;
+
+    UNREFERENCED_PARAMETER( buf2 );
+    UNREFERENCED_PARAMETER( buf3 );
+
+    // Future: it would be better to use a DL group and/or key that is already generated, but
+    // this is simpler
+
+    ntStatus = BCryptGenerateKeyPair( BCRYPT_DSA_ALG_HANDLE, &hKey, (UINT32)keySize * 8, 0 );
+    CHECK( NT_SUCCESS( ntStatus ), "Failed BCryptGenerateKeyPair for DSA" );
+
+    ntStatus = BCryptFinalizeKeyPair( hKey, 0 );
+    CHECK( NT_SUCCESS( ntStatus ), "Failed BCryptFinalizeKeyPair for DSA" );
+
+    *(BCRYPT_KEY_HANDLE *)buf1 = hKey;
+}
+
+template<>
+VOID
+algImpCleanPerfFunction<ImpCng, AlgDsa>( PBYTE buf1, PBYTE buf2, PBYTE buf3 )
+{
+    NTSTATUS ntStatus;
+
+    UNREFERENCED_PARAMETER( buf2 );
+    UNREFERENCED_PARAMETER( buf3 );
+
+    ntStatus = BCryptDestroyKey( ((BCRYPT_KEY_HANDLE *)buf1)[0] );
+    CHECK( NT_SUCCESS( ntStatus ), "?" );
+}
+
+template<>
+VOID
+algImpDataPerfFunction< ImpCng, AlgDsa>( PBYTE buf1, PBYTE buf2, PBYTE buf3, SIZE_T dataSize )
+{
+    NTSTATUS ntStatus;
+
+    UINT32 groupSize = dataSize <= 1024/8 ? 20 : 32;
+    ULONG cbResult;
+
+    ntStatus = BCryptSignHash(  *(BCRYPT_KEY_HANDLE *) buf1, 
+                                NULL,
+                                buf2, groupSize,
+                                buf3, 2*groupSize,
+                                &cbResult,
+                                0 );
+    CHECK( NT_SUCCESS( ntStatus ) && cbResult == 2*groupSize, "?" );
+}
+
+template<>
+VOID
+algImpDecryptPerfFunction< ImpCng, AlgDsa>( PBYTE buf1, PBYTE buf2, PBYTE buf3, SIZE_T dataSize )
+{
+    NTSTATUS ntStatus;
+
+    UINT32 groupSize = dataSize <= 1024/8 ? 20 : 32;
+
+    ntStatus = BCryptVerifySignature(   *(BCRYPT_KEY_HANDLE *) buf1, 
+                                        NULL,
+                                        buf2, groupSize,
+                                        buf3, 2*groupSize,
+                                        0 );
+    CHECK( NT_SUCCESS( ntStatus ), "?" );
+}
+
+
+template<>
+DsaImp<ImpCng, AlgDsa>::DsaImp()
+{
+    m_perfDataFunction      = &algImpDataPerfFunction <ImpCng, AlgDsa>;
+    m_perfDecryptFunction   = &algImpDecryptPerfFunction<ImpCng, AlgDsa>;
+    m_perfKeyFunction       = &algImpKeyPerfFunction  <ImpCng, AlgDsa>;
+    m_perfCleanFunction     = &algImpCleanPerfFunction<ImpCng, AlgDsa>;
+
+    state.hKey = NULL;
+}
+
+template<>
+DsaImp<ImpCng, AlgDsa>::~DsaImp()
+{
+    if( state.hKey != NULL )
+    {
+        CHECK( NT_SUCCESS( BCryptDestroyKey( state.hKey ) ), "?" );
+        state.hKey = NULL;
+    }
+}
+
+template<>
+NTSTATUS 
+DsaImp<ImpCng, AlgDsa>::setKey( PCDLKEY_TESTBLOB pcKeyBlob )
+{
+    NTSTATUS ntStatus = STATUS_SUCCESS;
+    BYTE buf[7 * DLKEY_MAXKEYSIZE ];    // Big enough for CNG header + fields of import blob
+
+    if( state.hKey != NULL )
+    {
+        CHECK( NT_SUCCESS( BCryptDestroyKey( state.hKey )), "?" );
+        state.hKey = NULL;
+    }
+
+    if( pcKeyBlob == NULL )
+    {
+        goto cleanup;
+    }
+
+    state.hKey = DsaKeyBlobToHandle( pcKeyBlob, buf );
+    state.cbP = pcKeyBlob->pGroup->cbPrimeP;
+    state.cbQ = pcKeyBlob->pGroup->cbPrimeQ;
+
+    ntStatus = state.hKey == NULL ? STATUS_UNSUCCESSFUL : STATUS_SUCCESS;
+
+cleanup:
+    return ntStatus;
+}
+
+template<>
+NTSTATUS 
+DsaImp<ImpCng,AlgDsa>::sign(
+        _In_reads_( cbHash)     PCBYTE  pbHash, 
+                                SIZE_T  cbHash,
+        _Out_writes_( cbSig )   PBYTE   pbSig,
+                                SIZE_T  cbSig )
+{
+    NTSTATUS ntStatus = STATUS_SUCCESS;
+    ULONG cbResult;
+
+    if( cbHash != state.cbQ )
+    {
+        ntStatus = STATUS_NOT_SUPPORTED;
+        goto cleanup;
+    }
+
+    ntStatus = BCryptSignHash( state.hKey, NULL, (PBYTE)pbHash, (ULONG)cbHash, pbSig, (ULONG)cbSig, &cbResult, 0 );
+
+    CHECK( cbResult == cbSig, "Signature length mismatch" );
+
+    // Normalize the status code so that the MultiImp can directly compare two results
+    ntStatus = NT_SUCCESS( ntStatus ) ? STATUS_SUCCESS : STATUS_UNSUCCESSFUL;
+
+cleanup:
+    return ntStatus;
+}
+
+template<>
+NTSTATUS
+DsaImp<ImpCng,AlgDsa>::verify( 
+        _In_reads_( cbHash)     PCBYTE  pbHash, 
+                                SIZE_T  cbHash,
+        _In_reads_( cbSig )     PCBYTE  pbSig,
+                                SIZE_T  cbSig )
+{
+    NTSTATUS ntStatus;
+
+    if( cbHash != state.cbQ )
+    {
+        ntStatus = STATUS_NOT_SUPPORTED;
+        goto cleanup;
+    }
+
+    ntStatus = BCryptVerifySignature(   state.hKey, 
+                                        NULL,
+                                        (PBYTE)pbHash, (ULONG)cbHash,
+                                        (PBYTE)pbSig, (ULONG)cbSig,
+                                        0 );
+    ntStatus = NT_SUCCESS( ntStatus ) ? STATUS_SUCCESS : STATUS_UNSUCCESSFUL;
+
+cleanup:
+    return ntStatus;
+}
+// DSA end
+
+/*
+
+
+template<>
+RsaSignImp<ImpCng, AlgRsaSignPkcs1>::~RsaSignImp()
+{
+    if( state.hKey != NULL )
+    {
+        BCryptDestroyKey( state.hKey );
+        state.hKey = NULL;
+    }
+}
+
+template<>
+NTSTATUS 
+RsaSignImp<ImpCng, AlgRsaSignPkcs1>::setKey( PCRSAKEY_TESTBLOB pcKeyBlob )
+{
+    NTSTATUS ntStatus;
+    BCRYPT_RSAKEY_BLOB * pBlob = NULL;
+    PBYTE pTmp;
+
+    if( state.hKey != NULL )
+    {
+        BCryptDestroyKey( state.hKey );
+        state.hKey = NULL;
+    }
+
+    if( pcKeyBlob == NULL )
+    {
+        // Just used to clear the key state to do leak detection
+        return STATUS_SUCCESS;
+    }
+
+    // Allocate memory for our blob
+    pBlob = (BCRYPT_RSAKEY_BLOB *) malloc( sizeof( *pBlob ) + 8 + 3 * RSAKEY_MAXKEYSIZE );
+    CHECK( pBlob != NULL, "?" );
+
+    pBlob->Magic = BCRYPT_RSAPRIVATE_MAGIC;
+    pBlob->BitLength= pcKeyBlob->nBitsModulus;
+    pBlob->cbPublicExp = 8;
+    pBlob->cbModulus = pcKeyBlob->cbModulus;
+    pBlob->cbPrime1 = pcKeyBlob->cbPrime1;
+    pBlob->cbPrime2 = pcKeyBlob->cbPrime2;
+
+    pTmp = (PBYTE) (pBlob + 1);
+    SYMCRYPT_STORE_MSBFIRST64( pTmp, pcKeyBlob->u64PubExp );
+    pTmp += 8;
+
+    memcpy( pTmp, &pcKeyBlob->abModulus[0], pBlob->cbModulus );
+    pTmp += pBlob->cbModulus;
+
+    memcpy( pTmp, &pcKeyBlob->abPrime1[0], pBlob->cbPrime1 );
+    pTmp += pBlob->cbPrime1;
+    memcpy( pTmp, &pcKeyBlob->abPrime2[0], pBlob->cbPrime2 );
+    pTmp += pBlob->cbPrime2;
+
+    ntStatus = BCryptImportKeyPair(
+        BCRYPT_RSA_SIGN_ALG_HANDLE,
+        NULL,
+        BCRYPT_RSAPRIVATE_BLOB,
+        &state.hKey,
+        (PBYTE) pBlob,
+        (UINT32)(pTmp - (PBYTE) pBlob),
+        0 );
+
+    CHECK( NT_SUCCESS( ntStatus ), "?" );
+
+    return ntStatus;
+}
+
+template<>
+NTSTATUS 
+RsaSignImp<ImpCng, AlgRsaSignPkcs1>::sign(
+    _In_reads_( cbHash)     PCBYTE  pbHash, 
+                            SIZE_T  cbHash,
+                            PCSTR   pcstrHashAlgName,
+                            UINT32  u32Other,
+    _Out_writes_( cbSig )   PBYTE   pbSig,
+                            SIZE_T  cbSig )
+{
+    NTSTATUS ntStatus;
+    BCRYPT_PKCS1_PADDING_INFO paddingInfo;
+    PCCNG_HASH_INFO pInfo;
+    ULONG cbResult;
+    
+    UNREFERENCED_PARAMETER( u32Other );
+
+    pInfo = getHashInfo( pcstrHashAlgName);
+    paddingInfo.pszAlgId = pInfo->wideName;
+
+    ntStatus = BCryptSignHash(
+        state.hKey,
+        &paddingInfo,
+        (PBYTE) pbHash,
+        (UINT32)cbHash,
+        pbSig,
+        (UINT32)cbSig,
+        &cbResult,
+        BCRYPT_PAD_PKCS1 );
+    
+    CHECK( NT_SUCCESS( ntStatus ) && cbResult == cbSig, "?" );
+
+    return ntStatus;
+}                            
+
+template<>
+NTSTATUS
+RsaSignImp<ImpCng, AlgRsaSignPkcs1>::verify(
+    _In_reads_( cbHash)     PCBYTE  pbHash, 
+                            SIZE_T  cbHash,
+    _In_reads_( cbSig )     PCBYTE  pbSig,
+                            SIZE_T  cbSig,
+                            PCSTR   pcstrHashAlgName,
+                            UINT32  u32Other )
+{
+    NTSTATUS ntStatus;
+    BCRYPT_PKCS1_PADDING_INFO paddingInfo;
+    PCCNG_HASH_INFO pInfo;
+    
+    UNREFERENCED_PARAMETER( u32Other );
+
+    pInfo = getHashInfo( pcstrHashAlgName);
+    paddingInfo.pszAlgId = pInfo->wideName;
+
+    ntStatus = BCryptVerifySignature(
+        state.hKey,
+        &paddingInfo,
+        (PBYTE)pbHash,
+        (UINT32)cbHash,
+        (PBYTE)pbSig,
+        (UINT32)cbSig,
+        BCRYPT_PAD_PKCS1 );
+
+    return ntStatus;
+}
+
+*/
+
 //===
 /*
 template<>
@@ -3231,6 +3947,9 @@ addCngAlgs()
     //addImplementationToGlobalList<RsaImp<ImpCng, AlgRsaVerifyPkcs1>>();
     //addImplementationToGlobalList<RsaImp<ImpCng, AlgRsaSignPss>>();
     //addImplementationToGlobalList<RsaImp<ImpCng, AlgRsaVerifyPss>>();
+
+    addImplementationToGlobalList<DhImp<ImpCng, AlgDh>>();
+    addImplementationToGlobalList<DsaImp<ImpCng, AlgDsa>>();
 }
 
 #endif //INCLUDE_IMPL_CNG

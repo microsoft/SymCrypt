@@ -71,6 +71,8 @@ SOURCES= \
     testScsTools.cpp \
     testRsaSign.cpp \
     testRsaEnc.cpp \
+    testDh.cpp \
+    testDsa.cpp \
 
 I386_SOURCES = \
     savexmm.asm \

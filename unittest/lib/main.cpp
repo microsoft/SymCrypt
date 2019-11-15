@@ -180,6 +180,8 @@ const char * AlgDsaVerify::name = "DsaVerify";
 
 const char * AlgDh::name = "Dh";
 
+const char * AlgDsa::name = "Dsa";
+
 const char * AlgEcurveAllocate::name = "EcurveAllocate";
 
 const char * AlgEcpointSetZero::name = "EcpointSetZero";
@@ -495,9 +497,10 @@ const char * g_algorithmNames[] = {
     //AlgRsaVerifyPkcs1::name,
     AlgRsaSignPss::name,
     //AlgRsaVerifyPss::name,
-    AlgDsaSign::name,
-    AlgDsaVerify::name,
+    //AlgDsaSign::name,
+    //AlgDsaVerify::name,
     AlgDh::name,
+    AlgDsa::name,
     AlgEcurveAllocate::name,
     AlgEcpointSetZero::name,
     AlgEcpointSetDistinguished::name,
@@ -1161,9 +1164,9 @@ initTestInfrastructure( int argc, _In_reads_( argc ) char * argv[] )
         }
     } else {
         //
-        // Disable the RSA32 implementation by default
+        // Disable the RSA32b implementation by default
         //
-        updateNameSet( g_implementationNames, &g_implementationsToTest, '-', "rsa32" );
+        updateNameSet( g_implementationNames, &g_implementationsToTest, '-', "rsa32b" );
     }
 
     AllocWithChecksInit();
@@ -1463,6 +1466,10 @@ runFunctionalTests()
     testRsaSignAlgorithms();
 
     testRsaEncAlgorithms();
+
+    testDhAlgorithms();
+
+    testDsaAlgorithms();
 
     // need these two
 #if SYMCRYPT_MS_VC
@@ -1860,3 +1867,19 @@ printXmmRegisters( char * text )
 }
 
 #endif
+
+VOID
+ReverseMemCopy(
+    PBYTE pbDst,
+    PCBYTE pbSrc,
+    SIZE_T cbSrc
+)
+{
+    PBYTE p;
+
+    p = pbDst + cbSrc - 1;
+    while(p >= pbDst)
+    {
+        *p-- = *pbSrc++;
+    }
+}

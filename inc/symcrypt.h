@@ -4574,11 +4574,14 @@ PSYMCRYPT_DLGROUP
 SYMCRYPT_CALL
 SymCryptDlgroupAllocate( UINT32  nBitsOfP, UINT32  nBitsOfQ );
 //
-// This call allocates a DLGROUP object where the primes P and Q are
-// of size nBitsOfP and nBitsOfQ, respectively (L,N parameters in FIPS
-// 186-3 specs).
+// Allocate a Discrete Logarithm group object suitable for the given sizes.
 //
-// This call does not initialize the DL group. It should be followed
+// nBitsOfP: Maximum number of bits of the field prime P. Specifying a value larger
+//  than the actual size is allowed, but inefficient.
+// nBitsOfQ: Maximum number of bits of the group order Q. Specify the size of Q,
+//  or 0 if the size of Q is not (yet) known.
+//
+// This call does not initialize the DLGROUP. It should be followed
 // by a call to SymCryptDlgroupGenerate or SymCryptDlgroupSetValue.
 //
 // nBitsOfQ is allowed to be equal to 0 and signifies that the size of Q
@@ -4635,15 +4638,13 @@ SymCryptDlgroupCreate(
                                     UINT32              nBitsOfP,
                                     UINT32              nBitsOfQ );
 //
-// As always, this call does not initialize the DL group. It should be followed
+// Creates a DL group object, but does not initialize it. It must be followed
 // by a call to SymCryptDlgroupGenerate or SymCryptDlgroupSetValue.
 //
-// Requirements:
-//  - nBitsOfP >= nBitsOfQ
-//
-// Remarks:
-//  - The value in nBitsOfQ is allowed to be equal to 0
-//  (see SymCryptDlgroupAllocate).
+// - pbBuffer,cbBuffer: memory buffer to create the object out of. The required size
+//  can be computed with SymCryptSizeofDlgroupFromBitsizes().
+// - nBitsOfP: number of bits of the field prime P.
+// - nBitsOfQ: number of bits of the group order Q, or 0 if the size of Q is not (yet) known.
 //
 
 VOID
@@ -4968,8 +4969,13 @@ SymCryptDlgroupGenerate(
     _In_    SYMCRYPT_DLGROUP_FIPS   fipsStandard,
     _Out_   PSYMCRYPT_DLGROUP       pDlgroup );
 //
-// This function generates all parameters P, Q, G according to the
-// standard specified by the fipsStandard argument.
+// Generate a Discrete Logarithm Group for use in Diffie-Hellman and DSA.
+//
+// - hashAlgorithm: Hash algorithm to be used for generating the group (if required by the algorithm)
+// - fipsStandard: Which FIPS standard algorithm to use for generating the group.
+// - pDlgroup: group object that will be initialized with a newly generated group.
+//
+// pDlGroup must have been created with SymCryptDlgroupAllocate() or SymCryptDlgroupCreate().
 //
 // If nBitsOfQ was equal to 0 when the DLGROUP was Allocate-d/Create-d
 // (and only in this case), then this function picks a default size
@@ -4979,17 +4985,20 @@ SymCryptDlgroupGenerate(
 //      - If 1024 < nBitsOfP <= 2048 then nBitsOfQ = 256
 //      - If 2048 < nBitsOfP         then nBitsOfQ = 256
 //
-// If fipsStandard is equal to SYMCRYPT_DLGROUP_FIPS_NONE, then the default
-// standard is picked, which is SYMCRYPT_DLGROUP_FIPS_LATEST.
+// If fipsStandard == SYMCRYPT_DLGROUP_FIPS_NONE then no FIPS compliance is requested.
+// The code defaults to SYMCRYPT_DLGROUP_FIPS_LATEST.
 //
+// The requirements below address the parameter values after the defaults have been substituted
+// for nBitsOfQ and fipsStandard.
+// 
 // Requirements:
 //  - pDlgroup!=NULL. Otherwise it returns SYMCRYPT_INVALID_ARGUMENT.
 //
 //  - If fipsStandard == SYMCRYPT_DLGROUP_FIPS_186_2, hashAlgorithm MUST be equal to
-//    NULL. Otherwise the function returns SYMCRYPT_INVALID_ARGUMENT.
+//    NULL, and nBitsOfQ <= 160 or nBitsOfQ = 0 && nBitsOfP <= 1024.
 //
-//  - If fipsStandard != SYMCRYPT_DLGROUP_FIPS_186_2, then hashAlgorithm MUST NOT be equal
-//    to NULL. Otherwise the function returns SYMCRYPT_INVALID_ARGUMENT.
+//  - If fipsStandard == SYMCRYPT_DLGROUP_FIPS_186_3, then hashAlgorithm MUST NOT be equal
+//    to NULL. 
 //
 //  - If nBitsOfHash is the number of bits of the output block of hashAlgorithm,
 //    it is required that:

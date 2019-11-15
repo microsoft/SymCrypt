@@ -120,6 +120,7 @@ RsaEncMultiImp::setKey( PCRSAKEY_TESTBLOB pcKeyBlob )
     // Process result as MSBfirst array to get errors to print correctly.
     for( ImpPtrVector::iterator i = m_comps.begin(); i != m_comps.end(); ++i )
     {
+        msg[0]++;
         ntStatus = (*i)->decrypt(   pbCiphertext, cbCiphertext,
                                     pcstrHashAlgName,
                                     pbLabel, cbLabel,
@@ -172,6 +173,7 @@ RsaEncMultiImp::encrypt(
         {
             for( ImpPtrVector::iterator j = m_comps.begin(); j != m_comps.end(); j++ )
             {
+                msg[0]++;
                 ntStatus = (*j)->decrypt( ciphertext, cbCiphertext, pcstrHashAlgName, pbLabel, cbLabel, msg, sizeof( msg ), &cbMsgRes );
                 CHECK( ntStatus == STATUS_SUCCESS, "Failure during RSA decryption" );
                 CHECK( cbMsgRes == cbMsg, "Wrong message length" );

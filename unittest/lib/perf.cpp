@@ -297,9 +297,10 @@ const ALG_MEASURE_PARAMS g_algMeasureParams[] =
     "RsaSignPss"            , 1, {128, 256, 384, 512}, {PERF_DATASIZE_SAME_AS_KEYSIZE},
     "RsaVerifyPss"          , 1, {128, 256, 384, 512}, {PERF_DATASIZE_SAME_AS_KEYSIZE},
 
-    "DsaSign"               , 1, {64, 128, 256}, {},
-    "DsaVerify"             , 1, {64, 128, 256}, {},
+//    "DsaSign"               , 1, {64, 128, 256}, {},
+//    "DsaVerify"             , 1, {64, 128, 256}, {},
     "Dh"                    , 1, {64, 128, 256}, {PERF_DATASIZE_SAME_AS_KEYSIZE},
+    "Dsa"                   , 1, {64, 128, 256}, {PERF_DATASIZE_SAME_AS_KEYSIZE},
 
     "EcurveAllocate"        , 1, {PERF_KEY_NIST192, PERF_KEY_NIST224, PERF_KEY_NIST256, PERF_KEY_NIST384, PERF_KEY_NIST521, PERF_KEY_NUMS256, PERF_KEY_NUMS384, PERF_KEY_NUMS512, PERF_KEY_C255_19,}, {},
     "EcpointSetZero"        , 1, {PERF_KEY_NIST192, PERF_KEY_NIST224, PERF_KEY_NIST256, PERF_KEY_NIST384, PERF_KEY_NIST521, PERF_KEY_NUMS256, PERF_KEY_NUMS384, PERF_KEY_NUMS512,}, {},

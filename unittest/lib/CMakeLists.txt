@@ -28,6 +28,8 @@ set(SOURCES
     testMontgomery.cpp
     testRsaSign.cpp
     testRsaEnc.cpp
+    testDh.cpp
+    testDsa.cpp
     testScsTable.cpp
     testScsTools.cpp
     testIEEE802_11SaeCustom.cpp

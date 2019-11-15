@@ -839,6 +839,11 @@ public:
     const static char * name;
 };
 
+class AlgDsa{
+public:
+    const static char * name;
+};
+
 class AlgEcurveAllocate{
 public:
     const static char * name;
@@ -1117,6 +1122,12 @@ testRsaSignAlgorithms();
 
 VOID
 testRsaEncAlgorithms();
+
+VOID
+testDhAlgorithms();
+
+VOID
+testDsaAlgorithms();
 
 KatData *
 getCustomResource( _In_ PSTR resourceName, _In_ PSTR resourceType );
@@ -1627,6 +1638,10 @@ runRsaAverageKeyGenPerf();
 extern RSAKEY_TESTBLOB g_RsaTestKeyBlobs[ MAX_RSA_TESTKEYS ];
 extern UINT32 g_nRsaTestKeyBlobs;
 
+#define MAX_TEST_DLGROUPS   (50)
+extern DLGROUP_TESTBLOB g_DlGroup[ MAX_TEST_DLGROUPS ];
+extern UINT32 g_nDlgroups;
+
 VOID
 fprintHex( FILE * f, PCBYTE pbData, SIZE_T cbData );
 
@@ -1640,3 +1655,15 @@ rsaTestKeyRandom();
 
 PSYMCRYPT_RSAKEY
 rsaTestKeyForSize( SIZE_T nBits );
+
+PCDLGROUP_TESTBLOB
+dlgroupForSize( SIZE_T nBits );
+
+VOID generateDlGroups();
+
+PSYMCRYPT_DLGROUP
+dlgroupObjectFromTestBlob( PCDLGROUP_TESTBLOB pBlob );  // Must free object after use
+
+VOID
+ReverseMemCopy( PBYTE pbDst, PCBYTE pbSrc, SIZE_T cbSrc );
+

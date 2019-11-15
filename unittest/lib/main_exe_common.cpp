@@ -89,7 +89,7 @@ testMultiThread()
         CHECK3( threads[i] != NULL, "Failed to start thread i", i)
     }
 
-    Sleep( 1000 * 10 );
+    Sleep( 1000 * 5 );
 
     g_fExitMultithreadTest = TRUE;
 

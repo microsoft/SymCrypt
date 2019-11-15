@@ -158,4 +158,16 @@ public:
     BCRYPT_KEY_HANDLE   hKey;
 };
 
+template<>
+class DhImpState<ImpCng, AlgDh> {
+public:
+    BCRYPT_KEY_HANDLE   hKey;
+};
 
+template<>
+class DsaImpState<ImpCng, AlgDsa> {
+public:
+    BCRYPT_KEY_HANDLE   hKey;
+    UINT32              cbP;
+    UINT32              cbQ;
+};

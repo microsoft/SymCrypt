@@ -25,3 +25,9 @@ public:
     SIZE_T      cbKey;      // Size of modulus
     RSA_PRIVATE_KEY key;
 };
+
+template<>
+class DhImpState<ImpMsBignum, AlgDh> {
+public:
+    // TBD;
+};

@@ -233,7 +233,7 @@ VOID rsaTestKeysGenerate()
         };
     UINT32 bitSize;
 
-    char * sep = "    RSA test key gen: ";
+    char * sep = " [test key gen: ";
     UINT32 previousSize = 0;
 
     if( g_nRsaTestKeyBlobs >= MAX_RSA_TESTKEYS )
@@ -252,7 +252,7 @@ VOID rsaTestKeysGenerate()
                 iprint( "." );
             } else {
                 iprint( "%s%d", sep, bitSize );
-                sep = ", ";
+                sep = ",";
                 previousSize = bitSize;
             }
 
@@ -283,7 +283,7 @@ VOID rsaTestKeysGenerate()
             iprint( "." );
         } else {
             iprint( "%s%d", sep, bitSize );
-            sep = ", ";
+            sep = ",";
             previousSize = bitSize;
         }
         rsaTestKeysAddOne( bitSize );
@@ -292,11 +292,11 @@ VOID rsaTestKeysGenerate()
     while( g_nRsaTestKeyBlobs < MAX_RSA_TESTKEYS )
     {
         bitSize = (UINT32) g_rng.sizet( 3 * 512, 6 * 512 );
-        iprint( ", F%d", bitSize );
+        iprint( ",F%d", bitSize );
         rsaTestKeysAddOneFunky( bitSize );
     }
 
-    iprint( "\n" );
+    iprint( "]" );
 
 cleanup:    
     return;
@@ -478,6 +478,7 @@ RsaSignMultiImp::sign(
 
     for( ImpPtrVector::iterator i = m_comps.begin(); i != m_comps.end(); ++i )
     {
+        sig[0]++;
         ntStatus = (*i)->sign( pbHash, cbHash, pcstrHashAlgName, u32Other, &sig[0], m_cbSig );
         CHECK( ntStatus == STATUS_SUCCESS, "Failure during RSA signature" );
         for( ImpPtrVector::iterator j = m_comps.begin(); j != m_comps.end(); ++j )

@@ -573,6 +573,78 @@ public:
                                         SIZE_T *pcbMsg ) = 0;
 };
 
+#define DLKEY_MAXKEYSIZE    (512)  // 4096 bits = 512 bytes. Generating larger groups is too slow for testing
+typedef struct _DLGROUP_TESTBLOB {
+    UINT32                  nBitsP;             // P = field prime, Q = subgroup order, G = generator
+    UINT32                  cbPrimeP;           // 
+    UINT32                  cbPrimeQ;           // can be 0 if group order is not known
+    SYMCRYPT_DLGROUP_FIPS   fipsStandard;       // Which FIPS standard was used to generate this group
+    PCSYMCRYPT_HASH         pHashAlgorithm;     // Used for FIPS group generation
+    UINT32                  cbSeed;             // FIPS group generation seed
+    UINT32                  genCounter;         // FIPS group generation counter
+
+    BYTE    abPrimeP[DLKEY_MAXKEYSIZE];     // cbPrimeP bytes
+    BYTE    abPrimeQ[DLKEY_MAXKEYSIZE];     // cbPrimeQ bytes (optional)
+    BYTE    abGenG[DLKEY_MAXKEYSIZE];       // cbPrimeP bytes
+    BYTE    abSeed[DLKEY_MAXKEYSIZE];       // cbSeed bytes, cbSeed = 0 or cbSeed = cbPrimeQ
+} DLGROUP_TESTBLOB, *PDLGROUP_TESTBLOB;
+typedef const DLGROUP_TESTBLOB * PCDLGROUP_TESTBLOB;
+
+typedef struct _DLKEY_TESTBLOB {
+    PCDLGROUP_TESTBLOB  pGroup;
+    UINT32              cbPrivKey;                      // 
+    BYTE                abPubKey[DLKEY_MAXKEYSIZE];     // cbPrimeP bytes
+    BYTE                abPrivKey[DLKEY_MAXKEYSIZE];    // cbPrivKey bytes
+} DLKEY_TESTBLOB, *PDLKEY_TESTBLOB;
+typedef const DLKEY_TESTBLOB * PCDLKEY_TESTBLOB;
+
+class DhImplementation: public AlgorithmImplementation
+{
+public:
+    DhImplementation() {};
+    virtual ~DhImplementation() {};
+
+private:
+    DhImplementation( const DhImplementation & );
+    VOID operator=( const DhImplementation & );
+
+public:
+    virtual NTSTATUS setKey( 
+        _In_    PCDLKEY_TESTBLOB    pcKeyBlob ) = 0; // Returns an error if this key can't be handled.
+    
+    virtual NTSTATUS sharedSecret(
+        _In_                        PCDLKEY_TESTBLOB    pcPubkey,   // Must be on same group object
+        _Out_writes_( cbSecret )    PBYTE               pbSecret,
+                                    SIZE_T              cbSecret ) = 0;
+};
+
+class DsaImplementation: public AlgorithmImplementation
+{
+public:
+    DsaImplementation() {};
+    virtual ~DsaImplementation() {};
+
+private:
+    DsaImplementation( const DsaImplementation & );
+    VOID operator=( const DsaImplementation & );
+
+public:
+    virtual NTSTATUS setKey( 
+        _In_    PCDLKEY_TESTBLOB    pcKeyBlob ) = 0; // Returns an error if this key can't be handled.
+    
+    virtual NTSTATUS sign(
+        _In_reads_( cbHash)     PCBYTE  pbHash, 
+                                SIZE_T  cbHash,             // Can be any size, but often = size of Q
+        _Out_writes_( cbSig )   PBYTE   pbSig,
+                                SIZE_T  cbSig ) = 0;        // cbSig == 2 * cbPrimeQ of group
+
+    virtual NTSTATUS verify( 
+        _In_reads_( cbHash)     PCBYTE  pbHash, 
+                                SIZE_T  cbHash,
+        _In_reads_( cbSig )     PCBYTE  pbSig,
+                                SIZE_T  cbSig ) = 0;
+};
+
 // RsaImplementation class is only used for performance measurements of RSA
 /*
 class RsaImplementation: public AlgorithmImplementation
@@ -1169,6 +1241,70 @@ public:
     RsaEncImpState<Implementation,Algorithm> state;
 };
 
+template< class Implementation, class Algorithm > class DhImpState;
+
+template< class Implementation, class Algorithm>
+class DhImp: public DhImplementation
+{
+public:
+    DhImp();
+    virtual ~DhImp();
+
+private:
+    DhImp( const DhImp & );
+    VOID operator=( const DhImp & );
+
+public:
+    static const String s_algName;             // Algorithm name
+    static const String s_modeName;
+    static const String s_impName;             // Implementation name
+
+    virtual NTSTATUS setKey( 
+        _In_    PCDLKEY_TESTBLOB    pcKeyBlob );    
+    
+    virtual NTSTATUS sharedSecret(
+        _In_                        PCDLKEY_TESTBLOB    pcPubkey, 
+        _Out_writes_( cbSecret )    PBYTE               pbSecret,
+                                    SIZE_T              cbSecret );
+
+    DhImpState<Implementation,Algorithm> state;
+};
+
+template< class Implementation, class Algorithm > class DsaImpState;
+
+template< class Implementation, class Algorithm>
+class DsaImp: public DsaImplementation
+{
+public:
+    DsaImp();
+    virtual ~DsaImp();
+
+private:
+    DsaImp( const DsaImp & );
+    VOID operator=( const DsaImp & );
+
+public:
+    static const String s_algName;             // Algorithm name
+    static const String s_modeName;
+    static const String s_impName;             // Implementation name
+
+    virtual NTSTATUS setKey( 
+        _In_    PCDLKEY_TESTBLOB    pcKeyBlob ); // Returns an error if this key can't be handled.
+    
+    virtual NTSTATUS sign(
+        _In_reads_( cbHash)     PCBYTE  pbHash, 
+                                SIZE_T  cbHash,             // Can be any size, but often = size of Q
+        _Out_writes_( cbSig )   PBYTE   pbSig,
+                                SIZE_T  cbSig );        // cbSig == cbModulus of group
+
+    virtual NTSTATUS verify( 
+        _In_reads_( cbHash)     PCBYTE  pbHash, 
+                                SIZE_T  cbHash,
+        _In_reads_( cbSig )     PCBYTE  pbSig,
+                                SIZE_T  cbSig );
+
+    DsaImpState<Implementation,Algorithm> state;
+};
 
 template< class Implementation, class Algorithm>
 class EccImp: public EccImplementation
@@ -1320,6 +1456,20 @@ template< class Imp, class Alg>
 const String RsaEncImp<Imp,Alg>::s_algName = Alg::name;
 template< class Imp, class Alg>
 const String RsaEncImp<Imp,Alg>::s_modeName;
+
+template< class Imp, class Alg>
+const String DhImp<Imp,Alg>::s_impName = Imp::name;
+template< class Imp, class Alg>
+const String DhImp<Imp,Alg>::s_algName = Alg::name;
+template< class Imp, class Alg>
+const String DhImp<Imp,Alg>::s_modeName;
+
+template< class Imp, class Alg>
+const String DsaImp<Imp,Alg>::s_impName = Imp::name;
+template< class Imp, class Alg>
+const String DsaImp<Imp,Alg>::s_algName = Alg::name;
+template< class Imp, class Alg>
+const String DsaImp<Imp,Alg>::s_modeName;
 
 //
 // Template declaration for performance functions (for those implementations that wish to use them)
