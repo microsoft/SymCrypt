@@ -33,6 +33,7 @@ set(SOURCES
     testScsTable.cpp
     testScsTools.cpp
     testIEEE802_11SaeCustom.cpp
+    perf.cpp
   )
 
 # Append Windows-specific sources
@@ -42,16 +43,15 @@ if(WIN32)
         capi_implementations.cpp
         cng_implementations.cpp
         msbignum_implementations.cpp
-        perf.cpp
-        testInterop.cpp
+        # testInterop.cpp
         # testRsa.cpp
         # testRsa_sc.cpp
         # testRsa_msbignum.cpp
         # testRsa_cng.cpp
-        testDl.cpp
-        testDl_sc.cpp
-        testDl_msbignum.cpp
-        testDl_cng.cpp
+        # testDl.cpp
+        # testDl_sc.cpp
+        # testDl_msbignum.cpp
+        # testDl_cng.cpp
     )
 endif()
 

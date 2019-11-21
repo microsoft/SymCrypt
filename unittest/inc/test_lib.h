@@ -1207,7 +1207,7 @@ exitTestInfrastructure();
 //
 // Function pointers to deal with various BCrypt versions
 //
-#if SYMCRYPT_MS_VC
+#if INCLUDE_IMPL_CNG
 
 typedef _Must_inspect_result_ NTSTATUS
 (WINAPI * BCryptDeriveKeyPBKDF2Fn)(
@@ -1617,7 +1617,10 @@ VOID
 testMontgomery(PSYMCRYPT_ECURVE  pCurve);
 
 VOID
-runRsaAverageKeyGenPerf();
+addRsaKeyGenPerfSymCrypt( PrintTable &table );
+
+VOID
+addRsaKeyGenPerfMsBignum( PrintTable &table );
 
 // Constants for RSA performance tests (OAEP, PKCS1, PSS modes)
 #define PERF_RSA_PKCS1_LESS_BYTES           (11)
@@ -1667,3 +1670,9 @@ dlgroupObjectFromTestBlob( PCDLGROUP_TESTBLOB pBlob );  // Must free object afte
 VOID
 ReverseMemCopy( PBYTE pbDst, PCBYTE pbSrc, SIZE_T cbSrc );
 
+BOOL
+SYMCRYPT_CALL
+RefIsPrime(
+    _In_                            PCSYMCRYPT_INT  piSrc,
+    _Out_writes_bytes_( cbScratch ) PBYTE           pbScratch,
+                                    SIZE_T          cbScratch );

@@ -5,6 +5,9 @@
 //
 
 #include "precomp.h"
+
+#if INCLUDE_IMPL_MSBIGNUM
+
 #include "testInterop.h"
 
 #define SCRATCH_BUF_OFFSET  (1 << 15)
@@ -13,6 +16,40 @@
 char * ImpMsBignum::name = "MsBignum";
 
 bigctx_t g_BignumCtx = { 0 };
+
+// Functions needed for MsBignum hashes (see pfnHash type)
+BOOL
+WINAPI
+SHA1Hash(
+    __in_bcount( cbData )   const unsigned char* pbData,
+                            unsigned int   cbData,
+    __out_bcount( SYMCRYPT_SHA1_RESULT_SIZE )
+                            unsigned char*  pbResult )
+{
+    SymCryptSha1( (PCBYTE)pbData,cbData,(PBYTE)pbResult);
+    return TRUE;
+
+}
+
+BOOL
+WINAPI
+SHA256Hash(
+    __in_bcount( cbData )   const unsigned char* pbData,
+                            unsigned int   cbData,
+    __out_bcount( SYMCRYPT_SHA256_RESULT_SIZE )
+                            unsigned char*  pbResult )
+{
+    SymCryptSha256( (PCBYTE)pbData,cbData,(PBYTE)pbResult);
+    return TRUE;
+}
+
+HASHALG_DATA g_HashAlgs[] = {
+    { SymCryptMd5Algorithm ,    "MD5",      BCRYPT_MD5_ALGORITHM,       NULL        },
+    { SymCryptSha1Algorithm,    "SHA1",     BCRYPT_SHA1_ALGORITHM,      SHA1Hash   },
+    { SymCryptSha256Algorithm,  "SHA256",   BCRYPT_SHA256_ALGORITHM,    SHA256Hash },
+    { SymCryptSha384Algorithm,  "SHA384",   BCRYPT_SHA384_ALGORITHM,    NULL },
+    { SymCryptSha512Algorithm,  "SHA512",   BCRYPT_SHA512_ALGORITHM,    NULL },
+};
 
 // RSA algorithms
 
@@ -330,6 +367,33 @@ struct {
     { 128, 32, FALSE, {0}, {0}, {0}, {0} },
     { 256, 32, FALSE, {0}, {0}, {0}, {0} },
 };
+
+// Hash algorithms translations
+VOID testInteropScToHashContext( PCSYMCRYPT_HASH pHashAlgorithm, PBYTE rgbDigest, hash_function_context* pHashFunCxt)
+{
+    pHashFunCxt->dwVersion = HASH_FUNCTION_STRUCTURE_VERSION;
+    pHashFunCxt->pvContext = NULL;
+    pHashFunCxt->pdwDigest = (PDWORD)rgbDigest;
+
+    if (pHashAlgorithm == NULL)
+    {
+        CHECK( FALSE, "NULL hash algorithm\n");
+    }
+    else
+    {
+        for(UINT32 i=0; i<TEST_INTEROP_NUMOF_HASHALGS; i++)
+        {
+            if (pHashAlgorithm == g_HashAlgs[i].pHashAlgorithm)
+            {
+                pHashFunCxt->pfHash = g_HashAlgs[i].msBignumHashFunc;
+                pHashFunCxt->cbDigest = (DWORD)SymCryptHashResultSize(pHashAlgorithm);
+                return;
+            }
+        }
+
+        CHECK( FALSE, "NULL hash algorithm\n");
+    }
+}
 
 void
 SetupBignumDlGroup( PBYTE buf1, SIZE_T keySize )
@@ -1441,7 +1505,7 @@ addMsBignumAlgs()
     addImplementationToGlobalList<ArithImp<ImpMsBignum, AlgScsTable>>();
 }
 
-
+#endif // INCLUDE_IMPL_MSBIGNUM
 
 
 

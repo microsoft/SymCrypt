@@ -7,6 +7,25 @@
 
 #include "precomp.h"
 
+// There is a bit of duplicate work and data structures here.
+// The test for DH and DSA were re-written to fit the overall structure;
+// some tests were carried over from the old tests, and they duplicate some minor
+// things like structures for key sizes.
+
+typedef struct {
+    UINT32  nBitsOfP;
+    UINT32  nBitsOfQ;
+} TEST_DL_BITSIZEENTRY, * PTEST_DL_BITSIZEENTRY;
+
+const TEST_DL_BITSIZEENTRY g_DlBitSizes[] = {
+    { 512, 160 },
+    { 768, 160 },
+    { 960, 160 },       // Multiple of 64
+    { 1024, 160 },
+    { 1536, 256 },
+    { 2048, 256 },
+};
+
 DLGROUP_TESTBLOB g_DlGroup[ MAX_TEST_DLGROUPS ] = {0};
 UINT32 g_nDlgroups = 0;
 
@@ -247,6 +266,353 @@ dlgroupForSize( SIZE_T nBits )
     return NULL;
 }
 
+SYMCRYPT_DLGROUP_FIPS testDlRandomFips()
+{
+    BYTE rand = 0;
+
+    do
+    {
+        rand = g_rng.byte() & 0x03;
+    } while (rand > 2);
+
+    switch (rand)
+    {
+        case (0):
+            return SYMCRYPT_DLGROUP_FIPS_NONE;
+            break;
+        case (1):
+            return SYMCRYPT_DLGROUP_FIPS_186_2;
+            break;
+        case (2):
+            return SYMCRYPT_DLGROUP_FIPS_186_3;
+            break;
+        default:
+            CHECK(FALSE, "?");
+            return SYMCRYPT_DLGROUP_FIPS_NONE;
+            break;
+    }
+}
+
+VOID testDlSimple()
+// This test is inherited from the previous tests for Discrete Log
+// It tests both DL and DSA, but we include it here as all the DL general
+// tests are in the testDh.cpp.
+{
+    SYMCRYPT_ERROR scError = SYMCRYPT_NO_ERROR;
+    PSYMCRYPT_DLGROUP pDlgroup = NULL;
+    PSYMCRYPT_DLKEY pkDlkey = NULL;
+
+    SYMCRYPT_DLGROUP_FIPS eFipsStandard = SYMCRYPT_DLGROUP_FIPS_NONE;
+    PCSYMCRYPT_HASH pHashAlgorithm = NULL;
+
+    UINT32 nBitsOfP = 0;
+    UINT32 nBitsOfQ = 0;
+    UINT32 nBitsOfQActual = 0;
+
+    // Variables for exported parameters
+    SIZE_T cbExpP = 0;
+    SIZE_T cbExpQ = 0;
+    SIZE_T cbExpG = 0;
+    SIZE_T cbExpS = 0;
+    PCSYMCRYPT_HASH pExpH = NULL;
+    UINT32 dwExpC = 0;
+
+    PBYTE pbBlob = NULL;
+    SIZE_T cbBlob = 0;
+
+    BYTE rbHashValue[SYMCRYPT_HASH_MAX_RESULT_SIZE] = { 0 };
+    SIZE_T cbHashValue = 0;
+
+    BYTE rbSignature[2*DLKEY_MAXKEYSIZE];
+    SIZE_T cbSignature = 0;
+
+    for (UINT32 i = 0; i<ARRAY_SIZE(g_DlBitSizes); i++)
+    {
+        nBitsOfP = g_DlBitSizes[i].nBitsOfP;
+        nBitsOfQ = g_DlBitSizes[i].nBitsOfQ;
+        nBitsOfQActual = nBitsOfQ;
+
+        // Pick a random FIPS standard (unless nBitsOfQ > 160)
+        if (nBitsOfQActual <= 160)
+        {
+            eFipsStandard = testDlRandomFips();
+        }
+        else
+        {
+            eFipsStandard = SYMCRYPT_DLGROUP_FIPS_LATEST;
+        }
+
+        // Pick a random hash algorithm (or if FIPS 186-2 pick NULL)
+        if (eFipsStandard == SYMCRYPT_DLGROUP_FIPS_186_2)
+        {
+            pHashAlgorithm = NULL;
+            cbHashValue = SYMCRYPT_SHA256_RESULT_SIZE;
+        }
+        else
+        {
+            do
+            {
+                // Pick a random hash algorithm
+                switch( g_rng.byte() % 4 )
+                {
+                case 0: 
+                    pHashAlgorithm = SymCryptSha1Algorithm;
+                    cbHashValue = 20;
+                    break;
+                case 1: 
+                    pHashAlgorithm = SymCryptSha256Algorithm;
+                    cbHashValue = 32;
+                    break;
+                case 2: 
+                    pHashAlgorithm = SymCryptSha384Algorithm;
+                    cbHashValue = 48;
+                    break;
+                case 3: 
+                    pHashAlgorithm = SymCryptSha512Algorithm;
+                    cbHashValue = 64;
+                    break;
+                default:
+                    CHECK( FALSE, "?" );
+                }
+            } while ((8*cbHashValue < nBitsOfQActual) ||
+                     (8*cbHashValue > nBitsOfP) );
+        }
+
+        // Allocate and generate a DLGROUP
+        pDlgroup = SymCryptDlgroupAllocate( nBitsOfP, nBitsOfQ );
+        CHECK( pDlgroup!=NULL, "?");
+
+        scError = SymCryptDlgroupGenerate( pHashAlgorithm, eFipsStandard, pDlgroup );
+        CHECK( scError == SYMCRYPT_NO_ERROR, "?" );
+
+        vprint(g_verbose, "\nGenerated ");
+        //printDlGroup( pDlgroup );
+
+        // DLKEY
+        pkDlkey = SymCryptDlkeyAllocate( pDlgroup );
+        CHECK( pkDlkey!=NULL, "?");
+
+        scError = SymCryptDlkeyGenerate( 0, pkDlkey );
+        CHECK( scError == SYMCRYPT_NO_ERROR, "?" );
+
+        //printDlKey( pkDlkey );
+
+        // DSA sign and verify
+        scError = SymCryptCallbackRandom(rbHashValue, cbHashValue);
+        CHECK( scError == SYMCRYPT_NO_ERROR, "?" );
+
+        cbSignature = 2*SymCryptDlkeySizeofPrivateKey(pkDlkey);
+
+        scError = SymCryptDsaSign(
+                        pkDlkey,
+                        rbHashValue,
+                        cbHashValue,
+                        SYMCRYPT_NUMBER_FORMAT_MSB_FIRST,
+                        0,
+                        rbSignature,
+                        cbSignature );
+        CHECK( scError == SYMCRYPT_NO_ERROR, "?" );
+
+        scError = SymCryptDsaVerify(
+                        pkDlkey,
+                        rbHashValue,
+                        cbHashValue,
+                        rbSignature,
+                        cbSignature,
+                        SYMCRYPT_NUMBER_FORMAT_MSB_FIRST,
+                        0 );
+        CHECK( scError == SYMCRYPT_NO_ERROR, "?" );
+
+        // Flip the first byte of the message
+        rbHashValue[0] ^= 0xff;
+        scError = SymCryptDsaVerify(
+                        pkDlkey,
+                        rbHashValue,
+                        cbHashValue,
+                        rbSignature,
+                        cbSignature,
+                        SYMCRYPT_NUMBER_FORMAT_MSB_FIRST,
+                        0 );
+        CHECK( scError == SYMCRYPT_SIGNATURE_VERIFICATION_FAILURE, "?" );
+
+        // Get the group parameters in a blob
+        SymCryptDlgroupGetSizes(
+            pDlgroup,
+            &cbExpP,
+            &cbExpQ,
+            &cbExpG,
+            &cbExpS );
+
+        cbBlob = cbExpP + cbExpQ + cbExpG + cbExpS;
+        pbBlob = (PBYTE) SymCryptCallbackAlloc( cbBlob );
+        CHECK( pbBlob != NULL, "?" );
+
+        scError = SymCryptDlgroupGetValue(
+                        pDlgroup,
+                        pbBlob,
+                        cbExpP,
+                        pbBlob + cbExpP,
+                        cbExpQ,
+                        pbBlob + cbExpP + cbExpQ,
+                        cbExpG,
+                        SYMCRYPT_NUMBER_FORMAT_MSB_FIRST,
+                        &pExpH,
+                        pbBlob + cbExpP + cbExpQ + cbExpG,
+                        cbExpS,
+                        &dwExpC );
+        CHECK( scError==SYMCRYPT_NO_ERROR, "?" );
+
+        // Set its value with only P (it should fail as it cannot generate G)
+        scError = SymCryptDlgroupSetValue(
+                        pbBlob,
+                        cbExpP,
+                        NULL,
+                        0,
+                        NULL,
+                        0,
+                        SYMCRYPT_NUMBER_FORMAT_MSB_FIRST,
+                        NULL,
+                        NULL,
+                        0,
+                        0,
+                        SYMCRYPT_DLGROUP_FIPS_NONE,
+                        pDlgroup );
+        CHECK( scError==SYMCRYPT_INVALID_ARGUMENT, "?" );
+
+        // Set its value with P and G (it should succeed)
+        scError = SymCryptDlgroupSetValue(
+                        pbBlob,
+                        cbExpP,
+                        NULL,
+                        0,
+                        pbBlob + cbExpP + cbExpQ,
+                        cbExpG,
+                        SYMCRYPT_NUMBER_FORMAT_MSB_FIRST,
+                        NULL,
+                        NULL,
+                        0,
+                        0,
+                        SYMCRYPT_DLGROUP_FIPS_NONE,
+                        pDlgroup );
+        CHECK( scError==SYMCRYPT_NO_ERROR, "?" );
+
+        vprint(g_verbose, "\n(P, -, G) ");
+        //printDlGroup( pDlgroup );
+
+        // Create a new key and make sure it is mod P
+        scError = SymCryptDlkeyGenerate( 0, pkDlkey );
+        CHECK( scError == SYMCRYPT_NO_ERROR, "?" );
+
+        CHECK(SymCryptDlkeySizeofPrivateKey(pkDlkey) == cbExpP, "?")
+
+        //printDlKey( pkDlkey );
+
+        // Set its value with P and Q (it should succeed and generate a new G)
+        scError = SymCryptDlgroupSetValue(
+                        pbBlob,
+                        cbExpP,
+                        pbBlob + cbExpP,
+                        cbExpQ,
+                        NULL,
+                        0,
+                        SYMCRYPT_NUMBER_FORMAT_MSB_FIRST,
+                        NULL,
+                        NULL,
+                        0,
+                        0,
+                        SYMCRYPT_DLGROUP_FIPS_NONE,
+                        pDlgroup );
+        CHECK( scError==SYMCRYPT_NO_ERROR, "?" );
+
+        //vprint(g_verbose, "\n(P, Q, G) ");
+        //printDlGroup( pDlgroup );
+
+        // Flip one byte of the seed
+        *(&pbBlob[cbExpP + cbExpQ + cbExpG]) = *(&pbBlob[cbExpP + cbExpQ + cbExpG]) ^ 0xff;
+
+        // Set its value with P, Q, and G with bogus seed but no verify flag.
+        // It should succeed
+        scError = SymCryptDlgroupSetValue(
+                        pbBlob,
+                        cbExpP,
+                        pbBlob + cbExpP,
+                        cbExpQ,
+                        pbBlob + cbExpP + cbExpQ,
+                        cbExpG,
+                        SYMCRYPT_NUMBER_FORMAT_MSB_FIRST,
+                        pExpH,
+                        pbBlob + cbExpP + cbExpQ + cbExpG,
+                        cbExpS,
+                        dwExpC,
+                        SYMCRYPT_DLGROUP_FIPS_NONE,
+                        pDlgroup );
+        CHECK( scError==SYMCRYPT_NO_ERROR, "?" );
+
+        //vprint(g_verbose, "\n(P,Q,G) w/o Ver. ");
+        //printDlGroup( pDlgroup );
+
+        // Set its value with P, Q, and G with bogus seed and verify flag.
+        // It should fail
+        scError = SymCryptDlgroupSetValue(
+                        pbBlob,
+                        cbExpP,
+                        pbBlob + cbExpP,
+                        cbExpQ,
+                        pbBlob + cbExpP + cbExpQ,
+                        cbExpG,
+                        SYMCRYPT_NUMBER_FORMAT_MSB_FIRST,
+                        pExpH,
+                        pbBlob + cbExpP + cbExpQ + cbExpG,
+                        cbExpS,
+                        dwExpC,
+                        (eFipsStandard==SYMCRYPT_DLGROUP_FIPS_NONE)
+                            ?SYMCRYPT_DLGROUP_FIPS_LATEST
+                            :eFipsStandard,
+                        pDlgroup );
+        CHECK( scError==SYMCRYPT_AUTHENTICATION_FAILURE, "?" );
+
+        // Flip the byte of the seed back
+        *(&pbBlob[cbExpP + cbExpQ + cbExpG]) = *(&pbBlob[cbExpP + cbExpQ + cbExpG]) ^ 0xff;
+
+        // Set its value with P, Q, and G with proper verification data and verify flag.
+        // It should succeed
+        scError = SymCryptDlgroupSetValue(
+                        pbBlob,
+                        cbExpP,
+                        pbBlob + cbExpP,
+                        cbExpQ,
+                        pbBlob + cbExpP + cbExpQ,
+                        cbExpG,
+                        SYMCRYPT_NUMBER_FORMAT_MSB_FIRST,
+                        pExpH,
+                        pbBlob + cbExpP + cbExpQ + cbExpG,
+                        cbExpS,
+                        dwExpC,
+                        (eFipsStandard==SYMCRYPT_DLGROUP_FIPS_NONE)
+                            ?SYMCRYPT_DLGROUP_FIPS_LATEST
+                            :eFipsStandard,
+                        pDlgroup );
+        CHECK( scError==SYMCRYPT_NO_ERROR, "?" );
+
+        //vprint(g_verbose, "\n(P,Q,G) w/ Ver. ");
+        //printDlGroup( pDlgroup );
+
+        // Create a new key and use the mod P flag
+        scError = SymCryptDlkeyGenerate( SYMCRYPT_FLAG_DLKEY_GEN_MODP, pkDlkey );
+        CHECK( scError == SYMCRYPT_NO_ERROR, "?" );
+
+        CHECK(SymCryptDlkeySizeofPrivateKey(pkDlkey) == cbExpP, "?")
+
+        //printDlKey( pkDlkey );
+
+        SymCryptDlkeyFree( pkDlkey );
+        SymCryptDlgroupFree( pDlgroup );
+
+        SymCryptWipe(pbBlob, cbBlob);
+        SymCryptCallbackFree(pbBlob);
+    }
+}
+
 
 class DhMultiImp: public DhImplementation
 {
@@ -322,6 +688,7 @@ DhMultiImp::sharedSecret(
 
     CHECK( cbSecret <= DLKEY_MAXKEYSIZE, "?" );
 
+    GENRANDOM( buf, sizeof( buf ) );
     for( ImpPtrVector::iterator i = m_comps.begin(); i != m_comps.end(); ++i )
     {
         buf[0]++;
@@ -703,6 +1070,11 @@ testDhAlgorithms()
 
     // Uncomment this function to generate a new KAT file
     //createKatFileDh();
+
+   if( isAlgorithmPresent( "Dh", TRUE )  )
+   {
+        testDlSimple();
+   }
 
     testDhKats();
 

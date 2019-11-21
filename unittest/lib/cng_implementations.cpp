@@ -6,7 +6,7 @@
 
 #include "precomp.h"
 
-#if 1 | INCLUDE_IMPL_CNG
+#if INCLUDE_IMPL_CNG
 
 char * ImpCng::name = "Cng";
 

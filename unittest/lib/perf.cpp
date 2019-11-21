@@ -1292,18 +1292,13 @@ runProfiling()
 
     g_perfTestsRunning = FALSE;
 }
-#if !SYMCRYPT_GNUC
-#include "bigpriv.h"
-#include "ms_rsa.h"
+
 
 VOID
-runRsaAverageKeyGenPerf()
+addRsaKeyGenPerfSymCrypt( PrintTable &table )
 {
     UINT32 bitSizes[] = {512, 3*256, 1024, 3*512, 2048, 3*1024, 4096, 3*2048, 8192, };
-    bigctx_t bignumCtx = { 0 };
     SYMCRYPT_RSA_PARAMS scRsaParams = {0};
-    RSA_PRIVATE_KEY bnPrivateKey;
-    big_prime_search_stat_t bnStats = { 0 };
 
     iprint( "\n"
         " Trial division limits: \n" );
@@ -1315,23 +1310,13 @@ runRsaAverageKeyGenPerf()
         SymCryptFreeTrialDivisionContext( pContext );
     }
 
-    iprint( "\n"
-            "RSA key generation performance\n"
-            "KeySize    Bignum   SymCrypt  |  BnAvg   ScAvg\n"
-            "==============================+===============\n"
-        );
-
     for( UINT32 i=0; i<ARRAY_SIZE( bitSizes ); i++ )
     {
         UINT32 bitSize = bitSizes[i];
-        UINT64 lastPrintTime = 0;
 
         UINT64 scTicks;
-        UINT64 bnTicks;
         double scCost;
-        double bnCost;
         double scTotal = 0.0;
-        double bnTotal = 0.0;
 
         scRsaParams.version = 1;
         scRsaParams.nBitsOfModulus = bitSize;
@@ -1348,33 +1333,52 @@ runRsaAverageKeyGenPerf()
 
             UINT64 stop = GET_PERF_CLOCK();
             scTicks = stop - start;
-            start = stop;
+
+            scCost = scTicks * g_perfScaleFactor - g_perfMeasurementOverhead;
+            scTotal += scCost;
+
+            String row = formatNumber( bitSize ) + "-" + formatNumber(j+1);
+            table.addItem( row, "SymCrypt", formatNumber( scCost ) );
+            table.addItem( row, "SymCryptav", formatNumber( scTotal / (j+1) ));
+        }
+    }
+}
+
+#if INCLUDE_IMPL_MSBIGNUM 
+VOID
+addRsaKeyGenPerfMsBignum( PrintTable &table )
+{
+    UINT32 bitSizes[] = {512, 3*256, 1024, 3*512, 2048, 3*1024, 4096, 3*2048, 8192, };
+
+    bigctx_t bignumCtx = { 0 };
+    RSA_PRIVATE_KEY bnPrivateKey;
+    big_prime_search_stat_t bnStats = { 0 };
+
+    for( UINT32 i=0; i<ARRAY_SIZE( bitSizes ); i++ )
+    {
+        UINT32 bitSize = bitSizes[i];
+
+        UINT64 bnTicks;
+        double bnCost;
+        double bnTotal = 0.0;
+
+        for( UINT32 j=0; j<10; j++ )
+        {
+            UINT64 start = GET_PERF_CLOCK();
 
             rsa_construction( bitSize, &bnPrivateKey, NULL, 0, &bnStats, &bignumCtx );
             rsa_destruction( &bnPrivateKey, &bignumCtx );
 
-            stop = GET_PERF_CLOCK();
+            UINT64 stop = GET_PERF_CLOCK();
             bnTicks = stop - start;
 
-            scCost = scTicks * g_perfScaleFactor - g_perfMeasurementOverhead;
             bnCost = bnTicks * g_perfScaleFactor - g_perfMeasurementOverhead;
-            scTotal += scCost;
             bnTotal += bnCost;
 
-            print( "  %5d    %s    %s   | %s    %s\n", bitSize,
-                    formatNumber( bnCost ).c_str(),
-                    formatNumber( scCost ).c_str(),
-                    formatNumber( bnTotal / (j+1) ).c_str(),
-                    formatNumber( scTotal / (j+1) ).c_str()
-                );
-            if( stop - lastPrintTime > (1<<30) )
-            {
-                printOutput(1);
-                lastPrintTime = stop;
-            }
+            String row = formatNumber( bitSize ) + "-" + formatNumber(j+1);
+            table.addItem( row, "MsBignum", formatNumber( bnCost ) );
+            table.addItem( row, "MsBignumav", formatNumber( bnTotal / (j+1) ));
         }
-        print( "                              |\n");
     }
-    iprint( "\n" );
 }
 #endif

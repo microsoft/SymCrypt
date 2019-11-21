@@ -1455,9 +1455,7 @@ runFunctionalTests()
 
     testTlsCbcHmacAlgorithms();
 
-#if SYMCRYPT_MS_VC
     testArithmetic();
-#endif
 
     testScsTable();
 
@@ -1470,14 +1468,6 @@ runFunctionalTests()
     testDhAlgorithms();
 
     testDsaAlgorithms();
-
-    // need these two
-#if SYMCRYPT_MS_VC
-
-    // testRsa();
-
-    testDl();
-#endif
 
     testEcc();
 
@@ -1512,7 +1502,6 @@ runFunctionalTests()
 
 }
 
-#if SYMCRYPT_MS_VC
 VOID
 runPerfTests()
 {
@@ -1579,13 +1568,18 @@ runPerfTests()
 
     if( g_runRsaAverageKeyPerf )
     {
-        runRsaAverageKeyGenPerf();
+        PrintTable ptRsaKeygen;
+        addRsaKeyGenPerfSymCrypt( ptRsaKeygen );
+#if INCLUDE_IMPL_MSBIGNUM
+        addRsaKeyGenPerfMsBignum( ptRsaKeygen );
+#endif
+        ptRsaKeygen.print( "RSA key generation performance" );
+        printOutput( 0 );                
     }
 
     g_perfTestsRunning = FALSE;
 
 }
-#endif //SYMCRYPT_APPLE_CC
 
 
 VOID

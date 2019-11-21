@@ -1085,7 +1085,7 @@ SymCryptIntToDivisor(
 //  - Dst.nDigits == Src.nDigits
 //  - Src != 0
 //  - cbScratch >= SYMCRYPT_SCRATCH_BYTES_FOR_INT_TO_DIVISOR( Src.nDigits )
-// SymCryptBitsizeOfValue( Src ) is published.
+// SymCryptIntBitsizeOfValue( Src ) is published.
 // Src may be equal to SymCryptIntFromDivisor( Dst ).
 // totalOperations is an estimate of how many divide/modulo operations will be performed with this divisor.
 //   An implementation may use this to decide how much pre-computations to do.
@@ -1347,7 +1347,7 @@ SymCryptIntMillerRabinPrimalityTest(
 //      numbers is that such a function would be prohibitively slow.
 //
 // Requirements:
-//  - SymCryptBitsizeOfValue( piSrc ) <= nBitsSrc <= SymCryptIntBitsizeOfObject( piSrc )
+//  - SymCryptIntBitsizeOfValue( piSrc ) <= nBitsSrc <= SymCryptIntBitsizeOfObject( piSrc )
 //  - Src is odd and greater than 3.
 //  - If flags == 0 then Src must be 3 modulo 4. (See the comment above for
 //    the SYMCRYPT_FLAG_DATA_PUBLIC flag)
@@ -1450,7 +1450,7 @@ SymCryptIntToModulus(
 //  - Src != 0
 //  - Dst.nDigits == Src.nDigits
 //  - cbScratch >= SYMCRYPT_SCRATCH_BYTES_FOR_INT_TO_MODULUS( Src.nDigits )
-// SymCryptBitsizeOfValue( Src ) is published.
+// SymCryptIntBitsizeOfValue( Src ) is published.
 // averageOperations is the average number of multiplications that are performed on a ModElement created with this modulus between the time that the value is
 //      created as a ModElement and the time it is exported out of modElement form.
 //      There are multiple ways of doing modular computations; some of them are faster but have an overhead for converting into and out of modular form.
@@ -1831,7 +1831,7 @@ SymCryptModExp(
 //              number of bits (even leading zeros) as the modulus. In this case
 //              the exponent should have a value with bitsize less or equal to the
 //              bitsize of the modulus.
-//          -   nBitsExp = max(1, SymCryptBitsizeOfValue( piExp )) => This processes
+//          -   nBitsExp = max(1, SymCryptIntBitsizeOfValue( piExp )) => This processes
 //              the bits of the exponent ignoring the leading zeros. Therefore, this
 //              option leaks the the bitsize of the value of the exponent.
 //

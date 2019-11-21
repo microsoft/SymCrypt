@@ -1634,7 +1634,6 @@ testIntSquare()
 
 #define BYTES_TO_DIGITS(x)  (((x) + (sizeof(digit_t) - 1)) / sizeof(digit_t))
 
-#if SYMCRYPT_MS_VC
 VOID
 testIntPrimalityTest()
 {
@@ -1647,15 +1646,15 @@ testIntPrimalityTest()
     PSYMCRYPT_INT   piSrc = NULL;
     UINT32          cbSrc = 0;
 
+    const SIZE_T    cbBuf = SYMCRYPT_SIZEOF_INT_FROM_BITS( 32 );
+    BYTE            rawbuf[ cbBuf ];
+    PBYTE           pbBuf = SYMCRYPT_ASYM_ALIGN_UP( rawbuf );
+    PBYTE           pbScratch = g_scratch;
+    SIZE_T          cbScratch = sizeof( g_scratch );
+
     PCBYTE          pCurr = NULL;
     UINT32          nBytes = 0;
     UINT32          index = 0;
-
-    BYTE            buf[ MAX_INT_BYTES ] = { 0 };
-    digit_t         bignumInt[ BYTES_TO_DIGITS( MAX_INT_BYTES ) ] = { 0 };
-    bigctx_t        bignumCtx = { 0 };
-    BOOL            bignumSuccess = FALSE;
-    BOOL            bignumResult = FALSE;
 
     UINT32          primActual = 0;
     UINT32          primResult = 0;
@@ -1667,9 +1666,9 @@ testIntPrimalityTest()
     //   that the test outputs "prime".
     // - With probability 12.5% pick a known composite and verify
     //   that the test outputs "composite".
-    // - With probability 75% compare the result of the
-    //   SymCrypt primality test with the bignum primality
-    //   test.
+    // - With prob 12.5%, pick a small integer to test
+    // - Otherwise compare the result of the
+    //   SymCrypt primality test with the reference primality test.
     //
 
     rand = g_rng.byte() & 0x07;
@@ -1734,11 +1733,32 @@ testIntPrimalityTest()
         {
             flags = SYMCRYPT_FLAG_DATA_PUBLIC;
         }
+        //iprint( "[%s %d]", primActual ? "prime" : "composite", nD );
     }
-    else
+    else if( rand == 3 )
     {
-        // Bignum comparison
+        // Pick a random 32-bit prime; lots of strange corner-cases happen more often
+        // in small primes.
+        nD = 1;
+        piSrc = SymCryptIntCreate( pbBuf, cbBuf, SymCryptDigitsFromBits( 32 ) );
+        CHECK( piSrc != NULL, "?" );
+        do {
+            index = g_rng.uint32();
+            index |= 1;        
+        } while( index < 5 );
+        SymCryptIntSetValueUint32( index, piSrc );
+        primActual = RefIsPrime( piSrc, pbScratch, cbScratch ) ? 0xffffffff : 0;
+        flags = g_rng.uint32() & SYMCRYPT_FLAG_DATA_PUBLIC;
 
+        // Current SymCrypt can only do non-public values if they are 3 mod 4
+        if( (index & 2) == 0 )
+        {
+            flags |= SYMCRYPT_FLAG_DATA_PUBLIC;
+        }
+
+        //iprint( "[%d]", index );
+    } else
+    {
         // Pick number of digits
         nD = (UINT32) g_rng.sizet( 1, g_digitLimit );
 
@@ -1758,28 +1778,11 @@ testIntPrimalityTest()
                   (!SymCryptIntGetBit(pSrc->m_pScInt, 0)) ||
                   (!flags && !SymCryptIntGetBit(pSrc->m_pScInt, 1)) );
 
-        if (SymCryptIntBitsizeOfValue(pSrc->m_pScInt) > 32)
-        {
-            // Get the bytes
-            nBytes = pSrc->m_nDigits*g_bytesPerDigit;
-            scError = SymCryptIntGetValue(pSrc->m_pScInt, buf, nBytes, SYMCRYPT_NUMBER_FORMAT_MSB_FIRST);
-            CHECK(scError == SYMCRYPT_NO_ERROR, "?");
-
-            // Convert it to bignum integer
-            bignumSuccess = big_endian_bytes_to_digits(buf, bignumInt, pSrc->m_nDigits*g_bitsPerDigit, &bignumCtx);
-            CHECK(bignumSuccess, "?");
-
-            // Check for primality in bignum
-            bignumSuccess = test_primality(bignumInt, BYTES_TO_DIGITS(nBytes), &bignumResult, &bignumCtx);
-            CHECK(bignumSuccess, "?");
-
-            primActual = (bignumResult ? 0xffffffff : 0);
-        }
-
         // Set the value
         piSrc = pSrc->m_pScInt;
 
-        //iprint( "Bignum 0x%x vs SymCrypt 0x%x\n", primActual, primResult );
+        primActual = RefIsPrime( piSrc, pbScratch, cbScratch ) ? 0xffffffff : 0;
+        //iprint( "[rnd]");
     }
 
     // Check for primality
@@ -1791,13 +1794,12 @@ testIntPrimalityTest()
                         g_scratch + cbSrc,
                         SYMCRYPT_SCRATCH_BYTES_FOR_INT_IS_PRIME( nD ) );
 
-    if ((rand < 2) || (SymCryptIntBitsizeOfValue(piSrc)>32))
+    if ((rand < 2) || (SymCryptIntBitsizeOfValue(piSrc)>2))
     {
         CHECK4(primResult == primActual, "Primality test produced wrong result\n  Result : 0x%x\n  Desired: 0x%x", primResult, primActual);
     }
 
 }
-#endif
 
 //=================================
 // Divisor
@@ -3886,9 +3888,8 @@ testArithmetic()
     rnddRegisterTestFunction( testIntDivMod,        "IntDivMod", 10 );
     rnddRegisterTestFunction( testIntGcdEx,         "IntGcdEx", 1 );
 
-#if SYMCRYPT_MS_VC
     rnddRegisterTestFunction( testIntPrimalityTest, "IntPrimalityTest", 1 );    // very expensive
-#endif
+
     rnddRegisterTestFunction( testModulusObjectLifetime, "ModulusObjectLifetime", 5 );
     rnddRegisterTestFunction( testModulusCopy, "ModulusCopy", 1 );
 

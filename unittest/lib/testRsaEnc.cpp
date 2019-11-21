@@ -117,6 +117,8 @@ RsaEncMultiImp::setKey( PCRSAKEY_TESTBLOB pcKeyBlob )
 
     CHECK( cbCiphertext == m_cbCiphertext, "Wrong ciphertext size" );
 
+    GENRANDOM( msg, sizeof( msg ) );
+    
     // Process result as MSBfirst array to get errors to print correctly.
     for( ImpPtrVector::iterator i = m_comps.begin(); i != m_comps.end(); ++i )
     {
@@ -158,6 +160,8 @@ RsaEncMultiImp::encrypt(
     NTSTATUS ntStatusRes = -1;
 
     CHECK( cbCiphertext == m_cbCiphertext, "Wrong ciphertext length" );
+
+    GENRANDOM( msg, sizeof( msg ) );
 
     for( ImpPtrVector::iterator i = m_comps.begin(); i != m_comps.end(); i++ )
     {

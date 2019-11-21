@@ -55,15 +55,15 @@ SOURCES= \
     rndDriver.cpp \
     testArithmetic.cpp \
     testEcc.cpp \
-    testInterop.cpp \
+#    testInterop.cpp \
 #    testRsa.cpp \
 #    testRsa_sc.cpp \
 #    testRsa_msbignum.cpp \
 #    testRsa_cng.cpp \
-    testDl.cpp \
-    testDl_sc.cpp \
-    testDl_msbignum.cpp \
-    testDl_cng.cpp \
+#    testDl.cpp \
+#    testDl_sc.cpp \
+#    testDl_msbignum.cpp \
+#    testDl_cng.cpp \
     callback.cpp \
     testMontgomery.cpp \
     testScsTable.cpp \
@@ -81,9 +81,9 @@ AMD64_SOURCES = \
     saveymm.asm
 
 TARGETLIBS= \
-		$(DS_LIB_PATH)\rsa32.lib \
+#		$(DS_LIB_PATH)\rsa32.lib \
 		$(SDK_LIB_PATH)\powrprof.lib \
-		$(SDK_LIB_PATH)\bcrypt.lib \
+#		$(SDK_LIB_PATH)\bcrypt.lib \
 		$(PROJECT_OBJ_ROOT)\symcrypt\lib\$(O)\symcrypt.lib \
 
 UNICODE = 1

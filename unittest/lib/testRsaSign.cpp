@@ -476,6 +476,8 @@ RsaSignMultiImp::sign(
     int nSigs = 0;
     NTSTATUS ntStatus;
 
+    GENRANDOM( sig, sizeof( sig ) );
+
     for( ImpPtrVector::iterator i = m_comps.begin(); i != m_comps.end(); ++i )
     {
         sig[0]++;
