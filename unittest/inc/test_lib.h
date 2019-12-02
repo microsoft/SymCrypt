@@ -155,10 +155,20 @@
     static inline unsigned long __rdtsc(void)
     {
         unsigned long tsc;
-        asm volatile ("rdtsc; sal $32, %rdx; or %rax, %rdx;" : "=a"(tsc));
+        asm volatile ("rdtsc; sal $32, %%rdx; or %%rax, %%rdx;" : "=a"(tsc));
         return tsc;
     }
     #endif
+
+    static inline void __cpuid(int CPUInfo[4], int InfoType)
+    {
+        asm volatile ("mov %0, %%eax; cpuid" :
+            "=a" (CPUInfo[0]),
+            "=b" (CPUInfo[1]),
+            "=c" (CPUInfo[2]),
+            "=d" (CPUInfo[3]) :
+            "g" (InfoType));
+    }
 
     #include <unistd.h>
     #define Sleep(x) sleep((x)/1000)
@@ -201,6 +211,14 @@
     #ifndef PRId64
     #define PRId64       "lld"
     #endif
+
+    //
+    // Missing from our standard headers when compiling C++
+    //
+    extern "C"
+    {
+        void __cpuid(int CPUInfo[4], int InfoType );
+    }
 #endif
 
 
@@ -217,15 +235,6 @@
 #include <wmmintrin.h>
 #include <immintrin.h>
 #endif
-
-
-//
-// Missing from our standard headers when compiling C++
-//
-extern "C"
-{
-    void __cpuid(int CPUInfo[4], int InfoType );
-}
 
 /*
 // Exclude rarely-used stuff from Windows headers

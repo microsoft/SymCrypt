@@ -91,8 +91,33 @@ set(SOURCES
     IEEE802_11SaeCustom.c
   )
 
+if(NOT(SYMCRYPT_TARGET_ENV MATCHES "Generic") AND CMAKE_SYSTEM_PROCESSOR MATCHES "AMD64")
+    list(APPEND SOURCES
+        amd64/aesasm.asm
+        amd64/fdef_asm.asm
+        amd64/fdef_mulx.asm
+        amd64/fdef369_asm.asm
+        amd64/sha1asm.asm
+        amd64/wipe.asm)
+    set_source_files_properties(
+        amd64/aesasm.asm
+        amd64/fdef_asm.asm
+        amd64/fdef_mulx.asm
+        amd64/fdef369_asm.asm
+        amd64/sha1asm.asm
+        amd64/wipe.asm
+        PROPERTY LANGUAGE ASM_MASM)
+#    set_source_files_properties(
+#        amd64/aesasm.asm
+#        amd64/fdef_asm.asm
+#        amd64/fdef_mulx.asm
+#        amd64/fdef369_asm.asm
+#        amd64/sha1asm.asm
+#        amd64/wipe.asm
+#        PROPERTY COMPILE_FLAGS "/D\"DBG=1\"")
+endif()
+
 include_directories(${CMAKE_SOURCE_DIR}/inc)
-include_directories(../km)
 
 set(SOURCES_GENERIC ${SOURCES})
 list(APPEND SOURCES_GENERIC env_generic.c)

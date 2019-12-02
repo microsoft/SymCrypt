@@ -334,8 +334,10 @@ SymCryptAesCbcEncryptNeon(
     *(__n128 *)pbChainingValue = c;
 }
 
-#pragma warning( push )
-#pragma warning( disable: 6001 4701 ) // use of uninitialized values, but that is by designs
+// Disable warnings and VC++ runtime checks for use of uninitialized values (by design)
+#pragma warning(push)
+#pragma warning( disable: 6001 4701 ) 
+#pragma runtime_checks( "u", off )
 VOID
 SYMCRYPT_CALL
 SymCryptAesCbcDecryptNeon(
@@ -491,6 +493,7 @@ SymCryptAesCbcDecryptNeon(
 
     return;
 }
+#pragma runtime_checks( "u", restore )
 #pragma warning( pop )
 
 
@@ -518,8 +521,10 @@ SymCryptAesCbcMacNeon(
     *(__n128 *)pbChainingValue = c;
 }
 
+// Disable warnings and VC++ runtime checks for use of uninitialized values (by design)
 #pragma warning(push)
-#pragma warning( disable: 6001 4701 ) // use of uninitialized values, but that is by designs
+#pragma warning( disable: 6001 4701 ) 
+#pragma runtime_checks( "u", off )
 VOID
 SYMCRYPT_CALL
 SymCryptAesEcbEncryptNeon(
@@ -629,11 +634,12 @@ SymCryptAesEcbEncryptNeon(
         }
     }
 }
+#pragma runtime_checks( "u", restore)
 #pragma warning( pop )
 
 #pragma warning(push)
 #pragma warning( disable:4701 ) // "Use of uninitialized variable"
-
+#pragma runtime_checks( "u", off )
 
 VOID
 SYMCRYPT_CALL
@@ -802,7 +808,7 @@ SymCryptAesCtrMsb64Neon(
     chain = vrev64q_u8( chain );
     *(__n128 *)pbChainingValue = chain;
 }
-
+#pragma runtime_checks( "u", restore )
 #pragma warning(pop)
 
 

@@ -328,9 +328,10 @@ SymCryptAesDecryptXmm(
     _mm_storeu_si128( (__m128i *) pbDst, c );
 }
 
-
+// Disable warnings and VC++ runtime checks for use of uninitialized values (by design)
 #pragma warning(push)
-#pragma warning( disable: 6001 4701 ) // use of uninitialized values, but that is by designs
+#pragma warning( disable: 6001 4701 ) 
+#pragma runtime_checks( "u", off )
 VOID
 SYMCRYPT_CALL
 SymCryptAesEcbEncryptXmm( 
@@ -438,6 +439,7 @@ SymCryptAesEcbEncryptXmm(
         }
     }
 }
+#pragma runtime_checks( "u", restore )
 #pragma warning( pop )
 
 
@@ -468,8 +470,10 @@ SymCryptAesCbcEncryptXmm(
     _mm_storeu_si128( (__m128i *) pbChainingValue, c );
 }
 
-#pragma warning( push )
-#pragma warning( disable: 6001 4701 ) // use of uninitialized values, but that is by designs
+// Disable warnings and VC++ runtime checks for use of uninitialized values (by design)
+#pragma warning(push)
+#pragma warning( disable: 6001 4701 ) 
+#pragma runtime_checks( "u", off )
 VOID
 SYMCRYPT_CALL
 SymCryptAesCbcDecryptXmm( 
@@ -622,6 +626,7 @@ SymCryptAesCbcDecryptXmm(
 
     return;
 }
+#pragma runtime_checks( "u", restore )
 #pragma warning( pop )
 
 VOID
@@ -651,6 +656,7 @@ SymCryptAesCbcMacXmm(
 
 #pragma warning(push)
 #pragma warning( disable:4701 ) // "Use of uninitialized variable"
+#pragma runtime_checks( "u", off )
 
 VOID
 SYMCRYPT_CALL
@@ -812,7 +818,7 @@ SymCryptAesCtrMsb64Xmm(
     chain = _mm_shuffle_epi8( chain, BYTE_REVERSE_ORDER );
     _mm_storeu_si128( (__m128i *) pbChainingValue, chain );
 }
-
+#pragma runtime_checks( "u", off )
 #pragma warning(pop)
 
 /*

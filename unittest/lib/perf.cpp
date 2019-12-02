@@ -56,6 +56,15 @@ GET_PERF_CLOCK()
 
 #endif
 
+#if SYMCRYPT_MS_VC
+
+#define ALLOCA( n ) _alloca( n )
+
+#else
+
+#define ALLOCA( n ) alloca( n )
+
+#endif // SYMCRYPT_MS_VC
 
 /*
 //
@@ -577,7 +586,7 @@ double measureWipePerfGivenStack(
         if( duration < g_minMeasurementClockTime )
         {
             //
-            // The measuremennt was too short, restart & double the # runs we do.
+            // The measurement was too short, restart & double the # runs we do.
             //
             i = 0;
             runs <<= 1;
@@ -617,7 +626,7 @@ double measurePerfMoveStack(    SIZE_T keySize,
     SIZE_T stackMove = 16 + g_rng.sizet( (1 << 17) );
 #pragma prefast(push)
 #pragma prefast(disable:6255)
-    VOID * p = _alloca( stackMove );
+    VOID * p = ALLOCA( stackMove );
 #pragma prefast(pop)
 
     *(VOID **)p = g_stackAllocLinkedList;
@@ -643,7 +652,7 @@ double measureWipePerfMoveStack(
     SIZE_T stackMove = 16 + g_rng.sizet( (1 << 17) );
 #pragma prefast(push)
 #pragma prefast(disable:6255)
-    VOID * p = _alloca( stackMove );
+    VOID * p = ALLOCA( stackMove );
 #pragma prefast(pop)
 
     *(VOID **)p = g_stackAllocLinkedList;
@@ -987,6 +996,8 @@ VOID
 SYMCRYPT_NOINLINE
 measurePerfOfAlgorithms()
 {
+    #if SYMCRYPT_MS_VC
+
     ULONGLONG startClock;
     ULONGLONG clockCycles;
     LARGE_INTEGER startCnt;
@@ -1035,6 +1046,8 @@ measurePerfOfAlgorithms()
     cntTime = ((double) stopCnt.QuadPart - startCnt.QuadPart) / cntFreq.QuadPart;
     g_tscFreqTickCtr = (double) clockCycles / ((double) ms / 1000);
     g_tscFreqPerfCtr = (double) clockCycles / cntTime;
+
+    #endif // SYMCRYPT_MS_VC
 }
 
 
@@ -1082,6 +1095,8 @@ measurePerfOfWipe()
 VOID
 measurePerf()
 {
+    #if SYMCRYPT_MS_VC
+
     iprint( "\nStarting performance measurements..." );
 
     int oldPriority = GetThreadPriority( GetCurrentThread() );
@@ -1092,7 +1107,6 @@ measurePerf()
     DWORD_PTR affinitymask = (DWORD_PTR)1 << GetCurrentProcessorNumber();
     affinitymask = SetThreadAffinityMask( GetCurrentThread(), affinitymask );
     CHECK( affinitymask != 0, "Failed to set affinity mask" );
-
 
     initPerfSystem();
 
@@ -1110,6 +1124,8 @@ measurePerf()
     CHECK( SetThreadPriority( GetCurrentThread(), oldPriority ), "Failed to set priority" );
 
     iprint( "...done\n" );
+
+    #endif // SYMCRYPT_MS_VC
 }
 
 SYMCRYPT_NOINLINE

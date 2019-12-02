@@ -14,16 +14,16 @@ jobs:
   # Initialize CMake
   - task: CMake@1
     inputs:
-      workingDirectory: '$(Build.SourcesDirectory)'
-      cmakeArgs: '.'
+      workingDirectory: '$(Build.SourcesDirectory)/bin'
+      cmakeArgs: '..  -DCMAKE_TOOLCHAIN_FILE=../cmake-toolchain/windows-amd64.cmake'
   # Build with CMake
   - task: CMake@1
     inputs:
-      workingDirectory: '$(Build.SourcesDirectory)'
+      workingDirectory: '$(Build.SourcesDirectory)/bin'
       cmakeArgs: '--build .'
   # Execute unit tests
   - script: |
-      cd bin\exe\Debug
+      cd bin\exe\AMD64\WindowsUserMode\Debug
       .\symcryptunittest_generic.exe
     displayName: 'Execute generic unit test'
     name: 'WindowsGenericUnitTest'
@@ -47,16 +47,16 @@ jobs:
   # Initialize CMake
   - task: CMake@1
     inputs:
-      workingDirectory: '$(Build.SourcesDirectory)'
-      cmakeArgs: '.'
+      workingDirectory: '$(Build.SourcesDirectory)/bin'
+      cmakeArgs: '..'
   # Build with CMake
   - task: CMake@1
     inputs:
-      workingDirectory: '$(Build.SourcesDirectory)'
+      workingDirectory: '$(Build.SourcesDirectory)/bin'
       cmakeArgs: '--build .'
   # Execute unit tests
   - script: |
-      cd bin/exe
+      cd bin/exe/x86_64/Generic
       ./symcryptunittest
     displayName: 'Execute generic unit test'
     name: 'LinuxGenericUnitTest'
