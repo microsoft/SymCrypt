@@ -900,16 +900,22 @@ SYMCRYPT_ALIGN_AT( 16 ) const BYTE g_SymCryptXtsNeonAlphaMask[16] = {0x87, 1, 1,
 }
 
 // Multiply by ALPHA^8
-// t2 = Input >> 120
-// t2 = (t2 <<<< 7) ^ (t2 <<<< 2) ^ (t2 <<<< 1) ^ t2
-// res = (Input << 8) ^ t2
+// res = (Input << 8) | (Input >> 120)
+// t2 = (Input >> 120) * 0x86
+//      i.e. ((Input >> 120) <<<< 7) ^ ((Input >> 120) <<<< 2) ^ ((Input >> 120) <<<< 1)
+//           the 0x01 component is already in res where we want it
+// res = res ^ t2
+//
+// vAlphaMultiplier = (0, 0, ..., 0, 0x86 )
+SYMCRYPT_ALIGN_AT( 8 ) const BYTE g_SymCryptXtsNeonAlphaMultiplier[8] = {0x86, 0, 0, 0, 0, 0, 0, 0,};
+
 #define XTS_MUL_ALPHA8( _in, _res ) \
 {\
     __n128 _t2;\
 \
-    _t2 = vextq_u8( _in, vZero, 15 ); \
-    _t2 = veorq_u32( veorq_u32( veorq_u32( _t2, vshlq_n_u32( _t2, 7 )), vshlq_n_u32( _t2, 2 ) ), vshlq_n_u32( _t2, 1 ) ); \
-    _res = veorq_u32( vextq_u8( vZero, _in, 15 ), _t2 ); \
+    _res = vextq_u8( _in, _in, 15 ); \
+    _t2 = vmull_p8( _res, vAlphaMultiplier ) \
+    _res = veorq_u32( _res, _t2 ); \
 }
 
 
@@ -929,6 +935,7 @@ SymCryptXtsAesEncryptDataUnitNeon(
     __n128 *        pDst;
     const __n128 vZero = neon_moviqb(0);
     const __n128 vAlphaMask = *(__n128 *) g_SymCryptXtsNeonAlphaMask;
+    const __n128 vAlphaMultiplier = vld1_u8(g_SymCryptXtsNeonAlphaMultiplier);
 
     if( cbData < 8 * SYMCRYPT_AES_BLOCK_SIZE )
     {
@@ -981,14 +988,14 @@ SymCryptXtsAesEncryptDataUnitNeon(
         pDst[6] = veorq_u32( c6, t6 );
         pDst[7] = veorq_u32( c7, t7 );
 
-        XTS_MUL_ALPHA5( t7, t4 );
-        XTS_MUL_ALPHA ( t7, t0 );
-        XTS_MUL_ALPHA ( t4, t5 );
-        XTS_MUL_ALPHA ( t0, t1 );
-        XTS_MUL_ALPHA ( t5, t6 );
-        XTS_MUL_ALPHA ( t1, t2 );
-        XTS_MUL_ALPHA ( t6, t7 );
-        XTS_MUL_ALPHA ( t2, t3 );
+        XTS_MUL_ALPHA8( t0, t0 );
+        XTS_MUL_ALPHA8( t1, t1 );
+        XTS_MUL_ALPHA8( t2, t2 );
+        XTS_MUL_ALPHA8( t3, t3 );
+        XTS_MUL_ALPHA8( t4, t4 );
+        XTS_MUL_ALPHA8( t5, t5 );
+        XTS_MUL_ALPHA8( t6, t6 );
+        XTS_MUL_ALPHA8( t7, t7 );
 
         c0 = veorq_u32( pSrc[0], t0 );
         c1 = veorq_u32( pSrc[1], t1 );
@@ -1022,7 +1029,7 @@ SymCryptXtsAesEncryptDataUnitNeon(
         // Fix up the tweak block first
         //
 
-        XTS_MUL_ALPHA( t7, t0 );
+        XTS_MUL_ALPHA8( t0, t0 );
         *(__n128 *)pbTweakBlock = t0;
         SymCryptXtsAesEncryptDataUnitC( pExpandedKey, pbTweakBlock, pbSrc, pbDst, cbData );
     }
@@ -1045,6 +1052,7 @@ SymCryptXtsAesDecryptDataUnitNeon(
     __n128 *        pDst;
     const __n128 vZero = neon_moviqb(0);
     const __n128 vAlphaMask = *(__n128 *) g_SymCryptXtsNeonAlphaMask;
+    const __n128 vAlphaMultiplier = vld1_u8(g_SymCryptXtsNeonAlphaMultiplier);
 
     if( cbData < 8 * SYMCRYPT_AES_BLOCK_SIZE )
     {
@@ -1097,14 +1105,14 @@ SymCryptXtsAesDecryptDataUnitNeon(
         pDst[6] = veorq_u32( c6, t6 );
         pDst[7] = veorq_u32( c7, t7 );
 
-        XTS_MUL_ALPHA5( t7, t4 );
-        XTS_MUL_ALPHA ( t7, t0 );
-        XTS_MUL_ALPHA ( t0, t1 );
-        XTS_MUL_ALPHA ( t4, t5 );
-        XTS_MUL_ALPHA ( t1, t2 );
-        XTS_MUL_ALPHA ( t5, t6 );
-        XTS_MUL_ALPHA ( t2, t3 );
-        XTS_MUL_ALPHA ( t6, t7 );
+        XTS_MUL_ALPHA8( t0, t0 );
+        XTS_MUL_ALPHA8( t1, t1 );
+        XTS_MUL_ALPHA8( t2, t2 );
+        XTS_MUL_ALPHA8( t3, t3 );
+        XTS_MUL_ALPHA8( t4, t4 );
+        XTS_MUL_ALPHA8( t5, t5 );
+        XTS_MUL_ALPHA8( t6, t6 );
+        XTS_MUL_ALPHA8( t7, t7 );
 
         c0 = veorq_u32( pSrc[0], t0 );
         c1 = veorq_u32( pSrc[1], t1 );
@@ -1138,7 +1146,7 @@ SymCryptXtsAesDecryptDataUnitNeon(
         // Fix up the tweak block first
         //
 
-        XTS_MUL_ALPHA( t7, t0 );
+        XTS_MUL_ALPHA8( t0, t0 );
         *(__n128 *)pbTweakBlock = t0;
         SymCryptXtsAesDecryptDataUnitC( pExpandedKey, pbTweakBlock, pbSrc, pbDst, cbData );
     }
