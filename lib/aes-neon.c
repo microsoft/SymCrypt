@@ -52,26 +52,36 @@ SymCryptAesCreateDecryptionRoundKeyNeon(
     *(__n128 *) pDecryptionRoundKey = aesimc_u8( *(__n128 *)pEncryptionRoundKey );
 }
 
+//
+// When doing a full round of AES encryption, make sure to give compiler opportunity to schedule dependent
+// aese/aesmc pairs to enable instruction fusion in many arm64 CPUs
+//
+#define AESE_AESMC( c, rk ) \
+{ \
+    c = aese_u8( c, rk ); \
+    c = aesmc_u8( c ); \
+};
 
 #define AES_ENCRYPT_1( pExpandedKey, c0 ) \
 { \
     const __n128 *keyPtr; \
     const __n128 *keyLimit; \
+    __n128 roundKey; \
 \
     keyPtr = (const __n128 *)&pExpandedKey->RoundKey[0]; \
-    keyLimit = (const __n128 *)pExpandedKey->lastEncRoundKey; \
+    keyLimit = ((const __n128 *)pExpandedKey->lastEncRoundKey) - 1; \
 \
-    c0 = aese_u8( c0, *keyPtr ); \
-    keyPtr ++; \
+    roundKey = *keyPtr++; \
 \
-    do \
+    while ( keyPtr < keyLimit ) \
     { \
-        c0 = aesmc_u8( c0 ); \
-        c0 = aese_u8( c0, *keyPtr ); \
-        keyPtr++;\
-    } while( keyPtr < keyLimit ); \
+        AESE_AESMC( c0, roundKey ) \
+        roundKey = *keyPtr++; \
+    } \
 \
-    c0 = veorq_u8( c0, *keyPtr ); \
+    c0 = aese_u8( c0, roundKey ); \
+    roundKey = *keyPtr; \
+    c0 = veorq_u8( c0, roundKey ); \
 };
 
 #define AES_ENCRYPT_4( pExpandedKey, c0, c1, c2, c3 ) \
@@ -81,27 +91,23 @@ SymCryptAesCreateDecryptionRoundKeyNeon(
     __n128 roundKey; \
 \
     keyPtr = (const __n128 *)&pExpandedKey->RoundKey[0]; \
-    keyLimit = (const __n128 *)pExpandedKey->lastEncRoundKey; \
+    keyLimit = ((const __n128 *)pExpandedKey->lastEncRoundKey) - 1; \
 \
     roundKey = *keyPtr++; \
+\
+    while ( keyPtr < keyLimit ) \
+    { \
+        AESE_AESMC( c0, roundKey ) \
+        AESE_AESMC( c1, roundKey ) \
+        AESE_AESMC( c2, roundKey ) \
+        AESE_AESMC( c3, roundKey ) \
+        roundKey = *keyPtr++; \
+    } \
+\
     c0 = aese_u8( c0, roundKey ); \
     c1 = aese_u8( c1, roundKey ); \
     c2 = aese_u8( c2, roundKey ); \
     c3 = aese_u8( c3, roundKey ); \
-\
-    do \
-    { \
-        c0 = aesmc_u8( c0 ); \
-        c1 = aesmc_u8( c1 ); \
-        c2 = aesmc_u8( c2 ); \
-        c3 = aesmc_u8( c3 ); \
-        roundKey = *keyPtr++; \
-        c0 = aese_u8( c0, roundKey ); \
-        c1 = aese_u8( c1, roundKey ); \
-        c2 = aese_u8( c2, roundKey ); \
-        c3 = aese_u8( c3, roundKey ); \
-    } while( keyPtr < keyLimit ); \
-\
     roundKey = *keyPtr; \
     c0 = veorq_u8( c0, roundKey ); \
     c1 = veorq_u8( c1, roundKey ); \
@@ -109,9 +115,6 @@ SymCryptAesCreateDecryptionRoundKeyNeon(
     c3 = veorq_u8( c3, roundKey ); \
 };
 
-//
-// The main loop is interleaved to get a small perf advantage at start-up of the loop
-//
 #define AES_ENCRYPT_8( pExpandedKey, c0, c1, c2, c3, c4, c5, c6, c7 ) \
 { \
     const __n128 *keyPtr; \
@@ -119,9 +122,23 @@ SymCryptAesCreateDecryptionRoundKeyNeon(
     __n128 roundKey; \
 \
     keyPtr = (const __n128 *)&pExpandedKey->RoundKey[0]; \
-    keyLimit = (const __n128 *)pExpandedKey->lastEncRoundKey; \
+    keyLimit = ((const __n128 *)pExpandedKey->lastEncRoundKey) - 1; \
 \
     roundKey = *keyPtr++; \
+\
+    while ( keyPtr < keyLimit ) \
+    { \
+        AESE_AESMC( c0, roundKey ) \
+        AESE_AESMC( c1, roundKey ) \
+        AESE_AESMC( c2, roundKey ) \
+        AESE_AESMC( c3, roundKey ) \
+        AESE_AESMC( c4, roundKey ) \
+        AESE_AESMC( c5, roundKey ) \
+        AESE_AESMC( c6, roundKey ) \
+        AESE_AESMC( c7, roundKey ) \
+        roundKey = *keyPtr++; \
+    } \
+\
     c0 = aese_u8( c0, roundKey ); \
     c1 = aese_u8( c1, roundKey ); \
     c2 = aese_u8( c2, roundKey ); \
@@ -130,28 +147,6 @@ SymCryptAesCreateDecryptionRoundKeyNeon(
     c5 = aese_u8( c5, roundKey ); \
     c6 = aese_u8( c6, roundKey ); \
     c7 = aese_u8( c7, roundKey ); \
-\
-    do \
-    { \
-        c0 = aesmc_u8( c0 ); \
-        roundKey = *keyPtr++; \
-        c1 = aesmc_u8( c1 ); \
-        c0 = aese_u8( c0, roundKey ); \
-        c2 = aesmc_u8( c2 ); \
-        c1 = aese_u8( c1, roundKey ); \
-        c3 = aesmc_u8( c3 ); \
-        c2 = aese_u8( c2, roundKey ); \
-        c4 = aesmc_u8( c4 ); \
-        c3 = aese_u8( c3, roundKey ); \
-        c5 = aesmc_u8( c5 ); \
-        c4 = aese_u8( c4, roundKey ); \
-        c6 = aesmc_u8( c6 ); \
-        c5 = aese_u8( c5, roundKey ); \
-        c7 = aesmc_u8( c7 ); \
-        c6 = aese_u8( c6, roundKey ); \
-        c7 = aese_u8( c7, roundKey ); \
-    } while( keyPtr < keyLimit ); \
-\
     roundKey = *keyPtr; \
     c0 = veorq_u8( c0, roundKey ); \
     c1 = veorq_u8( c1, roundKey ); \
@@ -163,25 +158,36 @@ SymCryptAesCreateDecryptionRoundKeyNeon(
     c7 = veorq_u8( c7, roundKey ); \
 };
 
+//
+// When doing a full round of AES decryption, make sure to give compiler opportunity to schedule dependent
+// aesd/aesimc pairs to enable instruction fusion in many arm64 CPUs
+//
+#define AESD_AESIMC( c, rk ) \
+{ \
+    c = aesd_u8( c, rk ); \
+    c = aesimc_u8( c ); \
+};
+
 #define AES_DECRYPT_1( pExpandedKey, c0 ) \
 { \
     const __n128 *keyPtr; \
     const __n128 *keyLimit; \
+    __n128 roundKey; \
 \
     keyPtr = (const __n128 *)pExpandedKey->lastEncRoundKey; \
-    keyLimit = (const __n128 *)pExpandedKey->lastDecRoundKey; \
+    keyLimit = ((const __n128 *)pExpandedKey->lastDecRoundKey) - 1; \
 \
-    c0 = aesd_u8( c0, *keyPtr ); \
-    keyPtr ++; \
+    roundKey = *keyPtr++; \
 \
-    do \
+    while ( keyPtr < keyLimit ) \
     { \
-        c0 = aesimc_u8( c0 ); \
-        c0 = aesd_u8( c0, *keyPtr ); \
-        keyPtr++;\
-    } while( keyPtr < keyLimit ); \
+        AESD_AESIMC( c0, roundKey ) \
+        roundKey = *keyPtr++; \
+    } \
 \
-    c0 = veorq_u8( c0, *keyPtr ); \
+    c0 = aesd_u8( c0, roundKey ); \
+    roundKey = *keyPtr; \
+    c0 = veorq_u8( c0, roundKey ); \
 };
 
 #define AES_DECRYPT_4( pExpandedKey, c0, c1, c2, c3 ) \
@@ -191,27 +197,23 @@ SymCryptAesCreateDecryptionRoundKeyNeon(
     __n128 roundKey; \
 \
     keyPtr = (const __n128 *)pExpandedKey->lastEncRoundKey; \
-    keyLimit = (const __n128 *)pExpandedKey->lastDecRoundKey; \
+    keyLimit = ((const __n128 *)pExpandedKey->lastDecRoundKey) - 1; \
 \
     roundKey = *keyPtr++; \
+\
+    while ( keyPtr < keyLimit ) \
+    { \
+        AESD_AESIMC( c0, roundKey ) \
+        AESD_AESIMC( c1, roundKey ) \
+        AESD_AESIMC( c2, roundKey ) \
+        AESD_AESIMC( c3, roundKey ) \
+        roundKey = *keyPtr++; \
+    } \
+\
     c0 = aesd_u8( c0, roundKey ); \
     c1 = aesd_u8( c1, roundKey ); \
     c2 = aesd_u8( c2, roundKey ); \
     c3 = aesd_u8( c3, roundKey ); \
-\
-    do \
-    { \
-        c0 = aesimc_u8( c0 ); \
-        c1 = aesimc_u8( c1 ); \
-        c2 = aesimc_u8( c2 ); \
-        c3 = aesimc_u8( c3 ); \
-        roundKey = *keyPtr++; \
-        c0 = aesd_u8( c0, roundKey ); \
-        c1 = aesd_u8( c1, roundKey ); \
-        c2 = aesd_u8( c2, roundKey ); \
-        c3 = aesd_u8( c3, roundKey ); \
-    } while( keyPtr < keyLimit ); \
-\
     roundKey = *keyPtr; \
     c0 = veorq_u8( c0, roundKey ); \
     c1 = veorq_u8( c1, roundKey ); \
@@ -219,9 +221,6 @@ SymCryptAesCreateDecryptionRoundKeyNeon(
     c3 = veorq_u8( c3, roundKey ); \
 };
 
-//
-// The main loop is interleaved to get a small perf advantage at start-up of the loop
-//
 #define AES_DECRYPT_8( pExpandedKey, c0, c1, c2, c3, c4, c5, c6, c7 ) \
 { \
     const __n128 *keyPtr; \
@@ -229,9 +228,23 @@ SymCryptAesCreateDecryptionRoundKeyNeon(
     __n128 roundKey; \
 \
     keyPtr = (const __n128 *)pExpandedKey->lastEncRoundKey; \
-    keyLimit = (const __n128 *)pExpandedKey->lastDecRoundKey; \
+    keyLimit = ((const __n128 *)pExpandedKey->lastDecRoundKey) - 1; \
 \
     roundKey = *keyPtr++; \
+\
+    while ( keyPtr < keyLimit ) \
+    { \
+        AESD_AESIMC( c0, roundKey ) \
+        AESD_AESIMC( c1, roundKey ) \
+        AESD_AESIMC( c2, roundKey ) \
+        AESD_AESIMC( c3, roundKey ) \
+        AESD_AESIMC( c4, roundKey ) \
+        AESD_AESIMC( c5, roundKey ) \
+        AESD_AESIMC( c6, roundKey ) \
+        AESD_AESIMC( c7, roundKey ) \
+        roundKey = *keyPtr++; \
+    } \
+\
     c0 = aesd_u8( c0, roundKey ); \
     c1 = aesd_u8( c1, roundKey ); \
     c2 = aesd_u8( c2, roundKey ); \
@@ -240,28 +253,6 @@ SymCryptAesCreateDecryptionRoundKeyNeon(
     c5 = aesd_u8( c5, roundKey ); \
     c6 = aesd_u8( c6, roundKey ); \
     c7 = aesd_u8( c7, roundKey ); \
-\
-    do \
-    { \
-        c0 = aesimc_u8( c0 ); \
-        roundKey = *keyPtr++; \
-        c1 = aesimc_u8( c1 ); \
-        c0 = aesd_u8( c0, roundKey ); \
-        c2 = aesimc_u8( c2 ); \
-        c1 = aesd_u8( c1, roundKey ); \
-        c3 = aesimc_u8( c3 ); \
-        c2 = aesd_u8( c2, roundKey ); \
-        c4 = aesimc_u8( c4 ); \
-        c3 = aesd_u8( c3, roundKey ); \
-        c5 = aesimc_u8( c5 ); \
-        c4 = aesd_u8( c4, roundKey ); \
-        c6 = aesimc_u8( c6 ); \
-        c5 = aesd_u8( c5, roundKey ); \
-        c7 = aesimc_u8( c7 ); \
-        c6 = aesd_u8( c6, roundKey ); \
-        c7 = aesd_u8( c7, roundKey ); \
-    } while( keyPtr < keyLimit ); \
-\
     roundKey = *keyPtr; \
     c0 = veorq_u8( c0, roundKey ); \
     c1 = veorq_u8( c1, roundKey ); \
@@ -336,7 +327,7 @@ SymCryptAesCbcEncryptNeon(
 
 // Disable warnings and VC++ runtime checks for use of uninitialized values (by design)
 #pragma warning(push)
-#pragma warning( disable: 6001 4701 ) 
+#pragma warning( disable: 6001 4701 )
 #pragma runtime_checks( "u", off )
 VOID
 SYMCRYPT_CALL
@@ -523,7 +514,7 @@ SymCryptAesCbcMacNeon(
 
 // Disable warnings and VC++ runtime checks for use of uninitialized values (by design)
 #pragma warning(push)
-#pragma warning( disable: 6001 4701 ) 
+#pragma warning( disable: 6001 4701 )
 #pragma runtime_checks( "u", off )
 VOID
 SYMCRYPT_CALL
