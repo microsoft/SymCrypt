@@ -1,7 +1,7 @@
 //
 // SymCrypt implementation classes
 //
-// Copyright (c) Microsoft Corporation. Licensed under the MIT license. 
+// Copyright (c) Microsoft Corporation. Licensed under the MIT license.
 //
 
 #include "precomp.h"
@@ -12,7 +12,7 @@
 //
 VOID
 SYMCRYPT_CALL
-SymCryptAesEcbEncrypt( 
+SymCryptAesEcbEncrypt(
     _In_                                    PCSYMCRYPT_AES_EXPANDED_KEY pExpandedKey,
     _In_reads_( SYMCRYPT_AES_BLOCK_SIZE )   PBYTE                       pbChainingValue,
     _In_reads_( cbData )                    PCBYTE                      pbSrc,
@@ -26,7 +26,7 @@ SymCryptAesEcbEncrypt(
 
 VOID
 SYMCRYPT_CALL
-SymCryptAesEcbDecrypt( 
+SymCryptAesEcbDecrypt(
     _In_                                    PCSYMCRYPT_AES_EXPANDED_KEY pExpandedKey,
     _In_reads_( SYMCRYPT_AES_BLOCK_SIZE )   PBYTE                       pbChainingValue,
     _In_reads_( cbData )                    PCBYTE                      pbSrc,
@@ -48,9 +48,9 @@ SymCryptAesCfbEncrypt(
                                             SIZE_T                      cbData )
 {
     _Analysis_assume_( SymCryptAesBlockCipher->blockSize == SYMCRYPT_AES_BLOCK_SIZE );
-    SymCryptCfbEncrypt( SymCryptAesBlockCipher, 
+    SymCryptCfbEncrypt( SymCryptAesBlockCipher,
                         g_modeCfbShiftParam,
-                        pExpandedKey, 
+                        pExpandedKey,
                         pbChainingValue,
                         pbSrc,
                         pbDst,
@@ -67,9 +67,9 @@ SymCryptAesCfbDecrypt(
                                             SIZE_T                      cbData )
 {
     _Analysis_assume_( SymCryptAesBlockCipher->blockSize == SYMCRYPT_AES_BLOCK_SIZE );
-    SymCryptCfbDecrypt( SymCryptAesBlockCipher, 
+    SymCryptCfbDecrypt( SymCryptAesBlockCipher,
                         g_modeCfbShiftParam,
-                        pExpandedKey, 
+                        pExpandedKey,
                         pbChainingValue,
                         pbSrc,
                         pbDst,
@@ -78,7 +78,7 @@ SymCryptAesCfbDecrypt(
 
 VOID
 SYMCRYPT_CALL
-SymCryptDesEcbEncrypt( 
+SymCryptDesEcbEncrypt(
     _In_                                    PCSYMCRYPT_DES_EXPANDED_KEY pExpandedKey,
     _In_reads_( SYMCRYPT_DES_BLOCK_SIZE )   PBYTE                       pbChainingValue,
     _In_reads_( cbData )                    PCBYTE                      pbSrc,
@@ -92,7 +92,7 @@ SymCryptDesEcbEncrypt(
 
 VOID
 SYMCRYPT_CALL
-SymCryptDesEcbDecrypt( 
+SymCryptDesEcbDecrypt(
     _In_                                    PCSYMCRYPT_DES_EXPANDED_KEY pExpandedKey,
     _In_reads_( SYMCRYPT_DES_BLOCK_SIZE )   PBYTE                       pbChainingValue,
     _In_reads_( cbData )                    PCBYTE                      pbSrc,
@@ -106,7 +106,7 @@ SymCryptDesEcbDecrypt(
 
 VOID
 SYMCRYPT_CALL
-SymCryptDesCbcEncrypt( 
+SymCryptDesCbcEncrypt(
     _In_                                    PCSYMCRYPT_DES_EXPANDED_KEY pExpandedKey,
     _In_reads_( SYMCRYPT_DES_BLOCK_SIZE )   PBYTE                       pbChainingValue,
     _In_reads_( cbData )                    PCBYTE                      pbSrc,
@@ -119,7 +119,7 @@ SymCryptDesCbcEncrypt(
 
 VOID
 SYMCRYPT_CALL
-SymCryptDesCbcDecrypt( 
+SymCryptDesCbcDecrypt(
     _In_                                    PCSYMCRYPT_DES_EXPANDED_KEY pExpandedKey,
     _In_reads_( SYMCRYPT_DES_BLOCK_SIZE )   PBYTE                       pbChainingValue,
     _In_reads_( cbData )                    PCBYTE                      pbSrc,
@@ -132,7 +132,7 @@ SymCryptDesCbcDecrypt(
 
 VOID
 SYMCRYPT_CALL
-SymCryptDesCfbEncrypt( 
+SymCryptDesCfbEncrypt(
     _In_                                    PCSYMCRYPT_DES_EXPANDED_KEY pExpandedKey,
     _In_reads_( SYMCRYPT_DES_BLOCK_SIZE )   PBYTE                       pbChainingValue,
     _In_reads_( cbData )                    PCBYTE                      pbSrc,
@@ -145,7 +145,7 @@ SymCryptDesCfbEncrypt(
 
 VOID
 SYMCRYPT_CALL
-SymCryptDesCfbDecrypt( 
+SymCryptDesCfbDecrypt(
     _In_                                    PCSYMCRYPT_DES_EXPANDED_KEY pExpandedKey,
     _In_reads_( SYMCRYPT_DES_BLOCK_SIZE )   PBYTE                       pbChainingValue,
     _In_reads_( cbData )                    PCBYTE                      pbSrc,
@@ -159,7 +159,7 @@ SymCryptDesCfbDecrypt(
 
 VOID
 SYMCRYPT_CALL
-SymCrypt2DesEcbEncrypt( 
+SymCrypt2DesEcbEncrypt(
     _In_                                    PCSYMCRYPT_3DES_EXPANDED_KEY pExpandedKey,
     _In_reads_( SYMCRYPT_DES_BLOCK_SIZE )   PBYTE                       pbChainingValue,
     _In_reads_( cbData )                    PCBYTE                      pbSrc,
@@ -173,7 +173,7 @@ SymCrypt2DesEcbEncrypt(
 
 VOID
 SYMCRYPT_CALL
-SymCrypt2DesEcbDecrypt( 
+SymCrypt2DesEcbDecrypt(
     _In_                                    PCSYMCRYPT_3DES_EXPANDED_KEY pExpandedKey,
     _In_reads_( SYMCRYPT_DES_BLOCK_SIZE )   PBYTE                       pbChainingValue,
     _In_reads_( cbData )                    PCBYTE                      pbSrc,
@@ -187,7 +187,7 @@ SymCrypt2DesEcbDecrypt(
 
 VOID
 SYMCRYPT_CALL
-SymCrypt2DesCbcEncrypt( 
+SymCrypt2DesCbcEncrypt(
     _In_                                    PCSYMCRYPT_3DES_EXPANDED_KEY pExpandedKey,
     _In_reads_( SYMCRYPT_DES_BLOCK_SIZE )   PBYTE                       pbChainingValue,
     _In_reads_( cbData )                    PCBYTE                      pbSrc,
@@ -200,7 +200,7 @@ SymCrypt2DesCbcEncrypt(
 
 VOID
 SYMCRYPT_CALL
-SymCrypt2DesCbcDecrypt( 
+SymCrypt2DesCbcDecrypt(
     _In_                                    PCSYMCRYPT_3DES_EXPANDED_KEY pExpandedKey,
     _In_reads_( SYMCRYPT_DES_BLOCK_SIZE )   PBYTE                       pbChainingValue,
     _In_reads_( cbData )                    PCBYTE                      pbSrc,
@@ -213,7 +213,7 @@ SymCrypt2DesCbcDecrypt(
 
 VOID
 SYMCRYPT_CALL
-SymCrypt2DesCfbEncrypt( 
+SymCrypt2DesCfbEncrypt(
     _In_                                    PCSYMCRYPT_3DES_EXPANDED_KEY pExpandedKey,
     _In_reads_( SYMCRYPT_DES_BLOCK_SIZE )   PBYTE                       pbChainingValue,
     _In_reads_( cbData )                    PCBYTE                      pbSrc,
@@ -226,7 +226,7 @@ SymCrypt2DesCfbEncrypt(
 
 VOID
 SYMCRYPT_CALL
-SymCrypt2DesCfbDecrypt( 
+SymCrypt2DesCfbDecrypt(
     _In_                                    PCSYMCRYPT_3DES_EXPANDED_KEY pExpandedKey,
     _In_reads_( SYMCRYPT_DES_BLOCK_SIZE )   PBYTE                       pbChainingValue,
     _In_reads_( cbData )                    PCBYTE                      pbSrc,
@@ -239,7 +239,7 @@ SymCrypt2DesCfbDecrypt(
 
 VOID
 SYMCRYPT_CALL
-SymCrypt3DesEcbEncrypt( 
+SymCrypt3DesEcbEncrypt(
     _In_                                    PCSYMCRYPT_3DES_EXPANDED_KEY pExpandedKey,
     _In_reads_( SYMCRYPT_DES_BLOCK_SIZE )   PBYTE                       pbChainingValue,
     _In_reads_( cbData )                    PCBYTE                      pbSrc,
@@ -253,7 +253,7 @@ SymCrypt3DesEcbEncrypt(
 
 VOID
 SYMCRYPT_CALL
-SymCrypt3DesEcbDecrypt( 
+SymCrypt3DesEcbDecrypt(
     _In_                                    PCSYMCRYPT_3DES_EXPANDED_KEY pExpandedKey,
     _In_reads_( SYMCRYPT_DES_BLOCK_SIZE )   PBYTE                       pbChainingValue,
     _In_reads_( cbData )                    PCBYTE                      pbSrc,
@@ -267,7 +267,7 @@ SymCrypt3DesEcbDecrypt(
 
 VOID
 SYMCRYPT_CALL
-SymCrypt3DesCfbEncrypt( 
+SymCrypt3DesCfbEncrypt(
     _In_                                    PCSYMCRYPT_3DES_EXPANDED_KEY pExpandedKey,
     _In_reads_( SYMCRYPT_DES_BLOCK_SIZE )   PBYTE                       pbChainingValue,
     _In_reads_( cbData )                    PCBYTE                      pbSrc,
@@ -280,7 +280,7 @@ SymCrypt3DesCfbEncrypt(
 
 VOID
 SYMCRYPT_CALL
-SymCrypt3DesCfbDecrypt( 
+SymCrypt3DesCfbDecrypt(
     _In_                                    PCSYMCRYPT_3DES_EXPANDED_KEY pExpandedKey,
     _In_reads_( SYMCRYPT_DES_BLOCK_SIZE )   PBYTE                       pbChainingValue,
     _In_reads_( cbData )                    PCBYTE                      pbSrc,
@@ -294,7 +294,7 @@ SymCrypt3DesCfbDecrypt(
 
 VOID
 SYMCRYPT_CALL
-SymCryptDesxEcbEncrypt( 
+SymCryptDesxEcbEncrypt(
     _In_                                    PCSYMCRYPT_DESX_EXPANDED_KEY pExpandedKey,
     _In_reads_( SYMCRYPT_DESX_BLOCK_SIZE )  PBYTE                       pbChainingValue,
     _In_reads_( cbData )                    PCBYTE                      pbSrc,
@@ -308,7 +308,7 @@ SymCryptDesxEcbEncrypt(
 
 VOID
 SYMCRYPT_CALL
-SymCryptDesxEcbDecrypt( 
+SymCryptDesxEcbDecrypt(
     _In_                                    PCSYMCRYPT_DESX_EXPANDED_KEY pExpandedKey,
     _In_reads_( SYMCRYPT_DESX_BLOCK_SIZE )  PBYTE                       pbChainingValue,
     _In_reads_( cbData )                    PCBYTE                      pbSrc,
@@ -322,7 +322,7 @@ SymCryptDesxEcbDecrypt(
 
 VOID
 SYMCRYPT_CALL
-SymCryptDesxCbcEncrypt( 
+SymCryptDesxCbcEncrypt(
     _In_                                    PCSYMCRYPT_DESX_EXPANDED_KEY pExpandedKey,
     _In_reads_( SYMCRYPT_DESX_BLOCK_SIZE )  PBYTE                       pbChainingValue,
     _In_reads_( cbData )                    PCBYTE                      pbSrc,
@@ -335,7 +335,7 @@ SymCryptDesxCbcEncrypt(
 
 VOID
 SYMCRYPT_CALL
-SymCryptDesxCbcDecrypt( 
+SymCryptDesxCbcDecrypt(
     _In_                                    PCSYMCRYPT_DESX_EXPANDED_KEY pExpandedKey,
     _In_reads_( SYMCRYPT_DESX_BLOCK_SIZE )  PBYTE                       pbChainingValue,
     _In_reads_( cbData )                    PCBYTE                      pbSrc,
@@ -348,7 +348,7 @@ SymCryptDesxCbcDecrypt(
 
 VOID
 SYMCRYPT_CALL
-SymCryptDesxCfbEncrypt( 
+SymCryptDesxCfbEncrypt(
     _In_                                    PCSYMCRYPT_DESX_EXPANDED_KEY pExpandedKey,
     _In_reads_( SYMCRYPT_DESX_BLOCK_SIZE )  PBYTE                       pbChainingValue,
     _In_reads_( cbData )                    PCBYTE                      pbSrc,
@@ -361,7 +361,7 @@ SymCryptDesxCfbEncrypt(
 
 VOID
 SYMCRYPT_CALL
-SymCryptDesxCfbDecrypt( 
+SymCryptDesxCfbDecrypt(
     _In_                                    PCSYMCRYPT_DESX_EXPANDED_KEY pExpandedKey,
     _In_reads_( SYMCRYPT_DESX_BLOCK_SIZE )  PBYTE                       pbChainingValue,
     _In_reads_( cbData )                    PCBYTE                      pbSrc,
@@ -375,7 +375,7 @@ SymCryptDesxCfbDecrypt(
 
 VOID
 SYMCRYPT_CALL
-SymCryptRc2EcbEncrypt( 
+SymCryptRc2EcbEncrypt(
     _In_                                    PCSYMCRYPT_RC2_EXPANDED_KEY pExpandedKey,
     _In_reads_( SYMCRYPT_RC2_BLOCK_SIZE )   PBYTE                       pbChainingValue,
     _In_reads_( cbData )                    PCBYTE                      pbSrc,
@@ -389,7 +389,7 @@ SymCryptRc2EcbEncrypt(
 
 VOID
 SYMCRYPT_CALL
-SymCryptRc2EcbDecrypt( 
+SymCryptRc2EcbDecrypt(
     _In_                                    PCSYMCRYPT_RC2_EXPANDED_KEY pExpandedKey,
     _In_reads_( SYMCRYPT_RC2_BLOCK_SIZE )   PBYTE                       pbChainingValue,
     _In_reads_( cbData )                    PCBYTE                      pbSrc,
@@ -403,7 +403,7 @@ SymCryptRc2EcbDecrypt(
 
 VOID
 SYMCRYPT_CALL
-SymCryptRc2CbcEncrypt( 
+SymCryptRc2CbcEncrypt(
     _In_                                    PCSYMCRYPT_RC2_EXPANDED_KEY pExpandedKey,
     _In_reads_( SYMCRYPT_RC2_BLOCK_SIZE )   PBYTE                       pbChainingValue,
     _In_reads_( cbData )                    PCBYTE                      pbSrc,
@@ -416,7 +416,7 @@ SymCryptRc2CbcEncrypt(
 
 VOID
 SYMCRYPT_CALL
-SymCryptRc2CbcDecrypt( 
+SymCryptRc2CbcDecrypt(
     _In_                                    PCSYMCRYPT_RC2_EXPANDED_KEY pExpandedKey,
     _In_reads_( SYMCRYPT_RC2_BLOCK_SIZE )   PBYTE                       pbChainingValue,
     _In_reads_( cbData )                    PCBYTE                      pbSrc,
@@ -429,7 +429,7 @@ SymCryptRc2CbcDecrypt(
 
 VOID
 SYMCRYPT_CALL
-SymCryptRc2CfbEncrypt( 
+SymCryptRc2CfbEncrypt(
     _In_                                    PCSYMCRYPT_RC2_EXPANDED_KEY pExpandedKey,
     _In_reads_( SYMCRYPT_RC2_BLOCK_SIZE )   PBYTE                       pbChainingValue,
     _In_reads_( cbData )                    PCBYTE                      pbSrc,
@@ -442,7 +442,7 @@ SymCryptRc2CfbEncrypt(
 
 VOID
 SYMCRYPT_CALL
-SymCryptRc2CfbDecrypt( 
+SymCryptRc2CfbDecrypt(
     _In_                                    PCSYMCRYPT_RC2_EXPANDED_KEY pExpandedKey,
     _In_reads_( SYMCRYPT_RC2_BLOCK_SIZE )   PBYTE                       pbChainingValue,
     _In_reads_( cbData )                    PCBYTE                      pbSrc,
@@ -694,7 +694,7 @@ char * ImpSc::name = "SymCrypt";
 #include "sc_imp_kdfpattern.cpp"
 #include "sc_imp_pbkdf2pattern.cpp"
 #undef ALG_Base
- 
+
 #undef ALG_NAME
 #undef ALG_Name
 
@@ -874,7 +874,7 @@ NTSTATUS HashImp<ImpSc, AlgSha512>::initWithLongMessage( ULONGLONG nBytes )
 //
 
 template<>
-VOID 
+VOID
 algImpKeyPerfFunction< ImpSc, AlgAes, ModeCcm>( PBYTE buf1, PBYTE buf2, PBYTE buf3, SIZE_T keySize )
 {
     UNREFERENCED_PARAMETER( buf3 );
@@ -886,7 +886,7 @@ template<>
 VOID
 algImpDataPerfFunction<ImpSc,AlgAes, ModeCcm>( PBYTE buf1, PBYTE buf2, PBYTE buf3, SIZE_T dataSize )
 {
-    SymCryptCcmEncrypt( SymCryptAesBlockCipher, (SYMCRYPT_AES_EXPANDED_KEY *)buf1, 
+    SymCryptCcmEncrypt( SymCryptAesBlockCipher, (SYMCRYPT_AES_EXPANDED_KEY *)buf1,
         buf2, 12, NULL, 0, buf2+16, buf2+16, dataSize, buf3, 16 );
 }
 
@@ -894,7 +894,7 @@ template<>
 VOID
 algImpDecryptPerfFunction<ImpSc,AlgAes, ModeCcm>( PBYTE buf1, PBYTE buf2, PBYTE buf3, SIZE_T dataSize )
 {
-    SymCryptCcmDecrypt( SymCryptAesBlockCipher, (SYMCRYPT_AES_EXPANDED_KEY *)buf1, 
+    SymCryptCcmDecrypt( SymCryptAesBlockCipher, (SYMCRYPT_AES_EXPANDED_KEY *)buf1,
         buf2, 12, NULL, 0, buf2 + 16, buf2 + 16, dataSize, buf3, 16 );
 }
 
@@ -931,7 +931,7 @@ AuthEncImp<ImpSc, AlgAes, ModeCcm>::getKeySizes()
     res.insert( 16 );
     res.insert( 24 );
     res.insert( 32 );
-    
+
     return res;
 }
 
@@ -988,14 +988,14 @@ AuthEncImp<ImpSc, AlgAes, ModeCcm>::setTotalCbData( SIZE_T cbData )
 template<>
 NTSTATUS
 AuthEncImp<ImpSc, AlgAes, ModeCcm>::encrypt(
-        _In_reads_( cbNonce )       PCBYTE  pbNonce,      
-                                    SIZE_T  cbNonce, 
-        _In_reads_( cbAuthData )    PCBYTE  pbAuthData, 
-                                    SIZE_T  cbAuthData, 
-        _In_reads_( cbData )        PCBYTE  pbSrc, 
-        _Out_writes_( cbData )      PBYTE   pbDst, 
+        _In_reads_( cbNonce )       PCBYTE  pbNonce,
+                                    SIZE_T  cbNonce,
+        _In_reads_( cbAuthData )    PCBYTE  pbAuthData,
+                                    SIZE_T  cbAuthData,
+        _In_reads_( cbData )        PCBYTE  pbSrc,
+        _Out_writes_( cbData )      PBYTE   pbDst,
                                     SIZE_T  cbData,
-        _Out_writes_( cbTag )       PBYTE   pbTag, 
+        _Out_writes_( cbTag )       PBYTE   pbTag,
                                     SIZE_T  cbTag,
                                     ULONG   flags )
 {
@@ -1009,10 +1009,10 @@ AuthEncImp<ImpSc, AlgAes, ModeCcm>::encrypt(
     {
         // simple straight CCM computation.
         initXmmRegisters();
-        CHECK( SymCryptCcmValidateParameters(   SymCryptAesBlockCipher, 
-            cbNonce, 
-            cbAuthData, 
-            cbData, 
+        CHECK( SymCryptCcmValidateParameters(   SymCryptAesBlockCipher,
+            cbNonce,
+            cbAuthData,
+            cbData,
             cbTag ) == SYMCRYPT_NO_ERROR, "?" );
         verifyXmmRegisters();
 
@@ -1035,7 +1035,7 @@ AuthEncImp<ImpSc, AlgAes, ModeCcm>::encrypt(
         verifyXmmRegisters();
 
         state.inComputation = TRUE;
-    } 
+    }
 
     // We can process the next part before we decide whether to produce the tag.
     initXmmRegisters();
@@ -1053,21 +1053,21 @@ AuthEncImp<ImpSc, AlgAes, ModeCcm>::encrypt(
 
 cleanup:
     return status;
-    
+
 }
 
 
 template<>
 NTSTATUS
 AuthEncImp<ImpSc, AlgAes, ModeCcm>::decrypt(
-        _In_reads_( cbNonce )       PCBYTE  pbNonce,      
-                                    SIZE_T  cbNonce, 
-        _In_reads_( cbAuthData )    PCBYTE  pbAuthData, 
-                                    SIZE_T  cbAuthData, 
-        _In_reads_( cbData )        PCBYTE  pbSrc, 
-        _Out_writes_( cbData )      PBYTE   pbDst, 
+        _In_reads_( cbNonce )       PCBYTE  pbNonce,
+                                    SIZE_T  cbNonce,
+        _In_reads_( cbAuthData )    PCBYTE  pbAuthData,
+                                    SIZE_T  cbAuthData,
+        _In_reads_( cbData )        PCBYTE  pbSrc,
+        _Out_writes_( cbData )      PBYTE   pbDst,
                                     SIZE_T  cbData,
-        _In_reads_( cbTag )         PCBYTE  pbTag, 
+        _In_reads_( cbTag )         PCBYTE  pbTag,
                                     SIZE_T  cbTag,
                                     ULONG   flags )
 {
@@ -1082,10 +1082,10 @@ AuthEncImp<ImpSc, AlgAes, ModeCcm>::decrypt(
     {
         // simple straight CCM computation.
         initXmmRegisters();
-        CHECK( SymCryptCcmValidateParameters(   SymCryptAesBlockCipher, 
-            cbNonce, 
-            cbAuthData, 
-            cbData, 
+        CHECK( SymCryptCcmValidateParameters(   SymCryptAesBlockCipher,
+            cbNonce,
+            cbAuthData,
+            cbData,
             cbTag ) == SYMCRYPT_NO_ERROR, "?" );
         verifyXmmRegisters();
 
@@ -1114,7 +1114,7 @@ AuthEncImp<ImpSc, AlgAes, ModeCcm>::decrypt(
         verifyXmmRegisters();
 
         state.inComputation = TRUE;
-    } 
+    }
 
     // We can process the next part before we decide whether to produce the tag.
     initXmmRegisters();
@@ -1149,13 +1149,13 @@ cleanup:
 //
 
 template<>
-VOID 
+VOID
 algImpKeyPerfFunction< ImpSc, AlgAes, ModeGcm>( PBYTE buf1, PBYTE buf2, PBYTE buf3, SIZE_T keySize )
 {
     UNREFERENCED_PARAMETER( buf3 );
 
     SymCryptGcmExpandKey( (PSYMCRYPT_GCM_EXPANDED_KEY) buf1,
-                          SymCryptAesBlockCipher, 
+                          SymCryptAesBlockCipher,
                           buf2, keySize );
 }
 
@@ -1164,9 +1164,9 @@ VOID
 algImpDataPerfFunction<ImpSc,AlgAes, ModeGcm>( PBYTE buf1, PBYTE buf2, PBYTE buf3, SIZE_T dataSize )
 {
     SymCryptGcmEncrypt( (PCSYMCRYPT_GCM_EXPANDED_KEY) buf1,
-                            buf2, 12, 
-                            NULL, 0, 
-                            buf2+16, buf2+16, dataSize, 
+                            buf2, 12,
+                            NULL, 0,
+                            buf2+16, buf2+16, dataSize,
                             buf3, 16 );
 }
 
@@ -1175,9 +1175,9 @@ VOID
 algImpDecryptPerfFunction<ImpSc,AlgAes, ModeGcm>( PBYTE buf1, PBYTE buf2, PBYTE buf3, SIZE_T dataSize )
 {
     SymCryptGcmDecrypt( (PCSYMCRYPT_GCM_EXPANDED_KEY) buf1,
-                            buf2, 12, 
-                            NULL, 0, 
-                            buf2+16, buf2+16, dataSize, 
+                            buf2, 12,
+                            NULL, 0,
+                            buf2+16, buf2+16, dataSize,
                             buf3, 16 );
 }
 
@@ -1203,7 +1203,7 @@ AuthEncImp<ImpSc, AlgAes, ModeGcm>::AuthEncImp()
 template<>
 AuthEncImp<ImpSc, AlgAes, ModeGcm>::~AuthEncImp()
 {
-    SymCryptWipeKnownSize( &state.key, sizeof( state.key ) ); 
+    SymCryptWipeKnownSize( &state.key, sizeof( state.key ) );
 }
 
 template<>
@@ -1215,7 +1215,7 @@ AuthEncImp<ImpSc, AlgAes, ModeGcm>::getKeySizes()
     res.insert( 16 );
     res.insert( 24 );
     res.insert( 32 );
-    
+
     return res;
 }
 
@@ -1270,14 +1270,14 @@ AuthEncImp<ImpSc, AlgAes, ModeGcm>::setTotalCbData( SIZE_T cbData )
 template<>
 NTSTATUS
 AuthEncImp<ImpSc, AlgAes, ModeGcm>::encrypt(
-        _In_reads_( cbNonce )       PCBYTE  pbNonce,      
-                                    SIZE_T  cbNonce, 
-        _In_reads_( cbAuthData )    PCBYTE  pbAuthData, 
-                                    SIZE_T  cbAuthData, 
-        _In_reads_( cbData )        PCBYTE  pbSrc, 
-        _Out_writes_( cbData )      PBYTE   pbDst, 
+        _In_reads_( cbNonce )       PCBYTE  pbNonce,
+                                    SIZE_T  cbNonce,
+        _In_reads_( cbAuthData )    PCBYTE  pbAuthData,
+                                    SIZE_T  cbAuthData,
+        _In_reads_( cbData )        PCBYTE  pbSrc,
+        _Out_writes_( cbData )      PBYTE   pbDst,
                                     SIZE_T  cbData,
-        _Out_writes_( cbTag )       PBYTE   pbTag, 
+        _Out_writes_( cbTag )       PBYTE   pbTag,
                                     SIZE_T  cbTag,
                                     ULONG   flags )
 {
@@ -1289,10 +1289,10 @@ AuthEncImp<ImpSc, AlgAes, ModeGcm>::encrypt(
     {
         // simple straight CCM computation.
         initXmmRegisters();
-        CHECK( SymCryptGcmValidateParameters(   SymCryptAesBlockCipher, 
-            cbNonce, 
-            cbAuthData, 
-            cbData, 
+        CHECK( SymCryptGcmValidateParameters(   SymCryptAesBlockCipher,
+            cbNonce,
+            cbAuthData,
+            cbData,
             cbTag ) == SYMCRYPT_NO_ERROR, "?" );
         verifyXmmRegisters();
 
@@ -1362,14 +1362,14 @@ cleanup:
 template<>
 NTSTATUS
 AuthEncImp<ImpSc, AlgAes, ModeGcm>::decrypt(
-        _In_reads_( cbNonce )       PCBYTE  pbNonce,      
-                                    SIZE_T  cbNonce, 
-        _In_reads_( cbAuthData )    PCBYTE  pbAuthData, 
-                                    SIZE_T  cbAuthData, 
-        _In_reads_( cbData )        PCBYTE  pbSrc, 
-        _Out_writes_( cbData )      PBYTE   pbDst, 
+        _In_reads_( cbNonce )       PCBYTE  pbNonce,
+                                    SIZE_T  cbNonce,
+        _In_reads_( cbAuthData )    PCBYTE  pbAuthData,
+                                    SIZE_T  cbAuthData,
+        _In_reads_( cbData )        PCBYTE  pbSrc,
+        _Out_writes_( cbData )      PBYTE   pbDst,
                                     SIZE_T  cbData,
-        _In_reads_( cbTag )         PCBYTE  pbTag, 
+        _In_reads_( cbTag )         PCBYTE  pbTag,
                                     SIZE_T  cbTag,
                                     ULONG   flags )
 {
@@ -1381,10 +1381,10 @@ AuthEncImp<ImpSc, AlgAes, ModeGcm>::decrypt(
     {
         // simple straight CCM computation.
         initXmmRegisters();
-        CHECK( SymCryptGcmValidateParameters(   SymCryptAesBlockCipher, 
-            cbNonce, 
-            cbAuthData, 
-            cbData, 
+        CHECK( SymCryptGcmValidateParameters(   SymCryptAesBlockCipher,
+            cbNonce,
+            cbAuthData,
+            cbData,
             cbTag ) == SYMCRYPT_NO_ERROR, "?" );
         verifyXmmRegisters();
 
@@ -1457,7 +1457,7 @@ cleanup:
 
 
 template<>
-VOID 
+VOID
 algImpKeyPerfFunction< ImpSc, AlgRc4>( PBYTE buf1, PBYTE buf2, PBYTE buf3, SIZE_T keySize )
 {
     UNREFERENCED_PARAMETER( buf3 );
@@ -1493,7 +1493,7 @@ StreamCipherImp<ImpSc, AlgRc4>::StreamCipherImp()
 template<>
 StreamCipherImp<ImpSc, AlgRc4>::~StreamCipherImp()
 {
-    SymCryptWipeKnownSize( &state.state, sizeof( state.state ) ); 
+    SymCryptWipeKnownSize( &state.state, sizeof( state.state ) );
 }
 
 template<>
@@ -1561,7 +1561,7 @@ StreamCipherImp<ImpSc, AlgRc4>::encrypt( PCBYTE pbSrc, PBYTE pbDst, SIZE_T cbDat
 // CHACHA20
 
 template<>
-VOID 
+VOID
 algImpKeyPerfFunction< ImpSc, AlgChaCha20>( PBYTE buf1, PBYTE buf2, PBYTE buf3, SIZE_T keySize )
 {
     UNREFERENCED_PARAMETER( keySize );
@@ -1597,7 +1597,7 @@ StreamCipherImp<ImpSc, AlgChaCha20>::StreamCipherImp()
 template<>
 StreamCipherImp<ImpSc, AlgChaCha20>::~StreamCipherImp()
 {
-    SymCryptWipeKnownSize( &state.state, sizeof( state.state ) ); 
+    SymCryptWipeKnownSize( &state.state, sizeof( state.state ) );
 }
 
 template<>
@@ -1628,7 +1628,7 @@ StreamCipherImp<ImpSc, AlgChaCha20>::setNonce( PCBYTE pbNonce, SIZE_T cbNonce )
 
     memcpy( state.nonce, pbNonce, cbNonce );
     state.offset = 0;
-    
+
     CHECK( SymCryptChaCha20Init( &state.state, state.key, 32, state.nonce, 12, state.offset ) == SYMCRYPT_NO_ERROR,
         "ChaCha20 init error" );
 
@@ -1640,7 +1640,7 @@ VOID
 StreamCipherImp< ImpSc, AlgChaCha20>::setOffset( UINT64 offset )
 {
     state.offset = offset;
-    
+
     SymCryptChaCha20SetOffset( &state.state, offset );
 }
 
@@ -1714,9 +1714,9 @@ MacImp<ImpSc, AlgPoly1305>::~MacImp<ImpSc, AlgPoly1305>()
 }
 
 template<>
-NTSTATUS MacImp<ImpSc, AlgPoly1305>::mac( 
-    _In_reads_( cbKey )      PCBYTE pbKey,   SIZE_T cbKey, 
-    _In_reads_( cbData )     PCBYTE pbData,  SIZE_T cbData, 
+NTSTATUS MacImp<ImpSc, AlgPoly1305>::mac(
+    _In_reads_( cbKey )      PCBYTE pbKey,   SIZE_T cbKey,
+    _In_reads_( cbData )     PCBYTE pbData,  SIZE_T cbData,
     _Out_writes_( cbResult )  PBYTE pbResult, SIZE_T cbResult )
 {
     CHECK( cbKey == 32, "?" );
@@ -1729,7 +1729,7 @@ NTSTATUS MacImp<ImpSc, AlgPoly1305>::mac(
 
 template<>
 NTSTATUS
-MacImp<ImpSc, AlgPoly1305>::init( _In_reads_( cbKey ) PCBYTE pbKey, SIZE_T cbKey ) 
+MacImp<ImpSc, AlgPoly1305>::init( _In_reads_( cbKey ) PCBYTE pbKey, SIZE_T cbKey )
 {
     CHECK( cbKey == 32, "?" );
     SymCryptPoly1305Init( &state.state, pbKey );
@@ -1770,7 +1770,7 @@ SIZE_T MacImp<ImpSc, AlgPoly1305>::resultLen()
 
 
 template<>
-VOID 
+VOID
 algImpKeyPerfFunction< ImpSc, AlgAesCtrDrbg>( PBYTE buf1, PBYTE buf2, PBYTE buf3, SIZE_T keySize )
 {
     UNREFERENCED_PARAMETER( buf3 );
@@ -1855,7 +1855,7 @@ RngSp800_90Imp<ImpSc, AlgAesCtrDrbg>::generate(  _Out_writes_( cbData ) PBYTE pb
 
 
 template<>
-VOID 
+VOID
 algImpKeyPerfFunction< ImpSc, AlgAesCtrF142>( PBYTE buf1, PBYTE buf2, PBYTE buf3, SIZE_T keySize )
 {
     UNREFERENCED_PARAMETER( buf3 );
@@ -1997,7 +1997,7 @@ algImpDataPerfFunction<ImpSc,AlgParallelSha256>( PBYTE buf1, PBYTE buf2, PBYTE b
 }
 
 template<>
-ParallelHashImp<ImpSc, AlgParallelSha256>::ParallelHashImp() 
+ParallelHashImp<ImpSc, AlgParallelSha256>::ParallelHashImp()
 {
     m_perfDataFunction = &algImpDataPerfFunction <ImpSc, AlgParallelSha256>;
     m_perfKeyFunction  = &algImpKeyPerfFunction  <ImpSc, AlgParallelSha256>;
@@ -2017,13 +2017,13 @@ ParallelHashImp<ImpSc, AlgParallelSha256>::SymCryptHash()
 }
 
 template<>
-SIZE_T ParallelHashImp<ImpSc, AlgParallelSha256>::resultLen() 
+SIZE_T ParallelHashImp<ImpSc, AlgParallelSha256>::resultLen()
 {
     return SYMCRYPT_SHA256_RESULT_SIZE;
 }
 
 template<>
-SIZE_T ParallelHashImp<ImpSc, AlgParallelSha256>::inputBlockLen() 
+SIZE_T ParallelHashImp<ImpSc, AlgParallelSha256>::inputBlockLen()
 {
     return SYMCRYPT_SHA256_INPUT_BLOCK_SIZE;
 }
@@ -2031,7 +2031,7 @@ SIZE_T ParallelHashImp<ImpSc, AlgParallelSha256>::inputBlockLen()
 
 template<>
 VOID
-ParallelHashImp<ImpSc, AlgParallelSha256>::init( SIZE_T nHashes ) 
+ParallelHashImp<ImpSc, AlgParallelSha256>::init( SIZE_T nHashes )
 {
     CHECK( nHashes <= MAX_PARALLEL_HASH_STATES, "Too many hash states requested" );
     state.nHashes = nHashes;
@@ -2043,7 +2043,7 @@ ParallelHashImp<ImpSc, AlgParallelSha256>::init( SIZE_T nHashes )
 
 template<>
 VOID
-ParallelHashImp<ImpSc, AlgParallelSha256>::process( 
+ParallelHashImp<ImpSc, AlgParallelSha256>::process(
         _In_reads_( nOperations )   BCRYPT_MULTI_HASH_OPERATION *   pOperations,
                                     SIZE_T                          nOperations )
 {
@@ -2155,7 +2155,7 @@ algImpDataPerfFunction<ImpSc,AlgParallelSha384>( PBYTE buf1, PBYTE buf2, PBYTE b
 }
 
 template<>
-ParallelHashImp<ImpSc, AlgParallelSha384>::ParallelHashImp() 
+ParallelHashImp<ImpSc, AlgParallelSha384>::ParallelHashImp()
 {
     m_perfDataFunction = &algImpDataPerfFunction <ImpSc, AlgParallelSha384>;
     m_perfKeyFunction  = &algImpKeyPerfFunction  <ImpSc, AlgParallelSha384>;
@@ -2175,13 +2175,13 @@ ParallelHashImp<ImpSc, AlgParallelSha384>::SymCryptHash()
 }
 
 template<>
-SIZE_T ParallelHashImp<ImpSc, AlgParallelSha384>::resultLen() 
+SIZE_T ParallelHashImp<ImpSc, AlgParallelSha384>::resultLen()
 {
     return SYMCRYPT_SHA384_RESULT_SIZE;
 }
 
 template<>
-SIZE_T ParallelHashImp<ImpSc, AlgParallelSha384>::inputBlockLen() 
+SIZE_T ParallelHashImp<ImpSc, AlgParallelSha384>::inputBlockLen()
 {
     return SYMCRYPT_SHA384_INPUT_BLOCK_SIZE;
 }
@@ -2189,7 +2189,7 @@ SIZE_T ParallelHashImp<ImpSc, AlgParallelSha384>::inputBlockLen()
 
 template<>
 VOID
-ParallelHashImp<ImpSc, AlgParallelSha384>::init( SIZE_T nHashes ) 
+ParallelHashImp<ImpSc, AlgParallelSha384>::init( SIZE_T nHashes )
 {
     CHECK( nHashes <= MAX_PARALLEL_HASH_STATES, "Too many hash states requested" );
     state.nHashes = nHashes;
@@ -2200,7 +2200,7 @@ ParallelHashImp<ImpSc, AlgParallelSha384>::init( SIZE_T nHashes )
 
 template<>
 VOID
-ParallelHashImp<ImpSc, AlgParallelSha384>::process( 
+ParallelHashImp<ImpSc, AlgParallelSha384>::process(
         _In_reads_( nOperations )   BCRYPT_MULTI_HASH_OPERATION *   pOperations,
                                     SIZE_T                          nOperations )
 {
@@ -2312,7 +2312,7 @@ algImpDataPerfFunction<ImpSc,AlgParallelSha512>( PBYTE buf1, PBYTE buf2, PBYTE b
 }
 
 template<>
-ParallelHashImp<ImpSc, AlgParallelSha512>::ParallelHashImp() 
+ParallelHashImp<ImpSc, AlgParallelSha512>::ParallelHashImp()
 {
     m_perfDataFunction = &algImpDataPerfFunction <ImpSc, AlgParallelSha512>;
     m_perfKeyFunction  = &algImpKeyPerfFunction  <ImpSc, AlgParallelSha512>;
@@ -2332,13 +2332,13 @@ ParallelHashImp<ImpSc, AlgParallelSha512>::SymCryptHash()
 }
 
 template<>
-SIZE_T ParallelHashImp<ImpSc, AlgParallelSha512>::resultLen() 
+SIZE_T ParallelHashImp<ImpSc, AlgParallelSha512>::resultLen()
 {
     return SYMCRYPT_SHA512_RESULT_SIZE;
 }
 
 template<>
-SIZE_T ParallelHashImp<ImpSc, AlgParallelSha512>::inputBlockLen() 
+SIZE_T ParallelHashImp<ImpSc, AlgParallelSha512>::inputBlockLen()
 {
     return SYMCRYPT_SHA512_INPUT_BLOCK_SIZE;
 }
@@ -2346,7 +2346,7 @@ SIZE_T ParallelHashImp<ImpSc, AlgParallelSha512>::inputBlockLen()
 
 template<>
 VOID
-ParallelHashImp<ImpSc, AlgParallelSha512>::init( SIZE_T nHashes ) 
+ParallelHashImp<ImpSc, AlgParallelSha512>::init( SIZE_T nHashes )
 {
     CHECK( nHashes <= MAX_PARALLEL_HASH_STATES, "Too many hash states requested" );
     state.nHashes = nHashes;
@@ -2357,7 +2357,7 @@ ParallelHashImp<ImpSc, AlgParallelSha512>::init( SIZE_T nHashes )
 
 template<>
 VOID
-ParallelHashImp<ImpSc, AlgParallelSha512>::process( 
+ParallelHashImp<ImpSc, AlgParallelSha512>::process(
         _In_reads_( nOperations )   BCRYPT_MULTI_HASH_OPERATION *   pOperations,
                                     SIZE_T                          nOperations )
 {
@@ -2421,7 +2421,7 @@ ParallelHashImp<ImpSc, AlgParallelSha512>::initWithLongMessage( ULONGLONG nBytes
 //
 
 template<>
-VOID 
+VOID
 algImpKeyPerfFunction< ImpSc, AlgXtsAes>( PBYTE buf1, PBYTE buf2, PBYTE buf3, SIZE_T keySize )
 {
     UNREFERENCED_PARAMETER( buf3 );
@@ -2434,7 +2434,7 @@ VOID
 algImpDataPerfFunction<ImpSc,AlgXtsAes>( PBYTE buf1, PBYTE buf2, PBYTE buf3, SIZE_T dataSize )
 {
     SymCryptXtsAesEncrypt( (SYMCRYPT_XTS_AES_EXPANDED_KEY *) buf1,
-                            min( dataSize, 4096 ),
+                            512,
                             'twek',
                             buf2,
                             buf3,
@@ -2476,7 +2476,7 @@ XtsImp<ImpSc, AlgXtsAes>::XtsImp()
 template<>
 XtsImp<ImpSc, AlgXtsAes>::~XtsImp()
 {
-    SymCryptWipeKnownSize( &state.key, sizeof( state.key ) ); 
+    SymCryptWipeKnownSize( &state.key, sizeof( state.key ) );
 }
 
 template<>
@@ -2484,7 +2484,7 @@ NTSTATUS
 XtsImp<ImpSc, AlgXtsAes>::setKey( PCBYTE pbKey, SIZE_T cbKey )
 {
     SYMCRYPT_ERROR scError;
-    
+
     initXmmRegisters();
     scError = SymCryptXtsAesExpandKey( &state.key, pbKey, cbKey );
     verifyXmmRegisters();
@@ -2494,11 +2494,11 @@ XtsImp<ImpSc, AlgXtsAes>::setKey( PCBYTE pbKey, SIZE_T cbKey )
 
 template<>
 VOID
-XtsImp<ImpSc, AlgXtsAes>::encrypt( 
+XtsImp<ImpSc, AlgXtsAes>::encrypt(
                                         SIZE_T      cbDataUnit,
                                         ULONGLONG   tweak,
-        _In_reads_( cbData )            PCBYTE      pbSrc, 
-        _Out_writes_( cbData )          PBYTE       pbDst, 
+        _In_reads_( cbData )            PCBYTE      pbSrc,
+        _Out_writes_( cbData )          PBYTE       pbDst,
                                         SIZE_T      cbData )
 {
     initXmmRegisters();
@@ -2513,11 +2513,11 @@ XtsImp<ImpSc, AlgXtsAes>::encrypt(
 
 template<>
 VOID
-XtsImp<ImpSc, AlgXtsAes>::decrypt( 
+XtsImp<ImpSc, AlgXtsAes>::decrypt(
                                         SIZE_T      cbDataUnit,
                                         ULONGLONG   tweak,
-        _In_reads_( cbData )            PCBYTE      pbSrc, 
-        _Out_writes_( cbData )          PBYTE       pbDst, 
+        _In_reads_( cbData )            PCBYTE      pbSrc,
+        _Out_writes_( cbData )          PBYTE       pbDst,
                                         SIZE_T      cbData )
 {
     initXmmRegisters();
@@ -2597,8 +2597,8 @@ algImpCleanPerfFunction<ImpSc, AlgTlsCbcHmacSha256>( PBYTE buf1, PBYTE buf2, PBY
 }
 
 
-template<> 
-VOID 
+template<>
+VOID
 algImpDataPerfFunction<ImpSc, AlgTlsCbcHmacSha256>( PBYTE buf1, PBYTE buf2, PBYTE buf3, SIZE_T dataSize )
 {
     SYMCRYPT_HMAC_SHA256_STATE state;
@@ -2614,8 +2614,8 @@ algImpDataPerfFunction<ImpSc, AlgTlsCbcHmacSha256>( PBYTE buf1, PBYTE buf2, PBYT
     memset( &buf2[dataSize + SYMCRYPT_HMAC_SHA256_RESULT_SIZE], (BYTE) paddingSize, paddingSize + 1);
 }
 
-template<> 
-VOID 
+template<>
+VOID
 algImpDecryptPerfFunction<ImpSc, AlgTlsCbcHmacSha256>( PBYTE buf1, PBYTE buf2, PBYTE buf3, SIZE_T dataSize )
 {
     SYMCRYPT_HMAC_SHA256_STATE  state;
@@ -2703,8 +2703,8 @@ algImpCleanPerfFunction<ImpSc, AlgTlsCbcHmacSha1>( PBYTE buf1, PBYTE buf2, PBYTE
 }
 
 
-template<> 
-VOID 
+template<>
+VOID
 algImpDataPerfFunction<ImpSc, AlgTlsCbcHmacSha1>( PBYTE buf1, PBYTE buf2, PBYTE buf3, SIZE_T dataSize )
 {
     SYMCRYPT_HMAC_SHA1_STATE state;
@@ -2720,8 +2720,8 @@ algImpDataPerfFunction<ImpSc, AlgTlsCbcHmacSha1>( PBYTE buf1, PBYTE buf2, PBYTE 
     memset( &buf2[dataSize + SYMCRYPT_HMAC_SHA1_RESULT_SIZE], (BYTE) paddingSize, paddingSize + 1);
 }
 
-template<> 
-VOID 
+template<>
+VOID
 algImpDecryptPerfFunction<ImpSc, AlgTlsCbcHmacSha1>( PBYTE buf1, PBYTE buf2, PBYTE buf3, SIZE_T dataSize )
 {
     SYMCRYPT_HMAC_SHA1_STATE  state;
@@ -2807,8 +2807,8 @@ algImpCleanPerfFunction<ImpSc, AlgTlsCbcHmacSha384>( PBYTE buf1, PBYTE buf2, PBY
 }
 
 
-template<> 
-VOID 
+template<>
+VOID
 algImpDataPerfFunction<ImpSc, AlgTlsCbcHmacSha384>( PBYTE buf1, PBYTE buf2, PBYTE buf3, SIZE_T dataSize )
 {
     SYMCRYPT_HMAC_SHA384_STATE state;
@@ -2824,8 +2824,8 @@ algImpDataPerfFunction<ImpSc, AlgTlsCbcHmacSha384>( PBYTE buf1, PBYTE buf2, PBYT
     memset( &buf2[dataSize + SYMCRYPT_HMAC_SHA384_RESULT_SIZE], (BYTE) paddingSize, paddingSize + 1);
 }
 
-template<> 
-VOID 
+template<>
+VOID
 algImpDecryptPerfFunction<ImpSc, AlgTlsCbcHmacSha384>( PBYTE buf1, PBYTE buf2, PBYTE buf3, SIZE_T dataSize )
 {
     SYMCRYPT_HMAC_SHA384_STATE  state;
@@ -3101,8 +3101,8 @@ ArithImp<ImpSc, AlgIntDivMod>::~ArithImp()
 
 //
 // SetupModulus
-// Initializes a modulus of the desired keysize & features 
-// 
+// Initializes a modulus of the desired keysize & features
+//
 // *((PSYMCRYPT_MODULUS *) buf1) will contain a pointer to the modulus, which is also in buf1.
 // buf3 is used as scratch
 //
@@ -3111,14 +3111,14 @@ setupModulus( PBYTE buf1, PBYTE buf3, SIZE_T keySize )
 {
     UINT32 keyBytes = (UINT32) keySize & 0x00ffffff;
     UINT32 keyFlags = (UINT32) keySize & 0xff000000;
-    
+
     UINT32 nDigits = SymCryptDigitsFromBits( 8 * keyBytes );
 
 
     PSYMCRYPT_MODULUS pmMod = SymCryptModulusCreate( buf1 + SYMCRYPT_ASYM_ALIGN_VALUE, PERF_BUFFER_SIZE - SYMCRYPT_ASYM_ALIGN_VALUE, nDigits );
 
-    SymCryptIntSetValue(    getPerfTestModulus( (UINT32)keySize ), 
-                            ((UINT32) keySize) & 0x00ffffff, 
+    SymCryptIntSetValue(    getPerfTestModulus( (UINT32)keySize ),
+                            ((UINT32) keySize) & 0x00ffffff,
                             SYMCRYPT_NUMBER_FORMAT_MSB_FIRST,
                             SymCryptIntFromModulus( pmMod ) );
 
@@ -3154,7 +3154,7 @@ setupModOperations( PBYTE buf1, PBYTE buf2, PBYTE buf3, SIZE_T keySize )
     UINT32 keyBytes = (UINT32) keySize & 0x00ffffff;
     CHECK( 2 * keyBytes <= sizeof( buf ), "?" );
     GENRANDOM( buf, (2*keyBytes) );
-    
+
     setupModulus( buf1, buf3, keySize );
     PCSYMCRYPT_MODULUS pmMod = *((PCSYMCRYPT_MODULUS *)buf1);
 
@@ -3420,11 +3420,11 @@ algImpDataPerfFunction< ImpSc, AlgModInv>( PBYTE buf1, PBYTE buf2, PBYTE buf3, S
 {
     UNREFERENCED_PARAMETER( dataSize );
     SYMCRYPT_ERROR scError;
-    scError = SymCryptModInv(   *(PSYMCRYPT_MODULUS *) buf1, 
-                                ((PSYMCRYPT_MODELEMENT *) buf2)[0], 
-                                ((PSYMCRYPT_MODELEMENT *) buf3)[0],  
+    scError = SymCryptModInv(   *(PSYMCRYPT_MODULUS *) buf1,
+                                ((PSYMCRYPT_MODELEMENT *) buf2)[0],
+                                ((PSYMCRYPT_MODELEMENT *) buf3)[0],
                                 0,
-                                buf3 + SCRATCH_BUF_OFFSET, 
+                                buf3 + SCRATCH_BUF_OFFSET,
                                 SCRATCH_BUF_SIZE );
     CHECK( scError == SYMCRYPT_NO_ERROR, "Error in perf test case" );
 }
@@ -3901,7 +3901,7 @@ VOID
 algImpDecryptPerfFunction< ImpSc, AlgRsaSignPkcs1>( PBYTE buf1, PBYTE buf2, PBYTE buf3, SIZE_T dataSize )
 {
     SYMCRYPT_ERROR scError;
-    
+
     scError = SymCryptRsaPkcs1Verify(
                     *((PSYMCRYPT_RSAKEY *) buf1),
                     buf2,
@@ -3937,7 +3937,7 @@ RsaSignImp<ImpSc, AlgRsaSignPkcs1>::~RsaSignImp()
 }
 
 template<>
-NTSTATUS 
+NTSTATUS
 RsaSignImp<ImpSc, AlgRsaSignPkcs1>::setKey( PCRSAKEY_TESTBLOB pcKeyBlob )
 {
     SYMCRYPT_ERROR scError;
@@ -3971,7 +3971,7 @@ RsaSignImp<ImpSc, AlgRsaSignPkcs1>::setKey( PCRSAKEY_TESTBLOB pcKeyBlob )
         &pcKeyBlob->u64PubExp, 1,
         ppPrime, cbPrime, 2,
         SYMCRYPT_NUMBER_FORMAT_MSB_FIRST,
-        0, 
+        0,
         state.pKey );
     CHECK( scError == SYMCRYPT_NO_ERROR, "?" );
 
@@ -3979,9 +3979,9 @@ RsaSignImp<ImpSc, AlgRsaSignPkcs1>::setKey( PCRSAKEY_TESTBLOB pcKeyBlob )
 }
 
 template<>
-NTSTATUS 
+NTSTATUS
 RsaSignImp<ImpSc, AlgRsaSignPkcs1>::sign(
-    _In_reads_( cbHash)     PCBYTE  pbHash, 
+    _In_reads_( cbHash)     PCBYTE  pbHash,
                             SIZE_T  cbHash,
                             PCSTR   pcstrHashAlgName,
                             UINT32  u32Other,
@@ -3991,11 +3991,11 @@ RsaSignImp<ImpSc, AlgRsaSignPkcs1>::sign(
     PCHASH_INFO pInfo;
     SYMCRYPT_ERROR scError;
     SIZE_T cbTmp;
-    
+
     UNREFERENCED_PARAMETER( u32Other );
 
     pInfo = getHashInfo( pcstrHashAlgName);
-    scError = SymCryptRsaPkcs1Sign( 
+    scError = SymCryptRsaPkcs1Sign(
                     state.pKey,
                     pbHash,
                     cbHash,
@@ -4009,12 +4009,12 @@ RsaSignImp<ImpSc, AlgRsaSignPkcs1>::sign(
     CHECK( scError == SYMCRYPT_NO_ERROR && cbTmp == cbSig, "?" );
 
     return STATUS_SUCCESS;
-}                            
+}
 
 template<>
 NTSTATUS
 RsaSignImp<ImpSc, AlgRsaSignPkcs1>::verify(
-    _In_reads_( cbHash)     PCBYTE  pbHash, 
+    _In_reads_( cbHash)     PCBYTE  pbHash,
                             SIZE_T  cbHash,
     _In_reads_( cbSig )     PCBYTE  pbSig,
                             SIZE_T  cbSig,
@@ -4041,16 +4041,16 @@ RsaSignImp<ImpSc, AlgRsaSignPkcs1>::verify(
 
     switch( scError )
     {
-    case SYMCRYPT_NO_ERROR: 
-        ntStatus = STATUS_SUCCESS; 
+    case SYMCRYPT_NO_ERROR:
+        ntStatus = STATUS_SUCCESS;
         break;
-    case SYMCRYPT_SIGNATURE_VERIFICATION_FAILURE: 
-        ntStatus = STATUS_INVALID_SIGNATURE; 
+    case SYMCRYPT_SIGNATURE_VERIFICATION_FAILURE:
+        ntStatus = STATUS_INVALID_SIGNATURE;
         break;
     case SYMCRYPT_INVALID_ARGUMENT:
         ntStatus = STATUS_INVALID_PARAMETER;
         break;
-    default: 
+    default:
         iprint( "Unexpected SymCrypt error %08x, %d, %d, %s\n", scError, cbHash, cbSig, pcstrHashAlgName );
         CHECK( FALSE, "?" );
         ntStatus = STATUS_UNSUCCESSFUL;
@@ -4130,7 +4130,7 @@ VOID
 algImpDecryptPerfFunction< ImpSc, AlgRsaSignPss>( PBYTE buf1, PBYTE buf2, PBYTE buf3, SIZE_T dataSize )
 {
     SYMCRYPT_ERROR scError;
-    
+
     scError = SymCryptRsaPssVerify(
                     *((PSYMCRYPT_RSAKEY *) buf1),
                     buf2,
@@ -4166,7 +4166,7 @@ RsaSignImp<ImpSc, AlgRsaSignPss>::~RsaSignImp()
 }
 
 template<>
-NTSTATUS 
+NTSTATUS
 RsaSignImp<ImpSc, AlgRsaSignPss>::setKey( PCRSAKEY_TESTBLOB pcKeyBlob )
 {
     SYMCRYPT_ERROR scError;
@@ -4200,7 +4200,7 @@ RsaSignImp<ImpSc, AlgRsaSignPss>::setKey( PCRSAKEY_TESTBLOB pcKeyBlob )
         &pcKeyBlob->u64PubExp, 1,
         ppPrime, cbPrime, 2,
         SYMCRYPT_NUMBER_FORMAT_MSB_FIRST,
-        0, 
+        0,
         state.pKey );
     CHECK( scError == SYMCRYPT_NO_ERROR, "?" );
 
@@ -4208,9 +4208,9 @@ RsaSignImp<ImpSc, AlgRsaSignPss>::setKey( PCRSAKEY_TESTBLOB pcKeyBlob )
 }
 
 template<>
-NTSTATUS 
+NTSTATUS
 RsaSignImp<ImpSc, AlgRsaSignPss>::sign(
-    _In_reads_( cbHash)     PCBYTE  pbHash, 
+    _In_reads_( cbHash)     PCBYTE  pbHash,
                             SIZE_T  cbHash,
                             PCSTR   pcstrHashAlgName,
                             UINT32  u32Other,
@@ -4220,9 +4220,9 @@ RsaSignImp<ImpSc, AlgRsaSignPss>::sign(
     PCHASH_INFO pInfo;
     SYMCRYPT_ERROR scError;
     SIZE_T cbTmp;
-    
+
     pInfo = getHashInfo( pcstrHashAlgName);
-    scError = SymCryptRsaPssSign( 
+    scError = SymCryptRsaPssSign(
                     state.pKey,
                     pbHash,
                     cbHash,
@@ -4236,12 +4236,12 @@ RsaSignImp<ImpSc, AlgRsaSignPss>::sign(
     CHECK( scError == SYMCRYPT_NO_ERROR && cbTmp == cbSig, "?" );
 
     return STATUS_SUCCESS;
-}                            
+}
 
 template<>
 NTSTATUS
 RsaSignImp<ImpSc, AlgRsaSignPss>::verify(
-    _In_reads_( cbHash)     PCBYTE  pbHash, 
+    _In_reads_( cbHash)     PCBYTE  pbHash,
                             SIZE_T  cbHash,
     _In_reads_( cbSig )     PCBYTE  pbSig,
                             SIZE_T  cbSig,
@@ -4266,16 +4266,16 @@ RsaSignImp<ImpSc, AlgRsaSignPss>::verify(
 
     switch( scError )
     {
-    case SYMCRYPT_NO_ERROR: 
-        ntStatus = STATUS_SUCCESS; 
+    case SYMCRYPT_NO_ERROR:
+        ntStatus = STATUS_SUCCESS;
         break;
-    case SYMCRYPT_SIGNATURE_VERIFICATION_FAILURE: 
-        ntStatus = STATUS_INVALID_SIGNATURE; 
+    case SYMCRYPT_SIGNATURE_VERIFICATION_FAILURE:
+        ntStatus = STATUS_INVALID_SIGNATURE;
         break;
     case SYMCRYPT_INVALID_ARGUMENT:
         ntStatus = STATUS_INVALID_PARAMETER;
         break;
-    default: 
+    default:
         iprint( "Unexpected SymCrypt error %08x, %d, %d, %s\n", scError, cbHash, cbSig, pcstrHashAlgName );
         CHECK( FALSE, "?" );
         ntStatus = STATUS_UNSUCCESSFUL;
@@ -4346,7 +4346,7 @@ VOID
 algImpDecryptPerfFunction< ImpSc, AlgRsaEncRaw>( PBYTE buf1, PBYTE buf2, PBYTE buf3, SIZE_T dataSize )
 {
     SYMCRYPT_ERROR scError;
-    
+
     scError = SymCryptRsaRawDecrypt(
                     *((PSYMCRYPT_RSAKEY *) buf1),
                     buf3,
@@ -4381,7 +4381,7 @@ RsaEncImp<ImpSc, AlgRsaEncRaw>::~RsaEncImp()
 }
 
 template<>
-NTSTATUS 
+NTSTATUS
 RsaEncImp<ImpSc, AlgRsaEncRaw>::setKey( PCRSAKEY_TESTBLOB pcKeyBlob )
 {
     SYMCRYPT_ERROR scError;
@@ -4415,7 +4415,7 @@ RsaEncImp<ImpSc, AlgRsaEncRaw>::setKey( PCRSAKEY_TESTBLOB pcKeyBlob )
         &pcKeyBlob->u64PubExp, 1,
         ppPrime, cbPrime, 2,
         SYMCRYPT_NUMBER_FORMAT_MSB_FIRST,
-        0, 
+        0,
         state.pKey );
     CHECK( scError == SYMCRYPT_NO_ERROR, "?" );
 
@@ -4423,9 +4423,9 @@ RsaEncImp<ImpSc, AlgRsaEncRaw>::setKey( PCRSAKEY_TESTBLOB pcKeyBlob )
 }
 
 template<>
-NTSTATUS 
+NTSTATUS
 RsaEncImp<ImpSc, AlgRsaEncRaw>::encrypt(
-    _In_reads_( cbMsg )             PCBYTE  pbMsg, 
+    _In_reads_( cbMsg )             PCBYTE  pbMsg,
                                     SIZE_T  cbMsg,
                                     PCSTR   pcstrHashAlgName,
                                     PCBYTE  pbLabel,
@@ -4483,7 +4483,7 @@ RsaEncImp<ImpSc, AlgRsaEncRaw>::decrypt(
     *pcbMsg = cbKey;
 
     return scError == SYMCRYPT_NO_ERROR ? STATUS_SUCCESS : STATUS_UNSUCCESSFUL;
-}                                        
+}
 
 
 // RSA PKCS1 encryption
@@ -4555,7 +4555,7 @@ algImpDecryptPerfFunction< ImpSc, AlgRsaEncPkcs1>( PBYTE buf1, PBYTE buf2, PBYTE
 {
     SYMCRYPT_ERROR scError;
     SIZE_T cbDst;
-    
+
     scError = SymCryptRsaPkcs1Decrypt(
                     *((PSYMCRYPT_RSAKEY *) buf1),
                     buf3,
@@ -4592,7 +4592,7 @@ RsaEncImp<ImpSc, AlgRsaEncPkcs1>::~RsaEncImp()
 }
 
 template<>
-NTSTATUS 
+NTSTATUS
 RsaEncImp<ImpSc, AlgRsaEncPkcs1>::setKey( PCRSAKEY_TESTBLOB pcKeyBlob )
 {
     SYMCRYPT_ERROR scError;
@@ -4626,7 +4626,7 @@ RsaEncImp<ImpSc, AlgRsaEncPkcs1>::setKey( PCRSAKEY_TESTBLOB pcKeyBlob )
         &pcKeyBlob->u64PubExp, 1,
         ppPrime, cbPrime, 2,
         SYMCRYPT_NUMBER_FORMAT_MSB_FIRST,
-        0, 
+        0,
         state.pKey );
     CHECK( scError == SYMCRYPT_NO_ERROR, "?" );
 
@@ -4634,9 +4634,9 @@ RsaEncImp<ImpSc, AlgRsaEncPkcs1>::setKey( PCRSAKEY_TESTBLOB pcKeyBlob )
 }
 
 template<>
-NTSTATUS 
+NTSTATUS
 RsaEncImp<ImpSc, AlgRsaEncPkcs1>::encrypt(
-    _In_reads_( cbMsg )             PCBYTE  pbMsg, 
+    _In_reads_( cbMsg )             PCBYTE  pbMsg,
                                     SIZE_T  cbMsg,
                                     PCSTR   pcstrHashAlgName,
                                     PCBYTE  pbLabel,
@@ -4692,13 +4692,13 @@ RsaEncImp<ImpSc, AlgRsaEncPkcs1>::decrypt(
                                         pbCiphertext, cbCiphertext,
                                         SYMCRYPT_NUMBER_FORMAT_MSB_FIRST,
                                         0,
-                                        pbMsg, cbMsg, 
+                                        pbMsg, cbMsg,
                                         &cbResult );
 
     *pcbMsg = cbResult;
 
     return scError == SYMCRYPT_NO_ERROR ? STATUS_SUCCESS : STATUS_UNSUCCESSFUL;
-}                                        
+}
 
 // RSA OAEP encryption
 
@@ -4781,7 +4781,7 @@ algImpDecryptPerfFunction< ImpSc, AlgRsaEncOaep>( PBYTE buf1, PBYTE buf2, PBYTE 
 {
     SYMCRYPT_ERROR scError;
     SIZE_T cbDst;
-    
+
     scError = SymCryptRsaOaepDecrypt(
                     *((PSYMCRYPT_RSAKEY *) buf1),
                     buf3,
@@ -4821,7 +4821,7 @@ RsaEncImp<ImpSc, AlgRsaEncOaep>::~RsaEncImp()
 }
 
 template<>
-NTSTATUS 
+NTSTATUS
 RsaEncImp<ImpSc, AlgRsaEncOaep>::setKey( PCRSAKEY_TESTBLOB pcKeyBlob )
 {
     SYMCRYPT_ERROR scError;
@@ -4855,7 +4855,7 @@ RsaEncImp<ImpSc, AlgRsaEncOaep>::setKey( PCRSAKEY_TESTBLOB pcKeyBlob )
         &pcKeyBlob->u64PubExp, 1,
         ppPrime, cbPrime, 2,
         SYMCRYPT_NUMBER_FORMAT_MSB_FIRST,
-        0, 
+        0,
         state.pKey );
     CHECK( scError == SYMCRYPT_NO_ERROR, "?" );
 
@@ -4863,9 +4863,9 @@ RsaEncImp<ImpSc, AlgRsaEncOaep>::setKey( PCRSAKEY_TESTBLOB pcKeyBlob )
 }
 
 template<>
-NTSTATUS 
+NTSTATUS
 RsaEncImp<ImpSc, AlgRsaEncOaep>::encrypt(
-    _In_reads_( cbMsg )             PCBYTE  pbMsg, 
+    _In_reads_( cbMsg )             PCBYTE  pbMsg,
                                     SIZE_T  cbMsg,
                                     PCSTR   pcstrHashAlgName,
                                     PCBYTE  pbLabel,
@@ -4929,13 +4929,13 @@ RsaEncImp<ImpSc, AlgRsaEncOaep>::decrypt(
                                         pInfo->pcHash,
                                         pbLabel, cbLabel,
                                         0,
-                                        pbMsg, cbMsg, 
+                                        pbMsg, cbMsg,
                                         &cbResult );
 
     *pcbMsg = cbResult;
 
     return scError == SYMCRYPT_NO_ERROR ? STATUS_SUCCESS : STATUS_UNSUCCESSFUL;
-}                                        
+}
 
 
 // Rsa Pkcs1 Encryption
@@ -5484,12 +5484,12 @@ VOID
 algImpKeyPerfFunction<ImpSc, AlgDh>( PBYTE buf1, PBYTE buf2, PBYTE buf3, SIZE_T keySize )
 {
     SYMCRYPT_ERROR scError;
-    
+
     UNREFERENCED_PARAMETER( buf3 );
 
     DlgroupSetup( buf1, keySize );
 
-    // Set up two keys in buf2 
+    // Set up two keys in buf2
     PSYMCRYPT_DLGROUP pGroup = *(PSYMCRYPT_DLGROUP *) buf1;
 
     PSYMCRYPT_DLKEY pKey1 = SymCryptDlkeyCreate( buf2 + 64, PERF_BUFFER_SIZE/4, pGroup );
@@ -5499,10 +5499,10 @@ algImpKeyPerfFunction<ImpSc, AlgDh>( PBYTE buf1, PBYTE buf2, PBYTE buf3, SIZE_T 
 
     scError = SymCryptDlkeyGenerate( 0, pKey1 );
     CHECK( scError == SYMCRYPT_NO_ERROR, "?" );
-    
+
     scError = SymCryptDlkeyGenerate( 0, pKey2 );
     CHECK( scError == SYMCRYPT_NO_ERROR, "?" );
-    
+
     ((PSYMCRYPT_DLKEY *) buf2)[0] = pKey1;
     ((PSYMCRYPT_DLKEY *) buf2)[1] = pKey2;
 }
@@ -5530,7 +5530,7 @@ algImpDataPerfFunction< ImpSc, AlgDh>( PBYTE buf1, PBYTE buf2, PBYTE buf3, SIZE_
 
     PSYMCRYPT_DLKEY pKey = SymCryptDlkeyCreate( buf3, (1 << 16), pGroup );
     CHECK( pKey != NULL, "?" );
-    
+
     scError = SymCryptDlkeyGenerate( 0, pKey );
     CHECK( scError == SYMCRYPT_NO_ERROR, "?" );
 
@@ -5609,7 +5609,7 @@ DhImp<ImpSc, AlgDh>::setKey( _In_    PCDLKEY_TESTBLOB    pcKeyBlob )
 template<>
 NTSTATUS
 DhImp<ImpSc, AlgDh>::sharedSecret(
-        _In_                        PCDLKEY_TESTBLOB    pcPubkey, 
+        _In_                        PCDLKEY_TESTBLOB    pcPubkey,
         _Out_writes_( cbSecret )    PBYTE               pbSecret,
                                     SIZE_T              cbSecret )
 {
@@ -5623,7 +5623,7 @@ DhImp<ImpSc, AlgDh>::sharedSecret(
                                             pKey2,
                                             SYMCRYPT_NUMBER_FORMAT_MSB_FIRST,
                                             0,
-                                            pbSecret, cbSecret );  
+                                            pbSecret, cbSecret );
 
     SymCryptDlkeyFree( pKey2 );
 
@@ -5636,12 +5636,12 @@ VOID
 algImpKeyPerfFunction<ImpSc, AlgDsa>( PBYTE buf1, PBYTE buf2, PBYTE buf3, SIZE_T keySize )
 {
     SYMCRYPT_ERROR scError;
-    
+
     UNREFERENCED_PARAMETER( buf3 );
 
     DlgroupSetup( buf1, keySize );  // Set buf1 to contain a DL group of size keySize
 
-    // Set up a keys in buf2 
+    // Set up a keys in buf2
     PSYMCRYPT_DLGROUP pGroup = *(PSYMCRYPT_DLGROUP *) buf1;
 
     PSYMCRYPT_DLKEY pKey = SymCryptDlkeyCreate( buf2 + 64, PERF_BUFFER_SIZE/4, pGroup );
@@ -5650,7 +5650,7 @@ algImpKeyPerfFunction<ImpSc, AlgDsa>( PBYTE buf1, PBYTE buf2, PBYTE buf3, SIZE_T
 
     scError = SymCryptDlkeyGenerate( 0, pKey );
     CHECK( scError == SYMCRYPT_NO_ERROR, "?" );
-    
+
     ((PSYMCRYPT_DLKEY *) buf2)[0] = pKey;
 }
 
@@ -5758,7 +5758,7 @@ DsaImp<ImpSc, AlgDsa>::setKey( _In_    PCDLKEY_TESTBLOB    pcKeyBlob )
 template<>
 NTSTATUS
 DsaImp<ImpSc, AlgDsa>::sign(
-        _In_reads_( cbHash)     PCBYTE  pbHash, 
+        _In_reads_( cbHash)     PCBYTE  pbHash,
                                 SIZE_T  cbHash,             // Can be any size, but often = size of Q
         _Out_writes_( cbSig )   PBYTE   pbSig,
                                 SIZE_T  cbSig )
@@ -5770,14 +5770,14 @@ DsaImp<ImpSc, AlgDsa>::sign(
                                 SYMCRYPT_NUMBER_FORMAT_MSB_FIRST,
                                 0,
                                 pbSig, cbSig );
-    
+
     return scError == SYMCRYPT_NO_ERROR ? STATUS_SUCCESS : STATUS_UNSUCCESSFUL;
-}                                
+}
 
 template<>
 NTSTATUS
 DsaImp<ImpSc, AlgDsa>::verify(
-    _In_reads_( cbHash)     PCBYTE  pbHash, 
+    _In_reads_( cbHash)     PCBYTE  pbHash,
                             SIZE_T  cbHash,
     _In_reads_( cbSig )     PCBYTE  pbSig,
                             SIZE_T  cbSig )
@@ -5791,7 +5791,7 @@ DsaImp<ImpSc, AlgDsa>::verify(
                                     0 );
 
     return scError == SYMCRYPT_NO_ERROR ? STATUS_SUCCESS : STATUS_UNSUCCESSFUL;
-}                            
+}
 
 
 
@@ -5901,7 +5901,7 @@ SetupSymCryptEcdsaAndEcdh( PBYTE buf1, PBYTE buf2, PBYTE buf3 )
     GENRANDOM( (PBYTE)pPtrs[1], SYMCRYPT_SHA512_RESULT_SIZE );
 
     PUINT32 puiSignatureSize = (PUINT32) buf3;
-    
+
     CHECK( sizeof(UINT32) + signatureSize <= SCRATCH_BUF_SIZE, "Destination buffer cannot fit the signature" );
 
     *puiSignatureSize = signatureSize;
@@ -6796,7 +6796,7 @@ addSymCryptAlgs()
     addImplementationToGlobalList<KdfImp<ImpSc , AlgSp800_108, AlgHmacSha384>>();
     addImplementationToGlobalList<KdfImp<ImpSc , AlgSp800_108, AlgHmacSha512>>();
     addImplementationToGlobalList<KdfImp<ImpSc , AlgSp800_108, AlgAesCmac>>();
-    
+
     addImplementationToGlobalList<KdfImp<ImpSc, AlgTlsPrf1_1, AlgHmacMd5>>();
     addImplementationToGlobalList<KdfImp<ImpSc, AlgTlsPrf1_2, AlgHmacSha256>>();
     addImplementationToGlobalList<KdfImp<ImpSc, AlgTlsPrf1_2, AlgHmacSha384>>();
@@ -6837,7 +6837,7 @@ addSymCryptAlgs()
     addImplementationToGlobalList<RsaEncImp<ImpSc, AlgRsaEncRaw>>();
     addImplementationToGlobalList<RsaEncImp<ImpSc, AlgRsaEncPkcs1>>();
     addImplementationToGlobalList<RsaEncImp<ImpSc, AlgRsaEncOaep>>();
-    
+
     //addImplementationToGlobalList<RsaImp<ImpSc, AlgRsaSignPkcs1>>();
     //addImplementationToGlobalList<RsaImp<ImpSc, AlgRsaVerifyPkcs1>>();
     //addImplementationToGlobalList<RsaImp<ImpSc, AlgRsaSignPss>>();

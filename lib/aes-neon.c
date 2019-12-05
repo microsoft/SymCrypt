@@ -31,7 +31,7 @@ SymCryptAes4SboxNeon( _In_reads_(4) PCBYTE pIn, _Out_writes_(4) PBYTE pOut )
     __n128 x;
 
     //
-    // There is no pure S-box lookup instruction, but the AESE instructoin
+    // There is no pure S-box lookup instruction, but the AESE instruction
     // does a ShiftRow followed by a SubBytes.
     // If we duplicate the input value to all 4 lanes, then the ShiftRow does nothing
     // and the SubBytes will do the S-box lookup.
