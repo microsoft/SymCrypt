@@ -654,14 +654,22 @@ SymCryptAesCtrMsb64Neon(
     // See section 6.7.8 of the C standard for details on this initializer usage.
     const __n128 chainIncrement1 = (__n128) {.n128_u64 = {0, 1}};   // use {0,1} to initialize the n128_u64 element of the __n128 union.
     const __n128 chainIncrement2 = (__n128) {.n128_u64 = {0, 2}};
-    const __n128 chainIncrement3 = (__n128) {.n128_u64 = {0, 3}};
+    const __n128 chainIncrement8 = (__n128) {.n128_u64 = {0, 8}};
 
+    __n128 ctr0, ctr1, ctr2, ctr3, ctr4, ctr5, ctr6, ctr7;
     __n128 c0, c1, c2, c3, c4, c5, c6, c7;
 
     cbData &= ~(SYMCRYPT_AES_BLOCK_SIZE - 1);
 
     // Our chain variable is in integer format, not the MSBfirst format loaded from memory.
-    chain = vrev64q_u8( chain );
+    ctr0 = vrev64q_u8( chain );
+    ctr1 = vaddq_u64( ctr0, chainIncrement1 );
+    ctr2 = vaddq_u64( ctr0, chainIncrement2 );
+    ctr3 = vaddq_u64( ctr1, chainIncrement2 );
+    ctr4 = vaddq_u64( ctr2, chainIncrement2 );
+    ctr5 = vaddq_u64( ctr3, chainIncrement2 );
+    ctr6 = vaddq_u64( ctr4, chainIncrement2 );
+    ctr7 = vaddq_u64( ctr5, chainIncrement2 );
 
 /*
     while cbData >= 5 * block
@@ -672,34 +680,33 @@ SymCryptAesCtrMsb64Neon(
     if cbData >= 5 * block
         process 5-7 blocks
         done
-    if cbData > 1 block
+    if cbData >= 2 * block
         generate 4 blocks of key stream
         process 2-4 blocks
         done
-    if cbData >= 1 block
+    if cbData == 1 block
         generate 1 block of key stream
         process block
 */
     while( cbData >= 5 * SYMCRYPT_AES_BLOCK_SIZE )
     {
-        c0 = chain;
-        c1 = vaddq_u64( chain, chainIncrement1 );
-        c2 = vaddq_u64( chain, chainIncrement2 );
-        c3 = vaddq_u64( c1, chainIncrement2 );
-        c4 = vaddq_u64( c2, chainIncrement2 );
-        c5 = vaddq_u64( c3, chainIncrement2 );
-        c6 = vaddq_u64( c4, chainIncrement2 );
-        c7 = vaddq_u64( c5, chainIncrement2 );
-        chain = vaddq_u64( c6, chainIncrement2 );
+        c0 = vrev64q_u8( ctr0 );
+        c1 = vrev64q_u8( ctr1 );
+        c2 = vrev64q_u8( ctr2 );
+        c3 = vrev64q_u8( ctr3 );
+        c4 = vrev64q_u8( ctr4 );
+        c5 = vrev64q_u8( ctr5 );
+        c6 = vrev64q_u8( ctr6 );
+        c7 = vrev64q_u8( ctr7 );
 
-        c0 = vrev64q_u8( c0 );
-        c1 = vrev64q_u8( c1 );
-        c2 = vrev64q_u8( c2 );
-        c3 = vrev64q_u8( c3 );
-        c4 = vrev64q_u8( c4 );
-        c5 = vrev64q_u8( c5 );
-        c6 = vrev64q_u8( c6 );
-        c7 = vrev64q_u8( c7 );
+        ctr0 = vaddq_u64( ctr0, chainIncrement8 );
+        ctr1 = vaddq_u64( ctr1, chainIncrement8 );
+        ctr2 = vaddq_u64( ctr2, chainIncrement8 );
+        ctr3 = vaddq_u64( ctr3, chainIncrement8 );
+        ctr4 = vaddq_u64( ctr4, chainIncrement8 );
+        ctr5 = vaddq_u64( ctr5, chainIncrement8 );
+        ctr6 = vaddq_u64( ctr6, chainIncrement8 );
+        ctr7 = vaddq_u64( ctr7, chainIncrement8 );
 
         AES_ENCRYPT_8( pExpandedKey, c0, c1, c2, c3, c4, c5, c6, c7 );
 
@@ -724,8 +731,8 @@ SymCryptAesCtrMsb64Neon(
 
     //
     // At this point we have one of the two following cases:
-    // - cbData >= 5 * 16 and we have 8 blocks of key stream in c0-c7. chain is set to c7 + 1
-    // - cbData < 5 * 16 and we have no blocks of key stream, with chain the next value to use
+    // - cbData >= 5 * 16 and we have 8 blocks of key stream in c0-c7. ctr0-ctr7 is set to (c0+8)-(c7+8)
+    // - cbData < 5 * 16 and we have no blocks of key stream, and ctr0-ctr7 set to the next 8 counters to use
     //
 
     if( cbData >= SYMCRYPT_AES_BLOCK_SIZE ) // quick exit of function if the request was a multiple of 8 blocks
@@ -740,15 +747,15 @@ SymCryptAesCtrMsb64Neon(
             pDst[2] = veorq_u64( pSrc[2], c2 );
             pDst[3] = veorq_u64( pSrc[3], c3 );
             pDst[4] = veorq_u64( pSrc[4], c4 );
-            chain = vsubq_u64( chain, chainIncrement3 );
+            chain = vsubq_u64( ctr5, chainIncrement8 );
 
             if( cbData >= 96 )
             {
-            chain = vaddq_u64( chain, chainIncrement1 );
+            chain = vsubq_u64( ctr6, chainIncrement8 );
             pDst[5] = veorq_u64( pSrc[5], c5 );
                 if( cbData >= 112 )
                 {
-            chain = vaddq_u64( chain, chainIncrement1 );
+            chain = vsubq_u64( ctr7, chainIncrement8 );
             pDst[6] = veorq_u64( pSrc[6], c6 );
                 }
             }
@@ -757,16 +764,12 @@ SymCryptAesCtrMsb64Neon(
         {
             // Produce 4 blocks of key stream
 
-            c0 = chain;
-            c1 = vaddq_u64( chain, chainIncrement1 );
-            c2 = vaddq_u64( chain, chainIncrement2 );
-            c3 = vaddq_u64( c1, chainIncrement2 );
-            chain = c2;             // chain is only incremented by 2 for now
+            chain = ctr2;           // chain is only incremented by 2 for now
 
-            c0 = vrev64q_u8( c0 );
-            c1 = vrev64q_u8( c1 );
-            c2 = vrev64q_u8( c2 );
-            c3 = vrev64q_u8( c3 );
+            c0 = vrev64q_u8( ctr0 );
+            c1 = vrev64q_u8( ctr1 );
+            c2 = vrev64q_u8( ctr2 );
+            c3 = vrev64q_u8( ctr3 );
 
             AES_ENCRYPT_4( pExpandedKey, c0, c1, c2, c3 );
 
@@ -774,11 +777,11 @@ SymCryptAesCtrMsb64Neon(
             pDst[1] = veorq_u64( pSrc[1], c1 );
             if( cbData >= 48 )
             {
-            chain = vaddq_u64( chain, chainIncrement1 );
+            chain = ctr3;
             pDst[2] = veorq_u64( pSrc[2], c2 );
                 if( cbData >= 64 )
                 {
-            chain = vaddq_u64( chain, chainIncrement1 );
+            chain = ctr4;
             pDst[3] = veorq_u64( pSrc[3], c3 );
                 }
             }
@@ -786,10 +789,9 @@ SymCryptAesCtrMsb64Neon(
         else
         {
             // Exactly 1 block to process
-            c0 = chain;
-            chain = vaddq_u64( chain, chainIncrement1 );
+            chain = ctr1;
 
-            c0 = vrev64q_u8( c0 );
+            c0 = vrev64q_u8( ctr0 );
 
             AES_ENCRYPT_1( pExpandedKey, c0 );
             pDst[0] = veorq_u64( pSrc[0], c0 );

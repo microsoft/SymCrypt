@@ -695,7 +695,7 @@ SymCryptAesCtrMsb64Xmm(
         generate 4 blocks of key stream
         process 2-4 blocks
         done
-    if cbData >= 1 block
+    if cbData == 1 block
         generate 1 block of key stream
         process block
 */
@@ -939,13 +939,19 @@ SymCryptAesCtrMsb64Xmm(
 // t2 = Input >> 120
 // t2 = (t2 <<<< 7) ^ (t2 <<<< 2) ^ (t2 <<<< 1) ^ t2
 // res = (Input << 8) ^ t2
+//
+// Expected to be marginally faster than new XTS_MUL_ALPHA on CPUs where clmul
+// instruction corresponds to a single uop - unused for now.
+//
+// __m128i XTS_ALPHA_MULTIPLIER = _mm_set_epi32( 0, 0, 0, 0x87 );
 #define XTS_MUL_ALPHA8( _in, _res ) \
 {\
     __m128i _t2;\
 \
-    _t2 = _mm_srli_si128( _in, 15); \
-    _t2 = _mm_xor_si128( _mm_xor_si128( _mm_xor_si128( _mm_slli_epi32( _t2, 7 ), _mm_slli_epi32( _t2, 2 ) ), _mm_slli_epi32( _t2, 1 )), _t2 ); \
-    _res = _mm_xor_si128( _mm_slli_si128( _in, 1 ), _t2 ); \
+    _t2 = _mm_srli_si128( _in, 15 ); \
+    _res = _mm_slli_si128( _in, 1); \
+    _t2 = _mm_clmulepi64_si128( _t2, XTS_ALPHA_MULTIPLIER, 0x00 ); \
+    _res = _mm_xor_si128( _res, _t2 ); \
 }
 
 
