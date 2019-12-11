@@ -32,8 +32,6 @@ const SYMCRYPT_BLOCKCIPHER SymCryptAesBlockCipherNoOpt = {
     NULL,
     NULL,
     NULL,
-    NULL,                   // PSYMCRYPT_BLOCKCIPHER_CRYPT_XTS     xtsEncFunc;
-    NULL,                   // PSYMCRYPT_BLOCKCIPHER_CRYPT_XTS     xtsDecFunc;
 
     SYMCRYPT_AES_BLOCK_SIZE,
     sizeof( SYMCRYPT_AES_EXPANDED_KEY ),
@@ -293,7 +291,7 @@ SymCryptAesEcbEncrypt(
 //
 // NOTE: There is no reason that SymCryptAesEcbDecrypt could not have unrolled versions similar to
 // SymCryptAesEcbEncrypt if a real use case requiring large scale Ecb decryption is found.
-// For now just do decryption 1 block at a time to reduce code size.
+// For now just decrypt 1 block at a time to reduce code size.
 //
 VOID
 SYMCRYPT_CALL
@@ -406,91 +404,3 @@ SymCryptAesCtrMsb64(
     SymCryptCtrMsb64( &SymCryptAesBlockCipherNoOpt, pExpandedKey, pbChainingValue, pbSrc, pbDst, cbData );
 #endif
 }
-
-
-PSYMCRYPT_BLOCKCIPHER_CRYPT_XTS
-SYMCRYPT_CALL
-SymCryptXtsAesGetBlockEncFunc( )
-{
-#if SYMCRYPT_CPU_AMD64
-    if( SYMCRYPT_CPU_FEATURES_PRESENT( SYMCRYPT_CPU_FEATURES_FOR_AESNI_CODE ) )
-    {
-        return &SymCryptXtsAesEncryptDataUnitXmm;
-    }
-    else
-    {
-        return &SymCryptXtsAesEncryptDataUnitAsm;
-    }
-
-#elif SYMCRYPT_CPU_X86
-
-    // SYMCRYPT_EXTENDED_SAVE_DATA  SaveData;
-
-    // if( SYMCRYPT_CPU_FEATURES_PRESENT( SYMCRYPT_CPU_FEATURES_FOR_AESNI_CODE ) &&
-    //     SymCryptSaveXmm( &SaveData ) == SYMCRYPT_NO_ERROR )
-    // {
-    //     SymCryptXtsAesEncryptDataUnitXmm( pExpandedKey, pbChainingValue, pbSrc, pbDst, cbData );
-    //     SymCryptRestoreXmm( &SaveData );
-    // } else {
-
-    // Just return SymCryptXtsAesEncryptDataUnitAsm as wrapping function pointer for Save/RestoreXmm is a pain
-    return &SymCryptXtsAesEncryptDataUnitAsm;
-
-#elif SYMCRYPT_CPU_ARM
-    return &SymCryptXtsAesEncryptDataUnitAsm;
-
-#elif SYMCRYPT_CPU_ARM64
-    if( SYMCRYPT_CPU_FEATURES_PRESENT( SYMCRYPT_CPU_FEATURE_NEON_AES ) )
-    {
-        return &SymCryptXtsAesEncryptDataUnitNeon;
-    } else {
-        return &SymCryptXtsAesEncryptDataUnitAsm;
-    }
-#else
-    return &SymCryptXtsAesEncryptDataUnitC;
-#endif
-}
-
-PSYMCRYPT_BLOCKCIPHER_CRYPT_XTS
-SYMCRYPT_CALL
-SymCryptXtsAesGetBlockDecFunc( )
-{
-#if SYMCRYPT_CPU_AMD64
-    if( SYMCRYPT_CPU_FEATURES_PRESENT( SYMCRYPT_CPU_FEATURES_FOR_AESNI_CODE ) )
-    {
-        return &SymCryptXtsAesDecryptDataUnitXmm;
-    }
-    else
-    {
-        return &SymCryptXtsAesDecryptDataUnitAsm;
-    }
-
-#elif SYMCRYPT_CPU_X86
-
-    // SYMCRYPT_EXTENDED_SAVE_DATA  SaveData;
-
-    // if( SYMCRYPT_CPU_FEATURES_PRESENT( SYMCRYPT_CPU_FEATURES_FOR_AESNI_CODE ) &&
-    //     SymCryptSaveXmm( &SaveData ) == SYMCRYPT_NO_ERROR )
-    // {
-    //     SymCryptXtsAesDecryptDataUnitXmm( pExpandedKey, pbChainingValue, pbSrc, pbDst, cbData );
-    //     SymCryptRestoreXmm( &SaveData );
-    // } else {
-
-    // Just return SymCryptXtsAesDecryptDataUnitAsm as wrapping function pointer for Save/RestoreXmm is a pain
-    return &SymCryptXtsAesDecryptDataUnitAsm;
-
-#elif SYMCRYPT_CPU_ARM
-    return &SymCryptXtsAesDecryptDataUnitAsm;
-
-#elif SYMCRYPT_CPU_ARM64
-    if( SYMCRYPT_CPU_FEATURES_PRESENT( SYMCRYPT_CPU_FEATURE_NEON_AES ) )
-    {
-        return &SymCryptXtsAesDecryptDataUnitNeon;
-    } else {
-        return &SymCryptXtsAesDecryptDataUnitAsm;
-    }
-#else
-    return &SymCryptXtsAesDecryptDataUnitC;
-#endif
-}
-

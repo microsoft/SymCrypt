@@ -456,7 +456,7 @@ SymCryptCpuFeaturesNeverPresent();
 		#define SYMCRYPT_INTERNAL_FORCE_WRITE8( _p, _v )  ( *((volatile BYTE*)  (_p)) = (_v) )
 		#define SYMCRYPT_INTERNAL_FORCE_WRITE16( _p, _v ) ( *((volatile UINT16*)(_p)) = (_v) )
 		#define SYMCRYPT_INTERNAL_FORCE_WRITE32( _p, _v ) ( *((volatile UINT32*)(_p)) = (_v) )
-		#define SYMCRYPT_INTERNAL_FORCE_WRITE64( _p, _v ) ( *((volatile UINT64*)(_p)) = (_v) )        
+		#define SYMCRYPT_INTERNAL_FORCE_WRITE64( _p, _v ) ( *((volatile UINT64*)(_p)) = (_v) )
 	#endif
 
 #elif SYMCRYPT_APPLE_CC || SYMCRYPT_GNUC
@@ -1335,7 +1335,6 @@ typedef VOID( SYMCRYPT_CALL * PSYMCRYPT_BLOCKCIPHER_CRYPT )     (PCVOID pExpande
 typedef VOID( SYMCRYPT_CALL * PSYMCRYPT_BLOCKCIPHER_CRYPT_ECB ) (PCVOID pExpandedKey, PCBYTE pbSrc, PBYTE pbDst, SIZE_T cbData);
 typedef VOID( SYMCRYPT_CALL * PSYMCRYPT_BLOCKCIPHER_CRYPT_MODE )(PCVOID pExpandedKey, PBYTE pbChainingValue, PCBYTE pbSrc, PBYTE pbDst, SIZE_T cbData);
 typedef VOID( SYMCRYPT_CALL * PSYMCRYPT_BLOCKCIPHER_MAC_MODE )  (PCVOID pExpandedKey, PBYTE pbChainingValue, PCBYTE pbSrc, SIZE_T cbData);
-typedef VOID( SYMCRYPT_CALL * PSYMCRYPT_BLOCKCIPHER_CRYPT_XTS ) (PCVOID pExpandedKey, PBYTE pbTweakBlock, PCBYTE pbSrc, PBYTE pbDst, SIZE_T cbData);
 
 struct _SYMCRYPT_BLOCKCIPHER {
                                                 PSYMCRYPT_BLOCKCIPHER_EXPAND_KEY    expandKeyFunc;      // mandatory
@@ -1347,8 +1346,6 @@ struct _SYMCRYPT_BLOCKCIPHER {
                                                 PSYMCRYPT_BLOCKCIPHER_CRYPT_MODE    cbcDecryptFunc;     // NULL if no optimized version available
                                                 PSYMCRYPT_BLOCKCIPHER_MAC_MODE      cbcMacFunc;         // NULL if no optimized version available
                                                 PSYMCRYPT_BLOCKCIPHER_CRYPT_MODE    ctrMsb64Func;       // NULL if no optimized version available
-                                                PSYMCRYPT_BLOCKCIPHER_CRYPT_XTS     xtsEncFunc;
-                                                PSYMCRYPT_BLOCKCIPHER_CRYPT_XTS     xtsDecFunc;
     _Field_range_( 0, SYMCRYPT_MAX_BLOCK_SIZE ) SIZE_T                              blockSize;          // = SYMCRYPT_XXX_BLOCK_SIZE, power of 2, value <= 32.
                                                 SIZE_T                              expandedKeySize;    // = sizeof( SYMCRYPT_XXX_EXPANDED_KEY )
 };
@@ -1364,7 +1361,7 @@ struct _SYMCRYPT_BLOCKCIPHER {
 
 //
 // Some CPUs like the S array type to be larger than BYTE. We abstract the data type
-// of the S array to accomodate such CPUs in future.
+// of the S array to accommodate such CPUs in future.
 //
 
 typedef BYTE    SYMCRYPT_RC4_S_TYPE;
@@ -2366,7 +2363,7 @@ typedef struct _SYMCRYPT_EXTENDED_SAVE_DATA      SYMCRYPT_EXTENDED_SAVE_DATA, *P
 
 // Environment forwarding functions.
 // CPUIDEX is only forwarded on CPUs that have it.
-#if SYMCRYPT_CPU_AMD64 | SYMCRYPT_CPU_X86 
+#if SYMCRYPT_CPU_AMD64 | SYMCRYPT_CPU_X86
 #define SYMCRYPT_ENVIRONMENT_FORWARD_CPUIDEX( envName ) \
     VOID SYMCRYPT_CALL SymCryptCpuidExFuncEnv##envName( int cpuInfo[4], int function_id, int subfunction_id ); \
     VOID SYMCRYPT_CALL SymCryptCpuidExFunc( int cpuInfo[4], int function_id, int subfunction_id ) \

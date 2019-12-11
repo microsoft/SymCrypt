@@ -1293,14 +1293,6 @@ SymCryptXtsAesDecryptDataUnitNeon(
     _Out_writes_( cbData )                  PBYTE                       pbDst,
                                             SIZE_T                      cbData );
 
-PSYMCRYPT_BLOCKCIPHER_CRYPT_XTS
-SYMCRYPT_CALL
-SymCryptXtsAesGetBlockEncFunc();
-
-PSYMCRYPT_BLOCKCIPHER_CRYPT_XTS
-SYMCRYPT_CALL
-SymCryptXtsAesGetBlockDecFunc();
-
 VOID
 SYMCRYPT_CALL
 SymCryptXtsEncryptDataUnit(
