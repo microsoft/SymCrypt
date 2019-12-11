@@ -894,6 +894,8 @@ SymCryptGHashAppendDataPmull(
     __n128 a0, a1, a2;
     __n128 Hi, Hix;
     const __n128 vZero = vzeroq();
+    const __n128 vMultiplicationConstant = (__n128) {.n128_u64 = {0xc200000000000000, 0}};
+    const __n128 vMask = (__n128) {.n128_u64 = {0x7fffffffffffffff, 0xffffffffffffffff}};
     SIZE_T i;
     SIZE_T nBlocks = cbData / SYMCRYPT_GF128_BLOCK_SIZE;
     SIZE_T todo;
@@ -903,7 +905,7 @@ SymCryptGHashAppendDataPmull(
     while( nBlocks > 0 )
     {
         //
-        // We process the data in blocks of up to SYMCRYPT_GHASH_PCLMULQDQ_HPOWERS blocks
+        // We process the data in blocks of up to SYMCRYPT_GHASH_PMULL_HPOWERS blocks
         //
         todo = min( nBlocks, SYMCRYPT_GHASH_PMULL_HPOWERS );
 

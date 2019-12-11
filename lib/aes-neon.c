@@ -837,8 +837,6 @@ SymCryptAesCtrMsb64Neon(
 // and an AND to mask the modulo reduction and the extraneous bits in the other bytes at the same time.
 // vAlphaMask = (1, 1, ..., 1, 0x87 )
 //
-SYMCRYPT_ALIGN_AT( 16 ) const BYTE g_SymCryptXtsNeonAlphaMask[16] = {0x87, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,};
-
 #define XTS_MUL_ALPHA( _in, _res ) \
 {\
     __n128 _t1, _t2;\
@@ -909,7 +907,6 @@ SYMCRYPT_ALIGN_AT( 16 ) const BYTE g_SymCryptXtsNeonAlphaMask[16] = {0x87, 1, 1,
 // res = res ^ t2
 //
 // vAlphaMultiplier = (0, 0, ..., 0, 0x86 )
-SYMCRYPT_ALIGN_AT( 8 ) const BYTE g_SymCryptXtsNeonAlphaMultiplier[8] = {0x86, 0, 0, 0, 0, 0, 0, 0,};
 
 #define XTS_MUL_ALPHA8( _in, _res ) \
 {\
@@ -936,8 +933,8 @@ SymCryptXtsAesEncryptDataUnitNeon(
     const __n128 *  pSrc;
     __n128 *        pDst;
     const __n128 vZero = neon_moviqb(0);
-    const __n128 vAlphaMask = *(__n128 *) g_SymCryptXtsNeonAlphaMask;
-    const __n128 vAlphaMultiplier = vld1_u8(g_SymCryptXtsNeonAlphaMultiplier);
+    const __n128 vAlphaMask =       (__n128) {.n128_u8 = {0x87, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1}};
+    const __n128 vAlphaMultiplier = (__n128) {.n128_u8 = {0x86, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}};
 
     if( cbData < 8 * SYMCRYPT_AES_BLOCK_SIZE )
     {
@@ -1053,8 +1050,8 @@ SymCryptXtsAesDecryptDataUnitNeon(
     const __n128 *  pSrc;
     __n128 *        pDst;
     const __n128 vZero = neon_moviqb(0);
-    const __n128 vAlphaMask = *(__n128 *) g_SymCryptXtsNeonAlphaMask;
-    const __n128 vAlphaMultiplier = vld1_u8(g_SymCryptXtsNeonAlphaMultiplier);
+    const __n128 vAlphaMask =       (__n128) {.n128_u8 = {0x87, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1}};
+    const __n128 vAlphaMultiplier = (__n128) {.n128_u8 = {0x86, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}};
 
     if( cbData < 8 * SYMCRYPT_AES_BLOCK_SIZE )
     {
