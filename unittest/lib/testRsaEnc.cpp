@@ -619,7 +619,7 @@ testRsaEncKats()
     String sep = "    ";
     BOOL doneAnything = FALSE;
 
-    std::auto_ptr<RsaEncMultiImp> pRsaEncMultiImp;
+    std::unique_ptr<RsaEncMultiImp> pRsaEncMultiImp;
 
     while( 1 )
     {
@@ -720,7 +720,7 @@ testRsaEncRaw()
 
     iprint( "    RsaEncRaw+" );
 
-    std::auto_ptr<RsaEncMultiImp> pRsaEncMultiImp;
+    std::unique_ptr<RsaEncMultiImp> pRsaEncMultiImp;
     pRsaEncMultiImp.reset( new RsaEncMultiImp( "RsaEncRaw" ) );
     CHECK( pRsaEncMultiImp->m_imps.size() > 0, "No RsaEncRaw impls?" );
 
@@ -895,7 +895,7 @@ testRsaEncOaep()
 
     iprint( "    RsaEncOaep+" );
 
-    std::auto_ptr<RsaEncMultiImp> pRsaEncMultiImp;
+    std::unique_ptr<RsaEncMultiImp> pRsaEncMultiImp;
     pRsaEncMultiImp.reset( new RsaEncMultiImp( "RsaEncOaep" ) );
     CHECK( pRsaEncMultiImp->m_imps.size() > 0, "No RsaEncOaep impls?" );
 

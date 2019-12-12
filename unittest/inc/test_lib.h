@@ -152,10 +152,10 @@
 
     #elif defined(__amd64)
 
-    static inline unsigned long __rdtsc(void)
+    static inline unsigned long long __rdtsc(void)
     {
-        unsigned long tsc;
-        asm volatile ("rdtsc; sal $32, %%rdx; or %%rax, %%rdx;" : "=a"(tsc));
+        unsigned long long tsc;
+        asm volatile ("rdtsc; sal $32, %%rdx; or %%rdx, %%rax;" : "=a"(tsc));
         return tsc;
     }
     #endif
@@ -1027,17 +1027,12 @@ extern ULONG    g_rc2EffectiveKeyLength;
 
 extern ULONG g_cngKeySizeFlag;
 
-extern double g_tscFreqTickCtr;
-extern double g_tscFreqPerfCtr;
+extern double g_tscFreq;
 
 extern BOOL g_sgx;
 
-//template< typename AlgType >
-//VOID getAlgorithmsOfOneType();
-//std::auto_ptr<std::vector< AlgType * >> getAlgorithmsOfOneType();
-
 template< typename AlgType >
-std::auto_ptr<std::vector<AlgType *>> getAlgorithmsOfOneType( );
+std::unique_ptr<std::vector<AlgType *>> getAlgorithmsOfOneType( );
 
 
 extern BOOLEAN     TestSelftestsEnabled;

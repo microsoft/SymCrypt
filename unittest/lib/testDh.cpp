@@ -969,7 +969,7 @@ testDhKats()
     String sep = "    ";
     BOOL doneAnything = FALSE;
 
-    std::auto_ptr<DhMultiImp> pDhMultiImp;
+    std::unique_ptr<DhMultiImp> pDhMultiImp;
 
     while( 1 )
     {

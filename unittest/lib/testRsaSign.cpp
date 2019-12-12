@@ -777,7 +777,7 @@ testRsaSignKats()
     String sep = "    ";
     BOOL doneAnything = FALSE;
 
-    std::auto_ptr<RsaSignMultiImp> pRsaSignMultiImp;
+    std::unique_ptr<RsaSignMultiImp> pRsaSignMultiImp;
 
     while( 1 )
     {
@@ -975,7 +975,7 @@ testRsaSignPss()
     NTSTATUS ntStatus;
     
 
-    std::auto_ptr<RsaSignMultiImp> pRsaSignMultiImp;
+    std::unique_ptr<RsaSignMultiImp> pRsaSignMultiImp;
     pRsaSignMultiImp.reset( new RsaSignMultiImp( "RsaSignPss" ) );
     CHECK( pRsaSignMultiImp->m_imps.size() > 0, "No PSS impls?" );
 

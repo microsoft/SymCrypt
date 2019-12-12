@@ -1101,7 +1101,7 @@ testEcdh(
 VOID
 testEccEcdsaKats()
 {
-    std::auto_ptr<KatData> katEcc( getCustomResource( "kat_ecdsa.dat", "KAT_ECDSA" ) );
+    std::unique_ptr<KatData> katEcc( getCustomResource( "kat_ecdsa.dat", "KAT_ECDSA" ) );
     KAT_ITEM katItem;
 
     String sep = "";

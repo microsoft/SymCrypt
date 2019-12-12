@@ -1514,8 +1514,8 @@ runPerfTests()
 
     measurePerf();
 
-    print( "Unit of performance measurement: %s\n    frequency = %4.0f MHz (vs. tickCtr) / %4.0f MHz (vs. perfCtr)\n",
-            g_perfUnits, g_tscFreqTickCtr / 1e6, g_tscFreqPerfCtr / 1e6 );
+    print( "Unit of performance measurement: %s\n    frequency = %4.0f MHz (using std::chrono)\n",
+            g_perfUnits, g_tscFreq / 1e6);
 
     PrintTable ptPerf;
     PrintTable ptWipe;

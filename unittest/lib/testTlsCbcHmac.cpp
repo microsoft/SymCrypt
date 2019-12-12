@@ -165,7 +165,7 @@ testTlsCbcHmacSingle(
 VOID
 testTlsCbcHmacAlgorithms()
 {
-    std::auto_ptr<TlsCbcHmacMultiImp> pImp;
+    std::unique_ptr<TlsCbcHmacMultiImp> pImp;
        
     char * sep = "    ";
     BOOL doneAnything = FALSE;

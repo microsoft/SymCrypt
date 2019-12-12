@@ -438,7 +438,7 @@ testDsaKats()
     String sep = "    ";
     BOOL doneAnything = FALSE;
 
-    std::auto_ptr<DsaMultiImp> pDsaMultiImp;
+    std::unique_ptr<DsaMultiImp> pDsaMultiImp;
 
     while( 1 )
     {

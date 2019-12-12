@@ -24,7 +24,7 @@ jobs:
   # Execute unit tests
   - script: |
       cd bin\exe\AMD64\WindowsUserMode\Debug
-      .\symcryptunittest_generic.exe
+      .\symcryptunittest.exe
     displayName: 'Execute generic unit test'
     name: 'WindowsGenericUnitTest'
   - task: CopyFiles@2

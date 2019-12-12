@@ -771,7 +771,7 @@ testHashKats()
     String sep = "    ";
     BOOL doneAnything = FALSE;
 
-    std::auto_ptr<HashMultiImp> pHashMultiImp;
+    std::unique_ptr<HashMultiImp> pHashMultiImp;
 
     while( 1 )
     {
@@ -881,7 +881,7 @@ testParallelHash( String &sep, String algName )
     ULONG                               cbResult;
     ULONG                               cbInputBlock;
     PCSYMCRYPT_HASH                     pHash;
-    std::auto_ptr<ParallelHashMultiImp> pParHash;
+    std::unique_ptr<ParallelHashMultiImp> pParHash;
     PBYTE                               pBuf;
     ULONG                               i;
     ULONG                               j;
