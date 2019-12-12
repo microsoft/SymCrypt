@@ -520,21 +520,28 @@ testRsaEncSingle(
     CHECK3( cbRes == cbMsg, "Wrong message length in line %lld", line );
     CHECK3( memcmp( buf, pbMsg, cbMsg ) == 0, "Wrong message in line %lld", line );
 
-    // Check that we get an error when the ciphertext is modified.
-    // This doesn't work in general as RsaRaw doesn't return an error, but we cheat and use cbMsg to 
-    // see whether we expect an error or not.
+    // Check whether we get an error when the ciphertext is modified.
+    // For RsaRaw we never get an error.
+    // For OAEP we should always get an error.
+    // PKCS1 will mostly give an error but sometimes succeed (prob about 2^-16)
+    // We don't do this test for PKCS1 as PKCS1 decryption errors are tested elsewhere.
+    // We detect RsaRaw because cbMsg == cbKey, and OAEP because pcstrHashAlgName != NULL
 
-    // Modify the ciphertext, not in the first byte to avoid values > modulus
-    memcpy( buf, pbCiphertext, cbKey );
-    UINT32 t = g_rng.uint32();
-    buf[ 1 + ((t/8) % (cbKey - 1)) ] ^= 1 << (t%8);
-    ntStatus = pRsaEnc->decrypt( buf, cbKey, pcstrHashAlgName, pbLabel, cbLabel, buf, cbKey, &cbRes );
-    if( cbMsg == cbKey )
+    if( cbMsg == cbKey || pcstrHashAlgName != NULL )            // Only for RsaRaw and OAEP
     {
-        // We are handling RsaRaw
-        CHECK( ntStatus == STATUS_SUCCESS, "Error decrypting modified RsaRaw ciphertext" );
-    } else {
-        CHECK( !NT_SUCCESS( ntStatus ), "Modified ciphertext did not generate an Rsa decryption error" );
+        // Modify the ciphertext, not in the first byte to avoid values > modulus
+        memcpy( buf, pbCiphertext, cbKey );
+        UINT32 t = g_rng.uint32();
+        buf[ 1 + ((t/8) % (cbKey - 1)) ] ^= 1 << (t%8);
+        ntStatus = pRsaEnc->decrypt( buf, cbKey, pcstrHashAlgName, pbLabel, cbLabel, buf, cbKey, &cbRes );
+        if( cbMsg == cbKey )
+        {
+            // We are handling RsaRaw
+            CHECK( ntStatus == STATUS_SUCCESS, "Error decrypting modified RsaRaw ciphertext" );
+        } else {
+            // OAEP
+            CHECK( !NT_SUCCESS( ntStatus ), "Modified ciphertext did not generate an RsaOaep decryption error" );
+        }
     }
 
     // Encrypt; the multi-imp will do cross-verification of all implementations.
