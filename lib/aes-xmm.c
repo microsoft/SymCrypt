@@ -1019,7 +1019,7 @@ SymCryptXtsAesEncryptDataUnitXmm(
 
         XTS_MUL_ALPHA ( t7, t0 );
         XTS_MUL_ALPHA5( t7, t4 );
-    } while( cbData >= 8 * SYMCRYPT_AES_BLOCK_SIZE )
+    } while( cbData >= 8 * SYMCRYPT_AES_BLOCK_SIZE );
 
     // We won't do another 8-block set so we don't update the tweak blocks
 
@@ -1097,7 +1097,7 @@ SymCryptXtsAesDecryptDataUnitXmm(
 
         XTS_MUL_ALPHA ( t7, t0 );
         XTS_MUL_ALPHA5( t7, t4 );
-    } while( cbData >= 8 * SYMCRYPT_AES_BLOCK_SIZE )
+    } while( cbData >= 8 * SYMCRYPT_AES_BLOCK_SIZE );
 
     // We won't do another 8-block set so we don't update the tweak blocks
 

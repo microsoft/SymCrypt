@@ -734,8 +734,6 @@ SymCryptGHashAppendDataPclmulqdq(
 
 #define vmullq_high_p64(src1, src2) neon_pmull2_64(src1, src2)
 
-#define vzeroq()    vdupq_n_u64(0)
-
 //
 // CLMUL_4 multiplies two operands into three intermediate results using 4 pmull instructions
 //
@@ -803,7 +801,7 @@ SymCryptGHashAppendDataPclmulqdq(
     __n128 _T0, _T1; \
 \
     /* multiply rl by constant which is (rev(0x87) << 1) - we'll eor the lost high bit in manually */ \
-    _T0 = vmullq_p64( rl, vMultiplicationConstant ); \
+    _T0 = vmull_p64( vget_low_p64(rl), vMultiplicationConstant ); \
 \
     /* we want the high 64b of rl to align with the low 64b of rm, because we haven't merged rm into rl and rh */ \
     /* we want the low 64b of rl to align with the high 64b of rm, because we lost the high bit in the previous pmull */ \
@@ -813,10 +811,10 @@ SymCryptGHashAppendDataPclmulqdq(
     rm = veorq_u8( rm, rl ); \
 \
     /* almost same again to fold rm into rh, but bit 63 of rm should end up as the LSB of the result and needs no more multiplication */ \
-    _T1 = vshr_n_u64( rm, 63 ); \
+    _T1 = vcombine_u64( vshr_n_u64( vget_low_p64(rm), 63 ), (__n64) {.n64_u64 = {0}} ); \
     rm = vandq_u8( rm, vMask ); \
 \
-    _T0 = vmullq_p64( rm, vMultiplicationConstant ); \
+    _T0 = vmull_p64( vget_low_p64(rm), vMultiplicationConstant ); \
     rm = vextq_u8( rm, rm, 8 ); \
     rh = veorq_u8( rh, _T0 ); \
     res = veorq_u8( rh, rm ); \
@@ -849,8 +847,7 @@ SymCryptGHashExpandKeyPmull(
     __n128 H;
     __n128 t0, t1, t2;
     __n128 Hi;
-    const __n128 vZero = vzeroq();
-    const __n128 vMultiplicationConstant = (__n128) {.n128_u64 = {0xc200000000000000, 0}};
+    const __n64 vMultiplicationConstant = (__n64) {.n64_u64 = {0xc200000000000000}};
     const __n128 vMask = (__n128) {.n128_u64 = {0x7fffffffffffffff, 0xffffffffffffffff}};
 
     //
@@ -893,8 +890,7 @@ SymCryptGHashAppendDataPmull(
     __n128 data;
     __n128 a0, a1, a2;
     __n128 Hi, Hix;
-    const __n128 vZero = vzeroq();
-    const __n128 vMultiplicationConstant = (__n128) {.n128_u64 = {0xc200000000000000, 0}};
+    const __n64 vMultiplicationConstant = (__n64) {.n64_u64 = {0xc200000000000000}};
     const __n128 vMask = (__n128) {.n128_u64 = {0x7fffffffffffffff, 0xffffffffffffffff}};
     SIZE_T i;
     SIZE_T nBlocks = cbData / SYMCRYPT_GF128_BLOCK_SIZE;

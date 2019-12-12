@@ -913,7 +913,7 @@ SymCryptAesCtrMsb64Neon(
     __n128 _t2;\
 \
     _res = vextq_u8( _in, _in, 15 ); \
-    _t2 = vmull_p8( _res, vAlphaMultiplier ) \
+    _t2 = vmull_p8( vget_low_p8(_res), vAlphaMultiplier ); \
     _res = veorq_u32( _res, _t2 ); \
 }
 
@@ -933,8 +933,8 @@ SymCryptXtsAesEncryptDataUnitNeon(
     const __n128 *  pSrc;
     __n128 *        pDst;
     const __n128 vZero = neon_moviqb(0);
-    const __n128 vAlphaMask =       (__n128) {.n128_u8 = {0x87, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1}};
-    const __n128 vAlphaMultiplier = (__n128) {.n128_u8 = {0x86, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}};
+    const __n128 vAlphaMask =     (__n128) {.n128_u8 = {0x87, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1}};
+    const __n64 vAlphaMultiplier = (__n64) {.n64_u8  = {0x86, 0, 0, 0, 0, 0, 0, 0}};
 
     if( cbData < 8 * SYMCRYPT_AES_BLOCK_SIZE )
     {
@@ -1050,8 +1050,8 @@ SymCryptXtsAesDecryptDataUnitNeon(
     const __n128 *  pSrc;
     __n128 *        pDst;
     const __n128 vZero = neon_moviqb(0);
-    const __n128 vAlphaMask =       (__n128) {.n128_u8 = {0x87, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1}};
-    const __n128 vAlphaMultiplier = (__n128) {.n128_u8 = {0x86, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}};
+    const __n128 vAlphaMask =     (__n128) {.n128_u8 = {0x87, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1}};
+    const __n64 vAlphaMultiplier = (__n64) {.n64_u8  = {0x86, 0, 0, 0, 0, 0, 0, 0}};
 
     if( cbData < 8 * SYMCRYPT_AES_BLOCK_SIZE )
     {
