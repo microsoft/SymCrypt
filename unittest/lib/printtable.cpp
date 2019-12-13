@@ -48,7 +48,7 @@ PrintTable::addItem( String row, String col, ULONGLONG item )
 
     s << item;
 
-    String st ( s.str(), s.pcount() );
+    String st ( s.str() );
 
     addItem( row, col, st );
 }
