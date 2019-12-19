@@ -5,6 +5,7 @@
 //
 
 #include "precomp.h"
+#include <sstream>
 
 PrintTable::PrintTable()
 {
@@ -44,13 +45,11 @@ PrintTable::addItem( String row, String col, String item )
 VOID
 PrintTable::addItem( String row, String col, ULONGLONG item )
 {
-    std::strstream s;
+    std::ostringstream s;
 
     s << item;
 
-    String st ( s.str() );
-
-    addItem( row, col, st );
+    addItem( row, col, s.str() );
 }
 
 VOID
