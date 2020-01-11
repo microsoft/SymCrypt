@@ -235,7 +235,7 @@ SymCryptRngAesGenerateBlocks(
         // 1 + (~v & mask) is the value you can add to v so that the mask bits of the sum
         // end up to be zero. It is in the range 1 .. mask+1
         //
-        blocksToDo = min( cBlocks, 1 + ( (~v) & (MAX_CTRMSB64_BLOCKS - 1) ) );
+        blocksToDo = SYMCRYPT_MIN( cBlocks, 1 + ( (~v) & (MAX_CTRMSB64_BLOCKS - 1) ) );
 
         bytesToDo = blocksToDo * SYMCRYPT_AES_BLOCK_SIZE;
         SYMCRYPT_ASSERT( bytesToDo <= cbRandom );

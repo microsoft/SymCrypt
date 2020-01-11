@@ -161,13 +161,13 @@ SymCryptEcurveAllocate(
     //
     cbScratch = SymCryptSizeofEcpointEx( cbModElement, SYMCRYPT_ECPOINT_FORMAT_MAX_LENGTH ) +
                 8 * cbModElement +
-                max( SYMCRYPT_SCRATCH_BYTES_FOR_COMMON_MOD_OPERATIONS( nDigitsFieldLength ),
+                SYMCRYPT_MAX( SYMCRYPT_SCRATCH_BYTES_FOR_COMMON_MOD_OPERATIONS( nDigitsFieldLength ),
                      SYMCRYPT_SCRATCH_BYTES_FOR_MODINV( nDigitsFieldLength ) );
     // IntToModulus( FMod and GOrd )
-    cbScratch = max( cbScratch,
-                     SYMCRYPT_SCRATCH_BYTES_FOR_INT_TO_MODULUS( max(nDigitsFieldLength, nDigitsSubgroupOrder) ) );
+    cbScratch = SYMCRYPT_MAX( cbScratch,
+                     SYMCRYPT_SCRATCH_BYTES_FOR_INT_TO_MODULUS( SYMCRYPT_MAX(nDigitsFieldLength, nDigitsSubgroupOrder) ) );
     // ModElementSetValue( FMod )
-    cbScratch = max( cbScratch,
+    cbScratch = SYMCRYPT_MAX( cbScratch,
                      SYMCRYPT_SCRATCH_BYTES_FOR_COMMON_MOD_OPERATIONS( nDigitsFieldLength ) );
 
     pbScratch = SymCryptCallbackAlloc( cbScratch );

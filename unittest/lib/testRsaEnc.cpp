@@ -208,7 +208,7 @@ createKatFileSingleRawEnc( FILE * f, PCRSAKEY_TESTBLOB pBlob )
     UINT32 nDigits = SymCryptDigitsFromBits( pBlob->nBitsModulus );
 
     SIZE_T cbScratch = SYMCRYPT_SCRATCH_BYTES_FOR_INT_TO_MODULUS( nDigits );
-    cbScratch = max( cbScratch, SYMCRYPT_SCRATCH_BYTES_FOR_COMMON_MOD_OPERATIONS( nDigits ) );
+    cbScratch = SYMCRYPT_MAX( cbScratch, SYMCRYPT_SCRATCH_BYTES_FOR_COMMON_MOD_OPERATIONS( nDigits ) );
     PBYTE pbScratch = (PBYTE) SymCryptCallbackAlloc( cbScratch );
     CHECK( pbScratch != NULL, "?" );
 

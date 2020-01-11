@@ -1078,7 +1078,7 @@ testpbkdf2()
        }
 
        iteration = 1 + iteration % 500;
-       resultsize = max( 1, resultsize % (SYMCRYPT_HMAC_SHA512_RESULT_SIZE * 4));
+       resultsize = SYMCRYPT_MAX( 1, resultsize % (SYMCRYPT_HMAC_SHA512_RESULT_SIZE * 4));
 
        for (passwordSize = 0; passwordSize <= 32; passwordSize += 1)
        {
@@ -1675,6 +1675,9 @@ verifyXmmRegisters()
             // For now we will relax this test to not be triggered by the compiler/CRT. This means that we
             // no longer test this property, but we can at least detect some violations, which is better
             // than none.
+            //
+            // As of January 2020, this now also affects memcpy(), meaning we can no longer test the YMM
+            // registers in user mode either.
             //
             if( (g_xmmTestState[0].m128i_u64[0] | g_xmmTestState[0].m128i_u64[1]) == 0 &&
                 memcmp( &g_xmmTestState[1], &g_xmmStartState[1], 7 * sizeof( g_xmmStartState[0] ) ) == 0 )

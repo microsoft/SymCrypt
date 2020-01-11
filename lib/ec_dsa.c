@@ -191,7 +191,7 @@ SymCryptEcDsaSignEx(
 
     // Calculating the digits for the temporary integers
     nDigitsInt = SymCryptDigitsFromBits( (UINT32)cbHashValue * 8 );
-    nDigitsInt = max( nDigitsInt, pCurve->GOrdDigits );
+    nDigitsInt = SYMCRYPT_MAX( nDigitsInt, pCurve->GOrdDigits );
 
     nDigitsMul = SymCryptEcurveDigitsofScalarMultiplier(pCurve);
 
@@ -203,10 +203,10 @@ SymCryptEcDsaSignEx(
     cbX  = SymCryptEcurveSizeofFieldElement( pCurve );
 
     cbScratchInternal = SYMCRYPT_SCRATCH_BYTES_FOR_SCALAR_ECURVE_OPERATIONS( pCurve );
-    cbScratchInternal = max( cbScratchInternal, SYMCRYPT_SCRATCH_BYTES_FOR_COMMON_MOD_OPERATIONS( pCurve->GOrdDigits ) );
-    cbScratchInternal = max( cbScratchInternal, SYMCRYPT_SCRATCH_BYTES_FOR_COMMON_MOD_OPERATIONS( pCurve->FModDigits ) );
-    cbScratchInternal = max( cbScratchInternal, SYMCRYPT_SCRATCH_BYTES_FOR_MODINV( pCurve->GOrdDigits ) );
-    cbScratchInternal = max( cbScratchInternal, SYMCRYPT_SCRATCH_BYTES_FOR_GETSET_VALUE_ECURVE_OPERATIONS( pCurve ) );
+    cbScratchInternal = SYMCRYPT_MAX( cbScratchInternal, SYMCRYPT_SCRATCH_BYTES_FOR_COMMON_MOD_OPERATIONS( pCurve->GOrdDigits ) );
+    cbScratchInternal = SYMCRYPT_MAX( cbScratchInternal, SYMCRYPT_SCRATCH_BYTES_FOR_COMMON_MOD_OPERATIONS( pCurve->FModDigits ) );
+    cbScratchInternal = SYMCRYPT_MAX( cbScratchInternal, SYMCRYPT_SCRATCH_BYTES_FOR_MODINV( pCurve->GOrdDigits ) );
+    cbScratchInternal = SYMCRYPT_MAX( cbScratchInternal, SYMCRYPT_SCRATCH_BYTES_FOR_GETSET_VALUE_ECURVE_OPERATIONS( pCurve ) );
 
     //
     // From symcrypt_internal.h we have:
@@ -433,9 +433,9 @@ SymCryptEcDsaVerify(
     }
 
     // Calculating the digits for the temporary integer
-    nDigitsInt = max( pCurve->FModDigits, pCurve->GOrdDigits );
-    nDigitsInt = max( nDigitsInt, SymCryptDigitsFromBits( (UINT32)cbHashValue * 8 ) );
-    nDigitsInt = max( nDigitsInt, SymCryptDigitsFromBits( (UINT32)cbSignature * 4 ) );  // pbSignature contains (c,d)
+    nDigitsInt = SYMCRYPT_MAX( pCurve->FModDigits, pCurve->GOrdDigits );
+    nDigitsInt = SYMCRYPT_MAX( nDigitsInt, SymCryptDigitsFromBits( (UINT32)cbHashValue * 8 ) );
+    nDigitsInt = SYMCRYPT_MAX( nDigitsInt, SymCryptDigitsFromBits( (UINT32)cbSignature * 4 ) );  // pbSignature contains (c,d)
 
     nDigitsMul = SymCryptEcurveDigitsofScalarMultiplier(pCurve);
 
@@ -447,11 +447,11 @@ SymCryptEcDsaVerify(
     cbX  = SymCryptEcurveSizeofFieldElement( pCurve );
 
     cbScratchInternal = SYMCRYPT_SCRATCH_BYTES_FOR_MULTI_SCALAR_ECURVE_OPERATIONS( pCurve, 2 );
-    cbScratchInternal = max( cbScratchInternal, SYMCRYPT_SCRATCH_BYTES_FOR_COMMON_MOD_OPERATIONS( pCurve->GOrdDigits ) );
-    cbScratchInternal = max( cbScratchInternal, SYMCRYPT_SCRATCH_BYTES_FOR_COMMON_MOD_OPERATIONS( pCurve->FModDigits ) );
-    cbScratchInternal = max( cbScratchInternal, SYMCRYPT_SCRATCH_BYTES_FOR_MODINV( pCurve->GOrdDigits ) );
-    cbScratchInternal = max( cbScratchInternal, SYMCRYPT_SCRATCH_BYTES_FOR_GETSET_VALUE_ECURVE_OPERATIONS( pCurve ) );
-    cbScratchInternal = max( cbScratchInternal, SYMCRYPT_SCRATCH_BYTES_FOR_COMMON_ECURVE_OPERATIONS( pCurve ) );
+    cbScratchInternal = SYMCRYPT_MAX( cbScratchInternal, SYMCRYPT_SCRATCH_BYTES_FOR_COMMON_MOD_OPERATIONS( pCurve->GOrdDigits ) );
+    cbScratchInternal = SYMCRYPT_MAX( cbScratchInternal, SYMCRYPT_SCRATCH_BYTES_FOR_COMMON_MOD_OPERATIONS( pCurve->FModDigits ) );
+    cbScratchInternal = SYMCRYPT_MAX( cbScratchInternal, SYMCRYPT_SCRATCH_BYTES_FOR_MODINV( pCurve->GOrdDigits ) );
+    cbScratchInternal = SYMCRYPT_MAX( cbScratchInternal, SYMCRYPT_SCRATCH_BYTES_FOR_GETSET_VALUE_ECURVE_OPERATIONS( pCurve ) );
+    cbScratchInternal = SYMCRYPT_MAX( cbScratchInternal, SYMCRYPT_SCRATCH_BYTES_FOR_COMMON_ECURVE_OPERATIONS( pCurve ) );
 
     //
     // From symcrypt_internal.h we have:

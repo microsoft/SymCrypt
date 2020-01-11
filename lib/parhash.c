@@ -137,7 +137,7 @@ SymCryptParallelHashSetNextWork( PCSYMCRYPT_PARALLEL_HASH pParHash, PSYMCRYPT_PA
                 {
                     SYMCRYPT_ASSERT( pHash->inputBlockSize > bytesInBuffer );
 
-                    todo = min( pHash->inputBlockSize - bytesInBuffer, pOp->cbBuffer );
+                    todo = SYMCRYPT_MIN( pHash->inputBlockSize - bytesInBuffer, pOp->cbBuffer );
                     memcpy( &pState->buffer[bytesInBuffer], pOp->pbBuffer, todo );
                     pState->bytesInBuffer += (UINT32) todo;
                     if( pState->bytesInBuffer == pHash->inputBlockSize )
@@ -435,7 +435,7 @@ SymCryptParallelHashProcess(
         qsort( pWork, nWork, sizeof( *pWork ), &compareRequestSize );
     }
 
-    nPar = min( nWork, maxParallel );  // # parallel states we currently work on
+    nPar = SYMCRYPT_MIN( nWork, maxParallel );  // # parallel states we currently work on
     pNextWork = pWork + nPar;        // next work pointer.
 
     while( nWork > 0 )
@@ -443,7 +443,7 @@ SymCryptParallelHashProcess(
         todo = pWork[0]->cbData;
         for( i=1; i<nPar; i++ )
         {
-            todo = min( todo, pWork[i]->cbData );
+            todo = SYMCRYPT_MIN( todo, pWork[i]->cbData );
         }
 
         nBytes = todo & ~(pHash->inputBlockSize - 1 );

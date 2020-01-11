@@ -2434,7 +2434,7 @@ VOID
 algImpDataPerfFunction<ImpSc,AlgXtsAes>( PBYTE buf1, PBYTE buf2, PBYTE buf3, SIZE_T dataSize )
 {
     SymCryptXtsAesEncrypt( (SYMCRYPT_XTS_AES_EXPANDED_KEY *) buf1,
-                            min( dataSize, 4096 ),
+                            SYMCRYPT_MIN( dataSize, 4096 ),
                             'twek',
                             buf2,
                             buf3,
@@ -5313,7 +5313,7 @@ SetupSymCryptDsaAndDh( PBYTE buf1, PBYTE buf2, PBYTE buf3 )
     signatureSize = 2*SymCryptDlkeySizeofPrivateKey( pPtrs[0] );
     puiSignatureSize = (PUINT32) buf3;
 
-    CHECK( buff3Offset + max( signatureSize, SymCryptDlkeySizeofPublicKey( pPtrs[0] ) ) <= SCRATCH_BUF_SIZE,
+    CHECK( buff3Offset + SYMCRYPT_MAX( signatureSize, SymCryptDlkeySizeofPublicKey( pPtrs[0] ) ) <= SCRATCH_BUF_SIZE,
            "Destination buffer cannot fit the DSA signature or the DH secret" );
 
     *puiSignatureSize = signatureSize;

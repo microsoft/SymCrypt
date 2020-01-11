@@ -632,8 +632,8 @@ testLongMessage( HashMultiImp * pHash, int maxLen, PCBYTE pbResult, SIZE_T cbRes
         pHash->initWithLongMessage( startLen );
         while( nBytes > 0 )
         {
-            pHash->append( data, min( 5, nBytes ) );
-            nBytes -= min( 5, nBytes );
+            pHash->append( data, SYMCRYPT_MIN( 5, nBytes ) );
+            nBytes -= SYMCRYPT_MIN( 5, nBytes );
         }
         pHash->result( tmp, cbResult );
         CHECK3( memcmp( tmp, res, cbResult ) == 0, "Inconsistent results in line %lld", line );
@@ -700,7 +700,7 @@ testLongMessageConsistency( HashMultiImp * pHash, int nInputBlocks,  LONGLONG li
 
     while( cbData > 0 )
     {
-        SIZE_T todo = min( cbData, blockLen );
+        SIZE_T todo = SYMCRYPT_MIN( cbData, blockLen );
         pHash->append( pbData, todo );
         pbData += todo;
         cbData -= todo;

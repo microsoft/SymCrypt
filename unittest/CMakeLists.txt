@@ -74,6 +74,11 @@ if(NOT WIN32)
     create_resource_h("${DATA_FILES}")
 endif()
 
+if(WIN32 AND CMAKE_SYSTEM_PROCESSOR MATCHES "X86")
+  # Required on x86 to avoid "error LNK2026: module unsafe for SAFESEH image."
+  add_link_options(/SAFESEH:NO)
+endif()
+
 include_directories(${CMAKE_SOURCE_DIR}/unittest/inc)
 include_directories(${CMAKE_SOURCE_DIR}/unittest/lib)
 include_directories(${CMAKE_SOURCE_DIR}/unittest/resource)

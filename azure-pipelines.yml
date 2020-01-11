@@ -1,29 +1,74 @@
+# This file defines the build pipeline to build SymCrypt in Azure Dev Ops. It defines multiple jobs
+# for building and testing SymCrypt in each of the target environments. For more information on Azure
+# Pipelines, see https://docs.microsoft.com/en-us/azure/devops/pipelines/customize-pipeline
+
+# Execute the pipeline whenever a change is made to master
 trigger:
 - master
 
+# Execute the pipeline on any PR into master. (Currently not supported on Azure Git Repos; must
+# be configured through the UI.)
 pr:
 - master
 
+# List of jobs to build. Each job follows the same general format.
+# 1. Windows AMD64 with CPU optimizations
+# 2. Windows x86 with CPU optimizations
+# 3. Linux (host native) with no CPU optimizations
 jobs:
-- job: Windows
+- job: Windows_AMD64
   pool:
-    vmImage: 'windows-2019'
+    vmImage: 'windows-2019' # Windows Server 2019 with Visual Studio 2019
   steps:
   - checkout: self  # self represents the repo where the initial Pipelines YAML file was found
     submodules: recursive 
   # Initialize CMake
+  # cd bin; cmake .. -DCMAKE_TOOLCHAIN_FILE=../cmake-toolchain/windows-amd64.cmake
   - task: CMake@1
     inputs:
       workingDirectory: '$(Build.SourcesDirectory)/bin'
       cmakeArgs: '..  -DCMAKE_TOOLCHAIN_FILE=../cmake-toolchain/windows-amd64.cmake'
   # Build with CMake
+  # cmake --build .
   - task: CMake@1
     inputs:
       workingDirectory: '$(Build.SourcesDirectory)/bin'
       cmakeArgs: '--build .'
-  # Execute unit tests
+  # Execute unit tests using the inline script
   - script: |
       cd bin\exe\AMD64\WindowsUserMode\Debug
+      .\symcryptunittest.exe
+    displayName: 'Execute generic unit test'
+    name: 'WindowsGenericUnitTest'
+  # Copy build output files to artifact staging directory
+  - task: CopyFiles@2
+    inputs:
+      SourceFolder: 'bin'
+      Contents: '**'
+      TargetFolder: '$(build.artifactstagingdirectory)'
+  # Publish staged artifacts so they're available in the pipeline results
+  - task: PublishBuildArtifacts@1
+    inputs:
+      PathtoPublish: '$(Build.ArtifactStagingDirectory)'
+      ArtifactName: 'drop-Windows-AMD64'
+      publishLocation: 'Container'
+
+- job: Windows_x86
+  pool:
+    vmImage: 'windows-2019'
+  steps:
+  - checkout: self 
+    submodules: recursive 
+  - task: CMake@1
+    inputs:
+      workingDirectory: '$(Build.SourcesDirectory)/bin'
+      cmakeArgs: '..  -DCMAKE_TOOLCHAIN_FILE=../cmake-toolchain/windows-x86.cmake -A Win32'
+  - task: CMake@1
+    inputs:
+      workingDirectory: '$(Build.SourcesDirectory)/bin'
+      cmakeArgs: '--build .'
+  - script: |
+      cd bin\exe\x86\WindowsUserMode\Debug
       .\symcryptunittest.exe
     displayName: 'Execute generic unit test'
     name: 'WindowsGenericUnitTest'
@@ -35,26 +80,23 @@ jobs:
   - task: PublishBuildArtifacts@1
     inputs:
       PathtoPublish: '$(Build.ArtifactStagingDirectory)'
-      ArtifactName: 'drop-Windows-Generic'
+      ArtifactName: 'drop-Windows-x86'
       publishLocation: 'Container'
 
 - job: Linux
   pool:
     vmImage: 'ubuntu-18.04'
   steps:
-  - checkout: self  # self represents the repo where the initial Pipelines YAML file was found
+  - checkout: self
     submodules: recursive 
-  # Initialize CMake
   - task: CMake@1
     inputs:
       workingDirectory: '$(Build.SourcesDirectory)/bin'
       cmakeArgs: '..'
-  # Build with CMake
   - task: CMake@1
     inputs:
       workingDirectory: '$(Build.SourcesDirectory)/bin'
       cmakeArgs: '--build .'
-  # Execute unit tests
   - script: |
       cd bin/exe/x86_64/Generic
       ./symcryptunittest

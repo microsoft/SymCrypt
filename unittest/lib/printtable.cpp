@@ -5,6 +5,7 @@
 //
 
 #include "precomp.h"
+
 #include <sstream>
 
 PrintTable::PrintTable()
@@ -153,7 +154,7 @@ PrintTable::print( String heading )
     //
     for( SIZE_T r=0; r<nRows; r++ )
     {
-        colSize[0] = max( colSize[0], m_rows[r].size() + 1 );
+        colSize[0] = SYMCRYPT_MAX( colSize[0], m_rows[r].size() + 1 );
     }
 
     //
@@ -162,7 +163,7 @@ PrintTable::print( String heading )
     for( SIZE_T c=0; c<nCols; c++ )
     {
         //print( "%d\n", m_cols[c].size() );
-        colSize[c+1] = max( colSize[ c+1 ], m_cols[c].size() );
+        colSize[c+1] = SYMCRYPT_MAX( colSize[ c+1 ], m_cols[c].size() );
     }
 
     for( SIZE_T r=0; r<nRows; r++ )
@@ -172,7 +173,7 @@ PrintTable::print( String heading )
             // print( "%d(%s) %d(%s)\n", i, m_rows[i].c_str(), j, m_cols[j].c_str() );
             SIZE_T s = m_items[ make_pair( m_rows[r], m_cols[c] ) ].size();
             // print( "%d %s\n", s, m_items[ make_pair( m_rows[r], m_cols[c] ) ].c_str() );
-            colSize[ c+1 ] = max( colSize[ c+1 ], s );
+            colSize[ c+1 ] = SYMCRYPT_MAX( colSize[ c+1 ], s );
         }
     }
 

@@ -230,7 +230,7 @@ SymCryptDlkeyGenerate(
     // Thus the following calculation does not overflow cbScratch.
     //
     cbScratch = cbPrivateKey +
-                max(SYMCRYPT_SCRATCH_BYTES_FOR_COMMON_MOD_OPERATIONS(nDigitsPriv),
+                SYMCRYPT_MAX(SYMCRYPT_SCRATCH_BYTES_FOR_COMMON_MOD_OPERATIONS(nDigitsPriv),
                     SYMCRYPT_SCRATCH_BYTES_FOR_MODEXP(pDlgroup->nDigitsOfP));
     pbScratch = SymCryptCallbackAlloc( cbScratch );
     if (pbScratch == NULL)
@@ -334,7 +334,7 @@ SymCryptDlkeySetValue(
     //      - SYMCRYPT_SCRATCH_BYTES results are upper bounded by 2^27 (including RSA and ECURVE)
     // Thus the following calculation does not overflow cbScratch.
     //
-    cbScratch = max( SYMCRYPT_SCRATCH_BYTES_FOR_COMMON_MOD_OPERATIONS(pDlgroup->nDigitsOfP),
+    cbScratch = SYMCRYPT_MAX( SYMCRYPT_SCRATCH_BYTES_FOR_COMMON_MOD_OPERATIONS(pDlgroup->nDigitsOfP),
                      cbModElement + SYMCRYPT_SCRATCH_BYTES_FOR_MODEXP(pDlgroup->nDigitsOfP) );
     pbScratch = SymCryptCallbackAlloc( cbScratch );
     if (pbScratch == NULL)

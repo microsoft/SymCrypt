@@ -91,30 +91,38 @@ set(SOURCES
     IEEE802_11SaeCustom.c
   )
 
-if(NOT(SYMCRYPT_TARGET_ENV MATCHES "Generic") AND CMAKE_SYSTEM_PROCESSOR MATCHES "AMD64")
-    list(APPEND SOURCES
-        amd64/aesasm.asm
-        amd64/fdef_asm.asm
-        amd64/fdef_mulx.asm
-        amd64/fdef369_asm.asm
-        amd64/sha1asm.asm
-        amd64/wipe.asm)
-    set_source_files_properties(
-        amd64/aesasm.asm
-        amd64/fdef_asm.asm
-        amd64/fdef_mulx.asm
-        amd64/fdef369_asm.asm
-        amd64/sha1asm.asm
-        amd64/wipe.asm
-        PROPERTY LANGUAGE ASM_MASM)
-#    set_source_files_properties(
-#        amd64/aesasm.asm
-#        amd64/fdef_asm.asm
-#        amd64/fdef_mulx.asm
-#        amd64/fdef369_asm.asm
-#        amd64/sha1asm.asm
-#        amd64/wipe.asm
-#        PROPERTY COMPILE_FLAGS "/D\"DBG=1\"")
+if(NOT(SYMCRYPT_TARGET_ENV MATCHES "Generic"))
+    if(CMAKE_SYSTEM_PROCESSOR MATCHES "AMD64")
+        list(APPEND SOURCES
+            amd64/aesasm.asm
+            amd64/fdef_asm.asm
+            amd64/fdef_mulx.asm
+            amd64/fdef369_asm.asm
+            amd64/sha1asm.asm
+            amd64/wipe.asm)
+        set_source_files_properties(
+            amd64/aesasm.asm
+            amd64/fdef_asm.asm
+            amd64/fdef_mulx.asm
+            amd64/fdef369_asm.asm
+            amd64/sha1asm.asm
+            amd64/wipe.asm
+            PROPERTY LANGUAGE ASM_MASM)
+    elseif(CMAKE_SYSTEM_PROCESSOR MATCHES "X86")
+        list(APPEND SOURCES
+            i386/aesasm.asm
+            i386/fdef_asm.asm
+            i386/rc4asm.asm
+            i386/sha1asm.asm
+            i386/wipe.asm)
+        set_source_files_properties(
+            i386/aesasm.asm
+            i386/fdef_asm.asm
+            i386/rc4asm.asm
+            i386/sha1asm.asm
+            i386/wipe.asm
+            PROPERTY LANGUAGE ASM_MASM)
+    endif()
 endif()
 
 include_directories(${CMAKE_SOURCE_DIR}/inc)

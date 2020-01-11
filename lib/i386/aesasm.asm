@@ -46,7 +46,7 @@
 _TEXT   SEGMENT PARA PUBLIC USE32 'CODE'
         ASSUME  CS:_TEXT, DS:FLAT, SS:FLAT
 
-include <..\inc\symcrypt_version.inc>
+include symcrypt_version.inc
 include symcrypt_magic.inc
 
 

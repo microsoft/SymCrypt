@@ -12,7 +12,7 @@ SymCryptMontgomeryFillScratchSpaces(_In_ PSYMCRYPT_ECURVE pCurve)
 {
     UINT32 nDigits = SymCryptDigitsFromBits( pCurve->FModBitsize );
     UINT32 nBytes = SymCryptSizeofModElementFromModulus( pCurve->FMod );
-    UINT32 nCommon = max( SymCryptSizeofIntFromDigits( nDigits ), max( SYMCRYPT_SCRATCH_BYTES_FOR_COMMON_MOD_OPERATIONS( nDigits ), SYMCRYPT_SCRATCH_BYTES_FOR_MODINV( nDigits ) ) );
+    UINT32 nCommon = SYMCRYPT_MAX( SymCryptSizeofIntFromDigits( nDigits ), SYMCRYPT_MAX( SYMCRYPT_SCRATCH_BYTES_FOR_COMMON_MOD_OPERATIONS( nDigits ), SYMCRYPT_SCRATCH_BYTES_FOR_MODINV( nDigits ) ) );
     UINT32 cbModElement = pCurve->cbModElement;
     UINT32 nDigitsFieldLength = pCurve->FModDigits;
 
@@ -34,13 +34,13 @@ SymCryptMontgomeryFillScratchSpaces(_In_ PSYMCRYPT_ECURVE pCurve)
     pCurve->cbScratchGetSetValue = 
         SymCryptSizeofEcpointEx( cbModElement, SYMCRYPT_ECPOINT_FORMAT_MAX_LENGTH ) +
         2 * cbModElement +
-        max( SYMCRYPT_SCRATCH_BYTES_FOR_COMMON_MOD_OPERATIONS( nDigitsFieldLength ),
+        SYMCRYPT_MAX( SYMCRYPT_SCRATCH_BYTES_FOR_COMMON_MOD_OPERATIONS( nDigitsFieldLength ),
              SYMCRYPT_SCRATCH_BYTES_FOR_MODINV( nDigitsFieldLength ) );
 
-    pCurve->cbScratchGetSetValue = max( pCurve->cbScratchGetSetValue, SymCryptSizeofIntFromDigits( nDigits ) ); 
+    pCurve->cbScratchGetSetValue = SYMCRYPT_MAX( pCurve->cbScratchGetSetValue, SymCryptSizeofIntFromDigits( nDigits ) ); 
 
     pCurve->cbScratchEckey = pCurve->cbModElement + SymCryptSizeofIntFromDigits(SymCryptEcurveDigitsofScalarMultiplier(pCurve)) +
-        max( pCurve->cbScratchScalar, pCurve->cbScratchGetSetValue );
+        SYMCRYPT_MAX( pCurve->cbScratchScalar, pCurve->cbScratchGetSetValue );
 }
 
 VOID
@@ -256,7 +256,7 @@ SymCryptMontgomeryPointScalarMul(
 
     nDigits = SymCryptDigitsFromBits( pCurve->FModBitsize );
     nBytes = SymCryptSizeofModElementFromModulus( pmMod );
-    nCommon = max( SymCryptSizeofIntFromDigits(nDigits), max(SYMCRYPT_SCRATCH_BYTES_FOR_COMMON_MOD_OPERATIONS(nDigits), SYMCRYPT_SCRATCH_BYTES_FOR_MODINV(nDigits)));
+    nCommon = SYMCRYPT_MAX( SymCryptSizeofIntFromDigits(nDigits), SYMCRYPT_MAX(SYMCRYPT_SCRATCH_BYTES_FOR_COMMON_MOD_OPERATIONS(nDigits), SYMCRYPT_SCRATCH_BYTES_FOR_MODINV(nDigits)));
  
     SYMCRYPT_ASSERT( cbScratch >= 6 * nBytes + nCommon );
 

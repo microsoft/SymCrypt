@@ -7,8 +7,6 @@
 
 #include "precomp.h"
 
-#undef min
-#undef max
 #include <chrono>
 
 ULONGLONG g_minMeasurementClockTime = 0;
@@ -125,9 +123,9 @@ setPerfScaleFactor()    // FOR IA64, even older
     maxCurrent = 0;
     for( ULONG i=0; i<nProcessors; i++ )
     {
-        //iprint( "Proc %2d, curr =%6d, max = %6d\n", i, pProcPowerInfo[i].CurrentMhz, pProcPowerInfo[i].MaxMhz );
-        //maxCurrent = max( maxCurrent, pProcPowerInfo[i].CurrentMhz );
-        maxCurrent = max( maxCurrent, pProcPowerInfo[i].MaxMhz );
+        //iprint( "Proc %2d, curr =%6d, SYMCRYPT_MAX = %6d\n", i, pProcPowerInfo[i].CurrentMhz, pProcPowerInfo[i].MaxMhz );
+        //maxCurrent = SYMCRYPT_MAX( maxCurrent, pProcPowerInfo[i].CurrentMhz );
+        maxCurrent = SYMCRYPT_MAX( maxCurrent, pProcPowerInfo[i].MaxMhz );
     }
 
     QueryPerformanceFrequency(&perfFreq);
@@ -135,7 +133,7 @@ setPerfScaleFactor()    // FOR IA64, even older
 
     g_perfScaleFactor = (1e6 * maxCurrent)/perfFreq.QuadPart;
 
-    g_minMeasurementClockTime = min( 1000, (ULONG) (10000/g_perfScaleFactor) );
+    g_minMeasurementClockTime = SYMCRYPT_MIN( 1000, (ULONG) (10000/g_perfScaleFactor) );
 
     delete[] pProcPowerInfo;
 }

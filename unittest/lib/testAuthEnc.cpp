@@ -378,7 +378,7 @@ testAuthEncRandom( AuthEncMultiImp * pImp, int rrep, PCBYTE pbResult, SIZE_T cbR
             do
             {
                 SIZE_T todo = g_rng.sizet( cbData - idx + cbData/10 + 10);
-                todo = min( todo, cbData - idx );
+                todo = SYMCRYPT_MIN( todo, cbData - idx );
                 BOOLEAN last = todo == cbData - idx;
 
                 pImp->encrypt(  &buf[nonceIdx], cbNonce,
@@ -425,7 +425,7 @@ testAuthEncRandom( AuthEncMultiImp * pImp, int rrep, PCBYTE pbResult, SIZE_T cbR
             do
             {
                 SIZE_T todo = g_rng.sizet( cbData - idx + cbData/10 + 10);
-                todo = min( todo, cbData - idx );
+                todo = SYMCRYPT_MIN( todo, cbData - idx );
                 BOOLEAN last = todo == cbData - idx;
                 if( last && (g_rng.byte() & 1) == 0 )
                 {

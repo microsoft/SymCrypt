@@ -292,7 +292,7 @@ SymCryptScsRotateBuffer(
     // Using the mask array is beneficial as long as the array is used twice or more
     // Each swap loop processes 2 * blockSize of data, so the block size should never
     // be larger than n/4
-    blockSizeLimit = min( SYMCRYPT_ARRAY_SIZE( Mask ), n/4 );
+    blockSizeLimit = SYMCRYPT_MIN( SYMCRYPT_ARRAY_SIZE( Mask ), n/4 );
     while( blockSize <= blockSizeLimit )
     {
         // Compute the masks for this level

@@ -111,7 +111,7 @@ SymCryptHkdfDerive(
     pMacAlgorithm->resultFunc( &state, rbPartialResult );
 
     // Store the result in the output buffer
-    memcpy(pbCurr, rbPartialResult, min(cbResult, cbMacResultSize));
+    memcpy(pbCurr, rbPartialResult, SYMCRYPT_MIN(cbResult, cbMacResultSize));
     if (cbResult <= cbMacResultSize)
     {
         goto cleanup;
@@ -132,7 +132,7 @@ SymCryptHkdfDerive(
         pMacAlgorithm->resultFunc( &state, rbPartialResult );
 
         // Store the result in the output buffer
-        memcpy(pbCurr, rbPartialResult, min(cbResult, cbMacResultSize));
+        memcpy(pbCurr, rbPartialResult, SYMCRYPT_MIN(cbResult, cbMacResultSize));
         if (cbResult <= cbMacResultSize)
         {
             goto cleanup;

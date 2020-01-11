@@ -4,6 +4,9 @@
 // Copyright (c) Microsoft Corporation. Licensed under the MIT license.
 //
 
+// Prevent Windows header files from defining min and max macros (breaks STL)
+#define NOMINMAX
+
 #ifdef KERNEL_MODE
     //#include <ntddksec.h>
     //#include <ntverp.h>
@@ -121,21 +124,6 @@
                                 PUCHAR                          pbBuffer;       // data to be hashed, or result buffer
                                 uint32_t                           cbBuffer;
     } BCRYPT_MULTI_HASH_OPERATION;
-
-
-    #if !defined min
-    #define min(a,b) \
-    ({ __typeof__ (a) __a = (a); \
-    __typeof__ (b) __b = (b); \
-    __a < __b ? __a : __b; })
-    #endif
-
-    #if !defined max
-    #define max(a,b) \
-    ({ __typeof__ (a) __a = (a); \
-    __typeof__ (b) __b = (b); \
-    __a > __b ? __a : __b; })
-    #endif
 
     #define InterlockedAdd64(ptr, val) __sync_fetch_and_add(ptr, val)
     #define InterlockedIncrement64(ptr) __sync_fetch_and_add(ptr, 1)

@@ -1090,7 +1090,7 @@ testIntAddMixedSize()
 
     rand = g_rng.byte();
 
-    nDdst = max( nD1, nD2 );
+    nDdst = SYMCRYPT_MAX( nD1, nD2 );
     if( (rand & 1) == 0 )
     {
         nDdst += g_rng.sizet( g_digitLimit - nDdst );
@@ -1157,7 +1157,7 @@ testIntSubMixedSize()
 
     rand = g_rng.byte();
 
-    nDdst = max( nD1, nD2 );
+    nDdst = SYMCRYPT_MAX( nD1, nD2 );
     if( (rand & 1) == 0 )
     {
         nDdst += g_rng.sizet( g_digitLimit - nDdst );
@@ -1446,7 +1446,7 @@ testIsEqual()
     UINT32          expected;
     UINT32          mask;
 
-    SIZE_T          nBytes = max( nBytes1, nBytes2 );
+    SIZE_T          nBytes = SYMCRYPT_MAX( nBytes1, nBytes2 );
 
     ArithInt    *pSrc1 = randomArithInt( nD1 );
     ArithInt    *pSrc2 = randomArithInt( nD2 );
@@ -1477,7 +1477,7 @@ testIsLessThan()
     UINT32          expected;
     UINT32          mask;
 
-    SIZE_T          nBytes = max( nBytes1, nBytes2 );
+    SIZE_T          nBytes = SYMCRYPT_MAX( nBytes1, nBytes2 );
 
     ArithInt    *pSrc1 = randomArithInt( nD1 );
     ArithInt    *pSrc2 = randomArithInt( nD2 );
@@ -2081,9 +2081,9 @@ testIntGcdEx()
         piSrc2 = SymCryptIntFromDivisor( pSrc2->m_pScDivisor );
     } while ( (SymCryptIntGetValueLsbits32(piSrc2) & 0x01) == 0);
 
-    ndGcd = min(nD1,nD2);
-    ndLarge = 2*max(nD1,nD2);       // Big enough for LCM and the products InvSrcXModSrcY * SrcX
-    ndRemainder = max(nD1,nD2);     // Big enough for remainders modulo Src1 and Src2
+    ndGcd = SYMCRYPT_MIN(nD1,nD2);
+    ndLarge = 2*SYMCRYPT_MAX(nD1,nD2);       // Big enough for LCM and the products InvSrcXModSrcY * SrcX
+    ndRemainder = SYMCRYPT_MAX(nD1,nD2);     // Big enough for remainders modulo Src1 and Src2
 
     cbGcd = SymCryptSizeofDivisorFromDigits( ndGcd );
     pdGcd = SymCryptDivisorCreate( pbTmp, cbGcd, ndGcd );
@@ -2143,7 +2143,7 @@ testIntGcdEx()
             piInvSrc1ModSrc2,
             piInvSrc2ModSrc1,
             pbTmp,
-            SYMCRYPT_SCRATCH_BYTES_FOR_EXTENDED_GCD( max( nD1, nD2 ) ) );
+            SYMCRYPT_SCRATCH_BYTES_FOR_EXTENDED_GCD( SYMCRYPT_MAX( nD1, nD2 ) ) );
 
     // Verifications
     switch (rand)
@@ -2540,7 +2540,7 @@ ArithModElement::ArithModElement( ArithModulus * pModulus, UINT32 nFail )
         // Pick a random Int value of the right size. Our Int values contain the low-Hamming-weight and small values we need for corner cases.
 
         nSrcDigits = 1 + (UINT32)g_rng.sizet( 2 * nDigits );                // compute this once (min might be a macro)
-        nSrcDigits = min( nSrcDigits, g_digitLimit - 1);
+        nSrcDigits = SYMCRYPT_MIN( nSrcDigits, g_digitLimit - 1);
         pSrc = randomArithInt( nSrcDigits, nFail );
 
         SymCryptIntToModElement( pSrc->m_pScInt, m_pModulus->m_pScModulus, m_pScModElement,g_scratch, SYMCRYPT_SCRATCH_BYTES_FOR_COMMON_MOD_OPERATIONS( nDigits ) );
@@ -3215,7 +3215,7 @@ testModExp()
                 pMod->m_pScModulus,
                 pB1->m_pScModElement,
                 pE1->m_pScInt,
-                max(1, SymCryptIntBitsizeOfValue(pE1->m_pScInt)),
+                SYMCRYPT_MAX(1, SymCryptIntBitsizeOfValue(pE1->m_pScInt)),
                 flags,
                 peTmp1,
                 pbScratch,
@@ -3226,7 +3226,7 @@ testModExp()
             pMod->m_pScModulus,
             pB1->m_pScModElement,
             pE2->m_pScInt,
-            max(1, SymCryptIntBitsizeOfValue(pE2->m_pScInt)),
+            SYMCRYPT_MAX(1, SymCryptIntBitsizeOfValue(pE2->m_pScInt)),
             flags,
             peTmp2,
             pbScratch,
@@ -3243,7 +3243,7 @@ testModExp()
             pMod->m_pScModulus,
             pB1->m_pScModElement,
             piTmp,
-            max(1, SymCryptIntBitsizeOfValue(piTmp)),
+            SYMCRYPT_MAX(1, SymCryptIntBitsizeOfValue(piTmp)),
             flags,
             peTmp2,
             pbScratch,
@@ -3303,8 +3303,8 @@ testModMultiExp()
         pExp = randomArithInt( nDI );
         piExps[i] = pExp->m_pScInt;
 
-        nBitsExps[i] = max( 1, SymCryptIntBitsizeOfValue(piExps[i]));       // We can never pass nBitsExp == 0
-        nBitsExpMax = max( nBitsExpMax, nBitsExps[i] );
+        nBitsExps[i] = SYMCRYPT_MAX( 1, SymCryptIntBitsizeOfValue(piExps[i]));       // We can never pass nBitsExp == 0
+        nBitsExpMax = SYMCRYPT_MAX( nBitsExpMax, nBitsExps[i] );
     }
 
     // Create temporary elements in the g_scratch space

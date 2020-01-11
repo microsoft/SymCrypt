@@ -61,8 +61,8 @@ SymCryptEcDhSecretAgreement(
         goto cleanup;
     }
 
-    cbScratchInternal = max( SYMCRYPT_SCRATCH_BYTES_FOR_COMMON_ECURVE_OPERATIONS(pCurve),
-                        max( SYMCRYPT_SCRATCH_BYTES_FOR_SCALAR_ECURVE_OPERATIONS( pCurve ),
+    cbScratchInternal = SYMCRYPT_MAX( SYMCRYPT_SCRATCH_BYTES_FOR_COMMON_ECURVE_OPERATIONS(pCurve),
+                        SYMCRYPT_MAX( SYMCRYPT_SCRATCH_BYTES_FOR_SCALAR_ECURVE_OPERATIONS( pCurve ),
                              SYMCRYPT_SCRATCH_BYTES_FOR_GETSET_VALUE_ECURVE_OPERATIONS( pCurve ) ));
 
     //

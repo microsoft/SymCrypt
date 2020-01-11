@@ -79,7 +79,7 @@ SymCryptModExpWindowed(
     UINT32 index = 0;
 
     // Truncate the nBitsExp if above the object size
-    nBitsExp = min( nBitsExp, SymCryptIntBitsizeOfObject(piExp) );
+    nBitsExp = SYMCRYPT_MIN( nBitsExp, SymCryptIntBitsizeOfObject(piExp) );
 
     // Calculate the window size
     W = MIN_WINDOW_SIZE;
