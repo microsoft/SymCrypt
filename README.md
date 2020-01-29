@@ -20,14 +20,16 @@ Like any engineering project, SymCrypt is a compromise between conflicting requi
 
 # Build and Test
 SymCrypt can be compiled with CMake >= 2.8.9 and Visual Studio 2019 (with Windows 10 SDK version 18362) on Windows
-or gcc 7.4.0 on Linux.
+or gcc 7.4.0 on Linux. Note that CMake ships with Visual Studio 2019.
 
-1. `mkdir bin; cd bin`
-2. Configure CMake compilation:
+1. Optionally use CMake from Visual Studio `$env:PATH="C:\Program Files (x86)\Microsoft Visual Studio\2019\Enterprise\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\bin\;${env:PATH}"`
+2. `git submodule update --init`
+3. `mkdir bin; cd bin`
+4. Configure CMake compilation:
     * For 32-bit Windows targets: `cmake .. -DCMAKE_TOOLCHAIN_FILE=../cmake-toolchain/windows-x86.cmake -A Win32`
     * For 64-bit Windows targets: `cmake .. -DCMAKE_TOOLCHAIN_FILE=../cmake-toolchain/windows-amd64.cmake`
     * For Linux (or Windows with no CPU optimizations): `cmake ..`
-3. `cmake --build .`
+5. `cmake --build .`
 
 If compilation succeeds, the output will be put in the `exe` subdirectory relative to where compilation occurred
 (i.e. `bin/exe` if you followed the instructions above).
