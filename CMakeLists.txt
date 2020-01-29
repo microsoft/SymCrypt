@@ -32,6 +32,7 @@ if(WIN32 AND SYMCRYPT_TARGET_ENV MATCHES "WindowsUserMode")
     # the toolchain file
     add_compile_options(-DDBG=1)
     enable_language(ASM_MASM)
+    add_compile_options(/MP)
 elseif(NOT WIN32)
     add_compile_options(-Wno-deprecated-declarations -Wno-deprecated)
     add_compile_options(-g)

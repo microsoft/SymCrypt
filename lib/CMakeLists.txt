@@ -1,4 +1,4 @@
-set(SOURCES
+set(SOURCES_COMMON
     blockciphermodes.c
     hash.c
     parhash.c
@@ -93,7 +93,7 @@ set(SOURCES
 
 if(NOT(SYMCRYPT_TARGET_ENV MATCHES "Generic"))
     if(CMAKE_SYSTEM_PROCESSOR MATCHES "AMD64")
-        list(APPEND SOURCES
+        list(APPEND SOURCES_COMMON
             amd64/aesasm.asm
             amd64/fdef_asm.asm
             amd64/fdef_mulx.asm
@@ -109,7 +109,7 @@ if(NOT(SYMCRYPT_TARGET_ENV MATCHES "Generic"))
             amd64/wipe.asm
             PROPERTY LANGUAGE ASM_MASM)
     elseif(CMAKE_SYSTEM_PROCESSOR MATCHES "X86")
-        list(APPEND SOURCES
+        list(APPEND SOURCES_COMMON
             i386/aesasm.asm
             i386/fdef_asm.asm
             i386/rc4asm.asm
@@ -127,57 +127,46 @@ endif()
 
 include_directories(${CMAKE_SOURCE_DIR}/inc)
 
-set(SOURCES_GENERIC ${SOURCES})
-list(APPEND SOURCES_GENERIC env_generic.c)
-
-set(SOURCES_USERMODEWIN7 ${SOURCES})
-list(APPEND SOURCES_USERMODEWIN7 env_windowsUserModeWin7.c)
-
-set(SOURCES_USERMODEWIN8_1 ${SOURCES})
-list(APPEND SOURCES_USERMODEWIN8_1 env_windowsUserModeWin8_1.c)
-
-set(SOURCES_KERNELMODEWIN7 ${SOURCES})
-list(APPEND SOURCES_KERNELMODEWIN7 env_windowsKernelModeWin7.c)
-
-set(SOURCES_KERNELMODEWIN8_1 ${SOURCES})
-list(APPEND SOURCES_KERNELMODEWIN8_1 env_windowsKernelModeWin8_1.c)
-
-set(SOURCES_WINDOWSBOOTLIB ${SOURCES})
-list(APPEND SOURCES_WINDOWSBOOTLIB env_windowsBootLib.c)
-
-set(SOURCES_WINDOWSKERNELDEBUGGER ${SOURCES})
-list(APPEND SOURCES_WINDOWSKERNELDEBUGGER env_windowsKernelDebugger.c)
-
-set(SOURCES_WIN10SGX ${SOURCES})
-list(APPEND SOURCES_WIN10SGX env_win10Sgx.c)
+add_library(symcrypt_common STATIC ${SOURCES_COMMON})
 
 if(WIN32)
-    add_library(symcrypt_usermodewin7 STATIC ${SOURCES_USERMODEWIN7})
+    add_library(symcrypt_usermodewin7 STATIC env_windowsUserModeWin7.c)
     set_target_properties(symcrypt_usermodewin7 PROPERTIES PREFIX "")
+    target_link_libraries(symcrypt_usermodewin7 symcrypt_common)
 
-    add_library(symcrypt_usermodewin8_1 STATIC ${SOURCES_USERMODEWIN8_1})
+    add_library(symcrypt_usermodewin8_1 STATIC env_windowsUserModeWin8_1.c)
     set_target_properties(symcrypt_usermodewin8_1 PROPERTIES PREFIX "")
+    target_link_libraries(symcrypt_usermodewin8_1 symcrypt_common)
 
-    # add_library(symcrypt_kernelmodewin7 STATIC ${SOURCES_KERNELMODEWIN7})
+    # add_library(symcrypt_kernelmodewin7 STATIC env_windowsKernelModeWin7.c)
     # set_target_properties(symcrypt_kernelmodewin7 PROPERTIES PREFIX "")
+    # target_link_libraries(symcrypt_kernelmodewin7 symcrypt_common)
 
-    # add_library(symcrypt_kernelmodewin8_1 STATIC ${SOURCES_KERNELMODEWIN8_1})
+    # add_library(symcrypt_kernelmodewin8_1 STATIC env_windowsKernelModeWin8_1.c)
     # set_target_properties(symcrypt_kernelmodewin8_1 PROPERTIES PREFIX "")
+    # target_link_libraries(symcrypt_kernelmodewin8_1 symcrypt_common)
 
-    # add_library(symcrypt_windowsbootlib STATIC ${SOURCES_WINDOWSBOOTLIB})
+    # add_library(symcrypt_windowsbootlib STATIC env_windowsBootLib.c)
     # set_target_properties(symcrypt_windowsbootlib PROPERTIES PREFIX "")
+    # target_link_libraries(symcrypt_windowsbootlib symcrypt_common)
 
-    add_library(symcrypt_windowskerneldebugger STATIC ${SOURCES_WINDOWSKERNELDEBUGGER})
+    add_library(symcrypt_windowskerneldebugger STATIC env_windowsKernelDebugger.c)
     set_target_properties(symcrypt_windowskerneldebugger PROPERTIES PREFIX "")
+    target_link_libraries(symcrypt_windowskerneldebugger symcrypt_common)
 
-    add_library(symcrypt_windows10sgx STATIC ${SOURCES_WIN10SGX})
+    add_library(symcrypt_windows10sgx STATIC env_win10Sgx.c)
     set_target_properties(symcrypt_windows10sgx PROPERTIES PREFIX "")
-else()
+    target_link_libraries(symcrypt_windows10sgx symcrypt_common)
+endif()
+
+set(SOURCES_GENERIC ${SOURCES_COMMON})
+list(APPEND SOURCES_GENERIC env_generic.c)
+if(NOT WIN32)
     list(FILTER SOURCES_GENERIC EXCLUDE REGEX aes-asm.c)
     list(FILTER SOURCES_GENERIC EXCLUDE REGEX aes-neon.c)
     list(FILTER SOURCES_GENERIC EXCLUDE REGEX aes-xmm.c)
     add_compile_options(-Wno-trigraphs)
 endif()
-
-add_library(symcrypt_generic STATIC ${SOURCES_GENERIC})
+add_library(symcrypt_generic STATIC env_generic.c)
 set_target_properties(symcrypt_generic PROPERTIES PREFIX "")
+target_link_libraries(symcrypt_generic symcrypt_common)
