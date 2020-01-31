@@ -939,10 +939,10 @@ SymCryptAesCtrMsb64Xmm(
 // t2 = Input >> 120
 // t2 = (t2 <<<< 7) ^ (t2 <<<< 2) ^ (t2 <<<< 1) ^ t2
 // res = (Input << 8) ^ t2
-//
-// Expected to be marginally faster than new XTS_MUL_ALPHA on CPUs where clmul
+//// Expected to be marginally faster than new XTS_MUL_ALPHA on CPUs where clmul
 // instruction corresponds to a single uop - unused for now.
 //
+// __m128i XTS_ALPHA_MULTIPLIER = _mm_set_epi32( 0, 0, 0, 0x87 );
 #define XTS_MUL_ALPHA8( _in, _res ) \
 {\
     __m128i _t2;\
@@ -966,10 +966,8 @@ SymCryptXtsAesEncryptDataUnitXmm(
                                             SIZE_T                      cbData )
 {
     __m128i t0, t1, t2, t3, t4, t5, t6, t7;
-    __m128i t8, t9, t10, t11;
     __m128i c0, c1, c2, c3, c4, c5, c6, c7;
     __m128i XTS_ALPHA_MASK = _mm_set_epi32( 1, 1, 1, 0x87 );
-    __m128i XTS_ALPHA_MULTIPLIER = _mm_set_epi32( 0, 0, 0, 0x87 );
 
 
     if( cbData < 8 * SYMCRYPT_AES_BLOCK_SIZE )
@@ -981,56 +979,16 @@ SymCryptXtsAesEncryptDataUnitXmm(
     t0 = _mm_loadu_si128( (__m128i *) pbTweakBlock );
 
     XTS_MUL_ALPHA4( t0, t4 );
-    XTS_MUL_ALPHA ( t0, t1 );
-    XTS_MUL_ALPHA ( t4, t5 );
-    XTS_MUL_ALPHA ( t1, t2 );
-    XTS_MUL_ALPHA ( t5, t6 );
-    XTS_MUL_ALPHA ( t2, t3 );
-    XTS_MUL_ALPHA ( t6, t7 );
 
-    c0 = _mm_xor_si128( t0, _mm_loadu_si128( ( __m128i * ) (pbSrc +    0 ) ) );
-    c1 = _mm_xor_si128( t1, _mm_loadu_si128( ( __m128i * ) (pbSrc +   16 ) ) );
-    c2 = _mm_xor_si128( t2, _mm_loadu_si128( ( __m128i * ) (pbSrc +   32 ) ) );
-    c3 = _mm_xor_si128( t3, _mm_loadu_si128( ( __m128i * ) (pbSrc +   48 ) ) );
-    c4 = _mm_xor_si128( t4, _mm_loadu_si128( ( __m128i * ) (pbSrc +   64 ) ) );
-    c5 = _mm_xor_si128( t5, _mm_loadu_si128( ( __m128i * ) (pbSrc +   80 ) ) );
-    c6 = _mm_xor_si128( t6, _mm_loadu_si128( ( __m128i * ) (pbSrc +   96 ) ) );
-    c7 = _mm_xor_si128( t7, _mm_loadu_si128( ( __m128i * ) (pbSrc +  112 ) ) );
-
-    for(;;)
+    do
     {
-        pbSrc += 8 * SYMCRYPT_AES_BLOCK_SIZE;
-
-        AES_ENCRYPT_8( pExpandedKey, c0, c1, c2, c3, c4, c5, c6, c7 );
-
-        XTS_MUL_ALPHA8( t0, t8 );
-        XTS_MUL_ALPHA8( t1, t9 );
-        XTS_MUL_ALPHA8( t2, t10 );
-        XTS_MUL_ALPHA8( t3, t11 );
-
-        cbData -= 8 * SYMCRYPT_AES_BLOCK_SIZE;
-        if( cbData < 8 * SYMCRYPT_AES_BLOCK_SIZE )
-        {
-            break;
-        }
-
-        _mm_storeu_si128( (__m128i *) (pbDst +   0 ), _mm_xor_si128( c0, t0 ) );
-        _mm_storeu_si128( (__m128i *) (pbDst +  16 ), _mm_xor_si128( c1, t1 ) );
-        _mm_storeu_si128( (__m128i *) (pbDst +  32 ), _mm_xor_si128( c2, t2 ) );
-        _mm_storeu_si128( (__m128i *) (pbDst +  48 ), _mm_xor_si128( c3, t3 ) );
-        _mm_storeu_si128( (__m128i *) (pbDst +  64 ), _mm_xor_si128( c4, t4 ) );
-        _mm_storeu_si128( (__m128i *) (pbDst +  80 ), _mm_xor_si128( c5, t5 ) );
-        _mm_storeu_si128( (__m128i *) (pbDst +  96 ), _mm_xor_si128( c6, t6 ) );
-        _mm_storeu_si128( (__m128i *) (pbDst + 112 ), _mm_xor_si128( c7, t7 ) );
-
-        t0 = t8;
-        t1 = t9;
-        t2 = t10;
-        t3 = t11;
-        XTS_MUL_ALPHA8( t4, t4 );
-        XTS_MUL_ALPHA8( t5, t5 );
-        XTS_MUL_ALPHA8( t6, t6 );
-        XTS_MUL_ALPHA8( t7, t7 );
+        // At loop entry, t0 and t4 have the right values.
+        XTS_MUL_ALPHA ( t0, t1 );
+        XTS_MUL_ALPHA ( t4, t5 );
+        XTS_MUL_ALPHA ( t1, t2 );
+        XTS_MUL_ALPHA ( t5, t6 );
+        XTS_MUL_ALPHA ( t2, t3 );
+        XTS_MUL_ALPHA ( t6, t7 );
 
         c0 = _mm_xor_si128( t0, _mm_loadu_si128( ( __m128i * ) (pbSrc +    0 ) ) );
         c1 = _mm_xor_si128( t1, _mm_loadu_si128( ( __m128i * ) (pbSrc +   16 ) ) );
@@ -1041,29 +999,34 @@ SymCryptXtsAesEncryptDataUnitXmm(
         c6 = _mm_xor_si128( t6, _mm_loadu_si128( ( __m128i * ) (pbSrc +   96 ) ) );
         c7 = _mm_xor_si128( t7, _mm_loadu_si128( ( __m128i * ) (pbSrc +  112 ) ) );
 
+        pbSrc += 8 * SYMCRYPT_AES_BLOCK_SIZE;
+
+        AES_ENCRYPT_8( pExpandedKey, c0, c1, c2, c3, c4, c5, c6, c7 );
+
+        _mm_storeu_si128( (__m128i *) (pbDst +   0 ), _mm_xor_si128( c0, t0 ) );
+        _mm_storeu_si128( (__m128i *) (pbDst +  16 ), _mm_xor_si128( c1, t1 ) );
+        _mm_storeu_si128( (__m128i *) (pbDst +  32 ), _mm_xor_si128( c2, t2 ) );
+        _mm_storeu_si128( (__m128i *) (pbDst +  48 ), _mm_xor_si128( c3, t3 ) );
+        _mm_storeu_si128( (__m128i *) (pbDst +  64 ), _mm_xor_si128( c4, t4 ) );
+        _mm_storeu_si128( (__m128i *) (pbDst +  80 ), _mm_xor_si128( c5, t5 ) );
+        _mm_storeu_si128( (__m128i *) (pbDst +  96 ), _mm_xor_si128( c6, t6 ) );
+        _mm_storeu_si128( (__m128i *) (pbDst + 112 ), _mm_xor_si128( c7, t7 ) );
+
         pbDst += 8*SYMCRYPT_AES_BLOCK_SIZE;
-    }
+        cbData -= 8 * SYMCRYPT_AES_BLOCK_SIZE;
+        XTS_MUL_ALPHA ( t7, t0 );
+        XTS_MUL_ALPHA5( t7, t4 );
+    } while( cbData >= 8 * SYMCRYPT_AES_BLOCK_SIZE );
 
     // We won't do another 8-block set so we don't update the tweak blocks
-    _mm_storeu_si128( (__m128i *) (pbDst +   0 ), _mm_xor_si128( c0, t0 ) );
-    _mm_storeu_si128( (__m128i *) (pbDst +  16 ), _mm_xor_si128( c1, t1 ) );
-    _mm_storeu_si128( (__m128i *) (pbDst +  32 ), _mm_xor_si128( c2, t2 ) );
-    _mm_storeu_si128( (__m128i *) (pbDst +  48 ), _mm_xor_si128( c3, t3 ) );
-    _mm_storeu_si128( (__m128i *) (pbDst +  64 ), _mm_xor_si128( c4, t4 ) );
-    _mm_storeu_si128( (__m128i *) (pbDst +  80 ), _mm_xor_si128( c5, t5 ) );
-    _mm_storeu_si128( (__m128i *) (pbDst +  96 ), _mm_xor_si128( c6, t6 ) );
-    _mm_storeu_si128( (__m128i *) (pbDst + 112 ), _mm_xor_si128( c7, t7 ) );
-    pbDst += 8*SYMCRYPT_AES_BLOCK_SIZE;
 
     if( cbData > 0  )
     {
         //
         // This is a rare case: the data unit length is not a multiple of 128 bytes.
         // We do this in the default C implementation.
-        // Fix up the tweak block first
         //
 
-        t0 = t8;
         _mm_storeu_si128( (__m128i *) pbTweakBlock, t0 );
         SymCryptXtsAesEncryptDataUnitC( pExpandedKey, pbTweakBlock, pbSrc, pbDst, cbData );
     }
@@ -1080,10 +1043,8 @@ SymCryptXtsAesDecryptDataUnitXmm(
                                             SIZE_T                      cbData )
 {
     __m128i t0, t1, t2, t3, t4, t5, t6, t7;
-    __m128i t8, t9, t10, t11;
     __m128i c0, c1, c2, c3, c4, c5, c6, c7;
     __m128i XTS_ALPHA_MASK = _mm_set_epi32( 1, 1, 1, 0x87 );
-    __m128i XTS_ALPHA_MULTIPLIER = _mm_set_epi32( 0, 0, 0, 0x87 );
 
 
     if( cbData < 8 * SYMCRYPT_AES_BLOCK_SIZE )
@@ -1095,56 +1056,16 @@ SymCryptXtsAesDecryptDataUnitXmm(
     t0 = _mm_loadu_si128( (__m128i *) pbTweakBlock );
 
     XTS_MUL_ALPHA4( t0, t4 );
-    XTS_MUL_ALPHA ( t0, t1 );
-    XTS_MUL_ALPHA ( t4, t5 );
-    XTS_MUL_ALPHA ( t1, t2 );
-    XTS_MUL_ALPHA ( t5, t6 );
-    XTS_MUL_ALPHA ( t2, t3 );
-    XTS_MUL_ALPHA ( t6, t7 );
 
-    c0 = _mm_xor_si128( t0, _mm_loadu_si128( ( __m128i * ) (pbSrc +    0 ) ) );
-    c1 = _mm_xor_si128( t1, _mm_loadu_si128( ( __m128i * ) (pbSrc +   16 ) ) );
-    c2 = _mm_xor_si128( t2, _mm_loadu_si128( ( __m128i * ) (pbSrc +   32 ) ) );
-    c3 = _mm_xor_si128( t3, _mm_loadu_si128( ( __m128i * ) (pbSrc +   48 ) ) );
-    c4 = _mm_xor_si128( t4, _mm_loadu_si128( ( __m128i * ) (pbSrc +   64 ) ) );
-    c5 = _mm_xor_si128( t5, _mm_loadu_si128( ( __m128i * ) (pbSrc +   80 ) ) );
-    c6 = _mm_xor_si128( t6, _mm_loadu_si128( ( __m128i * ) (pbSrc +   96 ) ) );
-    c7 = _mm_xor_si128( t7, _mm_loadu_si128( ( __m128i * ) (pbSrc +  112 ) ) );
-
-    for(;;)
+    do
     {
-        pbSrc += 8 * SYMCRYPT_AES_BLOCK_SIZE;
-
-        AES_DECRYPT_8( pExpandedKey, c0, c1, c2, c3, c4, c5, c6, c7 );
-
-        XTS_MUL_ALPHA8( t0, t8 );
-        XTS_MUL_ALPHA8( t1, t9 );
-        XTS_MUL_ALPHA8( t2, t10 );
-        XTS_MUL_ALPHA8( t3, t11 );
-
-        cbData -= 8 * SYMCRYPT_AES_BLOCK_SIZE;
-        if( cbData < 8 * SYMCRYPT_AES_BLOCK_SIZE )
-        {
-            break;
-        }
-
-        _mm_storeu_si128( (__m128i *) (pbDst +   0 ), _mm_xor_si128( c0, t0 ) );
-        _mm_storeu_si128( (__m128i *) (pbDst +  16 ), _mm_xor_si128( c1, t1 ) );
-        _mm_storeu_si128( (__m128i *) (pbDst +  32 ), _mm_xor_si128( c2, t2 ) );
-        _mm_storeu_si128( (__m128i *) (pbDst +  48 ), _mm_xor_si128( c3, t3 ) );
-        _mm_storeu_si128( (__m128i *) (pbDst +  64 ), _mm_xor_si128( c4, t4 ) );
-        _mm_storeu_si128( (__m128i *) (pbDst +  80 ), _mm_xor_si128( c5, t5 ) );
-        _mm_storeu_si128( (__m128i *) (pbDst +  96 ), _mm_xor_si128( c6, t6 ) );
-        _mm_storeu_si128( (__m128i *) (pbDst + 112 ), _mm_xor_si128( c7, t7 ) );
-
-        t0 = t8;
-        t1 = t9;
-        t2 = t10;
-        t3 = t11;
-        XTS_MUL_ALPHA8( t4, t4 );
-        XTS_MUL_ALPHA8( t5, t5 );
-        XTS_MUL_ALPHA8( t6, t6 );
-        XTS_MUL_ALPHA8( t7, t7 );
+        // At loop entry, t0 and t4 have the right values.
+        XTS_MUL_ALPHA ( t0, t1 );
+        XTS_MUL_ALPHA ( t4, t5 );
+        XTS_MUL_ALPHA ( t1, t2 );
+        XTS_MUL_ALPHA ( t5, t6 );
+        XTS_MUL_ALPHA ( t2, t3 );
+        XTS_MUL_ALPHA ( t6, t7 );
 
         c0 = _mm_xor_si128( t0, _mm_loadu_si128( ( __m128i * ) (pbSrc +    0 ) ) );
         c1 = _mm_xor_si128( t1, _mm_loadu_si128( ( __m128i * ) (pbSrc +   16 ) ) );
@@ -1155,19 +1076,26 @@ SymCryptXtsAesDecryptDataUnitXmm(
         c6 = _mm_xor_si128( t6, _mm_loadu_si128( ( __m128i * ) (pbSrc +   96 ) ) );
         c7 = _mm_xor_si128( t7, _mm_loadu_si128( ( __m128i * ) (pbSrc +  112 ) ) );
 
+        pbSrc += 8 * SYMCRYPT_AES_BLOCK_SIZE;
+
+        AES_DECRYPT_8( pExpandedKey, c0, c1, c2, c3, c4, c5, c6, c7 );
+
+        _mm_storeu_si128( (__m128i *) (pbDst +   0 ), _mm_xor_si128( c0, t0 ) );
+        _mm_storeu_si128( (__m128i *) (pbDst +  16 ), _mm_xor_si128( c1, t1 ) );
+        _mm_storeu_si128( (__m128i *) (pbDst +  32 ), _mm_xor_si128( c2, t2 ) );
+        _mm_storeu_si128( (__m128i *) (pbDst +  48 ), _mm_xor_si128( c3, t3 ) );
+        _mm_storeu_si128( (__m128i *) (pbDst +  64 ), _mm_xor_si128( c4, t4 ) );
+        _mm_storeu_si128( (__m128i *) (pbDst +  80 ), _mm_xor_si128( c5, t5 ) );
+        _mm_storeu_si128( (__m128i *) (pbDst +  96 ), _mm_xor_si128( c6, t6 ) );
+        _mm_storeu_si128( (__m128i *) (pbDst + 112 ), _mm_xor_si128( c7, t7 ) );
+
         pbDst += 8*SYMCRYPT_AES_BLOCK_SIZE;
-    }
+        cbData -= 8 * SYMCRYPT_AES_BLOCK_SIZE;
+        XTS_MUL_ALPHA ( t7, t0 );
+        XTS_MUL_ALPHA5( t7, t4 );
+    } while( cbData >= 8 * SYMCRYPT_AES_BLOCK_SIZE );
 
     // We won't do another 8-block set so we don't update the tweak blocks
-    _mm_storeu_si128( (__m128i *) (pbDst +   0 ), _mm_xor_si128( c0, t0 ) );
-    _mm_storeu_si128( (__m128i *) (pbDst +  16 ), _mm_xor_si128( c1, t1 ) );
-    _mm_storeu_si128( (__m128i *) (pbDst +  32 ), _mm_xor_si128( c2, t2 ) );
-    _mm_storeu_si128( (__m128i *) (pbDst +  48 ), _mm_xor_si128( c3, t3 ) );
-    _mm_storeu_si128( (__m128i *) (pbDst +  64 ), _mm_xor_si128( c4, t4 ) );
-    _mm_storeu_si128( (__m128i *) (pbDst +  80 ), _mm_xor_si128( c5, t5 ) );
-    _mm_storeu_si128( (__m128i *) (pbDst +  96 ), _mm_xor_si128( c6, t6 ) );
-    _mm_storeu_si128( (__m128i *) (pbDst + 112 ), _mm_xor_si128( c7, t7 ) );
-    pbDst += 8*SYMCRYPT_AES_BLOCK_SIZE;
 
 
     if( cbData > 0  )
@@ -1175,10 +1103,8 @@ SymCryptXtsAesDecryptDataUnitXmm(
         //
         // This is a rare case: the data unit length is not a multiple of 128 bytes.
         // We do this in the default C implementation.
-        // Fix up the tweak block first
         //
 
-        t0 = t8;
         _mm_storeu_si128( (__m128i *) pbTweakBlock, t0 );
         SymCryptXtsAesDecryptDataUnitC( pExpandedKey, pbTweakBlock, pbSrc, pbDst, cbData );
     }
