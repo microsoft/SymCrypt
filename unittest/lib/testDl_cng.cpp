@@ -8,7 +8,7 @@
 #include "testInterop.h"
 
 // Maximum sizes of DSA and DH key blob (blobs passed around always contain **private** info)
-#define TEST_DL_MAX_SIZEOF_DSA_BLOB         (max(sizeof(BCRYPT_DSA_KEY_BLOB)+4*TEST_DL_MAX_NUMOF_BYTES, sizeof(BCRYPT_DSA_KEY_BLOB_V2) + 5*TEST_DL_MAX_NUMOF_BYTES))
+#define TEST_DL_MAX_SIZEOF_DSA_BLOB         (SYMCRYPT_MAX(sizeof(BCRYPT_DSA_KEY_BLOB)+4*TEST_DL_MAX_NUMOF_BYTES, sizeof(BCRYPT_DSA_KEY_BLOB_V2) + 5*TEST_DL_MAX_NUMOF_BYTES))
 #define TEST_DL_MAX_SIZEOF_DH_BLOB          (sizeof(BCRYPT_DH_KEY_BLOB)+4*TEST_DL_MAX_NUMOF_BYTES)
 #define TEST_DL_MAX_SIZEOF_DH_PARAMS        (sizeof(BCRYPT_DH_PARAMETER_HEADER)+2*TEST_DL_MAX_NUMOF_BYTES)
 

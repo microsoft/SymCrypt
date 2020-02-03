@@ -219,7 +219,7 @@ SymCryptEcpointTransform(
     PSYMCRYPT_MODELEMENT peT[2] = { 0 };    // Temporaries
 
     SYMCRYPT_ASSERT( (flags & ~SYMCRYPT_FLAG_DATA_PUBLIC) == 0 );
-    SYMCRYPT_ASSERT( cbScratch >= max(  SYMCRYPT_SCRATCH_BYTES_FOR_COMMON_MOD_OPERATIONS( pCurve->FModDigits ), 
+    SYMCRYPT_ASSERT( cbScratch >= SYMCRYPT_MAX(  SYMCRYPT_SCRATCH_BYTES_FOR_COMMON_MOD_OPERATIONS( pCurve->FModDigits ), 
                                         SYMCRYPT_SCRATCH_BYTES_FOR_MODINV( pCurve->FModDigits )) +
                                   2 * pCurve->cbModElement );
 

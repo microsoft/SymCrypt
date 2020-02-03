@@ -16,7 +16,7 @@ SymCryptRsaCoreEncScratchSpace( _In_ PCSYMCRYPT_RSAKEY pkRsakey)
 {
 	// Bounded by 2^19 + 2^24 ~ 2^24 (see symcrypt_internal.h)
     return SymCryptSizeofModElementFromModulus( pkRsakey->pmModulus ) +
-           max( SYMCRYPT_SCRATCH_BYTES_FOR_COMMON_MOD_OPERATIONS( pkRsakey->nDigitsOfModulus ),
+           SYMCRYPT_MAX( SYMCRYPT_SCRATCH_BYTES_FOR_COMMON_MOD_OPERATIONS( pkRsakey->nDigitsOfModulus ),
                 SYMCRYPT_SCRATCH_BYTES_FOR_MODEXP( pkRsakey->nDigitsOfModulus ) );
 }
 
@@ -109,7 +109,7 @@ SymCryptRsaCoreEnc(
 
     UNREFERENCED_PARAMETER( cbScratch );
     SYMCRYPT_ASSERT( cbScratch >= cbModElement +
-                                  max( SYMCRYPT_SCRATCH_BYTES_FOR_COMMON_MOD_OPERATIONS( pkRsakey->nDigitsOfModulus ),
+                                  SYMCRYPT_MAX( SYMCRYPT_SCRATCH_BYTES_FOR_COMMON_MOD_OPERATIONS( pkRsakey->nDigitsOfModulus ),
                                        SYMCRYPT_SCRATCH_BYTES_FOR_MODEXP( pkRsakey->nDigitsOfModulus ) ));
 
     pbFnScratch = pbScratch;
@@ -182,9 +182,9 @@ SymCryptRsaCoreDecCrtScratchSpace( _In_ PCSYMCRYPT_RSAKEY pkRsakey)
            SymCryptSizeofIntFromDigits( pkRsakey->nMaxDigitsOfPrimes ) +
            cbModElementTotal +
            SYMCRYPT_SIZEOF_MODELEMENT_FROM_BITS( pkRsakey->nBitsOfModulus) +
-           max( SYMCRYPT_SCRATCH_BYTES_FOR_COMMON_MOD_OPERATIONS( pkRsakey->nDigitsOfModulus ),
-           max( SYMCRYPT_SCRATCH_BYTES_FOR_MODEXP( pkRsakey->nDigitsOfModulus ),
-           max( SYMCRYPT_SCRATCH_BYTES_FOR_INT_DIVMOD( pkRsakey->nDigitsOfModulus, pkRsakey->nMaxDigitsOfPrimes ),
+           SYMCRYPT_MAX( SYMCRYPT_SCRATCH_BYTES_FOR_COMMON_MOD_OPERATIONS( pkRsakey->nDigitsOfModulus ),
+           SYMCRYPT_MAX( SYMCRYPT_SCRATCH_BYTES_FOR_MODEXP( pkRsakey->nDigitsOfModulus ),
+           SYMCRYPT_MAX( SYMCRYPT_SCRATCH_BYTES_FOR_INT_DIVMOD( pkRsakey->nDigitsOfModulus, pkRsakey->nMaxDigitsOfPrimes ),
                 SYMCRYPT_SCRATCH_BYTES_FOR_CRT_SOLUTION( pkRsakey->nMaxDigitsOfPrimes ) )));
 }
 
@@ -194,7 +194,7 @@ SymCryptRsaCoreDecScratchSpace( _In_ PCSYMCRYPT_RSAKEY pkRsakey)
 {
 	// Bounded by 2^19 + 2^24 ~ 2^24 (see symcrypt_internal.h)
     return SymCryptSizeofModElementFromModulus( pkRsakey->pmModulus ) +
-           max( SYMCRYPT_SCRATCH_BYTES_FOR_COMMON_MOD_OPERATIONS( pkRsakey->nDigitsOfModulus ),
+           SYMCRYPT_MAX( SYMCRYPT_SCRATCH_BYTES_FOR_COMMON_MOD_OPERATIONS( pkRsakey->nDigitsOfModulus ),
                 SYMCRYPT_SCRATCH_BYTES_FOR_MODEXP( pkRsakey->nDigitsOfModulus ) );
 }
 
@@ -276,9 +276,9 @@ SymCryptRsaCoreDecCrt(
     //
     SYMCRYPT_ASSERT( cbScratch >= 
                 3*cbInt + cbTmp + cbModElementTotal + cbModElementVerify +
-                max( SYMCRYPT_SCRATCH_BYTES_FOR_COMMON_MOD_OPERATIONS( pkRsakey->nDigitsOfModulus ),
-                max( SYMCRYPT_SCRATCH_BYTES_FOR_MODEXP( pkRsakey->nDigitsOfModulus ),
-                max( SYMCRYPT_SCRATCH_BYTES_FOR_INT_DIVMOD( pkRsakey->nDigitsOfModulus, pkRsakey->nMaxDigitsOfPrimes ),
+                SYMCRYPT_MAX( SYMCRYPT_SCRATCH_BYTES_FOR_COMMON_MOD_OPERATIONS( pkRsakey->nDigitsOfModulus ),
+                SYMCRYPT_MAX( SYMCRYPT_SCRATCH_BYTES_FOR_MODEXP( pkRsakey->nDigitsOfModulus ),
+                SYMCRYPT_MAX( SYMCRYPT_SCRATCH_BYTES_FOR_INT_DIVMOD( pkRsakey->nDigitsOfModulus, pkRsakey->nMaxDigitsOfPrimes ),
                      SYMCRYPT_SCRATCH_BYTES_FOR_CRT_SOLUTION( pkRsakey->nMaxDigitsOfPrimes ) ))) );
 
     pbFnScratch = pbScratch;
@@ -457,7 +457,7 @@ SymCryptRsaCoreDec(
 
     UNREFERENCED_PARAMETER( cbScratch );
     SYMCRYPT_ASSERT( cbScratch >= cbModElement +
-                     max( SYMCRYPT_SCRATCH_BYTES_FOR_COMMON_MOD_OPERATIONS( pkRsakey->nDigitsOfModulus ),
+                     SYMCRYPT_MAX( SYMCRYPT_SCRATCH_BYTES_FOR_COMMON_MOD_OPERATIONS( pkRsakey->nDigitsOfModulus ),
                           SYMCRYPT_SCRATCH_BYTES_FOR_MODEXP( pkRsakey->nDigitsOfModulus ) ) );
 
     pbFnScratch = pbScratch;
@@ -835,7 +835,7 @@ SymCryptRsaOaepEncrypt(
 
     // The SYMCRYPT_SCRATCH_BYTES_FOR_RSA_OAEP macro does not
     // overflow cbScratch since cbTmp < 2^17.
-    cbScratch = cbTmp + max( SYMCRYPT_SCRATCH_BYTES_FOR_RSA_OAEP( hashAlgorithm, cbTmp ), SymCryptRsaCoreEncScratchSpace( pkRsakey ) );
+    cbScratch = cbTmp + SYMCRYPT_MAX( SYMCRYPT_SCRATCH_BYTES_FOR_RSA_OAEP( hashAlgorithm, cbTmp ), SymCryptRsaCoreEncScratchSpace( pkRsakey ) );
     pbScratch = (PBYTE)SymCryptCallbackAlloc( cbScratch );
     if (pbScratch == NULL)
     {
@@ -939,9 +939,9 @@ SymCryptRsaOaepDecrypt(
     // The SYMCRYPT_SCRATCH_BYTES_FOR_RSA_OAEP macro does not
     // overflow cbScratch since cbTmp < 2^17.
 #if (SYMCRYPT_CRT_DECRYPTION)
-    cbScratch = cbTmp + max( SYMCRYPT_SCRATCH_BYTES_FOR_RSA_OAEP( hashAlgorithm, cbSrc ), SymCryptRsaCoreDecCrtScratchSpace( pkRsakey ) );
+    cbScratch = cbTmp + SYMCRYPT_MAX( SYMCRYPT_SCRATCH_BYTES_FOR_RSA_OAEP( hashAlgorithm, cbSrc ), SymCryptRsaCoreDecCrtScratchSpace( pkRsakey ) );
 #else
-    cbScratch = cbTmp + max( SYMCRYPT_SCRATCH_BYTES_FOR_RSA_OAEP( hashAlgorithm, cbSrc ), SymCryptRsaCoreDecScratchSpace( pkRsakey ) );
+    cbScratch = cbTmp + SYMCRYPT_MAX( SYMCRYPT_SCRATCH_BYTES_FOR_RSA_OAEP( hashAlgorithm, cbSrc ), SymCryptRsaCoreDecScratchSpace( pkRsakey ) );
 #endif
 
     pbScratch = (PBYTE)SymCryptCallbackAlloc( cbScratch );
@@ -1184,7 +1184,7 @@ SymCryptRsaPkcs1Verify(
     // The SYMCRYPT_SCRATCH_BYTES_FOR_RSA_PKCS1 macro does not
     // overflow cbScratch since cbTmp < 2^17.
     cbScratch = cbTmp + 
-                max( SymCryptRsaCoreEncScratchSpace( pkRsakey ),
+                SYMCRYPT_MAX( SymCryptRsaCoreEncScratchSpace( pkRsakey ),
                      SYMCRYPT_SCRATCH_BYTES_FOR_RSA_PKCS1( cbTmp ) );
 
     pbScratch = (PBYTE)SymCryptCallbackAlloc( cbScratch );
@@ -1287,11 +1287,11 @@ SymCryptRsaPssSign(
     // overflow cbScratch since cbTmp < 2^17.
 #if (SYMCRYPT_CRT_DECRYPTION)
     cbScratch = cbTmp + 
-                max( SymCryptRsaCoreDecCrtScratchSpace( pkRsakey ),
+                SYMCRYPT_MAX( SymCryptRsaCoreDecCrtScratchSpace( pkRsakey ),
                      SYMCRYPT_SCRATCH_BYTES_FOR_RSA_PSS( hashAlgorithm, cbHashValue, cbTmp ) );
 #else
     cbScratch = cbTmp + 
-                max( SymCryptRsaCoreDecScratchSpace( pkRsakey ),
+                SYMCRYPT_MAX( SymCryptRsaCoreDecScratchSpace( pkRsakey ),
                      SYMCRYPT_SCRATCH_BYTES_FOR_RSA_PSS( hashAlgorithm, cbHashValue, cbTmp ) );
 #endif
 
@@ -1412,7 +1412,7 @@ SymCryptRsaPssVerify(
     // The SYMCRYPT_SCRATCH_BYTES_FOR_RSA_PSS macro does not
     // overflow cbScratch since cbTmp < 2^17.
     cbScratch = cbTmp + 
-                max( SymCryptRsaCoreEncScratchSpace( pkRsakey ),
+                SYMCRYPT_MAX( SymCryptRsaCoreEncScratchSpace( pkRsakey ),
                      SYMCRYPT_SCRATCH_BYTES_FOR_RSA_PSS( hashAlgorithm, cbHashValue, cbTmp ) );
 
     pbScratch = (PBYTE)SymCryptCallbackAlloc( cbScratch );

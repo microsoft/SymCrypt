@@ -15,17 +15,3 @@
 
 #define FAST_FAIL_CRYPTO_LIBRARY    22
 #define __fastfail(x)               (*((volatile int *)(0)) = (int) (x))
-
-#if !defined min
-#define min(a,b) \
-({ __typeof__ (a) __a = (a); \
-__typeof__ (b) __b = (b); \
-__a < __b ? __a : __b; })
-#endif
-
-#if !defined max
-#define max(a,b) \
-({ __typeof__ (a) __a = (a); \
-__typeof__ (b) __b = (b); \
-__a > __b ? __a : __b; })
-#endif

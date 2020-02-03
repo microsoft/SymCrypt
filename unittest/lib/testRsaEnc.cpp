@@ -208,7 +208,7 @@ createKatFileSingleRawEnc( FILE * f, PCRSAKEY_TESTBLOB pBlob )
     UINT32 nDigits = SymCryptDigitsFromBits( pBlob->nBitsModulus );
 
     SIZE_T cbScratch = SYMCRYPT_SCRATCH_BYTES_FOR_INT_TO_MODULUS( nDigits );
-    cbScratch = max( cbScratch, SYMCRYPT_SCRATCH_BYTES_FOR_COMMON_MOD_OPERATIONS( nDigits ) );
+    cbScratch = SYMCRYPT_MAX( cbScratch, SYMCRYPT_SCRATCH_BYTES_FOR_COMMON_MOD_OPERATIONS( nDigits ) );
     PBYTE pbScratch = (PBYTE) SymCryptCallbackAlloc( cbScratch );
     CHECK( pbScratch != NULL, "?" );
 
@@ -520,21 +520,28 @@ testRsaEncSingle(
     CHECK3( cbRes == cbMsg, "Wrong message length in line %lld", line );
     CHECK3( memcmp( buf, pbMsg, cbMsg ) == 0, "Wrong message in line %lld", line );
 
-    // Check that we get an error when the ciphertext is modified.
-    // This doesn't work in general as RsaRaw doesn't return an error, but we cheat and use cbMsg to 
-    // see whether we expect an error or not.
+    // Check whether we get an error when the ciphertext is modified.
+    // For RsaRaw we never get an error.
+    // For OAEP we should always get an error.
+    // PKCS1 will mostly give an error but sometimes succeed (prob about 2^-16)
+    // We don't do this test for PKCS1 as PKCS1 decryption errors are tested elsewhere.
+    // We detect RsaRaw because cbMsg == cbKey, and OAEP because pcstrHashAlgName != NULL
 
-    // Modify the ciphertext, not in the first byte to avoid values > modulus
-    memcpy( buf, pbCiphertext, cbKey );
-    UINT32 t = g_rng.uint32();
-    buf[ 1 + ((t/8) % (cbKey - 1)) ] ^= 1 << (t%8);
-    ntStatus = pRsaEnc->decrypt( buf, cbKey, pcstrHashAlgName, pbLabel, cbLabel, buf, cbKey, &cbRes );
-    if( cbMsg == cbKey )
+    if( cbMsg == cbKey || pcstrHashAlgName != NULL )            // Only for RsaRaw and OAEP
     {
-        // We are handling RsaRaw
-        CHECK( ntStatus == STATUS_SUCCESS, "Error decrypting modified RsaRaw ciphertext" );
-    } else {
-        CHECK( !NT_SUCCESS( ntStatus ), "Modified ciphertext did not generate an Rsa decryption error" );
+        // Modify the ciphertext, not in the first byte to avoid values > modulus
+        memcpy( buf, pbCiphertext, cbKey );
+        UINT32 t = g_rng.uint32();
+        buf[ 1 + ((t/8) % (cbKey - 1)) ] ^= 1 << (t%8);
+        ntStatus = pRsaEnc->decrypt( buf, cbKey, pcstrHashAlgName, pbLabel, cbLabel, buf, cbKey, &cbRes );
+        if( cbMsg == cbKey )
+        {
+            // We are handling RsaRaw
+            CHECK( ntStatus == STATUS_SUCCESS, "Error decrypting modified RsaRaw ciphertext" );
+        } else {
+            // OAEP
+            CHECK( !NT_SUCCESS( ntStatus ), "Modified ciphertext did not generate an RsaOaep decryption error" );
+        }
     }
 
     // Encrypt; the multi-imp will do cross-verification of all implementations.
@@ -619,7 +626,7 @@ testRsaEncKats()
     String sep = "    ";
     BOOL doneAnything = FALSE;
 
-    std::auto_ptr<RsaEncMultiImp> pRsaEncMultiImp;
+    std::unique_ptr<RsaEncMultiImp> pRsaEncMultiImp;
 
     while( 1 )
     {
@@ -720,7 +727,7 @@ testRsaEncRaw()
 
     iprint( "    RsaEncRaw+" );
 
-    std::auto_ptr<RsaEncMultiImp> pRsaEncMultiImp;
+    std::unique_ptr<RsaEncMultiImp> pRsaEncMultiImp;
     pRsaEncMultiImp.reset( new RsaEncMultiImp( "RsaEncRaw" ) );
     CHECK( pRsaEncMultiImp->m_imps.size() > 0, "No RsaEncRaw impls?" );
 
@@ -895,7 +902,7 @@ testRsaEncOaep()
 
     iprint( "    RsaEncOaep+" );
 
-    std::auto_ptr<RsaEncMultiImp> pRsaEncMultiImp;
+    std::unique_ptr<RsaEncMultiImp> pRsaEncMultiImp;
     pRsaEncMultiImp.reset( new RsaEncMultiImp( "RsaEncOaep" ) );
     CHECK( pRsaEncMultiImp->m_imps.size() > 0, "No RsaEncOaep impls?" );
 

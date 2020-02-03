@@ -226,7 +226,7 @@ SymCryptParallelSha256SetNextWork( PSYMCRYPT_PARALLEL_HASH_SCRATCH_STATE pScratc
                 pState->dataLengthL += pOp->cbBuffer;
                 if( bytesInBuffer > 0 )
                 {
-                    todo = (UINT32) min( SYMCRYPT_SHA256_INPUT_BLOCK_SIZE - bytesInBuffer, pOp->cbBuffer );
+                    todo = (UINT32) SYMCRYPT_MIN( SYMCRYPT_SHA256_INPUT_BLOCK_SIZE - bytesInBuffer, pOp->cbBuffer );
                     memcpy( &pState->buffer[bytesInBuffer], pOp->pbBuffer, todo );
                     pState->bytesInBuffer += todo;
                     if( pState->bytesInBuffer == SYMCRYPT_SHA256_INPUT_BLOCK_SIZE )
@@ -380,7 +380,7 @@ SymCryptParallelSha256SetNextWork( PSYMCRYPT_PARALLEL_HASH_SCRATCH_STATE pScratc
             //
             if( bytesInBuffer > 0 )
             {
-                todo = min( SYMCRYPT_SHA256_INPUT_BLOCK_SIZE - bytesInBuffer, pState->cbData );
+                todo = SYMCRYPT_MIN( SYMCRYPT_SHA256_INPUT_BLOCK_SIZE - bytesInBuffer, pState->cbData );
                 memcpy( &pState->internalState.hashState.buffer[bytesInBuffer], pState->pbData, todo );
                 pState->pbData += todo;
                 pState->cbData -= todo;

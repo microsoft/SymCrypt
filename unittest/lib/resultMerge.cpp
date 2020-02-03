@@ -55,7 +55,7 @@ ResultMerge::getResult( PBYTE pbResult, SIZE_T cbResult, BOOL countInvocation )
             if( i->strData == j->strData )
             {
                 i->nAgree++;
-                maxAgree = max( maxAgree, i->nAgree );
+                maxAgree = SYMCRYPT_MAX( maxAgree, i->nAgree );
             }
         }
     }

@@ -63,7 +63,7 @@ rsaTestKeysAddOneFunky( UINT32 nBitsOfModulus )
 
     // Calculate scratch space
     cbScratch = 3*cbModulus + cbPrime1 + cbPrime2 +
-                max(SYMCRYPT_SCRATCH_BYTES_FOR_INT_PRIME_GEN(ndModulus),
+                SYMCRYPT_MAX(SYMCRYPT_SCRATCH_BYTES_FOR_INT_PRIME_GEN(ndModulus),
                     SYMCRYPT_SCRATCH_BYTES_FOR_INT_MUL(ndModulus));
 
     // Allocate
@@ -777,7 +777,7 @@ testRsaSignKats()
     String sep = "    ";
     BOOL doneAnything = FALSE;
 
-    std::auto_ptr<RsaSignMultiImp> pRsaSignMultiImp;
+    std::unique_ptr<RsaSignMultiImp> pRsaSignMultiImp;
 
     while( 1 )
     {
@@ -975,7 +975,7 @@ testRsaSignPss()
     NTSTATUS ntStatus;
     
 
-    std::auto_ptr<RsaSignMultiImp> pRsaSignMultiImp;
+    std::unique_ptr<RsaSignMultiImp> pRsaSignMultiImp;
     pRsaSignMultiImp.reset( new RsaSignMultiImp( "RsaSignPss" ) );
     CHECK( pRsaSignMultiImp->m_imps.size() > 0, "No PSS impls?" );
 
@@ -991,7 +991,7 @@ testRsaSignPss()
         UINT32 cbHash;
         UINT32 cbSalt;
         cbHash = g_rng.uint32() % sizeof( hash );
-        cbHash = min( cbHash, cbModulus - 3);
+        cbHash = SYMCRYPT_MIN( cbHash, cbModulus - 3);
         cbSalt = g_rng.uint32() % (cbModulus - 2 - cbHash );
 
         // The multi-imp sign automatically does a cross-verification of all

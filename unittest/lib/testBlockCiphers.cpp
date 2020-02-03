@@ -347,7 +347,7 @@ testBlockCipherRandom( BlockCipherMultiImp * pImp, int rrep, SIZE_T keyLen, PCBY
 VOID
 testBlockCipherKats()
 {
-    std::auto_ptr<KatData> katBlockCipher( getCustomResource( "kat_blockcipher.dat", "KAT_BLOCK_CIPHER" ) );
+    std::unique_ptr<KatData> katBlockCipher( getCustomResource( "kat_blockcipher.dat", "KAT_BLOCK_CIPHER" ) );
     KAT_ITEM katItem;
 
     static String g_currentCategory;
@@ -355,7 +355,7 @@ testBlockCipherKats()
     String sep = "    ";
     BOOL doneAnything = FALSE;
 
-    std::auto_ptr<BlockCipherMultiImp> pBlockCipherMultiImp;
+    std::unique_ptr<BlockCipherMultiImp> pBlockCipherMultiImp;
 
     while( 1 )
     {

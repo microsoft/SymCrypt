@@ -378,7 +378,7 @@ testAuthEncRandom( AuthEncMultiImp * pImp, int rrep, PCBYTE pbResult, SIZE_T cbR
             do
             {
                 SIZE_T todo = g_rng.sizet( cbData - idx + cbData/10 + 10);
-                todo = min( todo, cbData - idx );
+                todo = SYMCRYPT_MIN( todo, cbData - idx );
                 BOOLEAN last = todo == cbData - idx;
 
                 pImp->encrypt(  &buf[nonceIdx], cbNonce,
@@ -425,7 +425,7 @@ testAuthEncRandom( AuthEncMultiImp * pImp, int rrep, PCBYTE pbResult, SIZE_T cbR
             do
             {
                 SIZE_T todo = g_rng.sizet( cbData - idx + cbData/10 + 10);
-                todo = min( todo, cbData - idx );
+                todo = SYMCRYPT_MIN( todo, cbData - idx );
                 BOOLEAN last = todo == cbData - idx;
                 if( last && (g_rng.byte() & 1) == 0 )
                 {
@@ -494,7 +494,7 @@ testAuthEncRandom( AuthEncMultiImp * pImp, int rrep, PCBYTE pbResult, SIZE_T cbR
 VOID
 testAuthEncKats()
 {
-    std::auto_ptr<KatData> katAuthEnc( getCustomResource( "kat_authenc.dat", "KAT_AUTHENC" ) );
+    std::unique_ptr<KatData> katAuthEnc( getCustomResource( "kat_authenc.dat", "KAT_AUTHENC" ) );
     KAT_ITEM katItem;
 
     static String g_currentCategory;
@@ -502,7 +502,7 @@ testAuthEncKats()
     String sep = "    ";
     BOOL doneAnything = FALSE;
 
-    std::auto_ptr<AuthEncMultiImp> pAuthEncMultiImp;
+    std::unique_ptr<AuthEncMultiImp> pAuthEncMultiImp;
 
     while( 1 )
     {

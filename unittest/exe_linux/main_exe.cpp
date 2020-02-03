@@ -7,7 +7,7 @@
 
 #include "precomp.h"
 
-SYMCRYPT_ENVIRONMENT_GENERIC;
+SYMCRYPT_ENVIRONMENT_DEFS( Unittest );
 
 const char * g_implementationNames[] =
 {
@@ -49,15 +49,15 @@ main( int argc, _In_reads_( argc ) char * argv[] )
 
     if (g_profile)
     {
-        // runProfiling();
+        runProfiling();
     }
     else
     {
-        // runPerfTests();
+        runPerfTests();
 
         // testMultiThread();
 
-        // testSelftest();
+        testSelftest();
     }
 
     exitTestInfrastructure();

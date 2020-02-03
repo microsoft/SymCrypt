@@ -136,10 +136,10 @@ SymCryptDsaSignEx(
     // Thus the following calculation does not overflow cbScratch.
     //
     cbScratch = cbIntLarge + cbIntQ + cbIntP + cbModelementP + 4*cbModelementQ +
-                max( cbScratchInputK,
-                max( SYMCRYPT_SCRATCH_BYTES_FOR_COMMON_MOD_OPERATIONS( nDigitsOfQ ),
-                max( SYMCRYPT_SCRATCH_BYTES_FOR_COMMON_MOD_OPERATIONS( nDigitsOfP ),
-                max( SYMCRYPT_SCRATCH_BYTES_FOR_MODEXP( nDigitsOfP ),
+                SYMCRYPT_MAX( cbScratchInputK,
+                SYMCRYPT_MAX( SYMCRYPT_SCRATCH_BYTES_FOR_COMMON_MOD_OPERATIONS( nDigitsOfQ ),
+                SYMCRYPT_MAX( SYMCRYPT_SCRATCH_BYTES_FOR_COMMON_MOD_OPERATIONS( nDigitsOfP ),
+                SYMCRYPT_MAX( SYMCRYPT_SCRATCH_BYTES_FOR_MODEXP( nDigitsOfP ),
                      SYMCRYPT_SCRATCH_BYTES_FOR_MODINV( nDigitsOfQ ) ))));
     pbScratch = SymCryptCallbackAlloc( cbScratch );
     if (pbScratch==NULL)
@@ -433,7 +433,7 @@ SymCryptDsaVerify(
 
     // Calculate the digit sizes
     ndIntLarge = SymCryptDigitsFromBits( (UINT32)cbHashValue * 8 );
-    ndIntLarge = max( ndIntLarge, SymCryptDigitsFromBits( (UINT32)cbSignature * 4 ) );  // pbSignature contains (R,S)
+    ndIntLarge = SYMCRYPT_MAX( ndIntLarge, SymCryptDigitsFromBits( (UINT32)cbSignature * 4 ) );  // pbSignature contains (R,S)
 
     // Calculate the sizes of temp objects
     cbIntLarge = SymCryptSizeofIntFromDigits(ndIntLarge);
@@ -450,10 +450,10 @@ SymCryptDsaVerify(
     // Thus the following calculation does not overflow cbScratch.
     //
     cbScratch = cbIntLarge + cbIntP + 2*cbIntQ + cbModelementP + 3*cbModelementQ +
-                max( SYMCRYPT_SCRATCH_BYTES_FOR_INT_DIVMOD(nDigitsOfP,nDigitsOfQ),
-                max( SYMCRYPT_SCRATCH_BYTES_FOR_COMMON_MOD_OPERATIONS( nDigitsOfQ ),
-                max( SYMCRYPT_SCRATCH_BYTES_FOR_COMMON_MOD_OPERATIONS( nDigitsOfP ),
-                max( SYMCRYPT_SCRATCH_BYTES_FOR_MODMULTIEXP( SymCryptModulusDigitsizeOfObject(pDlgroup->pmP), 2, pDlgroup->nBitsOfQ ),
+                SYMCRYPT_MAX( SYMCRYPT_SCRATCH_BYTES_FOR_INT_DIVMOD(nDigitsOfP,nDigitsOfQ),
+                SYMCRYPT_MAX( SYMCRYPT_SCRATCH_BYTES_FOR_COMMON_MOD_OPERATIONS( nDigitsOfQ ),
+                SYMCRYPT_MAX( SYMCRYPT_SCRATCH_BYTES_FOR_COMMON_MOD_OPERATIONS( nDigitsOfP ),
+                SYMCRYPT_MAX( SYMCRYPT_SCRATCH_BYTES_FOR_MODMULTIEXP( SymCryptModulusDigitsizeOfObject(pDlgroup->pmP), 2, pDlgroup->nBitsOfQ ),
                      SYMCRYPT_SCRATCH_BYTES_FOR_MODINV( nDigitsOfQ ) ))));
     pbScratch = SymCryptCallbackAlloc( cbScratch );
     if (pbScratch==NULL)

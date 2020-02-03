@@ -690,7 +690,7 @@ SymCryptGHashAppendDataPclmulqdq(
         //
         // We process the data in blocks of up to SYMCRYPT_GHASH_PCLMULQDQ_HPOWERS blocks
         //
-        todo = min( nBlocks, SYMCRYPT_GHASH_PCLMULQDQ_HPOWERS );
+        todo = SYMCRYPT_MIN( nBlocks, SYMCRYPT_GHASH_PCLMULQDQ_HPOWERS );
 
         //
         // The first block is xorred with the state before multiplying it with a power of H
@@ -903,7 +903,7 @@ SymCryptGHashAppendDataPmull(
         //
         // We process the data in blocks of up to SYMCRYPT_GHASH_PMULL_HPOWERS blocks
         //
-        todo = min( nBlocks, SYMCRYPT_GHASH_PMULL_HPOWERS );
+        todo = SYMCRYPT_MIN( nBlocks, SYMCRYPT_GHASH_PMULL_HPOWERS );
 
         //
         // The first block is xorred with the state before multiplying it with a power of H

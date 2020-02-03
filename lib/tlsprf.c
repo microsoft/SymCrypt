@@ -237,7 +237,7 @@ SymCryptTlsPrfPHash(
     else
     {
         // Get the previous Ai
-        memcpy(rbAi, pbAiIn, min(SYMCRYPT_MAC_MAX_RESULT_SIZE, cbAiIn));
+        memcpy(rbAi, pbAiIn, SYMCRYPT_MIN(SYMCRYPT_MAC_MAX_RESULT_SIZE, cbAiIn));
     }
    
     while (cbBytesToWrite > 0)
@@ -253,7 +253,7 @@ SymCryptTlsPrfPHash(
             rbPartialResult);
     
         // Store it in the output buffer
-        memcpy(pbTmp, rbPartialResult, min(cbBytesToWrite, cbMacResultSize));
+        memcpy(pbTmp, rbPartialResult, SYMCRYPT_MIN(cbBytesToWrite, cbMacResultSize));
 
         // Build A(i+1) 
         SymCryptTlsPrfMac(
@@ -277,7 +277,7 @@ SymCryptTlsPrfPHash(
     // Store the next A(i) if needed
     if (cbAiOut > 0)
     {
-        memcpy(pbAiOut, rbAi, min(cbAiOut,cbMacResultSize));
+        memcpy(pbAiOut, rbAi, SYMCRYPT_MIN(cbAiOut,cbMacResultSize));
     }
     
     SymCryptWipeKnownSize(rbAi, sizeof(rbAi));
@@ -370,7 +370,7 @@ SymCryptTlsPrf1_1Derive(
             rbAiMd5,
             SYMCRYPT_HMAC_MD5_RESULT_SIZE,
             rbPartialResultMd5,
-            min(cbBytesToWrite, SYMCRYPT_TLS_1_1_CHUNK_SIZE),
+            SYMCRYPT_MIN(cbBytesToWrite, SYMCRYPT_TLS_1_1_CHUNK_SIZE),
             rbAiMd5,
             SYMCRYPT_HMAC_MD5_RESULT_SIZE);
 
@@ -383,7 +383,7 @@ SymCryptTlsPrf1_1Derive(
             rbAiSha1,
             SYMCRYPT_HMAC_SHA1_RESULT_SIZE,
             rbPartialResultSha1,
-            min(cbBytesToWrite, SYMCRYPT_TLS_1_1_CHUNK_SIZE),
+            SYMCRYPT_MIN(cbBytesToWrite, SYMCRYPT_TLS_1_1_CHUNK_SIZE),
             rbAiSha1,
             SYMCRYPT_HMAC_SHA1_RESULT_SIZE);
 
@@ -392,7 +392,7 @@ SymCryptTlsPrf1_1Derive(
             rbPartialResultMd5,
             rbPartialResultSha1,
             pbTmp,
-            min(cbBytesToWrite, SYMCRYPT_TLS_1_1_CHUNK_SIZE));
+            SYMCRYPT_MIN(cbBytesToWrite, SYMCRYPT_TLS_1_1_CHUNK_SIZE));
 
         if (cbBytesToWrite <= SYMCRYPT_TLS_1_1_CHUNK_SIZE)
         {

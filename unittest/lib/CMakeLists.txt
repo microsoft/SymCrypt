@@ -55,9 +55,12 @@ if(WIN32)
     )
 endif()
 
-if(CMAKE_SYSTEM_PROCESSOR MATCHES "^AMD64")
+if(CMAKE_SYSTEM_PROCESSOR MATCHES "AMD64")
     list(APPEND SOURCES amd64/saveymm.asm)
     set_source_files_properties(amd64/saveymm.asm PROPERTY LANGUAGE ASM_MASM)
+elseif(CMAKE_SYSTEM_PROCESSOR MATCHES "X86")
+    list(APPEND SOURCES i386/savexmm.asm)
+    set_source_files_properties(i386/savexmm.asm PROPERTY LANGUAGE ASM_MASM)
 endif()
 
 # Need to include an asm file from here.

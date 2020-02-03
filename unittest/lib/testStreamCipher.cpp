@@ -355,7 +355,7 @@ testStreamCipherRandom( StreamCipherMultiImp * pImp, int rrep, PCBYTE pbResult, 
 VOID
 testStreamCipherKats()
 {
-    std::auto_ptr<KatData> katStreamCipher( getCustomResource( "kat_streamcipher.dat", "KAT_STREAM_CIPHER" ) );
+    std::unique_ptr<KatData> katStreamCipher( getCustomResource( "kat_streamcipher.dat", "KAT_STREAM_CIPHER" ) );
     KAT_ITEM katItem;
 
     static String g_currentCategory;
@@ -364,7 +364,7 @@ testStreamCipherKats()
     BOOL doneAnything = FALSE;
     UINT64 offset;
 
-    std::auto_ptr<StreamCipherMultiImp> pStreamCipherMultiImp;
+    std::unique_ptr<StreamCipherMultiImp> pStreamCipherMultiImp;
 
 
     while( 1 )

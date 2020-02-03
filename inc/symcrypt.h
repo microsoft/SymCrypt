@@ -52,7 +52,6 @@ extern "C" {
 // to indicate that the environment is kernel mode and the compact SHA-256 implementation is to
 // be used.
 // There are optimized environments for various Windows use cases.
-// At the moment there is no Linux port of SymCrypt.
 //
 //
 // CHECKED BUILDS
@@ -440,6 +439,12 @@ SymCryptUint64Bytesize( UINT64 value );
 // (e.g. if XMM register saving is not needed, the stub function declared by the macro
 // will always succeed, and the compiler will inline it and optimize it away.)
 //
+// Warning: due to recent changes in the Visual Studio C runtime, we cannot test saving
+// of the YMM registers in Windows user mode. Because we do not have a kernel mode test
+// for saving/restoring the YMM registers, this functionality is currently not tested.
+// Before using SymCrypt in Windows 7 kernel mode, additional kernel mode tests should be
+// added to verify this functionality.
+//
 
 //
 // The following environment macros are available. Callers should invoke one of these
@@ -746,11 +751,11 @@ SymCryptHashStateSize( _In_ PCSYMCRYPT_HASH pHash );
 VOID
 SYMCRYPT_CALL
 SymCryptHash(
-    _In_                                                PCSYMCRYPT_HASH pHash,
-    _In_reads_( cbData )                                PCBYTE          pbData,
-                                                        SIZE_T          cbData,
-    _Out_writes_( min( cbResult, pHash->resultSize ) )  PBYTE           pbResult,
-                                                        SIZE_T          cbResult );
+    _In_                                                         PCSYMCRYPT_HASH pHash,
+    _In_reads_( cbData )                                         PCBYTE          pbData,
+                                                                 SIZE_T          cbData,
+    _Out_writes_( SYMCRYPT_MIN( cbResult, pHash->resultSize ) )  PBYTE           pbResult,
+                                                                 SIZE_T          cbResult );
 
 VOID
 SYMCRYPT_CALL
@@ -769,10 +774,10 @@ SymCryptHashAppend(
 VOID
 SYMCRYPT_CALL
 SymCryptHashResult(
-    _In_                                                PCSYMCRYPT_HASH pHash,
-    _Inout_updates_bytes_( pHash->stateSize )           PVOID           pState,
-    _Out_writes_( min( cbResult, pHash->resultSize ) )  PBYTE           pbResult,
-                                                        SIZE_T          cbResult );
+    _In_                                                         PCSYMCRYPT_HASH pHash,
+    _Inout_updates_bytes_( pHash->stateSize )                    PVOID           pState,
+    _Out_writes_( SYMCRYPT_MIN( cbResult, pHash->resultSize ) )  PBYTE           pbResult,
+                                                                 SIZE_T          cbResult );
 
 
 ////////////////////////////////////////////////////////////////////////////

@@ -60,9 +60,9 @@ VOID addImplementationToList(AlgorithmImplementationVector * pAlgorithmImplement
 
 
 template< typename AlgType >
-std::auto_ptr<std::vector< AlgType * >>  getAlgorithmsOfOneType()
+std::unique_ptr<std::vector< AlgType * >>  getAlgorithmsOfOneType()
 {
-    std::auto_ptr<std::vector< AlgType * >> result( new std::vector< AlgType * > );
+    std::unique_ptr<std::vector< AlgType * >> result( new std::vector< AlgType * > );
 
     for( std::vector<AlgorithmImplementation *>::iterator i = g_algorithmImplementation.begin();
             i != g_algorithmImplementation.end();

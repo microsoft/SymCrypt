@@ -75,7 +75,7 @@ SymCryptGcmAddMacData(
     SIZE_T nBytes;
     if( pState->bytesInMacBlock > 0 )
     {
-        nBytes = min( cbData, SYMCRYPT_GCM_BLOCK_SIZE - pState->bytesInMacBlock );
+        nBytes = SYMCRYPT_MIN( cbData, SYMCRYPT_GCM_BLOCK_SIZE - pState->bytesInMacBlock );
         memcpy( &pState->macBlock[pState->bytesInMacBlock], pbData, nBytes );
         pbData += nBytes;
         cbData -= nBytes;
@@ -151,7 +151,7 @@ SymCryptGcmEncryptDecryptPart(
     
     if( bytesUsedInKeyStreamBuffer != 0 )
     {
-        bytesToProcess = min( cbData, SYMCRYPT_GCM_BLOCK_SIZE - bytesUsedInKeyStreamBuffer );
+        bytesToProcess = SYMCRYPT_MIN( cbData, SYMCRYPT_GCM_BLOCK_SIZE - bytesUsedInKeyStreamBuffer );
         SymCryptXorBytes( pbSrc, &pState->keystreamBlock[bytesUsedInKeyStreamBuffer], pbDst, bytesToProcess );
         pbSrc += bytesToProcess;
         pbDst += bytesToProcess;

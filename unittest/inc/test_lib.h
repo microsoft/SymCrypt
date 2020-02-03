@@ -4,6 +4,9 @@
 // Copyright (c) Microsoft Corporation. Licensed under the MIT license.
 //
 
+// Prevent Windows header files from defining min and max macros (breaks STL)
+#define NOMINMAX
+
 #ifdef KERNEL_MODE
     //#include <ntddksec.h>
     //#include <ntverp.h>
@@ -122,21 +125,6 @@
                                 uint32_t                           cbBuffer;
     } BCRYPT_MULTI_HASH_OPERATION;
 
-
-    #if !defined min
-    #define min(a,b) \
-    ({ __typeof__ (a) __a = (a); \
-    __typeof__ (b) __b = (b); \
-    __a < __b ? __a : __b; })
-    #endif
-
-    #if !defined max
-    #define max(a,b) \
-    ({ __typeof__ (a) __a = (a); \
-    __typeof__ (b) __b = (b); \
-    __a > __b ? __a : __b; })
-    #endif
-
     #define InterlockedAdd64(ptr, val) __sync_fetch_and_add(ptr, val)
     #define InterlockedIncrement64(ptr) __sync_fetch_and_add(ptr, 1)
     #define InterlockedDecrement64(ptr) __sync_fetch_and_sub(ptr, 1)
@@ -152,10 +140,10 @@
 
     #elif defined(__amd64)
 
-    static inline unsigned long __rdtsc(void)
+    static inline unsigned long long __rdtsc(void)
     {
-        unsigned long tsc;
-        asm volatile ("rdtsc; sal $32, %%rdx; or %%rax, %%rdx;" : "=a"(tsc));
+        unsigned long long tsc;
+        asm volatile ("rdtsc; sal $32, %%rdx; or %%rdx, %%rax;" : "=a"(tsc));
         return tsc;
     }
     #endif
@@ -1027,17 +1015,12 @@ extern ULONG    g_rc2EffectiveKeyLength;
 
 extern ULONG g_cngKeySizeFlag;
 
-extern double g_tscFreqTickCtr;
-extern double g_tscFreqPerfCtr;
+extern double g_tscFreq;
 
 extern BOOL g_sgx;
 
-//template< typename AlgType >
-//VOID getAlgorithmsOfOneType();
-//std::auto_ptr<std::vector< AlgType * >> getAlgorithmsOfOneType();
-
 template< typename AlgType >
-std::auto_ptr<std::vector<AlgType *>> getAlgorithmsOfOneType( );
+std::unique_ptr<std::vector<AlgType *>> getAlgorithmsOfOneType( );
 
 
 extern BOOLEAN     TestSelftestsEnabled;

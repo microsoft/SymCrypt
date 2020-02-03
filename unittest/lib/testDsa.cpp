@@ -305,7 +305,7 @@ testDsaSingle(
     // As the truncation is to the bit size, we introduce a difference in the bytes
     // that are always relevant.
     memcpy( buf, pbHash, cbHash );
-    buf[g_rng.sizet( min( cbHash, pKey->pGroup->cbPrimeQ - 1 ) )]++;
+    buf[g_rng.sizet( SYMCRYPT_MIN( cbHash, pKey->pGroup->cbPrimeQ - 1 ) )]++;
     ntStatus = pDsa->verify( buf, cbHash, pbSig, cbSig );
     CHECK( !NT_SUCCESS( ntStatus ), "Success verifying modified DSA signature" );
 
@@ -399,7 +399,7 @@ testDsatestGroups( DsaImplementation  * pDsa, INT64 line )
         CHECK( NT_SUCCESS( ntStatus ), "?" );
 
         // Modify the hash, but only in the bytes that are known to be used
-        SIZE_T j = g_rng.sizet( min( cbHash, pGroupBlob->cbPrimeQ - 1) );
+        SIZE_T j = g_rng.sizet( SYMCRYPT_MIN( cbHash, pGroupBlob->cbPrimeQ - 1) );
         hash[j]++;
         ntStatus = pDsa->verify( hash, cbHash, sig, cbSig );
         hash[j]--;
@@ -438,7 +438,7 @@ testDsaKats()
     String sep = "    ";
     BOOL doneAnything = FALSE;
 
-    std::auto_ptr<DsaMultiImp> pDsaMultiImp;
+    std::unique_ptr<DsaMultiImp> pDsaMultiImp;
 
     while( 1 )
     {

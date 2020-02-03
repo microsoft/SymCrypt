@@ -248,7 +248,7 @@ CFBAnyLen(
 
     while( cbData > 0 )
     {
-        todo = min( cbData, dwBlockLen );
+        todo = SYMCRYPT_MIN( cbData, dwBlockLen );
         memcpy( buf, input, todo );
         memcpy( oldFeedback, feedback, dwBlockLen );
         CFB( Cipher, dwBlockLen, buf, buf, keyTable, op, feedback );

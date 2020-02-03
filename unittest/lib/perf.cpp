@@ -7,13 +7,12 @@
 
 #include "precomp.h"
 
+#include <chrono>
 
 ULONGLONG g_minMeasurementClockTime = 0;
 ULONGLONG g_largeMeasurementClockTime = (ULONGLONG)-1;
 double g_perfScaleFactor;
-
-double g_tscFreqTickCtr;
-double g_tscFreqPerfCtr;
+double g_tscFreq;
 
 BOOLEAN g_enableCpuIdBeforeRdtsc = TRUE;
 
@@ -35,8 +34,6 @@ BOOLEAN g_enableCpuIdBeforeRdtsc = TRUE;
 #define PERF_UNIT   "cycles"
 
 #else
-
-
 
 FORCEINLINE
 ULONGLONG
@@ -126,9 +123,9 @@ setPerfScaleFactor()    // FOR IA64, even older
     maxCurrent = 0;
     for( ULONG i=0; i<nProcessors; i++ )
     {
-        //iprint( "Proc %2d, curr =%6d, max = %6d\n", i, pProcPowerInfo[i].CurrentMhz, pProcPowerInfo[i].MaxMhz );
-        //maxCurrent = max( maxCurrent, pProcPowerInfo[i].CurrentMhz );
-        maxCurrent = max( maxCurrent, pProcPowerInfo[i].MaxMhz );
+        //iprint( "Proc %2d, curr =%6d, SYMCRYPT_MAX = %6d\n", i, pProcPowerInfo[i].CurrentMhz, pProcPowerInfo[i].MaxMhz );
+        //maxCurrent = SYMCRYPT_MAX( maxCurrent, pProcPowerInfo[i].CurrentMhz );
+        maxCurrent = SYMCRYPT_MAX( maxCurrent, pProcPowerInfo[i].MaxMhz );
     }
 
     QueryPerformanceFrequency(&perfFreq);
@@ -136,7 +133,7 @@ setPerfScaleFactor()    // FOR IA64, even older
 
     g_perfScaleFactor = (1e6 * maxCurrent)/perfFreq.QuadPart;
 
-    g_minMeasurementClockTime = min( 1000, (ULONG) (10000/g_perfScaleFactor) );
+    g_minMeasurementClockTime = SYMCRYPT_MIN( 1000, (ULONG) (10000/g_perfScaleFactor) );
 
     delete[] pProcPowerInfo;
 }
@@ -996,36 +993,9 @@ VOID
 SYMCRYPT_NOINLINE
 measurePerfOfAlgorithms()
 {
-    #if SYMCRYPT_MS_VC
+    auto startChrono = std::chrono::steady_clock::now();
 
-    ULONGLONG startClock;
-    ULONGLONG clockCycles;
-    LARGE_INTEGER startCnt;
-    LARGE_INTEGER stopCnt;
-    LARGE_INTEGER cntFreq;
-    ULONGLONG startTick;
-    ULONGLONG ms;
-    double cntTime;
-
-    //
-    // Experimentally we know that the very first algorithms to be measured returns too large measurements.
-    // We test the first algorithm and throw away the results to circumvent this.
-    //
-    /* This is too slow when the first algorithm is really expensive...
-    AlgorithmImplementation * pAlgImp = * g_algorithmImplementation.begin();
-    if( pAlgImp != NULL )
-    {
-        for( int i=0; i<4; i++ )
-        {
-            measurePerfOneAlg( pAlgImp );
-            pAlgImp->m_perfInfo.clear();
-        }
-    }
-    */
-
-    QueryPerformanceCounter( &startCnt );
-    startTick = GetTickCount64();
-    startClock = GET_PERF_CLOCK();
+    ULONGLONG startClock = GET_PERF_CLOCK();
 
     for( std::vector<AlgorithmImplementation *>::iterator i = g_algorithmImplementation.begin();
             i != g_algorithmImplementation.end();
@@ -1037,17 +1007,11 @@ measurePerfOfAlgorithms()
         measurePerfOneAlg( *i );
     }
 
-    clockCycles = GET_PERF_CLOCK() - startClock;
-    ms = GetTickCount64() - startTick;
-    QueryPerformanceCounter( &stopCnt );
+    ULONGLONG clockCycles = GET_PERF_CLOCK() - startClock;
 
-    QueryPerformanceFrequency( &cntFreq );
+    auto durationMs = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - startChrono);
 
-    cntTime = ((double) stopCnt.QuadPart - startCnt.QuadPart) / cntFreq.QuadPart;
-    g_tscFreqTickCtr = (double) clockCycles / ((double) ms / 1000);
-    g_tscFreqPerfCtr = (double) clockCycles / cntTime;
-
-    #endif // SYMCRYPT_MS_VC
+    g_tscFreq = (double) clockCycles / ((double) durationMs.count() / 1000);
 }
 
 
@@ -1095,10 +1059,9 @@ measurePerfOfWipe()
 VOID
 measurePerf()
 {
-    #if SYMCRYPT_MS_VC
-
     iprint( "\nStarting performance measurements..." );
 
+    #if SYMCRYPT_MS_VC
     int oldPriority = GetThreadPriority( GetCurrentThread() );
 
     CHECK( SetThreadPriority( GetCurrentThread(), THREAD_PRIORITY_TIME_CRITICAL ), "Failed to set priority" );
@@ -1107,6 +1070,7 @@ measurePerf()
     DWORD_PTR affinitymask = (DWORD_PTR)1 << GetCurrentProcessorNumber();
     affinitymask = SetThreadAffinityMask( GetCurrentThread(), affinitymask );
     CHECK( affinitymask != 0, "Failed to set affinity mask" );
+    #endif // SYMCRYPT_MS_VC
 
     initPerfSystem();
 
@@ -1119,13 +1083,13 @@ measurePerf()
     }
 
 
+    #if SYMCRYPT_MS_VC
     CHECK( SetThreadAffinityMask( GetCurrentThread(), affinitymask ) != 0, "Failed to restore affinity mask" );
     CHECK( GetThreadPriority( GetCurrentThread() ) == THREAD_PRIORITY_TIME_CRITICAL, "Thread priority decay" );
     CHECK( SetThreadPriority( GetCurrentThread(), oldPriority ), "Failed to set priority" );
+    #endif // SYMCRYPT_MS_VC
 
     iprint( "...done\n" );
-
-    #endif // SYMCRYPT_MS_VC
 }
 
 SYMCRYPT_NOINLINE

@@ -196,7 +196,7 @@ void WINAPI mp_free_temp(
     FreeWithChecksMsBignum(p);
 }
 
-void SetMpErrno(__in mp_errno_tc code, PBIGCTX_ARG)
+void WINAPI SetMpErrno(__in mp_errno_tc code, PBIGCTX_ARG)
 {
     if (NULL != pbigctx)
     {
@@ -204,7 +204,7 @@ void SetMpErrno(__in mp_errno_tc code, PBIGCTX_ARG)
     }
 }
 
-void SetMpErrno_clue1(__in mp_errno_tc code, __in_opt const char *hint, PBIGCTX_ARG)
+void WINAPI SetMpErrno_clue1(__in mp_errno_tc code, __in_opt const char *hint, PBIGCTX_ARG)
 {
     UNREFERENCED_PARAMETER(hint);
 

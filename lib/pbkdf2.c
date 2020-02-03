@@ -60,7 +60,7 @@ SymCryptPbkdf2Derive(
             SymCryptXorBytes( &rbWorkBuffer[0], &rbBlockResult[0], &rbBlockResult[0], blockSize );
         }
         
-        bytes = min( cbResult, blockSize );
+        bytes = SYMCRYPT_MIN( cbResult, blockSize );
         memcpy( pbResult, rbBlockResult, bytes );
         pbResult += bytes;
         cbResult -= bytes;

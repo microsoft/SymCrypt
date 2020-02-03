@@ -303,7 +303,7 @@ testRsaGenerateFunkyKey(
 
     // Calculate scratch space
     cbScratch = 3*cbModulus + cbPrime1 + cbPrime2 +
-                max(SYMCRYPT_SCRATCH_BYTES_FOR_INT_PRIME_GEN(ndModulus),
+                SYMCRYPT_MAX(SYMCRYPT_SCRATCH_BYTES_FOR_INT_PRIME_GEN(ndModulus),
                     SYMCRYPT_SCRATCH_BYTES_FOR_INT_MUL(ndModulus));
 
     // Allocate

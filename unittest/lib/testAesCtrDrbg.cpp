@@ -236,7 +236,7 @@ testAesCtrDrbgSingle(
 VOID
 testRngs()
 {
-    std::auto_ptr<KatData> katRng( getCustomResource( "kat_rng.dat", "KAT_RNG" ) );
+    std::unique_ptr<KatData> katRng( getCustomResource( "kat_rng.dat", "KAT_RNG" ) );
     KAT_ITEM katItem;
 
     static String g_currentCategory;
@@ -245,7 +245,7 @@ testRngs()
     LONGLONG generateAfterInstantiate = -1;
 
     String sep = "    ";
-    std::auto_ptr<RngSp800_90MultiImp> pRngMultiImp;
+    std::unique_ptr<RngSp800_90MultiImp> pRngMultiImp;
 
     while( 1 )
     {

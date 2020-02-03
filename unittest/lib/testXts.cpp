@@ -268,7 +268,7 @@ testXtsRandom( XtsMultiImp * pImp, int rrep, SIZE_T keyLen, PCBYTE pbResult, SIZ
 VOID
 testXtsKats()
 {
-    std::auto_ptr<KatData> katXts( getCustomResource( "kat_xts.dat", "KAT_XTS" ) );
+    std::unique_ptr<KatData> katXts( getCustomResource( "kat_xts.dat", "KAT_XTS" ) );
     KAT_ITEM katItem;
 
     static String g_currentCategory;
@@ -276,7 +276,7 @@ testXtsKats()
     String sep = "    ";
     BOOL doneAnything = FALSE;
 
-    std::auto_ptr<XtsMultiImp> pXtsMultiImp;
+    std::unique_ptr<XtsMultiImp> pXtsMultiImp;
 
     while( 1 )
     {

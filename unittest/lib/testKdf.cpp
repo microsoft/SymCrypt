@@ -228,7 +228,7 @@ testKdfRandom( KdfMultiImp * pImp, KDF_ARGUMENT_TYPE argType, int rrep, SIZE_T k
 VOID
 testKdfKats()
 {
-    std::auto_ptr<KatData> katBlockCipher( getCustomResource( "kat_kdf.dat", "KAT_KDF" ) );
+    std::unique_ptr<KatData> katBlockCipher( getCustomResource( "kat_kdf.dat", "KAT_KDF" ) );
     KAT_ITEM katItem;
 
     static String g_currentCategory;
@@ -236,7 +236,7 @@ testKdfKats()
     String sep = "    ";
     BOOL doneAnything = FALSE;
 
-    std::auto_ptr<KdfMultiImp> pKdfMultiImp;
+    std::unique_ptr<KdfMultiImp> pKdfMultiImp;
 
     while( 1 )
     {

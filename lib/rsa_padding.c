@@ -276,7 +276,7 @@ SymCryptRsaPkcs1RemoveEncryptionPadding(
     // The ScsCopy function can copy the data to the destination buffer, but the input buffer must be
     // as long as the output buffer. We can't just use cbPlaintext as the output buffer size, as it is
     // unbounded. But we can limit it to cbPkcs1Format as that is the public key size and is public.
-    SymCryptScsCopy( pbPkcs1Format, cbPlaintextResult, pbPlaintext, min( cbPlaintext, cbPkcs1Format ) );
+    SymCryptScsCopy( pbPkcs1Format, cbPlaintextResult, pbPlaintext, SYMCRYPT_MIN( cbPlaintext, cbPkcs1Format ) );
 
 cleanup:
     // Update scError with the two error masks. Padding error given highest priority.

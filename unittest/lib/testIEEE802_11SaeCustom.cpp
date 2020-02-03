@@ -153,7 +153,7 @@ testSaeCustomNegative(
 VOID
 testIEEE802_11SaeCustomKats()
 {
-    std::auto_ptr<KatData> katData( getCustomResource( "kat_IEEE802_11SaeCustom.dat", "KAT_SAE_CUSTOM" ) );
+    std::unique_ptr<KatData> katData( getCustomResource( "kat_IEEE802_11SaeCustom.dat", "KAT_SAE_CUSTOM" ) );
     KAT_ITEM katItem;
     std::vector<ArithImplementation *> ImpPtrVector;
 

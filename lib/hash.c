@@ -153,11 +153,11 @@ SymCryptHashStateSize( _In_ PCSYMCRYPT_HASH pHash )
 VOID
 SYMCRYPT_CALL
 SymCryptHash( 
-    _In_                                                PCSYMCRYPT_HASH pHash,
-    _In_reads_( cbData )                                PCBYTE          pbData, 
-                                                        SIZE_T          cbData,
-    _Out_writes_( min( cbResult, pHash->resultSize ) )  PBYTE           pbResult,
-                                                        SIZE_T          cbResult )
+    _In_                                                         PCSYMCRYPT_HASH pHash,
+    _In_reads_( cbData )                                         PCBYTE          pbData, 
+                                                                 SIZE_T          cbData,
+    _Out_writes_( SYMCRYPT_MIN( cbResult, pHash->resultSize ) )  PBYTE           pbResult,
+                                                                 SIZE_T          cbResult )
 {
     SYMCRYPT_HASH_STATE hash;
 
@@ -191,17 +191,17 @@ SymCryptHashAppend(
 VOID
 SYMCRYPT_CALL
 SymCryptHashResult( 
-    _In_                                                PCSYMCRYPT_HASH pHash,
-    _Inout_updates_bytes_( pHash->stateSize )           PVOID           pState,
-    _Out_writes_( min( cbResult, pHash->resultSize ) )  PBYTE           pbResult,
-                                                        SIZE_T          cbResult )
+    _In_                                                         PCSYMCRYPT_HASH pHash,
+    _Inout_updates_bytes_( pHash->stateSize )                    PVOID           pState,
+    _Out_writes_( SYMCRYPT_MIN( cbResult, pHash->resultSize ) )  PBYTE           pbResult,
+                                                                 SIZE_T          cbResult )
 {
     BYTE    buf[SYMCRYPT_HASH_MAX_RESULT_SIZE];
 
     _Analysis_assume_( pHash->resultSize <= SYMCRYPT_HASH_MAX_RESULT_SIZE );
 
     (*pHash->resultFunc)( pState, buf );
-    memcpy( pbResult, buf, min( cbResult, pHash->resultSize ));
+    memcpy( pbResult, buf, SYMCRYPT_MIN( cbResult, pHash->resultSize ));
     SymCryptWipe( buf, pHash->resultSize );
 }
 

@@ -187,7 +187,7 @@ SymCryptPositiveWidthNafRecoding(
 
     for (UINT32 i=0; i < nRecodedDigits; i++)
     {
-        T1 = SymCryptIntGetBits( piK, i, min(W, nBitsExp-i) );   // Get a batch of W bits (but don't go over nBitsExp)
+        T1 = SymCryptIntGetBits( piK, i, SYMCRYPT_MIN(W, nBitsExp-i) );   // Get a batch of W bits (but don't go over nBitsExp)
 
         if ((cntrZ>=W) && ((T1 & 0x01) > 0))    // Only store odd digits
         {

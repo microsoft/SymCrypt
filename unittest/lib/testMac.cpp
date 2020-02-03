@@ -280,7 +280,7 @@ testMacRandom( MacMultiImp * pMac, int rrep, SIZE_T keyLen, PCBYTE pbResult, SIZ
     //
     rng.reset( (PCBYTE) pMac->m_algorithmName.data(), pMac->m_algorithmName.size() );
 
-    const SIZE_T bufSize = max( 64, pMac->inputBlockLen() * 4);
+    const SIZE_T bufSize = SYMCRYPT_MAX( 64, pMac->inputBlockLen() * 4);
     CHECK( bufSize <= sizeof( buf ), "Input block len too large" );
 
     // We used to set the buffer to 0 at the start, but Poly1305 has a fixed-point at 0
@@ -412,7 +412,7 @@ testMacConsistency( MacMultiImp * pMac, SIZE_T cbKey, LONGLONG megaBytes, LONGLO
 VOID
 testMacKats()
 {
-    std::auto_ptr<KatData> katMac( getCustomResource( "kat_mac.dat", "KAT_MAC" ) );
+    std::unique_ptr<KatData> katMac( getCustomResource( "kat_mac.dat", "KAT_MAC" ) );
     KAT_ITEM katItem;
 
     static String g_currentCategory;
@@ -420,7 +420,7 @@ testMacKats()
     String sep = "    ";
     BOOL doneAnything = FALSE;
 
-    std::auto_ptr<MacMultiImp> pMacMultiImp;
+    std::unique_ptr<MacMultiImp> pMacMultiImp;
 
     while( 1 )
     {

@@ -52,20 +52,4 @@ typedef struct _BCRYPT_MULTI_HASH_OPERATION {
                             BCRYPT_HASH_OPERATION_TYPE      hashOperation;  // operation to be performed      
                             PUCHAR                          pbBuffer;       // data to be hashed, or result buffer                              
                             uint32_t                           cbBuffer;         
-} BCRYPT_MULTI_HASH_OPERATION; 
-
-
-#if !defined min
-#define min(a,b) \
-({ __typeof__ (a) __a = (a); \
-__typeof__ (b) __b = (b); \
-__a < __b ? __a : __b; })
-#endif
-
-#if !defined max
-#define max(a,b) \
-({ __typeof__ (a) __a = (a); \
-__typeof__ (b) __b = (b); \
-__a > __b ? __a : __b; })
-#endif
-
+} BCRYPT_MULTI_HASH_OPERATION;

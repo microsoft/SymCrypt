@@ -162,7 +162,7 @@ testEccArithmetic( _In_ PCSYMCRYPT_ECURVE pCurve )
     cbIntLargeSize = SymCryptSizeofIntFromDigits( SymCryptEcurveDigitsofScalarMultiplier(pCurve) + 1 );
     cbEckeySize = SymCryptSizeofEckeyFromCurve( pCurve );
 
-    cbScratch = max( SYMCRYPT_SCRATCH_BYTES_FOR_COMMON_ECURVE_OPERATIONS( pCurve ),
+    cbScratch = SYMCRYPT_MAX( SYMCRYPT_SCRATCH_BYTES_FOR_COMMON_ECURVE_OPERATIONS( pCurve ),
                 SYMCRYPT_SCRATCH_BYTES_FOR_INT_DIVMOD( SymCryptEcurveDigitsofScalarMultiplier(pCurve) + 1, pCurve->GOrdDigits ) );
     cbScratchMul = SYMCRYPT_SCRATCH_BYTES_FOR_SCALAR_ECURVE_OPERATIONS( pCurve );
     cbScratchMultiMul = SYMCRYPT_SCRATCH_BYTES_FOR_MULTI_SCALAR_ECURVE_OPERATIONS( pCurve, MULTIMUL_POINTS );
@@ -1101,7 +1101,7 @@ testEcdh(
 VOID
 testEccEcdsaKats()
 {
-    std::auto_ptr<KatData> katEcc( getCustomResource( "kat_ecdsa.dat", "KAT_ECDSA" ) );
+    std::unique_ptr<KatData> katEcc( getCustomResource( "kat_ecdsa.dat", "KAT_ECDSA" ) );
     KAT_ITEM katItem;
 
     String sep = "";
