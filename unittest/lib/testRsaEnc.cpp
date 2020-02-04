@@ -29,9 +29,9 @@ public:
     ImpPtrVector m_comps;                   // Subset of m_imps; set of ongoing computations
 
     virtual NTSTATUS setKey( PCRSAKEY_TESTBLOB pcKeyBlob );
-    
+
     virtual NTSTATUS encrypt(
-        _In_reads_( cbMsg )             PCBYTE  pbMsg, 
+        _In_reads_( cbMsg )             PCBYTE  pbMsg,
                                         SIZE_T  cbMsg,
                                         PCSTR   pcstrHashAlgName,
                                         PCBYTE  pbLabel,
@@ -39,7 +39,7 @@ public:
         _Out_writes_( cbCiphertext )    PBYTE   pbCiphertext,
                                         SIZE_T  cbCiphertext );        // == cbModulus of key
 
-    virtual NTSTATUS decrypt( 
+    virtual NTSTATUS decrypt(
         _In_reads_( cbCiphertext )      PCBYTE  pbCiphertext,
                                         SIZE_T  cbCiphertext,
                                         PCSTR   pcstrHashAlgName,
@@ -85,7 +85,7 @@ RsaEncMultiImp::setKey( PCRSAKEY_TESTBLOB pcKeyBlob )
         m_cbCiphertext = pcKeyBlob->cbModulus;
         CHECK( m_cbCiphertext <= RSAKEY_MAXKEYSIZE, "Modulus too big" );
     }
-    
+
     for( ImpPtrVector::iterator i = m_imps.begin(); i != m_imps.end(); ++i )
     {
         if( (*i)->setKey( pcKeyBlob ) == STATUS_SUCCESS )
@@ -97,8 +97,8 @@ RsaEncMultiImp::setKey( PCRSAKEY_TESTBLOB pcKeyBlob )
     return m_comps.size() == 0 ? STATUS_NOT_SUPPORTED : STATUS_SUCCESS;
 }
 
- NTSTATUS 
- RsaEncMultiImp::decrypt( 
+ NTSTATUS
+ RsaEncMultiImp::decrypt(
         _In_reads_( cbCiphertext )      PCBYTE  pbCiphertext,
                                         SIZE_T  cbCiphertext,
                                         PCSTR   pcstrHashAlgName,
@@ -118,7 +118,7 @@ RsaEncMultiImp::setKey( PCRSAKEY_TESTBLOB pcKeyBlob )
     CHECK( cbCiphertext == m_cbCiphertext, "Wrong ciphertext size" );
 
     GENRANDOM( msg, sizeof( msg ) );
-    
+
     // Process result as MSBfirst array to get errors to print correctly.
     for( ImpPtrVector::iterator i = m_comps.begin(); i != m_comps.end(); ++i )
     {
@@ -142,9 +142,9 @@ RsaEncMultiImp::setKey( PCRSAKEY_TESTBLOB pcKeyBlob )
     return ntStatus;
 }
 
-NTSTATUS 
+NTSTATUS
 RsaEncMultiImp::encrypt(
-    _In_reads_( cbMsg )             PCBYTE  pbMsg, 
+    _In_reads_( cbMsg )             PCBYTE  pbMsg,
                                     SIZE_T  cbMsg,
                                     PCSTR   pcstrHashAlgName,
                                     PCBYTE  pbLabel,
@@ -237,7 +237,7 @@ createKatFileSingleRawEnc( FILE * f, PCRSAKEY_TESTBLOB pBlob )
 
     UINT64 exp = pBlob->u64PubExp;
     SIZE_T cbTmp = SymCryptUint64Bytesize( exp );
-    SymCryptStoreMsbFirstUint64( exp, buf, cbTmp );    
+    SymCryptStoreMsbFirstUint64( exp, buf, cbTmp );
     fprintf( f, "e = "  );
     fprintHex( f, buf, cbTmp );
 
@@ -325,7 +325,7 @@ createKatFileSinglePkcs1Enc( FILE * f, PCRSAKEY_TESTBLOB pBlob )
 
     // Use ciphertext buffer as temp space
     SIZE_T cbTmp = SymCryptUint64Bytesize( pBlob->u64PubExp );
-    SymCryptStoreMsbFirstUint64( pBlob->u64PubExp, ciphertext, cbTmp );    
+    SymCryptStoreMsbFirstUint64( pBlob->u64PubExp, ciphertext, cbTmp );
     fprintf( f, "e = "  );
     fprintHex( f, ciphertext, cbTmp );
 
@@ -389,7 +389,7 @@ createKatFileSingleOaep( FILE * f, PCRSAKEY_TESTBLOB pBlob, PCSTR hashName, PCSY
     fprintHex( f, pBlob->abModulus, pBlob->cbModulus );
 
     cbTmp = SymCryptUint64Bytesize( pBlob->u64PubExp );
-    SymCryptStoreMsbFirstUint64( pBlob->u64PubExp, ciphertext, cbTmp );    
+    SymCryptStoreMsbFirstUint64( pBlob->u64PubExp, ciphertext, cbTmp );
     fprintf( f, "e = "  );
     fprintHex( f, ciphertext, cbTmp );
 
@@ -483,7 +483,7 @@ createKatFileRsaEnc()
 
     fprintf( f, "\n\nrnd = 3\n" );      // Trigger random-key test, 3 = OAEP
 
-    // Generating test vectors is not normal program flow, so we abort here to avoid getting into 
+    // Generating test vectors is not normal program flow, so we abort here to avoid getting into
     // non-standard states.
     CHECK( FALSE, "Written test vector file" );
 }
@@ -555,7 +555,7 @@ VOID
 testRsaEncTestkeys(
     RsaEncImplementation * pRsaEnc,
     UINT32                  rnd,
-    INT64                   line )    
+    INT64                   line )
 {
     NTSTATUS    ntStatus;
     BYTE        msg[RSAKEY_MAXKEYSIZE];
@@ -567,10 +567,10 @@ testRsaEncTestkeys(
 
     for( int i=0; i<MAX_RSA_TESTKEYS; i++ )
     {
-        PRSAKEY_TESTBLOB pBlob = &g_RsaTestKeyBlobs[ i ]; 
+        PRSAKEY_TESTBLOB pBlob = &g_RsaTestKeyBlobs[ i ];
         ntStatus = pRsaEnc->setKey( pBlob );
         CHECK( ntStatus == STATUS_SUCCESS, "Error setting key" );
-    
+
         PCSTR strHash = "SHA256";
 
         GENRANDOM( msg, sizeof( msg ) );
@@ -609,9 +609,9 @@ testRsaEncTestkeys(
         // iprint( "(%d, %d, %d)", pBlob->cbModulus, cbMsg, cbLabel );
         ntStatus = pRsaEnc->encrypt( msg, cbMsg, strHash, (msg + 1), cbLabel, ciph, pBlob->cbModulus  );
         CHECK( NT_SUCCESS( ntStatus ), "Error in RSA encryption validation" );
-    } 
+    }
     CHECK( pRsaEnc->setKey( NULL ) == STATUS_SUCCESS, "Failed to clear key" );
-}                            
+}
 
 VOID
 testRsaEncKats()
@@ -683,7 +683,7 @@ testRsaEncKats()
                 blob.cbPrime1 = (UINT32) P1.size();
                 blob.cbPrime2 = (UINT32) P2.size();
 
-                CHECK( blob.cbModulus <= RSAKEY_MAXKEYSIZE && blob.cbPrime1 <= RSAKEY_MAXKEYSIZE && blob.cbPrime2 <= RSAKEY_MAXKEYSIZE, 
+                CHECK( blob.cbModulus <= RSAKEY_MAXKEYSIZE && blob.cbPrime1 <= RSAKEY_MAXKEYSIZE && blob.cbPrime2 <= RSAKEY_MAXKEYSIZE,
                         "Test vector too large" );
                 memcpy( blob.abModulus, N.data(), blob.cbModulus );
                 memcpy( blob.abPrime1, P1.data(), blob.cbPrime1 );
@@ -697,7 +697,7 @@ testRsaEncKats()
                 testRsaEncSingle(  pRsaEncMultiImp.get(),
                                     &blob,
                                     Msg.data(), Msg.size(),
-                                    acStringName,
+                                    hashAlg.size() ? acStringName : NULL,
                                     Label.data(), Label.size(),
                                     Ciphertext.data(), Ciphertext.size(),
                                     katItem.line );
@@ -786,7 +786,7 @@ testRsaEncRaw()
 VOID
 testRsaEncPkcs1Errors()
 {
-    // We check various PKCS1 padding errors 
+    // We check various PKCS1 padding errors
     SYMCRYPT_ERROR scError;
     PSYMCRYPT_RSAKEY pKey = NULL;
 
@@ -840,14 +840,14 @@ testRsaEncPkcs1Errors()
     do{ b = g_rng.byte(); } while( b==0 );
 
     // Test second byte not 2
-    paddedData[1] ^= b;    
+    paddedData[1] ^= b;
     scError = SymCryptRsaRawEncrypt( pKey, paddedData, cbModulus, SYMCRYPT_NUMBER_FORMAT_MSB_FIRST, 0, ciphertext, cbModulus );
     CHECK( scError == SYMCRYPT_NO_ERROR, "?" );
     scError = SymCryptRsaPkcs1Decrypt( pKey, ciphertext, cbModulus, SYMCRYPT_NUMBER_FORMAT_MSB_FIRST, 0, res, cbModulus, &cbRes );
     CHECK( scError == SYMCRYPT_INVALID_ARGUMENT, "?" );
-    paddedData[1] ^= b;    
+    paddedData[1] ^= b;
 
-    // Test no zero byte 
+    // Test no zero byte
     paddedData[cbModulus - 1] ^= b;
     scError = SymCryptRsaRawEncrypt( pKey, paddedData, cbModulus, SYMCRYPT_NUMBER_FORMAT_MSB_FIRST, 0, ciphertext, cbModulus );
     CHECK( scError == SYMCRYPT_NO_ERROR, "?" );
