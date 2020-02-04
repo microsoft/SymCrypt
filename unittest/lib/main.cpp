@@ -699,7 +699,7 @@ processSingleOption( _In_ PSTR option )
             char * endptr;
             __analysis_assume( strlen(option) >= 8 );
             g_profile = TRUE;
-            g_profile_iterations = (UINT32) strtol( &option[8], &endptr, 0 );
+            g_profile_iterations = (UINT32) strtoul( &option[8], &endptr, 0 );
             if (g_profile_iterations == 0)
             {
                 FATAL( "Number of profile iterations must be greater than zero." );
@@ -715,7 +715,7 @@ processSingleOption( _In_ PSTR option )
             {
                 FATAL2( "Key parameter present without profile parameter \"%s\"", &option[0] );
             }
-            g_profile_key = (UINT32) strtol( &option[4], &endptr, 16 );
+            g_profile_key = (UINT32) strtoul( &option[4], &endptr, 16 );
             optionHandled = TRUE;
         }
 
@@ -736,7 +736,7 @@ processSingleOption( _In_ PSTR option )
             char * endptr;
             __analysis_assume( strlen(option) >= 10 );
             // SAL_readableTo(elementCount(10))
-            g_osVersion = (UINT32) strtol( &option[10], &endptr, 16 );
+            g_osVersion = (UINT32) strtoul( &option[10], &endptr, 16 );
             if( endptr != &option[14] || g_osVersion < 0x0500 || g_osVersion > 0x0800 )
             {
                 FATAL2( "Invalid OS version \"%s\"", &option[10] );
@@ -748,7 +748,7 @@ processSingleOption( _In_ PSTR option )
         {
             char * endptr;
             __analysis_assume( strlen(option) >= 8 );
-            g_rngSeed = (UINT32) strtol( &option[8], &endptr, 16 );
+            g_rngSeed = (UINT32) strtoul( &option[8], &endptr, 16 );
             optionHandled = TRUE;
         }
         if (STRICMP(&option[0], "sgx") == 0)
@@ -1112,7 +1112,7 @@ extern const CHAR * SymCryptBuildString;
 VOID
 initTestInfrastructure( int argc, _In_reads_( argc ) char * argv[] )
 {
-    iprint( "SymCrypt unit test program, " 
+    iprint( "SymCrypt unit test program, "
              "Library version %s\n"
              "Copyright (c) Microsoft Corporation. Licensed under the MIT license.\n", SymCryptBuildString );
 
@@ -1574,7 +1574,7 @@ runPerfTests()
         addRsaKeyGenPerfMsBignum( ptRsaKeygen );
 #endif
         ptRsaKeygen.print( "RSA key generation performance" );
-        printOutput( 0 );                
+        printOutput( 0 );
     }
 
     g_perfTestsRunning = FALSE;
