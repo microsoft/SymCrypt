@@ -939,7 +939,7 @@ SymCryptAesCtrMsb64Xmm(
 // t2 = Input >> 120
 // t2 = (t2 <<<< 7) ^ (t2 <<<< 2) ^ (t2 <<<< 1) ^ t2
 // res = (Input << 8) ^ t2
-//// Expected to be marginally faster than new XTS_MUL_ALPHA on CPUs where clmul
+// Expected to be marginally faster than new XTS_MUL_ALPHA on CPUs where clmul
 // instruction corresponds to a single uop - unused for now.
 //
 // __m128i XTS_ALPHA_MULTIPLIER = _mm_set_epi32( 0, 0, 0, 0x87 );
@@ -980,7 +980,7 @@ SymCryptXtsAesEncryptDataUnitXmm(
 
     XTS_MUL_ALPHA4( t0, t4 );
 
-    do
+    for(;;)
     {
         // At loop entry, t0 and t4 have the right values.
         XTS_MUL_ALPHA ( t0, t1 );
@@ -1013,10 +1013,16 @@ SymCryptXtsAesEncryptDataUnitXmm(
         _mm_storeu_si128( (__m128i *) (pbDst + 112 ), _mm_xor_si128( c7, t7 ) );
 
         pbDst += 8*SYMCRYPT_AES_BLOCK_SIZE;
+
         cbData -= 8 * SYMCRYPT_AES_BLOCK_SIZE;
+        if( cbData < 8 * SYMCRYPT_AES_BLOCK_SIZE )
+        {
+            break;
+        }
+
         XTS_MUL_ALPHA ( t7, t0 );
         XTS_MUL_ALPHA5( t7, t4 );
-    } while( cbData >= 8 * SYMCRYPT_AES_BLOCK_SIZE );
+    }
 
     // We won't do another 8-block set so we don't update the tweak blocks
 
@@ -1025,8 +1031,10 @@ SymCryptXtsAesEncryptDataUnitXmm(
         //
         // This is a rare case: the data unit length is not a multiple of 128 bytes.
         // We do this in the default C implementation.
+        // Fix up the tweak block first
         //
 
+        XTS_MUL_ALPHA( t7, t0 );
         _mm_storeu_si128( (__m128i *) pbTweakBlock, t0 );
         SymCryptXtsAesEncryptDataUnitC( pExpandedKey, pbTweakBlock, pbSrc, pbDst, cbData );
     }
@@ -1057,7 +1065,7 @@ SymCryptXtsAesDecryptDataUnitXmm(
 
     XTS_MUL_ALPHA4( t0, t4 );
 
-    do
+    for(;;)
     {
         // At loop entry, t0 and t4 have the right values.
         XTS_MUL_ALPHA ( t0, t1 );
@@ -1090,21 +1098,28 @@ SymCryptXtsAesDecryptDataUnitXmm(
         _mm_storeu_si128( (__m128i *) (pbDst + 112 ), _mm_xor_si128( c7, t7 ) );
 
         pbDst += 8*SYMCRYPT_AES_BLOCK_SIZE;
+
         cbData -= 8 * SYMCRYPT_AES_BLOCK_SIZE;
+        if( cbData < 8 * SYMCRYPT_AES_BLOCK_SIZE )
+        {
+            break;
+        }
+
         XTS_MUL_ALPHA ( t7, t0 );
         XTS_MUL_ALPHA5( t7, t4 );
-    } while( cbData >= 8 * SYMCRYPT_AES_BLOCK_SIZE );
+    }
 
     // We won't do another 8-block set so we don't update the tweak blocks
-
 
     if( cbData > 0  )
     {
         //
         // This is a rare case: the data unit length is not a multiple of 128 bytes.
         // We do this in the default C implementation.
+        // Fix up the tweak block first
         //
 
+        XTS_MUL_ALPHA( t7, t0 );
         _mm_storeu_si128( (__m128i *) pbTweakBlock, t0 );
         SymCryptXtsAesDecryptDataUnitC( pExpandedKey, pbTweakBlock, pbSrc, pbDst, cbData );
     }
