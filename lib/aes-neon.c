@@ -62,32 +62,78 @@ SymCryptAesCreateDecryptionRoundKeyNeon(
     c = aesmc_u8( c ); \
 };
 
-#define UNROLL_AES_ROUNDS( round ) \
+//
+// When doing a full round of AES decryption, make sure to give compiler opportunity to schedule dependent
+// aesd/aesimc pairs to enable instruction fusion in many arm64 CPUs
+//
+#define AESD_AESIMC( c, rk ) \
 { \
-    /* Unconditionally do 9 rounds */ \
-    round \
-    round \
-    round \
-    round \
-    round \
-    round \
-    round \
-    round \
-    round \
+    c = aesd_u8( c, rk ); \
+    c = aesimc_u8( c ); \
+};
+
+//
+// Using a loop with AESE_AESMC and AESD_AESIMC, the compiler can still prematurely rearrange the loop and
+// lose opportunity for scheduling adjacent pairs.
+// Instead, explicitly unroll the AES rounds with this macro.
+// Takes the name of round and final macros, and uses them to construct block to handle AES (128|192|256)
+// for either encrypt or decrypt. For now assume only need at most 8 state variables in the macros.
+// Assumes roundKey, keyPtr, and keyLimit are defined in calling context.
+//
+#define UNROLL_AES_ROUNDS( round, final, c0, c1, c2, c3, c4, c5, c6, c7 ) \
+{ \
+    /* Do 9 full rounds (AES-128|AES-192|AES-256) */ \
+    roundKey = *keyPtr++; \
+    round( c0, c1, c2, c3, c4, c5, c6, c7 ) \
+    roundKey = *keyPtr++; \
+    round( c0, c1, c2, c3, c4, c5, c6, c7 ) \
+    roundKey = *keyPtr++; \
+    round( c0, c1, c2, c3, c4, c5, c6, c7 ) \
+    roundKey = *keyPtr++; \
+    round( c0, c1, c2, c3, c4, c5, c6, c7 ) \
+    roundKey = *keyPtr++; \
+    round( c0, c1, c2, c3, c4, c5, c6, c7 ) \
+    roundKey = *keyPtr++; \
+    round( c0, c1, c2, c3, c4, c5, c6, c7 ) \
+    roundKey = *keyPtr++; \
+    round( c0, c1, c2, c3, c4, c5, c6, c7 ) \
+    roundKey = *keyPtr++; \
+    round( c0, c1, c2, c3, c4, c5, c6, c7 ) \
+    roundKey = *keyPtr++; \
+    round( c0, c1, c2, c3, c4, c5, c6, c7 ) \
+    roundKey = *keyPtr++; \
 \
-    /* Maybe do 11 rounds */ \
     if ( keyPtr < keyLimit ) \
     { \
-        round \
-        round \
+        /* Do 2 more full rounds (AES-192|AES-256) */ \
+        round( c0, c1, c2, c3, c4, c5, c6, c7 ) \
+        roundKey = *keyPtr++; \
+        round( c0, c1, c2, c3, c4, c5, c6, c7 ) \
+        roundKey = *keyPtr++; \
 \
-        /* Or even 13 rounds */ \
         if ( keyPtr < keyLimit ) \
         { \
-            round \
-            round \
+            /* Do 2 more full rounds (AES-256) */ \
+            round( c0, c1, c2, c3, c4, c5, c6, c7 ) \
+            roundKey = *keyPtr++; \
+            round( c0, c1, c2, c3, c4, c5, c6, c7 ) \
+            roundKey = *keyPtr++; \
         } \
     } \
+\
+    /* Do final round (AES-128|AES-192|AES-256) */ \
+    final( c0, c1, c2, c3, c4, c5, c6, c7 ) \
+};
+
+#define AES_ENCRYPT_ROUND_1( c0, c1, c2, c3, c4, c5, c6, c7 ) \
+{ \
+    AESE_AESMC( c0, roundKey ) \
+};
+#define AES_ENCRYPT_FINAL_1( c0, c1, c2, c3, c4, c5, c6, c7 ) \
+{ \
+    c0 = aese_u8( c0, roundKey ); \
+    roundKey = *keyPtr; \
+    c0 = veorq_u8( c0, roundKey ); \
 };
 
 #define AES_ENCRYPT_1( pExpandedKey, c0 ) \
@@ -99,37 +145,22 @@ SymCryptAesCreateDecryptionRoundKeyNeon(
     keyPtr = (const __n128 *)&pExpandedKey->RoundKey[0]; \
     keyLimit = (const __n128 *)pExpandedKey->lastEncRoundKey; \
 \
-    roundKey = *keyPtr++; \
-\
     UNROLL_AES_ROUNDS( \
-        AESE_AESMC( c0, roundKey ); \
-        roundKey = *keyPtr++; \
+        AES_ENCRYPT_ROUND_1, \
+        AES_ENCRYPT_FINAL_1, \
+        c0, c1, c2, c3, c4, c5, c6, c7 \
     ) \
-\
-    c0 = aese_u8( c0, roundKey ); \
-    roundKey = *keyPtr; \
-    c0 = veorq_u8( c0, roundKey ); \
 };
 
-#define AES_ENCRYPT_4( pExpandedKey, c0, c1, c2, c3 ) \
+#define AES_ENCRYPT_ROUND_4( c0, c1, c2, c3, c4, c5, c6, c7 ) \
 { \
-    const __n128 *keyPtr; \
-    const __n128 *keyLimit; \
-    __n128 roundKey; \
-\
-    keyPtr = (const __n128 *)&pExpandedKey->RoundKey[0]; \
-    keyLimit = (const __n128 *)pExpandedKey->lastEncRoundKey; \
-\
-    roundKey = *keyPtr++; \
-\
-    UNROLL_AES_ROUNDS( \
-        AESE_AESMC( c0, roundKey ) \
-        AESE_AESMC( c1, roundKey ) \
-        AESE_AESMC( c2, roundKey ) \
-        AESE_AESMC( c3, roundKey ) \
-        roundKey = *keyPtr++; \
-    ) \
-\
+    AESE_AESMC( c0, roundKey ) \
+    AESE_AESMC( c1, roundKey ) \
+    AESE_AESMC( c2, roundKey ) \
+    AESE_AESMC( c3, roundKey ) \
+};
+#define AES_ENCRYPT_FINAL_4( c0, c1, c2, c3, c4, c5, c6, c7 ) \
+{ \
     c0 = aese_u8( c0, roundKey ); \
     c1 = aese_u8( c1, roundKey ); \
     c2 = aese_u8( c2, roundKey ); \
@@ -141,7 +172,7 @@ SymCryptAesCreateDecryptionRoundKeyNeon(
     c3 = veorq_u8( c3, roundKey ); \
 };
 
-#define AES_ENCRYPT_8( pExpandedKey, c0, c1, c2, c3, c4, c5, c6, c7 ) \
+#define AES_ENCRYPT_4( pExpandedKey, c0, c1, c2, c3 ) \
 { \
     const __n128 *keyPtr; \
     const __n128 *keyLimit; \
@@ -150,20 +181,26 @@ SymCryptAesCreateDecryptionRoundKeyNeon(
     keyPtr = (const __n128 *)&pExpandedKey->RoundKey[0]; \
     keyLimit = (const __n128 *)pExpandedKey->lastEncRoundKey; \
 \
-    roundKey = *keyPtr++; \
-\
     UNROLL_AES_ROUNDS( \
-        AESE_AESMC( c0, roundKey ) \
-        AESE_AESMC( c1, roundKey ) \
-        AESE_AESMC( c2, roundKey ) \
-        AESE_AESMC( c3, roundKey ) \
-        AESE_AESMC( c4, roundKey ) \
-        AESE_AESMC( c5, roundKey ) \
-        AESE_AESMC( c6, roundKey ) \
-        AESE_AESMC( c7, roundKey ) \
-        roundKey = *keyPtr++; \
+        AES_ENCRYPT_ROUND_4, \
+        AES_ENCRYPT_FINAL_4, \
+        c0, c1, c2, c3, c4, c5, c6, c7 \
     ) \
-\
+};
+
+#define AES_ENCRYPT_ROUND_8( c0, c1, c2, c3, c4, c5, c6, c7 ) \
+{ \
+    AESE_AESMC( c0, roundKey ) \
+    AESE_AESMC( c1, roundKey ) \
+    AESE_AESMC( c2, roundKey ) \
+    AESE_AESMC( c3, roundKey ) \
+    AESE_AESMC( c4, roundKey ) \
+    AESE_AESMC( c5, roundKey ) \
+    AESE_AESMC( c6, roundKey ) \
+    AESE_AESMC( c7, roundKey ) \
+};
+#define AES_ENCRYPT_FINAL_8( c0, c1, c2, c3, c4, c5, c6, c7 ) \
+{ \
     c0 = aese_u8( c0, roundKey ); \
     c1 = aese_u8( c1, roundKey ); \
     c2 = aese_u8( c2, roundKey ); \
@@ -183,14 +220,31 @@ SymCryptAesCreateDecryptionRoundKeyNeon(
     c7 = veorq_u8( c7, roundKey ); \
 };
 
-//
-// When doing a full round of AES decryption, make sure to give compiler opportunity to schedule dependent
-// aesd/aesimc pairs to enable instruction fusion in many arm64 CPUs
-//
-#define AESD_AESIMC( c, rk ) \
+#define AES_ENCRYPT_8( pExpandedKey, c0, c1, c2, c3, c4, c5, c6, c7 ) \
 { \
-    c = aesd_u8( c, rk ); \
-    c = aesimc_u8( c ); \
+    const __n128 *keyPtr; \
+    const __n128 *keyLimit; \
+    __n128 roundKey; \
+\
+    keyPtr = (const __n128 *)&pExpandedKey->RoundKey[0]; \
+    keyLimit = (const __n128 *)pExpandedKey->lastEncRoundKey; \
+\
+    UNROLL_AES_ROUNDS( \
+        AES_ENCRYPT_ROUND_8, \
+        AES_ENCRYPT_FINAL_8, \
+        c0, c1, c2, c3, c4, c5, c6, c7 \
+    ) \
+};
+
+#define AES_DECRYPT_ROUND_1( c0, c1, c2, c3, c4, c5, c6, c7 ) \
+{ \
+    AESD_AESIMC( c0, roundKey ) \
+};
+#define AES_DECRYPT_FINAL_1( c0, c1, c2, c3, c4, c5, c6, c7 ) \
+{ \
+    c0 = aesd_u8( c0, roundKey ); \
+    roundKey = *keyPtr; \
+    c0 = veorq_u8( c0, roundKey ); \
 };
 
 #define AES_DECRYPT_1( pExpandedKey, c0 ) \
@@ -202,37 +256,22 @@ SymCryptAesCreateDecryptionRoundKeyNeon(
     keyPtr = (const __n128 *)pExpandedKey->lastEncRoundKey; \
     keyLimit = (const __n128 *)pExpandedKey->lastDecRoundKey; \
 \
-    roundKey = *keyPtr++; \
-\
     UNROLL_AES_ROUNDS( \
-        AESD_AESIMC( c0, roundKey ) \
-        roundKey = *keyPtr++; \
+        AES_DECRYPT_ROUND_1, \
+        AES_DECRYPT_FINAL_1, \
+        c0, c1, c2, c3, c4, c5, c6, c7 \
     ) \
-\
-    c0 = aesd_u8( c0, roundKey ); \
-    roundKey = *keyPtr; \
-    c0 = veorq_u8( c0, roundKey ); \
 };
 
-#define AES_DECRYPT_4( pExpandedKey, c0, c1, c2, c3 ) \
+#define AES_DECRYPT_ROUND_4( c0, c1, c2, c3, c4, c5, c6, c7 ) \
 { \
-    const __n128 *keyPtr; \
-    const __n128 *keyLimit; \
-    __n128 roundKey; \
-\
-    keyPtr = (const __n128 *)pExpandedKey->lastEncRoundKey; \
-    keyLimit = (const __n128 *)pExpandedKey->lastDecRoundKey; \
-\
-    roundKey = *keyPtr++; \
-\
-    UNROLL_AES_ROUNDS( \
-        AESD_AESIMC( c0, roundKey ) \
-        AESD_AESIMC( c1, roundKey ) \
-        AESD_AESIMC( c2, roundKey ) \
-        AESD_AESIMC( c3, roundKey ) \
-        roundKey = *keyPtr++; \
-    ) \
-\
+    AESD_AESIMC( c0, roundKey ) \
+    AESD_AESIMC( c1, roundKey ) \
+    AESD_AESIMC( c2, roundKey ) \
+    AESD_AESIMC( c3, roundKey ) \
+};
+#define AES_DECRYPT_FINAL_4( c0, c1, c2, c3, c4, c5, c6, c7 ) \
+{ \
     c0 = aesd_u8( c0, roundKey ); \
     c1 = aesd_u8( c1, roundKey ); \
     c2 = aesd_u8( c2, roundKey ); \
@@ -244,7 +283,7 @@ SymCryptAesCreateDecryptionRoundKeyNeon(
     c3 = veorq_u8( c3, roundKey ); \
 };
 
-#define AES_DECRYPT_8( pExpandedKey, c0, c1, c2, c3, c4, c5, c6, c7 ) \
+#define AES_DECRYPT_4( pExpandedKey, c0, c1, c2, c3 ) \
 { \
     const __n128 *keyPtr; \
     const __n128 *keyLimit; \
@@ -253,20 +292,26 @@ SymCryptAesCreateDecryptionRoundKeyNeon(
     keyPtr = (const __n128 *)pExpandedKey->lastEncRoundKey; \
     keyLimit = (const __n128 *)pExpandedKey->lastDecRoundKey; \
 \
-    roundKey = *keyPtr++; \
-\
     UNROLL_AES_ROUNDS( \
-        AESD_AESIMC( c0, roundKey ) \
-        AESD_AESIMC( c1, roundKey ) \
-        AESD_AESIMC( c2, roundKey ) \
-        AESD_AESIMC( c3, roundKey ) \
-        AESD_AESIMC( c4, roundKey ) \
-        AESD_AESIMC( c5, roundKey ) \
-        AESD_AESIMC( c6, roundKey ) \
-        AESD_AESIMC( c7, roundKey ) \
-        roundKey = *keyPtr++; \
+        AES_DECRYPT_ROUND_4, \
+        AES_DECRYPT_FINAL_4, \
+        c0, c1, c2, c3, c4, c5, c6, c7 \
     ) \
-\
+};
+
+#define AES_DECRYPT_ROUND_8( c0, c1, c2, c3, c4, c5, c6, c7 ) \
+{ \
+    AESD_AESIMC( c0, roundKey ) \
+    AESD_AESIMC( c1, roundKey ) \
+    AESD_AESIMC( c2, roundKey ) \
+    AESD_AESIMC( c3, roundKey ) \
+    AESD_AESIMC( c4, roundKey ) \
+    AESD_AESIMC( c5, roundKey ) \
+    AESD_AESIMC( c6, roundKey ) \
+    AESD_AESIMC( c7, roundKey ) \
+};
+#define AES_DECRYPT_FINAL_8( c0, c1, c2, c3, c4, c5, c6, c7 ) \
+{ \
     c0 = aesd_u8( c0, roundKey ); \
     c1 = aesd_u8( c1, roundKey ); \
     c2 = aesd_u8( c2, roundKey ); \
@@ -284,6 +329,22 @@ SymCryptAesCreateDecryptionRoundKeyNeon(
     c5 = veorq_u8( c5, roundKey ); \
     c6 = veorq_u8( c6, roundKey ); \
     c7 = veorq_u8( c7, roundKey ); \
+};
+
+#define AES_DECRYPT_8( pExpandedKey, c0, c1, c2, c3, c4, c5, c6, c7 ) \
+{ \
+    const __n128 *keyPtr; \
+    const __n128 *keyLimit; \
+    __n128 roundKey; \
+\
+    keyPtr = (const __n128 *)pExpandedKey->lastEncRoundKey; \
+    keyLimit = (const __n128 *)pExpandedKey->lastDecRoundKey; \
+\
+    UNROLL_AES_ROUNDS( \
+        AES_DECRYPT_ROUND_8, \
+        AES_DECRYPT_FINAL_8, \
+        c0, c1, c2, c3, c4, c5, c6, c7 \
+    ) \
 };
 
 
