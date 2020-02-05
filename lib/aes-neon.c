@@ -76,53 +76,53 @@ SymCryptAesCreateDecryptionRoundKeyNeon(
 // Using a loop with AESE_AESMC and AESD_AESIMC, the compiler can still prematurely rearrange the loop and
 // lose opportunity for scheduling adjacent pairs.
 // Instead, explicitly unroll the AES rounds with this macro.
-// Takes the name of round and final macros, and uses them to construct block to handle AES (128|192|256)
+// Takes the name of full_round and final_round macros, and uses them to construct block to handle AES (128|192|256)
 // for either encrypt or decrypt. For now assume only need at most 8 state variables in the macros.
 // Assumes roundKey, keyPtr, and keyLimit are defined in calling context.
 //
-#define UNROLL_AES_ROUNDS( round, final, c0, c1, c2, c3, c4, c5, c6, c7 ) \
+#define UNROLL_AES_ROUNDS( full_round, final_round, c0, c1, c2, c3, c4, c5, c6, c7 ) \
 { \
     /* Do 9 full rounds (AES-128|AES-192|AES-256) */ \
     roundKey = *keyPtr++; \
-    round( c0, c1, c2, c3, c4, c5, c6, c7 ) \
+    full_round( c0, c1, c2, c3, c4, c5, c6, c7 ) \
     roundKey = *keyPtr++; \
-    round( c0, c1, c2, c3, c4, c5, c6, c7 ) \
+    full_round( c0, c1, c2, c3, c4, c5, c6, c7 ) \
     roundKey = *keyPtr++; \
-    round( c0, c1, c2, c3, c4, c5, c6, c7 ) \
+    full_round( c0, c1, c2, c3, c4, c5, c6, c7 ) \
     roundKey = *keyPtr++; \
-    round( c0, c1, c2, c3, c4, c5, c6, c7 ) \
+    full_round( c0, c1, c2, c3, c4, c5, c6, c7 ) \
     roundKey = *keyPtr++; \
-    round( c0, c1, c2, c3, c4, c5, c6, c7 ) \
+    full_round( c0, c1, c2, c3, c4, c5, c6, c7 ) \
     roundKey = *keyPtr++; \
-    round( c0, c1, c2, c3, c4, c5, c6, c7 ) \
+    full_round( c0, c1, c2, c3, c4, c5, c6, c7 ) \
     roundKey = *keyPtr++; \
-    round( c0, c1, c2, c3, c4, c5, c6, c7 ) \
+    full_round( c0, c1, c2, c3, c4, c5, c6, c7 ) \
     roundKey = *keyPtr++; \
-    round( c0, c1, c2, c3, c4, c5, c6, c7 ) \
+    full_round( c0, c1, c2, c3, c4, c5, c6, c7 ) \
     roundKey = *keyPtr++; \
-    round( c0, c1, c2, c3, c4, c5, c6, c7 ) \
+    full_round( c0, c1, c2, c3, c4, c5, c6, c7 ) \
     roundKey = *keyPtr++; \
 \
     if ( keyPtr < keyLimit ) \
     { \
         /* Do 2 more full rounds (AES-192|AES-256) */ \
-        round( c0, c1, c2, c3, c4, c5, c6, c7 ) \
+        full_round( c0, c1, c2, c3, c4, c5, c6, c7 ) \
         roundKey = *keyPtr++; \
-        round( c0, c1, c2, c3, c4, c5, c6, c7 ) \
+        full_round( c0, c1, c2, c3, c4, c5, c6, c7 ) \
         roundKey = *keyPtr++; \
 \
         if ( keyPtr < keyLimit ) \
         { \
             /* Do 2 more full rounds (AES-256) */ \
-            round( c0, c1, c2, c3, c4, c5, c6, c7 ) \
+            full_round( c0, c1, c2, c3, c4, c5, c6, c7 ) \
             roundKey = *keyPtr++; \
-            round( c0, c1, c2, c3, c4, c5, c6, c7 ) \
+            full_round( c0, c1, c2, c3, c4, c5, c6, c7 ) \
             roundKey = *keyPtr++; \
         } \
     } \
 \
     /* Do final round (AES-128|AES-192|AES-256) */ \
-    final( c0, c1, c2, c3, c4, c5, c6, c7 ) \
+    final_round( c0, c1, c2, c3, c4, c5, c6, c7 ) \
 };
 
 #define AES_ENCRYPT_ROUND_1( c0, c1, c2, c3, c4, c5, c6, c7 ) \
