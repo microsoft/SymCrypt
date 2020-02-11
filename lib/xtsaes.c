@@ -196,6 +196,108 @@ SymCryptXtsAesEncryptXmm(
         }
     }
 }
+
+VOID
+SYMCRYPT_CALL
+SymCryptXtsAesEncryptZmm(
+    _In_                    PCSYMCRYPT_XTS_AES_EXPANDED_KEY pExpandedKey,
+                            SIZE_T                          cbDataUnit, 
+                            UINT64                          tweak,  
+    _In_reads_( cbData )    PCBYTE                          pbSrc,
+    _Out_writes_( cbData )  PBYTE                           pbDst,
+                            SIZE_T                          cbData )
+{
+    SYMCRYPT_ALIGN BYTE     tweakBuf[N_PARALLEL_TWEAKS * SYMCRYPT_AES_BLOCK_SIZE];
+    SIZE_T                  tweakbytes;
+    SIZE_T                  i;
+
+    SYMCRYPT_ASSERT( (cbDataUnit & (SYMCRYPT_AES_BLOCK_SIZE - 1)) == 0 && cbData % cbDataUnit == 0);
+
+    cbDataUnit &= ~(SYMCRYPT_AES_BLOCK_SIZE - 1);
+
+    while( cbData >= cbDataUnit )
+    {
+        //
+        // We encrypt the tweaks of many data units in parallel for best performance.
+        // In the first loop we build the tweaks and decrement cbData.
+        // In the second loop we use up all the tweaks, and update the pointers.
+        // Both loops are executed the same number of times.
+        //
+        tweakbytes = 0;
+
+        do // do-while because we know we are going to go through at least once.
+        {
+            SYMCRYPT_STORE_LSBFIRST64(&tweakBuf[tweakbytes    ], tweak);
+            SYMCRYPT_STORE_LSBFIRST64(&tweakBuf[tweakbytes + 8], 0);
+            tweak++;
+            cbData -= cbDataUnit;
+            tweakbytes += SYMCRYPT_AES_BLOCK_SIZE;
+        } while( cbData >= cbDataUnit && tweakbytes < SYMCRYPT_AES_BLOCK_SIZE * N_PARALLEL_TWEAKS );
+
+        SymCryptAesEcbEncryptXmm( &pExpandedKey->key2, &tweakBuf[0], &tweakBuf[0], tweakbytes );
+
+        i = 0;
+        while( i < tweakbytes )
+        {
+            // SymCryptXtsAesEncryptDataUnitZmm( &pExpandedKey->key1, &tweakBuf[i], pbSrc, pbDst, cbDataUnit );
+            SymCryptXtsAesEncryptDataUnitZmm_2048( &pExpandedKey->key1, &tweakBuf[i], pbSrc, pbDst, cbDataUnit );
+            pbSrc += cbDataUnit;
+            pbDst += cbDataUnit;
+            i += SYMCRYPT_AES_BLOCK_SIZE;
+        }
+    }
+}
+
+VOID
+SYMCRYPT_CALL
+SymCryptXtsAesEncryptYmm(
+    _In_                    PCSYMCRYPT_XTS_AES_EXPANDED_KEY pExpandedKey,
+                            SIZE_T                          cbDataUnit, 
+                            UINT64                          tweak,  
+    _In_reads_( cbData )    PCBYTE                          pbSrc,
+    _Out_writes_( cbData )  PBYTE                           pbDst,
+                            SIZE_T                          cbData )
+{
+    SYMCRYPT_ALIGN BYTE     tweakBuf[N_PARALLEL_TWEAKS * SYMCRYPT_AES_BLOCK_SIZE];
+    SIZE_T                  tweakbytes;
+    SIZE_T                  i;
+
+    SYMCRYPT_ASSERT( (cbDataUnit & (SYMCRYPT_AES_BLOCK_SIZE - 1)) == 0 && cbData % cbDataUnit == 0);
+
+    cbDataUnit &= ~(SYMCRYPT_AES_BLOCK_SIZE - 1);
+
+    while( cbData >= cbDataUnit )
+    {
+        //
+        // We encrypt the tweaks of many data units in parallel for best performance.
+        // In the first loop we build the tweaks and decrement cbData.
+        // In the second loop we use up all the tweaks, and update the pointers.
+        // Both loops are executed the same number of times.
+        //
+        tweakbytes = 0;
+
+        do // do-while because we know we are going to go through at least once.
+        {
+            SYMCRYPT_STORE_LSBFIRST64(&tweakBuf[tweakbytes    ], tweak);
+            SYMCRYPT_STORE_LSBFIRST64(&tweakBuf[tweakbytes + 8], 0);
+            tweak++;
+            cbData -= cbDataUnit;
+            tweakbytes += SYMCRYPT_AES_BLOCK_SIZE;
+        } while( cbData >= cbDataUnit && tweakbytes < SYMCRYPT_AES_BLOCK_SIZE * N_PARALLEL_TWEAKS );
+
+        SymCryptAesEcbEncryptXmm( &pExpandedKey->key2, &tweakBuf[0], &tweakBuf[0], tweakbytes );
+
+        i = 0;
+        while( i < tweakbytes )
+        {
+            // SymCryptXtsAesEncryptDataUnitZmm( &pExpandedKey->key1, &tweakBuf[i], pbSrc, pbDst, cbDataUnit );
+            SymCryptXtsAesEncryptDataUnitYmm_1024( &pExpandedKey->key1, &tweakBuf[i], pbSrc, pbDst, cbDataUnit );
+            pbSrc += cbDataUnit;
+            pbDst += cbDataUnit;
+            i += SYMCRYPT_AES_BLOCK_SIZE;
+        }
+    }
+}
 #endif
 
 #if SYMCRYPT_CPU_ARM64
@@ -313,8 +415,13 @@ SymCryptXtsAesEncrypt(
                             SIZE_T                          cbData )
 {
 #if SYMCRYPT_CPU_AMD64
-    if( SYMCRYPT_CPU_FEATURES_PRESENT( SYMCRYPT_CPU_FEATURES_FOR_AESNI_CODE ) )
+    if( SYMCRYPT_CPU_FEATURES_PRESENT( SYMCRYPT_CPU_FEATURES_FOR_AESNI_CODE | SYMCRYPT_CPU_FEATURE_VAES_512 ) )
     {
+        SymCryptXtsAesEncryptZmm( pExpandedKey, cbDataUnit, tweak, pbSrc, pbDst, cbData );
+    } else if( SYMCRYPT_CPU_FEATURES_PRESENT( SYMCRYPT_CPU_FEATURES_FOR_AESNI_CODE | SYMCRYPT_CPU_FEATURE_VAES_256 ) )
+    {
+        SymCryptXtsAesEncryptYmm( pExpandedKey, cbDataUnit, tweak, pbSrc, pbDst, cbData );
+    } else if( SYMCRYPT_CPU_FEATURES_PRESENT( SYMCRYPT_CPU_FEATURES_FOR_AESNI_CODE ) ) {
         SymCryptXtsAesEncryptXmm( pExpandedKey, cbDataUnit, tweak, pbSrc, pbDst, cbData );
     } else {
         SymCryptXtsAesEncryptAsm( pExpandedKey, cbDataUnit, tweak, pbSrc, pbDst, cbData );
@@ -498,6 +605,107 @@ SymCryptXtsAesDecryptXmm(
         }
     }
 }
+
+VOID
+SYMCRYPT_CALL
+SymCryptXtsAesDecryptZmm(
+    _In_                    PCSYMCRYPT_XTS_AES_EXPANDED_KEY pExpandedKey,
+                            SIZE_T                          cbDataUnit, 
+                            UINT64                          tweak,  
+    _In_reads_( cbData )    PCBYTE                          pbSrc,
+    _Out_writes_( cbData )  PBYTE                           pbDst,
+                            SIZE_T                          cbData )
+{
+    SYMCRYPT_ALIGN BYTE     tweakBuf[N_PARALLEL_TWEAKS * SYMCRYPT_AES_BLOCK_SIZE];
+    SIZE_T                  tweakbytes;
+    SIZE_T                  i;
+
+    SYMCRYPT_ASSERT( (cbDataUnit & (SYMCRYPT_AES_BLOCK_SIZE - 1)) == 0 && cbData % cbDataUnit == 0);
+
+    cbDataUnit &= ~(SYMCRYPT_AES_BLOCK_SIZE - 1);
+
+    while( cbData >= cbDataUnit )
+    {
+        //
+        // We encrypt the tweaks of many data units in parallel for best performance.
+        // In the first loop we build the tweaks and decrement cbData.
+        // In the second loop we use up all the tweaks, and update the pointers.
+        // Both loops are executed the same number of times.
+        //
+        tweakbytes = 0;
+
+        do // do-while because we know we are going to go through at least once.
+        {
+            SYMCRYPT_STORE_LSBFIRST64(&tweakBuf[tweakbytes    ], tweak);
+            SYMCRYPT_STORE_LSBFIRST64(&tweakBuf[tweakbytes + 8], 0);
+            tweak++;
+            cbData -= cbDataUnit;
+            tweakbytes += SYMCRYPT_AES_BLOCK_SIZE;
+        } while( cbData >= cbDataUnit && tweakbytes < SYMCRYPT_AES_BLOCK_SIZE * N_PARALLEL_TWEAKS );
+
+        SymCryptAesEcbEncryptXmm( &pExpandedKey->key2, &tweakBuf[0], &tweakBuf[0], tweakbytes );
+
+        i = 0;
+        while( i < tweakbytes )
+        {
+            // SymCryptXtsAesDecryptDataUnitZmm( &pExpandedKey->key1, &tweakBuf[i], pbSrc, pbDst, cbDataUnit );
+            SymCryptXtsAesDecryptDataUnitZmm_2048( &pExpandedKey->key1, &tweakBuf[i], pbSrc, pbDst, cbDataUnit );           
+            pbSrc += cbDataUnit;
+            pbDst += cbDataUnit;
+            i += SYMCRYPT_AES_BLOCK_SIZE;
+        }
+    }
+}
+
+VOID
+SYMCRYPT_CALL
+SymCryptXtsAesDecryptYmm(
+    _In_                    PCSYMCRYPT_XTS_AES_EXPANDED_KEY pExpandedKey,
+                            SIZE_T                          cbDataUnit, 
+                            UINT64                          tweak,  
+    _In_reads_( cbData )    PCBYTE                          pbSrc,
+    _Out_writes_( cbData )  PBYTE                           pbDst,
+                            SIZE_T                          cbData )
+{
+    SYMCRYPT_ALIGN BYTE     tweakBuf[N_PARALLEL_TWEAKS * SYMCRYPT_AES_BLOCK_SIZE];
+    SIZE_T                  tweakbytes;
+    SIZE_T                  i;
+
+    SYMCRYPT_ASSERT( (cbDataUnit & (SYMCRYPT_AES_BLOCK_SIZE - 1)) == 0 && cbData % cbDataUnit == 0);
+
+    cbDataUnit &= ~(SYMCRYPT_AES_BLOCK_SIZE - 1);
+
+    while( cbData >= cbDataUnit )
+    {
+        //
+        // We encrypt the tweaks of many data units in parallel for best performance.
+        // In the first loop we build the tweaks and decrement cbData.
+        // In the second loop we use up all the tweaks, and update the pointers.
+        // Both loops are executed the same number of times.
+        //
+        tweakbytes = 0;
+
+        do // do-while because we know we are going to go through at least once.
+        {
+            SYMCRYPT_STORE_LSBFIRST64(&tweakBuf[tweakbytes    ], tweak);
+            SYMCRYPT_STORE_LSBFIRST64(&tweakBuf[tweakbytes + 8], 0);
+            tweak++;
+            cbData -= cbDataUnit;
+            tweakbytes += SYMCRYPT_AES_BLOCK_SIZE;
+        } while( cbData >= cbDataUnit && tweakbytes < SYMCRYPT_AES_BLOCK_SIZE * N_PARALLEL_TWEAKS );
+
+        SymCryptAesEcbEncryptXmm( &pExpandedKey->key2, &tweakBuf[0], &tweakBuf[0], tweakbytes );
+
+        i = 0;
+        while( i < tweakbytes )
+        {
+            SymCryptXtsAesDecryptDataUnitYmm_1024( &pExpandedKey->key1, &tweakBuf[i], pbSrc, pbDst, cbDataUnit );           
+            pbSrc += cbDataUnit;
+            pbDst += cbDataUnit;
+            i += SYMCRYPT_AES_BLOCK_SIZE;
+        }
+    }
+}
 #endif
 
 VOID
@@ -511,8 +719,13 @@ SymCryptXtsAesDecrypt(
                             SIZE_T                          cbData )
 {
 #if SYMCRYPT_CPU_AMD64
-    if( SYMCRYPT_CPU_FEATURES_PRESENT( SYMCRYPT_CPU_FEATURES_FOR_AESNI_CODE ) )
+    if( SYMCRYPT_CPU_FEATURES_PRESENT( SYMCRYPT_CPU_FEATURES_FOR_AESNI_CODE | SYMCRYPT_CPU_FEATURE_VAES_512 ) )
     {
+        SymCryptXtsAesDecryptZmm( pExpandedKey, cbDataUnit, tweak, pbSrc, pbDst, cbData );
+    } else if( SYMCRYPT_CPU_FEATURES_PRESENT( SYMCRYPT_CPU_FEATURES_FOR_AESNI_CODE | SYMCRYPT_CPU_FEATURE_VAES_256 ) )
+    {
+        SymCryptXtsAesDecryptYmm( pExpandedKey, cbDataUnit, tweak, pbSrc, pbDst, cbData );
+    } else if( SYMCRYPT_CPU_FEATURES_PRESENT( SYMCRYPT_CPU_FEATURES_FOR_AESNI_CODE ) ) {
         SymCryptXtsAesDecryptXmm( pExpandedKey, cbDataUnit, tweak, pbSrc, pbDst, cbData );
     } else {
         SymCryptXtsAesDecryptAsm( pExpandedKey, cbDataUnit, tweak, pbSrc, pbDst, cbData );
