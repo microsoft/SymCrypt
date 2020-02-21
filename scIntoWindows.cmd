@@ -72,7 +72,7 @@ goto error
 )
 
 popd
-pushd %SDXROOT%\ds\security\cryptoapi\test\cng_tests\testdata\primitives\unittest
+pushd %SDXROOT%\onecore\ds\security\cryptoapi\ncrypt\test\unittest
 @if ERRORLEVEL 1 (
 echo Pushd to DSTEST failed
 goto error
