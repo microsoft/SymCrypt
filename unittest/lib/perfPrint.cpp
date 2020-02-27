@@ -76,7 +76,11 @@ formatNumber( double v )
     
     // there doesn't seem to be a way to do a fixed-size result with the format specifiers
     // Our output is always 5 characters long
-    if( v < 10 && !fSmallInt )
+    if( v < 1 && !fSmallInt )
+    {
+        SNPRINTF_S( buf1, sizeof( buf1 ), _TRUNCATE, ".%03d",
+            (int) ( 1000.0 * v) );
+    } else if( v < 10 && !fSmallInt )
     {
         SNPRINTF_S( buf1, sizeof( buf1 ), _TRUNCATE, "%1d.%02d",
             (int)floor(v), (int) ( 100.0 * fmod( v, 1 ) ) );

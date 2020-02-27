@@ -616,6 +616,8 @@ const CPU_FEATURE_DATA g_cpuFeatureData[] =
     { "shani", SYMCRYPT_CPU_FEATURE_SHANI },
     { "adx", SYMCRYPT_CPU_FEATURE_ADX },
     { "bmi2", SYMCRYPT_CPU_FEATURE_BMI2 },
+    { "vaes512", SYMCRYPT_CPU_FEATURE_VAES_512 },
+    { "vaes256", SYMCRYPT_CPU_FEATURE_VAES_256 },
 #elif SYMCRYPT_CPU_ARM64
     { "neon", SYMCRYPT_CPU_FEATURE_NEON },
     { "i_aes", SYMCRYPT_CPU_FEATURE_NEON_AES },
@@ -814,7 +816,6 @@ VOID
 fatal( _In_ PSTR file, ULONG line, _In_ PSTR format, ... )
 {
     va_list vl;
-
     printOutput( 0 );
 
     fprintf( stdout, "*\n\n***** FATAL ERROR %s(%lu): ", file, line );

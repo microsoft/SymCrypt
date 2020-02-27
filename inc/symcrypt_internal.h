@@ -375,7 +375,8 @@ C_ASSERT( (SYMCRYPT_ALIGN_VALUE & (SYMCRYPT_ALIGN_VALUE - 1 )) == 0 );
 
 //
 // We keep the most commonly tested bits in the least significant byte, to make it easier for the compiler to optimize
-//
+// There is a many to one relationship between CPUID feature flags and SYMCRYPT_CPU_FEATURE_XXX bits
+// since a SYMCRYPT_CPU_FEATURE_XXX could require multiple CPUID features.
 
 #define SYMCRYPT_CPU_FEATURE_SSE2               0x0001          // includes SSE, SSE2
 #define SYMCRYPT_CPU_FEATURE_SSSE3              0x0002          // includes SSE, SSE2, SSE3, SSSE3
@@ -389,6 +390,8 @@ C_ASSERT( (SYMCRYPT_ALIGN_VALUE & (SYMCRYPT_ALIGN_VALUE - 1 )) == 0 );
 #define SYMCRYPT_CPU_FEATURE_ADX                0x0100          // ADCX, ADOX
 #define SYMCRYPT_CPU_FEATURE_RDRAND             0x0200
 #define SYMCRYPT_CPU_FEATURE_RDSEED             0x0400
+#define SYMCRYPT_CPU_FEATURE_VAES_256           0x0800
+#define SYMCRYPT_CPU_FEATURE_VAES_512           0x1000
 
 #endif
 
