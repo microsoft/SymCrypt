@@ -108,7 +108,7 @@ SymCryptDetectCpuFeaturesByCpuid( UINT32 flags )
         SYMCRYPT_CPU_FEATURE_ADX        |
         SYMCRYPT_CPU_FEATURE_RDRAND     |
         SYMCRYPT_CPU_FEATURE_RDSEED     |
-        SYMCRYPT_CPU_FEATURE_VAES_512   |
+        // SYMCRYPT_CPU_FEATURE_VAES_512   |
         SYMCRYPT_CPU_FEATURE_VAES_256
         );
 
