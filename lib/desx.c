@@ -15,11 +15,9 @@ const SYMCRYPT_BLOCKCIPHER SymCryptDesxBlockCipher_default = {
     NULL,                   // PSYMCRYPT_BLOCKCIPHER_CRYPT_ECB     ecbEncryptFunc;
     NULL,                   // PSYMCRYPT_BLOCKCIPHER_CRYPT_ECB     ecbDecryptFunc;
     NULL,                   // PSYMCRYPT_BLOCKCIPHER_CRYPT_MODE    cbcEncryptFunc;
-    NULL,                   // PSYMCRYPT_BLOCKCIPHER_CRYPT_MODE    cbcDecryptFunc; 
+    NULL,                   // PSYMCRYPT_BLOCKCIPHER_CRYPT_MODE    cbcDecryptFunc;
     NULL,                   // PSYMCRYPT_BLOCKCIPHER_MAC_MODE      cbcMacFunc;
     NULL,                   // PSYMCRYPT_BLOCKCIPHER_CRYPT_MODE    ctrMsbFunc;
-    NULL,                   // PSYMCRYPT_BLOCKCIPHER_CRYPT_XTS     xtsEncFunc;
-    NULL,                   // PSYMCRYPT_BLOCKCIPHER_CRYPT_XTS     xtsDecFunc;
     8,                      // SIZE_T                              blockSize;
     sizeof( SYMCRYPT_DESX_EXPANDED_KEY ), // SIZE_T  expandedKeySize;    // = sizeof( SYMCRYPT_XXX_EXPANDED_KEY )
 };
@@ -66,7 +64,7 @@ SymCryptDesxEncrypt(
 
 VOID
 SYMCRYPT_CALL
-SymCryptDesxDecrypt( 
+SymCryptDesxDecrypt(
     _In_                                        PCSYMCRYPT_DESX_EXPANDED_KEY    pExpandedKey,
     _In_reads_( SYMCRYPT_DESX_BLOCK_SIZE )     PCBYTE                          pbSrc,
     _Out_writes_( SYMCRYPT_DESX_BLOCK_SIZE )    PBYTE                           pbDst )
@@ -87,15 +85,15 @@ SymCryptDesxDecrypt(
 static const BYTE desxKnownKey[24] = {
     0x00, 0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77,
     0x88, 0x99, 0xaa, 0xbb, 0xcc, 0xdd, 0xee, 0xff,
-    0x01, 0x12, 0x13, 0x14, 0x15, 0x16, 0x17, 0x18 
+    0x01, 0x12, 0x13, 0x14, 0x15, 0x16, 0x17, 0x18
 };
 
-static const BYTE desxKnownPlaintext[] = { 
-    0xd9, 0xb6, 0xa1, 0x4e, 0xe6, 0x71, 0x4e, 0x17 
+static const BYTE desxKnownPlaintext[] = {
+    0xd9, 0xb6, 0xa1, 0x4e, 0xe6, 0x71, 0x4e, 0x17
 };
 
 static const BYTE desxKnownCiphertext[] = {
-    0x66, 0x77, 0x1f, 0x2a, 0x0c, 0x05, 0x01, 0xca 
+    0x66, 0x77, 0x1f, 0x2a, 0x0c, 0x05, 0x01, 0xca
 };
 
 
@@ -114,7 +112,7 @@ SymCryptDesxSelftest()
     SymCryptDesxEncrypt( &key, desxKnownPlaintext, buf );
 
     SymCryptInjectError( buf, SYMCRYPT_DESX_BLOCK_SIZE );
-    
+
     if( memcmp( buf, desxKnownCiphertext, SYMCRYPT_DESX_BLOCK_SIZE ) != 0 )
     {
         SymCryptFatal( 'desy' );
@@ -123,7 +121,7 @@ SymCryptDesxSelftest()
     SymCryptDesxDecrypt( &key, desxKnownCiphertext, buf );
 
     SymCryptInjectError( buf, SYMCRYPT_DESX_BLOCK_SIZE );
-    
+
     if( memcmp( buf, desxKnownPlaintext, SYMCRYPT_DESX_BLOCK_SIZE ) != 0 )
     {
         SymCryptFatal( 'desz' );

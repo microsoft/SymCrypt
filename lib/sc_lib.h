@@ -46,7 +46,7 @@ typedef int                 BOOL;
 //
 #pragma prefast( disable:28112 )
 #pragma prefast( disable:28113 )
-#pragma warning( disable: 4702 )        // unreachable code. The compilers are not equally smart, and some complain 
+#pragma warning( disable: 4702 )        // unreachable code. The compilers are not equally smart, and some complain
                                         // about 'function must return a value' and some about 'unreachable code'
 
 
@@ -1097,13 +1097,6 @@ SymCryptAesEcbDecryptC(
     _In_reads_( cbData )                        PCBYTE                      pbSrc,
     _Out_writes_( cbData )                      PBYTE                       pbDst,
                                                 SIZE_T                      cbData );
-VOID
-SYMCRYPT_CALL
-SymCryptAesEcbDecryptXmm(
-    _In_                                        PCSYMCRYPT_AES_EXPANDED_KEY pExpandedKey,
-    _In_reads_( cbData )                        PCBYTE                      pbSrc,
-    _Out_writes_( cbData )                      PBYTE                       pbDst,
-                                                SIZE_T                      cbData );
 
 VOID
 SYMCRYPT_CALL
@@ -1354,14 +1347,6 @@ SymCryptXtsAesDecryptDataUnitNeon(
     _In_reads_( cbData )                    PCBYTE                      pbSrc,
     _Out_writes_( cbData )                  PBYTE                       pbDst,
                                             SIZE_T                      cbData );
-
-PSYMCRYPT_BLOCKCIPHER_CRYPT_XTS
-SYMCRYPT_CALL
-SymCryptXtsAesGetBlockEncFunc();
-
-PSYMCRYPT_BLOCKCIPHER_CRYPT_XTS
-SYMCRYPT_CALL
-SymCryptXtsAesGetBlockDecFunc();
 
 VOID
 SYMCRYPT_CALL
