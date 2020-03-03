@@ -13,7 +13,7 @@ BCRYPT_ALG_HANDLE ParallelHashImpState<ImpXxx, AlgXxx>::hAlg;
 #define BCRYPT_MULTI_FLAG                       0x00000040
 #endif
 
-ParallelHashImp<ImpXxx, AlgXxx>::ParallelHashImp<ImpXxx, AlgXxx>()
+ParallelHashImp<ImpXxx, AlgXxx>::ParallelHashImp()
 {
     CHECK( CngOpenAlgorithmProviderFn( &state.hAlg, AlgXxx::pwstrBasename, NULL, BCRYPT_MULTI_FLAG ) == STATUS_SUCCESS, 
         "Could not open CNG/" STRING( ALG_Name ) );
@@ -24,7 +24,7 @@ ParallelHashImp<ImpXxx, AlgXxx>::ParallelHashImp<ImpXxx, AlgXxx>()
 }
 
 template<>
-ParallelHashImp<ImpXxx, AlgXxx>::~ParallelHashImp<ImpXxx, AlgXxx>()
+ParallelHashImp<ImpXxx, AlgXxx>::~ParallelHashImp()
 {
     if( state.hHash != 0 )
     {

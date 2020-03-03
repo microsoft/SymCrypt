@@ -60,17 +60,7 @@ copy %ScTempDir%\inc\symcrypt_low_level.h inc\ds\symcrypt_low_level.w
 echo Copy failed
 goto error
 )
-copy %ScTempDir%\inc\symcrypt_inline.h inc\ds\symcrypt_inline.w
-@if ERRORLEVEL 1 (
-echo Copy failed
-goto error
-)
 copy %ScTempDir%\inc\symcrypt_internal.h inc\ds\symcrypt_internal.w
-@if ERRORLEVEL 1 (
-echo Copy failed
-goto error
-)
-copy %ScTempDir%\inc\symcrypt_types.h inc\ds\symcrypt_types.w
 @if ERRORLEVEL 1 (
 echo Copy failed
 goto error
@@ -82,7 +72,7 @@ goto error
 )
 
 popd
-pushd %SDXROOT%\ds\security\cryptoapi\test\cng_tests\testdata\primitives\unittest
+pushd %SDXROOT%\onecore\ds\security\cryptoapi\ncrypt\test\unittest
 @if ERRORLEVEL 1 (
 echo Pushd to DSTEST failed
 goto error

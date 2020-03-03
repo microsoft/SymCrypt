@@ -1,6 +1,6 @@
 # This .gitignore file is mostly a copy of the .gitignore used by the Windows main
-# repository. 
-# Currently SymCrypt is built with the Windows build system which generates many 
+# repository.
+# Currently SymCrypt is built with the Windows build system which generates many
 # transient files. This .gitignore file ignores these transient files.
 
 
@@ -18,27 +18,22 @@ acl.txt
 build.log
 build.err
 build*.metadata
-buildchk.dbb
-buildchk.err
-buildchk.evt
-buildchk.ipc
-buildchk.log
-buildchk.prf
-buildchk.rec
-buildchk.trc
-buildchk.wrn
-buildchk.rec_dbg
-buildfre.dbb
-buildfre.err
-buildfre.evt
-buildfre.ipc
-buildfre.log
-buildfre.prf
-buildfre.rec
-buildfre.trc
-buildfre.wrn
-buildfre.rec_dbg
+buildchk.*
+buildfre.*
 tmp*.xml
+**/objchk/*
+**/*.dir/*
+x64/*
+*.exe
+*.lib
+*.pdb
+*.aps
+*.a
+
+# Generated files
+inc/*.dat.h
+inc/buildInfo.h
+inc/resource.h
 
 [Pp]ass*-buildfre.dbb
 [Pp]ass*-buildfre.evt
@@ -70,3 +65,18 @@ validate-pushrelease*.log
 
 release/
 scbuild.log
+
+# Cmake output
+bin/
+CMakeFiles
+CMakeCache.txt
+**/cmake_install.*
+
+# Visual Studio project/solution files from CMake
+*.vcxproj
+*.vcxproj.user
+*.vcxproj.filters
+*.sln
+
+# Makefiles from CMake
+Makefile

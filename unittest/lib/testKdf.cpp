@@ -1,5 +1,5 @@
 //
-// Copyright (c) Microsoft Corporation. Licensed under the MIT license. 
+// Copyright (c) Microsoft Corporation. Licensed under the MIT license.
 //
 
 #include "precomp.h"
@@ -25,11 +25,11 @@ private:
 
 public:
 
-    virtual VOID derive( 
+    virtual VOID derive(
         _In_reads_( cbKey )     PCBYTE          pbKey,
                                 SIZE_T          cbKey,
         _In_                    PKDF_ARGUMENTS  args,
-        _Out_writes_( cbDst )   PBYTE           pbDst, 
+        _Out_writes_( cbDst )   PBYTE           pbDst,
                                 SIZE_T          cbDst );
 
     typedef std::vector<KdfImplementation *> KdfImpPtrVector;
@@ -37,14 +37,14 @@ public:
     KdfImpPtrVector m_imps;                    // Implementations we use
 
     KdfImpPtrVector m_comps;                   // Subset of m_imps; set of ongoing computations
-    
+
 };
 
 KdfMultiImp::KdfMultiImp( String algName )
 {
     getAllImplementations<KdfImplementation>( algName, &m_imps );
     m_algorithmName = algName;
-    
+
     String sumImpName;
     char * sepStr = "<";
 
@@ -69,11 +69,11 @@ KdfMultiImp::~KdfMultiImp()
 
 
 
-VOID KdfMultiImp::derive( 
+VOID KdfMultiImp::derive(
         _In_reads_( cbKey )     PCBYTE          pbKey,
                                 SIZE_T          cbKey,
         _In_                    PKDF_ARGUMENTS  args,
-        _Out_writes_( cbDst )   PBYTE           pbDst, 
+        _Out_writes_( cbDst )   PBYTE           pbDst,
                                 SIZE_T          cbDst )
 {
     BYTE    buf[1024];
@@ -93,8 +93,8 @@ VOID KdfMultiImp::derive(
 
 
 VOID
-katKdfSingle( 
-                                KdfImplementation * pImp, 
+katKdfSingle(
+                                KdfImplementation * pImp,
     _In_reads_( cbKey )         PCBYTE              pbKey,
                                 SIZE_T              cbKey,
     _In_                        PKDF_ARGUMENTS      pArgs,
@@ -130,11 +130,11 @@ testKdfRandom( KdfMultiImp * pImp, KDF_ARGUMENT_TYPE argType, int rrep, SIZE_T k
     SIZE_T algNameSize = pImp->m_algorithmName.size();
     CHECK( algNameSize < sizeof( buf ) - sizeof( ULONGLONG ), "Algorithm name too long" );
     memcpy( buf, pImp->m_algorithmName.data(), algNameSize );
-    *(ULONGLONG UNALIGNED *)&buf[algNameSize] = keyLen;
+    *(ULONGLONG SYMCRYPT_UNALIGNED *)&buf[algNameSize] = keyLen;
     rng.reset( buf, algNameSize + sizeof( ULONGLONG ) );
 
     memset( buf, 0, sizeof( buf ) );
-    
+
     SIZE_T keyIdx = 0;
     SIZE_T pos;
     SIZE_T len;
@@ -212,7 +212,7 @@ testKdfRandom( KdfMultiImp * pImp, KDF_ARGUMENT_TYPE argType, int rrep, SIZE_T k
     CHECK3( cbResult <= SYMCRYPT_SHA256_RESULT_SIZE, "Result size too long in line %lld", line );
     if( memcmp( buf, pbResult, cbResult ) != 0 )
     {
-            
+
         print( "*\nWrong KDF result in line %d. \n"
             "Expected ", line );
         printHex( pbResult, cbResult );
@@ -228,22 +228,22 @@ testKdfRandom( KdfMultiImp * pImp, KDF_ARGUMENT_TYPE argType, int rrep, SIZE_T k
 VOID
 testKdfKats()
 {
-    std::auto_ptr<KatData> katBlockCipher( getCustomResource( "kat_kdf.dat", "KAT_KDF" ) );
+    std::unique_ptr<KatData> katBlockCipher( getCustomResource( "kat_kdf.dat", "KAT_KDF" ) );
     KAT_ITEM katItem;
 
     static String g_currentCategory;
     BOOL skipData = TRUE;
     String sep = "    ";
     BOOL doneAnything = FALSE;
-    
-    std::auto_ptr<KdfMultiImp> pKdfMultiImp;
+
+    std::unique_ptr<KdfMultiImp> pKdfMultiImp;
 
     while( 1 )
     {
         katBlockCipher->getKatItem( & katItem );
         ULONGLONG line = katItem.line;
 
-        
+
         if( katItem.type == KAT_TYPE_END )
         {
             break;
@@ -253,7 +253,7 @@ testKdfKats()
         {
             g_currentCategory = katItem.categoryName;
             pKdfMultiImp.reset( new KdfMultiImp( g_currentCategory ) );
-            
+
             //
             // If we have no algorithms, we skip all the data until the next category
             //
@@ -352,7 +352,7 @@ testKdfKats()
                 BString katKeyBlock = katParseData(katItem, "key_block");
 
                 /////////////////////////////////////////////////////////////////////////////////
-                // 
+                //
                 // Test routine for all versions (from RFCs 2246, 4336, 5246)
                 //
                 //      For all key exchange methods, the same algorithm is used to convert

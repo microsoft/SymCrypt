@@ -183,7 +183,7 @@ SymCryptIntExtendedGcd(
     _Out_writes_bytes_( cbScratch ) PBYTE           pbScratch,
                                     SIZE_T          cbScratch )
 {
-    UINT32 nDigits  = max( SymCryptIntDigitsizeOfObject( piSrc1 ), SymCryptIntDigitsizeOfObject( piSrc2 ));
+    UINT32 nDigits  = SYMCRYPT_MAX( SymCryptIntDigitsizeOfObject( piSrc1 ), SymCryptIntDigitsizeOfObject( piSrc2 ));
     PSYMCRYPT_INT       piA;        // size nDigits
     PSYMCRYPT_INT       piB;        // size nDigits, NOT ALLOCATED (part of the pdGcd divisor)
     PSYMCRYPT_INT       piTmp;      // size nDigits
@@ -202,8 +202,8 @@ SymCryptIntExtendedGcd(
 
     // Compute how much scratch space we need for the functions we call
     cbFnScratch = SYMCRYPT_SCRATCH_BYTES_FOR_INT_DIVMOD( 2 * nDigits, nDigits );
-    cbFnScratch = max( cbFnScratch, SYMCRYPT_SCRATCH_BYTES_FOR_INT_MUL( 2*nDigits ) );
-    cbFnScratch = max( cbFnScratch, SYMCRYPT_SCRATCH_BYTES_FOR_INT_TO_DIVISOR( nDigits ) );
+    cbFnScratch = SYMCRYPT_MAX( cbFnScratch, SYMCRYPT_SCRATCH_BYTES_FOR_INT_MUL( 2*nDigits ) );
+    cbFnScratch = SYMCRYPT_MAX( cbFnScratch, SYMCRYPT_SCRATCH_BYTES_FOR_INT_TO_DIVISOR( nDigits ) );
 
     SYMCRYPT_ASSERT( cbScratch >=   4 * SymCryptSizeofIntFromDigits( nDigits ) +
                                     1 * SymCryptSizeofIntFromDigits( 2*nDigits ) +

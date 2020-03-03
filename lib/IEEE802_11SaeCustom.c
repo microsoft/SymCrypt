@@ -84,8 +84,8 @@ SymCrypt802_11SaeCustomInit(
 
     nDigits = SymCryptDigitsFromBits( 256 );
 
-    cbScratch = max( SYMCRYPT_SCRATCH_BYTES_FOR_COMMON_MOD_OPERATIONS( nDigits ), 
-                max( SYMCRYPT_SCRATCH_BYTES_FOR_MODEXP( nDigits ),
+    cbScratch = SYMCRYPT_MAX( SYMCRYPT_SCRATCH_BYTES_FOR_COMMON_MOD_OPERATIONS( nDigits ), 
+                SYMCRYPT_MAX( SYMCRYPT_SCRATCH_BYTES_FOR_MODEXP( nDigits ),
                      SYMCRYPT_SCRATCH_BYTES_FOR_GETSET_VALUE_ECURVE_OPERATIONS( pCurve ) ) );
     pbScratch = SymCryptCallbackAlloc( cbScratch );
 
@@ -387,8 +387,8 @@ SymCrypt802_11SaeCustomCommitCreate(
     PCSYMCRYPT_ECURVE pCurve = pState->pCurve;
 
     nDigits = SymCryptDigitsFromBits( 256 );
-    cbScratch = max( SYMCRYPT_SCRATCH_BYTES_FOR_COMMON_MOD_OPERATIONS( nDigits ), 
-                max( SYMCRYPT_SCRATCH_BYTES_FOR_SCALAR_ECURVE_OPERATIONS( pCurve ),
+    cbScratch = SYMCRYPT_MAX( SYMCRYPT_SCRATCH_BYTES_FOR_COMMON_MOD_OPERATIONS( nDigits ), 
+                SYMCRYPT_MAX( SYMCRYPT_SCRATCH_BYTES_FOR_SCALAR_ECURVE_OPERATIONS( pCurve ),
                      SYMCRYPT_SCRATCH_BYTES_FOR_GETSET_VALUE_ECURVE_OPERATIONS( pCurve ) ) );
 
     pbScratch = SymCryptCallbackAlloc( cbScratch );
@@ -491,9 +491,9 @@ SymCrypt802_11SaeCustomCommitProcess(
     SIZE_T cbScratch;
 
     nDigits = SymCryptDigitsFromBits( 256 );
-    cbScratch = max( SYMCRYPT_SCRATCH_BYTES_FOR_COMMON_MOD_OPERATIONS( nDigits ), 
-                max( SYMCRYPT_SCRATCH_BYTES_FOR_SCALAR_ECURVE_OPERATIONS( pCurve ),
-                max( SYMCRYPT_SCRATCH_BYTES_FOR_COMMON_ECURVE_OPERATIONS( pCurve ), 
+    cbScratch = SYMCRYPT_MAX( SYMCRYPT_SCRATCH_BYTES_FOR_COMMON_MOD_OPERATIONS( nDigits ), 
+                SYMCRYPT_MAX( SYMCRYPT_SCRATCH_BYTES_FOR_SCALAR_ECURVE_OPERATIONS( pCurve ),
+                SYMCRYPT_MAX( SYMCRYPT_SCRATCH_BYTES_FOR_COMMON_ECURVE_OPERATIONS( pCurve ), 
                      SYMCRYPT_SCRATCH_BYTES_FOR_GETSET_VALUE_ECURVE_OPERATIONS( pCurve ) ) ) );
     pbScratch = SymCryptCallbackAlloc( cbScratch );
 

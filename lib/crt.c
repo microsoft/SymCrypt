@@ -37,7 +37,7 @@ SymCryptCrtGenerateForTwoCoprimes(
     SYMCRYPT_ASSERT( pmP != NULL );
     SYMCRYPT_ASSERT( pmQ != NULL );
 
-    nDigits = max( SymCryptModulusDigitsizeOfObject( pmP ), SymCryptModulusDigitsizeOfObject( pmQ ));
+    nDigits = SYMCRYPT_MAX( SymCryptModulusDigitsizeOfObject( pmP ), SymCryptModulusDigitsizeOfObject( pmQ ));
 
     SYMCRYPT_ASSERT( cbScratch >= 2*SymCryptSizeofIntFromDigits( nDigits ) +
                                   SYMCRYPT_SCRATCH_BYTES_FOR_EXTENDED_GCD( nDigits ));
@@ -156,12 +156,12 @@ SymCryptCrtSolve(
 
     UNREFERENCED_PARAMETER( flags );
 
-    nDigitsMax = max( SymCryptModulusDigitsizeOfObject( ppmCoprimes[0] ), SymCryptModulusDigitsizeOfObject( ppmCoprimes[1] ) );
+    nDigitsMax = SYMCRYPT_MAX( SymCryptModulusDigitsizeOfObject( ppmCoprimes[0] ), SymCryptModulusDigitsizeOfObject( ppmCoprimes[1] ) );
 
     SYMCRYPT_ASSERT( cbScratch >= SymCryptSizeofIntFromDigits( nDigitsMax ) +
                                   SymCryptSizeofModElementFromModulus( ppmCoprimes[0] ) +
                                   SymCryptSizeofIntFromDigits( 2*nDigitsMax ) +
-                                  max( SYMCRYPT_SCRATCH_BYTES_FOR_COMMON_MOD_OPERATIONS( nDigitsMax ),
+                                  SYMCRYPT_MAX( SYMCRYPT_SCRATCH_BYTES_FOR_COMMON_MOD_OPERATIONS( nDigitsMax ),
                                        SYMCRYPT_SCRATCH_BYTES_FOR_INT_MUL( 2*nDigitsMax ) )
                     );
 

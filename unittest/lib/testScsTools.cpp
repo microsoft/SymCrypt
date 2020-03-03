@@ -47,7 +47,7 @@ testScsCopy()
 
         nSrc = nSrc % sizeof( buf1 );
         nDst = nDst % sizeof( buf1 );
-        UINT32 nCopied = min( nSrc, nDst );
+        UINT32 nCopied = SYMCRYPT_MIN( nSrc, nDst );
 
         GENRANDOM( buf1, sizeof( buf1 ) );
         GENRANDOM( buf2, sizeof( buf2 ) ); 

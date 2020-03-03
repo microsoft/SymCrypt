@@ -11,8 +11,6 @@ TEST_CODE= 1
 LINK_TIME_CODE_GENERATION = 1
 
 INCLUDES= \
-#    ..\..\..\released\windows\ntrsa32\inc; \
-#    ..\..\..\released\windows\bignum; \
     $(DS_INC_PATH);                 \
     $(DS_INC_PATH)\crypto; \
     $(ONECOREDS_INTERNAL_INC_PATH_L)\crypto; \
@@ -55,20 +53,24 @@ SOURCES= \
     rndDriver.cpp \
     testArithmetic.cpp \
     testEcc.cpp \
-    testInterop.cpp \
-    testRsa.cpp \
-    testRsa_sc.cpp \
-    testRsa_msbignum.cpp \
-    testRsa_cng.cpp \
-    testDl.cpp \
-    testDl_sc.cpp \
-    testDl_msbignum.cpp \
-    testDl_cng.cpp \
+#    testInterop.cpp \
+#    testRsa.cpp \
+#    testRsa_sc.cpp \
+#    testRsa_msbignum.cpp \
+#    testRsa_cng.cpp \
+#    testDl.cpp \
+#    testDl_sc.cpp \
+#    testDl_msbignum.cpp \
+#    testDl_cng.cpp \
     callback.cpp \
     testMontgomery.cpp \
     testScsTable.cpp \
     testIEEE802_11SaeCustom.cpp \
     testScsTools.cpp \
+    testRsaSign.cpp \
+    testRsaEnc.cpp \
+    testDh.cpp \
+    testDsa.cpp \
 
 I386_SOURCES = \
     savexmm.asm \
@@ -77,14 +79,15 @@ AMD64_SOURCES = \
     saveymm.asm
 
 TARGETLIBS= \
-		$(DS_LIB_PATH)\rsa32.lib \
+#		$(DS_LIB_PATH)\rsa32.lib \
 		$(SDK_LIB_PATH)\powrprof.lib \
-		$(SDK_LIB_PATH)\bcrypt.lib \
+#		$(SDK_LIB_PATH)\bcrypt.lib \
 		$(PROJECT_OBJ_ROOT)\symcrypt\lib\$(O)\symcrypt.lib \
 
 UNICODE = 1
 
 USE_MSVCRT=1
+USE_UNICRT=1
 
 BUFFER_OVERFLOW_CHECKS=1
 
@@ -97,7 +100,7 @@ PRECOMPILED_CXX = 1
 USE_RTTI = 1
 
 USE_STL = 1
-STL_VER = 70
+STL_VER = STL_VER_CURRENT
 USE_NATIVE_EH = 1
 
 

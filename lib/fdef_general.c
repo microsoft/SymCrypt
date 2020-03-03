@@ -341,7 +341,7 @@ SymCryptFdefIntCopyMixedSize(
 	// I would assume that this function isn't intended for use
 	// with private data due to branching
 
-    n = min( piSrc->nDigits, piDst->nDigits );
+    n = SYMCRYPT_MIN( piSrc->nDigits, piDst->nDigits );
     memcpy( SYMCRYPT_FDEF_INT_PUINT32( piDst ), SYMCRYPT_FDEF_INT_PUINT32( piSrc ), n * SYMCRYPT_FDEF_DIGIT_SIZE );
 
     if( piDst->nDigits > n )
@@ -757,7 +757,7 @@ SymCryptFdefIntIsEqual(
     PCUINT32 pSrc1 = SYMCRYPT_FDEF_INT_PUINT32( piSrc1 );
     PCUINT32 pSrc2 = SYMCRYPT_FDEF_INT_PUINT32( piSrc2 );
 
-    n = min( n1, n2 );
+    n = SYMCRYPT_MIN( n1, n2 );
     d = 0;
     for( i=0; i < n ; i++ )
     {
@@ -1025,8 +1025,8 @@ SymCryptGenerateSmallPrimes( UINT32 maxPrime, PUINT32 * ppList )
     UINT32 si;
     UINT32 i;
 
-    maxPrime = max( maxPrime, 32 );         // simplify error handling by always producing primes at least up to 32
-    maxPrime = min( maxPrime, 1 << 24 );    // Limit prime list to something sane (sieve = 8 MB, list = 4 MB or so).
+    maxPrime = SYMCRYPT_MAX( maxPrime, 32 );         // simplify error handling by always producing primes at least up to 32
+    maxPrime = SYMCRYPT_MIN( maxPrime, 1 << 24 );    // Limit prime list to something sane (sieve = 8 MB, list = 4 MB or so).
 
     // highest index is (maxPrime - 1)/2 which encodes maxPrime if odd, or maxPrime-1 if even
     nSieve = (maxPrime - 1) / 2 + 1;   
@@ -1167,10 +1167,10 @@ SymCryptFdefCreateTrialDivisionContext( UINT32 nDigits )
 
         // Now we know how many primes are in the last groups, let's find out how large the largest prime should be
         tmp64 = cRabinMillerCost / cPerPrimeCost;
-        tmp64 = min( tmp64, SYMCRYPT_TRIALDIVISION_MAX_SMALL_PRIME );   
+        tmp64 = SYMCRYPT_MIN( tmp64, SYMCRYPT_TRIALDIVISION_MAX_SMALL_PRIME );   
         maxPrime = (UINT32) tmp64;
         SYMCRYPT_HARD_ASSERT( maxPrime == tmp64 );
-        maxPrime = max( maxPrime, minPrime );       // Make sure we don't fall into the previous group size that we don't want
+        maxPrime = SYMCRYPT_MAX( maxPrime, minPrime );       // Make sure we don't fall into the previous group size that we don't want
     } 
 	else 
 	{ 

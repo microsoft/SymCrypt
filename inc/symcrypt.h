@@ -20,7 +20,7 @@ extern "C" {
 // implementations of cryptographic algorithms.
 //
 // All API information is in this file. Information in the
-// other include files (symcrypt_internal.h & symcrypt_inline.h) is subject
+// other include files (symcrypt_internal.h) is subject
 // to change at any time. Please use only the information in this file.
 // The header file symcrypt_low_level contains low-level API functions that
 // are sometimes needed. That API surface is not stable across releases.
@@ -49,17 +49,16 @@ extern "C" {
 // algorithm. For example, a caller might use
 //      SYMCRYPT_ENVIRONMENT_WINDOWS_KERNELMODE
 //      SYMCRYPT_SELECT_SHA256_COMPACT
-// to indicate that the environment is kernel mode and the compact SHA-256 implementation is to 
+// to indicate that the environment is kernel mode and the compact SHA-256 implementation is to
 // be used.
-// There are optimized environments for various Windows use cases. 
-// At the moment there is no Linux port of SymCrypt.
+// There are optimized environments for various Windows use cases.
 //
 //
 // CHECKED BUILDS
 // For each CPU, SymCrypt is available in both a checked build and a fre build. The
 // checked build includes additional error checking which catches the most common
-// errors. Please make sure you build a checked version of your binary and test with 
-// that regularly. 
+// errors. Please make sure you build a checked version of your binary and test with
+// that regularly.
 //
 //
 // MEMORY STRUCTURES
@@ -72,37 +71,37 @@ extern "C" {
 //
 // MULTI_THREADING
 // The routines in this library are multi-thread safe, taking into account the usual
-// rules of multiple threads accessing the same data structures. 
+// rules of multiple threads accessing the same data structures.
 // Any function that accepts a pointer-to-const argument must be assumed to read the
-// corresponding data. If the function accepts a pointer-to-non-const it must be 
-// assumed to both read and write the data. 
-// It is safe for two threads to use the same data element as long as both of them 
+// corresponding data. If the function accepts a pointer-to-non-const it must be
+// assumed to both read and write the data.
+// It is safe for two threads to use the same data element as long as both of them
 // are only reading form it. For example, an expanded key is typically passed as
 // a pointer-to-const to the encryption and decryption routines. Thus, multiple
 // threads can perform multiple encryptions/decryptions in parallel using the
 // same expanded key.
 //
 // The normal memory re-order issues apply as well. If one thread initializes a
-// data structure and the initialization function returns, it is NOT safe for 
+// data structure and the initialization function returns, it is NOT safe for
 // another thread to read the data structure without a suitable memory barrier or
-// synchronization primitive. 
-// 
+// synchronization primitive.
+//
 //
 // SIDE CHANNELS
 // Side channels are ways in which an attacker can receive information about what
-// a target process is doing using other aspects than just the input/output behaviour 
+// a target process is doing using other aspects than just the input/output behaviour
 // of the target. For example, the memory subsystem, CPU load modulation, disk usage,
 // and many other aspects can provide side-channels to an attacker.
 //
 // Wherever possible the implementations in SymCrypt have been hardened against side channels.
 // The most important rules are that the instruction sequence and the memory addresses
 // accessed do not depend on any of the data being processed.
-// As a general rule, the actual data being processed is protected, but the 
+// As a general rule, the actual data being processed is protected, but the
 // length of the data (i.e. the number of bytes) is not protected in this way and
 // is treated as public information.
 //
 // The implementation of the following algorithms are NOT side-channel safe:
-//  - non-AES-NI based AES 
+//  - non-AES-NI based AES
 //      used on CPUs that don't have AES-NI, or in kernel mode on x86 Win8 and below.
 //  - DES, 3DES, DESX
 //  - RC4
@@ -110,7 +109,7 @@ extern "C" {
 //
 //
 // FATAL ERRORS
-// This is a high-performance library with a minimum of error checking. 
+// This is a high-performance library with a minimum of error checking.
 // Many functions do not return an error code; this avoids the cost of
 // having any error checking on the caller's side for error situations that
 // can never occur. However, this does assume that the caller is calling
@@ -135,14 +134,14 @@ extern "C" {
 // CHANGES FROM RSA32.LIB
 // This library replaces the venerable rsa32(k).lib. The major changes are:
 //
-// - SymCrypt requires the caller to call a library initialization function 
+// - SymCrypt requires the caller to call a library initialization function
 //   before calling the various algorithm implementations.
 // - SymCrypt requires the caller to specify the environment in which the library
 //   is running.
 // - SymCrypt has a CHKed and FRE version for use in CHKed and FRE builds.
 // - The API has been updated. The API is more consistent and has better support
 //   for 64-bit platforms (use of SIZE_T rather than UINT32 for lengths).
-// - All algorithm implementations have been updated to reflect the 
+// - All algorithm implementations have been updated to reflect the
 //   latest cryptographic coding guidelines. Several security weaknesses
 //   in the RSA32.lib code have been fixed.
 // - Code has been optimized for the newer CPUs.
@@ -150,9 +149,9 @@ extern "C" {
 //   Most algorithms are faster, especially the recommended algorithms.
 //   Some legacy algorithms are somewhat slower due to removal of assembler support.
 //   Note: performance on older CPUs, like the Pentium 4, is reduced in some places.
-// - Code and data now go into their default segments. 
-//   RSA32 has a kernel-mode version where the code and data go into 
-//   special segments. This allows the crypto code to be made pageable or 
+// - Code and data now go into their default segments.
+//   RSA32 has a kernel-mode version where the code and data go into
+//   special segments. This allows the crypto code to be made pageable or
 //   nonpageable separate from the rest of the executable. This feature is
 //   error-prone, and not widely used. Furthermore, it switches on a per-lib
 //   basis, rather than a per-functionality basis, which is the wrong granularity.
@@ -165,17 +164,12 @@ extern "C" {
 //
 
 //
-// SymCrypt data types
-//
-#include "symcrypt_types.h"
-
-//
 // Error codes
 //
 // This is a high-performance library with a minimum of error checking. Most
 // routines do not perform any error checking at all.
 // Some routines perform internal consistency checks and will cause a fatal
-// error if the library is used incorrectly. 
+// error if the library is used incorrectly.
 //
 // In a few cases routines return an error code when they are called incorrectly.
 // Mostly this is for key expansion routines which return an error code when the key
@@ -216,12 +210,44 @@ typedef enum {
     SYMCRYPT_VALUE_TOO_LARGE,
 } SYMCRYPT_ERROR;
 
+// SYMCRYPT_ECURVE_TYPE needs to be completely defined before including
+// symcrypt_internal.h because it's a member of another type in there.
+typedef enum _SYMCRYPT_ECURVE_TYPE {
+    SYMCRYPT_ECURVE_TYPE_NULL               = 0,
+    SYMCRYPT_ECURVE_TYPE_SHORT_WEIERSTRASS  = 1,
+    SYMCRYPT_ECURVE_TYPE_TWISTED_EDWARDS    = 2,
+    SYMCRYPT_ECURVE_TYPE_MONTGOMERY         = 3,
+} SYMCRYPT_ECURVE_TYPE;
 //
-// The symcrypt_internal.h file contains information only relevant to the internals 
-// of the library, but they have to be exposed to the compiler of the caller. 
+// SYMCRYPT_ECURVE_TYPE is used to specify the type of the curve.
+//
+
+// SYMCRYPT_DLGROUP_FIPS needs to be completely defined before including
+// symcrypt_internal.h because it's a member of another type in there.
+
+//=====================================================
+// DL group operations
+
+typedef enum _SYMCRYPT_DLGROUP_FIPS {
+    SYMCRYPT_DLGROUP_FIPS_NONE  = 0,
+    SYMCRYPT_DLGROUP_FIPS_186_2 = 1,
+    SYMCRYPT_DLGROUP_FIPS_186_3 = 2,
+} SYMCRYPT_DLGROUP_FIPS;
+//
+// Dlgroup enums for the generation and verification of the group parameters.
+// These are used in:
+//  - SymCryptDlgroupGenerate function to specify the appropriate standard to
+//    be used.
+//  - SymCryptDlgroupSetValue function to verify that the input parameters were
+//    properly generated.
+//
+
+//
+// The symcrypt_internal.h file contains information only relevant to the internals
+// of the library, but they have to be exposed to the compiler of the caller.
 // We put those in a separate file to make this file easier to read
-// for users of the library. 
-// The details in the symcrypt_internal.h file can change at any time; 
+// for users of the library.
+// The details in the symcrypt_internal.h file can change at any time;
 // users should only rely on the information in this header file.
 //
 #include "symcrypt_internal.h"
@@ -240,13 +266,13 @@ typedef enum {
 // items that are not part of the stable public API of SymCrypt.
 //
 
-#define SYMCRYPT_LOAD_LSBFIRST16( p )   SYMCRYPT_INTERNAL_LOAD_LSBFIRST16( p )      
-#define SYMCRYPT_LOAD_LSBFIRST32( p )   SYMCRYPT_INTERNAL_LOAD_LSBFIRST32( p )      
-#define SYMCRYPT_LOAD_LSBFIRST64( p )   SYMCRYPT_INTERNAL_LOAD_LSBFIRST64( p )      
+#define SYMCRYPT_LOAD_LSBFIRST16( p )   SYMCRYPT_INTERNAL_LOAD_LSBFIRST16( p )
+#define SYMCRYPT_LOAD_LSBFIRST32( p )   SYMCRYPT_INTERNAL_LOAD_LSBFIRST32( p )
+#define SYMCRYPT_LOAD_LSBFIRST64( p )   SYMCRYPT_INTERNAL_LOAD_LSBFIRST64( p )
 
-#define SYMCRYPT_LOAD_MSBFIRST16( p )   SYMCRYPT_INTERNAL_LOAD_MSBFIRST16( p )      
-#define SYMCRYPT_LOAD_MSBFIRST32( p )   SYMCRYPT_INTERNAL_LOAD_MSBFIRST32( p )      
-#define SYMCRYPT_LOAD_MSBFIRST64( p )   SYMCRYPT_INTERNAL_LOAD_MSBFIRST64( p )      
+#define SYMCRYPT_LOAD_MSBFIRST16( p )   SYMCRYPT_INTERNAL_LOAD_MSBFIRST16( p )
+#define SYMCRYPT_LOAD_MSBFIRST32( p )   SYMCRYPT_INTERNAL_LOAD_MSBFIRST32( p )
+#define SYMCRYPT_LOAD_MSBFIRST64( p )   SYMCRYPT_INTERNAL_LOAD_MSBFIRST64( p )
 
 #define SYMCRYPT_STORE_LSBFIRST16( p, v )   SYMCRYPT_INTERNAL_STORE_LSBFIRST16( p, v )
 #define SYMCRYPT_STORE_LSBFIRST32( p, v )   SYMCRYPT_INTERNAL_STORE_LSBFIRST32( p, v )
@@ -259,39 +285,39 @@ typedef enum {
 //
 // Convert between UINT32/UINT64 and variable-sized byte buffers
 //
-// The load functions take any size input array, and will return an error if the value 
+// The load functions take any size input array, and will return an error if the value
 // encoded in the array exceeds the range of the target type (UINT32 or UINT64).
 // The store functions will return an error if the destination buffer is too small
 // to encode the actual value passed.
 // An empty buffer (length = 0) encodes the value 0, and the value 0 can be encoded
 // in the empty buffer.
 // These functions are not side-channel safe.
-// 
+//
 
 SYMCRYPT_ERROR
 SYMCRYPT_CALL
-SymCryptLoadLsbFirstUint32( 
+SymCryptLoadLsbFirstUint32(
     _In_reads_( cbSrc ) PCBYTE  pbSrc,
                         SIZE_T  cbSrc,
     _Out_               PUINT32 pDst );
 
 SYMCRYPT_ERROR
 SYMCRYPT_CALL
-SymCryptLoadLsbFirstUint64( 
+SymCryptLoadLsbFirstUint64(
     _In_reads_( cbSrc ) PCBYTE  pbSrc,
                         SIZE_T  cbSrc,
     _Out_               PUINT64 pDst );
 
 SYMCRYPT_ERROR
 SYMCRYPT_CALL
-SymCryptLoadMsbFirstUint32( 
+SymCryptLoadMsbFirstUint32(
     _In_reads_( cbSrc ) PCBYTE  pbSrc,
                         SIZE_T  cbSrc,
     _Out_               PUINT32 pDst );
 
 SYMCRYPT_ERROR
 SYMCRYPT_CALL
-SymCryptLoadMsbFirstUint64( 
+SymCryptLoadMsbFirstUint64(
     _In_reads_( cbSrc ) PCBYTE  pbSrc,
                         SIZE_T  cbSrc,
     _Out_               PUINT64 pDst );
@@ -367,19 +393,19 @@ SymCryptUint64Bytesize( UINT64 value );
 #define SYMCRYPT_FORCE_WRITE16( _p, _v )    SYMCRYPT_INTERNAL_FORCE_WRITE16( _p, _v )
 #define SYMCRYPT_FORCE_WRITE32( _p, _v )    SYMCRYPT_INTERNAL_FORCE_WRITE32( _p, _v )
 #define SYMCRYPT_FORCE_WRITE64( _p, _v )    SYMCRYPT_INTERNAL_FORCE_WRITE64( _p, _v )
-    
+
 //==========================================================================
 //   TYPE MODIFIERS
 //==========================================================================
 //
 // The SymCrypt library uses the following type modifiers
 //
-// SYMCRYPT_CALL    
+// SYMCRYPT_CALL
 //
 //      The calling-convention used by SymCrypt functions.
 //      Some platforms have multiple calling conventions which differ in the
 //      way arguments are passed and the stack is handled
-//      The SYMCRYPT_CALL type modifier selects the correct calling convention. 
+//      The SYMCRYPT_CALL type modifier selects the correct calling convention.
 //      The current implementation uses __fastcall on the x86 platform, which
 //      passes arguments in registers and is generally faster than the __stdcall
 //      calling convention.
@@ -408,10 +434,16 @@ SymCryptUint64Bytesize( UINT64 value );
 // Creating different libraries for each environment has huge testing and maintenance
 // costs. Instead, the user of the library invokes a pre-defined macro in their own code
 // that contains the necessary adoptions to that environment.
-// Using a macro makes the selection static, which allows the compiler to optimize 
-// away a lot of the overhead. 
+// Using a macro makes the selection static, which allows the compiler to optimize
+// away a lot of the overhead.
 // (e.g. if XMM register saving is not needed, the stub function declared by the macro
 // will always succeed, and the compiler will inline it and optimize it away.)
+//
+// Warning: due to recent changes in the Visual Studio C runtime, we cannot test saving
+// of the YMM registers in Windows user mode. Because we do not have a kernel mode test
+// for saving/restoring the YMM registers, this functionality is currently not tested.
+// Before using SymCrypt in Windows 7 kernel mode, additional kernel mode tests should be
+// added to verify this functionality.
 //
 
 //
@@ -427,7 +459,7 @@ SymCryptUint64Bytesize( UINT64 value );
 //
 // SYMCRYPT_ENVIRONMENT_WINDOWS_USERMODE_LEGACY             // use for any version of Windows
 // SYMCRYPT_ENVIRONMENT_WINDOWS_USERMODE_WIN7_N_LATER       // Only for Win7 and later (cannot use AVX2 instructions)
-// SYMCRYPT_ENVIRONMENT_WINDOWS_USERMODE_WIN8_1_N_LATER     // Only for Win8.1 and later 
+// SYMCRYPT_ENVIRONMENT_WINDOWS_USERMODE_WIN8_1_N_LATER     // Only for Win8.1 and later
 // SYMCRYPT_ENVIRONMENT_WINDOWS_USERMODE_LATEST             // use for latest OS
 //
 // SYMCRYPT_ENVIRONMENT_WINDOWS_KERNELDEBUGGER
@@ -439,18 +471,18 @@ VOID
 SYMCRYPT_CALL
 SymCryptInit();
 //
-// Initialize the library. 
+// Initialize the library.
 // This function MUST be called before any other function in the library.
 //
 // This function does not perform the self tests in the library.
 // Doing so would force the linking of all the algorithm in the library,
-// which is obviously not desirable for applications that want to link in 
+// which is obviously not desirable for applications that want to link in
 // only one or two algorithms.
 // If self test are required (e.g. for FIPS certification) they have to be
 // called separately for each algorithm.
 //
 // It is safe to call this function multiple times.
-// The library initialization is done in the first call; subsequent calls are no-ops. 
+// The library initialization is done in the first call; subsequent calls are no-ops.
 //
 // If you get an 'undefined symbol' error on this function name, then you forgot
 // to invoke one of the environment macros documented above.
@@ -468,32 +500,32 @@ SymCryptInit();
 
 VOID
 SYMCRYPT_CALL
-SymCryptWipe( 
-    _Out_writes_bytes_( cbData )    PVOID   pbData, 
+SymCryptWipe(
+    _Out_writes_bytes_( cbData )    PVOID   pbData,
                                     SIZE_T  cbData );
-                                    
-FORCEINLINE                                    
+
+FORCEINLINE
 VOID
 SYMCRYPT_CALL
-SymCryptWipeKnownSize( 
-    _Out_writes_bytes_( cbData )    PVOID   pbData, 
+SymCryptWipeKnownSize(
+    _Out_writes_bytes_( cbData )    PVOID   pbData,
                                     SIZE_T  cbData );
 
 //
 // The SymCryptWipe and SymCryptWipeKnownSize functions wipe memory.
 // They work for any size and any alignment.
-// Wiping is faster on x86 and x64 if the data buffer is 16-aligned, 
+// Wiping is faster on x86 and x64 if the data buffer is 16-aligned,
 // and the size is a multiple of 16.
 //
 // The SymCryptWipe function is optimized for the case where the size of the buffer
 // is not known at compile time.
 //
-// The SymCryptWipeKnownSize function is optimized for the case where the 
-// cbData parameter is a compile-time known value. 
+// The SymCryptWipeKnownSize function is optimized for the case where the
+// cbData parameter is a compile-time known value.
 //
 // The two functions are functionally equivalent, but there can be a significant performance
 // differences:
-//  - calling SymCryptWipeKnownSize when the size is not known at compile time incurs a 
+//  - calling SymCryptWipeKnownSize when the size is not known at compile time incurs a
 //      code size penalty.
 //  - calling SymCryptWipeKnownSize when the size is not known at compile time and is sometimes <= 64
 //      incurs a performance penalty.
@@ -506,7 +538,7 @@ SymCryptWipeKnownSize(
 
 VOID
 SYMCRYPT_CALL
-SymCryptXorBytes( 
+SymCryptXorBytes(
     _In_reads_( cbBytes )   PCBYTE  pbSrc1,
     _In_reads_( cbBytes )   PCBYTE  pbSrc2,
     _Out_writes_( cbBytes ) PBYTE   pbResult,
@@ -521,7 +553,7 @@ SymCryptXorBytes(
 
 BOOLEAN
 SYMCRYPT_CALL
-SymCryptEqual(  
+SymCryptEqual(
     _In_reads_( cbBytes )   PCBYTE pbSrc1,
     _In_reads_( cbBytes )   PCBYTE pbSrc2,
                             SIZE_T cbBytes );
@@ -539,13 +571,13 @@ SymCryptEqual(
 //==========================================================================
 //
 // All hash functions have a similar interface. For consistency we describe
-// the generic parts of the interface once. 
+// the generic parts of the interface once.
 // Algorithm-specific comments are given with the API functions of each algorithm separately.
 //
 // For an algorithm called XXX the following functions, types, and constants are defined:
 //
 //
-// SYMCRYPT_XXX_RESULT_SIZE 
+// SYMCRYPT_XXX_RESULT_SIZE
 //
 //      A constant giving the size, in bytes, of the result of the hash function.
 //
@@ -563,12 +595,12 @@ SymCryptEqual(
 //                                                          SIZE_T cbData,
 //              _Out_writes_( SYMCRYPT_XXX_RESULT_SIZE )    PBYTE pbResult );
 //
-//      Computes the hash value of the data buffer. 
+//      Computes the hash value of the data buffer.
 //      If you have all the data to be hashed in a single buffer this is the simplest function to use.
 //
 //
 // SYMCRYPT_XXX_STATE
-//      
+//
 //      Type to store the intermediate state of a hash computation.
 //      This is an opaque type whose structure can change at will.
 //      It should only be used for transient computations in a single executable
@@ -576,7 +608,7 @@ SymCryptEqual(
 //      The pointer version is also defined (PSYMCRYPT_XXX_STATE)
 //
 //      The SYMCRYPT_XXX_STATE structure contains the entire state of an ongoing
-//      hash computation. If you want to compute the hash on several strings that 
+//      hash computation. If you want to compute the hash on several strings that
 //      have the same prefix, the caller may hash the prefix first, then create
 //      multiple copies using the supplied state copy function,
 //      and continue hashing the different states with different postfix strings.
@@ -584,18 +616,18 @@ SymCryptEqual(
 // VOID
 // SYMCRYPT_CALL
 // SymCryptXxxInit( _Out_ PSYMCRYPT_XXX_STATE pState );
-//      
+//
 //      Initialize a SYMCRYPT_XXX_STATE for subsequent use.
 //
-//      The state encodes an ongoing hash computation and allows incremental 
+//      The state encodes an ongoing hash computation and allows incremental
 //      computation of a hash function.
-//      At any point in time the state object encodes a state that is equivalent to 
+//      At any point in time the state object encodes a state that is equivalent to
 //      the hash computation of a data string.
-//      This function can be called at any time and resets the state to correspond 
+//      This function can be called at any time and resets the state to correspond
 //      to the empty data string.
-//      The SymCryptXxxAppend function appends data to the data string 
+//      The SymCryptXxxAppend function appends data to the data string
 //      encoded by the state.
-//      The SymCryptXxxResult function finalizes the computation and 
+//      The SymCryptXxxResult function finalizes the computation and
 //      returns the actual hash result.
 //
 //
@@ -607,26 +639,26 @@ SymCryptEqual(
 //
 //      Provide more data to the ongoing hash computation specified by the state.
 //      The state must have been initialized by SymCryptXxxInit.
-//      This function can be called multiple times on the same state 
+//      This function can be called multiple times on the same state
 //      to append more data to the encoded data string.
 //
 //
 // VOID
 // SYMCRYPT_CALL
-// SymCryptXxxResult( 
+// SymCryptXxxResult(
 //      _Inout_                                PSYMCRYPT_XXX_STATE pState,
 //     _Out_writes_( SYMCRYPT_XXX_RESULT_SIZE )PBYTE               pbResult );
 //
-//      Returns the hash of the data string encoded by the state. 
-//      If the state was newly initialized this returns the hash of the empty string. 
+//      Returns the hash of the data string encoded by the state.
+//      If the state was newly initialized this returns the hash of the empty string.
 //      If one or more SymCryptXxxAppend function calls were made on this state
-//      it returns the hash of the concatenation of all the data strings 
+//      it returns the hash of the concatenation of all the data strings
 //      passed to SymCryptXxxAppend.
-// 
+//
 //      The state is re-initialized and ready for re-use; you do not have to call
 //      SymCryptXxxInit on the state to start another fresh hash computation.
 //      The state is also wiped of any traces of old data to prevent accidental data leakage.
-// 
+//
 //
 // VOID
 // SYMCRYPT_CALL
@@ -637,7 +669,7 @@ SymCryptEqual(
 //
 // VOID
 // SYMCRYPT_CALL
-// SymCryptXxxStateExport( 
+// SymCryptXxxStateExport(
 //      _In_                                                    PCSYMCRYPT_XXX_STATE    pState,
 //      _Out_writes_bytes_( SYMCRYPT_XXX_STATE_EXPORT_SIZE )    PBYTE                   pbBlob );
 //
@@ -653,12 +685,12 @@ SymCryptEqual(
 // SymCryptXxxStateImport(
 //      _Out_                                               PSYMCRYPT_XXX_STATE pState,
 //      _In_reads_bytes_( SYMCRYPT_XXX_STATE_EXPORT_SIZE)   PCBYTE              pbBlob );
-// 
+//
 //      Imports a hash state that was previously exported with SymCryptXxxStateExport.
 //      After this call, the effective state of *pState is identical to the effective
 //      state of *pState that was passed to the SymCryptXxxStateExport function which
 //      created this blob.
-//  
+//
 //      This function returns an error if the blob is incorrectly formatted.
 //
 //
@@ -681,8 +713,8 @@ SymCryptEqual(
 // Virtual table addresses that callers can use are supplied through a const-ptr-const definition.
 // This supports an application switching the underlying implementation of one algorithm
 // without the need to re-compile all the intermediate libraries inbetween.
-// For example, you could use the same signature verification library with the fast hash implementation in one binary, 
-// and with a compact hash implementation in a second binary, without needing a different 
+// For example, you could use the same signature verification library with the fast hash implementation in one binary,
+// and with a compact hash implementation in a second binary, without needing a different
 // signature verification library.
 //
 
@@ -696,7 +728,7 @@ SymCryptHashInputBlockSize( _In_ PCSYMCRYPT_HASH pHash );
 
 //
 // SymCryptHashStateSize
-// 
+//
 // Returns the size, in bytes, of the hash state for this hash algorithm.
 // Note that the state must be SYMCRYPT_ALIGNed.
 // Alternatively, the SYMCRYPT_HASH_STATE structure is large enough to contain
@@ -705,25 +737,25 @@ SymCryptHashInputBlockSize( _In_ PCSYMCRYPT_HASH pHash );
 //
 SIZE_T
 SYMCRYPT_CALL
-SymCryptHashStateSize( _In_ PCSYMCRYPT_HASH pHash );    
+SymCryptHashStateSize( _In_ PCSYMCRYPT_HASH pHash );
 
 
 
 //
 // SymCryptHash
-// 
+//
 // Compute a hash value using any hash function.
 // The number of bytes written to the pbResult buffer is
 //      min( cbResult, SymCryptHashResultSize( pHash ) )
 //
 VOID
 SYMCRYPT_CALL
-SymCryptHash( 
-    _In_                                                PCSYMCRYPT_HASH pHash,
-    _In_reads_( cbData )                                PCBYTE          pbData, 
-                                                        SIZE_T          cbData,
-    _Out_writes_( min( cbResult, pHash->resultSize ) )  PBYTE           pbResult,
-                                                        SIZE_T          cbResult );
+SymCryptHash(
+    _In_                                                         PCSYMCRYPT_HASH pHash,
+    _In_reads_( cbData )                                         PCBYTE          pbData,
+                                                                 SIZE_T          cbData,
+    _Out_writes_( SYMCRYPT_MIN( cbResult, pHash->resultSize ) )  PBYTE           pbResult,
+                                                                 SIZE_T          cbResult );
 
 VOID
 SYMCRYPT_CALL
@@ -741,11 +773,11 @@ SymCryptHashAppend(
 
 VOID
 SYMCRYPT_CALL
-SymCryptHashResult( 
-    _In_                                                PCSYMCRYPT_HASH pHash,
-    _Inout_updates_bytes_( pHash->stateSize )           PVOID           pState,
-    _Out_writes_( min( cbResult, pHash->resultSize ) )  PBYTE           pbResult,
-                                                        SIZE_T          cbResult );
+SymCryptHashResult(
+    _In_                                                         PCSYMCRYPT_HASH pHash,
+    _Inout_updates_bytes_( pHash->stateSize )                    PVOID           pState,
+    _Out_writes_( SYMCRYPT_MIN( cbResult, pHash->resultSize ) )  PBYTE           pbResult,
+                                                                 SIZE_T          cbResult );
 
 
 ////////////////////////////////////////////////////////////////////////////
@@ -759,7 +791,7 @@ SymCryptHashResult(
 // The SymCrypt implementation of MD2 uses table lookups which leads to a side-channel
 // vulnerability.
 //
-// Per the Crypto SDL, any use of this algorithm in Microsoft code requires 
+// Per the Crypto SDL, any use of this algorithm in Microsoft code requires
 // a Crypto board exemption. Whenever possible, please use SHA-256 or SHA-512.
 //
 // For details on this API see the description above about the generic hash function API.
@@ -770,8 +802,8 @@ SymCryptHashResult(
 
 VOID
 SYMCRYPT_CALL
-SymCryptMd2( 
-    _In_reads_( cbData )                        PCBYTE  pbData, 
+SymCryptMd2(
+    _In_reads_( cbData )                        PCBYTE  pbData,
                                                 SIZE_T  cbData,
     _Out_writes_( SYMCRYPT_MD2_RESULT_SIZE )    PBYTE   pbResult );
 
@@ -781,14 +813,14 @@ SymCryptMd2Init( _Out_ PSYMCRYPT_MD2_STATE pState );
 
 VOID
 SYMCRYPT_CALL
-SymCryptMd2Append( 
+SymCryptMd2Append(
     _Inout_                 PSYMCRYPT_MD2_STATE pState,
     _In_reads_( cbData )    PCBYTE              pbData,
                             SIZE_T              cbData );
 
 VOID
 SYMCRYPT_CALL
-SymCryptMd2Result( 
+SymCryptMd2Result(
     _Inout_                                  PSYMCRYPT_MD2_STATE pState,
     _Out_writes_( SYMCRYPT_MD2_RESULT_SIZE ) PBYTE               pbResult );
 
@@ -798,7 +830,7 @@ SymCryptMd2StateCopy( _In_ PCSYMCRYPT_MD2_STATE pSrc, _Out_ PSYMCRYPT_MD2_STATE 
 
 VOID
 SYMCRYPT_CALL
-SymCryptMd2StateExport( 
+SymCryptMd2StateExport(
     _In_                                                    PCSYMCRYPT_MD2_STATE    pState,
     _Out_writes_bytes_( SYMCRYPT_MD2_STATE_EXPORT_SIZE )    PBYTE                   pbBlob );
 
@@ -823,7 +855,7 @@ extern const PCSYMCRYPT_HASH SymCryptMd2Algorithm;
 // Odd bit length are not supported.
 //
 // The MD4 hash function has been badly broken and is not considered secure.
-// Per the Crypto SDL, any use of this algorithm in Microsoft code requires 
+// Per the Crypto SDL, any use of this algorithm in Microsoft code requires
 // a Crypto board exemption. Whenever possible, please use SHA-256 or SHA-512.
 //
 // For details on this API see the description above about the generic hash function API.
@@ -834,8 +866,8 @@ extern const PCSYMCRYPT_HASH SymCryptMd2Algorithm;
 
 VOID
 SYMCRYPT_CALL
-SymCryptMd4( 
-    _In_reads_( cbData )                        PCBYTE  pbData, 
+SymCryptMd4(
+    _In_reads_( cbData )                        PCBYTE  pbData,
                                                 SIZE_T  cbData,
     _Out_writes_( SYMCRYPT_MD4_RESULT_SIZE )    PBYTE   pbResult );
 
@@ -845,14 +877,14 @@ SymCryptMd4Init( _Out_ PSYMCRYPT_MD4_STATE pState );
 
 VOID
 SYMCRYPT_CALL
-SymCryptMd4Append( 
+SymCryptMd4Append(
     _Inout_                 PSYMCRYPT_MD4_STATE  pState,
     _In_reads_( cbData )    PCBYTE               pbData,
                             SIZE_T               cbData );
 
 VOID
 SYMCRYPT_CALL
-SymCryptMd4Result( 
+SymCryptMd4Result(
     _Inout_                                  PSYMCRYPT_MD4_STATE  pState,
     _Out_writes_( SYMCRYPT_MD4_RESULT_SIZE ) PBYTE                pbResult );
 
@@ -862,7 +894,7 @@ SymCryptMd4StateCopy( _In_ PCSYMCRYPT_MD4_STATE pSrc, _Out_ PSYMCRYPT_MD4_STATE 
 
 VOID
 SYMCRYPT_CALL
-SymCryptMd4StateExport( 
+SymCryptMd4StateExport(
     _In_                                                    PCSYMCRYPT_MD4_STATE    pState,
     _Out_writes_bytes_( SYMCRYPT_MD4_STATE_EXPORT_SIZE )    PBYTE                   pbBlob );
 
@@ -887,7 +919,7 @@ extern const PCSYMCRYPT_HASH SymCryptMd4Algorithm;
 // Odd bit length are not supported.
 //
 // The MD5 hash function has been badly broken and is not considered secure.
-// Per the Crypto SDL, any use of this algorithm in Microsoft code requires 
+// Per the Crypto SDL, any use of this algorithm in Microsoft code requires
 // a Crypto board exemption. Whenever possible, please use SHA-256 or SHA-512.
 //
 // For details on this API see the description above about the generic hash function API.
@@ -898,8 +930,8 @@ extern const PCSYMCRYPT_HASH SymCryptMd4Algorithm;
 
 VOID
 SYMCRYPT_CALL
-SymCryptMd5( 
-    _In_reads_( cbData )                        PCBYTE  pbData, 
+SymCryptMd5(
+    _In_reads_( cbData )                        PCBYTE  pbData,
                                                 SIZE_T  cbData,
     _Out_writes_( SYMCRYPT_MD5_RESULT_SIZE )    PBYTE   pbResult );
 
@@ -909,14 +941,14 @@ SymCryptMd5Init( _Out_ PSYMCRYPT_MD5_STATE pState );
 
 VOID
 SYMCRYPT_CALL
-SymCryptMd5Append( 
+SymCryptMd5Append(
     _Inout_                 PSYMCRYPT_MD5_STATE   pState,
     _In_reads_( cbData )    PCBYTE                pbData,
                             SIZE_T                cbData );
 
 VOID
 SYMCRYPT_CALL
-SymCryptMd5Result( 
+SymCryptMd5Result(
     _Inout_                                  PSYMCRYPT_MD5_STATE  pState,
     _Out_writes_( SYMCRYPT_MD5_RESULT_SIZE ) PBYTE                pbResult );
 
@@ -926,7 +958,7 @@ SymCryptMd5StateCopy( _In_ PCSYMCRYPT_MD5_STATE pSrc, _Out_ PSYMCRYPT_MD5_STATE 
 
 VOID
 SYMCRYPT_CALL
-SymCryptMd5StateExport( 
+SymCryptMd5StateExport(
     _In_                                                    PCSYMCRYPT_MD5_STATE    pState,
     _Out_writes_bytes_( SYMCRYPT_MD5_STATE_EXPORT_SIZE )    PBYTE                   pbBlob );
 
@@ -952,7 +984,7 @@ extern const PCSYMCRYPT_HASH SymCryptMd5Algorithm;
 // This implementation is limited to data strings that are in whole bytes.
 // Odd bit length are not supported.
 //
-// The SHA-1 standard limits data inputs to a maximum of 2^61-1 bytes. 
+// The SHA-1 standard limits data inputs to a maximum of 2^61-1 bytes.
 // This implementation supports larger inputs, and simply wraps the internal message
 // length counter. Note that the security properties are unknown for
 // such long messages, and their use is not recommended.
@@ -960,7 +992,7 @@ extern const PCSYMCRYPT_HASH SymCryptMd5Algorithm;
 // The SHA-1 hash algorithm has been broken in a technical sense, and future
 // attacks can only get better.
 // This algorithm is not recommended for new applications and should only be used
-// for backward compatibility. 
+// for backward compatibility.
 // Per the Crypto SDL, new uses of this algorithm in Microsoft code require
 // a Crypto board exemption. Whenever possible, please use SHA-256 or SHA-512.
 //
@@ -972,8 +1004,8 @@ extern const PCSYMCRYPT_HASH SymCryptMd5Algorithm;
 
 VOID
 SYMCRYPT_CALL
-SymCryptSha1( 
-    _In_reads_( cbData )                        PCBYTE  pbData, 
+SymCryptSha1(
+    _In_reads_( cbData )                        PCBYTE  pbData,
                                                 SIZE_T  cbData,
     _Out_writes_( SYMCRYPT_SHA1_RESULT_SIZE )   PBYTE   pbResult );
 
@@ -983,14 +1015,14 @@ SymCryptSha1Init( _Out_ PSYMCRYPT_SHA1_STATE pState );
 
 VOID
 SYMCRYPT_CALL
-SymCryptSha1Append( 
+SymCryptSha1Append(
     _Inout_                 PSYMCRYPT_SHA1_STATE    pState,
     _In_reads_( cbData )    PCBYTE                  pbData,
                             SIZE_T                  cbData );
 
 VOID
 SYMCRYPT_CALL
-SymCryptSha1Result( 
+SymCryptSha1Result(
     _Inout_                                  PSYMCRYPT_SHA1_STATE pState,
     _Out_writes_( SYMCRYPT_SHA1_RESULT_SIZE )PBYTE                pbResult );
 
@@ -1000,7 +1032,7 @@ SymCryptSha1StateCopy( _In_ PCSYMCRYPT_SHA1_STATE pSrc, _Out_ PSYMCRYPT_SHA1_STA
 
 VOID
 SYMCRYPT_CALL
-SymCryptSha1StateExport( 
+SymCryptSha1StateExport(
     _In_                                                    PCSYMCRYPT_SHA1_STATE   pState,
     _Out_writes_bytes_( SYMCRYPT_SHA1_STATE_EXPORT_SIZE )   PBYTE                   pbBlob );
 
@@ -1025,7 +1057,7 @@ extern const PCSYMCRYPT_HASH SymCryptSha1Algorithm;
 // This implementation is limited to data strings that are in whole bytes.
 // Odd bit length are not supported.
 //
-// The SHA-256 standard limits data inputs to a maximum of 2^61-1 bytes. 
+// The SHA-256 standard limits data inputs to a maximum of 2^61-1 bytes.
 // This implementation supports larger inputs, and simply wraps the internal message
 // length counter. Note that the security properties are unknown for
 // such long messages, and their use is not recommended.
@@ -1038,8 +1070,8 @@ extern const PCSYMCRYPT_HASH SymCryptSha1Algorithm;
 
 VOID
 SYMCRYPT_CALL
-SymCryptSha256( 
-    _In_reads_( cbData )                        PCBYTE  pbData, 
+SymCryptSha256(
+    _In_reads_( cbData )                        PCBYTE  pbData,
                                                 SIZE_T  cbData,
     _Out_writes_( SYMCRYPT_SHA256_RESULT_SIZE ) PBYTE   pbResult );
 
@@ -1049,14 +1081,14 @@ SymCryptSha256Init( _Out_ PSYMCRYPT_SHA256_STATE pState );
 
 VOID
 SYMCRYPT_CALL
-SymCryptSha256Append( 
+SymCryptSha256Append(
     _Inout_                 PSYMCRYPT_SHA256_STATE  pState,
     _In_reads_( cbData )    PCBYTE                  pbData,
                             SIZE_T                  cbData );
 
 VOID
 SYMCRYPT_CALL
-SymCryptSha256Result( 
+SymCryptSha256Result(
     _Inout_                                       PSYMCRYPT_SHA256_STATE pState,
     _Out_writes_( SYMCRYPT_SHA256_RESULT_SIZE )   PBYTE                  pbResult );
 
@@ -1066,7 +1098,7 @@ SymCryptSha256StateCopy( _In_ PCSYMCRYPT_SHA256_STATE pSrc, _Out_ PSYMCRYPT_SHA2
 
 VOID
 SYMCRYPT_CALL
-SymCryptSha256StateExport( 
+SymCryptSha256StateExport(
     _In_                                                    PCSYMCRYPT_SHA256_STATE pState,
     _Out_writes_bytes_( SYMCRYPT_SHA256_STATE_EXPORT_SIZE ) PBYTE                   pbBlob );
 
@@ -1091,7 +1123,7 @@ extern const PCSYMCRYPT_HASH SymCryptSha256Algorithm;
 // This implementation is limited to data strings that are in whole bytes.
 // Odd bit length are not supported.
 //
-// The SHA-384 standard limits data inputs to a maximum of 2^125-1 bytes. 
+// The SHA-384 standard limits data inputs to a maximum of 2^125-1 bytes.
 // This implementation supports larger inputs, and simply wraps the internal message
 // length counter. Note that the security properties are unknown for
 // such long messages, and their use is not recommended.
@@ -1104,8 +1136,8 @@ extern const PCSYMCRYPT_HASH SymCryptSha256Algorithm;
 
 VOID
 SYMCRYPT_CALL
-SymCryptSha384( 
-    _In_reads_( cbData )                        PCBYTE  pbData, 
+SymCryptSha384(
+    _In_reads_( cbData )                        PCBYTE  pbData,
                                                 SIZE_T  cbData,
     _Out_writes_( SYMCRYPT_SHA384_RESULT_SIZE ) PBYTE   pbResult );
 
@@ -1115,14 +1147,14 @@ SymCryptSha384Init( _Out_ PSYMCRYPT_SHA384_STATE pState );
 
 VOID
 SYMCRYPT_CALL
-SymCryptSha384Append( 
+SymCryptSha384Append(
     _Inout_                 PSYMCRYPT_SHA384_STATE  pState,
     _In_reads_( cbData )    PCBYTE                  pbData,
                             SIZE_T                  cbData );
 
 VOID
 SYMCRYPT_CALL
-SymCryptSha384Result( 
+SymCryptSha384Result(
     _Inout_                                     PSYMCRYPT_SHA384_STATE  pState,
     _Out_writes_( SYMCRYPT_SHA384_RESULT_SIZE ) PBYTE                  pbResult );
 
@@ -1132,7 +1164,7 @@ SymCryptSha384StateCopy( _In_ PCSYMCRYPT_SHA384_STATE pSrc, _Out_ PSYMCRYPT_SHA3
 
 VOID
 SYMCRYPT_CALL
-SymCryptSha384StateExport( 
+SymCryptSha384StateExport(
     _In_                                                    PCSYMCRYPT_SHA384_STATE pState,
     _Out_writes_bytes_( SYMCRYPT_SHA384_STATE_EXPORT_SIZE ) PBYTE                   pbBlob );
 
@@ -1157,7 +1189,7 @@ extern const PCSYMCRYPT_HASH SymCryptSha384Algorithm;
 // This implementation is limited to data strings that are in whole bytes.
 // Odd bit length are not supported.
 //
-// The SHA-512 standard limits data inputs to a maximum of 2^125-1 bytes. 
+// The SHA-512 standard limits data inputs to a maximum of 2^125-1 bytes.
 // This implementation supports larger inputs, and simply wraps the internal message
 // length counter. Note that the security properties are unknown for
 // such long messages, and their use is not recommended.
@@ -1170,8 +1202,8 @@ extern const PCSYMCRYPT_HASH SymCryptSha384Algorithm;
 
 VOID
 SYMCRYPT_CALL
-SymCryptSha512( 
-    _In_reads_( cbData )                        PCBYTE  pbData, 
+SymCryptSha512(
+    _In_reads_( cbData )                        PCBYTE  pbData,
                                                 SIZE_T  cbData,
     _Out_writes_( SYMCRYPT_SHA512_RESULT_SIZE ) PBYTE   pbResult );
 
@@ -1181,14 +1213,14 @@ SymCryptSha512Init( _Out_ PSYMCRYPT_SHA512_STATE pState );
 
 VOID
 SYMCRYPT_CALL
-SymCryptSha512Append( 
+SymCryptSha512Append(
     _Inout_                 PSYMCRYPT_SHA512_STATE  pState,
     _In_reads_( cbData )    PCBYTE                  pbData,
                             SIZE_T                  cbData );
 
 VOID
 SYMCRYPT_CALL
-SymCryptSha512Result( 
+SymCryptSha512Result(
     _Inout_                                     PSYMCRYPT_SHA512_STATE pState,
     _Out_writes_( SYMCRYPT_SHA512_RESULT_SIZE ) PBYTE                  pbResult );
 
@@ -1198,7 +1230,7 @@ SymCryptSha512StateCopy( _In_ PCSYMCRYPT_SHA512_STATE pSrc, _Out_ PSYMCRYPT_SHA5
 
 VOID
 SYMCRYPT_CALL
-SymCryptSha512StateExport( 
+SymCryptSha512StateExport(
     _In_                                                    PCSYMCRYPT_SHA512_STATE pState,
     _Out_writes_bytes_( SYMCRYPT_SHA512_STATE_EXPORT_SIZE ) PBYTE                   pbBlob );
 
@@ -1219,25 +1251,25 @@ extern const PCSYMCRYPT_HASH SymCryptSha512Algorithm;
 //   PARALLELISED HASH FUNCTIONS
 //==========================================================================
 //
-// On some platforms it is possible to parallelize the hash function 
+// On some platforms it is possible to parallelize the hash function
 // computation to achieve a higher throughput.
 // The parallel hash APIs support this.
 // The parallel implementation tries to perform the computations as efficiently
 // as possible. Applications that have many hashes to compute can always call these
 // functions; the library will optimize the computation to the current situation.
-// For example, if only a single hash is computed using these APIs, the 
+// For example, if only a single hash is computed using these APIs, the
 // single-hash version is used to achieve full single-hash speed.
 // On platforms that do not support parallel hash implementations, these functions
 // are still available, and will implement the parallel hashing by computing the
 // hashes one at a time.
 //
-// 
+//
 // SYMCRYPT_PARALLEL_XXX_MIN_PARALLELISM
 //
 //      Compile-time constant, but can vary per platform.
 //      Minimum number of parallel computations at which
-//      the parallel implementation is faster on at least some CPU versions. 
-//      Applications can safely ask for parallel computations with fewer hashes, 
+//      the parallel implementation is faster on at least some CPU versions.
+//      Applications can safely ask for parallel computations with fewer hashes,
 //      but there will be no speed gain.
 //
 // SYMCRYPT_PARALLEL_XXX_MAX_PARALLELISM
@@ -1252,8 +1284,8 @@ extern const PCSYMCRYPT_HASH SymCryptSha512Algorithm;
 //      Note that the internal parallelism that can be used might depend
 //      on the CPU features availalbe, so this value is only an upper bound.
 //      We recommend that callers provide as much parallelism as practical,
-//      and let the library perform the optimal sequence of computations. 
-//  
+//      and let the library perform the optimal sequence of computations.
+//
 // SYMCRYPT_HASH_OPERATION_TYPE
 //
 //      An enum that specifies which operation is to be performed in a command
@@ -1264,17 +1296,17 @@ extern const PCSYMCRYPT_HASH SymCryptSha512Algorithm;
 //
 // SYMCRYPT_PARALLEL_HASH_OPERATION
 //
-//      Structure that contains a command to be performed on a single item in a 
+//      Structure that contains a command to be performed on a single item in a
 //      parallel hash state array. Visible fields are:
 //
 //      SIZE_T                          iHash;          // index of hash object into the state array
 //      SYMCRYPT_HASH_OPERATION_TYPE    hashOperation;  // operation to be performed
 //      PBYTE                           pbBuffer;       // data to be hashed, or result buffer
-//      SIZE_T                          cbBuffer;       
+//      SIZE_T                          cbBuffer;
 //
 //      There might be other fields in this structure that the caller should not use or assume anything about.
 //
-// SymCryptParallelXxxInit( 
+// SymCryptParallelXxxInit(
 //          _Out_writes_( nStates ) PSYMCRYPT_XXX_STATE pStates,
 //                                  SIZE_T              nStates );
 //      Initialize an array of hash states.
@@ -1297,7 +1329,7 @@ extern const PCSYMCRYPT_HASH SymCryptSha512Algorithm;
 //          _Inout_updates_( nOperations )  PSYMCRYPT_PARALLEL_HASH_OPERATION   pOperation,
 //                                          SIZE_T                              nOperations,
 //          _Out_writes_( cbScratch )       PBYTE                               pbScratch,
-//                                          SIZE_T                              cbScratch ); 
+//                                          SIZE_T                              cbScratch );
 //
 //      Perform optionally parallel processing of hashes.
 //      This is functionally equivalent to iterating over the pOperations array in order,
@@ -1308,25 +1340,25 @@ extern const PCSYMCRYPT_HASH SymCryptSha512Algorithm;
 //          pbBuffer        The buffer that contains the data to be hashed, or that will receive the result.
 //          cbBuffer        The size of pbBuffer. (Must be equal to the hash algorithm result size for RESULT operations.)
 //      As the SAL annotations document, the pOperations array is updated by this function, and therefore
-//      it cannot be in read-only memory. 
+//      it cannot be in read-only memory.
 //      The updates modify only to the internal scratch space that is reserved
-//      in the SYMCRYPT_PARALLEL_HASH_OPERATION structure; none of the documented fields 
+//      in the SYMCRYPT_PARALLEL_HASH_OPERATION structure; none of the documented fields
 //      (iHash, hashOperation, pbBuffer, cbBuffer) are modified.
 //      The scratch fields are used purely within one call to this function, their value does not have to be
 //      maintained between function calls. The scratch fields to not have to be initialzed by the caller
-//      of this function, 
+//      of this function,
 //      THREAD SAFETY: as the pOperations array is updated, it CANNOT be shared between different threads.
-//      Obviously, the same is true of pStates and pbScratch. 
+//      Obviously, the same is true of pStates and pbScratch.
 //
 //      The pbScratch pointer provides a scratch buffer for the parallel processing function.
 //      This is used to organize the request and perform the functions in an optimal order for
 //      maximum parallelism, and for storing intermediate results that are too large
 //      to fit on the stack. The scratch buffer must be at least
 //      SYMCRYPT_PARALLEL_XXX_FIXED_SCRATCH + nStates * SYMCRYPT_PARALLEL_HASH_PER_STATE_SCRATCH
-//      bytes in size. 
+//      bytes in size.
 //
 //      For incremental hashing, we recommend that callers process data sizes that are
-//      a multiple of the SYMCRYPT_XXX_INPUT_BLOCK_LEN. 
+//      a multiple of the SYMCRYPT_XXX_INPUT_BLOCK_LEN.
 //
 
 
@@ -1344,7 +1376,7 @@ SymCryptParallelSha256Process(
     _Inout_updates_( nOperations )  PSYMCRYPT_PARALLEL_HASH_OPERATION   pOperations,
                                     SIZE_T                              nOperations,
     _Out_writes_( cbScratch )       PBYTE                               pbScratch,
-                                    SIZE_T                              cbScratch ); 
+                                    SIZE_T                              cbScratch );
 
 
 VOID
@@ -1361,7 +1393,7 @@ SymCryptParallelSha384Process(
     _Inout_updates_( nOperations )  PSYMCRYPT_PARALLEL_HASH_OPERATION   pOperations,
                                     SIZE_T                              nOperations,
     _Out_writes_( cbScratch )       PBYTE                               pbScratch,
-                                    SIZE_T                              cbScratch ); 
+                                    SIZE_T                              cbScratch );
 
 
 VOID
@@ -1378,7 +1410,7 @@ SymCryptParallelSha512Process(
     _Inout_updates_( nOperations )  PSYMCRYPT_PARALLEL_HASH_OPERATION   pOperations,
                                     SIZE_T                              nOperations,
     _Out_writes_( cbScratch )       PBYTE                               pbScratch,
-                                    SIZE_T                              cbScratch ); 
+                                    SIZE_T                              cbScratch );
 
 
 VOID
@@ -1400,13 +1432,13 @@ SymCryptParallelSha512Selftest();
 //==========================================================================
 //
 // All MAC functions have a similar interface. For consistency we describe
-// the generic parts of the interface once. 
+// the generic parts of the interface once.
 // Algorithm-specific comments are given with the API functions of each algorithm separately.
 //
 // For a MAC algorithm called XXX the following functions, types, and constants are defined:
 //
 //
-// SYMCRYPT_XXX_RESULT_SIZE 
+// SYMCRYPT_XXX_RESULT_SIZE
 //
 //      A constant giving is the size, in bytes, of the result of the MAC function.
 //      Some applications use truncated MAC functions. These are not directly supported
@@ -1428,11 +1460,11 @@ SymCryptParallelSha512Selftest();
 //      and not be stored or transferred to a different environment.
 //      The pointer and const-pointer versions are also declared
 //      (PSYMCRYPOT_XXX_EXPANDED_KEY and PCSYMCRYPT_XXX_EXPANDED_KEY).
-//      
+//
 //      The EXPANDED_KEY structure contains keying material and should be wiped
 //      once it is no longer used. (See SymCryptWipe & SymCryptWipeKnownSize)
 //
-//      Once a key has been expanded, multiple threads can simultaneously use the same expanded key 
+//      Once a key has been expanded, multiple threads can simultaneously use the same expanded key
 //      object for different MAC computations that use the same key as the expanded key
 //      object does not change value.
 //
@@ -1443,8 +1475,8 @@ SymCryptParallelSha512Selftest();
 //                         _In_reads_(cbKey)    PCBYTE                      pbKey,
 //                                              SIZE_T                      cbKey );
 //
-//      Prepare a key for future use by the Xxx algorithm. 
-//      This function performs pre-computations on the key 
+//      Prepare a key for future use by the Xxx algorithm.
+//      This function performs pre-computations on the key
 //      to speed up the actual MAC computations later, and stores the result as an expanded key.
 //      The expanded key must be kept unchanged until all MAC computations that use the key are finished.
 //      When the key is no longer needed the expanded key structure should be wiped.
@@ -1456,7 +1488,7 @@ SymCryptParallelSha512Selftest();
 //
 // VOID
 // SYMCRYPT_CALL
-// SymCryptXxxKeyCopy( _In_ PCSYMCRYPT_XXX_EXPANDED_KEY pSrc, 
+// SymCryptXxxKeyCopy( _In_ PCSYMCRYPT_XXX_EXPANDED_KEY pSrc,
 //                     _Out_ PSYMCRYPT_XXX_EXPANDED_KEY pDst );
 //
 //      Create a copy of an expanded key.
@@ -1473,10 +1505,10 @@ SymCryptParallelSha512Selftest();
 //
 //
 // SYMCRYPT_XXX_STATE
-//      
-//      The state encodes an ongoing MAC computation and allows incremental 
+//
+//      The state encodes an ongoing MAC computation and allows incremental
 //      computation of a MAC function.
-//      At any point in time the state encodes a state that is equivalent to 
+//      At any point in time the state encodes a state that is equivalent to
 //      the MAC computation of a data string X with the key specified during initialization of the state.
 //      The SymCryptXxxInit() function initializes a state.
 //      The SymCryptXxxAppend() function appends data to the data string X.
@@ -1486,7 +1518,7 @@ SymCryptParallelSha512Selftest();
 //      It should only be used for transient computations in a single executable
 //      and not be stored or transferred to a different environment.
 //
-//      Once initialized using SymCryptXxxInit, the state contains sensitive keying information. 
+//      Once initialized using SymCryptXxxInit, the state contains sensitive keying information.
 //      The SymCryptXxxResult function wipes the sensitive information from the state.
 //      Callers can also wipe the structure themselves if it is no longer needed.
 //
@@ -1497,8 +1529,8 @@ SymCryptParallelSha512Selftest();
 //
 // VOID
 // SYMCRYPT_CALL
-// SymCryptXxxStateCopy( 
-//      _In_        PCSYMCRYPT_XXX_STATE        pSrc, 
+// SymCryptXxxStateCopy(
+//      _In_        PCSYMCRYPT_XXX_STATE        pSrc,
 //      _In_opt_    PCSYMCRYPT_XXX_EXPANDED_KEY pExpandedKey,
 //      _Out_       PSYMCRYPT_XXX_STATE         pDst );
 //
@@ -1511,17 +1543,17 @@ SymCryptParallelSha512Selftest();
 // SYMCRYPT_CALL
 // SymCryptXxxInit( _Out_   PSYMCRYPT_XXX_STATE         pState,
 //                  _In_    PCSYMCRYPT_XXX_EXPANDED_KEY pExpandedKey);
-//      
+//
 //      Initialize a SYMCRYPT_XXX_STATE for subsequent use with the provided key.
 //
-//      This function can be called at any time and resets the state to correspond 
+//      This function can be called at any time and resets the state to correspond
 //      to the empty data string with the newly specified key.
-//      The SymCryptXxxAppend function appends data to the data string 
+//      The SymCryptXxxAppend function appends data to the data string
 //      encoded by the state.
-//      The SymCryptXxxResult function finalizes the computation and 
+//      The SymCryptXxxResult function finalizes the computation and
 //      returns the actual MAC result.
 //
-//      This function typically stores a pointer to the expanded key in the state. 
+//      This function typically stores a pointer to the expanded key in the state.
 //      The expanded key must remain unchanged in
 //      memory until the SYMCRYPT_XXX_STATE structure is no longer used.
 //
@@ -1540,7 +1572,7 @@ SymCryptParallelSha512Selftest();
 //
 //      Provide more data to the ongoing MAC computation specified by the state.
 //      The state must have been initialized by SymCryptXxxInit.
-//      This function can be called multiple times on the same state 
+//      This function can be called multiple times on the same state
 //      to append more data to the encoded data string.
 //
 //      The SYMCRYPT_XXX_STATE structure contains the entire state of an ongoing
@@ -1552,25 +1584,25 @@ SymCryptParallelSha512Selftest();
 //
 // VOID
 // SYMCRYPT_CALL
-// SymCryptXxxResult( 
+// SymCryptXxxResult(
 //      _Inout_                                     PSYMCRYPT_XXX_STATE  pState,
 //      _Out_writes_( SYMCRYPT_XXX_RESULT_SIZE )    PBYTE                pbResult );
 //
-//      Returns the MAC result of the the state. 
+//      Returns the MAC result of the the state.
 //      If the state was newly initialized this returns the MAC of the empty string
-//      using the key specified in the SymCryptXxxInit call. 
+//      using the key specified in the SymCryptXxxInit call.
 //      If one or more SymCryptXxxAppend function calls were made on this state
-//      it returns the MAC of the concatenation of all the data strings 
+//      it returns the MAC of the concatenation of all the data strings
 //      passed to SymCryptXxxAppend using the specified key.
-// 
-//      The state is wiped to remove any traces of sensitive data. 
+//
+//      The state is wiped to remove any traces of sensitive data.
 //      To use the same state for another MAC computation you must call
 //      SymCryptXxxInit again to re-initialize the state.
 //      This behaviour is different from hash function states that are re-initialized for
 //      use by the Result routine. This difference is by design; re-initializing a hash
 //      state is a safe operation. Re-initializing a MAC state puts keying information
 //      in the state, and callers would have to wipe the MAC state explicitly.
-// 
+//
 //
 // VOID
 // SYMCRYPT_CALL
@@ -1595,7 +1627,7 @@ SymCryptParallelSha512Selftest();
 _Success_(return == SYMCRYPT_NO_ERROR)
 SYMCRYPT_ERROR
 SYMCRYPT_CALL
-SymCryptHmacMd5ExpandKey( 
+SymCryptHmacMd5ExpandKey(
     _Out_               PSYMCRYPT_HMAC_MD5_EXPANDED_KEY pExpandedKey,
     _In_reads_(cbKey)   PCBYTE                          pbKey,
                         SIZE_T                          cbKey );
@@ -1605,14 +1637,14 @@ SymCryptHmacMd5ExpandKey(
 
 VOID
 SYMCRYPT_CALL
-SymCryptHmacMd5KeyCopy( 
-    _In_    PCSYMCRYPT_HMAC_MD5_EXPANDED_KEY pSrc, 
+SymCryptHmacMd5KeyCopy(
+    _In_    PCSYMCRYPT_HMAC_MD5_EXPANDED_KEY pSrc,
     _Out_   PSYMCRYPT_HMAC_MD5_EXPANDED_KEY  pDst );
 
 
 VOID
 SYMCRYPT_CALL
-SymCryptHmacMd5( 
+SymCryptHmacMd5(
     _In_                                            PCSYMCRYPT_HMAC_MD5_EXPANDED_KEY pExpandedKey,
     _In_reads_( cbData )                            PCBYTE                           pbData,
                                                     SIZE_T                           cbData,
@@ -1620,27 +1652,27 @@ SymCryptHmacMd5(
 
 VOID
 SYMCRYPT_CALL
-SymCryptHmacMd5StateCopy( 
-    _In_        PCSYMCRYPT_HMAC_MD5_STATE           pSrc, 
+SymCryptHmacMd5StateCopy(
+    _In_        PCSYMCRYPT_HMAC_MD5_STATE           pSrc,
     _In_opt_    PCSYMCRYPT_HMAC_MD5_EXPANDED_KEY    pExpandedKey,
     _Out_       PSYMCRYPT_HMAC_MD5_STATE            pDst );
 
 VOID
 SYMCRYPT_CALL
-SymCryptHmacMd5Init( 
+SymCryptHmacMd5Init(
     _Out_   PSYMCRYPT_HMAC_MD5_STATE         pState,
     _In_    PCSYMCRYPT_HMAC_MD5_EXPANDED_KEY pExpandedKey);
 
 VOID
 SYMCRYPT_CALL
-SymCryptHmacMd5Append( 
+SymCryptHmacMd5Append(
     _Inout_                 PSYMCRYPT_HMAC_MD5_STATE    pState,
     _In_reads_( cbData )    PCBYTE                      pbData,
                             SIZE_T                      cbData );
 
 VOID
 SYMCRYPT_CALL
-SymCryptHmacMd5Result( 
+SymCryptHmacMd5Result(
     _Inout_                                      PSYMCRYPT_HMAC_MD5_STATE   pState,
     _Out_writes_( SYMCRYPT_HMAC_MD5_RESULT_SIZE )PBYTE                      pbResult );
 
@@ -1661,7 +1693,7 @@ extern const PCSYMCRYPT_MAC SymCryptHmacMd5Algorithm;
 _Success_(return == SYMCRYPT_NO_ERROR)
 SYMCRYPT_ERROR
 SYMCRYPT_CALL
-SymCryptHmacSha1ExpandKey( 
+SymCryptHmacSha1ExpandKey(
     _Out_               PSYMCRYPT_HMAC_SHA1_EXPANDED_KEY    pExpandedKey,
     _In_reads_(cbKey)   PCBYTE                              pbKey,
                         SIZE_T                              cbKey );
@@ -1671,14 +1703,14 @@ SymCryptHmacSha1ExpandKey(
 
 VOID
 SYMCRYPT_CALL
-SymCryptHmacSha1KeyCopy( 
-    _In_    PCSYMCRYPT_HMAC_SHA1_EXPANDED_KEY  pSrc, 
+SymCryptHmacSha1KeyCopy(
+    _In_    PCSYMCRYPT_HMAC_SHA1_EXPANDED_KEY  pSrc,
     _Out_   PSYMCRYPT_HMAC_SHA1_EXPANDED_KEY   pDst );
 
 
 VOID
 SYMCRYPT_CALL
-SymCryptHmacSha1( 
+SymCryptHmacSha1(
     _In_                                            PCSYMCRYPT_HMAC_SHA1_EXPANDED_KEY   pExpandedKey,
     _In_reads_( cbData )                            PCBYTE                              pbData,
                                                     SIZE_T                              cbData,
@@ -1686,27 +1718,27 @@ SymCryptHmacSha1(
 
 VOID
 SYMCRYPT_CALL
-SymCryptHmacSha1StateCopy( 
-    _In_        PCSYMCRYPT_HMAC_SHA1_STATE          pSrc, 
+SymCryptHmacSha1StateCopy(
+    _In_        PCSYMCRYPT_HMAC_SHA1_STATE          pSrc,
     _In_opt_    PCSYMCRYPT_HMAC_SHA1_EXPANDED_KEY   pExpandedKey,
     _Out_       PSYMCRYPT_HMAC_SHA1_STATE           pDst );
 
 VOID
 SYMCRYPT_CALL
-SymCryptHmacSha1Init( 
+SymCryptHmacSha1Init(
     _Out_   PSYMCRYPT_HMAC_SHA1_STATE           pState,
     _In_    PCSYMCRYPT_HMAC_SHA1_EXPANDED_KEY   pExpandedKey);
 
 VOID
 SYMCRYPT_CALL
-SymCryptHmacSha1Append( 
+SymCryptHmacSha1Append(
     _Inout_                 PSYMCRYPT_HMAC_SHA1_STATE   pState,
     _In_reads_( cbData )    PCBYTE                      pbData,
                             SIZE_T                      cbData );
 
 VOID
 SYMCRYPT_CALL
-SymCryptHmacSha1Result( 
+SymCryptHmacSha1Result(
     _Inout_                                         PSYMCRYPT_HMAC_SHA1_STATE   pState,
     _Out_writes_( SYMCRYPT_HMAC_SHA1_RESULT_SIZE )  PBYTE                       pbResult );
 
@@ -1727,7 +1759,7 @@ extern const PCSYMCRYPT_MAC SymCryptHmacSha1Algorithm;
 _Success_(return == SYMCRYPT_NO_ERROR)
 SYMCRYPT_ERROR
 SYMCRYPT_CALL
-SymCryptHmacSha256ExpandKey( 
+SymCryptHmacSha256ExpandKey(
     _Out_               PSYMCRYPT_HMAC_SHA256_EXPANDED_KEY  pExpandedKey,
     _In_reads_(cbKey)   PCBYTE                              pbKey,
                         SIZE_T                              cbKey );
@@ -1737,13 +1769,13 @@ SymCryptHmacSha256ExpandKey(
 
 VOID
 SYMCRYPT_CALL
-SymCryptHmacSha256KeyCopy( 
-    _In_    PCSYMCRYPT_HMAC_SHA256_EXPANDED_KEY pSrc, 
+SymCryptHmacSha256KeyCopy(
+    _In_    PCSYMCRYPT_HMAC_SHA256_EXPANDED_KEY pSrc,
     _Out_   PSYMCRYPT_HMAC_SHA256_EXPANDED_KEY  pDst );
 
 VOID
 SYMCRYPT_CALL
-SymCryptHmacSha256( 
+SymCryptHmacSha256(
     _In_                                            PCSYMCRYPT_HMAC_SHA256_EXPANDED_KEY pExpandedKey,
     _In_reads_( cbData )                            PCBYTE                              pbData,
                                                     SIZE_T                              cbData,
@@ -1751,27 +1783,27 @@ SymCryptHmacSha256(
 
 VOID
 SYMCRYPT_CALL
-SymCryptHmacSha256StateCopy( 
-    _In_        PCSYMCRYPT_HMAC_SHA256_STATE        pSrc, 
+SymCryptHmacSha256StateCopy(
+    _In_        PCSYMCRYPT_HMAC_SHA256_STATE        pSrc,
     _In_opt_    PCSYMCRYPT_HMAC_SHA256_EXPANDED_KEY pExpandedKey,
     _Out_       PSYMCRYPT_HMAC_SHA256_STATE         pDst );
 
 VOID
 SYMCRYPT_CALL
-SymCryptHmacSha256Init( 
+SymCryptHmacSha256Init(
     _Out_   PSYMCRYPT_HMAC_SHA256_STATE         pState,
     _In_    PCSYMCRYPT_HMAC_SHA256_EXPANDED_KEY pExpandedKey);
 
 VOID
 SYMCRYPT_CALL
-SymCryptHmacSha256Append( 
+SymCryptHmacSha256Append(
     _Inout_                 PSYMCRYPT_HMAC_SHA256_STATE pState,
     _In_reads_( cbData )    PCBYTE                      pbData,
                             SIZE_T                      cbData );
 
 VOID
 SYMCRYPT_CALL
-SymCryptHmacSha256Result( 
+SymCryptHmacSha256Result(
     _Inout_                                         PSYMCRYPT_HMAC_SHA256_STATE pState,
     _Out_writes_( SYMCRYPT_HMAC_SHA256_RESULT_SIZE )PBYTE                       pbResult );
 
@@ -1792,7 +1824,7 @@ extern const PCSYMCRYPT_MAC  SymCryptHmacSha256Algorithm;
 _Success_(return == SYMCRYPT_NO_ERROR)
 SYMCRYPT_ERROR
 SYMCRYPT_CALL
-SymCryptHmacSha384ExpandKey( 
+SymCryptHmacSha384ExpandKey(
     _Out_               PSYMCRYPT_HMAC_SHA384_EXPANDED_KEY  pExpandedKey,
     _In_reads_(cbKey)   PCBYTE                              pbKey,
                         SIZE_T                              cbKey );
@@ -1802,13 +1834,13 @@ SymCryptHmacSha384ExpandKey(
 
 VOID
 SYMCRYPT_CALL
-SymCryptHmacSha384KeyCopy( 
-    _In_    PCSYMCRYPT_HMAC_SHA384_EXPANDED_KEY pSrc, 
+SymCryptHmacSha384KeyCopy(
+    _In_    PCSYMCRYPT_HMAC_SHA384_EXPANDED_KEY pSrc,
     _Out_   PSYMCRYPT_HMAC_SHA384_EXPANDED_KEY  pDst );
 
 VOID
 SYMCRYPT_CALL
-SymCryptHmacSha384( 
+SymCryptHmacSha384(
     _In_                                            PCSYMCRYPT_HMAC_SHA384_EXPANDED_KEY pExpandedKey,
     _In_reads_( cbData )                            PCBYTE                              pbData,
                                                     SIZE_T                              cbData,
@@ -1816,27 +1848,27 @@ SymCryptHmacSha384(
 
 VOID
 SYMCRYPT_CALL
-SymCryptHmacSha384StateCopy( 
-    _In_        PCSYMCRYPT_HMAC_SHA384_STATE        pSrc, 
+SymCryptHmacSha384StateCopy(
+    _In_        PCSYMCRYPT_HMAC_SHA384_STATE        pSrc,
     _In_opt_    PCSYMCRYPT_HMAC_SHA384_EXPANDED_KEY pExpandedKey,
     _Out_       PSYMCRYPT_HMAC_SHA384_STATE         pDst );
 
 VOID
 SYMCRYPT_CALL
-SymCryptHmacSha384Init( 
+SymCryptHmacSha384Init(
     _Out_   PSYMCRYPT_HMAC_SHA384_STATE         pState,
     _In_    PCSYMCRYPT_HMAC_SHA384_EXPANDED_KEY pExpandedKey);
 
 VOID
 SYMCRYPT_CALL
-SymCryptHmacSha384Append( 
+SymCryptHmacSha384Append(
     _Inout_                 PSYMCRYPT_HMAC_SHA384_STATE pState,
     _In_reads_( cbData )    PCBYTE                      pbData,
                             SIZE_T                      cbData );
 
 VOID
 SYMCRYPT_CALL
-SymCryptHmacSha384Result( 
+SymCryptHmacSha384Result(
     _Inout_                                         PSYMCRYPT_HMAC_SHA384_STATE pState,
     _Out_writes_( SYMCRYPT_HMAC_SHA384_RESULT_SIZE )PBYTE                       pbResult );
 
@@ -1857,7 +1889,7 @@ extern const PCSYMCRYPT_MAC  SymCryptHmacSha384Algorithm;
 _Success_(return == SYMCRYPT_NO_ERROR)
 SYMCRYPT_ERROR
 SYMCRYPT_CALL
-SymCryptHmacSha512ExpandKey( 
+SymCryptHmacSha512ExpandKey(
     _Out_               PSYMCRYPT_HMAC_SHA512_EXPANDED_KEY  pExpandedKey,
     _In_reads_(cbKey)   PCBYTE                              pbKey,
                         SIZE_T                              cbKey );
@@ -1867,13 +1899,13 @@ SymCryptHmacSha512ExpandKey(
 
 VOID
 SYMCRYPT_CALL
-SymCryptHmacSha512KeyCopy( 
-    _In_    PCSYMCRYPT_HMAC_SHA512_EXPANDED_KEY pSrc, 
+SymCryptHmacSha512KeyCopy(
+    _In_    PCSYMCRYPT_HMAC_SHA512_EXPANDED_KEY pSrc,
     _Out_   PSYMCRYPT_HMAC_SHA512_EXPANDED_KEY  pDst );
 
 VOID
 SYMCRYPT_CALL
-SymCryptHmacSha512( 
+SymCryptHmacSha512(
     _In_                                            PCSYMCRYPT_HMAC_SHA512_EXPANDED_KEY pExpandedKey,
     _In_reads_( cbData )                            PCBYTE                              pbData,
                                                     SIZE_T                              cbData,
@@ -1881,27 +1913,27 @@ SymCryptHmacSha512(
 
 VOID
 SYMCRYPT_CALL
-SymCryptHmacSha512StateCopy( 
-    _In_        PCSYMCRYPT_HMAC_SHA512_STATE        pSrc, 
+SymCryptHmacSha512StateCopy(
+    _In_        PCSYMCRYPT_HMAC_SHA512_STATE        pSrc,
     _In_opt_    PCSYMCRYPT_HMAC_SHA512_EXPANDED_KEY pExpandedKey,
     _Out_       PSYMCRYPT_HMAC_SHA512_STATE         pDst );
 
 VOID
 SYMCRYPT_CALL
-SymCryptHmacSha512Init( 
+SymCryptHmacSha512Init(
     _Out_   PSYMCRYPT_HMAC_SHA512_STATE         pState,
     _In_    PCSYMCRYPT_HMAC_SHA512_EXPANDED_KEY pExpandedKey);
 
 VOID
 SYMCRYPT_CALL
-SymCryptHmacSha512Append( 
+SymCryptHmacSha512Append(
     _Inout_                 PSYMCRYPT_HMAC_SHA512_STATE pState,
     _In_reads_( cbData )    PCBYTE                      pbData,
                             SIZE_T                      cbData );
 
 VOID
 SYMCRYPT_CALL
-SymCryptHmacSha512Result( 
+SymCryptHmacSha512Result(
     _Inout_                                         PSYMCRYPT_HMAC_SHA512_STATE pState,
     _Out_writes_( SYMCRYPT_HMAC_SHA512_RESULT_SIZE )PBYTE                       pbResult );
 
@@ -1924,7 +1956,7 @@ extern const PCSYMCRYPT_MAC  SymCryptHmacSha512Algorithm;
 _Success_(return == SYMCRYPT_NO_ERROR)
 SYMCRYPT_ERROR
 SYMCRYPT_CALL
-SymCryptAesCmacExpandKey( 
+SymCryptAesCmacExpandKey(
     _Out_               PSYMCRYPT_AES_CMAC_EXPANDED_KEY pExpandedKey,
     _In_reads_(cbKey)   PCBYTE                          pbKey,
                         SIZE_T                          cbKey );
@@ -1934,13 +1966,13 @@ SymCryptAesCmacExpandKey(
 
 VOID
 SYMCRYPT_CALL
-SymCryptAesCmacKeyCopy( 
-    _In_    PCSYMCRYPT_AES_CMAC_EXPANDED_KEY pSrc, 
+SymCryptAesCmacKeyCopy(
+    _In_    PCSYMCRYPT_AES_CMAC_EXPANDED_KEY pSrc,
     _Out_   PSYMCRYPT_AES_CMAC_EXPANDED_KEY  pDst );
 
 VOID
 SYMCRYPT_CALL
-SymCryptAesCmac( 
+SymCryptAesCmac(
     _In_                                            PSYMCRYPT_AES_CMAC_EXPANDED_KEY pExpandedKey,
     _In_reads_( cbData )                            PCBYTE                          pbData,
                                                     SIZE_T                          cbData,
@@ -1948,27 +1980,27 @@ SymCryptAesCmac(
 
 VOID
 SYMCRYPT_CALL
-SymCryptAesCmacStateCopy( 
-    _In_        PCSYMCRYPT_AES_CMAC_STATE        pSrc, 
+SymCryptAesCmacStateCopy(
+    _In_        PCSYMCRYPT_AES_CMAC_STATE        pSrc,
     _In_opt_    PCSYMCRYPT_AES_CMAC_EXPANDED_KEY pExpandedKey,
     _Out_       PSYMCRYPT_AES_CMAC_STATE         pDst );
 
 VOID
 SYMCRYPT_CALL
-SymCryptAesCmacInit( 
+SymCryptAesCmacInit(
     _Out_   PSYMCRYPT_AES_CMAC_STATE        pState,
     _In_    PCSYMCRYPT_AES_CMAC_EXPANDED_KEY pExpandedKey);
 
 VOID
 SYMCRYPT_CALL
-SymCryptAesCmacAppend( 
+SymCryptAesCmacAppend(
     _Inout_                 PSYMCRYPT_AES_CMAC_STATE    pState,
     _In_reads_( cbData )    PCBYTE                      pbData,
                             SIZE_T                      cbData );
 
 VOID
 SYMCRYPT_CALL
-SymCryptAesCmacResult( 
+SymCryptAesCmacResult(
     _Inout_                                         PSYMCRYPT_AES_CMAC_STATE    pState,
     _Out_writes_( SYMCRYPT_AES_CMAC_RESULT_SIZE )   PBYTE                       pbResult );
 
@@ -1993,7 +2025,7 @@ extern const PCSYMCRYPT_MAC SymCryptAesCmacAlgorithm;
 
 VOID
 SYMCRYPT_CALL
-SymCryptPoly1305( 
+SymCryptPoly1305(
     _In_reads_( SYMCRYPT_POLY1305_KEY_SIZE )        PCBYTE  pbKey,
     _In_reads_( cbData )                            PCBYTE  pbData,
                                                     SIZE_T  cbData,
@@ -2003,7 +2035,7 @@ SymCryptPoly1305(
 
 VOID
 SYMCRYPT_CALL
-SymCryptPoly1305Init( 
+SymCryptPoly1305Init(
     _Out_                                       PSYMCRYPT_POLY1305_STATE    pState,
     _In_reads_( SYMCRYPT_POLY1305_KEY_SIZE )    PCBYTE                      pbKey );
 // Starts an incremental Poly1305 computation.
@@ -2011,14 +2043,14 @@ SymCryptPoly1305Init(
 
 VOID
 SYMCRYPT_CALL
-SymCryptPoly1305Append( 
+SymCryptPoly1305Append(
     _Inout_                 PSYMCRYPT_POLY1305_STATE    pState,
     _In_reads_( cbData )    PCBYTE                      pbData,
                             SIZE_T                      cbData );
 
 VOID
 SYMCRYPT_CALL
-SymCryptPoly1305Result( 
+SymCryptPoly1305Result(
     _Inout_                                         PSYMCRYPT_POLY1305_STATE    pState,
     _Out_writes_( SYMCRYPT_POLY1305_RESULT_SIZE )   PBYTE                       pbResult );
 // The state is wiped and not suitable for re-use.
@@ -2037,22 +2069,22 @@ SymCryptPoly1305Selftest();
 
 ////////////////////////////////////////////////////////////////////////////
 //   MARVIN32
-// 
+//
 // Marvin is a checksum function optimized for speed on small inputs.
 // IT IS NOT A CRYPTOGRAPHIC HASH FUNCTION.
-// Marvin lacks the security properties of a cryptographic hash function. 
+// Marvin lacks the security properties of a cryptographic hash function.
 // DO NOT USE FOR ANY SECURITY USE.
 //
 // A randomizable checksum function has essentially the same API as a MAC
 // function. We use the SymCrypt MAC API here, with the difference
 // that we use the word 'seed' rather than 'key'.
-// 
+//
 // See the description above of the generic MAC API for details on how
 // these functions are used. Wherever the MAC API talks about keys, this
 // applies to the seed for Marvin32.
 //
 // The randomization is useful for hash tables.
-// There are DOS attacks where an attacker generates many inputs that 
+// There are DOS attacks where an attacker generates many inputs that
 // hash to the same location in the hash table. Some hash table implementations
 // then use O(n^2) CPU time, allowing a DOS attack.
 // The randomization provided by the seed avoids this attack if:
@@ -2067,7 +2099,7 @@ SymCryptPoly1305Selftest();
 //
 // FUTURE IMPROVEMENTS:
 // At the moment it is relatively expensive to change the seed.
-// If needed, we can add a facility to modify the seed faster than 
+// If needed, we can add a facility to modify the seed faster than
 // re-running the ExpandSeed function.
 //
 
@@ -2078,7 +2110,7 @@ SymCryptPoly1305Selftest();
 _Success_(return == SYMCRYPT_NO_ERROR)
 SYMCRYPT_ERROR
 SYMCRYPT_CALL
-SymCryptMarvin32ExpandSeed(   
+SymCryptMarvin32ExpandSeed(
     _Out_               PSYMCRYPT_MARVIN32_EXPANDED_SEED    pExpandedSeed,
     _In_reads_(cbSeed)  PCBYTE                              pbSeed,
                         SIZE_T                              cbSeed );
@@ -2093,12 +2125,12 @@ extern PCSYMCRYPT_MARVIN32_EXPANDED_SEED const SymCryptMarvin32DefaultSeed;
 
 VOID
 SYMCRYPT_CALL
-SymCryptMarvin32SeedCopy(   _In_    PCSYMCRYPT_MARVIN32_EXPANDED_SEED   pSrc, 
+SymCryptMarvin32SeedCopy(   _In_    PCSYMCRYPT_MARVIN32_EXPANDED_SEED   pSrc,
                             _Out_   PSYMCRYPT_MARVIN32_EXPANDED_SEED    pDst );
 
 VOID
 SYMCRYPT_CALL
-SymCryptMarvin32( 
+SymCryptMarvin32(
     _In_                                            PCSYMCRYPT_MARVIN32_EXPANDED_SEED   pExpandedSeed,
     _In_reads_( cbData )                            PCBYTE                              pbData,
                                                     SIZE_T                              cbData,
@@ -2110,8 +2142,8 @@ SymCryptMarvin32(
 
 VOID
 SYMCRYPT_CALL
-SymCryptMarvin32StateCopy( 
-    _In_        PCSYMCRYPT_MARVIN32_STATE           pSrc, 
+SymCryptMarvin32StateCopy(
+    _In_        PCSYMCRYPT_MARVIN32_STATE           pSrc,
     _In_opt_    PCSYMCRYPT_MARVIN32_EXPANDED_SEED   pExpandedSeed,
     _Out_       PSYMCRYPT_MARVIN32_STATE            pDst );
 
@@ -2120,7 +2152,7 @@ VOID
 SYMCRYPT_CALL
 SymCryptMarvin32Init(   _Out_   PSYMCRYPT_MARVIN32_STATE            pState,
                         _In_    PCSYMCRYPT_MARVIN32_EXPANDED_SEED   pExpandedSeed);
-      
+
 VOID
 SYMCRYPT_CALL
 SymCryptMarvin32Append(     _Inout_                 PSYMCRYPT_MARVIN32_STATE    pState,
@@ -2129,7 +2161,7 @@ SymCryptMarvin32Append(     _Inout_                 PSYMCRYPT_MARVIN32_STATE    
 
 VOID
 SYMCRYPT_CALL
-SymCryptMarvin32Result( 
+SymCryptMarvin32Result(
      _Inout_                                        PSYMCRYPT_MARVIN32_STATE    pState,
      _Out_writes_( SYMCRYPT_MARVIN32_RESULT_SIZE )  PBYTE                       pbResult );
 
@@ -2145,7 +2177,7 @@ SymCryptMarvin32Selftest();
 //
 // For a block cipher XXX the following minimal functions, types, and constants are defined:
 //
-// SYMCRYPT_XXX_BLOCK_SIZE 
+// SYMCRYPT_XXX_BLOCK_SIZE
 //
 //      A constant giving is the block size, in bytes, of the algorithm.
 //
@@ -2157,7 +2189,7 @@ SymCryptMarvin32Selftest();
 //      and not be stored or transferred to a different environment.
 //      The pointer and const-pointer versions are also declared
 //      (PSYMCRYPOT_XXX_EXPANDED_KEY and PCSYMCRYPT_XXX_EXPANDED_KEY).
-//      
+//
 //      The EXPANDED_KEY structure contains keying material and should be wiped
 //      once it is no longer used. (See SymCryptWipe & SymCryptWipeKnownSize)
 //
@@ -2176,8 +2208,8 @@ SymCryptMarvin32Selftest();
 //                          _In_reads_(cbKey)   PCBYTE                     pbKey,
 //                                              SIZE_T                     cbKey );
 //
-//      Prepare a key for future use by the Xxx algorithm. 
-//      This function performs pre-computations on the key 
+//      Prepare a key for future use by the Xxx algorithm.
+//      This function performs pre-computations on the key
 //      to speed up the actual block cipher computations later, and stores the result as an expanded key.
 //      The expanded key must be kept unchanged until all computations that use the key are finished.
 //      When the key is no longer needed the expanded key structure should be wiped.
@@ -2193,7 +2225,7 @@ SymCryptMarvin32Selftest();
 //                      _In_reads_( SYMCRYPT_XXX_BLOCK_SIZE )   PCBYTE                      pbSrc,
 //                      _Out_writes_( SYMCRYPT_XXX_BLOCK_SIZE ) PBYTE                       pbDst );
 //
-//      Encrypt a single block. 
+//      Encrypt a single block.
 //
 //
 // VOID
@@ -2202,7 +2234,7 @@ SymCryptMarvin32Selftest();
 //                      _In_reads_( SYMCRYPT_XXX_BLOCK_SIZE )   PCBYTE                      pbSrc,
 //                      _Out_writes_( SYMCRYPT_XXX_BLOCK_SIZE ) PBYTE                       pbDst );
 //
-//      Decrypt a single block. 
+//      Decrypt a single block.
 //
 //
 // --------------------------------------------------------------------------------------------------------------
@@ -2213,7 +2245,7 @@ SymCryptMarvin32Selftest();
 //
 // VOID
 // SYMCRYPT_CALL
-// SymCryptXxxCbcEncrypt( 
+// SymCryptXxxCbcEncrypt(
 //      _In_                                        PCSYMCRYPT_XXX_EXPANDED_KEY pExpandedKey,
 //      _Inout_updates_( SYMCRYPT_XXX_BLOCK_SIZE )  PBYTE                       pbChainingValue,
 //      _In_reads_( cbData )                        PCBYTE                      pbSrc,
@@ -2222,20 +2254,20 @@ SymCryptMarvin32Selftest();
 //
 //      Encrypt data using the CBC chaining mode.
 //      On entry the pbChainingValue is the IV which is xorred into the first plaintext block of the CBC encryption.
-//      On exit the pbChainingValue is updated to the last ciphertext block of the result. 
+//      On exit the pbChainingValue is updated to the last ciphertext block of the result.
 //      This allows a longer CBC encryption to be done incrementally.
 //
 //      cbData must be a multiple of the block size. For efficiency reasons this routine does not return an error
-//      if cbData is not a proper multiple; instead the result is undefined. The routine might hang, 
+//      if cbData is not a proper multiple; instead the result is undefined. The routine might hang,
 //      round cbData down to a multiple of the block size, or return random data that cannot be decrypted.
-// 
+//
 //      The pbSrc and pbDst buffers may be the same, or they may be non-overlapping. However, they may
-//      not be partially overlapping. 
+//      not be partially overlapping.
 //
 //
 // VOID
 // SYMCRYPT_CALL
-// SymCryptXxxCbcDecrypt( 
+// SymCryptXxxCbcDecrypt(
 //      _In_                                        PCSYMCRYPT_XXX_EXPANDED_KEY pExpandedKey,
 //      _Inout_updates_( SYMCRYPT_XXX_BLOCK_SIZE )  PBYTE                       pbChainingValue,
 //      _In_reads_( cbData )                        PCBYTE                      pbSrc,
@@ -2244,25 +2276,25 @@ SymCryptMarvin32Selftest();
 //
 //      Decrypt data using the CBC chaining mode.
 //      On entry the pbChainingValue is the IV to be xorred into the first plaintext block of the CBC decryption.
-//      On exit the pbChainingValue is updated to the last ciphertext block of the input. 
+//      On exit the pbChainingValue is updated to the last ciphertext block of the input.
 //      This allows a longer CBC decryption to be done incrementally.
 //
 //      cbData must be a multiple of the block size. For efficiency reasons this routine does not return an error
-//      if cbData is not a proper multiple; instead the result is undefined. The routine might hang, 
+//      if cbData is not a proper multiple; instead the result is undefined. The routine might hang,
 //      round cbData down to a multiple of the block size, or return random data.
-// 
+//
 //      The pbSrc and pbDst buffers may be the same, or they may be non-overlapping. However, they may
-//      not be partially overlapping. 
+//      not be partially overlapping.
 //
 //
 // VOID
 // SYMCRYPT_CALL
-// SymCryptXxxCbcMac( 
+// SymCryptXxxCbcMac(
 //      _In_                                        PCSYMCRYPT_XXX_EXPANDED_KEY pExpandedKey,
 //      _Inout_updates_( SYMCRYPT_XXX_BLOCK_SIZE )  PBYTE                       pbChainingValue,
 //      _In_reads_( cbData )                        PCBYTE                      pbData,
 //                                                  SIZE_T                      cbData );
-// 
+//
 //      Compute a CBC-MAC on the input data.
 //      On entry the pbChainingValue is the current chaining state of the CBC-MAC computation; this routine
 //      updates the state to reflect the chaining state after MACing the data.
@@ -2274,7 +2306,7 @@ SymCryptMarvin32Selftest();
 //
 // VOID
 // SYMCRYPT_CALL
-// SymCryptXxxCtrMsb64( 
+// SymCryptXxxCtrMsb64(
 //      _In_                                        PCSYMCRYPT_XXX_EXPANDED_KEY pExpandedKey,
 //      _Inout_updates_( SYMCRYPT_XXX_BLOCK_SIZE )  PBYTE                       pbChainingValue,
 //      _In_reads_( cbData )                        PCBYTE                      pbSrc,
@@ -2284,8 +2316,8 @@ SymCryptMarvin32Selftest();
 //      Perform a CTR encryption on the data. (Note: CTR encryption and decryption are the same operation.)
 //      On entry pbChainingValue contains the first counter value to be used. On exit it contains
 //      the next counter value to be used.
-//      The increment function treats the last 8 bytes of the pbChainingValue string as an integer 
-//      in most-significant-byte-first format, and increments this integer. 
+//      The increment function treats the last 8 bytes of the pbChainingValue string as an integer
+//      in most-significant-byte-first format, and increments this integer.
 //      Thus, the last byte is incremented the fastest.
 //      The pbSrc and pbDst buffers may be identical or non-overalapping, but they may not partially overlap.
 //      cbData must be a multiple of the block size.
@@ -2314,11 +2346,11 @@ SymCryptMarvin32Selftest();
 // The AES block cipher per FIPS 197
 //
 // WARNING:
-// Unless this code is running on a CPU with AES-NI instructions, 
+// Unless this code is running on a CPU with AES-NI instructions,
 // the AES implementation makes extensive use of table lookups to implement the S-boxes of the algorithm.
-// This violates our current crypto implementation guidelines and opens up a possible side-channel attack 
+// This violates our current crypto implementation guidelines and opens up a possible side-channel attack
 // through information leakage via the memory caching system of the CPU.
-// 
+//
 // Unfortunately there is no known software fix for this that does not lead to an order of magnitude performance loss.
 // An implementation that is 10x slower will not be used by anybody and is useless, so we implement a fast
 // version that uses table lookups. (Just like all other systems we know of.)
@@ -2330,14 +2362,14 @@ SymCryptMarvin32Selftest();
 // use table lookups. NIST and NSA are aware of this problem, but so far we have not seen any indication
 // that they consider this important enough to create an alternative encryption algorithm that does not
 // rely on table lookups as much.
-// 
+//
 
 #define SYMCRYPT_AES_BLOCK_SIZE  (16)
 
 _Success_(return == SYMCRYPT_NO_ERROR)
 SYMCRYPT_ERROR
 SYMCRYPT_CALL
-SymCryptAesExpandKey(   
+SymCryptAesExpandKey(
     _Out_               PSYMCRYPT_AES_EXPANDED_KEY  pExpandedKey,
     _In_reads_(cbKey)   PCBYTE                      pbKey,
                         SIZE_T                      cbKey );
@@ -2350,33 +2382,33 @@ SymCryptAesExpandKey(
 _Success_(return == SYMCRYPT_NO_ERROR)
 SYMCRYPT_ERROR
 SYMCRYPT_CALL
-SymCryptAesExpandKeyEncryptOnly(   
+SymCryptAesExpandKeyEncryptOnly(
     _Out_               PSYMCRYPT_AES_EXPANDED_KEY  pExpandedKey,
     _In_reads_(cbKey)   PCBYTE                      pbKey,
                         SIZE_T                      cbKey );
 
 VOID
 SYMCRYPT_CALL
-SymCryptAesKeyCopy( _In_ PCSYMCRYPT_AES_EXPANDED_KEY pSrc, 
+SymCryptAesKeyCopy( _In_ PCSYMCRYPT_AES_EXPANDED_KEY pSrc,
                     _Out_ PSYMCRYPT_AES_EXPANDED_KEY pDst );
 
 VOID
 SYMCRYPT_CALL
-SymCryptAesEncrypt( 
+SymCryptAesEncrypt(
     _In_                                    PCSYMCRYPT_AES_EXPANDED_KEY pExpandedKey,
     _In_reads_( SYMCRYPT_AES_BLOCK_SIZE )   PCBYTE                      pbSrc,
     _Out_writes_( SYMCRYPT_AES_BLOCK_SIZE ) PBYTE                       pbDst );
 
 VOID
 SYMCRYPT_CALL
-SymCryptAesDecrypt( 
+SymCryptAesDecrypt(
     _In_                                    PCSYMCRYPT_AES_EXPANDED_KEY pExpandedKey,
     _In_reads_( SYMCRYPT_AES_BLOCK_SIZE )   PCBYTE                      pbSrc,
     _Out_writes_( SYMCRYPT_AES_BLOCK_SIZE ) PBYTE                       pbDst );
 
 VOID
 SYMCRYPT_CALL
-SymCryptAesEcbEncrypt( 
+SymCryptAesEcbEncrypt(
     _In_                                        PCSYMCRYPT_AES_EXPANDED_KEY pExpandedKey,
     _In_reads_( cbData )                        PCBYTE                      pbSrc,
     _Out_writes_( cbData )                      PBYTE                       pbDst,
@@ -2384,7 +2416,7 @@ SymCryptAesEcbEncrypt(
 
 VOID
 SYMCRYPT_CALL
-SymCryptAesEcbDecrypt( 
+SymCryptAesEcbDecrypt(
     _In_                                        PCSYMCRYPT_AES_EXPANDED_KEY pExpandedKey,
     _In_reads_( cbData )                        PCBYTE                      pbSrc,
     _Out_writes_( cbData )                      PBYTE                       pbDst,
@@ -2392,7 +2424,7 @@ SymCryptAesEcbDecrypt(
 
 VOID
 SYMCRYPT_CALL
-SymCryptAesCbcEncrypt( 
+SymCryptAesCbcEncrypt(
     _In_                                        PCSYMCRYPT_AES_EXPANDED_KEY pExpandedKey,
     _Inout_updates_( SYMCRYPT_AES_BLOCK_SIZE )  PBYTE                       pbChainingValue,
     _In_reads_( cbData )                        PCBYTE                      pbSrc,
@@ -2401,7 +2433,7 @@ SymCryptAesCbcEncrypt(
 
 VOID
 SYMCRYPT_CALL
-SymCryptAesCbcDecrypt( 
+SymCryptAesCbcDecrypt(
     _In_                                        PCSYMCRYPT_AES_EXPANDED_KEY pExpandedKey,
     _Inout_updates_( SYMCRYPT_AES_BLOCK_SIZE )  PBYTE                       pbChainingValue,
     _In_reads_( cbData )                        PCBYTE                      pbSrc,
@@ -2410,7 +2442,7 @@ SymCryptAesCbcDecrypt(
 
 VOID
 SYMCRYPT_CALL
-SymCryptAesCbcMac( 
+SymCryptAesCbcMac(
         _In_                                        PCSYMCRYPT_AES_EXPANDED_KEY pExpandedKey,
         _Inout_updates_( SYMCRYPT_AES_BLOCK_SIZE )  PBYTE                       pbChainingValue,
         _In_reads_( cbData )                        PCBYTE                      pbData,
@@ -2418,7 +2450,7 @@ SymCryptAesCbcMac(
 
 VOID
 SYMCRYPT_CALL
-SymCryptAesCtrMsb64( 
+SymCryptAesCtrMsb64(
         _In_                                        PCSYMCRYPT_AES_EXPANDED_KEY pExpandedKey,
         _Inout_updates_( SYMCRYPT_AES_BLOCK_SIZE )  PBYTE                       pbChainingValue,
         _In_reads_( cbData )                        PCBYTE                      pbSrc,
@@ -2460,16 +2492,16 @@ extern const PCSYMCRYPT_BLOCKCIPHER SymCryptAesBlockCipher;
 // Per the Crypto SDL, any use of DES in Microsoft code requires a Crypto board exemption
 //
 // The DES implementation makes extensive use of table lookups to implement the S-boxes of the algorithm.
-// This violates our current crypto implementation guidelines and opens up a possible side-channel attack 
+// This violates our current crypto implementation guidelines and opens up a possible side-channel attack
 // through information leakage via the memory caching system of the CPU.
-// 
+//
 
 #define SYMCRYPT_DES_BLOCK_SIZE  (8)
 
 _Success_(return == SYMCRYPT_NO_ERROR)
 SYMCRYPT_ERROR
 SYMCRYPT_CALL
-SymCryptDesExpandKey(   
+SymCryptDesExpandKey(
     _Out_               PSYMCRYPT_DES_EXPANDED_KEY  pExpandedKey,
     _In_reads_(cbKey)   PCBYTE                      pbKey,
                         SIZE_T                      cbKey );
@@ -2479,14 +2511,14 @@ SymCryptDesExpandKey(
 
 VOID
 SYMCRYPT_CALL
-SymCryptDesEncrypt( 
+SymCryptDesEncrypt(
     _In_                                    PCSYMCRYPT_DES_EXPANDED_KEY pExpandedKey,
     _In_reads_( SYMCRYPT_DES_BLOCK_SIZE )   PCBYTE                      pbSrc,
     _Out_writes_( SYMCRYPT_DES_BLOCK_SIZE ) PBYTE                       pbDst );
 
 VOID
 SYMCRYPT_CALL
-SymCryptDesDecrypt( 
+SymCryptDesDecrypt(
     _In_                                    PCSYMCRYPT_DES_EXPANDED_KEY pExpandedKey,
     _In_reads_( SYMCRYPT_DES_BLOCK_SIZE )   PCBYTE                      pbSrc,
     _Out_writes_( SYMCRYPT_DES_BLOCK_SIZE ) PBYTE                       pbDst );
@@ -2494,11 +2526,11 @@ SymCryptDesDecrypt(
 
 VOID
 SYMCRYPT_CALL
-SymCryptDesSetOddParity( 
+SymCryptDesSetOddParity(
     _Inout_updates_( cbData ) PBYTE   pbData,
     _In_                            SIZE_T  cbData );
 //
-// Set each byte to have odd parity by possibly flipping bit 0. 
+// Set each byte to have odd parity by possibly flipping bit 0.
 // This is the parity used by DES, and is needed for compatibility.
 // The parity bit is ignored by the DES key expansion.
 //
@@ -2516,16 +2548,16 @@ extern const PCSYMCRYPT_BLOCKCIPHER SymCryptDesBlockCipher;
 //
 // WARNING:
 // The DES implementation makes extensive use of table lookups to implement the S-boxes of the algorithm.
-// This violates our current crypto implementation guidelines and opens up a possible side-channel attack 
+// This violates our current crypto implementation guidelines and opens up a possible side-channel attack
 // through information leakage via the memory caching system of the CPU.
-// 
+//
 
 #define SYMCRYPT_3DES_BLOCK_SIZE  (8)
 
 _Success_(return == SYMCRYPT_NO_ERROR)
 SYMCRYPT_ERROR
 SYMCRYPT_CALL
-SymCrypt3DesExpandKey(  
+SymCrypt3DesExpandKey(
     _Out_               PSYMCRYPT_3DES_EXPANDED_KEY pExpandedKey,
     _In_reads_(cbKey)   PCBYTE                      pbKey,
                         SIZE_T                      cbKey );
@@ -2579,14 +2611,14 @@ extern const PCSYMCRYPT_BLOCKCIPHER SymCrypt3DesBlockCipher;
 // The DESX block cipher.
 //
 // Use of DESX is not recommended.
-// 
+//
 
 #define SYMCRYPT_DESX_BLOCK_SIZE  (8)
 
 _Success_(return == SYMCRYPT_NO_ERROR)
 SYMCRYPT_ERROR
 SYMCRYPT_CALL
-SymCryptDesxExpandKey(   
+SymCryptDesxExpandKey(
     _Out_               PSYMCRYPT_DESX_EXPANDED_KEY pExpandedKey,
     _In_reads_(cbKey)   PCBYTE                      pbKey,
                         SIZE_T                      cbKey );
@@ -2600,7 +2632,7 @@ SymCryptDesxEncrypt(
 
 VOID
 SYMCRYPT_CALL
-SymCryptDesxDecrypt( 
+SymCryptDesxDecrypt(
     _In_                                    PCSYMCRYPT_DESX_EXPANDED_KEY    pExpandedKey,
     _In_reads_( SYMCRYPT_DESX_BLOCK_SIZE )  PCBYTE                          pbSrc,
     _Out_writes_( SYMCRYPT_DESX_BLOCK_SIZE )PBYTE                           pbDst );
@@ -2615,22 +2647,22 @@ extern const PCSYMCRYPT_BLOCKCIPHER SymCryptDesxBlockCipher;
 ////////////////////////////////////////////////////////////////////////////
 //   RC2
 //
-// The RC2 block cipher 
+// The RC2 block cipher
 //
 // WARNING:
 // Use of RC2 is not recommended for many reasons.
 //
 // The RC2 implementation makes extensive use of table lookups to implement the S-boxes of the algorithm.
-// This violates our current crypto implementation guidelines and opens up a possible side-channel attack 
+// This violates our current crypto implementation guidelines and opens up a possible side-channel attack
 // through information leakage via the memory caching system of the CPU.
-// 
+//
 
 #define SYMCRYPT_RC2_BLOCK_SIZE  (8)
 
 _Success_(return == SYMCRYPT_NO_ERROR)
 SYMCRYPT_ERROR
 SYMCRYPT_CALL
-SymCryptRc2ExpandKey(   
+SymCryptRc2ExpandKey(
     _Out_               PSYMCRYPT_RC2_EXPANDED_KEY  pExpandedKey,
     _In_reads_(cbKey)   PCBYTE                      pbKey,
                         SIZE_T                      cbKey );
@@ -2651,29 +2683,29 @@ SymCryptRc2ExpandKeyEx(
                         UINT32                      effectiveKeySizeInBits );
 //
 // Rc2 has an option to limit the effective key size, which means the key expansion function has an extra
-// parameter. 
+// parameter.
 //
 // The effective key size in bits may be any value from 9..1024. If it is larger than 8*cbKey it does
 // not significantly affect the key strength. However, the expanded key will always depend on the
 // effective key size; expanding the same string of key bytes with differ effective key sizes leads
 // to different expanded keys and different encryption functions.
 //
-// The original default was an effective key size of 40 bits. 
-// 
-// Do not allow your attacker to choose the effective key size. RC2 seems vulnerable to 
+// The original default was an effective key size of 40 bits.
+//
+// Do not allow your attacker to choose the effective key size. RC2 seems vulnerable to
 // related-effective-key-size attacks.
 //
 
 VOID
 SYMCRYPT_CALL
-SymCryptRc2Encrypt( 
+SymCryptRc2Encrypt(
     _In_                                    PCSYMCRYPT_RC2_EXPANDED_KEY pExpandedKey,
     _In_reads_( SYMCRYPT_RC2_BLOCK_SIZE )   PCBYTE                      pbSrc,
     _Out_writes_( SYMCRYPT_RC2_BLOCK_SIZE ) PBYTE                       pbDst );
 
 VOID
 SYMCRYPT_CALL
-SymCryptRc2Decrypt( 
+SymCryptRc2Decrypt(
     _In_                                    PCSYMCRYPT_RC2_EXPANDED_KEY pExpandedKey,
     _In_reads_( SYMCRYPT_RC2_BLOCK_SIZE )   PCBYTE                      pbSrc,
     _Out_writes_( SYMCRYPT_RC2_BLOCK_SIZE ) PBYTE                       pbDst );
@@ -2692,7 +2724,7 @@ extern const PCSYMCRYPT_BLOCKCIPHER SymCryptRc2BlockCipher;
 //
 // Block cipher modes use the block cipher description tables to implement
 // the various modes in a block-cipher independent way.
-// 
+//
 // Some block ciphers implement optimized versions of the block cipher modes.
 // These functions call that optimized version, but calling the block-cipher specific
 // function has less overhead.
@@ -2704,7 +2736,7 @@ extern const PCSYMCRYPT_BLOCKCIPHER SymCryptRc2BlockCipher;
 
 VOID
 SYMCRYPT_CALL
-SymCryptEcbEncrypt( 
+SymCryptEcbEncrypt(
     _In_                        PCSYMCRYPT_BLOCKCIPHER  pBlockCipher,
     _In_                        PCVOID                  pExpandedKey,
     _In_reads_( cbData )        PCBYTE                  pbSrc,
@@ -2721,12 +2753,12 @@ SymCryptEcbEncrypt(
 //      identical (in-place encryption) or non-overlapping, but they may not partially overlap.
 // - cbData. Number of bytes to encrypt. This must be a multiple of the block size.
 // - pbDst is the result buffer. It may be identical to pbPlaintext or non-overlapping,
-//      but it may not partially overlap with the pbPlaintext buffer. 
+//      but it may not partially overlap with the pbPlaintext buffer.
 //
 
 VOID
 SYMCRYPT_CALL
-SymCryptEcbDecrypt( 
+SymCryptEcbDecrypt(
     _In_                        PCSYMCRYPT_BLOCKCIPHER  pBlockCipher,
     _In_                        PCVOID                  pExpandedKey,
     _In_reads_( cbData )        PCBYTE                  pbSrc,
@@ -2743,16 +2775,16 @@ SymCryptEcbDecrypt(
 //      identical (in-place encryption) or non-overlapping, but they may not partially overlap.
 // - cbData. Number of bytes to encrypt. This must be a multiple of the block size.
 // - pbDst is the result buffer. It may be identical to pbPlaintext or non-overlapping,
-//      but it may not partially overlap with the pbPlaintext buffer. 
+//      but it may not partially overlap with the pbPlaintext buffer.
 //
 
 
 VOID
 SYMCRYPT_CALL
-SymCryptCbcEncrypt( 
+SymCryptCbcEncrypt(
     _In_                        PCSYMCRYPT_BLOCKCIPHER  pBlockCipher,
     _In_                        PCVOID                  pExpandedKey,
-    _Inout_updates_( pBlockCipher->blockSize ) 
+    _Inout_updates_( pBlockCipher->blockSize )
                                 PBYTE                   pbChainingValue,
     _In_reads_( cbData )        PCBYTE                  pbSrc,
     _Out_writes_( cbData )      PBYTE                   pbDst,
@@ -2774,16 +2806,16 @@ SymCryptCbcEncrypt(
 //      identical (in-place encryption) or non-overlapping, but they may not partially overlap.
 // - cbData. Number of bytes to encrypt. This must be a multiple of the block size.
 // - pbDst is the result buffer. It may be identical to pbPlaintext or non-overlapping,
-//      but it may not partially overlap with the pbPlaintext buffer. 
+//      but it may not partially overlap with the pbPlaintext buffer.
 //
 
 
 VOID
 SYMCRYPT_CALL
-SymCryptCbcDecrypt( 
+SymCryptCbcDecrypt(
     _In_                        PCSYMCRYPT_BLOCKCIPHER  pBlockCipher,
     _In_                        PCVOID                  pExpandedKey,
-    _Inout_updates_( pBlockCipher->blockSize ) 
+    _Inout_updates_( pBlockCipher->blockSize )
                                 PBYTE                   pbChainingValue,
     _In_reads_( cbData )        PCBYTE                  pbSrc,
     _Out_writes_( cbData )      PBYTE                   pbDst,
@@ -2800,18 +2832,18 @@ SYMCRYPT_CALL
 SymCryptCbcMac(
     _In_                        PCSYMCRYPT_BLOCKCIPHER  pBlockCipher,
     _In_                        PCVOID                  pExpandedKey,
-    _Inout_updates_( pBlockCipher->blockSize ) 
+    _Inout_updates_( pBlockCipher->blockSize )
                                 PBYTE                   pbChainingValue,
     _In_reads_( cbData )        PCBYTE                  pbSrc,
                                 SIZE_T                  cbData );
 //
-// This function implements the same function as SymCryptCbcEncrypt except that 
-// it does not produce a ciphertext output. 
+// This function implements the same function as SymCryptCbcEncrypt except that
+// it does not produce a ciphertext output.
 // All other restrictions apply.
 // The pbChainingValue is the only output provided.
 //
 // This is the primitive operation used by other modes of operation,
-// and some platforms have special optimizations for this primitive. 
+// and some platforms have special optimizations for this primitive.
 // As we expose special APIs for some algorithms, we provide the generic function so that it
 // can be used for all algorithms.
 //
@@ -2819,10 +2851,10 @@ SymCryptCbcMac(
 
 VOID
 SYMCRYPT_CALL
-SymCryptCtrMsb64( 
+SymCryptCtrMsb64(
     _In_                        PCSYMCRYPT_BLOCKCIPHER  pBlockCipher,
     _In_                        PCVOID                  pExpandedKey,
-    _Inout_updates_( pBlockCipher->blockSize ) 
+    _Inout_updates_( pBlockCipher->blockSize )
                                 PBYTE                   pbChainingValue,
     _In_reads_( cbData )        PCBYTE                  pbSrc,
     _Out_writes_( cbData )      PBYTE                   pbDst,
@@ -2830,7 +2862,7 @@ SymCryptCtrMsb64(
 //
 // This function implements the CTR cipher mode.
 // It is not intended to be used as-is, rather it is a building block
-// for modes like CCM and GCM. 
+// for modes like CCM and GCM.
 // On some platforms we have optimized code for AES-CTR, on other platforms
 // we use this generic construction to achieve the same effect.
 //
@@ -2843,7 +2875,7 @@ SymCryptCtrMsb64(
 // - pbChainingValue points to the chaining value. On entry it is the first counter value to be
 //      used. On exit is the next counter value to be used.
 //      The pbChainingValue is incremented by cbData/blockSize.
-//      The increment function treats the last 8 bytes of pbChaining a MSBfirst integer 
+//      The increment function treats the last 8 bytes of pbChaining a MSBfirst integer
 //      and increments the integer representation by one for each block.
 // - pbSrc is the input data buffer that will be encrypted/decrypted.
 // - cbData. Number of bytes to encrypt/decrypt. This must be a multiple of the block size.
@@ -2858,14 +2890,14 @@ SymCryptCfbEncrypt(
     _In_                        PCSYMCRYPT_BLOCKCIPHER  pBlockCipher,
                                 SIZE_T                  cbShift,
     _In_                        PCVOID                  pExpandedKey,
-    _Inout_updates_( pBlockCipher->blockSize ) 
+    _Inout_updates_( pBlockCipher->blockSize )
                                 PBYTE                   pbChainingValue,
     _In_reads_( cbData )        PCBYTE                  pbSrc,
     _Out_writes_( cbData )      PBYTE                   pbDst,
                                 SIZE_T                  cbData );
 //
 // Encrypt a buffer using the CFB cipher mode.
-// 
+//
 // This implements the CFB mode, with selected shift amount (in bytes).
 // In general, one block cipher encryption is used for each cbShift bytes
 // of plaintext, which can be slow.
@@ -2873,11 +2905,11 @@ SymCryptCfbEncrypt(
 //
 // - pBlockCipher is a pointer to the block cipher description table.
 //      Suitable description tables for all ciphers in this library have been pre-defined.
-// - cbShift is the shift value (in bytes) of the CFB mode. 
+// - cbShift is the shift value (in bytes) of the CFB mode.
 //      The only supported values are 1 and the block size.
 // - pExpandedKey points to the expanded key to use. This generic function uses PVOID so there
 //      is no type safety to ensure that the expanded key and the encryption function match.
-// - pbChainingValue points to the chaining value. On entry and exit it 
+// - pbChainingValue points to the chaining value. On entry and exit it
 //      contains the last blockSize ciphertext bytes.
 // - pbSrc is the input data buffer that will be encrypted/decrypted.
 // - cbData. Number of bytes to encrypt/decrypt.
@@ -2892,7 +2924,7 @@ SymCryptCfbDecrypt(
     _In_                        PCSYMCRYPT_BLOCKCIPHER  pBlockCipher,
                                 SIZE_T                  cbShift,
     _In_                        PCVOID                  pExpandedKey,
-    _Inout_updates_( pBlockCipher->blockSize ) 
+    _Inout_updates_( pBlockCipher->blockSize )
                                 PBYTE                   pbChainingValue,
     _In_reads_( cbData )        PCBYTE                  pbSrc,
     _Out_writes_( cbData )      PBYTE                   pbDst,
@@ -2917,7 +2949,7 @@ SymCryptCcmValidateParameters(
     _In_    SIZE_T                  cbTag
    );
 //
-// To achieve maximum performance, CCM functions do not check for valid parameters. 
+// To achieve maximum performance, CCM functions do not check for valid parameters.
 // Passing invalid parameters can lead to buffer overflows.
 // Callers who want to validate their CCM parameters can call this function.
 // Note: In Checked builds some CCM functions might fatal out when invalid parameters are
@@ -2927,7 +2959,7 @@ SymCryptCcmValidateParameters(
 
 VOID
 SYMCRYPT_CALL
-SymCryptCcmEncrypt(  
+SymCryptCcmEncrypt(
      _In_                           PCSYMCRYPT_BLOCKCIPHER     pBlockCipher,
      _In_                           PCVOID                     pExpandedKey,
      _In_reads_( cbNonce )          PCBYTE                     pbNonce,
@@ -2943,10 +2975,10 @@ SymCryptCcmEncrypt(
 //
 //  Encrypt a buffer using the block cipher in CCM mode.
 //      - pBlockCipher points to the block cipher description table.
-//      - pExpandedKey points to the expanded key for the block cipher. 
+//      - pExpandedKey points to the expanded key for the block cipher.
 //      - pbNonce: Pointer to the nonce for this encryption. For a single key, each nonce
 //          value may be used at most once to encrypt data. Re-using nonce values leads
-//          to catastrophic loss of security. 
+//          to catastrophic loss of security.
 //      - cbNonce: number of bytes in the nonce: 7 <= cbNonce <= 13.
 //      - pbAuthData: pointer to the associated authentication data. This data is not encrypted
 //          but it is included in the authentication. Use NULL if not used.
@@ -2957,13 +2989,13 @@ SymCryptCcmEncrypt(
 //      - cbData: # bytes of plaintext input. The maximum length is 2^{8(15-cbNonce)} - 1 bytes.
 //      - pbTag: buffer that will receive the authetication tag.
 //      - cbTag: size of tag. cbTag must be one of {4, 6, 8, 10, 12, 14, 16}.
-// 
+//
 
 
 _Success_(return == SYMCRYPT_NO_ERROR)
 SYMCRYPT_ERROR
 SYMCRYPT_CALL
-SymCryptCcmDecrypt(  
+SymCryptCcmDecrypt(
      _In_                           PCSYMCRYPT_BLOCKCIPHER  pBlockCipher,
      _In_                           PCVOID                  pExpandedKey,
      _In_reads_( cbNonce )          PCBYTE                  pbNonce,
@@ -2984,7 +3016,7 @@ SymCryptCcmDecrypt(
 // is wiped of any plaintext.
 // Note: While checking the authentication the purported plaintext is stored in pbDst. It is not safe to reveal
 // purported plaintext when the authentication has not been checked. (Doing so would reveal key stream information
-// that can be used to decrypt any message encrypted with the same nonce value.) Thus, users should be careful 
+// that can be used to decrypt any message encrypted with the same nonce value.) Thus, users should be careful
 // to not reveal the pbDst buffer until this function returns (e.g. through other threads or sharing memory).
 //
 
@@ -3000,7 +3032,7 @@ SymCryptCcmDecrypt(
 
 VOID
 SYMCRYPT_CALL
-SymCryptCcmInit( 
+SymCryptCcmInit(
     _Out_                           PSYMCRYPT_CCM_STATE     pState,
     _In_                            PCSYMCRYPT_BLOCKCIPHER  pBlockCipher,
     _In_                            PCVOID                  pExpandedKey,
@@ -3017,7 +3049,7 @@ SymCryptCcmInit(
 
 VOID
 SYMCRYPT_CALL
-SymCryptCcmEncryptPart( 
+SymCryptCcmEncryptPart(
     _Inout_                 PSYMCRYPT_CCM_STATE pState,
     _In_reads_( cbData )    PCBYTE              pbSrc,
     _Out_writes_( cbData )  PBYTE               pbDst,
@@ -3025,7 +3057,7 @@ SymCryptCcmEncryptPart(
 
 VOID
 SYMCRYPT_CALL
-SymCryptCcmEncryptFinal( 
+SymCryptCcmEncryptFinal(
     _In_                    PSYMCRYPT_CCM_STATE pState,
     _Out_writes_( cbTag )   PBYTE               pbTag,
                             SIZE_T              cbTag );
@@ -3040,11 +3072,11 @@ SymCryptCcmDecryptPart(
     _In_reads_( cbData )    PCBYTE              pbSrc,
     _Out_writes_( cbData )  PBYTE               pbDst,
                             SIZE_T              cbData );
- 
+
 _Success_(return == SYMCRYPT_NO_ERROR)
 SYMCRYPT_ERROR
 SYMCRYPT_CALL
-SymCryptCcmDecryptFinal( 
+SymCryptCcmDecryptFinal(
     _In_                    PSYMCRYPT_CCM_STATE pState,
     _In_reads_( cbTag )     PCBYTE              pbTag,
                             SIZE_T              cbTag );
@@ -3080,7 +3112,7 @@ SymCryptGcmValidateParameters(
     _In_    SIZE_T                  cbTag
    );
 //
-// To achieve maximum performance, GCM functions do not check for valid parameters. 
+// To achieve maximum performance, GCM functions do not check for valid parameters.
 // Passing invalid parameters can lead to buffer overflows.
 // Callers who want to validate their GCM parameters can call this function.
 // Note: In Checked builds some CCM functions might fatal out when invalid parameters are
@@ -3091,7 +3123,7 @@ SymCryptGcmValidateParameters(
 _Success_(return == SYMCRYPT_NO_ERROR)
 SYMCRYPT_ERROR
 SYMCRYPT_CALL
-SymCryptGcmExpandKey(       
+SymCryptGcmExpandKey(
     _Out_                   PSYMCRYPT_GCM_EXPANDED_KEY  pExpandedKey,
     _In_                    PCSYMCRYPT_BLOCKCIPHER      pBlockCipher,
     _In_reads_( cbKey )     PCBYTE                      pbKey,
@@ -3110,7 +3142,7 @@ SymCryptGcmKeyCopy( _In_ PCSYMCRYPT_GCM_EXPANDED_KEY pSrc, _Out_ PSYMCRYPT_GCM_E
 
 VOID
 SYMCRYPT_CALL
-SymCryptGcmEncrypt(  
+SymCryptGcmEncrypt(
      _In_                           PCSYMCRYPT_GCM_EXPANDED_KEY pExpandedKey,
      _In_reads_( cbNonce )          PCBYTE                      pbNonce,
                                     SIZE_T                      cbNonce,
@@ -3140,13 +3172,13 @@ SymCryptGcmEncrypt(
 //      - pbTag: buffer that will receive the authetication tag.
 //      - cbTag: size of tag. cbTag must be one of {12, 13, 14, 15, 16} per SP800-38D
 //          section 5.2.1.2. The optional shorter tag sizes (4 and 8) are not supported.
-// 
+//
 
 
 _Success_(return == SYMCRYPT_NO_ERROR)
 SYMCRYPT_ERROR
 SYMCRYPT_CALL
-SymCryptGcmDecrypt(  
+SymCryptGcmDecrypt(
     _In_                            PCSYMCRYPT_GCM_EXPANDED_KEY pExpandedKey,
     _In_reads_( cbNonce )           PCBYTE                      pbNonce,
                                     SIZE_T                      cbNonce,
@@ -3165,7 +3197,7 @@ SymCryptGcmDecrypt(
 // is wiped of any plaintext.
 // Note: While checking the authentication the purported plaintext is stored in pbDst. It is not safe to reveal
 // purported plaintext when the authentication has not been checked. (Doing so would reveal key stream information
-// that can be used to decrypt any message encrypted with the same nonce value.) Thus, users should be careful 
+// that can be used to decrypt any message encrypted with the same nonce value.) Thus, users should be careful
 // to not reveal the pbDst buffer until this function returns (e.g. through other threads or sharing memory).
 //
 
@@ -3182,24 +3214,24 @@ SymCryptGcmDecrypt(
 
 VOID
 SYMCRYPT_CALL
-SymCryptGcmInit( 
+SymCryptGcmInit(
     _Out_                       PSYMCRYPT_GCM_STATE         pState,
     _In_                        PCSYMCRYPT_GCM_EXPANDED_KEY pExpandedKey,
     _In_reads_( cbNonce )       PCBYTE                      pbNonce,
                                 SIZE_T                      cbNonce );
 //
-// Initialize a GCM computation. 
+// Initialize a GCM computation.
 // The pBlockCipher and pExpandedKey structures must remain unchanged until the GCM computation is finished.
 //
 
 VOID
 SYMCRYPT_CALL
-SymCryptGcmStateCopy( 
-    _In_        PCSYMCRYPT_GCM_STATE            pSrc, 
+SymCryptGcmStateCopy(
+    _In_        PCSYMCRYPT_GCM_STATE            pSrc,
     _In_opt_    PCSYMCRYPT_GCM_EXPANDED_KEY     pExpandedKeyCopy,
     _Out_       PSYMCRYPT_GCM_STATE             pDst );
 //
-// Copy a GCM state. 
+// Copy a GCM state.
 // If pExpandedKeyCopy is NULL, then the new pDst state uses the same expanded key as pSrc.
 // If pExpandedKeyCopy is not NULL, it must point to a copy of the expanded key of the pSrc state.
 // This new expanded key will be used as the expanded key for pDst.
@@ -3219,7 +3251,7 @@ SymCryptGcmAuthPart(
 
 VOID
 SYMCRYPT_CALL
-SymCryptGcmEncryptPart( 
+SymCryptGcmEncryptPart(
     _Inout_                 PSYMCRYPT_GCM_STATE pState,
     _In_reads_( cbData )    PCBYTE              pbSrc,
     _Out_writes_( cbData )  PBYTE               pbDst,
@@ -3227,14 +3259,14 @@ SymCryptGcmEncryptPart(
 
 VOID
 SYMCRYPT_CALL
-SymCryptGcmEncryptFinal( 
+SymCryptGcmEncryptFinal(
     _In_                    PSYMCRYPT_GCM_STATE pState,
     _Out_writes_( cbTag )   PBYTE               pbTag,
                             SIZE_T              cbTag );
 
 VOID
 SYMCRYPT_CALL
-SymCryptGcmDecryptPart( 
+SymCryptGcmDecryptPart(
     _Inout_                 PSYMCRYPT_GCM_STATE pState,
     _In_reads_( cbData )    PCBYTE              pbSrc,
     _Out_writes_( cbData )  PBYTE               pbDst,
@@ -3243,7 +3275,7 @@ SymCryptGcmDecryptPart(
 _Success_(return == SYMCRYPT_NO_ERROR)
 SYMCRYPT_ERROR
 SYMCRYPT_CALL
-SymCryptGcmDecryptFinal( 
+SymCryptGcmDecryptFinal(
     _In_                    PSYMCRYPT_GCM_STATE pState,
     _In_reads_( cbTag )     PCBYTE              pbTag,
                             SIZE_T              cbTag );
@@ -3272,19 +3304,19 @@ SymCryptGcmSelftest();
 // Use of RC4 is not recommended.
 //
 // The RC4 implementation makes extensive use of table lookups to implement the S-boxes of the algorithm.
-// This violates our current crypto implementation guidelines and opens up a possible side-channel attack 
+// This violates our current crypto implementation guidelines and opens up a possible side-channel attack
 // through information leakage via the memory caching system of the CPU.
-// 
+//
 
 _Success_(return == SYMCRYPT_NO_ERROR)
 SYMCRYPT_ERROR
 SYMCRYPT_CALL
-SymCryptRc4Init( 
+SymCryptRc4Init(
     _Out_                   PSYMCRYPT_RC4_STATE pState,
     _In_reads_( cbKey )     PCBYTE              pbKey,
     _In_                    SIZE_T              cbKey );
 //
-// Initialize an RC4 encryption/decryption state. 
+// Initialize an RC4 encryption/decryption state.
 // WARNING: the most common error in using RC4 is to use the same key to encrypt two different pieces of data.
 // This is insecure and should never be done; you need a unique key for each data element that is encrypted.
 // Typically this is done by concatenating the key and a nonce or IV to generate the RC4 key.
@@ -3292,7 +3324,7 @@ SymCryptRc4Init(
 
 VOID
 SYMCRYPT_CALL
-SymCryptRc4Crypt( 
+SymCryptRc4Crypt(
     _Inout_                 PSYMCRYPT_RC4_STATE pState,
     _In_reads_( cbData )    PCBYTE              pbSrc,
     _Out_writes_( cbData )  PBYTE               pbDst,
@@ -3300,7 +3332,7 @@ SymCryptRc4Crypt(
 //
 // Encrypt or Decrypt data using the RC4 state. Note that the RC4 state is updated and therefore this
 // function cannot be used by two threads simultaneously using the same state object.
-// 
+//
 
 VOID
 SYMCRYPT_CALL
@@ -3313,10 +3345,10 @@ SymCryptRc4Selftest();
 // The ChaCha20 stream cipher is specified in RFC 7539 and referenced by RFC 7905
 // which specifies the ChaCha20-Poly1305 TLS cipher suite.
 //
-// ChaCha is a random-access stream cipher. It is possible to jump to any part of 
+// ChaCha is a random-access stream cipher. It is possible to jump to any part of
 // the key stream and start en/decrypting there.
 // We support this by allowing the caller to select the position in the key stream
-// to use. 
+// to use.
 //
 
 _Success_(return == SYMCRYPT_NO_ERROR)
@@ -3338,11 +3370,11 @@ SymCryptChaCha20Init(
 // The ChaCha documentation is formulated in terms of a 'counter' or 'initial counter'.
 // Callers can set offset = 64 * <counter> to achieve the same results.
 //
-// An error is returned only for invalid key or nonce sizes. 
-// 
+// An error is returned only for invalid key or nonce sizes.
+//
 // A single (key,nonce) pair defines a key stream of 256 GB.
 // Any part of that key stream can be used to encrypt a message, or part of a
-// message. 
+// message.
 // Note that it is critical that each key stream byte is used only once; thus
 // callers have to ensure that for any key, each nonce is used at most once for
 // a message, and messages cannot use any part of the 256 GB key stream more than
@@ -3356,19 +3388,19 @@ SymCryptChaCha20SetOffset(
                             UINT64                      offset );
 //
 // Specify the offset into the key stream where the next encrypt/decrypt operation
-// will start. 
+// will start.
 // Requirement: 0 <= offset < 2^38
 //
 
 VOID
 SYMCRYPT_CALL
-SymCryptChaCha20Crypt( 
+SymCryptChaCha20Crypt(
     _Inout_                 PSYMCRYPT_CHACHA20_STATE    pState,
     _In_reads_( cbData )    PCBYTE                      pbSrc,
     _Out_writes_( cbData )  PBYTE                       pbDst,
                             SIZE_T                      cbData );
 //
-// Encrypt or Decrypt data using the CHACHA20 state. 
+// Encrypt or Decrypt data using the CHACHA20 state.
 // The Src data is xorred with the key stream generated from the state, and the result stored
 // in the Dst buffer. The Src and Dst buffer can be identical or non-overlapping; partial overlaps
 // are not supported.
@@ -3377,7 +3409,7 @@ SymCryptChaCha20Crypt(
 // offset into the key stream. This function updates the offset of the state by adding cbData to
 // it so that the next call will use the next part of the key stream.
 // Any attempt to use the key stream at offset >= 2^38 will result in a fatal error.
-// 
+//
 
 VOID
 SYMCRYPT_CALL
@@ -3432,7 +3464,7 @@ SymCryptPbkdf2(
                             SIZE_T          cbResult);
 
 //
-// Because the self-test pulls in the associated MAC function, 
+// Because the self-test pulls in the associated MAC function,
 // we have several self-tests; each of which tests the PBKDF2 implementation
 // using the specified MAC function.
 // This allows a FIPS module to run the self-test with the MAC function it already
@@ -3507,12 +3539,12 @@ SymCryptSp800_108_HmacSha256SelfTest();
 // TLS Key Derivation PRFs
 //
 // PRFs used in the key derivation functions of the TLS protocol, versions
-// 1.0, 1.1, and 1.2. These are defined in RFC 2246, 4346, and 5246, 
-// respectively. 
+// 1.0, 1.1, and 1.2. These are defined in RFC 2246, 4346, and 5246,
+// respectively.
 // Note: The PRFs for versions 1.0 and 1.1 are identical.
 //
 
-// Maximum sizes (in bytes) for the label and the seed inputs. See the 
+// Maximum sizes (in bytes) for the label and the seed inputs. See the
 // above RFCs 2246, 4346, and 5246 for more details.
 #define SYMCRYPT_TLS_MAX_LABEL_SIZE 256
 #define SYMCRYPT_TLS_MAX_SEED_SIZE  256
@@ -3606,7 +3638,7 @@ SymCryptTlsPrf1_2SelfTest();
 // 1.3. It is defined in RFC 5869.
 //
 // The SymCrypt ExpandKey functions correspond to the "HKDF-Extract" function
-// of the RFC 5869, while the SymCrypt Derive function corresponds to the 
+// of the RFC 5869, while the SymCrypt Derive function corresponds to the
 // "HKDF-Expand" function of the RFC.
 //
 // SymCryptHkdfExpandKey takes as inputs the MAC algorithm, the IKM (input
@@ -3707,18 +3739,18 @@ SymCryptRngAesInstantiate(
 // This implementation always uses 256-bit security strength, and
 // does not support 'prediction resistance' as defined in SP 800-90.
 //
-// SP 800-90 specifies three inputs to the instantiation: 
-// - entropy 
-// - nonce 
+// SP 800-90 specifies three inputs to the instantiation:
+// - entropy
+// - nonce
 // - personalization string
 // This function takes only a single input, which is the concatenation of these three:
 //   seed material := entropy | nonce | personalization string
-// 
+//
 // The following are the requirements on the three inputs:
 //  Entropy: must have at least 256 bits of entropy
 //  Nonce: must either be a random value with 128-bits of entropy, or a value that does not
 //      repeat with a probability of more than 2^{-128}.
-// Together these requirements imply that cbSeedMaterial should be at least 
+// Together these requirements imply that cbSeedMaterial should be at least
 //  SYMCRYPT_RNG_AES_MIN_SEED_SIZE
 //
 // This function only returns an error if the cbSeedMaterial value is out of range.
@@ -3732,7 +3764,7 @@ SymCryptRngAesGenerate(
                             SIZE_T                  cbRandom );
 //
 // Generate random output from the state.
-// 
+//
 // Callers do not need to limit themselves to requests of 64 kB or less;
 // large requests are split internally to follow the request size limitations of SP 800-90.
 //
@@ -3743,7 +3775,7 @@ SymCryptRngAesGenerate(
 
 _Success_(return == SYMCRYPT_NO_ERROR)
 SYMCRYPT_ERROR
-SYMCRYPT_CALL 
+SYMCRYPT_CALL
 SymCryptRngAesReseed(
     _Inout_                     PSYMCRYPT_RNG_AES_STATE pRngState,
     _In_reads_(cbSeedMaterial)  PCBYTE                  pcbSeedMaterial,
@@ -3826,7 +3858,7 @@ SymCryptRngAesFips140_2Generate(
 
 _Success_(return == SYMCRYPT_NO_ERROR)
 SYMCRYPT_ERROR
-SYMCRYPT_CALL 
+SYMCRYPT_CALL
 SymCryptRngAesFips140_2Reseed(
     _Inout_                     PSYMCRYPT_RNG_AES_FIPS140_2_STATE   pRngState,
     _In_reads_(cbSeedMaterial)  PCBYTE                              pcbSeedMaterial,
@@ -3849,11 +3881,11 @@ SymCryptRngAesFips140_2Uninstantiate(
 // The seed for each consecutive 8 kB of data can be recoved in 2^128 work.
 // Therefore, we allow for multiple blocks of 8 kB to be gathered in an attempt to
 // extract 256-bit security from the hardware.
-// In general, to achieve N*128 bits of security, you should use a buffer of 
+// In general, to achieve N*128 bits of security, you should use a buffer of
 // (N+1)*SYMCRYPT_RDRAND_RESEED_SIZE bytes.
 //
 
-#if SYMCRYPT_CPU_X86 | SYMCRYPT_CPU_AMD64 
+#if SYMCRYPT_CPU_X86 | SYMCRYPT_CPU_AMD64
 
 // The RdRand instruction reseeds its internal DRBG every 8 kB (or faster)
 #define SYMCRYPT_RDRAND_RESEED_SIZE (1<<13)
@@ -3872,7 +3904,7 @@ SymCryptRdrandStatus();
 _Success_(return == SYMCRYPT_NO_ERROR)
 SYMCRYPT_ERROR
 SYMCRYPT_CALL
-SymCryptRdrandGetBytes( 
+SymCryptRdrandGetBytes(
     _Out_writes_( cbBuffer )                    PBYTE   pbBuffer,
                                                 SIZE_T  cbBuffer,
     _Out_writes_( SYMCRYPT_SHA512_RESULT_SIZE ) PBYTE   pbResult );
@@ -3883,11 +3915,11 @@ SymCryptRdrandGetBytes(
 // Fatal error if SymCryptRdrandStatus indicates that Rdrand is not available.
 // Returns an error if the RdRand instruction failed consistently.
 // See SymCryptRdrandGet for a version that does not return an error but fatals instead.
-// 
+//
 
 VOID
 SYMCRYPT_CALL
-SymCryptRdrandGet( 
+SymCryptRdrandGet(
     _Out_writes_( cbBuffer )                    PBYTE   pbBuffer,
                                                 SIZE_T  cbBuffer,
     _Out_writes_( SYMCRYPT_SHA512_RESULT_SIZE ) PBYTE   pbResult );
@@ -3896,7 +3928,7 @@ SymCryptRdrandGet(
 // pbBuffer points to a scratch buffer that is used internally, but wiped upon exit.
 // cbBuffer must be a multiple of 16.
 // Fatal error if the RdRand instruction fails.
-// 
+//
 
 #endif
 
@@ -3908,7 +3940,7 @@ SymCryptRdrandGet(
 // recent Intel CPUs.
 //
 
-#if SYMCRYPT_CPU_X86 | SYMCRYPT_CPU_AMD64 
+#if SYMCRYPT_CPU_X86 | SYMCRYPT_CPU_AMD64
 
 _Success_(return == SYMCRYPT_NO_ERROR)
 SYMCRYPT_ERROR
@@ -3924,7 +3956,7 @@ SymCryptRdseedStatus();
 _Success_(return == SYMCRYPT_NO_ERROR)
 SYMCRYPT_ERROR
 SYMCRYPT_CALL
-SymCryptRdseedGetBytes( 
+SymCryptRdseedGetBytes(
     _Out_writes_( cbResult )                    PBYTE   pbResult,
                                                 SIZE_T  cbResult );
 //
@@ -3937,7 +3969,7 @@ SymCryptRdseedGetBytes(
 
 VOID
 SYMCRYPT_CALL
-SymCryptRdseedGet( 
+SymCryptRdseedGet(
     _Out_writes_( cbResult )                    PBYTE   pbResult,
                                                 SIZE_T  cbResult );
 //
@@ -3956,7 +3988,7 @@ SymCryptRdseedGet(
 _Success_(return == SYMCRYPT_NO_ERROR)
 SYMCRYPT_ERROR
 SYMCRYPT_CALL
-SymCryptXtsAesExpandKey(   
+SymCryptXtsAesExpandKey(
     _Out_               PSYMCRYPT_XTS_AES_EXPANDED_KEY  pExpandedKey,
     _In_reads_(cbKey)   PCBYTE                          pbKey,
                         SIZE_T                          cbKey );
@@ -3970,7 +4002,7 @@ SymCryptXtsAesEncrypt(
     _In_reads_( cbData )    PCBYTE                          pbSrc,
     _Out_writes_( cbData )  PBYTE                           pbDst,
                             SIZE_T                          cbData );           // must be a multiple of cbDataUnit
-                            
+
 VOID
 SYMCRYPT_CALL
 SymCryptXtsAesDecrypt(
@@ -3990,19 +4022,19 @@ SymCryptXtsAesSelftest();
 //
 // TLS CBC cipher suites HMAC verification
 //
-// The TLS cipher suites for block cipher modes (typically CBC) are designed in an unfortunate way. 
+// The TLS cipher suites for block cipher modes (typically CBC) are designed in an unfortunate way.
 // The format is:
 //      Plaintext | MAC | <padding> | <padding_length>
 // Which is then encrypted by the block cipher.
 // Plaintext is the data being transferred. MAC is the HMAC value over some header data and the plaintext.
-// The padding_length is a byte (range 0-255) that specifies the length of the padding. 
+// The padding_length is a byte (range 0-255) that specifies the length of the padding.
 // The padding consists of padding_length bytes (up to 255) Each byte is equal to padding_length.
 // The padding_length is chosen so that length of the whole structure is a multiple of the block cipher block
 // size, so that it can be encrypted with CBC.
 //
 // The problem is that when decrypting this, the natural code will take actions that depend on the padding_length
 // byte before it has been authenticated, and those actions might reveal information about padding_byte. This
-// in turn can be used in an attack that lets the attacker decrypt data. 
+// in turn can be used in an attack that lets the attacker decrypt data.
 // We are particularly concerned with software side channels, where another thread infers information about what the
 // active thread is doing through cache state and other shared CPU state.
 //
@@ -4010,7 +4042,7 @@ SymCryptXtsAesSelftest();
 // properties:
 // - It verifies the HMAC in the data structure above.
 // - This is done in a side-channel safe manner, not revealing anything except whether the structure is valid or not.
-// This means that the HMAC computation over the plaintext is constant-time and constant-memory-access pattern 
+// This means that the HMAC computation over the plaintext is constant-time and constant-memory-access pattern
 // irrepective of the padding_length; thus this is a fixed-time implementation for variable-sized inputs.
 // Similarly, the MAC value has to be extracted from a variable location in the input using a fixed memory access
 // pattern.
@@ -4026,7 +4058,7 @@ SymCryptTlsCbcHmacVerify(
                         SIZE_T          cbData);
 // Verify a TLS CBC cipher suite MAC value
 //  - macAlgorithm: one of SymCryptHmacSha1Algorithm, SymCryptHmacSha256Algorithm, or SymCryptHmacSha384Algorithm.
-//      Other MAC algorithms are not supported. 
+//      Other MAC algorithms are not supported.
 //  - pState points to an SYMCRYPT_HMAC_SHAXXX_STATE. It is allowed to process data into the state before this call,
 //      but the total # bytes processed must be < 2^16.
 //  - pbData points to a buffer containing the concatenation of plaintext, MAC, padding, and padding_length.
@@ -4041,7 +4073,7 @@ SymCryptTlsCbcHmacVerify(
 
 
 
-/* 
+/*
 
 Yes, despite its name, SymCrypt supports asymmetric cryptographic algorithms.
 The asymmetric implementations have the following primary design goals:
@@ -4053,7 +4085,7 @@ The asymmetric implementations have the following primary design goals:
     - Support environments that need to control memory allocations.
 
 The primary use-case is for SymCrypt to be the crypto library for MS products. This includes high-performance
-scenarios such as TLS server termination, and low-footprint uses such as Bootmgr. 
+scenarios such as TLS server termination, and low-footprint uses such as Bootmgr.
 SymCrypt supports applications such as firmware updates for embedded CPUs where code and memory
 footprint are of overriding importance.
 
@@ -4071,8 +4103,8 @@ to attack cryptographic systems.
 
 SymCrypt uses the following API rules to protect against side-channel attacks:
 - Information is divided into two classes: public information and private information.
-- Public information is allowed to leak through side channels, and the library makes no attempt to hide 
-    public information. 
+- Public information is allowed to leak through side channels, and the library makes no attempt to hide
+    public information.
 - Private information is protected against side-channel attacks to the best ability of the library.
 Unless otherwise documented, all information is treated as private.
 Functions may document that a particular value is "published". This means that the function may use
@@ -4084,7 +4116,7 @@ The following information is always assumed to be public, and thus known to any 
 - The location of any of the buffers passed as arguments.
 - The size parameter of any buffer passed as an argument.
 - Any details that cause a function to return an error.
-Thus, it is important that callers who wish to be side-channel safe ensure that their buffer locations and sizes 
+Thus, it is important that callers who wish to be side-channel safe ensure that their buffer locations and sizes
 do not reveal any information, and that they do not make any calls that result in an error, unless there is no
 need for secrecy when an error occurs.
 
@@ -4109,18 +4141,18 @@ document the additional protections that SymCrypt provides.
 
 Running with CHKed code:
 All binaries that use SymCrypt must build CHKed versions of the binary (linking the CHKed version of SymCrypt)
-and perform full test runs on the CHKed version. 
-Due to the performance and operational requirements, the production-optimized SymCrypt library API cannot 
-check all buffer sizes or even be fully SAL-annotated. 
+and perform full test runs on the CHKed version.
+Due to the performance and operational requirements, the production-optimized SymCrypt library API cannot
+check all buffer sizes or even be fully SAL-annotated.
 The necessary size information is simply not available at every call point, and passing
 the size information around would add too much overhead.
 The CHKed version of the library adds additional code & per-object storage to be able to implement check that
-are broadly equivalent to what SAL would normally check. 
+are broadly equivalent to what SAL would normally check.
 SAL checks are part of the SDL requirements and need to be done on all Microsoft products.
 Though this requirement cannot strictly speaking be satisfied with the SymCrypt library, running the CHKed
 version through full validation is the best equivalent, and therefore should be considered mandatory.
 
-Please ensure that the validation runs exercise all the border-cases of largest and smallest sizes, as well as 
+Please ensure that the validation runs exercise all the border-cases of largest and smallest sizes, as well as
 intermediate sizes for the parameters.
 
 */
@@ -4135,7 +4167,7 @@ intermediate sizes for the parameters.
 // Use of callbacks is documented in each function that uses them.
 //
 
-PVOID 
+PVOID
 SYMCRYPT_CALL
 SymCryptCallbackAlloc( SIZE_T nBytes );
 //
@@ -4143,7 +4175,7 @@ SymCryptCallbackAlloc( SIZE_T nBytes );
 // Returned pointer must be aligned to a multiple of SYMCRYPT_ASYM_ALIGN_VALUE.
 //
 
-VOID 
+VOID
 SYMCRYPT_CALL
 SymCryptCallbackFree( VOID * pMem );
 //
@@ -4204,7 +4236,7 @@ typedef enum _SYMCRYPT_NUMBER_FORMAT {
     SYMCRYPT_NUMBER_FORMAT_MSB_FIRST = 2,
 } SYMCRYPT_NUMBER_FORMAT;
 //
-// SYMCRYPT_NUMBER_FORMAT is used to specify the number format for import and export 
+// SYMCRYPT_NUMBER_FORMAT is used to specify the number format for import and export
 // of BYTE arrays. We support the following two number formats:
 // Let p[0], ..., p[n-1] be an array containing n bytes:
 // LSB_FIRST:
@@ -4248,7 +4280,7 @@ typedef const SYMCRYPT_RSA_PARAMS * PCSYMCRYPT_RSA_PARAMS;
 // Definitions
 // ===========
 
-// A "proper public key" (PPK) on the curve E is defined to be an arbitrary nonzero point of the 
+// A "proper public key" (PPK) on the curve E is defined to be an arbitrary nonzero point of the
 // subgroup generated by the point G.
 
 // A "proper secret key" (PSK) is the logarithm of a "proper public key" with
@@ -4270,21 +4302,11 @@ typedef const SYMCRYPT_RSA_PARAMS * PCSYMCRYPT_RSA_PARAMS;
 // that all secret keys have the 3 lowest bits set to 0, which is equivalent to multiplying
 // by h=8.
 
-typedef enum _SYMCRYPT_ECURVE_TYPE {
-    SYMCRYPT_ECURVE_TYPE_NULL               = 0,
-    SYMCRYPT_ECURVE_TYPE_SHORT_WEIERSTRASS  = 1,
-    SYMCRYPT_ECURVE_TYPE_TWISTED_EDWARDS    = 2,
-    SYMCRYPT_ECURVE_TYPE_MONTGOMERY         = 3,
-} SYMCRYPT_ECURVE_TYPE;
-//
-// SYMCRYPT_ECURVE_TYPE is used to specify the type of the curve.
-//
-
 typedef enum _SYMCRYPT_ECURVE_GEN_ALG_ID {
     SYMCRYPT_ECURVE_GEN_ALG_ID_NULL = 0,
 } SYMCRYPT_ECURVE_GEN_ALG_ID;
 //
-// SYMCRYPT_ECURVE_GEN_ALG_ID is used to specify (if available) the algorithm that 
+// SYMCRYPT_ECURVE_GEN_ALG_ID is used to specify (if available) the algorithm that
 // generates the curve parameters from the provided seed.
 //
 
@@ -4317,7 +4339,7 @@ typedef const SYMCRYPT_ECURVE_PARAMS_V2_EXTENSION * PCSYMCRYPT_ECURVE_PARAMS_V2_
 //      The internal format of the secret keys might be one of them or something totally
 //      different; the internal format is not visible to the caller.
 //  -   Formats 3 and 4 have bigger storage requirements compared to 1 and 2, as
-//      the key can be up to |E|. 
+//      the key can be up to |E|.
 //  -   When h=1 all formats are identical. This is the case for NIST curves.
 //  -   The NUMS curves use the "DivH" secret key format in the test vectors and the
 //      multiplication algorithm implicitly multiplies by h.
@@ -4332,7 +4354,7 @@ typedef enum _SYMCRYPT_ECKEY_PRIVATE_FORMAT {
 // High bit restrictions
 // =====================
 // A high bit restriction is a requirement for some of the high bits of the secret keys
-// (usually the most significant bits of the curve). 
+// (usually the most significant bits of the curve).
 // Currently only curve 25519 imposes such a restriction: That the bits 255 and 254 of the
 // secret key in the "DivHTimesH" format are 0 and 1, respectively.
 //
@@ -4401,7 +4423,7 @@ typedef enum _SYMCRYPT_ECPOINT_FORMAT {
 //
 // Object management is the same for most object types. For an object type XXX we have
 // the following functions:
-// 
+//
 // PSYMCRYPT_XXX
 // SYMCRYPT_CALL
 // SymCryptXxxAllocate( <size parameters> )
@@ -4434,33 +4456,33 @@ typedef enum _SYMCRYPT_ECPOINT_FORMAT {
 //
 // PSYMCRYPT_XXX
 // SYMCRYPT_CALL
-// SymCryptXxxCreate( 
+// SymCryptXxxCreate(
 //      _Out_writes_bytes_( cbBuffer )  PBYTE   pbBuffer,
 //                                      SIZE_T  cbBuffer,
 //                                      <size parameters> );
 //  Create an XXX object from the provided (pbBuffer, cbBuffer) space.
 //  This function performs the necessary initializations of the object, but does not assing or set a value.
 //  The object will be able to store values up to size determined by the <size parameters>.
-//  Requirement: 
+//  Requirement:
 //      - pbBuffer is aligned to SYMCRYPT_ASYM_ALIGN_VALUE. Note that this can be a stricter requirement than
 //          SYMCRYPT_ALIGNED, and memory allocation functions might not return pointers that are suitably
 //          aligned. For some object types and some CPUs, the alignment requirements might be less strict.
 //          The main purpose of this relaxation is to always allow objects that are spaced
-//          SymCryptSizeofXxxFromYyy apart. The common usage is to create an array of objects. The array 
+//          SymCryptSizeofXxxFromYyy apart. The common usage is to create an array of objects. The array
 //          starts at a SYMCRYPT_ASYM_ALIGNed location, with each element SymCryptSizeofXxxFromYyy(..) bytes long.
 //      - cbBuffer >= SymCryptSizeofXxxFromYyy( <size parameters> )
 //      - (pbBuffer,cbBuffer) memory must be exclusively used by this object.
 //  The last requirement ensures that all objects are non-overlapping (except for API functions
-//  that explicitly create overlapping objects). 
+//  that explicitly create overlapping objects).
 //  All parameters are published.
-//  It is always safe to choose 
+//  It is always safe to choose
 //      cbBuffer = SymCryptSizeofXxxFromYyy( <size parameters> )
 //  The returned object pointer is simply a cast of the pbBuffer pointer.
 //  Callers that manage arrays of objects can reconstruct the PSYMCYRPT_XXX by casting the buffer pointer
 //  to the right type.
 //  An object that is created with this function should be wiped, even if it doesn't contain private data.
 //  The SymCryptXxxWipe() function also frees any associated data that the library may maintain.
-// 
+//
 // VOID
 // SYMCRYPT_CALL
 // SymCryptXxxWipe( _Out_ PSYMCRYPT_XXX  Dst )
@@ -4468,19 +4490,19 @@ typedef enum _SYMCRYPT_ECPOINT_FORMAT {
 //  Unless otherwise specified, the Dst object is left in an undefined state.
 //  An SymCryptXxxAllocate-d object does not have to be wiped before it is freed
 //  because the SymCryptXxxFree function will perform the wipe.
-//  However, SymCryptXxxCreate-d objects should always be wiped even if they don't contain 
+//  However, SymCryptXxxCreate-d objects should always be wiped even if they don't contain
 //  secret data, as the wipe also frees any associated data the library may maintain.
 //
 // VOID
 // SYMCRYPT_CALL
-// SymCryptXxxCopy( 
+// SymCryptXxxCopy(
 //      _In_ PCSYMCRYPT_XXX    pxSrc,
 //      _Out_PSYMCRYPT_XXX     pxDst );
 // Dst = Src.
 //  Requirement: The <size parameters> of both objects should the same.
 //  Src must be in a defined state, it is not valid to copy an undefined object.
 //  Src and Dst may be the same object (though that is a no-op).
-// 
+//
 
 //========================================================================
 // RSAKEY objects' API
@@ -4557,11 +4579,14 @@ PSYMCRYPT_DLGROUP
 SYMCRYPT_CALL
 SymCryptDlgroupAllocate( UINT32  nBitsOfP, UINT32  nBitsOfQ );
 //
-// This call allocates a DLGROUP object where the primes P and Q are
-// of size nBitsOfP and nBitsOfQ, respectively (L,N parameters in FIPS
-// 186-3 specs).
+// Allocate a Discrete Logarithm group object suitable for the given sizes.
 //
-// This call does not initialize the DL group. It should be followed
+// nBitsOfP: Maximum number of bits of the field prime P. Specifying a value larger
+//  than the actual size is allowed, but inefficient.
+// nBitsOfQ: Maximum number of bits of the group order Q. Specify the size of Q,
+//  or 0 if the size of Q is not (yet) known.
+//
+// This call does not initialize the DLGROUP. It should be followed
 // by a call to SymCryptDlgroupGenerate or SymCryptDlgroupSetValue.
 //
 // nBitsOfQ is allowed to be equal to 0 and signifies that the size of Q
@@ -4618,15 +4643,13 @@ SymCryptDlgroupCreate(
                                     UINT32              nBitsOfP,
                                     UINT32              nBitsOfQ );
 //
-// As always, this call does not initialize the DL group. It should be followed
+// Creates a DL group object, but does not initialize it. It must be followed
 // by a call to SymCryptDlgroupGenerate or SymCryptDlgroupSetValue.
 //
-// Requirements:
-//  - nBitsOfP >= nBitsOfQ
-//
-// Remarks:
-//  - The value in nBitsOfQ is allowed to be equal to 0
-//  (see SymCryptDlgroupAllocate).
+// - pbBuffer,cbBuffer: memory buffer to create the object out of. The required size
+//  can be computed with SymCryptSizeofDlgroupFromBitsizes().
+// - nBitsOfP: number of bits of the field prime P.
+// - nBitsOfQ: number of bits of the group order Q, or 0 if the size of Q is not (yet) known.
 //
 
 VOID
@@ -4678,10 +4701,10 @@ SymCryptDlkeyCopy(
     _Out_   PSYMCRYPT_DLKEY    pkDst );
 
 //========================================================================
-// ECURVE objects' API is slightly different than the above API schema because of the close 
-// relation to multiple parameters, the fact that they contain public information, 
-// and that they are persisted by the callers. 
-// Thus, the Allocate function takes in all the curve parameters and there are no Create, 
+// ECURVE objects' API is slightly different than the above API schema because of the close
+// relation to multiple parameters, the fact that they contain public information,
+// and that they are persisted by the callers.
+// Thus, the Allocate function takes in all the curve parameters and there are no Create,
 // Wipe, or Copy functions.
 //
 
@@ -4694,27 +4717,29 @@ SymCryptEcurveAllocate(
 // Allocate memory and create an ECURVE object which is defined
 // by the parameters in pParams.
 //
-// flags: enable different features/tradeoffs.
-//   Currently no tradeoffs are defined, but there are a number of interesting
-//   memory/speed/pre-computation cost trades that can be made.
-//   For example, pre-computing multiples of the distinguished point, or 
-//   (parallel?) pre-computation of (r, rG) pairs for random r values.
+// - pParams: parameters that define the curve
+// - flags: Not used, must be zero.
 //
-// Requirement:
-//  The pParams parameters define a suitable elliptic curve with consistent parameters.
-//  The parameters are trusted; there is no verification on the consistency of the parameter
-//  structure, or its security. 
-//  If hostile parameters are received, all functions are guaranteed to not throw an exception, but
-//  either return a result or an error. However, no security is provided when hostile parameters are used.
+// Future versions might use the flags to enable different features/tradeoffs.
+// There are a number of interesting memory/speed/pre-computation cost trades that can be made.
+// For example, pre-computing multiples of the distinguished point, or (parallel?) pre-computation 
+// of (r, rG) pairs for random r values.
 //
-// Returns NULL if out of memory.
+// This function applies limited validation of the pParams. The validation is intended to eliminate
+// the threat of denial-of-service when hostile parameters are presented. It does not ensure that
+// the parameters make sense, define a proper curve, or that any elliptic-curve operations made on
+// the curve built from these parameters will fail, succeed or provide any security. 
+// The only guarantee provided for invalid parameters is that all operations on this curve will
+// not crash and will return in some reasonable amount of time.
+//
+// Returns NULL if out of memory or the parameters are deemed invalid.
 // If the return value is not NULL, the object must later be freed with SymCryptEcurveFree().
 //
-    
+
 VOID
 SYMCRYPT_CALL
 SymCryptEcurveFree( _Out_ PSYMCRYPT_ECURVE pCurve );
-    
+
 //========================================================================
 // ECKEY objects' API is slightly different than the above API schema in the sense that they
 // take as input an ECURVE object pointer instead of the number of digits.
@@ -4734,9 +4759,9 @@ SymCryptSizeofEckeyFromCurve( _In_ PCSYMCRYPT_ECURVE pCurve );
 
 PSYMCRYPT_ECKEY
 SYMCRYPT_CALL
-SymCryptEckeyCreate( 
-    _Out_writes_bytes_( cbBuffer )  PBYTE               pbBuffer, 
-                                    SIZE_T              cbBuffer, 
+SymCryptEckeyCreate(
+    _Out_writes_bytes_( cbBuffer )  PBYTE               pbBuffer,
+                                    SIZE_T              cbBuffer,
                                     PCSYMCRYPT_ECURVE   pCurve );
 
 VOID
@@ -4826,7 +4851,7 @@ SymCryptRsakeyGenerate(
                                 UINT32              nPubExp,
     _In_                        UINT32              flags );
 //
-// Generate a new random RSA key using the information from the  
+// Generate a new random RSA key using the information from the
 // parameters passed to SymCryptRsaKeyAllocate/SymCryptRsaKeyCreate.
 // PubExp is the array of nPubExp public exponent values, specifying
 // the public exponents for the key.
@@ -4869,7 +4894,7 @@ SymCryptRsakeySetValue(
 //  - Currently, the only acceptable value of nPrimes is 2 or 0.
 // We allow separate sizes for each prime. This seems redundant because all primes
 // are approximately the same size. However, some storage/encoding formats, such as ASN.1,
-// strip leading zeroes, or add an additional leading zero depending on the situation. 
+// strip leading zeroes, or add an additional leading zero depending on the situation.
 // Allowing separate sizes avoids the need for the caller to make a copy of the data
 // into a possibly slightly larger buffer.
 //
@@ -4915,10 +4940,10 @@ SymCryptRsakeyGetCrtValue(
     _Out_       PBYTE *                     ppCrtExponents,
     _In_        SIZE_T *                    pcbCrtExponents,
                 UINT32                      nCrtExponents,
-     _Out_writes_bytes_(cbCrtCoefficient) 
+     _Out_writes_bytes_(cbCrtCoefficient)
                 PBYTE                       pbCrtCoefficient,
                 SIZE_T                      cbCrtCoefficient,
-     _Out_writes_bytes_(cbPrivateExponent) 
+     _Out_writes_bytes_(cbPrivateExponent)
                 PBYTE                       pbPrivateExponent,
                 SIZE_T                      cbPrivateExponent,
                 SYMCRYPT_NUMBER_FORMAT      numFormat,
@@ -4939,23 +4964,6 @@ SymCryptRsakeyGetCrtValue(
 //    pbCrtCoefficient, pbPrivateExponent can be NULL;
 
 
-//=====================================================
-// DL group operations
-
-typedef enum _SYMCRYPT_DLGROUP_FIPS {
-    SYMCRYPT_DLGROUP_FIPS_NONE  = 0,
-    SYMCRYPT_DLGROUP_FIPS_186_2 = 1,
-    SYMCRYPT_DLGROUP_FIPS_186_3 = 2,
-} SYMCRYPT_DLGROUP_FIPS;
-//
-// Dlgroup enums for the generation and verification of the group parameters.
-// These are used in:
-//  - SymCryptDlgroupGenerate function to specify the appropriate standard to
-//    be used.
-//  - SymCryptDlgroupSetValue function to verify that the input parameters were
-//    properly generated.
-//
-
 #define SYMCRYPT_DLGROUP_FIPS_LATEST    (SYMCRYPT_DLGROUP_FIPS_186_3)
 
 _Success_(return == SYMCRYPT_NO_ERROR)
@@ -4966,8 +4974,13 @@ SymCryptDlgroupGenerate(
     _In_    SYMCRYPT_DLGROUP_FIPS   fipsStandard,
     _Out_   PSYMCRYPT_DLGROUP       pDlgroup );
 //
-// This function generates all parameters P, Q, G according to the
-// standard specified by the fipsStandard argument.
+// Generate a Discrete Logarithm Group for use in Diffie-Hellman and DSA.
+//
+// - hashAlgorithm: Hash algorithm to be used for generating the group (if required by the algorithm)
+// - fipsStandard: Which FIPS standard algorithm to use for generating the group.
+// - pDlgroup: group object that will be initialized with a newly generated group.
+//
+// pDlGroup must have been created with SymCryptDlgroupAllocate() or SymCryptDlgroupCreate().
 //
 // If nBitsOfQ was equal to 0 when the DLGROUP was Allocate-d/Create-d
 // (and only in this case), then this function picks a default size
@@ -4977,17 +4990,20 @@ SymCryptDlgroupGenerate(
 //      - If 1024 < nBitsOfP <= 2048 then nBitsOfQ = 256
 //      - If 2048 < nBitsOfP         then nBitsOfQ = 256
 //
-// If fipsStandard is equal to SYMCRYPT_DLGROUP_FIPS_NONE, then the default
-// standard is picked, which is SYMCRYPT_DLGROUP_FIPS_LATEST.
+// If fipsStandard == SYMCRYPT_DLGROUP_FIPS_NONE then no FIPS compliance is requested.
+// The code defaults to SYMCRYPT_DLGROUP_FIPS_LATEST.
 //
+// The requirements below address the parameter values after the defaults have been substituted
+// for nBitsOfQ and fipsStandard.
+// 
 // Requirements:
 //  - pDlgroup!=NULL. Otherwise it returns SYMCRYPT_INVALID_ARGUMENT.
 //
 //  - If fipsStandard == SYMCRYPT_DLGROUP_FIPS_186_2, hashAlgorithm MUST be equal to
-//    NULL. Otherwise the function returns SYMCRYPT_INVALID_ARGUMENT.
+//    NULL, and nBitsOfQ <= 160 or nBitsOfQ = 0 && nBitsOfP <= 1024.
 //
-//  - If fipsStandard != SYMCRYPT_DLGROUP_FIPS_186_2, then hashAlgorithm MUST NOT be equal
-//    to NULL. Otherwise the function returns SYMCRYPT_INVALID_ARGUMENT.
+//  - If fipsStandard == SYMCRYPT_DLGROUP_FIPS_186_3, then hashAlgorithm MUST NOT be equal
+//    to NULL. 
 //
 //  - If nBitsOfHash is the number of bits of the output block of hashAlgorithm,
 //    it is required that:
@@ -5127,7 +5143,7 @@ UINT32
 SYMCRYPT_CALL
 SymCryptDlkeySizeofPublicKey( _In_ PCSYMCRYPT_DLKEY pkDlkey );
 //
-// Returns the size in bytes of a blob big enough to retrieve the public key. 
+// Returns the size in bytes of a blob big enough to retrieve the public key.
 //
 
 UINT32
@@ -5246,7 +5262,7 @@ UINT32
 SYMCRYPT_CALL
 SymCryptEcurveBitsizeofGroupOrder( _In_ PCSYMCRYPT_ECURVE pCurve );
 //
-// This function returns the number of bits of the order of the subgroup generated by 
+// This function returns the number of bits of the order of the subgroup generated by
 // the distinguished point of the curve.
 //
 
@@ -5256,7 +5272,7 @@ SymCryptEcurveSizeofFieldElement( _In_    PCSYMCRYPT_ECURVE   pCurve );
 //
 // This function returns the number of bytes of a field element. It is used to
 // construct buffers for setting and getting the value of elliptic curve points (most
-// notably the public key of an ECKEY object). 
+// notably the public key of an ECKEY object).
 //
 // The result is equal to the cbFieldLength field of the parameters that created the curve.
 //
@@ -5268,7 +5284,7 @@ SymCryptEcurveSizeofScalarMultiplier( _In_    PCSYMCRYPT_ECURVE   pCurve );
 // This function returns the number of bytes of a scalar integer that is big enough to
 // store a private key (or a multiplier of an elliptic curve point). It is used to
 // construct buffers for setting and getting the value of a scalar multiplier (most
-// notably the private key of an ECKEY object - see SymCryptEckeySetValue and 
+// notably the private key of an ECKEY object - see SymCryptEckeySetValue and
 // SymCryptEckeyGetValue).
 //
 // The result is equal to sizeof( subgroupOrder * co-factor ).
@@ -5320,7 +5336,7 @@ SymCryptEckeySizeofPublicKey(
     _In_ SYMCRYPT_ECPOINT_FORMAT    ecPointFormat );
 //
 // Returns the size in bytes of a blob big enough to retrieve the public key in
-// the specified ECPOINT format. 
+// the specified ECPOINT format.
 //
 
 UINT32
@@ -5353,12 +5369,12 @@ SymCryptEckeySetValue(
     _Out_                               PSYMCRYPT_ECKEY         pEckey );
 //
 // Import key material to an ECKEY object.
-// 
+//
 // Requirements:
 //      (pbPrivateKey, cbPrivateKey): a buffer that contains the private key, encoded
 //      in the format specified by the numFormat parameter.
 //      Note that the integer encoded in (pbPrivateKey, cbPrivateKey) is taken modulo the order of the
-//      subgroup generated by the curve generator. Callers that want a uniform private key value 
+//      subgroup generated by the curve generator. Callers that want a uniform private key value
 //      should ensure that the input is uniform in the range [0..t-1] where t is the order of the generator.
 //
 //      Requirements: cbPrivateKey == SymCryptEckeySizeofPrivateKey( pEckey )
@@ -5382,7 +5398,7 @@ SymCryptEckeySetValue(
 //      The algorithm always set the corresponding public key
 //
 // Allowed flags:
-//      - SYMCRYPT_FLAG_ECC_NO_VALIDATION: If set then we don't check that the public key matches the 
+//      - SYMCRYPT_FLAG_ECC_NO_VALIDATION: If set then we don't check that the public key matches the
 //        private key.
 //
 
@@ -5414,7 +5430,7 @@ SymCryptEckeyGetValue(
     _Out_writes_bytes_( cbPrivateKey )
             PBYTE                   pbPrivateKey,
             SIZE_T                  cbPrivateKey,
-    _Out_writes_bytes_( cbPublicKey ) 
+    _Out_writes_bytes_( cbPublicKey )
             PBYTE                   pbPublicKey,
             SIZE_T                  cbPublicKey,
             SYMCRYPT_NUMBER_FORMAT  numFormat,
@@ -5424,7 +5440,7 @@ SymCryptEckeyGetValue(
 // Retrieve the public or the private key (or both) from an ECKEY. The buffers should be
 // allocated by the caller.
 //
-// If (pbPrivateKey != NULL), then the function will return the private key in pbPrivateKey 
+// If (pbPrivateKey != NULL), then the function will return the private key in pbPrivateKey
 // in the format specified by the numFormat parameter **as long as** the following two
 // requirements are satisfied:
 //      1. cbPrivateKey >= SymCryptEckeyGetSizeofPrivateKey( pEckey )
@@ -5432,9 +5448,9 @@ SymCryptEckeyGetValue(
 // If (pbPrivateKey == NULL) and (cbPrivateKey != 0), then it returns SYMCRYPT_INVALID_ARGUMENT.
 // If (pbPrivateKey == NULL) and (cbPrivateKey == 0), then these parameters are ignored
 // and no private key is returned.
-// 
-// If (pbPublicKey != NULL), then the function will return the public key in pbPublicKey 
-// in the format specified by the numFormat and the ecPointFormat parameters 
+//
+// If (pbPublicKey != NULL), then the function will return the public key in pbPublicKey
+// in the format specified by the numFormat and the ecPointFormat parameters
 // **as long as** the following requirement is satisfied:
 //      1. cbPublicKey >= SymCryptEckeyGetSizeofPublicKey( pEckey, ecPointFormat )
 // If (pbPublicKey == NULL) and (cbPublicKey != 0), then it returns SYMCRYPT_INVALID_ARGUMENT.
@@ -5449,7 +5465,7 @@ SymCryptEckeyGetValue(
  * Crypto algorithm API *
  ************************/
 
-// 
+//
 // The Crypto algorithm API implements various cryptographic algorithms that use large-integer arithmetic.
 //
 
@@ -5551,12 +5567,19 @@ SymCryptRsaPkcs1Decrypt(
                                 SIZE_T                      cbDst,
     _Out_                       SIZE_T                      *pcbDst );
 //
-// This function decrypts the buffer pbSrc with the pkRsakey key using RSA PKSC1 v1.5.
-// The output is stored in the pbDst buffer and the number of bytes written in *pcbDst.
+// Perform an RSA-PKCS1 decryption.
+//  - pbSrc/cbSrc: source buffer
+//  - nfSrc: format of source buffer
+//  - flags: must be 0
+//  - pbDst/cbDst: destination buffer
+//  - pcbDst: receives the size of the decrypted data.
 //
-// If pbDst == NULL then only the *pcbDst is output.
-//
-// nfSrc is the number format of the ciphertext (i.e. the pbSrc buffer).
+// If the data in improperly formatted, an error is returned.
+// If pbDst == NULL, then *pcbDst is set to the decrypted data length, and the functions succeeds.
+//      This is not recommended as retrieving the actual data requires a second RSA decryption, 
+//      which is expensive. We recommend that callers provide a large enough buffer the first time.
+// If pbDst != NULL and cbDst is too small, then *pcbDst is set to the required size of pbDst
+//      and SYMCRYPT_BUFFER_TOO_SMALL is returned.
 //
 // Allowed flags:
 //      None
@@ -5636,10 +5659,10 @@ typedef const SYMCRYPT_OID *PCSYMCRYPT_OID;
 //
 // OID lists for the most commonly used hash functions
 // These are designed to be used with the RSA PKCS1 functions below
-// When generating a signature we use the first OID in the list, but when 
+// When generating a signature we use the first OID in the list, but when
 // verifying a signature we allow any of the OIDs in the provided list.
 // This ensures compatibility with other implementations.
-// 
+//
 
 #define SYMCRYPT_MD5_OID_COUNT         (2)
 extern const SYMCRYPT_OID SymCryptMd5OidList[SYMCRYPT_MD5_OID_COUNT];
@@ -5675,7 +5698,7 @@ SymCryptRsaPkcs1Sign(
                                         SIZE_T                      cbSignature,
     _Out_                               SIZE_T                      *pcbSignature );
 //
-// This function signs a message (its hash value is stored in pbHashValue) with 
+// This function signs a message (its hash value is stored in pbHashValue) with
 // the pkRsakey key using RSA PKCS1 v1.5. The signature is stored in the pbSignature
 // buffer and the number of bytes written in *pcbSignature.
 //
@@ -5738,18 +5761,23 @@ SymCryptRsaPssSign(
                                         SIZE_T                      cbSignature,
     _Out_                               SIZE_T                      *pcbSignature );
 //
-// This function signs a message (its hash value is stored in pbHashValue) with 
-// the pkRsakey key using RSA PSS. The signature is stored in the pbSignature
-// buffer and the number of bytes written in *pcbSignature.
+// Sign a message using RSA-PSS
+// - pkRsaKey: Key to sign with; must contain a private key
+// - pbHashValue/cbHashValue: Value to sign
+// - hashAlgorithm: Hash algorithm to use in the MGF of PSS
+// - cbSalt: # bytes of salt to use (typically equal to size of hash value)
+// - flags: must be 0
+// - nfSignature: Number format of signature. Typically SYMCRYPT_NUMBER_FORMAT_MSB_FIRST
+// - pbSignature/cbSignature: buffer that receives the signature.
+//              If pbSignature == NULL< only *pcbSignature is returned.
+//              Note: pbSignature receives an integer, so if the buffer is larger than the modulus size
+//              it will be padded with zeroes. For MSB-first format the zeroes are at the start of the buffer.
+//              Typically this buffer is the same size as the RSA modulus.
+// - pcbSignature: receives the size of the signature.
 //
-// If pbSignature == NULL then only the *pcbSignature is output.
-//
-// nfSignature is the number format of the signature (i.e. the pbSignature buffer). Currently
-// only SYMCRYPT_NUMBER_FORMAT_MSB_FIRST is supported.
-//
-// Requirement:
-//  - cbHashValue <= SymCryptRsakeySizeofModulus( pkRsakey ). Otherwise the function
-//    returns SYMCRYPT_INVALID_ARGUMENT.
+// Return value:
+//  If cbHashValue + cbSalt is too large (abover modulus size minus 2 or 3 depending on details) then
+//  signature generation fails.
 //
 // Allowed flags:
 //      None
@@ -5929,7 +5957,7 @@ SymCryptEcDsaVerify(
 //
 // It returns SYMCRYPT_NO_ERROR if the verification suceeded or SYMCRYPT_SIGNATURE_VERIFICATION_FAILURE
 // if it failed.
-// 
+//
 // Allowed flags:
 //      SYMCRYPT_FLAG_ECDSA_NO_TRUNCATION: If set then the hash value will
 //      not be truncated.
@@ -5947,7 +5975,7 @@ SymCryptEcDhSecretAgreement(
             UINT32                  flags,
     _Out_   PBYTE                   pbAgreedSecret,
             SIZE_T                  cbAgreedSecret );
-            
+
 //
 // Calculates the agreed secret of a DH key exchange and stores it
 // in the pbAgreedSecret buffer under the specified number format.
@@ -5956,14 +5984,34 @@ SymCryptEcDhSecretAgreement(
 //      - None
 //
 
-////////////////////////////////////////////////////////////////////////////////////////////
 //
-// Some functions in this library are implemented as inline functions.
-// Those implementations are included in the symcrypt_inline.h file
-// Callers of this library should not depend on the exact implementation method
-// of these functions as that can change at any time.
+// SymCryptFatal
 //
-#include "symcrypt_inline.h"
+// Call the Fatal routine passed to the library upon initialization
+//
+_Analysis_noreturn_
+VOID
+SYMCRYPT_CALL
+SymCryptFatal(UINT32 fatalCode);
+
+//
+// We use an ASSERT macro to catch problems in CHKed builds
+// HARD_ASSERT checks also in FRE builds.
+//
+
+#define SYMCRYPT_HARD_ASSERT( _x ) \
+    {\
+        if( !(_x) ){ SymCryptFatal( 'asrt' ); }\
+    }\
+    _Analysis_assume_( _x )
+
+#if SYMCRYPT_DEBUG
+#define SYMCRYPT_ASSERT( _x ) SYMCRYPT_HARD_ASSERT( _x )
+#else
+#define SYMCRYPT_ASSERT( _x ) \
+    _Analysis_assume_( _x )
+#endif
+
 
 #ifdef __cplusplus
 }

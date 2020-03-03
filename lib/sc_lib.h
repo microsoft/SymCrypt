@@ -5,24 +5,48 @@
 //
 
 
-//#define SYMCRYPT_DISABLE_CFG    
-#define SYMCRYPT_DISABLE_CFG    DECLSPEC_GUARDNOCF
+//#define SYMCRYPT_DISABLE_CFG
+#if SYMCRYPT_MS_VC
+#define SYMCRYPT_DISABLE_CFG    __declspec(guard(nocf))
+#else
+#define SYMCRYPT_DISABLE_CFG
+#endif
 
 #include "sc_lib-testhooks.h"
 
 #include <symcrypt_low_level.h>
 
+// Types
+
+typedef int                 BOOL;
+
+#if !defined(TRUE)
+#define TRUE  (1)
+#endif
+
+#if !defined(FALSE)
+#define FALSE (0)
+#endif
+
+#if !defined(UNREFERENCED_PARAMETER)
+#define UNREFERENCED_PARAMETER(x)   ((void)x)
+#endif
+
+#if !defined(FAST_FAIL_CRYPTO_LIBRARY)
+#define FAST_FAIL_CRYPTO_LIBRARY    22
+#endif
+
 //
 // Our Wipe code uses FORCE_WRITE* which are implemented using
 // WriteNoFence* functions. Unfortunately, they declare their parameter
 // to be interlocked, and the compiler complains when we also access the variable
-// using non-interlocked code. 
+// using non-interlocked code.
 // This warning is nonsensical in our situation, so we disable it.
 // The second warning is about accessing a local variable via an interlocked ptr.
-// 
+//
 #pragma prefast( disable:28112 )
 #pragma prefast( disable:28113 )
-#pragma warning( disable: 4702 )        // unreachable code. The compilers are not equally smart, and some complain 
+#pragma warning( disable: 4702 )        // unreachable code. The compilers are not equally smart, and some complain
                                         // about 'function must return a value' and some about 'unreachable code'
 
 
@@ -98,7 +122,7 @@
 // allows us to save only the XMM registers and not touch the X87/MMX registers which should
 // save time.
 //
-#if SYMCRYPT_CPU_X86 
+#if SYMCRYPT_CPU_X86
 
 //
 // The XSTATE_SAVE structure consists of a union between
@@ -143,8 +167,8 @@
 
 #endif
 
-typedef 
-SYMCRYPT_ALIGN 
+typedef
+SYMCRYPT_ALIGN
 struct _SYMCRYPT_EXTENDED_SAVE_DATA {
     SYMCRYPT_ALIGN  BYTE    data[SYMCRYPT_XSTATE_SAVE_SIZE];
                     SYMCRYPT_MAGIC_FIELD
@@ -162,7 +186,7 @@ struct _SYMCRYPT_EXTENDED_SAVE_DATA {
 //
 // Functions to save/restore the XMM or YMM registers.
 // If the Save*mm function is called and succeeds, then the corresponding
-// Restore*mm function MUST be called later on the same thread. 
+// Restore*mm function MUST be called later on the same thread.
 // The extended registers cannot be called if the Save function returns an error.
 //
 
@@ -236,7 +260,7 @@ SymCryptCheckLibraryInitialized()
     #define ROR32( x, n ) _rotr( (x), (n) )
     #define ROL64( x, n ) _rotl64( (x), (n) )
     #define ROR64( x, n ) _rotr64( (x), (n) )
-#elif SYMCRYPT_APPLE_CC
+#elif SYMCRYPT_APPLE_CC || SYMCRYPT_GNUC
     #define ROL32( x, n ) ((UINT32)( ( ((x) << (n)) | ((x) >> (32-(n))) ) ))
     #define ROR32( x, n ) ((UINT32)( ( ((x) >> (n)) | ((x) << (32-(n))) ) ))
     #define ROL64( x, n ) ((UINT64)( ( ((x) << (n)) | ((x) >> (64-(n))) ) ))
@@ -253,7 +277,7 @@ enum{
     STATE_DATA_START,
     STATE_DATA_END,
     STATE_RESULT2,          // 2nd phase of result computation (1st phase is at STATE_NEXT when the result operation is found)
-    STATE_RESULT_DONE,      // 3rd phase of result computation 
+    STATE_RESULT_DONE,      // 3rd phase of result computation
 };
 
 
@@ -265,7 +289,7 @@ enum{
 //
 // These are a bunch of functions to convert between an array of
 // 32 or 64-bit integers to an array of bytes in LSBfirst or MSBfirst convention.
-// Not all variations have been implemented yet. We add them as they are 
+// Not all variations have been implemented yet. We add them as they are
 // needed.
 //
 
@@ -342,7 +366,7 @@ SymCryptMsbFirstToUint32( _In_reads_(4*cuResult) PCBYTE  pbData,
 
 //
 // SymCryptUint32ToLsbFirst & SymCryptLsbFirstToUint32
-// These are used by the MD4 and MD5 hash functions 
+// These are used by the MD4 and MD5 hash functions
 //
 #if SYMCRYPT_CPU_X86 | SYMCRYPT_CPU_AMD64 | SYMCRYPT_CPU_ARM | SYMCRYPT_CPU_ARM64
 
@@ -355,7 +379,7 @@ SYMCRYPT_CALL
 SymCryptUint32ToLsbFirst( _In_reads_(cuData)     PCUINT32 puData,
                           _Out_writes_(4*cuData) PBYTE    pbResult,
                                                  SIZE_T   cuData )
-                         
+
 {
     memcpy( pbResult, puData, 4*cuData );
 }
@@ -397,7 +421,7 @@ SymCryptLsbFirstToUint32( _In_reads_(4*cuResult) PCBYTE  pbData,
 {
     while( cuResult != 0 )
     {
-        *puResult = SYMCRYPT_LOAD_MSBFIRST32( pbData );
+        *puResult = SYMCRYPT_LOAD_LSBFIRST32( pbData );
         pbData += 4;
         puResult++;
         cuResult--;
@@ -457,7 +481,7 @@ SymCryptMsbFirstToUint64( _In_reads_(8*cuResult) PCBYTE      pbData,
 //
 VOID
 SYMCRYPT_CALL
-SymCryptSha1AppendBlocks( 
+SymCryptSha1AppendBlocks(
     _Inout_                 SYMCRYPT_SHA1_CHAINING_STATE  * pChain,
     _In_reads_( cbData )    PCBYTE                          pbData,
                             SIZE_T                          cbData,
@@ -499,7 +523,7 @@ SymCryptSha512AppendBlocks(
 
 VOID
 SYMCRYPT_CALL
-SymCryptSha512AppendBlocks_xmm( 
+SymCryptSha512AppendBlocks_xmm(
     _Inout_                 SYMCRYPT_SHA512_CHAINING_STATE  *   pChain,
     _In_reads_(cbData)      PCBYTE                              pbData,
                             SIZE_T                              cbData,
@@ -547,7 +571,7 @@ SymCryptMd4AppendBlocks(
 VOID
 SYMCRYPT_CALL
 SymCryptMd2AppendBlocks(
-    _Inout_                 SYMCRYPT_MD2_CHAINING_STATE   * pChain, 
+    _Inout_                 SYMCRYPT_MD2_CHAINING_STATE   * pChain,
     _In_reads_( cbData )    PCBYTE                          pbData,
                             SIZE_T                          cbData,
     _Out_                   SIZE_T                        * pcbRemaining );
@@ -614,7 +638,7 @@ SymCryptLsbFirstToUint32( _In_reads_(4*cuResult) PCBYTE  pbData,
 //
 // SymCryptUint64ToMsbFirst
 //
-// Convert an array of UINT64s to an array of bytes using the MSB first 
+// Convert an array of UINT64s to an array of bytes using the MSB first
 // (big-endian) conversion.
 //
 VOID
@@ -647,11 +671,11 @@ SymCryptMsbFirstToUint64( _In_reads_(8*cuResult) PCBYTE      pbData,
 #define REPEAT_BYTE_TO_UINT64( x ) ( ((UINT64)REPEAT_BYTE_TO_UINT32(x) << 32) | REPEAT_BYTE_TO_UINT32(x) )
 
 //
-// The XorByteIntoBuffer function is a platform-optimized function to xor a byte 
+// The XorByteIntoBuffer function is a platform-optimized function to xor a byte
 // repeatedly into a buffer.
 // Note that the buffer length must be a multiple of 8.
 //
-#if SYMCRYPT_CPU_X86 | SYMCRYPT_CPU_AMD64 | SYMCRYPT_CPU_ARM | SYMCRYPT_CPU_ARM64 
+#if SYMCRYPT_CPU_X86 | SYMCRYPT_CPU_AMD64 | SYMCRYPT_CPU_ARM | SYMCRYPT_CPU_ARM64
 FORCEINLINE
 VOID
 SYMCRYPT_CALL
@@ -692,13 +716,13 @@ SymCryptGHashExpandKey(
 
 VOID
 SYMCRYPT_CALL
-SymCryptGHashExpandKeyC( 
+SymCryptGHashExpandKeyC(
     _Out_writes_( SYMCRYPT_GF128_FIELD_SIZE )   PSYMCRYPT_GF128_ELEMENT expandedKey,
     _In_reads_( SYMCRYPT_GF128_BLOCK_SIZE )     PCBYTE                  pH );
 
 VOID
 SYMCRYPT_CALL
-SymCryptGHashExpandKeyX86( 
+SymCryptGHashExpandKeyX86(
     _Out_                                   PSYMCRYPT_GHASH_EXPANDED_KEY    expandedKey,
    _In_reads_( SYMCRYPT_GF128_BLOCK_SIZE )  PCBYTE                          pH );
 
@@ -759,7 +783,7 @@ SymCryptGHashAppendDataPclmulqdq(
 
 VOID
 SYMCRYPT_CALL
-SymCryptGHashResult( 
+SymCryptGHashResult(
     _In_                                        PCSYMCRYPT_GF128_ELEMENT    pState,
     _Out_writes_( SYMCRYPT_GF128_BLOCK_SIZE )   PBYTE                       pbResult );
 
@@ -783,7 +807,7 @@ extern const BYTE SymCryptTestMsg16[16];
 extern const BYTE SymCryptTestKey32[32];
 
 VOID
-SYMCRYPT_CALL   
+SYMCRYPT_CALL
 SymCryptInjectError( PBYTE pbData, SIZE_T cbData );
 
 
@@ -932,135 +956,127 @@ extern const SYMCRYPT_BLOCKCIPHER SymCryptAesBlockCipherNoOpt;
 
 VOID
 SYMCRYPT_CALL
-SymCryptAes4Sbox(  
-    _In_reads_(4)   PCBYTE  pIn, 
+SymCryptAes4Sbox(
+    _In_reads_(4)   PCBYTE  pIn,
     _Out_writes_(4) PBYTE   pOut,
                     BOOL    UseSimd );
 
 VOID
 SYMCRYPT_CALL
-SymCryptAes4SboxC(  
-    _In_reads_(4)   PCBYTE  pIn, 
+SymCryptAes4SboxC(
+    _In_reads_(4)   PCBYTE  pIn,
     _Out_writes_(4) PBYTE   pOut );
 
 VOID
 SYMCRYPT_CALL
-SymCryptAes4SboxXmm(  
-    _In_reads_(4)   PCBYTE  pIn, 
+SymCryptAes4SboxXmm(
+    _In_reads_(4)   PCBYTE  pIn,
     _Out_writes_(4) PBYTE   pOut );
 
 VOID
 SYMCRYPT_CALL
-SymCryptAes4SboxNeon(  
-    _In_reads_(4)   PCBYTE  pIn, 
+SymCryptAes4SboxNeon(
+    _In_reads_(4)   PCBYTE  pIn,
     _Out_writes_(4) PBYTE   pOut );
 
 VOID
 SYMCRYPT_CALL
-SymCryptAesCreateDecryptionRoundKey( 
-    _In_reads_(16)      PCBYTE  pEncryptionRoundKey, 
+SymCryptAesCreateDecryptionRoundKey(
+    _In_reads_(16)      PCBYTE  pEncryptionRoundKey,
     _Out_writes_(16)    PBYTE   pDecryptionRoundKey,
                         BOOL    UseSimd );
 
 VOID
 SYMCRYPT_CALL
-SymCryptAesCreateDecryptionRoundKeyC( 
-    _In_reads_(16)     PCBYTE  pEncryptionRoundKey, 
+SymCryptAesCreateDecryptionRoundKeyC(
+    _In_reads_(16)     PCBYTE  pEncryptionRoundKey,
     _Out_writes_(16)    PBYTE   pDecryptionRoundKey );
 
 VOID
 SYMCRYPT_CALL
-SymCryptAesCreateDecryptionRoundKeyXmm( 
-    _In_reads_(16)     PCBYTE  pEncryptionRoundKey, 
+SymCryptAesCreateDecryptionRoundKeyXmm(
+    _In_reads_(16)     PCBYTE  pEncryptionRoundKey,
     _Out_writes_(16)    PBYTE   pDecryptionRoundKey );
 
 VOID
 SYMCRYPT_CALL
-SymCryptAesCreateDecryptionRoundKeyNeon( 
-    _In_reads_(16)     PCBYTE  pEncryptionRoundKey, 
+SymCryptAesCreateDecryptionRoundKeyNeon(
+    _In_reads_(16)     PCBYTE  pEncryptionRoundKey,
     _Out_writes_(16)    PBYTE   pDecryptionRoundKey );
 
 VOID
 SYMCRYPT_CALL
-SymCryptAesEncryptC( 
+SymCryptAesEncryptC(
     _In_                                    PCSYMCRYPT_AES_EXPANDED_KEY pExpandedKey,
     _In_reads_( SYMCRYPT_AES_BLOCK_SIZE )   PCBYTE                      pbSrc,
     _Out_writes_( SYMCRYPT_AES_BLOCK_SIZE ) PBYTE                       pbDst );
 
 VOID
 SYMCRYPT_CALL
-SymCryptAesEncryptAsm( 
+SymCryptAesEncryptAsm(
     _In_                                    PCSYMCRYPT_AES_EXPANDED_KEY pExpandedKey,
     _In_reads_( SYMCRYPT_AES_BLOCK_SIZE )   PCBYTE                      pbSrc,
     _Out_writes_( SYMCRYPT_AES_BLOCK_SIZE ) PBYTE                       pbDst );
 
 VOID
 SYMCRYPT_CALL
-SymCryptAesEncryptXmm( 
+SymCryptAesEncryptXmm(
     _In_                                    PCSYMCRYPT_AES_EXPANDED_KEY pExpandedKey,
     _In_reads_( SYMCRYPT_AES_BLOCK_SIZE )   PCBYTE                      pbSrc,
     _Out_writes_( SYMCRYPT_AES_BLOCK_SIZE ) PBYTE                       pbDst );
 
 VOID
 SYMCRYPT_CALL
-SymCryptAesEncryptNeon( 
+SymCryptAesEncryptNeon(
     _In_                                    PCSYMCRYPT_AES_EXPANDED_KEY pExpandedKey,
     _In_reads_( SYMCRYPT_AES_BLOCK_SIZE )   PCBYTE                      pbSrc,
     _Out_writes_( SYMCRYPT_AES_BLOCK_SIZE ) PBYTE                       pbDst );
 
 VOID
 SYMCRYPT_CALL
-SymCryptAesDecryptC( 
+SymCryptAesDecryptC(
     _In_                                    PCSYMCRYPT_AES_EXPANDED_KEY pExpandedKey,
     _In_reads_( SYMCRYPT_AES_BLOCK_SIZE )   PCBYTE                      pbSrc,
     _Out_writes_( SYMCRYPT_AES_BLOCK_SIZE ) PBYTE                       pbDst );
 
 VOID
 SYMCRYPT_CALL
-SymCryptAesDecryptAsm( 
+SymCryptAesDecryptAsm(
     _In_                                    PCSYMCRYPT_AES_EXPANDED_KEY pExpandedKey,
     _In_reads_( SYMCRYPT_AES_BLOCK_SIZE )   PCBYTE                      pbSrc,
     _Out_writes_( SYMCRYPT_AES_BLOCK_SIZE ) PBYTE                       pbDst );
 
 VOID
 SYMCRYPT_CALL
-SymCryptAesDecryptXmm( 
+SymCryptAesDecryptXmm(
     _In_                                    PCSYMCRYPT_AES_EXPANDED_KEY pExpandedKey,
     _In_reads_( SYMCRYPT_AES_BLOCK_SIZE )   PCBYTE                      pbSrc,
     _Out_writes_( SYMCRYPT_AES_BLOCK_SIZE ) PBYTE                       pbDst );
 
 VOID
 SYMCRYPT_CALL
-SymCryptAesDecryptNeon( 
+SymCryptAesDecryptNeon(
     _In_                                    PCSYMCRYPT_AES_EXPANDED_KEY pExpandedKey,
     _In_reads_( SYMCRYPT_AES_BLOCK_SIZE )   PCBYTE                      pbSrc,
     _Out_writes_( SYMCRYPT_AES_BLOCK_SIZE ) PBYTE                       pbDst );
 
 VOID
 SYMCRYPT_CALL
-SymCryptAesEcbEncryptC( 
+SymCryptAesEcbEncryptC(
     _In_                                        PCSYMCRYPT_AES_EXPANDED_KEY pExpandedKey,
     _In_reads_( cbData )                        PCBYTE                      pbSrc,
     _Out_writes_( cbData )                      PBYTE                       pbDst,
                                                 SIZE_T                      cbData );
 VOID
 SYMCRYPT_CALL
-SymCryptAesEcbEncryptAsm( 
+SymCryptAesEcbEncryptAsm(
     _In_                                        PCSYMCRYPT_AES_EXPANDED_KEY pExpandedKey,
     _In_reads_( cbData )                        PCBYTE                      pbSrc,
     _Out_writes_( cbData )                      PBYTE                       pbDst,
                                                 SIZE_T                      cbData );
 VOID
 SYMCRYPT_CALL
-SymCryptAesEcbEncryptXmm( 
-    _In_                                        PCSYMCRYPT_AES_EXPANDED_KEY pExpandedKey,
-    _In_reads_( cbData )                        PCBYTE                      pbSrc,
-    _Out_writes_( cbData )                      PBYTE                       pbDst,
-                                                SIZE_T                      cbData );
-
-VOID
-SYMCRYPT_CALL
-SymCryptAesEcbEncryptNeon( 
+SymCryptAesEcbEncryptXmm(
     _In_                                        PCSYMCRYPT_AES_EXPANDED_KEY pExpandedKey,
     _In_reads_( cbData )                        PCBYTE                      pbSrc,
     _Out_writes_( cbData )                      PBYTE                       pbDst,
@@ -1068,14 +1084,7 @@ SymCryptAesEcbEncryptNeon(
 
 VOID
 SYMCRYPT_CALL
-SymCryptAesEcbDecryptC( 
-    _In_                                        PCSYMCRYPT_AES_EXPANDED_KEY pExpandedKey,
-    _In_reads_( cbData )                        PCBYTE                      pbSrc,
-    _Out_writes_( cbData )                      PBYTE                       pbDst,
-                                                SIZE_T                      cbData );
-VOID
-SYMCRYPT_CALL
-SymCryptAesEcbDecryptXmm( 
+SymCryptAesEcbEncryptNeon(
     _In_                                        PCSYMCRYPT_AES_EXPANDED_KEY pExpandedKey,
     _In_reads_( cbData )                        PCBYTE                      pbSrc,
     _Out_writes_( cbData )                      PBYTE                       pbDst,
@@ -1083,7 +1092,15 @@ SymCryptAesEcbDecryptXmm(
 
 VOID
 SYMCRYPT_CALL
-SymCryptAesCbcEncryptAsm( 
+SymCryptAesEcbDecryptC(
+    _In_                                        PCSYMCRYPT_AES_EXPANDED_KEY pExpandedKey,
+    _In_reads_( cbData )                        PCBYTE                      pbSrc,
+    _Out_writes_( cbData )                      PBYTE                       pbDst,
+                                                SIZE_T                      cbData );
+
+VOID
+SYMCRYPT_CALL
+SymCryptAesCbcEncryptAsm(
     _In_                                    PCSYMCRYPT_AES_EXPANDED_KEY pExpandedKey,
     _In_reads_( SYMCRYPT_AES_BLOCK_SIZE )   PBYTE                       pbChainingValue,
     _In_reads_( cbData )                    PCBYTE                      pbSrc,
@@ -1091,7 +1108,7 @@ SymCryptAesCbcEncryptAsm(
                                             SIZE_T                      cbData );
 VOID
 SYMCRYPT_CALL
-SymCryptAesCbcEncryptXmm( 
+SymCryptAesCbcEncryptXmm(
     _In_                                    PCSYMCRYPT_AES_EXPANDED_KEY pExpandedKey,
     _In_reads_( SYMCRYPT_AES_BLOCK_SIZE )   PBYTE                       pbChainingValue,
     _In_reads_( cbData )                    PCBYTE                      pbSrc,
@@ -1100,7 +1117,7 @@ SymCryptAesCbcEncryptXmm(
 
 VOID
 SYMCRYPT_CALL
-SymCryptAesCbcEncryptNeon( 
+SymCryptAesCbcEncryptNeon(
     _In_                                    PCSYMCRYPT_AES_EXPANDED_KEY pExpandedKey,
     _In_reads_( SYMCRYPT_AES_BLOCK_SIZE )   PBYTE                       pbChainingValue,
     _In_reads_( cbData )                    PCBYTE                      pbSrc,
@@ -1109,7 +1126,7 @@ SymCryptAesCbcEncryptNeon(
 
 VOID
 SYMCRYPT_CALL
-SymCryptAesCbcEncryptSaveXmm( 
+SymCryptAesCbcEncryptSaveXmm(
     _In_                                    PCSYMCRYPT_AES_EXPANDED_KEY pExpandedKey,
     _In_reads_( SYMCRYPT_AES_BLOCK_SIZE )   PBYTE                       pbChainingValue,
     _In_reads_( cbData )                    PCBYTE                      pbSrc,
@@ -1118,7 +1135,7 @@ SymCryptAesCbcEncryptSaveXmm(
 
 VOID
 SYMCRYPT_CALL
-SymCryptAesCbcDecryptAsm( 
+SymCryptAesCbcDecryptAsm(
     _In_                                    PCSYMCRYPT_AES_EXPANDED_KEY pExpandedKey,
     _In_reads_( SYMCRYPT_AES_BLOCK_SIZE )   PBYTE                       pbChainingValue,
     _In_reads_( cbData )                    PCBYTE                      pbSrc,
@@ -1127,7 +1144,7 @@ SymCryptAesCbcDecryptAsm(
 
 VOID
 SYMCRYPT_CALL
-SymCryptAesCbcDecryptXmm( 
+SymCryptAesCbcDecryptXmm(
     _In_                                    PCSYMCRYPT_AES_EXPANDED_KEY pExpandedKey,
     _In_reads_( SYMCRYPT_AES_BLOCK_SIZE )   PBYTE                       pbChainingValue,
     _In_reads_( cbData )                    PCBYTE                      pbSrc,
@@ -1136,7 +1153,7 @@ SymCryptAesCbcDecryptXmm(
 
 VOID
 SYMCRYPT_CALL
-SymCryptAesCbcDecryptSaveXmm( 
+SymCryptAesCbcDecryptSaveXmm(
     _In_                                    PCSYMCRYPT_AES_EXPANDED_KEY pExpandedKey,
     _In_reads_( SYMCRYPT_AES_BLOCK_SIZE )   PBYTE                       pbChainingValue,
     _In_reads_( cbData )                    PCBYTE                      pbSrc,
@@ -1145,7 +1162,7 @@ SymCryptAesCbcDecryptSaveXmm(
 
 VOID
 SYMCRYPT_CALL
-SymCryptAesCbcDecryptNeon( 
+SymCryptAesCbcDecryptNeon(
     _In_                                    PCSYMCRYPT_AES_EXPANDED_KEY pExpandedKey,
     _In_reads_( SYMCRYPT_AES_BLOCK_SIZE )   PBYTE                       pbChainingValue,
     _In_reads_( cbData )                    PCBYTE                      pbSrc,
@@ -1170,7 +1187,7 @@ SymCryptAesCbcMacNeon(
 
 VOID
 SYMCRYPT_CALL
-SymCryptAesCtrMsb64Asm( 
+SymCryptAesCtrMsb64Asm(
     _In_                                    PCSYMCRYPT_AES_EXPANDED_KEY pExpandedKey,
     _In_reads_( SYMCRYPT_AES_BLOCK_SIZE )   PBYTE                       pbChainingValue,
     _In_reads_( cbData )                    PCBYTE                      pbSrc,
@@ -1179,7 +1196,7 @@ SymCryptAesCtrMsb64Asm(
 
 VOID
 SYMCRYPT_CALL
-SymCryptAesCtrMsb64Xmm( 
+SymCryptAesCtrMsb64Xmm(
     _In_                                    PCSYMCRYPT_AES_EXPANDED_KEY pExpandedKey,
     _In_reads_( SYMCRYPT_AES_BLOCK_SIZE )   PBYTE                       pbChainingValue,
     _In_reads_( cbData )                    PCBYTE                      pbSrc,
@@ -1188,7 +1205,7 @@ SymCryptAesCtrMsb64Xmm(
 
 VOID
 SYMCRYPT_CALL
-SymCryptAesCtrMsb64Neon( 
+SymCryptAesCtrMsb64Neon(
     _In_                                    PCSYMCRYPT_AES_EXPANDED_KEY pExpandedKey,
     _In_reads_( SYMCRYPT_AES_BLOCK_SIZE )   PBYTE                       pbChainingValue,
     _In_reads_( cbData )                    PCBYTE                      pbSrc,
@@ -1197,7 +1214,7 @@ SymCryptAesCtrMsb64Neon(
 
 VOID
 SYMCRYPT_CALL
-SymCryptAesCtrMsb64SaveXmm( 
+SymCryptAesCtrMsb64SaveXmm(
     _In_                                    PCSYMCRYPT_AES_EXPANDED_KEY pExpandedKey,
     _In_reads_( SYMCRYPT_AES_BLOCK_SIZE )   PBYTE                       pbChainingValue,
     _In_reads_( cbData )                    PCBYTE                      pbSrc,
@@ -1260,6 +1277,61 @@ SymCryptXtsAesDecryptDataUnitXmm(
 
 VOID
 SYMCRYPT_CALL
+SymCryptXtsAesEncryptDataUnitZmm(
+    _In_                                    PCSYMCRYPT_AES_EXPANDED_KEY pExpandedKey,
+    _Inout_updates_(SYMCRYPT_AES_BLOCK_SIZE)PBYTE                       pbTweakBlock,
+    _In_reads_( cbData )                    PCBYTE                      pbSrc,
+    _Out_writes_( cbData )                  PBYTE                       pbDst,
+                                            SIZE_T                      cbData );
+
+VOID
+SYMCRYPT_CALL
+SymCryptXtsAesDecryptDataUnitZmm(
+    _In_                                    PCSYMCRYPT_AES_EXPANDED_KEY pExpandedKey,
+    _Inout_updates_( SYMCRYPT_AES_BLOCK_SIZE )PBYTE                     pbTweakBlock,
+    _In_reads_( cbData )                    PCBYTE                      pbSrc,
+    _Out_writes_( cbData )                  PBYTE                       pbDst,
+                                            SIZE_T                      cbData );
+
+VOID
+SYMCRYPT_CALL
+SymCryptXtsAesEncryptDataUnitZmm_2048(
+    _In_                                    PCSYMCRYPT_AES_EXPANDED_KEY pExpandedKey,
+    _Inout_updates_(SYMCRYPT_AES_BLOCK_SIZE)PBYTE                       pbTweakBlock,
+    _In_reads_( cbData )                    PCBYTE                      pbSrc,
+    _Out_writes_( cbData )                  PBYTE                       pbDst,
+                                            SIZE_T                      cbData );
+
+VOID
+SYMCRYPT_CALL
+SymCryptXtsAesDecryptDataUnitZmm_2048(
+    _In_                                    PCSYMCRYPT_AES_EXPANDED_KEY pExpandedKey,
+    _Inout_updates_( SYMCRYPT_AES_BLOCK_SIZE )PBYTE                     pbTweakBlock,
+    _In_reads_( cbData )                    PCBYTE                      pbSrc,
+    _Out_writes_( cbData )                  PBYTE                       pbDst,
+                                            SIZE_T                      cbData );
+
+VOID
+SYMCRYPT_CALL
+SymCryptXtsAesEncryptDataUnitYmm_1024(
+    _In_                                    PCSYMCRYPT_AES_EXPANDED_KEY pExpandedKey,
+    _Inout_updates_(SYMCRYPT_AES_BLOCK_SIZE)PBYTE                       pbTweakBlock,
+    _In_reads_( cbData )                    PCBYTE                      pbSrc,
+    _Out_writes_( cbData )                  PBYTE                       pbDst,
+                                            SIZE_T                      cbData );
+
+VOID
+SYMCRYPT_CALL
+SymCryptXtsAesDecryptDataUnitYmm_1024(
+    _In_                                    PCSYMCRYPT_AES_EXPANDED_KEY pExpandedKey,
+    _Inout_updates_( SYMCRYPT_AES_BLOCK_SIZE )PBYTE                     pbTweakBlock,
+    _In_reads_( cbData )                    PCBYTE                      pbSrc,
+    _Out_writes_( cbData )                  PBYTE                       pbDst,
+                                            SIZE_T                      cbData );
+
+
+VOID
+SYMCRYPT_CALL
 SymCryptXtsAesEncryptDataUnitNeon(
     _In_                                    PCSYMCRYPT_AES_EXPANDED_KEY pExpandedKey,
     _Inout_updates_(SYMCRYPT_AES_BLOCK_SIZE)PBYTE                       pbTweakBlock,
@@ -1275,14 +1347,6 @@ SymCryptXtsAesDecryptDataUnitNeon(
     _In_reads_( cbData )                    PCBYTE                      pbSrc,
     _Out_writes_( cbData )                  PBYTE                       pbDst,
                                             SIZE_T                      cbData );
-
-PSYMCRYPT_BLOCKCIPHER_CRYPT_XTS
-SYMCRYPT_CALL
-SymCryptXtsAesGetBlockEncFunc();
-
-PSYMCRYPT_BLOCKCIPHER_CRYPT_XTS
-SYMCRYPT_CALL
-SymCryptXtsAesGetBlockDecFunc();
 
 VOID
 SYMCRYPT_CALL
@@ -1326,10 +1390,10 @@ SymCryptParallelHashProcess(
     _Out_writes_( cbScratch )                                       PBYTE                               pbScratch,
                                                                     SIZE_T                              cbScratch,
                                                                     UINT32                              maxParallel );
-                                                                    
+
 VOID
 SYMCRYPT_CALL
-SymCryptHashAppendInternal( 
+SymCryptHashAppendInternal(
     _In_                        PCSYMCRYPT_HASH             pHash,
     _Inout_                     PSYMCRYPT_COMMON_HASH_STATE pState,
     _In_reads_bytes_( cbData )  PCBYTE                      pbData,
@@ -1377,8 +1441,13 @@ extern const BYTE SymCryptSha512KATAnswer[64];
 #define SYMCRYPT_OBJ_NBYTES( _p )               ((_p)->nDigits * SYMCRYPT_FDEF_DIGIT_SIZE)
 #define SYMCRYPT_OBJ_NUINT32( _p )              ((_p)->nDigits * SYMCRYPT_FDEF_DIGIT_SIZE / sizeof( UINT32 ))
 
+#if SYMCRYPT_MS_VC
 #define SYMCRYPT_MUL32x32TO64( _a, _b )         UInt32x32To64( (_a), (_b) )
-
+#elif SYMCRYPT_GNUC
+#define SYMCRYPT_MUL32x32TO64( _a, _b )         ( (unsigned long)(_a)*(unsigned long)(_b) )
+#else
+    #error Unknown compiler
+#endif
 typedef VOID (SYMCRYPT_CALL * SYMCRYPT_MOD_BINARY_OP_FN)(
     _In_                            PCSYMCRYPT_MODULUS      pmMod,
     _In_                            PCSYMCRYPT_MODELEMENT   peSrc1,
@@ -1434,10 +1503,10 @@ typedef VOID (SYMCRYPT_CALL * SYMCRYPT_MODULUS_INIT_FN)(
 // In Montgomery format, this is stored as (RX, RZ), and just doing RX * (1/RZ) gets you the value to be exported.
 // There seem to be many tricks here to get some more speed; maybe we just need to define export functions for each
 // point format and allow the Modulus to contain special optimizations.
-// 
+//
 // The SetPost function is the post-processing function of any SetValue operation. The SetValue operation will store the
 // modElement in the normal integer format into the ModElement. The SetPost function post-proccesses it into the proper
-// representation for that modulus. 
+// representation for that modulus.
 //
 // The PreGet function is the pre-processing function to any GetValue operation. It returns a pointer to the proper value
 // stored in standard integer format. This pointer can either be into the ModElement itself, or into the scratch space.
@@ -1469,7 +1538,7 @@ extern const UINT32 g_SymCryptModFnsMask;
 //
 
 #define SYMCRYPT_MODULUS_FEATURE_MONTGOMERY         1       // Modulus is suitable for Montgomery processing
-// #define SYMCRYPT_MODULUS_FEATURE_PSEUDO_MERSENNE    2       // Modulus is suitable for Pseudo-Mersenne processing 
+// #define SYMCRYPT_MODULUS_FEATURE_PSEUDO_MERSENNE    2       // Modulus is suitable for Pseudo-Mersenne processing
 // #define SYMCRYPT_MODULUS_FEATURE_NISTP256           4       // Modulus is the NIST P256 curve prime
 
 typedef struct _SYMCRYPT_MODULUS_TYPE_SELECTION_ENTRY
@@ -1604,7 +1673,7 @@ SymCryptFdefMaskedCopy(
                                                                 UINT32      mask );
 //
 // Copies Src to Dst under mask.
-// Requirements: 
+// Requirements:
 //  - mask == 0 or mask == 0xffffffff
 //  - cbData must be a multple of the size of a digit, or a multiple of the size of a ModElement.
 //  - pbSrc and pbDst must be SYMCRYPT_ALIGNed
@@ -1657,8 +1726,8 @@ SymCryptFdefIntCreate(
                                     UINT32  nDigits );
 
 VOID
-SymCryptFdefIntCopy( 
-    _In_    PCSYMCRYPT_INT  piSrc, 
+SymCryptFdefIntCopy(
+    _In_    PCSYMCRYPT_INT  piSrc,
     _Out_   PSYMCRYPT_INT   piDst );
 
 VOID
@@ -1690,8 +1759,8 @@ SYMCRYPT_CALL
 SymCryptFdefNumberofDigitsFromInt( _In_ PCSYMCRYPT_INT piSrc );
 
 SYMCRYPT_ERROR
-SymCryptFdefIntCopyMixedSize( 
-    _In_    PCSYMCRYPT_INT  piSrc, 
+SymCryptFdefIntCopyMixedSize(
+    _In_    PCSYMCRYPT_INT  piSrc,
     _Out_   PSYMCRYPT_INT   piDst );
 
 UINT32
@@ -1700,30 +1769,30 @@ SymCryptFdefIntBitsizeOfValue( _In_ PCSYMCRYPT_INT piSrc );
 
 VOID
 SYMCRYPT_CALL
-SymCryptFdefIntSetValueUint32( 
-            UINT32          u32Src, 
+SymCryptFdefIntSetValueUint32(
+            UINT32          u32Src,
     _Out_   PSYMCRYPT_INT   piDst );
 
 VOID
 SYMCRYPT_CALL
-SymCryptFdefIntSetValueUint64( 
-            UINT64          u64Src, 
+SymCryptFdefIntSetValueUint64(
+            UINT64          u64Src,
     _Out_   PSYMCRYPT_INT   piDst );
 
 SYMCRYPT_ERROR
 SYMCRYPT_CALL
-SymCryptFdefIntSetValue( 
-    _In_reads_bytes_(cbSrc)     PCBYTE                  pbSrc, 
-                                SIZE_T                  cbSrc, 
-                                SYMCRYPT_NUMBER_FORMAT  format, 
+SymCryptFdefIntSetValue(
+    _In_reads_bytes_(cbSrc)     PCBYTE                  pbSrc,
+                                SIZE_T                  cbSrc,
+                                SYMCRYPT_NUMBER_FORMAT  format,
     _Out_                       PSYMCRYPT_INT           piDst );
 
 SYMCRYPT_ERROR
 SYMCRYPT_CALL
-SymCryptFdefIntGetValue( 
-    _In_                        PCSYMCRYPT_INT          piSrc, 
-    _Out_writes_bytes_(cbDst)   PBYTE                   pbDst, 
-                                SIZE_T                  cbDst, 
+SymCryptFdefIntGetValue(
+    _In_                        PCSYMCRYPT_INT          piSrc,
+    _Out_writes_bytes_(cbDst)   PBYTE                   pbDst,
+                                SIZE_T                  cbDst,
                                 SYMCRYPT_NUMBER_FORMAT  format );
 
 UINT32
@@ -1891,9 +1960,9 @@ SymCryptFdefSizeofDivisorFromDigits( UINT32 nDigits );
 
 PSYMCRYPT_DIVISOR
 SYMCRYPT_CALL
-SymCryptFdefDivisorCreate( 
-    _Out_writes_bytes_( cbBuffer )  PBYTE   pbBuffer, 
-                                    SIZE_T  cbBuffer, 
+SymCryptFdefDivisorCreate(
+    _Out_writes_bytes_( cbBuffer )  PBYTE   pbBuffer,
+                                    SIZE_T  cbBuffer,
                                     UINT32  nDigits );
 
 PSYMCRYPT_DIVISOR
@@ -1901,13 +1970,13 @@ SYMCRYPT_CALL
 SymCryptFdefDivisorRetrieveHandle( _In_ PBYTE pbBuffer );
 
 VOID
-SymCryptFdefDivisorCopy( 
-    _In_    PCSYMCRYPT_DIVISOR  pdSrc, 
+SymCryptFdefDivisorCopy(
+    _In_    PCSYMCRYPT_DIVISOR  pdSrc,
     _Out_   PSYMCRYPT_DIVISOR   pdDst );
 
 VOID
-SymCryptFdefDivisorCopyFixup( 
-    _In_    PCSYMCRYPT_DIVISOR  pSrc, 
+SymCryptFdefDivisorCopyFixup(
+    _In_    PCSYMCRYPT_DIVISOR  pSrc,
     _Out_   PSYMCRYPT_DIVISOR   pDst );
 
 PSYMCRYPT_INT
@@ -1938,7 +2007,7 @@ VOID
 SYMCRYPT_CALL
 SymCryptFdefRawDivMod(
     _In_reads_(nDigits * SYMCRYPT_FDEF_DIGIT_NUINT32)           PCUINT32            pNum,
-                                                                UINT32              nDigits, 
+                                                                UINT32              nDigits,
     _In_                                                        PCSYMCRYPT_DIVISOR  pDivisor,
     _Out_writes_opt_(nDigits * SYMCRYPT_FDEF_DIGIT_NUINT32)     PUINT32             pQuotient,
     _Out_writes_opt_(SYMCRYPT_FDEF_INT_NUINT32(&pDivisor->Int)) PUINT32             pRemainder,
@@ -1960,9 +2029,9 @@ SymCryptFdefSizeofModulusFromDigits( UINT32 nDigits );
 
 PSYMCRYPT_MODULUS
 SYMCRYPT_CALL
-SymCryptFdefModulusCreate( 
-    _Out_writes_bytes_( cbBuffer )  PBYTE   pbBuffer, 
-                                    SIZE_T  cbBuffer, 
+SymCryptFdefModulusCreate(
+    _Out_writes_bytes_( cbBuffer )  PBYTE   pbBuffer,
+                                    SIZE_T  cbBuffer,
                                     UINT32  nDigits );
 
 PSYMCRYPT_MODULUS
@@ -1972,7 +2041,7 @@ SymCryptFdefModulusRetrieveHandle( _In_ PBYTE pbBuffer );
 
 VOID
 SymCryptFdefModulusCopy(
-    _In_    PCSYMCRYPT_MODULUS  pmSrc, 
+    _In_    PCSYMCRYPT_MODULUS  pmSrc,
     _Out_   PSYMCRYPT_MODULUS   pmDst );
 
 PSYMCRYPT_MODELEMENT
@@ -1981,8 +2050,8 @@ SymCryptFdefModElementAllocate( _In_ PCSYMCRYPT_MODULUS pmMod );
 
 VOID
 SYMCRYPT_CALL
-SymCryptFdefModElementFree( 
-    _In_    PCSYMCRYPT_MODULUS      pmMod,      
+SymCryptFdefModElementFree(
+    _In_    PCSYMCRYPT_MODULUS      pmMod,
     _Out_   PSYMCRYPT_MODELEMENT    peObj );
 
 UINT32
@@ -1991,9 +2060,9 @@ SymCryptFdefSizeofModElementFromModulus( PCSYMCRYPT_MODULUS pmMod );
 
 PSYMCRYPT_MODELEMENT
 SYMCRYPT_CALL
-SymCryptFdefModElementCreate( 
-    _Out_writes_bytes_( cbBuffer )  PBYTE               pbBuffer, 
-                                    SIZE_T              cbBuffer, 
+SymCryptFdefModElementCreate(
+    _Out_writes_bytes_( cbBuffer )  PBYTE               pbBuffer,
+                                    SIZE_T              cbBuffer,
                                     PCSYMCRYPT_MODULUS   pmMod );
 
 PSYMCRYPT_MODELEMENT
@@ -2002,20 +2071,20 @@ SymCryptFdefModElementRetrieveHandle( _In_ PBYTE pbBuffer );
 
 VOID
 SYMCRYPT_CALL
-SymCryptFdefModElementWipe( 
+SymCryptFdefModElementWipe(
     _In_    PCSYMCRYPT_MODULUS      pmMod,
     _Out_   PSYMCRYPT_MODELEMENT    peDst );
 
 VOID
-SymCryptFdefModElementCopy( 
+SymCryptFdefModElementCopy(
     _In_    PCSYMCRYPT_MODULUS      pmMod,
-    _In_    PCSYMCRYPT_MODELEMENT   peSrc, 
+    _In_    PCSYMCRYPT_MODELEMENT   peSrc,
     _Out_   PSYMCRYPT_MODELEMENT    peDst );
 
 VOID
 SymCryptFdefModElementMaskedCopy(
     _In_    PCSYMCRYPT_MODULUS      pmMod,
-    _In_    PCSYMCRYPT_MODELEMENT   peSrc, 
+    _In_    PCSYMCRYPT_MODELEMENT   peSrc,
     _Out_   PSYMCRYPT_MODELEMENT    peDst,
             UINT32                  mask );
 
@@ -2064,19 +2133,19 @@ SymCryptFdefModElementToIntGeneric(
 
 SYMCRYPT_ERROR
 SYMCRYPT_CALL
-SymCryptFdefRawSetValue( 
-    _In_reads_bytes_(cbSrc)     PCBYTE                  pbSrc, 
-                                SIZE_T                  cbSrc, 
-                                SYMCRYPT_NUMBER_FORMAT  format, 
+SymCryptFdefRawSetValue(
+    _In_reads_bytes_(cbSrc)     PCBYTE                  pbSrc,
+                                SIZE_T                  cbSrc,
+                                SYMCRYPT_NUMBER_FORMAT  format,
     _Out_writes_(nWords)        PUINT32                 pDst,
                                 UINT32                  nWords );
 
 SYMCRYPT_ERROR
 SYMCRYPT_CALL
-SymCryptFdefModElementSetValueGeneric( 
-    _In_reads_bytes_( cbSrc )       PCBYTE                  pbSrc, 
-                                    SIZE_T                  cbSrc, 
-                                    SYMCRYPT_NUMBER_FORMAT  format, 
+SymCryptFdefModElementSetValueGeneric(
+    _In_reads_bytes_( cbSrc )       PCBYTE                  pbSrc,
+                                    SIZE_T                  cbSrc,
+                                    SYMCRYPT_NUMBER_FORMAT  format,
                                     PCSYMCRYPT_MODULUS      pmMod,
     _Out_                           PSYMCRYPT_MODELEMENT    peDst,
     _Out_writes_bytes_( cbScratch ) PBYTE                   pbScratch,
@@ -2084,8 +2153,8 @@ SymCryptFdefModElementSetValueGeneric(
 
 VOID
 SYMCRYPT_CALL
-SymCryptFdefModElementSetValueUint32Generic( 
-                                    UINT32                  value, 
+SymCryptFdefModElementSetValueUint32Generic(
+                                    UINT32                  value,
     _In_                            PCSYMCRYPT_MODULUS      pmMod,
     _Out_                           PSYMCRYPT_MODELEMENT    peDst,
     _Out_writes_bytes_( cbScratch ) PBYTE                   pbScratch,
@@ -2093,8 +2162,8 @@ SymCryptFdefModElementSetValueUint32Generic(
 
 VOID
 SYMCRYPT_CALL
-SymCryptFdefModElementSetValueNegUint32( 
-                                    UINT32                  value, 
+SymCryptFdefModElementSetValueNegUint32(
+                                    UINT32                  value,
     _In_                            PCSYMCRYPT_MODULUS      pmMod,
     _Out_                           PSYMCRYPT_MODELEMENT    peDst,
     _Out_writes_bytes_( cbScratch ) PBYTE                   pbScratch,
@@ -2102,20 +2171,20 @@ SymCryptFdefModElementSetValueNegUint32(
 
 SYMCRYPT_ERROR
 SYMCRYPT_CALL
-SymCryptFdefRawGetValue( 
+SymCryptFdefRawGetValue(
     _In_reads_(nWords)          PCUINT32                pSrc,
                                 UINT32                  nWords,
-    _Out_writes_bytes_(cbBytes) PBYTE                   pbDst, 
-                                SIZE_T                  cbDst, 
+    _Out_writes_bytes_(cbBytes) PBYTE                   pbDst,
+                                SIZE_T                  cbDst,
                                 SYMCRYPT_NUMBER_FORMAT  format );
 
 SYMCRYPT_ERROR
 SYMCRYPT_CALL
-SymCryptFdefModElementGetValue( 
+SymCryptFdefModElementGetValue(
                                     PCSYMCRYPT_MODULUS      pmMod,
     _In_                            PCSYMCRYPT_MODELEMENT   peSrc,
-    _Out_writes_bytes_( cbDst )     PBYTE                   pbDst, 
-                                    SIZE_T                  cbDst, 
+    _Out_writes_bytes_( cbDst )     PBYTE                   pbDst,
+                                    SIZE_T                  cbDst,
                                     SYMCRYPT_NUMBER_FORMAT  format,
     _Out_writes_bytes_( cbScratch ) PBYTE                   pbScratch,
                                     SIZE_T                  cbScratch );
@@ -2211,32 +2280,32 @@ SymCryptFdef369ModNegGeneric(
     _Out_writes_bytes_( cbScratch ) PBYTE                   pbScratch,
                                     SIZE_T                  cbScratch );
 
-VOID 
-SYMCRYPT_CALL 
+VOID
+SYMCRYPT_CALL
 SymCryptFdefModSetPostGeneric(
     _In_                            PCSYMCRYPT_MODULUS      pmMod,
     _Inout_                         PSYMCRYPT_MODELEMENT    peObj,
     _Out_writes_bytes_( cbScratch ) PBYTE                   pbScratch,
                                     SIZE_T                  cbScratch );
 
-VOID 
-SYMCRYPT_CALL 
+VOID
+SYMCRYPT_CALL
 SymCryptFdefModSetPostMontgomery(
     _In_                            PCSYMCRYPT_MODULUS      pmMod,
     _Inout_                         PSYMCRYPT_MODELEMENT    peObj,
     _Out_writes_bytes_( cbScratch ) PBYTE                   pbScratch,
                                     SIZE_T                  cbScratch );
 
-VOID 
-SYMCRYPT_CALL 
+VOID
+SYMCRYPT_CALL
 SymCryptFdefModSetPostMontgomery256(
     _In_                            PCSYMCRYPT_MODULUS      pmMod,
     _Inout_                         PSYMCRYPT_MODELEMENT    peObj,
     _Out_writes_bytes_( cbScratch ) PBYTE                   pbScratch,
                                     SIZE_T                  cbScratch );
 
-VOID 
-SYMCRYPT_CALL 
+VOID
+SYMCRYPT_CALL
 SymCryptFdef369ModSetPostMontgomery(
     _In_                            PCSYMCRYPT_MODULUS      pmMod,
     _Inout_                         PSYMCRYPT_MODELEMENT    peObj,
@@ -2952,7 +3021,7 @@ SymCryptShortWeierstrassAddDiffNonZero(
     _In_    PCSYMCRYPT_ECPOINT  poSrc1,
     _In_    PCSYMCRYPT_ECPOINT  poSrc2,
     _Out_   PSYMCRYPT_ECPOINT   poDst,
-    _Out_writes_bytes_opt_( cbScratch ) 
+    _Out_writes_bytes_opt_( cbScratch )
             PBYTE               pbScratch,
             SIZE_T              cbScratch );
 
@@ -3187,7 +3256,7 @@ SymCryptFdefCreateTrialDivisionContext( UINT32 nDigits );
 
 UINT32
 SYMCRYPT_CALL
-SymCryptFdefIntFindSmallDivisor( 
+SymCryptFdefIntFindSmallDivisor(
     _In_                            PCSYMCRYPT_TRIALDIVISION_CONTEXT    pContext,
     _In_                            PCSYMCRYPT_INT                      piSrc,
     _Out_writes_bytes_( cbScratch ) PBYTE                               pbScratch,
@@ -3237,3 +3306,25 @@ SymCryptPositiveWidthNafRecoding(
     _Out_writes_( nRecodedDigits )
             PUINT32         absofKIs,
             UINT32          nRecodedDigits );
+
+
+#if !SYMCRYPT_MS_VC
+
+// Ingnore the incompatible pointer types void * to PSYMCRYPT_XXX
+#pragma GCC diagnostic ignored "-Wincompatible-pointer-types"
+
+#define FIELD_OFFSET(type,field)    ((UINT32)(uintptr_t)&(((type *)0)->field))
+
+#define __fastfail(x)               (*((volatile int *)(0)) = (int) (x))
+
+#endif
+
+// Atomics.
+#if SYMCRYPT_MS_VC
+#define ATOMIC_OR32(_dest, _val)     _InterlockedOr( (volatile LONG *)(_dest), (LONG)(_val) )
+#elif SYMCRYPT_APPLE_CC
+#include <libkern/OSAtomic.h>   // atomic operations
+#define ATOMIC_OR32(_dest, _val)     OSAtomicOr32Barrier( (uint32_t)(_val), (volatile uint32_t *)(_dest) )
+#elif SYMCRYPT_GNUC
+#define ATOMIC_OR32(_dest, _val)     __sync_fetch_and_or( (volatile uint32_t *)(_dest), (uint32_t)(_val) )
+#endif

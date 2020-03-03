@@ -1,26 +1,25 @@
 //
 // Performance measurement infrastructure
 //
-// Copyright (c) Microsoft Corporation. Licensed under the MIT license. 
+// Copyright (c) Microsoft Corporation. Licensed under the MIT license.
 //
 
 
 #include "precomp.h"
 
+#include <chrono>
 
 ULONGLONG g_minMeasurementClockTime = 0;
 ULONGLONG g_largeMeasurementClockTime = (ULONGLONG)-1;
 double g_perfScaleFactor;
-
-double g_tscFreqTickCtr;
-double g_tscFreqPerfCtr;
+double g_tscFreq;
 
 BOOLEAN g_enableCpuIdBeforeRdtsc = TRUE;
 
 //
 // The performance infrastructure has some flexibility to use different clocks.
 // At the moment they can all use the time stamp counter.
-// 
+//
 
 #if SYMCRYPT_CPU_ARM
 
@@ -36,13 +35,11 @@ BOOLEAN g_enableCpuIdBeforeRdtsc = TRUE;
 
 #else
 
-
-
 FORCEINLINE
 ULONGLONG
 GET_PERF_CLOCK()
 {
-    int tmp[4]; 
+    int tmp[4];
 
     if( g_enableCpuIdBeforeRdtsc )
     {
@@ -56,6 +53,15 @@ GET_PERF_CLOCK()
 
 #endif
 
+#if SYMCRYPT_MS_VC
+
+#define ALLOCA( n ) _alloca( n )
+
+#else
+
+#define ALLOCA( n ) alloca( n )
+
+#endif // SYMCRYPT_MS_VC
 
 /*
 //
@@ -101,7 +107,7 @@ setPerfScaleFactor()    // FOR IA64, even older
     PPROCESSOR_POWER_INFORMATION    pProcPowerInfo = NULL;
     LARGE_INTEGER perfFreq;
     ULONG maxCurrent;
-    
+
     //
     // Gather CPU information
     //
@@ -117,18 +123,18 @@ setPerfScaleFactor()    // FOR IA64, even older
     maxCurrent = 0;
     for( ULONG i=0; i<nProcessors; i++ )
     {
-        //iprint( "Proc %2d, curr =%6d, max = %6d\n", i, pProcPowerInfo[i].CurrentMhz, pProcPowerInfo[i].MaxMhz );
-        //maxCurrent = max( maxCurrent, pProcPowerInfo[i].CurrentMhz );
-        maxCurrent = max( maxCurrent, pProcPowerInfo[i].MaxMhz );
+        //iprint( "Proc %2d, curr =%6d, SYMCRYPT_MAX = %6d\n", i, pProcPowerInfo[i].CurrentMhz, pProcPowerInfo[i].MaxMhz );
+        //maxCurrent = SYMCRYPT_MAX( maxCurrent, pProcPowerInfo[i].CurrentMhz );
+        maxCurrent = SYMCRYPT_MAX( maxCurrent, pProcPowerInfo[i].MaxMhz );
     }
 
-    QueryPerformanceFrequency(&perfFreq); 
+    QueryPerformanceFrequency(&perfFreq);
     print( "Performance frequency %I64u\n", perfFreq.QuadPart );
 
     g_perfScaleFactor = (1e6 * maxCurrent)/perfFreq.QuadPart;
 
-    g_minMeasurementClockTime = min( 1000, (ULONG) (10000/g_perfScaleFactor) );
-    
+    g_minMeasurementClockTime = SYMCRYPT_MIN( 1000, (ULONG) (10000/g_perfScaleFactor) );
+
     delete[] pProcPowerInfo;
 }
 */
@@ -137,7 +143,7 @@ PSTR g_perfUnits = PERF_UNIT;
 
 PVOID g_stackAllocLinkedList;     // We put alloca's in a linked list so the compiler won't optimize it away.
 
-__declspec( align( 256 )) BYTE g_perfBuffer[8 * PERF_BUFFER_SIZE];
+SYMCRYPT_ALIGN_AT(256) BYTE g_perfBuffer[8 * PERF_BUFFER_SIZE];
 
 #define MAX_RUNS_PER_MEASUREMENT    (1<<15)
 #define MEASUREMENTS_PER_RESULT     30
@@ -173,12 +179,12 @@ typedef struct _ALG_MEASURE_PARAMS
 // MODELEMENT algorithms might have different performacne for different modulus types & sizes
 // EC algorithms have different performance for different curves. (We are not generating curves on-the-fly, and only used pre-defined ones.)
 // RSA algorithms have different performacne for key size, # primes, and pubexp value.
-// 
+//
 
 #define PERF_NO_KEYPERF                     1
 #define PERF_DATASIZE_SAME_AS_KEYSIZE       (1<<30)     // This unique datasize signifies that the datasize is equal to the corresponding keysize
 
-const ALG_MEASURE_PARAMS g_algMeasureParams[] = 
+const ALG_MEASURE_PARAMS g_algMeasureParams[] =
 {
     "Null"                  , 0, {}, {64, 128, 256, 512, 1024, (1<<13) },
     "Md2"                   , 0, {}, {64, 128, 256, 512, 1024, (1<<13) },
@@ -270,13 +276,13 @@ const ALG_MEASURE_PARAMS g_algMeasureParams[] =
                                   PERF_KEY_SECRET | 64, PERF_KEY_PUB_ODD | 64, PERF_KEY_PUB_PM | 64, PERF_KEY_PUB_NIST | 66,
                                   PERF_KEY_SECRET |128, PERF_KEY_PUB_ODD |128,
                                   PERF_KEY_SECRET |256, PERF_KEY_PUB_ODD |256, PERF_KEY_PUB_ODD | 384 }, {},
-    "ModInv"                , 1, {PERF_KEY_PUBLIC | PERF_KEY_PRIME | 24, 
-                                  PERF_KEY_PUBLIC | PERF_KEY_PRIME | 32,   
-                                  PERF_KEY_PUBLIC | PERF_KEY_PRIME | 48,   
+    "ModInv"                , 1, {PERF_KEY_PUBLIC | PERF_KEY_PRIME | 24,
+                                  PERF_KEY_PUBLIC | PERF_KEY_PRIME | 32,
+                                  PERF_KEY_PUBLIC | PERF_KEY_PRIME | 48,
                                   PERF_KEY_PUBLIC | PERF_KEY_PRIME | 64,}, {},
     "ModExp"                , 1, {PERF_KEY_PUBLIC | PERF_KEY_PRIME | 24,
-                                  PERF_KEY_PUBLIC | PERF_KEY_PRIME | 32,   
-                                  PERF_KEY_PUBLIC | PERF_KEY_PRIME | 48,   
+                                  PERF_KEY_PUBLIC | PERF_KEY_PRIME | 32,
+                                  PERF_KEY_PUBLIC | PERF_KEY_PRIME | 48,
                                   PERF_KEY_PUBLIC | PERF_KEY_PRIME | 64,
                                   PERF_KEY_PUBLIC | PERF_KEY_PRIME | 128,
                                   PERF_KEY_PUBLIC | PERF_KEY_PRIME | 256,
@@ -297,9 +303,10 @@ const ALG_MEASURE_PARAMS g_algMeasureParams[] =
     "RsaSignPss"            , 1, {128, 256, 384, 512}, {PERF_DATASIZE_SAME_AS_KEYSIZE},
     "RsaVerifyPss"          , 1, {128, 256, 384, 512}, {PERF_DATASIZE_SAME_AS_KEYSIZE},
 
-    "DsaSign"               , 1, {64, 128, 256}, {},
-    "DsaVerify"             , 1, {64, 128, 256}, {},
+//    "DsaSign"               , 1, {64, 128, 256}, {},
+//    "DsaVerify"             , 1, {64, 128, 256}, {},
     "Dh"                    , 1, {64, 128, 256}, {PERF_DATASIZE_SAME_AS_KEYSIZE},
+    "Dsa"                   , 1, {64, 128, 256}, {PERF_DATASIZE_SAME_AS_KEYSIZE},
 
     "EcurveAllocate"        , 1, {PERF_KEY_NIST192, PERF_KEY_NIST224, PERF_KEY_NIST256, PERF_KEY_NIST384, PERF_KEY_NIST521, PERF_KEY_NUMS256, PERF_KEY_NUMS384, PERF_KEY_NUMS512, PERF_KEY_C255_19,}, {},
     "EcpointSetZero"        , 1, {PERF_KEY_NIST192, PERF_KEY_NIST224, PERF_KEY_NIST256, PERF_KEY_NIST384, PERF_KEY_NIST521, PERF_KEY_NUMS256, PERF_KEY_NUMS384, PERF_KEY_NUMS512,}, {},
@@ -325,7 +332,7 @@ const ALG_MEASURE_PARAMS g_algMeasureParams[] =
 
 
 
-int __cdecl compareUlonglong( const VOID * p1, const VOID * p2 )
+int SYMCRYPT_CDECL compareUlonglong( const VOID * p1, const VOID * p2 )
 {
     ULONGLONG v1 = *(ULONGLONG *)p1;
     ULONGLONG v2 = *(ULONGLONG *)p2;
@@ -335,7 +342,7 @@ int __cdecl compareUlonglong( const VOID * p1, const VOID * p2 )
     return 1;
 }
 
-int __cdecl compareDouble( const VOID * p1, const VOID * p2 )
+int SYMCRYPT_CDECL compareDouble( const VOID * p1, const VOID * p2 )
 {
     double v1 = *(double *)p1;
     double v2 = *(double *)p2;
@@ -372,7 +379,7 @@ double correctAverage( double average, double * pData, SIZE_T cdData )
 
     double sum = 0.0;
     SIZE_T pos = 0;
-    
+
     while( pos < cdData && deviation[pos] < 0.0 )
     {
         pos++;
@@ -406,18 +413,18 @@ double correctAverage( double average, double * pData, SIZE_T cdData )
 
     double result = average + (sum / cdData);
     return result;
-    
+
 }
 
 
 
-double measureDataPerfGivenStack(   
-                                SIZE_T keySize, 
-                                SIZE_T dataSize, 
-                                PerfKeyFn keyFn, 
-                                PerfDataFn prepFn, 
-                                PerfDataFn dataFn, 
-                                PerfCleanFn cleanFn, 
+double measureDataPerfGivenStack(
+                                SIZE_T keySize,
+                                SIZE_T dataSize,
+                                PerfKeyFn keyFn,
+                                PerfDataFn prepFn,
+                                PerfDataFn dataFn,
+                                PerfCleanFn cleanFn,
                                 int * pNRuns )
 {
     PBYTE buf1 = g_perfBuffer + 0*PERF_BUFFER_SIZE + (g_rng.sizet( PERF_BUFFER_SIZE ) & ~0x3f); // cache-aligned buffers
@@ -434,7 +441,7 @@ double measureDataPerfGivenStack(
 
     int runs = *pNRuns;
     int i=0;
-    
+
     if( prepFn != NULL )
     {
         (*prepFn) (buf1, buf2, buf3, dataSize );
@@ -454,7 +461,7 @@ double measureDataPerfGivenStack(
             //
             // The measuremennt was too short, restart & double the # runs we do.
             //
-            i = 0; 
+            i = 0;
             loopStart = GET_PERF_CLOCK();
             runs <<= 1;
             CHECK( runs <= MAX_RUNS_PER_MEASUREMENT, "Measurement too fast" );
@@ -496,9 +503,9 @@ double measureDataPerfGivenStack(
     return res;
 }
 
-double measureKeyPerfGivenStack(    SIZE_T keySize, 
-                                    PerfKeyFn keyFn, 
-                                    PerfCleanFn cleanFn, 
+double measureKeyPerfGivenStack(    SIZE_T keySize,
+                                    PerfKeyFn keyFn,
+                                    PerfCleanFn cleanFn,
                                     int * pNRuns )
 {
     PBYTE buf1 = g_perfBuffer + 0*PERF_BUFFER_SIZE + (g_rng.sizet( PERF_BUFFER_SIZE ) & ~0xf);
@@ -527,7 +534,7 @@ double measureKeyPerfGivenStack(    SIZE_T keySize,
             //
             // The measuremennt was too short, restart & double the # runs we do.
             //
-            i = 0; 
+            i = 0;
             runs <<= 1;
             CHECK( runs <= MAX_RUNS_PER_MEASUREMENT, "Measurement too fast" );
             continue;
@@ -551,10 +558,10 @@ double measureKeyPerfGivenStack(    SIZE_T keySize,
 }
 
 
-double measureWipePerfGivenStack(   
-                                SIZE_T dataSize, 
-                                SIZE_T dataOffset, 
-                                WIPE_FN wipeFn, 
+double measureWipePerfGivenStack(
+                                SIZE_T dataSize,
+                                SIZE_T dataOffset,
+                                WIPE_FN wipeFn,
                                 int * pNRuns )
 {
     PBYTE buf = g_perfBuffer + (g_rng.sizet( PERF_BUFFER_SIZE ) & ~0x7f) + dataOffset;
@@ -563,7 +570,7 @@ double measureWipePerfGivenStack(
 
     int runs = *pNRuns;
     int i=0;
-    
+
     while( i < MEASUREMENTS_PER_RESULT )
     {
         ULONGLONG start = GET_PERF_CLOCK();
@@ -576,9 +583,9 @@ double measureWipePerfGivenStack(
         if( duration < g_minMeasurementClockTime )
         {
             //
-            // The measuremennt was too short, restart & double the # runs we do.
+            // The measurement was too short, restart & double the # runs we do.
             //
-            i = 0; 
+            i = 0;
             runs <<= 1;
             CHECK( runs <= MAX_RUNS_PER_MEASUREMENT, "Measurement too fast" );
             continue;
@@ -604,19 +611,19 @@ double measureWipePerfGivenStack(
 
 
 
-double measurePerfMoveStack(    SIZE_T keySize, 
-                                SIZE_T dataSize, 
-                                PerfKeyFn keyFn, 
-                                PerfDataFn prepFn, 
-                                PerfDataFn dataFn, 
-                                PerfCleanFn cleanFn, 
+double measurePerfMoveStack(    SIZE_T keySize,
+                                SIZE_T dataSize,
+                                PerfKeyFn keyFn,
+                                PerfDataFn prepFn,
+                                PerfDataFn dataFn,
+                                PerfCleanFn cleanFn,
                                 BOOL    measureKey,
                                 int * pNRuns )
 {
     SIZE_T stackMove = 16 + g_rng.sizet( (1 << 17) );
 #pragma prefast(push)
 #pragma prefast(disable:6255)
-    VOID * p = _alloca( stackMove );
+    VOID * p = ALLOCA( stackMove );
 #pragma prefast(pop)
 
     *(VOID **)p = g_stackAllocLinkedList;
@@ -633,23 +640,23 @@ double measurePerfMoveStack(    SIZE_T keySize,
 }
 
 
-double measureWipePerfMoveStack( 
-                                SIZE_T dataSize, 
-                                SIZE_T dataOffset, 
-                                WIPE_FN wipeFn, 
+double measureWipePerfMoveStack(
+                                SIZE_T dataSize,
+                                SIZE_T dataOffset,
+                                WIPE_FN wipeFn,
                                 int * pNRuns )
 {
     SIZE_T stackMove = 16 + g_rng.sizet( (1 << 17) );
 #pragma prefast(push)
 #pragma prefast(disable:6255)
-    VOID * p = _alloca( stackMove );
+    VOID * p = ALLOCA( stackMove );
 #pragma prefast(pop)
 
     *(VOID **)p = g_stackAllocLinkedList;
     g_stackAllocLinkedList = p;
 
     return measureWipePerfGivenStack( dataSize, dataOffset, wipeFn, pNRuns );
-   
+
 }
 
 
@@ -692,7 +699,7 @@ double measureWipePerfOneSize( SIZE_T dataSize, SIZE_T dataOffset, WIPE_FN wipeF
 {
     int nRuns = 1;
     double results[ RESULTS_PER_DATAPOINT ];
-    
+
     for( int i=0; i<RESULTS_PER_DATAPOINT; i++ )
     {
         results[i] = measureWipePerfMoveStack( dataSize, dataOffset, wipeFn, &nRuns );
@@ -710,7 +717,7 @@ double measureWipePerfOneSize( SIZE_T dataSize, SIZE_T dataOffset, WIPE_FN wipeF
 VOID createSizeSet( const SIZE_T pSizeList[], std::set<SIZE_T> * res )
 {
     res->clear();
-    
+
     for( int i= MAX_SIZES-1; i>=0; i-- )
     {
         if( pSizeList[i] == 0 && res->size() == 0 )
@@ -730,16 +737,16 @@ VOID createSizeSet( const SIZE_T pSizeList[], std::set<SIZE_T> * res )
     //    print( "%I64u, ", (ULONGLONG)*i );
     //}
     //iprint( "\n" );
-    
+
 }
 
 
-VOID measurePerfData( 
-                        PerfKeyFn keyFn, 
+VOID measurePerfData(
+                        PerfKeyFn keyFn,
                         PerfDataFn prepFn,
                         PerfDataFn dataFn,
-                        PerfCleanFn cleanFn, 
-                        std::set<SIZE_T> * pDataSizes, 
+                        PerfCleanFn cleanFn,
+                        std::set<SIZE_T> * pDataSizes,
                         SIZE_T keySize,
                         AlgorithmImplementation::ALG_PERF_INFO * pRes )
 {
@@ -754,7 +761,7 @@ VOID measurePerfData(
     for( std::set<SIZE_T>::const_iterator i = pDataSizes->begin(); i != pDataSizes->end(); ++i )
     {
         SIZE_T dataSize = *i;
-        
+
         SYMCRYPT_ASSERT( n < MAX_SIZES );
 
         if ( dataSize == PERF_DATASIZE_SAME_AS_KEYSIZE)
@@ -768,9 +775,9 @@ VOID measurePerfData(
             x[n] = dataSize;
             sumXi += dataSize;
         }
-        
+
         y[n] = measurePerfOneSize( keySize, dataSize, keyFn, prepFn, dataFn, cleanFn, FALSE );
-        
+
         //iprint( "Size = %5I64u, clocks = %f\n", (ULONGLONG) size, y[n] );
         ++n;
     }
@@ -800,7 +807,7 @@ VOID measurePerfData(
             sumDxDy += (x[i] - avX) * (y[i] - avY );
             sumDx2 += (x[i] - avX) * (x[i] - avX );
         }
-        
+
 
         //
         // We fit a line to the data points using Linear Regression
@@ -814,16 +821,16 @@ VOID measurePerfData(
         if( fixed < 0 )
         {
             // Our estimated fixed cost per request is < 0, which is nonsensical and due to measurement errors.
-            // This makes reporting ugly, especially with graphs. 
+            // This makes reporting ugly, especially with graphs.
             // As we know that the fixed cost must be >=0, we set it to 0 and re-optimize the perByte cost.
             // Our line becomes: Y = c*X for a per-byte cost c.
-            
+
             // Minimise_c Sum_i (Yi - c*Xi)^2
             // Minimise_c Sum_i (Yi^2 - 2*c*Xi*Yi + c^2*Xi^2)
             // Minimise_c (Sum_i Xi^2)*c^2 - 2*(Sum_i Xi*Yi)*c + (Sum_i Yi^2)
             // differentiate w.r.t. c
             //  2*(Sum_i Xi^2)*c - 2*(Sum_i Xi*Yi) = 0
-            // and thus c = (Sum_i Xi*Yi) / (Sum_i Xi^2) 
+            // and thus c = (Sum_i Xi*Yi) / (Sum_i Xi^2)
 
             ULONGLONG sumXiXi = 0;      // Our Xi < 2^24 or so, so a 64-bit accumulator is enough
             double sumXiYi = 0.0;
@@ -838,7 +845,7 @@ VOID measurePerfData(
 
         // Note: We should consider switching to the Theil�Sen estimator because it is much less sensitive to outliers
 
-    } else 
+    } else
     {
         // Only one data size. If datasize == 0, we have just a fixed overhead, otherwise we have only a perByte cost
         if( x[0] == 0 )
@@ -850,7 +857,7 @@ VOID measurePerfData(
             fixed = 0;
         }
     }
-    
+
 
     double lineDeviation[ MAX_SIZES ];
     for( SIZE_T i=0; i< n; i++ )
@@ -893,14 +900,14 @@ VOID measurePerfOneAlg( AlgorithmImplementation * pAlgImp )
     PerfKeyFn  keyFn = pAlgImp->m_perfKeyFunction;
     PerfCleanFn cleanFn = pAlgImp->m_perfCleanFunction;
 
-    CHECK4( keyFn == NULL || cleanFn != NULL, "No clean function in %s/%s", pAlgImp->m_implementationName.c_str(), pAlgImp->m_algorithmName.c_str() );        
+    CHECK4( keyFn == NULL || cleanFn != NULL, "No clean function in %s/%s", pAlgImp->m_implementationName.c_str(), pAlgImp->m_algorithmName.c_str() );
 
     const ALG_MEASURE_PARAMS * pParams = NULL;
 
     String algMode = pAlgImp->m_algorithmName + pAlgImp->m_modeName;
-    
+
     //print( "%s\n", algMode.c_str() );
-    
+
     for( int i=0; i<ARRAY_SIZE( g_algMeasureParams ); i++ )
     {
         if( g_algMeasureParams[i].algName == algMode )
@@ -944,7 +951,7 @@ VOID measurePerfOneAlg( AlgorithmImplementation * pAlgImp )
             perfInfo.cPerByte = 0;
             perfInfo.cFixed = measurePerfOneSize( *k, 0, keyFn, NULL, NULL, cleanFn, TRUE );
             perfInfo.strPostfix = "key";
-            
+
             pAlgImp->m_perfInfo.push_back( perfInfo );
         }
 
@@ -978,7 +985,7 @@ VOID measurePerfOneAlg( AlgorithmImplementation * pAlgImp )
             measurePerfData( keyFn, dataFn, decryptFn, cleanFn, &dataSizes, *k, &perfInfo );
             pAlgImp->m_perfInfo.push_back( perfInfo );
         }
-       
+
     }
 }
 
@@ -986,54 +993,25 @@ VOID
 SYMCRYPT_NOINLINE
 measurePerfOfAlgorithms()
 {
-    ULONGLONG startClock;
-    ULONGLONG clockCycles;
-    LARGE_INTEGER startCnt;
-    LARGE_INTEGER stopCnt;
-    LARGE_INTEGER cntFreq;
-    ULONGLONG startTick;
-    ULONGLONG ms;
-    double cntTime;
+    auto startChrono = std::chrono::steady_clock::now();
 
-    //
-    // Experimentally we know that the very first algorithms to be measured returns too large measurements.
-    // We test the first algorithm and throw away the results to circumvent this.
-    // 
-    /* This is too slow when the first algorithm is really expensive...
-    AlgorithmImplementation * pAlgImp = * g_algorithmImplementation.begin();
-    if( pAlgImp != NULL )
-    {
-        for( int i=0; i<4; i++ )
-        {
-            measurePerfOneAlg( pAlgImp );
-            pAlgImp->m_perfInfo.clear();
-        }
-    }
-    */
+    ULONGLONG startClock = GET_PERF_CLOCK();
 
-    QueryPerformanceCounter( &startCnt );
-    startTick = GetTickCount64();
-    startClock = GET_PERF_CLOCK();
-
-    for( std::vector<AlgorithmImplementation *>::iterator i = g_algorithmImplementation.begin(); 
+    for( std::vector<AlgorithmImplementation *>::iterator i = g_algorithmImplementation.begin();
             i != g_algorithmImplementation.end();
             i++ )
     {
-        
+
         //iprint( "Performance testing %s/%s\n", (*i)->m_implementationName.c_str(), (*i)->m_algorithmName.c_str() );
         //Sleep( 10 );
         measurePerfOneAlg( *i );
     }
 
-    clockCycles = GET_PERF_CLOCK() - startClock;
-    ms = GetTickCount64() - startTick;
-    QueryPerformanceCounter( &stopCnt );
+    ULONGLONG clockCycles = GET_PERF_CLOCK() - startClock;
 
-    QueryPerformanceFrequency( &cntFreq );
+    auto durationMs = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - startChrono);
 
-    cntTime = ((double) stopCnt.QuadPart - startCnt.QuadPart) / cntFreq.QuadPart;
-    g_tscFreqTickCtr = (double) clockCycles / ((double) ms / 1000);
-    g_tscFreqPerfCtr = (double) clockCycles / cntTime;
+    g_tscFreq = (double) clockCycles / ((double) durationMs.count() / 1000);
 }
 
 
@@ -1050,7 +1028,7 @@ wipeWrapper( PBYTE pbData, SIZE_T cbData )
     //memset( pbData, 0, cbData );
 }
 
-// We need two functions to measure, because the compiler is smart enough to 
+// We need two functions to measure, because the compiler is smart enough to
 // not use indirect calls if there is only ever one target.
 // and that messes up the perf numbers.
 VOID
@@ -1082,17 +1060,18 @@ VOID
 measurePerf()
 {
     iprint( "\nStarting performance measurements..." );
-    
+
+    #if SYMCRYPT_MS_VC
     int oldPriority = GetThreadPriority( GetCurrentThread() );
-    
+
     CHECK( SetThreadPriority( GetCurrentThread(), THREAD_PRIORITY_TIME_CRITICAL ), "Failed to set priority" );
     //print( "Thread priority set to %d\n", GetThreadPriority( GetCurrentThread() ) );
-    
+
     DWORD_PTR affinitymask = (DWORD_PTR)1 << GetCurrentProcessorNumber();
     affinitymask = SetThreadAffinityMask( GetCurrentThread(), affinitymask );
     CHECK( affinitymask != 0, "Failed to set affinity mask" );
+    #endif // SYMCRYPT_MS_VC
 
-    
     initPerfSystem();
 
 
@@ -1104,9 +1083,11 @@ measurePerf()
     }
 
 
+    #if SYMCRYPT_MS_VC
     CHECK( SetThreadAffinityMask( GetCurrentThread(), affinitymask ) != 0, "Failed to restore affinity mask" );
     CHECK( GetThreadPriority( GetCurrentThread() ) == THREAD_PRIORITY_TIME_CRITICAL, "Thread priority decay" );
     CHECK( SetThreadPriority( GetCurrentThread(), oldPriority ), "Failed to set priority" );
+    #endif // SYMCRYPT_MS_VC
 
     iprint( "...done\n" );
 }
@@ -1124,11 +1105,11 @@ initPerfSystem()
     // Sleep to let the system handle any background things (scrolling the window...) that might interfere with us
     //
     Sleep( 100 );
-    
+
     //
     // On Win7 the early measurements are unreliable. Presumably it takes a while to wake up the CPU
-    // and get it running at the highest clock frequency. 
-    // We have a do-nothing loop that cannot be optimized away 
+    // and get it running at the highest clock frequency.
+    // We have a do-nothing loop that cannot be optimized away
     // to ensure we get this before we start the actual measurements.
     //
     // To ensure that the compiler cannot optimize our busy-work away we actually print some result
@@ -1292,19 +1273,14 @@ runProfiling()
     g_perfTestsRunning = FALSE;
 }
 
-#include "bigpriv.h"
-#include "ms_rsa.h"
 
 VOID
-runRsaAverageKeyGenPerf()
+addRsaKeyGenPerfSymCrypt( PrintTable &table )
 {
     UINT32 bitSizes[] = {512, 3*256, 1024, 3*512, 2048, 3*1024, 4096, 3*2048, 8192, };
-    bigctx_t bignumCtx = { 0 };
     SYMCRYPT_RSA_PARAMS scRsaParams = {0};
-    RSA_PRIVATE_KEY bnPrivateKey;
-    big_prime_search_stat_t bnStats = { 0 };
 
-    iprint( "\n" 
+    iprint( "\n"
         " Trial division limits: \n" );
     for( UINT32 i=0; i<ARRAY_SIZE( bitSizes ); i++ )
     {
@@ -1314,23 +1290,13 @@ runRsaAverageKeyGenPerf()
         SymCryptFreeTrialDivisionContext( pContext );
     }
 
-    iprint( "\n"
-            "RSA key generation performance\n"
-            "KeySize    Bignum   SymCrypt  |  BnAvg   ScAvg\n"
-            "==============================+===============\n"
-        );
-
     for( UINT32 i=0; i<ARRAY_SIZE( bitSizes ); i++ )
     {
         UINT32 bitSize = bitSizes[i];
-        UINT64 lastPrintTime = 0;
 
         UINT64 scTicks;
-        UINT64 bnTicks;
         double scCost;
-        double bnCost;
         double scTotal = 0.0;
-        double bnTotal = 0.0;
 
         scRsaParams.version = 1;
         scRsaParams.nBitsOfModulus = bitSize;
@@ -1347,32 +1313,52 @@ runRsaAverageKeyGenPerf()
 
             UINT64 stop = GET_PERF_CLOCK();
             scTicks = stop - start;
-            start = stop;
+
+            scCost = scTicks * g_perfScaleFactor - g_perfMeasurementOverhead;
+            scTotal += scCost;
+
+            String row = formatNumber( bitSize ) + "-" + formatNumber(j+1);
+            table.addItem( row, "SymCrypt", formatNumber( scCost ) );
+            table.addItem( row, "SymCryptav", formatNumber( scTotal / (j+1) ));
+        }
+    }
+}
+
+#if INCLUDE_IMPL_MSBIGNUM 
+VOID
+addRsaKeyGenPerfMsBignum( PrintTable &table )
+{
+    UINT32 bitSizes[] = {512, 3*256, 1024, 3*512, 2048, 3*1024, 4096, 3*2048, 8192, };
+
+    bigctx_t bignumCtx = { 0 };
+    RSA_PRIVATE_KEY bnPrivateKey;
+    big_prime_search_stat_t bnStats = { 0 };
+
+    for( UINT32 i=0; i<ARRAY_SIZE( bitSizes ); i++ )
+    {
+        UINT32 bitSize = bitSizes[i];
+
+        UINT64 bnTicks;
+        double bnCost;
+        double bnTotal = 0.0;
+
+        for( UINT32 j=0; j<10; j++ )
+        {
+            UINT64 start = GET_PERF_CLOCK();
 
             rsa_construction( bitSize, &bnPrivateKey, NULL, 0, &bnStats, &bignumCtx );
             rsa_destruction( &bnPrivateKey, &bignumCtx );
 
-            stop = GET_PERF_CLOCK();
+            UINT64 stop = GET_PERF_CLOCK();
             bnTicks = stop - start;
 
-            scCost = scTicks * g_perfScaleFactor - g_perfMeasurementOverhead;
             bnCost = bnTicks * g_perfScaleFactor - g_perfMeasurementOverhead;
-            scTotal += scCost;
             bnTotal += bnCost;
 
-            print( "  %5d    %s    %s   | %s    %s\n", bitSize, 
-                    formatNumber( bnCost ).c_str(),
-                    formatNumber( scCost ).c_str(),
-                    formatNumber( bnTotal / (j+1) ).c_str(),
-                    formatNumber( scTotal / (j+1) ).c_str()
-                );
-            if( stop - lastPrintTime > (1<<30) )
-            {
-                printOutput(1);
-                lastPrintTime = stop;
-            }
+            String row = formatNumber( bitSize ) + "-" + formatNumber(j+1);
+            table.addItem( row, "MsBignum", formatNumber( bnCost ) );
+            table.addItem( row, "MsBignumav", formatNumber( bnTotal / (j+1) ));
         }
-        print( "                              |\n");
     }
-    iprint( "\n" );
 }
+#endif

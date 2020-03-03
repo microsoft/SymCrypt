@@ -31,7 +31,7 @@ SymCryptAes4SboxNeon( _In_reads_(4) PCBYTE pIn, _Out_writes_(4) PBYTE pOut )
     __n128 x;
 
     //
-    // There is no pure S-box lookup instruction, but the AESE instructoin
+    // There is no pure S-box lookup instruction, but the AESE instruction
     // does a ShiftRow followed by a SubBytes.
     // If we duplicate the input value to all 4 lanes, then the ShiftRow does nothing
     // and the SubBytes will do the S-box lookup.
@@ -45,33 +45,131 @@ SymCryptAes4SboxNeon( _In_reads_(4) PCBYTE pIn, _Out_writes_(4) PBYTE pOut )
 
 VOID
 SYMCRYPT_CALL
-SymCryptAesCreateDecryptionRoundKeyNeon( 
-    _In_reads_(16)      PCBYTE  pEncryptionRoundKey, 
+SymCryptAesCreateDecryptionRoundKeyNeon(
+    _In_reads_(16)      PCBYTE  pEncryptionRoundKey,
     _Out_writes_(16)    PBYTE   pDecryptionRoundKey )
 {
     *(__n128 *) pDecryptionRoundKey = aesimc_u8( *(__n128 *)pEncryptionRoundKey );
 }
 
+//
+// When doing a full round of AES encryption, make sure to give compiler opportunity to schedule dependent
+// aese/aesmc pairs to enable instruction fusion in many arm64 CPUs
+//
+#define AESE_AESMC( c, rk ) \
+{ \
+    c = aese_u8( c, rk ); \
+    c = aesmc_u8( c ); \
+};
+
+//
+// When doing a full round of AES decryption, make sure to give compiler opportunity to schedule dependent
+// aesd/aesimc pairs to enable instruction fusion in many arm64 CPUs
+//
+#define AESD_AESIMC( c, rk ) \
+{ \
+    c = aesd_u8( c, rk ); \
+    c = aesimc_u8( c ); \
+};
+
+//
+// Using a loop with AESE_AESMC and AESD_AESIMC, the compiler can still prematurely rearrange the loop and
+// lose opportunity for scheduling adjacent pairs.
+// Instead, explicitly unroll the AES rounds with this macro.
+// Takes the name of full_round and final_round macros, and uses them to construct block to handle AES (128|192|256)
+// for either encrypt or decrypt. For now assume only need at most 8 state variables in the macros.
+// Assumes roundKey, keyPtr, and keyLimit are defined in calling context.
+//
+#define UNROLL_AES_ROUNDS( full_round, final_round, c0, c1, c2, c3, c4, c5, c6, c7 ) \
+{ \
+    /* Do 9 full rounds (AES-128|AES-192|AES-256) */ \
+    roundKey = *keyPtr++; \
+    full_round( c0, c1, c2, c3, c4, c5, c6, c7 ) \
+    roundKey = *keyPtr++; \
+    full_round( c0, c1, c2, c3, c4, c5, c6, c7 ) \
+    roundKey = *keyPtr++; \
+    full_round( c0, c1, c2, c3, c4, c5, c6, c7 ) \
+    roundKey = *keyPtr++; \
+    full_round( c0, c1, c2, c3, c4, c5, c6, c7 ) \
+    roundKey = *keyPtr++; \
+    full_round( c0, c1, c2, c3, c4, c5, c6, c7 ) \
+    roundKey = *keyPtr++; \
+    full_round( c0, c1, c2, c3, c4, c5, c6, c7 ) \
+    roundKey = *keyPtr++; \
+    full_round( c0, c1, c2, c3, c4, c5, c6, c7 ) \
+    roundKey = *keyPtr++; \
+    full_round( c0, c1, c2, c3, c4, c5, c6, c7 ) \
+    roundKey = *keyPtr++; \
+    full_round( c0, c1, c2, c3, c4, c5, c6, c7 ) \
+    roundKey = *keyPtr++; \
+\
+    if ( keyPtr < keyLimit ) \
+    { \
+        /* Do 2 more full rounds (AES-192|AES-256) */ \
+        full_round( c0, c1, c2, c3, c4, c5, c6, c7 ) \
+        roundKey = *keyPtr++; \
+        full_round( c0, c1, c2, c3, c4, c5, c6, c7 ) \
+        roundKey = *keyPtr++; \
+\
+        if ( keyPtr < keyLimit ) \
+        { \
+            /* Do 2 more full rounds (AES-256) */ \
+            full_round( c0, c1, c2, c3, c4, c5, c6, c7 ) \
+            roundKey = *keyPtr++; \
+            full_round( c0, c1, c2, c3, c4, c5, c6, c7 ) \
+            roundKey = *keyPtr++; \
+        } \
+    } \
+\
+    /* Do final round (AES-128|AES-192|AES-256) */ \
+    final_round( c0, c1, c2, c3, c4, c5, c6, c7 ) \
+};
+
+#define AES_ENCRYPT_ROUND_1( c0, c1, c2, c3, c4, c5, c6, c7 ) \
+{ \
+    AESE_AESMC( c0, roundKey ) \
+};
+#define AES_ENCRYPT_FINAL_1( c0, c1, c2, c3, c4, c5, c6, c7 ) \
+{ \
+    c0 = aese_u8( c0, roundKey ); \
+    roundKey = *keyPtr; \
+    c0 = veorq_u8( c0, roundKey ); \
+};
 
 #define AES_ENCRYPT_1( pExpandedKey, c0 ) \
 { \
     const __n128 *keyPtr; \
     const __n128 *keyLimit; \
+    __n128 roundKey; \
 \
     keyPtr = (const __n128 *)&pExpandedKey->RoundKey[0]; \
     keyLimit = (const __n128 *)pExpandedKey->lastEncRoundKey; \
 \
-    c0 = aese_u8( c0, *keyPtr ); \
-    keyPtr ++; \
-\
-    do \
-    { \
-        c0 = aesmc_u8( c0 ); \
-        c0 = aese_u8( c0, *keyPtr ); \
-        keyPtr++;\
-    } while( keyPtr < keyLimit ); \
-\
-    c0 = veorq_u8( c0, *keyPtr ); \
+    UNROLL_AES_ROUNDS( \
+        AES_ENCRYPT_ROUND_1, \
+        AES_ENCRYPT_FINAL_1, \
+        c0, c1, c2, c3, c4, c5, c6, c7 \
+    ) \
+};
+
+#define AES_ENCRYPT_ROUND_4( c0, c1, c2, c3, c4, c5, c6, c7 ) \
+{ \
+    AESE_AESMC( c0, roundKey ) \
+    AESE_AESMC( c1, roundKey ) \
+    AESE_AESMC( c2, roundKey ) \
+    AESE_AESMC( c3, roundKey ) \
+};
+#define AES_ENCRYPT_FINAL_4( c0, c1, c2, c3, c4, c5, c6, c7 ) \
+{ \
+    c0 = aese_u8( c0, roundKey ); \
+    c1 = aese_u8( c1, roundKey ); \
+    c2 = aese_u8( c2, roundKey ); \
+    c3 = aese_u8( c3, roundKey ); \
+    roundKey = *keyPtr; \
+    c0 = veorq_u8( c0, roundKey ); \
+    c1 = veorq_u8( c1, roundKey ); \
+    c2 = veorq_u8( c2, roundKey ); \
+    c3 = veorq_u8( c3, roundKey ); \
 };
 
 #define AES_ENCRYPT_4( pExpandedKey, c0, c1, c2, c3 ) \
@@ -83,45 +181,26 @@ SymCryptAesCreateDecryptionRoundKeyNeon(
     keyPtr = (const __n128 *)&pExpandedKey->RoundKey[0]; \
     keyLimit = (const __n128 *)pExpandedKey->lastEncRoundKey; \
 \
-    roundKey = *keyPtr++; \
-    c0 = aese_u8( c0, roundKey ); \
-    c1 = aese_u8( c1, roundKey ); \
-    c2 = aese_u8( c2, roundKey ); \
-    c3 = aese_u8( c3, roundKey ); \
-\
-    do \
-    { \
-        c0 = aesmc_u8( c0 ); \
-        c1 = aesmc_u8( c1 ); \
-        c2 = aesmc_u8( c2 ); \
-        c3 = aesmc_u8( c3 ); \
-        roundKey = *keyPtr++; \
-        c0 = aese_u8( c0, roundKey ); \
-        c1 = aese_u8( c1, roundKey ); \
-        c2 = aese_u8( c2, roundKey ); \
-        c3 = aese_u8( c3, roundKey ); \
-    } while( keyPtr < keyLimit ); \
-\
-    roundKey = *keyPtr; \
-    c0 = veorq_u8( c0, roundKey ); \
-    c1 = veorq_u8( c1, roundKey ); \
-    c2 = veorq_u8( c2, roundKey ); \
-    c3 = veorq_u8( c3, roundKey ); \
+    UNROLL_AES_ROUNDS( \
+        AES_ENCRYPT_ROUND_4, \
+        AES_ENCRYPT_FINAL_4, \
+        c0, c1, c2, c3, c4, c5, c6, c7 \
+    ) \
 };
 
-//
-// The main loop is interleaved to get a small perf advantage at start-up of the loop
-//
-#define AES_ENCRYPT_8( pExpandedKey, c0, c1, c2, c3, c4, c5, c6, c7 ) \
+#define AES_ENCRYPT_ROUND_8( c0, c1, c2, c3, c4, c5, c6, c7 ) \
 { \
-    const __n128 *keyPtr; \
-    const __n128 *keyLimit; \
-    __n128 roundKey; \
-\
-    keyPtr = (const __n128 *)&pExpandedKey->RoundKey[0]; \
-    keyLimit = (const __n128 *)pExpandedKey->lastEncRoundKey; \
-\
-    roundKey = *keyPtr++; \
+    AESE_AESMC( c0, roundKey ) \
+    AESE_AESMC( c1, roundKey ) \
+    AESE_AESMC( c2, roundKey ) \
+    AESE_AESMC( c3, roundKey ) \
+    AESE_AESMC( c4, roundKey ) \
+    AESE_AESMC( c5, roundKey ) \
+    AESE_AESMC( c6, roundKey ) \
+    AESE_AESMC( c7, roundKey ) \
+};
+#define AES_ENCRYPT_FINAL_8( c0, c1, c2, c3, c4, c5, c6, c7 ) \
+{ \
     c0 = aese_u8( c0, roundKey ); \
     c1 = aese_u8( c1, roundKey ); \
     c2 = aese_u8( c2, roundKey ); \
@@ -130,28 +209,6 @@ SymCryptAesCreateDecryptionRoundKeyNeon(
     c5 = aese_u8( c5, roundKey ); \
     c6 = aese_u8( c6, roundKey ); \
     c7 = aese_u8( c7, roundKey ); \
-\
-    do \
-    { \
-        c0 = aesmc_u8( c0 ); \
-        roundKey = *keyPtr++; \
-        c1 = aesmc_u8( c1 ); \
-        c0 = aese_u8( c0, roundKey ); \
-        c2 = aesmc_u8( c2 ); \
-        c1 = aese_u8( c1, roundKey ); \
-        c3 = aesmc_u8( c3 ); \
-        c2 = aese_u8( c2, roundKey ); \
-        c4 = aesmc_u8( c4 ); \
-        c3 = aese_u8( c3, roundKey ); \
-        c5 = aesmc_u8( c5 ); \
-        c4 = aese_u8( c4, roundKey ); \
-        c6 = aesmc_u8( c6 ); \
-        c5 = aese_u8( c5, roundKey ); \
-        c7 = aesmc_u8( c7 ); \
-        c6 = aese_u8( c6, roundKey ); \
-        c7 = aese_u8( c7, roundKey ); \
-    } while( keyPtr < keyLimit ); \
-\
     roundKey = *keyPtr; \
     c0 = veorq_u8( c0, roundKey ); \
     c1 = veorq_u8( c1, roundKey ); \
@@ -163,25 +220,67 @@ SymCryptAesCreateDecryptionRoundKeyNeon(
     c7 = veorq_u8( c7, roundKey ); \
 };
 
+#define AES_ENCRYPT_8( pExpandedKey, c0, c1, c2, c3, c4, c5, c6, c7 ) \
+{ \
+    const __n128 *keyPtr; \
+    const __n128 *keyLimit; \
+    __n128 roundKey; \
+\
+    keyPtr = (const __n128 *)&pExpandedKey->RoundKey[0]; \
+    keyLimit = (const __n128 *)pExpandedKey->lastEncRoundKey; \
+\
+    UNROLL_AES_ROUNDS( \
+        AES_ENCRYPT_ROUND_8, \
+        AES_ENCRYPT_FINAL_8, \
+        c0, c1, c2, c3, c4, c5, c6, c7 \
+    ) \
+};
+
+#define AES_DECRYPT_ROUND_1( c0, c1, c2, c3, c4, c5, c6, c7 ) \
+{ \
+    AESD_AESIMC( c0, roundKey ) \
+};
+#define AES_DECRYPT_FINAL_1( c0, c1, c2, c3, c4, c5, c6, c7 ) \
+{ \
+    c0 = aesd_u8( c0, roundKey ); \
+    roundKey = *keyPtr; \
+    c0 = veorq_u8( c0, roundKey ); \
+};
+
 #define AES_DECRYPT_1( pExpandedKey, c0 ) \
 { \
     const __n128 *keyPtr; \
     const __n128 *keyLimit; \
+    __n128 roundKey; \
 \
     keyPtr = (const __n128 *)pExpandedKey->lastEncRoundKey; \
     keyLimit = (const __n128 *)pExpandedKey->lastDecRoundKey; \
 \
-    c0 = aesd_u8( c0, *keyPtr ); \
-    keyPtr ++; \
-\
-    do \
-    { \
-        c0 = aesimc_u8( c0 ); \
-        c0 = aesd_u8( c0, *keyPtr ); \
-        keyPtr++;\
-    } while( keyPtr < keyLimit ); \
-\
-    c0 = veorq_u8( c0, *keyPtr ); \
+    UNROLL_AES_ROUNDS( \
+        AES_DECRYPT_ROUND_1, \
+        AES_DECRYPT_FINAL_1, \
+        c0, c1, c2, c3, c4, c5, c6, c7 \
+    ) \
+};
+
+#define AES_DECRYPT_ROUND_4( c0, c1, c2, c3, c4, c5, c6, c7 ) \
+{ \
+    AESD_AESIMC( c0, roundKey ) \
+    AESD_AESIMC( c1, roundKey ) \
+    AESD_AESIMC( c2, roundKey ) \
+    AESD_AESIMC( c3, roundKey ) \
+};
+#define AES_DECRYPT_FINAL_4( c0, c1, c2, c3, c4, c5, c6, c7 ) \
+{ \
+    c0 = aesd_u8( c0, roundKey ); \
+    c1 = aesd_u8( c1, roundKey ); \
+    c2 = aesd_u8( c2, roundKey ); \
+    c3 = aesd_u8( c3, roundKey ); \
+    roundKey = *keyPtr; \
+    c0 = veorq_u8( c0, roundKey ); \
+    c1 = veorq_u8( c1, roundKey ); \
+    c2 = veorq_u8( c2, roundKey ); \
+    c3 = veorq_u8( c3, roundKey ); \
 };
 
 #define AES_DECRYPT_4( pExpandedKey, c0, c1, c2, c3 ) \
@@ -193,45 +292,26 @@ SymCryptAesCreateDecryptionRoundKeyNeon(
     keyPtr = (const __n128 *)pExpandedKey->lastEncRoundKey; \
     keyLimit = (const __n128 *)pExpandedKey->lastDecRoundKey; \
 \
-    roundKey = *keyPtr++; \
-    c0 = aesd_u8( c0, roundKey ); \
-    c1 = aesd_u8( c1, roundKey ); \
-    c2 = aesd_u8( c2, roundKey ); \
-    c3 = aesd_u8( c3, roundKey ); \
-\
-    do \
-    { \
-        c0 = aesimc_u8( c0 ); \
-        c1 = aesimc_u8( c1 ); \
-        c2 = aesimc_u8( c2 ); \
-        c3 = aesimc_u8( c3 ); \
-        roundKey = *keyPtr++; \
-        c0 = aesd_u8( c0, roundKey ); \
-        c1 = aesd_u8( c1, roundKey ); \
-        c2 = aesd_u8( c2, roundKey ); \
-        c3 = aesd_u8( c3, roundKey ); \
-    } while( keyPtr < keyLimit ); \
-\
-    roundKey = *keyPtr; \
-    c0 = veorq_u8( c0, roundKey ); \
-    c1 = veorq_u8( c1, roundKey ); \
-    c2 = veorq_u8( c2, roundKey ); \
-    c3 = veorq_u8( c3, roundKey ); \
+    UNROLL_AES_ROUNDS( \
+        AES_DECRYPT_ROUND_4, \
+        AES_DECRYPT_FINAL_4, \
+        c0, c1, c2, c3, c4, c5, c6, c7 \
+    ) \
 };
 
-//
-// The main loop is interleaved to get a small perf advantage at start-up of the loop
-//
-#define AES_DECRYPT_8( pExpandedKey, c0, c1, c2, c3, c4, c5, c6, c7 ) \
+#define AES_DECRYPT_ROUND_8( c0, c1, c2, c3, c4, c5, c6, c7 ) \
 { \
-    const __n128 *keyPtr; \
-    const __n128 *keyLimit; \
-    __n128 roundKey; \
-\
-    keyPtr = (const __n128 *)pExpandedKey->lastEncRoundKey; \
-    keyLimit = (const __n128 *)pExpandedKey->lastDecRoundKey; \
-\
-    roundKey = *keyPtr++; \
+    AESD_AESIMC( c0, roundKey ) \
+    AESD_AESIMC( c1, roundKey ) \
+    AESD_AESIMC( c2, roundKey ) \
+    AESD_AESIMC( c3, roundKey ) \
+    AESD_AESIMC( c4, roundKey ) \
+    AESD_AESIMC( c5, roundKey ) \
+    AESD_AESIMC( c6, roundKey ) \
+    AESD_AESIMC( c7, roundKey ) \
+};
+#define AES_DECRYPT_FINAL_8( c0, c1, c2, c3, c4, c5, c6, c7 ) \
+{ \
     c0 = aesd_u8( c0, roundKey ); \
     c1 = aesd_u8( c1, roundKey ); \
     c2 = aesd_u8( c2, roundKey ); \
@@ -240,28 +320,6 @@ SymCryptAesCreateDecryptionRoundKeyNeon(
     c5 = aesd_u8( c5, roundKey ); \
     c6 = aesd_u8( c6, roundKey ); \
     c7 = aesd_u8( c7, roundKey ); \
-\
-    do \
-    { \
-        c0 = aesimc_u8( c0 ); \
-        roundKey = *keyPtr++; \
-        c1 = aesimc_u8( c1 ); \
-        c0 = aesd_u8( c0, roundKey ); \
-        c2 = aesimc_u8( c2 ); \
-        c1 = aesd_u8( c1, roundKey ); \
-        c3 = aesimc_u8( c3 ); \
-        c2 = aesd_u8( c2, roundKey ); \
-        c4 = aesimc_u8( c4 ); \
-        c3 = aesd_u8( c3, roundKey ); \
-        c5 = aesimc_u8( c5 ); \
-        c4 = aesd_u8( c4, roundKey ); \
-        c6 = aesimc_u8( c6 ); \
-        c5 = aesd_u8( c5, roundKey ); \
-        c7 = aesimc_u8( c7 ); \
-        c6 = aesd_u8( c6, roundKey ); \
-        c7 = aesd_u8( c7, roundKey ); \
-    } while( keyPtr < keyLimit ); \
-\
     roundKey = *keyPtr; \
     c0 = veorq_u8( c0, roundKey ); \
     c1 = veorq_u8( c1, roundKey ); \
@@ -273,11 +331,27 @@ SymCryptAesCreateDecryptionRoundKeyNeon(
     c7 = veorq_u8( c7, roundKey ); \
 };
 
+#define AES_DECRYPT_8( pExpandedKey, c0, c1, c2, c3, c4, c5, c6, c7 ) \
+{ \
+    const __n128 *keyPtr; \
+    const __n128 *keyLimit; \
+    __n128 roundKey; \
+\
+    keyPtr = (const __n128 *)pExpandedKey->lastEncRoundKey; \
+    keyLimit = (const __n128 *)pExpandedKey->lastDecRoundKey; \
+\
+    UNROLL_AES_ROUNDS( \
+        AES_DECRYPT_ROUND_8, \
+        AES_DECRYPT_FINAL_8, \
+        c0, c1, c2, c3, c4, c5, c6, c7 \
+    ) \
+};
+
 
 
 VOID
 SYMCRYPT_CALL
-SymCryptAesEncryptNeon( 
+SymCryptAesEncryptNeon(
     _In_                                    PCSYMCRYPT_AES_EXPANDED_KEY pExpandedKey,
     _In_reads_( SYMCRYPT_AES_BLOCK_SIZE )   PCBYTE                      pbSrc,
     _Out_writes_( SYMCRYPT_AES_BLOCK_SIZE ) PBYTE                       pbDst )
@@ -293,7 +367,7 @@ SymCryptAesEncryptNeon(
 
 VOID
 SYMCRYPT_CALL
-SymCryptAesDecryptNeon( 
+SymCryptAesDecryptNeon(
     _In_                                    PCSYMCRYPT_AES_EXPANDED_KEY pExpandedKey,
     _In_reads_( SYMCRYPT_AES_BLOCK_SIZE )   PCBYTE                      pbSrc,
     _Out_writes_( SYMCRYPT_AES_BLOCK_SIZE ) PBYTE                       pbDst )
@@ -310,7 +384,7 @@ SymCryptAesDecryptNeon(
 
 VOID
 SYMCRYPT_CALL
-SymCryptAesCbcEncryptNeon( 
+SymCryptAesCbcEncryptNeon(
     _In_                                    PCSYMCRYPT_AES_EXPANDED_KEY pExpandedKey,
     _In_reads_( SYMCRYPT_AES_BLOCK_SIZE )   PBYTE                       pbChainingValue,
     _In_reads_( cbData )                    PCBYTE                      pbSrc,
@@ -334,11 +408,13 @@ SymCryptAesCbcEncryptNeon(
     *(__n128 *)pbChainingValue = c;
 }
 
-#pragma warning( push )
-#pragma warning( disable: 6001 4701 ) // use of uninitialized values, but that is by designs
+// Disable warnings and VC++ runtime checks for use of uninitialized values (by design)
+#pragma warning(push)
+#pragma warning( disable: 6001 4701 )
+#pragma runtime_checks( "u", off )
 VOID
 SYMCRYPT_CALL
-SymCryptAesCbcDecryptNeon( 
+SymCryptAesCbcDecryptNeon(
     _In_                                    PCSYMCRYPT_AES_EXPANDED_KEY pExpandedKey,
     _In_reads_( SYMCRYPT_AES_BLOCK_SIZE )   PBYTE                       pbChainingValue,
     _In_reads_( cbData )                    PCBYTE                      pbSrc,
@@ -405,7 +481,7 @@ SymCryptAesCbcDecryptNeon(
         //
         // There is remaining work to be done
         //
-        d0 = c0 = pSrc[0]; 
+        d0 = c0 = pSrc[0];
         if( cData >= 2 )
         {
         d1 = c1 = pSrc[1];
@@ -445,7 +521,7 @@ SymCryptAesCbcDecryptNeon(
             c4 = veorq_u8( c4, d3 );
             c5 = veorq_u8( c5, d4 );
             c6 = veorq_u8( c6, d5 );
-        } 
+        }
         else if( cData > 1 )
         {
             AES_DECRYPT_4( pExpandedKey, c0, c1, c2, c3 );
@@ -491,6 +567,7 @@ SymCryptAesCbcDecryptNeon(
 
     return;
 }
+#pragma runtime_checks( "u", restore )
 #pragma warning( pop )
 
 
@@ -518,11 +595,13 @@ SymCryptAesCbcMacNeon(
     *(__n128 *)pbChainingValue = c;
 }
 
+// Disable warnings and VC++ runtime checks for use of uninitialized values (by design)
 #pragma warning(push)
-#pragma warning( disable: 6001 4701 ) // use of uninitialized values, but that is by designs
+#pragma warning( disable: 6001 4701 )
+#pragma runtime_checks( "u", off )
 VOID
 SYMCRYPT_CALL
-SymCryptAesEcbEncryptNeon( 
+SymCryptAesEcbEncryptNeon(
     _In_                                        PCSYMCRYPT_AES_EXPANDED_KEY pExpandedKey,
     _In_reads_( cbData )                        PCBYTE                      pbSrc,
     _Out_writes_( cbData )                      PBYTE                       pbDst,
@@ -593,11 +672,11 @@ SymCryptAesEcbEncryptNeon(
     if( cbData >= 5 * SYMCRYPT_AES_BLOCK_SIZE )
     {
         AES_ENCRYPT_8( pExpandedKey, c0, c1, c2, c3, c4, c5, c6, c7 );
-    } 
+    }
     else if( cbData >= 2 * SYMCRYPT_AES_BLOCK_SIZE )
     {
         AES_ENCRYPT_4( pExpandedKey, c0, c1, c2, c3 );
-    } 
+    }
     else
     {
         AES_ENCRYPT_1( pExpandedKey, c0 );
@@ -629,15 +708,16 @@ SymCryptAesEcbEncryptNeon(
         }
     }
 }
+#pragma runtime_checks( "u", restore)
 #pragma warning( pop )
 
 #pragma warning(push)
 #pragma warning( disable:4701 ) // "Use of uninitialized variable"
-
+#pragma runtime_checks( "u", off )
 
 VOID
 SYMCRYPT_CALL
-SymCryptAesCtrMsb64Neon( 
+SymCryptAesCtrMsb64Neon(
     _In_                                    PCSYMCRYPT_AES_EXPANDED_KEY pExpandedKey,
     _In_reads_( SYMCRYPT_AES_BLOCK_SIZE )   PBYTE                       pbChainingValue,
     _In_reads_( cbData )                    PCBYTE                      pbSrc,
@@ -657,14 +737,22 @@ SymCryptAesCtrMsb64Neon(
     // See section 6.7.8 of the C standard for details on this initializer usage.
     const __n128 chainIncrement1 = (__n128) {.n128_u64 = {0, 1}};   // use {0,1} to initialize the n128_u64 element of the __n128 union.
     const __n128 chainIncrement2 = (__n128) {.n128_u64 = {0, 2}};
-    const __n128 chainIncrement3 = (__n128) {.n128_u64 = {0, 3}};
+    const __n128 chainIncrement8 = (__n128) {.n128_u64 = {0, 8}};
 
+    __n128 ctr0, ctr1, ctr2, ctr3, ctr4, ctr5, ctr6, ctr7;
     __n128 c0, c1, c2, c3, c4, c5, c6, c7;
 
     cbData &= ~(SYMCRYPT_AES_BLOCK_SIZE - 1);
 
     // Our chain variable is in integer format, not the MSBfirst format loaded from memory.
-    chain = vrev64q_u8( chain );
+    ctr0 = vrev64q_u8( chain );
+    ctr1 = vaddq_u64( ctr0, chainIncrement1 );
+    ctr2 = vaddq_u64( ctr0, chainIncrement2 );
+    ctr3 = vaddq_u64( ctr1, chainIncrement2 );
+    ctr4 = vaddq_u64( ctr2, chainIncrement2 );
+    ctr5 = vaddq_u64( ctr3, chainIncrement2 );
+    ctr6 = vaddq_u64( ctr4, chainIncrement2 );
+    ctr7 = vaddq_u64( ctr5, chainIncrement2 );
 
 /*
     while cbData >= 5 * block
@@ -675,34 +763,33 @@ SymCryptAesCtrMsb64Neon(
     if cbData >= 5 * block
         process 5-7 blocks
         done
-    if cbData > 1 block
+    if cbData >= 2 * block
         generate 4 blocks of key stream
         process 2-4 blocks
         done
-    if cbData >= 1 block
+    if cbData == 1 block
         generate 1 block of key stream
         process block
 */
     while( cbData >= 5 * SYMCRYPT_AES_BLOCK_SIZE )
     {
-        c0 = chain;
-        c1 = vaddq_u64( chain, chainIncrement1 );
-        c2 = vaddq_u64( chain, chainIncrement2 );
-        c3 = vaddq_u64( c1, chainIncrement2 );
-        c4 = vaddq_u64( c2, chainIncrement2 );
-        c5 = vaddq_u64( c3, chainIncrement2 );
-        c6 = vaddq_u64( c4, chainIncrement2 );
-        c7 = vaddq_u64( c5, chainIncrement2 );
-        chain = vaddq_u64( c6, chainIncrement2 );
+        c0 = vrev64q_u8( ctr0 );
+        c1 = vrev64q_u8( ctr1 );
+        c2 = vrev64q_u8( ctr2 );
+        c3 = vrev64q_u8( ctr3 );
+        c4 = vrev64q_u8( ctr4 );
+        c5 = vrev64q_u8( ctr5 );
+        c6 = vrev64q_u8( ctr6 );
+        c7 = vrev64q_u8( ctr7 );
 
-        c0 = vrev64q_u8( c0 );
-        c1 = vrev64q_u8( c1 );
-        c2 = vrev64q_u8( c2 );
-        c3 = vrev64q_u8( c3 );
-        c4 = vrev64q_u8( c4 );
-        c5 = vrev64q_u8( c5 );
-        c6 = vrev64q_u8( c6 );
-        c7 = vrev64q_u8( c7 );
+        ctr0 = vaddq_u64( ctr0, chainIncrement8 );
+        ctr1 = vaddq_u64( ctr1, chainIncrement8 );
+        ctr2 = vaddq_u64( ctr2, chainIncrement8 );
+        ctr3 = vaddq_u64( ctr3, chainIncrement8 );
+        ctr4 = vaddq_u64( ctr4, chainIncrement8 );
+        ctr5 = vaddq_u64( ctr5, chainIncrement8 );
+        ctr6 = vaddq_u64( ctr6, chainIncrement8 );
+        ctr7 = vaddq_u64( ctr7, chainIncrement8 );
 
         AES_ENCRYPT_8( pExpandedKey, c0, c1, c2, c3, c4, c5, c6, c7 );
 
@@ -712,7 +799,7 @@ SymCryptAesCtrMsb64Neon(
         }
 
         pDst[0] = veorq_u64( pSrc[0], c0 ); __prefetch( &pSrc[ 8] );
-        pDst[1] = veorq_u64( pSrc[1], c1 ); 
+        pDst[1] = veorq_u64( pSrc[1], c1 );
         pDst[2] = veorq_u64( pSrc[2], c2 ); __prefetch( &pSrc[10] );
         pDst[3] = veorq_u64( pSrc[3], c3 );
         pDst[4] = veorq_u64( pSrc[4], c4 ); __prefetch( &pSrc[12] );
@@ -727,8 +814,8 @@ SymCryptAesCtrMsb64Neon(
 
     //
     // At this point we have one of the two following cases:
-    // - cbData >= 5 * 16 and we have 8 blocks of key stream in c0-c7. chain is set to c7 + 1
-    // - cbData < 5 * 16 and we have no blocks of key stream, with chain the next value to use
+    // - cbData >= 5 * 16 and we have 8 blocks of key stream in c0-c7. ctr0-ctr7 is set to (c0+8)-(c7+8)
+    // - cbData < 5 * 16 and we have no blocks of key stream, and ctr0-ctr7 set to the next 8 counters to use
     //
 
     if( cbData >= SYMCRYPT_AES_BLOCK_SIZE ) // quick exit of function if the request was a multiple of 8 blocks
@@ -743,33 +830,29 @@ SymCryptAesCtrMsb64Neon(
             pDst[2] = veorq_u64( pSrc[2], c2 );
             pDst[3] = veorq_u64( pSrc[3], c3 );
             pDst[4] = veorq_u64( pSrc[4], c4 );
-            chain = vsubq_u64( chain, chainIncrement3 );
+            chain = vsubq_u64( ctr5, chainIncrement8 );
 
             if( cbData >= 96 )
             {
-            chain = vaddq_u64( chain, chainIncrement1 );
+            chain = vsubq_u64( ctr6, chainIncrement8 );
             pDst[5] = veorq_u64( pSrc[5], c5 );
                 if( cbData >= 112 )
                 {
-            chain = vaddq_u64( chain, chainIncrement1 );
+            chain = vsubq_u64( ctr7, chainIncrement8 );
             pDst[6] = veorq_u64( pSrc[6], c6 );
                 }
             }
-        } 
+        }
         else if( cbData >= 2 * SYMCRYPT_AES_BLOCK_SIZE )
         {
             // Produce 4 blocks of key stream
 
-            c0 = chain;
-            c1 = vaddq_u64( chain, chainIncrement1 );
-            c2 = vaddq_u64( chain, chainIncrement2 );
-            c3 = vaddq_u64( c1, chainIncrement2 );
-            chain = c2;             // chain is only incremented by 2 for now
+            chain = ctr2;           // chain is only incremented by 2 for now
 
-            c0 = vrev64q_u8( c0 );
-            c1 = vrev64q_u8( c1 );
-            c2 = vrev64q_u8( c2 );
-            c3 = vrev64q_u8( c3 );
+            c0 = vrev64q_u8( ctr0 );
+            c1 = vrev64q_u8( ctr1 );
+            c2 = vrev64q_u8( ctr2 );
+            c3 = vrev64q_u8( ctr3 );
 
             AES_ENCRYPT_4( pExpandedKey, c0, c1, c2, c3 );
 
@@ -777,32 +860,35 @@ SymCryptAesCtrMsb64Neon(
             pDst[1] = veorq_u64( pSrc[1], c1 );
             if( cbData >= 48 )
             {
-            chain = vaddq_u64( chain, chainIncrement1 );
+            chain = ctr3;
             pDst[2] = veorq_u64( pSrc[2], c2 );
                 if( cbData >= 64 )
                 {
-            chain = vaddq_u64( chain, chainIncrement1 );
+            chain = ctr4;
             pDst[3] = veorq_u64( pSrc[3], c3 );
                 }
             }
         }
-        else 
+        else
         {
             // Exactly 1 block to process
-            c0 = chain;
-            chain = vaddq_u64( chain, chainIncrement1 );
+            chain = ctr1;
 
-            c0 = vrev64q_u8( c0 );
+            c0 = vrev64q_u8( ctr0 );
 
             AES_ENCRYPT_1( pExpandedKey, c0 );
             pDst[0] = veorq_u64( pSrc[0], c0 );
         }
     }
+    else
+    {
+        chain = ctr0;
+    }
 
     chain = vrev64q_u8( chain );
     *(__n128 *)pbChainingValue = chain;
 }
-
+#pragma runtime_checks( "u", restore )
 #pragma warning(pop)
 
 
@@ -838,8 +924,6 @@ SymCryptAesCtrMsb64Neon(
 // and an AND to mask the modulo reduction and the extraneous bits in the other bytes at the same time.
 // vAlphaMask = (1, 1, ..., 1, 0x87 )
 //
-__declspec( align( 16 ) ) const BYTE g_SymCryptXtsNeonAlphaMask[16] = {0x87, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,};
-
 #define XTS_MUL_ALPHA( _in, _res ) \
 {\
     __n128 _t1, _t2;\
@@ -903,16 +987,21 @@ __declspec( align( 16 ) ) const BYTE g_SymCryptXtsNeonAlphaMask[16] = {0x87, 1, 
 }
 
 // Multiply by ALPHA^8
-// t2 = Input >> 120
-// t2 = (t2 <<<< 7) ^ (t2 <<<< 2) ^ (t2 <<<< 1) ^ t2
-// res = (Input << 8) ^ t2
+// res = (Input << 8) | (Input >> 120)
+// t2 = (Input >> 120) * 0x86
+//      i.e. ((Input >> 120) <<<< 7) ^ ((Input >> 120) <<<< 2) ^ ((Input >> 120) <<<< 1)
+//           the 0x01 component is already in res where we want it
+// res = res ^ t2
+//
+// vAlphaMultiplier = (0, 0, ..., 0, 0x86 )
+
 #define XTS_MUL_ALPHA8( _in, _res ) \
 {\
     __n128 _t2;\
 \
-    _t2 = vextq_u8( _in, vZero, 15 ); \
-    _t2 = veorq_u32( veorq_u32( veorq_u32( _t2, vshlq_n_u32( _t2, 7 )), vshlq_n_u32( _t2, 2 ) ), vshlq_n_u32( _t2, 1 ) ); \
-    _res = veorq_u32( vextq_u8( vZero, _in, 15 ), _t2 ); \
+    _res = vextq_u8( _in, _in, 15 ); \
+    _t2 = vmull_p8( vget_low_p8(_res), vAlphaMultiplier ); \
+    _res = veorq_u32( _res, _t2 ); \
 }
 
 
@@ -931,7 +1020,8 @@ SymCryptXtsAesEncryptDataUnitNeon(
     const __n128 *  pSrc;
     __n128 *        pDst;
     const __n128 vZero = neon_moviqb(0);
-    const __n128 vAlphaMask = *(__n128 *) g_SymCryptXtsNeonAlphaMask;
+    const __n128 vAlphaMask =     (__n128) {.n128_u8 = {0x87, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1}};
+    const __n64 vAlphaMultiplier = (__n64) {.n64_u8  = {0x86, 0, 0, 0, 0, 0, 0, 0}};
 
     if( cbData < 8 * SYMCRYPT_AES_BLOCK_SIZE )
     {
@@ -984,14 +1074,14 @@ SymCryptXtsAesEncryptDataUnitNeon(
         pDst[6] = veorq_u32( c6, t6 );
         pDst[7] = veorq_u32( c7, t7 );
 
-        XTS_MUL_ALPHA5( t7, t4 );
-        XTS_MUL_ALPHA ( t7, t0 );
-        XTS_MUL_ALPHA ( t4, t5 );
-        XTS_MUL_ALPHA ( t0, t1 );
-        XTS_MUL_ALPHA ( t5, t6 );
-        XTS_MUL_ALPHA ( t1, t2 );
-        XTS_MUL_ALPHA ( t6, t7 );
-        XTS_MUL_ALPHA ( t2, t3 );
+        XTS_MUL_ALPHA8( t0, t0 );
+        XTS_MUL_ALPHA8( t1, t1 );
+        XTS_MUL_ALPHA8( t2, t2 );
+        XTS_MUL_ALPHA8( t3, t3 );
+        XTS_MUL_ALPHA8( t4, t4 );
+        XTS_MUL_ALPHA8( t5, t5 );
+        XTS_MUL_ALPHA8( t6, t6 );
+        XTS_MUL_ALPHA8( t7, t7 );
 
         c0 = veorq_u32( pSrc[0], t0 );
         c1 = veorq_u32( pSrc[1], t1 );
@@ -1025,7 +1115,7 @@ SymCryptXtsAesEncryptDataUnitNeon(
         // Fix up the tweak block first
         //
 
-        XTS_MUL_ALPHA( t7, t0 );
+        XTS_MUL_ALPHA8( t0, t0 );
         *(__n128 *)pbTweakBlock = t0;
         SymCryptXtsAesEncryptDataUnitC( pExpandedKey, pbTweakBlock, pbSrc, pbDst, cbData );
     }
@@ -1047,7 +1137,8 @@ SymCryptXtsAesDecryptDataUnitNeon(
     const __n128 *  pSrc;
     __n128 *        pDst;
     const __n128 vZero = neon_moviqb(0);
-    const __n128 vAlphaMask = *(__n128 *) g_SymCryptXtsNeonAlphaMask;
+    const __n128 vAlphaMask =     (__n128) {.n128_u8 = {0x87, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1}};
+    const __n64 vAlphaMultiplier = (__n64) {.n64_u8  = {0x86, 0, 0, 0, 0, 0, 0, 0}};
 
     if( cbData < 8 * SYMCRYPT_AES_BLOCK_SIZE )
     {
@@ -1100,14 +1191,14 @@ SymCryptXtsAesDecryptDataUnitNeon(
         pDst[6] = veorq_u32( c6, t6 );
         pDst[7] = veorq_u32( c7, t7 );
 
-        XTS_MUL_ALPHA5( t7, t4 );
-        XTS_MUL_ALPHA ( t7, t0 );
-        XTS_MUL_ALPHA ( t0, t1 );
-        XTS_MUL_ALPHA ( t4, t5 );
-        XTS_MUL_ALPHA ( t1, t2 );
-        XTS_MUL_ALPHA ( t5, t6 );
-        XTS_MUL_ALPHA ( t2, t3 );
-        XTS_MUL_ALPHA ( t6, t7 );
+        XTS_MUL_ALPHA8( t0, t0 );
+        XTS_MUL_ALPHA8( t1, t1 );
+        XTS_MUL_ALPHA8( t2, t2 );
+        XTS_MUL_ALPHA8( t3, t3 );
+        XTS_MUL_ALPHA8( t4, t4 );
+        XTS_MUL_ALPHA8( t5, t5 );
+        XTS_MUL_ALPHA8( t6, t6 );
+        XTS_MUL_ALPHA8( t7, t7 );
 
         c0 = veorq_u32( pSrc[0], t0 );
         c1 = veorq_u32( pSrc[1], t1 );
@@ -1141,7 +1232,7 @@ SymCryptXtsAesDecryptDataUnitNeon(
         // Fix up the tweak block first
         //
 
-        XTS_MUL_ALPHA( t7, t0 );
+        XTS_MUL_ALPHA8( t0, t0 );
         *(__n128 *)pbTweakBlock = t0;
         SymCryptXtsAesDecryptDataUnitC( pExpandedKey, pbTweakBlock, pbSrc, pbDst, cbData );
     }

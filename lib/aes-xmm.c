@@ -25,8 +25,8 @@ SymCryptAes4SboxXmm( _In_reads_(4) PCBYTE pIn, _Out_writes_(4) PBYTE pOut )
 
 VOID
 SYMCRYPT_CALL
-SymCryptAesCreateDecryptionRoundKeyXmm( 
-    _In_reads_(16)      PCBYTE  pEncryptionRoundKey, 
+SymCryptAesCreateDecryptionRoundKeyXmm(
+    _In_reads_(16)      PCBYTE  pEncryptionRoundKey,
     _Out_writes_(16)    PBYTE   pDecryptionRoundKey )
 {
     //
@@ -44,10 +44,10 @@ SymCryptAesCreateDecryptionRoundKeyXmm(
 // On x86 it will introduce some register spilling, but the load/stores
 // should be able to hide behind the AES instruction latencies.
 // Silvermont x86 CPUs has AES-NI with latency = 8 and throughput = 5, so there
-// the CPU parallelism is low. 
+// the CPU parallelism is low.
 // For things like BitLocker that is fine, but other uses, such as GCM & AES_CTR_DRBG
 // use odd sizes.
-// We try to di 5-8 blocks in 8-parallel code, 2-4 blocks in 4-parallel code, and 
+// We try to do 5-8 blocks in 8-parallel code, 2-4 blocks in 4-parallel code, and
 // 1 block in 1-parallel code.
 // This is a compromise; the big cores can do 8 parallel in about the time of a 4-parallel,
 // but Silvermont cannot and would pay a big price on small requests if we only use 8-parallel.
@@ -174,6 +174,120 @@ SymCryptAesCreateDecryptionRoundKeyXmm(
     c7 = _mm_aesenclast_si128( c7, roundkey ); \
 };
 
+// c0 and c1 are __m512i
+#define AES_ENCRYPT_ZMM_1024( pExpandedKey, c0, c1 ) \
+{ \
+    const BYTE (*keyPtr)[4][4]; \
+    const BYTE (*keyLimit)[4][4]; \
+    __m128i roundkey; \
+    __m512i roundkeys; \
+\
+    keyPtr = &pExpandedKey->RoundKey[0]; \
+    keyLimit = pExpandedKey->lastEncRoundKey; \
+\
+    roundkey = _mm_loadu_si128( (__m128i *) keyPtr ); \
+    roundkeys = _mm512_broadcast_i32x4( roundkey ); \
+    keyPtr ++; \
+\
+    c0 = _mm512_xor_si512( c0, roundkeys ); \
+    c1 = _mm512_xor_si512( c1, roundkeys ); \
+\
+    while( keyPtr < keyLimit ) \
+    { \
+        roundkey = _mm_loadu_si128( (__m128i *) keyPtr ); \
+        roundkeys = _mm512_broadcast_i32x4( roundkey ); \
+        keyPtr ++; \
+        c0 = _mm512_aesenc_epi128( c0, roundkeys ); \
+        c1 = _mm512_aesenc_epi128( c1, roundkeys ); \
+    } \
+\
+    roundkey = _mm_loadu_si128( (__m128i *) keyPtr ); \
+    roundkeys = _mm512_broadcast_i32x4( roundkey ); \
+\
+    c0 = _mm512_aesenclast_epi128( c0, roundkeys ); \
+    c1 = _mm512_aesenclast_epi128( c1, roundkeys ); \
+};
+
+#define AES_ENCRYPT_ZMM_2048( pExpandedKey, c0, c1, c2, c3 ) \
+{ \
+    const BYTE (*keyPtr)[4][4]; \
+    const BYTE (*keyLimit)[4][4]; \
+    __m128i roundkey; \
+    __m512i roundkeys; \
+\
+    keyPtr = pExpandedKey->RoundKey; \
+    keyLimit = pExpandedKey->lastEncRoundKey; \
+\
+    roundkey = _mm_loadu_si128( (__m128i *) keyPtr ); \
+    roundkeys = _mm512_broadcast_i32x4( roundkey ); \
+    keyPtr ++; \
+\
+    c0 = _mm512_xor_si512( c0, roundkeys ); \
+    c1 = _mm512_xor_si512( c1, roundkeys ); \
+    c2 = _mm512_xor_si512( c2, roundkeys ); \
+    c3 = _mm512_xor_si512( c3, roundkeys ); \
+\
+    while( keyPtr < keyLimit ) \
+    { \
+        roundkey = _mm_loadu_si128( (__m128i *) keyPtr ); \
+        roundkeys = _mm512_broadcast_i32x4( roundkey ); \
+        keyPtr ++; \
+        c0 = _mm512_aesenc_epi128( c0, roundkeys ); \
+        c1 = _mm512_aesenc_epi128( c1, roundkeys ); \
+        c2 = _mm512_aesenc_epi128( c2, roundkeys ); \
+        c3 = _mm512_aesenc_epi128( c3, roundkeys ); \
+    } \
+\
+    roundkey = _mm_loadu_si128( (__m128i *) keyPtr ); \
+    roundkeys = _mm512_broadcast_i32x4( roundkey ); \
+\
+    c0 = _mm512_aesenclast_epi128( c0, roundkeys ); \
+    c1 = _mm512_aesenclast_epi128( c1, roundkeys ); \
+    c2 = _mm512_aesenclast_epi128( c2, roundkeys ); \
+    c3 = _mm512_aesenclast_epi128( c3, roundkeys ); \
+};
+
+#define AES_ENCRYPT_YMM_1024( pExpandedKey, c0, c1, c2, c3 ) \
+{ \
+    const BYTE (*keyPtr)[4][4]; \
+    const BYTE (*keyLimit)[4][4]; \
+    __m128i roundkey; \
+    __m256i roundkeys; \
+\
+    keyPtr = pExpandedKey->RoundKey; \
+    keyLimit = pExpandedKey->lastEncRoundKey; \
+\
+    /* _mm256_insertf128_si256 which requires AVX. */ \
+    roundkey = _mm_loadu_si128( (__m128i *) keyPtr ); \
+    roundkeys = _mm256_insertf128_si256( _mm256_castsi128_si256( roundkey ), roundkey, 1 ); \
+    keyPtr ++; \
+\
+    /* _mm256_xor_si256 requires AVX2 */ \
+    c0 = _mm256_xor_si256( c0, roundkeys ); \
+    c1 = _mm256_xor_si256( c1, roundkeys ); \
+    c2 = _mm256_xor_si256( c2, roundkeys ); \
+    c3 = _mm256_xor_si256( c3, roundkeys ); \
+\
+    while( keyPtr < keyLimit ) \
+    { \
+        roundkey = _mm_loadu_si128( (__m128i *) keyPtr ); \
+        roundkeys = _mm256_insertf128_si256( _mm256_castsi128_si256( roundkey ), roundkey, 1 ); \
+        keyPtr ++; \
+        c0 = _mm256_aesenc_epi128( c0, roundkeys ); \
+        c1 = _mm256_aesenc_epi128( c1, roundkeys ); \
+        c2 = _mm256_aesenc_epi128( c2, roundkeys ); \
+        c3 = _mm256_aesenc_epi128( c3, roundkeys ); \
+    } \
+\
+    roundkey = _mm_loadu_si128( (__m128i *) keyPtr ); \
+    roundkeys = _mm256_insertf128_si256( _mm256_castsi128_si256( roundkey ), roundkey, 1 ); \
+\
+    c0 = _mm256_aesenclast_epi128( c0, roundkeys ); \
+    c1 = _mm256_aesenclast_epi128( c1, roundkeys ); \
+    c2 = _mm256_aesenclast_epi128( c2, roundkeys ); \
+    c3 = _mm256_aesenclast_epi128( c3, roundkeys ); \
+};
+
 #define AES_DECRYPT_1( pExpandedKey, c0 ) \
 { \
     const BYTE (*keyPtr)[4][4]; \
@@ -289,13 +403,130 @@ SymCryptAesCreateDecryptionRoundKeyXmm(
     c7 = _mm_aesdeclast_si128( c7, roundkey ); \
 };
 
+// c0 and c1 are __m512i
+// Note that this is the same as AES_ENCRYPT_8_ZMM
+// except we use decrypt instructions and round key are different too.
+#define AES_DECRYPT_ZMM_1024( pExpandedKey, c0, c1 ) \
+{ \
+    const BYTE (*keyPtr)[4][4]; \
+    const BYTE (*keyLimit)[4][4]; \
+    __m128i roundkey; \
+    __m512i roundkeys; \
+\
+    keyPtr = pExpandedKey->lastEncRoundKey; \
+    keyLimit = pExpandedKey->lastDecRoundKey; \
+\
+    roundkey = _mm_loadu_si128( (__m128i *) keyPtr ); \
+    roundkeys = _mm512_broadcast_i32x4( roundkey ); \
+    keyPtr ++; \
+\
+    c0 = _mm512_xor_si512( c0, roundkeys ); \
+    c1 = _mm512_xor_si512( c1, roundkeys ); \
+\
+    while( keyPtr < keyLimit ) \
+    { \
+        roundkey = _mm_loadu_si128( (__m128i *) keyPtr ); \
+        roundkeys = _mm512_broadcast_i32x4( roundkey ); \
+        keyPtr ++; \
+        c0 = _mm512_aesdec_epi128( c0, roundkeys ); \
+        c1 = _mm512_aesdec_epi128( c1, roundkeys ); \
+    } \
+\
+    roundkey = _mm_loadu_si128( (__m128i *) keyPtr ); \
+    roundkeys = _mm512_broadcast_i32x4( roundkey ); \
+\
+    c0 = _mm512_aesdeclast_epi128( c0, roundkeys ); \
+    c1 = _mm512_aesdeclast_epi128( c1, roundkeys ); \
+};
+
+#define AES_DECRYPT_ZMM_2048( pExpandedKey, c0, c1, c2, c3 ) \
+{ \
+    const BYTE (*keyPtr)[4][4]; \
+    const BYTE (*keyLimit)[4][4]; \
+    __m128i roundkey; \
+    __m512i roundkeys; \
+\
+    keyPtr = pExpandedKey->lastEncRoundKey; \
+    keyLimit = pExpandedKey->lastDecRoundKey; \
+\
+    roundkey = _mm_loadu_si128( (__m128i *) keyPtr ); \
+    roundkeys = _mm512_broadcast_i32x4( roundkey ); \
+    keyPtr ++; \
+\
+    /* _mm512_xor_si512 requires AVX512F */ \
+    c0 = _mm512_xor_si512( c0, roundkeys ); \
+    c1 = _mm512_xor_si512( c1, roundkeys ); \
+    c2 = _mm512_xor_si512( c2, roundkeys ); \
+    c3 = _mm512_xor_si512( c3, roundkeys ); \
+\
+    while( keyPtr < keyLimit ) \
+    { \
+        roundkey = _mm_loadu_si128( (__m128i *) keyPtr ); \
+        roundkeys = _mm512_broadcast_i32x4( roundkey ); \
+        keyPtr ++; \
+        c0 = _mm512_aesdec_epi128( c0, roundkeys ); \
+        c1 = _mm512_aesdec_epi128( c1, roundkeys ); \
+        c2 = _mm512_aesdec_epi128( c2, roundkeys ); \
+        c3 = _mm512_aesdec_epi128( c3, roundkeys ); \
+    } \
+\
+    roundkey = _mm_loadu_si128( (__m128i *) keyPtr ); \
+    roundkeys = _mm512_broadcast_i32x4( roundkey ); \
+\
+    c0 = _mm512_aesdeclast_epi128( c0, roundkeys ); \
+    c1 = _mm512_aesdeclast_epi128( c1, roundkeys ); \
+    c2 = _mm512_aesdeclast_epi128( c2, roundkeys ); \
+    c3 = _mm512_aesdeclast_epi128( c3, roundkeys ); \
+};
+
+#define AES_DECRYPT_YMM_1024( pExpandedKey, c0, c1, c2, c3 ) \
+{ \
+    const BYTE (*keyPtr)[4][4]; \
+    const BYTE (*keyLimit)[4][4]; \
+    __m128i roundkey; \
+    __m256i roundkeys; \
+\
+    keyPtr = pExpandedKey->lastEncRoundKey; \
+    keyLimit = pExpandedKey->lastDecRoundKey; \
+\
+    /* _mm256_insertf128_si256 which requires AVX. */ \
+    roundkey = _mm_loadu_si128( (__m128i *) keyPtr ); \
+    roundkeys = _mm256_insertf128_si256( _mm256_castsi128_si256( roundkey ), roundkey, 1 ); \
+    keyPtr ++; \
+\
+    /* _mm256_xor_si256 requires AVX2 */ \
+    c0 = _mm256_xor_si256( c0, roundkeys ); \
+    c1 = _mm256_xor_si256( c1, roundkeys ); \
+    c2 = _mm256_xor_si256( c2, roundkeys ); \
+    c3 = _mm256_xor_si256( c3, roundkeys ); \
+\
+    while( keyPtr < keyLimit ) \
+    { \
+        roundkey = _mm_loadu_si128( (__m128i *) keyPtr ); \
+        roundkeys = _mm256_insertf128_si256( _mm256_castsi128_si256( roundkey ), roundkey, 1 ); \
+        keyPtr ++; \
+        c0 = _mm256_aesdec_epi128( c0, roundkeys ); \
+        c1 = _mm256_aesdec_epi128( c1, roundkeys ); \
+        c2 = _mm256_aesdec_epi128( c2, roundkeys ); \
+        c3 = _mm256_aesdec_epi128( c3, roundkeys ); \
+    } \
+\
+    roundkey = _mm_loadu_si128( (__m128i *) keyPtr ); \
+    roundkeys = _mm256_insertf128_si256( _mm256_castsi128_si256( roundkey ), roundkey, 1 ); \
+\
+    c0 = _mm256_aesdeclast_epi128( c0, roundkeys ); \
+    c1 = _mm256_aesdeclast_epi128( c1, roundkeys ); \
+    c2 = _mm256_aesdeclast_epi128( c2, roundkeys ); \
+    c3 = _mm256_aesdeclast_epi128( c3, roundkeys ); \
+};
+
 
 //
-// The EncryptXmm code is tested through the CFB mode encryption which has not further optimizations.
+// The EncryptXmm code is tested through the CFB mode encryption which has no further optimizations.
 //
 VOID
 SYMCRYPT_CALL
-SymCryptAesEncryptXmm( 
+SymCryptAesEncryptXmm(
     _In_                                    PCSYMCRYPT_AES_EXPANDED_KEY pExpandedKey,
     _In_reads_( SYMCRYPT_AES_BLOCK_SIZE )   PCBYTE                      pbSrc,
     _Out_writes_( SYMCRYPT_AES_BLOCK_SIZE ) PBYTE                       pbDst )
@@ -314,7 +545,7 @@ SymCryptAesEncryptXmm(
 //
 VOID
 SYMCRYPT_CALL
-SymCryptAesDecryptXmm( 
+SymCryptAesDecryptXmm(
     _In_                                    PCSYMCRYPT_AES_EXPANDED_KEY pExpandedKey,
     _In_reads_( SYMCRYPT_AES_BLOCK_SIZE )   PCBYTE                      pbSrc,
     _Out_writes_( SYMCRYPT_AES_BLOCK_SIZE ) PBYTE                       pbDst )
@@ -328,12 +559,13 @@ SymCryptAesDecryptXmm(
     _mm_storeu_si128( (__m128i *) pbDst, c );
 }
 
-
+// Disable warnings and VC++ runtime checks for use of uninitialized values (by design)
 #pragma warning(push)
-#pragma warning( disable: 6001 4701 ) // use of uninitialized values, but that is by designs
+#pragma warning( disable: 6001 4701 )
+#pragma runtime_checks( "u", off )
 VOID
 SYMCRYPT_CALL
-SymCryptAesEcbEncryptXmm( 
+SymCryptAesEcbEncryptXmm(
     _In_                                        PCSYMCRYPT_AES_EXPANDED_KEY pExpandedKey,
     _In_reads_( cbData )                        PCBYTE                      pbSrc,
     _Out_writes_( cbData )                      PBYTE                       pbDst,
@@ -402,11 +634,11 @@ SymCryptAesEcbEncryptXmm(
     if( cbData >= 5 * SYMCRYPT_AES_BLOCK_SIZE )
     {
         AES_ENCRYPT_8( pExpandedKey, c0, c1, c2, c3, c4, c5, c6, c7 );
-    } 
+    }
     else if( cbData >= 2 * SYMCRYPT_AES_BLOCK_SIZE )
     {
         AES_ENCRYPT_4( pExpandedKey, c0, c1, c2, c3 );
-    } 
+    }
     else
     {
         AES_ENCRYPT_1( pExpandedKey, c0 );
@@ -438,13 +670,14 @@ SymCryptAesEcbEncryptXmm(
         }
     }
 }
+#pragma runtime_checks( "u", restore )
 #pragma warning( pop )
 
 
 
 VOID
 SYMCRYPT_CALL
-SymCryptAesCbcEncryptXmm( 
+SymCryptAesCbcEncryptXmm(
     _In_                                    PCSYMCRYPT_AES_EXPANDED_KEY pExpandedKey,
     _In_reads_( SYMCRYPT_AES_BLOCK_SIZE )   PBYTE                       pbChainingValue,
     _In_reads_( cbData )                    PCBYTE                      pbSrc,
@@ -468,11 +701,13 @@ SymCryptAesCbcEncryptXmm(
     _mm_storeu_si128( (__m128i *) pbChainingValue, c );
 }
 
-#pragma warning( push )
-#pragma warning( disable: 6001 4701 ) // use of uninitialized values, but that is by designs
+// Disable warnings and VC++ runtime checks for use of uninitialized values (by design)
+#pragma warning(push)
+#pragma warning( disable: 6001 4701 )
+#pragma runtime_checks( "u", off )
 VOID
 SYMCRYPT_CALL
-SymCryptAesCbcDecryptXmm( 
+SymCryptAesCbcDecryptXmm(
     _In_                                    PCSYMCRYPT_AES_EXPANDED_KEY pExpandedKey,
     _In_reads_( SYMCRYPT_AES_BLOCK_SIZE )   PBYTE                       pbChainingValue,
     _In_reads_( cbData )                    PCBYTE                      pbSrc,
@@ -496,7 +731,7 @@ SymCryptAesCbcDecryptXmm(
 
     while( cbData >= 8 * SYMCRYPT_AES_BLOCK_SIZE )
     {
-        d0 = c0 = _mm_loadu_si128( (__m128i *) (pbSrc + 0 * SYMCRYPT_AES_BLOCK_SIZE ) ); 
+        d0 = c0 = _mm_loadu_si128( (__m128i *) (pbSrc + 0 * SYMCRYPT_AES_BLOCK_SIZE ) );
         d1 = c1 = _mm_loadu_si128( (__m128i *) (pbSrc + 1 * SYMCRYPT_AES_BLOCK_SIZE ) );
         d2 = c2 = _mm_loadu_si128( (__m128i *) (pbSrc + 2 * SYMCRYPT_AES_BLOCK_SIZE ) );
         d3 = c3 = _mm_loadu_si128( (__m128i *) (pbSrc + 3 * SYMCRYPT_AES_BLOCK_SIZE ) );
@@ -536,25 +771,25 @@ SymCryptAesCbcDecryptXmm(
         //
         // There is remaining work to be done
         //
-        d0 = c0 = _mm_loadu_si128( (__m128i *) (pbSrc + 0 * SYMCRYPT_AES_BLOCK_SIZE ) ); 
+        d0 = c0 = _mm_loadu_si128( (__m128i *) (pbSrc + 0 * SYMCRYPT_AES_BLOCK_SIZE ) );
         if( cbData >= 32 )
         {
-        d1 = c1 = _mm_loadu_si128( (__m128i *) (pbSrc + 1 * SYMCRYPT_AES_BLOCK_SIZE ) ); 
+        d1 = c1 = _mm_loadu_si128( (__m128i *) (pbSrc + 1 * SYMCRYPT_AES_BLOCK_SIZE ) );
             if( cbData >= 48 )
             {
-        d2 = c2 = _mm_loadu_si128( (__m128i *) (pbSrc + 2 * SYMCRYPT_AES_BLOCK_SIZE ) ); 
+        d2 = c2 = _mm_loadu_si128( (__m128i *) (pbSrc + 2 * SYMCRYPT_AES_BLOCK_SIZE ) );
                 if( cbData >= 64 )
                 {
-        d3 = c3 = _mm_loadu_si128( (__m128i *) (pbSrc + 3 * SYMCRYPT_AES_BLOCK_SIZE ) ); 
+        d3 = c3 = _mm_loadu_si128( (__m128i *) (pbSrc + 3 * SYMCRYPT_AES_BLOCK_SIZE ) );
                     if( cbData >= 80 )
                     {
-        d4 = c4 = _mm_loadu_si128( (__m128i *) (pbSrc + 4 * SYMCRYPT_AES_BLOCK_SIZE ) ); 
+        d4 = c4 = _mm_loadu_si128( (__m128i *) (pbSrc + 4 * SYMCRYPT_AES_BLOCK_SIZE ) );
                         if( cbData >= 96 )
                         {
-        d5 = c5 = _mm_loadu_si128( (__m128i *) (pbSrc + 5 * SYMCRYPT_AES_BLOCK_SIZE ) ); 
+        d5 = c5 = _mm_loadu_si128( (__m128i *) (pbSrc + 5 * SYMCRYPT_AES_BLOCK_SIZE ) );
                             if( cbData >= 112 )
                             {
-        d6 = c6 = _mm_loadu_si128( (__m128i *) (pbSrc + 6 * SYMCRYPT_AES_BLOCK_SIZE ) ); 
+        d6 = c6 = _mm_loadu_si128( (__m128i *) (pbSrc + 6 * SYMCRYPT_AES_BLOCK_SIZE ) );
                             }
                         }
                     }
@@ -576,7 +811,7 @@ SymCryptAesCbcDecryptXmm(
             c4 = _mm_xor_si128( c4, d3 );
             c5 = _mm_xor_si128( c5, d4 );
             c6 = _mm_xor_si128( c6, d5 );
-        } 
+        }
         else if( cbData > SYMCRYPT_AES_BLOCK_SIZE )
         {
             AES_DECRYPT_4( pExpandedKey, c0, c1, c2, c3 );
@@ -622,6 +857,7 @@ SymCryptAesCbcDecryptXmm(
 
     return;
 }
+#pragma runtime_checks( "u", restore )
 #pragma warning( pop )
 
 VOID
@@ -651,10 +887,11 @@ SymCryptAesCbcMacXmm(
 
 #pragma warning(push)
 #pragma warning( disable:4701 ) // "Use of uninitialized variable"
+#pragma runtime_checks( "u", off )
 
 VOID
 SYMCRYPT_CALL
-SymCryptAesCtrMsb64Xmm( 
+SymCryptAesCtrMsb64Xmm(
     _In_                                    PCSYMCRYPT_AES_EXPANDED_KEY pExpandedKey,
     _In_reads_( SYMCRYPT_AES_BLOCK_SIZE )   PBYTE                       pbChainingValue,
     _In_reads_( cbData )                    PCBYTE                      pbSrc,
@@ -690,7 +927,7 @@ SymCryptAesCtrMsb64Xmm(
         generate 4 blocks of key stream
         process 2-4 blocks
         done
-    if cbData >= 1 block
+    if cbData == 1 block
         generate 1 block of key stream
         process block
 */
@@ -765,7 +1002,7 @@ SymCryptAesCtrMsb64Xmm(
             _mm_storeu_si128( (__m128i *) (pbDst + 96), _mm_xor_si128( c6, _mm_loadu_si128( ( __m128i * ) (pbSrc + 96 ) ) ) );
                 }
             }
-        } 
+        }
         else if( cbData >= 2 * SYMCRYPT_AES_BLOCK_SIZE )
         {
             // Produce 4 blocks of key stream
@@ -796,7 +1033,7 @@ SymCryptAesCtrMsb64Xmm(
                 }
             }
         }
-        else 
+        else
         {
             // Exactly 1 block to process
             c0 = chain;
@@ -812,7 +1049,7 @@ SymCryptAesCtrMsb64Xmm(
     chain = _mm_shuffle_epi8( chain, BYTE_REVERSE_ORDER );
     _mm_storeu_si128( (__m128i *) pbChainingValue, chain );
 }
-
+#pragma runtime_checks( "u", off )
 #pragma warning(pop)
 
 /*
@@ -843,15 +1080,19 @@ SymCryptAesCtrMsb64Xmm(
 // Multiply by alpha
 //
 // <</>> indicate shifts on 128-bit values
-// <<<</>>>> indicate shifts on 32-bit values
+// <<<</>>>> indicate shifts on 32-bit values (a word)
 //
 
 // Multiply by ALPHA
-// t1 = Input <<<< 1                        words shifted left by 1
-// t2 = Input >>>> 31                       words shifted right by 31
-// t1 = t1 ^ (t2 << 32)                     t1 = S << 1
-// t2 = t2 >> 96                            t2 = highest bit of S
-// t2 = (t2 <<<< 7) + (t2 <<<<3) - (t2)     multiply polynomially by 0x87 , we can use - because we only have one bit input
+// Since there's no instruction to shift the 128 bit register left by one, the following shifts do the trick.
+// All shifts are zero extended
+// t1 = _in <<<< 1                          words shifted left by 1, this is almost a _in << 1 but there are
+//                                          gaps at first bit of each word, the following two shifts fixes that.
+// t2 = _in >>>> 31                         words shifted right by 31
+// t1 = t1 ^ (t2 << 32)                     t1 = _in << 1, note ^ could be |
+// Do the special case for first byte of _in where last carry means xor with 135 for first byte.
+// t2 = t2 >> 96                            t2 = _in >> 127, i.e., last bit of _in is placed in first bit
+// t2 = (t2 <<<< 7) + (t2 <<<<3) - (t2)     t2 = 135 if last bit of t2 is set
 // res = t1 ^ t2
 #define XTS_MUL_ALPHA_old( _in, _res ) \
 {\
@@ -878,6 +1119,19 @@ SymCryptAesCtrMsb64Xmm(
     _res = _mm_xor_si128( _t1, _t2 ); \
 }
 
+// Like XTS_MUL_ALPHA_old but operate on __m512i for _in and _res.
+// TODO: do this with VSHUFPS.
+#define XTS_MUL_ALPHA_ZMM_old( _in, _res ) \
+{\
+    __m512i _t1, _t2;\
+\
+    _t1 = _mm512_slli_epi32( _in, 1 ); \
+    _t2 = _mm512_srli_epi32( _in, 31); \
+    _t1 = _mm512_xor_si512( _t1, _mm512_bslli_epi128( _t2, 4 )); \
+    _t2 = _mm512_bsrli_epi128( _t2, 12 ); \
+    _t2 = _mm512_sub_epi32( _mm512_add_epi32( _mm512_slli_epi32( _t2, 7 ), _mm512_slli_epi32( _t2, 3 ) ), _t2 ); \
+    _res = _mm512_xor_si512( _t1, _t2 ); \
+}
 
 // Multiply by ALPHA^2
 // t1 = Input <<<< 2
@@ -934,17 +1188,61 @@ SymCryptAesCtrMsb64Xmm(
 // t2 = Input >> 120
 // t2 = (t2 <<<< 7) ^ (t2 <<<< 2) ^ (t2 <<<< 1) ^ t2
 // res = (Input << 8) ^ t2
+// Expected to be marginally faster than new XTS_MUL_ALPHA on CPUs where clmul
+// instruction corresponds to a single uop - unused for now.
+//
+// __m128i XTS_ALPHA_MULTIPLIER = _mm_set_epi32( 0, 0, 0, 0x87 );
 #define XTS_MUL_ALPHA8( _in, _res ) \
 {\
     __m128i _t2;\
 \
-    _t2 = _mm_srli_si128( _in, 15); \
-    _t2 = _mm_xor_si128( _mm_xor_si128( _mm_xor_si128( _mm_slli_epi32( _t2, 7 ), _mm_slli_epi32( _t2, 2 ) ), _mm_slli_epi32( _t2, 1 )), _t2 ); \
-    _res = _mm_xor_si128( _mm_slli_si128( _in, 1 ), _t2 ); \
+    _t2 = _mm_srli_si128( _in, 15 ); \
+    _res = _mm_slli_si128( _in, 1); \
+    _t2 = _mm_clmulepi64_si128( _t2, XTS_ALPHA_MULTIPLIER, 0x00 ); \
+    _res = _mm_xor_si128( _res, _t2 ); \
 }
 
+#define XTS_MUL_ALPHA8_ZMM( _in, _res ) \
+{\
+    __m512i _t2;\
+\
+    _t2 = _mm512_bsrli_epi128( _in, 15); \
+    _t2 = _mm512_xor_si512( \
+              _mm512_xor_si512( \
+                  _mm512_xor_si512( _mm512_slli_epi32( _t2, 7 ), _mm512_slli_epi32( _t2, 2 ) ), \
+                  _mm512_slli_epi32( _t2, 1 ) ), \
+              _t2 ); \
+    _res = _mm512_xor_si512( _mm512_bslli_epi128( _in, 1 ), _t2 ); \
+}
 
+#define XTS_MUL_ALPHA8_YMM( _in, _res ) \
+{\
+    __m256i _t2;\
+\
+    _t2 = _mm256_srli_si256( _in, 15); /* AVX2 */ \
+    _t2 = _mm256_xor_si256( \
+              _mm256_xor_si256( \
+                  _mm256_xor_si256( _mm256_slli_epi32( _t2, 7 ), _mm256_slli_epi32( _t2, 2 ) ), \
+                  _mm256_slli_epi32( _t2, 1 ) ), \
+              _t2 ); \
+    _res = _mm256_xor_si256( _mm256_slli_si256( _in, 1 ), _t2 ); \
+}
 
+// The strategy here is to put the 16 highest bits of _in into the lowest bits.
+// and xor that by 135. This is the carry step.
+// Then xor that with _in shifted by 16 bits left. 
+#define XTS_MUL_ALPHA16_ZMM( _in, _res ) \
+{\
+    __m512i _t2;\
+\
+    _t2 = _mm512_bsrli_epi128( _in, 14); \
+    _t2 = _mm512_xor_si512( \
+              _mm512_xor_si512( \
+                  _mm512_xor_si512( _mm512_slli_epi32( _t2, 7 ), _mm512_slli_epi32( _t2, 2 ) ), \
+                  _mm512_slli_epi32( _t2, 1 ) ), \
+              _t2 ); \
+    _res = _mm512_xor_si512( _mm512_bslli_epi128( _in, 2 ), _t2 ); \
+}
 
 VOID
 SYMCRYPT_CALL
@@ -993,14 +1291,14 @@ SymCryptXtsAesEncryptDataUnitXmm(
 
         AES_ENCRYPT_8( pExpandedKey, c0, c1, c2, c3, c4, c5, c6, c7 );
 
-        _mm_storeu_si128( (__m128i *) (pbDst +   0 ), _mm_xor_si128( c0, t0 ) );    
-        _mm_storeu_si128( (__m128i *) (pbDst +  16 ), _mm_xor_si128( c1, t1 ) );    
-        _mm_storeu_si128( (__m128i *) (pbDst +  32 ), _mm_xor_si128( c2, t2 ) );    
-        _mm_storeu_si128( (__m128i *) (pbDst +  48 ), _mm_xor_si128( c3, t3 ) );    
-        _mm_storeu_si128( (__m128i *) (pbDst +  64 ), _mm_xor_si128( c4, t4 ) );    
-        _mm_storeu_si128( (__m128i *) (pbDst +  80 ), _mm_xor_si128( c5, t5 ) );    
-        _mm_storeu_si128( (__m128i *) (pbDst +  96 ), _mm_xor_si128( c6, t6 ) );    
-        _mm_storeu_si128( (__m128i *) (pbDst + 112 ), _mm_xor_si128( c7, t7 ) );    
+        _mm_storeu_si128( (__m128i *) (pbDst +   0 ), _mm_xor_si128( c0, t0 ) );
+        _mm_storeu_si128( (__m128i *) (pbDst +  16 ), _mm_xor_si128( c1, t1 ) );
+        _mm_storeu_si128( (__m128i *) (pbDst +  32 ), _mm_xor_si128( c2, t2 ) );
+        _mm_storeu_si128( (__m128i *) (pbDst +  48 ), _mm_xor_si128( c3, t3 ) );
+        _mm_storeu_si128( (__m128i *) (pbDst +  64 ), _mm_xor_si128( c4, t4 ) );
+        _mm_storeu_si128( (__m128i *) (pbDst +  80 ), _mm_xor_si128( c5, t5 ) );
+        _mm_storeu_si128( (__m128i *) (pbDst +  96 ), _mm_xor_si128( c6, t6 ) );
+        _mm_storeu_si128( (__m128i *) (pbDst + 112 ), _mm_xor_si128( c7, t7 ) );
 
         pbDst += 8*SYMCRYPT_AES_BLOCK_SIZE;
 
@@ -1012,7 +1310,6 @@ SymCryptXtsAesEncryptDataUnitXmm(
 
         XTS_MUL_ALPHA ( t7, t0 );
         XTS_MUL_ALPHA5( t7, t4 );
-
     }
 
     // We won't do another 8-block set so we don't update the tweak blocks
@@ -1059,7 +1356,6 @@ SymCryptXtsAesDecryptDataUnitXmm(
     for(;;)
     {
         // At loop entry, t0 and t4 have the right values.
-
         XTS_MUL_ALPHA ( t0, t1 );
         XTS_MUL_ALPHA ( t4, t5 );
         XTS_MUL_ALPHA ( t1, t2 );
@@ -1080,14 +1376,14 @@ SymCryptXtsAesDecryptDataUnitXmm(
 
         AES_DECRYPT_8( pExpandedKey, c0, c1, c2, c3, c4, c5, c6, c7 );
 
-        _mm_storeu_si128( (__m128i *) (pbDst +   0 ), _mm_xor_si128( c0, t0 ) );    
-        _mm_storeu_si128( (__m128i *) (pbDst +  16 ), _mm_xor_si128( c1, t1 ) );    
-        _mm_storeu_si128( (__m128i *) (pbDst +  32 ), _mm_xor_si128( c2, t2 ) );    
-        _mm_storeu_si128( (__m128i *) (pbDst +  48 ), _mm_xor_si128( c3, t3 ) );    
-        _mm_storeu_si128( (__m128i *) (pbDst +  64 ), _mm_xor_si128( c4, t4 ) );    
-        _mm_storeu_si128( (__m128i *) (pbDst +  80 ), _mm_xor_si128( c5, t5 ) );    
-        _mm_storeu_si128( (__m128i *) (pbDst +  96 ), _mm_xor_si128( c6, t6 ) );    
-        _mm_storeu_si128( (__m128i *) (pbDst + 112 ), _mm_xor_si128( c7, t7 ) );  
+        _mm_storeu_si128( (__m128i *) (pbDst +   0 ), _mm_xor_si128( c0, t0 ) );
+        _mm_storeu_si128( (__m128i *) (pbDst +  16 ), _mm_xor_si128( c1, t1 ) );
+        _mm_storeu_si128( (__m128i *) (pbDst +  32 ), _mm_xor_si128( c2, t2 ) );
+        _mm_storeu_si128( (__m128i *) (pbDst +  48 ), _mm_xor_si128( c3, t3 ) );
+        _mm_storeu_si128( (__m128i *) (pbDst +  64 ), _mm_xor_si128( c4, t4 ) );
+        _mm_storeu_si128( (__m128i *) (pbDst +  80 ), _mm_xor_si128( c5, t5 ) );
+        _mm_storeu_si128( (__m128i *) (pbDst +  96 ), _mm_xor_si128( c6, t6 ) );
+        _mm_storeu_si128( (__m128i *) (pbDst + 112 ), _mm_xor_si128( c7, t7 ) );
 
         pbDst += 8*SYMCRYPT_AES_BLOCK_SIZE;
 
@@ -1118,7 +1414,621 @@ SymCryptXtsAesDecryptDataUnitXmm(
 
 }
 
+VOID
+SYMCRYPT_CALL
+SymCryptXtsAesEncryptDataUnitZmm(
+    _In_                                    PCSYMCRYPT_AES_EXPANDED_KEY pExpandedKey,
+    _Inout_updates_(SYMCRYPT_AES_BLOCK_SIZE)PBYTE                       pbTweakBlock,
+    _In_reads_( cbData )                    PCBYTE                      pbSrc,
+    _Out_writes_( cbData )                  PBYTE                       pbDst,
+                                            SIZE_T                      cbData )
+{
+    __m128i t0, t1, t2, t3, t4, t5, t6, t7;
+    __m512i c0, c1;
+    __m128i XTS_ALPHA_MASK = _mm_set_epi32( 1, 1, 1, 0x87 );
 
+    // Load tweaks into big T
+    __m512i T0, T1, T2, T3;
+
+    if( cbData < 8 * SYMCRYPT_AES_BLOCK_SIZE )
+    {
+        SymCryptXtsAesEncryptDataUnitC( pExpandedKey, pbTweakBlock, pbSrc, pbDst, cbData );
+        return;
+    }
+
+    t0 = _mm_loadu_si128( (__m128i *) pbTweakBlock );
+
+    // Do not stall.
+    XTS_MUL_ALPHA4( t0, t4 );
+    XTS_MUL_ALPHA ( t0, t1 );
+    XTS_MUL_ALPHA ( t4, t5 );
+    XTS_MUL_ALPHA ( t1, t2 );
+    XTS_MUL_ALPHA ( t5, t6 );
+    XTS_MUL_ALPHA ( t2, t3 );
+    XTS_MUL_ALPHA ( t6, t7 );
+    
+    T0 = _mm512_castsi128_si512( t0 );
+    // _mm512_inserti64x2 requires AVX512DQ.
+    T0 = _mm512_inserti64x2( T0, t1 , 1 );
+    T0 = _mm512_inserti64x2( T0, t2 , 2 );
+    T0 = _mm512_inserti64x2( T0, t3 , 3 );
+    
+    T1 = _mm512_castsi128_si512( t4 );
+    T1 = _mm512_inserti64x2( T1, t5, 1 );
+    T1 = _mm512_inserti64x2( T1, t6, 2 );
+    T1 = _mm512_inserti64x2( T1, t7, 3 );
+
+    for(;;)
+    {
+        // _mm512_xor_si512 requires AVX512F.
+        c0 = _mm512_xor_si512( T0, _mm512_loadu_si512( ( pbSrc +                           0 ) ) );
+        c1 = _mm512_xor_si512( T1, _mm512_loadu_si512( ( pbSrc +   4*SYMCRYPT_AES_BLOCK_SIZE ) ) );
+
+        pbSrc += 8 * SYMCRYPT_AES_BLOCK_SIZE;
+
+        AES_ENCRYPT_ZMM_1024( pExpandedKey, c0, c1 );
+        // _mm512_store_si512 requires AVX512F.
+        _mm512_store_si512( ( pbDst +                          0 ), _mm512_xor_si512( c0, T0 ) );    
+        _mm512_store_si512( ( pbDst +  4*SYMCRYPT_AES_BLOCK_SIZE ), _mm512_xor_si512( c1, T1 ) );    
+
+        pbDst += 8*SYMCRYPT_AES_BLOCK_SIZE;
+
+        cbData -= 8 * SYMCRYPT_AES_BLOCK_SIZE;
+        if( cbData < 8 * SYMCRYPT_AES_BLOCK_SIZE )
+        {
+            break;
+        }
+
+        XTS_MUL_ALPHA8_ZMM(T0, T2);
+        XTS_MUL_ALPHA8_ZMM(T1, T3);
+        T0 = T2;
+        T1 = T3;
+    }
+
+    // We won't do another 8-block set so we don't update the tweak blocks
+
+    if( cbData > 0  )
+    {
+        //
+        // This is a rare case: the data unit length is not a multiple of 128 bytes.
+        // We do this in the default C implementation.
+        // Fix up the tweak block first
+        //
+        t7 = _mm512_extracti64x2_epi64( T1, 3 /* Highest 128 bits */ );
+        _mm256_zeroupper();
+        XTS_MUL_ALPHA( t7, t0 );
+        _mm_storeu_si128( (__m128i *) pbTweakBlock, t0 );
+        SymCryptXtsAesEncryptDataUnitC( pExpandedKey, pbTweakBlock, pbSrc, pbDst, cbData );
+    }
+    else {
+        _mm256_zeroupper();
+    }
+}
+
+VOID
+SYMCRYPT_CALL
+SymCryptXtsAesEncryptDataUnitZmm_2048(
+    _In_                                    PCSYMCRYPT_AES_EXPANDED_KEY pExpandedKey,
+    _Inout_updates_(SYMCRYPT_AES_BLOCK_SIZE)PBYTE                       pbTweakBlock,
+    _In_reads_( cbData )                    PCBYTE                      pbSrc,
+    _Out_writes_( cbData )                  PBYTE                       pbDst,
+                                            SIZE_T                      cbData )
+{
+    __m128i t0, t1, t2, t3, t4, t5, t6, t7;
+    __m512i c0, c1, c2, c3;
+    __m128i XTS_ALPHA_MASK = _mm_set_epi32( 1, 1, 1, 0x87 );
+
+    // Load tweaks into big T
+    __m512i T0, T1, T2, T3;
+
+    if( cbData < 16 * SYMCRYPT_AES_BLOCK_SIZE )
+    {
+        SymCryptXtsAesEncryptDataUnitC( pExpandedKey, pbTweakBlock, pbSrc, pbDst, cbData );
+        return;
+    }
+
+    t0 = _mm_loadu_si128( (__m128i *) pbTweakBlock );
+
+    // Do not stall.
+    XTS_MUL_ALPHA4( t0, t4 );
+    XTS_MUL_ALPHA ( t0, t1 );
+    XTS_MUL_ALPHA ( t4, t5 );
+    XTS_MUL_ALPHA ( t1, t2 );
+    XTS_MUL_ALPHA ( t5, t6 );
+    XTS_MUL_ALPHA ( t2, t3 );
+    XTS_MUL_ALPHA ( t6, t7 );
+    
+    T0 = _mm512_castsi128_si512( t0 );
+    T0 = _mm512_inserti64x2( T0, t1, 1 );
+    T0 = _mm512_inserti64x2( T0, t2, 2 );
+    T0 = _mm512_inserti64x2( T0, t3, 3 );
+    
+    T1 = _mm512_castsi128_si512( t4 );
+    T1 = _mm512_inserti64x2( T1, t5, 1 );
+    T1 = _mm512_inserti64x2( T1, t6, 2 );
+    T1 = _mm512_inserti64x2( T1, t7, 3 );
+
+    XTS_MUL_ALPHA8_ZMM(T0, T2);
+    XTS_MUL_ALPHA8_ZMM(T1, T3);
+
+    for(;;)
+    {
+        c0 = _mm512_xor_si512( T0, _mm512_loadu_si512( ( pbSrc +                           0 ) ) );
+        c1 = _mm512_xor_si512( T1, _mm512_loadu_si512( ( pbSrc +   4*SYMCRYPT_AES_BLOCK_SIZE ) ) );
+        c2 = _mm512_xor_si512( T2, _mm512_loadu_si512( ( pbSrc +   8*SYMCRYPT_AES_BLOCK_SIZE ) ) );
+        c3 = _mm512_xor_si512( T3, _mm512_loadu_si512( ( pbSrc +   12*SYMCRYPT_AES_BLOCK_SIZE ) ) );
+
+
+        pbSrc += 16 * SYMCRYPT_AES_BLOCK_SIZE;
+
+        AES_ENCRYPT_ZMM_2048( pExpandedKey, c0, c1, c2, c3 );
+        _mm512_store_si512( ( pbDst +                          0 ), _mm512_xor_si512( c0, T0 ) );
+        _mm512_store_si512( ( pbDst +  4*SYMCRYPT_AES_BLOCK_SIZE ), _mm512_xor_si512( c1, T1 ) );
+        _mm512_store_si512( ( pbDst +  8*SYMCRYPT_AES_BLOCK_SIZE ), _mm512_xor_si512( c2, T2 ) );
+        _mm512_store_si512( ( pbDst +  12*SYMCRYPT_AES_BLOCK_SIZE ), _mm512_xor_si512( c3, T3 ) );
+
+        pbDst += 16 * SYMCRYPT_AES_BLOCK_SIZE;
+
+        cbData -= 16 * SYMCRYPT_AES_BLOCK_SIZE;
+        if( cbData < 16 * SYMCRYPT_AES_BLOCK_SIZE )
+        {
+            break;
+        }
+
+        // ^ is exponentiation
+        // T is the T0 in the first iteration of this loop
+        // a is alpha
+        // factor to get T_next is a^16
+        //         current value    next value
+        // T0      T*a^0            T*a^16
+        // T1      T*a^4            T*a^20
+        // T2      T*a^8            T*a^24
+        // T3      T*a^12           T*a^28
+
+        // to get the next iteration of Tx without temp registers
+        // T0 = T*a^16 = T2 * a^8
+        // T1 = T*a^20 = T3 * a^8
+        // T2 = T*a^24 = T0 * a^8
+        // T3 = T*a^28 = T1 * a^8
+
+        XTS_MUL_ALPHA8_ZMM(T2, T0);
+        XTS_MUL_ALPHA8_ZMM(T3, T1);
+        XTS_MUL_ALPHA8_ZMM(T0, T2);
+        XTS_MUL_ALPHA8_ZMM(T1, T3);
+    }
+
+    // We won't do another 16-block set so we don't update the tweak blocks
+
+    if( cbData > 0  )
+    {
+        //
+        // This is a rare case: the data unit length is not a multiple of 128 bytes.
+        // We do this in the default C implementation.
+        // Fix up the tweak block first
+        //
+        t7 = _mm512_extracti64x2_epi64( T3, 3 /* Highest 128 bits */ );
+        _mm256_zeroupper();
+        XTS_MUL_ALPHA( t7, t0 );
+        _mm_storeu_si128( (__m128i *) pbTweakBlock, t0 );
+
+        SymCryptXtsAesEncryptDataUnitC( pExpandedKey, pbTweakBlock, pbSrc, pbDst, cbData );
+    }
+    else {
+        _mm256_zeroupper();
+    }
+}
+
+
+// Note that this is the same as the encryption procedure except for the AES Decryption macro
+// AES_DECRYPT_8_ZMM
+VOID
+SYMCRYPT_CALL
+SymCryptXtsAesDecryptDataUnitZmm(
+    _In_                                    PCSYMCRYPT_AES_EXPANDED_KEY pExpandedKey,
+    _Inout_updates_(SYMCRYPT_AES_BLOCK_SIZE)PBYTE                       pbTweakBlock,
+    _In_reads_( cbData )                    PCBYTE                      pbSrc,
+    _Out_writes_( cbData )                  PBYTE                       pbDst,
+                                            SIZE_T                      cbData )
+{
+    __m128i t0, t1, t2, t3, t4, t5, t6, t7;
+    __m512i c0, c1;
+    __m128i XTS_ALPHA_MASK = _mm_set_epi32( 1, 1, 1, 0x87 );
+
+    // Load tweaks into big T
+    __m512i T0, T1, T2, T3;
+
+    if( cbData < 8 * SYMCRYPT_AES_BLOCK_SIZE )
+    {
+        SymCryptXtsAesDecryptDataUnitC( pExpandedKey, pbTweakBlock, pbSrc, pbDst, cbData );
+        return;
+    }
+
+    t0 = _mm_loadu_si128( (__m128i *) pbTweakBlock );
+
+    // Do not stall.
+    XTS_MUL_ALPHA4( t0, t4 );
+    XTS_MUL_ALPHA ( t0, t1 );
+    XTS_MUL_ALPHA ( t4, t5 );
+    XTS_MUL_ALPHA ( t1, t2 );
+    XTS_MUL_ALPHA ( t5, t6 );
+    XTS_MUL_ALPHA ( t2, t3 );
+    XTS_MUL_ALPHA ( t6, t7 );
+    
+    T0 = _mm512_castsi128_si512( t0 );
+    T0 = _mm512_inserti64x2( T0, t1, 1 );
+    T0 = _mm512_inserti64x2( T0, t2, 2 );
+    T0 = _mm512_inserti64x2( T0, t3, 3 );
+    
+    T1 = _mm512_castsi128_si512( t4 );
+    T1 = _mm512_inserti64x2( T1, t5, 1 );
+    T1 = _mm512_inserti64x2( T1, t6, 2 );
+    T1 = _mm512_inserti64x2( T1, t7, 3 );
+
+    for(;;)
+    {
+        c0 = _mm512_xor_si512( T0, _mm512_loadu_si512( ( pbSrc +                           0 ) ) );
+        c1 = _mm512_xor_si512( T1, _mm512_loadu_si512( ( pbSrc +   4*SYMCRYPT_AES_BLOCK_SIZE ) ) );
+
+        pbSrc += 8 * SYMCRYPT_AES_BLOCK_SIZE;
+
+        AES_DECRYPT_ZMM_1024( pExpandedKey, c0, c1 );
+        _mm512_store_si512( ( pbDst +                          0 ), _mm512_xor_si512( c0, T0 ) );    
+        _mm512_store_si512( ( pbDst +  4*SYMCRYPT_AES_BLOCK_SIZE ), _mm512_xor_si512( c1, T1 ) );    
+
+        pbDst += 8*SYMCRYPT_AES_BLOCK_SIZE;
+
+        cbData -= 8 * SYMCRYPT_AES_BLOCK_SIZE;
+        if( cbData < 8 * SYMCRYPT_AES_BLOCK_SIZE )
+        {
+            break;
+        }
+
+        XTS_MUL_ALPHA8_ZMM(T0, T2);
+        XTS_MUL_ALPHA8_ZMM(T1, T3);
+        T0 = T2;
+        T1 = T3;
+    }
+
+    // We won't do another 8-block set so we don't update the tweak blocks
+
+    if( cbData > 0  )
+    {
+        //
+        // This is a rare case: the data unit length is not a multiple of 128 bytes.
+        // We do this in the default C implementation.
+        // Fix up the tweak block first
+        //
+        t7 = _mm512_extracti64x2_epi64( T1, 3 /* Highest 128 bits */ );
+        _mm256_zeroupper();
+        XTS_MUL_ALPHA( t7, t0 );
+        _mm_storeu_si128( (__m128i *) pbTweakBlock, t0 );
+        SymCryptXtsAesDecryptDataUnitC( pExpandedKey, pbTweakBlock, pbSrc, pbDst, cbData );
+    }
+    else {
+        _mm256_zeroupper();
+    }
+}
+
+VOID
+SYMCRYPT_CALL
+SymCryptXtsAesDecryptDataUnitZmm_2048(
+    _In_                                    PCSYMCRYPT_AES_EXPANDED_KEY pExpandedKey,
+    _Inout_updates_(SYMCRYPT_AES_BLOCK_SIZE)PBYTE                       pbTweakBlock,
+    _In_reads_( cbData )                    PCBYTE                      pbSrc,
+    _Out_writes_( cbData )                  PBYTE                       pbDst,
+                                            SIZE_T                      cbData )
+{
+    __m128i t0, t1, t2, t3, t4, t5, t6, t7;
+    __m512i c0, c1, c2, c3;
+    __m128i XTS_ALPHA_MASK = _mm_set_epi32( 1, 1, 1, 0x87 );
+
+    // Load tweaks into big T
+    __m512i T0, T1, T2, T3;
+
+    if( cbData < 16 * SYMCRYPT_AES_BLOCK_SIZE )
+    {
+        SymCryptXtsAesDecryptDataUnitC( pExpandedKey, pbTweakBlock, pbSrc, pbDst, cbData );
+        return;
+    }
+
+    t0 = _mm_loadu_si128( (__m128i *) pbTweakBlock );
+
+    // Do not stall.
+    XTS_MUL_ALPHA4( t0, t4 );
+    XTS_MUL_ALPHA ( t0, t1 );
+    XTS_MUL_ALPHA ( t4, t5 );
+    XTS_MUL_ALPHA ( t1, t2 );
+    XTS_MUL_ALPHA ( t5, t6 );
+    XTS_MUL_ALPHA ( t2, t3 );
+    XTS_MUL_ALPHA ( t6, t7 );
+    
+    T0 = _mm512_castsi128_si512( t0 );
+    T0 = _mm512_inserti64x2( T0, t1, 1 );
+    T0 = _mm512_inserti64x2( T0, t2, 2 );
+    T0 = _mm512_inserti64x2( T0, t3, 3 );
+    
+    T1 = _mm512_castsi128_si512( t4 );
+    T1 = _mm512_inserti64x2( T1, t5, 1 );
+    T1 = _mm512_inserti64x2( T1, t6, 2 );
+    T1 = _mm512_inserti64x2( T1, t7, 3 );
+
+    XTS_MUL_ALPHA8_ZMM(T0, T2);
+    XTS_MUL_ALPHA8_ZMM(T1, T3);
+
+    for(;;)
+    {
+        c0 = _mm512_xor_si512( T0, _mm512_loadu_si512( ( pbSrc +                           0 ) ) );
+        c1 = _mm512_xor_si512( T1, _mm512_loadu_si512( ( pbSrc +   4*SYMCRYPT_AES_BLOCK_SIZE ) ) );
+        c2 = _mm512_xor_si512( T2, _mm512_loadu_si512( ( pbSrc +   8*SYMCRYPT_AES_BLOCK_SIZE ) ) );
+        c3 = _mm512_xor_si512( T3, _mm512_loadu_si512( ( pbSrc +   12*SYMCRYPT_AES_BLOCK_SIZE ) ) );
+
+
+        pbSrc += 16 * SYMCRYPT_AES_BLOCK_SIZE;
+
+        AES_DECRYPT_ZMM_2048( pExpandedKey, c0, c1, c2, c3 );
+        _mm512_store_si512( ( pbDst +                          0 ), _mm512_xor_si512( c0, T0 ) );
+        _mm512_store_si512( ( pbDst +  4*SYMCRYPT_AES_BLOCK_SIZE ), _mm512_xor_si512( c1, T1 ) );
+        _mm512_store_si512( ( pbDst +  8*SYMCRYPT_AES_BLOCK_SIZE ), _mm512_xor_si512( c2, T2 ) );
+        _mm512_store_si512( ( pbDst +  12*SYMCRYPT_AES_BLOCK_SIZE ), _mm512_xor_si512( c3, T3 ) );
+
+        pbDst += 16 * SYMCRYPT_AES_BLOCK_SIZE;
+
+        cbData -= 16 * SYMCRYPT_AES_BLOCK_SIZE;
+        if( cbData < 16 * SYMCRYPT_AES_BLOCK_SIZE )
+        {
+            break;
+        }
+
+        XTS_MUL_ALPHA8_ZMM(T2, T0);
+        XTS_MUL_ALPHA8_ZMM(T3, T1);
+        XTS_MUL_ALPHA8_ZMM(T0, T2);
+        XTS_MUL_ALPHA8_ZMM(T1, T3);
+    }
+
+    // We won't do another 16-block set so we don't update the tweak blocks
+
+    if( cbData > 0  )
+    {
+        //
+        // This is a rare case: the data unit length is not a multiple of 128 bytes.
+        // We do this in the default C implementation.
+        // Fix up the tweak block first
+        //
+        t7 = _mm512_extracti64x2_epi64( T3, 3 /* Highest 128 bits */ );
+        _mm256_zeroupper();
+        XTS_MUL_ALPHA( t7, t0 );
+        _mm_storeu_si128( (__m128i *) pbTweakBlock, t0 );
+        SymCryptXtsAesDecryptDataUnitC( pExpandedKey, pbTweakBlock, pbSrc, pbDst, cbData );
+    }
+    else {
+        _mm256_zeroupper();
+    }
+}
+
+VOID
+SYMCRYPT_CALL
+SymCryptXtsAesEncryptDataUnitYmm_1024(
+    _In_                                    PCSYMCRYPT_AES_EXPANDED_KEY pExpandedKey,
+    _Inout_updates_(SYMCRYPT_AES_BLOCK_SIZE)PBYTE                       pbTweakBlock,
+    _In_reads_( cbData )                    PCBYTE                      pbSrc,
+    _Out_writes_( cbData )                  PBYTE                       pbDst,
+                                            SIZE_T                      cbData )
+{
+    __m128i t0, t1, t2, t3, t4, t5, t6, t7;
+    __m256i c0, c1, c2, c3;
+    __m128i XTS_ALPHA_MASK = _mm_set_epi32( 1, 1, 1, 0x87 );
+
+    // Load tweaks into big T
+    __m256i T0, T1, T2, T3;
+
+    if( cbData < 8 * SYMCRYPT_AES_BLOCK_SIZE )
+    {
+        SymCryptXtsAesEncryptDataUnitC( pExpandedKey, pbTweakBlock, pbSrc, pbDst, cbData );
+        return;
+    }
+
+    t0 = _mm_loadu_si128( (__m128i *) pbTweakBlock );
+
+    // Do not stall.
+    XTS_MUL_ALPHA4( t0, t4 );
+    XTS_MUL_ALPHA ( t0, t1 );
+    XTS_MUL_ALPHA ( t4, t5 );
+    XTS_MUL_ALPHA ( t1, t2 );
+    XTS_MUL_ALPHA ( t5, t6 );
+    XTS_MUL_ALPHA ( t2, t3 );
+    XTS_MUL_ALPHA ( t6, t7 );
+    
+    T0 = _mm256_insertf128_si256( _mm256_castsi128_si256( t0 ), t1, 1 ); // AVX
+    T1 = _mm256_insertf128_si256( _mm256_castsi128_si256( t2 ), t3, 1);;
+    T2 = _mm256_insertf128_si256( _mm256_castsi128_si256( t4 ), t5, 1);;
+    T3 = _mm256_insertf128_si256( _mm256_castsi128_si256( t6 ), t7, 1);;
+
+    for(;;)
+    {
+        c0 = _mm256_xor_si256( T0, _mm256_loadu_si256( ( __m256i * ) ( pbSrc +                           0 ) ) );
+        c1 = _mm256_xor_si256( T1, _mm256_loadu_si256( ( __m256i * ) ( pbSrc +   2*SYMCRYPT_AES_BLOCK_SIZE ) ) );
+        c2 = _mm256_xor_si256( T2, _mm256_loadu_si256( ( __m256i * ) ( pbSrc +   4*SYMCRYPT_AES_BLOCK_SIZE ) ) );
+        c3 = _mm256_xor_si256( T3, _mm256_loadu_si256( ( __m256i * ) ( pbSrc +   6*SYMCRYPT_AES_BLOCK_SIZE ) ) );
+
+        pbSrc += 8 * SYMCRYPT_AES_BLOCK_SIZE;
+
+        AES_ENCRYPT_YMM_1024( pExpandedKey, c0, c1, c2, c3 );
+
+        _mm256_store_si256( ( __m256i * ) ( pbDst +                          0 ), _mm256_xor_si256( c0, T0 ) );
+        _mm256_store_si256( ( __m256i * ) ( pbDst +  2*SYMCRYPT_AES_BLOCK_SIZE ), _mm256_xor_si256( c1, T1 ) );
+        _mm256_store_si256( ( __m256i * ) ( pbDst +  4*SYMCRYPT_AES_BLOCK_SIZE ), _mm256_xor_si256( c2, T2 ) );
+        _mm256_store_si256( ( __m256i * ) ( pbDst +  6*SYMCRYPT_AES_BLOCK_SIZE ), _mm256_xor_si256( c3, T3 ) );
+
+        pbDst += 8 * SYMCRYPT_AES_BLOCK_SIZE;
+
+        cbData -= 8 * SYMCRYPT_AES_BLOCK_SIZE;
+        if( cbData < 8 * SYMCRYPT_AES_BLOCK_SIZE )
+        {
+            break;
+        }
+
+        // Get the next T0, T1, T2, T3 without temporaries.
+        // ^ is exponentiation
+        // T is the T0 in the first iteration of this loop
+        // a is alpha
+        // factor to get T_next is a^16
+        //         current value    next value
+        // T0      T*a^0            T*a^8
+        // T1      T*a^2            T*a^10
+        // T2      T*a^4            T*a^12
+        // T3      T*a^6           T*a^14
+
+        // to get the next iteration of Tx without temp registers
+        // T0 = T*a^8 = T2 * a^4
+        // T1 = T*a^10 = T3 * a^4
+        // T2 = T*a^12 = T0 * a^4
+        // T3 = T*a^14 = T1 * a^4
+        //
+        // But multiplication by factors of a^8 with temporary
+        // is faster. So don't do that ^^^^.
+
+        __m256i temp;
+        XTS_MUL_ALPHA8_YMM(T0, temp);
+        T0 = temp;
+        XTS_MUL_ALPHA8_YMM(T1, temp);
+        T1 = temp;
+        XTS_MUL_ALPHA8_YMM(T2, temp);
+        T2 = temp;
+        XTS_MUL_ALPHA8_YMM(T3, temp);
+        T3 = temp;
+    }
+
+    // We won't do another 16-block set so we don't update the tweak blocks
+
+    if( cbData > 0  )
+    {
+        //
+        // This is a rare case: the data unit length is not a multiple of 128 bytes.
+        // We do this in the default C implementation.
+        // Fix up the tweak block first
+        //
+        t7 = _mm256_extracti128_si256 ( T3, 1 /* Highest 128 bits */ ); // AVX2
+        _mm256_zeroupper();
+        XTS_MUL_ALPHA( t7, t0 );
+        _mm_storeu_si128( (__m128i *) pbTweakBlock, t0 );
+        SymCryptXtsAesEncryptDataUnitC( pExpandedKey, pbTweakBlock, pbSrc, pbDst, cbData );
+    }
+    else {
+        _mm256_zeroupper();
+    }
+}
+
+VOID
+SYMCRYPT_CALL
+SymCryptXtsAesDecryptDataUnitYmm_1024(
+    _In_                                    PCSYMCRYPT_AES_EXPANDED_KEY pExpandedKey,
+    _Inout_updates_(SYMCRYPT_AES_BLOCK_SIZE)PBYTE                       pbTweakBlock,
+    _In_reads_( cbData )                    PCBYTE                      pbSrc,
+    _Out_writes_( cbData )                  PBYTE                       pbDst,
+                                            SIZE_T                      cbData )
+{
+    __m128i t0, t1, t2, t3, t4, t5, t6, t7;
+    __m256i c0, c1, c2, c3;
+    __m128i XTS_ALPHA_MASK = _mm_set_epi32( 1, 1, 1, 0x87 );
+
+    // Load tweaks into big T
+    __m256i T0, T1, T2, T3;
+
+    if( cbData < 8 * SYMCRYPT_AES_BLOCK_SIZE )
+    {
+        SymCryptXtsAesDecryptDataUnitC( pExpandedKey, pbTweakBlock, pbSrc, pbDst, cbData );
+        return;
+    }
+
+    t0 = _mm_loadu_si128( (__m128i *) pbTweakBlock );
+
+    // Do not stall.
+    XTS_MUL_ALPHA4( t0, t4 );
+    XTS_MUL_ALPHA ( t0, t1 );
+    XTS_MUL_ALPHA ( t4, t5 );
+    XTS_MUL_ALPHA ( t1, t2 );
+    XTS_MUL_ALPHA ( t5, t6 );
+    XTS_MUL_ALPHA ( t2, t3 );
+    XTS_MUL_ALPHA ( t6, t7 );
+    
+    T0 = _mm256_insertf128_si256( _mm256_castsi128_si256( t0 ), t1, 1);; // AVX
+    T1 = _mm256_insertf128_si256( _mm256_castsi128_si256( t2 ), t3, 1);;
+    T2 = _mm256_insertf128_si256( _mm256_castsi128_si256( t4 ), t5, 1);;
+    T3 = _mm256_insertf128_si256( _mm256_castsi128_si256( t6 ), t7, 1);;
+
+    for(;;)
+    {
+        c0 = _mm256_xor_si256( T0, _mm256_loadu_si256( ( __m256i * ) ( pbSrc +                           0 ) ) );
+        c1 = _mm256_xor_si256( T1, _mm256_loadu_si256( ( __m256i * ) ( pbSrc +   2*SYMCRYPT_AES_BLOCK_SIZE ) ) );
+        c2 = _mm256_xor_si256( T2, _mm256_loadu_si256( ( __m256i * ) ( pbSrc +   4*SYMCRYPT_AES_BLOCK_SIZE ) ) );
+        c3 = _mm256_xor_si256( T3, _mm256_loadu_si256( ( __m256i * ) ( pbSrc +   6*SYMCRYPT_AES_BLOCK_SIZE ) ) );
+
+        pbSrc += 8 * SYMCRYPT_AES_BLOCK_SIZE;
+
+        AES_DECRYPT_YMM_1024( pExpandedKey, c0, c1, c2, c3 );
+        _mm256_store_si256( ( __m256i * ) ( pbDst +                          0 ), _mm256_xor_si256( c0, T0 ) );
+        _mm256_store_si256( ( __m256i * ) ( pbDst +  2*SYMCRYPT_AES_BLOCK_SIZE ), _mm256_xor_si256( c1, T1 ) );
+        _mm256_store_si256( ( __m256i * ) ( pbDst +  4*SYMCRYPT_AES_BLOCK_SIZE ), _mm256_xor_si256( c2, T2 ) );
+        _mm256_store_si256( ( __m256i * ) ( pbDst +  6*SYMCRYPT_AES_BLOCK_SIZE ), _mm256_xor_si256( c3, T3 ) );
+
+        pbDst += 8 * SYMCRYPT_AES_BLOCK_SIZE;
+
+        cbData -= 8 * SYMCRYPT_AES_BLOCK_SIZE;
+        if( cbData < 8 * SYMCRYPT_AES_BLOCK_SIZE )
+        {
+            break;
+        }
+
+        // Get the next T0, T1, T2, T3 without temporaries.
+        // ^ is exponentiation
+        // T is the T0 in the first iteration of this loop
+        // a is alpha
+        // factor to get T_next is a^16
+        //         current value    next value
+        // T0      T*a^0            T*a^8
+        // T1      T*a^2            T*a^10
+        // T2      T*a^4            T*a^12
+        // T3      T*a^6           T*a^14
+
+        // to get the next iteration of Tx without temp registers
+        // T0 = T*a^8 = T2 * a^4
+        // T1 = T*a^10 = T3 * a^4
+        // T2 = T*a^12 = T0 * a^4
+        // T3 = T*a^14 = T1 * a^4
+        //
+        // But multiplication by factors of a^8 with temporary
+        // is faster. So don't do that ^^^^.
+
+        __m256i temp;
+        XTS_MUL_ALPHA8_YMM(T0, temp);
+        T0 = temp;
+        XTS_MUL_ALPHA8_YMM(T1, temp);
+        T1 = temp;
+        XTS_MUL_ALPHA8_YMM(T2, temp);
+        T2 = temp;
+        XTS_MUL_ALPHA8_YMM(T3, temp);
+        T3 = temp;
+    }
+
+    // We won't do another 16-block set so we don't update the tweak blocks
+
+    if( cbData > 0  )
+    {
+        //
+        // This is a rare case: the data unit length is not a multiple of 128 bytes.
+        // We do this in the default C implementation.
+        // Fix up the tweak block first
+        //
+        t7 = _mm256_extracti128_si256 ( T3, 1 /* Highest 128 bits */ ); // AVX2
+        _mm256_zeroupper();
+        XTS_MUL_ALPHA( t7, t0 );
+        _mm_storeu_si128( (__m128i *) pbTweakBlock, t0 );
+        SymCryptXtsAesDecryptDataUnitC( pExpandedKey, pbTweakBlock, pbSrc, pbDst, cbData );
+    }
+    else {
+        _mm256_zeroupper();
+    }
+}
 
 #endif // CPU_X86 | CPU_AMD64
 

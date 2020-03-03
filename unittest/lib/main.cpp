@@ -2,7 +2,7 @@
 // Main.cpp
 // Main file for SymCrypt unit test program
 //
-// Copyright (c) Microsoft Corporation. Licensed under the MIT license. 
+// Copyright (c) Microsoft Corporation. Licensed under the MIT license.
 //
 
 #include "precomp.h"
@@ -28,7 +28,7 @@ developertest()
     // This function is called before the main testing begins.
     // It is primarilly used during development of new code to run the test code
     // without having to wait for all the other things to run.
-    // 
+    //
     // Note: there is also a DeveloperTest algorithm that can be used for developer performance
     // tests.
     //
@@ -38,188 +38,192 @@ developertest()
 //
 // Special extern declarations to allow us to disable AES-NI on the RSA32 library
 //
+#if INCLUDE_IMPL_RSA32
 extern "C" {
 extern BYTE AesUseXmm;
 extern BOOL AesDetectXmmDone;
 }
+#endif
 
-char * AlgMd2::name = "Md2";
+const char * AlgMd2::name = "Md2";
 
-char * AlgMd4::name = "Md4";
+const char * AlgMd4::name = "Md4";
 
-char * AlgMd5::name = "Md5";
+const char * AlgMd5::name = "Md5";
 
-char * AlgSha1::name = "Sha1";
+const char * AlgSha1::name = "Sha1";
 
-char * AlgSha256::name = "Sha256";
+const char * AlgSha256::name = "Sha256";
 
-char * AlgSha384::name = "Sha384";
+const char * AlgSha384::name = "Sha384";
 
-char * AlgSha512::name = "Sha512";
+const char * AlgSha512::name = "Sha512";
 
-char * AlgHmacMd5::name = "HmacMd5";
+const char * AlgHmacMd5::name = "HmacMd5";
 
-char * AlgHmacSha1::name = "HmacSha1";
+const char * AlgHmacSha1::name = "HmacSha1";
 
-char * AlgHmacSha256::name = "HmacSha256";
+const char * AlgHmacSha256::name = "HmacSha256";
 
-char * AlgHmacSha384::name = "HmacSha384";
+const char * AlgHmacSha384::name = "HmacSha384";
 
-char * AlgHmacSha512::name = "HmacSha512";
+const char * AlgHmacSha512::name = "HmacSha512";
 
-char * AlgAesCmac::name = "AesCmac";
+const char * AlgAesCmac::name = "AesCmac";
 
-char * AlgMarvin32::name = "Marvin32";
+const char * AlgMarvin32::name = "Marvin32";
 
-char * AlgAes::name = "Aes";
+const char * AlgAes::name = "Aes";
 
-char * AlgDes::name = "Des";
+const char * AlgDes::name = "Des";
 
-char * Alg3Des::name = "Des3";
+const char * Alg3Des::name = "Des3";
 
-char * Alg2Des::name = "Des2";
+const char * Alg2Des::name = "Des2";
 
-char * AlgDesx::name = "Desx";
+const char * AlgDesx::name = "Desx";
 
-char * AlgRc2::name = "Rc2";
+const char * AlgRc2::name = "Rc2";
 
-char * AlgRc4::name = "Rc4";
+const char * AlgRc4::name = "Rc4";
 
-char * AlgChaCha20::name = "ChaCha20";
+const char * AlgChaCha20::name = "ChaCha20";
 
-char * AlgPoly1305::name = "Poly1305";
+const char * AlgPoly1305::name = "Poly1305";
 
-char * AlgAesCtrDrbg::name = "AesCtrDrbg";
+const char * AlgAesCtrDrbg::name = "AesCtrDrbg";
 
-char * AlgAesCtrF142::name = "AesCtrF142";
+const char * AlgAesCtrF142::name = "AesCtrF142";
 
-char * AlgParallelSha256::name = "ParSha256";
-WCHAR * AlgParallelSha256::pwstrBasename = L"SHA256";
+const char * AlgParallelSha256::name = "ParSha256";
+const WCHAR * AlgParallelSha256::pwstrBasename = L"SHA256";
 
-char * AlgParallelSha384::name = "ParSha384";
-WCHAR * AlgParallelSha384::pwstrBasename = L"SHA384";
+const char * AlgParallelSha384::name = "ParSha384";
+const WCHAR * AlgParallelSha384::pwstrBasename = L"SHA384";
 
-char * AlgParallelSha512::name = "ParSha512";
-WCHAR * AlgParallelSha512::pwstrBasename = L"SHA512";
+const char * AlgParallelSha512::name = "ParSha512";
+const WCHAR * AlgParallelSha512::pwstrBasename = L"SHA512";
 
-char * AlgPbkdf2::name = "Pbkdf2";
+const char * AlgPbkdf2::name = "Pbkdf2";
 
-char * AlgSp800_108::name = "Sp800_108";
+const char * AlgSp800_108::name = "Sp800_108";
 
-char * AlgTlsPrf1_1::name = "TlsPrf1_1";
+const char * AlgTlsPrf1_1::name = "TlsPrf1_1";
 
-char * AlgTlsPrf1_2::name = "TlsPrf1_2";
+const char * AlgTlsPrf1_2::name = "TlsPrf1_2";
 
-char * AlgHkdf::name = "Hkdf";
+const char * AlgHkdf::name = "Hkdf";
 
-char * AlgXtsAes::name = "XtsAes";
+const char * AlgXtsAes::name = "XtsAes";
 
-char * AlgTlsCbcHmacSha1::name   = "TlsCbcHmacSha1";
+const char * AlgTlsCbcHmacSha1::name   = "TlsCbcHmacSha1";
 
-char * AlgTlsCbcHmacSha256::name = "TlsCbcHmacSha256";
+const char * AlgTlsCbcHmacSha256::name = "TlsCbcHmacSha256";
 
-char * AlgTlsCbcHmacSha384::name = "TlsCbcHmacSha384";
+const char * AlgTlsCbcHmacSha384::name = "TlsCbcHmacSha384";
 
-char * AlgIntAdd::name = "IntAdd";
+const char * AlgIntAdd::name = "IntAdd";
 
-char * AlgIntSub::name = "IntSub";
+const char * AlgIntSub::name = "IntSub";
 
-char * AlgIntMul::name = "IntMul";
+const char * AlgIntMul::name = "IntMul";
 
-char * AlgIntSquare::name = "IntSquare";
+const char * AlgIntSquare::name = "IntSquare";
 
-char * AlgIntDivMod::name = "IntDivMod";
+const char * AlgIntDivMod::name = "IntDivMod";
 
-char * AlgModAdd::name = "ModAdd";
+const char * AlgModAdd::name = "ModAdd";
 
-char * AlgModSub::name = "ModSub";
+const char * AlgModSub::name = "ModSub";
 
-char * AlgModMul::name = "ModMul";
+const char * AlgModMul::name = "ModMul";
 
-char * AlgModSquare::name = "ModSquare";
+const char * AlgModSquare::name = "ModSquare";
 
-char * AlgModInv::name = "ModInv";
+const char * AlgModInv::name = "ModInv";
 
-char * AlgModExp::name = "ModExp";
+const char * AlgModExp::name = "ModExp";
 
-char * AlgScsTable::name = "ScsTable";
+const char * AlgScsTable::name = "ScsTable";
 
-char * AlgIEEE802_11SaeCustom::name = "IEEE802_11SaeCustom";
+const char * AlgIEEE802_11SaeCustom::name = "IEEE802_11SaeCustom";
 
-char * AlgTrialDivision::name = "TrialDivision";
+const char * AlgTrialDivision::name = "TrialDivision";
 
-char * AlgTrialDivisionContext::name = "TrialDivisionContext";
+const char * AlgTrialDivisionContext::name = "TrialDivisionContext";
 
-char * AlgWipe::name = "Wipe";
+const char * AlgWipe::name = "Wipe";
 
-char * AlgRsaEncRaw::name = "RsaEncRaw";
+const char * AlgRsaEncRaw::name = "RsaEncRaw";
 
-char * AlgRsaDecRaw::name = "RsaDecRaw";
+//const char * AlgRsaDecRaw::name = "RsaDecRaw";
 
-char * AlgRsaEncPkcs1::name = "RsaEncPkcs1";
+const char * AlgRsaEncPkcs1::name = "RsaEncPkcs1";
 
-char * AlgRsaDecPkcs1::name = "RsaDecPkcs1";
+//const char * AlgRsaDecPkcs1::name = "RsaDecPkcs1";
 
-char * AlgRsaEncOaep::name = "RsaEncOaep";
+const char * AlgRsaEncOaep::name = "RsaEncOaep";
 
-char * AlgRsaDecOaep::name = "RsaDecOaep";
+//const char * AlgRsaDecOaep::name = "RsaDecOaep";
 
-char * AlgRsaSignPkcs1::name = "RsaSignPkcs1";
+const char * AlgRsaSignPkcs1::name = "RsaSignPkcs1";
 
-char * AlgRsaVerifyPkcs1::name = "RsaVerifyPkcs1";
+//const char * AlgRsaVerifyPkcs1::name = "RsaVerifyPkcs1";
 
-char * AlgRsaSignPss::name = "RsaSignPss";
+const char * AlgRsaSignPss::name = "RsaSignPss";
 
-char * AlgRsaVerifyPss::name = "RsaVerifyPss";
+//const char * AlgRsaVerifyPss::name = "RsaVerifyPss";
 
-char * AlgDsaSign::name = "DsaSign";
+const char * AlgDsaSign::name = "DsaSign";
 
-char * AlgDsaVerify::name = "DsaVerify";
+const char * AlgDsaVerify::name = "DsaVerify";
 
-char * AlgDh::name = "Dh";
+const char * AlgDh::name = "Dh";
 
-char * AlgEcurveAllocate::name = "EcurveAllocate";
+const char * AlgDsa::name = "Dsa";
 
-char * AlgEcpointSetZero::name = "EcpointSetZero";
+const char * AlgEcurveAllocate::name = "EcurveAllocate";
 
-char * AlgEcpointSetDistinguished::name = "EcpointSetDistinguished";
+const char * AlgEcpointSetZero::name = "EcpointSetZero";
 
-char * AlgEcpointSetRandom::name = "EcpointSetRandom";
+const char * AlgEcpointSetDistinguished::name = "EcpointSetDistinguished";
 
-char * AlgEcpointIsEqual::name = "EcpointIsEqual";
+const char * AlgEcpointSetRandom::name = "EcpointSetRandom";
 
-char * AlgEcpointIsZero::name = "EcpointIsZero";
+const char * AlgEcpointIsEqual::name = "EcpointIsEqual";
 
-char * AlgEcpointOnCurve::name = "EcpointOnCurve";
+const char * AlgEcpointIsZero::name = "EcpointIsZero";
 
-char * AlgEcpointAdd::name = "EcpointAdd";
+const char * AlgEcpointOnCurve::name = "EcpointOnCurve";
 
-char * AlgEcpointAddDiffNz::name = "EcpointAddDiffNz";
+const char * AlgEcpointAdd::name = "EcpointAdd";
 
-char * AlgEcpointDouble::name = "EcpointDouble";
+const char * AlgEcpointAddDiffNz::name = "EcpointAddDiffNz";
 
-char * AlgEcpointScalarMul::name = "EcpointScalarMul";
+const char * AlgEcpointDouble::name = "EcpointDouble";
 
-char * AlgEcdsaSign::name = "EcdsaSign";
+const char * AlgEcpointScalarMul::name = "EcpointScalarMul";
 
-char * AlgEcdsaVerify::name = "EcdsaVerify";
+const char * AlgEcdsaSign::name = "EcdsaSign";
 
-char * AlgEcdh::name = "Ecdh";
+const char * AlgEcdsaVerify::name = "EcdsaVerify";
 
-char * AlgDeveloperTest::name = "DeveloperTest";
+const char * AlgEcdh::name = "Ecdh";
 
-char * ModeEcb::name = "Ecb";
+const char * AlgDeveloperTest::name = "DeveloperTest";
+
+const char * ModeEcb::name = "Ecb";
 ULONG ModeEcb::flags = 0;
 
-char * ModeCbc::name = "Cbc";
+const char * ModeCbc::name = "Cbc";
 ULONG ModeCbc::flags = MODE_FLAG_CHAIN;
 
-char * ModeCfb::name = "Cfb";
+const char * ModeCfb::name = "Cfb";
 ULONG ModeCfb::flags = MODE_FLAG_CHAIN | MODE_FLAG_CFB;
 
-char * ModeCcm::name = "Ccm";
+const char * ModeCcm::name = "Ccm";
 
-char * ModeGcm::name = "Gcm";
+const char * ModeGcm::name = "Gcm";
 
 BOOL AlgRc4::isRandomAccess = FALSE;
 BOOL AlgChaCha20::isRandomAccess = TRUE;
@@ -246,7 +250,7 @@ SYMCRYPT_CPU_FEATURES g_disabledOnCommandLine = 0;
 // message. We also compute the 90 percentile of the deviation of the cloud points from this line.
 // The flag below can be set to show this 90 percentile range in the output.
 //
-BOOL g_showPerfRangeInfo = FALSE;   
+BOOL g_showPerfRangeInfo = FALSE;
 
 //
 // For the ECC algorithms we show detailed information if this flag is set.
@@ -297,13 +301,13 @@ CREATE_PERF_FUNCTION( WipeAlign, 100, 100000 )
 #undef INIT_CODE
 #undef PERF_CODE
 
-VOID 
+VOID
 perftestWipe()
 {
     int dataSizes[] = { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 24, 25, 32, 34, 48, 57, 64, 80, 83, 104, 112, 128, 1024, 4096};
     int i;
     double perf;
-    
+
     print( "SymCryptWipe performance\n" );
     for( i=0; i<sizeof( dataSizes ) / sizeof( dataSizes[0] ); i++ )
     {
@@ -330,7 +334,7 @@ perftestWipe()
 // If a filter is empty, all algorithm implementations pass the test.
 // If a filter is nonempty, an algorithm implementation passes the test if one
 // of the elements in the vector is a prefix of the
-// corresponding algorithm or implementation name. 
+// corresponding algorithm or implementation name.
 //
 // Thus, we can test all RSA32 or SymCrypt algorithms together,
 // And all AES algorithms (including AES-CBC).
@@ -339,7 +343,7 @@ perftestWipe()
 //
 typedef std::vector<String> StringVector;
 
-StringSet g_algorithmsToTest;     
+StringSet g_algorithmsToTest;
 StringSet g_implementationsToTest;
 
 BOOL setContainsPrefix( const StringSet & set, const std::string & str )
@@ -348,7 +352,7 @@ BOOL setContainsPrefix( const StringSet & set, const std::string & str )
     {
         return TRUE;
     }
-    
+
     BOOL found = FALSE;
     for( StringSet::const_iterator i = set.begin(); i != set.end(); ++i )
     {
@@ -367,21 +371,21 @@ BOOL setContainsPrefix( const StringSet & set, const std::string & str )
             return TRUE;
         }
     }
-    
-    return FALSE;    
+
+    return FALSE;
 }
 
 BOOL
-updateNameSet( _In_ PSTR * names, _Inout_ StringSet * set, CHAR op, _In_ PSTR name )
+updateNameSet( _In_ PCSTR * names, _Inout_ StringSet * set, CHAR op, _In_ PSTR name )
 {
     BOOL nameMatch = FALSE;
     SIZE_T nameLen = strlen( name );
-    
+
     if( nameLen == 0 )
     {
         return FALSE;
     }
-    
+
     for( SIZE_T i=0; names[i] != NULL; i++ )
     {
         if( STRNICMP( name, names[i], nameLen ) == 0 )
@@ -406,7 +410,7 @@ updateNameSet( _In_ PSTR * names, _Inout_ StringSet * set, CHAR op, _In_ PSTR na
     }
 
     return nameMatch;
-    
+
 }
 
 BOOL
@@ -429,7 +433,7 @@ isAlgorithmPresent( String algName, BOOL isPrefix )
     return FALSE;
 }
 
-char * g_algorithmNames[] = {
+const char * g_algorithmNames[] = {
     AlgMd2::name,
     AlgMd4::name,
     AlgMd5::name,
@@ -484,18 +488,19 @@ char * g_algorithmNames[] = {
     AlgTrialDivisionContext::name,
     AlgWipe::name,
     AlgRsaEncRaw::name,
-    AlgRsaDecRaw::name,
+    //AlgRsaDecRaw::name,
     AlgRsaEncPkcs1::name,
-    AlgRsaDecPkcs1::name,
+    //AlgRsaDecPkcs1::name,
     AlgRsaEncOaep::name,
-    AlgRsaDecOaep::name,
+    //AlgRsaDecOaep::name,
     AlgRsaSignPkcs1::name,
-    AlgRsaVerifyPkcs1::name,
+    //AlgRsaVerifyPkcs1::name,
     AlgRsaSignPss::name,
-    AlgRsaVerifyPss::name,
-    AlgDsaSign::name,
-    AlgDsaVerify::name,
+    //AlgRsaVerifyPss::name,
+    //AlgDsaSign::name,
+    //AlgDsaVerify::name,
     AlgDh::name,
+    AlgDsa::name,
     AlgEcurveAllocate::name,
     AlgEcpointSetZero::name,
     AlgEcpointSetDistinguished::name,
@@ -518,7 +523,7 @@ char * g_algorithmNames[] = {
 VOID
 usage()
 {
-    char * sep;
+    const char * sep;
     int i;
     SIZE_T col;
 
@@ -548,7 +553,7 @@ usage()
             "                           Note: If you don't know the desired key, run profiling without\n"
             "                               the key parameter and all possible codes will get printed.\n"
             "  rsakgp            Run perf measurement of RSA key generation.\n"
-            "  sgx               Run CNG and symcrypt test implementations against BCrypt in SGX enclave.\n" 
+            "  sgx               Run CNG and symcrypt test implementations against BCrypt in SGX enclave.\n"
             "                    This option is only valid for win8_1 version and newer of the tests.\n"
             "\n"
 #if SYMCRYPT_CPU_X86 | SYMCRYPT_CPU_AMD64
@@ -556,12 +561,12 @@ usage()
             "                    rdrand, rdseed, savexmmnofail, shani, adx, bmi2\n"
 #elif SYMCRYPT_CPU_ARM64
             " CPU feature:       neon, i_sha1, i_sha256, i_aes, i_pmull\n"
-#elif SYMCRYPT_CPU_ARM 
+#elif SYMCRYPT_CPU_ARM
             " CPU feature:       neon\n"
 #endif
             );
 
-    sep = " Implementations:   "; 
+    sep = " Implementations:   ";
     for( i=0; g_implementationNames[i] != NULL; i++ )
     {
         iprint( "%s%s", sep, g_implementationNames[i] );
@@ -611,6 +616,8 @@ const CPU_FEATURE_DATA g_cpuFeatureData[] =
     { "shani", SYMCRYPT_CPU_FEATURE_SHANI },
     { "adx", SYMCRYPT_CPU_FEATURE_ADX },
     { "bmi2", SYMCRYPT_CPU_FEATURE_BMI2 },
+    { "vaes512", SYMCRYPT_CPU_FEATURE_VAES_512 },
+    { "vaes256", SYMCRYPT_CPU_FEATURE_VAES_256 },
 #elif SYMCRYPT_CPU_ARM64
     { "neon", SYMCRYPT_CPU_FEATURE_NEON },
     { "i_aes", SYMCRYPT_CPU_FEATURE_NEON_AES },
@@ -633,7 +640,7 @@ VOID printSymCryptCpuInfo( PCSTR text, SYMCRYPT_CPU_FEATURES notPresent )
         if( !(notPresent & g_cpuFeatureData[i].mask) )
         {
             print( "%c%s", sep, g_cpuFeatureData[i].name );
-            sep = ',';  
+            sep = ',';
         }
     }
     print( "\n" );
@@ -648,13 +655,13 @@ processSingleOption( _In_ PSTR option )
     {
         if( STRICMP( &option[0], "-aesni" ) == 0 )
         {
-#if SYMCRYPT_CPU_X86 | SYMCRYPT_CPU_AMD64
+#if INCLUDE_IMPL_RSA32 & (SYMCRYPT_CPU_X86 | SYMCRYPT_CPU_AMD64)
             //
             // Disable AES-NI for RSA32 and SymCrypt
             //
             AesUseXmm = 0;
-            AesDetectXmmDone = TRUE;    
-#endif                
+            AesDetectXmmDone = TRUE;
+#endif
         }
 
         for( int i=0; i < sizeof(g_cpuFeatureData)/sizeof(g_cpuFeatureData[0]); i++ )
@@ -694,7 +701,7 @@ processSingleOption( _In_ PSTR option )
             char * endptr;
             __analysis_assume( strlen(option) >= 8 );
             g_profile = TRUE;
-            g_profile_iterations = (UINT32) strtol( &option[8], &endptr, 0 );
+            g_profile_iterations = (UINT32) strtoul( &option[8], &endptr, 0 );
             if (g_profile_iterations == 0)
             {
                 FATAL( "Number of profile iterations must be greater than zero." );
@@ -710,7 +717,7 @@ processSingleOption( _In_ PSTR option )
             {
                 FATAL2( "Key parameter present without profile parameter \"%s\"", &option[0] );
             }
-            g_profile_key = (UINT32) strtol( &option[4], &endptr, 16 );
+            g_profile_key = (UINT32) strtoul( &option[4], &endptr, 16 );
             optionHandled = TRUE;
         }
 
@@ -729,21 +736,21 @@ processSingleOption( _In_ PSTR option )
         if( STRNICMP( &option[0], "osversion=", 10 ) == 0 )
         {
             char * endptr;
-            __analysis_assume( strlen(option) >= 10 );  
+            __analysis_assume( strlen(option) >= 10 );
             // SAL_readableTo(elementCount(10))
-            g_osVersion = (UINT32) strtol( &option[10], &endptr, 16 );
+            g_osVersion = (UINT32) strtoul( &option[10], &endptr, 16 );
             if( endptr != &option[14] || g_osVersion < 0x0500 || g_osVersion > 0x0800 )
             {
                 FATAL2( "Invalid OS version \"%s\"", &option[10] );
             }
             optionHandled = TRUE;
-            g_modifiedCpuFeatures = TRUE; 
+            g_modifiedCpuFeatures = TRUE;
         }
         if( STRNICMP( &option[0], "rngseed=", 8 ) == 0 )
         {
             char * endptr;
-            __analysis_assume( strlen(option) >= 8 );  
-            g_rngSeed = (UINT32) strtol( &option[8], &endptr, 16 );
+            __analysis_assume( strlen(option) >= 8 );
+            g_rngSeed = (UINT32) strtoul( &option[8], &endptr, 16 );
             optionHandled = TRUE;
         }
         if (STRICMP(&option[0], "sgx") == 0)
@@ -776,15 +783,15 @@ processOptions( int argc, _In_reads_( argc ) char * argv[] )
         {
             CHAR c = argv[i][0];
             String str( argv[i] + 1 );
-            
-            if( updateNameSet( g_algorithmNames, 
+
+            if( updateNameSet( g_algorithmNames,
                                 &g_algorithmsToTest, c, argv[i] + 1 ) )
             {
                 optionHandled = TRUE;
             }
 
             // if an option matches both algorithm names & implementation names, the alg name wins.
-            if( !optionHandled && 
+            if( !optionHandled &&
                 updateNameSet( g_implementationNames,
                                 &g_implementationsToTest, c, argv[i] + 1 ) )
             {
@@ -809,19 +816,19 @@ VOID
 fatal( _In_ PSTR file, ULONG line, _In_ PSTR format, ... )
 {
     va_list vl;
-
     printOutput( 0 );
-    
-    fprintf( stdout, "*\n\n***** FATAL ERROR %s(%d): ", file, line );
+
+    fprintf( stdout, "*\n\n***** FATAL ERROR %s(%lu): ", file, line );
 
     va_start( vl, format );
 
     vfprintf( stdout, format, vl );
+    fprintf( stdout, "\n" );
 
     exit( -1 );
 }
 
-#if !SYMCRYPT_APPLE_CC
+#if SYMCRYPT_MS_VC
 KatData *
 getCustomResource( _In_ PSTR resourceName, _In_ PSTR resourceType )
 {
@@ -833,10 +840,10 @@ getCustomResource( _In_ PSTR resourceName, _In_ PSTR resourceType )
 
     resourceHandle = FindResourceA( NULL, resourceName, resourceType );
     CHECK( resourceHandle != NULL, "Failed to find resource" );
-    
+
     resourceDataHandle = LoadResource( NULL, resourceHandle );
     CHECK( resourceDataHandle != NULL, "Failed to laod resource" );
-    
+
     cbData = SizeofResource( NULL, resourceHandle );
     CHECK( cbData != 0, "?" );
 
@@ -847,15 +854,30 @@ getCustomResource( _In_ PSTR resourceName, _In_ PSTR resourceType )
 }
 
 void getPlatformInformation()
-{   
+{
     OSVERSIONINFO versionInfo;
 
     versionInfo.dwOSVersionInfoSize = sizeof( versionInfo );
 
+    #pragma warning(push)
+    #pragma warning(disable:4996) // GetVersionEx is deprecated
     CHECK( GetVersionEx( &versionInfo ), "Failed to get OS version info" );
+    #pragma warning(pop)
 
     g_osVersion = (versionInfo.dwMajorVersion << 8) + (versionInfo.dwMinorVersion & 0xff);
 }
+#elif SYMCRYPT_GNUC
+#include "resource.h"
+KatData *
+getCustomResource( _In_ PSTR resourceName, _In_ PSTR /* resourceType */)
+{
+    PCCHAR pbData = nullptr;
+    SIZE_T cbData = GetResourceBytes((const char *)resourceName, &pbData);
+    CHECK( cbData != 0, "Resource not found" );
+
+    return new KatData( resourceName, pbData, cbData - 1 );
+}
+
 #endif
 
 void printPlatformInformation( _In_z_ char * text )
@@ -864,11 +886,11 @@ void printPlatformInformation( _In_z_ char * text )
     iprint( "\n%s "
 #if SYMCRYPT_CPU_X86
         "x86"
-#elif SYMCRYPT_CPU_AMD64 
+#elif SYMCRYPT_CPU_AMD64
         "amd64"
 #elif SYMCRYPT_CPU_ARM64
         "arm64"
-#elif SYMCRYPT_CPU_ARM 
+#elif SYMCRYPT_CPU_ARM
         "arm"
 #else
         "generic"
@@ -878,7 +900,7 @@ void printPlatformInformation( _In_z_ char * text )
         "Chk"
 #else
         "Fre"
-#endif    
+#endif
 
 #if SYMCRYPT_APPLE_CC
         ", iOS\n", text);
@@ -895,7 +917,7 @@ void printPlatformInformation( _In_z_ char * text )
     memcpy( &nameBuf[4], (BYTE *)&CPUInfo[3], 4 );
     memcpy( &nameBuf[8], (BYTE *)&CPUInfo[2], 4 );
     nameBuf[12] = 0;
-    
+
     __cpuid( CPUInfo, 1 );
     DWORD cpuidfammod = CPUInfo[0];
     DWORD family;
@@ -1057,7 +1079,7 @@ testpbkdf2()
        }
 
        iteration = 1 + iteration % 500;
-       resultsize = max( 1, resultsize % (SYMCRYPT_HMAC_SHA512_RESULT_SIZE * 4));
+       resultsize = SYMCRYPT_MAX( 1, resultsize % (SYMCRYPT_HMAC_SHA512_RESULT_SIZE * 4));
 
        for (passwordSize = 0; passwordSize <= 32; passwordSize += 1)
        {
@@ -1075,19 +1097,25 @@ testpbkdf2()
 
            testonepbkdf2case(symcryptMAC[index], hHmacAlg, password, sizeof(password), salt, sizeof(salt), iteration, resultsize);
        }
-        
+
        BCryptCloseAlgorithmProvider(hHmacAlg, 0);
        hHmacAlg = 0;
     }
 }
 #endif
 
+//
+// Reach into the internals of Symcrypt to retrieve the build string
+extern "C" {
+extern const CHAR * SymCryptBuildString;
+};
+
 VOID
 initTestInfrastructure( int argc, _In_reads_( argc ) char * argv[] )
 {
-    iprint( "SymCrypt unit test program, " 
-             "Built " __DATE__ " " __TIME__ "\n"
-             "Copyright (c) Microsoft Corporation. Licensed under the MIT license.\n");
+    iprint( "SymCrypt unit test program, "
+             "Library version %s\n"
+             "Copyright (c) Microsoft Corporation. Licensed under the MIT license.\n", SymCryptBuildString );
 
 #define SYMCRYPT_CHECK_ASM_OFFSET( a, b ) CHECK4( (a) == (b), "Assembler offset incorrect: %s should be %d", #a, (b) );
     SYMCRYPT_CHECK_ASM_OFFSETS;
@@ -1095,7 +1123,7 @@ initTestInfrastructure( int argc, _In_reads_( argc ) char * argv[] )
 
     SymCryptInit();
 
-#if !SYMCRYPT_APPLE_CC
+#if SYMCRYPT_MS_VC
     getPlatformInformation();
 #endif
 
@@ -1127,7 +1155,7 @@ initTestInfrastructure( int argc, _In_reads_( argc ) char * argv[] )
             print( "    %s\n", i->c_str() );
         }
     }
-    
+
     if( g_implementationsToTest.size() > 0 )
     {
         print( "\nImplementations to test:\n" );
@@ -1137,17 +1165,17 @@ initTestInfrastructure( int argc, _In_reads_( argc ) char * argv[] )
         }
     } else {
         //
-        // Disable the RSA32 implementation by default
+        // Disable the RSA32b implementation by default
         //
-        updateNameSet( g_implementationNames, &g_implementationsToTest, '-', "rsa32" );
+        updateNameSet( g_implementationNames, &g_implementationsToTest, '-', "rsa32b" );
     }
-    
+
     AllocWithChecksInit();
 
     printOutput( 0 );
 }
 
-#if !SYMCRYPT_APPLE_CC
+#if SYMCRYPT_MS_VC
 VOID
 callKernelmodeTests()
 {
@@ -1363,7 +1391,7 @@ cleanup:
 
     if( scService != 0 )
     {
-        
+
         if( !DeleteService( scService ) )
         {
             print( "Failed to delete service, error = %08x\n", GetLastError() );
@@ -1386,13 +1414,13 @@ cleanup:
         scManager = 0;
     }
 }
-#endif //!SYMCRYPT_APPLE_CC
+#endif //SYMCRYPT_MS_VC
 
 VOID
 runFunctionalTests()
 {
-    
-#if !SYMCRYPT_APPLE_CC
+
+#if SYMCRYPT_MS_VC
     if( g_runKernelmodeTest )
     {
         runKernelmodeTests();
@@ -1401,7 +1429,7 @@ runFunctionalTests()
 #endif
 
     print( "\nFunctional tests:\n" );
-    
+
     developertest();
 
     rdrandTest();
@@ -1421,7 +1449,7 @@ runFunctionalTests()
     testKdfAlgorithms();
 
     testAuthEncAlgorithms();
-    
+
     testAesCtrDrbg();
 
     testXtsAlgorithms();
@@ -1434,9 +1462,13 @@ runFunctionalTests()
 
     testScsTools();
 
-    testRsa();
+    testRsaSignAlgorithms();
 
-    testDl();
+    testRsaEncAlgorithms();
+
+    testDhAlgorithms();
+
+    testDsaAlgorithms();
 
     testEcc();
 
@@ -1455,7 +1487,7 @@ runFunctionalTests()
         ptResults.addItemNonZero( row, (*i)->m_implementationName, (*i)->m_nResults );
 
         ULONGLONG nErrors = (*i)->m_nErrorDisagreeWithMajority + (*i)->m_nErrorNoMajority + (*i)->m_nErrorKatFailure;
-        
+
         ptErrors. addItemNonZero( row, (*i)->m_implementationName, nErrors );
 
         g_nTotalErrors += nErrors;
@@ -1471,7 +1503,6 @@ runFunctionalTests()
 
 }
 
-#if !SYMCRYPT_APPLE_CC
 VOID
 runPerfTests()
 {
@@ -1481,15 +1512,15 @@ runPerfTests()
     }
 
     g_perfTestsRunning = TRUE;
-    
+
     measurePerf();
 
-    print( "Unit of performance measurement: %s\n    frequency = %4.0f MHz (vs. tickCtr) / %4.0f MHz (vs. perfCtr)\n", 
-            g_perfUnits, g_tscFreqTickCtr / 1e6, g_tscFreqPerfCtr / 1e6 );
+    print( "Unit of performance measurement: %s\n    frequency = %4.0f MHz (using std::chrono)\n",
+            g_perfUnits, g_tscFreq / 1e6);
 
     PrintTable ptPerf;
     PrintTable ptWipe;
-    
+
     for( AlgorithmImplementationVector::const_iterator i = g_algorithmImplementation.begin(); i != g_algorithmImplementation.end(); ++i )
     {
         for( std::vector<AlgorithmImplementation::ALG_PERF_INFO>::const_iterator j = (*i)->m_perfInfo.begin();
@@ -1500,13 +1531,13 @@ runPerfTests()
             if( j->keySize > 0 )
             {
                 char buf[100];
-                SNPRINTF_S( buf, sizeof( buf ), _TRUNCATE, "-%4d", (ULONG) (j->keySize & 0xffff) * 8 );
+                SNPRINTF_S( buf, sizeof( buf ), _TRUNCATE, "-%4lu", (ULONG) (j->keySize & 0xffff) * 8 );
 
                 name = name + buf;
             }
             name = name + " " + j->strPostfix;
 
-            ptPerf.addItem( name, (*i)->m_implementationName, 
+            ptPerf.addItem( name, (*i)->m_implementationName,
                         j->cPerByte, j->cFixed, j->cRange );
         }
     }
@@ -1525,11 +1556,11 @@ runPerfTests()
                 SNPRINTF_S( col, sizeof( col ), _TRUNCATE, "%2d", offset );
                 SNPRINTF_S( item, sizeof( item ), _TRUNCATE, "%3.0f", g_wipePerf[len][offset] );
 
-                            
+
                 ptWipe.addItem( String( row ), String( col ), String( item ) );
             }
         }
-    
+
         ptWipe.print( "Wipe performance for each len & alignment" );
     }
 
@@ -1538,14 +1569,19 @@ runPerfTests()
 
     if( g_runRsaAverageKeyPerf )
     {
-        runRsaAverageKeyGenPerf();
+        PrintTable ptRsaKeygen;
+        addRsaKeyGenPerfSymCrypt( ptRsaKeygen );
+#if INCLUDE_IMPL_MSBIGNUM
+        addRsaKeyGenPerfMsBignum( ptRsaKeygen );
+#endif
+        ptRsaKeygen.print( "RSA key generation performance" );
+        printOutput( 0 );
     }
 
     g_perfTestsRunning = FALSE;
 
 }
-#endif //SYMCRYPT_APPLE_CC
-    
+
 
 VOID
 exitTestInfrastructure()
@@ -1611,7 +1647,7 @@ __m128i g_xmmTestState[8];
 
 //
 // The save/restore functions work on an aligned subset of the structure.
-// We don't care which part is used, we copy the start structure, store the 
+// We don't care which part is used, we copy the start structure, store the
 // XMM registers in it, and check that it is the same.
 //
 
@@ -1640,6 +1676,9 @@ verifyXmmRegisters()
             // For now we will relax this test to not be triggered by the compiler/CRT. This means that we
             // no longer test this property, but we can at least detect some violations, which is better
             // than none.
+            //
+            // As of January 2020, this now also affects memcpy(), meaning we can no longer test the YMM
+            // registers in user mode either.
             //
             if( (g_xmmTestState[0].m128i_u64[0] | g_xmmTestState[0].m128i_u64[1]) == 0 &&
                 memcmp( &g_xmmTestState[1], &g_xmmStartState[1], 7 * sizeof( g_xmmStartState[0] ) ) == 0 )
@@ -1698,11 +1737,11 @@ initXmmRegisters()
 
 #else
 
-VOID verifyXmmRegisters() 
+VOID verifyXmmRegisters()
 {
 }
 
-VOID initXmmRegisters() 
+VOID initXmmRegisters()
 {
 }
 #endif
@@ -1738,7 +1777,7 @@ verifyYmmRegisters()
         SymCryptEnvUmSaveYmmRegistersAsm( g_ymmTestState );
 
         //
-        // On AMD64 it is perfectly fine for the XMM register values to have been modified. 
+        // On AMD64 it is perfectly fine for the XMM register values to have been modified.
         // On x86 it is not.
         // We don't use memcmp() 'cause it might use XMM registers on x86
         //
@@ -1776,11 +1815,11 @@ initYmmRegisters()
 
 #else
 
-VOID verifyYmmRegisters() 
+VOID verifyYmmRegisters()
 {
 }
 
-VOID initYmmRegisters() 
+VOID initYmmRegisters()
 {
 }
 #endif
@@ -1803,6 +1842,16 @@ printHexArray( PCBYTE pData, SIZE_T nElements, SIZE_T elementSize )
     }
 }
 
+VOID
+fprintHex( FILE * f, PCBYTE pbData, SIZE_T cbData )
+{
+    for( SIZE_T i=0; i<cbData; i++ )
+    {
+        fprintf( f, "%02x", pbData[i] );
+    }
+    fprintf( f, "\n" );
+}
+
 #if SYMCRYPT_CPU_X86
 // XMM registers are never a problem on amd64, and we don't have the save-xmm asm code
 VOID
@@ -1816,3 +1865,19 @@ printXmmRegisters( char * text )
 }
 
 #endif
+
+VOID
+ReverseMemCopy(
+    PBYTE pbDst,
+    PCBYTE pbSrc,
+    SIZE_T cbSrc
+)
+{
+    PBYTE p;
+
+    p = pbDst + cbSrc - 1;
+    while(p >= pbDst)
+    {
+        *p-- = *pbSrc++;
+    }
+}

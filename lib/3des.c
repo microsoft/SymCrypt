@@ -5,7 +5,7 @@
 //
 // This is an updated implementation that is carefully reviewed to be fully copyrighted by
 // Microsoft. Our previous implementation was partially based on a very old public domain
-// implementation. 
+// implementation.
 // According to Andrew Tucker (atucker) there was a claim many years ago about the copyright of
 // our DES code. Working with LCA (legal) it was determined that the DES implementation in RSA32.lib
 // was a Microsoft derivitive of a public-domain implementation, and therefore is clear of
@@ -25,7 +25,7 @@
 // used to access them. Any further layout and structure are all standard C conventions.
 // Algorithm tricks such as Hoey's IP implementation are not copyrightable but are patentable.
 // Fortunately all the techniques we use have been around long enough that any patents have expired.
-// 
+//
 
 //
 // Feb 2018, Niels Ferguson
@@ -47,11 +47,9 @@ const SYMCRYPT_BLOCKCIPHER SymCrypt3DesBlockCipher_default = {
     NULL,                   // PSYMCRYPT_BLOCKCIPHER_CRYPT_ECB     ecbEncryptFunc;
     NULL,                   // PSYMCRYPT_BLOCKCIPHER_CRYPT_ECB     ecbDecryptFunc;
     NULL,                   // PSYMCRYPT_BLOCKCIPHER_CRYPT_MODE    cbcEncryptFunc;
-    NULL,                   // PSYMCRYPT_BLOCKCIPHER_CRYPT_MODE    cbcDecryptFunc; 
+    NULL,                   // PSYMCRYPT_BLOCKCIPHER_CRYPT_MODE    cbcDecryptFunc;
     NULL,                   // PSYMCRYPT_BLOCKCIPHER_MAC_MODE      cbcMacFunc;
     NULL,                   // PSYMCRYPT_BLOCKCIPHER_CRYPT_MODE    ctrMsbFunc;
-    NULL,                   // PSYMCRYPT_BLOCKCIPHER_CRYPT_XTS     xtsEncFunc;
-    NULL,                   // PSYMCRYPT_BLOCKCIPHER_CRYPT_XTS     xtsDecFunc;
     8,                      // SIZE_T                              blockSize;
     sizeof( SYMCRYPT_3DES_EXPANDED_KEY ), // SIZE_T  expandedKeySize;    // = sizeof( SYMCRYPT_XXX_EXPANDED_KEY )
 };
@@ -63,11 +61,9 @@ const SYMCRYPT_BLOCKCIPHER SymCryptDesBlockCipher_default = {
     NULL,                   // PSYMCRYPT_BLOCKCIPHER_CRYPT_ECB     ecbEncryptFunc;
     NULL,                   // PSYMCRYPT_BLOCKCIPHER_CRYPT_ECB     ecbDecryptFunc;
     NULL,                   // PSYMCRYPT_BLOCKCIPHER_CRYPT_MODE    cbcEncryptFunc;
-    NULL,                   // PSYMCRYPT_BLOCKCIPHER_CRYPT_MODE    cbcDecryptFunc; 
+    NULL,                   // PSYMCRYPT_BLOCKCIPHER_CRYPT_MODE    cbcDecryptFunc;
     NULL,                   // PSYMCRYPT_BLOCKCIPHER_MAC_MODE      cbcMacFunc;
     NULL,                   // PSYMCRYPT_BLOCKCIPHER_CRYPT_MODE    ctrMsbFunc;
-    NULL,                   // PSYMCRYPT_BLOCKCIPHER_CRYPT_XTS     xtsEncFunc;
-    NULL,                   // PSYMCRYPT_BLOCKCIPHER_CRYPT_XTS     xtsDecFunc;
     8,                      // SIZE_T                              blockSize;
     sizeof( SYMCRYPT_DES_EXPANDED_KEY ), // SIZE_T  expandedKeySize;    // = sizeof( SYMCRYPT_XXX_EXPANDED_KEY )
 };
@@ -75,8 +71,8 @@ const SYMCRYPT_BLOCKCIPHER SymCryptDesBlockCipher_default = {
 const PCSYMCRYPT_BLOCKCIPHER SymCrypt3DesBlockCipher = &SymCrypt3DesBlockCipher_default;
 const PCSYMCRYPT_BLOCKCIPHER SymCryptDesBlockCipher = &SymCryptDesBlockCipher_default;
 
-extern __declspec( align(256) ) const UINT32 SymCryptDesSpbox[8][64];      // Combined S and P tables
-extern __declspec( align(256) ) const UINT32 SymCryptDesKeySelect[8][64];
+extern SYMCRYPT_ALIGN_AT(256) const UINT32 SymCryptDesSpbox[8][64];      // Combined S and P tables
+extern SYMCRYPT_ALIGN_AT(256) const UINT32 SymCryptDesKeySelect[8][64];
 
 
 //
@@ -84,7 +80,7 @@ extern __declspec( align(256) ) const UINT32 SymCryptDesKeySelect[8][64];
 // SWAP_BITS_WITHIN_UINT32( _value, _shift, _mask )
 // swaps each bit in _value selected by _mask with the bit _shift positions to the left
 // Thus it swaps (_value & _mask) with (_value & (_mask << _shift))
-// 
+//
 
 #define SWAP_BITS_WITHIN_UINT32( _value, _shift, _mask ) \
 { \
@@ -229,7 +225,7 @@ SymCryptDesExpandSingleKey(
     SWAP_BITS_BETWEEN_UINT32( Dr, Cr, 8, 0x00ff00ff );
     SWAP_BITS_BETWEEN_UINT32( Cr, Dr, 1, 0x55555555 );
     SWAP_BITS_WITHIN_UINT32( Dr, 16, 0xff );
-    
+
     // Have to re-arrange C and D a tiny bit so that each contains 28 bits and we throw away 8 bits
     Dr = (Dr & 0x00ffffff) | ((Cr & 0xf0000000 ) >> 4 );
     Cr = (Cr & 0x0fffffff);
@@ -261,7 +257,7 @@ SymCryptDesExpandSingleKey(
              SymCryptDesKeySelect[1][((Cr >>  6)&0x03) | ((Cr >>  7)&0x3c)] |
              SymCryptDesKeySelect[2][((Cr >> 13)&0x0f) | ((Cr >> 14)&0x30)] |
              SymCryptDesKeySelect[3][((Cr >> 20)&0x01) | ((Cr >> 21)&0x06) | ((Cr >> 22)&0x38)];
-    
+
         K2 = SymCryptDesKeySelect[4][ (Dr      )&0x3f                     ] |
              SymCryptDesKeySelect[5][((Dr >>  7)&0x03) | ((Dr >>  8)&0x3c)] |
              SymCryptDesKeySelect[6][ (Dr >> 15)&0x3f                     ] |
@@ -279,7 +275,7 @@ SymCryptDesExpandSingleKey(
         // and it is not worth the effort to update the tables.
         //
         // We don't worry about extraneous bits in unused positions as the F function masks out unused bits.
-        // 
+        //
 
         tmp = ((K2 << 16) | (K1 & 0x0000ffff)) ;
         expandedKeyTable[r][0] = ROL32(tmp, 2);
@@ -294,7 +290,7 @@ _Success_(return == SYMCRYPT_NO_ERROR)
 SYMCRYPT_NOINLINE
 SYMCRYPT_ERROR
 SYMCRYPT_CALL
-SymCrypt3DesExpandKey(  
+SymCrypt3DesExpandKey(
     _Out_               PSYMCRYPT_3DES_EXPANDED_KEY pExpandedKey,
     _In_reads_(cbKey)   PCBYTE                      pbKey,
                         SIZE_T                      cbKey )
@@ -350,8 +346,8 @@ SymCrypt3DesExpandKey(
 
 
 //
-// Block encryption. 
-// The noinline stops the compiler from inlining the code and creating additional 
+// Block encryption.
+// The noinline stops the compiler from inlining the code and creating additional
 // implementations which would require separate FIPS selftests.
 //
 SYMCRYPT_NOINLINE
@@ -373,8 +369,8 @@ SymCrypt3DesEncrypt(
     //
     // Hoey's wonderful initial permutation algorithm, from Outerbridge
     // (see Schneier p 478)
-    // 
-    // The algorithm we use is derived (through several intermediate forms) from the mentioned source. 
+    //
+    // The algorithm we use is derived (through several intermediate forms) from the mentioned source.
     // But the algorithm cannot be copyrighted, only patented, and if there were any patents
     // they have expired by now.
     // The expression of the algorithm in code is purely MS generated,
@@ -471,7 +467,7 @@ SymCrypt3DesEncrypt(
 
 //
 // Block decrypt
-// The noinline stops the compiler from inlining the code and creating additional 
+// The noinline stops the compiler from inlining the code and creating additional
 // implementations which would require separate FIPS selftests.
 //
 SYMCRYPT_NOINLINE
@@ -486,10 +482,10 @@ SymCrypt3DesDecrypt(
     int r;
 
     SYMCRYPT_CHECK_MAGIC( pExpandedKey );
-    
+
     R = SYMCRYPT_LOAD_LSBFIRST32( pbSrc );
     L = SYMCRYPT_LOAD_LSBFIRST32( pbSrc + 4 );
-    
+
     R = ROL32(R, 4);
     Ta = (L ^ R) & 0xf0f0f0f0;
     L ^= Ta;
@@ -576,7 +572,7 @@ SymCrypt3DesDecrypt(
 
 VOID
 SYMCRYPT_CALL
-SymCryptDesSetOddParity( 
+SymCryptDesSetOddParity(
     _Inout_updates_( cbData )   PBYTE   pbData,
     _In_                        SIZE_T  cbData )
 //
@@ -636,7 +632,7 @@ SymCryptDesSelftest()
     SymCryptDesEncrypt( &key, des3KnownPlaintext, buf );
 
     SymCryptInjectError( buf, SYMCRYPT_DES_BLOCK_SIZE );
-    
+
     if( memcmp( buf, desKnownCiphertext, SYMCRYPT_DES_BLOCK_SIZE ) != 0 )
     {
         SymCryptFatal( 'desb' );
@@ -645,7 +641,7 @@ SymCryptDesSelftest()
     SymCryptDesDecrypt( &key, desKnownCiphertext, buf );
 
     SymCryptInjectError( buf, SYMCRYPT_DES_BLOCK_SIZE );
-    
+
     if( memcmp( buf, des3KnownPlaintext, SYMCRYPT_DES_BLOCK_SIZE ) != 0 )
     {
         SymCryptFatal( 'desc' );
@@ -668,7 +664,7 @@ SymCrypt3DesSelftest()
     SymCrypt3DesEncrypt( &key, des3KnownPlaintext, buf );
 
     SymCryptInjectError( buf, SYMCRYPT_3DES_BLOCK_SIZE );
-    
+
     if( memcmp( buf, des3KnownCiphertext, SYMCRYPT_3DES_BLOCK_SIZE ) != 0 )
     {
         SymCryptFatal( 'des4' );
@@ -677,7 +673,7 @@ SymCrypt3DesSelftest()
     SymCrypt3DesDecrypt( &key, des3KnownCiphertext, buf );
 
     SymCryptInjectError( buf, SYMCRYPT_3DES_BLOCK_SIZE );
-    
+
     if( memcmp( buf, des3KnownPlaintext, SYMCRYPT_3DES_BLOCK_SIZE ) != 0 )
     {
         SymCryptFatal( 'des5' );
@@ -701,7 +697,7 @@ SymCrypt3DesSelftest()
 // to build the combined SP box, Spbox[]. They're also here just
 // for reference.
 //
-// initial permutation IP 
+// initial permutation IP
 static unsigned BYTE ip[] = {
     58, 50, 42, 34, 26, 18, 10,  2,
     60, 52, 44, 36, 28, 20, 12,  4,
@@ -713,7 +709,7 @@ static unsigned BYTE ip[] = {
     63, 55, 47, 39, 31, 23, 15,  7
 };
 
-// final permutation IP^-1 
+// final permutation IP^-1
 static unsigned BYTE fp[] = {
     40,  8, 48, 16, 56, 24, 64, 32,
     39,  7, 47, 15, 55, 23, 63, 31,
@@ -725,7 +721,7 @@ static unsigned BYTE fp[] = {
     33,  1, 41,  9, 49, 17, 57, 25
 };
 
-// expansion operation matrix 
+// expansion operation matrix
 static unsigned BYTE ei[] = {
     32,  1,  2,  3,  4,  5,
      4,  5,  6,  7,  8,  9,
@@ -737,58 +733,58 @@ static unsigned BYTE ei[] = {
     28, 29, 30, 31, 32,  1
 };
 
-// The (in)famous S-boxes 
+// The (in)famous S-boxes
 static unsigned BYTE sbox[8][64] = {
-    // S1 
+    // S1
     14,  4, 13,  1,  2, 15, 11,  8,  3, 10,  6, 12,  5,  9,  0,  7,
      0, 15,  7,  4, 14,  2, 13,  1, 10,  6, 12, 11,  9,  5,  3,  8,
      4,  1, 14,  8, 13,  6,  2, 11, 15, 12,  9,  7,  3, 10,  5,  0,
     15, 12,  8,  2,  4,  9,  1,  7,  5, 11,  3, 14, 10,  0,  6, 13,
 
-    // S2 
+    // S2
     15,  1,  8, 14,  6, 11,  3,  4,  9,  7,  2, 13, 12,  0,  5, 10,
      3, 13,  4,  7, 15,  2,  8, 14, 12,  0,  1, 10,  6,  9, 11,  5,
      0, 14,  7, 11, 10,  4, 13,  1,  5,  8, 12,  6,  9,  3,  2, 15,
     13,  8, 10,  1,  3, 15,  4,  2, 11,  6,  7, 12,  0,  5, 14,  9,
 
-    // S3 
+    // S3
     10,  0,  9, 14,  6,  3, 15,  5,  1, 13, 12,  7, 11,  4,  2,  8,
     13,  7,  0,  9,  3,  4,  6, 10,  2,  8,  5, 14, 12, 11, 15,  1,
     13,  6,  4,  9,  8, 15,  3,  0, 11,  1,  2, 12,  5, 10, 14,  7,
      1, 10, 13,  0,  6,  9,  8,  7,  4, 15, 14,  3, 11,  5,  2, 12,
 
-    // S4 
+    // S4
      7, 13, 14,  3,  0,  6,  9, 10,  1,  2,  8,  5, 11, 12,  4, 15,
     13,  8, 11,  5,  6, 15,  0,  3,  4,  7,  2, 12,  1, 10, 14,  9,
     10,  6,  9,  0, 12, 11,  7, 13, 15,  1,  3, 14,  5,  2,  8,  4,
      3, 15,  0,  6, 10,  1, 13,  8,  9,  4,  5, 11, 12,  7,  2, 14,
 
-    // S5 
+    // S5
      2, 12,  4,  1,  7, 10, 11,  6,  8,  5,  3, 15, 13,  0, 14,  9,
     14, 11,  2, 12,  4,  7, 13,  1,  5,  0, 15, 10,  3,  9,  8,  6,
      4,  2,  1, 11, 10, 13,  7,  8, 15,  9, 12,  5,  6,  3,  0, 14,
     11,  8, 12,  7,  1, 14,  2, 13,  6, 15,  0,  9, 10,  4,  5,  3,
 
-    // S6 
+    // S6
     12,  1, 10, 15,  9,  2,  6,  8,  0, 13,  3,  4, 14,  7,  5, 11,
     10, 15,  4,  2,  7, 12,  9,  5,  6,  1, 13, 14,  0, 11,  3,  8,
      9, 14, 15,  5,  2,  8, 12,  3,  7,  0,  4, 10,  1, 13, 11,  6,
      4,  3,  2, 12,  9,  5, 15, 10, 11, 14,  1,  7,  6,  0,  8, 13,
 
-    // S7 
+    // S7
      4, 11,  2, 14, 15,  0,  8, 13,  3, 12,  9,  7,  5, 10,  6,  1,
     13,  0, 11,  7,  4,  9,  1, 10, 14,  3,  5, 12,  2, 15,  8,  6,
      1,  4, 11, 13, 12,  3,  7, 14, 10, 15,  6,  8,  0,  5,  9,  2,
      6, 11, 13,  8,  1,  4, 10,  7,  9,  5,  0, 15, 14,  2,  3, 12,
 
-    // S8 
+    // S8
     13,  2,  8,  4,  6, 15, 11,  1, 10,  9,  3, 14,  5,  0, 12,  7,
      1, 15, 13,  8, 10,  3,  7,  4, 12,  5,  6, 11,  0, 14,  9,  2,
      7, 11,  4,  1,  9, 12, 14,  2,  0,  6, 10, 13, 15,  3,  5,  8,
      2,  1, 14,  7,  4, 10,  8, 13, 15, 12,  9,  0,  3,  5,  6, 11
 };
 
-// 32-bit permutation function P used on the output of the S-boxes 
+// 32-bit permutation function P used on the output of the S-boxes
 static unsigned BYTE p32i[] = {
     16,  7, 20, 21,
     29, 12, 28, 17,
@@ -800,7 +796,7 @@ static unsigned BYTE p32i[] = {
     22, 11,  4, 25
 };
 
-// permuted choice table (key) 
+// permuted choice table (key)
 static unsigned BYTE pc1[] = {
     57, 49, 41, 33, 25, 17,  9,
      1, 58, 50, 42, 34, 26, 18,
@@ -813,12 +809,12 @@ static unsigned BYTE pc1[] = {
     21, 13,  5, 28, 20, 12,  4
 };
 
-// number left rotations of pc1 
+// number left rotations of pc1
 static unsigned BYTE totrot[] = {
     1,2,4,6,8,10,12,14,15,17,19,21,23,25,27,28
 };
 
-// permuted choice key (table) 
+// permuted choice key (table)
 static unsigned BYTE pc2[] = {
     14, 17, 11, 24,  1,  5,
      3, 28, 15,  6, 21, 10,

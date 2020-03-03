@@ -486,7 +486,167 @@ private:
 public:
 };
 
+// We need an implementation-independent way to store RSA keys
+// As RSA key gen is so expensive, we generate a bunch of keys up front and use
+// them for all tests.
+
+#define RSAKEY_MAXKEYSIZE   (1024)  // 8192 bits = 1024 bytes
+typedef struct _RSAKEY_TESTBLOB {
+    UINT32  nBitsModulus;
+    UINT64  u64PubExp;
+    UINT32  cbModulus;
+    UINT32  cbPrime1;
+    UINT32  cbPrime2;
+    BYTE    abModulus[RSAKEY_MAXKEYSIZE];
+    BYTE    abPrime1[RSAKEY_MAXKEYSIZE];
+    BYTE    abPrime2[RSAKEY_MAXKEYSIZE];
+
+    // And some fields to make debugging easier
+    const char *    pcstrSource;    // Where did this key come from
+    INT64  u64Line;                 // line # of test vector file (if applicable)
+} RSAKEY_TESTBLOB, *PRSAKEY_TESTBLOB;
+typedef const RSAKEY_TESTBLOB * PCRSAKEY_TESTBLOB;
+
+class RsaSignImplementation: public AlgorithmImplementation
+{
+public:
+    RsaSignImplementation() {};
+    virtual ~RsaSignImplementation() {};
+
+private:
+    RsaSignImplementation( const RsaSignImplementation & );
+    VOID operator=( const RsaSignImplementation & );
+
+public:
+    virtual NTSTATUS setKey( PCRSAKEY_TESTBLOB pcKeyBlob ) = 0; // Returns an error if this key can't be handled.
+    
+    // This is the abstraction that covers both PKCS1 and PSS. Both take a hash alg as parameter.
+    // We also add a salt size used for PSS.
+    virtual NTSTATUS sign(
+        _In_reads_( cbHash)     PCBYTE  pbHash, 
+                                SIZE_T  cbHash,
+                                PCSTR   pcstrHashAlgName,
+                                UINT32  u32Other,
+        _Out_writes_( cbSig )   PBYTE   pbSig,
+                                SIZE_T  cbSig ) = 0;        // cbSig == cbModulus of key
+
+    virtual NTSTATUS verify( 
+        _In_reads_( cbHash)     PCBYTE  pbHash, 
+                                SIZE_T  cbHash,
+        _In_reads_( cbSig )     PCBYTE  pbSig,
+                                SIZE_T  cbSig,
+                                PCSTR   pcstrHashAlgName,
+                                UINT32  u32Other ) = 0;
+};
+
+class RsaEncImplementation: public AlgorithmImplementation
+{
+public:
+    RsaEncImplementation() {};
+    virtual ~RsaEncImplementation() {};
+
+private:
+    RsaEncImplementation( const RsaEncImplementation & );
+    VOID operator=( const RsaEncImplementation & );
+
+public:
+    virtual NTSTATUS setKey( PCRSAKEY_TESTBLOB pcKeyBlob ) = 0; // Returns an error if this key can't be handled.
+    
+    // This is the abstraction that covers RAW, PKCS1 and OAEP. 
+    virtual NTSTATUS encrypt(
+        _In_reads_( cbMsg )             PCBYTE  pbMsg, 
+                                        SIZE_T  cbMsg,
+                                        PCSTR   pcstrHashAlgName,
+                                        PCBYTE  pbLabel,
+                                        SIZE_T  cbLabel,
+        _Out_writes_( cbCiphertext )    PBYTE   pbCiphertext,
+                                        SIZE_T  cbCiphertext ) = 0;        // == cbModulus of key
+
+    virtual NTSTATUS decrypt( 
+        _In_reads_( cbCiphertext )      PCBYTE  pbCiphertext,
+                                        SIZE_T  cbCiphertext,
+                                        PCSTR   pcstrHashAlgName,
+                                        PCBYTE  pbLabel,
+                                        SIZE_T  cbLabel,
+        _Out_writes_to_(cbMsg,*pcbMsg)  PBYTE   pbMsg,
+                                        SIZE_T  cbMsg,
+                                        SIZE_T *pcbMsg ) = 0;
+};
+
+#define DLKEY_MAXKEYSIZE    (512)  // 4096 bits = 512 bytes. Generating larger groups is too slow for testing
+typedef struct _DLGROUP_TESTBLOB {
+    UINT32                  nBitsP;             // P = field prime, Q = subgroup order, G = generator
+    UINT32                  cbPrimeP;           // 
+    UINT32                  cbPrimeQ;           // can be 0 if group order is not known
+    SYMCRYPT_DLGROUP_FIPS   fipsStandard;       // Which FIPS standard was used to generate this group
+    PCSYMCRYPT_HASH         pHashAlgorithm;     // Used for FIPS group generation
+    UINT32                  cbSeed;             // FIPS group generation seed
+    UINT32                  genCounter;         // FIPS group generation counter
+
+    BYTE    abPrimeP[DLKEY_MAXKEYSIZE];     // cbPrimeP bytes
+    BYTE    abPrimeQ[DLKEY_MAXKEYSIZE];     // cbPrimeQ bytes (optional)
+    BYTE    abGenG[DLKEY_MAXKEYSIZE];       // cbPrimeP bytes
+    BYTE    abSeed[DLKEY_MAXKEYSIZE];       // cbSeed bytes, cbSeed = 0 or cbSeed = cbPrimeQ
+} DLGROUP_TESTBLOB, *PDLGROUP_TESTBLOB;
+typedef const DLGROUP_TESTBLOB * PCDLGROUP_TESTBLOB;
+
+typedef struct _DLKEY_TESTBLOB {
+    PCDLGROUP_TESTBLOB  pGroup;
+    UINT32              cbPrivKey;                      // 
+    BYTE                abPubKey[DLKEY_MAXKEYSIZE];     // cbPrimeP bytes
+    BYTE                abPrivKey[DLKEY_MAXKEYSIZE];    // cbPrivKey bytes
+} DLKEY_TESTBLOB, *PDLKEY_TESTBLOB;
+typedef const DLKEY_TESTBLOB * PCDLKEY_TESTBLOB;
+
+class DhImplementation: public AlgorithmImplementation
+{
+public:
+    DhImplementation() {};
+    virtual ~DhImplementation() {};
+
+private:
+    DhImplementation( const DhImplementation & );
+    VOID operator=( const DhImplementation & );
+
+public:
+    virtual NTSTATUS setKey( 
+        _In_    PCDLKEY_TESTBLOB    pcKeyBlob ) = 0; // Returns an error if this key can't be handled.
+    
+    virtual NTSTATUS sharedSecret(
+        _In_                        PCDLKEY_TESTBLOB    pcPubkey,   // Must be on same group object
+        _Out_writes_( cbSecret )    PBYTE               pbSecret,
+                                    SIZE_T              cbSecret ) = 0;
+};
+
+class DsaImplementation: public AlgorithmImplementation
+{
+public:
+    DsaImplementation() {};
+    virtual ~DsaImplementation() {};
+
+private:
+    DsaImplementation( const DsaImplementation & );
+    VOID operator=( const DsaImplementation & );
+
+public:
+    virtual NTSTATUS setKey( 
+        _In_    PCDLKEY_TESTBLOB    pcKeyBlob ) = 0; // Returns an error if this key can't be handled.
+    
+    virtual NTSTATUS sign(
+        _In_reads_( cbHash)     PCBYTE  pbHash, 
+                                SIZE_T  cbHash,             // Can be any size, but often = size of Q
+        _Out_writes_( cbSig )   PBYTE   pbSig,
+                                SIZE_T  cbSig ) = 0;        // cbSig == 2 * cbPrimeQ of group
+
+    virtual NTSTATUS verify( 
+        _In_reads_( cbHash)     PCBYTE  pbHash, 
+                                SIZE_T  cbHash,
+        _In_reads_( cbSig )     PCBYTE  pbSig,
+                                SIZE_T  cbSig ) = 0;
+};
+
 // RsaImplementation class is only used for performance measurements of RSA
+/*
 class RsaImplementation: public AlgorithmImplementation
 {
 public:
@@ -499,6 +659,7 @@ private:
 
 public:
 };
+*/
 
 // DlImplementation class is only used for performance measurements of Discrete Log group algorithms
 class DlImplementation: public AlgorithmImplementation
@@ -961,6 +1122,7 @@ public:
     static const String s_algName;
 };
 
+/*
 template< class Implementation, class Algorithm>
 class RsaImp: public RsaImplementation
 {
@@ -977,6 +1139,7 @@ public:
     static const String s_modeName;
     static const String s_algName;
 };
+*/
 
 template< class Implementation, class Algorithm>
 class DlImp: public DlImplementation
@@ -993,6 +1156,154 @@ public:
     static const String s_impName;
     static const String s_modeName;
     static const String s_algName;
+};
+
+template< class Implementation, class Algorithm > class RsaSignImpState;
+
+template< class Implementation, class Algorithm>
+class RsaSignImp: public RsaSignImplementation
+{
+public:
+    RsaSignImp();
+    virtual ~RsaSignImp();
+
+private:
+    RsaSignImp( const RsaSignImp & );
+    VOID operator=( const RsaSignImp & );
+
+public:
+    static const String s_algName;             // Algorithm name
+    static const String s_modeName;
+    static const String s_impName;             // Implementation name
+
+    virtual NTSTATUS setKey( PCRSAKEY_TESTBLOB pcKeyBlob );
+
+    virtual NTSTATUS sign(
+        _In_reads_( cbHash)     PCBYTE  pbHash, 
+                                SIZE_T  cbHash,
+                                PCSTR   pcstrHashAlgName,
+                                UINT32  u32Other,
+        _Out_writes_( cbSig )   PBYTE   pbSig,
+                                SIZE_T  cbSig );
+
+    virtual NTSTATUS verify( 
+        _In_reads_( cbHash)     PCBYTE  pbHash, 
+                                SIZE_T  cbHash,
+        _In_reads_( cbSig )     PCBYTE  pbSig,
+                                SIZE_T  cbSig,
+                                PCSTR   pcstrHashAlgName,
+                                UINT32  u32Other );
+
+    RsaSignImpState<Implementation,Algorithm> state;
+};
+
+
+
+template< class Implementation, class Algorithm > class RsaEncImpState;
+
+template< class Implementation, class Algorithm>
+class RsaEncImp: public RsaEncImplementation
+{
+public:
+    RsaEncImp();
+    virtual ~RsaEncImp();
+
+private:
+    RsaEncImp( const RsaEncImp & );
+    VOID operator=( const RsaEncImp & );
+
+public:
+    static const String s_algName;             // Algorithm name
+    static const String s_modeName;
+    static const String s_impName;             // Implementation name
+
+    virtual NTSTATUS setKey( PCRSAKEY_TESTBLOB pcKeyBlob );
+    
+    virtual NTSTATUS encrypt(
+        _In_reads_( cbMsg )             PCBYTE  pbMsg, 
+                                        SIZE_T  cbMsg,
+                                        PCSTR   pcstrHashAlgName,
+                                        PCBYTE  pbLabel,
+                                        SIZE_T  cbLabel,
+        _Out_writes_( cbCiphertext )    PBYTE   pbCiphertext,
+                                        SIZE_T  cbCiphertext );        // == cbModulus of key
+
+    virtual NTSTATUS decrypt( 
+        _In_reads_( cbCiphertext )      PCBYTE  pbCiphertext,
+                                        SIZE_T  cbCiphertext,
+                                        PCSTR   pcstrHashAlgName,
+                                        PCBYTE  pbLabel,
+                                        SIZE_T  cbLabel,
+        _Out_writes_to_(cbMsg,*pcbMsg)  PBYTE   pbMsg,
+                                        SIZE_T  cbMsg,
+                                        SIZE_T *pcbMsg );
+
+    RsaEncImpState<Implementation,Algorithm> state;
+};
+
+template< class Implementation, class Algorithm > class DhImpState;
+
+template< class Implementation, class Algorithm>
+class DhImp: public DhImplementation
+{
+public:
+    DhImp();
+    virtual ~DhImp();
+
+private:
+    DhImp( const DhImp & );
+    VOID operator=( const DhImp & );
+
+public:
+    static const String s_algName;             // Algorithm name
+    static const String s_modeName;
+    static const String s_impName;             // Implementation name
+
+    virtual NTSTATUS setKey( 
+        _In_    PCDLKEY_TESTBLOB    pcKeyBlob );    
+    
+    virtual NTSTATUS sharedSecret(
+        _In_                        PCDLKEY_TESTBLOB    pcPubkey, 
+        _Out_writes_( cbSecret )    PBYTE               pbSecret,
+                                    SIZE_T              cbSecret );
+
+    DhImpState<Implementation,Algorithm> state;
+};
+
+template< class Implementation, class Algorithm > class DsaImpState;
+
+template< class Implementation, class Algorithm>
+class DsaImp: public DsaImplementation
+{
+public:
+    DsaImp();
+    virtual ~DsaImp();
+
+private:
+    DsaImp( const DsaImp & );
+    VOID operator=( const DsaImp & );
+
+public:
+    static const String s_algName;             // Algorithm name
+    static const String s_modeName;
+    static const String s_impName;             // Implementation name
+
+    virtual NTSTATUS setKey( 
+        _In_    PCDLKEY_TESTBLOB    pcKeyBlob ); // Returns an error if this key can't be handled.
+    
+    virtual NTSTATUS sign(
+        _In_reads_( cbHash)     PCBYTE  pbHash, 
+                                SIZE_T  cbHash,             // Can be any size, but often = size of Q
+        _Out_writes_( cbSig )   PBYTE   pbSig,
+                                SIZE_T  cbSig );        // cbSig == cbModulus of group
+
+    virtual NTSTATUS verify( 
+        _In_reads_( cbHash)     PCBYTE  pbHash, 
+                                SIZE_T  cbHash,
+        _In_reads_( cbSig )     PCBYTE  pbSig,
+                                SIZE_T  cbSig );
+
+    DsaImpState<Implementation,Algorithm> state;
 };
 
 template< class Implementation, class Algorithm>
@@ -1109,12 +1420,14 @@ const String ArithImp<Implementation, Algorithm>::s_algName = Algorithm::name;
 template< class Implementation, class Algorithm>
 const String ArithImp<Implementation, Algorithm>::s_modeName;
 
+/*
 template< class Implementation, class Algorithm>
 const String RsaImp<Implementation, Algorithm>::s_impName = Implementation::name;
 template< class Implementation, class Algorithm>
 const String RsaImp<Implementation, Algorithm>::s_algName = Algorithm::name;
 template< class Implementation, class Algorithm>
 const String RsaImp<Implementation, Algorithm>::s_modeName;
+*/
 
 template< class Implementation, class Algorithm>
 const String DlImp<Implementation, Algorithm>::s_impName = Implementation::name;
@@ -1129,6 +1442,34 @@ template< class Implementation, class Algorithm>
 const String EccImp<Implementation, Algorithm>::s_algName = Algorithm::name;
 template< class Implementation, class Algorithm>
 const String EccImp<Implementation, Algorithm>::s_modeName;
+
+template< class Imp, class Alg>
+const String RsaSignImp<Imp,Alg>::s_impName = Imp::name;
+template< class Imp, class Alg>
+const String RsaSignImp<Imp,Alg>::s_algName = Alg::name;
+template< class Imp, class Alg>
+const String RsaSignImp<Imp,Alg>::s_modeName;
+
+template< class Imp, class Alg>
+const String RsaEncImp<Imp,Alg>::s_impName = Imp::name;
+template< class Imp, class Alg>
+const String RsaEncImp<Imp,Alg>::s_algName = Alg::name;
+template< class Imp, class Alg>
+const String RsaEncImp<Imp,Alg>::s_modeName;
+
+template< class Imp, class Alg>
+const String DhImp<Imp,Alg>::s_impName = Imp::name;
+template< class Imp, class Alg>
+const String DhImp<Imp,Alg>::s_algName = Alg::name;
+template< class Imp, class Alg>
+const String DhImp<Imp,Alg>::s_modeName;
+
+template< class Imp, class Alg>
+const String DsaImp<Imp,Alg>::s_impName = Imp::name;
+template< class Imp, class Alg>
+const String DsaImp<Imp,Alg>::s_algName = Alg::name;
+template< class Imp, class Alg>
+const String DsaImp<Imp,Alg>::s_modeName;
 
 //
 // Template declaration for performance functions (for those implementations that wish to use them)

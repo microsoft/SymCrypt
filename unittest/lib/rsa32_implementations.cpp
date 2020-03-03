@@ -5,7 +5,9 @@
 //
 
 #include "precomp.h"
-#include "rsa32_implementations.h"
+
+#if INCLUDE_IMPL_RSA32
+
 
 
 char * ImpRsa32::name = "Rsa32";
@@ -246,7 +248,7 @@ CFBAnyLen(
 
     while( cbData > 0 )
     {
-        todo = min( cbData, dwBlockLen );
+        todo = SYMCRYPT_MIN( cbData, dwBlockLen );
         memcpy( buf, input, todo );
         memcpy( oldFeedback, feedback, dwBlockLen );
         CFB( Cipher, dwBlockLen, buf, buf, keyTable, op, feedback );
@@ -2643,7 +2645,7 @@ algImpCleanPerfFunction<ImpRsa32,AlgAes, ModeCcm>( PBYTE buf1, PBYTE buf2, PBYTE
 }
 
 
-AuthEncImp<ImpRsa32, AlgAes, ModeCcm>::AuthEncImp<ImpRsa32, AlgAes, ModeCcm>()
+AuthEncImp<ImpRsa32, AlgAes, ModeCcm>::AuthEncImp()
 {
     m_perfKeyFunction     = &algImpKeyPerfFunction    <ImpRsa32, AlgAes, ModeCcm>;
     m_perfCleanFunction   = &algImpCleanPerfFunction  <ImpRsa32, AlgAes, ModeCcm>;
@@ -2652,7 +2654,7 @@ AuthEncImp<ImpRsa32, AlgAes, ModeCcm>::AuthEncImp<ImpRsa32, AlgAes, ModeCcm>()
 }
 
 template<>
-AuthEncImp<ImpRsa32, AlgAes, ModeCcm>::~AuthEncImp<ImpRsa32, AlgAes, ModeCcm>()
+AuthEncImp<ImpRsa32, AlgAes, ModeCcm>::~AuthEncImp()
 {
 }
 
@@ -2852,7 +2854,7 @@ algImpCleanPerfFunction<ImpRsa32,AlgAes, ModeGcm>( PBYTE buf1, PBYTE buf2, PBYTE
 }
 
 
-AuthEncImp<ImpRsa32, AlgAes, ModeGcm>::AuthEncImp<ImpRsa32, AlgAes, ModeGcm>()
+AuthEncImp<ImpRsa32, AlgAes, ModeGcm>::AuthEncImp()
 {
     m_perfKeyFunction     = &algImpKeyPerfFunction    <ImpRsa32, AlgAes, ModeGcm>;
     m_perfCleanFunction   = &algImpCleanPerfFunction  <ImpRsa32, AlgAes, ModeGcm>;
@@ -2861,7 +2863,7 @@ AuthEncImp<ImpRsa32, AlgAes, ModeGcm>::AuthEncImp<ImpRsa32, AlgAes, ModeGcm>()
 }
 
 template<>
-AuthEncImp<ImpRsa32, AlgAes, ModeGcm>::~AuthEncImp<ImpRsa32, AlgAes, ModeGcm>()
+AuthEncImp<ImpRsa32, AlgAes, ModeGcm>::~AuthEncImp()
 {
 }
 
@@ -3033,7 +3035,7 @@ algImpCleanPerfFunction<ImpRsa32,AlgRc4>( PBYTE buf1, PBYTE buf2, PBYTE buf3 )
 }
 
 
-StreamCipherImp<ImpRsa32, AlgRc4>::StreamCipherImp<ImpRsa32, AlgRc4>()
+StreamCipherImp<ImpRsa32, AlgRc4>::StreamCipherImp()
 {
     m_perfKeyFunction     = &algImpKeyPerfFunction    <ImpRsa32, AlgRc4>;
     m_perfCleanFunction   = &algImpCleanPerfFunction  <ImpRsa32, AlgRc4>;
@@ -3041,7 +3043,7 @@ StreamCipherImp<ImpRsa32, AlgRc4>::StreamCipherImp<ImpRsa32, AlgRc4>()
 }
 
 template<>
-StreamCipherImp<ImpRsa32, AlgRc4>::~StreamCipherImp<ImpRsa32, AlgRc4>()
+StreamCipherImp<ImpRsa32, AlgRc4>::~StreamCipherImp()
 {
     RtlSecureZeroMemory( &state.state, sizeof( state.state ) ); 
 }
@@ -3157,6 +3159,7 @@ addRsa32Algs()
     addImplementationToGlobalList<StreamCipherImp<ImpRsa32, AlgRc4>>();
 }
 
+#endif //INCLUDE_IMPL_RSA32
 
 
 

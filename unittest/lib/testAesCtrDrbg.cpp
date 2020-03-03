@@ -1,7 +1,7 @@
 //
 // Test of SP 800-90 AES_CTR_DRGB
 //
-// Copyright (c) Microsoft Corporation. Licensed under the MIT license. 
+// Copyright (c) Microsoft Corporation. Licensed under the MIT license.
 //
 
 #include "precomp.h"
@@ -14,7 +14,7 @@
 static const BYTE g_abInstantiateEntropyInputPlusNonce[] =
 {
     // Entropy input
-    
+
     0x00,0x01,0x02,0x03,0x04,0x05,0x06,0x07,
     0x08,0x09,0x0A,0x0B,0x0C,0x0D,0x0E,0x0F,
     0x10,0x11,0x12,0x13,0x14,0x15,0x16,0x17,
@@ -25,13 +25,13 @@ static const BYTE g_abInstantiateEntropyInputPlusNonce[] =
     // Nonce
     0x20,0x21,0x22,0x23,0x24,0x25,0x26,0x27,
     0x28,0x29,0x2A,0x2B,0x2C,0x2D,0x2E,0x2F,
-   
+
 };
 
 #if 0
 static const BYTE g_abReseedEntropy[] =
 {
-    
+
    0x80,0x81,0x82,0x83,0x84,0x85,0x86,0x87,
    0x88,0x89,0x8A,0x8B,0x8C,0x8D,0x8E,0x8F,
    0x90,0x91,0x92,0x93,0x94,0x95,0x96,0x97,
@@ -50,15 +50,15 @@ static const BYTE g_abOutput1[ 32 ] =
 };
 
 //
-// We call the generate function a second time with a known answer to test the 
+// We call the generate function a second time with a known answer to test the
 // correctness of the backtracking resistance function at the end of each generate.
-// 
+//
 
 static const BYTE g_abOutput2[ 32 ] =
 {
-    0x8D, 0xA6, 0xCC, 0x59, 0xE7, 0x03, 0xCE, 0xD0, 
-    0x7D, 0x58, 0xD9, 0x6E, 0x5B, 0x6D, 0x78, 0x36, 
-    0xC3, 0x25, 0x99, 0x73, 0x5B, 0x73, 0x4F, 0x88, 
+    0x8D, 0xA6, 0xCC, 0x59, 0xE7, 0x03, 0xCE, 0xD0,
+    0x7D, 0x58, 0xD9, 0x6E, 0x5B, 0x6D, 0x78, 0x36,
+    0xC3, 0x25, 0x99, 0x73, 0x5B, 0x73, 0x4F, 0x88,
     0xC1, 0xA7, 0x3B, 0x53, 0xC7, 0xA6, 0xD8, 0x2E,
 };
 
@@ -114,7 +114,7 @@ RngSp800_90MultiImp::RngSp800_90MultiImp( String algName )
     getAllImplementations<RngSp800_90Implementation>( algName, &m_imps );
 
     m_algorithmName = algName;
-    
+
     String sumAlgName;
     char * sepStr = "<";
 
@@ -141,7 +141,7 @@ NTSTATUS
 RngSp800_90MultiImp::instantiate( _In_reads_( cbEntropy ) PCBYTE pbEntropy, SIZE_T cbEntropy )
 {
     NTSTATUS status;
- 
+
     m_comps.clear();
 
     for( RngImpPtrVector::iterator i = m_imps.begin(); i != m_imps.end(); ++i )
@@ -172,14 +172,14 @@ RngSp800_90MultiImp::reseed( _In_reads_( cbEntropy ) PCBYTE pbEntropy, SIZE_T cb
     return STATUS_SUCCESS;
 }
 
-VOID 
+VOID
 RngSp800_90MultiImp::generate( _Out_writes_( cbData ) PBYTE pbData, SIZE_T cbData )
 {
    BYTE buf[500];
    ResultMerge res;
 
    CHECK( cbData <= sizeof( buf ), "?" );
-   
+
    for( RngImpPtrVector::const_iterator i = m_comps.begin(); i != m_comps.end(); ++i )
    {
         SymCryptWipe( buf, cbData );
@@ -204,7 +204,7 @@ testAesCtrDrbgSingle(
     BYTE buf[64];
 
     CHECK3( cbRes <= sizeof( buf ), "RNG result size too large in record on line %lld", line );
-    CHECK3( generateAfterInstantiate == -1 || generateAfterInstantiate <= sizeof( buf ), 
+    CHECK3( generateAfterInstantiate == -1 || generateAfterInstantiate <= sizeof( buf ),
             "RNG result size too large in record -2- on line %lld", line );
 
     pRng->instantiate( pbEntropy, cbEntropy );
@@ -226,7 +226,7 @@ testAesCtrDrbgSingle(
         print( "\nGot      " );
         printHex( buf, cbRes );
         print( "\n" );
-        
+
         pRng->m_nErrorKatFailure++;
     }
 
@@ -236,16 +236,16 @@ testAesCtrDrbgSingle(
 VOID
 testRngs()
 {
-    std::auto_ptr<KatData> katRng( getCustomResource( "kat_rng.dat", "KAT_RNG" ) );
+    std::unique_ptr<KatData> katRng( getCustomResource( "kat_rng.dat", "KAT_RNG" ) );
     KAT_ITEM katItem;
 
     static String g_currentCategory;
     BOOL skipData = TRUE;
     BOOL doneAnything = FALSE;
     LONGLONG generateAfterInstantiate = -1;
-    
+
     String sep = "    ";
-    std::auto_ptr<RngSp800_90MultiImp> pRngMultiImp;
+    std::unique_ptr<RngSp800_90MultiImp> pRngMultiImp;
 
     while( 1 )
     {
@@ -279,11 +279,11 @@ testRngs()
                 BString katReseed = katParseData( katItem, "entropyinputreseed" );
                 BString katRes = katParseData( katItem, "returnedbits" );
 
-                testAesCtrDrbgSingle( 
-                            pRngMultiImp.get(), 
-                            katEntropy.data(), katEntropy.size(), 
+                testAesCtrDrbgSingle(
+                            pRngMultiImp.get(),
+                            katEntropy.data(), katEntropy.size(),
                             katReseed.data(), katReseed.size(),
-                            katRes.data(), katRes.size(), 
+                            katRes.data(), katRes.size(),
                             generateAfterInstantiate,
                             katRng->m_line );
 
@@ -295,7 +295,7 @@ testRngs()
                 generateAfterInstantiate = katParseInteger( katItem, "generateafterinstantiate" );
                 continue;
             }
-                    
+
             FATAL2( "Unknown data record ending at line %lld", katRng->m_line );
         }
     }

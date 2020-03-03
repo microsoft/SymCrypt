@@ -1,7 +1,7 @@
 //
 // TestTlsCbcHmac.cpp
 //
-// Copyright (c) Microsoft Corporation. Licensed under the MIT license. 
+// Copyright (c) Microsoft Corporation. Licensed under the MIT license.
 //
 
 #include "precomp.h"
@@ -38,7 +38,7 @@ TlsCbcHmacMultiImp::TlsCbcHmacMultiImp( String algName )
 {
     getAllImplementations<TlsCbcHmacImplementation>( algName, &m_imps );
     m_algorithmName = algName;
-    
+
     String sumImpName;
     char * sepStr = "<";
 
@@ -62,7 +62,7 @@ TlsCbcHmacMultiImp::~TlsCbcHmacMultiImp()
 }
 
 
-NTSTATUS 
+NTSTATUS
 TlsCbcHmacMultiImp::verify(
         _In_reads_( cbKey )     PCBYTE  pbKey,
                                 SIZE_T  cbKey,
@@ -124,9 +124,9 @@ testTlsCbcHmacSingle(
             for( SIZE_T i=0; i<headerLen; i++ ) { header[i] = (BYTE)('H' + i); };
             for( SIZE_T i=0; i<recordLen; i++ ) { buf[i] = (BYTE)('d' + i); };
         } else {
-            CHECK( NT_SUCCESS( BCryptGenRandom( BCRYPT_RNG_ALG_HANDLE, key, sizeof( key ), 0 )), "?" );;
-            CHECK( NT_SUCCESS( BCryptGenRandom( BCRYPT_RNG_ALG_HANDLE, header, (UINT32)headerLen, 0 )), "?" );;
-            CHECK( NT_SUCCESS( BCryptGenRandom( BCRYPT_RNG_ALG_HANDLE, buf, (UINT32)recordLen, 0 )), "?" );
+            CHECK( NT_SUCCESS( GENRANDOM( key, sizeof( key ) )), "?" );;
+            CHECK( NT_SUCCESS( GENRANDOM( header, (UINT32)headerLen )), "?" );;
+            CHECK( NT_SUCCESS( GENRANDOM( buf, (UINT32)recordLen )), "?" );
         }
 
         macLen = pMac->resultSize;
@@ -165,11 +165,11 @@ testTlsCbcHmacSingle(
 VOID
 testTlsCbcHmacAlgorithms()
 {
-    std::auto_ptr<TlsCbcHmacMultiImp> pImp;
+    std::unique_ptr<TlsCbcHmacMultiImp> pImp;
        
     char * sep = "    ";
     BOOL doneAnything = FALSE;
-        
+
     pImp.reset( new TlsCbcHmacMultiImp( "TlsCbcHmacSha1" ) );
     if( pImp->m_imps.size() > 0 )
     {

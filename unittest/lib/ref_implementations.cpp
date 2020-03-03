@@ -5,7 +5,9 @@
 //
 
 #include "precomp.h"
-#include "ref_implementations.h"
+
+
+#if INCLUDE_IMPL_REF
 
 char * ImpRef::name = "Ref";
 
@@ -240,6 +242,180 @@ SIZE_T MacImp<ImpRef, AlgPoly1305>::resultLen()
     return SYMCRYPT_POLY1305_RESULT_SIZE;
 }
 
+
+/////////////////////////////////////////////////////////////////////////////////////
+// Primality test
+// 
+// To test the primality-test function of SymCrypt, we need something to compare it against.
+// We implement Rabin-Miller in the simple (and insecure) way.
+//
+
+BOOL
+SYMCRYPT_CALL
+RefIsPossiblePrime(
+    _In_                            PCSYMCRYPT_INT  piSrc,
+    _Out_writes_bytes_( cbScratch ) PBYTE           pbScratch,
+                                    SIZE_T          cbScratch )
+// If piSrc is a prime, this function returns TRUE.
+// If piSrc is a composite, this function returns FALSE at least 75% of the time.
+{
+    UINT32 nD;
+    PSYMCRYPT_MODULUS pmMod = NULL;
+    PSYMCRYPT_MODELEMENT peBase = NULL;
+    PSYMCRYPT_MODELEMENT peTmp = NULL;
+    UINT32 lwb;
+    BOOL res = FALSE;
+    UINT32 stopBit;
+    UINT32 currentBit;
+    
+    lwb = SymCryptIntGetValueLsbits32( piSrc );
+
+    // Handle small values that confuse the later code
+    if( SymCryptIntBitsizeOfValue( piSrc ) < 10 )
+    {
+        if( lwb < 2  )
+        {
+            // 0 and 1
+            res = FALSE;
+            goto cleanup;
+        }
+        if( lwb <= 3 )
+        {
+            // 2 and 3
+            res = TRUE;
+            goto cleanup;
+        }
+    }
+
+    // Other even numbers are not prime
+    if( (lwb & 1) == 0 )
+    {
+        res = FALSE;
+        goto cleanup;
+    }
+
+    // Here we know piSrc is odd and > 3
+
+    // Create a modulus
+    nD = SymCryptIntDigitsizeOfObject( piSrc );
+    pmMod = SymCryptModulusAllocate( nD );
+    CHECK( pmMod != NULL, "Out of memory" );    
+    SymCryptIntToModulus( piSrc, pmMod, 0, 0, pbScratch, cbScratch );
+
+    // Create a mod elements
+    peBase = SymCryptModElementAllocate( pmMod );
+    peTmp = SymCryptModElementAllocate( pmMod );
+    CHECK( peBase != NULL && peTmp != NULL, "Out of memory" );
+
+    // Pick a random base. Do not allow 0, 1, or -1 as they never show a number to be composite.
+    SymCryptModSetRandom( pmMod, peBase, 0, pbScratch, cbScratch );
+
+    // Find the stop bit for the base exponentiation. This is the first nonzero bit closest to the parity bit
+    stopBit = 1;
+    while( SymCryptIntGetBit( piSrc, stopBit ) == 0 )
+    {
+        // This loops ends because the value is >= 3;
+        stopBit += 1;
+    }
+
+    currentBit = SymCryptIntBitsizeOfValue( piSrc ) - 1;
+    CHECK( SymCryptIntGetBit( piSrc, currentBit ) == 1, "?" );
+    SymCryptModElementCopy( pmMod, peBase, peTmp );
+
+    // Do the basic exponentiation
+    // Invariant: peTmp = base ^ piSrc[*..currentBit] (inclusive of currentBit)
+    while( currentBit > stopBit )
+    {
+        currentBit -= 1;
+        SymCryptModSquare( pmMod, peTmp, peTmp, pbScratch, cbScratch );
+        if( SymCryptIntGetBit( piSrc, currentBit ) != 0 )
+        {
+            SymCryptModMul( pmMod, peTmp, peBase, peTmp, pbScratch, cbScratch );
+        }
+    }
+    // Now we have currentBit = stopBit, so the basic exponentiation is done
+
+    // We don't need peBase anymore, so we use it as scratch
+    SymCryptModElementSetValueUint32( 1, pmMod, peBase, pbScratch, cbScratch );
+    if( SymCryptModElementIsEqual( pmMod, peBase, peTmp ) )
+    {
+        // base exponentiation resulted in 1, this could be a prime.
+        res = TRUE;
+        goto cleanup;
+    }
+
+    // Now we need to see a -1 before we reach 1 as we keep squaring
+    SymCryptModElementSetValueNegUint32( 1, pmMod, peBase, pbScratch, cbScratch );
+    for(;;)
+    {
+        // We only check that we reach -1. If we get to 1 before we reach -1, then
+        // we'll keep looping with Tmp = 1 until we reach the currentBit limit at which point we
+        // conclude Src is a composite.
+    
+        if( SymCryptModElementIsEqual( pmMod, peBase, peTmp ) )
+        {
+            // found -1, piSrc could be prime
+            res = TRUE;
+            goto cleanup;
+        }
+
+        if( currentBit == 0 )
+        {
+            // We've reached base^(Src-1) and not found -1 or 1. Src is not a composite
+            res = FALSE;
+            goto cleanup;
+        }
+
+        // square
+        SymCryptModSquare( pmMod, peTmp, peTmp, pbScratch, cbScratch );
+        currentBit -= 1;
+    }
+
+cleanup:
+    if( peTmp != NULL )
+    {
+        SymCryptModElementFree( pmMod, peTmp );
+        peTmp = NULL;
+    }
+
+    if( peBase != NULL )
+    {
+        SymCryptModElementFree( pmMod, peBase );
+        peBase = NULL;
+    }
+
+    if( pmMod != NULL )
+    {
+        SymCryptModulusFree( pmMod );
+        pmMod = NULL;
+    }
+
+    return res;
+}                                    
+
+BOOL
+SYMCRYPT_CALL
+RefIsPrime(
+    _In_                            PCSYMCRYPT_INT  piSrc,
+    _Out_writes_bytes_( cbScratch ) PBYTE           pbScratch,
+                                    SIZE_T          cbScratch )
+{
+    // Just iterate the probabalistic test 64 times to achieve an error rate of 2^-128.
+    for( int i=0; i<64; i++ )
+    {
+        if( !RefIsPossiblePrime( piSrc, pbScratch, cbScratch ) )
+        {
+            return FALSE;
+        }
+    }
+    return TRUE;
+}
+
+//////////////////////////////////////////////////////////////////////////
+// AddAlgs
+//
+
+
 VOID
 addRefAlgs()
 {
@@ -256,3 +432,5 @@ addRefAlgs()
 
     addImplementationToGlobalList<MacImp<ImpRef, AlgPoly1305>>();
 }
+
+#endif //INCLUDE_IMPL_REF

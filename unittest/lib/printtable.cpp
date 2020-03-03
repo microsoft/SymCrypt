@@ -1,10 +1,12 @@
 //
 // PrintTable.cpp   Print pretty tables
 //
-// Copyright (c) Microsoft Corporation. Licensed under the MIT license. 
+// Copyright (c) Microsoft Corporation. Licensed under the MIT license.
 //
 
 #include "precomp.h"
+
+#include <sstream>
 
 PrintTable::PrintTable()
 {
@@ -44,13 +46,11 @@ PrintTable::addItem( String row, String col, String item )
 VOID
 PrintTable::addItem( String row, String col, ULONGLONG item )
 {
-    std::strstream s;
+    std::ostringstream s;
 
     s << item;
 
-    String st ( s.str(), s.pcount() );
-
-    addItem( row, col, st );
+    addItem( row, col, s.str() );
 }
 
 VOID
@@ -74,7 +74,7 @@ PrintTable::addItem( String row, String col, double perByte, double overhead, do
     if( perByte != 0.0 )
     {
         //
-        // We want to have a fixed width 
+        // We want to have a fixed width
         // and fixed precision for the clocks per byte value
         // There is no easy way to do this with format specifiers
         //
@@ -84,7 +84,7 @@ PrintTable::addItem( String row, String col, double perByte, double overhead, do
             perByte = -perByte;
             SNPRINTF_S( buf1, sizeof( buf1 ), _TRUNCATE, "-%1d.%02dn",
                 (int)floor(perByte), (int) ( 100.0 * fmod( perByte, 1 ) ) );
-        } 
+        }
         else if( perByte < 99.99 )
         {
             SNPRINTF_S( buf1, sizeof( buf1 ), _TRUNCATE, "%2d.%02dn",
@@ -126,9 +126,9 @@ PrintTable::addItem( String row, String col, double perByte, double overhead, do
             data = data + "      ";
         }
     }
-    
+
     addItem( row, col, data );
-        
+
 }
 
 VOID
@@ -154,7 +154,7 @@ PrintTable::print( String heading )
     //
     for( SIZE_T r=0; r<nRows; r++ )
     {
-        colSize[0] = max( colSize[0], m_rows[r].size() + 1 );
+        colSize[0] = SYMCRYPT_MAX( colSize[0], m_rows[r].size() + 1 );
     }
 
     //
@@ -163,7 +163,7 @@ PrintTable::print( String heading )
     for( SIZE_T c=0; c<nCols; c++ )
     {
         //print( "%d\n", m_cols[c].size() );
-        colSize[c+1] = max( colSize[ c+1 ], m_cols[c].size() );
+        colSize[c+1] = SYMCRYPT_MAX( colSize[ c+1 ], m_cols[c].size() );
     }
 
     for( SIZE_T r=0; r<nRows; r++ )
@@ -173,14 +173,14 @@ PrintTable::print( String heading )
             // print( "%d(%s) %d(%s)\n", i, m_rows[i].c_str(), j, m_cols[j].c_str() );
             SIZE_T s = m_items[ make_pair( m_rows[r], m_cols[c] ) ].size();
             // print( "%d %s\n", s, m_items[ make_pair( m_rows[r], m_cols[c] ) ].c_str() );
-            colSize[ c+1 ] = max( colSize[ c+1 ], s );
+            colSize[ c+1 ] = SYMCRYPT_MAX( colSize[ c+1 ], s );
         }
     }
 
     ::print( "\n" );
     ::print( heading );
     ::print( ":\n" );
-    
+
     //
     // Print column headers
     //

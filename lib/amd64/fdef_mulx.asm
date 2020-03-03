@@ -5,7 +5,7 @@
 
 include ksamd64.inc
 
-include ..\inc\symcrypt_version.inc
+include symcrypt_version.inc
 include symcrypt_magic.inc
 
 

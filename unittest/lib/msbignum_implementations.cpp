@@ -5,6 +5,9 @@
 //
 
 #include "precomp.h"
+
+#if INCLUDE_IMPL_MSBIGNUM
+
 #include "testInterop.h"
 
 #define SCRATCH_BUF_OFFSET  (1 << 15)
@@ -13,6 +16,40 @@
 char * ImpMsBignum::name = "MsBignum";
 
 bigctx_t g_BignumCtx = { 0 };
+
+// Functions needed for MsBignum hashes (see pfnHash type)
+BOOL
+WINAPI
+SHA1Hash(
+    __in_bcount( cbData )   const unsigned char* pbData,
+                            unsigned int   cbData,
+    __out_bcount( SYMCRYPT_SHA1_RESULT_SIZE )
+                            unsigned char*  pbResult )
+{
+    SymCryptSha1( (PCBYTE)pbData,cbData,(PBYTE)pbResult);
+    return TRUE;
+
+}
+
+BOOL
+WINAPI
+SHA256Hash(
+    __in_bcount( cbData )   const unsigned char* pbData,
+                            unsigned int   cbData,
+    __out_bcount( SYMCRYPT_SHA256_RESULT_SIZE )
+                            unsigned char*  pbResult )
+{
+    SymCryptSha256( (PCBYTE)pbData,cbData,(PBYTE)pbResult);
+    return TRUE;
+}
+
+HASHALG_DATA g_HashAlgs[] = {
+    { SymCryptMd5Algorithm ,    "MD5",      BCRYPT_MD5_ALGORITHM,       NULL        },
+    { SymCryptSha1Algorithm,    "SHA1",     BCRYPT_SHA1_ALGORITHM,      SHA1Hash   },
+    { SymCryptSha256Algorithm,  "SHA256",   BCRYPT_SHA256_ALGORITHM,    SHA256Hash },
+    { SymCryptSha384Algorithm,  "SHA384",   BCRYPT_SHA384_ALGORITHM,    NULL },
+    { SymCryptSha512Algorithm,  "SHA512",   BCRYPT_SHA512_ALGORITHM,    NULL },
+};
 
 // RSA algorithms
 
@@ -134,21 +171,140 @@ algImpDataPerfFunction< ImpMsBignum, AlgRsaEncRaw>( PBYTE buf1, PBYTE buf2, PBYT
 }
 
 template<>
-RsaImp<ImpMsBignum, AlgRsaEncRaw>::RsaImp()
+VOID
+algImpDecryptPerfFunction< ImpMsBignum, AlgRsaEncRaw>( PBYTE buf1, PBYTE buf2, PBYTE buf3, SIZE_T dataSize )
 {
-    m_perfDataFunction      = &algImpDataPerfFunction <ImpMsBignum, AlgRsaEncRaw>;
-    m_perfDecryptFunction   = NULL;
-    m_perfKeyFunction       = &algImpKeyPerfFunction  <ImpMsBignum, AlgRsaEncRaw>;
-    m_perfCleanFunction     = &algImpCleanPerfFunction<ImpMsBignum, AlgRsaEncRaw>;
+    UNREFERENCED_PARAMETER( dataSize );
+
+    rsa_decryption(
+            *((PRSA_PRIVATE_KEY *) buf1),
+            buf3,
+            buf2 + dataSize,
+            &g_BignumCtx );
 }
 
 template<>
-RsaImp<ImpMsBignum, AlgRsaEncRaw>::~RsaImp()
+RsaEncImp<ImpMsBignum, AlgRsaEncRaw>::RsaEncImp()
 {
+    m_perfDataFunction      = &algImpDataPerfFunction <ImpMsBignum, AlgRsaEncRaw>;
+    m_perfDecryptFunction   = &algImpDecryptPerfFunction< ImpMsBignum, AlgRsaEncRaw>;
+    m_perfKeyFunction       = &algImpKeyPerfFunction  <ImpMsBignum, AlgRsaEncRaw>;
+    m_perfCleanFunction     = &algImpCleanPerfFunction<ImpMsBignum, AlgRsaEncRaw>;
+
+    SymCryptWipe( (PBYTE) &state.key, sizeof( state.key ) );
+}
+
+template<>
+RsaEncImp<ImpMsBignum, AlgRsaEncRaw>::~RsaEncImp()
+{
+    if( state.key.diglen_pubexp != 0 )
+    {
+        rsa_destruction( &state.key, &g_BignumCtx );
+        SymCryptWipe( (PBYTE) &state.key, sizeof( state.key ) );
+    }
+}
+
+template<>
+NTSTATUS
+RsaEncImp<ImpMsBignum, AlgRsaEncRaw>::setKey( PCRSAKEY_TESTBLOB pcKeyBlob )
+{
+    BYTE buf[8];
+    BOOL res;
+
+    if( state.key.diglen_pubexp != 0 )
+    {
+        rsa_destruction( &state.key, &g_BignumCtx );
+        SymCryptWipe( (PBYTE) &state.key, sizeof( state.key ) );
+    }
+
+    if( pcKeyBlob == NULL )
+    {
+        // Used to clear out any keys
+        goto cleanup;
+    }
+
+    SYMCRYPT_STORE_MSBFIRST64( buf, pcKeyBlob->u64PubExp );
+
+    state.cbKey = pcKeyBlob->cbModulus;
+    res = rsa_import(   buf, 8,
+                        &pcKeyBlob->abModulus[0], pcKeyBlob->cbModulus,
+                        &pcKeyBlob->abPrime1[0], pcKeyBlob->cbPrime1,
+                        &pcKeyBlob->abPrime2[0], pcKeyBlob->cbPrime2,
+                        &state.key,
+                        TRUE,
+                        &g_BignumCtx );
+    CHECK( res, "Failed to import key" );
+
+cleanup:
+    return STATUS_SUCCESS;
+}
+
+template<>
+NTSTATUS 
+RsaEncImp<ImpMsBignum, AlgRsaEncRaw>::encrypt(
+    _In_reads_( cbMsg )             PCBYTE  pbMsg, 
+                                    SIZE_T  cbMsg,
+                                    PCSTR   pcstrHashAlgName,
+                                    PCBYTE  pbLabel,
+                                    SIZE_T  cbLabel,
+    _Out_writes_( cbCiphertext )    PBYTE   pbCiphertext,
+                                    SIZE_T  cbCiphertext )
+{
+    BOOL success;
+
+    UNREFERENCED_PARAMETER( pcstrHashAlgName );
+    UNREFERENCED_PARAMETER( pbLabel );
+    UNREFERENCED_PARAMETER( cbLabel );
+
+    CHECK( cbMsg == state.cbKey, "Wrong message size" );
+    CHECK( cbCiphertext == state.cbKey, "Wrong ciphertext size" );
+
+    success = rsa_encryption(
+            &state.key,
+            pbMsg,
+            pbCiphertext,
+            &g_BignumCtx );
+    CHECK( success, "?" );
+
+    return STATUS_SUCCESS;
+}
+
+template<>
+NTSTATUS
+RsaEncImp<ImpMsBignum, AlgRsaEncRaw>::decrypt(
+        _In_reads_( cbCiphertext )      PCBYTE  pbCiphertext,
+                                        SIZE_T  cbCiphertext,
+                                        PCSTR   pcstrHashAlgName,
+                                        PCBYTE  pbLabel,
+                                        SIZE_T  cbLabel,
+        _Out_writes_to_(cbMsg,*pcbMsg)  PBYTE   pbMsg,
+                                        SIZE_T  cbMsg,
+                                        SIZE_T *pcbMsg )
+{
+    BOOL success;
+
+    UNREFERENCED_PARAMETER( pcstrHashAlgName );
+    UNREFERENCED_PARAMETER( pbLabel );
+    UNREFERENCED_PARAMETER( cbLabel );
+
+    CHECK( cbCiphertext == state.cbKey, "Wrong ciphertext size" );
+    CHECK( cbMsg >= state.cbKey, "Output buffer too small" );
+
+    success = rsa_decryption(
+            &state.key,
+            pbCiphertext,
+            pbMsg,
+            &g_BignumCtx );
+    CHECK( success, "?" );
+
+    *pcbMsg = state.cbKey;
+
+    return STATUS_SUCCESS;
 }
 
 // Rsa Decryption
 
+/*
 template<>
 VOID
 algImpKeyPerfFunction<ImpMsBignum, AlgRsaDecRaw>( PBYTE buf1, PBYTE buf2, PBYTE buf3, SIZE_T keySize )
@@ -178,6 +334,7 @@ algImpDataPerfFunction< ImpMsBignum, AlgRsaDecRaw>( PBYTE buf1, PBYTE buf2, PBYT
             &g_BignumCtx );
 }
 
+
 template<>
 RsaImp<ImpMsBignum, AlgRsaDecRaw>::RsaImp()
 {
@@ -191,6 +348,7 @@ template<>
 RsaImp<ImpMsBignum, AlgRsaDecRaw>::~RsaImp()
 {
 }
+*/
 
 //============================
 
@@ -209,6 +367,33 @@ struct {
     { 128, 32, FALSE, {0}, {0}, {0}, {0} },
     { 256, 32, FALSE, {0}, {0}, {0}, {0} },
 };
+
+// Hash algorithms translations
+VOID testInteropScToHashContext( PCSYMCRYPT_HASH pHashAlgorithm, PBYTE rgbDigest, hash_function_context* pHashFunCxt)
+{
+    pHashFunCxt->dwVersion = HASH_FUNCTION_STRUCTURE_VERSION;
+    pHashFunCxt->pvContext = NULL;
+    pHashFunCxt->pdwDigest = (PDWORD)rgbDigest;
+
+    if (pHashAlgorithm == NULL)
+    {
+        CHECK( FALSE, "NULL hash algorithm\n");
+    }
+    else
+    {
+        for(UINT32 i=0; i<TEST_INTEROP_NUMOF_HASHALGS; i++)
+        {
+            if (pHashAlgorithm == g_HashAlgs[i].pHashAlgorithm)
+            {
+                pHashFunCxt->pfHash = g_HashAlgs[i].msBignumHashFunc;
+                pHashFunCxt->cbDigest = (DWORD)SymCryptHashResultSize(pHashAlgorithm);
+                return;
+            }
+        }
+
+        CHECK( FALSE, "NULL hash algorithm\n");
+    }
+}
 
 void
 SetupBignumDlGroup( PBYTE buf1, SIZE_T keySize )
@@ -1298,8 +1483,7 @@ ArithImp<ImpMsBignum, AlgScsTable>::~ArithImp()
 VOID
 addMsBignumAlgs()
 {
-    addImplementationToGlobalList<RsaImp<ImpMsBignum, AlgRsaEncRaw>>();
-    addImplementationToGlobalList<RsaImp<ImpMsBignum, AlgRsaDecRaw>>();
+    addImplementationToGlobalList<RsaEncImp<ImpMsBignum, AlgRsaEncRaw>>();
 
     addImplementationToGlobalList<DlImp<ImpMsBignum, AlgDsaSign>>();
     addImplementationToGlobalList<DlImp<ImpMsBignum, AlgDsaVerify>>();
@@ -1321,7 +1505,7 @@ addMsBignumAlgs()
     addImplementationToGlobalList<ArithImp<ImpMsBignum, AlgScsTable>>();
 }
 
-
+#endif // INCLUDE_IMPL_MSBIGNUM
 
 
 

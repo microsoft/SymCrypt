@@ -6,10 +6,10 @@
 
 #include "ksarm.h"
 
-#include "..\inc\symcrypt_version.inc"
+#include "symcrypt_version.inc"
 #include "symcrypt_magic.inc"
 
-#include "..\C_asm_shared.inc"
+#include "C_asm_shared.inc"
 
 ; A digit consists of 4 words of 32 bits each
 

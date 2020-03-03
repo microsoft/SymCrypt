@@ -1,7 +1,7 @@
 //
 // TestIEEE802_11SaeCustom.cpp
 //
-// Copyright (c) Microsoft Corporation. Licensed under the MIT license. 
+// Copyright (c) Microsoft Corporation. Licensed under the MIT license.
 //
 
 #include "precomp.h"
@@ -10,7 +10,7 @@ VOID
 testSaeCustom(
         ArithImplementation *       pAlgImp,
     _In_reads_(cbPassword)  PCBYTE  pbPassword,
-                            SIZE_T  cbPassword,                
+                            SIZE_T  cbPassword,
     _In_reads_(6)           PCBYTE  pbMACa,
     _In_reads_(6)           PCBYTE  pbMACb,
                             BYTE    bCounter,
@@ -112,7 +112,7 @@ testSaeCustomConsistency( ArithImplementation * pAlgImp )
 }
 
 VOID
-testSaeCustomNegative( 
+testSaeCustomNegative(
                     ArithImplementation *   pAlgImp,
     _In_reads_(32)  PCBYTE                  pbPeerScalar,
     _In_reads_(64)  PCBYTE                  pbPeerElement,
@@ -153,7 +153,7 @@ testSaeCustomNegative(
 VOID
 testIEEE802_11SaeCustomKats()
 {
-    std::auto_ptr<KatData> katData( getCustomResource( "kat_IEEE802_11SaeCustom.dat", "KAT_SAE_CUSTOM" ) );
+    std::unique_ptr<KatData> katData( getCustomResource( "kat_IEEE802_11SaeCustom.dat", "KAT_SAE_CUSTOM" ) );
     KAT_ITEM katItem;
     std::vector<ArithImplementation *> ImpPtrVector;
 
@@ -220,11 +220,11 @@ testIEEE802_11SaeCustomKats()
                             peerScalar.data(), peerElement.data(), sharedSecret.data(), scalarSum.data() );
 
                 (*(ImpPtrVector.begin()))->m_nResults++;
-            } 
+            }
             else if( katIsFieldPresent( katItem, "selfconsistent" ) )
             {
                 testSaeCustomConsistency( *(ImpPtrVector.begin()) );
-            } 
+            }
             else if( katIsFieldPresent( katItem, "negativetest" ) )
             {
                 BString peerScalar = katParseData( katItem, "peerscalar" );
@@ -234,7 +234,7 @@ testIEEE802_11SaeCustomKats()
                 CHECK3( peerElement.size()   == 64, "Invalid length for peerElement at line %lld", line );
 
                 testSaeCustomNegative( *(ImpPtrVector.begin()), peerScalar.data(), peerElement.data(), line );
-            } 
+            }
             else
             {
                 FATAL2( "Unknown data record ending at line %lld", line );

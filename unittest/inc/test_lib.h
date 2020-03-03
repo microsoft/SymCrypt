@@ -1,8 +1,11 @@
 //
-// precomp.h    Precompiled header file for SymCrypt unit test 
+// precomp.h    Precompiled header file for SymCrypt unit test
 //
-// Copyright (c) Microsoft Corporation. Licensed under the MIT license. 
+// Copyright (c) Microsoft Corporation. Licensed under the MIT license.
 //
+
+// Prevent Windows header files from defining min and max macros (breaks STL)
+#define NOMINMAX
 
 #ifdef KERNEL_MODE
     //#include <ntddksec.h>
@@ -38,15 +41,130 @@
 
     #include "precomp_iOS.h"
 
+#elif defined(__GNUC__)
+
+    #include <stdio.h>
+    #include <cstring>
+    #include <cinttypes>
+    #include <stdlib.h>
+    #include <math.h>
+    #include <unistd.h>
+
+    #include <vector>
+    #include <string>
+    #include <memory>
+    #include <algorithm>
+    #include <map>
+    #include <strstream>
+    #include <set>
+    #include <cstdarg>
+
+    #include "symcrypt_no_sal.h"
+
+    // Ignore the multi-character character constant warnings
+    #pragma GCC diagnostic ignored "-Wmultichar"
+
+    // Ignore the ISO C++ 11 does allow conversion from string literal to PSTR
+    // #pragma GCC diagnostic ignored "-Wc++11-compat-deprecated-writable-strings"
+
+    // Ignore the unused entity issue with UNREFERENCED PARAMETER
+    #pragma GCC diagnostic ignored "-Wunused-value"
+
+
+    #define DWORD       UINT32
+
+    #define PSTR        char *
+    #define PCSTR       CONST PSTR
+    #define LPSTR       PSTR
+    #define LPCSTR      CONST PSTR
+
+    #define PUCHAR      unsigned char *
+
+    #define WCHAR       wchar_t
+    #define PWSTR       wchar_t *
+    #define LPWSTR      PWSTR
+
+    #define CONST       const
+    #define LONGLONG    INT64
+    #define ULONGLONG   UINT64
+
+    #define ULONG_PTR   UINT_PTR
+
+    #define LPVOID      PVOID
+    #define NTSTATUS    INT32
+
+    #define STATUS_INVALID_SIGNATURE         ((NTSTATUS)0xC000A000L)
+    #define STATUS_INVALID_PARAMETER         ((NTSTATUS)0xC000000DL)
+    #define STATUS_NO_MEMORY                 ((NTSTATUS)0xC0000017L)
+    #define STATUS_NOT_SUPPORTED             ((NTSTATUS)0xC00000BBL)
+    #define STATUS_UNSUCCESSFUL              ((NTSTATUS)0xC0000001L)
+    #define STATUS_SUCCESS                   ((NTSTATUS)0x00000000L)
+    #define NT_SUCCESS(Status)               (((NTSTATUS)(Status)) >= 0)
+    #define STATUS_AUTH_TAG_MISMATCH         ((NTSTATUS)0xC000A002L)
+
+    #define UNREFERENCED_PARAMETER(x)       (x)
+
+    #define __success(x)
+    #define __out_bcount_part_opt(x, y)
+    #define WINAPI
+
+    #define BOOL_SUCCESS BOOL
+
+    typedef size_t DWORDREG;
+    typedef const DWORDREG DWORDREGC;
+
+    typedef enum {
+        BCRYPT_HASH_OPERATION_HASH_DATA = 1,
+        BCRYPT_HASH_OPERATION_FINISH_HASH = 2,
+    } BCRYPT_HASH_OPERATION_TYPE;
+
+    typedef struct _BCRYPT_MULTI_HASH_OPERATION {
+                                uint32_t                        iHash;          // index of hash object
+                                BCRYPT_HASH_OPERATION_TYPE      hashOperation;  // operation to be performed
+                                PUCHAR                          pbBuffer;       // data to be hashed, or result buffer
+                                uint32_t                           cbBuffer;
+    } BCRYPT_MULTI_HASH_OPERATION;
+
+    #define InterlockedAdd64(ptr, val) __sync_fetch_and_add(ptr, val)
+    #define InterlockedIncrement64(ptr) __sync_fetch_and_add(ptr, 1)
+    #define InterlockedDecrement64(ptr) __sync_fetch_and_sub(ptr, 1)
+
+    #if defined(__i386__)
+
+    static inline unsigned long __rdtsc(void)
+    {
+        unsigned long x;
+        asm volatile (".byte 0x0f, 0x31" : "=A" (x));
+        return x;
+    }
+
+    #elif defined(__amd64)
+
+    static inline unsigned long long __rdtsc(void)
+    {
+        unsigned long long tsc;
+        asm volatile ("rdtsc; sal $32, %%rdx; or %%rdx, %%rax;" : "=a"(tsc));
+        return tsc;
+    }
+    #endif
+
+    static inline void __cpuid(int CPUInfo[4], int InfoType)
+    {
+        asm volatile ("mov %0, %%eax; cpuid" :
+            "=a" (CPUInfo[0]),
+            "=b" (CPUInfo[1]),
+            "=c" (CPUInfo[2]),
+            "=d" (CPUInfo[3]) :
+            "g" (InfoType));
+    }
+
+    #include <unistd.h>
+    #define Sleep(x) sleep((x)/1000)
 #else
     #include <ntstatus.h>
-    #pragma prefast(push)
-    #pragma prefast(disable: 26071, "Avoid error in validation of RtlULongLongMult")
-    #include <ntintsafe.h>
-    #pragma prefast(pop)
 
     // Ensure that windows.h doesn't re-define the status_* symbols
-    #define WIN32_NO_STATUS	
+    #define WIN32_NO_STATUS
     #include <windows.h>
     #include <winternl.h>
     #include <winioctl.h>
@@ -74,6 +192,21 @@
     #include <strstream>
     #include <set>
     #include <strsafe.h>
+
+    #ifndef PRIx64
+    #define PRIx64       "llx"
+    #endif
+    #ifndef PRId64
+    #define PRId64       "lld"
+    #endif
+
+    //
+    // Missing from our standard headers when compiling C++
+    //
+    extern "C"
+    {
+        void __cpuid(int CPUInfo[4], int InfoType );
+    }
 #endif
 
 
@@ -81,7 +214,7 @@
 #include "symcrypt_low_level.h"
 
 #if !SYMCRYPT_APPLE_CC
-    #include "ioctldefs.h"
+    #include "ioctlDefs.h"
 #else
     VOID GenRandom( PBYTE  pbBuf, SIZE_T cbBuf );
 #endif
@@ -90,15 +223,6 @@
 #include <wmmintrin.h>
 #include <immintrin.h>
 #endif
-
-
-//
-// Missing from our standard headers when compiling C++
-//
-extern "C"
-{
-    void __cpuid(int CPUInfo[4], int InfoType );
-}
 
 /*
 // Exclude rarely-used stuff from Windows headers
@@ -113,13 +237,8 @@ extern "C"
 //#include <nturtl.h>
 #include <ntstatus.h>
 
-#pragma prefast(push)
-#pragma prefast(disable: 26071, "Avoid error in validation of RtlULongLongMult")
-#include <ntintsafe.h>
-#pragma prefast(pop)
-
 // Ensure that windows.h doesn't re-define the status_* symbols
-#define WIN32_NO_STATUS	
+#define WIN32_NO_STATUS
 #include <windows.h>
 
 #include <wincrypt.h>
@@ -195,9 +314,9 @@ extern "C" {
                                         // Don't understand why I get that one; something about templates...
 #pragma warning( disable: 4127 )        // conditional expression is constant
 #pragma warning( disable: 6262 )        // excessive stack usage. This is test code, I don't care.
-#pragma warning( disable: 4702 )        // unreachable code. The compilers are not equally smart, and some complain 
+#pragma warning( disable: 4702 )        // unreachable code. The compilers are not equally smart, and some complain
                                         // aobut 'function must return a value' and some about 'unreachable code'
-                                        
+
 //
 // Macros for different environments
 //
@@ -206,55 +325,105 @@ extern "C" {
 
     #define STRICMP                     _stricmp
     #define STRNICMP                    _strnicmp
-    
+
     #define SNPRINTF_S(a,b,c,d,...)     _snprintf_s((a),(b),(c),(d),__VA_ARGS__)
     #define VSNPRINTF_S(a,b,c,d,...)    _vsnprintf_s((a),(b),(c),(d),__VA_ARGS__)
-    
+
     #define GENRANDOM(pbBuf, cbBuf)     BCryptGenRandom( NULL, (PBYTE) (pbBuf), (cbBuf), BCRYPT_USE_SYSTEM_PREFERRED_RNG )
-    
+
     #define SLEEP                       Sleep
-    
+
     #if defined( _X86_ ) | defined( _ARM_ )
         #define BitScanReverseSizeT  _BitScanReverse
     #elif defined( _AMD64_ ) || defined( _ARM64_ )
         #define BitScanReverseSizeT _BitScanReverse64
     #endif
-    
+
     #define SECUREZEROMEMORY(dest, sz)  RtlSecureZeroMemory( (dest), (sz) )
-    
+
 #elif SYMCRYPT_APPLE_CC
 
     #define STRICMP                     strcasecmp
     #define STRNICMP                    strncasecmp
-    
+
     #define SNPRINTF_S(a,b,c,d,...)     std::snprintf((a),(b),(d),__VA_ARGS__)
     #define VSNPRINTF_S(a,b,c,d,...)    std::vsnprintf((a),(b),(d),__VA_ARGS__)
-    
+
     NTSTATUS IosGenRandom( PBYTE pbBuf, UINT32 cbBuf );
-    
+
     #define GENRANDOM(pbBuf, cbBuf)     IosGenRandom( (PBYTE) pbBuf, cbBuf )
-    
+
     #define SLEEP                       usleep
-    
+
     #if defined(__LP64__)
-        #define SIZET_BITS_1            63               
+        #define SIZET_BITS_1            63
     #else
         #define SIZET_BITS_1            31
     #endif
-    
+
     #define BitScanReverseSizeT(pInd, mask)  \
             ({*(pInd) = SIZET_BITS_1 - __builtin_clzl( (mask) ); \
             ( (mask)==0 )? 0 : 1; })
-    
+
     #define SECUREZEROMEMORY(dest, sz)  memset_s( (dest), (sz), 0, (sz) )
-    
+
+#elif SYMCRYPT_GNUC
+
+    #define STRICMP                     strcasecmp
+    #define STRNICMP                    strncasecmp
+
+    #define SNPRINTF_S(a,b,c,d,...)     std::snprintf((a),(b),(d),__VA_ARGS__)
+    #define VSNPRINTF_S(a,b,c,d,...)    std::vsnprintf((a),(b),(d),__VA_ARGS__)
+#ifdef __linux__
+    #include <sys/random.h>
+    #define GENRANDOM(pbBuf, cbBuf)     getrandom( (void *) pbBuf, cbBuf, 0 )
+#else
+    #error "Oh no, need a GENRANDOM() implementation"
 #endif
-    
+    #define SLEEP                       usleep
+
+    #if defined(__LP64__)
+        #define SIZET_BITS_1            63
+    #else
+        #define SIZET_BITS_1            31
+    #endif
+
+    #define BitScanReverseSizeT(pInd, mask)  \
+            ({*(pInd) = SIZET_BITS_1 - __builtin_clzl( (mask) ); \
+            ( (mask)==0 )? 0 : 1; })
+
+    #define SECUREZEROMEMORY(dest, sz)  ({ \
+        memset(dest, 0, sz);               \
+        asm volatile("" ::: "memory");      \
+    })
+
+#endif
+
+#if !defined( INCLUDE_IMPL_RSA32 )
+#define INCLUDE_IMPL_RSA32     (1)
+#endif
+
+#if !defined( INCLUDE_IMPL_MSBIGNUM )
+#define INCLUDE_IMPL_MSBIGNUM  (1)
+#endif
+
+#if !defined( INCLUDE_IMPL_CAPI )
+#define INCLUDE_IMPL_CAPI      (1)
+#endif
+
+#if !defined( INCLUDE_IMPL_CNG )
+#define INCLUDE_IMPL_CNG       (1)
+#endif
+
+#if !defined( INCLUDE_IMPL_REF )
+#define INCLUDE_IMPL_REF       (1)
+#endif
+
+
 
 //
 // Our own header info
 //
-
 typedef std::string String;                     // String of characters
 typedef std::basic_string<BYTE> BString;        // String of bytes
 
@@ -316,204 +485,204 @@ typedef std::basic_string<BYTE> BString;        // String of bytes
 #define CNG_XXX_HASH_ALG_NAMEU          CONCAT3( Cng, ALG_Base, HashAlgNameU )
 
 #define SYMCRYPT_2DES_BLOCK_SIZE        SYMCRYPT_3DES_BLOCK_SIZE
-#define BCRYPT_2DES_ALGORITHM           BCRYPT_3DES_112_ALGORITHM 
+#define BCRYPT_2DES_ALGORITHM           BCRYPT_3DES_112_ALGORITHM
 
 
 #define MAX_SIZE_T                      ((SIZE_T) -1)
 
 //
-// Discriminator classes, one for each algorithm. 
+// Discriminator classes, one for each algorithm.
 // These are used to specialize our algorithm implementation template classes.
 //
 
 class AlgMd2{
 public:
-    static char * name;
+    const static char * name;
 };
 
 class AlgMd4{
 public:
-    static char * name;
+    const static char * name;
 };
 
 class AlgMd5{
 public:
-    static char * name;
+    const static char * name;
 };
 
 class AlgSha1{
 public:
-    static char * name;
+    const static char * name;
 };
 
 class AlgSha256{
 public:
-    static char * name;
+    const static char * name;
 };
 
 class AlgSha384{
 public:
-    static char * name;
+    const static char * name;
 };
 
 class AlgSha512{
 public:
-    static char * name;
+    const static char * name;
 };
 
 class AlgHmacMd5{
 public:
-    static char * name;
+    const static char * name;
 };
 
 class AlgHmacSha1{
 public:
-    static char * name;
+    const static char * name;
 };
 
 class AlgHmacSha256{
 public:
-    static char * name;
+    const static char * name;
 };
 
 class AlgHmacSha384{
 public:
-    static char * name;
+    const static char * name;
 };
 
 class AlgHmacSha512{
 public:
-    static char * name;
+    const static char * name;
 };
 
 class AlgAesCmac{
 public:
-	static char * name;
+	const static char * name;
 };
 
 class AlgMarvin32{
 public:
-	static char * name;
+	const static char * name;
 };
 
 class AlgAes{
 public:
-    static char * name;
+    const static char * name;
 };
 
 class AlgDes{
 public:
-    static char * name;
+    const static char * name;
 };
 
 class Alg2Des{
 public:
-    static char * name;
+    const static char * name;
 };
 
 class Alg3Des{
 public:
-    static char * name;
+    const static char * name;
 };
 
 class AlgDesx{
 public:
-    static char * name;
+    const static char * name;
 };
 
 class AlgRc2{
 public:
-    static char * name;
+    const static char * name;
 };
 
 class AlgRc4{
 public:
-    static char * name;
+    const static char * name;
     static BOOL isRandomAccess;
 };
 
 class AlgChaCha20 {
 public:
-    static char * name;
+    const static char * name;
     static BOOL isRandomAccess;
 };
 
 class AlgPoly1305 {
 public:
-    static char * name;
+    const static char * name;
 };
 
 class AlgAesCtrDrbg{
 public:
-    static char * name;
+    const static char * name;
 };
 
 class AlgAesCtrF142{
 public:
-    static char * name;
+    const static char * name;
 };
 
 class AlgParallelSha256{
 public:
-    static char * name;
-    static WCHAR * pwstrBasename;      // e.g. L"SHA256" 
+    const static char * name;
+    const static WCHAR * pwstrBasename;      // e.g. L"SHA256"
 };
 
 class AlgParallelSha384{
 public:
-    static char * name;
-    static WCHAR * pwstrBasename;
+    const static char * name;
+    const static WCHAR * pwstrBasename;
 };
 
 class AlgParallelSha512{
 public:
-    static char * name;
-    static WCHAR * pwstrBasename;
+    const static char * name;
+    const static WCHAR * pwstrBasename;
 };
 
 class AlgPbkdf2{
 public:
-    static char * name;
+    const static char * name;
 };
 
 class AlgSp800_108{
 public:
-    static char * name;
+    const static char * name;
 };
 
 class AlgTlsPrf1_1{
 public:
-    static char * name;
+    const static char * name;
 };
 
 class AlgTlsPrf1_2{
 public:
-    static char * name;
+    const static char * name;
 };
 
 class AlgHkdf{
 public:
-    static char * name;
+    const static char * name;
 };
 
 class AlgXtsAes{
 public:
-    static char * name;
+    const static char * name;
 };
 
 class AlgTlsCbcHmacSha1 {
 public:
-    static char * name;
+    const static char * name;
 };
 
 class AlgTlsCbcHmacSha256 {
 public:
-    static char * name;
+    const static char * name;
 };
 
 class AlgTlsCbcHmacSha384 {
 public:
-    static char * name;
+    const static char * name;
 };
 
 #define MODE_FLAG_CHAIN 1
@@ -521,250 +690,230 @@ public:
 
 class ModeEcb{
 public:
-    static char * name;
+    const static char * name;
     static ULONG flags;
 };
 
 class ModeCbc{
 public:
-    static char * name;
+    const static char * name;
     static ULONG flags;
 };
 
 class ModeCfb{
 public:
-    static char * name;
+    const static char * name;
     static ULONG flags;
 };
 
 class ModeCcm{
 public:
-    static char * name;
+    const static char * name;
 };
 
 class ModeGcm{
 public:
-    static char * name;
+    const static char * name;
 };
 
 class AlgIntAdd{
 public:
-    static char * name;
+    const static char * name;
 };
 
 class AlgIntSub{
 public:
-    static char * name;
+    const static char * name;
 };
 
 class AlgIntMul{
 public:
-    static char * name;
+    const static char * name;
 };
 
 class AlgIntSquare{
 public:
-    static char * name;
+    const static char * name;
 };
 
 class AlgIntDivMod{
 public:
-    static char * name;
+    const static char * name;
 };
 
 class AlgModAdd{
 public:
-    static char * name;
+    const static char * name;
 };
 
 class AlgModSub{
 public:
-    static char * name;
+    const static char * name;
 };
 
 class AlgModMul{
 public:
-    static char * name;
+    const static char * name;
 };
 
 class AlgModSquare{
 public:
-    static char * name;
+    const static char * name;
 };
 
 class AlgModInv{
 public:
-    static char * name;
+    const static char * name;
 };
 
 class AlgModExp{
 public:
-    static char * name;
+    const static char * name;
 };
 
 class AlgScsTable{
 public:
-    static char * name;
+    const static char * name;
 };
 
 class AlgIEEE802_11SaeCustom{
 public:
-    static char * name;
+    const static char * name;
 };
 
 class AlgTrialDivision{
 public:
-    static char * name;
+    const static char * name;
 };
 
 class AlgTrialDivisionContext{
 public:
-    static char * name;
+    const static char * name;
 };
 
 class AlgWipe{
 public:
-    static char * name;
+    const static char * name;
 };
 
 class AlgRsaEncRaw{
 public:
-    static char * name;
-};
-
-class AlgRsaDecRaw{
-public:
-    static char * name;
+    const static char * name;
 };
 
 class AlgRsaEncPkcs1{
 public:
-    static char * name;
-};
-
-class AlgRsaDecPkcs1{
-public:
-    static char * name;
+    const static char * name;
 };
 
 class AlgRsaEncOaep{
 public:
-    static char * name;
-};
-
-class AlgRsaDecOaep{
-public:
-    static char * name;
+    const static char * name;
 };
 
 class AlgRsaSignPkcs1{
 public:
-    static char * name;
-};
-
-class AlgRsaVerifyPkcs1{
-public:
-    static char * name;
+    const static char * name;
 };
 
 class AlgRsaSignPss{
 public:
-    static char * name;
-};
-
-class AlgRsaVerifyPss{
-public:
-    static char * name;
+    const static char * name;
 };
 
 class AlgDsaSign{
 public:
-    static char * name;
+    const static char * name;
 };
 
 class AlgDsaVerify{
 public:
-    static char * name;
+    const static char * name;
 };
 
 class AlgDh{
 public:
-    static char * name;
+    const static char * name;
+};
+
+class AlgDsa{
+public:
+    const static char * name;
 };
 
 class AlgEcurveAllocate{
 public:
-    static char * name;
+    const static char * name;
 };
 
 class AlgEcpointSetZero{
 public:
-    static char * name;
+    const static char * name;
 };
 
 class AlgEcpointSetDistinguished{
 public:
-    static char * name;
+    const static char * name;
 };
 
 class AlgEcpointSetRandom{
 public:
-    static char * name;
+    const static char * name;
 };
 
 class AlgEcpointIsEqual{
 public:
-    static char * name;
+    const static char * name;
 };
 
 class AlgEcpointIsZero{
 public:
-    static char * name;
+    const static char * name;
 };
 
 class AlgEcpointOnCurve{
 public:
-    static char * name;
+    const static char * name;
 };
 
 class AlgEcpointAdd{
 public:
-    static char * name;
+    const static char * name;
 };
 
 class AlgEcpointAddDiffNz{
 public:
-    static char * name;
+    const static char * name;
 };
 
 class AlgEcpointDouble{
 public:
-    static char * name;
+    const static char * name;
 };
 
 class AlgEcpointScalarMul{
 public:
-    static char * name;
+    const static char * name;
 };
 
 class AlgEcdsaSign{
 public:
-    static char * name;
+    const static char * name;
 };
 
 class AlgEcdsaVerify{
 public:
-    static char * name;
+    const static char * name;
 };
 
 class AlgEcdh{
 public:
-    static char * name;
+    const static char * name;
 };
 
 class AlgDeveloperTest{
 public:
-    static char * name;
+    const static char * name;
 };
 
 //
@@ -809,22 +958,46 @@ extern AlgorithmImplementationVector g_algorithmImplementation;
 #include "perfprint.h"
 
 typedef std::set<String> StringSet;
-extern StringSet g_algorithmsToTest;     
+extern StringSet g_algorithmsToTest;
 extern StringSet g_implementationsToTest;
 BOOL setContainsPrefix( const StringSet & set, const std::string & str );
 
 #include "main_inline.h"
 #include "resultMerge.h"
 
-extern char * g_implementationNames[];
+extern const char * g_implementationNames[];
 
-//#include "sc_implementations.h"
-//#include "rsa32_implementations.h"
-//#include "capi_implementations.h"
-//#include "cng_implementations.h"
+//
+// Include the info from the implementations we support on this compilation
+//
+
+// We always include the SymCrypt implementation
+#include "sc_implementations.h"
+
+#if INCLUDE_IMPL_CAPI
+#include "capi_implementations.h"
+#endif
+
+#if INCLUDE_IMPL_CNG
+#include "cng_implementations.h"
+#endif
+
+#if INCLUDE_IMPL_MSBIGNUM
+#include "msbignum_implementations.h"
+#endif
+
+#if INCLUDE_IMPL_REF
+#include "ref_implementations.h"
+#endif
+
+#if INCLUDE_IMPL_RSA32
+#include "rsa32_implementations.h"
+#endif
+
+
 #include "printtable.h"
 
-#include "rnddriver.h"
+#include "rndDriver.h"
 
 extern Rng g_rng;
 
@@ -842,17 +1015,12 @@ extern ULONG    g_rc2EffectiveKeyLength;
 
 extern ULONG g_cngKeySizeFlag;
 
-extern double g_tscFreqTickCtr;
-extern double g_tscFreqPerfCtr;
+extern double g_tscFreq;
 
 extern BOOL g_sgx;
 
-//template< typename AlgType >
-//VOID getAlgorithmsOfOneType();
-//std::auto_ptr<std::vector< AlgType * >> getAlgorithmsOfOneType();
-
 template< typename AlgType >
-std::auto_ptr<std::vector<AlgType *>> getAlgorithmsOfOneType( );
+std::unique_ptr<std::vector<AlgType *>> getAlgorithmsOfOneType( );
 
 
 extern BOOLEAN     TestSelftestsEnabled;
@@ -941,11 +1109,23 @@ testRsa();
 VOID
 testDl();
 
+VOID
+testRsaSignAlgorithms();
+
+VOID
+testRsaEncAlgorithms();
+
+VOID
+testDhAlgorithms();
+
+VOID
+testDsaAlgorithms();
+
 KatData *
 getCustomResource( _In_ PSTR resourceName, _In_ PSTR resourceType );
 
 VOID
-randomTestGetSubstringPosition( _In_reads_( bufSize )  PCBYTE buf, 
+randomTestGetSubstringPosition( _In_reads_( bufSize )  PCBYTE buf,
                                                         SIZE_T bufSize,
                                 _Inout_                 SIZE_T * idx,
                                 _Out_                   SIZE_T * pos,
@@ -979,6 +1159,9 @@ initYmmRegisters();
 VOID
 verifyYmmRegisters();
 
+
+VOID 
+addAllAlgs();
 
 VOID
 addCapiAlgs();
@@ -1016,7 +1199,7 @@ exitTestInfrastructure();
 //
 // Function pointers to deal with various BCrypt versions
 //
-#if !SYMCRYPT_APPLE_CC
+#if INCLUDE_IMPL_CNG
 
 typedef _Must_inspect_result_ NTSTATUS
 (WINAPI * BCryptDeriveKeyPBKDF2Fn)(
@@ -1316,7 +1499,7 @@ extern BCryptSetPropertyFn              CngSetPropertyFn;
 extern BCryptSignHashFn                 CngSignHashFn;
 extern BCryptVerifySignatureFn          CngVerifySignatureFn;
 
-#endif //SYMCRYPT_APPLE_CC
+#endif //SYMCRYPT_MS_VC
 
 
 extern BOOLEAN g_fExitMultithreadTest;
@@ -1364,7 +1547,7 @@ printXmmRegisters( PCSTR text );
 
 //
 // For testing the different internal curves
-// The first byte denotes the type of curve while the lower bytes the field length 
+// The first byte denotes the type of curve while the lower bytes the field length
 //
 #define PERF_KEY_NIST_CURVE 0x10000000  // NIST curve
 #define PERF_KEY_NUMS_CURVE 0x20000000  // NUMS curve
@@ -1426,7 +1609,10 @@ VOID
 testMontgomery(PSYMCRYPT_ECURVE  pCurve);
 
 VOID
-runRsaAverageKeyGenPerf();
+addRsaKeyGenPerfSymCrypt( PrintTable &table );
+
+VOID
+addRsaKeyGenPerfMsBignum( PrintTable &table );
 
 // Constants for RSA performance tests (OAEP, PKCS1, PSS modes)
 #define PERF_RSA_PKCS1_LESS_BYTES           (11)
@@ -1437,6 +1623,48 @@ runRsaAverageKeyGenPerf();
 #define PERF_RSA_HASH_ALG_SC                (SymCryptSha256Algorithm)
 #define PERF_RSA_HASH_ALG_CNG               (BCRYPT_SHA256_ALGORITHM)
 #define PERF_RSA_HASH_ALG_SIZE              (SYMCRYPT_SHA256_RESULT_SIZE)
+#define PERF_RSA_HASH_ALG_OIDS_SC           (SymCryptSha256OidList)
+#define PERF_RSA_HASH_ALG_NOIDS_SC          (SYMCRYPT_SHA256_OID_COUNT)
 
 #define PERF_RSA_OAEP_LESS_BYTES            (2 + 2*SYMCRYPT_SHA256_RESULT_SIZE)
 
+
+#define MAX_RSA_TESTKEYS    (50)
+extern RSAKEY_TESTBLOB g_RsaTestKeyBlobs[ MAX_RSA_TESTKEYS ];
+extern UINT32 g_nRsaTestKeyBlobs;
+
+#define MAX_TEST_DLGROUPS   (50)
+extern DLGROUP_TESTBLOB g_DlGroup[ MAX_TEST_DLGROUPS ];
+extern UINT32 g_nDlgroups;
+
+VOID
+fprintHex( FILE * f, PCBYTE pbData, SIZE_T cbData );
+
+VOID rsaTestKeysGenerate();
+
+PSYMCRYPT_RSAKEY
+rsaKeyFromTestBlob( PCRSAKEY_TESTBLOB pBlob );
+
+PSYMCRYPT_RSAKEY
+rsaTestKeyRandom();
+
+PSYMCRYPT_RSAKEY
+rsaTestKeyForSize( SIZE_T nBits );
+
+PCDLGROUP_TESTBLOB
+dlgroupForSize( SIZE_T nBits );
+
+VOID generateDlGroups();
+
+PSYMCRYPT_DLGROUP
+dlgroupObjectFromTestBlob( PCDLGROUP_TESTBLOB pBlob );  // Must free object after use
+
+VOID
+ReverseMemCopy( PBYTE pbDst, PCBYTE pbSrc, SIZE_T cbSrc );
+
+BOOL
+SYMCRYPT_CALL
+RefIsPrime(
+    _In_                            PCSYMCRYPT_INT  piSrc,
+    _Out_writes_bytes_( cbScratch ) PBYTE           pbScratch,
+                                    SIZE_T          cbScratch );

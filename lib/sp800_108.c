@@ -76,7 +76,7 @@ SymCryptSp800_108Derive(
 
         pExpandedKey->macAlg->resultFunc( &macState, rbBlockResult );
 
-        bytes = min( bytesRemaining, blockSize );
+        bytes = SYMCRYPT_MIN( bytesRemaining, blockSize );
         memcpy( pbResult, rbBlockResult, bytes );
         pbResult += bytes;
         bytesRemaining -= bytes;

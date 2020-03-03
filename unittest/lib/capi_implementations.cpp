@@ -5,7 +5,8 @@
 //
 
 #include "precomp.h"
-#include "capi_implementations.h"
+
+#if INCLUDE_IMPL_CAPI
 
 HCRYPTPROV g_capiProvider;
 
@@ -388,7 +389,7 @@ algImpCleanPerfFunction<ImpCapi,AlgRc4>( PBYTE buf1, PBYTE buf2, PBYTE buf3 )
 }
 
 
-StreamCipherImp<ImpCapi, AlgRc4>::StreamCipherImp<ImpCapi, AlgRc4>()
+StreamCipherImp<ImpCapi, AlgRc4>::StreamCipherImp()
 {
     state.hKey = 0;
     
@@ -398,7 +399,7 @@ StreamCipherImp<ImpCapi, AlgRc4>::StreamCipherImp<ImpCapi, AlgRc4>()
 }
 
 template<>
-StreamCipherImp<ImpCapi, AlgRc4>::~StreamCipherImp<ImpCapi, AlgRc4>()
+StreamCipherImp<ImpCapi, AlgRc4>::~StreamCipherImp()
 {
     if( state.hKey != 0 )
     {
@@ -543,7 +544,7 @@ addCapiAlgs()
     addImplementationToGlobalList<StreamCipherImp<ImpCapi, AlgRc4>>();
 }
 
-
+#endif //INCLUDE_IMPL_CAPI
 
 
 

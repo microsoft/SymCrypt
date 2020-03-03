@@ -31,11 +31,9 @@ const SYMCRYPT_BLOCKCIPHER SymCryptAesBlockCipherNoOpt = {
     NULL,
     NULL,
     NULL,
-    NULL,                
-    NULL,                   // PSYMCRYPT_BLOCKCIPHER_CRYPT_XTS     xtsEncFunc;
-    NULL,                   // PSYMCRYPT_BLOCKCIPHER_CRYPT_XTS     xtsDecFunc;
+    NULL,
 
-    SYMCRYPT_AES_BLOCK_SIZE,         
+    SYMCRYPT_AES_BLOCK_SIZE,
     sizeof( SYMCRYPT_AES_EXPANDED_KEY ),
 };
 
@@ -65,8 +63,8 @@ SymCryptAes4Sbox( _In_reads_(4) PCBYTE pIn, _Out_writes_(4) PBYTE pOut, BOOL Use
 
 VOID
 SYMCRYPT_CALL
-SymCryptAesCreateDecryptionRoundKey( 
-    _In_reads_(16)      PCBYTE  pEncryptionRoundKey, 
+SymCryptAesCreateDecryptionRoundKey(
+    _In_reads_(16)      PCBYTE  pEncryptionRoundKey,
     _Out_writes_(16)    PBYTE   pDecryptionRoundKey,
                         BOOL    UseSimd )
 {
@@ -170,7 +168,7 @@ SymCryptAesDecrypt(
 
 VOID
 SYMCRYPT_CALL
-SymCryptAesCbcEncrypt( 
+SymCryptAesCbcEncrypt(
     _In_                                        PCSYMCRYPT_AES_EXPANDED_KEY pExpandedKey,
     _Inout_updates_( SYMCRYPT_AES_BLOCK_SIZE )  PBYTE                       pbChainingValue,
     _In_reads_( cbData )                        PCBYTE                      pbSrc,
@@ -211,7 +209,7 @@ SymCryptAesCbcEncrypt(
 
 VOID
 SYMCRYPT_CALL
-SymCryptAesCbcDecrypt( 
+SymCryptAesCbcDecrypt(
     _In_                                        PCSYMCRYPT_AES_EXPANDED_KEY pExpandedKey,
     _Inout_updates_( SYMCRYPT_AES_BLOCK_SIZE )  PBYTE                       pbChainingValue,
     _In_reads_( cbData )                        PCBYTE                      pbSrc,
@@ -252,7 +250,7 @@ SymCryptAesCbcDecrypt(
 
 VOID
 SYMCRYPT_CALL
-SymCryptAesEcbEncrypt( 
+SymCryptAesEcbEncrypt(
     _In_                                        PCSYMCRYPT_AES_EXPANDED_KEY pExpandedKey,
     _In_reads_( cbData )                        PCBYTE                      pbSrc,
     _Out_writes_( cbData )                      PBYTE                       pbDst,
@@ -290,9 +288,14 @@ SymCryptAesEcbEncrypt(
 #endif
 }
 
+//
+// NOTE: There is no reason that SymCryptAesEcbDecrypt could not have unrolled versions similar to
+// SymCryptAesEcbEncrypt if a real use case requiring large scale Ecb decryption is found.
+// For now just decrypt 1 block at a time to reduce code size.
+//
 VOID
 SYMCRYPT_CALL
-SymCryptAesEcbDecrypt( 
+SymCryptAesEcbDecrypt(
     _In_                                        PCSYMCRYPT_AES_EXPANDED_KEY pExpandedKey,
     _In_reads_( cbData )                        PCBYTE                      pbSrc,
     _Out_writes_( cbData )                      PBYTE                       pbDst,
@@ -358,7 +361,7 @@ SymCryptAesCbcMac(
 
 VOID
 SYMCRYPT_CALL
-SymCryptAesCtrMsb64( 
+SymCryptAesCtrMsb64(
     _In_                                        PCSYMCRYPT_AES_EXPANDED_KEY pExpandedKey,
     _Inout_updates_( SYMCRYPT_AES_BLOCK_SIZE )  PBYTE                       pbChainingValue,
     _In_reads_( cbData )                        PCBYTE                      pbSrc,
@@ -401,41 +404,3 @@ SymCryptAesCtrMsb64(
     SymCryptCtrMsb64( &SymCryptAesBlockCipherNoOpt, pExpandedKey, pbChainingValue, pbSrc, pbDst, cbData );
 #endif
 }
-
-
-PSYMCRYPT_BLOCKCIPHER_CRYPT_XTS
-SYMCRYPT_CALL
-SymCryptXtsAesGetBlockEncFunc( )
-{
-#if SYMCRYPT_CPU_X86 | SYMCRYPT_CPU_AMD64
-    if( SYMCRYPT_CPU_FEATURES_PRESENT( SYMCRYPT_CPU_FEATURES_FOR_AESNI_CODE ) )
-    {
-        return &SymCryptXtsAesEncryptDataUnitXmm;
-    }
-    else
-    {
-        return &SymCryptXtsAesEncryptDataUnitC;
-    }
-#else
-    return &SymCryptXtsAesEncryptDataUnitC;
-#endif
-}
-
-PSYMCRYPT_BLOCKCIPHER_CRYPT_XTS
-SYMCRYPT_CALL
-SymCryptXtsAesGetBlockDecFunc( )
-{
-#if SYMCRYPT_CPU_X86 | SYMCRYPT_CPU_AMD64
-    if( SYMCRYPT_CPU_FEATURES_PRESENT( SYMCRYPT_CPU_FEATURES_FOR_AESNI_CODE ) )
-    {
-        return &SymCryptXtsAesDecryptDataUnitXmm;
-    }
-    else
-    {
-        return &SymCryptXtsAesDecryptDataUnitC;
-    }
-#else
-    return &SymCryptXtsAesDecryptDataUnitC;
-#endif
-}
-

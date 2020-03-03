@@ -259,6 +259,13 @@ SymCryptRsakeySizeofModulus( _In_ PCSYMCRYPT_RSAKEY pkRsakey )
 
 UINT32
 SYMCRYPT_CALL
+SymCryptRsakeyModulusBits( _In_ PCSYMCRYPT_RSAKEY pkRsakey )
+{
+    return pkRsakey->nBitsOfModulus;
+}
+
+UINT32
+SYMCRYPT_CALL
 SymCryptRsakeySizeofPublicExponent(
     _In_    PCSYMCRYPT_RSAKEY pRsakey,
             UINT32            index )
@@ -539,12 +546,12 @@ SymCryptRsakeyGenerate(
     pkRsakey->nDigitsOfPrimes[0] = SymCryptDigitsFromBits(pkRsakey->nBitsOfPrimes[0]);
     pkRsakey->nDigitsOfPrimes[1] = SymCryptDigitsFromBits(pkRsakey->nBitsOfPrimes[1]);
 
-    pkRsakey->nMaxDigitsOfPrimes = max(pkRsakey->nDigitsOfPrimes[0], pkRsakey->nDigitsOfPrimes[1]);
+    pkRsakey->nMaxDigitsOfPrimes = SYMCRYPT_MAX(pkRsakey->nDigitsOfPrimes[0], pkRsakey->nDigitsOfPrimes[1]);
 
     ndPrimes = pkRsakey->nMaxDigitsOfPrimes;
     ndLarge = ndPrimes + ndMod;
 
-    primeBits = max(pkRsakey->nBitsOfPrimes[0],pkRsakey->nBitsOfPrimes[1]);
+    primeBits = SYMCRYPT_MAX(pkRsakey->nBitsOfPrimes[0],pkRsakey->nBitsOfPrimes[1]);
     maxTries = 100 * primeBits;
 
     // Create all the SymCryptObjects
@@ -558,12 +565,12 @@ SymCryptRsakeyGenerate(
     cbDivisor = SymCryptSizeofDivisorFromDigits( ndPrimes );
 
     cbScratch = 2*cbPrimes + cbMod + cbLarge + cbDivisor +
-                max( SYMCRYPT_SCRATCH_BYTES_FOR_INT_PRIME_GEN(ndPrimes),
-                max( SYMCRYPT_SCRATCH_BYTES_FOR_INT_TO_MODULUS(ndMod),
-                max( SYMCRYPT_SCRATCH_BYTES_FOR_INT_MUL(ndMod),
-                max( SYMCRYPT_SCRATCH_BYTES_FOR_CRT_GENERATION(ndPrimes),
-                max( SYMCRYPT_SCRATCH_BYTES_FOR_EXTENDED_GCD(ndMod),
-                max( SYMCRYPT_SCRATCH_BYTES_FOR_INT_TO_DIVISOR(ndPrimes),
+                SYMCRYPT_MAX( SYMCRYPT_SCRATCH_BYTES_FOR_INT_PRIME_GEN(ndPrimes),
+                SYMCRYPT_MAX( SYMCRYPT_SCRATCH_BYTES_FOR_INT_TO_MODULUS(ndMod),
+                SYMCRYPT_MAX( SYMCRYPT_SCRATCH_BYTES_FOR_INT_MUL(ndMod),
+                SYMCRYPT_MAX( SYMCRYPT_SCRATCH_BYTES_FOR_CRT_GENERATION(ndPrimes),
+                SYMCRYPT_MAX( SYMCRYPT_SCRATCH_BYTES_FOR_EXTENDED_GCD(ndMod),
+                SYMCRYPT_MAX( SYMCRYPT_SCRATCH_BYTES_FOR_INT_TO_DIVISOR(ndPrimes),
                      SYMCRYPT_SCRATCH_BYTES_FOR_INT_DIVMOD( ndMod, ndPrimes )
                     ))))));
 
@@ -760,10 +767,10 @@ SymCryptRsakeySetValue(
         cbDivisor = SymCryptSizeofDivisorFromDigits( ndMod );
 
         cbScratch = cbMod + cbLarge + cbDivisor +
-                    max( SYMCRYPT_SCRATCH_BYTES_FOR_INT_TO_MODULUS(ndMod),
-                    max( SYMCRYPT_SCRATCH_BYTES_FOR_CRT_GENERATION(ndMod),
-                    max( SYMCRYPT_SCRATCH_BYTES_FOR_EXTENDED_GCD(ndMod),
-                    max( SYMCRYPT_SCRATCH_BYTES_FOR_INT_TO_DIVISOR(ndMod),
+                    SYMCRYPT_MAX( SYMCRYPT_SCRATCH_BYTES_FOR_INT_TO_MODULUS(ndMod),
+                    SYMCRYPT_MAX( SYMCRYPT_SCRATCH_BYTES_FOR_CRT_GENERATION(ndMod),
+                    SYMCRYPT_MAX( SYMCRYPT_SCRATCH_BYTES_FOR_EXTENDED_GCD(ndMod),
+                    SYMCRYPT_MAX( SYMCRYPT_SCRATCH_BYTES_FOR_INT_TO_DIVISOR(ndMod),
                          SYMCRYPT_SCRATCH_BYTES_FOR_INT_DIVMOD( ndMod, ndMod )
                         ))));
     }
@@ -843,7 +850,7 @@ SymCryptRsakeySetValue(
             pkRsakey->nBitsOfPrimes[i] = SymCryptIntBitsizeOfValue(piPhi);
             pkRsakey->nDigitsOfPrimes[i] = SymCryptDigitsFromBits(pkRsakey->nBitsOfPrimes[i]);
 
-            pkRsakey->nMaxDigitsOfPrimes = max(pkRsakey->nMaxDigitsOfPrimes, pkRsakey->nDigitsOfPrimes[i]);
+            pkRsakey->nMaxDigitsOfPrimes = SYMCRYPT_MAX(pkRsakey->nMaxDigitsOfPrimes, pkRsakey->nDigitsOfPrimes[i]);
 
             if (pkRsakey->nBitsOfPrimes[i] < SYMCRYPT_RSAKEY_MIN_BITSIZE_PRIME)
             {

@@ -91,7 +91,7 @@ algImpCleanPerfFunction<ImpXxx,AlgXxx, ModeXxx>( PBYTE buf1, PBYTE buf2, PBYTE b
 }
 
 template<>
-AuthEncImp<ImpXxx, AlgXxx, ModeXxx>::AuthEncImp<ImpXxx, AlgXxx, ModeXxx>()
+AuthEncImp<ImpXxx, AlgXxx, ModeXxx>::AuthEncImp()
 {
     DWORD res;
     CHECK( CngOpenAlgorithmProviderFn( &state.hAlg, BCRYPT_AES_ALGORITHM, NULL, 0 ) == STATUS_SUCCESS, 
@@ -125,7 +125,7 @@ AuthEncImp<ImpXxx, AlgXxx, ModeXxx>::AuthEncImp<ImpXxx, AlgXxx, ModeXxx>()
 }
 
 template<>
-AuthEncImp<ImpXxx, AlgXxx, ModeXxx>::~AuthEncImp<ImpXxx, AlgXxx, ModeXxx>()
+AuthEncImp<ImpXxx, AlgXxx, ModeXxx>::~AuthEncImp()
 {
     if( state.hKey != 0 )
     {
@@ -282,8 +282,8 @@ AuthEncImp<ImpXxx, AlgXxx, ModeXxx>::setKey( PCBYTE pbKey, SIZE_T cbKey )
 
     if( !NT_SUCCESS( status ) )
     {
-        print( "\n hAlg:%s, hKey:%x, pKeyObj:%x, cbKeyObj:%d, pbKey:%x, cbKey:%d, flag:%x, status:%x",
-                hAlg == state.hAlg ? "hAlg" : "hAlgNoMode", (ULONG)&state.hKey, (ULONG) pKeyObject, (ULONG) cbKeyObject, (ULONG) pbKey, (ULONG) cbKey, g_cngKeySizeFlag, status );
+        print( "\n hAlg:%s, hKey:%p, pKeyObj:%p, cbKeyObj:%d, pbKey:%p, cbKey:%d, flag:%x, status:%x",
+                hAlg == state.hAlg ? "hAlg" : "hAlgNoMode", &state.hKey, pKeyObject, (ULONG) cbKeyObject, pbKey, (ULONG) cbKey, g_cngKeySizeFlag, status );
     }
 
     CHECK( NT_SUCCESS( status ),  "Error importing key" );

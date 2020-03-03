@@ -60,7 +60,7 @@ algImpDecryptPerfFunction<ImpXxx, AlgXxx, ModeXxx>(PBYTE buf1, PBYTE buf2, PBYTE
 
 
 template<>
-BlockCipherImp<ImpXxx, AlgXxx, ModeXxx>::BlockCipherImp<ImpXxx, AlgXxx, ModeXxx>()
+BlockCipherImp<ImpXxx, AlgXxx, ModeXxx>::BlockCipherImp()
 {
     DWORD   res;
 
@@ -81,7 +81,7 @@ BlockCipherImp<ImpXxx, AlgXxx, ModeXxx>::BlockCipherImp<ImpXxx, AlgXxx, ModeXxx>
 }
 
 template<>
-BlockCipherImp<ImpXxx, AlgXxx, ModeXxx>::~BlockCipherImp<ImpXxx, AlgXxx, ModeXxx>()
+BlockCipherImp<ImpXxx, AlgXxx, ModeXxx>::~BlockCipherImp()
 {
     if( state.hKey != 0 )
     {
@@ -261,8 +261,8 @@ BlockCipherImp<ImpXxx, AlgXxx, ModeXxx>::decrypt(
     status = CngDecryptFn( state.hKey, (PBYTE) pbSrc, (ULONG) cbData, NULL, pbIv, (ULONG) cbChain, pbDst, (ULONG) cbData, &res, 0 );
     if( !NT_SUCCESS( status ) )
     {
-        print( "\nkey: %x, pbSrc: %x, cbData:%d, pbIv: %x, cbChain:%d, pbDst:%x, cbData:%d, res:%d\n",
-            (ULONG)state.hKey, (ULONG) pbSrc, (ULONG) cbData, (ULONG) pbIv, (ULONG) cbChain, (ULONG) pbDst, (ULONG) cbData, res );
+        print( "\nkey: %p, pbSrc: %p, cbData:%d, pbIv: %p, cbChain:%d, pbDst:%p, cbData:%d, res:%d\n",
+            state.hKey, pbSrc, (ULONG) cbData, pbIv, (ULONG) cbChain, pbDst, (ULONG) cbData, res );
     }
         
     CHECK( NT_SUCCESS( status ), "Decryption error" );

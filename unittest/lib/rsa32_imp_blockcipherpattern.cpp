@@ -6,7 +6,7 @@
 
 
 template<>
-BlockCipherImp<ImpXxx, AlgXxx, ModeXxx>::BlockCipherImp<ImpXxx, AlgXxx, ModeXxx>()
+BlockCipherImp<ImpXxx, AlgXxx, ModeXxx>::BlockCipherImp()
 {
     m_perfKeyFunction     = &algImpKeyPerfFunction    <ImpXxx, AlgXxx, ModeXxx>;
     m_perfCleanFunction   = &algImpCleanPerfFunction  <ImpXxx, AlgXxx, ModeXxx>;
@@ -15,7 +15,7 @@ BlockCipherImp<ImpXxx, AlgXxx, ModeXxx>::BlockCipherImp<ImpXxx, AlgXxx, ModeXxx>
 }
 
 template<>
-BlockCipherImp<ImpXxx, AlgXxx, ModeXxx>::~BlockCipherImp<ImpXxx, AlgXxx, ModeXxx>()
+BlockCipherImp<ImpXxx, AlgXxx, ModeXxx>::~BlockCipherImp()
 {
 }
 

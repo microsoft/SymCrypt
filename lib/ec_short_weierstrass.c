@@ -88,7 +88,7 @@ SymCryptShortWeierstrassFillScratchSpaces( _In_ PSYMCRYPT_ECURVE pCurve )
             pCurve->cbModElement +
             2 * SymCryptSizeofEcpointEx( pCurve->cbModElement, SYMCRYPT_INTERNAL_NUMOF_COORDINATES( pCurve->eCoordinates ) ) +
             2 * SymCryptSizeofIntFromDigits( pCurve->GOrdDigits ) +
-            max( pCurve->cbScratchCommon, SYMCRYPT_SCRATCH_BYTES_FOR_COMMON_MOD_OPERATIONS( pCurve->GOrdDigits ));
+            SYMCRYPT_MAX( pCurve->cbScratchCommon, SYMCRYPT_SCRATCH_BYTES_FOR_COMMON_MOD_OPERATIONS( pCurve->GOrdDigits ));
 
     // Scalar dependent on precomp points (be careful to align the UINT32 arrays properly)
     pCurve->cbScratchScalarMulti =
@@ -99,14 +99,14 @@ SymCryptShortWeierstrassFillScratchSpaces( _In_ PSYMCRYPT_ECURVE pCurve )
     pCurve->cbScratchGetSetValue =
             SymCryptSizeofEcpointEx( pCurve->cbModElement, SYMCRYPT_ECPOINT_FORMAT_MAX_LENGTH ) +
             2 * pCurve->cbModElement +
-            max(    SYMCRYPT_SCRATCH_BYTES_FOR_COMMON_MOD_OPERATIONS( pCurve->FModDigits ),
+            SYMCRYPT_MAX(    SYMCRYPT_SCRATCH_BYTES_FOR_COMMON_MOD_OPERATIONS( pCurve->FModDigits ),
                     SYMCRYPT_SCRATCH_BYTES_FOR_MODINV( pCurve->FModDigits ) );
 
-    pCurve->cbScratchGetSetValue = max( pCurve->cbScratchGetSetValue, SymCryptSizeofIntFromDigits( nDigits ) );
+    pCurve->cbScratchGetSetValue = SYMCRYPT_MAX( pCurve->cbScratchGetSetValue, SymCryptSizeofIntFromDigits( nDigits ) );
 
     // Eckey
     pCurve->cbScratchEckey = pCurve->cbModElement + SymCryptSizeofIntFromDigits(SymCryptEcurveDigitsofScalarMultiplier(pCurve)) +
-            max( pCurve->cbScratchScalar + pCurve->cbScratchScalarMulti, pCurve->cbScratchGetSetValue );
+            SYMCRYPT_MAX( pCurve->cbScratchScalar + pCurve->cbScratchScalarMulti, pCurve->cbScratchGetSetValue );
 }
 
 //

@@ -4,7 +4,7 @@
 // Copyright (c) Microsoft Corporation. Licensed under the MIT license. 
 //
 
-MacImp<ImpXxx, AlgXxx>::MacImp<ImpXxx, AlgXxx>()
+MacImp<ImpXxx, AlgXxx>::MacImp()
 {
     state.hHash = 0;
     state.hKey = 0;
@@ -14,7 +14,7 @@ MacImp<ImpXxx, AlgXxx>::MacImp<ImpXxx, AlgXxx>()
 }
 
 template<>
-MacImp<ImpXxx, AlgXxx>::~MacImp<ImpXxx, AlgXxx>()
+MacImp<ImpXxx, AlgXxx>::~MacImp()
 {
     CHECK( state.hKey == 0, "Handle leak" );
     CHECK( state.hHash == 0, "Handle leak" );

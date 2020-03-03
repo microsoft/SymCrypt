@@ -1,5 +1,5 @@
 //
-// libmain.c    
+// libmain.c
 // General routines for the SymCrypt library
 //
 // Copyright (c) Microsoft Corporation. Licensed under the MIT license.
@@ -13,9 +13,9 @@
 
 #include "buildInfo.h"
 
-// The following global g_SymCryptFlags has to be at least 32 
-// bits because the iOS environment has interlocked function 
-// support for variables of size at least 32 bits. 
+// The following global g_SymCryptFlags has to be at least 32
+// bits because the iOS environment has interlocked function
+// support for variables of size at least 32 bits.
 // The relevant function is OSAtomicOr32Barrier.
 UINT32 g_SymCryptFlags = 0;
 
@@ -34,7 +34,7 @@ SymCryptLibraryWasNotInitialized()
 
 #endif
 
-CHAR * SymCryptBuildString = 
+const CHAR * SymCryptBuildString = 
         "v" SYMCRYPT_BUILD_INFO_VERSION 
         "_" SYMCRYPT_BUILD_INFO_BRANCH 
         "_" SYMCRYPT_BUILD_INFO_COMMIT
@@ -47,7 +47,7 @@ SymCryptInitEnvCommon( UINT32 version )
 {
     UINT32 tmp;
 
-    CHAR * p;
+    const CHAR * p;
 
     // Assertion that verifies that the calling application was compiled with
     // the same version header files as the library.
@@ -66,7 +66,7 @@ SymCryptInitEnvCommon( UINT32 version )
     //
     SYMCRYPT_FORCE_WRITE32( &tmp, SYMCRYPT_API_VERSION );
 
-    // 
+    //
     // Force the build string to be in memory, because otherwise the
     // compiler might get smart and remove it.
     // This ensures we can always track back to the SymCrypt source code from
@@ -106,7 +106,7 @@ SymCryptFatalHang( UINT32 fatalCode )
     UINT32   fcode;
 
     //
-    // Put the fatal code in a location we can find 
+    // Put the fatal code in a location we can find
     //
     SYMCRYPT_FORCE_WRITE32( &fcode, fatalCode );
 
@@ -129,7 +129,7 @@ SymCryptWipe( _Out_writes_bytes_( cbData ) PVOID pbData, SIZE_T cbData )
 
 #else
 //
-// Generic but slow wipe routine. 
+// Generic but slow wipe routine.
 //
 VOID
 SYMCRYPT_CALL
@@ -148,7 +148,7 @@ SymCryptWipe( _Out_writes_bytes_( cbData ) PVOID pbData, SIZE_T cbData )
 #if SYMCRYPT_CPU_X86 | SYMCRYPT_CPU_ARM
 VOID
 SYMCRYPT_CALL
-SymCryptXorBytes( 
+SymCryptXorBytes(
     _In_reads_( cbBytes )   PCBYTE  pbSrc1,
     _In_reads_( cbBytes )   PCBYTE  pbSrc2,
     _Out_writes_( cbBytes ) PBYTE   pbResult,
@@ -166,8 +166,8 @@ SymCryptXorBytes(
         d[1] = s1[1] ^ s2[1];
         d[2] = s1[2] ^ s2[2];
         d[3] = s1[3] ^ s2[3];
-    } 
-    else 
+    }
+    else
     {
         i = 0;
         while( i + 3 < cbBytes )
@@ -188,7 +188,7 @@ SymCryptXorBytes(
 
 VOID
 SYMCRYPT_CALL
-SymCryptXorBytes( 
+SymCryptXorBytes(
     _In_reads_( cbBytes )   PCBYTE  pbSrc1,
     _In_reads_( cbBytes )   PCBYTE  pbSrc2,
     _Out_writes_( cbBytes ) PBYTE   pbResult,
@@ -202,7 +202,7 @@ SymCryptXorBytes(
 
         d[0] = s1[0] ^ s2[0];
         d[1] = s1[1] ^ s2[1];
-    } 
+    }
     else
     {
         while( cbBytes >= 8 )
@@ -232,7 +232,7 @@ SymCryptXorBytes(
 //
 VOID
 SYMCRYPT_CALL
-SymCryptXorBytes( 
+SymCryptXorBytes(
     _In_reads_( cbBytes )   PCBYTE  pbSrc1,
     _In_reads_( cbBytes )   PCBYTE  pbSrc2,
     _Out_writes_( cbBytes ) PBYTE   pbResult,
@@ -281,7 +281,7 @@ SymCryptUint64Bitsize( UINT64 value )
 {
     UINT32 res;
     UINT32 upper;
-    
+
     upper = (UINT32)(value >> 32);
 
     if( upper == 0 )
@@ -321,7 +321,7 @@ SymCryptUint64Bytesize( UINT64 value )
 {
     UINT32 res;
     UINT32 upper;
-    
+
     upper = (UINT32)(value >> 32);
 
     if( upper == 0 )
@@ -337,7 +337,7 @@ SymCryptUint64Bytesize( UINT64 value )
 
 SYMCRYPT_ERROR
 SYMCRYPT_CALL
-SymCryptLoadLsbFirstUint32( 
+SymCryptLoadLsbFirstUint32(
     _In_reads_( cbSrc ) PCBYTE  pbSrc,
                         SIZE_T  cbSrc,
     _Out_               PUINT32 pDst )
@@ -367,7 +367,7 @@ cleanup:
 
 SYMCRYPT_ERROR
 SYMCRYPT_CALL
-SymCryptLoadLsbFirstUint64( 
+SymCryptLoadLsbFirstUint64(
     _In_reads_( cbSrc ) PCBYTE  pbSrc,
                         SIZE_T  cbSrc,
     _Out_               PUINT64 pDst )
@@ -401,7 +401,7 @@ cleanup:
 
 SYMCRYPT_ERROR
 SYMCRYPT_CALL
-SymCryptLoadMsbFirstUint32( 
+SymCryptLoadMsbFirstUint32(
     _In_reads_( cbSrc ) PCBYTE  pbSrc,
                         SIZE_T  cbSrc,
     _Out_               PUINT32 pDst )
@@ -432,7 +432,7 @@ cleanup:
 
 SYMCRYPT_ERROR
 SYMCRYPT_CALL
-SymCryptLoadMsbFirstUint64( 
+SymCryptLoadMsbFirstUint64(
     _In_reads_( cbSrc ) PCBYTE  pbSrc,
                         SIZE_T  cbSrc,
     _Out_               PUINT64 pDst )

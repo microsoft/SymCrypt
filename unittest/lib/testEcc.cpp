@@ -1,5 +1,5 @@
 //
-// Copyright (c) Microsoft Corporation. Licensed under the MIT license. 
+// Copyright (c) Microsoft Corporation. Licensed under the MIT license.
 //
 
 #include "precomp.h"
@@ -162,7 +162,7 @@ testEccArithmetic( _In_ PCSYMCRYPT_ECURVE pCurve )
     cbIntLargeSize = SymCryptSizeofIntFromDigits( SymCryptEcurveDigitsofScalarMultiplier(pCurve) + 1 );
     cbEckeySize = SymCryptSizeofEckeyFromCurve( pCurve );
 
-    cbScratch = max( SYMCRYPT_SCRATCH_BYTES_FOR_COMMON_ECURVE_OPERATIONS( pCurve ), 
+    cbScratch = SYMCRYPT_MAX( SYMCRYPT_SCRATCH_BYTES_FOR_COMMON_ECURVE_OPERATIONS( pCurve ),
                 SYMCRYPT_SCRATCH_BYTES_FOR_INT_DIVMOD( SymCryptEcurveDigitsofScalarMultiplier(pCurve) + 1, pCurve->GOrdDigits ) );
     cbScratchMul = SYMCRYPT_SCRATCH_BYTES_FOR_SCALAR_ECURVE_OPERATIONS( pCurve );
     cbScratchMultiMul = SYMCRYPT_SCRATCH_BYTES_FOR_MULTI_SCALAR_ECURVE_OPERATIONS( pCurve, MULTIMUL_POINTS );
@@ -603,10 +603,90 @@ testEccArithmetic( _In_ PCSYMCRYPT_ECURVE pCurve )
     vprint( g_verbose, "Success\n");
 }
 
+BOOL
+testCurveParamsValid( PSYMCRYPT_ECURVE_PARAMS pParams, SIZE_T cbData )
+{
+    // We test whether the parameters are valid by trying them with random data
+    // several times.
+    // Exception: we set the cofactor to 1 so that it is a power of 2
+
+    BOOL res = FALSE;
+
+    for( int i=0; i<1000; i++ )
+    {
+        // Add random data + set cofactor to 1
+        GENRANDOM( (PBYTE)(pParams + 1), (UINT32)cbData - sizeof( *pParams ) );
+        ((PBYTE)(pParams + 1))[5 * pParams->cbFieldLength + pParams->cbSubgroupOrder] = 1;
+
+        PSYMCRYPT_ECURVE eCurve = SymCryptEcurveAllocate( pParams, 0 );
+        if( eCurve != NULL )
+        {
+            SymCryptEcurveFree( eCurve );
+            res = TRUE;
+            break;
+        }
+    }
+    return res;
+}
+
+
+VOID
+testBadCurveParams()
+{
+    const SIZE_T cbBuf = 1 << 20;
+    PVOID pBuf = malloc( cbBuf );
+
+    CHECK( pBuf != NULL, "Out of memory" );
+
+    PSYMCRYPT_ECURVE_PARAMS pParams = (PSYMCRYPT_ECURVE_PARAMS) pBuf;
+
+    GENRANDOM( pBuf, cbBuf );
+
+    pParams->version = 1;
+    pParams->type = SYMCRYPT_ECURVE_TYPE_SHORT_WEIERSTRASS;
+    pParams->algId = SYMCRYPT_ECURVE_GEN_ALG_ID_NULL;
+    pParams->cbFieldLength = 32;
+    pParams->cbSubgroupOrder = 32;
+    pParams->cbCofactor = 1;
+    pParams->cbSeed = 0;
+
+    CHECK( testCurveParamsValid( pParams, cbBuf ), "Params invalid" );
+
+    pParams->cbFieldLength = 128;
+    CHECK( testCurveParamsValid( pParams, cbBuf ), "Params invalid" );
+
+    pParams->cbFieldLength = 129;
+    CHECK( !testCurveParamsValid( pParams, cbBuf ), "Params valid" );
+
+    pParams->cbFieldLength = 32;
+
+    pParams->cbSubgroupOrder = 130;  // Can be 64 + 1 as subgroup can be larger than the field.
+    CHECK( !testCurveParamsValid( pParams, cbBuf ), "Params valid" );
+
+    pParams->cbSubgroupOrder = 32;
+
+    pParams->cbCofactor = 3;
+    CHECK( !testCurveParamsValid( pParams, cbBuf ), "Params valid" );
+    pParams->cbCofactor = 1;
+
+    pParams->cbSeed = 256;
+    CHECK( testCurveParamsValid( pParams, cbBuf ), "Params invalid" );
+    pParams->cbSeed = 257;
+    CHECK( !testCurveParamsValid( pParams, cbBuf ), "Params valid" );
+    pParams->cbSeed = 0;
+
+    CHECK( testCurveParamsValid( pParams, cbBuf ), "Params invalid" );
+
+    if( pBuf != NULL )
+    {
+        free( pBuf );
+        pBuf = NULL;
+    }
+}
+
 VOID
 testEcc()
 {
-
     static BOOL hasRun = FALSE;
 
     PSYMCRYPT_ECURVE            pCurve  = NULL;
@@ -684,6 +764,9 @@ testEcc()
     }
 
     CHECK3( g_nOutstandingCheckedAllocs == 0, "Memory leak, %d outstanding", (unsigned) g_nOutstandingCheckedAllocs );
+
+    // Put under an if( algorithm_present ) when we refactor this
+    testBadCurveParams();
 
     iprint("\n");
 }
@@ -1018,7 +1101,7 @@ testEcdh(
 VOID
 testEccEcdsaKats()
 {
-    std::auto_ptr<KatData> katEcc( getCustomResource( "kat_ecdsa.dat", "KAT_ECDSA" ) );
+    std::unique_ptr<KatData> katEcc( getCustomResource( "kat_ecdsa.dat", "KAT_ECDSA" ) );
     KAT_ITEM katItem;
 
     String sep = "";
@@ -1061,7 +1144,7 @@ testEccEcdsaKats()
             for( i=0; i < NUM_OF_INTERNAL_CURVES; i++ )
             {
                 // Compare with the curve name excluding the first and last character (they are ")
-                if ( lstrcmp( pKatCurve->data.substr(1,pKatCurve->data.size()-2).c_str(), rgbInternalCurves[i].pszCurveName ) == 0 )
+                if ( strcmp( pKatCurve->data.substr(1,pKatCurve->data.size()-2).c_str(), rgbInternalCurves[i].pszCurveName ) == 0 )
                 {
                     bCurveFound = TRUE;
                     break;
@@ -1090,7 +1173,7 @@ testEccEcdsaKats()
                 bHashFound = FALSE;
                 for( i=0; i < NUM_OF_ECC_HASH_ALGORITHMS; i++ )
                 {
-                    if ( lstrcmp( pKatHash->data.substr(1,pKatHash->data.size()-2).c_str(), rgbHashAlgorithms[i].pszHashName ) == 0 )
+                    if ( strcmp( pKatHash->data.substr(1,pKatHash->data.size()-2).c_str(), rgbHashAlgorithms[i].pszHashName ) == 0 )
                     {
                         bHashFound = TRUE;
                         break;
@@ -1169,7 +1252,7 @@ testEccEcdsaKats()
                 bHashFound = FALSE;
                 for( i=0; i < NUM_OF_ECC_HASH_ALGORITHMS; i++ )
                 {
-                    if ( lstrcmp( pKatHash->data.substr(1,pKatHash->data.size()-2).c_str(), rgbHashAlgorithms[i].pszHashName ) == 0 )
+                    if ( strcmp( pKatHash->data.substr(1,pKatHash->data.size()-2).c_str(), rgbHashAlgorithms[i].pszHashName ) == 0 )
                     {
                         bHashFound = TRUE;
                         break;

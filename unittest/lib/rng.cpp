@@ -124,7 +124,7 @@ Rng::sizetNonUniform( SIZE_T upb, SIZE_T uniformLimit, ULONG logIncrease )
         prob >>= 1;
         limit <<= logIncrease;
     }
-    limit = min( upb, limit );
+    limit = SYMCRYPT_MIN( upb, limit );
     return sizet( limit );
 }
 
@@ -132,7 +132,7 @@ VOID Rng::randomSubRange( SIZE_T bufSize, SIZE_T * pStart, SIZE_T * pLen )
 {
     SIZE_T a = sizet( bufSize );
     SIZE_T b = sizet( bufSize );
-    *pStart = min( a, b );
-    *pLen = max( a, b ) - min( a, b);
+    *pStart = SYMCRYPT_MIN( a, b );
+    *pLen = SYMCRYPT_MAX( a, b ) - SYMCRYPT_MIN( a, b);
 }
 

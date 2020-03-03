@@ -6,26 +6,8 @@
 //
 
 #include "precomp.h"
-#include "msbignum_implementations.h"
-#include "rsa32_implementations.h"
-#include "capi_implementations.h"
-#include "cng_implementations.h"
-#include "sc_implementations.h"
-#include "ref_implementations.h"
 
 SYMCRYPT_ENVIRONMENT_DEFS( Unittest );
-
-char * g_implementationNames[] = 
-{
-    ImpSc::name,
-    ImpRsa32::name,
-    ImpRsa32b::name,
-    ImpCapi::name,
-    ImpCng::name,
-    ImpMsBignum::name,
-    ImpRef::name,
-    NULL,
-};
 
 #include "main_exe_common.cpp"
 
@@ -35,23 +17,19 @@ main( int argc, _In_reads_( argc ) char * argv[] )
 
     initTestInfrastructure( argc, argv );
 
-    TestSaveXmmEnabled = TRUE;
-    TestSaveYmmEnabled = TRUE;
+    // As of January 2020, we can't test XMM/YMM register saving and restoring because basic CRT
+    // functions like memcpy and memcmp use the XMM registers. This causes the test to fail on
+    // x86, but there's no point in testing this on AMD64 either because it effectively ignores
+    // the modified XMM values, meaning it's not actually testing anything.
+    TestSaveXmmEnabled = FALSE;
+    TestSaveYmmEnabled = FALSE;
 
-    addCapiAlgs();
-    addRsa32Algs();
-    addCngAlgs();
-    addMsBignumAlgs();
-    addSymCryptAlgs();
-    addRefAlgs();
+    addAllAlgs();
 
     if (!g_profile)
     {
         runFunctionalTests();
     }
-    
-    TestSaveXmmEnabled = FALSE;
-    TestSaveYmmEnabled = FALSE;
 
     if (g_profile)
     {

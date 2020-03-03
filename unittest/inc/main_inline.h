@@ -1,8 +1,8 @@
 //
 // main_inline.h
 //
-// Copyright (c) Microsoft Corporation. Licensed under the MIT license. 
-// 
+// Copyright (c) Microsoft Corporation. Licensed under the MIT license.
+//
 
 
 template< typename AlgImp >
@@ -60,11 +60,11 @@ VOID addImplementationToList(AlgorithmImplementationVector * pAlgorithmImplement
 
 
 template< typename AlgType >
-std::auto_ptr<std::vector< AlgType * >>  getAlgorithmsOfOneType()
+std::unique_ptr<std::vector< AlgType * >>  getAlgorithmsOfOneType()
 {
-    std::auto_ptr<std::vector< AlgType * >> result( new std::vector< AlgType * > );
+    std::unique_ptr<std::vector< AlgType * >> result( new std::vector< AlgType * > );
 
-    for( std::vector<AlgorithmImplementation *>::iterator i = g_algorithmImplementation.begin(); 
+    for( std::vector<AlgorithmImplementation *>::iterator i = g_algorithmImplementation.begin();
             i != g_algorithmImplementation.end();
             i++ )
     {
@@ -85,7 +85,7 @@ VOID getAllImplementations( String algName, std::vector<AlgorithmType *> *res )
     for( AlgorithmImplementationVector::const_iterator i= g_algorithmImplementation.begin(); i != g_algorithmImplementation.end(); ++i )
     {
         if( (*i)->m_algorithmName + (*i)->m_modeName == algName )
-        {   
+        {
             AlgorithmType * p = dynamic_cast< AlgorithmType *>( *i );
             CHECK( p != NULL, "Wrong algorithm name/type combo" );
             res->push_back( p );

@@ -134,7 +134,7 @@ SymCryptDhSecretAgreement(
     // Objects and scratch space size calculation
     cbModelement = SymCryptSizeofModElementFromModulus( pDlgroup->pmP );
     cbScratch = cbModelement +
-                max( SYMCRYPT_SCRATCH_BYTES_FOR_MODEXP( pDlgroup->nDigitsOfP ),
+                SYMCRYPT_MAX( SYMCRYPT_SCRATCH_BYTES_FOR_MODEXP( pDlgroup->nDigitsOfP ),
                      SYMCRYPT_SCRATCH_BYTES_FOR_COMMON_MOD_OPERATIONS( pDlgroup->nDigitsOfP ));
 
     // Scratch space allocation

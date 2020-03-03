@@ -272,3 +272,47 @@ class XtsImpState<ImpSc, AlgXtsAes> {
 public:
     SYMCRYPT_XTS_AES_EXPANDED_KEY   key;
 };
+
+template<>
+class RsaSignImpState<ImpSc, AlgRsaSignPkcs1> {
+public:
+    PSYMCRYPT_RSAKEY    pKey;
+};
+
+template<>
+class RsaSignImpState<ImpSc, AlgRsaSignPss> {
+public:
+    PSYMCRYPT_RSAKEY    pKey;
+};
+
+template<>
+class RsaEncImpState<ImpSc, AlgRsaEncRaw> {
+public:
+    PSYMCRYPT_RSAKEY    pKey;
+};
+
+template<>
+class RsaEncImpState<ImpSc, AlgRsaEncPkcs1> {
+public:
+    PSYMCRYPT_RSAKEY    pKey;
+};
+
+template<>
+class RsaEncImpState<ImpSc, AlgRsaEncOaep> {
+public:
+    PSYMCRYPT_RSAKEY    pKey;
+};
+
+template<>
+class DhImpState<ImpSc, AlgDh> {
+public:
+    PSYMCRYPT_DLGROUP   pGroup;
+    PSYMCRYPT_DLKEY     pKey;
+};
+
+template<>
+class DsaImpState<ImpSc, AlgDsa> {
+public:
+    PSYMCRYPT_DLGROUP   pGroup;
+    PSYMCRYPT_DLKEY     pKey;
+};

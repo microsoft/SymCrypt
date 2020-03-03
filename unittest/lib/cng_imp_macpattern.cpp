@@ -7,7 +7,7 @@
 BCRYPT_ALG_HANDLE MacImpState<ImpXxx, AlgXxx>::hAlg;
 
 
-MacImp<ImpXxx, AlgXxx>::MacImp<ImpXxx, AlgXxx>()
+MacImp<ImpXxx, AlgXxx>::MacImp()
 {
     NTSTATUS status;
 
@@ -31,7 +31,7 @@ MacImp<ImpXxx, AlgXxx>::MacImp<ImpXxx, AlgXxx>()
 }
 
 template<>
-MacImp<ImpXxx, AlgXxx>::~MacImp<ImpXxx, AlgXxx>()
+MacImp<ImpXxx, AlgXxx>::~MacImp()
 {
     CHECK( state.hHash == 0, "Handle leak" );
     CHECK( NT_SUCCESS( CngCloseAlgorithmProviderFn( state.hAlg, 0 )), "Could not close CNG/" STRING( ALG_Name ) );

@@ -14,8 +14,13 @@
 
 #include "precomp.h"
 
+#if SYMCRYPT_CPU_ARM64 && SYMCRYPT_MS_VC
+#undef UNREFERENCED_PARAMETER
+#include <processthreadsapi.h>
 
-#if SYMCRYPT_CPU_ARM64
+// From winnt.h
+#define PF_ARM_V8_CRYPTO_INSTRUCTIONS_AVAILABLE 30   
+
 VOID
 SYMCRYPT_CALL
 SymCryptDetectCpuFeaturesFromIsProcessorFeaturePresent()

@@ -1,5 +1,5 @@
 //
-// Copyright (c) Microsoft Corporation. Licensed under the MIT license. 
+// Copyright (c) Microsoft Corporation. Licensed under the MIT license.
 //
 
 #include "precomp.h"
@@ -27,9 +27,9 @@ public:
 
     virtual VOID setOffset( UINT64 offset );
 
-    virtual VOID encrypt( 
-        _In_reads_( cbData )    PCBYTE  pbSrc, 
-        _Out_writes_( cbData )  PBYTE   pbDst, 
+    virtual VOID encrypt(
+        _In_reads_( cbData )    PCBYTE  pbSrc,
+        _Out_writes_( cbData )  PBYTE   pbDst,
                                 SIZE_T  cbData );
 
     typedef std::vector<StreamCipherImplementation *> StreamCipherImpPtrVector;
@@ -43,7 +43,7 @@ StreamCipherMultiImp::StreamCipherMultiImp( String algName )
 {
     getAllImplementations<StreamCipherImplementation>( algName, &m_imps );
     m_algorithmName = algName;
-    
+
     String sumImpName;
     char * sepStr = "<";
 
@@ -105,7 +105,7 @@ NTSTATUS StreamCipherMultiImp::setKey( PCBYTE pbKey, SIZE_T cbKey )
     // copy list of implementations to the ongoing computation list
     //
     m_comps.clear();
-    
+
     for( StreamCipherImpPtrVector::const_iterator i = m_imps.begin(); i != m_imps.end(); ++i )
     {
         if( (*i)->setKey( pbKey, cbKey ) == 0 )
@@ -116,7 +116,7 @@ NTSTATUS StreamCipherMultiImp::setKey( PCBYTE pbKey, SIZE_T cbKey )
     return m_comps.size() == 0 ? STATUS_NOT_SUPPORTED : STATUS_SUCCESS;
 }
 
-BOOL StreamCipherMultiImp::isRandomAccess() 
+BOOL StreamCipherMultiImp::isRandomAccess()
 {
     ResultMerge res;
     BOOL b;
@@ -140,7 +140,7 @@ VOID StreamCipherMultiImp::setOffset( UINT64 offset )
     }
 }
 
-VOID 
+VOID
 StreamCipherMultiImp::encrypt( PCBYTE pbSrc, PBYTE pbDst, SIZE_T cbData )
 {
     BYTE bufData[1024];
@@ -154,21 +154,21 @@ StreamCipherMultiImp::encrypt( PCBYTE pbSrc, PBYTE pbDst, SIZE_T cbData )
         (*i)->encrypt( pbSrc, bufData, cbData );
         resData.addResult( (*i), bufData, cbData );
     }
-    
+
     resData.getResult( pbDst, cbData );
 }
 
 
 VOID
-katStreamCipherSingle( 
-                                StreamCipherImplementation * pImp, 
+katStreamCipherSingle(
+                                StreamCipherImplementation * pImp,
     _In_reads_( cbKey )         PCBYTE                      pbKey,
                                 SIZE_T                      cbKey,
     _In_reads_( cbNonce )       PCBYTE                      pbNonce,
                                 SIZE_T                      cbNonce,
                                 UINT64                      offset,
-    _In_reads_( cbPlaintext )   PCBYTE                      pbPlaintext, 
-                                SIZE_T                      cbPlaintext, 
+    _In_reads_( cbPlaintext )   PCBYTE                      pbPlaintext,
+                                SIZE_T                      cbPlaintext,
     _In_reads_( cbCiphertext )  PCBYTE                      pbCiphertext,
                                 SIZE_T                      cbCiphertext,
                                 ULONGLONG                   line)
@@ -177,7 +177,7 @@ katStreamCipherSingle(
 
     CHECK3( cbPlaintext < sizeof( bufData ), "Buffer too small, need %lld bytes", cbPlaintext );
     CHECK3( cbPlaintext == cbCiphertext, "Plaintext/Ciphertext size mismatch in line %lld", line );
-    
+
     CHECK( pImp->setKey( pbKey, cbKey ) == 0, "Error in setting key" );
     CHECK( pImp->setNonce( pbNonce, cbNonce ) == 0, "Error setting nonce" );
     if( offset != 0 )
@@ -189,7 +189,7 @@ katStreamCipherSingle(
     // Do single encryption
     //
     memset( bufData, 0, sizeof( bufData ) );
-    
+
     pImp->encrypt( pbPlaintext, bufData, cbPlaintext );
     CHECK3( memcmp( bufData, pbCiphertext, cbPlaintext ) == 0, "Ciphertext mismatch in line %lld", line );
 
@@ -207,13 +207,13 @@ katStreamCipherSingle(
     SIZE_T pos = 0;
     while( pos < cbPlaintext )
     {
-        SIZE_T nBytes = g_rng.sizetNonUniform( (cbPlaintext - pos) + 1, 4, 1 ); 
+        SIZE_T nBytes = g_rng.sizetNonUniform( (cbPlaintext - pos) + 1, 4, 1 );
         pImp->encrypt( pbPlaintext + pos, bufData + pos, nBytes );
         pos += nBytes;
     }
     CHECK3( memcmp( bufData, pbCiphertext, cbPlaintext ) == 0, "Ciphertext 2 mismatch in line %lld", line );
 
-    // 
+    //
     // Do random-access checks
     //
     if( pImp->isRandomAccess() )
@@ -229,7 +229,7 @@ katStreamCipherSingle(
     }
 }
 
-int __cdecl compareSizet( const VOID * p1, const VOID * p2 )
+int SYMCRYPT_CDECL compareSizet( const VOID * p1, const VOID * p2 )
 {
     SIZE_T v1 = *(SIZE_T *)p1;
     SIZE_T v2 = *(SIZE_T *)p2;
@@ -258,9 +258,9 @@ testStreamCipherRandom( StreamCipherMultiImp * pImp, int rrep, PCBYTE pbResult, 
     rng.reset( buf, algNameSize );
 
     const SIZE_T bufSize = sizeof( buf );
-    
+
     memset( buf, 0, bufSize );
-    
+
     std::set<SIZE_T> keySizeSet = pImp->getKeySizes();
     std::set<SIZE_T> nonceSizeSet = pImp->getNonceSizes();
 
@@ -317,7 +317,7 @@ testStreamCipherRandom( StreamCipherMultiImp * pImp, int rrep, PCBYTE pbResult, 
         //
         nPieces = rng.byte();
         nPieces = 1 + nPieces % 5;
-        
+
         for( SIZE_T j=0; j<nPieces; j++ )
         {
             rng.randomSubRange( bufSize, &pos, &len );
@@ -355,7 +355,7 @@ testStreamCipherRandom( StreamCipherMultiImp * pImp, int rrep, PCBYTE pbResult, 
 VOID
 testStreamCipherKats()
 {
-    std::auto_ptr<KatData> katStreamCipher( getCustomResource( "kat_streamcipher.dat", "KAT_STREAM_CIPHER" ) );
+    std::unique_ptr<KatData> katStreamCipher( getCustomResource( "kat_streamcipher.dat", "KAT_STREAM_CIPHER" ) );
     KAT_ITEM katItem;
 
     static String g_currentCategory;
@@ -363,8 +363,8 @@ testStreamCipherKats()
     String sep = "    ";
     BOOL doneAnything = FALSE;
     UINT64 offset;
-    
-    std::auto_ptr<StreamCipherMultiImp> pStreamCipherMultiImp;
+
+    std::unique_ptr<StreamCipherMultiImp> pStreamCipherMultiImp;
 
 
     while( 1 )
@@ -372,7 +372,7 @@ testStreamCipherKats()
         katStreamCipher->getKatItem( & katItem );
         ULONGLONG line = katItem.line;
 
-        
+
         if( katItem.type == KAT_TYPE_END )
         {
             break;
@@ -382,7 +382,7 @@ testStreamCipherKats()
         {
             g_currentCategory = katItem.categoryName;
             pStreamCipherMultiImp.reset( new StreamCipherMultiImp( g_currentCategory ) );
-            
+
             //
             // If we have no algorithms, we skip all the data until the next category
             //
@@ -397,7 +397,7 @@ testStreamCipherKats()
 
         if( katItem.type == KAT_TYPE_DATASET && !skipData )
         {
-            
+
             if( katIsFieldPresent( katItem, "ciphertext" ) )
             {
                 BString katKey = katParseData( katItem, "key" );
@@ -420,14 +420,14 @@ testStreamCipherKats()
                     offset = katParseInteger( katItem, "offset" );
                 }
 
-                katStreamCipherSingle(  pStreamCipherMultiImp.get(), 
-                                        katKey.data(), katKey.size(), 
+                katStreamCipherSingle(  pStreamCipherMultiImp.get(),
+                                        katKey.data(), katKey.size(),
                                         pbNonce, cbNonce,
                                         offset,
-                                        katPlaintext.data(), katPlaintext.size(), 
+                                        katPlaintext.data(), katPlaintext.size(),
                                         katCiphertext.data(), katCiphertext.size(),
                                         line );
-                
+
             }
             else if( katIsFieldPresent( katItem, "rnd" ) )
             {
@@ -439,7 +439,7 @@ testStreamCipherKats()
             {
                 FATAL2( "Unknown data record ending at line %lld", line );
             }
-            
+
         }
     }
 

@@ -10,7 +10,7 @@
 
 #include "precomp.h"
 
-extern __declspec( align( 64 ) ) const UINT64 SymCryptSha512K[81];
+extern SYMCRYPT_ALIGN_AT( 64 ) const UINT64 SymCryptSha512K[81];
 
 #define PAR_SCRATCH_ELEMENTS    (4+8+80)        // # scratch elements our parallel impementations need
 
@@ -51,7 +51,7 @@ extern __declspec( align( 64 ) ) const UINT64 SymCryptSha512K[81];
 
 VOID
 SYMCRYPT_CALL
-SymCryptParallelSha512AppendBytes_serial( 
+SymCryptParallelSha512AppendBytes_serial(
     _Inout_updates_( nPar )                 PSYMCRYPT_PARALLEL_HASH_SCRATCH_STATE * pWork,
     _In_range_(1, MAX_PARALLEL)             SIZE_T                                  nPar,
                                             SIZE_T                                  nBytes );
@@ -139,9 +139,9 @@ SymCryptParallelSha384Process(
 BOOLEAN
 SYMCRYPT_CALL
 SymCryptParallelSha512Result1(
-    _In_    PCSYMCRYPT_PARALLEL_HASH pParHash, 
-    _Inout_ PSYMCRYPT_COMMON_HASH_STATE pState, 
-    _Inout_ PSYMCRYPT_PARALLEL_HASH_SCRATCH_STATE pScratch,    
+    _In_    PCSYMCRYPT_PARALLEL_HASH pParHash,
+    _Inout_ PSYMCRYPT_COMMON_HASH_STATE pState,
+    _Inout_ PSYMCRYPT_PARALLEL_HASH_SCRATCH_STATE pScratch,
     _Out_   BOOLEAN *pRes)
 {
     UINT32 bytesInBuffer = pState->bytesInBuffer;
@@ -175,9 +175,9 @@ SymCryptParallelSha512Result1(
 BOOLEAN
 SYMCRYPT_CALL
 SymCryptParallelSha512Result2(
-    _In_    PCSYMCRYPT_PARALLEL_HASH                pParHash, 
-    _Inout_ PSYMCRYPT_COMMON_HASH_STATE             pState, 
-    _Inout_ PSYMCRYPT_PARALLEL_HASH_SCRATCH_STATE   pScratch,    
+    _In_    PCSYMCRYPT_PARALLEL_HASH                pParHash,
+    _Inout_ PSYMCRYPT_COMMON_HASH_STATE             pState,
+    _Inout_ PSYMCRYPT_PARALLEL_HASH_SCRATCH_STATE   pScratch,
     _Out_   BOOLEAN *pRes)
 {
     UNREFERENCED_PARAMETER( pParHash );
@@ -194,11 +194,11 @@ SymCryptParallelSha512Result2(
     return TRUE;
 }
 
-VOID 
-SYMCRYPT_CALL 
+VOID
+SYMCRYPT_CALL
 SymCryptParallelSha512ResultDone(
-    _In_    PCSYMCRYPT_PARALLEL_HASH            pParHash, 
-    _Inout_ PSYMCRYPT_COMMON_HASH_STATE         pState, 
+    _In_    PCSYMCRYPT_PARALLEL_HASH            pParHash,
+    _Inout_ PSYMCRYPT_COMMON_HASH_STATE         pState,
     _In_    PCSYMRYPT_PARALLEL_HASH_OPERATION   pOp)
 {
     PSYMCRYPT_SHA512_STATE  pSha512State = (PSYMCRYPT_SHA512_STATE) pState;
@@ -213,11 +213,11 @@ SymCryptParallelSha512ResultDone(
     SymCryptSha512Init( pSha512State );
 }
 
-VOID 
-SYMCRYPT_CALL 
+VOID
+SYMCRYPT_CALL
 SymCryptParallelSha384ResultDone(
-    _In_    PCSYMCRYPT_PARALLEL_HASH            pParHash, 
-    _Inout_ PSYMCRYPT_COMMON_HASH_STATE         pState, 
+    _In_    PCSYMCRYPT_PARALLEL_HASH            pParHash,
+    _Inout_ PSYMCRYPT_COMMON_HASH_STATE         pState,
     _In_    PCSYMRYPT_PARALLEL_HASH_OPERATION   pOp)
 {
     PSYMCRYPT_SHA384_STATE  pSha384State = (PSYMCRYPT_SHA384_STATE) pState;
@@ -333,7 +333,7 @@ SymCryptParallelSha384Process(
 }
 
 
-#if  SYMCRYPT_CPU_X86 | SYMCRYPT_CPU_AMD64 
+#if  SYMCRYPT_CPU_X86 | SYMCRYPT_CPU_AMD64
 //
 // Code that uses the XMM registers.
 //
@@ -370,7 +370,7 @@ SymCryptParallelSha384Process(
 
 VOID
 SYMCRYPT_CALL
-SymCryptParallelSha512AppendBlocks_xmm( 
+SymCryptParallelSha512AppendBlocks_xmm(
     _Inout_updates_( 2 )                                PSYMCRYPT_SHA512_CHAINING_STATE   * pChain,
     _Inout_updates_( 2 )                                PCBYTE                            * ppByte,
                                                         SIZE_T                              nBytes,
@@ -437,7 +437,7 @@ SymCryptParallelSha512AppendBlocks_xmm(
 
             //
             // Macro for one word of message expansion.
-            // Invariant: 
+            // Invariant:
             // on entry: a = W[r-1], b = W[r-2], d = W[r-16]
             // on exit:  W[r] computed, a = W[r-1], b = W[r], c = W[r-15]
             //
@@ -460,16 +460,16 @@ SymCryptParallelSha512AppendBlocks_xmm(
         for( r=0; r<80; r += 4 )
         {
             //
-            // Loop invariant: 
+            // Loop invariant:
             // A, B, C, and D are the a,b,c,d values of the current state.
             // W[r] is the next expanded message word to be processed.
-            // W[r-8 .. r-5] contain the current state words h, g, f, e. 
+            // W[r-8 .. r-5] contain the current state words h, g, f, e.
             //
 
             //
             // Macro to compute one round
             // The shuffle is to duplicate the 64-bit value to both lanes.
-            // Each half of the immediate is 0100. See the documentation of the 
+            // Each half of the immediate is 0100. See the documentation of the
             // PSHUFD instruction.
             //
 
@@ -579,7 +579,7 @@ SymCryptParallelSha512AppendBlocks_xmm(
 
 VOID
 SYMCRYPT_CALL
-SymCryptParallelSha512AppendBlocks_ymm( 
+SymCryptParallelSha512AppendBlocks_ymm(
     _Inout_updates_( 4 )                                PSYMCRYPT_SHA512_CHAINING_STATE   * pChain,
     _Inout_updates_( 4 )                                PCBYTE                            * ppByte,
                                                         SIZE_T                              nBytes,
@@ -647,7 +647,7 @@ SymCryptParallelSha512AppendBlocks_ymm(
 
             //
             // Macro for one word of message expansion.
-            // Invariant: 
+            // Invariant:
             // on entry: a = W[r-1], b = W[r-2], d = W[r-16]
             // on exit:  W[r] computed, a = W[r-1], b = W[r], c = W[r-15]
             //
@@ -670,16 +670,16 @@ SymCryptParallelSha512AppendBlocks_ymm(
         for( r=0; r<80; r += 4 )
         {
             //
-            // Loop invariant: 
+            // Loop invariant:
             // A, B, C, and D are the a,b,c,d values of the current state.
             // W[r] is the next expanded message word to be processed.
-            // W[r-8 .. r-5] contain the current state words h, g, f, e. 
+            // W[r-8 .. r-5] contain the current state words h, g, f, e.
             //
 
             //
             // Macro to compute one round
             // The shuffle is to duplicate the 64-bit value to both lanes.
-            // Each half of the immediate is 0100. See the documentation of the 
+            // Each half of the immediate is 0100. See the documentation of the
             // PSHUFD instruction.
             //
             #define DO_ROUND( a, b, c, d, t, r ) \
@@ -738,7 +738,7 @@ SymCryptParallelSha512AppendBlocks_ymm(
 
 VOID
 SYMCRYPT_CALL
-SymCryptParallelSha512AppendBytes_serial( 
+SymCryptParallelSha512AppendBytes_serial(
     _Inout_updates_( nPar )                 PSYMCRYPT_PARALLEL_HASH_SCRATCH_STATE * pWork,
     _In_range_(1, MAX_PARALLEL)             SIZE_T                                  nPar,
                                             SIZE_T                                  nBytes )
@@ -757,7 +757,7 @@ SymCryptParallelSha512AppendBytes_serial(
         // On X86 the Sha512 append blocks function saves the XMM registers again, which is not allowed at DISPATCH level.
         // We call the internal function that assumes the XMM registers are already saved.
         // This function is only called when we are doing parallel hashing, which means that at a minimum we have SSSE3 and
-        // the XMM registers are saved. 
+        // the XMM registers are saved.
         //
         SymCryptSha512AppendBlocks_xmm( & ((PSYMCRYPT_SHA512_STATE)(pWork[i]->hashState))->chain, pWork[i]->pbData, nBytes, &tmp );
 #else
@@ -771,11 +771,11 @@ SymCryptParallelSha512AppendBytes_serial(
 
 VOID
 SYMCRYPT_CALL
-SymCryptParallelSha512Append( 
+SymCryptParallelSha512Append(
     _Inout_updates_( nPar )                 PSYMCRYPT_PARALLEL_HASH_SCRATCH_STATE * pWork,
     _In_range_(1, MAX_PARALLEL)             SIZE_T                                  nPar,
                                             SIZE_T                                  nBytes,
-    _Inout_updates_( SYMCRYPT_SIMD_ELEMENT_SIZE * PAR_SCRATCH_ELEMENTS ) 
+    _Inout_updates_( SYMCRYPT_SIMD_ELEMENT_SIZE * PAR_SCRATCH_ELEMENTS )
                                             PBYTE                                   pbSimdScratch,
                                             SIZE_T                                  cbSimdScratch )
 {
@@ -784,7 +784,7 @@ SymCryptParallelSha512Append(
     SIZE_T                          i;
     UINT32                          maxParallel;
 
-    UNREFERENCED_PARAMETER( cbSimdScratch );        // not referenced on FRE builds 
+    UNREFERENCED_PARAMETER( cbSimdScratch );        // not referenced on FRE builds
     SYMCRYPT_ASSERT( cbSimdScratch >= PAR_SCRATCH_ELEMENTS * SYMCRYPT_SIMD_ELEMENT_SIZE );
     SYMCRYPT_ASSERT( ((UINT_PTR)pbSimdScratch & (SYMCRYPT_SIMD_ELEMENT_SIZE - 1)) == 0 );
 
@@ -856,7 +856,7 @@ cleanup:
     ;// no cleanup at this moment.
 }
 
-        
+
 #endif // SUPPORT_PARALLEL
 
 #if SUPPORT_PARALLEL
@@ -971,7 +971,7 @@ SymCryptParallelSha512Selftest()
         op[2*i + 1].pbBuffer = &result[i][0];
         op[2*i + 1].cbBuffer = SYMCRYPT_SHA512_RESULT_SIZE;
     }
-    
+
     SymCryptParallelSha512Process( &states[0], N_SELFTEST_STATES, op, 2*N_SELFTEST_STATES, scratch, sizeof( scratch ) );
 
     for( i=0; i<N_SELFTEST_STATES; i++ )

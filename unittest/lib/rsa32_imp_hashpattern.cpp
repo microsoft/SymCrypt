@@ -9,13 +9,13 @@
 // The RSA32 API is not structured enough to create a generic implementation.
 //
 
-HashImp<ImpXxx, AlgXxx>::HashImp<ImpXxx, AlgXxx>()
+HashImp<ImpXxx, AlgXxx>::HashImp()
 {
     m_perfDataFunction = &algImpDataPerfFunction<ImpXxx, AlgXxx>;
 }
 
 template<>
-HashImp<ImpXxx, AlgXxx>::~HashImp<ImpXxx, AlgXxx>()
+HashImp<ImpXxx, AlgXxx>::~HashImp()
 {
 }
 

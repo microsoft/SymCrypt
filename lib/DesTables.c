@@ -11,13 +11,13 @@
 #include "precomp.h"
 
 //
-// Alignments are chosen to reduce side-channel attacks through the TLB cache. 
+// Alignments are chosen to reduce side-channel attacks through the TLB cache.
 // We align each table to a multiple of the size within which we do data-dependent
 // lookups. For example, the table below is aligned to 256. It is not a secret
 // that the 8 sub-tables are accessed, but which value inside each sub-table is a secret.
 // Aligning to 256 still leaves the data cache line leakage, but avoids any TLB-related leakage.
 //
-__declspec( align( 256 ) ) const UINT32 SymCryptDesSpbox[8][64] = {
+SYMCRYPT_ALIGN_AT( 256 ) const UINT32 SymCryptDesSpbox[8][64] = {
 0x02080800,0x00080000,0x02000002,0x02080802,
 0x02000000,0x00080802,0x00080002,0x02000002,
 0x00080802,0x02080800,0x02080000,0x00000802,
@@ -148,7 +148,7 @@ __declspec( align( 256 ) ) const UINT32 SymCryptDesSpbox[8][64] = {
 0x20000000,0x20800080,0x00020000,0x00820080,
 };
 
-__declspec(align(256)) const UINT32 SymCryptDesKeySelect[8][64]={
+SYMCRYPT_ALIGN_AT(256) const UINT32 SymCryptDesKeySelect[8][64]={
 0x00000000,0x00000010,0x20000000,0x20000010,
 0x00010000,0x00010010,0x20010000,0x20010010,
 0x00000800,0x00000810,0x20000800,0x20000810,

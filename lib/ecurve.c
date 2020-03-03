@@ -13,6 +13,14 @@
 #define SYMCRYPT_INTERNAL_ECURVE_MODULUS_NUMOF_OPERATIONS( _bitsize )      ( 100 * (_bitsize) )
 #define SYMCRYPT_INTERNAL_ECURVE_GROUP_ORDER_NUMOF_OPERATIONS              ( 1 )
 
+// We limit the max size of the elliptic curve to avoid denial-of-service attacks when
+// an attacker sends a curve specification.
+// Elliptic curve operations are O(n^3) in the curve size. Theoretically SymCrypt supports
+// values up to 2^20 bits at the moment, so that is 2^12 times more than a typical curve size
+// of 256 bits. Operations are then 2^36 times slower, and a single operation could take months.
+// Our largest curve is 521 bits, and we won't see curves > 1024 bits for a while yet.
+#define SYMCRYPT_INTERNAL_MAX_ECURVE_SIZE   (1024)
+
 PSYMCRYPT_ECURVE
 SYMCRYPT_CALL
 SymCryptEcurveAllocate(
@@ -62,6 +70,15 @@ SymCryptEcurveAllocate(
                      (pParams->type == SYMCRYPT_ECURVE_TYPE_TWISTED_EDWARDS) ||
                      (pParams->type == SYMCRYPT_ECURVE_TYPE_MONTGOMERY) );
 
+    // Reject inputs that are wildly big to avoid denial-of-service attacks.
+    if ( pParams->cbFieldLength > SYMCRYPT_INTERNAL_MAX_ECURVE_SIZE/8 ||
+         pParams->cbSubgroupOrder > SYMCRYPT_INTERNAL_MAX_ECURVE_SIZE / 8 + 1 ||     // subgroup can be > field prime
+         pParams->cbCofactor > 2 ||                                                  // We support co-factor = 256
+         pParams->cbSeed > 256 )
+    {
+        goto cleanup;
+    }
+
     // Getting the # of digits of the various parameters
     nDigitsFieldLength = SymCryptDigitsFromBits( pParams->cbFieldLength * 8 );
     nDigitsSubgroupOrder = SymCryptDigitsFromBits( pParams->cbSubgroupOrder * 8 );
@@ -74,12 +91,6 @@ SymCryptEcurveAllocate(
     cbSubgroupOrder = SymCryptSizeofModulusFromDigits( nDigitsSubgroupOrder );
     cbCoFactor =  SymCryptSizeofIntFromDigits( nDigitsCoFactor );
 
-    // ModElement: The modulus is not initialized yet, we call the macro but
-    // make sure it does not create an invalid value.
-    if ( pParams->cbFieldLength > SYMCRYPT_INT_MAX_BITS/8 )
-    {
-        SymCryptFatal( 'ecrv' );
-    }
     cbModElement = SYMCRYPT_SIZEOF_MODELEMENT_FROM_BITS( pParams->cbFieldLength * 8 );
 
     // EcPoint: The curve is not initialized yet, we call the helper function.
@@ -150,13 +161,13 @@ SymCryptEcurveAllocate(
     //
     cbScratch = SymCryptSizeofEcpointEx( cbModElement, SYMCRYPT_ECPOINT_FORMAT_MAX_LENGTH ) +
                 8 * cbModElement +
-                max( SYMCRYPT_SCRATCH_BYTES_FOR_COMMON_MOD_OPERATIONS( nDigitsFieldLength ),
+                SYMCRYPT_MAX( SYMCRYPT_SCRATCH_BYTES_FOR_COMMON_MOD_OPERATIONS( nDigitsFieldLength ),
                      SYMCRYPT_SCRATCH_BYTES_FOR_MODINV( nDigitsFieldLength ) );
     // IntToModulus( FMod and GOrd )
-    cbScratch = max( cbScratch,
-                     SYMCRYPT_SCRATCH_BYTES_FOR_INT_TO_MODULUS( max(nDigitsFieldLength, nDigitsSubgroupOrder) ) );
+    cbScratch = SYMCRYPT_MAX( cbScratch,
+                     SYMCRYPT_SCRATCH_BYTES_FOR_INT_TO_MODULUS( SYMCRYPT_MAX(nDigitsFieldLength, nDigitsSubgroupOrder) ) );
     // ModElementSetValue( FMod )
-    cbScratch = max( cbScratch,
+    cbScratch = SYMCRYPT_MAX( cbScratch,
                      SYMCRYPT_SCRATCH_BYTES_FOR_COMMON_MOD_OPERATIONS( nDigitsFieldLength ) );
 
     pbScratch = SymCryptCallbackAlloc( cbScratch );
@@ -358,11 +369,10 @@ SymCryptEcurveAllocate(
     }
 
 
-    // Make sure that the cofactor is not too big
+    // Make sure that the cofactor is not zero or too big
     pCurve->coFactorPower = SymCryptIntBitsizeOfValue( pCurve->H ) - 1;
-    if (pCurve->coFactorPower > SYMCRYPT_ECURVE_MAX_COFACTOR_POWER)
+    if (pCurve->coFactorPower == (UINT32)-1 || pCurve->coFactorPower > SYMCRYPT_ECURVE_MAX_COFACTOR_POWER)
     {
-        scError = SYMCRYPT_WRONG_KEY_SIZE;
         goto cleanup;
     }
 

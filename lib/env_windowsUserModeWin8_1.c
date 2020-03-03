@@ -5,7 +5,10 @@
 // Copyright (c) Microsoft Corporation. Licensed under the MIT license.
 //
 
-#include "precomp.h"
+//#include "precomp.h"
+#include <Windows.h>
+#include "symcrypt.h"
+#include "sc_lib.h"
 
 SYMCRYPT_CPU_FEATURES SYMCRYPT_CALL SymCryptCpuFeaturesNeverPresentEnvWindowsUsermodeWin8_1nLater()
 {

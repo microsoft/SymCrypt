@@ -7,6 +7,10 @@
 
 #include "precomp.h"
 
+#if (SYMCRYPT_CPU_ARM | SYMCRYPT_CPU_ARM64) & SYMCRYPT_MS_VC
+#include <excpt.h>
+#endif
+
 #if SYMCRYPT_CPU_X86 | SYMCRYPT_CPU_AMD64
 
 //
@@ -31,6 +35,11 @@
 #define CPUID_70_EBX_SHANI_BIT      29
 #define CPUID_70_EBX_ADX_BIT        19
 #define CPUID_70_EBX_BMI2_BIT       8
+#define CPUID_70_EBX_AVX512F_BIT    16
+#define CPUID_70_EBX_AVX512BW_BIT   30
+#define CPUID_70_EBX_AVX512DQ_BIT   17
+#define CPUID_70_EBX_AVX512VL_BIT   31
+#define CPUID_70_ECX_VAES_BIT       9
 
 
 #define CPUID_1_ECX_OSXSAVE_BIT     27     
@@ -58,12 +67,17 @@ CPUID_BIT_INFO  cpuidBitInfo[] = {
     {1, WORD_EDX, CPUID_1_EDX_SSE2_BIT,         SYMCRYPT_CPU_FEATURE_SSE2 | SYMCRYPT_CPU_FEATURE_SSSE3 },
     {1, WORD_ECX, CPUID_1_ECX_SSE3_BIT,         SYMCRYPT_CPU_FEATURE_SSSE3 },
     {1, WORD_ECX, CPUID_1_ECX_SSSE3_BIT,        SYMCRYPT_CPU_FEATURE_SSSE3 },
-    {1, WORD_ECX, CPUID_1_ECX_AVX_BIT,          SYMCRYPT_CPU_FEATURE_AVX2 },
-    {7, WORD_EBX, CPUID_70_EBX_AVX2_BIT,        SYMCRYPT_CPU_FEATURE_AVX2 },
+    {1, WORD_ECX, CPUID_1_ECX_AVX_BIT,          SYMCRYPT_CPU_FEATURE_AVX2 | SYMCRYPT_CPU_FEATURE_VAES_256 },
+    {7, WORD_EBX, CPUID_70_EBX_AVX2_BIT,        SYMCRYPT_CPU_FEATURE_AVX2 /* | SYMCRYPT_CPU_FEATURE_VAES_256 */ },
     {7, WORD_EBX, CPUID_70_EBX_RDSEED_BIT,      SYMCRYPT_CPU_FEATURE_RDSEED },
     {7, WORD_EBX, CPUID_70_EBX_SHANI_BIT,       SYMCRYPT_CPU_FEATURE_SHANI },
     {7, WORD_EBX, CPUID_70_EBX_ADX_BIT,         SYMCRYPT_CPU_FEATURE_ADX },
     {7, WORD_EBX, CPUID_70_EBX_BMI2_BIT,        SYMCRYPT_CPU_FEATURE_BMI2 },
+    {7, WORD_EBX, CPUID_70_EBX_AVX512F_BIT,     SYMCRYPT_CPU_FEATURE_VAES_512 },
+    {7, WORD_EBX, CPUID_70_EBX_AVX512VL_BIT,    SYMCRYPT_CPU_FEATURE_VAES_512 },
+    {7, WORD_EBX, CPUID_70_EBX_AVX512BW_BIT,    SYMCRYPT_CPU_FEATURE_VAES_512 },
+    {7, WORD_EBX, CPUID_70_EBX_AVX512DQ_BIT,    SYMCRYPT_CPU_FEATURE_VAES_512 },
+    {7, WORD_ECX, CPUID_70_ECX_VAES_BIT,        SYMCRYPT_CPU_FEATURE_VAES_512 | SYMCRYPT_CPU_FEATURE_VAES_256 },
 };
 
 extern void __cpuid( _Out_writes_(4) int a[4], int b);          // Add SAL annotation to intrinsic declaration to keep Prefast happy.
@@ -93,9 +107,13 @@ SymCryptDetectCpuFeaturesByCpuid( UINT32 flags )
         SYMCRYPT_CPU_FEATURE_BMI2       |
         SYMCRYPT_CPU_FEATURE_ADX        |
         SYMCRYPT_CPU_FEATURE_RDRAND     |
-        SYMCRYPT_CPU_FEATURE_RDSEED
+        SYMCRYPT_CPU_FEATURE_RDSEED     |
+        // SYMCRYPT_CPU_FEATURE_VAES_512   |
+        SYMCRYPT_CPU_FEATURE_VAES_256
         );
 
+    // InfoType holds the function id of previous cpuid 
+    // so we don't have to repeatedly invoke cpuid.
     InfoType = 0; 
     SymCryptCpuidExFunc( CPUInfo, InfoType, 0 );
     maxInfoType = CPUInfo[WORD_EAX];
@@ -144,7 +162,7 @@ SymCryptDetectCpuFeaturesByCpuid( UINT32 flags )
         if( !allowYmm )
         {
             // Disallow the AVX2-dependent code because we don't have OS YMM support.
-            result |= SYMCRYPT_CPU_FEATURE_AVX2;
+            result |= SYMCRYPT_CPU_FEATURE_AVX2 | SYMCRYPT_CPU_FEATURE_VAES_512 | SYMCRYPT_CPU_FEATURE_VAES_256;
         }
     }
 

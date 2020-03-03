@@ -1,5 +1,5 @@
 //
-// Copyright (c) Microsoft Corporation. Licensed under the MIT license. 
+// Copyright (c) Microsoft Corporation. Licensed under the MIT license.
 //
 
 #include "precomp.h"
@@ -25,27 +25,27 @@ public:
 
     virtual VOID setTotalCbData( SIZE_T cbData );
 
-    virtual NTSTATUS encrypt(   
-        _In_reads_( cbNonce )       PCBYTE  pbNonce,      
-                                    SIZE_T  cbNonce, 
-        _In_reads_( cbAuthData )    PCBYTE  pbAuthData, 
-                                    SIZE_T  cbAuthData, 
-        _In_reads_( cbData )        PCBYTE  pbSrc, 
-        _Out_writes_( cbData )      PBYTE   pbDst, 
+    virtual NTSTATUS encrypt(
+        _In_reads_( cbNonce )       PCBYTE  pbNonce,
+                                    SIZE_T  cbNonce,
+        _In_reads_( cbAuthData )    PCBYTE  pbAuthData,
+                                    SIZE_T  cbAuthData,
+        _In_reads_( cbData )        PCBYTE  pbSrc,
+        _Out_writes_( cbData )      PBYTE   pbDst,
                                     SIZE_T  cbData,
-        _Out_writes_( cbTag )       PBYTE   pbTag, 
+        _Out_writes_( cbTag )       PBYTE   pbTag,
                                     SIZE_T  cbTag,
                                     ULONG   flags );
 
     virtual NTSTATUS decrypt(
-        _In_reads_( cbNonce )       PCBYTE  pbNonce,      
-                                    SIZE_T  cbNonce, 
-        _In_reads_( cbAuthData )    PCBYTE  pbAuthData, 
-                                    SIZE_T  cbAuthData, 
-        _In_reads_( cbData )        PCBYTE  pbSrc, 
-        _Out_writes_( cbData )      PBYTE   pbDst, 
+        _In_reads_( cbNonce )       PCBYTE  pbNonce,
+                                    SIZE_T  cbNonce,
+        _In_reads_( cbAuthData )    PCBYTE  pbAuthData,
+                                    SIZE_T  cbAuthData,
+        _In_reads_( cbData )        PCBYTE  pbSrc,
+        _Out_writes_( cbData )      PBYTE   pbDst,
                                     SIZE_T  cbData,
-        _In_reads_( cbTag )         PCBYTE  pbTag, 
+        _In_reads_( cbTag )         PCBYTE  pbTag,
                                     SIZE_T  cbTag,
                                     ULONG   flags );
 
@@ -55,14 +55,14 @@ public:
 
     AuthEncImpPtrVector m_comps;                   // Subset of m_imps; set of ongoing computations
 
-    
+
 };
 
 AuthEncMultiImp::AuthEncMultiImp( String algName )
 {
     getAllImplementations<AuthEncImplementation>( algName, &m_imps );
     m_algorithmName = algName;
-    
+
     String sumAlgName;
     char * sepStr = "<";
 
@@ -128,7 +128,7 @@ NTSTATUS AuthEncMultiImp::setKey( PCBYTE pbKey, SIZE_T cbKey )
     // copy list of implementations to the ongoing computation list
     //
     m_comps.clear();
-    
+
     for( AuthEncImpPtrVector::const_iterator i = m_imps.begin(); i != m_imps.end(); ++i )
     {
         if( (*i)->setKey( pbKey, cbKey ) == 0 )
@@ -147,16 +147,16 @@ VOID AuthEncMultiImp::setTotalCbData( SIZE_T cbData )
     }
 }
 
-NTSTATUS 
-AuthEncMultiImp::encrypt(   
-        _In_reads_( cbNonce )       PCBYTE  pbNonce,      
-                                    SIZE_T  cbNonce, 
-        _In_reads_( cbAuthData )    PCBYTE  pbAuthData, 
-                                    SIZE_T  cbAuthData, 
-        _In_reads_( cbData )        PCBYTE  pbSrc, 
-        _Out_writes_( cbData )      PBYTE   pbDst, 
+NTSTATUS
+AuthEncMultiImp::encrypt(
+        _In_reads_( cbNonce )       PCBYTE  pbNonce,
+                                    SIZE_T  cbNonce,
+        _In_reads_( cbAuthData )    PCBYTE  pbAuthData,
+                                    SIZE_T  cbAuthData,
+        _In_reads_( cbData )        PCBYTE  pbSrc,
+        _Out_writes_( cbData )      PBYTE   pbDst,
                                     SIZE_T  cbData,
-        _Out_writes_( cbTag )       PBYTE   pbTag, 
+        _Out_writes_( cbTag )       PBYTE   pbTag,
                                     SIZE_T  cbTag,
                                     ULONG   flags )
 {
@@ -182,7 +182,7 @@ AuthEncMultiImp::encrypt(
         if( NT_SUCCESS( status ) )
         {
             resData.addResult( (*i), bufData, cbData );
-            if( pbTag != NULL ) 
+            if( pbTag != NULL )
             {
                 resTag.addResult( (*i), bufTag, cbTag );
             }
@@ -200,16 +200,16 @@ AuthEncMultiImp::encrypt(
     return res;
 }
 
-NTSTATUS 
+NTSTATUS
 AuthEncMultiImp::decrypt(
-        _In_reads_( cbNonce )       PCBYTE  pbNonce,      
-                                    SIZE_T  cbNonce, 
-        _In_reads_( cbAuthData )    PCBYTE  pbAuthData, 
-                                    SIZE_T  cbAuthData, 
-        _In_reads_( cbData )        PCBYTE  pbSrc, 
-        _Out_writes_( cbData )      PBYTE   pbDst, 
+        _In_reads_( cbNonce )       PCBYTE  pbNonce,
+                                    SIZE_T  cbNonce,
+        _In_reads_( cbAuthData )    PCBYTE  pbAuthData,
+                                    SIZE_T  cbAuthData,
+        _In_reads_( cbData )        PCBYTE  pbSrc,
+        _Out_writes_( cbData )      PBYTE   pbDst,
                                     SIZE_T  cbData,
-        _In_reads_( cbTag )         PCBYTE  pbTag, 
+        _In_reads_( cbTag )         PCBYTE  pbTag,
                                     SIZE_T  cbTag,
                                     ULONG   flags )
 {
@@ -238,7 +238,7 @@ AuthEncMultiImp::decrypt(
             resData.addResult( (*i), bufData, cbData );
         }
     }
-    
+
     if( pbTag != NULL )
     {
         resTagError.getResult( (PBYTE)&tagError, sizeof( tagError ) );
@@ -254,16 +254,16 @@ AuthEncMultiImp::decrypt(
 
 
 VOID
-katAuthEncSingle( 
-                                AuthEncImplementation     * pImp, 
+katAuthEncSingle(
+                                AuthEncImplementation     * pImp,
     _In_reads_( cbKey )         PCBYTE                      pbKey,
                                 SIZE_T                      cbKey,
     _In_reads_( cbNonce )       PCBYTE                      pbNonce,
                                 SIZE_T                      cbNonce,
     _In_reads_( cbAuthData )    PCBYTE                      pbAuthData,
                                 SIZE_T                      cbAuthData,
-    _In_reads_( cbPlaintext )   PCBYTE                      pbPlaintext, 
-                                SIZE_T                      cbPlaintext, 
+    _In_reads_( cbPlaintext )   PCBYTE                      pbPlaintext,
+                                SIZE_T                      cbPlaintext,
     _In_reads_( cbCiphertext )  PCBYTE                      pbCiphertext,
                                 SIZE_T                      cbCiphertext,
     _In_reads_( cbTag )         PCBYTE                      pbTag,
@@ -277,7 +277,7 @@ katAuthEncSingle(
     CHECK3( cbPlaintext <= sizeof( bufData ), "Buffer too small, need %lld bytes", cbPlaintext );
     CHECK( cbTag <= sizeof( bufTag ), "?" );
     CHECK3( cbPlaintext == cbCiphertext, "Plaintext/Ciphertext size mismatch in line %lld", line );
-    
+
     //
     // Do single encryption
     //
@@ -285,21 +285,21 @@ katAuthEncSingle(
     memset( bufTag, 0, sizeof( bufTag ) );
 
     CHECK4( NT_SUCCESS(pImp->setKey( pbKey, cbKey )), "Failed to set key size %d in line %lld", cbKey, line );
-    
+
     pImp->encrypt( pbNonce, cbNonce, pbAuthData, cbAuthData, pbPlaintext, bufData, cbPlaintext, bufTag, cbTag, 0 );
     CHECK3( memcmp( bufData, pbCiphertext, cbPlaintext ) == 0, "Ciphertext mismatch in line %lld", line );
     CHECK3( memcmp( bufTag, pbTag, cbTag ) == 0, "Tag mismatch in line %lld", line );
 
-    // 
+    //
     // Do single decryption
     //
 
     memset( bufData, 0, sizeof( bufData ) );
-    
+
     status = pImp->decrypt( pbNonce, cbNonce, pbAuthData, cbAuthData, pbCiphertext, bufData, cbPlaintext, bufTag, cbTag, 0 );
     CHECK4( NT_SUCCESS( status ), "Decryption signaled error %08x in line %lld", status, line );
     CHECK3( memcmp( bufData, pbPlaintext, cbPlaintext ) == 0, "Plaintext mismatch in line %lld", line );
-    
+
 }
 
 
@@ -363,7 +363,7 @@ testAuthEncRandom( AuthEncMultiImp * pImp, int rrep, PCBYTE pbResult, SIZE_T cbR
         rng.randomSubRange( bufSize, &srcIdx, &cbData );
         SIZE_T dstIdx = rng.sizet( bufSize - cbData );
 
-        pImp->encrypt( &buf[nonceIdx], cbNonce, 
+        pImp->encrypt( &buf[nonceIdx], cbNonce,
                         &buf[authDataIdx], cbAuthData,
                         &buf[srcIdx], tmp1, cbData,
                         &tagBuf[0], cbTag, 0 );
@@ -375,13 +375,13 @@ testAuthEncRandom( AuthEncMultiImp * pImp, int rrep, PCBYTE pbResult, SIZE_T cbR
             SIZE_T idx = 0;
 
             // We have to do the partial encrypt once even for cbData = 0
-            do 
+            do
             {
                 SIZE_T todo = g_rng.sizet( cbData - idx + cbData/10 + 10);
-                todo = min( todo, cbData - idx );
+                todo = SYMCRYPT_MIN( todo, cbData - idx );
                 BOOLEAN last = todo == cbData - idx;
-                
-                pImp->encrypt(  &buf[nonceIdx], cbNonce, 
+
+                pImp->encrypt(  &buf[nonceIdx], cbNonce,
                                 &buf[authDataIdx], cbAuthData,
                                 &buf[srcIdx + idx], &tmp2[idx], todo,
                                 last ? &tagTmp[0] : NULL, cbTag, AUTHENC_FLAG_PARTIAL );
@@ -396,10 +396,10 @@ testAuthEncRandom( AuthEncMultiImp * pImp, int rrep, PCBYTE pbResult, SIZE_T cbR
         // If the implementation can tell correct tags from incorrect ones, then the tag
         // computation must be correct, and there is no point in injecting
         // errors in the data or authdata.
-        // 
+        //
         // Copy tag to temp buffer, inject an error, and check we get an error.
         //
-        
+
         memcpy( tagTmp, tagBuf, cbTag );
         SIZE_T errorIdx = rng.sizet( cbTag );
         tagTmp[errorIdx] ^= (BYTE)(1 << (rng.byte() & 7));
@@ -425,7 +425,7 @@ testAuthEncRandom( AuthEncMultiImp * pImp, int rrep, PCBYTE pbResult, SIZE_T cbR
             do
             {
                 SIZE_T todo = g_rng.sizet( cbData - idx + cbData/10 + 10);
-                todo = min( todo, cbData - idx );
+                todo = SYMCRYPT_MIN( todo, cbData - idx );
                 BOOLEAN last = todo == cbData - idx;
                 if( last && (g_rng.byte() & 1) == 0 )
                 {
@@ -433,7 +433,7 @@ testAuthEncRandom( AuthEncMultiImp * pImp, int rrep, PCBYTE pbResult, SIZE_T cbR
                     // Don't do that always because we perform a different partial decryption for the final
                     // check.
                     tagBuf[0] ^= 1;
-                    status = pImp->decrypt(  &buf[nonceIdx], cbNonce, 
+                    status = pImp->decrypt(  &buf[nonceIdx], cbNonce,
                                     &buf[authDataIdx], cbAuthData,
                                     &tmp1[idx], &tmp2[idx], todo,
                                     last ? &tagBuf[0] : NULL, cbTag, AUTHENC_FLAG_PARTIAL );
@@ -442,13 +442,13 @@ testAuthEncRandom( AuthEncMultiImp * pImp, int rrep, PCBYTE pbResult, SIZE_T cbR
                     // Re-establish the partial encryption state
                     if( idx > 0 )
                     {
-                        status = pImp->decrypt(  &buf[nonceIdx], cbNonce, 
+                        status = pImp->decrypt(  &buf[nonceIdx], cbNonce,
                                         &buf[authDataIdx], cbAuthData,
                                         &tmp1[0], &tmp2[0], idx,
                                         NULL, cbTag, AUTHENC_FLAG_PARTIAL );
                     }
                 }
-                status = pImp->decrypt(  &buf[nonceIdx], cbNonce, 
+                status = pImp->decrypt(  &buf[nonceIdx], cbNonce,
                                 &buf[authDataIdx], cbAuthData,
                                 &tmp1[idx], &tmp2[idx], todo,
                                 last ? &tagBuf[0] : NULL, cbTag, AUTHENC_FLAG_PARTIAL );
@@ -466,7 +466,7 @@ testAuthEncRandom( AuthEncMultiImp * pImp, int rrep, PCBYTE pbResult, SIZE_T cbR
 
     memset( tagBuf, 0, sizeof( tagBuf ) );
     SIZE_T blockLen = tagSizes[ tagSizes.size() - 1 ];
-    
+
     for( SIZE_T i=0; i<bufSize; i++ )
     {
         tagBuf[ i % blockLen ]  ^= buf[i];
@@ -494,22 +494,22 @@ testAuthEncRandom( AuthEncMultiImp * pImp, int rrep, PCBYTE pbResult, SIZE_T cbR
 VOID
 testAuthEncKats()
 {
-    std::auto_ptr<KatData> katAuthEnc( getCustomResource( "kat_authenc.dat", "KAT_AUTHENC" ) );
+    std::unique_ptr<KatData> katAuthEnc( getCustomResource( "kat_authenc.dat", "KAT_AUTHENC" ) );
     KAT_ITEM katItem;
 
     static String g_currentCategory;
     BOOL skipData = TRUE;
     String sep = "    ";
     BOOL doneAnything = FALSE;
-    
-    std::auto_ptr<AuthEncMultiImp> pAuthEncMultiImp;
+
+    std::unique_ptr<AuthEncMultiImp> pAuthEncMultiImp;
 
     while( 1 )
     {
         katAuthEnc->getKatItem( & katItem );
         ULONGLONG line = katItem.line;
 
-        
+
         if( katItem.type == KAT_TYPE_END )
         {
             break;
@@ -519,7 +519,7 @@ testAuthEncKats()
         {
             g_currentCategory = katItem.categoryName;
             pAuthEncMultiImp.reset( new AuthEncMultiImp( g_currentCategory ) );
-            
+
             //
             // If we have no algorithms, we skip all the data until the next category
             //
@@ -543,7 +543,7 @@ testAuthEncKats()
                 BString katCiphertext = katParseData( katItem, "ciphertext" );
                 BString katTag = katParseData( katItem, "tag" );
 
-                katAuthEncSingle( pAuthEncMultiImp.get(), 
+                katAuthEncSingle( pAuthEncMultiImp.get(),
                     katKey.data(), katKey.size(),
                     katNonce.data(), katNonce.size(),
                     katAuthData.data(), katAuthData.size(),
@@ -551,7 +551,7 @@ testAuthEncKats()
                     katCiphertext.data(), katCiphertext.size(),
                     katTag.data(), katTag.size(),
                     line );
-                
+
             }
             else if( katIsFieldPresent( katItem, "rnd" ) )
             {
@@ -563,7 +563,7 @@ testAuthEncKats()
             {
                 FATAL2( "Unknown data record ending at line %lld", line );
             }
-            
+
         }
     }
 

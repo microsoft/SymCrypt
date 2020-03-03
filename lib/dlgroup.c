@@ -276,8 +276,8 @@ SymCryptDlgroupGeneratePrimeQ_FIPS(
     UINT32 carry = 0;
 
     UNREFERENCED_PARAMETER( cbScratch );
-    SYMCRYPT_ASSERT( cbScratch >= max( SYMCRYPT_SCRATCH_BYTES_FOR_INT_TO_DIVISOR(SymCryptDigitsFromBits(nBitsOfQ+1)),
-                                  max( SYMCRYPT_SCRATCH_BYTES_FOR_INT_IS_PRIME(pDlgroup->nDigitsOfQ),
+    SYMCRYPT_ASSERT( cbScratch >= SYMCRYPT_MAX( SYMCRYPT_SCRATCH_BYTES_FOR_INT_TO_DIVISOR(SymCryptDigitsFromBits(nBitsOfQ+1)),
+                                  SYMCRYPT_MAX( SYMCRYPT_SCRATCH_BYTES_FOR_INT_IS_PRIME(pDlgroup->nDigitsOfQ),
                                        2 * cbHash )) );
     SYMCRYPT_ASSERT( cbHash >= cbPrimeQ );
 
@@ -447,12 +447,12 @@ SymCryptDlgroupGeneratePrimeP_FIPS(
 
     UNREFERENCED_PARAMETER( cbScratch );
     SYMCRYPT_ASSERT( cbScratch >= 2*cbIntTwoQ + cbHash + cbSeed + cbW +
-                                  max( SYMCRYPT_SCRATCH_BYTES_FOR_INT_DIVMOD( pDlgroup->nDigitsOfP, ndDivTwoQ ),
+                                  SYMCRYPT_MAX( SYMCRYPT_SCRATCH_BYTES_FOR_INT_DIVMOD( pDlgroup->nDigitsOfP, ndDivTwoQ ),
                                        SYMCRYPT_SCRATCH_BYTES_FOR_INT_IS_PRIME( pDlgroup->nDigitsOfP )) );
 
     // Create temporaries
     pbScratchInternal = pbScratch;
-    cbScratchInternal = max( SYMCRYPT_SCRATCH_BYTES_FOR_INT_DIVMOD( pDlgroup->nDigitsOfP, ndDivTwoQ ),
+    cbScratchInternal = SYMCRYPT_MAX( SYMCRYPT_SCRATCH_BYTES_FOR_INT_DIVMOD( pDlgroup->nDigitsOfP, ndDivTwoQ ),
                              SYMCRYPT_SCRATCH_BYTES_FOR_INT_IS_PRIME( pDlgroup->nDigitsOfP ) );
     pbScratch += cbScratchInternal;
 
@@ -498,7 +498,7 @@ SymCryptDlgroupGeneratePrimeP_FIPS(
     for (counter = 0; counter < dwMaxCounter+1; counter++)
     {
         cbWBytesLeft = cbW;                         // Bytes left to write
-        pbWCurr = pbW + cbW - min(cbW,cbHash);      // Position of the first hash chunk to write (if cbW < cbHash then we write only 1 chunk)
+        pbWCurr = pbW + cbW - SYMCRYPT_MIN(cbW,cbHash);      // Position of the first hash chunk to write (if cbW < cbHash then we write only 1 chunk)
 
         while (cbWBytesLeft > 0)
         {
@@ -537,8 +537,8 @@ SymCryptDlgroupGeneratePrimeP_FIPS(
             }
 
             // Update the positions on the W buffer
-            cbWBytesLeft -= min(cbHash,cbWBytesLeft);
-            pbWCurr -= min(cbHash,cbWBytesLeft);
+            cbWBytesLeft -= SYMCRYPT_MIN(cbHash,cbWBytesLeft);
+            pbWCurr -= SYMCRYPT_MIN(cbHash,cbWBytesLeft);
         }
 
         // Import the W buffer into P
@@ -659,14 +659,14 @@ SymCryptDlgroupGenerateGenG_FIPS(
     UNREFERENCED_PARAMETER( cbScratch );
     UNREFERENCED_PARAMETER( nDigitsOfQ );
     SYMCRYPT_ASSERT( cbScratch >= cbExp + cbModElement + cbState + cbHash +
-                               max(SYMCRYPT_SCRATCH_BYTES_FOR_MODEXP( nDigitsOfP ),
-                               max(SYMCRYPT_SCRATCH_BYTES_FOR_INT_DIVMOD( nDigitsOfP, nDigitsOfQ ),
+                               SYMCRYPT_MAX(SYMCRYPT_SCRATCH_BYTES_FOR_MODEXP( nDigitsOfP ),
+                               SYMCRYPT_MAX(SYMCRYPT_SCRATCH_BYTES_FOR_INT_DIVMOD( nDigitsOfP, nDigitsOfQ ),
                                    SYMCRYPT_SCRATCH_BYTES_FOR_COMMON_MOD_OPERATIONS( nDigitsOfP ) )) );
 
     // Create temporaries
     pbScratchInternal = pbScratch;
-    cbScratchInternal = max( SYMCRYPT_SCRATCH_BYTES_FOR_MODEXP( nDigitsOfP ),
-                        max( SYMCRYPT_SCRATCH_BYTES_FOR_INT_DIVMOD( nDigitsOfP, nDigitsOfQ ),
+    cbScratchInternal = SYMCRYPT_MAX( SYMCRYPT_SCRATCH_BYTES_FOR_MODEXP( nDigitsOfP ),
+                        SYMCRYPT_MAX( SYMCRYPT_SCRATCH_BYTES_FOR_INT_DIVMOD( nDigitsOfP, nDigitsOfQ ),
                              SYMCRYPT_SCRATCH_BYTES_FOR_COMMON_MOD_OPERATIONS( nDigitsOfP ) ));
     pbScratch += cbScratchInternal;
 
@@ -791,22 +791,22 @@ SymCryptDlgroupScratchSpace_FIPS( UINT32 nBitsOfP, UINT32 nBitsOfQ, PCSYMCRYPT_H
     //      - SYMCRYPT_SCRATCH_BYTES results are upper bounded by 2^27 (including RSA and ECURVE)
     // Thus the following calculation does not overflow the result and is bounded by 2^28.
     //
-    return max( cbDivTwoQ + max(
+    return SYMCRYPT_MAX( cbDivTwoQ + SYMCRYPT_MAX(
                             // Generate Q
-                            max( SYMCRYPT_SCRATCH_BYTES_FOR_INT_TO_DIVISOR( ndDivTwoQ ),
-                            max( SYMCRYPT_SCRATCH_BYTES_FOR_INT_IS_PRIME( nDigitsOfQ ),
+                            SYMCRYPT_MAX( SYMCRYPT_SCRATCH_BYTES_FOR_INT_TO_DIVISOR( ndDivTwoQ ),
+                            SYMCRYPT_MAX( SYMCRYPT_SCRATCH_BYTES_FOR_INT_IS_PRIME( nDigitsOfQ ),
                                  2 * cbHash)),
                             // Generate P
                             2*cbIntTwoQ + cbHash + cbSeed + cbPrimeP +
-                            max( SYMCRYPT_SCRATCH_BYTES_FOR_INT_DIVMOD( nDigitsOfP, ndDivTwoQ ),
+                            SYMCRYPT_MAX( SYMCRYPT_SCRATCH_BYTES_FOR_INT_DIVMOD( nDigitsOfP, ndDivTwoQ ),
                                  SYMCRYPT_SCRATCH_BYTES_FOR_INT_IS_PRIME( nDigitsOfP )) ),
-           max(
+           SYMCRYPT_MAX(
                 // Convert P and Q to moduli
                 SYMCRYPT_SCRATCH_BYTES_FOR_INT_TO_MODULUS( nDigitsOfP ),
                 // Generate GenG
                 cbExp + cbModElement + cbState + cbHash +
-                max(SYMCRYPT_SCRATCH_BYTES_FOR_MODEXP( nDigitsOfP ),
-                max(SYMCRYPT_SCRATCH_BYTES_FOR_INT_DIVMOD( nDigitsOfP, nDigitsOfQ ),
+                SYMCRYPT_MAX(SYMCRYPT_SCRATCH_BYTES_FOR_MODEXP( nDigitsOfP ),
+                SYMCRYPT_MAX(SYMCRYPT_SCRATCH_BYTES_FOR_INT_DIVMOD( nDigitsOfP, nDigitsOfQ ),
                     SYMCRYPT_SCRATCH_BYTES_FOR_COMMON_MOD_OPERATIONS( nDigitsOfP ) )) ));
 }
 
@@ -845,6 +845,7 @@ SymCryptDlgroupGenerate(
         fipsStandard = SYMCRYPT_DLGROUP_FIPS_LATEST;
     }
 
+    // Numbered comments refer to the steps in the FIPS standard
     // 1. Check that L,N is in the list of acceptable pairs
     //      => Skipped as SymCrypt supports more sizes
 
@@ -1185,8 +1186,8 @@ SymCryptDlgroupSetValue(
         // Also, we will need some additional space for the computed parameters:
         //      computedP, computedQ, and computedG.
         cbScratchVerify = SymCryptDlgroupScratchSpace_FIPS( pDlgroup->nMaxBitsOfP, pDlgroup->nMaxBitsOfQ, pDlgroup->pHashAlgorithm ) +
-                          max( SymCryptSizeofIntFromDigits(nMaxDigitsOfP),
-                          max( SymCryptSizeofIntFromDigits(nMaxDigitsOfQ),
+                          SYMCRYPT_MAX( SymCryptSizeofIntFromDigits(nMaxDigitsOfP),
+                          SYMCRYPT_MAX( SymCryptSizeofIntFromDigits(nMaxDigitsOfQ),
                                2*SYMCRYPT_SIZEOF_MODELEMENT_FROM_BITS(nMaxDigitsOfP)));
     }
 
@@ -1199,9 +1200,9 @@ SymCryptDlgroupSetValue(
     //
     // Thus the following calculation does not overflow cbScratch.
     //
-    cbScratch = max( SymCryptSizeofIntFromDigits(nMaxDigitsOfQ),
-                max( SYMCRYPT_SCRATCH_BYTES_FOR_INT_TO_MODULUS(nMaxDigitsOfP),
-                max( SYMCRYPT_SCRATCH_BYTES_FOR_COMMON_MOD_OPERATIONS(nMaxDigitsOfP),
+    cbScratch = SYMCRYPT_MAX( SymCryptSizeofIntFromDigits(nMaxDigitsOfQ),
+                SYMCRYPT_MAX( SYMCRYPT_SCRATCH_BYTES_FOR_INT_TO_MODULUS(nMaxDigitsOfP),
+                SYMCRYPT_MAX( SYMCRYPT_SCRATCH_BYTES_FOR_COMMON_MOD_OPERATIONS(nMaxDigitsOfP),
                      cbScratchVerify )));
     pbScratch = SymCryptCallbackAlloc( cbScratch );
     if (pbScratch==NULL)

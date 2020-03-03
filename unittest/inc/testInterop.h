@@ -4,16 +4,11 @@
 // Copyright (c) Microsoft Corporation. Licensed under the MIT license. 
 //
 
-#include "sc_implementations.h"
-
-#include "msbignum_implementations.h"
 #include "bigpriv.h"
 #include "ms_rsa.h"
 
 #include "cryptdsa.h"
 #include "cryptdh.h"
-
-#include "cng_implementations.h"
 
 #define IMPSC_INDEX             (0)
 #define IMPMSBIGNUM_INDEX       (1)

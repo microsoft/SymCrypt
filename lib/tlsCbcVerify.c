@@ -6,10 +6,10 @@
 
 #include "precomp.h"
 
-// 
-// This code needs to process data in words, and we'd like to use 32-bit words on 32-bit 
+//
+// This code needs to process data in words, and we'd like to use 32-bit words on 32-bit
 // architectures and 64-bit words on 64-bit architectures.
-// We don't want to use 64-bit words on 32-bit architectures because the 64-bit shift/rotate 
+// We don't want to use 64-bit words on 32-bit architectures because the 64-bit shift/rotate
 // code might not be constant-time, and it puts further register pressure on the x86 that can only
 // use 6 registers in C code.
 //
@@ -22,7 +22,7 @@ typedef UINT64              NATIVE_UINT;
 #define NATIVE_BYTES_2LOG   (3)
 #define NATIVE_01           (0x0101010101010101)
 
-#else 
+#else
 typedef INT32               NATIVE_INT;
 typedef UINT32              NATIVE_UINT;
 #define NATIVE_BITS         (32)
@@ -64,11 +64,11 @@ SymCryptNMaskGe( UINT32 wordStart, UINT32 boundary )
     INT32 diff32;
     NATIVE_INT anySet;
     UINT32 shift;
-        
+
     // Mask that is -1 if boundary < wordStart + 8
     anySet = ((NATIVE_INT) boundary - (NATIVE_INT) wordStart - NATIVE_BYTES) >> (NATIVE_BITS - 1);
 
-    // Compute the index of boundary into the word, possibly negative    
+    // Compute the index of boundary into the word, possibly negative
     diff32 = (INT32)boundary - (INT32)wordStart;
     // Compute the necessary shift when the result will be partially set
     shift = 8 * (diff32 & (NATIVE_BYTES - 1));
@@ -87,7 +87,7 @@ SymCryptNMaskEq( UINT32 wordStart, UINT32 boundary )
     INT32 diff32;
     NATIVE_UINT inWord;
 
-    // 32-bit signed difference 
+    // 32-bit signed difference
     diff32 = (INT32)boundary - (INT32)wordStart;
 
     // inWord = (-1) if boundary is within the word, 0 otherwise
@@ -106,7 +106,7 @@ SymCryptNMaskEq80( UINT32 wordStart, UINT32 boundary )
     INT32 diff32;
     NATIVE_UINT inWord;
 
-    // 32-bit signed difference 
+    // 32-bit signed difference
     diff32 = (INT32)boundary - (INT32)wordStart;
 
     // inWord = (-1) if boundary is within the word, 0 otherwise
@@ -208,7 +208,7 @@ SymCryptTlsCbcHmacVerifyCore(
 
     next = (UINT32)pState->dataLengthL;         // # bytes processed so far.
     pbData -= next;
-    cbData += next; 
+    cbData += next;
 
     totalBytesHashed = (UINT32)cbData - pHash->resultSize - cbPad;
     SYMCRYPT_STORE_MSBFIRST32( &hashPaddingFinal, totalBytesHashed * 8 );      // Length padding for result hash block
@@ -243,7 +243,7 @@ SymCryptTlsCbcHmacVerifyCore(
 
         // Process a partial word
         SYMCRYPT_ASSERT( ( (next ^ pState->bytesInBuffer) & (NATIVE_BYTES - 1) ) == 0 );
-        
+
         // Read a word; as the MAC value is > 8 bytes this won't overflow the buffer
         w = *(NATIVE_UINT *) &pbData[next];
         m = SymCryptNMaskGe( next, iMacStart );
@@ -252,7 +252,7 @@ SymCryptTlsCbcHmacVerifyCore(
 
         data = w & mInData;
         data |= SymCryptNMaskEq80( next, iMacStart );    // add 0x80 byte @ iMacStart
-      
+
         // Now we put the data into the hash buffer
         bufferLocation = (NATIVE_UINT *)&pState->buffer[ pState->bytesInBuffer - backOffset ];
         *bufferLocation = (*bufferLocation & (((NATIVE_UINT)1 << 8*backOffset) - 1))  | (data << 8*backOffset);
@@ -345,7 +345,7 @@ SymCryptTlsCbcHmacVerifyCore(
 
     // At this point we still have to potentially do one more hash block.
     // The data is all copied into the hash input buffer, as is the 0x80 padding byte.
-    
+
     if (next < lastHashBlockIndex)
     {
         // there is still one more hash block to compute. This could either be the actual last block of the hash
@@ -420,8 +420,8 @@ SymCryptTlsCbcHmacVerify(
     PCSYMCRYPT_HASH pHashAlgorithm = *(pMacAlgorithm->ppHashAlgorithm);
     UINT32 i;
 
-    SYMCRYPT_ASSERT(pMacAlgorithm == SymCryptHmacSha1Algorithm || 
-                    pMacAlgorithm == SymCryptHmacSha256Algorithm || 
+    SYMCRYPT_ASSERT(pMacAlgorithm == SymCryptHmacSha1Algorithm ||
+                    pMacAlgorithm == SymCryptHmacSha256Algorithm ||
                     pMacAlgorithm == SymCryptHmacSha384Algorithm );
 
     SymCryptTlsCbcHmacVerifyCore(
@@ -435,8 +435,8 @@ SymCryptTlsCbcHmacVerify(
 
     // We have the hash value, convert it to a MAC value
     // First we set up the chaining value
-    memcpy( ((PBYTE)pHashState + pHashAlgorithm->chainOffset), 
-            (PBYTE)pExpandedKey + pMacAlgorithm->outerChainingStateOffset, 
+    memcpy( ((PBYTE)pHashState + pHashAlgorithm->chainOffset),
+            (PBYTE)pExpandedKey + pMacAlgorithm->outerChainingStateOffset,
             pHashAlgorithm->chainSize );
     // Then copy the data & set the length
     // The hash result wasn't BSWAPPED yet...

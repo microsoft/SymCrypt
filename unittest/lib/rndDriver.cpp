@@ -1,7 +1,7 @@
 //
 // rndDriver.cpp random test driver
 //
-// Copyright (c) Microsoft Corporation. Licensed under the MIT license. 
+// Copyright (c) Microsoft Corporation. Licensed under the MIT license.
 //
 
 #include "precomp.h"
@@ -78,7 +78,7 @@ rnddRegisterInitFunction( RNDD_TEST_FN func )
     p->func = func;
     p->weight = 0;
     g_initFunctions.push_back( p );
-}   
+}
 
 
 VOID
@@ -89,7 +89,7 @@ rnddRegisterCleanupFunction( RNDD_TEST_FN func )
     p->func = func;
     p->weight = 0;
     g_cleanupFunctions.push_back( p );
-}   
+}
 
 VOID
 rnddRegisterInvariantFunction( RNDD_TEST_FN func )
@@ -101,12 +101,21 @@ rnddRegisterInvariantFunction( RNDD_TEST_FN func )
     g_invariantFunctions.push_back( p );
 
     g_invariantFunctionsUsed = TRUE;
-}   
+}
 
 ULONGLONG
 getTimeInMs()    // Will have to move it to the main_exe or main_dll when we support kernel mode
 {
+#if SYMCRYPT_MS_VC
     return GetTickCount64();
+#elif SYMCRYPT_GNUC && defined(__linux__)
+    struct timespec ts;
+    clock_gettime(CLOCK_MONOTONIC, &ts);
+    return (uint64_t)(ts.tv_nsec / 1000000) + ((uint64_t)ts.tv_sec * 1000ull);
+#else
+#error "Need GetTickCount64!"
+return 0;
+#endif
 }
 
 VOID
@@ -149,7 +158,7 @@ rnddRunTest( UINT32 nSeconds, UINT32 nThreads )
     print( "\n" );
     for( std::vector<FUNCTION_RECORD *>::iterator i = g_testFunctions.begin(); i != g_testFunctions.end(); i++ )
     {
-        print( "%30s : %I64d\n", (*i)->name, (*i)->count );
+        print( "%30s : %8" PRId64 "\n", (*i)->name, (*i)->count );
     }
     iprint( "\n" );
 

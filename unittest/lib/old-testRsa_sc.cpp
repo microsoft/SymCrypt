@@ -206,32 +206,10 @@ template<> VOID algImpTestRsaReplyFunction< ImpSc, AlgRsaEncPkcs1 >(
 
     UNREFERENCED_PARAMETER( keySize );
     UNREFERENCED_PARAMETER( pHashAlgorithm );
+    UNREFERENCED_PARAMETER( pbExtra );
+    UNREFERENCED_PARAMETER( cbExtra );
 
     // The ciphertext is in the destination buffer
-
-    CHECK( cbDst > 4, "?" );
-    UINT32 r = SYMCRYPT_LOAD_LSBFIRST32( pbDst );
-
-    if( r % 11 == 0 )
-    {
-        // Make a copy and verify that we get an error
-        CHECK( cbExtra >= cbDst, "?" );
-        memcpy( pbExtra, pbDst, cbDst );
-
-        // inject an error
-        pbExtra[ r % cbDst] ++;
-
-        scError = SymCryptRsaPkcs1Decrypt(
-                (PSYMCRYPT_RSAKEY) pkKey,
-                pbExtra,                          // The ciphertext is in the destination buffer originally
-                cbDst,
-                SYMCRYPT_NUMBER_FORMAT_MSB_FIRST,
-                0,
-                pbExtra,
-                cbDst,
-                &cbTmp );
-        CHECK( scError != SYMCRYPT_NO_ERROR, "No decryption error after error injection" );
-    }
 
     scError = SymCryptRsaPkcs1Decrypt(
             (PSYMCRYPT_RSAKEY) pkKey,

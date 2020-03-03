@@ -34,7 +34,7 @@ SymCryptTwistedEdwardsFillScratchSpaces( _In_ PSYMCRYPT_ECURVE pCurve )
             (pCurve->cbModElement) +
             2 * SymCryptSizeofEcpointEx( pCurve->cbModElement, SYMCRYPT_INTERNAL_NUMOF_COORDINATES( pCurve->eCoordinates ) ) +
             2 * SymCryptSizeofIntFromDigits( pCurve->GOrdDigits ) +
-            max( pCurve->cbScratchCommon, SYMCRYPT_SCRATCH_BYTES_FOR_COMMON_MOD_OPERATIONS( pCurve->GOrdDigits ));
+            SYMCRYPT_MAX( pCurve->cbScratchCommon, SYMCRYPT_SCRATCH_BYTES_FOR_COMMON_MOD_OPERATIONS( pCurve->GOrdDigits ));
 
     pCurve->cbScratchScalarMulti =
             pCurve->info.sw.nPrecompPoints * SymCryptSizeofEcpointEx( pCurve->cbModElement, SYMCRYPT_INTERNAL_NUMOF_COORDINATES( pCurve->eCoordinates ) ) +
@@ -43,13 +43,13 @@ SymCryptTwistedEdwardsFillScratchSpaces( _In_ PSYMCRYPT_ECURVE pCurve )
     pCurve->cbScratchGetSetValue = 
         SymCryptSizeofEcpointEx(cbModElement, SYMCRYPT_ECPOINT_FORMAT_MAX_LENGTH) +
         2 * cbModElement +
-        max(SYMCRYPT_SCRATCH_BYTES_FOR_COMMON_MOD_OPERATIONS(nDigitsFieldLength),
+        SYMCRYPT_MAX(SYMCRYPT_SCRATCH_BYTES_FOR_COMMON_MOD_OPERATIONS(nDigitsFieldLength),
         SYMCRYPT_SCRATCH_BYTES_FOR_MODINV(nDigitsFieldLength));
 
-    pCurve->cbScratchGetSetValue = max( pCurve->cbScratchGetSetValue, SymCryptSizeofIntFromDigits( nDigits ) );
+    pCurve->cbScratchGetSetValue = SYMCRYPT_MAX( pCurve->cbScratchGetSetValue, SymCryptSizeofIntFromDigits( nDigits ) );
 
     pCurve->cbScratchEckey = pCurve->cbModElement + SymCryptSizeofIntFromDigits(SymCryptEcurveDigitsofScalarMultiplier(pCurve)) +
-        max( pCurve->cbScratchScalar + pCurve->cbScratchScalarMulti, pCurve->cbScratchGetSetValue );
+        SYMCRYPT_MAX( pCurve->cbScratchScalar + pCurve->cbScratchScalarMulti, pCurve->cbScratchGetSetValue );
 }
 
 VOID
