@@ -2720,7 +2720,7 @@ typedef const SYMCRYPT_802_11_SAE_CUSTOM_STATE *PCSYMCRYPT_802_11_SAE_CUSTOM_STA
 // change at any time.
 //
 
-
+_Success_( return == SYMCRYPT_NO_ERROR )
 SYMCRYPT_ERROR
 SymCrypt802_11SaeCustomInit(
     _Out_                       PSYMCRYPT_802_11_SAE_CUSTOM_STATE   pState,
@@ -2760,6 +2760,55 @@ SymCrypt802_11SaeCustomInit(
 // of the other functions.
 //
 
+_Success_( return == SYMCRYPT_NO_ERROR )
+SYMCRYPT_ERROR
+SymCrypt802_11SaeCustomCreatePT(
+    _In_reads_( cbSsid )                   PCBYTE                              pbSsid,
+                                           SIZE_T                              cbSsid,
+    _In_reads_( cbPassword )               PCBYTE                              pbPassword,
+                                           SIZE_T                              cbPassword,
+    _In_reads_opt_( cbPasswordIdentifier ) PCBYTE                              pbPasswordIdentifier,
+                                           SIZE_T                              cbPasswordIdentifier,
+    _Out_writes_( 64 )                     PBYTE                               pbPT );
+
+//
+// Generate the PT secret element for use with the SAE Hash-to-Element algorithm, as described in
+// section 12.4.4.2.3 of the 802.11 spec ("Hash-to-curve generation of the password element with
+// ECC groups"). The PT value can be "stored until needed to generate a session specific PWE."
+//
+// - pbSsid, cbSsid                              SSID for the connection as a string of bytes
+// - pbPassword, cbPassword                      Password buffer
+// - pbPasswordIdentifier, cbPasswordIdentifier  Optional password identifier, as a string of bytes
+// - pbPT                                        Out pointer to PT (as a byte buffer)
+//
+// As above, we only support NIST P256.
+// 
+
+_Success_( return == SYMCRYPT_NO_ERROR )
+SYMCRYPT_ERROR
+SymCrypt802_11SaeCustomInitH2E(
+    _Out_                       PSYMCRYPT_802_11_SAE_CUSTOM_STATE   pState,
+    _In_reads_( 64 )            PCBYTE                              pbPT,
+    _In_reads_( 6 )             PCBYTE                              pbMacA,
+    _In_reads_( 6 )             PCBYTE                              pbMacB,
+    _Inout_updates_opt_( 32 )   PBYTE                               pbRand,
+    _Inout_updates_opt_( 32 )   PBYTE                               pbMask );
+
+//
+// Initialize the state object  using the Hash-to-Element algorithm, using the PT value calculated
+// by SymCrypt802_11SaeCustomCreatePT.
+//
+// - State                      Protocol state to initialize
+// - pbPT                       PT value calculated using SymCrypt802_11SaeCustomCreatePT
+// - pbMacA, pbMacB             Two 6-byte MAC addresses with MacA >= MacB.
+// - pbRand                     Optional pointer to Rand buffer
+// - pbMask                     Optional pointer to Mask buffer
+//
+// See the comment on SymCrypt802_11SaeCustomInit for more details about the pbRand and pbMask
+// parameters
+// 
+
+_Success_( return == SYMCRYPT_NO_ERROR )
 SYMCRYPT_ERROR
 SymCrypt802_11SaeCustomCommitCreate(
     _In_                        PCSYMCRYPT_802_11_SAE_CUSTOM_STATE  pState,
@@ -2775,6 +2824,7 @@ SymCrypt802_11SaeCustomCommitCreate(
 //                      (x,y) in order, each value in MSByte first.
 //
 
+_Success_( return == SYMCRYPT_NO_ERROR )
 SYMCRYPT_ERROR
 SymCrypt802_11SaeCustomCommitProcess(
     _In_                        PCSYMCRYPT_802_11_SAE_CUSTOM_STATE  pState,
@@ -2795,7 +2845,7 @@ SymCrypt802_11SaeCustomCommitProcess(
 
 VOID
 SymCrypt802_11SaeCustomDestroy( 
-    _Out_   PSYMCRYPT_802_11_SAE_CUSTOM_STATE   pState );
+    _Inout_   PSYMCRYPT_802_11_SAE_CUSTOM_STATE   pState );
 //
 // Wipe a state object.
 // After this call the memory used for pState is uninitialized and can be used for other purposes.
