@@ -11,7 +11,7 @@
 
         TEXTAREA
 
-        EXTERN  memset
+        EXTERN  A64NAME(memset)
 
         SUBT  "SymCryptWipe"
 ;VOID
@@ -20,16 +20,16 @@
 ;                                       SIZE_T cbData )
 
 
-        LEAF_ENTRY SymCryptWipeAsm
+        LEAF_ENTRY A64NAME(SymCryptWipeAsm)
 
         ; we just jump to memset.
         ; this is enough to stop the compiler optimizing the memset away.
 
         mov     x2, x1
         mov     x1, #0
-        b       memset
+        b       A64NAME(memset)
 
-        LEAF_END SymCryptWipeAsm
+        LEAF_END (SymCryptWipeAsm)
 
 
 

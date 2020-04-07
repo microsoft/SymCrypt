@@ -5,7 +5,7 @@
 ; Include file to define the support macros for the Magic field
 ;
 
-        IMPORT  SymCryptFatal
+        IMPORT  A64NAME(SymCryptFatal)
 
 #define SYMCRYPT_CODE_VERSION   (SYMCRYPT_CODE_VERSION_API * 65536 + SYMCRYPT_CODE_VERSION_MINOR)
 #define SYMCRYPT_MAGIC_CONSTANT (0x53316d76 + SYMCRYPT_CODE_VERSION)
@@ -21,7 +21,7 @@
         cmp     $temp1, $temp2
         beq     %F1
         mov32   r0, 0x6d616763     ; 'magc'
-        bl      SymCryptFatal
+        bl      A64NAME(SymCryptFatal)
 1
 #endif
 
