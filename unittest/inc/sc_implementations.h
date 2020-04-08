@@ -210,6 +210,12 @@ public:
 };
 
 template<>
+class AuthEncImpState<ImpSc, AlgChaCha20Poly1305, ModeNone> {
+public:
+    BYTE    key[32];
+};
+
+template<>
 class StreamCipherImpState<ImpSc, AlgRc4> {
 public:
     SYMCRYPT_RC4_STATE  state;

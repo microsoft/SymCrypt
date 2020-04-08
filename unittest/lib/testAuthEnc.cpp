@@ -304,7 +304,7 @@ katAuthEncSingle(
 
 
 VOID
-testAuthEncRandom( AuthEncMultiImp * pImp, int rrep, PCBYTE pbResult, SIZE_T cbResult, ULONGLONG line )
+testAuthEncRandom( AuthEncMultiImp * pImp, int rrep, PCBYTE pbResult, SIZE_T cbResult, ULONGLONG line, BOOLEAN fSupportsPartialEncryption )
 {
     const SIZE_T bufSize = 1 << 13;
     BYTE buf[ bufSize ];
@@ -368,28 +368,31 @@ testAuthEncRandom( AuthEncMultiImp * pImp, int rrep, PCBYTE pbResult, SIZE_T cbR
                         &buf[srcIdx], tmp1, cbData,
                         &tagBuf[0], cbTag, 0 );
 
-        // Encrypt again piecewise
+        if ( fSupportsPartialEncryption )
+        { 
+            // Encrypt again piecewise
 
-        pImp->setTotalCbData( cbData );
-        {
-            SIZE_T idx = 0;
-
-            // We have to do the partial encrypt once even for cbData = 0
-            do
+            pImp->setTotalCbData( cbData );
             {
-                SIZE_T todo = g_rng.sizet( cbData - idx + cbData/10 + 10);
-                todo = SYMCRYPT_MIN( todo, cbData - idx );
-                BOOLEAN last = todo == cbData - idx;
+                SIZE_T idx = 0;
 
-                pImp->encrypt(  &buf[nonceIdx], cbNonce,
-                                &buf[authDataIdx], cbAuthData,
-                                &buf[srcIdx + idx], &tmp2[idx], todo,
-                                last ? &tagTmp[0] : NULL, cbTag, AUTHENC_FLAG_PARTIAL );
-                idx += todo;
-            } while( idx < cbData );
+                // We have to do the partial encrypt once even for cbData = 0
+                do
+                {
+                    SIZE_T todo = g_rng.sizet( cbData - idx + cbData/10 + 10);
+                    todo = SYMCRYPT_MIN( todo, cbData - idx );
+                    BOOLEAN last = todo == cbData - idx;
+
+                    pImp->encrypt(  &buf[nonceIdx], cbNonce,
+                                    &buf[authDataIdx], cbAuthData,
+                                    &buf[srcIdx + idx], &tmp2[idx], todo,
+                                    last ? &tagTmp[0] : NULL, cbTag, AUTHENC_FLAG_PARTIAL );
+                    idx += todo;
+                } while( idx < cbData );
+            }
+            CHECK( memcmp( tmp1, tmp2, cbData ) == 0, "Partial/full encryption data mismatch" );
+            CHECK( memcmp( tagBuf, tagTmp, cbTag ) == 0, "Partial/full encryption tag mismatch" );
         }
-        CHECK( memcmp( tmp1, tmp2, cbData ) == 0, "Partial/full encryption data mismatch" );
-        CHECK( memcmp( tagBuf, tagTmp, cbTag ) == 0, "Partial/full encryption tag mismatch" );
 
         //
         // We first inject an error in the tag to test that it is caught.
@@ -417,49 +420,51 @@ testAuthEncRandom( AuthEncMultiImp * pImp, int rrep, PCBYTE pbResult, SIZE_T cbR
         CHECK3( NT_SUCCESS( status ), "Decryption error, line %lld", line );
         CHECK3( memcmp( tmp2, &buf[srcIdx], cbData ) == 0, "Decryption mismatch, line %lld", line );
 
-        // Now repeat the decryption check with partial calls
-        pImp->setTotalCbData( cbData );
-        {
-            SIZE_T idx = 0;
-
-            do
+        if ( fSupportsPartialEncryption )
+        { 
+            // Now repeat the decryption check with partial calls
+            pImp->setTotalCbData( cbData );
             {
-                SIZE_T todo = g_rng.sizet( cbData - idx + cbData/10 + 10);
-                todo = SYMCRYPT_MIN( todo, cbData - idx );
-                BOOLEAN last = todo == cbData - idx;
-                if( last && (g_rng.byte() & 1) == 0 )
+                SIZE_T idx = 0;
+
+                do
                 {
-                    // Check that we get a failure if we modify the tag
-                    // Don't do that always because we perform a different partial decryption for the final
-                    // check.
-                    tagBuf[0] ^= 1;
+                    SIZE_T todo = g_rng.sizet( cbData - idx + cbData/10 + 10);
+                    todo = SYMCRYPT_MIN( todo, cbData - idx );
+                    BOOLEAN last = todo == cbData - idx;
+                    if( last && (g_rng.byte() & 1) == 0 )
+                    {
+                        // Check that we get a failure if we modify the tag
+                        // Don't do that always because we perform a different partial decryption for the final
+                        // check.
+                        tagBuf[0] ^= 1;
+                        status = pImp->decrypt(  &buf[nonceIdx], cbNonce,
+                                        &buf[authDataIdx], cbAuthData,
+                                        &tmp1[idx], &tmp2[idx], todo,
+                                        last ? &tagBuf[0] : NULL, cbTag, AUTHENC_FLAG_PARTIAL );
+                        CHECK( !NT_SUCCESS( status ), "No partial decrypt error" );
+                        tagBuf[0] ^= 1;
+                        // Re-establish the partial encryption state
+                        if( idx > 0 )
+                        {
+                            status = pImp->decrypt(  &buf[nonceIdx], cbNonce,
+                                            &buf[authDataIdx], cbAuthData,
+                                            &tmp1[0], &tmp2[0], idx,
+                                            NULL, cbTag, AUTHENC_FLAG_PARTIAL );
+                        }
+                    }
                     status = pImp->decrypt(  &buf[nonceIdx], cbNonce,
                                     &buf[authDataIdx], cbAuthData,
                                     &tmp1[idx], &tmp2[idx], todo,
                                     last ? &tagBuf[0] : NULL, cbTag, AUTHENC_FLAG_PARTIAL );
-                    CHECK( !NT_SUCCESS( status ), "No partial decrypt error" );
-                    tagBuf[0] ^= 1;
-                    // Re-establish the partial encryption state
-                    if( idx > 0 )
-                    {
-                        status = pImp->decrypt(  &buf[nonceIdx], cbNonce,
-                                        &buf[authDataIdx], cbAuthData,
-                                        &tmp1[0], &tmp2[0], idx,
-                                        NULL, cbTag, AUTHENC_FLAG_PARTIAL );
-                    }
-                }
-                status = pImp->decrypt(  &buf[nonceIdx], cbNonce,
-                                &buf[authDataIdx], cbAuthData,
-                                &tmp1[idx], &tmp2[idx], todo,
-                                last ? &tagBuf[0] : NULL, cbTag, AUTHENC_FLAG_PARTIAL );
-                CHECK( NT_SUCCESS( status ), "Decrypt error" );
-                CHECK( memcmp( &tmp2[idx], &buf[srcIdx + idx], todo ) == 0, "Partial decryption mismatch" );
-                idx += todo;
-            } while( idx < cbData );
+                    CHECK( NT_SUCCESS( status ), "Decrypt error" );
+                    CHECK( memcmp( &tmp2[idx], &buf[srcIdx + idx], todo ) == 0, "Partial decryption mismatch" );
+                    idx += todo;
+                } while( idx < cbData );
 
+            }
+            CHECK3( memcmp( tmp2, &buf[srcIdx], cbData ) == 0, "Decryption mismatch, line %lld", line );
         }
-        CHECK3( memcmp( tmp2, &buf[srcIdx], cbData ) == 0, "Decryption mismatch, line %lld", line );
-
         memcpy( &buf[dstIdx], tmp1, cbData );
         memcpy( &buf[tagIdx], tagBuf, cbTag );
     }
@@ -555,10 +560,11 @@ testAuthEncKats()
             }
             else if( katIsFieldPresent( katItem, "rnd" ) )
             {
-                CHECK3( katItem.dataItems.size() == 2, "Wrong # items in RND record ending at line %lld", line );
+                CHECK3( katItem.dataItems.size() == 3, "Wrong # items in RND record ending at line %lld", line );
                 int rrep = (int) katParseInteger( katItem, "rrep" );
                 BString katRnd = katParseData( katItem, "rnd" );
-                testAuthEncRandom( pAuthEncMultiImp.get(), rrep, katRnd.data(), katRnd.size(), line );
+                BOOLEAN fSupportsPartialEncryption = (BOOLEAN) katParseInteger( katItem, "partial" );
+                testAuthEncRandom( pAuthEncMultiImp.get(), rrep, katRnd.data(), katRnd.size(), line, fSupportsPartialEncryption );
             } else
             {
                 FATAL2( "Unknown data record ending at line %lld", line );

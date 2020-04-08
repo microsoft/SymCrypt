@@ -612,6 +612,11 @@ public:
     const static char * name;
 };
 
+class AlgChaCha20Poly1305 {
+public:
+    const static char* name;
+};
+
 class AlgAesCtrDrbg{
 public:
     const static char * name;
@@ -714,6 +719,11 @@ public:
 class ModeGcm{
 public:
     const static char * name;
+};
+
+class ModeNone {
+public:
+    const static char* name;
 };
 
 class AlgIntAdd{

@@ -46,6 +46,7 @@ const SELFTEST_INFO g_selfTests[] =
     {&SymCryptRc4Selftest, "Rc4" },
     {&SymCryptChaCha20Selftest, "ChaCha20" },
     {&SymCryptPoly1305Selftest, "Poly1305" },
+    {&SymCryptChaCha20Poly1305Selftest, "ChaCha20Poly1305" },
     {&SymCryptRngAesInstantiateSelftest, "AesCtrDrbgInstantiate" },
     {&SymCryptRngAesReseedSelftest, "AesCtrDrbgReseed" },
     {&SymCryptRngAesGenerateSelftest, "AesCtrDrbgGenerate"},

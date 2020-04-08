@@ -1451,6 +1451,169 @@ cleanup:
 }
 
 
+//////////////////////////
+// CHACHA20POLY1305
+
+//template<>
+//VOID
+//algImpKeyPerfFunction< ImpSc, AlgChaCha20Poly1305, ModeNone>( PBYTE buf1, PBYTE buf2, PBYTE buf3, SIZE_T keySize )
+//{
+//    UNREFERENCED_PARAMETER( buf1 );
+//    UNREFERENCED_PARAMETER( buf2 );
+//    UNREFERENCED_PARAMETER( buf3 );
+//    UNREFERENCED_PARAMETER( KeySize );
+//}
+
+template<>
+VOID
+algImpDataPerfFunction<ImpSc, AlgChaCha20Poly1305, ModeNone>( PBYTE buf1, PBYTE buf2, PBYTE buf3, SIZE_T dataSize )
+{
+    SymCryptChaCha20Poly1305Encrypt( buf1, 32,
+                                     buf2, 12,
+                                     NULL, 0,
+                                     buf2 + 16, buf2 + 16, dataSize,
+                                     buf3, 16 );
+}
+
+template<>
+VOID
+algImpDecryptPerfFunction<ImpSc, AlgChaCha20Poly1305, ModeNone>( PBYTE buf1, PBYTE buf2, PBYTE buf3, SIZE_T dataSize )
+{
+    SymCryptChaCha20Poly1305Decrypt( buf1, 32,
+                                     buf2, 12,
+                                     NULL, 0,
+                                     buf2 + 16, buf2 + 16, dataSize,
+                                     buf3, 16 );
+}
+
+//template<>
+//VOID
+//algImpCleanPerfFunction<ImpSc, AlgChaCha20Poly1305, ModeNone>( PBYTE buf1, PBYTE buf2, PBYTE buf3 )
+//{
+//    UNREFERENCED_PARAMETER( buf1 );
+//    UNREFERENCED_PARAMETER( buf2 );
+//    UNREFERENCED_PARAMETER( buf3 );
+//}
+
+template<>
+AuthEncImp<ImpSc, AlgChaCha20Poly1305, ModeNone>::AuthEncImp()
+{
+    m_perfKeyFunction     = NULL;
+    m_perfCleanFunction   = NULL;
+    m_perfDataFunction    = &algImpDataPerfFunction   <ImpSc, AlgChaCha20Poly1305, ModeNone>;
+    m_perfDecryptFunction = &algImpDecryptPerfFunction<ImpSc, AlgChaCha20Poly1305, ModeNone>;
+}
+
+template<>
+AuthEncImp<ImpSc, AlgChaCha20Poly1305, ModeNone>::~AuthEncImp()
+{
+    SymCryptWipeKnownSize( state.key, sizeof( state.key ) );
+}
+
+template<>
+std::set<SIZE_T>
+AuthEncImp<ImpSc, AlgChaCha20Poly1305, ModeNone>::getKeySizes()
+{
+    std::set<SIZE_T> res;
+
+    res.insert( 32 );
+
+    return res;
+}
+
+
+template<>
+std::set<SIZE_T>
+AuthEncImp<ImpSc, AlgChaCha20Poly1305, ModeNone>::getNonceSizes()
+{
+    std::set<SIZE_T> res;
+
+    res.insert( 12 );
+
+    return res;
+}
+
+
+template<>
+std::set<SIZE_T>
+AuthEncImp<ImpSc, AlgChaCha20Poly1305, ModeNone>::getTagSizes()
+{
+    std::set<SIZE_T> res;
+
+    res.insert( 16 );
+
+    return res;
+}
+
+template<>
+NTSTATUS
+AuthEncImp<ImpSc, AlgChaCha20Poly1305, ModeNone>::setKey( PCBYTE pbKey, SIZE_T cbKey )
+{
+    CHECK( cbKey == 32, "?" );
+    memcpy( state.key, pbKey, cbKey );
+
+    return STATUS_SUCCESS;
+}
+
+template<>
+VOID
+AuthEncImp<ImpSc, AlgChaCha20Poly1305, ModeNone>::setTotalCbData( SIZE_T cbData )
+{
+    UNREFERENCED_PARAMETER( cbData );
+}
+
+template<>
+NTSTATUS
+AuthEncImp<ImpSc, AlgChaCha20Poly1305, ModeNone>::encrypt(
+        _In_reads_( cbNonce )                     PCBYTE  pbNonce,
+                                                  SIZE_T  cbNonce,
+        _In_reads_( cbAuthData )                  PCBYTE  pbAuthData,
+                                                  SIZE_T  cbAuthData,
+        _In_reads_( cbData )                      PCBYTE  pbSrc,
+        _Out_writes_( cbData )                    PBYTE   pbDst,
+                                                  SIZE_T  cbData,
+        _Out_writes_( cbTag )                     PBYTE   pbTag,
+                                                  SIZE_T  cbTag,
+                                                  ULONG   flags )
+{
+    UNREFERENCED_PARAMETER( flags );
+
+    SYMCRYPT_ERROR scError = SYMCRYPT_NO_ERROR;
+
+    scError = SymCryptChaCha20Poly1305Encrypt( state.key, sizeof( state.key ),
+                                               pbNonce, cbNonce, pbAuthData, cbAuthData,
+                                               pbSrc, pbDst, cbData,
+                                               pbTag, cbTag );
+
+    return scError == SYMCRYPT_NO_ERROR ? 0 : STATUS_ENCRYPTION_FAILED;
+}
+
+template<>
+NTSTATUS
+AuthEncImp<ImpSc, AlgChaCha20Poly1305, ModeNone>::decrypt(
+        _In_reads_( cbNonce )                     PCBYTE  pbNonce,
+                                                  SIZE_T  cbNonce,
+        _In_reads_( cbAuthData )                  PCBYTE  pbAuthData,
+                                                  SIZE_T  cbAuthData,
+        _In_reads_( cbData )                      PCBYTE  pbSrc,
+        _Out_writes_( cbData )                    PBYTE   pbDst,
+                                                  SIZE_T  cbData,
+        _In_reads_( cbTag )                       PCBYTE  pbTag,
+                                                  SIZE_T  cbTag,
+                                                  ULONG   flags )
+{
+    UNREFERENCED_PARAMETER( flags );
+
+    SYMCRYPT_ERROR scError = SYMCRYPT_NO_ERROR;
+
+    scError = SymCryptChaCha20Poly1305Decrypt( state.key, sizeof( state.key ),
+                                               pbNonce, cbNonce, pbAuthData, cbAuthData,
+                                               pbSrc, pbDst, cbData,
+                                               pbTag, cbTag );
+
+    return scError == SYMCRYPT_NO_ERROR ? 0 : STATUS_AUTH_TAG_MISMATCH;
+}
+
 
 //////////////////////////
 // RC4
@@ -6770,6 +6933,7 @@ addSymCryptAlgs()
 
     addImplementationToGlobalList<AuthEncImp<ImpSc, AlgAes, ModeCcm>>();
     addImplementationToGlobalList<AuthEncImp<ImpSc, AlgAes, ModeGcm>>();
+    addImplementationToGlobalList<AuthEncImp<ImpSc, AlgChaCha20Poly1305, ModeNone>>();
 
     addImplementationToGlobalList<StreamCipherImp<ImpSc, AlgRc4>>();
     addImplementationToGlobalList<StreamCipherImp<ImpSc, AlgChaCha20>>();

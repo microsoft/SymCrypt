@@ -91,6 +91,8 @@ const char * AlgChaCha20::name = "ChaCha20";
 
 const char * AlgPoly1305::name = "Poly1305";
 
+const char * AlgChaCha20Poly1305::name = "ChaCha20Poly1305";
+
 const char * AlgAesCtrDrbg::name = "AesCtrDrbg";
 
 const char * AlgAesCtrF142::name = "AesCtrF142";
@@ -224,6 +226,8 @@ ULONG ModeCfb::flags = MODE_FLAG_CHAIN | MODE_FLAG_CFB;
 const char * ModeCcm::name = "Ccm";
 
 const char * ModeGcm::name = "Gcm";
+
+const char * ModeNone::name = "";
 
 BOOL AlgRc4::isRandomAccess = FALSE;
 BOOL AlgChaCha20::isRandomAccess = TRUE;
@@ -457,6 +461,7 @@ const char * g_algorithmNames[] = {
     AlgRc4::name,
     AlgChaCha20::name,
     AlgPoly1305::name,
+    AlgChaCha20Poly1305::name,
     AlgAesCtrDrbg::name,
     AlgAesCtrF142::name,
     AlgParallelSha256::name,

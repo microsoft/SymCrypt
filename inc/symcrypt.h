@@ -2068,6 +2068,56 @@ SymCryptPoly1305Selftest();
 //
 
 ////////////////////////////////////////////////////////////////////////////
+// CHACHA20_POLY1305
+//
+// This algorithm combines the CHACHA20 symmetric key stream cipher with
+// the POLY1305 MAC function as per RFC 8439.
+// The POLY1305 authenticator key is generated from the first 32 bytes
+// of the CHACHA20 keystream and is only valid for a single message.
+// For this reason each key and nonce combination passed to
+// SymCryptChaCha20Poly1305Encrypt MUST only be used once.
+//
+// The Src and Dst buffers can be identical or non-overlapping; partial overlaps
+// are not supported.
+//
+
+_Success_(return == SYMCRYPT_NO_ERROR)
+SYMCRYPT_ERROR
+SYMCRYPT_CALL
+SymCryptChaCha20Poly1305Encrypt(
+    _In_reads_( cbKey )             PCBYTE    pbKey,
+                                    SIZE_T    cbKey,      // Required. Key size MUST be 32 bytes.
+    _In_reads_( cbNonce )           PCBYTE    pbNonce,
+                                    SIZE_T    cbNonce,    // Required. Nonce size MUST be 12 bytes.
+    _In_reads_opt_( cbAuthData )    PCBYTE    pbAuthData,
+                                    SIZE_T    cbAuthData, // Optional. Can be any size.
+    _In_reads_( cbData )            PCBYTE    pbSrc,
+    _Out_writes_( cbData )          PBYTE     pbDst,
+                                    SIZE_T    cbData,     // Required. Max size is 274,877,906,880 bytes.
+    _Out_writes_( cbTag )           PBYTE     pbTag,
+                                    SIZE_T    cbTag );    // Required. Tag size MUST be 16 bytes.
+
+_Success_(return == SYMCRYPT_NO_ERROR)
+SYMCRYPT_ERROR
+SYMCRYPT_CALL
+SymCryptChaCha20Poly1305Decrypt(
+    _In_reads_( cbKey )             PCBYTE    pbKey,
+                                    SIZE_T    cbKey,      // Required. Key size MUST be 32 bytes.
+    _In_reads_( cbNonce )           PCBYTE    pbNonce,
+                                    SIZE_T    cbNonce,    // Required. Nonce size MUST be 12 bytes.
+    _In_reads_opt_( cbAuthData )    PCBYTE    pbAuthData,
+                                    SIZE_T    cbAuthData, // Optional. Can be any size.
+    _In_reads_( cbData )            PCBYTE    pbSrc,
+    _Out_writes_( cbData )          PBYTE     pbDst,
+                                    SIZE_T    cbData,     // Required. Max size is 274,877,906,880 bytes.
+    _In_reads_( cbTag )             PCBYTE    pbTag,
+                                    SIZE_T    cbTag );    // Required. Tag size MUST be 16 bytes.
+
+VOID
+SYMCRYPT_CALL
+SymCryptChaCha20Poly1305Selftest();
+
+////////////////////////////////////////////////////////////////////////////
 //   MARVIN32
 //
 // Marvin is a checksum function optimized for speed on small inputs.

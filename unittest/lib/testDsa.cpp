@@ -309,7 +309,7 @@ testDsaSingle(
     ntStatus = pDsa->verify( buf, cbHash, pbSig, cbSig );
     CHECK( !NT_SUCCESS( ntStatus ), "Success verifying modified DSA signature" );
 
-    memcpy( buf, pbHash, cbSig );
+    memcpy( buf, pbSig, cbSig );
     buf[g_rng.sizet( cbSig )]++;
     ntStatus = pDsa->verify( pbHash, cbHash, buf, cbSig );
     CHECK( !NT_SUCCESS( ntStatus ), "Success verifying modified DSA signature" );
