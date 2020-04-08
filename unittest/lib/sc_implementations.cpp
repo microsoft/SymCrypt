@@ -887,7 +887,7 @@ VOID
 algImpDataPerfFunction<ImpSc,AlgAes, ModeCcm>( PBYTE buf1, PBYTE buf2, PBYTE buf3, SIZE_T dataSize )
 {
     SymCryptCcmEncrypt( SymCryptAesBlockCipher, (SYMCRYPT_AES_EXPANDED_KEY *)buf1,
-        buf2, 12, NULL, 0, buf2+16, buf2+16, dataSize, buf3, 16 );
+        buf2, 12, NULL, 0, buf2 + 16, buf3 + 16, dataSize, buf3, 16 );
 }
 
 template<>
@@ -895,7 +895,7 @@ VOID
 algImpDecryptPerfFunction<ImpSc,AlgAes, ModeCcm>( PBYTE buf1, PBYTE buf2, PBYTE buf3, SIZE_T dataSize )
 {
     SymCryptCcmDecrypt( SymCryptAesBlockCipher, (SYMCRYPT_AES_EXPANDED_KEY *)buf1,
-        buf2, 12, NULL, 0, buf2 + 16, buf2 + 16, dataSize, buf3, 16 );
+        buf2, 12, NULL, 0, buf3 + 16, buf2 + 16, dataSize, buf3, 16 );
 }
 
 template<>
@@ -1166,7 +1166,7 @@ algImpDataPerfFunction<ImpSc,AlgAes, ModeGcm>( PBYTE buf1, PBYTE buf2, PBYTE buf
     SymCryptGcmEncrypt( (PCSYMCRYPT_GCM_EXPANDED_KEY) buf1,
                             buf2, 12,
                             NULL, 0,
-                            buf2+16, buf2+16, dataSize,
+                            buf2 + 16, buf3 + 16, dataSize,
                             buf3, 16 );
 }
 
@@ -1177,7 +1177,7 @@ algImpDecryptPerfFunction<ImpSc,AlgAes, ModeGcm>( PBYTE buf1, PBYTE buf2, PBYTE 
     SymCryptGcmDecrypt( (PCSYMCRYPT_GCM_EXPANDED_KEY) buf1,
                             buf2, 12,
                             NULL, 0,
-                            buf2+16, buf2+16, dataSize,
+                            buf3 + 16, buf2 + 16, dataSize,
                             buf3, 16 );
 }
 
@@ -1471,7 +1471,7 @@ algImpDataPerfFunction<ImpSc, AlgChaCha20Poly1305, ModeNone>( PBYTE buf1, PBYTE 
     SymCryptChaCha20Poly1305Encrypt( buf1, 32,
                                      buf2, 12,
                                      NULL, 0,
-                                     buf2 + 16, buf2 + 16, dataSize,
+                                     buf2 + 16, buf3 + 16, dataSize,
                                      buf3, 16 );
 }
 
@@ -1482,7 +1482,7 @@ algImpDecryptPerfFunction<ImpSc, AlgChaCha20Poly1305, ModeNone>( PBYTE buf1, PBY
     SymCryptChaCha20Poly1305Decrypt( buf1, 32,
                                      buf2, 12,
                                      NULL, 0,
-                                     buf2 + 16, buf2 + 16, dataSize,
+                                     buf3 + 16, buf2 + 16, dataSize,
                                      buf3, 16 );
 }
 

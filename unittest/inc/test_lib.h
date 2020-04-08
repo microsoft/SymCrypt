@@ -101,6 +101,7 @@
     #define STATUS_SUCCESS                   ((NTSTATUS)0x00000000L)
     #define NT_SUCCESS(Status)               (((NTSTATUS)(Status)) >= 0)
     #define STATUS_AUTH_TAG_MISMATCH         ((NTSTATUS)0xC000A002L)
+    #define STATUS_ENCRYPTION_FAILED         ((NTSTATUS)0xC000028AL)
 
     #define UNREFERENCED_PARAMETER(x)       (x)
 
