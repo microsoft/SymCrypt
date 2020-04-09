@@ -27,7 +27,7 @@
 ;       pDst        -> x2
 ;       nDigits     -> x3
 
-    LEAF_ENTRY A64NAME(SymCryptFdefRawAddAsm)
+    LEAF_ENTRY SymCryptFdefRawAddAsm
 
     neg     x3, x3                  ; negate the digit count
     ands    x4, x4, x4              ; Zero the carry flag
@@ -54,7 +54,7 @@ SymCryptFdefRawAddAsmLoop
 
     ret
 
-    LEAF_END A64NAME(SymCryptFdefRawAddAsm)
+    LEAF_END SymCryptFdefRawAddAsm
 
 ;UINT32
 ;SYMCRYPT_CALL
@@ -70,7 +70,7 @@ SymCryptFdefRawAddAsmLoop
 ;       pDst        -> x2
 ;       nDigits     -> x3
 
-    LEAF_ENTRY A64NAME(SymCryptFdefRawSubAsm)
+    LEAF_ENTRY SymCryptFdefRawSubAsm
 
     neg     x3, x3                  ; negate the digit count
     subs    x4, x4, x4              ; Set the carry flag (i.e. no borrow)
@@ -97,7 +97,7 @@ SymCryptFdefRawSubAsmLoop
 
     ret
 
-    LEAF_END A64NAME(SymCryptFdefRawSubAsm)
+    LEAF_END SymCryptFdefRawSubAsm
 
 ;VOID
 ;SYMCRYPT_CALL
@@ -107,7 +107,7 @@ SymCryptFdefRawSubAsmLoop
 ;                                                                UINT32      nDigits,
 ;                                                                UINT32      mask )
 
-    LEAF_ENTRY A64NAME(SymCryptFdefMaskedCopyAsm)
+    LEAF_ENTRY SymCryptFdefMaskedCopyAsm
 
     neg     x2, x2                  ; negate the digit count
     subs    x4, XZR, x3             ; If (x3 > 0) clear the carry flag (i.e. borrow)
@@ -133,7 +133,7 @@ SymCryptFdefMaskedCopyAsmLoop
 
     ret
 
-    LEAF_END A64NAME(SymCryptFdefMaskedCopyAsm)
+    LEAF_END SymCryptFdefMaskedCopyAsm
 
 ;VOID
 ;SYMCRYPT_CALL
@@ -171,7 +171,7 @@ SymCryptFdefMaskedCopyAsmLoop
 ; Note x13, x14 are reserved in ARM64EC and thus are not used
 
 
-    LEAF_ENTRY A64NAME(SymCryptFdefRawMulAsm)
+    LEAF_ENTRY SymCryptFdefRawMulAsm
 
     lsl     x1, x1, #2                  ; Calculate word count
 
@@ -294,7 +294,7 @@ SymCryptFdefRawMulAsmLoopInner
 
     ret
 
-    LEAF_END A64NAME(SymCryptFdefRawMulAsm)
+    LEAF_END SymCryptFdefRawMulAsm
 
 
 

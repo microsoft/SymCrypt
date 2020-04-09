@@ -33,7 +33,7 @@
 ;       pDst        -> x2
 ;       nDigits     -> x3
 
-    LEAF_ENTRY A64NAME(SymCryptFdef369RawAddAsm)
+    LEAF_ENTRY SymCryptFdef369RawAddAsm
 
     neg     x3, x3                  ; negate the digit count
     ands    x4, x4, x4              ; Zero the carry flag
@@ -59,7 +59,7 @@ SymCryptFdef369RawAddAsmLoop
 
     ret
 
-    LEAF_END A64NAME(SymCryptFdef369RawAddAsm)
+    LEAF_END SymCryptFdef369RawAddAsm
 
 ;UINT32
 ;SYMCRYPT_CALL
@@ -75,7 +75,7 @@ SymCryptFdef369RawAddAsmLoop
 ;       pDst        -> x2
 ;       nDigits     -> x3
 
-    LEAF_ENTRY A64NAME(SymCryptFdef369RawSubAsm)
+    LEAF_ENTRY SymCryptFdef369RawSubAsm
 
     neg     x3, x3                  ; negate the digit count
     subs    x4, x4, x4              ; Set the carry flag (i.e. no borrow)
@@ -101,7 +101,7 @@ SymCryptFdef369RawSubAsmLoop
 
     ret
 
-    LEAF_END A64NAME(SymCryptFdef369RawSubAsm)
+    LEAF_END SymCryptFdef369RawSubAsm
 
 ;VOID
 ;SYMCRYPT_CALL
@@ -111,7 +111,7 @@ SymCryptFdef369RawSubAsmLoop
 ;                                                                UINT32      nDigits,
 ;                                                                UINT32      mask )
 
-    LEAF_ENTRY A64NAME(SymCryptFdef369MaskedCopyAsm)
+    LEAF_ENTRY SymCryptFdef369MaskedCopyAsm
 
     neg     x2, x2                  ; negate the digit count
     subs    x4, XZR, x3             ; If (x3 > 0) clear the carry flag (i.e. borrow)
@@ -136,7 +136,7 @@ SymCryptFdef369MaskedCopyAsmLoop
 
     ret
 
-    LEAF_END A64NAME(SymCryptFdef369MaskedCopyAsm)
+    LEAF_END SymCryptFdef369MaskedCopyAsm
 
 ;VOID
 ;SYMCRYPT_CALL
@@ -174,7 +174,7 @@ SymCryptFdef369MaskedCopyAsmLoop
 ; Note x13, x14 are reserved in ARM64EC and thus are not used
 
 
-    LEAF_ENTRY A64NAME(SymCryptFdef369RawMulAsm)
+    LEAF_ENTRY SymCryptFdef369RawMulAsm
 
     add     x1, x1, x1, LSL #1          ; Calculate word count (x1 * 3)
 
@@ -279,7 +279,7 @@ SymCryptFdef369RawMulAsmLoopInner
 
     ret
 
-    LEAF_END A64NAME(SymCryptFdef369RawMulAsm)
+    LEAF_END SymCryptFdef369RawMulAsm
 
 ;VOID
 ;SymCryptFdef369MontgomeryReduceAsm(

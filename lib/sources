@@ -8,7 +8,7 @@
 #
 #
 #----------------------------------------------------------------------------
-ARM64X_EC_ENABLED=1
+
 
 TARGETNAME = symcrypt
 TARGETTYPE=LIBRARY
@@ -156,10 +156,6 @@ ARM64_SOURCES = \
     fdef369_asm.asm \
     wipe.asm \
 
-ARM64EC_SOURCES = \
-    fdef_asm.asm \
-    fdef369_asm.asm \
-    wipe.asm \
 
 BUFFER_OVERFLOW_CHECKS=1
 
