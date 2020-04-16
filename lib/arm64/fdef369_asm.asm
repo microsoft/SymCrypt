@@ -13,6 +13,7 @@
 #include "ksarm64.h"
 
 #include "symcrypt_version.inc"
+#include "symcrypt_name_mangling.inc"
 #include "symcrypt_magic.inc"
 
 #include "C_asm_shared.inc"
@@ -33,7 +34,7 @@
 ;       pDst        -> x2
 ;       nDigits     -> x3
 
-    LEAF_ENTRY SymCryptFdef369RawAddAsm
+    LEAF_ENTRY ARM64EC_NAME_MANGLE(SymCryptFdef369RawAddAsm)
 
     neg     x3, x3                  ; negate the digit count
     ands    x4, x4, x4              ; Zero the carry flag
@@ -59,7 +60,7 @@ SymCryptFdef369RawAddAsmLoop
 
     ret
 
-    LEAF_END SymCryptFdef369RawAddAsm
+    LEAF_END ARM64EC_NAME_MANGLE(SymCryptFdef369RawAddAsm)
 
 ;UINT32
 ;SYMCRYPT_CALL
@@ -75,7 +76,7 @@ SymCryptFdef369RawAddAsmLoop
 ;       pDst        -> x2
 ;       nDigits     -> x3
 
-    LEAF_ENTRY SymCryptFdef369RawSubAsm
+    LEAF_ENTRY ARM64EC_NAME_MANGLE(SymCryptFdef369RawSubAsm)
 
     neg     x3, x3                  ; negate the digit count
     subs    x4, x4, x4              ; Set the carry flag (i.e. no borrow)
@@ -101,7 +102,7 @@ SymCryptFdef369RawSubAsmLoop
 
     ret
 
-    LEAF_END SymCryptFdef369RawSubAsm
+    LEAF_END ARM64EC_NAME_MANGLE(SymCryptFdef369RawSubAsm)
 
 ;VOID
 ;SYMCRYPT_CALL
@@ -111,7 +112,7 @@ SymCryptFdef369RawSubAsmLoop
 ;                                                                UINT32      nDigits,
 ;                                                                UINT32      mask )
 
-    LEAF_ENTRY SymCryptFdef369MaskedCopyAsm
+    LEAF_ENTRY ARM64EC_NAME_MANGLE(SymCryptFdef369MaskedCopyAsm)
 
     neg     x2, x2                  ; negate the digit count
     subs    x4, XZR, x3             ; If (x3 > 0) clear the carry flag (i.e. borrow)
@@ -136,7 +137,7 @@ SymCryptFdef369MaskedCopyAsmLoop
 
     ret
 
-    LEAF_END SymCryptFdef369MaskedCopyAsm
+    LEAF_END ARM64EC_NAME_MANGLE(SymCryptFdef369MaskedCopyAsm)
 
 ;VOID
 ;SYMCRYPT_CALL
@@ -174,7 +175,7 @@ SymCryptFdef369MaskedCopyAsmLoop
 ; Note x13, x14 are reserved in ARM64EC and thus are not used
 
 
-    LEAF_ENTRY SymCryptFdef369RawMulAsm
+    LEAF_ENTRY ARM64EC_NAME_MANGLE(SymCryptFdef369RawMulAsm)
 
     add     x1, x1, x1, LSL #1          ; Calculate word count (x1 * 3)
 
@@ -279,7 +280,7 @@ SymCryptFdef369RawMulAsmLoopInner
 
     ret
 
-    LEAF_END SymCryptFdef369RawMulAsm
+    LEAF_END ARM64EC_NAME_MANGLE(SymCryptFdef369RawMulAsm)
 
 ;VOID
 ;SymCryptFdef369MontgomeryReduceAsm(
@@ -310,7 +311,7 @@ SymCryptFdef369RawMulAsmLoopInner
 ;       x20 = Stored pSrc pointer (moving forward one word every outer loop)
 ; Note x13, x14 are reserved in ARM64EC and thus are not used
 
-    NESTED_ENTRY SymCryptFdef369MontgomeryReduceAsm
+    NESTED_ENTRY ARM64EC_NAME_MANGLE(SymCryptFdef369MontgomeryReduceAsm)
     PROLOG_SAVE_REG_PAIR fp, lr, #-32!  ; allocate 32 bytes of stack; store FP/LR
     PROLOG_SAVE_REG_PAIR x19, x20, #16  ; free up x19/x20
 
@@ -461,7 +462,7 @@ SymCryptFdef369MontgomeryReduceMaskedCopyAsmLoop
     EPILOG_RESTORE_REG_PAIR fp, lr, #32!
     EPILOG_RETURN
 
-    NESTED_END SymCryptFdef369MontgomeryReduceAsm
+    NESTED_END ARM64EC_NAME_MANGLE(SymCryptFdef369MontgomeryReduceAsm)
 
     END
 

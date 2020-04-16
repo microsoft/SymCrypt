@@ -138,18 +138,18 @@
 #pragma warning(disable:4359)   // *** Alignment specifier is less than actual alignment
 #endif
 
+#elif (defined( _ARM64_ ) || defined( _ARM64EC_ )) && !defined( SYMCRYPT_IGNORE_PLATFORM )
+
+#undef  SYMCRYPT_CPU_ARM64
+#define SYMCRYPT_CPU_ARM64      1
+#define SYMCRYPT_CALL
+#define SYMCRYPT_ALIGN_VALUE    16
+
 #elif defined( _AMD64_ ) && !defined ( SYMCRYPT_IGNORE_PLATFORM )
 
 #undef  SYMCRYPT_CPU_AMD64
 #define SYMCRYPT_CPU_AMD64      1
 
-#define SYMCRYPT_CALL
-#define SYMCRYPT_ALIGN_VALUE    16
-
-#elif defined( _ARM64_ ) && !defined( SYMCRYPT_IGNORE_PLATFORM )
-
-#undef  SYMCRYPT_CPU_ARM64
-#define SYMCRYPT_CPU_ARM64      1
 #define SYMCRYPT_CALL
 #define SYMCRYPT_ALIGN_VALUE    16
 
