@@ -1,3 +1,5 @@
+ARM64X_EC_ENABLED=1
+
 TARGETNAME=symcryptunittest_Win8_1nLater
 
 # TODO: update this to a Win8.1 test driver
