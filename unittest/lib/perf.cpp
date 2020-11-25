@@ -48,7 +48,30 @@ GET_PERF_CLOCK()
     return __rdtsc();
 }
 
-#define SET_PERF_SCALEFACTOR() {g_perfScaleFactor = 1.0; g_minMeasurementClockTime = 10000; g_largeMeasurementClockTime = (ULONGLONG) ((1<<28) / g_perfScaleFactor);}
+#define SET_PERF_SCALEFACTOR() \
+{ \
+    g_perfScaleFactor = 1.0; g_largeMeasurementClockTime = (ULONGLONG) ((1<<28) / g_perfScaleFactor); \
+    /*print( "Perf scale factor = %f\n", (float) g_perfScaleFactor ); */ \
+ \
+    /* measure cycles for doing nothing - ensure we measure at least 100x this to keep measurement error < 1% */ \
+    ULONGLONG durations[ MEASUREMENTS_PER_RESULT ]; \
+ \
+    for( int i=0; i<MEASUREMENTS_PER_RESULT; i++) \
+    { \
+        ULONGLONG before = GET_PERF_CLOCK(); \
+        ULONGLONG after = GET_PERF_CLOCK(); \
+        durations[i] = after - before; \
+    } \
+ \
+    qsort( durations, MEASUREMENTS_PER_RESULT, sizeof( durations[0] ), compareUlonglong ); \
+ \
+    g_minMeasurementClockTime = 100 * durations[ MEASUREMENTS_PER_RESULT / 3 ]; \
+ \
+    if( g_minMeasurementClockTime < 10000 ) g_minMeasurementClockTime = 10000; \
+ \
+    print( "Perf min measurement clock time = %.1f\n", (float) g_minMeasurementClockTime ); \
+}
+
 #define PERF_UNIT   "cycles"
 
 #endif
@@ -150,7 +173,10 @@ SYMCRYPT_ALIGN_AT(256) BYTE g_perfBuffer[8 * PERF_BUFFER_SIZE];
 #define RESULTS_PER_DATAPOINT       10
 #define MAX_SIZES                   25
 
-double g_perfMeasurementOverhead = 0.0;
+double g_perfMeasurementOverhead = 0.0; // Overhead per measurement of a loop over the test function
+double g_perfRunOverhead = 0.0;         // Overhead per run of a test function (1 iteration of a loop being measured)
+
+SIZE_T g_fixedTimeLoopVariable; // When running busy-work which will take constant time, we will update this global which will be printed to prevent compiler optimization
 
 typedef VOID (SYMCRYPT_CALL * WIPE_FN)( PBYTE pbData, SIZE_T cbData );
 
@@ -372,7 +398,7 @@ double correctAverage( double average, double * pData, SIZE_T cdData )
 
     //
     // We want to add the deviations in the numerically stablest order.
-    // That means in order of increasing aboslute value.
+    // That means in order of increasing absolute value.
     // We do this by sorting, finding the zero-point, and then adding the elements
     // upwards and downwards from there.
     //
@@ -417,7 +443,34 @@ double correctAverage( double average, double * pData, SIZE_T cdData )
 
 }
 
+int g_fixedTimeLoopRuns = 1;
 
+#define FIXED_TIME_LOOP_ITER_2() \
+    x += y; y ^= x;
+
+#define FIXED_TIME_LOOP_ITER_8() \
+    FIXED_TIME_LOOP_ITER_2() FIXED_TIME_LOOP_ITER_2() FIXED_TIME_LOOP_ITER_2() FIXED_TIME_LOOP_ITER_2()
+
+#define FIXED_TIME_LOOP_ITER_32() \
+    FIXED_TIME_LOOP_ITER_8() FIXED_TIME_LOOP_ITER_8() FIXED_TIME_LOOP_ITER_8() FIXED_TIME_LOOP_ITER_8()
+
+#define FIXED_TIME_LOOP_ITER_128() \
+    FIXED_TIME_LOOP_ITER_32() FIXED_TIME_LOOP_ITER_32() FIXED_TIME_LOOP_ITER_32() FIXED_TIME_LOOP_ITER_32()
+
+#define FIXED_TIME_LOOP_ITER_512() \
+    FIXED_TIME_LOOP_ITER_128() FIXED_TIME_LOOP_ITER_128() FIXED_TIME_LOOP_ITER_128() FIXED_TIME_LOOP_ITER_128()
+
+#define FIXED_TIME_LOOP_EXPECTED_CYCLES (512 * g_fixedTimeLoopRuns)
+#define FIXED_TIME_LOOP() \
+    { \
+        SIZE_T x = g_fixedTimeLoopVariable; \
+        SIZE_T y = 0; \
+        for( int ftl_i=0; ftl_i < g_fixedTimeLoopRuns; ++ftl_i ) \
+        { \
+            FIXED_TIME_LOOP_ITER_512() \
+        } \
+        g_fixedTimeLoopVariable = x; \
+    }
 
 double measureDataPerfGivenStack(
                                 SIZE_T keySize,
@@ -433,7 +486,9 @@ double measureDataPerfGivenStack(
     PBYTE buf3 = g_perfBuffer + 4*PERF_BUFFER_SIZE + (g_rng.sizet( PERF_BUFFER_SIZE ) & ~0x3f);
     //PBYTE buf4 = g_perfBuffer + 6*PERF_BUFFER_SIZE + (g_rng.sizet( PERF_BUFFER_SIZE ) & ~0x3f);
 
-    ULONGLONG   durations[ MEASUREMENTS_PER_RESULT ];
+    double   durations[ MEASUREMENTS_PER_RESULT ];
+    //double   before[ MEASUREMENTS_PER_RESULT ]; // Helpful when debugging
+    //double   after[ MEASUREMENTS_PER_RESULT ];
 
     if( keyFn != NULL )
     {
@@ -451,16 +506,34 @@ double measureDataPerfGivenStack(
     ULONGLONG loopStart = GET_PERF_CLOCK();
     while( i < MEASUREMENTS_PER_RESULT && ( (GET_PERF_CLOCK() - loopStart) < g_largeMeasurementClockTime ) )
     {
-        ULONGLONG start = GET_PERF_CLOCK();
+        // Measure fixed time loop before and after loop of function of interest
+        // We use this both to ensure that the timing has not changed dramatically during the loop of the function of interest
+        // and to scale different measurements at different times so they are more directly comparable
+        ULONGLONG time0 = GET_PERF_CLOCK();
+        FIXED_TIME_LOOP();
+        ULONGLONG time1 = GET_PERF_CLOCK();
         for( int j=0; j<runs; j++ )
         {
             (*dataFn)( buf1, buf2, buf3, dataSize );
         }
-        ULONGLONG duration = GET_PERF_CLOCK() - start;
+        ULONGLONG time2 = GET_PERF_CLOCK();
+        FIXED_TIME_LOOP();
+        ULONGLONG time3 = GET_PERF_CLOCK();
+
+        double fixedBefore = (double) (time1 - time0);
+        double fixedAfter = (double)  (time3 - time2);
+        double fixedRatio = fixedBefore > fixedAfter ? fixedBefore / fixedAfter : fixedAfter / fixedBefore;
+        if( fixedRatio > 1.01f )
+        {
+            // Something changed in timing between before and after, rerun this run
+            continue;
+        }
+
+        ULONGLONG duration = time2 - time1;
         if( duration < g_minMeasurementClockTime )
         {
             //
-            // The measuremennt was too short, restart & double the # runs we do.
+            // The measurement was too short, restart & double the # runs we do.
             //
             i = 0;
             loopStart = GET_PERF_CLOCK();
@@ -468,31 +541,39 @@ double measureDataPerfGivenStack(
             CHECK( runs <= MAX_RUNS_PER_MEASUREMENT, "Measurement too fast" );
             continue;
         }
-        durations[i] = duration;
+
+        double fixedAverage = (fixedBefore + fixedAfter) / 2;
+        double measurementScaleFactor = ((double) FIXED_TIME_LOOP_EXPECTED_CYCLES) / fixedAverage;
+
+        durations[i] = ((double) duration) * measurementScaleFactor;
+        //before[i] = fixedBefore; // Helpful when debugging
+        //after[i] = fixedAfter;
+
         ++i;
     }
 
     /*
     // Helpful when debugging
-    print( " mdpgs");
+    print( " mdpgs[%i]", runs);
     char c = '[';
     for( int j=0; j<i; j++ )
     {
-        print( "%c%I64d", c, durations[j] );
+        print( "%c(%f,%f,%f)", c, durations[j], before[j] / g_fixedTimeLoopRuns, after[j] / g_fixedTimeLoopRuns );
         c = ',';
     }
     print( "]\n" );
     */
 
-    qsort( durations, i, sizeof( durations[0] ), compareUlonglong );
+    qsort( durations, i, sizeof( durations[0] ), compareDouble );
 
     //
     // We return the one-third percentile point to compensate for expected slow-downs.
     //
     double res = (double) durations[i/3];
+    res -= g_perfMeasurementOverhead;
     res /= runs;
     res *= g_perfScaleFactor;
-    res -= g_perfMeasurementOverhead;
+    res -= g_perfRunOverhead;
 
     *pNRuns = runs;
 
@@ -514,44 +595,62 @@ double measureKeyPerfGivenStack(    SIZE_T keySize,
     PBYTE buf3 = g_perfBuffer + 4*PERF_BUFFER_SIZE + (g_rng.sizet( PERF_BUFFER_SIZE ) & ~0xf);
     //PBYTE buf4 = g_perfBuffer + 6*PERF_BUFFER_SIZE + (g_rng.sizet( PERF_BUFFER_SIZE ) & ~0xf);
 
-    ULONGLONG   durations[ MEASUREMENTS_PER_RESULT ];
+    double   durations[ MEASUREMENTS_PER_RESULT ];
 
 
     int runs = *pNRuns;
     int i=0;
     while( i < MEASUREMENTS_PER_RESULT )
     {
-        ULONGLONG duration;
-        ULONGLONG start = GET_PERF_CLOCK();
+        ULONGLONG time0 = GET_PERF_CLOCK();
+        FIXED_TIME_LOOP();
+        ULONGLONG time1 = GET_PERF_CLOCK();
         for( int j=0; j<runs; j++ )
         {
-
             (*keyFn)( buf1, buf2, buf3, keySize );
             (*cleanFn)( buf1, buf2, buf3 );
         }
-        duration = GET_PERF_CLOCK() - start;
+        ULONGLONG time2 = GET_PERF_CLOCK();
+        FIXED_TIME_LOOP();
+        ULONGLONG time3 = GET_PERF_CLOCK();
+
+        double fixedBefore = (double) (time1 - time0);
+        double fixedAfter = (double)  (time3 - time2);
+        double fixedRatio = fixedBefore > fixedAfter ? fixedBefore / fixedAfter : fixedAfter / fixedBefore;
+        if( fixedRatio > 1.01f )
+        {
+            // Something changed in timing between before and after, rerun this run
+            continue;
+        }
+
+        ULONGLONG duration = time2 - time1;
         if( duration < g_minMeasurementClockTime )
         {
             //
-            // The measuremennt was too short, restart & double the # runs we do.
+            // The measurement was too short, restart & double the # runs we do.
             //
             i = 0;
             runs <<= 1;
             CHECK( runs <= MAX_RUNS_PER_MEASUREMENT, "Measurement too fast" );
             continue;
         }
-        durations[i] = duration;
+
+        double fixedAverage = (fixedBefore + fixedAfter) / 2;
+        double measurementScaleFactor = ((double) FIXED_TIME_LOOP_EXPECTED_CYCLES) / fixedAverage;
+
+        durations[i] = ((double) duration) * measurementScaleFactor;
         ++i;
     }
-    qsort( durations, MEASUREMENTS_PER_RESULT, sizeof( durations[0] ), compareUlonglong );
+    qsort( durations, MEASUREMENTS_PER_RESULT, sizeof( durations[0] ), compareDouble );
 
     //
     // We return the one-third percentile point to compensate for expected slow-downs.
     //
     double res = (double) durations[MEASUREMENTS_PER_RESULT/3];
+    res -= g_perfMeasurementOverhead;
     res /= runs;
     res *= g_perfScaleFactor;
-    res -= 2 * g_perfMeasurementOverhead;
+    res -= g_perfRunOverhead;
 
     *pNRuns = runs;
 
@@ -567,20 +666,35 @@ double measureWipePerfGivenStack(
 {
     PBYTE buf = g_perfBuffer + (g_rng.sizet( PERF_BUFFER_SIZE ) & ~0x7f) + dataOffset;
 
-    ULONGLONG   durations[ MEASUREMENTS_PER_RESULT ];
+    double   durations[ MEASUREMENTS_PER_RESULT ];
 
     int runs = *pNRuns;
     int i=0;
 
     while( i < MEASUREMENTS_PER_RESULT )
     {
-        ULONGLONG start = GET_PERF_CLOCK();
+        ULONGLONG time0 = GET_PERF_CLOCK();
+        FIXED_TIME_LOOP();
+        ULONGLONG time1 = GET_PERF_CLOCK();
         for( int j=0; j<runs; j++ )
         {
 
             (*wipeFn)( buf, dataSize );
         }
-        ULONGLONG duration = GET_PERF_CLOCK() - start;
+        ULONGLONG time2 = GET_PERF_CLOCK();
+        FIXED_TIME_LOOP();
+        ULONGLONG time3 = GET_PERF_CLOCK();
+
+        double fixedBefore = (double) (time1 - time0);
+        double fixedAfter = (double)  (time3 - time2);
+        double fixedRatio = fixedBefore > fixedAfter ? fixedBefore / fixedAfter : fixedAfter / fixedBefore;
+        if( fixedRatio > 1.01f )
+        {
+            // Something changed in timing between before and after, rerun this run
+            continue;
+        }
+
+        ULONGLONG duration = time2 - time1;
         if( duration < g_minMeasurementClockTime )
         {
             //
@@ -591,18 +705,23 @@ double measureWipePerfGivenStack(
             CHECK( runs <= MAX_RUNS_PER_MEASUREMENT, "Measurement too fast" );
             continue;
         }
-        durations[i] = duration;
+
+        double fixedAverage = (fixedBefore + fixedAfter) / 2;
+        double measurementScaleFactor = ((double) FIXED_TIME_LOOP_EXPECTED_CYCLES) / fixedAverage;
+
+        durations[i] = ((double) duration) * measurementScaleFactor;
         ++i;
     }
-    qsort( durations, MEASUREMENTS_PER_RESULT, sizeof( durations[0] ), compareUlonglong );
+    qsort( durations, MEASUREMENTS_PER_RESULT, sizeof( durations[0] ), compareDouble );
 
     //
     // We return the one-third percentile point to compensate for expected slow-downs.
     //
     double res = (double) durations[MEASUREMENTS_PER_RESULT/3];
+    res -= g_perfMeasurementOverhead;
     res /= runs;
     res *= g_perfScaleFactor;
-    res -= g_perfMeasurementOverhead;
+    res -= g_perfRunOverhead;
 
     *pNRuns = runs;
 
@@ -661,9 +780,11 @@ double measureWipePerfMoveStack(
 }
 
 
-double measurePerfOneSize( SIZE_T keySize, SIZE_T dataSize, PerfKeyFn keyFn, PerfDataFn prepFn, PerfDataFn dataFn, PerfCleanFn cleanFn, BOOL measureKey )
+double measurePerfOneSize( SIZE_T keySize, SIZE_T dataSize, PerfKeyFn keyFn, PerfDataFn prepFn, PerfDataFn dataFn, PerfCleanFn cleanFn, BOOL measureKey, int * pNRuns = NULL )
 {
     int nRuns = 1;
+    if (pNRuns != NULL) nRuns = *pNRuns;
+
     double results[ RESULTS_PER_DATAPOINT ];
     int i = 0;
 
@@ -675,6 +796,7 @@ double measurePerfOneSize( SIZE_T keySize, SIZE_T dataSize, PerfKeyFn keyFn, Per
         results[i] = measurePerfMoveStack( keySize, dataSize, keyFn, prepFn, dataFn, cleanFn, measureKey, &nRuns );
         i++;
     }
+    if (pNRuns != NULL) *pNRuns = nRuns;
 
     /*
     // Helpful when debugging
@@ -791,7 +913,7 @@ VOID measurePerfData(
 
         //
         // Compute the average of the y values accurately.
-        // Inacuracies in this lead to numerical instabilities that are quite visible
+        // Inaccuracies in this lead to numerical instabilities that are quite visible
         // in cases where the algorithm time does not depend on x.
         //
         double avY = correctAverage( 0.0, y, n );
@@ -975,7 +1097,7 @@ VOID measurePerfOneAlg( AlgorithmImplementation * pAlgImp )
                 CHECK3( perfInfo.strPostfix != NULL, "Extended key param not found %08x", *k );
             }
 
-            measurePerfData( keyFn, dataFn, dataFn, cleanFn, &dataSizes, *k, &perfInfo );
+            measurePerfData( keyFn, NULL, dataFn, cleanFn, &dataSizes, *k, &perfInfo );
             pAlgImp->m_perfInfo.push_back( perfInfo );
         }
 
@@ -1090,6 +1212,8 @@ measurePerf()
     CHECK( SetThreadPriority( GetCurrentThread(), oldPriority ), "Failed to set priority" );
     #endif // SYMCRYPT_MS_VC
 
+    print( ".%c.\n", ' ' + (g_fixedTimeLoopVariable)%(127-' '));    // DO NOT REMOVE, ensures that do-busy work isn't optimized away
+
     iprint( "...done\n" );
 }
 
@@ -1117,8 +1241,8 @@ initPerfSystem()
     // which cannot be faked without doing the work.
     //
 
-    SIZE_T r = g_rng.sizet( MAX_SIZE_T );
-    SIZE_T x = r;
+    g_fixedTimeLoopVariable = g_rng.sizet( MAX_SIZE_T );
+    SIZE_T x = g_fixedTimeLoopVariable;
     SIZE_T y = 0;
     for( int i=0; i<(1<<27); i++ )
     {
@@ -1127,31 +1251,73 @@ initPerfSystem()
         x += y>>5;
         y ^= x+1;
     }
-    print( ".%c.\n", ' ' + (r + x)%(127-' '));    // DO NOT REMOVE, ensures that do-busy work isn't optimized away
+    g_fixedTimeLoopVariable = x;
 
     SET_PERF_SCALEFACTOR();
-    //print( "Perf scale factor = %f\n", (float) g_perfScaleFactor );
 
-    for( int i=0; i<50; i++ )
+    // set up fixed time loop runs
+    ULONGLONG before = GET_PERF_CLOCK();
+    FIXED_TIME_LOOP();
+    ULONGLONG after = GET_PERF_CLOCK();
+    while (after - before < g_minMeasurementClockTime)
     {
-        g_perfMeasurementOverhead = 0.0;
-        g_perfMeasurementOverhead = measurePerfOneSize( 0, 0, NULL, NULL, nullPerfFunction, NULL, FALSE );
+        g_fixedTimeLoopRuns <<= 1;
+        before = GET_PERF_CLOCK();
+        FIXED_TIME_LOOP();
+        after = GET_PERF_CLOCK();
     }
+
+    g_perfRunOverhead = 0.0;
+    g_perfMeasurementOverhead = 0.0;
+
+    int nRuns0 = 1;
+    double runOverhead0 = measurePerfOneSize( 0, 0, NULL, NULL, nullPerfFunction, NULL, FALSE, &nRuns0 );
+    double measurementOverhead0 = runOverhead0 * nRuns0;
+
+    int nRuns1 = nRuns0 << 1;
+    double runOverhead1 = measurePerfOneSize( 0, 0, NULL, NULL, nullPerfFunction, NULL, FALSE, &nRuns1 );
+    double measurementOverhead1 = runOverhead1 * nRuns1;
+
+    g_perfRunOverhead = (measurementOverhead1 - measurementOverhead0) / (nRuns1 - nRuns0);
+    g_perfMeasurementOverhead = measurementOverhead0 - (g_perfRunOverhead * nRuns0);
+
 
 #if SYMCRYPT_CPU_X86 | SYMCRYPT_CPU_AMD64
     if( g_perfMeasurementOverhead > 1000 )
     {
         print( "Detected Hypervisor due to very high overhead; disabling CPUID before RDTSC\n" );
         g_enableCpuIdBeforeRdtsc = FALSE;
-        for( int i=0; i<50; i++ )
+
+        SET_PERF_SCALEFACTOR();
+
+        // set up fixed time loop runs
+        ULONGLONG before = GET_PERF_CLOCK();
+        FIXED_TIME_LOOP();
+        ULONGLONG after = GET_PERF_CLOCK();
+        while (after - before < g_minMeasurementClockTime)
         {
-            g_perfMeasurementOverhead = 0.0;
-            g_perfMeasurementOverhead = measurePerfOneSize( 0, 0, NULL, NULL, nullPerfFunction, NULL, FALSE );
+            g_fixedTimeLoopRuns <<= 1;
+            before = GET_PERF_CLOCK();
+            FIXED_TIME_LOOP();
+            after = GET_PERF_CLOCK();
         }
+        g_perfRunOverhead = 0.0;
+        g_perfMeasurementOverhead = 0.0;
+
+        int nRuns0 = 1;
+        double runOverhead0 = measurePerfOneSize( 0, 0, NULL, NULL, nullPerfFunction, NULL, FALSE, &nRuns0 );
+        double measurementOverhead0 = runOverhead0 * nRuns0;
+
+        int nRuns1 = nRuns0 << 1;
+        double runOverhead1 = measurePerfOneSize( 0, 0, NULL, NULL, nullPerfFunction, NULL, FALSE, &nRuns1 );
+        double measurementOverhead1 = runOverhead1 * nRuns1;
+
+        g_perfRunOverhead = (measurementOverhead1 - measurementOverhead0) / (nRuns1 - nRuns0);
+        g_perfMeasurementOverhead = measurementOverhead0 - (g_perfRunOverhead * nRuns0);
     }
 #endif
 
-    print( "Performance measurement overhead = %.1f %s", g_perfMeasurementOverhead, PERF_UNIT );
+    print( "Performance overhead: %.1f %s per run, %.1f %s per measurement", g_perfRunOverhead, PERF_UNIT, g_perfMeasurementOverhead, PERF_UNIT );
 }
 
 VOID
@@ -1325,7 +1491,7 @@ addRsaKeyGenPerfSymCrypt( PrintTable &table )
     }
 }
 
-#if INCLUDE_IMPL_MSBIGNUM 
+#if INCLUDE_IMPL_MSBIGNUM
 VOID
 addRsaKeyGenPerfMsBignum( PrintTable &table )
 {
