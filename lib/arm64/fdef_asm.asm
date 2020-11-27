@@ -218,7 +218,7 @@ SymCryptFdefRawMulAsmLoopInner1
 
     add     x2, x2, #32
     add     x4, x4, #32
-    
+
     cbnz    x3, SymCryptFdefRawMulAsmLoopInner1
 
     adc     x15, x15, XZR               ; Store the next word into the destination (with the carry if any)
@@ -439,7 +439,7 @@ SymCryptFdefRawSquareAsmInnerLoopInit_Word1
 
     SQR_SINGLEADD_64    3
 
-    add     x3, x3, #1                  ; move one digit up    
+    add     x3, x3, #1                  ; move one digit up
     add     x2, x2, #32
     add     x4, x4, #32
 
@@ -498,7 +498,7 @@ SymCryptFdefRawSquareAsmInnerLoop_Word2
 SymCryptFdefRawSquareAsmInnerLoop_Word3
     SQR_DOUBLEADD_64    3
 
-    add     x3, x3, #1                  ; move one digit up    
+    add     x3, x3, #1                  ; move one digit up
     add     x2, x2, #32
     add     x4, x4, #32
 
@@ -524,7 +524,7 @@ SymCryptFdefRawSquareAsmInnerLoop_Word3
 
 SymCryptFdefRawSquareAsmSecondPass
 
-    add     x3, x3, #1      ; move one digit up    
+    add     x3, x3, #1      ; move one digit up
 
     ldp     x8, x9, [x4]
     adcs    x8, x8, x8      ; Shift left and add the carry
@@ -758,7 +758,7 @@ SymCryptFdefMontgomeryReduceMaskedCopyAsmLoop
     EPILOG_RESTORE_REG_PAIR fp, lr, #32!
     EPILOG_RETURN
 
-    NESTED_END (SymCryptFdefMontgomeryReduceAsm)
+    NESTED_END ARM64EC_NAME_MANGLE(SymCryptFdefMontgomeryReduceAsm)
 
     END
 

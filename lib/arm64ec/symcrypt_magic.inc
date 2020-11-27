@@ -1,1 +1,1 @@
-#include "..\arm64\SymCrypt_magic.inc"
+#include "..\arm64\symcrypt_magic.inc"

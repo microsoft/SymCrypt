@@ -1016,55 +1016,86 @@ SymCryptXtsAesEncryptDataUnitNeon(
 {
     __n128 t0, t1, t2, t3, t4, t5, t6, t7;
     __n128 c0, c1, c2, c3, c4, c5, c6, c7;
-
     const __n128 *  pSrc;
     __n128 *        pDst;
     const __n128 vZero = neon_moviqb(0);
     const __n128 vAlphaMask =     (__n128) {.n128_u8 = {0x87, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1}};
     const __n64 vAlphaMultiplier = (__n64) {.n64_u8  = {0x86, 0, 0, 0, 0, 0, 0, 0}};
 
-    if( cbData < 8 * SYMCRYPT_AES_BLOCK_SIZE )
-    {
-        SymCryptXtsAesEncryptDataUnitC( pExpandedKey, pbTweakBlock, pbSrc, pbDst, cbData );
-        return;
-    }
-
-    pSrc = (const __n128 *) pbSrc;
     t0 = *(__n128 *)pbTweakBlock;
 
-    XTS_MUL_ALPHA4( t0, t4 );
-    XTS_MUL_ALPHA ( t0, t1 );
-    XTS_MUL_ALPHA ( t4, t5 );
-    XTS_MUL_ALPHA ( t1, t2 );
-    XTS_MUL_ALPHA ( t5, t6 );
-    XTS_MUL_ALPHA ( t2, t3 );
-    XTS_MUL_ALPHA ( t6, t7 );
-
-    c0 = veorq_u32( t0, pSrc[0] );
-    c1 = veorq_u32( t1, pSrc[1] );
-    c2 = veorq_u32( t2, pSrc[2] );
-    c3 = veorq_u32( t3, pSrc[3] );
-    c4 = veorq_u32( t4, pSrc[4] );
-    c5 = veorq_u32( t5, pSrc[5] );
-    c6 = veorq_u32( t6, pSrc[6] );
-    c7 = veorq_u32( t7, pSrc[7] );
-
-    for(;;)
+    if( cbData >= 8 * SYMCRYPT_AES_BLOCK_SIZE )
     {
-        pbSrc += 8 * SYMCRYPT_AES_BLOCK_SIZE;
+        // Set up for main loop entry
+        // NOTE: We load the first 8 blocks and store the last 8 blocks out of the loop to allow
+        // greater instruction interleaving in the main loop.
+        // This appears to give about 5-8% performance uplift on little (in-order) cores and has
+        // no effect on big cores.
+        XTS_MUL_ALPHA4( t0, t4 );
+        XTS_MUL_ALPHA ( t0, t1 );
+        XTS_MUL_ALPHA ( t4, t5 );
+        XTS_MUL_ALPHA ( t1, t2 );
+        XTS_MUL_ALPHA ( t5, t6 );
+        XTS_MUL_ALPHA ( t2, t3 );
+        XTS_MUL_ALPHA ( t6, t7 );
 
-        AES_ENCRYPT_8( pExpandedKey, c0, c1, c2, c3, c4, c5, c6, c7 );
+        pSrc = (const __n128 *) pbSrc;
+        c0 = veorq_u32( t0, pSrc[0] );
+        c1 = veorq_u32( t1, pSrc[1] );
+        c2 = veorq_u32( t2, pSrc[2] );
+        c3 = veorq_u32( t3, pSrc[3] );
+        c4 = veorq_u32( t4, pSrc[4] );
+        c5 = veorq_u32( t5, pSrc[5] );
+        c6 = veorq_u32( t6, pSrc[6] );
+        c7 = veorq_u32( t7, pSrc[7] );
 
-        cbData -= 8 * SYMCRYPT_AES_BLOCK_SIZE;
-        if( cbData < 8 * SYMCRYPT_AES_BLOCK_SIZE )
+        for(;;)
         {
-            break;
+            pbSrc += 8 * SYMCRYPT_AES_BLOCK_SIZE;
+
+            AES_ENCRYPT_8( pExpandedKey, c0, c1, c2, c3, c4, c5, c6, c7 );
+
+            cbData -= 8 * SYMCRYPT_AES_BLOCK_SIZE;
+            if( cbData < 8 * SYMCRYPT_AES_BLOCK_SIZE )
+            {
+                break;
+            }
+
+            // Interleave the final xor, write, and compute next tweak block, and load, and first xor.
+            // This reduces register pressure and is more efficient.
+            pDst = (__n128 *) pbDst;
+            pSrc = (const __n128 *) pbSrc;
+            pDst[0] = veorq_u32( c0, t0 );
+            pDst[1] = veorq_u32( c1, t1 );
+            pDst[2] = veorq_u32( c2, t2 );
+            pDst[3] = veorq_u32( c3, t3 );
+            pDst[4] = veorq_u32( c4, t4 );
+            pDst[5] = veorq_u32( c5, t5 );
+            pDst[6] = veorq_u32( c6, t6 );
+            pDst[7] = veorq_u32( c7, t7 );
+
+            XTS_MUL_ALPHA8( t0, t0 );
+            XTS_MUL_ALPHA8( t1, t1 );
+            XTS_MUL_ALPHA8( t2, t2 );
+            XTS_MUL_ALPHA8( t3, t3 );
+            XTS_MUL_ALPHA8( t4, t4 );
+            XTS_MUL_ALPHA8( t5, t5 );
+            XTS_MUL_ALPHA8( t6, t6 );
+            XTS_MUL_ALPHA8( t7, t7 );
+
+            c0 = veorq_u32( pSrc[0], t0 );
+            c1 = veorq_u32( pSrc[1], t1 );
+            c2 = veorq_u32( pSrc[2], t2 );
+            c3 = veorq_u32( pSrc[3], t3 );
+            c4 = veorq_u32( pSrc[4], t4 );
+            c5 = veorq_u32( pSrc[5], t5 );
+            c6 = veorq_u32( pSrc[6], t6 );
+            c7 = veorq_u32( pSrc[7], t7 );
+
+            pbDst += 8 * SYMCRYPT_AES_BLOCK_SIZE;
         }
 
-        // Interleave the final xor, write, and compute next tweak block, and load, and first xor.
-        // This reduces register pressure and is more efficient.
         pDst = (__n128 *) pbDst;
-        pSrc = (const __n128 *) pbSrc;
         pDst[0] = veorq_u32( c0, t0 );
         pDst[1] = veorq_u32( c1, t1 );
         pDst[2] = veorq_u32( c2, t2 );
@@ -1074,52 +1105,31 @@ SymCryptXtsAesEncryptDataUnitNeon(
         pDst[6] = veorq_u32( c6, t6 );
         pDst[7] = veorq_u32( c7, t7 );
 
+        // We won't do another 8-block set
+        // Update only the first tweak block in case it is needed for tail
         XTS_MUL_ALPHA8( t0, t0 );
-        XTS_MUL_ALPHA8( t1, t1 );
-        XTS_MUL_ALPHA8( t2, t2 );
-        XTS_MUL_ALPHA8( t3, t3 );
-        XTS_MUL_ALPHA8( t4, t4 );
-        XTS_MUL_ALPHA8( t5, t5 );
-        XTS_MUL_ALPHA8( t6, t6 );
-        XTS_MUL_ALPHA8( t7, t7 );
-
-        c0 = veorq_u32( pSrc[0], t0 );
-        c1 = veorq_u32( pSrc[1], t1 );
-        c2 = veorq_u32( pSrc[2], t2 );
-        c3 = veorq_u32( pSrc[3], t3 );
-        c4 = veorq_u32( pSrc[4], t4 );
-        c5 = veorq_u32( pSrc[5], t5 );
-        c6 = veorq_u32( pSrc[6], t6 );
-        c7 = veorq_u32( pSrc[7], t7 );
 
         pbDst += 8 * SYMCRYPT_AES_BLOCK_SIZE;
     }
 
-    // We won't do another 8-block set so we don't update the tweak blocks
-    pDst = (__n128 *) pbDst;
-    pDst[0] = veorq_u32( c0, t0 );
-    pDst[1] = veorq_u32( c1, t1 );
-    pDst[2] = veorq_u32( c2, t2 );
-    pDst[3] = veorq_u32( c3, t3 );
-    pDst[4] = veorq_u32( c4, t4 );
-    pDst[5] = veorq_u32( c5, t5 );
-    pDst[6] = veorq_u32( c6, t6 );
-    pDst[7] = veorq_u32( c7, t7 );
-    pbDst += 8 * SYMCRYPT_AES_BLOCK_SIZE;
-
-    if( cbData > 0  )
+    // Rare case, with data unit length not being multiple of 128 bytes, handle the tail one block at a time
+    // NOTE: we enforce that cbData is a multiple of SYMCRYPT_AES_BLOCK_SIZE for XTS
+    while( cbData >= SYMCRYPT_AES_BLOCK_SIZE )
     {
-        //
-        // This is a rare case: the data unit length is not a multiple of 128 bytes.
-        // We do this in the default C implementation.
-        // Fix up the tweak block first
-        //
+        pSrc = (const __n128 *) pbSrc;
+        c0 = veorq_u32( pSrc[0], t0 );
+        pbSrc += SYMCRYPT_AES_BLOCK_SIZE;
 
-        XTS_MUL_ALPHA8( t0, t0 );
-        *(__n128 *)pbTweakBlock = t0;
-        SymCryptXtsAesEncryptDataUnitC( pExpandedKey, pbTweakBlock, pbSrc, pbDst, cbData );
+        AES_ENCRYPT_1( pExpandedKey, c0 );
+
+        pDst = (__n128 *) pbDst;
+        pDst[0] = veorq_u32( c0, t0 );
+        pbDst += SYMCRYPT_AES_BLOCK_SIZE;
+
+        XTS_MUL_ALPHA ( t0, t0 );
+
+        cbData -= SYMCRYPT_AES_BLOCK_SIZE;
     }
-
 }
 
 
@@ -1140,48 +1150,80 @@ SymCryptXtsAesDecryptDataUnitNeon(
     const __n128 vAlphaMask =     (__n128) {.n128_u8 = {0x87, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1}};
     const __n64 vAlphaMultiplier = (__n64) {.n64_u8  = {0x86, 0, 0, 0, 0, 0, 0, 0}};
 
-    if( cbData < 8 * SYMCRYPT_AES_BLOCK_SIZE )
-    {
-        SymCryptXtsAesDecryptDataUnitC( pExpandedKey, pbTweakBlock, pbSrc, pbDst, cbData );
-        return;
-    }
-
-    pSrc = (const __n128 *) pbSrc;
     t0 = *(__n128 *)pbTweakBlock;
 
-    XTS_MUL_ALPHA4( t0, t4 );
-    XTS_MUL_ALPHA ( t0, t1 );
-    XTS_MUL_ALPHA ( t4, t5 );
-    XTS_MUL_ALPHA ( t1, t2 );
-    XTS_MUL_ALPHA ( t5, t6 );
-    XTS_MUL_ALPHA ( t2, t3 );
-    XTS_MUL_ALPHA ( t6, t7 );
-
-    c0 = veorq_u32( t0, pSrc[0] );
-    c1 = veorq_u32( t1, pSrc[1] );
-    c2 = veorq_u32( t2, pSrc[2] );
-    c3 = veorq_u32( t3, pSrc[3] );
-    c4 = veorq_u32( t4, pSrc[4] );
-    c5 = veorq_u32( t5, pSrc[5] );
-    c6 = veorq_u32( t6, pSrc[6] );
-    c7 = veorq_u32( t7, pSrc[7] );
-
-    for(;;)
+    if( cbData >= 8 * SYMCRYPT_AES_BLOCK_SIZE )
     {
-        pbSrc += 8 * SYMCRYPT_AES_BLOCK_SIZE;
+        // Set up for main loop entry
+        // NOTE: We load the first 8 blocks and store the last 8 blocks out of the loop to allow
+        // greater instruction interleaving in the main loop.
+        // This appears to give about 5-8% performance uplift on little (in-order) cores and has
+        // no effect on big cores.
+        XTS_MUL_ALPHA4( t0, t4 );
+        XTS_MUL_ALPHA ( t0, t1 );
+        XTS_MUL_ALPHA ( t4, t5 );
+        XTS_MUL_ALPHA ( t1, t2 );
+        XTS_MUL_ALPHA ( t5, t6 );
+        XTS_MUL_ALPHA ( t2, t3 );
+        XTS_MUL_ALPHA ( t6, t7 );
 
-        AES_DECRYPT_8( pExpandedKey, c0, c1, c2, c3, c4, c5, c6, c7 );
+        pSrc = (const __n128 *) pbSrc;
+        c0 = veorq_u32( t0, pSrc[0] );
+        c1 = veorq_u32( t1, pSrc[1] );
+        c2 = veorq_u32( t2, pSrc[2] );
+        c3 = veorq_u32( t3, pSrc[3] );
+        c4 = veorq_u32( t4, pSrc[4] );
+        c5 = veorq_u32( t5, pSrc[5] );
+        c6 = veorq_u32( t6, pSrc[6] );
+        c7 = veorq_u32( t7, pSrc[7] );
 
-        cbData -= 8 * SYMCRYPT_AES_BLOCK_SIZE;
-        if( cbData < 8 * SYMCRYPT_AES_BLOCK_SIZE )
+        for(;;)
         {
-            break;
+            pbSrc += 8 * SYMCRYPT_AES_BLOCK_SIZE;
+
+            AES_DECRYPT_8( pExpandedKey, c0, c1, c2, c3, c4, c5, c6, c7 );
+
+            cbData -= 8 * SYMCRYPT_AES_BLOCK_SIZE;
+            if( cbData < 8 * SYMCRYPT_AES_BLOCK_SIZE )
+            {
+                break;
+            }
+
+            // Interleave the final xor, write, and compute next tweak block, and load, and first xor.
+            // This reduces register pressure and is more efficient.
+            pDst = (__n128 *) pbDst;
+            pSrc = (const __n128 *) pbSrc;
+            pDst[0] = veorq_u32( c0, t0 );
+            pDst[1] = veorq_u32( c1, t1 );
+            pDst[2] = veorq_u32( c2, t2 );
+            pDst[3] = veorq_u32( c3, t3 );
+            pDst[4] = veorq_u32( c4, t4 );
+            pDst[5] = veorq_u32( c5, t5 );
+            pDst[6] = veorq_u32( c6, t6 );
+            pDst[7] = veorq_u32( c7, t7 );
+
+            XTS_MUL_ALPHA8( t0, t0 );
+            XTS_MUL_ALPHA8( t1, t1 );
+            XTS_MUL_ALPHA8( t2, t2 );
+            XTS_MUL_ALPHA8( t3, t3 );
+            XTS_MUL_ALPHA8( t4, t4 );
+            XTS_MUL_ALPHA8( t5, t5 );
+            XTS_MUL_ALPHA8( t6, t6 );
+            XTS_MUL_ALPHA8( t7, t7 );
+
+            c0 = veorq_u32( pSrc[0], t0 );
+            c1 = veorq_u32( pSrc[1], t1 );
+            c2 = veorq_u32( pSrc[2], t2 );
+            c3 = veorq_u32( pSrc[3], t3 );
+            c4 = veorq_u32( pSrc[4], t4 );
+            c5 = veorq_u32( pSrc[5], t5 );
+            c6 = veorq_u32( pSrc[6], t6 );
+            c7 = veorq_u32( pSrc[7], t7 );
+
+            pbDst += 8 * SYMCRYPT_AES_BLOCK_SIZE;
         }
 
-        // Interleave the final xor, write, and compute next tweak block, and load, and first xor.
-        // This reduces register pressure and is more efficient.
         pDst = (__n128 *) pbDst;
-        pSrc = (const __n128 *) pbSrc;
         pDst[0] = veorq_u32( c0, t0 );
         pDst[1] = veorq_u32( c1, t1 );
         pDst[2] = veorq_u32( c2, t2 );
@@ -1191,52 +1233,31 @@ SymCryptXtsAesDecryptDataUnitNeon(
         pDst[6] = veorq_u32( c6, t6 );
         pDst[7] = veorq_u32( c7, t7 );
 
+        // We won't do another 8-block set
+        // Update only the first tweak block in case it is needed for tail
         XTS_MUL_ALPHA8( t0, t0 );
-        XTS_MUL_ALPHA8( t1, t1 );
-        XTS_MUL_ALPHA8( t2, t2 );
-        XTS_MUL_ALPHA8( t3, t3 );
-        XTS_MUL_ALPHA8( t4, t4 );
-        XTS_MUL_ALPHA8( t5, t5 );
-        XTS_MUL_ALPHA8( t6, t6 );
-        XTS_MUL_ALPHA8( t7, t7 );
-
-        c0 = veorq_u32( pSrc[0], t0 );
-        c1 = veorq_u32( pSrc[1], t1 );
-        c2 = veorq_u32( pSrc[2], t2 );
-        c3 = veorq_u32( pSrc[3], t3 );
-        c4 = veorq_u32( pSrc[4], t4 );
-        c5 = veorq_u32( pSrc[5], t5 );
-        c6 = veorq_u32( pSrc[6], t6 );
-        c7 = veorq_u32( pSrc[7], t7 );
 
         pbDst += 8 * SYMCRYPT_AES_BLOCK_SIZE;
     }
 
-    // We won't do another 8-block set so we don't update the tweak blocks
-    pDst = (__n128 *) pbDst;
-    pDst[0] = veorq_u32( c0, t0 );
-    pDst[1] = veorq_u32( c1, t1 );
-    pDst[2] = veorq_u32( c2, t2 );
-    pDst[3] = veorq_u32( c3, t3 );
-    pDst[4] = veorq_u32( c4, t4 );
-    pDst[5] = veorq_u32( c5, t5 );
-    pDst[6] = veorq_u32( c6, t6 );
-    pDst[7] = veorq_u32( c7, t7 );
-    pbDst += 8 * SYMCRYPT_AES_BLOCK_SIZE;
-
-    if( cbData > 0  )
+    // Rare case, with data unit length not being multiple of 128 bytes, handle the tail one block at a time
+    // NOTE: we enforce that cbData is a multiple of SYMCRYPT_AES_BLOCK_SIZE for XTS
+    while( cbData >= SYMCRYPT_AES_BLOCK_SIZE )
     {
-        //
-        // This is a rare case: the data unit length is not a multiple of 128 bytes.
-        // We do this in the default C implementation.
-        // Fix up the tweak block first
-        //
+        pSrc = (const __n128 *) pbSrc;
+        c0 = veorq_u32( pSrc[0], t0 );
+        pbSrc += SYMCRYPT_AES_BLOCK_SIZE;
 
-        XTS_MUL_ALPHA8( t0, t0 );
-        *(__n128 *)pbTweakBlock = t0;
-        SymCryptXtsAesDecryptDataUnitC( pExpandedKey, pbTweakBlock, pbSrc, pbDst, cbData );
+        AES_DECRYPT_1( pExpandedKey, c0 );
+
+        pDst = (__n128 *) pbDst;
+        pDst[0] = veorq_u32( c0, t0 );
+        pbDst += SYMCRYPT_AES_BLOCK_SIZE;
+
+        XTS_MUL_ALPHA ( t0, t0 );
+
+        cbData -= SYMCRYPT_AES_BLOCK_SIZE;
     }
-
 }
 
 

@@ -4040,7 +4040,7 @@ SYMCRYPT_ERROR
 SYMCRYPT_CALL
 SymCryptXtsAesExpandKey(
     _Out_               PSYMCRYPT_XTS_AES_EXPANDED_KEY  pExpandedKey,
-    _In_reads_(cbKey)   PCBYTE                          pbKey,
+    _In_reads_( cbKey ) PCBYTE                          pbKey,
                         SIZE_T                          cbKey );
 
 VOID
