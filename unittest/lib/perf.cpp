@@ -24,13 +24,11 @@ BOOLEAN g_enableCpuIdBeforeRdtsc = TRUE;
 #if SYMCRYPT_CPU_ARM
 
 #define GET_PERF_CLOCK() __rdpmccntr64()
-#define SET_PERF_SCALEFACTOR() {g_perfScaleFactor = 1.0; g_minMeasurementClockTime = (ULONG) (10000 / g_perfScaleFactor); g_largeMeasurementClockTime = (ULONGLONG) (100000000 / g_perfScaleFactor);}
 #define PERF_UNIT   "cycles"
 
 #elif SYMCRYPT_CPU_ARM64
 
 #define GET_PERF_CLOCK() _ReadStatusReg(ARM64_PMCCNTR_EL0)
-#define SET_PERF_SCALEFACTOR() {g_perfScaleFactor = 1.0; g_minMeasurementClockTime = (ULONG) (10000 / g_perfScaleFactor); g_largeMeasurementClockTime = (ULONGLONG) (100000000 / g_perfScaleFactor);}
 #define PERF_UNIT   "cycles"
 
 #else
@@ -46,30 +44,6 @@ GET_PERF_CLOCK()
         __cpuid( tmp, 0);
     }
     return __rdtsc();
-}
-
-#define SET_PERF_SCALEFACTOR() \
-{ \
-    g_perfScaleFactor = 1.0; g_largeMeasurementClockTime = (ULONGLONG) ((1<<28) / g_perfScaleFactor); \
-    /*print( "Perf scale factor = %f\n", (float) g_perfScaleFactor ); */ \
- \
-    /* measure cycles for doing nothing - ensure we measure at least 100x this to keep measurement error < 1% */ \
-    ULONGLONG durations[ MEASUREMENTS_PER_RESULT ]; \
- \
-    for( int i=0; i<MEASUREMENTS_PER_RESULT; i++) \
-    { \
-        ULONGLONG before = GET_PERF_CLOCK(); \
-        ULONGLONG after = GET_PERF_CLOCK(); \
-        durations[i] = after - before; \
-    } \
- \
-    qsort( durations, MEASUREMENTS_PER_RESULT, sizeof( durations[0] ), compareUlonglong ); \
- \
-    g_minMeasurementClockTime = 100 * durations[ MEASUREMENTS_PER_RESULT / 3 ]; \
- \
-    if( g_minMeasurementClockTime < 10000 ) g_minMeasurementClockTime = 10000; \
- \
-    print( "Perf min measurement clock time = %.1f\n", (float) g_minMeasurementClockTime ); \
 }
 
 #define PERF_UNIT   "cycles"
@@ -168,9 +142,10 @@ PVOID g_stackAllocLinkedList;     // We put alloca's in a linked list so the com
 
 SYMCRYPT_ALIGN_AT(256) BYTE g_perfBuffer[8 * PERF_BUFFER_SIZE];
 
-#define MAX_RUNS_PER_MEASUREMENT    (1<<15)
-#define MEASUREMENTS_PER_RESULT     30
-#define RESULTS_PER_DATAPOINT       10
+#define MAX_RUNS_PER_MEASUREMENT    (1<<20)
+#define MEASUREMENTS_PER_RESULT     31 // We will take the n/3rd element - so we want a 3k+1 elements to select from
+#define MIN_RESULTS_PER_DATAPOINT   4
+#define MAX_RESULTS_PER_DATAPOINT   13
 #define MAX_SIZES                   25
 
 double g_perfMeasurementOverhead = 0.0; // Overhead per measurement of a loop over the test function
@@ -445,6 +420,9 @@ double correctAverage( double average, double * pData, SIZE_T cdData )
 
 int g_fixedTimeLoopRuns = 1;
 
+#define FIXED_TIME_LOOP_CYCLES_INIT 512
+double g_fixedTimeLoopCycles = FIXED_TIME_LOOP_CYCLES_INIT;
+
 #define FIXED_TIME_LOOP_ITER_2() \
     x += y; y ^= x;
 
@@ -460,17 +438,109 @@ int g_fixedTimeLoopRuns = 1;
 #define FIXED_TIME_LOOP_ITER_512() \
     FIXED_TIME_LOOP_ITER_128() FIXED_TIME_LOOP_ITER_128() FIXED_TIME_LOOP_ITER_128() FIXED_TIME_LOOP_ITER_128()
 
-#define FIXED_TIME_LOOP_EXPECTED_CYCLES (512 * g_fixedTimeLoopRuns)
-#define FIXED_TIME_LOOP() \
-    { \
-        SIZE_T x = g_fixedTimeLoopVariable; \
-        SIZE_T y = 0; \
-        for( int ftl_i=0; ftl_i < g_fixedTimeLoopRuns; ++ftl_i ) \
-        { \
-            FIXED_TIME_LOOP_ITER_512() \
-        } \
-        g_fixedTimeLoopVariable = x; \
+#define FIXED_TIME_LOOP_EXPECTED_CYCLES (g_fixedTimeLoopCycles * g_fixedTimeLoopRuns)
+
+#define FIXED_TIME_LOOP() fixedTimeLoopPerfFunction( NULL, NULL, NULL, 0 )
+#define FIXED_DOUBLE_TIME_LOOP() fixedDoubleTimeLoopPerfFunction( NULL, NULL, NULL, 0 )
+
+SYMCRYPT_NOINLINE
+VOID
+nullPerfFunction( PBYTE, PBYTE, PBYTE, SIZE_T )
+{
+}
+
+SYMCRYPT_NOINLINE
+VOID
+fixed64PerfFunction( PBYTE, PBYTE, PBYTE, SIZE_T )
+{
+    SIZE_T x = g_fixedTimeLoopVariable;
+    SIZE_T y = g_fixedTimeLoopRuns;
+    FIXED_TIME_LOOP_ITER_32()
+    FIXED_TIME_LOOP_ITER_32()
+    g_fixedTimeLoopVariable = y;
+}
+
+SYMCRYPT_NOINLINE
+VOID
+fixed128PerfFunction( PBYTE, PBYTE, PBYTE, SIZE_T )
+{
+    SIZE_T x = g_fixedTimeLoopVariable;
+    SIZE_T y = g_fixedTimeLoopRuns;
+    FIXED_TIME_LOOP_ITER_128()
+    g_fixedTimeLoopVariable = y;
+}
+
+SYMCRYPT_NOINLINE
+VOID
+fixed256PerfFunction( PBYTE, PBYTE, PBYTE, SIZE_T )
+{
+    SIZE_T x = g_fixedTimeLoopVariable;
+    SIZE_T y = g_fixedTimeLoopRuns;
+    FIXED_TIME_LOOP_ITER_128()
+    FIXED_TIME_LOOP_ITER_128()
+    g_fixedTimeLoopVariable = y;
+}
+
+SYMCRYPT_NOINLINE
+VOID
+fixed512PerfFunction( PBYTE, PBYTE, PBYTE, SIZE_T )
+{
+    SIZE_T x = g_fixedTimeLoopVariable;
+    SIZE_T y = g_fixedTimeLoopRuns;
+    FIXED_TIME_LOOP_ITER_512()
+    g_fixedTimeLoopVariable = y;
+}
+
+SYMCRYPT_NOINLINE
+VOID
+fixed1024PerfFunction( PBYTE, PBYTE, PBYTE, SIZE_T )
+{
+    SIZE_T x = g_fixedTimeLoopVariable;
+    SIZE_T y = g_fixedTimeLoopRuns;
+    FIXED_TIME_LOOP_ITER_512()
+    FIXED_TIME_LOOP_ITER_512()
+    g_fixedTimeLoopVariable = y;
+}
+
+SYMCRYPT_NOINLINE
+VOID
+fixed2048PerfFunction( PBYTE, PBYTE, PBYTE, SIZE_T )
+{
+    SIZE_T x = g_fixedTimeLoopVariable;
+    SIZE_T y = g_fixedTimeLoopRuns;
+    FIXED_TIME_LOOP_ITER_512()
+    FIXED_TIME_LOOP_ITER_512()
+    FIXED_TIME_LOOP_ITER_512()
+    FIXED_TIME_LOOP_ITER_512()
+    g_fixedTimeLoopVariable = y;
+}
+
+SYMCRYPT_NOINLINE
+VOID
+fixedTimeLoopPerfFunction( PBYTE, PBYTE, PBYTE, SIZE_T )
+{
+    SIZE_T x = g_fixedTimeLoopVariable;
+    SIZE_T y = g_fixedTimeLoopRuns;
+    for( int ftl_i=0; ftl_i < g_fixedTimeLoopRuns; ++ftl_i )
+    {
+        FIXED_TIME_LOOP_ITER_512()
     }
+    g_fixedTimeLoopVariable = y;
+}
+
+SYMCRYPT_NOINLINE
+VOID
+fixedDoubleTimeLoopPerfFunction( PBYTE, PBYTE, PBYTE, SIZE_T )
+{
+    SIZE_T x = g_fixedTimeLoopVariable;
+    SIZE_T y = g_fixedTimeLoopRuns;
+    for( int ftl_i=0; ftl_i < g_fixedTimeLoopRuns; ++ftl_i )
+    {
+        FIXED_TIME_LOOP_ITER_512()
+        FIXED_TIME_LOOP_ITER_512()
+    }
+    g_fixedTimeLoopVariable = y;
+}
 
 double measureDataPerfGivenStack(
                                 SIZE_T keySize,
@@ -503,6 +573,7 @@ double measureDataPerfGivenStack(
         (*prepFn) (buf1, buf2, buf3, dataSize );
     }
 
+    (*dataFn)( buf1, buf2, buf3, dataSize ); // Run data function once to prime caches
     ULONGLONG loopStart = GET_PERF_CLOCK();
     while( i < MEASUREMENTS_PER_RESULT && ( (GET_PERF_CLOCK() - loopStart) < g_largeMeasurementClockTime ) )
     {
@@ -785,13 +856,13 @@ double measurePerfOneSize( SIZE_T keySize, SIZE_T dataSize, PerfKeyFn keyFn, Per
     int nRuns = 1;
     if (pNRuns != NULL) nRuns = *pNRuns;
 
-    double results[ RESULTS_PER_DATAPOINT ];
+    double results[ MAX_RESULTS_PER_DATAPOINT ];
     int i = 0;
 
     ULONGLONG starttime = GET_PERF_CLOCK();
 
-    // Limit total time to MIN_RESULTS or 1 billion clock cycles.
-    while( i < RESULTS_PER_DATAPOINT && (GET_PERF_CLOCK() - starttime) < g_largeMeasurementClockTime  )
+    // Limit total time to MAX_RESULTS_PER_DATAPOINT or 1 billion clock cycles.
+    while( i < MAX_RESULTS_PER_DATAPOINT && (i < MIN_RESULTS_PER_DATAPOINT || (GET_PERF_CLOCK() - starttime) < g_largeMeasurementClockTime)  )
     {
         results[i] = measurePerfMoveStack( keySize, dataSize, keyFn, prepFn, dataFn, cleanFn, measureKey, &nRuns );
         i++;
@@ -821,19 +892,19 @@ double measurePerfOneSize( SIZE_T keySize, SIZE_T dataSize, PerfKeyFn keyFn, Per
 double measureWipePerfOneSize( SIZE_T dataSize, SIZE_T dataOffset, WIPE_FN wipeFn )
 {
     int nRuns = 1;
-    double results[ RESULTS_PER_DATAPOINT ];
+    double results[ MAX_RESULTS_PER_DATAPOINT ];
 
-    for( int i=0; i<RESULTS_PER_DATAPOINT; i++ )
+    for( int i=0; i<MAX_RESULTS_PER_DATAPOINT; i++ )
     {
         results[i] = measureWipePerfMoveStack( dataSize, dataOffset, wipeFn, &nRuns );
     }
 
-    qsort( results, RESULTS_PER_DATAPOINT, sizeof( results[0] ), compareDouble );
+    qsort( results, MAX_RESULTS_PER_DATAPOINT, sizeof( results[0] ), compareDouble );
 
     //
     // Return the one-third point to compensate for expected slowdowns.
     //
-    return results[ RESULTS_PER_DATAPOINT / 3];
+    return results[ MAX_RESULTS_PER_DATAPOINT / 3];
 }
 
 
@@ -1182,7 +1253,7 @@ measurePerfOfWipe()
 VOID
 measurePerf()
 {
-    iprint( "\nStarting performance measurements..." );
+    iprint( "\nStarting performance measurements...\n" );
 
     #if SYMCRYPT_MS_VC
     int oldPriority = GetThreadPriority( GetCurrentThread() );
@@ -1217,10 +1288,93 @@ measurePerf()
     iprint( "...done\n" );
 }
 
-SYMCRYPT_NOINLINE
 VOID
-nullPerfFunction( PBYTE, PBYTE, PBYTE, SIZE_T )
+calibratePerfMeasurements()
 {
+    g_perfScaleFactor = 1.0;
+    g_largeMeasurementClockTime = (ULONGLONG) ((1<<28) / g_perfScaleFactor);
+    /*print( "Perf scale factor = %f\n", (float) g_perfScaleFactor ); */
+
+    // Measure cycles for doing nothing - ensure we measure at least 1000x this to keep measurement error < 0.1%
+    ULONGLONG durations[ MEASUREMENTS_PER_RESULT ];
+
+    for( int i=0; i<MEASUREMENTS_PER_RESULT; i++)
+    {
+        ULONGLONG before = GET_PERF_CLOCK();
+        ULONGLONG after = GET_PERF_CLOCK();
+        durations[i] = after - before;
+    }
+
+    qsort( durations, MEASUREMENTS_PER_RESULT, sizeof( durations[0] ), compareUlonglong );
+
+    g_minMeasurementClockTime = 1000 * durations[ MEASUREMENTS_PER_RESULT / 3 ];
+
+    print( "Perf min measurement clock time = %llu\n", g_minMeasurementClockTime );
+
+    // Set up fixed time loop runs so that measurement error is sufficiently small
+    g_fixedTimeLoopRuns = 1;
+    ULONGLONG before = GET_PERF_CLOCK();
+    FIXED_TIME_LOOP();
+    ULONGLONG after = GET_PERF_CLOCK();
+    while (after - before < g_minMeasurementClockTime)
+    {
+        g_fixedTimeLoopRuns <<= 1;
+        before = GET_PERF_CLOCK();
+        FIXED_TIME_LOOP();
+        after = GET_PERF_CLOCK();
+    }
+
+    // Derive the actual number of cycles taken in the fixed time loop so measurement scaling
+    // better reflects real cycles (with hard coded assumption we will be off by a scale factor)
+    for(;;)
+    {
+        ULONGLONG t0 = GET_PERF_CLOCK();
+        FIXED_TIME_LOOP();
+        ULONGLONG t1 = GET_PERF_CLOCK();
+        FIXED_DOUBLE_TIME_LOOP();
+        ULONGLONG t2 = GET_PERF_CLOCK();
+        FIXED_TIME_LOOP();
+        ULONGLONG t3 = GET_PERF_CLOCK();
+        FIXED_DOUBLE_TIME_LOOP();
+        ULONGLONG t4 = GET_PERF_CLOCK();
+
+        ULONGLONG m0 = t1 - t0;
+        ULONGLONG m1 = t2 - t1;
+        ULONGLONG m2 = t3 - t2;
+        ULONGLONG m3 = t4 - t3;
+
+        double loopRatio = m0 > m2 ? ((double) m0) / m2 : ((double) m2) / m0;
+        double doubleLoopRatio = m1 > m3 ? ((double) m1) / m3 : ((double) m3) / m1;
+
+        if(loopRatio > 1.001f || doubleLoopRatio > 1.001f)
+        {
+            continue;
+        }
+
+        double averageLoop = (double) (m0 + m2);
+        double averageDoubleLoop = (double) (m1 + m3);
+
+        g_fixedTimeLoopCycles = (averageLoop * FIXED_TIME_LOOP_CYCLES_INIT) / (averageDoubleLoop - averageLoop);
+        print( "g_fixedTimeLoopCycles %.1f %s\n", g_fixedTimeLoopCycles, PERF_UNIT );
+        break;
+    }
+
+    // Measure the overheads of measurement using fixed512PerfFunction which should take a fixed short time
+    g_perfRunOverhead = 0.0;
+    g_perfMeasurementOverhead = 0.0;
+
+    int nRuns0 = 1;
+    double runOverhead0 = measurePerfOneSize( 0, 0, NULL, NULL, fixed512PerfFunction, NULL, FALSE, &nRuns0 );
+    double measurementOverhead0 = (runOverhead0 - 512) * nRuns0;
+
+    int nRuns1 = nRuns0 << 1;
+    double runOverhead1 = measurePerfOneSize( 0, 0, NULL, NULL, fixed512PerfFunction, NULL, FALSE, &nRuns1 );
+    double measurementOverhead1 = (runOverhead1 - 512) * nRuns1;
+
+    g_perfRunOverhead = (measurementOverhead1 - measurementOverhead0) / (nRuns1 - nRuns0);
+    g_perfMeasurementOverhead = measurementOverhead0 - (g_perfRunOverhead * nRuns0);
+
+    print( "Performance overhead: %.1f %s per run, %.1f %s per measurement\n", g_perfRunOverhead, PERF_UNIT, g_perfMeasurementOverhead, PERF_UNIT );
 }
 
 VOID
@@ -1253,71 +1407,31 @@ initPerfSystem()
     }
     g_fixedTimeLoopVariable = x;
 
-    SET_PERF_SCALEFACTOR();
-
-    // set up fixed time loop runs
-    ULONGLONG before = GET_PERF_CLOCK();
-    FIXED_TIME_LOOP();
-    ULONGLONG after = GET_PERF_CLOCK();
-    while (after - before < g_minMeasurementClockTime)
-    {
-        g_fixedTimeLoopRuns <<= 1;
-        before = GET_PERF_CLOCK();
-        FIXED_TIME_LOOP();
-        after = GET_PERF_CLOCK();
-    }
-
-    g_perfRunOverhead = 0.0;
-    g_perfMeasurementOverhead = 0.0;
-
-    int nRuns0 = 1;
-    double runOverhead0 = measurePerfOneSize( 0, 0, NULL, NULL, nullPerfFunction, NULL, FALSE, &nRuns0 );
-    double measurementOverhead0 = runOverhead0 * nRuns0;
-
-    int nRuns1 = nRuns0 << 1;
-    double runOverhead1 = measurePerfOneSize( 0, 0, NULL, NULL, nullPerfFunction, NULL, FALSE, &nRuns1 );
-    double measurementOverhead1 = runOverhead1 * nRuns1;
-
-    g_perfRunOverhead = (measurementOverhead1 - measurementOverhead0) / (nRuns1 - nRuns0);
-    g_perfMeasurementOverhead = measurementOverhead0 - (g_perfRunOverhead * nRuns0);
-
+    calibratePerfMeasurements();
 
 #if SYMCRYPT_CPU_X86 | SYMCRYPT_CPU_AMD64
-    if( g_perfMeasurementOverhead > 1000 )
+    if( g_enableCpuIdBeforeRdtsc == TRUE && g_perfMeasurementOverhead > 500 )
     {
         print( "Detected Hypervisor due to very high overhead; disabling CPUID before RDTSC\n" );
         g_enableCpuIdBeforeRdtsc = FALSE;
-
-        SET_PERF_SCALEFACTOR();
-
-        // set up fixed time loop runs
-        ULONGLONG before = GET_PERF_CLOCK();
-        FIXED_TIME_LOOP();
-        ULONGLONG after = GET_PERF_CLOCK();
-        while (after - before < g_minMeasurementClockTime)
-        {
-            g_fixedTimeLoopRuns <<= 1;
-            before = GET_PERF_CLOCK();
-            FIXED_TIME_LOOP();
-            after = GET_PERF_CLOCK();
-        }
-        g_perfRunOverhead = 0.0;
-        g_perfMeasurementOverhead = 0.0;
-
-        int nRuns0 = 1;
-        double runOverhead0 = measurePerfOneSize( 0, 0, NULL, NULL, nullPerfFunction, NULL, FALSE, &nRuns0 );
-        double measurementOverhead0 = runOverhead0 * nRuns0;
-
-        int nRuns1 = nRuns0 << 1;
-        double runOverhead1 = measurePerfOneSize( 0, 0, NULL, NULL, nullPerfFunction, NULL, FALSE, &nRuns1 );
-        double measurementOverhead1 = runOverhead1 * nRuns1;
-
-        g_perfRunOverhead = (measurementOverhead1 - measurementOverhead0) / (nRuns1 - nRuns0);
-        g_perfMeasurementOverhead = measurementOverhead0 - (g_perfRunOverhead * nRuns0);
+        calibratePerfMeasurements();
     }
 #endif
 
-    print( "Performance overhead: %.1f %s per run, %.1f %s per measurement", g_perfRunOverhead, PERF_UNIT, g_perfMeasurementOverhead, PERF_UNIT );
+    // Sanity check calibration
+    double fixedTimeLoopMeasurement = measurePerfOneSize( 0, 0, NULL, NULL, fixedTimeLoopPerfFunction, NULL, FALSE) / g_fixedTimeLoopRuns;
+    double fixedDoubleTimeLoopMeasurement = measurePerfOneSize( 0, 0, NULL, NULL, fixedDoubleTimeLoopPerfFunction, NULL, FALSE) / g_fixedTimeLoopRuns;
+    double nullMeasurement = measurePerfOneSize( 0, 0, NULL, NULL, nullPerfFunction, NULL, FALSE);
+    double fixed64Measurement = measurePerfOneSize( 0, 0, NULL, NULL, fixed64PerfFunction, NULL, FALSE);
+    double fixed128Measurement = measurePerfOneSize( 0, 0, NULL, NULL, fixed128PerfFunction, NULL, FALSE);
+    double fixed256Measurement = measurePerfOneSize( 0, 0, NULL, NULL, fixed256PerfFunction, NULL, FALSE);
+    double fixed512Measurement = measurePerfOneSize( 0, 0, NULL, NULL, fixed512PerfFunction, NULL, FALSE);
+    double fixed1024Measurement = measurePerfOneSize( 0, 0, NULL, NULL, fixed1024PerfFunction, NULL, FALSE);
+    double fixed2048Measurement = measurePerfOneSize( 0, 0, NULL, NULL, fixed2048PerfFunction, NULL, FALSE);
+
+    print( "Sanity check measurements:\n%.1f %s fixedTimeLoop, %.1f %s fixedDoubleTimeLoop\n%.1f %s null, %.1f %s fixed64, %.1f %s fixed128, %.1f %s fixed256, %.1f %s fixed512, %.1f %s fixed1024, %.1f %s fixed2048\n",
+        fixedTimeLoopMeasurement, PERF_UNIT, fixedDoubleTimeLoopMeasurement, PERF_UNIT,
+        nullMeasurement, PERF_UNIT, fixed64Measurement, PERF_UNIT, fixed128Measurement, PERF_UNIT, fixed256Measurement, PERF_UNIT, fixed512Measurement, PERF_UNIT, fixed1024Measurement, PERF_UNIT, fixed2048Measurement, PERF_UNIT );
 }
 
 VOID
