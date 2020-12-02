@@ -40,9 +40,10 @@
 #define CPUID_70_EBX_AVX512DQ_BIT   17
 #define CPUID_70_EBX_AVX512VL_BIT   31
 #define CPUID_70_ECX_VAES_BIT       9
+#define CPUID_70_ECX_VPCLMULQDQ_BIT 10
 
 
-#define CPUID_1_ECX_OSXSAVE_BIT     27     
+#define CPUID_1_ECX_OSXSAVE_BIT     27
 
 typedef struct _CPUID_BIT_INFO {
     BYTE                    leaf;
@@ -58,7 +59,7 @@ typedef struct _CPUID_BIT_INFO {
 
 int g_SymCryptCpuid1[4];        // We cache the results of CPUID(1) to help diagnose CPU detection errors
 
-const 
+const
 CPUID_BIT_INFO  cpuidBitInfo[] = {
     {1, WORD_ECX, CPUID_1_ECX_RDRAND_BIT,       SYMCRYPT_CPU_FEATURE_RDRAND },
     {1, WORD_ECX, CPUID_1_ECX_PCLMULQDQ_BIT,    SYMCRYPT_CPU_FEATURE_PCLMULQDQ },
@@ -78,6 +79,7 @@ CPUID_BIT_INFO  cpuidBitInfo[] = {
     {7, WORD_EBX, CPUID_70_EBX_AVX512BW_BIT,    SYMCRYPT_CPU_FEATURE_VAES_512 },
     {7, WORD_EBX, CPUID_70_EBX_AVX512DQ_BIT,    SYMCRYPT_CPU_FEATURE_VAES_512 },
     {7, WORD_ECX, CPUID_70_ECX_VAES_BIT,        SYMCRYPT_CPU_FEATURE_VAES_512 | SYMCRYPT_CPU_FEATURE_VAES_256 },
+    {7, WORD_ECX, CPUID_70_ECX_VPCLMULQDQ_BIT,  SYMCRYPT_CPU_FEATURE_VAES_512 | SYMCRYPT_CPU_FEATURE_VAES_256 },
 };
 
 extern void __cpuid( _Out_writes_(4) int a[4], int b);          // Add SAL annotation to intrinsic declaration to keep Prefast happy.
@@ -112,9 +114,9 @@ SymCryptDetectCpuFeaturesByCpuid( UINT32 flags )
         SYMCRYPT_CPU_FEATURE_VAES_256
         );
 
-    // InfoType holds the function id of previous cpuid 
+    // InfoType holds the function id of previous cpuid
     // so we don't have to repeatedly invoke cpuid.
-    InfoType = 0; 
+    InfoType = 0;
     SymCryptCpuidExFunc( CPUInfo, InfoType, 0 );
     maxInfoType = CPUInfo[WORD_EAX];
 
@@ -135,7 +137,7 @@ SymCryptDetectCpuFeaturesByCpuid( UINT32 flags )
     {
         //
         // Check for OS support of the YMM registers.
-        // This detection is optional in any environment because some environments are single-threaded, and 
+        // This detection is optional in any environment because some environments are single-threaded, and
         // OS support is not required. (E.g. Boot library.)
         //
         // We use the following logic:
@@ -170,9 +172,9 @@ SymCryptDetectCpuFeaturesByCpuid( UINT32 flags )
     if( (result & SYMCRYPT_CPU_FEATURE_AESNI) == 0 )    // thus, if AES-NI is present according to CPUID
     {
         //
-        // In Win7 Beta we had an interesting crash bucket. 
+        // In Win7 Beta we had an interesting crash bucket.
         // It only occurred on the AsusTek A6K line of laptops which sometimes
-        // set the cpuid AES-NI bit (but not always). This leads to a crash as 
+        // set the cpuid AES-NI bit (but not always). This leads to a crash as
         // we start using AES instructions that don't exist on those machines.
         //
         // I found on-line reviews for the A6K line from december 2005 so it was launched around
@@ -184,13 +186,13 @@ SymCryptDetectCpuFeaturesByCpuid( UINT32 flags )
         // We really shouldn't need this logic, and it only slows things down.
         // We should be able to remove it at some point in the future.
         //
-        // At AMD's recommendation, we use the logic below. 
+        // At AMD's recommendation, we use the logic below.
         // The AMD engineers reviewed this code to ensure we don't lock out future CPUs
         // that will have AES-NI.
         //
         SymCryptCpuidExFunc( CPUInfo, 0, 0 );
-        if(    CPUInfo[WORD_EBX] == 'htuA' 
-            && CPUInfo[WORD_ECX] == 'DMAc' 
+        if(    CPUInfo[WORD_EBX] == 'htuA'
+            && CPUInfo[WORD_ECX] == 'DMAc'
             && CPUInfo[WORD_EDX] == 'itne' )
         {
             //
@@ -321,7 +323,7 @@ SymCryptDetectCpuFeaturesFromRegisters()
           ((op1 & 7) << 11) | \
           ((crn & 15) << 7) | \
           ((crm & 15) << 3) | \
-          ((op2 & 7) << 0) ) 
+          ((op2 & 7) << 0) )
 
 #define ARM64_ID_AA64ISAR0_EL1  ARM64_SYSREG(3,0, 0, 6,0)   // ISA Feature Register 0
 

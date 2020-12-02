@@ -9,9 +9,9 @@
 _Success_(return == SYMCRYPT_NO_ERROR)
 SYMCRYPT_ERROR
 SYMCRYPT_CALL
-SymCryptXtsAesExpandKey(   
+SymCryptXtsAesExpandKey(
     _Out_               PSYMCRYPT_XTS_AES_EXPANDED_KEY  pExpandedKey,
-    _In_reads_(cbKey)   PCBYTE                          pbKey,
+    _In_reads_( cbKey ) PCBYTE                          pbKey,
                         SIZE_T                          cbKey )
 {
     SYMCRYPT_ERROR  scError;
@@ -25,7 +25,7 @@ SymCryptXtsAesExpandKey(
 
     //
     // Pass the 'rest' of the key to the second one. This catches errors such as
-    // an attempt to pass a 33 byte key. 
+    // an attempt to pass a 33 byte key.
     // halfKeySize = 16, which is valid, but this expansion gets a 17-byte key which will fail.
     // Key2 is only used for tweak encryption, so we can use the EncryptOnly key expansion.
     //
@@ -47,8 +47,8 @@ VOID
 SYMCRYPT_CALL
 SymCryptXtsAesEncryptC(
     _In_                    PCSYMCRYPT_XTS_AES_EXPANDED_KEY pExpandedKey,
-                            SIZE_T                          cbDataUnit, 
-                            UINT64                          tweak,  
+                            SIZE_T                          cbDataUnit,
+                            UINT64                          tweak,
     _In_reads_( cbData )    PCBYTE                          pbSrc,
     _Out_writes_( cbData )  PBYTE                           pbDst,
                             SIZE_T                          cbData )
@@ -93,14 +93,14 @@ SymCryptXtsAesEncryptC(
     }
 }
 
-#if SYMCRYPT_CPU_AMD64 | SYMCRYPT_CPU_X86 | SYMCRYPT_CPU_ARM 
+#if SYMCRYPT_CPU_AMD64 | SYMCRYPT_CPU_X86 | SYMCRYPT_CPU_ARM
 
 VOID
 SYMCRYPT_CALL
 SymCryptXtsAesEncryptAsm(
     _In_                    PCSYMCRYPT_XTS_AES_EXPANDED_KEY pExpandedKey,
-                            SIZE_T                          cbDataUnit, 
-                            UINT64                       tweak,  
+                            SIZE_T                          cbDataUnit,
+                            UINT64                          tweak,
     _In_reads_( cbData )    PCBYTE                          pbSrc,
     _Out_writes_( cbData )  PBYTE                           pbDst,
                             SIZE_T                          cbData )
@@ -146,13 +146,13 @@ SymCryptXtsAesEncryptAsm(
 }
 #endif
 
-#if SYMCRYPT_CPU_X86 | SYMCRYPT_CPU_AMD64 
+#if SYMCRYPT_CPU_X86 | SYMCRYPT_CPU_AMD64
 VOID
 SYMCRYPT_CALL
 SymCryptXtsAesEncryptXmm(
     _In_                    PCSYMCRYPT_XTS_AES_EXPANDED_KEY pExpandedKey,
-                            SIZE_T                          cbDataUnit, 
-                            UINT64                       tweak,  
+                            SIZE_T                          cbDataUnit,
+                            UINT64                          tweak,
     _In_reads_( cbData )    PCBYTE                          pbSrc,
     _Out_writes_( cbData )  PBYTE                           pbDst,
                             SIZE_T                          cbData )
@@ -201,8 +201,8 @@ VOID
 SYMCRYPT_CALL
 SymCryptXtsAesEncryptZmm(
     _In_                    PCSYMCRYPT_XTS_AES_EXPANDED_KEY pExpandedKey,
-                            SIZE_T                          cbDataUnit, 
-                            UINT64                          tweak,  
+                            SIZE_T                          cbDataUnit,
+                            UINT64                          tweak,
     _In_reads_( cbData )    PCBYTE                          pbSrc,
     _Out_writes_( cbData )  PBYTE                           pbDst,
                             SIZE_T                          cbData )
@@ -252,8 +252,8 @@ VOID
 SYMCRYPT_CALL
 SymCryptXtsAesEncryptYmm(
     _In_                    PCSYMCRYPT_XTS_AES_EXPANDED_KEY pExpandedKey,
-                            SIZE_T                          cbDataUnit, 
-                            UINT64                          tweak,  
+                            SIZE_T                          cbDataUnit,
+                            UINT64                          tweak,
     _In_reads_( cbData )    PCBYTE                          pbSrc,
     _Out_writes_( cbData )  PBYTE                           pbDst,
                             SIZE_T                          cbData )
@@ -290,7 +290,6 @@ SymCryptXtsAesEncryptYmm(
         i = 0;
         while( i < tweakbytes )
         {
-            // SymCryptXtsAesEncryptDataUnitZmm( &pExpandedKey->key1, &tweakBuf[i], pbSrc, pbDst, cbDataUnit );
             SymCryptXtsAesEncryptDataUnitYmm_1024( &pExpandedKey->key1, &tweakBuf[i], pbSrc, pbDst, cbDataUnit );
             pbSrc += cbDataUnit;
             pbDst += cbDataUnit;
@@ -305,8 +304,8 @@ VOID
 SYMCRYPT_CALL
 SymCryptXtsAesEncryptNeon(
     _In_                    PCSYMCRYPT_XTS_AES_EXPANDED_KEY pExpandedKey,
-                            SIZE_T                          cbDataUnit, 
-                            ULONGLONG                       tweak,  
+                            SIZE_T                          cbDataUnit,
+                            UINT64                          tweak,
     _In_reads_( cbData )    PCBYTE                          pbSrc,
     _Out_writes_( cbData )  PBYTE                           pbDst,
                             SIZE_T                          cbData )
@@ -355,8 +354,8 @@ VOID
 SYMCRYPT_CALL
 SymCryptXtsAesDecryptNeon(
     _In_                    PCSYMCRYPT_XTS_AES_EXPANDED_KEY pExpandedKey,
-                            SIZE_T                          cbDataUnit, 
-                            ULONGLONG                       tweak,  
+                            SIZE_T                          cbDataUnit,
+                            UINT64                          tweak,
     _In_reads_( cbData )    PCBYTE                          pbSrc,
     _Out_writes_( cbData )  PBYTE                           pbDst,
                             SIZE_T                          cbData )
@@ -408,18 +407,17 @@ VOID
 SYMCRYPT_CALL
 SymCryptXtsAesEncrypt(
     _In_                    PCSYMCRYPT_XTS_AES_EXPANDED_KEY pExpandedKey,
-                            SIZE_T                          cbDataUnit, 
-                            UINT64                       tweak,  
+                            SIZE_T                          cbDataUnit,
+                            UINT64                          tweak,
     _In_reads_( cbData )    PCBYTE                          pbSrc,
     _Out_writes_( cbData )  PBYTE                           pbDst,
                             SIZE_T                          cbData )
 {
 #if SYMCRYPT_CPU_AMD64
-    if( SYMCRYPT_CPU_FEATURES_PRESENT( SYMCRYPT_CPU_FEATURES_FOR_AESNI_CODE | SYMCRYPT_CPU_FEATURE_VAES_512 ) )
-    {
+    /* if( SYMCRYPT_CPU_FEATURES_PRESENT( SYMCRYPT_CPU_FEATURES_FOR_AESNI_CODE | SYMCRYPT_CPU_FEATURE_VAES_512 ) ) {
         SymCryptXtsAesEncryptZmm( pExpandedKey, cbDataUnit, tweak, pbSrc, pbDst, cbData );
-    } else if( SYMCRYPT_CPU_FEATURES_PRESENT( SYMCRYPT_CPU_FEATURES_FOR_AESNI_CODE | SYMCRYPT_CPU_FEATURE_VAES_256 ) )
-    {
+    } else */
+    if( SYMCRYPT_CPU_FEATURES_PRESENT( SYMCRYPT_CPU_FEATURES_FOR_AESNI_CODE | SYMCRYPT_CPU_FEATURE_VAES_256 ) ) {
         SymCryptXtsAesEncryptYmm( pExpandedKey, cbDataUnit, tweak, pbSrc, pbDst, cbData );
     } else if( SYMCRYPT_CPU_FEATURES_PRESENT( SYMCRYPT_CPU_FEATURES_FOR_AESNI_CODE ) ) {
         SymCryptXtsAesEncryptXmm( pExpandedKey, cbDataUnit, tweak, pbSrc, pbDst, cbData );
@@ -456,8 +454,8 @@ VOID
 SYMCRYPT_CALL
 SymCryptXtsAesDecryptC(
     _In_                    PCSYMCRYPT_XTS_AES_EXPANDED_KEY pExpandedKey,
-                            SIZE_T                          cbDataUnit, 
-                            UINT64                       tweak,  
+                            SIZE_T                          cbDataUnit,
+                            UINT64                          tweak,
     _In_reads_( cbData )    PCBYTE                          pbSrc,
     _Out_writes_( cbData )  PBYTE                           pbDst,
                             SIZE_T                          cbData )
@@ -502,14 +500,14 @@ SymCryptXtsAesDecryptC(
     }
 }
 
-#if SYMCRYPT_CPU_AMD64 | SYMCRYPT_CPU_X86 | SYMCRYPT_CPU_ARM 
+#if SYMCRYPT_CPU_AMD64 | SYMCRYPT_CPU_X86 | SYMCRYPT_CPU_ARM
 
 VOID
 SYMCRYPT_CALL
 SymCryptXtsAesDecryptAsm(
     _In_                    PCSYMCRYPT_XTS_AES_EXPANDED_KEY pExpandedKey,
-                            SIZE_T                          cbDataUnit, 
-                            UINT64                       tweak,  
+                            SIZE_T                          cbDataUnit,
+                            UINT64                          tweak,
     _In_reads_( cbData )    PCBYTE                          pbSrc,
     _Out_writes_( cbData )  PBYTE                           pbDst,
                             SIZE_T                          cbData )
@@ -555,13 +553,13 @@ SymCryptXtsAesDecryptAsm(
 }
 #endif
 
-#if SYMCRYPT_CPU_X86 | SYMCRYPT_CPU_AMD64 
+#if SYMCRYPT_CPU_X86 | SYMCRYPT_CPU_AMD64
 VOID
 SYMCRYPT_CALL
 SymCryptXtsAesDecryptXmm(
     _In_                    PCSYMCRYPT_XTS_AES_EXPANDED_KEY pExpandedKey,
-                            SIZE_T                          cbDataUnit, 
-                            UINT64                       tweak,  
+                            SIZE_T                          cbDataUnit,
+                            UINT64                          tweak,
     _In_reads_( cbData )    PCBYTE                          pbSrc,
     _Out_writes_( cbData )  PBYTE                           pbDst,
                             SIZE_T                          cbData )
@@ -610,8 +608,8 @@ VOID
 SYMCRYPT_CALL
 SymCryptXtsAesDecryptZmm(
     _In_                    PCSYMCRYPT_XTS_AES_EXPANDED_KEY pExpandedKey,
-                            SIZE_T                          cbDataUnit, 
-                            UINT64                          tweak,  
+                            SIZE_T                          cbDataUnit,
+                            UINT64                          tweak,
     _In_reads_( cbData )    PCBYTE                          pbSrc,
     _Out_writes_( cbData )  PBYTE                           pbDst,
                             SIZE_T                          cbData )
@@ -649,7 +647,7 @@ SymCryptXtsAesDecryptZmm(
         while( i < tweakbytes )
         {
             // SymCryptXtsAesDecryptDataUnitZmm( &pExpandedKey->key1, &tweakBuf[i], pbSrc, pbDst, cbDataUnit );
-            SymCryptXtsAesDecryptDataUnitZmm_2048( &pExpandedKey->key1, &tweakBuf[i], pbSrc, pbDst, cbDataUnit );           
+            SymCryptXtsAesDecryptDataUnitZmm_2048( &pExpandedKey->key1, &tweakBuf[i], pbSrc, pbDst, cbDataUnit );
             pbSrc += cbDataUnit;
             pbDst += cbDataUnit;
             i += SYMCRYPT_AES_BLOCK_SIZE;
@@ -661,8 +659,8 @@ VOID
 SYMCRYPT_CALL
 SymCryptXtsAesDecryptYmm(
     _In_                    PCSYMCRYPT_XTS_AES_EXPANDED_KEY pExpandedKey,
-                            SIZE_T                          cbDataUnit, 
-                            UINT64                          tweak,  
+                            SIZE_T                          cbDataUnit,
+                            UINT64                          tweak,
     _In_reads_( cbData )    PCBYTE                          pbSrc,
     _Out_writes_( cbData )  PBYTE                           pbDst,
                             SIZE_T                          cbData )
@@ -699,7 +697,7 @@ SymCryptXtsAesDecryptYmm(
         i = 0;
         while( i < tweakbytes )
         {
-            SymCryptXtsAesDecryptDataUnitYmm_1024( &pExpandedKey->key1, &tweakBuf[i], pbSrc, pbDst, cbDataUnit );           
+            SymCryptXtsAesDecryptDataUnitYmm_1024( &pExpandedKey->key1, &tweakBuf[i], pbSrc, pbDst, cbDataUnit );
             pbSrc += cbDataUnit;
             pbDst += cbDataUnit;
             i += SYMCRYPT_AES_BLOCK_SIZE;
@@ -712,18 +710,17 @@ VOID
 SYMCRYPT_CALL
 SymCryptXtsAesDecrypt(
     _In_                    PCSYMCRYPT_XTS_AES_EXPANDED_KEY pExpandedKey,
-                            SIZE_T                          cbDataUnit, 
-                            UINT64                       tweak,  
+                            SIZE_T                          cbDataUnit,
+                            UINT64                          tweak,
     _In_reads_( cbData )    PCBYTE                          pbSrc,
     _Out_writes_( cbData )  PBYTE                           pbDst,
                             SIZE_T                          cbData )
 {
 #if SYMCRYPT_CPU_AMD64
-    if( SYMCRYPT_CPU_FEATURES_PRESENT( SYMCRYPT_CPU_FEATURES_FOR_AESNI_CODE | SYMCRYPT_CPU_FEATURE_VAES_512 ) )
-    {
+    /* if( SYMCRYPT_CPU_FEATURES_PRESENT( SYMCRYPT_CPU_FEATURES_FOR_AESNI_CODE | SYMCRYPT_CPU_FEATURE_VAES_512 ) ) {
         SymCryptXtsAesDecryptZmm( pExpandedKey, cbDataUnit, tweak, pbSrc, pbDst, cbData );
-    } else if( SYMCRYPT_CPU_FEATURES_PRESENT( SYMCRYPT_CPU_FEATURES_FOR_AESNI_CODE | SYMCRYPT_CPU_FEATURE_VAES_256 ) )
-    {
+    } else */
+    if( SYMCRYPT_CPU_FEATURES_PRESENT( SYMCRYPT_CPU_FEATURES_FOR_AESNI_CODE | SYMCRYPT_CPU_FEATURE_VAES_256 ) ) {
         SymCryptXtsAesDecryptYmm( pExpandedKey, cbDataUnit, tweak, pbSrc, pbDst, cbData );
     } else if( SYMCRYPT_CPU_FEATURES_PRESENT( SYMCRYPT_CPU_FEATURES_FOR_AESNI_CODE ) ) {
         SymCryptXtsAesDecryptXmm( pExpandedKey, cbDataUnit, tweak, pbSrc, pbDst, cbData );
@@ -801,12 +798,12 @@ SymCryptXtsUpdateTweak(
 VOID
 SYMCRYPT_CALL
 SymCryptXtsEncryptDataUnit(
-    _In_                                    PCSYMCRYPT_BLOCKCIPHER      pBlockCipher,
-    _In_                                    PCVOID                      pExpandedKey,
-    _Inout_updates_(pBlockCipher->blockSize)PBYTE                       pbTweakBlock,
-    _In_reads_( cbData )                    PCBYTE                      pbSrc,
-    _Out_writes_( cbData )                  PBYTE                       pbDst,
-                                            SIZE_T                      cbData )
+    _In_                                        PCSYMCRYPT_BLOCKCIPHER      pBlockCipher,
+    _In_                                        PCVOID                      pExpandedKey,
+    _Inout_updates_( pBlockCipher->blockSize )  PBYTE                       pbTweakBlock,
+    _In_reads_( cbData )                        PCBYTE                      pbSrc,
+    _Out_writes_( cbData )                      PBYTE                       pbDst,
+                                                SIZE_T                      cbData )
 {
     BYTE    buf[SYMCRYPT_AES_BLOCK_SIZE];
 
@@ -828,12 +825,12 @@ SymCryptXtsEncryptDataUnit(
 VOID
 SYMCRYPT_CALL
 SymCryptXtsDecryptDataUnit(
-    _In_                                    PCSYMCRYPT_BLOCKCIPHER      pBlockCipher,
-    _In_                                    PCVOID                      pExpandedKey,
-    _Inout_updates_(pBlockCipher->blockSize)PBYTE                       pbTweakBlock,
-    _In_reads_( cbData )                    PCBYTE                      pbSrc,
-    _Out_writes_( cbData )                  PBYTE                       pbDst,
-                                            SIZE_T                      cbData )
+    _In_                                        PCSYMCRYPT_BLOCKCIPHER      pBlockCipher,
+    _In_                                        PCVOID                      pExpandedKey,
+    _Inout_updates_( pBlockCipher->blockSize )  PBYTE                       pbTweakBlock,
+    _In_reads_( cbData )                        PCBYTE                      pbSrc,
+    _Out_writes_( cbData )                      PBYTE                       pbDst,
+                                                SIZE_T                      cbData )
 {
     BYTE    buf[SYMCRYPT_AES_BLOCK_SIZE];
 
@@ -855,53 +852,53 @@ SymCryptXtsDecryptDataUnit(
 VOID
 SYMCRYPT_CALL
 SymCryptXtsAesEncryptDataUnitAsm(
-    _In_                                    PCSYMCRYPT_AES_EXPANDED_KEY pExpandedKey,
-    _Inout_updates_( pBlockCipher->blockSize )PBYTE                     pbTweakBlock,
-    _In_reads_( cbData )                    PCBYTE                      pbSrc,
-    _Out_writes_( cbData )                  PBYTE                       pbDst,
-                                            SIZE_T                      cbData )
+    _In_                                        PCSYMCRYPT_AES_EXPANDED_KEY pExpandedKey,
+    _Inout_updates_( SYMCRYPT_AES_BLOCK_SIZE )  PBYTE                       pbTweakBlock,
+    _In_reads_( cbData )                        PCBYTE                      pbSrc,
+    _Out_writes_( cbData )                      PBYTE                       pbDst,
+                                                SIZE_T                      cbData )
 {
     SYMCRYPT_ASSERT( SymCryptAesBlockCipherNoOpt.blockSize == SYMCRYPT_AES_BLOCK_SIZE ); // keep Prefast happy
-    SymCryptXtsEncryptDataUnit( 
+    SymCryptXtsEncryptDataUnit(
             &SymCryptAesBlockCipherNoOpt,
-            pExpandedKey, 
-            pbTweakBlock, 
-            pbSrc, 
-            pbDst, 
+            pExpandedKey,
+            pbTweakBlock,
+            pbSrc,
+            pbDst,
             cbData );
 }
 
 VOID
 SYMCRYPT_CALL
 SymCryptXtsAesDecryptDataUnitAsm(
-    _In_                                    PCSYMCRYPT_AES_EXPANDED_KEY pExpandedKey,
-    _Inout_updates_( pBlockCipher->blockSize )PBYTE                     pbTweakBlock,
-    _In_reads_( cbData )                    PCBYTE                      pbSrc,
-    _Out_writes_( cbData )                  PBYTE                       pbDst,
-                                            SIZE_T                      cbData )
+    _In_                                        PCSYMCRYPT_AES_EXPANDED_KEY pExpandedKey,
+    _Inout_updates_( SYMCRYPT_AES_BLOCK_SIZE )  PBYTE                       pbTweakBlock,
+    _In_reads_( cbData )                        PCBYTE                      pbSrc,
+    _Out_writes_( cbData )                      PBYTE                       pbDst,
+                                                SIZE_T                      cbData )
 {
     SYMCRYPT_ASSERT( SymCryptAesBlockCipherNoOpt.blockSize == SYMCRYPT_AES_BLOCK_SIZE ); // keep Prefast happy
-    SymCryptXtsDecryptDataUnit( 
+    SymCryptXtsDecryptDataUnit(
             &SymCryptAesBlockCipherNoOpt,
-            pExpandedKey, 
-            pbTweakBlock, 
-            pbSrc, 
-            pbDst, 
+            pExpandedKey,
+            pbTweakBlock,
+            pbSrc,
+            pbDst,
             cbData );
 }
 
 VOID
 SYMCRYPT_CALL
 SymCryptXtsAesEncryptDataUnitC(
-    _In_                                    PCSYMCRYPT_AES_EXPANDED_KEY pExpandedKey,
-    _Inout_updates_(SYMCRYPT_AES_BLOCK_SIZE)PBYTE                       pbTweakBlock,
-    _In_reads_( cbData )                    PCBYTE                      pbSrc,
-    _Out_writes_( cbData )                  PBYTE                       pbDst,
-                                            SIZE_T                      cbData )
+    _In_                                        PCSYMCRYPT_AES_EXPANDED_KEY pExpandedKey,
+    _Inout_updates_( SYMCRYPT_AES_BLOCK_SIZE )  PBYTE                       pbTweakBlock,
+    _In_reads_( cbData )                        PCBYTE                      pbSrc,
+    _Out_writes_( cbData )                      PBYTE                       pbDst,
+                                                SIZE_T                      cbData )
 {
     // No special optimizations...
     SYMCRYPT_ASSERT( SymCryptAesBlockCipherNoOpt.blockSize == SYMCRYPT_AES_BLOCK_SIZE ); // keep Prefast happy
-    SymCryptXtsEncryptDataUnit( 
+    SymCryptXtsEncryptDataUnit(
         &SymCryptAesBlockCipherNoOpt,
         pExpandedKey,
         pbTweakBlock,
@@ -913,11 +910,11 @@ SymCryptXtsAesEncryptDataUnitC(
 VOID
 SYMCRYPT_CALL
 SymCryptXtsAesDecryptDataUnitC(
-    _In_                                    PCSYMCRYPT_AES_EXPANDED_KEY pExpandedKey,
-    _Inout_updates_(SYMCRYPT_AES_BLOCK_SIZE)PBYTE                       pbTweakBlock,
-    _In_reads_( cbData )                    PCBYTE                      pbSrc,
-    _Out_writes_( cbData )                  PBYTE                       pbDst,
-                                            SIZE_T                      cbData )
+    _In_                                        PCSYMCRYPT_AES_EXPANDED_KEY pExpandedKey,
+    _Inout_updates_( SYMCRYPT_AES_BLOCK_SIZE )  PBYTE                       pbTweakBlock,
+    _In_reads_( cbData )                        PCBYTE                      pbSrc,
+    _Out_writes_( cbData )                      PBYTE                       pbDst,
+                                                SIZE_T                      cbData )
 {
     SYMCRYPT_ASSERT( SymCryptAesBlockCipherNoOpt.blockSize == SYMCRYPT_AES_BLOCK_SIZE ); // keep Prefast happy
     SymCryptXtsDecryptDataUnit(
@@ -932,8 +929,8 @@ SymCryptXtsAesDecryptDataUnitC(
 
 static const BYTE SymCryptXtsAesCiphertext[32] = {
     0x91, 0x7c, 0xf6, 0x9e, 0xbd, 0x68, 0xb2, 0xec,
-    0x9b, 0x9f, 0xe9, 0xa3, 0xea, 0xdd, 0xa6, 0x92, 
-    0xcd, 0x43, 0xd2, 0xf5, 0x95, 0x98, 0xed, 0x85, 
+    0x9b, 0x9f, 0xe9, 0xa3, 0xea, 0xdd, 0xa6, 0x92,
+    0xcd, 0x43, 0xd2, 0xf5, 0x95, 0x98, 0xed, 0x85,
     0x8c, 0x02, 0xc2, 0x65, 0x2f, 0xbf, 0x92, 0x2e,
 };
 
