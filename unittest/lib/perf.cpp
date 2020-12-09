@@ -31,7 +31,12 @@ double g_tscFreq;
 #define PERF_UNIT   "cycles"
 
 #else
+
+#if SYMCRYPT_MS_VC
 #include <intrin.h>
+#else
+#include <x86intrin.h>
+#endif
 
 FORCEINLINE
 ULONGLONG
@@ -144,7 +149,7 @@ SYMCRYPT_ALIGN_AT(256) BYTE g_perfBuffer[8 * PERF_BUFFER_SIZE];
 
 #define MAX_RUNS_PER_MEASUREMENT    (1<<20)
 #define MEASUREMENTS_PER_RESULT     10 // We will take the n/3rd element - so we want a 3k+1 elements to select from
-#define MIN_RESULTS_PER_DATAPOINT   4
+#define MIN_RESULTS_PER_DATAPOINT   10
 #define MAX_RESULTS_PER_DATAPOINT   13
 #define MAX_SIZES                   25
 
@@ -418,7 +423,6 @@ double correctAverage( double average, double * pData, SIZE_T cdData )
 
 }
 
-int g_fixedTimeLoopRuns = 1;
 
 #define FIXED_TIME_LOOP_ITER_2() \
     x += y; y ^= x;
@@ -451,69 +455,21 @@ nullPerfFunction( PBYTE, PBYTE, PBYTE, SIZE_T )
 {
 }
 
-SYMCRYPT_NOINLINE
-VOID
-fixed64PerfFunction( PBYTE, PBYTE, PBYTE, SIZE_T )
-{
-    SIZE_T x = g_fixedTimeLoopVariable;
-    SIZE_T y = g_fixedTimeLoopRuns;
-    FIXED_TIME_LOOP_ITER_32()
-    FIXED_TIME_LOOP_ITER_32()
-    g_fixedTimeLoopVariable = y;
-}
+int g_sanityCheckLoopRuns = 1;
+int g_fixedTimeLoopRuns = 1;
+
+#define SANITY_CHECK_LOOP_CYCLES (32 * g_sanityCheckLoopRuns)
 
 SYMCRYPT_NOINLINE
 VOID
-fixed128PerfFunction( PBYTE, PBYTE, PBYTE, SIZE_T )
+sanityCheckPerfFunction( PBYTE, PBYTE, PBYTE, SIZE_T )
 {
     SIZE_T x = g_fixedTimeLoopVariable;
     SIZE_T y = g_fixedTimeLoopRuns;
-    FIXED_TIME_LOOP_ITER_128()
-    g_fixedTimeLoopVariable = y;
-}
-
-SYMCRYPT_NOINLINE
-VOID
-fixed256PerfFunction( PBYTE, PBYTE, PBYTE, SIZE_T )
-{
-    SIZE_T x = g_fixedTimeLoopVariable;
-    SIZE_T y = g_fixedTimeLoopRuns;
-    FIXED_TIME_LOOP_ITER_128()
-    FIXED_TIME_LOOP_ITER_128()
-    g_fixedTimeLoopVariable = y;
-}
-
-SYMCRYPT_NOINLINE
-VOID
-fixed512PerfFunction( PBYTE, PBYTE, PBYTE, SIZE_T )
-{
-    SIZE_T x = g_fixedTimeLoopVariable;
-    SIZE_T y = g_fixedTimeLoopRuns;
-    FIXED_TIME_LOOP_ITER_512()
-    g_fixedTimeLoopVariable = y;
-}
-
-SYMCRYPT_NOINLINE
-VOID
-fixed1024PerfFunction( PBYTE, PBYTE, PBYTE, SIZE_T )
-{
-    SIZE_T x = g_fixedTimeLoopVariable;
-    SIZE_T y = g_fixedTimeLoopRuns;
-    FIXED_TIME_LOOP_ITER_512()
-    FIXED_TIME_LOOP_ITER_512()
-    g_fixedTimeLoopVariable = y;
-}
-
-SYMCRYPT_NOINLINE
-VOID
-fixed2048PerfFunction( PBYTE, PBYTE, PBYTE, SIZE_T )
-{
-    SIZE_T x = g_fixedTimeLoopVariable;
-    SIZE_T y = g_fixedTimeLoopRuns;
-    FIXED_TIME_LOOP_ITER_512()
-    FIXED_TIME_LOOP_ITER_512()
-    FIXED_TIME_LOOP_ITER_512()
-    FIXED_TIME_LOOP_ITER_512()
+    for( int i=0; i < g_sanityCheckLoopRuns; ++i )
+    {
+        FIXED_TIME_LOOP_ITER_32()
+    }
     g_fixedTimeLoopVariable = y;
 }
 
@@ -526,7 +482,7 @@ fixedTimeLoopPerfFunction( PBYTE, PBYTE, PBYTE, SIZE_T )
 {
     SIZE_T x = g_fixedTimeLoopVariable;
     SIZE_T y = g_fixedTimeLoopRuns;
-    for( int ftl_i=0; ftl_i < g_fixedTimeLoopRuns; ++ftl_i )
+    for( int i=0; i < g_fixedTimeLoopRuns; ++i )
     {
         FIXED_TIME_LOOP_ITER_512()
     }
@@ -1299,7 +1255,7 @@ measurePerf()
 }
 
 VOID
-calibratePerfMeasurements(bool verbose = true)
+calibratePerfMeasurements(BOOL verbose = FALSE)
 {
     g_perfScaleFactor = 1.0;
     g_largeMeasurementClockTime = (ULONGLONG) ((1<<28) / g_perfScaleFactor);
@@ -1311,45 +1267,57 @@ calibratePerfMeasurements(bool verbose = true)
     for( int i=0; i<MEASUREMENTS_PER_RESULT; i++)
     {
         ULONGLONG before = GET_PERF_CLOCK();
+        nullPerfFunction(NULL, NULL, NULL, 0);
         ULONGLONG after = GET_PERF_CLOCK();
         durations[i] = after - before;
     }
 
     qsort( durations, MEASUREMENTS_PER_RESULT, sizeof( durations[0] ), compareUlonglong );
 
-    g_minMeasurementClockTime = 1000 * durations[ MEASUREMENTS_PER_RESULT / 3 ];
+    g_minMeasurementClockTime = 1000 * SYMCRYPT_MAX(durations[ MEASUREMENTS_PER_RESULT / 3 ], 1);
 
     if (verbose) iprint( "Perf min measurement clock time = %llu\n", g_minMeasurementClockTime );
 
     // Set up fixed time loop runs so that measurement error is sufficiently small
-    g_fixedTimeLoopRuns = (int) g_minMeasurementClockTime / FIXED_TIME_LOOP_CYCLES_INIT;
-    ULONGLONG before = GET_PERF_CLOCK();
-    FIXED_TIME_LOOP();
-    ULONGLONG after = GET_PERF_CLOCK();
-    while (after - before < (g_minMeasurementClockTime / 10))
+    if( g_perfClockScaling )
     {
-        g_fixedTimeLoopRuns <<= 1;
-        before = GET_PERF_CLOCK();
-        FIXED_TIME_LOOP();
-        after = GET_PERF_CLOCK();
+        g_fixedTimeLoopRuns = 1;
+        ULONGLONG fixedLoopDuration;
+        do
+        {
+            g_fixedTimeLoopRuns <<= 1;
+            fixedLoopDuration = g_minMeasurementClockTime;
+            for (int i=0; i<3; ++i) // repeat a few times to avoid accuracy issues if we get an unexpectedly large measurement
+            {
+                ULONGLONG before = GET_PERF_CLOCK();
+                FIXED_TIME_LOOP();
+                ULONGLONG after = GET_PERF_CLOCK();
+                fixedLoopDuration = SYMCRYPT_MIN(fixedLoopDuration, after-before);
+            }
+        } while (fixedLoopDuration < g_minMeasurementClockTime);
     }
 
-    // Measure the overheads of measurement using fixed512PerfFunction which should take a fixed short time
+    // Removing attempt to calibrateoverheads of measurement with reference to known functions for now
+    // Previously was using the nullPerfFunction (just a function which immediately returns) but this overestimates the cost of the function call
+    // (in a real function call, the work of the function call can be executed in parallel with the argument preparation/call/ret)
+    // Attempts to use a function with fixed length real work had further constant prologue/epilogue costs within the function which appear to dominate
+    // the cost of being run within the measurement infrastructure.
+    // Experimentally, keeping the overheads at 0 seems to give as good results as any current attempt to calibrate them!
     g_perfRunOverhead = 0.0;
     g_perfMeasurementOverhead = 0.0;
 
+    /*
+    Measure the overheads of measurement using sanityCheckPerfFunction which should take a fixed short time
     int nRuns0 = 1;
-    // This call will scale nRuns0 up until the runs are sufficient for the loop to be >= g_minMeasurementClockTime
-    double measurement0 = measurePerfOneSize( 0, 0, NULL, NULL, fixed512PerfFunction, NULL, FALSE, &nRuns0 );
-    while (measurement0 < 512) measurement0 = measurePerfOneSize( 0, 0, NULL, NULL, fixed512PerfFunction, NULL, FALSE, &nRuns0 );
-    double runOverhead0 = measurement0 - 512; // expected result is 512 cycles - anything extra is overhead
+    g_sanityCheckLoopRuns = 32;
+    This call will scale nRuns0 up until the runs are sufficient for the loop to be >= g_minMeasurementClockTime
+    double measurement0 = measurePerfOneSize( 0, 0, NULL, NULL, sanityCheckPerfFunction, NULL, FALSE, &nRuns0 );
+    double runOverhead0 = measurement0 - SANITY_CHECK_LOOP_CYCLES; // expected result is SANITY_CHECK_LOOP_CYCLES - anything extra is overhead
     double measurementOverhead0 = runOverhead0 * nRuns0;
 
-
     int nRuns1 = nRuns0 << 1;
-    double measurement1 = measurePerfOneSize( 0, 0, NULL, NULL, fixed512PerfFunction, NULL, FALSE, &nRuns1 );
-    while (measurement1 < 512) measurement1 = measurePerfOneSize( 0, 0, NULL, NULL, fixed512PerfFunction, NULL, FALSE, &nRuns1 );
-    double runOverhead1 = measurement1 - 512;
+    double measurement1 = measurePerfOneSize( 0, 0, NULL, NULL, sanityCheckPerfFunction, NULL, FALSE, &nRuns1 );
+    double runOverhead1 = measurement1 - SANITY_CHECK_LOOP_CYCLES;
     double measurementOverhead1 = runOverhead1 * nRuns1;
 
     g_perfRunOverhead = (measurementOverhead1 - measurementOverhead0) / (nRuns1 - nRuns0);
@@ -1367,6 +1335,7 @@ calibratePerfMeasurements(bool verbose = true)
         print( "nRuns0 %d, measurement0 %.1f, runOverhead0 %.1f, measurementOverhead0 %.1f\nnRuns1 %d, measurement1 %.1f, runOverhead1 %.1f, measurementOverhead1 %.1f\n", nRuns0, measurement0, runOverhead0, measurementOverhead0, nRuns1, measurement1, runOverhead1, measurementOverhead1 );
         iprint( "Performance overhead: %.1f %s per run, %.1f %s per measurement\n", g_perfRunOverhead, PERF_UNIT, g_perfMeasurementOverhead, PERF_UNIT );
     }
+    */
 }
 
 VOID
@@ -1402,23 +1371,24 @@ initPerfSystem()
     // get to a steady state with calibration
     for(int i=0; i<5; ++i)
     {
-        calibratePerfMeasurements(false);
+        calibratePerfMeasurements();
     }
 
-    calibratePerfMeasurements();
+    calibratePerfMeasurements(TRUE);
 
     // Sanity check calibration
     double fixedTimeLoopMeasurement = measurePerfOneSize( 0, 0, NULL, NULL, fixedTimeLoopPerfFunction, NULL, FALSE) / g_fixedTimeLoopRuns;
     double nullMeasurement = measurePerfOneSize( 0, 0, NULL, NULL, nullPerfFunction, NULL, FALSE);
-    double fixed64Measurement = measurePerfOneSize( 0, 0, NULL, NULL, fixed64PerfFunction, NULL, FALSE);
-    double fixed128Measurement = measurePerfOneSize( 0, 0, NULL, NULL, fixed128PerfFunction, NULL, FALSE);
-    double fixed256Measurement = measurePerfOneSize( 0, 0, NULL, NULL, fixed256PerfFunction, NULL, FALSE);
-    double fixed512Measurement = measurePerfOneSize( 0, 0, NULL, NULL, fixed512PerfFunction, NULL, FALSE);
-    double fixed1024Measurement = measurePerfOneSize( 0, 0, NULL, NULL, fixed1024PerfFunction, NULL, FALSE);
-    double fixed2048Measurement = measurePerfOneSize( 0, 0, NULL, NULL, fixed2048PerfFunction, NULL, FALSE);
 
-    iprint( "Sanity check measurements:\n%.1f %s fixedTimeLoop, %.1f %s null, %.1f %s fixed64, %.1f %s fixed128, %.1f %s fixed256, %.1f %s fixed512, %.1f %s fixed1024, %.1f %s fixed2048\n",
-        fixedTimeLoopMeasurement, PERF_UNIT, nullMeasurement, PERF_UNIT, fixed64Measurement, PERF_UNIT, fixed128Measurement, PERF_UNIT, fixed256Measurement, PERF_UNIT, fixed512Measurement, PERF_UNIT, fixed1024Measurement, PERF_UNIT, fixed2048Measurement, PERF_UNIT );
+    print( "Sanity check measurements:\n%.1f %s fixedTimeLoop, %.1f %s null", fixedTimeLoopMeasurement, PERF_UNIT, nullMeasurement, PERF_UNIT );
+    g_sanityCheckLoopRuns = 1;
+    while(SANITY_CHECK_LOOP_CYCLES < g_minMeasurementClockTime)
+    {
+        double sanityCheckMeasurement = measurePerfOneSize( 0, 0, NULL, NULL, sanityCheckPerfFunction, NULL, FALSE);
+        print(", %.1f %s (for %d)", sanityCheckMeasurement, PERF_UNIT, SANITY_CHECK_LOOP_CYCLES);
+        g_sanityCheckLoopRuns <<= 1;
+    }
+    iprint("\n");
 }
 
 VOID
