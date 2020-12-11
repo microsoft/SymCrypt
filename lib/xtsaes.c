@@ -239,7 +239,6 @@ SymCryptXtsAesEncryptZmm(
         i = 0;
         while( i < tweakbytes )
         {
-            // SymCryptXtsAesEncryptDataUnitZmm( &pExpandedKey->key1, &tweakBuf[i], pbSrc, pbDst, cbDataUnit );
             SymCryptXtsAesEncryptDataUnitZmm_2048( &pExpandedKey->key1, &tweakBuf[i], pbSrc, pbDst, cbDataUnit );
             pbSrc += cbDataUnit;
             pbDst += cbDataUnit;
@@ -290,7 +289,7 @@ SymCryptXtsAesEncryptYmm(
         i = 0;
         while( i < tweakbytes )
         {
-            SymCryptXtsAesEncryptDataUnitYmm_1024( &pExpandedKey->key1, &tweakBuf[i], pbSrc, pbDst, cbDataUnit );
+            SymCryptXtsAesEncryptDataUnitYmm_2048( &pExpandedKey->key1, &tweakBuf[i], pbSrc, pbDst, cbDataUnit );
             pbSrc += cbDataUnit;
             pbDst += cbDataUnit;
             i += SYMCRYPT_AES_BLOCK_SIZE;
@@ -646,7 +645,6 @@ SymCryptXtsAesDecryptZmm(
         i = 0;
         while( i < tweakbytes )
         {
-            // SymCryptXtsAesDecryptDataUnitZmm( &pExpandedKey->key1, &tweakBuf[i], pbSrc, pbDst, cbDataUnit );
             SymCryptXtsAesDecryptDataUnitZmm_2048( &pExpandedKey->key1, &tweakBuf[i], pbSrc, pbDst, cbDataUnit );
             pbSrc += cbDataUnit;
             pbDst += cbDataUnit;
@@ -697,7 +695,7 @@ SymCryptXtsAesDecryptYmm(
         i = 0;
         while( i < tweakbytes )
         {
-            SymCryptXtsAesDecryptDataUnitYmm_1024( &pExpandedKey->key1, &tweakBuf[i], pbSrc, pbDst, cbDataUnit );
+            SymCryptXtsAesDecryptDataUnitYmm_2048( &pExpandedKey->key1, &tweakBuf[i], pbSrc, pbDst, cbDataUnit );
             pbSrc += cbDataUnit;
             pbDst += cbDataUnit;
             i += SYMCRYPT_AES_BLOCK_SIZE;

@@ -1277,24 +1277,6 @@ SymCryptXtsAesDecryptDataUnitXmm(
 
 VOID
 SYMCRYPT_CALL
-SymCryptXtsAesEncryptDataUnitZmm(
-    _In_                                        PCSYMCRYPT_AES_EXPANDED_KEY pExpandedKey,
-    _Inout_updates_( SYMCRYPT_AES_BLOCK_SIZE )  PBYTE                       pbTweakBlock,
-    _In_reads_( cbData )                        PCBYTE                      pbSrc,
-    _Out_writes_( cbData )                      PBYTE                       pbDst,
-                                                SIZE_T                      cbData );
-
-VOID
-SYMCRYPT_CALL
-SymCryptXtsAesDecryptDataUnitZmm(
-    _In_                                        PCSYMCRYPT_AES_EXPANDED_KEY pExpandedKey,
-    _Inout_updates_( SYMCRYPT_AES_BLOCK_SIZE )  PBYTE                       pbTweakBlock,
-    _In_reads_( cbData )                        PCBYTE                      pbSrc,
-    _Out_writes_( cbData )                      PBYTE                       pbDst,
-                                                SIZE_T                      cbData );
-
-VOID
-SYMCRYPT_CALL
 SymCryptXtsAesEncryptDataUnitZmm_2048(
     _In_                                        PCSYMCRYPT_AES_EXPANDED_KEY pExpandedKey,
     _Inout_updates_( SYMCRYPT_AES_BLOCK_SIZE )  PBYTE                       pbTweakBlock,
@@ -1313,7 +1295,7 @@ SymCryptXtsAesDecryptDataUnitZmm_2048(
 
 VOID
 SYMCRYPT_CALL
-SymCryptXtsAesEncryptDataUnitYmm_1024(
+SymCryptXtsAesEncryptDataUnitYmm_2048(
     _In_                                        PCSYMCRYPT_AES_EXPANDED_KEY pExpandedKey,
     _Inout_updates_( SYMCRYPT_AES_BLOCK_SIZE )  PBYTE                       pbTweakBlock,
     _In_reads_( cbData )                        PCBYTE                      pbSrc,
@@ -1322,7 +1304,7 @@ SymCryptXtsAesEncryptDataUnitYmm_1024(
 
 VOID
 SYMCRYPT_CALL
-SymCryptXtsAesDecryptDataUnitYmm_1024(
+SymCryptXtsAesDecryptDataUnitYmm_2048(
     _In_                                        PCSYMCRYPT_AES_EXPANDED_KEY pExpandedKey,
     _Inout_updates_( SYMCRYPT_AES_BLOCK_SIZE )  PBYTE                       pbTweakBlock,
     _In_reads_( cbData )                        PCBYTE                      pbSrc,
