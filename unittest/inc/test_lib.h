@@ -130,35 +130,6 @@
     #define InterlockedIncrement64(ptr) __sync_fetch_and_add(ptr, 1)
     #define InterlockedDecrement64(ptr) __sync_fetch_and_sub(ptr, 1)
 
-    #if defined(__i386__)
-
-    static inline unsigned long __rdtsc(void)
-    {
-        unsigned long x;
-        asm volatile (".byte 0x0f, 0x31" : "=A" (x));
-        return x;
-    }
-
-    #elif defined(__amd64)
-
-    static inline unsigned long long __rdtsc(void)
-    {
-        unsigned long long tsc;
-        asm volatile ("rdtsc; sal $32, %%rdx; or %%rdx, %%rax;" : "=a"(tsc));
-        return tsc;
-    }
-    #endif
-
-    static inline void __cpuid(int CPUInfo[4], int InfoType)
-    {
-        asm volatile ("mov %0, %%eax; cpuid" :
-            "=a" (CPUInfo[0]),
-            "=b" (CPUInfo[1]),
-            "=c" (CPUInfo[2]),
-            "=d" (CPUInfo[3]) :
-            "g" (InfoType));
-    }
-
     #include <unistd.h>
     #define Sleep(x) sleep((x)/1000)
 #else
@@ -1171,7 +1142,7 @@ VOID
 verifyYmmRegisters();
 
 
-VOID 
+VOID
 addAllAlgs();
 
 VOID
