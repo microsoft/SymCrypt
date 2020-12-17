@@ -109,7 +109,7 @@ SymCryptParallelHashSetNextWork( PCSYMCRYPT_PARALLEL_HASH pParHash, PSYMCRYPT_PA
         // STATE_PAD2:      We are working on the next operation (a result), and have processed the first half of a 2-block padding.
         // STATE_RESULT:    We are working on the next operation (a result), and have processed all the padding.
         //
-        // The pState->dataLength is updated whenver we copy bytes from the append into the state's buffer, or when
+        // The pState->dataLength is updated whenever we copy bytes from the append into the state's buffer, or when
         //      we return TRUE and process bulk data.
         //
         pOp = pScratch->next;
