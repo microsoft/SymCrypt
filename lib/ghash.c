@@ -1,7 +1,7 @@
 //
 // GHASH.c
 //
-// Implemenation of the NIST SP800-38D GHASH function which is the
+// Implementation of the NIST SP800-38D GHASH function which is the
 // core authentication function for the GCM and GMAC modes.
 //
 // This implementation was done by Niels Ferguson for the RSA32.lib library in 2008,

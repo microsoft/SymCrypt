@@ -3165,7 +3165,7 @@ SymCryptGcmValidateParameters(
 // To achieve maximum performance, GCM functions do not check for valid parameters.
 // Passing invalid parameters can lead to buffer overflows.
 // Callers who want to validate their GCM parameters can call this function.
-// Note: In Checked builds some CCM functions might fatal out when invalid parameters are
+// Note: In Checked builds some GCM functions might fatal out when invalid parameters are
 // passed.
 //
 
@@ -4772,13 +4772,13 @@ SymCryptEcurveAllocate(
 //
 // Future versions might use the flags to enable different features/tradeoffs.
 // There are a number of interesting memory/speed/pre-computation cost trades that can be made.
-// For example, pre-computing multiples of the distinguished point, or (parallel?) pre-computation 
+// For example, pre-computing multiples of the distinguished point, or (parallel?) pre-computation
 // of (r, rG) pairs for random r values.
 //
 // This function applies limited validation of the pParams. The validation is intended to eliminate
 // the threat of denial-of-service when hostile parameters are presented. It does not ensure that
 // the parameters make sense, define a proper curve, or that any elliptic-curve operations made on
-// the curve built from these parameters will fail, succeed or provide any security. 
+// the curve built from these parameters will fail, succeed or provide any security.
 // The only guarantee provided for invalid parameters is that all operations on this curve will
 // not crash and will return in some reasonable amount of time.
 //
@@ -5045,7 +5045,7 @@ SymCryptDlgroupGenerate(
 //
 // The requirements below address the parameter values after the defaults have been substituted
 // for nBitsOfQ and fipsStandard.
-// 
+//
 // Requirements:
 //  - pDlgroup!=NULL. Otherwise it returns SYMCRYPT_INVALID_ARGUMENT.
 //
@@ -5053,7 +5053,7 @@ SymCryptDlgroupGenerate(
 //    NULL, and nBitsOfQ <= 160 or nBitsOfQ = 0 && nBitsOfP <= 1024.
 //
 //  - If fipsStandard == SYMCRYPT_DLGROUP_FIPS_186_3, then hashAlgorithm MUST NOT be equal
-//    to NULL. 
+//    to NULL.
 //
 //  - If nBitsOfHash is the number of bits of the output block of hashAlgorithm,
 //    it is required that:
@@ -5626,7 +5626,7 @@ SymCryptRsaPkcs1Decrypt(
 //
 // If the data in improperly formatted, an error is returned.
 // If pbDst == NULL, then *pcbDst is set to the decrypted data length, and the functions succeeds.
-//      This is not recommended as retrieving the actual data requires a second RSA decryption, 
+//      This is not recommended as retrieving the actual data requires a second RSA decryption,
 //      which is expensive. We recommend that callers provide a large enough buffer the first time.
 // If pbDst != NULL and cbDst is too small, then *pcbDst is set to the required size of pbDst
 //      and SYMCRYPT_BUFFER_TOO_SMALL is returned.

@@ -742,14 +742,6 @@ SymCryptGHashAppendData(
 
 VOID
 SYMCRYPT_CALL
-SymCryptGHashAppendDataSaveXmm(
-    _In_reads_( SYMCRYPT_GF128_FIELD_SIZE )     PCSYMCRYPT_GF128_ELEMENT    expandedKeyTable,
-    _Inout_                                     PSYMCRYPT_GF128_ELEMENT     pState,
-    _In_reads_( cbData )                        PCBYTE                      pbData,
-    _In_                                        SIZE_T                      cbData );
-
-VOID
-SYMCRYPT_CALL
 SymCryptGHashAppendDataC(
     _In_reads_( SYMCRYPT_GF128_FIELD_SIZE )     PCSYMCRYPT_GF128_ELEMENT    expandedKeyTable,
     _Inout_                                     PSYMCRYPT_GF128_ELEMENT     pState,
@@ -1101,73 +1093,55 @@ SymCryptAesEcbDecryptC(
 VOID
 SYMCRYPT_CALL
 SymCryptAesCbcEncryptAsm(
-    _In_                                    PCSYMCRYPT_AES_EXPANDED_KEY pExpandedKey,
-    _In_reads_( SYMCRYPT_AES_BLOCK_SIZE )   PBYTE                       pbChainingValue,
-    _In_reads_( cbData )                    PCBYTE                      pbSrc,
-    _Out_writes_( cbData )                  PBYTE                       pbDst,
-                                            SIZE_T                      cbData );
+    _In_                                        PCSYMCRYPT_AES_EXPANDED_KEY pExpandedKey,
+    _Inout_updates_( SYMCRYPT_AES_BLOCK_SIZE )  PBYTE                       pbChainingValue,
+    _In_reads_( cbData )                        PCBYTE                      pbSrc,
+    _Out_writes_( cbData )                      PBYTE                       pbDst,
+                                                SIZE_T                      cbData );
 VOID
 SYMCRYPT_CALL
 SymCryptAesCbcEncryptXmm(
-    _In_                                    PCSYMCRYPT_AES_EXPANDED_KEY pExpandedKey,
-    _In_reads_( SYMCRYPT_AES_BLOCK_SIZE )   PBYTE                       pbChainingValue,
-    _In_reads_( cbData )                    PCBYTE                      pbSrc,
-    _Out_writes_( cbData )                  PBYTE                       pbDst,
-                                            SIZE_T                      cbData );
+    _In_                                        PCSYMCRYPT_AES_EXPANDED_KEY pExpandedKey,
+    _Inout_updates_( SYMCRYPT_AES_BLOCK_SIZE )  PBYTE                       pbChainingValue,
+    _In_reads_( cbData )                        PCBYTE                      pbSrc,
+    _Out_writes_( cbData )                      PBYTE                       pbDst,
+                                                SIZE_T                      cbData );
 
 VOID
 SYMCRYPT_CALL
 SymCryptAesCbcEncryptNeon(
-    _In_                                    PCSYMCRYPT_AES_EXPANDED_KEY pExpandedKey,
-    _In_reads_( SYMCRYPT_AES_BLOCK_SIZE )   PBYTE                       pbChainingValue,
-    _In_reads_( cbData )                    PCBYTE                      pbSrc,
-    _Out_writes_( cbData )                  PBYTE                       pbDst,
-                                            SIZE_T                      cbData );
-
-VOID
-SYMCRYPT_CALL
-SymCryptAesCbcEncryptSaveXmm(
-    _In_                                    PCSYMCRYPT_AES_EXPANDED_KEY pExpandedKey,
-    _In_reads_( SYMCRYPT_AES_BLOCK_SIZE )   PBYTE                       pbChainingValue,
-    _In_reads_( cbData )                    PCBYTE                      pbSrc,
-    _Out_writes_( cbData )                  PBYTE                       pbDst,
-                                            SIZE_T                      cbData );
+    _In_                                        PCSYMCRYPT_AES_EXPANDED_KEY pExpandedKey,
+    _Inout_updates_( SYMCRYPT_AES_BLOCK_SIZE )  PBYTE                       pbChainingValue,
+    _In_reads_( cbData )                        PCBYTE                      pbSrc,
+    _Out_writes_( cbData )                      PBYTE                       pbDst,
+                                                SIZE_T                      cbData );
 
 VOID
 SYMCRYPT_CALL
 SymCryptAesCbcDecryptAsm(
-    _In_                                    PCSYMCRYPT_AES_EXPANDED_KEY pExpandedKey,
-    _In_reads_( SYMCRYPT_AES_BLOCK_SIZE )   PBYTE                       pbChainingValue,
-    _In_reads_( cbData )                    PCBYTE                      pbSrc,
-    _Out_writes_( cbData )                  PBYTE                       pbDst,
-                                            SIZE_T                      cbData );
+    _In_                                        PCSYMCRYPT_AES_EXPANDED_KEY pExpandedKey,
+    _Inout_updates_( SYMCRYPT_AES_BLOCK_SIZE )  PBYTE                       pbChainingValue,
+    _In_reads_( cbData )                        PCBYTE                      pbSrc,
+    _Out_writes_( cbData )                      PBYTE                       pbDst,
+                                                SIZE_T                      cbData );
 
 VOID
 SYMCRYPT_CALL
 SymCryptAesCbcDecryptXmm(
-    _In_                                    PCSYMCRYPT_AES_EXPANDED_KEY pExpandedKey,
-    _In_reads_( SYMCRYPT_AES_BLOCK_SIZE )   PBYTE                       pbChainingValue,
-    _In_reads_( cbData )                    PCBYTE                      pbSrc,
-    _Out_writes_( cbData )                  PBYTE                       pbDst,
-                                            SIZE_T                      cbData );
-
-VOID
-SYMCRYPT_CALL
-SymCryptAesCbcDecryptSaveXmm(
-    _In_                                    PCSYMCRYPT_AES_EXPANDED_KEY pExpandedKey,
-    _In_reads_( SYMCRYPT_AES_BLOCK_SIZE )   PBYTE                       pbChainingValue,
-    _In_reads_( cbData )                    PCBYTE                      pbSrc,
-    _Out_writes_( cbData )                  PBYTE                       pbDst,
-                                            SIZE_T                      cbData );
+    _In_                                        PCSYMCRYPT_AES_EXPANDED_KEY pExpandedKey,
+    _Inout_updates_( SYMCRYPT_AES_BLOCK_SIZE )  PBYTE                       pbChainingValue,
+    _In_reads_( cbData )                        PCBYTE                      pbSrc,
+    _Out_writes_( cbData )                      PBYTE                       pbDst,
+                                                SIZE_T                      cbData );
 
 VOID
 SYMCRYPT_CALL
 SymCryptAesCbcDecryptNeon(
-    _In_                                    PCSYMCRYPT_AES_EXPANDED_KEY pExpandedKey,
-    _In_reads_( SYMCRYPT_AES_BLOCK_SIZE )   PBYTE                       pbChainingValue,
-    _In_reads_( cbData )                    PCBYTE                      pbSrc,
-    _Out_writes_( cbData )                  PBYTE                       pbDst,
-                                            SIZE_T                      cbData );
+    _In_                                        PCSYMCRYPT_AES_EXPANDED_KEY pExpandedKey,
+    _Inout_updates_( SYMCRYPT_AES_BLOCK_SIZE )  PBYTE                       pbChainingValue,
+    _In_reads_( cbData )                        PCBYTE                      pbSrc,
+    _Out_writes_( cbData )                      PBYTE                       pbDst,
+                                                SIZE_T                      cbData );
 
 VOID
 SYMCRYPT_CALL
@@ -1188,38 +1162,29 @@ SymCryptAesCbcMacNeon(
 VOID
 SYMCRYPT_CALL
 SymCryptAesCtrMsb64Asm(
-    _In_                                    PCSYMCRYPT_AES_EXPANDED_KEY pExpandedKey,
-    _In_reads_( SYMCRYPT_AES_BLOCK_SIZE )   PBYTE                       pbChainingValue,
-    _In_reads_( cbData )                    PCBYTE                      pbSrc,
-    _Out_writes_( cbData )                  PBYTE                       pbDst,
-                                            SIZE_T                      cbData );
+    _In_                                        PCSYMCRYPT_AES_EXPANDED_KEY pExpandedKey,
+    _Inout_updates_( SYMCRYPT_AES_BLOCK_SIZE )  PBYTE                       pbChainingValue,
+    _In_reads_( cbData )                        PCBYTE                      pbSrc,
+    _Out_writes_( cbData )                      PBYTE                       pbDst,
+                                                SIZE_T                      cbData );
 
 VOID
 SYMCRYPT_CALL
 SymCryptAesCtrMsb64Xmm(
-    _In_                                    PCSYMCRYPT_AES_EXPANDED_KEY pExpandedKey,
-    _In_reads_( SYMCRYPT_AES_BLOCK_SIZE )   PBYTE                       pbChainingValue,
-    _In_reads_( cbData )                    PCBYTE                      pbSrc,
-    _Out_writes_( cbData )                  PBYTE                       pbDst,
-                                            SIZE_T                      cbData );
+    _In_                                        PCSYMCRYPT_AES_EXPANDED_KEY pExpandedKey,
+    _Inout_updates_( SYMCRYPT_AES_BLOCK_SIZE )  PBYTE                       pbChainingValue,
+    _In_reads_( cbData )                        PCBYTE                      pbSrc,
+    _Out_writes_( cbData )                      PBYTE                       pbDst,
+                                                SIZE_T                      cbData );
 
 VOID
 SYMCRYPT_CALL
 SymCryptAesCtrMsb64Neon(
-    _In_                                    PCSYMCRYPT_AES_EXPANDED_KEY pExpandedKey,
-    _In_reads_( SYMCRYPT_AES_BLOCK_SIZE )   PBYTE                       pbChainingValue,
-    _In_reads_( cbData )                    PCBYTE                      pbSrc,
-    _Out_writes_( cbData )                  PBYTE                       pbDst,
-                                            SIZE_T                      cbData );
-
-VOID
-SYMCRYPT_CALL
-SymCryptAesCtrMsb64SaveXmm(
-    _In_                                    PCSYMCRYPT_AES_EXPANDED_KEY pExpandedKey,
-    _In_reads_( SYMCRYPT_AES_BLOCK_SIZE )   PBYTE                       pbChainingValue,
-    _In_reads_( cbData )                    PCBYTE                      pbSrc,
-    _Out_writes_( cbData )                  PBYTE                       pbDst,
-                                            SIZE_T                      cbData );
+    _In_                                        PCSYMCRYPT_AES_EXPANDED_KEY pExpandedKey,
+    _Inout_updates_( SYMCRYPT_AES_BLOCK_SIZE )  PBYTE                       pbChainingValue,
+    _In_reads_( cbData )                        PCBYTE                      pbSrc,
+    _Out_writes_( cbData )                      PBYTE                       pbDst,
+                                                SIZE_T                      cbData );
 
 VOID
 SYMCRYPT_CALL

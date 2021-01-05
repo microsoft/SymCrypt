@@ -92,6 +92,39 @@ SymCryptAesCreateDecryptionRoundKeyXmm(
     c0 = _mm_aesenclast_si128( c0, roundkey ); \
 };
 
+
+// Perform AES encryption without the first round key and with a specified last round key
+//
+// For algorithms where performance is dominated by a chain of dependent AES rounds (i.e. CBC encryption, CCM, CMAC)
+// we can gain a reasonable performance uplift by computing (last round key ^ next plaintext block ^ first round key)
+// off the critical path and using this computed value in place of last round key in AESENCLAST instructions.
+#define AES_ENCRYPT_1_CHAIN( pExpandedKey, cipherState, mergedLastRoundKey ) \
+{ \
+    const BYTE (*keyPtr)[4][4]; \
+    const BYTE (*keyLimit)[4][4]; \
+    __m128i roundkey; \
+\
+    keyPtr = &pExpandedKey->RoundKey[1]; \
+    keyLimit = pExpandedKey->lastEncRoundKey; \
+\
+    roundkey = _mm_loadu_si128( (__m128i *) keyPtr ); \
+    keyPtr ++; \
+\
+    cipherState = _mm_aesenc_si128( cipherState, roundkey ); \
+\
+    while( keyPtr < keyLimit ) \
+    { \
+        roundkey = _mm_loadu_si128( (__m128i *) keyPtr ); \
+        keyPtr ++; \
+        cipherState = _mm_aesenc_si128( cipherState, roundkey ); \
+        roundkey = _mm_loadu_si128( (__m128i *) keyPtr ); \
+        keyPtr ++; \
+        cipherState = _mm_aesenc_si128( cipherState, roundkey ); \
+    } \
+\
+    cipherState = _mm_aesenclast_si128( cipherState, mergedLastRoundKey ); \
+};
+
 #define AES_ENCRYPT_4( pExpandedKey, c0, c1, c2, c3 ) \
 { \
     const BYTE (*keyPtr)[4][4]; \
@@ -618,26 +651,42 @@ SymCryptAesEcbEncryptXmm(
 VOID
 SYMCRYPT_CALL
 SymCryptAesCbcEncryptXmm(
-    _In_                                    PCSYMCRYPT_AES_EXPANDED_KEY pExpandedKey,
-    _In_reads_( SYMCRYPT_AES_BLOCK_SIZE )   PBYTE                       pbChainingValue,
-    _In_reads_( cbData )                    PCBYTE                      pbSrc,
-    _Out_writes_( cbData )                  PBYTE                       pbDst,
-                                            SIZE_T                      cbData )
+    _In_                                        PCSYMCRYPT_AES_EXPANDED_KEY pExpandedKey,
+    _Inout_updates_( SYMCRYPT_AES_BLOCK_SIZE )  PBYTE                       pbChainingValue,
+    _In_reads_( cbData )                        PCBYTE                      pbSrc,
+    _Out_writes_( cbData )                      PBYTE                       pbDst,
+                                                SIZE_T                      cbData )
 {
     __m128i c = _mm_loadu_si128( (__m128i *) pbChainingValue );
+    __m128i rk0 = _mm_loadu_si128( (__m128i *) &pExpandedKey->RoundKey[0] );
+    __m128i rkLast = _mm_loadu_si128( (__m128i *) pExpandedKey->lastEncRoundKey );
     __m128i d;
+
+    if (cbData < SYMCRYPT_AES_BLOCK_SIZE)
+        return;
+
+    // This algorithm is dominated by chain of dependent AES rounds, so we want to avoid XOR
+    // instructions on the critical path where possible
+    // We can compute (last round key ^ next plaintext block ^ first round key) off the critical
+    // path and use this with AES_ENCRYPT_1_CHAIN so that only AES instructions write to c in
+    // the main loop
+    d = _mm_xor_si128( _mm_loadu_si128( (__m128i *) pbSrc ), rk0 );
+    c = _mm_xor_si128( c, d );
+    pbSrc += SYMCRYPT_AES_BLOCK_SIZE;
+    cbData -= SYMCRYPT_AES_BLOCK_SIZE;
 
     while( cbData >= SYMCRYPT_AES_BLOCK_SIZE )
     {
-        d = _mm_loadu_si128( (__m128i *) pbSrc );
-        c = _mm_xor_si128( c, d );
-        AES_ENCRYPT_1( pExpandedKey, c );
-        _mm_storeu_si128( (__m128i *) pbDst, c );
+        d = _mm_xor_si128( _mm_loadu_si128( (__m128i *) pbSrc ), rk0 );
+        AES_ENCRYPT_1_CHAIN( pExpandedKey, c, _mm_xor_si128(d, rkLast ) );
+        _mm_storeu_si128( (__m128i *) pbDst, _mm_xor_si128(c, d) );
 
         pbSrc += SYMCRYPT_AES_BLOCK_SIZE;
         pbDst += SYMCRYPT_AES_BLOCK_SIZE;
         cbData -= SYMCRYPT_AES_BLOCK_SIZE;
     }
+    AES_ENCRYPT_1_CHAIN( pExpandedKey, c, rkLast );
+    _mm_storeu_si128( (__m128i *) pbDst, c );
     _mm_storeu_si128( (__m128i *) pbChainingValue, c );
 }
 
@@ -648,11 +697,11 @@ SymCryptAesCbcEncryptXmm(
 VOID
 SYMCRYPT_CALL
 SymCryptAesCbcDecryptXmm(
-    _In_                                    PCSYMCRYPT_AES_EXPANDED_KEY pExpandedKey,
-    _In_reads_( SYMCRYPT_AES_BLOCK_SIZE )   PBYTE                       pbChainingValue,
-    _In_reads_( cbData )                    PCBYTE                      pbSrc,
-    _Out_writes_( cbData )                  PBYTE                       pbDst,
-                                            SIZE_T                      cbData )
+    _In_                                        PCSYMCRYPT_AES_EXPANDED_KEY pExpandedKey,
+    _Inout_updates_( SYMCRYPT_AES_BLOCK_SIZE )  PBYTE                       pbChainingValue,
+    _In_reads_( cbData )                        PCBYTE                      pbSrc,
+    _Out_writes_( cbData )                      PBYTE                       pbDst,
+                                                SIZE_T                      cbData )
 {
     __m128i chain;
     __m128i c0, c1, c2, c3, c4, c5, c6, c7;
@@ -809,19 +858,36 @@ SymCryptAesCbcMacXmm(
                                                 SIZE_T                      cbData )
 {
     __m128i c = _mm_loadu_si128( (__m128i *) pbChainingValue );
-    __m128i d;
+    __m128i rk0 = _mm_loadu_si128( (__m128i *) &pExpandedKey->RoundKey[0] );
+    __m128i rkLast = _mm_loadu_si128( (__m128i *) pExpandedKey->lastEncRoundKey );
+    __m128i d, rk0AndLast;
+
+    if (cbData < SYMCRYPT_AES_BLOCK_SIZE)
+        return;
+
+    // This algorithm is dominated by chain of dependent AES rounds, so we want to avoid XOR
+    // instructions on the critical path where possible
+    // We can compute (last round key ^ next plaintext block ^ first round key) off the critical
+    // path and use this with AES_ENCRYPT_1_CHAIN so that only AES instructions write to c in
+    // the main loop
+    d = _mm_xor_si128( _mm_loadu_si128( (__m128i *) pbData ), rk0 );
+    c = _mm_xor_si128( c, d );
+    pbData += SYMCRYPT_AES_BLOCK_SIZE;
+    cbData -= SYMCRYPT_AES_BLOCK_SIZE;
+
+    // As we don't compute ciphertext here, we only need to XOR rk0 and rkLast once
+    rk0AndLast = _mm_xor_si128( rk0, rkLast );
 
     while( cbData >= SYMCRYPT_AES_BLOCK_SIZE )
     {
-        d = _mm_loadu_si128( (__m128i *) pbData );
-        c = _mm_xor_si128( c, d );
-        AES_ENCRYPT_1( pExpandedKey, c );
+        d = _mm_xor_si128( _mm_loadu_si128( (__m128i *) pbData ), rk0AndLast );
+        AES_ENCRYPT_1_CHAIN( pExpandedKey, c, d );
 
         pbData += SYMCRYPT_AES_BLOCK_SIZE;
         cbData -= SYMCRYPT_AES_BLOCK_SIZE;
     }
+    AES_ENCRYPT_1_CHAIN( pExpandedKey, c, rkLast );
     _mm_storeu_si128( (__m128i *) pbChainingValue, c );
-
 }
 
 
@@ -832,11 +898,11 @@ SymCryptAesCbcMacXmm(
 VOID
 SYMCRYPT_CALL
 SymCryptAesCtrMsb64Xmm(
-    _In_                                    PCSYMCRYPT_AES_EXPANDED_KEY pExpandedKey,
-    _In_reads_( SYMCRYPT_AES_BLOCK_SIZE )   PBYTE                       pbChainingValue,
-    _In_reads_( cbData )                    PCBYTE                      pbSrc,
-    _Out_writes_( cbData )                  PBYTE                       pbDst,
-                                            SIZE_T                      cbData )
+    _In_                                        PCSYMCRYPT_AES_EXPANDED_KEY pExpandedKey,
+    _Inout_updates_( SYMCRYPT_AES_BLOCK_SIZE )  PBYTE                       pbChainingValue,
+    _In_reads_( cbData )                        PCBYTE                      pbSrc,
+    _Out_writes_( cbData )                      PBYTE                       pbDst,
+                                                SIZE_T                      cbData )
 {
     __m128i chain = _mm_loadu_si128( (__m128i *) pbChainingValue );
 

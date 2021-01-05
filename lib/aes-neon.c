@@ -385,11 +385,11 @@ SymCryptAesDecryptNeon(
 VOID
 SYMCRYPT_CALL
 SymCryptAesCbcEncryptNeon(
-    _In_                                    PCSYMCRYPT_AES_EXPANDED_KEY pExpandedKey,
-    _In_reads_( SYMCRYPT_AES_BLOCK_SIZE )   PBYTE                       pbChainingValue,
-    _In_reads_( cbData )                    PCBYTE                      pbSrc,
-    _Out_writes_( cbData )                  PBYTE                       pbDst,
-                                            SIZE_T                      cbData )
+    _In_                                        PCSYMCRYPT_AES_EXPANDED_KEY pExpandedKey,
+    _Inout_updates_( SYMCRYPT_AES_BLOCK_SIZE )  PBYTE                       pbChainingValue,
+    _In_reads_( cbData )                        PCBYTE                      pbSrc,
+    _Out_writes_( cbData )                      PBYTE                       pbDst,
+                                                SIZE_T                      cbData )
 {
     __n128 c = *(__n128 *)pbChainingValue;
     __n128 d;
@@ -415,11 +415,11 @@ SymCryptAesCbcEncryptNeon(
 VOID
 SYMCRYPT_CALL
 SymCryptAesCbcDecryptNeon(
-    _In_                                    PCSYMCRYPT_AES_EXPANDED_KEY pExpandedKey,
-    _In_reads_( SYMCRYPT_AES_BLOCK_SIZE )   PBYTE                       pbChainingValue,
-    _In_reads_( cbData )                    PCBYTE                      pbSrc,
-    _Out_writes_( cbData )                  PBYTE                       pbDst,
-                                            SIZE_T                      cbData )
+    _In_                                        PCSYMCRYPT_AES_EXPANDED_KEY pExpandedKey,
+    _Inout_updates_( SYMCRYPT_AES_BLOCK_SIZE )  PBYTE                       pbChainingValue,
+    _In_reads_( cbData )                        PCBYTE                      pbSrc,
+    _Out_writes_( cbData )                      PBYTE                       pbDst,
+                                                SIZE_T                      cbData )
 {
     __n128 chain;
     __n128 c0, c1, c2, c3, c4, c5, c6, c7;
@@ -718,11 +718,11 @@ SymCryptAesEcbEncryptNeon(
 VOID
 SYMCRYPT_CALL
 SymCryptAesCtrMsb64Neon(
-    _In_                                    PCSYMCRYPT_AES_EXPANDED_KEY pExpandedKey,
-    _In_reads_( SYMCRYPT_AES_BLOCK_SIZE )   PBYTE                       pbChainingValue,
-    _In_reads_( cbData )                    PCBYTE                      pbSrc,
-    _Out_writes_( cbData )                  PBYTE                       pbDst,
-                                            SIZE_T                      cbData )
+    _In_                                        PCSYMCRYPT_AES_EXPANDED_KEY pExpandedKey,
+    _Inout_updates_( SYMCRYPT_AES_BLOCK_SIZE )  PBYTE                       pbChainingValue,
+    _In_reads_( cbData )                        PCBYTE                      pbSrc,
+    _Out_writes_( cbData )                      PBYTE                       pbDst,
+                                                SIZE_T                      cbData )
 {
     __n128          chain = *(__n128 *)pbChainingValue;
     const __n128 *  pSrc = (const __n128 *) pbSrc;
