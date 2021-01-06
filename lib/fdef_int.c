@@ -11,7 +11,7 @@
 // INT objects are stored in two parts:
 //  a SYMCRYPT_FDEF_INT structure
 //  an array of UINT32; the # elements in the array is a multiple of SYMCRYPT_FDEF_DIGIT_SIZE/4.
-//  
+//
 // The pointer passed points to the start of the UINT32 array, just after the SYMCRYPT_FDEF_INT structure.
 //
 // The generic implementation accesses the digits as an array of UINT32, but on 64-bit CPUs
@@ -102,9 +102,9 @@ SymCryptFdefIntAddSameSize(
 {
     SYMCRYPT_ASSERT( piSrc1->nDigits == piSrc2->nDigits && piSrc2->nDigits == piDst->nDigits );
 
-    return SymCryptFdefRawAdd(  SYMCRYPT_FDEF_INT_PUINT32( piSrc1 ), 
-                                SYMCRYPT_FDEF_INT_PUINT32( piSrc2 ), 
-                                SYMCRYPT_FDEF_INT_PUINT32( piDst ), 
+    return SymCryptFdefRawAdd(  SYMCRYPT_FDEF_INT_PUINT32( piSrc1 ),
+                                SYMCRYPT_FDEF_INT_PUINT32( piSrc2 ),
+                                SYMCRYPT_FDEF_INT_PUINT32( piDst ),
                                 piDst->nDigits );
 }
 
@@ -127,7 +127,7 @@ SymCryptFdefIntAddMixedSize(
     {
         c = SymCryptFdefRawAdd( SYMCRYPT_FDEF_INT_PUINT32( piSrc1 ), SYMCRYPT_FDEF_INT_PUINT32( piSrc2 ), SYMCRYPT_FDEF_INT_PUINT32( piDst ), nS1 );
         c = SymCryptFdefRawAddUint32( &SYMCRYPT_FDEF_INT_PUINT32( piSrc2 )[nS1 * SYMCRYPT_FDEF_DIGIT_NUINT32], c, &SYMCRYPT_FDEF_INT_PUINT32( piDst )[nS1 * SYMCRYPT_FDEF_DIGIT_NUINT32], nS2 - nS1 );
-        nW = nS2; 
+        nW = nS2;
     } else {
         // nS2 < nS1
         c = SymCryptFdefRawAdd( SYMCRYPT_FDEF_INT_PUINT32( piSrc1 ), SYMCRYPT_FDEF_INT_PUINT32( piSrc2 ), SYMCRYPT_FDEF_INT_PUINT32( piDst ), nS2 );
@@ -304,7 +304,7 @@ SymCryptFdefRawIsLessThanC(
     UINT64 t;
     UINT32 c;
 
-    // WE just do a subtraction wihtout writing and return the carry
+    // We just do a subtraction without writing and return the carry
     c = 0;
     for( i=0; i<nDigits * SYMCRYPT_FDEF_DIGIT_NUINT32; i++ )
     {
@@ -340,7 +340,7 @@ SymCryptFdefRawIsZeroC(
     UINT32 i;
     UINT32 c;
 
-    // WE just do a subtraction wihtout writing and return the carry
+    // We just do a subtraction without writing and return the carry
     c = 0;
     for( i=0; i<nDigits * SYMCRYPT_FDEF_DIGIT_NUINT32; i++ )
     {
@@ -850,7 +850,7 @@ SymCryptFdefRawSquare(
                                                             UINT32      nDigits,
     _Out_writes_(2*nDigits1*SYMCRYPT_FDEF_DIGIT_NUINT32)    PUINT32     pDst )
 {
-#if SYMCRYPT_CPU_AMD64 
+#if SYMCRYPT_CPU_AMD64
     if( SYMCRYPT_CPU_FEATURES_PRESENT( SYMCRYPT_CPU_FEATURES_FOR_MULX ) )
     {
         SymCryptFdefRawSquareMulx( pSrc, nDigits, pDst );
@@ -935,7 +935,7 @@ SymCryptFdefIntToDivisor(
     // the value W is defined as
     //     floor( (2^{N+D} - 1) / M } - 2^D
     // which is the largest W such that (W * M + 2^D * M )< 2^{N+D}
-    // To compute W we use a binary search. 
+    // To compute W we use a binary search.
     // This can be optimized, but this is the simplest side-channel safe solution.
     // We can compute the upper bits of W * M + 2^D * M in a simple loop.
     //
@@ -990,7 +990,7 @@ SymCryptFdefRawMultSubUint32(
     //
     // pAcc -= pSrc1 * Src2
     // BEWARE: this is only used by the DivMod routine, and works in Words rather than Digits
-    // making optimizations hard. 
+    // making optimizations hard.
     //
 
     UINT32 i;
@@ -1081,7 +1081,7 @@ VOID
 SYMCRYPT_CALL
 SymCryptFdefRawDivMod(
     _In_reads_(nDigits * SYMCRYPT_FDEF_DIGIT_NUINT32)           PCUINT32                pNum,
-                                                                UINT32                  nDigits, 
+                                                                UINT32                  nDigits,
     _In_                                                        PCSYMCRYPT_DIVISOR      pdDivisor,
     _Out_writes_opt_(nDigits * SYMCRYPT_FDEF_DIGIT_NUINT32)     PUINT32                 pQuotient,
     _Out_writes_opt_(SYMCRYPT_OBJ_NUINT32(pdDivisor))           PUINT32                 pRemainder,
@@ -1158,7 +1158,7 @@ SymCryptFdefRawDivMod(
         nQ--;
         X0 = ( ((UINT64) pTmp[nQ + activeDivWords + 2] << 32) + pTmp[nQ + activeDivWords + 1] ) >> (32 - shift);
         X1 = ( ((UINT64) pTmp[nQ + activeDivWords + 1] << 32) + pTmp[nQ + activeDivWords + 0] ) >> (32 - shift);
-        
+
         W = (UINT32) pdDivisor->td.fdef.W;
         T = SYMCRYPT_MUL32x32TO64( W, X0 ) + (((UINT64)X0) << 32) + X1 + ((W>>1) & ((UINT32)0 - (X1 >> 31)));
         Qest = (UINT32)(T >> 32);
