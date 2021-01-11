@@ -201,7 +201,6 @@
 #else
 
 #include <stdint.h>
-#include <stddef.h>
 
 typedef uint8_t         BYTE;
 
@@ -245,6 +244,8 @@ typedef uint32_t            ULONG32, *PULONG32;
 typedef char CHAR;
 
 #endif //WIN32
+
+#include <stddef.h>
 
 //
 // Pointer types
@@ -1575,7 +1576,7 @@ typedef const SYMCRYPT_ECPOINT * PCSYMCRYPT_ECPOINT;
 //
 
 #define SYMCRYPT_ANYSIZE    1       // used to mark arrays of arbitrary size
-#define SYMCRYPT_FIELD_OFFSET(type, field)      ((ULONG)(ULONG_PTR)&(((type *)0)->field))
+#define SYMCRYPT_FIELD_OFFSET(type, field)      (offsetof(type, field))
 #define SYMCRYPT_FIELD_SIZE(type, field)        (sizeof( ((type *)0)->field ))
 
 

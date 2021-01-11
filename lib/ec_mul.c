@@ -35,7 +35,7 @@ SymCryptPrecomputation(
     _In_reads_( SYMCRYPT_ECURVE_SW_MAX_NPRECOMP_POINTS )
             PSYMCRYPT_ECPOINT *     poPIs,
     _Out_   PSYMCRYPT_ECPOINT       poQ,
-    _Out_writes_bytes_opt_( cbScratch ) 
+    _Out_writes_bytes_opt_( cbScratch )
             PBYTE               pbScratch,
             SIZE_T              cbScratch
 )
@@ -95,7 +95,7 @@ SymCryptEcpointScalarMulFixedWindow(
             PCSYMCRYPT_ECPOINT      poSrc,
     _In_    UINT32                  flags,
     _Out_   PSYMCRYPT_ECPOINT       poDst,
-    _Out_writes_bytes_opt_( cbScratch ) 
+    _Out_writes_bytes_opt_( cbScratch )
             PBYTE               pbScratch,
             SIZE_T              cbScratch )
 {
@@ -305,6 +305,9 @@ SymCryptEcpointScalarMulFixedWindow(
         }
     }
 
+    // If the resultant point is zero, ensure it will be set to the canonical zero point
+    fZero |= SymCryptEcpointIsZero( pCurve, poQ, pbScratch, cbScratch );
+
     // Set the zero point
     SymCryptEcpointSetZero( pCurve, poTmp, pbScratch, cbScratch );
     SymCryptEcpointMaskedCopy( pCurve, poTmp, poQ, fZero );
@@ -504,6 +507,13 @@ SymCryptEcpointMultiScalarMulWnafWithInterleaving(
         {
             SymCryptEcpointDouble( pCurve, poQ, poQ, 0, pbScratch, cbScratch );
         }
+    }
+
+    // If the resultant point is zero, ensure it will be set to the canonical zero point
+    if ( SymCryptEcpointIsZero( pCurve, poQ, pbScratch, cbScratch ) )
+    {
+        // Set poQ to zero point
+        SymCryptEcpointSetZero( pCurve, poQ, pbScratch, cbScratch );
     }
 
     // Copy the result to the destination (normalized flag == FALSE)

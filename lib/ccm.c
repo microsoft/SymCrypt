@@ -87,12 +87,12 @@ SymCryptCcmValidateParameters(
 
 VOID
 SYMCRYPT_CALL
-SymCryptCcmEncryptDecryptPart(  
+SymCryptCcmEncryptDecryptPart(
     _Inout_                     PSYMCRYPT_CCM_STATE pState,
     _In_reads_( cbData )        PCBYTE              pbSrc,
     _Out_writes_( cbData )      PBYTE               pbDst,
                                 SIZE_T              cbData )
-    
+
 {
     SIZE_T  cbToDo = cbData;
     SIZE_T  bytesToProcess;
@@ -118,8 +118,8 @@ SymCryptCcmEncryptDecryptPart(
         SYMCRYPT_ASSERT( bytesToProcess <= cbToDo );
 
         SYMCRYPT_ASSERT( pState->pBlockCipher->blockSize == SYMCRYPT_CCM_BLOCK_SIZE );
-        SymCryptCtrMsb64(   pState->pBlockCipher, 
-                            pState->pExpandedKey, 
+        SymCryptCtrMsb64(   pState->pBlockCipher,
+                            pState->pExpandedKey,
                             &pState->counterBlock[0],
                             pbSrc,
                             pbDst,
@@ -138,8 +138,8 @@ SymCryptCcmEncryptDecryptPart(
         SymCryptWipeKnownSize( &pState->keystreamBlock[0], SYMCRYPT_CCM_BLOCK_SIZE );
 
         SYMCRYPT_ASSERT( pState->pBlockCipher->blockSize == SYMCRYPT_CCM_BLOCK_SIZE );
-        SymCryptCtrMsb64(   pState->pBlockCipher, 
-                            pState->pExpandedKey, 
+        SymCryptCtrMsb64(   pState->pBlockCipher,
+                            pState->pExpandedKey,
                             &pState->counterBlock[0],
                             &pState->keystreamBlock[0],
                             &pState->keystreamBlock[0],
@@ -158,18 +158,21 @@ SymCryptCcmEncryptDecryptPart(
 
 VOID
 SYMCRYPT_CALL
-SymCryptCcmAddMacData( 
-                                PSYMCRYPT_CCM_STATE  pState,
-    _In_reads_( cbData )        PCBYTE               pbData,
-                                SIZE_T               cbData )
+SymCryptCcmAddMacData(
+    _Inout_                 PSYMCRYPT_CCM_STATE pState,
+    _In_reads_( cbData )    PCBYTE              pbData,
+                            SIZE_T              cbData )
 {
-    while( pState->bytesInMacBlock != 0 && cbData > 0 )
+    SIZE_T bytesToProcess;
+    if( pState->bytesInMacBlock > 0 )
     {
-        pState->macBlock[pState->bytesInMacBlock] ^= *pbData;
-        pState->bytesInMacBlock++;
-        pbData ++;
-        cbData--;
-        if( pState->bytesInMacBlock >= SYMCRYPT_CCM_BLOCK_SIZE )
+        bytesToProcess = SYMCRYPT_MIN( cbData, SYMCRYPT_CCM_BLOCK_SIZE - pState->bytesInMacBlock );
+        SymCryptXorBytes( &pState->macBlock[pState->bytesInMacBlock], pbData, &pState->macBlock[pState->bytesInMacBlock], bytesToProcess );
+        pbData += bytesToProcess;
+        cbData -= bytesToProcess;
+        pState->bytesInMacBlock += bytesToProcess;
+
+        if( pState->bytesInMacBlock == SYMCRYPT_CCM_BLOCK_SIZE )
         {
             pState->pBlockCipher->encryptFunc( pState->pExpandedKey, &pState->macBlock[0], &pState->macBlock[0] );
             pState->bytesInMacBlock = 0;
@@ -178,31 +181,29 @@ SymCryptCcmAddMacData(
 
     if( cbData >= SYMCRYPT_CCM_BLOCK_SIZE )
     {
-        SIZE_T bytesToDo = cbData & CCM_BLOCK_ROUND_MASK;
+        bytesToProcess = cbData & CCM_BLOCK_ROUND_MASK;
         SYMCRYPT_ASSERT( pState->pBlockCipher->blockSize == SYMCRYPT_CCM_BLOCK_SIZE );
-        
-        SymCryptCbcMac( pState->pBlockCipher, 
+
+        SymCryptCbcMac( pState->pBlockCipher,
                         pState->pExpandedKey,
                         &pState->macBlock[0],
                         pbData,
-                        bytesToDo );
-        
-        pbData += bytesToDo;
-        cbData -= bytesToDo;
+                        bytesToProcess );
+
+        pbData += bytesToProcess;
+        cbData -= bytesToProcess;
     }
 
-    while( cbData > 0 )
+    if( cbData > 0 )
     {
-        pState->macBlock[pState->bytesInMacBlock] ^= *pbData;
-        pState->bytesInMacBlock++;
-        pbData ++;
-        cbData--;
+        SymCryptXorBytes( &pState->macBlock[0], pbData, &pState->macBlock[0], cbData );
+        pState->bytesInMacBlock = cbData;
     }
 }
 
 VOID
 SYMCRYPT_CALL
-SymCryptCcmPadMacData( PSYMCRYPT_CCM_STATE  pState )
+SymCryptCcmPadMacData( _Inout_ PSYMCRYPT_CCM_STATE  pState )
 {
     //
     // Pad the MAC data with zeroes until we hit the block size.
@@ -220,22 +221,22 @@ SymCryptCcmPadMacData( PSYMCRYPT_CCM_STATE  pState )
 SYMCRYPT_NOINLINE
 VOID
 SYMCRYPT_CALL
-SymCryptCcmEncrypt(  
-     _In_                           PCSYMCRYPT_BLOCKCIPHER     pBlockCipher,
-     _In_                           PCVOID                     pExpandedKey,
-     _In_reads_( cbNonce )         PCBYTE                     pbNonce,
-                                    SIZE_T                     cbNonce,
-     _In_reads_opt_( cbAuthData )  PCBYTE                     pbAuthData,
-                                    SIZE_T                     cbAuthData,
-     _In_reads_( cbData )          PCBYTE                     pbSrc,
-     _Out_writes_( cbData )         PBYTE                      pbDst,
-                                    SIZE_T                     cbData,
-     _Out_writes_( cbTag )          PBYTE                      pbTag,
-                                    SIZE_T                     cbTag )
+SymCryptCcmEncrypt(
+    _In_                            PCSYMCRYPT_BLOCKCIPHER  pBlockCipher,
+    _In_                            PCVOID                  pExpandedKey,
+    _In_reads_( cbNonce )           PCBYTE                  pbNonce,
+                                    SIZE_T                  cbNonce,
+    _In_reads_opt_( cbAuthData )    PCBYTE                  pbAuthData,
+                                    SIZE_T                  cbAuthData,
+    _In_reads_( cbData )            PCBYTE                  pbSrc,
+    _Out_writes_( cbData )          PBYTE                   pbDst,
+                                    SIZE_T                  cbData,
+    _Out_writes_( cbTag )           PBYTE                   pbTag,
+                                    SIZE_T                  cbTag )
 {
     SYMCRYPT_CCM_STATE  state;
 
-    SymCryptCcmInit(    &state, 
+    SymCryptCcmInit(    &state,
                         pBlockCipher,
                         pExpandedKey,
                         pbNonce, cbNonce,
@@ -254,23 +255,23 @@ _Success_(return == SYMCRYPT_NO_ERROR)
 SYMCRYPT_NOINLINE
 SYMCRYPT_ERROR
 SYMCRYPT_CALL
-SymCryptCcmDecrypt(  
-     _In_                           PCSYMCRYPT_BLOCKCIPHER  pBlockCipher,
-     _In_                           PCVOID                  pExpandedKey,
-     _In_reads_( cbNonce )         PCBYTE                  pbNonce,
+SymCryptCcmDecrypt(
+    _In_                            PCSYMCRYPT_BLOCKCIPHER  pBlockCipher,
+    _In_                            PCVOID                  pExpandedKey,
+    _In_reads_( cbNonce )           PCBYTE                  pbNonce,
                                     SIZE_T                  cbNonce,
-     _In_reads_opt_( cbAuthData )  PCBYTE                  pbAuthData,
+    _In_reads_opt_( cbAuthData )    PCBYTE                  pbAuthData,
                                     SIZE_T                  cbAuthData,
-     _In_reads_( cbData )          PCBYTE                  pbSrc,
-     _Out_writes_( cbData )         PBYTE                   pbDst,
+    _In_reads_( cbData )            PCBYTE                  pbSrc,
+    _Out_writes_( cbData )          PBYTE                   pbDst,
                                     SIZE_T                  cbData,
-     _In_reads_( cbTag )           PCBYTE                  pbTag,
+    _In_reads_( cbTag )             PCBYTE                  pbTag,
                                     SIZE_T                  cbTag )
 {
     SYMCRYPT_CCM_STATE  state;
     SYMCRYPT_ERROR      status;
 
-    SymCryptCcmInit(    &state, 
+    SymCryptCcmInit(    &state,
                         pBlockCipher,
                         pExpandedKey,
                         pbNonce, cbNonce,
@@ -281,9 +282,9 @@ SymCryptCcmDecrypt(
     SymCryptCcmDecryptPart( &state, pbSrc, pbDst, cbData );
 
     status = SymCryptCcmDecryptFinal( &state, pbTag, cbTag );
-    
+
     //
-    // If we failed for any reason we wipe our output buffer to avoid returning 
+    // If we failed for any reason we wipe our output buffer to avoid returning
     // decrypted but unauthenticated data.
     //
     if( status != SYMCRYPT_NO_ERROR )
@@ -291,15 +292,13 @@ SymCryptCcmDecrypt(
         SymCryptWipe( pbDst, cbData );
     }
 
-    SymCryptWipeKnownSize( &state, sizeof( state ) );
-
     return status;
 }
 
 SYMCRYPT_NOINLINE
 VOID
 SYMCRYPT_CALL
-SymCryptCcmInit( 
+SymCryptCcmInit(
     _Out_                           PSYMCRYPT_CCM_STATE     pState,
     _In_                            PCSYMCRYPT_BLOCKCIPHER  pBlockCipher,
     _In_                            PCVOID                  pExpandedKey,
@@ -321,7 +320,7 @@ SymCryptCcmInit(
     //
     SYMCRYPT_ASSERT( SymCryptCcmValidateParameters( pBlockCipher, cbNonce, cbAuthData, cbData, cbTag ) == SYMCRYPT_NO_ERROR );
 
-    
+
     //
     // compute # bytes in the counter field
     // We limit cbNonce to 15 so that cbCounter + cbNonce = 15 will always hold
@@ -345,7 +344,7 @@ SymCryptCcmInit(
     //
     // Per Sp800-38c the flag byte is made up of four fields:
     // Bits 0-2 are cbCounter - 1
-    // Bits 3-5 are (cbTag-2)/2  
+    // Bits 3-5 are (cbTag-2)/2
     // Bit 6 is 1 if cbAuthData > 0
     // Bit 7 is reserved and set to 0.
     flags = (BYTE) (pState->cbCounter - 1);
@@ -423,7 +422,7 @@ SymCryptCcmInit(
         SYMCRYPT_STORE_MSBFIRST64( &tmpBuf[2], cbAuthData );
         SymCryptCcmAddMacData( pState, &tmpBuf[0], 2 + sizeof( UINT64 ) );
     }
-    
+
     SymCryptCcmAddMacData( pState, pbAuthData, cbAuthData );
     SymCryptCcmPadMacData( pState );        // Pad MAC data with zeroes until the next block size boundary
 
@@ -432,9 +431,9 @@ SymCryptCcmInit(
 SYMCRYPT_NOINLINE
 VOID
 SYMCRYPT_CALL
-SymCryptCcmEncryptPart( 
+SymCryptCcmEncryptPart(
     _Inout_                   PSYMCRYPT_CCM_STATE pState,
-    _In_reads_( cbData )     PCBYTE              pbSrc,
+    _In_reads_( cbData )      PCBYTE              pbSrc,
     _Out_writes_( cbData )    PBYTE               pbDst,
                               SIZE_T              cbData )
 {
@@ -446,18 +445,18 @@ SymCryptCcmEncryptPart(
 
     SYMCRYPT_ASSERT( bytesProcessedAfterThisCall >= cbData &&
                      bytesProcessedAfterThisCall <= pState->cbData );
-    
+
     //
     // We are violating the read-once implementation rule here. We read the data twice:
     // once for MACing and once for encryption.
-    // In this particular situation this is safe to do. 
+    // In this particular situation this is safe to do.
     // We consider the read for the MAC operation as reading the 'real' value.
     // The encryption code reads the data, but all it does is XOR the key stream into
     // it. (CCM encryption uses CTR mode for the encryption part.)
-    // We don't care if the attacker modifies the data before the encryption. 
+    // We don't care if the attacker modifies the data before the encryption.
     // We are revealing the key stream anyway (from the plaintext and ciphertext) and
     // the exact byte value that we xor the key stream into is irrelevant.
-    // 
+    //
     SymCryptCcmAddMacData( pState, pbSrc, cbData );
 
     SymCryptCcmEncryptDecryptPart( pState, pbSrc, pbDst, cbData );
@@ -467,8 +466,8 @@ SymCryptCcmEncryptPart(
 SYMCRYPT_NOINLINE
 VOID
 SYMCRYPT_CALL
-SymCryptCcmEncryptFinal(    
-    _In_                    PSYMCRYPT_CCM_STATE pState,
+SymCryptCcmEncryptFinal(
+    _Inout_                 PSYMCRYPT_CCM_STATE pState,
     _Out_writes_( cbTag )   PBYTE               pbTag,
                             SIZE_T              cbTag )
 {
@@ -476,7 +475,7 @@ SymCryptCcmEncryptFinal(
     // Check invariants in checked builds
     //
     SYMCRYPT_CHECK_MAGIC( pState );
-    
+
     SYMCRYPT_ASSERT( cbTag  == pState->cbTag && pState->bytesProcessed == pState->cbData );
 
 
@@ -490,20 +489,22 @@ SymCryptCcmEncryptFinal(
     SymCryptWipe( &pState->counterBlock[1 + pState->cbNonce], pState->cbCounter );
 
     pState->bytesProcessed = 0;
-       
+
     SymCryptCcmEncryptDecryptPart( pState, &pState->macBlock[0], &pState->macBlock[0], SYMCRYPT_CCM_BLOCK_SIZE );
 
     memcpy( pbTag, &pState->macBlock[0], cbTag );
 
+    SymCryptWipeKnownSize( pState, sizeof( *pState ) );
 }
 
 SYMCRYPT_NOINLINE
 VOID
 SYMCRYPT_CALL
-SymCryptCcmDecryptPart( _Inout_                 PSYMCRYPT_CCM_STATE pState,
-                      _In_reads_( cbData )   PCBYTE              pbSrc,
-                      _Out_writes_( cbData )  PBYTE               pbDst,
-                                              SIZE_T              cbData )
+SymCryptCcmDecryptPart(
+    _Inout_                 PSYMCRYPT_CCM_STATE pState,
+    _In_reads_( cbData )    PCBYTE              pbSrc,
+    _Out_writes_( cbData )  PBYTE               pbDst,
+                            SIZE_T              cbData )
 {
     UINT64 bytesProcessedAfterThisCall;
 
@@ -513,15 +514,15 @@ SymCryptCcmDecryptPart( _Inout_                 PSYMCRYPT_CCM_STATE pState,
 
     SYMCRYPT_ASSERT( bytesProcessedAfterThisCall >= cbData &&
                      bytesProcessedAfterThisCall <= pState->cbData );
-    
+
 
     //
-    // We are violating the read-once/write-once implementation rule here. 
+    // We are violating the read-once/write-once implementation rule here.
     // We write the decrypted data and then read it back for the authentication function.
-    // In this particular situation this is safe to do. 
+    // In this particular situation this is safe to do.
     //
     // Anyone who can access the memory space that contains the source and destination of this
-    // function can recover the key stream used for this (key,nonce) combination. 
+    // function can recover the key stream used for this (key,nonce) combination.
     // We can think of the decryption function as merely exposing the key stream, and then the
     // caller picking the ciphertext (and by implication the plaintext) to be authenticated.
     // Thus the data we read during authentication is the 'real' plaintext, and the
@@ -539,15 +540,18 @@ _Success_(return == SYMCRYPT_NO_ERROR)
 SYMCRYPT_NOINLINE
 SYMCRYPT_ERROR
 SYMCRYPT_CALL
-SymCryptCcmDecryptFinal( _In_                     PSYMCRYPT_CCM_STATE pState,
-                         _In_reads_( cbTag )     PCBYTE                  pbTag,
-                                                  SIZE_T                  cbTag )
+SymCryptCcmDecryptFinal(
+    _Inout_             PSYMCRYPT_CCM_STATE pState,
+    _In_reads_( cbTag ) PCBYTE              pbTag,
+                        SIZE_T              cbTag )
 {
+    SYMCRYPT_ERROR status;
+
     //
     // Check invariants in checked builds
     //
     SYMCRYPT_CHECK_MAGIC( pState );
-    
+
     SYMCRYPT_ASSERT( cbTag  == pState->cbTag && pState->bytesProcessed == pState->cbData );
 
     SymCryptCcmPadMacData( pState );
@@ -560,21 +564,27 @@ SymCryptCcmDecryptFinal( _In_                     PSYMCRYPT_CCM_STATE pState,
     SymCryptWipe( &pState->counterBlock[1 + pState->cbNonce], pState->cbCounter );
 
     pState->bytesProcessed = 0;
-    
+
     SymCryptCcmEncryptDecryptPart( pState, &pState->macBlock[0], &pState->macBlock[0], SYMCRYPT_CCM_BLOCK_SIZE );
 
     if( !SymCryptEqual( pbTag, &pState->macBlock[0], cbTag ) )
     {
-        return SYMCRYPT_AUTHENTICATION_FAILURE;
+        status = SYMCRYPT_AUTHENTICATION_FAILURE;
+    }
+    else
+    {
+        status = SYMCRYPT_NO_ERROR;
     }
 
-    return SYMCRYPT_NO_ERROR;
+    SymCryptWipeKnownSize( pState, sizeof( *pState ) );
+
+    return status;
 }
 
 
 static const BYTE SymCryptCcmSelftestResult[3 + SYMCRYPT_AES_BLOCK_SIZE ] =
 {
-    0x42, 0xd7, 0xda, 
+    0x42, 0xd7, 0xda,
     0x3d, 0x9e, 0x95, 0x82, 0x29, 0x3c, 0x10, 0x9c, 0xa3, 0x39, 0x31, 0x3f, 0x18, 0xf3, 0x10, 0xf6
 };
 
@@ -606,7 +616,7 @@ SymCryptCcmSelftest()
 
     // inject error into the ciphertext or tag
     SymCryptInjectError( buf, sizeof( buf ) );
-    
+
     err = SymCryptCcmDecrypt(   SymCryptAesBlockCipher,
                                 &key,
                                 &SymCryptTestKey32[16], 12,
@@ -620,6 +630,6 @@ SymCryptCcmSelftest()
     {
         SymCryptFatal( 'ccm2' );
     }
-   
+
 }
 

@@ -3108,7 +3108,7 @@ SymCryptCcmEncryptPart(
 VOID
 SYMCRYPT_CALL
 SymCryptCcmEncryptFinal(
-    _In_                    PSYMCRYPT_CCM_STATE pState,
+    _Inout_                 PSYMCRYPT_CCM_STATE pState,
     _Out_writes_( cbTag )   PBYTE               pbTag,
                             SIZE_T              cbTag );
 //
@@ -3127,7 +3127,7 @@ _Success_(return == SYMCRYPT_NO_ERROR)
 SYMCRYPT_ERROR
 SYMCRYPT_CALL
 SymCryptCcmDecryptFinal(
-    _In_                    PSYMCRYPT_CCM_STATE pState,
+    _Inout_                 PSYMCRYPT_CCM_STATE pState,
     _In_reads_( cbTag )     PCBYTE              pbTag,
                             SIZE_T              cbTag );
 //
@@ -3310,7 +3310,7 @@ SymCryptGcmEncryptPart(
 VOID
 SYMCRYPT_CALL
 SymCryptGcmEncryptFinal(
-    _In_                    PSYMCRYPT_GCM_STATE pState,
+    _Inout_                 PSYMCRYPT_GCM_STATE pState,
     _Out_writes_( cbTag )   PBYTE               pbTag,
                             SIZE_T              cbTag );
 
@@ -3326,7 +3326,7 @@ _Success_(return == SYMCRYPT_NO_ERROR)
 SYMCRYPT_ERROR
 SYMCRYPT_CALL
 SymCryptGcmDecryptFinal(
-    _In_                    PSYMCRYPT_GCM_STATE pState,
+    _Inout_                 PSYMCRYPT_GCM_STATE pState,
     _In_reads_( cbTag )     PCBYTE              pbTag,
                             SIZE_T              cbTag );
 //
@@ -3928,7 +3928,7 @@ SymCryptRngAesFips140_2Uninstantiate(
 // These functions provide access to the RdRand random number generator in
 // the latest Intel CPUs.
 // The DRBG that underlies the RdRand instruction is limited to 128-bit security.
-// The seed for each consecutive 8 kB of data can be recoved in 2^128 work.
+// The seed for each consecutive 8 kB of data can be recovered in 2^128 work.
 // Therefore, we allow for multiple blocks of 8 kB to be gathered in an attempt to
 // extract 256-bit security from the hardware.
 // In general, to achieve N*128 bits of security, you should use a buffer of
@@ -3964,6 +3964,8 @@ SymCryptRdrandGetBytes(
 // cbBuffer must be a multiple of 16.
 // Fatal error if SymCryptRdrandStatus indicates that Rdrand is not available.
 // Returns an error if the RdRand instruction failed consistently.
+// Note: SymCrypt only checks whether RdRand self-reports as failing. SymCrypt does NOT attempt
+// to validate that the values returned in successful RdRand calls are in fact random.
 // See SymCryptRdrandGet for a version that does not return an error but fatals instead.
 //
 
@@ -3978,6 +3980,8 @@ SymCryptRdrandGet(
 // pbBuffer points to a scratch buffer that is used internally, but wiped upon exit.
 // cbBuffer must be a multiple of 16.
 // Fatal error if the RdRand instruction fails.
+// Note: SymCrypt only checks whether RdRand self-reports as failing. SymCrypt does NOT attempt
+// to validate that the values returned in successful RdRand calls are in fact random.
 //
 
 #endif
@@ -4014,6 +4018,8 @@ SymCryptRdseedGetBytes(
 // The number of bytes (cbResult) must be a multiple of 16.
 // Fatal error if the Rdseed instruction is not present.
 // Returns an error if the Rdseed instruction fails consistently.
+// Note: SymCrypt only checks whether Rdseed self-reports as failing. SymCrypt does NOT attempt
+// to validate that the values returned in successful Rdseed calls are in fact random.
 // See SymCryptRdseedGet for a version that does not return an error but fatals instead.
 //
 
@@ -4026,6 +4032,8 @@ SymCryptRdseedGet(
 // Queries cbResult bytes from teh Rdseed instructoin and puts them in the buffer.
 // The number of bytes (cbResult) must be a multiple of 16.
 // Fatal error if the Rdseed instruction is not present, or the instruction fails consistently.
+// Note: SymCrypt only checks whether Rdseed self-reports as failing. SymCrypt does NOT attempt
+// to validate that the values returned in successful Rdseed calls are in fact random.
 //
 
 #endif
