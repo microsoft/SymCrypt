@@ -708,11 +708,11 @@ SymCryptFdefModSetRandomGeneric(
     mask = 0x100 >> ( (8-pmMod->Divisor.nBits) & 7);
     mask -= 1;
 
+    // Wipe any bytes we won't fill with random
+    SymCryptWipe( (PBYTE)pDst + nUsedBytes, (nDigits * SYMCRYPT_FDEF_DIGIT_SIZE) - nUsedBytes );
+
     for(cntr=0; cntr<FDEF_MOD_SET_RANDOM_GENERIC_LIMIT; cntr++)
     {
-        // Wipe all the digits
-        SymCryptWipe( pDst, nDigits * SYMCRYPT_FDEF_DIGIT_SIZE );
-
         // Try random values until we get one we like
         SymCryptCallbackRandom( (PBYTE)pDst, nUsedBytes );
         ((PBYTE)pDst)[nUsedBytes-1] &= (BYTE) mask;

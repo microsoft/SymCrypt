@@ -340,7 +340,6 @@ SymCryptFdefRawIsZeroC(
     UINT32 i;
     UINT32 c;
 
-    // We just do a subtraction without writing and return the carry
     c = 0;
     for( i=0; i<nDigits * SYMCRYPT_FDEF_DIGIT_NUINT32; i++ )
     {
