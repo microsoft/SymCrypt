@@ -95,9 +95,9 @@ testMultiThread()
 
     for( i=0; i<ARRAY_SIZE( threads ); i++ )
     {
-        // Timeout increased from 5 seconds to 15. In Entropy Validation test, we run several SymCryptUnitTests in parallel, and
+        // Timeout increased from 15 seconds to 2 minutes. In Entropy Validation test, we run several SymCryptUnitTests in parallel, and
         // the timeout wasn't enough in that case.
-        CHECK( WaitForSingleObject( threads[i], 15000 ) == 0, "Thread did not exit in time" );
+        CHECK( WaitForSingleObject( threads[i], 120000 ) == 0, "Thread did not exit in time" );
         CloseHandle( threads[i] );
     }
     iprint( " done. %lld tests run.\n", g_nMultithreadTestsRun );
