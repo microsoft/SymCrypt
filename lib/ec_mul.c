@@ -485,7 +485,7 @@ SymCryptEcpointMultiScalarMulWnafWithInterleaving(
 
             for (j = 0; j<nPoints; j++)
             {
-                if (sigofKIs[j*nRecodedDigits + i] != 0)
+                if (!fZero[j] && sigofKIs[j*nRecodedDigits + i] != 0)
                 {
                     SymCryptEcpointCopy( pCurve, poPIs[j*nPrecompPoints + absofKIs[j*nRecodedDigits + i]/2], poTmp );
 

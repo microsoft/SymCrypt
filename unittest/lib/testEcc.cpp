@@ -319,6 +319,21 @@ testEccArithmetic( _In_ PCSYMCRYPT_ECURVE pCurve )
     vprint( g_verbose, "Success\n");
 
     // =================================
+    vprint( g_verbose, "    %-41s", "P3 := 8 * P1 + 0 * P2" );
+    vprint( g_verbose, " %-40s", "SymCryptEcpointMultiScalarMul");
+    SymCryptIntSetValueUint32( 8, piSc1 );
+    SymCryptIntSetValueUint32( 0, piSc2 );
+    scError = SymCryptEcpointMultiScalarMul( pCurve, piTable, poTable, MULTIMUL_POINTS, SYMCRYPT_FLAG_DATA_PUBLIC, poP3, pbScratchMultiMul, cbScratchMultiMul );
+
+    CHECK( scError == SYMCRYPT_NO_ERROR, "Multi Scalar Multiplying failed" );
+    CHECK( SymCryptEcpointOnCurve( pCurve, poP3, pbScratch, cbScratch ), "Multiplied point not on curve!");
+    vprint( g_verbose, "Success\n");
+
+    vprint( g_verbose, "    %-41s", "Checking P2 == P3 ?" );
+    vprint( g_verbose, " %-40s", "SymCryptEcpointIsEqual");
+    CHECK( SymCryptEcpointIsEqual( pCurve, poP2, poP3, 0, pbScratch, cbScratch ), " P2 != P3 " );
+    vprint( g_verbose, "Success\n");
+
     vprint( g_verbose, "    %-41s", "P3 := 6 * P1 + 17 * P2" );
     vprint( g_verbose, " %-40s", "SymCryptEcpointMultiScalarMul");
     SymCryptIntSetValueUint32( 6, piSc1 );
@@ -585,12 +600,28 @@ testEccArithmetic( _In_ PCSYMCRYPT_ECURVE pCurve )
     CHECK( scError == SYMCRYPT_NO_ERROR, "SymCryptEcDhSecretAgreement failed" );
     vprint( g_verbose, "Success\n");
 
+    SymCryptEcpointSetZero(pCurve, pkKey1->poPublicKey, pbScratchMul, cbScratchMul);
+
+    vprint( g_verbose, "    %-41s", "Verify signature with 0 public key" );
+    vprint( g_verbose, " %-40s", "SymCryptEcDsaVerify");
+    scError = SymCryptEcDsaVerify(
+                    pkKey1,
+                    pbHashValue,
+                    sizeof(pbHashValue),
+                    pbSignature,
+                    cbSignature,
+                    SYMCRYPT_NUMBER_FORMAT_MSB_FIRST,
+                    0 );
+
+    CHECK( scError != SYMCRYPT_NO_ERROR, "SymCryptEcDsaVerify should have failed but succeeded" );
+    vprint( g_verbose, "Success\n");
+
     // =================================
     // =================================
     // Check that only the necessary extra allocations happened:
     // NUM_OF_HIGH_BIT_RESTRICTION_ITERATIONS* (SymCryptEckeySetRandom, SymCryptEckeyGetValue) if msbNumOfBits is non zero
-    // SymCryptEcDsaSign x2, SymCryptEcDsaVerify x2, SymCryptEcDhSecretAgreement
-    CHECK( g_nAllocs == nAllocs + 5 + 2*(msbNumOfBits?NUM_OF_HIGH_BIT_RESTRICTION_ITERATIONS:1), "Undesired allocation" );
+    // SymCryptEcDsaSign x2, SymCryptEcDsaVerify x3, SymCryptEcDhSecretAgreement
+    CHECK( g_nAllocs == nAllocs + 6 + 2*(msbNumOfBits?NUM_OF_HIGH_BIT_RESTRICTION_ITERATIONS:1), "Undesired allocation" );
     // =================================
     // =================================
 
