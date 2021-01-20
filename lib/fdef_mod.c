@@ -55,9 +55,9 @@ SymCryptFdefSizeofModulusFromDigits( UINT32 nDigits )
 
 PSYMCRYPT_MODULUS
 SYMCRYPT_CALL
-SymCryptFdefModulusCreate( 
-    _Out_writes_bytes_( cbBuffer )  PBYTE   pbBuffer, 
-                                    SIZE_T  cbBuffer, 
+SymCryptFdefModulusCreate(
+    _Out_writes_bytes_( cbBuffer )  PBYTE   pbBuffer,
+                                    SIZE_T  cbBuffer,
                                     UINT32  nDigits )
 {
     PSYMCRYPT_MODULUS pmMod = (PSYMCRYPT_MODULUS) pbBuffer;
@@ -94,8 +94,8 @@ SymCryptFdefModulusCreate(
     return pmMod;
 }
 
-VOID 
-SYMCRYPT_CALL 
+VOID
+SYMCRYPT_CALL
 SymCryptFdefModulusInitGeneric(
     _Inout_                         PSYMCRYPT_MODULUS       pmMod,
     _Out_writes_bytes_( cbScratch ) PBYTE                   pbScratch,
@@ -108,8 +108,8 @@ SymCryptFdefModulusInitGeneric(
 
 
 VOID
-SymCryptFdefModulusCopy( 
-    _In_    PCSYMCRYPT_MODULUS  pmSrc, 
+SymCryptFdefModulusCopy(
+    _In_    PCSYMCRYPT_MODULUS  pmSrc,
     _Out_   PSYMCRYPT_MODULUS   pmDst )
 {
     SYMCRYPT_ASSERT( pmSrc->nDigits == pmDst->nDigits );
@@ -165,8 +165,8 @@ cleanup:
 
 VOID
 SYMCRYPT_CALL
-SymCryptFdefModElementFree( 
-    _In_    PCSYMCRYPT_MODULUS      pmMod,      
+SymCryptFdefModElementFree(
+    _In_    PCSYMCRYPT_MODULUS      pmMod,
     _Out_   PSYMCRYPT_MODELEMENT    peObj )
 {
     SymCryptFdefModElementWipe( pmMod, peObj );
@@ -183,9 +183,9 @@ SymCryptFdefSizeofModElementFromModulus( PCSYMCRYPT_MODULUS pmMod )
 
 PSYMCRYPT_MODELEMENT
 SYMCRYPT_CALL
-SymCryptFdefModElementCreate( 
-    _Out_writes_bytes_( cbBuffer )  PBYTE               pbBuffer, 
-                                    SIZE_T              cbBuffer, 
+SymCryptFdefModElementCreate(
+    _Out_writes_bytes_( cbBuffer )  PBYTE               pbBuffer,
+                                    SIZE_T              cbBuffer,
                                     PCSYMCRYPT_MODULUS  pmMod )
 {
     PSYMCRYPT_MODELEMENT pDst = (PSYMCRYPT_MODELEMENT) pbBuffer;
@@ -213,7 +213,7 @@ SymCryptFdefModElementCreate(
 
 VOID
 SYMCRYPT_CALL
-SymCryptFdefModElementWipe( 
+SymCryptFdefModElementWipe(
     _In_    PCSYMCRYPT_MODULUS      pmMod,
     _Out_   PSYMCRYPT_MODELEMENT    peDst )
 {
@@ -221,9 +221,9 @@ SymCryptFdefModElementWipe(
 }
 
 VOID
-SymCryptFdefModElementCopy( 
+SymCryptFdefModElementCopy(
     _In_    PCSYMCRYPT_MODULUS      pmMod,
-    _In_    PCSYMCRYPT_MODELEMENT   peSrc, 
+    _In_    PCSYMCRYPT_MODELEMENT   peSrc,
     _Out_   PSYMCRYPT_MODELEMENT    peDst )
 {
     memcpy( peDst, peSrc, pmMod->cbModElement );
@@ -276,9 +276,9 @@ SymCryptFdefDecideModulusType( PCSYMCRYPT_INT piSrc, UINT32 nDigits, UINT32 aver
     UINT32 nBitsizeOfValue = SymCryptIntBitsizeOfValue( piSrc );
     UINT32 modulusFeatures = 0;
 
-    if( !disableMontgomery && 
+    if( !disableMontgomery &&
         ( flags & (SYMCRYPT_FLAG_DATA_PUBLIC | SYMCRYPT_FLAG_MODULUS_PARITY_PUBLIC)) != 0 &&
-        (SymCryptIntGetValueLsbits32( piSrc ) & 1) == 1 && 
+        (SymCryptIntGetValueLsbits32( piSrc ) & 1) == 1 &&
         averageOperations >= 10 )
     {
         modulusFeatures |= SYMCRYPT_MODULUS_FEATURE_MONTGOMERY;
@@ -302,8 +302,8 @@ SymCryptFdefDecideModulusType( PCSYMCRYPT_INT piSrc, UINT32 nDigits, UINT32 aver
     return res;
 }
 
-VOID 
-SYMCRYPT_CALL 
+VOID
+SYMCRYPT_CALL
 SymCryptFdefModSetPostGeneric(
     _In_                            PCSYMCRYPT_MODULUS      pmMod,
     _Inout_                         PSYMCRYPT_MODELEMENT    peObj,
@@ -390,10 +390,10 @@ SymCryptFdefModElementToIntGeneric(
 
 SYMCRYPT_ERROR
 SYMCRYPT_CALL
-SymCryptFdefModElementSetValueGeneric( 
-    _In_reads_bytes_( cbSrc )       PCBYTE                  pbSrc, 
-                                    SIZE_T                  cbSrc, 
-                                    SYMCRYPT_NUMBER_FORMAT  format, 
+SymCryptFdefModElementSetValueGeneric(
+    _In_reads_bytes_( cbSrc )       PCBYTE                  pbSrc,
+                                    SIZE_T                  cbSrc,
+                                    SYMCRYPT_NUMBER_FORMAT  format,
     _In_                            PCSYMCRYPT_MODULUS      pmMod,
     _Out_                           PSYMCRYPT_MODELEMENT    peDst,
     _Out_writes_bytes_( cbScratch ) PBYTE                   pbScratch,
@@ -413,12 +413,12 @@ SymCryptFdefModElementSetValueGeneric(
     }
 
     SymCryptFdefRawDivMod(
-        &peDst->d.uint32[0], 
+        &peDst->d.uint32[0],
         nDigits,
         &pmMod->Divisor,
         NULL,
-        &peDst->d.uint32[0], 
-        pbScratch, 
+        &peDst->d.uint32[0],
+        pbScratch,
         cbScratch );
 
     scError = SYMCRYPT_NO_ERROR;
@@ -429,11 +429,11 @@ cleanup:
 
 SYMCRYPT_ERROR
 SYMCRYPT_CALL
-SymCryptFdefModElementGetValue( 
+SymCryptFdefModElementGetValue(
     _In_                            PCSYMCRYPT_MODULUS      pmMod,
     _In_                            PCSYMCRYPT_MODELEMENT   peSrc,
-    _Out_writes_bytes_( cbDst )     PBYTE                   pbDst, 
-                                    SIZE_T                  cbDst, 
+    _Out_writes_bytes_( cbDst )     PBYTE                   pbDst,
+                                    SIZE_T                  cbDst,
                                     SYMCRYPT_NUMBER_FORMAT  format,
     _Out_writes_bytes_( cbScratch ) PBYTE                   pbScratch,
                                     SIZE_T                  cbScratch )
@@ -441,7 +441,7 @@ SymCryptFdefModElementGetValue(
     SYMCRYPT_ERROR scError;
     PCUINT32 pUint32;
     UINT32  nDigits = pmMod->nDigits;
-    
+
 
     SymCryptFdefClaimScratch( pbScratch, cbScratch, SYMCRYPT_SCRATCH_BYTES_FOR_COMMON_MOD_OPERATIONS( nDigits ) );
 
@@ -510,7 +510,7 @@ SymCryptFdefModAddGeneric(
     //
     // Doing add/cmp/sub might be faster or not.
     // Masked add is hard because the mask operations destroy the carry flag.
-    // 
+    //
 
 	// dcl - cleanup?
 
@@ -522,7 +522,7 @@ SymCryptFdefModAddGeneric(
     d = SymCryptFdefRawSub( &peDst->d.uint32[0], SYMCRYPT_FDEF_INT_PUINT32( &pmMod->Divisor.Int ), (PUINT32) pbScratch, nDigits );
     SymCryptFdefMaskedCopy( pbScratch, (PBYTE) &peDst->d.uint32[0], nDigits, (c^d) - 1 );
 
-    // We can't have a carry in the first addition, and no carry in the subtraction. 
+    // We can't have a carry in the first addition, and no carry in the subtraction.
     SYMCRYPT_ASSERT( !( c == 1 && d == 0 ) );
 }
 
@@ -580,8 +580,8 @@ SymCryptFdefModNegGeneric(
 
 VOID
 SYMCRYPT_CALL
-SymCryptFdefModElementSetValueUint32Generic( 
-                                    UINT32                  value, 
+SymCryptFdefModElementSetValueUint32Generic(
+                                    UINT32                  value,
     _In_                            PCSYMCRYPT_MODULUS      pmMod,
     _Out_                           PSYMCRYPT_MODELEMENT    peDst,
     _Out_writes_bytes_( cbScratch ) PBYTE                   pbScratch,
@@ -604,8 +604,8 @@ SymCryptFdefModElementSetValueUint32Generic(
 
 VOID
 SYMCRYPT_CALL
-SymCryptFdefModElementSetValueNegUint32( 
-                                    UINT32                  value, 
+SymCryptFdefModElementSetValueNegUint32(
+                                    UINT32                  value,
     _In_                            PCSYMCRYPT_MODULUS      pmMod,
     _Out_                           PSYMCRYPT_MODELEMENT    peDst,
     _Out_writes_bytes_( cbScratch ) PBYTE                   pbScratch,
@@ -648,10 +648,9 @@ SymCryptFdefModSetRandomGeneric(
     UINT32 offset;
     UINT32 ulimit;
     UINT32 nDigits = pmMod->nDigits;
+    PUINT32 pTmp = (PUINT32) pbScratch;
     UINT32 nUsedBytes;
-    BOOLEAN tryAgain;
     UINT32 mask;
-    UINT32 i;
     UINT32 c;
     UINT32 cntr;
     PUINT32 pDst = &peDst->d.uint32[0];
@@ -700,69 +699,43 @@ SymCryptFdefModSetRandomGeneric(
         SymCryptFatal( 'rndX' );
     }
 
+    // Set pTmp to pMod-(offset+ulimit)
+    SYMCRYPT_ASSERT( nDigits * SYMCRYPT_FDEF_DIGIT_SIZE <= cbScratch );
+    c = SymCryptFdefRawSubUint32( pMod, offset + ulimit, pTmp, nDigits );
+    SYMCRYPT_ASSERT( c == 0 );
+
     nUsedBytes = (pmMod->Divisor.nBits + 7)/8;
+    mask = 0x100 >> ( (8-pmMod->Divisor.nBits) & 7);
+    mask -= 1;
+
+    // Wipe any bytes we won't fill with random
+    SymCryptWipe( (PBYTE)pDst + nUsedBytes, (nDigits * SYMCRYPT_FDEF_DIGIT_SIZE) - nUsedBytes );
 
     for(cntr=0; cntr<FDEF_MOD_SET_RANDOM_GENERIC_LIMIT; cntr++)
     {
-        // Wipe all the digits
-        SymCryptWipe( pDst, nDigits * SYMCRYPT_FDEF_DIGIT_SIZE );
-
         // Try random values until we get one we like
         SymCryptCallbackRandom( (PBYTE)pDst, nUsedBytes );
-        mask = 0x100 >> ( (8-pmMod->Divisor.nBits) & 7);
-        mask -= 1;
         ((PBYTE)pDst)[nUsedBytes-1] &= (BYTE) mask;
 
-        // Add offset + ulimit; later we will subtract ulimit again.
-        c = SymCryptFdefRawAddUint32( pDst, offset + ulimit, pDst, nDigits );
-        if( c != 0 )
+        // Compare value to pMod-(offset+ulimit)
+        if( SymCryptFdefRawIsLessThan( pDst, pTmp, nDigits ) )
         {
-            // We have a carry. The number is too large.
-            // At best our final result is one smaller (ulimit) than our current value, but that would still be greater or
-            // equal to the modulus.
-            // Try again with a new random value.
-            continue;
+            // The value is within required range [0, Divisor-offset-ulimit)
+            break;
         }
-
-        // Compare to modulus and reject if >= modulus. We can use an efficient early-out algorithm for this
-        i = nDigits * SYMCRYPT_FDEF_DIGIT_NUINT32;
-
-        tryAgain = FALSE;
-        while( i > 0 )
-        {
-            i--;
-            if( pDst[i] > pMod[i] )
-            {
-                tryAgain = TRUE;
-                break;
-            }
-            if( pDst[i] < pMod[i] )
-            {
-                tryAgain = FALSE;
-                break;
-            }
-            // Two uint32 values are equal
-            if( i == 0 )
-            {
-                tryAgain = TRUE;
-                break;
-            }
-        }
-        if( tryAgain )
-        {
-            continue;
-        }
-        // Value is < modulus here
-        break;
     }
+
+    // Wipe all the digits in pTmp
+    SymCryptWipe( pTmp, nDigits * SYMCRYPT_FDEF_DIGIT_SIZE );
 
     if (cntr >= FDEF_MOD_SET_RANDOM_GENERIC_LIMIT)
     {
         SymCryptFatal( 'rndc' );
     }
 
-    // Subtract the ulimit which allows us to avoid Mod-1 if required.
-    c = SymCryptFdefRawSubUint32( pDst, ulimit, pDst, nDigits );
+    // Add the offset which allows us to avoid 0 and/or 1 if required.
+    // Now result is in range [offset, Divisor-ulimit)
+    c = SymCryptFdefRawAddUint32( pDst, offset, pDst, nDigits );
     SYMCRYPT_ASSERT( c == 0 );
 }
 
@@ -842,9 +815,9 @@ SymCryptFdefModMulGeneric(
     SYMCRYPT_ASSERT_ASYM_ALIGNED( pbScratch );
 
     // Tmp space is enough for the product plus the DivMod scratch
-    
+
     SymCryptFdefRawMul( &peSrc1->d.uint32[0], nDigits, &peSrc2->d.uint32[0], nDigits, pTmp );
-    
+
     SymCryptFdefRawDivMod( pTmp, 2*nDigits, &pmMod->Divisor, NULL, &peDst->d.uint32[0], pbScratch + scratchOffset, cbScratch - scratchOffset );
 }
 
@@ -895,12 +868,12 @@ SymCryptFdefModInvGeneric(
 
     if( (pmMod->flags & (SYMCRYPT_FLAG_DATA_PUBLIC | SYMCRYPT_FLAG_MODULUS_PRIME )) != (SYMCRYPT_FLAG_DATA_PUBLIC | SYMCRYPT_FLAG_MODULUS_PRIME ) )
     {
-        // Inversion over non-public or non-prime moduli currently not supported. 
+        // Inversion over non-public or non-prime moduli currently not supported.
         // Our blinding below only works for prime moduli.
         // As the modulus cannot be blinded, it requires a fully side-channel safe algorithm which is much more complicated and
         // slower.
         // When this is necessary, we will add a second ModInv implementation for those cases.
-        SymCryptFatal( 'unsp' );    
+        SymCryptFatal( 'unsp' );
     }
 
     //
@@ -908,13 +881,13 @@ SymCryptFdefModInvGeneric(
     // R = random nonzero value mod Mod
     // X := Src * R (mod Mod)
     // A = X
-    // B = Mod      
+    // B = Mod
     // Va = 1
     // Vb = 0
-    // invariant: A = Va*X (mod Mod), B = Vb*X (mod Mod), 
+    // invariant: A = Va*X (mod Mod), B = Vb*X (mod Mod),
     //
     // if( A == 0 ): error
-    // 
+    //
     // verify (A | B) is odd
     // if B even: swap (A,B), swap( Va, Vb)
     //
@@ -926,7 +899,7 @@ SymCryptFdefModInvGeneric(
     //      if( A == 0 ): error (not co-prime)
 
     nBytes = SymCryptSizeofModElementFromModulus( pmMod );
-	
+
     SYMCRYPT_ASSERT( cbScratch >= 4*nBytes );
     PSYMCRYPT_MODELEMENT peR = SymCryptModElementCreate( pbScratch, nBytes, pmMod );
     pbScratch += nBytes;
@@ -969,8 +942,8 @@ SymCryptFdefModInvGeneric(
     SymCryptIntCopy( SymCryptIntFromModulus( (PSYMCRYPT_MODULUS) pmMod ), piB );          // B = Mod
 
     // Reject if A = 0, B = 0, or A and B both even
-    if( SymCryptIntIsEqualUint32( piA, 0 ) | 
-        SymCryptIntIsEqualUint32( piB, 0 ) | 
+    if( SymCryptIntIsEqualUint32( piA, 0 ) |
+        SymCryptIntIsEqualUint32( piB, 0 ) |
         (((SymCryptIntGetValueLsbits32( piA ) | SymCryptIntGetValueLsbits32( piB )) & 1) ^ 1) )
     {
         scError = SYMCRYPT_INVALID_ARGUMENT;
@@ -1034,7 +1007,7 @@ SymCryptFdefModInvGeneric(
     // 1 = A = Va * X (mod Mod), so Va is the inverse of X
     // Check computation that we can test in the debugger
     SymCryptFdefModMulGeneric( pmMod, peVa, peX, peVb, pbScratch, cbScratch );
-    
+
     // Actual answer
 
     // If the data is not public, multiply by the random blinding factor; otherwise copy the value
@@ -1169,8 +1142,8 @@ SymCryptFdefMontgomeryReduce(
 }
 
 
-VOID 
-SYMCRYPT_CALL 
+VOID
+SYMCRYPT_CALL
 SymCryptFdefModSetPostMontgomery(
     _In_                            PCSYMCRYPT_MODULUS      pmMod,
     _Inout_                         PSYMCRYPT_MODELEMENT    peObj,
@@ -1212,8 +1185,8 @@ SymCryptFdefModPreGetMontgomery(
     return pTmp;
 }
 
-VOID 
-SYMCRYPT_CALL 
+VOID
+SYMCRYPT_CALL
 SymCryptFdefModulusCopyFixupMontgomery(
     _In_                            PCSYMCRYPT_MODULUS      pmSrc,
     _Out_                           PSYMCRYPT_MODULUS       pmDst )
@@ -1224,8 +1197,8 @@ SymCryptFdefModulusCopyFixupMontgomery(
     pmDst->tm.montgomery.Rsqr = (PUINT32)((PBYTE)&pmDst->Divisor + SymCryptFdefSizeofDivisorFromDigits( pmDst->nDigits ));
 }
 
-VOID 
-SYMCRYPT_CALL 
+VOID
+SYMCRYPT_CALL
 SymCryptFdefModMulMontgomery(
     _In_                            PCSYMCRYPT_MODULUS      pmMod,
     _In_                            PCSYMCRYPT_MODELEMENT   peSrc1,
@@ -1245,8 +1218,8 @@ SymCryptFdefModMulMontgomery(
 }
 
 #if SYMCRYPT_CPU_AMD64
-VOID 
-SYMCRYPT_CALL 
+VOID
+SYMCRYPT_CALL
 SymCryptFdefModMulMontgomeryMulx(
     _In_                            PCSYMCRYPT_MODULUS      pmMod,
     _In_                            PCSYMCRYPT_MODELEMENT   peSrc1,
@@ -1264,8 +1237,8 @@ SymCryptFdefModMulMontgomeryMulx(
     SymCryptFdefMontgomeryReduceMulx( pmMod, pTmp, &peDst->d.uint32[0] );
 }
 
-VOID 
-SYMCRYPT_CALL 
+VOID
+SYMCRYPT_CALL
 SymCryptFdefModMulMontgomeryMulx1024(
     _In_                            PCSYMCRYPT_MODULUS      pmMod,
     _In_                            PCSYMCRYPT_MODELEMENT   peSrc1,
@@ -1285,8 +1258,8 @@ SymCryptFdefModMulMontgomeryMulx1024(
 #endif
 
 
-VOID 
-SYMCRYPT_CALL 
+VOID
+SYMCRYPT_CALL
 SymCryptFdefModSquareMontgomery(
     _In_                            PCSYMCRYPT_MODULUS      pmMod,
     _In_                            PCSYMCRYPT_MODELEMENT   peSrc,
@@ -1305,8 +1278,8 @@ SymCryptFdefModSquareMontgomery(
 
 
 #if SYMCRYPT_CPU_AMD64
-VOID 
-SYMCRYPT_CALL 
+VOID
+SYMCRYPT_CALL
 SymCryptFdefModSquareMontgomeryMulx(
     _In_                            PCSYMCRYPT_MODULUS      pmMod,
     _In_                            PCSYMCRYPT_MODELEMENT   peSrc,
@@ -1323,8 +1296,8 @@ SymCryptFdefModSquareMontgomeryMulx(
     SymCryptFdefMontgomeryReduceMulx( pmMod, pTmp, &peDst->d.uint32[0] );
 }
 
-VOID 
-SYMCRYPT_CALL 
+VOID
+SYMCRYPT_CALL
 SymCryptFdefModSquareMontgomeryMulx1024(
     _In_                            PCSYMCRYPT_MODULUS      pmMod,
     _In_                            PCSYMCRYPT_MODELEMENT   peSrc,
@@ -1343,7 +1316,7 @@ SymCryptFdefModSquareMontgomeryMulx1024(
 #endif
 
 SYMCRYPT_ERROR
-SYMCRYPT_CALL 
+SYMCRYPT_CALL
 SymCryptFdefModInvMontgomery(
     _In_                            PCSYMCRYPT_MODULUS      pmMod,
     _In_                            PCSYMCRYPT_MODELEMENT   peSrc,
@@ -1441,8 +1414,8 @@ SymCryptFdefModMulMontgomery256Test(
     SymCryptFdefModMulMontgomery256Asm( pmMod, peSrc1, peSrc2, peDst, pbScratch, cbScratch );
 }
 
-VOID 
-SYMCRYPT_CALL 
+VOID
+SYMCRYPT_CALL
 SymCryptFdefModSquareMontgomery256(
     _In_                            PCSYMCRYPT_MODULUS      pmMod,
     _In_                            PCSYMCRYPT_MODELEMENT   peSrc,
@@ -1454,7 +1427,7 @@ SymCryptFdefModSquareMontgomery256(
 }
 
 SYMCRYPT_ERROR
-SYMCRYPT_CALL 
+SYMCRYPT_CALL
 SymCryptFdefModInvMontgomery256(
     _In_                            PCSYMCRYPT_MODULUS      pmMod,
     _In_                            PCSYMCRYPT_MODELEMENT   peSrc,
@@ -1487,8 +1460,8 @@ SymCryptFdefModInvMontgomery256(
     return scError;
 }
 
-VOID 
-SYMCRYPT_CALL 
+VOID
+SYMCRYPT_CALL
 SymCryptFdefModSetPostMontgomery256(
     _In_                            PCSYMCRYPT_MODULUS      pmMod,
     _Inout_                         PSYMCRYPT_MODELEMENT    peObj,
