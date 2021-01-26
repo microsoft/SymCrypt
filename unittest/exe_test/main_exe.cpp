@@ -26,7 +26,7 @@ main( int argc, _In_reads_( argc ) char * argv[] )
 
     addAllAlgs();
 
-    if (!g_profile)
+    if (!g_profile && !g_measure_specific_sizes)
     {
         runFunctionalTests();
     }
@@ -39,9 +39,12 @@ main( int argc, _In_reads_( argc ) char * argv[] )
     {
         runPerfTests();
 
-        testMultiThread();
+        if (!g_measure_specific_sizes)
+        {
+            testMultiThread();
 
-        testSelftest();
+            testSelftest();
+        }
     }
 
     exitTestInfrastructure();

@@ -991,6 +991,13 @@ extern BOOL g_profile;
 extern UINT32 g_profile_iterations;
 extern UINT32 g_profile_key;
 
+extern BOOL g_measure_specific_sizes;
+extern UINT32 g_measure_sizes_start;
+extern UINT32 g_measure_sizes_end;
+extern UINT32 g_measure_sizes_increment;
+extern UINT32 g_measure_sizes_repetitions;
+extern String g_measure_sizes_stringPrefix;
+
 extern BOOL g_perfTestsRunning;
 
 extern ULONG    g_rc2EffectiveKeyLength;

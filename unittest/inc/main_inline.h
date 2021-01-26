@@ -11,8 +11,9 @@ VOID addImplementationToGlobalList()
     std::string algName = AlgImp::s_algName;
     std::string impName = AlgImp::s_impName;
     std::string modeName = AlgImp::s_modeName;
+    std::string algModeName = algName + modeName;
 
-    if( setContainsPrefix( g_algorithmsToTest, algName ) &&
+    if( setContainsPrefix( g_algorithmsToTest, algModeName ) &&
         setContainsPrefix( g_implementationsToTest, impName ) )
     {
         AlgorithmImplementation * p;

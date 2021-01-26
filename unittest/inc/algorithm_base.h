@@ -2,8 +2,8 @@
 // Algorithm_base.h
 // base classes for algorithm implementations
 //
-// Copyright (c) Microsoft Corporation. Licensed under the MIT license. 
-// 
+// Copyright (c) Microsoft Corporation. Licensed under the MIT license.
+//
 
 //
 // AlgorithmImplementation class
@@ -15,11 +15,11 @@ class AlgorithmImplementation
 public:
     AlgorithmImplementation();
     virtual ~AlgorithmImplementation() {};
-    
-private:    
+
+private:
     AlgorithmImplementation( const AlgorithmImplementation & );
     VOID operator =( const AlgorithmImplementation & );
-    
+
 public:
 
     std::string m_algorithmName;                // Name of algorithm
@@ -31,7 +31,7 @@ public:
     PerfDataFn  m_perfDataFunction;
     PerfDataFn  m_perfDecryptFunction;
     PerfCleanFn m_perfCleanFunction;
-    
+
     //
     // During functional testing we test all implementations of a single algorithm
     // in parallel. This makes debugging bugs triggered by the pseudo-random test cases
@@ -58,8 +58,9 @@ public:
     typedef struct _ALG_PERF_INFO
     {
         SIZE_T                  keySize;        // key size to add to row header. (0 if not used)
+        SIZE_T                  dataSize;       // data size to add to row header. (only used with g_measure_specific_sizes)
         char *                  strPostfix;     // postfix string, must be 3 characters long
-        double                  cFixed;         // clocks of fixed overhead. 
+        double                  cFixed;         // clocks of fixed overhead.
         double                  cPerByte;       // clocks average cost per byte (used only for linear records, 0 for non-linear records)
         double                  cRange;         // 90 percentile of deviation from prediction by previous two numbers
     } ALG_PERF_INFO;
@@ -80,20 +81,20 @@ private:
 public:
     virtual SIZE_T resultLen() = 0;
         // Return the result length of this hash
-        
+
     virtual SIZE_T inputBlockLen() = 0;
         // Return the input block length of this hash
 
     virtual VOID init() = 0;
         // Initialize for a new hash computation.
-        
+
     virtual VOID append( _In_reads_( cbData ) PCBYTE pbData, SIZE_T cbData ) = 0;
         // Append data to the running hash computation.
-        
+
     virtual VOID result( _Out_writes_( cbResult ) PBYTE pbResult, SIZE_T cbResult ) = 0;
         // Get the result of the running hash computation.
 
-    virtual VOID hash( _In_reads_( cbData ) PCBYTE pbData, SIZE_T cbData, 
+    virtual VOID hash( _In_reads_( cbData ) PCBYTE pbData, SIZE_T cbData,
                        _Out_writes_( cbResult ) PBYTE pbResult, SIZE_T cbResult );
         // Single hash computation.
         // The default implementation calls init/append/result so implementations that do not
@@ -109,9 +110,9 @@ public:
         // problem area.)
         // Return zero if success, NT status error if not supported.
 
-    virtual NTSTATUS exportSymCryptFormat( 
-            _Out_writes_bytes_to_( cbResultBufferSize, *pcbResult ) PBYTE   pbResult, 
-            _In_                                                    SIZE_T  cbResultBufferSize, 
+    virtual NTSTATUS exportSymCryptFormat(
+            _Out_writes_bytes_to_( cbResultBufferSize, *pcbResult ) PBYTE   pbResult,
+            _In_                                                    SIZE_T  cbResultBufferSize,
             _Out_                                                   SIZE_T *pcbResult ) = 0;
 };
 
@@ -135,15 +136,15 @@ public:
 
     virtual SIZE_T resultLen() = 0;
         // Return the result length of this hash
-        
+
     virtual SIZE_T inputBlockLen() = 0;
         // Return the input block length of this hash
 
     virtual VOID init( SIZE_T nHashes ) = 0;
         // Initialize for a new hash computation.
         // nHashes = # hash states, nHashes <= MAX_PARALLEL_HASH_STATES
-        
-    virtual VOID process( 
+
+    virtual VOID process(
         _In_reads_( nOperations )   BCRYPT_MULTI_HASH_OPERATION *   pOperations,
                                     SIZE_T                          nOperations ) = 0;
         // Process BCrypt-style operations on the parallel hash state
@@ -182,12 +183,12 @@ public:
 
     virtual VOID append( _In_reads_( cbData ) PCBYTE pbData, SIZE_T cbData ) = 0;
         // Append data to the running MAC computation.
-        
+
     virtual VOID result( _Out_writes_( cbResult ) PBYTE pbResult, SIZE_T cbResult ) = 0;
         // Get the result of the running MAC computation.
 
-    virtual NTSTATUS mac( _In_reads_( cbKey )      PCBYTE pbKey,   SIZE_T cbKey, 
-                          _In_reads_( cbData )     PCBYTE pbData,  SIZE_T cbData, 
+    virtual NTSTATUS mac( _In_reads_( cbKey )      PCBYTE pbKey,   SIZE_T cbKey,
+                          _In_reads_( cbData )     PCBYTE pbData,  SIZE_T cbData,
                           _Out_writes_( cbResult )  PBYTE pbResult, SIZE_T cbResult );
         // Complete a full MAC computation.
         // The default implementation merely calls the init/append/result members.
@@ -218,18 +219,18 @@ public:
 
     virtual NTSTATUS setKey( PCBYTE pbKey, SIZE_T cbKey ) = 0;
 
-    virtual VOID encrypt( 
-        _Inout_updates_opt_( cbChain )  PBYTE pbChain, 
-                                        SIZE_T cbChain, 
-        _In_reads_( cbData )            PCBYTE pbSrc, 
-        _Out_writes_( cbData )          PBYTE pbDst, 
+    virtual VOID encrypt(
+        _Inout_updates_opt_( cbChain )  PBYTE pbChain,
+                                        SIZE_T cbChain,
+        _In_reads_( cbData )            PCBYTE pbSrc,
+        _Out_writes_( cbData )          PBYTE pbDst,
                                         SIZE_T cbData ) = 0;
 
-    virtual VOID decrypt( 
-        _Inout_updates_opt_( cbChain )  PBYTE pbChain, 
-                                        SIZE_T cbChain, 
-        _In_reads_( cbData )            PCBYTE pbSrc, 
-        _Out_writes_( cbData )          PBYTE pbDst, 
+    virtual VOID decrypt(
+        _Inout_updates_opt_( cbChain )  PBYTE pbChain,
+                                        SIZE_T cbChain,
+        _In_reads_( cbData )            PCBYTE pbSrc,
+        _Out_writes_( cbData )          PBYTE pbDst,
                                         SIZE_T cbData ) = 0;
 
 };
@@ -265,34 +266,34 @@ public:
     // All authdata has to be passed in the first incremental call.
     // The last incremental call is marked by a nonzero pbTag.
     // setTotalCbData() must be called before each sequence of incremental calls.
-    // Implementations that don't do incremental processing can simply return 
+    // Implementations that don't do incremental processing can simply return
     // STATUS_NOT_SUPPORTED for all incremental calls.
 
-#define AUTHENC_FLAG_PARTIAL 1   
+#define AUTHENC_FLAG_PARTIAL 1
 
     virtual VOID setTotalCbData( SIZE_T cbData ) = 0;   // Set total cbData up front for partial processing (used by CCM)
-                
+
     virtual NTSTATUS encrypt(
-        _In_reads_( cbNonce )       PCBYTE  pbNonce,      
-                                    SIZE_T  cbNonce, 
-        _In_reads_( cbAuthData )    PCBYTE  pbAuthData, 
-                                    SIZE_T  cbAuthData, 
-        _In_reads_( cbData )        PCBYTE  pbSrc, 
-        _Out_writes_( cbData )      PBYTE   pbDst, 
+        _In_reads_( cbNonce )       PCBYTE  pbNonce,
+                                    SIZE_T  cbNonce,
+        _In_reads_( cbAuthData )    PCBYTE  pbAuthData,
+                                    SIZE_T  cbAuthData,
+        _In_reads_( cbData )        PCBYTE  pbSrc,
+        _Out_writes_( cbData )      PBYTE   pbDst,
                                     SIZE_T  cbData,
-        _Out_writes_( cbTag )       PBYTE   pbTag, 
+        _Out_writes_( cbTag )       PBYTE   pbTag,
                                     SIZE_T  cbTag,
                                     ULONG   flags ) = 0;
 
     virtual NTSTATUS decrypt(
-        _In_reads_( cbNonce )       PCBYTE  pbNonce,      
-                                    SIZE_T  cbNonce, 
-        _In_reads_( cbAuthData )    PCBYTE  pbAuthData, 
-                                    SIZE_T  cbAuthData, 
-        _In_reads_( cbData )        PCBYTE  pbSrc, 
-        _Out_writes_( cbData )      PBYTE   pbDst, 
+        _In_reads_( cbNonce )       PCBYTE  pbNonce,
+                                    SIZE_T  cbNonce,
+        _In_reads_( cbAuthData )    PCBYTE  pbAuthData,
+                                    SIZE_T  cbAuthData,
+        _In_reads_( cbData )        PCBYTE  pbSrc,
+        _Out_writes_( cbData )      PBYTE   pbDst,
                                     SIZE_T  cbData,
-        _In_reads_( cbTag )         PCBYTE  pbTag, 
+        _In_reads_( cbTag )         PCBYTE  pbTag,
                                     SIZE_T  cbTag,
                                     ULONG   flags ) = 0;
 };
@@ -310,18 +311,18 @@ private:
 public:
     virtual NTSTATUS setKey( PCBYTE pbKey, SIZE_T cbKey ) = 0;
 
-    virtual VOID encrypt( 
+    virtual VOID encrypt(
                                         SIZE_T      cbDataUnit,
                                         ULONGLONG   tweak,
-        _In_reads_( cbData )            PCBYTE      pbSrc, 
-        _Out_writes_( cbData )          PBYTE       pbDst, 
+        _In_reads_( cbData )            PCBYTE      pbSrc,
+        _Out_writes_( cbData )          PBYTE       pbDst,
                                         SIZE_T      cbData ) = 0;
 
-    virtual VOID decrypt( 
+    virtual VOID decrypt(
                                         SIZE_T      cbDataUnit,
                                         ULONGLONG   tweak,
-        _In_reads_( cbData )            PCBYTE      pbSrc, 
-        _Out_writes_( cbData )          PBYTE       pbDst, 
+        _In_reads_( cbData )            PCBYTE      pbSrc,
+        _Out_writes_( cbData )          PBYTE       pbDst,
                                         SIZE_T      cbData ) = 0;
 
 };
@@ -349,9 +350,9 @@ public:
 
     virtual VOID setOffset( UINT64 offset ) = 0;
 
-    virtual VOID encrypt( 
-        _In_reads_( cbData )    PCBYTE  pbSrc, 
-        _Out_writes_( cbData )  PBYTE   pbDst, 
+    virtual VOID encrypt(
+        _In_reads_( cbData )    PCBYTE  pbSrc,
+        _Out_writes_( cbData )  PBYTE   pbDst,
                                 SIZE_T  cbData ) = 0;
 };
 
@@ -426,7 +427,7 @@ typedef struct _KDF_ARGUMENTS {
         KDF_TLSPRF_ARGUMENTS    uTlsPrf;
         KDF_HKDF_ARGUMENTS      uHkdf;
     };
-} KDF_ARGUMENTS, *PKDF_ARGUMENTS;        
+} KDF_ARGUMENTS, *PKDF_ARGUMENTS;
 typedef const KDF_ARGUMENTS *PCKDF_ARGUMENTS;
 
 class KdfImplementation: public AlgorithmImplementation
@@ -441,11 +442,11 @@ private:
 
 public:
 
-    virtual VOID derive( 
+    virtual VOID derive(
         _In_reads_( cbKey )     PCBYTE          pbKey,
                                 SIZE_T          cbKey,
         _In_                    PKDF_ARGUMENTS  args,
-        _Out_writes_( cbDst )   PBYTE           pbDst, 
+        _Out_writes_( cbDst )   PBYTE           pbDst,
                                 SIZE_T          cbDst ) = 0;
 
 };
@@ -519,19 +520,19 @@ private:
 
 public:
     virtual NTSTATUS setKey( PCRSAKEY_TESTBLOB pcKeyBlob ) = 0; // Returns an error if this key can't be handled.
-    
+
     // This is the abstraction that covers both PKCS1 and PSS. Both take a hash alg as parameter.
     // We also add a salt size used for PSS.
     virtual NTSTATUS sign(
-        _In_reads_( cbHash)     PCBYTE  pbHash, 
+        _In_reads_( cbHash)     PCBYTE  pbHash,
                                 SIZE_T  cbHash,
                                 PCSTR   pcstrHashAlgName,
                                 UINT32  u32Other,
         _Out_writes_( cbSig )   PBYTE   pbSig,
                                 SIZE_T  cbSig ) = 0;        // cbSig == cbModulus of key
 
-    virtual NTSTATUS verify( 
-        _In_reads_( cbHash)     PCBYTE  pbHash, 
+    virtual NTSTATUS verify(
+        _In_reads_( cbHash)     PCBYTE  pbHash,
                                 SIZE_T  cbHash,
         _In_reads_( cbSig )     PCBYTE  pbSig,
                                 SIZE_T  cbSig,
@@ -551,10 +552,10 @@ private:
 
 public:
     virtual NTSTATUS setKey( PCRSAKEY_TESTBLOB pcKeyBlob ) = 0; // Returns an error if this key can't be handled.
-    
-    // This is the abstraction that covers RAW, PKCS1 and OAEP. 
+
+    // This is the abstraction that covers RAW, PKCS1 and OAEP.
     virtual NTSTATUS encrypt(
-        _In_reads_( cbMsg )             PCBYTE  pbMsg, 
+        _In_reads_( cbMsg )             PCBYTE  pbMsg,
                                         SIZE_T  cbMsg,
                                         PCSTR   pcstrHashAlgName,
                                         PCBYTE  pbLabel,
@@ -562,7 +563,7 @@ public:
         _Out_writes_( cbCiphertext )    PBYTE   pbCiphertext,
                                         SIZE_T  cbCiphertext ) = 0;        // == cbModulus of key
 
-    virtual NTSTATUS decrypt( 
+    virtual NTSTATUS decrypt(
         _In_reads_( cbCiphertext )      PCBYTE  pbCiphertext,
                                         SIZE_T  cbCiphertext,
                                         PCSTR   pcstrHashAlgName,
@@ -576,7 +577,7 @@ public:
 #define DLKEY_MAXKEYSIZE    (512)  // 4096 bits = 512 bytes. Generating larger groups is too slow for testing
 typedef struct _DLGROUP_TESTBLOB {
     UINT32                  nBitsP;             // P = field prime, Q = subgroup order, G = generator
-    UINT32                  cbPrimeP;           // 
+    UINT32                  cbPrimeP;           //
     UINT32                  cbPrimeQ;           // can be 0 if group order is not known
     SYMCRYPT_DLGROUP_FIPS   fipsStandard;       // Which FIPS standard was used to generate this group
     PCSYMCRYPT_HASH         pHashAlgorithm;     // Used for FIPS group generation
@@ -592,7 +593,7 @@ typedef const DLGROUP_TESTBLOB * PCDLGROUP_TESTBLOB;
 
 typedef struct _DLKEY_TESTBLOB {
     PCDLGROUP_TESTBLOB  pGroup;
-    UINT32              cbPrivKey;                      // 
+    UINT32              cbPrivKey;                      //
     BYTE                abPubKey[DLKEY_MAXKEYSIZE];     // cbPrimeP bytes
     BYTE                abPrivKey[DLKEY_MAXKEYSIZE];    // cbPrivKey bytes
 } DLKEY_TESTBLOB, *PDLKEY_TESTBLOB;
@@ -609,9 +610,9 @@ private:
     VOID operator=( const DhImplementation & );
 
 public:
-    virtual NTSTATUS setKey( 
+    virtual NTSTATUS setKey(
         _In_    PCDLKEY_TESTBLOB    pcKeyBlob ) = 0; // Returns an error if this key can't be handled.
-    
+
     virtual NTSTATUS sharedSecret(
         _In_                        PCDLKEY_TESTBLOB    pcPubkey,   // Must be on same group object
         _Out_writes_( cbSecret )    PBYTE               pbSecret,
@@ -629,17 +630,17 @@ private:
     VOID operator=( const DsaImplementation & );
 
 public:
-    virtual NTSTATUS setKey( 
+    virtual NTSTATUS setKey(
         _In_    PCDLKEY_TESTBLOB    pcKeyBlob ) = 0; // Returns an error if this key can't be handled.
-    
+
     virtual NTSTATUS sign(
-        _In_reads_( cbHash)     PCBYTE  pbHash, 
+        _In_reads_( cbHash)     PCBYTE  pbHash,
                                 SIZE_T  cbHash,             // Can be any size, but often = size of Q
         _Out_writes_( cbSig )   PBYTE   pbSig,
                                 SIZE_T  cbSig ) = 0;        // cbSig == 2 * cbPrimeQ of group
 
-    virtual NTSTATUS verify( 
-        _In_reads_( cbHash)     PCBYTE  pbHash, 
+    virtual NTSTATUS verify(
+        _In_reads_( cbHash)     PCBYTE  pbHash,
                                 SIZE_T  cbHash,
         _In_reads_( cbSig )     PCBYTE  pbSig,
                                 SIZE_T  cbSig ) = 0;
@@ -702,7 +703,7 @@ template< class Implementation, class Algorithm> class HashImpState;
 //
 // A template class for the actual hash algorithm implementations
 //
-template< class Implementation, class Algorithm > 
+template< class Implementation, class Algorithm >
 class HashImp: public HashImplementation
 {
 public:
@@ -725,15 +726,15 @@ public:
     virtual void init();
     virtual void append( _In_reads_( cbData ) PCBYTE pbData, SIZE_T cbData );
     virtual void result( _Out_writes_( cbResult ) PBYTE pbResult, SIZE_T cbResult );
-    virtual VOID hash( 
-        _In_reads_( cbData )       PCBYTE pbData, 
-                                    SIZE_T cbData, 
-        _Out_writes_( cbResult )    PBYTE pbResult, 
+    virtual VOID hash(
+        _In_reads_( cbData )       PCBYTE pbData,
+                                    SIZE_T cbData,
+        _Out_writes_( cbResult )    PBYTE pbResult,
                                     SIZE_T cbResult );
     virtual NTSTATUS initWithLongMessage( ULONGLONG nBytes );
-    virtual NTSTATUS exportSymCryptFormat( 
-            _Out_writes_bytes_to_( cbResultBufferSize, *pcbResult ) PBYTE   pbResult, 
-            _In_                                                    SIZE_T  cbResultBufferSize, 
+    virtual NTSTATUS exportSymCryptFormat(
+            _Out_writes_bytes_to_( cbResultBufferSize, *pcbResult ) PBYTE   pbResult,
+            _In_                                                    SIZE_T  cbResultBufferSize,
             _Out_                                                   SIZE_T *pcbResult );
 
     HashImpState<Implementation,Algorithm> state;
@@ -747,7 +748,7 @@ template< class Implementation, class Algorithm> class ParallelHashImpState;
 //
 // A template class for the actual hash algorithm implementations
 //
-template< class Implementation, class Algorithm > 
+template< class Implementation, class Algorithm >
 class ParallelHashImp: public ParallelHashImplementation
 {
 public:
@@ -767,15 +768,15 @@ public:
     virtual PCSYMCRYPT_HASH SymCryptHash();
 
     virtual SIZE_T resultLen();
-        
+
     virtual SIZE_T inputBlockLen();
 
     virtual VOID init( SIZE_T nHashes );
-        
-    virtual VOID process( 
+
+    virtual VOID process(
         _In_reads_( nOperations )   BCRYPT_MULTI_HASH_OPERATION *   pOperations,
                                     SIZE_T                          nOperations );
-        
+
 
     virtual NTSTATUS initWithLongMessage( ULONGLONG nBytes );
 
@@ -791,7 +792,7 @@ template< class Implementation, class Algorithm> class MacImpState;
 //
 // Template class for the actual MAC implementations
 //
-template< class Implementation, class Algorithm > 
+template< class Implementation, class Algorithm >
 class MacImp: public MacImplementation
 {
 public:
@@ -807,19 +808,19 @@ public:
     static const String s_algName;
     static const String s_modeName;
     static const String s_impName;
-    
+
     virtual SIZE_T resultLen();
     virtual SIZE_T inputBlockLen();
-    
+
     virtual NTSTATUS init( _In_reads_( cbKey ) PCBYTE pbKey, SIZE_T cbKey );
     virtual VOID append( _In_reads_( cbData ) PCBYTE pbData, SIZE_T cbData );
     virtual VOID result( _Out_writes_( cbResult ) PBYTE pbResult, SIZE_T cbResult );
-    virtual NTSTATUS mac( 
-        _In_reads_( cbKey )        PCBYTE pbKey, 
-                                    SIZE_T cbKey, 
-        _In_reads_( cbData )       PCBYTE pbData, 
-                                    SIZE_T cbData, 
-        _Out_writes_( cbResult )    PBYTE pbResult, 
+    virtual NTSTATUS mac(
+        _In_reads_( cbKey )        PCBYTE pbKey,
+                                    SIZE_T cbKey,
+        _In_reads_( cbData )       PCBYTE pbData,
+                                    SIZE_T cbData,
+        _Out_writes_( cbResult )    PBYTE pbResult,
                                     SIZE_T cbResult );
 
     MacImpState<Implementation,Algorithm> state;
@@ -843,24 +844,24 @@ public:
     static const String s_algName;
     static const String s_modeName;
     static const String s_impName;
-    
+
     virtual SIZE_T msgBlockLen();       // block length of mode (msg must be multiple of this)
     virtual SIZE_T chainBlockLen();     // length of chaining field
 
     virtual SIZE_T coreBlockLen();      // block length of underlying cipher
 
     virtual NTSTATUS setKey( _In_reads_( cbKey ) PCBYTE pbKey, SIZE_T cbKey );
-    virtual VOID encrypt( 
-        _Inout_updates_opt_( cbChain )   PBYTE pbChain, 
-                                        SIZE_T cbChain, 
-        _In_reads_( cbData )           PCBYTE pbSrc, 
-        _Out_writes_( cbData )          PBYTE pbDst, 
+    virtual VOID encrypt(
+        _Inout_updates_opt_( cbChain )   PBYTE pbChain,
+                                        SIZE_T cbChain,
+        _In_reads_( cbData )           PCBYTE pbSrc,
+        _Out_writes_( cbData )          PBYTE pbDst,
                                         SIZE_T cbData );
-    virtual VOID decrypt( 
-        _Inout_updates_opt_( cbChain )   PBYTE pbChain, 
-                                        SIZE_T cbChain, 
-        _In_reads_( cbData )           PCBYTE pbSrc, 
-        _Out_writes_( cbData )          PBYTE pbDst, 
+    virtual VOID decrypt(
+        _Inout_updates_opt_( cbChain )   PBYTE pbChain,
+                                        SIZE_T cbChain,
+        _In_reads_( cbData )           PCBYTE pbSrc,
+        _Out_writes_( cbData )          PBYTE pbDst,
                                         SIZE_T cbData );
 
     BlockCipherImpState< Implementation, Algorithm, Mode > state;
@@ -884,21 +885,21 @@ public:
     static const String s_algName;
     static const String s_modeName;
     static const String s_impName;
-    
+
     virtual NTSTATUS setKey( PCBYTE pbKey, SIZE_T cbKey );
 
-    virtual VOID encrypt( 
+    virtual VOID encrypt(
                                         SIZE_T      cbDataUnit,
                                         ULONGLONG   tweak,
-        _In_reads_( cbData )            PCBYTE      pbSrc, 
-        _Out_writes_( cbData )          PBYTE       pbDst, 
+        _In_reads_( cbData )            PCBYTE      pbSrc,
+        _Out_writes_( cbData )          PBYTE       pbDst,
                                         SIZE_T      cbData );
 
-    virtual VOID decrypt( 
+    virtual VOID decrypt(
                                         SIZE_T      cbDataUnit,
                                         ULONGLONG   tweak,
-        _In_reads_( cbData )            PCBYTE      pbSrc, 
-        _Out_writes_( cbData )          PBYTE       pbDst, 
+        _In_reads_( cbData )            PCBYTE      pbSrc,
+        _Out_writes_( cbData )          PBYTE       pbDst,
                                         SIZE_T      cbData );
 
     XtsImpState< Implementation, Algorithm > state;
@@ -943,7 +944,7 @@ public:
     static const String s_algName;
     static const String s_modeName;
     static const String s_impName;
-    
+
     virtual std::set<SIZE_T> getNonceSizes();
 
     virtual std::set<SIZE_T> getTagSizes();
@@ -954,28 +955,28 @@ public:
 
     virtual VOID setTotalCbData( SIZE_T cbData );
 
-    virtual NTSTATUS encrypt(   
-        _In_reads_( cbNonce )       PCBYTE  pbNonce,      
-                                    SIZE_T  cbNonce, 
-        _In_reads_( cbAuthData )    PCBYTE  pbAuthData, 
-                                    SIZE_T  cbAuthData, 
-        _In_reads_( cbData )        PCBYTE  pbSrc, 
-        _Out_writes_( cbData )      PBYTE   pbDst, 
+    virtual NTSTATUS encrypt(
+        _In_reads_( cbNonce )       PCBYTE  pbNonce,
+                                    SIZE_T  cbNonce,
+        _In_reads_( cbAuthData )    PCBYTE  pbAuthData,
+                                    SIZE_T  cbAuthData,
+        _In_reads_( cbData )        PCBYTE  pbSrc,
+        _Out_writes_( cbData )      PBYTE   pbDst,
                                     SIZE_T  cbData,
-        _Out_writes_( cbTag )       PBYTE   pbTag, 
+        _Out_writes_( cbTag )       PBYTE   pbTag,
                                     SIZE_T  cbTag,
                                     ULONG   flags );
         // returns an error only if the request is not supported; only allowed for partial requests.
 
-    virtual NTSTATUS decrypt(   
-        _In_reads_( cbNonce )       PCBYTE  pbNonce,      
-                                    SIZE_T  cbNonce, 
-        _In_reads_( cbAuthData )    PCBYTE  pbAuthData, 
-                                    SIZE_T  cbAuthData, 
-        _In_reads_( cbData )        PCBYTE  pbSrc, 
-        _Out_writes_( cbData )      PBYTE   pbDst, 
+    virtual NTSTATUS decrypt(
+        _In_reads_( cbNonce )       PCBYTE  pbNonce,
+                                    SIZE_T  cbNonce,
+        _In_reads_( cbAuthData )    PCBYTE  pbAuthData,
+                                    SIZE_T  cbAuthData,
+        _In_reads_( cbData )        PCBYTE  pbSrc,
+        _Out_writes_( cbData )      PBYTE   pbDst,
                                     SIZE_T  cbData,
-        _In_reads_( cbTag )         PCBYTE  pbTag, 
+        _In_reads_( cbTag )         PCBYTE  pbTag,
                                     SIZE_T  cbTag,
                                     ULONG   flags );
         // returns STATUS_AUTH_TAG_MISMATCH if the tag is wrong.
@@ -1004,7 +1005,7 @@ public:
     static const String s_modeName;
     static const String s_algName;
     static const BOOL   s_isRandomAccess;
-    
+
     virtual std::set<SIZE_T> getNonceSizes();
 
     virtual std::set<SIZE_T> getKeySizes();
@@ -1017,9 +1018,9 @@ public:
 
     virtual VOID setOffset( UINT64 offset );
 
-    virtual VOID encrypt( 
-        _In_reads_( cbData )    PCBYTE  pbSrc, 
-        _Out_writes_( cbData )  PBYTE   pbDst, 
+    virtual VOID encrypt(
+        _In_reads_( cbData )    PCBYTE  pbSrc,
+        _Out_writes_( cbData )  PBYTE   pbDst,
                                 SIZE_T  cbData );
 
     StreamCipherImpState< Implementation, Algorithm> state;
@@ -1043,7 +1044,7 @@ public:
     static const String s_impName;
     static const String s_modeName;
     static const String s_algName;
-    
+
     virtual NTSTATUS instantiate( _In_reads_( cbEntropy ) PCBYTE pbEntropy, SIZE_T cbEntropy ) ;
     virtual NTSTATUS reseed( _In_reads_( cbEntropy ) PCBYTE pbEntropy, SIZE_T cbEntropy );
     virtual VOID generate( _Out_writes_( cbData ) PBYTE pbData, SIZE_T cbData );
@@ -1068,18 +1069,18 @@ public:
     static const String s_impName;
     static const String s_modeName;
     static const String s_algName;
-    
-    virtual VOID derive( 
+
+    virtual VOID derive(
         _In_reads_( cbKey )     PCBYTE          pbKey,
                                 SIZE_T          cbKey,
         _In_                    PKDF_ARGUMENTS  args,
-        _Out_writes_( cbDst )   PBYTE           pbDst, 
+        _Out_writes_( cbDst )   PBYTE           pbDst,
                                 SIZE_T          cbDst );
 
     KdfImpState<Implementation,Algorithm,BaseAlg> state;
 };
 
-template< class Implementation, class Algorithm > 
+template< class Implementation, class Algorithm >
 class TlsCbcHmacImp: public TlsCbcHmacImplementation
 {
 public:
@@ -1179,15 +1180,15 @@ public:
     virtual NTSTATUS setKey( PCRSAKEY_TESTBLOB pcKeyBlob );
 
     virtual NTSTATUS sign(
-        _In_reads_( cbHash)     PCBYTE  pbHash, 
+        _In_reads_( cbHash)     PCBYTE  pbHash,
                                 SIZE_T  cbHash,
                                 PCSTR   pcstrHashAlgName,
                                 UINT32  u32Other,
         _Out_writes_( cbSig )   PBYTE   pbSig,
                                 SIZE_T  cbSig );
 
-    virtual NTSTATUS verify( 
-        _In_reads_( cbHash)     PCBYTE  pbHash, 
+    virtual NTSTATUS verify(
+        _In_reads_( cbHash)     PCBYTE  pbHash,
                                 SIZE_T  cbHash,
         _In_reads_( cbSig )     PCBYTE  pbSig,
                                 SIZE_T  cbSig,
@@ -1218,9 +1219,9 @@ public:
     static const String s_impName;             // Implementation name
 
     virtual NTSTATUS setKey( PCRSAKEY_TESTBLOB pcKeyBlob );
-    
+
     virtual NTSTATUS encrypt(
-        _In_reads_( cbMsg )             PCBYTE  pbMsg, 
+        _In_reads_( cbMsg )             PCBYTE  pbMsg,
                                         SIZE_T  cbMsg,
                                         PCSTR   pcstrHashAlgName,
                                         PCBYTE  pbLabel,
@@ -1228,7 +1229,7 @@ public:
         _Out_writes_( cbCiphertext )    PBYTE   pbCiphertext,
                                         SIZE_T  cbCiphertext );        // == cbModulus of key
 
-    virtual NTSTATUS decrypt( 
+    virtual NTSTATUS decrypt(
         _In_reads_( cbCiphertext )      PCBYTE  pbCiphertext,
                                         SIZE_T  cbCiphertext,
                                         PCSTR   pcstrHashAlgName,
@@ -1259,11 +1260,11 @@ public:
     static const String s_modeName;
     static const String s_impName;             // Implementation name
 
-    virtual NTSTATUS setKey( 
-        _In_    PCDLKEY_TESTBLOB    pcKeyBlob );    
-    
+    virtual NTSTATUS setKey(
+        _In_    PCDLKEY_TESTBLOB    pcKeyBlob );
+
     virtual NTSTATUS sharedSecret(
-        _In_                        PCDLKEY_TESTBLOB    pcPubkey, 
+        _In_                        PCDLKEY_TESTBLOB    pcPubkey,
         _Out_writes_( cbSecret )    PBYTE               pbSecret,
                                     SIZE_T              cbSecret );
 
@@ -1288,17 +1289,17 @@ public:
     static const String s_modeName;
     static const String s_impName;             // Implementation name
 
-    virtual NTSTATUS setKey( 
+    virtual NTSTATUS setKey(
         _In_    PCDLKEY_TESTBLOB    pcKeyBlob ); // Returns an error if this key can't be handled.
-    
+
     virtual NTSTATUS sign(
-        _In_reads_( cbHash)     PCBYTE  pbHash, 
+        _In_reads_( cbHash)     PCBYTE  pbHash,
                                 SIZE_T  cbHash,             // Can be any size, but often = size of Q
         _Out_writes_( cbSig )   PBYTE   pbSig,
                                 SIZE_T  cbSig );        // cbSig == cbModulus of group
 
-    virtual NTSTATUS verify( 
-        _In_reads_( cbHash)     PCBYTE  pbHash, 
+    virtual NTSTATUS verify(
+        _In_reads_( cbHash)     PCBYTE  pbHash,
                                 SIZE_T  cbHash,
         _In_reads_( cbSig )     PCBYTE  pbSig,
                                 SIZE_T  cbSig );

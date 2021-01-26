@@ -1108,6 +1108,7 @@ VOID measurePerfOneAlg( AlgorithmImplementation * pAlgImp )
         //
         if( keyFn != NULL && (pParams->flags & PERF_NO_KEYPERF) == 0 )
         {
+            perfInfo.dataSize = 0;
             perfInfo.cPerByte = 0;
             perfInfo.cFixed = measurePerfOneSize( *k, 0, keyFn, NULL, NULL, cleanFn, TRUE );
             perfInfo.strPostfix = "key";
@@ -1134,16 +1135,41 @@ VOID measurePerfOneAlg( AlgorithmImplementation * pAlgImp )
                 CHECK3( perfInfo.strPostfix != NULL, "Extended key param not found %08x", *k );
             }
 
-            measurePerfData( keyFn, NULL, dataFn, cleanFn, &dataSizes, *k, &perfInfo );
-            pAlgImp->m_perfInfo.push_back( perfInfo );
+            if(!g_measure_specific_sizes)
+            {
+                measurePerfData( keyFn, NULL, dataFn, cleanFn, &dataSizes, *k, &perfInfo );
+                pAlgImp->m_perfInfo.push_back( perfInfo );
+            }
+            else
+            {
+                for(UINT32 dataSize = g_measure_sizes_start; dataSize <= g_measure_sizes_end; dataSize+=g_measure_sizes_increment)
+                {
+                    perfInfo.dataSize = dataSize;
+                    perfInfo.cFixed = measurePerfOneSize( *k, dataSize, keyFn, NULL, dataFn, cleanFn, FALSE );
+
+                    pAlgImp->m_perfInfo.push_back( perfInfo );
+                }
+            }
         }
 
         if( decryptFn != NULL )
         {
             perfInfo.strPostfix = "dec";
+            if(!g_measure_specific_sizes)
+            {
+                measurePerfData( keyFn, dataFn, decryptFn, cleanFn, &dataSizes, *k, &perfInfo );
+                pAlgImp->m_perfInfo.push_back( perfInfo );
+            }
+            else
+            {
+                for(UINT32 dataSize = g_measure_sizes_start; dataSize <= g_measure_sizes_end; dataSize+=g_measure_sizes_increment)
+                {
+                    perfInfo.dataSize = dataSize;
+                    perfInfo.cFixed = measurePerfOneSize( *k, dataSize, keyFn, dataFn, decryptFn, cleanFn, FALSE );
 
-            measurePerfData( keyFn, dataFn, decryptFn, cleanFn, &dataSizes, *k, &perfInfo );
-            pAlgImp->m_perfInfo.push_back( perfInfo );
+                    pAlgImp->m_perfInfo.push_back( perfInfo );
+                }
+            }
         }
 
     }

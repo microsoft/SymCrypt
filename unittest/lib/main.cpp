@@ -269,6 +269,16 @@ UINT32 g_profile_iterations = 0;
 UINT32 g_profile_key = 0;
 
 //
+// Profiling options to run an algorithm for a range of specific sizes
+//
+BOOL g_measure_specific_sizes = FALSE;
+UINT32 g_measure_sizes_start = 0;
+UINT32 g_measure_sizes_end = 0;
+UINT32 g_measure_sizes_increment = 1;
+UINT32 g_measure_sizes_repetitions = 1;
+String g_measure_sizes_stringPrefix = "";
+
+//
 // Flag that specifies that we run performance tests
 //
 BOOL g_perfTestsRunning = FALSE;
@@ -360,19 +370,22 @@ BOOL setContainsPrefix( const StringSet & set, const std::string & str )
     BOOL found = FALSE;
     for( StringSet::const_iterator i = set.begin(); i != set.end(); ++i )
     {
-        found = TRUE;
-        for( SIZE_T j=0; j< str.size(); j++ )
+        if( str.size() >= i->size())
         {
-            if( charToLower( (*i)[j] ) != charToLower( str[j] ) )
+            found = TRUE;
+            for( SIZE_T j=0; j< i->size(); j++ )
             {
-                found = FALSE;
-                break;
+                if( charToLower( (*i)[j] ) != charToLower( str[j] ) )
+                {
+                    found = FALSE;
+                    break;
+                }
             }
-        }
 
-        if( found && i->size() == str.size() )
-        {
-            return TRUE;
+            if( found )
+            {
+                return TRUE;
+            }
         }
     }
 
@@ -392,14 +405,23 @@ updateNameSet( _In_ PCSTR * names, _Inout_ StringSet * set, CHAR op, _In_ PSTR n
 
     for( SIZE_T i=0; names[i] != NULL; i++ )
     {
-        if( STRNICMP( name, names[i], nameLen ) == 0 )
+        if( op == '+' )
         {
-            nameMatch = TRUE;
-            if( op == '+' )
+            SIZE_T prefixLen = strlen( names[i] );
+            prefixLen = prefixLen < nameLen ? prefixLen : nameLen;
+            // if parameter is a prefix of the set element
+            // or set element is a prefix of the parameter
+            if( STRNICMP( name, names[i], prefixLen ) == 0 )
             {
-                set->insert( names[i] );
+                nameMatch = TRUE;
+                set->insert( name );
+                break;
             }
-            else
+        }
+        else
+        {
+            // if parameter is a prefix of the set element
+            if( STRNICMP( name, names[i], nameLen ) == 0 )
             {
                 if( set->size() == 0 )
                 {
@@ -525,6 +547,16 @@ const char * g_algorithmNames[] = {
     NULL,
 };
 
+const char * g_modeNames[] = {
+    ModeEcb::name,
+    ModeCbc::name,
+    ModeCfb::name,
+    ModeCcm::name,
+    ModeGcm::name,
+    ModeNone::name,
+    NULL,
+};
+
 VOID
 usage()
 {
@@ -549,6 +581,16 @@ usage()
             "  osversion=xxxx    Use Capi/Cng calling conventions for OS version xxxx\n"
             "                    XP = <tbd>, Vista = 0600, Win7 = 0601, Win8 = 0602, Blue=0603\n"
             "  rngseed=xxxxxxxx  Set seed for test RNG algorithm, default = 0 = random\n"
+            "  sizes:<startSize>,<endSize>,<sizeIncrement>,<numberOfRepetitions>\n"
+            "                    Run algorithms for dataSizes specified at the command line, rather\n"
+            "                    than using using the sizes built into the unit tests and performing\n"
+            "                    a linear regression. All parameters are unsigned decimal integers.\n"
+            "                    Only a prefix of the parameters needs to be specified - i.e. sizes:1024\n"
+            "                    tests specified algorithms/implementations at only a dataSize of 1024\n"
+            "  sizeprefix:<prefix>      Only applies when sizes: parameter is also specified. Prefixes\n"
+            "                           output of test command with a specific string. This can enable\n"
+            "                           easier concatenation of many test runs on differing platforms into\n"
+            "                           a single .csv for postprocessing."
             "  kernel            Run the kernel-mode tests \n"
             "  verbose           Print detailed information for some algorithms\n"
             "  profile:xxx [key=yyy]    Run one or more algorithms in a tight loop, xxx times for\n"
@@ -593,7 +635,14 @@ usage()
         col += strlen( sep ) + strlen( g_algorithmNames[i] );
         sep = ", ";
     }
+    iprint( "\n" );
 
+    sep = " Mode names:        ";
+    for( i=0; g_modeNames[i] != NULL; i++ )
+    {
+        iprint( "%s%s", sep, g_modeNames[i] );
+        sep = ", ";
+    }
     iprint( "\n" );
 }
 
@@ -726,6 +775,39 @@ processSingleOption( _In_ PSTR option )
             optionHandled = TRUE;
         }
 
+        if( STRNICMP( &option[0], "sizes:", 6 ) == 0 )
+        {
+            char * endptr;
+            __analysis_assume( strlen(option) >= 6 );
+            g_measure_specific_sizes = TRUE;
+            g_measure_sizes_start = (UINT32) strtoul( &option[6], &endptr, 0 );
+            g_measure_sizes_end = (UINT32) strtoul( endptr+1, &endptr, 0 );
+            g_measure_sizes_increment = (UINT32) strtoul( endptr+1, &endptr, 0 );
+            g_measure_sizes_repetitions = (UINT32) strtoul( endptr+1, &endptr, 0 );
+
+            if (g_measure_sizes_end == 0)
+            {
+                g_measure_sizes_end = g_measure_sizes_start;
+            }
+            if (g_measure_sizes_increment == 0)
+            {
+                g_measure_sizes_increment = (g_measure_sizes_start >= g_measure_sizes_end) ? 1 : g_measure_sizes_end - g_measure_sizes_start;
+            }
+            if (g_measure_sizes_repetitions == 0)
+            {
+                g_measure_sizes_repetitions = 1;
+            }
+            optionHandled = TRUE;
+        }
+
+        if( STRNICMP( &option[0], "sizeprefix:", 11 ) == 0 )
+        {
+            __analysis_assume( strlen(option) >= 11 );
+
+            g_measure_sizes_stringPrefix = String( &option[11] );
+            optionHandled = TRUE;
+        }
+
         if( STRICMP( &option[0], "kernel" ) == 0 )
         {
             g_runKernelmodeTest = TRUE;
@@ -766,7 +848,7 @@ processSingleOption( _In_ PSTR option )
     }
     if( !optionHandled )
     {
-        print( "Unknown option \"%s\"", option );
+        print( "\nUnknown option \"%s\"", option );
         usage();
         exit( -1 );
     }
@@ -1518,10 +1600,16 @@ runPerfTests()
 
     g_perfTestsRunning = TRUE;
 
-    measurePerf();
+    for( UINT32 measurementRepetitions = 0; measurementRepetitions < g_measure_sizes_repetitions; measurementRepetitions++ )
+    {
+        measurePerf();
+    }
 
     print( "Unit of performance measurement: %s\n    frequency = %4.0f MHz (using std::chrono)\n",
-            g_perfUnits, g_tscFreq / 1e6);
+        g_perfUnits, g_tscFreq / 1e6);
+
+    if( g_measure_specific_sizes )
+        print("AlgorithmName,KeySize,Operation,ImplementationName,DataSize,%s\n", g_perfUnits);
 
     PrintTable ptPerf;
     PrintTable ptWipe;
@@ -1532,22 +1620,36 @@ runPerfTests()
                 j != (*i)->m_perfInfo.end();
                 ++j )
         {
-            String name = (*i)->m_algorithmName + (*i)->m_modeName;
-            if( j->keySize > 0 )
+            if( !g_measure_specific_sizes )
             {
-                char buf[100];
-                SNPRINTF_S( buf, sizeof( buf ), _TRUNCATE, "-%4lu", (ULONG) (j->keySize & 0xffff) * 8 );
+                String name = (*i)->m_algorithmName + (*i)->m_modeName;
+                if( j->keySize > 0 )
+                {
+                    char buf[100];
+                    SNPRINTF_S( buf, sizeof( buf ), _TRUNCATE, "-%4lu", (ULONG) (j->keySize & 0xffff) * 8 );
 
-                name = name + buf;
+                    name = name + buf;
+                }
+                name = name + " " + j->strPostfix;
+
+                ptPerf.addItem( name, (*i)->m_implementationName,
+                            j->cPerByte, j->cFixed, j->cRange );
             }
-            name = name + " " + j->strPostfix;
-
-            ptPerf.addItem( name, (*i)->m_implementationName,
-                        j->cPerByte, j->cFixed, j->cRange );
+            else
+            {
+                print( "%s%s,%lu,%s,%s,%lu,%lu\n",
+                    g_measure_sizes_stringPrefix.c_str(),
+                    (*i)->m_algorithmName + (*i)->m_modeName,
+                    (ULONG) (j->keySize & 0xffff) * 8,
+                    j->strPostfix,
+                    (*i)->m_implementationName,
+                    (ULONG) j->dataSize,
+                    (ULONG) floor(j->cFixed) );
+            }
         }
     }
 
-    if( TRUE || isAlgorithmPresent( "Wipe", FALSE ) )   // Check doesn't work, should fix...
+    if( !g_measure_specific_sizes || isAlgorithmPresent( "Wipe", FALSE ) )   // Check doesn't work, should fix...
     {
         for( int offset = 0; offset < PERF_WIPE_N_OFFSETS; offset ++ )
         {
@@ -1569,18 +1671,21 @@ runPerfTests()
         ptWipe.print( "Wipe performance for each len & alignment" );
     }
 
-    ptPerf.print( "Performance for n-byte message/key" );
-    printOutput( 0 );
-
-    if( g_runRsaAverageKeyPerf )
+    if( !g_measure_specific_sizes )
     {
-        PrintTable ptRsaKeygen;
-        addRsaKeyGenPerfSymCrypt( ptRsaKeygen );
-#if INCLUDE_IMPL_MSBIGNUM
-        addRsaKeyGenPerfMsBignum( ptRsaKeygen );
-#endif
-        ptRsaKeygen.print( "RSA key generation performance" );
+        ptPerf.print( "Performance for n-byte message/key" );
         printOutput( 0 );
+
+        if( g_runRsaAverageKeyPerf )
+        {
+            PrintTable ptRsaKeygen;
+            addRsaKeyGenPerfSymCrypt( ptRsaKeygen );
+#if INCLUDE_IMPL_MSBIGNUM
+            addRsaKeyGenPerfMsBignum( ptRsaKeygen );
+#endif
+            ptRsaKeygen.print( "RSA key generation performance" );
+            printOutput( 0 );
+        }
     }
 
     g_perfTestsRunning = FALSE;
