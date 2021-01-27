@@ -69,6 +69,18 @@ const SYMCRYPT_BLOCKCIPHER SymCryptAesBlockCipher_Fast = {
     NULL,
 #endif
 
+#if SYMCRYPT_CPU_X86 | SYMCRYPT_CPU_AMD64 | SYMCRYPT_CPU_ARM | SYMCRYPT_CPU_ARM64
+    &SymCryptAesGcmEncryptPart,
+#else
+    NULL,
+#endif
+
+#if SYMCRYPT_CPU_X86 | SYMCRYPT_CPU_AMD64 | SYMCRYPT_CPU_ARM | SYMCRYPT_CPU_ARM64
+    &SymCryptAesGcmDecryptPart,
+#else
+    NULL,
+#endif
+
     SYMCRYPT_AES_BLOCK_SIZE,
     sizeof( SYMCRYPT_AES_EXPANDED_KEY ),
 };

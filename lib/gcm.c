@@ -7,12 +7,8 @@
 #include "precomp.h"
 
 #define GCM_REQUIRED_NONCE_SIZE     (12)
-#define GCM_MAX_DATA_SIZE           (((UINT64)1 << 36) - 32)
 #define GCM_MIN_TAG_SIZE            (12)
 #define GCM_MAX_TAG_SIZE            (16)
-
-#define GCM_BLOCK_MOD_MASK      (SYMCRYPT_GCM_BLOCK_SIZE - 1)
-#define GCM_BLOCK_ROUND_MASK    (~GCM_BLOCK_MOD_MASK)
 
 
 _Success_(return == SYMCRYPT_NO_ERROR)
@@ -23,8 +19,7 @@ SymCryptGcmValidateParameters(
     _In_    SIZE_T                  cbNonce,
     _In_    UINT64                  cbAssociatedData,
     _In_    UINT64                  cbData,
-    _In_    SIZE_T                  cbTag
-   )
+    _In_    SIZE_T                  cbTag )
 {
     if( pBlockCipher->blockSize != SYMCRYPT_GCM_BLOCK_SIZE )
     {
@@ -50,7 +45,7 @@ SymCryptGcmValidateParameters(
     //
     // per SP800-38D cbData is limited to 2^36 - 32 bytes
     //
-    if( cbData > GCM_MAX_DATA_SIZE )
+    if( cbData > SYMCRYPT_GCM_MAX_DATA_SIZE )
     {
         return SYMCRYPT_WRONG_DATA_SIZE;
     }
@@ -69,7 +64,7 @@ VOID
 SYMCRYPT_CALL
 SymCryptGcmAddMacData(
     _Inout_                     PSYMCRYPT_GCM_STATE  pState,
-    _In_reads_opt_( cbData )   PCBYTE               pbData,
+    _In_reads_opt_( cbData )    PCBYTE               pbData,
                                 SIZE_T               cbData )
 {
     SIZE_T bytesToProcess;
@@ -93,7 +88,7 @@ SymCryptGcmAddMacData(
 
     if( cbData >= SYMCRYPT_GCM_BLOCK_SIZE )
     {
-        bytesToProcess = cbData & GCM_BLOCK_ROUND_MASK;
+        bytesToProcess = cbData & SYMCRYPT_GCM_BLOCK_ROUND_MASK;
 
         SymCryptGHashAppendData( &pState->pKey->ghashKey, &pState->ghashState, pbData, bytesToProcess );
 
@@ -140,13 +135,13 @@ SymCryptGcmEncryptDecryptPart(
     SIZE_T      bytesToProcess;
     SIZE_T      bytesUsedInKeyStreamBuffer;
 
-    bytesUsedInKeyStreamBuffer = (SIZE_T) (pState->cbData & GCM_BLOCK_MOD_MASK);
+    bytesUsedInKeyStreamBuffer = (SIZE_T) (pState->cbData & SYMCRYPT_GCM_BLOCK_MOD_MASK);
 
     //
     // We update pState->cbData once before we modify cbData.
     // pState->cbData is not used in the rest of this function
     //
-    SYMCRYPT_ASSERT( pState->cbData + cbData <= GCM_MAX_DATA_SIZE );
+    SYMCRYPT_ASSERT( pState->cbData + cbData <= SYMCRYPT_GCM_MAX_DATA_SIZE );
     pState->cbData += cbData;
 
     if( bytesUsedInKeyStreamBuffer != 0 )
@@ -165,7 +160,7 @@ SymCryptGcmEncryptDecryptPart(
 
     if( cbData >= SYMCRYPT_GCM_BLOCK_SIZE )
     {
-        bytesToProcess = cbData & GCM_BLOCK_ROUND_MASK;
+        bytesToProcess = cbData & SYMCRYPT_GCM_BLOCK_ROUND_MASK;
 
         //
         // We use the CTR mode function that increments 64 bits, rather than the 32 bits that GCM requires.
@@ -223,20 +218,31 @@ SymCryptGcmComputeTag(
     _Inout_                                 PSYMCRYPT_GCM_STATE pState,
     _Out_writes_( SYMCRYPT_GCM_BLOCK_SIZE ) PBYTE               pbTag )
 {
-    SYMCRYPT_ALIGN BYTE  buf[SYMCRYPT_GCM_BLOCK_SIZE];
+    SYMCRYPT_ALIGN BYTE  buf[2 * SYMCRYPT_GCM_BLOCK_SIZE];
     UINT64   cntLow;
 
-    SymCryptGcmPadMacData( pState );
+    SYMCRYPT_STORE_MSBFIRST64( &buf[16], pState->cbAuthData * 8 );
+    SYMCRYPT_STORE_MSBFIRST64( &buf[24], pState->cbData * 8 );
 
-    SYMCRYPT_STORE_MSBFIRST64( &buf[0], pState->cbAuthData * 8 );
-    SYMCRYPT_STORE_MSBFIRST64( &buf[8], pState->cbData * 8 );
+    if( pState->bytesInMacBlock > 0 )
+    {
+        //
+        // Pad the MAC data with zeroes until we hit the block size
+        //
+        SymCryptWipeKnownSize( &buf[0], SYMCRYPT_GCM_BLOCK_SIZE );
+        memcpy( buf, &pState->macBlock[0], pState->bytesInMacBlock );
 
-    SymCryptGcmAddMacData( pState, buf, SYMCRYPT_GCM_BLOCK_SIZE );
+        SymCryptGHashAppendData( &pState->pKey->ghashKey, &pState->ghashState, &buf[0], 2 * SYMCRYPT_GCM_BLOCK_SIZE );
+    }
+    else
+    {
+        SymCryptGHashAppendData( &pState->pKey->ghashKey, &pState->ghashState, &buf[16], SYMCRYPT_GCM_BLOCK_SIZE );
+    }
 
     //
     // Set up the correct counter block value
     // This is a bit tricky. Normally all we have to do is set the last
-    // 4 bytes to 00000001. But if the message is 2^36+32 bytes then
+    // 4 bytes to 00000001. But if the message is 2^36-32 bytes then
     // our use of a 64-bit incrementing CTR function has incremented bytes
     // 8-11 of the nonce. (The 4-byte counter has overflowed, and
     // the carry went into the next byte(s).)
@@ -248,7 +254,7 @@ SymCryptGcmComputeTag(
     SYMCRYPT_STORE_MSBFIRST64( &pState->counterBlock[8], cntLow );
 
     //
-    // Conver the GHash state to an array of bytes
+    // Convert the GHash state to an array of bytes
     //
     SYMCRYPT_STORE_MSBFIRST64( &buf[0], pState->ghashState.ull[1] );
     SYMCRYPT_STORE_MSBFIRST64( &buf[8], pState->ghashState.ull[0] );
@@ -270,10 +276,10 @@ SYMCRYPT_NOINLINE
 SYMCRYPT_ERROR
 SYMCRYPT_CALL
 SymCryptGcmExpandKey(
-    _Out_                   PSYMCRYPT_GCM_EXPANDED_KEY  pExpandedKey,
-    _In_                    PCSYMCRYPT_BLOCKCIPHER      pBlockCipher,
-    _In_reads_( cbKey )    PCBYTE                      pbKey,
-                            SIZE_T                      cbKey )
+    _Out_               PSYMCRYPT_GCM_EXPANDED_KEY  pExpandedKey,
+    _In_                PCSYMCRYPT_BLOCKCIPHER      pBlockCipher,
+    _In_reads_( cbKey ) PCBYTE                      pbKey,
+                        SIZE_T                      cbKey )
 {
     SYMCRYPT_ALIGN BYTE    H[SYMCRYPT_GCM_BLOCK_SIZE];
     SYMCRYPT_ERROR status = SYMCRYPT_NO_ERROR;
@@ -394,7 +400,7 @@ VOID
 SYMCRYPT_CALL
 SymCryptGcmAuthPart(
     _Inout_                     PSYMCRYPT_GCM_STATE pState,
-    _In_reads_opt_( cbData )   PCBYTE              pbAuthData,
+    _In_reads_opt_( cbData )    PCBYTE              pbAuthData,
                                 SIZE_T              cbData )
 {
     SYMCRYPT_CHECK_MAGIC( pState );
@@ -421,6 +427,28 @@ SymCryptGcmEncryptPart(
         SymCryptGcmPadMacData( pState );
     }
 
+    if ( pState->pKey->pBlockCipher->gcmEncryptPartFunc != NULL )
+    {
+        //
+        // Use optimized implementation if available
+        //
+        (*pState->pKey->pBlockCipher->gcmEncryptPartFunc) ( pState, pbSrc, pbDst, cbData );
+    }
+    else
+    {
+        SymCryptGcmEncryptPartTwoPass( pState, pbSrc, pbDst, cbData );
+    }
+}
+
+SYMCRYPT_NOINLINE
+VOID
+SYMCRYPT_CALL
+SymCryptGcmEncryptPartTwoPass(
+    _Inout_                 PSYMCRYPT_GCM_STATE pState,
+    _In_reads_( cbData )    PCBYTE              pbSrc,
+    _Out_writes_( cbData )  PBYTE               pbDst,
+                            SIZE_T              cbData )
+{
     //
     // Do the actual encryption
     //
@@ -431,7 +459,7 @@ SymCryptGcmEncryptPart(
     // In this particular situation this is safe, and avoiding it is expensive as it
     // requires an extra copy and an extra memory buffer.
     // The first write exposes the GCM key stream, independent of the underlying data that
-    // we are processing. Form an attacking point of view me can think of this as literally
+    // we are processing. From an attacking point of view we can think of this as literally
     // handing over the key stream. So encryption consists of two steps:
     // - hand over the key stream
     // - MAC some ciphertext
@@ -448,7 +476,7 @@ VOID
 SYMCRYPT_CALL
 SymCryptGcmDecryptPart(
     _Inout_                 PSYMCRYPT_GCM_STATE pState,
-    _In_reads_( cbData )   PCBYTE              pbSrc,
+    _In_reads_( cbData )    PCBYTE              pbSrc,
     _Out_writes_( cbData )  PBYTE               pbDst,
                             SIZE_T              cbData )
 {
@@ -460,6 +488,28 @@ SymCryptGcmDecryptPart(
         SymCryptGcmPadMacData( pState );
     }
 
+    if ( pState->pKey->pBlockCipher->gcmDecryptPartFunc != NULL )
+    {
+        //
+        // Use optimized implementation if available
+        //
+        (*pState->pKey->pBlockCipher->gcmDecryptPartFunc) ( pState, pbSrc, pbDst, cbData );
+    }
+    else
+    {
+        SymCryptGcmDecryptPartTwoPass( pState, pbSrc, pbDst, cbData );
+    }
+}
+
+SYMCRYPT_NOINLINE
+VOID
+SYMCRYPT_CALL
+SymCryptGcmDecryptPartTwoPass(
+    _Inout_                 PSYMCRYPT_GCM_STATE pState,
+    _In_reads_( cbData )    PCBYTE              pbSrc,
+    _Out_writes_( cbData )  PBYTE               pbDst,
+                            SIZE_T              cbData )
+{
     SymCryptGcmAddMacData( pState, pbSrc, cbData );
 
     //
@@ -529,24 +579,119 @@ SYMCRYPT_NOINLINE
 VOID
 SYMCRYPT_CALL
 SymCryptGcmEncrypt(
-     _In_                           PCSYMCRYPT_GCM_EXPANDED_KEY pExpandedKey,
-     _In_reads_( cbNonce )          PCBYTE                      pbNonce,
+    _In_                            PCSYMCRYPT_GCM_EXPANDED_KEY pExpandedKey,
+    _In_reads_( cbNonce )           PCBYTE                      pbNonce,
                                     SIZE_T                      cbNonce,
-     _In_reads_opt_( cbAuthData )   PCBYTE                      pbAuthData,
+    _In_reads_opt_( cbAuthData )    PCBYTE                      pbAuthData,
                                     SIZE_T                      cbAuthData,
-     _In_reads_( cbData )           PCBYTE                      pbSrc,
-     _Out_writes_( cbData )         PBYTE                       pbDst,
+    _In_reads_( cbData )            PCBYTE                      pbSrc,
+    _Out_writes_( cbData )          PBYTE                       pbDst,
                                     SIZE_T                      cbData,
-     _Out_writes_( cbTag )          PBYTE                       pbTag,
+    _Out_writes_( cbTag )           PBYTE                       pbTag,
                                     SIZE_T                      cbTag )
 {
+    SYMCRYPT_ALIGN BYTE buf[2 * SYMCRYPT_GCM_BLOCK_SIZE];
     SYMCRYPT_GCM_STATE  state;
+    PSYMCRYPT_GCM_STATE pState = &state;
+    UINT64   cntLow;
 
-    SymCryptGcmInit( &state, pExpandedKey, pbNonce, cbNonce );
-    SymCryptGcmAuthPart( &state, pbAuthData, cbAuthData );
-    SymCryptGcmEncryptPart( &state, pbSrc, pbDst, cbData );
-    SymCryptGcmEncryptFinal( &state, pbTag, cbTag );
+    // SymCryptGcmInit( &state, pExpandedKey, pbNonce, cbNonce );
+    UNREFERENCED_PARAMETER( cbNonce );          // It is used in an ASSERT, but only in CHKed builds.
 
+    SYMCRYPT_ASSERT( cbNonce == GCM_REQUIRED_NONCE_SIZE );
+    SYMCRYPT_ASSERT( cbTag >= GCM_MIN_TAG_SIZE && cbTag <= GCM_MAX_TAG_SIZE );
+
+    SYMCRYPT_CHECK_MAGIC( pExpandedKey );
+
+    pState->pKey = pExpandedKey;
+    pState->cbData = 0;
+    pState->cbAuthData = 0;
+    pState->bytesInMacBlock = 0;
+    SymCryptWipeKnownSize( &pState->ghashState, sizeof( pState->ghashState ) );
+
+    memcpy( &pState->counterBlock[0], pbNonce, GCM_REQUIRED_NONCE_SIZE );
+    SymCryptWipeKnownSize( &pState->counterBlock[12], 4 );
+    pState->counterBlock[15] = 1;
+    // Keep cntLow (for encrypting the tag) for later
+    cntLow = *((PUINT64) &pState->counterBlock[8]);
+
+    pState->counterBlock[15] = 2;
+
+
+    // SymCryptGcmAuthPart( &state, pbAuthData, cbAuthData );
+    pState->cbAuthData += cbAuthData;
+    if( cbAuthData >= SYMCRYPT_GCM_BLOCK_SIZE )
+    {
+        SIZE_T bytesToDo = cbAuthData & SYMCRYPT_GCM_BLOCK_ROUND_MASK;
+
+        SymCryptGHashAppendData( &pState->pKey->ghashKey, &pState->ghashState, pbAuthData, bytesToDo );
+
+        pbAuthData += bytesToDo;
+        cbAuthData -= bytesToDo;
+    }
+
+    if( cbAuthData > 0 )
+    {
+        //
+        // Pad the MAC data with zeroes until we hit the block size.
+        //
+        SymCryptWipeKnownSize( &pState->macBlock[0], SYMCRYPT_GCM_BLOCK_SIZE );
+        memcpy( &pState->macBlock[0], pbAuthData, cbAuthData );
+        SymCryptGHashAppendData( &pState->pKey->ghashKey, &pState->ghashState, &pState->macBlock[0], SYMCRYPT_GCM_BLOCK_SIZE );
+    }
+
+    // SymCryptGcmEncryptPart( &state, pbSrc, pbDst, cbData );
+    if ( pState->pKey->pBlockCipher->gcmEncryptPartFunc != NULL )
+    {
+        //
+        // Use optimized implementation if available
+        //
+        (*pState->pKey->pBlockCipher->gcmEncryptPartFunc) ( pState, pbSrc, pbDst, cbData );
+    }
+    else
+    {
+        SymCryptGcmEncryptPartTwoPass( pState, pbSrc, pbDst, cbData );
+    }
+
+    // SymCryptGcmEncryptFinal( &state, pbTag, cbTag );
+    SYMCRYPT_STORE_MSBFIRST64( &buf[16], pState->cbAuthData * 8 );
+    SYMCRYPT_STORE_MSBFIRST64( &buf[24], pState->cbData * 8 );
+
+    if( pState->bytesInMacBlock > 0 )
+    {
+        //
+        // Pad the MAC data with zeroes until we hit the block size
+        //
+        SymCryptWipeKnownSize( &buf[0], SYMCRYPT_GCM_BLOCK_SIZE );
+        memcpy( buf, &pState->macBlock[0], pState->bytesInMacBlock );
+
+        SymCryptGHashAppendData( &pState->pKey->ghashKey, &pState->ghashState, &buf[0], 2 * SYMCRYPT_GCM_BLOCK_SIZE );
+    }
+    else
+    {
+        SymCryptGHashAppendData( &pState->pKey->ghashKey, &pState->ghashState, &buf[16], SYMCRYPT_GCM_BLOCK_SIZE );
+    }
+
+    *((PUINT64) &pState->counterBlock[8]) = cntLow;
+
+    //
+    // Convert the GHash state to an array of bytes
+    //
+    SYMCRYPT_STORE_MSBFIRST64( &buf[0], pState->ghashState.ull[1] );
+    SYMCRYPT_STORE_MSBFIRST64( &buf[8], pState->ghashState.ull[0] );
+
+    SYMCRYPT_ASSERT( pState->pKey->pBlockCipher->blockSize == SYMCRYPT_GCM_BLOCK_SIZE );
+    SymCryptCtrMsb64(   pState->pKey->pBlockCipher,
+                        &pState->pKey->blockcipherKey,
+                        &pState->counterBlock[0],
+                        buf,
+                        buf,
+                        SYMCRYPT_GCM_BLOCK_SIZE );
+
+    memcpy( pbTag, buf, cbTag );
+
+    SymCryptWipeKnownSize( buf, sizeof( buf ) );
+    SymCryptWipeKnownSize( pState, sizeof( *pState ) );
 }
 
 
@@ -567,14 +712,115 @@ SymCryptGcmDecrypt(
                                     SIZE_T                      cbTag )
 {
     SYMCRYPT_ERROR status;
+    SYMCRYPT_ALIGN BYTE buf[2 * SYMCRYPT_GCM_BLOCK_SIZE];
+    SYMCRYPT_GCM_STATE  state;
+    PSYMCRYPT_GCM_STATE pState = &state;
+    UINT64   cntLow;
 
-    SYMCRYPT_GCM_STATE state;
+    // SymCryptGcmInit( &state, pExpandedKey, pbNonce, cbNonce );
+    UNREFERENCED_PARAMETER( cbNonce );          // It is used in an ASSERT, but only in CHKed builds.
 
-    SymCryptGcmInit( &state, pExpandedKey, pbNonce, cbNonce );
-    SymCryptGcmAuthPart( &state, pbAuthData, cbAuthData );
-    SymCryptGcmDecryptPart( &state, pbSrc, pbDst, cbData );
+    SYMCRYPT_ASSERT( cbNonce == GCM_REQUIRED_NONCE_SIZE );
+    SYMCRYPT_ASSERT( cbTag >= GCM_MIN_TAG_SIZE && cbTag <= GCM_MAX_TAG_SIZE );
 
-    status = SymCryptGcmDecryptFinal( &state, pbTag, cbTag );
+    SYMCRYPT_CHECK_MAGIC( pExpandedKey );
+
+    pState->pKey = pExpandedKey;
+    pState->cbData = 0;
+    pState->cbAuthData = 0;
+    pState->bytesInMacBlock = 0;
+    SymCryptWipeKnownSize( &pState->ghashState, sizeof( pState->ghashState ) );
+
+    memcpy( &pState->counterBlock[0], pbNonce, GCM_REQUIRED_NONCE_SIZE );
+    SymCryptWipeKnownSize( &pState->counterBlock[12], 4 );
+    pState->counterBlock[15] = 1;
+    // Keep cntLow (for encrypting the tag) for later
+    cntLow = *((PUINT64) &pState->counterBlock[8]);
+
+    pState->counterBlock[15] = 2;
+
+    // SymCryptGcmAuthPart( &state, pbAuthData, cbAuthData );
+    pState->cbAuthData += cbAuthData;
+    if( cbAuthData >= SYMCRYPT_GCM_BLOCK_SIZE )
+    {
+        SIZE_T bytesToDo = cbAuthData & SYMCRYPT_GCM_BLOCK_ROUND_MASK;
+
+        SymCryptGHashAppendData( &pState->pKey->ghashKey, &pState->ghashState, pbAuthData, bytesToDo );
+
+        pbAuthData += bytesToDo;
+        cbAuthData -= bytesToDo;
+    }
+
+    if( cbAuthData > 0 )
+    {
+        //
+        // Pad the MAC data with zeroes until we hit the block size.
+        //
+        SymCryptWipeKnownSize( &pState->macBlock[0], SYMCRYPT_GCM_BLOCK_SIZE );
+        memcpy( &pState->macBlock[0], pbAuthData, cbAuthData );
+        SymCryptGHashAppendData( &pState->pKey->ghashKey, &pState->ghashState, &pState->macBlock[0], SYMCRYPT_GCM_BLOCK_SIZE );
+    }
+
+    // SymCryptGcmDecryptPart( &state, pbSrc, pbDst, cbData );
+    if ( pState->pKey->pBlockCipher->gcmDecryptPartFunc != NULL )
+    {
+        //
+        // Use optimized implementation if available
+        //
+        (*pState->pKey->pBlockCipher->gcmDecryptPartFunc) ( pState, pbSrc, pbDst, cbData );
+    }
+    else
+    {
+        SymCryptGcmDecryptPartTwoPass( pState, pbSrc, pbDst, cbData );
+    }
+
+    //status = SymCryptGcmDecryptFinal( &state, pbTag, cbTag );
+    SYMCRYPT_STORE_MSBFIRST64( &buf[16], pState->cbAuthData * 8 );
+    SYMCRYPT_STORE_MSBFIRST64( &buf[24], pState->cbData * 8 );
+
+    if( pState->bytesInMacBlock > 0 )
+    {
+        //
+        // Pad the MAC data with zeroes until we hit the block size
+        //
+        SymCryptWipeKnownSize( &buf[0], SYMCRYPT_GCM_BLOCK_SIZE );
+        memcpy( buf, &pState->macBlock[0], pState->bytesInMacBlock );
+
+        SymCryptGHashAppendData( &pState->pKey->ghashKey, &pState->ghashState, &buf[0], 2 * SYMCRYPT_GCM_BLOCK_SIZE );
+    }
+    else
+    {
+        SymCryptGHashAppendData( &pState->pKey->ghashKey, &pState->ghashState, &buf[16], SYMCRYPT_GCM_BLOCK_SIZE );
+    }
+
+    *((PUINT64) &pState->counterBlock[8]) = cntLow;
+
+    //
+    // Convert the GHash state to an array of bytes
+    //
+    SYMCRYPT_STORE_MSBFIRST64( &buf[0], pState->ghashState.ull[1] );
+    SYMCRYPT_STORE_MSBFIRST64( &buf[8], pState->ghashState.ull[0] );
+
+    SYMCRYPT_ASSERT( pState->pKey->pBlockCipher->blockSize == SYMCRYPT_GCM_BLOCK_SIZE );
+    SymCryptCtrMsb64(   pState->pKey->pBlockCipher,
+                        &pState->pKey->blockcipherKey,
+                        &pState->counterBlock[0],
+                        buf,
+                        buf,
+                        SYMCRYPT_GCM_BLOCK_SIZE );
+
+    if( !SymCryptEqual( pbTag, buf, cbTag ) )
+    {
+        status = SYMCRYPT_AUTHENTICATION_FAILURE;
+    }
+    else
+    {
+        status = SYMCRYPT_NO_ERROR;
+    }
+
+    SymCryptWipeKnownSize( buf, sizeof( buf ) );
+    SymCryptWipeKnownSize( pState, sizeof( *pState ) );
+
     if( status != SYMCRYPT_NO_ERROR )
     {
         SymCryptWipe( pbDst, cbData );

@@ -2493,19 +2493,19 @@ SymCryptAesCbcDecrypt(
 VOID
 SYMCRYPT_CALL
 SymCryptAesCbcMac(
-        _In_                                        PCSYMCRYPT_AES_EXPANDED_KEY pExpandedKey,
-        _Inout_updates_( SYMCRYPT_AES_BLOCK_SIZE )  PBYTE                       pbChainingValue,
-        _In_reads_( cbData )                        PCBYTE                      pbData,
-                                                    SIZE_T                      cbData );
+    _In_                                        PCSYMCRYPT_AES_EXPANDED_KEY pExpandedKey,
+    _Inout_updates_( SYMCRYPT_AES_BLOCK_SIZE )  PBYTE                       pbChainingValue,
+    _In_reads_( cbData )                        PCBYTE                      pbData,
+                                                SIZE_T                      cbData );
 
 VOID
 SYMCRYPT_CALL
 SymCryptAesCtrMsb64(
-        _In_                                        PCSYMCRYPT_AES_EXPANDED_KEY pExpandedKey,
-        _Inout_updates_( SYMCRYPT_AES_BLOCK_SIZE )  PBYTE                       pbChainingValue,
-        _In_reads_( cbData )                        PCBYTE                      pbSrc,
-        _Out_writes_( cbData )                      PBYTE                       pbDst,
-                                                    SIZE_T                      cbData );
+    _In_                                        PCSYMCRYPT_AES_EXPANDED_KEY pExpandedKey,
+    _Inout_updates_( SYMCRYPT_AES_BLOCK_SIZE )  PBYTE                       pbChainingValue,
+    _In_reads_( cbData )                        PCBYTE                      pbSrc,
+    _Out_writes_( cbData )                      PBYTE                       pbDst,
+                                                SIZE_T                      cbData );
 
 //
 // There are many optimized implementations for various AES modes.
@@ -3037,7 +3037,7 @@ SymCryptCcmEncrypt(
 //      - pbDst: ciphertext output. The ciphertext buffer may be identical to the plaintext
 //          buffer, or non-overlapping. The ciphertext is also cbData bytes long.
 //      - cbData: # bytes of plaintext input. The maximum length is 2^{8(15-cbNonce)} - 1 bytes.
-//      - pbTag: buffer that will receive the authetication tag.
+//      - pbTag: buffer that will receive the authentication tag.
 //      - cbTag: size of tag. cbTag must be one of {4, 6, 8, 10, 12, 14, 16}.
 //
 
@@ -3219,7 +3219,7 @@ SymCryptGcmEncrypt(
 //      - pbDst: ciphertext output. The ciphertext buffer may be identical to the plaintext
 //          buffer, or non-overlapping. The ciphertext is also cbData bytes long.
 //      - cbData: # bytes of plaintext input. The maximum length is 2^{36} - 32 bytes.
-//      - pbTag: buffer that will receive the authetication tag.
+//      - pbTag: buffer that will receive the authentication tag.
 //      - cbTag: size of tag. cbTag must be one of {12, 13, 14, 15, 16} per SP800-38D
 //          section 5.2.1.2. The optional shorter tag sizes (4 and 8) are not supported.
 //
@@ -3536,7 +3536,7 @@ SymCryptPbkdf2_HmacSha256SelfTest();
 //
 // Generic KDF parameter handling:
 // Generic parameter contains the concatenation of the Label, a zero byte, and the Context.
-// To pass a generic paramter do the following:
+// To pass a generic parameter do the following:
 //  - pbLabel = NULL
 //  - cbLabel = (SIZE_T) -1;
 //  - pbContext/cbContext = generic parameter

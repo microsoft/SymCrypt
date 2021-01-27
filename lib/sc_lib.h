@@ -772,6 +772,7 @@ SymCryptGHashAppendDataPclmulqdq(
     _In_reads_( cbData )                    PCBYTE                      pbData,
     _In_                                    SIZE_T                      cbData );
 
+#define CPU_FEATURES_FOR_PCLMULQDQ  (SYMCRYPT_CPU_FEATURE_PCLMULQDQ | SYMCRYPT_CPU_FEATURE_SSSE3 | SYMCRYPT_CPU_FEATURE_SAVEXMM_NOFAIL )
 
 VOID
 SYMCRYPT_CALL
@@ -1225,20 +1226,20 @@ SymCryptXtsAesDecryptDataUnitAsm(
 VOID
 SYMCRYPT_CALL
 SymCryptXtsAesEncryptDataUnitXmm(
-    _In_                                        PCSYMCRYPT_AES_EXPANDED_KEY pExpandedKey,
-    _Inout_updates_( SYMCRYPT_AES_BLOCK_SIZE )  PBYTE                       pbTweakBlock,
-    _In_reads_( cbData )                        PCBYTE                      pbSrc,
-    _Out_writes_( cbData )                      PBYTE                       pbDst,
-                                                SIZE_T                      cbData );
+    _In_                                    PCSYMCRYPT_AES_EXPANDED_KEY pExpandedKey,
+    _In_reads_( SYMCRYPT_AES_BLOCK_SIZE )   PBYTE                       pbTweakBlock,
+    _In_reads_( cbData )                    PCBYTE                      pbSrc,
+    _Out_writes_( cbData )                  PBYTE                       pbDst,
+                                            SIZE_T                      cbData );
 
 VOID
 SYMCRYPT_CALL
 SymCryptXtsAesDecryptDataUnitXmm(
-    _In_                                        PCSYMCRYPT_AES_EXPANDED_KEY pExpandedKey,
-    _Inout_updates_( SYMCRYPT_AES_BLOCK_SIZE )  PBYTE                       pbTweakBlock,
-    _In_reads_( cbData )                        PCBYTE                      pbSrc,
-    _Out_writes_( cbData )                      PBYTE                       pbDst,
-                                                SIZE_T                      cbData );
+    _In_                                    PCSYMCRYPT_AES_EXPANDED_KEY pExpandedKey,
+    _In_reads_( SYMCRYPT_AES_BLOCK_SIZE )   PBYTE                       pbTweakBlock,
+    _In_reads_( cbData )                    PCBYTE                      pbSrc,
+    _Out_writes_( cbData )                  PBYTE                       pbDst,
+                                            SIZE_T                      cbData );
 
 VOID
 SYMCRYPT_CALL
@@ -1275,7 +1276,6 @@ SymCryptXtsAesDecryptDataUnitYmm_2048(
     _In_reads_( cbData )                        PCBYTE                      pbSrc,
     _Out_writes_( cbData )                      PBYTE                       pbDst,
                                                 SIZE_T                      cbData );
-
 
 VOID
 SYMCRYPT_CALL
@@ -1314,6 +1314,104 @@ SymCryptXtsDecryptDataUnit(
     _In_reads_( cbData )                        PCBYTE                      pbSrc,
     _Out_writes_( cbData )                      PBYTE                       pbDst,
                                                 SIZE_T                      cbData );
+
+VOID
+SYMCRYPT_CALL
+SymCryptAesGcmEncryptStitchedXmm(
+    _In_                                    PCSYMCRYPT_AES_EXPANDED_KEY pExpandedKey,
+    _In_reads_( SYMCRYPT_AES_BLOCK_SIZE )   PBYTE                       pbChainingValue,
+    _In_reads_( SYMCRYPT_GF128_FIELD_SIZE ) PCSYMCRYPT_GF128_ELEMENT    expandedKeyTable,
+    _Inout_                                 PSYMCRYPT_GF128_ELEMENT     pState,
+    _In_reads_( cbData )                    PCBYTE                      pbSrc,
+    _Out_writes_( cbData )                  PBYTE                       pbDst,
+                                            SIZE_T                      cbData );
+
+VOID
+SYMCRYPT_CALL
+SymCryptAesGcmEncryptStitchedYmm_2048(
+    _In_                                    PCSYMCRYPT_AES_EXPANDED_KEY pExpandedKey,
+    _In_reads_( SYMCRYPT_AES_BLOCK_SIZE )   PBYTE                       pbChainingValue,
+    _In_reads_( SYMCRYPT_GF128_FIELD_SIZE ) PCSYMCRYPT_GF128_ELEMENT    expandedKeyTable,
+    _Inout_                                 PSYMCRYPT_GF128_ELEMENT     pState,
+    _In_reads_( cbData )                    PCBYTE                      pbSrc,
+    _Out_writes_( cbData )                  PBYTE                       pbDst,
+                                            SIZE_T                      cbData );
+
+VOID
+SYMCRYPT_CALL
+SymCryptAesGcmDecryptStitchedXmm(
+    _In_                                    PCSYMCRYPT_AES_EXPANDED_KEY pExpandedKey,
+    _In_reads_( SYMCRYPT_AES_BLOCK_SIZE )   PBYTE                       pbChainingValue,
+    _In_reads_( SYMCRYPT_GF128_FIELD_SIZE ) PCSYMCRYPT_GF128_ELEMENT    expandedKeyTable,
+    _Inout_                                 PSYMCRYPT_GF128_ELEMENT     pState,
+    _In_reads_( cbData )                    PCBYTE                      pbSrc,
+    _Out_writes_( cbData )                  PBYTE                       pbDst,
+                                            SIZE_T                      cbData );
+
+VOID
+SYMCRYPT_CALL
+SymCryptAesGcmDecryptStitchedYmm_2048(
+    _In_                                    PCSYMCRYPT_AES_EXPANDED_KEY pExpandedKey,
+    _In_reads_( SYMCRYPT_AES_BLOCK_SIZE )   PBYTE                       pbChainingValue,
+    _In_reads_( SYMCRYPT_GF128_FIELD_SIZE ) PCSYMCRYPT_GF128_ELEMENT    expandedKeyTable,
+    _Inout_                                 PSYMCRYPT_GF128_ELEMENT     pState,
+    _In_reads_( cbData )                    PCBYTE                      pbSrc,
+    _Out_writes_( cbData )                  PBYTE                       pbDst,
+                                            SIZE_T                      cbData );
+
+VOID
+SYMCRYPT_CALL
+SymCryptAesGcmEncryptStitchedNeon(
+    _In_                                    PCSYMCRYPT_AES_EXPANDED_KEY pExpandedKey,
+    _In_reads_( SYMCRYPT_AES_BLOCK_SIZE )   PBYTE                       pbChainingValue,
+    _In_reads_( SYMCRYPT_GF128_FIELD_SIZE ) PCSYMCRYPT_GF128_ELEMENT    expandedKeyTable,
+    _Inout_                                 PSYMCRYPT_GF128_ELEMENT     pState,
+    _In_reads_( cbData )                    PCBYTE                      pbSrc,
+    _Out_writes_( cbData )                  PBYTE                       pbDst,
+                                            SIZE_T                      cbData );
+
+VOID
+SYMCRYPT_CALL
+SymCryptAesGcmDecryptStitchedNeon(
+    _In_                                    PCSYMCRYPT_AES_EXPANDED_KEY pExpandedKey,
+    _In_reads_( SYMCRYPT_AES_BLOCK_SIZE )   PBYTE                       pbChainingValue,
+    _In_reads_( SYMCRYPT_GF128_FIELD_SIZE ) PCSYMCRYPT_GF128_ELEMENT    expandedKeyTable,
+    _Inout_                                 PSYMCRYPT_GF128_ELEMENT     pState,
+    _In_reads_( cbData )                    PCBYTE                      pbSrc,
+    _Out_writes_( cbData )                  PBYTE                       pbDst,
+                                            SIZE_T                      cbData );
+
+VOID
+SYMCRYPT_CALL
+SymCryptAesGcmEncryptPart(
+    _Inout_                 PSYMCRYPT_GCM_STATE pState,
+    _In_reads_( cbData )    PCBYTE              pbSrc,
+    _Out_writes_( cbData )  PBYTE               pbDst,
+                            SIZE_T              cbData );
+
+VOID
+SYMCRYPT_CALL
+SymCryptAesGcmDecryptPart(
+    _Inout_                 PSYMCRYPT_GCM_STATE pState,
+    _In_reads_( cbData )    PCBYTE              pbSrc,
+    _Out_writes_( cbData )  PBYTE               pbDst,
+                            SIZE_T              cbData );
+
+VOID
+SYMCRYPT_CALL
+SymCryptGcmEncryptPartTwoPass(
+    _Inout_                 PSYMCRYPT_GCM_STATE pState,
+    _In_reads_( cbData )    PCBYTE              pbSrc,
+    _Out_writes_( cbData )  PBYTE               pbDst,
+                            SIZE_T              cbData );
+
+VOID
+SYMCRYPT_CALL
+SymCryptGcmDecryptPartTwoPass(
+    _Inout_                 PSYMCRYPT_GCM_STATE pState,
+    _In_reads_( cbData )    PCBYTE              pbSrc,
+    _Out_writes_( cbData )  PBYTE               pbDst,
+                            SIZE_T              cbData );
 
 VOID
 SYMCRYPT_CALL
@@ -1468,7 +1566,7 @@ typedef struct _SYMCRYPT_MODULAR_FUNCTIONS {
     SYMCRYPT_MOD_UNARY_OP_FLAG_STATUS_FN    modInv;
     SYMCRYPT_MOD_SET_POST_FN                modSetPost;
     SYMCRYPT_MOD_PRE_GET_FN                 modPreGet;
-    SYMCRYPT_MODULUS_COPYFIXUP_FN           modulusCopyFixup;   // non-genric fixup after memcpy
+    SYMCRYPT_MODULUS_COPYFIXUP_FN           modulusCopyFixup;   // non-generic fixup after memcpy
     SYMCRYPT_MODULUS_INIT_FN                modulusInit;
     PVOID                                   slack[6];
 } SYMCRYPT_MODULAR_FUNCTIONS;

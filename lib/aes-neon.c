@@ -84,24 +84,11 @@ SymCryptAesCreateDecryptionRoundKeyNeon(
 { \
     /* Do 9 full rounds (AES-128|AES-192|AES-256) */ \
     roundKey = *keyPtr++; \
-    full_round( c0, c1, c2, c3, c4, c5, c6, c7 ) \
-    roundKey = *keyPtr++; \
-    full_round( c0, c1, c2, c3, c4, c5, c6, c7 ) \
-    roundKey = *keyPtr++; \
-    full_round( c0, c1, c2, c3, c4, c5, c6, c7 ) \
-    roundKey = *keyPtr++; \
-    full_round( c0, c1, c2, c3, c4, c5, c6, c7 ) \
-    roundKey = *keyPtr++; \
-    full_round( c0, c1, c2, c3, c4, c5, c6, c7 ) \
-    roundKey = *keyPtr++; \
-    full_round( c0, c1, c2, c3, c4, c5, c6, c7 ) \
-    roundKey = *keyPtr++; \
-    full_round( c0, c1, c2, c3, c4, c5, c6, c7 ) \
-    roundKey = *keyPtr++; \
-    full_round( c0, c1, c2, c3, c4, c5, c6, c7 ) \
-    roundKey = *keyPtr++; \
-    full_round( c0, c1, c2, c3, c4, c5, c6, c7 ) \
-    roundKey = *keyPtr++; \
+    for( int unrollAesRoundCounter=0; unrollAesRoundCounter<9; ++unrollAesRoundCounter) \
+    { \
+        full_round( c0, c1, c2, c3, c4, c5, c6, c7 ) \
+        roundKey = *keyPtr++; \
+    } \
 \
     if ( keyPtr < keyLimit ) \
     { \
@@ -1260,6 +1247,575 @@ SymCryptXtsAesDecryptDataUnitNeon(
     }
 }
 
+#include "ghash_definitions.h"
 
+#define AES_ENCRYPT_ROUND_4_GHASH_1( c0, c1, c2, c3, r0, r0x, t0, t1, gHashPointer, gHashExpandedKeyTable, todo, resl, resm, resh ) \
+{ \
+    AESE_AESMC( c0, roundKey ) \
+    AESE_AESMC( c1, roundKey ) \
+    AESE_AESMC( c2, roundKey ) \
+    AESE_AESMC( c3, roundKey ) \
+\
+    r0x = *gHashPointer; \
+    r0x = vrev64q_u8( r0x ); \
+    r0 = vextq_u8( r0x, r0x, 8 ); \
+    r0x = veorq_u8( r0, r0x ); \
+    gHashPointer++; \
+\
+    t1 = GHASH_H_POWER(gHashExpandedKeyTable, todo); \
+    t0 = vmullq_p64( r0, t1 ); \
+    t1 = vmull_high_p64( r0, t1 ); \
+\
+    resl = veorq_u8( resl, t0 ); \
+    resh = veorq_u8( resh, t1 ); \
+\
+    t1 = GHASH_Hx_POWER(gHashExpandedKeyTable, todo); \
+    t1 = vmullq_p64( r0x, t1 ); \
+\
+    resm = veorq_u8( resm, t1 ); \
+    todo--; \
+};
+
+//
+// Using a loop with AESE_AESMC and AESD_AESIMC, the compiler can still prematurely rearrange the loop and
+// lose opportunity for scheduling adjacent pairs.
+// Instead, explicitly unroll the AES rounds with this macro.
+//
+#define AES_GCM_ENCRYPT_4( pExpandedKey, c0, c1, c2, c3, gHashPointer, gHashRounds, gHashExpandedKeyTable, todo, resl, resm, resh ) \
+{ \
+    const __n128 *keyPtr; \
+    const __n128 *keyLimit; \
+    __n128 roundKey; \
+\
+    keyPtr = (const __n128 *)&pExpandedKey->RoundKey[0]; \
+    keyLimit = (const __n128 *)pExpandedKey->lastEncRoundKey; \
+    __n128 t0, t1, r0, r0x; \
+    int aesEncryptGhashLoop; \
+\
+    /* Do gHashRounds full rounds (AES-128|AES-192|AES-256) with stitched GHASH */ \
+    roundKey = *keyPtr++; \
+    for( aesEncryptGhashLoop = 0; aesEncryptGhashLoop < gHashRounds; aesEncryptGhashLoop++) \
+    { \
+        AES_ENCRYPT_ROUND_4_GHASH_1( c0, c1, c2, c3, r0, r0x, t0, t1, gHashPointer, gHashExpandedKeyTable, todo, resl, resm, resh ) \
+        roundKey = *keyPtr++; \
+    } \
+\
+    /* Do 9-gHashRounds full rounds (AES-128|AES-192|AES-256) */ \
+    for( aesEncryptGhashLoop = 0; aesEncryptGhashLoop < (9-gHashRounds); aesEncryptGhashLoop++) \
+    { \
+        AES_ENCRYPT_ROUND_4( c0, c1, c2, c3, c4, c5, c6, c7 ) \
+        roundKey = *keyPtr++; \
+    } \
+\
+    if ( keyPtr < keyLimit ) \
+    { \
+        /* Do 2 more full rounds (AES-192|AES-256) */ \
+        AES_ENCRYPT_ROUND_4( c0, c1, c2, c3, c4, c5, c6, c7 ) \
+        roundKey = *keyPtr++; \
+        AES_ENCRYPT_ROUND_4( c0, c1, c2, c3, c4, c5, c6, c7 ) \
+        roundKey = *keyPtr++; \
+\
+        if ( keyPtr < keyLimit ) \
+        { \
+            /* Do 2 more full rounds (AES-256) */ \
+            AES_ENCRYPT_ROUND_4( c0, c1, c2, c3, c4, c5, c6, c7 ) \
+            roundKey = *keyPtr++; \
+            AES_ENCRYPT_ROUND_4( c0, c1, c2, c3, c4, c5, c6, c7 ) \
+            roundKey = *keyPtr++; \
+        } \
+    } \
+\
+    /* Do final round (AES-128|AES-192|AES-256) */ \
+    AES_ENCRYPT_FINAL_4( c0, c1, c2, c3, c4, c5, c6, c7 ) \
+};
+
+#define AES_ENCRYPT_ROUND_8_GHASH_1( c0, c1, c2, c3, c4, c5, c6, c7, r0, r0x, t0, t1, gHashPointer, gHashExpandedKeyTable, todo, resl, resm, resh ) \
+{ \
+    AESE_AESMC( c0, roundKey ) \
+    AESE_AESMC( c1, roundKey ) \
+    AESE_AESMC( c2, roundKey ) \
+    AESE_AESMC( c3, roundKey ) \
+    AESE_AESMC( c4, roundKey ) \
+    AESE_AESMC( c5, roundKey ) \
+    AESE_AESMC( c6, roundKey ) \
+    AESE_AESMC( c7, roundKey ) \
+\
+    r0x = *gHashPointer; \
+    r0x = vrev64q_u8( r0x ); \
+    r0 = vextq_u8( r0x, r0x, 8 ); \
+    r0x = veorq_u8( r0, r0x ); \
+    gHashPointer++; \
+\
+    t1 = GHASH_H_POWER(gHashExpandedKeyTable, todo); \
+    t0 = vmullq_p64( r0, t1 ); \
+    t1 = vmull_high_p64( r0, t1 ); \
+\
+    resl = veorq_u8( resl, t0 ); \
+    resh = veorq_u8( resh, t1 ); \
+\
+    t1 = GHASH_Hx_POWER(gHashExpandedKeyTable, todo); \
+    t1 = vmullq_p64( r0x, t1 ); \
+\
+    resm = veorq_u8( resm, t1 ); \
+    todo--; \
+};
+
+//
+// Using a loop with AESE_AESMC and AESD_AESIMC, the compiler can still prematurely rearrange the loop and
+// lose opportunity for scheduling adjacent pairs.
+// Instead, explicitly unroll the AES rounds with this macro.
+//
+#define AES_GCM_ENCRYPT_8( pExpandedKey, c0, c1, c2, c3, c4, c5, c6, c7, gHashPointer, gHashRounds, gHashExpandedKeyTable, todo, resl, resm, resh ) \
+{ \
+    const __n128 *keyPtr; \
+    const __n128 *keyLimit; \
+    __n128 roundKey; \
+\
+    keyPtr = (const __n128 *)&pExpandedKey->RoundKey[0]; \
+    keyLimit = (const __n128 *)pExpandedKey->lastEncRoundKey; \
+    __n128 t0, t1, r0, r0x; \
+    int aesEncryptGhashLoop; \
+\
+    /* Do gHashRounds full rounds (AES-128|AES-192|AES-256) with stitched GHASH */ \
+    roundKey = *keyPtr++; \
+    for( aesEncryptGhashLoop = 0; aesEncryptGhashLoop < gHashRounds; aesEncryptGhashLoop++) \
+    { \
+        AES_ENCRYPT_ROUND_8_GHASH_1( c0, c1, c2, c3, c4, c5, c6, c7, r0, r0x, t0, t1, gHashPointer, gHashExpandedKeyTable, todo, resl, resm, resh ) \
+        roundKey = *keyPtr++; \
+    } \
+\
+    /* Do 9-gHashRounds full rounds (AES-128|AES-192|AES-256) */ \
+    for( aesEncryptGhashLoop = 0; aesEncryptGhashLoop < (9-gHashRounds); aesEncryptGhashLoop++) \
+    { \
+        AES_ENCRYPT_ROUND_8( c0, c1, c2, c3, c4, c5, c6, c7 ) \
+        roundKey = *keyPtr++; \
+    } \
+\
+    if ( keyPtr < keyLimit ) \
+    { \
+        /* Do 2 more full rounds (AES-192|AES-256) */ \
+        AES_ENCRYPT_ROUND_8( c0, c1, c2, c3, c4, c5, c6, c7 ) \
+        roundKey = *keyPtr++; \
+        AES_ENCRYPT_ROUND_8( c0, c1, c2, c3, c4, c5, c6, c7 ) \
+        roundKey = *keyPtr++; \
+\
+        if ( keyPtr < keyLimit ) \
+        { \
+            /* Do 2 more full rounds (AES-256) */ \
+            AES_ENCRYPT_ROUND_8( c0, c1, c2, c3, c4, c5, c6, c7 ) \
+            roundKey = *keyPtr++; \
+            AES_ENCRYPT_ROUND_8( c0, c1, c2, c3, c4, c5, c6, c7 ) \
+            roundKey = *keyPtr++; \
+        } \
+    } \
+\
+    /* Do final round (AES-128|AES-192|AES-256) */ \
+    AES_ENCRYPT_FINAL_8( c0, c1, c2, c3, c4, c5, c6, c7 ) \
+};
+
+// This call is functionally identical to:
+// SymCryptAesCtrMsb64Neon( pExpandedKey,
+//                          pbChainingValue,
+//                          pbSrc,
+//                          pbDst,
+//                          cbData );
+// SymCryptGHashAppendDataPmull(    expandedKeyTable,
+//                                  pState,
+//                                  pbDstOrig,
+//                                  cbDataOrig );
+VOID
+SYMCRYPT_CALL
+SymCryptAesGcmEncryptStitchedNeon(
+    _In_                                    PCSYMCRYPT_AES_EXPANDED_KEY pExpandedKey,
+    _In_reads_( SYMCRYPT_AES_BLOCK_SIZE )   PBYTE                       pbChainingValue,
+    _In_reads_( SYMCRYPT_GF128_FIELD_SIZE ) PCSYMCRYPT_GF128_ELEMENT    expandedKeyTable,
+    _Inout_                                 PSYMCRYPT_GF128_ELEMENT     pState,
+    _In_reads_( cbData )                    PCBYTE                      pbSrc,
+    _Out_writes_( cbData )                  PBYTE                       pbDst,
+                                            SIZE_T                      cbData )
+{
+    __n128          chain = *(__n128 *)pbChainingValue;
+    const __n128 *  pSrc = (const __n128 *) pbSrc;
+    const __n128 *  pGhashSrc = (const __n128 *) pbDst;
+    __n128 *        pDst = (__n128 *) pbDst;
+
+    // See section 6.7.8 of the C standard for details on this initializer usage.
+    const __n128 chainIncrement1 = (__n128) {.n128_u64 = {0, 1}};   // use {0,1} to initialize the n128_u64 element of the __n128 union.
+    const __n128 chainIncrement2 = (__n128) {.n128_u64 = {0, 2}};
+    const __n128 chainIncrement8 = (__n128) {.n128_u64 = {0, 8}};
+
+    __n128 ctr0, ctr1, ctr2, ctr3, ctr4, ctr5, ctr6, ctr7;
+    __n128 c0, c1, c2, c3, c4, c5, c6, c7;
+    __n128 r0, r1;
+    __n128 r0x, r1x;
+
+    __n128 state;
+    __n128 a0, a1, a2;
+    const __n64 vMultiplicationConstant = (__n64) {.n64_u64 = {0xc200000000000000}};
+    SIZE_T nBlocks = cbData / SYMCRYPT_GF128_BLOCK_SIZE;
+    SIZE_T todo;
+
+    // Our chain variable is in integer format, not the MSBfirst format loaded from memory.
+    ctr0 = vrev64q_u8( chain );
+    ctr1 = vaddq_u64( ctr0, chainIncrement1 );
+    ctr2 = vaddq_u64( ctr0, chainIncrement2 );
+    ctr3 = vaddq_u64( ctr1, chainIncrement2 );
+    ctr4 = vaddq_u64( ctr2, chainIncrement2 );
+    ctr5 = vaddq_u64( ctr3, chainIncrement2 );
+    ctr6 = vaddq_u64( ctr4, chainIncrement2 );
+    ctr7 = vaddq_u64( ctr5, chainIncrement2 );
+
+    state = *(__n128 *) pState;
+
+    todo = SYMCRYPT_MIN( nBlocks, SYMCRYPT_GHASH_PMULL_HPOWERS );
+    CLMUL_3( state, GHASH_H_POWER(expandedKeyTable, todo), GHASH_Hx_POWER(expandedKeyTable, todo), a0, a1, a2 );
+
+    // Do 8 blocks of CTR either for tail (if total blocks <8) or for encryption of first 8 blocks
+    c0 = vrev64q_u8( ctr0 );
+    c1 = vrev64q_u8( ctr1 );
+    c2 = vrev64q_u8( ctr2 );
+    c3 = vrev64q_u8( ctr3 );
+    c4 = vrev64q_u8( ctr4 );
+    c5 = vrev64q_u8( ctr5 );
+    c6 = vrev64q_u8( ctr6 );
+    c7 = vrev64q_u8( ctr7 );
+
+    AES_ENCRYPT_8( pExpandedKey, c0, c1, c2, c3, c4, c5, c6, c7 );
+
+    if ( cbData >= 8 * SYMCRYPT_AES_BLOCK_SIZE )
+    {
+        ctr0 = vaddq_u64( ctr0, chainIncrement8 );
+        ctr1 = vaddq_u64( ctr1, chainIncrement8 );
+        ctr2 = vaddq_u64( ctr2, chainIncrement8 );
+        ctr3 = vaddq_u64( ctr3, chainIncrement8 );
+        ctr4 = vaddq_u64( ctr4, chainIncrement8 );
+        ctr5 = vaddq_u64( ctr5, chainIncrement8 );
+        ctr6 = vaddq_u64( ctr6, chainIncrement8 );
+        ctr7 = vaddq_u64( ctr7, chainIncrement8 );
+
+        // Encrypt first 8 blocks
+        pDst[0] = veorq_u64( pSrc[0], c0 );
+        pDst[1] = veorq_u64( pSrc[1], c1 );
+        pDst[2] = veorq_u64( pSrc[2], c2 );
+        pDst[3] = veorq_u64( pSrc[3], c3 );
+        pDst[4] = veorq_u64( pSrc[4], c4 );
+        pDst[5] = veorq_u64( pSrc[5], c5 );
+        pDst[6] = veorq_u64( pSrc[6], c6 );
+        pDst[7] = veorq_u64( pSrc[7], c7 );
+
+        pDst  += 8;
+        pSrc  += 8;
+
+        while( nBlocks >= 16 )
+        {
+            // In this loop we always have 8 blocks to encrypt and we have already encrypted the previous 8 blocks ready for GHASH
+            c0 = vrev64q_u8( ctr0 );
+            c1 = vrev64q_u8( ctr1 );
+            c2 = vrev64q_u8( ctr2 );
+            c3 = vrev64q_u8( ctr3 );
+            c4 = vrev64q_u8( ctr4 );
+            c5 = vrev64q_u8( ctr5 );
+            c6 = vrev64q_u8( ctr6 );
+            c7 = vrev64q_u8( ctr7 );
+
+            ctr0 = vaddq_u64( ctr0, chainIncrement8 );
+            ctr1 = vaddq_u64( ctr1, chainIncrement8 );
+            ctr2 = vaddq_u64( ctr2, chainIncrement8 );
+            ctr3 = vaddq_u64( ctr3, chainIncrement8 );
+            ctr4 = vaddq_u64( ctr4, chainIncrement8 );
+            ctr5 = vaddq_u64( ctr5, chainIncrement8 );
+            ctr6 = vaddq_u64( ctr6, chainIncrement8 );
+            ctr7 = vaddq_u64( ctr7, chainIncrement8 );
+
+            AES_GCM_ENCRYPT_8( pExpandedKey, c0, c1, c2, c3, c4, c5, c6, c7, pGhashSrc, 8, expandedKeyTable, todo, a0, a1, a2 );
+
+            pDst[0] = veorq_u64( pSrc[0], c0 );
+            pDst[1] = veorq_u64( pSrc[1], c1 );
+            pDst[2] = veorq_u64( pSrc[2], c2 );
+            pDst[3] = veorq_u64( pSrc[3], c3 );
+            pDst[4] = veorq_u64( pSrc[4], c4 );
+            pDst[5] = veorq_u64( pSrc[5], c5 );
+            pDst[6] = veorq_u64( pSrc[6], c6 );
+            pDst[7] = veorq_u64( pSrc[7], c7 );
+
+            pDst  += 8;
+            pSrc  += 8;
+            nBlocks -= 8;
+
+            if (todo == 0)
+            {
+                CLMUL_3_POST( a0, a1, a2 );
+                MODREDUCE( vMultiplicationConstant, a0, a1, a2, state );
+
+                todo = SYMCRYPT_MIN( nBlocks, SYMCRYPT_GHASH_PMULL_HPOWERS );
+                CLMUL_3( state, GHASH_H_POWER(expandedKeyTable, todo), GHASH_Hx_POWER(expandedKeyTable, todo), a0, a1, a2 );
+            }
+        }
+
+        // We now have at least 8 blocks of encrypted data to GHASH and at most 7 blocks left to encrypt
+        // Do 8 blocks of GHASH in parallel with generating 0, 4, or 8 AES-CTR blocks for tail encryption
+        nBlocks -= 8;
+        if (nBlocks > 0)
+        {
+            c0 = vrev64q_u8( ctr0 );
+            c1 = vrev64q_u8( ctr1 );
+            c2 = vrev64q_u8( ctr2 );
+            c3 = vrev64q_u8( ctr3 );
+
+            if (nBlocks > 4)
+            {
+                // Do 8 rounds of AES-CTR for tail in parallel with 8 rounds of GHASH
+                c4 = vrev64q_u8( ctr4 );
+                c5 = vrev64q_u8( ctr5 );
+                c6 = vrev64q_u8( ctr6 );
+
+                AES_GCM_ENCRYPT_8( pExpandedKey, c0, c1, c2, c3, c4, c5, c6, c7, pGhashSrc, 8, expandedKeyTable, todo, a0, a1, a2 );
+            }
+            else
+            {
+                // Do 4 rounds of AES-CTR for tail in parallel with 8 rounds of GHASH
+                AES_GCM_ENCRYPT_4( pExpandedKey, c0, c1, c2, c3, pGhashSrc, 8, expandedKeyTable, todo, a0, a1, a2 );
+            }
+
+            if( todo == 0)
+            {
+                CLMUL_3_POST( a0, a1, a2 );
+                MODREDUCE( vMultiplicationConstant, a0, a1, a2, state );
+
+                todo = SYMCRYPT_MIN( nBlocks, SYMCRYPT_GHASH_PMULL_HPOWERS );
+                CLMUL_3( state, GHASH_H_POWER(expandedKeyTable, todo), GHASH_Hx_POWER(expandedKeyTable, todo), a0, a1, a2 );
+            }
+        }
+        else
+        {
+            // Just do the final 8 rounds of GHASH
+            for( todo=8; todo>0; todo-- )
+            {
+                r0x = vrev64q_u8( pGhashSrc[0] );
+                r0 = vextq_u8( r0x, r0x, 8 );
+                r0x = veorq_u8( r0, r0x );
+                pGhashSrc++;
+
+                CLMUL_ACCX_3( r0, r0x, GHASH_H_POWER(expandedKeyTable, todo), GHASH_Hx_POWER(expandedKeyTable, todo), a0, a1, a2 );
+            }
+
+            CLMUL_3_POST( a0, a1, a2 );
+            MODREDUCE( vMultiplicationConstant, a0, a1, a2, state );
+        }
+    }
+
+    if( nBlocks > 0 )
+    {
+        // Encrypt 1-7 blocks with pre-generated AES-CTR blocks and GHASH the results
+        while( nBlocks >= 2 )
+        {
+            ctr0 = vaddq_u64( ctr0, chainIncrement2 );
+
+            r0 = veorq_u64( pSrc[0], c0 );
+            r1 = veorq_u64( pSrc[1], c1 );
+
+            pDst[0] = r0;
+            pDst[1] = r1;
+
+            r0x = vrev64q_u8( r0 );
+            r1x = vrev64q_u8( r1 );
+            r0 = vextq_u8( r0x, r0x, 8 );
+            r1 = vextq_u8( r1x, r1x, 8 );
+            r0x = veorq_u8( r0, r0x );
+            r1x = veorq_u8( r1, r1x );
+
+            CLMUL_ACCX_3( r0, r0x, GHASH_H_POWER(expandedKeyTable, todo - 0), GHASH_Hx_POWER(expandedKeyTable, todo - 0), a0, a1, a2 );
+            CLMUL_ACCX_3( r1, r1x, GHASH_H_POWER(expandedKeyTable, todo - 1), GHASH_Hx_POWER(expandedKeyTable, todo - 1), a0, a1, a2 );
+
+            pDst    += 2;
+            pSrc    += 2;
+            todo    -= 2;
+            nBlocks -= 2;
+            c0 = c2;
+            c1 = c3;
+            c2 = c4;
+            c3 = c5;
+            c4 = c6;
+        }
+
+        if( nBlocks > 0 )
+        {
+            ctr0 = vaddq_u64( ctr0, chainIncrement1 );
+
+            r0 = veorq_u64( pSrc[0], c0 );
+            pDst[0] = r0;
+            r0x = vrev64q_u8( r0 );
+            r0 = vextq_u8( r0x, r0x, 8 );
+            r0x = veorq_u8( r0, r0x );
+
+            CLMUL_ACCX_3( r0, r0x, GHASH_H_POWER(expandedKeyTable, 1), GHASH_Hx_POWER(expandedKeyTable, 1), a0, a1, a2 );
+        }
+
+        CLMUL_3_POST( a0, a1, a2 );
+        MODREDUCE( vMultiplicationConstant, a0, a1, a2, state );
+    }
+
+    chain = vrev64q_u8( ctr0 );
+    *(__n128 *)pbChainingValue = chain;
+    *(__n128 *)pState = state;
+}
+
+// This call is functionally identical to:
+// SymCryptGHashAppendDataPmull(expandedKeyTable,
+//                              pState,
+//                              pbSrc,
+//                              cbData );
+// SymCryptAesCtrMsb64Neon( pExpandedKey,
+//                          pbChainingValue,
+//                          pbSrc,
+//                          pbDst,
+//                          cbData );
+VOID
+SYMCRYPT_CALL
+SymCryptAesGcmDecryptStitchedNeon(
+    _In_                                    PCSYMCRYPT_AES_EXPANDED_KEY pExpandedKey,
+    _In_reads_( SYMCRYPT_AES_BLOCK_SIZE )   PBYTE                       pbChainingValue,
+    _In_reads_( SYMCRYPT_GF128_FIELD_SIZE ) PCSYMCRYPT_GF128_ELEMENT    expandedKeyTable,
+    _Inout_                                 PSYMCRYPT_GF128_ELEMENT     pState,
+    _In_reads_( cbData )                    PCBYTE                      pbSrc,
+    _Out_writes_( cbData )                  PBYTE                       pbDst,
+                                            SIZE_T                      cbData )
+{
+    __n128          chain = *(__n128 *)pbChainingValue;
+    const __n128 *  pSrc = (const __n128 *) pbSrc;
+    const __n128 *  pGhashSrc = (const __n128 *) pbSrc;
+    __n128 *        pDst = (__n128 *) pbDst;
+
+    // See section 6.7.8 of the C standard for details on this initializer usage.
+    const __n128 chainIncrement1 = (__n128) {.n128_u64 = {0, 1}};   // use {0,1} to initialize the n128_u64 element of the __n128 union.
+    const __n128 chainIncrement2 = (__n128) {.n128_u64 = {0, 2}};
+    const __n128 chainIncrement8 = (__n128) {.n128_u64 = {0, 8}};
+
+    __n128 ctr0, ctr1, ctr2, ctr3, ctr4, ctr5, ctr6, ctr7;
+    __n128 c0, c1, c2, c3, c4, c5, c6, c7;
+
+    __n128 state;
+    __n128 a0, a1, a2;
+    const __n64 vMultiplicationConstant = (__n64) {.n64_u64 = {0xc200000000000000}};
+    SIZE_T nBlocks = cbData / SYMCRYPT_GF128_BLOCK_SIZE;
+    SIZE_T todo;
+
+    // Our chain variable is in integer format, not the MSBfirst format loaded from memory.
+    ctr0 = vrev64q_u8( chain );
+    ctr1 = vaddq_u64( ctr0, chainIncrement1 );
+    ctr2 = vaddq_u64( ctr0, chainIncrement2 );
+    ctr3 = vaddq_u64( ctr1, chainIncrement2 );
+    ctr4 = vaddq_u64( ctr2, chainIncrement2 );
+    ctr5 = vaddq_u64( ctr3, chainIncrement2 );
+    ctr6 = vaddq_u64( ctr4, chainIncrement2 );
+    ctr7 = vaddq_u64( ctr5, chainIncrement2 );
+
+    state = *(__n128 *) pState;
+
+    todo = SYMCRYPT_MIN( nBlocks, SYMCRYPT_GHASH_PMULL_HPOWERS );
+
+    CLMUL_3( state, GHASH_H_POWER(expandedKeyTable, todo), GHASH_Hx_POWER(expandedKeyTable, todo), a0, a1, a2 );
+
+    while( nBlocks >= 8 )
+    {
+        // In this loop we always have 8 blocks to decrypt and GHASH
+        c0 = vrev64q_u8( ctr0 );
+        c1 = vrev64q_u8( ctr1 );
+        c2 = vrev64q_u8( ctr2 );
+        c3 = vrev64q_u8( ctr3 );
+        c4 = vrev64q_u8( ctr4 );
+        c5 = vrev64q_u8( ctr5 );
+        c6 = vrev64q_u8( ctr6 );
+        c7 = vrev64q_u8( ctr7 );
+
+        ctr0 = vaddq_u64( ctr0, chainIncrement8 );
+        ctr1 = vaddq_u64( ctr1, chainIncrement8 );
+        ctr2 = vaddq_u64( ctr2, chainIncrement8 );
+        ctr3 = vaddq_u64( ctr3, chainIncrement8 );
+        ctr4 = vaddq_u64( ctr4, chainIncrement8 );
+        ctr5 = vaddq_u64( ctr5, chainIncrement8 );
+        ctr6 = vaddq_u64( ctr6, chainIncrement8 );
+        ctr7 = vaddq_u64( ctr7, chainIncrement8 );
+
+        AES_GCM_ENCRYPT_8( pExpandedKey, c0, c1, c2, c3, c4, c5, c6, c7, pGhashSrc, 8, expandedKeyTable, todo, a0, a1, a2 );
+
+        pDst[0] = veorq_u64( pSrc[0], c0 );
+        pDst[1] = veorq_u64( pSrc[1], c1 );
+        pDst[2] = veorq_u64( pSrc[2], c2 );
+        pDst[3] = veorq_u64( pSrc[3], c3 );
+        pDst[4] = veorq_u64( pSrc[4], c4 );
+        pDst[5] = veorq_u64( pSrc[5], c5 );
+        pDst[6] = veorq_u64( pSrc[6], c6 );
+        pDst[7] = veorq_u64( pSrc[7], c7 );
+
+        pDst  += 8;
+        pSrc  += 8;
+        nBlocks -= 8;
+
+        if (todo == 0)
+        {
+            CLMUL_3_POST( a0, a1, a2 );
+            MODREDUCE( vMultiplicationConstant, a0, a1, a2, state );
+
+            if ( nBlocks > 0 )
+            {
+                todo = SYMCRYPT_MIN( nBlocks, SYMCRYPT_GHASH_PMULL_HPOWERS );
+                CLMUL_3( state, GHASH_H_POWER(expandedKeyTable, todo), GHASH_Hx_POWER(expandedKeyTable, todo), a0, a1, a2 );
+            }
+        }
+    }
+
+    if( nBlocks > 0 )
+    {
+        // We have 1-7 blocks to GHASH and decrypt
+        // Do the exact number of GHASH blocks we need in parallel with generating either 4 or 8 blocks of AES-CTR
+        c0 = vrev64q_u8( ctr0 );
+        c1 = vrev64q_u8( ctr1 );
+        c2 = vrev64q_u8( ctr2 );
+        c3 = vrev64q_u8( ctr3 );
+
+        if( nBlocks > 4 )
+        {
+            c4 = vrev64q_u8( ctr4 );
+            c5 = vrev64q_u8( ctr5 );
+            c6 = vrev64q_u8( ctr6 );
+
+            AES_GCM_ENCRYPT_8( pExpandedKey, c0, c1, c2, c3, c4, c5, c6, c7, pGhashSrc, nBlocks, expandedKeyTable, todo, a0, a1, a2 );
+        } else {
+            AES_GCM_ENCRYPT_4( pExpandedKey, c0, c1, c2, c3, pGhashSrc, nBlocks, expandedKeyTable, todo, a0, a1, a2 );
+        }
+        CLMUL_3_POST( a0, a1, a2 );
+        MODREDUCE( vMultiplicationConstant, a0, a1, a2, state );
+
+        // Decrypt 1-7 blocks with pre-generated AES-CTR blocks
+        while( nBlocks >= 2 )
+        {
+            ctr0 = vaddq_u64( ctr0, chainIncrement2 );
+
+            pDst[0] = veorq_u64( pSrc[0], c0 );
+            pDst[1] = veorq_u64( pSrc[1], c1 );
+
+            pDst    += 2;
+            pSrc    += 2;
+            nBlocks -= 2;
+            c0 = c2;
+            c1 = c3;
+            c2 = c4;
+            c3 = c5;
+            c4 = c6;
+        }
+
+        if( nBlocks > 0 )
+        {
+            ctr0 = vaddq_u64( ctr0, chainIncrement1 );
+
+            pDst[0] = veorq_u64( pSrc[0], c0 );
+        }
+    }
+
+    chain = vrev64q_u8( ctr0 );
+    *(__n128 *)pbChainingValue = chain;
+    *(__n128 *)pState = state;
+}
 
 #endif

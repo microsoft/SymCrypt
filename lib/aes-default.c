@@ -32,6 +32,8 @@ const SYMCRYPT_BLOCKCIPHER SymCryptAesBlockCipherNoOpt = {
     NULL,
     NULL,
     NULL,
+    NULL,
+    NULL,
 
     SYMCRYPT_AES_BLOCK_SIZE,
     sizeof( SYMCRYPT_AES_EXPANDED_KEY ),
@@ -188,8 +190,8 @@ SymCryptAesCbcEncrypt(
     if( SYMCRYPT_CPU_FEATURES_PRESENT( SYMCRYPT_CPU_FEATURES_FOR_AESNI_CODE ) &&
         SymCryptSaveXmm( &SaveData ) == SYMCRYPT_NO_ERROR )
     {
-            SymCryptAesCbcEncryptXmm( pExpandedKey, pbChainingValue, pbSrc, pbDst, cbData );
-            SymCryptRestoreXmm( &SaveData );
+        SymCryptAesCbcEncryptXmm( pExpandedKey, pbChainingValue, pbSrc, pbDst, cbData );
+        SymCryptRestoreXmm( &SaveData );
     } else {
         SymCryptAesCbcEncryptAsm( pExpandedKey, pbChainingValue, pbSrc, pbDst, cbData );
     }
@@ -229,8 +231,8 @@ SymCryptAesCbcDecrypt(
     if( SYMCRYPT_CPU_FEATURES_PRESENT( SYMCRYPT_CPU_FEATURES_FOR_AESNI_CODE ) &&
         SymCryptSaveXmm( &SaveData ) == SYMCRYPT_NO_ERROR )
     {
-            SymCryptAesCbcDecryptXmm( pExpandedKey, pbChainingValue, pbSrc, pbDst, cbData );
-            SymCryptRestoreXmm( &SaveData );
+        SymCryptAesCbcDecryptXmm( pExpandedKey, pbChainingValue, pbSrc, pbDst, cbData );
+        SymCryptRestoreXmm( &SaveData );
     } else {
         SymCryptAesCbcDecryptAsm( pExpandedKey, pbChainingValue, pbSrc, pbDst, cbData );
     }
@@ -402,5 +404,415 @@ SymCryptAesCtrMsb64(
 #else
     SYMCRYPT_ASSERT( SymCryptAesBlockCipherNoOpt.blockSize == SYMCRYPT_AES_BLOCK_SIZE );        // keep Prefast happy
     SymCryptCtrMsb64( &SymCryptAesBlockCipherNoOpt, pExpandedKey, pbChainingValue, pbSrc, pbDst, cbData );
+#endif
+}
+
+VOID
+SYMCRYPT_CALL
+SymCryptAesGcmEncryptPartOnePass(
+    _Inout_                 PSYMCRYPT_GCM_STATE pState,
+    _In_reads_( cbData )    PCBYTE              pbSrc,
+    _Out_writes_( cbData )  PBYTE               pbDst,
+                            SIZE_T              cbData )
+{
+    SIZE_T      bytesToProcess;
+
+    //
+    // We have entered the encrypt phase, the AAD has been padded to be a multiple of block size
+    // We know that the bytes still to use in the key stream buffer and the bytes left to fill the
+    // macBlock will be the same in the context of this function
+    //
+    SYMCRYPT_ASSERT( (pState->cbData & SYMCRYPT_GCM_BLOCK_MOD_MASK) == pState->bytesInMacBlock );
+
+    //
+    // We update pState->cbData once before we modify cbData.
+    // pState->cbData is not used in the rest of this function
+    //
+    SYMCRYPT_ASSERT( pState->cbData + cbData <= SYMCRYPT_GCM_MAX_DATA_SIZE );
+    pState->cbData += cbData;
+
+    if( pState->bytesInMacBlock > 0 )
+    {
+        bytesToProcess = SYMCRYPT_MIN( cbData, SYMCRYPT_GCM_BLOCK_SIZE - pState->bytesInMacBlock );
+        SymCryptXorBytes(
+            pbSrc,
+            &pState->keystreamBlock[pState->bytesInMacBlock],
+            &pState->macBlock[pState->bytesInMacBlock],
+            bytesToProcess );
+        memcpy( pbDst, &pState->macBlock[pState->bytesInMacBlock], bytesToProcess );
+        pbSrc += bytesToProcess;
+        pbDst += bytesToProcess;
+        cbData -= bytesToProcess;
+        pState->bytesInMacBlock += bytesToProcess;
+
+        if( pState->bytesInMacBlock == SYMCRYPT_GCM_BLOCK_SIZE )
+        {
+            SymCryptGHashAppendData(    &pState->pKey->ghashKey,
+                                        &pState->ghashState,
+                                        &pState->macBlock[0],
+                                        SYMCRYPT_GCM_BLOCK_SIZE );
+            pState->bytesInMacBlock = 0;
+        }
+
+        //
+        // If there are bytes left in the key stream buffer, then cbData == 0 and we're done.
+        // If we used up all the bytes, then we are fine, no need to compute the next key stream block
+        //
+    }
+
+    if( cbData >= SYMCRYPT_GCM_BLOCK_SIZE )
+    {
+        bytesToProcess = cbData & SYMCRYPT_GCM_BLOCK_ROUND_MASK;
+
+        //
+        // We use a Gcm function that increments the CTR by 64 bits, rather than the 32 bits that GCM requires.
+        // As we only support 12-byte nonces, the 32-bit counter never overflows, and we can safely use
+        // the 64-bit incrementing primitive.
+        // If we ever support other nonce sizes this is going to be a big problem.
+        // You can't fake a 32-bit counter using a 64-bit counter function without side-channels that expose
+        // information about the current counter value.
+        // With other nonce sizes the actual counter value itself is not public, so we can't expose that.
+        // We can do two things:
+        // - create SymCryptAesGcmEncryptXXX32
+        // - Accept that we leak information about the counter value; after all it is not treated as a
+        //   secret when the nonce is 12 bytes.
+        //
+        SYMCRYPT_ASSERT( pState->pKey->pBlockCipher->blockSize == SYMCRYPT_GCM_BLOCK_SIZE );
+
+#if SYMCRYPT_CPU_AMD64
+        if( SYMCRYPT_CPU_FEATURES_PRESENT( SYMCRYPT_CPU_FEATURES_FOR_AESNI_CODE | SYMCRYPT_CPU_FEATURE_VAES_256 ) ) {
+            SymCryptAesGcmEncryptStitchedYmm_2048(
+                &pState->pKey->blockcipherKey.aes,
+                &pState->counterBlock[0],
+                &pState->pKey->ghashKey.table[0],
+                &pState->ghashState,
+                pbSrc,
+                pbDst,
+                bytesToProcess );
+        } else {
+            SymCryptAesGcmEncryptStitchedXmm(
+                &pState->pKey->blockcipherKey.aes,
+                &pState->counterBlock[0],
+                &pState->pKey->ghashKey.table[0],
+                &pState->ghashState,
+                pbSrc,
+                pbDst,
+                bytesToProcess );
+        }
+
+#elif SYMCRYPT_CPU_X86
+        SymCryptAesGcmEncryptStitchedXmm(
+            &pState->pKey->blockcipherKey.aes,
+            &pState->counterBlock[0],
+            (PSYMCRYPT_GF128_ELEMENT)&pState->pKey->ghashKey.tableSpace[pState->pKey->ghashKey.tableOffset],
+            &pState->ghashState,
+            pbSrc,
+            pbDst,
+            bytesToProcess );
+
+#elif SYMCRYPT_CPU_ARM64
+        SymCryptAesGcmEncryptStitchedNeon(
+            &pState->pKey->blockcipherKey.aes,
+            &pState->counterBlock[0],
+            &pState->pKey->ghashKey.table[0],
+            &pState->ghashState,
+            pbSrc,
+            pbDst,
+            bytesToProcess );
+
+#else
+        SymCryptAesCtrMsb64(&pState->pKey->blockcipherKey.aes,
+                            &pState->counterBlock[0],
+                            pbSrc,
+                            pbDst,
+                            cbData );
+        //
+        // We break the read-once/write once rule here by reading the pbDst data back.
+        // In this particular situation this is safe, and avoiding it is expensive as it
+        // requires an extra copy and an extra memory buffer.
+        // The first write exposes the GCM key stream, independent of the underlying data that
+        // we are processing. From an attacking point of view we can think of this as literally
+        // handing over the key stream. So encryption consists of two steps:
+        // - hand over the key stream
+        // - MAC some ciphertext
+        // In this view (which has equivalent security properties to GCM) is obviously doesn't
+        // matter that we read pbDst back.
+        //
+        SymCryptGHashAppendData(&pState->pKey->ghashKey,
+                                &pState->ghashState,
+                                pbDst,
+                                cbData );
+
+#endif
+
+        pbSrc += bytesToProcess;
+        pbDst += bytesToProcess;
+        cbData -= bytesToProcess;
+    }
+
+    if( cbData > 0 )
+    {
+        SymCryptWipeKnownSize( &pState->keystreamBlock[0], SYMCRYPT_GCM_BLOCK_SIZE );
+
+        SYMCRYPT_ASSERT( pState->pKey->pBlockCipher->blockSize == SYMCRYPT_GCM_BLOCK_SIZE );
+        SymCryptAesCtrMsb64(&pState->pKey->blockcipherKey.aes,
+                            &pState->counterBlock[0],
+                            &pState->keystreamBlock[0],
+                            &pState->keystreamBlock[0],
+                            SYMCRYPT_GCM_BLOCK_SIZE );
+
+        SymCryptXorBytes( &pState->keystreamBlock[0], pbSrc, &pState->macBlock[0], cbData );
+        memcpy( pbDst, &pState->macBlock[0], cbData );
+        pState->bytesInMacBlock = cbData;
+
+        //
+        // pState->cbData contains the data length after this call already, so it knows how many
+        // bytes are left in the keystream block
+        //
+    }
+}
+
+VOID
+SYMCRYPT_CALL
+SymCryptAesGcmDecryptPartOnePass(
+    _Inout_                 PSYMCRYPT_GCM_STATE pState,
+    _In_reads_( cbData )    PCBYTE              pbSrc,
+    _Out_writes_( cbData )  PBYTE               pbDst,
+                            SIZE_T              cbData )
+{
+    SIZE_T      bytesToProcess;
+
+    //
+    // We have entered the decrypt phase, the AAD has been padded to be a multiple of block size
+    // We know that the bytes still to use in the key stream buffer and the bytes left to fill the
+    // macBlock will be the same in the context of this function
+    //
+    SYMCRYPT_ASSERT( (pState->cbData & SYMCRYPT_GCM_BLOCK_MOD_MASK) == pState->bytesInMacBlock );
+
+    //
+    // We update pState->cbData once before we modify cbData.
+    // pState->cbData is not used in the rest of this function
+    //
+    SYMCRYPT_ASSERT( pState->cbData + cbData <= SYMCRYPT_GCM_MAX_DATA_SIZE );
+    pState->cbData += cbData;
+
+    if( pState->bytesInMacBlock > 0 )
+    {
+        bytesToProcess = SYMCRYPT_MIN( cbData, SYMCRYPT_GCM_BLOCK_SIZE - pState->bytesInMacBlock );
+        memcpy( &pState->macBlock[pState->bytesInMacBlock], pbSrc, bytesToProcess );
+        SymCryptXorBytes(
+            &pState->keystreamBlock[pState->bytesInMacBlock],
+            &pState->macBlock[pState->bytesInMacBlock],
+            pbDst,
+            bytesToProcess );
+
+        pbSrc += bytesToProcess;
+        pbDst += bytesToProcess;
+        cbData -= bytesToProcess;
+        pState->bytesInMacBlock += bytesToProcess;
+
+        if( pState->bytesInMacBlock == SYMCRYPT_GCM_BLOCK_SIZE )
+        {
+            SymCryptGHashAppendData(    &pState->pKey->ghashKey,
+                                        &pState->ghashState,
+                                        &pState->macBlock[0],
+                                        SYMCRYPT_GCM_BLOCK_SIZE );
+            pState->bytesInMacBlock = 0;
+        }
+
+        //
+        // If there are bytes left in the key stream buffer, then cbData == 0 and we're done.
+        // If we used up all the bytes, then we are fine, no need to compute the next key stream block
+        //
+    }
+
+    if( cbData >= SYMCRYPT_GCM_BLOCK_SIZE )
+    {
+        bytesToProcess = cbData & SYMCRYPT_GCM_BLOCK_ROUND_MASK;
+
+        //
+        // We use a Gcm function that increments the CTR by 64 bits, rather than the 32 bits that GCM requires.
+        // As we only support 12-byte nonces, the 32-bit counter never overflows, and we can safely use
+        // the 64-bit incrementing primitive.
+        // If we ever support other nonce sizes this is going to be a big problem.
+        // You can't fake a 32-bit counter using a 64-bit counter function without side-channels that expose
+        // information about the current counter value.
+        // With other nonce sizes the actual counter value itself is not public, so we can't expose that.
+        // We can do two things:
+        // - create SymCryptAesGcmDecryptXXX32
+        // - Accept that we leak information about the counter value; after all it is not treated as a
+        //   secret when the nonce is 12 bytes.
+        //
+        SYMCRYPT_ASSERT( pState->pKey->pBlockCipher->blockSize == SYMCRYPT_GCM_BLOCK_SIZE );
+
+#if SYMCRYPT_CPU_AMD64
+        if( SYMCRYPT_CPU_FEATURES_PRESENT( SYMCRYPT_CPU_FEATURES_FOR_AESNI_CODE | SYMCRYPT_CPU_FEATURE_VAES_256 ) ) {
+            SymCryptAesGcmDecryptStitchedYmm_2048(
+                &pState->pKey->blockcipherKey.aes,
+                &pState->counterBlock[0],
+                &pState->pKey->ghashKey.table[0],
+                &pState->ghashState,
+                pbSrc,
+                pbDst,
+                bytesToProcess );
+        } else {
+            SymCryptAesGcmDecryptStitchedXmm(
+                &pState->pKey->blockcipherKey.aes,
+                &pState->counterBlock[0],
+                &pState->pKey->ghashKey.table[0],
+                &pState->ghashState,
+                pbSrc,
+                pbDst,
+                bytesToProcess );
+        }
+
+#elif SYMCRYPT_CPU_X86
+        SymCryptAesGcmDecryptStitchedXmm(
+            &pState->pKey->blockcipherKey.aes,
+            &pState->counterBlock[0],
+            (PSYMCRYPT_GF128_ELEMENT)&pState->pKey->ghashKey.tableSpace[pState->pKey->ghashKey.tableOffset],
+            &pState->ghashState,
+            pbSrc,
+            pbDst,
+            bytesToProcess );
+
+#elif SYMCRYPT_CPU_ARM64
+        SymCryptAesGcmDecryptStitchedNeon(
+            &pState->pKey->blockcipherKey.aes,
+            &pState->counterBlock[0],
+            &pState->pKey->ghashKey.table[0],
+            &pState->ghashState,
+            pbSrc,
+            pbDst,
+            bytesToProcess );
+
+#else
+        SymCryptGHashAppendData(&pState->pKey->ghashKey,
+                                &pState->ghashState,
+                                pbSrc,
+                                cbData );
+        //
+        // Do the actual decryption
+        // This violates the read-once rule, but it is safe for the same reasons as above
+        // in the encryption case.
+        //
+        SymCryptAesCtrMsb64(&pState->pKey->blockcipherKey.aes,
+                            &pState->counterBlock[0],
+                            pbSrc,
+                            pbDst,
+                            cbData );
+
+#endif
+        pbSrc += bytesToProcess;
+        pbDst += bytesToProcess;
+        cbData -= bytesToProcess;
+    }
+
+    if( cbData > 0 )
+    {
+        SymCryptWipeKnownSize( &pState->keystreamBlock[0], SYMCRYPT_GCM_BLOCK_SIZE );
+
+        SYMCRYPT_ASSERT( pState->pKey->pBlockCipher->blockSize == SYMCRYPT_GCM_BLOCK_SIZE );
+        SymCryptAesCtrMsb64(&pState->pKey->blockcipherKey.aes,
+                            &pState->counterBlock[0],
+                            &pState->keystreamBlock[0],
+                            &pState->keystreamBlock[0],
+                            SYMCRYPT_GCM_BLOCK_SIZE );
+
+        memcpy( &pState->macBlock[0], pbSrc, cbData );
+        SymCryptXorBytes(
+            &pState->keystreamBlock[0],
+            &pState->macBlock[0],
+            pbDst,
+            cbData );
+
+        pState->bytesInMacBlock = cbData;
+
+        //
+        // pState->cbData contains the data length after this call already, so it knows how many
+        // bytes are left in the keystream block
+        //
+    }
+}
+
+VOID
+SYMCRYPT_CALL
+SymCryptAesGcmEncryptPart(
+    _Inout_                 PSYMCRYPT_GCM_STATE pState,
+    _In_reads_( cbData )    PCBYTE              pbSrc,
+    _Out_writes_( cbData )  PBYTE               pbDst,
+                            SIZE_T              cbData )
+{
+#if SYMCRYPT_CPU_AMD64
+    if( SYMCRYPT_CPU_FEATURES_PRESENT( SYMCRYPT_CPU_FEATURES_FOR_AESNI_CODE | CPU_FEATURES_FOR_PCLMULQDQ ) )
+    {
+        SymCryptAesGcmEncryptPartOnePass( pState, pbSrc, pbDst, cbData );
+    } else {
+        SymCryptGcmEncryptPartTwoPass( pState, pbSrc, pbDst, cbData );
+    }
+
+#elif SYMCRYPT_CPU_X86
+    SYMCRYPT_EXTENDED_SAVE_DATA  SaveData;
+
+    if( SYMCRYPT_CPU_FEATURES_PRESENT( SYMCRYPT_CPU_FEATURES_FOR_AESNI_CODE | CPU_FEATURES_FOR_PCLMULQDQ ) &&
+        SymCryptSaveXmm( &SaveData ) == SYMCRYPT_NO_ERROR )
+    {
+        SymCryptAesGcmEncryptPartOnePass( pState, pbSrc, pbDst, cbData );
+        SymCryptRestoreXmm( &SaveData );
+    } else {
+        SymCryptGcmEncryptPartTwoPass( pState, pbSrc, pbDst, cbData );
+    }
+
+#elif SYMCRYPT_CPU_ARM64
+    if( SYMCRYPT_CPU_FEATURES_PRESENT( SYMCRYPT_CPU_FEATURE_NEON_AES ) )
+    {
+        SymCryptAesGcmEncryptPartOnePass( pState, pbSrc, pbDst, cbData );
+    } else {
+        SymCryptGcmEncryptPartTwoPass( pState, pbSrc, pbDst, cbData );
+    }
+
+#else
+    SymCryptGcmEncryptPartTwoPass( pState, pbSrc, pbDst, cbData );
+#endif
+}
+
+VOID
+SYMCRYPT_CALL
+SymCryptAesGcmDecryptPart(
+    _Inout_                 PSYMCRYPT_GCM_STATE pState,
+    _In_reads_( cbData )    PCBYTE              pbSrc,
+    _Out_writes_( cbData )  PBYTE               pbDst,
+                            SIZE_T              cbData )
+{
+#if SYMCRYPT_CPU_AMD64
+    if( SYMCRYPT_CPU_FEATURES_PRESENT( SYMCRYPT_CPU_FEATURES_FOR_AESNI_CODE | CPU_FEATURES_FOR_PCLMULQDQ ) )
+    {
+        SymCryptAesGcmDecryptPartOnePass( pState, pbSrc, pbDst, cbData );
+    } else {
+        SymCryptGcmDecryptPartTwoPass( pState, pbSrc, pbDst, cbData );
+    }
+
+#elif SYMCRYPT_CPU_X86
+    SYMCRYPT_EXTENDED_SAVE_DATA  SaveData;
+
+    if( SYMCRYPT_CPU_FEATURES_PRESENT( SYMCRYPT_CPU_FEATURES_FOR_AESNI_CODE | CPU_FEATURES_FOR_PCLMULQDQ ) &&
+        SymCryptSaveXmm( &SaveData ) == SYMCRYPT_NO_ERROR )
+    {
+        SymCryptAesGcmDecryptPartOnePass( pState, pbSrc, pbDst, cbData );
+        SymCryptRestoreXmm( &SaveData );
+    } else {
+        SymCryptGcmDecryptPartTwoPass( pState, pbSrc, pbDst, cbData );
+    }
+
+#elif SYMCRYPT_CPU_ARM64
+    if( SYMCRYPT_CPU_FEATURES_PRESENT( SYMCRYPT_CPU_FEATURE_NEON_AES | SYMCRYPT_CPU_FEATURE_NEON_PMULL ) )
+    {
+        SymCryptAesGcmDecryptPartOnePass( pState, pbSrc, pbDst, cbData );
+    } else {
+        SymCryptGcmDecryptPartTwoPass( pState, pbSrc, pbDst, cbData );
+    }
+
+#else
+    SymCryptGcmDecryptPartTwoPass( pState, pbSrc, pbDst, cbData );
 #endif
 }

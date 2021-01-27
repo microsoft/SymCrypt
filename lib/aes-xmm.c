@@ -74,7 +74,6 @@ SymCryptAesCreateDecryptionRoundKeyXmm(
 \
     roundkey = _mm_loadu_si128( (__m128i *) keyPtr ); \
     keyPtr ++; \
-\
     c0 = _mm_aesenc_si128( c0, roundkey ); \
 \
     while( keyPtr < keyLimit ) \
@@ -252,8 +251,8 @@ SymCryptAesCreateDecryptionRoundKeyXmm(
     keyPtr = pExpandedKey->RoundKey; \
     keyLimit = pExpandedKey->lastEncRoundKey; \
 \
-    /* _mm256_broadcast_ps which requires AVX. */ \
-    roundkeys =  _mm256_castps_si256( _mm256_broadcast_ps( (const __m128 *) keyPtr ) ); \
+    /* _mm256_broadcastsi128_si256 requires AVX2 */ \
+    roundkeys =  _mm256_broadcastsi128_si256( *( (const __m128i *) keyPtr ) ); \
     keyPtr ++; \
 \
     /* _mm256_xor_si256 requires AVX2 */ \
@@ -268,7 +267,7 @@ SymCryptAesCreateDecryptionRoundKeyXmm(
 \
     while( keyPtr < keyLimit ) \
     { \
-        roundkeys =  _mm256_castps_si256( _mm256_broadcast_ps( (const __m128 *) keyPtr ) ); \
+        roundkeys =  _mm256_broadcastsi128_si256( *( (const __m128i *) keyPtr ) ); \
         keyPtr ++; \
         c0 = _mm256_aesenc_epi128( c0, roundkeys ); \
         c1 = _mm256_aesenc_epi128( c1, roundkeys ); \
@@ -280,7 +279,7 @@ SymCryptAesCreateDecryptionRoundKeyXmm(
         c7 = _mm256_aesenc_epi128( c7, roundkeys ); \
     } \
 \
-    roundkeys =  _mm256_castps_si256( _mm256_broadcast_ps( (const __m128 *) keyPtr ) ); \
+    roundkeys =  _mm256_broadcastsi128_si256( *( (const __m128i *) keyPtr ) ); \
 \
     c0 = _mm256_aesenclast_epi128( c0, roundkeys ); \
     c1 = _mm256_aesenclast_epi128( c1, roundkeys ); \
@@ -453,8 +452,8 @@ SymCryptAesCreateDecryptionRoundKeyXmm(
     keyPtr = pExpandedKey->lastEncRoundKey; \
     keyLimit = pExpandedKey->lastDecRoundKey; \
 \
-    /* _mm256_broadcast_ps which requires AVX. */ \
-    roundkeys =  _mm256_castps_si256( _mm256_broadcast_ps( (const __m128 *) keyPtr ) ); \
+    /* _mm256_broadcastsi128_si256 requires AVX2 */ \
+    roundkeys =  _mm256_broadcastsi128_si256( *( (const __m128i *) keyPtr ) ); \
     keyPtr ++; \
 \
     /* _mm256_xor_si256 requires AVX2 */ \
@@ -469,7 +468,7 @@ SymCryptAesCreateDecryptionRoundKeyXmm(
 \
     while( keyPtr < keyLimit ) \
     { \
-        roundkeys =  _mm256_castps_si256( _mm256_broadcast_ps( (const __m128 *) keyPtr ) ); \
+        roundkeys =  _mm256_broadcastsi128_si256( *( (const __m128i *) keyPtr ) ); \
         keyPtr ++; \
         c0 = _mm256_aesdec_epi128( c0, roundkeys ); \
         c1 = _mm256_aesdec_epi128( c1, roundkeys ); \
@@ -481,7 +480,7 @@ SymCryptAesCreateDecryptionRoundKeyXmm(
         c7 = _mm256_aesdec_epi128( c7, roundkeys ); \
     } \
 \
-    roundkeys =  _mm256_castps_si256( _mm256_broadcast_ps( (const __m128 *) keyPtr ) ); \
+    roundkeys =  _mm256_broadcastsi128_si256( *( (const __m128i *) keyPtr ) ); \
 \
     c0 = _mm256_aesdeclast_epi128( c0, roundkeys ); \
     c1 = _mm256_aesdeclast_epi128( c1, roundkeys ); \
@@ -973,7 +972,7 @@ SymCryptAesCtrMsb64Xmm(
         _mm_storeu_si128( (__m128i *) (pbDst + 80), _mm_xor_si128( c5, _mm_loadu_si128( ( __m128i * ) (pbSrc + 80 ) ) ) );
         _mm_storeu_si128( (__m128i *) (pbDst + 96), _mm_xor_si128( c6, _mm_loadu_si128( ( __m128i * ) (pbSrc + 96 ) ) ) );
         _mm_storeu_si128( (__m128i *) (pbDst +112), _mm_xor_si128( c7, _mm_loadu_si128( ( __m128i * ) (pbSrc +112 ) ) ) );
-        pbDst  += 8 * SYMCRYPT_AES_BLOCK_SIZE ;
+        pbDst  += 8 * SYMCRYPT_AES_BLOCK_SIZE;
         pbSrc  += 8 * SYMCRYPT_AES_BLOCK_SIZE;
         cbData -= 8 * SYMCRYPT_AES_BLOCK_SIZE;
     }
@@ -1244,7 +1243,7 @@ VOID
 SYMCRYPT_CALL
 SymCryptXtsAesEncryptDataUnitXmm(
     _In_                                    PCSYMCRYPT_AES_EXPANDED_KEY pExpandedKey,
-    _Inout_updates_(SYMCRYPT_AES_BLOCK_SIZE)PBYTE                       pbTweakBlock,
+    _In_reads_( SYMCRYPT_AES_BLOCK_SIZE )   PBYTE                       pbTweakBlock,
     _In_reads_( cbData )                    PCBYTE                      pbSrc,
     _Out_writes_( cbData )                  PBYTE                       pbDst,
                                             SIZE_T                      cbData )
@@ -1318,7 +1317,7 @@ VOID
 SYMCRYPT_CALL
 SymCryptXtsAesDecryptDataUnitXmm(
     _In_                                    PCSYMCRYPT_AES_EXPANDED_KEY pExpandedKey,
-    _Inout_updates_(SYMCRYPT_AES_BLOCK_SIZE)PBYTE                       pbTweakBlock,
+    _In_reads_( SYMCRYPT_AES_BLOCK_SIZE )   PBYTE                       pbTweakBlock,
     _In_reads_( cbData )                    PCBYTE                      pbSrc,
     _Out_writes_( cbData )                  PBYTE                       pbDst,
                                             SIZE_T                      cbData )
@@ -1799,6 +1798,988 @@ SymCryptXtsAesDecryptDataUnitYmm_2048(
     }
     else {
         _mm256_zeroupper();
+    }
+}
+
+#include "ghash_definitions.h"
+
+#define AES_FULLROUND_4_GHASH_1( roundkey, keyPtr, c0, c1, c2, c3, r0, t0, t1, gHashPointer, byteReverseOrder, gHashExpandedKeyTable, todo, resl, resm, resh ) \
+{ \
+    roundkey = _mm_loadu_si128( (__m128i *) keyPtr ); \
+    keyPtr ++; \
+    c0 = _mm_aesenc_si128( c0, roundkey ); \
+    c1 = _mm_aesenc_si128( c1, roundkey ); \
+    c2 = _mm_aesenc_si128( c2, roundkey ); \
+    c3 = _mm_aesenc_si128( c3, roundkey ); \
+\
+    r0 = _mm_loadu_si128( (__m128i *) gHashPointer ); \
+    r0 = _mm_shuffle_epi8( r0, byteReverseOrder ); \
+    gHashPointer += 16; \
+\
+    t1 = _mm_loadu_si128( (__m128i *) &GHASH_H_POWER(gHashExpandedKeyTable, todo) ); \
+    t0 = _mm_clmulepi64_si128( r0, t1, 0x00 ); \
+    t1 = _mm_clmulepi64_si128( r0, t1, 0x11 ); \
+\
+    resl = _mm_xor_si128( resl, t0 ); \
+    resh = _mm_xor_si128( resh, t1 ); \
+\
+    t0 = _mm_srli_si128( r0, 8 ); \
+    r0 = _mm_xor_si128( r0, t0 ); \
+    t1 = _mm_loadu_si128( (__m128i *) &GHASH_Hx_POWER(gHashExpandedKeyTable, todo) ); \
+    t1 = _mm_clmulepi64_si128( r0, t1, 0x00 ); \
+\
+    resm = _mm_xor_si128( resm, t1 ); \
+    todo --; \
+};
+
+#define AES_GCM_ENCRYPT_4( pExpandedKey, c0, c1, c2, c3, gHashPointer, ghashRounds, byteReverseOrder, gHashExpandedKeyTable, todo, resl, resm, resh ) \
+{ \
+    const BYTE (*keyPtr)[4][4]; \
+    const BYTE (*keyLimit)[4][4]; \
+    __m128i roundkey; \
+    __m128i t0, t1; \
+    __m128i r0; \
+    int aesEncryptGhashLoop; \
+\
+    keyPtr = &pExpandedKey->RoundKey[0]; \
+    keyLimit = pExpandedKey->lastEncRoundKey; \
+\
+    roundkey = _mm_loadu_si128( (__m128i *) keyPtr ); \
+    keyPtr ++; \
+    c0 = _mm_xor_si128( c0, roundkey ); \
+    c1 = _mm_xor_si128( c1, roundkey ); \
+    c2 = _mm_xor_si128( c2, roundkey ); \
+    c3 = _mm_xor_si128( c3, roundkey ); \
+\
+    /* Do ghashRounds full rounds (AES-128|AES-192|AES-256) with stitched GHASH */ \
+    for( aesEncryptGhashLoop = 0; aesEncryptGhashLoop < ghashRounds; aesEncryptGhashLoop++ ) \
+    { \
+        AES_FULLROUND_4_GHASH_1( roundkey, keyPtr, c0, c1, c2, c3, r0, t0, t1, gHashPointer, byteReverseOrder, gHashExpandedKeyTable, todo, resl, resm, resh ); \
+    } \
+\
+    do \
+    { \
+        roundkey = _mm_loadu_si128( (__m128i *) keyPtr ); \
+        keyPtr ++; \
+        c0 = _mm_aesenc_si128( c0, roundkey ); \
+        c1 = _mm_aesenc_si128( c1, roundkey ); \
+        c2 = _mm_aesenc_si128( c2, roundkey ); \
+        c3 = _mm_aesenc_si128( c3, roundkey ); \
+    } while( keyPtr < keyLimit ); \
+\
+    roundkey = _mm_loadu_si128( (__m128i *) keyPtr ); \
+\
+    c0 = _mm_aesenclast_si128( c0, roundkey ); \
+    c1 = _mm_aesenclast_si128( c1, roundkey ); \
+    c2 = _mm_aesenclast_si128( c2, roundkey ); \
+    c3 = _mm_aesenclast_si128( c3, roundkey ); \
+};
+
+#define AES_FULLROUND_8_GHASH_1( roundkey, keyPtr, c0, c1, c2, c3, c4, c5, c6, c7, r0, t0, t1, gHashPointer, byteReverseOrder, gHashExpandedKeyTable, todo, resl, resm, resh ) \
+{ \
+    roundkey = _mm_loadu_si128( (__m128i *) keyPtr ); \
+    keyPtr ++; \
+    c0 = _mm_aesenc_si128( c0, roundkey ); \
+    c1 = _mm_aesenc_si128( c1, roundkey ); \
+    c2 = _mm_aesenc_si128( c2, roundkey ); \
+    c3 = _mm_aesenc_si128( c3, roundkey ); \
+    c4 = _mm_aesenc_si128( c4, roundkey ); \
+    c5 = _mm_aesenc_si128( c5, roundkey ); \
+    c6 = _mm_aesenc_si128( c6, roundkey ); \
+    c7 = _mm_aesenc_si128( c7, roundkey ); \
+\
+    r0 = _mm_loadu_si128( (__m128i *) gHashPointer ); \
+    r0 = _mm_shuffle_epi8( r0, byteReverseOrder ); \
+    gHashPointer += 16; \
+\
+    t1 = _mm_loadu_si128( (__m128i *) &GHASH_H_POWER(gHashExpandedKeyTable, todo) ); \
+    t0 = _mm_clmulepi64_si128( r0, t1, 0x00 ); \
+    t1 = _mm_clmulepi64_si128( r0, t1, 0x11 ); \
+\
+    resl = _mm_xor_si128( resl, t0 ); \
+    resh = _mm_xor_si128( resh, t1 ); \
+\
+    t0 = _mm_srli_si128( r0, 8 ); \
+    r0 = _mm_xor_si128( r0, t0 ); \
+    t1 = _mm_loadu_si128( (__m128i *) &GHASH_Hx_POWER(gHashExpandedKeyTable, todo) ); \
+    t1 = _mm_clmulepi64_si128( r0, t1, 0x00 ); \
+\
+    resm = _mm_xor_si128( resm, t1 ); \
+    todo --; \
+};
+
+#define AES_GCM_ENCRYPT_8( pExpandedKey, c0, c1, c2, c3, c4, c5, c6, c7, gHashPointer, ghashRounds, byteReverseOrder, gHashExpandedKeyTable, todo, resl, resm, resh ) \
+{ \
+    const BYTE (*keyPtr)[4][4]; \
+    const BYTE (*keyLimit)[4][4]; \
+    __m128i roundkey; \
+    __m128i t0, t1; \
+    __m128i r0; \
+    int aesEncryptGhashLoop; \
+\
+    keyPtr = &pExpandedKey->RoundKey[0]; \
+    keyLimit = pExpandedKey->lastEncRoundKey; \
+\
+    roundkey = _mm_loadu_si128( (__m128i *) keyPtr ); \
+    keyPtr ++; \
+    c0 = _mm_xor_si128( c0, roundkey ); \
+    c1 = _mm_xor_si128( c1, roundkey ); \
+    c2 = _mm_xor_si128( c2, roundkey ); \
+    c3 = _mm_xor_si128( c3, roundkey ); \
+    c4 = _mm_xor_si128( c4, roundkey ); \
+    c5 = _mm_xor_si128( c5, roundkey ); \
+    c6 = _mm_xor_si128( c6, roundkey ); \
+    c7 = _mm_xor_si128( c7, roundkey ); \
+\
+    /* Do ghashRounds full rounds (AES-128|AES-192|AES-256) with stitched GHASH */ \
+    for( aesEncryptGhashLoop = 0; aesEncryptGhashLoop < ghashRounds; aesEncryptGhashLoop++ ) \
+    { \
+        AES_FULLROUND_8_GHASH_1( roundkey, keyPtr, c0, c1, c2, c3, c4, c5, c6, c7, r0, t0, t1, gHashPointer, byteReverseOrder, gHashExpandedKeyTable, todo, resl, resm, resh ); \
+    } \
+\
+    do \
+    { \
+        roundkey = _mm_loadu_si128( (__m128i *) keyPtr ); \
+        keyPtr ++; \
+        c0 = _mm_aesenc_si128( c0, roundkey ); \
+        c1 = _mm_aesenc_si128( c1, roundkey ); \
+        c2 = _mm_aesenc_si128( c2, roundkey ); \
+        c3 = _mm_aesenc_si128( c3, roundkey ); \
+        c4 = _mm_aesenc_si128( c4, roundkey ); \
+        c5 = _mm_aesenc_si128( c5, roundkey ); \
+        c6 = _mm_aesenc_si128( c6, roundkey ); \
+        c7 = _mm_aesenc_si128( c7, roundkey ); \
+    } while( keyPtr < keyLimit ); \
+\
+    roundkey = _mm_loadu_si128( (__m128i *) keyPtr ); \
+\
+    c0 = _mm_aesenclast_si128( c0, roundkey ); \
+    c1 = _mm_aesenclast_si128( c1, roundkey ); \
+    c2 = _mm_aesenclast_si128( c2, roundkey ); \
+    c3 = _mm_aesenclast_si128( c3, roundkey ); \
+    c4 = _mm_aesenclast_si128( c4, roundkey ); \
+    c5 = _mm_aesenclast_si128( c5, roundkey ); \
+    c6 = _mm_aesenclast_si128( c6, roundkey ); \
+    c7 = _mm_aesenclast_si128( c7, roundkey ); \
+};
+
+// This call is functionally identical to:
+// SymCryptAesCtrMsb64Xmm( pExpandedKey,
+//                         pbChainingValue,
+//                         pbSrc,
+//                         pbDst,
+//                         cbData );
+// SymCryptGHashAppendDataPclmulqdq(   expandedKeyTable,
+//                                     pState,
+//                                     pbDst,
+//                                     cbData );
+VOID
+SYMCRYPT_CALL
+SymCryptAesGcmEncryptStitchedXmm(
+    _In_                                    PCSYMCRYPT_AES_EXPANDED_KEY pExpandedKey,
+    _In_reads_( SYMCRYPT_AES_BLOCK_SIZE )   PBYTE                       pbChainingValue,
+    _In_reads_( SYMCRYPT_GF128_FIELD_SIZE ) PCSYMCRYPT_GF128_ELEMENT    expandedKeyTable,
+    _Inout_                                 PSYMCRYPT_GF128_ELEMENT     pState,
+    _In_reads_( cbData )                    PCBYTE                      pbSrc,
+    _Out_writes_( cbData )                  PBYTE                       pbDst,
+                                            SIZE_T                      cbData )
+{
+    __m128i chain = _mm_loadu_si128( (__m128i *) pbChainingValue );
+
+    __m128i BYTE_REVERSE_ORDER = _mm_set_epi8(
+            0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15 );
+    __m128i vMultiplicationConstant = _mm_set_epi32( 0, 0, 0xc2000000, 0 );
+
+    __m128i chainIncrement1 = _mm_set_epi32( 0, 0, 0, 1 );
+    __m128i chainIncrement2 = _mm_set_epi32( 0, 0, 0, 2 );
+    __m128i chainIncrement8 = _mm_set_epi32( 0, 0, 0, 8 );
+
+    __m128i c0, c1, c2, c3, c4, c5, c6, c7;
+    __m128i r0, r1;
+
+    __m128i state;
+    __m128i a0, a1, a2;
+    SIZE_T nBlocks = cbData / SYMCRYPT_GF128_BLOCK_SIZE;
+    SIZE_T todo;
+    PCBYTE pbGhashSrc = pbDst;
+
+    chain = _mm_shuffle_epi8( chain, BYTE_REVERSE_ORDER );
+    state = _mm_loadu_si128( (__m128i *) pState );
+
+    todo = SYMCRYPT_MIN( nBlocks, SYMCRYPT_GHASH_PCLMULQDQ_HPOWERS );
+    CLMUL_3( state, GHASH_H_POWER(expandedKeyTable, todo), GHASH_Hx_POWER(expandedKeyTable, todo), a0, a1, a2 );
+
+    // Do 8 blocks of CTR either for tail (if total blocks <8) or for encryption of first 8 blocks
+    c0 = chain;
+    c1 = _mm_add_epi64( chain, chainIncrement1 );
+    c2 = _mm_add_epi64( chain, chainIncrement2 );
+    c3 = _mm_add_epi64( c1, chainIncrement2 );
+    c4 = _mm_add_epi64( c2, chainIncrement2 );
+    c5 = _mm_add_epi64( c3, chainIncrement2 );
+    c6 = _mm_add_epi64( c4, chainIncrement2 );
+    c7 = _mm_add_epi64( c5, chainIncrement2 );
+
+    c0 = _mm_shuffle_epi8( c0, BYTE_REVERSE_ORDER );
+    c1 = _mm_shuffle_epi8( c1, BYTE_REVERSE_ORDER );
+    c2 = _mm_shuffle_epi8( c2, BYTE_REVERSE_ORDER );
+    c3 = _mm_shuffle_epi8( c3, BYTE_REVERSE_ORDER );
+    c4 = _mm_shuffle_epi8( c4, BYTE_REVERSE_ORDER );
+    c5 = _mm_shuffle_epi8( c5, BYTE_REVERSE_ORDER );
+    c6 = _mm_shuffle_epi8( c6, BYTE_REVERSE_ORDER );
+    c7 = _mm_shuffle_epi8( c7, BYTE_REVERSE_ORDER );
+
+    AES_ENCRYPT_8( pExpandedKey, c0, c1, c2, c3, c4, c5, c6, c7 );
+
+    if( nBlocks >= 8 )
+    {
+        // Encrypt first 8 blocks - update chain
+        chain = _mm_add_epi64( chain, chainIncrement8 );
+
+        _mm_storeu_si128( (__m128i *) (pbDst +  0), _mm_xor_si128( c0, _mm_loadu_si128( ( __m128i * ) (pbSrc +  0) ) ) );
+        _mm_storeu_si128( (__m128i *) (pbDst + 16), _mm_xor_si128( c1, _mm_loadu_si128( ( __m128i * ) (pbSrc + 16) ) ) );
+        _mm_storeu_si128( (__m128i *) (pbDst + 32), _mm_xor_si128( c2, _mm_loadu_si128( ( __m128i * ) (pbSrc + 32) ) ) );
+        _mm_storeu_si128( (__m128i *) (pbDst + 48), _mm_xor_si128( c3, _mm_loadu_si128( ( __m128i * ) (pbSrc + 48) ) ) );
+        _mm_storeu_si128( (__m128i *) (pbDst + 64), _mm_xor_si128( c4, _mm_loadu_si128( ( __m128i * ) (pbSrc + 64) ) ) );
+        _mm_storeu_si128( (__m128i *) (pbDst + 80), _mm_xor_si128( c5, _mm_loadu_si128( ( __m128i * ) (pbSrc + 80) ) ) );
+        _mm_storeu_si128( (__m128i *) (pbDst + 96), _mm_xor_si128( c6, _mm_loadu_si128( ( __m128i * ) (pbSrc + 96) ) ) );
+        _mm_storeu_si128( (__m128i *) (pbDst +112), _mm_xor_si128( c7, _mm_loadu_si128( ( __m128i * ) (pbSrc +112) ) ) );
+
+        pbDst  += 8 * SYMCRYPT_AES_BLOCK_SIZE;
+        pbSrc  += 8 * SYMCRYPT_AES_BLOCK_SIZE;
+
+        while( nBlocks >= 16 )
+        {
+            // In this loop we always have 8 blocks to encrypt and we have already encrypted the previous 8 blocks ready for GHASH
+            c0 = chain;
+            c1 = _mm_add_epi64( chain, chainIncrement1 );
+            c2 = _mm_add_epi64( chain, chainIncrement2 );
+            c3 = _mm_add_epi64( c1, chainIncrement2 );
+            c4 = _mm_add_epi64( c2, chainIncrement2 );
+            c5 = _mm_add_epi64( c3, chainIncrement2 );
+            c6 = _mm_add_epi64( c4, chainIncrement2 );
+            c7 = _mm_add_epi64( c5, chainIncrement2 );
+            chain = _mm_add_epi64( c6, chainIncrement2 );
+
+            c0 = _mm_shuffle_epi8( c0, BYTE_REVERSE_ORDER );
+            c1 = _mm_shuffle_epi8( c1, BYTE_REVERSE_ORDER );
+            c2 = _mm_shuffle_epi8( c2, BYTE_REVERSE_ORDER );
+            c3 = _mm_shuffle_epi8( c3, BYTE_REVERSE_ORDER );
+            c4 = _mm_shuffle_epi8( c4, BYTE_REVERSE_ORDER );
+            c5 = _mm_shuffle_epi8( c5, BYTE_REVERSE_ORDER );
+            c6 = _mm_shuffle_epi8( c6, BYTE_REVERSE_ORDER );
+            c7 = _mm_shuffle_epi8( c7, BYTE_REVERSE_ORDER );
+
+            AES_GCM_ENCRYPT_8( pExpandedKey, c0, c1, c2, c3, c4, c5, c6, c7, pbGhashSrc, 8, BYTE_REVERSE_ORDER, expandedKeyTable, todo, a0, a1, a2 );
+
+            _mm_storeu_si128( (__m128i *) (pbDst +  0), _mm_xor_si128( c0, _mm_loadu_si128( ( __m128i * ) (pbSrc +  0) ) ) );
+            _mm_storeu_si128( (__m128i *) (pbDst + 16), _mm_xor_si128( c1, _mm_loadu_si128( ( __m128i * ) (pbSrc + 16) ) ) );
+            _mm_storeu_si128( (__m128i *) (pbDst + 32), _mm_xor_si128( c2, _mm_loadu_si128( ( __m128i * ) (pbSrc + 32) ) ) );
+            _mm_storeu_si128( (__m128i *) (pbDst + 48), _mm_xor_si128( c3, _mm_loadu_si128( ( __m128i * ) (pbSrc + 48) ) ) );
+            _mm_storeu_si128( (__m128i *) (pbDst + 64), _mm_xor_si128( c4, _mm_loadu_si128( ( __m128i * ) (pbSrc + 64) ) ) );
+            _mm_storeu_si128( (__m128i *) (pbDst + 80), _mm_xor_si128( c5, _mm_loadu_si128( ( __m128i * ) (pbSrc + 80) ) ) );
+            _mm_storeu_si128( (__m128i *) (pbDst + 96), _mm_xor_si128( c6, _mm_loadu_si128( ( __m128i * ) (pbSrc + 96) ) ) );
+            _mm_storeu_si128( (__m128i *) (pbDst +112), _mm_xor_si128( c7, _mm_loadu_si128( ( __m128i * ) (pbSrc +112) ) ) );
+
+            pbDst  += 8 * SYMCRYPT_AES_BLOCK_SIZE;
+            pbSrc  += 8 * SYMCRYPT_AES_BLOCK_SIZE;
+            nBlocks -= 8;
+
+            if( todo == 0 )
+            {
+                CLMUL_3_POST( a0, a1, a2 );
+                MODREDUCE( vMultiplicationConstant, a0, a1, a2, state );
+
+                todo = SYMCRYPT_MIN( nBlocks, SYMCRYPT_GHASH_PCLMULQDQ_HPOWERS );
+                CLMUL_3( state, GHASH_H_POWER(expandedKeyTable, todo), GHASH_Hx_POWER(expandedKeyTable, todo), a0, a1, a2 );
+            }
+        }
+
+        // We now have at least 8 blocks of encrypted data to GHASH and at most 7 blocks left to encrypt
+        // Do 8 blocks of GHASH in parallel with generating 0, 4, or 8 AES-CTR blocks for tail encryption
+        nBlocks -= 8;
+        if (nBlocks > 0)
+        {
+            c0 = chain;
+            c1 = _mm_add_epi64( chain, chainIncrement1 );
+            c2 = _mm_add_epi64( chain, chainIncrement2 );
+            c3 = _mm_add_epi64( c1, chainIncrement2 );
+            c4 = _mm_add_epi64( c2, chainIncrement2 );
+
+            c0 = _mm_shuffle_epi8( c0, BYTE_REVERSE_ORDER );
+            c1 = _mm_shuffle_epi8( c1, BYTE_REVERSE_ORDER );
+            c2 = _mm_shuffle_epi8( c2, BYTE_REVERSE_ORDER );
+            c3 = _mm_shuffle_epi8( c3, BYTE_REVERSE_ORDER );
+
+            if (nBlocks > 4)
+            {
+                // Do 8 rounds of AES-CTR for tail in parallel with 8 rounds of GHASH
+                c5 = _mm_add_epi64( c4, chainIncrement1 );
+                c6 = _mm_add_epi64( c4, chainIncrement2 );
+
+                c4 = _mm_shuffle_epi8( c4, BYTE_REVERSE_ORDER );
+                c5 = _mm_shuffle_epi8( c5, BYTE_REVERSE_ORDER );
+                c6 = _mm_shuffle_epi8( c6, BYTE_REVERSE_ORDER );
+
+                AES_GCM_ENCRYPT_8( pExpandedKey, c0, c1, c2, c3, c4, c5, c6, c7, pbGhashSrc, 8, BYTE_REVERSE_ORDER, expandedKeyTable, todo, a0, a1, a2 );
+            }
+            else
+            {
+                // Do 4 rounds of AES-CTR for tail in parallel with 8 rounds of GHASH
+                AES_GCM_ENCRYPT_4( pExpandedKey, c0, c1, c2, c3, pbGhashSrc, 8, BYTE_REVERSE_ORDER, expandedKeyTable, todo, a0, a1, a2 );
+            }
+
+            if( todo == 0)
+            {
+                CLMUL_3_POST( a0, a1, a2 );
+                MODREDUCE( vMultiplicationConstant, a0, a1, a2, state );
+
+                todo = SYMCRYPT_MIN( nBlocks, SYMCRYPT_GHASH_PCLMULQDQ_HPOWERS );
+                CLMUL_3( state, GHASH_H_POWER(expandedKeyTable, todo), GHASH_Hx_POWER(expandedKeyTable, todo), a0, a1, a2 );
+            }
+        }
+        else
+        {
+            // Just do the final 8 rounds of GHASH
+            for( todo=8; todo>0; todo-- )
+            {
+                r0 = _mm_shuffle_epi8( _mm_loadu_si128( (__m128i *) (pbGhashSrc +  0) ), BYTE_REVERSE_ORDER );
+                pbGhashSrc += SYMCRYPT_AES_BLOCK_SIZE;
+
+                CLMUL_ACC_3( r0, GHASH_H_POWER(expandedKeyTable, todo), GHASH_Hx_POWER(expandedKeyTable, todo), a0, a1, a2 );
+            }
+
+            CLMUL_3_POST( a0, a1, a2 );
+            MODREDUCE( vMultiplicationConstant, a0, a1, a2, state );
+        }
+    }
+
+    if( nBlocks > 0 )
+    {
+        // Encrypt 1-7 blocks with pre-generated AES-CTR blocks and GHASH the results
+        while( nBlocks >= 2 )
+        {
+            chain = _mm_add_epi64( chain, chainIncrement2 );
+
+            r0 = _mm_xor_si128( c0, _mm_loadu_si128( ( __m128i * ) (pbSrc +  0) ) );
+            r1 = _mm_xor_si128( c1, _mm_loadu_si128( ( __m128i * ) (pbSrc + 16) ) );
+
+            _mm_storeu_si128( (__m128i *) (pbDst +  0), r0 );
+            _mm_storeu_si128( (__m128i *) (pbDst + 16), r1 );
+
+            r0 = _mm_shuffle_epi8( r0, BYTE_REVERSE_ORDER );
+            r1 = _mm_shuffle_epi8( r1, BYTE_REVERSE_ORDER );
+
+            CLMUL_ACC_3( r0, GHASH_H_POWER(expandedKeyTable, todo - 0), GHASH_Hx_POWER(expandedKeyTable, todo - 0), a0, a1, a2 );
+            CLMUL_ACC_3( r1, GHASH_H_POWER(expandedKeyTable, todo - 1), GHASH_Hx_POWER(expandedKeyTable, todo - 1), a0, a1, a2 );
+
+            pbDst   += 2*SYMCRYPT_AES_BLOCK_SIZE;
+            pbSrc   += 2*SYMCRYPT_AES_BLOCK_SIZE;
+            todo    -= 2;
+            nBlocks -= 2;
+            c0 = c2;
+            c1 = c3;
+            c2 = c4;
+            c3 = c5;
+            c4 = c6;
+        }
+
+        if( nBlocks > 0 )
+        {
+            chain = _mm_add_epi64( chain, chainIncrement1 );
+
+            r0 = _mm_xor_si128( c0, _mm_loadu_si128( ( __m128i * ) (pbSrc +  0) ) );
+
+            _mm_storeu_si128( (__m128i *) (pbDst +  0), r0 );
+
+            r0 = _mm_shuffle_epi8( r0, BYTE_REVERSE_ORDER );
+
+            CLMUL_ACC_3( r0, GHASH_H_POWER(expandedKeyTable, 1), GHASH_Hx_POWER(expandedKeyTable, 1), a0, a1, a2 );
+        }
+
+        CLMUL_3_POST( a0, a1, a2 );
+        MODREDUCE( vMultiplicationConstant, a0, a1, a2, state );
+    }
+
+    chain = _mm_shuffle_epi8( chain, BYTE_REVERSE_ORDER );
+    _mm_storeu_si128( (__m128i *) pbChainingValue, chain );
+    _mm_storeu_si128( (__m128i *) pState, state );
+}
+
+// This call is functionally identical to:
+// SymCryptGHashAppendDataPclmulqdq(   expandedKeyTable,
+//                                     pState,
+//                                     pbSrc,
+//                                     cbData );
+// SymCryptAesCtrMsb64Xmm( pExpandedKey,
+//                         pbChainingValue,
+//                         pbSrc,
+//                         pbDst,
+//                         cbData );
+VOID
+SYMCRYPT_CALL
+SymCryptAesGcmDecryptStitchedXmm(
+    _In_                                    PCSYMCRYPT_AES_EXPANDED_KEY pExpandedKey,
+    _In_reads_( SYMCRYPT_AES_BLOCK_SIZE )   PBYTE                       pbChainingValue,
+    _In_reads_( SYMCRYPT_GF128_FIELD_SIZE ) PCSYMCRYPT_GF128_ELEMENT    expandedKeyTable,
+    _Inout_                                 PSYMCRYPT_GF128_ELEMENT     pState,
+    _In_reads_( cbData )                    PCBYTE                      pbSrc,
+    _Out_writes_( cbData )                  PBYTE                       pbDst,
+                                            SIZE_T                      cbData )
+{
+    __m128i chain = _mm_loadu_si128( (__m128i *) pbChainingValue );
+
+    __m128i BYTE_REVERSE_ORDER = _mm_set_epi8(
+            0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15 );
+    __m128i vMultiplicationConstant = _mm_set_epi32( 0, 0, 0xc2000000, 0 );
+
+    __m128i chainIncrement1 = _mm_set_epi32( 0, 0, 0, 1 );
+    __m128i chainIncrement2 = _mm_set_epi32( 0, 0, 0, 2 );
+
+    __m128i c0, c1, c2, c3, c4, c5, c6, c7;
+
+    __m128i state;
+    __m128i a0, a1, a2;
+    SIZE_T nBlocks = cbData / SYMCRYPT_GF128_BLOCK_SIZE;
+    SIZE_T todo = 0;
+    PCBYTE pbGhashSrc = pbSrc;
+
+    chain = _mm_shuffle_epi8( chain, BYTE_REVERSE_ORDER );
+    state = _mm_loadu_si128( (__m128i *) pState );
+
+    todo = SYMCRYPT_MIN( nBlocks, SYMCRYPT_GHASH_PCLMULQDQ_HPOWERS );
+    CLMUL_3( state, GHASH_H_POWER(expandedKeyTable, todo), GHASH_Hx_POWER(expandedKeyTable, todo), a0, a1, a2 );
+
+    while( nBlocks >= 8 )
+    {
+        // In this loop we always have 8 blocks to decrypt and GHASH
+        c0 = chain;
+        c1 = _mm_add_epi64( chain, chainIncrement1 );
+        c2 = _mm_add_epi64( chain, chainIncrement2 );
+        c3 = _mm_add_epi64( c1, chainIncrement2 );
+        c4 = _mm_add_epi64( c2, chainIncrement2 );
+        c5 = _mm_add_epi64( c3, chainIncrement2 );
+        c6 = _mm_add_epi64( c4, chainIncrement2 );
+        c7 = _mm_add_epi64( c5, chainIncrement2 );
+        chain = _mm_add_epi64( c6, chainIncrement2 );
+
+        c0 = _mm_shuffle_epi8( c0, BYTE_REVERSE_ORDER );
+        c1 = _mm_shuffle_epi8( c1, BYTE_REVERSE_ORDER );
+        c2 = _mm_shuffle_epi8( c2, BYTE_REVERSE_ORDER );
+        c3 = _mm_shuffle_epi8( c3, BYTE_REVERSE_ORDER );
+        c4 = _mm_shuffle_epi8( c4, BYTE_REVERSE_ORDER );
+        c5 = _mm_shuffle_epi8( c5, BYTE_REVERSE_ORDER );
+        c6 = _mm_shuffle_epi8( c6, BYTE_REVERSE_ORDER );
+        c7 = _mm_shuffle_epi8( c7, BYTE_REVERSE_ORDER );
+
+        AES_GCM_ENCRYPT_8( pExpandedKey, c0, c1, c2, c3, c4, c5, c6, c7, pbGhashSrc, 8, BYTE_REVERSE_ORDER, expandedKeyTable, todo, a0, a1, a2 );
+
+        _mm_storeu_si128( (__m128i *) (pbDst +  0), _mm_xor_si128( c0, _mm_loadu_si128( ( __m128i * ) (pbSrc +  0) ) ) );
+        _mm_storeu_si128( (__m128i *) (pbDst + 16), _mm_xor_si128( c1, _mm_loadu_si128( ( __m128i * ) (pbSrc + 16) ) ) );
+        _mm_storeu_si128( (__m128i *) (pbDst + 32), _mm_xor_si128( c2, _mm_loadu_si128( ( __m128i * ) (pbSrc + 32) ) ) );
+        _mm_storeu_si128( (__m128i *) (pbDst + 48), _mm_xor_si128( c3, _mm_loadu_si128( ( __m128i * ) (pbSrc + 48) ) ) );
+        _mm_storeu_si128( (__m128i *) (pbDst + 64), _mm_xor_si128( c4, _mm_loadu_si128( ( __m128i * ) (pbSrc + 64) ) ) );
+        _mm_storeu_si128( (__m128i *) (pbDst + 80), _mm_xor_si128( c5, _mm_loadu_si128( ( __m128i * ) (pbSrc + 80) ) ) );
+        _mm_storeu_si128( (__m128i *) (pbDst + 96), _mm_xor_si128( c6, _mm_loadu_si128( ( __m128i * ) (pbSrc + 96) ) ) );
+        _mm_storeu_si128( (__m128i *) (pbDst +112), _mm_xor_si128( c7, _mm_loadu_si128( ( __m128i * ) (pbSrc +112) ) ) );
+
+        pbDst  += 8 * SYMCRYPT_AES_BLOCK_SIZE;
+        pbSrc  += 8 * SYMCRYPT_AES_BLOCK_SIZE;
+        nBlocks -= 8;
+
+        if ( todo == 0 )
+        {
+            CLMUL_3_POST( a0, a1, a2 );
+            MODREDUCE( vMultiplicationConstant, a0, a1, a2, state );
+
+            if ( nBlocks > 0 )
+            {
+                todo = SYMCRYPT_MIN( nBlocks, SYMCRYPT_GHASH_PCLMULQDQ_HPOWERS );
+                CLMUL_3( state, GHASH_H_POWER(expandedKeyTable, todo), GHASH_Hx_POWER(expandedKeyTable, todo), a0, a1, a2 );
+            }
+        }
+    }
+
+    if( nBlocks > 0 )
+    {
+        // We have 1-7 blocks to GHASH and decrypt
+        // Do the exact number of GHASH blocks we need in parallel with generating either 4 or 8 blocks of AES-CTR
+        c0 = chain;
+        c1 = _mm_add_epi64( chain, chainIncrement1 );
+        c2 = _mm_add_epi64( chain, chainIncrement2 );
+        c3 = _mm_add_epi64( c1, chainIncrement2 );
+        c4 = _mm_add_epi64( c2, chainIncrement2 );
+
+        c0 = _mm_shuffle_epi8( c0, BYTE_REVERSE_ORDER );
+        c1 = _mm_shuffle_epi8( c1, BYTE_REVERSE_ORDER );
+        c2 = _mm_shuffle_epi8( c2, BYTE_REVERSE_ORDER );
+        c3 = _mm_shuffle_epi8( c3, BYTE_REVERSE_ORDER );
+
+        if( nBlocks > 4 )
+        {
+            c5 = _mm_add_epi64( c4, chainIncrement1 );
+            c6 = _mm_add_epi64( c4, chainIncrement2 );
+
+            c4 = _mm_shuffle_epi8( c4, BYTE_REVERSE_ORDER );
+            c5 = _mm_shuffle_epi8( c5, BYTE_REVERSE_ORDER );
+            c6 = _mm_shuffle_epi8( c6, BYTE_REVERSE_ORDER );
+
+            AES_GCM_ENCRYPT_8( pExpandedKey, c0, c1, c2, c3, c4, c5, c6, c7, pbGhashSrc, nBlocks, BYTE_REVERSE_ORDER, expandedKeyTable, todo, a0, a1, a2 );
+        } else {
+            AES_GCM_ENCRYPT_4( pExpandedKey, c0, c1, c2, c3, pbGhashSrc, nBlocks, BYTE_REVERSE_ORDER, expandedKeyTable, todo, a0, a1, a2 );
+        }
+
+        CLMUL_3_POST( a0, a1, a2 );
+        MODREDUCE( vMultiplicationConstant, a0, a1, a2, state );
+
+        // Decrypt 1-7 blocks with pre-generated AES-CTR blocks
+        while( nBlocks >= 2 )
+        {
+            chain = _mm_add_epi64( chain, chainIncrement2 );
+
+            _mm_storeu_si128( (__m128i *) (pbDst +  0), _mm_xor_si128( c0, _mm_loadu_si128( ( __m128i * ) (pbSrc +  0) ) ) );
+            _mm_storeu_si128( (__m128i *) (pbDst + 16), _mm_xor_si128( c1, _mm_loadu_si128( ( __m128i * ) (pbSrc + 16) ) ) );
+
+            pbDst   += 2*SYMCRYPT_AES_BLOCK_SIZE;
+            pbSrc   += 2*SYMCRYPT_AES_BLOCK_SIZE;
+            nBlocks -= 2;
+            c0 = c2;
+            c1 = c3;
+            c2 = c4;
+            c3 = c5;
+            c4 = c6;
+        }
+
+        if( nBlocks > 0 )
+        {
+            chain = _mm_add_epi64( chain, chainIncrement1 );
+
+            _mm_storeu_si128( (__m128i *) (pbDst +  0), _mm_xor_si128( c0, _mm_loadu_si128( ( __m128i * ) (pbSrc +  0) ) ) );
+        }
+    }
+
+    chain = _mm_shuffle_epi8( chain, BYTE_REVERSE_ORDER );
+    _mm_storeu_si128( (__m128i *) pbChainingValue, chain );
+    _mm_storeu_si128((__m128i *)pState, state );
+}
+
+#define GCM_YMM_MINBLOCKS 16
+
+#define AES_FULLROUND_16_GHASH_2_Ymm( roundkeys, keyPtr, c0, c1, c2, c3, c4, c5, c6, c7, r0, t0, t1, gHashPointer, byteReverseOrder, gHashExpandedKeyTable, todo, resl, resm, resh ) \
+{ \
+    roundkeys =  _mm256_broadcastsi128_si256( *( (const __m128i *) keyPtr ) ); \
+    keyPtr ++; \
+    c0 = _mm256_aesenc_epi128( c0, roundkeys ); \
+    c1 = _mm256_aesenc_epi128( c1, roundkeys ); \
+    c2 = _mm256_aesenc_epi128( c2, roundkeys ); \
+    c3 = _mm256_aesenc_epi128( c3, roundkeys ); \
+    c4 = _mm256_aesenc_epi128( c4, roundkeys ); \
+    c5 = _mm256_aesenc_epi128( c5, roundkeys ); \
+    c6 = _mm256_aesenc_epi128( c6, roundkeys ); \
+    c7 = _mm256_aesenc_epi128( c7, roundkeys ); \
+\
+    r0 = _mm256_loadu_si256( (__m256i *) gHashPointer ); \
+    r0 = _mm256_shuffle_epi8( r0, byteReverseOrder ); \
+    gHashPointer += 32; \
+\
+    t1 = _mm256_loadu_si256( (__m256i *) &GHASH_H_POWER(gHashExpandedKeyTable, todo) ); \
+    t0 = _mm256_clmulepi64_epi128( r0, t1, 0x00 ); \
+    t1 = _mm256_clmulepi64_epi128( r0, t1, 0x11 ); \
+\
+    resl = _mm256_xor_si256( resl, t0 ); \
+    resh = _mm256_xor_si256( resh, t1 ); \
+\
+    t0 = _mm256_srli_si256( r0, 8 ); \
+    r0 = _mm256_xor_si256( r0, t0 ); \
+    t1 = _mm256_loadu_si256( (__m256i *) &GHASH_Hx_POWER(gHashExpandedKeyTable, todo) ); \
+    t1 = _mm256_clmulepi64_epi128( r0, t1, 0x00 ); \
+\
+    resm = _mm256_xor_si256( resm, t1 ); \
+    todo -= 2; \
+};
+
+#define AES_GCM_ENCRYPT_16_Ymm( pExpandedKey, c0, c1, c2, c3, c4, c5, c6, c7, gHashPointer, byteReverseOrder, gHashExpandedKeyTable, todo, resl, resm, resh ) \
+{ \
+    const BYTE (*keyPtr)[4][4]; \
+    const BYTE (*keyLimit)[4][4]; \
+    __m256i roundkeys; \
+    __m256i t0, t1; \
+    __m256i r0; \
+    int aesEncryptGhashLoop; \
+\
+    keyPtr = pExpandedKey->RoundKey; \
+    keyLimit = pExpandedKey->lastEncRoundKey; \
+\
+    /* _mm256_broadcastsi128_si256 requires AVX2 */ \
+    roundkeys =  _mm256_broadcastsi128_si256( *( (const __m128i *) keyPtr ) ); \
+    keyPtr ++; \
+\
+    /* _mm256_xor_si256 requires AVX2 */ \
+    c0 = _mm256_xor_si256( c0, roundkeys ); \
+    c1 = _mm256_xor_si256( c1, roundkeys ); \
+    c2 = _mm256_xor_si256( c2, roundkeys ); \
+    c3 = _mm256_xor_si256( c3, roundkeys ); \
+    c4 = _mm256_xor_si256( c4, roundkeys ); \
+    c5 = _mm256_xor_si256( c5, roundkeys ); \
+    c6 = _mm256_xor_si256( c6, roundkeys ); \
+    c7 = _mm256_xor_si256( c7, roundkeys ); \
+\
+    /* Do 8(x2) full rounds (AES-128|AES-192|AES-256) with stitched GHASH */ \
+    for( aesEncryptGhashLoop = 0; aesEncryptGhashLoop < 4; aesEncryptGhashLoop++ ) \
+    { \
+        AES_FULLROUND_16_GHASH_2_Ymm( roundkeys, keyPtr, c0, c1, c2, c3, c4, c5, c6, c7, r0, t0, t1, gHashPointer, byteReverseOrder, gHashExpandedKeyTable, todo, resl, resm, resh ); \
+        AES_FULLROUND_16_GHASH_2_Ymm( roundkeys, keyPtr, c0, c1, c2, c3, c4, c5, c6, c7, r0, t0, t1, gHashPointer, byteReverseOrder, gHashExpandedKeyTable, todo, resl, resm, resh ); \
+    } \
+\
+    do \
+    { \
+        roundkeys =  _mm256_broadcastsi128_si256( *( (const __m128i *) keyPtr ) ); \
+        keyPtr ++; \
+        c0 = _mm256_aesenc_epi128( c0, roundkeys ); \
+        c1 = _mm256_aesenc_epi128( c1, roundkeys ); \
+        c2 = _mm256_aesenc_epi128( c2, roundkeys ); \
+        c3 = _mm256_aesenc_epi128( c3, roundkeys ); \
+        c4 = _mm256_aesenc_epi128( c4, roundkeys ); \
+        c5 = _mm256_aesenc_epi128( c5, roundkeys ); \
+        c6 = _mm256_aesenc_epi128( c6, roundkeys ); \
+        c7 = _mm256_aesenc_epi128( c7, roundkeys ); \
+    } while( keyPtr < keyLimit ); \
+\
+    roundkeys =  _mm256_broadcastsi128_si256( *( (const __m128i *) keyPtr ) ); \
+\
+    c0 = _mm256_aesenclast_epi128( c0, roundkeys ); \
+    c1 = _mm256_aesenclast_epi128( c1, roundkeys ); \
+    c2 = _mm256_aesenclast_epi128( c2, roundkeys ); \
+    c3 = _mm256_aesenclast_epi128( c3, roundkeys ); \
+    c4 = _mm256_aesenclast_epi128( c4, roundkeys ); \
+    c5 = _mm256_aesenclast_epi128( c5, roundkeys ); \
+    c6 = _mm256_aesenclast_epi128( c6, roundkeys ); \
+    c7 = _mm256_aesenclast_epi128( c7, roundkeys ); \
+};
+
+VOID
+SYMCRYPT_CALL
+SymCryptAesGcmEncryptStitchedYmm_2048(
+    _In_                                    PCSYMCRYPT_AES_EXPANDED_KEY pExpandedKey,
+    _In_reads_( SYMCRYPT_AES_BLOCK_SIZE )   PBYTE                       pbChainingValue,
+    _In_reads_( SYMCRYPT_GF128_FIELD_SIZE ) PCSYMCRYPT_GF128_ELEMENT    expandedKeyTable,
+    _Inout_                                 PSYMCRYPT_GF128_ELEMENT     pState,
+    _In_reads_( cbData )                    PCBYTE                      pbSrc,
+    _Out_writes_( cbData )                  PBYTE                       pbDst,
+                                            SIZE_T                      cbData )
+{
+    __m128i chain = _mm_loadu_si128( (__m128i *) pbChainingValue );
+
+    __m128i BYTE_REVERSE_ORDER_xmm = _mm_set_epi8(
+            0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15 );
+    __m256i BYTE_REVERSE_ORDER = _mm256_set_epi64x( 0x0001020304050607, 0x08090a0b0c0d0e0f, 0x0001020304050607, 0x08090a0b0c0d0e0f );
+    __m128i vMultiplicationConstant = _mm_set_epi32( 0, 0, 0xc2000000, 0 );
+
+    __m256i chainIncrementUpper1  = _mm256_set_epi64x( 0,  1, 0,  0 );
+    __m256i chainIncrement2  = _mm256_set_epi64x( 0,  2, 0,  2 );
+    __m256i chainIncrement4  = _mm256_set_epi64x( 0,  4, 0,  4 );
+    __m256i chainIncrement16 = _mm256_set_epi64x( 0, 16, 0, 16 );
+
+    __m256i ctr0, ctr1, ctr2, ctr3, ctr4, ctr5, ctr6, ctr7;
+    __m256i c0, c1, c2, c3, c4, c5, c6, c7;
+    __m256i r0, r1, r2, r3, r4, r5, r6, r7;
+    __m256i Hi, Hix;
+
+    __m128i state;
+    __m128i a0_xmm, a1_xmm, a2_xmm;
+    __m256i a0, a1, a2;
+    SIZE_T nBlocks = cbData / SYMCRYPT_GF128_BLOCK_SIZE;
+    SIZE_T todo;
+    PCBYTE pbGhashSrc = pbDst;
+
+    if ( nBlocks < GCM_YMM_MINBLOCKS )
+    {
+        SymCryptAesGcmEncryptStitchedXmm( pExpandedKey, pbChainingValue, expandedKeyTable, pState, pbSrc, pbDst, cbData);
+        return;
+    }
+
+    todo = SYMCRYPT_MIN( nBlocks, SYMCRYPT_GHASH_PCLMULQDQ_HPOWERS ) & ~(GCM_YMM_MINBLOCKS-1);
+    chain = _mm_shuffle_epi8( chain, BYTE_REVERSE_ORDER_xmm );
+
+    state = _mm_loadu_si128( (__m128i *) pState );
+    ctr0 = _mm256_insertf128_si256( _mm256_castsi128_si256( chain ), chain, 1); // AVX
+    ctr0 = _mm256_add_epi64( ctr0, chainIncrementUpper1 );
+    ctr1 = _mm256_add_epi64( ctr0, chainIncrement2 );
+    ctr2 = _mm256_add_epi64( ctr0, chainIncrement4 );
+    ctr3 = _mm256_add_epi64( ctr1, chainIncrement4 );
+    ctr4 = _mm256_add_epi64( ctr2, chainIncrement4 );
+    ctr5 = _mm256_add_epi64( ctr3, chainIncrement4 );
+    ctr6 = _mm256_add_epi64( ctr4, chainIncrement4 );
+    ctr7 = _mm256_add_epi64( ctr5, chainIncrement4 );
+
+    CLMUL_3( state, GHASH_H_POWER(expandedKeyTable, todo), GHASH_Hx_POWER(expandedKeyTable, todo), a0_xmm, a1_xmm, a2_xmm );
+    a0 = a1 = a2 = _mm256_setzero_si256();
+
+    c0 = _mm256_shuffle_epi8( ctr0, BYTE_REVERSE_ORDER );
+    c1 = _mm256_shuffle_epi8( ctr1, BYTE_REVERSE_ORDER );
+    c2 = _mm256_shuffle_epi8( ctr2, BYTE_REVERSE_ORDER );
+    c3 = _mm256_shuffle_epi8( ctr3, BYTE_REVERSE_ORDER );
+    c4 = _mm256_shuffle_epi8( ctr4, BYTE_REVERSE_ORDER );
+    c5 = _mm256_shuffle_epi8( ctr5, BYTE_REVERSE_ORDER );
+    c6 = _mm256_shuffle_epi8( ctr6, BYTE_REVERSE_ORDER );
+    c7 = _mm256_shuffle_epi8( ctr7, BYTE_REVERSE_ORDER );
+
+    ctr0 = _mm256_add_epi64( ctr0, chainIncrement16 );
+    ctr1 = _mm256_add_epi64( ctr1, chainIncrement16 );
+    ctr2 = _mm256_add_epi64( ctr2, chainIncrement16 );
+    ctr3 = _mm256_add_epi64( ctr3, chainIncrement16 );
+    ctr4 = _mm256_add_epi64( ctr4, chainIncrement16 );
+    ctr5 = _mm256_add_epi64( ctr5, chainIncrement16 );
+    ctr6 = _mm256_add_epi64( ctr6, chainIncrement16 );
+    ctr7 = _mm256_add_epi64( ctr7, chainIncrement16 );
+
+    AES_ENCRYPT_YMM_2048( pExpandedKey, c0, c1, c2, c3, c4, c5, c6, c7 );
+
+    _mm256_storeu_si256( (__m256i *) (pbDst +  0), _mm256_xor_si256( c0, _mm256_loadu_si256( ( __m256i * ) (pbSrc +  0) ) ) );
+    _mm256_storeu_si256( (__m256i *) (pbDst + 32), _mm256_xor_si256( c1, _mm256_loadu_si256( ( __m256i * ) (pbSrc + 32) ) ) );
+    _mm256_storeu_si256( (__m256i *) (pbDst + 64), _mm256_xor_si256( c2, _mm256_loadu_si256( ( __m256i * ) (pbSrc + 64) ) ) );
+    _mm256_storeu_si256( (__m256i *) (pbDst + 96), _mm256_xor_si256( c3, _mm256_loadu_si256( ( __m256i * ) (pbSrc + 96) ) ) );
+    _mm256_storeu_si256( (__m256i *) (pbDst +128), _mm256_xor_si256( c4, _mm256_loadu_si256( ( __m256i * ) (pbSrc +128) ) ) );
+    _mm256_storeu_si256( (__m256i *) (pbDst +160), _mm256_xor_si256( c5, _mm256_loadu_si256( ( __m256i * ) (pbSrc +160) ) ) );
+    _mm256_storeu_si256( (__m256i *) (pbDst +192), _mm256_xor_si256( c6, _mm256_loadu_si256( ( __m256i * ) (pbSrc +192) ) ) );
+    _mm256_storeu_si256( (__m256i *) (pbDst +224), _mm256_xor_si256( c7, _mm256_loadu_si256( ( __m256i * ) (pbSrc +224) ) ) );
+
+    pbDst  += 16 * SYMCRYPT_AES_BLOCK_SIZE;
+    pbSrc  += 16 * SYMCRYPT_AES_BLOCK_SIZE;
+
+    while( nBlocks >= 2*GCM_YMM_MINBLOCKS )
+    {
+        c0 = _mm256_shuffle_epi8( ctr0, BYTE_REVERSE_ORDER );
+        c1 = _mm256_shuffle_epi8( ctr1, BYTE_REVERSE_ORDER );
+        c2 = _mm256_shuffle_epi8( ctr2, BYTE_REVERSE_ORDER );
+        c3 = _mm256_shuffle_epi8( ctr3, BYTE_REVERSE_ORDER );
+        c4 = _mm256_shuffle_epi8( ctr4, BYTE_REVERSE_ORDER );
+        c5 = _mm256_shuffle_epi8( ctr5, BYTE_REVERSE_ORDER );
+        c6 = _mm256_shuffle_epi8( ctr6, BYTE_REVERSE_ORDER );
+        c7 = _mm256_shuffle_epi8( ctr7, BYTE_REVERSE_ORDER );
+
+        ctr0 = _mm256_add_epi64( ctr0, chainIncrement16 );
+        ctr1 = _mm256_add_epi64( ctr1, chainIncrement16 );
+        ctr2 = _mm256_add_epi64( ctr2, chainIncrement16 );
+        ctr3 = _mm256_add_epi64( ctr3, chainIncrement16 );
+        ctr4 = _mm256_add_epi64( ctr4, chainIncrement16 );
+        ctr5 = _mm256_add_epi64( ctr5, chainIncrement16 );
+        ctr6 = _mm256_add_epi64( ctr6, chainIncrement16 );
+        ctr7 = _mm256_add_epi64( ctr7, chainIncrement16 );
+
+        AES_GCM_ENCRYPT_16_Ymm( pExpandedKey, c0, c1, c2, c3, c4, c5, c6, c7, pbGhashSrc, BYTE_REVERSE_ORDER, expandedKeyTable, todo, a0, a1, a2 );
+
+        _mm256_storeu_si256( (__m256i *) (pbDst +  0), _mm256_xor_si256( c0, _mm256_loadu_si256( ( __m256i * ) (pbSrc +  0) ) ) );
+        _mm256_storeu_si256( (__m256i *) (pbDst + 32), _mm256_xor_si256( c1, _mm256_loadu_si256( ( __m256i * ) (pbSrc + 32) ) ) );
+        _mm256_storeu_si256( (__m256i *) (pbDst + 64), _mm256_xor_si256( c2, _mm256_loadu_si256( ( __m256i * ) (pbSrc + 64) ) ) );
+        _mm256_storeu_si256( (__m256i *) (pbDst + 96), _mm256_xor_si256( c3, _mm256_loadu_si256( ( __m256i * ) (pbSrc + 96) ) ) );
+        _mm256_storeu_si256( (__m256i *) (pbDst +128), _mm256_xor_si256( c4, _mm256_loadu_si256( ( __m256i * ) (pbSrc +128) ) ) );
+        _mm256_storeu_si256( (__m256i *) (pbDst +160), _mm256_xor_si256( c5, _mm256_loadu_si256( ( __m256i * ) (pbSrc +160) ) ) );
+        _mm256_storeu_si256( (__m256i *) (pbDst +192), _mm256_xor_si256( c6, _mm256_loadu_si256( ( __m256i * ) (pbSrc +192) ) ) );
+        _mm256_storeu_si256( (__m256i *) (pbDst +224), _mm256_xor_si256( c7, _mm256_loadu_si256( ( __m256i * ) (pbSrc +224) ) ) );
+
+        pbDst  += 16 * SYMCRYPT_AES_BLOCK_SIZE;
+        pbSrc  += 16 * SYMCRYPT_AES_BLOCK_SIZE;
+        nBlocks -= 16;
+
+        if ( todo == 0 )
+        {
+            a0_xmm = _mm_xor_si128( a0_xmm, _mm256_extracti128_si256 ( a0, 0 /* Lowest 128 bits */ ));
+            a1_xmm = _mm_xor_si128( a1_xmm, _mm256_extracti128_si256 ( a1, 0 /* Lowest 128 bits */ ));
+            a2_xmm = _mm_xor_si128( a2_xmm, _mm256_extracti128_si256 ( a2, 0 /* Lowest 128 bits */ ));
+
+            a0_xmm = _mm_xor_si128( a0_xmm, _mm256_extracti128_si256 ( a0, 1 /* Highest 128 bits */ ));
+            a1_xmm = _mm_xor_si128( a1_xmm, _mm256_extracti128_si256 ( a1, 1 /* Highest 128 bits */ ));
+            a2_xmm = _mm_xor_si128( a2_xmm, _mm256_extracti128_si256 ( a2, 1 /* Highest 128 bits */ ));
+            CLMUL_3_POST( a0_xmm, a1_xmm, a2_xmm );
+            MODREDUCE( vMultiplicationConstant, a0_xmm, a1_xmm, a2_xmm, state );
+
+            todo = SYMCRYPT_MIN( nBlocks, SYMCRYPT_GHASH_PCLMULQDQ_HPOWERS ) & ~(GCM_YMM_MINBLOCKS-1);
+            CLMUL_3( state, GHASH_H_POWER(expandedKeyTable, todo), GHASH_Hx_POWER(expandedKeyTable, todo), a0_xmm, a1_xmm, a2_xmm );
+            a0 = a1 = a2 = _mm256_setzero_si256();
+        }
+    }
+
+    r0 = _mm256_shuffle_epi8( _mm256_loadu_si256( (__m256i *) (pbGhashSrc +  0) ), BYTE_REVERSE_ORDER );
+    r1 = _mm256_shuffle_epi8( _mm256_loadu_si256( (__m256i *) (pbGhashSrc + 32) ), BYTE_REVERSE_ORDER );
+    r2 = _mm256_shuffle_epi8( _mm256_loadu_si256( (__m256i *) (pbGhashSrc + 64) ), BYTE_REVERSE_ORDER );
+    r3 = _mm256_shuffle_epi8( _mm256_loadu_si256( (__m256i *) (pbGhashSrc + 96) ), BYTE_REVERSE_ORDER );
+    r4 = _mm256_shuffle_epi8( _mm256_loadu_si256( (__m256i *) (pbGhashSrc +128) ), BYTE_REVERSE_ORDER );
+    r5 = _mm256_shuffle_epi8( _mm256_loadu_si256( (__m256i *) (pbGhashSrc +160) ), BYTE_REVERSE_ORDER );
+    r6 = _mm256_shuffle_epi8( _mm256_loadu_si256( (__m256i *) (pbGhashSrc +192) ), BYTE_REVERSE_ORDER );
+    r7 = _mm256_shuffle_epi8( _mm256_loadu_si256( (__m256i *) (pbGhashSrc +224) ), BYTE_REVERSE_ORDER );
+
+    Hi  = _mm256_loadu_si256( (__m256i *)  &GHASH_H_POWER(expandedKeyTable, todo - 0) );
+    Hix = _mm256_loadu_si256( (__m256i *) &GHASH_Hx_POWER(expandedKeyTable, todo - 0) );
+    CLMUL_ACC_3_Ymm( r0, Hi, Hix, a0, a1, a2 );
+    Hi  = _mm256_loadu_si256( (__m256i *)  &GHASH_H_POWER(expandedKeyTable, todo - 2) );
+    Hix = _mm256_loadu_si256( (__m256i *) &GHASH_Hx_POWER(expandedKeyTable, todo - 2) );
+    CLMUL_ACC_3_Ymm( r1, Hi, Hix, a0, a1, a2 );
+    Hi  = _mm256_loadu_si256( (__m256i *)  &GHASH_H_POWER(expandedKeyTable, todo - 4) );
+    Hix = _mm256_loadu_si256( (__m256i *) &GHASH_Hx_POWER(expandedKeyTable, todo - 4) );
+    CLMUL_ACC_3_Ymm( r2, Hi, Hix, a0, a1, a2 );
+    Hi  = _mm256_loadu_si256( (__m256i *)  &GHASH_H_POWER(expandedKeyTable, todo - 6) );
+    Hix = _mm256_loadu_si256( (__m256i *) &GHASH_Hx_POWER(expandedKeyTable, todo - 6) );
+    CLMUL_ACC_3_Ymm( r3, Hi, Hix, a0, a1, a2 );
+    Hi  = _mm256_loadu_si256( (__m256i *)  &GHASH_H_POWER(expandedKeyTable, todo - 8) );
+    Hix = _mm256_loadu_si256( (__m256i *) &GHASH_Hx_POWER(expandedKeyTable, todo - 8) );
+    CLMUL_ACC_3_Ymm( r4, Hi, Hix, a0, a1, a2 );
+    Hi  = _mm256_loadu_si256( (__m256i *)  &GHASH_H_POWER(expandedKeyTable, todo -10) );
+    Hix = _mm256_loadu_si256( (__m256i *) &GHASH_Hx_POWER(expandedKeyTable, todo -10) );
+    CLMUL_ACC_3_Ymm( r5, Hi, Hix, a0, a1, a2 );
+    Hi  = _mm256_loadu_si256( (__m256i *)  &GHASH_H_POWER(expandedKeyTable, todo -12) );
+    Hix = _mm256_loadu_si256( (__m256i *) &GHASH_Hx_POWER(expandedKeyTable, todo -12) );
+    CLMUL_ACC_3_Ymm( r6, Hi, Hix, a0, a1, a2 );
+    Hi  = _mm256_loadu_si256( (__m256i *)  &GHASH_H_POWER(expandedKeyTable, todo -14) );
+    Hix = _mm256_loadu_si256( (__m256i *) &GHASH_Hx_POWER(expandedKeyTable, todo -14) );
+    CLMUL_ACC_3_Ymm( r7, Hi, Hix, a0, a1, a2 );
+
+    a0_xmm = _mm_xor_si128( a0_xmm, _mm256_extracti128_si256 ( a0, 0 /* Lowest 128 bits */ ));
+    a1_xmm = _mm_xor_si128( a1_xmm, _mm256_extracti128_si256 ( a1, 0 /* Lowest 128 bits */ ));
+    a2_xmm = _mm_xor_si128( a2_xmm, _mm256_extracti128_si256 ( a2, 0 /* Lowest 128 bits */ ));
+
+    a0_xmm = _mm_xor_si128( a0_xmm, _mm256_extracti128_si256 ( a0, 1 /* Highest 128 bits */ ));
+    a1_xmm = _mm_xor_si128( a1_xmm, _mm256_extracti128_si256 ( a1, 1 /* Highest 128 bits */ ));
+    a2_xmm = _mm_xor_si128( a2_xmm, _mm256_extracti128_si256 ( a2, 1 /* Highest 128 bits */ ));
+    CLMUL_3_POST( a0_xmm, a1_xmm, a2_xmm );
+    MODREDUCE( vMultiplicationConstant, a0_xmm, a1_xmm, a2_xmm, state );
+
+    chain = _mm256_extracti128_si256 ( ctr0, 0 /* Lowest 128 bits */ );
+    _mm256_zeroupper();
+
+    chain = _mm_shuffle_epi8( chain, BYTE_REVERSE_ORDER_xmm );
+    _mm_storeu_si128((__m128i *) pbChainingValue, chain );
+    _mm_storeu_si128((__m128i *) pState, state );
+
+    cbData &= ( GCM_YMM_MINBLOCKS*SYMCRYPT_AES_BLOCK_SIZE ) - 1;
+    if ( cbData >= SYMCRYPT_AES_BLOCK_SIZE )
+    {
+        SymCryptAesGcmEncryptStitchedXmm( pExpandedKey, pbChainingValue, expandedKeyTable, pState, pbSrc, pbDst, cbData);
+    }
+}
+
+VOID
+SYMCRYPT_CALL
+SymCryptAesGcmDecryptStitchedYmm_2048(
+    _In_                                    PCSYMCRYPT_AES_EXPANDED_KEY pExpandedKey,
+    _In_reads_( SYMCRYPT_AES_BLOCK_SIZE )   PBYTE                       pbChainingValue,
+    _In_reads_( SYMCRYPT_GF128_FIELD_SIZE ) PCSYMCRYPT_GF128_ELEMENT    expandedKeyTable,
+    _Inout_                                 PSYMCRYPT_GF128_ELEMENT     pState,
+    _In_reads_( cbData )                    PCBYTE                      pbSrc,
+    _Out_writes_( cbData )                  PBYTE                       pbDst,
+                                            SIZE_T                      cbData )
+{
+    __m128i chain = _mm_loadu_si128( (__m128i *) pbChainingValue );
+
+    __m128i BYTE_REVERSE_ORDER_xmm = _mm_set_epi8(
+            0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15 );
+    __m256i BYTE_REVERSE_ORDER = _mm256_set_epi64x( 0x0001020304050607, 0x08090a0b0c0d0e0f, 0x0001020304050607, 0x08090a0b0c0d0e0f );
+    __m128i vMultiplicationConstant = _mm_set_epi32( 0, 0, 0xc2000000, 0 );
+
+    __m256i chainIncrementUpper1  = _mm256_set_epi64x( 0,  1, 0,  0 );
+    __m256i chainIncrement2  = _mm256_set_epi64x( 0,  2, 0,  2 );
+    __m256i chainIncrement4  = _mm256_set_epi64x( 0,  4, 0,  4 );
+    __m256i chainIncrement16 = _mm256_set_epi64x( 0, 16, 0, 16 );
+
+    __m256i ctr0, ctr1, ctr2, ctr3, ctr4, ctr5, ctr6, ctr7;
+    __m256i c0, c1, c2, c3, c4, c5, c6, c7;
+
+    __m128i state;
+    __m128i a0_xmm, a1_xmm, a2_xmm;
+    __m256i a0, a1, a2;
+    SIZE_T nBlocks = cbData / SYMCRYPT_GF128_BLOCK_SIZE;
+    SIZE_T todo;
+    PCBYTE pbGhashSrc = pbSrc;
+
+    if ( nBlocks < GCM_YMM_MINBLOCKS )
+    {
+        SymCryptAesGcmDecryptStitchedXmm( pExpandedKey, pbChainingValue, expandedKeyTable, pState, pbSrc, pbDst, cbData);
+        return;
+    }
+
+    todo = SYMCRYPT_MIN( nBlocks, SYMCRYPT_GHASH_PCLMULQDQ_HPOWERS ) & ~(GCM_YMM_MINBLOCKS-1);
+    chain = _mm_shuffle_epi8( chain, BYTE_REVERSE_ORDER_xmm );
+
+    state = _mm_loadu_si128( (__m128i *) pState );
+    ctr0 = _mm256_insertf128_si256( _mm256_castsi128_si256( chain ), chain, 1); // AVX
+    ctr0 = _mm256_add_epi64( ctr0, chainIncrementUpper1 );
+    ctr1 = _mm256_add_epi64( ctr0, chainIncrement2 );
+    ctr2 = _mm256_add_epi64( ctr0, chainIncrement4 );
+    ctr3 = _mm256_add_epi64( ctr1, chainIncrement4 );
+    ctr4 = _mm256_add_epi64( ctr2, chainIncrement4 );
+    ctr5 = _mm256_add_epi64( ctr3, chainIncrement4 );
+    ctr6 = _mm256_add_epi64( ctr4, chainIncrement4 );
+    ctr7 = _mm256_add_epi64( ctr5, chainIncrement4 );
+
+    CLMUL_3( state, GHASH_H_POWER(expandedKeyTable, todo), GHASH_Hx_POWER(expandedKeyTable, todo), a0_xmm, a1_xmm, a2_xmm );
+    a0 = a1 = a2 = _mm256_setzero_si256();
+
+    while( nBlocks >= GCM_YMM_MINBLOCKS )
+    {
+        c0 = _mm256_shuffle_epi8( ctr0, BYTE_REVERSE_ORDER );
+        c1 = _mm256_shuffle_epi8( ctr1, BYTE_REVERSE_ORDER );
+        c2 = _mm256_shuffle_epi8( ctr2, BYTE_REVERSE_ORDER );
+        c3 = _mm256_shuffle_epi8( ctr3, BYTE_REVERSE_ORDER );
+        c4 = _mm256_shuffle_epi8( ctr4, BYTE_REVERSE_ORDER );
+        c5 = _mm256_shuffle_epi8( ctr5, BYTE_REVERSE_ORDER );
+        c6 = _mm256_shuffle_epi8( ctr6, BYTE_REVERSE_ORDER );
+        c7 = _mm256_shuffle_epi8( ctr7, BYTE_REVERSE_ORDER );
+
+        ctr0 = _mm256_add_epi64( ctr0, chainIncrement16 );
+        ctr1 = _mm256_add_epi64( ctr1, chainIncrement16 );
+        ctr2 = _mm256_add_epi64( ctr2, chainIncrement16 );
+        ctr3 = _mm256_add_epi64( ctr3, chainIncrement16 );
+        ctr4 = _mm256_add_epi64( ctr4, chainIncrement16 );
+        ctr5 = _mm256_add_epi64( ctr5, chainIncrement16 );
+        ctr6 = _mm256_add_epi64( ctr6, chainIncrement16 );
+        ctr7 = _mm256_add_epi64( ctr7, chainIncrement16 );
+
+        AES_GCM_ENCRYPT_16_Ymm( pExpandedKey, c0, c1, c2, c3, c4, c5, c6, c7, pbGhashSrc, BYTE_REVERSE_ORDER, expandedKeyTable, todo, a0, a1, a2 );
+
+        _mm256_storeu_si256( (__m256i *) (pbDst +  0), _mm256_xor_si256( c0, _mm256_loadu_si256( ( __m256i * ) (pbSrc +  0) ) ) );
+        _mm256_storeu_si256( (__m256i *) (pbDst + 32), _mm256_xor_si256( c1, _mm256_loadu_si256( ( __m256i * ) (pbSrc + 32) ) ) );
+        _mm256_storeu_si256( (__m256i *) (pbDst + 64), _mm256_xor_si256( c2, _mm256_loadu_si256( ( __m256i * ) (pbSrc + 64) ) ) );
+        _mm256_storeu_si256( (__m256i *) (pbDst + 96), _mm256_xor_si256( c3, _mm256_loadu_si256( ( __m256i * ) (pbSrc + 96) ) ) );
+        _mm256_storeu_si256( (__m256i *) (pbDst +128), _mm256_xor_si256( c4, _mm256_loadu_si256( ( __m256i * ) (pbSrc +128) ) ) );
+        _mm256_storeu_si256( (__m256i *) (pbDst +160), _mm256_xor_si256( c5, _mm256_loadu_si256( ( __m256i * ) (pbSrc +160) ) ) );
+        _mm256_storeu_si256( (__m256i *) (pbDst +192), _mm256_xor_si256( c6, _mm256_loadu_si256( ( __m256i * ) (pbSrc +192) ) ) );
+        _mm256_storeu_si256( (__m256i *) (pbDst +224), _mm256_xor_si256( c7, _mm256_loadu_si256( ( __m256i * ) (pbSrc +224) ) ) );
+
+        pbDst  += 16 * SYMCRYPT_AES_BLOCK_SIZE;
+        pbSrc  += 16 * SYMCRYPT_AES_BLOCK_SIZE;
+        nBlocks -= 16;
+
+        if ( todo == 0 )
+        {
+            a0_xmm = _mm_xor_si128( a0_xmm, _mm256_extracti128_si256 ( a0, 0 /* Lowest 128 bits */ ));
+            a1_xmm = _mm_xor_si128( a1_xmm, _mm256_extracti128_si256 ( a1, 0 /* Lowest 128 bits */ ));
+            a2_xmm = _mm_xor_si128( a2_xmm, _mm256_extracti128_si256 ( a2, 0 /* Lowest 128 bits */ ));
+
+            a0_xmm = _mm_xor_si128( a0_xmm, _mm256_extracti128_si256 ( a0, 1 /* Highest 128 bits */ ));
+            a1_xmm = _mm_xor_si128( a1_xmm, _mm256_extracti128_si256 ( a1, 1 /* Highest 128 bits */ ));
+            a2_xmm = _mm_xor_si128( a2_xmm, _mm256_extracti128_si256 ( a2, 1 /* Highest 128 bits */ ));
+            CLMUL_3_POST( a0_xmm, a1_xmm, a2_xmm );
+            MODREDUCE( vMultiplicationConstant, a0_xmm, a1_xmm, a2_xmm, state );
+
+            if ( nBlocks > 0 )
+            {
+                todo = SYMCRYPT_MIN( nBlocks, SYMCRYPT_GHASH_PCLMULQDQ_HPOWERS ) & ~(GCM_YMM_MINBLOCKS-1);
+                CLMUL_3( state, GHASH_H_POWER(expandedKeyTable, todo), GHASH_Hx_POWER(expandedKeyTable, todo), a0_xmm, a1_xmm, a2_xmm );
+                a0 = a1 = a2 = _mm256_setzero_si256();
+            }
+        }
+    }
+
+    chain = _mm256_extracti128_si256 ( ctr0, 0 /* Lowest 128 bits */ );
+    _mm256_zeroupper();
+
+    chain = _mm_shuffle_epi8( chain, BYTE_REVERSE_ORDER_xmm );
+    _mm_storeu_si128((__m128i *) pbChainingValue, chain );
+    _mm_storeu_si128((__m128i *) pState, state );
+
+    cbData &= ( GCM_YMM_MINBLOCKS*SYMCRYPT_AES_BLOCK_SIZE ) - 1;
+    if ( cbData >= SYMCRYPT_AES_BLOCK_SIZE )
+    {
+        SymCryptAesGcmDecryptStitchedXmm( pExpandedKey, pbChainingValue, expandedKeyTable, pState, pbSrc, pbDst, cbData);
     }
 }
 

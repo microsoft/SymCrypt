@@ -24,6 +24,8 @@ const SYMCRYPT_BLOCKCIPHER SymCryptRc2BlockCipher_default = {
     NULL,                   // PSYMCRYPT_BLOCKCIPHER_CRYPT_MODE    cbcDecryptFunc;
     NULL,                   // PSYMCRYPT_BLOCKCIPHER_MAC_MODE      cbcMacFunc;
     NULL,                   // PSYMCRYPT_BLOCKCIPHER_CRYPT_MODE    ctrMsbFunc;
+    NULL,                   // PSYMCRYPT_BLOCKCIPHER_AEADPART_MODE gcmEncryptPartFunc;
+    NULL,                   // PSYMCRYPT_BLOCKCIPHER_AEADPART_MODE gcmDecryptPartFunc;
     8,                      // SIZE_T                              blockSize;
     sizeof( SYMCRYPT_RC2_EXPANDED_KEY ), // SIZE_T  expandedKeySize;    // = sizeof( SYMCRYPT_XXX_EXPANDED_KEY )
 };

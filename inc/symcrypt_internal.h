@@ -568,7 +568,7 @@ SymCryptCpuFeaturesNeverPresent();
 //  INTERNAL DATA STRUCTURES
 //==============================================================================================
 //
-// Note: we don not use the symbolic names like SYMCRYPT_SHA1_INPUT_BLOCK_SIZE as this
+// Note: we do not use the symbolic names like SYMCRYPT_SHA1_INPUT_BLOCK_SIZE as this
 // file is included before that name is defined. Fixing that would make the public API header
 // file harder to read by moving the constant away from the associated functions, or forcing
 // the header file to use the struct name rather than the typedef. The current solution
@@ -1243,6 +1243,12 @@ typedef union _SYMCRYPT_GCM_SUPPORTED_BLOCKCIPHER_KEYS
 #define SYMCRYPT_GCM_BLOCK_SIZE     (16)
 #define SYMCRYPT_GCM_MAX_KEY_SIZE   (32)
 
+
+#define SYMCRYPT_GCM_MAX_DATA_SIZE           (((UINT64)1 << 36) - 32)
+
+#define SYMCRYPT_GCM_BLOCK_MOD_MASK      (SYMCRYPT_GCM_BLOCK_SIZE - 1)
+#define SYMCRYPT_GCM_BLOCK_ROUND_MASK    (~SYMCRYPT_GCM_BLOCK_MOD_MASK)
+
 #if SYMCRYPT_CPU_X86
     //
     // x86 needs extra alignment of the GHASH expanded key to support
@@ -1335,10 +1341,11 @@ typedef const SYMCRYPT_GCM_STATE * PCSYMCRYPT_GCM_STATE;
 
 typedef SYMCRYPT_ERROR( SYMCRYPT_CALL * PSYMCRYPT_BLOCKCIPHER_EXPAND_KEY )
 (PVOID pExpandedKey, PCBYTE pbKey, SIZE_T cbKey);
-typedef VOID( SYMCRYPT_CALL * PSYMCRYPT_BLOCKCIPHER_CRYPT )     (PCVOID pExpandedKey, PCBYTE pbSrc, PBYTE pbDst);
-typedef VOID( SYMCRYPT_CALL * PSYMCRYPT_BLOCKCIPHER_CRYPT_ECB ) (PCVOID pExpandedKey, PCBYTE pbSrc, PBYTE pbDst, SIZE_T cbData);
-typedef VOID( SYMCRYPT_CALL * PSYMCRYPT_BLOCKCIPHER_CRYPT_MODE )(PCVOID pExpandedKey, PBYTE pbChainingValue, PCBYTE pbSrc, PBYTE pbDst, SIZE_T cbData);
-typedef VOID( SYMCRYPT_CALL * PSYMCRYPT_BLOCKCIPHER_MAC_MODE )  (PCVOID pExpandedKey, PBYTE pbChainingValue, PCBYTE pbSrc, SIZE_T cbData);
+typedef VOID( SYMCRYPT_CALL * PSYMCRYPT_BLOCKCIPHER_CRYPT )         (PCVOID pExpandedKey, PCBYTE pbSrc, PBYTE pbDst);
+typedef VOID( SYMCRYPT_CALL * PSYMCRYPT_BLOCKCIPHER_CRYPT_ECB )     (PCVOID pExpandedKey, PCBYTE pbSrc, PBYTE pbDst, SIZE_T cbData);
+typedef VOID( SYMCRYPT_CALL * PSYMCRYPT_BLOCKCIPHER_CRYPT_MODE )    (PCVOID pExpandedKey, PBYTE pbChainingValue, PCBYTE pbSrc, PBYTE pbDst, SIZE_T cbData);
+typedef VOID( SYMCRYPT_CALL * PSYMCRYPT_BLOCKCIPHER_MAC_MODE )      (PCVOID pExpandedKey, PBYTE pbChainingValue, PCBYTE pbSrc, SIZE_T cbData);
+typedef VOID( SYMCRYPT_CALL * PSYMCRYPT_BLOCKCIPHER_AEADPART_MODE ) (PVOID pState, PCBYTE pbSrc, PBYTE pbDst, SIZE_T cbData);
 
 struct _SYMCRYPT_BLOCKCIPHER {
                                                 PSYMCRYPT_BLOCKCIPHER_EXPAND_KEY    expandKeyFunc;      // mandatory
@@ -1350,6 +1357,8 @@ struct _SYMCRYPT_BLOCKCIPHER {
                                                 PSYMCRYPT_BLOCKCIPHER_CRYPT_MODE    cbcDecryptFunc;     // NULL if no optimized version available
                                                 PSYMCRYPT_BLOCKCIPHER_MAC_MODE      cbcMacFunc;         // NULL if no optimized version available
                                                 PSYMCRYPT_BLOCKCIPHER_CRYPT_MODE    ctrMsb64Func;       // NULL if no optimized version available
+                                                PSYMCRYPT_BLOCKCIPHER_AEADPART_MODE gcmEncryptPartFunc; // NULL if no optimized version available
+                                                PSYMCRYPT_BLOCKCIPHER_AEADPART_MODE gcmDecryptPartFunc; // NULL if no optimized version available
     _Field_range_( 0, SYMCRYPT_MAX_BLOCK_SIZE ) SIZE_T                              blockSize;          // = SYMCRYPT_XXX_BLOCK_SIZE, power of 2, value <= 32.
                                                 SIZE_T                              expandedKeySize;    // = sizeof( SYMCRYPT_XXX_EXPANDED_KEY )
 };

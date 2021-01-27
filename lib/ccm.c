@@ -246,9 +246,6 @@ SymCryptCcmEncrypt(
     SymCryptCcmEncryptPart( &state, pbSrc, pbDst, cbData );
 
     SymCryptCcmEncryptFinal( &state, pbTag, cbTag );
-
-    SymCryptWipeKnownSize( &state, sizeof( state ) );
-
 }
 
 _Success_(return == SYMCRYPT_NO_ERROR)

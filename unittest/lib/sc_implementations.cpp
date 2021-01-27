@@ -1287,7 +1287,7 @@ AuthEncImp<ImpSc, AlgAes, ModeGcm>::encrypt(
 
     if( (flags & AUTHENC_FLAG_PARTIAL) == 0 )
     {
-        // simple straight CCM computation.
+        // simple straight GCM computation.
         initXmmRegisters();
         CHECK( SymCryptGcmValidateParameters(   SymCryptAesBlockCipher,
             cbNonce,
@@ -1379,7 +1379,7 @@ AuthEncImp<ImpSc, AlgAes, ModeGcm>::decrypt(
 
     if( (flags & AUTHENC_FLAG_PARTIAL) == 0 )
     {
-        // simple straight CCM computation.
+        // simple straight GCM computation.
         initXmmRegisters();
         CHECK( SymCryptGcmValidateParameters(   SymCryptAesBlockCipher,
             cbNonce,
