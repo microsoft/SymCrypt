@@ -91,6 +91,8 @@ SymCryptXtsAesEncryptC(
             i += SYMCRYPT_AES_BLOCK_SIZE;
         }
     }
+
+    SymCryptWipeKnownSize( tweakBuf, sizeof( tweakBuf ) );
 }
 
 #if SYMCRYPT_CPU_AMD64 | SYMCRYPT_CPU_X86 | SYMCRYPT_CPU_ARM
@@ -143,6 +145,8 @@ SymCryptXtsAesEncryptAsm(
             i += SYMCRYPT_AES_BLOCK_SIZE;
         }
     }
+
+    SymCryptWipeKnownSize( tweakBuf, sizeof( tweakBuf ) );
 }
 #endif
 
@@ -157,9 +161,12 @@ SymCryptXtsAesEncryptXmm(
     _Out_writes_( cbData )  PBYTE                           pbDst,
                             SIZE_T                          cbData )
 {
-    SYMCRYPT_ALIGN BYTE     tweakBuf[N_PARALLEL_TWEAKS * SYMCRYPT_AES_BLOCK_SIZE];
-    SIZE_T                  tweakbytes;
-    SIZE_T                  i;
+    // Defining localScratch as a buffer of __m128is ensures there is required 16B alignment on x86
+    __m128i localScratch[ N_PARALLEL_TWEAKS + 16 ];
+    PBYTE               tweakBuf        = (PBYTE) &localScratch[0];
+    PBYTE               dataUnitScratch = (PBYTE) &localScratch[N_PARALLEL_TWEAKS];
+    SIZE_T              tweakbytes;
+    SIZE_T              i;
 
     SYMCRYPT_ASSERT( (cbDataUnit & (SYMCRYPT_AES_BLOCK_SIZE - 1)) == 0 && cbData % cbDataUnit == 0);
 
@@ -189,12 +196,14 @@ SymCryptXtsAesEncryptXmm(
         i = 0;
         while( i < tweakbytes )
         {
-            SymCryptXtsAesEncryptDataUnitXmm( &pExpandedKey->key1, &tweakBuf[i], pbSrc, pbDst, cbDataUnit );
+            SymCryptXtsAesEncryptDataUnitXmm( &pExpandedKey->key1, &tweakBuf[i], &dataUnitScratch[0], pbSrc, pbDst, cbDataUnit );
             pbSrc += cbDataUnit;
             pbDst += cbDataUnit;
             i += SYMCRYPT_AES_BLOCK_SIZE;
         }
     }
+
+    SymCryptWipeKnownSize( localScratch, sizeof( localScratch ) );
 }
 
 VOID
@@ -207,9 +216,12 @@ SymCryptXtsAesEncryptZmm(
     _Out_writes_( cbData )  PBYTE                           pbDst,
                             SIZE_T                          cbData )
 {
-    SYMCRYPT_ALIGN BYTE     tweakBuf[N_PARALLEL_TWEAKS * SYMCRYPT_AES_BLOCK_SIZE];
-    SIZE_T                  tweakbytes;
-    SIZE_T                  i;
+    // Defining localScratch as a buffer of __m128is ensures there is required 16B alignment on x86
+    __m128i localScratch[ N_PARALLEL_TWEAKS + 16 ];
+    PBYTE               tweakBuf        = (PBYTE) &localScratch[0];
+    PBYTE               dataUnitScratch = (PBYTE) &localScratch[N_PARALLEL_TWEAKS];
+    SIZE_T              tweakbytes;
+    SIZE_T              i;
 
     SYMCRYPT_ASSERT( (cbDataUnit & (SYMCRYPT_AES_BLOCK_SIZE - 1)) == 0 && cbData % cbDataUnit == 0);
 
@@ -239,12 +251,14 @@ SymCryptXtsAesEncryptZmm(
         i = 0;
         while( i < tweakbytes )
         {
-            SymCryptXtsAesEncryptDataUnitZmm_2048( &pExpandedKey->key1, &tweakBuf[i], pbSrc, pbDst, cbDataUnit );
+            SymCryptXtsAesEncryptDataUnitZmm_2048( &pExpandedKey->key1, &tweakBuf[i], &dataUnitScratch[0], pbSrc, pbDst, cbDataUnit );
             pbSrc += cbDataUnit;
             pbDst += cbDataUnit;
             i += SYMCRYPT_AES_BLOCK_SIZE;
         }
     }
+
+    SymCryptWipeKnownSize( localScratch, sizeof( localScratch ) );
 }
 
 VOID
@@ -257,9 +271,12 @@ SymCryptXtsAesEncryptYmm(
     _Out_writes_( cbData )  PBYTE                           pbDst,
                             SIZE_T                          cbData )
 {
-    SYMCRYPT_ALIGN BYTE     tweakBuf[N_PARALLEL_TWEAKS * SYMCRYPT_AES_BLOCK_SIZE];
-    SIZE_T                  tweakbytes;
-    SIZE_T                  i;
+    // Defining localScratch as a buffer of __m128is ensures there is required 16B alignment on x86
+    __m128i localScratch[ N_PARALLEL_TWEAKS + 16 ];
+    PBYTE               tweakBuf        = (PBYTE) &localScratch[0];
+    PBYTE               dataUnitScratch = (PBYTE) &localScratch[N_PARALLEL_TWEAKS];
+    SIZE_T              tweakbytes;
+    SIZE_T              i;
 
     SYMCRYPT_ASSERT( (cbDataUnit & (SYMCRYPT_AES_BLOCK_SIZE - 1)) == 0 && cbData % cbDataUnit == 0);
 
@@ -289,12 +306,14 @@ SymCryptXtsAesEncryptYmm(
         i = 0;
         while( i < tweakbytes )
         {
-            SymCryptXtsAesEncryptDataUnitYmm_2048( &pExpandedKey->key1, &tweakBuf[i], pbSrc, pbDst, cbDataUnit );
+            SymCryptXtsAesEncryptDataUnitYmm_2048( &pExpandedKey->key1, &tweakBuf[i], &dataUnitScratch[0], pbSrc, pbDst, cbDataUnit );
             pbSrc += cbDataUnit;
             pbDst += cbDataUnit;
             i += SYMCRYPT_AES_BLOCK_SIZE;
         }
     }
+
+    SymCryptWipeKnownSize( localScratch, sizeof( localScratch ) );
 }
 #endif
 
@@ -347,6 +366,8 @@ SymCryptXtsAesEncryptNeon(
             i += SYMCRYPT_AES_BLOCK_SIZE;
         }
     }
+
+    SymCryptWipeKnownSize( tweakBuf, sizeof( tweakBuf ) );
 }
 
 VOID
@@ -397,6 +418,8 @@ SymCryptXtsAesDecryptNeon(
             i += SYMCRYPT_AES_BLOCK_SIZE;
         }
     }
+
+    SymCryptWipeKnownSize( tweakBuf, sizeof( tweakBuf ) );
 }
 
 
@@ -497,6 +520,8 @@ SymCryptXtsAesDecryptC(
             i += SYMCRYPT_AES_BLOCK_SIZE;
         }
     }
+
+    SymCryptWipeKnownSize( tweakBuf, sizeof( tweakBuf ) );
 }
 
 #if SYMCRYPT_CPU_AMD64 | SYMCRYPT_CPU_X86 | SYMCRYPT_CPU_ARM
@@ -549,6 +574,8 @@ SymCryptXtsAesDecryptAsm(
             i += SYMCRYPT_AES_BLOCK_SIZE;
         }
     }
+
+    SymCryptWipeKnownSize( tweakBuf, sizeof( tweakBuf ) );
 }
 #endif
 
@@ -563,9 +590,12 @@ SymCryptXtsAesDecryptXmm(
     _Out_writes_( cbData )  PBYTE                           pbDst,
                             SIZE_T                          cbData )
 {
-    SYMCRYPT_ALIGN BYTE     tweakBuf[N_PARALLEL_TWEAKS * SYMCRYPT_AES_BLOCK_SIZE];
-    SIZE_T                  tweakbytes;
-    SIZE_T                  i;
+    // Defining localScratch as a buffer of __m128is ensures there is required 16B alignment on x86
+    __m128i localScratch[ N_PARALLEL_TWEAKS + 16 ];
+    PBYTE               tweakBuf        = (PBYTE) &localScratch[0];
+    PBYTE               dataUnitScratch = (PBYTE) &localScratch[N_PARALLEL_TWEAKS];
+    SIZE_T              tweakbytes;
+    SIZE_T              i;
 
     SYMCRYPT_ASSERT( (cbDataUnit & (SYMCRYPT_AES_BLOCK_SIZE - 1)) == 0 && cbData % cbDataUnit == 0);
 
@@ -595,12 +625,14 @@ SymCryptXtsAesDecryptXmm(
         i = 0;
         while( i < tweakbytes )
         {
-            SymCryptXtsAesDecryptDataUnitXmm( &pExpandedKey->key1, &tweakBuf[i], pbSrc, pbDst, cbDataUnit );
+            SymCryptXtsAesDecryptDataUnitXmm( &pExpandedKey->key1, &tweakBuf[i], &dataUnitScratch[0], pbSrc, pbDst, cbDataUnit );
             pbSrc += cbDataUnit;
             pbDst += cbDataUnit;
             i += SYMCRYPT_AES_BLOCK_SIZE;
         }
     }
+
+    SymCryptWipeKnownSize( localScratch, sizeof( localScratch ) );
 }
 
 VOID
@@ -613,9 +645,12 @@ SymCryptXtsAesDecryptZmm(
     _Out_writes_( cbData )  PBYTE                           pbDst,
                             SIZE_T                          cbData )
 {
-    SYMCRYPT_ALIGN BYTE     tweakBuf[N_PARALLEL_TWEAKS * SYMCRYPT_AES_BLOCK_SIZE];
-    SIZE_T                  tweakbytes;
-    SIZE_T                  i;
+    // Defining localScratch as a buffer of __m128is ensures there is required 16B alignment on x86
+    __m128i localScratch[ N_PARALLEL_TWEAKS + 16 ];
+    PBYTE               tweakBuf        = (PBYTE) &localScratch[0];
+    PBYTE               dataUnitScratch = (PBYTE) &localScratch[N_PARALLEL_TWEAKS];
+    SIZE_T              tweakbytes;
+    SIZE_T              i;
 
     SYMCRYPT_ASSERT( (cbDataUnit & (SYMCRYPT_AES_BLOCK_SIZE - 1)) == 0 && cbData % cbDataUnit == 0);
 
@@ -645,12 +680,14 @@ SymCryptXtsAesDecryptZmm(
         i = 0;
         while( i < tweakbytes )
         {
-            SymCryptXtsAesDecryptDataUnitZmm_2048( &pExpandedKey->key1, &tweakBuf[i], pbSrc, pbDst, cbDataUnit );
+            SymCryptXtsAesDecryptDataUnitZmm_2048( &pExpandedKey->key1, &tweakBuf[i], &dataUnitScratch[0], pbSrc, pbDst, cbDataUnit );
             pbSrc += cbDataUnit;
             pbDst += cbDataUnit;
             i += SYMCRYPT_AES_BLOCK_SIZE;
         }
     }
+
+    SymCryptWipeKnownSize( localScratch, sizeof( localScratch ) );
 }
 
 VOID
@@ -663,9 +700,12 @@ SymCryptXtsAesDecryptYmm(
     _Out_writes_( cbData )  PBYTE                           pbDst,
                             SIZE_T                          cbData )
 {
-    SYMCRYPT_ALIGN BYTE     tweakBuf[N_PARALLEL_TWEAKS * SYMCRYPT_AES_BLOCK_SIZE];
-    SIZE_T                  tweakbytes;
-    SIZE_T                  i;
+    // Defining localScratch as a buffer of __m128is ensures there is required 16B alignment on x86
+    __m128i localScratch[ N_PARALLEL_TWEAKS + 16 ];
+    PBYTE               tweakBuf        = (PBYTE) &localScratch[0];
+    PBYTE               dataUnitScratch = (PBYTE) &localScratch[N_PARALLEL_TWEAKS];
+    SIZE_T              tweakbytes;
+    SIZE_T              i;
 
     SYMCRYPT_ASSERT( (cbDataUnit & (SYMCRYPT_AES_BLOCK_SIZE - 1)) == 0 && cbData % cbDataUnit == 0);
 
@@ -695,12 +735,14 @@ SymCryptXtsAesDecryptYmm(
         i = 0;
         while( i < tweakbytes )
         {
-            SymCryptXtsAesDecryptDataUnitYmm_2048( &pExpandedKey->key1, &tweakBuf[i], pbSrc, pbDst, cbDataUnit );
+            SymCryptXtsAesDecryptDataUnitYmm_2048( &pExpandedKey->key1, &tweakBuf[i], &dataUnitScratch[0], pbSrc, pbDst, cbDataUnit );
             pbSrc += cbDataUnit;
             pbDst += cbDataUnit;
             i += SYMCRYPT_AES_BLOCK_SIZE;
         }
     }
+
+    SymCryptWipeKnownSize( localScratch, sizeof( localScratch ) );
 }
 #endif
 

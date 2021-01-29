@@ -1290,7 +1290,7 @@ SymCryptXtsAesDecryptDataUnitNeon(
     keyPtr = (const __n128 *)&pExpandedKey->RoundKey[0]; \
     keyLimit = (const __n128 *)pExpandedKey->lastEncRoundKey; \
     __n128 t0, t1, r0, r0x; \
-    int aesEncryptGhashLoop; \
+    SIZE_T aesEncryptGhashLoop; \
 \
     /* Do gHashRounds full rounds (AES-128|AES-192|AES-256) with stitched GHASH */ \
     roundKey = *keyPtr++; \
@@ -1374,7 +1374,7 @@ SymCryptXtsAesDecryptDataUnitNeon(
     keyPtr = (const __n128 *)&pExpandedKey->RoundKey[0]; \
     keyLimit = (const __n128 *)pExpandedKey->lastEncRoundKey; \
     __n128 t0, t1, r0, r0x; \
-    int aesEncryptGhashLoop; \
+    SIZE_T aesEncryptGhashLoop; \
 \
     /* Do gHashRounds full rounds (AES-128|AES-192|AES-256) with stitched GHASH */ \
     roundKey = *keyPtr++; \
