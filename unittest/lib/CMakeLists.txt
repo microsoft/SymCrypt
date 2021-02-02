@@ -72,6 +72,11 @@ if(WIN32)
     # DNDEBUG is required to link with msbignum. This should eventually be removed.
     add_compile_options(-DNDEBUG)
     add_compile_options(-D_CRT_SECURE_NO_WARNINGS)
+
+    if(NOT SYMCRYPT_INTERNAL_BUILD)
+        add_compile_options(-DINCLUDE_IMPL_MSBIGNUM=0)
+        add_compile_options(-DINCLUDE_IMPL_RSA32=0)
+    endif()
 else()
     add_compile_options(-Wno-write-strings)
     add_compile_options(-DINCLUDE_IMPL_CAPI=0)

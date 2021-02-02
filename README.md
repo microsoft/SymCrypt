@@ -23,7 +23,9 @@ SymCrypt can be compiled with CMake >= 2.8.9 and Visual Studio 2019 (with Window
 or gcc 7.4.0 on Linux. Note that CMake ships with Visual Studio 2019.
 
 1. Optionally use CMake from Visual Studio `$env:PATH="C:\Program Files (x86)\Microsoft Visual Studio\2019\Enterprise\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\bin\;${env:PATH}"`
-2. `git submodule update --init`
+2. For Microsoft employees building the library internally, to include msbignum and RSA32 implementation benchmarks in the unit tests:
+    1. `git submodule update --init`
+    2. In step 4 below, add the additional cmake argument `-DSYMCRYPT_INTERNAL_BUILD=1`
 3. `mkdir bin; cd bin`
 4. Configure CMake compilation:
     * For 32-bit Windows targets: `cmake .. -DCMAKE_TOOLCHAIN_FILE=../cmake-toolchain/windows-x86.cmake -A Win32`
@@ -34,7 +36,7 @@ or gcc 7.4.0 on Linux. Note that CMake ships with Visual Studio 2019.
 If compilation succeeds, the output will be put in the `exe` subdirectory relative to where compilation occurred
 (i.e. `bin/exe` if you followed the instructions above).
 
-The SymCrypt unit test is in the `\unittest` directory. It runs extensive functional tests on the SymCrypt
+The SymCrypt unit test is in the `unittest` directory. It runs extensive functional tests on the SymCrypt
 library. On Windows it also compares results against on other implementations such as the Windows APIs CNG
 and CAPI, and the older crypto libraries rsa32 and msbignum, if they are available. It also provides 
 detailed performance information.

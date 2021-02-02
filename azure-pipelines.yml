@@ -27,7 +27,7 @@ jobs:
   - task: CMake@1
     inputs:
       workingDirectory: '$(Build.SourcesDirectory)/bin'
-      cmakeArgs: '..  -DCMAKE_TOOLCHAIN_FILE=../cmake-toolchain/windows-amd64.cmake'
+      cmakeArgs: '..  -DCMAKE_TOOLCHAIN_FILE=../cmake-toolchain/windows-amd64.cmake -DSYMCRYPT_INTERNAL_BUILD=1'
   # Build with CMake
   # cmake --build .
   - task: CMake@1
@@ -62,7 +62,7 @@ jobs:
   - task: CMake@1
     inputs:
       workingDirectory: '$(Build.SourcesDirectory)/bin'
-      cmakeArgs: '..  -DCMAKE_TOOLCHAIN_FILE=../cmake-toolchain/windows-x86.cmake -A Win32'
+      cmakeArgs: '..  -DCMAKE_TOOLCHAIN_FILE=../cmake-toolchain/windows-x86.cmake -DSYMCRYPT_INTERNAL_BUILD=1 -A Win32'
   - task: CMake@1
     inputs:
       workingDirectory: '$(Build.SourcesDirectory)/bin'
