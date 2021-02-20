@@ -574,7 +574,7 @@ public:
                                         SIZE_T *pcbMsg ) = 0;
 };
 
-#define DLKEY_MAXKEYSIZE    (512)  // 4096 bits = 512 bytes. Generating larger groups is too slow for testing
+#define DLKEY_MAXKEYSIZE    (1024)  // 8192 bits = 1024 bytes. Generating larger groups is too slow for testing
 typedef struct _DLGROUP_TESTBLOB {
     UINT32                  nBitsP;             // P = field prime, Q = subgroup order, G = generator
     UINT32                  cbPrimeP;           //
@@ -596,6 +596,7 @@ typedef struct _DLKEY_TESTBLOB {
     UINT32              cbPrivKey;                      //
     BYTE                abPubKey[DLKEY_MAXKEYSIZE];     // cbPrimeP bytes
     BYTE                abPrivKey[DLKEY_MAXKEYSIZE];    // cbPrivKey bytes
+    BOOL                fPrivateModP;                   // private key in range [1,P-2] - not [1,Q-1]
 } DLKEY_TESTBLOB, *PDLKEY_TESTBLOB;
 typedef const DLKEY_TESTBLOB * PCDLKEY_TESTBLOB;
 

@@ -1622,9 +1622,10 @@ addRsaKeyGenPerfMsBignum( PrintTable &table );
 extern RSAKEY_TESTBLOB g_RsaTestKeyBlobs[ MAX_RSA_TESTKEYS ];
 extern UINT32 g_nRsaTestKeyBlobs;
 
-#define MAX_TEST_DLGROUPS   (50)
+#define MAX_TEST_DLGROUPS   (60)
 extern DLGROUP_TESTBLOB g_DlGroup[ MAX_TEST_DLGROUPS ];
 extern UINT32 g_nDlgroups;
+extern UINT32 g_nDhNamedGroups;
 
 VOID
 fprintHex( FILE * f, PCBYTE pbData, SIZE_T cbData );
@@ -1641,7 +1642,7 @@ PSYMCRYPT_RSAKEY
 rsaTestKeyForSize( SIZE_T nBits );
 
 PCDLGROUP_TESTBLOB
-dlgroupForSize( SIZE_T nBits );
+dlgroupForSize( SIZE_T nBits, BOOLEAN forDiffieHellman );
 
 VOID generateDlGroups();
 

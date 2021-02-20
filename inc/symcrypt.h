@@ -242,6 +242,19 @@ typedef enum _SYMCRYPT_DLGROUP_FIPS {
 //    properly generated.
 //
 
+typedef enum _SYMCRYPT_DLGROUP_DH_SAFEPRIMETYPE {
+    SYMCRYPT_DLGROUP_DH_SAFEPRIMETYPE_NONE = 0,
+    SYMCRYPT_DLGROUP_DH_SAFEPRIMETYPE_IKE_3526 = 1,
+    SYMCRYPT_DLGROUP_DH_SAFEPRIMETYPE_TLS_7919 = 2,
+} SYMCRYPT_DLGROUP_DH_SAFEPRIMETYPE;
+#define SYMCRYPT_DLGROUP_DH_SAFEPRIMETYPE_DEFAULT   SYMCRYPT_DLGROUP_DH_SAFEPRIMETYPE_TLS_7919
+//
+// Dlgroup enums for the specification and verification of the named safe prime group parameters.
+// These are used in:
+//  - SymCryptDlgroupGenerateSafePrime function to specify the appropriate group to
+//    be used.
+//
+
 //
 // The symcrypt_internal.h file contains information only relevant to the internals
 // of the library, but they have to be exposed to the compiler of the caller.
@@ -4655,6 +4668,10 @@ SymCryptDlgroupAllocate( UINT32  nBitsOfP, UINT32  nBitsOfQ );
 // the prime Q is known and if a future caller tries to import a bigger Q then
 // the SymCryptDlgroupSetValue call will fail.
 //
+// Technically nBitsOfQ should always be strictly less than nBitsOfP, as Q divides
+// P-1. For simplicity, it is allowed that callers specify nBitsOfQ equal to nBitsOfP
+// in this call, but SymCrypt will treat this as setting nBitsOfQ to (nBitsOfP-1).
+//
 // Setting nBitsOfQ to 0 might result in a bigger size of the DLGROUP object
 // compared to setting it to a specific size (see SymCryptSizeofDlgroupFromBitsizes).
 //
@@ -4689,7 +4706,7 @@ SymCryptSizeofDlgroupFromBitsizes( UINT32 nBitsOfP, UINT32 nBitsOfQ );
 //          F(nBitsOfP_0,nBitsOfQ_0) <= F(nBitsOfP_1,nBitsOfQ_1)
 //      where F is the function SymCryptSizeofDlgroupFromBitsizes.
 //
-//  - F(nBitsOfP, 0)=F(nBitsOfP, nBitsOfP). Thus when nBitsOfQ==0 the
+//  - F(nBitsOfP, 0)=F(nBitsOfP, nBitsOfP-1). Thus when nBitsOfQ==0 the
 //    function takes the maximum value for a fixed nBitsOfP.
 //
 
@@ -4830,6 +4847,62 @@ VOID
 SymCryptEckeyCopy(
     _In_    PCSYMCRYPT_ECKEY  pkSrc,
     _Out_   PSYMCRYPT_ECKEY   pkDst );
+
+
+//=====================================================
+// Generic key validation flags
+// Currently only apply to DH, DSA, ECDH, and ECDSA.
+
+// SYMCRYPT_FLAG_KEY_MINIMAL_VALIDATION: When set in a SetValue call, minimize costly validation.
+//      Only to be used in very performance sensitive situations where the caller strongly trusts the values
+//      it is passing to SymCrypt
+//      Cannot be specified with SYMCRYPT_FLAG_KEY_RANGE_VALIDATION or SYMCRYPT_FLAG_KEY_RANGE_AND_PUBLIC_KEY_ORDER_VALIDATION
+#define SYMCRYPT_FLAG_KEY_MINIMAL_VALIDATION                    (0x10)
+
+// Maintain old ECC specific flag for backwards compatibility
+#define SYMCRYPT_FLAG_ECC_NO_VALIDATION     SYMCRYPT_FLAG_KEY_MINIMAL_VALIDATION
+
+// SYMCRYPT_FLAG_KEY_RANGE_VALIDATION: When set in a SetValue call, ensure that:
+//      Generated or imported Private key:
+//          For DH/DSA:
+//              Check private key is in the range: [1, q-1]
+//                  If Dlgroup is a named safe-prime group, nBitsPriv is specified statically, such that
+//                  2s <= nBitsPriv <= nBitsOfQ. In this case, we enforce that the private key is in the
+//                  reduced range [1, min(2^nBitsPriv, q)-1]
+//                      (s is the maximum security strength for a named safe-prime group as specified in SP800-56arev3)
+//              If q is not known, this will cause SYMCRYPT_INVALID_ARGUMENT
+//          For ECDH/ECDSA:
+//              For Curves with Canonical Private key format: Private key is in range [1, GOrd-1]
+//                  Currently only Short-Weierstrass curves use the SYMCRYPT_ECKEY_PRIVATE_FORMAT_CANONICAL format
+//              For other Curves: Private key is non-zero
+//      Generated or imported Public key:
+//          For DH/DSA: Public key in range [2, p-2]
+//          For ECDH/ECDSA:
+//              Public key is nonzero, has coordinates in the underlying field
+//              and for non-Montgomery Curves: Public key is on the curve
+//      Cannot be specified with SYMCRYPT_FLAG_KEY_MINIMAL_VALIDATION or SYMCRYPT_FLAG_KEY_RANGE_AND_PUBLIC_KEY_ORDER_VALIDATION
+#define SYMCRYPT_FLAG_KEY_RANGE_VALIDATION                      (0x20)
+
+// SYMCRYPT_FLAG_KEY_RANGE_AND_PUBLIC_KEY_ORDER_VALIDATION: When set in a SetValue, Generate, or SetRandom call, ensure that:
+//      Range validation ensured as for SYMCRYPT_FLAG_KEY_RANGE_VALIDATION
+//          In the case of generation of a Private key this is done by construction
+//      and
+//      Generated or imported Public key is in a subgroup of the correct order. i.e.:
+//          For DH/DSA: Verify that (Public key)^Q == 1 mod P
+//              If Q is not known, this will cause SYMCRYPT_INVALID_ARGUMENT
+//          For ECDH/ECDSA: Verify that GOrd*(Public key) == O
+//      Cannot be specified with SYMCRYPT_FLAG_KEY_MINIMAL_VALIDATION or SYMCRYPT_FLAG_KEY_RANGE_VALIDATION
+#define SYMCRYPT_FLAG_KEY_RANGE_AND_PUBLIC_KEY_ORDER_VALIDATION (0x30)
+
+// SYMCRYPT_FLAG_KEY_KEYPAIR_REGENERATION_VALIDATION: When set in a SetValue call, ensure that:
+//      If a Public and Private key are imported:
+//          Use the imported Private key to generate a Public key, and check the generated Public key is equal
+//          to the imported Public key
+#define SYMCRYPT_FLAG_KEY_KEYPAIR_REGENERATION_VALIDATION       (0x40)
+
+// Maintain old DL specific flag for backwards compatibility
+#define SYMCRYPT_FLAG_DLKEY_VERIFY      SYMCRYPT_FLAG_KEY_KEYPAIR_REGENERATION_VALIDATION
+
 
 //=====================================================
 // RSA key operations
@@ -5030,7 +5103,7 @@ SYMCRYPT_CALL
 SymCryptDlgroupGenerate(
     _In_    PCSYMCRYPT_HASH         hashAlgorithm,
     _In_    SYMCRYPT_DLGROUP_FIPS   fipsStandard,
-    _Out_   PSYMCRYPT_DLGROUP       pDlgroup );
+    _Inout_ PSYMCRYPT_DLGROUP       pDlgroup );
 //
 // Generate a Discrete Logarithm Group for use in Diffie-Hellman and DSA.
 //
@@ -5072,6 +5145,33 @@ SymCryptDlgroupGenerate(
 //  - For FIPS 186-2, we have that nBitsOfHash == 160 (SHA1 output size). Therefore
 //    this flag can only work with nBitsOfQ up to 160 bits. Anything else will
 //    return SYMCRYPT_INVALID_ARGUMENT.
+//
+
+_Success_(return == SYMCRYPT_NO_ERROR)
+SYMCRYPT_ERROR
+SYMCRYPT_CALL
+SymCryptDlgroupSetValueSafePrime(
+            SYMCRYPT_DLGROUP_DH_SAFEPRIMETYPE   dhSafePrimeType,
+    _Inout_ PSYMCRYPT_DLGROUP                   pDlgroup );
+//
+// Sets a Discrete Logarithm Group for use in Diffie-Hellman using a named safe-prime group.
+//
+// - dhSafePrimeType: The type of named safe-prime group to use
+//
+// pDlGroup must have been created with SymCryptDlgroupAllocate() or SymCryptDlgroupCreate().
+//
+// Selects the largest named safe-prime group that will fit in the allocated Dlgroup (based on the
+// values of nBitsOfP and nBitsOfQ used in allocation). It is recommended that callers set nBitsOfQ
+// to 0 in allocation (equivalent to nBitsOfQ = (nBitsOfP-1)) when creating a safe-prime group.
+//
+// Requirements:
+//  - pDlgroup!=NULL. Otherwise it returns SYMCRYPT_INVALID_ARGUMENT.
+//
+//  - pDlgroup was allocated with sufficient bits for the selected P (and Q) to fit. If there is no
+//    named safe-prime group with bit size <= the allocated size, it returns SYMCRYPT_INVALID_ARGUMENT.
+//    The minimum currently supported bitsize of named safe-prime groups is nBitsOfP = 2048.
+//
+//  - dhSafePrimeType!=SYMCRYPT_DLGROUP_DH_SAFEPRIMETYPE_NONE. Otherwise it returns SYMCRYPT_INVALID_ARGUMENT.
 //
 
 BOOLEAN
@@ -5118,7 +5218,7 @@ SymCryptDlgroupSetValue(
                                     SIZE_T                  cbSeed,
                                     UINT32                  genCounter,
                                     SYMCRYPT_DLGROUP_FIPS   fipsStandard,
-    _Out_                           PSYMCRYPT_DLGROUP       pDlgroup );
+    _Inout_                         PSYMCRYPT_DLGROUP       pDlgroup );
 //
 // Import key material to a DLGROUP object.
 //  - Prime P is NOT optional and should always be imported.
@@ -5184,11 +5284,19 @@ SymCryptDlgroupGetValue(
 //
 
 //=====================================================
-// DL key operations
+// DL flags
+//
+// Also see Generic key validation flags above
 
-// Flags
+// SYMCRYPT_FLAG_DLKEY_GEN_MODP:
+// When set on SymCryptDlkeyGenerate call, generate a private key between 1 and P-2.
+// When Q is known, this overrides the default behavior of generating a private key between 1 and Q-1,
+// or 1 and 2^nBitsPriv-1 for named safe-prime groups
+// When Q is not known, this does not affect the behavior
 #define SYMCRYPT_FLAG_DLKEY_GEN_MODP  (0x01)
-#define SYMCRYPT_FLAG_DLKEY_VERIFY    (0x02)
+
+//=====================================================
+// DL key operations
 
 PCSYMCRYPT_DLGROUP
 SYMCRYPT_CALL
@@ -5222,19 +5330,27 @@ _Success_(return == SYMCRYPT_NO_ERROR)
 SYMCRYPT_ERROR
 SYMCRYPT_CALL
 SymCryptDlkeyGenerate(
-    _In_  UINT32                     flags,
-    _Out_ PSYMCRYPT_DLKEY            pkDlkey );
+    _In_    UINT32                      flags,
+    _Inout_ PSYMCRYPT_DLKEY             pkDlkey );
 //
 // Allowed flags:
-//  - SYMCRYPT_FLAG_DLKEY_GEN_MODP: If this flag is specified then
-//  the generation algorithm will generate a private key between 1
-//  and P-2.
+//  - SYMCRYPT_FLAG_KEY_RANGE_AND_PUBLIC_KEY_ORDER_VALIDATION
+//  Described in the key validation flag definitions above. Intended use is to allow additional
+//  (expensive) checks required by FIPS (SP800-56arev3) to be performed for compliance.
+//  Provided the Dlgroup is well formed, and the prime Q is known, generated keypairs will always
+//  pass these checks, so it is not recommended to set this flag unless required, as it makes the
+//  operation slower without affecting the results.
 //
-//  The default behavior is to generate a key between 1 and Q-1 which
-//  speeds up the operations and is necessary for the DSA algorithms.
+//  - SYMCRYPT_FLAG_DLKEY_GEN_MODP
+//  When set, generate a private key between 1 and P-2.
+//  When Q is known, this overrides the default behavior of generating a private key between 1 and Q-1,
+//  or 1 and 2^nBitsPriv-1 for named safe-prime groups
+//  When Q is not known, this does not affect the behavior
 //
-//  Obviously if the group has no Q specified the generation algorithm
-//  will generate a key between 1 and P-2 even without the above flag.
+// Note:
+// If SYMCRYPT_FLAG_DLKEY_GEN_MODP is specified in conjuction with
+// SYMCRYPT_FLAG_KEY_RANGE_AND_PUBLIC_KEY_ORDER_VALIDATION a SYMCRYPT_INVALID_ARGUMENT error will be
+// returned, as Private key range validation requires the default generation behavior
 //
 
 _Success_(return == SYMCRYPT_NO_ERROR)
@@ -5247,13 +5363,17 @@ SymCryptDlkeySetValue(
                                         SIZE_T                  cbPublicKey,
                                         SYMCRYPT_NUMBER_FORMAT  numFormat,
                                         UINT32                  flags,
-    _Out_                               PSYMCRYPT_DLKEY         pkDlkey );
+    _Inout_                             PSYMCRYPT_DLKEY         pkDlkey );
 //
 // Import key material to a DLKEY object.
 //
 // Allowed flags:
-//  - SYMCRYPT_FLAG_DLKEY_VERIFY: If both private and public keys are given and
-//  this flag is specified, then the function verifies that they match.
+//  - Optionally, at most 1 of
+//      SYMCRYPT_FLAG_KEY_MINIMAL_VALIDATION,
+//      SYMCRYPT_FLAG_KEY_RANGE_VALIDATION, and
+//      SYMCRYPT_FLAG_KEY_RANGE_AND_PUBLIC_KEY_ORDER_VALIDATION
+//  - and optionally SYMCRYPT_FLAG_KEY_KEYPAIR_REGENERATION_VALIDATION
+//  Described in the key validation flag definitions above.
 //
 
 _Success_(return == SYMCRYPT_NO_ERROR)
@@ -5373,15 +5493,11 @@ extern const PCSYMCRYPT_ECURVE_PARAMS    SymCryptEcurveParamsCurve25519;
 //=====================================================
 // ECC flags
 //
-// SYMCRYPT_FLAG_ECC_NO_VALIDATION: When set the ECKEY SetValue algorithm doesn't perform any validation
-//      on the created ECKEYS. (default: Validation according to the X9.62 section 5.2.2 standard)
-//
+// Also see Generic key validation flags above
+
 // SYMCRYPT_FLAG_ECDSA_NO_TRUNCATION: This flag applies only to the ECDSA algorithm. When set, the sign
 //      and verify algorithms will not do hash truncation. The caller can use their own truncation method in such case.
 //      (default: according to the ECDSA standard)
-
-#define SYMCRYPT_FLAG_ECC_NO_VALIDATION         (0x04)
-
 #define SYMCRYPT_FLAG_ECDSA_NO_TRUNCATION        (0x08)
 
 //=====================================================
@@ -5424,7 +5540,7 @@ SymCryptEckeySetValue(
                                         SYMCRYPT_NUMBER_FORMAT  numFormat,
                                         SYMCRYPT_ECPOINT_FORMAT ecPointFormat,
                                         UINT32                  flags,
-    _Out_                               PSYMCRYPT_ECKEY         pEckey );
+    _Inout_                             PSYMCRYPT_ECKEY         pEckey );
 //
 // Import key material to an ECKEY object.
 //
@@ -5433,7 +5549,7 @@ SymCryptEckeySetValue(
 //      in the format specified by the numFormat parameter.
 //      Note that the integer encoded in (pbPrivateKey, cbPrivateKey) is taken modulo the order of the
 //      subgroup generated by the curve generator. Callers that want a uniform private key value
-//      should ensure that the input is uniform in the range [0..t-1] where t is the order of the generator.
+//      should ensure that the input is uniform in the range [1..GOrd-1].
 //
 //      Requirements: cbPrivateKey == SymCryptEckeySizeofPrivateKey( pEckey )
 //
@@ -5449,35 +5565,44 @@ SymCryptEckeySetValue(
 //      key is computed from the provided private key.
 //
 //      At least one of the public and private keys must be provided.
-//      If both are provided, then they must match.
-//      If only a public key is provided this function verifies that it is in the subgroup generated by
-//      the the curve distinguished point.
 //
-//      The algorithm always set the corresponding public key
+//      If both are provided, then they should match. They are required to match when
+//      SYMCRYPT_FLAG_KEY_KEYPAIR_REGENERATION_VALIDATION is specified.
+//
+//      The algorithm always sets the corresponding public key
 //
 // Allowed flags:
-//      - SYMCRYPT_FLAG_ECC_NO_VALIDATION: If set then we don't check that the public key matches the
-//        private key.
+//      - Optionally, at most 1 of
+//          SYMCRYPT_FLAG_KEY_MINIMAL_VALIDATION,
+//          SYMCRYPT_FLAG_KEY_RANGE_VALIDATION, and
+//          SYMCRYPT_FLAG_KEY_RANGE_AND_PUBLIC_KEY_ORDER_VALIDATION
+//      - and optionally SYMCRYPT_FLAG_KEY_KEYPAIR_REGENERATION_VALIDATION
+//      Described in the key validation flag definitions above.
 //
 
 _Success_(return == SYMCRYPT_NO_ERROR)
 SYMCRYPT_ERROR
 SYMCRYPT_CALL
 SymCryptEckeySetRandom(
-    _In_  UINT32                     flags,
-    _Out_ PSYMCRYPT_ECKEY            pEckey );
+    _In_    UINT32                  flags,
+    _Inout_ PSYMCRYPT_ECKEY         pEckey );
 //
 // Generates a new Eckey public/private key pair using the specified curve. The public key
 // is a uniformly random non-zero point of the subgroup generated by the distinguished point
 // of the curve. This complies with the FIPS 186-4 standard.
 //
 // Remarks:
-//  - In the case that the highbit restrictions on the curve are unsatsfiable, i.e.
+//  - In the case that the highbit restrictions on the curve are unsatisfiable, i.e.
 //    there is no private key smaller than the group order it returns
 //    SYMCRYPT_INVALID_ARGUMENT.
 //
 // Allowed flags:
-//      - None
+//      - SYMCRYPT_FLAG_KEY_RANGE_AND_PUBLIC_KEY_ORDER_VALIDATION
+//  Described in the key validation flag definitions above. Intended use is to allow additional
+//  (expensive) checks required by FIPS (SP800-56arev3) to be performed for compliance.
+//  Provided the Ecurve is well formed, generated keypairs will always pass these checks, so it is
+//  not recommended to set this flag unless required, as it makes the operation slower without
+//  affecting the results.
 //
 
 _Success_(return == SYMCRYPT_NO_ERROR)

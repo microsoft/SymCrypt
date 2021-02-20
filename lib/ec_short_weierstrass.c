@@ -22,7 +22,7 @@
 // The following table shows the scratch space requirements of each function with appropriate
 // abbreviations. The calling sequence implies a directed graph that starting from the "leaves"
 // (functions that do no call others) allows to calculate the total scratch space requirements.
-//  
+//
 //  #N Function                     Calls Function  Self Temporaries            Self Scratch
 //   1 SetZero                      -               0                           COM_MOD(FMod)
 //   2 SetDistinguishedPoint        -               0                           0
@@ -79,7 +79,7 @@ SymCryptShortWeierstrassFillScratchSpaces( _In_ PSYMCRYPT_ECURVE pCurve )
 
     // Common
     pCurve->cbScratchCommon =
-            8 * pCurve->cbModElement + 
+            8 * pCurve->cbModElement +
             2 * SymCryptSizeofEcpointEx( pCurve->cbModElement, SYMCRYPT_INTERNAL_NUMOF_COORDINATES( pCurve->eCoordinates ) ) +
             SYMCRYPT_SCRATCH_BYTES_FOR_COMMON_MOD_OPERATIONS( pCurve->FModDigits );
 
@@ -105,7 +105,9 @@ SymCryptShortWeierstrassFillScratchSpaces( _In_ PSYMCRYPT_ECURVE pCurve )
     pCurve->cbScratchGetSetValue = SYMCRYPT_MAX( pCurve->cbScratchGetSetValue, SymCryptSizeofIntFromDigits( nDigits ) );
 
     // Eckey
-    pCurve->cbScratchEckey = pCurve->cbModElement + SymCryptSizeofIntFromDigits(SymCryptEcurveDigitsofScalarMultiplier(pCurve)) +
+    pCurve->cbScratchEckey =
+            SYMCRYPT_MAX( pCurve->cbModElement + SymCryptSizeofIntFromDigits(SymCryptEcurveDigitsofScalarMultiplier(pCurve)),
+                SymCryptSizeofEcpointEx( pCurve->cbModElement, SYMCRYPT_INTERNAL_NUMOF_COORDINATES( pCurve->eCoordinates ) ) ) +
             SYMCRYPT_MAX( pCurve->cbScratchScalar + pCurve->cbScratchScalarMulti, pCurve->cbScratchGetSetValue );
 }
 
@@ -133,7 +135,7 @@ SymCryptShortWeierstrassSetZero(
     // Setting the right value (always 1)
     SymCryptModElementSetValueUint32( 1, FMod, peTmp, pbScratch, cbScratch );
 
-    // Getting handle to Y 
+    // Getting handle to Y
     peTmp = SYMCRYPT_INTERNAL_ECPOINT_COORDINATE( 1, pCurve, poDst );
 
     // Setting the right value (always 1)
@@ -204,9 +206,9 @@ SymCryptShortWeierstrassIsEqual(
     // Creating temporaries
     for (UINT32 i=0; i<4; i++)
     {
-        peT[i] = SymCryptModElementCreate( 
-                pbScratch, 
-                pCurve->cbModElement, 
+        peT[i] = SymCryptModElementCreate(
+                pbScratch,
+                pCurve->cbModElement,
                 FMod );
 
         SYMCRYPT_ASSERT( peT[i] != NULL);
@@ -240,14 +242,14 @@ SymCryptShortWeierstrassIsEqual(
     SymCryptModMul( FMod, peZ2, peT[1], peT[1], pbScratch, cbScratch );       // T1 := Z2 * T1 = Z2^3
     SymCryptModMul( FMod, peY1, peT[1], peT[2], pbScratch, cbScratch );       // T2 := Y1 * T1 = Y1*Z2^3
     SymCryptModMul( FMod, peY2, peT[0], peT[3], pbScratch, cbScratch );       // T3 := Y2 * T0 = Y2*Z1^3
-    
+
     dResY = SymCryptModElementIsEqual( FMod, peT[2], peT[3] );
 
     SymCryptModNeg( FMod, peT[3], peT[3], pbScratch, cbScratch );             // T3 := -T3 = -Y2*Z1^3
 
     dResYN = SymCryptModElementIsEqual( FMod, peT[2], peT[3] );
 
-    return (SYMCRYPT_MASK32_NONZERO(flags & SYMCRYPT_FLAG_ECPOINT_EQUAL) & dResX & dResY) | 
+    return (SYMCRYPT_MASK32_NONZERO(flags & SYMCRYPT_FLAG_ECPOINT_EQUAL) & dResX & dResY) |
            (SYMCRYPT_MASK32_NONZERO(flags & SYMCRYPT_FLAG_ECPOINT_NEG_EQUAL) & dResX & dResYN);
 }
 
@@ -276,7 +278,7 @@ SymCryptShortWeierstrassIsZero(
 }
 
 //
-// The following function verifies if the point (X:Y:Z) in Jacobian 
+// The following function verifies if the point (X:Y:Z) in Jacobian
 // coordinates satisfies the equation Y^2 = X^3 + aXZ^4+bZ^6 .
 //
 UINT32
@@ -302,16 +304,16 @@ SymCryptShortWeierstrassOnCurve(
     // Creating temporaries
     for (UINT32 i=0; i<2; i++)
     {
-        peT[i] = SymCryptModElementCreate( 
-                pbScratch, 
-                pCurve->cbModElement, 
+        peT[i] = SymCryptModElementCreate(
+                pbScratch,
+                pCurve->cbModElement,
                 FMod );
 
         SYMCRYPT_ASSERT( peT[i] != NULL);
 
         pbScratch += pCurve->cbModElement;
     }
-    
+
     // Fixing remaining scratch space size
     cbScratch -= 2*pCurve->cbModElement;
 
@@ -326,7 +328,7 @@ SymCryptShortWeierstrassOnCurve(
     SymCryptModMul( FMod, peT[0], peT[1], peT[0], pbScratch, cbScratch );       // T1 := T1 * T2 = Z^6
 
     SymCryptModMul( FMod, peT[0], pCurve->B, peT[0], pbScratch, cbScratch );    // T1 := T1 * b  = bZ^6
-    
+
     SymCryptModMul( FMod, peT[1], peX, peT[1], pbScratch, cbScratch );          // T2 := T2 * X  = XZ^4
     SymCryptModMul( FMod, peT[1], pCurve->A, peT[1], pbScratch, cbScratch );    // T2 := T2 * a  = aXZ^4
 
@@ -394,9 +396,9 @@ SymCryptShortWeierstrassDouble(
     // Creating temporaries
     for (UINT32 i=0; i<6; i++)
     {
-        peT[i] = SymCryptModElementCreate( 
-                pbScratch, 
-                pCurve->cbModElement, 
+        peT[i] = SymCryptModElementCreate(
+                pbScratch,
+                pCurve->cbModElement,
                 FMod );
 
         SYMCRYPT_ASSERT( peT[i] != NULL);
@@ -483,7 +485,7 @@ SymCryptShortWeierstrassAddDiffNonZero(
     _In_    PCSYMCRYPT_ECPOINT  poSrc1,
     _In_    PCSYMCRYPT_ECPOINT  poSrc2,
     _Out_   PSYMCRYPT_ECPOINT   poDst,
-    _Out_writes_bytes_opt_( cbScratch ) 
+    _Out_writes_bytes_opt_( cbScratch )
             PBYTE               pbScratch,
             SIZE_T              cbScratch )
 {
@@ -505,9 +507,9 @@ SymCryptShortWeierstrassAddDiffNonZero(
     // Creating temporaries
     for (UINT32 i=0; i<8; i++)
     {
-        peT[i] = SymCryptModElementCreate( 
-                pbScratch, 
-                pCurve->cbModElement, 
+        peT[i] = SymCryptModElementCreate(
+                pbScratch,
+                pCurve->cbModElement,
                 FMod );
 
         SYMCRYPT_ASSERT( peT[i] != NULL);
@@ -574,7 +576,7 @@ SymCryptShortWeierstrassAddSideChannelUnsafe(
     _In_    PCSYMCRYPT_ECPOINT  poSrc1,
     _In_    PCSYMCRYPT_ECPOINT  poSrc2,
     _Out_   PSYMCRYPT_ECPOINT   poDst,
-    _Out_writes_bytes_opt_( cbScratch ) 
+    _Out_writes_bytes_opt_( cbScratch )
             PBYTE               pbScratch,
             SIZE_T              cbScratch )
 {
@@ -707,7 +709,7 @@ SymCryptShortWeierstrassAddSideChannelUnsafe(
         SymCryptModMul( FMod, peT[3], peT[7], peT[3], pbScratch, cbScratch );   /* T3 := T3 * T7 = r*(V-X3) */
         SymCryptModMul( FMod, peT[6], peT[5], peT[6], pbScratch, cbScratch );   /* T6 := T6 * T5 = S1*J */
         SymCryptModAdd( FMod, peT[6], peT[6], peT[6], pbScratch, cbScratch );   /* T6 := T6 + T6 = 2*S1*J */
-        SymCryptModSub( FMod, peT[3], peT[6], peT[3], pbScratch, cbScratch );   /* T3 := T6 - T3 = r*(V-X3) - 2*S1*J = Y3 */   
+        SymCryptModSub( FMod, peT[3], peT[6], peT[3], pbScratch, cbScratch );   /* T3 := T6 - T3 = r*(V-X3) - 2*S1*J = Y3 */
 
         // Setting the result
         SymCryptModElementCopy( FMod, peT[2], SYMCRYPT_INTERNAL_ECPOINT_COORDINATE( 0, pCurve, poDst ) );
@@ -747,7 +749,7 @@ SymCryptShortWeierstrassAdd(
     {
 
         // Creating temporary points
-        poQ0 = SymCryptEcpointCreate( 
+        poQ0 = SymCryptEcpointCreate(
                     pbScratch,
                     SymCryptSizeofEcpointFromCurve( pCurve ),
                     pCurve );
@@ -800,9 +802,9 @@ SymCryptShortWeierstrassNegate(
     SYMCRYPT_ASSERT( pCurve->type == SYMCRYPT_ECURVE_TYPE_SHORT_WEIERSTRASS );
     SYMCRYPT_ASSERT( cbScratch >= SYMCRYPT_SCRATCH_BYTES_FOR_COMMON_MOD_OPERATIONS( pCurve->FModDigits ) + pCurve->cbModElement);
 
-    peTmp = SymCryptModElementCreate( 
-                pbScratch, 
-                pCurve->cbModElement, 
+    peTmp = SymCryptModElementCreate(
+                pbScratch,
+                pCurve->cbModElement,
                 FMod );
     SYMCRYPT_ASSERT( peTmp != NULL);
 

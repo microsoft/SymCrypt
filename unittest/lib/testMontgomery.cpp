@@ -1,7 +1,7 @@
 //
 // Test Montgomery Curve
 //
-// Copyright (c) Microsoft Corporation. Licensed under the MIT license. 
+// Copyright (c) Microsoft Corporation. Licensed under the MIT license.
 //
 
 #include "precomp.h"
@@ -25,7 +25,7 @@ static BYTE public_key_1_xy[64] = {     // *** LSB first
  0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
 };
 
-static BYTE private_key_2[32] = {    // *** MSB first 
+static BYTE private_key_2[32] = {    // *** MSB first
  0x6B, 0xE0, 0x88, 0xFF, 0x27, 0x8B, 0x2F, 0x1C, 0xFD, 0xB6, 0x18, 0x26, 0x29, 0xB1, 0x3B, 0x6F,
  0xE6, 0x0E, 0x80, 0x83, 0x8B, 0x7F, 0xE1, 0x79, 0x4B, 0x8A, 0x4A, 0x62, 0x7E, 0x08, 0xAB, 0x58
 };
@@ -58,7 +58,7 @@ testSymCryptMontgomeryPointScalarMul(
     _In_    PSYMCRYPT_ECPOINT   poDst,
     _In_    PBYTE               pbResult,
     _In_    UINT32              cbResult,
-    _In_    PBYTE               pbScratch, 
+    _In_    PBYTE               pbScratch,
     _In_    SIZE_T              cbScratch)
 {
     SYMCRYPT_ERROR  scError = SYMCRYPT_NO_ERROR;
@@ -72,7 +72,7 @@ testSymCryptMontgomeryPointScalarMul(
                   poDst,
                   pbScratch,
                   cbScratch);
-   
+
     CHECK( scError == SYMCRYPT_NO_ERROR, "SymCryptMontgomeryPointScalarMul failed.\n");
 
     scError = SymCryptEcpointGetValue(
@@ -109,7 +109,7 @@ testMontgomery(PSYMCRYPT_ECURVE  pCurve)
     vprint( g_verbose, "    ..................................................................................................\n");
 
     SIZE_T cbScratch = SYMCRYPT_SCRATCH_BYTES_FOR_SCALAR_ECURVE_OPERATIONS(pCurve);
-  
+
     PBYTE  pbScratch = (PBYTE)SymCryptCallbackAlloc(cbScratch);
     if (pbScratch == NULL)
     {

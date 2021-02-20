@@ -106,10 +106,12 @@ SymCryptDsaSignEx(
 
     // Make sure that the group and the key have all the
     // information for dsa, i.e. prime q and private key
-    // modulo q.
+    // modulo q, and we are not using a named DH safe-prime
+    // group
     if ((!pDlgroup->fHasPrimeQ) ||
         (!pKey->fHasPrivateKey) ||
-        (!pKey->fPrivateModQ))
+        (!pKey->fPrivateModQ) ||
+        (pDlgroup->isSafePrimeGroup))
     {
         scError = SYMCRYPT_INVALID_ARGUMENT;
         goto cleanup;
@@ -266,7 +268,7 @@ SymCryptDsaSignEx(
                 pDlgroup->pmQ,
                 peK,
                 peK,    // In place
-                0, 
+                0,
                 pbScratchInternal,
                 cbScratchInternal );
         if( scError != SYMCRYPT_NO_ERROR )
@@ -424,8 +426,8 @@ SymCryptDsaVerify(
 
     UNREFERENCED_PARAMETER( flags );
 
-    // Make sure that the group and the key has a prime q
-    if (!pDlgroup->fHasPrimeQ)
+    // Make sure that the group has a prime q, and we are not using a named DH safe-prime group
+    if (!pDlgroup->fHasPrimeQ || pDlgroup->isSafePrimeGroup)
     {
         scError = SYMCRYPT_INVALID_ARGUMENT;
         goto cleanup;

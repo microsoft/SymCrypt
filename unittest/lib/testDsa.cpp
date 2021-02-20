@@ -21,17 +21,17 @@ private:
 public:
     typedef std::vector<DsaImplementation *> ImpPtrVector;
 
-    virtual NTSTATUS setKey( 
+    virtual NTSTATUS setKey(
         _In_    PCDLKEY_TESTBLOB    pcKeyBlob ); // Returns an error if this key can't be handled.
-    
+
     virtual NTSTATUS sign(
-        _In_reads_( cbHash)     PCBYTE  pbHash, 
+        _In_reads_( cbHash)     PCBYTE  pbHash,
                                 SIZE_T  cbHash,             // Can be any size, but often = size of Q
         _Out_writes_( cbSig )   PBYTE   pbSig,
                                 SIZE_T  cbSig );        // cbSig == cbModulus of group
 
-    virtual NTSTATUS verify( 
-        _In_reads_( cbHash)     PCBYTE  pbHash, 
+    virtual NTSTATUS verify(
+        _In_reads_( cbHash)     PCBYTE  pbHash,
                                 SIZE_T  cbHash,
         _In_reads_( cbSig )     PCBYTE  pbSig,
                                 SIZE_T  cbSig );
@@ -59,8 +59,8 @@ DsaMultiImp::~DsaMultiImp()
     }
 }
 
-NTSTATUS 
-DsaMultiImp::setKey( 
+NTSTATUS
+DsaMultiImp::setKey(
         _In_    PCDLKEY_TESTBLOB    pcKeyBlob )
 {
     m_comps.clear();
@@ -74,13 +74,13 @@ DsaMultiImp::setKey(
     }
 
     return m_comps.size() == 0 ? STATUS_NOT_SUPPORTED : STATUS_SUCCESS;
-   
+
 }
 
 NTSTATUS
-DsaMultiImp::sign( 
-        _In_reads_( cbHash)     PCBYTE  pbHash, 
-                                SIZE_T  cbHash,         
+DsaMultiImp::sign(
+        _In_reads_( cbHash)     PCBYTE  pbHash,
+                                SIZE_T  cbHash,
         _Out_writes_( cbSig )   PBYTE   pbSig,
                                 SIZE_T  cbSig )
 {
@@ -127,11 +127,11 @@ DsaMultiImp::sign(
     }
 
     return STATUS_SUCCESS;
-}                                
+}
 
 NTSTATUS
-DsaMultiImp::verify( 
-        _In_reads_( cbHash)     PCBYTE  pbHash, 
+DsaMultiImp::verify(
+        _In_reads_( cbHash)     PCBYTE  pbHash,
                                 SIZE_T  cbHash,
         _In_reads_( cbSig )     PCBYTE  pbSig,
                                 SIZE_T  cbSig )
@@ -168,7 +168,7 @@ createKatFileSingleDsa( FILE * f, PCDLGROUP_TESTBLOB pBlob )
     PSYMCRYPT_DLGROUP pGroup = dlgroupObjectFromTestBlob( pBlob );
 
     PSYMCRYPT_DLKEY pKey = SymCryptDlkeyAllocate( pGroup );
-    
+
     scError = SymCryptDlkeyGenerate( 0, pKey );
     CHECK( scError == SYMCRYPT_NO_ERROR, "Error generating DL key" );
 
@@ -197,7 +197,7 @@ createKatFileSingleDsa( FILE * f, PCDLGROUP_TESTBLOB pBlob )
     UINT32 r = g_rng.uint32();
     UINT32 cbHash = 0;
     // Pick a random hash size.
-    // 
+    //
     switch( r % 11)
     {
     case 0: cbHash = 20; break;
@@ -252,7 +252,7 @@ createKatFileDsa()
     fprintf( f, "[Dsa]\n\n" );
 
     generateDlGroups();
-    for( int i=0; i<MAX_TEST_DLGROUPS; i++ )
+    for( int i=g_nDhNamedGroups; i<MAX_TEST_DLGROUPS; i++ )
     {
         if( g_DlGroup[i].cbPrimeQ != 0 )
         {
@@ -262,12 +262,12 @@ createKatFileDsa()
 
     fprintf( f, "\n"
                 "rnd = 1\n"
-                "\n" 
+                "\n"
                 );
 
     fclose( f );
 
-    // Generating test vectors is not normal program flow, so we abort here to avoid getting into 
+    // Generating test vectors is not normal program flow, so we abort here to avoid getting into
     // non-standard states.
     CHECK( FALSE, "Written DSA test vector file" );
 }
@@ -277,7 +277,7 @@ VOID
 testDsaSingle(
                                 DsaImplementation  * pDsa,
     _In_                        PCDLKEY_TESTBLOB    pKey,
-    _In_reads_( cbHash)         PCBYTE  pbHash, 
+    _In_reads_( cbHash)         PCBYTE  pbHash,
                                 SIZE_T  cbHash,
     _In_reads_( cbSig )         PCBYTE  pbSig,
                                 SIZE_T  cbSig,
@@ -288,7 +288,7 @@ testDsaSingle(
 
     UNREFERENCED_PARAMETER( line );
     // iprint( "<%d>", (UINT32)line );
-    
+
     CHECK( cbHash < DLKEY_MAXKEYSIZE && cbSig < DLKEY_MAXKEYSIZE, "?" );
 
     SIZE_T cbP = pKey->pGroup->cbPrimeP;
@@ -315,7 +315,7 @@ testDsaSingle(
     CHECK( !NT_SUCCESS( ntStatus ), "Success verifying modified DSA signature" );
 
     CHECK( pDsa->setKey( NULL ) == STATUS_SUCCESS, "Failed to clear key" );
-}                                
+}
 
 VOID
 testDsatestGroups( DsaImplementation  * pDsa, INT64 line )
@@ -329,7 +329,7 @@ testDsatestGroups( DsaImplementation  * pDsa, INT64 line )
 
     generateDlGroups();
 
-    for( int i=0; i<MAX_TEST_DLGROUPS; i++ )
+    for( int i=g_nDhNamedGroups; i<MAX_TEST_DLGROUPS; i++ )
     {
         PCDLGROUP_TESTBLOB pGroupBlob = &g_DlGroup[i];
 
@@ -339,7 +339,7 @@ testDsatestGroups( DsaImplementation  * pDsa, INT64 line )
 
         SIZE_T cbP = pGroupBlob->cbPrimeP;
 
-        scError = SymCryptDlgroupSetValue( 
+        scError = SymCryptDlgroupSetValue(
                     &pGroupBlob->abPrimeP[0], cbP,
                     &pGroupBlob->abPrimeQ[0], pGroupBlob->cbPrimeQ,
                     &pGroupBlob->abGenG[0], cbP,
@@ -356,7 +356,7 @@ testDsatestGroups( DsaImplementation  * pDsa, INT64 line )
 
         scError = SymCryptDlkeyGenerate( 0, pKey );
         CHECK( scError == SYMCRYPT_NO_ERROR, "Error generating key" );
-        
+
         DLKEY_TESTBLOB  blob;
 
         blob.pGroup = pGroupBlob;
@@ -492,9 +492,9 @@ testDsaKats()
                 memcpy( bGroup.abPrimeP, P.data(), bGroup.cbPrimeP );
                 memcpy( bGroup.abPrimeQ, Q.data(), bGroup.cbPrimeQ );
                 memcpy( bGroup.abGenG, G.data(), bGroup.cbPrimeP );
-                
+
                 bKey.pGroup = &bGroup;
-                
+
                 bKey.cbPrivKey = (UINT32) X.size();
 
                 CHECK( H.size() == bGroup.cbPrimeP, "Wrong public key sizes" );

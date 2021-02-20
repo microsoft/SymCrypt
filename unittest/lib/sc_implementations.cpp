@@ -5374,11 +5374,11 @@ RsaImp<ImpSc, AlgRsaVerifyPss>::~RsaImp()
 //============================
 
 VOID
-DlgroupSetup( PBYTE buf1, SIZE_T keySize )
+DlgroupSetup( PBYTE buf1, SIZE_T keySize, BOOLEAN forDiffieHellman )
 {
     SYMCRYPT_ERROR scError;
 
-    PCDLGROUP_TESTBLOB pBlob = dlgroupForSize( keySize * 8 );
+    PCDLGROUP_TESTBLOB pBlob = dlgroupForSize( keySize * 8, forDiffieHellman );
 
     CHECK( pBlob != NULL, "?" );
 
@@ -5624,19 +5624,67 @@ DlImp<ImpSc, AlgDsaVerify>::~DlImp()
 //============================
 
 PSYMCRYPT_DLKEY
-dlkeyObjectFromTestBlob( PCSYMCRYPT_DLGROUP pGroup, PCDLKEY_TESTBLOB pBlob )
+dlkeyObjectFromTestBlob( PCSYMCRYPT_DLGROUP pGroup, PCDLKEY_TESTBLOB pBlob, BOOL setPrivate = TRUE )
 {
     PSYMCRYPT_DLKEY pRes;
     SYMCRYPT_ERROR scError;
+    UINT32 flags = 0;
+    PCBYTE pbPrivKey = NULL;
+    SIZE_T cbPrivKey = 0;
+    PCBYTE pbPubKey = NULL;
+    SIZE_T cbPubKey = 0;
 
     pRes = SymCryptDlkeyAllocate( pGroup );
     CHECK( pRes != NULL, "?" );
 
-    scError = SymCryptDlkeySetValue(    &pBlob->abPrivKey[0], pBlob->cbPrivKey,
-                                        &pBlob->abPubKey[0], pBlob->pGroup->cbPrimeP,
+    // We want to exercise the various code paths semi-randomly in tests - we will be hitting this function 100s of times
+    // in unit tests, and there are only 16 combinations of code paths we want to exercise, so we should get decent coverage
+
+    BYTE randByte = g_rng.byte();
+
+    if(randByte & 1)
+    {
+        flags |= SYMCRYPT_FLAG_KEY_KEYPAIR_REGENERATION_VALIDATION;
+    }
+
+    // If Dlgroup has a set Q and Dlkey wasn't explicitly generated with private key mod P
+    if ( pGroup->fHasPrimeQ && !pBlob->fPrivateModP )
+    {
+        switch((randByte >> 1) & 3)
+        {
+            case 0:
+                break;
+            case 1:
+                flags |= SYMCRYPT_FLAG_KEY_MINIMAL_VALIDATION;
+                break;
+            case 2:
+                flags |= SYMCRYPT_FLAG_KEY_RANGE_VALIDATION;
+                break;
+            case 3:
+            default:
+                flags |= SYMCRYPT_FLAG_KEY_RANGE_AND_PUBLIC_KEY_ORDER_VALIDATION;
+                break;
+        }
+    }
+
+    if (setPrivate || (randByte & 0x8))
+    {
+        pbPrivKey = &pBlob->abPrivKey[0];
+        cbPrivKey = pBlob->cbPrivKey;
+    }
+
+    if (!setPrivate)
+    {
+        pbPubKey = &pBlob->abPubKey[0];
+        cbPubKey = pBlob->pGroup->cbPrimeP;
+    }
+
+    scError = SymCryptDlkeySetValue(    pbPrivKey, cbPrivKey,
+                                        pbPubKey, cbPubKey,
                                         SYMCRYPT_NUMBER_FORMAT_MSB_FIRST,
-                                        SYMCRYPT_FLAG_DLKEY_VERIFY,     // Verify the key is correct
+                                        flags, // Do as much verification that the key is correct as possible
                                         pRes );
+
     CHECK( scError == SYMCRYPT_NO_ERROR, "Error importing key" );
 
     return pRes;
@@ -5650,7 +5698,7 @@ algImpKeyPerfFunction<ImpSc, AlgDh>( PBYTE buf1, PBYTE buf2, PBYTE buf3, SIZE_T 
 
     UNREFERENCED_PARAMETER( buf3 );
 
-    DlgroupSetup( buf1, keySize );
+    DlgroupSetup( buf1, keySize, TRUE );
 
     // Set up two keys in buf2
     PSYMCRYPT_DLGROUP pGroup = *(PSYMCRYPT_DLGROUP *) buf1;
@@ -5779,7 +5827,7 @@ DhImp<ImpSc, AlgDh>::sharedSecret(
     PSYMCRYPT_DLKEY pKey2;
     SYMCRYPT_ERROR scError;
 
-    pKey2 = dlkeyObjectFromTestBlob( state.pGroup, pcPubkey );
+    pKey2 = dlkeyObjectFromTestBlob( state.pGroup, pcPubkey, /*setPrivate=*/ FALSE );
     CHECK( pKey2 != NULL, "?")
 
     scError = SymCryptDhSecretAgreement(    state.pKey,
@@ -5802,7 +5850,7 @@ algImpKeyPerfFunction<ImpSc, AlgDsa>( PBYTE buf1, PBYTE buf2, PBYTE buf3, SIZE_T
 
     UNREFERENCED_PARAMETER( buf3 );
 
-    DlgroupSetup( buf1, keySize );  // Set buf1 to contain a DL group of size keySize
+    DlgroupSetup( buf1, keySize, FALSE );  // Set buf1 to contain a DL group of size keySize
 
     // Set up a keys in buf2
     PSYMCRYPT_DLGROUP pGroup = *(PSYMCRYPT_DLGROUP *) buf1;

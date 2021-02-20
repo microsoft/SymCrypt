@@ -8,7 +8,7 @@
 #include "precomp.h"
 
 // Table with the number of field elements for each point format
-const UINT32 SymCryptEcpointFormatNumberofElements[] = { 
+const UINT32 SymCryptEcpointFormatNumberofElements[] = {
     0,
     1,      // SYMCRYPT_ECPOINT_FORMAT_X
     2,      // SYMCRYPT_ECPOINT_FORMAT_XY
@@ -26,7 +26,7 @@ SymCryptSizeofEcpointEx(
     }
 
     // Since the maximum number of coordinates is 4 this result is bounded
-    // by 4*2^17 + ovehead ~ 2^20
+    // by 4*2^17 + overhead ~ 2^20
     return sizeof(SYMCRYPT_ECPOINT) + numOfCoordinates * cbModElement;
 }
 
@@ -175,7 +175,7 @@ SymCryptEcpointMaskedCopy(
     SYMCRYPT_ASSERT( (mask + 1) < 2 );
 
     poDst->normalized = (poSrc->normalized & mask) | (poDst->normalized & ~mask);
-    
+
 	// dcl - this looks like the equivalent of memcpy
 	// should be proven that arguments cannot be the result of an integer overflow
     SymCryptFdefMaskedCopy((PCBYTE)poSrc + sizeof(SYMCRYPT_ECPOINT), (PBYTE)poDst + sizeof(SYMCRYPT_ECPOINT), SYMCRYPT_INTERNAL_NUMOF_COORDINATES(pCurve->eCoordinates) * pCurve->FModDigits, mask );
@@ -184,11 +184,11 @@ SymCryptEcpointMaskedCopy(
 //
 // SymCryptEcpointTransform: Internal function to transform an ECPOINT
 // from one coordinate representation to another. One point has the default
-// format of the curve. The other point has a format large enough for the external 
-// SYMCRYPT_ECPOINT_FORMAT. 
+// format of the curve. The other point has a format large enough for the external
+// SYMCRYPT_ECPOINT_FORMAT.
 //
 // When the boolean setValue is set to TRUE, the source point is the one with
-// the external format eformat, and the destination point has the default 
+// the external format eformat, and the destination point has the default
 // format of the curve. If setValue = FALSE the roles are reversed.
 // This function is only called by the Get / Set Value functions.
 //
@@ -202,7 +202,7 @@ SymCryptEcpointTransform(
             SYMCRYPT_ECPOINT_FORMAT         eformat,
             BOOLEAN                         setValue,
             UINT32                          flags,
-    _Out_writes_bytes_( cbScratch ) 
+    _Out_writes_bytes_( cbScratch )
             PBYTE                           pbScratch,
             SIZE_T                          cbScratch )
 {
@@ -219,7 +219,7 @@ SymCryptEcpointTransform(
     PSYMCRYPT_MODELEMENT peT[2] = { 0 };    // Temporaries
 
     SYMCRYPT_ASSERT( (flags & ~SYMCRYPT_FLAG_DATA_PUBLIC) == 0 );
-    SYMCRYPT_ASSERT( cbScratch >= SYMCRYPT_MAX(  SYMCRYPT_SCRATCH_BYTES_FOR_COMMON_MOD_OPERATIONS( pCurve->FModDigits ), 
+    SYMCRYPT_ASSERT( cbScratch >= SYMCRYPT_MAX(  SYMCRYPT_SCRATCH_BYTES_FOR_COMMON_MOD_OPERATIONS( pCurve->FModDigits ),
                                         SYMCRYPT_SCRATCH_BYTES_FOR_MODINV( pCurve->FModDigits )) +
                                   2 * pCurve->cbModElement );
 
@@ -249,11 +249,11 @@ SymCryptEcpointTransform(
     }
 
     // Take all the possible supported transformations:
-    //      - From SYMCRYPT_ECPOINT_COORDINATES_SINGLE to 
+    //      - From SYMCRYPT_ECPOINT_COORDINATES_SINGLE to
     //          * SYMCRYPT_ECPOINT_COORDINATES_SINGLE (identity transformation)
     //          * SYMCRYPT_ECPOINT_COORDINATES_AFFINE (** Set all zeros to the Y coordinate **)
     //          * SYMCRYPT_ECPOINT_COORDINATES_SINGLE_PROJECTIVE
-    //      - From SYMCRYPT_ECPOINT_COORDINATES_AFFINE to 
+    //      - From SYMCRYPT_ECPOINT_COORDINATES_AFFINE to
     //          * SYMCRYPT_ECPOINT_COORDINATES_SINGLE (** Ignore Y coordinate **)
     //          * SYMCRYPT_ECPOINT_COORDINATES_AFFINE (identity transformation)
     //          * SYMCRYPT_ECPOINT_COORDINATES_JACOBIAN
@@ -417,7 +417,7 @@ SymCryptEcpointTransform(
 
             // Calculation
             // T0 := 1  / Z
-            scError = SymCryptModInv( pCurve->FMod, peSrc, peT[0], flags, pbScratch, cbScratch ); 
+            scError = SymCryptModInv( pCurve->FMod, peSrc, peT[0], flags, pbScratch, cbScratch );
             if( scError != SYMCRYPT_NO_ERROR )
             {
                 goto cleanup;

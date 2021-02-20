@@ -9,7 +9,7 @@
 // but which still needs to be known to the compiler to be able to use the library.
 // This includes structure declarations and all support for inline implementations
 // of some of the library functions.
-// Information in this file is not part of tha API and can change at any time.
+// Information in this file is not part of the API and can change at any time.
 //
 
 //
@@ -2008,6 +2008,10 @@ typedef SYMCRYPT_ASYM_ALIGN struct _SYMCRYPT_DLGROUP {
     UINT32                  cbPrimeQ;       // Number of bytes of the value of Q (not the object's size), equal to ceil(nBitsOfQ/8)
     UINT32                  nDigitsOfQ;     // Number of digits of the object of prime Q
     UINT32                  nMaxBitsOfQ;    // Maximum number of bits of the value of Q
+
+    BOOLEAN                 isSafePrimeGroup;   // Boolean indicating if this is a Safe Prime group
+    UINT32                  nBitsPriv;      // Number of bits in private keys using this group
+                                            // Normally equals nBitsOfQ, but may be further restricted (i.e. for named Safe Prime groups)
 
     UINT32                  nBitsOfSeed;    // Number of bits of the seed used for generation (seedlen in FIPS 186-3)
     UINT32                  cbSeed;         // Number of bytes of the seed, equal to ceil(nBitsOfSeed/8)

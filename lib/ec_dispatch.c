@@ -8,7 +8,7 @@
 #include "precomp.h"
 
 // Table with all the pointers to SYMCRYPT_ECURVE_FUNCTIONS
-const SYMCRYPT_ECURVE_FUNCTIONS SymCryptEcurveAllFunctionPointers[] = 
+const SYMCRYPT_ECURVE_FUNCTIONS SymCryptEcurveAllFunctionPointers[] =
 {
     // NULL Type
     {
@@ -60,7 +60,7 @@ const SYMCRYPT_ECURVE_FUNCTIONS SymCryptEcurveAllFunctionPointers[] =
         NULL,       // SymCryptEcpointSetZeroNotImplemented,
         SymCryptMontgomerySetDistinguished,
         SymCryptEcpointGenericSetRandom,
-        NULL,       // SymCryptEcpointIsEqualNotImplemented,
+        SymCryptMontgomeryIsEqual,
         SymCryptMontgomeryIsZero,
         NULL,       // SymCryptEcpointOnCurveNotImplemented,
         NULL,       // SymCryptEcpointAddNotImplemented,
@@ -79,7 +79,7 @@ SYMCRYPT_CALL
 SymCryptEcpointSetZero(
     _In_    PCSYMCRYPT_ECURVE   pCurve,
     _Out_   PSYMCRYPT_ECPOINT   poDst,
-    _Out_writes_bytes_opt_( cbScratch ) 
+    _Out_writes_bytes_opt_( cbScratch )
             PBYTE               pbScratch,
             SIZE_T              cbScratch )
 {
@@ -92,7 +92,7 @@ SYMCRYPT_CALL
 SymCryptEcpointSetDistinguishedPoint(
     _In_    PCSYMCRYPT_ECURVE   pCurve,
     _Out_   PSYMCRYPT_ECPOINT   poDst,
-    _Out_writes_bytes_opt_( cbScratch ) 
+    _Out_writes_bytes_opt_( cbScratch )
             PBYTE               pbScratch,
             SIZE_T              cbScratch )
 {
@@ -106,7 +106,7 @@ SymCryptEcpointSetRandom(
     _In_    PCSYMCRYPT_ECURVE       pCurve,
     _Out_   PSYMCRYPT_INT           piScalar,
     _Out_   PSYMCRYPT_ECPOINT       poDst,
-    _Out_writes_bytes_opt_( cbScratch ) 
+    _Out_writes_bytes_opt_( cbScratch )
             PBYTE                   pbScratch,
             SIZE_T                  cbScratch )
 {
@@ -121,7 +121,7 @@ SymCryptEcpointIsEqual(
     _In_    PCSYMCRYPT_ECPOINT  poSrc1,
     _In_    PCSYMCRYPT_ECPOINT  poSrc2,
             UINT32              flags,
-    _Out_writes_bytes_opt_( cbScratch ) 
+    _Out_writes_bytes_opt_( cbScratch )
             PBYTE               pbScratch,
             SIZE_T              cbScratch )
 {
@@ -134,7 +134,7 @@ SYMCRYPT_CALL
 SymCryptEcpointIsZero(
     _In_    PCSYMCRYPT_ECURVE   pCurve,
     _In_    PCSYMCRYPT_ECPOINT  poSrc,
-    _Out_writes_bytes_opt_( cbScratch ) 
+    _Out_writes_bytes_opt_( cbScratch )
             PBYTE               pbScratch,
             SIZE_T              cbScratch )
 {
@@ -147,7 +147,7 @@ SYMCRYPT_CALL
 SymCryptEcpointOnCurve(
     _In_    PCSYMCRYPT_ECURVE   pCurve,
     _In_    PCSYMCRYPT_ECPOINT  poSrc,
-    _Out_writes_bytes_opt_( cbScratch ) 
+    _Out_writes_bytes_opt_( cbScratch )
             PBYTE               pbScratch,
             SIZE_T              cbScratch )
 {
@@ -158,12 +158,12 @@ SYMCRYPT_DISABLE_CFG
 VOID
 SYMCRYPT_CALL
 SymCryptEcpointAdd(
-    _In_    PCSYMCRYPT_ECURVE   pCurve, 
+    _In_    PCSYMCRYPT_ECURVE   pCurve,
     _In_    PCSYMCRYPT_ECPOINT  poSrc1,
     _In_    PCSYMCRYPT_ECPOINT  poSrc2,
     _Out_   PSYMCRYPT_ECPOINT   poDst,
     _In_    UINT32              flags,
-    _Out_writes_bytes_opt_( cbScratch ) 
+    _Out_writes_bytes_opt_( cbScratch )
             PBYTE               pbScratch,
             SIZE_T              cbScratch )
 {
@@ -178,7 +178,7 @@ SymCryptEcpointAddDiffNonZero(
     _In_    PCSYMCRYPT_ECPOINT  poSrc1,
     _In_    PCSYMCRYPT_ECPOINT  poSrc2,
     _Out_   PSYMCRYPT_ECPOINT   poDst,
-    _Out_writes_bytes_opt_( cbScratch ) 
+    _Out_writes_bytes_opt_( cbScratch )
             PBYTE               pbScratch,
             SIZE_T              cbScratch )
 {
@@ -193,7 +193,7 @@ SymCryptEcpointDouble(
     _In_    PCSYMCRYPT_ECPOINT  poSrc,
     _Out_   PSYMCRYPT_ECPOINT   poDst,
     _In_    UINT32              flags,
-    _Out_writes_bytes_opt_( cbScratch ) 
+    _Out_writes_bytes_opt_( cbScratch )
             PBYTE               pbScratch,
             SIZE_T              cbScratch )
 {
@@ -224,7 +224,7 @@ SymCryptEcpointScalarMul(
             PCSYMCRYPT_ECPOINT      poSrc,
     _In_    UINT32                  flags,
     _Out_   PSYMCRYPT_ECPOINT       poDst,
-    _Out_writes_bytes_opt_( cbScratch ) 
+    _Out_writes_bytes_opt_( cbScratch )
             PBYTE               pbScratch,
             SIZE_T              cbScratch )
 {
@@ -241,7 +241,7 @@ SymCryptEcpointMultiScalarMul(
     _In_    UINT32                  nPoints,
     _In_    UINT32                  flags,
     _Out_   PSYMCRYPT_ECPOINT       poDst,
-    _Out_writes_bytes_opt_( cbScratch ) 
+    _Out_writes_bytes_opt_( cbScratch )
             PBYTE               pbScratch,
             SIZE_T              cbScratch )
 {

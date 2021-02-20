@@ -15,7 +15,7 @@ extern "C" {
 // WARNING: The low-level APIs are not stable, and can change from release to release.
 // The low-level APIs are only provided for certain exceptional use cases.
 // All aspects of the low-level API can change in any release.
-// Users are strongly advised to only rely on the API surface defined in symcrypt.h 
+// Users are strongly advised to only rely on the API surface defined in symcrypt.h
 //=======================================================================================
 
 
@@ -24,7 +24,7 @@ extern "C" {
 //
 
 /**************************************************************************************************
-    Low-level Integer API 
+    Low-level Integer API
  **************************************************************************************************
 The low-level API allows manipulation of arbitrarily large integers.
 
@@ -35,14 +35,14 @@ Therefore it is critical that callers refrain from making assumptions about the 
 data format used. SymCrypt numbers should only be manipulated through the SymCrypt
 API.
 
-The low-level API allows the caller to allocate the necessary memory for all objects. 
+The low-level API allows the caller to allocate the necessary memory for all objects.
 This is typically necessary for high-IRQL level callers, callers running in low-memory
 environments, and high-performance scenarios where memory has to be pre-allocated.
 SymCrypt also provides routines for allocating objects, which makes the API easier
 to use. The caller has to provide the allocation functions that SymCrypt uses.
 
 Internal data representation, and consequently the size of objects, can depend on the
-exact CPU stepping the code is running on. 
+exact CPU stepping the code is running on.
 For robustness, the allocation size requirements are compile-time properties;
 they vary per CPU architecture but do not depend on the exact available CPU features.
 
@@ -60,7 +60,7 @@ Other low-level functions are so fast that the overhead of the allocations would
 down the computations. These functions require the caller to allocate the memory; this memory
 is called the scratch space.
 
-For each function that requires scratch space, there is a macro that determines how much scratch space 
+For each function that requires scratch space, there is a macro that determines how much scratch space
 must be provided. This macro is a compile-time function of its arguments; if the parameters to the macro
 are compile-time constants, then the result is also a compile-time constant. Therefore that
 the macro can be used for statically sizing arrays.
@@ -69,10 +69,10 @@ Callers that perform multiple operations can use a single scratch space, sized f
 argument(s) used. Note that the SYMCRYPT_C_MAX macro implements a compile-time MAX function suitable
 for combining different scratch space sizes at compile time.
 
-The scratch space is always passed as a pair or arguments: (pbScratch, cbScratch). 
+The scratch space is always passed as a pair or arguments: (pbScratch, cbScratch).
 cbScratch needs to be at least as large as the macro definition requires, but may be larger.
 
-Functions that take scratch parameters do not require memory allocation, and will not fail due to 
+Functions that take scratch parameters do not require memory allocation, and will not fail due to
 low-memory conditions.
 All functions that use memory allocation will return an error indication if a necessary memory
 allocation fails. These functions return an error code, or an object pointer which will be NULL if
@@ -80,11 +80,11 @@ the allocation fails.
 Functions that do not return an error code or object pointer do not use memory allocation.
 
 SymCrypt uses several implementation techniques to minimize the cost of the scratch space parameters.
-This is necessary because the cost of the parameter passing by itself is significant in scenarios 
-such as elliptic-curve operations. 
+This is necessary because the cost of the parameter passing by itself is significant in scenarios
+such as elliptic-curve operations.
 In a FRE build, some functions will ignore the cbScratch parameter and simply assume they get enough space;
 in this case the SymCrypt may provide an inline-able function that allow the compiler to optimize the cbScratch parameter
-away, completely removing it from the actual code. 
+away, completely removing it from the actual code.
 In environments where some functions don't need any scratch space, similar optimizations are possible for the
 pbScratch parameter.
 
@@ -105,13 +105,13 @@ INTEGERS
 Integers are internally represented as a sequence of Digits. An INT object with n digits can store
 numbers up to (but not including) R^n where R is the _radix_ of the representation.
 
-The radix R, as well as the size and format of a Digit, are internal to the library, 
+The radix R, as well as the size and format of a Digit, are internal to the library,
 and can depend on CPU architecture, CPU stepping and other run-time decisions. Therefore, callers
 need to be especially careful not to make any assumptions about the size of a digit, or the number
-of digits needed for any particular computation. 
+of digits needed for any particular computation.
 
-At the same time, most INT operations are defined in terms of Digit sizes, so the caller has to 
-be aware of digits. This becomes important in the following example. Suppose the radix R =2^256, 
+At the same time, most INT operations are defined in terms of Digit sizes, so the caller has to
+be aware of digits. This becomes important in the following example. Suppose the radix R =2^256,
 and a caller wants to multiply two 384-bit numbers. It takes 2 digits to store a 384-bit number.
 The caller knows that the product is 768 bits, which can fit in 3 digits. So the caller might try
 to multiply two 2-digit numbers into a 3-digit result, which will not work as the result is 4 digits.
@@ -130,26 +130,26 @@ with integers of such magnitude will consume so much CPU time that it will be in
 an application hang.
 
 
-Digit size and radix can vary widely; on some CPU steppings the library might use a digit that contains 
+Digit size and radix can vary widely; on some CPU steppings the library might use a digit that contains
 128 bits are requires 16 bytes of memory, on another CPU stepping it might use a digit that contains
 416 bits and uses 64 bytes of memory.
 
 SAL annotations:
-Because the different run-time selected implementations underneath this API might use 
+Because the different run-time selected implementations underneath this API might use
 different size memory buffers for any one operation, fully accurate SAL annotations are not possible as SAL only
-performs static analysis. 
+performs static analysis.
 Furthermore, adding size parameters to every function would add too much overhead, and sizes are often passed
 implicitly. Together with the fact that the same API can be implemented by different implementations, this means
 that it isn't possible to write the actual size used in a form that SAL can understand.
 Instead we use the following conventions:
 -   Pointers to SYMCRYPT_* objects can only be created with functions that provide the right memory buffer size.
--   We annotate each object-pointer with _In_ our _Out_. The SAL engine treats this as just a read/write to 
+-   We annotate each object-pointer with _In_ our _Out_. The SAL engine treats this as just a read/write to
     a single object at the pointer location
 -   The CHKed version of SymCrypt adds run-time checking that the various size parameters are correct.
 This allows us to have both high performance and good checking of our memory management.
 
 API rationale:
-One important choice in this API is whether to pass a (ptr,len) for each INT or just a pointer. 
+One important choice in this API is whether to pass a (ptr,len) for each INT or just a pointer.
 We investigated this issue. The ptr-based API means that there are fewer parameters to pass around,
 and generally makes the API simpler. The downside of a ptr-based API is that each INT object has some overhead
 and this makes arrays of large integers less efficient, especially since the overhead can be a whole alignment
@@ -168,7 +168,7 @@ For this reason, we use a ptr-based API for integers.
 
 Most crypto algorithms that wish to store arrays of values actually want to store arrays of elements in a
 ring modulo an modulus. And for modular operations the caller is already passing the modulus separately, so
-there isn't any need to store per-object size information. The API is designed to allow the ModElement for bitsize 
+there isn't any need to store per-object size information. The API is designed to allow the ModElement for bitsize
 B to be smaller than an INT for bitsize B so that implementations can choose to not store any length information in
 a ModElement object.
 */
@@ -177,27 +177,27 @@ a ModElement object.
 //========================================================================
 // Main schema for object creation, deletion, and management (low - level calls).
 //
-// The following are descriptions of some of the generic functions specifically 
+// The following are descriptions of some of the generic functions specifically
 // modified for the INT, DIVISOR, MODULUS, and MODELEMENT objects.
 
 //
 // PSYMCRYPT_XXX
 // SYMCRYPT_CALL
-// SymCryptXxxCreate( 
+// SymCryptXxxCreate(
 //      _Out_writes_bytes_( cbBuffer )  PBYTE   pbBuffer,
 //                                      SIZE_T  cbBuffer,
 //                                      UINT32  nDigits );
 //  Create an XXX object from the provided (pbBuffer, cbBuffer) space.
 //  The object will be able to store values up to R^nDigits where R is the digit radix.
-//  Requirement: 
+//  Requirement:
 //      - 1 <= nDigits <= SymCryptDigitsFromBits(SYMCRYPT_INT_MAX_BITS)
 //          If the value is outside these bounds the call will trigger a hard fail.
 //      - cbBuffer >= SymCryptSizeofXxxFromDigits( nDigits )
 //      - (pbBuffer,cbBuffer) memory must be exclusively used by this object.
 //  The last requirement ensures that all objects are non-overlapping (except for API functions
-//  that explicitly create overlapping objects). 
+//  that explicitly create overlapping objects).
 //  All parameters are published.
-//  It is always safe to choose 
+//  It is always safe to choose
 //      cbBuffer = SYMCRYPT_SIZEOF_XXX_FROM_BITS( nBits )
 //      nDigits  = SymCryptDigitsFromBits( nBits )
 //  if the caller wants to be able to store numbers up to 2^nBits. However, it is frequently more
@@ -230,7 +230,7 @@ a ModElement object.
 //  necessary to store the product of two numbers with bitsize n and m respectively.
 //  It is guaranteed that
 //    SymCryptSizeofXxxFromDigits( SymCryptDigitsFromBits( n ) + SymCryptDigitsFromBits( m ) ) <=
-//      SYMCRYPT_SIZEOF_XXX_FROM_BITS( n ) + SYMCRYPT_SIZEOF_XXX_FROM_BITS( m ) 
+//      SYMCRYPT_SIZEOF_XXX_FROM_BITS( n ) + SYMCRYPT_SIZEOF_XXX_FROM_BITS( m )
 //  This is the proper way to statically compute the size needed to store the product of an n- and m-bit value.
 //
 // UINT32
@@ -243,7 +243,7 @@ a ModElement object.
 //          If the value is outside these bounds the call will trigger a hard fail.
 //  This function is has the following property:
 //    SymCryptSizeofXxxFromDigits( a + b ) <= SymCryptSizeofXxxFromDigits( a ) + SymCryptSizeofXxxFromDigits( b )
-//  for all a and b. 
+//  for all a and b.
 //
 // UINT32
 // SYMCRYPT_CALL
@@ -260,7 +260,7 @@ a ModElement object.
 // Object types for low-level API
 //
 // INT          integer in range 0..N for some N
-// DIVISOR      an integer > 0 that can be used to divide with. 
+// DIVISOR      an integer > 0 that can be used to divide with.
 // MODULUS      a value M > 1 to use in modulo-M computations
 // MODELEMENT   An element in a modulo-M ring.
 // ECPOINT      A point on an elliptic curve.
@@ -298,13 +298,13 @@ typedef const SYMCRYPT_ECPOINT * PCSYMCRYPT_ECPOINT;
 UINT32
 SymCryptDigitsFromBits( UINT32 nBits );
 //
-// Returns the # digits needed to store values (INT, DIVISOR, MODULUS, MODELEMENT) 
+// Returns the # digits needed to store values (INT, DIVISOR, MODULUS, MODELEMENT)
 // in the range 0..(2^nBits - 1).
 //
 // Remarks:
 //  If nBits==0 the returned number is 1.
 //
-//  This is a run-time decision; the return value can depend on the exact CPU stepping 
+//  This is a run-time decision; the return value can depend on the exact CPU stepping
 //  the program is running on, or run-time configurations.
 //  It is always true that
 //  SymCryptDigitsFromBits( a + b ) <= SymCryptDigitsFromBits( a ) + SymCryptDigitsFromBits( b )
@@ -333,9 +333,9 @@ SymCryptSizeofIntFromDigits( UINT32 nDigits );
 
 PSYMCRYPT_INT
 SYMCRYPT_CALL
-SymCryptIntCreate( 
-    _Out_writes_bytes_( cbBuffer )  PBYTE   pbBuffer, 
-                                    SIZE_T  cbBuffer, 
+SymCryptIntCreate(
+    _Out_writes_bytes_( cbBuffer )  PBYTE   pbBuffer,
+                                    SIZE_T  cbBuffer,
                                     UINT32  nDigits );
 
 VOID
@@ -344,8 +344,8 @@ SymCryptIntWipe( _Out_ PSYMCRYPT_INT piObj );
 
 VOID
 SYMCRYPT_CALL
-SymCryptIntCopy( 
-    _In_    PCSYMCRYPT_INT  piSrc, 
+SymCryptIntCopy(
+    _In_    PCSYMCRYPT_INT  piSrc,
     _Out_   PSYMCRYPT_INT   piDst );        // **** Documentation lacking: requires same size
 
 VOID
@@ -397,9 +397,9 @@ SymCryptSizeofDivisorFromDigits( UINT32 nDigits );
 
 PSYMCRYPT_DIVISOR
 SYMCRYPT_CALL
-SymCryptDivisorCreate( 
-    _Out_writes_bytes_( cbBuffer )  PBYTE   pbBuffer, 
-                                    SIZE_T  cbBuffer, 
+SymCryptDivisorCreate(
+    _Out_writes_bytes_( cbBuffer )  PBYTE   pbBuffer,
+                                    SIZE_T  cbBuffer,
                                     UINT32  nDigits );
 
 VOID
@@ -407,8 +407,8 @@ SYMCRYPT_CALL
 SymCryptDivisorWipe( _Out_ PSYMCRYPT_DIVISOR pdObj );
 
 VOID
-SymCryptDivisorCopy( 
-    _In_    PCSYMCRYPT_DIVISOR  pdSrc, 
+SymCryptDivisorCopy(
+    _In_    PCSYMCRYPT_DIVISOR  pdSrc,
     _Out_   PSYMCRYPT_DIVISOR   pdDst );
 
 UINT32
@@ -435,9 +435,9 @@ SymCryptSizeofModulusFromDigits( UINT32 nDigits );
 
 PSYMCRYPT_MODULUS
 SYMCRYPT_CALL
-SymCryptModulusCreate( 
-    _Out_writes_bytes_( cbBuffer )  PBYTE   pbBuffer, 
-                                    SIZE_T  cbBuffer, 
+SymCryptModulusCreate(
+    _Out_writes_bytes_( cbBuffer )  PBYTE   pbBuffer,
+                                    SIZE_T  cbBuffer,
                                     UINT32  nDigits );
 
 VOID
@@ -446,7 +446,7 @@ SymCryptModulusWipe( _Out_ PSYMCRYPT_MODULUS pmObj );
 
 VOID
 SymCryptModulusCopy(
-    _In_    PCSYMCRYPT_MODULUS  pmSrc, 
+    _In_    PCSYMCRYPT_MODULUS  pmSrc,
     _Out_   PSYMCRYPT_MODULUS   pmDst );
 
 UINT32
@@ -470,7 +470,7 @@ SymCryptModElementAllocate( _In_ PCSYMCRYPT_MODULUS pmMod );
 
 VOID
 SYMCRYPT_CALL
-SymCryptModElementFree( 
+SymCryptModElementFree(
     _In_    PCSYMCRYPT_MODULUS      pmMod,      // only used to determine the digit size of peObj.
     _Out_   PSYMCRYPT_MODELEMENT    peObj );
 
@@ -482,21 +482,21 @@ SymCryptSizeofModElementFromModulus( PCSYMCRYPT_MODULUS pmMod );
 
 PSYMCRYPT_MODELEMENT
 SYMCRYPT_CALL
-SymCryptModElementCreate( 
-    _Out_writes_bytes_( cbBuffer )  PBYTE               pbBuffer, 
+SymCryptModElementCreate(
+    _Out_writes_bytes_( cbBuffer )  PBYTE               pbBuffer,
                                     SIZE_T              cbBuffer,
     _In_                            PCSYMCRYPT_MODULUS  pmMod );
 
 VOID
 SYMCRYPT_CALL
-SymCryptModElementWipe( 
+SymCryptModElementWipe(
     _In_    PCSYMCRYPT_MODULUS      pmMod,
     _Out_   PSYMCRYPT_MODELEMENT    peDst );
 
 VOID
-SymCryptModElementCopy( 
+SymCryptModElementCopy(
     _In_    PCSYMCRYPT_MODULUS      pmMod,
-    _In_    PCSYMCRYPT_MODELEMENT   peSrc, 
+    _In_    PCSYMCRYPT_MODELEMENT   peSrc,
     _Out_   PSYMCRYPT_MODELEMENT    peDst );
 
 VOID
@@ -505,7 +505,7 @@ SymCryptModElementMaskedCopy(
     _In_    PCSYMCRYPT_MODELEMENT   peSrc,
     _Out_   PSYMCRYPT_MODELEMENT    peDst,
             UINT32                  mask );
-   
+
 VOID
 SymCryptModElementConditionalSwap(
      _In_       PCSYMCRYPT_MODULUS    pmMod,
@@ -534,9 +534,9 @@ SymCryptSizeofEcpointFromCurve( PCSYMCRYPT_ECURVE pCurve );
 
 PSYMCRYPT_ECPOINT
 SYMCRYPT_CALL
-SymCryptEcpointCreate( 
-    _Out_writes_bytes_( cbBuffer )  PBYTE               pbBuffer, 
-                                    SIZE_T              cbBuffer, 
+SymCryptEcpointCreate(
+    _Out_writes_bytes_( cbBuffer )  PBYTE               pbBuffer,
+                                    SIZE_T              cbBuffer,
     _In_                            PCSYMCRYPT_ECURVE   pCurve );
 // The above can take as input a pointer to a curve that has only the FMod, cbModElement, and the
 // eformat fields set
@@ -554,7 +554,7 @@ SymCryptEcpointWipe(
 VOID
 SymCryptEcpointCopy(
     _In_    PCSYMCRYPT_ECURVE   pCurve,
-    _In_    PCSYMCRYPT_ECPOINT  poSrc, 
+    _In_    PCSYMCRYPT_ECPOINT  poSrc,
     _Out_   PSYMCRYPT_ECPOINT   poDst );
 
 VOID
@@ -572,8 +572,8 @@ SymCryptEcpointMaskedCopy(
 _Success_(return == SYMCRYPT_NO_ERROR)
 SYMCRYPT_ERROR
 SYMCRYPT_CALL
-SymCryptIntCopyMixedSize( 
-    _In_    PCSYMCRYPT_INT  piSrc, 
+SymCryptIntCopyMixedSize(
+    _In_    PCSYMCRYPT_INT  piSrc,
     _Out_   PSYMCRYPT_INT   piDst );
 //
 // Dst = Src, but allows Dst and Src to have different # digits.
@@ -583,7 +583,7 @@ SymCryptIntCopyMixedSize(
 // If Src >= R^Dst.nDigits then the value in Src is published and an error is returned.
 // Warning: it is not side-channel safe to use this function with a Src value that can't fit in Dst.
 // Src and Dst may be the same object.
-// 
+//
 
 UINT32
 SYMCRYPT_CALL
@@ -592,7 +592,7 @@ SymCryptIntBitsizeOfValue( _In_ PCSYMCRYPT_INT piSrc );
 // Returns the number of bits necessary to store the value of Src.
 //
 // Let V be the value of Src.
-// Then this function returns 
+// Then this function returns
 //  0 if Src == 0
 //  1 + floor( log(Src)/log(2) )  if V > 0
 // Note that there is no defined relationship between the result of this function and the bitsize used to allocate Src.
@@ -604,8 +604,8 @@ SymCryptIntBitsizeOfValue( _In_ PCSYMCRYPT_INT piSrc );
 
 VOID
 SYMCRYPT_CALL
-SymCryptIntSetValueUint32( 
-            UINT32          u32Src, 
+SymCryptIntSetValueUint32(
+            UINT32          u32Src,
     _Out_   PSYMCRYPT_INT   piDst );
 //
 // Dst = Src
@@ -614,8 +614,8 @@ SymCryptIntSetValueUint32(
 
 VOID
 SYMCRYPT_CALL
-SymCryptIntSetValueUint64( 
-            UINT64          u64Src, 
+SymCryptIntSetValueUint64(
+            UINT64          u64Src,
     _Out_   PSYMCRYPT_INT   piDst );
 //
 // Dst = Src
@@ -630,10 +630,10 @@ SymCryptIntSetValueUint64(
 _Success_(return == SYMCRYPT_NO_ERROR)
 SYMCRYPT_ERROR
 SYMCRYPT_CALL
-SymCryptIntSetValue( 
-    _In_reads_bytes_(cbSrc)     PCBYTE                  pbSrc, 
-                                SIZE_T                  cbSrc, 
-                                SYMCRYPT_NUMBER_FORMAT  format, 
+SymCryptIntSetValue(
+    _In_reads_bytes_(cbSrc)     PCBYTE                  pbSrc,
+                                SIZE_T                  cbSrc,
+                                SYMCRYPT_NUMBER_FORMAT  format,
     _Out_                       PSYMCRYPT_INT           piDst );
 //
 // Set the value of an INT object from an array of bytes
@@ -642,8 +642,8 @@ SymCryptIntSetValue(
 // format: specifies the format of the pbBytes/cbBytes buffer.
 // Dst : INT object that receives the value; must previously have been created/allocated.
 //
-// Return value: 
-//   If the value encoded in the (pbSrc,cbSrc) buffer fits in Dst, then the 
+// Return value:
+//   If the value encoded in the (pbSrc,cbSrc) buffer fits in Dst, then the
 //   function succeeds. If the value does not fit, then the function
 //   returns an error. Note that the error condition is only dependent on the value in the input,
 //   and not on how many bytes are in the input. Importing a very large (pbSrc,cbSrc) buffer
@@ -653,7 +653,7 @@ SymCryptIntSetValue(
 // Warning:
 //  Error return values are always published, so if this function fails it is visible to the attacker.
 //
-// Rationale: 
+// Rationale:
 //   Because the size of a digit can be any size (even odd) there are always scenarios in which the
 //   caller can provide an input that is too large for the INT to store. (Restricting only the size of
 //   the input buffer is not sufficient.) And if we have to handle this
@@ -663,10 +663,10 @@ SymCryptIntSetValue(
 _Success_(return == SYMCRYPT_NO_ERROR)
 SYMCRYPT_ERROR
 SYMCRYPT_CALL
-SymCryptIntGetValue( 
-    _In_                        PCSYMCRYPT_INT          piSrc, 
-    _Out_writes_bytes_( cbDst)  PBYTE                   pbDst, 
-                                SIZE_T                  cbDst, 
+SymCryptIntGetValue(
+    _In_                        PCSYMCRYPT_INT          piSrc,
+    _Out_writes_bytes_( cbDst)  PBYTE                   pbDst,
+                                SIZE_T                  cbDst,
                                 SYMCRYPT_NUMBER_FORMAT  format );
 //
 // Convert a value form the internal number representation to a byte array.
@@ -674,9 +674,9 @@ SymCryptIntGetValue(
 // Src is the number whose value is to be stored in a byte array
 // (pbDst, cbDst) the destination buffer
 // format: the destination format.
-// Return value: if the value of Src when encoded in the format fits in the output buffer then the function succeeds. 
+// Return value: if the value of Src when encoded in the format fits in the output buffer then the function succeeds.
 // If the encoded value does not fit, the function returns an error. (Note: All errors are published.)
-// 
+//
 
 UINT32
 SYMCRYPT_CALL
@@ -685,7 +685,7 @@ SymCryptIntGetValueLsbits32( _In_  PCSYMCRYPT_INT piSrc );
 // Returns Src mod 2^32
 //
 // Usecase: there are many number-theoretic algorithms where the algorithm
-// depends on (n mod 8) or similar values. 
+// depends on (n mod 8) or similar values.
 //
 
 UINT64
@@ -705,7 +705,7 @@ SymCryptIntIsEqualUint32(
     _In_    UINT32          u32Src2 );
 //
 // Returns a mask value which is 0xffffffff if Src1 = Src2 and 0 otherwise.
-// 
+//
 
 UINT32
 SYMCRYPT_CALL
@@ -727,7 +727,7 @@ SymCryptIntIsLessThan(
 // Returns a mask value which is 0xffffffff if Src1 < Src2 and 0 otherwise.
 //
 // Note that a <= b is equivalent to NOT( b < a ) so all possible comparisons
-// can be made using the < and = comparison primitive. 
+// can be made using the < and = comparison primitive.
 //
 
 
@@ -751,7 +751,7 @@ SymCryptIntAddUint32(
 // Dst is set to the result minus the capacity and the value 1 is returned.
 // Otherwise the Dst is set to the sum and the value 0 is returned.
 // The return value is thus a carry output of the addition.
-// 
+//
 
 UINT32
 SYMCRYPT_CALL
@@ -801,7 +801,7 @@ SymCryptIntAddMixedSize(
 // The return value is 1 if an underflow occurred (borrow), and 0 if no underflow/borrow occurred.
 // On underflow, the value of the result is the result of the subtraction plus Dst.capacity.
 //
-// Rationale: For an underflow we could also return (UINT32)-1 or return -1 on a INT32. 
+// Rationale: For an underflow we could also return (UINT32)-1 or return -1 on a INT32.
 // -1 in an unsigned type is actually 2^32 -1 which makes no sense.
 // Returning a signed type is somewhat neater, but all other values are unsigned, and mixing
 // signed and unsigned types is always error-prone. Furthermore, converting from a signed integer
@@ -838,7 +838,7 @@ SymCryptIntNeg(
 
 //
 // Dst = (- Src) mod Dst.Capacity;
-// Requirement: 
+// Requirement:
 //  - Dst.nDigits == Src.nDigits;
 // This is a negate modulo the capacity.
 // Useful when you want the absolute value of a difference.
@@ -876,7 +876,7 @@ SymCryptIntDivPow2(
             SIZE_T          exp,
     _Out_   PSYMCRYPT_INT   piDst );
 //
-// Dst = (Src div 2^Exp ) 
+// Dst = (Src div 2^Exp )
 // Requirement: Dst.nDigits == Src.nDigits, Dst == Src is allowed
 // Exp is published
 //
@@ -1000,7 +1000,7 @@ SymCryptIntMulSameSize(
                                     SIZE_T          cbScratch );
 //
 // Dst = Src1 * Src2.
-// Requirement: 
+// Requirement:
 //  - Src1.nDigits == Src2.nDigits; Dst.nDigits == Src1.nDigits + Src2.nDigits
 //  - cbScratch >= SYMCRYPT_SCRATCH_BYTES_FOR_INT_MUL( Dst.nDigits )
 //
@@ -1016,7 +1016,7 @@ SymCryptIntSquare(
                                     SIZE_T          cbScratch );
 //
 // Dst = Src^2
-// Requirement: 
+// Requirement:
 //  - Dst.nDigits == 2 * Src.nDigits
 //  - cbScratch >= SYMCRYPT_SCRATCH_BYTES_FOR_INT_MUL( Dst.nDigits )
 //
@@ -1033,7 +1033,7 @@ SymCryptIntMulMixedSize(
                                     SIZE_T          cbScratch );
 //
 // Dst = Src1 * Src2.
-// Requirement: 
+// Requirement:
 //  - Dst.nDigits >= Src1.nDigits + Src2.nDigits
 //  - cbScratch >= SYMCRYPT_SCRATCH_BYTES_FOR_INT_MUL( Dst.nDigits )
 //
@@ -1045,7 +1045,7 @@ SymCryptIntMulMixedSize(
 // Division
 // For all division and modulo operations, there are pre-computations that have to be done
 // on the divisor. The pre-computed divisor information is stored in a DIVISOR object.
-// Note that the bitsize of the value of the divisor is published. 
+// Note that the bitsize of the value of the divisor is published.
 // Therefore, a generic division is not side-channel safe.
 // Rationale: Hiding the bitsize of the value of the divisor is quite expensive,
 // and we have no cryptographic algorithms that require it.
@@ -1064,7 +1064,7 @@ SymCryptIntFromDivisor( _In_ PSYMCRYPT_DIVISOR pdSrc );
 // - On an initialized DIVISOR object the function returns a pointer to the INT that contains
 //   the divisor value. Modifying the INT value from an initialized DIVISOR value corrupts
 //   the divisor value.
-//  
+//
 // This is typically a very fast function, with a run-time cost that is zero or only one instruction.
 //
 
@@ -1081,7 +1081,7 @@ SymCryptIntToDivisor(
                                     SIZE_T              cbScratch );
 //
 // Create a DIVISOR object from an INT.
-// Requirement: 
+// Requirement:
 //  - Dst.nDigits == Src.nDigits
 //  - Src != 0
 //  - cbScratch >= SYMCRYPT_SCRATCH_BYTES_FOR_INT_TO_DIVISOR( Src.nDigits )
@@ -1095,7 +1095,7 @@ SymCryptIntToDivisor(
 //      Implementations can use this to use more efficient divisor algorithms depending on the actual value of Src.
 //      For example, if Src is very close to a power of 2, division can be implemented more efficiently.
 //
-// Once a divisor object has been created, it is immutable. 
+// Once a divisor object has been created, it is immutable.
 // Multiple threads can use the same divisor object for different division operations in parallel.
 //
 
@@ -1120,7 +1120,7 @@ SymCryptIntDivMod(
 //  - cbScratch >= SYMCRYPT_SCRATCH_BYTES_FOR_INT_DIVMOD( Src.nDigits, Divisor.nDigits )
 // Quotient and Remainder must be different objects.
 // Src may be the same object as either Quotient or Remainder.
-// 
+//
 
 #define SYMCRYPT_SCRATCH_BYTES_FOR_EXTENDED_GCD( _nDigits  )  SYMCRYPT_INTERNAL_SCRATCH_BYTES_FOR_EXTENDED_GCD( _nDigits )
 
@@ -1152,7 +1152,7 @@ SymCryptIntExtendedGcd(
 // Any of the ouput pointers can be NULL and then that result is not returned.
 // Requirements:
 //  - Src1 > 0
-//  - Src2 > 0 and  Src2 odd  
+//  - Src2 > 0 and  Src2 odd
 //  - Gcd.nDigits >= min( Src1.nDigits, Src2.nDigits )
 //  - Lcm.nDigits >= Src1.nDigits + Src2.nDigits
 //  - InvSrc1ModSrc2.nDigits >= max(Src1.nDigits, Src2.nDigits)     // Future work: Make these bounds Src2 and Src1 respectively.
@@ -1175,13 +1175,13 @@ SymCryptIntExtendedGcd(
 #define SYMCRYPT_FLAG_GCD_PUBLIC                    (0x04)
 
 
-UINT64 
+UINT64
 SYMCRYPT_CALL
 SymCryptUint64Gcd( UINT64 a, UINT64 b, UINT32 flags );
 //
 // Return GCD of two 64-bit positive integers.
 //  a, b : inputs to the GCD
-//  flags: 
+//  flags:
 //      - SYMCRYPT_FLAG_DATA_PUBLIC signals that a and b are public values (w.r.t. side-channel safety)
 //          This may improve performance.
 //      - SYMCRYPT_FLAG_GCD_INPUTS_NOT_BOTH_EVEN: signals that at least one of (a,b) is odd. This
@@ -1290,13 +1290,13 @@ SymCryptCreateTrialDivisionContext( UINT32 nDigits );
 VOID
 SYMCRYPT_CALL
 SymCryptFreeTrialDivisionContext( PCSYMCRYPT_TRIALDIVISION_CONTEXT pContext );
-// 
+//
 // Free the trial division context after use.
 //
 
 UINT32
 SYMCRYPT_CALL
-SymCryptIntFindSmallDivisor( 
+SymCryptIntFindSmallDivisor(
     _In_                            PCSYMCRYPT_TRIALDIVISION_CONTEXT    pContext,
     _In_                            PCSYMCRYPT_INT                      piSrc,
     _Out_writes_bytes_( cbScratch ) PBYTE                               pbScratch,
@@ -1304,7 +1304,7 @@ SymCryptIntFindSmallDivisor(
 //
 // Returns a divisor of piSrc, or zero.
 // Requirements:
-// Requirement: 
+// Requirement:
 //  - pContext is a valid trial division context, and Context.nDigits >= Src.nDigits
 //  - Src >= 2
 // Note:
@@ -1376,7 +1376,7 @@ SymCryptIntGenerateRandomPrime(
 //          Low <= Dst < High
 //          for e in PubExp[]: GCD( Dst - 1, e ) == 1
 //
-// (pu64PubExp, nPubExp) can be (NULL, 0) if no pubexp restriction is needed. 
+// (pu64PubExp, nPubExp) can be (NULL, 0) if no pubexp restriction is needed.
 // The nTries parameter specifies the maximum number of candidate numbers
 // until a prime number is found satisfying the above restrictions.
 // If the function cannot find one after nTries, it returns SYMCRYPT_INVALID_ARGUMENT
@@ -1429,7 +1429,7 @@ SymCryptIntFromModulus( _In_ PSYMCRYPT_MODULUS pmSrc );
 // - On an initialized MODULUS object the function returns a pointer to the INT that contains
 //   the modulus value. Modifying the INT value from an initialized MODULUS value corrupts
 //   the modulus.
-//  
+//
 // This is typically a very fast function, with a run-time cost that is zero or one instruction.
 //
 
@@ -1446,7 +1446,7 @@ SymCryptIntToModulus(
                                     SIZE_T              cbScratch );
 //
 // Create  a modulus from an INT.
-// Requirements: 
+// Requirements:
 //  - Src != 0
 //  - Dst.nDigits == Src.nDigits
 //  - cbScratch >= SYMCRYPT_SCRATCH_BYTES_FOR_INT_TO_MODULUS( Src.nDigits )
@@ -1458,7 +1458,7 @@ SymCryptIntToModulus(
 //      For RSA signatures, the # operations is large and the fastest per-operation form should be used.
 //      This parameter allows the library to select the right kind of modular arithmetic for this modulus.
 // The following flags are supported:
-//  SYMCRYPT_FLAG_DATA_PUBLIC    
+//  SYMCRYPT_FLAG_DATA_PUBLIC
 //      Signals the code that the Src value is public. This may improve performance because it allows further optimizations that
 //      depend on the value. (For example, if Src is close to a power of 2, the modulo reduction can be made significantly faster.)
 //  SYMCRYPT_FLAG_MODULUS_PARITY_PUBLIC
@@ -1470,7 +1470,7 @@ SymCryptIntToModulus(
 //  SYMCRYPT_FLAG_MODULUS_PRIME
 //      Signals that the modulus is a prime. Some algorithms can be more efficient for prime moduli. Note that setting this flag
 //      for a non-prime modulus can result in incorrect answers.
-// The flags and overageOperations parameters are published.
+// The flags and averageOperations parameters are published.
 //
 
 #define SYMCRYPT_FLAG_MODULUS_PARITY_PUBLIC     (0x02)
@@ -1494,7 +1494,7 @@ SymCryptIntToModElement(
 //  - Dst.nDigits == Mod.nDigits
 //  - piSrc.nDigits <= 2 * MOd.nDigits
 //  - cbScratch >= SYMCRYPT_SCRATCH_BYTES_FOR_COMMON_MOD_OPERATIONS( Mod.nDigits )
-// 
+//
 // Note: the input is limited in size to be no more than twice the modulus size (in digits).
 // This should be a rare case, and it simplifies the scratch space handling significantly.
 //
@@ -1509,8 +1509,8 @@ SymCryptModElementToInt(
                                     SIZE_T                  cbScratch );
 //
 // Dst = Src
-//  
-// Requirement: 
+//
+// Requirement:
 //  - Dst.nDigits >= Mod.nDigits
 //  - cbScratch >= SYMCRYPT_SCRATCH_BYTES_FOR_COMMON_MOD_OPERATIONS( Mod.nDigits )
 //
@@ -1523,10 +1523,10 @@ SymCryptModElementToInt(
 _Success_(return == SYMCRYPT_NO_ERROR)
 SYMCRYPT_ERROR
 SYMCRYPT_CALL
-SymCryptModElementSetValue( 
-    _In_reads_bytes_( cbSrc )       PCBYTE                  pbSrc, 
-                                    SIZE_T                  cbSrc, 
-                                    SYMCRYPT_NUMBER_FORMAT  format, 
+SymCryptModElementSetValue(
+    _In_reads_bytes_( cbSrc )       PCBYTE                  pbSrc,
+                                    SIZE_T                  cbSrc,
+                                    SYMCRYPT_NUMBER_FORMAT  format,
                                     PCSYMCRYPT_MODULUS      pmMod,
     _Out_                           PSYMCRYPT_MODELEMENT    peDst,
     _Out_writes_bytes_( cbScratch ) PBYTE                   pbScratch,
@@ -1542,26 +1542,26 @@ SymCryptModElementSetValue(
 
 VOID
 SYMCRYPT_CALL
-SymCryptModElementSetValueUint32( 
-                                    UINT32                  value, 
+SymCryptModElementSetValueUint32(
+                                    UINT32                  value,
                                     PCSYMCRYPT_MODULUS      pmMod,
     _Out_                           PSYMCRYPT_MODELEMENT    peDst,
     _Out_writes_bytes_( cbScratch ) PBYTE                   pbScratch,
                                     SIZE_T                  cbScratch );
 //
 // Dst = value mod Mod
-// value is published. 
+// value is published.
 // Requirement:
 //  - value < Mod
 //  - cbScratch >= SYMCRYPT_SCRATCH_BYTES_FOR_COMMON_MOD_OPERATIONS( Mod.nDigits )
-// Note: this function does NOT hide the value. 
+// Note: this function does NOT hide the value.
 // Rationale: typically the value parameter is known, either 0 or 1.
 //
 
 VOID
 SYMCRYPT_CALL
-SymCryptModElementSetValueNegUint32( 
-                                    UINT32                  value, 
+SymCryptModElementSetValueNegUint32(
+                                    UINT32                  value,
                                     PCSYMCRYPT_MODULUS      pmMod,
     _Out_                           PSYMCRYPT_MODELEMENT    peDst,
     _Out_writes_bytes_( cbScratch ) PBYTE                   pbScratch,
@@ -1572,7 +1572,7 @@ SymCryptModElementSetValueNegUint32(
 // Requirement:
 //  - 0 < value < Mod
 //  - cbScratch >= SYMCRYPT_SCRATCH_BYTES_FOR_COMMON_MOD_OPERATIONS( Mod.nDigits )
-// Note: this function does NOT hide the value. 
+// Note: this function does NOT hide the value.
 // Rationale: typically the value parameter is known, either 0 or 1.
 //
 
@@ -1580,11 +1580,11 @@ SymCryptModElementSetValueNegUint32(
 _Success_(return == SYMCRYPT_NO_ERROR)
 SYMCRYPT_ERROR
 SYMCRYPT_CALL
-SymCryptModElementGetValue( 
+SymCryptModElementGetValue(
                                     PCSYMCRYPT_MODULUS      pmMod,
     _In_                            PCSYMCRYPT_MODELEMENT   peSrc,
-    _Out_writes_bytes_( cbDst )     PBYTE                   pbDst, 
-                                    SIZE_T                  cbDst, 
+    _Out_writes_bytes_( cbDst )     PBYTE                   pbDst,
+                                    SIZE_T                  cbDst,
                                     SYMCRYPT_NUMBER_FORMAT  format,
     _Out_writes_bytes_( cbScratch ) PBYTE                   pbScratch,
                                     SIZE_T                  cbScratch );
@@ -1646,12 +1646,12 @@ SymCryptModSetRandom(
 //
 // Rationale: these values cause problems in many situations, and for all commonly used cryptographic modulo sizes
 // the absence of these values is statistically undetectable even if they are allowed.
-// For completeness of the API, the flags parameter can be used to allow these three values. 
+// For completeness of the API, the flags parameter can be used to allow these three values.
 // flags is a bitmask containing a combination of the following bit values:
-//  SYMCRYPT_FLAG_MODRANDOM_ALLOW_ZERO   
+//  SYMCRYPT_FLAG_MODRANDOM_ALLOW_ZERO
 //  SYMCRYPT_FLAG_MODRANDOM_ALLOW_ONE
 //  SYMCRYPT_FLAG_MODRANDOM_ALLOW_MINUSONE
-// Specifying ALLOW_ZERO is only valid if ALLOW_ONE is also specified. 
+// Specifying ALLOW_ZERO is only valid if ALLOW_ONE is also specified.
 //
 
 #define SYMCRYPT_FLAG_MODRANDOM_ALLOW_ZERO      (0x01)
@@ -1671,7 +1671,7 @@ SymCryptModNeg(
 // Dst = -Src mod Mod
 // Requirements:
 //  - cbScratch >= SYMCRYPT_SCRATCH_BYTES_FOR_COMMON_MOD_OPERATIONS( Mod.nDigits )
-// 
+//
 
 VOID
 SYMCRYPT_CALL
@@ -1684,14 +1684,14 @@ SymCryptModAdd(
                                     SIZE_T                  cbScratch );
 //
 // Dst = Src1 + Src2 mod Mod
-// Requirement: 
+// Requirement:
 //  - Src1.modulus == Src2.modulus == Mod.
 //  - cbScratch >= SYMCRYPT_SCRATCH_BYTES_FOR_COMMON_MOD_OPERATIONS( Mod.nDigits )
 // Dst == Src1, Dst == Src2, and Src1 == Src2 are all allowed.
 // Rationale:
 //  scratch space can make the mod-add faster for side-channel safe implementations.
-//  It allows: 
-//      Dst = Src1 + Src2; 
+//  It allows:
+//      Dst = Src1 + Src2;
 //      Tmp = Dst - Mod;
 //      Dst = choose( Dst, Tmp, carry_bits )
 //  And the choose() operation is fast because it does not require carry propagation.
@@ -1709,7 +1709,7 @@ SymCryptModSub(
                                     SIZE_T                  cbScratch );
 //
 // Dst = Src1 - Src2 mod Mod
-// Requirement: 
+// Requirement:
 //  Same as SymCryptModAdd
 //
 
@@ -1725,9 +1725,9 @@ SymCryptModMul(
                                     SIZE_T                  cbScratch );
 //
 // Dst = Src1 * Src2 mod Mod
-// Requirement: 
+// Requirement:
 //      - Src1.modulus == Src2.modulus == Mod.
-//      - cbScratch >= SYMCRYPT_SCRATCH_BYTES_FOR_COMMON_MOD_OPERATIONS( Mod.nDigits ) 
+//      - cbScratch >= SYMCRYPT_SCRATCH_BYTES_FOR_COMMON_MOD_OPERATIONS( Mod.nDigits )
 //
 
 VOID
@@ -1740,9 +1740,9 @@ SymCryptModSquare(
                                     SIZE_T                  cbScratch );
 //
 // Dst = Src1^2 mod Mod
-// Requirement: 
+// Requirement:
 //      - Src.modulus == Mod.
-//      - cbScratch >= SYMCRYPT_SCRATCH_BYTES_FOR_COMMON_MOD_OPERATIONS( Mod.nDigits ) 
+//      - cbScratch >= SYMCRYPT_SCRATCH_BYTES_FOR_COMMON_MOD_OPERATIONS( Mod.nDigits )
 //
 
 VOID
@@ -1759,7 +1759,7 @@ SymCryptModDivPow2(
 // Requirements:
 //      - Mod is odd.
 //      - Src.modulus == Dst.modulus == Mod.
-//      - cbScratch >= SYMCRYPT_SCRATCH_BYTES_FOR_COMMON_MOD_OPERATIONS( Mod.nDigits ) 
+//      - cbScratch >= SYMCRYPT_SCRATCH_BYTES_FOR_COMMON_MOD_OPERATIONS( Mod.nDigits )
 //
 
 
@@ -1891,8 +1891,8 @@ typedef struct _SYMCRYPT_SCSTABLE {
 
 UINT32
 SYMCRYPT_CALL
-SymCryptScsTableInit( 
-    _Out_   PSYMCRYPT_SCSTABLE  pScsTable, 
+SymCryptScsTableInit(
+    _Out_   PSYMCRYPT_SCSTABLE  pScsTable,
             UINT32              nElements,
             UINT32              elementSize );
 // Initializes an ScsTable for nElements elements each of elementSize bytes.
@@ -1909,36 +1909,36 @@ SymCryptScsTableInit(
 
 VOID
 SYMCRYPT_CALL
-SymCryptScsTableSetBuffer( 
-    _Inout_                             PSYMCRYPT_SCSTABLE  pScsTable, 
-    _Inout_updates_bytes_( cbBuffer )   PBYTE               pbBuffer, 
+SymCryptScsTableSetBuffer(
+    _Inout_                             PSYMCRYPT_SCSTABLE  pScsTable,
+    _Inout_updates_bytes_( cbBuffer )   PBYTE               pbBuffer,
                                         UINT32              cbBuffer );
 // Sets the caller-provided buffer on the ScsTable.
 // cbBuffer should be >= the size returned by the SymCryptScsTableInit function
 
 VOID
 SYMCRYPT_CALL
-SymCryptScsTableStore( 
-    _Inout_                     PSYMCRYPT_SCSTABLE  pScsTable, 
-                                UINT32              iIndex, 
-    _In_reads_bytes_( cbData )  PCBYTE              pbData, 
+SymCryptScsTableStore(
+    _Inout_                     PSYMCRYPT_SCSTABLE  pScsTable,
+                                UINT32              iIndex,
+    _In_reads_bytes_( cbData )  PCBYTE              pbData,
                                 UINT32              cbData );
 // Not side-channel safe; publishes iIndex.
 // cbData must match the elementSize i.e. the size of a single element.
 
 VOID
 SYMCRYPT_CALL
-SymCryptScsTableLoad( 
-    _In_                        PSYMCRYPT_SCSTABLE  pScsTable, 
-                                UINT32              iIndex, 
-    _Out_writes_bytes_(cbData)  PBYTE               pbData, 
+SymCryptScsTableLoad(
+    _In_                        PSYMCRYPT_SCSTABLE  pScsTable,
+                                UINT32              iIndex,
+    _Out_writes_bytes_(cbData)  PBYTE               pbData,
                                 UINT32              cbData );
 // Side-channel safe fetching of data; iIndex is kept secret.
 // cbData must match the elementSize i.e. the size of a single element.
 
 VOID
 SYMCRYPT_CALL
-SymCryptScsTableWipe( 
+SymCryptScsTableWipe(
     _Inout_ PSYMCRYPT_SCSTABLE pScsTable );
 // Wipes the part of the buffer that the table used
 
@@ -1946,7 +1946,7 @@ SymCryptScsTableWipe(
 
 VOID
 SYMCRYPT_CALL
-SymCryptScsRotateBuffer( 
+SymCryptScsRotateBuffer(
     _Inout_updates_( cbBuffer ) PBYTE   pbBuffer,
                                 SIZE_T  cbBuffer,
                                 SIZE_T  lshift );
@@ -1969,7 +1969,7 @@ SymCryptScsCopy(
 // through side channels.
 //
 // WARNING: pbSrc buffer must be at least cbDst bytes long; not cbSrc!
-//  
+//
 // - pbSrc  pointer to buffer to copy data from
 //          This buffer must be at least cbDst bytes long
 // - cbSrc  number of bytes to be copied, must be <= 2^31
@@ -1982,7 +1982,7 @@ SymCryptScsCopy(
 
 
 //
-// Mask generation functions. 
+// Mask generation functions.
 // All these functions are side-channel safe in all parameters.
 // Naming convention:
 // SymCrypt <MaskType> <Op> <ParameterType>
@@ -2285,7 +2285,7 @@ UINT32
 SYMCRYPT_CALL
 SymCryptEcurveDigitsofFieldElement( _In_ PCSYMCRYPT_ECURVE pCurve );
 //
-// This function returns the number of digits for one coordinate of the public key. 
+// This function returns the number of digits for one coordinate of the public key.
 //
 
 //=====================================================
@@ -2299,9 +2299,9 @@ SYMCRYPT_ERROR
 SYMCRYPT_CALL
 SymCryptEcpointSetValue(
     _In_                            PCSYMCRYPT_ECURVE       pCurve,
-    _In_reads_bytes_(cbSrc)         PCBYTE                  pbSrc, 
-                                    SIZE_T                  cbSrc, 
-                                    SYMCRYPT_NUMBER_FORMAT  nformat, 
+    _In_reads_bytes_(cbSrc)         PCBYTE                  pbSrc,
+                                    SIZE_T                  cbSrc,
+                                    SYMCRYPT_NUMBER_FORMAT  nformat,
                                     SYMCRYPT_ECPOINT_FORMAT eformat,
     _Out_                           PSYMCRYPT_ECPOINT       poDst,
                                     UINT32                  flags,
@@ -2313,9 +2313,9 @@ SymCryptEcpointSetValue(
 // and eformat. The nformat determines the format of the integers in the buffer while the
 // eformat determines the layout (and the number) of the coordinates.
 //
-// Requirements: 
-//  - cbSrc = X * SymCryptEcurveSizeofFieldModulus( pCurve ) where X depends on the 
-//    eformat specified and denotes the number of coordinates. For example, for 
+// Requirements:
+//  - cbSrc = X * SymCryptEcurveSizeofFieldModulus( pCurve ) where X depends on the
+//    eformat specified and denotes the number of coordinates. For example, for
 //    SYMCRYPT_ECPOINT_FORMAT_XY it is equal to 2.
 //  - cbScratch >= SYMCRYPT_SCRATCH_BYTES_FOR_GETSET_VALUE_ECURVE_OPERATIONS( pCurve )
 //
@@ -2326,12 +2326,12 @@ SymCryptEcpointSetValue(
 //    Scratch space provides room for conversion of point representations.
 //
 // Example:
-//    Set an ECPOINT to (X,Y) point in affine coordinates where the size of each coordinate 
+//    Set an ECPOINT to (X,Y) point in affine coordinates where the size of each coordinate
 //    is t = SymCryptEcurveSizeofFieldModulus( pCurve ) bytes. The coordinates are
-//    X=(X_(t-1), ... , X_1, X_0) and Y=(Y_(t-1), ... , Y_1, Y_0) with t-1 the 
+//    X=(X_(t-1), ... , X_1, X_0) and Y=(Y_(t-1), ... , Y_1, Y_0) with t-1 the
 //    most significant byte. Then the function can be called with
 //      pbSrc = { X_(t-1), ... , X_1, X_0, Y_(t-1), ... , Y_1, Y_0 }
-//      cbSrc = 2 * t 
+//      cbSrc = 2 * t
 //      nformat = SYMCRYPT_NUMBER_FORMAT_MSB_FIRST
 //      eformat = SYMCRYPT_ECPOINT_AFFINE
 //
@@ -2342,10 +2342,10 @@ SYMCRYPT_CALL
 SymCryptEcpointGetValue(
     _In_                            PCSYMCRYPT_ECURVE       pCurve,
     _In_                            PCSYMCRYPT_ECPOINT      poSrc,
-                                    SYMCRYPT_NUMBER_FORMAT  nformat, 
+                                    SYMCRYPT_NUMBER_FORMAT  nformat,
                                     SYMCRYPT_ECPOINT_FORMAT eformat,
     _Out_writes_bytes_(cbDst)       PBYTE                   pbDst,
-                                    SIZE_T                  cbDst, 
+                                    SIZE_T                  cbDst,
                                     UINT32                  flags,
     _Out_writes_bytes_( cbScratch ) PBYTE                   pbScratch,
                                     SIZE_T                  cbScratch );
@@ -2362,8 +2362,8 @@ SymCryptEcpointGetValue(
 //  - If the source point is the "zero" point and it cannot be exported into the
 //    required ECPOINT_FORMAT (XY or X), the function fails with SYMCRYPT_INCOMPATIBLE_FORMAT.
 //
-// Requirements: 
-//  - cbDst = X * SymCryptEcurveSizeofFieldModulus( pCurve ) where X depends on the 
+// Requirements:
+//  - cbDst = X * SymCryptEcurveSizeofFieldModulus( pCurve ) where X depends on the
 //    eformat specified and denotes the number of coordinates. For example for SYMCRYPT_ECPOINT_FORMAT_XY it is equal to 2.
 //  - cbScratch >= SYMCRYPT_SCRATCH_BYTES_FOR_GETSET_VALUE_ECURVE_OPERATIONS( pCurve )
 //
@@ -2482,7 +2482,7 @@ SymCryptEcpointOnCurve(
 VOID
 SYMCRYPT_CALL
 SymCryptEcpointAdd(
-    _In_    PCSYMCRYPT_ECURVE   pCurve, 
+    _In_    PCSYMCRYPT_ECURVE   pCurve,
     _In_    PCSYMCRYPT_ECPOINT  poSrc1,
     _In_    PCSYMCRYPT_ECPOINT  poSrc2,
     _Out_   PSYMCRYPT_ECPOINT   poDst,
@@ -2496,7 +2496,7 @@ SymCryptEcpointAdd(
 //
 // Allowed flags:
 //      SYMCRYPT_FLAG_DATA_PUBLIC: If set then the algorithm
-//      is not side-channel safe (and faster). The default behaviour 
+//      is not side-channel safe (and faster). The default behaviour
 //      is side-channel safety.
 //
 // Remarks:
@@ -2517,10 +2517,10 @@ SymCryptEcpointAddDiffNonZero(
             PBYTE               pbScratch,
             SIZE_T              cbScratch );
 //
-// Point addition when *peSrc1 != +- *peSrc2 
+// Point addition when *peSrc1 != +- *peSrc2
 // and none of them is equal to the zero point.
 //
-// Remarks: 
+// Remarks:
 //      - Side-channel safe
 //      - Complete (i.e. works for all points)
 //
@@ -2546,7 +2546,7 @@ SymCryptEcpointDouble(
 //      is not side-channel safe (and faster). The default behaviour
 //      is side-channel safety.
 //
-// Remarks: 
+// Remarks:
 //      - Side-channel safe
 //
 // Requirements:
@@ -2617,11 +2617,11 @@ SymCryptEcpointScalarMul(
 //
 // Allowed flags:
 //      SYMCRYPT_FLAG_ECC_LL_COFACTOR_MUL: If set then
-//      the scalar is multiplied by the cofactor of 
-//      the curve. The default behaviour is to not multiply 
+//      the scalar is multiplied by the cofactor of
+//      the curve. The default behaviour is to not multiply
 //      by the cofactor.
 //
-// Remarks: 
+// Remarks:
 //      - Complete
 //      - Side-channel safe
 //
@@ -2647,21 +2647,21 @@ SymCryptEcpointMultiScalarMul(
             PBYTE               pbScratch,
             SIZE_T              cbScratch );
 //
-// It executes the multi scalar - add operation for nPoints 
+// It executes the multi scalar - add operation for nPoints
 // pairs of (exponents, points) in (piSrcScalarArray, poSrcEcpointArray).
 //
-// If poSrcEcpointArray[0] == NULL the algorithm uses the distinguished point of the curve as 
+// If poSrcEcpointArray[0] == NULL the algorithm uses the distinguished point of the curve as
 // the first source point and it might be faster (depending on the curve optimizations).
 // Only the first source point can be NULL.
 //
 // Allowed flags:
 //      SYMCRYPT_FLAG_ECC_LL_COFACTOR_MUL: If set then
-//      the scalar is multiplied by the cofactor of 
-//      the curve. The default behaviour is to not multiply 
+//      the scalar is multiplied by the cofactor of
+//      the curve. The default behaviour is to not multiply
 //      by the cofactor.
 //      SYMCRYPT_FLAG_DATA_PUBLIC: If set then the algorithm
-//      is not side-channel safe (For use in the ECDSA 
-//      verification with public information). The default behaviour 
+//      is not side-channel safe (For use in the ECDSA
+//      verification with public information). The default behaviour
 //      is side channel safe.
 //
 // Requirements:
@@ -2687,7 +2687,7 @@ SymCryptEcDsaSignEx(
     _Out_writes_bytes_( cbSignature )   PBYTE                   pbSignature,
                                         SIZE_T                  cbSignature );
 //
-// This algorithm is the same as SymCryptEcDsaSign except that the caller can specify 
+// This algorithm is the same as SymCryptEcDsaSign except that the caller can specify
 // a value of k in peK. It is used in verifying test vectors of ECDSA.
 //
 // Requirements:
@@ -2697,21 +2697,21 @@ SymCryptEcDsaSignEx(
 //===================================================================
 // 802.11 SAE protocol
 //===================================================================
-// 
+//
 // WARNING: These functions are NOT part of the stable SymCrypt API. They are a private
-// interface for the Windows WiFi driver. These functions can change or disappear 
+// interface for the Windows WiFi driver. These functions can change or disappear
 // at any time as we update our WiFi solutions.
 //
 // These functions implement the non-standard or 'custom' parts of the SAE protocol for
 // 802.11 SAE as specified in IEEE 801.11-2016 12.4
-// 
+//
 // Parts of the protocol that are easy to implement with conventional crypto functions are
-// not included in this custom part. 
+// not included in this custom part.
 //
 // Limitation: currently only the NIST P256 curve is supported.
 //
 
-typedef SYMCRYPT_ALIGN struct _SYMCRYPT_802_11_SAE_CUSTOM_STATE     
+typedef SYMCRYPT_ALIGN struct _SYMCRYPT_802_11_SAE_CUSTOM_STATE
 SYMCRYPT_802_11_SAE_CUSTOM_STATE,  *PSYMCRYPT_802_11_SAE_CUSTOM_STATE;
 typedef const SYMCRYPT_802_11_SAE_CUSTOM_STATE *PCSYMCRYPT_802_11_SAE_CUSTOM_STATE;
 //
@@ -2738,7 +2738,7 @@ SymCrypt802_11SaeCustomInit(
 // - State                      Protocol state to initialize
 // - pbMacA, pbMacB             Two 6-byte MAC addresses with MacA >= MacB.
 // - pbPassword, cbPassword     The password buffer
-// - pbCounter                  If not NULL, receives the counter value of the 
+// - pbCounter                  If not NULL, receives the counter value of the
 //                              successful PWE genration per section 12.4.4.2.2
 // - pbRand                     Optional pointer to Rand buffer (see below)
 // - pbMask                     Optional pointer to Mask buffer (see below)
@@ -2746,7 +2746,7 @@ SymCrypt802_11SaeCustomInit(
 // The Rand and Mask buffers are optional. If a pointer is not provided then the caller
 // has no access to the corresponding value.
 // For either of these pointers there are three cases:
-//  - If a NULL pointer is provided, the function generates an appropriate value internally, 
+//  - If a NULL pointer is provided, the function generates an appropriate value internally,
 //      but does not return it to the caller.
 //  - If a buffer is provided and the buffer is all-zero, the function generates an appropriate
 //      value internally and returns it in the buffer.
@@ -2756,7 +2756,7 @@ SymCrypt802_11SaeCustomInit(
 // Rand and Mask buffers are MSByte first.
 //
 // Note: currently we only support the NIST P256 curve. If we ever want to support other curves
-// we'll update this function to accept a curve parameter and update the SAL annotations 
+// we'll update this function to accept a curve parameter and update the SAL annotations
 // of the other functions.
 //
 
@@ -2782,7 +2782,7 @@ SymCrypt802_11SaeCustomCreatePT(
 // - pbPT                                        Out pointer to PT (as a byte buffer)
 //
 // As above, we only support NIST P256.
-// 
+//
 
 _Success_( return == SYMCRYPT_NO_ERROR )
 SYMCRYPT_ERROR
@@ -2806,7 +2806,7 @@ SymCrypt802_11SaeCustomInitH2E(
 //
 // See the comment on SymCrypt802_11SaeCustomInit for more details about the pbRand and pbMask
 // parameters
-// 
+//
 
 _Success_( return == SYMCRYPT_NO_ERROR )
 SYMCRYPT_ERROR
@@ -2844,7 +2844,7 @@ SymCrypt802_11SaeCustomCommitProcess(
 //
 
 VOID
-SymCrypt802_11SaeCustomDestroy( 
+SymCrypt802_11SaeCustomDestroy(
     _Inout_   PSYMCRYPT_802_11_SAE_CUSTOM_STATE   pState );
 //
 // Wipe a state object.

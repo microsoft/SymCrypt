@@ -2992,7 +2992,46 @@ SymCryptFdefMontgomeryReduceMulx1024(
     _In_                            PUINT32                 pSrc,
     _Out_                           PUINT32                 pDst );
 
+// Helper macro for checking for specific key validation flag using bits 4 and 5 in a flags variable
+// Must be updated if SYMCRYPT_FLAG_KEY_MINIMAL_VALIDATION, SYMCRYPT_FLAG_KEY_RANGE_VALIDATION, or
+// SYMCRYPT_FLAG_KEY_RANGE_AND_PUBLIC_KEY_ORDER_VALIDATION are updated.
+#define SYMCRYPT_FLAG_KEY_VALIDATION_MASK   SYMCRYPT_FLAG_KEY_RANGE_AND_PUBLIC_KEY_ORDER_VALIDATION
 
+typedef struct _SYMCRYPT_DLGROUP_DH_SAFEPRIME_PARAMS {
+    SYMCRYPT_DLGROUP_DH_SAFEPRIMETYPE eDhSafePrimeType;
+
+    PCBYTE  pcbPrimeP;
+
+    UINT32  nBitsOfP;  // nBitsOfQ == nBitsOfP-1
+    UINT32  nBitsPriv; // nBitsOfQ >= nBitsPriv >= 2s
+                       // nBitsPriv will be the enforced maximum length of private keys using this Dlgroup
+                       // where s is the maximum security strength supported based on SP800-56Arev3
+} SYMCRYPT_DLGROUP_DH_SAFEPRIME_PARAMS;
+typedef const SYMCRYPT_DLGROUP_DH_SAFEPRIME_PARAMS * PCSYMCRYPT_DLGROUP_DH_SAFEPRIME_PARAMS;
+//
+// SYMCRYPT_DLGROUP_DH_SAFEPRIME_PARAMS is used to specify all the parameters needed for creation
+// of a Dlgroup based on a safe-prime group (i.e. p = 2q+1, and g = 2).
+// Currently this is used exclusively internally, and the interface for explicitly specifying use of
+// safe-prime group in SymCrypt is to use
+
+// Internally supported Safe Prime groups
+extern const PCSYMCRYPT_DLGROUP_DH_SAFEPRIME_PARAMS SymCryptDlgroupDhSafePrimeParamsModp2048;
+extern const PCSYMCRYPT_DLGROUP_DH_SAFEPRIME_PARAMS SymCryptDlgroupDhSafePrimeParamsModp3072;
+extern const PCSYMCRYPT_DLGROUP_DH_SAFEPRIME_PARAMS SymCryptDlgroupDhSafePrimeParamsModp4096;
+extern const PCSYMCRYPT_DLGROUP_DH_SAFEPRIME_PARAMS SymCryptDlgroupDhSafePrimeParamsModp6144;
+extern const PCSYMCRYPT_DLGROUP_DH_SAFEPRIME_PARAMS SymCryptDlgroupDhSafePrimeParamsModp8192;
+
+extern const PCSYMCRYPT_DLGROUP_DH_SAFEPRIME_PARAMS SymCryptDlgroupDhSafePrimeParamsffdhe2048;
+extern const PCSYMCRYPT_DLGROUP_DH_SAFEPRIME_PARAMS SymCryptDlgroupDhSafePrimeParamsffdhe3072;
+extern const PCSYMCRYPT_DLGROUP_DH_SAFEPRIME_PARAMS SymCryptDlgroupDhSafePrimeParamsffdhe4096;
+extern const PCSYMCRYPT_DLGROUP_DH_SAFEPRIME_PARAMS SymCryptDlgroupDhSafePrimeParamsffdhe6144;
+extern const PCSYMCRYPT_DLGROUP_DH_SAFEPRIME_PARAMS SymCryptDlgroupDhSafePrimeParamsffdhe8192;
+
+#define SYMCRYPT_DH_SAFEPRIME_GROUP_COUNT (10)
+
+// Note, we rely on the ordering of the parameters from smallest to largest within each named set of
+// safe-prime groups as we iterate through them assuming this order in SymCryptDlgroupSetValueSafePrime
+extern const PCSYMCRYPT_DLGROUP_DH_SAFEPRIME_PARAMS SymCryptNamedSafePrimeGroups[SYMCRYPT_DH_SAFEPRIME_GROUP_COUNT];
 
 //
 // Functions for the each type of curve
@@ -3218,6 +3257,17 @@ SymCryptMontgomerySetDistinguished(
     _Out_writes_bytes_( cbScratch )
             PBYTE               pbScratch,
             SIZE_T              cbScratch );
+
+UINT32
+SYMCRYPT_CALL
+SymCryptMontgomeryIsEqual(
+    _In_    PCSYMCRYPT_ECURVE   pCurve,
+    _In_    PCSYMCRYPT_ECPOINT  poSrc1,
+    _In_    PCSYMCRYPT_ECPOINT  poSrc2,
+            UINT32              flags,
+     _Out_writes_bytes_opt_(cbScratch)
+            PBYTE               pbScratch,
+            SIZE_T              cbScratch);
 
 UINT32
 SYMCRYPT_CALL

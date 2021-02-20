@@ -107,7 +107,7 @@ SymCryptFixedWindowRecoding(
 //
 // Remarks:
 //          1. The above algorithm and the implementation are NOT SIDE-CHANNEL SAFE.
-//             Therefore, it should only be used when the SYMCRYPT_FLAG_ECC_LL_NOT_SIDE_CHANEL_SAFE is
+//             Therefore, it should only be used when the SYMCRYPT_FLAG_DATA_PUBLIC is
 //             specified.
 //          2. The multiplication algorithm uses |k_i|/2 as indexes. Therefore we will shift left
 //             the absolute value of k_i by 1 bit and store only |k_i|/2.

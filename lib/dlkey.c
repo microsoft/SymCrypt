@@ -177,9 +177,87 @@ SymCryptDlkeyHasPrivateKey( _In_ PCSYMCRYPT_DLKEY pkDlkey )
 _Success_(return == SYMCRYPT_NO_ERROR)
 SYMCRYPT_ERROR
 SYMCRYPT_CALL
+SymCryptDlkeyPerformPublicKeyValidation(
+    _In_                            PCSYMCRYPT_DLKEY        pkDlkey,
+    _In_                            UINT32                  flags,
+    _Out_writes_bytes_( cbScratch ) PBYTE                   pbScratch,
+                                    SIZE_T                  cbScratch )
+{
+    PCSYMCRYPT_DLGROUP pDlgroup = pkDlkey->pDlgroup;
+
+    PSYMCRYPT_MODELEMENT peTmp = NULL;
+    PSYMCRYPT_MODELEMENT peTmpPublicKeyExpQ = NULL;
+    UINT32 cbModElement = SymCryptSizeofModElementFromModulus( pDlgroup->pmP );
+
+    SYMCRYPT_ASSERT( cbScratch >= (2 * SymCryptSizeofModElementFromModulus( pDlgroup->pmP )) +
+                                    SYMCRYPT_SCRATCH_BYTES_FOR_MODEXP(pDlgroup->nDigitsOfP) )
+
+    // Check if Public key is 0
+    if ( SymCryptModElementIsZero( pDlgroup->pmP, pkDlkey->pePublicKey ) )
+    {
+        return SYMCRYPT_INVALID_ARGUMENT;
+    }
+
+    peTmp = SymCryptModElementCreate( pbScratch, cbModElement, pDlgroup->pmP);
+    pbScratch += cbModElement;
+    cbScratch -= cbModElement;
+
+    // Check if Public key is P-1
+    SymCryptModElementSetValueNegUint32( 1, pDlgroup->pmP, peTmp, pbScratch, cbScratch );
+    if ( SymCryptModElementIsEqual( pDlgroup->pmP, pkDlkey->pePublicKey, peTmp ) )
+    {
+        return SYMCRYPT_INVALID_ARGUMENT;
+    }
+
+    // Check if Public key is 1 (do this check second as we may reuse 1 element in next check)
+    SymCryptModElementSetValueUint32( 1, pDlgroup->pmP, peTmp, pbScratch, cbScratch );
+    if ( SymCryptModElementIsEqual( pDlgroup->pmP, pkDlkey->pePublicKey, peTmp ) )
+    {
+        return SYMCRYPT_INVALID_ARGUMENT;
+    }
+
+    // Perform validation that Public key is in a subgroup of order Q.
+    if ( (flags & SYMCRYPT_FLAG_KEY_VALIDATION_MASK) == SYMCRYPT_FLAG_KEY_RANGE_AND_PUBLIC_KEY_ORDER_VALIDATION )
+    {
+        peTmpPublicKeyExpQ = SymCryptModElementCreate( pbScratch, cbModElement, pDlgroup->pmP);
+        pbScratch += cbModElement;
+        cbScratch -= cbModElement;
+
+        // Ensure that Q is specified in the Dlgroup
+        if ( !pDlgroup->fHasPrimeQ )
+        {
+            return SYMCRYPT_INVALID_ARGUMENT;
+        }
+
+        // Calculate peTmpPublicKeyExpQ = (Public key)^Q
+        SymCryptModExp(
+            pDlgroup->pmP,
+            pkDlkey->pePublicKey,
+            SymCryptIntFromModulus( pDlgroup->pmQ ),
+            pDlgroup->nBitsOfQ,
+            SYMCRYPT_FLAG_DATA_PUBLIC, // No need for side-channel safety for public key validation
+            peTmpPublicKeyExpQ,
+            pbScratch,
+            cbScratch );
+
+        // Ensure (Public key)^Q == 1 mod P
+        if ( !SymCryptModElementIsEqual( pDlgroup->pmP, peTmpPublicKeyExpQ, peTmp ) )
+        {
+            return SYMCRYPT_INVALID_ARGUMENT;
+        }
+    }
+
+    return SYMCRYPT_NO_ERROR;
+}
+
+#define DLKEY_GEN_RANDOM_GENERIC_LIMIT   (1000)
+
+_Success_(return == SYMCRYPT_NO_ERROR)
+SYMCRYPT_ERROR
+SYMCRYPT_CALL
 SymCryptDlkeyGenerate(
-    _In_  UINT32                     flags,
-    _Out_ PSYMCRYPT_DLKEY            pkDlkey )
+    _In_    UINT32                  flags,
+    _Inout_ PSYMCRYPT_DLKEY         pkDlkey )
 {
     SYMCRYPT_ERROR scError = SYMCRYPT_NO_ERROR;
     PBYTE pbScratch = NULL;
@@ -197,8 +275,18 @@ SymCryptDlkeyGenerate(
     UINT32 nBitsPriv = 0;
     UINT32 fFlagsForModSetRandom = 0;
 
-    // Check that only the verify flag is specified
-    if ((flags & ~SYMCRYPT_FLAG_DLKEY_GEN_MODP)!=0)
+    BOOLEAN useModSetRandom = TRUE;
+    UINT32 nBytesPriv = 0;
+    UINT32 cntr;
+
+    // Make sure only the correct flags are specified
+    // Check if a flag with bits outside of the expected flags is specified
+    // Check if a flag is specified using bits expected, but not one of the expected flags
+    if ( ( ( flags & ~( SYMCRYPT_FLAG_DLKEY_GEN_MODP |
+                        SYMCRYPT_FLAG_KEY_RANGE_AND_PUBLIC_KEY_ORDER_VALIDATION ) ) != 0 ) ||
+        ( flags != 0 &&
+        (flags & SYMCRYPT_FLAG_DLKEY_GEN_MODP) == 0 &&
+        !((flags & SYMCRYPT_FLAG_KEY_VALIDATION_MASK) == SYMCRYPT_FLAG_KEY_RANGE_AND_PUBLIC_KEY_ORDER_VALIDATION) ) )
     {
         scError = SYMCRYPT_INVALID_ARGUMENT;
         goto cleanup;
@@ -211,14 +299,33 @@ SymCryptDlkeyGenerate(
         pmPriv = pDlgroup->pmQ;
         nDigitsPriv = pDlgroup->nDigitsOfQ;
         nBitsPriv = pDlgroup->nBitsOfQ;
-        fFlagsForModSetRandom = SYMCRYPT_FLAG_MODRANDOM_ALLOW_ONE | SYMCRYPT_FLAG_MODRANDOM_ALLOW_MINUSONE;     // 1 to Q-1
+        fFlagsForModSetRandom = SYMCRYPT_FLAG_MODRANDOM_ALLOW_ONE | SYMCRYPT_FLAG_MODRANDOM_ALLOW_MINUSONE; // 1 to Q-1
+
+        if ( pDlgroup->isSafePrimeGroup )
+        {
+            useModSetRandom = FALSE;
+            SYMCRYPT_ASSERT( pDlgroup->nBitsPriv < pDlgroup->nBitsOfQ );    // 2^nBitsPriv < Q
+
+            nBitsPriv = pDlgroup->nBitsPriv;                                // 1 to (2^nBitsPriv)-1
+
+            SYMCRYPT_ASSERT( nBitsPriv % 8 == 0 );                          // nBitsPriv is always a multiple of bytes
+            nBytesPriv = nBitsPriv / 8;
+        }
     }
     else
     {
+        // We perform Private key range validation by construction
+        // The Private key is constructed in the range [1,min(2^nBitsPriv,Q)-1] precisely when pkDlkey->fPrivateModQ
+        if ( (flags & SYMCRYPT_FLAG_KEY_VALIDATION_MASK) == SYMCRYPT_FLAG_KEY_RANGE_AND_PUBLIC_KEY_ORDER_VALIDATION )
+        {
+            scError = SYMCRYPT_INVALID_ARGUMENT;
+            goto cleanup;
+        }
+
         pmPriv = pDlgroup->pmP;
         nDigitsPriv = pDlgroup->nDigitsOfP;
         nBitsPriv = pDlgroup->nBitsOfP;
-        fFlagsForModSetRandom = SYMCRYPT_FLAG_MODRANDOM_ALLOW_ONE;                                              // 1 to P-2
+        fFlagsForModSetRandom = SYMCRYPT_FLAG_MODRANDOM_ALLOW_ONE;                                          // 1 to P-2
     }
 
     cbPrivateKey = SymCryptSizeofModElementFromModulus( pmPriv );
@@ -229,9 +336,8 @@ SymCryptDlkeyGenerate(
     //      - SYMCRYPT_SCRATCH_BYTES results are upper bounded by 2^27 (including RSA and ECURVE)
     // Thus the following calculation does not overflow cbScratch.
     //
-    cbScratch = cbPrivateKey +
-                SYMCRYPT_MAX(SYMCRYPT_SCRATCH_BYTES_FOR_COMMON_MOD_OPERATIONS(nDigitsPriv),
-                    SYMCRYPT_SCRATCH_BYTES_FOR_MODEXP(pDlgroup->nDigitsOfP));
+    cbScratch = SYMCRYPT_MAX( cbPrivateKey + SYMCRYPT_SCRATCH_BYTES_FOR_COMMON_MOD_OPERATIONS(nDigitsPriv),
+                    (2 * SymCryptSizeofModElementFromModulus( pDlgroup->pmP )) + SYMCRYPT_SCRATCH_BYTES_FOR_MODEXP(pDlgroup->nDigitsOfP));
     pbScratch = SymCryptCallbackAlloc( cbScratch );
     if (pbScratch == NULL)
     {
@@ -239,29 +345,61 @@ SymCryptDlkeyGenerate(
         goto cleanup;
     }
 
-    // Create the private key modelement
-    pePrivateKey = SymCryptModElementCreate( pbScratch, cbPrivateKey, pmPriv );
-    pbScratchInternal = pbScratch + cbPrivateKey;
-    cbScratchInternal = cbScratch - cbPrivateKey;
-
     // Create the private key integer
     pkDlkey->piPrivateKey = SymCryptIntCreate( pkDlkey->pbPrivate, SymCryptSizeofIntFromDigits(nDigitsPriv), nDigitsPriv );
 
-    // Set a modelement from 1 to q-1 (or 1 to p-2)
-    SymCryptModSetRandom(
-        pmPriv,
-        pePrivateKey,
-        fFlagsForModSetRandom,
-        pbScratchInternal,
-        cbScratchInternal );
+    if (useModSetRandom)
+    {
+        // Create the private key modelement
+        pePrivateKey = SymCryptModElementCreate( pbScratch, cbPrivateKey, pmPriv );
+        pbScratchInternal = pbScratch + cbPrivateKey;
+        cbScratchInternal = cbScratch - cbPrivateKey;
 
-    // Set the private key
-    SymCryptModElementToInt(
-        pmPriv,
-        pePrivateKey,
-        pkDlkey->piPrivateKey,
-        pbScratchInternal,
-        cbScratchInternal );
+        // Set a modelement from 1 to q-1 (or 1 to p-2)
+        SymCryptModSetRandom(
+            pmPriv,
+            pePrivateKey,
+            fFlagsForModSetRandom,
+            pbScratchInternal,
+            cbScratchInternal );
+
+        // Set the private key
+        SymCryptModElementToInt(
+            pmPriv,
+            pePrivateKey,
+            pkDlkey->piPrivateKey,
+            pbScratchInternal,
+            cbScratchInternal );
+    }
+    else
+    {
+        // Set private key from 1 to (2^nBitsPriv)-1
+        // Wipe any bytes we won't fill with random
+        SymCryptWipe( pbScratch + nBytesPriv, (nDigitsPriv * SYMCRYPT_FDEF_DIGIT_SIZE) - nBytesPriv );
+
+        for(cntr=0; cntr<DLKEY_GEN_RANDOM_GENERIC_LIMIT; cntr++)
+        {
+            // Try random values until we get one we like
+            SymCryptCallbackRandom( pbScratch, nBytesPriv );
+
+            // If non-zero we have a value in range [1, (2^nBitsPriv)-1]
+            if( !SymCryptFdefRawIsEqualUint32( (PCUINT32)pbScratch, nDigitsPriv, 0 ) )
+            {
+                break;
+            }
+        }
+
+        if (cntr >= DLKEY_GEN_RANDOM_GENERIC_LIMIT)
+        {
+            SymCryptFatal( 'rndl' );
+        }
+
+        scError = SymCryptIntSetValue( pbScratch, nBytesPriv, SYMCRYPT_NUMBER_FORMAT_LSB_FIRST, pkDlkey->piPrivateKey );
+        if ( scError != SYMCRYPT_NO_ERROR )
+        {
+            goto cleanup;
+        }
+    }
 
     // Calculate the public key
     SymCryptModExp(
@@ -271,8 +409,25 @@ SymCryptDlkeyGenerate(
         nBitsPriv,
         0,      // Side-channel safe
         pkDlkey->pePublicKey,
-        pbScratchInternal,
-        cbScratchInternal );
+        pbScratch, // We can overwrite pePrivateKey now
+        cbScratch );
+
+    // Perform range validation on generated Public key.
+    if ( (flags & SYMCRYPT_FLAG_KEY_VALIDATION_MASK) == SYMCRYPT_FLAG_KEY_RANGE_AND_PUBLIC_KEY_ORDER_VALIDATION )
+    {
+        // Perform Public key validation.
+        // Always perform range validation
+        // May also perform validation that Public key is in subgroup of order Q, depending on flags
+        scError = SymCryptDlkeyPerformPublicKeyValidation(
+            pkDlkey,
+            flags,
+            pbScratch,
+            cbScratch );
+        if ( scError != SYMCRYPT_NO_ERROR )
+        {
+            goto cleanup;
+        }
+    }
 
     // Set the fHasPrivateKey flag
     pkDlkey->fHasPrivateKey = TRUE;
@@ -296,7 +451,7 @@ SymCryptDlkeySetValue(
                                         SIZE_T                  cbPublicKey,
                                         SYMCRYPT_NUMBER_FORMAT  numFormat,
                                         UINT32                  flags,
-    _Out_                               PSYMCRYPT_DLKEY         pkDlkey )
+    _Inout_                             PSYMCRYPT_DLKEY         pkDlkey )
 {
     SYMCRYPT_ERROR      scError = SYMCRYPT_NO_ERROR;
     PBYTE               pbScratch = NULL;
@@ -306,12 +461,13 @@ SymCryptDlkeySetValue(
 
     PCSYMCRYPT_DLGROUP pDlgroup = pkDlkey->pDlgroup;
 
-    PSYMCRYPT_MODULUS pmPriv = NULL;
     UINT32 nDigitsPriv = 0;
     UINT32 nBitsPriv = 0;
 
     PSYMCRYPT_MODELEMENT peTmp = NULL;
     UINT32 cbModElement = SymCryptSizeofModElementFromModulus( pDlgroup->pmP );
+
+    BOOLEAN performRangeValidation = FALSE;
 
     if ( ((pbPrivateKey==NULL) && (cbPrivateKey!=0)) ||
          ((pbPublicKey==NULL) && (cbPublicKey!=0)) ||
@@ -321,12 +477,20 @@ SymCryptDlkeySetValue(
         goto cleanup;
     }
 
-    // Check that only the verify flag is specified
-    if ((flags & ~SYMCRYPT_FLAG_DLKEY_VERIFY)!=0)
+    // Ensure only the correct flags are specified
+    // Check if a flag with bits outside of the expected flags is specified
+    // All bit combinations using the expected flags are valid, so no more flag validation required
+    if ( ( flags & ~(   SYMCRYPT_FLAG_KEY_MINIMAL_VALIDATION |
+                        SYMCRYPT_FLAG_KEY_RANGE_VALIDATION |
+                        SYMCRYPT_FLAG_KEY_RANGE_AND_PUBLIC_KEY_ORDER_VALIDATION |
+                        SYMCRYPT_FLAG_KEY_KEYPAIR_REGENERATION_VALIDATION ) ) != 0 )
     {
         scError = SYMCRYPT_INVALID_ARGUMENT;
         goto cleanup;
     }
+
+    performRangeValidation = ((flags & SYMCRYPT_FLAG_KEY_VALIDATION_MASK) == SYMCRYPT_FLAG_KEY_RANGE_VALIDATION) ||
+            ((flags & SYMCRYPT_FLAG_KEY_VALIDATION_MASK) == SYMCRYPT_FLAG_KEY_RANGE_AND_PUBLIC_KEY_ORDER_VALIDATION);
 
     //
     // From symcrypt_internal.h we have:
@@ -334,8 +498,8 @@ SymCryptDlkeySetValue(
     //      - SYMCRYPT_SCRATCH_BYTES results are upper bounded by 2^27 (including RSA and ECURVE)
     // Thus the following calculation does not overflow cbScratch.
     //
-    cbScratch = SYMCRYPT_MAX( SYMCRYPT_SCRATCH_BYTES_FOR_COMMON_MOD_OPERATIONS(pDlgroup->nDigitsOfP),
-                     cbModElement + SYMCRYPT_SCRATCH_BYTES_FOR_MODEXP(pDlgroup->nDigitsOfP) );
+    cbScratch = SYMCRYPT_MAX( cbModElement + SYMCRYPT_SCRATCH_BYTES_FOR_COMMON_MOD_OPERATIONS(pDlgroup->nDigitsOfP),
+                     (2 * cbModElement) + SYMCRYPT_SCRATCH_BYTES_FOR_MODEXP(pDlgroup->nDigitsOfP) );
     pbScratch = SymCryptCallbackAlloc( cbScratch );
     if (pbScratch == NULL)
     {
@@ -343,7 +507,7 @@ SymCryptDlkeySetValue(
         goto cleanup;
     }
 
-    if (pbPrivateKey != NULL)
+    if ( pbPrivateKey != NULL )
     {
         //
         // Check the size of the imported private key to detect if it is mod P or mod Q
@@ -351,17 +515,22 @@ SymCryptDlkeySetValue(
         // it wouldn't help us assume otherwise (the bitsize of the private key should be kept
         // secret from SC attacks).
         //
-        pkDlkey->fPrivateModQ = ((pDlgroup->fHasPrimeQ) && (cbPrivateKey <= pDlgroup->cbPrimeQ));
+        pkDlkey->fPrivateModQ = ( (pDlgroup->fHasPrimeQ) &&
+            ((cbPrivateKey < pDlgroup->cbPrimeQ) ||
+            ((cbPrivateKey == pDlgroup->cbPrimeQ) && (pDlgroup->cbPrimeQ < pDlgroup->cbPrimeP))) );
 
-        if (pkDlkey->fPrivateModQ)
+        if ( pkDlkey->fPrivateModQ )
         {
-            pmPriv = pDlgroup->pmQ;
             nDigitsPriv = pDlgroup->nDigitsOfQ;
             nBitsPriv = pDlgroup->nBitsOfQ;
+
+            if ( pDlgroup->nBitsPriv != 0 && (cbPrivateKey <= ((pDlgroup->nBitsPriv + 7) / 8)) )
+            {
+                nBitsPriv = pDlgroup->nBitsPriv;
+            }
         }
         else
         {
-            pmPriv = pDlgroup->pmP;
             nDigitsPriv = pDlgroup->nDigitsOfP;
             nBitsPriv = pDlgroup->nBitsOfP;
         }
@@ -373,15 +542,44 @@ SymCryptDlkeySetValue(
                         cbPrivateKey,
                         numFormat,
                         pkDlkey->piPrivateKey );
-        if (scError!=SYMCRYPT_NO_ERROR)
+        if ( scError != SYMCRYPT_NO_ERROR )
         {
             goto cleanup;
+        }
+
+        // Perform range validation on imported Private key.
+        if ( performRangeValidation )
+        {
+            // Ensure that Q is specified in the Dlgroup
+            if ( !pDlgroup->fHasPrimeQ )
+            {
+                scError = SYMCRYPT_INVALID_ARGUMENT;
+                goto cleanup;
+            }
+
+            // Check if Private key is 0
+            if ( SymCryptIntIsEqualUint32( pkDlkey->piPrivateKey, 0 ) )
+            {
+                scError = SYMCRYPT_INVALID_ARGUMENT;
+                goto cleanup;
+            }
+
+            // If nBitsPriv is specified, check if Private key is greater than or equal to 2^nBitsPriv
+            // Otherwise, check if Private key is greater than or equal to Q
+            if ( ( ( (pDlgroup->nBitsPriv <  pDlgroup->nBitsOfQ) &&
+                    SymCryptIntBitsizeOfValue( pkDlkey->piPrivateKey ) > pDlgroup->nBitsPriv ) ) ||
+                   ( (pDlgroup->nBitsPriv >= pDlgroup->nBitsOfQ) &&
+                    !SymCryptIntIsLessThan( pkDlkey->piPrivateKey, SymCryptIntFromModulus( pDlgroup->pmQ ) ) ) )
+            {
+                scError = SYMCRYPT_INVALID_ARGUMENT;
+                goto cleanup;
+            }
         }
 
         pkDlkey->fHasPrivateKey = TRUE;
     }
 
-    if (pbPublicKey != NULL)
+    if ( pbPublicKey != NULL )
     {
         scError = SymCryptModElementSetValue(
                         pbPublicKey,
@@ -391,26 +589,49 @@ SymCryptDlkeySetValue(
                         pkDlkey->pePublicKey,
                         pbScratch,
                         cbScratch );
-        if (scError!=SYMCRYPT_NO_ERROR)
+        if ( scError != SYMCRYPT_NO_ERROR )
         {
             goto cleanup;
         }
+
+        // Perform range validation on imported Public key.
+        if ( performRangeValidation )
+        {
+            // Perform Public key validation.
+            // Always perform range validation
+            // May also perform validation that Public key is in subgroup of order Q, depending on flags
+            scError = SymCryptDlkeyPerformPublicKeyValidation(
+                pkDlkey,
+                flags,
+                pbScratch,
+                cbScratch );
+            if ( scError != SYMCRYPT_NO_ERROR )
+            {
+                goto cleanup;
+            }
+        }
     }
 
-
     // Calculating the public key if no key was provided
-    // and verifying if needed
+    // or if needed for keypair regeneration validation
     if ( (pbPublicKey==NULL) ||
-         (((flags&SYMCRYPT_FLAG_DLKEY_VERIFY)!=0) && (pbPrivateKey!=NULL) && (pbPublicKey!=NULL))
-        )
+         ( ( (flags & SYMCRYPT_FLAG_KEY_KEYPAIR_REGENERATION_VALIDATION) != 0 ) &&
+          (pbPrivateKey!=NULL) && (pbPublicKey!=NULL) ) )
     {
+        // Calculate the public key from the private key
         pbScratchInternal = pbScratch;
         cbScratchInternal = cbScratch;
 
-        // Calculate the public key from the private key
-        peTmp = SymCryptModElementCreate( pbScratchInternal, cbModElement, pDlgroup->pmP);
-        pbScratchInternal += cbModElement;
-        cbScratchInternal -= cbModElement;
+        // By default calculate the public key directly where it will be persisted
+        peTmp = pkDlkey->pePublicKey;
+
+        if ( pbPublicKey != NULL )
+        {
+            // If doing regeneration validation calculate the public key in scratch
+            peTmp = SymCryptModElementCreate( pbScratchInternal, cbModElement, pDlgroup->pmP);
+            pbScratchInternal += cbModElement;
+            cbScratchInternal -= cbModElement;
+        }
 
         SymCryptModExp(
                 pDlgroup->pmP,
@@ -422,16 +643,14 @@ SymCryptDlkeySetValue(
                 pbScratchInternal,
                 cbScratchInternal );
 
-        if (pbPublicKey!=NULL)
+        if ( pbPublicKey != NULL )
         {
-            if (!SymCryptModElementIsEqual(pDlgroup->pmP, peTmp, pkDlkey->pePublicKey))
+            if ( !SymCryptModElementIsEqual(pDlgroup->pmP, peTmp, pkDlkey->pePublicKey) )
             {
                 scError = SYMCRYPT_AUTHENTICATION_FAILURE;
                 goto cleanup;
             }
         }
-
-        SymCryptModElementCopy(pDlgroup->pmP, peTmp, pkDlkey->pePublicKey);
     }
 
 cleanup:

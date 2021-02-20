@@ -88,6 +88,7 @@ set(SOURCES_COMMON
     dlkey.c
     dsa.c
     dh.c
+    dl_internal_groups.c
     recoding.c
     IEEE802_11SaeCustom.c
   )

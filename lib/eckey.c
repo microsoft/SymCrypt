@@ -70,7 +70,7 @@ SymCryptEckeyCreate(
 	// and then check it in runtime? This is a very consistent problem.
 	// I understand not wanting to take a perf hit, but not doing checks
 	// when you have to call the function regardless is just dangerous code
-	// with no performance benefit to justify it. Code should be secure, 
+	// with no performance benefit to justify it. Code should be secure,
 	// unless there is some reason to make a trade-off.
 
 	// In fact, you call it twice, which is not efficient
@@ -121,7 +121,7 @@ SymCryptEckeyCopy(
     {
         // Copy the hasPrivateKey flag
         pkDst->hasPrivateKey = pkSrc->hasPrivateKey;
-    
+
         // Copy the public key
         SymCryptEcpointCopy( pkSrc->pCurve, pkSrc->poPublicKey, pkDst->poPublicKey );
 
@@ -161,21 +161,101 @@ SymCryptEckeyHasPrivateKey( _In_ PCSYMCRYPT_ECKEY pkEckey )
     return pkEckey->hasPrivateKey;
 }
 
+_Success_(return == SYMCRYPT_NO_ERROR)
+SYMCRYPT_ERROR
+SYMCRYPT_CALL
+SymCryptEckeyPerformPublicKeyValidation(
+    _In_                            PCSYMCRYPT_ECKEY        pEckey,
+    _In_                            UINT32                  flags,
+    _Out_writes_bytes_( cbScratch ) PBYTE                   pbScratch,
+                                    SIZE_T                  cbScratch )
+{
+    SYMCRYPT_ERROR scError = SYMCRYPT_NO_ERROR;
+
+    PCSYMCRYPT_ECURVE   pCurve = pEckey->pCurve;
+
+    PSYMCRYPT_ECPOINT   poNPub = NULL;
+    UINT32              cbNPub = 0;
+
+    // This is an excessive amount of space to require, but all callers can currently provide it, and it's easy to phrase
+    SYMCRYPT_ASSERT( cbScratch >= SYMCRYPT_INTERNAL_SCRATCH_BYTES_FOR_ECKEY_ECURVE_OPERATIONS( pCurve ) );
+
+    // Check if Public key is O
+    if ( SymCryptEcpointIsZero( pCurve, pEckey->poPublicKey, pbScratch, cbScratch ) )
+    {
+        return SYMCRYPT_INVALID_ARGUMENT;
+    }
+
+    // Public key is represented by Modelements of the underlying finite field for the curve
+    // If we have reached this point we have either:
+    // Constructed the Public key to have coordinates in the field (Generate case), or
+    // Verified the Public key has coordinates in the field (SetValue case)
+
+    // Check that Public key is on the curve
+    // Skip check for Montgomery curves as we do not have an EcpointOnCurve function for them
+    if ( pCurve->type != SYMCRYPT_ECURVE_TYPE_MONTGOMERY &&
+        !SymCryptEcpointOnCurve( pCurve, pEckey->poPublicKey, pbScratch, cbScratch ) )
+    {
+        return SYMCRYPT_INVALID_ARGUMENT;
+    }
+
+    // Perform validation that Public key is in a subgroup of order GOrd.
+    if ( (flags & SYMCRYPT_FLAG_KEY_VALIDATION_MASK) == SYMCRYPT_FLAG_KEY_RANGE_AND_PUBLIC_KEY_ORDER_VALIDATION )
+    {
+        if ( SymCryptIntIsEqualUint32( pCurve->H, 1 ) )
+        {
+            // If cofactor is 1 then to validate that Public key has order GOrd
+            // it is sufficient to validate Public key is on the curve
+            // We just performed this check - so we are done.
+        }
+        else
+        {
+            // Ensure GOrd*(Public key) == O
+            cbNPub = SymCryptSizeofEcpointFromCurve( pCurve );
+            poNPub = SymCryptEcpointCreate( pbScratch, cbNPub, pCurve );
+            pbScratch += cbNPub;
+            cbScratch -= cbNPub;
+
+            SYMCRYPT_ASSERT( poNPub != NULL );
+
+            // Do the multiplication
+            scError = SymCryptEcpointScalarMul(
+                pCurve,
+                SymCryptIntFromModulus( pCurve->GOrd ),
+                pEckey->poPublicKey,
+                0, // Do not multiply by cofactor!
+                poNPub,
+                pbScratch,
+                cbScratch );
+            if ( scError != SYMCRYPT_NO_ERROR )
+            {
+                return scError;
+            }
+
+            if ( !SymCryptEcpointIsZero( pCurve, poNPub, pbScratch, cbScratch ) )
+            {
+                return SYMCRYPT_INVALID_ARGUMENT;
+            }
+        }
+    }
+
+    return SYMCRYPT_NO_ERROR;
+}
 
 _Success_(return == SYMCRYPT_NO_ERROR)
 SYMCRYPT_ERROR
 SYMCRYPT_CALL
 SymCryptEckeySetValue(
     _In_reads_bytes_( cbPrivateKey )
-          PCBYTE                  pbPrivateKey,
-          SIZE_T                  cbPrivateKey,
-    _In_reads_bytes_( cbPublicKey ) 
-          PCBYTE                  pbPublicKey,
-          SIZE_T                  cbPublicKey,
-          SYMCRYPT_NUMBER_FORMAT  numFormat,
-          SYMCRYPT_ECPOINT_FORMAT ecPointFormat,
-          UINT32                  flags,
-    _Out_ PSYMCRYPT_ECKEY         pEckey )
+            PCBYTE                  pbPrivateKey,
+            SIZE_T                  cbPrivateKey,
+    _In_reads_bytes_( cbPublicKey )
+            PCBYTE                  pbPublicKey,
+            SIZE_T                  cbPublicKey,
+            SYMCRYPT_NUMBER_FORMAT  numFormat,
+            SYMCRYPT_ECPOINT_FORMAT ecPointFormat,
+            UINT32                  flags,
+    _Inout_ PSYMCRYPT_ECKEY         pEckey )
 {
     SYMCRYPT_ERROR      scError = SYMCRYPT_NO_ERROR;
     PBYTE               pbScratch = NULL;
@@ -185,6 +265,9 @@ SymCryptEckeySetValue(
 
     PCSYMCRYPT_ECURVE   pCurve = pEckey->pCurve;
 
+    PSYMCRYPT_ECPOINT   poTmp = NULL;
+    UINT32              cbTmp = 0;
+
     PSYMCRYPT_INT           piTmpInteger = NULL;
     UINT32                  cbTmpInteger = 0;
     PSYMCRYPT_MODELEMENT    peTmpModElement = NULL;
@@ -192,16 +275,26 @@ SymCryptEckeySetValue(
 
     UINT32 privateKeyDigits = SymCryptEcurveDigitsofScalarMultiplier(pCurve);
 
+    BOOLEAN performRangeValidation = FALSE;
+
 	// dcl - again, we require the results of these functions below, so why not check them in release?
     SYMCRYPT_ASSERT( (cbPrivateKey==0) || (cbPrivateKey == SymCryptEcurveSizeofScalarMultiplier( pEckey->pCurve )) );
     SYMCRYPT_ASSERT( (cbPublicKey==0) || (cbPublicKey == SymCryptEckeySizeofPublicKey( pEckey, ecPointFormat)) );
 
-    // Make sure we only specify the correct flags
-    if ( ( flags & ~(SYMCRYPT_FLAG_ECC_NO_VALIDATION) ) != 0 )
+    // Ensure only the correct flags are specified
+    // Check if a flag with bits outside of the expected flags is specified
+    // All bit combinations using the expected flags are valid, so no more flag validation required
+    if ( ( flags & ~(   SYMCRYPT_FLAG_KEY_MINIMAL_VALIDATION |
+                        SYMCRYPT_FLAG_KEY_RANGE_VALIDATION |
+                        SYMCRYPT_FLAG_KEY_RANGE_AND_PUBLIC_KEY_ORDER_VALIDATION |
+                        SYMCRYPT_FLAG_KEY_KEYPAIR_REGENERATION_VALIDATION ) ) != 0 )
     {
         scError = SYMCRYPT_INVALID_ARGUMENT;
         goto cleanup;
     }
+
+    performRangeValidation = ((flags & SYMCRYPT_FLAG_KEY_VALIDATION_MASK) == SYMCRYPT_FLAG_KEY_RANGE_VALIDATION) ||
+            ((flags & SYMCRYPT_FLAG_KEY_VALIDATION_MASK) == SYMCRYPT_FLAG_KEY_RANGE_AND_PUBLIC_KEY_ORDER_VALIDATION);
 
     if ( ( ( cbPrivateKey == 0 ) && ( cbPublicKey == 0 ) ) ||
          ( ( cbPrivateKey != 0 ) && ( cbPrivateKey != SymCryptEcurveSizeofScalarMultiplier( pEckey->pCurve ) ) ) ||
@@ -220,7 +313,127 @@ SymCryptEckeySetValue(
         goto cleanup;
     }
 
-    if ( cbPublicKey != 0 )
+    if ( pbPrivateKey != NULL )
+    {
+        //
+        // Private key calculations
+        //
+
+        pbScratchInternal = pbScratch;
+        cbScratchInternal = cbScratch;
+
+        // Allocate the integer
+        cbTmpInteger = SymCryptSizeofIntFromDigits( privateKeyDigits );
+        piTmpInteger = SymCryptIntCreate( pbScratchInternal, cbTmpInteger, privateKeyDigits );
+        SYMCRYPT_ASSERT( piTmpInteger != NULL );
+
+        pbScratchInternal += cbTmpInteger;
+        cbScratchInternal -= cbTmpInteger;
+
+        // Allocate the modelement
+        peTmpModElement = SymCryptModElementCreate( pbScratchInternal, cbTmpModElement, pCurve->GOrd );
+        SYMCRYPT_ASSERT( peTmpModElement != NULL );
+
+        pbScratchInternal += cbTmpModElement;
+        cbScratchInternal -= cbTmpModElement;
+
+        // Get the "raw" private key
+        scError = SymCryptIntSetValue( pbPrivateKey, cbPrivateKey, numFormat, piTmpInteger );
+        if (scError != SYMCRYPT_NO_ERROR)
+        {
+            goto cleanup;
+        }
+
+        // Validation steps
+        if ( !((flags & SYMCRYPT_FLAG_KEY_VALIDATION_MASK) == SYMCRYPT_FLAG_KEY_MINIMAL_VALIDATION) )
+        {
+            // Perform range validation on imported Private key if it is in canonical format
+            if ( performRangeValidation &&
+                (pCurve->PrivateKeyDefaultFormat == SYMCRYPT_ECKEY_PRIVATE_FORMAT_CANONICAL) )
+            {
+                // Check if Private key is greater than or equal to GOrd
+                if ( !SymCryptIntIsLessThan( piTmpInteger, SymCryptIntFromModulus( pCurve->GOrd ) ) )
+                {
+                    scError = SYMCRYPT_INVALID_ARGUMENT;
+                    goto cleanup;
+                }
+            }
+
+            // "TimesH" formats
+            // IntGetBits requirements:
+            //      We know that coFactorPower is up to SYMCRYPT_ECURVE_MAX_COFACTOR_POWER. Thus
+            //      less than 32 and less than the digits size in bits.
+            if ( (pCurve->coFactorPower>0) &&
+                (pCurve->PrivateKeyDefaultFormat == SYMCRYPT_ECKEY_PRIVATE_FORMAT_DIVH_TIMESH) &&
+                (SymCryptIntGetBits( piTmpInteger, 0, pCurve->coFactorPower) != 0) )
+            {
+                scError = SYMCRYPT_INVALID_ARGUMENT;
+                goto cleanup;
+            }
+
+
+            // High bit restrictions
+            // IntGetBits requirements:
+            //      Satisfied by asserting that
+            //      HighBitRestrictionPosition + HighBitRestrictionNumOfBits <= GOrdBitsize + coFactorPower
+            //      during EcurveAllocate.
+            if ( (pCurve->HighBitRestrictionNumOfBits>0) &&
+                (SymCryptIntGetBits(
+                    piTmpInteger,
+                    pCurve->HighBitRestrictionPosition,
+                    pCurve->HighBitRestrictionNumOfBits) != pCurve->HighBitRestrictionValue) )
+            {
+                scError = SYMCRYPT_INVALID_ARGUMENT;
+                goto cleanup;
+            }
+        }
+
+        // Convert the private key to "DivH" format
+        if (pCurve->coFactorPower>0)
+        {
+            // "TimesH" format: Divide the input private key with the cofactor
+            // by shifting right the appropriate number of bits
+            if (pCurve->PrivateKeyDefaultFormat == SYMCRYPT_ECKEY_PRIVATE_FORMAT_DIVH_TIMESH)
+            {
+                SymCryptIntDivPow2( piTmpInteger, pCurve->coFactorPower, piTmpInteger );
+            }
+
+            // "Canonical" format: Divide by h modulo GOrd
+            if (pCurve->PrivateKeyDefaultFormat == SYMCRYPT_ECKEY_PRIVATE_FORMAT_CANONICAL)
+            {
+                SymCryptIntToModElement( piTmpInteger, pCurve->GOrd, peTmpModElement, pbScratchInternal, cbScratchInternal );
+                SymCryptModDivPow2( pCurve->GOrd, peTmpModElement, pCurve->coFactorPower, peTmpModElement, pbScratchInternal, cbScratchInternal );
+                SymCryptModElementToInt( pCurve->GOrd, peTmpModElement, piTmpInteger, pbScratchInternal, cbScratchInternal );
+            }
+        }
+
+        // Divide the input private key since it could be larger than subgroup order
+        SymCryptIntDivMod(
+            piTmpInteger,
+            SymCryptDivisorFromModulus(pCurve->GOrd),
+            NULL,
+            piTmpInteger,
+            pbScratchInternal,
+            cbScratchInternal );
+
+        if ( !((flags & SYMCRYPT_FLAG_KEY_VALIDATION_MASK) == SYMCRYPT_FLAG_KEY_MINIMAL_VALIDATION) )
+        {
+            // Check if Private key is 0 after dividing it by the subgroup order
+            // Other part of range validation
+            if (SymCryptIntIsEqualUint32( piTmpInteger, 0 ))
+            {
+                scError = SYMCRYPT_INVALID_ARGUMENT;
+                goto cleanup;
+            }
+        }
+
+        // Copy into the ECKEY
+        SymCryptIntCopy( piTmpInteger, pEckey->piPrivateKey );
+
+        pEckey->hasPrivateKey = TRUE;
+    }
+
+    if ( pbPublicKey != NULL )
     {
         scError = SymCryptEcpointSetValue(
                             pCurve,
@@ -230,140 +443,73 @@ SymCryptEckeySetValue(
                             ecPointFormat,
                             pEckey->poPublicKey,
                             SYMCRYPT_FLAG_DATA_PUBLIC,
-                            pbScratch, 
+                            pbScratch,
                             cbScratch );
         if ( scError != SYMCRYPT_NO_ERROR )
         {
             goto cleanup;
         }
 
-        // Validate if the public key is on the curve
-        if ( ( ( flags & SYMCRYPT_FLAG_ECC_NO_VALIDATION ) == 0) &&
-             ( pCurve->type != SYMCRYPT_ECURVE_TYPE_MONTGOMERY ) )
+        // Perform Public key validation on imported Public key.
+        if ( !((flags & SYMCRYPT_FLAG_KEY_VALIDATION_MASK) == SYMCRYPT_FLAG_KEY_MINIMAL_VALIDATION) )
         {
-            if ( !SymCryptEcpointOnCurve( pCurve, pEckey->poPublicKey, pbScratch, cbScratch ) )
+            scError = SymCryptEckeyPerformPublicKeyValidation(
+                pEckey,
+                flags,
+                pbScratch,
+                cbScratch );
+            if ( scError != SYMCRYPT_NO_ERROR )
             {
-                scError = SYMCRYPT_INVALID_ARGUMENT;
                 goto cleanup;
             }
         }
     }
 
-    // Only set the public key
-    if ( cbPrivateKey == 0 )
+    // Calculating the public key if no key was provided
+    // or if needed for keypair regeneration validation
+    if ( (pbPublicKey==NULL) ||
+         ( ( (flags & SYMCRYPT_FLAG_KEY_KEYPAIR_REGENERATION_VALIDATION) != 0 ) &&
+          (pbPrivateKey!=NULL) && (pbPublicKey!=NULL) ) )
     {
-        goto cleanup;
-    }
+        // Calculate the public key from the private key
+        pbScratchInternal = pbScratch;
+        cbScratchInternal = cbScratch;
 
-    //
-    // Private key calculations
-    //
+        // By default calculate the Public key directly where it will be persisted
+        poTmp = pEckey->poPublicKey;
 
-    pbScratchInternal = pbScratch;
-    cbScratchInternal = cbScratch;
-
-    // Allocate the integer
-    cbTmpInteger = SymCryptSizeofIntFromDigits( privateKeyDigits );
-    piTmpInteger = SymCryptIntCreate( pbScratchInternal, cbTmpInteger, privateKeyDigits );
-    SYMCRYPT_ASSERT( piTmpInteger != NULL );
-
-    pbScratchInternal += cbTmpInteger;
-    cbScratchInternal -= cbTmpInteger;
-
-    // Allocate the modelement
-    peTmpModElement = SymCryptModElementCreate( pbScratchInternal, cbTmpModElement, pCurve->GOrd );
-    SYMCRYPT_ASSERT( peTmpModElement != NULL );
-
-    pbScratchInternal += cbTmpModElement;
-    cbScratchInternal -= cbTmpModElement;
-
-    // Get the "raw" private key
-    scError = SymCryptIntSetValue( pbPrivateKey, cbPrivateKey, numFormat, piTmpInteger );
-    if (scError != SYMCRYPT_NO_ERROR)
-    {
-        goto cleanup;
-    }
-
-    // Validation steps
-    if (( flags & SYMCRYPT_FLAG_ECC_NO_VALIDATION ) == 0 )
-    {
-        // Zero private key
-        if (SymCryptIntIsEqualUint32( piTmpInteger, 0 ))
+        if ( pbPublicKey != NULL )
         {
-            scError = SYMCRYPT_INVALID_ARGUMENT;
-            goto cleanup;
+            // If doing regeneration validation calculate the Public key in scratch
+            cbTmp = SymCryptSizeofEcpointFromCurve( pCurve );
+            poTmp = SymCryptEcpointCreate( pbScratchInternal, cbTmp, pCurve );
+            pbScratchInternal += cbTmp;
+            cbScratchInternal -= cbTmp;
         }
 
-        // "TimesH" formats
-        // IntGetBits requirements:
-        //      We know that coFactorPower is up to SYMCRYPT_ECURVE_MAX_COFACTOR_POWER. Thus
-        //      less than 32 and less than the digits size in bits.
-        if ( (pCurve->coFactorPower>0) &&
-             (pCurve->PrivateKeyDefaultFormat == SYMCRYPT_ECKEY_PRIVATE_FORMAT_DIVH_TIMESH) &&
-             (SymCryptIntGetBits( piTmpInteger, 0, pCurve->coFactorPower) != 0) )
-        {
-            scError = SYMCRYPT_INVALID_ARGUMENT;
-            goto cleanup;
-        }
+        SYMCRYPT_ASSERT( poTmp != NULL );
 
-
-        // High bit restrictions
-        // IntGetBits requirements:
-        //      Satisfied by asserting that
-        //      HighBitRestrictionPosition + HighBitRestrictionNumOfBits <= GOrdBitsize + coFactorPower
-        //      during EcurveAllocate.
-        if ( (pCurve->HighBitRestrictionNumOfBits>0) &&
-             (SymCryptIntGetBits(
-                piTmpInteger,
-                pCurve->HighBitRestrictionPosition,
-                pCurve->HighBitRestrictionNumOfBits) != pCurve->HighBitRestrictionValue) )
-        {
-            scError = SYMCRYPT_INVALID_ARGUMENT;
-            goto cleanup;
-        }
-    }
-
-    // Convert the private key to "DivH" format
-    if (pCurve->coFactorPower>0)
-    {
-        // "TimesH" format: Divide the input private key with the cofactor
-        // by shifting right the appropriate number of bits
-        if (pCurve->PrivateKeyDefaultFormat == SYMCRYPT_ECKEY_PRIVATE_FORMAT_DIVH_TIMESH)
-        {
-            SymCryptIntDivPow2( piTmpInteger, pCurve->coFactorPower, piTmpInteger );
-        }
-
-        // "Canonical" format: Divide by h modulo GOrd
-        if (pCurve->PrivateKeyDefaultFormat == SYMCRYPT_ECKEY_PRIVATE_FORMAT_CANONICAL)
-        {
-            SymCryptIntToModElement( piTmpInteger, pCurve->GOrd, peTmpModElement, pbScratchInternal, cbScratchInternal );
-            SymCryptModDivPow2( pCurve->GOrd, peTmpModElement, pCurve->coFactorPower, peTmpModElement, pbScratchInternal, cbScratchInternal );
-            SymCryptModElementToInt( pCurve->GOrd, peTmpModElement, piTmpInteger, pbScratchInternal, cbScratchInternal );
-        }
-    }
-
-    // Divide the input private key since it could be larger than subgroup value
-    SymCryptIntDivMod(
-        piTmpInteger,
-        SymCryptDivisorFromModulus(pCurve->GOrd),
-        NULL,
-        piTmpInteger,
-        pbScratchInternal,
-        cbScratchInternal );
-
-    // Copy into the ECKEY
-    SymCryptIntCopy( piTmpInteger, pEckey->piPrivateKey );
-
-    pEckey->hasPrivateKey = TRUE;
-
-    // We need calculate the public key if only the private key is provided
-    if ( cbPublicKey == 0 )
-    {
         // Always multiply by the cofactor since the internal format is "DIVH"
-        scError = SymCryptEcpointScalarMul( pCurve, piTmpInteger, NULL, SYMCRYPT_FLAG_ECC_LL_COFACTOR_MUL, pEckey->poPublicKey, pbScratchInternal, cbScratchInternal );
-        if (scError != SYMCRYPT_NO_ERROR)
+        scError = SymCryptEcpointScalarMul(
+            pCurve,
+            pEckey->piPrivateKey,
+            NULL,
+            SYMCRYPT_FLAG_ECC_LL_COFACTOR_MUL,
+            poTmp,
+            pbScratchInternal,
+            cbScratchInternal );
+        if ( scError != SYMCRYPT_NO_ERROR )
         {
             goto cleanup;
+        }
+
+        if ( pbPublicKey != NULL )
+        {
+            if ( !SymCryptEcpointIsEqual( pCurve, poTmp, pEckey->poPublicKey, 0, pbScratchInternal, cbScratchInternal ) )
+            {
+                scError = SYMCRYPT_INVALID_ARGUMENT;
+                goto cleanup;
+            }
         }
     }
 
@@ -386,7 +532,7 @@ SymCryptEckeyGetValue(
     _Out_writes_bytes_( cbPrivateKey )
             PBYTE                   pbPrivateKey,
             SIZE_T                  cbPrivateKey,
-    _Out_writes_bytes_( cbPublicKey ) 
+    _Out_writes_bytes_( cbPublicKey )
             PBYTE                   pbPublicKey,
             SIZE_T                  cbPublicKey,
             SYMCRYPT_NUMBER_FORMAT  numFormat,
@@ -503,7 +649,7 @@ SymCryptEckeyGetValue(
                             pbPublicKey,
                             cbPublicKey,
                             SYMCRYPT_FLAG_DATA_PUBLIC,
-                            pbScratch, 
+                            pbScratch,
                             cbScratch );
     }
 
@@ -524,8 +670,8 @@ _Success_(return == SYMCRYPT_NO_ERROR)
 SYMCRYPT_ERROR
 SYMCRYPT_CALL
 SymCryptEckeySetRandom(
-    _In_  UINT32                     flags,
-    _Out_ PSYMCRYPT_ECKEY            pEckey )
+    _In_    UINT32                  flags,
+    _Inout_ PSYMCRYPT_ECKEY         pEckey )
 {
     SYMCRYPT_ERROR      scError = SYMCRYPT_NO_ERROR;
     PBYTE               pbScratch = NULL;
@@ -543,7 +689,16 @@ SymCryptEckeySetRandom(
 
     UINT32 highBitRestrictionPosition = pCurve->HighBitRestrictionPosition;
 
-    UNREFERENCED_PARAMETER( flags );
+    // Ensure only the correct flags are specified
+    // Check if a flag with bits outside of the expected flags is specified
+    // Check if a flag is specified using bits expected, but not one of the expected flags
+    if ( ( ( flags & ~( SYMCRYPT_FLAG_KEY_RANGE_AND_PUBLIC_KEY_ORDER_VALIDATION ) ) != 0 ) ||
+        ( flags != 0 &&
+        !((flags & SYMCRYPT_FLAG_KEY_VALIDATION_MASK) == SYMCRYPT_FLAG_KEY_RANGE_AND_PUBLIC_KEY_ORDER_VALIDATION) ) )
+    {
+        scError = SYMCRYPT_INVALID_ARGUMENT;
+        goto cleanup;
+    }
 
     //
     // From symcrypt_internal.h we have:
@@ -586,6 +741,7 @@ SymCryptEckeySetRandom(
     // Main loop
     do
     {
+        // We perform Private key range validation by construction
         // Setting a random mod element in the [1, SubgroupOrder-1] set
         // This will be the "DivH" format of the private key. This means
         // that PublicKey = h * PrivateKey * G
@@ -655,7 +811,35 @@ SymCryptEckeySetRandom(
     SymCryptModElementToInt( pCurve->GOrd, peScalar, pEckey->piPrivateKey, pbScratchInternal, cbScratchInternal );
 
     // Do the multiplication (pass over the entire scratch space as it is not needed anymore)
-    SymCryptEcpointScalarMul( pCurve, pEckey->piPrivateKey, NULL, SYMCRYPT_FLAG_ECC_LL_COFACTOR_MUL, pEckey->poPublicKey, pbScratch, cbScratch );
+    scError = SymCryptEcpointScalarMul(
+        pCurve,
+        pEckey->piPrivateKey,
+        NULL,
+        SYMCRYPT_FLAG_ECC_LL_COFACTOR_MUL,
+        pEckey->poPublicKey,
+        pbScratch,
+        cbScratch );
+    if ( scError != SYMCRYPT_NO_ERROR )
+    {
+        goto cleanup;
+    }
+
+    // Perform range and public key order validation on generated Public key.
+    if ( (flags & SYMCRYPT_FLAG_KEY_VALIDATION_MASK) == SYMCRYPT_FLAG_KEY_RANGE_AND_PUBLIC_KEY_ORDER_VALIDATION )
+    {
+        // Perform Public key validation.
+        // Always perform range validation
+        // May also perform validation that Public key is in subgroup of order GOrd, depending on flags
+        scError = SymCryptEckeyPerformPublicKeyValidation(
+            pEckey,
+            flags,
+            pbScratch,
+            cbScratch );
+        if ( scError != SYMCRYPT_NO_ERROR )
+        {
+            goto cleanup;
+        }
+    }
 
     pEckey->hasPrivateKey = TRUE;
 

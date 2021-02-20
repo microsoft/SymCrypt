@@ -1,7 +1,7 @@
 //
 // CNG implementation classes
 //
-// Copyright (c) Microsoft Corporation. Licensed under the MIT license. 
+// Copyright (c) Microsoft Corporation. Licensed under the MIT license.
 //
 
 #include "precomp.h"
@@ -100,7 +100,7 @@ CngRc2KeySupport<AlgRc2>( BCRYPT_ALG_HANDLE hAlg, SIZE_T cbKey )
     if( g_osVersion <= 0x0602 )
     {
         suc = kl >= 40 && kl <= 128;
-        if( !suc ) 
+        if( !suc )
         {
             //
             // We know this will not work on <= Win8.
@@ -118,7 +118,7 @@ CngRc2KeySupport<AlgRc2>( BCRYPT_ALG_HANDLE hAlg, SIZE_T cbKey )
         CHECK5( FALSE, "Failed to set RC2 effective key size, %04x, %04x, %d", status, g_osVersion, kl );
     }
 
-   
+
     return status;
 }
 
@@ -141,7 +141,7 @@ AddBCryptBuffer( BCryptBufferDesc * pBufferDesc, ULONG BufferType, PCVOID pData,
     pBufferDesc->pBuffers[i].pvBuffer = (PVOID) pData;
 }
 
-ULONG 
+ULONG
 bcoapReusableFlag()
 {
     if( g_osVersion < 0x0602 )
@@ -152,9 +152,9 @@ bcoapReusableFlag()
 }
 
 // The following function checks if BCrypt supports
-// AES CMAC with the HMAC flag set. This means that 
+// AES CMAC with the HMAC flag set. This means that
 // PBKDF2 and SP800-108 in CNG accept AES CMAC.
-// Supported in Threshold and above (no version # 
+// Supported in Threshold and above (no version #
 // set yet)
 BOOL
 cngAesCmac_HmacMode()
@@ -163,9 +163,9 @@ cngAesCmac_HmacMode()
     BCRYPT_ALG_HANDLE hAlg = NULL;
 
     Status = CngOpenAlgorithmProviderFn(
-        &hAlg, 
-        BCRYPT_AES_CMAC_ALGORITHM, 
-        NULL, 
+        &hAlg,
+        BCRYPT_AES_CMAC_ALGORITHM,
+        NULL,
         BCRYPT_ALG_HANDLE_HMAC_FLAG);
 
     if (hAlg != NULL)
@@ -593,7 +593,7 @@ AuthEncImp<ImpCng, AlgAes, ModeGcm>::getNonceSizes()
     std::set<SIZE_T> res;
 
     res.insert( 12 );
-    
+
     return res;
 }
 
@@ -605,10 +605,10 @@ AuthEncImp<ImpCng, AlgAes, ModeGcm>::getNonceSizes()
 BCRYPT_ALG_HANDLE StreamCipherImpState<ImpCng, AlgRc4>::hAlg;
 
 template<>
-VOID 
+VOID
 algImpKeyPerfFunction< ImpCng, AlgRc4>( PBYTE buf1, PBYTE buf2, PBYTE buf3, SIZE_T keySize )
 {
-    BCRYPT_KEY_HANDLE hKey; 
+    BCRYPT_KEY_HANDLE hKey;
     BCRYPT_ALG_HANDLE hAlg = StreamCipherImpState<ImpCng, AlgRc4>::hAlg;
     UNREFERENCED_PARAMETER( buf3 );
 
@@ -617,10 +617,10 @@ algImpKeyPerfFunction< ImpCng, AlgRc4>( PBYTE buf1, PBYTE buf2, PBYTE buf3, SIZE
                             &hKey,
                             buf1 + 16, 768,
                             buf2, (ULONG) keySize,
-                            g_cngKeySizeFlag ) ), 
+                            g_cngKeySizeFlag ) ),
            "Error importing key" );
-    
-    
+
+
     *(BCRYPT_KEY_HANDLE *) buf1 = hKey;
 }
 
@@ -647,7 +647,7 @@ algImpCleanPerfFunction<ImpCng,AlgRc4>( PBYTE buf1, PBYTE buf2, PBYTE buf3 )
 
 StreamCipherImp<ImpCng, AlgRc4>::StreamCipherImp()
 {
-    CHECK( CngOpenAlgorithmProviderFn( &state.hAlg, PROVIDER_NAME( RC4 ), NULL, 0 ) == STATUS_SUCCESS, 
+    CHECK( CngOpenAlgorithmProviderFn( &state.hAlg, PROVIDER_NAME( RC4 ), NULL, 0 ) == STATUS_SUCCESS,
         "Could not open CNG/" STRING( ALG_Name ) );
 
     state.hKey = 0;
@@ -822,13 +822,13 @@ RngSp800_90Imp<ImpCng, AlgAesCtrDrbg>::generate(  _Out_writes_( cbData ) PBYTE p
 
 
 template<>
-VOID 
+VOID
 algImpKeyPerfFunction< ImpCng, AlgXtsAes>( PBYTE buf1, PBYTE buf2, PBYTE buf3, SIZE_T keySize )
 {
     UNREFERENCED_PARAMETER( buf3 );
     ULONG dataUnitSize = 512;
 
-    CHECK( NT_SUCCESS( CngGenerateSymmetricKeyFn( BCRYPT_XTS_AES_ALG_HANDLE, (BCRYPT_KEY_HANDLE *) buf1, buf1 + 64, 2048, buf2, (ULONG)keySize, 0 ) ), "?" ); 
+    CHECK( NT_SUCCESS( CngGenerateSymmetricKeyFn( BCRYPT_XTS_AES_ALG_HANDLE, (BCRYPT_KEY_HANDLE *) buf1, buf1 + 64, 2048, buf2, (ULONG)keySize, 0 ) ), "?" );
     CHECK( NT_SUCCESS( CngSetPropertyFn( *(BCRYPT_KEY_HANDLE *) buf1, BCRYPT_MESSAGE_BLOCK_LENGTH, (PBYTE)&dataUnitSize, sizeof( dataUnitSize ), 0 ) ), "?" );
 }
 
@@ -943,30 +943,30 @@ XtsImp<ImpCng, AlgXtsAes>::setKey( PCBYTE pbKey, SIZE_T cbKey )
     // Test the opaque blob import/export
     // Can be removed once this is part of the CNG BVTs
     //
-    
+
     CHECK( *state.pMagic == 'ntft', "Magic marker overwritten" );
 
     CHECK( NT_SUCCESS( CngExportKeyFn( state.hKey, NULL, BCRYPT_OPAQUE_KEY_BLOB, blob, sizeof( blob ), &cbBlob, 0 ) ), "Opaque blob export error" );
     CHECK( NT_SUCCESS( CngDestroyKeyFn( state.hKey ) ), "Could not destroy key" );
     CHECK( *state.pMagic == 'ntft', "Magic marker overwritten" );
     CHECK( NT_SUCCESS( CngImportKeyFn( BCRYPT_XTS_AES_ALG_HANDLE, NULL, BCRYPT_OPAQUE_KEY_BLOB, &state.hKey, pKeyObject, cbKeyObject, blob, cbBlob, 0 ) ), "Opaque blob import error" );
-    
+
     CHECK( *state.pMagic == 'ntft', "Magic marker overwritten" );
 
 Cleanup:
-    return status;        
-    
+    return status;
+
 
 
 }
 
 template<>
 VOID
-XtsImp<ImpCng, AlgXtsAes>::encrypt( 
+XtsImp<ImpCng, AlgXtsAes>::encrypt(
                                         SIZE_T      cbDataUnit,
                                         ULONGLONG   tweak,
-        _In_reads_( cbData )            PCBYTE      pbSrc, 
-        _Out_writes_( cbData )          PBYTE       pbDst, 
+        _In_reads_( cbData )            PCBYTE      pbSrc,
+        _Out_writes_( cbData )          PBYTE       pbDst,
                                         SIZE_T      cbData )
 {
     ULONG dataUnitSize = (ULONG) cbDataUnit;
@@ -979,11 +979,11 @@ XtsImp<ImpCng, AlgXtsAes>::encrypt(
 
 template<>
 VOID
-XtsImp<ImpCng, AlgXtsAes>::decrypt( 
+XtsImp<ImpCng, AlgXtsAes>::decrypt(
                                         SIZE_T      cbDataUnit,
                                         ULONGLONG   tweak,
-        _In_reads_( cbData )            PCBYTE      pbSrc, 
-        _Out_writes_( cbData )          PBYTE       pbDst, 
+        _In_reads_( cbData )            PCBYTE      pbSrc,
+        _Out_writes_( cbData )          PBYTE       pbDst,
                                         SIZE_T      cbData )
 {
     ULONG dataUnitSize = (ULONG) cbDataUnit;
@@ -1000,7 +1000,7 @@ XtsImp<ImpCng, AlgXtsAes>::decrypt(
 
 // TLS-CBC-HMAC-VERIFY-SHA1
 template<>
-VOID 
+VOID
 algImpKeyPerfFunction< ImpCng, AlgTlsCbcHmacSha1>( PBYTE buf1, PBYTE buf2, PBYTE buf3, SIZE_T keySize )
 {
     UNREFERENCED_PARAMETER( buf2 );
@@ -1090,7 +1090,7 @@ TlsCbcHmacImp<ImpCng, AlgTlsCbcHmacSha1>::verify(
 
 // TLS-CBC-HMAC-VERIFY-SHA256
 template<>
-VOID 
+VOID
 algImpKeyPerfFunction< ImpCng, AlgTlsCbcHmacSha256>( PBYTE buf1, PBYTE buf2, PBYTE buf3, SIZE_T keySize )
 {
     UNREFERENCED_PARAMETER( buf2 );
@@ -1180,7 +1180,7 @@ TlsCbcHmacImp<ImpCng, AlgTlsCbcHmacSha256>::verify(
 
 // TLS-CBC-HMAC-VERIFY-SHA384
 template<>
-VOID 
+VOID
 algImpKeyPerfFunction< ImpCng, AlgTlsCbcHmacSha384>( PBYTE buf1, PBYTE buf2, PBYTE buf3, SIZE_T keySize )
 {
     UNREFERENCED_PARAMETER( buf2 );
@@ -1486,7 +1486,7 @@ RsaSignImp<ImpCng, AlgRsaSignPkcs1>::~RsaSignImp()
 }
 
 template<>
-NTSTATUS 
+NTSTATUS
 RsaSignImp<ImpCng, AlgRsaSignPkcs1>::setKey( PCRSAKEY_TESTBLOB pcKeyBlob )
 {
     NTSTATUS ntStatus;
@@ -1543,9 +1543,9 @@ RsaSignImp<ImpCng, AlgRsaSignPkcs1>::setKey( PCRSAKEY_TESTBLOB pcKeyBlob )
 }
 
 template<>
-NTSTATUS 
+NTSTATUS
 RsaSignImp<ImpCng, AlgRsaSignPkcs1>::sign(
-    _In_reads_( cbHash)     PCBYTE  pbHash, 
+    _In_reads_( cbHash)     PCBYTE  pbHash,
                             SIZE_T  cbHash,
                             PCSTR   pcstrHashAlgName,
                             UINT32  u32Other,
@@ -1556,7 +1556,7 @@ RsaSignImp<ImpCng, AlgRsaSignPkcs1>::sign(
     BCRYPT_PKCS1_PADDING_INFO paddingInfo;
     PCCNG_HASH_INFO pInfo;
     ULONG cbResult;
-    
+
     UNREFERENCED_PARAMETER( u32Other );
 
     pInfo = getHashInfo( pcstrHashAlgName);
@@ -1571,16 +1571,16 @@ RsaSignImp<ImpCng, AlgRsaSignPkcs1>::sign(
         (UINT32)cbSig,
         &cbResult,
         BCRYPT_PAD_PKCS1 );
-    
+
     CHECK( NT_SUCCESS( ntStatus ) && cbResult == cbSig, "?" );
 
     return ntStatus;
-}                            
+}
 
 template<>
 NTSTATUS
 RsaSignImp<ImpCng, AlgRsaSignPkcs1>::verify(
-    _In_reads_( cbHash)     PCBYTE  pbHash, 
+    _In_reads_( cbHash)     PCBYTE  pbHash,
                             SIZE_T  cbHash,
     _In_reads_( cbSig )     PCBYTE  pbSig,
                             SIZE_T  cbSig,
@@ -1590,7 +1590,7 @@ RsaSignImp<ImpCng, AlgRsaSignPkcs1>::verify(
     NTSTATUS ntStatus;
     BCRYPT_PKCS1_PADDING_INFO paddingInfo;
     PCCNG_HASH_INFO pInfo;
-    
+
     UNREFERENCED_PARAMETER( u32Other );
 
     pInfo = getHashInfo( pcstrHashAlgName);
@@ -1719,7 +1719,7 @@ RsaSignImp<ImpCng, AlgRsaSignPss>::~RsaSignImp()
 }
 
 template<>
-NTSTATUS 
+NTSTATUS
 RsaSignImp<ImpCng, AlgRsaSignPss>::setKey( PCRSAKEY_TESTBLOB pcKeyBlob )
 {
     NTSTATUS ntStatus;
@@ -1776,9 +1776,9 @@ RsaSignImp<ImpCng, AlgRsaSignPss>::setKey( PCRSAKEY_TESTBLOB pcKeyBlob )
 }
 
 template<>
-NTSTATUS 
+NTSTATUS
 RsaSignImp<ImpCng, AlgRsaSignPss>::sign(
-    _In_reads_( cbHash)     PCBYTE  pbHash, 
+    _In_reads_( cbHash)     PCBYTE  pbHash,
                             SIZE_T  cbHash,
                             PCSTR   pcstrHashAlgName,
                             UINT32  u32Other,
@@ -1789,7 +1789,7 @@ RsaSignImp<ImpCng, AlgRsaSignPss>::sign(
     BCRYPT_PSS_PADDING_INFO paddingInfo;
     PCCNG_HASH_INFO pInfo;
     ULONG cbResult;
-    
+
     pInfo = getHashInfo( pcstrHashAlgName);
     paddingInfo.pszAlgId = pInfo->wideName;
     paddingInfo.cbSalt = u32Other;
@@ -1803,16 +1803,16 @@ RsaSignImp<ImpCng, AlgRsaSignPss>::sign(
         (UINT32)cbSig,
         &cbResult,
         BCRYPT_PAD_PSS );
-    
+
     CHECK( NT_SUCCESS( ntStatus ) && cbResult == cbSig, "?" );
 
     return ntStatus;
-}                            
+}
 
 template<>
 NTSTATUS
 RsaSignImp<ImpCng, AlgRsaSignPss>::verify(
-    _In_reads_( cbHash)     PCBYTE  pbHash, 
+    _In_reads_( cbHash)     PCBYTE  pbHash,
                             SIZE_T  cbHash,
     _In_reads_( cbSig )     PCBYTE  pbSig,
                             SIZE_T  cbSig,
@@ -1822,7 +1822,7 @@ RsaSignImp<ImpCng, AlgRsaSignPss>::verify(
     NTSTATUS ntStatus;
     BCRYPT_PSS_PADDING_INFO paddingInfo;
     PCCNG_HASH_INFO pInfo;
-    
+
      pInfo = getHashInfo( pcstrHashAlgName);
     paddingInfo.pszAlgId = pInfo->wideName;
     paddingInfo.cbSalt = u32Other;
@@ -1954,7 +1954,7 @@ RsaEncImp<ImpCng, AlgRsaEncRaw>::~RsaEncImp()
 }
 
 template<>
-NTSTATUS 
+NTSTATUS
 RsaEncImp<ImpCng, AlgRsaEncRaw>::setKey( PCRSAKEY_TESTBLOB pcKeyBlob )
 {
     NTSTATUS ntStatus;
@@ -2010,9 +2010,9 @@ RsaEncImp<ImpCng, AlgRsaEncRaw>::setKey( PCRSAKEY_TESTBLOB pcKeyBlob )
     return ntStatus;
 }
 
-NTSTATUS 
+NTSTATUS
 RsaEncImp<ImpCng, AlgRsaEncRaw>::encrypt(
-        _In_reads_( cbMsg )             PCBYTE  pbMsg, 
+        _In_reads_( cbMsg )             PCBYTE  pbMsg,
                                         SIZE_T  cbMsg,
                                         PCSTR   pcstrHashAlgName,
                                         PCBYTE  pbLabel,
@@ -2037,7 +2037,7 @@ RsaEncImp<ImpCng, AlgRsaEncRaw>::encrypt(
                     pbCiphertext, (ULONG)cbCiphertext,
                     &cbResult,
                     0 );
-    
+
     if( ntStatus != STATUS_SUCCESS )
     {
         iprint( "ntStatus = %08x\n", ntStatus );
@@ -2047,9 +2047,9 @@ RsaEncImp<ImpCng, AlgRsaEncRaw>::encrypt(
     CHECK( cbResult == cbMsg, "?" );
 
     return ntStatus;
-}                                        
+}
 
-NTSTATUS 
+NTSTATUS
 RsaEncImp<ImpCng, AlgRsaEncRaw>::decrypt(
         _In_reads_( cbCiphertext )      PCBYTE  pbCiphertext,
                                         SIZE_T  cbCiphertext,
@@ -2075,13 +2075,13 @@ RsaEncImp<ImpCng, AlgRsaEncRaw>::decrypt(
                     pbMsg, (ULONG)cbMsg,
                     &cbResult,
                     0 );
-    
+
     CHECK( ntStatus == STATUS_SUCCESS, "?" );
     CHECK( cbResult == cbCiphertext, "?" );
 
     *pcbMsg = cbResult;
     return ntStatus;
-}                                        
+}
 
 // RSA Pkcs1 encryption
 
@@ -2198,7 +2198,7 @@ RsaEncImp<ImpCng, AlgRsaEncPkcs1>::~RsaEncImp()
 }
 
 template<>
-NTSTATUS 
+NTSTATUS
 RsaEncImp<ImpCng, AlgRsaEncPkcs1>::setKey( PCRSAKEY_TESTBLOB pcKeyBlob )
 {
     NTSTATUS ntStatus;
@@ -2254,9 +2254,9 @@ RsaEncImp<ImpCng, AlgRsaEncPkcs1>::setKey( PCRSAKEY_TESTBLOB pcKeyBlob )
     return ntStatus;
 }
 
-NTSTATUS 
+NTSTATUS
 RsaEncImp<ImpCng, AlgRsaEncPkcs1>::encrypt(
-        _In_reads_( cbMsg )             PCBYTE  pbMsg, 
+        _In_reads_( cbMsg )             PCBYTE  pbMsg,
                                         SIZE_T  cbMsg,
                                         PCSTR   pcstrHashAlgName,
                                         PCBYTE  pbLabel,
@@ -2281,14 +2281,14 @@ RsaEncImp<ImpCng, AlgRsaEncPkcs1>::encrypt(
                     pbCiphertext, (ULONG)cbCiphertext,
                     &cbResult,
                     BCRYPT_PAD_PKCS1 );
-    
+
     CHECK( ntStatus == STATUS_SUCCESS, "?" );
     CHECK( cbResult == cbCiphertext, "?" );
 
     return ntStatus;
-}                                        
+}
 
-NTSTATUS 
+NTSTATUS
 RsaEncImp<ImpCng, AlgRsaEncPkcs1>::decrypt(
         _In_reads_( cbCiphertext )      PCBYTE  pbCiphertext,
                                         SIZE_T  cbCiphertext,
@@ -2314,13 +2314,13 @@ RsaEncImp<ImpCng, AlgRsaEncPkcs1>::decrypt(
                     pbMsg, (ULONG)cbMsg,
                     &cbResult,
                     BCRYPT_PAD_PKCS1 );
-    
+
     // Normalize error code to allow equality testing across different implementations
     ntStatus = NT_SUCCESS( ntStatus ) ? STATUS_SUCCESS : STATUS_UNSUCCESSFUL;
 
     *pcbMsg = cbResult;
     return ntStatus;
-}                                        
+}
 
 
 // RSA Oaep encryption
@@ -2449,7 +2449,7 @@ RsaEncImp<ImpCng, AlgRsaEncOaep>::~RsaEncImp()
 }
 
 template<>
-NTSTATUS 
+NTSTATUS
 RsaEncImp<ImpCng, AlgRsaEncOaep>::setKey( PCRSAKEY_TESTBLOB pcKeyBlob )
 {
     NTSTATUS ntStatus;
@@ -2505,9 +2505,9 @@ RsaEncImp<ImpCng, AlgRsaEncOaep>::setKey( PCRSAKEY_TESTBLOB pcKeyBlob )
     return ntStatus;
 }
 
-NTSTATUS 
+NTSTATUS
 RsaEncImp<ImpCng, AlgRsaEncOaep>::encrypt(
-        _In_reads_( cbMsg )             PCBYTE  pbMsg, 
+        _In_reads_( cbMsg )             PCBYTE  pbMsg,
                                         SIZE_T  cbMsg,
                                         PCSTR   pcstrHashAlgName,
                                         PCBYTE  pbLabel,
@@ -2537,9 +2537,9 @@ RsaEncImp<ImpCng, AlgRsaEncOaep>::encrypt(
     CHECK( cbResult == cbCiphertext, "Wrong ciphertext size" );
 
     return NT_SUCCESS( ntStatus ) ? STATUS_SUCCESS : STATUS_UNSUCCESSFUL;
-}                                        
+}
 
-NTSTATUS 
+NTSTATUS
 RsaEncImp<ImpCng, AlgRsaEncOaep>::decrypt(
         _In_reads_( cbCiphertext )      PCBYTE  pbCiphertext,
                                         SIZE_T  cbCiphertext,
@@ -2568,13 +2568,13 @@ RsaEncImp<ImpCng, AlgRsaEncOaep>::decrypt(
                     pbMsg, (ULONG)cbMsg,
                     &cbResult,
                     BCRYPT_PAD_OAEP );
-    
+
     // Normalize error code to allow equality testing across different implementations
     ntStatus = NT_SUCCESS( ntStatus ) ? STATUS_SUCCESS : STATUS_UNSUCCESSFUL;
 
     *pcbMsg = cbResult;
     return ntStatus;
-}                                        
+}
 
 
 
@@ -2592,7 +2592,7 @@ algImpKeyPerfFunction<ImpCng, AlgDh>( PBYTE buf1, PBYTE buf2, PBYTE buf3, SIZE_T
 
     UNREFERENCED_PARAMETER( buf3 );
 
-    pGroupBlob = dlgroupForSize( 8*keySize );
+    pGroupBlob = dlgroupForSize( 8*keySize, TRUE );
     CHECK( pGroupBlob != NULL, "Could not find DH group of right size" );
     CHECK( pGroupBlob->cbPrimeP == keySize, "?" );
 
@@ -2666,7 +2666,7 @@ algImpDataPerfFunction< ImpCng, AlgDh>( PBYTE buf1, PBYTE buf2, PBYTE buf3, SIZE
     UNREFERENCED_PARAMETER( buf1 );
     UNREFERENCED_PARAMETER( buf3 );
 
-    pGroupBlob = dlgroupForSize( 8* dataSize );
+    pGroupBlob = dlgroupForSize( 8* dataSize, TRUE );
     CHECK( pGroupBlob != NULL, "Could not find DH group of right size" );
     CHECK( pGroupBlob->cbPrimeP == dataSize, "?" );
 
@@ -2723,7 +2723,7 @@ algImpDecryptPerfFunction< ImpCng, AlgDh>( PBYTE buf1, PBYTE buf2, PBYTE buf3, S
                                 BCRYPT_KDF_RAW_SECRET,  // This exists from BLUE and above
                                 NULL,
                                 buf2,
-                                (ULONG)dataSize,      
+                                (ULONG)dataSize,
                                 &cbResult,
                                 0 );
     CHECK( NT_SUCCESS( ntStatus ), "?" );
@@ -2755,7 +2755,7 @@ DhImp<ImpCng, AlgDh>::~DhImp()
 }
 
 template<>
-NTSTATUS 
+NTSTATUS
 DhImp<ImpCng, AlgDh>::setKey( PCDLKEY_TESTBLOB pcKeyBlob )
 {
     NTSTATUS ntStatus = STATUS_SUCCESS;
@@ -2781,7 +2781,7 @@ DhImp<ImpCng, AlgDh>::setKey( PCDLKEY_TESTBLOB pcKeyBlob )
     pBlob->cbKey = cbP;
     p = (PBYTE) (pBlob + 1);
 
-    memcpy( p, pcKeyBlob->pGroup->abPrimeP, cbP ); 
+    memcpy( p, pcKeyBlob->pGroup->abPrimeP, cbP );
     p += cbP;
     memcpy( p, pcKeyBlob->pGroup->abGenG, cbP );
     p += cbP;
@@ -2805,7 +2805,7 @@ cleanup:
 }
 
 template<>
-NTSTATUS 
+NTSTATUS
 DhImp<ImpCng,AlgDh>::sharedSecret(
         _In_                        PCDLKEY_TESTBLOB    pcPubkey,   // Must be on same group object
         _Out_writes_( cbSecret )    PBYTE               pbSecret,
@@ -2821,12 +2821,12 @@ DhImp<ImpCng,AlgDh>::sharedSecret(
     ULONG cbResult;
 
     cbP = pcPubkey->pGroup->cbPrimeP;
-    
+
     pBlob->dwMagic = BCRYPT_DH_PUBLIC_MAGIC;
     pBlob->cbKey = cbP;
     p = (PBYTE) (pBlob + 1);
 
-    memcpy( p, pcPubkey->pGroup->abPrimeP, cbP ); 
+    memcpy( p, pcPubkey->pGroup->abPrimeP, cbP );
     p += cbP;
     memcpy( p, pcPubkey->pGroup->abGenG, cbP );
     p += cbP;
@@ -2887,7 +2887,7 @@ DsaKeyBlobToHandle( PCDLKEY_TESTBLOB pcKeyBlob, BYTE * pbTmp )
 
     // DSA key import is a bit weird due to the way the API grew over time.
     //  There are two blob formats, one for keys <= 1024 bits ane one is for keys > 1024 bits.
-    // There are also other restriction 
+    // There are also other restriction
     // - bitsize of the key must be a multiple of 64 between 512 and 3072.
     // - group size must be 160 bits for keys <= 1024 bits, and 256 bits for keys > 1024 bits
 
@@ -2902,10 +2902,10 @@ DsaKeyBlobToHandle( PCDLKEY_TESTBLOB pcKeyBlob, BYTE * pbTmp )
         // - Public key H, cbKey bytes long
         // - private key X, optional, 20 bytes long
         if( pGroupBlob->cbPrimeQ != 20 )
-        {  
+        {
             // Wrong group size for CNG, we can't deal with this key
             goto cleanup;
-        }        
+        }
         BCRYPT_DSA_KEY_BLOB * pHeader = (BCRYPT_DSA_KEY_BLOB *) pbTmp;
         pNext = (PBYTE) (pHeader + 1);
 
@@ -2927,7 +2927,7 @@ DsaKeyBlobToHandle( PCDLKEY_TESTBLOB pcKeyBlob, BYTE * pbTmp )
         blobSize = pNext - pbTmp;
     } else {
         // BCRYPT_DSA_KEY_BLOB_V2 requires that
-        // 
+        //
         if( pGroupBlob->cbPrimeQ != 32 )
         {
             // Wrong size for CNG, can't deal with this key
@@ -2967,8 +2967,8 @@ DsaKeyBlobToHandle( PCDLKEY_TESTBLOB pcKeyBlob, BYTE * pbTmp )
         blobSize = pNext - pbTmp;
     }
 
-    ntStatus = BCryptImportKeyPair( BCRYPT_DSA_ALG_HANDLE, 
-                                    NULL, 
+    ntStatus = BCryptImportKeyPair( BCRYPT_DSA_ALG_HANDLE,
+                                    NULL,
                                     BCRYPT_DSA_PRIVATE_BLOB,
                                     &hKey,
                                     pbTmp, (UINT32) blobSize,
@@ -3024,7 +3024,7 @@ algImpDataPerfFunction< ImpCng, AlgDsa>( PBYTE buf1, PBYTE buf2, PBYTE buf3, SIZ
     UINT32 groupSize = dataSize <= 1024/8 ? 20 : 32;
     ULONG cbResult;
 
-    ntStatus = BCryptSignHash(  *(BCRYPT_KEY_HANDLE *) buf1, 
+    ntStatus = BCryptSignHash(  *(BCRYPT_KEY_HANDLE *) buf1,
                                 NULL,
                                 buf2, groupSize,
                                 buf3, 2*groupSize,
@@ -3041,7 +3041,7 @@ algImpDecryptPerfFunction< ImpCng, AlgDsa>( PBYTE buf1, PBYTE buf2, PBYTE buf3, 
 
     UINT32 groupSize = dataSize <= 1024/8 ? 20 : 32;
 
-    ntStatus = BCryptVerifySignature(   *(BCRYPT_KEY_HANDLE *) buf1, 
+    ntStatus = BCryptVerifySignature(   *(BCRYPT_KEY_HANDLE *) buf1,
                                         NULL,
                                         buf2, groupSize,
                                         buf3, 2*groupSize,
@@ -3072,7 +3072,7 @@ DsaImp<ImpCng, AlgDsa>::~DsaImp()
 }
 
 template<>
-NTSTATUS 
+NTSTATUS
 DsaImp<ImpCng, AlgDsa>::setKey( PCDLKEY_TESTBLOB pcKeyBlob )
 {
     NTSTATUS ntStatus = STATUS_SUCCESS;
@@ -3100,9 +3100,9 @@ cleanup:
 }
 
 template<>
-NTSTATUS 
+NTSTATUS
 DsaImp<ImpCng,AlgDsa>::sign(
-        _In_reads_( cbHash)     PCBYTE  pbHash, 
+        _In_reads_( cbHash)     PCBYTE  pbHash,
                                 SIZE_T  cbHash,
         _Out_writes_( cbSig )   PBYTE   pbSig,
                                 SIZE_T  cbSig )
@@ -3129,8 +3129,8 @@ cleanup:
 
 template<>
 NTSTATUS
-DsaImp<ImpCng,AlgDsa>::verify( 
-        _In_reads_( cbHash)     PCBYTE  pbHash, 
+DsaImp<ImpCng,AlgDsa>::verify(
+        _In_reads_( cbHash)     PCBYTE  pbHash,
                                 SIZE_T  cbHash,
         _In_reads_( cbSig )     PCBYTE  pbSig,
                                 SIZE_T  cbSig )
@@ -3143,7 +3143,7 @@ DsaImp<ImpCng,AlgDsa>::verify(
         goto cleanup;
     }
 
-    ntStatus = BCryptVerifySignature(   state.hKey, 
+    ntStatus = BCryptVerifySignature(   state.hKey,
                                         NULL,
                                         (PBYTE)pbHash, (ULONG)cbHash,
                                         (PBYTE)pbSig, (ULONG)cbSig,
@@ -3169,7 +3169,7 @@ RsaSignImp<ImpCng, AlgRsaSignPkcs1>::~RsaSignImp()
 }
 
 template<>
-NTSTATUS 
+NTSTATUS
 RsaSignImp<ImpCng, AlgRsaSignPkcs1>::setKey( PCRSAKEY_TESTBLOB pcKeyBlob )
 {
     NTSTATUS ntStatus;
@@ -3226,9 +3226,9 @@ RsaSignImp<ImpCng, AlgRsaSignPkcs1>::setKey( PCRSAKEY_TESTBLOB pcKeyBlob )
 }
 
 template<>
-NTSTATUS 
+NTSTATUS
 RsaSignImp<ImpCng, AlgRsaSignPkcs1>::sign(
-    _In_reads_( cbHash)     PCBYTE  pbHash, 
+    _In_reads_( cbHash)     PCBYTE  pbHash,
                             SIZE_T  cbHash,
                             PCSTR   pcstrHashAlgName,
                             UINT32  u32Other,
@@ -3239,7 +3239,7 @@ RsaSignImp<ImpCng, AlgRsaSignPkcs1>::sign(
     BCRYPT_PKCS1_PADDING_INFO paddingInfo;
     PCCNG_HASH_INFO pInfo;
     ULONG cbResult;
-    
+
     UNREFERENCED_PARAMETER( u32Other );
 
     pInfo = getHashInfo( pcstrHashAlgName);
@@ -3254,16 +3254,16 @@ RsaSignImp<ImpCng, AlgRsaSignPkcs1>::sign(
         (UINT32)cbSig,
         &cbResult,
         BCRYPT_PAD_PKCS1 );
-    
+
     CHECK( NT_SUCCESS( ntStatus ) && cbResult == cbSig, "?" );
 
     return ntStatus;
-}                            
+}
 
 template<>
 NTSTATUS
 RsaSignImp<ImpCng, AlgRsaSignPkcs1>::verify(
-    _In_reads_( cbHash)     PCBYTE  pbHash, 
+    _In_reads_( cbHash)     PCBYTE  pbHash,
                             SIZE_T  cbHash,
     _In_reads_( cbSig )     PCBYTE  pbSig,
                             SIZE_T  cbSig,
@@ -3273,7 +3273,7 @@ RsaSignImp<ImpCng, AlgRsaSignPkcs1>::verify(
     NTSTATUS ntStatus;
     BCRYPT_PKCS1_PADDING_INFO paddingInfo;
     PCCNG_HASH_INFO pInfo;
-    
+
     UNREFERENCED_PARAMETER( u32Other );
 
     pInfo = getHashInfo( pcstrHashAlgName);
@@ -3772,8 +3772,8 @@ addCngAlgs()
 
     if (g_sgx)
     {
-        // Shim BCrypt crypto primitive calls through proxy to execute in an SGX enclave. 
-        // This also keeps the proxy loaded for the lifetime of this process, as BCrypt would normally be via static import. 
+        // Shim BCrypt crypto primitive calls through proxy to execute in an SGX enclave.
+        // This also keeps the proxy loaded for the lifetime of this process, as BCrypt would normally be via static import.
         CngCloseAlgorithmProviderFn = (BCryptCloseAlgorithmProviderFn) CheckedGetProcAddress(hModule, "BCryptCloseAlgorithmProvider" );
         CngCreateHashFn = (BCryptCreateHashFn) CheckedGetProcAddress( hModule, "BCryptCreateHash" );
         CngDecryptFn = (BCryptDecryptFn) CheckedGetProcAddress( hModule, "BCryptDecrypt" );
@@ -3829,7 +3829,7 @@ addCngAlgs()
     addImplementationToGlobalList<MacImp<ImpCng, AlgHmacSha384>>();
     addImplementationToGlobalList<MacImp<ImpCng, AlgHmacSha512>>();
 
-    if( g_osVersion >= OS_VERSION_WIN8 )    // Is this the right limit?   
+    if( g_osVersion >= OS_VERSION_WIN8 )    // Is this the right limit?
     {
         addImplementationToGlobalList<MacImp<ImpCng, AlgAesCmac>>();
     }
@@ -3841,7 +3841,7 @@ addCngAlgs()
     addImplementationToGlobalList<BlockCipherImp<ImpCng, AlgDes, ModeCbc>>();
     if( g_osVersion >= 0x0602 )
     {
-        // Not supported on Win7 
+        // Not supported on Win7
         addImplementationToGlobalList<BlockCipherImp<ImpCng, AlgDes, ModeCfb>>();
     }
     addImplementationToGlobalList<BlockCipherImp<ImpCng, Alg2Des, ModeEcb>>();
@@ -3918,8 +3918,8 @@ addCngAlgs()
         hAlg = 0;
     }
 
-    // See if TlsCbcHmacVerify option is supported 
-    if( NT_SUCCESS( CngOpenAlgorithmProviderFn( &hAlg, BCRYPT_HMAC_SHA256_ALGORITHM, NULL, 
+    // See if TlsCbcHmacVerify option is supported
+    if( NT_SUCCESS( CngOpenAlgorithmProviderFn( &hAlg, BCRYPT_HMAC_SHA256_ALGORITHM, NULL,
                                                 BCRYPT_ALG_HANDLE_HMAC_FLAG | BCRYPT_TLS_CBC_HMAC_VERIFY_FLAG )))
     {
         CngCloseAlgorithmProviderFn( hAlg, 0 );

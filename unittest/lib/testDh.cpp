@@ -28,9 +28,44 @@ const TEST_DL_BITSIZEENTRY g_DlBitSizes[] = {
 
 DLGROUP_TESTBLOB g_DlGroup[ MAX_TEST_DLGROUPS ] = {0};
 UINT32 g_nDlgroups = 0;
+UINT32 g_nDhNamedGroups = 0;
 
 // Creating DL groups for all DH and DSA tests that need random groups
 
+VOID
+addDlgroupToGlobalTestBlobArray( UINT32 nBitsP, PSYMCRYPT_DLGROUP pGroup )
+{
+    SYMCRYPT_ERROR scError;
+    PDLGROUP_TESTBLOB pBlob = &g_DlGroup[ g_nDlgroups++ ];
+    SymCryptWipe( (PBYTE) pBlob, sizeof( *pBlob ) );
+
+    SIZE_T cbP;
+    SIZE_T cbQ;
+    SIZE_T cbSeed;
+    SymCryptDlgroupGetSizes(    pGroup,
+                                &cbP,
+                                &cbQ,
+                                NULL,
+                                &cbSeed );
+    pBlob->cbPrimeP = (UINT32) cbP;
+    pBlob->cbPrimeQ = (UINT32) cbQ;
+    pBlob->cbSeed = (UINT32)cbSeed;
+
+    pBlob->nBitsP = nBitsP;
+    pBlob->fipsStandard = pGroup->eFipsStandard;
+
+    scError = SymCryptDlgroupGetValue(  pGroup,
+                                        &pBlob->abPrimeP[0], pBlob->cbPrimeP,
+                                        &pBlob->abPrimeQ[0], pBlob->cbPrimeQ,
+                                        &pBlob->abGenG[0], pBlob->cbPrimeP,
+                                        SYMCRYPT_NUMBER_FORMAT_MSB_FIRST,
+                                        &pBlob->pHashAlgorithm,
+                                        &pBlob->abSeed[0], pBlob->cbSeed,
+                                        &pBlob->genCounter );
+    CHECK( scError == SYMCRYPT_NO_ERROR, "Failure to get DLGROUP value" );
+
+    SymCryptDlgroupFree( pGroup );
+}
 
 VOID
 addOneDlgroup( UINT32 nBitsP, BOOL randomQsize )
@@ -79,7 +114,7 @@ addOneDlgroup( UINT32 nBitsP, BOOL randomQsize )
 
         if( randomQsize )
         {
-            nBitsQ = (UINT32) g_rng.sizet( 128, hashAlgorithm != NULL ? nBitsHash + 1 : nBitsP );
+            nBitsQ = (UINT32) g_rng.sizet( 128, hashAlgorithm != NULL ? nBitsHash + 1 : (nBitsP-1) );
         } else {
             nBitsQ = 0;
         }
@@ -114,36 +149,18 @@ addOneDlgroup( UINT32 nBitsP, BOOL randomQsize )
     scError = SymCryptDlgroupGenerate( hashAlgorithm, fipsStandard, pGroup );
     CHECK( scError == SYMCRYPT_NO_ERROR, "Error generating DL group" );
 
-    PDLGROUP_TESTBLOB pBlob = &g_DlGroup[ g_nDlgroups++ ]; 
-    SymCryptWipe( (PBYTE) pBlob, sizeof( *pBlob ) );
-
-    SIZE_T cbP;
-    SIZE_T cbQ;
-    SIZE_T cbSeed;
-    SymCryptDlgroupGetSizes(    pGroup,
-                                &cbP,
-                                &cbQ,
-                                NULL,
-                                &cbSeed );
-    pBlob->cbPrimeP = (UINT32) cbP;
-    pBlob->cbPrimeQ = (UINT32) cbQ;
-    pBlob->cbSeed = (UINT32)cbSeed;
-
-    pBlob->nBitsP = nBitsP;
-
-    scError = SymCryptDlgroupGetValue(  pGroup,
-                                        &pBlob->abPrimeP[0], pBlob->cbPrimeP,
-                                        &pBlob->abPrimeQ[0], pBlob->cbPrimeQ,
-                                        &pBlob->abGenG[0], pBlob->cbPrimeP,
-                                        SYMCRYPT_NUMBER_FORMAT_MSB_FIRST,
-                                        &pBlob->pHashAlgorithm,
-                                        &pBlob->abSeed[0], pBlob->cbSeed,
-                                        &pBlob->genCounter );
-    CHECK( scError == SYMCRYPT_NO_ERROR, "Failure to get DLGROUP value" );
-
-    SymCryptDlgroupFree( pGroup );
-    pGroup = NULL;
+    addDlgroupToGlobalTestBlobArray( nBitsP, pGroup );
 }
+
+const int g_maxSafePrimeGroupBitSize = 8192;
+
+const SYMCRYPT_DLGROUP_DH_SAFEPRIMETYPE g_safePrimeTypes[] =
+{
+    SYMCRYPT_DLGROUP_DH_SAFEPRIMETYPE_IKE_3526,
+    SYMCRYPT_DLGROUP_DH_SAFEPRIMETYPE_TLS_7919,
+};
+
+SYMCRYPT_ASYM_ALIGN BYTE g_dlGroupScratch[1 << 22]; // Scratch space used by generateDlGroups
 
 VOID generateDlGroups()
 {
@@ -159,14 +176,92 @@ VOID generateDlGroups()
         0,
         };
     UINT32 bitSize;
+    UINT32 primResult;
 
-    char * sep = " [group gen: ";
+    char * sep = " [group safeprime:";
     UINT32 previousSize = 0;
 
     if( g_nDlgroups >= MAX_TEST_DLGROUPS )
     {
         goto cleanup;
     }
+
+    for( int i = 0; i<ARRAY_SIZE(g_safePrimeTypes); i++)
+    {
+        SYMCRYPT_ERROR scError;
+        SYMCRYPT_DLGROUP_DH_SAFEPRIMETYPE eDhSafePrimeType = g_safePrimeTypes[i];
+
+        iprint( sep );
+        switch(eDhSafePrimeType)
+        {
+        case SYMCRYPT_DLGROUP_DH_SAFEPRIMETYPE_IKE_3526:
+            sep = " IKE";
+            break;
+        case SYMCRYPT_DLGROUP_DH_SAFEPRIMETYPE_TLS_7919:
+            sep = " TLS";
+            break;
+        default:
+            sep = " ???";
+            break;
+        }
+
+        UINT32 maxBitSize = g_maxSafePrimeGroupBitSize;
+        while( TRUE )
+        {
+            PSYMCRYPT_DLGROUP pGroup = SymCryptDlgroupAllocate( maxBitSize, maxBitSize );
+            CHECK( pGroup != NULL, "?" );
+
+            scError = SymCryptDlgroupSetValueSafePrime( eDhSafePrimeType, pGroup );
+            // Assume we've reached the minimum supported size
+            if( scError == SYMCRYPT_INVALID_ARGUMENT )
+            {
+                SymCryptDlgroupFree( pGroup );
+                break;
+            }
+
+            CHECK( scError == SYMCRYPT_NO_ERROR, "Error setting DL safe-prime group" );
+
+            CHECK(pGroup->isSafePrimeGroup, "DL safe-prime group initialized incorrectly")
+            CHECK(pGroup->nBitsOfP <= maxBitSize,   "DL safe-prime group P is wrong size");
+            CHECK(pGroup->nBitsOfQ <= maxBitSize-1, "DL safe-prime group Q is wrong size");
+
+            iprint( "%s%d", sep, pGroup->nBitsOfP );
+            sep = ",";
+            maxBitSize = pGroup->nBitsOfP-1;
+
+            // Check that the constants selected by SetValueSafePrime are indeed prime
+            primResult = SymCryptIntMillerRabinPrimalityTest(
+                SymCryptIntFromModulus( pGroup->pmP ),
+                pGroup->nBitsOfP,
+                8, // nIterations - reduce runtime overhead as this should always pass
+                SYMCRYPT_FLAG_DATA_PUBLIC, //flags
+                g_dlGroupScratch,
+                SYMCRYPT_SCRATCH_BYTES_FOR_INT_IS_PRIME( pGroup->pmP->nDigits ) );
+            CHECK(primResult != 0, "Primality test failed for DL safe-prime group P");
+
+            primResult = SymCryptIntMillerRabinPrimalityTest(
+                SymCryptIntFromModulus( pGroup->pmQ ),
+                pGroup->nBitsOfQ,
+                8, // nIterations - reduce runtime overhead as this should always pass
+                SYMCRYPT_FLAG_DATA_PUBLIC, //flags
+                g_dlGroupScratch,
+                SYMCRYPT_SCRATCH_BYTES_FOR_INT_IS_PRIME( pGroup->pmQ->nDigits ) );
+            CHECK(primResult != 0, "Primality test failed for DL safe-prime group Q");
+
+            // Need to enable DH keypairs larger than 4096b in CNG before testing with these groups
+            if (pGroup->nBitsOfP <= 4096)
+            {
+                g_nDhNamedGroups++;
+                addDlgroupToGlobalTestBlobArray( pGroup->nBitsOfP, pGroup );
+            }
+            else
+            {
+                SymCryptDlgroupFree( pGroup );
+            }
+        }
+    }
+
+    sep = "]\n     [group gen: ";
 
     for( int i = 0; desiredFixedGroupSizes[i] != 0; i++ )
     {
@@ -216,7 +311,7 @@ VOID generateDlGroups()
 
     iprint( "]" );
 
-cleanup:    
+cleanup:
     return;
 }
 
@@ -253,9 +348,12 @@ dlgroupRandom()
 }
 
 PCDLGROUP_TESTBLOB
-dlgroupForSize( SIZE_T nBits )
+dlgroupForSize( SIZE_T nBits, BOOLEAN forDiffieHellman )
 {
-    for( UINT32 i=0; i<g_nDlgroups; i++ )
+    // If not DH, skip the DH named safe-prime groups at the start
+    UINT32 i = forDiffieHellman ? 0 : g_nDhNamedGroups;
+
+    for( ; i<g_nDlgroups; i++ )
     {
         if( g_DlGroup[i].nBitsP == nBits )
         {
@@ -355,19 +453,19 @@ VOID testDlSimple()
                 // Pick a random hash algorithm
                 switch( g_rng.byte() % 4 )
                 {
-                case 0: 
+                case 0:
                     pHashAlgorithm = SymCryptSha1Algorithm;
                     cbHashValue = 20;
                     break;
-                case 1: 
+                case 1:
                     pHashAlgorithm = SymCryptSha256Algorithm;
                     cbHashValue = 32;
                     break;
-                case 2: 
+                case 2:
                     pHashAlgorithm = SymCryptSha384Algorithm;
                     cbHashValue = 48;
                     break;
-                case 3: 
+                case 3:
                     pHashAlgorithm = SymCryptSha512Algorithm;
                     cbHashValue = 64;
                     break;
@@ -630,9 +728,9 @@ public:
     ImpPtrVector m_imps;        // Implementations being tested
     ImpPtrVector m_comps;       // Implementations for current computation
 
-    virtual NTSTATUS setKey( 
+    virtual NTSTATUS setKey(
         _In_    PCDLKEY_TESTBLOB    pcKeyBlob );    // Returns an error if this key can't be handled.
-    
+
     virtual NTSTATUS sharedSecret(
         _In_                        PCDLKEY_TESTBLOB    pcPubkey,   // Must be on same group
         _Out_writes_( cbSecret )    PBYTE               pbSecret,
@@ -657,8 +755,8 @@ DhMultiImp::~DhMultiImp()
     }
 }
 
-NTSTATUS 
-DhMultiImp::setKey( 
+NTSTATUS
+DhMultiImp::setKey(
         _In_    PCDLKEY_TESTBLOB    pcKeyBlob )
 {
     m_comps.clear();
@@ -672,7 +770,7 @@ DhMultiImp::setKey(
     }
 
     return m_comps.size() == 0 ? STATUS_NOT_SUPPORTED : STATUS_SUCCESS;
-   
+
 }
 
 NTSTATUS
@@ -699,7 +797,7 @@ DhMultiImp::sharedSecret(
 
     res.getResult( pbSecret, cbSecret );
     return STATUS_SUCCESS;
-}                                    
+}
 
 VOID
 createKatFileSingleDh( FILE * f, PCDLGROUP_TESTBLOB pBlob )
@@ -712,7 +810,7 @@ createKatFileSingleDh( FILE * f, PCDLGROUP_TESTBLOB pBlob )
 
     PSYMCRYPT_DLKEY pKey1 = SymCryptDlkeyAllocate( pGroup );
     PSYMCRYPT_DLKEY pKey2 = SymCryptDlkeyAllocate( pGroup );
-    
+
     scError = SymCryptDlkeyGenerate( 0, pKey1 );
     CHECK( scError == SYMCRYPT_NO_ERROR, "Error generating DH key" );
 
@@ -743,7 +841,7 @@ createKatFileSingleDh( FILE * f, PCDLGROUP_TESTBLOB pBlob )
     fprintHex( f, privKey, cbPrivKey1 );
     fprintf( f, "H1 = " );
     fprintHex( f, buf, pBlob->cbPrimeP );
-    
+
     scError = SymCryptDlkeyGetValue(    pKey2,
                                         privKey, cbPrivKey2,
                                         buf, pBlob->cbPrimeP,
@@ -755,7 +853,7 @@ createKatFileSingleDh( FILE * f, PCDLGROUP_TESTBLOB pBlob )
     fprintf( f, "H2 = " );
     fprintHex( f, buf, pBlob->cbPrimeP );
 
-    scError = SymCryptDhSecretAgreement(    pKey1, 
+    scError = SymCryptDhSecretAgreement(    pKey1,
                                             pKey2,
                                             SYMCRYPT_NUMBER_FORMAT_MSB_FIRST,
                                             0,
@@ -764,7 +862,7 @@ createKatFileSingleDh( FILE * f, PCDLGROUP_TESTBLOB pBlob )
     fprintf( f, "SS = " );
     fprintHex( f, buf, pBlob->cbPrimeP );
 
-    scError = SymCryptDhSecretAgreement(    pKey2, 
+    scError = SymCryptDhSecretAgreement(    pKey2,
                                             pKey1,
                                             SYMCRYPT_NUMBER_FORMAT_MSB_FIRST,
                                             0,
@@ -808,12 +906,12 @@ createKatFileDh()
 
     fprintf( f, "\n"
                 "rnd = 1\n"
-                "\n" 
+                "\n"
                 );
 
     fclose( f );
 
-    // Generating test vectors is not normal program flow, so we abort here to avoid getting into 
+    // Generating test vectors is not normal program flow, so we abort here to avoid getting into
     // non-standard states.
     CHECK( FALSE, "Written DH test vector file" );
 }
@@ -833,7 +931,7 @@ testDhSingle(
     // We require that two keys are on the same group objects; we don't have the case where we
     // have to compare two groups to see if they are the same.
     CHECK( pKey1->pGroup == pKey2->pGroup, "Two DH keys are on different DL group objects" );
-    
+
     SIZE_T cbP = pKey1->pGroup->cbPrimeP;
     CHECK( cbP <= DLKEY_MAXKEYSIZE, "?" );
     CHECK( cbShared == cbP, "Wrong shared secret size" );
@@ -855,7 +953,7 @@ testDhSingle(
     CHECK( memcmp( buf, pbShared, cbP ) == 0, "Shared secret mismatch" );
 
     CHECK( pDh->setKey( NULL ) == STATUS_SUCCESS, "Failed to clear key" );
-}                                
+}
 
 VOID
 testDhtestGroups( DhImplementation  * pDh, INT64 line )
@@ -879,7 +977,7 @@ testDhtestGroups( DhImplementation  * pDh, INT64 line )
 
         SIZE_T cbP = pGroupBlob->cbPrimeP;
 
-        scError = SymCryptDlgroupSetValue( 
+        scError = SymCryptDlgroupSetValue(
                     &pGroupBlob->abPrimeP[0], cbP,
                     &pGroupBlob->abPrimeQ[0], pGroupBlob->cbPrimeQ,
                     &pGroupBlob->abGenG[0], cbP,
@@ -897,9 +995,11 @@ testDhtestGroups( DhImplementation  * pDh, INT64 line )
 
         scError = SymCryptDlkeyGenerate( 0, pKey1 );
         CHECK( scError == SYMCRYPT_NO_ERROR, "Error generating key" );
+        scError = SymCryptDlkeyGenerate( SYMCRYPT_FLAG_KEY_RANGE_AND_PUBLIC_KEY_ORDER_VALIDATION, pKey1 );
+        CHECK( scError == SYMCRYPT_NO_ERROR, "Error generating key" );
         scError = SymCryptDlkeyGenerate( SYMCRYPT_FLAG_DLKEY_GEN_MODP, pKey2 );
         CHECK( scError == SYMCRYPT_NO_ERROR, "Error generating key" );
-        
+
         DLKEY_TESTBLOB  blob1;
         DLKEY_TESTBLOB  blob2;
 
@@ -908,6 +1008,8 @@ testDhtestGroups( DhImplementation  * pDh, INT64 line )
 
         blob1.cbPrivKey = SymCryptDlkeySizeofPrivateKey( pKey1 );
         blob2.cbPrivKey = SymCryptDlkeySizeofPrivateKey( pKey2 );
+
+        blob2.fPrivateModP = TRUE;
 
         scError = SymCryptDlkeyGetValue(
                 pKey1,
@@ -1028,10 +1130,10 @@ testDhKats()
                 memcpy( bGroup.abPrimeP, P.data(), bGroup.cbPrimeP );
                 memcpy( bGroup.abPrimeQ, Q.data(), bGroup.cbPrimeQ );
                 memcpy( bGroup.abGenG, G.data(), bGroup.cbPrimeP );
-                
+
                 bKey1.pGroup = &bGroup;
                 bKey2.pGroup = &bGroup;
-                
+
                 bKey1.cbPrivKey = (UINT32) X1.size();
                 bKey2.cbPrivKey = (UINT32) X2.size();
 

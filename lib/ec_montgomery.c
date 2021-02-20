@@ -25,21 +25,23 @@ SymCryptMontgomeryFillScratchSpaces(_In_ PSYMCRYPT_ECURVE pCurve)
     //
 
     pCurve->cbScratchCommon = nCommon;
-    pCurve->cbScratchScalar = 
+    pCurve->cbScratchScalar =
         SymCryptSizeofIntFromDigits(nDigits) +
         6 * nBytes +
         nCommon;
 
     pCurve->cbScratchScalarMulti = 0;
-    pCurve->cbScratchGetSetValue = 
+    pCurve->cbScratchGetSetValue =
         SymCryptSizeofEcpointEx( cbModElement, SYMCRYPT_ECPOINT_FORMAT_MAX_LENGTH ) +
         2 * cbModElement +
         SYMCRYPT_MAX( SYMCRYPT_SCRATCH_BYTES_FOR_COMMON_MOD_OPERATIONS( nDigitsFieldLength ),
              SYMCRYPT_SCRATCH_BYTES_FOR_MODINV( nDigitsFieldLength ) );
 
-    pCurve->cbScratchGetSetValue = SYMCRYPT_MAX( pCurve->cbScratchGetSetValue, SymCryptSizeofIntFromDigits( nDigits ) ); 
+    pCurve->cbScratchGetSetValue = SYMCRYPT_MAX( pCurve->cbScratchGetSetValue, SymCryptSizeofIntFromDigits( nDigits ) );
 
-    pCurve->cbScratchEckey = pCurve->cbModElement + SymCryptSizeofIntFromDigits(SymCryptEcurveDigitsofScalarMultiplier(pCurve)) +
+    pCurve->cbScratchEckey =
+        SYMCRYPT_MAX( pCurve->cbModElement + SymCryptSizeofIntFromDigits(SymCryptEcurveDigitsofScalarMultiplier(pCurve)),
+            SymCryptSizeofEcpointEx( pCurve->cbModElement, SYMCRYPT_INTERNAL_NUMOF_COORDINATES( pCurve->eCoordinates ) ) ) +
         SYMCRYPT_MAX( pCurve->cbScratchScalar, pCurve->cbScratchGetSetValue );
 }
 
@@ -58,6 +60,59 @@ SymCryptMontgomerySetDistinguished(
     UNREFERENCED_PARAMETER( cbScratch );
 
     SymCryptEcpointCopy( pCurve, pCurve->G, poDst );
+}
+
+//
+//  Verify poSrc1(X1, Z1) = poSrc2(X2, Z2)
+//  To avoid ModIv for 1/Z, we do
+//     X1 * Z2 = X2 * Z1
+//
+//  This function currently does not support non-zero flag
+//
+UINT32
+SYMCRYPT_CALL
+SymCryptMontgomeryIsEqual(
+    _In_    PCSYMCRYPT_ECURVE   pCurve,
+    _In_    PCSYMCRYPT_ECPOINT  poSrc1,
+    _In_    PCSYMCRYPT_ECPOINT  poSrc2,
+            UINT32              flags,
+     _Out_writes_bytes_opt_(cbScratch)
+            PBYTE               pbScratch,
+            SIZE_T              cbScratch)
+{
+    PSYMCRYPT_MODELEMENT  peTemp[2];
+    PSYMCRYPT_MODELEMENT  peSrc1X, peSrc1Z;
+    PSYMCRYPT_MODELEMENT  peSrc2X, peSrc2Z;
+    PSYMCRYPT_MODULUS     pmMod = pCurve->FMod;
+    SIZE_T nBytes;
+
+    SYMCRYPT_ASSERT( flags == 0 );
+    SYMCRYPT_ASSERT( pCurve->type == SYMCRYPT_ECURVE_TYPE_MONTGOMERY );
+    SYMCRYPT_ASSERT( cbScratch >= SYMCRYPT_INTERNAL_SCRATCH_BYTES_FOR_COMMON_ECURVE_OPERATIONS( pCurve ) );
+
+    UNREFERENCED_PARAMETER( flags );
+
+    nBytes = SymCryptSizeofModElementFromModulus( pmMod );
+    for (UINT32 i = 0; i < 2; ++i)
+    {
+        peTemp[i] = SymCryptModElementCreate( pbScratch, nBytes, pmMod );
+        pbScratch += nBytes;
+        cbScratch -= nBytes;
+    }
+
+    peSrc1X = SYMCRYPT_INTERNAL_ECPOINT_COORDINATE( 0, pCurve, poSrc1 );
+    peSrc1Z = SYMCRYPT_INTERNAL_ECPOINT_COORDINATE( 1, pCurve, poSrc1 );
+
+    peSrc2X = SYMCRYPT_INTERNAL_ECPOINT_COORDINATE( 0, pCurve, poSrc2 );
+    peSrc2Z = SYMCRYPT_INTERNAL_ECPOINT_COORDINATE( 1, pCurve, poSrc2 );
+
+    // peTemp[0] = X1 * Z2
+    SymCryptModMul( pmMod, peSrc1X, peSrc2Z, peTemp[0], pbScratch, cbScratch );
+
+    // peTemp[1] = X2 * Z1
+    SymCryptModMul( pmMod, peSrc2X, peSrc1Z, peTemp[1], pbScratch, cbScratch );
+
+    return SymCryptModElementIsEqual( pmMod, peTemp[0], peTemp[1] );
 }
 
 UINT32
@@ -257,7 +312,7 @@ SymCryptMontgomeryPointScalarMul(
     nDigits = SymCryptDigitsFromBits( pCurve->FModBitsize );
     nBytes = SymCryptSizeofModElementFromModulus( pmMod );
     nCommon = SYMCRYPT_MAX( SymCryptSizeofIntFromDigits(nDigits), SYMCRYPT_MAX(SYMCRYPT_SCRATCH_BYTES_FOR_COMMON_MOD_OPERATIONS(nDigits), SYMCRYPT_SCRATCH_BYTES_FOR_MODINV(nDigits)));
- 
+
     SYMCRYPT_ASSERT( cbScratch >= 6 * nBytes + nCommon );
 
     cbAllScratch = cbScratch;
@@ -289,7 +344,7 @@ SymCryptMontgomeryPointScalarMul(
     //
     // Set up values
     //
-   
+
     peA24 = pCurve->A;
 
     // X1 = X
