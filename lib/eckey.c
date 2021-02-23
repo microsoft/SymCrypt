@@ -511,6 +511,19 @@ SymCryptEckeySetValue(
                 goto cleanup;
             }
         }
+        else if ( !((flags & SYMCRYPT_FLAG_KEY_VALIDATION_MASK) == SYMCRYPT_FLAG_KEY_MINIMAL_VALIDATION) )
+        {
+            // Perform Public key validation on generated Public key.
+            scError = SymCryptEckeyPerformPublicKeyValidation(
+                pEckey,
+                flags,
+                pbScratch,
+                cbScratch );
+            if ( scError != SYMCRYPT_NO_ERROR )
+            {
+                goto cleanup;
+            }
+        }
     }
 
 cleanup:

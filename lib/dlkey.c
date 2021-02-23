@@ -651,6 +651,21 @@ SymCryptDlkeySetValue(
                 goto cleanup;
             }
         }
+        else if ( performRangeValidation )
+        {
+            // Perform Public key validation on generated public key.
+            // Always perform range validation
+            // May also perform validation that Public key is in subgroup of order Q, depending on flags
+            scError = SymCryptDlkeyPerformPublicKeyValidation(
+                pkDlkey,
+                flags,
+                pbScratch,
+                cbScratch );
+            if ( scError != SYMCRYPT_NO_ERROR )
+            {
+                goto cleanup;
+            }
+        }
     }
 
 cleanup:
