@@ -15,12 +15,11 @@ SYMCRYPT_CALL
 SymCryptAes4SboxXmm( _In_reads_(4) PCBYTE pIn, _Out_writes_(4) PBYTE pOut )
 {
     __m128i x;
-
     x = _mm_set1_epi32( *(int *) pIn );
 
     x = _mm_aeskeygenassist_si128( x, 0 );
 
-    *(unsigned *) pOut = x.m128i_u32[0];
+    *(unsigned *) pOut = _mm_extract_epi32(x, 0);
 }
 
 VOID

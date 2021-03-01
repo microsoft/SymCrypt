@@ -85,14 +85,14 @@ jobs:
 
 - job: Linux
   pool:
-    vmImage: 'ubuntu-18.04'
+    vmImage: 'ubuntu-20.04'
   steps:
   - checkout: self
     submodules: recursive 
   - task: CMake@1
     inputs:
       workingDirectory: '$(Build.SourcesDirectory)/bin'
-      cmakeArgs: '..'
+      cmakeArgs: '.. -DCMAKE_TOOLCHAIN_FILE=cmake-toolchain/linux-amd64.cmake'
   - task: CMake@1
     inputs:
       workingDirectory: '$(Build.SourcesDirectory)/bin'

@@ -797,7 +797,10 @@ SymCryptSha256AppendBlocks_ul2(
 
 //
 // Code that uses the XMM registers.
+// This code is currently unused. It was written in case it would provide better performance, but
+// it did not. We are retaining it in case it might be useful in a future CPU generation.
 //
+#if 0
 
 #define MAJXMM( x, y, z ) _mm_or_si128( _mm_and_si128( _mm_or_si128( z, y ), x ), _mm_and_si128( z, y ))
 #define CHXMM( x, y, z )  _mm_xor_si128( _mm_and_si128( _mm_xor_si128( z, y ), x ), z )
@@ -850,14 +853,14 @@ SymCryptSha256AppendBlocks_xmm1(
     //
     // Copy the chaining state into the start of the buffer, order = h,g,f,e,d,c,b,a
     //
-    ha[7].m128i_u32[0] = pChain->H[0];
-    ha[6].m128i_u32[0] = pChain->H[1];
-    ha[5].m128i_u32[0] = pChain->H[2];
-    ha[4].m128i_u32[0] = pChain->H[3];
-    ha[3].m128i_u32[0] = pChain->H[4];
-    ha[2].m128i_u32[0] = pChain->H[5];
-    ha[1].m128i_u32[0] = pChain->H[6];
-    ha[0].m128i_u32[0] = pChain->H[7];
+    ha[7] = _mm_insert_epi32(ha[7], pChain->H[0], 0);
+    ha[6] = _mm_insert_epi32(ha[6], pChain->H[1], 0);
+    ha[5] = _mm_insert_epi32(ha[5], pChain->H[2], 0);
+    ha[4] = _mm_insert_epi32(ha[4], pChain->H[3], 0);
+    ha[3] = _mm_insert_epi32(ha[3], pChain->H[4], 0);
+    ha[2] = _mm_insert_epi32(ha[2], pChain->H[5], 0);
+    ha[1] = _mm_insert_epi32(ha[1], pChain->H[6], 0);
+    ha[0] = _mm_insert_epi32(ha[0], pChain->H[7], 0);
 
     buf[0] = ha[4];
     buf[1] = ha[5];
@@ -872,7 +875,7 @@ SymCryptSha256AppendBlocks_xmm1(
         //
         for( r=0; r<16; r++ )
         {
-            W[r].m128i_u32[0] = SYMCRYPT_LOAD_MSBFIRST32( &pbData[ 4*r ] );
+            W[r] = _mm_insert_epi32(W[r], SYMCRYPT_LOAD_MSBFIRST32( &pbData[ 4*r ] ), 0);
         }
 
         //
@@ -952,14 +955,14 @@ SymCryptSha256AppendBlocks_xmm1(
     //
     // Copy the chaining state back into the hash structure
     //
-    pChain->H[0] = ha[7].m128i_u32[0];
-    pChain->H[1] = ha[6].m128i_u32[0];
-    pChain->H[2] = ha[5].m128i_u32[0];
-    pChain->H[3] = ha[4].m128i_u32[0];
-    pChain->H[4] = ha[3].m128i_u32[0];
-    pChain->H[5] = ha[2].m128i_u32[0];
-    pChain->H[6] = ha[1].m128i_u32[0];
-    pChain->H[7] = ha[0].m128i_u32[0];
+    pChain->H[0] = _mm_extract_epi32(ha[7], 0);
+    pChain->H[1] = _mm_extract_epi32(ha[6], 0);
+    pChain->H[2] = _mm_extract_epi32(ha[5], 0);
+    pChain->H[3] = _mm_extract_epi32(ha[4], 0);
+    pChain->H[4] = _mm_extract_epi32(ha[3], 0);
+    pChain->H[5] = _mm_extract_epi32(ha[2], 0);
+    pChain->H[6] = _mm_extract_epi32(ha[1], 0);
+    pChain->H[7] = _mm_extract_epi32(ha[0], 0);
 
     *pcbRemaining = cbData;
 
@@ -1180,6 +1183,8 @@ SymCryptSha256AppendBlocks_xmm2(
 #undef FROUND
 #undef CROUND
 }
+
+#endif
 
 //
 // SHA-NI Implementation

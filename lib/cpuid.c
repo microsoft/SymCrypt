@@ -94,7 +94,7 @@ SymCryptDetectCpuFeaturesByCpuid( UINT32 flags )
     int     maxInfoType;
     int     i;
     BOOLEAN allowYmm;
-    __int64 xGetBvResult;
+    INT64 xGetBvResult;
 
     //
     // Mark all features as present (the result bits indicate not-present, so set the features we know to 0).

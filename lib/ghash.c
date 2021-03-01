@@ -187,10 +187,7 @@ SymCryptGHashAppendDataXmm(
             // little endian machines.
             //
             t = SYMCRYPT_LOAD_MSBFIRST32( &pbData[4*i] ) ^ pState->ul[3-i];
-            tmp.m128i_u32[0] =
-            tmp.m128i_u32[1] =
-            tmp.m128i_u32[2] =
-            tmp.m128i_u32[3] = t;
+            tmp = _mm_set_epi32(t, t, t, t);
 
             T = tmp;
             while( p < pLimit )

@@ -34,7 +34,6 @@ developertest()
     //
 }
 
-
 //
 // Special extern declarations to allow us to disable AES-NI on the RSA32 library
 //
@@ -989,10 +988,14 @@ void printPlatformInformation( _In_z_ char * text )
         "Fre"
 #endif
 
-#if SYMCRYPT_APPLE_CC
+#if defined(__APPLE__)
         ", iOS\n", text);
-#else
+#elif defined(__linux__)
+        ", Linux\n", text);
+#elif defined(_WIN32)
         ", Windows %04x\n", text, g_osVersion );
+#else
+        ", Unknown platform\n", text);
 #endif
 
 #if SYMCRYPT_CPU_X86 | SYMCRYPT_CPU_AMD64

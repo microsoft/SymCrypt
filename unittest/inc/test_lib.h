@@ -49,6 +49,7 @@
     #include <stdlib.h>
     #include <math.h>
     #include <unistd.h>
+    #include <x86intrin.h>
 
     #include <vector>
     #include <string>
@@ -153,6 +154,7 @@
     #include <stdio.h>
     #include <stdlib.h>
     #include <math.h>
+    #include <intrin.h>
 
     #include <powrprof.h>
 
@@ -179,6 +181,7 @@
     {
         void __cpuid(int CPUInfo[4], int InfoType );
     }
+
 #endif
 
 

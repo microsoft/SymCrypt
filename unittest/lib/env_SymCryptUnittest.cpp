@@ -43,7 +43,6 @@ SYMCRYPT_CPU_FEATURES SYMCRYPT_CALL SymCryptCpuFeaturesNeverPresentEnvUnittest()
     return 0;
 }
 
-
 VOID
 SYMCRYPT_CALL
 SymCryptInitEnvUnittest( UINT32 version )
@@ -56,13 +55,19 @@ SymCryptInitEnvUnittest( UINT32 version )
 #if SYMCRYPT_CPU_X86 | SYMCRYPT_CPU_AMD64
     SymCryptDetectCpuFeaturesByCpuid( SYMCRYPT_CPUID_DETECT_FLAG_CHECK_OS_SUPPORT_FOR_YMM );
 
-    if( (GetEnabledXStateFeatures() & XSTATE_MASK_AVX) == 0 )
-    {
-        //
-        // Don't use Ymm registers if the OS doesn't report them as available.
-        //
-        g_SymCryptCpuFeaturesNotPresent |= SYMCRYPT_CPU_FEATURE_AVX2;
-    }
+
+    //
+    // Don't use Ymm registers if the OS doesn't report them as available.
+    // We assume Ymm register swapping isn't supported unless we can verify that it is.
+    //
+    g_SymCryptCpuFeaturesNotPresent |= SYMCRYPT_CPU_FEATURE_AVX2;
+
+    #if SYMCRYPT_MS_VC
+        if( (GetEnabledXStateFeatures() & XSTATE_MASK_AVX) != 0 )
+        {
+            g_SymCryptCpuFeaturesNotPresent &= ~SYMCRYPT_CPU_FEATURE_AVX2;
+        }
+    #endif
 
     //
     // By default we don't fail XMM so that we get proper performance for GCM.
@@ -152,7 +157,7 @@ ULONG g_nSaves = 0;
 
 #pragma warning(push)
 #pragma warning(disable:4359)
-typedef SYMCRYPT_ALIGN struct _SYMCRYPT_ENV_XMM_SAVE_DATA_REGS {
+typedef SYMCRYPT_ALIGN_STRUCT _SYMCRYPT_ENV_XMM_SAVE_DATA_REGS {
     //
     // The alignment on x86 is only 4, so we can't align the __m128i fields properly.
     // We add some padding and let the assembler code adjust the alignmetn of the actual data.

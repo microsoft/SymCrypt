@@ -6,8 +6,11 @@
 
 #include "precomp.h"
 
-#if (SYMCRYPT_CPU_X86 | SYMCRYPT_CPU_AMD64)  && _MSC_VER >= 1610   // only available on x86 and amd64 architectures, and latest compiler.
-// *** note: the MSC_VER bound might be too small *** 
+#if (SYMCRYPT_CPU_X86 | SYMCRYPT_CPU_AMD64) // only available on x86 and amd64 architectures.
+
+#if SYMCRYPT_MS_VC && _MSC_VER < 1610 
+#error MSVC version lacks support for RDSEED intrinsics. Compile for the generic environment instead.
+#endif
 
 //
 // Create a definition that works on SIZE_Ts.
@@ -16,7 +19,7 @@
 #if SYMCRYPT_CPU_X86
 #define _rdseedxx_step(_p) _rdseed32_step( (unsigned int *) (_p) )
 #else
-#define _rdseedxx_step(_p) _rdseed64_step( (unsigned __int64  *) (_p) )
+#define _rdseedxx_step(_p) _rdseed64_step( (UINT64  *) (_p) )
 #endif
 
 FORCEINLINE

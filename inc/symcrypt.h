@@ -4268,35 +4268,20 @@ SymCryptCallbackRandom(
 //==============================================================================================
 // Object types for high-level API
 //
-// RSAKEY       A key that stores the information for the RSA algorithms (encryption and signing).
-//              It always contains the RSA parameters / public key, and may or may not contain
-//              the associated private key.
-// DLGROUP      A discrete log group to be used for the DSA and DH algorithmms. It contains the
-//              group parameters (P,[Q],G) (The prime Q is optional).
-// DLKEY        A "discrete log" key that stores the information for the DSA and DH algorithms. It
-//              always contains a public key, and may or may not contain the associated private key.
-// ECURVE       An elliptic curve over a prime field. Contains field prime, curve parameters,
-//              and distinguished point (generator).
-// ECKEY        An elliptic curve key for the ECDH and ECDSA algorithms. It always contains a
-//              public key, and may or may not contain the associated private key.
+// SYMCRYPT_RSAKEY       A key that stores the information for the RSA algorithms (encryption and signing).
+//                       It always contains the RSA parameters / public key, and may or may not contain
+//                       the associated private key.
+// SYMCRYPT_DLGROUP      A discrete log group to be used for the DSA and DH algorithmms. It contains the
+//                       group parameters (P,[Q],G) (The prime Q is optional).
+// SYMCRYPT_DLKEY        A "discrete log" key that stores the information for the DSA and DH algorithms. It
+//                       always contains a public key, and may or may not contain the associated private key.
+// SYMCRYPT_ECURVE       An elliptic curve over a prime field. Contains field prime, curve parameters,
+//                       and distinguished point (generator).
+// SYMCRYPT_ECKEY        An elliptic curve key for the ECDH and ECDSA algorithms. It always contains a
+//                       public key, and may or may not contain the associated private key.
 //
-// These are abstract type definitions, the actual type is not a compile-time property.
+// See symcrypt_internal.h for structure definitions.
 //
-
-typedef SYMCRYPT_ALIGN struct _SYMCRYPT_RSAKEY   SYMCRYPT_RSAKEY, *PSYMCRYPT_RSAKEY;
-typedef const SYMCRYPT_RSAKEY *PCSYMCRYPT_RSAKEY;
-
-typedef SYMCRYPT_ALIGN struct _SYMCRYPT_DLGROUP   SYMCRYPT_DLGROUP, *PSYMCRYPT_DLGROUP;
-typedef const SYMCRYPT_DLGROUP *PCSYMCRYPT_DLGROUP;
-
-typedef SYMCRYPT_ALIGN struct _SYMCRYPT_DLKEY   SYMCRYPT_DLKEY, *PSYMCRYPT_DLKEY;
-typedef const SYMCRYPT_DLKEY *PCSYMCRYPT_DLKEY;
-
-typedef SYMCRYPT_ALIGN struct _SYMCRYPT_ECURVE   SYMCRYPT_ECURVE, *PSYMCRYPT_ECURVE;
-typedef const SYMCRYPT_ECURVE * PCSYMCRYPT_ECURVE;
-
-typedef SYMCRYPT_ALIGN struct _SYMCRYPT_ECKEY   SYMCRYPT_ECKEY, *PSYMCRYPT_ECKEY;
-typedef const SYMCRYPT_ECKEY *PCSYMCRYPT_ECKEY;
 
 //==============================================================================================
 // Supported formats and parameters

@@ -16,7 +16,7 @@
         TTL   "Advanced Encryption Standard (AES)"
 
 ;
-; typedef SYMCRYPT_ALIGN struct _SYMCRYPT_AES_EXPANDED_KEY {
+; typedef SYMCRYPT_ALIGN_STRUCT _SYMCRYPT_AES_EXPANDED_KEY {
 ;     SYMCRYPT_ALIGN BYTE RoundKey[29][4][4];
 ;         // Round keys, first the encryption round keys in encryption order,
 ;         // followed by the decryption round keys in decryption order.

@@ -17,4 +17,9 @@
 #if SYMCRYPT_CPU_X86 | SYMCRYPT_CPU_AMD64
 #include <wmmintrin.h>
 #include <immintrin.h>
+
+    #if SYMCRYPT_GNUC
+        #include <xsaveintrin.h>
+        #define _XCR_XFEATURE_ENABLED_MASK 0
+    #endif
 #endif

@@ -6,13 +6,17 @@
 
 #include "precomp.h"
 
-#if (SYMCRYPT_CPU_X86 | SYMCRYPT_CPU_AMD64)  && _MSC_VER >= 1610   // only available on x86 and amd64 architectures, and 
+#if (SYMCRYPT_CPU_X86 | SYMCRYPT_CPU_AMD64)  // only available on x86 and amd64 architectures
+
+#if SYMCRYPT_MS_VC && _MSC_VER < 1610 
+#error MSVC version lacks support for RDRAND intrinsics. Compile for the generic environment instead.
+#endif
 
 //
 // TODO: the _rdrand_u*() versions of the intrinsics can be removed once the new compiler
 // with the _rdrand*_step() intrinsics is used in all branches
 
-#if _MSC_VER < 1700				// 1700 = Dev11, 
+#if SYMCRYPT_MS_VC && _MSC_VER < 1700				// 1700 = Dev11, 
 
 //
 // This is the code that uses the old intrinsics in the compiler version 16.1
@@ -37,7 +41,7 @@ unsigned __int64 _rdrand_u64(void);
 #if SYMCRYPT_CPU_X86
 #define _rdrandxx_step(_p) _rdrand32_step( (unsigned int *) (_p) )
 #else
-#define _rdrandxx_step(_p) _rdrand64_step( (unsigned __int64  *) (_p) )
+#define _rdrandxx_step(_p) _rdrand64_step( (UINT64  *) (_p) )
 #endif
 
 FORCEINLINE

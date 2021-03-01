@@ -14,4 +14,4 @@ execute_process(COMMAND
 string(REGEX REPLACE "\n$" "" SYMCRYPT_BUILD_INFO_VERSION "${SYMCRYPT_BUILD_INFO_VERSION}")
 
 string(TIMESTAMP SYMCRYPT_BUILD_INFO_TIMESTAMP "%Y-%m-%dT%H:%M:%S")
-configure_file(${CMAKE_SOURCE_DIR}/build/buildInfo.h.in ${CMAKE_BINARY_DIR}/inc/buildInfo.h)
+configure_file(${CMAKE_SOURCE_DIR}/build/buildInfo.h.in ${CMAKE_SOURCE_DIR}/inc/buildInfo.h)

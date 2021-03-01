@@ -1217,7 +1217,7 @@ SymCryptFdefModMulMontgomery(
     SymCryptFdefMontgomeryReduce( pmMod, pTmp, &peDst->d.uint32[0] );
 }
 
-#if SYMCRYPT_CPU_AMD64
+#if SYMCRYPT_CPU_AMD64 && SYMCRYPT_MS_VC
 VOID
 SYMCRYPT_CALL
 SymCryptFdefModMulMontgomeryMulx(
@@ -1277,7 +1277,7 @@ SymCryptFdefModSquareMontgomery(
 }
 
 
-#if SYMCRYPT_CPU_AMD64
+#if SYMCRYPT_CPU_AMD64 && SYMCRYPT_MS_VC
 VOID
 SYMCRYPT_CALL
 SymCryptFdefModSquareMontgomeryMulx(
@@ -1350,7 +1350,7 @@ SymCryptFdefModInvMontgomery(
     return scError;
 }
 
-#if SYMCRYPT_CPU_AMD64
+#if SYMCRYPT_CPU_AMD64 && SYMCRYPT_MS_VC
 
 //=====================================
 // 256-bit Montgomery modulus code

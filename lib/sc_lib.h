@@ -2659,7 +2659,7 @@ SymCryptFdefRawMul(
 VOID
 SYMCRYPT_CALL
 SymCryptFdefRawMulMulx(
-    _In_reads_(nDgigits1*SYMCRYPT_FDEF_DIGIT_NUINT32)   PCUINT32    pSrc1,
+    _In_reads_(nDigits1*SYMCRYPT_FDEF_DIGIT_NUINT32)    PCUINT32    pSrc1,
                                                         UINT32      nDigits1,
     _In_reads_(nDigits2*SYMCRYPT_FDEF_DIGIT_NUINT32)    PCUINT32    pSrc2,
                                                         UINT32      nDigits2,
@@ -2668,8 +2668,8 @@ SymCryptFdefRawMulMulx(
 VOID
 SYMCRYPT_CALL
 SymCryptFdefRawMulMulx1024(
-    _In_reads_(nDgigits1*SYMCRYPT_FDEF_DIGIT_NUINT32)   PCUINT32    pSrc1,
-    _In_reads_(nDigits2*SYMCRYPT_FDEF_DIGIT_NUINT32)    PCUINT32    pSrc2,
+    _In_reads_(nDigits*SYMCRYPT_FDEF_DIGIT_NUINT32)     PCUINT32    pSrc1,
+    _In_reads_(nDigits*SYMCRYPT_FDEF_DIGIT_NUINT32)     PCUINT32    pSrc2,
                                                         UINT32      nDigits,
     _Out_writes_(nWords1 + nWords2)                     PUINT32     pDst );
 

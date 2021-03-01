@@ -93,7 +93,12 @@ set(SOURCES_COMMON
     IEEE802_11SaeCustom.c
   )
 
-if(NOT(SYMCRYPT_TARGET_ENV MATCHES "Generic"))
+if(NOT WIN32)
+    list(APPEND SOURCES_COMMON linux/intrinsics.c)
+    list(APPEND SOURCES_COMMON linux/asmstubs.c)
+endif()
+
+if(WIN32 AND NOT(SYMCRYPT_TARGET_ENV MATCHES "Generic"))
     if(CMAKE_SYSTEM_PROCESSOR MATCHES "AMD64")
         list(APPEND SOURCES_COMMON
             amd64/aesasm.asm
@@ -164,9 +169,6 @@ endif()
 set(SOURCES_GENERIC ${SOURCES_COMMON})
 list(APPEND SOURCES_GENERIC env_generic.c)
 if(NOT WIN32)
-    list(FILTER SOURCES_GENERIC EXCLUDE REGEX aes-asm.c)
-    list(FILTER SOURCES_GENERIC EXCLUDE REGEX aes-neon.c)
-    list(FILTER SOURCES_GENERIC EXCLUDE REGEX aes-xmm.c)
     add_compile_options(-Wno-trigraphs)
 endif()
 add_library(symcrypt_generic STATIC env_generic.c)
