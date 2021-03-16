@@ -114,14 +114,17 @@ SymCryptFdefModulusCopy(
 {
     SYMCRYPT_ASSERT( pmSrc->nDigits == pmDst->nDigits );
 
-    memcpy( pmDst, pmSrc, pmDst->cbSize );
+    if( pmSrc != pmDst )
+    {
+        memcpy( pmDst, pmSrc, pmDst->cbSize );
 
-    SymCryptFdefDivisorCopyFixup( &pmSrc->Divisor, &pmDst->Divisor );
+        SymCryptFdefDivisorCopyFixup( &pmSrc->Divisor, &pmDst->Divisor );
 
-    // Copy the type-specific fields
-    SYMCRYPT_MOD_CALL( pmSrc ) modulusCopyFixup( pmSrc, pmDst );
+        // Copy the type-specific fields
+        SYMCRYPT_MOD_CALL( pmSrc ) modulusCopyFixup( pmSrc, pmDst );
 
-    SYMCRYPT_SET_MAGIC( pmDst );
+        SYMCRYPT_SET_MAGIC( pmDst );
+    }
 }
 
 VOID
@@ -226,7 +229,10 @@ SymCryptFdefModElementCopy(
     _In_    PCSYMCRYPT_MODELEMENT   peSrc,
     _Out_   PSYMCRYPT_MODELEMENT    peDst )
 {
-    memcpy( peDst, peSrc, pmMod->cbModElement );
+    if( peSrc != peDst )
+    {
+        memcpy( peDst, peSrc, pmMod->cbModElement );
+    }
 }
 
 VOID
@@ -761,7 +767,7 @@ SymCryptFdefModDivPow2(
     // mod must be odd
     SYMCRYPT_ASSERT( (pMod[0] & 1) != 0 );
 
-    if( exp > 1 )
+    if( exp > 1 && peSrc != peDst)
     {
         // If more than one bit, we copy to the destination and work in a loop in-place.
         memcpy( &peDst->d.uint32[0], &peSrc->d.uint32[0], nDigits * SYMCRYPT_FDEF_DIGIT_SIZE );

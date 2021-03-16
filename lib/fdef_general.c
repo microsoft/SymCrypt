@@ -3,7 +3,7 @@
 //
 // Copyright (c) Microsoft Corporation. Licensed under the MIT license.
 //
-// 
+//
 //
 
 #include "precomp.h"
@@ -45,14 +45,14 @@ SymCryptFdefMaskedCopyC(
 	It also appears that it is never called. Consider removing it if it is not needed.
 	*/
 {
-    UINT64 m64 = (UINT64)0 - (mask & 1); 
+    UINT64 m64 = (UINT64)0 - (mask & 1);
     PUINT64 pSrc = (PUINT64) pbSrc; // should be a const pointer to match pSrc
     PUINT64 pDst = (PUINT64) pbDst;
     SIZE_T i;
 
 	// This allows 0xffffffff and 0, is that what you wanted?
 	// If so, ( mask == 0xffffffff || mask == 0 )
-	// would be more readable. It is also odd that 1 is not valid, but it results in exactly the 
+	// would be more readable. It is also odd that 1 is not valid, but it results in exactly the
 	// same code flow as ~0.
     SYMCRYPT_ASSERT( (mask + 1) < 2 );      // Check that mask is valid
 
@@ -241,8 +241,8 @@ SymCryptFdefIntCopyFixup(
 }
 
 VOID
-SymCryptFdefIntCopy( 
-    _In_    PCSYMCRYPT_INT  piSrc, 
+SymCryptFdefIntCopy(
+    _In_    PCSYMCRYPT_INT  piSrc,
     _Out_   PSYMCRYPT_INT   piDst )
 {
     SYMCRYPT_CHECK_MAGIC( piSrc );
@@ -325,22 +325,25 @@ SymCryptFdefNumberofDigitsFromInt( _In_ PCSYMCRYPT_INT piSrc )
 }
 
 SYMCRYPT_ERROR
-SymCryptFdefIntCopyMixedSize( 
-    _In_    PCSYMCRYPT_INT  piSrc, 
+SymCryptFdefIntCopyMixedSize(
+    _In_    PCSYMCRYPT_INT  piSrc,
     _Out_   PSYMCRYPT_INT   piDst )
 {
     UINT32  n;
-    SYMCRYPT_ERROR scError;
+    SYMCRYPT_ERROR scError = SYMCRYPT_NO_ERROR;
 
     SYMCRYPT_CHECK_MAGIC( piSrc );
     SYMCRYPT_CHECK_MAGIC( piDst );
 
+    // in-place copy is somewhat common, and addresses are always public, so we can test for a no-op copy.
+    if( piSrc == piDst )
+    {
+        goto cleanup;
+    }
+
     //
     // Copy the digits that are available in both
     //
-	// I would assume that this function isn't intended for use
-	// with private data due to branching
-
     n = SYMCRYPT_MIN( piSrc->nDigits, piDst->nDigits );
     memcpy( SYMCRYPT_FDEF_INT_PUINT32( piDst ), SYMCRYPT_FDEF_INT_PUINT32( piSrc ), n * SYMCRYPT_FDEF_DIGIT_SIZE );
 
@@ -370,7 +373,7 @@ SymCryptFdefIntCopyMixedSize(
             goto cleanup;
         }
     }
-    scError = SYMCRYPT_NO_ERROR;
+
 cleanup:
     return scError;
 }
@@ -396,7 +399,7 @@ SymCryptFdefBitsizeOfUint32( UINT32 v )
 
     // This is tricky to do side-channel safe using only defined behaviour of the C language.
 
-	// This is very difficult to make any sense of. A comment containing the C code that one would normally 
+	// This is very difficult to make any sense of. A comment containing the C code that one would normally
 	// write to do the same thing would be helpful. I will need to come back to this.
 	// Also, there is no test coverage of this function. There should be a unit test to show that it does the same thing
 	// as the code one would normally write.
@@ -431,7 +434,7 @@ SymCryptFdefBitsizeOfUint32( UINT32 v )
     // Now we have the bit number of the MSbit set in res.
     // We need to increase this by one if v was nonzero, so that we
     // get 0 for v==0, and the # bits needed for v > 0
-    // 
+    //
     res += (v | vBit1) & 1;
 
     return res;
@@ -458,7 +461,7 @@ SymCryptFdefIntBitsizeOfValue( _In_ PCSYMCRYPT_INT piSrc )
     while( nUint32 > 0 )
     {
         //
-        // Invariant: 
+        // Invariant:
         // If no nonzero digit has been found, res = 0 and updateMask = -1.
         // If a nonzero digit has been found:
         //  msNonzeroDigit = most significant nonzero digit in Src
@@ -486,8 +489,8 @@ SymCryptFdefIntBitsizeOfValue( _In_ PCSYMCRYPT_INT piSrc )
 
 VOID
 SYMCRYPT_CALL
-SymCryptFdefIntSetValueUint32( 
-            UINT32          u32Src, 
+SymCryptFdefIntSetValueUint32(
+            UINT32          u32Src,
     _Out_   PSYMCRYPT_INT   piDst )
 {
     SYMCRYPT_CHECK_MAGIC( piDst );
@@ -500,8 +503,8 @@ C_ASSERT( SYMCRYPT_FDEF_DIGIT_SIZE >= 8 );      // Code below fails if this does
 
 VOID
 SYMCRYPT_CALL
-SymCryptFdefIntSetValueUint64( 
-            UINT64          u64Src, 
+SymCryptFdefIntSetValueUint64(
+            UINT64          u64Src,
     _Out_   PSYMCRYPT_INT   piDst )
 {
     SYMCRYPT_CHECK_MAGIC( piDst );
@@ -513,10 +516,10 @@ SymCryptFdefIntSetValueUint64(
 
 SYMCRYPT_ERROR
 SYMCRYPT_CALL
-SymCryptFdefRawSetValue( 
-    _In_reads_bytes_(cbSrc)     PCBYTE                  pbSrc, 
-                                SIZE_T                  cbSrc, 
-                                SYMCRYPT_NUMBER_FORMAT  format, 
+SymCryptFdefRawSetValue(
+    _In_reads_bytes_(cbSrc)     PCBYTE                  pbSrc,
+                                SIZE_T                  cbSrc,
+                                SYMCRYPT_NUMBER_FORMAT  format,
     _Out_writes_(nWords)        PUINT32                 pDst,
                                 UINT32                  nDigits )
 {
@@ -589,10 +592,10 @@ cleanup:
 
 SYMCRYPT_ERROR
 SYMCRYPT_CALL
-SymCryptFdefIntSetValue( 
-    _In_reads_bytes_(cbSrc)     PCBYTE                  pbSrc, 
-                                SIZE_T                  cbSrc, 
-                                SYMCRYPT_NUMBER_FORMAT  format, 
+SymCryptFdefIntSetValue(
+    _In_reads_bytes_(cbSrc)     PCBYTE                  pbSrc,
+                                SIZE_T                  cbSrc,
+                                SYMCRYPT_NUMBER_FORMAT  format,
     _Out_                       PSYMCRYPT_INT           piDst )
 {
     SYMCRYPT_ERROR scError;
@@ -607,11 +610,11 @@ SymCryptFdefIntSetValue(
 
 SYMCRYPT_ERROR
 SYMCRYPT_CALL
-SymCryptFdefRawGetValue( 
+SymCryptFdefRawGetValue(
     _In_reads_(nWords)          PCUINT32                pSrc,
                                 UINT32                  nDigits,
-    _Out_writes_bytes_(cbBytes) PBYTE                   pbDst, 
-                                SIZE_T                  cbDst, 
+    _Out_writes_bytes_(cbBytes) PBYTE                   pbDst,
+                                SIZE_T                  cbDst,
                                 SYMCRYPT_NUMBER_FORMAT  format )
 {
     SYMCRYPT_ERROR scError;
@@ -682,10 +685,10 @@ cleanup:
 
 SYMCRYPT_ERROR
 SYMCRYPT_CALL
-SymCryptFdefIntGetValue( 
-    _In_                        PCSYMCRYPT_INT          piSrc, 
-    _Out_writes_bytes_( cbBytes)PBYTE                   pbDst, 
-                                SIZE_T                  cbDst, 
+SymCryptFdefIntGetValue(
+    _In_                        PCSYMCRYPT_INT          piSrc,
+    _Out_writes_bytes_( cbBytes)PBYTE                   pbDst,
+                                SIZE_T                  cbDst,
                                 SYMCRYPT_NUMBER_FORMAT  format )
 {
     SYMCRYPT_ERROR scError;
@@ -763,7 +766,7 @@ SymCryptFdefIntIsEqual(
     {
         d |= pSrc1[i] ^ pSrc2[i];
     }
-    
+
     // i == n1 or i == n2, so at most one of the 2 loops below is ever run
 
     while( i < n1 )
@@ -821,9 +824,9 @@ SymCryptFdefSizeofDivisorFromDigits( UINT32 nDigits )
 
 PSYMCRYPT_DIVISOR
 SYMCRYPT_CALL
-SymCryptFdefDivisorCreate( 
-    _Out_writes_bytes_( cbBuffer )  PBYTE   pbBuffer, 
-                                    SIZE_T  cbBuffer, 
+SymCryptFdefDivisorCreate(
+    _Out_writes_bytes_( cbBuffer )  PBYTE   pbBuffer,
+                                    SIZE_T  cbBuffer,
                                     UINT32  nDigits )
 {
     PSYMCRYPT_DIVISOR  pdDiv = (PSYMCRYPT_DIVISOR) pbBuffer;
@@ -853,7 +856,7 @@ SymCryptFdefDivisorCreate(
 }
 
 VOID
-SymCryptFdefDivisorCopyFixup( 
+SymCryptFdefDivisorCopyFixup(
     _In_    PCSYMCRYPT_DIVISOR pdSrc,
     _Out_   PSYMCRYPT_DIVISOR  pdDst )
 {
@@ -866,8 +869,8 @@ SymCryptFdefDivisorCopyFixup(
 }
 
 VOID
-SymCryptFdefDivisorCopy( 
-    _In_    PCSYMCRYPT_DIVISOR  pdSrc, 
+SymCryptFdefDivisorCopy(
+    _In_    PCSYMCRYPT_DIVISOR  pdSrc,
     _Out_   PSYMCRYPT_DIVISOR   pdDst )
 {
     SYMCRYPT_CHECK_MAGIC( pdSrc );
@@ -875,9 +878,13 @@ SymCryptFdefDivisorCopy(
 
     SYMCRYPT_ASSERT( pdSrc->nDigits == pdDst->nDigits );
 
-    memcpy( pdDst, pdSrc, pdDst->cbSize );
+    // in-place copy is somewhat common, and addresses are always public, so we can test for a no-op copy.
+    if( pdSrc != pdDst )
+    {
+        memcpy( pdDst, pdSrc, pdDst->cbSize );
 
-    SymCryptFdefDivisorCopyFixup( pdSrc, pdDst );
+        SymCryptFdefDivisorCopyFixup( pdSrc, pdDst );
+    }
 }
 
 
@@ -896,7 +903,7 @@ SymCryptFdefClaimScratch( PBYTE pbScratch, SIZE_T cbScratch, SIZE_T cbMin )
 }
 
 UINT32
-SymCryptTestTrialdivisionMaxSmallPrime( 
+SymCryptTestTrialdivisionMaxSmallPrime(
     _In_                            PCSYMCRYPT_TRIALDIVISION_CONTEXT    pContext )
 {
     return pContext->maxTrialPrime;
@@ -910,17 +917,17 @@ SymCryptInverseMod2e64( UINT64 M )
     // We use Newton's method that works in general mod p^n
     // Looking for a zero of f(x) := 1/x - m
     // we get the iteration formula
-    //  x_{i+1} = x_i - f(x)/f'(x) 
+    //  x_{i+1} = x_i - f(x)/f'(x)
     //          = x_i - (1/x_i - m)/(-1/x_i^2)
     //          = x_i + x_i^2(1/x_i - m)
     //          = x_i + x_i - x_i^2*m
     //          = x_i (2 - x_i*m)
     //
     // Let x_i = d + 2^n * e where d is the desired answer 1/m mod 2^64 and 2^n * e is the error term that is zero in the n least significant bits.
-    // We have 
+    // We have
     //  x_{i+1} = (d + 2^n * e) (2 - (d + 2^n * e) * m )
     //          = (d + 2^n * e) (2 - d*m - 2^n * e * m )
-    //          = 2d - d^2*m - 2^n*e*d*m + 2^{n+1}*e - 2^n*e*d*m - 2^{2n}*e*e*m 
+    //          = 2d - d^2*m - 2^n*e*d*m + 2^{n+1}*e - 2^n*e*d*m - 2^{2n}*e*e*m
     //          = 2d - d - 2^n*e + 2^{n+1}*e - 2^n*e - 2^{2n}*e*e*m
     //          = d - 2^{2n}*e^2*m
     // In other words, the error has been squared and multiplied by m. In our case, the number of correct bits on the least significant
@@ -934,11 +941,11 @@ SymCryptInverseMod2e64( UINT64 M )
     UINT32 inv32;
     UINT64 inv64;
     UINT32 M32;
-    
+
     M32 = (UINT32)M;
 
     inv32 = M32;
-	// dcl - I am not sure I see the value in this assert - 
+	// dcl - I am not sure I see the value in this assert -
 	// The multiplication will occur as 32 bits, and may overflow. Except for the constraint that inv32 == M32,
 	// We can produce any 32-bit value from (2^32-1) * (2^32-1) = 2^64 - 2^33 + 1 by truncation.
 	// Possibly there is some constraint on M such that this cannot occur, but this is not apparent, or documented.
@@ -967,7 +974,7 @@ SymCryptInverseMod2e64( UINT64 M )
 
 VOID
 SYMCRYPT_CALL
-SymCryptFdefInitTrialdivisionPrime( 
+SymCryptFdefInitTrialdivisionPrime(
             UINT32                          prime,
     _Out_   PSYMCRYPT_TRIALDIVISION_PRIME   pPrime )
 {
@@ -1029,7 +1036,7 @@ SymCryptGenerateSmallPrimes( UINT32 maxPrime, PUINT32 * ppList )
     maxPrime = SYMCRYPT_MIN( maxPrime, 1 << 24 );    // Limit prime list to something sane (sieve = 8 MB, list = 4 MB or so).
 
     // highest index is (maxPrime - 1)/2 which encodes maxPrime if odd, or maxPrime-1 if even
-    nSieve = (maxPrime - 1) / 2 + 1;   
+    nSieve = (maxPrime - 1) / 2 + 1;
 
     pSieve = SymCryptCallbackAlloc( nSieve );
     if( pSieve == NULL )
@@ -1072,7 +1079,7 @@ SymCryptGenerateSmallPrimes( UINT32 maxPrime, PUINT32 * ppList )
     }
 
 	// dcl - I suspect that this is not a problem, but please document
-	// why this multiplication cannot overflow. I assume there is a practical limit on nPrimes, but unsure 
+	// why this multiplication cannot overflow. I assume there is a practical limit on nPrimes, but unsure
 	// what that would be.
     pList = SymCryptCallbackAlloc( nPrimes * sizeof( UINT32 ) );
     if( pList == NULL )
@@ -1136,9 +1143,9 @@ SymCryptFdefCreateTrialDivisionContext( UINT32 nDigits )
     // - cycles per digit^3 for a Rabin-Miller test
     // We optimize in this model, which is pretty accurate for large inputs but underestimates the RM cost
     // for smaller sizes.
-    
+
     // Compute the Rabin-Miller cost estimate. We reduce it by 20% because our cost model does not take
-    // into account some of the trial-division cost such as memory footprint, cache pressure, 
+    // into account some of the trial-division cost such as memory footprint, cache pressure,
     // setup cost, etc. Reducing the Rabin-Miller cost leads us to do fewer trial divisions to approximately
     // balance the hidden costs.
 
@@ -1167,13 +1174,13 @@ SymCryptFdefCreateTrialDivisionContext( UINT32 nDigits )
 
         // Now we know how many primes are in the last groups, let's find out how large the largest prime should be
         tmp64 = cRabinMillerCost / cPerPrimeCost;
-        tmp64 = SYMCRYPT_MIN( tmp64, SYMCRYPT_TRIALDIVISION_MAX_SMALL_PRIME );   
+        tmp64 = SYMCRYPT_MIN( tmp64, SYMCRYPT_TRIALDIVISION_MAX_SMALL_PRIME );
         maxPrime = (UINT32) tmp64;
         SYMCRYPT_HARD_ASSERT( maxPrime == tmp64 );
         maxPrime = SYMCRYPT_MAX( maxPrime, minPrime );       // Make sure we don't fall into the previous group size that we don't want
-    } 
-	else 
-	{ 
+    }
+	else
+	{
         maxPrime = SYMCRYPT_TRIALDIVISION_MAX_SMALL_PRIME;
     }
 
@@ -1209,7 +1216,7 @@ SymCryptFdefCreateTrialDivisionContext( UINT32 nDigits )
 	// dcl - Potential integer overflow
 	// Need to document sizes, and limits of nG, nP, and confirm
 	// an overflow is not possible, also recall that size_t varies in size, but nBytes is 32-bit
-    nBytes = sizeof( SYMCRYPT_TRIALDIVISION_CONTEXT ) 
+    nBytes = sizeof( SYMCRYPT_TRIALDIVISION_CONTEXT )
             + (nG + 1) * sizeof( SYMCRYPT_TRIALDIVISION_GROUP )     // + 1 for 0 sentinel
             + (nP + 1) * sizeof( SYMCRYPT_TRIALDIVISION_PRIME )     // + 1 for 0 sentinel
             + (nP + 1) * sizeof( UINT32 );                          // + 1 for 0 sentinel
@@ -1244,7 +1251,7 @@ SymCryptFdefCreateTrialDivisionContext( UINT32 nDigits )
     memcpy( pRes->pPrimes, pSmallPrimeList, nP * sizeof( UINT32 ) );
     pRes->pPrimes[nP] = 0;
     pRes->maxTrialPrime = pRes->pPrimes[nP-1];
-    
+
     /*
     *** Old code to decrypt the nibble encoding. Keep in case we want it back later...
     // Generate the other primes from the difference table.
@@ -1258,7 +1265,7 @@ SymCryptFdefCreateTrialDivisionContext( UINT32 nDigits )
     {
         b = *pNibs++;
         nib = b & 0xf;
-        
+
         if( nib == 0 )
         {
             smallPrime += 30;
@@ -1358,7 +1365,7 @@ SymCryptFdefFreeTrialDivisionContext( PCSYMCRYPT_TRIALDIVISION_CONTEXT pContext 
 
 UINT32
 SYMCRYPT_CALL
-SymCryptFdefIntFindSmallDivisor( 
+SymCryptFdefIntFindSmallDivisor(
     _In_                            PCSYMCRYPT_TRIALDIVISION_CONTEXT    pContext,
     _In_                            PCSYMCRYPT_INT                      piSrc,
     _Out_writes_bytes_( cbScratch ) PBYTE                               pbScratch,
@@ -1403,13 +1410,13 @@ SymCryptFdefIntFindSmallDivisor(
         res = 3;
         goto cleanup;
     }
-    
+
     if( SymCryptIsMultipleOfSmallPrime( Acc, &pContext->Primes3_5_17[1] ) )
     {
         res = 5;
         goto cleanup;
     }
-    
+
     if( SymCryptIsMultipleOfSmallPrime( Acc, &pContext->Primes3_5_17[2] ) )
     {
         res = 17;
@@ -1429,7 +1436,7 @@ SymCryptFdefIntFindSmallDivisor(
         {
             // nUInt32 is 4 mod 8, process the top 4 words only
             p -= 4;
-            Acc = 
+            Acc =
                 p[0] +
                 SYMCRYPT_MUL32x32TO64( p[1],  pGroup->factor[0] ) +
                 SYMCRYPT_MUL32x32TO64( p[2],  pGroup->factor[1] ) +
@@ -1437,7 +1444,7 @@ SymCryptFdefIntFindSmallDivisor(
         } else {
             // Process 8 words to start
             p -= 8;
-            Acc = 
+            Acc =
                 p[0] +
                 SYMCRYPT_MUL32x32TO64( p[1],  pGroup->factor[0] ) +
                 SYMCRYPT_MUL32x32TO64( p[2],  pGroup->factor[1] ) +
@@ -1450,7 +1457,7 @@ SymCryptFdefIntFindSmallDivisor(
 #elif (SYMCRYPT_FDEF_DIGIT_SIZE % 32) == 0
 
         p -= 8;
-        Acc = 
+        Acc =
             p[0] +
             SYMCRYPT_MUL32x32TO64( p[1],  pGroup->factor[0] ) +
             SYMCRYPT_MUL32x32TO64( p[2],  pGroup->factor[1] ) +
@@ -1466,7 +1473,7 @@ SymCryptFdefIntFindSmallDivisor(
         while( p > pSrc )
         {
             p -= 8;
-            Acc = 
+            Acc =
                 p[0] +
                 SYMCRYPT_MUL32x32TO64( p[1],  pGroup->factor[0] ) +
                 SYMCRYPT_MUL32x32TO64( p[2],  pGroup->factor[1] ) +

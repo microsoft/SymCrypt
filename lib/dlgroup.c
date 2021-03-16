@@ -1991,7 +1991,7 @@ SymCryptDlgroupGetValue(
         }
     }
 
-    if (pbSeed!=NULL)
+    if (pbSeed!=NULL && pDlgroup->pbSeed!=NULL)
     {
         memcpy( pbSeed, pDlgroup->pbSeed, pDlgroup->cbSeed);
     }

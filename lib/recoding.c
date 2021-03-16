@@ -14,7 +14,7 @@
 //      "Selecting Elliptic Curves for Cryptography: An Efficiency and
 //       Security Analysis" by Bos, Costello, Longa, and Naehrig
 //
-// Input:   odd integer k \in [1,GOrd), window width w>=2, and
+// Input:   odd integer k \in [1,GOrd], window width w>=2, and
 //          t = ceil( GOrdBitsize / w-1 )
 //
 // Output:  (k_t, ... , k_0) where k_i \in {+-1, +-3, ..., +-(2^(w-1) -1)}
@@ -23,7 +23,7 @@
 //          for i=0 to (t-1) do
 //              k_i = (k mod 2^w) - 2^(w-1)
 //              k = (k-k_i)/2^(w-1)
-//          k_t = k
+//          k_t = k mod 2^(w-1)
 //          return (k_t, ..., k_0)
 //
 // Remarks:
@@ -35,6 +35,9 @@
 //          3. In the multiplication algorithm we always access the precomputed point
 //             P[(|k_i|-1)/2]. Therefore here we just shift the |k_i| value left by
 //             one bit before storing it in absofKIs table.
+//          4. Caller should check k in range [1,GOrd] to ensure use of recoding will
+//             give correct results. This algorithm always recodes the t * (w-1) least
+//             significant bits of the provided k, interpreted as an unsigned integer.
 //
 VOID
 SYMCRYPT_CALL
@@ -50,11 +53,10 @@ SymCryptFixedWindowRecoding(
 {
     UINT32 T1 = 0;
     UINT32 T2 = 0;
-
-	// dcl - behavior of a shift operation where bits to shift > bits available is undefined
-	// our compiler will do this as (W % 32) if it goes over. May want to limit W, at least assert.
     UINT32 mask = ~(0xffffffff << W);       // Window mask = 2^w - 1 (e.g. 0x0000003f for w = 6)
     UINT32 smask = 0x1 << (W-1);            // Sign mask   = 2^(w-1) (e.g. 0x00000020 for w = 6)
+
+    SYMCRYPT_ASSERT( W < 32 );
 
     for (UINT32 i=0; i < nRecodedDigits - 1; i++)
     {
@@ -82,8 +84,10 @@ SymCryptFixedWindowRecoding(
         SymCryptIntDivPow2( piK, W-1, piK );                    // k := k / 2^(w-1)
     }
 
-    sigofKIs[nRecodedDigits - 1] = 0;                                            // The last sign is always positive
-    absofKIs[nRecodedDigits - 1] = (SymCryptIntGetValueLsbits32( piK ) & mask) >> 1; // Always k_t < 2^w
+    // The last sign is positive given k < GOrd => k_t < 2^w
+    sigofKIs[nRecodedDigits - 1] = 0;
+    // Belts and braces, select only the bottom w-1 bits (ensure all absofKIs represent odd values in range [1,2^(w-1)-1])
+    absofKIs[nRecodedDigits - 1] = (SymCryptIntGetValueLsbits32( piK ) & mask & ~smask) >> 1;
 }
 
 //
@@ -128,10 +132,11 @@ SymCryptWidthNafRecoding(
             UINT32          nRecodedDigits )
 {
     UINT32 T1 = 0;
-	// dcl - see comment above about shifting
     UINT32 mask = ~(0xffffffff << W);       // Window mask = 2^w - 1 (e.g. 0x0000003f for w = 6)
     UINT32 modulus = mask + 1;              // 2^w
     UINT32 smask = 0x1 << (W-1);            // Sign mask   = 2^(w-1) (e.g. 0x00000020 for w = 6)
+
+    SYMCRYPT_ASSERT( W < 32 );
 
     for (UINT32 i=0; i < nRecodedDigits; i++)
     {

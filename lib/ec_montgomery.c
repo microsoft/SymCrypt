@@ -55,6 +55,7 @@ SymCryptMontgomerySetDistinguished(
             SIZE_T              cbScratch )
 {
     SYMCRYPT_ASSERT( pCurve->type == SYMCRYPT_ECURVE_TYPE_MONTGOMERY );
+    SYMCRYPT_ASSERT( poDst->pCurve == pCurve );
 
     UNREFERENCED_PARAMETER( pbScratch );
     UNREFERENCED_PARAMETER( cbScratch );
@@ -64,10 +65,12 @@ SymCryptMontgomerySetDistinguished(
 
 //
 //  Verify poSrc1(X1, Z1) = poSrc2(X2, Z2)
-//  To avoid ModIv for 1/Z, we do
+//  To avoid ModInv for 1/Z, we do
 //     X1 * Z2 = X2 * Z1
 //
-//  This function currently does not support non-zero flag
+//  This function currently ignores the flags parameter as there is no distinction between equal and
+//  negative equal case in Single Projective Coordinates used in Montgomery curves. We accept the flags
+//  to maintain the same API as for other curves.
 //
 UINT32
 SYMCRYPT_CALL
@@ -76,7 +79,7 @@ SymCryptMontgomeryIsEqual(
     _In_    PCSYMCRYPT_ECPOINT  poSrc1,
     _In_    PCSYMCRYPT_ECPOINT  poSrc2,
             UINT32              flags,
-     _Out_writes_bytes_opt_(cbScratch)
+    _Out_writes_bytes_opt_(cbScratch)
             PBYTE               pbScratch,
             SIZE_T              cbScratch)
 {
@@ -86,8 +89,9 @@ SymCryptMontgomeryIsEqual(
     PSYMCRYPT_MODULUS     pmMod = pCurve->FMod;
     SIZE_T nBytes;
 
-    SYMCRYPT_ASSERT( flags == 0 );
+    SYMCRYPT_ASSERT( (flags & ~(SYMCRYPT_FLAG_ECPOINT_EQUAL|SYMCRYPT_FLAG_ECPOINT_NEG_EQUAL)) == 0 );
     SYMCRYPT_ASSERT( pCurve->type == SYMCRYPT_ECURVE_TYPE_MONTGOMERY );
+    SYMCRYPT_ASSERT( poSrc1->pCurve == pCurve && poSrc2->pCurve == pCurve );
     SYMCRYPT_ASSERT( cbScratch >= SYMCRYPT_INTERNAL_SCRATCH_BYTES_FOR_COMMON_ECURVE_OPERATIONS( pCurve ) );
 
     UNREFERENCED_PARAMETER( flags );
@@ -128,6 +132,7 @@ SymCryptMontgomeryIsZero(
     PSYMCRYPT_MODELEMENT peZ = NULL;    // Pointer to Z
 
     SYMCRYPT_ASSERT( pCurve->type == SYMCRYPT_ECURVE_TYPE_MONTGOMERY );
+    SYMCRYPT_ASSERT( poSrc->pCurve == pCurve );
 
     UNREFERENCED_PARAMETER( pbScratch );
     UNREFERENCED_PARAMETER( cbScratch );
@@ -140,28 +145,33 @@ SymCryptMontgomeryIsZero(
 
 VOID
 SymCryptMontgomeryDoubleAndAdd(
-    _In_                           PCSYMCRYPT_MODULUS    pmMod,
-    _In_                           PSYMCRYPT_MODELEMENT  peX1,
-    _In_                           PSYMCRYPT_MODELEMENT  peA24,
-    _In_                           PSYMCRYPT_MODELEMENT  peX2,
-    _In_                           PSYMCRYPT_MODELEMENT  peZ2,
-    _In_                           PSYMCRYPT_MODELEMENT  peX3,
-    _In_                           PSYMCRYPT_MODELEMENT  peZ3,
-    _In_                           PSYMCRYPT_MODELEMENT  peTemp1,
-    _In_                           PSYMCRYPT_MODELEMENT  peTemp2,
-    _Out_writes_bytes_(cbScratch)  PBYTE                 pbScratch,
-                                   SIZE_T                cbScratch)
+    _In_                            PCSYMCRYPT_MODULUS      pmMod,
+    _In_                            PCSYMCRYPT_MODELEMENT   peX1,
+    _In_opt_                        PCSYMCRYPT_MODELEMENT   peZ1,
+    _In_                            PCSYMCRYPT_MODELEMENT   peA24,
+    _Inout_                         PSYMCRYPT_MODELEMENT    peX2,
+    _Inout_                         PSYMCRYPT_MODELEMENT    peZ2,
+    _Inout_                         PSYMCRYPT_MODELEMENT    peX3,
+    _Inout_                         PSYMCRYPT_MODELEMENT    peZ3,
+    _Inout_                         PSYMCRYPT_MODELEMENT    peTemp1,
+    _Inout_                         PSYMCRYPT_MODELEMENT    peTemp2,
+    _Out_writes_bytes_(cbScratch)   PBYTE                   pbScratch,
+                                    SIZE_T                  cbScratch)
 /*
-We use the notation of the current RFC draft for TLS use of curve25519
-However, this is a generic Montgomery ladder implementation.
+We use the notation of ladd-1987-m-3, this is a generic Montgomery ladder implementation.
+This is similar to RFC7748 for TLS use of curve25519, however, unlike in the RFC, we support the case when Z1 != 1.
+
+When it is statically known that Z1 == 1 the caller can set peZ1 to NULL to skip one redundant modular multiplication.
+   Note that this will be revealed through timing, so peZ1 can only be set to NULL it is not secret that Z1 == 1.
+   Z1 == 1 is statically known for points which have just been imported into SymCrypt (and for the distinguished point of the
+   curve), and this knowledge is tracked in an ecPoint's normalized flag.
 
 The (X,Z) values represent an x-coordinate (X/Z) but it avoids the modular division.
-In our case, we don't need the general (X1,Z1) form for the first input, so we do not allow it.
 
 The value a24 is such that 4*a24 = a+2 where a is one of the Montgomery curve parameters.
 Thus, a24 = (a+2)/4. For curve25519, A = 486662, so a24 = 121666 (=0x01db42)
 
-Algorithm (from RFC draft), with all operations expanded
+Algorithm (ladd-1987-m-3), with all operations expanded
    A  = X2 + Z2
    AA = A^2
    B  = X2 - Z2
@@ -171,9 +181,11 @@ Algorithm (from RFC draft), with all operations expanded
    D  = X3 - Z3
    DA = D * A
    CB = C * B
-   X5 = (DA + CB)^2:
+   X5 = (DA + CB)^2
         DApCB = DA + CB
         X5 = DApCB^2
+   if peZ1 != NULL:
+        X5 = Z1 * X5
    Z5 = X1 * (DA - CB)^2
         DAmCB = DA - CB
         DAmCB2 = DAmCB ^ 2
@@ -184,7 +196,8 @@ Algorithm (from RFC draft), with all operations expanded
         BAE = BB + A24 * E
         Z4 = E * BAE
 
-If we write a = (X2,Z2) and b = (X3,Z3), then this algorithm computes (2*a) and (a+b) into (X4, Z4) and (X5,Z5).
+If we write a = (X2,Z2) and b = (X3,Z3), and a-b = (X1,Z1), then this algorithm computes
+(2*a) and (a+b) into (X4, Z4) and (X5,Z5) respectively.
 The Montgomery ladder uses this as follows:
 - Store xP and (x+1)P
 - To process a 0 bit in the scalar, apply the DoubleAndAdd to (xP,(x+1)P) to get (2xP, (2x+1)P)
@@ -192,14 +205,14 @@ The Montgomery ladder uses this as follows:
 This updates the state to either (2xP, (2x+1)P) or to ((2x+1)P, (2x+2)P) and corresponds to updating
 x to either 2x or 2x+1.
 
-The starting value is (0,P), represented as ((1,0),(P_x,1)
-The algorithm above, when applied to (1, 0, X, 1) produces:
+The starting value is (0,P), represented as ((1,0),(P_x,P_z)
+The algorithm above, when applied to (1, 0, X, Z) produces:
     A = 1, AA = 1, B = 1, BB = 1, E = 0,
-    C = X+1, D = X-1, DA = X-1, CB = X+1,
-    X5 = 4X^2, Z5 = 4X
+    C = X+Z, D = X-Z, DA = X-Z, CB = X+Z,
+    X5 = 4(X^2)Z, Z5 = 4X(Z^2)
     X4 = 1, Z4 = 0
-for an output of (1, 0, 4X^2, 4X)
-But (4X^2, 4X) is just another representation of (X,1) as only the quotient of the two numbers is significant.
+for an output of (1, 0, 4(X^2)Z, 4X(Z^2))
+But (4(X^2)Z, 4X(Z^2)) is just another representation of (X,Z) as only the quotient of the two numbers is significant.
 So even if an exponent starts with a bunch of 0 bits, the DoubleAndAdd-based function computes the right result in constant time.
 
 */
@@ -222,7 +235,7 @@ So even if an exponent starts with a bunch of 0 bits, the DoubleAndAdd-based fun
     // Z3 =             DA = D * A      = Z3 * Temp1
     SymCryptModMul( pmMod, peZ3, peTemp1, peZ3, pbScratch, cbScratch );
 
-    // From this point on, the outputs (X5,Z5) depend only on (X3,Z3) and X1
+    // From this point on, the outputs (X5,Z5) depend only on (X3,Z3) and (X1,Z1)
     // and the outputs (X4,Z4) only on (Temp1,Z2) and A24
     // We'll do the (X4,Z4) first
 
@@ -255,8 +268,14 @@ So even if an exponent starts with a bunch of 0 bits, the DoubleAndAdd-based fun
     // Z3 =             DAmCB = DA - CB     = Z3 - X3
     SymCryptModSub( pmMod, peZ3, peX3, peZ3, pbScratch, cbScratch );
 
-    // X3 =             X5 = DApCB^2         = Temp1 ^ 2
+    // X3 =             DApCB^2 = Temp1 ^ 2 ( = X5 when (peZ1 == NULL) => Z1 == 1)
     SymCryptModSquare( pmMod, peTemp1, peX3, pbScratch, cbScratch );
+
+    if (peZ1 != NULL) // source point is not normalized
+    {
+    // X3 =             X5 = Z1 * DApCB^2   = Z1 * X3
+    SymCryptModMul( pmMod, peZ1, peX3, peX3, pbScratch, cbScratch );
+    }
 
     // Z3 =             DAmCB2 = DAmCB ^ 2  = Z3 ^ 2
     SymCryptModSquare( pmMod, peZ3, peZ3, pbScratch, cbScratch );
@@ -285,12 +304,13 @@ SymCryptMontgomeryPointScalarMul(
     SYMCRYPT_ERROR        scError = SYMCRYPT_NO_ERROR;
 
     PSYMCRYPT_MODULUS     pmMod;
-    PSYMCRYPT_MODELEMENT  peX1, peA24, peX2, peZ2, peX3, peZ3, peTemp1, peTemp2, peResult;
+    PSYMCRYPT_MODELEMENT  peX1, peZ1, peA24, peX2, peZ2, peX3, peZ3, peTemp1, peTemp2, peResult;
     UINT32                i, nBytes, nDigits, cond, newcond, nCommon;
     PBYTE                 pBegin;
     SIZE_T                cbAllScratch;
 
     SYMCRYPT_ASSERT( pCurve->type == SYMCRYPT_ECURVE_TYPE_MONTGOMERY );
+    SYMCRYPT_ASSERT( (poSrc == NULL || poSrc->pCurve == pCurve) && poDst->pCurve == pCurve );
 
     // Make sure we only specify the correct flags
     if ((flags & ~SYMCRYPT_FLAG_ECC_LL_COFACTOR_MUL) != 0)
@@ -347,28 +367,21 @@ SymCryptMontgomeryPointScalarMul(
 
     peA24 = pCurve->A;
 
-    // X1 = X
+    // X1 = X, Z1 = Z
     peX1 = SYMCRYPT_INTERNAL_ECPOINT_COORDINATE( 0, pCurve, poSrc);
+    peZ1 = SYMCRYPT_INTERNAL_ECPOINT_COORDINATE( 1, pCurve, poSrc);
 
-    // Normalize the point from (X,Z) to X
-    if (!poSrc->normalized)
-    {
-        peResult = SYMCRYPT_INTERNAL_ECPOINT_COORDINATE( 1, pCurve, poSrc);
-        scError = SymCryptModInv( pmMod, peResult, peResult, 0, pbScratch, cbScratch ); // 1/Z
-        if( scError != SYMCRYPT_NO_ERROR )
-        {
-            goto cleanup;
-        }
-
-        SymCryptModMul( pmMod, peX1, peResult, peX1, pbScratch, cbScratch );            // X = X/Z
-        SymCryptModElementSetValueUint32( 1, pmMod, peResult, pbScratch, cbScratch );   // Set Z to 1
-    }
-
-    // X2 = 1, Z2 = 0, X3 = X (base point) Z3 = 1
+    // X2 = 1, Z2 = 0, X3 = X, Z3 = Z
     SymCryptModElementSetValueUint32( 1, pmMod, peX2, pbScratch, cbScratch );
     SymCryptModElementSetValueUint32( 0, pmMod, peZ2, pbScratch, cbScratch );
     SymCryptModElementCopy( pmMod, peX1, peX3 );
-    SymCryptModElementSetValueUint32( 1, pmMod, peZ3, pbScratch, cbScratch );
+    SymCryptModElementCopy( pmMod, peZ1, peZ3 );
+
+    if ( poSrc->normalized )
+    {
+        // Set peZ1 to NULL to avoid redundant multiplications in SymCryptMontgomeryDoubleAndAdd
+        peZ1 = NULL;
+    }
 
     //
     //  Montgomery ladder scalar multiplication
@@ -389,7 +402,7 @@ SymCryptMontgomeryPointScalarMul(
 
         cond = newcond;
 
-        SymCryptMontgomeryDoubleAndAdd( pmMod, peX1, peA24, peX2, peZ2, peX3, peZ3, peTemp1, peTemp2, pbScratch, cbScratch );
+        SymCryptMontgomeryDoubleAndAdd( pmMod, peX1, peZ1, peA24, peX2, peZ2, peX3, peZ3, peTemp1, peTemp2, pbScratch, cbScratch );
     }
 
     // Now put them back in the normal order
@@ -403,7 +416,9 @@ SymCryptMontgomeryPointScalarMul(
         while (i!=0)
         {
             i--;
-            SymCryptMontgomeryDoubleAndAdd( pmMod, peX1, peA24, peX2, peZ2, peX3, peZ3, peTemp1, peTemp2, pbScratch, cbScratch );
+            // We only use the doubling output here, so we definitely don't need to provide Z1
+            // We could refactor to have a separate SymCryptMontgomeryDouble function but for Curve25519 this loop is ~1% of runtime
+            SymCryptMontgomeryDoubleAndAdd( pmMod, peX1, NULL, peA24, peX2, peZ2, peX3, peZ3, peTemp1, peTemp2, pbScratch, cbScratch );
         }
     }
 
@@ -415,7 +430,7 @@ SymCryptMontgomeryPointScalarMul(
     peResult = SYMCRYPT_INTERNAL_ECPOINT_COORDINATE( 1, pCurve, poDst);
     SymCryptModElementCopy( pCurve->FMod, peZ2, peResult );
 
-    poDst->normalized = 0;
+    poDst->normalized = FALSE;
 
     scError = SYMCRYPT_NO_ERROR;
 

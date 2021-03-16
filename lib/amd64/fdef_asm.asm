@@ -32,7 +32,7 @@ include fdef_mul_macros.asm
         ; rdx = Src2
         ; r8 = Dst
         ; r9 = nDigits
-        
+
         add     r9d, r9d        ; loop over each half digit
         xor     rax, rax
         xor     r10, r10
@@ -46,15 +46,15 @@ SymCryptFdefRawAddAsmLoop:
         mov     rax,[rcx + 8]
         adc     rax,[rdx + 8]
         mov     [r8 + 8], rax
-        
+
         mov     rax,[rcx + 16]
         adc     rax,[rdx + 16]
         mov     [r8 + 16], rax
-        
+
         mov     rax,[rcx + 24]
         adc     rax,[rdx + 24]
         mov     [r8 + 24], rax
-        
+
         lea     rcx, [rcx + 32]
         lea     rdx, [rdx + 32]
         lea     r8,  [r8  + 32]
@@ -63,9 +63,9 @@ SymCryptFdefRawAddAsmLoop:
 
         mov     rax, r10
         adc     rax, r10
-                
+
         ret
-        
+
         LEAF_END SymCryptFdefRawAddAsm, _TEXT
 
 
@@ -83,7 +83,7 @@ SymCryptFdefRawAddAsmLoop:
         ; rdx = Src2
         ; r8 = Dst
         ; r9 = nDigits
-        
+
         add     r9d, r9d        ; loop over each half digit
         xor     rax, rax
         xor     r10, r10
@@ -97,15 +97,15 @@ SymCryptFdefRawSubAsmLoop:
         mov     rax,[rcx + 8]
         sbb     rax,[rdx + 8]
         mov     [r8 + 8], rax
-        
+
         mov     rax,[rcx + 16]
         sbb     rax,[rdx + 16]
         mov     [r8 + 16], rax
-        
+
         mov     rax,[rcx + 24]
         sbb     rax,[rdx + 24]
         mov     [r8 + 24], rax
-        
+
         lea     rcx, [rcx + 32]
         lea     rdx, [rdx + 32]
         lea     r8,  [r8  + 32]
@@ -114,9 +114,9 @@ SymCryptFdefRawSubAsmLoop:
 
         mov     rax, r10
         adc     rax, r10
-                
+
         ret
-        
+
         LEAF_END SymCryptFdefRawSubAsm, _TEXT
 
 
@@ -134,7 +134,7 @@ SymCryptFdefRawSubAsmLoop:
         add     r8d, r8d            ; loop over half digits
 
         movd    xmm0, r9d           ; xmm0[0] = mask
-        pcmpeqd xmm1, xmm1          ; xmm1 = ff...ff    
+        pcmpeqd xmm1, xmm1          ; xmm1 = ff...ff
         pshufd  xmm0, xmm0, 0       ; xmm0[0..3] = mask
         pxor    xmm1, xmm0          ; xmm1 = not Mask
 
@@ -142,14 +142,14 @@ SymCryptFdefMaskedCopyAsmLoop:
         movdqa  xmm2, [rcx]         ; xmm2 = pSrc[0]
         movdqa  xmm3, [rdx]         ; xmm3 = pDst[0]
         pand    xmm2, xmm0          ;
-        pand    xmm3, xmm1          ; 
+        pand    xmm3, xmm1          ;
         por     xmm2, xmm3
         movdqa  [rdx], xmm2
 
         movdqa  xmm2, [rcx + 16]    ; xmm2 = pSrc[0]
         movdqa  xmm3, [rdx + 16]    ; xmm3 = pDst[0]
         pand    xmm2, xmm0          ;
-        pand    xmm3, xmm1          ; 
+        pand    xmm3, xmm1          ;
         por     xmm2, xmm3
         movdqa  [rdx + 16], xmm2
 
@@ -205,7 +205,7 @@ SymCryptFdefRawMulAsm_Frame        ends
         ;   for each word in Src1:
         ;       Dst += Src2 * word
         ; Register assignments
-        ; 
+        ;
         ; rax = tmp for mul
         ; rbx = word from Src1 to multiply with
         ; rcx = pSrc1  (updated in outer loop)
@@ -291,10 +291,10 @@ SymCryptFdefRawMulAsmLoop2:
         pop     r15
         pop     r14
         pop     r13
-        pop     r12      
+        pop     r12
         pop     rbx
         ret
-               
+
     NESTED_END      SymCryptFdefRawMulAsm, _TEXT
 
 ; VOID
@@ -546,7 +546,7 @@ SymCryptFdefRawSquareAsmThirdPass:
 
         NESTED_ENTRY    SymCryptFdefMontgomeryReduceAsm, _TEXT
 
-        rex_push_reg    rbx 
+        rex_push_reg    rbx
         push_reg        r12
         push_reg        r13
         push_reg        r14
@@ -554,7 +554,7 @@ SymCryptFdefRawSquareAsmThirdPass:
         push_reg        rsi
         push_reg        rdi
         push_reg        rbp
-        
+
         END_PROLOGUE
 
         mov     r11, rdx        ; r11 = pSrc
@@ -639,7 +639,7 @@ SymCryptFdefMontgomeryReduceAsmInnerloop:
 
         ;
         ; Most of the work is done; now all that is left is subtract the modulus if it is smaller than the result
-        ; 
+        ;
 
         ; First we compute the pSrc result minus the modulus into the destination
         mov     esi, ebp        ; loop ctr
@@ -691,12 +691,12 @@ SymCryptFdefMontgomeryReduceAsmSubLoop:
         dec     esi
         jnz     SymCryptFdefMontgomeryReduceAsmSubLoop
 
-        ; Finally a masked copy form pSrc to pDst 
+        ; Finally a masked copy form pSrc to pDst
         ; copy if: r14 == 0 && Cy = 1
         sbb     r14d, 0
 
         movd    xmm0, r14d          ; xmm0[0] = mask
-        pcmpeqd xmm1, xmm1          ; xmm1 = ff...ff    
+        pcmpeqd xmm1, xmm1          ; xmm1 = ff...ff
         pshufd  xmm0, xmm0, 0       ; xmm0[0..3] = mask
         pxor    xmm1, xmm0          ; xmm1 = not Mask
 
@@ -706,28 +706,28 @@ SymCryptFdefMontgomeryReduceAsmMaskedCopyLoop:
         movdqa  xmm2, [r11]         ; xmm2 = pSrc[0]
         movdqa  xmm3, [r8]          ; xmm3 = pDst[0]
         pand    xmm2, xmm0          ;
-        pand    xmm3, xmm1          ; 
+        pand    xmm3, xmm1          ;
         por     xmm2, xmm3
         movdqa  [r8], xmm2
 
         movdqa  xmm2, [r11 + 16]    ; xmm2 = pSrc[0]
         movdqa  xmm3, [r8  + 16]    ; xmm3 = pDst[0]
         pand    xmm2, xmm0          ;
-        pand    xmm3, xmm1          ; 
+        pand    xmm3, xmm1          ;
         por     xmm2, xmm3
         movdqa  [r8  + 16], xmm2
 
         movdqa  xmm2, [r11 + 32]    ; xmm2 = pSrc[0]
         movdqa  xmm3, [r8 + 32]     ; xmm3 = pDst[0]
         pand    xmm2, xmm0          ;
-        pand    xmm3, xmm1          ; 
+        pand    xmm3, xmm1          ;
         por     xmm2, xmm3
         movdqa  [r8 + 32], xmm2
 
         movdqa  xmm2, [r11 + 48]    ; xmm2 = pSrc[0]
         movdqa  xmm3, [r8  + 48]    ; xmm3 = pDst[0]
         pand    xmm2, xmm0          ;
-        pand    xmm3, xmm1          ; 
+        pand    xmm3, xmm1          ;
         por     xmm2, xmm3
         movdqa  [r8  + 48], xmm2
 
@@ -749,7 +749,7 @@ SymCryptFdefMontgomeryReduceAsmMaskedCopyLoop:
         pop     r12
         pop     rbx
         ret
-               
+
     NESTED_END      SymCryptFdefMontgomeryReduceAsm, _TEXT
 
 
@@ -815,12 +815,12 @@ SymCryptFdefMontgomeryReduceAsmMaskedCopyLoop:
         ; addition carry = 0 and subtraction carry = 0: pick 2nd result
         ; addition carry = 0 and subtraction carry = 1: pick first result
 
-        xor     rcx, r12            ; 0 = 2nd result, 1 = first result               
-        
+        xor     rcx, r12            ; 0 = 2nd result, 1 = first result
+
         xor     rax, rdx
         xor     rbx, r8
         xor     r10, r13
-        xor     r11, r14            
+        xor     r11, r14
 
         and     rax, rcx
         and     rbx, rcx
@@ -833,7 +833,7 @@ SymCryptFdefMontgomeryReduceAsmMaskedCopyLoop:
         xor     r14, r11
 
         mov     [r9 +  0], rdx
-        mov     [r9 +  8], r8 
+        mov     [r9 +  8], r8
         mov     [r9 + 16], r13
         mov     [r9 + 24], r14
 
@@ -983,7 +983,7 @@ SymCryptFdefMontgomeryReduceAsmMaskedCopyLoop:
         ALTERNATE_ENTRY     SymCryptFdefMontgomerReduce256AsmInternal
         ; Invariant:
         ;   common prologue used
-        ;   256-bit result in (rdi, rbp, r10, r11, r12, r13, r14, r15)
+        ;   512-bit result in (rdi, rbp, r10, r11, r12, r13, r14, r15)
         ;   rcx = pmMod
         ;   r9 = peDst
 
@@ -1016,7 +1016,7 @@ SymCryptFdefMontgomeryReduceAsmMaskedCopyLoop:
         adc     r15, rdx
 
         sbb     rbx, rbx        ; Carry out from final addition in mask form
-    
+
         ; reduced value in (r12, r13, r14, r15, -rbx), and it is less than 2*Modulus
 
         mov     rdi, r12
@@ -1035,12 +1035,12 @@ SymCryptFdefMontgomeryReduceAsmMaskedCopyLoop:
         ; addition carry = 0 and subtraction carry = 0: pick 2nd result
         ; addition carry = 0 and subtraction carry = 1: pick first result
 
-        xor     rcx, rbx            ; 0 = 2nd result, 1 = first result               
-        
+        xor     rcx, rbx            ; 0 = 2nd result, 1 = first result
+
         xor     r12, rdi
         xor     r13, rbp
         xor     r14, r10
-        xor     r15, r11            
+        xor     r15, r11
 
         and     r12, rcx
         and     r13, rcx
@@ -1103,8 +1103,8 @@ SymCryptFdefMontgomeryReduceAsmMaskedCopyLoop:
         NESTED_END      SymCryptFdefMontgomeryReduce256Asm, _TEXT
 
 
-;VOID 
-;SYMCRYPT_CALL 
+;VOID
+;SYMCRYPT_CALL
 ;SymCryptFdefModSquareMontgomery256(
 ;    _In_                            PCSYMCRYPT_MODULUS      pmMod,
 ;    _In_                            PCSYMCRYPT_MODELEMENT   peSrc,
@@ -1168,7 +1168,7 @@ SymCryptFdefMontgomeryReduceAsmMaskedCopyLoop:
         mul     rbx
         add     r13, rax
         adc     r14, rdx        ; no overflow from this
-       
+
         ; double these terms
         xor     r15, r15
 
@@ -1237,7 +1237,7 @@ SymCryptFdefMontgomeryReduceAsmMaskedCopyLoop:
         ;   for each word in Src1:
         ;       Dst += Src2 * word
         ; Register assignments
-        ; 
+        ;
         ; rax = tmp for mul
         ; rbx = word from Src1 to multiply with
         ; rcx = pSrc1  (updated in outer loop)
@@ -1291,7 +1291,7 @@ SymCryptFdefRawMul512AsmLoopOuter:
         jnz     SymCryptFdefRawMul512AsmLoopOuter
 
         MULT_COMMON_EPILOGUE
-               
+
         NESTED_END      SymCryptFdefRawMul512Asm, _TEXT
 
 ; VOID
@@ -1527,7 +1527,7 @@ SymCryptFdefMontgomeryReduce512AsmOuterLoop:
 
         ;
         ; Most of the work is done; now all that is left is subtract the modulus if it is smaller than the result
-        ; 
+        ;
 
         ; First we compute the pSrc result minus the modulus into the destination
         mov     esi, ebp        ; loop ctr
@@ -1572,7 +1572,7 @@ SymCryptFdefMontgomeryReduce512AsmOuterLoop:
         lea     r9,[r9 + 64]
         lea     r12,[r12 + 64]
 
-        ; Finally a masked copy form pSrc to pDst 
+        ; Finally a masked copy form pSrc to pDst
         ; copy if: r14 == 0 && Cy = 1
         sbb     r14d, 0
 
@@ -1643,7 +1643,7 @@ SymCryptFdefMontgomeryReduce512AsmMaskedCopyLoop:
         ;   for each word in Src1:
         ;       Dst += Src2 * word
         ; Register assignments
-        ; 
+        ;
         ; rax = tmp for mul
         ; rbx = word from Src1 to multiply with
         ; rcx = pSrc1  (updated in outer loop)
@@ -1707,7 +1707,7 @@ SymCryptFdefRawMul1024AsmLoopOuter:
         jnz     SymCryptFdefRawMul1024AsmLoopOuter
 
         MULT_COMMON_EPILOGUE
-               
+
         NESTED_END      SymCryptFdefRawMul1024Asm, _TEXT
 
 ; VOID
@@ -2059,7 +2059,7 @@ SymCryptFdefMontgomeryReduce1024AsmOuterLoop:
 
         ;
         ; Most of the work is done; now all that is left is subtract the modulus if it is smaller than the result
-        ; 
+        ;
 
         ; First we compute the pSrc result minus the modulus into the destination
         mov     esi, ebp        ; loop ctr
@@ -2111,7 +2111,7 @@ SymCryptFdefMontgomeryReduce1024AsmSubLoop:
         dec     esi
         jnz     SymCryptFdefMontgomeryReduce1024AsmSubLoop
 
-        ; Finally a masked copy form pSrc to pDst 
+        ; Finally a masked copy form pSrc to pDst
         ; copy if: r14 == 0 && Cy = 1
         sbb     r14d, 0
 

@@ -58,7 +58,7 @@
             4) If c == FE2IP(x(P)) mod r, return TRUE.
                Otherwise return FALSE.
 
-FE2IP is a P1363 function that casts a field element to an 
+FE2IP is a P1363 function that casts a field element to an
 integer (MSB_FIRST).  See Section 5.5.5 of P1363.
 */
 
@@ -67,7 +67,7 @@ integer (MSB_FIRST).  See Section 5.5.5 of P1363.
 // the original CNG implementation:
 //
 // Initially both implementations truncate the last **bytes**
-// of the hash that are over the group byte length. Then if 
+// of the hash that are over the group byte length. Then if
 // the bit length of the hash is still bigger than the bit
 // length of the group order, ...
 //
@@ -170,7 +170,7 @@ SymCryptEcDsaSignEx(
     PSYMCRYPT_MODELEMENT    peSigC = NULL;
     PSYMCRYPT_MODELEMENT    peSigD = NULL;
     PSYMCRYPT_MODELEMENT    peTmp = NULL;
-    
+
     PBYTE                   pbX = NULL;
 
     UINT32  nDigitsInt = 0;
@@ -251,10 +251,10 @@ SymCryptEcDsaSignEx(
     SYMCRYPT_ASSERT( peTmp != NULL);
 
     // Truncate the message according to the flags
-    scError = SymCryptEcDsaTruncateHash( 
-                    pCurve, 
-                    pbHashValue, 
-                    cbHashValue, 
+    scError = SymCryptEcDsaTruncateHash(
+                    pCurve,
+                    pbHashValue,
+                    cbHashValue,
                     flags,
                     peMsghash,
                     piTmp,
@@ -276,15 +276,20 @@ SymCryptEcDsaSignEx(
         }
         else
         {
-            SymCryptIntCopy( piK, piMul );
-            SymCryptEcpointScalarMul( pCurve, piMul, NULL, 0, poKG, pbScratch, cbScratchInternal );  // Generate k*G
-
-            SymCryptIntToModElement( piMul, pCurve->GOrd, peTmp, pbScratch, cbScratchInternal );
-
-            // Make sure that the K passed in is not zero
-            if (SymCryptModElementIsZero( pCurve->GOrd, peTmp ))
+            // Ensure that piK is in the range [1, GOrd-1]
+            if( SymCryptIntIsEqualUint32( piK, 0 ) ||
+                !SymCryptIntIsLessThan( piK, SymCryptIntFromModulus( pCurve->GOrd ) ) )
             {
                 scError = SYMCRYPT_INVALID_ARGUMENT;
+                goto cleanup;
+            }
+
+            SymCryptIntCopy( piK, piMul );
+            SymCryptIntToModElement( piMul, pCurve->GOrd, peTmp, pbScratch, cbScratchInternal );
+
+            scError = SymCryptEcpointScalarMul( pCurve, piMul, NULL, 0, poKG, pbScratch, cbScratchInternal );  // Generate k*G
+            if ( scError != SYMCRYPT_NO_ERROR )
+            {
                 goto cleanup;
             }
         }
@@ -296,15 +301,15 @@ SymCryptEcDsaSignEx(
         }
 
         // Get the x coordinates from KG
-        scError = SymCryptEcpointGetValue( 
-                        pCurve, 
-                        poKG, 
-                        SYMCRYPT_NUMBER_FORMAT_MSB_FIRST, 
-                        SYMCRYPT_ECPOINT_FORMAT_X, 
-                        pbX, 
-                        cbX, 
+        scError = SymCryptEcpointGetValue(
+                        pCurve,
+                        poKG,
+                        SYMCRYPT_NUMBER_FORMAT_MSB_FIRST,
+                        SYMCRYPT_ECPOINT_FORMAT_X,
+                        pbX,
+                        cbX,
                         0,
-                        pbScratch, 
+                        pbScratch,
                         cbScratchInternal );
         if ( scError != SYMCRYPT_NO_ERROR )
         {
@@ -327,11 +332,11 @@ SymCryptEcDsaSignEx(
             SymCryptModAdd( pCurve->GOrd, peSigD, peSigD, peSigD, pbScratch, cbScratchInternal );
         }
 
-        SymCryptModMul( pCurve->GOrd, peSigC, peSigD, peSigD, pbScratch, cbScratchInternal );                   // s * c 
+        SymCryptModMul( pCurve->GOrd, peSigC, peSigD, peSigD, pbScratch, cbScratchInternal );                   // s * c
         SymCryptModAdd( pCurve->GOrd, peMsghash, peSigD, peSigD, pbScratch, cbScratchInternal );                // msghash + s*c
         SymCryptModMul( pCurve->GOrd, peSigD, peTmp, peSigD, pbScratch, cbScratchInternal );                    // ( msghash + s*c ) / k
 
-    } while ( (piK == NULL) && 
+    } while ( (piK == NULL) &&
               ( SymCryptModElementIsZero( pCurve->GOrd, peSigC ) |
                 SymCryptModElementIsZero( pCurve->GOrd, peSigD ) ) );
 

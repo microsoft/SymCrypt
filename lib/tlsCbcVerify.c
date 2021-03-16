@@ -146,6 +146,8 @@ SymCryptTlsCbcHmacVerifyCore(
     NATIVE_UINT m;
     NATIVE_UINT nPaddingError = 0;     // nonzero if a padding byte value is wrong.
     UINT32 next;
+    UINT32 cbHashPrefix;
+    UINT32 cbExtendedData;
     UINT32 totalBytesHashed;
     UINT32 hashPaddingFinal;
     UINT32 resultHashBlockIndex;
@@ -201,16 +203,18 @@ SymCryptTlsCbcHmacVerifyCore(
         cbData = u32;
     }
 
-    // From here on out we address bytes by the index into the message, starting
-    // our counting at 0 at the start of the hash computation.
-    // This is easiest as it aligns us with the hash input block, and simplifies
-    // hash padding computations and word accesses.
+    // From here on out we maintain indices into a conceptual extended buffer with length cbExtendedData,
+    // and index 0 at the start of the hash computation.
+    // This aligns us with the hash input block, and simplifies hash padding computations and word
+    // accesses.
+    // However, we must always subtract cbHashPrefix from indices before using them to access bytes
+    // in pbData, as the HashPrefix was already hashed into the MAC state.
 
-    next = (UINT32)pState->dataLengthL;         // # bytes processed so far.
-    pbData -= next;
-    cbData += next;
+    cbHashPrefix = (UINT32)pState->dataLengthL;     // # bytes already hashed into the MAC state
+    cbExtendedData = (UINT32)cbData + cbHashPrefix; // total # bytes that the conceptual extended buffer has
+    next = cbHashPrefix;                            // next index we will consider for processing (start of pbData)
 
-    totalBytesHashed = (UINT32)cbData - pHash->resultSize - cbPad;
+    totalBytesHashed = cbExtendedData - pHash->resultSize - cbPad;
     SYMCRYPT_STORE_MSBFIRST32( &hashPaddingFinal, totalBytesHashed * 8 );      // Length padding for result hash block
 
     // We need to figure out what the index is of the last hash input block in the computation
@@ -219,7 +223,7 @@ SymCryptTlsCbcHmacVerifyCore(
     // We've limited the max input for simplicity (everything fits in 32 bits)
     // We also avoid 64-bit operations as their implementation on 32-bit architectures might not
     // always be constant-time.
-    // This computation works for SHA-1, SHA-256, and SHA-512 which is all we care about
+    // This computation works for SHA-1, SHA-256, and SHA-384 which is all we care about
     // We avoid using % as the runtime isn't constant and our inputs are secret.
 
     // First the actual # bytes in the real and phantom computation
@@ -231,10 +235,10 @@ SymCryptTlsCbcHmacVerifyCore(
     lastHashBlockIndex   = (lastHashBlockIndex   + pHash->inputBlockSize - 1) & ~(pHash->inputBlockSize - 1);
 
     // Compute the indices where the MAC and padding start
-    iPaddingStart = (UINT32)cbData - cbPad;
+    iPaddingStart = cbExtendedData - cbPad;
     iMacStart = iPaddingStart - pHash->resultSize;
 
-    SYMCRYPT_ASSERT( iMacStart < (1<<15) );    // Fail if the last computation underflowed.
+    SYMCRYPT_ASSERT( iMacStart < cbExtendedData );    // Fail if the last computation underflowed.
 
     // Align our handling to the native word size so that we can safely use native words
     if( (next & (NATIVE_BYTES - 1)) != 0 )
@@ -245,7 +249,7 @@ SymCryptTlsCbcHmacVerifyCore(
         SYMCRYPT_ASSERT( ( (next ^ pState->bytesInBuffer) & (NATIVE_BYTES - 1) ) == 0 );
 
         // Read a word; as the MAC value is > 8 bytes this won't overflow the buffer
-        w = *(NATIVE_UINT *) &pbData[next];
+        w = *(NATIVE_UINT *) &pbData[0];
         m = SymCryptNMaskGe( next, iMacStart );
         mInData = ~m;
         mInMac = m;
@@ -274,9 +278,9 @@ SymCryptTlsCbcHmacVerifyCore(
     padBytes = MASKNB_BROADCAST( cbPad );
 
     // Now we can loop over the data in whole words
-    while( next <= cbData - NATIVE_BYTES )
+    while( next <= cbExtendedData - NATIVE_BYTES )
     {
-        w = *(NATIVE_UINT *) &pbData[next];
+        w = *(NATIVE_UINT *) &pbData[next - cbHashPrefix];
 
         m = SymCryptNMaskGe( next, iMacStart );
         mInMac = m;
@@ -324,14 +328,14 @@ SymCryptTlsCbcHmacVerifyCore(
         next += NATIVE_BYTES;
     }
 
-    if( next < cbData )
+    if( next < cbExtendedData )
     {
         // Process the remaining bytes. This can't be data so we only do the MAC and padding...
         // The main difference is that we read the last full word in pbData and then align it
-        // as if we read the next word starting at pbData[next]
+        // as if we read the next word starting at pbData[next - cbHashPrefix]
         w = *(NATIVE_UINT *) &pbData[ cbData - NATIVE_BYTES ];      // last word
-        w >>= 8 * (next - cbData + NATIVE_BYTES );                  // Shift to right location
-        padBytes >>= 8 * (next - cbData + NATIVE_BYTES );           // Zero padBytes that are never read
+        w >>= 8 * (next - cbExtendedData + NATIVE_BYTES );          // Shift to right location
+        padBytes >>= 8 * (next - cbExtendedData + NATIVE_BYTES );   // Zero padBytes that are never read
 
         m = SymCryptNMaskGe( next, iPaddingStart );
         mInPadding = m;
@@ -340,7 +344,7 @@ SymCryptTlsCbcHmacVerifyCore(
         *(NATIVE_UINT *)&pbMacValue[next & (cbMacValue - 1)] |= w & mInMac;
 
         nPaddingError |= (w ^ padBytes) & mInPadding;
-        next = (UINT32) cbData;
+        next = cbExtendedData;
     }
 
     // At this point we still have to potentially do one more hash block.
@@ -384,14 +388,14 @@ SymCryptTlsCbcHmacVerifyCore(
     // Check that we have the right hash result
     //for( SIZE_T t=0; t < cbMacValue; t++ )
     //{
-    //    SYMCRYPT_ASSERT( pbMacValue[ (iMacStart + t) & (cbMacValue - 1 ) ] == (t >= pHash->resultSize ? 0 : pbData[iMacStart + t] ));
+    //    SYMCRYPT_ASSERT( pbMacValue[ (iMacStart + t) & (cbMacValue - 1 ) ] == (t >= pHash->resultSize ? 0 : pbData[iMacStart - cbHashPrefix + t] ));
     //}
 
     SymCryptScsRotateBuffer(  pbMacValue, cbMacValue, iMacStart & (cbMacValue - 1) );
 
     //for( SIZE_T t=0; t < cbMacValue; t++ )
     //{
-    //    SYMCRYPT_ASSERT( pbMacValue[ t ] == (t >= pHash->resultSize ? 0 : pbData[iMacStart + t] ));
+    //    SYMCRYPT_ASSERT( pbMacValue[ t ] == (t >= pHash->resultSize ? 0 : pbData[iMacStart - cbHashPrefix + t] ));
     //}
 
 cleanup:

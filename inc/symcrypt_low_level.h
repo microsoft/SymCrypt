@@ -2612,6 +2612,8 @@ SymCryptEcpointScalarMul(
 //
 // Requirements:
 //  - The piScalar must have SymCryptEcurveDigitsofScalarMultiplier( pCurve ) digits.
+//  - For Non-Montgomery curves, the piScalar must be in the range [0, SubgroupOrder].
+//      - This is the caller's responsibility, it is not checked.
 //  - cbScratch >= SYMCRYPT_SCRATCH_BYTES_FOR_SCALAR_ECURVE_OPERATIONS( pCurve ).
 //
 
@@ -2676,7 +2678,8 @@ SymCryptEcDsaSignEx(
 // a value of k in peK. It is used in verifying test vectors of ECDSA.
 //
 // Requirements:
-//  - If piK is not NULL it must have SymCryptEcurveDigitsofScalarMultiplier( pCurve ) digits.
+//  - If piK is not NULL it must have SymCryptEcurveDigitsofScalarMultiplier( pCurve ) digits, and
+//    must be in range [1, SubgroupOrder-1]
 //
 
 //===================================================================

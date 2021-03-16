@@ -532,7 +532,10 @@ SymCryptFdefIntModPow2(
 
     SYMCRYPT_ASSERT( piSrc->nDigits == piDst->nDigits );
 
-    memcpy( SYMCRYPT_FDEF_INT_PUINT32( piDst ), SYMCRYPT_FDEF_INT_PUINT32( piSrc ), nWords * sizeof( UINT32 ) );
+    if( piSrc != piDst )
+    {
+        memcpy( SYMCRYPT_FDEF_INT_PUINT32( piDst ), SYMCRYPT_FDEF_INT_PUINT32( piSrc ), nWords * sizeof( UINT32 ) );
+    }
 
     if( expWords >= nWords )
     {

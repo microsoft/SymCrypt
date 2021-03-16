@@ -8,7 +8,7 @@
 
 VOID
 SYMCRYPT_CALL
-SymCryptEcbEncrypt( 
+SymCryptEcbEncrypt(
     _In_                        PCSYMCRYPT_BLOCKCIPHER  pBlockCipher,
     _In_                        PCVOID                  pExpandedKey,
     _In_reads_( cbData )        PCBYTE                  pbSrc,
@@ -30,7 +30,7 @@ SymCryptEcbEncrypt(
     //
     // To avoid buffer overruns we truncate the work to an integral number of blocks.
     //
-    
+
     for( i=0; i<cbToDo; i+= pBlockCipher->blockSize )
     {
         (*pBlockCipher->encryptFunc)( pExpandedKey, pbSrc + i, pbDst + i );
@@ -39,7 +39,7 @@ SymCryptEcbEncrypt(
 
 VOID
 SYMCRYPT_CALL
-SymCryptEcbDecrypt( 
+SymCryptEcbDecrypt(
     _In_                        PCSYMCRYPT_BLOCKCIPHER  pBlockCipher,
     _In_                        PCVOID                  pExpandedKey,
     _In_reads_( cbData )       PCBYTE                  pbSrc,
@@ -48,7 +48,7 @@ SymCryptEcbDecrypt(
 {
     SIZE_T i;
     SIZE_T cbToDo = cbData & ~(pBlockCipher->blockSize - 1);
-    
+
     if( pBlockCipher->ecbDecryptFunc != NULL )
     {
         //
@@ -75,13 +75,13 @@ SymCryptEcbDecrypt(
 //
 VOID
 SYMCRYPT_CALL
-SymCryptCbcEncrypt( 
+SymCryptCbcEncrypt(
     _In_                        PCSYMCRYPT_BLOCKCIPHER  pBlockCipher,
     _In_                        PCVOID                  pExpandedKey,
-    _Inout_updates_( pBlockCipher->blockSize ) 
+    _Inout_updates_( pBlockCipher->blockSize )
                                 PBYTE                   pbChainingValue,
-    _In_reads_( cbData )       PCBYTE                  pbSrc,
-    _Out_writes_( cbData )      PBYTE                   pbDst,  
+    _In_reads_( cbData )        PCBYTE                  pbSrc,
+    _Out_writes_( cbData )      PBYTE                   pbDst,
                                 SIZE_T                  cbData )
 {
     SYMCRYPT_ALIGN BYTE    buf[SYMCRYPT_MAX_BLOCK_SIZE];
@@ -100,9 +100,9 @@ SymCryptCbcEncrypt(
     }
 
     blockSize = pBlockCipher->blockSize;
-    
+
     SYMCRYPT_ASSERT( blockSize <= SYMCRYPT_MAX_BLOCK_SIZE );
-    
+
 
     //
     // Compute the end of the data, rounding the size down to a multiple of the block size.
@@ -140,10 +140,10 @@ SymCryptCbcEncrypt(
 //
 VOID
 SYMCRYPT_CALL
-SymCryptCbcDecrypt( 
+SymCryptCbcDecrypt(
     _In_                        PCSYMCRYPT_BLOCKCIPHER  pBlockCipher,
     _In_                        PCVOID                  pExpandedKey,
-    _Inout_updates_( pBlockCipher->blockSize ) 
+    _Inout_updates_( pBlockCipher->blockSize )
                                 PBYTE                   pbChainingValue,
     _In_reads_( cbData )        PCBYTE                  pbSrc,
     _Out_writes_( cbData )      PBYTE                   pbDst,
@@ -198,7 +198,7 @@ SYMCRYPT_CALL
 SymCryptCbcMac(
     _In_                        PCSYMCRYPT_BLOCKCIPHER  pBlockCipher,
     _In_                        PCVOID                  pExpandedKey,
-    _Inout_updates_( pBlockCipher->blockSize ) 
+    _Inout_updates_( pBlockCipher->blockSize )
                                 PBYTE                   pbChainingValue,
     _In_reads_( cbData )        PCBYTE                  pbSrc,
                                 SIZE_T                  cbData )
@@ -246,10 +246,10 @@ SymCryptCbcMac(
 
 VOID
 SYMCRYPT_CALL
-SymCryptCtrMsb64( 
+SymCryptCtrMsb64(
     _In_                        PCSYMCRYPT_BLOCKCIPHER  pBlockCipher,
     _In_                        PCVOID                  pExpandedKey,
-    _Inout_updates_( pBlockCipher->blockSize ) 
+    _Inout_updates_( pBlockCipher->blockSize )
                                 PBYTE                   pbChainingValue,
     _In_reads_( cbData )        PCBYTE                  pbSrc,
     _Out_writes_( cbData )      PBYTE                   pbDst,
@@ -282,7 +282,7 @@ SymCryptCtrMsb64(
     // We keep the chaining state in a local buffer to enforce the read-once write-once rule.
     // It also improves memory locality.
     //
-#pragma warning(suppress: 22105)
+    #pragma warning(suppress: 22105)
     memcpy( count, pbChainingValue, blockSize );
     while( pbSrc < pbSrcEnd )
     {
@@ -294,7 +294,7 @@ SymCryptCtrMsb64(
         // We only need to increment the last 64 bits of the counter value.
         //
         SYMCRYPT_STORE_MSBFIRST64( &count[ blockSize-8 ], 1 + SYMCRYPT_LOAD_MSBFIRST64( &count[ blockSize-8 ] ) );
-            
+
         pbSrc += blockSize;
         pbDst += blockSize;
     }
@@ -310,15 +310,15 @@ SymCryptCfbEncrypt(
     _In_                        PCSYMCRYPT_BLOCKCIPHER  pBlockCipher,
                                 SIZE_T                  cbShift,
     _In_                        PCVOID                  pExpandedKey,
-        _Inout_updates_( pBlockCipher->blockSize ) 
+        _Inout_updates_( pBlockCipher->blockSize )
                                 PBYTE                   pbChainingValue,
     _In_reads_( cbData )        PCBYTE                  pbSrc,
     _Out_writes_( cbData )      PBYTE                   pbDst,
                                 SIZE_T                  cbData )
 //
 // Encrypt a buffer using the CFB cipher mode.
-// 
-// This implements the CFB mode using a 1-byte feedback shift. 
+//
+// This implements the CFB mode using a 1-byte feedback shift.
 // This requires a block cipher encryption call for each byte, which is very slow.
 // Use of this cipher mode is not recommended.
 //
@@ -326,7 +326,7 @@ SymCryptCfbEncrypt(
 //      Suitable description tables for all ciphers in this library have been pre-defined.
 // - pExpandedKey points to the expanded key to use. This generic function uses PVOID so there
 //      is no type safety to ensure that the expanded key and the encryption function match.
-// - pbChainingValue points to the chaining value. On entry and exit it 
+// - pbChainingValue points to the chaining value. On entry and exit it
 //      contains the last blockSize ciphertext bytes.
 // - pbSrc is the input data buffer that will be encrypted/decrypted.
 // - cbData. Number of bytes to encrypt/decrypt. This must be a multiple of the block size.
@@ -341,9 +341,13 @@ SymCryptCfbEncrypt(
 
     blockSize = pBlockCipher->blockSize;
     SYMCRYPT_ASSERT( blockSize <= SYMCRYPT_MAX_BLOCK_SIZE );
-    SYMCRYPT_ASSERT( cbShift == 1 || cbShift == blockSize );
 
-#pragma warning(suppress: 22105)
+    // Force cbShift to either be 1 or blockSize
+    if(cbShift != 1)
+    {
+        cbShift = blockSize;
+    }
+
     memcpy( chain, pbChainingValue, blockSize );
     while( cbData >= cbShift )
     {
@@ -353,7 +357,7 @@ SymCryptCfbEncrypt(
 
         memmove( chain, chain + cbShift, blockSize - cbShift );
         memcpy( chain + blockSize - cbShift, tmp, cbShift );
-        
+
         pbDst += cbShift;
         pbSrc += cbShift;
         cbData -= cbShift;
@@ -369,7 +373,7 @@ SymCryptCfbDecrypt(
     _In_                        PCSYMCRYPT_BLOCKCIPHER  pBlockCipher,
                                 SIZE_T                  cbShift,
     _In_                        PCVOID                  pExpandedKey,
-    _Inout_updates_( pBlockCipher->blockSize ) 
+    _Inout_updates_( pBlockCipher->blockSize )
                                 PBYTE                   pbChainingValue,
     _In_reads_( cbData )        PCBYTE                  pbSrc,
     _Out_writes_( cbData )      PBYTE                   pbDst,
@@ -382,9 +386,13 @@ SymCryptCfbDecrypt(
 
     blockSize = pBlockCipher->blockSize;
     SYMCRYPT_ASSERT( blockSize <= SYMCRYPT_MAX_BLOCK_SIZE );
-    SYMCRYPT_ASSERT( cbShift == 1 || cbShift == blockSize );
 
-#pragma warning(suppress: 22105)
+    // Force cbShift to either be 1 or blockSize
+    if(cbShift != 1)
+    {
+        cbShift = blockSize;
+    }
+
     memcpy( chain, pbChainingValue, blockSize );
     while( cbData >= cbShift )
     {

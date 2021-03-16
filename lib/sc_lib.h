@@ -1585,7 +1585,7 @@ extern const SYMCRYPT_MODULAR_FUNCTIONS g_SymCryptModFns[];
 extern const UINT32 g_SymCryptModFnsMask;
 
 //
-// Table entry that containst he information about an implementation.
+// Table entry that contains the information about an implementation.
 // Allows generic code to make the decision.
 // First entry in the table that is allowed is chosen, last entry always matches everything
 //
@@ -3424,6 +3424,7 @@ SymCryptPositiveWidthNafRecoding(
 
 // Atomics.
 #if SYMCRYPT_MS_VC
+#include <intrin.h>
 #define ATOMIC_OR32(_dest, _val)     _InterlockedOr( (volatile LONG *)(_dest), (LONG)(_val) )
 #elif SYMCRYPT_APPLE_CC
 #include <libkern/OSAtomic.h>   // atomic operations

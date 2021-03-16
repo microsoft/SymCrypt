@@ -1641,9 +1641,9 @@ _Success_(return == SYMCRYPT_NO_ERROR)
 SYMCRYPT_ERROR
 SYMCRYPT_CALL
 SymCryptHmacMd5ExpandKey(
-    _Out_               PSYMCRYPT_HMAC_MD5_EXPANDED_KEY pExpandedKey,
-    _In_reads_(cbKey)   PCBYTE                          pbKey,
-                        SIZE_T                          cbKey );
+    _Out_                   PSYMCRYPT_HMAC_MD5_EXPANDED_KEY pExpandedKey,
+    _In_reads_opt_(cbKey)   PCBYTE                          pbKey,
+                            SIZE_T                          cbKey );
 //
 // Supports all key lengths; never returns an error.
 //
@@ -1707,9 +1707,9 @@ _Success_(return == SYMCRYPT_NO_ERROR)
 SYMCRYPT_ERROR
 SYMCRYPT_CALL
 SymCryptHmacSha1ExpandKey(
-    _Out_               PSYMCRYPT_HMAC_SHA1_EXPANDED_KEY    pExpandedKey,
-    _In_reads_(cbKey)   PCBYTE                              pbKey,
-                        SIZE_T                              cbKey );
+    _Out_                   PSYMCRYPT_HMAC_SHA1_EXPANDED_KEY    pExpandedKey,
+    _In_reads_opt_(cbKey)   PCBYTE                              pbKey,
+                            SIZE_T                              cbKey );
 //
 // Supports all key lengths; never returns an error.
 //
@@ -1773,9 +1773,9 @@ _Success_(return == SYMCRYPT_NO_ERROR)
 SYMCRYPT_ERROR
 SYMCRYPT_CALL
 SymCryptHmacSha256ExpandKey(
-    _Out_               PSYMCRYPT_HMAC_SHA256_EXPANDED_KEY  pExpandedKey,
-    _In_reads_(cbKey)   PCBYTE                              pbKey,
-                        SIZE_T                              cbKey );
+    _Out_                   PSYMCRYPT_HMAC_SHA256_EXPANDED_KEY  pExpandedKey,
+    _In_reads_opt_(cbKey)   PCBYTE                              pbKey,
+                            SIZE_T                              cbKey );
 //
 // Supports all key lengths; never returns an error.
 //
@@ -1838,9 +1838,9 @@ _Success_(return == SYMCRYPT_NO_ERROR)
 SYMCRYPT_ERROR
 SYMCRYPT_CALL
 SymCryptHmacSha384ExpandKey(
-    _Out_               PSYMCRYPT_HMAC_SHA384_EXPANDED_KEY  pExpandedKey,
-    _In_reads_(cbKey)   PCBYTE                              pbKey,
-                        SIZE_T                              cbKey );
+    _Out_                   PSYMCRYPT_HMAC_SHA384_EXPANDED_KEY  pExpandedKey,
+    _In_reads_opt_(cbKey)   PCBYTE                              pbKey,
+                            SIZE_T                              cbKey );
 //
 // Supports all key lengths; never returns an error.
 //
@@ -1903,9 +1903,9 @@ _Success_(return == SYMCRYPT_NO_ERROR)
 SYMCRYPT_ERROR
 SYMCRYPT_CALL
 SymCryptHmacSha512ExpandKey(
-    _Out_               PSYMCRYPT_HMAC_SHA512_EXPANDED_KEY  pExpandedKey,
-    _In_reads_(cbKey)   PCBYTE                              pbKey,
-                        SIZE_T                              cbKey );
+    _Out_                   PSYMCRYPT_HMAC_SHA512_EXPANDED_KEY  pExpandedKey,
+    _In_reads_opt_(cbKey)   PCBYTE                              pbKey,
+                            SIZE_T                              cbKey );
 //
 // Supports all key lengths; never returns an error.
 //
@@ -3628,7 +3628,7 @@ SYMCRYPT_ERROR
 SYMCRYPT_CALL
 SymCryptTlsPrf1_1Derive(
     _In_                    PCSYMCRYPT_TLSPRF1_1_EXPANDED_KEY   pExpandedKey,
-    _In_reads_(cbLabel)     PCBYTE                              pbLabel,
+    _In_reads_opt_(cbLabel) PCBYTE                              pbLabel,
     _In_                    SIZE_T                              cbLabel,        // Up to SYMCRYPT_TLS_MAX_LABEL_SIZE
     _In_reads_(cbSeed)      PCBYTE                              pbSeed,
     _In_                    SIZE_T                              cbSeed,         // Up to SYMCRYPT_TLS_MAX_SEED_SIZE
@@ -3641,7 +3641,7 @@ SYMCRYPT_CALL
 SymCryptTlsPrf1_1(
     _In_reads_(cbKey)       PCBYTE   pbKey,
     _In_                    SIZE_T   cbKey,
-    _In_reads_(cbLabel)     PCBYTE   pbLabel,
+    _In_reads_opt_(cbLabel) PCBYTE   pbLabel,
     _In_                    SIZE_T   cbLabel,
     _In_reads_(cbSeed)      PCBYTE   pbSeed,
     _In_                    SIZE_T   cbSeed,
@@ -3669,7 +3669,7 @@ SYMCRYPT_ERROR
 SYMCRYPT_CALL
 SymCryptTlsPrf1_2Derive(
     _In_                    PCSYMCRYPT_TLSPRF1_2_EXPANDED_KEY   pExpandedKey,
-    _In_reads_(cbLabel)     PCBYTE                              pbLabel,
+    _In_reads_opt_(cbLabel) PCBYTE                              pbLabel,
     _In_                    SIZE_T                              cbLabel,    // Up to SYMCRYPT_TLS_MAX_LABEL_SIZE
     _In_reads_(cbSeed)      PCBYTE                              pbSeed,
     _In_                    SIZE_T                              cbSeed,     // Up to SYMCRYPT_TLS_MAX_SEED_SIZE
@@ -3683,7 +3683,7 @@ SymCryptTlsPrf1_2(
     _In_                    PCSYMCRYPT_MAC  macAlgorithm,
     _In_reads_(cbKey)       PCBYTE          pbKey,
     _In_                    SIZE_T          cbKey,
-    _In_reads_(cbLabel)     PCBYTE          pbLabel,
+    _In_reads_opt_(cbLabel) PCBYTE          pbLabel,
     _In_                    SIZE_T          cbLabel,
     _In_reads_(cbSeed)      PCBYTE          pbSeed,
     _In_                    SIZE_T          cbSeed,
@@ -5459,7 +5459,10 @@ SymCryptEcurveIsSame(
     _In_    PCSYMCRYPT_ECURVE  pCurve1,
     _In_    PCSYMCRYPT_ECURVE  pCurve2);
 //
-// Returns true if pCurve1 and pCurve2 have same set of P, A, B,  false otherwise.
+// Returns true if pCurve1 and pCurve2 have same type, P, A, and B - false otherwise.
+//
+// Note: This does not check that the curves have the same G set, callers may additionally
+// consider calling SymCryptEcpointIsEqual to compare the curves' distinguished points.
 //
 
 // Internally supported curves

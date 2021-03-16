@@ -182,9 +182,9 @@ typedef struct _ALG_MEASURE_PARAMS
 //
 // For asymmetrics we have a slightly different problem:
 // INT algorithms might have different performance for different divisor value types, and sizes
-// MODELEMENT algorithms might have different performacne for different modulus types & sizes
+// MODELEMENT algorithms might have different performance for different modulus types & sizes
 // EC algorithms have different performance for different curves. (We are not generating curves on-the-fly, and only used pre-defined ones.)
-// RSA algorithms have different performacne for key size, # primes, and pubexp value.
+// RSA algorithms have different performance for key size, # primes, and pubexp value.
 //
 
 #define PERF_NO_KEYPERF                     1
@@ -319,7 +319,7 @@ const ALG_MEASURE_PARAMS g_algMeasureParams[] =
     "EcpointSetZero"        , 1, {PERF_KEY_NIST192, PERF_KEY_NIST224, PERF_KEY_NIST256, PERF_KEY_NIST384, PERF_KEY_NIST521, PERF_KEY_NUMS256, PERF_KEY_NUMS384, PERF_KEY_NUMS512,}, {},
     "EcpointSetDistinguished", 1, {PERF_KEY_NIST192, PERF_KEY_NIST224, PERF_KEY_NIST256, PERF_KEY_NIST384, PERF_KEY_NIST521, PERF_KEY_NUMS256, PERF_KEY_NUMS384, PERF_KEY_NUMS512,}, {},
     "EcpointSetRandom"      , 1, {PERF_KEY_NIST192, PERF_KEY_NIST224, PERF_KEY_NIST256, PERF_KEY_NIST384, PERF_KEY_NIST521, PERF_KEY_NUMS256, PERF_KEY_NUMS384, PERF_KEY_NUMS512, PERF_KEY_C255_19,}, {},
-    "EcpointIsEqual"        , 1, {PERF_KEY_NIST192, PERF_KEY_NIST224, PERF_KEY_NIST256, PERF_KEY_NIST384, PERF_KEY_NIST521, PERF_KEY_NUMS256, PERF_KEY_NUMS384, PERF_KEY_NUMS512,}, {},
+    "EcpointIsEqual"        , 1, {PERF_KEY_NIST192, PERF_KEY_NIST224, PERF_KEY_NIST256, PERF_KEY_NIST384, PERF_KEY_NIST521, PERF_KEY_NUMS256, PERF_KEY_NUMS384, PERF_KEY_NUMS512, PERF_KEY_C255_19,}, {},
     "EcpointIsZero"         , 1, {PERF_KEY_NIST192, PERF_KEY_NIST224, PERF_KEY_NIST256, PERF_KEY_NIST384, PERF_KEY_NIST521, PERF_KEY_NUMS256, PERF_KEY_NUMS384, PERF_KEY_NUMS512,}, {},
     "EcpointOnCurve"        , 1, {PERF_KEY_NIST192, PERF_KEY_NIST224, PERF_KEY_NIST256, PERF_KEY_NIST384, PERF_KEY_NIST521, PERF_KEY_NUMS256, PERF_KEY_NUMS384, PERF_KEY_NUMS512,}, {},
     "EcpointAdd"            , 1, {PERF_KEY_NIST192, PERF_KEY_NIST224, PERF_KEY_NIST256, PERF_KEY_NIST384, PERF_KEY_NIST521, PERF_KEY_NUMS256, PERF_KEY_NUMS384, PERF_KEY_NUMS512,}, {},

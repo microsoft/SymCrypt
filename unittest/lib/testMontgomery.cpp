@@ -120,6 +120,7 @@ testMontgomery(PSYMCRYPT_ECURVE  pCurve)
     PSYMCRYPT_INT       piScalar = SymCryptIntAllocate(SymCryptEcurveDigitsofScalarMultiplier(pCurve));
     PSYMCRYPT_ECPOINT   poSrc = SymCryptEcpointAllocate(pCurve);
     PSYMCRYPT_ECPOINT   poDst = SymCryptEcpointAllocate(pCurve);
+    PSYMCRYPT_ECPOINT   poDst2 = SymCryptEcpointAllocate(pCurve);
     PSYMCRYPT_ECKEY     pkKey1 = SymCryptEckeyAllocate(pCurve);
 
     vprint( g_verbose, "    %-41s", "G_x * private_key_1");
@@ -144,7 +145,7 @@ testMontgomery(PSYMCRYPT_ECURVE  pCurve)
     testSymCryptMontgomeryPointScalarMul(
         pCurve,
         piScalar,
-        poSrc,
+        NULL, // test that NULL source point is converted to G
         0,
         poDst,
         public_key_2,
@@ -195,11 +196,18 @@ testMontgomery(PSYMCRYPT_ECURVE  pCurve)
         piScalar,
         poSrc,
         0,
-        poDst,
+        poDst2,
         shared_secret,
         32,
         pbScratch,
         cbScratch);
+
+    vprint( g_verbose, "    %-41s", "public_key_1 * private_key2 == public_key_2 * private_key1");
+    vprint( g_verbose, " %-40s", "SymCryptEcpointIsEqual");
+
+    CHECK( SymCryptEcpointIsEqual(pCurve, poDst, poDst, 0, pbScratch, cbScratch ), "poDst != poDst" );
+    CHECK( SymCryptEcpointIsEqual(pCurve, poDst, poDst2, 0, pbScratch, cbScratch ), "poDst != poDst2");
+    CHECK( !SymCryptEcpointIsEqual(pCurve, poSrc, poDst, 0, pbScratch, cbScratch ), "poSrc == poDst");
 
     // =================================
     // Check that the high bit restriction is obeyed
@@ -252,6 +260,7 @@ testMontgomery(PSYMCRYPT_ECURVE  pCurve)
     SymCryptIntFree(piScalar);
     SymCryptEcpointFree(pCurve, poSrc);
     SymCryptEcpointFree(pCurve, poDst);
+    SymCryptEcpointFree(pCurve, poDst2);
     SymCryptEckeyFree(pkKey1);
 
     SymCryptWipe(pbScratch, cbScratch);

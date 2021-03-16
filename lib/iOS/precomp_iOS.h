@@ -7,7 +7,7 @@
 
 #include <libkern/OSAtomic.h>   // atomic operations
 
-// Ingnore the incompatible pointer types void * to PSYMCRYPT_XXX
+// Ignore the incompatible pointer types void * to PSYMCRYPT_XXX
 #pragma GCC diagnostic ignored "-Wincompatible-pointer-types"
 
 #define FIELD_OFFSET(type,field)    ((UINT32)(uintptr_t)&(((type *)0)->field))

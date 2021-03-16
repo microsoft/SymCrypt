@@ -626,11 +626,12 @@ SymCryptEcurveIsSame(
         goto cleanup;
     }
 
-    if ( !SymCryptIntIsEqual (
+    if ( (pCurve1->type != pCurve2->type) ||
+         !SymCryptIntIsEqual (
               SymCryptIntFromModulus( pCurve1->FMod ),
               SymCryptIntFromModulus( pCurve2->FMod ) ) ||
          !SymCryptModElementIsEqual ( pCurve1->FMod, pCurve1->A, pCurve2->A ) ||
-         !SymCryptModElementIsEqual ( pCurve1->FMod, pCurve1->B, pCurve2->B ))
+         !SymCryptModElementIsEqual ( pCurve1->FMod, pCurve1->B, pCurve2->B ) )
     {
         goto cleanup;
     }

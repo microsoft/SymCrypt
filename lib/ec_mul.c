@@ -37,9 +37,9 @@ SymCryptPrecomputation(
     _Out_   PSYMCRYPT_ECPOINT       poQ,
     _Out_writes_bytes_opt_( cbScratch )
             PBYTE               pbScratch,
-            SIZE_T              cbScratch
-)
+            SIZE_T              cbScratch )
 {
+    SYMCRYPT_ASSERT( poQ->pCurve == pCurve );
     // Calculation for Q = 2*P
     SymCryptEcpointDouble( pCurve, poPIs[0], poQ, 0, pbScratch, cbScratch );
 
@@ -151,6 +151,7 @@ SymCryptEcpointScalarMulFixedWindow(
 
     SYMCRYPT_ASSERT( (pCurve->type == SYMCRYPT_ECURVE_TYPE_SHORT_WEIERSTRASS) ||
                      (pCurve->type == SYMCRYPT_ECURVE_TYPE_TWISTED_EDWARDS) );
+    SYMCRYPT_ASSERT( poSrc->pCurve == pCurve && poDst->pCurve == pCurve );
     SYMCRYPT_ASSERT( cbScratch >= SYMCRYPT_INTERNAL_SCRATCH_BYTES_FOR_SCALAR_ECURVE_OPERATIONS(pCurve, 1) );
 
     // Creating temporary modelement
@@ -211,6 +212,9 @@ SymCryptEcpointScalarMulFixedWindow(
     //
     // Main algorithm
     //
+
+    // It is the caller's responsibility to ensure that the provided piScalar <= GOrd, double check this in debug mode
+    SYMCRYPT_ASSERT( !SymCryptIntIsLessThan( SymCryptIntFromModulus( pCurve->GOrd ), piScalar ) );
 
     // Store k into an int
     SymCryptIntCopy( piScalar, piRem );
@@ -332,7 +336,7 @@ SYMCRYPT_CALL
 SymCryptEcpointMultiScalarMulWnafWithInterleaving(
     _In_    PCSYMCRYPT_ECURVE       pCurve,
     _In_    PCSYMCRYPT_INT *        piSrcScalarArray,
-    _In_    PCSYMCRYPT_ECPOINT *    poSrcEcpointArray,
+    _Inout_ PCSYMCRYPT_ECPOINT *    poSrcEcpointArray,
     _In_    UINT32                  nPoints,
     _In_    UINT32                  flags,
     _Out_   PSYMCRYPT_ECPOINT       poDst,
@@ -396,6 +400,7 @@ SymCryptEcpointMultiScalarMulWnafWithInterleaving(
 
     SYMCRYPT_ASSERT( (pCurve->type == SYMCRYPT_ECURVE_TYPE_SHORT_WEIERSTRASS) ||
                      (pCurve->type == SYMCRYPT_ECURVE_TYPE_TWISTED_EDWARDS) );
+    SYMCRYPT_ASSERT( poDst->pCurve == pCurve );
     SYMCRYPT_ASSERT( cbScratch >= SYMCRYPT_INTERNAL_SCRATCH_BYTES_FOR_SCALAR_ECURVE_OPERATIONS(pCurve, nPoints) );
 
     // Creating temporary precomputed points (if needed for the first point)
@@ -450,6 +455,8 @@ SymCryptEcpointMultiScalarMulWnafWithInterleaving(
     //
     for (j = 0; j<nPoints; j++)
     {
+        SYMCRYPT_ASSERT( poSrcEcpointArray[j]->pCurve == pCurve );
+
         // Check if k is 0 or if the src point is zero
         fZero[j] = ( SymCryptIntIsEqualUint32( piSrcScalarArray[j], 0 ) | SymCryptEcpointIsZero( pCurve, poSrcEcpointArray[j], pbScratch, cbScratch ) );
         fZeroTot &= fZero[j];
@@ -536,6 +543,7 @@ SymCryptEcpointGenericSetRandom(
             SIZE_T                  cbScratch )
 {
     PSYMCRYPT_MODELEMENT peScalar = NULL;
+    SYMCRYPT_ASSERT( poDst->pCurve == pCurve );
     SYMCRYPT_ASSERT( cbScratch >= SYMCRYPT_INTERNAL_SCRATCH_BYTES_FOR_SCALAR_ECURVE_OPERATIONS(pCurve, 1) );
 
     peScalar = SymCryptModElementCreate( pbScratch, pCurve->cbModElement, pCurve->GOrd );

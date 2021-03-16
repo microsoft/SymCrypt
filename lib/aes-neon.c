@@ -84,11 +84,24 @@ SymCryptAesCreateDecryptionRoundKeyNeon(
 { \
     /* Do 9 full rounds (AES-128|AES-192|AES-256) */ \
     roundKey = *keyPtr++; \
-    for( int unrollAesRoundCounter=0; unrollAesRoundCounter<9; ++unrollAesRoundCounter) \
-    { \
-        full_round( c0, c1, c2, c3, c4, c5, c6, c7 ) \
-        roundKey = *keyPtr++; \
-    } \
+    full_round( c0, c1, c2, c3, c4, c5, c6, c7 ) \
+    roundKey = *keyPtr++; \
+    full_round( c0, c1, c2, c3, c4, c5, c6, c7 ) \
+    roundKey = *keyPtr++; \
+    full_round( c0, c1, c2, c3, c4, c5, c6, c7 ) \
+    roundKey = *keyPtr++; \
+    full_round( c0, c1, c2, c3, c4, c5, c6, c7 ) \
+    roundKey = *keyPtr++; \
+    full_round( c0, c1, c2, c3, c4, c5, c6, c7 ) \
+    roundKey = *keyPtr++; \
+    full_round( c0, c1, c2, c3, c4, c5, c6, c7 ) \
+    roundKey = *keyPtr++; \
+    full_round( c0, c1, c2, c3, c4, c5, c6, c7 ) \
+    roundKey = *keyPtr++; \
+    full_round( c0, c1, c2, c3, c4, c5, c6, c7 ) \
+    roundKey = *keyPtr++; \
+    full_round( c0, c1, c2, c3, c4, c5, c6, c7 ) \
+    roundKey = *keyPtr++; \
 \
     if ( keyPtr < keyLimit ) \
     { \

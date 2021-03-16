@@ -541,10 +541,10 @@ SymCryptCpuFeaturesNeverPresent();
 // generic case.
 // So far these macros have not been fully tested
 //
-#define SYMCRYPT_INTERNAL_LOAD_MSBFIRST16( p ) ( (UINT16)(((PBYTE)p)[0] << 8 | ((PBYTE)p)[1]       ) )
-#define SYMCRYPT_INTERNAL_LOAD_LSBFIRST16( p ) ( (UINT16)(((PBYTE)p)[0]      | ((PBYTE)p)[1] <<  8 ) )
-#define SYMCRYPT_INTERNAL_LOAD_MSBFIRST32( p ) ( (UINT32)(((PBYTE)p)[0] << 24 | ((PBYTE)p)[1] << 16 | ((PBYTE)p)[2] <<  8 | ((PBYTE)p)[3]       ) )
-#define SYMCRYPT_INTERNAL_LOAD_LSBFIRST32( p ) ( (UINT32)(((PBYTE)p)[0]       | ((PBYTE)p)[1] <<  8 | ((PBYTE)p)[2] << 16 | ((PBYTE)p)[3] << 24 ) )
+#define SYMCRYPT_INTERNAL_LOAD_MSBFIRST16( p ) ( ((UINT16)((PBYTE)p)[0]) << 8 | ((PBYTE)p)[1] )
+#define SYMCRYPT_INTERNAL_LOAD_LSBFIRST16( p ) ( ((UINT16)((PBYTE)p)[1]) << 8 | ((PBYTE)p)[0] )
+#define SYMCRYPT_INTERNAL_LOAD_MSBFIRST32( p ) ( (UINT32)SYMCRYPT_INTERNAL_LOAD_MSBFIRST16(&((PBYTE)p)[0]) << 16 | SYMCRYPT_INTERNAL_LOAD_MSBFIRST16(&((PBYTE)p)[2]) )
+#define SYMCRYPT_INTERNAL_LOAD_LSBFIRST32( p ) ( (UINT32)SYMCRYPT_INTERNAL_LOAD_MSBFIRST16(&((PBYTE)p)[2]) << 16 | SYMCRYPT_INTERNAL_LOAD_MSBFIRST16(&((PBYTE)p)[0]) )
 #define SYMCRYPT_INTERNAL_LOAD_MSBFIRST64( p ) ( (UINT64)SYMCRYPT_INTERNAL_LOAD_MSBFIRST32(&((PBYTE)p)[0]) << 32 | SYMCRYPT_INTERNAL_LOAD_MSBFIRST32(&((PBYTE)p)[4]) )
 #define SYMCRYPT_INTERNAL_LOAD_LSBFIRST64( p ) ( (UINT64)SYMCRYPT_INTERNAL_LOAD_LSBFIRST32(&((PBYTE)p)[4]) << 32 | SYMCRYPT_INTERNAL_LOAD_LSBFIRST32(&((PBYTE)p)[0]) )
 
@@ -871,7 +871,7 @@ struct _SYMCRYPT_PARALLEL_HASH_OPERATION {
 
 
 SYMCRYPT_ALIGN_STRUCT _SYMCRYPT_PARALLEL_HASH_SCRATCH_OPERATION; // as yet unspecified struct
-typedef struct _SYMCRYPT_PARALLEL_HASH_SCRATCH_OPERATION    
+typedef struct _SYMCRYPT_PARALLEL_HASH_SCRATCH_OPERATION
         SYMCRYPT_PARALLEL_HASH_SCRATCH_OPERATION, *PSYMCRYPT_PARALLEL_HASH_SCRATCH_OPERATION;
 
 typedef SYMCRYPT_ALIGN_STRUCT _SYMCRYPT_PARALLEL_HASH_SCRATCH_STATE {
@@ -1385,7 +1385,7 @@ struct _SYMCRYPT_BLOCKCIPHER {
                                                 PSYMCRYPT_BLOCKCIPHER_CRYPT_MODE    ctrMsb64Func;       // NULL if no optimized version available
                                                 PSYMCRYPT_BLOCKCIPHER_AEADPART_MODE gcmEncryptPartFunc; // NULL if no optimized version available
                                                 PSYMCRYPT_BLOCKCIPHER_AEADPART_MODE gcmDecryptPartFunc; // NULL if no optimized version available
-    _Field_range_( 0, SYMCRYPT_MAX_BLOCK_SIZE ) SIZE_T                              blockSize;          // = SYMCRYPT_XXX_BLOCK_SIZE, power of 2, value <= 32.
+    _Field_range_( 1, SYMCRYPT_MAX_BLOCK_SIZE ) SIZE_T                              blockSize;          // = SYMCRYPT_XXX_BLOCK_SIZE, power of 2, 1 <= value <= 32.
                                                 SIZE_T                              expandedKeySize;    // = sizeof( SYMCRYPT_XXX_EXPANDED_KEY )
 };
 
@@ -1608,7 +1608,7 @@ typedef       SYMCRYPT_MODELEMENT * PSYMCRYPT_MODELEMENT;
 typedef const SYMCRYPT_MODELEMENT * PCSYMCRYPT_MODELEMENT;
 
 SYMCRYPT_ASYM_ALIGN_STRUCT _SYMCRYPT_ECPOINT;
-typedef struct _SYMCRYPT_ECPOINT   SYMCRYPT_ECPOINT; 
+typedef struct _SYMCRYPT_ECPOINT   SYMCRYPT_ECPOINT;
 typedef       SYMCRYPT_ECPOINT * PSYMCRYPT_ECPOINT;
 typedef const SYMCRYPT_ECPOINT * PCSYMCRYPT_ECPOINT;
 
@@ -2117,15 +2117,6 @@ typedef enum _SYMCRYPT_ECPOINT_COORDINATES {
 
 #define SYMCRYPT_INTERNAL_NUMOF_COORDINATES( _eCoordinates )              ((_eCoordinates) & 0xf)
 
-typedef SYMCRYPT_ASYM_ALIGN_STRUCT _SYMCRYPT_ECPOINT {
-                    UINT32     normalized;          // A flag specifying whether the point is normalized or not. This flag
-                                                    // makes sense only for PROJECTIVE, JACOBIAN, EXTENDED_PROJECTIVE, and
-                                                    // SINGLE_PROJECTIVE coordinates. If set to TRUE (non-zero), it means
-                                                    // that the Z coordinate of the point is equal to 1.
-                    SYMCRYPT_MAGIC_FIELD
-                    // An array of MODELEMENTs. The total size will depend on the MODELEMENT size and the number of MODELEMENTs.
-} SYMCRYPT_ECPOINT, *PSYMCRYPT_ECPOINT;
-typedef const SYMCRYPT_ECPOINT * PCSYMCRYPT_ECPOINT;
 
 //
 // Curve-type-dependent information
@@ -2235,6 +2226,17 @@ typedef const SYMCRYPT_ECURVE * PCSYMCRYPT_ECURVE;
                                                                                                 (_nPoints) * (_pCurve)->cbScratchScalarMulti )
 #define SYMCRYPT_INTERNAL_SCRATCH_BYTES_FOR_GETSET_VALUE_ECURVE_OPERATIONS( _pCurve )           ( (_pCurve)->cbScratchGetSetValue)
 #define SYMCRYPT_INTERNAL_SCRATCH_BYTES_FOR_ECKEY_ECURVE_OPERATIONS( _pCurve )                  ( (_pCurve)->cbScratchEckey)
+
+typedef SYMCRYPT_ASYM_ALIGN_STRUCT _SYMCRYPT_ECPOINT {
+                    BOOLEAN normalized;     // A flag specifying whether the point is normalized or not. This flag
+                                            // makes sense only for PROJECTIVE, JACOBIAN, EXTENDED_PROJECTIVE, and
+                                            // SINGLE_PROJECTIVE coordinates. If set to TRUE (non-zero), it means
+                                            // that the Z coordinate of the point is equal to 1.
+                    PCSYMCRYPT_ECURVE   pCurve; // Handle to the curve which the point is on. Only used in CHKed builds for ASSERTs
+                    SYMCRYPT_MAGIC_FIELD
+                    // An array of MODELEMENTs. The total size will depend on the MODELEMENT size and the number of MODELEMENTs.
+} SYMCRYPT_ECPOINT, *PSYMCRYPT_ECPOINT;
+typedef const SYMCRYPT_ECPOINT * PCSYMCRYPT_ECPOINT;
 
 typedef SYMCRYPT_ASYM_ALIGN_STRUCT _SYMCRYPT_ECKEY {
                     BOOLEAN                 hasPrivateKey;  // Set to true if there is a private key set
@@ -2512,13 +2514,14 @@ SymCryptWipe(
 //
 // If the known size is large we call the generic wipe function anyway.
 // For small known sizes we perform the wipe inline.
-// We put the limit at 8 native writes, which varies by platform.
-//
+// This is a tradeoff between speed and code size and there are diminishing returns to supporting
+// increasingly large sizes.
+// We currently put the limit at ~8 native writes, which varies by platform.
 //
 #if SYMCRYPT_CPU_X86 | SYMCRYPT_CPU_ARM
-#define SYMCRYPT_WIPE_FUNCTION_LIMIT (32)            // If this is increased beyond 64 the code below must be updated.
+#define SYMCRYPT_WIPE_FUNCTION_LIMIT (32)   // If this is increased beyond 127 the code below must be updated.
 #elif SYMCRYPT_CPU_AMD64 | SYMCRYPT_CPU_ARM64
-#define SYMCRYPT_WIPE_FUNCTION_LIMIT (64)            // If this is increased beyond 64 the code below must be updated.
+#define SYMCRYPT_WIPE_FUNCTION_LIMIT (64)   // If this is increased beyond 127 the code below must be updated.
 #else
 #error ??
 #endif

@@ -1,5 +1,5 @@
 //
-// ScsTable.c 
+// ScsTable.c
 // Side-channel safe table
 //
 // Copyright (c) Microsoft Corporation. Licensed under the MIT license.
@@ -28,11 +28,11 @@
 // Let nElements be the number of elements in the table.
 // If necessary, the size of each element in the table is rounded up to a multiple of interleave_size.
 // Each whole group of group_size elements is interleaved with each other.
-// The last (nElements % group_size) elements are simply stored consecutively. 
+// The last (nElements % group_size) elements are simply stored consecutively.
 // (For now we simply require that nElements is a multiple of group_size.)
 // Within each group of group_size, the data for the elements are interleaved in natural order
 // using chunks of interleave_size bytes.
-// 
+//
 // The choice of group_size and interleave_size depends on the CPU architecture, CPU features,
 // and even the element size. (E.g. 1024-bit elements might interleave @ 64 bytes on an AVX512
 // capable CPU, but 256-bit elements would have to interleave at 16 or 32 bytes on that same CPU.)
@@ -53,9 +53,9 @@ typedef UINT32 SYMCRYPT_SCSTABLE_TYPE;
 
 UINT32
 SYMCRYPT_CALL
-SymCryptScsTableInit( 
-    _Out_   PSYMCRYPT_SCSTABLE  pScsTable, 
-            UINT32              nElements, 
+SymCryptScsTableInit(
+    _Out_   PSYMCRYPT_SCSTABLE  pScsTable,
+            UINT32              nElements,
             UINT32              elementSize )
 {
     UINT32  groupSize;
@@ -64,7 +64,6 @@ SymCryptScsTableInit(
 
     SYMCRYPT_ASSERT( nElements > 0 );
 
-	// dcl - not portable, and since SYMCRYPT_CPU_AMD64 is a #define, why isn't this in a #if?
 #pragma warning( suppress: 4127 )       // conditional expression is constant
     if( SYMCRYPT_CPU_AMD64 && elementSize == 128 )
     {
@@ -97,8 +96,8 @@ SymCryptScsTableInit(
 VOID
 SYMCRYPT_CALL
 SymCryptScsTableSetBuffer(
-    _Inout_                             PSYMCRYPT_SCSTABLE  pScsTable, 
-    _Inout_updates_bytes_( cbBuffer )   PBYTE               pbBuffer, 
+    _Inout_                             PSYMCRYPT_SCSTABLE  pScsTable,
+    _Inout_updates_bytes_( cbBuffer )   PBYTE               pbBuffer,
                                         UINT32              cbBuffer )
 {
     SYMCRYPT_ASSERT(cbBuffer >= pScsTable->cbTableData);
@@ -112,10 +111,10 @@ C_ASSERT( SYMCRYPT_SCSTABLE_INTERLEAVE_SIZE == 16 || SYMCRYPT_SCSTABLE_INTERLEAV
 
 VOID
 SYMCRYPT_CALL
-SymCryptScsTableStoreC( 
-    _Inout_                     PSYMCRYPT_SCSTABLE  pScsTable, 
-                                UINT32              iIndex, 
-    _In_reads_bytes_( cbData )  PCBYTE              pbData, 
+SymCryptScsTableStoreC(
+    _Inout_                     PSYMCRYPT_SCSTABLE  pScsTable,
+                                UINT32              iIndex,
+    _In_reads_bytes_( cbData )  PCBYTE              pbData,
                                 UINT32              cbData )
 {
     UINT32 groupSize = SYMCRYPT_SCSTABLE_GROUP_SIZE;
@@ -156,10 +155,10 @@ SymCryptScsTableStoreC(
 #if SYMCRYPT_CPU_AMD64
 VOID
 SYMCRYPT_CALL
-SymCryptScsTableStore128Xmm( 
-    _Inout_                     PSYMCRYPT_SCSTABLE  pScsTable, 
-                                UINT32              iIndex, 
-    _In_reads_bytes_( cbData )  PCBYTE              pbData, 
+SymCryptScsTableStore128Xmm(
+    _Inout_                     PSYMCRYPT_SCSTABLE  pScsTable,
+                                UINT32              iIndex,
+    _In_reads_bytes_( cbData )  PCBYTE              pbData,
                                 UINT32              cbData )
 {
     __m128i * pDst = (__m128i *) (pScsTable->pbTableData + iIndex * 128);
@@ -181,10 +180,10 @@ SymCryptScsTableStore128Xmm(
 
 VOID
 SYMCRYPT_CALL
-SymCryptScsTableLoadC( 
-    _In_                        PSYMCRYPT_SCSTABLE  pScsTable, 
-                                UINT32              iIndex, 
-    _Out_writes_bytes_(cbData)  PBYTE               pbData, 
+SymCryptScsTableLoadC(
+    _In_                        PSYMCRYPT_SCSTABLE  pScsTable,
+                                UINT32              iIndex,
+    _Out_writes_bytes_(cbData)  PBYTE               pbData,
                                 UINT32              cbData )
 {
     UINT32 groupSize = SYMCRYPT_SCSTABLE_GROUP_SIZE;
@@ -208,7 +207,7 @@ SymCryptScsTableLoadC(
 
     SYMCRYPT_ASSERT( cbData == pScsTable->elementSize );
     UNREFERENCED_PARAMETER( cbData );
-    
+
     // check that an interleave size is exactly 4 words
     SYMCRYPT_HARD_ASSERT(interleaveSize == 4 * sizeof( SYMCRYPT_SCSTABLE_TYPE ));
 
@@ -268,10 +267,10 @@ SymCryptScsTableLoadC(
 #if SYMCRYPT_CPU_AMD64
 VOID
 SYMCRYPT_CALL
-SymCryptScsTableLoad128Xmm( 
-    _In_                        PSYMCRYPT_SCSTABLE  pScsTable, 
-                                UINT32              iIndex, 
-    _Out_writes_bytes_(cbData)  PBYTE               pbData, 
+SymCryptScsTableLoad128Xmm(
+    _In_                        PSYMCRYPT_SCSTABLE  pScsTable,
+                                UINT32              iIndex,
+    _Out_writes_bytes_(cbData)  PBYTE               pbData,
                                 UINT32              cbData )
 {
     UINT32 nElements = pScsTable->nElements;
@@ -332,10 +331,10 @@ SymCryptScsTableLoad128Xmm(
 
 VOID
 SYMCRYPT_CALL
-SymCryptScsTableStore( 
-    _Inout_                     PSYMCRYPT_SCSTABLE  pScsTable, 
-                                UINT32              iIndex, 
-    _In_reads_bytes_( cbData )  PCBYTE              pbData, 
+SymCryptScsTableStore(
+    _Inout_                     PSYMCRYPT_SCSTABLE  pScsTable,
+                                UINT32              iIndex,
+    _In_reads_bytes_( cbData )  PCBYTE              pbData,
                                 UINT32              cbData )
 {
 #if SYMCRYPT_CPU_AMD64
@@ -356,13 +355,13 @@ SymCryptScsTableStore(
 
 VOID
 SYMCRYPT_CALL
-SymCryptScsTableLoad( 
-    _In_                        PSYMCRYPT_SCSTABLE  pScsTable, 
-                                UINT32              iIndex, 
-    _Out_writes_bytes_(cbData)  PBYTE               pbData, 
+SymCryptScsTableLoad(
+    _In_                        PSYMCRYPT_SCSTABLE  pScsTable,
+                                UINT32              iIndex,
+    _Out_writes_bytes_(cbData)  PBYTE               pbData,
                                 UINT32              cbData )
 {
-    // This is the side-channel safe routine    
+    // This is the side-channel safe routine
 
 #if SYMCRYPT_CPU_AMD64
 
@@ -382,7 +381,7 @@ SymCryptScsTableLoad(
 
 VOID
 SYMCRYPT_CALL
-SymCryptScsTableWipe( 
+SymCryptScsTableWipe(
     _Inout_ PSYMCRYPT_SCSTABLE pScsTable )
 {
     SymCryptWipe( pScsTable->pbTableData, pScsTable->cbTableData );

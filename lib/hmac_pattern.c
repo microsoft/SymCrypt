@@ -40,9 +40,9 @@ _Success_(return == SYMCRYPT_NO_ERROR)
 SYMCRYPT_ERROR
 SYMCRYPT_CALL
 SYMCRYPT_HmacXxxExpandKey(
-    _Out_              PSYMCRYPT_HMAC_XXX_EXPANDED_KEY  pExpandedKey,
-    _In_reads_(cbKey)  PCBYTE                           pbKey,
-                       SIZE_T                           cbKey )
+    _Out_                   PSYMCRYPT_HMAC_XXX_EXPANDED_KEY pExpandedKey,
+    _In_reads_opt_(cbKey)   PCBYTE                          pbKey,
+                            SIZE_T                          cbKey )
 {
     SYMCRYPT_XXX_STATE  hashState;
     SYMCRYPT_ALIGN BYTE iblock[ SYMCRYPT_XXX_INPUT_BLOCK_SIZE ];  // One input block for the hash function
@@ -60,7 +60,10 @@ SYMCRYPT_HmacXxxExpandKey(
 
     if( cbKey <= sizeof( iblock ) )
     {
-        memcpy( iblock, pbKey, cbKey );
+        if( cbKey > 0 )
+        {
+            memcpy( iblock, pbKey, cbKey );
+        }
     } else {
         //
         // We can use the existing MD5 state to hash the long key.
@@ -151,9 +154,9 @@ SYMCRYPT_HmacXxxResult(
     pState->hash.chain = pState->pKey->outerState;
 
     //
-    // We put the data direcly in the buffer, rather than call the Append function.
+    // We put the data directly in the buffer, rather than call the Append function.
     //
-    memcpy( &pState->hash.buffer , innerRes, sizeof( innerRes ) );
+    memcpy( &pState->hash.buffer, innerRes, sizeof( innerRes ) );
     SET_DATALENGTH(  pState->hash, SYMCRYPT_XXX_INPUT_BLOCK_SIZE + SYMCRYPT_XXX_RESULT_SIZE );
     pState->hash.bytesInBuffer = SYMCRYPT_XXX_RESULT_SIZE;
 
