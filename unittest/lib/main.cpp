@@ -1642,10 +1642,10 @@ runPerfTests()
             {
                 print( "%s%s,%lu,%s,%s,%lu,%lu\n",
                     g_measure_sizes_stringPrefix.c_str(),
-                    (*i)->m_algorithmName + (*i)->m_modeName,
+                    ((*i)->m_algorithmName + (*i)->m_modeName).c_str(),
                     (ULONG) (j->keySize & 0xffff) * 8,
                     j->strPostfix,
-                    (*i)->m_implementationName,
+                    ((*i)->m_implementationName).c_str(),
                     (ULONG) j->dataSize,
                     (ULONG) floor(j->cFixed) );
             }

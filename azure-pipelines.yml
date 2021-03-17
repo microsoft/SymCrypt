@@ -21,7 +21,7 @@ jobs:
     vmImage: 'windows-2019' # Windows Server 2019 with Visual Studio 2019
   steps:
   - checkout: self  # self represents the repo where the initial Pipelines YAML file was found
-    submodules: recursive 
+    submodules: recursive
   # Initialize CMake
   # cd bin; cmake .. -DCMAKE_TOOLCHAIN_FILE=../cmake-toolchain/windows-amd64.cmake
   - task: CMake@1
@@ -57,8 +57,8 @@ jobs:
   pool:
     vmImage: 'windows-2019'
   steps:
-  - checkout: self 
-    submodules: recursive 
+  - checkout: self
+    submodules: recursive
   - task: CMake@1
     inputs:
       workingDirectory: '$(Build.SourcesDirectory)/bin'
@@ -83,12 +83,12 @@ jobs:
       ArtifactName: 'drop-Windows-x86'
       publishLocation: 'Container'
 
-- job: Linux
+- job: Linux_AMD64
   pool:
     vmImage: 'ubuntu-20.04'
   steps:
   - checkout: self
-    submodules: recursive 
+    submodules: recursive
   - task: CMake@1
     inputs:
       workingDirectory: '$(Build.SourcesDirectory)/bin'
@@ -97,12 +97,11 @@ jobs:
     inputs:
       workingDirectory: '$(Build.SourcesDirectory)/bin'
       cmakeArgs: '--build .'
-  # saml - 2021/02/19 Temporarily disabling linux unit test runs as they are consistently timing out
-  #- script: |
-  #    cd bin/exe/x86_64/Generic
-  #    ./symcryptunittest
-  #  displayName: 'Execute generic unit test'
-  #  name: 'LinuxGenericUnitTest'
+  - script: |
+      cd bin/exe/AMD64/Linux
+      ./symcryptunittest
+    displayName: 'Execute generic unit test'
+    name: 'LinuxGenericUnitTest'
   - task: CopyFiles@2
     inputs:
       SourceFolder: 'bin'

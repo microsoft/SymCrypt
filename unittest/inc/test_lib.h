@@ -351,7 +351,11 @@ extern "C" {
     #define VSNPRINTF_S(a,b,c,d,...)    std::vsnprintf((a),(b),(d),__VA_ARGS__)
 #ifdef __linux__
     #include <sys/random.h>
-    #define GENRANDOM(pbBuf, cbBuf)     getrandom( (void *) pbBuf, cbBuf, 0 )
+    // write as a function wrapper to handle unexpected return values as errors
+    FORCEINLINE
+    ssize_t GENRANDOM(void * pbBuf, size_t cbBuf) {
+        return (getrandom( pbBuf, cbBuf, 0 ) == cbBuf) ? 0 : -1;
+    }
 #else
     #error "Oh no, need a GENRANDOM() implementation"
 #endif
