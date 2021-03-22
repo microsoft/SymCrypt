@@ -39,7 +39,7 @@ SymCryptPrecomputation(
             PBYTE               pbScratch,
             SIZE_T              cbScratch )
 {
-    SYMCRYPT_ASSERT( poQ->pCurve == pCurve );
+    SYMCRYPT_ASSERT( SymCryptEcurveIsSame(pCurve, poQ->pCurve) );
     // Calculation for Q = 2*P
     SymCryptEcpointDouble( pCurve, poPIs[0], poQ, 0, pbScratch, cbScratch );
 
@@ -151,7 +151,7 @@ SymCryptEcpointScalarMulFixedWindow(
 
     SYMCRYPT_ASSERT( (pCurve->type == SYMCRYPT_ECURVE_TYPE_SHORT_WEIERSTRASS) ||
                      (pCurve->type == SYMCRYPT_ECURVE_TYPE_TWISTED_EDWARDS) );
-    SYMCRYPT_ASSERT( poSrc->pCurve == pCurve && poDst->pCurve == pCurve );
+    SYMCRYPT_ASSERT( SymCryptEcurveIsSame(pCurve, poSrc->pCurve) && SymCryptEcurveIsSame(pCurve, poDst->pCurve) );
     SYMCRYPT_ASSERT( cbScratch >= SYMCRYPT_INTERNAL_SCRATCH_BYTES_FOR_SCALAR_ECURVE_OPERATIONS(pCurve, 1) );
 
     // Creating temporary modelement
@@ -400,7 +400,7 @@ SymCryptEcpointMultiScalarMulWnafWithInterleaving(
 
     SYMCRYPT_ASSERT( (pCurve->type == SYMCRYPT_ECURVE_TYPE_SHORT_WEIERSTRASS) ||
                      (pCurve->type == SYMCRYPT_ECURVE_TYPE_TWISTED_EDWARDS) );
-    SYMCRYPT_ASSERT( poDst->pCurve == pCurve );
+    SYMCRYPT_ASSERT( SymCryptEcurveIsSame(pCurve, poDst->pCurve) );
     SYMCRYPT_ASSERT( cbScratch >= SYMCRYPT_INTERNAL_SCRATCH_BYTES_FOR_SCALAR_ECURVE_OPERATIONS(pCurve, nPoints) );
 
     // Creating temporary precomputed points (if needed for the first point)
@@ -455,7 +455,7 @@ SymCryptEcpointMultiScalarMulWnafWithInterleaving(
     //
     for (j = 0; j<nPoints; j++)
     {
-        SYMCRYPT_ASSERT( poSrcEcpointArray[j]->pCurve == pCurve );
+        SYMCRYPT_ASSERT( SymCryptEcurveIsSame(pCurve, poSrcEcpointArray[j]->pCurve) );
 
         // Check if k is 0 or if the src point is zero
         fZero[j] = ( SymCryptIntIsEqualUint32( piSrcScalarArray[j], 0 ) | SymCryptEcpointIsZero( pCurve, poSrcEcpointArray[j], pbScratch, cbScratch ) );
@@ -543,7 +543,7 @@ SymCryptEcpointGenericSetRandom(
             SIZE_T                  cbScratch )
 {
     PSYMCRYPT_MODELEMENT peScalar = NULL;
-    SYMCRYPT_ASSERT( poDst->pCurve == pCurve );
+    SYMCRYPT_ASSERT( SymCryptEcurveIsSame(pCurve, poDst->pCurve) );
     SYMCRYPT_ASSERT( cbScratch >= SYMCRYPT_INTERNAL_SCRATCH_BYTES_FOR_SCALAR_ECURVE_OPERATIONS(pCurve, 1) );
 
     peScalar = SymCryptModElementCreate( pbScratch, pCurve->cbModElement, pCurve->GOrd );

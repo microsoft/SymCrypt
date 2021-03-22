@@ -55,7 +55,7 @@ SymCryptMontgomerySetDistinguished(
             SIZE_T              cbScratch )
 {
     SYMCRYPT_ASSERT( pCurve->type == SYMCRYPT_ECURVE_TYPE_MONTGOMERY );
-    SYMCRYPT_ASSERT( poDst->pCurve == pCurve );
+    SYMCRYPT_ASSERT( SymCryptEcurveIsSame(pCurve, poDst->pCurve) );
 
     UNREFERENCED_PARAMETER( pbScratch );
     UNREFERENCED_PARAMETER( cbScratch );
@@ -91,7 +91,7 @@ SymCryptMontgomeryIsEqual(
 
     SYMCRYPT_ASSERT( (flags & ~(SYMCRYPT_FLAG_ECPOINT_EQUAL|SYMCRYPT_FLAG_ECPOINT_NEG_EQUAL)) == 0 );
     SYMCRYPT_ASSERT( pCurve->type == SYMCRYPT_ECURVE_TYPE_MONTGOMERY );
-    SYMCRYPT_ASSERT( poSrc1->pCurve == pCurve && poSrc2->pCurve == pCurve );
+    SYMCRYPT_ASSERT( SymCryptEcurveIsSame(pCurve, poSrc1->pCurve) && SymCryptEcurveIsSame(pCurve, poSrc2->pCurve) );
     SYMCRYPT_ASSERT( cbScratch >= SYMCRYPT_INTERNAL_SCRATCH_BYTES_FOR_COMMON_ECURVE_OPERATIONS( pCurve ) );
 
     UNREFERENCED_PARAMETER( flags );
@@ -132,7 +132,7 @@ SymCryptMontgomeryIsZero(
     PSYMCRYPT_MODELEMENT peZ = NULL;    // Pointer to Z
 
     SYMCRYPT_ASSERT( pCurve->type == SYMCRYPT_ECURVE_TYPE_MONTGOMERY );
-    SYMCRYPT_ASSERT( poSrc->pCurve == pCurve );
+    SYMCRYPT_ASSERT( SymCryptEcurveIsSame(pCurve, poSrc->pCurve) );
 
     UNREFERENCED_PARAMETER( pbScratch );
     UNREFERENCED_PARAMETER( cbScratch );
@@ -310,7 +310,7 @@ SymCryptMontgomeryPointScalarMul(
     SIZE_T                cbAllScratch;
 
     SYMCRYPT_ASSERT( pCurve->type == SYMCRYPT_ECURVE_TYPE_MONTGOMERY );
-    SYMCRYPT_ASSERT( (poSrc == NULL || poSrc->pCurve == pCurve) && poDst->pCurve == pCurve );
+    SYMCRYPT_ASSERT( (poSrc == NULL || SymCryptEcurveIsSame(pCurve, poSrc->pCurve)) && SymCryptEcurveIsSame(pCurve, poDst->pCurve) );
 
     // Make sure we only specify the correct flags
     if ((flags & ~SYMCRYPT_FLAG_ECC_LL_COFACTOR_MUL) != 0)

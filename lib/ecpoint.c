@@ -151,7 +151,7 @@ VOID
 SYMCRYPT_CALL
 SymCryptEcpointWipe( _In_ PCSYMCRYPT_ECURVE pCurve, _Out_ PSYMCRYPT_ECPOINT poDst )
 {
-    SYMCRYPT_ASSERT( poDst->pCurve == pCurve );
+    SYMCRYPT_ASSERT( SymCryptEcurveIsSame(pCurve, poDst->pCurve) );
 
     // Wipe the whole structure in one go.
     SymCryptWipe( poDst, SymCryptSizeofEcpointFromCurve( pCurve ) );
@@ -163,7 +163,7 @@ SymCryptEcpointCopy(
     _In_    PCSYMCRYPT_ECPOINT  poSrc,
     _Out_   PSYMCRYPT_ECPOINT   poDst )
 {
-    SYMCRYPT_ASSERT( poSrc->pCurve == pCurve && poDst->pCurve == pCurve );
+    SYMCRYPT_ASSERT( SymCryptEcurveIsSame(pCurve, poSrc->pCurve) && SymCryptEcurveIsSame(pCurve, poDst->pCurve) );
 
     if( poSrc != poDst )
     {
@@ -182,7 +182,7 @@ SymCryptEcpointMaskedCopy(
             UINT32              mask )
 {
     SYMCRYPT_ASSERT( (mask == 0) || (mask == 0xffffffff) );
-    SYMCRYPT_ASSERT( poSrc->pCurve == pCurve && poDst->pCurve == pCurve );
+    SYMCRYPT_ASSERT( SymCryptEcurveIsSame(pCurve, poSrc->pCurve) && SymCryptEcurveIsSame(pCurve, poDst->pCurve) );
 
     // Unconditionally combine the normalization state of source and destination to avoid potential for
     // leak of mask. Normalized is a non-secret value and is permitted to be leaked by side-channels
@@ -231,7 +231,7 @@ SymCryptEcpointTransform(
     PSYMCRYPT_MODELEMENT peT[2] = { 0 };    // Temporaries
 
     SYMCRYPT_ASSERT( (flags & ~SYMCRYPT_FLAG_DATA_PUBLIC) == 0 );
-    SYMCRYPT_ASSERT( poSrc->pCurve == pCurve && poDst->pCurve == pCurve );
+    SYMCRYPT_ASSERT( SymCryptEcurveIsSame(pCurve, poSrc->pCurve) && SymCryptEcurveIsSame(pCurve, poDst->pCurve) );
     SYMCRYPT_ASSERT( cbScratch >= SYMCRYPT_MAX(  SYMCRYPT_SCRATCH_BYTES_FOR_COMMON_MOD_OPERATIONS( pCurve->FModDigits ),
                                         SYMCRYPT_SCRATCH_BYTES_FOR_MODINV( pCurve->FModDigits )) +
                                   2 * pCurve->cbModElement );
