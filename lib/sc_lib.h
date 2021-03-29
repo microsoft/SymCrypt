@@ -244,6 +244,18 @@ SymCryptCheckLibraryInitialized()
 #define HMAC_IPAD_BYTE   0x36
 #define HMAC_OPAD_BYTE   0x5c
 
+// SYMCRYPT_CPU_FEATURES
+#define SYMCRYPT_CPU_FEATURES_FOR_PCLMULQDQ_CODE  (SYMCRYPT_CPU_FEATURE_PCLMULQDQ | SYMCRYPT_CPU_FEATURE_SSSE3 | SYMCRYPT_CPU_FEATURE_SAVEXMM_NOFAIL )
+
+#define SYMCRYPT_CPU_FEATURES_FOR_AESNI_CODE (SYMCRYPT_CPU_FEATURE_SSSE3 | SYMCRYPT_CPU_FEATURE_AESNI)
+#define SYMCRYPT_CPU_FEATURES_FOR_AESNI_PCLMULQDQ_CODE (SYMCRYPT_CPU_FEATURES_FOR_AESNI_CODE | SYMCRYPT_CPU_FEATURES_FOR_PCLMULQDQ_CODE)
+#define SYMCRYPT_CPU_FEATURES_FOR_VAES_256_CODE (SYMCRYPT_CPU_FEATURES_FOR_AESNI_CODE | SYMCRYPT_CPU_FEATURE_VAES_256)
+#define SYMCRYPT_CPU_FEATURES_FOR_VAES_512_CODE (SYMCRYPT_CPU_FEATURES_FOR_AESNI_CODE | SYMCRYPT_CPU_FEATURE_VAES_512)
+
+#define SYMCRYPT_CPU_FEATURES_FOR_SHANI_CODE (SYMCRYPT_CPU_FEATURE_SSSE3 | SYMCRYPT_CPU_FEATURE_SHANI)
+
+#define SYMCRYPT_CPU_FEATURES_FOR_MULX (SYMCRYPT_CPU_FEATURE_BMI2 | SYMCRYPT_CPU_FEATURE_ADX | SYMCRYPT_CPU_FEATURE_SSE2 )
+
 //
 // ROTATE OPERATIONS
 //
@@ -772,8 +784,6 @@ SymCryptGHashAppendDataPclmulqdq(
     _In_reads_( cbData )                    PCBYTE                      pbData,
     _In_                                    SIZE_T                      cbData );
 
-#define CPU_FEATURES_FOR_PCLMULQDQ  (SYMCRYPT_CPU_FEATURE_PCLMULQDQ | SYMCRYPT_CPU_FEATURE_SSSE3 | SYMCRYPT_CPU_FEATURE_SAVEXMM_NOFAIL )
-
 VOID
 SYMCRYPT_CALL
 SymCryptGHashResult(
@@ -944,7 +954,6 @@ C_ASSERT( sizeof( SYMCRYPT_SHA512_STATE_EXPORT_BLOB ) == SYMCRYPT_SHA512_STATE_E
 /////////////////////////////////////////////
 // AES internal functions
 
-#define SYMCRYPT_CPU_FEATURES_FOR_AESNI_CODE (SYMCRYPT_CPU_FEATURE_SSSE3 | SYMCRYPT_CPU_FEATURE_AESNI)   // The SSSE3 implies SSE, SSE2, and SSE3
 extern const SYMCRYPT_BLOCKCIPHER SymCryptAesBlockCipherNoOpt;
 
 VOID
@@ -1463,6 +1472,26 @@ extern const PCSYMCRYPT_PARALLEL_HASH SymCryptParallelSha256Algorithm;
 extern const PCSYMCRYPT_PARALLEL_HASH SymCryptParallelSha384Algorithm;
 extern const PCSYMCRYPT_PARALLEL_HASH SymCryptParallelSha512Algorithm;
 
+#define PAR_SCRATCH_ELEMENTS_256    (4+8+64)    // # scratch elements our parallel SHA256 implementations need
+#define PAR_SCRATCH_ELEMENTS_512    (4+8+80)    // # scratch elements our parallel SHA512 implementations need
+
+// pScratch must be 32B aligned, as it is used as an array of __m256i
+VOID
+SYMCRYPT_CALL
+SymCryptParallelSha256AppendBlocks_ymm(
+    _Inout_updates_( 8 )                                PSYMCRYPT_SHA256_CHAINING_STATE   * pChain,
+    _Inout_updates_( 8 )                                PCBYTE                            * ppByte,
+                                                        SIZE_T                              nBytes,
+    _Out_writes_( PAR_SCRATCH_ELEMENTS_256 * 32 )       PBYTE                               pScratch );
+
+// pScratch must be 32B aligned, as it is used as an array of __m256i
+VOID
+SYMCRYPT_CALL
+SymCryptParallelSha512AppendBlocks_ymm(
+    _Inout_updates_( 4 )                                PSYMCRYPT_SHA512_CHAINING_STATE   * pChain,
+    _Inout_updates_( 4 )                                PCBYTE                            * ppByte,
+                                                        SIZE_T                              nBytes,
+    _Out_writes_( PAR_SCRATCH_ELEMENTS_512 * 32 )       PBYTE                               pScratch );
 
 extern const SYMCRYPT_HASH SymCryptSha256Algorithm_default;
 extern const SYMCRYPT_HASH SymCryptSha384Algorithm_default;
@@ -1475,8 +1504,6 @@ SymCryptFatalIntercept( UINT32 fatalCode );
 extern const BYTE SymCryptSha256KATAnswer[32];
 extern const BYTE SymCryptSha384KATAnswer[48];
 extern const BYTE SymCryptSha512KATAnswer[64];
-
-#define SYMCRYPT_CPU_FEATURES_FOR_SHANI_CODE (SYMCRYPT_CPU_FEATURE_SSSE3 | SYMCRYPT_CPU_FEATURE_SHANI)   // The SSSE3 implies SSE, SSE2, and SSE3
 
 //
 // Arithmetic
@@ -1714,8 +1741,6 @@ C_ASSERT( (SYMCRYPT_MODULAR_FUNCTIONS_SIZE & (SYMCRYPT_MODULAR_FUNCTIONS_SIZE-1)
     &SymCryptFdefModulusCopyFixupMontgomery,\
     &SymCryptFdefModulusInitMontgomery,\
 }
-
-#define SYMCRYPT_CPU_FEATURES_FOR_MULX (SYMCRYPT_CPU_FEATURE_BMI2 | SYMCRYPT_CPU_FEATURE_ADX | SYMCRYPT_CPU_FEATURE_SSE2 )
 
 VOID
 SYMCRYPT_CALL

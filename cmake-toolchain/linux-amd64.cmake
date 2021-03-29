@@ -13,9 +13,11 @@ add_compile_options(-D_AMD64_)
 add_compile_options(-DDBG)
 add_compile_options(-O3)
 
-# TODO: The below target options give the compiler the freedom to generate these instructions _anywhere_ in the resultant
-# binary. We need to restrict their use to the specific functions which are only called once CPUID has been checked, or
-# we may hit illegal instructions.
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -mpclmul -mvpclmulqdq -mavx512dq -mavx512bw -maes -mvaes -msha -mrdrnd -mrdseed")
+# Enable a baseline of features for the compiler to support everywhere
+# Other than for SSSE3 we do not expect the compiler to generate these instructions anywhere other than with intrinsics
+#
+# We cannot globally enable AVX and later, as we need to keep use of these instructions behind CPU detection, and the
+# instructions are definitely useful enough for a smart compiler to use them in C code (i.e. in memcpy)
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -mssse3 -mxsave -maes -mpclmul -msha -mrdrnd -mrdseed")
 
 set(CMAKE_ASM_FLAGS "-x assembler-with-cpp")

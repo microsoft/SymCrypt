@@ -788,7 +788,7 @@ SymCryptGHashExpandKey(
 
     pExpandedKeyTable = (PSYMCRYPT_GF128_ELEMENT)&expandedKey->tableSpace[expandedKey->tableOffset];
 
-    if( SYMCRYPT_CPU_FEATURES_PRESENT( CPU_FEATURES_FOR_PCLMULQDQ ) )
+    if( SYMCRYPT_CPU_FEATURES_PRESENT( SYMCRYPT_CPU_FEATURES_FOR_PCLMULQDQ_CODE ) )
     {
         //
         // We can only use the PCLMULQDQ data representation if the SaveXmm never fails.
@@ -813,7 +813,7 @@ SymCryptGHashExpandKey(
     PSYMCRYPT_GF128_ELEMENT pExpandedKeyTable;
     pExpandedKeyTable = &expandedKey->table[0];
 
-    if( SYMCRYPT_CPU_FEATURES_PRESENT( CPU_FEATURES_FOR_PCLMULQDQ ) )
+    if( SYMCRYPT_CPU_FEATURES_PRESENT( SYMCRYPT_CPU_FEATURES_FOR_PCLMULQDQ_CODE ) )
     {
         SymCryptGHashExpandKeyPclmulqdq( pExpandedKeyTable, pH );
     } else if( SYMCRYPT_CPU_FEATURES_PRESENT( SYMCRYPT_CPU_FEATURE_SSE2 ) )
@@ -853,7 +853,7 @@ SymCryptGHashAppendData(
 
     pExpandedKeyTable = (PSYMCRYPT_GF128_ELEMENT)&expandedKey->tableSpace[expandedKey->tableOffset];
 
-    if( SYMCRYPT_CPU_FEATURES_PRESENT( CPU_FEATURES_FOR_PCLMULQDQ ) )
+    if( SYMCRYPT_CPU_FEATURES_PRESENT( SYMCRYPT_CPU_FEATURES_FOR_PCLMULQDQ_CODE ) )
     {
         if( SymCryptSaveXmm( &SaveData ) != SYMCRYPT_NO_ERROR )
         {
@@ -873,7 +873,7 @@ SymCryptGHashAppendData(
     PCSYMCRYPT_GF128_ELEMENT pExpandedKeyTable;
 
     pExpandedKeyTable = &expandedKey->table[0];
-    if( SYMCRYPT_CPU_FEATURES_PRESENT( CPU_FEATURES_FOR_PCLMULQDQ ) )
+    if( SYMCRYPT_CPU_FEATURES_PRESENT( SYMCRYPT_CPU_FEATURES_FOR_PCLMULQDQ_CODE ) )
     {
         SymCryptGHashAppendDataPclmulqdq( pExpandedKeyTable, pState, pbData, cbData );
     } else if( SYMCRYPT_CPU_FEATURES_PRESENT( SYMCRYPT_CPU_FEATURE_SSE2 ) )

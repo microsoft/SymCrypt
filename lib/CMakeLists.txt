@@ -11,6 +11,7 @@ set(SOURCES_COMMON
     aes-c.c
     aes-asm.c
     aes-xmm.c
+    aes-ymm.c
     aes-neon.c
     aes-selftest.c
     AesTables.c
@@ -41,7 +42,9 @@ set(SOURCES_COMMON
     rdrand.c
     rdseed.c
     sha256Par.c
-    sha512par.c
+    sha256Par-ymm.c
+    sha512Par.c
+    sha512Par-ymm.c
     marvin32.c
     cpuid.c
     cpuid_um.c
@@ -130,6 +133,12 @@ if(WIN32 AND NOT(SYMCRYPT_TARGET_ENV MATCHES "Generic"))
             i386/wipe.asm
             PROPERTY LANGUAGE ASM_MASM)
     endif()
+endif()
+
+if (CMAKE_C_COMPILER_ID MATCHES "Clang|GNU")
+    set_source_files_properties(aes-ymm.c PROPERTIES COMPILE_OPTIONS "-mavx;-mavx2;-mvaes;-mvpclmulqdq")
+    set_source_files_properties(sha256Par-ymm.c PROPERTIES COMPILE_OPTIONS "-mavx;-mavx2")
+    set_source_files_properties(sha512Par-ymm.c PROPERTIES COMPILE_OPTIONS "-mavx;-mavx2")
 endif()
 
 include_directories(${CMAKE_SOURCE_DIR}/inc)

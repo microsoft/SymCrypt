@@ -206,6 +206,7 @@ SymCryptXtsAesEncryptXmm(
     SymCryptWipeKnownSize( localScratch, sizeof( localScratch ) );
 }
 
+#if 0 //do not compile Zmm code for now
 VOID
 SYMCRYPT_CALL
 SymCryptXtsAesEncryptZmm(
@@ -260,6 +261,7 @@ SymCryptXtsAesEncryptZmm(
 
     SymCryptWipeKnownSize( localScratch, sizeof( localScratch ) );
 }
+#endif
 
 VOID
 SYMCRYPT_CALL
@@ -436,10 +438,10 @@ SymCryptXtsAesEncrypt(
                             SIZE_T                          cbData )
 {
 #if SYMCRYPT_CPU_AMD64
-    /* if( SYMCRYPT_CPU_FEATURES_PRESENT( SYMCRYPT_CPU_FEATURES_FOR_AESNI_CODE | SYMCRYPT_CPU_FEATURE_VAES_512 ) ) {
+    /* if( SYMCRYPT_CPU_FEATURES_PRESENT( SYMCRYPT_CPU_FEATURES_FOR_VAES_512_CODE ) ) {
         SymCryptXtsAesEncryptZmm( pExpandedKey, cbDataUnit, tweak, pbSrc, pbDst, cbData );
     } else */
-    if( SYMCRYPT_CPU_FEATURES_PRESENT( SYMCRYPT_CPU_FEATURES_FOR_AESNI_CODE | SYMCRYPT_CPU_FEATURE_VAES_256 ) ) {
+    if( SYMCRYPT_CPU_FEATURES_PRESENT( SYMCRYPT_CPU_FEATURES_FOR_VAES_256_CODE ) ) {
         SymCryptXtsAesEncryptYmm( pExpandedKey, cbDataUnit, tweak, pbSrc, pbDst, cbData );
     } else if( SYMCRYPT_CPU_FEATURES_PRESENT( SYMCRYPT_CPU_FEATURES_FOR_AESNI_CODE ) ) {
         SymCryptXtsAesEncryptXmm( pExpandedKey, cbDataUnit, tweak, pbSrc, pbDst, cbData );
@@ -635,6 +637,7 @@ SymCryptXtsAesDecryptXmm(
     SymCryptWipeKnownSize( localScratch, sizeof( localScratch ) );
 }
 
+#if 0 //do not compile Zmm code for now
 VOID
 SYMCRYPT_CALL
 SymCryptXtsAesDecryptZmm(
@@ -689,6 +692,7 @@ SymCryptXtsAesDecryptZmm(
 
     SymCryptWipeKnownSize( localScratch, sizeof( localScratch ) );
 }
+#endif
 
 VOID
 SYMCRYPT_CALL
@@ -757,10 +761,10 @@ SymCryptXtsAesDecrypt(
                             SIZE_T                          cbData )
 {
 #if SYMCRYPT_CPU_AMD64
-    /* if( SYMCRYPT_CPU_FEATURES_PRESENT( SYMCRYPT_CPU_FEATURES_FOR_AESNI_CODE | SYMCRYPT_CPU_FEATURE_VAES_512 ) ) {
+    /* if( SYMCRYPT_CPU_FEATURES_PRESENT( SYMCRYPT_CPU_FEATURES_FOR_VAES_512_CODE ) ) {
         SymCryptXtsAesDecryptZmm( pExpandedKey, cbDataUnit, tweak, pbSrc, pbDst, cbData );
     } else */
-    if( SYMCRYPT_CPU_FEATURES_PRESENT( SYMCRYPT_CPU_FEATURES_FOR_AESNI_CODE | SYMCRYPT_CPU_FEATURE_VAES_256 ) ) {
+    if( SYMCRYPT_CPU_FEATURES_PRESENT( SYMCRYPT_CPU_FEATURES_FOR_VAES_256_CODE ) ) {
         SymCryptXtsAesDecryptYmm( pExpandedKey, cbDataUnit, tweak, pbSrc, pbDst, cbData );
     } else if( SYMCRYPT_CPU_FEATURES_PRESENT( SYMCRYPT_CPU_FEATURES_FOR_AESNI_CODE ) ) {
         SymCryptXtsAesDecryptXmm( pExpandedKey, cbDataUnit, tweak, pbSrc, pbDst, cbData );

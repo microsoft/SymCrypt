@@ -42,6 +42,8 @@ SOURCES= \
     aes-c.c \
     aes-asm.c \
     aes-xmm.c \
+    aes-ymm.c \
+#    aes-zmm.c \
     aes-neon.c \
     aes-selftest.c \
     aesTables.c \
@@ -80,7 +82,9 @@ SOURCES= \
     rdrand.c \
     rdseed.c \
     sha256Par.c \
+    sha256Par-ymm.c \
     sha512Par.c \
+    sha512Par-ymm.c \
     marvin32.c \
     cpuid.c \
     cpuid_um.c \

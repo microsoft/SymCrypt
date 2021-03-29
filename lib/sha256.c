@@ -1190,6 +1190,7 @@ SymCryptSha256AppendBlocks_xmm2(
 // SHA-NI Implementation
 //
 
+#if SYMCRYPT_MS_VC
 // Intrinsic definitions included here
 // until the header is updated.
 // *******************************
@@ -1201,6 +1202,7 @@ extern __m128i _mm_sha256msg2_epu32(__m128i, __m128i);
 // *******************************
 // *******************************
 // *******************************
+#endif
 
 // For the SHA-NI implementation we will utilize 128-bit XMM registers. Each
 // XMM state will be denoted as (R_3, R_2, R_1, R_0), where each R_i

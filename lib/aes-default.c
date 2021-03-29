@@ -480,7 +480,7 @@ SymCryptAesGcmEncryptPartOnePass(
         SYMCRYPT_ASSERT( pState->pKey->pBlockCipher->blockSize == SYMCRYPT_GCM_BLOCK_SIZE );
 
 #if SYMCRYPT_CPU_AMD64
-        if( SYMCRYPT_CPU_FEATURES_PRESENT( SYMCRYPT_CPU_FEATURES_FOR_AESNI_CODE | SYMCRYPT_CPU_FEATURE_VAES_256 ) ) {
+        if( SYMCRYPT_CPU_FEATURES_PRESENT( SYMCRYPT_CPU_FEATURES_FOR_VAES_256_CODE ) ) {
             SymCryptAesGcmEncryptStitchedYmm_2048(
                 &pState->pKey->blockcipherKey.aes,
                 &pState->counterBlock[0],
@@ -646,7 +646,7 @@ SymCryptAesGcmDecryptPartOnePass(
         SYMCRYPT_ASSERT( pState->pKey->pBlockCipher->blockSize == SYMCRYPT_GCM_BLOCK_SIZE );
 
 #if SYMCRYPT_CPU_AMD64
-        if( SYMCRYPT_CPU_FEATURES_PRESENT( SYMCRYPT_CPU_FEATURES_FOR_AESNI_CODE | SYMCRYPT_CPU_FEATURE_VAES_256 ) ) {
+        if( SYMCRYPT_CPU_FEATURES_PRESENT( SYMCRYPT_CPU_FEATURES_FOR_VAES_256_CODE ) ) {
             SymCryptAesGcmDecryptStitchedYmm_2048(
                 &pState->pKey->blockcipherKey.aes,
                 &pState->counterBlock[0],
@@ -744,7 +744,7 @@ SymCryptAesGcmEncryptPart(
                             SIZE_T              cbData )
 {
 #if SYMCRYPT_CPU_AMD64
-    if( SYMCRYPT_CPU_FEATURES_PRESENT( SYMCRYPT_CPU_FEATURES_FOR_AESNI_CODE | CPU_FEATURES_FOR_PCLMULQDQ ) )
+    if( SYMCRYPT_CPU_FEATURES_PRESENT( SYMCRYPT_CPU_FEATURES_FOR_AESNI_PCLMULQDQ_CODE ) )
     {
         SymCryptAesGcmEncryptPartOnePass( pState, pbSrc, pbDst, cbData );
     } else {
@@ -754,7 +754,7 @@ SymCryptAesGcmEncryptPart(
 #elif SYMCRYPT_CPU_X86
     SYMCRYPT_EXTENDED_SAVE_DATA  SaveData;
 
-    if( SYMCRYPT_CPU_FEATURES_PRESENT( SYMCRYPT_CPU_FEATURES_FOR_AESNI_CODE | CPU_FEATURES_FOR_PCLMULQDQ ) &&
+    if( SYMCRYPT_CPU_FEATURES_PRESENT( SYMCRYPT_CPU_FEATURES_FOR_AESNI_PCLMULQDQ_CODE ) &&
         SymCryptSaveXmm( &SaveData ) == SYMCRYPT_NO_ERROR )
     {
         SymCryptAesGcmEncryptPartOnePass( pState, pbSrc, pbDst, cbData );
@@ -764,7 +764,7 @@ SymCryptAesGcmEncryptPart(
     }
 
 #elif SYMCRYPT_CPU_ARM64
-    if( SYMCRYPT_CPU_FEATURES_PRESENT( SYMCRYPT_CPU_FEATURE_NEON_AES ) )
+    if( SYMCRYPT_CPU_FEATURES_PRESENT( SYMCRYPT_CPU_FEATURE_NEON_AES | SYMCRYPT_CPU_FEATURE_NEON_PMULL ) )
     {
         SymCryptAesGcmEncryptPartOnePass( pState, pbSrc, pbDst, cbData );
     } else {
@@ -785,7 +785,7 @@ SymCryptAesGcmDecryptPart(
                             SIZE_T              cbData )
 {
 #if SYMCRYPT_CPU_AMD64
-    if( SYMCRYPT_CPU_FEATURES_PRESENT( SYMCRYPT_CPU_FEATURES_FOR_AESNI_CODE | CPU_FEATURES_FOR_PCLMULQDQ ) )
+    if( SYMCRYPT_CPU_FEATURES_PRESENT( SYMCRYPT_CPU_FEATURES_FOR_AESNI_PCLMULQDQ_CODE ) )
     {
         SymCryptAesGcmDecryptPartOnePass( pState, pbSrc, pbDst, cbData );
     } else {
@@ -795,7 +795,7 @@ SymCryptAesGcmDecryptPart(
 #elif SYMCRYPT_CPU_X86
     SYMCRYPT_EXTENDED_SAVE_DATA  SaveData;
 
-    if( SYMCRYPT_CPU_FEATURES_PRESENT( SYMCRYPT_CPU_FEATURES_FOR_AESNI_CODE | CPU_FEATURES_FOR_PCLMULQDQ ) &&
+    if( SYMCRYPT_CPU_FEATURES_PRESENT( SYMCRYPT_CPU_FEATURES_FOR_AESNI_PCLMULQDQ_CODE ) &&
         SymCryptSaveXmm( &SaveData ) == SYMCRYPT_NO_ERROR )
     {
         SymCryptAesGcmDecryptPartOnePass( pState, pbSrc, pbDst, cbData );

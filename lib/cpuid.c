@@ -142,7 +142,7 @@ SymCryptDetectCpuFeaturesByCpuid( UINT32 flags )
         //
         // We use the following logic:
         // Check that the OSXSAVE bit is 1, which means we can use XGETBV
-        // Use XGETBV and check that XCR0[2:1] = '11b' signalign that both XMM and YMM are enabled by OS
+        // Use XGETBV and check that XCR0[2:1] = '11b' signaling that both XMM and YMM are enabled by OS
         // Note that we only disable the AVX2 usage; AESNI & XMM registers are used independent of OS support, because
         // all our (known) OSes have it.
         //
