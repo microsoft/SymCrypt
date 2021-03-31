@@ -11,6 +11,7 @@
 
 extern SYMCRYPT_ALIGN_AT( 256 ) const UINT32 SymCryptSha256K[64];
 
+#if  SYMCRYPT_CPU_X86 | SYMCRYPT_CPU_AMD64
 //
 // Code that uses the YMM registers.
 //
@@ -250,3 +251,5 @@ SymCryptParallelSha256AppendBlocks_ymm(
     _mm256_zeroupper();
 
 }
+
+#endif // CPU_X86_X64
