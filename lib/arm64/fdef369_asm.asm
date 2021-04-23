@@ -16,7 +16,11 @@
 #include "symcrypt_name_mangling.inc"
 #include "symcrypt_magic.inc"
 
+; As Arm assembler already uses C preprocessor, we can just hardcode this asm to include constants
+; MASM for now. To be fixed properly when converting arm64 asm to symcryptasm.
+#define SYMCRYPT_MASM
 #include "C_asm_shared.inc"
+#undef SYMCRYPT_MASM
 
 ; A digit consists of 3 words of 64 bits each
 
@@ -213,7 +217,7 @@ SymCryptFdef369RawMulAsmLoopInner1
     adcs    x12, x12, x15               ; Adding the previous word (if there was a carry from the last addition it is added)
     umulh   x15, x6, x8                 ; Bits <127:64> of pSrc1[0]*pSrc2[j+2]
     str     x12, [x4], #8               ; Store to destination
-    
+
     cbnz    x3, SymCryptFdef369RawMulAsmLoopInner1
 
     adc     x15, x15, XZR               ; Store the next word into the destination (with the carry if any)

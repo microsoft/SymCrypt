@@ -13,13 +13,28 @@ ARM64X_EC_ENABLED=1
 TARGETNAME = symcrypt
 TARGETTYPE=LIBRARY
 
-KM_LIBRARY = 1		# enable /kernel flag & epilogue metadata
-GUARD = 1		# enable CFG
+KM_LIBRARY = 1  # enable /kernel flag & epilogue metadata
+GUARD = 1       # enable CFG
 ENABLE_ASM_RETPOLINE = 1
 ENABLE_RETPOLINE_LINKER_WARNING = 1
 
 # Enable /Gy for all assembler code
 ASM_DEFINES=$(ASM_DEFINES) /Gy
+
+USE_MAKEFILE_INC = 1
+
+# Explicitly call out that we must preprocess symcryptasm files
+# Make the target paths be architecture specific to get nmake to pick the right inference rule
+NTTARGETFILE0=\
+!IF "$(_BUILDARCH)" == "amd64"
+    $(OBJ_PATH)\$(O)\..\amd64\fdef_asm.asm \
+    $(OBJ_PATH)\$(O)\..\amd64\wipe.asm \
+    $(OBJ_PATH)\$(O)\..\amd64\aesasm.asm \
+    $(OBJ_PATH)\$(O)\..\amd64\fdef369_asm.asm \
+    $(OBJ_PATH)\$(O)\..\amd64\fdef_mulx.asm \
+!ELSEIF "$(_BUILDARCH)" == "x86"
+    $(OBJ_PATH)\$(O)\..\i386\fdef_asm.asm \
+!ENDIF
 
 INCLUDES=  \
     ..\inc; \
@@ -137,7 +152,6 @@ SOURCES= \
     scsTools.c \
 
 AMD64_SOURCES = \
-#    sha1asm.asm \
     wipe.asm \
     aesasm.asm \
     fdef_asm.asm \
@@ -145,10 +159,8 @@ AMD64_SOURCES = \
     fdef_mulx.asm \
 
 I386_SOURCES = \
-#    sha1asm.asm \
     aesasm.asm \
     wipe.asm \
-#    rc4asm.asm \
     fdef_asm.asm \
 
 ARM_SOURCES = \

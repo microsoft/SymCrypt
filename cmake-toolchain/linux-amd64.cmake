@@ -10,7 +10,6 @@ set(SYMCRYPT_TARGET_ENV Linux)
 
 # Define _AMD64_ to set up the correct SymCrypt macros, e.g. SYMCRYPT_CPU_AMD64
 add_compile_options(-D_AMD64_)
-add_compile_options(-DDBG)
 add_compile_options(-O3)
 
 # Enable a baseline of features for the compiler to support everywhere

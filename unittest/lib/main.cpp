@@ -7,7 +7,6 @@
 
 #include "precomp.h"
 
-#define EQU =
 #include "C_asm_shared.inc"
 
 VOID

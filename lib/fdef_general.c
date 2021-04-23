@@ -517,11 +517,11 @@ SymCryptFdefIntSetValueUint64(
 SYMCRYPT_ERROR
 SYMCRYPT_CALL
 SymCryptFdefRawSetValue(
-    _In_reads_bytes_(cbSrc)     PCBYTE                  pbSrc,
-                                SIZE_T                  cbSrc,
-                                SYMCRYPT_NUMBER_FORMAT  format,
-    _Out_writes_(nWords)        PUINT32                 pDst,
-                                UINT32                  nDigits )
+    _In_reads_bytes_(cbSrc)                             PCBYTE                  pbSrc,
+                                                        SIZE_T                  cbSrc,
+                                                        SYMCRYPT_NUMBER_FORMAT  format,
+    _Out_writes_(nDigits * SYMCRYPT_FDEF_DIGIT_NUINT32) PUINT32                 pDst,
+                                                        UINT32                  nDigits )
 {
     SYMCRYPT_ERROR scError;
     UINT32  b;
@@ -611,11 +611,11 @@ SymCryptFdefIntSetValue(
 SYMCRYPT_ERROR
 SYMCRYPT_CALL
 SymCryptFdefRawGetValue(
-    _In_reads_(nWords)          PCUINT32                pSrc,
-                                UINT32                  nDigits,
-    _Out_writes_bytes_(cbBytes) PBYTE                   pbDst,
-                                SIZE_T                  cbDst,
-                                SYMCRYPT_NUMBER_FORMAT  format )
+    _In_reads_(nDigits * SYMCRYPT_FDEF_DIGIT_NUINT32)   PCUINT32                pSrc,
+                                                        UINT32                  nDigits,
+    _Out_writes_bytes_(cbBytes)                         PBYTE                   pbDst,
+                                                        SIZE_T                  cbDst,
+                                                        SYMCRYPT_NUMBER_FORMAT  format )
 {
     SYMCRYPT_ERROR scError;
     UINT32  b;

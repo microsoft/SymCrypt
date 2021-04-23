@@ -1,4 +1,4 @@
-# Introduction 
+# Introduction
 SymCrypt is the core cryptographic function library currently used by Windows.
 
 ## History
@@ -30,20 +30,23 @@ or gcc 7.4.0 on Linux. Note that CMake ships with Visual Studio 2019.
 4. Configure CMake compilation:
     * For 32-bit Windows targets: `cmake .. -DCMAKE_TOOLCHAIN_FILE=../cmake-toolchain/windows-x86.cmake -A Win32`
     * For 64-bit Windows targets: `cmake .. -DCMAKE_TOOLCHAIN_FILE=../cmake-toolchain/windows-amd64.cmake`
-    * For Linux (or Windows with no CPU optimizations): `cmake ..`
+    * For 64-bit Linux targets: `cmake .. -DCMAKE_TOOLCHAIN_FILE=../cmake-toolchain/linux-amd64.cmake`
+    * For no CPU optimizations: `cmake ..`
+    * Optionally, for a release build, specify `-DCMAKE_BUILD_TYPE=Release`
 5. `cmake --build .`
+    * Optionally specify -jN where N is the number of processes you wish to spawn for the build
 
 If compilation succeeds, the output will be put in the `exe` subdirectory relative to where compilation occurred
 (i.e. `bin/exe` if you followed the instructions above).
 
 The SymCrypt unit test is in the `unittest` directory. It runs extensive functional tests on the SymCrypt
 library. On Windows it also compares results against on other implementations such as the Windows APIs CNG
-and CAPI, and the older crypto libraries rsa32 and msbignum, if they are available. It also provides 
+and CAPI, and the older crypto libraries rsa32 and msbignum, if they are available. It also provides
 detailed performance information.
 
 # Security Bugs
 If you believe you have found a problem that affects the security of this code, please do **NOT** create an issue
-or pull request, but instead email your comments to secure@microsoft.com. 
+or pull request, but instead email your comments to secure@microsoft.com.
 
 # Contribute
 We love to receive comments and suggestions. Unfortunately we cannot accept external code contributions at this time.

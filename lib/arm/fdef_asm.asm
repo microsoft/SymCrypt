@@ -9,7 +9,11 @@
 #include "symcrypt_version.inc"
 #include "symcrypt_magic.inc"
 
+; As Arm assembler already uses C preprocessor, we can just hardcode this asm to include constants
+; MASM for now. To be fixed properly when converting arm64 asm to symcryptasm.
+#define SYMCRYPT_MASM
 #include "C_asm_shared.inc"
+#undef SYMCRYPT_MASM
 
 ; A digit consists of 4 words of 32 bits each
 
@@ -449,11 +453,11 @@ SymCryptFdefRawSquareAsmInnerLoopInit_Word1
 
     SQR_SINGLEADD_32    3
 
-  
+
     add     r2, r2, #16
     add     r4, r4, #16
 
-    adds    r3, r3, #1                  ; move one digit up  
+    adds    r3, r3, #1                  ; move one digit up
     bne     SymCryptFdefRawSquareAsmInnerLoopInit_Word0
 
     str     r11, [r4]                   ; Store the next word into the destination
@@ -689,7 +693,7 @@ SymCryptFdefMontgomeryReduceAsmInner
     adds    r11, r11, r7                ; c + pSrc[nWords] + hc
     adc     r8, r8, #0                  ; Add the carry if any
     str     r11, [r1], #4               ; pSrc[nWords] = c
-    
+
     adds    r12, r12, r6                ; c + pSrc[nWords+1]
     adc     r9, r9, #0                  ; Add the carry if any
     adds    r12, r12, r8                ; c + pSrc[nWords] + hc
@@ -701,7 +705,7 @@ SymCryptFdefMontgomeryReduceAsmInner
     add     r2, r2, #8                  ; Move stored pSrc pointer two words up
     ldr     r0, [sp, #pMod]             ; Restore the pMod pointer
     mov     r1, r2                      ; Restore the pSrc pointer
-    
+
     bne     SymCryptFdefMontgomeryReduceAsmOuter
 
     ;

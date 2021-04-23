@@ -722,11 +722,11 @@ SymCryptFdefIntSquare(
 VOID
 SYMCRYPT_CALL
 SymCryptFdefRawMulC(
-    _In_reads_(nWords1)             PCUINT32    pSrc1,
-                                    UINT32      nDigits1,
-    _In_reads_(nWords2)             PCUINT32    pSrc2,
-                                    UINT32      nDigits2,
-    _Out_writes_(nWords1 + nWords2) PUINT32     pDst )
+    _In_reads_(nDigits1 * SYMCRYPT_FDEF_DIGIT_NUINT32)              PCUINT32    pSrc1,
+                                                                    UINT32      nDigits1,
+    _In_reads_(nDigits2 * SYMCRYPT_FDEF_DIGIT_NUINT32)              PCUINT32    pSrc2,
+                                                                    UINT32      nDigits2,
+    _Out_writes_((nDigits1+nDigits2)*SYMCRYPT_FDEF_DIGIT_NUINT32)   PUINT32     pDst )
 {
     UINT32 nWords1 = nDigits1 * SYMCRYPT_FDEF_DIGIT_NUINT32;
     UINT32 nWords2 = nDigits2 * SYMCRYPT_FDEF_DIGIT_NUINT32;
@@ -778,9 +778,9 @@ SymCryptFdefRawMul(
 VOID
 SYMCRYPT_CALL
 SymCryptFdefRawSquareC(
-    _In_reads_(nWords)              PCUINT32    pSrc,
-                                    UINT32      nDigits,
-    _Out_writes_(2*nWords)          PUINT32     pDst )
+    _In_reads_(nDigits * SYMCRYPT_FDEF_DIGIT_NUINT32)   PCUINT32    pSrc,
+                                                        UINT32      nDigits,
+    _Out_writes_(2*nDigits*SYMCRYPT_FDEF_DIGIT_NUINT32) PUINT32     pDst )
 {
     UINT32 nWords = nDigits * SYMCRYPT_FDEF_DIGIT_NUINT32;
 

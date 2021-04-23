@@ -28,9 +28,8 @@ set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib/${CMAKE_SYSTEM_PROCES
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/exe/${CMAKE_SYSTEM_PROCESSOR}/${SYMCRYPT_TARGET_ENV})
 
 if(WIN32 AND SYMCRYPT_TARGET_ENV MATCHES "WindowsUserMode")
-    # Set DBG=1 and enable ASM_MASM. Annoyingly, this has to be done in the main CMake file rather than in
-    # the toolchain file
-    add_compile_options(-DDBG=1)
+    # Enable ASM_MASM. Annoyingly, this has to be done in the main CMake file rather than in the
+    # toolchain file
     enable_language(ASM_MASM)
     add_compile_options(/MP)
     # Remove /RTC1, incompatible of /Ox
@@ -43,16 +42,23 @@ if(WIN32 AND SYMCRYPT_TARGET_ENV MATCHES "WindowsUserMode")
     string( REPLACE "/Od" "" CMAKE_C_FLAGS_DEBUG ${CMAKE_C_FLAGS_DEBUG})
     string( REPLACE "/Od" "" CMAKE_CXX_FLAGS_RELEASE ${CMAKE_CXX_FLAGS_RELEASE})
     string( REPLACE "/Od" "" CMAKE_C_FLAGS_RELEASE ${CMAKE_C_FLAGS_RELEASE})
-    
-    IF(CMAKE_BUILD_TYPE MATCHES Release)
-        message("Release mode")
+
+    if(CMAKE_BUILD_TYPE MATCHES Release)
         add_compile_options(/Oxs)
-    ENDIF(CMAKE_BUILD_TYPE MATCHES Release)
+    endif()
 elseif(NOT WIN32)
     enable_language(ASM)
     add_compile_options(-Wno-deprecated-declarations -Wno-deprecated)
     add_compile_options(-g)
     add_compile_options(-Wno-multichar)
+    add_compile_options(-fPIC)
+endif()
+
+if(CMAKE_BUILD_TYPE MATCHES Release)
+    message("Release mode")
+else()
+    message("Debug mode")
+    add_compile_options(-DDBG=1)
 endif()
 
 include_directories(inc)

@@ -1,0 +1,36 @@
+//
+//  symcryptasm_shared.cppasm   Shared definitions used by the C preprocessor step in symcryptasm
+//  processing. See scripts/symcryptasm_processor.py for more details.
+//
+// Copyright (c) Microsoft Corporation. Licensed under the MIT license.
+//
+
+#if defined(SYMCRYPT_MASM)
+
+#if defined(SYMCRYPT_CPU_AMD64)
+include ksamd64.inc
+#endif
+
+#include "C_asm_shared.inc"
+
+#define FILE_END()                      END
+#define ALIGN(__alignment)              align __alignment
+#define GET_SYMBOL_ADDRESS(__symbol)    __symbol
+#define HEX(__constant)                 __constant##h
+
+#elif defined(SYMCRYPT_GAS)
+
+.intel_syntax noprefix
+
+#include "C_asm_shared.inc"
+
+#define FILE_END()
+#define ALIGN(__alignment)              .align __alignment
+#define GET_SYMBOL_ADDRESS(__symbol)    __symbol+rip
+#define HEX(__constant)                 0x##__constant
+
+#else
+
+#error Unknown target assembly
+
+#endif

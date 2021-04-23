@@ -1,5 +1,6 @@
 ;
-;  fdef_asm.asm     Assembler code for fast arithmetic 
+;  fdef_asm.cppasm     Assembler code for fast arithmetic
+;  Requires C preprocessor to correctly include C_asm_shared.inc
 ;
 ; Copyright (c) Microsoft Corporation. Licensed under the MIT license.
 ;
@@ -11,9 +12,9 @@
 ;
 ; FPO documentation:
 ; The .FPO provides debugging information.
-; This stuff not well documented, 
+; This stuff not well documented,
 ; but here is the information I've gathered about the arguments to .FPO
-; 
+;
 ; In order:
 ; cdwLocals: Size of local variables, in DWords
 ; cdwParams: Size of parameters, in DWords. Given that this is all about
@@ -23,7 +24,7 @@
 ;            prolog code with work for better performance. Most uses of
 ;            .FPO seem to set this value to 0 anyway, which is what we
 ;            will do.
-; cbRegs   : # registers saved in the prolog. 
+; cbRegs   : # registers saved in the prolog.
 ; fUseBP   : 0 if EBP is not used as base pointer, 1 if EBP is used as base pointer
 ; cbFrame  : Type of frame.
 ;            0 = FPO frame (no frame pointer)
@@ -43,7 +44,7 @@ _TEXT   SEGMENT PARA PUBLIC USE32 'CODE'
 include symcrypt_version.inc
 include symcrypt_magic.inc
 
-include C_asm_shared.inc
+#include "C_asm_shared.inc"
 
         PUBLIC  @SymCryptFdefRawAddAsm@16
         PUBLIC  @SymCryptFdefRawSubAsm@16
@@ -60,7 +61,7 @@ BEFORE_PROC     MACRO
         ;
         DB      5 dup (0cch)
                 ENDM
-        
+
 
 
 
@@ -86,7 +87,7 @@ pDst            dd      ?
 nDigits         dd      ?
 
 SymCryptFdefRawAddAsmFrame ends
-        
+
         ; ecx = pSrc1
         ; edx = pSrc2
 
@@ -129,7 +130,7 @@ SymCryptFdefRawAddAsmLoop:
         pop     edi
         pop     ebx
         ret     8
-        
+
 @SymCryptFdefRawAddAsm@16 ENDP
 
 
@@ -154,7 +155,7 @@ pDst            dd      ?
 nDigits         dd      ?
 
 SymCryptFdefRawSubAsmFrame ends
-        
+
         ; ecx = pSrc1
         ; edx = pSrc2
 
@@ -197,7 +198,7 @@ SymCryptFdefRawSubAsmLoop:
         pop     edi
         pop     ebx
         ret     8
-        
+
 @SymCryptFdefRawSubAsm@16 ENDP
 
 
@@ -305,8 +306,8 @@ SymCryptFdefRawMulAsmFrame        ends
         ;   for each word in Src1:
         ;       Dst += Src2 * word
         ; Register assignments
-        ; 
-        ;   eax = tmp/lower half of mult 
+        ;
+        ;   eax = tmp/lower half of mult
         ;   ebx = multiplicant
         ;   ecx = loop counter, initialized to nDigits2
         ;   edx = upper half of mult
@@ -315,7 +316,7 @@ SymCryptFdefRawMulAsmFrame        ends
         ;   ebp = carry
         ;
         ;   esp + pSrc1     running pointer into Src1
-        ;   esp + 
+        ;   esp +
 
 
         mov     edi,edi
@@ -436,7 +437,7 @@ SymCryptFdefRawMulAsmLoop2:
         adc     edx, 0
         mov     [edi + 12], eax
         mov     ebp, edx
-        
+
         add     esi, 16
         add     edi, 16
         sub     ecx,1
@@ -477,7 +478,7 @@ SymCryptFdefMontgomeryReduceAsmFrame struct 4, NONUNIQUE
         HighCarry       dd  ?
         pSrc            dd  ?
         pModValue       dd  ?
-        nWords          dd  ?           
+        nWords          dd  ?
         SaveEbp         dd  ?       ; # words still to process in outer loop
         SaveEsi         dd  ?
         SaveEdi         dd  ?
@@ -513,13 +514,13 @@ SymCryptFdefMontgomeryReduceAsmFrame        ends
 SymCryptFdefMontgomeryReduceOuterLoop:
         ; eax = <undef>
         ; ebx = <undef>
-        ; ecx = <undef> 
+        ; ecx = <undef>
         ; edx = <undef>
         ; esi = start of mod value
         ; edi = pSrc + 4 * loop iteration count
         ; ebp = <undef>
 
-        ; compute multiplier for this outer loop iteration. 
+        ; compute multiplier for this outer loop iteration.
         mov     ebx, [esi - SymCryptModulusValueOffsetX86 + SymCryptModulusMontgomeryInv64OffsetX86 ]
         imul    ebx, [edi]              ; word we want to zero out, ebx = multiplier for this inner loop
 
@@ -529,7 +530,7 @@ SymCryptFdefMontgomeryReduceOuterLoop:
 SymCryptFdefMontgomeryReduceInnerLoop:
         ; eax = mul scratch
         ; ebx = multiplier
-        ; ecx = digit counter 
+        ; ecx = digit counter
         ; edx = mul scratch
         ; esi = running pointer to mod value
         ; edi = running pointer to input/scratch
@@ -570,7 +571,7 @@ SymCryptFdefMontgomeryReduceInnerLoop:
         adc     edx, 0
         mov     [edi + 12], eax
         mov     ebp, edx
-        
+
         add     esi, 16
         add     edi, 16
         sub     ecx,1
@@ -606,7 +607,7 @@ SymCryptFdefMontgomeryReduceInnerLoop:
 
         mov     ecx, [esi - SymCryptModulusValueOffsetX86 + SymCryptModulusNdigitsOffsetX86]    ; loop counter
         mov     edx, [esp + SymCryptFdefMontgomeryReduceAsmFrame.pDst];
-        
+
         ; ecx = nDigits
 
         ; Save some values for the copy loop

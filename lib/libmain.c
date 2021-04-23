@@ -7,9 +7,7 @@
 
 #include "precomp.h"
 
-#define EQU =
 #include "C_asm_shared.inc"
-#undef EQU
 
 #include "buildInfo.h"
 
@@ -34,16 +32,16 @@ SymCryptLibraryWasNotInitialized()
 
 #endif
 
-const CHAR * SymCryptBuildString = 
-        "v" SYMCRYPT_BUILD_INFO_VERSION 
-        "_" SYMCRYPT_BUILD_INFO_BRANCH 
+const CHAR * SymCryptBuildString =
+        "v" SYMCRYPT_BUILD_INFO_VERSION
+        "_" SYMCRYPT_BUILD_INFO_BRANCH
         "_" SYMCRYPT_BUILD_INFO_COMMIT
         "_" SYMCRYPT_BUILD_INFO_TIMESTAMP;
 
 VOID
 SYMCRYPT_CALL
 SymCryptInitEnvCommon( UINT32 version )
-// Returns TRUE if the initializatoin steps have to be performed.
+// Returns TRUE if the initialization steps have to be performed.
 {
     UINT32 tmp;
 
