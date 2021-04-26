@@ -80,7 +80,7 @@ SymCryptAesCreateDecryptionRoundKeyXmm(
     keyPtr ++; \
     c0 = _mm_aesenc_si128( c0, roundkey ); \
 \
-    while( keyPtr < keyLimit ) \
+    do \
     { \
         roundkey = _mm_loadu_si128( (__m128i *) keyPtr ); \
         keyPtr ++; \
@@ -88,7 +88,7 @@ SymCryptAesCreateDecryptionRoundKeyXmm(
         roundkey = _mm_loadu_si128( (__m128i *) keyPtr ); \
         keyPtr ++; \
         c0 = _mm_aesenc_si128( c0, roundkey ); \
-    } \
+    } while( keyPtr < keyLimit ); \
 \
     roundkey = _mm_loadu_si128( (__m128i *) keyPtr ); \
 \
@@ -115,7 +115,7 @@ SymCryptAesCreateDecryptionRoundKeyXmm(
 \
     cipherState = _mm_aesenc_si128( cipherState, roundkey ); \
 \
-    while( keyPtr < keyLimit ) \
+    do \
     { \
         roundkey = _mm_loadu_si128( (__m128i *) keyPtr ); \
         keyPtr ++; \
@@ -123,7 +123,7 @@ SymCryptAesCreateDecryptionRoundKeyXmm(
         roundkey = _mm_loadu_si128( (__m128i *) keyPtr ); \
         keyPtr ++; \
         cipherState = _mm_aesenc_si128( cipherState, roundkey ); \
-    } \
+    } while( keyPtr < keyLimit ); \
 \
     cipherState = _mm_aesenclast_si128( cipherState, mergedLastRoundKey ); \
 };
@@ -145,7 +145,7 @@ SymCryptAesCreateDecryptionRoundKeyXmm(
     c2 = _mm_xor_si128( c2, roundkey ); \
     c3 = _mm_xor_si128( c3, roundkey ); \
 \
-    while( keyPtr < keyLimit ) \
+    do \
     { \
         roundkey = _mm_loadu_si128( (__m128i *) keyPtr ); \
         keyPtr ++; \
@@ -153,7 +153,7 @@ SymCryptAesCreateDecryptionRoundKeyXmm(
         c1 = _mm_aesenc_si128( c1, roundkey ); \
         c2 = _mm_aesenc_si128( c2, roundkey ); \
         c3 = _mm_aesenc_si128( c3, roundkey ); \
-    } \
+    } while( keyPtr < keyLimit ); \
 \
     roundkey = _mm_loadu_si128( (__m128i *) keyPtr ); \
 \
@@ -184,7 +184,7 @@ SymCryptAesCreateDecryptionRoundKeyXmm(
     c6 = _mm_xor_si128( c6, roundkey ); \
     c7 = _mm_xor_si128( c7, roundkey ); \
 \
-    while( keyPtr < keyLimit ) \
+    do \
     { \
         roundkey = _mm_loadu_si128( (__m128i *) keyPtr ); \
         keyPtr ++; \
@@ -196,7 +196,7 @@ SymCryptAesCreateDecryptionRoundKeyXmm(
         c5 = _mm_aesenc_si128( c5, roundkey ); \
         c6 = _mm_aesenc_si128( c6, roundkey ); \
         c7 = _mm_aesenc_si128( c7, roundkey ); \
-    } \
+    } while( keyPtr < keyLimit ); \
 \
     roundkey = _mm_loadu_si128( (__m128i *) keyPtr ); \
 \
@@ -228,7 +228,7 @@ SymCryptAesCreateDecryptionRoundKeyXmm(
     keyPtr ++; \
     c0 = _mm_aesdec_si128( c0, roundkey ); \
 \
-    while( keyPtr < keyLimit ) \
+    do \
     { \
         roundkey = _mm_loadu_si128( (__m128i *) keyPtr ); \
         keyPtr ++; \
@@ -236,7 +236,7 @@ SymCryptAesCreateDecryptionRoundKeyXmm(
         roundkey = _mm_loadu_si128( (__m128i *) keyPtr ); \
         keyPtr ++; \
         c0 = _mm_aesdec_si128( c0, roundkey ); \
-    } \
+    } while( keyPtr < keyLimit ); \
 \
     roundkey = _mm_loadu_si128( (__m128i *) keyPtr ); \
 \
@@ -260,7 +260,7 @@ SymCryptAesCreateDecryptionRoundKeyXmm(
     c2 = _mm_xor_si128( c2, roundkey ); \
     c3 = _mm_xor_si128( c3, roundkey ); \
 \
-    while( keyPtr < keyLimit ) \
+    do \
     { \
         roundkey = _mm_loadu_si128( (__m128i *) keyPtr ); \
         keyPtr ++; \
@@ -268,7 +268,7 @@ SymCryptAesCreateDecryptionRoundKeyXmm(
         c1 = _mm_aesdec_si128( c1, roundkey ); \
         c2 = _mm_aesdec_si128( c2, roundkey ); \
         c3 = _mm_aesdec_si128( c3, roundkey ); \
-    } \
+    } while( keyPtr < keyLimit ); \
 \
     roundkey = _mm_loadu_si128( (__m128i *) keyPtr ); \
 \
@@ -299,7 +299,7 @@ SymCryptAesCreateDecryptionRoundKeyXmm(
     c6 = _mm_xor_si128( c6, roundkey ); \
     c7 = _mm_xor_si128( c7, roundkey ); \
 \
-    while( keyPtr < keyLimit ) \
+    do \
     { \
         roundkey = _mm_loadu_si128( (__m128i *) keyPtr ); \
         keyPtr ++; \
@@ -311,7 +311,7 @@ SymCryptAesCreateDecryptionRoundKeyXmm(
         c5 = _mm_aesdec_si128( c5, roundkey ); \
         c6 = _mm_aesdec_si128( c6, roundkey ); \
         c7 = _mm_aesdec_si128( c7, roundkey ); \
-    } \
+    } while( keyPtr < keyLimit ); \
 \
     roundkey = _mm_loadu_si128( (__m128i *) keyPtr ); \
 \

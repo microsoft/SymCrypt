@@ -83,7 +83,7 @@ jobs:
       ArtifactName: 'drop-Windows-x86'
       publishLocation: 'Container'
 
-- job: Linux_AMD64
+- job: Linux_AMD64_gcc
   pool:
     vmImage: 'ubuntu-20.04'
   steps:
@@ -92,7 +92,37 @@ jobs:
   - task: CMake@1
     inputs:
       workingDirectory: '$(Build.SourcesDirectory)/bin'
-      cmakeArgs: '.. -DCMAKE_TOOLCHAIN_FILE=cmake-toolchain/linux-amd64.cmake'
+      cmakeArgs: '.. -DCMAKE_TOOLCHAIN_FILE=cmake-toolchain/linux-amd64.cmake -DCMAKE_C_COMPILER=gcc'
+  - task: CMake@1
+    inputs:
+      workingDirectory: '$(Build.SourcesDirectory)/bin'
+      cmakeArgs: '--build .'
+  - script: |
+      cd bin/exe/AMD64/Linux
+      ./symcryptunittest
+    displayName: 'Execute generic unit test'
+    name: 'LinuxGenericUnitTest'
+  - task: CopyFiles@2
+    inputs:
+      SourceFolder: 'bin'
+      Contents: '**'
+      TargetFolder: '$(build.artifactstagingdirectory)'
+  - task: PublishBuildArtifacts@1
+    inputs:
+      PathtoPublish: '$(Build.ArtifactStagingDirectory)'
+      ArtifactName: 'drop-Linux-Generic'
+      publishLocation: 'Container'
+
+- job: Linux_AMD64_clang
+  pool:
+    vmImage: 'ubuntu-20.04'
+  steps:
+  - checkout: self
+    submodules: recursive
+  - task: CMake@1
+    inputs:
+      workingDirectory: '$(Build.SourcesDirectory)/bin'
+      cmakeArgs: '.. -DCMAKE_TOOLCHAIN_FILE=cmake-toolchain/linux-amd64.cmake -DCMAKE_C_COMPILER=clang'
   - task: CMake@1
     inputs:
       workingDirectory: '$(Build.SourcesDirectory)/bin'

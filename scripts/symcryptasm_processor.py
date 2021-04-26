@@ -17,7 +17,7 @@ this effort.
 The processing of symcryptasm files takes place in 2 passes. The first pass is performed by this
 symcryptasm_processor.py script, which does the more stateful processing, outputting a .cppasm file.
 The .cppasm files are further processed by the C preprocessor to do more simple stateless text
-substitutions, outputting a .asm file which can be assembled by thetarget assembler for the target
+substitutions, outputting a .asm file which can be assembled by the target assembler for the target
 environment.
 
 We have set up the intermediate generated files to be created in the output directories in both
@@ -56,7 +56,7 @@ At the function end an epilogue is generated with restores the non-volatile regi
 
 
 A nested function (a function which does call another function) is specified similarly, only using
-NESTED_FUNCTION_START and NESTED_FUNCTION_END macros. A nested function currently updates and align
+NESTED_FUNCTION_START and NESTED_FUNCTION_END macros. A nested function currently updates and aligns
 the stack pointer in the function prologue, and avoids use of the redzone in the SystemV ABI.
 
 

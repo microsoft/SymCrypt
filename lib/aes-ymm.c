@@ -37,7 +37,7 @@
     c6 = _mm256_xor_si256( c6, roundkeys ); \
     c7 = _mm256_xor_si256( c7, roundkeys ); \
 \
-    while( keyPtr < keyLimit ) \
+    do \
     { \
         roundkeys =  _mm256_broadcastsi128_si256( *( (const __m128i *) keyPtr ) ); \
         keyPtr ++; \
@@ -49,7 +49,7 @@
         c5 = _mm256_aesenc_epi128( c5, roundkeys ); \
         c6 = _mm256_aesenc_epi128( c6, roundkeys ); \
         c7 = _mm256_aesenc_epi128( c7, roundkeys ); \
-    } \
+    } while( keyPtr < keyLimit ); \
 \
     roundkeys =  _mm256_broadcastsi128_si256( *( (const __m128i *) keyPtr ) ); \
 \
@@ -86,7 +86,7 @@
     c6 = _mm256_xor_si256( c6, roundkeys ); \
     c7 = _mm256_xor_si256( c7, roundkeys ); \
 \
-    while( keyPtr < keyLimit ) \
+    do \
     { \
         roundkeys =  _mm256_broadcastsi128_si256( *( (const __m128i *) keyPtr ) ); \
         keyPtr ++; \
@@ -98,7 +98,7 @@
         c5 = _mm256_aesdec_epi128( c5, roundkeys ); \
         c6 = _mm256_aesdec_epi128( c6, roundkeys ); \
         c7 = _mm256_aesdec_epi128( c7, roundkeys ); \
-    } \
+    } while( keyPtr < keyLimit ); \
 \
     roundkeys =  _mm256_broadcastsi128_si256( *( (const __m128i *) keyPtr ) ); \
 \

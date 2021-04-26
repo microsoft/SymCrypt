@@ -30,7 +30,7 @@
     c2 = _mm512_xor_si512( c2, roundkeys ); \
     c3 = _mm512_xor_si512( c3, roundkeys ); \
 \
-    while( keyPtr < keyLimit ) \
+    do \
     { \
         roundkeys = _mm512_broadcast_i32x4( _mm_loadu_si128( (__m128i *) keyPtr ) ); \
         keyPtr ++; \
@@ -38,7 +38,7 @@
         c1 = _mm512_aesenc_epi128( c1, roundkeys ); \
         c2 = _mm512_aesenc_epi128( c2, roundkeys ); \
         c3 = _mm512_aesenc_epi128( c3, roundkeys ); \
-    } \
+    } while( keyPtr < keyLimit ); \
 \
     roundkeys = _mm512_broadcast_i32x4( _mm_loadu_si128( (__m128i *) keyPtr ) ); \
 \
@@ -66,7 +66,7 @@
     c2 = _mm512_xor_si512( c2, roundkeys ); \
     c3 = _mm512_xor_si512( c3, roundkeys ); \
 \
-    while( keyPtr < keyLimit ) \
+    do \
     { \
         roundkeys = _mm512_broadcast_i32x4( _mm_loadu_si128( (__m128i *) keyPtr ) ); \
         keyPtr ++; \
@@ -74,7 +74,7 @@
         c1 = _mm512_aesdec_epi128( c1, roundkeys ); \
         c2 = _mm512_aesdec_epi128( c2, roundkeys ); \
         c3 = _mm512_aesdec_epi128( c3, roundkeys ); \
-    } \
+    } while( keyPtr < keyLimit ); \
 \
     roundkeys = _mm512_broadcast_i32x4( _mm_loadu_si128( (__m128i *) keyPtr ) ); \
 \

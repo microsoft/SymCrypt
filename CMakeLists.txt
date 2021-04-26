@@ -32,6 +32,7 @@ if(WIN32 AND SYMCRYPT_TARGET_ENV MATCHES "WindowsUserMode")
     # toolchain file
     enable_language(ASM_MASM)
     add_compile_options(/MP)
+    add_compile_options(/Zp8)
     # Remove /RTC1, incompatible of /Ox
     string( REPLACE "/RTC1" "" CMAKE_CXX_FLAGS_DEBUG ${CMAKE_CXX_FLAGS_DEBUG})
     string( REPLACE "/RTC1" "" CMAKE_C_FLAGS_DEBUG ${CMAKE_C_FLAGS_DEBUG})
@@ -45,6 +46,10 @@ if(WIN32 AND SYMCRYPT_TARGET_ENV MATCHES "WindowsUserMode")
 
     if(CMAKE_BUILD_TYPE MATCHES Release)
         add_compile_options(/Oxs)
+        add_compile_options(/GL)
+        add_compile_options(/GF)
+        add_compile_options(/Gy)
+        add_compile_options(/Gw)
     endif()
 elseif(NOT WIN32)
     enable_language(ASM)
@@ -52,6 +57,12 @@ elseif(NOT WIN32)
     add_compile_options(-g)
     add_compile_options(-Wno-multichar)
     add_compile_options(-fPIC)
+
+    # GCC and clang unroll more aggressively than they should for best performance
+    # When we want to unroll loops, we unroll in the source code, so tell the compiler not to unroll
+    # (clang seems to respect this option globally, but I could only make GCC behave in AES-GCM by
+    # using GCC-specific pragmas for the loops of interest)
+    add_compile_options(-fno-unroll-loops)
 endif()
 
 if(CMAKE_BUILD_TYPE MATCHES Release)

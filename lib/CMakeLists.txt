@@ -114,10 +114,10 @@ function(process_cppasm filepath outformat archdefine)
     string(FIND ${rootpath} ${CMAKE_CURRENT_BINARY_DIR} findindex) # check whether input is in the output directory
     if(findindex EQUAL -1) # input in the source directory
         set(filepath ${CMAKE_CURRENT_SOURCE_DIR}/${filepath})
-        set(output_pass2 ${CMAKE_CURRENT_BINARY_DIR}/${rootpath}/${filestem}-${outformat}.asm)
+        set(output_asm ${CMAKE_CURRENT_BINARY_DIR}/${rootpath}/${filestem}-${outformat}.asm)
     else() # input in the output directory
         set(output_directory ${rootpath})
-        set(output_pass2 ${rootpath}/${filestem}.asm)
+        set(output_asm ${rootpath}/${filestem}.asm)
     endif()
 
     set(dbg_definition "")
@@ -128,24 +128,24 @@ function(process_cppasm filepath outformat archdefine)
     if(outformat STREQUAL gas)
         # assume gas => GCC compatible C compiler
         add_custom_command(
-            OUTPUT ${output_pass2}
-            COMMAND "${CMAKE_C_COMPILER}" -E -P -x c ${filepath} -o ${output_pass2}
+            OUTPUT ${output_asm}
+            COMMAND "${CMAKE_C_COMPILER}" -E -P -x c ${filepath} -o ${output_asm}
                 -I${CMAKE_CURRENT_SOURCE_DIR} -I${CMAKE_CURRENT_SOURCE_DIR}/${rootpath} -I${CMAKE_SOURCE_DIR}/inc
                 -DSYMCRYPT_${outformatupper} -DSYMCRYPT_CPU_${archdefineupper} ${dbg_definition}
             MAIN_DEPENDENCY ${filepath}
             DEPENDS ${CMAKE_SOURCE_DIR}/inc/C_asm_shared.inc ${filepath} symcryptasm_shared.cppasm
-            COMMENT "C preprocessing ${filepath} to ${outformat} (${output_pass2})"
+            COMMENT "C preprocessing ${filepath} to ${outformat} (${output_asm})"
             VERBATIM)
     elseif(outformat STREQUAL masm)
         # assume masm => MSVC C compiler
         add_custom_command(
-            OUTPUT ${output_pass2}
-            COMMAND "${CMAKE_C_COMPILER}" /EP /P /Fi${output_pass2} ${filepath}
+            OUTPUT ${output_asm}
+            COMMAND "${CMAKE_C_COMPILER}" /EP /P /Fi${output_asm} ${filepath}
                 -I${CMAKE_CURRENT_SOURCE_DIR} -I${CMAKE_CURRENT_SOURCE_DIR}/${rootpath} -I${CMAKE_SOURCE_DIR}/inc
                 -DSYMCRYPT_${outformatupper} -DSYMCRYPT_CPU_${archdefineupper} ${dbg_definition}
             MAIN_DEPENDENCY ${filepath}
             DEPENDS ${CMAKE_SOURCE_DIR}/inc/C_asm_shared.inc ${filepath} symcryptasm_shared.cppasm
-            COMMENT "C preprocessing ${filepath} to ${outformat} (${output_pass2})"
+            COMMENT "C preprocessing ${filepath} to ${outformat} (${output_asm})"
             VERBATIM)
     endif()
 endfunction()
@@ -252,6 +252,9 @@ include_directories(${CMAKE_SOURCE_DIR}/inc)
 add_library(symcrypt_common STATIC ${SOURCES_COMMON})
 
 if(WIN32)
+    # Disable run-time type information for SymCrypt library - we do not use it
+    add_compile_options(/GR-)
+
     add_library(symcrypt_usermodewin7 STATIC env_windowsUserModeWin7.c)
     set_target_properties(symcrypt_usermodewin7 PROPERTIES PREFIX "")
     target_link_libraries(symcrypt_usermodewin7 symcrypt_common)
