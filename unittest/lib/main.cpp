@@ -898,7 +898,7 @@ AlgorithmImplementationVector g_algorithmImplementation;
 
 _Analysis_noreturn_
 VOID
-fatal( _In_ PSTR file, ULONG line, _In_ PSTR format, ... )
+fatal( _In_ PCSTR file, ULONG line, _In_ PCSTR format, ... )
 {
     va_list vl;
     printOutput( 0 );
@@ -1196,7 +1196,7 @@ testpbkdf2()
 //
 // Reach into the internals of Symcrypt to retrieve the build string
 extern "C" {
-extern const CHAR * SymCryptBuildString;
+extern const CHAR * const SymCryptBuildString;
 };
 
 VOID
@@ -1561,7 +1561,9 @@ runFunctionalTests()
 
     testEcc();
 
+#if SYMCRYPT_MS_VC
     testIEEE802_11SaeCustom();
+#endif
 
     iprint( "Functional testing done.\n" );
 

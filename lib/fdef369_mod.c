@@ -23,7 +23,7 @@
 #elif SYMCRYPT_CPU_ARM64
 #define SYMCRYPT_FDEF369_DIGITS_TO_NUINT32( nD )        ((nD) * 6)
 #else
-#??
+#error ??
 #endif
 
 VOID

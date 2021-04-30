@@ -465,7 +465,7 @@ SymCryptUint64Bytesize( UINT64 value );
 //
 // SYMCRYPT_ENVIRONMENT_WINDOWS_BOOTLIBRARY                 // only for the current OS release
 //
-// SYMCRYPT_ENVIRONMENT_WINDWOS_KERNELMODE_LEGACY           // Use for any version of Windows.
+// SYMCRYPT_ENVIRONMENT_WINDOWS_KERNELMODE_LEGACY           // Use for any version of Windows.
 // SYMCRYPT_ENVIRONMENT_WINDOWS_KERNELMODE_WIN7_N_LATER     // Only for Win7 and later
 // SYMCRYPT_ENVIRONMENT_WINDOWS_KERNELMODE_WIN8_1_N_LATER   // Only for WinBlue and later
 // SYMCRYPT_ENVIRONMENT_WINDOWS_KERNELMODE_LATEST           // use for latest OS
@@ -477,6 +477,8 @@ SymCryptUint64Bytesize( UINT64 value );
 //
 // SYMCRYPT_ENVIRONMENT_WINDOWS_KERNELDEBUGGER
 //
+// SYMCRYPT_ENVIRONMENT_LINUX_USERMODE                      // use for Linux
+//
 // SYMCRYPT_ENVIRONMENT_GENERIC                             // use for all other situations
 //
 
@@ -484,8 +486,9 @@ VOID
 SYMCRYPT_CALL
 SymCryptInit();
 //
-// Initialize the library.
+// Initialize the static library.
 // This function MUST be called before any other function in the library.
+// It is not necessary to call this function when using the shared object library.
 //
 // This function does not perform the self tests in the library.
 // Doing so would force the linking of all the algorithm in the library,
@@ -501,7 +504,20 @@ SymCryptInit();
 // to invoke one of the environment macros documented above.
 //
 
+VOID
+SYMCRYPT_CALL
+SymCryptModuleInit(
+    _In_ UINT32 api, 
+    _In_ UINT32 minor,
+    _In_ UINT32 patch);
 
+#define SYMCRYPT_MODULE_INIT() SymCryptModuleInit(SYMCRYPT_CODE_VERSION_API, SYMCRYPT_CODE_VERSION_MINOR, SYMCRYPT_CODE_VERSION_PATCH);
+//
+// Initialize the SymCrypt shared object module/dynamic-link library. This function verifies
+// that the module version supports the version requested by the application. If the version
+// is unsupported, a fatal error will occur. The macro SYMCRYPT_MODULE_INIT can be used
+// to call SymCryptModuleInit with the correct arguments.
+//
 
 //==========================================================================
 //   DATA MANIPULATION
@@ -4258,6 +4274,7 @@ SymCryptCallbackFree( VOID * pMem );
 _Success_(return == SYMCRYPT_NO_ERROR)
 SYMCRYPT_ERROR
 SYMCRYPT_CALL
+SYMCRYPT_WEAK_SYMBOL
 SymCryptCallbackRandom(
     _Out_writes_bytes_( cbBuffer )   PBYTE   pbBuffer,
                                     SIZE_T  cbBuffer );

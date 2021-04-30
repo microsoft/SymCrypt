@@ -32,7 +32,6 @@ set(SOURCES
     testDsa.cpp
     testScsTable.cpp
     testScsTools.cpp
-    testIEEE802_11SaeCustom.cpp
     perf.cpp
   )
 
@@ -43,6 +42,7 @@ if(WIN32)
         capi_implementations.cpp
         cng_implementations.cpp
         msbignum_implementations.cpp
+        testIEEE802_11SaeCustom.cpp
         # testInterop.cpp
         # testRsa.cpp
         # testRsa_sc.cpp

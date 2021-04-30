@@ -22,6 +22,7 @@ jobs:
   steps:
   - checkout: self  # self represents the repo where the initial Pipelines YAML file was found
     submodules: recursive
+  - task: ComponentGovernanceComponentDetection@0
   # Initialize CMake
   # cd bin; cmake .. -DCMAKE_TOOLCHAIN_FILE=../cmake-toolchain/windows-amd64.cmake
   - task: CMake@1
@@ -33,13 +34,12 @@ jobs:
   - task: CMake@1
     inputs:
       workingDirectory: '$(Build.SourcesDirectory)/bin'
-      cmakeArgs: '--build .'
+      cmakeArgs: '--build . -j 8'
   # Execute unit tests using the inline script
   - script: |
       cd bin\exe\AMD64\WindowsUserMode\Debug
       .\symcryptunittest.exe
-    displayName: 'Execute generic unit test'
-    name: 'WindowsGenericUnitTest'
+    displayName: 'Execute unit test'
   # Copy build output files to artifact staging directory
   - task: CopyFiles@2
     inputs:
@@ -66,12 +66,11 @@ jobs:
   - task: CMake@1
     inputs:
       workingDirectory: '$(Build.SourcesDirectory)/bin'
-      cmakeArgs: '--build .'
+      cmakeArgs: '--build . -j 8'
   - script: |
       cd bin\exe\x86\WindowsUserMode\Debug
       .\symcryptunittest.exe
-    displayName: 'Execute generic unit test'
-    name: 'WindowsGenericUnitTest'
+    displayName: 'Execute unit test'
   - task: CopyFiles@2
     inputs:
       SourceFolder: 'bin'
@@ -89,14 +88,23 @@ jobs:
   steps:
   - checkout: self
     submodules: recursive
+  - task: ComponentGovernanceComponentDetection@0
+  - script: |
+      python -m pip install --upgrade pip setuptools wheel
+      pip install -r $(Build.SourcesDirectory)/scripts/requirements.txt
+    displayName: 'Install Python requirements'
   - task: CMake@1
     inputs:
       workingDirectory: '$(Build.SourcesDirectory)/bin'
-      cmakeArgs: '.. -DCMAKE_TOOLCHAIN_FILE=cmake-toolchain/linux-amd64.cmake -DCMAKE_C_COMPILER=gcc'
+      cmakeArgs: '.. -DCMAKE_TOOLCHAIN_FILE=cmake-toolchain/linux-amd64.cmake -DCMAKE_C_COMPILER=gcc -DCMAKE_CXX_COMPILER=g++'
   - task: CMake@1
     inputs:
       workingDirectory: '$(Build.SourcesDirectory)/bin'
-      cmakeArgs: '--build .'
+      cmakeArgs: '--build . -j 8'
+  - script: |
+      cd bin/exe/AMD64/Linux
+      ./symcryptmoduletest
+    displayName: 'Execute module test'
   - script: |
       cd bin/exe/AMD64/Linux
       ./symcryptunittest
@@ -119,19 +127,26 @@ jobs:
   steps:
   - checkout: self
     submodules: recursive
+  - script: |
+      python -m pip install --upgrade pip setuptools wheel
+      pip install -r $(Build.SourcesDirectory)/scripts/requirements.txt
+    displayName: 'Install Python requirements'
   - task: CMake@1
     inputs:
       workingDirectory: '$(Build.SourcesDirectory)/bin'
-      cmakeArgs: '.. -DCMAKE_TOOLCHAIN_FILE=cmake-toolchain/linux-amd64.cmake -DCMAKE_C_COMPILER=clang'
+      cmakeArgs: '.. -DCMAKE_TOOLCHAIN_FILE=cmake-toolchain/linux-amd64.cmake -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++'
   - task: CMake@1
     inputs:
       workingDirectory: '$(Build.SourcesDirectory)/bin'
-      cmakeArgs: '--build .'
+      cmakeArgs: '--build . -j 8'
+  - script: |
+      cd bin/exe/AMD64/Linux
+      ./symcryptmoduletest
+    displayName: 'Execute module test'
   - script: |
       cd bin/exe/AMD64/Linux
       ./symcryptunittest
-    displayName: 'Execute generic unit test'
-    name: 'LinuxGenericUnitTest'
+    displayName: 'Execute unit test'
   - task: CopyFiles@2
     inputs:
       SourceFolder: 'bin'

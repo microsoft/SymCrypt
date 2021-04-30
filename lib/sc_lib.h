@@ -1628,8 +1628,9 @@ typedef struct _SYMCRYPT_MODULUS_TYPE_SELECTION_ENTRY
     UINT32                  maxBits;            // Max # bits that the actual value of the modulus is, 0 = no limit
     UINT32                  modulusFeatures;    // Required features of the modulus
 } SYMCRYPT_MODULUS_TYPE_SELECTION_ENTRY, *PSYMCRYPT_MODULUS_TYPE_SELECTION_ENTRY;
+typedef const SYMCRYPT_MODULUS_TYPE_SELECTION_ENTRY* PCSYMCRYPT_MODULUS_TYPE_SELECTION_ENTRY;
 
-extern SYMCRYPT_MODULUS_TYPE_SELECTION_ENTRY SymCryptModulusTypeSelections[];       // Array can be any size...
+extern const SYMCRYPT_MODULUS_TYPE_SELECTION_ENTRY SymCryptModulusTypeSelections[];       // Array can be any size...
 
 
 // Check that the size is a power of 2

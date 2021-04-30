@@ -32,9 +32,9 @@ SymCryptLibraryWasNotInitialized()
 
 #endif
 
-const CHAR * SymCryptBuildString =
-        "v" SYMCRYPT_BUILD_INFO_VERSION
-        "_" SYMCRYPT_BUILD_INFO_BRANCH
+const CHAR * const SymCryptBuildString = 
+        "v" SYMCRYPT_BUILD_INFO_VERSION 
+        "_" SYMCRYPT_BUILD_INFO_BRANCH 
         "_" SYMCRYPT_BUILD_INFO_COMMIT
         "_" SYMCRYPT_BUILD_INFO_TIMESTAMP;
 

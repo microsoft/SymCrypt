@@ -287,7 +287,7 @@ SymCryptRngAesGenerateBlocks(
         SymCryptAesEncrypt( pAesKey, Vcopy, buf );
         if( memcmp( buf, pbCheck, 16 ) != 0 )
         {
-            SymCryptFatal( '????' );
+            SymCryptFatal( 'OLD?' );
         }
         pbCheck += SYMCRYPT_AES_BLOCK_SIZE;
         cbCheck -= SYMCRYPT_AES_BLOCK_SIZE;

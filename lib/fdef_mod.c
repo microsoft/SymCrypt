@@ -277,7 +277,7 @@ SymCryptFdefDecideModulusType( PCSYMCRYPT_INT piSrc, UINT32 nDigits, UINT32 aver
 {
     UINT32 res = 0;
     BOOLEAN disableMontgomery = 0;
-    PSYMCRYPT_MODULUS_TYPE_SELECTION_ENTRY pEntry;
+    PCSYMCRYPT_MODULUS_TYPE_SELECTION_ENTRY pEntry;
 
     UINT32 nBitsizeOfValue = SymCryptIntBitsizeOfValue( piSrc );
     UINT32 modulusFeatures = 0;

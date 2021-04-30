@@ -1,99 +1,98 @@
 set(SOURCES_COMMON
-    blockciphermodes.c
-    hash.c
-    parhash.c
-    ccm.c
-    ghash.c
-    gcm.c
-    aes-default.c
-    aes-default-bc.c
-    aes-key.c
-    aes-c.c
+    3des.c
+    a_dispatch.c
     aes-asm.c
-    aes-xmm.c
-    aes-ymm.c
+    aes-c.c
+    aes-default-bc.c
+    aes-default.c
+    aes-key.c
     aes-neon.c
     aes-selftest.c
-    AesTables.c
+    aes-xmm.c
+    aes-ymm.c
     aescmac.c
-    xtsaes.c
-    3des.c
+    aesCtrDrbg.c
+    AesTables.c
+    blockciphermodes.c
+    ccm.c
+    chacha20_poly1305.c
+    chacha20.c
+    cpuid_notry.c
+    cpuid_um.c
+    cpuid.c
+    crt.c
     DesTables.c
     desx.c
-    rc2.c
-    rc4.c
-    sha1.c
-    sha256.c
-    sha512.c
-    md5.c
-    md4.c
-    md2.c
+    dh.c
+    dl_internal_groups.c
+    dlgroup.c
+    dlkey.c
+    dsa.c
+    ec_dh.c
+    ec_dispatch.c
+    ec_dsa.c
+    ec_internal_curves.c
+    ec_montgomery.c
+    ec_mul.c
+    ec_short_weierstrass.c
+    ec_twisted_edwards.c
+    eckey.c
+    ecpoint.c
+    ecurve.c
+    equal.c
+    FatalIntercept.c
+    fdef_general.c
+    fdef_int.c
+    fdef_mod.c
+    fdef369_mod.c
+    gcm.c
+    gen_int.c
+    ghash.c
+    hash.c
+    hkdf_selftest.c
+    hkdf.c
     hmacmd5.c
     hmacsha1.c
     hmacsha256.c
     hmacsha384.c
     hmacsha512.c
-    tlsCbcVerify.c
-    aesCtrDrbg.c
     libmain.c
-    equal.c
-    FatalIntercept.c
-    selftest.c
-    rdrand.c
-    rdseed.c
-    sha256Par.c
-    sha256Par-ymm.c
-    sha512Par.c
-    sha512Par-ymm.c
     marvin32.c
-    cpuid.c
-    cpuid_um.c
-    cpuid_notry.c
-    pbkdf2.c
+    md2.c
+    md4.c
+    md5.c
+    modexp.c
+    parhash.c
     pbkdf2_hmacsha1.c
     pbkdf2_hmacsha256.c
-    sp800_108.c
-    sp800_108_hmacsha1.c
-    sp800_108_hmacsha256.c
-    tlsprf.c
-    tlsprf_selftest.c
-    hkdf.c
-    hkdf_selftest.c
-    chacha20.c
+    pbkdf2.c
     poly1305.c
-    chacha20_poly1305.c
-    a_dispatch.c
-    fdef_general.c
-    fdef_int.c
-    fdef_mod.c
-    fdef369_mod.c
-    ecpoint.c
-    ecurve.c
-    eckey.c
-    ec_dispatch.c
-    ec_short_weierstrass.c
-    ec_internal_curves.c
-    ec_dsa.c
-    ec_dh.c
-    ec_montgomery.c
-    ec_twisted_edwards.c
-    ec_mul.c
-    ScsTable.c
-    scsTools.c
     primes.c
-    modexp.c
-    gen_int.c
-    crt.c
-    rsakey.c
+    rc2.c
+    rc4.c
+    rdrand.c
+    rdseed.c
+    recoding.c
     rsa_enc.c
     rsa_padding.c
-    dlgroup.c
-    dlkey.c
-    dsa.c
-    dh.c
-    dl_internal_groups.c
-    recoding.c
-    IEEE802_11SaeCustom.c
+    rsakey.c
+    ScsTable.c
+    scsTools.c
+    selftest.c
+    sha1.c
+    sha256.c
+    sha256Par.c
+    sha256Par-ymm.c
+    sha512.c
+    sha512Par.c
+    sha512Par-ymm.c
+    sp800_108_hmacsha1.c
+    sp800_108_hmacsha256.c
+    sp800_108.c
+    tlsCbcVerify.c
+    tlsprf_selftest.c
+    tlsprf.c
+    xtsaes.c
   )
 
 function(process_cppasm filepath outformat archdefine)
@@ -176,7 +175,9 @@ function(process_symcryptasm filepath outformat archdefine)
     process_cppasm(${output_cppasm} ${outformat} ${archdefine})
 endfunction()
 
-if(NOT WIN32)
+if(WIN32)
+    list(APPEND SOURCES_COMMON IEEE802_11SaeCustom.c)
+else()
     list(APPEND SOURCES_COMMON linux/intrinsics.c)
 endif()
 
@@ -284,11 +285,14 @@ if(WIN32)
     target_link_libraries(symcrypt_windows10sgx symcrypt_common)
 endif()
 
-set(SOURCES_GENERIC ${SOURCES_COMMON})
-list(APPEND SOURCES_GENERIC env_generic.c)
 if(NOT WIN32)
     add_compile_options(-Wno-trigraphs)
+
+    add_library(symcrypt_linuxusermode STATIC env_linuxUserMode.c)
+    set_target_properties(symcrypt_linuxusermode PROPERTIES PREFIX "")
+    target_link_libraries(symcrypt_linuxusermode symcrypt_common)
 endif()
+
 add_library(symcrypt_generic STATIC env_generic.c)
 set_target_properties(symcrypt_generic PROPERTIES PREFIX "")
 target_link_libraries(symcrypt_generic symcrypt_common)

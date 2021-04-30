@@ -300,13 +300,20 @@ C_ASSERT( (SYMCRYPT_ALIGN_VALUE & (SYMCRYPT_ALIGN_VALUE - 1 )) == 0 );
 #define SYMCRYPT_ALIGN_UP( _p ) ((PBYTE) ( ((UINT_PTR) (_p) + SYMCRYPT_ALIGN_VALUE - 1) & ~(SYMCRYPT_ALIGN_VALUE - 1 ) ) )
 
 #if SYMCRYPT_MS_VC
-#define SYMCRYPT_ALIGN  __declspec(align(SYMCRYPT_ALIGN_VALUE))
-#define SYMCRYPT_ALIGN_STRUCT SYMCRYPT_ALIGN struct
-#define SYMCRYPT_ALIGN_AT(x)  __declspec(align(x))
+    #define SYMCRYPT_ALIGN  __declspec(align(SYMCRYPT_ALIGN_VALUE))
+    #define SYMCRYPT_ALIGN_STRUCT SYMCRYPT_ALIGN struct
+    #define SYMCRYPT_ALIGN_AT(x)  __declspec(align(x))
+    #define SYMCRYPT_WEAK_SYMBOL
+#elif SYMCRYPT_GNUC
+    #define SYMCRYPT_ALIGN  __attribute__((aligned(SYMCRYPT_ALIGN_VALUE)))
+    #define SYMCRYPT_ALIGN_STRUCT struct SYMCRYPT_ALIGN
+    #define SYMCRYPT_ALIGN_AT(x) __attribute__((aligned(x)))
+    #define SYMCRYPT_WEAK_SYMBOL __attribute__((weak))
 #else
-#define SYMCRYPT_ALIGN  __attribute__((aligned(SYMCRYPT_ALIGN_VALUE)))
-#define SYMCRYPT_ALIGN_STRUCT struct SYMCRYPT_ALIGN
-#define SYMCRYPT_ALIGN_AT(x) __attribute__((aligned(x)))
+    #define SYMCRYPT_ALIGN
+    #define SYMCRYPT_ALIGN_STRUCT
+    #define SYMCRYPT_ALIGN_AT(x)
+    #define SYMCRYPT_WEAK_SYMBOL
 #endif
 
 
@@ -2497,6 +2504,8 @@ SYMCRYPT_EXTERN_C_END
 
 #define SYMCRYPT_ENVIRONMENT_WINDOWS_USERMODE_LATEST            SYMCRYPT_ENVIRONMENT_WINDOWS_USERMODE_WIN8_1_N_LATER
 
+
+#define SYMCRYPT_ENVIRONMENT_LINUX_USERMODE                     SYMCRYPT_ENVIRONMENT_DEFS( LinuxUsermode )
 
 //////////////////////////////////////////////////////////
 //

@@ -29,6 +29,7 @@ x64/*
 *.pdb
 *.aps
 *.a
+*.bin
 
 # Generated files
 inc/*.dat.h

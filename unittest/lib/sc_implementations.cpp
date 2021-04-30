@@ -6877,6 +6877,7 @@ EccImp<ImpSc, AlgEcdh>::~EccImp()
 }
 
 //============================
+#if SYMCRYPT_MS_VC
 template<>
 VOID
 algImpKeyPerfFunction<ImpSc, AlgIEEE802_11SaeCustom>( PBYTE buf1, PBYTE buf2, PBYTE buf3, SIZE_T keySize )
@@ -6926,7 +6927,7 @@ template<>
 ArithImp<ImpSc, AlgIEEE802_11SaeCustom>::~ArithImp()
 {
 }
-
+#endif
 
 
 VOID
@@ -7083,7 +7084,9 @@ addSymCryptAlgs()
     addImplementationToGlobalList<EccImp<ImpSc, AlgEcdsaVerify>>();
     addImplementationToGlobalList<EccImp<ImpSc, AlgEcdh>>();
 
+#if SYMCRYPT_MS_VC
     addImplementationToGlobalList<ArithImp<ImpSc, AlgIEEE802_11SaeCustom>>();
+#endif
 
     addImplementationToGlobalList<ArithImp<ImpSc, AlgDeveloperTest>>();
 }

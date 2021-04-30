@@ -929,7 +929,7 @@ extern DWORD g_osVersion;       // 0xaabb for major version aa and minor version
 
 _Analysis_noreturn_
 VOID
-fatal( _In_ PSTR file, ULONG line, _In_ PSTR text, ... );
+fatal( _In_ PCSTR file, ULONG line, _In_ PCSTR text, ... );
 
 typedef CONST CHAR * PCCHAR;
 

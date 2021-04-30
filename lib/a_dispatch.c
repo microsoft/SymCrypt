@@ -55,7 +55,7 @@ const UINT32 g_SymCryptModFnsMask = sizeof( g_SymCryptModFns ) - sizeof( g_SymCr
 //
 // Tweaking the selection & function tables allows different tradeoffs of performance vs codesize
 //
-SYMCRYPT_MODULUS_TYPE_SELECTION_ENTRY SymCryptModulusTypeSelections[] =
+const SYMCRYPT_MODULUS_TYPE_SELECTION_ENTRY SymCryptModulusTypeSelections[] = 
 {
 #if SYMCRYPT_CPU_AMD64
     // Mulx used for 257-512 and 577-... bits

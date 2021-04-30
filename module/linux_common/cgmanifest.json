@@ -1,0 +1,15 @@
+{
+    "Registrations": [ 
+        {
+            "Component": { 
+                "Type": "Other", 
+                "Other": {
+                    "Name": "elfdefinitions.h", 
+                    "Version": "3769",
+                    "DownloadUrl": "https://cgit.freebsd.org/src/plain/contrib/elftoolchain/common/elfdefinitions.h"
+                    }
+            },
+            "DevelopmentDependency": false
+        }
+    ]
+}

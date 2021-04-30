@@ -24,7 +24,7 @@ message(STATUS "Target: ${CMAKE_SYSTEM_NAME} ${CMAKE_SYSTEM_PROCESSOR} ${SYMCRYP
 
 # Set output directories binaries
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib/${CMAKE_SYSTEM_PROCESSOR}/${SYMCRYPT_TARGET_ENV})
-set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib/${CMAKE_SYSTEM_PROCESSOR}/${SYMCRYPT_TARGET_ENV})
+set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/module/${CMAKE_SYSTEM_PROCESSOR}/${SYMCRYPT_TARGET_ENV})
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/exe/${CMAKE_SYSTEM_PROCESSOR}/${SYMCRYPT_TARGET_ENV})
 
 if(WIN32 AND SYMCRYPT_TARGET_ENV MATCHES "WindowsUserMode")
@@ -57,6 +57,8 @@ elseif(NOT WIN32)
     add_compile_options(-g)
     add_compile_options(-Wno-multichar)
     add_compile_options(-fPIC)
+    add_compile_options(-fno-stack-protector)
+    add_compile_options(-fno-plt)
 
     # GCC and clang unroll more aggressively than they should for best performance
     # When we want to unroll loops, we unroll in the source code, so tell the compiler not to unroll
@@ -77,4 +79,9 @@ include_directories(${CMAKE_BINARY_DIR}/inc)
 include(build/buildInfo.cmake)
 
 add_subdirectory(lib)
+
+if(NOT WIN32)
+    add_subdirectory(module)
+endif()
+
 add_subdirectory(unittest)
