@@ -12,148 +12,143 @@ pr:
 - master
 
 # List of jobs to build. Each job follows the same general format.
-# 1. Windows AMD64 with CPU optimizations
-# 2. Windows x86 with CPU optimizations
-# 3. Linux (host native) with no CPU optimizations
+# 1. Windows AMD64 with CPU optimizations in Debug mode
+# 2. Windows AMD64 with CPU optimizations in Release mode
+# 3. Windows X86 with CPU optimizations in Debug mode
+# 4. Windows X86 with CPU optimizations in Release mode
+# 5. Linux AMD64 with CPU optimizations using GCC in Debug mode
+# 6. Linux AMD64 with CPU optimizations using GCC in Sanitize mode
+# 7. Linux AMD64 with CPU optimizations using GCC in Release mode
+# 8. Linux AMD64 with CPU optimizations using clang in Debug mode
+# 9. Linux AMD64 with CPU optimizations using clang in Sanitize mode
+# 10. Linux AMD64 with CPU optimizations using clang in Release mode
 jobs:
-- job: Windows_AMD64
+- job: Windows_AMD64_Debug
   pool:
     vmImage: 'windows-2019' # Windows Server 2019 with Visual Studio 2019
   steps:
-  - checkout: self  # self represents the repo where the initial Pipelines YAML file was found
-    submodules: recursive
-  - task: ComponentGovernanceComponentDetection@0
-  # Initialize CMake
-  # cd bin; cmake .. -DCMAKE_TOOLCHAIN_FILE=../cmake-toolchain/windows-amd64.cmake
-  - task: CMake@1
-    inputs:
-      workingDirectory: '$(Build.SourcesDirectory)/bin'
-      cmakeArgs: '..  -DCMAKE_TOOLCHAIN_FILE=../cmake-toolchain/windows-amd64.cmake -DSYMCRYPT_INTERNAL_BUILD=1'
-  # Build with CMake
-  # cmake --build .
-  - task: CMake@1
-    inputs:
-      workingDirectory: '$(Build.SourcesDirectory)/bin'
-      cmakeArgs: '--build . -j 8'
-  # Execute unit tests using the inline script
-  - script: |
-      cd bin\exe\AMD64\WindowsUserMode\Debug
-      .\symcryptunittest.exe
-    displayName: 'Execute unit test'
-  # Copy build output files to artifact staging directory
-  - task: CopyFiles@2
-    inputs:
-      SourceFolder: 'bin'
-      Contents: '**'
-      TargetFolder: '$(build.artifactstagingdirectory)'
-  # Publish staged artifacts so they're available in the pipeline results
-  - task: PublishBuildArtifacts@1
-    inputs:
-      PathtoPublish: '$(Build.ArtifactStagingDirectory)'
-      ArtifactName: 'drop-Windows-AMD64'
-      publishLocation: 'Container'
+  - template: azure-build-template.yml
+    parameters:
+      env: WindowsUserMode
+      arch: AMD64
+      cc: cl
+      cxx: cl
+      buildType: Debug
+      additionalCMakeArgs: -DSYMCRYPT_INTERNAL_BUILD=1
 
-- job: Windows_x86
+- job: Windows_AMD64_Release
   pool:
     vmImage: 'windows-2019'
   steps:
-  - checkout: self
-    submodules: recursive
-  - task: CMake@1
-    inputs:
-      workingDirectory: '$(Build.SourcesDirectory)/bin'
-      cmakeArgs: '..  -DCMAKE_TOOLCHAIN_FILE=../cmake-toolchain/windows-x86.cmake -DSYMCRYPT_INTERNAL_BUILD=1 -A Win32'
-  - task: CMake@1
-    inputs:
-      workingDirectory: '$(Build.SourcesDirectory)/bin'
-      cmakeArgs: '--build . -j 8'
-  - script: |
-      cd bin\exe\x86\WindowsUserMode\Debug
-      .\symcryptunittest.exe
-    displayName: 'Execute unit test'
-  - task: CopyFiles@2
-    inputs:
-      SourceFolder: 'bin'
-      Contents: '**'
-      TargetFolder: '$(build.artifactstagingdirectory)'
-  - task: PublishBuildArtifacts@1
-    inputs:
-      PathtoPublish: '$(Build.ArtifactStagingDirectory)'
-      ArtifactName: 'drop-Windows-x86'
-      publishLocation: 'Container'
+  - template: azure-build-template.yml
+    parameters:
+      env: WindowsUserMode
+      arch: AMD64
+      cc: cl
+      cxx: cl
+      buildType: Release
+      additionalCMakeArgs: -DSYMCRYPT_INTERNAL_BUILD=1
 
-- job: Linux_AMD64_gcc
+- job: Windows_x86_Debug
+  pool:
+    vmImage: 'windows-2019'
+  steps:
+  - template: azure-build-template.yml
+    parameters:
+      env: WindowsUserMode
+      arch: X86
+      cc: cl
+      cxx: cl
+      buildType: Debug
+      additionalCMakeArgs: -DSYMCRYPT_INTERNAL_BUILD=1 -A Win32
+
+- job: Windows_x86_Release
+  pool:
+    vmImage: 'windows-2019'
+  steps:
+  - template: azure-build-template.yml
+    parameters:
+      env: WindowsUserMode
+      arch: X86
+      cc: cl
+      cxx: cl
+      buildType: Release
+      additionalCMakeArgs: -DSYMCRYPT_INTERNAL_BUILD=1 -A Win32
+
+- job: Linux_AMD64_gcc_Debug
   pool:
     vmImage: 'ubuntu-20.04'
   steps:
-  - checkout: self
-    submodules: recursive
-  - task: ComponentGovernanceComponentDetection@0
-  - script: |
-      python -m pip install --upgrade pip setuptools wheel
-      pip install -r $(Build.SourcesDirectory)/scripts/requirements.txt
-    displayName: 'Install Python requirements'
-  - task: CMake@1
-    inputs:
-      workingDirectory: '$(Build.SourcesDirectory)/bin'
-      cmakeArgs: '.. -DCMAKE_TOOLCHAIN_FILE=cmake-toolchain/linux-amd64.cmake -DCMAKE_C_COMPILER=gcc -DCMAKE_CXX_COMPILER=g++'
-  - task: CMake@1
-    inputs:
-      workingDirectory: '$(Build.SourcesDirectory)/bin'
-      cmakeArgs: '--build . -j 8'
-  - script: |
-      cd bin/exe/AMD64/Linux
-      ./symcryptmoduletest
-    displayName: 'Execute module test'
-  - script: |
-      cd bin/exe/AMD64/Linux
-      ./symcryptunittest
-    displayName: 'Execute generic unit test'
-    name: 'LinuxGenericUnitTest'
-  - task: CopyFiles@2
-    inputs:
-      SourceFolder: 'bin'
-      Contents: '**'
-      TargetFolder: '$(build.artifactstagingdirectory)'
-  - task: PublishBuildArtifacts@1
-    inputs:
-      PathtoPublish: '$(Build.ArtifactStagingDirectory)'
-      ArtifactName: 'drop-Linux-Generic'
-      publishLocation: 'Container'
+  - template: azure-build-template.yml
+    parameters:
+      env: LinuxUserMode
+      arch: AMD64
+      cc: gcc
+      cxx: g++
+      buildType: Debug
+      additionalCMakeArgs:
 
-- job: Linux_AMD64_clang
+- job: Linux_AMD64_gcc_Sanitize
   pool:
     vmImage: 'ubuntu-20.04'
   steps:
-  - checkout: self
-    submodules: recursive
-  - script: |
-      python -m pip install --upgrade pip setuptools wheel
-      pip install -r $(Build.SourcesDirectory)/scripts/requirements.txt
-    displayName: 'Install Python requirements'
-  - task: CMake@1
-    inputs:
-      workingDirectory: '$(Build.SourcesDirectory)/bin'
-      cmakeArgs: '.. -DCMAKE_TOOLCHAIN_FILE=cmake-toolchain/linux-amd64.cmake -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++'
-  - task: CMake@1
-    inputs:
-      workingDirectory: '$(Build.SourcesDirectory)/bin'
-      cmakeArgs: '--build . -j 8'
-  - script: |
-      cd bin/exe/AMD64/Linux
-      ./symcryptmoduletest
-    displayName: 'Execute module test'
-  - script: |
-      cd bin/exe/AMD64/Linux
-      ./symcryptunittest
-    displayName: 'Execute unit test'
-  - task: CopyFiles@2
-    inputs:
-      SourceFolder: 'bin'
-      Contents: '**'
-      TargetFolder: '$(build.artifactstagingdirectory)'
-  - task: PublishBuildArtifacts@1
-    inputs:
-      PathtoPublish: '$(Build.ArtifactStagingDirectory)'
-      ArtifactName: 'drop-Linux-Generic'
-      publishLocation: 'Container'
+  - template: azure-build-template.yml
+    parameters:
+      env: LinuxUserMode
+      arch: AMD64
+      cc: gcc
+      cxx: g++
+      buildType: Sanitize
+      additionalCMakeArgs:
+
+- job: Linux_AMD64_gcc_Release
+  pool:
+    vmImage: 'ubuntu-20.04'
+  steps:
+  - template: azure-build-template.yml
+    parameters:
+      env: LinuxUserMode
+      arch: AMD64
+      cc: gcc
+      cxx: g++
+      buildType: Release
+      additionalCMakeArgs:
+
+- job: Linux_AMD64_clang_Debug
+  pool:
+    vmImage: 'ubuntu-20.04'
+  steps:
+  - template: azure-build-template.yml
+    parameters:
+      env: LinuxUserMode
+      arch: AMD64
+      cc: clang
+      cxx: clang++
+      buildType: Debug
+      additionalCMakeArgs:
+
+- job: Linux_AMD64_clang_Sanitize
+  pool:
+    vmImage: 'ubuntu-20.04'
+  steps:
+  - template: azure-build-template.yml
+    parameters:
+      env: LinuxUserMode
+      arch: AMD64
+      cc: clang
+      cxx: clang++
+      buildType: Sanitize
+      additionalCMakeArgs:
+
+- job: Linux_AMD64_clang_Release
+  pool:
+    vmImage: 'ubuntu-20.04'
+  steps:
+  - template: azure-build-template.yml
+    parameters:
+      env: LinuxUserMode
+      arch: AMD64
+      cc: clang
+      cxx: clang++
+      buildType: Release
+      additionalCMakeArgs:

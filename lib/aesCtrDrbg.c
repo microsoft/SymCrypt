@@ -18,7 +18,7 @@
 
 VOID
 SYMCRYPT_CALL
-SymCryptRngAesBcc( 
+SymCryptRngAesBcc(
     _In_                                    PSYMCRYPT_AES_EXPANDED_KEY  pKey,
     _In_reads_( cbData )                   PCBYTE                      pcbData,
     _In_                                    SIZE_T                      cbData,
@@ -46,16 +46,16 @@ SymCryptRngAesDf(
     SYMCRYPT_ALIGN BYTE         buf[SYMCRYPT_RNG_AES_MAX_SEED_SIZE + 3 * SYMCRYPT_AES_BLOCK_SIZE];
     PBYTE                       pb;
     SIZE_T                      lenIvS;
-    
+
     SYMCRYPT_ALIGN BYTE         temp[SYMCRYPT_RNG_AES_KEY_AND_V_SIZE];
     SYMCRYPT_AES_EXPANDED_KEY   aesKey;
     PBYTE                       pX;
-     
+
     SIZE_T                      i;
 
     C_ASSERT( sizeof( temp ) % SYMCRYPT_AES_BLOCK_SIZE == 0 );
 
-    // 
+    //
     // See SP800-90 section 10.4.2
     //
     // Our buf contains the following data:
@@ -74,15 +74,15 @@ SymCryptRngAesDf(
     // Initialize the entire buf to zero
     //
     SymCryptWipeKnownSize( buf, sizeof( buf ) );
-    
+
     //
     // build the string S in buf[16...]
     //
     pb = &buf[ SYMCRYPT_AES_BLOCK_SIZE ];
-    
+
     //
     // Set L; SP800-90 isn't clear, but we'll use MSB first as that is what is used elsewhere.
-    // 
+    //
     SYMCRYPT_STORE_MSBFIRST32( pb, (UINT32) cbData );
     pb += 4;
 
@@ -95,7 +95,7 @@ SymCryptRngAesDf(
     //
     // Set input_string
     //
-    
+
     memcpy( pb, pcbData, cbData );
     pb += cbData;
 
@@ -130,7 +130,7 @@ SymCryptRngAesDf(
     for( i=0; i< SYMCRYPT_RNG_AES_KEY_AND_V_SIZE / SYMCRYPT_AES_BLOCK_SIZE; i++ )
     {
         //
-        // Update the IV with the right i value. 
+        // Update the IV with the right i value.
         // i is only 0-2, so we only have to set a single byte
         //
         buf[3] = (BYTE) i;
@@ -146,7 +146,7 @@ SymCryptRngAesDf(
     //
     SymCryptAesExpandKeyEncryptOnly( &aesKey, temp, SYMCRYPT_RNG_AES_KEY_SIZE );
     pX = &temp[SYMCRYPT_RNG_AES_KEY_SIZE];
-    
+
     for( i=0; i < SYMCRYPT_RNG_AES_INTERNAL_SEED_SIZE; i += SYMCRYPT_AES_BLOCK_SIZE )
     {
         SymCryptAesEncrypt( &aesKey, pX, pX );
@@ -219,14 +219,14 @@ SymCryptRngAesGenerateBlocks(
 
         //
         // The SymCryptAesCtrMsb64 routine will increment the last 64 bits of the V value,
-        // but not handle the carry to the first 64 bits. 
+        // but not handle the carry to the first 64 bits.
         // We limit how many block we do so that we never cross this boundary.
         // SymCryptAesCtrMsb64 does a post-increment, so it may increment the last 64 bits
         // to zero as long as we don't rely on the V value afterwards.
         // As one-in-2^64 code is not testable, we terminate the Msb64 call earlier, and
         // much earlier on CHKed builds.
         //
-#if DBG
+#if SYMCRYPT_DEBUG
 #define MAX_CTRMSB64_BLOCKS (1 << 3)        // very small; overflow will be triggered by any reasonable test
 #else
 #define MAX_CTRMSB64_BLOCKS (1 << 10)         // increase when we have this well-tested
@@ -320,7 +320,7 @@ SymCryptRngAesAreBlocksIdentical(
     tmp = (p1[0] ^ p2[0]) | (p1[1] ^ p2[1]);
 
 #else
-    
+
     SIZE_T i;
 
     C_ASSERT( 16 % sizeof( SIZE_T ) == 0 );
@@ -330,7 +330,7 @@ SymCryptRngAesAreBlocksIdentical(
     {
         tmp |= p1[i] ^ p2[i];
     }
-    
+
 #endif
 
     return tmp == 0;
@@ -356,14 +356,14 @@ SymCryptRngAesCheckBlocksNotIdentical(
         SYMCRYPT_ASSERT( cbData >= i + SYMCRYPT_AES_BLOCK_SIZE );
         identical |= SymCryptRngAesAreBlocksIdentical( &pcbData[i-SYMCRYPT_AES_BLOCK_SIZE], &pcbData[ i ] );
     }
-        
+
     memcpy( pbPreviousBlock, &pcbData[cbData - SYMCRYPT_AES_BLOCK_SIZE], SYMCRYPT_AES_BLOCK_SIZE );
 
     //
     // The structure of AES-CTR-DRBG makes it impossible for two consecutive blocks of a single request
     // to be equal. The only way this could happen is if the first block of one request is the same as
     // the last block of the previous request. But the probability of this happening is 2^{-128}.
-    // This never happens, so the whole check is technically useless. 
+    // This never happens, so the whole check is technically useless.
     // Nevertheless, it is required by FIPS 140-2, so we have to implement it,
     // but we don't have to handle the error usefully in any way.
     // (Trying to handle this error sensibly is far too complicated, and adds far more danger from code
@@ -383,8 +383,8 @@ SymCryptRngAesUpdate(
     _In_reads_opt_( SYMCRYPT_RNG_AES_INTERNAL_SEED_SIZE )   PBYTE                       pbProvidedData,
     _In_opt_                                                PSYMCRYPT_AES_EXPANDED_KEY  pAesKey)
 //
-// Implement the CTR_DRBG Update function. 
-// pbProvidedData is optional, but if provided must always be exactly seedlen bits. 
+// Implement the CTR_DRBG Update function.
+// pbProvidedData is optional, but if provided must always be exactly seedlen bits.
 // pAesKey is the already expanded key of the RngState. This is optional, and only has
 // to be provided if the caller already has it.
 //
@@ -409,8 +409,8 @@ SymCryptRngAesUpdate(
 
     memcpy( buf, &pState->keyAndV[SYMCRYPT_RNG_AES_KEY_SIZE], sizeof( buf ) );
 
-    SymCryptRngAesGenerateBlocks( 
-            pKey, 
+    SymCryptRngAesGenerateBlocks(
+            pKey,
             buf,                            // pV
             pState->keyAndV,                // pbRandom
             sizeof( pState->keyAndV) );     // cbRandom
@@ -472,7 +472,7 @@ SymCryptRngAesGenerateSmall(
     //
     if( pRngState->requestCounter > SYMCRYPT_RNG_AES_MAX_REQUESTS_PER_RESEED )
     {
-        return SYMCRYPT_FIPS_FAILURE; 
+        return SYMCRYPT_FIPS_FAILURE;
     }
 
     SymCryptAesExpandKeyEncryptOnly( &aesKey, pRngState->keyAndV, SYMCRYPT_RNG_AES_KEY_SIZE );
@@ -480,9 +480,9 @@ SymCryptRngAesGenerateSmall(
     if( cbRandom >= SYMCRYPT_AES_BLOCK_SIZE )
     {
         SIZE_T wholeBlocks = cbRandom & ~(SYMCRYPT_AES_BLOCK_SIZE - 1);
-        SymCryptRngAesGenerateBlocks(   &aesKey, 
+        SymCryptRngAesGenerateBlocks(   &aesKey,
                                         &pRngState->keyAndV[ SYMCRYPT_RNG_AES_KEY_SIZE],
-                                        pbRandom, 
+                                        pbRandom,
                                         wholeBlocks );
         if( pRngState->fips140_2Check )
         {
@@ -495,9 +495,9 @@ SymCryptRngAesGenerateSmall(
     if( cbRandom > 0 )
     {
         SYMCRYPT_ASSERT( cbRandom < SYMCRYPT_AES_BLOCK_SIZE );
-        SymCryptRngAesGenerateBlocks(   &aesKey, 
+        SymCryptRngAesGenerateBlocks(   &aesKey,
                                         &pRngState->keyAndV[ SYMCRYPT_RNG_AES_KEY_SIZE],
-                                        buf, 
+                                        buf,
                                         sizeof( buf ) );
         if( pRngState->fips140_2Check )
         {
@@ -594,7 +594,7 @@ SymCryptRngAesGenerate( PSYMCRYPT_RNG_AES_STATE pRngState,
 _Use_decl_annotations_
 SYMCRYPT_NOINLINE
 SYMCRYPT_ERROR
-SYMCRYPT_CALL 
+SYMCRYPT_CALL
 SymCryptRngAesReseed(   PSYMCRYPT_RNG_AES_STATE pRngState,
                         PCBYTE                  pcbSeedMaterial,
                         SIZE_T                  cbSeedMaterial )
@@ -612,18 +612,18 @@ SymCryptRngAesReseed(   PSYMCRYPT_RNG_AES_STATE pRngState,
     {
         return SYMCRYPT_EXTERNAL_FAILURE;     // bug is external to SymCrypt (i.e. the caller)
     }
-    
+
     //
     // We do not perform the FIPS-required reseed self-test here.
     // Rather, we have a function that external callers can use to implement that test before
     // calling this reseed function.
     // This allows callers that are not interested in FIPS certification to skip the test.
     //
-    
+
     SymCryptRngAesDf( pcbSeedMaterial, cbSeedMaterial, abSeed );
 
     SymCryptRngAesUpdate( pRngState, abSeed, NULL );
-    
+
     pRngState->requestCounter = 1;
 
     SymCryptWipeKnownSize( abSeed, sizeof( abSeed ) );
@@ -649,7 +649,7 @@ SymCryptRngAesUninstantiate(    PSYMCRYPT_RNG_AES_STATE pRngState )
 static const BYTE g_abInstantiateEntropyInputPlusNonce[] =
 {
     // Entropy input
-    
+
     0x00,0x01,0x02,0x03,0x04,0x05,0x06,0x07,
     0x08,0x09,0x0A,0x0B,0x0C,0x0D,0x0E,0x0F,
     0x10,0x11,0x12,0x13,0x14,0x15,0x16,0x17,
@@ -660,13 +660,13 @@ static const BYTE g_abInstantiateEntropyInputPlusNonce[] =
     // Nonce
     0x20,0x21,0x22,0x23,0x24,0x25,0x26,0x27,
     0x28,0x29,0x2A,0x2B,0x2C,0x2D,0x2E,0x2F,
-   
+
 };
 
 
 static const BYTE g_abReseedEntropy[] =
 {
-    
+
    0x80,0x81,0x82,0x83,0x84,0x85,0x86,0x87,
    0x88,0x89,0x8A,0x8B,0x8C,0x8D,0x8E,0x8F,
    0x90,0x91,0x92,0x93,0x94,0x95,0x96,0x97,
@@ -696,7 +696,7 @@ static const BYTE g_expectedStateAfterInstantiate[ SYMCRYPT_RNG_AES_KEY_AND_V_SI
 };
 
 static const BYTE g_expectedStateAfterReseed[ SYMCRYPT_RNG_AES_KEY_AND_V_SIZE ] =
-{   
+{
     //key
     0x17,0x98,0xC0,0xDF,0x09,0x69,0x6A,0x46,
     0x19,0x46,0xFE,0x6D,0x68,0x7D,0x8C,0xC8,
@@ -708,7 +708,7 @@ static const BYTE g_expectedStateAfterReseed[ SYMCRYPT_RNG_AES_KEY_AND_V_SIZE ] 
 };
 
 static const BYTE g_expectedStateAfterGenerate[ SYMCRYPT_RNG_AES_KEY_AND_V_SIZE ] =
-{   
+{
     //key
     0x28, 0xbc, 0x65, 0xa8, 0x6a, 0xb7, 0xc7, 0x4e, 0xdf, 0x4b, 0xb8, 0x72, 0x87, 0xd3, 0x4f, 0xbb,
     0x8d, 0x6f, 0x16, 0xd7, 0xb9, 0x1b, 0x6a, 0xbb, 0xee, 0x7b, 0x88, 0x86, 0x5b, 0x0f, 0xc7, 0xbd,
@@ -721,7 +721,7 @@ VOID
 SYMCRYPT_CALL
 SymCryptRngAesTestInstantiate( PSYMCRYPT_RNG_AES_STATE pRngState )
 //
-// Test the Instantiate function on the passed instance. Leave it 
+// Test the Instantiate function on the passed instance. Leave it
 // in the initialized state for the test vector.
 //
 {
@@ -746,7 +746,7 @@ SymCryptRngAesTestInstantiate( PSYMCRYPT_RNG_AES_STATE pRngState )
 
     if ( scError != SYMCRYPT_NO_ERROR ||
          0 != memcmp( pRngState->keyAndV,
-                        g_expectedStateAfterInstantiate, 
+                        g_expectedStateAfterInstantiate,
                         SYMCRYPT_RNG_AES_KEY_AND_V_SIZE ))
     {
         SymCryptFatal( 'aci2' );
@@ -782,8 +782,8 @@ SymCryptRngAesTestReseed( PSYMCRYPT_RNG_AES_STATE pRngState )
     SymCryptInjectError( pRngState->keyAndV, SYMCRYPT_RNG_AES_KEY_AND_V_SIZE );
 
     if ( scError != SYMCRYPT_NO_ERROR ||
-         0 != memcmp( pRngState->keyAndV,  
-                        g_expectedStateAfterReseed, 
+         0 != memcmp( pRngState->keyAndV,
+                        g_expectedStateAfterReseed,
                         SYMCRYPT_RNG_AES_KEY_AND_V_SIZE ) )
     {
         SymCryptFatal( 'acr2' );
@@ -822,14 +822,14 @@ SymCryptRngAesTestGenerate( PSYMCRYPT_RNG_AES_STATE pRngState )
 
 #pragma prefast( suppress: 6202 26000, "buffer size of cbOutput is purposely incorrect");
     scError = SymCryptRngAesGenerateSmall( pRngState, abOutput, SYMCRYPT_RNG_AES_MAX_REQUEST_SIZE + 1);
-    
+
     if( scError == SYMCRYPT_NO_ERROR )
     {
         SymCryptFatal( 'acg2' );
     }
 
     //
-    // Now test for correct output data. 
+    // Now test for correct output data.
     //
     scError = SymCryptRngAesGenerateSmall( pRngState, abOutput, sizeof( g_abOutput1 ) );
 
@@ -845,8 +845,8 @@ SymCryptRngAesTestGenerate( PSYMCRYPT_RNG_AES_STATE pRngState )
     //
     SymCryptInjectError( pRngState->keyAndV, SYMCRYPT_RNG_AES_KEY_AND_V_SIZE );
 
-    if ( 0 != memcmp( pRngState->keyAndV,  
-                        g_expectedStateAfterGenerate, 
+    if ( 0 != memcmp( pRngState->keyAndV,
+                        g_expectedStateAfterGenerate,
                         SYMCRYPT_RNG_AES_KEY_AND_V_SIZE ) )
     {
         SymCryptFatal( 'acg4' );
@@ -887,7 +887,7 @@ SymCryptRngAesInstantiateSelftest()
     SYMCRYPT_RNG_AES_STATE rng;
 
     SymCryptRngAesTestInstantiate( &rng );
-    
+
     //
     // Uninstantiate has to be tested whenever another function is tested.
     //
@@ -963,7 +963,7 @@ SymCryptRngAesFips140_2Generate(    PSYMCRYPT_RNG_AES_FIPS140_2_STATE   pRngStat
 
 _Use_decl_annotations_
 SYMCRYPT_ERROR
-SYMCRYPT_CALL 
+SYMCRYPT_CALL
 SymCryptRngAesFips140_2Reseed(  PSYMCRYPT_RNG_AES_FIPS140_2_STATE   pRngState,
                                 PCBYTE                              pcbSeedMaterial,
                                 SIZE_T                              cbSeedMaterial )

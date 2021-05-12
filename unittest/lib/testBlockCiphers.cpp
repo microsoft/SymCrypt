@@ -192,7 +192,10 @@ katBlockCipherSingle(
     // Do single encryption
     //
     memset( bufData, 0, sizeof( bufData ) );
-    memcpy( bufChain, pbChain, cbChain );
+    if (cbChain > 0)
+    {
+        memcpy( bufChain, pbChain, cbChain );
+    }
 
     pImp->encrypt( bufChain, cbChain, pbPlaintext, bufData, cbPlaintext );
     CHECK3( memcmp( bufData, pbCiphertext, cbPlaintext ) == 0, "Ciphertext mismatch in line %lld", line );
@@ -201,7 +204,10 @@ katBlockCipherSingle(
     // Do encryption piecewise
     //
     memset( bufData, 0, sizeof( bufData ) );
-    memcpy( bufChain, pbChain, cbChain );
+    if (cbChain > 0)
+    {
+        memcpy( bufChain, pbChain, cbChain );
+    }
     SIZE_T offset = 0;
     while( offset < cbPlaintext )
     {
@@ -214,8 +220,10 @@ katBlockCipherSingle(
     //
     // Do single decryption
     //
-
-    memcpy( bufChain, pbChain, cbChain );
+    if (cbChain > 0)
+    {
+        memcpy( bufChain, pbChain, cbChain );
+    }
     pImp->decrypt( bufChain, cbChain, pbCiphertext, bufData, cbCiphertext );
     CHECK3( memcmp( bufData, pbPlaintext, cbCiphertext ) == 0, "Plaintext mismatch in line %lld", line );
 
@@ -223,7 +231,10 @@ katBlockCipherSingle(
     // Do piecewise decryption
     //
     memset( bufData, 0, sizeof( bufData ) );
-    memcpy( bufChain, pbChain, cbChain );
+    if (cbChain > 0)
+    {
+        memcpy( bufChain, pbChain, cbChain );
+    }
     offset = 0;
     while( offset < cbPlaintext )
     {

@@ -507,7 +507,7 @@ SymCryptInit();
 VOID
 SYMCRYPT_CALL
 SymCryptModuleInit(
-    _In_ UINT32 api, 
+    _In_ UINT32 api,
     _In_ UINT32 minor,
     _In_ UINT32 patch);
 
@@ -5025,6 +5025,7 @@ SymCryptRsakeySetValue(
 //    importing a public key.
 //  - Currently, the only acceptable value of nPubExps is 1.
 //  - Currently, the only acceptable value of nPrimes is 2 or 0.
+//  - Elements of ppPrimes must represent prime numbers.
 // We allow separate sizes for each prime. This seems redundant because all primes
 // are approximately the same size. However, some storage/encoding formats, such as ASN.1,
 // strip leading zeroes, or add an additional leading zero depending on the situation.
@@ -5249,6 +5250,7 @@ SymCryptDlgroupSetValue(
 // Remarks:
 //  - The buffers pbPrimeP, pbPrimeQ, pbGenG must all have the same number
 //    format defined by numFormat.
+//  - Primes P and (when provided) Q must represent prime numbers.
 //
 
 _Success_(return == SYMCRYPT_NO_ERROR)

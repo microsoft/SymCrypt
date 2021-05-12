@@ -6023,7 +6023,28 @@ DlImp<ImpSc, AlgDh>::~DlImp()
 //============================
 
 // Global table with the curve pointers (same size as the g_exKeyToCurve)
+//
+// These curves are allocated on demand as they are needed in tests and all deallocated by a single
+// call to CleanupSymCryptCurves performed in the destructor for AlgEcpointSetZero (which is called
+// once at the end of the unit tests). A more robust solution for freeing the curves with reference
+// counts in each algorithm using the global curves and a critical sections to avoid double freeing
+// at program end could be done, but just doing the simplest thing to avoid memory leaks in the unit
+// tests for now.
 PCSYMCRYPT_ECURVE   g_pCurves[ARRAY_SIZE(g_exKeyToCurve)] = { 0 };
+
+void
+CleanupSymCryptCurves()
+{
+    int i = 0;
+    for( i=0; i < ARRAY_SIZE(g_exKeyToCurve); i++ )
+    {
+        if (g_pCurves[i] != NULL)
+        {
+            SymCryptEcurveFree( (PSYMCRYPT_ECURVE) g_pCurves[i] );
+            g_pCurves[i] = NULL;
+        }
+    }
+}
 
 void
 SetupSymCryptCurves( PBYTE buf1, SIZE_T keySize )
@@ -6186,8 +6207,7 @@ algImpCleanPerfFunction<ImpSc, AlgEcurveAllocate>( PBYTE buf1, PBYTE buf2, PBYTE
 {
     UNREFERENCED_PARAMETER( buf1 );
     UNREFERENCED_PARAMETER( buf2 );
-
-    SymCryptEcurveFree( *((PSYMCRYPT_ECURVE *) buf3) );
+    UNREFERENCED_PARAMETER( buf3 );
 }
 
 template<>
@@ -6199,6 +6219,7 @@ algImpDataPerfFunction< ImpSc, AlgEcurveAllocate>( PBYTE buf1, PBYTE buf2, PBYTE
     UNREFERENCED_PARAMETER( dataSize );
 
     *((PSYMCRYPT_ECURVE *) buf3) = SymCryptEcurveAllocate( *((PCSYMCRYPT_ECURVE_PARAMS *) buf1), 0 );
+    SymCryptEcurveFree( *((PSYMCRYPT_ECURVE *) buf3) );
 }
 
 
@@ -6262,6 +6283,9 @@ EccImp<ImpSc, AlgEcpointSetZero>::EccImp()
 template<>
 EccImp<ImpSc, AlgEcpointSetZero>::~EccImp()
 {
+    // We free the global curves in just this destructor (which is called once at the end of the
+    // unit tests) to avoid memory leaks. See the comments by g_pCurves declaration above.
+    CleanupSymCryptCurves();
 }
 
 //============================

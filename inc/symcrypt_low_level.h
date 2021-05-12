@@ -2675,11 +2675,13 @@ SymCryptEcDsaSignEx(
                                         SIZE_T                  cbSignature );
 //
 // This algorithm is the same as SymCryptEcDsaSign except that the caller can specify
-// a value of k in peK. It is used in verifying test vectors of ECDSA.
+// a value of k in piK. It is used in verifying test vectors of ECDSA.
 //
 // Requirements:
 //  - If piK is not NULL it must have SymCryptEcurveDigitsofScalarMultiplier( pCurve ) digits, and
-//    must be in range [1, SubgroupOrder-1]
+//    must be in range [1, SubgroupOrder-1].
+//  - If piK is not NULL and the generated signature would be 0, SYMCRYPT_INVALID_ARGUMENT is
+//    returned.
 //
 
 //===================================================================

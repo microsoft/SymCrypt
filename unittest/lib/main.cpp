@@ -182,7 +182,7 @@ const char * AlgDh::name = "Dh";
 
 const char * AlgDsa::name = "Dsa";
 
-const char * AlgEcurveAllocate::name = "EcurveAllocate";
+const char * AlgEcurveAllocate::name = "EcurveAllocateAndFree";
 
 const char * AlgEcpointSetZero::name = "EcpointSetZero";
 
@@ -981,7 +981,7 @@ void printPlatformInformation( _In_z_ char * text )
         "generic"
 #endif
 
-#if defined(DBG)
+#if SYMCRYPT_DEBUG
         "Chk"
 #else
         "Fre"

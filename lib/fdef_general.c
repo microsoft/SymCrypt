@@ -537,7 +537,7 @@ SymCryptFdefRawSetValue(
     // (e.g. use of memcpy)
     //
 
-	// I assume the number format is public?
+    // I assume the number format is public?
     switch( format )
     {
     case SYMCRYPT_NUMBER_FORMAT_LSB_FIRST:
@@ -545,7 +545,8 @@ SymCryptFdefRawSetValue(
         break;
     case SYMCRYPT_NUMBER_FORMAT_MSB_FIRST:
         step = -1;
-        pbSrc += cbSrc - 1;
+        pbSrc += cbSrc; // avoid tripping pointer overflow sanitizer with cbSrc == 0
+        pbSrc--;
         break;
     default:
         scError = SYMCRYPT_INVALID_ARGUMENT;
@@ -638,7 +639,8 @@ SymCryptFdefRawGetValue(
         break;
     case SYMCRYPT_NUMBER_FORMAT_MSB_FIRST:
         step = -1;
-        pbDst += cbDst - 1;
+        pbDst += cbDst; // avoid tripping pointer overflow sanitizer with cbSrc == 0
+        pbDst--;
         break;
     default:
         scError = SYMCRYPT_INVALID_ARGUMENT;
@@ -892,7 +894,7 @@ VOID
 SYMCRYPT_CALL
 SymCryptFdefClaimScratch( PBYTE pbScratch, SIZE_T cbScratch, SIZE_T cbMin )
 {
-#if defined(DBG)
+#if SYMCRYPT_DEBUG
     SYMCRYPT_ASSERT( cbScratch >= cbMin );
     SymCryptWipe( pbScratch, cbMin );
 #else
@@ -1315,6 +1317,17 @@ SymCryptFdefCreateTrialDivisionContext( UINT32 nDigits )
     nGroups = g_SymCryptSmallPrimeGroupsSpec[iGroupSpec].nGroups;
     while( iPrime < nP )
     {
+        if( nGroups == 0 )
+        {
+            iGroupSpec +=1 ;
+            nPrimes = g_SymCryptSmallPrimeGroupsSpec[iGroupSpec].nPrimes;
+            nGroups = g_SymCryptSmallPrimeGroupsSpec[iGroupSpec].nGroups;
+            if( nGroups == 0 )
+            {
+                nGroups = nG - iGroup;
+            }
+        }
+
         SYMCRYPT_ASSERT( iPrime + nPrimes <= nP );
         M = pRes->pPrimes[iPrime++];
         for( j=1; j<nPrimes; j++ )
@@ -1326,16 +1339,6 @@ SymCryptFdefCreateTrialDivisionContext( UINT32 nDigits )
         iGroup++;
 
         nGroups--;
-        if( nGroups == 0 )
-        {
-            iGroupSpec +=1 ;
-            nPrimes = g_SymCryptSmallPrimeGroupsSpec[iGroupSpec].nPrimes;
-            nGroups = g_SymCryptSmallPrimeGroupsSpec[iGroupSpec].nGroups;
-            if( nGroups == 0 )
-            {
-                nGroups = nG - iGroup;
-            }
-        }
     }
 
     SYMCRYPT_ASSERT( iPrime == nP && iGroup == nG );

@@ -1,5 +1,5 @@
-# This toolchain file configures CMake options for Windows x86 compilation with CPU optimizations.
-# To use the toolchain file, run cmake .. -DCMAKE_TOOLCHAIN_FILE=cmake-toolchain/windows-x86.cmake -A Win32
+# This toolchain file configures CMake options for Windows User Mode x86 compilation with CPU optimizations.
+# To use the toolchain file, run cmake .. -DCMAKE_TOOLCHAIN_FILE=cmake-toolchain/WindowsUserMode-X86.cmake -A Win32
 #
 # (The "-A Win32" option seems to be required when compiling on a 64-bit host. Ideally this toolchain file
 # should set all the required options, but I haven't figured out how to force 32-bit compilation from the

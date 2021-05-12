@@ -216,7 +216,7 @@ SymCryptRestoreYmm( _Inout_ PSYMCRYPT_EXTENDED_SAVE_DATA pSaveData );
 //
 // Function to check that the library has been initialized
 //
-#if defined( DBG )
+#if SYMCRYPT_DEBUG
 
 VOID
 SYMCRYPT_CALL

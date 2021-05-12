@@ -127,7 +127,7 @@ SymCryptDetectCpuFeaturesByCpuid( UINT32 flags )
             InfoType = cpuidBitInfo[i].leaf;
             SymCryptCpuidExFunc( CPUInfo, InfoType, 0 );
         }
-        if( cpuidBitInfo[i].leaf > maxInfoType || (CPUInfo[ cpuidBitInfo[i].word ] & (1 << cpuidBitInfo[i].bitno) ) == 0 )
+        if( cpuidBitInfo[i].leaf > maxInfoType || (CPUInfo[ cpuidBitInfo[i].word ] & (1UL << cpuidBitInfo[i].bitno) ) == 0 )
         {
             result |= cpuidBitInfo[i].requiredBy;
         }

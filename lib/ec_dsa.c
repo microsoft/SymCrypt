@@ -268,7 +268,8 @@ SymCryptEcDsaSignEx(
     //
     // Main loop: Stop when both c and d are not zero (unless a specific k is provided)
     //
-    do {
+    while ( TRUE )
+    {
         if ( piK == NULL )
         {
             SymCryptEcpointSetRandom( pCurve, piMul, poKG, pbScratch, cbScratchInternal );          // Generate k and k*G
@@ -336,9 +337,19 @@ SymCryptEcDsaSignEx(
         SymCryptModAdd( pCurve->GOrd, peMsghash, peSigD, peSigD, pbScratch, cbScratchInternal );                // msghash + s*c
         SymCryptModMul( pCurve->GOrd, peSigD, peTmp, peSigD, pbScratch, cbScratchInternal );                    // ( msghash + s*c ) / k
 
-    } while ( (piK == NULL) &&
-              ( SymCryptModElementIsZero( pCurve->GOrd, peSigC ) |
-                SymCryptModElementIsZero( pCurve->GOrd, peSigD ) ) );
+        if ( !( SymCryptModElementIsZero( pCurve->GOrd, peSigC ) |
+                SymCryptModElementIsZero( pCurve->GOrd, peSigD ) ) )
+        {
+            break;
+        }
+
+        if (piK != NULL)
+        {
+            // piK resulted in 0 signature
+            scError = SYMCRYPT_INVALID_ARGUMENT;
+            goto cleanup;
+        }
+    }
 
     // Output c
     scError = SymCryptModElementGetValue( pCurve->GOrd, peSigC, pbSignature, cbSignature / 2, format, pbScratch, cbScratchInternal );

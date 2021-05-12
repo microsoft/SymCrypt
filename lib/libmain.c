@@ -20,7 +20,7 @@ UINT32 g_SymCryptFlags = 0;
 SYMCRYPT_CPU_FEATURES g_SymCryptCpuFeaturesNotPresent = (SYMCRYPT_CPU_FEATURES) ~0;
 SYMCRYPT_CPU_FEATURES g_SymCryptCpuFeaturesPresentCheck = 0;
 
-#if defined( DBG )
+#if SYMCRYPT_DEBUG
 
 SYMCRYPT_NOINLINE
 VOID
@@ -32,9 +32,9 @@ SymCryptLibraryWasNotInitialized()
 
 #endif
 
-const CHAR * const SymCryptBuildString = 
-        "v" SYMCRYPT_BUILD_INFO_VERSION 
-        "_" SYMCRYPT_BUILD_INFO_BRANCH 
+const CHAR * const SymCryptBuildString =
+        "v" SYMCRYPT_BUILD_INFO_VERSION
+        "_" SYMCRYPT_BUILD_INFO_BRANCH
         "_" SYMCRYPT_BUILD_INFO_COMMIT
         "_" SYMCRYPT_BUILD_INFO_TIMESTAMP;
 

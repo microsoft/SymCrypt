@@ -34,7 +34,7 @@
 #undef  SYMCRYPT_MS_VC
 #define SYMCRYPT_MS_VC  1
 
-#if defined(DBG)
+#if DBG
 #define SYMCRYPT_DEBUG 1
 #else
 #define SYMCRYPT_DEBUG 0
@@ -74,7 +74,7 @@
 // Suppress the SAL annotations
 #include "symcrypt_no_sal.h"
 
-#if defined(DBG)
+#if DBG
 #define SYMCRYPT_DEBUG 1
 #else
 #define SYMCRYPT_DEBUG 0
@@ -339,7 +339,7 @@ C_ASSERT( (SYMCRYPT_ALIGN_VALUE & (SYMCRYPT_ALIGN_VALUE - 1 )) == 0 );
 // Memcpy is not supported as it limits what the library is allowed to do.
 // Where needed the library provides for copy functions of its internal data structures.
 //
-#if defined( DBG )
+#if SYMCRYPT_DEBUG
     #define SYMCRYPT_MAGIC_ENABLED
 #endif
 
@@ -526,6 +526,10 @@ SymCryptCpuFeaturesNeverPresent();
 //
 // X86, AMD64, ARM, and ARM64 have no alignment restrictions, and are little-endian.
 // We do straight store/loads with BSWAPs where required.
+// This technically relies upon on undefined behavior, as we assume the compiler will translate
+// operations on unaligned pointers to 2, 4, and 8 bytes types to appropriately unaligned store/load
+// instructions on these platforms (not just in these macros). This works for all compilers we
+// currently use.
 //
 #define SYMCRYPT_INTERNAL_LOAD_MSBFIRST16( p ) SYMCRYPT_BSWAP16( *((UINT16 *)(p)) )
 #define SYMCRYPT_INTERNAL_LOAD_LSBFIRST16( p )                 ( *((UINT16 *)(p)) )

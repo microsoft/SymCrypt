@@ -19,8 +19,12 @@ Like any engineering project, SymCrypt is a compromise between conflicting requi
 - Provide high assurance in the proper functionality of the library.
 
 # Build and Test
-SymCrypt can be compiled with CMake >= 2.8.9 and Visual Studio 2019 (with Windows 10 SDK version 18362) on Windows
-or gcc 7.4.0 on Linux. Note that CMake ships with Visual Studio 2019.
+SymCrypt can be compiled with CMake >= 3.0.0 and Visual Studio 2019 (with Windows 10 SDK version 18362) on Windows
+or gcc 7.4.0 or clang 10.0.0 on Linux. Note that CMake ships with Visual Studio 2019.
+
+Python3 is also required for translation of SymCryptAsm, and for building the SymCrypt module with integrity check.
+The integrity check additionally requires pip and pyelftools: `pip install -r ./scripts/requirements.txt`
+
 
 1. Optionally use CMake from Visual Studio `$env:PATH="C:\Program Files (x86)\Microsoft Visual Studio\2019\Enterprise\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\bin\;${env:PATH}"`
 2. For Microsoft employees building the library internally, to include msbignum and RSA32 implementation benchmarks in the unit tests:
@@ -28,13 +32,14 @@ or gcc 7.4.0 on Linux. Note that CMake ships with Visual Studio 2019.
     2. In step 4 below, add the additional cmake argument `-DSYMCRYPT_INTERNAL_BUILD=1`
 3. `mkdir bin; cd bin`
 4. Configure CMake compilation:
-    * For 32-bit Windows targets: `cmake .. -DCMAKE_TOOLCHAIN_FILE=../cmake-toolchain/windows-x86.cmake -A Win32`
-    * For 64-bit Windows targets: `cmake .. -DCMAKE_TOOLCHAIN_FILE=../cmake-toolchain/windows-amd64.cmake`
-    * For 64-bit Linux targets: `cmake .. -DCMAKE_TOOLCHAIN_FILE=../cmake-toolchain/linux-amd64.cmake`
+    * For 32-bit Windows targets: `cmake .. -DCMAKE_TOOLCHAIN_FILE=../cmake-toolchain/WindowsUserMode-X86.cmake -A Win32`
+    * For 64-bit Windows targets: `cmake .. -DCMAKE_TOOLCHAIN_FILE=../cmake-toolchain/WindowsUserMode-AMD64.cmake`
+    * For 64-bit Linux targets: `cmake .. -DCMAKE_TOOLCHAIN_FILE=../cmake-toolchain/LinuxUserMode-AMD64.cmake`
     * For no CPU optimizations: `cmake ..`
     * Optionally, for a release build, specify `-DCMAKE_BUILD_TYPE=Release`
 5. `cmake --build .`
-    * Optionally specify -jN where N is the number of processes you wish to spawn for the build
+    * Optionally, for a release build on Windows, specify `--config Release`
+    * Optionally specify `-jN` where N is the number of processes you wish to spawn for the build
 
 If compilation succeeds, the output will be put in the `exe` subdirectory relative to where compilation occurred
 (i.e. `bin/exe` if you followed the instructions above).

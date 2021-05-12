@@ -9,10 +9,10 @@
 // Buffer limits for SymCryptScsRotateBuffer
 #define MIN_BUFFER_SIZE (32)
 
-// 
-// This code needs to process data in words, and we'd like to use 32-bit words on 32-bit 
+//
+// This code needs to process data in words, and we'd like to use 32-bit words on 32-bit
 // architectures and 64-bit words on 64-bit architectures.
-// We don't want to use 64-bit words on 32-bit architectures because the 64-bit shift/rotate 
+// We don't want to use 64-bit words on 32-bit architectures because the 64-bit shift/rotate
 // code might not be constant-time, and it puts further register pressure on the x86 that can only
 // use 6 registers in C code.
 //
@@ -25,7 +25,7 @@ typedef UINT64              NATIVE_UINT;
 #define NATIVE_BYTES_2LOG   (3)
 #define NATIVE_01           (0x0101010101010101)
 
-#else 
+#else
 typedef INT32               NATIVE_INT;
 typedef UINT32              NATIVE_UINT;
 #define NATIVE_BITS         (32)
@@ -47,7 +47,7 @@ UINT32
 SYMCRYPT_CALL
 SymCryptMask32IsNonzeroU31( UINT32 v )
 {
-    SYMCRYPT_ASSERT( v < (1<<31) );
+    SYMCRYPT_ASSERT( v < (1UL<<31) );
     return (-(INT32) v) >> 31;
 }
 
@@ -62,8 +62,8 @@ UINT32
 SYMCRYPT_CALL
 SymCryptMask32NeqU31( UINT32 a, UINT32 b )
 {
-    SYMCRYPT_ASSERT( a < (1<<31) );
-    SYMCRYPT_ASSERT( b < (1<<31) );
+    SYMCRYPT_ASSERT( a < (1UL<<31) );
+    SYMCRYPT_ASSERT( b < (1UL<<31) );
 
     return SymCryptMask32IsNonzeroU31( a ^ b );
 }
@@ -72,8 +72,8 @@ UINT32
 SYMCRYPT_CALL
 SymCryptMask32LtU31( UINT32 a, UINT32 b )
 {
-    SYMCRYPT_ASSERT( a < (1<<31) );
-    SYMCRYPT_ASSERT( b < (1<<31) );
+    SYMCRYPT_ASSERT( a < (1UL<<31) );
+    SYMCRYPT_ASSERT( b < (1UL<<31) );
 
     // Casting to INT32 is defined as a and b are < 2^31
     return ((INT32) a - (INT32) b) >> 31;
@@ -138,7 +138,7 @@ SymCryptScsCopy(
 {
     UINT32 i;
 
-    SYMCRYPT_ASSERT( cbSrc <= (1 << 31) && cbDst <= (1 << 31) );
+    SYMCRYPT_ASSERT( cbSrc <= (1UL << 31) && cbDst <= (1UL << 31) );
 
     // Loop over the destination buffer and update each byte with the source data (if appropriate)
     // We round-robin loop over the source buffer
@@ -180,7 +180,7 @@ SymCryptScsCopy(
 // In the final array W'' we should have W''[i] = W[ (i+s)%n ]
 // So W''[i] = W'[i] when (i+s) % n = (i+s) % n/2 which is equivalent to (i+s)%n < n/2.
 //
-// We turn this into a non-recursive algorithm. 
+// We turn this into a non-recursive algorithm.
 // First we do rotations on 2 words,
 // then the fixups to make it 4-word rotations,
 // then on to 8-words, etc.
@@ -192,7 +192,7 @@ SymCryptScsCopy(
 
 VOID
 SYMCRYPT_CALL
-SymCryptScsRotateBuffer( 
+SymCryptScsRotateBuffer(
     _Inout_updates_( cbBuffer ) PBYTE   pbBuffer,
                                 SIZE_T  cbBuffer,
                                 SIZE_T  lshift )
@@ -228,7 +228,7 @@ SymCryptScsRotateBuffer(
     // First a rotate left by lshift % NATIVE_BYTES
     // This is more complex because shifting by NATIVE_BITS is not a defined operation, and behavior is different
     // on different CPUs.
-    
+
     // Compute the shift amounts & mask
     // M = 0 if lshift % NATIVE_BYTES == 0, -1 otherwise
     a = 8 * (lshift & (NATIVE_BYTES-1));            // Core shift

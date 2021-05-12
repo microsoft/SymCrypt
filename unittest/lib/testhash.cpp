@@ -373,6 +373,11 @@ ParallelHashMultiImp::process(
     CHECK( nOperations <= MAX_PARALLEL_HASH_OPERATIONS, "?" );
     _Analysis_assume_( nOperations <= MAX_PARALLEL_HASH_OPERATIONS );
 
+    if (nOperations == 0)
+    {
+        return;
+    }
+
     for( ParallelHashImpPtrVector::const_iterator i = m_comps.begin(); i != m_comps.end(); ++i )
     {
         //

@@ -148,7 +148,7 @@ SymCryptEcurveAllocate(
     }
 
     // Allocating internal scratch space for this function
-    // **   We have to calculate it here ourselves as the curve object does not have 
+    // **   We have to calculate it here ourselves as the curve object does not have
     //      any fields initialized here **
     // EcpointSetValue and SymCryptOfflinePrecomputation
 
@@ -255,7 +255,7 @@ SymCryptEcurveAllocate(
                     SYMCRYPT_FLAG_DATA_PUBLIC | SYMCRYPT_FLAG_MODULUS_PRIME,
                     pbScratch,
                     cbScratch );
-    
+
     pDst += cbModulus;
     pSrc += pParams->cbFieldLength;
 
@@ -300,7 +300,7 @@ SymCryptEcurveAllocate(
     }
     pDst += cbModElement;
     pSrc += pParams->cbFieldLength;
-    
+
     // Skip over the distinguished point until we fix all the parameters and scratch space sizes
     pSrcGenerator = pSrc;
     pSrc += pParams->cbFieldLength * 2;
@@ -492,7 +492,7 @@ SymCryptEcurveAllocate(
     pCurve->HighBitRestrictionPosition = pcParamsV2Ext->HighBitRestrictionPosition;
     pCurve->HighBitRestrictionValue = pcParamsV2Ext->HighBitRestrictionValue;
 
-    // Make sure that the HigBitRestrictions make sense
+    // Make sure that the HighBitRestrictions make sense
     // (see SymCryptIntGet/SetBits)
     if ( (pCurve->HighBitRestrictionNumOfBits>32) ||
          ((pCurve->HighBitRestrictionNumOfBits>0) &&
