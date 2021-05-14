@@ -6070,13 +6070,21 @@ SymCryptDsaVerify(
                                         SYMCRYPT_NUMBER_FORMAT  format,
                                         UINT32                  flags );
 //
-/// Verifies a DSA signature using the public part of Key.
+// Verifies a DSA signature using the public part of Key.
 //
 // It returns SYMCRYPT_NO_ERROR if the verification suceeded or SYMCRYPT_SIGNATURE_VERIFICATION_FAILURE
 // if it failed.
 //
 // Allowed flags:
 //      None
+//
+
+VOID
+SYMCRYPT_CALL
+SymCryptDsaPairwiseSelftest();
+//
+// FIPS self-test for DSA sign/verify. If the self-test fails, SymCryptFatal will be called to
+// fastfail.
 //
 
 //
@@ -6178,6 +6186,14 @@ SymCryptEcDsaVerify(
 // Allowed flags:
 //      SYMCRYPT_FLAG_ECDSA_NO_TRUNCATION: If set then the hash value will
 //      not be truncated.
+
+VOID
+SYMCRYPT_CALL
+SymCryptEcDsaPairwiseSelftest();
+//
+// FIPS self-test for ECDSA sign/verify. If the self-test fails, SymCryptFatal will be called to
+// fastfail.
+//
 
 //
 // ECDH

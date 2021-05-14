@@ -44,6 +44,9 @@ VOID __attribute__((constructor)) SymCryptModuleMain()
     SymCryptTlsPrf1_2SelfTest(); 
     
     SymCryptHkdfSelfTest(); 
+
+    SymCryptDsaPairwiseSelftest();
+    SymCryptEcDsaPairwiseSelftest();
 }
 
 VOID __attribute__((destructor)) SymCryptModuleDestructor()
@@ -76,7 +79,6 @@ SYMCRYPT_CALL
 SymCryptCallbackRandom( PBYTE   pbBuffer, SIZE_T  cbBuffer )
 {
     SymCryptRandom( pbBuffer, cbBuffer );
-    return SYMCRYPT_NO_ERROR;
 }
 
 VOID SYMCRYPT_CALL SymCryptModuleInit( UINT32 api, UINT32 minor, UINT32 patch )

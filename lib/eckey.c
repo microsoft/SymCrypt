@@ -66,14 +66,6 @@ SymCryptEckeyCreate(
     UNREFERENCED_PARAMETER( cbBuffer );     // only referenced in an ASSERT...
 
     SYMCRYPT_ASSERT( pCurve != NULL );
-	// dcl - you have to use this function call below, why not call it,
-	// and then check it in runtime? This is a very consistent problem.
-	// I understand not wanting to take a perf hit, but not doing checks
-	// when you have to call the function regardless is just dangerous code
-	// with no performance benefit to justify it. Code should be secure,
-	// unless there is some reason to make a trade-off.
-
-	// In fact, you call it twice, which is not efficient
     SYMCRYPT_ASSERT( cbBuffer >=  SymCryptSizeofEckeyFromCurve( pCurve ) );
 
     SYMCRYPT_ASSERT_ASYM_ALIGNED( pbBuffer );
