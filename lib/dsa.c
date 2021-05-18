@@ -7,9 +7,6 @@
 
 #include "precomp.h"
 
-#define SYMCRYPT_SELFTEST_DL_BITS_OF_P 2048
-#define SYMCRYPT_SELFTEST_DL_BITS_OF_Q 256
-
 // Truncating function according to the FIPS 186-4 standard
 _Success_(return == SYMCRYPT_NO_ERROR)
 SYMCRYPT_ERROR
@@ -656,80 +653,4 @@ cleanup:
     }
 
     return scError;
-}
-
-VOID
-SYMCRYPT_CALL
-SymCryptDsaPairwiseSelftest()
-{
-    SYMCRYPT_ERROR scError = SYMCRYPT_NO_ERROR;
-    PSYMCRYPT_DLGROUP pDlgroup = NULL;
-    PSYMCRYPT_DLKEY pkDlkey = NULL;
-
-    BYTE rbHashValue[SYMCRYPT_SHA256_RESULT_SIZE] = { 0 };
-    SIZE_T cbHashValue = sizeof(rbHashValue);
-
-    BYTE rbSignature[2 * SYMCRYPT_SELFTEST_DL_BITS_OF_P / 8] = { 0 };
-    SIZE_T cbSignature = sizeof(rbSignature);
-
-    pDlgroup = SymCryptDlgroupAllocate( SYMCRYPT_SELFTEST_DL_BITS_OF_P, SYMCRYPT_SELFTEST_DL_BITS_OF_Q );
-    if( pDlgroup == NULL )
-    {
-        SymCryptFatal( 'DSA0' );
-    }
-
-    scError = SymCryptDlgroupGenerate( SymCryptSha256Algorithm, SYMCRYPT_DLGROUP_FIPS_LATEST, pDlgroup );
-    if( scError != SYMCRYPT_NO_ERROR )
-    {
-        SymCryptFatal( 'DSA1' );
-    }
-
-    pkDlkey = SymCryptDlkeyAllocate( pDlgroup );
-    if( pkDlkey == NULL )
-    {
-        SymCryptFatal( 'DSA2' );
-    }
-
-    scError = SymCryptDlkeyGenerate( 0, pkDlkey );
-    if( scError != SYMCRYPT_NO_ERROR )
-    {
-        SymCryptFatal( 'DSA3' );
-    }
-
-    scError = SymCryptCallbackRandom( rbHashValue, cbHashValue );
-    if( scError != SYMCRYPT_NO_ERROR )
-    {
-        SymCryptFatal( 'DSA4' );
-    }
-
-    cbSignature = 2 * SymCryptDlkeySizeofPrivateKey( pkDlkey );
-
-    scError = SymCryptDsaSign(
-                pkDlkey,
-                rbHashValue,
-                cbHashValue,
-                SYMCRYPT_NUMBER_FORMAT_MSB_FIRST,
-                0,
-                rbSignature,
-                cbSignature );
-    if( scError != SYMCRYPT_NO_ERROR )
-    {
-        SymCryptFatal( 'DSA5' );
-    }
-
-    scError = SymCryptDsaVerify(
-                pkDlkey,
-                rbHashValue,
-                cbHashValue,
-                rbSignature,
-                cbSignature,
-                SYMCRYPT_NUMBER_FORMAT_MSB_FIRST,
-                0 );
-    if( scError != SYMCRYPT_NO_ERROR )
-    {
-        SymCryptFatal( 'DSA6' );
-    }
-
-    SymCryptDlkeyFree( pkDlkey );
-    SymCryptDlgroupFree( pDlgroup );
 }

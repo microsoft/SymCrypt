@@ -47,6 +47,7 @@ VOID __attribute__((constructor)) SymCryptModuleMain()
 
     SymCryptDsaPairwiseSelftest();
     SymCryptEcDsaPairwiseSelftest();
+    SymCryptRsaPairwiseSelftest();
 }
 
 VOID __attribute__((destructor)) SymCryptModuleDestructor()

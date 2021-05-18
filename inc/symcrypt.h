@@ -1008,7 +1008,7 @@ extern const PCSYMCRYPT_HASH SymCryptMd5Algorithm;
 ///////////////////////////////////////////////////////////////////////////////
 //      SHA-1
 //
-// The SHA-1 hash algorithm per FIPS 182-2.
+// The SHA-1 hash algorithm per FIPS 180-4.
 //
 // This implementation is limited to data strings that are in whole bytes.
 // Odd bit length are not supported.
@@ -1082,7 +1082,7 @@ extern const PCSYMCRYPT_HASH SymCryptSha1Algorithm;
 //   SHA-256
 //
 //
-// Tha SHA-256 hash algorithm per FIPS 182-2.
+// Tha SHA-256 hash algorithm per FIPS 180-4.
 // This implementation is limited to data strings that are in whole bytes.
 // Odd bit length are not supported.
 //
@@ -1148,7 +1148,7 @@ extern const PCSYMCRYPT_HASH SymCryptSha256Algorithm;
 //   SHA-384
 //
 //
-// Tha SHA-384 hash algorithm per FIPS 182-2.
+// Tha SHA-384 hash algorithm per FIPS 180-4.
 // This implementation is limited to data strings that are in whole bytes.
 // Odd bit length are not supported.
 //
@@ -1214,7 +1214,7 @@ extern const PCSYMCRYPT_HASH SymCryptSha384Algorithm;
 //   SHA-512
 //
 //
-// Tha SHA-512 hash algorithm per FIPS 182-2.
+// Tha SHA-512 hash algorithm per FIPS 180-4.
 // This implementation is limited to data strings that are in whole bytes.
 // Odd bit length are not supported.
 //
@@ -6030,6 +6030,14 @@ SymCryptRsaPssVerify(
 //
 // Allowed flags:
 //      None
+//
+
+VOID
+SYMCRYPT_CALL
+SymCryptRsaPairwiseSelftest();
+//
+// FIPS self-test for RSA sign/verify. If the self-test fails, SymCryptFatal will be called to
+// fastfail.
 //
 
 //
