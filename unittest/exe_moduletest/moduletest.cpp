@@ -81,7 +81,7 @@ main( int argc, _In_reads_( argc ) char * argv[] )
     scError = SymCryptModuleTestDhSecretAgreement();
     if( scError != SYMCRYPT_NO_ERROR )
     {
-        printf( "DH secret agreement selftest failed!" );
+        printf( "DH secret agreement selftest failed!\n" );
         return scError;
     }
     

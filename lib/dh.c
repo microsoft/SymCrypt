@@ -132,8 +132,8 @@ SymCryptDhSecretAgreement(
     }
 
     if( SYMCRYPT_IS_FIPS_MODULE &&
-        (flags & SYMCRYPT_FLAG_KEY_MINIMAL_VALIDATION == 0) &&
-        (g_SymCryptFipsSelftestsPerformed & SYMCRYPT_SELFTEST_DH_SECRET_AGREEMENT == 0) )
+        ((flags & SYMCRYPT_FLAG_KEY_MINIMAL_VALIDATION) == 0) &&
+        ((g_SymCryptFipsSelftestsPerformed & SYMCRYPT_SELFTEST_DH_SECRET_AGREEMENT) == 0) )
     {
         scError = SymCryptDhSecretAgreementSelftest( pkPrivate );
         if( scError != SYMCRYPT_NO_ERROR )

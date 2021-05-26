@@ -67,6 +67,7 @@ VERSION_100.16 {
       SymCryptDesxExpandKey;
       SymCryptDesxSelftest;
       SymCryptDhSecretAgreement;
+      SymCryptDhSecretAgreementSelftest;
       SymCryptDigitsFromBits;
       SymCryptDivisorAllocate;
       SymCryptDivisorCopy;
