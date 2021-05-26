@@ -107,7 +107,7 @@ SymCryptDhSecretAgreement(
 
     // Make sure we only specify the correct flags and that
     // there is a private key
-    if ( (flags != 0) || (!pkPrivate->fHasPrivateKey) )
+    if ( ((flags & ~SYMCRYPT_FLAG_KEY_MINIMAL_VALIDATION) != 0) || (!pkPrivate->fHasPrivateKey) )
     {
         scError = SYMCRYPT_INVALID_ARGUMENT;
         goto cleanup;
@@ -129,6 +129,19 @@ SymCryptDhSecretAgreement(
     {
         scError = SYMCRYPT_WRONG_BLOCK_SIZE;
         goto cleanup;
+    }
+
+    if( SYMCRYPT_IS_FIPS_MODULE &&
+        (flags & SYMCRYPT_FLAG_KEY_MINIMAL_VALIDATION == 0) &&
+        (g_SymCryptFipsSelftestsPerformed & SYMCRYPT_SELFTEST_DH_SECRET_AGREEMENT == 0) )
+    {
+        scError = SymCryptDhSecretAgreementSelftest( pkPrivate );
+        if( scError != SYMCRYPT_NO_ERROR )
+        {
+            goto cleanup;
+        }
+
+        g_SymCryptFipsSelftestsPerformed |= SYMCRYPT_SELFTEST_DH_SECRET_AGREEMENT;
     }
 
     // Objects and scratch space size calculation

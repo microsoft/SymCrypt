@@ -6087,7 +6087,7 @@ SymCryptDsaVerify(
 //      None
 //
 
-VOID
+SYMCRYPT_ERROR
 SYMCRYPT_CALL
 SymCryptDsaPairwiseSelftest();
 //
@@ -6115,7 +6115,17 @@ SymCryptDhSecretAgreement(
 // format is the number format of the agreed secret (pbAgreedSecret buffer).
 //
 // Allowed flags:
-//      - None
+//      SYMCRYPT_FLAG_KEY_MINIMAL_VALIDATION - Specify to skip FIPS checks. Do not use this flag
+//          if your application requires FIPS compliance. Has no effect is not running in the
+//          FIPS module.
+//
+
+SYMCRYPT_ERROR
+SYMCRYPT_CALL
+SymCryptDhSecretAgreementSelftest(
+    _In_ PSYMCRYPT_DLKEY pkCallerKeyPrivate );
+//
+// FIPS self-test for DH secret agreement. Returns an error if the selftest fails.
 //
 
 //
