@@ -3950,6 +3950,33 @@ SYMCRYPT_CALL
 SymCryptRngAesFips140_2Uninstantiate(
     _Inout_                 PSYMCRYPT_RNG_AES_FIPS140_2_STATE pRngState );
 
+////////////////////////////////////////////////////////////////////////////////////////////
+//
+// Internal RNG functions
+//
+// To satisfy FIPS 140-3 and SP 800-90B, certain modules of SymCrypt may set up internal
+// RNG state(s) to keep random bit generation behind the module security boundary. 
+// These functions allow the caller to get random bits and provide entropy, respectively, 
+// to SymCrypt's internal RNG state(s). 
+// Implementation is module dependent, and these functions may not be defined 
+// for certain modules. Check before using.
+//
+
+VOID
+SYMCRYPT_CALL
+SymCryptRandom(
+    _Out_writes_(cbRandom)  PBYTE   pbRandom,
+                            SIZE_T  cbRandom );
+// Fills pbRandom with cbRandom random bytes
+
+VOID
+SYMCRYPT_CALL
+SymCryptProvideEntropy(
+    _In_reads_(cbEntropy)   PCBYTE  pbEntropy,
+                            SIZE_T  cbEntropy );
+// Mixes pbEntropy into the internal RNG state. There may be module-specific limits on
+// cbEntropy - check module before use
+
 
 ////////////////////////////////////////////////////////////////////////////////////////////
 //
@@ -4058,7 +4085,7 @@ SymCryptRdseedGet(
     _Out_writes_( cbResult )                    PBYTE   pbResult,
                                                 SIZE_T  cbResult );
 //
-// Queries cbResult bytes from teh Rdseed instructoin and puts them in the buffer.
+// Queries cbResult bytes from the Rdseed instruction and puts them in the buffer.
 // The number of bytes (cbResult) must be a multiple of 16.
 // Fatal error if the Rdseed instruction is not present, or the instruction fails consistently.
 // Note: SymCrypt only checks whether Rdseed self-reports as failing. SymCrypt does NOT attempt

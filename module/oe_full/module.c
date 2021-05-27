@@ -19,6 +19,12 @@ VOID __attribute__((constructor)) SymCryptModuleMain()
 
     SymCryptModuleVerifyIntegrity();
 
+    SymCryptRngAesInstantiateSelftest(); 
+    SymCryptRngAesReseedSelftest(); 
+    SymCryptRngAesGenerateSelftest(); 
+    
+    SymCryptRngInit();
+
     SymCrypt3DesSelftest(); 
  
     SymCryptAesSelftest( SYMCRYPT_AES_SELFTEST_ALL ); 
@@ -26,10 +32,6 @@ VOID __attribute__((constructor)) SymCryptModuleMain()
     SymCryptCcmSelftest(); 
     SymCryptGcmSelftest(); 
     SymCryptXtsAesSelftest(); 
-    
-    SymCryptRngAesInstantiateSelftest(); 
-    SymCryptRngAesReseedSelftest(); 
-    SymCryptRngAesGenerateSelftest(); 
     
     SymCryptHmacSha1Selftest(); 
     SymCryptHmacSha384Selftest();
@@ -42,6 +44,11 @@ VOID __attribute__((constructor)) SymCryptModuleMain()
     SymCryptTlsPrf1_2SelfTest(); 
     
     SymCryptHkdfSelfTest(); 
+}
+
+VOID __attribute__((destructor)) SymCryptModuleDestructor()
+{
+    SymCryptRngUninit();
 }
 
 PVOID
@@ -62,6 +69,14 @@ SYMCRYPT_CALL
 SymCryptCallbackFree( VOID * pMem )
 {
     free( pMem );
+}
+
+SYMCRYPT_ERROR
+SYMCRYPT_CALL
+SymCryptCallbackRandom( PBYTE   pbBuffer, SIZE_T  cbBuffer )
+{
+    SymCryptRandom( pbBuffer, cbBuffer );
+    return SYMCRYPT_NO_ERROR;
 }
 
 VOID SYMCRYPT_CALL SymCryptModuleInit( UINT32 api, UINT32 minor, UINT32 patch )

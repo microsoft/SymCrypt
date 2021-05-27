@@ -5,6 +5,8 @@
 //
 
 #include <stdlib.h>
+#include <string.h>
 
 #include "symcrypt.h"
 #include "integrity.h"
+#include "rng.h"

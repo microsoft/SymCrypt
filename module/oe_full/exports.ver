@@ -379,6 +379,8 @@ VERSION_100.16 {
       SymCryptPoly1305Init;
       SymCryptPoly1305Result;
       SymCryptPoly1305Selftest;
+      SymCryptProvideEntropy;
+      SymCryptRandom;
       SymCryptRc2BlockCipher;
       SymCryptRc2Decrypt;
       SymCryptRc2Encrypt;
