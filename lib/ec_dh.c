@@ -61,6 +61,19 @@ SymCryptEcDhSecretAgreement(
         goto cleanup;
     }
 
+    if( SYMCRYPT_IS_FIPS_MODULE &&
+        ((flags & SYMCRYPT_FLAG_KEY_MINIMAL_VALIDATION) == 0) &&
+        ((g_SymCryptFipsSelftestsPerformed & SYMCRYPT_SELFTEST_ECDH_SECRET_AGREEMENT) == 0) )
+    {
+        scError = SymCryptEcDhSecretAgreementSelftest( pkPrivate );
+        if( scError != SYMCRYPT_NO_ERROR )
+        {
+            goto cleanup;
+        }
+
+        g_SymCryptFipsSelftestsPerformed |= SYMCRYPT_SELFTEST_ECDH_SECRET_AGREEMENT;
+    }
+
     cbScratchInternal = SYMCRYPT_MAX( SYMCRYPT_SCRATCH_BYTES_FOR_COMMON_ECURVE_OPERATIONS(pCurve),
                         SYMCRYPT_MAX( SYMCRYPT_SCRATCH_BYTES_FOR_SCALAR_ECURVE_OPERATIONS( pCurve ),
                              SYMCRYPT_SCRATCH_BYTES_FOR_GETSET_VALUE_ECURVE_OPERATIONS( pCurve ) ));

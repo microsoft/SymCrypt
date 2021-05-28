@@ -6,8 +6,8 @@
 
 #include "precomp.h"
 
-const UINT SymCryptSelftestDlGroupBitsOfP = 2048;
-const UINT SymCryptSelftestDlGroupBitsOfQ = 256;
+#define SYMCRYPT_SELFTEST_DLGROUP_BITS_OF_P 2048
+#define SYMCRYPT_SELFTEST_DLGROUP_BITS_OF_Q 256
 
 SYMCRYPT_FIPS_SELFTEST g_SymCryptFipsSelftestsPerformed = SYMCRYPT_SELFTEST_NONE;
 
@@ -93,7 +93,7 @@ const unsigned char rgbDh2048Private[] = {
 SYMCRYPT_ERROR
 SYMCRYPT_CALL
 SymCryptDhSecretAgreementSelftest(
-    _In_ PSYMCRYPT_DLKEY pkCallerKeyPrivate )
+    _In_ PCSYMCRYPT_DLKEY pkCallerKeyPrivate )
 {
     SYMCRYPT_ERROR scError = SYMCRYPT_NO_ERROR;
 
@@ -159,22 +159,22 @@ SymCryptDhSecretAgreementSelftest(
         goto cleanup;
     }
 
-    if( cbKeyBufferPublic == sizeof(rgbDh2048Public) )
-    {
-        scError = SymCryptDlkeySetValue(
-            rgbDh2048Private,
-            sizeof(rgbDh2048Private),
-            rgbDh2048Public,
-            sizeof(rgbDh2048Public),
-            SYMCRYPT_NUMBER_FORMAT_MSB_FIRST,
-            SYMCRYPT_FLAG_KEY_RANGE_AND_PUBLIC_KEY_ORDER_VALIDATION,
-            pkTestKeyPrivate );
-        if( scError != SYMCRYPT_NO_ERROR )
-        {
-            goto cleanup;
-        }
-    }
-    else
+    // if( cbKeyBufferPublic == sizeof(rgbDh2048Public) )
+    // {
+    //     scError = SymCryptDlkeySetValue(
+    //         rgbDh2048Private,
+    //         sizeof(rgbDh2048Private),
+    //         rgbDh2048Public,
+    //         sizeof(rgbDh2048Public),
+    //         SYMCRYPT_NUMBER_FORMAT_MSB_FIRST,
+    //         SYMCRYPT_FLAG_KEY_RANGE_AND_PUBLIC_KEY_ORDER_VALIDATION,
+    //         pkTestKeyPrivate );
+    //     if( scError != SYMCRYPT_NO_ERROR )
+    //     {
+    //         goto cleanup;
+    //     }
+    // }
+    // else
     {
         scError = SymCryptDlkeyGenerate( 0, pkTestKeyPrivate );
         if( scError != SYMCRYPT_NO_ERROR )
@@ -251,7 +251,7 @@ SymCryptDhSecretAgreementSelftest(
         pkCallerKeyPublic,
         SYMCRYPT_NUMBER_FORMAT_MSB_FIRST,
         SYMCRYPT_FLAG_KEY_MINIMAL_VALIDATION,
-        pbSecret1,
+        pbSecret2,
         cbKeyBufferPublic );
     if( scError != SYMCRYPT_NO_ERROR )
     {
@@ -308,6 +308,205 @@ cleanup:
 
 SYMCRYPT_ERROR
 SYMCRYPT_CALL
+SymCryptEcDhSecretAgreementSelftest(
+    _In_ PCSYMCRYPT_ECKEY pkCallerKeyPrivate )
+{
+    SYMCRYPT_ERROR scError = SYMCRYPT_NO_ERROR;
+
+    PSYMCRYPT_ECKEY pkTestKeyPrivate = NULL;
+    PSYMCRYPT_ECKEY pkCallerKeyPublic = NULL;
+    PSYMCRYPT_ECKEY pkTestKeyPublic = NULL;
+
+    PBYTE pbKeyBufferPublic = NULL;
+    UINT32 cbKeyBufferPublic = 0;
+
+    PBYTE pbSecret1 = NULL;
+    PBYTE pbSecret2 = NULL;
+    UINT32 cbSecret = 0;
+
+    // Export the caller public key and import it into a new Eckey so we can do secret
+    // agreement with (caller public key, test private key)
+    cbKeyBufferPublic = SymCryptEckeySizeofPublicKey(
+        pkCallerKeyPrivate, SYMCRYPT_ECPOINT_FORMAT_XY );
+    pbKeyBufferPublic = SymCryptCallbackAlloc( cbKeyBufferPublic );
+    if( pbKeyBufferPublic == NULL )
+    {
+        scError = SYMCRYPT_MEMORY_ALLOCATION_FAILURE;
+        goto cleanup;
+    }
+
+    scError = SymCryptEckeyGetValue(
+        pkCallerKeyPrivate,
+        NULL,
+        0,
+        pbKeyBufferPublic,
+        cbKeyBufferPublic,
+        SYMCRYPT_NUMBER_FORMAT_MSB_FIRST,
+        SYMCRYPT_ECPOINT_FORMAT_XY,
+        0 );
+    if( scError != SYMCRYPT_NO_ERROR )
+    {
+        goto cleanup;
+    }
+
+    pkCallerKeyPublic = SymCryptEckeyAllocate( pkCallerKeyPrivate->pCurve );
+    if( pkCallerKeyPublic == NULL )
+    {
+        scError = SYMCRYPT_MEMORY_ALLOCATION_FAILURE;
+        goto cleanup;
+    }
+
+    scError = SymCryptEckeySetValue(
+        NULL,
+        0,
+        pbKeyBufferPublic,
+        cbKeyBufferPublic,
+        SYMCRYPT_NUMBER_FORMAT_MSB_FIRST,
+        SYMCRYPT_ECPOINT_FORMAT_XY,
+        0,
+        pkCallerKeyPublic );
+    if( scError != SYMCRYPT_NO_ERROR )
+    {
+        goto cleanup;
+    }
+
+    // Import or generate a test private key. This key must be the same size as the caller key,
+    // so if our pre-generated key doesn't match, we have to generate a new one, which is expensive.
+    pkTestKeyPrivate = SymCryptEckeyAllocate( pkCallerKeyPrivate->pCurve );
+    if( pkTestKeyPrivate == NULL )
+    {
+        scError = SYMCRYPT_MEMORY_ALLOCATION_FAILURE;
+        goto cleanup;
+    }
+
+    scError = SymCryptEckeySetRandom( 0, pkTestKeyPrivate );
+    if( scError != SYMCRYPT_NO_ERROR )
+    {
+        goto cleanup;
+    }
+
+    scError = SymCryptEckeyGetValue(
+        pkTestKeyPrivate,
+        NULL,
+        0,
+        pbKeyBufferPublic,
+        cbKeyBufferPublic,
+        SYMCRYPT_NUMBER_FORMAT_MSB_FIRST,
+        SYMCRYPT_ECPOINT_FORMAT_XY,
+        0 );
+    if( scError != SYMCRYPT_NO_ERROR )
+    {
+        goto cleanup;
+    }
+
+    pkTestKeyPublic = SymCryptEckeyAllocate( pkCallerKeyPrivate->pCurve );
+    if( pkTestKeyPublic == NULL )
+    {
+        scError = SYMCRYPT_MEMORY_ALLOCATION_FAILURE;
+        goto cleanup;
+    }
+
+    scError = SymCryptEckeySetValue(
+        NULL,
+        0,
+        pbKeyBufferPublic,
+        cbKeyBufferPublic,
+        SYMCRYPT_NUMBER_FORMAT_MSB_FIRST,
+        SYMCRYPT_ECPOINT_FORMAT_XY,
+        0,
+        pkTestKeyPublic );
+    if( scError != SYMCRYPT_NO_ERROR )
+    {
+        goto cleanup;
+    }
+
+    cbSecret = SymCryptEcurveSizeofFieldElement( pkCallerKeyPrivate->pCurve );
+    pbSecret1 = SymCryptCallbackAlloc( cbSecret );
+    if( pbSecret1 == NULL )
+    {
+        scError = SYMCRYPT_MEMORY_ALLOCATION_FAILURE;
+        goto cleanup;
+    }
+
+    pbSecret2 = SymCryptCallbackAlloc( cbSecret );
+    if( pbSecret2 == NULL )
+    {
+        scError = SYMCRYPT_MEMORY_ALLOCATION_FAILURE;
+        goto cleanup;
+    }
+
+    scError = SymCryptEcDhSecretAgreement(
+        pkCallerKeyPrivate,
+        pkTestKeyPublic,
+        SYMCRYPT_NUMBER_FORMAT_MSB_FIRST,
+        SYMCRYPT_FLAG_KEY_MINIMAL_VALIDATION,
+        pbSecret1,
+        cbSecret);
+    if( scError != SYMCRYPT_NO_ERROR )
+    {
+        goto cleanup;
+    }
+
+    scError = SymCryptEcDhSecretAgreement(
+        pkTestKeyPrivate,
+        pkCallerKeyPublic,
+        SYMCRYPT_NUMBER_FORMAT_MSB_FIRST,
+        SYMCRYPT_FLAG_KEY_MINIMAL_VALIDATION,
+        pbSecret2,
+        cbSecret);
+    if( scError != SYMCRYPT_NO_ERROR )
+    {
+        goto cleanup;
+    }
+
+    if( memcmp(pbSecret1, pbSecret2, cbSecret) != 0 )
+    {
+        scError = SYMCRYPT_FIPS_FAILURE;
+        goto cleanup;
+    }
+
+cleanup:
+    if( pbSecret2 != NULL )
+    {
+        SymCryptCallbackFree( pbSecret2 );
+        pbSecret2 = NULL;
+    }
+
+    if( pbSecret1 != NULL )
+    {
+        SymCryptCallbackFree( pbSecret2 );
+        pbSecret1 = NULL;
+    }
+
+    if( pkTestKeyPublic != NULL )
+    {
+        SymCryptEckeyFree( pkTestKeyPublic );
+        pkTestKeyPublic = NULL;
+    }
+
+    if( pkTestKeyPrivate != NULL )
+    {
+        SymCryptEckeyFree( pkTestKeyPrivate );
+        pkTestKeyPrivate = NULL;
+    }
+
+    if( pkCallerKeyPublic != NULL )
+    {
+        SymCryptEckeyFree( pkCallerKeyPublic );
+        pkCallerKeyPublic = NULL;
+    }
+
+    if ( pbKeyBufferPublic != NULL )
+    {
+        SymCryptCallbackFree( pbKeyBufferPublic );
+        pbKeyBufferPublic = NULL;
+    }
+
+    return scError;
+}
+
+SYMCRYPT_ERROR
+SYMCRYPT_CALL
 SymCryptDsaPairwiseSelftest()
 {
     SYMCRYPT_ERROR scError = SYMCRYPT_NO_ERROR;
@@ -317,10 +516,10 @@ SymCryptDsaPairwiseSelftest()
     BYTE rbHashValue[SYMCRYPT_SHA256_RESULT_SIZE] = { 0 };
     SIZE_T cbHashValue = sizeof(rbHashValue);
 
-    BYTE rbSignature[2 * SymCryptSelftestDlGroupBitsOfP / 8] = { 0 };
+    BYTE rbSignature[2 * SYMCRYPT_SELFTEST_DLGROUP_BITS_OF_P / 8] = { 0 };
     SIZE_T cbSignature = sizeof(rbSignature);
 
-    pDlgroup = SymCryptDlgroupAllocate( SymCryptSelftestDlGroupBitsOfP, SymCryptSelftestDlGroupBitsOfQ );
+    pDlgroup = SymCryptDlgroupAllocate( SYMCRYPT_SELFTEST_DLGROUP_BITS_OF_P, SYMCRYPT_SELFTEST_DLGROUP_BITS_OF_Q );
     if( pDlgroup == NULL )
     {
         scError = SYMCRYPT_MEMORY_ALLOCATION_FAILURE;
@@ -395,4 +594,81 @@ cleanup:
     }
 
     return scError;
+}
+
+VOID
+SYMCRYPT_CALL
+SymCryptEcDsaPairwiseSelftest()
+{
+    SYMCRYPT_ERROR scError = SYMCRYPT_NO_ERROR;
+    PSYMCRYPT_ECURVE pCurve = NULL;
+    PSYMCRYPT_ECKEY pkKey = NULL;
+
+    BYTE rbHashValue[SYMCRYPT_SHA256_RESULT_SIZE] = { 0 };
+    SIZE_T cbHashValue = sizeof(rbHashValue);
+
+    PBYTE pbSignature = NULL;
+    SIZE_T cbSignature = 0;
+
+    pCurve = SymCryptEcurveAllocate( SymCryptEcurveParamsNistP256, 0 );
+    if( pCurve == NULL )
+    {
+        SymCryptFatal( 'ECD0' );
+    }
+
+    pkKey = SymCryptEckeyAllocate( pCurve );
+    if( pkKey == NULL )
+    {
+        SymCryptFatal( 'ECD1' );
+    }
+
+    scError = SymCryptEckeySetRandom( 0, pkKey );
+    if( scError != SYMCRYPT_NO_ERROR )
+    {
+        SymCryptFatal( 'ECD2' );
+    }
+
+    scError = SymCryptCallbackRandom( rbHashValue, cbHashValue );
+    if( scError != SYMCRYPT_NO_ERROR )
+    {
+        SymCryptFatal( 'ECD3' );
+    }
+
+    cbSignature = 2 * SymCryptEcurveSizeofFieldElement( pCurve );
+    pbSignature = SymCryptCallbackAlloc( cbSignature );
+    if( pbSignature == NULL )
+    {
+        SymCryptFatal( 'ECD4' );
+    }
+
+    scError = SymCryptEcDsaSign(
+        pkKey,
+        rbHashValue,
+        cbHashValue,
+        SYMCRYPT_NUMBER_FORMAT_MSB_FIRST,
+        0,
+        pbSignature,
+        cbSignature );
+    if( scError != SYMCRYPT_NO_ERROR )
+    {
+        SymCryptFatal( 'ECD5' );
+    }
+
+    scError = SymCryptEcDsaVerify(
+        pkKey,
+        rbHashValue,
+        cbHashValue,
+        pbSignature,
+        cbSignature,
+        SYMCRYPT_NUMBER_FORMAT_MSB_FIRST,
+        0 );
+
+    if( scError != SYMCRYPT_NO_ERROR )
+    {
+        SymCryptFatal( 'ECD6' );
+    }
+
+    SymCryptCallbackFree( pbSignature );
+    SymCryptEckeyFree( pkKey );
+    SymCryptEcurveFree( pCurve );
 }

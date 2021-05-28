@@ -5643,7 +5643,7 @@ _Success_(return == SYMCRYPT_NO_ERROR)
 SYMCRYPT_ERROR
 SYMCRYPT_CALL
 SymCryptEckeyGetValue(
-    _In_    PSYMCRYPT_ECKEY         pEckey,
+    _In_    PCSYMCRYPT_ECKEY        pEckey,
     _Out_writes_bytes_( cbPrivateKey )
             PBYTE                   pbPrivateKey,
             SIZE_T                  cbPrivateKey,
@@ -6123,7 +6123,7 @@ SymCryptDhSecretAgreement(
 SYMCRYPT_ERROR
 SYMCRYPT_CALL
 SymCryptDhSecretAgreementSelftest(
-    _In_ PSYMCRYPT_DLKEY pkCallerKeyPrivate );
+    _In_ PCSYMCRYPT_DLKEY pkCallerKeyPrivate );
 //
 // FIPS self-test for DH secret agreement. Returns an error if the selftest fails.
 //
@@ -6233,6 +6233,15 @@ SymCryptEcDhSecretAgreement(
 //
 // Allowed flags:
 //      - None
+//
+
+SYMCRYPT_ERROR
+SYMCRYPT_CALL
+SymCryptEcDhSecretAgreementSelftest(
+    _In_    PCSYMCRYPT_ECKEY        pkPrivate );
+
+//
+// FIPS self-test for ECDH secret agreement. Returns an error if the selftest fails.
 //
 
 //
