@@ -6,9 +6,6 @@
 
 #include "precomp.h"
 
-#define SYMCRYPT_SELFTEST_DLGROUP_BITS_OF_P 2048
-#define SYMCRYPT_SELFTEST_DLGROUP_BITS_OF_Q 256
-
 SYMCRYPT_FIPS_SELFTEST g_SymCryptFipsSelftestsPerformed = SYMCRYPT_SELFTEST_NONE;
 
 // 0x44, 0x48, 0x50, 0x56, // magic
@@ -507,43 +504,16 @@ cleanup:
 
 SYMCRYPT_ERROR
 SYMCRYPT_CALL
-SymCryptDsaPairwiseSelftest()
+SymCryptDsaPairwiseSelftest(
+    _In_ PCSYMCRYPT_DLKEY pkCallerKey )
 {
     SYMCRYPT_ERROR scError = SYMCRYPT_NO_ERROR;
-    PSYMCRYPT_DLGROUP pDlgroup = NULL;
-    PSYMCRYPT_DLKEY pkDlkey = NULL;
 
-    BYTE rbHashValue[SYMCRYPT_SHA256_RESULT_SIZE] = { 0 };
+    BYTE rbHashValue[SYMCRYPT_SHA256_RESULT_SIZE];
     SIZE_T cbHashValue = sizeof(rbHashValue);
 
-    BYTE rbSignature[2 * SYMCRYPT_SELFTEST_DLGROUP_BITS_OF_P / 8] = { 0 };
-    SIZE_T cbSignature = sizeof(rbSignature);
-
-    pDlgroup = SymCryptDlgroupAllocate( SYMCRYPT_SELFTEST_DLGROUP_BITS_OF_P, SYMCRYPT_SELFTEST_DLGROUP_BITS_OF_Q );
-    if( pDlgroup == NULL )
-    {
-        scError = SYMCRYPT_MEMORY_ALLOCATION_FAILURE;
-        goto cleanup;
-    }
-
-    scError = SymCryptDlgroupGenerate( SymCryptSha256Algorithm, SYMCRYPT_DLGROUP_FIPS_LATEST, pDlgroup );
-    if( scError != SYMCRYPT_NO_ERROR )
-    {
-        goto cleanup;
-    }
-
-    pkDlkey = SymCryptDlkeyAllocate( pDlgroup );
-    if( pkDlkey == NULL )
-    {
-        scError = SYMCRYPT_MEMORY_ALLOCATION_FAILURE;
-        goto cleanup;
-    }
-
-    scError = SymCryptDlkeyGenerate( 0, pkDlkey );
-    if( scError != SYMCRYPT_NO_ERROR )
-    {
-        goto cleanup;
-    }
+    PBYTE pbSignature = NULL;
+    SIZE_T cbSignature = 0;
 
     scError = SymCryptCallbackRandom( rbHashValue, cbHashValue );
     if( scError != SYMCRYPT_NO_ERROR )
@@ -551,15 +521,21 @@ SymCryptDsaPairwiseSelftest()
         goto cleanup;
     }
 
-    cbSignature = 2 * SymCryptDlkeySizeofPrivateKey( pkDlkey );
+    cbSignature = 2 * SymCryptDlkeySizeofPrivateKey( pkCallerKey );
+    pbSignature = SymCryptCallbackAlloc( cbSignature );
+    if( pbSignature == NULL )
+    {
+        scError = SYMCRYPT_MEMORY_ALLOCATION_FAILURE;
+        goto cleanup;
+    }
 
     scError = SymCryptDsaSign(
-                pkDlkey,
+                pkCallerKey,
                 rbHashValue,
                 cbHashValue,
                 SYMCRYPT_NUMBER_FORMAT_MSB_FIRST,
                 0,
-                rbSignature,
+                pbSignature,
                 cbSignature );
     if( scError != SYMCRYPT_NO_ERROR )
     {
@@ -567,10 +543,10 @@ SymCryptDsaPairwiseSelftest()
     }
 
     scError = SymCryptDsaVerify(
-                pkDlkey,
+                pkCallerKey,
                 rbHashValue,
                 cbHashValue,
-                rbSignature,
+                pbSignature,
                 cbSignature,
                 SYMCRYPT_NUMBER_FORMAT_MSB_FIRST,
                 0 );
@@ -581,68 +557,44 @@ SymCryptDsaPairwiseSelftest()
 
 cleanup:
 
-    if( pkDlkey != NULL )
+    if( pbSignature != NULL )
     {
-        SymCryptDlkeyFree( pkDlkey );
-        pkDlkey = NULL;
-    }
-
-    if( pDlgroup != NULL )
-    {
-        SymCryptDlgroupFree( pDlgroup );
-        pDlgroup = NULL;
+        SymCryptCallbackFree( pbSignature );
+        pbSignature = NULL;
     }
 
     return scError;
 }
 
-VOID
+SYMCRYPT_ERROR
 SYMCRYPT_CALL
-SymCryptEcDsaPairwiseSelftest()
+SymCryptEcDsaPairwiseSelftest(
+    _In_ PCSYMCRYPT_ECKEY pkCallerKey )
 {
     SYMCRYPT_ERROR scError = SYMCRYPT_NO_ERROR;
-    PSYMCRYPT_ECURVE pCurve = NULL;
-    PSYMCRYPT_ECKEY pkKey = NULL;
 
-    BYTE rbHashValue[SYMCRYPT_SHA256_RESULT_SIZE] = { 0 };
+    BYTE rbHashValue[SYMCRYPT_SHA256_RESULT_SIZE];
     SIZE_T cbHashValue = sizeof(rbHashValue);
 
     PBYTE pbSignature = NULL;
     SIZE_T cbSignature = 0;
 
-    pCurve = SymCryptEcurveAllocate( SymCryptEcurveParamsNistP256, 0 );
-    if( pCurve == NULL )
-    {
-        SymCryptFatal( 'ECD0' );
-    }
-
-    pkKey = SymCryptEckeyAllocate( pCurve );
-    if( pkKey == NULL )
-    {
-        SymCryptFatal( 'ECD1' );
-    }
-
-    scError = SymCryptEckeySetRandom( 0, pkKey );
-    if( scError != SYMCRYPT_NO_ERROR )
-    {
-        SymCryptFatal( 'ECD2' );
-    }
-
     scError = SymCryptCallbackRandom( rbHashValue, cbHashValue );
     if( scError != SYMCRYPT_NO_ERROR )
     {
-        SymCryptFatal( 'ECD3' );
+        goto cleanup;
     }
 
-    cbSignature = 2 * SymCryptEcurveSizeofFieldElement( pCurve );
+    cbSignature = 2 * SymCryptEcurveSizeofFieldElement( pkCallerKey->pCurve );
     pbSignature = SymCryptCallbackAlloc( cbSignature );
     if( pbSignature == NULL )
     {
-        SymCryptFatal( 'ECD4' );
+        scError = SYMCRYPT_MEMORY_ALLOCATION_FAILURE;
+        goto cleanup;
     }
 
     scError = SymCryptEcDsaSign(
-        pkKey,
+        pkCallerKey,
         rbHashValue,
         cbHashValue,
         SYMCRYPT_NUMBER_FORMAT_MSB_FIRST,
@@ -651,24 +603,98 @@ SymCryptEcDsaPairwiseSelftest()
         cbSignature );
     if( scError != SYMCRYPT_NO_ERROR )
     {
-        SymCryptFatal( 'ECD5' );
+        goto cleanup;
     }
 
     scError = SymCryptEcDsaVerify(
-        pkKey,
+        pkCallerKey,
         rbHashValue,
         cbHashValue,
         pbSignature,
         cbSignature,
         SYMCRYPT_NUMBER_FORMAT_MSB_FIRST,
         0 );
-
     if( scError != SYMCRYPT_NO_ERROR )
     {
-        SymCryptFatal( 'ECD6' );
+        goto cleanup;
     }
 
-    SymCryptCallbackFree( pbSignature );
-    SymCryptEckeyFree( pkKey );
-    SymCryptEcurveFree( pCurve );
+cleanup:
+
+    if(pbSignature != NULL)
+    {
+        SymCryptCallbackFree( pbSignature );
+        pbSignature = NULL;
+    }
+
+    return scError;
+}
+
+SYMCRYPT_ERROR
+SYMCRYPT_CALL
+SymCryptRsaPairwiseSelftest(
+    _In_ PCSYMCRYPT_RSAKEY pkCallerKey )
+{
+    SYMCRYPT_ERROR scError = SYMCRYPT_NO_ERROR;
+
+    BYTE rbHashValue[SYMCRYPT_SHA256_RESULT_SIZE] = { 0 };
+    SIZE_T cbHashValue = sizeof(rbHashValue);
+
+    BYTE pbSignature = NULL;
+    SIZE_T cbSignature = 0;
+
+    scError = SymCryptCallbackRandom( rbHashValue, cbHashValue );
+    if( scError != SYMCRYPT_NO_ERROR )
+    {
+        goto cleanup;
+    }
+
+    cbSignature = pkCallerKey->nBitsOfModulus / 8;
+    pbSignature = SymCryptCallbackAlloc( cbSignature );
+    if( pbSignature == NULL )
+    {
+        scError = SYMCRYPT_MEMORY_ALLOCATION_FAILURE;
+        goto cleanup;
+    }
+
+    scError = SymCryptRsaPkcs1Sign(
+        pkCallerKey,
+        rbHashValue,
+        cbHashValue,
+        SymCryptSha256OidList,
+        SYMCRYPT_SHA256_OID_COUNT,
+        0,
+        SYMCRYPT_NUMBER_FORMAT_MSB_FIRST,
+        pbSignature,
+        cbSignature,
+        &cbSignature );
+    if( scError != SYMCRYPT_NO_ERROR )
+    {
+        goto cleanup;
+    }
+
+    scError = SymCryptRsaPkcs1Verify(
+        pkCallerKey,
+        rbHashValue,
+        cbHashValue,
+        pbSignature,
+        cbSignature,
+        SYMCRYPT_NUMBER_FORMAT_MSB_FIRST,
+        SymCryptSha256OidList,
+        SYMCRYPT_SHA256_OID_COUNT,
+        0 );
+    if( scError != SYMCRYPT_NO_ERROR )
+    {
+        goto cleanup;
+    }
+
+cleanup:
+
+    if( pbSignature != NULL )
+    {
+        SymCryptCallbackFree( pbSignature );
+        pbSignature = NULL;
+    }
+
+    return scError;
 }

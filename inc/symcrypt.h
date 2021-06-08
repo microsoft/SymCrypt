@@ -6032,9 +6032,10 @@ SymCryptRsaPssVerify(
 //      None
 //
 
-VOID
+SYMCRYPT_ERROR
 SYMCRYPT_CALL
-SymCryptRsaPairwiseSelftest();
+SymCryptRsaPairwiseSelftest(
+    _In_ PCSYMCRYPT_RSAKEY pkCallerKey );
 //
 // FIPS self-test for RSA sign/verify. If the self-test fails, SymCryptFatal will be called to
 // fastfail.
@@ -6089,7 +6090,8 @@ SymCryptDsaVerify(
 
 SYMCRYPT_ERROR
 SYMCRYPT_CALL
-SymCryptDsaPairwiseSelftest();
+SymCryptDsaPairwiseSelftest(
+    _In_ PCSYMCRYPT_DLKEY pkCallerKey );
 //
 // FIPS self-test for DSA sign/verify. If the self-test fails, SymCryptFatal will be called to
 // fastfail.
@@ -6205,9 +6207,11 @@ SymCryptEcDsaVerify(
 //      SYMCRYPT_FLAG_ECDSA_NO_TRUNCATION: If set then the hash value will
 //      not be truncated.
 
-VOID
+SYMCRYPT_ERROR
 SYMCRYPT_CALL
-SymCryptEcDsaPairwiseSelftest();
+SymCryptEcDsaPairwiseSelftest(
+    _In_ PCSYMCRYPT_ECKEY pkCallerKey
+);
 //
 // FIPS self-test for ECDSA sign/verify. If the self-test fails, SymCryptFatal will be called to
 // fastfail.
