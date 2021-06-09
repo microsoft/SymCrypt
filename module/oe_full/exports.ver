@@ -99,10 +99,12 @@ VERSION_100.16 {
       SymCryptDlkeySizeofPrivateKey;
       SymCryptDlkeySizeofPublicKey;
       SymCryptDlkeyWipe;
+      SymCryptDsaPairwiseSelftest;
       SymCryptDsaSign;
       SymCryptDsaVerify;
       SymCryptEcDhSecretAgreement;
       SymCryptEcDhSecretAgreementSelftest;
+      SymCryptEcDsaPairwiseSelftest;
       SymCryptEcDsaSign;
       SymCryptEcDsaSignDeterministic;
       SymCryptEcDsaSignEx;
@@ -412,6 +414,7 @@ VERSION_100.16 {
       SymCryptRoundUpPow2Sizet;
       SymCryptRsaOaepDecrypt;
       SymCryptRsaOaepEncrypt;
+      SymCryptRsaPairwiseSelftest;
       SymCryptRsaPkcs1Decrypt;
       SymCryptRsaPkcs1Encrypt;
       SymCryptRsaPkcs1Sign;

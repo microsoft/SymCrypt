@@ -44,15 +44,6 @@ VOID __attribute__((constructor)) SymCryptModuleMain()
     SymCryptTlsPrf1_2SelfTest(); 
     
     SymCryptHkdfSelfTest(); 
-
-    SYMCRYPT_ERROR scError = SymCryptDsaPairwiseSelftest();
-    if( scError != SYMCRYPT_NO_ERROR )
-    {
-        SymCryptFatal( 'DSAF' );
-    }
-
-    SymCryptEcDsaPairwiseSelftest();
-    SymCryptRsaPairwiseSelftest();
 }
 
 VOID __attribute__((destructor)) SymCryptModuleDestructor()

@@ -640,7 +640,7 @@ SymCryptRsaPairwiseSelftest(
     BYTE rbHashValue[SYMCRYPT_SHA256_RESULT_SIZE] = { 0 };
     SIZE_T cbHashValue = sizeof(rbHashValue);
 
-    BYTE pbSignature = NULL;
+    PBYTE pbSignature = NULL;
     SIZE_T cbSignature = 0;
 
     scError = SymCryptCallbackRandom( rbHashValue, cbHashValue );

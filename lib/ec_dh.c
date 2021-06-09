@@ -33,7 +33,7 @@ SymCryptEcDhSecretAgreement(
     UINT32              cbX = 0;
 
     // Make sure we only specify the correct flags
-    if (flags != 0)
+    if ( (flags & ~SYMCRYPT_FLAG_KEY_MINIMAL_VALIDATION) != 0 )
     {
         scError = SYMCRYPT_INVALID_ARGUMENT;
         goto cleanup;
