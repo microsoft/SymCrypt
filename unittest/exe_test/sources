@@ -15,5 +15,4 @@ TARGETLIBS= \
     $(MINCORE_EXTERNAL_SDK_LIB_VPATH_L)\mincore_legacy.lib \
     $(MINCORE_EXTERNAL_SDK_LIB_VPATH_L)\mincore_obsolete.lib \
 # Linking CAPI is a bit of a mess as the proper macros are not available in our separate repo
-    $(PUBLIC_ROOT)\onecore\internal\minwin\priv_sdk\lib\$(TARGET_DIRECTORY)\api-ms-win-security-cryptoapi-l1-1-0.lib \
-
+    $(PUBLIC_ROOT)\onecore\internal\minwin\priv_sdk\lib\api-ms-win-security-cryptoapi-l1-1-0.lib \

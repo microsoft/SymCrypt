@@ -3955,10 +3955,10 @@ SymCryptRngAesFips140_2Uninstantiate(
 // Internal RNG functions
 //
 // To satisfy FIPS 140-3 and SP 800-90B, certain modules of SymCrypt may set up internal
-// RNG state(s) to keep random bit generation behind the module security boundary. 
-// These functions allow the caller to get random bits and provide entropy, respectively, 
-// to SymCrypt's internal RNG state(s). 
-// Implementation is module dependent, and these functions may not be defined 
+// RNG state(s) to keep random bit generation behind the module security boundary.
+// These functions allow the caller to get random bits and provide entropy, respectively,
+// to SymCrypt's internal RNG state(s).
+// Implementation is module dependent, and these functions may not be defined
 // for certain modules. Check before using.
 //
 
@@ -5016,7 +5016,7 @@ SymCryptRsakeyGenerate(
 // PubExp is the array of nPubExp public exponent values, specifying
 // the public exponents for the key.
 // nPubExp must match the # public exponents in the parameters.
-// If pu32PubExp == NULL, nPubExp == 0, and the key requires only one
+// If pu64PubExp == NULL, nPubExp == 0, and the key requires only one
 // public exponent, then the default exponent 2^16 + 1 is used.
 // Flags: none currently defined
 //
@@ -5038,7 +5038,7 @@ SymCryptRsakeySetValue(
 //
 // Import key material to an RSAKEY object. The arguments are the following:
 //  - pbModulus is a pointer to a byte buffer of cbModulus bytes. It cannot be NULL.
-//  - pu32PubExp is a pointer to an array of nPubExp UINT64 exponent values.
+//  - pu64PubExp is a pointer to an array of nPubExp UINT64 exponent values.
 //    nPubExp must match the RSA parameters used to create the key object.
 //  - ppPrimes is an array of nPrimes pointers that point to byte buffers storing
 //    the primes. pcbPrimes is an array of nPrimes sizes such that

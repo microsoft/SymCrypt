@@ -31,7 +31,7 @@
 
 
 SYMCRYPT_CODE_VERSION_API       EQU     100
-SYMCRYPT_CODE_VERSION_MINOR     EQU     16
+SYMCRYPT_CODE_VERSION_MINOR     EQU     17
 SYMCRYPT_CODE_VERSION_PATCH     EQU     0
 
 
@@ -39,7 +39,7 @@ SYMCRYPT_CODE_VERSION_PATCH     EQU     0
 ;*/                             // End of C comment, the C compiler will read the lines below
 
 #define SYMCRYPT_CODE_VERSION_API       100
-#define SYMCRYPT_CODE_VERSION_MINOR     16
+#define SYMCRYPT_CODE_VERSION_MINOR     17
 #define SYMCRYPT_CODE_VERSION_PATCH     0
 
 ;/*                             ; Switch back into a C comment so that we can close the IF
