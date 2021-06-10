@@ -6124,8 +6124,7 @@ SymCryptDhSecretAgreement(
 
 SYMCRYPT_ERROR
 SYMCRYPT_CALL
-SymCryptDhSecretAgreementSelftest(
-    _In_ PCSYMCRYPT_DLKEY pkCallerKeyPrivate );
+SymCryptDhSecretAgreementSelftest();
 //
 // FIPS self-test for DH secret agreement. Returns an error if the selftest fails.
 //

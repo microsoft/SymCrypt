@@ -135,7 +135,7 @@ SymCryptDhSecretAgreement(
         ((flags & SYMCRYPT_FLAG_KEY_MINIMAL_VALIDATION) == 0) &&
         ((g_SymCryptFipsSelftestsPerformed & SYMCRYPT_SELFTEST_DH_SECRET_AGREEMENT) == 0) )
     {
-        scError = SymCryptDhSecretAgreementSelftest( pkPrivate );
+        scError = SymCryptDhSecretAgreementSelftest( );
         if( scError != SYMCRYPT_NO_ERROR )
         {
             goto cleanup;
