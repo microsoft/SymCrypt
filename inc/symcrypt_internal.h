@@ -34,7 +34,7 @@
 #undef  SYMCRYPT_MS_VC
 #define SYMCRYPT_MS_VC  1
 
-#if DBG
+#if defined(DBG) && DBG
 #define SYMCRYPT_DEBUG 1
 #else
 #define SYMCRYPT_DEBUG 0
@@ -74,7 +74,7 @@
 // Suppress the SAL annotations
 #include "symcrypt_no_sal.h"
 
-#if DBG
+#if defined(DBG) && DBG
 #define SYMCRYPT_DEBUG 1
 #else
 #define SYMCRYPT_DEBUG 0
