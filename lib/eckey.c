@@ -848,6 +848,14 @@ SymCryptEckeySetRandom(
 
     pEckey->hasPrivateKey = TRUE;
 
+    if( SYMCRYPT_DO_FIPS_SELFTESTS &&
+        ((g_SymCryptFipsSelftestsPerformed & SYMCRYPT_SELFTEST_ECDSA) == 0) )
+    {
+        SymCryptEcDsaPairwiseSelftest( pEckey );
+
+        ATOMIC_OR32( &g_SymCryptFipsSelftestsPerformed, SYMCRYPT_SELFTEST_ECDSA );
+    }
+
 cleanup:
 
     if ( pbScratch != NULL )

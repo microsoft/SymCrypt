@@ -12,7 +12,15 @@
 
 const UINT32 SymCryptSelftestRsaKeySizeBits = 2048;
 
-SYMCRYPT_ERROR
+_Analysis_noreturn_
+VOID
+SYMCRYPT_CALL
+SymCryptFatal(UINT32 fatalCode)
+{
+    abort();
+}
+
+VOID
 SymCryptModuleTestDsaPairwise()
 {
     SYMCRYPT_ERROR scError = SYMCRYPT_NO_ERROR;
@@ -22,55 +30,27 @@ SymCryptModuleTestDsaPairwise()
     pDlgroup = SymCryptDlgroupAllocate( 
         2048, 
         0 );
-    if( pDlgroup == NULL )
-    {
-        scError = SYMCRYPT_MEMORY_ALLOCATION_FAILURE;
-        goto cleanup;
-    }
+    SYMCRYPT_FIPS_ASSERT( pDlgroup != NULL );
 
     scError = SymCryptDlgroupGenerate( SymCryptSha256Algorithm, SYMCRYPT_DLGROUP_FIPS_LATEST, pDlgroup );
-    if( scError != SYMCRYPT_NO_ERROR )
-    {
-        goto cleanup;
-    }
+    SYMCRYPT_FIPS_ASSERT( scError == SYMCRYPT_NO_ERROR );
 
     pkDlkey = SymCryptDlkeyAllocate( pDlgroup );
-    if( pkDlkey == NULL )
-    {
-        scError = SYMCRYPT_MEMORY_ALLOCATION_FAILURE;
-        goto cleanup;
-    }
+    SYMCRYPT_FIPS_ASSERT( pkDlkey != NULL );
 
+    // SymCryptDlkeyGenerate will call the selftest
     scError = SymCryptDlkeyGenerate( 0, pkDlkey );
-    if( scError != SYMCRYPT_NO_ERROR )
-    {
-        goto cleanup;
-    }
+    SYMCRYPT_FIPS_ASSERT( scError == SYMCRYPT_NO_ERROR );
 
-    scError = SymCryptDsaPairwiseSelftest( pkDlkey );
-    if( scError != SYMCRYPT_NO_ERROR )
-    {
-        goto cleanup;
-    }
+    // Verify that the selftest flag was set
+    SYMCRYPT_FIPS_ASSERT( (g_SymCryptFipsSelftestsPerformed & SYMCRYPT_SELFTEST_DSA) != 0);
 
-cleanup:
 
-    if( pkDlkey != NULL )
-    {
-        SymCryptDlkeyFree( pkDlkey );
-        pkDlkey = NULL;
-    }
-
-    if( pDlgroup != NULL )
-    {
-        SymCryptDlgroupFree( pDlgroup );
-        pDlgroup = NULL;
-    }
-
-    return scError;
+    SymCryptDlkeyFree( pkDlkey );
+    SymCryptDlgroupFree( pDlgroup );
 }
 
-SYMCRYPT_ERROR
+VOID
 SymCryptModuleTestEcDsaPairwise()
 {
     SYMCRYPT_ERROR scError = SYMCRYPT_NO_ERROR;
@@ -78,49 +58,23 @@ SymCryptModuleTestEcDsaPairwise()
     PSYMCRYPT_ECKEY pkKey = NULL;
 
     pCurve = SymCryptEcurveAllocate( SymCryptEcurveParamsNistP256, 0 );
-    if( pCurve == NULL )
-    {
-        scError = SYMCRYPT_MEMORY_ALLOCATION_FAILURE;
-        goto cleanup;
-    }
+    SYMCRYPT_FIPS_ASSERT( pCurve != NULL );
 
     pkKey = SymCryptEckeyAllocate( pCurve );
-    if( pkKey == NULL )
-    {
-        scError = SYMCRYPT_MEMORY_ALLOCATION_FAILURE;
-        goto cleanup;
-    }
+    SYMCRYPT_FIPS_ASSERT( pkKey != NULL );
 
+    // SymCryptEckeySetRandom will call the selftest
     scError = SymCryptEckeySetRandom( 0, pkKey );
-    if( scError != SYMCRYPT_NO_ERROR )
-    {
-        goto cleanup;
-    }
+    SYMCRYPT_FIPS_ASSERT( scError == SYMCRYPT_NO_ERROR );
 
-    scError = SymCryptEcDsaPairwiseSelftest( pkKey );
-    if( scError != SYMCRYPT_NO_ERROR )
-    {
-        goto cleanup;
-    }
+    // Verify that the selftest flag was set
+    SYMCRYPT_FIPS_ASSERT( (g_SymCryptFipsSelftestsPerformed & SYMCRYPT_SELFTEST_ECDSA) != 0 );
 
-cleanup:
-    
-    if( pkKey != NULL )
-    {
-        SymCryptEckeyFree( pkKey );
-        pkKey = NULL;
-    }
-
-    if( pCurve != NULL)
-    {
-        SymCryptEcurveFree( pCurve );
-        pCurve = NULL;
-    }
-
-    return scError;
+    SymCryptEckeyFree( pkKey );
+    SymCryptEcurveFree( pCurve );
 }
 
-SYMCRYPT_ERROR
+VOID
 SymCryptModuleTestRsaPairwise()
 {
     SYMCRYPT_ERROR scError = SYMCRYPT_NO_ERROR;
@@ -133,32 +87,16 @@ SymCryptModuleTestRsaPairwise()
     rsaParams.nPubExp = 1;
 
     pkRsakey = SymCryptRsakeyAllocate( &rsaParams, 0 );
-    if( pkRsakey == NULL )
-    {
-        scError = SYMCRYPT_MEMORY_ALLOCATION_FAILURE;
-        goto cleanup;
-    }
+    SYMCRYPT_FIPS_ASSERT( pkRsakey != NULL );
 
+    // SymCryptRsakeyGenerate will call the selftest
     scError = SymCryptRsakeyGenerate( pkRsakey, NULL, 0, 0 );
-    if( scError != SYMCRYPT_NO_ERROR )
-    {
-        goto cleanup;
-    }
+    SYMCRYPT_FIPS_ASSERT( scError == SYMCRYPT_NO_ERROR );
 
-    scError = SymCryptRsaPairwiseSelftest( pkRsakey );
-    if( scError != SYMCRYPT_NO_ERROR )
-    {
-        goto cleanup;
-    }
+    // Verify that the selftest flag was set
+    SYMCRYPT_FIPS_ASSERT( (g_SymCryptFipsSelftestsPerformed & SYMCRYPT_SELFTEST_RSA) != 0 );
 
-cleanup:
-    if( pkRsakey == NULL )
-    {
-        SymCryptRsakeyFree( pkRsakey );
-        pkRsakey = NULL;
-    }
-
-    return scError;
+    SymCryptRsakeyFree( pkRsakey );
 }
 
 int
@@ -168,28 +106,19 @@ main( int argc, _In_reads_( argc ) char * argv[] )
 
     SYMCRYPT_MODULE_INIT();
 
-    SymCryptDhSecretAgreementSelftest();
-    SymCryptEcDhSecretAgreementSelftest();
-
-    scError = SymCryptModuleTestDsaPairwise();
-    if( scError != SYMCRYPT_NO_ERROR )
+    if( !(SYMCRYPT_DO_FIPS_SELFTESTS) )
     {
-        printf( "DSA pairwise selftest failed!\n" );
-        return scError;
+        printf("SYMCRYPT_DO_FIPS_SELFTESTS is false; skipping self-test verification.\n");
     }
-
-    scError = SymCryptModuleTestEcDsaPairwise();
-    if( scError != SYMCRYPT_NO_ERROR )
+    else
     {
-        printf( "ECDSA pairwise selftest failed!\n" );
-        return scError;
-    }
+        SYMCRYPT_FIPS_ASSERT( (g_SymCryptFipsSelftestsPerformed & SYMCRYPT_SELFTEST_STARTUP) != 0 );
 
-    scError = SymCryptModuleTestRsaPairwise();
-    if( scError != SYMCRYPT_NO_ERROR )
-    {
-        printf( "RSA pairwise selftest failed!\n" );
-        return scError;
+        SymCryptDhSecretAgreementSelftest();
+        SymCryptEcDhSecretAgreementSelftest();
+        SymCryptModuleTestDsaPairwise();
+        SymCryptModuleTestEcDsaPairwise();
+        SymCryptModuleTestRsaPairwise();
     }
     
     printf( "Success!\n" );

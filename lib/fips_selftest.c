@@ -417,7 +417,7 @@ SymCryptEcDhSecretAgreementSelftest( )
     SymCryptEcurveFree( pCurve );
 }
 
-SYMCRYPT_ERROR
+VOID
 SYMCRYPT_CALL
 SymCryptDsaPairwiseSelftest(
     _In_ PCSYMCRYPT_DLKEY pkCallerKey )
@@ -431,18 +431,11 @@ SymCryptDsaPairwiseSelftest(
     SIZE_T cbSignature = 0;
 
     scError = SymCryptCallbackRandom( rbHashValue, cbHashValue );
-    if( scError != SYMCRYPT_NO_ERROR )
-    {
-        goto cleanup;
-    }
+    SYMCRYPT_FIPS_ASSERT( scError == SYMCRYPT_NO_ERROR );
 
     cbSignature = 2 * SymCryptDlkeySizeofPrivateKey( pkCallerKey );
     pbSignature = SymCryptCallbackAlloc( cbSignature );
-    if( pbSignature == NULL )
-    {
-        scError = SYMCRYPT_MEMORY_ALLOCATION_FAILURE;
-        goto cleanup;
-    }
+    SYMCRYPT_FIPS_ASSERT( pbSignature != NULL );
 
     scError = SymCryptDsaSign(
                 pkCallerKey,
@@ -452,10 +445,7 @@ SymCryptDsaPairwiseSelftest(
                 0,
                 pbSignature,
                 cbSignature );
-    if( scError != SYMCRYPT_NO_ERROR )
-    {
-        goto cleanup;
-    }
+    SYMCRYPT_FIPS_ASSERT( scError == SYMCRYPT_NO_ERROR );
 
     scError = SymCryptDsaVerify(
                 pkCallerKey,
@@ -465,23 +455,12 @@ SymCryptDsaPairwiseSelftest(
                 cbSignature,
                 SYMCRYPT_NUMBER_FORMAT_MSB_FIRST,
                 0 );
-    if( scError != SYMCRYPT_NO_ERROR )
-    {
-        goto cleanup;
-    }
+    SYMCRYPT_FIPS_ASSERT( scError == SYMCRYPT_NO_ERROR );
 
-cleanup:
-
-    if( pbSignature != NULL )
-    {
-        SymCryptCallbackFree( pbSignature );
-        pbSignature = NULL;
-    }
-
-    return scError;
+    SymCryptCallbackFree( pbSignature );
 }
 
-SYMCRYPT_ERROR
+VOID
 SYMCRYPT_CALL
 SymCryptEcDsaPairwiseSelftest(
     _In_ PCSYMCRYPT_ECKEY pkCallerKey )
@@ -495,18 +474,11 @@ SymCryptEcDsaPairwiseSelftest(
     SIZE_T cbSignature = 0;
 
     scError = SymCryptCallbackRandom( rbHashValue, cbHashValue );
-    if( scError != SYMCRYPT_NO_ERROR )
-    {
-        goto cleanup;
-    }
+    SYMCRYPT_FIPS_ASSERT( scError == SYMCRYPT_NO_ERROR );
 
     cbSignature = 2 * SymCryptEcurveSizeofFieldElement( pkCallerKey->pCurve );
     pbSignature = SymCryptCallbackAlloc( cbSignature );
-    if( pbSignature == NULL )
-    {
-        scError = SYMCRYPT_MEMORY_ALLOCATION_FAILURE;
-        goto cleanup;
-    }
+    SYMCRYPT_FIPS_ASSERT( pbSignature != NULL );
 
     scError = SymCryptEcDsaSign(
         pkCallerKey,
@@ -516,10 +488,7 @@ SymCryptEcDsaPairwiseSelftest(
         0,
         pbSignature,
         cbSignature );
-    if( scError != SYMCRYPT_NO_ERROR )
-    {
-        goto cleanup;
-    }
+    SYMCRYPT_FIPS_ASSERT( scError == SYMCRYPT_NO_ERROR );
 
     scError = SymCryptEcDsaVerify(
         pkCallerKey,
@@ -529,23 +498,12 @@ SymCryptEcDsaPairwiseSelftest(
         cbSignature,
         SYMCRYPT_NUMBER_FORMAT_MSB_FIRST,
         0 );
-    if( scError != SYMCRYPT_NO_ERROR )
-    {
-        goto cleanup;
-    }
+    SYMCRYPT_FIPS_ASSERT( scError == SYMCRYPT_NO_ERROR )
 
-cleanup:
-
-    if(pbSignature != NULL)
-    {
-        SymCryptCallbackFree( pbSignature );
-        pbSignature = NULL;
-    }
-
-    return scError;
+    SymCryptCallbackFree( pbSignature );
 }
 
-SYMCRYPT_ERROR
+VOID
 SYMCRYPT_CALL
 SymCryptRsaPairwiseSelftest(
     _In_ PCSYMCRYPT_RSAKEY pkCallerKey )
@@ -559,18 +517,11 @@ SymCryptRsaPairwiseSelftest(
     SIZE_T cbSignature = 0;
 
     scError = SymCryptCallbackRandom( rbHashValue, cbHashValue );
-    if( scError != SYMCRYPT_NO_ERROR )
-    {
-        goto cleanup;
-    }
+    SYMCRYPT_FIPS_ASSERT( scError == SYMCRYPT_NO_ERROR );
 
     cbSignature = pkCallerKey->nBitsOfModulus / 8;
     pbSignature = SymCryptCallbackAlloc( cbSignature );
-    if( pbSignature == NULL )
-    {
-        scError = SYMCRYPT_MEMORY_ALLOCATION_FAILURE;
-        goto cleanup;
-    }
+    SYMCRYPT_FIPS_ASSERT( pbSignature != NULL );
 
     scError = SymCryptRsaPkcs1Sign(
         pkCallerKey,
@@ -583,10 +534,7 @@ SymCryptRsaPairwiseSelftest(
         pbSignature,
         cbSignature,
         &cbSignature );
-    if( scError != SYMCRYPT_NO_ERROR )
-    {
-        goto cleanup;
-    }
+    SYMCRYPT_FIPS_ASSERT( scError == SYMCRYPT_NO_ERROR );
 
     scError = SymCryptRsaPkcs1Verify(
         pkCallerKey,
@@ -598,18 +546,7 @@ SymCryptRsaPairwiseSelftest(
         SymCryptSha256OidList,
         SYMCRYPT_SHA256_OID_COUNT,
         0 );
-    if( scError != SYMCRYPT_NO_ERROR )
-    {
-        goto cleanup;
-    }
+    SYMCRYPT_FIPS_ASSERT( scError == SYMCRYPT_NO_ERROR );
 
-cleanup:
-
-    if( pbSignature != NULL )
-    {
-        SymCryptCallbackFree( pbSignature );
-        pbSignature = NULL;
-    }
-
-    return scError;
+    SymCryptCallbackFree( pbSignature );
 }

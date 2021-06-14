@@ -6032,7 +6032,7 @@ SymCryptRsaPssVerify(
 //      None
 //
 
-SYMCRYPT_ERROR
+VOID
 SYMCRYPT_CALL
 SymCryptRsaPairwiseSelftest(
     _In_ PCSYMCRYPT_RSAKEY pkCallerKey );
@@ -6088,7 +6088,7 @@ SymCryptDsaVerify(
 //      None
 //
 
-SYMCRYPT_ERROR
+VOID
 SYMCRYPT_CALL
 SymCryptDsaPairwiseSelftest(
     _In_ PCSYMCRYPT_DLKEY pkCallerKey );
@@ -6206,7 +6206,7 @@ SymCryptEcDsaVerify(
 //      SYMCRYPT_FLAG_ECDSA_NO_TRUNCATION: If set then the hash value will
 //      not be truncated.
 
-SYMCRYPT_ERROR
+VOID
 SYMCRYPT_CALL
 SymCryptEcDsaPairwiseSelftest(
     _In_ PCSYMCRYPT_ECKEY pkCallerKey

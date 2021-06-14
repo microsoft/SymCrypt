@@ -432,6 +432,14 @@ SymCryptDlkeyGenerate(
     // Set the fHasPrivateKey flag
     pkDlkey->fHasPrivateKey = TRUE;
 
+    if( SYMCRYPT_DO_FIPS_SELFTESTS &&
+        ((g_SymCryptFipsSelftestsPerformed & SYMCRYPT_SELFTEST_DSA) == 0) )
+    {
+        SymCryptDsaPairwiseSelftest( pkDlkey );
+
+        ATOMIC_OR32( &g_SymCryptFipsSelftestsPerformed, SYMCRYPT_SELFTEST_DSA );
+    }
+
 cleanup:
     if (pbScratch!=NULL)
     {
