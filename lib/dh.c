@@ -105,6 +105,18 @@ SymCryptDhSecretAgreement(
 
     UINT32 nBitsOfExp = 0;
 
+    if( SYMCRYPT_DO_FIPS_SELFTESTS &&
+        ((flags & SYMCRYPT_FLAG_BYPASS_FIPS_SELFTEST) == 0) &&
+        ((g_SymCryptFipsSelftestsPerformed & SYMCRYPT_SELFTEST_DH_SECRET_AGREEMENT) == 0) )
+    {
+        SymCryptDhSecretAgreementSelftest( );
+
+        ATOMIC_OR32( &g_SymCryptFipsSelftestsPerformed, SYMCRYPT_SELFTEST_DH_SECRET_AGREEMENT );
+    }
+
+    // Reset SYMCRYPT_FLAG_BYPASS_FIPS_SELFTEST, if it was set, so the below check succeeds
+    flags &= ~SYMCRYPT_FLAG_BYPASS_FIPS_SELFTEST;
+
     // Make sure we only specify the correct flags and that
     // there is a private key
     if ( ((flags & ~SYMCRYPT_FLAG_KEY_MINIMAL_VALIDATION) != 0) || (!pkPrivate->fHasPrivateKey) )
@@ -129,19 +141,6 @@ SymCryptDhSecretAgreement(
     {
         scError = SYMCRYPT_WRONG_BLOCK_SIZE;
         goto cleanup;
-    }
-
-    if( SYMCRYPT_IS_FIPS_MODULE &&
-        ((flags & SYMCRYPT_FLAG_KEY_MINIMAL_VALIDATION) == 0) &&
-        ((g_SymCryptFipsSelftestsPerformed & SYMCRYPT_SELFTEST_DH_SECRET_AGREEMENT) == 0) )
-    {
-        scError = SymCryptDhSecretAgreementSelftest( );
-        if( scError != SYMCRYPT_NO_ERROR )
-        {
-            goto cleanup;
-        }
-
-        g_SymCryptFipsSelftestsPerformed |= SYMCRYPT_SELFTEST_DH_SECRET_AGREEMENT;
     }
 
     // Objects and scratch space size calculation

@@ -128,7 +128,64 @@ const BYTE rgbDh2048PrivateKey2[] =
     0x30, 0x47, 0x08, 0x55, 0x94, 0xD7, 0x4B, 0x9A, 0x26, 0x38, 0xAC, 0x71, 0x44, 0x39, 0x64, 0x8F
 };
 
-SYMCRYPT_ERROR
+typedef struct _SYMCRYPT_SELFTEST_ECKEY_P256
+{
+    BYTE Qx[32];
+    BYTE Qy[32];
+    BYTE d[32];
+} SYMCRYPT_SELFTEST_ECKEY_P256;
+
+SYMCRYPT_SELFTEST_ECKEY_P256 eckey1 =
+{
+    // Qx
+    {
+        0xdd, 0xd5, 0x15, 0x20, 0x43, 0x8d, 0x41, 0xa9,
+        0x18, 0xcf, 0x62, 0xc2, 0x13, 0xf7, 0xed, 0xb2,
+        0xf9, 0x8f, 0x02, 0xa3, 0x78, 0x30, 0x7e, 0x22,
+        0x8f, 0xc1, 0x44, 0xbe, 0xde, 0xc6, 0x65, 0x91
+    },
+    //Qy
+    {
+        0x72, 0xad, 0x17, 0xad, 0x51, 0x8c, 0xd3, 0x60,
+        0x0f, 0x54, 0xc0, 0xf4, 0xc3, 0x22, 0x5b, 0x44,
+        0xab, 0xad, 0x28, 0xb5, 0x56, 0x8e, 0x78, 0x0a,
+        0x6a, 0x09, 0x6b, 0x65, 0x81, 0x6d, 0x6f, 0x99
+    },
+    //d
+    {
+        0x07, 0x36, 0x9f, 0xb2, 0x35, 0xce, 0xe2, 0xd4,
+        0x7e, 0x13, 0x35, 0x31, 0xae, 0xa5, 0x6e, 0x6c,
+        0x96, 0xd3, 0x9f, 0x3b, 0xa7, 0x74, 0xae, 0xf9,
+        0x7a, 0x56, 0x6e, 0xfe, 0x32, 0x3f, 0x43, 0xaa
+    },
+};
+
+SYMCRYPT_SELFTEST_ECKEY_P256 eckey2 =
+{
+    //Qx
+    {
+        0x21, 0xf2, 0xf7, 0x08, 0x8c, 0x71, 0x59, 0xa7,
+        0x0c, 0xe1, 0xb9, 0x1a, 0xe0, 0xed, 0x69, 0xbe,
+        0x44, 0xeb, 0xa3, 0x51, 0xfd, 0x32, 0x4a, 0x90,
+        0xdc, 0xde, 0xa4, 0x10, 0xe4, 0x44, 0x69, 0x29
+    },
+    //Qy
+    {
+        0x74, 0xd0, 0xc6, 0xbd, 0xe5, 0x13, 0x68, 0x07,
+        0x9f, 0x40, 0x5e, 0xbf, 0x9e, 0x61, 0x7c, 0x3f,
+        0xc8, 0x16, 0xe2, 0xd5, 0x0e, 0xf8, 0x09, 0x15,
+        0xf3, 0x30, 0xba, 0x45, 0x25, 0xab, 0x9a, 0xae
+    },
+    //d
+    {
+        0xd0, 0x93, 0xf2, 0x34, 0x82, 0x39, 0xa6, 0x5c,
+        0xd7, 0xe5, 0x10, 0x27, 0x0f, 0xfc, 0x0a, 0x0d,
+        0x89, 0x97, 0x10, 0xa7, 0x50, 0x5a, 0xc4, 0x1b,
+        0x5d, 0x18, 0x03, 0x2f, 0x7d, 0x46, 0x58, 0x4d
+    }
+};
+
+VOID
 SYMCRYPT_CALL
 SymCryptDhSecretAgreementSelftest()
 {
@@ -144,11 +201,7 @@ SymCryptDhSecretAgreementSelftest()
     BYTE rgbSecret2[sizeof(rgbDh2048PublicKey1)];
 
     pDlgroup = SymCryptDlgroupAllocate( sizeof(rgbDh2048PublicKey1) * 8, 0 );
-    if( pDlgroup == NULL )
-    {
-        scError = SYMCRYPT_MEMORY_ALLOCATION_FAILURE;
-        goto cleanup;
-    }
+    SYMCRYPT_FIPS_ASSERT(pDlgroup != NULL);
 
     scError = SymCryptDlgroupSetValue(
         rgbDh2048Modulus,
@@ -164,17 +217,10 @@ SymCryptDhSecretAgreementSelftest()
         0, // genCounter
         SYMCRYPT_DLGROUP_FIPS_NONE,
         pDlgroup);
-    if( scError != SYMCRYPT_NO_ERROR )
-    {
-        goto cleanup;
-    }
+    SYMCRYPT_FIPS_ASSERT( scError == SYMCRYPT_NO_ERROR );
 
     pkKey1Private = SymCryptDlkeyAllocate( pDlgroup );
-    if( pkKey1Private == NULL )
-    {
-        scError = SYMCRYPT_MEMORY_ALLOCATION_FAILURE;
-        goto cleanup;
-    }
+    SYMCRYPT_FIPS_ASSERT( pkKey1Private != NULL );
 
     scError = SymCryptDlkeySetValue(
         rgbDh2048PrivateKey1,
@@ -184,17 +230,10 @@ SymCryptDhSecretAgreementSelftest()
         SYMCRYPT_NUMBER_FORMAT_MSB_FIRST,
         0,
         pkKey1Private );
-    if( scError != SYMCRYPT_NO_ERROR )
-    {
-        goto cleanup;
-    }
+    SYMCRYPT_FIPS_ASSERT( scError == SYMCRYPT_NO_ERROR );
 
     pkKey1Public = SymCryptDlkeyAllocate( pDlgroup );
-    if( pkKey1Public == NULL )
-    {
-        scError = SYMCRYPT_MEMORY_ALLOCATION_FAILURE;
-        goto cleanup;
-    }
+    SYMCRYPT_FIPS_ASSERT( pkKey1Public != NULL );
 
     scError = SymCryptDlkeySetValue(
         NULL, // pbPrivateKey
@@ -204,17 +243,10 @@ SymCryptDhSecretAgreementSelftest()
         SYMCRYPT_NUMBER_FORMAT_MSB_FIRST,
         0,
         pkKey1Public );
-    if( scError != SYMCRYPT_NO_ERROR )
-    {
-        goto cleanup;
-    }
+    SYMCRYPT_FIPS_ASSERT( scError == SYMCRYPT_NO_ERROR );
 
     pkKey2Private = SymCryptDlkeyAllocate( pDlgroup );
-    if( pkKey2Private == NULL )
-    {
-        scError = SYMCRYPT_MEMORY_ALLOCATION_FAILURE;
-        goto cleanup;
-    }
+    SYMCRYPT_FIPS_ASSERT( pkKey2Private != NULL );
 
     scError = SymCryptDlkeySetValue(
         rgbDh2048PrivateKey2,
@@ -224,19 +256,12 @@ SymCryptDhSecretAgreementSelftest()
         SYMCRYPT_NUMBER_FORMAT_MSB_FIRST,
         0,
         pkKey2Private );
-    if( scError != SYMCRYPT_NO_ERROR )
-    {
-        goto cleanup;
-    }
+    SYMCRYPT_FIPS_ASSERT( scError == SYMCRYPT_NO_ERROR );
 
     // Allocate a new Dlkey for the test public key so we can do secret agreement with
     // (test public key, caller private key)
     pkKey2Public = SymCryptDlkeyAllocate( pDlgroup );
-    if( pkKey2Public == NULL )
-    {
-        scError = SYMCRYPT_MEMORY_ALLOCATION_FAILURE;
-        goto cleanup;
-    }
+    SYMCRYPT_FIPS_ASSERT( pkKey2Public != NULL );
 
     scError = SymCryptDlkeySetValue(
         NULL, // pbPrivateKey
@@ -246,274 +271,150 @@ SymCryptDhSecretAgreementSelftest()
         SYMCRYPT_NUMBER_FORMAT_MSB_FIRST,
         0,
         pkKey2Public );
-    if( scError != SYMCRYPT_NO_ERROR )
-    {
-        goto cleanup;
-    }
+    SYMCRYPT_FIPS_ASSERT( scError == SYMCRYPT_NO_ERROR );
 
+    // Calculate secret 1 using private key 1 and public key 2
     scError = SymCryptDhSecretAgreement(
         pkKey1Private,
         pkKey2Public,
         SYMCRYPT_NUMBER_FORMAT_MSB_FIRST,
-        SYMCRYPT_FLAG_KEY_MINIMAL_VALIDATION,
+        SYMCRYPT_FLAG_BYPASS_FIPS_SELFTEST,
         rgbSecret1,
         sizeof(rgbSecret1) );
-    if( scError != SYMCRYPT_NO_ERROR )
-    {
-        goto cleanup;
-    }
+    SYMCRYPT_FIPS_ASSERT( scError == SYMCRYPT_NO_ERROR );
 
+    // Calculate secret 2 using private key 2 and public key 1
     scError = SymCryptDhSecretAgreement(
         pkKey2Private,
         pkKey1Public,
         SYMCRYPT_NUMBER_FORMAT_MSB_FIRST,
-        SYMCRYPT_FLAG_KEY_MINIMAL_VALIDATION,
+        SYMCRYPT_FLAG_BYPASS_FIPS_SELFTEST,
         rgbSecret2,
         sizeof(rgbSecret2) );
-    if( scError != SYMCRYPT_NO_ERROR )
-    {
-        goto cleanup;
-    }
+    SYMCRYPT_FIPS_ASSERT( scError == SYMCRYPT_NO_ERROR );
 
-    if( memcmp(rgbSecret1, rgbSecret2, sizeof(rgbSecret1)) != 0 )
-    {
-        scError = SYMCRYPT_FIPS_FAILURE;
-        goto cleanup;
-    }
+    // Verify that secret1 == secret2
+    SYMCRYPT_FIPS_ASSERT( memcmp( rgbSecret1, rgbSecret2, sizeof(rgbSecret1) ) == 0 );
 
-cleanup:
-
-    if( pkKey2Public != NULL )
-    {
-        SymCryptDlkeyFree( pkKey2Public );
-        pkKey2Public = NULL;
-    }
-
-    if( pkKey2Private != NULL )
-    {
-        SymCryptDlkeyFree( pkKey2Private );
-        pkKey2Private = NULL;
-    }
-
-    if( pkKey1Public != NULL )
-    {
-        SymCryptDlkeyFree( pkKey1Public );
-        pkKey1Public = NULL;
-    }
-
-    if( pkKey1Private != NULL )
-    {
-        SymCryptCallbackFree( pkKey1Private );
-        pkKey1Private = NULL;
-    }
-
-    if( pDlgroup != NULL )
-    {
-        SymCryptDlgroupFree( pDlgroup );
-        pDlgroup = NULL;
-    }
-
-    return scError;
-
+    SymCryptDlkeyFree( pkKey2Public );
+    SymCryptDlkeyFree( pkKey2Private );
+    SymCryptDlkeyFree( pkKey1Public );
+    SymCryptCallbackFree( pkKey1Private );
+    SymCryptDlgroupFree( pDlgroup );
 }
 
-SYMCRYPT_ERROR
+VOID
 SYMCRYPT_CALL
-SymCryptEcDhSecretAgreementSelftest(
-    _In_ PCSYMCRYPT_ECKEY pkCallerKeyPrivate )
+SymCryptEcDhSecretAgreementSelftest( )
 {
     SYMCRYPT_ERROR scError = SYMCRYPT_NO_ERROR;
 
-    PSYMCRYPT_ECKEY pkTestKeyPrivate = NULL;
-    PSYMCRYPT_ECKEY pkCallerKeyPublic = NULL;
-    PSYMCRYPT_ECKEY pkTestKeyPublic = NULL;
-
-    PBYTE pbKeyBufferPublic = NULL;
-    UINT32 cbKeyBufferPublic = 0;
+    PSYMCRYPT_ECURVE pCurve = NULL;
+    PSYMCRYPT_ECKEY pkKey1Private = NULL;
+    PSYMCRYPT_ECKEY pkKey1Public = NULL;
+    PSYMCRYPT_ECKEY pkKey2Private = NULL;
+    PSYMCRYPT_ECKEY pkKey2Public = NULL;
 
     PBYTE pbSecret1 = NULL;
     PBYTE pbSecret2 = NULL;
     UINT32 cbSecret = 0;
 
-    // Export the caller public key and import it into a new Eckey so we can do secret
-    // agreement with (caller public key, test private key)
-    cbKeyBufferPublic = SymCryptEckeySizeofPublicKey(
-        pkCallerKeyPrivate, SYMCRYPT_ECPOINT_FORMAT_XY );
-    pbKeyBufferPublic = SymCryptCallbackAlloc( cbKeyBufferPublic );
-    if( pbKeyBufferPublic == NULL )
-    {
-        scError = SYMCRYPT_MEMORY_ALLOCATION_FAILURE;
-        goto cleanup;
-    }
+    pCurve = SymCryptEcurveAllocate( SymCryptEcurveParamsNistP256, 0 );
+    SYMCRYPT_FIPS_ASSERT( pCurve != NULL );
 
-    scError = SymCryptEckeyGetValue(
-        pkCallerKeyPrivate,
+    pkKey1Private = SymCryptEckeyAllocate( pCurve );
+    SYMCRYPT_FIPS_ASSERT( pkKey1Private != NULL );
+
+    scError = SymCryptEckeySetValue(
+        eckey1.d,
+        sizeof(eckey1.d),
         NULL,
         0,
-        pbKeyBufferPublic,
-        cbKeyBufferPublic,
         SYMCRYPT_NUMBER_FORMAT_MSB_FIRST,
         SYMCRYPT_ECPOINT_FORMAT_XY,
-        0 );
-    if( scError != SYMCRYPT_NO_ERROR )
-    {
-        goto cleanup;
-    }
+        0, // flags
+        pkKey1Private);
+    SYMCRYPT_FIPS_ASSERT( scError == SYMCRYPT_NO_ERROR );
 
-    pkCallerKeyPublic = SymCryptEckeyAllocate( pkCallerKeyPrivate->pCurve );
-    if( pkCallerKeyPublic == NULL )
-    {
-        scError = SYMCRYPT_MEMORY_ALLOCATION_FAILURE;
-        goto cleanup;
-    }
+    pkKey1Public = SymCryptEckeyAllocate( pCurve );
+    SYMCRYPT_FIPS_ASSERT( pkKey1Public != NULL );
 
     scError = SymCryptEckeySetValue(
         NULL,
         0,
-        pbKeyBufferPublic,
-        cbKeyBufferPublic,
+        eckey1.Qx,
+        sizeof(eckey1.Qx) + sizeof(eckey1.Qy),
         SYMCRYPT_NUMBER_FORMAT_MSB_FIRST,
         SYMCRYPT_ECPOINT_FORMAT_XY,
-        0,
-        pkCallerKeyPublic );
-    if( scError != SYMCRYPT_NO_ERROR )
-    {
-        goto cleanup;
-    }
+        0, // flags
+        pkKey1Public );
+    SYMCRYPT_FIPS_ASSERT( scError == SYMCRYPT_NO_ERROR );
 
-    // Import or generate a test private key. This key must be the same size as the caller key,
-    // so if our pre-generated key doesn't match, we have to generate a new one, which is expensive.
-    pkTestKeyPrivate = SymCryptEckeyAllocate( pkCallerKeyPrivate->pCurve );
-    if( pkTestKeyPrivate == NULL )
-    {
-        scError = SYMCRYPT_MEMORY_ALLOCATION_FAILURE;
-        goto cleanup;
-    }
+    pkKey2Private = SymCryptEckeyAllocate( pCurve );
+    SYMCRYPT_FIPS_ASSERT( pkKey2Private != NULL );
 
-    scError = SymCryptEckeySetRandom( 0, pkTestKeyPrivate );
-    if( scError != SYMCRYPT_NO_ERROR )
-    {
-        goto cleanup;
-    }
-
-    scError = SymCryptEckeyGetValue(
-        pkTestKeyPrivate,
+    scError = SymCryptEckeySetValue(
+        eckey2.d,
+        sizeof(eckey2.d),
         NULL,
         0,
-        pbKeyBufferPublic,
-        cbKeyBufferPublic,
         SYMCRYPT_NUMBER_FORMAT_MSB_FIRST,
         SYMCRYPT_ECPOINT_FORMAT_XY,
-        0 );
-    if( scError != SYMCRYPT_NO_ERROR )
-    {
-        goto cleanup;
-    }
+        0, // flags
+        pkKey2Private);
+    SYMCRYPT_FIPS_ASSERT( scError == SYMCRYPT_NO_ERROR );
 
-    pkTestKeyPublic = SymCryptEckeyAllocate( pkCallerKeyPrivate->pCurve );
-    if( pkTestKeyPublic == NULL )
-    {
-        scError = SYMCRYPT_MEMORY_ALLOCATION_FAILURE;
-        goto cleanup;
-    }
+    pkKey2Public = SymCryptEckeyAllocate( pCurve );
+    SYMCRYPT_FIPS_ASSERT( pkKey2Public != NULL );
 
     scError = SymCryptEckeySetValue(
         NULL,
         0,
-        pbKeyBufferPublic,
-        cbKeyBufferPublic,
+        eckey2.Qx,
+        sizeof(eckey2.Qx) + sizeof(eckey2.Qy),
         SYMCRYPT_NUMBER_FORMAT_MSB_FIRST,
         SYMCRYPT_ECPOINT_FORMAT_XY,
         0,
-        pkTestKeyPublic );
-    if( scError != SYMCRYPT_NO_ERROR )
-    {
-        goto cleanup;
-    }
+        pkKey2Public );
+    SYMCRYPT_FIPS_ASSERT( scError == SYMCRYPT_NO_ERROR );
 
-    cbSecret = SymCryptEcurveSizeofFieldElement( pkCallerKeyPrivate->pCurve );
+    cbSecret = SymCryptEcurveSizeofFieldElement( pCurve );
     pbSecret1 = SymCryptCallbackAlloc( cbSecret );
-    if( pbSecret1 == NULL )
-    {
-        scError = SYMCRYPT_MEMORY_ALLOCATION_FAILURE;
-        goto cleanup;
-    }
+    SYMCRYPT_FIPS_ASSERT( pbSecret1 != NULL );
 
     pbSecret2 = SymCryptCallbackAlloc( cbSecret );
-    if( pbSecret2 == NULL )
-    {
-        scError = SYMCRYPT_MEMORY_ALLOCATION_FAILURE;
-        goto cleanup;
-    }
+    SYMCRYPT_FIPS_ASSERT( pbSecret2 != NULL );
 
+    // Calculate secret 1 using private key 1 and public key 2
     scError = SymCryptEcDhSecretAgreement(
-        pkCallerKeyPrivate,
-        pkTestKeyPublic,
+        pkKey1Private,
+        pkKey2Public,
         SYMCRYPT_NUMBER_FORMAT_MSB_FIRST,
-        SYMCRYPT_FLAG_KEY_MINIMAL_VALIDATION,
+        SYMCRYPT_FLAG_BYPASS_FIPS_SELFTEST,
         pbSecret1,
         cbSecret);
-    if( scError != SYMCRYPT_NO_ERROR )
-    {
-        goto cleanup;
-    }
+    SYMCRYPT_FIPS_ASSERT( scError == SYMCRYPT_NO_ERROR );
 
+    // Calculate secret 2 using private key 2 and public key 1
     scError = SymCryptEcDhSecretAgreement(
-        pkTestKeyPrivate,
-        pkCallerKeyPublic,
+        pkKey2Private,
+        pkKey1Public,
         SYMCRYPT_NUMBER_FORMAT_MSB_FIRST,
-        SYMCRYPT_FLAG_KEY_MINIMAL_VALIDATION,
+        SYMCRYPT_FLAG_BYPASS_FIPS_SELFTEST,
         pbSecret2,
         cbSecret);
-    if( scError != SYMCRYPT_NO_ERROR )
-    {
-        goto cleanup;
-    }
+    SYMCRYPT_FIPS_ASSERT( scError == SYMCRYPT_NO_ERROR );
 
-    if( memcmp(pbSecret1, pbSecret2, cbSecret) != 0 )
-    {
-        scError = SYMCRYPT_FIPS_FAILURE;
-        goto cleanup;
-    }
+    // Verify secret 1 == secret 2
+    SYMCRYPT_FIPS_ASSERT( memcmp(pbSecret1, pbSecret2, cbSecret) == 0 );
 
-cleanup:
-    if( pbSecret2 != NULL )
-    {
-        SymCryptCallbackFree( pbSecret2 );
-        pbSecret2 = NULL;
-    }
-
-    if( pbSecret1 != NULL )
-    {
-        SymCryptCallbackFree( pbSecret2 );
-        pbSecret1 = NULL;
-    }
-
-    if( pkTestKeyPublic != NULL )
-    {
-        SymCryptEckeyFree( pkTestKeyPublic );
-        pkTestKeyPublic = NULL;
-    }
-
-    if( pkTestKeyPrivate != NULL )
-    {
-        SymCryptEckeyFree( pkTestKeyPrivate );
-        pkTestKeyPrivate = NULL;
-    }
-
-    if( pkCallerKeyPublic != NULL )
-    {
-        SymCryptEckeyFree( pkCallerKeyPublic );
-        pkCallerKeyPublic = NULL;
-    }
-
-    if ( pbKeyBufferPublic != NULL )
-    {
-        SymCryptCallbackFree( pbKeyBufferPublic );
-        pbKeyBufferPublic = NULL;
-    }
-
-    return scError;
+    SymCryptCallbackFree( pbSecret2 );
+    SymCryptCallbackFree( pbSecret1 );
+    SymCryptEckeyFree( pkKey2Public );
+    SymCryptEckeyFree( pkKey2Private );
+    SymCryptEckeyFree( pkKey1Public );
+    SymCryptEckeyFree( pkKey1Private );
+    SymCryptEcurveFree( pCurve );
 }
 
 SYMCRYPT_ERROR

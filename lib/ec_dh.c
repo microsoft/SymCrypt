@@ -32,6 +32,18 @@ SymCryptEcDhSecretAgreement(
     UINT32              cbQ = 0;
     UINT32              cbX = 0;
 
+    if( SYMCRYPT_DO_FIPS_SELFTESTS &&
+        ((flags & SYMCRYPT_FLAG_BYPASS_FIPS_SELFTEST) == 0) &&
+        ((g_SymCryptFipsSelftestsPerformed & SYMCRYPT_SELFTEST_ECDH_SECRET_AGREEMENT) == 0) )
+    {
+        SymCryptEcDhSecretAgreementSelftest( );
+
+        ATOMIC_OR32( &g_SymCryptFipsSelftestsPerformed, SYMCRYPT_SELFTEST_ECDH_SECRET_AGREEMENT );
+    }
+
+    // Reset SYMCRYPT_FLAG_BYPASS_FIPS_SELFTEST, if it was set, so the below check succeeds
+    flags &= ~SYMCRYPT_FLAG_BYPASS_FIPS_SELFTEST;
+
     // Make sure we only specify the correct flags
     if ( (flags & ~SYMCRYPT_FLAG_KEY_MINIMAL_VALIDATION) != 0 )
     {
@@ -59,19 +71,6 @@ SymCryptEcDhSecretAgreement(
     {
         scError = SYMCRYPT_WRONG_BLOCK_SIZE;
         goto cleanup;
-    }
-
-    if( SYMCRYPT_IS_FIPS_MODULE &&
-        ((flags & SYMCRYPT_FLAG_KEY_MINIMAL_VALIDATION) == 0) &&
-        ((g_SymCryptFipsSelftestsPerformed & SYMCRYPT_SELFTEST_ECDH_SECRET_AGREEMENT) == 0) )
-    {
-        scError = SymCryptEcDhSecretAgreementSelftest( pkPrivate );
-        if( scError != SYMCRYPT_NO_ERROR )
-        {
-            goto cleanup;
-        }
-
-        g_SymCryptFipsSelftestsPerformed |= SYMCRYPT_SELFTEST_ECDH_SECRET_AGREEMENT;
     }
 
     cbScratchInternal = SYMCRYPT_MAX( SYMCRYPT_SCRATCH_BYTES_FOR_COMMON_ECURVE_OPERATIONS(pCurve),

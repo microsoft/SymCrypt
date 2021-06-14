@@ -6117,16 +6117,16 @@ SymCryptDhSecretAgreement(
 // format is the number format of the agreed secret (pbAgreedSecret buffer).
 //
 // Allowed flags:
-//      SYMCRYPT_FLAG_KEY_MINIMAL_VALIDATION - Specify to skip FIPS checks. Do not use this flag
-//          if your application requires FIPS compliance. Has no effect is not running in the
-//          FIPS module.
+//      - None
 //
 
-SYMCRYPT_ERROR
+VOID
 SYMCRYPT_CALL
 SymCryptDhSecretAgreementSelftest();
 //
-// FIPS self-test for DH secret agreement. Returns an error if the selftest fails.
+// FIPS self-test for DH secret agreement. If the self-test fails, SymCryptFatal will be called to
+// fastfail. Called automatically by SymCryptDhSecretAgreement when SYMCRYPT_DO_FIPS_SELFTESTS is
+// defined during compilation.
 //
 
 //
@@ -6238,13 +6238,14 @@ SymCryptEcDhSecretAgreement(
 //      - None
 //
 
-SYMCRYPT_ERROR
+VOID
 SYMCRYPT_CALL
-SymCryptEcDhSecretAgreementSelftest(
-    _In_    PCSYMCRYPT_ECKEY        pkPrivate );
+SymCryptEcDhSecretAgreementSelftest( );
 
 //
-// FIPS self-test for ECDH secret agreement. Returns an error if the selftest fails.
+// FIPS self-test for ECDH secret agreement. If the self-test fails, SymCryptFatal will be called
+// to fastfail. Called automatically by SymCryptEcDhSecretAgreement when SYMCRYPT_DO_FIPS_SELFTESTS
+// is defined during compilation.
 //
 
 //

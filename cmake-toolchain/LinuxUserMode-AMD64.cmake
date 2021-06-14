@@ -13,7 +13,7 @@ add_compile_options(-D_AMD64_)
 add_compile_options(-O3)
 
 # Enable FIPS build
-add_compile_options(-DSYMCRYPT_IS_FIPS_MODULE=1)
+add_compile_options(-DSYMCRYPT_DO_FIPS_SELFTESTS=1)
 
 # Enable a baseline of features for the compiler to support everywhere
 # Other than for SSSE3 we do not expect the compiler to generate these instructions anywhere other than with intrinsics
