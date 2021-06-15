@@ -516,6 +516,14 @@ SymCryptRsakeyGenerate(
 
     UNREFERENCED_PARAMETER( flags );
 
+     if( SYMCRYPT_DO_FIPS_SELFTESTS &&
+        ((g_SymCryptFipsSelftestsPerformed & SYMCRYPT_SELFTEST_RSA) == 0) )
+    {
+        SymCryptRsaPairwiseSelftest( );
+
+        ATOMIC_OR32( &g_SymCryptFipsSelftestsPerformed, SYMCRYPT_SELFTEST_RSA );
+    }
+
     // Handle the default exponent case
     if( pu64PubExp == NULL && nPubExp == 0 )
     {
@@ -694,14 +702,6 @@ SymCryptRsakeyGenerate(
     }
 
     pkRsakey->hasPrivateKey = TRUE;
-
-    if( SYMCRYPT_DO_FIPS_SELFTESTS &&
-        ((g_SymCryptFipsSelftestsPerformed & SYMCRYPT_SELFTEST_RSA) == 0) )
-    {
-        SymCryptRsaPairwiseSelftest( pkRsakey );
-
-        ATOMIC_OR32( &g_SymCryptFipsSelftestsPerformed, SYMCRYPT_SELFTEST_RSA );
-    }
 
 cleanup:
     if (pbScratch!=NULL)

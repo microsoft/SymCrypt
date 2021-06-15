@@ -6034,8 +6034,7 @@ SymCryptRsaPssVerify(
 
 VOID
 SYMCRYPT_CALL
-SymCryptRsaPairwiseSelftest(
-    _In_ PCSYMCRYPT_RSAKEY pkCallerKey );
+SymCryptRsaPairwiseSelftest( );
 //
 // FIPS self-test for RSA sign/verify. If the self-test fails, SymCryptFatal will be called to
 // fastfail.

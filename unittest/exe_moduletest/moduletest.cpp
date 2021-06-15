@@ -74,31 +74,6 @@ SymCryptModuleTestEcDsaPairwise()
     SymCryptEcurveFree( pCurve );
 }
 
-VOID
-SymCryptModuleTestRsaPairwise()
-{
-    SYMCRYPT_ERROR scError = SYMCRYPT_NO_ERROR;
-    PSYMCRYPT_RSAKEY pkRsakey = NULL;
-    SYMCRYPT_RSA_PARAMS rsaParams = { 0 };
-
-    rsaParams.version = 1;
-    rsaParams.nBitsOfModulus = SymCryptSelftestRsaKeySizeBits;
-    rsaParams.nPrimes = 2;
-    rsaParams.nPubExp = 1;
-
-    pkRsakey = SymCryptRsakeyAllocate( &rsaParams, 0 );
-    SYMCRYPT_FIPS_ASSERT( pkRsakey != NULL );
-
-    // SymCryptRsakeyGenerate will call the selftest
-    scError = SymCryptRsakeyGenerate( pkRsakey, NULL, 0, 0 );
-    SYMCRYPT_FIPS_ASSERT( scError == SYMCRYPT_NO_ERROR );
-
-    // Verify that the selftest flag was set
-    SYMCRYPT_FIPS_ASSERT( (g_SymCryptFipsSelftestsPerformed & SYMCRYPT_SELFTEST_RSA) != 0 );
-
-    SymCryptRsakeyFree( pkRsakey );
-}
-
 int
 main( int argc, _In_reads_( argc ) char * argv[] )
 {
@@ -118,7 +93,7 @@ main( int argc, _In_reads_( argc ) char * argv[] )
         SymCryptEcDhSecretAgreementSelftest();
         SymCryptModuleTestDsaPairwise();
         SymCryptModuleTestEcDsaPairwise();
-        SymCryptModuleTestRsaPairwise();
+        SymCryptRsaPairwiseSelftest();
     }
     
     printf( "Success!\n" );
