@@ -50,6 +50,7 @@ SymCryptModuleTestDsaPairwise()
     SymCryptDlgroupFree( pDlgroup );
 }
 
+/*
 VOID
 SymCryptModuleTestEcDsaPairwise()
 {
@@ -73,6 +74,7 @@ SymCryptModuleTestEcDsaPairwise()
     SymCryptEckeyFree( pkKey );
     SymCryptEcurveFree( pCurve );
 }
+*/
 
 int
 main( int argc, _In_reads_( argc ) char * argv[] )
@@ -92,7 +94,7 @@ main( int argc, _In_reads_( argc ) char * argv[] )
         SymCryptDhSecretAgreementSelftest();
         SymCryptEcDhSecretAgreementSelftest();
         SymCryptModuleTestDsaPairwise();
-        SymCryptModuleTestEcDsaPairwise();
+        SymCryptEcDsaPairwiseSelftest();
         SymCryptRsaPairwiseSelftest();
     }
     

@@ -327,10 +327,8 @@ SymCryptDhSecretAgreementSelftest()
     SYMCRYPT_ERROR scError = SYMCRYPT_NO_ERROR;
 
     PSYMCRYPT_DLGROUP pDlgroup = NULL;
-    PSYMCRYPT_DLKEY pkKey1Private = NULL;
-    PSYMCRYPT_DLKEY pkKey1Public = NULL;
-    PSYMCRYPT_DLKEY pkKey2Private = NULL;
-    PSYMCRYPT_DLKEY pkKey2Public = NULL;
+    PSYMCRYPT_DLKEY pkKey1 = NULL;
+    PSYMCRYPT_DLKEY pkKey2 = NULL;
 
     BYTE rgbSecret1[sizeof(rgbDh2048PublicKey1)];
     BYTE rgbSecret2[sizeof(rgbDh2048PublicKey1)];
@@ -354,8 +352,8 @@ SymCryptDhSecretAgreementSelftest()
         pDlgroup);
     SYMCRYPT_FIPS_ASSERT( scError == SYMCRYPT_NO_ERROR );
 
-    pkKey1Private = SymCryptDlkeyAllocate( pDlgroup );
-    SYMCRYPT_FIPS_ASSERT( pkKey1Private != NULL );
+    pkKey1 = SymCryptDlkeyAllocate( pDlgroup );
+    SYMCRYPT_FIPS_ASSERT( pkKey1 != NULL );
 
     scError = SymCryptDlkeySetValue(
         rgbDh2048PrivateKey1,
@@ -364,24 +362,11 @@ SymCryptDhSecretAgreementSelftest()
         sizeof(rgbDh2048PublicKey1),
         SYMCRYPT_NUMBER_FORMAT_MSB_FIRST,
         0,
-        pkKey1Private );
+        pkKey1 );
     SYMCRYPT_FIPS_ASSERT( scError == SYMCRYPT_NO_ERROR );
 
-    pkKey1Public = SymCryptDlkeyAllocate( pDlgroup );
-    SYMCRYPT_FIPS_ASSERT( pkKey1Public != NULL );
-
-    scError = SymCryptDlkeySetValue(
-        NULL, // pbPrivateKey
-        0, // cbPrivateKey
-        rgbDh2048PublicKey1,
-        sizeof(rgbDh2048PublicKey1),
-        SYMCRYPT_NUMBER_FORMAT_MSB_FIRST,
-        0,
-        pkKey1Public );
-    SYMCRYPT_FIPS_ASSERT( scError == SYMCRYPT_NO_ERROR );
-
-    pkKey2Private = SymCryptDlkeyAllocate( pDlgroup );
-    SYMCRYPT_FIPS_ASSERT( pkKey2Private != NULL );
+    pkKey2 = SymCryptDlkeyAllocate( pDlgroup );
+    SYMCRYPT_FIPS_ASSERT( pkKey2 != NULL );
 
     scError = SymCryptDlkeySetValue(
         rgbDh2048PrivateKey2,
@@ -390,28 +375,13 @@ SymCryptDhSecretAgreementSelftest()
         sizeof(rgbDh2048PublicKey2),
         SYMCRYPT_NUMBER_FORMAT_MSB_FIRST,
         0,
-        pkKey2Private );
-    SYMCRYPT_FIPS_ASSERT( scError == SYMCRYPT_NO_ERROR );
-
-    // Allocate a new Dlkey for the test public key so we can do secret agreement with
-    // (test public key, caller private key)
-    pkKey2Public = SymCryptDlkeyAllocate( pDlgroup );
-    SYMCRYPT_FIPS_ASSERT( pkKey2Public != NULL );
-
-    scError = SymCryptDlkeySetValue(
-        NULL, // pbPrivateKey
-        0, // cbPrivateKey
-        rgbDh2048PublicKey2,
-        sizeof(rgbDh2048PublicKey2),
-        SYMCRYPT_NUMBER_FORMAT_MSB_FIRST,
-        0,
-        pkKey2Public );
+        pkKey2 );
     SYMCRYPT_FIPS_ASSERT( scError == SYMCRYPT_NO_ERROR );
 
     // Calculate secret 1 using private key 1 and public key 2
     scError = SymCryptDhSecretAgreement(
-        pkKey1Private,
-        pkKey2Public,
+        pkKey1,
+        pkKey2,
         SYMCRYPT_NUMBER_FORMAT_MSB_FIRST,
         SYMCRYPT_FLAG_BYPASS_FIPS_SELFTEST,
         rgbSecret1,
@@ -420,8 +390,8 @@ SymCryptDhSecretAgreementSelftest()
 
     // Calculate secret 2 using private key 2 and public key 1
     scError = SymCryptDhSecretAgreement(
-        pkKey2Private,
-        pkKey1Public,
+        pkKey2,
+        pkKey1,
         SYMCRYPT_NUMBER_FORMAT_MSB_FIRST,
         SYMCRYPT_FLAG_BYPASS_FIPS_SELFTEST,
         rgbSecret2,
@@ -431,10 +401,8 @@ SymCryptDhSecretAgreementSelftest()
     // Verify that secret1 == secret2
     SYMCRYPT_FIPS_ASSERT( memcmp( rgbSecret1, rgbSecret2, sizeof(rgbSecret1) ) == 0 );
 
-    SymCryptDlkeyFree( pkKey2Public );
-    SymCryptDlkeyFree( pkKey2Private );
-    SymCryptDlkeyFree( pkKey1Public );
-    SymCryptCallbackFree( pkKey1Private );
+    SymCryptDlkeyFree( pkKey2 );
+    SymCryptDlkeyFree( pkKey1 );
     SymCryptDlgroupFree( pDlgroup );
 }
 
@@ -445,110 +413,69 @@ SymCryptEcDhSecretAgreementSelftest( )
     SYMCRYPT_ERROR scError = SYMCRYPT_NO_ERROR;
 
     PSYMCRYPT_ECURVE pCurve = NULL;
-    PSYMCRYPT_ECKEY pkKey1Private = NULL;
-    PSYMCRYPT_ECKEY pkKey1Public = NULL;
-    PSYMCRYPT_ECKEY pkKey2Private = NULL;
-    PSYMCRYPT_ECKEY pkKey2Public = NULL;
+    PSYMCRYPT_ECKEY pkKey1 = NULL;
+    PSYMCRYPT_ECKEY pkKey2 = NULL;
 
-    PBYTE pbSecret1 = NULL;
-    PBYTE pbSecret2 = NULL;
+    BYTE rgbSecret1[SymCryptEcurveParamsNistP256->cbFieldLength];
+    BYTE rgbSecret2[SymCryptEcurveParamsNistP256->cbFieldLength];
     UINT32 cbSecret = 0;
 
     pCurve = SymCryptEcurveAllocate( SymCryptEcurveParamsNistP256, 0 );
     SYMCRYPT_FIPS_ASSERT( pCurve != NULL );
 
-    pkKey1Private = SymCryptEckeyAllocate( pCurve );
-    SYMCRYPT_FIPS_ASSERT( pkKey1Private != NULL );
+    pkKey1 = SymCryptEckeyAllocate( pCurve );
+    SYMCRYPT_FIPS_ASSERT( pkKey1 != NULL );
 
     scError = SymCryptEckeySetValue(
         eckey1.d,
         sizeof(eckey1.d),
-        NULL,
-        0,
-        SYMCRYPT_NUMBER_FORMAT_MSB_FIRST,
-        SYMCRYPT_ECPOINT_FORMAT_XY,
-        0, // flags
-        pkKey1Private);
-    SYMCRYPT_FIPS_ASSERT( scError == SYMCRYPT_NO_ERROR );
-
-    pkKey1Public = SymCryptEckeyAllocate( pCurve );
-    SYMCRYPT_FIPS_ASSERT( pkKey1Public != NULL );
-
-    scError = SymCryptEckeySetValue(
-        NULL,
-        0,
         eckey1.Qx,
         sizeof(eckey1.Qx) + sizeof(eckey1.Qy),
         SYMCRYPT_NUMBER_FORMAT_MSB_FIRST,
         SYMCRYPT_ECPOINT_FORMAT_XY,
         0, // flags
-        pkKey1Public );
+        pkKey1);
     SYMCRYPT_FIPS_ASSERT( scError == SYMCRYPT_NO_ERROR );
 
-    pkKey2Private = SymCryptEckeyAllocate( pCurve );
-    SYMCRYPT_FIPS_ASSERT( pkKey2Private != NULL );
+    pkKey2 = SymCryptEckeyAllocate( pCurve );
+    SYMCRYPT_FIPS_ASSERT( pkKey2 != NULL );
 
     scError = SymCryptEckeySetValue(
         eckey2.d,
         sizeof(eckey2.d),
-        NULL,
-        0,
-        SYMCRYPT_NUMBER_FORMAT_MSB_FIRST,
-        SYMCRYPT_ECPOINT_FORMAT_XY,
-        0, // flags
-        pkKey2Private);
-    SYMCRYPT_FIPS_ASSERT( scError == SYMCRYPT_NO_ERROR );
-
-    pkKey2Public = SymCryptEckeyAllocate( pCurve );
-    SYMCRYPT_FIPS_ASSERT( pkKey2Public != NULL );
-
-    scError = SymCryptEckeySetValue(
-        NULL,
-        0,
         eckey2.Qx,
         sizeof(eckey2.Qx) + sizeof(eckey2.Qy),
         SYMCRYPT_NUMBER_FORMAT_MSB_FIRST,
         SYMCRYPT_ECPOINT_FORMAT_XY,
-        0,
-        pkKey2Public );
+        0, // flags
+        pkKey2);
     SYMCRYPT_FIPS_ASSERT( scError == SYMCRYPT_NO_ERROR );
-
-    cbSecret = SymCryptEcurveSizeofFieldElement( pCurve );
-    pbSecret1 = SymCryptCallbackAlloc( cbSecret );
-    SYMCRYPT_FIPS_ASSERT( pbSecret1 != NULL );
-
-    pbSecret2 = SymCryptCallbackAlloc( cbSecret );
-    SYMCRYPT_FIPS_ASSERT( pbSecret2 != NULL );
 
     // Calculate secret 1 using private key 1 and public key 2
     scError = SymCryptEcDhSecretAgreement(
-        pkKey1Private,
-        pkKey2Public,
+        pkKey1,
+        pkKey2,
         SYMCRYPT_NUMBER_FORMAT_MSB_FIRST,
         SYMCRYPT_FLAG_BYPASS_FIPS_SELFTEST,
-        pbSecret1,
-        cbSecret);
+        rgbSecret1,
+        sizeof(rgbSecret1));
     SYMCRYPT_FIPS_ASSERT( scError == SYMCRYPT_NO_ERROR );
 
     // Calculate secret 2 using private key 2 and public key 1
     scError = SymCryptEcDhSecretAgreement(
-        pkKey2Private,
-        pkKey1Public,
+        pkKey2,
+        pkKey1,
         SYMCRYPT_NUMBER_FORMAT_MSB_FIRST,
         SYMCRYPT_FLAG_BYPASS_FIPS_SELFTEST,
-        pbSecret2,
-        cbSecret);
+        rgbSecret2,
+        sizeof(rgbSecret2));
     SYMCRYPT_FIPS_ASSERT( scError == SYMCRYPT_NO_ERROR );
 
     // Verify secret 1 == secret 2
-    SYMCRYPT_FIPS_ASSERT( memcmp(pbSecret1, pbSecret2, cbSecret) == 0 );
+    SYMCRYPT_FIPS_ASSERT( memcmp(rgbSecret1, rgbSecret2, sizeof(rgbSecret1)) == 0 );
 
-    SymCryptCallbackFree( pbSecret2 );
-    SymCryptCallbackFree( pbSecret1 );
-    SymCryptEckeyFree( pkKey2Public );
-    SymCryptEckeyFree( pkKey2Private );
-    SymCryptEckeyFree( pkKey1Public );
-    SymCryptEckeyFree( pkKey1Private );
+    SymCryptEckeyFree( pkKey2 );
+    SymCryptEckeyFree( pkKey1 );
     SymCryptEcurveFree( pCurve );
 }
 
@@ -597,45 +524,58 @@ SymCryptDsaPairwiseSelftest(
 
 VOID
 SYMCRYPT_CALL
-SymCryptEcDsaPairwiseSelftest(
-    _In_ PCSYMCRYPT_ECKEY pkCallerKey )
+SymCryptEcDsaPairwiseSelftest( )
 {
     SYMCRYPT_ERROR scError = SYMCRYPT_NO_ERROR;
 
-    BYTE rbHashValue[SYMCRYPT_SHA256_RESULT_SIZE];
-    SIZE_T cbHashValue = sizeof(rbHashValue);
+    PSYMCRYPT_ECURVE pCurve = NULL;
+    PSYMCRYPT_ECKEY pkEckey = NULL;
 
-    PBYTE pbSignature = NULL;
-    SIZE_T cbSignature = 0;
+    BYTE rgbHashValue[SYMCRYPT_SHA256_RESULT_SIZE];
+    BYTE rgbSignature[2 * SymCryptEcurveParamsNistP256->cbFieldLength];
 
-    scError = SymCryptCallbackRandom( rbHashValue, cbHashValue );
+    pCurve = SymCryptEcurveAllocate( SymCryptEcurveParamsNistP256, 0 );
+    SYMCRYPT_FIPS_ASSERT( pCurve != NULL );
+
+    pkEckey = SymCryptEckeyAllocate( pCurve );
+    SYMCRYPT_FIPS_ASSERT( pkEckey != NULL );
+
+    scError = SymCryptEckeySetValue(
+        eckey1.d,
+        sizeof(eckey1.d),
+        eckey1.Qx,
+        sizeof(eckey1.Qx) + sizeof(eckey1.Qy),
+        SYMCRYPT_NUMBER_FORMAT_MSB_FIRST,
+        SYMCRYPT_ECPOINT_FORMAT_XY,
+        0, // flags
+        pkEckey);
     SYMCRYPT_FIPS_ASSERT( scError == SYMCRYPT_NO_ERROR );
 
-    cbSignature = 2 * SymCryptEcurveSizeofFieldElement( pkCallerKey->pCurve );
-    pbSignature = SymCryptCallbackAlloc( cbSignature );
-    SYMCRYPT_FIPS_ASSERT( pbSignature != NULL );
+    scError = SymCryptCallbackRandom( rgbHashValue, sizeof(rgbHashValue) );
+    SYMCRYPT_FIPS_ASSERT( scError == SYMCRYPT_NO_ERROR );
 
     scError = SymCryptEcDsaSign(
-        pkCallerKey,
-        rbHashValue,
-        cbHashValue,
+        pkEckey,
+        rgbHashValue,
+        sizeof(rgbHashValue),
         SYMCRYPT_NUMBER_FORMAT_MSB_FIRST,
         0,
-        pbSignature,
-        cbSignature );
+        rgbSignature,
+        sizeof(rgbSignature) );
     SYMCRYPT_FIPS_ASSERT( scError == SYMCRYPT_NO_ERROR );
 
     scError = SymCryptEcDsaVerify(
-        pkCallerKey,
-        rbHashValue,
-        cbHashValue,
-        pbSignature,
-        cbSignature,
+        pkEckey,
+        rgbHashValue,
+        sizeof(rgbHashValue),
+        rgbSignature,
+        sizeof(rgbSignature),
         SYMCRYPT_NUMBER_FORMAT_MSB_FIRST,
         0 );
     SYMCRYPT_FIPS_ASSERT( scError == SYMCRYPT_NO_ERROR )
 
-    SymCryptCallbackFree( pbSignature );
+    SymCryptEckeyFree( pkEckey );
+    SymCryptEcurveFree( pCurve );
 }
 
 VOID
@@ -644,8 +584,7 @@ SymCryptRsaPairwiseSelftest( )
 {
     SYMCRYPT_ERROR scError = SYMCRYPT_NO_ERROR;
 
-    PSYMCRYPT_RSAKEY pkRsakeyPrivate = NULL;
-    PSYMCRYPT_RSAKEY pkRsakeyPublic = NULL;
+    PSYMCRYPT_RSAKEY pkRsakey = NULL;
     SYMCRYPT_RSA_PARAMS rsaParams = { 0 };
 
     rsaParams.version = 1;
@@ -659,8 +598,8 @@ SymCryptRsaPairwiseSelftest( )
     PCBYTE pbPrimes[] = { rsakey.prime1, rsakey.prime2 };
     SIZE_T cbPrimes[] = { sizeof(rsakey.prime1), sizeof(rsakey.prime2) };
 
-    pkRsakeyPrivate = SymCryptRsakeyAllocate( &rsaParams, 0 );
-    SYMCRYPT_FIPS_ASSERT( pkRsakeyPrivate != NULL );
+    pkRsakey = SymCryptRsakeyAllocate( &rsaParams, 0 );
+    SYMCRYPT_FIPS_ASSERT( pkRsakey != NULL );
 
     scError = SymCryptRsakeySetValue(
         rsakey.modulus,
@@ -672,11 +611,11 @@ SymCryptRsaPairwiseSelftest( )
         sizeof(cbPrimes) / sizeof(cbPrimes[0]),
         SYMCRYPT_NUMBER_FORMAT_MSB_FIRST,
         0,
-        pkRsakeyPrivate );
+        pkRsakey );
     SYMCRYPT_FIPS_ASSERT( scError == SYMCRYPT_NO_ERROR );
 
     scError = SymCryptRsaPkcs1Sign(
-        pkRsakeyPrivate,
+        pkRsakey,
         rgbRsaSignVerifyHash,
         sizeof(rgbRsaSignVerifyHash),
         SymCryptSha256OidList,
@@ -691,24 +630,8 @@ SymCryptRsaPairwiseSelftest( )
     SYMCRYPT_FIPS_ASSERT( cbSignature == sizeof(rgbKnownSignature) );
     SYMCRYPT_FIPS_ASSERT( memcmp(rgbSignature, rgbKnownSignature, cbSignature ) == 0);
 
-    pkRsakeyPublic = SymCryptRsakeyAllocate( &rsaParams, 0 );
-    SYMCRYPT_FIPS_ASSERT( pkRsakeyPublic != NULL );
-
-    scError = SymCryptRsakeySetValue(
-        rsakey.modulus,
-        sizeof(rsakey.modulus),
-        &rsakey.publicExp,
-        1,
-        NULL,
-        0,
-        0,
-        SYMCRYPT_NUMBER_FORMAT_MSB_FIRST,
-        0,
-        pkRsakeyPublic );
-    SYMCRYPT_FIPS_ASSERT( scError == SYMCRYPT_NO_ERROR );
-
     scError = SymCryptRsaPkcs1Verify(
-        pkRsakeyPublic,
+        pkRsakey,
         rgbRsaSignVerifyHash,
         sizeof(rgbRsaSignVerifyHash),
         rgbSignature,
@@ -719,6 +642,5 @@ SymCryptRsaPairwiseSelftest( )
         0 );
     SYMCRYPT_FIPS_ASSERT( scError == SYMCRYPT_NO_ERROR );
 
-    SymCryptRsakeyFree( pkRsakeyPublic );
-    SymCryptRsakeyFree( pkRsakeyPrivate );
+    SymCryptRsakeyFree( pkRsakey );
 }

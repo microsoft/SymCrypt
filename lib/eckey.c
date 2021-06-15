@@ -694,6 +694,14 @@ SymCryptEckeySetRandom(
 
     UINT32 highBitRestrictionPosition = pCurve->HighBitRestrictionPosition;
 
+    if( SYMCRYPT_DO_FIPS_SELFTESTS &&
+        ((g_SymCryptFipsSelftestsPerformed & SYMCRYPT_SELFTEST_ECDSA) == 0) )
+    {
+        SymCryptEcDsaPairwiseSelftest( );
+
+        ATOMIC_OR32( &g_SymCryptFipsSelftestsPerformed, SYMCRYPT_SELFTEST_ECDSA );
+    }
+
     // Ensure only the correct flags are specified
     // Check if a flag with bits outside of the expected flags is specified
     // Check if a flag is specified using bits expected, but not one of the expected flags
@@ -847,14 +855,6 @@ SymCryptEckeySetRandom(
     }
 
     pEckey->hasPrivateKey = TRUE;
-
-    if( SYMCRYPT_DO_FIPS_SELFTESTS &&
-        ((g_SymCryptFipsSelftestsPerformed & SYMCRYPT_SELFTEST_ECDSA) == 0) )
-    {
-        SymCryptEcDsaPairwiseSelftest( pEckey );
-
-        ATOMIC_OR32( &g_SymCryptFipsSelftestsPerformed, SYMCRYPT_SELFTEST_ECDSA );
-    }
 
 cleanup:
 

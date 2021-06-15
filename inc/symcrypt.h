@@ -6207,9 +6207,7 @@ SymCryptEcDsaVerify(
 
 VOID
 SYMCRYPT_CALL
-SymCryptEcDsaPairwiseSelftest(
-    _In_ PCSYMCRYPT_ECKEY pkCallerKey
-);
+SymCryptEcDsaPairwiseSelftest( );
 //
 // FIPS self-test for ECDSA sign/verify. If the self-test fails, SymCryptFatal will be called to
 // fastfail.
