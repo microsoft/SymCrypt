@@ -97,7 +97,7 @@ steps:
     condition: failed()
   - publish: /var/crash
     artifact: 'crash-${{parameters.env}}-${{parameters.arch}}-${{parameters.cc}}-${{parameters.buildType}}'
-    condition: and(failed(), eq(Agent.OS, 'Linux'))
+    condition: and(failed(), eq(variables['Agent.OS'], 'Linux'))
   - publish: $(Agent.TempDirectory)
     artifact: 'temp-${{parameters.env}}-${{parameters.arch}}-${{parameters.cc}}-${{parameters.buildType}}'
     condition: failed()
