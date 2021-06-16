@@ -90,5 +90,5 @@ steps:
       name: '${{parameters.env}}UnitTest_${{parameters.buildType}}'
   # Publish staged artifacts so they're available in the pipeline results
   - publish: $(System.DefaultWorkingDirectory)/bin
-    artifact: 'drop-${{parameters.env}}-${{parameters.arch}}-${{parameters.buildType}}-${{Agent.JobStatus}}'
+    artifact: 'drop-${{parameters.env}}-${{parameters.arch}}-${{parameters.buildType}}'
     condition: succeededOrFailed()
