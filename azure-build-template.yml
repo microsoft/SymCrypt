@@ -88,15 +88,7 @@ steps:
         ./symcryptunittest
       displayName: 'Execute unit tests'
       name: '${{parameters.env}}UnitTest_${{parameters.buildType}}'
-  # Copy build output files to artifact staging directory
-  - task: CopyFiles@2
-    inputs:
-      SourceFolder: 'bin'
-      Contents: '**'
-      TargetFolder: '$(build.artifactstagingdirectory)'
   # Publish staged artifacts so they're available in the pipeline results
-  - task: PublishBuildArtifacts@1
-    inputs:
-      PathtoPublish: '$(Build.ArtifactStagingDirectory)'
-      ArtifactName: 'drop-${{parameters.env}}-${{parameters.arch}}-${{parameters.buildType}}'
-      publishLocation: 'Container'
+  - publish: $(System.DefaultWorkingDirectory)/bin
+    artifact: 'drop-${{parameters.env}}-${{parameters.arch}}-${{parameters.buildType}}-${{Agent.JobStatus}}'
+    condition: succeededOrFailed()
