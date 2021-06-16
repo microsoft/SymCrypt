@@ -6,11 +6,7 @@
 
 #include "precomp.h"
 
-#if SYMCRYPT_DO_FIPS_SELFTESTS
-
 SYMCRYPT_FIPS_SELFTEST g_SymCryptFipsSelftestsPerformed = SYMCRYPT_SELFTEST_NONE;
-
-#endif // SYMCRYPT_DO_FIPS_SELFTESTS
 
 //
 // Convenience structs for selftest data
