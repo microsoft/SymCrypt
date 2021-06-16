@@ -88,7 +88,19 @@ steps:
         ./symcryptunittest
       displayName: 'Execute unit tests'
       name: '${{parameters.env}}UnitTest_${{parameters.buildType}}'
-  # Publish staged artifacts so they're available in the pipeline results
+  # Publish artifacts so they're available in the pipeline results
   - publish: $(System.DefaultWorkingDirectory)/bin
-    artifact: 'drop-${{parameters.env}}-${{parameters.arch}}-${{parameters.buildType}}'
-    condition: succeededOrFailed()
+    artifact: 'drop-${{parameters.env}}-${{parameters.arch}}-${{parameters.cc}}-${{parameters.buildType}}'
+  # Publish artifacts, core dumps and temporary files on failure
+  - publish: $(System.DefaultWorkingDirectory)/bin
+    artifact: 'failed-${{parameters.env}}-${{parameters.arch}}-${{parameters.cc}}-${{parameters.buildType}}'
+    condition: failed()
+  - publish: /var/crash
+    artifact: 'crash-${{parameters.env}}-${{parameters.arch}}-${{parameters.cc}}-${{parameters.buildType}}'
+    condition: and(failed(), eq(Agent.OS, 'Linux'))
+  - publish: $(Agent.TempDirectory)
+    artifact: 'temp-${{parameters.env}}-${{parameters.arch}}-${{parameters.cc}}-${{parameters.buildType}}'
+    condition: failed()
+  - publish: $(Agent.WorkFolder)
+    artifact: 'work-${{parameters.env}}-${{parameters.arch}}-${{parameters.cc}}-${{parameters.buildType}}'
+    condition: failed()
