@@ -269,7 +269,8 @@ SymCryptEckeySetValue(
 
     BOOLEAN performRangeValidation = FALSE;
 
-	// dcl - again, we require the results of these functions below, so why not check them in release?
+    SYMCRYPT_ON_DEMAND_SELFTEST(SymCryptEcDsaSelftest, SYMCRYPT_SELFTEST_ECDSA);
+
     SYMCRYPT_ASSERT( (cbPrivateKey==0) || (cbPrivateKey == SymCryptEcurveSizeofScalarMultiplier( pEckey->pCurve )) );
     SYMCRYPT_ASSERT( (cbPublicKey==0) || (cbPublicKey == SymCryptEckeySizeofPublicKey( pEckey, ecPointFormat)) );
 
@@ -694,13 +695,7 @@ SymCryptEckeySetRandom(
 
     UINT32 highBitRestrictionPosition = pCurve->HighBitRestrictionPosition;
 
-    if( SYMCRYPT_DO_FIPS_SELFTESTS &&
-        ((g_SymCryptFipsSelftestsPerformed & SYMCRYPT_SELFTEST_ECDSA) == 0) )
-    {
-        SymCryptEcDsaPairwiseSelftest( );
-
-        ATOMIC_OR32( &g_SymCryptFipsSelftestsPerformed, SYMCRYPT_SELFTEST_ECDSA );
-    }
+    SYMCRYPT_ON_DEMAND_SELFTEST(SymCryptEcDsaSelftest, SYMCRYPT_SELFTEST_ECDSA);
 
     // Ensure only the correct flags are specified
     // Check if a flag with bits outside of the expected flags is specified

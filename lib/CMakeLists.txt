@@ -120,7 +120,7 @@ function(process_cppasm filepath outformat archdefine)
         set(output_asm ${rootpath}/${filestem}.asm)
     endif()
 
-    set(dbg_definition "-DDBG=0")
+    set(dbg_definition "")
     if(CMAKE_BUILD_TYPE MATCHES (Debug|Sanitize))
         set(dbg_definition "-DDBG=1")
     endif()

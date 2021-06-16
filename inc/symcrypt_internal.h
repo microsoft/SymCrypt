@@ -20,6 +20,11 @@
 #pragma warning(disable:4068)
 #endif
 
+#if defined(DBG)
+#define SYMCRYPT_DEBUG 1
+#else
+#define SYMCRYPT_DEBUG 0
+#endif
 
 //==============================================================================================
 //  COMPILER DETECTION
@@ -33,12 +38,6 @@
 
 #undef  SYMCRYPT_MS_VC
 #define SYMCRYPT_MS_VC  1
-
-#if defined(DBG) && DBG
-#define SYMCRYPT_DEBUG 1
-#else
-#define SYMCRYPT_DEBUG 0
-#endif
 
 // This should go somewhere else. Same in the other #if branches.
 #define SYMCRYPT_ANYSIZE_ARRAY               1
@@ -73,12 +72,6 @@
 #define SYMCRYPT_GNUC 1
 // Suppress the SAL annotations
 #include "symcrypt_no_sal.h"
-
-#if defined(DBG) && DBG
-#define SYMCRYPT_DEBUG 1
-#else
-#define SYMCRYPT_DEBUG 0
-#endif
 
 // Ignore the multi-character character constant warnings
 #pragma GCC diagnostic ignored "-Wmultichar"

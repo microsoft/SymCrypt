@@ -6034,7 +6034,7 @@ SymCryptRsaPssVerify(
 
 VOID
 SYMCRYPT_CALL
-SymCryptRsaPairwiseSelftest( );
+SymCryptRsaSelftest( );
 //
 // FIPS self-test for RSA sign/verify. If the self-test fails, SymCryptFatal will be called to
 // fastfail.
@@ -6089,8 +6089,7 @@ SymCryptDsaVerify(
 
 VOID
 SYMCRYPT_CALL
-SymCryptDsaPairwiseSelftest(
-    _In_ PCSYMCRYPT_DLKEY pkCallerKey );
+SymCryptDsaSelftest( );
 //
 // FIPS self-test for DSA sign/verify. If the self-test fails, SymCryptFatal will be called to
 // fastfail.
@@ -6207,7 +6206,7 @@ SymCryptEcDsaVerify(
 
 VOID
 SYMCRYPT_CALL
-SymCryptEcDsaPairwiseSelftest( );
+SymCryptEcDsaSelftest( );
 //
 // FIPS self-test for ECDSA sign/verify. If the self-test fails, SymCryptFatal will be called to
 // fastfail.

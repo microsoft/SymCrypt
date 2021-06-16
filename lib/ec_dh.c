@@ -32,20 +32,10 @@ SymCryptEcDhSecretAgreement(
     UINT32              cbQ = 0;
     UINT32              cbX = 0;
 
-    if( SYMCRYPT_DO_FIPS_SELFTESTS &&
-        ((flags & SYMCRYPT_FLAG_BYPASS_FIPS_SELFTEST) == 0) &&
-        ((g_SymCryptFipsSelftestsPerformed & SYMCRYPT_SELFTEST_ECDH_SECRET_AGREEMENT) == 0) )
-    {
-        SymCryptEcDhSecretAgreementSelftest( );
-
-        ATOMIC_OR32( &g_SymCryptFipsSelftestsPerformed, SYMCRYPT_SELFTEST_ECDH_SECRET_AGREEMENT );
-    }
-
-    // Reset SYMCRYPT_FLAG_BYPASS_FIPS_SELFTEST, if it was set, so the below check succeeds
-    flags &= ~SYMCRYPT_FLAG_BYPASS_FIPS_SELFTEST;
+    SYMCRYPT_ON_DEMAND_SELFTEST(SymCryptEcDhSecretAgreementSelftest, SYMCRYPT_SELFTEST_ECDH_SECRET_AGREEMENT);
 
     // Make sure we only specify the correct flags
-    if ( (flags & ~SYMCRYPT_FLAG_KEY_MINIMAL_VALIDATION) != 0 )
+    if (flags != 0)
     {
         scError = SYMCRYPT_INVALID_ARGUMENT;
         goto cleanup;

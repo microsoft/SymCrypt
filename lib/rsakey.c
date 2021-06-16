@@ -516,13 +516,7 @@ SymCryptRsakeyGenerate(
 
     UNREFERENCED_PARAMETER( flags );
 
-     if( SYMCRYPT_DO_FIPS_SELFTESTS &&
-        ((g_SymCryptFipsSelftestsPerformed & SYMCRYPT_SELFTEST_RSA) == 0) )
-    {
-        SymCryptRsaPairwiseSelftest( );
-
-        ATOMIC_OR32( &g_SymCryptFipsSelftestsPerformed, SYMCRYPT_SELFTEST_RSA );
-    }
+    SYMCRYPT_ON_DEMAND_SELFTEST(SymCryptRsaSelftest, SYMCRYPT_SELFTEST_RSA);
 
     // Handle the default exponent case
     if( pu64PubExp == NULL && nPubExp == 0 )
@@ -751,6 +745,8 @@ SymCryptRsakeySetValue(
     UINT32          cbFnScratch = 0;
 
     UNREFERENCED_PARAMETER( flags );
+
+    SYMCRYPT_ON_DEMAND_SELFTEST(SymCryptRsaSelftest, SYMCRYPT_SELFTEST_RSA);
 
     // Check if the arguments are correct
     if ( (pbModulus==NULL) || (cbModulus==0) ||         // Modulus is needed

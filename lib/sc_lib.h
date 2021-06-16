@@ -3010,6 +3010,18 @@ SymCryptFdefMontgomeryReduceMulx1024(
 // SymCryptDhSecretAgreementSelftest which calls SymCryptDhSecretAgreement.)
 #define SYMCRYPT_FLAG_BYPASS_FIPS_SELFTEST (1 << 31)
 
+// Macro for executing a selftest and setting the corresponding flag
+#define SYMCRYPT_ON_DEMAND_SELFTEST(SelftestFunction, SelftestFlag) \
+if( SYMCRYPT_DO_FIPS_SELFTESTS && \
+    ((flags & SYMCRYPT_FLAG_BYPASS_FIPS_SELFTEST) == 0) && \
+    ((g_SymCryptFipsSelftestsPerformed & SelftestFlag) == 0) ) \
+{ \
+    SelftestFunction( ); \
+\
+    ATOMIC_OR32( &g_SymCryptFipsSelftestsPerformed, SYMCRYPT_SELFTEST_DH_SECRET_AGREEMENT );\
+}\
+flags &= ~SYMCRYPT_FLAG_BYPASS_FIPS_SELFTEST;
+
 typedef struct _SYMCRYPT_DLGROUP_DH_SAFEPRIME_PARAMS {
     SYMCRYPT_DLGROUP_DH_SAFEPRIMETYPE eDhSafePrimeType;
 

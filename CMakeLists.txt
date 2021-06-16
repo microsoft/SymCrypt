@@ -119,7 +119,6 @@ endif()
 
 if(CMAKE_BUILD_TYPE MATCHES Release)
     message("Release mode")
-    add_compile_options(-DDBG=0)
 else()
     message("Debug mode")
     add_compile_options(-DDBG=1)
