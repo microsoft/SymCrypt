@@ -6,7 +6,11 @@
 
 #include "precomp.h"
 
+#if SYMCRYPT_DO_FIPS_SELFTESTS
+
 SYMCRYPT_FIPS_SELFTEST g_SymCryptFipsSelftestsPerformed = SYMCRYPT_SELFTEST_NONE;
+
+#endif // SYMCRYPT_DO_FIPS_SELFTESTS
 
 //
 // Convenience structs for selftest data
@@ -571,8 +575,7 @@ SymCryptEcDhSecretAgreementSelftest( )
     PSYMCRYPT_ECKEY pkKey1 = NULL;
     PSYMCRYPT_ECKEY pkKey2 = NULL;
 
-    BYTE rgbSecret1[SymCryptEcurveParamsNistP256->cbFieldLength];
-    BYTE rgbSecret2[SymCryptEcurveParamsNistP256->cbFieldLength];
+    BYTE rgbSecret[ sizeof(rgbEcdhKnownSecret) ];
     UINT32 cbSecret = 0;
 
     pCurve = SymCryptEcurveAllocate( SymCryptEcurveParamsNistP256, 0 );
@@ -610,29 +613,17 @@ SymCryptEcDhSecretAgreementSelftest( )
         pkKey2);
     SYMCRYPT_FIPS_ASSERT( scError == SYMCRYPT_NO_ERROR );
 
-    // Calculate secret 1 using private key 1 and public key 2
+    // Calculate secret using private key 1 and public key 2
     scError = SymCryptEcDhSecretAgreement(
         pkKey1,
         pkKey2,
         SYMCRYPT_NUMBER_FORMAT_MSB_FIRST,
         SYMCRYPT_FLAG_BYPASS_FIPS_SELFTEST,
-        rgbSecret1,
-        sizeof(rgbSecret1));
+        rgbSecret,
+        sizeof(rgbSecret));
     SYMCRYPT_FIPS_ASSERT( scError == SYMCRYPT_NO_ERROR );
 
-    // Calculate secret 2 using private key 2 and public key 1
-    scError = SymCryptEcDhSecretAgreement(
-        pkKey2,
-        pkKey1,
-        SYMCRYPT_NUMBER_FORMAT_MSB_FIRST,
-        SYMCRYPT_FLAG_BYPASS_FIPS_SELFTEST,
-        rgbSecret2,
-        sizeof(rgbSecret2));
-    SYMCRYPT_FIPS_ASSERT( scError == SYMCRYPT_NO_ERROR );
-
-    // Verify secret 1 == secret 2
-    SYMCRYPT_FIPS_ASSERT( memcmp(rgbSecret1, rgbEcdhKnownSecret, sizeof(rgbSecret1)) == 0);
-    SYMCRYPT_FIPS_ASSERT( memcmp(rgbSecret1, rgbSecret2, sizeof(rgbSecret1)) == 0 );
+    SYMCRYPT_FIPS_ASSERT( memcmp(rgbSecret, rgbEcdhKnownSecret, sizeof(rgbSecret)) == 0);
 
     SymCryptEckeyFree( pkKey2 );
     SymCryptEckeyFree( pkKey1 );
@@ -687,23 +678,23 @@ SymCryptDsaSelftest( )
     SYMCRYPT_FIPS_ASSERT( scError == SYMCRYPT_NO_ERROR );
 
     scError = SymCryptDsaSign(
-                pkDlkey,
-                rgbSha256Hash,
-                sizeof(rgbSha256Hash),
-                SYMCRYPT_NUMBER_FORMAT_MSB_FIRST,
-                0,
-                rgbSignature,
-                sizeof(rgbSignature) );
+        pkDlkey,
+        rgbSha256Hash,
+        sizeof(rgbSha256Hash),
+        SYMCRYPT_NUMBER_FORMAT_MSB_FIRST,
+        0,
+        rgbSignature,
+        sizeof(rgbSignature) );
     SYMCRYPT_FIPS_ASSERT( scError == SYMCRYPT_NO_ERROR );
 
     scError = SymCryptDsaVerify(
-                pkDlkey,
-                rgbSha256Hash,
-                sizeof(rgbSha256Hash),
-                rgbSignature,
-                sizeof(rgbSignature),
-                SYMCRYPT_NUMBER_FORMAT_MSB_FIRST,
-                0 );
+        pkDlkey,
+        rgbSha256Hash,
+        sizeof(rgbSha256Hash),
+        rgbSignature,
+        sizeof(rgbSignature),
+        SYMCRYPT_NUMBER_FORMAT_MSB_FIRST,
+        0 );
     SYMCRYPT_FIPS_ASSERT( scError == SYMCRYPT_NO_ERROR );
 
     SymCryptDlkeyFree( pkDlkey );
@@ -719,7 +710,7 @@ SymCryptEcDsaSelftest( )
     PSYMCRYPT_ECURVE pCurve = NULL;
     PSYMCRYPT_ECKEY pkEckey = NULL;
 
-    BYTE rgbSignature[2 * SymCryptEcurveParamsNistP256->cbFieldLength];
+    BYTE rgbSignature[2 * sizeof(eckey1.d)];
 
     pCurve = SymCryptEcurveAllocate( SymCryptEcurveParamsNistP256, 0 );
     SYMCRYPT_FIPS_ASSERT( pCurve != NULL );

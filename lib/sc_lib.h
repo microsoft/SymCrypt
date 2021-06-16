@@ -3008,7 +3008,7 @@ SymCryptFdefMontgomeryReduceMulx1024(
 // Flag for bypassing FIPS selftests. Only intended to be used internally for selftests which have
 // to call themselves, to prevent infinite recursion. (e.g. SymCryptDhSecretAgreement calls
 // SymCryptDhSecretAgreementSelftest which calls SymCryptDhSecretAgreement.)
-#define SYMCRYPT_FLAG_BYPASS_FIPS_SELFTEST (1 << 31)
+#define SYMCRYPT_FLAG_BYPASS_FIPS_SELFTEST 0x80000000
 
 // Macro for executing a selftest and setting the corresponding flag
 #define SYMCRYPT_ON_DEMAND_SELFTEST(SelftestFunction, SelftestFlag) \
