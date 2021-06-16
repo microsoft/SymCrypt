@@ -147,8 +147,6 @@ testEccArithmetic( _In_ PCSYMCRYPT_ECURVE pCurve )
 
     PBYTE   pCurr;
 
-    INT64   nAllocs = 0;
-
     UINT32  msbCounter = NUM_OF_HIGH_BIT_RESTRICTION_ITERATIONS;
     UINT32  msbNumOfBits = 0;
     UINT32  msbValue = 0;
@@ -181,7 +179,6 @@ testEccArithmetic( _In_ PCSYMCRYPT_ECURVE pCurve )
     // =================================
     // Object creation
 
-    nAllocs = g_nAllocs;
     pCurr = pbWorkSpace;
 
     poP1 = SymCryptEcpointCreate( pCurr, cbEcpointSize, pCurve );
@@ -467,13 +464,6 @@ testEccArithmetic( _In_ PCSYMCRYPT_ECURVE pCurve )
     vprint( g_verbose, "Success\n");
 
     // =================================
-    // =================================
-    // Check that no extra allocations happened until here
-    CHECK( g_nAllocs == nAllocs, "Undesired allocation" );
-    // =================================
-    // =================================
-
-    // =================================
     vprint( g_verbose, "    %-41s", "Set K1 to a uniformly random eckey" );
     vprint( g_verbose, " %-40s", "SymCryptEckeySetRandom");
 
@@ -615,15 +605,6 @@ testEccArithmetic( _In_ PCSYMCRYPT_ECURVE pCurve )
 
     CHECK( scError != SYMCRYPT_NO_ERROR, "SymCryptEcDsaVerify should have failed but succeeded" );
     vprint( g_verbose, "Success\n");
-
-    // =================================
-    // =================================
-    // Check that only the necessary extra allocations happened:
-    // NUM_OF_HIGH_BIT_RESTRICTION_ITERATIONS* (SymCryptEckeySetRandom, SymCryptEckeyGetValue) if msbNumOfBits is non zero
-    // SymCryptEcDsaSign x2, SymCryptEcDsaVerify x3, SymCryptEcDhSecretAgreement
-    CHECK( g_nAllocs == nAllocs + 6 + 2*(msbNumOfBits?NUM_OF_HIGH_BIT_RESTRICTION_ITERATIONS:1), "Undesired allocation" );
-    // =================================
-    // =================================
 
     // =================================
     vprint( g_verbose, "    %-41s", "Wiping and freeing stuff ");

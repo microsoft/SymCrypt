@@ -3018,7 +3018,7 @@ if( SYMCRYPT_DO_FIPS_SELFTESTS && \
 { \
     SelftestFunction( ); \
 \
-    ATOMIC_OR32( &g_SymCryptFipsSelftestsPerformed, SYMCRYPT_SELFTEST_DH_SECRET_AGREEMENT );\
+    ATOMIC_OR32( &g_SymCryptFipsSelftestsPerformed, SelftestFlag );\
 }\
 flags &= ~SYMCRYPT_FLAG_BYPASS_FIPS_SELFTEST;
 
