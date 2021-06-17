@@ -120,7 +120,7 @@ function(process_cppasm filepath outformat archdefine)
         set(output_asm ${rootpath}/${filestem}.asm)
     endif()
 
-    set(dbg_definition "-DDBG=0")
+    set(dbg_definition "")
     if(CMAKE_BUILD_TYPE MATCHES (Debug|Sanitize))
         set(dbg_definition "-DDBG=1")
     endif()
@@ -205,14 +205,15 @@ if(WIN32 AND NOT(SYMCRYPT_TARGET_ENV MATCHES "Generic"))
             PROPERTY LANGUAGE ASM_MASM)
 
     elseif(CMAKE_SYSTEM_PROCESSOR MATCHES "X86")
+        process_cppasm(i386/aesasm.cppasm masm x86)
         process_cppasm(i386/fdef_asm.cppasm masm x86)
 
         list(APPEND SOURCES_COMMON
-            i386/aesasm.asm
+            i386/aesasm-masm.asm
             i386/fdef_asm-masm.asm
             i386/wipe.asm)
         set_source_files_properties(
-            i386/aesasm.asm
+            i386/aesasm-masm.asm
             i386/fdef_asm-masm.asm
             i386/wipe.asm
             PROPERTY LANGUAGE ASM_MASM)

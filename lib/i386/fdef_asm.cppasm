@@ -1,6 +1,6 @@
 ;
 ;  fdef_asm.cppasm     Assembler code for fast arithmetic
-;  Requires C preprocessor to correctly include C_asm_shared.inc
+;  Requires C preprocessor to correctly include C_asm_shared.inc and symcrypt_magic.in
 ;
 ; Copyright (c) Microsoft Corporation. Licensed under the MIT license.
 ;
@@ -42,9 +42,9 @@ _TEXT   SEGMENT PARA PUBLIC USE32 'CODE'
         ASSUME  CS:_TEXT, DS:FLAT, SS:FLAT
 
 include symcrypt_version.inc
-include symcrypt_magic.inc
 
 #include "C_asm_shared.inc"
+#include "symcrypt_magic.inc"
 
         PUBLIC  @SymCryptFdefRawAddAsm@16
         PUBLIC  @SymCryptFdefRawSubAsm@16

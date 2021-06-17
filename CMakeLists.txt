@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.0.0)
+cmake_minimum_required(VERSION 3.13.0)
 
 project(SymCrypt)
 
@@ -119,7 +119,6 @@ endif()
 
 if(CMAKE_BUILD_TYPE MATCHES Release)
     message("Release mode")
-    add_compile_options(-DDBG=0)
 else()
     message("Debug mode")
     add_compile_options(-DDBG=1)

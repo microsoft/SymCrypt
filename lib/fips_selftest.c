@@ -476,7 +476,7 @@ const SYMCRYPT_SELFTEST_RSAKEY_2048 rsakey =
 // Hashed from: { 0x61, 0x62, 0x63 }
 const BYTE rgbSha256Hash[] =
 {
-   0xba, 0x78, 0x16, 0xbf, 0x8f, 0x01, 0xcf, 0xea, 
+   0xba, 0x78, 0x16, 0xbf, 0x8f, 0x01, 0xcf, 0xea,
    0x41, 0x41, 0x40, 0xde, 0x5d, 0xae, 0x22, 0x23,
    0xb0, 0x03, 0x61, 0xa3, 0x96, 0x17, 0x7a, 0x9c,
    0xb4, 0x10, 0xff, 0x61, 0xf2, 0x00, 0x15, 0xad
@@ -522,7 +522,7 @@ SymCryptDhSecretAgreementSelftest()
         dhKey1.public,
         sizeof(dhKey1.public),
         SYMCRYPT_NUMBER_FORMAT_MSB_FIRST,
-        SYMCRYPT_FLAG_KEY_RANGE_AND_PUBLIC_KEY_ORDER_VALIDATION | 
+        SYMCRYPT_FLAG_KEY_RANGE_AND_PUBLIC_KEY_ORDER_VALIDATION |
             SYMCRYPT_FLAG_KEY_KEYPAIR_REGENERATION_VALIDATION |
             SYMCRYPT_FLAG_BYPASS_FIPS_SELFTEST,
         pkKey1 );
@@ -537,7 +537,7 @@ SymCryptDhSecretAgreementSelftest()
         dhKey2.public,
         sizeof(dhKey2.public),
         SYMCRYPT_NUMBER_FORMAT_MSB_FIRST,
-        SYMCRYPT_FLAG_KEY_RANGE_AND_PUBLIC_KEY_ORDER_VALIDATION | 
+        SYMCRYPT_FLAG_KEY_RANGE_AND_PUBLIC_KEY_ORDER_VALIDATION |
             SYMCRYPT_FLAG_KEY_KEYPAIR_REGENERATION_VALIDATION |
             SYMCRYPT_FLAG_BYPASS_FIPS_SELFTEST,
         pkKey2 );
@@ -553,6 +553,7 @@ SymCryptDhSecretAgreementSelftest()
         sizeof(rgbSecret) );
     SYMCRYPT_FIPS_ASSERT( scError == SYMCRYPT_NO_ERROR );
 
+#pragma warning( suppress: 4127 )       // conditional expression is constant
     SYMCRYPT_FIPS_ASSERT( sizeof(rgbSecret) == sizeof(rgbDhKnownSecret) );
     SYMCRYPT_FIPS_ASSERT( memcmp( rgbSecret, rgbDhKnownSecret, sizeof(rgbDhKnownSecret) ) == 0 );
 
@@ -572,7 +573,6 @@ SymCryptEcDhSecretAgreementSelftest( )
     PSYMCRYPT_ECKEY pkKey2 = NULL;
 
     BYTE rgbSecret[ sizeof(rgbEcdhKnownSecret) ];
-    UINT32 cbSecret = 0;
 
     pCurve = SymCryptEcurveAllocate( SymCryptEcurveParamsNistP256, 0 );
     SYMCRYPT_FIPS_ASSERT( pCurve != NULL );
@@ -587,7 +587,7 @@ SymCryptEcDhSecretAgreementSelftest( )
         sizeof(eckey1.Qx) + sizeof(eckey1.Qy),
         SYMCRYPT_NUMBER_FORMAT_MSB_FIRST,
         SYMCRYPT_ECPOINT_FORMAT_XY,
-        SYMCRYPT_FLAG_KEY_RANGE_AND_PUBLIC_KEY_ORDER_VALIDATION | 
+        SYMCRYPT_FLAG_KEY_RANGE_AND_PUBLIC_KEY_ORDER_VALIDATION |
             SYMCRYPT_FLAG_KEY_KEYPAIR_REGENERATION_VALIDATION |
             SYMCRYPT_FLAG_BYPASS_FIPS_SELFTEST,
         pkKey1);
@@ -603,7 +603,7 @@ SymCryptEcDhSecretAgreementSelftest( )
         sizeof(eckey2.Qx) + sizeof(eckey2.Qy),
         SYMCRYPT_NUMBER_FORMAT_MSB_FIRST,
         SYMCRYPT_ECPOINT_FORMAT_XY,
-        SYMCRYPT_FLAG_KEY_RANGE_AND_PUBLIC_KEY_ORDER_VALIDATION | 
+        SYMCRYPT_FLAG_KEY_RANGE_AND_PUBLIC_KEY_ORDER_VALIDATION |
             SYMCRYPT_FLAG_KEY_KEYPAIR_REGENERATION_VALIDATION |
             SYMCRYPT_FLAG_BYPASS_FIPS_SELFTEST,
         pkKey2);
@@ -667,7 +667,7 @@ SymCryptDsaSelftest( )
         dsaKey.public,
         sizeof(dsaKey.public),
         SYMCRYPT_NUMBER_FORMAT_MSB_FIRST,
-        SYMCRYPT_FLAG_KEY_RANGE_AND_PUBLIC_KEY_ORDER_VALIDATION | 
+        SYMCRYPT_FLAG_KEY_RANGE_AND_PUBLIC_KEY_ORDER_VALIDATION |
             SYMCRYPT_FLAG_KEY_KEYPAIR_REGENERATION_VALIDATION |
             SYMCRYPT_FLAG_BYPASS_FIPS_SELFTEST,
         pkDlkey );
@@ -721,7 +721,7 @@ SymCryptEcDsaSelftest( )
         sizeof(eckey1.Qx) + sizeof(eckey1.Qy),
         SYMCRYPT_NUMBER_FORMAT_MSB_FIRST,
         SYMCRYPT_ECPOINT_FORMAT_XY,
-        SYMCRYPT_FLAG_KEY_RANGE_AND_PUBLIC_KEY_ORDER_VALIDATION | 
+        SYMCRYPT_FLAG_KEY_RANGE_AND_PUBLIC_KEY_ORDER_VALIDATION |
             SYMCRYPT_FLAG_KEY_KEYPAIR_REGENERATION_VALIDATION |
             SYMCRYPT_FLAG_BYPASS_FIPS_SELFTEST,
         pkEckey);

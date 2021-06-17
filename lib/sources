@@ -33,6 +33,7 @@ NTTARGETFILE0=\
     $(OBJ_PATH)\$(O)\..\amd64\fdef369_asm.asm \
     $(OBJ_PATH)\$(O)\..\amd64\fdef_mulx.asm \
 !ELSEIF "$(_BUILDARCH)" == "x86"
+    $(OBJ_PATH)\$(O)\..\i386\aesasm.asm \
     $(OBJ_PATH)\$(O)\..\i386\fdef_asm.asm \
 !ENDIF
 
@@ -134,6 +135,7 @@ SOURCES= \
     ec_montgomery.c \
     ec_twisted_edwards.c \
     ec_mul.c \
+    fips_selftest.c \
     ScsTable.c \
     primes.c \
     modexp.c \

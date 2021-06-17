@@ -3,12 +3,18 @@
 ;
 ; Copyright (c) Microsoft Corporation. Licensed under the MIT license.
 ;
-; This code is derived from the AMD64 version of the AesFast 
+; This code is derived from the AMD64 version of the AesFast
 ; implemenation, developed by Niels Ferguson. For questions
 ; about the ARM specifics, contact Aaron Giles.
 ;
 
 #include "kxarm.h"
+
+; As Arm assembler already uses C preprocessor, we can just hardcode this asm to include constants
+; MASM for now. To be fixed properly when converting arm64 asm to symcryptasm.
+#define SYMCRYPT_MASM
+#include "C_asm_shared.inc"
+#undef SYMCRYPT_MASM
 
 #include "symcrypt_version.inc"
 #include "symcrypt_magic.inc"
@@ -35,7 +41,7 @@
 #define SYMCRYPT_AES_EXPANDED_KEY_lastEncRoundKey   (29*4*4)
 #define SYMCRYPT_AES_EXPANDED_KEY_lastDecRoundKey   (29*4*4+4)
 
-#if DBG
+#if SYMCRYPT_DEBUG
 #define SYMCRYPT_AES_EXPANDED_KEY_magic             (29*4*4+4+4)
 #endif
 
@@ -239,7 +245,7 @@
         ;
         ; xor in first round key
         ;
-        
+
         ldrd    r4, r5, [r8, #0]                ; fetch key in r4-r7
         ldrd    r6, r7, [r8, #8]                ;
         eors    r0, r0, r4                      ; exclusive-OR with the plaintext
@@ -333,7 +339,7 @@
 
         MACRO
         AES_DECRYPT
-        
+
         ;
         ; Input:
         ;   r0,r1,r2,r3 = ciphertext
@@ -460,7 +466,7 @@
         ;
 
         PROLOG_PUSH {r2, r4-r11, lr}
-        
+
         ;
         ; Stack layout:
         ;   [sp] = r2 = pbCipherText
@@ -515,7 +521,7 @@
         ;
 
         PROLOG_PUSH {r2, r4-r11, lr}
-        
+
         ;
         ; Stack layout:
         ;   [sp] = r2 = pbPlaintext
@@ -862,7 +868,7 @@ SymCryptAesCbcDecryptNoData
         ldr     r1, [r3, #4]            ;
         ldr     r2, [r3, #8]            ;
         ldr     r3, [r3, #12]           ;
-        
+
         strd    r0, r1, [sp, #16]       ; save a local copy
         strd    r2, r3, [sp, #24]       ;
 
@@ -885,27 +891,27 @@ SymCryptAesCtrMsb64AsmLoop
         ; r12 points to SboxMatrixMult (unchanged)
         ; Ciphertext ends up in r4, r5, r6, r7
         ;
-        
+
         ldr     r0, [r10, #0]           ; load plaintext
         ldr     r1, [r10, #4]           ;
         ldr     r2, [r10, #8]           ;
         ldr     r3, [r10, #12]          ;
         pld     [r10, #64]              ; prefetch source data
-        
+
         ldrd    r8, lr, [sp]            ; fetch pbDst/pbSrcEnd
 
         eors    r0, r0, r4              ; exclusive-OR against encrypt results
         eors    r1, r1, r5              ;
         eors    r2, r2, r6              ;
         eors    r3, r3, r7              ;
-        
+
         str     r0, [r8, #0]            ; store to destination
         str     r1, [r8, #4]            ;
         str     r2, [r8, #8]            ;
         str     r3, [r8, #12]           ;
 
         ldrd    r0, r1, [sp, #16]       ; load chaining state
-        ldrd    r2, r3, [sp, #24]       ; 
+        ldrd    r2, r3, [sp, #24]       ;
 
         add     r8, r8, #16             ; pbDst += 16
         add     r10, r10, #16           ; pbSrc += 16
@@ -921,7 +927,7 @@ SymCryptAesCtrMsb64AsmLoop
 
         cmp     r10, lr                 ; done?
         blo     SymCryptAesCtrMsb64AsmLoop ; loop until finished
-        
+
         ldr     r0, [sp, #36]           ; get pbChainingValue
         movs    r1, #0                  ; get 0 in r1
         str     r2, [r0, #8]            ; write back modified part of chaining state

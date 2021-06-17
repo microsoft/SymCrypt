@@ -6,15 +6,15 @@
 
 #include "ksarm64.h"
 
-#include "symcrypt_version.inc"
-#include "symcrypt_name_mangling.inc"
-#include "symcrypt_magic.inc"
-
 ; As Arm assembler already uses C preprocessor, we can just hardcode this asm to include constants
 ; MASM for now. To be fixed properly when converting arm64 asm to symcryptasm.
 #define SYMCRYPT_MASM
 #include "C_asm_shared.inc"
 #undef SYMCRYPT_MASM
+
+#include "symcrypt_version.inc"
+#include "symcrypt_name_mangling.inc"
+#include "symcrypt_magic.inc"
 
 ; A digit consists of 4 words of 64 bits each
 

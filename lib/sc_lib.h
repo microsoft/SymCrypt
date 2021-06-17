@@ -3012,6 +3012,7 @@ SymCryptFdefMontgomeryReduceMulx1024(
 
 // Macro for executing a selftest and setting the corresponding flag
 #define SYMCRYPT_ON_DEMAND_SELFTEST(SelftestFunction, SelftestFlag) \
+_Pragma( "warning( suppress: 4127 )" ) /* conditional expression is constant */ \
 if( SYMCRYPT_DO_FIPS_SELFTESTS && \
     ((flags & SYMCRYPT_FLAG_BYPASS_FIPS_SELFTEST) == 0) && \
     ((g_SymCryptFipsSelftestsPerformed & SelftestFlag) == 0) ) \

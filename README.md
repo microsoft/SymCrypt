@@ -19,11 +19,11 @@ Like any engineering project, SymCrypt is a compromise between conflicting requi
 - Provide high assurance in the proper functionality of the library.
 
 # Build and Test
-SymCrypt can be compiled with CMake >= 3.0.0 and Visual Studio 2019 (with Windows 10 SDK version 18362) on Windows
+SymCrypt can be compiled with CMake >= 3.13.0 and Visual Studio 2019 (with Windows 10 SDK version 18362) on Windows
 or gcc 7.4.0 or clang 10.0.0 on Linux. Note that CMake ships with Visual Studio 2019.
 
 Python3 is also required for translation of SymCryptAsm, and for building the SymCrypt module with integrity check.
-The integrity check additionally requires pip and pyelftools: `pip install -r ./scripts/requirements.txt`
+The integrity check additionally requires pip and pyelftools: `pip3 install -r ./scripts/requirements.txt`
 
 
 1. Optionally use CMake from Visual Studio `$env:PATH="C:\Program Files (x86)\Microsoft Visual Studio\2019\Enterprise\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\bin\;${env:PATH}"`

@@ -20,11 +20,7 @@
 #pragma warning(disable:4068)
 #endif
 
-#if defined(DBG)
-#define SYMCRYPT_DEBUG 1
-#else
-#define SYMCRYPT_DEBUG 0
-#endif
+#include "C_asm_shared_DBG.inc"
 
 //==============================================================================================
 //  COMPILER DETECTION
@@ -50,8 +46,6 @@
 
 #undef  SYMCRYPT_APPLE_CC
 #define SYMCRYPT_APPLE_CC  1
-
-#define SYMCRYPT_DEBUG 1
 
 // Suppress the SAL annotations for the APPLE compiler
 #include "symcrypt_no_sal.h"

@@ -10,6 +10,8 @@
 
 */
 
+#include "C_asm_shared_DBG.inc"
+
 #if defined(SYMCRYPT_MASM)
 #define SET(_variable, _value) _variable EQU _value
 #elif defined(SYMCRYPT_GAS)
@@ -65,6 +67,6 @@ SET(SymCryptModulusValueOffsetArm,              96);
 
 #endif // CPU_*
 
-#if !defined( SYMCRYPT_CHECK_ASM_OFFSETS)
+#if !defined(SYMCRYPT_CHECK_ASM_OFFSETS)
 #define SYMCRYPT_CHECK_ASM_OFFSETS
 #endif
