@@ -66,14 +66,6 @@ SymCryptEckeyCreate(
     UNREFERENCED_PARAMETER( cbBuffer );     // only referenced in an ASSERT...
 
     SYMCRYPT_ASSERT( pCurve != NULL );
-	// dcl - you have to use this function call below, why not call it,
-	// and then check it in runtime? This is a very consistent problem.
-	// I understand not wanting to take a perf hit, but not doing checks
-	// when you have to call the function regardless is just dangerous code
-	// with no performance benefit to justify it. Code should be secure,
-	// unless there is some reason to make a trade-off.
-
-	// In fact, you call it twice, which is not efficient
     SYMCRYPT_ASSERT( cbBuffer >=  SymCryptSizeofEckeyFromCurve( pCurve ) );
 
     SYMCRYPT_ASSERT_ASYM_ALIGNED( pbBuffer );
@@ -277,7 +269,8 @@ SymCryptEckeySetValue(
 
     BOOLEAN performRangeValidation = FALSE;
 
-	// dcl - again, we require the results of these functions below, so why not check them in release?
+    SYMCRYPT_ON_DEMAND_SELFTEST(SymCryptEcDsaSelftest, SYMCRYPT_SELFTEST_ECDSA);
+
     SYMCRYPT_ASSERT( (cbPrivateKey==0) || (cbPrivateKey == SymCryptEcurveSizeofScalarMultiplier( pEckey->pCurve )) );
     SYMCRYPT_ASSERT( (cbPublicKey==0) || (cbPublicKey == SymCryptEckeySizeofPublicKey( pEckey, ecPointFormat)) );
 
@@ -541,7 +534,7 @@ _Success_(return == SYMCRYPT_NO_ERROR)
 SYMCRYPT_ERROR
 SYMCRYPT_CALL
 SymCryptEckeyGetValue(
-    _In_    PSYMCRYPT_ECKEY         pEckey,
+    _In_    PCSYMCRYPT_ECKEY        pEckey,
     _Out_writes_bytes_( cbPrivateKey )
             PBYTE                   pbPrivateKey,
             SIZE_T                  cbPrivateKey,
@@ -701,6 +694,8 @@ SymCryptEckeySetRandom(
     UINT32               cbScalar = 0;
 
     UINT32 highBitRestrictionPosition = pCurve->HighBitRestrictionPosition;
+
+    SYMCRYPT_ON_DEMAND_SELFTEST(SymCryptEcDsaSelftest, SYMCRYPT_SELFTEST_ECDSA);
 
     // Ensure only the correct flags are specified
     // Check if a flag with bits outside of the expected flags is specified

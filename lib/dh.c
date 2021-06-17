@@ -105,6 +105,8 @@ SymCryptDhSecretAgreement(
 
     UINT32 nBitsOfExp = 0;
 
+    SYMCRYPT_ON_DEMAND_SELFTEST(SymCryptDhSecretAgreementSelftest, SYMCRYPT_SELFTEST_DH_SECRET_AGREEMENT);
+
     // Make sure we only specify the correct flags and that
     // there is a private key
     if ( (flags != 0) || (!pkPrivate->fHasPrivateKey) )

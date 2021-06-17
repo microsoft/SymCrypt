@@ -3005,6 +3005,23 @@ SymCryptFdefMontgomeryReduceMulx1024(
 // SYMCRYPT_FLAG_KEY_RANGE_AND_PUBLIC_KEY_ORDER_VALIDATION are updated.
 #define SYMCRYPT_FLAG_KEY_VALIDATION_MASK   SYMCRYPT_FLAG_KEY_RANGE_AND_PUBLIC_KEY_ORDER_VALIDATION
 
+// Flag for bypassing FIPS selftests. Only intended to be used internally for selftests which have
+// to call themselves, to prevent infinite recursion. (e.g. SymCryptDhSecretAgreement calls
+// SymCryptDhSecretAgreementSelftest which calls SymCryptDhSecretAgreement.)
+#define SYMCRYPT_FLAG_BYPASS_FIPS_SELFTEST 0x80000000
+
+// Macro for executing a selftest and setting the corresponding flag
+#define SYMCRYPT_ON_DEMAND_SELFTEST(SelftestFunction, SelftestFlag) \
+if( SYMCRYPT_DO_FIPS_SELFTESTS && \
+    ((flags & SYMCRYPT_FLAG_BYPASS_FIPS_SELFTEST) == 0) && \
+    ((g_SymCryptFipsSelftestsPerformed & SelftestFlag) == 0) ) \
+{ \
+    SelftestFunction( ); \
+\
+    ATOMIC_OR32( &g_SymCryptFipsSelftestsPerformed, SelftestFlag );\
+}\
+flags &= ~SYMCRYPT_FLAG_BYPASS_FIPS_SELFTEST;
+
 typedef struct _SYMCRYPT_DLGROUP_DH_SAFEPRIME_PARAMS {
     SYMCRYPT_DLGROUP_DH_SAFEPRIMETYPE eDhSafePrimeType;
 

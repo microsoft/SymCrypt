@@ -45,6 +45,7 @@ set(SOURCES_COMMON
     fdef_int.c
     fdef_mod.c
     fdef369_mod.c
+    fips_selftest.c
     gcm.c
     gen_int.c
     ghash.c

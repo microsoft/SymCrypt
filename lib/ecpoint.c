@@ -89,7 +89,6 @@ SymCryptEcpointCreateEx(
 
     SYMCRYPT_ASSERT( pCurve->FMod != 0 );
     SYMCRYPT_ASSERT( pCurve->cbModElement != 0 );
-	// dcl - this is not an expensive call, and could be checked in release, just one mul and one add
     SYMCRYPT_ASSERT( cbBuffer >=  SymCryptSizeofEcpointEx( pCurve->cbModElement, numOfCoordinates ) );
 
     SYMCRYPT_ASSERT_ASYM_ALIGNED( pbBuffer );

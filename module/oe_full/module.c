@@ -14,36 +14,46 @@ VOID __attribute__((constructor)) SymCryptModuleMain()
 {
     SymCryptInit();
 
-    // We must test HMAC-SHA256 first since it's used by our integrity verification
-    SymCryptHmacSha256Selftest(); 
+    if( SYMCRYPT_DO_FIPS_SELFTESTS )
+    {
+        // We must test HMAC-SHA256 first since it's used by our integrity verification
+        SymCryptHmacSha256Selftest(); 
 
-    SymCryptModuleVerifyIntegrity();
+        SymCryptModuleVerifyIntegrity();
 
-    SymCryptRngAesInstantiateSelftest(); 
-    SymCryptRngAesReseedSelftest(); 
-    SymCryptRngAesGenerateSelftest(); 
-    
+        SymCryptRngAesInstantiateSelftest(); 
+        SymCryptRngAesReseedSelftest(); 
+        SymCryptRngAesGenerateSelftest(); 
+    }
+
+    // RNG must be initialized before the following selftests, but this should happen
+    // regardless of whether or SYMCRYPT_DO_FIPS_SELFTESTS is set    
     SymCryptRngInit();
 
-    SymCrypt3DesSelftest(); 
- 
-    SymCryptAesSelftest( SYMCRYPT_AES_SELFTEST_ALL ); 
-    SymCryptAesCmacSelftest(); 
-    SymCryptCcmSelftest(); 
-    SymCryptGcmSelftest(); 
-    SymCryptXtsAesSelftest(); 
+    if( SYMCRYPT_DO_FIPS_SELFTESTS )
+    {
+        SymCrypt3DesSelftest(); 
     
-    SymCryptHmacSha1Selftest(); 
-    SymCryptHmacSha384Selftest();
-    SymCryptHmacSha512Selftest(); 
-    
-    SymCryptParallelSha256Selftest(); 
-    SymCryptParallelSha512Selftest(); 
-    
-    SymCryptTlsPrf1_1SelfTest(); 
-    SymCryptTlsPrf1_2SelfTest(); 
-    
-    SymCryptHkdfSelfTest(); 
+        SymCryptAesSelftest( SYMCRYPT_AES_SELFTEST_ALL ); 
+        SymCryptAesCmacSelftest(); 
+        SymCryptCcmSelftest(); 
+        SymCryptGcmSelftest(); 
+        SymCryptXtsAesSelftest(); 
+        
+        SymCryptHmacSha1Selftest(); 
+        SymCryptHmacSha384Selftest();
+        SymCryptHmacSha512Selftest(); 
+        
+        SymCryptParallelSha256Selftest(); 
+        SymCryptParallelSha512Selftest(); 
+        
+        SymCryptTlsPrf1_1SelfTest(); 
+        SymCryptTlsPrf1_2SelfTest(); 
+        
+        SymCryptHkdfSelfTest(); 
+
+        g_SymCryptFipsSelftestsPerformed |= SYMCRYPT_SELFTEST_STARTUP;
+    }
 }
 
 VOID __attribute__((destructor)) SymCryptModuleDestructor()

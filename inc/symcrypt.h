@@ -1008,7 +1008,7 @@ extern const PCSYMCRYPT_HASH SymCryptMd5Algorithm;
 ///////////////////////////////////////////////////////////////////////////////
 //      SHA-1
 //
-// The SHA-1 hash algorithm per FIPS 182-2.
+// The SHA-1 hash algorithm per FIPS 180-4.
 //
 // This implementation is limited to data strings that are in whole bytes.
 // Odd bit length are not supported.
@@ -1082,7 +1082,7 @@ extern const PCSYMCRYPT_HASH SymCryptSha1Algorithm;
 //   SHA-256
 //
 //
-// Tha SHA-256 hash algorithm per FIPS 182-2.
+// Tha SHA-256 hash algorithm per FIPS 180-4.
 // This implementation is limited to data strings that are in whole bytes.
 // Odd bit length are not supported.
 //
@@ -1148,7 +1148,7 @@ extern const PCSYMCRYPT_HASH SymCryptSha256Algorithm;
 //   SHA-384
 //
 //
-// Tha SHA-384 hash algorithm per FIPS 182-2.
+// Tha SHA-384 hash algorithm per FIPS 180-4.
 // This implementation is limited to data strings that are in whole bytes.
 // Odd bit length are not supported.
 //
@@ -1214,7 +1214,7 @@ extern const PCSYMCRYPT_HASH SymCryptSha384Algorithm;
 //   SHA-512
 //
 //
-// Tha SHA-512 hash algorithm per FIPS 182-2.
+// Tha SHA-512 hash algorithm per FIPS 180-4.
 // This implementation is limited to data strings that are in whole bytes.
 // Odd bit length are not supported.
 //
@@ -5643,7 +5643,7 @@ _Success_(return == SYMCRYPT_NO_ERROR)
 SYMCRYPT_ERROR
 SYMCRYPT_CALL
 SymCryptEckeyGetValue(
-    _In_    PSYMCRYPT_ECKEY         pEckey,
+    _In_    PCSYMCRYPT_ECKEY        pEckey,
     _Out_writes_bytes_( cbPrivateKey )
             PBYTE                   pbPrivateKey,
             SIZE_T                  cbPrivateKey,
@@ -6032,6 +6032,14 @@ SymCryptRsaPssVerify(
 //      None
 //
 
+VOID
+SYMCRYPT_CALL
+SymCryptRsaSelftest( );
+//
+// FIPS self-test for RSA sign/verify. If the self-test fails, SymCryptFatal will be called to
+// fastfail.
+//
+
 //
 // DSA
 //
@@ -6070,13 +6078,21 @@ SymCryptDsaVerify(
                                         SYMCRYPT_NUMBER_FORMAT  format,
                                         UINT32                  flags );
 //
-/// Verifies a DSA signature using the public part of Key.
+// Verifies a DSA signature using the public part of Key.
 //
 // It returns SYMCRYPT_NO_ERROR if the verification suceeded or SYMCRYPT_SIGNATURE_VERIFICATION_FAILURE
 // if it failed.
 //
 // Allowed flags:
 //      None
+//
+
+VOID
+SYMCRYPT_CALL
+SymCryptDsaSelftest( );
+//
+// FIPS self-test for DSA sign/verify. If the self-test fails, SymCryptFatal will be called to
+// fastfail.
 //
 
 //
@@ -6100,6 +6116,15 @@ SymCryptDhSecretAgreement(
 //
 // Allowed flags:
 //      - None
+//
+
+VOID
+SYMCRYPT_CALL
+SymCryptDhSecretAgreementSelftest();
+//
+// FIPS self-test for DH secret agreement. If the self-test fails, SymCryptFatal will be called to
+// fastfail. Called automatically by SymCryptDhSecretAgreement when SYMCRYPT_DO_FIPS_SELFTESTS is
+// defined during compilation.
 //
 
 //
@@ -6179,6 +6204,14 @@ SymCryptEcDsaVerify(
 //      SYMCRYPT_FLAG_ECDSA_NO_TRUNCATION: If set then the hash value will
 //      not be truncated.
 
+VOID
+SYMCRYPT_CALL
+SymCryptEcDsaSelftest( );
+//
+// FIPS self-test for ECDSA sign/verify. If the self-test fails, SymCryptFatal will be called to
+// fastfail.
+//
+
 //
 // ECDH
 //
@@ -6199,6 +6232,16 @@ SymCryptEcDhSecretAgreement(
 //
 // Allowed flags:
 //      - None
+//
+
+VOID
+SYMCRYPT_CALL
+SymCryptEcDhSecretAgreementSelftest( );
+
+//
+// FIPS self-test for ECDH secret agreement. If the self-test fails, SymCryptFatal will be called
+// to fastfail. Called automatically by SymCryptEcDhSecretAgreement when SYMCRYPT_DO_FIPS_SELFTESTS
+// is defined during compilation.
 //
 
 //

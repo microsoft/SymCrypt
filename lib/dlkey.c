@@ -279,6 +279,8 @@ SymCryptDlkeyGenerate(
     UINT32 nBytesPriv = 0;
     UINT32 cntr;
 
+    SYMCRYPT_ON_DEMAND_SELFTEST(SymCryptDsaSelftest, SYMCRYPT_SELFTEST_DSA);
+
     // Make sure only the correct flags are specified
     // Check if a flag with bits outside of the expected flags is specified
     // Check if a flag is specified using bits expected, but not one of the expected flags
@@ -468,6 +470,8 @@ SymCryptDlkeySetValue(
     UINT32 cbModElement = SymCryptSizeofModElementFromModulus( pDlgroup->pmP );
 
     BOOLEAN performRangeValidation = FALSE;
+
+    SYMCRYPT_ON_DEMAND_SELFTEST(SymCryptDsaSelftest, SYMCRYPT_SELFTEST_DSA);
 
     if ( ((pbPrivateKey==NULL) && (cbPrivateKey!=0)) ||
          ((pbPublicKey==NULL) && (cbPublicKey!=0)) ||

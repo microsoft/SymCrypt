@@ -20,6 +20,11 @@
 #pragma warning(disable:4068)
 #endif
 
+#if defined(DBG)
+#define SYMCRYPT_DEBUG 1
+#else
+#define SYMCRYPT_DEBUG 0
+#endif
 
 //==============================================================================================
 //  COMPILER DETECTION
@@ -33,12 +38,6 @@
 
 #undef  SYMCRYPT_MS_VC
 #define SYMCRYPT_MS_VC  1
-
-#if defined(DBG) && DBG
-#define SYMCRYPT_DEBUG 1
-#else
-#define SYMCRYPT_DEBUG 0
-#endif
 
 // This should go somewhere else. Same in the other #if branches.
 #define SYMCRYPT_ANYSIZE_ARRAY               1
@@ -73,12 +72,6 @@
 #define SYMCRYPT_GNUC 1
 // Suppress the SAL annotations
 #include "symcrypt_no_sal.h"
-
-#if defined(DBG) && DBG
-#define SYMCRYPT_DEBUG 1
-#else
-#define SYMCRYPT_DEBUG 0
-#endif
 
 // Ignore the multi-character character constant warnings
 #pragma GCC diagnostic ignored "-Wmultichar"
@@ -2628,3 +2621,24 @@ SymCryptWipeKnownSize(_Out_writes_bytes_(cbData) PVOID pbData, SIZE_T cbData)
 
 #endif  // Platform switch for SymCryptWipeKnownSize
 
+// Set this flag to 1 to enable FIPS checks in the SymCrypt module.
+#ifndef SYMCRYPT_DO_FIPS_SELFTESTS
+#define SYMCRYPT_DO_FIPS_SELFTESTS 0
+#endif
+
+#define SYMCRYPT_FIPS_ASSERT(x) { if(!(x)){ SymCryptFatal('FIPS'); } }
+
+// Flags for on-demand selftests. When an on-demand selftest succeeds, the corresponding flag
+// will be set in g_SymCryptFipsSelftestsPerformed. Other selftests are performed automatically
+// when the module is loaded, so they don't have a corresponding flag.
+typedef enum {
+    SYMCRYPT_SELFTEST_NONE = 0x0,
+    SYMCRYPT_SELFTEST_STARTUP = 0x1,
+    SYMCRYPT_SELFTEST_DSA = 0x2,
+    SYMCRYPT_SELFTEST_ECDSA = 0x4,
+    SYMCRYPT_SELFTEST_RSA = 0x8,
+    SYMCRYPT_SELFTEST_DH_SECRET_AGREEMENT = 0x10,
+    SYMCRYPT_SELFTEST_ECDH_SECRET_AGREEMENT = 0x20
+} SYMCRYPT_FIPS_SELFTEST;
+
+extern SYMCRYPT_FIPS_SELFTEST g_SymCryptFipsSelftestsPerformed;

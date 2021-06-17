@@ -1,5 +1,6 @@
-VERSION_100.16 {
+VERSION_100.17 {
    global:
+      g_SymCryptFipsSelftestsPerformed;
       SymCrypt3DesBlockCipher;
       SymCrypt3DesCbcDecrypt;
       SymCrypt3DesCbcEncrypt;
@@ -67,6 +68,7 @@ VERSION_100.16 {
       SymCryptDesxExpandKey;
       SymCryptDesxSelftest;
       SymCryptDhSecretAgreement;
+      SymCryptDhSecretAgreementSelftest;
       SymCryptDigitsFromBits;
       SymCryptDivisorAllocate;
       SymCryptDivisorCopy;
@@ -98,9 +100,12 @@ VERSION_100.16 {
       SymCryptDlkeySizeofPrivateKey;
       SymCryptDlkeySizeofPublicKey;
       SymCryptDlkeyWipe;
+      SymCryptDsaSelftest;
       SymCryptDsaSign;
       SymCryptDsaVerify;
       SymCryptEcDhSecretAgreement;
+      SymCryptEcDhSecretAgreementSelftest;
+      SymCryptEcDsaSelftest;
       SymCryptEcDsaSign;
       SymCryptEcDsaSignDeterministic;
       SymCryptEcDsaSignEx;
@@ -410,6 +415,7 @@ VERSION_100.16 {
       SymCryptRoundUpPow2Sizet;
       SymCryptRsaOaepDecrypt;
       SymCryptRsaOaepEncrypt;
+      SymCryptRsaSelftest;
       SymCryptRsaPkcs1Decrypt;
       SymCryptRsaPkcs1Encrypt;
       SymCryptRsaPkcs1Sign;

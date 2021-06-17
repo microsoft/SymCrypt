@@ -88,15 +88,19 @@ steps:
         ./symcryptunittest
       displayName: 'Execute unit tests'
       name: '${{parameters.env}}UnitTest_${{parameters.buildType}}'
-  # Copy build output files to artifact staging directory
-  - task: CopyFiles@2
-    inputs:
-      SourceFolder: 'bin'
-      Contents: '**'
-      TargetFolder: '$(build.artifactstagingdirectory)'
-  # Publish staged artifacts so they're available in the pipeline results
-  - task: PublishBuildArtifacts@1
-    inputs:
-      PathtoPublish: '$(Build.ArtifactStagingDirectory)'
-      ArtifactName: 'drop-${{parameters.env}}-${{parameters.arch}}-${{parameters.buildType}}'
-      publishLocation: 'Container'
+  # Publish artifacts so they're available in the pipeline results
+  - publish: $(System.DefaultWorkingDirectory)/bin
+    artifact: 'drop-${{parameters.env}}-${{parameters.arch}}-${{parameters.cc}}-${{parameters.buildType}}'
+  # Publish artifacts, core dumps and temporary files on failure
+  - publish: $(System.DefaultWorkingDirectory)/bin
+    artifact: 'failed-${{parameters.env}}-${{parameters.arch}}-${{parameters.cc}}-${{parameters.buildType}}'
+    condition: failed()
+  - publish: /var/crash
+    artifact: 'crash-${{parameters.env}}-${{parameters.arch}}-${{parameters.cc}}-${{parameters.buildType}}'
+    condition: and(failed(), eq(variables['Agent.OS'], 'Linux'))
+  - publish: $(Agent.TempDirectory)
+    artifact: 'temp-${{parameters.env}}-${{parameters.arch}}-${{parameters.cc}}-${{parameters.buildType}}'
+    condition: failed()
+  - publish: $(Agent.WorkFolder)
+    artifact: 'work-${{parameters.env}}-${{parameters.arch}}-${{parameters.cc}}-${{parameters.buildType}}'
+    condition: failed()

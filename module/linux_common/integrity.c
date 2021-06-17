@@ -8,8 +8,6 @@
 
 #include "precomp.h"
 
-#define SYMCRYPT_FIPS_ASSERT(x) { if(!(x)){ SymCryptFatal('FIPS'); } }
-
 #define PLACEHOLDER_VALUE 0x8BADF00D
 #define PLACEHOLDER_ARRAY \
 {\
