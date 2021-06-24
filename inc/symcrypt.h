@@ -6259,6 +6259,123 @@ SymCryptFatal(UINT32 fatalCode);
 // HARD_ASSERT checks also in FRE builds.
 //
 
+VOID
+SYMCRYPT_CALL
+SymCryptPaddingPkcs7Add(
+                                            SIZE_T  cbBlockSize,
+    _In_reads_( cbSrc )                     PCBYTE  pbSrc,
+                                            SIZE_T  cbSrc,
+    _Out_writes_to_( cbDst, *pcbResult )    PBYTE   pbDst,
+                                            SIZE_T  cbDst,
+    _Out_                                   SIZE_T  *pcbResult );
+//
+// Prerequisites:
+//  cbBlockSize is a power of 2 and <= 256
+//  cbDst >= cbSrc - cbSrc % cbBlockSize + cbBlockSize
+//
+// Add PKCS7 block padding to a message
+// The input data (pbSrc,cbSrc) is padded with between 1 and cbBlockSize bytes so that
+// the length of the result is a multiple of cbBlockSize.
+// The padded message is written to the pbDst buffer.
+// The length of the padded message is returned in *pcbResult.
+//
+// If pbSrc == pbDst this function avoids copying all the data. 
+// Note that cbSrc == cbDst is not valid as it violates the prerequisites.
+// Padding a message with cbSrc == 0 is valid.
+//
+// Note: 
+// Any whole blocks in Src are merely copied to Dst.
+// Callers can either process the whole message in this call,
+// or handle the whole blocks themselves and only pass the last few bytes of the message to this function.
+//
+// Note: the prerequisites are not checked by this function; if they are not satisfied 
+// the behaviour of the function is undefined.
+//
+
+
+SYMCRYPT_ERROR
+SYMCRYPT_CALL
+SymCryptPaddingPkcs7Remove(
+                                            SIZE_T  cbBlockSize,
+    _In_reads_( cbSrc )                     PCBYTE  pbSrc,
+                                            SIZE_T  cbSrc,
+    _Out_writes_to_( cbDst, *pcbResult )    PBYTE   pbDst,
+                                            SIZE_T  cbDst,
+    _Out_                                   SIZE_T  *pcbResult );
+// 
+// Prerequisites:
+//  - cbBlockSize is a power of 2 and <= 256
+//  - cbSrc is a multiple of cbBlockSize and greater than zero
+//
+// Remove PKCS7 block padding from a message in a side-channel safe way. 
+//  *** see below for important rules the caller should follow w.r.t. side-channel safety ***
+// The input data (pbSrc, cbSrc) is a valid PKCS7 padded message for the given blocksize.
+// This function removes the padding, copies the result to the (pbDst, cbDst) buffer,
+// and returns the size of the result in *pcbResult.
+//
+// This function only supports padding with a size up to the block size.
+// 
+// If pbSrc == pbDst this function avoids copying data.
+//
+// The following errors are returned:
+//  - SYMCRYPT_INVALID_ARGUMENT if cbSrc or the padding is invalid
+//  - SYMCRYPT_BUFFER_TOO_SMALL if cbDst < size of the unpadded message
+// If cbDst >= cbSrc the SYMCRYPT_BUFFER_TOO_SMALL error will not be returned.
+// Even if an error is returned, the pbDst buffer receives a copy of the data (up to cbDst bytes).
+// If cbDst < cbSrc - cbBlockSize the SYMCRYPT_BUFFER_TOO_SMALL error will be returned and
+// pbDst will not receive any copy of data.
+// 
+// Note: Removal of PKCS7 padding is extremely sensitive to side channels.
+// For example, if a message is encrypted with AES-CBC and the attacker can modify 
+// the ciphertext and then determine whether a padding error occurrs during decryption,
+// then the attacker can use the presence or absense of the error to decrypt the message itself.
+// This function takes great care not to reveal whether an error occurred, and hides
+// the size of the unpadded message. This is even true when writing to pbDst. If cbDst is large
+// enough, the code will write cbSrc-1 bytes to pbDst, using masking to only update the bytes of the
+// message and leaving the other bytes in pbDst unchanged.
+// Callers should take great care not to reveal the returned error or success, 
+// or the size of the returned message, until they have authenticated
+// the source of the data.
+// 
+// In particular, any mapping of the error code should be done in a side-channel safe way.
+// See the SymCryptMapUint32() function for a side-channel safe way to map error codes.
+//
+// The error caused by an invalid cbSrc value is not hidden from side channels as this does not reveal any
+// secret information.
+//
+// Note: callers can either process the whole message in this call,
+// or process the whole blocks themselves and only pass the last block to this function.
+//
+
+typedef struct _SYMCRYPT_UINT32_MAP {
+    UINT32              from;       // map this value...
+    UINT32              to;         // ...into this value
+} SYMCRYPT_UINT32_MAP, *PSYMCRYPT_UINT32_MAP;
+typedef const SYMCRYPT_UINT32_MAP * PCSYMCRYPT_UINT32_MAP;
+
+
+UINT32
+SYMCRYPT_CALL
+SymCryptMapUint32(
+                        UINT32                  u32Input,
+                        UINT32                  u32Default,
+    _In_reads_( nMap )  PCSYMCRYPT_UINT32_MAP   pcMap,
+                        SIZE_T                  nMap );
+//
+// Map values in a side-channel safe way, typically used for mapping error codes.
+//
+// (pcMap, nMap) point to an array of nMap entries of type SYMCRYPT_UINT32_MAP;
+// each entry specifies a single mapping. If u32Input matches the
+// 'from' field, the return value will be the 'to' field value. 
+// If u32Input is not equal to any 'from' field values, the return value is u32Default.
+// Both u32Input and the return value are treated as secrets w.r.t. side channels.
+//
+// If multiple map entries have the same 'from' field value, then the return value
+// is one of the several 'to' field values; which one is not defined.
+//
+// This function is particularly useful when mapping error codes in situations where
+// the actual error cannot be revealed through side channels.
+
 #define SYMCRYPT_HARD_ASSERT( _x ) \
     {\
         if( !(_x) ){ SymCryptFatal( 'asrt' ); }\
