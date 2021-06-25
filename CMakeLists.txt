@@ -61,10 +61,6 @@ elseif(NOT WIN32)
     add_compile_options(-fno-plt)
     add_compile_options(-fno-builtin-bcmp)
 
-    if (CMAKE_C_COMPILER_ID MATCHES "Clang")
-        add_compile_options(-mspeculative-load-hardening)
-    endif()
-
     # In Sanitize version, enable sanitizers
     if (CMAKE_BUILD_TYPE MATCHES Sanitize)
         add_compile_options(-fsanitize=address)

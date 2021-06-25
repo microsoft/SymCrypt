@@ -290,6 +290,10 @@ endif()
 if(NOT WIN32)
     add_compile_options(-Wno-trigraphs)
 
+    if (CMAKE_C_COMPILER_ID MATCHES "Clang")
+        add_compile_options(-mllvm -x86-speculative-load-hardening)
+    endif()
+
     add_library(symcrypt_linuxusermode STATIC env_linuxUserMode.c)
     set_target_properties(symcrypt_linuxusermode PROPERTIES PREFIX "")
     target_link_libraries(symcrypt_linuxusermode symcrypt_common)
