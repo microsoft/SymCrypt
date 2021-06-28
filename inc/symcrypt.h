@@ -3015,12 +3015,12 @@ SymCryptCfbDecrypt(
 VOID
 SYMCRYPT_CALL
 SymCryptPaddingPkcs7Add(
-    SIZE_T  cbBlockSize,
-    _In_reads_(cbSrc)                     PCBYTE  pbSrc,
-    SIZE_T  cbSrc,
-    _Out_writes_to_(cbDst, *pcbResult)    PBYTE   pbDst,
-    SIZE_T  cbDst,
-    _Out_                                   SIZE_T* pcbResult);
+                                            SIZE_T  cbBlockSize,
+    _In_reads_(cbSrc)                       PCBYTE  pbSrc,
+                                            SIZE_T  cbSrc,
+    _Out_writes_to_(cbDst, *pcbResult)      PBYTE   pbDst,
+                                            SIZE_T  cbDst,
+                                            SIZE_T* pcbResult);
 //
 // Prerequisites:
 //  cbBlockSize is a power of 2 and <= 256
@@ -3049,16 +3049,17 @@ SymCryptPaddingPkcs7Add(
 SYMCRYPT_ERROR
 SYMCRYPT_CALL
 SymCryptPaddingPkcs7Remove(
-    SIZE_T  cbBlockSize,
-    _In_reads_(cbSrc)                     PCBYTE  pbSrc,
-    SIZE_T  cbSrc,
-    _Out_writes_to_(cbDst, *pcbResult)    PBYTE   pbDst,
-    SIZE_T  cbDst,
-    _Out_                                   SIZE_T* pcbResult);
+                                            SIZE_T  cbBlockSize,
+    _In_reads_(cbSrc)                       PCBYTE  pbSrc,
+                                            SIZE_T  cbSrc,
+    _Out_writes_to_(cbDst, *pcbResult)      PBYTE   pbDst,
+                                            SIZE_T  cbDst,
+                                            SIZE_T* pcbResult);
 // 
 // Prerequisites:
 //  - cbBlockSize is a power of 2 and <= 256
-//  - cbSrc is a multiple of cbBlockSize and greater than zero
+//  - cbSrc is a multiple of cbBlockSize
+//  - cbSrc is greater than zero (at least equals to cbBlockSize)
 //
 // Remove PKCS7 block padding from a message in a side-channel safe way. 
 //  *** see below for important rules the caller should follow w.r.t. side-channel safety ***
