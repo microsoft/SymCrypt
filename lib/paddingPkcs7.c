@@ -17,9 +17,9 @@ SymCryptPaddingPkcs7Add(
                                             SIZE_T  cbDst,
                                             SIZE_T* pcbResult)
 {
-    SIZE_T          padVal          = 0;                                            // PadVal is the number of bytes to pad.
-    SIZE_T          dwDataLastBlock = 0;                                            // dwDataLastBlock is the number of bytes of data at the final block.
-    SIZE_T          cbResult        = cbSrc;                                        // This variable must always have a valid value when we finish the function.
+    SIZE_T          padVal;                                                         // PadVal is the number of bytes to pad.
+    SIZE_T          dwDataLastBlock;                                                // dwDataLastBlock is the number of bytes of data at the final block.
+    SIZE_T          cbResult        = 0;                                            // This variable must always have a valid value when we finish the function.
   
     SYMCRYPT_ASSERT(cbBlockSize <= 256);                                            // cbBlockSize must be <= 256
     SYMCRYPT_ASSERT((cbBlockSize & (cbBlockSize - 1)) == 0);                        // cbBlockSize must be a power of 2
@@ -44,7 +44,7 @@ SymCryptPaddingPkcs7Add(
     //  perform the padding
     //
 
-    if (pbDst != pbSrc)
+    if (pbDst != pbSrc && cbSrc > 0)
     {
         memcpy(pbDst, pbSrc, cbSrc);
     }

@@ -364,17 +364,14 @@ SymCryptScsRotateBuffer(
 
 UINT32 SYMCRYPT_CALL SymCryptMapUint32(UINT32 u32Input, UINT32 u32Default, PCSYMCRYPT_UINT32_MAP pcMap, SIZE_T nMap)
 {
-    UINT32 u32Output = u32Default;
+    UINT32 mask         = 0;
+    UINT32 u32Output    = u32Default;
 
     for (SIZE_T i = 0; i < nMap; ++i)
     {
-        if (u32Input == pcMap[i].from)
-        {
-            u32Output = pcMap[i].to;
-            goto cleanup;
-        }
+        mask = SymCryptMask32EqU32(u32Input, pcMap[i].from);
+        u32Output ^= (u32Output ^ pcMap[i].to) & mask;
     }
 
-cleanup:
     return u32Output;
 }
