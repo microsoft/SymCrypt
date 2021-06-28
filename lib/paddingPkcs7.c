@@ -88,7 +88,7 @@ SymCryptPaddingPkcs7Remove(
     SYMCRYPT_ASSERT((cbSrc & (cbBlockSize - 1)) == 0);                  // cbSrc is a multiple of cbBlockSize
     SYMCRYPT_ASSERT(cbSrc > 0);                                         // cbSrc is greaten than zero
 
-    padVal = (DWORD)pbSrc[cbSrc - 1];
+    padVal = (UINT32)pbSrc[cbSrc - 1];
     lastDataBytePos = padVal + 1;
     cbResult = cbSrc - padVal;
     
