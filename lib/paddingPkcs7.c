@@ -17,29 +17,29 @@ SymCryptPaddingPkcs7Add(
                                             SIZE_T  cbDst,
                                             SIZE_T* pcbResult)
 {
-    SIZE_T          padVal;                                                     // PadVal is the number of bytes to pad.
-    SIZE_T          dwDataLastBlock;                                            // dwDataLastBlock is the number of bytes of data at the final block.
-    SIZE_T          cbResult = 0;                                               // This variable must always have a valid value when we finish the function.
+    SIZE_T          padVal;                 // PadVal is the number of bytes to pad.
+    SIZE_T          cbDataLastBlock;        // dwDataLastBlock is the number of bytes of data at the final block.
+    SIZE_T          cbResult = 0;           // This variable must always have a valid value when we finish the function.
   
-    SYMCRYPT_ASSERT(cbBlockSize <= 256);                                        // cbBlockSize must be <= 256
-    SYMCRYPT_ASSERT((cbBlockSize & (cbBlockSize - 1)) == 0);                    // cbBlockSize must be a power of 2
+    SYMCRYPT_ASSERT(cbBlockSize <= 256);                        // cbBlockSize must be <= 256
+    SYMCRYPT_ASSERT((cbBlockSize & (cbBlockSize - 1)) == 0);    // cbBlockSize must be a power of 2
 
     //
     // Compute the padding parameters.
     //
 
-    dwDataLastBlock = (cbSrc & (cbBlockSize - 1));
+    cbDataLastBlock = (cbSrc & (cbBlockSize - 1));
 
-    SYMCRYPT_ASSERT(cbDst >= cbSrc - dwDataLastBlock + cbBlockSize);            // cbDst >= cbSrc - cbSrc % cbBlockSize + cbBlockSize
+    cbResult = (cbSrc - cbDataLastBlock + cbBlockSize);
 
-    cbResult = (cbSrc - dwDataLastBlock + cbBlockSize);
+    SYMCRYPT_ASSERT(cbDst >= cbResult);     // cbDst >= cbSrc - cbSrc % cbBlockSize + cbBlockSize
 
     if (cbResult > cbDst)
     {
         goto cleanup;
     }
 
-    padVal = (cbBlockSize - dwDataLastBlock);
+    padVal = (cbBlockSize - cbDataLastBlock);
 
     //
     //  perform the padding
@@ -68,28 +68,26 @@ SymCryptPaddingPkcs7Remove(
                                             SIZE_T  cbDst,
                                             SIZE_T* pcbResult)
 {
-    SYMCRYPT_ERROR          scError             = SYMCRYPT_NO_ERROR;
+    SYMCRYPT_ERROR  scError = SYMCRYPT_NO_ERROR;
 
-    UINT32                  mPaddingError       = 0;                    // Indicates whether there is an error in padding or not.
-    UINT32                  mBufferSizeError    = 0;                    // Indicates whether pbDst is large enough to contain the entire message or not (not including the padding).
-    UINT32                  isData              = 0;                    // isData is a mask for padding validation. It equals to zero for padded bytes.
-    UINT32                  mask                = 0;
-    UINT32                  padVal;                                     // dwPadVal is the number of padded bytes.
-    UINT32                  lastDataBytePos;                            // dwLastDataByte is the positin of the last byte of data before padding at the final block.
-    UINT32                  cbSrc32;
-    UINT32                  cbDst32;
-    UINT32                  cbMsg32;
-                                                                 
-    SIZE_T                  cbResult;                                   // This variable must always have a valid value when we finish the function
-    SIZE_T                  cbBulk              = 0;        
+    UINT32  mPaddingError       = 0;    // Indicates whether there is an error in padding or not.
+    UINT32  mBufferSizeError    = 0;    // Indicates whether pbDst is large enough to contain the entire message.
+    UINT32  mask                = 0;    // Mask for message bytes at the final block.
+    UINT32  padVal;                     // PadVal is the number of padded bytes.
+    UINT32  cbSrc32;
+    UINT32  cbDst32;
+    UINT32  cbMsg32;
+                   
+    SIZE_T  cbBulk = 0;
+    SIZE_T  cbResult;           // This variable must always have a valid value when we finish the function.
+            
 
-    SYMCRYPT_ASSERT(cbBlockSize <= 256);                                // cbBlockSize must be <= 256
-    SYMCRYPT_ASSERT((cbBlockSize & (cbBlockSize - 1)) == 0);            // cbBlockSize must be a power of 2
-    SYMCRYPT_ASSERT((cbSrc & (cbBlockSize - 1)) == 0);                  // cbSrc is a multiple of cbBlockSize
-    SYMCRYPT_ASSERT(cbSrc > 0);                                         // cbSrc is greaten than zero
+    SYMCRYPT_ASSERT(cbBlockSize <= 256);                        // cbBlockSize must be <= 256
+    SYMCRYPT_ASSERT((cbBlockSize & (cbBlockSize - 1)) == 0);    // cbBlockSize must be a power of 2
+    SYMCRYPT_ASSERT((cbSrc & (cbBlockSize - 1)) == 0);          // cbSrc is a multiple of cbBlockSize
+    SYMCRYPT_ASSERT(cbSrc > 0);                                 // cbSrc is greaten than zero
 
     padVal = (UINT32)pbSrc[cbSrc - 1];
-    lastDataBytePos = padVal + 1;
     cbResult = cbSrc - padVal;
     
     //
@@ -132,28 +130,21 @@ SymCryptPaddingPkcs7Remove(
     // check the Padding to make sure it is valid.
     mPaddingError |= SymCryptMask32IsZeroU31(padVal) | SymCryptMask32LtU31((UINT32)cbBlockSize, padVal);
 
-    // loop through the last block to check the padding.
-    for (UINT32 i = 2; i <= cbBlockSize; ++i)
-    {
-        isData |= SymCryptMask32IsZeroU31(i ^ lastDataBytePos);
-        mPaddingError |= (SymCryptMask32IsNonzeroU31((UINT32)pbSrc[cbSrc - i] ^ padVal) & ~isData);
-    }
-
     //
     // Final Block processing
-    //
+    // 
+    
+    // Updating only the bytes of the message and leaving the other bytes in pbDst unchanged.
+    // Validating the value of the padded bytes.
 
-    // If cbDst is large enough, the code will write cbSrc-1 bytes to pbDst, using masking to only update the bytes of the
-    // message and leaving the other bytes in pbDst unchanged.
-
-    for (UINT32 i = 0; i <= cbDst; ++i)
+    for (UINT32 i = 0; i < cbDst; ++i)  // cbDst <= cbSrc == cbBlockSize
     {
         mask = SymCryptMask32LtU31(i, cbMsg32);
+
+        mPaddingError |= (SymCryptMask32IsNonzeroU31((UINT32)pbSrc[i] ^ padVal) & ~mask);
+
         pbDst[i] ^= (pbDst[i] ^ pbSrc[i]) & mask;
     }
-
-    // Even if an error is returned, the pbDst buffer receives a copy of the data (up to cbDst bytes).
-    cbResult = (mBufferSizeError & (cbDst + cbBulk)) | ((~mBufferSizeError) & cbResult);
 
 cleanup:
 

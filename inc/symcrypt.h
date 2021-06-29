@@ -3075,9 +3075,8 @@ SymCryptPaddingPkcs7Remove(
 //  - SYMCRYPT_INVALID_ARGUMENT if cbSrc or the padding is invalid
 //  - SYMCRYPT_BUFFER_TOO_SMALL if cbDst < size of the unpadded message
 // If cbDst >= cbSrc the SYMCRYPT_BUFFER_TOO_SMALL error will not be returned.
-// Even if an error is returned, the pbDst buffer receives a copy of the data (up to cbDst bytes).
-// If cbDst < cbSrc - cbBlockSize the SYMCRYPT_BUFFER_TOO_SMALL error will be returned and
-// pbDst will not receive any copy of data.
+// Even if an error is returned, the pbDst buffer may or may not contain data from the message.
+// Callers should wipe the buffer even if an error is returned.
 // 
 // Note: Removal of PKCS7 padding is extremely sensitive to side channels.
 // For example, if a message is encrypted with AES-CBC and the attacker can modify 

@@ -152,7 +152,7 @@ SOURCES= \
     recoding.c \
     IEEE802_11SaeCustom.c \
     scsTools.c \
-	paddingPkcs7.c \
+    paddingPkcs7.c \
 
 AMD64_SOURCES = \
     wipe.asm \
