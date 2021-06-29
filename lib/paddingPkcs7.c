@@ -94,7 +94,7 @@ SymCryptPaddingPkcs7Remove(
     // Bulk processing
     //
 
-    cbDst = min(cbDst, cbSrc);
+    cbDst = SYMCRYPT_MIN(cbDst, cbSrc);
 
     cbBulk = cbSrc - cbBlockSize;
 

@@ -127,6 +127,54 @@ testBasicMaskFunctions()
 
 }
 
+VOID
+testScsMapUint32()
+{
+    UINT32 u32Input;
+    UINT32 u32Default;
+    UINT32 u32From1;
+    UINT32 u32To1;
+    UINT32 u32From2;
+    UINT32 u32To2;
+    UINT32 u32To3;
+
+    GENRANDOM(&u32Default, sizeof(u32Default));
+    GENRANDOM(&u32From1, sizeof(u32From1));
+    GENRANDOM(&u32From2, sizeof(u32From2));
+    GENRANDOM(&u32To1, sizeof(u32To1));
+    GENRANDOM(&u32To2, sizeof(u32To2));
+    GENRANDOM(&u32To3, sizeof(u32To3));
+
+
+    SYMCRYPT_UINT32_MAP map1 = { u32From1, u32To1 };
+    SYMCRYPT_UINT32_MAP map2 = { u32From2, u32To2 };
+    SYMCRYPT_UINT32_MAP map3 = { u32From2, u32To3 }; // multiple map entries may have the same 'from'
+
+    SYMCRYPT_UINT32_MAP pMap[2] = { map1, map2 };
+
+    //
+    // Case 1: u32Input matches the 'from' field of only one entry 
+    //
+
+    CHECK(SymCryptMapUint32(u32From1, u32Default, pMap, 2) == u32To1, "SymCryptMapUint32");
+
+    //
+    // Case 2: u32Input matches the 'from' field of multiple entries 
+    //
+    CHECK(SymCryptMapUint32(u32From2, u32Default, pMap, 2) == u32To2, "SymCryptMapUint32");
+
+    //
+    // Case 3: u32Input doesn't match the 'from' field of any entry 
+    //
+    do
+    {
+        GENRANDOM(&u32Input, sizeof(u32Input));
+    } 
+    while (u32Input == u32From1 || u32Input == u32From2);
+
+    CHECK(SymCryptMapUint32(u32Input, u32Default, pMap, 2) == u32Default, "SymCryptMapUint32");
+
+}
 
 VOID
 testScsTools()
@@ -136,4 +184,6 @@ testScsTools()
     testScsCopy();
 
     testBasicMaskFunctions();
+
+    testScsMapUint32();
 }
