@@ -45,7 +45,7 @@ SymCryptPaddingPkcs7Add(
     //  perform the padding
     //
 
-    // cbSrc must be greater than zero. memcpy(,,0) is not defined!
+    // cbSrc must be greater than zero. memcpy(pbDst, NULL, 0) is not defined!
     if (pbDst != pbSrc && cbSrc > 0)
     {
         memcpy(pbDst, pbSrc, cbSrc);
@@ -154,6 +154,7 @@ cleanup:
     *pcbResult = cbResult;
 
     // Update scError with the two error masks.
+    // SYMCRYPT_INVALID_ARGUMENT gets precedence over SYMCRYPT_BUFFER_TOO_SMALL
     scError ^= mBufferSizeError & (scError ^ SYMCRYPT_BUFFER_TOO_SMALL);
     scError ^= mPaddingError & (scError ^ SYMCRYPT_INVALID_ARGUMENT);
 

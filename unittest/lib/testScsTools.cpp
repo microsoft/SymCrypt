@@ -145,12 +145,10 @@ testScsMapUint32()
     GENRANDOM(&u32To2, sizeof(u32To2));
     GENRANDOM(&u32To3, sizeof(u32To3));
 
-
-    SYMCRYPT_UINT32_MAP map1 = { u32From1, u32To1 };
-    SYMCRYPT_UINT32_MAP map2 = { u32From2, u32To2 };
-    SYMCRYPT_UINT32_MAP map3 = { u32From2, u32To3 }; // multiple map entries may have the same 'from'
-
-    SYMCRYPT_UINT32_MAP pMap[2] = { map1, map2 };
+    SYMCRYPT_UINT32_MAP pMap[3] = { 
+        { u32From1, u32To1 }, 
+        { u32From2, u32To2 }, 
+        { u32From2, u32To3 } };     // multiple map entries may have the same 'from'
 
     //
     // Case 1: u32Input matches the 'from' field of only one entry 
