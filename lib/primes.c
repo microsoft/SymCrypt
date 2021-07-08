@@ -94,12 +94,12 @@ SymCryptIntMillerRabinPrimalityTest(
 
     // Check the 3 mod 4 requirement when side-channel safe
     SYMCRYPT_HARD_ASSERT(
-            ((flags & SYMCRYPT_FLAG_DATA_PUBLIC) != 0) || 
+            ((flags & SYMCRYPT_FLAG_DATA_PUBLIC) != 0) ||
             (SymCryptIntGetBit( piD, 1 )!=0) );
 
     // Calculate R and D such that Src - 1 = D*2^R
     //      Notice that the loop executes only if
-    //      the SYMCRYPT_FLAG_INT_LL_NOT_SIDE_CHANEL_SAFE is
+    //      the SYMCRYPT_FLAG_DATA_PUBLIC is
     //      specified (and Src != 3 mod 4)
     R = 1;
     while( SymCryptIntGetBit( piD, R )==0 )
@@ -131,7 +131,7 @@ SymCryptIntMillerRabinPrimalityTest(
 
         // repeat R-1 times
         //      Notice that the inner loop executes only if
-        //      the SYMCRYPT_FLAG_INT_LL_NOT_SIDE_CHANEL_SAFE is
+        //      the SYMCRYPT_FLAG_DATA_PUBLIC is
         //      specified (and Src != 3 mod 4)
         innerLoop = TRUE;
         for (UINT32 j=0; (j<R-1)&&(innerLoop); j++)

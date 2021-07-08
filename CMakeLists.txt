@@ -1,5 +1,10 @@
 cmake_minimum_required(VERSION 3.13.0)
 
+if(WIN32)
+    # Require Windows 10 SDK version 18362 for BCRYPT_TLS_CBC_HMAC_VERIFY_FLAG
+    set(CMAKE_SYSTEM_VERSION 10.0.18362)
+endif()
+
 project(SymCrypt)
 
 if(NOT CMAKE_BUILD_TYPE)
@@ -27,10 +32,12 @@ set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib/${CMAKE_SYSTEM_PROCES
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/module/${CMAKE_SYSTEM_PROCESSOR}/${SYMCRYPT_TARGET_ENV})
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/exe/${CMAKE_SYSTEM_PROCESSOR}/${SYMCRYPT_TARGET_ENV})
 
-if(WIN32 AND SYMCRYPT_TARGET_ENV MATCHES "WindowsUserMode")
-    # Enable ASM_MASM. Annoyingly, this has to be done in the main CMake file rather than in the
-    # toolchain file
-    enable_language(ASM_MASM)
+if(WIN32)
+    if(NOT SYMCRYPT_TARGET_ENV MATCHES "Generic")
+        # Enable ASM_MASM. Annoyingly, this has to be done in the main CMake file rather than in the
+        # toolchain file
+        enable_language(ASM_MASM)
+    endif()
     add_compile_options(/MP)
     add_compile_options(/Zp8)
     # Remove /RTC1, incompatible of /Ox
@@ -51,8 +58,10 @@ if(WIN32 AND SYMCRYPT_TARGET_ENV MATCHES "WindowsUserMode")
         add_compile_options(/Gy)
         add_compile_options(/Gw)
     endif()
-elseif(NOT WIN32)
-    enable_language(ASM)
+else()
+    if(NOT SYMCRYPT_TARGET_ENV MATCHES "Generic")
+        enable_language(ASM)
+    endif()
     add_compile_options(-Wno-deprecated-declarations -Wno-deprecated)
     add_compile_options(-g)
     add_compile_options(-Wno-multichar)
@@ -126,7 +135,7 @@ include(build/buildInfo.cmake)
 
 add_subdirectory(lib)
 
-if(NOT WIN32 AND NOT CMAKE_BUILD_TYPE MATCHES Sanitize)
+if(NOT WIN32 AND NOT SYMCRYPT_TARGET_ENV MATCHES "Generic" AND NOT CMAKE_BUILD_TYPE MATCHES Sanitize)
     # Module integrity check is seen as OOB access by sanitizers, and sanitizer instrumentation
     # breaks integrity check assumptions. Only enable module when not running with sanitizers
     add_subdirectory(module)

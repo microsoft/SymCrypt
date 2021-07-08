@@ -5,11 +5,17 @@
 
 
 parameters:
+- name: hostos
+  type: string
+  values:
+  - Windows
+  - Linux
 - name: env
   type: string
   values:
   - WindowsUserMode
   - LinuxUserMode
+  - Generic
 - name: arch
   type: string
   values:
@@ -17,6 +23,7 @@ parameters:
   - X86
   - ARM64
   - ARM
+  - Unknown
 - name: cc
   type: string
   values:
@@ -50,57 +57,90 @@ steps:
         python -m pip install --upgrade pip setuptools wheel
         pip install -r $(Build.SourcesDirectory)/scripts/requirements.txt
       displayName: 'Install Python requirements'
-  - task: CMake@1
-    inputs:
-      workingDirectory: '$(Build.SourcesDirectory)/bin'
-      cmakeArgs: >-
-        ..
-        -DCMAKE_TOOLCHAIN_FILE=../cmake-toolchain/${{parameters.env}}-${{parameters.arch}}.cmake
-        -DCMAKE_C_COMPILER=${{parameters.cc}} -DCMAKE_CXX_COMPILER=${{parameters.cxx}}
-        -DCMAKE_BUILD_TYPE=${{parameters.buildType}}
-        ${{parameters.additionalCMakeArgs}}
+  # Specify no toolchain file for generic build
+  - ${{ if eq(parameters.env, 'Generic') }}:
+    - task: CMake@1
+      inputs:
+        workingDirectory: '$(Build.SourcesDirectory)/bin'
+        cmakeArgs: >-
+          ..
+          -DCMAKE_C_COMPILER=${{parameters.cc}} -DCMAKE_CXX_COMPILER=${{parameters.cxx}}
+          -DCMAKE_BUILD_TYPE=${{parameters.buildType}}
+          ${{parameters.additionalCMakeArgs}}
+  # Specify toolchain file based on env and arch for non-generic build
+  - ${{ if ne(parameters.env, 'Generic') }}:
+    - task: CMake@1
+      inputs:
+        workingDirectory: '$(Build.SourcesDirectory)/bin'
+        cmakeArgs: >-
+          ..
+          -DCMAKE_TOOLCHAIN_FILE=../cmake-toolchain/${{parameters.env}}-${{parameters.arch}}.cmake
+          -DCMAKE_C_COMPILER=${{parameters.cc}} -DCMAKE_CXX_COMPILER=${{parameters.cxx}}
+          -DCMAKE_BUILD_TYPE=${{parameters.buildType}}
+          ${{parameters.additionalCMakeArgs}}
   # Build with CMake
   # cmake --build . -j
-  - ${{ if eq(parameters.env, 'WindowsUserMode') }}:
+  - ${{ if eq(parameters.hostos, 'Windows') }}:
     - task: CMake@1
       inputs:
         workingDirectory: '$(Build.SourcesDirectory)/bin'
         cmakeArgs: '--build . -j --config ${{parameters.buildType}}'
     # Execute unit tests using the inline script
-    - script: |
-        cd bin\exe\${{parameters.arch}}\${{parameters.env}}\${{parameters.buildType}}
-        .\symcryptunittest.exe
-      displayName: 'Execute unit tests'
-      name: '${{parameters.env}}UnitTest_${{parameters.buildType}}'
-  - ${{ if eq(parameters.env, 'LinuxUserMode') }}:
+    - ${{ if ne(parameters.env, 'Generic') }}:
+      - script: |
+          cd bin\exe\${{parameters.arch}}\${{parameters.env}}\${{parameters.buildType}}
+          .\symcryptunittest.exe
+        displayName: 'Execute unit tests'
+        name: '${{parameters.env}}UnitTest_${{parameters.buildType}}'
+    - ${{ if eq(parameters.env, 'Generic') }}:
+      - script: |
+          cd bin\exe\%PROCESSOR_ARCHITECTURE%\${{parameters.env}}\${{parameters.buildType}}
+          .\symcryptunittest.exe
+        displayName: 'Execute unit tests'
+        name: '${{parameters.env}}UnitTest_${{parameters.buildType}}'
+  - ${{ if eq(parameters.hostos, 'Linux') }}:
     - task: CMake@1
       inputs:
         workingDirectory: '$(Build.SourcesDirectory)/bin'
         cmakeArgs: '--build . -j'
-    # Execute module test using the inline script
-    - ${{ if ne(parameters.buildType, 'Sanitize') }}:
+    # Increase ulimit to enable core dump in case of a test crash
+    - script: |
+        ulimit -c unlimited
+      displayName: 'Enable core dumps'
+    # Execute module and unit test using the inline script
+    - ${{ if ne(parameters.env, 'Generic') }}:
       - script: |
           cd bin/exe/${{parameters.arch}}/${{parameters.env}}
-          ./symcryptmoduletest
-        displayName: 'Execute module test'
-    - script: |
-        cd bin/exe/${{parameters.arch}}/${{parameters.env}}
-        ./symcryptunittest
-      displayName: 'Execute unit tests'
-      name: '${{parameters.env}}UnitTest_${{parameters.buildType}}'
+          ulimit -c unlimited
+          ./symcryptunittest
+        displayName: 'Execute unit tests'
+        name: '${{parameters.env}}UnitTest_${{parameters.buildType}}'
+      - ${{ if ne(parameters.buildType, 'Sanitize') }}:
+        # Only run module test if rdseed is present on the CPU
+        - script: |
+            cd bin/exe/${{parameters.arch}}/${{parameters.env}}
+            if lshw -c cpu | grep -q rdseed
+            then ./symcryptmoduletest
+            fi
+          displayName: 'Execute module test'
+    # Execute unit test using the inline script
+    - ${{ if eq(parameters.env, 'Generic') }}:
+      - script: |
+          archName=`uname -m`
+          cd bin/exe/${archName}/${{parameters.env}}
+          ./symcryptunittest
+        displayName: 'Execute unit tests'
+        name: '${{parameters.env}}UnitTest_${{parameters.buildType}}'
   # Publish artifacts so they're available in the pipeline results
   - publish: $(System.DefaultWorkingDirectory)/bin
-    artifact: 'drop-${{parameters.env}}-${{parameters.arch}}-${{parameters.cc}}-${{parameters.buildType}}'
+    artifact: 'drop-${{parameters.hostos}}-${{parameters.env}}-${{parameters.arch}}-${{parameters.cc}}-${{parameters.buildType}}-${{parameters.additionalCMakeArgs}}'
   # Publish artifacts, core dumps and temporary files on failure
   - publish: $(System.DefaultWorkingDirectory)/bin
-    artifact: 'failed-${{parameters.env}}-${{parameters.arch}}-${{parameters.cc}}-${{parameters.buildType}}'
+    artifact: 'failed-${{parameters.hostos}}-${{parameters.env}}-${{parameters.arch}}-${{parameters.cc}}-${{parameters.buildType}}-${{parameters.additionalCMakeArgs}}'
     condition: failed()
-  - publish: /var/crash
-    artifact: 'crash-${{parameters.env}}-${{parameters.arch}}-${{parameters.cc}}-${{parameters.buildType}}'
-    condition: and(failed(), eq(variables['Agent.OS'], 'Linux'))
   - publish: $(Agent.TempDirectory)
-    artifact: 'temp-${{parameters.env}}-${{parameters.arch}}-${{parameters.cc}}-${{parameters.buildType}}'
+    artifact: 'temp-${{parameters.hostos}}-${{parameters.env}}-${{parameters.arch}}-${{parameters.cc}}-${{parameters.buildType}}-${{parameters.additionalCMakeArgs}}'
     condition: failed()
   - publish: $(Agent.WorkFolder)
-    artifact: 'work-${{parameters.env}}-${{parameters.arch}}-${{parameters.cc}}-${{parameters.buildType}}'
+    artifact: 'work-${{parameters.hostos}}-${{parameters.env}}-${{parameters.arch}}-${{parameters.cc}}-${{parameters.buildType}}-${{parameters.additionalCMakeArgs}}'
     condition: failed()
