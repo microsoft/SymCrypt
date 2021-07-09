@@ -19,6 +19,7 @@
 #include <immintrin.h>
 
     #if SYMCRYPT_GNUC
+        #include <x86intrin.h>  // required for definition of _rdseed64_step for GCC 8 and earlier
         #include <xsaveintrin.h>
         #define _XCR_XFEATURE_ENABLED_MASK 0
     #endif
