@@ -24,9 +24,13 @@ target_link_options(symcrypt PRIVATE
 
 add_dependencies(symcrypt symcrypt_linuxusermode symcrypt_common symcrypt_module_linux_common)
 
+if (CMAKE_C_COMPILER_ID MATCHES "Clang")
+    add_compile_options(-mllvm -x86-speculative-load-hardening)
+endif()
+
 add_custom_target(
   symcrypt_fips ALL
-  COMMAND ${CMAKE_SOURCE_DIR}/scripts/process_fips_module.py $<TARGET_FILE:symcrypt> -d
+  COMMAND python3 ${CMAKE_SOURCE_DIR}/scripts/process_fips_module.py $<TARGET_FILE:symcrypt> -d
   DEPENDS $<TARGET_FILE:symcrypt>
   COMMENT "Postprocessing SymCrypt shared object for FIPS integrity verification"
 )

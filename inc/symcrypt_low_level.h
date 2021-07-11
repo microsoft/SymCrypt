@@ -654,7 +654,7 @@ SymCryptIntGetValue(
                                 SIZE_T                  cbDst,
                                 SYMCRYPT_NUMBER_FORMAT  format );
 //
-// Convert a value form the internal number representation to a byte array.
+// Convert a value from the internal number representation to a byte array.
 //
 // Src is the number whose value is to be stored in a byte array
 // (pbDst, cbDst) the destination buffer

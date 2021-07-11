@@ -784,7 +784,7 @@ SymCryptFdefMontgomeryReduceAsmSubLoop:
         dec     D12
         jnz     SymCryptFdefMontgomeryReduceAsmSubLoop
 
-        // Finally a masked copy form pSrc to pDst
+        // Finally a masked copy from pSrc to pDst
         // copy if: Q9 == 0 && Cy = 1
         sbb     D9, 0
 
@@ -2083,7 +2083,7 @@ SymCryptFdefMontgomeryReduce1024AsmSubLoop:
         dec     D12
         jnz     SymCryptFdefMontgomeryReduce1024AsmSubLoop
 
-        // Finally a masked copy form pSrc to pDst
+        // Finally a masked copy from pSrc to pDst
         // copy if: Q9 == 0 && Cy = 1
         sbb     D9, 0
 

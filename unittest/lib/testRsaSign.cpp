@@ -49,7 +49,7 @@ rsaTestKeysAddOneFunky( UINT32 nBitsOfModulus )
     PSYMCRYPT_INT piHigh = NULL;
 
     CHECK( g_nRsaTestKeyBlobs < MAX_RSA_TESTKEYS, "?" );
-    PRSAKEY_TESTBLOB pBlob = &g_RsaTestKeyBlobs[ g_nRsaTestKeyBlobs++ ]; 
+    PRSAKEY_TESTBLOB pBlob = &g_RsaTestKeyBlobs[ g_nRsaTestKeyBlobs++ ];
     SymCryptWipe( (PBYTE) pBlob, sizeof( *pBlob ) );
 
     // Calculate the needed sizes
@@ -200,7 +200,7 @@ rsaTestKeysAddOne( UINT32 bitSize )
     scError = SymCryptRsakeyGenerate( pKey, &u64PubExp, 1, 0 );
     CHECK( scError == SYMCRYPT_NO_ERROR, "?" );
 
-    PRSAKEY_TESTBLOB pBlob = &g_RsaTestKeyBlobs[ g_nRsaTestKeyBlobs++ ]; 
+    PRSAKEY_TESTBLOB pBlob = &g_RsaTestKeyBlobs[ g_nRsaTestKeyBlobs++ ];
     SymCryptWipe( (PBYTE) pBlob, sizeof( *pBlob ) );
 
     pBlob->nBitsModulus = SymCryptRsakeyModulusBits( pKey );
@@ -298,7 +298,7 @@ VOID rsaTestKeysGenerate()
 
     iprint( "]" );
 
-cleanup:    
+cleanup:
     return;
 }
 
@@ -324,7 +324,7 @@ rsaKeyFromTestBlob( PCRSAKEY_TESTBLOB pBlob )
         &pBlob->u64PubExp, 1,
         ppPrime, cbPrime, 2,
         SYMCRYPT_NUMBER_FORMAT_MSB_FIRST,
-        0, 
+        0,
         pKey );
     CHECK( scError == SYMCRYPT_NO_ERROR, "?" );
 
@@ -369,17 +369,17 @@ public:
     ImpPtrVector m_comps;                   // Subset of m_imps; set of ongoing computations
 
     virtual NTSTATUS setKey( PCRSAKEY_TESTBLOB pcKeyBlob );
-    
+
     virtual NTSTATUS sign(
-        _In_reads_( cbHash)     PCBYTE  pbHash, 
+        _In_reads_( cbHash)     PCBYTE  pbHash,
                                 SIZE_T  cbHash,
                                 PCSTR   pcstrHashAlgName,
                                 UINT32  u32Other,
         _Out_writes_( cbSig )   PBYTE   pbSig,
                                 SIZE_T  cbSig );        // cbSig == cbModulus of key
 
-    virtual NTSTATUS verify( 
-        _In_reads_( cbHash)     PCBYTE  pbHash, 
+    virtual NTSTATUS verify(
+        _In_reads_( cbHash)     PCBYTE  pbHash,
                                 SIZE_T  cbHash,
         _In_reads_( cbSig )     PCBYTE  pbSig,
                                 SIZE_T  cbSig,
@@ -421,7 +421,7 @@ RsaSignMultiImp::setKey( PCRSAKEY_TESTBLOB pcKeyBlob )
         m_cbSig = pcKeyBlob->cbModulus;
         CHECK( m_cbSig <= RSAKEY_MAXKEYSIZE, "Modulus too big" );
     }
-    
+
     for( ImpPtrVector::iterator i = m_imps.begin(); i != m_imps.end(); ++i )
     {
         if( (*i)->setKey( pcKeyBlob ) == STATUS_SUCCESS )
@@ -434,8 +434,8 @@ RsaSignMultiImp::setKey( PCRSAKEY_TESTBLOB pcKeyBlob )
 }
 
 NTSTATUS
-RsaSignMultiImp::verify( 
-    _In_reads_( cbHash)     PCBYTE  pbHash, 
+RsaSignMultiImp::verify(
+    _In_reads_( cbHash)     PCBYTE  pbHash,
                             SIZE_T  cbHash,
     _In_reads_( cbSig )     PCBYTE  pbSig,
                             SIZE_T  cbSig,
@@ -461,14 +461,14 @@ RsaSignMultiImp::verify(
 
 NTSTATUS
 RsaSignMultiImp::sign(
-    _In_reads_( cbHash)     PCBYTE  pbHash, 
+    _In_reads_( cbHash)     PCBYTE  pbHash,
                             SIZE_T  cbHash,
                             PCSTR   pcstrHashAlgName,
                             UINT32  u32Other,
     _Out_writes_( cbSig )   PBYTE   pbSig,
                             SIZE_T  cbSig )
 {
-    // RSA signatures are not necesarilly deterministic (PSS) so we do the following:
+    // RSA signatures are not necessarily deterministic (PSS) so we do the following:
     // - Have every implementation sign
     // - Have every implementation verify each signature
     // - return a random signature
@@ -528,7 +528,7 @@ createKatFileSinglePkcs1( FILE * f, PCRSAKEY_TESTBLOB pBlob, PCSTR hashName, UIN
     fprintHex( f, pBlob->abModulus, pBlob->cbModulus );
 
     cbTmp = SymCryptUint64Bytesize( pBlob->u64PubExp );
-    SymCryptStoreMsbFirstUint64( pBlob->u64PubExp, sig, cbTmp );    
+    SymCryptStoreMsbFirstUint64( pBlob->u64PubExp, sig, cbTmp );
     fprintf( f, "e = "  );
     fprintHex( f, sig, cbTmp );
 
@@ -586,7 +586,7 @@ createKatFileSinglePss( FILE * f, PCRSAKEY_TESTBLOB pBlob, PCSTR hashName, PCSYM
     fprintHex( f, pBlob->abModulus, pBlob->cbModulus );
 
     cbTmp = SymCryptUint64Bytesize( pBlob->u64PubExp );
-    SymCryptStoreMsbFirstUint64( pBlob->u64PubExp, sig, cbTmp );    
+    SymCryptStoreMsbFirstUint64( pBlob->u64PubExp, sig, cbTmp );
     fprintf( f, "e = "  );
     fprintHex( f, sig, cbTmp );
 
@@ -676,7 +676,7 @@ createKatFileRsaSign()
 
     fclose( f );
 
-    // Generating test vectors is not normal program flow, so we abort here to avoid getting into 
+    // Generating test vectors is not normal program flow, so we abort here to avoid getting into
     // non-standard states.
     CHECK( FALSE, "Written test vector file" );
 }
@@ -735,7 +735,7 @@ testRsaSignSingle(
 VOID
 testRsaSignTestkeys(
     RsaSignImplementation * pRsaSign,
-    INT64                   line )    
+    INT64                   line )
 {
     NTSTATUS    ntStatus;
     BYTE        sig[RSAKEY_MAXKEYSIZE];
@@ -747,10 +747,10 @@ testRsaSignTestkeys(
 
     for( int i=0; i<MAX_RSA_TESTKEYS; i++ )
     {
-        PRSAKEY_TESTBLOB pBlob = &g_RsaTestKeyBlobs[ i ]; 
+        PRSAKEY_TESTBLOB pBlob = &g_RsaTestKeyBlobs[ i ];
         ntStatus = pRsaSign->setKey( pBlob );
         CHECK( ntStatus == STATUS_SUCCESS, "Error setting key" );
-    
+
         GENRANDOM( hash, sizeof( hash ) );
         UINT32 cbHash = 32;
         UINT32 cbSalt = (UINT32) g_rng.sizet( 0, pBlob->cbModulus - 48 );
@@ -760,9 +760,9 @@ testRsaSignTestkeys(
         // iprint( "%d, ", i );
         ntStatus = pRsaSign->sign( hash, cbHash, "SHA256", cbSalt, &sig[0], pBlob->cbModulus );
         CHECK( NT_SUCCESS( ntStatus ), "Error in RSA signing validation" );
-    } 
+    }
     CHECK( pRsaSign->setKey( NULL ) == STATUS_SUCCESS, "Failed to clear key" );
-}                            
+}
 
 VOID
 testRsaSignKats()
@@ -833,7 +833,7 @@ testRsaSignKats()
                 blob.cbPrime1 = (UINT32) P1.size();
                 blob.cbPrime2 = (UINT32) P2.size();
 
-                CHECK( blob.cbModulus <= RSAKEY_MAXKEYSIZE && blob.cbPrime1 <= RSAKEY_MAXKEYSIZE && blob.cbPrime2 <= RSAKEY_MAXKEYSIZE, 
+                CHECK( blob.cbModulus <= RSAKEY_MAXKEYSIZE && blob.cbPrime1 <= RSAKEY_MAXKEYSIZE && blob.cbPrime2 <= RSAKEY_MAXKEYSIZE,
                         "Test vector too large" );
                 memcpy( blob.abModulus, N.data(), blob.cbModulus );
                 memcpy( blob.abPrime1, P1.data(), blob.cbPrime1 );
@@ -892,10 +892,10 @@ testRsaSignPkcs1()
 
     for( int i = 0; i < 20; i++ )
     {
-        pKey = rsaTestKeyRandom();    
+        pKey = rsaTestKeyRandom();
 
         GENRANDOM( hash, sizeof( hash ) );
-        scError = SymCryptRsaPkcs1Sign( 
+        scError = SymCryptRsaPkcs1Sign(
                     pKey,
                     hash, sizeof( hash ),
                     SymCryptSha256OidList, SYMCRYPT_SHA256_OID_COUNT,
@@ -926,7 +926,7 @@ testRsaSignPkcs1()
         CHECK( scError != SYMCRYPT_NO_ERROR, "?" );
 
         // Sign with the second OID
-        scError = SymCryptRsaPkcs1Sign( 
+        scError = SymCryptRsaPkcs1Sign(
                     pKey,
                     hash, sizeof( hash ),
                     SymCryptSha256OidList + 1, SYMCRYPT_SHA256_OID_COUNT - 1,
@@ -955,7 +955,7 @@ testRsaSignPkcs1()
                     SymCryptSha256OidList, SYMCRYPT_SHA256_OID_COUNT,
                     0 );
         CHECK( scError == SYMCRYPT_NO_ERROR, "?" );
-        
+
         SymCryptRsakeyFree( pKey );
         pKey = NULL;
     }
@@ -973,7 +973,7 @@ testRsaSignPss()
     BYTE hash[64];
     UINT32 cbModulus;
     NTSTATUS ntStatus;
-    
+
 
     std::unique_ptr<RsaSignMultiImp> pRsaSignMultiImp;
     pRsaSignMultiImp.reset( new RsaSignMultiImp( "RsaSignPss" ) );

@@ -200,28 +200,28 @@ SymCryptAesEncryptC(
     // Final round
 
     // SubBytes/ShiftRows for col. 0
-    state2[0] = SymCryptAesSboxMatrixMult[0][ state[0][0] ][1];
-    state2[3] = SymCryptAesSboxMatrixMult[0][ state[0][1] ][1] << 8;
-    state2[2] = SymCryptAesSboxMatrixMult[0][ state[0][2] ][1] << 16;
-    state2[1] = SymCryptAesSboxMatrixMult[0][ state[0][3] ][1] << 24;
+    state2[0] = (UINT32) SymCryptAesSboxMatrixMult[0][ state[0][0] ][1];
+    state2[3] = (UINT32) SymCryptAesSboxMatrixMult[0][ state[0][1] ][1] << 8;
+    state2[2] = (UINT32) SymCryptAesSboxMatrixMult[0][ state[0][2] ][1] << 16;
+    state2[1] = (UINT32) SymCryptAesSboxMatrixMult[0][ state[0][3] ][1] << 24;
 
     // SubBytes/ShiftRows for col. 1
-    state2[1] |= SymCryptAesSboxMatrixMult[0][ state[1][0] ][1];
-    state2[0] |= SymCryptAesSboxMatrixMult[0][ state[1][1] ][1] << 8;
-    state2[3] |= SymCryptAesSboxMatrixMult[0][ state[1][2] ][1] << 16;
-    state2[2] |= SymCryptAesSboxMatrixMult[0][ state[1][3] ][1] << 24;
+    state2[1] |= (UINT32) SymCryptAesSboxMatrixMult[0][ state[1][0] ][1];
+    state2[0] |= (UINT32) SymCryptAesSboxMatrixMult[0][ state[1][1] ][1] << 8;
+    state2[3] |= (UINT32) SymCryptAesSboxMatrixMult[0][ state[1][2] ][1] << 16;
+    state2[2] |= (UINT32) SymCryptAesSboxMatrixMult[0][ state[1][3] ][1] << 24;
 
     // SubBytes/ShiftRows for col. 2
-    state2[2] |= SymCryptAesSboxMatrixMult[0][ state[2][0] ][1];
-    state2[1] |= SymCryptAesSboxMatrixMult[0][ state[2][1] ][1] << 8;
-    state2[0] |= SymCryptAesSboxMatrixMult[0][ state[2][2] ][1] << 16;
-    state2[3] |= SymCryptAesSboxMatrixMult[0][ state[2][3] ][1] << 24;
+    state2[2] |= (UINT32) SymCryptAesSboxMatrixMult[0][ state[2][0] ][1];
+    state2[1] |= (UINT32) SymCryptAesSboxMatrixMult[0][ state[2][1] ][1] << 8;
+    state2[0] |= (UINT32) SymCryptAesSboxMatrixMult[0][ state[2][2] ][1] << 16;
+    state2[3] |= (UINT32) SymCryptAesSboxMatrixMult[0][ state[2][3] ][1] << 24;
 
     // SubBytes/ShiftRows for col. 3
-    state2[3] |= SymCryptAesSboxMatrixMult[0][ state[3][0] ][1];
-    state2[2] |= SymCryptAesSboxMatrixMult[0][ state[3][1] ][1] << 8;
-    state2[1] |= SymCryptAesSboxMatrixMult[0][ state[3][2] ][1] << 16;
-    state2[0] |= SymCryptAesSboxMatrixMult[0][ state[3][3] ][1] << 24;
+    state2[3] |= (UINT32) SymCryptAesSboxMatrixMult[0][ state[3][0] ][1];
+    state2[2] |= (UINT32) SymCryptAesSboxMatrixMult[0][ state[3][1] ][1] << 8;
+    state2[1] |= (UINT32) SymCryptAesSboxMatrixMult[0][ state[3][2] ][1] << 16;
+    state2[0] |= (UINT32) SymCryptAesSboxMatrixMult[0][ state[3][3] ][1] << 24;
 
     // AddRoundKey
     *((UINT32 *) &pbCiphertext[0 ]) = *(UINT32 *) (*keyPtr)[0] ^ state2[0];
@@ -321,28 +321,28 @@ SymCryptAesDecryptC(
     // Final round
 
     // SubBytes/ShiftRows for col. 0
-    state2[0] = SymCryptAesInvSbox[ state[0][0] ];
-    state2[1] = SymCryptAesInvSbox[ state[0][1] ] << 8;
-    state2[2] = SymCryptAesInvSbox[ state[0][2] ] << 16;
-    state2[3] = SymCryptAesInvSbox[ state[0][3] ] << 24;
+    state2[0] = (UINT32) SymCryptAesInvSbox[ state[0][0] ];
+    state2[1] = (UINT32) SymCryptAesInvSbox[ state[0][1] ] << 8;
+    state2[2] = (UINT32) SymCryptAesInvSbox[ state[0][2] ] << 16;
+    state2[3] = (UINT32) SymCryptAesInvSbox[ state[0][3] ] << 24;
 
     // SubBytes/ShiftRows for col. 1
-    state2[1] |= SymCryptAesInvSbox[ state[1][0] ];
-    state2[2] |= SymCryptAesInvSbox[ state[1][1] ] << 8;
-    state2[3] |= SymCryptAesInvSbox[ state[1][2] ] << 16;
-    state2[0] |= SymCryptAesInvSbox[ state[1][3] ] << 24;
+    state2[1] |= (UINT32) SymCryptAesInvSbox[ state[1][0] ];
+    state2[2] |= (UINT32) SymCryptAesInvSbox[ state[1][1] ] << 8;
+    state2[3] |= (UINT32) SymCryptAesInvSbox[ state[1][2] ] << 16;
+    state2[0] |= (UINT32) SymCryptAesInvSbox[ state[1][3] ] << 24;
 
     // SubBytes/ShiftRows for col. 2
-    state2[2] |= SymCryptAesInvSbox[ state[2][0] ];
-    state2[3] |= SymCryptAesInvSbox[ state[2][1] ] << 8;
-    state2[0] |= SymCryptAesInvSbox[ state[2][2] ] << 16;
-    state2[1] |= SymCryptAesInvSbox[ state[2][3] ] << 24;
+    state2[2] |= (UINT32) SymCryptAesInvSbox[ state[2][0] ];
+    state2[3] |= (UINT32) SymCryptAesInvSbox[ state[2][1] ] << 8;
+    state2[0] |= (UINT32) SymCryptAesInvSbox[ state[2][2] ] << 16;
+    state2[1] |= (UINT32) SymCryptAesInvSbox[ state[2][3] ] << 24;
 
     // SubBytes/ShiftRows for col. 3
-    state2[3] |= SymCryptAesInvSbox[ state[3][0] ];
-    state2[0] |= SymCryptAesInvSbox[ state[3][1] ] << 8;
-    state2[1] |= SymCryptAesInvSbox[ state[3][2] ] << 16;
-    state2[2] |= SymCryptAesInvSbox[ state[3][3] ] << 24;
+    state2[3] |= (UINT32) SymCryptAesInvSbox[ state[3][0] ];
+    state2[0] |= (UINT32) SymCryptAesInvSbox[ state[3][1] ] << 8;
+    state2[1] |= (UINT32) SymCryptAesInvSbox[ state[3][2] ] << 16;
+    state2[2] |= (UINT32) SymCryptAesInvSbox[ state[3][3] ] << 24;
 
     // AddRoundKey
     *((UINT32 *) &pbPlaintext[0 ]) = *(UINT32 *) (*keyPtr)[0] ^ state2[0];

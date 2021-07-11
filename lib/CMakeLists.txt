@@ -221,7 +221,7 @@ if(WIN32 AND NOT(SYMCRYPT_TARGET_ENV MATCHES "Generic"))
         set_source_files_properties(
             i386/fdef_asm-masm.asm PROPERTIES INCLUDE_DIRECTORIES ${CMAKE_CURRENT_SOURCE_DIR}/i386)
     endif()
-else()
+elseif(NOT(SYMCRYPT_TARGET_ENV MATCHES "Generic"))
     if(CMAKE_SYSTEM_PROCESSOR MATCHES "AMD64")
         process_symcryptasm(amd64/aesasm.symcryptasm gas amd64)
         process_symcryptasm(amd64/fdef_asm.symcryptasm gas amd64)
@@ -290,6 +290,10 @@ endif()
 
 if(NOT WIN32)
     add_compile_options(-Wno-trigraphs)
+
+    if (CMAKE_C_COMPILER_ID MATCHES "Clang")
+        add_compile_options(-mllvm -x86-speculative-load-hardening)
+    endif()
 
     add_library(symcrypt_linuxusermode STATIC env_linuxUserMode.c)
     set_target_properties(symcrypt_linuxusermode PROPERTIES PREFIX "")

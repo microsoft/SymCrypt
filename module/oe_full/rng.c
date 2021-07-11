@@ -7,34 +7,53 @@
 
 #include "precomp.h"
 #include <pthread.h>
+#include <sys/random.h>
 
 // Size of small entropy request cache, same as Windows
 #define  RANDOM_NUM_CACHE_SIZE         128
 #define  MAX_GENERATE_BEFORE_RESEED    8192
 
-SYMCRYPT_RNG_AES_STATE   g_AesRngState;
-pthread_mutex_t          g_rngLock;
-BYTE                     g_randomBytesCache[RANDOM_NUM_CACHE_SIZE];
-SIZE_T                   g_cbRandomBytesCache = 0;
-int                      g_rngCounter = 0;
+pthread_mutex_t g_rngLock; // lock around access to g_AesRngState
+SYMCRYPT_RNG_AES_STATE g_AesRngState;
 
+BYTE g_randomBytesCache[RANDOM_NUM_CACHE_SIZE];
+SIZE_T g_cbRandomBytesCache = 0;
+
+UINT32 g_rngCounter = 0; // reseed when counter exceeds MAX_GENERATE_BEFORE_RESEED, increments 1 per generate
+
+// Helper function for reseeding with RDSEED, urandom, and user-provided pbEntropy
+VOID
+SymCryptModuleReseed( PCBYTE pbEntropy, SIZE_T cbEntropy );
 
 // This function must be called during module initialization. It sets up
-// the internal SymCrypt RNG state by seeding with RDSEED
+// the internal SymCrypt RNG state by seeding with RDSEED and urandom.
+// Max seed size for SymCryptRngAesInstantiate is 64 bytes, so first 48
+// are from RDSEED and last 16 are urandom, as per SP800-90A section 10.2.1.3.2
+// The RDSEED input constitutes the entropy_input and nonce, while urandom is
+// the personalization_string
 VOID
 SYMCRYPT_CALL
 SymCryptRngInit()
 {
     SYMCRYPT_ERROR error = SYMCRYPT_NO_ERROR;
-    BYTE seed[SYMCRYPT_RNG_AES_MIN_INSTANTIATE_SIZE];
+
+    BYTE seed[64];
+    SIZE_T readElements = 0;
 
     pthread_mutex_init( &g_rngLock, NULL );
 
-    // Get instantiate seed from RDSEED
+    // Get entropy and nonce from RDSEED
     SymCryptRdseedGet(
         seed,
-        sizeof(seed)
+        48
     );
+
+    // Get personalization string from urandom
+    readElements = getrandom( seed + 48, 16, 0 );
+    if ( readElements != 16 )
+    {
+        SymCryptFatal( 'rngu' );
+    }
 
     // Instantiate internal RNG state
     error = SymCryptRngAesInstantiate(
@@ -45,13 +64,22 @@ SymCryptRngInit()
 
     if( error != SYMCRYPT_NO_ERROR )
     {
-        pthread_mutex_destroy( &g_rngLock );
         SymCryptFatal( 'rngi' );
     }
+
+    // Reseed as well so there is sufficient entropy from urandom
+    // Explanation: if RDRAND were to silenty fail, we would only be relying
+    // on 16 bytes of entropy from urandom, which isn't enough. During the
+    // reseed function below, 32 bytes from urandom are used.
+    SymCryptModuleReseed( NULL, 0 );
+
+    SymCryptWipeKnownSize( seed, sizeof(seed) );
 }
 
 // This function must be called during module uninitialization. Cleans
-// up the RNG state and lock
+// up the RNG state and lock.
+// Note: bytes in g_randomBytesCache are not wiped, as they have never been
+// output and so are not secret
 VOID
 SYMCRYPT_CALL
 SymCryptRngUninit()
@@ -65,13 +93,10 @@ SymCryptRngUninit()
 // the AesRngState's generate function directly
 VOID
 SYMCRYPT_CALL
-SymCryptRandom(PBYTE pbRandom, SIZE_T cbRandom)
+SymCryptRandom( PBYTE pbRandom, SIZE_T cbRandom )
 {
-
-    SYMCRYPT_ERROR error = SYMCRYPT_NO_ERROR;
     SIZE_T cbRandomTmp = cbRandom;
     SIZE_T mask;
-    BYTE seed[SYMCRYPT_RNG_AES_MAX_SEED_SIZE];
     SIZE_T cbFill;
 
     if( cbRandom == 0 )
@@ -81,29 +106,15 @@ SymCryptRandom(PBYTE pbRandom, SIZE_T cbRandom)
 
     pthread_mutex_lock( &g_rngLock );
 
-    // If counter is high enough, we reseed the RNG state via RDSEED
+    // If counter is high enough, we reseed the RNG state
     ++g_rngCounter;
     if( g_rngCounter > MAX_GENERATE_BEFORE_RESEED )
     {
-        SymCryptRdseedGet(
-            seed,
-            sizeof(seed)
-        );
-
-        error = SymCryptRngAesReseed(
-            &g_AesRngState,
-            seed,
-            sizeof(seed)
-        );
-
-        if( error != SYMCRYPT_NO_ERROR )
-        {
-            // Should never fail. Fatal if so as RNG isn't functioning properly
-            SymCryptFatal( 'rngg' );
-        }
+        // Call the Module reseed function defined below - this will reseed for us with
+        // RDSEED and urandom
+        SymCryptModuleReseed( NULL, 0 );
 
         g_rngCounter = 0;
-        g_cbRandomBytesCache = 0;
     }
 
     // Big or small request?
@@ -183,29 +194,64 @@ SymCryptRandom(PBYTE pbRandom, SIZE_T cbRandom)
     return;
 }
 
-// This function reseeds the RNG state with pbEntropy. This function
-// is allowed to fail as the caller may provide entropy that is too small
-// or large. (SYMCRYPT_RNG_AES_MIN_SEED_SIZE <= cbEntropy <= SYMCRYPT_RNG_AES_MAX_SEED_SIZE)
+// This function reseeds the RNG state using RDSEED, pbEntropy that the user provides, and urandom from Linux.
+// Seed is constructed as per SP800-90A for CTR_DRBG with a derivation function, that is
+// entropy_input || additional_input, where entropy input is the SP800-90B compliant RDSEED and the additional
+// input is the hash of pbEntropy and urandom
 VOID
 SYMCRYPT_CALL
-SymCryptProvideEntropy(PCBYTE pbEntropy, SIZE_T cbEntropy)
+SymCryptProvideEntropy( PCBYTE pbEntropy, SIZE_T cbEntropy )
 {
-    SYMCRYPT_ERROR error;
-    BYTE hash[SYMCRYPT_SHA256_RESULT_SIZE];
-
-    // Hash entropy to a size that SymCryptRngAesReseed will accept
-    SymCryptSha256( pbEntropy, cbEntropy, hash );
-
     pthread_mutex_lock( &g_rngLock );
 
-    error = SymCryptRngAesReseed( &g_AesRngState, hash, sizeof(hash) );
-
-    if( error != SYMCRYPT_NO_ERROR )
-    {
-        SymCryptFatal( 'rngr' );
-    }
-
-    g_cbRandomBytesCache = 0;
+    SymCryptModuleReseed( pbEntropy, cbEntropy );
 
     pthread_mutex_unlock( &g_rngLock );
+}
+
+// Module-specific reseed function, no locking, used in SymCryptProvideEntropy and SymCryptRandom since they
+// both use this same flow of reseeding.
+// This function reseeds the RNG state using RDSEED, pbEntropy that the user provides, and urandom from Linux.
+// Seed is constructed as per SP800-90A for CTR_DRBG with a derivation function, that is
+// entropy_input || additional_input, where entropy input is the SP800-90B compliant RDSEED and the additional
+// input is the hash of pbEntropy and urandom
+VOID
+SymCryptModuleReseed( PCBYTE pbEntropy, SIZE_T cbEntropy )
+{
+    BYTE seed[64]; // 256 bits of entropy input and 256 bits of additional input
+    BYTE* hash = seed + 32; // Second half of seed will be output of SHA256 below
+    SIZE_T readElements = 0;
+
+    SYMCRYPT_SHA256_STATE hashState;
+
+
+    // Second half of seed is 'additional input' of SP800-90A for DRBG. We hash together pbEntropy and urandom
+    // to force it to size 256 bits
+    SymCryptSha256Init( &hashState );
+    SymCryptSha256Append( &hashState, pbEntropy, cbEntropy );
+
+    // Mix in data from urandom. Place in first half of seed buffer to store until we hash it
+    readElements = getrandom( seed, 32, 0 );
+    if (readElements != 32)
+    {
+        SymCryptFatal( 'rngu' );
+    }
+    SymCryptSha256Append( &hashState, seed, 32 );
+
+    // Get hash result (OK if user passes empty pbEntropy and urandom fails - additional input is optional and
+    // RDSEED is only critical source)
+    SymCryptSha256Result( &hashState, hash );
+
+    // Fill first half of seed with SP800-90B compliant RDSEED
+    SymCryptRdseedGet( seed, 32 );
+
+    // Perform the reseed
+    SymCryptRngAesReseed( &g_AesRngState, seed, sizeof(seed) );
+
+    // Don't use any existing cached random data
+    g_cbRandomBytesCache = 0;
+    
+    SymCryptWipeKnownSize( seed, sizeof(seed) );
+
+    return;
 }

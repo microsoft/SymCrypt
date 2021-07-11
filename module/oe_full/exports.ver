@@ -107,7 +107,6 @@ VERSION_100.17 {
       SymCryptEcDhSecretAgreementSelftest;
       SymCryptEcDsaSelftest;
       SymCryptEcDsaSign;
-      SymCryptEcDsaSignDeterministic;
       SymCryptEcDsaSignEx;
       SymCryptEcDsaVerify;
       SymCryptEcbDecrypt;

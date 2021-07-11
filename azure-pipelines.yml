@@ -2,14 +2,16 @@
 # for building and testing SymCrypt in each of the target environments. For more information on Azure
 # Pipelines, see https://docs.microsoft.com/en-us/azure/devops/pipelines/customize-pipeline
 
-# Execute the pipeline whenever a change is made to master
+# Execute the pipeline whenever a change is made to master or publish
 trigger:
 - master
+- publish
 
-# Execute the pipeline on any PR into master. (Currently not supported on Azure Git Repos; must
-# be configured through the UI.)
+# Execute the pipeline on any PR into master or publish.
+# (Currently not supported on Azure Git Repos; must be configured through the UI.)
 pr:
 - master
+- publish
 
 # List of jobs to build. Each job follows the same general format.
 # 1. Windows AMD64 with CPU optimizations in Debug mode
@@ -22,6 +24,12 @@ pr:
 # 8. Linux AMD64 with CPU optimizations using clang in Debug mode
 # 9. Linux AMD64 with CPU optimizations using clang in Sanitize mode
 # 10. Linux AMD64 with CPU optimizations using clang in Release mode
+# The following jobs run only on CI and PRs to publish
+# 11. Windows 64b with no CPU optimizations in Release mode
+# 12. Windows 32b with no CPU optimizations in Release mode
+# 13. Linux with no CPU optimizations using GCC in Release mode
+# 14. Linux with no CPU optimizations using clang in Release mode
+
 jobs:
 - job: Windows_AMD64_Debug
   pool:
@@ -29,6 +37,7 @@ jobs:
   steps:
   - template: azure-build-template.yml
     parameters:
+      hostos: Windows
       env: WindowsUserMode
       arch: AMD64
       cc: cl
@@ -42,6 +51,7 @@ jobs:
   steps:
   - template: azure-build-template.yml
     parameters:
+      hostos: Windows
       env: WindowsUserMode
       arch: AMD64
       cc: cl
@@ -55,6 +65,7 @@ jobs:
   steps:
   - template: azure-build-template.yml
     parameters:
+      hostos: Windows
       env: WindowsUserMode
       arch: X86
       cc: cl
@@ -68,6 +79,7 @@ jobs:
   steps:
   - template: azure-build-template.yml
     parameters:
+      hostos: Windows
       env: WindowsUserMode
       arch: X86
       cc: cl
@@ -81,6 +93,7 @@ jobs:
   steps:
   - template: azure-build-template.yml
     parameters:
+      hostos: Linux
       env: LinuxUserMode
       arch: AMD64
       cc: gcc
@@ -94,6 +107,7 @@ jobs:
   steps:
   - template: azure-build-template.yml
     parameters:
+      hostos: Linux
       env: LinuxUserMode
       arch: AMD64
       cc: gcc
@@ -107,6 +121,7 @@ jobs:
   steps:
   - template: azure-build-template.yml
     parameters:
+      hostos: Linux
       env: LinuxUserMode
       arch: AMD64
       cc: gcc
@@ -120,6 +135,7 @@ jobs:
   steps:
   - template: azure-build-template.yml
     parameters:
+      hostos: Linux
       env: LinuxUserMode
       arch: AMD64
       cc: clang
@@ -133,6 +149,7 @@ jobs:
   steps:
   - template: azure-build-template.yml
     parameters:
+      hostos: Linux
       env: LinuxUserMode
       arch: AMD64
       cc: clang
@@ -146,9 +163,71 @@ jobs:
   steps:
   - template: azure-build-template.yml
     parameters:
+      hostos: Linux
       env: LinuxUserMode
       arch: AMD64
       cc: clang
       cxx: clang++
       buildType: Release
       additionalCMakeArgs:
+
+
+- job: Generic_Windows_Win64_Release
+  pool:
+    vmImage: 'windows-2019'
+  steps:
+  - template: azure-build-template.yml
+    parameters:
+      hostos: Windows
+      env: Generic
+      arch: Unknown
+      cc: cl
+      cxx: cl
+      buildType: Release
+      additionalCMakeArgs:
+  condition: or(eq(variables['System.PullRequest.TargetBranch'], 'refs/heads/publish'), in(variables['Build.Reason'], 'IndividualCI', 'BatchedCI'))
+
+- job: Generic_Windows_Win32_Release
+  pool:
+    vmImage: 'windows-2019'
+  steps:
+  - template: azure-build-template.yml
+    parameters:
+      hostos: Windows
+      env: Generic
+      arch: Unknown
+      cc: cl
+      cxx: cl
+      buildType: Release
+      additionalCMakeArgs: -A Win32
+  condition: or(eq(variables['System.PullRequest.TargetBranch'], 'refs/heads/publish'), in(variables['Build.Reason'], 'IndividualCI', 'BatchedCI'))
+
+- job: Generic_Linux_gcc_Release
+  pool:
+    vmImage: 'ubuntu-20.04'
+  steps:
+  - template: azure-build-template.yml
+    parameters:
+      hostos: Linux
+      env: Generic
+      arch: Unknown
+      cc: gcc
+      cxx: g++
+      buildType: Release
+      additionalCMakeArgs:
+  condition: or(eq(variables['System.PullRequest.TargetBranch'], 'refs/heads/publish'), in(variables['Build.Reason'], 'IndividualCI', 'BatchedCI'))
+
+- job: Generic_Linux_clang_Release
+  pool:
+    vmImage: 'ubuntu-20.04'
+  steps:
+  - template: azure-build-template.yml
+    parameters:
+      hostos: Linux
+      env: Generic
+      arch: Unknown
+      cc: clang
+      cxx: clang++
+      buildType: Release
+      additionalCMakeArgs:
+  condition: or(eq(variables['System.PullRequest.TargetBranch'], 'refs/heads/publish'), in(variables['Build.Reason'], 'IndividualCI', 'BatchedCI'))

@@ -411,7 +411,7 @@ SymCryptFdef369MontgomeryReduceAsmSubLoop:
         dec     D11
         jnz     SymCryptFdef369MontgomeryReduceAsmSubLoop
 
-        // Finally a masked copy form pSrc to pDst
+        // Finally a masked copy from pSrc to pDst
         // copy if: Q8 == 0 && Cy = 1
         sbb     Q8, 0              // mask (64 bits)
 

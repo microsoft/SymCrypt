@@ -76,7 +76,7 @@ extern "C" {
 // corresponding data. If the function accepts a pointer-to-non-const it must be
 // assumed to both read and write the data.
 // It is safe for two threads to use the same data element as long as both of them
-// are only reading form it. For example, an expanded key is typically passed as
+// are only reading from it. For example, an expanded key is typically passed as
 // a pointer-to-const to the encryption and decryption routines. Thus, multiple
 // threads can perform multiple encryptions/decryptions in parallel using the
 // same expanded key.
@@ -270,7 +270,7 @@ typedef enum _SYMCRYPT_DLGROUP_DH_SAFEPRIMETYPE {
 //
 // A variety of useful macros.
 //
-// The load/store macros convert from integer types to an array of bytes and visa versa.
+// The load/store macros convert from integer types to an array of bytes and vice versa.
 // LOAD<n>_* (p) loads a value of <n> bits from the byte pointer p.
 // STORE<n>_* (p,v) stores the n-bit value v to byte pointer p.
 // The macros can either do Most Significant Byte first (big-endian) or
@@ -6244,28 +6244,6 @@ SymCryptEcDsaSign(
 // (pbHashValue,cbHashValue) is the output of the hash function that hashed the message to be signed.
 // (pbSignature,cbSignature) is the output buffer that receives the signature.
 // The signature is encoded as two integers in the format specified by the 'format' parameter.
-//
-// Allowed flags:
-//      SYMCRYPT_FLAG_ECDSA_NO_TRUNCATION: If set then the hash value will
-//      not be truncated.
-//
-
-_Success_(return == SYMCRYPT_NO_ERROR)
-SYMCRYPT_ERROR
-SYMCRYPT_CALL
-SymCryptEcDsaSignDeterministic(
-    _In_                                PCSYMCRYPT_ECKEY        pKey,
-    _In_reads_bytes_( cbHashValue )     PCBYTE                  pbHashValue,
-                                        SIZE_T                  cbHashValue,
-                                        SYMCRYPT_NUMBER_FORMAT  format,
-                                        PCSYMCRYPT_MAC          pMac,
-                                        UINT32                  flags,
-    _Out_writes_bytes_( cbSignature )   PBYTE                   pbSignature,
-                                        SIZE_T                  cbSignature );
-//
-// Same as SymCryptEcDsaSign, but uses the Mac algorithm to compute the 'k' value
-// from the hash value and the private key, rather than generate a random 'k' value.
-// This makes the signature algorithm deterministic, and avoids the need for an RNG.
 //
 // Allowed flags:
 //      SYMCRYPT_FLAG_ECDSA_NO_TRUNCATION: If set then the hash value will
