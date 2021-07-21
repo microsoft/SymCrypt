@@ -97,7 +97,7 @@ verifyRemovePadding(SIZE_T cbBlockSize, PCBYTE pbSrc, UINT32 cbSrc, PBYTE pbDst,
         // validate data at pbDst
         for (UINT32 i = 0; i < cbDst; ++i)
         {
-            if (!bufferTooSmall && i < cbMsg)
+            if (i < cbMsg)
             {
                 CHECK(pbSrc[i] == pbDst[i], "testPaddingPkcs7Remove: message was not copied to destination as expected!");
                 continue;
