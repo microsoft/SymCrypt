@@ -3023,7 +3023,7 @@ SymCryptPaddingPkcs7Add(
                                             SIZE_T* pcbResult);
 //
 // Prerequisites:
-//  cbBlockSize is a power of 2 and <= 256
+//  cbBlockSize is a power of 2 and < 256
 //  cbDst >= cbSrc - cbSrc % cbBlockSize + cbBlockSize
 //
 // Add PKCS7 block padding to a message
@@ -3057,7 +3057,7 @@ SymCryptPaddingPkcs7Remove(
                                             SIZE_T* pcbResult);
 // 
 // Prerequisites:
-//  - cbBlockSize is a power of 2 and <= 256
+//  - cbBlockSize is a power of 2 and < 256
 //  - cbSrc is a multiple of cbBlockSize
 //  - cbSrc is greater than zero (at least equals to cbBlockSize)
 //
@@ -3077,10 +3077,6 @@ SymCryptPaddingPkcs7Remove(
 // If cbDst >= cbSrc the SYMCRYPT_BUFFER_TOO_SMALL error will not be returned.
 // Even if an error is returned, the pbDst buffer may or may not contain data from the message.
 // Callers should wipe the buffer even if an error is returned.
-// 
-// In case that the padding is invalid and the output buffer is too small, both the 
-// errors above are detected, but SYMCRYPT_INVALID_ARGUMENT gets precedence over 
-// SYMCRYPT_BUFFER_TOO_SMALL and the returned value will be SYMCRYPT_INVALID_ARGUMENT.
 // 
 // Note: Removal of PKCS7 padding is extremely sensitive to side channels.
 // For example, if a message is encrypted with AES-CBC and the attacker can modify 

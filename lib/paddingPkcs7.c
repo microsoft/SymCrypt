@@ -21,7 +21,7 @@ SymCryptPaddingPkcs7Add(
     SIZE_T          cbDataLastBlock;        // dwDataLastBlock is the number of bytes of data at the final block.
     SIZE_T          cbResult = 0;           // This variable must always have a valid value when we finish the function.
   
-    SYMCRYPT_ASSERT(cbBlockSize <= 256);                        // cbBlockSize must be <= 256
+    SYMCRYPT_ASSERT(cbBlockSize < 256);                         // cbBlockSize must be < 256
     SYMCRYPT_ASSERT((cbBlockSize & (cbBlockSize - 1)) == 0);    // cbBlockSize must be a power of 2
 
     //
@@ -82,12 +82,18 @@ SymCryptPaddingPkcs7Remove(
     SIZE_T  cbResult;           // This variable must always have a valid value when we finish the function.
             
 
-    SYMCRYPT_ASSERT(cbBlockSize <= 256);                        // cbBlockSize must be <= 256
+    SYMCRYPT_ASSERT(cbBlockSize < 256);                         // cbBlockSize must be < 256
     SYMCRYPT_ASSERT((cbBlockSize & (cbBlockSize - 1)) == 0);    // cbBlockSize must be a power of 2
     SYMCRYPT_ASSERT((cbSrc & (cbBlockSize - 1)) == 0);          // cbSrc is a multiple of cbBlockSize
     SYMCRYPT_ASSERT(cbSrc > 0);                                 // cbSrc is greaten than zero
 
     cbPadVal = (UINT32)pbSrc[cbSrc - 1];
+
+    // check the Padding to make sure it is valid.
+    mPaddingError |= SymCryptMask32IsZeroU31(cbPadVal) | SymCryptMask32LtU31((UINT32)cbBlockSize, cbPadVal);
+
+    // If cbPadVal is greater than cbSrc, SYMCRYPT_INVALID_ARGUMENT will be returned
+    // and cbResult will not be the right value.
     cbResult = cbSrc - cbPadVal;
     
     //
@@ -121,14 +127,13 @@ SymCryptPaddingPkcs7Remove(
     //
     // Validating padding
     //
-
+    // If cbPadVal is greater than cbBlockSize,
+    // we have to limit cbPadVal to be at most equal to cbBlockSize.
+    cbPadVal = 1 + ((cbPadVal - 1) & (cbBlockSize - 1));
     cbMsg32 = (UINT32)(cbBlockSize - cbPadVal);
 
     //check Dst buffer length to make sure it is possible copy the whole message (not including the padding).
     mBufferSizeError |= SymCryptMask32LtU31(cbDst32, cbMsg32);
-
-    // check the Padding to make sure it is valid.
-    mPaddingError |= SymCryptMask32IsZeroU31(cbPadVal) | SymCryptMask32LtU31((UINT32)cbBlockSize, cbPadVal);
 
     //
     // Final Block processing

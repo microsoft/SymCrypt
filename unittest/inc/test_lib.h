@@ -1097,6 +1097,9 @@ VOID
 testScsTools();
 
 VOID
+testPaddingPkcs7();
+
+VOID
 testEcc();
 
 VOID

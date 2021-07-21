@@ -73,6 +73,7 @@ SOURCES= \
     testRsaEnc.cpp \
     testDh.cpp \
     testDsa.cpp \
+    testPaddingPkcs7.cpp \
 
 I386_SOURCES = \
     savexmm.asm \

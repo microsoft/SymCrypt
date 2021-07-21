@@ -33,6 +33,7 @@ set(SOURCES
     testScsTable.cpp
     testScsTools.cpp
     perf.cpp
+    testPaddingPkcs7.cpp
   )
 
 # Append Windows-specific sources
