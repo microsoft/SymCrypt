@@ -362,7 +362,13 @@ SymCryptScsRotateBuffer(
 // the actual error cannot be revealed through side channels.
 //
 
-UINT32 SYMCRYPT_CALL SymCryptMapUint32(UINT32 u32Input, UINT32 u32Default, PCSYMCRYPT_UINT32_MAP pcMap, SIZE_T nMap)
+UINT32
+SYMCRYPT_CALL
+SymCryptMapUint32(
+                        UINT32                  u32Input,
+                        UINT32                  u32Default,
+    _In_reads_(nMap)    PCSYMCRYPT_UINT32_MAP   pcMap,
+                        SIZE_T                  nMap)
 {
     UINT32 mask;
     UINT32 u32Output    = u32Default;
