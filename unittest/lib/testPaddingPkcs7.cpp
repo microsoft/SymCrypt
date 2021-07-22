@@ -15,6 +15,7 @@ verifyAddPadding(SIZE_T cbBlockSize, PCBYTE pbSrc, UINT32 cbSrc, PBYTE pbDst, UI
 
     // Making copy of the Dst buffer before padding for validation
     PBYTE pbDstCpy = new BYTE[cbDst];
+    CHECK(pbDstCpy != NULL, "Out of memory in verifyAddPadding");
     memcpy(pbDstCpy, pbDst, cbDst);
 
     // Calculating padding parameters for validation
@@ -60,6 +61,7 @@ verifyRemovePadding(SIZE_T cbBlockSize, PCBYTE pbSrc, UINT32 cbSrc, PBYTE pbDst,
 
     // Making copy of the Dst buffer for validation
     PBYTE pbDstCpy = new BYTE[cbDst];
+    CHECK(pbDstCpy != NULL, "Out of memory in verifyRemovePadding");
     memcpy(pbDstCpy, pbDst, cbDst);
 
     SYMCRYPT_ERROR err = SymCryptPaddingPkcs7Remove(cbBlockSize, pbSrc, cbSrc, pbDst, cbDst, &cbResult);
@@ -152,8 +154,11 @@ testPaddingPkcs7()
     
     // Generating both Src and Dst random buffers
     PBYTE pbMsg = new BYTE[cbMsg];
+    CHECK(pbMsg != NULL, "Out of memory in testPaddingPkcs7");
     PBYTE pbAddPad = new BYTE[cbAddPad];
+    CHECK(pbAddPad != NULL, "Out of memory in testPaddingPkcs7");
     PBYTE pbRemovePad = new BYTE[cbRemovePad];
+    CHECK(pbRemovePad != NULL, "Out of memory in testPaddingPkcs7");
     
     GENRANDOM(pbMsg, cbMsg);
     GENRANDOM(pbAddPad, cbAddPad);
@@ -182,6 +187,7 @@ testPaddingPkcs7()
     }
     UINT32 cbSrcDummy = cbResult;
     PBYTE pbSrcDummy = new BYTE[cbSrcDummy];
+    CHECK(pbSrcDummy != NULL, "Out of memory in testPaddingPkcs7");
     memcpy(pbSrcDummy, pbAddPad, cbResult);
     memset(pbSrcDummy + rndPadPos, cbPadValDummy, 1);
 
@@ -189,6 +195,7 @@ testPaddingPkcs7()
     GENRANDOM(&cbDstDummy, sizeof(cbDstDummy));
     cbDstDummy = cbDstDummy % MAX_BUFFER_SIZE;
     PBYTE pbDstDummy = new BYTE[cbDstDummy];
+    CHECK(pbDstDummy != NULL, "Out of memory in testPaddingPkcs7");
     GENRANDOM(pbDstDummy, cbDstDummy);
 
     verifyRemovePadding(cbBlockSize, pbSrcDummy, cbSrcDummy, pbDstDummy, cbDstDummy);
