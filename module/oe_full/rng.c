@@ -21,6 +21,9 @@ SIZE_T g_cbRandomBytesCache = 0;
 
 UINT32 g_rngCounter = 0; // reseed when counter exceeds MAX_GENERATE_BEFORE_RESEED, increments 1 per generate
 
+// Forward declare, get host entropy from urandom
+int oe_sgx_get_additional_host_entropy(uint8_t* data, size_t size);
+
 // Helper function for reseeding with RDSEED, urandom, and user-provided pbEntropy
 VOID
 SymCryptModuleReseed( PCBYTE pbEntropy, SIZE_T cbEntropy );
@@ -38,7 +41,7 @@ SymCryptRngInit()
     SYMCRYPT_ERROR error = SYMCRYPT_NO_ERROR;
 
     BYTE seed[64];
-    SIZE_T readElements = 0;
+    UINT32 result;
 
     pthread_mutex_init( &g_rngLock, NULL );
 
@@ -49,8 +52,8 @@ SymCryptRngInit()
     );
 
     // Get personalization string from urandom
-    readElements = getrandom( seed + 48, 16, 0 );
-    if ( readElements != 16 )
+    result = oe_sgx_get_additional_host_entropy( seed + 48, 16 );
+    if ( result != 1 )
     {
         SymCryptFatal( 'rngu' );
     }
@@ -220,7 +223,7 @@ SymCryptModuleReseed( PCBYTE pbEntropy, SIZE_T cbEntropy )
 {
     BYTE seed[64]; // 256 bits of entropy input and 256 bits of additional input
     BYTE* hash = seed + 32; // Second half of seed will be output of SHA256 below
-    SIZE_T readElements = 0;
+    UINT32 result;
 
     SYMCRYPT_SHA256_STATE hashState;
 
@@ -231,8 +234,8 @@ SymCryptModuleReseed( PCBYTE pbEntropy, SIZE_T cbEntropy )
     SymCryptSha256Append( &hashState, pbEntropy, cbEntropy );
 
     // Mix in data from urandom. Place in first half of seed buffer to store until we hash it
-    readElements = getrandom( seed, 32, 0 );
-    if (readElements != 32)
+    result = oe_sgx_get_additional_host_entropy( seed, 32 );
+    if ( result != 1 )
     {
         SymCryptFatal( 'rngu' );
     }

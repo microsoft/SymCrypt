@@ -20,6 +20,14 @@ SymCryptFatal(UINT32 fatalCode)
     abort();
 }
 
+extern "C"
+{
+    int oe_sgx_get_additional_host_entropy(uint8_t* data, size_t size)
+    {
+        return 1;
+    }
+}
+
 int
 main( int argc, _In_reads_( argc ) char * argv[] )
 {
