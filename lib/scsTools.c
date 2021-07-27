@@ -344,3 +344,40 @@ SymCryptScsRotateBuffer(
     }
 
 }
+
+
+//
+// Map values in a side-channel safe way, typically used for mapping error codes.
+//
+// (pcMap, nMap) point to an array of nMap entries of type SYMCRYPT_UINT32_MAP;
+// each entry specifies a single mapping. If u32Input matches the
+// 'from' field, the return value will be the 'to' field value. 
+// If u32Input is not equal to any 'from' field values, the return value is u32Default.
+// Both u32Input and the return value are treated as secrets w.r.t. side channels.
+//
+// If multiple map entries have the same 'from' field value, then the return value
+// is one of the several 'to' field values; which one is not defined.
+//
+// This function is particularly useful when mapping error codes in situations where
+// the actual error cannot be revealed through side channels.
+//
+
+UINT32
+SYMCRYPT_CALL
+SymCryptMapUint32(
+                        UINT32                  u32Input,
+                        UINT32                  u32Default,
+    _In_reads_(nMap)    PCSYMCRYPT_UINT32_MAP   pcMap,
+                        SIZE_T                  nMap)
+{
+    UINT32 mask;
+    UINT32 u32Output    = u32Default;
+
+    for (SIZE_T i = 0; i < nMap; ++i)
+    {
+        mask = SymCryptMask32EqU32(u32Input, pcMap[i].from);
+        u32Output ^= (u32Output ^ pcMap[i].to) & mask;
+    }
+
+    return u32Output;
+}

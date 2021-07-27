@@ -63,6 +63,7 @@ set(SOURCES_COMMON
     md4.c
     md5.c
     modexp.c
+    paddingPkcs7.c
     parhash.c
     pbkdf2_hmacsha1.c
     pbkdf2_hmacsha256.c

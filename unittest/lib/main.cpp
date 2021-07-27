@@ -1548,7 +1548,9 @@ runFunctionalTests()
     testArithmetic();
 
     testScsTable();
-
+    
+    testPaddingPkcs7();
+    
     testScsTools();
 
     testRsaSignAlgorithms();

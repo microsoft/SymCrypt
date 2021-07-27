@@ -6,6 +6,7 @@
 
 #include "precomp.h"
 
+#define MAX_MAP_UINT32_LEN 99
 
 VOID
 testScsRotateBuffer()
@@ -127,6 +128,106 @@ testBasicMaskFunctions()
 
 }
 
+VOID 
+initMapUint32(PSYMCRYPT_UINT32_MAP pMap, UINT32 uMapLen)
+{
+    UINT32 uDuplication;
+    GENRANDOM(&uDuplication, sizeof(uDuplication));
+
+    // Limiting the number of duplicates of 'from' values to be at most uMapLen
+    uDuplication = uDuplication % uMapLen;
+
+    // Generating fully random map
+    for (UINT32 i = 0; i < uMapLen; ++i)
+    {
+        GENRANDOM(&(pMap[i].from), sizeof(pMap[i].from));
+        GENRANDOM(&(pMap[i].to), sizeof(pMap[i].to));
+    }
+
+    // forcing duplications
+    for (UINT32 i = 0; i < uDuplication; ++i)
+    {
+        UINT32 copyFromEntry;
+        UINT32 copyToEntry;
+
+        GENRANDOM(&copyFromEntry, sizeof(copyFromEntry));
+        GENRANDOM(&copyToEntry, sizeof(copyToEntry));
+
+        copyFromEntry = copyFromEntry % uMapLen;
+        copyToEntry = copyToEntry % uMapLen;
+
+        pMap[copyToEntry].from = pMap[copyFromEntry].from;
+    }
+}
+
+bool
+validateMapping(UINT32 u32Input, PCSYMCRYPT_UINT32_MAP pMap, UINT32 uMapLen)
+{
+    UINT32 u32Default;
+    UINT32 u32Result;
+
+    bool result = false;
+    bool exists = false;
+
+    GENRANDOM(&u32Default, sizeof(u32Default));
+
+    u32Result = SymCryptMapUint32(u32Input, u32Default, pMap, uMapLen);
+
+    for (UINT32 i = 0; i < uMapLen; ++i)
+    {
+        if (pMap[i].from == u32Input)
+        {
+            exists = true;
+            if (pMap[i].to == u32Result)
+            {
+                result = true;
+                break;
+            }
+        }
+    }
+
+    if (!exists && u32Result == u32Default)
+    {
+        result = true;
+    }
+
+    return result;
+}
+
+VOID
+testScsMapUint32()
+{
+    UINT32 uMapLen;
+    GENRANDOM(&uMapLen, sizeof(uMapLen));
+
+    // Limiting the length of the map to be between 1 to 100.
+    // We want to avoid a creation of huge map.
+    uMapLen = (uMapLen % MAX_MAP_UINT32_LEN) + 1;
+
+    PSYMCRYPT_UINT32_MAP pMap = new SYMCRYPT_UINT32_MAP[uMapLen];
+    CHECK(pMap != NULL, "Out of memory");
+
+    // Initiating map with random values
+    initMapUint32(pMap, uMapLen);
+
+    // Validating SymCryptMapUint32 result for every 'from' value in map
+    for (UINT32 i = 0; i < uMapLen; ++i)
+    {
+        CHECK(validateMapping(pMap[i].from, pMap, uMapLen), "SymCryptMapUint32");
+    }
+
+    // Validating SymCryptMapUint32 result for random inputs
+
+    for (UINT32 i = 0; i < MAX_MAP_UINT32_LEN; ++i)
+    {
+        UINT32 u32RndInput;
+        GENRANDOM(&u32RndInput, sizeof(u32RndInput));
+        CHECK(validateMapping(u32RndInput, pMap, uMapLen), "SymCryptMapUint32");
+    }
+
+    //cleanup
+    delete [] pMap;
+}
 
 VOID
 testScsTools()
@@ -136,4 +237,6 @@ testScsTools()
     testScsCopy();
 
     testBasicMaskFunctions();
+
+    testScsMapUint32();
 }
