@@ -10,12 +10,12 @@
 SYMCRYPT_ERROR
 SYMCRYPT_CALL
 SymCryptEcDhSecretAgreement(
-    _In_    PCSYMCRYPT_ECKEY        pkPrivate,
-    _In_    PCSYMCRYPT_ECKEY        pkPublic,
-            SYMCRYPT_NUMBER_FORMAT  format,
-            UINT32                  flags,
-    _Out_   PBYTE                   pbAgreedSecret,
-            SIZE_T                  cbAgreedSecret )
+    _In_                            PCSYMCRYPT_ECKEY        pkPrivate,
+    _In_                            PCSYMCRYPT_ECKEY        pkPublic,
+                                    SYMCRYPT_NUMBER_FORMAT  format,
+                                    UINT32                  flags,
+    _Out_writes_( cbAgreedSecret )  PBYTE                   pbAgreedSecret,
+                                    SIZE_T                  cbAgreedSecret )
 {
     SYMCRYPT_ERROR scError = SYMCRYPT_NO_ERROR;
 

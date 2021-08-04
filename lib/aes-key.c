@@ -7,7 +7,7 @@
 // assembler ones. They are used on platforms that don't have assembler implementations
 // and for various testing purposes.
 //
-// This code derives from the orignal fast AES code that Niels Ferguson wrote 
+// This code derives from the orignal fast AES code that Niels Ferguson wrote
 // for BitLocker in Windows Vista.
 // The C code is derived from the AES that was already in the RSA32 library,
 // the assembler code was created new at that time.
@@ -29,11 +29,10 @@ static BYTE g_SymCryptAesRoundConstant[11] =
     0, 0x01, 0x02, 0x04, 0x08, 0x10, 0x20, 0x40, 0x80, 0x1b, 0x36,
 };
 
-_Success_(return == SYMCRYPT_NO_ERROR)
 SYMCRYPT_NOINLINE
 SYMCRYPT_ERROR
 SYMCRYPT_CALL
-SymCryptAesExpandKeyInternal(   
+SymCryptAesExpandKeyInternal(
     _Out_               PSYMCRYPT_AES_EXPANDED_KEY  pExpandedKey,
     _In_reads_(cbKey)   PCBYTE                      pbKey,
                         SIZE_T                      cbKey,
@@ -178,7 +177,7 @@ SymCryptAesExpandKeyInternal(
         *(UINT32 *)(p+12) = *(UINT32 *)(p +  8) ^ *(UINT32 *)(p - 20);
 
         break;
-    
+
     default:
         status = SYMCRYPT_WRONG_KEY_SIZE;
         goto cleanup;
@@ -189,7 +188,7 @@ SymCryptAesExpandKeyInternal(
     {
         p = &pExpandedKey->RoundKey[0][0][0];
         q = (PBYTE)(pExpandedKey->lastDecRoundKey);
-    
+
         // The first encryption round key is the last decryption round key
         memcpy( q, p, SYMCRYPT_AES_BLOCK_SIZE );
         p += 16;
@@ -215,22 +214,20 @@ cleanup:
     return status;
 }
 
-_Success_(return == SYMCRYPT_NO_ERROR)
 SYMCRYPT_ERROR
 SYMCRYPT_CALL
 SymCryptAesExpandKey(
     _Out_               PSYMCRYPT_AES_EXPANDED_KEY  pExpandedKey,
     _In_reads_(cbKey)   PCBYTE                      pbKey,
                         SIZE_T                      cbKey )
- 
+
 {
     return SymCryptAesExpandKeyInternal( pExpandedKey, pbKey, cbKey, TRUE );
 }
 
-_Success_(return == SYMCRYPT_NO_ERROR)
 SYMCRYPT_ERROR
 SYMCRYPT_CALL
-SymCryptAesExpandKeyEncryptOnly(   
+SymCryptAesExpandKeyEncryptOnly(
     _Out_               PSYMCRYPT_AES_EXPANDED_KEY  pExpandedKey,
     _In_reads_(cbKey)   PCBYTE                      pbKey,
                         SIZE_T                      cbKey )
@@ -240,7 +237,7 @@ SymCryptAesExpandKeyEncryptOnly(
 
 VOID
 SYMCRYPT_CALL
-SymCryptAesKeyCopy( _In_    PCSYMCRYPT_AES_EXPANDED_KEY pSrc, 
+SymCryptAesKeyCopy( _In_    PCSYMCRYPT_AES_EXPANDED_KEY pSrc,
                     _Out_   PSYMCRYPT_AES_EXPANDED_KEY  pDst )
 {
     SYMCRYPT_CHECK_MAGIC( pSrc );
@@ -258,7 +255,7 @@ SymCryptAesKeyCopy( _In_    PCSYMCRYPT_AES_EXPANDED_KEY pSrc,
 
 
 const BYTE SymCryptAesNistTestVector128Ciphertext[16] = {
-    0x69, 0xc4, 0xe0, 0xd8, 0x6a, 0x7b, 0x04, 0x30, 
+    0x69, 0xc4, 0xe0, 0xd8, 0x6a, 0x7b, 0x04, 0x30,
     0xd8, 0xcd, 0xb7, 0x80, 0x70, 0xb4, 0xc5, 0x5a,
 };
 
@@ -272,7 +269,7 @@ const BYTE SymCryptAesNistTestVector128Ciphertext[16] = {
  *
 
 
-// 
+//
 // Prototype; on some platforms this function is in assembler.
 //
 VOID
@@ -288,7 +285,7 @@ SymCryptAesCreateRotatedTables( _Inout_ BYTE MatrixMult[4][256][4] )
     //
     // We do this byte-by-byte, which is easiest.
     // It would be faster to use UINT32 operations,
-    // but that is endian-specific, and therefore platform-specific. 
+    // but that is endian-specific, and therefore platform-specific.
     // Endian-agnostic UINT32-based code would be a lot more complicated.
     // All this is extremely easy to do in assembler, which we do on those
     // platforms that have assembler implementations.
@@ -307,7 +304,7 @@ SymCryptAesCreateRotatedTables( _Inout_ BYTE MatrixMult[4][256][4] )
 //
 // SymCryptAesInitMatrixMultiplyTable
 //
-// Initialize a matrix multiplication table. 
+// Initialize a matrix multiplication table.
 // Each matrix multiplication table consists of 4 tables of 256 entries of 4 bytes each.
 // The four tables are rotated copies of each other.
 // This funciton generates the first of those four tables from the init
@@ -324,7 +321,7 @@ SymCryptAesCreateRotatedTables( _Inout_ BYTE MatrixMult[4][256][4] )
 // using repeated multiplication by x in the finite field.
 //
 // It is safe to call this function on two separate threads for the same table.
-// All invocations will write the same data to the table, and within a tread each entry is written 
+// All invocations will write the same data to the table, and within a tread each entry is written
 // before it is read. Doing parallel initializations of the same table can be very inefficient
 // as multiple cores will be fighting over the cache lines, but the result will be correct.
 // We use this property to initialize the tables lazilly.
@@ -332,7 +329,7 @@ SymCryptAesCreateRotatedTables( _Inout_ BYTE MatrixMult[4][256][4] )
 static
 VOID
 SYMCRYPT_CALL
-SymCryptAesInitMatrixMultiplyTable( _Out_   SYMCRYPT_ALIGN BYTE MatrixMult[256][4], 
+SymCryptAesInitMatrixMultiplyTable( _Out_   SYMCRYPT_ALIGN BYTE MatrixMult[256][4],
                                     _In_    SYMCRYPT_ALIGN BYTE init[4]
                                     )
 {
@@ -350,11 +347,11 @@ SymCryptAesInitMatrixMultiplyTable( _Out_   SYMCRYPT_ALIGN BYTE MatrixMult[256][
     for( i=1; i<256; i<<=1 )
     {
         initCopyAsUint32 = *(UINT32 *)initCopy;
-        for( j=0; j<i; j++ ) 
+        for( j=0; j<i; j++ )
         {
             *(UINT32 *)MatrixMult[i+j] = *(UINT32 *)MatrixMult[j] ^ initCopyAsUint32;
         }
-        for( j=0; j<4; j++ ) 
+        for( j=0; j<4; j++ )
         {
             initCopy[j] = MULT_BY_X( initCopy[j] );
         }
@@ -370,14 +367,14 @@ SymCryptAesInitMatrixMultiplyTable( _Out_   SYMCRYPT_ALIGN BYTE MatrixMult[256][
 // tables not initialized.
 //
 // This leads to an interesting case where multiple threads running on multiple
-// CPUs run this initialization code at the same time. 
+// CPUs run this initialization code at the same time.
 // This code is carefully structured to allow that. When global data is written it is
 // always with the final value, and we never read uninitialized global data.
 // Thus, even if two CPUs run this code at the same time, they will both initialize each
 // memory location to the same correct value and the end result will be correct.
 // (Performance will suffer due to the fact that cache lines will be bounced back and force
 // between the two CPUs, but that is not a significant concern as this code is used only once.)
-// 
+//
 // At the end of the initialization the flag is set to indicate that further
 // key expansion invocations do not need to re-run the initialization.
 // We use memory barriers to keep this multi-thread safe.
@@ -414,14 +411,14 @@ SymCryptAesInitialize()
         *(UINT32 *)SymCryptAesSboxMatrixMult[0][i] = *(UINT32 *)MatrixScratch[S];
         *(UINT32 *)SymCryptAesInvSboxMatrixMult[0][S] = *(UINT32 *)SymCryptAesInvMatrixMult[0][i];
     }
-    
+
     //
     // Now we generate the byte rotations of the tables
     //
     SymCryptAesCreateRotatedTables( SymCryptAesSboxMatrixMult );
     SymCryptAesCreateRotatedTables( SymCryptAesInvSboxMatrixMult );
     SymCryptAesCreateRotatedTables( SymCryptAesInvMatrixMult );
- 
+
     //
     // This is a memory barrier. It ensures that all the memory writes we do before the barrier
     // are globally visible to other CPUs before the memory writes we do after the fence.
@@ -432,7 +429,7 @@ SymCryptAesInitialize()
 
     //
     // Set the flag to signal that the tables are initialized.
-    // 
+    //
     SymCryptAesTablesInitialized = TRUE;
 }
 

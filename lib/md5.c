@@ -13,7 +13,7 @@
 // at a glance looks very similar to the RSA32.lib code.
 //
 // The implementation had to be refreshed anyway to conform to our coding
-// guidelines for cryptographic functions. 
+// guidelines for cryptographic functions.
 // Re-implementing the function along the lines of our SHA-family implementations
 // was easy, and it removes one file with RSA copyright from our system.
 //
@@ -47,7 +47,7 @@ const PCSYMCRYPT_HASH SymCryptMd5Algorithm = &SymCryptMd5Algorithm_default;
 // These are called T[i] in RFC1321 although T[i] uses the range [1..64] and we use [0..63]
 // This array should be optimized away by the compiler as all values are inlined.
 //
-static const UINT32 md5Const[64] = { 
+static const UINT32 md5Const[64] = {
     0xd76aa478UL,
     0xe8c7b756UL,
     0x242070dbUL,
@@ -133,7 +133,7 @@ static const int md5Rotate[64] = {
     4, 11, 16, 23,
     4, 11, 16, 23,
     4, 11, 16, 23,
-    
+
     6, 10, 15, 21,
     6, 10, 15, 21,
     6, 10, 15, 21,
@@ -181,7 +181,7 @@ SYMCRYPT_CALL
 SymCryptMd5Init( _Out_ PSYMCRYPT_MD5_STATE pState )
 {
     SYMCRYPT_SET_MAGIC( pState );
-    
+
     pState->dataLengthL = 0;
     pState->dataLengthH = 0;
     pState->bytesInBuffer = 0;
@@ -200,7 +200,7 @@ SymCryptMd5Init( _Out_ PSYMCRYPT_MD5_STATE pState )
 //
 VOID
 SYMCRYPT_CALL
-SymCryptMd5Append( 
+SymCryptMd5Append(
     _Inout_             PSYMCRYPT_MD5_STATE pState,
    _In_reads_( cbData ) PCBYTE              pbData,
                         SIZE_T              cbData )
@@ -213,7 +213,7 @@ SymCryptMd5Append(
 //
 VOID
 SYMCRYPT_CALL
-SymCryptMd5Result( 
+SymCryptMd5Result(
     _Inout_                                 PSYMCRYPT_MD5_STATE pState,
    _Out_writes_( SYMCRYPT_MD5_RESULT_SIZE ) PBYTE               pbResult )
 {
@@ -281,7 +281,7 @@ SymCryptMd5Result(
 }
 
 //
-// Subsequent rounds. 
+// Subsequent rounds.
 // This is the same as the IROUND except that it uses the copied message.
 //
 #define FROUND( r, Func ) { \
@@ -306,7 +306,7 @@ SymCryptMd5AppendBlocks(
     ad[1] = pChain->H[3];
     ad[2] = pChain->H[2];
     ad[3] = pChain->H[1];
-    
+
     while( cbData >= 64 )
     {
         //
@@ -402,7 +402,7 @@ SymCryptMd5AppendBlocks(
 
 VOID
 SYMCRYPT_CALL
-SymCryptMd5StateExport( 
+SymCryptMd5StateExport(
     _In_                                                    PCSYMCRYPT_MD5_STATE    pState,
     _Out_writes_bytes_( SYMCRYPT_MD5_STATE_EXPORT_SIZE )    PBYTE                   pbBlob )
 {
@@ -435,7 +435,6 @@ SymCryptMd5StateExport(
     return;
 }
 
-_Success_(return == SYMCRYPT_NO_ERROR)
 SYMCRYPT_ERROR
 SYMCRYPT_CALL
 SymCryptMd5StateImport(
@@ -496,7 +495,7 @@ SymCryptMd5Selftest()
     SymCryptMd5( SymCryptTestMsg3, sizeof( SymCryptTestMsg3 ), result );
 
     SymCryptInjectError( result, sizeof( result ) );
-    
+
     if( memcmp( result, md5KATAnswer, sizeof( result ) ) != 0 ) {
         SymCryptFatal( 'MD5t' );
     }

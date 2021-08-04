@@ -283,7 +283,6 @@ SymCryptSha256StateExport(
     return;
 }
 
-_Success_(return == SYMCRYPT_NO_ERROR)
 SYMCRYPT_ERROR
 SYMCRYPT_CALL
 SymCryptSha256StateImport(

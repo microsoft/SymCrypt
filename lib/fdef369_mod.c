@@ -41,11 +41,12 @@ SymCryptFdef369ModAddGeneric(
     UINT32 nDigits = pmMod->nDigits;
 
     SymCryptFdefClaimScratch( pbScratch, cbScratch, SYMCRYPT_SCRATCH_BYTES_FOR_COMMON_MOD_OPERATIONS( nDigits ) );
+    SYMCRYPT_ASSERT( cbScratch >= nDigits*SYMCRYPT_FDEF_DIGIT_SIZE );
 
     //
     // Doing add/cmp/sub might be faster or not.
     // Masked add is hard because the mask operations destroy the carry flag.
-    // 
+    //
 	// dcl - cleanup?
 //    c = SymCryptFdefRawAdd( &pSrc1->uint32[0], &pSrc2->uint32[0], &pDst->uint32[0], nDigits);
 //    d = SymCryptFdefRawSub( &pDst->uint32[0], &pMod->Divisor.Int.uint32[0], &pDst->uint32[0], nDigits );
@@ -55,7 +56,7 @@ SymCryptFdef369ModAddGeneric(
     d = SymCryptFdef369RawSubAsm( &peDst->d.uint32[0], SYMCRYPT_FDEF_INT_PUINT32( &pmMod->Divisor.Int ), (PUINT32) pbScratch, nDigits );
     SymCryptFdef369MaskedCopyAsm( pbScratch, (PBYTE) &peDst->d.uint32[0], nDigits, (c^d) - 1 );
 
-    // We can't have a carry in the first addition, and no carry in the subtraction. 
+    // We can't have a carry in the first addition, and no carry in the subtraction.
     SYMCRYPT_ASSERT( !( c == 1 && d == 0 ) );
 }
 
@@ -75,6 +76,7 @@ SymCryptFdef369ModSubGeneric(
     UINT32 nDigits = pmMod->nDigits;
 
     SymCryptFdefClaimScratch( pbScratch, cbScratch, SYMCRYPT_SCRATCH_BYTES_FOR_COMMON_MOD_OPERATIONS( nDigits ) );
+    SYMCRYPT_ASSERT( cbScratch >= nDigits*SYMCRYPT_FDEF_DIGIT_SIZE );
 
     c = SymCryptFdef369RawSubAsm( &peSrc1->d.uint32[0], &peSrc2->d.uint32[0], &peDst->d.uint32[0], nDigits );
     d = SymCryptFdef369RawAddAsm( &peDst->d.uint32[0], SYMCRYPT_FDEF_INT_PUINT32( &pmMod->Divisor.Int ), (PUINT32) pbScratch, nDigits );
@@ -93,8 +95,8 @@ SymCryptFdef369ModulusInitMontgomery(
     SymCryptFdefModulusInitMontgomeryInternal( pmMod, SYMCRYPT_FDEF369_DIGITS_TO_NUINT32( pmMod->nDigits ), pbScratch, cbScratch );
 }
 
-VOID 
-SYMCRYPT_CALL 
+VOID
+SYMCRYPT_CALL
 SymCryptFdef369ModMulMontgomery(
     _In_                            PCSYMCRYPT_MODULUS      pmMod,
     _In_                            PCSYMCRYPT_MODELEMENT   peSrc1,
@@ -107,13 +109,14 @@ SymCryptFdef369ModMulMontgomery(
     PUINT32 pTmp = (PUINT32) pbScratch;
 
     UNREFERENCED_PARAMETER( cbScratch );
+    SYMCRYPT_ASSERT( cbScratch >= nDigits * 2 * SYMCRYPT_FDEF_DIGIT_SIZE );
 
     SymCryptFdef369RawMul( &peSrc1->d.uint32[0], nDigits, &peSrc2->d.uint32[0], nDigits, pTmp );
     SymCryptFdef369MontgomeryReduce( pmMod, pTmp, &peDst->d.uint32[0] );
 }
 
-VOID 
-SYMCRYPT_CALL 
+VOID
+SYMCRYPT_CALL
 SymCryptFdef369ModSquareMontgomery(
     _In_                            PCSYMCRYPT_MODULUS      pmMod,
     _In_                            PCSYMCRYPT_MODELEMENT   peSrc,
@@ -124,8 +127,8 @@ SymCryptFdef369ModSquareMontgomery(
     SymCryptFdef369ModMulMontgomery( pmMod, peSrc, peSrc, peDst, pbScratch, cbScratch );
 }
 
-VOID 
-SYMCRYPT_CALL 
+VOID
+SYMCRYPT_CALL
 SymCryptFdef369ModSetPostMontgomery(
     _In_                            PCSYMCRYPT_MODULUS      pmMod,
     _Inout_                         PSYMCRYPT_MODELEMENT    peObj,
@@ -175,7 +178,7 @@ SymCryptFdef369ModPreGetMontgomery(
 VOID
 SymCryptFdef369MontgomeryReduce(
     _In_                            PCSYMCRYPT_MODULUS      pmMod,
-    _In_                            PUINT32                 pSrc,
+    _Inout_                         PUINT32                 pSrc,
     _Out_                           PUINT32                 pDst )
 {
     SymCryptFdef369MontgomeryReduceAsm( pmMod, pSrc, pDst );
@@ -194,7 +197,7 @@ SymCryptFdef369RawMul(
 }
 
 SYMCRYPT_ERROR
-SYMCRYPT_CALL 
+SYMCRYPT_CALL
 SymCryptFdef369ModInvMontgomery(
     _In_                            PCSYMCRYPT_MODULUS      pmMod,
     _In_                            PCSYMCRYPT_MODELEMENT   peSrc,
@@ -209,6 +212,7 @@ SymCryptFdef369ModInvMontgomery(
     PUINT32 pTmp = (PUINT32) pbScratch;
 
     SYMCRYPT_ASSERT_ASYM_ALIGNED( pTmp );
+    SYMCRYPT_ASSERT( cbScratch >= 2 * nBytes );
 
     //
     // We have R*X; we first apply the montgomery reduction twice to get X/R, and then invert that

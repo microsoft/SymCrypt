@@ -26,7 +26,6 @@ const SYMCRYPT_BLOCKCIPHER SymCryptDesxBlockCipher_default = {
 
 const PCSYMCRYPT_BLOCKCIPHER SymCryptDesxBlockCipher = &SymCryptDesxBlockCipher_default;
 
-_Success_(return == SYMCRYPT_NO_ERROR)
 SYMCRYPT_ERROR
 SYMCRYPT_CALL
 SymCryptDesxExpandKey(   _Out_              PSYMCRYPT_DESX_EXPANDED_KEY  pExpandedKey,

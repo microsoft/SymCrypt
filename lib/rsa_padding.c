@@ -122,13 +122,12 @@ SymCryptRsaPaddingMaskGeneration(
 //      0x00 || 0x02 || PS || 0x00 || M
 //
 //
-_Success_(return == SYMCRYPT_NO_ERROR)
 SYMCRYPT_ERROR
 SYMCRYPT_CALL
 SymCryptRsaPkcs1ApplyEncryptionPadding(
     _In_reads_bytes_( cbPlaintext )     PCBYTE      pbPlaintext,
                                         SIZE_T      cbPlaintext,
-    _Out_writes_bytes_( cbPKCS1Format ) PBYTE       pbPkcs1Format,
+    _Out_writes_bytes_( cbPkcs1Format ) PBYTE       pbPkcs1Format,
                                         SIZE_T      cbPkcs1Format )
 {
     SYMCRYPT_ERROR scError = SYMCRYPT_NO_ERROR;
@@ -180,7 +179,6 @@ cleanup:
     return scError;
 }
 
-_Success_(return == SYMCRYPT_NO_ERROR)
 SYMCRYPT_ERROR
 SYMCRYPT_CALL
 SymCryptRsaPkcs1RemoveEncryptionPadding(
@@ -222,7 +220,7 @@ SymCryptRsaPkcs1RemoveEncryptionPadding(
     }
     // this also implies that cbPkcs1Buffer >= 16
 
-    // Check the leading bytes 
+    // Check the leading bytes
     mPaddingError |= SymCryptMask32IsNonzeroU31( pbPkcs1Format[0] ); // First byte must be = 0
     mPaddingError |= SymCryptMask32NeqU31( pbPkcs1Format[1], PKCS_BLOCKTYPE_2 ); // Second byte must be = 2
 
@@ -308,7 +306,6 @@ cleanup:
 //
 // PS = zero or more bytes 0x00 || 0x01
 //
-_Success_(return == SYMCRYPT_NO_ERROR)
 SYMCRYPT_ERROR
 SYMCRYPT_CALL
 SymCryptRsaOaepApplyEncryptionPadding(
@@ -319,7 +316,7 @@ SymCryptRsaOaepApplyEncryptionPadding(
                                         SIZE_T          cbLabel,
     _In_reads_bytes_opt_( cbSeed )      PCBYTE          pbSeed,
                                         SIZE_T          cbSeed,
-    _Out_writes_bytes_( cbOAEPFormat )  PBYTE           pbOaepFormat,
+    _Out_writes_bytes_( cbOaepFormat )  PBYTE           pbOaepFormat,
                                         SIZE_T          cbOaepFormat,
     _Out_writes_bytes_( cbScratch )     PBYTE           pbScratch,
                                         SIZE_T          cbScratch )
@@ -425,7 +422,6 @@ cleanup:
     return scError;
 }
 
-_Success_(return == SYMCRYPT_NO_ERROR)
 SYMCRYPT_ERROR
 SYMCRYPT_CALL
 SymCryptRsaOaepRemoveEncryptionPadding(
@@ -532,16 +528,16 @@ SymCryptRsaOaepRemoveEncryptionPadding(
     // errors in mPaddingError. We could continue to make the entire padding removal
     // side-channel safe like we do in the PKCS1 padding case, but that is not necessary.
     // The side-channel only leaks data if the attacker can trigger two different behaviours
-    // and derive information from the difference. 
-    // This is relatively easy to do with something like a match on 1 or 2 bytes because the 
+    // and derive information from the difference.
+    // This is relatively easy to do with something like a match on 1 or 2 bytes because the
     // chance of satisfying the check on a random input is still useful. But here we have
     // matched 33 bytes (assuming a 32-byte hash) and the Bleichenbacher style attacks don't
     // work beyond this point. Basically, these attacks produce ciphertexts without knowing
-    // the corresponding plaintext, and the chance of the label hash matching is something 
+    // the corresponding plaintext, and the chance of the label hash matching is something
     // like 2^{-256}. So these ciphertexts will always fail right here, and there is no
     // difference of behaviour that leaks data to the attacker.
-    // Thus, we can switch back to normal processing of the errors here. 
-    // 
+    // Thus, we can switch back to normal processing of the errors here.
+    //
 
     if( mPaddingError != 0 )
     {
@@ -591,7 +587,6 @@ cleanup:
 //
 // PKCS1 Signature Format:
 //
-_Success_(return == SYMCRYPT_NO_ERROR)
 SYMCRYPT_ERROR
 SYMCRYPT_CALL
 SymCryptRsaPkcs1ApplySignaturePadding(
@@ -714,7 +709,6 @@ cleanup:
 //
 // Check if a PKCS1 padding is valid with regard to a hash oid
 //
-_Success_(return == SYMCRYPT_NO_ERROR)
 SYMCRYPT_ERROR
 SYMCRYPT_CALL
 SymCryptRsaPkcs1CheckSignaturePadding(
@@ -762,7 +756,6 @@ cleanup:
 }
 
 
-_Success_(return == SYMCRYPT_NO_ERROR)
 SYMCRYPT_ERROR
 SYMCRYPT_CALL
 SymCryptRsaPkcs1VerifySignaturePadding(
@@ -854,7 +847,6 @@ cleanup:
 //       EM =  |    maskedDB       |maskedseed|bc|
 //             +-------------------+----------+--+
 //
-_Success_(return == SYMCRYPT_NO_ERROR)
 SYMCRYPT_ERROR
 SYMCRYPT_CALL
 SymCryptRsaPssApplySignaturePadding(
@@ -999,7 +991,6 @@ cleanup:
     return scError;
 }
 
-_Success_(return == SYMCRYPT_NO_ERROR)
 SYMCRYPT_ERROR
 SYMCRYPT_CALL
 SymCryptRsaPssVerifySignaturePadding(
@@ -1065,11 +1056,12 @@ SymCryptRsaPssVerifySignaturePadding(
     //
     // Size of cbSalt cannot exceed the maximal RSA key size CNG supports.
     //
-    if ( (pbPSSFormat[0] & (BYTE)(0xff << (8 - dwZeroBits))) != 0 ||
-        pbPSSFormat[cbPSSFormat - 1] != 0xbc ||
+    if ( cbPSSFormat < (cbHashAlg + cbSalt + 2) ||
+        (pbPSSFormat[0] & (BYTE)(0xff << (8 - dwZeroBits))) != 0 ||
         // cbSalt > MSCRYPT_RSA_MAX_KEY_LENGTH ||
         // cbHash > MSCRYPT_RSA_MAX_KEY_LENGTH ||
-        cbPSSFormat < (cbHashAlg + cbSalt + 2))
+        pbPSSFormat[cbPSSFormat - 1] != 0xbc
+        )
     {
         scError = SYMCRYPT_INVALID_ARGUMENT;
         goto cleanup;

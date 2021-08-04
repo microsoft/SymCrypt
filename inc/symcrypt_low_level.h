@@ -554,7 +554,6 @@ SymCryptEcpointMaskedCopy(
 // Integer operations
 //
 
-_Success_(return == SYMCRYPT_NO_ERROR)
 SYMCRYPT_ERROR
 SYMCRYPT_CALL
 SymCryptIntCopyMixedSize(
@@ -612,7 +611,6 @@ SymCryptIntSetValueUint64(
 // Read/write INTegers in defined formats
 //
 
-_Success_(return == SYMCRYPT_NO_ERROR)
 SYMCRYPT_ERROR
 SYMCRYPT_CALL
 SymCryptIntSetValue(
@@ -645,7 +643,6 @@ SymCryptIntSetValue(
 //   in one case, we might as well handle it in all cases.
 //
 
-_Success_(return == SYMCRYPT_NO_ERROR)
 SYMCRYPT_ERROR
 SYMCRYPT_CALL
 SymCryptIntGetValue(
@@ -1183,17 +1180,15 @@ SymCryptUint64Gcd( UINT64 a, UINT64 b, UINT32 flags );
 
 #define SYMCRYPT_SCRATCH_BYTES_FOR_CRT_GENERATION( _nDigits )  SYMCRYPT_INTERNAL_SCRATCH_BYTES_FOR_CRT_GENERATION( _nDigits )
 
-_Success_(return == SYMCRYPT_NO_ERROR)
 SYMCRYPT_ERROR
 SYMCRYPT_CALL
 SymCryptCrtGenerateInverses(
-            UINT32                  nCoprimes,
-    _In_    PCSYMCRYPT_MODULUS *    ppmCoprimes,
-            UINT32                  flags,
-    _Out_   PSYMCRYPT_MODELEMENT *  ppeCrtInverses,
-    _Out_writes_bytes_( cbScratch )
-            PBYTE                   pbScratch,
-            SIZE_T                  cbScratch );
+                                    UINT32                  nCoprimes,
+    _In_reads_( nCoprimes )         PCSYMCRYPT_MODULUS *    ppmCoprimes,
+                                    UINT32                  flags,
+    _Out_writes_( nCoprimes )       PSYMCRYPT_MODELEMENT *  ppeCrtInverses,
+    _Out_writes_bytes_( cbScratch ) PBYTE                   pbScratch,
+                                    SIZE_T                  cbScratch );
 //
 // Compute the Chinese Remainder Theorem (CRT) constants for a set of nCoprimes
 // pairwise coprime moduli. Pointers to the input numbers are stored in the array of
@@ -1225,19 +1220,17 @@ SymCryptCrtGenerateInverses(
 
 #define SYMCRYPT_SCRATCH_BYTES_FOR_CRT_SOLUTION( _nDigits )  SYMCRYPT_INTERNAL_SCRATCH_BYTES_FOR_CRT_SOLUTION( _nDigits )
 
-_Success_(return == SYMCRYPT_NO_ERROR)
 SYMCRYPT_ERROR
 SYMCRYPT_CALL
 SymCryptCrtSolve(
-            UINT32                  nCoprimes,
-    _In_    PCSYMCRYPT_MODULUS *    ppmCoprimes,
-    _In_    PCSYMCRYPT_MODELEMENT * ppeCrtInverses,
-    _In_    PCSYMCRYPT_MODELEMENT * ppeCrtRemainders,
-            UINT32                  flags,
-    _Out_   PSYMCRYPT_INT           piSolution,
-    _Out_writes_bytes_( cbScratch )
-            PBYTE                   pbScratch,
-            SIZE_T                  cbScratch );
+                                    UINT32                  nCoprimes,
+    _In_reads_( nCoprimes )         PCSYMCRYPT_MODULUS *    ppmCoprimes,
+    _In_reads_( nCoprimes )         PCSYMCRYPT_MODELEMENT * ppeCrtInverses,
+    _In_reads_( nCoprimes )         PCSYMCRYPT_MODELEMENT * ppeCrtRemainders,
+                                    UINT32                  flags,
+    _Out_                           PSYMCRYPT_INT           piSolution,
+    _Out_writes_bytes_( cbScratch ) PBYTE                   pbScratch,
+                                    SIZE_T                  cbScratch );
 //
 // Solve for x the system of nCoprimes congruences of the form
 //      x = ppeCrtRemainders[0] (mod ppmCoprimes[0])
@@ -1505,7 +1498,6 @@ SymCryptModElementToInt(
 //
 
 
-_Success_(return == SYMCRYPT_NO_ERROR)
 SYMCRYPT_ERROR
 SYMCRYPT_CALL
 SymCryptModElementSetValue(
@@ -1529,7 +1521,7 @@ VOID
 SYMCRYPT_CALL
 SymCryptModElementSetValueUint32(
                                     UINT32                  value,
-                                    PCSYMCRYPT_MODULUS      pmMod,
+    _In_                            PCSYMCRYPT_MODULUS      pmMod,
     _Out_                           PSYMCRYPT_MODELEMENT    peDst,
     _Out_writes_bytes_( cbScratch ) PBYTE                   pbScratch,
                                     SIZE_T                  cbScratch );
@@ -1547,7 +1539,7 @@ VOID
 SYMCRYPT_CALL
 SymCryptModElementSetValueNegUint32(
                                     UINT32                  value,
-                                    PCSYMCRYPT_MODULUS      pmMod,
+    _In_                            PCSYMCRYPT_MODULUS      pmMod,
     _Out_                           PSYMCRYPT_MODELEMENT    peDst,
     _Out_writes_bytes_( cbScratch ) PBYTE                   pbScratch,
                                     SIZE_T                  cbScratch );
@@ -1562,7 +1554,6 @@ SymCryptModElementSetValueNegUint32(
 //
 
 
-_Success_(return == SYMCRYPT_NO_ERROR)
 SYMCRYPT_ERROR
 SYMCRYPT_CALL
 SymCryptModElementGetValue(
@@ -1773,7 +1764,7 @@ SymCryptModInv(
 // - peSrc: Source value, modulu pmMod
 // - peDst: Destination value, mod element modulu pmMod
 // - flags: SYMCRYPT_FLAG_DATA_PUBLIC signals that peSrc is a public value.
-// - pbScatch/cbScratch: scratch space >= SYMCRYPT_SCRATCH_BYTES_FOR_MODINV( nDigits( pmMod ) )
+// - pbScratch/cbScratch: scratch space >= SYMCRYPT_SCRATCH_BYTES_FOR_MODINV( nDigits( pmMod ) )
 //
 // Returns an error if
 //  - GCD( Src, Mod ) != 1
@@ -1832,8 +1823,8 @@ VOID
 SYMCRYPT_CALL
 SymCryptModMultiExp(
     _In_                            PCSYMCRYPT_MODULUS      pmMod,
-    _In_                            PCSYMCRYPT_MODELEMENT * peBaseArray,
-    _In_                            PCSYMCRYPT_INT *        piExpArray,
+    _In_reads_( nBases )            PCSYMCRYPT_MODELEMENT * peBaseArray,
+    _In_reads_( nBases )            PCSYMCRYPT_INT *        piExpArray,
                                     UINT32                  nBases,
                                     UINT32                  nBitsExp,
                                     UINT32                  flags,
@@ -2024,22 +2015,20 @@ SymCryptRoundUpPow2Sizet( SIZE_T v );
 //=====================================================
 //=====================================================
 
-_Success_(return == SYMCRYPT_NO_ERROR)
 SYMCRYPT_ERROR
 SYMCRYPT_CALL
 SymCryptRsaPkcs1ApplyEncryptionPadding(
     _In_reads_bytes_( cbPlaintext )     PCBYTE      pbPlaintext,
                                         SIZE_T      cbPlaintext,
-    _Out_writes_bytes_( cbPKCS1Format ) PBYTE       pbPkcs1Format,
+    _Out_writes_bytes_( cbPkcs1Format ) PBYTE       pbPkcs1Format,
                                         SIZE_T      cbPkcs1Format );
 //
 // Applies the RSA PKCS1 v1.5 encryption padding to the plaintext buffer.
 // - Plaintext      buffer containing plaintext to be encoded
-// - Pkcs1Format    Output buffer, typicaly the size of the RSA modulus
+// - Pkcs1Format    Output buffer, typically the size of the RSA modulus
 // Requirement: cbPkcs1Format >= cbPlaintext + 11 due to the PKCS1 overhead.
 //
 
-_Success_(return == SYMCRYPT_NO_ERROR)
 SYMCRYPT_ERROR
 SYMCRYPT_CALL
 SymCryptRsaPkcs1RemoveEncryptionPadding(
@@ -2066,7 +2055,6 @@ SymCryptRsaPkcs1RemoveEncryptionPadding(
 
 #define SYMCRYPT_SCRATCH_BYTES_FOR_RSA_OAEP( _hashAlgorithm, _nBytesOAEP )      SYMCRYPT_INTERNAL_SCRATCH_BYTES_FOR_RSA_OAEP( _hashAlgorithm, _nBytesOAEP )
 
-_Success_(return == SYMCRYPT_NO_ERROR)
 SYMCRYPT_ERROR
 SYMCRYPT_CALL
 SymCryptRsaOaepApplyEncryptionPadding(
@@ -2077,7 +2065,7 @@ SymCryptRsaOaepApplyEncryptionPadding(
                                         SIZE_T          cbLabel,
     _In_reads_bytes_opt_( cbSeed )      PCBYTE          pbSeed,
                                         SIZE_T          cbSeed,
-    _Out_writes_bytes_( cbOAEPFormat )  PBYTE           pbOaepFormat,
+    _Out_writes_bytes_( cbOaepFormat )  PBYTE           pbOaepFormat,
                                         SIZE_T          cbOaepFormat,
     _Out_writes_bytes_( cbScratch )     PBYTE           pbScratch,
                                         SIZE_T          cbScratch );
@@ -2097,7 +2085,6 @@ SymCryptRsaOaepApplyEncryptionPadding(
 //      cbScratch >= SYMCRYPT_SCRATCH_BYTES_FOR_RSA_OAEP( hashAlgorithm, cbOAEPFormat )
 //
 
-_Success_(return == SYMCRYPT_NO_ERROR)
 SYMCRYPT_ERROR
 SYMCRYPT_CALL
 SymCryptRsaOaepRemoveEncryptionPadding(
@@ -2131,7 +2118,6 @@ SymCryptRsaOaepRemoveEncryptionPadding(
 
 #define SYMCRYPT_SCRATCH_BYTES_FOR_RSA_PKCS1( _nBytesPKCS1 )    SYMCRYPT_INTERNAL_SCRATCH_BYTES_FOR_RSA_PKCS1( _nBytesPKCS1 )
 
-_Success_(return == SYMCRYPT_NO_ERROR)
 SYMCRYPT_ERROR
 SYMCRYPT_CALL
 SymCryptRsaPkcs1ApplySignaturePadding(
@@ -2152,7 +2138,6 @@ SymCryptRsaPkcs1ApplySignaturePadding(
 //      SYMCRYPT_FLAG_RSA_PKCS1_NO_ASN1
 //
 
-_Success_(return == SYMCRYPT_NO_ERROR)
 SYMCRYPT_ERROR
 SYMCRYPT_CALL
 SymCryptRsaPkcs1VerifySignaturePadding(
@@ -2182,7 +2167,6 @@ SymCryptRsaPkcs1VerifySignaturePadding(
 
 #define SYMCRYPT_SCRATCH_BYTES_FOR_RSA_PSS( _hashAlgorithm, _nBytesMessage, _nBytesPSS )    SYMCRYPT_INTERNAL_SCRATCH_BYTES_FOR_RSA_PSS( _hashAlgorithm, _nBytesMessage, _nBytesPSS )
 
-_Success_(return == SYMCRYPT_NO_ERROR)
 SYMCRYPT_ERROR
 SYMCRYPT_CALL
 SymCryptRsaPssApplySignaturePadding(
@@ -2215,7 +2199,6 @@ SymCryptRsaPssApplySignaturePadding(
 //      cbScratch >= SYMCRYPT_SCRATCH_BYTES_FOR_RSA_PSS( hashAlgorithm, cbHash, cbPSSFormat )
 //
 
-_Success_(return == SYMCRYPT_NO_ERROR)
 SYMCRYPT_ERROR
 SYMCRYPT_CALL
 SymCryptRsaPssVerifySignaturePadding(
@@ -2279,7 +2262,6 @@ SymCryptEcurveDigitsofFieldElement( _In_ PCSYMCRYPT_ECURVE pCurve );
 
 #define SYMCRYPT_SCRATCH_BYTES_FOR_GETSET_VALUE_ECURVE_OPERATIONS( _pCurve )    SYMCRYPT_INTERNAL_SCRATCH_BYTES_FOR_GETSET_VALUE_ECURVE_OPERATIONS( _pCurve )
 
-_Success_(return == SYMCRYPT_NO_ERROR)
 SYMCRYPT_ERROR
 SYMCRYPT_CALL
 SymCryptEcpointSetValue(
@@ -2321,7 +2303,6 @@ SymCryptEcpointSetValue(
 //      eformat = SYMCRYPT_ECPOINT_AFFINE
 //
 
-_Success_(return == SYMCRYPT_NO_ERROR)
 SYMCRYPT_ERROR
 SYMCRYPT_CALL
 SymCryptEcpointGetValue(
@@ -2661,7 +2642,6 @@ SymCryptEcpointMultiScalarMul(
 // ECDSA-EX
 //
 
-_Success_(return == SYMCRYPT_NO_ERROR)
 SYMCRYPT_ERROR
 SYMCRYPT_CALL
 SymCryptEcDsaSignEx(
@@ -2710,7 +2690,6 @@ typedef const SYMCRYPT_802_11_SAE_CUSTOM_STATE *PCSYMCRYPT_802_11_SAE_CUSTOM_STA
 // change at any time.
 //
 
-_Success_( return == SYMCRYPT_NO_ERROR )
 SYMCRYPT_ERROR
 SymCrypt802_11SaeCustomInit(
     _Out_                       PSYMCRYPT_802_11_SAE_CUSTOM_STATE   pState,
@@ -2750,7 +2729,6 @@ SymCrypt802_11SaeCustomInit(
 // of the other functions.
 //
 
-_Success_( return == SYMCRYPT_NO_ERROR )
 SYMCRYPT_ERROR
 SymCrypt802_11SaeCustomCreatePT(
     _In_reads_( cbSsid )                   PCBYTE                              pbSsid,
@@ -2774,7 +2752,6 @@ SymCrypt802_11SaeCustomCreatePT(
 // As above, we only support NIST P256.
 //
 
-_Success_( return == SYMCRYPT_NO_ERROR )
 SYMCRYPT_ERROR
 SymCrypt802_11SaeCustomInitH2E(
     _Out_                       PSYMCRYPT_802_11_SAE_CUSTOM_STATE   pState,
@@ -2798,7 +2775,6 @@ SymCrypt802_11SaeCustomInitH2E(
 // parameters
 //
 
-_Success_( return == SYMCRYPT_NO_ERROR )
 SYMCRYPT_ERROR
 SymCrypt802_11SaeCustomCommitCreate(
     _In_                        PCSYMCRYPT_802_11_SAE_CUSTOM_STATE  pState,
@@ -2814,7 +2790,6 @@ SymCrypt802_11SaeCustomCommitCreate(
 //                      (x,y) in order, each value in MSByte first.
 //
 
-_Success_( return == SYMCRYPT_NO_ERROR )
 SYMCRYPT_ERROR
 SymCrypt802_11SaeCustomCommitProcess(
     _In_                        PCSYMCRYPT_802_11_SAE_CUSTOM_STATE  pState,

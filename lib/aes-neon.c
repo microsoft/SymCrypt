@@ -1468,6 +1468,8 @@ SymCryptAesGcmEncryptStitchedNeon(
     SIZE_T nBlocks = cbData / SYMCRYPT_GF128_BLOCK_SIZE;
     SIZE_T todo;
 
+    SYMCRYPT_ASSERT( (cbData & SYMCRYPT_GCM_BLOCK_MOD_MASK) == 0 ); // cbData is multiple of block size
+
     // Our chain variable is in integer format, not the MSBfirst format loaded from memory.
     ctr0 = vrev64q_u8( chain );
     ctr1 = vaddq_u64( ctr0, chainIncrement1 );
@@ -1712,6 +1714,8 @@ SymCryptAesGcmDecryptStitchedNeon(
     const __n64 vMultiplicationConstant = (__n64) {.n64_u64 = {0xc200000000000000}};
     SIZE_T nBlocks = cbData / SYMCRYPT_GF128_BLOCK_SIZE;
     SIZE_T todo;
+
+    SYMCRYPT_ASSERT( (cbData & SYMCRYPT_GCM_BLOCK_MOD_MASK) == 0 ); // cbData is multiple of block size
 
     // Our chain variable is in integer format, not the MSBfirst format loaded from memory.
     ctr0 = vrev64q_u8( chain );

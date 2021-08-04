@@ -11,7 +11,6 @@
 #define GCM_MAX_TAG_SIZE            (16)
 
 
-_Success_(return == SYMCRYPT_NO_ERROR)
 SYMCRYPT_ERROR
 SYMCRYPT_CALL
 SymCryptGcmValidateParameters(
@@ -271,7 +270,6 @@ SymCryptGcmComputeTag(
 }
 
 
-_Success_(return == SYMCRYPT_NO_ERROR)
 SYMCRYPT_NOINLINE
 SYMCRYPT_ERROR
 SYMCRYPT_CALL
@@ -433,6 +431,7 @@ SymCryptGcmEncryptPart(
         // Use optimized implementation if available
         //
         (*pState->pKey->pBlockCipher->gcmEncryptPartFunc) ( pState, pbSrc, pbDst, cbData );
+        SYMCRYPT_ASSERT( pState->bytesInMacBlock <= 15 );
     }
     else
     {
@@ -494,6 +493,7 @@ SymCryptGcmDecryptPart(
         // Use optimized implementation if available
         //
         (*pState->pKey->pBlockCipher->gcmDecryptPartFunc) ( pState, pbSrc, pbDst, cbData );
+        SYMCRYPT_ASSERT( pState->bytesInMacBlock <= 15 );
     }
     else
     {
@@ -540,9 +540,9 @@ SymCryptGcmEncryptFinal(
     SymCryptWipeKnownSize( buf, sizeof( buf ) );
 
     SymCryptWipeKnownSize( pState, sizeof( *pState ) );
+    SYMCRYPT_ASSERT( pState->bytesInMacBlock == 0 );
 }
 
-_Success_(return == SYMCRYPT_NO_ERROR)
 SYMCRYPT_NOINLINE
 SYMCRYPT_ERROR
 SYMCRYPT_CALL
@@ -570,6 +570,7 @@ SymCryptGcmDecryptFinal(
     SymCryptWipeKnownSize( buf, sizeof( buf ) );
 
     SymCryptWipeKnownSize( pState, sizeof( *pState ) );
+    SYMCRYPT_ASSERT( pState->bytesInMacBlock == 0 );
 
     return status;
 }
@@ -695,7 +696,6 @@ SymCryptGcmEncrypt(
 }
 
 
-_Success_(return == SYMCRYPT_NO_ERROR)
 SYMCRYPT_NOINLINE
 SYMCRYPT_ERROR
 SYMCRYPT_CALL

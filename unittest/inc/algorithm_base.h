@@ -344,7 +344,7 @@ public:
 
     virtual NTSTATUS setKey( _In_reads_( cbKey ) PCBYTE pbKey, SIZE_T cbKey ) = 0;
 
-    virtual NTSTATUS setNonce( _In_reads_( cbKey ) PCBYTE pbNonce, SIZE_T cbNonce ) = 0;
+    virtual NTSTATUS setNonce( _In_reads_( cbNonce ) PCBYTE pbNonce, SIZE_T cbNonce ) = 0;
 
     virtual BOOL isRandomAccess() = 0;
 
@@ -1013,7 +1013,7 @@ public:
 
     virtual NTSTATUS setKey( _In_reads_( cbKey ) PCBYTE pbKey, SIZE_T cbKey );
 
-    virtual NTSTATUS setNonce( _In_reads_( cbKey ) PCBYTE pbNonce, SIZE_T cbNonce );
+    virtual NTSTATUS setNonce( _In_reads_( cbNonce ) PCBYTE pbNonce, SIZE_T cbNonce );
 
     virtual BOOL isRandomAccess() { return s_isRandomAccess; };
 

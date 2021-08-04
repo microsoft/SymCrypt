@@ -119,7 +119,7 @@ SYMCRYPT_CALL
 SymCryptShortWeierstrassSetZero(
     _In_    PCSYMCRYPT_ECURVE   pCurve,
     _Out_   PSYMCRYPT_ECPOINT   poDst,
-    _Out_writes_bytes_opt_( cbScratch )
+    _Out_writes_bytes_( cbScratch )
             PBYTE               pbScratch,
             SIZE_T              cbScratch )
 {
@@ -154,7 +154,7 @@ SYMCRYPT_CALL
 SymCryptShortWeierstrassSetDistinguished(
     _In_    PCSYMCRYPT_ECURVE   pCurve,
     _Out_   PSYMCRYPT_ECPOINT   poDst,
-    _Out_writes_bytes_opt_( cbScratch )
+    _Out_writes_bytes_( cbScratch )
             PBYTE               pbScratch,
             SIZE_T              cbScratch )
 {
@@ -182,7 +182,7 @@ SymCryptShortWeierstrassIsEqual(
     _In_    PCSYMCRYPT_ECPOINT  poSrc1,
     _In_    PCSYMCRYPT_ECPOINT  poSrc2,
             UINT32              flags,
-    _Out_writes_bytes_opt_( cbScratch )
+    _Out_writes_bytes_( cbScratch )
             PBYTE               pbScratch,
             SIZE_T              cbScratch )
 {
@@ -261,7 +261,7 @@ SYMCRYPT_CALL
 SymCryptShortWeierstrassIsZero(
     _In_    PCSYMCRYPT_ECURVE   pCurve,
     _In_    PCSYMCRYPT_ECPOINT  poSrc,
-    _Out_writes_bytes_opt_( cbScratch )
+    _Out_writes_bytes_( cbScratch )
             PBYTE               pbScratch,
             SIZE_T              cbScratch )
 {
@@ -290,7 +290,7 @@ SYMCRYPT_CALL
 SymCryptShortWeierstrassOnCurve(
     _In_    PCSYMCRYPT_ECURVE   pCurve,
     _In_    PCSYMCRYPT_ECPOINT  poSrc,
-    _Out_writes_bytes_opt_( cbScratch )
+    _Out_writes_bytes_( cbScratch )
             PBYTE               pbScratch,
             SIZE_T              cbScratch )
 {
@@ -382,7 +382,7 @@ SymCryptShortWeierstrassDouble(
     _In_    PCSYMCRYPT_ECPOINT  poSrc,
     _Out_   PSYMCRYPT_ECPOINT   poDst,
     _In_    UINT32              flags,
-    _Out_writes_bytes_opt_( cbScratch )
+    _Out_writes_bytes_( cbScratch )
             PBYTE               pbScratch,
             SIZE_T              cbScratch )
 {
@@ -491,7 +491,7 @@ SymCryptShortWeierstrassAddDiffNonZero(
     _In_    PCSYMCRYPT_ECPOINT  poSrc1,
     _In_    PCSYMCRYPT_ECPOINT  poSrc2,
     _Out_   PSYMCRYPT_ECPOINT   poDst,
-    _Out_writes_bytes_opt_( cbScratch )
+    _Out_writes_bytes_( cbScratch )
             PBYTE               pbScratch,
             SIZE_T              cbScratch )
 {
@@ -583,7 +583,7 @@ SymCryptShortWeierstrassAddSideChannelUnsafe(
     _In_    PCSYMCRYPT_ECPOINT  poSrc1,
     _In_    PCSYMCRYPT_ECPOINT  poSrc2,
     _Out_   PSYMCRYPT_ECPOINT   poDst,
-    _Out_writes_bytes_opt_( cbScratch )
+    _Out_writes_bytes_( cbScratch )
             PBYTE               pbScratch,
             SIZE_T              cbScratch )
 {
@@ -734,7 +734,7 @@ SymCryptShortWeierstrassAdd(
     _In_    PCSYMCRYPT_ECPOINT  poSrc2,
     _Out_   PSYMCRYPT_ECPOINT   poDst,
     _In_    UINT32              flags,
-    _Out_writes_bytes_opt_( cbScratch )
+    _Out_writes_bytes_( cbScratch )
             PBYTE               pbScratch,
             SIZE_T              cbScratch )
 {
@@ -746,9 +746,13 @@ SymCryptShortWeierstrassAdd(
     PSYMCRYPT_ECPOINT   poQ0 = NULL;
     PSYMCRYPT_ECPOINT   poQ1 = NULL;
 
+    SIZE_T cbEcpoint = SymCryptSizeofEcpointFromCurve( pCurve );
+
     SYMCRYPT_ASSERT( pCurve->type == SYMCRYPT_ECURVE_TYPE_SHORT_WEIERSTRASS );
     SYMCRYPT_ASSERT( SymCryptEcurveIsSame(pCurve, poSrc1->pCurve) && SymCryptEcurveIsSame(pCurve, poSrc2->pCurve) && SymCryptEcurveIsSame(pCurve, poDst->pCurve) );
     SYMCRYPT_ASSERT( cbScratch >= SYMCRYPT_INTERNAL_SCRATCH_BYTES_FOR_COMMON_ECURVE_OPERATIONS( pCurve ) );     // We will need the entire scratch space
+
+    SYMCRYPT_ASSERT( cbScratch > 2*cbEcpoint );
 
     if ((flags & SYMCRYPT_FLAG_DATA_PUBLIC) != 0)
     {
@@ -758,22 +762,16 @@ SymCryptShortWeierstrassAdd(
     {
 
         // Creating temporary points
-        poQ0 = SymCryptEcpointCreate(
-                    pbScratch,
-                    SymCryptSizeofEcpointFromCurve( pCurve ),
-                    pCurve );
+        poQ0 = SymCryptEcpointCreate( pbScratch, cbEcpoint, pCurve );
         SYMCRYPT_ASSERT( poQ0 != NULL);
-        pbScratch += SymCryptSizeofEcpointFromCurve( pCurve );
+        pbScratch += cbEcpoint;
 
-        poQ1 = SymCryptEcpointCreate(
-                    pbScratch,
-                    SymCryptSizeofEcpointFromCurve( pCurve ),
-                    pCurve );
+        poQ1 = SymCryptEcpointCreate( pbScratch, cbEcpoint, pCurve );
         SYMCRYPT_ASSERT( poQ1 != NULL);
-        pbScratch += SymCryptSizeofEcpointFromCurve( pCurve );
+        pbScratch += cbEcpoint;
 
         // Fixing remaining scratch space size
-        cbScratch -= 2*SymCryptSizeofEcpointFromCurve( pCurve );
+        cbScratch -= 2*cbEcpoint;
 
         // Calculate the masks
         dSrc1Zero = SymCryptShortWeierstrassIsZero( pCurve, poSrc1, pbScratch, cbScratch );
@@ -799,7 +797,7 @@ SymCryptShortWeierstrassNegate(
     _In_    PCSYMCRYPT_ECURVE   pCurve,
     _Inout_ PSYMCRYPT_ECPOINT   poSrc,
             UINT32              mask,
-    _Out_writes_bytes_opt_( cbScratch )
+    _Out_writes_bytes_( cbScratch )
             PBYTE               pbScratch,
             SIZE_T              cbScratch )
 {

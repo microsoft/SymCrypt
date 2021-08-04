@@ -1585,7 +1585,7 @@ typedef VOID (SYMCRYPT_CALL * SYMCRYPT_MODULUS_INIT_FN)(
 // point format and allow the Modulus to contain special optimizations.
 //
 // The SetPost function is the post-processing function of any SetValue operation. The SetValue operation will store the
-// modElement in the normal integer format into the ModElement. The SetPost function post-proccesses it into the proper
+// modElement in the normal integer format into the ModElement. The SetPost function post-processes it into the proper
 // representation for that modulus.
 //
 // The PreGet function is the pre-processing function to any GetValue operation. It returns a pointer to the proper value
@@ -2087,9 +2087,9 @@ SYMCRYPT_CALL
 SymCryptFdefRawDivMod(
     _In_reads_(nDigits * SYMCRYPT_FDEF_DIGIT_NUINT32)           PCUINT32            pNum,
                                                                 UINT32              nDigits,
-    _In_                                                        PCSYMCRYPT_DIVISOR  pDivisor,
+    _In_                                                        PCSYMCRYPT_DIVISOR  pdDivisor,
     _Out_writes_opt_(nDigits * SYMCRYPT_FDEF_DIGIT_NUINT32)     PUINT32             pQuotient,
-    _Out_writes_opt_(SYMCRYPT_FDEF_INT_NUINT32(&pDivisor->Int)) PUINT32             pRemainder,
+    _Out_writes_opt_(SYMCRYPT_OBJ_NUINT32(pdDivisor))           PUINT32             pRemainder,
     _Out_writes_bytes_( cbScratch )                             PBYTE               pbScratch,
                                                                 SIZE_T              cbScratch );
 
@@ -2205,7 +2205,8 @@ VOID
 SYMCRYPT_CALL
 SymCryptFdefModElementToIntGeneric(
     _In_                            PCSYMCRYPT_MODULUS      pmMod,
-    _In_                            PCUINT32                pSrc,
+    _In_reads_bytes_( pmMod->nDigits * SYMCRYPT_FDEF_DIGIT_SIZE )
+                                    PCUINT32                pSrc,
     _Out_                           PSYMCRYPT_INT           piDst,
     _Out_writes_bytes_( cbScratch ) PBYTE                   pbScratch,
                                     SIZE_T                  cbScratch );
@@ -2225,7 +2226,7 @@ SymCryptFdefModElementSetValueGeneric(
     _In_reads_bytes_( cbSrc )       PCBYTE                  pbSrc,
                                     SIZE_T                  cbSrc,
                                     SYMCRYPT_NUMBER_FORMAT  format,
-                                    PCSYMCRYPT_MODULUS      pmMod,
+    _In_                            PCSYMCRYPT_MODULUS      pmMod,
     _Out_                           PSYMCRYPT_MODELEMENT    peDst,
     _Out_writes_bytes_( cbScratch ) PBYTE                   pbScratch,
                                     SIZE_T                  cbScratch );
@@ -2253,14 +2254,14 @@ SYMCRYPT_CALL
 SymCryptFdefRawGetValue(
     _In_reads_(nDigits * SYMCRYPT_FDEF_DIGIT_NUINT32)   PCUINT32                pSrc,
                                                         UINT32                  nDigits,
-    _Out_writes_bytes_(cbBytes)                         PBYTE                   pbDst,
+    _Out_writes_bytes_(cbDst)                           PBYTE                   pbDst,
                                                         SIZE_T                  cbDst,
                                                         SYMCRYPT_NUMBER_FORMAT  format );
 
 SYMCRYPT_ERROR
 SYMCRYPT_CALL
 SymCryptFdefModElementGetValue(
-                                    PCSYMCRYPT_MODULUS      pmMod,
+    _In_                            PCSYMCRYPT_MODULUS      pmMod,
     _In_                            PCSYMCRYPT_MODELEMENT   peSrc,
     _Out_writes_bytes_( cbDst )     PBYTE                   pbDst,
                                     SIZE_T                  cbDst,
@@ -2714,9 +2715,9 @@ SymCryptFdef369RawMul(
 UINT32
 SYMCRYPT_CALL
 SymCryptFdefRawIsEqualUint32(
-    _In_    PCUINT32        pSrc1,
-            UINT32          nDigits,
-    _In_    UINT32          u32Src2 );
+    _In_reads_(nDigits*SYMCRYPT_FDEF_DIGIT_NUINT32) PCUINT32        pSrc1,
+                                                    UINT32          nDigits,
+    _In_                                            UINT32          u32Src2 );
 
 UINT32
 SYMCRYPT_CALL
@@ -2808,8 +2809,8 @@ VOID
 SYMCRYPT_CALL
 SymCryptModMultiExpGeneric(
     _In_                            PCSYMCRYPT_MODULUS      pmMod,
-    _In_                            PCSYMCRYPT_MODELEMENT * peBaseArray,
-    _In_                            PCSYMCRYPT_INT *        piExpArray,
+    _In_reads_( nBases )            PCSYMCRYPT_MODELEMENT * peBaseArray,
+    _In_reads_( nBases )            PCSYMCRYPT_INT *        piExpArray,
                                     UINT32                  nBases,
                                     UINT32                  nBitsExp,
                                     UINT32                  flags,
@@ -3078,7 +3079,7 @@ SYMCRYPT_CALL
 SymCryptShortWeierstrassSetZero(
     _In_    PCSYMCRYPT_ECURVE   pCurve,
     _Out_   PSYMCRYPT_ECPOINT   poDst,
-    _Out_writes_bytes_opt_( cbScratch )
+    _Out_writes_bytes_( cbScratch )
             PBYTE               pbScratch,
             SIZE_T              cbScratch );
 
@@ -3087,7 +3088,7 @@ SYMCRYPT_CALL
 SymCryptShortWeierstrassSetDistinguished(
     _In_    PCSYMCRYPT_ECURVE   pCurve,
     _Out_   PSYMCRYPT_ECPOINT   poDst,
-    _Out_writes_bytes_opt_( cbScratch )
+    _Out_writes_bytes_( cbScratch )
             PBYTE               pbScratch,
             SIZE_T              cbScratch );
 
@@ -3098,7 +3099,7 @@ SymCryptShortWeierstrassIsEqual(
     _In_    PCSYMCRYPT_ECPOINT  poSrc1,
     _In_    PCSYMCRYPT_ECPOINT  poSrc2,
             UINT32              flags,
-    _Out_writes_bytes_opt_( cbScratch )
+    _Out_writes_bytes_( cbScratch )
             PBYTE               pbScratch,
             SIZE_T              cbScratch );
 
@@ -3107,7 +3108,7 @@ SYMCRYPT_CALL
 SymCryptShortWeierstrassIsZero(
     _In_    PCSYMCRYPT_ECURVE   pCurve,
     _In_    PCSYMCRYPT_ECPOINT  poSrc,
-    _Out_writes_bytes_opt_( cbScratch )
+    _Out_writes_bytes_( cbScratch )
             PBYTE               pbScratch,
             SIZE_T              cbScratch );
 
@@ -3116,7 +3117,7 @@ SYMCRYPT_CALL
 SymCryptShortWeierstrassOnCurve(
     _In_    PCSYMCRYPT_ECURVE   pCurve,
     _In_    PCSYMCRYPT_ECPOINT  poSrc,
-    _Out_writes_bytes_opt_( cbScratch )
+    _Out_writes_bytes_( cbScratch )
             PBYTE               pbScratch,
             SIZE_T              cbScratch );
 
@@ -3128,7 +3129,7 @@ SymCryptShortWeierstrassAdd(
     _In_    PCSYMCRYPT_ECPOINT  poSrc2,
     _Out_   PSYMCRYPT_ECPOINT   poDst,
     _In_    UINT32              flags,
-    _Out_writes_bytes_opt_( cbScratch )
+    _Out_writes_bytes_( cbScratch )
             PBYTE               pbScratch,
             SIZE_T              cbScratch );
 
@@ -3139,7 +3140,7 @@ SymCryptShortWeierstrassAddDiffNonZero(
     _In_    PCSYMCRYPT_ECPOINT  poSrc1,
     _In_    PCSYMCRYPT_ECPOINT  poSrc2,
     _Out_   PSYMCRYPT_ECPOINT   poDst,
-    _Out_writes_bytes_opt_( cbScratch )
+    _Out_writes_bytes_( cbScratch )
             PBYTE               pbScratch,
             SIZE_T              cbScratch );
 
@@ -3150,7 +3151,7 @@ SymCryptShortWeierstrassDouble(
     _In_    PCSYMCRYPT_ECPOINT  poSrc,
     _Out_   PSYMCRYPT_ECPOINT   poDst,
     _In_    UINT32              flags,
-    _Out_writes_bytes_opt_( cbScratch )
+    _Out_writes_bytes_( cbScratch )
             PBYTE               pbScratch,
             SIZE_T              cbScratch );
 
@@ -3160,7 +3161,7 @@ SymCryptShortWeierstrassNegate(
     _In_    PCSYMCRYPT_ECURVE   pCurve,
     _Inout_ PSYMCRYPT_ECPOINT   poSrc,
             UINT32              mask,
-    _Out_writes_bytes_opt_( cbScratch )
+    _Out_writes_bytes_( cbScratch )
             PBYTE               pbScratch,
             SIZE_T              cbScratch );
 
@@ -3179,7 +3180,7 @@ SYMCRYPT_CALL
 SymCryptTwistedEdwardsSetDistinguished(
     _In_    PCSYMCRYPT_ECURVE   pCurve,
     _Out_   PSYMCRYPT_ECPOINT   poDst,
-    _Out_writes_bytes_opt_( cbScratch )
+    _Out_writes_bytes_( cbScratch )
             PBYTE               pbScratch,
             SIZE_T              cbScratch);
 
@@ -3191,20 +3192,20 @@ SymCryptTwistedEdwardsAdd(
     _In_    PCSYMCRYPT_ECPOINT  poSrc2,
     _Out_   PSYMCRYPT_ECPOINT   poDst,
     _In_    UINT32              flags,
-    _Out_writes_bytes_opt_(cbScratch)
+    _Out_writes_bytes_( cbScratch )
             PBYTE               pbScratch,
-            SIZE_T              cbProvidedScratch);
+            SIZE_T              cbScratch );
 
 VOID
 SYMCRYPT_CALL
 SymCryptTwistedEdwardsAddDiffNonZero(
-     _In_    PCSYMCRYPT_ECURVE   pCurve,
-     _In_    PCSYMCRYPT_ECPOINT  poSrc1,
-     _In_    PCSYMCRYPT_ECPOINT  poSrc2,
-     _Out_   PSYMCRYPT_ECPOINT   poDst,
-     _Out_writes_bytes_opt_(cbScratch)
-             PBYTE               pbScratch,
-             SIZE_T              cbScratch );
+     _In_   PCSYMCRYPT_ECURVE   pCurve,
+     _In_   PCSYMCRYPT_ECPOINT  poSrc1,
+     _In_   PCSYMCRYPT_ECPOINT  poSrc2,
+     _Out_  PSYMCRYPT_ECPOINT   poDst,
+     _Out_writes_bytes_( cbScratch )
+            PBYTE               pbScratch,
+            SIZE_T              cbScratch );
 
 VOID
 SYMCRYPT_CALL
@@ -3213,9 +3214,9 @@ SymCryptTwistedEdwardsDouble(
     _In_    PCSYMCRYPT_ECPOINT  poSrc,
     _Out_   PSYMCRYPT_ECPOINT   poDst,
     _In_    UINT32              flags,
-    _Out_writes_bytes_opt_(cbScratch)
-    PBYTE                       pbScratch,
-    SIZE_T                      cbScratch);
+    _Out_writes_bytes_( cbScratch )
+            PBYTE               pbScratch,
+            SIZE_T              cbScratch);
 
 UINT32
 SYMCRYPT_CALL
@@ -3224,7 +3225,7 @@ SymCryptTwistedEdwardsIsEqual(
     _In_    PCSYMCRYPT_ECPOINT  poSrc1,
     _In_    PCSYMCRYPT_ECPOINT  poSrc2,
             UINT32              flags,
-     _Out_writes_bytes_opt_(cbScratch)
+    _Out_writes_bytes_( cbScratch )
             PBYTE               pbScratch,
             SIZE_T              cbScratch);
 
@@ -3233,16 +3234,16 @@ SYMCRYPT_CALL
 SymCryptTwistedEdwardsOnCurve(
     _In_    PCSYMCRYPT_ECURVE   pCurve,
     _In_    PCSYMCRYPT_ECPOINT  poSrc,
-    _Out_writes_bytes_opt_(cbScratch)
-    PBYTE                       pbScratch,
-    SIZE_T                      cbScratch);
+    _Out_writes_bytes_( cbScratch )
+            PBYTE               pbScratch,
+            SIZE_T              cbScratch);
 
 UINT32
 SYMCRYPT_CALL
 SymCryptTwistedEdwardsIsZero(
     _In_    PCSYMCRYPT_ECURVE   pCurve,
     _In_    PCSYMCRYPT_ECPOINT  poSrc,
-    _Out_writes_bytes_opt_( cbScratch )
+    _Out_writes_bytes_( cbScratch )
             PBYTE               pbScratch,
             SIZE_T              cbScratch);
 
@@ -3251,7 +3252,7 @@ SYMCRYPT_CALL
 SymCryptTwistedEdwardsSetZero(
     _In_    PCSYMCRYPT_ECURVE   pCurve,
     _Out_   PSYMCRYPT_ECPOINT   poDst,
-    _Out_writes_bytes_opt_(cbScratch)
+    _Out_writes_bytes_( cbScratch )
             PBYTE               pbScratch,
             SIZE_T              cbScratch);
 
@@ -3261,7 +3262,7 @@ SymCryptTwistedEdwardsNegate(
     _In_    PCSYMCRYPT_ECURVE   pCurve,
     _Inout_ PSYMCRYPT_ECPOINT   poSrc,
             UINT32              mask,
-    _Out_writes_bytes_opt_( cbScratch )
+    _Out_writes_bytes_( cbScratch )
             PBYTE               pbScratch,
             SIZE_T              cbScratch );
 
@@ -3291,7 +3292,7 @@ SymCryptMontgomeryIsEqual(
     _In_    PCSYMCRYPT_ECPOINT  poSrc1,
     _In_    PCSYMCRYPT_ECPOINT  poSrc2,
             UINT32              flags,
-     _Out_writes_bytes_opt_(cbScratch)
+     _Out_writes_bytes_( cbScratch )
             PBYTE               pbScratch,
             SIZE_T              cbScratch);
 
@@ -3300,7 +3301,7 @@ SYMCRYPT_CALL
 SymCryptMontgomeryIsZero(
     _In_    PCSYMCRYPT_ECURVE   pCurve,
     _In_    PCSYMCRYPT_ECPOINT  poSrc,
-    _Out_writes_bytes_opt_( cbScratch )
+    _Out_writes_bytes_( cbScratch )
             PBYTE               pbScratch,
             SIZE_T              cbScratch );
 
@@ -3313,7 +3314,7 @@ SymCryptMontgomeryPointScalarMul(
             PCSYMCRYPT_ECPOINT      poSrc,
     _In_    UINT32                  flags,
     _Out_   PSYMCRYPT_ECPOINT       poDst,
-    _Out_writes_bytes_(cbScratch)
+    _Out_writes_bytes_( cbScratch )
             PBYTE               pbScratch,
             SIZE_T              cbScratch);
 
@@ -3329,7 +3330,6 @@ SymCryptOfflinePrecomputation(
             PBYTE         pbScratch,
             SIZE_T        cbScratch );
 
-_Success_(return == SYMCRYPT_NO_ERROR)
 SYMCRYPT_ERROR
 SYMCRYPT_CALL
 SymCryptEcpointScalarMulFixedWindow(
@@ -3339,33 +3339,30 @@ SymCryptEcpointScalarMulFixedWindow(
             PCSYMCRYPT_ECPOINT      poSrc,
     _In_    UINT32                  flags,
     _Out_   PSYMCRYPT_ECPOINT       poDst,
-    _Out_writes_bytes_opt_( cbScratch )
+    _Out_writes_bytes_( cbScratch )
             PBYTE               pbScratch,
             SIZE_T              cbScratch );
 
-_Success_(return == SYMCRYPT_NO_ERROR)
 SYMCRYPT_ERROR
 SYMCRYPT_CALL
 SymCryptEcpointMultiScalarMulWnafWithInterleaving(
-    _In_    PCSYMCRYPT_ECURVE       pCurve,
-    _In_    PCSYMCRYPT_INT *        piSrcScalarArray,
-    _In_    PCSYMCRYPT_ECPOINT *    poSrcEcpointArray,
-    _In_    UINT32                  nPoints,
-    _In_    UINT32                  flags,
-    _Out_   PSYMCRYPT_ECPOINT       poDst,
-    _Out_writes_bytes_opt_( cbScratch )
-            PBYTE               pbScratch,
-            SIZE_T              cbScratch );
+    _In_                            PCSYMCRYPT_ECURVE       pCurve,
+    _In_reads_( nPoints )           PCSYMCRYPT_INT *        piSrcScalarArray,
+    _In_reads_( nPoints )           PCSYMCRYPT_ECPOINT *    poSrcEcpointArray,
+    _In_                            UINT32                  nPoints,
+    _In_                            UINT32                  flags,
+    _Out_                           PSYMCRYPT_ECPOINT       poDst,
+    _Out_writes_bytes_( cbScratch ) PBYTE                   pbScratch,
+                                    SIZE_T                  cbScratch );
 
 VOID
 SYMCRYPT_CALL
 SymCryptEcpointGenericSetRandom(
-    _In_    PCSYMCRYPT_ECURVE       pCurve,
-    _Out_   PSYMCRYPT_INT           piScalar,
-    _Out_   PSYMCRYPT_ECPOINT       poDst,
-    _Out_writes_bytes_opt_( cbScratch )
-            PBYTE                   pbScratch,
-            SIZE_T                  cbScratch );
+    _In_                            PCSYMCRYPT_ECURVE   pCurve,
+    _Out_                           PSYMCRYPT_INT       piScalar,
+    _Out_                           PSYMCRYPT_ECPOINT   poDst,
+    _Out_writes_bytes_( cbScratch ) PBYTE               pbScratch,
+                                    SIZE_T              cbScratch );
 //--------------------------------------------------------
 //--------------------------------------------------------
 

@@ -7,15 +7,15 @@
 // This module contains the routines to implement MD2 from RFC 1319
 //
 // This is a new implementation, NOT based on the existing one in RSA32.lib,
-// which is the one from RSA data security. 
+// which is the one from RSA data security.
 //
 // The implementation had to be refreshed anyway to conform to our coding
-// guidelines for cryptographic functions. 
+// guidelines for cryptographic functions.
 // Re-implementing the function along the lines of our SHA-family implementations
 // was easy, and it removes a file with RSA copyright from our system.
 //
 // The only data copied for this implementation is the S table from the
-// RFC. 
+// RFC.
 //
 
 #include "precomp.h"
@@ -82,7 +82,7 @@ SymCryptMd2Init( _Out_ PSYMCRYPT_MD2_STATE  pState )
 {
     //
     // We use the secure wipe as the init routine is also used to re-initialize
-    // (and wipe) the state after a hash computation. 
+    // (and wipe) the state after a hash computation.
     // In that case the compiler might conclude that this wipe can be optimized
     // away, and that would leak data.
     //
@@ -117,7 +117,7 @@ SymCryptMd2Result(  _Inout_                                 PSYMCRYPT_MD2_STATE 
     //
     SIZE_T tmp;
     SIZE_T paddingBytes = 16 - state->bytesInBuffer;
-    
+
 
     SYMCRYPT_CHECK_MAGIC( state );
 
@@ -143,8 +143,8 @@ SymCryptMd2Result(  _Inout_                                 PSYMCRYPT_MD2_STATE 
 
 VOID
 SYMCRYPT_CALL
-SymCryptMd2AppendBlocks( 
-    _Inout_                 PSYMCRYPT_MD2_CHAINING_STATE    pChain, 
+SymCryptMd2AppendBlocks(
+    _Inout_                 PSYMCRYPT_MD2_CHAINING_STATE    pChain,
     _In_reads_( cbData )    PCBYTE                          pbData,
                             SIZE_T                          cbData,
     _Out_                   SIZE_T                        * pcbRemaining )
@@ -162,7 +162,7 @@ SymCryptMd2AppendBlocks(
         // read the data once into our structure
         //
         memcpy( &pChain->X[16], pbData, SYMCRYPT_MD2_INPUT_BLOCK_SIZE );
-        
+
         //
         // Update the checksum block.
         // The L value at the end of the previous block is in the last byte of the checksum
@@ -200,7 +200,7 @@ SymCryptMd2AppendBlocks(
 
 VOID
 SYMCRYPT_CALL
-SymCryptMd2StateExport( 
+SymCryptMd2StateExport(
     _In_                                                    PCSYMCRYPT_MD2_STATE    pState,
     _Out_writes_bytes_( SYMCRYPT_MD2_STATE_EXPORT_SIZE )    PBYTE                   pbBlob )
 {
@@ -233,7 +233,6 @@ SymCryptMd2StateExport(
     return;
 }
 
-_Success_(return == SYMCRYPT_NO_ERROR)
 SYMCRYPT_ERROR
 SYMCRYPT_CALL
 SymCryptMd2StateImport(
@@ -268,7 +267,7 @@ SymCryptMd2StateImport(
     pState->bytesInBuffer = blob.bytesInBuffer;
 
     pState->dataLengthL = blob.bytesInBuffer;
-    pState->dataLengthH = 1;                   
+    pState->dataLengthH = 1;
 
     SYMCRYPT_SET_MAGIC( pState );
 
@@ -287,7 +286,7 @@ cleanup:
 //
 
 static const BYTE   md2KATAnswer[ 16 ] = {
-    0xda, 0x85, 0x3b, 0x0d, 0x3f, 0x88, 0xd9, 0x9b, 
+    0xda, 0x85, 0x3b, 0x0d, 0x3f, 0x88, 0xd9, 0x9b,
     0x30, 0x28, 0x3a, 0x69, 0xe6, 0xde, 0xd6, 0xbb,
 } ;
 
@@ -298,9 +297,9 @@ SymCryptMd2Selftest()
     BYTE result[SYMCRYPT_MD2_RESULT_SIZE];
 
     SymCryptMd2( SymCryptTestMsg3, sizeof( SymCryptTestMsg3 ), result );
-    
+
     SymCryptInjectError( result, sizeof( result ) );
-        
+
     if( memcmp( result, md2KATAnswer, sizeof( result ) ) != 0 ) {
         SymCryptFatal( 'MD2t' );
     }

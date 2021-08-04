@@ -124,7 +124,6 @@ static  const BYTE    PITABLE[] =
 */
 
 
-_Success_(return == SYMCRYPT_NO_ERROR)
 SYMCRYPT_ERROR
 SYMCRYPT_CALL
 SymCryptRc2ExpandKeyEx(
@@ -201,7 +200,6 @@ SymCryptRc2ExpandKeyEx(
     return SYMCRYPT_NO_ERROR;
 }
 
-_Success_(return == SYMCRYPT_NO_ERROR)
 SYMCRYPT_ERROR
 SYMCRYPT_CALL
 SymCryptRc2ExpandKey(

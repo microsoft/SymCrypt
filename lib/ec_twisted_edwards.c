@@ -59,7 +59,7 @@ SYMCRYPT_CALL
 SymCryptTwistedEdwardsSetDistinguished(
     _In_    PCSYMCRYPT_ECURVE   pCurve,
     _Out_   PSYMCRYPT_ECPOINT   poDst,
-    _Out_writes_bytes_opt_( cbScratch )
+    _Out_writes_bytes_( cbScratch )
             PBYTE               pbScratch,
             SIZE_T              cbScratch )
 {
@@ -77,7 +77,7 @@ SYMCRYPT_CALL
 SymCryptTwistedEdwardsIsZero(
     _In_    PCSYMCRYPT_ECURVE   pCurve,
     _In_    PCSYMCRYPT_ECPOINT  poSrc,
-    _Out_writes_bytes_opt_( cbScratch )
+    _Out_writes_bytes_( cbScratch )
             PBYTE               pbScratch,
             SIZE_T              cbScratch)
 {
@@ -112,7 +112,7 @@ SYMCRYPT_CALL
 SymCryptTwistedEdwardsOnCurve(
     _In_    PCSYMCRYPT_ECURVE   pCurve,
     _In_    PCSYMCRYPT_ECPOINT  poSrc,
-    _Out_writes_bytes_opt_( cbScratch )
+    _Out_writes_bytes_( cbScratch )
             PBYTE               pbScratch,
             SIZE_T              cbScratch)
 {
@@ -125,6 +125,8 @@ SymCryptTwistedEdwardsOnCurve(
     SYMCRYPT_ASSERT( cbScratch >= SYMCRYPT_INTERNAL_SCRATCH_BYTES_FOR_COMMON_ECURVE_OPERATIONS( pCurve ) );
 
     nBytes = SymCryptSizeofModElementFromModulus( pmMod );
+
+    SYMCRYPT_ASSERT( cbScratch >= 4*nBytes );
 
     for (UINT32 i = 0; i < 4; ++i)
     {
@@ -194,7 +196,7 @@ SymCryptTwistedEdwardsDouble(
      _In_    PCSYMCRYPT_ECPOINT  poSrc,
      _Out_   PSYMCRYPT_ECPOINT   poDst,
      _In_    UINT32              flags,
-     _Out_writes_bytes_opt_(cbScratch)
+     _Out_writes_bytes_( cbScratch )
              PBYTE               pbScratch,
              SIZE_T              cbScratch)
 {
@@ -209,6 +211,8 @@ SymCryptTwistedEdwardsDouble(
     UNREFERENCED_PARAMETER( flags );
 
     nBytes = SymCryptSizeofModElementFromModulus( pmMod );
+
+    SYMCRYPT_ASSERT( cbScratch >= 8*nBytes );
 
     for (UINT32 i = 0; i < 8; ++i)
     {
@@ -311,7 +315,7 @@ SymCryptTwistedEdwardsAdd(
      _In_    PCSYMCRYPT_ECPOINT  poSrc2,
      _Out_   PSYMCRYPT_ECPOINT   poDst,
      _In_    UINT32              flags,
-     _Out_writes_bytes_opt_(cbScratch)
+     _Out_writes_bytes_( cbScratch )
              PBYTE               pbScratch,
              SIZE_T              cbScratch )
 {
@@ -326,6 +330,8 @@ SymCryptTwistedEdwardsAdd(
     UNREFERENCED_PARAMETER( flags );
 
     nBytes = SymCryptSizeofModElementFromModulus( pmMod );
+
+    SYMCRYPT_ASSERT( cbScratch >= 8*nBytes );
 
     for (UINT32 i = 0; i < 8; ++i)
     {
@@ -420,7 +426,7 @@ SymCryptTwistedEdwardsAddDiffNonZero(
      _In_    PCSYMCRYPT_ECPOINT  poSrc1,
      _In_    PCSYMCRYPT_ECPOINT  poSrc2,
      _Out_   PSYMCRYPT_ECPOINT   poDst,
-     _Out_writes_bytes_opt_(cbScratch)
+     _Out_writes_bytes_(cbScratch)
              PBYTE               pbScratch,
              SIZE_T              cbScratch )
 {
@@ -442,7 +448,7 @@ SymCryptTwistedEdwardsIsEqual(
     _In_    PCSYMCRYPT_ECPOINT  poSrc1,
     _In_    PCSYMCRYPT_ECPOINT  poSrc2,
             UINT32              flags,
-    _Out_writes_bytes_opt_(cbScratch)
+    _Out_writes_bytes_(cbScratch)
             PBYTE               pbScratch,
             SIZE_T              cbScratch)
 {
@@ -460,6 +466,9 @@ SymCryptTwistedEdwardsIsEqual(
     SYMCRYPT_ASSERT( cbScratch >= SYMCRYPT_INTERNAL_SCRATCH_BYTES_FOR_COMMON_ECURVE_OPERATIONS( pCurve ) );
 
     nBytes = SymCryptSizeofModElementFromModulus( pmMod );
+
+    SYMCRYPT_ASSERT( cbScratch >= 2*nBytes );
+
     for (UINT32 i = 0; i < 2; ++i)
     {
         peTemp[i] = SymCryptModElementCreate( pbScratch, nBytes, pmMod );
@@ -507,7 +516,7 @@ SYMCRYPT_CALL
 SymCryptTwistedEdwardsSetZero(
     _In_    PCSYMCRYPT_ECURVE   pCurve,
     _Out_   PSYMCRYPT_ECPOINT   poDst,
-    _Out_writes_bytes_opt_(cbScratch)
+    _Out_writes_bytes_(cbScratch)
             PBYTE               pbScratch,
             SIZE_T              cbScratch)
 {
@@ -534,7 +543,7 @@ SymCryptTwistedEdwardsNegate(
     _In_    PCSYMCRYPT_ECURVE   pCurve,
     _Inout_ PSYMCRYPT_ECPOINT   poSrc,
             UINT32              mask,
-    _Out_writes_bytes_opt_( cbScratch )
+    _Out_writes_bytes_( cbScratch )
             PBYTE               pbScratch,
             SIZE_T              cbScratch )
 {

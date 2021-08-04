@@ -63,10 +63,17 @@ SymCryptEckeyCreate(
     PSYMCRYPT_ECKEY         pkObj = NULL;
     UINT32 privateKeyDigits = SymCryptEcurveDigitsofScalarMultiplier(pCurve);
 
-    UNREFERENCED_PARAMETER( cbBuffer );     // only referenced in an ASSERT...
+    SIZE_T cbPublicKey = SymCryptSizeofEcpointFromCurve( pCurve );
+    SIZE_T cbPrivateKey = SymCryptSizeofIntFromDigits( privateKeyDigits );
+
+    UNREFERENCED_PARAMETER( cbBuffer );     // only referenced in ASSERTs...
 
     SYMCRYPT_ASSERT( pCurve != NULL );
-    SYMCRYPT_ASSERT( cbBuffer >=  SymCryptSizeofEckeyFromCurve( pCurve ) );
+    SYMCRYPT_ASSERT( cbBuffer >= SymCryptSizeofEckeyFromCurve( pCurve ) );
+
+    SYMCRYPT_ASSERT( cbBuffer >= sizeof(SYMCRYPT_ECKEY) +
+                            cbPublicKey +
+                            cbPrivateKey );
 
     SYMCRYPT_ASSERT_ASYM_ALIGNED( pbBuffer );
 
@@ -77,13 +84,13 @@ SymCryptEckeyCreate(
 
     pkObj->poPublicKey = SymCryptEcpointCreate(
                         pbBuffer + sizeof(SYMCRYPT_ECKEY),
-                        SymCryptSizeofEcpointFromCurve( pCurve ),
+                        cbPublicKey,
                         pCurve );
     SYMCRYPT_ASSERT( pkObj->poPublicKey != NULL );
 
     pkObj->piPrivateKey = SymCryptIntCreate(
-                        pbBuffer + sizeof(SYMCRYPT_ECKEY) + SymCryptSizeofEcpointFromCurve( pCurve ),
-                        SymCryptSizeofIntFromDigits( privateKeyDigits ),
+                        pbBuffer + sizeof(SYMCRYPT_ECKEY) + cbPublicKey,
+                        cbPrivateKey,
                         privateKeyDigits );
     SYMCRYPT_ASSERT( pkObj->piPrivateKey );
 
@@ -153,7 +160,6 @@ SymCryptEckeyHasPrivateKey( _In_ PCSYMCRYPT_ECKEY pkEckey )
     return pkEckey->hasPrivateKey;
 }
 
-_Success_(return == SYMCRYPT_NO_ERROR)
 SYMCRYPT_ERROR
 SYMCRYPT_CALL
 SymCryptEckeyPerformPublicKeyValidation(
@@ -167,10 +173,12 @@ SymCryptEckeyPerformPublicKeyValidation(
     PCSYMCRYPT_ECURVE   pCurve = pEckey->pCurve;
 
     PSYMCRYPT_ECPOINT   poNPub = NULL;
-    UINT32              cbNPub = 0;
+    UINT32              cbNPub = SymCryptSizeofEcpointFromCurve( pCurve );
 
     // This is an excessive amount of space to require, but all callers can currently provide it, and it's easy to phrase
     SYMCRYPT_ASSERT( cbScratch >= SYMCRYPT_INTERNAL_SCRATCH_BYTES_FOR_ECKEY_ECURVE_OPERATIONS( pCurve ) );
+
+    SYMCRYPT_ASSERT( cbScratch >= cbNPub );
 
     // Check if Public key is O
     if ( SymCryptEcpointIsZero( pCurve, pEckey->poPublicKey, pbScratch, cbScratch ) )
@@ -203,7 +211,6 @@ SymCryptEckeyPerformPublicKeyValidation(
         else
         {
             // Ensure GOrd*(Public key) == O
-            cbNPub = SymCryptSizeofEcpointFromCurve( pCurve );
             poNPub = SymCryptEcpointCreate( pbScratch, cbNPub, pCurve );
             pbScratch += cbNPub;
             cbScratch -= cbNPub;
@@ -234,7 +241,6 @@ SymCryptEckeyPerformPublicKeyValidation(
     return SYMCRYPT_NO_ERROR;
 }
 
-_Success_(return == SYMCRYPT_NO_ERROR)
 SYMCRYPT_ERROR
 SYMCRYPT_CALL
 SymCryptEckeySetValue(
@@ -530,7 +536,6 @@ cleanup:
     return scError;
 }
 
-_Success_(return == SYMCRYPT_NO_ERROR)
 SYMCRYPT_ERROR
 SYMCRYPT_CALL
 SymCryptEckeyGetValue(
@@ -672,7 +677,6 @@ cleanup:
 
 #define SYMCRYPT_ECPOINT_SET_RANDOM_MAX_TRIES   (1000)
 
-_Success_(return == SYMCRYPT_NO_ERROR)
 SYMCRYPT_ERROR
 SYMCRYPT_CALL
 SymCryptEckeySetRandom(

@@ -19,7 +19,6 @@
 #define CCM_BLOCK_MOD_MASK      (SYMCRYPT_CCM_BLOCK_SIZE - 1)
 #define CCM_BLOCK_ROUND_MASK    (~CCM_BLOCK_MOD_MASK)
 
-_Success_(return == SYMCRYPT_NO_ERROR)
 SYMCRYPT_ERROR
 SYMCRYPT_CALL
 SymCryptCcmValidateParameters(
@@ -248,7 +247,6 @@ SymCryptCcmEncrypt(
     SymCryptCcmEncryptFinal( &state, pbTag, cbTag );
 }
 
-_Success_(return == SYMCRYPT_NO_ERROR)
 SYMCRYPT_NOINLINE
 SYMCRYPT_ERROR
 SYMCRYPT_CALL
@@ -492,6 +490,7 @@ SymCryptCcmEncryptFinal(
     memcpy( pbTag, &pState->macBlock[0], cbTag );
 
     SymCryptWipeKnownSize( pState, sizeof( *pState ) );
+    SYMCRYPT_ASSERT( pState->bytesInMacBlock == 0 );
 }
 
 SYMCRYPT_NOINLINE
@@ -533,7 +532,6 @@ SymCryptCcmDecryptPart(
 
 }
 
-_Success_(return == SYMCRYPT_NO_ERROR)
 SYMCRYPT_NOINLINE
 SYMCRYPT_ERROR
 SYMCRYPT_CALL
@@ -574,6 +572,7 @@ SymCryptCcmDecryptFinal(
     }
 
     SymCryptWipeKnownSize( pState, sizeof( *pState ) );
+    SYMCRYPT_ASSERT( pState->bytesInMacBlock == 0 );
 
     return status;
 }

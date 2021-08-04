@@ -67,7 +67,7 @@ number of macros argument names. It ends with MACRO_END.
 
 ### amd64 ###
 We allow up to 15 registers to be addressed, with the names:
-Q0-Q15 (64-bit registers), W0-W15 (32-bit registers), H0-H15 (16-bit registers), and B0-B15 (8-bit
+Q0-Q15 (64-bit registers), D0-D15 (32-bit registers), W0-W15 (16-bit registers), and B0-B15 (8-bit
 registers)
 Xmm0-Xmm5 registers may be used directly in assembly too, as in both amd64 calling conventions we
 currently support, these registers are volatile so do not need any special handling

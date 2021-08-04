@@ -8,7 +8,6 @@
 #include "precomp.h"
 
 // Truncating function according to the FIPS 186-4 standard
-_Success_(return == SYMCRYPT_NO_ERROR)
 SYMCRYPT_ERROR
 SYMCRYPT_CALL
 SymCryptDsaTruncateHash(
@@ -53,7 +52,6 @@ cleanup:
     return scError;
 }
 
-_Success_(return == SYMCRYPT_NO_ERROR)
 SYMCRYPT_ERROR
 SYMCRYPT_CALL
 SymCryptDsaSignEx(
@@ -360,7 +358,6 @@ cleanup:
     return scError;
 }
 
-_Success_(return == SYMCRYPT_NO_ERROR)
 SYMCRYPT_ERROR
 SYMCRYPT_CALL
 SymCryptDsaSign(
@@ -376,7 +373,6 @@ SymCryptDsaSign(
 }
 
 
-_Success_(return == SYMCRYPT_NO_ERROR)
 SYMCRYPT_ERROR
 SYMCRYPT_CALL
 SymCryptDsaVerify(

@@ -391,7 +391,7 @@ BOOL setContainsPrefix( const StringSet & set, const std::string & str )
 }
 
 BOOL
-updateNameSet( _In_ PCSTR * names, _Inout_ StringSet * set, CHAR op, _In_ PSTR name )
+updateNameSet( _In_z_ PCSTR * names, _Inout_ StringSet * set, CHAR op, _In_ PSTR name )
 {
     BOOL nameMatch = FALSE;
     SIZE_T nameLen = strlen( name );

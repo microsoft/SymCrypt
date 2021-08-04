@@ -39,7 +39,6 @@ SymCryptCmacMunge(
     buf[15] ^= (0 - carry) & 0x87;                // This is the R_128 value from SP 800-38B 5.3
 }
 
-_Success_(return == SYMCRYPT_NO_ERROR)
 SYMCRYPT_ERROR
 SYMCRYPT_CALL
 SymCryptAesCmacExpandKey(

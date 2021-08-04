@@ -33,14 +33,13 @@ PCSYMCRYPT_MARVIN32_EXPANDED_SEED const SymCryptMarvin32DefaultSeed = &SymCryptM
 // as we inline all our rotations.
 //
 static const int rotate[4] = {
-    20, 9, 27, 19, 
+    20, 9, 27, 19,
 };
 
 
-_Success_(return == SYMCRYPT_NO_ERROR)
 SYMCRYPT_ERROR
 SYMCRYPT_CALL
-SymCryptMarvin32ExpandSeed(   
+SymCryptMarvin32ExpandSeed(
     _Out_               PSYMCRYPT_MARVIN32_EXPANDED_SEED    pExpandedSeed,
     _In_reads_(cbSeed)  PCBYTE                              pbSeed,
                         SIZE_T                              cbSeed )
@@ -63,7 +62,7 @@ cleanup:
 
 VOID
 SYMCRYPT_CALL
-SymCryptMarvin32SeedCopy(   _In_    PCSYMCRYPT_MARVIN32_EXPANDED_SEED   pSrc, 
+SymCryptMarvin32SeedCopy(   _In_    PCSYMCRYPT_MARVIN32_EXPANDED_SEED   pSrc,
                             _Out_   PSYMCRYPT_MARVIN32_EXPANDED_SEED    pDst )
 {
     SYMCRYPT_CHECK_MAGIC( pSrc );
@@ -74,8 +73,8 @@ SymCryptMarvin32SeedCopy(   _In_    PCSYMCRYPT_MARVIN32_EXPANDED_SEED   pSrc,
 
 VOID
 SYMCRYPT_CALL
-SymCryptMarvin32StateCopy( 
-    _In_        PCSYMCRYPT_MARVIN32_STATE           pSrc, 
+SymCryptMarvin32StateCopy(
+    _In_        PCSYMCRYPT_MARVIN32_STATE           pSrc,
     _In_opt_    PCSYMCRYPT_MARVIN32_EXPANDED_SEED   pExpandedSeed,
     _Out_       PSYMCRYPT_MARVIN32_STATE            pDst )
 {
@@ -123,7 +122,7 @@ SymCryptMarvin32Append(     _Inout_                 PSYMCRYPT_MARVIN32_STATE    
                                                     SIZE_T                      cbData )
 {
     UINT32 bytesInBuffer = state->dataLength;
-    
+
     SYMCRYPT_CHECK_MAGIC( state );
 
     state->dataLength += (UINT32) cbData;    // We only keep track of the last 2 bits...
@@ -142,7 +141,7 @@ SymCryptMarvin32Append(     _Inout_                 PSYMCRYPT_MARVIN32_STATE    
 //
 VOID
 SYMCRYPT_CALL
-SymCryptMarvin32Result( 
+SymCryptMarvin32Result(
      _Inout_                                        PSYMCRYPT_MARVIN32_STATE    pState,
      _Out_writes_( SYMCRYPT_MARVIN32_RESULT_SIZE )  PBYTE                       pbResult )
 {
@@ -153,7 +152,7 @@ SymCryptMarvin32Result(
     //
     // Wipe four bytes in the buffer.
     // Doing this first ensures that this write is aligned when the input was of
-    // length 0 mod 4. 
+    // length 0 mod 4.
     // The buffer is 8 bytes long, so we never overwrite anything else.
     //
     *(UINT32 *) &pState->buffer[bytesInBuffer] = 0;
@@ -237,7 +236,7 @@ SymCryptMarvin32AppendBlocks(
 
 VOID
 SYMCRYPT_CALL
-SymCryptMarvin32( 
+SymCryptMarvin32(
     _In_                                            PCSYMCRYPT_MARVIN32_EXPANDED_SEED   pExpandedSeed,
     _In_reads_( cbData )                            PCBYTE                              pbData,
                                                     SIZE_T                              cbData,
@@ -309,7 +308,7 @@ SymCryptMarvin32(
 
 
 //
-// Simple test vector 
+// Simple test vector
 //
 
 static const BYTE   marvin32KATAnswer[ 8 ] = {
@@ -325,7 +324,7 @@ SymCryptMarvin32Selftest()
     SymCryptMarvin32( SymCryptMarvin32DefaultSeed, SymCryptTestMsg3, sizeof( SymCryptTestMsg3 ), res );
 
     SymCryptInjectError( res, sizeof( res ) );
-    if( memcmp( res, marvin32KATAnswer, sizeof( res ) ) != 0 ) 
+    if( memcmp( res, marvin32KATAnswer, sizeof( res ) ) != 0 )
     {
         SymCryptFatal( 'marv' );
     }

@@ -1,7 +1,7 @@
 //
 // ChaCha20_Poly1305.c
 //
-// Copyright (c) Microsoft Corporation. 
+// Copyright (c) Microsoft Corporation.
 //
 
 #include "precomp.h"
@@ -58,7 +58,6 @@ SymCryptChaCha20Poly1305ComputeTag(
     SymCryptPoly1305Result( pState, pbTag );
 }
 
-_Success_(return == SYMCRYPT_NO_ERROR)
 SYMCRYPT_NOINLINE
 SYMCRYPT_ERROR
 SYMCRYPT_CALL
@@ -129,7 +128,6 @@ cleanup:
     return status;
 }
 
-_Success_(return == SYMCRYPT_NO_ERROR)
 SYMCRYPT_NOINLINE
 SYMCRYPT_ERROR
 SYMCRYPT_CALL

@@ -459,6 +459,8 @@ SymCryptAesGcmEncryptStitchedYmm_2048(
     SIZE_T todo;
     PCBYTE pbGhashSrc = pbDst;
 
+    SYMCRYPT_ASSERT( (cbData & SYMCRYPT_GCM_BLOCK_MOD_MASK) == 0 ); // cbData is multiple of block size
+
     if ( nBlocks < GCM_YMM_MINBLOCKS )
     {
         SymCryptAesGcmEncryptStitchedXmm( pExpandedKey, pbChainingValue, expandedKeyTable, pState, pbSrc, pbDst, cbData);
@@ -619,6 +621,7 @@ SymCryptAesGcmEncryptStitchedYmm_2048(
     _mm_storeu_si128((__m128i *) pState, state );
 
     cbData &= ( GCM_YMM_MINBLOCKS*SYMCRYPT_AES_BLOCK_SIZE ) - 1;
+    SYMCRYPT_ASSERT( cbData == nBlocks*SYMCRYPT_AES_BLOCK_SIZE );
     if ( cbData >= SYMCRYPT_AES_BLOCK_SIZE )
     {
         SymCryptAesGcmEncryptStitchedXmm( pExpandedKey, pbChainingValue, expandedKeyTable, pState, pbSrc, pbDst, cbData);
@@ -657,6 +660,8 @@ SymCryptAesGcmDecryptStitchedYmm_2048(
     SIZE_T nBlocks = cbData / SYMCRYPT_GF128_BLOCK_SIZE;
     SIZE_T todo;
     PCBYTE pbGhashSrc = pbSrc;
+
+    SYMCRYPT_ASSERT( (cbData & SYMCRYPT_GCM_BLOCK_MOD_MASK) == 0 ); // cbData is multiple of block size
 
     if ( nBlocks < GCM_YMM_MINBLOCKS )
     {
@@ -745,6 +750,7 @@ SymCryptAesGcmDecryptStitchedYmm_2048(
     _mm_storeu_si128((__m128i *) pState, state );
 
     cbData &= ( GCM_YMM_MINBLOCKS*SYMCRYPT_AES_BLOCK_SIZE ) - 1;
+    SYMCRYPT_ASSERT( cbData == nBlocks*SYMCRYPT_AES_BLOCK_SIZE );
     if ( cbData >= SYMCRYPT_AES_BLOCK_SIZE )
     {
         SymCryptAesGcmDecryptStitchedXmm( pExpandedKey, pbChainingValue, expandedKeyTable, pState, pbSrc, pbDst, cbData);

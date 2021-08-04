@@ -29,8 +29,7 @@ typedef struct _SYMCRYPT_SELFTEST_DLGROUP_2048
 
 typedef struct _SYMCRYPT_SELFTEST_ECKEY_P256
 {
-    BYTE Qx[32];
-    BYTE Qy[32];
+    BYTE Qxy[64]; // 32B of Qx followed by 32B of Qy
     BYTE d[32];
 } SYMCRYPT_SELFTEST_ECKEY_P256;
 
@@ -333,15 +332,14 @@ const SYMCRYPT_SELFTEST_DLKEY_2048 dsaKey =
 
 const SYMCRYPT_SELFTEST_ECKEY_P256 eckey1 =
 {
-    // Qx
+    // Qxy
     {
+        //Qx
         0xdd, 0xd5, 0x15, 0x20, 0x43, 0x8d, 0x41, 0xa9,
         0x18, 0xcf, 0x62, 0xc2, 0x13, 0xf7, 0xed, 0xb2,
         0xf9, 0x8f, 0x02, 0xa3, 0x78, 0x30, 0x7e, 0x22,
-        0x8f, 0xc1, 0x44, 0xbe, 0xde, 0xc6, 0x65, 0x91
-    },
-    //Qy
-    {
+        0x8f, 0xc1, 0x44, 0xbe, 0xde, 0xc6, 0x65, 0x91,
+        //Qy
         0x72, 0xad, 0x17, 0xad, 0x51, 0x8c, 0xd3, 0x60,
         0x0f, 0x54, 0xc0, 0xf4, 0xc3, 0x22, 0x5b, 0x44,
         0xab, 0xad, 0x28, 0xb5, 0x56, 0x8e, 0x78, 0x0a,
@@ -358,15 +356,14 @@ const SYMCRYPT_SELFTEST_ECKEY_P256 eckey1 =
 
 const SYMCRYPT_SELFTEST_ECKEY_P256 eckey2 =
 {
-    //Qx
+    // Qxy
     {
+        //Qx
         0x21, 0xf2, 0xf7, 0x08, 0x8c, 0x71, 0x59, 0xa7,
         0x0c, 0xe1, 0xb9, 0x1a, 0xe0, 0xed, 0x69, 0xbe,
         0x44, 0xeb, 0xa3, 0x51, 0xfd, 0x32, 0x4a, 0x90,
-        0xdc, 0xde, 0xa4, 0x10, 0xe4, 0x44, 0x69, 0x29
-    },
-    //Qy
-    {
+        0xdc, 0xde, 0xa4, 0x10, 0xe4, 0x44, 0x69, 0x29,
+        //Qy
         0x74, 0xd0, 0xc6, 0xbd, 0xe5, 0x13, 0x68, 0x07,
         0x9f, 0x40, 0x5e, 0xbf, 0x9e, 0x61, 0x7c, 0x3f,
         0xc8, 0x16, 0xe2, 0xd5, 0x0e, 0xf8, 0x09, 0x15,
@@ -583,8 +580,8 @@ SymCryptEcDhSecretAgreementSelftest( )
     scError = SymCryptEckeySetValue(
         eckey1.d,
         sizeof(eckey1.d),
-        eckey1.Qx,
-        sizeof(eckey1.Qx) + sizeof(eckey1.Qy),
+        eckey1.Qxy,
+        sizeof(eckey1.Qxy),
         SYMCRYPT_NUMBER_FORMAT_MSB_FIRST,
         SYMCRYPT_ECPOINT_FORMAT_XY,
         SYMCRYPT_FLAG_KEY_RANGE_AND_PUBLIC_KEY_ORDER_VALIDATION |
@@ -599,8 +596,8 @@ SymCryptEcDhSecretAgreementSelftest( )
     scError = SymCryptEckeySetValue(
         eckey2.d,
         sizeof(eckey2.d),
-        eckey2.Qx,
-        sizeof(eckey2.Qx) + sizeof(eckey2.Qy),
+        eckey2.Qxy,
+        sizeof(eckey2.Qxy),
         SYMCRYPT_NUMBER_FORMAT_MSB_FIRST,
         SYMCRYPT_ECPOINT_FORMAT_XY,
         SYMCRYPT_FLAG_KEY_RANGE_AND_PUBLIC_KEY_ORDER_VALIDATION |
@@ -717,8 +714,8 @@ SymCryptEcDsaSelftest( )
     scError = SymCryptEckeySetValue(
         eckey1.d,
         sizeof(eckey1.d),
-        eckey1.Qx,
-        sizeof(eckey1.Qx) + sizeof(eckey1.Qy),
+        eckey1.Qxy,
+        sizeof(eckey1.Qxy),
         SYMCRYPT_NUMBER_FORMAT_MSB_FIRST,
         SYMCRYPT_ECPOINT_FORMAT_XY,
         SYMCRYPT_FLAG_KEY_RANGE_AND_PUBLIC_KEY_ORDER_VALIDATION |

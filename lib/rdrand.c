@@ -8,7 +8,7 @@
 
 #if (SYMCRYPT_CPU_X86 | SYMCRYPT_CPU_AMD64)  // only available on x86 and amd64 architectures
 
-#if SYMCRYPT_MS_VC && _MSC_VER < 1610 
+#if SYMCRYPT_MS_VC && _MSC_VER < 1610
 #error MSVC version lacks support for RDRAND intrinsics. Compile for the generic environment instead.
 #endif
 
@@ -16,7 +16,7 @@
 // TODO: the _rdrand_u*() versions of the intrinsics can be removed once the new compiler
 // with the _rdrand*_step() intrinsics is used in all branches
 
-#if SYMCRYPT_MS_VC && _MSC_VER < 1700				// 1700 = Dev11, 
+#if SYMCRYPT_MS_VC && _MSC_VER < 1700				// 1700 = Dev11,
 
 //
 // This is the code that uses the old intrinsics in the compiler version 16.1
@@ -32,7 +32,7 @@ unsigned __int64 _rdrand_u64(void);
 #define SymCryptRdrandSizet(p) ( *(p)=(SIZE_T)_rdrand_u64(), SYMCRYPT_NO_ERROR )
 #endif
 
-#else	// _MSC_VER 
+#else	// _MSC_VER
 
 //
 // Code for the new Dev11 intrinsics
@@ -54,7 +54,7 @@ SymCryptRdrandSizet( SIZE_T * p )
     //
     // In Win8/WinBlue we iterated 1000 times.
     // But we got a crash bucket where we fail because of
-    // not getting any random data. 
+    // not getting any random data.
     // I contacted the Intel people; according to them they cannot make the
     // RDRAND instruction fail more than a dozen times in a row under any tested
     // circumstance. They have no idea how it could fail 1000 times in a row.
@@ -79,7 +79,6 @@ SymCryptRdrandSizet( SIZE_T * p )
 #endif
 
 
-_Success_(return == SYMCRYPT_NO_ERROR)
 SYMCRYPT_ERROR
 SYMCRYPT_CALL
 SymCryptRdrandStatus()
@@ -89,7 +88,7 @@ SymCryptRdrandStatus()
     // is all zeroes. (This check only happens in CHKed builds.)
     //
     SymCryptCheckLibraryInitialized();
-    
+
     if( SYMCRYPT_CPU_FEATURES_PRESENT( SYMCRYPT_CPU_FEATURE_RDRAND ) )
     {
         return SYMCRYPT_NO_ERROR;
@@ -101,10 +100,9 @@ SymCryptRdrandStatus()
 }
 
 
-_Success_(return == SYMCRYPT_NO_ERROR)
 SYMCRYPT_ERROR
 SYMCRYPT_CALL
-SymCryptRdrandGetBytes( 
+SymCryptRdrandGetBytes(
     _Out_writes_( cbBuffer )                    PBYTE   pbBuffer,
                                                 SIZE_T  cbBuffer,
     _Out_writes_( SYMCRYPT_SHA512_RESULT_SIZE ) PBYTE   pbResult )
@@ -117,7 +115,7 @@ SymCryptRdrandGetBytes(
     //
     // Take care of the obvious errors that can happen
     //
-    if( SymCryptRdrandStatus() != SYMCRYPT_NO_ERROR || 
+    if( SymCryptRdrandStatus() != SYMCRYPT_NO_ERROR ||
         (cbBuffer & 0xf) != 0
       )
     {
@@ -147,7 +145,7 @@ cleanup:
 
 VOID
 SYMCRYPT_CALL
-SymCryptRdrandGet( 
+SymCryptRdrandGet(
     _Out_writes_( cbBuffer )                    PBYTE   pbBuffer,
                                                 SIZE_T  cbBuffer,
     _Out_writes_( SYMCRYPT_SHA512_RESULT_SIZE ) PBYTE   pbResult )

@@ -13,7 +13,7 @@
 //      scsPrecomp = { 1, base, base^2, ..., base^(2^W-1) }
 //
 // TODO: To mitigate power analysis attacks when multiplying by 1 (which might
-//       contain a lot of zeros in non-Montgomery moduli), future work is to 
+//       contain a lot of zeros in non-Montgomery moduli), future work is to
 //       get rid of the 1 in the table. The leak is limited since now we always
 //       have Montgomery moduli.
 //
@@ -261,7 +261,7 @@ SymCryptModExpPrecomputation(
     _In_reads_( SYMCRYPT_MODMULTIEXP_MAX_NPRECOMP )
             PSYMCRYPT_MODELEMENT *  pePIs,
             PSYMCRYPT_MODELEMENT    peTemp,
-    _Out_writes_bytes_opt_( cbScratch ) 
+    _Out_writes_bytes_opt_( cbScratch )
             PBYTE               pbScratch,
             SIZE_T              cbScratch
 )
@@ -286,8 +286,8 @@ VOID
 SYMCRYPT_CALL
 SymCryptModMultiExpWnafWithInterleaving(
     _In_                            PCSYMCRYPT_MODULUS      pmMod,
-    _In_                            PCSYMCRYPT_MODELEMENT * peBaseArray,
-    _In_                            PCSYMCRYPT_INT *        piExpArray,
+    _In_reads_( nBases )            PCSYMCRYPT_MODELEMENT * peBaseArray,
+    _In_reads_( nBases )            PCSYMCRYPT_INT *        piExpArray,
                                     UINT32                  nBases,
                                     UINT32                  nBitsExp,
     _Out_                           PSYMCRYPT_MODELEMENT    peDst,
@@ -338,37 +338,44 @@ SymCryptModMultiExpWnafWithInterleaving(
     //        SYMCRYPT_MODMULTIEXP_MAX_NBITSEXP, and SYMCRYPT_MODMULTIEXP_MAX_NPRECOMP, repspectively.
     // Thus the following calculation does not overflow cbScratch.
     //
-    SYMCRYPT_ASSERT( cbScratch >= 
-            (nBases*nPrecompPoints + 2)*cbModElement +
-            ((nBases*nRecodedDigits*sizeof(UINT32) + SYMCRYPT_ASYM_ALIGN_VALUE - 1)/SYMCRYPT_ASYM_ALIGN_VALUE)*SYMCRYPT_ASYM_ALIGN_VALUE +
-            SYMCRYPT_SCRATCH_BYTES_FOR_COMMON_MOD_OPERATIONS( SymCryptModulusDigitsizeOfObject( pmMod ) ) );
-
+    SYMCRYPT_ASSERT( SYMCRYPT_MODMULTIEXP_MAX_NBASES >= nBases );
+    SYMCRYPT_ASSERT( SYMCRYPT_MODMULTIEXP_MAX_NPRECOMP >= nPrecompPoints );
 
     // Creating temporary precomputed modelements
     for (i=0; i<nBases*nPrecompPoints; i++)
     {
+        SYMCRYPT_ASSERT( cbScratch >= cbModElement );
         pePIs[i] = SymCryptModElementCreate( pbScratch, cbModElement, pmMod );
         SYMCRYPT_ASSERT( pePIs[i] != NULL );
         pbScratch += cbModElement;
+        cbScratch -= cbModElement;
     }
+
+    SYMCRYPT_ASSERT( cbScratch >=
+            2*cbModElement +
+            ((nBases*nRecodedDigits*sizeof(UINT32) + SYMCRYPT_ASYM_ALIGN_VALUE - 1)/SYMCRYPT_ASYM_ALIGN_VALUE)*SYMCRYPT_ASYM_ALIGN_VALUE +
+            SYMCRYPT_SCRATCH_BYTES_FOR_COMMON_MOD_OPERATIONS( SymCryptModulusDigitsizeOfObject( pmMod ) ) );
 
     // Creating temporary points
     peTemp = SymCryptModElementCreate( pbScratch, cbModElement, pmMod );
     SYMCRYPT_ASSERT( peTemp != NULL );
     pbScratch += cbModElement;
+    cbScratch -= cbModElement;
 
     peOne = SymCryptModElementCreate( pbScratch, cbModElement, pmMod );
     SYMCRYPT_ASSERT( peOne != NULL );
     pbScratch += cbModElement;
+    cbScratch -= cbModElement;
 
     // Fixing pointers to recoded digits (be careful that the remaining space is SYMCRYPT_ASYM_ALIGNed)
     absofKIs = (PUINT32) pbScratch;
     pbScratch += nBases * nRecodedDigits * sizeof(UINT32);
+    cbScratch -= nBases * nRecodedDigits * sizeof(UINT32);
+
+    // Update cbScratch first using pbScratch, as the amount of scratch skipped for alignment depends upon the alignment of pbScratch
+    cbScratch -=        ( ((ULONG_PTR)pbScratch + SYMCRYPT_ASYM_ALIGN_VALUE - 1) & ~(SYMCRYPT_ASYM_ALIGN_VALUE - 1) ) - (ULONG_PTR)pbScratch;
     pbScratch = (PBYTE) ( ((ULONG_PTR)pbScratch + SYMCRYPT_ASYM_ALIGN_VALUE - 1) & ~(SYMCRYPT_ASYM_ALIGN_VALUE - 1) );
 
-    // Fixing remaining scratch space size
-    cbScratch -= ( (nBases*nPrecompPoints+1)*cbModElement );
-    cbScratch -= ((nBases*nRecodedDigits*sizeof(UINT32) + SYMCRYPT_ASYM_ALIGN_VALUE - 1) & ~(SYMCRYPT_ASYM_ALIGN_VALUE - 1));
 
     //
     // Main algorithm
@@ -444,8 +451,8 @@ VOID
 SYMCRYPT_CALL
 SymCryptModMultiExpGeneric(
     _In_                            PCSYMCRYPT_MODULUS      pmMod,
-    _In_                            PCSYMCRYPT_MODELEMENT * peBaseArray,
-    _In_                            PCSYMCRYPT_INT *        piExpArray,
+    _In_reads_( nBases )            PCSYMCRYPT_MODELEMENT * peBaseArray,
+    _In_reads_( nBases )            PCSYMCRYPT_INT *        piExpArray,
                                     UINT32                  nBases,
                                     UINT32                  nBitsExp,
                                     UINT32                  flags,
@@ -475,14 +482,15 @@ SymCryptModMultiExpGeneric(
         //  at least 2 modelements bigger than the scratch space of ModExp
         cbModElement = SymCryptSizeofModElementFromModulus( pmMod );
 
-        SYMCRYPT_ASSERT( SYMCRYPT_SCRATCH_BYTES_FOR_MODEXP(SymCryptModulusDigitsizeOfObject(pmMod)) + 2*cbModElement <= 
+        SYMCRYPT_ASSERT( SYMCRYPT_SCRATCH_BYTES_FOR_MODEXP(SymCryptModulusDigitsizeOfObject(pmMod)) + 2*cbModElement <=
                          SYMCRYPT_SCRATCH_BYTES_FOR_MODMULTIEXP( SymCryptModulusDigitsizeOfObject(pmMod), nBases, nBitsExp ) );
+        SYMCRYPT_ASSERT( cbScratch >= 2*cbModElement + SYMCRYPT_SCRATCH_BYTES_FOR_MODEXP(SymCryptModulusDigitsizeOfObject(pmMod)) );
 
         peTemp = SymCryptModElementCreate( pbScratch, cbModElement, pmMod );
-        pbScratch += cbModElement; cbScratch += cbModElement;
+        pbScratch += cbModElement; cbScratch -= cbModElement;
 
         peAcc = SymCryptModElementCreate( pbScratch, cbModElement, pmMod );
-        pbScratch += cbModElement; cbScratch += cbModElement;
+        pbScratch += cbModElement; cbScratch -= cbModElement;
 
         // Set peAcc to 1
         SymCryptModElementSetValueUint32( 1, pmMod, peAcc, pbScratch, cbScratch );

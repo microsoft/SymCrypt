@@ -6,7 +6,6 @@
 
 #include "precomp.h"
 
-_Success_(return == SYMCRYPT_NO_ERROR)
 SYMCRYPT_ERROR
 SYMCRYPT_CALL
 SymCryptCrtGenerateForTwoCoprimes(
@@ -39,11 +38,11 @@ SymCryptCrtGenerateForTwoCoprimes(
 
     nDigits = SYMCRYPT_MAX( SymCryptModulusDigitsizeOfObject( pmP ), SymCryptModulusDigitsizeOfObject( pmQ ));
 
-    SYMCRYPT_ASSERT( cbScratch >= 2*SymCryptSizeofIntFromDigits( nDigits ) +
-                                  SYMCRYPT_SCRATCH_BYTES_FOR_EXTENDED_GCD( nDigits ));
-
     // Create two temporary integers
     cbInt = SymCryptSizeofIntFromDigits( nDigits );
+
+    SYMCRYPT_ASSERT( cbScratch >= 2*cbInt + SYMCRYPT_SCRATCH_BYTES_FOR_EXTENDED_GCD( nDigits ));
+
     piInvSrc1ModSrc2 = SymCryptIntCreate( pbScratch, cbInt, nDigits ); pbScratch += cbInt; cbScratch -= cbInt;
     piInvSrc2ModSrc1 = SymCryptIntCreate( pbScratch, cbInt, nDigits ); pbScratch += cbInt; cbScratch -= cbInt;
 
@@ -88,17 +87,15 @@ cleanup:
 }
 
 
-_Success_(return == SYMCRYPT_NO_ERROR)
 SYMCRYPT_ERROR
 SYMCRYPT_CALL
 SymCryptCrtGenerateInverses(
-            UINT32                  nCoprimes,
-    _In_    PCSYMCRYPT_MODULUS *    ppmCoprimes,
-            UINT32                  flags,
-    _Out_   PSYMCRYPT_MODELEMENT *  ppeCrtInverses,
-    _Out_writes_bytes_( cbScratch )
-            PBYTE                   pbScratch,
-            SIZE_T                  cbScratch )
+                                    UINT32                  nCoprimes,
+    _In_reads_( nCoprimes )         PCSYMCRYPT_MODULUS *    ppmCoprimes,
+                                    UINT32                  flags,
+    _Out_writes_( nCoprimes )       PSYMCRYPT_MODELEMENT *  ppeCrtInverses,
+    _Out_writes_bytes_( cbScratch ) PBYTE                   pbScratch,
+                                    SIZE_T                  cbScratch )
 {
     SYMCRYPT_ERROR scError = SYMCRYPT_NO_ERROR;
 
@@ -123,19 +120,17 @@ cleanup:
     return scError;
 }
 
-_Success_(return == SYMCRYPT_NO_ERROR)
 SYMCRYPT_ERROR
 SYMCRYPT_CALL
 SymCryptCrtSolve(
-            UINT32                  nCoprimes,
-    _In_    PCSYMCRYPT_MODULUS *    ppmCoprimes,
-    _In_    PCSYMCRYPT_MODELEMENT * ppeCrtInverses,
-    _In_    PCSYMCRYPT_MODELEMENT * ppeCrtRemainders,
-            UINT32                  flags,
-    _Out_   PSYMCRYPT_INT           piSolution,
-    _Out_writes_bytes_( cbScratch )
-            PBYTE                   pbScratch,
-            SIZE_T                  cbScratch )
+                                    UINT32                  nCoprimes,
+    _In_reads_( nCoprimes )         PCSYMCRYPT_MODULUS *    ppmCoprimes,
+    _In_reads_( nCoprimes )         PCSYMCRYPT_MODELEMENT * ppeCrtInverses,
+    _In_reads_( nCoprimes )         PCSYMCRYPT_MODELEMENT * ppeCrtRemainders,
+                                    UINT32                  flags,
+    _Out_                           PSYMCRYPT_INT           piSolution,
+    _Out_writes_bytes_( cbScratch ) PBYTE                   pbScratch,
+                                    SIZE_T                  cbScratch )
 {
     SYMCRYPT_ERROR scError = SYMCRYPT_NO_ERROR;
 
@@ -158,21 +153,20 @@ SymCryptCrtSolve(
 
     nDigitsMax = SYMCRYPT_MAX( SymCryptModulusDigitsizeOfObject( ppmCoprimes[0] ), SymCryptModulusDigitsizeOfObject( ppmCoprimes[1] ) );
 
-    SYMCRYPT_ASSERT( cbScratch >= SymCryptSizeofIntFromDigits( nDigitsMax ) +
-                                  SymCryptSizeofModElementFromModulus( ppmCoprimes[0] ) +
-                                  SymCryptSizeofIntFromDigits( 2*nDigitsMax ) +
+    cbInt = SymCryptSizeofIntFromDigits( nDigitsMax );
+    cbModElement = SymCryptSizeofModElementFromModulus( ppmCoprimes[0] );
+    cbDouble = SymCryptSizeofIntFromDigits( 2*nDigitsMax );
+
+    SYMCRYPT_ASSERT( cbScratch >= cbInt + cbModElement + cbDouble +
                                   SYMCRYPT_MAX( SYMCRYPT_SCRATCH_BYTES_FOR_COMMON_MOD_OPERATIONS( nDigitsMax ),
                                        SYMCRYPT_SCRATCH_BYTES_FOR_INT_MUL( 2*nDigitsMax ) )
                     );
 
     // Create temporaries
-    cbInt = SymCryptSizeofIntFromDigits( nDigitsMax );
     piTmp = SymCryptIntCreate( pbScratch, cbInt, nDigitsMax ); pbScratch += cbInt; cbScratch -= cbInt;
 
-    cbModElement = SymCryptSizeofModElementFromModulus( ppmCoprimes[0] );
     peTmp = SymCryptModElementCreate( pbScratch, cbModElement, ppmCoprimes[0] ); pbScratch += cbModElement; cbScratch -= cbModElement;
 
-    cbDouble = SymCryptSizeofIntFromDigits( 2*nDigitsMax );
     piDouble = SymCryptIntCreate( pbScratch, cbDouble, 2*nDigitsMax ); pbScratch += cbDouble; cbScratch -= cbDouble;
 
     if (nCoprimes == 2)

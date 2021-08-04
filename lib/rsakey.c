@@ -101,12 +101,13 @@ SymCryptRsakeyCreate(
         ( pParams->nBitsOfModulus < SYMCRYPT_RSAKEY_MIN_BITSIZE_MODULUS ) ||
         ( pParams->nBitsOfModulus > SYMCRYPT_RSAKEY_MAX_BITSIZE_MODULUS ) ||
         ( pParams->nPubExp < 1 ) ||
-        ( pParams->nPubExp > SYMCRYPT_RSAKEY_MAX_NUMOF_PUBEXPS ) || 
-        ( pParams->nPrimes == 1 ) || 
+        ( pParams->nPubExp > SYMCRYPT_RSAKEY_MAX_NUMOF_PUBEXPS ) ||
+        ( pParams->nPrimes == 1 ) ||
         ( pParams->nPrimes > SYMCRYPT_RSAKEY_MAX_NUMOF_PRIMES ) )
     {
         goto cleanup;
     }
+    SYMCRYPT_ASSERT( cbBuffer >= sizeof( SYMCRYPT_RSAKEY ) );
 
     pkObj = (PSYMCRYPT_RSAKEY) pbCurr;
 
@@ -118,7 +119,7 @@ SymCryptRsakeyCreate(
 
     pkObj->cbTotalSize = (UINT32) cbNeeded;
     // The result should always be within 4 GB, but we check to avoid security bugs
-    SYMCRYPT_HARD_ASSERT( pkObj->cbTotalSize == cbNeeded );     
+    SYMCRYPT_HARD_ASSERT( pkObj->cbTotalSize == cbNeeded );
 
     pkObj->hasPrivateKey = FALSE;
 
@@ -132,6 +133,11 @@ SymCryptRsakeyCreate(
 
     // Modulus
     itemSize = SymCryptSizeofModulusFromDigits( pkObj->nDigitsOfModulus );
+    SYMCRYPT_ASSERT( cbBuffer >= sizeof( SYMCRYPT_RSAKEY ) + itemSize
+                                 + (pkObj->nPrimes*SymCryptSizeofModulusFromDigits( pkObj->nDigitsOfModulus ))
+                                 + (pkObj->nPrimes*SYMCRYPT_SIZEOF_MODELEMENT_FROM_BITS( pParams->nBitsOfModulus ))
+                                 + (pkObj->nPubExp*SymCryptSizeofIntFromDigits( pkObj->nDigitsOfModulus ))
+                                 + (pkObj->nPubExp*pkObj->nPrimes*SymCryptSizeofIntFromDigits( pkObj->nDigitsOfModulus )) );
     pkObj->pmModulus = SymCryptModulusCreate(
                         pbCurr,
                         itemSize,
@@ -342,7 +348,6 @@ SymCryptRsakeyCreateAllObjects( _Inout_ PSYMCRYPT_RSAKEY  pkRsakey )
     }
 }
 
-_Success_(return == SYMCRYPT_NO_ERROR)
 SYMCRYPT_ERROR
 SYMCRYPT_CALL
 SymCryptRsakeyCalculatePrivateFields(
@@ -362,7 +367,7 @@ SymCryptRsakeyCalculatePrivateFields(
     // Use pdTmp as int scratch
     PSYMCRYPT_INT piScr = SymCryptIntFromDivisor(pdTmp);
 
-    // We need a 1-digit tmp value to store the GCD in. 
+    // We need a 1-digit tmp value to store the GCD in.
     // Simpler to put it on the stack than to add full scratch size computation support to this function
     piTmpGcd = SymCryptIntCreate( SYMCRYPT_ASYM_ALIGN_UP( tmpGcdBuf ), sizeof( tmpGcdBuf ) - SYMCRYPT_ASYM_ALIGN_VALUE, SymCryptDigitsFromBits( 64 ) );
 
@@ -469,7 +474,6 @@ cleanup:
     return scError;
 }
 
-_Success_(return == SYMCRYPT_NO_ERROR)
 SYMCRYPT_ERROR
 SYMCRYPT_CALL
 SymCryptRsakeyGenerate(
@@ -535,7 +539,7 @@ SymCryptRsakeyGenerate(
         goto cleanup;
     }
 
-    // Copy the public exponent into the key 
+    // Copy the public exponent into the key
     pkRsakey->au64PubExp[0] = pu64PubExp[0];
 
     // Before doing anything calculate all the needed sizes
@@ -707,16 +711,15 @@ cleanup:
     return scError;
 }
 
-_Success_(return == SYMCRYPT_NO_ERROR)
 SYMCRYPT_ERROR
 SYMCRYPT_CALL
 SymCryptRsakeySetValue(
     _In_reads_bytes_( cbModulus )   PCBYTE                  pbModulus,
                                     SIZE_T                  cbModulus,
-    _In_reads_opt_( nPubExp )       PCUINT64                pu64PubExp,
+    _In_reads_( nPubExp )           PCUINT64                pu64PubExp,
                                     UINT32                  nPubExp,
-    _In_                            PCBYTE *                ppPrimes,
-    _In_                            SIZE_T *                pcbPrimes,
+    _In_reads_( nPrimes )           PCBYTE *                ppPrimes,
+    _In_reads_( nPrimes )           SIZE_T *                pcbPrimes,
                                     UINT32                  nPrimes,
                                     SYMCRYPT_NUMBER_FORMAT  numFormat,
                                     UINT32                  flags,
@@ -762,7 +765,7 @@ SymCryptRsakeySetValue(
 
     ndMod = pkRsakey->nDigitsOfModulus;
 
-    // Calculate scratch spaces 
+    // Calculate scratch spaces
 	// No integer overflows as all numbers are limited by ndMod which is checked during Create
     if( nPrimes!=0 )
     {
@@ -845,6 +848,7 @@ SymCryptRsakeySetValue(
         pkRsakey->nMaxDigitsOfPrimes = 0;
         for (UINT32 i=0; i<pkRsakey->nPrimes; i++)
         {
+#pragma warning(suppress: 26007) // "Incorrect Annotation" - cannot phrase array of pointers to arrays in SAL
             scError = SymCryptIntSetValue( ppPrimes[i], pcbPrimes[i], numFormat, piPhi );
             if (scError != SYMCRYPT_NO_ERROR )
             {
@@ -869,6 +873,7 @@ SymCryptRsakeySetValue(
         // Set the values
         for (UINT32 i=0; i<pkRsakey->nPrimes; i++)
         {
+#pragma warning(suppress: 26007) // "Incorrect Annotation" - cannot phrase array of pointers to arrays in SAL
             scError = SymCryptIntSetValue( ppPrimes[i], pcbPrimes[i], numFormat, SymCryptIntFromModulus( pkRsakey->pmPrimes[i] ) );
             if (scError != SYMCRYPT_NO_ERROR )
             {
@@ -914,7 +919,6 @@ cleanup:
     return scError;
 }
 
-_Success_(return == SYMCRYPT_NO_ERROR)
 SYMCRYPT_ERROR
 SYMCRYPT_CALL
 SymCryptRsakeyGetValue(
@@ -923,8 +927,8 @@ SymCryptRsakeyGetValue(
                                     SIZE_T                  cbModulus,
     _Out_writes_opt_( nPubExp )     PUINT64                 pu64PubExp,
                                     UINT32                  nPubExp,
-    _Out_opt_                       PBYTE *                 ppPrimes,
-    _In_opt_                        SIZE_T *                pcbPrimes,
+    _Out_writes_opt_( nPrimes )     PBYTE *                 ppPrimes,
+    _In_reads_opt_( nPrimes )       SIZE_T *                pcbPrimes,
                                     UINT32                  nPrimes,
                                     SYMCRYPT_NUMBER_FORMAT  numFormat,
                                     UINT32                  flags )
@@ -988,22 +992,19 @@ cleanup:
     return scError;
 }
 
-_Success_(return == SYMCRYPT_NO_ERROR)
 SYMCRYPT_ERROR
 SYMCRYPT_CALL
 SymCryptRsakeyGetCrtValue(
-    _In_        PCSYMCRYPT_RSAKEY           pkRsakey,
-    _Out_       PBYTE *                     ppCrtExponents,
-    _In_        SIZE_T *                    pcbCrtExponents,
-                UINT32                      nCrtExponents,
-     _Out_writes_bytes_(cbCrtCoefficient) 
-                PBYTE                       pbCrtCoefficient,
-                SIZE_T                      cbCrtCoefficient,
-     _Out_writes_bytes_(cbPrivateExponent) 
-                PBYTE                       pbPrivateExponent,
-                SIZE_T                      cbPrivateExponent,
-                SYMCRYPT_NUMBER_FORMAT      numFormat,
-                UINT32                      flags)
+    _In_                                    PCSYMCRYPT_RSAKEY       pkRsakey,
+    _Out_writes_(nCrtExponents)             PBYTE *                 ppCrtExponents,
+    _In_reads_(nCrtExponents)               SIZE_T *                pcbCrtExponents,
+                                            UINT32                  nCrtExponents,
+    _Out_writes_bytes_(cbCrtCoefficient)    PBYTE                   pbCrtCoefficient,
+                                            SIZE_T                  cbCrtCoefficient,
+    _Out_writes_bytes_(cbPrivateExponent)   PBYTE                   pbPrivateExponent,
+                                            SIZE_T                  cbPrivateExponent,
+                                            SYMCRYPT_NUMBER_FORMAT  numFormat,
+                                            UINT32                  flags)
 {
     SYMCRYPT_ERROR scError = SYMCRYPT_NO_ERROR;
     PBYTE pbScratch = NULL;

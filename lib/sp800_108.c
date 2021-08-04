@@ -11,7 +11,6 @@
 
 #include "precomp.h"
 
-_Success_(return == SYMCRYPT_NO_ERROR)
 SYMCRYPT_ERROR
 SYMCRYPT_CALL
 SymCryptSp800_108Derive(
@@ -35,7 +34,7 @@ SymCryptSp800_108Derive(
         blockSize <= SYMCRYPT_MAC_MAX_RESULT_SIZE &&
         bytesRemaining > 0 );
 
-    if( cbResult > UINT32_MAX/8 )    
+    if( cbResult > UINT32_MAX/8 )
     {
         // SP800-108 requires the output size in bits to be encoded in a 32-bit value.
         // cbResults that are too large are impossible.
@@ -50,12 +49,12 @@ SymCryptSp800_108Derive(
 
         //
         // We append the pieces into the MAC function. This is inefficient but works always.
-        // If we need more speed for large outputs, we could use a fixed-size stack buffer to build the 
+        // If we need more speed for large outputs, we could use a fixed-size stack buffer to build the
         // concatenation & do a single append. This reduces the # calls in the loop, but adds one memcpy to
         // the parameters. For small output sizes this is probably a wash.
         //
 
-        SYMCRYPT_STORE_MSBFIRST32( &buf[0], iBlock );      
+        SYMCRYPT_STORE_MSBFIRST32( &buf[0], iBlock );
         pExpandedKey->macAlg->appendFunc( &macState, &buf[0], 4 );          // block count encoded in 4 bytes
 
         if( cbLabel != (SIZE_T) -1 )
@@ -86,7 +85,6 @@ SymCryptSp800_108Derive(
     return SYMCRYPT_NO_ERROR;
 }
 
-_Success_(return == SYMCRYPT_NO_ERROR)
 SYMCRYPT_ERROR
 SYMCRYPT_CALL
 SymCryptSp800_108ExpandKey(
@@ -101,7 +99,6 @@ SymCryptSp800_108ExpandKey(
     return macAlgorithm->expandKeyFunc(&pExpandedKey->macKey, pbKey, cbKey );
 }
 
-_Success_(return == SYMCRYPT_NO_ERROR)
 SYMCRYPT_ERROR
 SYMCRYPT_CALL
 SymCryptSp800_108(

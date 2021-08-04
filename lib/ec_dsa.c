@@ -79,7 +79,6 @@ integer (MSB_FIRST).  See Section 5.5.5 of P1363.
 //    topmost bits of the hash.
 //      In the same example as before we would zero out the top 7 bits.
 //
-_Success_(return == SYMCRYPT_NO_ERROR)
 SYMCRYPT_ERROR
 SYMCRYPT_CALL
 SymCryptEcDsaTruncateHash(
@@ -140,7 +139,6 @@ cleanup:
     return scError;
 }
 
-_Success_(return == SYMCRYPT_NO_ERROR)
 SYMCRYPT_ERROR
 SYMCRYPT_CALL
 SymCryptEcDsaSignEx(
@@ -381,7 +379,6 @@ cleanup:
 }
 
 
-_Success_(return == SYMCRYPT_NO_ERROR)
 SYMCRYPT_ERROR
 SYMCRYPT_CALL
 SymCryptEcDsaSign(
@@ -396,7 +393,6 @@ SymCryptEcDsaSign(
     return SymCryptEcDsaSignEx( pKey, pbHashValue, cbHashValue, NULL, format, flags, pbSignature, cbSignature );
 }
 
-_Success_(return == SYMCRYPT_NO_ERROR)
 SYMCRYPT_ERROR
 SYMCRYPT_CALL
 SymCryptEcDsaVerify(

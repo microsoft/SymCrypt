@@ -3,13 +3,13 @@
 //
 // Copyright (c) Microsoft Corporation. Licensed under the MIT license.
 //
-// 
+//
 
 #include "precomp.h"
 
 #define PRIME_LENGTH_BITS 256
 
-// 
+//
 // Calculate sqrt(peVal) if it exists. If so, *puIsQuadraticResidue is set to 0xFFFF`FFFF.
 // Otherwise, *puIsQuadraticResidue is set to 0.
 // WARNING: *peSqrtArg is set even if the square root doesn't exist. Use masked copy functions
@@ -21,7 +21,6 @@
 // - peSqrtArg: optional out argument for square root value
 // - pbScratch, cbScratch: scratch space >= SYMCRYPT_SCRATCH_BYTES_FOR_MODEXP( pmMod->nDigits )
 //
-_Success_( return == SYMCRYPT_NO_ERROR )
 SYMCRYPT_ERROR
 SymCryptModSqrt(
     _In_                            PSYMCRYPT_MODULUS    pmMod,
@@ -94,7 +93,6 @@ cleanup:
 // - popP: point on the curve found by SSWU.
 // - pbScratch, cbScratch: scratch space >= SYMCRYPT_SCRATCH_BYTES_FOR_COMMON_ECURVE_OPERATIONS( pCurve )
 //
-_Success_( return == SYMCRYPT_NO_ERROR )
 SYMCRYPT_ERROR
 SymCryptSswu(
     _In_                            PSYMCRYPT_ECURVE     pCurve,
@@ -124,7 +122,7 @@ SymCryptSswu(
     PSYMCRYPT_MODELEMENT peGX2 = NULL;
 
     BYTE pointBuf[64] = { 0 };
-   
+
     piTmp = SymCryptIntAllocate( SymCryptDigitsFromBits( PRIME_LENGTH_BITS ) );
 
     peTmp = SymCryptModElementAllocate( pCurve->FMod );
@@ -163,7 +161,7 @@ SymCryptSswu(
     SymCryptModExp( pCurve->FMod, peM, piTmp, PRIME_LENGTH_BITS, 0, peT, pbScratch, cbScratch );
 
     //x1 = CSEL( l, ( b / ( z * a ) modulo p ), ( ( – b / a ) * ( 1 + t ) ) modulo p )
-    // where CSEL(x,y,z) operates in constant time and returns y if x is true and z otherwise. 
+    // where CSEL(x,y,z) operates in constant time and returns y if x is true and z otherwise.
     SymCryptModMul( pCurve->FMod, peZ, pCurve->A, peTmp, pbScratch, cbScratch ); // tmp = z * a
     SymCryptModInv( pCurve->FMod, peTmp, peTmp, SYMCRYPT_FLAG_DATA_PUBLIC | SYMCRYPT_FLAG_MODULUS_PRIME, pbScratch, cbScratch ); // tmp = 1/(z * a)
     SymCryptModMul( pCurve->FMod, pCurve->B, peTmp, peX1, pbScratch, cbScratch ); // x1A = B * 1/(z * a)
@@ -186,7 +184,7 @@ SymCryptSswu(
     // gx1 = ( x1^3 + a * x1 + b ) = (x1^2 + a)*x1 + b modulo p
     SymCryptModSquare( pCurve->FMod, peX1, peGX1, pbScratch, cbScratch ); // gx1 = x1^2
     SymCryptModAdd( pCurve->FMod, peGX1, pCurve->A, peGX1, pbScratch, cbScratch ); // gx1 = x1^2 + a
-    SymCryptModMul( pCurve->FMod, peGX1, peX1, peGX1, pbScratch, cbScratch ); // gx1 = (x1^2 + a)*x1 
+    SymCryptModMul( pCurve->FMod, peGX1, peX1, peGX1, pbScratch, cbScratch ); // gx1 = (x1^2 + a)*x1
     SymCryptModAdd( pCurve->FMod, peGX1, pCurve->B, peGX1, pbScratch, cbScratch ); // gx1 = (x1^2 + a)*x1 + b
 
     //x2 = ( z * u^2 * x1 ) modulo p
@@ -218,7 +216,7 @@ SymCryptSswu(
     // y = sqrt( v ) = v^{(P+1)/4}
     // (Using gx1 as a temporary for y)
     scError = SymCryptModSqrt( pCurve->FMod, peGX1, &selectionMask, peGX1, pbScratch, cbScratch );
-    
+
     // l = CEQ( LSB( u ), LSB( y ) )
     // LSB returns the least significant *BIT* of its argument
     SymCryptModElementToInt( pCurve->FMod, peU, piTmp, pbScratch, cbScratch );
@@ -226,7 +224,7 @@ SymCryptSswu(
 
     SymCryptModElementToInt( pCurve->FMod, peGX1, piTmp, pbScratch, cbScratch );
     UINT32 y = SymCryptIntGetValueLsbits32( piTmp );
-        
+
     selectionMask = SYMCRYPT_MASK32_EQ( u & 1, y & 1 );
 
     // P = CSEL( l, ( x, y ), ( x, p – y ) )
@@ -313,7 +311,6 @@ cleanup:
     return scError;
 }
 
-_Success_( return == SYMCRYPT_NO_ERROR )
 SYMCRYPT_ERROR
 SymCrypt802_11SaeCustomSetRandMask(
     _Inout_                         PSYMCRYPT_802_11_SAE_CUSTOM_STATE   pState,
@@ -387,7 +384,6 @@ cleanup:
     return scError;
 }
 
-_Success_( return == SYMCRYPT_NO_ERROR )
 SYMCRYPT_ERROR
 SymCrypt802_11SaeCustomInit(
     _Out_                       PSYMCRYPT_802_11_SAE_CUSTOM_STATE   pState,
@@ -417,7 +413,7 @@ SymCrypt802_11SaeCustomInit(
     SIZE_T cbScratch = 0;
     UINT64 minMac;
     UINT64 maxMac;
-    
+
     UINT32  nDigits;
     PSYMCRYPT_ECURVE        pCurve;             // Only a cache, pState->pCurve owns the allocation
     PSYMCRYPT_INT           piTmp = NULL;
@@ -430,7 +426,7 @@ SymCrypt802_11SaeCustomInit(
     // Set state to 0 so that our pointers have valid values.
     SymCryptWipe( pState, sizeof( *pState ) );
 
-    // Per IEEE 802.11-2016 section 12.4.4.1 the madatory-to-implement curve is 
+    // Per IEEE 802.11-2016 section 12.4.4.1 the madatory-to-implement curve is
     // number 19 from the IANA Group description for RFC 2409 (IKE)
     // The IANA website maps this to a 256-bit Random ECP group in RFC 5903.
     // RFC 5903 specifies this group to be identical to the NIST P256 curve.
@@ -465,7 +461,7 @@ SymCrypt802_11SaeCustomInit(
 
     nDigits = SymCryptDigitsFromBits( PRIME_LENGTH_BITS );
 
-    cbScratch = SYMCRYPT_MAX( SYMCRYPT_SCRATCH_BYTES_FOR_COMMON_MOD_OPERATIONS( nDigits ), 
+    cbScratch = SYMCRYPT_MAX( SYMCRYPT_SCRATCH_BYTES_FOR_COMMON_MOD_OPERATIONS( nDigits ),
                 SYMCRYPT_MAX( SYMCRYPT_SCRATCH_BYTES_FOR_MODEXP( nDigits ),
                      SYMCRYPT_SCRATCH_BYTES_FOR_GETSET_VALUE_ECURVE_OPERATIONS( pCurve ) ) );
     pbScratch = SymCryptCallbackAlloc( cbScratch );
@@ -511,7 +507,7 @@ SymCrypt802_11SaeCustomInit(
 
     // We exit the loop only after 40 or more iterations
     // This greatly reduces the side-channel of how often we run this loop.
-    while( notFoundMask != 0 || counter < 40 ) 
+    while( notFoundMask != 0 || counter < 40 )
     {
         counter += 1;
         SYMCRYPT_HARD_ASSERT( counter != 0 );
@@ -576,12 +572,12 @@ SymCrypt802_11SaeCustomInit(
 
         SymCryptModElementGetValue( pCurve->FMod, peX, &pointBuf[ 0], 32, SYMCRYPT_NUMBER_FORMAT_MSB_FIRST, pbScratch, cbScratch );
         SymCryptModElementGetValue( pCurve->FMod, peY, &pointBuf[32], 32, SYMCRYPT_NUMBER_FORMAT_MSB_FIRST, pbScratch, cbScratch );
-        scError = SymCryptEcpointSetValue(  pCurve, 
-                                            pointBuf, 
-                                            sizeof( pointBuf ), 
-                                            SYMCRYPT_NUMBER_FORMAT_MSB_FIRST, 
-                                            SYMCRYPT_ECPOINT_FORMAT_XY, 
-                                            poPWECandidate, 
+        scError = SymCryptEcpointSetValue(  pCurve,
+                                            pointBuf,
+                                            sizeof( pointBuf ),
+                                            SYMCRYPT_NUMBER_FORMAT_MSB_FIRST,
+                                            SYMCRYPT_ECPOINT_FORMAT_XY,
+                                            poPWECandidate,
                                             0,
                                             pbScratch,
                                             cbScratch );
@@ -663,7 +659,6 @@ cleanup:
     return scError;
 }
 
-_Success_( return == SYMCRYPT_NO_ERROR )
 SYMCRYPT_ERROR
 SymCrypt802_11SaeCustomCreatePT(
     _In_reads_( cbSsid )                   PCBYTE                              pbSsid,
@@ -696,7 +691,7 @@ SymCrypt802_11SaeCustomCreatePT(
     PSYMCRYPT_ECPOINT         poP2 = NULL;
     PSYMCRYPT_ECPOINT         poPT = NULL;
 
-    // Per IEEE 802.11-2016 section 12.4.4.1 the madatory-to-implement curve is 
+    // Per IEEE 802.11-2016 section 12.4.4.1 the madatory-to-implement curve is
     // number 19 from the IANA Group description for RFC 2409 (IKE)
     // The IANA website maps this to a 256-bit Random ECP group in RFC 5903.
     // RFC 5903 specifies this group to be identical to the NIST P256 curve.
@@ -867,7 +862,6 @@ cleanup:
     return scError;
 }
 
-_Success_( return == SYMCRYPT_NO_ERROR )
 SYMCRYPT_ERROR
 SymCrypt802_11SaeCustomInitH2E(
     _Out_                       PSYMCRYPT_802_11_SAE_CUSTOM_STATE   pState,
@@ -904,7 +898,7 @@ SymCrypt802_11SaeCustomInitH2E(
     // Set state to 0 so that our pointers have valid values.
     SymCryptWipeKnownSize( pState, sizeof( *pState ) );
 
-    // Per IEEE 802.11-2016 section 12.4.4.1 the madatory-to-implement curve is 
+    // Per IEEE 802.11-2016 section 12.4.4.1 the madatory-to-implement curve is
     // number 19 from the IANA Group description for RFC 2409 (IKE)
     // The IANA website maps this to a 256-bit Random ECP group in RFC 5903.
     // RFC 5903 specifies this group to be identical to the NIST P256 curve.
@@ -1080,7 +1074,7 @@ cleanup:
 }
 
 VOID
-SymCrypt802_11SaeCustomDestroy( 
+SymCrypt802_11SaeCustomDestroy(
     _Inout_   PSYMCRYPT_802_11_SAE_CUSTOM_STATE   pState )
 {
     PSYMCRYPT_ECURVE pCurve = pState->pCurve;
@@ -1108,7 +1102,6 @@ SymCrypt802_11SaeCustomDestroy(
     SymCryptWipeKnownSize( pState, sizeof( *pState ) );
 }
 
-_Success_( return == SYMCRYPT_NO_ERROR )
 SYMCRYPT_ERROR
 SymCrypt802_11SaeCustomCommitCreate(
     _In_                        PCSYMCRYPT_802_11_SAE_CUSTOM_STATE  pState,
@@ -1126,7 +1119,7 @@ SymCrypt802_11SaeCustomCommitCreate(
     PCSYMCRYPT_ECURVE pCurve = pState->pCurve;
 
     nDigits = SymCryptDigitsFromBits( 256 );
-    cbScratch = SYMCRYPT_MAX( SYMCRYPT_SCRATCH_BYTES_FOR_COMMON_MOD_OPERATIONS( nDigits ), 
+    cbScratch = SYMCRYPT_MAX( SYMCRYPT_SCRATCH_BYTES_FOR_COMMON_MOD_OPERATIONS( nDigits ),
                 SYMCRYPT_MAX( SYMCRYPT_SCRATCH_BYTES_FOR_SCALAR_ECURVE_OPERATIONS( pCurve ),
                      SYMCRYPT_SCRATCH_BYTES_FOR_GETSET_VALUE_ECURVE_OPERATIONS( pCurve ) ) );
 
@@ -1165,11 +1158,11 @@ SymCrypt802_11SaeCustomCommitCreate(
     // Now we have mask * PWE, but we need the negative...
     SymCryptEcpointNegate( pCurve, poPoint, (UINT32)-1, pbScratch, cbScratch );
 
-    scError = SymCryptEcpointGetValue(  pCurve, 
-                                        poPoint,                                     
-                                        SYMCRYPT_NUMBER_FORMAT_MSB_FIRST, 
-                                        SYMCRYPT_ECPOINT_FORMAT_XY, 
-                                        pbCommitElement, 
+    scError = SymCryptEcpointGetValue(  pCurve,
+                                        poPoint,
+                                        SYMCRYPT_NUMBER_FORMAT_MSB_FIRST,
+                                        SYMCRYPT_ECPOINT_FORMAT_XY,
+                                        pbCommitElement,
                                         64,
                                         0,
                                         pbScratch,
@@ -1209,7 +1202,6 @@ cleanup:
     return scError;
 }
 
-_Success_( return == SYMCRYPT_NO_ERROR )
 SYMCRYPT_ERROR
 SymCrypt802_11SaeCustomCommitProcess(
     _In_                        PCSYMCRYPT_802_11_SAE_CUSTOM_STATE  pState,
@@ -1231,9 +1223,9 @@ SymCrypt802_11SaeCustomCommitProcess(
     SIZE_T cbScratch;
 
     nDigits = SymCryptDigitsFromBits( 256 );
-    cbScratch = SYMCRYPT_MAX( SYMCRYPT_SCRATCH_BYTES_FOR_COMMON_MOD_OPERATIONS( nDigits ), 
+    cbScratch = SYMCRYPT_MAX( SYMCRYPT_SCRATCH_BYTES_FOR_COMMON_MOD_OPERATIONS( nDigits ),
                 SYMCRYPT_MAX( SYMCRYPT_SCRATCH_BYTES_FOR_SCALAR_ECURVE_OPERATIONS( pCurve ),
-                SYMCRYPT_MAX( SYMCRYPT_SCRATCH_BYTES_FOR_COMMON_ECURVE_OPERATIONS( pCurve ), 
+                SYMCRYPT_MAX( SYMCRYPT_SCRATCH_BYTES_FOR_COMMON_ECURVE_OPERATIONS( pCurve ),
                      SYMCRYPT_SCRATCH_BYTES_FOR_GETSET_VALUE_ECURVE_OPERATIONS( pCurve ) ) ) );
     pbScratch = SymCryptCallbackAlloc( cbScratch );
 
@@ -1270,11 +1262,11 @@ SymCrypt802_11SaeCustomCommitProcess(
     SymCryptModAdd( pCurve->GOrd, peCommitScalarSum, pState->peRand, peCommitScalarSum, pbScratch, cbScratch );
     SymCryptModAdd( pCurve->GOrd, peCommitScalarSum, pState->peMask, peCommitScalarSum, pbScratch, cbScratch );
 
-    scError = SymCryptEcpointSetValue(  pCurve, 
-                                        pbPeerCommitElement, 
-                                        64, 
-                                        SYMCRYPT_NUMBER_FORMAT_MSB_FIRST, 
-                                        SYMCRYPT_ECPOINT_FORMAT_XY, 
+    scError = SymCryptEcpointSetValue(  pCurve,
+                                        pbPeerCommitElement,
+                                        64,
+                                        SYMCRYPT_NUMBER_FORMAT_MSB_FIRST,
+                                        SYMCRYPT_ECPOINT_FORMAT_XY,
                                         poPeerCommitElement,
                                         0,
                                         pbScratch,
@@ -1323,14 +1315,14 @@ SymCrypt802_11SaeCustomCommitProcess(
         goto cleanup;
     }
 
-    scError = SymCryptEcpointGetValue(  pCurve, 
-                                        poTmp, 
-                                        SYMCRYPT_NUMBER_FORMAT_MSB_FIRST, 
-                                        SYMCRYPT_ECPOINT_FORMAT_X, 
-                                        pbSharedSecret, 
-                                        32, 
-                                        0, 
-                                        pbScratch, 
+    scError = SymCryptEcpointGetValue(  pCurve,
+                                        poTmp,
+                                        SYMCRYPT_NUMBER_FORMAT_MSB_FIRST,
+                                        SYMCRYPT_ECPOINT_FORMAT_X,
+                                        pbSharedSecret,
+                                        32,
+                                        0,
+                                        pbScratch,
                                         cbScratch );
     if( scError != SYMCRYPT_NO_ERROR )
     {

@@ -13,7 +13,6 @@
 
 #include "precomp.h"
 
-_Success_(return == SYMCRYPT_NO_ERROR)
 SYMCRYPT_ERROR
 SYMCRYPT_CALL
 SymCryptHkdfExpandKey(
@@ -57,7 +56,6 @@ cleanup:
     return scError;
 }
 
-_Success_(return == SYMCRYPT_NO_ERROR)
 SYMCRYPT_ERROR
 SYMCRYPT_CALL
 SymCryptHkdfPrkExpandKey(
@@ -72,7 +70,6 @@ SymCryptHkdfPrkExpandKey(
     return macAlgorithm->expandKeyFunc( &pExpandedKey->macKey, pbPrk, cbPrk );
 }
 
-_Success_(return == SYMCRYPT_NO_ERROR)
 SYMCRYPT_ERROR
 SYMCRYPT_CALL
 SymCryptHkdfDerive(
@@ -153,7 +150,6 @@ cleanup:
 //
 // The full HKDF
 //
-_Success_(return == SYMCRYPT_NO_ERROR)
 SYMCRYPT_ERROR
 SYMCRYPT_CALL
 SymCryptHkdf(

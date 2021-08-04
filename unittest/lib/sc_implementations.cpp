@@ -47,7 +47,7 @@ SymCryptAesCfbEncrypt(
     _Out_writes_( cbData )                  PBYTE                       pbDst,
                                             SIZE_T                      cbData )
 {
-    _Analysis_assume_( SymCryptAesBlockCipher->blockSize == SYMCRYPT_AES_BLOCK_SIZE );
+    SYMCRYPT_ASSERT( SymCryptAesBlockCipher->blockSize == SYMCRYPT_AES_BLOCK_SIZE );
     SymCryptCfbEncrypt( SymCryptAesBlockCipher,
                         g_modeCfbShiftParam,
                         pExpandedKey,
@@ -66,7 +66,7 @@ SymCryptAesCfbDecrypt(
     _Out_writes_( cbData )                  PBYTE                       pbDst,
                                             SIZE_T                      cbData )
 {
-    _Analysis_assume_( SymCryptAesBlockCipher->blockSize == SYMCRYPT_AES_BLOCK_SIZE );
+    SYMCRYPT_ASSERT( SymCryptAesBlockCipher->blockSize == SYMCRYPT_AES_BLOCK_SIZE );
     SymCryptCfbDecrypt( SymCryptAesBlockCipher,
                         g_modeCfbShiftParam,
                         pExpandedKey,
@@ -113,7 +113,7 @@ SymCryptDesCbcEncrypt(
     _Out_writes_( cbData )                  PBYTE                       pbDst,
                                             SIZE_T                      cbData )
 {
-    _Analysis_assume_( SymCryptDesBlockCipher.blockSize == SYMCRYPT_DES_BLOCK_SIZE );
+    SYMCRYPT_ASSERT( SymCryptDesBlockCipher->blockSize == SYMCRYPT_DES_BLOCK_SIZE );
     SymCryptCbcEncrypt( SymCryptDesBlockCipher, pExpandedKey, pbChainingValue, pbSrc, pbDst, cbData );
 }
 
@@ -126,7 +126,7 @@ SymCryptDesCbcDecrypt(
     _Out_writes_( cbData )                  PBYTE                       pbDst,
                                             SIZE_T                      cbData )
 {
-    _Analysis_assume_( SymCryptDesBlockCipher.blockSize == SYMCRYPT_DES_BLOCK_SIZE );
+    SYMCRYPT_ASSERT( SymCryptDesBlockCipher->blockSize == SYMCRYPT_DES_BLOCK_SIZE );
     SymCryptCbcDecrypt( SymCryptDesBlockCipher, pExpandedKey, pbChainingValue, pbSrc, pbDst, cbData );
 }
 
@@ -139,7 +139,7 @@ SymCryptDesCfbEncrypt(
     _Out_writes_( cbData )                  PBYTE                       pbDst,
                                             SIZE_T                      cbData )
 {
-    _Analysis_assume_( SymCryptDesBlockCipher.blockSize == SYMCRYPT_DES_BLOCK_SIZE );
+    SYMCRYPT_ASSERT( SymCryptDesBlockCipher->blockSize == SYMCRYPT_DES_BLOCK_SIZE );
     SymCryptCfbEncrypt( SymCryptDesBlockCipher, g_modeCfbShiftParam, pExpandedKey, pbChainingValue, pbSrc, pbDst, cbData );
 }
 
@@ -152,7 +152,7 @@ SymCryptDesCfbDecrypt(
     _Out_writes_( cbData )                  PBYTE                       pbDst,
                                             SIZE_T                      cbData )
 {
-    _Analysis_assume_( SymCryptDesBlockCipher.blockSize == SYMCRYPT_DES_BLOCK_SIZE );
+    SYMCRYPT_ASSERT( SymCryptDesBlockCipher->blockSize == SYMCRYPT_DES_BLOCK_SIZE );
     SymCryptCfbDecrypt( SymCryptDesBlockCipher, g_modeCfbShiftParam, pExpandedKey, pbChainingValue, pbSrc, pbDst, cbData );
 }
 
@@ -194,7 +194,7 @@ SymCrypt2DesCbcEncrypt(
     _Out_writes_( cbData )                  PBYTE                       pbDst,
                                             SIZE_T                      cbData )
 {
-    _Analysis_assume_( SymCrypt3DesBlockCipher.blockSize == SYMCRYPT_DES_BLOCK_SIZE );
+    SYMCRYPT_ASSERT( SymCrypt3DesBlockCipher->blockSize == SYMCRYPT_DES_BLOCK_SIZE );
     SymCryptCbcEncrypt( SymCrypt3DesBlockCipher, pExpandedKey, pbChainingValue, pbSrc, pbDst, cbData );
 }
 
@@ -207,7 +207,7 @@ SymCrypt2DesCbcDecrypt(
     _Out_writes_( cbData )                  PBYTE                       pbDst,
                                             SIZE_T                      cbData )
 {
-    _Analysis_assume_( SymCrypt3DesBlockCipher.blockSize == SYMCRYPT_DES_BLOCK_SIZE );
+    SYMCRYPT_ASSERT( SymCrypt3DesBlockCipher->blockSize == SYMCRYPT_DES_BLOCK_SIZE );
     SymCryptCbcDecrypt( SymCrypt3DesBlockCipher, pExpandedKey, pbChainingValue, pbSrc, pbDst, cbData );
 }
 
@@ -220,7 +220,7 @@ SymCrypt2DesCfbEncrypt(
     _Out_writes_( cbData )                  PBYTE                       pbDst,
                                             SIZE_T                      cbData )
 {
-    _Analysis_assume_( SymCrypt3DesBlockCipher.blockSize == SYMCRYPT_DES_BLOCK_SIZE );
+    SYMCRYPT_ASSERT( SymCrypt3DesBlockCipher->blockSize == SYMCRYPT_DES_BLOCK_SIZE );
     SymCryptCfbEncrypt( SymCrypt3DesBlockCipher, g_modeCfbShiftParam, pExpandedKey, pbChainingValue, pbSrc, pbDst, cbData );
 }
 
@@ -233,7 +233,7 @@ SymCrypt2DesCfbDecrypt(
     _Out_writes_( cbData )                  PBYTE                       pbDst,
                                             SIZE_T                      cbData )
 {
-    _Analysis_assume_( SymCrypt3DesBlockCipher.blockSize == SYMCRYPT_DES_BLOCK_SIZE );
+    SYMCRYPT_ASSERT( SymCrypt3DesBlockCipher->blockSize == SYMCRYPT_DES_BLOCK_SIZE );
     SymCryptCfbDecrypt( SymCrypt3DesBlockCipher, g_modeCfbShiftParam, pExpandedKey, pbChainingValue, pbSrc, pbDst, cbData );
 }
 
@@ -274,7 +274,7 @@ SymCrypt3DesCfbEncrypt(
     _Out_writes_( cbData )                  PBYTE                       pbDst,
                                             SIZE_T                      cbData )
 {
-    _Analysis_assume_( SymCrypt3DesBlockCipher.blockSize == SYMCRYPT_DES_BLOCK_SIZE );
+    SYMCRYPT_ASSERT( SymCrypt3DesBlockCipher->blockSize == SYMCRYPT_DES_BLOCK_SIZE );
     SymCryptCfbEncrypt( SymCrypt3DesBlockCipher, g_modeCfbShiftParam, pExpandedKey, pbChainingValue, pbSrc, pbDst, cbData );
 }
 
@@ -287,7 +287,7 @@ SymCrypt3DesCfbDecrypt(
     _Out_writes_( cbData )                  PBYTE                       pbDst,
                                             SIZE_T                      cbData )
 {
-    _Analysis_assume_( SymCrypt3DesBlockCipher.blockSize == SYMCRYPT_DES_BLOCK_SIZE );
+    SYMCRYPT_ASSERT( SymCrypt3DesBlockCipher->blockSize == SYMCRYPT_DES_BLOCK_SIZE );
     SymCryptCfbDecrypt( SymCrypt3DesBlockCipher, g_modeCfbShiftParam, pExpandedKey, pbChainingValue, pbSrc, pbDst, cbData );
 }
 
@@ -329,7 +329,7 @@ SymCryptDesxCbcEncrypt(
     _Out_writes_( cbData )                  PBYTE                       pbDst,
                                             SIZE_T                      cbData )
 {
-    _Analysis_assume_( SymCryptDesxBlockCipher.blockSize == SYMCRYPT_DESX_BLOCK_SIZE );
+    SYMCRYPT_ASSERT( SymCryptDesxBlockCipher->blockSize == SYMCRYPT_DESX_BLOCK_SIZE );
     SymCryptCbcEncrypt( SymCryptDesxBlockCipher, pExpandedKey, pbChainingValue, pbSrc, pbDst, cbData );
 }
 
@@ -342,7 +342,7 @@ SymCryptDesxCbcDecrypt(
     _Out_writes_( cbData )                  PBYTE                       pbDst,
                                             SIZE_T                      cbData )
 {
-    _Analysis_assume_( SymCryptDesxBlockCipher.blockSize == SYMCRYPT_DESX_BLOCK_SIZE );
+    SYMCRYPT_ASSERT( SymCryptDesxBlockCipher->blockSize == SYMCRYPT_DESX_BLOCK_SIZE );
     SymCryptCbcDecrypt( SymCryptDesxBlockCipher, pExpandedKey, pbChainingValue, pbSrc, pbDst, cbData );
 }
 
@@ -355,7 +355,7 @@ SymCryptDesxCfbEncrypt(
     _Out_writes_( cbData )                  PBYTE                       pbDst,
                                             SIZE_T                      cbData )
 {
-    _Analysis_assume_( SymCryptDesxBlockCipher.blockSize == SYMCRYPT_DESX_BLOCK_SIZE );
+    SYMCRYPT_ASSERT( SymCryptDesxBlockCipher->blockSize == SYMCRYPT_DESX_BLOCK_SIZE );
     SymCryptCfbEncrypt( SymCryptDesxBlockCipher, g_modeCfbShiftParam, pExpandedKey, pbChainingValue, pbSrc, pbDst, cbData );
 }
 
@@ -368,7 +368,7 @@ SymCryptDesxCfbDecrypt(
     _Out_writes_( cbData )                  PBYTE                       pbDst,
                                             SIZE_T                      cbData )
 {
-    _Analysis_assume_( SymCryptDesxBlockCipher.blockSize == SYMCRYPT_DESX_BLOCK_SIZE );
+    SYMCRYPT_ASSERT( SymCryptDesxBlockCipher->blockSize == SYMCRYPT_DESX_BLOCK_SIZE );
     SymCryptCfbDecrypt( SymCryptDesxBlockCipher, g_modeCfbShiftParam, pExpandedKey, pbChainingValue, pbSrc, pbDst, cbData );
 }
 
@@ -410,7 +410,7 @@ SymCryptRc2CbcEncrypt(
     _Out_writes_( cbData )                  PBYTE                       pbDst,
                                             SIZE_T                      cbData )
 {
-    _Analysis_assume_( SymCryptRc2BlockCipher.blockSize == SYMCRYPT_RC2_BLOCK_SIZE );
+    SYMCRYPT_ASSERT( SymCryptRc2BlockCipher->blockSize == SYMCRYPT_RC2_BLOCK_SIZE );
     SymCryptCbcEncrypt( SymCryptRc2BlockCipher, pExpandedKey, pbChainingValue, pbSrc, pbDst, cbData );
 }
 
@@ -423,7 +423,7 @@ SymCryptRc2CbcDecrypt(
     _Out_writes_( cbData )                  PBYTE                       pbDst,
                                             SIZE_T                      cbData )
 {
-    _Analysis_assume_( SymCryptRc2BlockCipher.blockSize == SYMCRYPT_RC2_BLOCK_SIZE );
+    SYMCRYPT_ASSERT( SymCryptRc2BlockCipher->blockSize == SYMCRYPT_RC2_BLOCK_SIZE );
     SymCryptCbcDecrypt( SymCryptRc2BlockCipher, pExpandedKey, pbChainingValue, pbSrc, pbDst, cbData );
 }
 
@@ -436,7 +436,7 @@ SymCryptRc2CfbEncrypt(
     _Out_writes_( cbData )                  PBYTE                       pbDst,
                                             SIZE_T                      cbData )
 {
-    _Analysis_assume_( SymCryptRc2BlockCipher.blockSize == SYMCRYPT_RC2_BLOCK_SIZE );
+    SYMCRYPT_ASSERT( SymCryptRc2BlockCipher->blockSize == SYMCRYPT_RC2_BLOCK_SIZE );
     SymCryptCfbEncrypt( SymCryptRc2BlockCipher, g_modeCfbShiftParam, pExpandedKey, pbChainingValue, pbSrc, pbDst, cbData );
 }
 
@@ -449,7 +449,7 @@ SymCryptRc2CfbDecrypt(
     _Out_writes_( cbData )                  PBYTE                       pbDst,
                                             SIZE_T                      cbData )
 {
-    _Analysis_assume_( SymCryptRc2BlockCipher.blockSize == SYMCRYPT_RC2_BLOCK_SIZE );
+    SYMCRYPT_ASSERT( SymCryptRc2BlockCipher->blockSize == SYMCRYPT_RC2_BLOCK_SIZE );
     SymCryptCfbDecrypt( SymCryptRc2BlockCipher, g_modeCfbShiftParam, pExpandedKey, pbChainingValue, pbSrc, pbDst, cbData );
 }
 
@@ -2229,11 +2229,11 @@ ParallelHashImp<ImpSc, AlgParallelSha256>::process(
     BYTE sentinel = g_rng.byte();
     SIZE_T nScratch = SYMCRYPT_PARALLEL_SHA256_FIXED_SCRATCH + state.nHashes * SYMCRYPT_PARALLEL_HASH_PER_STATE_SCRATCH;
     CHECK( nScratch + scratchOffset <= sizeof( scratch ), "?" );
-    _Analysis_assume_( nScratch + scratchOffset < sizeof( scratch ) );
+    SYMCRYPT_ASSERT( nScratch + scratchOffset < sizeof( scratch ) );
 
     scratch[scratchOffset + nScratch] = sentinel;
 
-    _Analysis_assume_( state.nHashes <= MAX_PARALLEL_HASH_STATES );
+    SYMCRYPT_ASSERT( state.nHashes <= MAX_PARALLEL_HASH_STATES );
     initYmmRegisters();
     SymCryptParallelSha256Process( &state.sc[0],
                                     state.nHashes,
@@ -2386,11 +2386,11 @@ ParallelHashImp<ImpSc, AlgParallelSha384>::process(
     BYTE sentinel = g_rng.byte();
     SIZE_T nScratch = SYMCRYPT_PARALLEL_SHA384_FIXED_SCRATCH + state.nHashes * SYMCRYPT_PARALLEL_HASH_PER_STATE_SCRATCH;
     CHECK( nScratch + scratchOffset <= sizeof( scratch ), "?" );
-    _Analysis_assume_( nScratch + scratchOffset < sizeof( scratch ) );
+    SYMCRYPT_ASSERT( nScratch + scratchOffset < sizeof( scratch ) );
 
     scratch[scratchOffset + nScratch] = sentinel;
 
-    _Analysis_assume_( state.nHashes <= MAX_PARALLEL_HASH_STATES );
+    SYMCRYPT_ASSERT( state.nHashes <= MAX_PARALLEL_HASH_STATES );
     initYmmRegisters();
     SymCryptParallelSha384Process( &state.sc[0],
                                     state.nHashes,
@@ -2543,11 +2543,11 @@ ParallelHashImp<ImpSc, AlgParallelSha512>::process(
     BYTE sentinel = g_rng.byte();
     SIZE_T nScratch = SYMCRYPT_PARALLEL_SHA512_FIXED_SCRATCH + state.nHashes * SYMCRYPT_PARALLEL_HASH_PER_STATE_SCRATCH;
     CHECK( nScratch + scratchOffset <= sizeof( scratch ), "?" );
-    _Analysis_assume_( nScratch + scratchOffset < sizeof( scratch ) );
+    SYMCRYPT_ASSERT( nScratch + scratchOffset < sizeof( scratch ) );
 
     scratch[scratchOffset + nScratch] = sentinel;
 
-    _Analysis_assume_( state.nHashes <= MAX_PARALLEL_HASH_STATES );
+    SYMCRYPT_ASSERT( state.nHashes <= MAX_PARALLEL_HASH_STATES );
     initYmmRegisters();
     SymCryptParallelSha512Process( &state.sc[0],
                                     state.nHashes,

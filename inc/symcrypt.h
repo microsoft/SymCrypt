@@ -187,7 +187,12 @@ extern "C" {
 // occur at once (e.g. multiple invalid parameters) the exact error symbol returned
 // could change between versions of the library.
 //
-typedef enum {
+
+#ifndef _Return_type_success_
+#define _Return_type_success_(expr)
+#endif
+
+typedef _Return_type_success_( return == SYMCRYPT_NO_ERROR ) enum {
     SYMCRYPT_NO_ERROR = 0,
     SYMCRYPT_UNUSED = SYMCRYPT_API_VERSION << 5,    // This value changes all the time!
     SYMCRYPT_WRONG_KEY_SIZE,
@@ -863,7 +868,6 @@ SymCryptMd2StateExport(
     _In_                                                    PCSYMCRYPT_MD2_STATE    pState,
     _Out_writes_bytes_( SYMCRYPT_MD2_STATE_EXPORT_SIZE )    PBYTE                   pbBlob );
 
-_Success_(return == SYMCRYPT_NO_ERROR)
 SYMCRYPT_ERROR
 SYMCRYPT_CALL
 SymCryptMd2StateImport(
@@ -927,7 +931,6 @@ SymCryptMd4StateExport(
     _In_                                                    PCSYMCRYPT_MD4_STATE    pState,
     _Out_writes_bytes_( SYMCRYPT_MD4_STATE_EXPORT_SIZE )    PBYTE                   pbBlob );
 
-_Success_(return == SYMCRYPT_NO_ERROR)
 SYMCRYPT_ERROR
 SYMCRYPT_CALL
 SymCryptMd4StateImport(
@@ -991,7 +994,6 @@ SymCryptMd5StateExport(
     _In_                                                    PCSYMCRYPT_MD5_STATE    pState,
     _Out_writes_bytes_( SYMCRYPT_MD5_STATE_EXPORT_SIZE )    PBYTE                   pbBlob );
 
-_Success_(return == SYMCRYPT_NO_ERROR)
 SYMCRYPT_ERROR
 SYMCRYPT_CALL
 SymCryptMd5StateImport(
@@ -1065,7 +1067,6 @@ SymCryptSha1StateExport(
     _In_                                                    PCSYMCRYPT_SHA1_STATE   pState,
     _Out_writes_bytes_( SYMCRYPT_SHA1_STATE_EXPORT_SIZE )   PBYTE                   pbBlob );
 
-_Success_(return == SYMCRYPT_NO_ERROR)
 SYMCRYPT_ERROR
 SYMCRYPT_CALL
 SymCryptSha1StateImport(
@@ -1131,7 +1132,6 @@ SymCryptSha256StateExport(
     _In_                                                    PCSYMCRYPT_SHA256_STATE pState,
     _Out_writes_bytes_( SYMCRYPT_SHA256_STATE_EXPORT_SIZE ) PBYTE                   pbBlob );
 
-_Success_(return == SYMCRYPT_NO_ERROR)
 SYMCRYPT_ERROR
 SYMCRYPT_CALL
 SymCryptSha256StateImport(
@@ -1197,7 +1197,6 @@ SymCryptSha384StateExport(
     _In_                                                    PCSYMCRYPT_SHA384_STATE pState,
     _Out_writes_bytes_( SYMCRYPT_SHA384_STATE_EXPORT_SIZE ) PBYTE                   pbBlob );
 
-_Success_(return == SYMCRYPT_NO_ERROR)
 SYMCRYPT_ERROR
 SYMCRYPT_CALL
 SymCryptSha384StateImport(
@@ -1263,7 +1262,6 @@ SymCryptSha512StateExport(
     _In_                                                    PCSYMCRYPT_SHA512_STATE pState,
     _Out_writes_bytes_( SYMCRYPT_SHA512_STATE_EXPORT_SIZE ) PBYTE                   pbBlob );
 
-_Success_(return == SYMCRYPT_NO_ERROR)
 SYMCRYPT_ERROR
 SYMCRYPT_CALL
 SymCryptSha512StateImport(
@@ -1653,7 +1651,6 @@ SymCryptParallelSha512Selftest();
 #define SYMCRYPT_HMAC_MD5_RESULT_SIZE       SYMCRYPT_MD5_RESULT_SIZE
 #define SYMCRYPT_HMAC_MD5_INPUT_BLOCK_SIZE  SYMCRYPT_MD5_INPUT_BLOCK_SIZE
 
-_Success_(return == SYMCRYPT_NO_ERROR)
 SYMCRYPT_ERROR
 SYMCRYPT_CALL
 SymCryptHmacMd5ExpandKey(
@@ -1719,7 +1716,6 @@ extern const PCSYMCRYPT_MAC SymCryptHmacMd5Algorithm;
 #define SYMCRYPT_HMAC_SHA1_RESULT_SIZE       SYMCRYPT_SHA1_RESULT_SIZE
 #define SYMCRYPT_HMAC_SHA1_INPUT_BLOCK_SIZE  SYMCRYPT_SHA1_INPUT_BLOCK_SIZE
 
-_Success_(return == SYMCRYPT_NO_ERROR)
 SYMCRYPT_ERROR
 SYMCRYPT_CALL
 SymCryptHmacSha1ExpandKey(
@@ -1785,7 +1781,6 @@ extern const PCSYMCRYPT_MAC SymCryptHmacSha1Algorithm;
 #define SYMCRYPT_HMAC_SHA256_RESULT_SIZE       SYMCRYPT_SHA256_RESULT_SIZE
 #define SYMCRYPT_HMAC_SHA256_INPUT_BLOCK_SIZE  SYMCRYPT_SHA256_INPUT_BLOCK_SIZE
 
-_Success_(return == SYMCRYPT_NO_ERROR)
 SYMCRYPT_ERROR
 SYMCRYPT_CALL
 SymCryptHmacSha256ExpandKey(
@@ -1850,7 +1845,6 @@ extern const PCSYMCRYPT_MAC  SymCryptHmacSha256Algorithm;
 #define SYMCRYPT_HMAC_SHA384_RESULT_SIZE       SYMCRYPT_SHA384_RESULT_SIZE
 #define SYMCRYPT_HMAC_SHA384_INPUT_BLOCK_SIZE  SYMCRYPT_SHA384_INPUT_BLOCK_SIZE
 
-_Success_(return == SYMCRYPT_NO_ERROR)
 SYMCRYPT_ERROR
 SYMCRYPT_CALL
 SymCryptHmacSha384ExpandKey(
@@ -1915,7 +1909,6 @@ extern const PCSYMCRYPT_MAC  SymCryptHmacSha384Algorithm;
 #define SYMCRYPT_HMAC_SHA512_RESULT_SIZE       SYMCRYPT_SHA512_RESULT_SIZE
 #define SYMCRYPT_HMAC_SHA512_INPUT_BLOCK_SIZE  SYMCRYPT_SHA512_INPUT_BLOCK_SIZE
 
-_Success_(return == SYMCRYPT_NO_ERROR)
 SYMCRYPT_ERROR
 SYMCRYPT_CALL
 SymCryptHmacSha512ExpandKey(
@@ -1982,7 +1975,6 @@ extern const PCSYMCRYPT_MAC  SymCryptHmacSha512Algorithm;
 #define SYMCRYPT_AES_CMAC_RESULT_SIZE        (16)
 #define SYMCRYPT_AES_CMAC_INPUT_BLOCK_SIZE   (16)
 
-_Success_(return == SYMCRYPT_NO_ERROR)
 SYMCRYPT_ERROR
 SYMCRYPT_CALL
 SymCryptAesCmacExpandKey(
@@ -2110,7 +2102,6 @@ SymCryptPoly1305Selftest();
 // are not supported.
 //
 
-_Success_(return == SYMCRYPT_NO_ERROR)
 SYMCRYPT_ERROR
 SYMCRYPT_CALL
 SymCryptChaCha20Poly1305Encrypt(
@@ -2126,7 +2117,6 @@ SymCryptChaCha20Poly1305Encrypt(
     _Out_writes_( cbTag )           PBYTE     pbTag,
                                     SIZE_T    cbTag );    // Required. Tag size MUST be 16 bytes.
 
-_Success_(return == SYMCRYPT_NO_ERROR)
 SYMCRYPT_ERROR
 SYMCRYPT_CALL
 SymCryptChaCha20Poly1305Decrypt(
@@ -2186,7 +2176,6 @@ SymCryptChaCha20Poly1305Selftest();
 #define SYMCRYPT_MARVIN32_SEED_SIZE         (8)
 #define SYMCRYPT_MARVIN32_INPUT_BLOCK_SIZE  (4)
 
-_Success_(return == SYMCRYPT_NO_ERROR)
 SYMCRYPT_ERROR
 SYMCRYPT_CALL
 SymCryptMarvin32ExpandSeed(
@@ -2445,7 +2434,6 @@ SymCryptMarvin32Selftest();
 
 #define SYMCRYPT_AES_BLOCK_SIZE  (16)
 
-_Success_(return == SYMCRYPT_NO_ERROR)
 SYMCRYPT_ERROR
 SYMCRYPT_CALL
 SymCryptAesExpandKey(
@@ -2458,7 +2446,6 @@ SymCryptAesExpandKey(
 // for AES encryption operations. There are no safeguards when you use it for decryption; you get the wrong
 // result if you try.
 //
-_Success_(return == SYMCRYPT_NO_ERROR)
 SYMCRYPT_ERROR
 SYMCRYPT_CALL
 SymCryptAesExpandKeyEncryptOnly(
@@ -2577,7 +2564,6 @@ extern const PCSYMCRYPT_BLOCKCIPHER SymCryptAesBlockCipher;
 
 #define SYMCRYPT_DES_BLOCK_SIZE  (8)
 
-_Success_(return == SYMCRYPT_NO_ERROR)
 SYMCRYPT_ERROR
 SYMCRYPT_CALL
 SymCryptDesExpandKey(
@@ -2633,7 +2619,6 @@ extern const PCSYMCRYPT_BLOCKCIPHER SymCryptDesBlockCipher;
 
 #define SYMCRYPT_3DES_BLOCK_SIZE  (8)
 
-_Success_(return == SYMCRYPT_NO_ERROR)
 SYMCRYPT_ERROR
 SYMCRYPT_CALL
 SymCrypt3DesExpandKey(
@@ -2694,7 +2679,6 @@ extern const PCSYMCRYPT_BLOCKCIPHER SymCrypt3DesBlockCipher;
 
 #define SYMCRYPT_DESX_BLOCK_SIZE  (8)
 
-_Success_(return == SYMCRYPT_NO_ERROR)
 SYMCRYPT_ERROR
 SYMCRYPT_CALL
 SymCryptDesxExpandKey(
@@ -2738,7 +2722,6 @@ extern const PCSYMCRYPT_BLOCKCIPHER SymCryptDesxBlockCipher;
 
 #define SYMCRYPT_RC2_BLOCK_SIZE  (8)
 
-_Success_(return == SYMCRYPT_NO_ERROR)
 SYMCRYPT_ERROR
 SYMCRYPT_CALL
 SymCryptRc2ExpandKey(
@@ -2752,7 +2735,6 @@ SymCryptRc2ExpandKey(
 // our choice provides slightly better mixing of the key bytes into the expanded key.
 //
 
-_Success_(return == SYMCRYPT_NO_ERROR)
 SYMCRYPT_ERROR
 SYMCRYPT_CALL
 SymCryptRc2ExpandKeyEx(
@@ -3103,7 +3085,6 @@ SymCryptPaddingPkcs7Remove(
 // CCM
 ////////////////////////////
 
-_Success_(return == SYMCRYPT_NO_ERROR)
 SYMCRYPT_ERROR
 SYMCRYPT_CALL
 SymCryptCcmValidateParameters(
@@ -3157,7 +3138,6 @@ SymCryptCcmEncrypt(
 //
 
 
-_Success_(return == SYMCRYPT_NO_ERROR)
 SYMCRYPT_ERROR
 SYMCRYPT_CALL
 SymCryptCcmDecrypt(
@@ -3238,7 +3218,6 @@ SymCryptCcmDecryptPart(
     _Out_writes_( cbData )  PBYTE               pbDst,
                             SIZE_T              cbData );
 
-_Success_(return == SYMCRYPT_NO_ERROR)
 SYMCRYPT_ERROR
 SYMCRYPT_CALL
 SymCryptCcmDecryptFinal(
@@ -3266,7 +3245,6 @@ SymCryptCcmSelftest();
 // GMAC is just GCM with an empty data string; all the data is put in the pbAuthData buffer.
 //
 
-_Success_(return == SYMCRYPT_NO_ERROR)
 SYMCRYPT_ERROR
 SYMCRYPT_CALL
 SymCryptGcmValidateParameters(
@@ -3285,7 +3263,6 @@ SymCryptGcmValidateParameters(
 //
 
 
-_Success_(return == SYMCRYPT_NO_ERROR)
 SYMCRYPT_ERROR
 SYMCRYPT_CALL
 SymCryptGcmExpandKey(
@@ -3340,7 +3317,6 @@ SymCryptGcmEncrypt(
 //
 
 
-_Success_(return == SYMCRYPT_NO_ERROR)
 SYMCRYPT_ERROR
 SYMCRYPT_CALL
 SymCryptGcmDecrypt(
@@ -3437,7 +3413,6 @@ SymCryptGcmDecryptPart(
     _Out_writes_( cbData )  PBYTE               pbDst,
                             SIZE_T              cbData );
 
-_Success_(return == SYMCRYPT_NO_ERROR)
 SYMCRYPT_ERROR
 SYMCRYPT_CALL
 SymCryptGcmDecryptFinal(
@@ -3473,7 +3448,6 @@ SymCryptGcmSelftest();
 // through information leakage via the memory caching system of the CPU.
 //
 
-_Success_(return == SYMCRYPT_NO_ERROR)
 SYMCRYPT_ERROR
 SYMCRYPT_CALL
 SymCryptRc4Init(
@@ -3516,7 +3490,6 @@ SymCryptRc4Selftest();
 // to use.
 //
 
-_Success_(return == SYMCRYPT_NO_ERROR)
 SYMCRYPT_ERROR
 SYMCRYPT_CALL
 SymCryptChaCha20Init(
@@ -3595,7 +3568,6 @@ SymCryptChaCha20Selftest();
 //  - iterationCnt is set to 1.
 //
 
-_Success_(return == SYMCRYPT_NO_ERROR)
 SYMCRYPT_ERROR
 SYMCRYPT_CALL
 SymCryptPbkdf2ExpandKey(
@@ -3604,7 +3576,6 @@ SymCryptPbkdf2ExpandKey(
     _In_reads_(cbKey)   PCBYTE                          pbKey,
                         SIZE_T                          cbKey );
 
-_Success_(return == SYMCRYPT_NO_ERROR)
 SYMCRYPT_ERROR
 SYMCRYPT_CALL
 SymCryptPbkdf2Derive(
@@ -3615,7 +3586,6 @@ SymCryptPbkdf2Derive(
     _Out_writes_(cbResult)  PBYTE                           pbResult,
                             SIZE_T                          cbResult);
 
-_Success_(return == SYMCRYPT_NO_ERROR)
 SYMCRYPT_ERROR
 SYMCRYPT_CALL
 SymCryptPbkdf2(
@@ -3657,7 +3627,6 @@ SymCryptPbkdf2_HmacSha256SelfTest();
 //  - pbContext/cbContext = generic parameter
 //
 
-_Success_(return == SYMCRYPT_NO_ERROR)
 SYMCRYPT_ERROR
 SYMCRYPT_CALL
 SymCryptSp800_108ExpandKey(
@@ -3666,7 +3635,6 @@ SymCryptSp800_108ExpandKey(
     _In_reads_(cbKey)   PCBYTE                              pbKey,
                         SIZE_T                              cbKey );
 
-_Success_(return == SYMCRYPT_NO_ERROR)
 SYMCRYPT_ERROR
 SYMCRYPT_CALL
 SymCryptSp800_108Derive(
@@ -3678,7 +3646,6 @@ SymCryptSp800_108Derive(
     _Out_writes_(cbResult)      PBYTE                               pbResult,
                                 SIZE_T                              cbResult);
 
-_Success_(return == SYMCRYPT_NO_ERROR)
 SYMCRYPT_ERROR
 SYMCRYPT_CALL
 SymCryptSp800_108(
@@ -3717,7 +3684,6 @@ SymCryptSp800_108_HmacSha256SelfTest();
 //
 //  Version 1.0/1.1
 //
-_Success_(return == SYMCRYPT_NO_ERROR)
 SYMCRYPT_ERROR
 SYMCRYPT_CALL
 SymCryptTlsPrf1_1ExpandKey(
@@ -3725,7 +3691,6 @@ SymCryptTlsPrf1_1ExpandKey(
     _In_reads_(cbKey)   PCBYTE                              pbKey,
                         SIZE_T                              cbKey);
 
-_Success_(return == SYMCRYPT_NO_ERROR)
 SYMCRYPT_ERROR
 SYMCRYPT_CALL
 SymCryptTlsPrf1_1Derive(
@@ -3737,7 +3702,6 @@ SymCryptTlsPrf1_1Derive(
     _Out_writes_(cbResult)  PBYTE                               pbResult,
                             SIZE_T                              cbResult);
 
-_Success_(return == SYMCRYPT_NO_ERROR)
 SYMCRYPT_ERROR
 SYMCRYPT_CALL
 SymCryptTlsPrf1_1(
@@ -3757,7 +3721,6 @@ SymCryptTlsPrf1_1SelfTest();
 //
 //  Version 1.2
 //
-_Success_(return == SYMCRYPT_NO_ERROR)
 SYMCRYPT_ERROR
 SYMCRYPT_CALL
 SymCryptTlsPrf1_2ExpandKey(
@@ -3766,7 +3729,6 @@ SymCryptTlsPrf1_2ExpandKey(
     _In_reads_(cbKey)   PCBYTE                              pbKey,
                         SIZE_T                              cbKey);
 
-_Success_(return == SYMCRYPT_NO_ERROR)
 SYMCRYPT_ERROR
 SYMCRYPT_CALL
 SymCryptTlsPrf1_2Derive(
@@ -3778,7 +3740,6 @@ SymCryptTlsPrf1_2Derive(
     _Out_writes_(cbResult)  PBYTE                               pbResult,
                             SIZE_T                              cbResult);
 
-_Success_(return == SYMCRYPT_NO_ERROR)
 SYMCRYPT_ERROR
 SYMCRYPT_CALL
 SymCryptTlsPrf1_2(
@@ -3816,7 +3777,6 @@ SymCryptTlsPrf1_2SelfTest();
 // "HKDF-Expand" function.
 //
 
-_Success_(return == SYMCRYPT_NO_ERROR)
 SYMCRYPT_ERROR
 SYMCRYPT_CALL
 SymCryptHkdfExpandKey(
@@ -3827,7 +3787,6 @@ SymCryptHkdfExpandKey(
     _In_reads_opt_(cbSalt)  PCBYTE                          pbSalt,
                             SIZE_T                          cbSalt );
 
-_Success_(return == SYMCRYPT_NO_ERROR)
 SYMCRYPT_ERROR
 SYMCRYPT_CALL
 SymCryptHkdfPrkExpandKey(
@@ -3836,7 +3795,6 @@ SymCryptHkdfPrkExpandKey(
     _In_reads_(cbPrk)       PCBYTE                          pbPrk,
                             SIZE_T                          cbPrk );
 
-_Success_(return == SYMCRYPT_NO_ERROR)
 SYMCRYPT_ERROR
 SYMCRYPT_CALL
 SymCryptHkdfDerive(
@@ -3846,7 +3804,6 @@ SymCryptHkdfDerive(
     _Out_writes_(cbResult)  PBYTE                           pbResult,
                             SIZE_T                          cbResult);
 
-_Success_(return == SYMCRYPT_NO_ERROR)
 SYMCRYPT_ERROR
 SYMCRYPT_CALL
 SymCryptHkdf(
@@ -3885,7 +3842,6 @@ SymCryptHkdfSelfTest();
 #define SYMCRYPT_RNG_AES_MIN_RESEED_SIZE   (32)
 #define SYMCRYPT_RNG_AES_MAX_SEED_SIZE   (64)
 
-_Success_(return == SYMCRYPT_NO_ERROR)
 SYMCRYPT_ERROR
 SYMCRYPT_CALL
 SymCryptRngAesInstantiate(
@@ -3938,7 +3894,6 @@ SymCryptRngAesGenerate(
 // If the caller were to succeed, the 2^48'th call will result in a fatal error.
 //
 
-_Success_(return == SYMCRYPT_NO_ERROR)
 SYMCRYPT_ERROR
 SYMCRYPT_CALL
 SymCryptRngAesReseed(
@@ -4004,7 +3959,6 @@ SymCryptRngAesGenerateSelftest();
 // These functions are functionally equivalent to the ones for AES-CTR_DRBG.
 //
 
-_Success_(return == SYMCRYPT_NO_ERROR)
 SYMCRYPT_ERROR
 SYMCRYPT_CALL
 SymCryptRngAesFips140_2Instantiate(
@@ -4021,7 +3975,6 @@ SymCryptRngAesFips140_2Generate(
     _Out_writes_(cbRandom)  PBYTE                                   pbRandom,
                             SIZE_T                                  cbRandom );
 
-_Success_(return == SYMCRYPT_NO_ERROR)
 SYMCRYPT_ERROR
 SYMCRYPT_CALL
 SymCryptRngAesFips140_2Reseed(
@@ -4082,7 +4035,6 @@ SymCryptProvideEntropy(
 // The RdRand instruction reseeds its internal DRBG every 8 kB (or faster)
 #define SYMCRYPT_RDRAND_RESEED_SIZE (1<<13)
 
-_Success_(return == SYMCRYPT_NO_ERROR)
 SYMCRYPT_ERROR
 SYMCRYPT_CALL
 SymCryptRdrandStatus();
@@ -4093,7 +4045,6 @@ SymCryptRdrandStatus();
 //
 
 
-_Success_(return == SYMCRYPT_NO_ERROR)
 SYMCRYPT_ERROR
 SYMCRYPT_CALL
 SymCryptRdrandGetBytes(
@@ -4138,7 +4089,6 @@ SymCryptRdrandGet(
 
 #if SYMCRYPT_CPU_X86 | SYMCRYPT_CPU_AMD64
 
-_Success_(return == SYMCRYPT_NO_ERROR)
 SYMCRYPT_ERROR
 SYMCRYPT_CALL
 SymCryptRdseedStatus();
@@ -4149,7 +4099,6 @@ SymCryptRdseedStatus();
 //
 
 
-_Success_(return == SYMCRYPT_NO_ERROR)
 SYMCRYPT_ERROR
 SYMCRYPT_CALL
 SymCryptRdseedGetBytes(
@@ -4185,7 +4134,6 @@ SymCryptRdseedGet(
 // AES-XTS
 //
 
-_Success_(return == SYMCRYPT_NO_ERROR)
 SYMCRYPT_ERROR
 SYMCRYPT_CALL
 SymCryptXtsAesExpandKey(
@@ -4384,7 +4332,6 @@ SymCryptCallbackFree( VOID * pMem );
 // from the SymCrypt API are freed with SymCryptFree* functions, not this function.
 //
 
-_Success_(return == SYMCRYPT_NO_ERROR)
 SYMCRYPT_ERROR
 SYMCRYPT_CALL
 SYMCRYPT_WEAK_SYMBOL
@@ -5088,7 +5035,6 @@ SymCryptRsakeyGetNumberOfPrimes( _In_ PCSYMCRYPT_RSAKEY pkRsakey );
 //  Returns the number of primes stored in the key.
 //
 
-_Success_(return == SYMCRYPT_NO_ERROR)
 SYMCRYPT_ERROR
 SYMCRYPT_CALL
 SymCryptRsakeyGenerate(
@@ -5107,7 +5053,6 @@ SymCryptRsakeyGenerate(
 // Flags: none currently defined
 //
 
-_Success_(return == SYMCRYPT_NO_ERROR)
 SYMCRYPT_ERROR
 SYMCRYPT_CALL
 SymCryptRsakeySetValue(
@@ -5115,8 +5060,8 @@ SymCryptRsakeySetValue(
                                     SIZE_T                  cbModulus,
     _In_reads_( nPubExp )           PCUINT64                pu64PubExp,
                                     UINT32                  nPubExp,
-    _In_                            PCBYTE *                ppPrimes,
-    _In_                            SIZE_T *                pcbPrimes,
+    _In_reads_( nPrimes )           PCBYTE *                ppPrimes,
+    _In_reads_( nPrimes )           SIZE_T *                pcbPrimes,
                                     UINT32                  nPrimes,
                                     SYMCRYPT_NUMBER_FORMAT  numFormat,
                                     UINT32                  flags,
@@ -5147,17 +5092,16 @@ SymCryptRsakeySetValue(
 //
 
 
-_Success_(return == SYMCRYPT_NO_ERROR)
 SYMCRYPT_ERROR
 SYMCRYPT_CALL
 SymCryptRsakeyGetValue(
     _In_                            PCSYMCRYPT_RSAKEY       pkRsakey,
     _Out_writes_bytes_( cbModulus ) PBYTE                   pbModulus,
                                     SIZE_T                  cbModulus,
-    _Out_writes_( nPubExp )         PUINT64                 pu64PubExp,
+    _Out_writes_opt_( nPubExp )     PUINT64                 pu64PubExp,
                                     UINT32                  nPubExp,
-    _Out_opt_                       PBYTE *                 ppPrimes,
-    _In_opt_                        SIZE_T *                pcbPrimes,
+    _Out_writes_opt_( nPrimes )     PBYTE *                 ppPrimes,
+    _In_reads_opt_( nPrimes )       SIZE_T *                pcbPrimes,
                                     UINT32                  nPrimes,
                                     SYMCRYPT_NUMBER_FORMAT  numFormat,
                                     UINT32                  flags );
@@ -5173,28 +5117,25 @@ SymCryptRsakeyGetValue(
 //  - All parameters are stored in the same format specified by numFormat.
 //  - ppPrimes, pcbPrimes, and nPrimes can be NULL, NULL, and 0 respectively, when
 //    exporting a public key.
-//  - Currently, the only acceptable value of nPubExps is 1.
+//  - Currently, the only acceptable value of nPubExp is 1 or 0.
 //  - Currently, the only acceptable value of nPrimes is 2 or 0.
 // We use separate sizes for each prime. This supports the tight encoding
 // used by CNG export blobs, and uses the same format as RsakeySetValue
 //
 
-_Success_(return == SYMCRYPT_NO_ERROR)
 SYMCRYPT_ERROR
 SYMCRYPT_CALL
 SymCryptRsakeyGetCrtValue(
-    _In_        PCSYMCRYPT_RSAKEY           pkRsakey,
-    _Out_       PBYTE *                     ppCrtExponents,
-    _In_        SIZE_T *                    pcbCrtExponents,
-                UINT32                      nCrtExponents,
-     _Out_writes_bytes_(cbCrtCoefficient)
-                PBYTE                       pbCrtCoefficient,
-                SIZE_T                      cbCrtCoefficient,
-     _Out_writes_bytes_(cbPrivateExponent)
-                PBYTE                       pbPrivateExponent,
-                SIZE_T                      cbPrivateExponent,
-                SYMCRYPT_NUMBER_FORMAT      numFormat,
-                UINT32                      flags);
+    _In_                                    PCSYMCRYPT_RSAKEY       pkRsakey,
+    _Out_writes_(nCrtExponents)             PBYTE *                 ppCrtExponents,
+    _In_reads_(nCrtExponents)               SIZE_T *                pcbCrtExponents,
+                                            UINT32                  nCrtExponents,
+    _Out_writes_bytes_(cbCrtCoefficient)    PBYTE                   pbCrtCoefficient,
+                                            SIZE_T                  cbCrtCoefficient,
+    _Out_writes_bytes_(cbPrivateExponent)   PBYTE                   pbPrivateExponent,
+                                            SIZE_T                  cbPrivateExponent,
+                                            SYMCRYPT_NUMBER_FORMAT  numFormat,
+                                            UINT32                  flags);
 //
 // Export Crt key material from an RSAKEY object. The arguments are the following:
 //    ppCrtExponents is an array of nCrtExponent pointers that point to byte buffers
@@ -5213,7 +5154,6 @@ SymCryptRsakeyGetCrtValue(
 
 #define SYMCRYPT_DLGROUP_FIPS_LATEST    (SYMCRYPT_DLGROUP_FIPS_186_3)
 
-_Success_(return == SYMCRYPT_NO_ERROR)
 SYMCRYPT_ERROR
 SYMCRYPT_CALL
 SymCryptDlgroupGenerate(
@@ -5263,7 +5203,6 @@ SymCryptDlgroupGenerate(
 //    return SYMCRYPT_INVALID_ARGUMENT.
 //
 
-_Success_(return == SYMCRYPT_NO_ERROR)
 SYMCRYPT_ERROR
 SYMCRYPT_CALL
 SymCryptDlgroupSetValueSafePrime(
@@ -5318,7 +5257,6 @@ SymCryptDlgroupGetSizes(
 //    *pcbSeed will be 0.
 //
 
-_Success_(return == SYMCRYPT_NO_ERROR)
 SYMCRYPT_ERROR
 SYMCRYPT_CALL
 SymCryptDlgroupSetValue(
@@ -5366,7 +5304,6 @@ SymCryptDlgroupSetValue(
 //  - Primes P and (when provided) Q must represent prime numbers.
 //
 
-_Success_(return == SYMCRYPT_NO_ERROR)
 SYMCRYPT_ERROR
 SYMCRYPT_CALL
 SymCryptDlgroupGetValue(
@@ -5443,7 +5380,6 @@ SymCryptDlkeyHasPrivateKey( _In_ PCSYMCRYPT_DLKEY pkDlkey );
 // Returns TRUE if the pkDlkey object has a private key set.
 //
 
-_Success_(return == SYMCRYPT_NO_ERROR)
 SYMCRYPT_ERROR
 SYMCRYPT_CALL
 SymCryptDlkeyGenerate(
@@ -5470,7 +5406,6 @@ SymCryptDlkeyGenerate(
 // returned, as Private key range validation requires the default generation behavior
 //
 
-_Success_(return == SYMCRYPT_NO_ERROR)
 SYMCRYPT_ERROR
 SYMCRYPT_CALL
 SymCryptDlkeySetValue(
@@ -5493,7 +5428,6 @@ SymCryptDlkeySetValue(
 //  Described in the key validation flag definitions above.
 //
 
-_Success_(return == SYMCRYPT_NO_ERROR)
 SYMCRYPT_ERROR
 SYMCRYPT_CALL
 SymCryptDlkeyGetValue(
@@ -5649,7 +5583,6 @@ SymCryptEckeyHasPrivateKey( _In_ PCSYMCRYPT_ECKEY pkEckey );
 // Returns TRUE if the pkEckey object has a private key set.
 //
 
-_Success_(return == SYMCRYPT_NO_ERROR)
 SYMCRYPT_ERROR
 SYMCRYPT_CALL
 SymCryptEckeySetValue(
@@ -5700,7 +5633,6 @@ SymCryptEckeySetValue(
 //      Described in the key validation flag definitions above.
 //
 
-_Success_(return == SYMCRYPT_NO_ERROR)
 SYMCRYPT_ERROR
 SYMCRYPT_CALL
 SymCryptEckeySetRandom(
@@ -5725,7 +5657,6 @@ SymCryptEckeySetRandom(
 //  affecting the results.
 //
 
-_Success_(return == SYMCRYPT_NO_ERROR)
 SYMCRYPT_ERROR
 SYMCRYPT_CALL
 SymCryptEckeyGetValue(
@@ -5776,7 +5707,6 @@ SymCryptEckeyGetValue(
 // RSA Encryption Algorithms
 //
 
-_Success_(return == SYMCRYPT_NO_ERROR)
 SYMCRYPT_ERROR
 SYMCRYPT_CALL
 SymCryptRsaRawEncrypt(
@@ -5804,7 +5734,6 @@ SymCryptRsaRawEncrypt(
 //      None
 //
 
-_Success_(return == SYMCRYPT_NO_ERROR)
 SYMCRYPT_ERROR
 SYMCRYPT_CALL
 SymCryptRsaRawDecrypt(
@@ -5833,7 +5762,6 @@ SymCryptRsaRawDecrypt(
 //      None
 //
 
-_Success_(return == SYMCRYPT_NO_ERROR)
 SYMCRYPT_ERROR
 SYMCRYPT_CALL
 SymCryptRsaPkcs1Encrypt(
@@ -5846,7 +5774,7 @@ SymCryptRsaPkcs1Encrypt(
                                 SIZE_T                      cbDst,
     _Out_                       SIZE_T                      *pcbDst );
 //
-// This function encrypts the buffer pbSrc under the pkRsakey key using RSA PKSC1 v1.5.
+// This function encrypts the buffer pbSrc under the pkRsakey key using RSA PKCS1 v1.5.
 // The output is stored in the pbDst buffer and the number of bytes written in *pcbDst.
 //
 // If pbDst == NULL then only the *pcbDst is output.
@@ -5857,7 +5785,6 @@ SymCryptRsaPkcs1Encrypt(
 //      None
 //
 
-_Success_(return == SYMCRYPT_NO_ERROR)
 SYMCRYPT_ERROR
 SYMCRYPT_CALL
 SymCryptRsaPkcs1Decrypt(
@@ -5888,7 +5815,6 @@ SymCryptRsaPkcs1Decrypt(
 //      None
 //
 
-_Success_(return == SYMCRYPT_NO_ERROR)
 SYMCRYPT_ERROR
 SYMCRYPT_CALL
 SymCryptRsaOaepEncrypt(
@@ -5915,7 +5841,6 @@ SymCryptRsaOaepEncrypt(
 //      None
 //
 
-_Success_(return == SYMCRYPT_NO_ERROR)
 SYMCRYPT_ERROR
 SYMCRYPT_CALL
 SymCryptRsaOaepDecrypt(
@@ -5986,7 +5911,6 @@ extern const SYMCRYPT_OID SymCryptSha512OidList[SYMCRYPT_SHA512_OID_COUNT];
 // SYMCRYPT_FLAG_RSA_PKCS1_NO_ASN1: For RSA PKCS1 to not use the OID on signing or verifying.
 //
 
-_Success_(return == SYMCRYPT_NO_ERROR)
 SYMCRYPT_ERROR
 SYMCRYPT_CALL
 SymCryptRsaPkcs1Sign(
@@ -6016,7 +5940,6 @@ SymCryptRsaPkcs1Sign(
 //      SYMCRYPT_FLAG_RSA_PKCS1_NO_ASN1
 //
 
-_Success_(return == SYMCRYPT_NO_ERROR)
 SYMCRYPT_ERROR
 SYMCRYPT_CALL
 SymCryptRsaPkcs1Verify(
@@ -6026,7 +5949,7 @@ SymCryptRsaPkcs1Verify(
     _In_reads_bytes_( cbSignature )     PCBYTE                      pbSignature,
                                         SIZE_T                      cbSignature,
                                         SYMCRYPT_NUMBER_FORMAT      nfSignature,
-    _In_reads_opt_(nOIDCount)           PCSYMCRYPT_OID              pHashOID,
+    _In_reads_opt_( nOIDCount )         PCSYMCRYPT_OID              pHashOID,
     _In_                                SIZE_T                      nOIDCount,
                                         UINT32                      flags );
 //
@@ -6049,7 +5972,6 @@ SymCryptRsaPkcs1Verify(
 //
 
 
-_Success_(return == SYMCRYPT_NO_ERROR)
 SYMCRYPT_ERROR
 SYMCRYPT_CALL
 SymCryptRsaPssSign(
@@ -6086,7 +6008,6 @@ SymCryptRsaPssSign(
 //      None
 //
 
-_Success_(return == SYMCRYPT_NO_ERROR)
 SYMCRYPT_ERROR
 SYMCRYPT_CALL
 SymCryptRsaPssVerify(
@@ -6130,7 +6051,6 @@ SymCryptRsaSelftest( );
 // DSA
 //
 
-_Success_(return == SYMCRYPT_NO_ERROR)
 SYMCRYPT_ERROR
 SYMCRYPT_CALL
 SymCryptDsaSign(
@@ -6152,7 +6072,6 @@ SymCryptDsaSign(
 //
 
 
-_Success_(return == SYMCRYPT_NO_ERROR)
 SYMCRYPT_ERROR
 SYMCRYPT_CALL
 SymCryptDsaVerify(
@@ -6188,12 +6107,12 @@ SymCryptDsaSelftest( );
 SYMCRYPT_ERROR
 SYMCRYPT_CALL
 SymCryptDhSecretAgreement(
-    _In_    PCSYMCRYPT_DLKEY        pkPrivate,
-    _In_    PCSYMCRYPT_DLKEY        pkPublic,
-            SYMCRYPT_NUMBER_FORMAT  format,
-            UINT32                  flags,
-    _Out_   PBYTE                   pbAgreedSecret,
-            SIZE_T                  cbAgreedSecret );
+    _In_                            PCSYMCRYPT_DLKEY        pkPrivate,
+    _In_                            PCSYMCRYPT_DLKEY        pkPublic,
+                                    SYMCRYPT_NUMBER_FORMAT  format,
+                                    UINT32                  flags,
+    _Out_writes_( cbAgreedSecret )  PBYTE                   pbAgreedSecret,
+                                    SIZE_T                  cbAgreedSecret );
 //
 // Calculates the agreed secret of a DH key exchange and stores it
 // in the pbAgreedSecret buffer under the specified number format.
@@ -6224,7 +6143,6 @@ SymCryptDhSecretAgreementSelftest();
 // ECDSA
 //
 
-_Success_(return == SYMCRYPT_NO_ERROR)
 SYMCRYPT_ERROR
 SYMCRYPT_CALL
 SymCryptEcDsaSign(
@@ -6246,7 +6164,6 @@ SymCryptEcDsaSign(
 //      not be truncated.
 //
 
-_Success_(return == SYMCRYPT_NO_ERROR)
 SYMCRYPT_ERROR
 SYMCRYPT_CALL
 SymCryptEcDsaVerify(
@@ -6283,12 +6200,12 @@ SymCryptEcDsaSelftest( );
 SYMCRYPT_ERROR
 SYMCRYPT_CALL
 SymCryptEcDhSecretAgreement(
-    _In_    PCSYMCRYPT_ECKEY        pkPrivate,
-    _In_    PCSYMCRYPT_ECKEY        pkPublic,
-            SYMCRYPT_NUMBER_FORMAT  format,
-            UINT32                  flags,
-    _Out_   PBYTE                   pbAgreedSecret,
-            SIZE_T                  cbAgreedSecret );
+    _In_                            PCSYMCRYPT_ECKEY        pkPrivate,
+    _In_                            PCSYMCRYPT_ECKEY        pkPublic,
+                                    SYMCRYPT_NUMBER_FORMAT  format,
+                                    UINT32                  flags,
+    _Out_writes_( cbAgreedSecret )  PBYTE                   pbAgreedSecret,
+                                    SIZE_T                  cbAgreedSecret );
 
 //
 // Calculates the agreed secret of a DH key exchange and stores it

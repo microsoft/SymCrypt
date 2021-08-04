@@ -10,10 +10,9 @@
 
 #include "precomp.h"
 
-_Success_(return == SYMCRYPT_NO_ERROR)
 SYMCRYPT_ERROR
 SYMCRYPT_CALL
-SymCryptRc4Init( 
+SymCryptRc4Init(
     _Out_                   PSYMCRYPT_RC4_STATE pState,
     _In_reads_( cbKey )     PCBYTE              pbKey,
     _In_                    SIZE_T              cbKey )
@@ -22,7 +21,7 @@ SymCryptRc4Init(
     SIZE_T j;
     BYTE keyBuf[256];
     SIZE_T keyIdx;
-    
+
     SYMCRYPT_RC4_S_TYPE T;
 
     if( cbKey > 256 || cbKey == 0 )
@@ -69,18 +68,18 @@ SymCryptRc4Init(
     //
     pState->i = 1;
     pState->j = 0;
-    
+
     SYMCRYPT_SET_MAGIC( pState );
 
     SymCryptWipe( keyBuf, cbKey );
 
     return SYMCRYPT_NO_ERROR;
 }
-    
+
 
 VOID
 SYMCRYPT_CALL
-SymCryptRc4Crypt( 
+SymCryptRc4Crypt(
     _Inout_                 PSYMCRYPT_RC4_STATE pState,
     _In_reads_( cbData )   PCBYTE              pbSrc,
     _Out_writes_( cbData )  PBYTE               pbDst,
@@ -103,13 +102,13 @@ SymCryptRc4Crypt(
     // I suspect that that is because the instruction decoders are the bottleneck, and
     // a small loop can be run out of the uop queue which bypasses the instruction decoders.
     // A larger loop has to be decoded every time, and that slows things down.
-    // The theoretical gain of unrolling the loop is less than 1 c/B, 
-    // and as Core 2 and derived CPUs are the most commonly used CPUs by our customers, 
+    // The theoretical gain of unrolling the loop is less than 1 c/B,
+    // and as Core 2 and derived CPUs are the most commonly used CPUs by our customers,
     // it is not worthwhile to persue this further.
     //
     //  - Niels Ferguson (niels) 2010-10-11
     //
-    
+
     while( pbSrc < pbSrcEnd )
     {
         //
@@ -121,7 +120,7 @@ SymCryptRc4Crypt(
         pState->S[i] = Tj;
         pState->S[j] = Ti;
         *pbDst = (BYTE) (*pbSrc ^ pState->S[(Ti + Tj) & 0xff]);
-        
+
         i = (i + 1) & 0xff;
 
         pbSrc++;

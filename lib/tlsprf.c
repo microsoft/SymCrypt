@@ -53,7 +53,6 @@
 //          used keys (pre-master secret) longer than 128 bytes. To achieve interop
 //          with servers complying to the RFC we use the entire key for the HMAC calculation.
 //
-_Success_(return == SYMCRYPT_NO_ERROR)
 SYMCRYPT_ERROR
 SYMCRYPT_CALL
 SymCryptTlsPrf1_1ExpandKey(
@@ -133,7 +132,6 @@ cleanup:
     return scError;
 }
 
-_Success_(return == SYMCRYPT_NO_ERROR)
 SYMCRYPT_ERROR
 SYMCRYPT_CALL
 SymCryptTlsPrf1_2ExpandKey(
@@ -296,7 +294,6 @@ SymCryptTlsPrfPHash(
 //
 // Remark: We will do the do the two P_hash computations in parallel
 //
-_Success_(return == SYMCRYPT_NO_ERROR)
 SYMCRYPT_ERROR
 SYMCRYPT_CALL
 SymCryptTlsPrf1_1Derive(
@@ -424,7 +421,6 @@ cleanup:
 //
 //          PRF(secret, label, seed) = P_<hash>(secret, label + seed)
 //
-_Success_(return == SYMCRYPT_NO_ERROR)
 SYMCRYPT_ERROR
 SYMCRYPT_CALL
 SymCryptTlsPrf1_2Derive(
@@ -483,13 +479,12 @@ cleanup:
 //
 // The full TLS 1.0/1.1 Key Derivation Function
 //
-_Success_(return == SYMCRYPT_NO_ERROR)
 SYMCRYPT_ERROR
 SYMCRYPT_CALL
 SymCryptTlsPrf1_1(
     _In_reads_(cbKey)       PCBYTE   pbKey,
     _In_                    SIZE_T   cbKey,
-    _In_reads_(cbLabel)     PCBYTE   pbLabel,
+    _In_reads_opt_(cbLabel) PCBYTE   pbLabel,
     _In_                    SIZE_T   cbLabel,
     _In_reads_(cbSeed)      PCBYTE   pbSeed,
     _In_                    SIZE_T   cbSeed,
@@ -530,14 +525,13 @@ cleanup:
 //
 // The full TLS 1.2 Key Derivation Function
 //
-_Success_(return == SYMCRYPT_NO_ERROR)
 SYMCRYPT_ERROR
 SYMCRYPT_CALL
 SymCryptTlsPrf1_2(
     _In_                    PCSYMCRYPT_MAC  pMacAlgorithm,
     _In_reads_(cbKey)       PCBYTE          pbKey,
     _In_                    SIZE_T          cbKey,
-    _In_reads_(cbLabel)     PCBYTE          pbLabel,
+    _In_reads_opt_(cbLabel) PCBYTE          pbLabel,
     _In_                    SIZE_T          cbLabel,
     _In_reads_(cbSeed)      PCBYTE          pbSeed,
     _In_                    SIZE_T          cbSeed,

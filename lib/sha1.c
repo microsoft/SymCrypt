@@ -3,7 +3,7 @@
 //
 // Copyright (c) Microsoft Corporation. Licensed under the MIT license.
 //
-// This revised implementation is based on the older one in RSA32LIB by 
+// This revised implementation is based on the older one in RSA32LIB by
 // Scott Field and Dan Shumow. It is not based on any 3rd party code.
 //
 
@@ -67,7 +67,7 @@ SYMCRYPT_CALL
 SymCryptSha1Init( _Out_ PSYMCRYPT_SHA1_STATE pState )
 {
     SYMCRYPT_SET_MAGIC( pState );
-    
+
     pState->dataLengthL = 0;
     pState->dataLengthH = 0;
     pState->bytesInBuffer = 0;
@@ -87,7 +87,7 @@ SymCryptSha1Init( _Out_ PSYMCRYPT_SHA1_STATE pState )
 SYMCRYPT_NOINLINE
 VOID
 SYMCRYPT_CALL
-SymCryptSha1Append( 
+SymCryptSha1Append(
     _Inout_                 PSYMCRYPT_SHA1_STATE    pState,
     _In_reads_( cbData )    PCBYTE                  pbData,
                             SIZE_T                  cbData )
@@ -102,7 +102,7 @@ SymCryptSha1Append(
 SYMCRYPT_NOINLINE
 VOID
 SYMCRYPT_CALL
-SymCryptSha1Result( 
+SymCryptSha1Result(
     _Inout_                                     PSYMCRYPT_SHA1_STATE    pState,
     _Out_writes_( SYMCRYPT_SHA1_RESULT_SIZE )   PBYTE                   pbResult )
 {
@@ -116,7 +116,7 @@ SymCryptSha1Result(
     // common padding routine for SHA-1 as it wouldn't be shared by anyone right now.
     //
     SYMCRYPT_CHECK_MAGIC( pState );
-    
+
     bytesInBuffer = (UINT32)(pState->bytesInBuffer);
 
     //
@@ -197,7 +197,7 @@ SymCryptSha1Result(
 
 //
 // The core round routine (excluding the message schedule)
-// 
+//
 // In more readable form this macro does the following:
 //      e = ROL(a,5) + F(b,c,d) + e + K[r/20] + W[round]
 //      b = ROL( b, 30 )
@@ -215,7 +215,7 @@ SymCryptSha1Result(
 }
 
 //
-// Subsequent rounds. 
+// Subsequent rounds.
 // This is the same as the IROUND except that it adds the message schedule,
 // and takes the message word from the intermediate
 //
@@ -226,7 +226,7 @@ SymCryptSha1Result(
 
 VOID
 SYMCRYPT_CALL
-SymCryptSha1AppendBlocks( 
+SymCryptSha1AppendBlocks(
     _Inout_                 SYMCRYPT_SHA1_CHAINING_STATE *  pChain,
     _In_reads_( cbData )    PCBYTE                          pbData,
                             SIZE_T                          cbData,
@@ -242,7 +242,7 @@ SymCryptSha1AppendBlocks(
     C = pChain->H[2];
     D = pChain->H[3];
     E = pChain->H[4];
-    
+
     while( cbData >= 64 )
     {
         //
@@ -400,7 +400,6 @@ SymCryptSha1StateExport(
     return;
 }
 
-_Success_(return == SYMCRYPT_NO_ERROR)
 SYMCRYPT_ERROR
 SYMCRYPT_CALL
 SymCryptSha1StateImport(
@@ -465,7 +464,7 @@ SymCryptSha1Selftest()
     SymCryptSha1( SymCryptTestMsg3, sizeof( SymCryptTestMsg3 ), result );
 
     SymCryptInjectError( result, sizeof( result ) );
-    
+
     if( memcmp( result, sha1KATAnswer, sizeof( result ) ) != 0 ) {
         SymCryptFatal( 'SHA1' );
     }

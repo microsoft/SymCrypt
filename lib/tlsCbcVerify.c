@@ -427,6 +427,8 @@ SymCryptTlsCbcHmacVerify(
     SYMCRYPT_ASSERT(pMacAlgorithm == SymCryptHmacSha1Algorithm ||
                     pMacAlgorithm == SymCryptHmacSha256Algorithm ||
                     pMacAlgorithm == SymCryptHmacSha384Algorithm );
+    SYMCRYPT_ASSERT(((*(pMacAlgorithm->ppHashAlgorithm))->inputBlockSize)/2 <= 64);
+    SYMCRYPT_ASSERT((*(pMacAlgorithm->ppHashAlgorithm))->resultSize <= 48);
 
     SymCryptTlsCbcHmacVerifyCore(
         pHashAlgorithm,

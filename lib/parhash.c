@@ -10,13 +10,13 @@
 VOID
 SYMCRYPT_CALL
 SymCryptParallelHashProcess_serial(
-    _In_                                                PCSYMCRYPT_PARALLEL_HASH            pParHash,
-    _Inout_updates_bytes_( nStates * pHash->stateSize ) PVOID                               pStates,
-                                                        SIZE_T                              nStates,
-    _Inout_updates_( nOperations )                      PSYMCRYPT_PARALLEL_HASH_OPERATION   pOperations,
-                                                        SIZE_T                              nOperations,
-    _Out_writes_( cbScratch )                           PBYTE                               pbScratch,
-                                                        SIZE_T                              cbScratch )
+    _In_                                                            PCSYMCRYPT_PARALLEL_HASH            pParHash,
+    _Inout_updates_bytes_( nStates * pParHash->pHash->stateSize )   PVOID                               pStates,
+                                                                    SIZE_T                              nStates,
+    _Inout_updates_( nOperations )                                  PSYMCRYPT_PARALLEL_HASH_OPERATION   pOperations,
+                                                                    SIZE_T                              nOperations,
+    _Out_writes_( cbScratch )                                       PBYTE                               pbScratch,
+                                                                    SIZE_T                              cbScratch )
 {
     SIZE_T i;
     PSYMCRYPT_PARALLEL_HASH_OPERATION op;
@@ -33,6 +33,7 @@ SymCryptParallelHashProcess_serial(
     if( cbScratch < pParHash->parScratchFixed + nStates * SYMCRYPT_PARALLEL_HASH_PER_STATE_SCRATCH )
     {
         SymCryptFatal( 'ps2s' );
+        return;                 // prefast doesn't understand that SymCryptFatal doesn't return despite the annotation
     }
     SymCryptWipeKnownSize( pbScratch, pParHash->parScratchFixed + nStates * SYMCRYPT_PARALLEL_HASH_PER_STATE_SCRATCH );
 
@@ -287,14 +288,14 @@ compareRequestSize( const void * p1, const void * p2 )
 VOID
 SYMCRYPT_CALL
 SymCryptParallelHashProcess(
-    _In_                                                PCSYMCRYPT_PARALLEL_HASH            pParHash,
-    _Inout_updates_bytes_( nStates * pHash->stateSize ) PVOID                               pStates,
-                                                        SIZE_T                              nStates,
-    _Inout_updates_( nOperations )                      PSYMCRYPT_PARALLEL_HASH_OPERATION   pOperations,
-                                                        SIZE_T                              nOperations,
-    _Out_writes_( cbScratch )                           PBYTE                               pbScratch,
-                                                        SIZE_T                              cbScratch,
-                                                        UINT32                              maxParallel )
+    _In_                                                            PCSYMCRYPT_PARALLEL_HASH            pParHash,
+    _Inout_updates_bytes_( nStates * pParHash->pHash->stateSize )   PVOID                               pStates,
+                                                                    SIZE_T                              nStates,
+    _Inout_updates_( nOperations )                                  PSYMCRYPT_PARALLEL_HASH_OPERATION   pOperations,
+                                                                    SIZE_T                              nOperations,
+    _Out_writes_( cbScratch )                                       PBYTE                               pbScratch,
+                                                                    SIZE_T                              cbScratch,
+                                                                    UINT32                              maxParallel )
 {
     PSYMCRYPT_PARALLEL_HASH_SCRATCH_STATE   pScratchState;
     PSYMCRYPT_PARALLEL_HASH_SCRATCH_STATE * pWork;

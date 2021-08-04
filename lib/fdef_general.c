@@ -209,6 +209,8 @@ SymCryptFdefIntCreate(
     {
         SymCryptFatal( 'intc' );
     }
+    SYMCRYPT_ASSERT( cb >= sizeof(SYMCRYPT_INT) );
+    SYMCRYPT_ASSERT( cbBuffer >= cb );
 
     SYMCRYPT_ASSERT_ASYM_ALIGNED( pbBuffer );
     pInt = (PSYMCRYPT_INT) pbBuffer;
@@ -614,7 +616,7 @@ SYMCRYPT_CALL
 SymCryptFdefRawGetValue(
     _In_reads_(nDigits * SYMCRYPT_FDEF_DIGIT_NUINT32)   PCUINT32                pSrc,
                                                         UINT32                  nDigits,
-    _Out_writes_bytes_(cbBytes)                         PBYTE                   pbDst,
+    _Out_writes_bytes_(cbDst)                           PBYTE                   pbDst,
                                                         SIZE_T                  cbDst,
                                                         SYMCRYPT_NUMBER_FORMAT  format )
 {
@@ -689,7 +691,7 @@ SYMCRYPT_ERROR
 SYMCRYPT_CALL
 SymCryptFdefIntGetValue(
     _In_                        PCSYMCRYPT_INT          piSrc,
-    _Out_writes_bytes_( cbBytes)PBYTE                   pbDst,
+    _Out_writes_bytes_(cbDst)   PBYTE                   pbDst,
                                 SIZE_T                  cbDst,
                                 SYMCRYPT_NUMBER_FORMAT  format )
 {
@@ -723,9 +725,9 @@ SymCryptFdefIntGetValueLsbits64( _In_  PCSYMCRYPT_INT piSrc )
 UINT32
 SYMCRYPT_CALL
 SymCryptFdefRawIsEqualUint32(
-    _In_    PCUINT32        pSrc1,
-            UINT32          nDigits,
-    _In_    UINT32          u32Src2 )
+    _In_reads_(nDigits*SYMCRYPT_FDEF_DIGIT_NUINT32) PCUINT32        pSrc1,
+                                                    UINT32          nDigits,
+    _In_                                            UINT32          u32Src2 )
 {
     UINT32 d;
     UINT32 nWords = nDigits * SYMCRYPT_FDEF_DIGIT_NUINT32;
@@ -838,6 +840,8 @@ SymCryptFdefDivisorCreate(
     {
         SymCryptFatal( 'divc' );
     }
+    SYMCRYPT_ASSERT( cb >= sizeof(SYMCRYPT_DIVISOR) );
+    SYMCRYPT_ASSERT( cbBuffer >= cb );
 
     SYMCRYPT_ASSERT_ASYM_ALIGNED( pbBuffer );
 

@@ -434,37 +434,37 @@ SymCryptCpuFeaturesNeverPresent();
 
 #if SYMCRYPT_MS_VC  // Microsoft VC++ Compiler
 
-	#if SYMCRYPT_CPU_ARM || SYMCRYPT_CPU_ARM64
-		#define SYMCRYPT_INTERNAL_FORCE_READ8( _p )    ( __iso_volatile_load8( (const volatile char*)(_p) ) )
-		#define SYMCRYPT_INTERNAL_FORCE_READ16( _p )   ( __iso_volatile_load16( (const volatile short*)(_p) ) )
-		#define SYMCRYPT_INTERNAL_FORCE_READ32( _p )   ( __iso_volatile_load32( (const volatile int*)(_p) ) )
-		#define SYMCRYPT_INTERNAL_FORCE_READ64( _p )   ( __iso_volatile_load64( (const volatile __int64*)(_p) ) )
+    #if SYMCRYPT_CPU_ARM || SYMCRYPT_CPU_ARM64
+        #define SYMCRYPT_INTERNAL_FORCE_READ8( _p )    ( __iso_volatile_load8( (const volatile char*)(_p) ) )
+        #define SYMCRYPT_INTERNAL_FORCE_READ16( _p )   ( __iso_volatile_load16( (const volatile short*)(_p) ) )
+        #define SYMCRYPT_INTERNAL_FORCE_READ32( _p )   ( __iso_volatile_load32( (const volatile int*)(_p) ) )
+        #define SYMCRYPT_INTERNAL_FORCE_READ64( _p )   ( __iso_volatile_load64( (const volatile __int64*)(_p) ) )
 
-		#define SYMCRYPT_INTERNAL_FORCE_WRITE8( _p, _v )  ( __iso_volatile_store8( (volatile char*)(_p), (_v) ) )
-		#define SYMCRYPT_INTERNAL_FORCE_WRITE16( _p, _v ) ( __iso_volatile_store16( (volatile short*)(_p), (_v) ) )
-		#define SYMCRYPT_INTERNAL_FORCE_WRITE32( _p, _v ) ( __iso_volatile_store32( (volatile int*)(_p), (_v) ) )
-		#define SYMCRYPT_INTERNAL_FORCE_WRITE64( _p, _v ) ( __iso_volatile_store64( (volatile __int64*)(_p), (_v) ) )
-	#elif SYMCRYPT_CPU_X86 || SYMCRYPT_CPU_AMD64
-		#define SYMCRYPT_INTERNAL_FORCE_READ8( _p )    ( *((const volatile BYTE*)  (_p)) )
-		#define SYMCRYPT_INTERNAL_FORCE_READ16( _p )   ( *((const volatile UINT16*)(_p)) )
-		#define SYMCRYPT_INTERNAL_FORCE_READ32( _p )   ( *((const volatile UINT32*)(_p)) )
-		#define SYMCRYPT_INTERNAL_FORCE_READ64( _p )   ( *((const volatile UINT64*)(_p)) )
+        #define SYMCRYPT_INTERNAL_FORCE_WRITE8( _p, _v )  ( __iso_volatile_store8( (volatile char*)(_p), (_v) ) )
+        #define SYMCRYPT_INTERNAL_FORCE_WRITE16( _p, _v ) ( __iso_volatile_store16( (volatile short*)(_p), (_v) ) )
+        #define SYMCRYPT_INTERNAL_FORCE_WRITE32( _p, _v ) ( __iso_volatile_store32( (volatile int*)(_p), (_v) ) )
+        #define SYMCRYPT_INTERNAL_FORCE_WRITE64( _p, _v ) ( __iso_volatile_store64( (volatile __int64*)(_p), (_v) ) )
+    #elif SYMCRYPT_CPU_X86 || SYMCRYPT_CPU_AMD64
+        #define SYMCRYPT_INTERNAL_FORCE_READ8( _p )    ( *((const volatile BYTE*)  (_p)) )
+        #define SYMCRYPT_INTERNAL_FORCE_READ16( _p )   ( *((const volatile UINT16*)(_p)) )
+        #define SYMCRYPT_INTERNAL_FORCE_READ32( _p )   ( *((const volatile UINT32*)(_p)) )
+        #define SYMCRYPT_INTERNAL_FORCE_READ64( _p )   ( *((const volatile UINT64*)(_p)) )
 
-		#define SYMCRYPT_INTERNAL_FORCE_WRITE8( _p, _v )  ( *((volatile BYTE*)  (_p)) = (_v) )
-		#define SYMCRYPT_INTERNAL_FORCE_WRITE16( _p, _v ) ( *((volatile UINT16*)(_p)) = (_v) )
-		#define SYMCRYPT_INTERNAL_FORCE_WRITE32( _p, _v ) ( *((volatile UINT32*)(_p)) = (_v) )
-		#define SYMCRYPT_INTERNAL_FORCE_WRITE64( _p, _v ) ( *((volatile UINT64*)(_p)) = (_v) )
+        #define SYMCRYPT_INTERNAL_FORCE_WRITE8( _p, _v )  ( *((volatile BYTE*)  (_p)) = (_v) )
+        #define SYMCRYPT_INTERNAL_FORCE_WRITE16( _p, _v ) ( *((volatile UINT16*)(_p)) = (_v) )
+        #define SYMCRYPT_INTERNAL_FORCE_WRITE32( _p, _v ) ( *((volatile UINT32*)(_p)) = (_v) )
+        #define SYMCRYPT_INTERNAL_FORCE_WRITE64( _p, _v ) ( *((volatile UINT64*)(_p)) = (_v) )
     #else // Temporary workaround for CMake compilation issues on Windows. Assume X86/ADM64.
-		#define SYMCRYPT_INTERNAL_FORCE_READ8( _p )    ( *((const volatile BYTE*)  (_p)) )
-		#define SYMCRYPT_INTERNAL_FORCE_READ16( _p )   ( *((const volatile UINT16*)(_p)) )
-		#define SYMCRYPT_INTERNAL_FORCE_READ32( _p )   ( *((const volatile UINT32*)(_p)) )
-		#define SYMCRYPT_INTERNAL_FORCE_READ64( _p )   ( *((const volatile UINT64*)(_p)) )
+        #define SYMCRYPT_INTERNAL_FORCE_READ8( _p )    ( *((const volatile BYTE*)  (_p)) )
+        #define SYMCRYPT_INTERNAL_FORCE_READ16( _p )   ( *((const volatile UINT16*)(_p)) )
+        #define SYMCRYPT_INTERNAL_FORCE_READ32( _p )   ( *((const volatile UINT32*)(_p)) )
+        #define SYMCRYPT_INTERNAL_FORCE_READ64( _p )   ( *((const volatile UINT64*)(_p)) )
 
-		#define SYMCRYPT_INTERNAL_FORCE_WRITE8( _p, _v )  ( *((volatile BYTE*)  (_p)) = (_v) )
-		#define SYMCRYPT_INTERNAL_FORCE_WRITE16( _p, _v ) ( *((volatile UINT16*)(_p)) = (_v) )
-		#define SYMCRYPT_INTERNAL_FORCE_WRITE32( _p, _v ) ( *((volatile UINT32*)(_p)) = (_v) )
-		#define SYMCRYPT_INTERNAL_FORCE_WRITE64( _p, _v ) ( *((volatile UINT64*)(_p)) = (_v) )
-	#endif
+        #define SYMCRYPT_INTERNAL_FORCE_WRITE8( _p, _v )  ( *((volatile BYTE*)  (_p)) = (_v) )
+        #define SYMCRYPT_INTERNAL_FORCE_WRITE16( _p, _v ) ( *((volatile UINT16*)(_p)) = (_v) )
+        #define SYMCRYPT_INTERNAL_FORCE_WRITE32( _p, _v ) ( *((volatile UINT32*)(_p)) = (_v) )
+        #define SYMCRYPT_INTERNAL_FORCE_WRITE64( _p, _v ) ( *((volatile UINT64*)(_p)) = (_v) )
+    #endif
 
 #elif SYMCRYPT_APPLE_CC || SYMCRYPT_GNUC
 
@@ -1236,18 +1236,18 @@ typedef const SYMCRYPT_RC2_EXPANDED_KEY * PCSYMCRYPT_RC2_EXPANDED_KEY;
 #define SYMCRYPT_CCM_BLOCK_SIZE (16)
 
 typedef SYMCRYPT_ALIGN_STRUCT _SYMCRYPT_CCM_STATE {
-    PCSYMCRYPT_BLOCKCIPHER  pBlockCipher;
-    PCVOID                  pExpandedKey;
-    UINT64                  cbData;                                     // exact length of data
-    SIZE_T                  cbTag;
-    SIZE_T                  cbNonce;
-    SIZE_T                  cbCounter;                                  // # bytes in counter field
-    UINT64                  bytesProcessed;                             // data bytes processed so far
-    SIZE_T                  bytesInMacBlock;
-    SYMCRYPT_ALIGN BYTE     counterBlock[SYMCRYPT_CCM_BLOCK_SIZE];      // Current counter block value
-    SYMCRYPT_ALIGN BYTE     macBlock[SYMCRYPT_CCM_BLOCK_SIZE];          // Current state of the CBC-MAC part of CCM
-    SYMCRYPT_ALIGN BYTE     keystreamBlock[SYMCRYPT_CCM_BLOCK_SIZE];    // Remaining key stream if partial block has been processed
-    SYMCRYPT_MAGIC_FIELD
+                                                    PCSYMCRYPT_BLOCKCIPHER  pBlockCipher;
+                                                    PCVOID                  pExpandedKey;
+                                                    UINT64                  cbData;                                     // exact length of data
+                                                    SIZE_T                  cbTag;
+                                                    SIZE_T                  cbNonce;
+                                                    SIZE_T                  cbCounter;                                  // # bytes in counter field
+                                                    UINT64                  bytesProcessed;                             // data bytes processed so far
+    _Field_range_( 0, SYMCRYPT_CCM_BLOCK_SIZE-1 )   SIZE_T                  bytesInMacBlock;
+                                                    SYMCRYPT_ALIGN BYTE     counterBlock[SYMCRYPT_CCM_BLOCK_SIZE];      // Current counter block value
+                                                    SYMCRYPT_ALIGN BYTE     macBlock[SYMCRYPT_CCM_BLOCK_SIZE];          // Current state of the CBC-MAC part of CCM
+                                                    SYMCRYPT_ALIGN BYTE     keystreamBlock[SYMCRYPT_CCM_BLOCK_SIZE];    // Remaining key stream if partial block has been processed
+                                                    SYMCRYPT_MAGIC_FIELD
 } SYMCRYPT_CCM_STATE, *PSYMCRYPT_CCM_STATE;
 
 
@@ -1345,15 +1345,15 @@ typedef const SYMCRYPT_GCM_EXPANDED_KEY * PCSYMCRYPT_GCM_EXPANDED_KEY;
 
 
 typedef SYMCRYPT_ALIGN_STRUCT _SYMCRYPT_GCM_STATE {
-    PCSYMCRYPT_GCM_EXPANDED_KEY pKey;
-    UINT64                      cbData;         // Number of data bytes
-    UINT64                      cbAuthData;     // Number of AAD bytes
-    SIZE_T                      bytesInMacBlock;
-    SYMCRYPT_GF128_ELEMENT      ghashState;
-    SYMCRYPT_ALIGN BYTE         counterBlock[SYMCRYPT_GCM_BLOCK_SIZE];
-    SYMCRYPT_ALIGN BYTE         macBlock[SYMCRYPT_GCM_BLOCK_SIZE];
-    SYMCRYPT_ALIGN BYTE         keystreamBlock[SYMCRYPT_GCM_BLOCK_SIZE];
-    SYMCRYPT_MAGIC_FIELD
+                                                    PCSYMCRYPT_GCM_EXPANDED_KEY pKey;
+                                                    UINT64                      cbData;         // Number of data bytes
+                                                    UINT64                      cbAuthData;     // Number of AAD bytes
+    _Field_range_( 0, SYMCRYPT_GCM_BLOCK_SIZE-1 )   SIZE_T                      bytesInMacBlock;
+                                                    SYMCRYPT_GF128_ELEMENT      ghashState;
+                                                    SYMCRYPT_ALIGN BYTE         counterBlock[SYMCRYPT_GCM_BLOCK_SIZE];
+                                                    SYMCRYPT_ALIGN BYTE         macBlock[SYMCRYPT_GCM_BLOCK_SIZE];
+                                                    SYMCRYPT_ALIGN BYTE         keystreamBlock[SYMCRYPT_GCM_BLOCK_SIZE];
+                                                    SYMCRYPT_MAGIC_FIELD
 } SYMCRYPT_GCM_STATE, * PSYMCRYPT_GCM_STATE;
 typedef const SYMCRYPT_GCM_STATE * PCSYMCRYPT_GCM_STATE;
 
@@ -1662,7 +1662,7 @@ typedef const SYMCRYPT_ECPOINT * PCSYMCRYPT_ECPOINT;
 SYMCRYPT_ASYM_ALIGN_STRUCT _SYMCRYPT_INT {
     UINT32                  type;
     UINT32                  nDigits;                    // digit size depends on run-time decisions...
-    UINT32                  cbSize;                     // currently unused
+    UINT32                  cbSize;
     SYMCRYPT_MAGIC_FIELD
 
     SYMCRYPT_ASYM_ALIGN union {
@@ -1744,7 +1744,7 @@ SYMCRYPT_ASYM_ALIGN_STRUCT _SYMCRYPT_MODELEMENT {
 //
 // The following 14 scratch size computation macros are all of the form:
 //      Some SIZEOF macros + max( some other scratch macros )
-// and all depend on some number of digits. (Slight expceptions are
+// and all depend on some number of digits. (Slight exceptions are
 // INT_TO_MODULUS and INT_PRIME_GEN but they can fit into the below
 // rationale.)
 //
@@ -2022,7 +2022,7 @@ SymCryptTestTrialdivisionMaxSmallPrime( PCSYMCRYPT_TRIALDIVISION_CONTEXT pContex
 //
 
 #define SYMCRYPT_DLGROUP_MIN_BITSIZE_P          (32)
-#define SYMCRYPT_DLGROUP_MIN_BITSIZE_Q          (32)
+#define SYMCRYPT_DLGROUP_MIN_BITSIZE_Q          (31)  // Q must always be at least 1 bit shorter than P
 // Minimum allowable bit sizes for generated and imported parameters for both P and
 // Q primes.
 

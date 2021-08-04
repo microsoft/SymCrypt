@@ -20,7 +20,7 @@ SymCryptSizeofEcpointEx(
     UINT32 cbModElement,
     UINT32 numOfCoordinates )
 {
-	if ( numOfCoordinates > SYMCRYPT_ECPOINT_FORMAT_MAX_LENGTH )
+    if ( numOfCoordinates > SYMCRYPT_ECPOINT_FORMAT_MAX_LENGTH )
     {
         SymCryptFatal( 'ecp4' );
     }
@@ -83,17 +83,16 @@ SymCryptEcpointCreateEx(
     PSYMCRYPT_ECPOINT       poPoint = NULL;
 
     PSYMCRYPT_MODELEMENT    pmTmp = NULL;
-    UINT32                  cbModElement = 0;
+    UINT32                  cbModElement = pCurve->cbModElement;
 
-    UNREFERENCED_PARAMETER( cbBuffer );     // only referenced in an ASSERT...
+    PBYTE pbBufferEnd = pbBuffer + cbBuffer;
+    UNREFERENCED_PARAMETER( pbBufferEnd );     // only referenced in an ASSERT...
 
     SYMCRYPT_ASSERT( pCurve->FMod != 0 );
     SYMCRYPT_ASSERT( pCurve->cbModElement != 0 );
-    SYMCRYPT_ASSERT( cbBuffer >=  SymCryptSizeofEcpointEx( pCurve->cbModElement, numOfCoordinates ) );
+    SYMCRYPT_ASSERT( cbBuffer >= SymCryptSizeofEcpointEx( pCurve->cbModElement, numOfCoordinates ) );
 
     SYMCRYPT_ASSERT_ASYM_ALIGNED( pbBuffer );
-
-    cbModElement = pCurve->cbModElement;
 
     poPoint = (PSYMCRYPT_ECPOINT) pbBuffer;
 
@@ -102,6 +101,7 @@ SymCryptEcpointCreateEx(
     // Setting the point coordinates
     for (UINT32 i=0; i<numOfCoordinates; i++)
     {
+        SYMCRYPT_ASSERT( pbBuffer + cbModElement <= pbBufferEnd );
         pmTmp = SymCryptModElementCreate( pbBuffer, cbModElement, pCurve->FMod );
         if ( pmTmp == NULL )
         {
@@ -129,7 +129,7 @@ SYMCRYPT_CALL
 SymCryptEcpointCreate(
     _Out_writes_bytes_( cbBuffer )  PBYTE               pbBuffer,
                                     SIZE_T              cbBuffer,
-                                    PCSYMCRYPT_ECURVE   pCurve )
+    _In_                            PCSYMCRYPT_ECURVE   pCurve )
 {
 
     SYMCRYPT_ASSERT( pCurve->eCoordinates != 0 );
@@ -203,7 +203,6 @@ SymCryptEcpointMaskedCopy(
 // format of the curve. If setValue = FALSE the roles are reversed.
 // This function is only called by the Get / Set Value functions.
 //
-_Success_(return == SYMCRYPT_NO_ERROR)
 SYMCRYPT_ERROR
 SYMCRYPT_CALL
 SymCryptEcpointTransform(
@@ -588,7 +587,6 @@ cleanup:
     return scError;
 }
 
-_Success_(return == SYMCRYPT_NO_ERROR)
 SYMCRYPT_ERROR
 SYMCRYPT_CALL
 SymCryptEcpointSetValue(
@@ -627,7 +625,7 @@ SymCryptEcpointSetValue(
     cbSrc = cbSrc / SymCryptEcpointFormatNumberofElements[ eformat ];
 
     cbTemp = SymCryptSizeofIntFromDigits( publicKeyDigits );
-    SYMCRYPT_ASSERT( cbTemp < cbScratch );
+    SYMCRYPT_ASSERT( cbScratch > cbTemp );
 
     piTemp = SymCryptIntCreate( pbScratch, cbTemp, publicKeyDigits );
 
@@ -649,6 +647,7 @@ SymCryptEcpointSetValue(
 
     // Create the large point
     cbLarge = SymCryptSizeofEcpointEx( pCurve->cbModElement, SYMCRYPT_ECPOINT_FORMAT_MAX_LENGTH );
+    SYMCRYPT_ASSERT( cbScratch > cbLarge );
     poLarge = SymCryptEcpointCreateEx( pbScratch, cbLarge, pCurve, SYMCRYPT_ECPOINT_FORMAT_MAX_LENGTH );
     if ( poLarge == NULL )
     {
@@ -688,7 +687,6 @@ cleanup:
     return scError;
 }
 
-_Success_(return == SYMCRYPT_NO_ERROR)
 SYMCRYPT_ERROR
 SYMCRYPT_CALL
 SymCryptEcpointGetValue(
@@ -706,6 +704,7 @@ SymCryptEcpointGetValue(
     PSYMCRYPT_MODELEMENT    peTmp = NULL;       // Temporary MODELEMENT handle
     PSYMCRYPT_ECPOINT       poLarge = NULL;     // ECPOINT with the largest format available
     UINT32                  cbLarge = 0;
+    SIZE_T                  cbDstElem;
 
     SYMCRYPT_ASSERT( (flags & ~SYMCRYPT_FLAG_DATA_PUBLIC) == 0 );
     SYMCRYPT_ASSERT( pCurve->FMod != 0 );
@@ -720,10 +719,12 @@ SymCryptEcpointGetValue(
         scError = SYMCRYPT_BUFFER_TOO_SMALL;
         goto cleanup;
     }
-    cbDst = cbDst / SymCryptEcpointFormatNumberofElements[ eformat ];
+    SYMCRYPT_ASSERT( SymCryptEcpointFormatNumberofElements[ eformat ] > 0 );
+    cbDstElem = cbDst / SymCryptEcpointFormatNumberofElements[ eformat ];
 
     // Create the big point
     cbLarge = SymCryptSizeofEcpointEx( pCurve->cbModElement, SYMCRYPT_ECPOINT_FORMAT_MAX_LENGTH );
+    SYMCRYPT_ASSERT( cbScratch > cbLarge );
     poLarge = SymCryptEcpointCreateEx( pbScratch, cbLarge, pCurve, SYMCRYPT_ECPOINT_FORMAT_MAX_LENGTH );
     if ( poLarge == NULL )
     {
@@ -741,6 +742,7 @@ SymCryptEcpointGetValue(
     // Getting the point coordinates into the destination buffer
     for (UINT32 i=0; i<SymCryptEcpointFormatNumberofElements[eformat]; i++)
     {
+        SYMCRYPT_ASSERT( cbDst >= cbDstElem );
         peTmp = (PSYMCRYPT_MODELEMENT)( (PBYTE)poLarge + SYMCRYPT_INTERNAL_ECPOINT_COORDINATE_OFFSET( pCurve, i ) );
         if ( peTmp == NULL )
         {
@@ -752,7 +754,7 @@ SymCryptEcpointGetValue(
                             pCurve->FMod,
                             peTmp,
                             pbDst,
-                            cbDst,
+                            cbDstElem,
                             nformat,
                             pbScratch + cbLarge,
                             cbScratch - cbLarge );
@@ -760,7 +762,8 @@ SymCryptEcpointGetValue(
         {
             goto cleanup;
         }
-        pbDst += cbDst;
+        pbDst += cbDstElem;
+        cbDst -= cbDstElem;
     }
 
 cleanup:

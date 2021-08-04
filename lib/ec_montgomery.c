@@ -79,7 +79,7 @@ SymCryptMontgomeryIsEqual(
     _In_    PCSYMCRYPT_ECPOINT  poSrc1,
     _In_    PCSYMCRYPT_ECPOINT  poSrc2,
             UINT32              flags,
-    _Out_writes_bytes_opt_(cbScratch)
+    _Out_writes_bytes_( cbScratch )
             PBYTE               pbScratch,
             SIZE_T              cbScratch)
 {
@@ -97,6 +97,9 @@ SymCryptMontgomeryIsEqual(
     UNREFERENCED_PARAMETER( flags );
 
     nBytes = SymCryptSizeofModElementFromModulus( pmMod );
+
+    SYMCRYPT_ASSERT( cbScratch >= 2 * nBytes );
+
     for (UINT32 i = 0; i < 2; ++i)
     {
         peTemp[i] = SymCryptModElementCreate( pbScratch, nBytes, pmMod );
@@ -124,7 +127,7 @@ SYMCRYPT_CALL
 SymCryptMontgomeryIsZero(
     _In_    PCSYMCRYPT_ECURVE   pCurve,
     _In_    PCSYMCRYPT_ECPOINT  poSrc,
-    _Out_writes_bytes_opt_( cbScratch )
+    _Out_writes_bytes_( cbScratch )
             PBYTE               pbScratch,
             SIZE_T              cbScratch )
 {
@@ -155,7 +158,7 @@ SymCryptMontgomeryDoubleAndAdd(
     _Inout_                         PSYMCRYPT_MODELEMENT    peZ3,
     _Inout_                         PSYMCRYPT_MODELEMENT    peTemp1,
     _Inout_                         PSYMCRYPT_MODELEMENT    peTemp2,
-    _Out_writes_bytes_(cbScratch)   PBYTE                   pbScratch,
+    _Out_writes_bytes_( cbScratch ) PBYTE                   pbScratch,
                                     SIZE_T                  cbScratch)
 /*
 We use the notation of ladd-1987-m-3, this is a generic Montgomery ladder implementation.
@@ -297,7 +300,7 @@ SymCryptMontgomeryPointScalarMul(
             PCSYMCRYPT_ECPOINT     poSrc,
     _In_    UINT32                 flags,
     _Out_   PSYMCRYPT_ECPOINT      poDst,
-    _Out_writes_bytes_(cbScratch)
+    _Out_writes_bytes_( cbScratch )
             PBYTE                  pbScratch,
             SIZE_T                 cbScratch)
 {

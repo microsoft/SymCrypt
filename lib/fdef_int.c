@@ -850,7 +850,7 @@ SYMCRYPT_CALL
 SymCryptFdefRawSquare(
     _In_reads_(nDigits*SYMCRYPT_FDEF_DIGIT_NUINT32)         PCUINT32    pSrc,
                                                             UINT32      nDigits,
-    _Out_writes_(2*nDigits1*SYMCRYPT_FDEF_DIGIT_NUINT32)    PUINT32     pDst )
+    _Out_writes_(2*nDigits*SYMCRYPT_FDEF_DIGIT_NUINT32)     PUINT32     pDst )
 {
 #if SYMCRYPT_CPU_AMD64
     if( SYMCRYPT_CPU_FEATURES_PRESENT( SYMCRYPT_CPU_FEATURES_FOR_MULX ) )
@@ -984,8 +984,8 @@ SymCryptFdefIntToDivisor(
 UINT32
 SYMCRYPT_CALL
 SymCryptFdefRawMultSubUint32(
-    _Inout_updates_( nUInt32 + 1 )  PUINT32     pAcc,
-    _In_reads_(nUInt32)             PCUINT32    pSrc1,
+    _Inout_updates_( nUint32 + 1 )  PUINT32     pAcc,
+    _In_reads_( nUint32 )           PCUINT32    pSrc1,
                                     UINT32      Src2,
                                     UINT32      nUint32 )
 {
@@ -1124,6 +1124,7 @@ SymCryptFdefRawDivMod(
 
         if( pRemainder != NULL )
         {
+            SYMCRYPT_ASSERT( remainderWords >= nWords );
             memcpy( pRemainder, pNum, nWords * sizeof( UINT32 ) );
             SymCryptWipe( &pRemainder[nWords], (remainderWords - nWords) * sizeof( UINT32 ) );        // clear the rest of the remainder words
         }

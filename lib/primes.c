@@ -193,8 +193,6 @@ SymCryptIntGenerateRandomPrime(
 
     PCSYMCRYPT_TRIALDIVISION_CONTEXT pTrialDivisionContext = SymCryptCreateTrialDivisionContext( SymCryptIntDigitsizeOfObject( piHigh ) );
 
-
-
     SYMCRYPT_ASSERT( cbScratch >= SYMCRYPT_SCRATCH_BYTES_FOR_INT_PRIME_GEN( SymCryptIntDigitsizeOfObject( piDst ) ) );
     SYMCRYPT_ASSERT( nPubExp <= SYMCRYPT_RSAKEY_MAX_NUMOF_PUBEXPS );
     SYMCRYPT_ASSERT( SymCryptDigitsFromBits( 64 ) == 1 );
@@ -205,6 +203,7 @@ SymCryptIntGenerateRandomPrime(
     cbObj = SymCryptSizeofDivisorFromDigits( 1 );
     for( e = 0; e < nPubExp; e++ )
     {
+        SYMCRYPT_ASSERT( cbScratch >= cbObj );
         pdPubExp[e] = SymCryptDivisorCreate( pbScratch, cbObj, 1 );
         pbScratch += cbObj;
         cbScratch -= cbObj;
@@ -214,6 +213,7 @@ SymCryptIntGenerateRandomPrime(
     }
 
     cbObj = SymCryptSizeofIntFromDigits( 1 );
+    SYMCRYPT_ASSERT( cbScratch >= cbObj + nBytes );
     piTmp = SymCryptIntCreate( pbScratch, cbObj, 1 );
     pbScratch += cbObj;
     cbScratch -= cbObj;

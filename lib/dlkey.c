@@ -55,11 +55,11 @@ SymCryptDlkeyCreate(
     _In_                            PCSYMCRYPT_DLGROUP  pDlgroup )
 {
     PSYMCRYPT_DLKEY pkRes = NULL;
-    UINT32 cbModElement = 0;
+    UINT32 cbModElement = SymCryptSizeofModElementFromModulus( pDlgroup->pmP );
 
-    UNREFERENCED_PARAMETER( cbBuffer );     // only referenced in an ASSERT...
-    SYMCRYPT_ASSERT( cbBuffer >=  SymCryptSizeofDlkeyFromDlgroup( pDlgroup ) );
-
+    SYMCRYPT_ASSERT( cbBuffer >= SymCryptSizeofDlkeyFromDlgroup( pDlgroup ) );
+    SYMCRYPT_ASSERT( cbBuffer >= sizeof(SYMCRYPT_DLKEY) + cbModElement );
+    UNREFERENCED_PARAMETER( cbBuffer );     // only referenced in above ASSERTs...
     SYMCRYPT_ASSERT_ASYM_ALIGNED( pbBuffer );
 
     pkRes = (PSYMCRYPT_DLKEY) pbBuffer;
@@ -72,7 +72,6 @@ SymCryptDlkeyCreate(
     // Create SymCrypt objects
     pbBuffer += sizeof(SYMCRYPT_DLKEY);
 
-    cbModElement = SymCryptSizeofModElementFromModulus( pDlgroup->pmP );
     pkRes->pePublicKey = SymCryptModElementCreate( pbBuffer, cbModElement, pDlgroup->pmP );
     if (pkRes->pePublicKey == NULL)
     {
@@ -174,7 +173,6 @@ SymCryptDlkeyHasPrivateKey( _In_ PCSYMCRYPT_DLKEY pkDlkey )
     return pkDlkey->fHasPrivateKey;
 }
 
-_Success_(return == SYMCRYPT_NO_ERROR)
 SYMCRYPT_ERROR
 SYMCRYPT_CALL
 SymCryptDlkeyPerformPublicKeyValidation(
@@ -189,8 +187,8 @@ SymCryptDlkeyPerformPublicKeyValidation(
     PSYMCRYPT_MODELEMENT peTmpPublicKeyExpQ = NULL;
     UINT32 cbModElement = SymCryptSizeofModElementFromModulus( pDlgroup->pmP );
 
-    SYMCRYPT_ASSERT( cbScratch >= (2 * SymCryptSizeofModElementFromModulus( pDlgroup->pmP )) +
-                                    SYMCRYPT_SCRATCH_BYTES_FOR_MODEXP(pDlgroup->nDigitsOfP) )
+    SYMCRYPT_ASSERT( cbScratch >= (2 * cbModElement) +
+                                    SYMCRYPT_SCRATCH_BYTES_FOR_MODEXP(pDlgroup->nDigitsOfP) );
 
     // Check if Public key is 0
     if ( SymCryptModElementIsZero( pDlgroup->pmP, pkDlkey->pePublicKey ) )
@@ -252,7 +250,6 @@ SymCryptDlkeyPerformPublicKeyValidation(
 
 #define DLKEY_GEN_RANDOM_GENERIC_LIMIT   (1000)
 
-_Success_(return == SYMCRYPT_NO_ERROR)
 SYMCRYPT_ERROR
 SYMCRYPT_CALL
 SymCryptDlkeyGenerate(
@@ -443,7 +440,6 @@ cleanup:
     return scError;
 }
 
-_Success_(return == SYMCRYPT_NO_ERROR)
 SYMCRYPT_ERROR
 SYMCRYPT_CALL
 SymCryptDlkeySetValue(
@@ -682,7 +678,6 @@ cleanup:
 }
 
 
-_Success_(return == SYMCRYPT_NO_ERROR)
 SYMCRYPT_ERROR
 SYMCRYPT_CALL
 SymCryptDlkeyGetValue(

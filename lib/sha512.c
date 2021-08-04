@@ -407,7 +407,6 @@ SymCryptSha384StateExport(
 }
 
 
-_Success_(return == SYMCRYPT_NO_ERROR)
 SYMCRYPT_ERROR
 SYMCRYPT_CALL
 SymCryptSha512StateImportCore(
@@ -450,7 +449,6 @@ cleanup:
     return scError;
 }
 
-_Success_(return == SYMCRYPT_NO_ERROR)
 SYMCRYPT_ERROR
 SYMCRYPT_CALL
 SymCryptSha512StateImport(
@@ -460,7 +458,6 @@ SymCryptSha512StateImport(
     return SymCryptSha512StateImportCore( pState, pbBlob, SymCryptBlobTypeSha512State );
 }
 
-_Success_(return == SYMCRYPT_NO_ERROR)
 SYMCRYPT_ERROR
 SYMCRYPT_CALL
 SymCryptSha384StateImport(

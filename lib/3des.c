@@ -119,7 +119,6 @@ static const BYTE SymCryptDesDoubleShift[16]={0,0,1,1,1,1,1,1,0,1,1,1,1,1,1,0};
 // People using DES have bigger problems than bad performance.
 //
 
-_Success_( return == SYMCRYPT_NO_ERROR )
 SYMCRYPT_ERROR
 SYMCRYPT_CALL
 SymCryptDesExpandKey(
@@ -194,8 +193,8 @@ SymCrypt3DesCbcDecrypt(
 VOID
 SYMCRYPT_CALL
 SymCryptDesExpandSingleKey(
-        _Out_				UINT32  expandedKeyTable[16][2],
-        _In_reads_(8)       PCBYTE  pKey )
+        _Out_writes_bytes_(128) UINT32  expandedKeyTable[16][2],
+        _In_reads_(8)           PCBYTE  pKey )
 {
     UINT32 Cr, Dr;      // The C_r D_r values of FIPS 43 for round value r
     UINT32 r;           // round
@@ -219,8 +218,8 @@ SymCryptDesExpandSingleKey(
     // they have expired by now.
     // The expression of the algorithm in code is purely MS generated, and so not encumbered
     // by external copyrights.
-	// This algorithm is really just a transposition of the bits when viewed as an 8x8 matrix
-	// with an additional permutation on the output side.
+    // This algorithm is really just a transposition of the bits when viewed as an 8x8 matrix
+    // with an additional permutation on the output side.
     //
     SWAP_BITS_BETWEEN_UINT32( Cr, Dr, 4, 0x0f0f0f0f );
     SWAP_BITS_WITHIN_UINT32( Dr, 18, 0x00003333 );
@@ -290,7 +289,6 @@ SymCryptDesExpandSingleKey(
 }
 
 
-_Success_(return == SYMCRYPT_NO_ERROR)
 SYMCRYPT_NOINLINE
 SYMCRYPT_ERROR
 SYMCRYPT_CALL
@@ -501,12 +499,12 @@ SymCrypt3DesDecrypt(
     R ^= Ta;
 
     L = ROL32(L, 14);
-	Ta = (L ^ R) & 0x33333333;
+    Ta = (L ^ R) & 0x33333333;
     L ^= Ta;
     R ^= Ta;
 
     R = ROL32(R, 22);
-	Ta = (L ^ R) & 0x03fc03fc;
+    Ta = (L ^ R) & 0x03fc03fc;
     L ^= Ta;
     R ^= Ta;
 
@@ -542,7 +540,7 @@ SymCrypt3DesDecrypt(
     /* Inverse permutation, also from Hoey via Outerbridge and Schneier */
 
     R = ROR32(R, 1);
-	Ta = (L ^ R) & 0xaaaaaaaa;
+    Ta = (L ^ R) & 0xaaaaaaaa;
     L ^= Ta;
     R ^= Ta;
 
@@ -552,17 +550,17 @@ SymCrypt3DesDecrypt(
     R ^= Ta;
 
     L = ROR32(L, 22);
-	Ta = (L ^ R) & 0x33333333;
+    Ta = (L ^ R) & 0x33333333;
     L ^= Ta;
     R ^= Ta;
 
     R = ROR32(R, 14);
-	Ta = (L ^ R) & 0xfff0000f;
+    Ta = (L ^ R) & 0xfff0000f;
     L ^= Ta;
     R ^= Ta;
 
     R = ROR32(R, 20);
-	Ta = (L ^ R) & 0xf0f0f0f0;
+    Ta = (L ^ R) & 0xf0f0f0f0;
     L ^= Ta;
     R ^= Ta;
 

@@ -1388,6 +1388,8 @@ SymCryptAesGcmEncryptStitchedXmm(
     SIZE_T todo;
     PCBYTE pbGhashSrc = pbDst;
 
+    SYMCRYPT_ASSERT( (cbData & SYMCRYPT_GCM_BLOCK_MOD_MASK) == 0 ); // cbData is multiple of block size
+
     chain = _mm_shuffle_epi8( chain, BYTE_REVERSE_ORDER );
     state = _mm_loadu_si128( (__m128i *) pState );
 
@@ -1627,6 +1629,8 @@ SymCryptAesGcmDecryptStitchedXmm(
     SIZE_T nBlocks = cbData / SYMCRYPT_GF128_BLOCK_SIZE;
     SIZE_T todo = 0;
     PCBYTE pbGhashSrc = pbSrc;
+
+    SYMCRYPT_ASSERT( (cbData & SYMCRYPT_GCM_BLOCK_MOD_MASK) == 0 ); // cbData is multiple of block size
 
     chain = _mm_shuffle_epi8( chain, BYTE_REVERSE_ORDER );
     state = _mm_loadu_si128( (__m128i *) pState );

@@ -121,16 +121,12 @@ SymCryptDlgroupCreate(
 {
     PSYMCRYPT_DLGROUP       pDlgroup = NULL;
 
-    UINT32                  cbModP = 0;
-    UINT32                  cbModQ = 0;
-    UINT32                  cbModElement = 0;
+    UINT32                  cbModP;
+    UINT32                  cbModQ;
+    UINT32                  cbModElement;
 
-    UNREFERENCED_PARAMETER( cbBuffer );     // only referenced in an ASSERT...
-	// dcl - you have to calculate exactly this about 10 lines below, so why not do it
-	// here, and have a runtime check?
-	// I understand the need for perf, but this isn't a gain.
-    SYMCRYPT_ASSERT( cbBuffer >=  SymCryptSizeofDlgroupFromBitsizes( nBitsOfP, nBitsOfQ ) );
-
+    SYMCRYPT_ASSERT( cbBuffer >= SymCryptSizeofDlgroupFromBitsizes( nBitsOfP, nBitsOfQ ) );
+    UNREFERENCED_PARAMETER( cbBuffer );     // only referenced in ASSERTs...
     SYMCRYPT_ASSERT_ASYM_ALIGNED( pbBuffer );
 
     // Invalid parameters
@@ -147,6 +143,8 @@ SymCryptDlgroupCreate(
     }
 
     pDlgroup = (PSYMCRYPT_DLGROUP) pbBuffer;
+
+    SYMCRYPT_ASSERT( cbBuffer > sizeof(SYMCRYPT_DLGROUP) );
 
     // DLGROUP parameters
     pDlgroup->cbTotalSize = SymCryptSizeofDlgroupFromBitsizes( nBitsOfP, nBitsOfQ );
@@ -177,6 +175,7 @@ SymCryptDlgroupCreate(
     pbBuffer += sizeof(SYMCRYPT_DLGROUP);
 
     cbModP = SymCryptSizeofModulusFromDigits( pDlgroup->nDigitsOfP );
+    SYMCRYPT_ASSERT( cbBuffer > sizeof(SYMCRYPT_DLGROUP) + cbModP );
     pDlgroup->pmP = SymCryptModulusCreate( pbBuffer, cbModP, pDlgroup->nDigitsOfP );
     pbBuffer += cbModP;
 
@@ -193,11 +192,13 @@ SymCryptDlgroupCreate(
     {
         cbModQ = cbModP;
     }
+    SYMCRYPT_ASSERT( cbBuffer > sizeof(SYMCRYPT_DLGROUP) + cbModP + cbModQ );
     pDlgroup->pbQ = pbBuffer;      // Set the aligned buffer
     pDlgroup->pmQ = NULL;
     pbBuffer += cbModQ;
 
     cbModElement = SymCryptSizeofModElementFromModulus( pDlgroup->pmP );
+    SYMCRYPT_ASSERT( cbBuffer > sizeof(SYMCRYPT_DLGROUP) + cbModP + cbModQ + cbModElement );
     pDlgroup->peG = SymCryptModElementCreate( pbBuffer, cbModElement, pDlgroup->pmP );
     pbBuffer += cbModElement;
 
@@ -301,6 +302,7 @@ SymCryptDlgroupGeneratePrimeQ_FIPS(
     if (pDlgroup->eFipsStandard == SYMCRYPT_DLGROUP_FIPS_186_2)
     {
         SYMCRYPT_ASSERT( hashAlgorithm == SymCryptSha1Algorithm );
+        SYMCRYPT_ASSERT( cbScratch >= SYMCRYPT_MAX(2*cbHash, cbSeed) );
 
         // Hash buffers
         pbTrHash = pbScratch;
@@ -344,6 +346,7 @@ SymCryptDlgroupGeneratePrimeQ_FIPS(
     }
     else if (pDlgroup->eFipsStandard == SYMCRYPT_DLGROUP_FIPS_186_3)
     {
+        SYMCRYPT_ASSERT( cbScratch >= cbHash );
         pbTrHash = pbScratch;
         SymCryptHash( hashAlgorithm, pbSeed, cbSeed, pbTrHash, cbHash );
     }
@@ -651,7 +654,9 @@ SymCryptDlgroupGenerateGenG_FIPS(
     BYTE bIndexGenG = pDlgroup->bIndexGenG;
 
     SIZE_T cbHash = SymCryptHashResultSize( hashAlgorithm );
+    SYMCRYPT_ASSERT( cbHash == hashAlgorithm->resultSize );
     SIZE_T cbState = SymCryptHashStateSize( hashAlgorithm );
+    SYMCRYPT_ASSERT( cbState == hashAlgorithm->stateSize );
 
     UINT16 count = 0;
     BYTE bTmp = 0;
@@ -676,16 +681,14 @@ SymCryptDlgroupGenerateGenG_FIPS(
 
     UNREFERENCED_PARAMETER( cbScratch );
     UNREFERENCED_PARAMETER( nDigitsOfQ );
-    SYMCRYPT_ASSERT( cbScratch >= cbExp + SYMCRYPT_MAX(cbRem, cbModElement + cbState + cbHash) +
-                               SYMCRYPT_MAX(SYMCRYPT_SCRATCH_BYTES_FOR_MODEXP( nDigitsOfP ),
-                               SYMCRYPT_MAX(SYMCRYPT_SCRATCH_BYTES_FOR_INT_DIVMOD( nDigitsOfP, nDigitsOfQ ),
-                                   SYMCRYPT_SCRATCH_BYTES_FOR_COMMON_MOD_OPERATIONS( nDigitsOfP ) )) );
 
     // Create temporaries
     pbScratchInternal = pbScratch;
     cbScratchInternal = SYMCRYPT_MAX( SYMCRYPT_SCRATCH_BYTES_FOR_MODEXP( nDigitsOfP ),
                         SYMCRYPT_MAX( SYMCRYPT_SCRATCH_BYTES_FOR_INT_DIVMOD( nDigitsOfP, nDigitsOfQ ),
                              SYMCRYPT_SCRATCH_BYTES_FOR_COMMON_MOD_OPERATIONS( nDigitsOfP ) ));
+    SYMCRYPT_ASSERT( cbScratch >= cbScratchInternal + cbExp + cbRem );
+    SYMCRYPT_ASSERT( cbScratch >= cbScratchInternal + cbExp + cbModElement + cbHash + cbState );
     pbScratch += cbScratchInternal;
 
     piExp = SymCryptIntCreate( pbScratch, cbExp, nDigitsOfP );
@@ -840,7 +843,6 @@ SymCryptDlgroupScratchSpace_FIPS( UINT32 nBitsOfP, UINT32 nBitsOfQ, PCSYMCRYPT_H
                     SYMCRYPT_SCRATCH_BYTES_FOR_COMMON_MOD_OPERATIONS( nDigitsOfP ) )) ));
 }
 
-_Success_(return == SYMCRYPT_NO_ERROR)
 SYMCRYPT_ERROR
 SYMCRYPT_CALL
 SymCryptDlgroupGenerate(
@@ -1075,7 +1077,6 @@ cleanup:
     return scError;
 }
 
-_Success_(return == SYMCRYPT_NO_ERROR)
 SYMCRYPT_ERROR
 SYMCRYPT_CALL
 SymCryptDlgroupSetValueSafePrime(
@@ -1282,23 +1283,21 @@ SymCryptDlgroupGetSizes(
     }
 }
 
-_Success_(return == SYMCRYPT_NO_ERROR)
 SYMCRYPT_ERROR
 SYMCRYPT_CALL
 SymCryptDlgroupAutoCompleteNamedSafePrimeGroup(
     _Inout_                         PSYMCRYPT_DLGROUP   pDlgroup,
-    _Out_writes_bytes_( cbScratch )
-                                    PBYTE               pbScratch,
+    _Out_writes_bytes_( cbScratch ) PBYTE               pbScratch,
                                     SIZE_T              cbScratch )
 {
     SYMCRYPT_ERROR scError = SYMCRYPT_NO_ERROR;
 
-    PBYTE  pbScratchInternal = pbScratch;
-    SIZE_T cbScratchInternal = cbScratch;
+    PBYTE  pbScratchInternal;
+    SIZE_T cbScratchInternal;
 
-    UINT32 cbTemp = SymCryptSizeofIntFromDigits( pDlgroup->nDigitsOfP );
     PSYMCRYPT_INT piTemp = NULL;
-    UINT32 i = 0;
+    UINT32 cbTemp;
+    UINT32 i;
     UINT32 nBitsOfQ;
     PCSYMCRYPT_DLGROUP_DH_SAFEPRIME_PARAMS safePrimeParams = NULL;
 
@@ -1308,10 +1307,13 @@ SymCryptDlgroupAutoCompleteNamedSafePrimeGroup(
         goto cleanup; // Not a named safe-prime group
     }
 
+    cbTemp = SymCryptSizeofIntFromDigits( pDlgroup->nDigitsOfP );
+    SYMCRYPT_ASSERT( cbScratch >= cbTemp );
+
     // Create an integer piTemp
-    piTemp = SymCryptIntCreate( pbScratchInternal, cbTemp, pDlgroup->nDigitsOfP );
-    pbScratchInternal += cbTemp;
-    cbScratchInternal -= cbTemp;
+    piTemp = SymCryptIntCreate( pbScratch, cbTemp, pDlgroup->nDigitsOfP );
+    pbScratchInternal = pbScratch + cbTemp;
+    cbScratchInternal = cbScratch - cbTemp;
 
     // Set piTemp to the generator G (this will fail if the number cannot fit in the object)
     SymCryptModElementToInt( pDlgroup->pmP, pDlgroup->peG, piTemp, pbScratchInternal, cbScratchInternal );
@@ -1399,7 +1401,6 @@ cleanup:
     return scError;
 }
 
-_Success_(return == SYMCRYPT_NO_ERROR)
 SYMCRYPT_ERROR
 SYMCRYPT_CALL
 SymCryptDlgroupSetValue(
@@ -1890,7 +1891,6 @@ cleanup:
     return scError;
 }
 
-_Success_(return == SYMCRYPT_NO_ERROR)
 SYMCRYPT_ERROR
 SYMCRYPT_CALL
 SymCryptDlgroupGetValue(

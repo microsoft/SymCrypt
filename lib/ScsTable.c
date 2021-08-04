@@ -6,7 +6,7 @@
 //
 //
 // These functions implement an table of large elements.
-// Reading an element fromt he table is done in a way that does not reveal the
+// Reading an element from the table is done in a way that does not reveal the
 // element accessed through memory side channels.
 // Basically, the whole table is read by the CPU, and the required data is selected
 // using boolean operations.
@@ -205,6 +205,7 @@ SymCryptScsTableLoadC(
     SYMCRYPT_ASSERT( groupSize ==  pScsTable->groupSize );
     SYMCRYPT_ASSERT( interleaveSize == pScsTable->interleaveSize );
 
+    SYMCRYPT_ASSERT( cbData >= sizeof( SYMCRYPT_SCSTABLE_TYPE ) * SYMCRYPT_SCSTABLE_GROUP_SIZE );
     SYMCRYPT_ASSERT( cbData == pScsTable->elementSize );
     UNREFERENCED_PARAMETER( cbData );
 

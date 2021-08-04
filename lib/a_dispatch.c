@@ -43,9 +43,9 @@ const SYMCRYPT_MODULAR_FUNCTIONS g_SymCryptModFns[] = {
 #define SymCryptModFntableMontgomery            (1 * SYMCRYPT_MODULAR_FUNCTIONS_SIZE)
 #define SymCryptModFntable369Montgomery         (2 * SYMCRYPT_MODULAR_FUNCTIONS_SIZE)
 #define SymCryptModFntableMontgomery256         (3 * SYMCRYPT_MODULAR_FUNCTIONS_SIZE)
-#define SymCryptModFntableMontgomeryMulx	    (4 * SYMCRYPT_MODULAR_FUNCTIONS_SIZE)
-#define SymCryptModFntableMontgomery512	        (5 * SYMCRYPT_MODULAR_FUNCTIONS_SIZE)
-#define SymCryptModFntableMontgomery1024	    (6 * SYMCRYPT_MODULAR_FUNCTIONS_SIZE)
+#define SymCryptModFntableMontgomeryMulx        (4 * SYMCRYPT_MODULAR_FUNCTIONS_SIZE)
+#define SymCryptModFntableMontgomery512         (5 * SYMCRYPT_MODULAR_FUNCTIONS_SIZE)
+#define SymCryptModFntableMontgomery1024        (6 * SYMCRYPT_MODULAR_FUNCTIONS_SIZE)
 #define SymCryptModFntableMontgomeryMulx1024    (7 * SYMCRYPT_MODULAR_FUNCTIONS_SIZE)
 
 C_ASSERT( (sizeof( g_SymCryptModFns ) & (sizeof( g_SymCryptModFns) - 1 )) == 0 ); // size of the table must be a power of 2 to be CFG-safe.
@@ -55,7 +55,7 @@ const UINT32 g_SymCryptModFnsMask = sizeof( g_SymCryptModFns ) - sizeof( g_SymCr
 //
 // Tweaking the selection & function tables allows different tradeoffs of performance vs codesize
 //
-const SYMCRYPT_MODULUS_TYPE_SELECTION_ENTRY SymCryptModulusTypeSelections[] = 
+const SYMCRYPT_MODULUS_TYPE_SELECTION_ENTRY SymCryptModulusTypeSelections[] =
 {
 #if SYMCRYPT_CPU_AMD64
     // Mulx used for 257-512 and 577-... bits
@@ -645,7 +645,7 @@ SYMCRYPT_CALL
 SymCryptModElementCreate(
     _Out_writes_bytes_( cbBuffer )  PBYTE               pbBuffer,
                                     SIZE_T              cbBuffer,
-                                    PCSYMCRYPT_MODULUS   pmMod )
+    _In_                            PCSYMCRYPT_MODULUS   pmMod )
 {
     return SymCryptFdefModElementCreate( pbBuffer, cbBuffer, pmMod );
 }
@@ -947,7 +947,7 @@ SymCryptModExp(
     _In_                            PCSYMCRYPT_MODELEMENT   peBase,
     _In_                            PCSYMCRYPT_INT          piExp,
                                     UINT32                  nBitsExp,
-    _In_                            UINT32                  flags,
+                                    UINT32                  flags,
     _Out_                           PSYMCRYPT_MODELEMENT    peDst,
     _Out_writes_bytes_( cbScratch ) PBYTE                   pbScratch,
                                     SIZE_T                  cbScratch )
@@ -959,8 +959,8 @@ VOID
 SYMCRYPT_CALL
 SymCryptModMultiExp(
     _In_                            PCSYMCRYPT_MODULUS      pmMod,
-    _In_                            PCSYMCRYPT_MODELEMENT * peBaseArray,
-    _In_                            PCSYMCRYPT_INT *        piExpArray,
+    _In_reads_( nBases )            PCSYMCRYPT_MODELEMENT * peBaseArray,
+    _In_reads_( nBases )            PCSYMCRYPT_INT *        piExpArray,
                                     UINT32                  nBases,
                                     UINT32                  nBitsExp,
                                     UINT32                  flags,

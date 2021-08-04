@@ -11,7 +11,6 @@
 
 #include "precomp.h"
 
-_Success_(return == SYMCRYPT_NO_ERROR)
 SYMCRYPT_ERROR
 SYMCRYPT_CALL
 SymCryptPbkdf2Derive(
@@ -59,7 +58,7 @@ SymCryptPbkdf2Derive(
             pExpandedKey->macAlg->resultFunc( &macState, rbWorkBuffer );
             SymCryptXorBytes( &rbWorkBuffer[0], &rbBlockResult[0], &rbBlockResult[0], blockSize );
         }
-        
+
         bytes = SYMCRYPT_MIN( cbResult, blockSize );
         memcpy( pbResult, rbBlockResult, bytes );
         pbResult += bytes;
@@ -71,7 +70,6 @@ SymCryptPbkdf2Derive(
     return SYMCRYPT_NO_ERROR;
 }
 
-_Success_(return == SYMCRYPT_NO_ERROR)
 SYMCRYPT_ERROR
 SYMCRYPT_CALL
 SymCryptPbkdf2ExpandKey(
@@ -86,7 +84,6 @@ SymCryptPbkdf2ExpandKey(
     return macAlgorithm->expandKeyFunc(&pExpandedKey->macKey, pbKey, cbKey );
 }
 
-_Success_(return == SYMCRYPT_NO_ERROR)
 SYMCRYPT_ERROR
 SYMCRYPT_CALL
 SymCryptPbkdf2(
