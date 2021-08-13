@@ -17,127 +17,133 @@ double g_tscFreq;
 
 //
 // The performance infrastructure has some flexibility to use different clocks.
-// At the moment they can all use the time stamp counter.
+//
+// On Windows we use HW counters when the target architecture is known, and QueryPerformanceCounter when it is not.
+// On Linux we use rdtscp directly for x86/AMD64, and clock_gettime otherwise.
 //
 
-#if SYMCRYPT_CPU_ARM
+// Perf clock scaling uses a fixed function with cycle latency known at compile time as a measuring stick
+// to scale an arbitrary wall clock into a cycle clock (detecting CPU frequency changes and retaking measurements
+// as appropriate)
+// We currently only do not use this for ARM and ARM64 on Windows, where we can guarantee to access a raw CPU cycle counter
+BOOLEAN g_perfClockScaling = TRUE;
+#define FIXED_TIME_LOOP() fixedTimeLoopPerfFunction( NULL, NULL, NULL, 0 )
 
-#define GET_PERF_CLOCK() __rdpmccntr64()
-#define PERF_UNIT   "cycles"
+#if (SYMCRYPT_MS_VC || SYMCRYPT_GNUC) && (SYMCRYPT_CPU_AMD64 || SYMCRYPT_CPU_X86)
+    // Windows or Linux, x86 or AMD64
+    #if SYMCRYPT_MS_VC
+        #include <intrin.h>
+    #else
+        #include <x86intrin.h>
+    #endif
 
-#elif SYMCRYPT_CPU_ARM64
+    FORCEINLINE
+    ULONGLONG
+    GET_PERF_CLOCK()
+    {
+        // Use rdtscp instead of rdtsc as it ensures earlier (non-store) instructions complete before it executes
+        // This does not have the performance impact of serializing with cpuid
+        unsigned int ui;
+        ULONGLONG timestamp = __rdtscp(&ui);
+        // Use lfence to prevent speculative execution of instructions _after_ the rdtscp (assumes lfence is serializing which is true after spectre mitigations)
+        _mm_lfence();
+        return timestamp;
+    }
 
-#define GET_PERF_CLOCK() _ReadStatusReg(ARM64_PMCCNTR_EL0)
-#define PERF_UNIT   "cycles"
+    #define PERF_UNIT   "cycles"
 
-#else
+#elif SYMCRYPT_MS_VC && (SYMCRYPT_CPU_ARM || SYMCRYPT_CPU_ARM64)
+    // Windows, Arm or Arm64
+    g_perfClockScaling = FALSE;
+    #undef FIXED_TIME_LOOP
+    #define FIXED_TIME_LOOP() nullPerfFunction( NULL, NULL, NULL, 0 )
+
+    #if SYMCRYPT_CPU_ARM
+        // Windows, Arm
+        #define GET_PERF_CLOCK() __rdpmccntr64()
+    #elif SYMCRYPT_CPU_ARM64
+        // Windows, Arm64
+        #define GET_PERF_CLOCK() _ReadStatusReg(ARM64_PMCCNTR_EL0)
+    #endif
+    #define PERF_UNIT   "cycles"
+
+#elif SYMCRYPT_MS_VC
+    // Windows, Generic (no architecture specified at compile time)
+    FORCEINLINE
+    ULONGLONG
+    GET_PERF_CLOCK()
+    {
+        LARGE_INTEGER t;
+        QueryPerformanceCounter( &t );
+        return (ULONGLONG) t.QuadPart;
+    }
+
+    // We rely on performance scaling logic to convert the raw nanoseconds readings into cycles
+    #define PERF_UNIT   "cycles"
+
+#elif SYMCRYPT_GNUC
+    // Linux, not x86 or AMD64
+    FORCEINLINE
+    ULONGLONG
+    GET_PERF_CLOCK()
+    {
+        struct timespec time;
+        clock_gettime(CLOCK_MONOTONIC, &time);
+        return time.tv_nsec;
+    }
+
+    // We rely on performance scaling logic to convert the raw nanoseconds readings into cycles
+    #define PERF_UNIT   "cycles"
+#endif
 
 #if SYMCRYPT_MS_VC
-#include <intrin.h>
+    #define ALLOCA( n ) _alloca( n )
 #else
-#include <x86intrin.h>
-#endif
+    #define ALLOCA( n ) alloca( n )
+#endif // SYMCRYPT_MS_VC
+
+/*
+//
+// Some commented-out definitions that may be useful in the future
+//
+
+// Use linux generic perf event infrastructure to read CPU counter
+// See https://www.man7.org/linux/man-pages/man2/perf_event_open.2.html
+//
+// Seems to work on ARM64 WSL but not AMD64 WSL, so using clock_gettime instead for now
+#include <linux/perf_event.h>
+#include <sys/syscall.h>
+
+static int fdCpuCycles = -1;
+__attribute__((constructor)) static void
+START_PERF_CLOCK()
+{
+    static struct perf_event_attr attr;
+    attr.type = PERF_TYPE_HARDWARE;
+    attr.config = PERF_COUNT_HW_CPU_CYCLES;
+
+    // We need elevated permissions to read CPU cycles unless we specify exclude_kernel
+    // We should be benchmarking code which is predominantly in user mode anyway
+    attr.exclude_kernel = 1;
+    // pid == 0 and cpu == -1 => measure the calling process/thread on any CPU.
+    fdCpuCycles = syscall(__NR_perf_event_open, &attr, 0, -1, -1, 0);
+}
+
+__attribute__((destructor)) static void
+END_PERF_CLOCK()
+{
+    close(fdCpuCycles);
+}
 
 FORCEINLINE
 ULONGLONG
 GET_PERF_CLOCK()
 {
-    // Use rdtscp instead of rdtsc as it ensures earlier (non-store) instructions complete before it executes
-    // This does not have the performance impact of serializing with cpuid
-    unsigned int ui;
-    ULONGLONG timestamp = __rdtscp(&ui);
-    // Use lfence to prevent speculative execution of instructions _after_ the rdtscp (assumes lfence is serializing which is true after spectre mitigations)
-    _mm_lfence();
-    return timestamp;
-}
-
-#define PERF_UNIT   "cycles"
-
-#endif
-
-#if SYMCRYPT_MS_VC
-
-#define ALLOCA( n ) _alloca( n )
-
-#else
-
-#define ALLOCA( n ) alloca( n )
-
-#endif // SYMCRYPT_MS_VC
-
-/*
-//
-// Some commented-out definitions that will be useful if we ever port this to a platform
-// that doesn't have a time stamp counter
-//
-
-#if defined( _ARM_ )
-
-#define GET_PERF_CLOCK() getPerfClock()
-#define SET_PERF_SCALEFACTOR()  setPerfScaleFactor()
-
-FORCEINLINE
-ULONGLONG getPerfClock()
-{
-    LARGE_INTEGER t;
-    QueryPerformanceCounter( &t );
-    return (ULONGLONG) t.QuadPart;
-}
-
-#define PERF_UNIT   "ns"
-
-VOID
-setPerfScaleFactor()    // FOR ARM
-{
-    LARGE_INTEGER freq;
-    QueryPerformanceFrequency( &freq );
-
-    CHECK( freq.QuadPart != 0, "QueryPerformanceFrequency returned zero" );
-    print( "Performance counter frequency = %lld\n", freq.QuadPart );
-
-    g_perfScaleFactor = (double) 1e9 / (double) freq.QuadPart;  // print ns/b rather than clocks/b
-    g_minMeasurementClockTime = 100;
-}
-
-
-VOID
-setPerfScaleFactor()    // FOR IA64, even older
-{
-    SYSTEM_INFO systemInfo;
-    ULONG nProcessors;
-    NTSTATUS status;
-    PPROCESSOR_POWER_INFORMATION    pProcPowerInfo = NULL;
-    LARGE_INTEGER perfFreq;
-    ULONG maxCurrent;
-
-    //
-    // Gather CPU information
-    //
-    GetSystemInfo( &systemInfo );
-    nProcessors = systemInfo.dwNumberOfProcessors;
-
-    pProcPowerInfo = new PROCESSOR_POWER_INFORMATION[ nProcessors ];
-    CHECK( pProcPowerInfo != NULL, "Out of memory" );
-
-    status = CallNtPowerInformation( ProcessorInformation, NULL, 0, pProcPowerInfo, nProcessors * sizeof( *pProcPowerInfo ) );
-    CHECK3( NT_SUCCESS( status ), "Failed to get power info %08x", status );
-
-    maxCurrent = 0;
-    for( ULONG i=0; i<nProcessors; i++ )
-    {
-        //iprint( "Proc %2d, curr =%6d, SYMCRYPT_MAX = %6d\n", i, pProcPowerInfo[i].CurrentMhz, pProcPowerInfo[i].MaxMhz );
-        //maxCurrent = SYMCRYPT_MAX( maxCurrent, pProcPowerInfo[i].CurrentMhz );
-        maxCurrent = SYMCRYPT_MAX( maxCurrent, pProcPowerInfo[i].MaxMhz );
-    }
-
-    QueryPerformanceFrequency(&perfFreq);
-    print( "Performance frequency %I64u\n", perfFreq.QuadPart );
-
-    g_perfScaleFactor = (1e6 * maxCurrent)/perfFreq.QuadPart;
-
-    g_minMeasurementClockTime = SYMCRYPT_MIN( 1000, (ULONG) (10000/g_perfScaleFactor) );
-
-    delete[] pProcPowerInfo;
+    ULONGLONG result = 0;
+    // Assume we read the correct length rather than checking return value of read
+    // We want to minimize the code in the performance infrastructure
+    read(fdCpuCycles, &result, sizeof(result));
+    return result;
 }
 */
 
@@ -440,14 +446,6 @@ double correctAverage( double average, double * pData, SIZE_T cdData )
     FIXED_TIME_LOOP_ITER_128() FIXED_TIME_LOOP_ITER_128() FIXED_TIME_LOOP_ITER_128() FIXED_TIME_LOOP_ITER_128()
 
 #define FIXED_TIME_LOOP_EXPECTED_CYCLES (g_fixedTimeLoopCycles * g_fixedTimeLoopRuns)
-
-#if SYMCRYPT_CPU_ARM || SYMCRYPT_CPU_ARM64
-BOOLEAN g_perfClockScaling = FALSE;
-#define FIXED_TIME_LOOP() nullPerfFunction( NULL, NULL, NULL, 0 )
-#else
-BOOLEAN g_perfClockScaling = TRUE;
-#define FIXED_TIME_LOOP() fixedTimeLoopPerfFunction( NULL, NULL, NULL, 0 )
-#endif
 
 SYMCRYPT_NOINLINE
 VOID
@@ -1395,7 +1393,7 @@ initPerfSystem()
     g_fixedTimeLoopVariable = x;
 
     // get to a steady state with calibration
-    for(int i=0; i<5; ++i)
+    for(int i=0; i<15; ++i)
     {
         calibratePerfMeasurements();
     }

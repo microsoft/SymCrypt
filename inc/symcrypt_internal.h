@@ -1938,7 +1938,7 @@ typedef SYMCRYPT_ASYM_ALIGN_STRUCT _SYMCRYPT_RSAKEY {
                     UINT32              nSetBitsOfModulus;  // Bits of modulus specified during creation
 
                     UINT32              nBitsOfModulus;     // Number of bits of the value of the modulus (not the object's size)
-                    UINT32              nDigitsOfModulus;   // Number of digits of the modulus object (alwaays equal to SymCryptDigitsFromBits(nSetBitsOfModulus))
+                    UINT32              nDigitsOfModulus;   // Number of digits of the modulus object (always equal to SymCryptDigitsFromBits(nSetBitsOfModulus))
 
                     UINT32              nPubExp;            // Number of public exponents
 
@@ -2459,7 +2459,7 @@ SYMCRYPT_EXTERN_C_END
 
 //
 // There are no defined symbols that we can use to detect that we are in debugger code
-// But this is unlikely to be misued.
+// But this is unlikely to be misused.
 //
 #define SYMCRYPT_ENVIRONMENT_WINDOWS_KERNELDEBUGGER             SYMCRYPT_ENVIRONMENT_DEFS( WindowsKernelDebugger )
 

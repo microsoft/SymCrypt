@@ -49,7 +49,6 @@
     #include <stdlib.h>
     #include <math.h>
     #include <unistd.h>
-    #include <x86intrin.h>
 
     #include <vector>
     #include <string>
@@ -195,8 +194,12 @@
 #endif
 
 #if SYMCRYPT_CPU_X86 | SYMCRYPT_CPU_AMD64
-#include <wmmintrin.h>
-#include <immintrin.h>
+    #include <wmmintrin.h>
+    #include <immintrin.h>
+
+    #if SYMCRYPT_GNUC
+        #include <x86intrin.h>
+    #endif
 #endif
 
 /*

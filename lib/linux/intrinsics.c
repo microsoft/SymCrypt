@@ -1,6 +1,6 @@
 //
 // intrinsics.c
-// Replacements for instrincs not supported by GCC/LLVM
+// Replacements for intrinsics not supported by GCC/LLVM
 //
 // Copyright (c) Microsoft Corporation. Licensed under the MIT license.
 //
