@@ -936,7 +936,7 @@ VOID measurePerfData(
 
         y[n] = measurePerfOneSize( keySize, dataSize, keyFn, prepFn, dataFn, cleanFn, FALSE );
 
-        //iprint( "Size = %5I64u, clocks = %f\n", (ULONGLONG) size, y[n] );
+        CHECK5( !isnan(y[n]), "NaN result from measurePerfOneSize: n = %d, x[n] = %d, y[n] = %f", n, x[n], y[n] );
         ++n;
     }
 
@@ -1016,6 +1016,8 @@ VOID measurePerfData(
         }
     }
 
+    CHECK( !isnan(perByte), "NaN result for perByte" );
+    CHECK( !isnan(fixed), "NaN result for fixed" );
 
     double lineDeviation[ MAX_SIZES ];
     for( SIZE_T i=0; i< n; i++ )

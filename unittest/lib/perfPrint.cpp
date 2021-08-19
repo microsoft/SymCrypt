@@ -2,14 +2,14 @@
 // PerfPrint.cpp
 // Printing output without affecting performance measurements
 //
-// Copyright (c) Microsoft Corporation. Licensed under the MIT license. 
+// Copyright (c) Microsoft Corporation. Licensed under the MIT license.
 //
 
 #include "precomp.h"
 
 
 //
-// We don't want to print while we are still running tests, as the 
+// We don't want to print while we are still running tests, as the
 // console updates trigger other threads in the system to start doing work.
 // This module allows us to print output without disturbing the performance measurements.
 //
@@ -33,9 +33,9 @@ print( const char *format, ...)
     va_start( vl, format );
 
     res = VSNPRINTF_S( &Output[OutputOffset], MAX_OUTPUT_SIZE - OutputOffset, _TRUNCATE, format, vl );
-    
+
     CHECK( res >= 0 , "WHOA!!!" );
-    
+
     OutputOffset += res;
 }
 
@@ -60,6 +60,11 @@ formatNumber( double v )
         return "-" + formatNumber( -v );
     }
 
+    if( isnan(v) )
+    {
+        return "NAN  ";
+    }
+
     CHECK3( v < 1e24, "Number too large %f", v );
 
     bool fSmallInt = floor(v) == v && v < 10000;
@@ -73,7 +78,7 @@ formatNumber( double v )
             s++;
         }
     }
-    
+
     // there doesn't seem to be a way to do a fixed-size result with the format specifiers
     // Our output is always 5 characters long
     if( v < 1 && !fSmallInt )
@@ -113,9 +118,9 @@ iprint( const char *format, ...)
     va_start( vl, format );
 
     res = VSNPRINTF_S( &Output[OutputOffset], MAX_OUTPUT_SIZE - OutputOffset, _TRUNCATE, format, vl );
-    
+
     CHECK( res >= 0 , "WHOA!!!" );
-    
+
     OutputOffset += res;
     printOutput( 0 );
 }
@@ -130,9 +135,9 @@ dprint( const char * format, ... )
     va_start( vl, format );
 
     res = _vsnprintf_s( &Output[OutputOffset], MAX_OUTPUT_SIZE - OutputOffset, _TRUNCATE, format, vl );
-    
+
     CHECK( res >= 0 , "WHOA!!!" );
-    
+
     OutputOffset += res;
     printOutput( 0 );
 #else
@@ -140,7 +145,7 @@ dprint( const char * format, ... )
 #endif
 }
 
-VOID printOutput( int delayMilliSeconds ) 
+VOID printOutput( int delayMilliSeconds )
 {
     Output[MAX_OUTPUT_SIZE-1] = 0;
     fputs( Output, stdout );
