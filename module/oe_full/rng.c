@@ -6,6 +6,8 @@
 //
 
 #include "precomp.h"
+
+#if SYMCRYPT_CPU_X86 | SYMCRYPT_CPU_AMD64
 #include <pthread.h>
 #include <sys/random.h>
 
@@ -253,8 +255,32 @@ SymCryptModuleReseed( PCBYTE pbEntropy, SIZE_T cbEntropy )
 
     // Don't use any existing cached random data
     g_cbRandomBytesCache = 0;
-    
+
     SymCryptWipeKnownSize( seed, sizeof(seed) );
 
     return;
 }
+
+#endif // SYMCRYPT_CPU_X86 | SYMCRYPT_CPU_AMD64
+
+#if SYMCRYPT_CPU_ARM64
+
+// Arm64 RNG TBD
+
+VOID
+SYMCRYPT_CALL
+SymCryptRngInit()
+{
+    // Fatal for now
+    SymCryptFatal( 'rngi' );
+}
+
+VOID
+SYMCRYPT_CALL
+SymCryptRngUninit()
+{
+    // Fatal for now
+    SymCryptFatal( 'rngu' );
+}
+
+#endif // SYMCRYPT_CPU_ARM64

@@ -7,6 +7,7 @@
 
 #include <stddef.h>
 #include <stdio.h>
+#include <stdlib.h>
 
 #include "symcrypt.h"
 
@@ -49,7 +50,7 @@ main( int argc, _In_reads_( argc ) char * argv[] )
         SymCryptEcDsaSelftest();
         SymCryptRsaSelftest();
     }
-    
+
     printf( "Success!\n" );
 
     return 0;

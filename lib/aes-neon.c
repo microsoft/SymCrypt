@@ -10,8 +10,6 @@
 
 #if SYMCRYPT_CPU_ARM64
 
-static const __n128 n128_zero = {0};
-//#define vzeroq()    (n128_zero)
 #define vzeroq()    vdupq_n_u64(0)
 
 
@@ -37,7 +35,7 @@ SymCryptAes4SboxNeon( _In_reads_(4) PCBYTE pIn, _Out_writes_(4) PBYTE pOut )
     // and the SubBytes will do the S-box lookup.
     //
     x = vdupq_n_u32( *(unsigned int *) pIn );
-    x = aese_u8( x, vzeroq() );
+    x = vaeseq_u8( x, vzeroq() );
     vst1q_lane_s32( pOut, x, 0 );
     //*(unsigned int *) pOut = x.n128_u32[0];
 }
@@ -49,7 +47,7 @@ SymCryptAesCreateDecryptionRoundKeyNeon(
     _In_reads_(16)      PCBYTE  pEncryptionRoundKey,
     _Out_writes_(16)    PBYTE   pDecryptionRoundKey )
 {
-    *(__n128 *) pDecryptionRoundKey = aesimc_u8( *(__n128 *)pEncryptionRoundKey );
+    *(__n128 *) pDecryptionRoundKey = vaesimcq_u8( *(__n128 *)pEncryptionRoundKey );
 }
 
 //
@@ -58,8 +56,8 @@ SymCryptAesCreateDecryptionRoundKeyNeon(
 //
 #define AESE_AESMC( c, rk ) \
 { \
-    c = aese_u8( c, rk ); \
-    c = aesmc_u8( c ); \
+    c = vaeseq_u8( c, rk ); \
+    c = vaesmcq_u8( c ); \
 };
 
 //
@@ -68,8 +66,8 @@ SymCryptAesCreateDecryptionRoundKeyNeon(
 //
 #define AESD_AESIMC( c, rk ) \
 { \
-    c = aesd_u8( c, rk ); \
-    c = aesimc_u8( c ); \
+    c = vaesdq_u8( c, rk ); \
+    c = vaesimcq_u8( c ); \
 };
 
 //
@@ -131,7 +129,7 @@ SymCryptAesCreateDecryptionRoundKeyNeon(
 };
 #define AES_ENCRYPT_FINAL_1( c0, c1, c2, c3, c4, c5, c6, c7 ) \
 { \
-    c0 = aese_u8( c0, roundKey ); \
+    c0 = vaeseq_u8( c0, roundKey ); \
     roundKey = *keyPtr; \
     c0 = veorq_u8( c0, roundKey ); \
 };
@@ -161,10 +159,10 @@ SymCryptAesCreateDecryptionRoundKeyNeon(
 };
 #define AES_ENCRYPT_FINAL_4( c0, c1, c2, c3, c4, c5, c6, c7 ) \
 { \
-    c0 = aese_u8( c0, roundKey ); \
-    c1 = aese_u8( c1, roundKey ); \
-    c2 = aese_u8( c2, roundKey ); \
-    c3 = aese_u8( c3, roundKey ); \
+    c0 = vaeseq_u8( c0, roundKey ); \
+    c1 = vaeseq_u8( c1, roundKey ); \
+    c2 = vaeseq_u8( c2, roundKey ); \
+    c3 = vaeseq_u8( c3, roundKey ); \
     roundKey = *keyPtr; \
     c0 = veorq_u8( c0, roundKey ); \
     c1 = veorq_u8( c1, roundKey ); \
@@ -201,14 +199,14 @@ SymCryptAesCreateDecryptionRoundKeyNeon(
 };
 #define AES_ENCRYPT_FINAL_8( c0, c1, c2, c3, c4, c5, c6, c7 ) \
 { \
-    c0 = aese_u8( c0, roundKey ); \
-    c1 = aese_u8( c1, roundKey ); \
-    c2 = aese_u8( c2, roundKey ); \
-    c3 = aese_u8( c3, roundKey ); \
-    c4 = aese_u8( c4, roundKey ); \
-    c5 = aese_u8( c5, roundKey ); \
-    c6 = aese_u8( c6, roundKey ); \
-    c7 = aese_u8( c7, roundKey ); \
+    c0 = vaeseq_u8( c0, roundKey ); \
+    c1 = vaeseq_u8( c1, roundKey ); \
+    c2 = vaeseq_u8( c2, roundKey ); \
+    c3 = vaeseq_u8( c3, roundKey ); \
+    c4 = vaeseq_u8( c4, roundKey ); \
+    c5 = vaeseq_u8( c5, roundKey ); \
+    c6 = vaeseq_u8( c6, roundKey ); \
+    c7 = vaeseq_u8( c7, roundKey ); \
     roundKey = *keyPtr; \
     c0 = veorq_u8( c0, roundKey ); \
     c1 = veorq_u8( c1, roundKey ); \
@@ -242,7 +240,7 @@ SymCryptAesCreateDecryptionRoundKeyNeon(
 };
 #define AES_DECRYPT_FINAL_1( c0, c1, c2, c3, c4, c5, c6, c7 ) \
 { \
-    c0 = aesd_u8( c0, roundKey ); \
+    c0 = vaesdq_u8( c0, roundKey ); \
     roundKey = *keyPtr; \
     c0 = veorq_u8( c0, roundKey ); \
 };
@@ -272,10 +270,10 @@ SymCryptAesCreateDecryptionRoundKeyNeon(
 };
 #define AES_DECRYPT_FINAL_4( c0, c1, c2, c3, c4, c5, c6, c7 ) \
 { \
-    c0 = aesd_u8( c0, roundKey ); \
-    c1 = aesd_u8( c1, roundKey ); \
-    c2 = aesd_u8( c2, roundKey ); \
-    c3 = aesd_u8( c3, roundKey ); \
+    c0 = vaesdq_u8( c0, roundKey ); \
+    c1 = vaesdq_u8( c1, roundKey ); \
+    c2 = vaesdq_u8( c2, roundKey ); \
+    c3 = vaesdq_u8( c3, roundKey ); \
     roundKey = *keyPtr; \
     c0 = veorq_u8( c0, roundKey ); \
     c1 = veorq_u8( c1, roundKey ); \
@@ -312,14 +310,14 @@ SymCryptAesCreateDecryptionRoundKeyNeon(
 };
 #define AES_DECRYPT_FINAL_8( c0, c1, c2, c3, c4, c5, c6, c7 ) \
 { \
-    c0 = aesd_u8( c0, roundKey ); \
-    c1 = aesd_u8( c1, roundKey ); \
-    c2 = aesd_u8( c2, roundKey ); \
-    c3 = aesd_u8( c3, roundKey ); \
-    c4 = aesd_u8( c4, roundKey ); \
-    c5 = aesd_u8( c5, roundKey ); \
-    c6 = aesd_u8( c6, roundKey ); \
-    c7 = aesd_u8( c7, roundKey ); \
+    c0 = vaesdq_u8( c0, roundKey ); \
+    c1 = vaesdq_u8( c1, roundKey ); \
+    c2 = vaesdq_u8( c2, roundKey ); \
+    c3 = vaesdq_u8( c3, roundKey ); \
+    c4 = vaesdq_u8( c4, roundKey ); \
+    c5 = vaesdq_u8( c5, roundKey ); \
+    c6 = vaesdq_u8( c6, roundKey ); \
+    c7 = vaesdq_u8( c7, roundKey ); \
     roundKey = *keyPtr; \
     c0 = veorq_u8( c0, roundKey ); \
     c1 = veorq_u8( c1, roundKey ); \
@@ -728,16 +726,9 @@ SymCryptAesCtrMsb64Neon(
     const __n128 *  pSrc = (const __n128 *) pbSrc;
     __n128 *        pDst = (__n128 *) pbDst;
 
-    __prefetch( &pSrc[0] );
-    __prefetch( &pSrc[2] );
-    __prefetch( &pSrc[4] );
-    __prefetch( &pSrc[6] );
-
-
-    // See section 6.7.8 of the C standard for details on this initializer usage.
-    const __n128 chainIncrement1 = (__n128) {.n128_u64 = {0, 1}};   // use {0,1} to initialize the n128_u64 element of the __n128 union.
-    const __n128 chainIncrement2 = (__n128) {.n128_u64 = {0, 2}};
-    const __n128 chainIncrement8 = (__n128) {.n128_u64 = {0, 8}};
+    const __n128 chainIncrement1 = SYMCRYPT_SET_N128_U64( 0, 1 );
+    const __n128 chainIncrement2 = SYMCRYPT_SET_N128_U64( 0, 2 );
+    const __n128 chainIncrement8 = SYMCRYPT_SET_N128_U64( 0, 8 );
 
     __n128 ctr0, ctr1, ctr2, ctr3, ctr4, ctr5, ctr6, ctr7;
     __n128 c0, c1, c2, c3, c4, c5, c6, c7;
@@ -798,13 +789,13 @@ SymCryptAesCtrMsb64Neon(
             break;
         }
 
-        pDst[0] = veorq_u64( pSrc[0], c0 ); __prefetch( &pSrc[ 8] );
+        pDst[0] = veorq_u64( pSrc[0], c0 );
         pDst[1] = veorq_u64( pSrc[1], c1 );
-        pDst[2] = veorq_u64( pSrc[2], c2 ); __prefetch( &pSrc[10] );
+        pDst[2] = veorq_u64( pSrc[2], c2 );
         pDst[3] = veorq_u64( pSrc[3], c3 );
-        pDst[4] = veorq_u64( pSrc[4], c4 ); __prefetch( &pSrc[12] );
+        pDst[4] = veorq_u64( pSrc[4], c4 );
         pDst[5] = veorq_u64( pSrc[5], c5 );
-        pDst[6] = veorq_u64( pSrc[6], c6 ); __prefetch( &pSrc[14] );
+        pDst[6] = veorq_u64( pSrc[6], c6 );
         pDst[7] = veorq_u64( pSrc[7], c7 );
 
         pDst  += 8;
@@ -1018,9 +1009,9 @@ SymCryptXtsAesEncryptDataUnitNeon(
     __n128 c0, c1, c2, c3, c4, c5, c6, c7;
     const __n128 *  pSrc;
     __n128 *        pDst;
-    const __n128 vZero = neon_moviqb(0);
-    const __n128 vAlphaMask =     (__n128) {.n128_u8 = {0x87, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1}};
-    const __n64 vAlphaMultiplier = (__n64) {.n64_u8  = {0x86, 0, 0, 0, 0, 0, 0, 0}};
+    const __n128 vZero = vmovq_n_u8(0);
+    const __n128 vAlphaMask = SYMCRYPT_SET_N128_U8(0x87, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1);
+    const __n64 vAlphaMultiplier = SYMCRYPT_SET_N64_U64(0x0000000000000086);
 
     t0 = *(__n128 *)pbTweakBlock;
 
@@ -1146,9 +1137,9 @@ SymCryptXtsAesDecryptDataUnitNeon(
     __n128 c0, c1, c2, c3, c4, c5, c6, c7;
     const __n128 *  pSrc;
     __n128 *        pDst;
-    const __n128 vZero = neon_moviqb(0);
-    const __n128 vAlphaMask =     (__n128) {.n128_u8 = {0x87, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1}};
-    const __n64 vAlphaMultiplier = (__n64) {.n64_u8  = {0x86, 0, 0, 0, 0, 0, 0, 0}};
+    const __n128 vZero = vmovq_n_u8(0);
+    const __n128 vAlphaMask = SYMCRYPT_SET_N128_U8(0x87, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1);
+    const __n64 vAlphaMultiplier = SYMCRYPT_SET_N64_U64(0x0000000000000086);
 
     t0 = *(__n128 *)pbTweakBlock;
 
@@ -1452,10 +1443,9 @@ SymCryptAesGcmEncryptStitchedNeon(
     const __n128 *  pGhashSrc = (const __n128 *) pbDst;
     __n128 *        pDst = (__n128 *) pbDst;
 
-    // See section 6.7.8 of the C standard for details on this initializer usage.
-    const __n128 chainIncrement1 = (__n128) {.n128_u64 = {0, 1}};   // use {0,1} to initialize the n128_u64 element of the __n128 union.
-    const __n128 chainIncrement2 = (__n128) {.n128_u64 = {0, 2}};
-    const __n128 chainIncrement8 = (__n128) {.n128_u64 = {0, 8}};
+    const __n128 chainIncrement1 = SYMCRYPT_SET_N128_U64( 0, 1 );
+    const __n128 chainIncrement2 = SYMCRYPT_SET_N128_U64( 0, 2 );
+    const __n128 chainIncrement8 = SYMCRYPT_SET_N128_U64( 0, 8 );
 
     __n128 ctr0, ctr1, ctr2, ctr3, ctr4, ctr5, ctr6, ctr7;
     __n128 c0, c1, c2, c3, c4, c5, c6, c7;
@@ -1464,7 +1454,7 @@ SymCryptAesGcmEncryptStitchedNeon(
 
     __n128 state;
     __n128 a0, a1, a2;
-    const __n64 vMultiplicationConstant = (__n64) {.n64_u64 = {0xc200000000000000}};
+    const __n64 vMultiplicationConstant = SYMCRYPT_SET_N64_U64(0xc200000000000000);
     SIZE_T nBlocks = cbData / SYMCRYPT_GF128_BLOCK_SIZE;
     SIZE_T todo;
 
@@ -1701,17 +1691,16 @@ SymCryptAesGcmDecryptStitchedNeon(
     const __n128 *  pGhashSrc = (const __n128 *) pbSrc;
     __n128 *        pDst = (__n128 *) pbDst;
 
-    // See section 6.7.8 of the C standard for details on this initializer usage.
-    const __n128 chainIncrement1 = (__n128) {.n128_u64 = {0, 1}};   // use {0,1} to initialize the n128_u64 element of the __n128 union.
-    const __n128 chainIncrement2 = (__n128) {.n128_u64 = {0, 2}};
-    const __n128 chainIncrement8 = (__n128) {.n128_u64 = {0, 8}};
+    const __n128 chainIncrement1 = SYMCRYPT_SET_N128_U64( 0, 1 );
+    const __n128 chainIncrement2 = SYMCRYPT_SET_N128_U64( 0, 2 );
+    const __n128 chainIncrement8 = SYMCRYPT_SET_N128_U64( 0, 8 );
 
     __n128 ctr0, ctr1, ctr2, ctr3, ctr4, ctr5, ctr6, ctr7;
     __n128 c0, c1, c2, c3, c4, c5, c6, c7;
 
     __n128 state;
     __n128 a0, a1, a2;
-    const __n64 vMultiplicationConstant = (__n64) {.n64_u64 = {0xc200000000000000}};
+    const __n64 vMultiplicationConstant = SYMCRYPT_SET_N64_U64(0xc200000000000000);
     SIZE_T nBlocks = cbData / SYMCRYPT_GF128_BLOCK_SIZE;
     SIZE_T todo;
 

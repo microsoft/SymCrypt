@@ -373,7 +373,6 @@ C_ASSERT( (SYMCRYPT_ALIGN_VALUE & (SYMCRYPT_ALIGN_VALUE - 1 )) == 0 );
 #define SYMCRYPT_CPU_FEATURE_NEON_AES       0x02
 #define SYMCRYPT_CPU_FEATURE_NEON_PMULL     0x04
 #define SYMCRYPT_CPU_FEATURE_NEON_SHA256    0x08
-#define SYMCRYPT_CPU_FEATURE_NEON_SHA1      0x10
 
 #elif SYMCRYPT_CPU_X86 | SYMCRYPT_CPU_AMD64
 
@@ -1285,10 +1284,41 @@ typedef union _SYMCRYPT_GCM_SUPPORTED_BLOCKCIPHER_KEYS
 #define SYMCRYPT_GHASH_ALLOW_XMM    (SYMCRYPT_CPU_X86 | SYMCRYPT_CPU_AMD64)
 #define SYMCRYPT_GHASH_ALLOW_NEON   (SYMCRYPT_CPU_ARM | SYMCRYPT_CPU_ARM64)
 
+
 #if SYMCRYPT_CPU_ARM
 #include <arm_neon.h>
 #elif SYMCRYPT_CPU_ARM64
-#include <arm64_neon.h>
+
+    #if SYMCRYPT_MS_VC
+        #include <arm64_neon.h>
+
+        // See section 6.7.8 of the C standard for details on this initializer usage.
+        #define SYMCRYPT_SET_N128_U64(d0, d1) \
+            ((__n128) {.n128_u64 = {d0, d1}})
+        #define SYMCRYPT_SET_N64_U64(d0) \
+            ((__n64) {.n64_u64 = {d0}})
+        #define SYMCRYPT_SET_N128_U8(b0, b1, b2, b3, b4, b5, b6, b7, b8, b9, b10, b11, b12, b13, b14, b15) \
+            ((__n128) {.n128_u8 = {b0, b1, b2, b3, b4, b5, b6, b7, b8, b9, b10, b11, b12, b13, b14, b15}})
+    #elif SYMCRYPT_GNUC
+        #include <arm_neon.h>
+
+        #define __n128 uint8x16_t
+        #define __n64 uint8x8_t
+
+        #define SYMCRYPT_SET_N128_U64(d0, d1) \
+            ((__n128) ((uint64x2_t) {d0, d1}))
+        #define SYMCRYPT_SET_N64_U64(d0) \
+            ((__n64) ((uint64x1_t) {d0}))
+        #define SYMCRYPT_SET_N128_U8(b0, b1, b2, b3, b4, b5, b6, b7, b8, b9, b10, b11, b12, b13, b14, b15) \
+            ((__n128) ((uint8x16_t) {b0, b1, b2, b3, b4, b5, b6, b7, b8, b9, b10, b11, b12, b13, b14, b15}))
+
+        #define vmullq_p64( a, b )      ((__n128) vmull_p64(vgetq_lane_p64((poly64x2_t)a, 0), vgetq_lane_p64((poly64x2_t)b, 0)))
+        #define vmull_p64( a, b )       ((__n128) vmull_p64( (poly64_t)a, (poly64_t)b ))
+        #define vmull_high_p64( a, b )  ((__n128) vmull_high_p64( (poly64x2_t)a, (poly64x2_t)b ))
+
+        typedef uint64_t ULONG64;
+    #endif
+
 #endif
 
 //

@@ -646,8 +646,7 @@ SymCryptGHashExpandKeyPmull(
     __n128 H, Hx, H2, H2x;
     __n128 t0, t1, t2, t3, t4, t5;
     __n128 Hi_even, Hix_even, Hi_odd, Hix_odd;
-    const __n64 vMultiplicationConstant = (__n64) {.n64_u64 = {0xc200000000000000}};
-
+    const __n64 vMultiplicationConstant = SYMCRYPT_SET_N64_U64(0xc200000000000000);
     //
     // Our expanded key consists of a list of N=SYMCRYPT_GHASH_PMULL_HPOWERS
     // powers of H. The first entry is H^N, the next H^(N-1), then H^(N-2), ...
@@ -714,7 +713,7 @@ SymCryptGHashAppendDataPmull(
     __n128 data, datax;
     __n128 a0, a1, a2;
     __n128 Hi, Hix;
-    const __n64 vMultiplicationConstant = (__n64) {.n64_u64 = {0xc200000000000000}};
+    const __n64 vMultiplicationConstant = SYMCRYPT_SET_N64_U64(0xc200000000000000);
     SIZE_T i;
     SIZE_T nBlocks = cbData / SYMCRYPT_GF128_BLOCK_SIZE;
     SIZE_T todo;

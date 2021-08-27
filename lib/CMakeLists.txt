@@ -183,6 +183,10 @@ else()
     if(CMAKE_SYSTEM_PROCESSOR MATCHES "AMD64")
         list(APPEND SOURCES_COMMON linux/intrinsics.c)
     endif()
+
+    if(CMAKE_SYSTEM_PROCESSOR MATCHES "ARM64")
+        list(APPEND SOURCES_COMMON linux/asmstubs.c)
+    endif()
 endif()
 
 if(WIN32 AND NOT(SYMCRYPT_TARGET_ENV MATCHES "Generic"))

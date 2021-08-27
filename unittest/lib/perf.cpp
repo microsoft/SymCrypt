@@ -26,7 +26,7 @@ double g_tscFreq;
 // to scale an arbitrary wall clock into a cycle clock (detecting CPU frequency changes and retaking measurements
 // as appropriate)
 // We currently only do not use this for ARM and ARM64 on Windows, where we can guarantee to access a raw CPU cycle counter
-BOOLEAN g_perfClockScaling = TRUE;
+#define ENABLE_PERF_CLOCK_SCALING ((BOOLEAN) TRUE)
 #define FIXED_TIME_LOOP() fixedTimeLoopPerfFunction( NULL, NULL, NULL, 0 )
 
 #if (SYMCRYPT_MS_VC || SYMCRYPT_GNUC) && (SYMCRYPT_CPU_AMD64 || SYMCRYPT_CPU_X86)
@@ -54,8 +54,10 @@ BOOLEAN g_perfClockScaling = TRUE;
 
 #elif SYMCRYPT_MS_VC && (SYMCRYPT_CPU_ARM || SYMCRYPT_CPU_ARM64)
     // Windows, Arm or Arm64
-    g_perfClockScaling = FALSE;
+    #undef ENABLE_PERF_CLOCK_SCALING
+    #define ENABLE_PERF_CLOCK_SCALING ((BOOLEAN) FALSE)
     #undef FIXED_TIME_LOOP
+
     #define FIXED_TIME_LOOP() nullPerfFunction( NULL, NULL, NULL, 0 )
 
     #if SYMCRYPT_CPU_ARM
@@ -95,6 +97,8 @@ BOOLEAN g_perfClockScaling = TRUE;
     // We rely on performance scaling logic to convert the raw nanoseconds readings into cycles
     #define PERF_UNIT   "cycles"
 #endif
+
+BOOLEAN g_perfClockScaling = ENABLE_PERF_CLOCK_SCALING;
 
 #if SYMCRYPT_MS_VC
     #define ALLOCA( n ) _alloca( n )

@@ -8,14 +8,14 @@
 
 #include "precomp.h"
 
-#if SYMCRYPT_CPU_ARM64
+#if SYMCRYPT_CPU_ARM64 & SYMCRYPT_MS_VC
 
 #define ARM64_SYSREG(op0, op1, crn, crm, op2) \
         ( ((op0 & 1) << 14) | \
           ((op1 & 7) << 11) | \
           ((crn & 15) << 7) | \
           ((crm & 15) << 3) | \
-          ((op2 & 7) << 0) ) 
+          ((op2 & 7) << 0) )
 
 #define ARM64_ID_AA64ISAR0_EL1  ARM64_SYSREG(3,0, 0, 6,0)   // ISA Feature Register 0
 
@@ -23,10 +23,6 @@
 #define ISAR0_AES_NI                0
 #define ISAR0_AES_INSTRUCTIONS      1
 #define ISAR0_AES_PLUS_PMULL64      2
-
-#define ISAR0_SHA1                  2
-#define ISAR0_SHA1_NI               0
-#define ISAR0_SHA1_INSTRUCTIONS     1
 
 #define ISAR0_SHA2                  3
 #define ISAR0_SHA2_NI               0
@@ -49,8 +45,7 @@ SymCryptDetectCpuFeaturesFromRegistersNoTry()
         SYMCRYPT_CPU_FEATURE_NEON           |
         SYMCRYPT_CPU_FEATURE_NEON_AES       |
         SYMCRYPT_CPU_FEATURE_NEON_PMULL     |
-        SYMCRYPT_CPU_FEATURE_NEON_SHA256    |
-        SYMCRYPT_CPU_FEATURE_NEON_SHA1
+        SYMCRYPT_CPU_FEATURE_NEON_SHA256
         );
 
 
@@ -65,11 +60,6 @@ SymCryptDetectCpuFeaturesFromRegistersNoTry()
     }
 
     if( READ_ARM64_FEATURE(ARM64_ID_AA64ISAR0_EL1, ISAR0_SHA2) < ISAR0_SHA2_INSTRUCTIONS )
-    {
-        result |= SYMCRYPT_CPU_FEATURE_NEON_SHA1;
-    }
-
-    if( READ_ARM64_FEATURE(ARM64_ID_AA64ISAR0_EL1, ISAR0_SHA1) < ISAR0_SHA1_INSTRUCTIONS )
     {
         result |= SYMCRYPT_CPU_FEATURE_NEON_SHA256;
     }

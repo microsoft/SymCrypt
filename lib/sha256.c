@@ -1499,10 +1499,10 @@ SymCryptSha256AppendBlocks_instr(
 
     while( cbData >= 64 )
     {
-        W0 = neon_rev32q_8( vldq( &pbData[ 0] ) );
-        W1 = neon_rev32q_8( vldq( &pbData[16] ) );
-        W2 = neon_rev32q_8( vldq( &pbData[32] ) );
-        W3 = neon_rev32q_8( vldq( &pbData[48] ) );
+        W0 = vrev32q_u8( vldq( &pbData[ 0] ) );
+        W1 = vrev32q_u8( vldq( &pbData[16] ) );
+        W2 = vrev32q_u8( vldq( &pbData[32] ) );
+        W3 = vrev32q_u8( vldq( &pbData[48] ) );
 
         //
         // The sha256h/sha256h2 instructions overwrite one of the two state input registers.
@@ -1510,8 +1510,8 @@ SymCryptSha256AppendBlocks_instr(
         //
 #define ROUNDOP {\
     t = ABCD;\
-    ABCD = neon_sha256h ( ABCD, EFGH, Wr );\
-    EFGH = neon_sha256h2( EFGH, t, Wr );\
+    ABCD = vsha256hq_u32 ( ABCD, EFGH, Wr );\
+    EFGH = vsha256h2q_u32( EFGH, t, Wr );\
     }
 
         Wr = vaddq_u32( W0, K0 );
@@ -1523,65 +1523,65 @@ SymCryptSha256AppendBlocks_instr(
         Wr = vaddq_u32( W3, K3 );
         ROUNDOP;
 
-        t = neon_sha256su0( W0, W1 );
-        W0 = neon_sha256su1( t, W2, W3 );
+        t = vsha256su0q_u32( W0, W1 );
+        W0 = vsha256su1q_u32( t, W2, W3 );
         Wr = vaddq_u32( W0, K4 );
         ROUNDOP;
 
-        t = neon_sha256su0( W1, W2 );
-        W1 = neon_sha256su1( t, W3, W0 );
+        t = vsha256su0q_u32( W1, W2 );
+        W1 = vsha256su1q_u32( t, W3, W0 );
         Wr = vaddq_u32( W1, K5 );
         ROUNDOP;
 
-        t = neon_sha256su0( W2, W3 );
-        W2 = neon_sha256su1( t, W0, W1 );
+        t = vsha256su0q_u32( W2, W3 );
+        W2 = vsha256su1q_u32( t, W0, W1 );
         Wr = vaddq_u32( W2, K6 );
         ROUNDOP;
 
-        t = neon_sha256su0( W3, W0 );
-        W3 = neon_sha256su1( t, W1, W2 );
+        t = vsha256su0q_u32( W3, W0 );
+        W3 = vsha256su1q_u32( t, W1, W2 );
         Wr = vaddq_u32( W3, K7 );
         ROUNDOP;
 
 
-        t = neon_sha256su0( W0, W1 );
-        W0 = neon_sha256su1( t, W2, W3 );
+        t = vsha256su0q_u32( W0, W1 );
+        W0 = vsha256su1q_u32( t, W2, W3 );
         Wr = vaddq_u32( W0, K8 );
         ROUNDOP;
 
-        t = neon_sha256su0( W1, W2 );
-        W1 = neon_sha256su1( t, W3, W0 );
+        t = vsha256su0q_u32( W1, W2 );
+        W1 = vsha256su1q_u32( t, W3, W0 );
         Wr = vaddq_u32( W1, K9 );
         ROUNDOP;
 
-        t = neon_sha256su0( W2, W3 );
-        W2 = neon_sha256su1( t, W0, W1 );
+        t = vsha256su0q_u32( W2, W3 );
+        W2 = vsha256su1q_u32( t, W0, W1 );
         Wr = vaddq_u32( W2, K10 );
         ROUNDOP;
 
-        t = neon_sha256su0( W3, W0 );
-        W3 = neon_sha256su1( t, W1, W2 );
+        t = vsha256su0q_u32( W3, W0 );
+        W3 = vsha256su1q_u32( t, W1, W2 );
         Wr = vaddq_u32( W3, K11 );
         ROUNDOP;
 
 
-        t = neon_sha256su0( W0, W1 );
-        W0 = neon_sha256su1( t, W2, W3 );
+        t = vsha256su0q_u32( W0, W1 );
+        W0 = vsha256su1q_u32( t, W2, W3 );
         Wr = vaddq_u32( W0, K12 );
         ROUNDOP;
 
-        t = neon_sha256su0( W1, W2 );
-        W1 = neon_sha256su1( t, W3, W0 );
+        t = vsha256su0q_u32( W1, W2 );
+        W1 = vsha256su1q_u32( t, W3, W0 );
         Wr = vaddq_u32( W1, K13 );
         ROUNDOP;
 
-        t = neon_sha256su0( W2, W3 );
-        W2 = neon_sha256su1( t, W0, W1 );
+        t = vsha256su0q_u32( W2, W3 );
+        W2 = vsha256su1q_u32( t, W0, W1 );
         Wr = vaddq_u32( W2, K14 );
         ROUNDOP;
 
-        t = neon_sha256su0( W3, W0 );
-        W3 = neon_sha256su1( t, W1, W2 );
+        t = vsha256su0q_u32( W3, W0 );
+        W3 = vsha256su1q_u32( t, W1, W2 );
         Wr = vaddq_u32( W3, K15 );
         ROUNDOP;
 

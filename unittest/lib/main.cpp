@@ -674,7 +674,6 @@ const CPU_FEATURE_DATA g_cpuFeatureData[] =
     { "neon", SYMCRYPT_CPU_FEATURE_NEON },
     { "i_aes", SYMCRYPT_CPU_FEATURE_NEON_AES },
     { "i_pmull", SYMCRYPT_CPU_FEATURE_NEON_PMULL },
-    { "i_sha1", SYMCRYPT_CPU_FEATURE_NEON_SHA1 },
     { "i_sha256", SYMCRYPT_CPU_FEATURE_NEON_SHA256 },
 #elif SYMCRYPT_CPU_ARM
     { "neon", SYMCRYPT_CPU_FEATURE_NEON },
@@ -1548,9 +1547,9 @@ runFunctionalTests()
     testArithmetic();
 
     testScsTable();
-    
+
     testPaddingPkcs7();
-    
+
     testScsTools();
 
     testRsaSignAlgorithms();

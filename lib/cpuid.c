@@ -245,9 +245,6 @@ SymCryptDetectCpuFeaturesByCpuid( UINT32 flags )
 #define ISAR5_AES_AESE         1
 #define ISAR5_AES_PMULL        2
 
-#define ISAR5_SHA1             2
-#define ISAR5_SHA1_SHA1C       1
-
 #define ISAR5_SHA2             3
 #define ISAR5_SHA2_SHA256H     1
 
@@ -270,8 +267,7 @@ SymCryptDetectCpuFeaturesFromRegisters()
         SYMCRYPT_CPU_FEATURE_NEON           |
         SYMCRYPT_CPU_FEATURE_NEON_AES       |
         SYMCRYPT_CPU_FEATURE_NEON_PMULL     |
-        SYMCRYPT_CPU_FEATURE_NEON_SHA256    |
-        SYMCRYPT_CPU_FEATURE_NEON_SHA1
+        SYMCRYPT_CPU_FEATURE_NEON_SHA256
         );
 
     //
@@ -294,16 +290,11 @@ SymCryptDetectCpuFeaturesFromRegisters()
             result |= SYMCRYPT_CPU_FEATURE_NEON_SHA256;
         }
 
-        if( READ_ARM_FEATURE(CP15_ISAR5, ISAR5_SHA1) < ISAR5_SHA1_SHA1C )
-        {
-            result |= SYMCRYPT_CPU_FEATURE_NEON_SHA1;
-        }
-
     } except(EXCEPTION_EXECUTE_HANDLER) {
         //
         // Something went wrong reading the registers; disable all the crypto extensions leaving only the standard NEON registers available.
         //
-        restult |= SYMCRYPT_CPU_FEATURE_NEON_AES | SYMCRYPT_CPU_FEATURE_NEON_PMULL | SYMCRYPT_CPU_FEATURE_NEON_SHA256 | SYMCRYPT_CPU_FEATURE_NEON_SHA1l
+        result |= SYMCRYPT_CPU_FEATURE_NEON_AES | SYMCRYPT_CPU_FEATURE_NEON_PMULL | SYMCRYPT_CPU_FEATURE_NEON_SHA256;
     }
 #endif
     //
@@ -332,10 +323,6 @@ SymCryptDetectCpuFeaturesFromRegisters()
 #define ISAR0_AES_INSTRUCTIONS      1
 #define ISAR0_AES_PLUS_PMULL64      2
 
-#define ISAR0_SHA1                  2
-#define ISAR0_SHA1_NI               0
-#define ISAR0_SHA1_INSTRUCTIONS     1
-
 #define ISAR0_SHA2                  3
 #define ISAR0_SHA2_NI               0
 #define ISAR0_SHA2_INSTRUCTIONS     1
@@ -357,11 +344,10 @@ SymCryptDetectCpuFeaturesFromRegisters()
         SYMCRYPT_CPU_FEATURE_NEON           |
         SYMCRYPT_CPU_FEATURE_NEON_AES       |
         SYMCRYPT_CPU_FEATURE_NEON_PMULL     |
-        SYMCRYPT_CPU_FEATURE_NEON_SHA256    |
-        SYMCRYPT_CPU_FEATURE_NEON_SHA1
+        SYMCRYPT_CPU_FEATURE_NEON_SHA256
         );
 
-
+#if SYMCRYPT_MS_VC
     try {
 
         if( READ_ARM64_FEATURE(ARM64_ID_AA64ISAR0_EL1, ISAR0_AES) < ISAR0_AES_INSTRUCTIONS )
@@ -376,11 +362,6 @@ SymCryptDetectCpuFeaturesFromRegisters()
 
         if( READ_ARM64_FEATURE(ARM64_ID_AA64ISAR0_EL1, ISAR0_SHA2) < ISAR0_SHA2_INSTRUCTIONS )
         {
-            result |= SYMCRYPT_CPU_FEATURE_NEON_SHA1;
-        }
-
-        if( READ_ARM64_FEATURE(ARM64_ID_AA64ISAR0_EL1, ISAR0_SHA1) < ISAR0_SHA1_INSTRUCTIONS )
-        {
             result |= SYMCRYPT_CPU_FEATURE_NEON_SHA256;
         }
 
@@ -389,6 +370,7 @@ SymCryptDetectCpuFeaturesFromRegisters()
     } except(EXCEPTION_EXECUTE_HANDLER) {
         ; //NOTHING;
     }
+#endif
 
 }
 

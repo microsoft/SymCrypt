@@ -62,6 +62,8 @@ else()
     if(NOT SYMCRYPT_TARGET_ENV MATCHES "Generic")
         enable_language(ASM)
     endif()
+    # add_compile_options(-Wall)
+    # add_compile_options(-Wno-unknown-pragmas)
     add_compile_options(-Wno-deprecated-declarations -Wno-deprecated)
     add_compile_options(-g)
     add_compile_options(-Wno-multichar)
@@ -69,6 +71,10 @@ else()
     add_compile_options(-fno-stack-protector)
     add_compile_options(-fno-plt)
     add_compile_options(-fno-builtin-bcmp)
+
+    # Required for cross-compiling from AMD64 to ARM64
+    # Avoids error: cast from pointer to smaller type 'uintptr_t' when including <memory> from aarch64-linux-gnu
+    add_compile_options(-fms-extensions)
 
     # In Sanitize version, enable sanitizers
     if (CMAKE_BUILD_TYPE MATCHES Sanitize)
