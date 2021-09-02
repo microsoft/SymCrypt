@@ -45,6 +45,12 @@ parameters:
 - name: additionalCMakeArgs
   type: string
   default: ''
+- name: emulator
+  type: string
+  default: native
+  values:
+  - native
+  - qemu-aarch64
 
 steps:
   - checkout: self  # self represents the repo where the initial Pipelines YAML file was found
@@ -57,6 +63,12 @@ steps:
         python -m pip install --upgrade pip setuptools wheel
         pip install -r $(Build.SourcesDirectory)/scripts/requirements.txt
       displayName: 'Install Python requirements'
+  - ${{ if eq(parameters.emulator, 'qemu-aarch64') }}:
+    - script: |
+        sudo apt-get update
+        sudo apt-get install qemu-user binutils-aarch64-linux-gnu
+        sudo apt-get install gcc-aarch64-linux-gnu g++-aarch64-linux-gnu
+      displayName: 'Install arm64 cross-compilation and emulation tools'
   # Specify no toolchain file for generic build
   - ${{ if eq(parameters.env, 'Generic') }}:
     - task: CMake@1
@@ -92,12 +104,14 @@ steps:
           .\symcryptunittest.exe
         displayName: 'Execute unit tests'
         name: '${{parameters.env}}UnitTest_${{parameters.buildType}}'
+    # Execute Generic unit tests in CI and in PRs to publish
     - ${{ if eq(parameters.env, 'Generic') }}:
       - script: |
           cd bin\exe\%PROCESSOR_ARCHITECTURE%\${{parameters.env}}\${{parameters.buildType}}
           .\symcryptunittest.exe
         displayName: 'Execute unit tests'
         name: '${{parameters.env}}UnitTest_${{parameters.buildType}}'
+        condition: or(eq(variables['System.PullRequest.TargetBranch'], 'refs/heads/publish'), in(variables['Build.Reason'], 'IndividualCI', 'BatchedCI'))
   - ${{ if eq(parameters.hostos, 'Linux') }}:
     - task: CMake@1
       inputs:
@@ -107,23 +121,31 @@ steps:
     - script: |
         ulimit -c unlimited
       displayName: 'Enable core dumps'
-    # Execute module and unit test using the inline script
     - ${{ if ne(parameters.env, 'Generic') }}:
-      - script: |
-          cd bin/exe/${{parameters.arch}}/${{parameters.env}}
-          ulimit -c unlimited
-          ./symcryptunittest
-        displayName: 'Execute unit tests'
-        name: '${{parameters.env}}UnitTest_${{parameters.buildType}}'
-      - ${{ if ne(parameters.buildType, 'Sanitize') }}:
-        # Only run module test if rdseed is present on the CPU
+      # Execute module and unit test using the inline script
+      - ${{ if eq(parameters.emulator, 'native') }}:
         - script: |
             cd bin/exe/${{parameters.arch}}/${{parameters.env}}
-            if lshw -c cpu | grep -q rdseed
-            then ./symcryptmoduletest
-            fi
-          displayName: 'Execute module test'
-    # Execute unit test using the inline script
+            ./symcryptunittest
+          displayName: 'Execute unit tests'
+          name: '${{parameters.env}}UnitTest_${{parameters.buildType}}'
+        - ${{ if ne(parameters.buildType, 'Sanitize') }}:
+          # Only run module test if rdseed is present on the CPU
+          - script: |
+              cd bin/exe/${{parameters.arch}}/${{parameters.env}}
+              if lshw -c cpu | grep -q rdseed
+              then ./symcryptmoduletest
+              fi
+            displayName: 'Execute module test'
+      # Execute unit test using the inline script (Arm64 module not yet supported)
+      # Currently skip slower algorithms (DH/RSA), as otherwise we time out the pipeline
+      - ${{ if eq(parameters.emulator, 'qemu-aarch64') }}:
+        - script: |
+            cd bin/exe/${{parameters.arch}}/${{parameters.env}}
+            qemu-aarch64 -L /usr/aarch64-linux-gnu/ ./symcryptunittest noperftests +symcrypt -dh -dsa -rsa
+          displayName: 'Execute unit tests'
+          name: '${{parameters.env}}UnitTest_${{parameters.buildType}}_QEMU_AARCH64'
+    # Execute Generic unit tests in CI and in PRs to publish
     - ${{ if eq(parameters.env, 'Generic') }}:
       - script: |
           archName=`uname -m`
@@ -131,6 +153,7 @@ steps:
           ./symcryptunittest
         displayName: 'Execute unit tests'
         name: '${{parameters.env}}UnitTest_${{parameters.buildType}}'
+        condition: or(eq(variables['System.PullRequest.TargetBranch'], 'refs/heads/publish'), in(variables['Build.Reason'], 'IndividualCI', 'BatchedCI'))
   # Publish artifacts so they're available in the pipeline results
   - publish: $(System.DefaultWorkingDirectory)/bin
     artifact: 'drop-${{parameters.hostos}}-${{parameters.env}}-${{parameters.arch}}-${{parameters.cc}}-${{parameters.buildType}}-${{parameters.additionalCMakeArgs}}'

@@ -573,6 +573,9 @@ double measureDataPerfGivenStack(
         {
             durations[i] *= measurementScaleFactor;
         }
+
+        CHECK3( !isnan(measurementScaleFactor), "NaN result in measureDataPerfGivenStack measurementScaleFactor: %f", measurementScaleFactor );
+        CHECK4( !isnan(durations[i]), "NaN result in measureDataPerfGivenStack durations[%d]: %f", i, durations[i] );
         //average[i+1] = fixedAverage; // Helpful when debugging
 
         ++i;

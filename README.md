@@ -32,9 +32,9 @@ The integrity check additionally requires pip and pyelftools: `pip3 install -r .
     2. In step 4 below, add the additional cmake argument `-DSYMCRYPT_INTERNAL_BUILD=1`
 3. `mkdir bin; cd bin`
 4. Configure CMake compilation:
-    * For 32-bit Windows targets: `cmake .. -DCMAKE_TOOLCHAIN_FILE=../cmake-toolchain/WindowsUserMode-X86.cmake -A Win32`
-    * For 64-bit Windows targets: `cmake .. -DCMAKE_TOOLCHAIN_FILE=../cmake-toolchain/WindowsUserMode-AMD64.cmake`
-    * For 64-bit Linux targets: `cmake .. -DCMAKE_TOOLCHAIN_FILE=../cmake-toolchain/LinuxUserMode-AMD64.cmake`
+    * For 32-bit Windows targets: `cmake .. -DCMAKE_TOOLCHAIN_FILE="../cmake-toolchain/WindowsUserMode-X86.cmake" -A Win32`
+    * For 64-bit Windows targets: `cmake .. -DCMAKE_TOOLCHAIN_FILE="../cmake-toolchain/WindowsUserMode-AMD64.cmake"`
+    * For 64-bit Linux targets: `cmake .. -DCMAKE_TOOLCHAIN_FILE="../cmake-toolchain/LinuxUserMode-AMD64.cmake"`
     * For no CPU optimizations: `cmake ..`
     * Optionally, for a release build, specify `-DCMAKE_BUILD_TYPE=Release`
 5. `cmake --build .`

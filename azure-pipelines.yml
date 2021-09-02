@@ -24,11 +24,16 @@ pr:
 # 8. Linux AMD64 with CPU optimizations using clang in Debug mode
 # 9. Linux AMD64 with CPU optimizations using clang in Sanitize mode
 # 10. Linux AMD64 with CPU optimizations using clang in Release mode
-# The following jobs run only on CI and PRs to publish
-# 11. Windows 64b with no CPU optimizations in Release mode
-# 12. Windows 32b with no CPU optimizations in Release mode
-# 13. Linux with no CPU optimizations using GCC in Release mode
-# 14. Linux with no CPU optimizations using clang in Release mode
+
+# The following 2 jobs assume running on an AMD64 host, install cross compilation tools for Arm64 and runs a subset of units tests in QEMU
+# 11. Linux Arm64 with CPU optimizations using clang in Debug mode
+# 12. Linux Arm64 with CPU optimizations using clang in Release mode
+
+# The following 4 jobs only run the unit tests on CI and PRs to publish (they are always built)
+# 13. Windows 64b with no CPU optimizations in Release mode
+# 14. Windows 32b with no CPU optimizations in Release mode
+# 15. Linux with no CPU optimizations using GCC in Release mode
+# 16. Linux with no CPU optimizations using clang in Release mode
 
 jobs:
 - job: Windows_AMD64_Debug
@@ -171,6 +176,35 @@ jobs:
       buildType: Release
       additionalCMakeArgs:
 
+- job: Linux_QEMU_ARM64_clang_Debug
+  pool:
+    vmImage: 'ubuntu-20.04'
+  steps:
+  - template: azure-build-template.yml
+    parameters:
+      hostos: Linux
+      env: LinuxUserMode
+      arch: ARM64
+      cc: clang
+      cxx: clang++
+      buildType: Debug
+      additionalCMakeArgs:
+      emulator: qemu-aarch64
+
+- job: Linux_QEMU_ARM64_clang_Release
+  pool:
+    vmImage: 'ubuntu-20.04'
+  steps:
+  - template: azure-build-template.yml
+    parameters:
+      hostos: Linux
+      env: LinuxUserMode
+      arch: ARM64
+      cc: clang
+      cxx: clang++
+      buildType: Release
+      additionalCMakeArgs:
+      emulator: qemu-aarch64
 
 - job: Generic_Windows_Win64_Release
   pool:
@@ -185,7 +219,6 @@ jobs:
       cxx: cl
       buildType: Release
       additionalCMakeArgs:
-  condition: or(eq(variables['System.PullRequest.TargetBranch'], 'refs/heads/publish'), in(variables['Build.Reason'], 'IndividualCI', 'BatchedCI'))
 
 - job: Generic_Windows_Win32_Release
   pool:
@@ -200,7 +233,6 @@ jobs:
       cxx: cl
       buildType: Release
       additionalCMakeArgs: -A Win32
-  condition: or(eq(variables['System.PullRequest.TargetBranch'], 'refs/heads/publish'), in(variables['Build.Reason'], 'IndividualCI', 'BatchedCI'))
 
 - job: Generic_Linux_gcc_Release
   pool:
@@ -215,7 +247,6 @@ jobs:
       cxx: g++
       buildType: Release
       additionalCMakeArgs:
-  condition: or(eq(variables['System.PullRequest.TargetBranch'], 'refs/heads/publish'), in(variables['Build.Reason'], 'IndividualCI', 'BatchedCI'))
 
 - job: Generic_Linux_clang_Release
   pool:
@@ -230,4 +261,3 @@ jobs:
       cxx: clang++
       buildType: Release
       additionalCMakeArgs:
-  condition: or(eq(variables['System.PullRequest.TargetBranch'], 'refs/heads/publish'), in(variables['Build.Reason'], 'IndividualCI', 'BatchedCI'))

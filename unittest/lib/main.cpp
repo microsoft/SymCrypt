@@ -260,6 +260,12 @@ BOOL g_showPerfRangeInfo = FALSE;
 BOOL g_verbose = FALSE;
 
 //
+// Option to skip running performance tests
+// Helpful when running in an emulated environment where we just want to test the functionality
+//
+BOOL g_noPerfTests = FALSE;
+
+//
 // Profiling options to run an algorithm in a tight loop
 //
 BOOL g_profile = FALSE;
@@ -429,6 +435,7 @@ updateNameSet( _In_z_ PCSTR * names, _Inout_ StringSet * set, CHAR op, _In_ PSTR
                     }
                 }
                 set->erase( names[i] );
+                nameMatch = TRUE;
             }
         }
     }
@@ -451,7 +458,8 @@ isAlgorithmPresent( String algName, BOOL isPrefix )
         } else {
             if( (*i)->m_algorithmName == algName )
             {
-                return TRUE;            }
+                return TRUE;
+            }
         }
     }
     return FALSE;
@@ -591,6 +599,7 @@ usage()
             "                           a single .csv for postprocessing."
             "  kernel            Run the kernel-mode tests \n"
             "  verbose           Print detailed information for some algorithms\n"
+            "  noperftests       Skip running the performance tests - only run functional tests\n"
             "  profile:xxx [key=yyy]    Run one or more algorithms in a tight loop, xxx times for\n"
             "                           each key/datasize combination. The algorithms to run are specified\n"
             "                           by the +/- options. The optional key parameter can specify\n"
@@ -744,6 +753,12 @@ processSingleOption( _In_ PSTR option )
         if( STRICMP( &option[0], "verbose" ) == 0 )
         {
             g_verbose = TRUE;
+            optionHandled = TRUE;
+        }
+
+        if( STRICMP( &option[0], "noperftests" ) == 0 )
+        {
+            g_noPerfTests = TRUE;
             optionHandled = TRUE;
         }
 
@@ -1598,7 +1613,7 @@ runFunctionalTests()
 VOID
 runPerfTests()
 {
-    if( g_runKernelmodeTest )
+    if( g_runKernelmodeTest || g_noPerfTests )
     {
         return;
     }
