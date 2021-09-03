@@ -530,7 +530,8 @@ double measureDataPerfGivenStack(
     time1 = GET_PERF_CLOCK();
     double fixedBefore = (double) (time1 - time0);
 
-    while( i < MEASUREMENTS_PER_RESULT && ( (GET_PERF_CLOCK() - loopStart) < g_largeMeasurementClockTime ) )
+    // Try to get MEASUREMENTS_PER_RESULT measurements, but limit to g_largeMeasurementClockTime cycles if at least one measurement has been made
+    while( i < MEASUREMENTS_PER_RESULT && (i < 1 || (GET_PERF_CLOCK() - loopStart) < g_largeMeasurementClockTime) )
     {
         // Measure fixed time loop before and after loop of function of interest
         // We use this both to ensure that the timing has not changed dramatically during the loop of the function of interest
@@ -574,8 +575,6 @@ double measureDataPerfGivenStack(
             durations[i] *= measurementScaleFactor;
         }
 
-        CHECK3( !isnan(measurementScaleFactor), "NaN result in measureDataPerfGivenStack measurementScaleFactor: %f", measurementScaleFactor );
-        CHECK4( !isnan(durations[i]), "NaN result in measureDataPerfGivenStack durations[%d]: %f", i, durations[i] );
         //average[i+1] = fixedAverage; // Helpful when debugging
 
         ++i;
@@ -611,6 +610,7 @@ double measureDataPerfGivenStack(
         (*cleanFn)( buf1, buf2, buf3 );
     }
 
+    CHECK5( !isnan(res), "NaN result for measureDataPerfGivenStack res: durations[%d/3]: %f runs: %d", i, (double) durations[i/3], runs );
     return res;
 }
 
@@ -832,8 +832,8 @@ double measurePerfOneSize( SIZE_T keySize, SIZE_T dataSize, PerfKeyFn keyFn, Per
 
     ULONGLONG starttime = GET_PERF_CLOCK();
 
-    // Limit total time to MAX_RESULTS_PER_DATAPOINT or 1 billion clock cycles.
-    while( i < MAX_RESULTS_PER_DATAPOINT && (i < MIN_RESULTS_PER_DATAPOINT || (GET_PERF_CLOCK() - starttime) < g_largeMeasurementClockTime)  )
+    // Limit total time to MAX_RESULTS_PER_DATAPOINT or g_largeMeasurementClockTime cycles.
+    while( i < MAX_RESULTS_PER_DATAPOINT && (i < MIN_RESULTS_PER_DATAPOINT || (GET_PERF_CLOCK() - starttime) < g_largeMeasurementClockTime) )
     {
         results[i] = measurePerfMoveStack( keySize, dataSize, keyFn, prepFn, dataFn, cleanFn, measureKey, &nRuns );
         i++;
@@ -857,7 +857,8 @@ double measurePerfOneSize( SIZE_T keySize, SIZE_T dataSize, PerfKeyFn keyFn, Per
     //
     // Return the one-third point to compensate for expected slowdowns.
     //
-    return results[ i / 3];
+    CHECK4( !isnan(results[i / 3]), "NaN result in measurePerfOneSize results[%d / 3]: %f", i, results[i / 3] );
+    return results[i / 3];
 }
 
 double measureWipePerfOneSize( SIZE_T dataSize, SIZE_T dataOffset, WIPE_FN wipeFn )
