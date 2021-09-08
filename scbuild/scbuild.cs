@@ -18,7 +18,7 @@ static public class Output
     public static int OutputIndent = 0;
 
     public static ArrayList AllOutput = new ArrayList();
-    
+
     public static void Print( params object[] args)
     {
         string s;
@@ -38,7 +38,7 @@ static public class Output
         }
         System.Console.Write( s );
         AllOutput.Add( s );
-        
+
     }
 
     public static void OpenLogFile( string filename )
@@ -56,7 +56,7 @@ static public class Output
     }
 
     static StreamWriter outputFile = null;
-    
+
 }
 
 
@@ -69,7 +69,7 @@ public class FatalException: Exception
 class ScBuild
 {
     string LogDateTimeFormat = "yyyy-MM-dd HH:mm:ss.ff";
-    
+
     Random m_random;
 
     public IDictionary m_environment;
@@ -87,9 +87,9 @@ class ScBuild
         object [] t = new object[ args.Length - 1 ];
         Array.Copy( args, 1, t, 0, args.Length - 1 );
         string s = String.Format( (string)args[0], t );
-        
+
         Print( "*\n\n" );
-    
+
         throw new FatalException( "\n" + s );
     }
 
@@ -102,7 +102,7 @@ class ScBuild
         Print( "> " + ExeName + " " + Arguments + "\n" );
         RunStdout.Clear();
         RunStderr.Clear();
-        
+
         System.Diagnostics.Process p = new System.Diagnostics.Process();
 
         p.StartInfo.FileName = ExeName;
@@ -123,7 +123,7 @@ class ScBuild
         p.WaitForExit();
 
         //
-        // Should improve this: strip trailing empty lines from both of the outputs 
+        // Should improve this: strip trailing empty lines from both of the outputs
         //
 
         string [] s = new string[RunStdout.Count + RunStderr.Count ];
@@ -139,7 +139,7 @@ class ScBuild
         }
 
         return s;
-        
+
     }
 
     public static void StdOutDataHandler( object sendingProcess, DataReceivedEventArgs OutLine )
@@ -243,13 +243,13 @@ class ScBuild
             {
                 continue;
             }
-            
+
             Match match = Regex.Match( line, @"\s+\d+\s+(files? compiled|librar(y|ies) built|files? binplaced|executables? built)(?<error>.*)$" );
             if( match.Success )
             {
                 nResultLines++;
                 //Print( "***[{0}]\n", line );
-                
+
                 string possibleError = match.Groups[ "error" ].Value;
                 //Print( "***+{0}+\n", possibleError );
                 if( possibleError.Length > 0 )
@@ -289,9 +289,9 @@ class ScBuild
             subDirNamePart = subDir + @"_";
             subDirPath = subDir + @"\";
         }
-        
+
         string chkfre = arch.Substring( arch.Length - 3, 3 );
-        
+
         string LogFileName = subDirPath + "build" + chkfre + ".log";
         string DestFileName = @"release\buildlogs\" + subDirNamePart + "build" + arch + ".log";
 
@@ -300,13 +300,13 @@ class ScBuild
 
 
 
-    
+
     public void CheckWindowsRazzleEnvironment()
     {
         Print( "Checking that we run in a Windows Razzle environment... " );
 
         string [] requiredVariables = new string[] {
-                "PUBLIC_ROOT", 
+                "PUBLIC_ROOT",
                 "SDXROOT",
                 "_NTROOT",
                 "_NTDRIVE",
@@ -318,9 +318,9 @@ class ScBuild
                 Fatal( "Could not find environment variable '{0}' which is expected in a Windows enlistment", s );
             }
         }
-        
+
         Print( "Ok\n" );
-        
+
     }
 
     public void CheckFilePresent( string filename )
@@ -459,7 +459,7 @@ class ScBuild
             if(
                 !Line.Contains( @"symcrypt\release" ) &&
                 FileName != "buildchk.log" &&
-                FileName != "buildchk.err" && 
+                FileName != "buildchk.err" &&
                 FileName != "buildfre.log" &&
                 FileName != "buildfre.err" &&
                 FileName != "buildchk.trc" &&
@@ -474,7 +474,7 @@ class ScBuild
                 FileName != "buildfre.evt" &&
                 FileName != "buildchk.metadata" &&
                 FileName != "buildfre.metadata" &&
-                FileName != "scbuild.log" 
+                FileName != "scbuild.log"
                 )
             {
                 if( m_option_ignore_writable )
@@ -514,7 +514,7 @@ class ScBuild
             {
                 MatchCollection matches = Regex.Matches( line, @"\d+" );
                 if( matches.Count != 1 )
-                { 
+                {
                     Fatal( "Did not find a single integer in a Release version line '{0}'", line );
                 }
                 Match m = matches[0];
@@ -540,7 +540,7 @@ class ScBuild
             {
                 MatchCollection matches = Regex.Matches( line, @"\d+" );
                 if( matches.Count != 1 )
-                { 
+                {
                     Fatal( "Did not find a single integer in a minor version line '{0}'", line );
                 }
                 Match m = matches[0];
@@ -616,7 +616,7 @@ class ScBuild
         string testFileName3 = object_root + @"\symcrypt\unittest\exe_legacy\" + objDirName(arch) + "symcryptunittest_legacy";
         CopyFile(testFileName3 + ".exe", @"release\lib\" + arch + @"\symcryptunittest_legacy.exe");
         CopyFile(testFileName3 + ".pdb", @"release\lib\" + arch + @"\symcryptunittest_legacy.pdb");
-    
+
     }
 
     public string objDirName( string arch )
@@ -634,7 +634,7 @@ class ScBuild
         string object_root = "" + m_environment["OSBuildRoot"] + @"\obj\" + arch;
         string cpu = arch.Substring( 0, arch.Length - 3 );
         string cpudir = (cpu != "x86") ? cpu : "i386";
-        
+
         if( arch.StartsWith( "x86" ) || arch.StartsWith( "amd64" ) )
         {
             string command = @"release\lib\" + arch + @"\" + @"symcryptunittest";
@@ -673,17 +673,17 @@ class ScBuild
         {
             Fatal( "One or more build errors occurred" );
         }
-        
+
         foreach( string flavor in flavors )
         {
             RunSymCryptTest( flavor );
         }
     }
-    
+
 
     bool m_option_release = false;
     bool m_option_test = false;
-    
+
     string [] m_option_flavors = null;
     static string [] m_all_flavors = new string [] {
                                                         "amd64chk", "amd64fre",
@@ -705,7 +705,7 @@ class ScBuild
         for( int i=0; i<args.Length; i++ )
         {
             string opt = args[i].ToLower();
-            
+
             m_argumentsString = m_argumentsString + " " + opt;
 
             if (opt == "-r")
@@ -812,7 +812,7 @@ class ScBuild
         {
             return;
         }
-        
+
         if( m_option_ignore_sync )
         {
             Print( "Label creation disabled while any -i option is used\n" );
@@ -821,7 +821,7 @@ class ScBuild
 
         string [] res;
         res = RunCmd( "", "git tag -a -m \"Creation of "+ tagName + ".cab\" " + tagName );
-    
+
         if( res.Length != 0 )
         {
             Fatal("Unexpected output from tag command");
@@ -856,7 +856,7 @@ class ScBuild
         res = res.Replace( ":", "" );       // colons are not valid in file names
         return res;
     }
-    
+
 
     public void CreateCab()
     {
@@ -864,6 +864,7 @@ class ScBuild
 
         string[] filesToCopy = new string[] {
             @"symcrypt.h",
+            @"symcrypt_debug.inc",
             @"symcrypt_low_level.h",
             @"symcrypt_internal.h",
             @"symcrypt_version.inc",
@@ -873,11 +874,11 @@ class ScBuild
         {
             CopyFile(@"inc\" + file, @"release\inc\" + file);
         }
-  
+
         Print( "Closing log file and creating CAB...\n" );
 
         Print( "Current time = {0}\n", DateTime.Now.ToString( LogDateTimeFormat ) );
-        
+
         Output.CloseLogFile();
         MoveFile( "scbuild.log", @"release\scbuild.log" );
 
@@ -887,7 +888,7 @@ class ScBuild
         }
 
         string fileNameWarning = "";
-        if( m_option_flavors != null || 
+        if( m_option_flavors != null ||
             m_option_ignore_sync ||
             m_option_inc_version ||
             !m_option_release
@@ -895,7 +896,7 @@ class ScBuild
         {
             fileNameWarning = "_not_for_release";
         }
-        
+
         string releaseName = "SymCrypt" + fileNameWarning + "_v" + m_apiVersion + "." + m_minorVersion + "_" + m_currentBranch + "_" + GetCommitInfo();
         string cabFileName =  releaseName + ".cab";
 
@@ -957,7 +958,7 @@ class ScBuild
             Print( " {0}", arg );
         }
         Print( "\n" );
-        
+
         Print( "SymCrypt build tool version 1.0\n");
 
         Print( "Start time = {0}\n", DateTime.Now.ToString( LogDateTimeFormat ) );
@@ -978,7 +979,7 @@ class ScBuild
 
         // In Git, all files are writable, so this check is not useful.
         // CheckWriteableFiles();
-        
+
         CheckForBannedSymbols();
 
         UpdateVersionNumber();      // retrieve & update if needed
@@ -991,20 +992,20 @@ class ScBuild
         }
 
         CleanReleaseDirectory();
-        
+
         // CreateGitTag();
 
         BuildAndUnitTest();
 
         CreateCab();
-        
+
     }
-    
+
     public static int Main( string[] args )
     {
         int res = 0;
 
-        try 
+        try
         {
             new ScBuild( args );
         } catch( Exception e )

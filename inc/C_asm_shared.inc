@@ -10,7 +10,7 @@
 
 */
 
-#include "C_asm_shared_DBG.inc"
+#include "symcrypt_debug.inc"
 
 #if defined(SYMCRYPT_MASM)
 #define SET(_variable, _value) _variable EQU _value
