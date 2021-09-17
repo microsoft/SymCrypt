@@ -1161,7 +1161,7 @@ UINT64
 SYMCRYPT_CALL
 SymCryptUint64Gcd( UINT64 a, UINT64 b, UINT32 flags );
 //
-// Return GCD of two 64-bit positive integers.
+// Return GCD of two 64-bit integers.
 //  a, b : inputs to the GCD
 //  flags:
 //      - SYMCRYPT_FLAG_DATA_PUBLIC signals that a and b are public values (w.r.t. side-channel safety)
@@ -1169,12 +1169,9 @@ SymCryptUint64Gcd( UINT64 a, UINT64 b, UINT32 flags );
 //      - SYMCRYPT_FLAG_GCD_INPUTS_NOT_BOTH_EVEN: signals that at least one of (a,b) is odd. This
 //          simplifies & speeds up the GCD computation.
 //
-// Requirements:
-//  - a > 0
-//  - b > 0
-//
 // Note:
 // The current implementation requires that the INPUTS_NOT_BOTH_EVEN flag is set (and at least one input be odd).
+// Also note that GCD(x, 0) == GCD(0, x) == x
 //
 
 

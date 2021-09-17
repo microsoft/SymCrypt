@@ -260,9 +260,13 @@ SymCryptIntGenerateRandomPrime(
         {
             SymCryptIntDivMod( piDst, pdPubExp[e], NULL, piTmp, pbScratch, cbScratch );
 
-            // Check whether P-1 is coprime to pubExp. We have (P mod pubExp) in piTmp.
-            // The case where piTmp == 0 is not relevant as then P is not a prime and the further tests will catch that, so
-            // we don't care whether this tests fails or succeeds
+            // Check that e has a modular inverse mod P-1
+            // If e and P-1 are coprime, or GCD( P-1, e ) == 1, then e^-1 exists
+            // We have (P mod e) in piTmp.
+            // If piTmp == 0 then P is divisible by e, and will fail primality test - we don't care about the result of the GCD
+            // Otherwise, GCD( (P mod e)-1, e ) == GCD( P-1 mod e, e ) == GCD( P-1, e )
+            //
+            // Note that if P-1 is a multiple of e then (P mod e)-1 == 0, and GCD( 0, e ) == e
             if( SymCryptUint64Gcd( pu64PubExp[e], SymCryptIntGetValueLsbits64( piTmp ) - 1, SYMCRYPT_FLAG_GCD_INPUTS_NOT_BOTH_EVEN ) != 1 )
             {
                 // We can't continue the big loop from here :-(
