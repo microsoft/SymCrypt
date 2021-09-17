@@ -130,14 +130,15 @@ steps:
           displayName: 'Execute unit tests'
           name: '${{parameters.env}}UnitTest_${{parameters.buildType}}'
         - ${{ if ne(parameters.buildType, 'Sanitize') }}:
-          # Only run module test if rdseed is present on the CPU
+          # Only run oe module test if rdseed is present on the CPU
           - script: |
               cd bin/exe/${{parameters.arch}}/${{parameters.env}}
+              ./symcryptmoduletest_linux
               if lshw -c cpu | grep -q rdseed
-              then ./symcryptmoduletest
+              then ./symcryptmoduletest_oe
               fi
-            displayName: 'Execute module test'
-      # Execute unit test using the inline script (Arm64 module not yet supported)
+            displayName: 'Execute module tests'
+      # Execute module and unit test using the inline script
       # Currently skip slower algorithms (DH/RSA), as otherwise we time out the pipeline
       - ${{ if eq(parameters.emulator, 'qemu-aarch64') }}:
         - script: |
@@ -145,6 +146,10 @@ steps:
             qemu-aarch64 -L /usr/aarch64-linux-gnu/ ./symcryptunittest noperftests +symcrypt -dh -dsa -rsa
           displayName: 'Execute unit tests'
           name: '${{parameters.env}}UnitTest_${{parameters.buildType}}_QEMU_AARCH64'
+        - script: |
+            cd bin/exe/${{parameters.arch}}/${{parameters.env}}
+            qemu-aarch64 -L /usr/aarch64-linux-gnu/ ./symcryptmoduletest_linux
+          displayName: 'Execute module tests'
     # Execute Generic unit tests in CI and in PRs to publish
     - ${{ if eq(parameters.env, 'Generic') }}:
       - script: |
@@ -154,6 +159,12 @@ steps:
         displayName: 'Execute unit tests'
         name: '${{parameters.env}}UnitTest_${{parameters.buildType}}'
         condition: or(eq(variables['System.PullRequest.TargetBranch'], 'refs/heads/publish'), in(variables['Build.Reason'], 'IndividualCI', 'BatchedCI'))
+      - script: |
+          archName=`uname -m`
+          cd bin/exe/${archName}/${{parameters.env}}
+          ./symcryptmoduletest_linux
+        displayName: 'Execute generic linux module tests'
+
   # Publish artifacts so they're available in the pipeline results
   - publish: $(System.DefaultWorkingDirectory)/bin
     artifact: 'drop-${{parameters.hostos}}-${{parameters.env}}-${{parameters.arch}}-${{parameters.cc}}-${{parameters.buildType}}-${{parameters.additionalCMakeArgs}}'

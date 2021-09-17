@@ -93,7 +93,7 @@ if(WIN32)
 else()
   add_subdirectory(exe_linux)
 
-  if(NOT SYMCRYPT_TARGET_ENV MATCHES "Generic" AND NOT CMAKE_BUILD_TYPE MATCHES Sanitize)
+  if(NOT CMAKE_BUILD_TYPE MATCHES Sanitize)
     add_subdirectory(exe_moduletest)
   endif()
 endif()

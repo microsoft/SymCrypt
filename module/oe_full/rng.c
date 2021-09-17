@@ -283,4 +283,14 @@ SymCryptRngUninit()
     SymCryptFatal( 'rngu' );
 }
 
+VOID
+SYMCRYPT_CALL
+SymCryptRandom(
+    _Out_writes_(cbRandom)  PBYTE   pbRandom,
+                            SIZE_T  cbRandom )
+{
+    // Fatal for now
+    SymCryptFatal( 'srng' );
+}
+
 #endif // SYMCRYPT_CPU_ARM64

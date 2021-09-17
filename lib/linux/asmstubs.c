@@ -130,12 +130,3 @@ SymCryptFdefMontgomeryReduceAsm(
 {
     SymCryptFdefMontgomeryReduceC( pmMod, pSrc, pDst );
 }
-
-VOID
-SYMCRYPT_CALL
-SymCryptRandom(
-    _Out_writes_(cbRandom)  PBYTE   pbRandom,
-                            SIZE_T  cbRandom )
-{
-    return;
-}
