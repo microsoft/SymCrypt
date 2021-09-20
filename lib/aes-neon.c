@@ -74,15 +74,16 @@ SymCryptAesCreateDecryptionRoundKeyNeon(
 // Using a loop with AESE_AESMC and AESD_AESIMC, the compiler can still prematurely rearrange the loop and
 // lose opportunity for scheduling adjacent pairs.
 // Instead, explicitly unroll the AES rounds with this macro.
-// Takes the name of full_round and final_round macros, and uses them to construct block to handle AES (128|192|256)
-// for either encrypt or decrypt. For now assume only need at most 8 state variables in the macros.
+// Takes the name of first_round, full_round, and final_round macros, and uses them to construct block to
+// handle AES (128|192|256) for either encrypt or decrypt. For now assume only need at most 8 state
+// variables in the macros.
 // Assumes roundKey, keyPtr, and keyLimit are defined in calling context.
 //
-#define UNROLL_AES_ROUNDS( full_round, final_round, c0, c1, c2, c3, c4, c5, c6, c7 ) \
+#define UNROLL_AES_ROUNDS_FIRST( first_round, full_round, final_round, c0, c1, c2, c3, c4, c5, c6, c7 ) \
 { \
     /* Do 9 full rounds (AES-128|AES-192|AES-256) */ \
     roundKey = *keyPtr++; \
-    full_round( c0, c1, c2, c3, c4, c5, c6, c7 ) \
+    first_round( c0, c1, c2, c3, c4, c5, c6, c7 ) \
     roundKey = *keyPtr++; \
     full_round( c0, c1, c2, c3, c4, c5, c6, c7 ) \
     roundKey = *keyPtr++; \
@@ -123,6 +124,10 @@ SymCryptAesCreateDecryptionRoundKeyNeon(
     final_round( c0, c1, c2, c3, c4, c5, c6, c7 ) \
 };
 
+// Only AES_ENCRYPT_1_CHAIN needs to specify the first round differently from the full round
+#define UNROLL_AES_ROUNDS( full_round, final_round, c0, c1, c2, c3, c4, c5, c6, c7 ) \
+    UNROLL_AES_ROUNDS_FIRST( full_round, full_round, final_round, c0, c1, c2, c3, c4, c5, c6, c7 )
+
 #define AES_ENCRYPT_ROUND_1( c0, c1, c2, c3, c4, c5, c6, c7 ) \
 { \
     AESE_AESMC( c0, roundKey ) \
@@ -147,6 +152,37 @@ SymCryptAesCreateDecryptionRoundKeyNeon(
         AES_ENCRYPT_ROUND_1, \
         AES_ENCRYPT_FINAL_1, \
         c0, c1, c2, c3, c4, c5, c6, c7 \
+    ) \
+};
+
+// Perform AES encryption without the last round key and with a specified first round key
+//
+// For algorithms where performance is dominated by a chain of dependent AES rounds (i.e. CBC encryption, CCM, CMAC)
+// we can gain a reasonable performance uplift by computing (last round key ^ this plaintext block ^ first round key)
+// off the critical path and using this computed value in place of first round key in the first AESE instruction.
+#define AES_ENCRYPT_CHAIN_FIRST_1( c0, mergedFirstRoundKey, c2, c3, c4, c5, c6, c7 ) \
+{ \
+    AESE_AESMC( c0, mergedFirstRoundKey ) \
+};
+#define AES_ENCRYPT_CHAIN_FINAL_1( c0, c1, c2, c3, c4, c5, c6, c7 ) \
+{ \
+    c0 = vaeseq_u8( c0, roundKey ); \
+};
+
+#define AES_ENCRYPT_1_CHAIN( pExpandedKey, c0, mergedFirstRoundKey ) \
+{ \
+    const __n128 *keyPtr; \
+    const __n128 *keyLimit; \
+    __n128 roundKey; \
+\
+    keyPtr = (const __n128 *)&pExpandedKey->RoundKey[0]; \
+    keyLimit = (const __n128 *)pExpandedKey->lastEncRoundKey; \
+\
+    UNROLL_AES_ROUNDS_FIRST( \
+        AES_ENCRYPT_CHAIN_FIRST_1, \
+        AES_ENCRYPT_ROUND_1, \
+        AES_ENCRYPT_CHAIN_FINAL_1, \
+        c0, mergedFirstRoundKey, c2, c3, c4, c5, c6, c7 \
     ) \
 };
 
@@ -390,20 +426,30 @@ SymCryptAesCbcEncryptNeon(
                                                 SIZE_T                      cbData )
 {
     __n128 c = *(__n128 *)pbChainingValue;
-    __n128 d;
+    __n128 rk0 = *(__n128 *) &pExpandedKey->RoundKey[0];
+    __n128 rkLast = *(__n128 *) pExpandedKey->lastEncRoundKey;
+    __n128 d, rk0AndLast;
+
+    // This algorithm is dominated by chain of dependent AES rounds, so we want to avoid EOR
+    // instructions on the critical path where possible
+    // We can compute (last round key ^ this plaintext block ^ first round key) off the critical
+    // path and use this with AES_ENCRYPT_1_CHAIN so that only AES instructions write to c in
+    // the main loop
+    rk0AndLast = veorq_u8( rk0, rkLast );
+
+    c = veorq_u8( c, rkLast );
 
     while( cbData >= SYMCRYPT_AES_BLOCK_SIZE )
     {
-        d = *(__n128 *)pbSrc;
-        c = veorq_u8( c, d );
-        AES_ENCRYPT_1( pExpandedKey, c );
-        *(__n128 *)pbDst = c;
+        d = veorq_u8( *(__n128 *)pbSrc, rk0AndLast);
+        AES_ENCRYPT_1_CHAIN( pExpandedKey, c, d );
+        *(__n128 *)pbDst = veorq_u8( c, rkLast );
 
         pbSrc += SYMCRYPT_AES_BLOCK_SIZE;
         pbDst += SYMCRYPT_AES_BLOCK_SIZE;
         cbData -= SYMCRYPT_AES_BLOCK_SIZE;
     }
-    *(__n128 *)pbChainingValue = c;
+    *(__n128 *)pbChainingValue = veorq_u8( c, rkLast );
 }
 
 // Disable warnings and VC++ runtime checks for use of uninitialized values (by design)
@@ -579,18 +625,28 @@ SymCryptAesCbcMacNeon(
                                                 SIZE_T                      cbData )
 {
     __n128 c = *(__n128 *)pbChainingValue;
-    __n128 d;
+    __n128 rk0 = *(__n128 *) &pExpandedKey->RoundKey[0];
+    __n128 rkLast = *(__n128 *) pExpandedKey->lastEncRoundKey;
+    __n128 d, rk0AndLast;
+
+    // This algorithm is dominated by chain of dependent AES rounds, so we want to avoid EOR
+    // instructions on the critical path where possible
+    // We can compute (last round key ^ this plaintext block ^ first round key) off the critical
+    // path and use this with AES_ENCRYPT_1_CHAIN so that only AES instructions write to c in
+    // the main loop
+    rk0AndLast = veorq_u8( rk0, rkLast );
+
+    c = veorq_u8( c, rkLast );
 
     while( cbData >= SYMCRYPT_AES_BLOCK_SIZE )
     {
-        d = *(__n128 *)pbData;
-        c = veorq_u8( c, d );
-        AES_ENCRYPT_1( pExpandedKey, c );
+        d = veorq_u8( *(__n128 *)pbData, rk0AndLast);
+        AES_ENCRYPT_1_CHAIN( pExpandedKey, c, d );
 
         pbData += SYMCRYPT_AES_BLOCK_SIZE;
         cbData -= SYMCRYPT_AES_BLOCK_SIZE;
     }
-    *(__n128 *)pbChainingValue = c;
+    *(__n128 *)pbChainingValue = veorq_u8( c, rkLast );
 }
 
 // Disable warnings and VC++ runtime checks for use of uninitialized values (by design)

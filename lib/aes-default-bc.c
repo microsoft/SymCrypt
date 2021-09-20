@@ -57,7 +57,7 @@ const SYMCRYPT_BLOCKCIPHER SymCryptAesBlockCipher_Fast = {
     NULL,
 #endif
 
-#if SYMCRYPT_CPU_X86 | SYMCRYPT_CPU_AMD64
+#if SYMCRYPT_CPU_X86 | SYMCRYPT_CPU_AMD64 | SYMCRYPT_CPU_ARM64
     &SymCryptAesCbcMac,
 #else
     NULL,
