@@ -105,7 +105,7 @@ function(process_cppasm filepath outformat archdefine)
     if((NOT outformat STREQUAL gas) AND (NOT outformat STREQUAL masm))
         message(FATAL_ERROR "cppasm processing invoked with unrecognized outformat (${outformat})")
     endif()
-    if((NOT archdefine STREQUAL amd64) AND (NOT archdefine STREQUAL x86))
+    if((NOT archdefine STREQUAL amd64) AND (NOT archdefine STREQUAL x86) AND (NOT archdefine STREQUAL arm64))
         message(FATAL_ERROR "cppasm processing invoked with unrecognized archdefine (${archdefine})")
     endif()
     get_filename_component(rootpath ${filepath} DIRECTORY)
@@ -151,13 +151,19 @@ function(process_cppasm filepath outformat archdefine)
     endif()
 endfunction()
 
-function(process_symcryptasm filepath outformat archdefine)
+function(process_symcryptasm filepath outformat archdefine callingconvention)
     get_filename_component(fileextension ${filepath} EXT)
     if(NOT fileextension STREQUAL .symcryptasm)
         message(FATAL_ERROR "symcryptasm processing invoked on file with incorrect extension (${filepath} -> ${fileextension})")
     endif()
-    if((NOT outformat STREQUAL gas) AND (NOT outformat STREQUAL masm))
+    if((NOT outformat STREQUAL gas) AND (NOT outformat STREQUAL masm) AND (NOT outformat STREQUAL armasm64))
         message(FATAL_ERROR "symcryptasm processing invoked with unrecognized outformat (${outformat})")
+    endif()
+    if((NOT archdefine STREQUAL amd64) AND (NOT archdefine STREQUAL x86) AND (NOT archdefine STREQUAL arm64))
+        message(FATAL_ERROR "symcryptasm processing invoked with unrecognized archdefine (${archdefine})")
+    endif()
+    if((NOT callingconvention STREQUAL msft) AND (NOT callingconvention STREQUAL systemv) AND (NOT callingconvention STREQUAL aapcs64) AND (NOT callingconvention STREQUAL arm64ec))
+        message(FATAL_ERROR "symcryptasm processing invoked with unrecognized callingconvention (${callingconvention})")
     endif()
     get_filename_component(rootpath ${filepath} DIRECTORY)
     get_filename_component(filestem ${filepath} NAME_WE) # filestem is the filename w/out extension
@@ -168,7 +174,7 @@ function(process_symcryptasm filepath outformat archdefine)
     add_custom_command(
         OUTPUT ${output_cppasm}
         COMMAND ${CMAKE_COMMAND} -E make_directory ${output_directory}
-        COMMAND python3 ${CMAKE_SOURCE_DIR}/scripts/symcryptasm_processor.py ${outformat} ${filepath} ${output_cppasm}
+        COMMAND python3 ${CMAKE_SOURCE_DIR}/scripts/symcryptasm_processor.py ${outformat} ${archdefine} ${callingconvention} ${filepath} ${output_cppasm}
         MAIN_DEPENDENCY ${filepath}
         DEPENDS ${CMAKE_SOURCE_DIR}/scripts/symcryptasm_processor.py
         COMMENT "Python preprocessing ${filepath} to ${outformat} (${output_cppasm})"
@@ -183,19 +189,15 @@ else()
     if(CMAKE_SYSTEM_PROCESSOR MATCHES "AMD64")
         list(APPEND SOURCES_COMMON linux/intrinsics.c)
     endif()
-
-    if(CMAKE_SYSTEM_PROCESSOR MATCHES "ARM64")
-        list(APPEND SOURCES_COMMON linux/asmstubs.c)
-    endif()
 endif()
 
 if(WIN32 AND NOT(SYMCRYPT_TARGET_ENV MATCHES "Generic"))
     if(CMAKE_SYSTEM_PROCESSOR MATCHES "AMD64")
-        process_symcryptasm(amd64/aesasm.symcryptasm masm amd64)
-        process_symcryptasm(amd64/fdef_asm.symcryptasm masm amd64)
-        process_symcryptasm(amd64/fdef369_asm.symcryptasm masm amd64)
-        process_symcryptasm(amd64/fdef_mulx.symcryptasm masm amd64)
-        process_symcryptasm(amd64/wipe.symcryptasm masm amd64)
+        process_symcryptasm(amd64/aesasm.symcryptasm masm amd64 msft)
+        process_symcryptasm(amd64/fdef_asm.symcryptasm masm amd64 msft)
+        process_symcryptasm(amd64/fdef369_asm.symcryptasm masm amd64 msft)
+        process_symcryptasm(amd64/fdef_mulx.symcryptasm masm amd64 msft)
+        process_symcryptasm(amd64/wipe.symcryptasm masm amd64 msft)
 
         list(APPEND SOURCES_COMMON
             amd64/aesasm-masm.asm
@@ -229,11 +231,11 @@ if(WIN32 AND NOT(SYMCRYPT_TARGET_ENV MATCHES "Generic"))
     endif()
 elseif(NOT(SYMCRYPT_TARGET_ENV MATCHES "Generic"))
     if(CMAKE_SYSTEM_PROCESSOR MATCHES "AMD64")
-        process_symcryptasm(amd64/aesasm.symcryptasm gas amd64)
-        process_symcryptasm(amd64/fdef_asm.symcryptasm gas amd64)
-        process_symcryptasm(amd64/fdef369_asm.symcryptasm gas amd64)
-        process_symcryptasm(amd64/fdef_mulx.symcryptasm gas amd64)
-        process_symcryptasm(amd64/wipe.symcryptasm gas amd64)
+        process_symcryptasm(amd64/aesasm.symcryptasm gas amd64 systemv)
+        process_symcryptasm(amd64/fdef_asm.symcryptasm gas amd64 systemv)
+        process_symcryptasm(amd64/fdef369_asm.symcryptasm gas amd64 systemv)
+        process_symcryptasm(amd64/fdef_mulx.symcryptasm gas amd64 systemv)
+        process_symcryptasm(amd64/wipe.symcryptasm gas amd64 systemv)
 
         list(APPEND SOURCES_COMMON
             amd64/aesasm-gas.asm
@@ -247,6 +249,20 @@ elseif(NOT(SYMCRYPT_TARGET_ENV MATCHES "Generic"))
             amd64/fdef369_asm-gas.asm
             amd64/fdef_mulx-gas.asm
             amd64/wipe-gas.asm
+            PROPERTY LANGUAGE ASM)
+    elseif(CMAKE_SYSTEM_PROCESSOR MATCHES "ARM64")
+        process_symcryptasm(arm64/fdef_asm.symcryptasm gas arm64 aapcs64)
+        process_symcryptasm(arm64/fdef369_asm.symcryptasm gas arm64 aapcs64)
+        process_symcryptasm(arm64/wipe.symcryptasm gas arm64 aapcs64)
+
+        list(APPEND SOURCES_COMMON
+            arm64/fdef_asm-gas.asm
+            arm64/fdef369_asm-gas.asm
+            arm64/wipe-gas.asm)
+        set_source_files_properties(
+            arm64/fdef_asm-gas.asm
+            arm64/fdef369_asm-gas.asm
+            arm64/wipe-gas.asm
             PROPERTY LANGUAGE ASM)
     endif()
 endif()

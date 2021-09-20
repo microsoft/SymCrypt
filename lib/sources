@@ -18,8 +18,13 @@ GUARD = 1       # enable CFG
 ENABLE_ASM_RETPOLINE = 1
 ENABLE_RETPOLINE_LINKER_WARNING = 1
 
-# Enable /Gy for all assembler code
-ASM_DEFINES=$(ASM_DEFINES) /Gy
+# Enable /Gy for all assembler code, and some additional symcryptasm definitions for Arm64 assembler code
+ASM_DEFINES=\
+!IF "$(_BUILDARCH)" == "arm64"
+    $(ASM_DEFINES) /Gy /DSYMCRYPT_CPU_ARM64 /DSYMCRYPT_MASM
+!ELSE
+    $(ASM_DEFINES) /Gy
+!ENDIF
 
 USE_MAKEFILE_INC = 1
 
@@ -35,6 +40,15 @@ NTTARGETFILE0=\
 !ELSEIF "$(_BUILDARCH)" == "x86"
     $(OBJ_PATH)\$(O)\..\i386\aesasm.asm \
     $(OBJ_PATH)\$(O)\..\i386\fdef_asm.asm \
+!ELSEIF "$(_BUILDARCH)" == "arm64"
+    $(OBJ_PATH)\$(O)\..\arm64\fdef_asm.asm \
+    $(OBJ_PATH)\$(O)\..\arm64\fdef369_asm.asm \
+    $(OBJ_PATH)\$(O)\..\arm64\wipe.asm \
+!IF "$(ARM64X_EC_ENABLED)" == "1"
+    $(OBJ_PATH)\$(O)\..\arm64\arm64ec\fdef_asm.asm \
+    $(OBJ_PATH)\$(O)\..\arm64\arm64ec\fdef369_asm.asm \
+    $(OBJ_PATH)\$(O)\..\arm64\arm64ec\wipe.asm \
+!ENDIF
 !ENDIF
 
 INCLUDES=  \

@@ -61,6 +61,9 @@ if(WIN32)
 else()
     if(NOT SYMCRYPT_TARGET_ENV MATCHES "Generic")
         enable_language(ASM)
+        # Suppress noisy warnings about compile options which are ignored for ASM
+        # Less messy than restricting most of the below options to only C/CXX!
+        add_compile_options($<$<COMPILE_LANGUAGE:ASM>:-Wno-unused-command-line-argument>)
     endif()
     # add_compile_options(-Wall)
     # add_compile_options(-Wno-unknown-pragmas)
@@ -75,6 +78,12 @@ else()
     # Required for cross-compiling from AMD64 to ARM64
     # Avoids error: cast from pointer to smaller type 'uintptr_t' when including <memory> from aarch64-linux-gnu
     add_compile_options(-fms-extensions)
+
+    # GCC and clang unroll more aggressively than they should for best performance
+    # When we want to unroll loops, we unroll in the source code, so tell the compiler not to unroll
+    # (clang seems to respect this option globally, but I could only make GCC behave in AES-GCM by
+    # using GCC-specific pragmas for the loops of interest)
+    add_compile_options(-fno-unroll-loops)
 
     # In Sanitize version, enable sanitizers
     if (CMAKE_BUILD_TYPE MATCHES Sanitize)
@@ -120,12 +129,6 @@ else()
         add_link_options(-fsanitize=vptr)
         add_link_options(-fno-sanitize-recover=all)
     endif()
-
-    # GCC and clang unroll more aggressively than they should for best performance
-    # When we want to unroll loops, we unroll in the source code, so tell the compiler not to unroll
-    # (clang seems to respect this option globally, but I could only make GCC behave in AES-GCM by
-    # using GCC-specific pragmas for the loops of interest)
-    add_compile_options(-fno-unroll-loops)
 endif()
 
 if(CMAKE_BUILD_TYPE MATCHES Release)

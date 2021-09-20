@@ -1,5 +1,5 @@
 # This toolchain file configures CMake options for Linux User Mode AMD64 compilation with CPU optimizations.
-# To use the toolchain file, run cmake .. -DCMAKE_TOOLCHAIN_FILE=cmake-toolchain/LinuxUserMode-AMD64.cmake
+# To use the toolchain file, run cmake .. -DCMAKE_TOOLCHAIN_FILE="cmake-toolchain/LinuxUserMode-AMD64.cmake"
 
 # Set CMake variables that subsequent CMake scripts can check against
 set(CMAKE_SYSTEM_NAME Linux)

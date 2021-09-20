@@ -9,6 +9,10 @@
 
 #if defined(SYMCRYPT_CPU_AMD64)
 include ksamd64.inc
+#elif defined(SYMCRYPT_CPU_ARM64)
+#include "ksarm64.h"
+#include "arm64/symcrypt_name_mangling.inc"
+#include "symcrypt_version.inc"
 #endif
 
 #include "C_asm_shared.inc"
@@ -17,17 +21,29 @@ include ksamd64.inc
 #define ALIGN(__alignment)              align __alignment
 #define GET_SYMBOL_ADDRESS(__symbol)    __symbol
 #define HEX(__constant)                 __constant##h
+#define TEXTAREA()                      TEXTAREA
+#define EXTERN(__label)                 EXTERN __label
+#define LABEL(__labelname)              __labelname
 
 #elif defined(SYMCRYPT_GAS)
 
+#if defined(SYMCRYPT_CPU_AMD64)
 .intel_syntax noprefix
+#elif defined(SYMCRYPT_CPU_ARM64)
+#include "arm64/symcrypt_name_mangling.inc"
+#include "symcrypt_version.inc"
+#endif
 
 #include "C_asm_shared.inc"
+
 
 #define FILE_END()
 #define ALIGN(__alignment)              .align __alignment
 #define GET_SYMBOL_ADDRESS(__symbol)    __symbol+rip
 #define HEX(__constant)                 0x##__constant
+#define TEXTAREA()
+#define EXTERN(__label)
+#define LABEL(__labelname)              __labelname:
 
 #else
 
