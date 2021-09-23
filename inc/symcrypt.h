@@ -11,7 +11,7 @@
 extern "C" {
 #endif
 
-#include "symcrypt_version.inc"
+#include "symcrypt_internal_shared.inc"
 
 #define SYMCRYPT_API_VERSION ((SYMCRYPT_CODE_VERSION_API << 16) | SYMCRYPT_CODE_VERSION_MINOR)
 
@@ -3014,16 +3014,16 @@ SymCryptPaddingPkcs7Add(
 // The padded message is written to the pbDst buffer.
 // The length of the padded message is returned in *pcbResult.
 //
-// If pbSrc == pbDst this function avoids copying all the data. 
+// If pbSrc == pbDst this function avoids copying all the data.
 // Note that cbSrc == cbDst is not valid as it violates the prerequisites.
 // Padding a message with cbSrc == 0 is valid.
 //
-// Note: 
+// Note:
 // Any whole blocks in Src are merely copied to Dst.
 // Callers can either process the whole message in this call,
 // or handle the whole blocks themselves and only pass the last few bytes of the message to this function.
 //
-// Note: the prerequisites are not checked by this function; if they are not satisfied 
+// Note: the prerequisites are not checked by this function; if they are not satisfied
 // the behaviour of the function is undefined.
 //
 
@@ -3037,20 +3037,20 @@ SymCryptPaddingPkcs7Remove(
     _Out_writes_to_(cbDst, *pcbResult)      PBYTE   pbDst,
                                             SIZE_T  cbDst,
                                             SIZE_T* pcbResult);
-// 
+//
 // Prerequisites:
 //  - cbBlockSize is a power of 2 and < 256
 //  - cbSrc is a multiple of cbBlockSize
 //  - cbSrc is greater than zero (at least equals to cbBlockSize)
 //
-// Remove PKCS7 block padding from a message in a side-channel safe way. 
+// Remove PKCS7 block padding from a message in a side-channel safe way.
 //  *** see below for important rules the caller should follow w.r.t. side-channel safety ***
 // The input data (pbSrc, cbSrc) is a valid PKCS7 padded message for the given blocksize.
 // This function removes the padding, copies the result to the (pbDst, cbDst) buffer,
 // and returns the size of the result in *pcbResult.
 //
 // This function only supports padding with a size up to the block size.
-// 
+//
 // If pbSrc == pbDst this function avoids copying data.
 //
 // The following errors are returned:
@@ -3059,19 +3059,19 @@ SymCryptPaddingPkcs7Remove(
 // If cbDst >= cbSrc the SYMCRYPT_BUFFER_TOO_SMALL error will not be returned.
 // Even if an error is returned, the pbDst buffer may or may not contain data from the message.
 // Callers should wipe the buffer even if an error is returned.
-// 
+//
 // Note: Removal of PKCS7 padding is extremely sensitive to side channels.
-// For example, if a message is encrypted with AES-CBC and the attacker can modify 
+// For example, if a message is encrypted with AES-CBC and the attacker can modify
 // the ciphertext and then determine whether a padding error occurrs during decryption,
 // then the attacker can use the presence or absence of the error to decrypt the message itself.
 // This function takes great care not to reveal whether an error occurred, and hides
 // the size of the unpadded message. This is even true when writing to pbDst. If cbDst is large
 // enough, the code will write cbSrc-1 bytes to pbDst, using masking to only update the bytes of the
 // message and leaving the other bytes in pbDst unchanged.
-// Callers should take great care not to reveal the returned error or success, 
+// Callers should take great care not to reveal the returned error or success,
 // or the size of the returned message, until they have authenticated
 // the source of the data.
-// 
+//
 // In particular, any mapping of the error code should be done in a side-channel safe way.
 // See the SymCryptMapUint32() function for a side-channel safe way to map error codes.
 //
@@ -6260,7 +6260,7 @@ SymCryptMapUint32(
 //
 // (pcMap, nMap) point to an array of nMap entries of type SYMCRYPT_UINT32_MAP;
 // each entry specifies a single mapping. If u32Input matches the
-// 'from' field, the return value will be the 'to' field value. 
+// 'from' field, the return value will be the 'to' field value.
 // If u32Input is not equal to any 'from' field values, the return value is u32Default.
 // Both u32Input and the return value are treated as secrets w.r.t. side channels.
 //

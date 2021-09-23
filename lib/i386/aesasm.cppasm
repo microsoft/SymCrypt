@@ -1,10 +1,10 @@
 ;
 ;  AesAsm.cppasm   Assembler code for fast AES on the x86
-;  Requires C preprocessor to correctly include C_asm_shared.inc and symcrypt_magic.in
+;  Requires C preprocessor to correctly include C_asm_shared.inc and symcrypt_magic.inc
 ;
 ; Copyright (c) Microsoft Corporation. Licensed under the MIT license.
 ;
-; This code is derived from the AesFast implemenation that
+; This code is derived from the AesFast implementation that
 ; Niels Ferguson wrote from scratch for BitLocker during Vista.
 ; That code is still in RSA32.
 ;
@@ -46,8 +46,6 @@
 
 _TEXT   SEGMENT PARA PUBLIC USE32 'CODE'
         ASSUME  CS:_TEXT, DS:FLAT, SS:FLAT
-
-include symcrypt_version.inc
 
 #include "C_asm_shared.inc"
 #include "symcrypt_magic.inc"

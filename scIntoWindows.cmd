@@ -55,11 +55,6 @@ copy %ScTempDir%\inc\symcrypt.h inc\ds\symcrypt.w
 echo Copy failed
 goto error
 )
-copy %ScTempDir%\inc\symcrypt_debug.inc inc\ds\symcrypt_debug.inc
-@if ERRORLEVEL 1 (
-echo Copy failed
-goto error
-)
 copy %ScTempDir%\inc\symcrypt_low_level.h inc\ds\symcrypt_low_level.w
 @if ERRORLEVEL 1 (
 echo Copy failed
@@ -70,7 +65,7 @@ copy %ScTempDir%\inc\symcrypt_internal.h inc\ds\symcrypt_internal.w
 echo Copy failed
 goto error
 )
-copy %ScTempDir%\inc\symcrypt_version.inc inc\ds\symcrypt_version.inc
+copy %ScTempDir%\inc\symcrypt_internal_shared.inc inc\ds\symcrypt_internal_shared.inc
 @if ERRORLEVEL 1 (
 echo Copy failed
 goto error

@@ -12,7 +12,6 @@
 #include "C_asm_shared.inc"
 #undef SYMCRYPT_MASM
 
-#include "symcrypt_version.inc"
 #include "symcrypt_magic.inc"
 
 ; A digit consists of 4 words of 32 bits each

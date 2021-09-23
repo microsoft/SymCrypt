@@ -44,7 +44,7 @@ goto :EOF
 @rem get into variable VersionNumber
 
 @rem Extract the #define line from the version file
-findstr define %SDXROOT%\SymCrypt\inc\symcrypt_version.inc | findstr %1 >t.txt
+findstr define %SDXROOT%\SymCrypt\inc\symcrypt_internal_shared.inc | findstr %1 >t.txt
 set /p T=<t.txt
 
 @rem Extract the last item

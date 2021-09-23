@@ -26,6 +26,11 @@ ASM_DEFINES=\
     $(ASM_DEFINES) /Gy
 !ENDIF
 
+# Add /DDBG to USER_C_FLAGS in CHK build for use in cppasm processing
+!IF !$(FREEBUILD)
+USER_C_FLAGS=$(USER_C_FLAGS) /DDBG
+!ENDIF
+
 USE_MAKEFILE_INC = 1
 
 # Explicitly call out that we must preprocess symcryptasm files

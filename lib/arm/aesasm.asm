@@ -4,7 +4,7 @@
 ; Copyright (c) Microsoft Corporation. Licensed under the MIT license.
 ;
 ; This code is derived from the AMD64 version of the AesFast
-; implemenation, developed by Niels Ferguson. For questions
+; implementation, developed by Niels Ferguson. For questions
 ; about the ARM specifics, contact Aaron Giles.
 ;
 
@@ -16,7 +16,6 @@
 #include "C_asm_shared.inc"
 #undef SYMCRYPT_MASM
 
-#include "symcrypt_version.inc"
 #include "symcrypt_magic.inc"
 
         TTL   "Advanced Encryption Standard (AES)"

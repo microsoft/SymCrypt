@@ -1,4 +1,4 @@
-#include "symcrypt_version.inc"
+#include "symcrypt_internal_shared.inc"
 
 #define _SYMCRYPT_JOIN(a, b) #a "." #b
 #define _SYMCRYPT_EXPAND_JOIN(a, b) _SYMCRYPT_JOIN(a, b)

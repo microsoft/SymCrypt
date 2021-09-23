@@ -19,8 +19,6 @@
 
 #include "symcryptasm_shared.cppasm"
 
-#include "symcrypt_version.inc"
-
 #define USE_BLOCK_FUNCTION 1    // Set to 1 to use block function, 0 to use block macro
 
 #if defined(SYMCRYPT_MASM)

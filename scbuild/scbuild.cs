@@ -345,7 +345,7 @@ class ScBuild
                 currentDir, m_SymCryptDir );
         }
 
-        CheckFilePresent( @"inc\symcrypt_version.inc" );
+        CheckFilePresent( @"inc\symcrypt_internal_shared.inc" );
         CheckFilePresent( @"inc\symcrypt.h" );
         CheckFilePresent( @"lib\sc_lib.h" );
 
@@ -493,7 +493,7 @@ class ScBuild
 
     void UpdateVersionNumber()
     {
-        string versionFileName = @"inc\symcrypt_version.inc";
+        string versionFileName = @"inc\symcrypt_internal_shared.inc";
 
         string [] lines = File.ReadAllLines( versionFileName );
         if( lines.Length < 10 )
@@ -523,7 +523,7 @@ class ScBuild
 
                 if( vApi >= 0 && vApi != apiVersion )
                 {
-                    Fatal( "Inconsistent API versions in symcrypt_version.inc({0}) : {1} {2}", line, vApi, apiVersion );
+                    Fatal( "Inconsistent API versions in symcrypt_internal_shared.inc({0}) : {1} {2}", line, vApi, apiVersion );
                 }
                 vApi = apiVersion;
                 newApi = vApi;
@@ -549,7 +549,7 @@ class ScBuild
 
                 if( vMinor >= 0 && vMinor != minorVersion )
                 {
-                    Fatal( "Inconsistent minor versions in symcrypt_version.inc file" );
+                    Fatal( "Inconsistent minor versions in symcrypt_internal_shared.inc file" );
                 }
                 vMinor = minorVersion;
 
@@ -565,9 +565,9 @@ class ScBuild
             }
         }
 
-        if( nApi != 2 || nMinor != 2 )
+        if( nApi != 1 || nMinor != 1 )
         {
-            Fatal( "symcrypt_version.inc file has unexepected number of API and minor version-containing lines" );
+            Fatal( "symcrypt_internal_shared.inc file has unexpected number of API and minor version-containing lines" );
         }
 
         foreach( string l in lines )
@@ -801,7 +801,7 @@ class ScBuild
             + "            Flavors: x86chk, x86fre, amd64chk, amd64fre, armchk, armfre,\n"
             + "                arm64chk, arm64fre\n"
             + "-notag      Skip tag creation\n"
-            + "-version    Increment the minor version in inc\\symcrypt_version.h\n"
+            + "-version    Increment the minor version in inc\\symcrypt_internal_shared.inc\n"
             );
     }
 
@@ -864,10 +864,9 @@ class ScBuild
 
         string[] filesToCopy = new string[] {
             @"symcrypt.h",
-            @"symcrypt_debug.inc",
             @"symcrypt_low_level.h",
             @"symcrypt_internal.h",
-            @"symcrypt_version.inc",
+            @"symcrypt_internal_shared.inc",
         };
 
         foreach (string file in filesToCopy)

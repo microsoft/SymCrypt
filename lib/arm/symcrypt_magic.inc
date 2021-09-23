@@ -14,7 +14,6 @@
         SYMCRYPT_CHECK_MAGIC $temp1, $temp2, $ptr, $offset
 
 #if SYMCRYPT_DEBUG
-
         ldr     $temp1, [$ptr, #$offset]
         subs    $temp1, $temp1, $ptr
         mov32   $temp2, SYMCRYPT_MAGIC_CONSTANT

@@ -5,6 +5,8 @@
 // Copyright (c) Microsoft Corporation. Licensed under the MIT license.
 //
 
+#include "C_asm_shared.inc"
+
 #if defined(SYMCRYPT_MASM)
 
 #if defined(SYMCRYPT_CPU_AMD64)
@@ -12,10 +14,7 @@ include ksamd64.inc
 #elif defined(SYMCRYPT_CPU_ARM64)
 #include "ksarm64.h"
 #include "arm64/symcrypt_name_mangling.inc"
-#include "symcrypt_version.inc"
 #endif
-
-#include "C_asm_shared.inc"
 
 #define FILE_END()                      END
 #define ALIGN(__alignment)              align __alignment
@@ -31,11 +30,7 @@ include ksamd64.inc
 .intel_syntax noprefix
 #elif defined(SYMCRYPT_CPU_ARM64)
 #include "arm64/symcrypt_name_mangling.inc"
-#include "symcrypt_version.inc"
 #endif
-
-#include "C_asm_shared.inc"
-
 
 #define FILE_END()
 #define ALIGN(__alignment)              .align __alignment
