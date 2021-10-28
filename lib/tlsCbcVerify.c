@@ -163,8 +163,13 @@ SymCryptTlsCbcHmacVerifyCore(
     const UINT32 cbMacValue = pHash->inputBlockSize / 2;
 
     // We limit ourselves to reasonable record sizes to avoid any overflow, underflow, etc.
-    // TLS records are limited to 2^14 bytes per fragment, so we can slightly exceed 2^14.
-    SYMCRYPT_HARD_ASSERT( cbData < (1 << 15) );
+    // TLS records are limited to 2^14 bytes per fragment, but  Schannel allows up to 2^16
+    // (0x10000) bytes on the receiving path, so we allow a larger number to be safe
+    if ( cbData > (1 << 20) )
+    {
+        scError = SYMCRYPT_VALUE_TOO_LARGE;
+        goto cleanup;
+    }
 
     // Check that we have enough data for a valid record.
     // We need one MAC value plus one padding_length byte
