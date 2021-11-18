@@ -11,3 +11,7 @@ if(CMAKE_SYSTEM_PROCESSOR MATCHES "AMD64")
 
   add_dependencies(symcryptmoduletest_oe symcrypt_oe_fips)
 endif()
+
+add_executable(symcryptmoduletest_embedded ${SOURCES})
+target_link_libraries(symcryptmoduletest_embedded symcrypt_embedded)
+#add_dependencies(symcryptmoduletest_embedded symcrypt_embedded_fips)

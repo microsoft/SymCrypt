@@ -1,9 +1,14 @@
 set(SOURCES
-    module.c)
+    ../linux_common/nointegrity.c
+    ../linux_common/optional/rngfipsjitter.c
+    ../linux_common/optional/rngsecureurandom.c)
 
-include_directories(${CMAKE_SOURCE_DIR}/inc ../linux_common)
+include_directories(${CMAKE_SOURCE_DIR}/inc ../linux_common ${CMAKE_SOURCE_DIR}/jitterentropy-library)
 
 add_library(symcrypt_linux SHARED ${SOURCES})
+
+# Link jitterentropy
+target_link_libraries(symcrypt_linux ${CMAKE_SOURCE_DIR}/jitterentropy-library/libjitterentropy.a pthread)
 
 target_link_options(symcrypt_linux PRIVATE
   -Wl,--whole-archive
@@ -19,7 +24,7 @@ target_link_options(symcrypt_linux PRIVATE
   -nostartfiles
 )
 
-add_dependencies(symcrypt_linux symcrypt_linuxusermode symcrypt_common symcrypt_module_linux_common)
+add_dependencies(symcrypt_linux symcrypt_linuxusermode symcrypt_common symcrypt_module_linux_common jitterentropy_lib)
 
 set_target_properties(symcrypt_linux PROPERTIES LIBRARY_OUTPUT_DIRECTORY ${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/generic_linux)
 set_target_properties(symcrypt_linux PROPERTIES LIBRARY_OUTPUT_NAME "symcrypt")

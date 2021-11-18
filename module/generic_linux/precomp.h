@@ -9,3 +9,4 @@
 #include <stdio.h>
 
 #include "symcrypt.h"
+#include "rng.h"

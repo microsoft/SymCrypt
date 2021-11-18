@@ -1,0 +1,53 @@
+//
+// rng.h
+// Declares Init and Uninit functions for module versions of SymCrypt
+// and declares FIPS and secure entropy source functions
+//
+// Copyright (c) Microsoft Corporation. Licensed under the MIT license.
+//
+
+VOID
+SYMCRYPT_CALL
+SymCryptRngInit();
+
+VOID
+SYMCRYPT_CALL
+SymCryptRngUninit();
+
+//
+// Entropy function declarations
+// RNG system uses these functions to seed and reseed the rng state, and each module must define
+// these, as each module may have different available sources of entropy to use.
+// SymCryptEntropyFipsGet should be SP 800-90B compliant, while SymCryptEntropySecureGet should be
+// a secure source of entropy (better than or equal to that of the Fips source).
+//
+
+// Initializes FIPS entropy source (may do nothing)
+VOID
+SYMCRYPT_CALL
+SymCryptEntropyFipsInit();
+
+// Uninitializes FIPS entropy source (may do nothing)
+VOID
+SYMCRYPT_CALL
+SymCryptEntropyFipsUninit();
+
+// Fills pbResult with entropy from the FIPS entropy source, which is SP 800-90B compliant source
+VOID
+SYMCRYPT_CALL
+SymCryptEntropyFipsGet( _Out_writes_( cbResult ) PBYTE pbResult, SIZE_T cbResult );
+
+// Initializes secure entropy source (may do nothing)
+VOID
+SYMCRYPT_CALL
+SymCryptEntropySecureInit();
+
+// Uninitializes secure entropy source (may do nothing)
+VOID
+SYMCRYPT_CALL
+SymCryptEntropySecureUninit();
+
+// Fills pbResult with entropy from the secure entropy source.
+VOID
+SYMCRYPT_CALL
+SymCryptEntropySecureGet( _Out_writes_( cbResult ) PBYTE pbResult, SIZE_T cbResult );

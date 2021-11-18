@@ -1,3 +1,7 @@
 [submodule "SymCryptDependencies"]
 	path = SymCryptDependencies
 	url = https://microsoft.visualstudio.com/DefaultCollection/SymCryptDependencies/_git/SymCryptDependencies
+
+[submodule "jitterentropy-library"]
+	path = jitterentropy-library
+	url = https://github.com/smuellerDD/jitterentropy-library
