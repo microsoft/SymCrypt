@@ -4928,9 +4928,9 @@ SymCryptEckeyCopy(
 //      Generated or imported Private key:
 //          For DH/DSA:
 //              Check private key is in the range: [1, q-1]
-//                  If Dlgroup is a named safe-prime group, nBitsPriv is specified statically, such that
-//                  2s <= nBitsPriv <= nBitsOfQ. In this case, we enforce that the private key is in the
-//                  reduced range [1, min(2^nBitsPriv, q)-1]
+//                  If Dlgroup is a named safe-prime group, nBitsPriv is specified either using a default
+//                  value or using SymCryptDlkeySetPrivateKeyLength, such that 2s <= nBitsPriv <= nBitsOfQ.
+//                  In this case, we enforce that the private key is in the reduced range [1, min(2^nBitsPriv, q)-1]
 //                      (s is the maximum security strength for a named safe-prime group as specified in SP800-56arev3)
 //              If q is not known, this will cause SYMCRYPT_INVALID_ARGUMENT
 //          For ECDH/ECDSA:
@@ -5343,12 +5343,27 @@ SymCryptDlgroupGetValue(
 // SYMCRYPT_FLAG_DLKEY_GEN_MODP:
 // When set on SymCryptDlkeyGenerate call, generate a private key between 1 and P-2.
 // When Q is known, this overrides the default behavior of generating a private key between 1 and Q-1,
-// or 1 and 2^nBitsPriv-1 for named safe-prime groups
+// or 1 and min(2^nBitsPriv-1, Q-1) for named safe-prime groups
 // When Q is not known, this does not affect the behavior
 #define SYMCRYPT_FLAG_DLKEY_GEN_MODP  (0x01)
 
 //=====================================================
 // DL key operations
+
+SYMCRYPT_ERROR
+SYMCRYPT_CALL
+SymCryptDlkeySetPrivateKeyLength( _Inout_ PSYMCRYPT_DLKEY pkDlkey, UINT32 nBitsPriv, UINT32 flags );
+//
+// Sets the number of bits that this dlkey can have in its private key
+// The set value is only used for when the dlkey is a named safe-prime dlgroup, otherwise the value
+// is ignored.
+//
+// Requirements:
+//  - pkDlkey->pDlgroup->nBitsOfQ >= nBitsPriv >= pkDlkey->pDlgroup->nMinBitsPriv
+//    Otherwise SYMCRYPT_INVALID_ARGUMENT is returned
+//
+// Allowed flags:
+//  - None.
 
 PCSYMCRYPT_DLGROUP
 SYMCRYPT_CALL
@@ -5395,7 +5410,7 @@ SymCryptDlkeyGenerate(
 //  - SYMCRYPT_FLAG_DLKEY_GEN_MODP
 //  When set, generate a private key between 1 and P-2.
 //  When Q is known, this overrides the default behavior of generating a private key between 1 and Q-1,
-//  or 1 and 2^nBitsPriv-1 for named safe-prime groups
+//  or 1 and min(2^nBitsPriv-1, Q-1) for named safe-prime groups
 //  When Q is not known, this does not affect the behavior
 //
 // Note:

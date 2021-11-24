@@ -2073,8 +2073,12 @@ typedef SYMCRYPT_ASYM_ALIGN_STRUCT _SYMCRYPT_DLGROUP {
     UINT32                  nMaxBitsOfQ;    // Maximum number of bits of the value of Q
 
     BOOLEAN                 isSafePrimeGroup;   // Boolean indicating if this is a Safe Prime group
-    UINT32                  nBitsPriv;      // Number of bits in private keys using this group
-                                            // Normally equals nBitsOfQ, but may be further restricted (i.e. for named Safe Prime groups)
+    UINT32                  nMinBitsPriv;   // Minimum number of bits to be used in private keys for this group
+                                            // This only applies to named Safe Prime groups where this is related to the security strength
+                                            // i.e. this corresponds to 2s in SP800-56arev3 5.6.1.1.1 / 5.6.2.1.2
+    UINT32                  nDefaultBitsPriv;   // Default number of bits used in private keys for this group
+                                                // Normally equals nBitsOfQ, but may be further restricted (i.e. for named Safe Prime groups)
+                                                // i.e. this corresponds to a default value of N in SP800-56arev3 5.6.1.1.1 / 5.6.2.1.2
 
     UINT32                  nBitsOfSeed;    // Number of bits of the seed used for generation (seedlen in FIPS 186-3)
     UINT32                  cbSeed;         // Number of bytes of the seed, equal to ceil(nBitsOfSeed/8)
@@ -2113,11 +2117,12 @@ typedef SYMCRYPT_ASYM_ALIGN_STRUCT _SYMCRYPT_DLKEY {
 
                     BOOLEAN                 fHasPrivateKey; // Set to true if there is a private key set
                     BOOLEAN                 fPrivateModQ;   // Set to true if the private key is at most Q-1, otherwise it is at most P-2
+                    UINT32                  nBitsPriv;      // Number of bits used in private keys
 
                     PBYTE                   pbPrivate;      // SYMCRYPT_ASYM_ALIGN'ed buffer that points to the memory allocated for the private key
 
                     PSYMCRYPT_MODELEMENT    pePublicKey;    // Public key (modelement modulo P)
-                    PSYMCRYPT_INT           piPrivateKey;   // Private key (integer up to Q-1 or P-2)
+                    PSYMCRYPT_INT           piPrivateKey;   // Private key (integer up to 2^nBitsPriv-1, Q-1 or P-2)
 
                     SYMCRYPT_MAGIC_FIELD
 

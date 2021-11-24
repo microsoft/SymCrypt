@@ -3029,10 +3029,12 @@ typedef struct _SYMCRYPT_DLGROUP_DH_SAFEPRIME_PARAMS {
 
     PCBYTE  pcbPrimeP;
 
-    UINT32  nBitsOfP;  // nBitsOfQ == nBitsOfP-1
-    UINT32  nBitsPriv; // nBitsOfQ >= nBitsPriv >= 2s
-                       // nBitsPriv will be the enforced maximum length of private keys using this Dlgroup
-                       // where s is the maximum security strength supported based on SP800-56Arev3
+    UINT32  nBitsOfP;           // nBitsOfQ == nBitsOfP-1
+    UINT32  nMinBitsPriv;       // nMinBitsPriv == 2s 
+                                // s is the maximum security strength supported by the group based on SP800-56Arev3
+    UINT32  nDefaultBitsPriv;   // nBitsOfQ >= nDefaultBitsPriv >= nMinBitsPriv
+                                // nDefaultBitsPriv will be the default value of nBitsPriv for a Dlkey in this Dlgroup
+                                // nBitsPriv is the maximum length of the private key
 } SYMCRYPT_DLGROUP_DH_SAFEPRIME_PARAMS;
 typedef const SYMCRYPT_DLGROUP_DH_SAFEPRIME_PARAMS * PCSYMCRYPT_DLGROUP_DH_SAFEPRIME_PARAMS;
 //

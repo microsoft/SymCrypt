@@ -962,6 +962,7 @@ testDhtestGroups( DhImplementation  * pDh, INT64 line )
     BYTE buf2[DLKEY_MAXKEYSIZE];
     SYMCRYPT_ERROR scError;
     NTSTATUS ntStatus;
+    UINT32 nBitsPriv;
 
     UNREFERENCED_PARAMETER( line );
 
@@ -992,6 +993,18 @@ testDhtestGroups( DhImplementation  * pDh, INT64 line )
         PSYMCRYPT_DLKEY pKey1 = SymCryptDlkeyAllocate( pGroup );
         PSYMCRYPT_DLKEY pKey2 = SymCryptDlkeyAllocate( pGroup );
         CHECK( pKey1 != NULL && pKey2 != NULL, "Could not create keys" );
+
+        if( pGroup->isSafePrimeGroup )
+        {
+            // 50% chance to set private key lengths to a random value in range [2s, len(q)] rather
+            // than using the default value
+            if( g_rng.byte() & 1 )
+            {
+                nBitsPriv = (UINT32) g_rng.sizet(pGroup->nMinBitsPriv, pGroup->nBitsOfQ + 1);
+                SymCryptDlkeySetPrivateKeyLength( pKey1, nBitsPriv, 0 );
+                SymCryptDlkeySetPrivateKeyLength( pKey2, nBitsPriv, 0 );
+            }
+        }
 
         scError = SymCryptDlkeyGenerate( 0, pKey1 );
         CHECK( scError == SYMCRYPT_NO_ERROR, "Error generating key" );

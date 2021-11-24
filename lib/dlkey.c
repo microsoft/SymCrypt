@@ -68,6 +68,7 @@ SymCryptDlkeyCreate(
     pkRes->pDlgroup = pDlgroup;
     pkRes->fHasPrivateKey = FALSE;
     pkRes->fPrivateModQ = FALSE;            // This will be properly set during generate or setvalue
+    pkRes->nBitsPriv = pDlgroup->nDefaultBitsPriv;
 
     // Create SymCrypt objects
     pbBuffer += sizeof(SYMCRYPT_DLKEY);
@@ -117,6 +118,7 @@ SymCryptDlkeyCopy(
     {
         pkDst->fHasPrivateKey = pkSrc->fHasPrivateKey;
         pkDst->fPrivateModQ = pkSrc->fPrivateModQ;
+        pkDst->nBitsPriv = pkSrc->nBitsPriv;
 
         // Copy the public key
         SymCryptModElementCopy( pDlgroup->pmP, pkSrc->pePublicKey, pkDst->pePublicKey );
@@ -128,6 +130,21 @@ SymCryptDlkeyCopy(
 
 
 // DLKEY specific functions
+
+SYMCRYPT_ERROR
+SYMCRYPT_CALL
+SymCryptDlkeySetPrivateKeyLength( _Inout_ PSYMCRYPT_DLKEY pkDlkey, UINT32 nBitsPriv, UINT32 flags )
+{
+    if( nBitsPriv > pkDlkey->pDlgroup->nBitsOfQ ||
+        nBitsPriv < pkDlkey->pDlgroup->nMinBitsPriv ||
+        flags != 0 )
+    {
+        return SYMCRYPT_INVALID_ARGUMENT;
+    }
+
+    pkDlkey->nBitsPriv = nBitsPriv;
+    return SYMCRYPT_NO_ERROR;
+}
 
 PCSYMCRYPT_DLGROUP
 SYMCRYPT_CALL
@@ -274,6 +291,8 @@ SymCryptDlkeyGenerate(
 
     BOOLEAN useModSetRandom = TRUE;
     UINT32 nBytesPriv = 0;
+    UINT32 dwShiftBits;
+    BYTE   privMask;
     UINT32 cntr;
 
     SYMCRYPT_ON_DEMAND_SELFTEST(SymCryptDsaSelftest, SYMCRYPT_SELFTEST_DSA);
@@ -303,12 +322,10 @@ SymCryptDlkeyGenerate(
         if ( pDlgroup->isSafePrimeGroup )
         {
             useModSetRandom = FALSE;
-            SYMCRYPT_ASSERT( pDlgroup->nBitsPriv < pDlgroup->nBitsOfQ );    // 2^nBitsPriv < Q
+            SYMCRYPT_ASSERT( pkDlkey->nBitsPriv < pDlgroup->nBitsOfQ );     // 2^nBitsPriv < Q
 
-            nBitsPriv = pDlgroup->nBitsPriv;                                // 1 to (2^nBitsPriv)-1
-
-            SYMCRYPT_ASSERT( nBitsPriv % 8 == 0 );                          // nBitsPriv is always a multiple of bytes
-            nBytesPriv = nBitsPriv / 8;
+            nBitsPriv = pkDlkey->nBitsPriv;                                 // 1 to (2^nBitsPriv)-1
+            nBytesPriv = (pkDlkey->nBitsPriv + 7) / 8;
         }
     }
     else
@@ -376,10 +393,15 @@ SymCryptDlkeyGenerate(
         // Wipe any bytes we won't fill with random
         SymCryptWipe( pbScratch + nBytesPriv, (nDigitsPriv * SYMCRYPT_FDEF_DIGIT_SIZE) - nBytesPriv );
 
+        dwShiftBits = (0u-nBitsPriv) & 7;
+        privMask = (BYTE)(0xff >> dwShiftBits);
+
         for(cntr=0; cntr<DLKEY_GEN_RANDOM_GENERIC_LIMIT; cntr++)
         {
             // Try random values until we get one we like
             SymCryptCallbackRandom( pbScratch, nBytesPriv );
+
+            pbScratch[nBytesPriv-1] &= privMask;
 
             // If non-zero we have a value in range [1, (2^nBitsPriv)-1]
             if( !SymCryptFdefRawIsEqualUint32( (PCUINT32)pbScratch, nDigitsPriv, 0 ) )
@@ -524,9 +546,9 @@ SymCryptDlkeySetValue(
             nDigitsPriv = pDlgroup->nDigitsOfQ;
             nBitsPriv = pDlgroup->nBitsOfQ;
 
-            if ( pDlgroup->nBitsPriv != 0 && (cbPrivateKey <= ((pDlgroup->nBitsPriv + 7) / 8)) )
+            if ( pDlgroup->isSafePrimeGroup )
             {
-                nBitsPriv = pDlgroup->nBitsPriv;
+                nBitsPriv = pkDlkey->nBitsPriv;
             }
         }
         else
@@ -566,9 +588,9 @@ SymCryptDlkeySetValue(
 
             // If nBitsPriv is specified, check if Private key is greater than or equal to 2^nBitsPriv
             // Otherwise, check if Private key is greater than or equal to Q
-            if ( ( ( (pDlgroup->nBitsPriv <  pDlgroup->nBitsOfQ) &&
-                    SymCryptIntBitsizeOfValue( pkDlkey->piPrivateKey ) > pDlgroup->nBitsPriv ) ) ||
-                   ( (pDlgroup->nBitsPriv >= pDlgroup->nBitsOfQ) &&
+            if ( ( ( (nBitsPriv <  pDlgroup->nBitsOfQ) &&
+                    SymCryptIntBitsizeOfValue( pkDlkey->piPrivateKey ) > nBitsPriv ) ) ||
+                   ( (nBitsPriv >= pDlgroup->nBitsOfQ) &&
                     !SymCryptIntIsLessThan( pkDlkey->piPrivateKey, SymCryptIntFromModulus( pDlgroup->pmQ ) ) ) )
             {
                 scError = SYMCRYPT_INVALID_ARGUMENT;
@@ -637,7 +659,7 @@ SymCryptDlkeySetValue(
                 pDlgroup->pmP,
                 pDlgroup->peG,
                 pkDlkey->piPrivateKey,
-                nBitsPriv,  // This is either bits of P or of Q i.e. public values
+                nBitsPriv,  // This is either bits of P, Q, or some caller-defined value i.e. public values
                 0,          // Side-channel safe
                 peTmp,
                 pbScratchInternal,

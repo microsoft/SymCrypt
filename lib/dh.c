@@ -159,7 +159,7 @@ SymCryptDhSecretAgreement(
     // Fix the bits of the exponent (the private key might be either mod Q, mod 2^nBitsPriv, or mod P)
     if (pkPrivate->fPrivateModQ)
     {
-        nBitsOfExp = pDlgroup->nBitsPriv;
+        nBitsOfExp = pkPrivate->nBitsPriv;
     }
     else
     {
