@@ -68,7 +68,7 @@ scheduleAsyncTest( SelfTestFn f, BYTE rnd )
 {
     PKDPC   pDpc;
 
-    pDpc = (PKDPC) ExAllocatePoolWithTag( NonPagedPoolNx, sizeof( KDPC ), 'TcCS' );
+    pDpc = (PKDPC) ExAllocatePoolZero( NonPagedPoolNx, sizeof( KDPC ), 'TcCS' );
     if( pDpc == NULL )
     {
         return;
