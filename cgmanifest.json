@@ -16,7 +16,7 @@
                 "Type": "git",
                 "Git": {
                     "RepositoryUrl": "https://github.com/smuellerDD/jitterentropy-library",
-                    "CommitHash:": "887c9871ea110e397812ff7f3b28a6269f0a2ffc"
+                    "CommitHash": "887c9871ea110e397812ff7f3b28a6269f0a2ffc"
                 }
             },
             "DevelopmentDependency": false
