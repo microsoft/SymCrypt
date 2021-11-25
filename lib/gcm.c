@@ -334,10 +334,7 @@ SymCryptGcmKeyCopy( _In_ PCSYMCRYPT_GCM_EXPANDED_KEY pSrc, _Out_ PSYMCRYPT_GCM_E
     SYMCRYPT_CHECK_MAGIC( pSrc );
 
     status = SymCryptGcmExpandKey( pDst, pSrc->pBlockCipher, &pSrc->abKey[0], pSrc->cbKey );
-    if( status != SYMCRYPT_NO_ERROR )
-    {
-        SymCryptFatal( 'gcmc' );
-    }
+    SYMCRYPT_ASSERT( status == SYMCRYPT_NO_ERROR );
 }
 
 

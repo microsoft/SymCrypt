@@ -584,20 +584,20 @@ SymCryptDlgroupGeneratePrimeP_FIPS(
             // We can never get a carry here because the remainder X mod 2Q
             // is 0. Therefore X is even.
             carry = SymCryptIntAddUint32( piP, 1, piP );
-            SYMCRYPT_HARD_ASSERT( carry==0 );
+            SYMCRYPT_ASSERT( carry==0 );
         }
         else
         {
             // Subtract 1 from c
             // We can never get a borrow here because the remainder is not 0.
             carry = SymCryptIntSubUint32( piRemainder, 1, piRemainder );
-            SYMCRYPT_HARD_ASSERT( carry==0 );
+            SYMCRYPT_ASSERT( carry==0 );
 
             // X-(c-1)
             // We can never get a borrow here because c is smaller
             // or equal to X.
             carry = SymCryptIntSubMixedSize( piP, piRemainder, piP );
-            SYMCRYPT_HARD_ASSERT( carry==0 );
+            SYMCRYPT_ASSERT( carry==0 );
         }
 
         // Check if smaller than 2^{L-1} by checking the L-1 bit

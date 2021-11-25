@@ -645,7 +645,7 @@ SYMCRYPT_CALL
 SymCryptModElementCreate(
     _Out_writes_bytes_( cbBuffer )  PBYTE               pbBuffer,
                                     SIZE_T              cbBuffer,
-    _In_                            PCSYMCRYPT_MODULUS   pmMod )
+    _In_                            PCSYMCRYPT_MODULUS  pmMod )
 {
     return SymCryptFdefModElementCreate( pbBuffer, cbBuffer, pmMod );
 }
@@ -712,20 +712,16 @@ SymCryptIntToModulus(
     _Out_writes_bytes_( cbScratch ) PBYTE               pbScratch,
                                     SIZE_T              cbScratch )
 {
-    // Some sanity checks
-    if( (flags & SYMCRYPT_FLAG_MODULUS_PRIME) != 0)
-    {
-        // The claim is that the modulus is prime, and we'll verify that it is 2 or odd
-        // (Some inversion algorithms fail hard when one input isn't 2 or odd.)
-        // We are constant-time w.r.t. piSrc being odd or =2. We don't hide the size of any input,
-        // but inputs 2 and 3 are handled with the same code path.
-        if( ((SymCryptIntGetValueLsbits32( piSrc ) & 1) | SymCryptIntIsEqualUint32( piSrc, 2 )) == 0 )
-        {
-            SymCryptFatal( 'mdfl' );
-        }
-    }
+    PSYMCRYPT_INT piSrcTweak = (PSYMCRYPT_INT) piSrc;
 
-    SymCryptFdefIntToModulus( piSrc, pmDst, averageOperations, flags, pbScratch, cbScratch );
+    // In CHKed build, we'll verify that the modulus is not prime, or that it is 2 or odd
+    // (Some inversion algorithms fail hard when one input isn't 2 or odd.)
+    // We are constant-time w.r.t. piSrc being odd or =2. We don't hide the size of any input,
+    // but inputs 2 and 3 are handled with the same code path.
+    SYMCRYPT_ASSERT( ((flags & SYMCRYPT_FLAG_MODULUS_PRIME) == 0) ||
+        (((SymCryptIntGetValueLsbits32( piSrc ) & 1) | SymCryptIntIsEqualUint32( piSrc, 2 )) != 0) );
+
+    SymCryptFdefIntToModulus( piSrcTweak, pmDst, averageOperations, flags, pbScratch, cbScratch );
 }
 
 VOID
@@ -955,7 +951,7 @@ SymCryptModExp(
     SymCryptModExpGeneric( pmMod, peBase, piExp, nBitsExp, flags, peDst, pbScratch, cbScratch );
 }
 
-VOID
+SYMCRYPT_ERROR
 SYMCRYPT_CALL
 SymCryptModMultiExp(
     _In_                            PCSYMCRYPT_MODULUS      pmMod,
@@ -968,7 +964,7 @@ SymCryptModMultiExp(
     _Out_writes_bytes_( cbScratch ) PBYTE                   pbScratch,
                                     SIZE_T                  cbScratch )
 {
-    SymCryptModMultiExpGeneric( pmMod, peBaseArray, piExpArray, nBases, nBitsExp, flags, peDst, pbScratch, cbScratch );
+    return SymCryptModMultiExpGeneric( pmMod, peBaseArray, piExpArray, nBases, nBitsExp, flags, peDst, pbScratch, cbScratch );
 }
 
 SYMCRYPT_DISABLE_CFG
@@ -982,6 +978,7 @@ SymCryptModSetRandom(
                                     SIZE_T                  cbScratch )
 {
     SymCryptFdefModSetRandomGeneric( pmMod, peDst, flags, pbScratch, cbScratch );
+
     SYMCRYPT_MOD_CALL( pmMod ) modSetPost( pmMod, peDst, pbScratch, cbScratch );
 }
 

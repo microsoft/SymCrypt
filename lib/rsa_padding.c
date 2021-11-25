@@ -201,7 +201,7 @@ SymCryptRsaPkcs1RemoveEncryptionPadding(
     UINT32 cbPlaintextTruncated;
 
     SYMCRYPT_ASSERT( cbPkcs1Buffer >= cbPkcs1Format );
-    SYMCRYPT_ASSERT( cbPkcs1Buffer >= 32 );                         // Requiremenst for SymcryptScsRotateBuffer
+    SYMCRYPT_ASSERT( cbPkcs1Buffer >= 32 );                         // Requirements for SymcryptScsRotateBuffer
     SYMCRYPT_ASSERT( (cbPkcs1Buffer & (cbPkcs1Buffer - 1)) == 0 );  // must be a power of 2
     SYMCRYPT_ASSERT( cbPkcs1Buffer <= (1 << 30 ));                  // Ensure we can use 31-bit masking operations
 

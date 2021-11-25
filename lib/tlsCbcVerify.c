@@ -162,13 +162,16 @@ SymCryptTlsCbcHmacVerifyCore(
     SIZE_T tmp;
     const UINT32 cbMacValue = pHash->inputBlockSize / 2;
 
-    // We limit ourselves to reasonable record sizes to avoid any overflow, underflow, etc.
-    // TLS records are limited to 2^14 bytes per fragment, but  Schannel allows up to 2^16
-    // (0x10000) bytes on the receiving path, so we allow a larger number to be safe
-    if ( cbData > (1 << 20) )
+    SYMCRYPT_ASSERT( cbMacValue == SymCryptRoundUpPow2Sizet(pHash->resultSize) );
+
+    // Process all the data up to the part where the MAC value might appear
+    // The if() is safe as both cbData and u32 are public values.
+    u32 = pHash->resultSize + 256;
+    if( cbData > u32 )
     {
-        scError = SYMCRYPT_VALUE_TOO_LARGE;
-        goto cleanup;
+        (*pHash->appendFunc)(pState, pbData, cbData-u32 );
+        pbData += cbData - u32;
+        cbData = u32;
     }
 
     // Check that we have enough data for a valid record.
@@ -197,16 +200,6 @@ SymCryptTlsCbcHmacVerifyCore(
     u32 = MASK32_LT( maxPadLength, cbPad );             // mask: maxPadLength < cbPad
     cbPad = cbPad + ((maxPadLength - cbPad) & u32);
     nPaddingError |= u32;           // mark as padding error
-
-    // Process all the data up to the part where the MAC value might appear
-    // The if() is safe as both cbData and u32 are public values.
-    u32 = pHash->resultSize + 255;
-    if( cbData > u32 )
-    {
-        (*pHash->appendFunc)(pState, pbData, cbData-u32 );
-        pbData += cbData - u32;
-        cbData = u32;
-    }
 
     // From here on out we maintain indices into a conceptual extended buffer with length cbExtendedData,
     // and index 0 at the start of the hash computation.

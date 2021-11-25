@@ -60,7 +60,7 @@ SymCryptOfflinePrecomputation(
 {
     PSYMCRYPT_ECPOINT poQ = NULL;
 
-    UINT32 cbEcpoint = SymCryptSizeofEcpointEx( pCurve->cbModElement, SYMCRYPT_INTERNAL_NUMOF_COORDINATES( pCurve->eCoordinates ) );
+    UINT32 cbEcpoint = SymCryptSizeofEcpointFromCurve( pCurve );
 
     SYMCRYPT_ASSERT( cbScratch >= cbEcpoint + SYMCRYPT_SCRATCH_BYTES_FOR_COMMON_MOD_OPERATIONS( pCurve->FModDigits ) );
 
@@ -566,5 +566,6 @@ SymCryptEcpointGenericSetRandom(
     SymCryptModElementToInt( pCurve->GOrd, peScalar, piScalar, pbScratch + pCurve->cbModElement, cbScratch - pCurve->cbModElement );
 
     // Do the multiplication (pass over the entire scratch space as it is not needed anymore)
+    // !! Explicitly not checking the error return here as the only error is from specifying invalid flags !!
     SymCryptEcpointScalarMul( pCurve, piScalar, NULL, 0, poDst, pbScratch, cbScratch );
 }

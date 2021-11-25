@@ -36,7 +36,8 @@ SymCryptUint64Gcd( UINT64 a, UINT64 b, UINT32 flags )
 
     to compute (a < b) on 64-bit values is hard if we want to avoid
 */
-    SYMCRYPT_HARD_ASSERT( (flags & SYMCRYPT_FLAG_GCD_INPUTS_NOT_BOTH_EVEN) != 0 && ((a | b) & 1) != 0 );
+    SYMCRYPT_ASSERT( (flags & SYMCRYPT_FLAG_GCD_INPUTS_NOT_BOTH_EVEN) != 0 && ((a | b) & 1) != 0 );
+    UNREFERENCED_PARAMETER( flags );
 
     // First we make sure that b is odd
     // If b even: swap (a,b)
@@ -74,7 +75,7 @@ SymCryptUint64Gcd( UINT64 a, UINT64 b, UINT32 flags )
         b = (tmp & b2) | (~tmp & b);
     }
 
-    SYMCRYPT_HARD_ASSERT( a == 0 );
+    SYMCRYPT_ASSERT( a == 0 );
     return b;
 }
 
@@ -211,6 +212,7 @@ SymCryptIntExtendedGcd(
     cbWideInt = SymCryptSizeofIntFromDigits( 2*nDigits );
     cbDivisor = SymCryptSizeofDivisorFromDigits( nDigits );
 
+    SYMCRYPT_ASSERT( cbWideInt != 0 );
     SYMCRYPT_ASSERT( cbScratch >=   4 * cbInt +
                                     1 * cbWideInt +
                                     2 * cbDivisor +
@@ -243,10 +245,18 @@ SymCryptIntExtendedGcd(
     SymCryptIntSetValueUint32( 0, piB1 );
 
     // Currently not supported: Src1 to be 0 or Src2 to be even
+    SYMCRYPT_ASSERT( !SymCryptIntIsEqualUint32( piA, 0 ) );
+    SYMCRYPT_ASSERT( (SymCryptIntGetValueLsbits32( piB ) & 1) != 0 );
     if ( SymCryptIntIsEqualUint32( piA, 0 ) ||
         ((SymCryptIntGetValueLsbits32( piB ) & 1) == 0) )
     {
-        SymCryptFatal( 'xDCG' );
+        goto cleanup;
+    }
+
+    // Currently not supported: piInvSrc2ModSrc1 != NULL and max( Src1.nDigits, Src2.nDigits ) * 2 > SymCryptDigitsFromBits(SYMCRYPT_INT_MAX_BITS)
+    if( (piInvSrc2ModSrc1 != NULL) && (piTmpDbl == NULL) )
+    {
+        goto cleanup;
     }
 
     t = SymCryptIntBitsizeOfObject( piSrc1 ) + SymCryptIntBitsizeOfObject( piSrc2 ) - 1;

@@ -510,7 +510,11 @@ SymCrypt802_11SaeCustomInit(
     while( notFoundMask != 0 || counter < 40 )
     {
         counter += 1;
-        SYMCRYPT_HARD_ASSERT( counter != 0 );
+        if( counter == 0 )
+        {
+            scError = SYMCRYPT_INVALID_ARGUMENT;
+            goto cleanup;
+        }
 
         // pwd-seed = Hmac-sha256( MacA || MacB , Password || counter )
         SymCryptHmacSha256Init( &hmacState, &hmacSeedKey );
@@ -537,7 +541,10 @@ SymCrypt802_11SaeCustomInit(
 
         // Get the pwd-value into an integer
         scError = SymCryptIntSetValue( abValue, sizeof( abValue ), SYMCRYPT_NUMBER_FORMAT_MSB_FIRST, piTmp );
-        SYMCRYPT_HARD_ASSERT( scError == SYMCRYPT_NO_ERROR );
+        if( scError != SYMCRYPT_NO_ERROR )
+        {
+            goto cleanup;
+        }
 
         // Check that it is less than P
         if( !SymCryptIntIsLessThan( piTmp, SymCryptIntFromModulus( pCurve->FMod ) ) )
@@ -581,7 +588,10 @@ SymCrypt802_11SaeCustomInit(
                                             0,
                                             pbScratch,
                                             cbScratch );
-        SYMCRYPT_HARD_ASSERT( scError == SYMCRYPT_NO_ERROR );
+        if( scError != SYMCRYPT_NO_ERROR )
+        {
+            goto cleanup;
+        }
 
         SymCryptEcpointMaskedCopy( pCurve, poPWECandidate, pState->poPWE, solutionMask );
         pState->counter |= (BYTE)(counter & solutionMask);

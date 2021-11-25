@@ -97,6 +97,7 @@ SymCryptRoundUpPow2Sizet( SIZE_T v )
 {
     SIZE_T res;
 
+    SYMCRYPT_ASSERT( v <= (SIZE_T_MAX / 2) + 1)
     // If v is very large, then the result res might overflow.
     // As SIZE_T is an unsigned type, the overflow is defined to
     // be modulo 2^n for some n, and therefore we'll get res==0
@@ -107,8 +108,11 @@ SymCryptRoundUpPow2Sizet( SIZE_T v )
     {
         res += res;
 
-        // Catch any overflows; should never happen
-        SYMCRYPT_HARD_ASSERT( res != 0 );
+        // Catch any overflows; should never happen but break to avoid infinite loop
+        if( res == 0 )
+        {
+            break;
+        }
     }
 
     return res;
@@ -219,7 +223,7 @@ SymCryptScsRotateBuffer(
 
     NATIVE_UINT Mask[ 16 ];      // Size must be a power of 2
 
-    SYMCRYPT_HARD_ASSERT( (cbBuffer & (cbBuffer - 1)) == 0 && cbBuffer >= MIN_BUFFER_SIZE );
+    SYMCRYPT_ASSERT( (cbBuffer & (cbBuffer - 1)) == 0 && cbBuffer >= MIN_BUFFER_SIZE );
     SYMCRYPT_ASSERT( lshift < cbBuffer );
 
     pBuf = (NATIVE_UINT *) pbBuffer;
@@ -351,7 +355,7 @@ SymCryptScsRotateBuffer(
 //
 // (pcMap, nMap) point to an array of nMap entries of type SYMCRYPT_UINT32_MAP;
 // each entry specifies a single mapping. If u32Input matches the
-// 'from' field, the return value will be the 'to' field value. 
+// 'from' field, the return value will be the 'to' field value.
 // If u32Input is not equal to any 'from' field values, the return value is u32Default.
 // Both u32Input and the return value are treated as secrets w.r.t. side channels.
 //

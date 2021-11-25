@@ -355,7 +355,6 @@ testEccArithmetic( _In_ PCSYMCRYPT_ECURVE pCurve )
     vprint( g_verbose, "    %-41s", "P2 := rand1 * G" );
     vprint( g_verbose, " %-40s", "SymCryptEcpointSetRandom");
     SymCryptEcpointSetRandom( pCurve, piSc1, poP2, pbScratchMul, cbScratchMul );
-
     CHECK( SymCryptEcpointOnCurve( pCurve, poP2, pbScratch, cbScratch ), "Random not on curve!");
     vprint( g_verbose, "Success\n");
 
@@ -363,7 +362,6 @@ testEccArithmetic( _In_ PCSYMCRYPT_ECURVE pCurve )
     vprint( g_verbose, "    %-41s", "P3 := rand2 * G" );
     vprint( g_verbose, " %-40s", "SymCryptEcpointSetRandom");
     SymCryptEcpointSetRandom( pCurve, piSc2, poP3, pbScratchMul, cbScratchMul );
-
     CHECK( SymCryptEcpointOnCurve( pCurve, poP3, pbScratch, cbScratch ), "Random not on curve!");
     vprint( g_verbose, "Success\n");
 
@@ -427,13 +425,13 @@ testEccArithmetic( _In_ PCSYMCRYPT_ECURVE pCurve )
     CHECK( SymCryptEcpointOnCurve( pCurve, poP2, pbScratch, cbScratch ), "Random point not on curve!");
 
     SymCryptEcpointAdd( pCurve, poP2, poP3, poP3, 0, pbScratch, cbScratch );
-    CHECK( SymCryptEcpointOnCurve( pCurve, poP3, pbScratch, cbScratch ), "Random point not on curve!");
+    CHECK( SymCryptEcpointOnCurve( pCurve, poP3, pbScratch, cbScratch ), "P2 + P3 not on curve!");
 
     scError = SymCryptEcpointScalarMul( pCurve, piSc1, poP2, 0, poP2, pbScratchMul, cbScratchMul );  // Multiply by -1
     CHECK( scError == SYMCRYPT_NO_ERROR, "Scalar Multiplying P2 failed" );
 
     SymCryptEcpointAdd( pCurve, poP2, poP3, poP3, 0, pbScratch, cbScratch );
-    CHECK( SymCryptEcpointOnCurve( pCurve, poP3, pbScratch, cbScratch ), "Random point not on curve!");
+    CHECK( SymCryptEcpointOnCurve( pCurve, poP3, pbScratch, cbScratch ), "P2 + P3 not on curve!");
 
     scError = SymCryptEcpointGetValue(pCurve, poP3, SYMCRYPT_NUMBER_FORMAT_MSB_FIRST, SYMCRYPT_ECPOINT_FORMAT_XY, pbBuffer, cbBuffer, g_rng.uint32() & SYMCRYPT_FLAG_DATA_PUBLIC, pbScratchGetSet, cbScratchGetSet);
     CHECK( scError == SYMCRYPT_NO_ERROR, "SymCryptEcpointGetValue failed" );

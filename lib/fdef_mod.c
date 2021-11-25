@@ -10,7 +10,7 @@ PSYMCRYPT_MODULUS
 SYMCRYPT_CALL
 SymCryptFdefModulusAllocate( UINT32 nDigits )
 {
-    PVOID               p;
+    PVOID               p = NULL;
     UINT32              cb;
     PSYMCRYPT_MODULUS   res = NULL;
 
@@ -20,7 +20,10 @@ SymCryptFdefModulusAllocate( UINT32 nDigits )
     //
     cb = SymCryptFdefSizeofModulusFromDigits( nDigits );
 
-    p = SymCryptCallbackAlloc( cb );
+    if( cb != 0 )
+    {
+        p = SymCryptCallbackAlloc( cb );
+    }
 
     if( p == NULL )
     {
@@ -45,10 +48,16 @@ UINT32
 SYMCRYPT_CALL
 SymCryptFdefSizeofModulusFromDigits( UINT32 nDigits )
 {
+    SYMCRYPT_ASSERT( nDigits != 0 );
+    SYMCRYPT_ASSERT( nDigits <= SYMCRYPT_FDEF_UPB_DIGITS );
+
+    // Ensure we do not overflow the following calculation when provided with invalid inputs
+    if( nDigits == 0 || nDigits > SYMCRYPT_FDEF_UPB_DIGITS )
+    {
+        return 0;
+    }
+
     // Room for the Modulus structure, the Divisor, and the R^2 Montgomery factor
-    //
-    // The nDigits requirements are enforced by SymCryptFdefSizeofDivisorFromDigits. Thus
-    // the result does not overflow and is upper bounded by 2^19.
     //
     return SYMCRYPT_FIELD_OFFSET( SYMCRYPT_MODULUS, Divisor ) + SymCryptFdefSizeofDivisorFromDigits( nDigits ) + nDigits * SYMCRYPT_FDEF_DIGIT_SIZE;
 }
@@ -60,19 +69,20 @@ SymCryptFdefModulusCreate(
                                     SIZE_T  cbBuffer,
                                     UINT32  nDigits )
 {
-    PSYMCRYPT_MODULUS pmMod = (PSYMCRYPT_MODULUS) pbBuffer;
+    PSYMCRYPT_MODULUS pmMod = NULL;
     UINT32 cb = SymCryptFdefSizeofModulusFromDigits( nDigits );
 
     const UINT32 offset = SYMCRYPT_FIELD_OFFSET( SYMCRYPT_MODULUS, Divisor );
 
-    if ( cbBuffer < cb )
-    {
-        SymCryptFatal( 'modc' );
-    }
     SYMCRYPT_ASSERT( cb >= sizeof(SYMCRYPT_MODULUS) );
     SYMCRYPT_ASSERT( cbBuffer >= cb );
+    if( (cb == 0) || (cbBuffer < cb) )
+    {
+        goto cleanup; // return NULL
+    }
 
     SYMCRYPT_ASSERT_ASYM_ALIGNED( pbBuffer );
+    pmMod = (PSYMCRYPT_MODULUS) pbBuffer;
 
     pmMod->type = 'gM' << 16;
     pmMod->nDigits = nDigits;
@@ -93,6 +103,7 @@ SymCryptFdefModulusCreate(
 
     SYMCRYPT_SET_MAGIC( pmMod );
 
+cleanup:
     return pmMod;
 }
 
@@ -604,10 +615,12 @@ SymCryptFdefModElementSetValueUint32Generic(
     SymCryptFdefClaimScratch( pbScratch, cbScratch, SYMCRYPT_SCRATCH_BYTES_FOR_COMMON_MOD_OPERATIONS( nDigits ) );
 
     if( pmMod->Divisor.nBits <= 32 && value >= SYMCRYPT_FDEF_INT_PUINT32( &pmMod->Divisor.Int )[0] )
-        {
-            // The value is >=  the modulus; this is not supported
-            SymCryptFatal( 'stvm' );
-        }
+    {
+        // The value is >=  the modulus; this is not supported
+
+        // For now do a possibly non-sidechannel safe, but mathematically correct modulo operation
+        value %= SYMCRYPT_FDEF_INT_PUINT32( &pmMod->Divisor.Int )[0];
+    }
 
     peDst->d.uint32[0] = value;
 
@@ -629,8 +642,10 @@ SymCryptFdefModElementSetValueNegUint32(
 
     if( pmMod->Divisor.nBits <= 32 && value >= SYMCRYPT_FDEF_INT_PUINT32( &pmMod->Divisor.Int )[0] )
     {
-        // The value is >=  the modulus; this is not supported
-        SymCryptFatal( 'stvn' );
+        // The value is >=  the modulus; this is not supported.
+
+        // For now do a possibly non-sidechannel safe, but mathematically correct modulo operation
+        value %= SYMCRYPT_FDEF_INT_PUINT32( &pmMod->Divisor.Int )[0];
     }
 
     if( value == 0 )
@@ -646,6 +661,10 @@ SymCryptFdefModElementSetValueNegUint32(
     SYMCRYPT_MOD_CALL( pmMod ) modSetPost( pmMod, peDst, pbScratch, cbScratch );
 }
 
+// In the worst case there is a 1 in 8 chance of successfully generating a value
+// This is when the modulus is 4 (nBits of modulus is 3), and 0, 1, and -1 are disallowed.
+// In this case, having 1000 retries, there is a ~ 2^-193 chance of failure unless SymCryptCallbackRandom
+// is completely broken. This passes the bar of being reasonable to Fatal.
 #define FDEF_MOD_SET_RANDOM_GENERIC_LIMIT   (1000)
 
 VOID
@@ -670,14 +689,9 @@ SymCryptFdefModSetRandomGeneric(
 
     SymCryptFdefClaimScratch( pbScratch, cbScratch, SYMCRYPT_SCRATCH_BYTES_FOR_COMMON_MOD_OPERATIONS( nDigits ) );
 
-    if( (flags & SYMCRYPT_FLAG_MODRANDOM_ALLOW_ZERO) != 0 && (flags & SYMCRYPT_FLAG_MODRANDOM_ALLOW_ONE) == 0 )
-    {
-        // It is invalid to allow 0 but not 1
-        SymCryptFatal( 'unsp' );
-    }
-
     if( (flags & SYMCRYPT_FLAG_MODRANDOM_ALLOW_ZERO) != 0 )
     {
+        // SYMCRYPT_FLAG_MODRANDOM_ALLOW_ZERO => SYMCRYPT_FLAG_MODRANDOM_ALLOW_ONE
         offset = 0;
     } else if( (flags & SYMCRYPT_FLAG_MODRANDOM_ALLOW_ONE) != 0 )
     {
@@ -695,20 +709,14 @@ SymCryptFdefModSetRandomGeneric(
     }
 
     //
-    // Special cases for the divisor:
-    //  -   When it is 1, the only allowable return value is
-    //      0. So we can only have offset==0 and ulimit==0.
-    //  -   When it is 2, the only allowable return values are
-    //      0 and 1. So we can have offset==0 (regardless
-    //      of ulimit) or (offset==1 and ulimit==0).
-    //  -   When it is 3, the only allowable return values are
-    //      0,1, and 2. So everything other than offset==2 and
-    //      ulimit==1 is allowed.
-    //
-    if ( (pmMod->Divisor.nBits < 3) &&
-         (offset + ulimit >= pMod[0]) )
+    // Special case for small divisors:
+    //  When the divisor is 1, 2, or 3 we always allow returning -1
+    //  We may also allow returning 1 or 0 depending on the flags specified
+    if ( pmMod->Divisor.nBits < 3 )
     {
-        SymCryptFatal( 'rndX' );
+        // At a minimum, allow -1
+        offset = SYMCRYPT_MIN(offset, pMod[0] - 1);
+        ulimit = 0;
     }
 
     // Set pTmp to pMod-(offset+ulimit)
@@ -742,7 +750,7 @@ SymCryptFdefModSetRandomGeneric(
 
     if (cntr >= FDEF_MOD_SET_RANDOM_GENERIC_LIMIT)
     {
-        SymCryptFatal( 'rndc' );
+        SymCryptFatal( 'rndc');
     }
 
     // Add the offset which allows us to avoid 0 and/or 1 if required.
@@ -887,7 +895,8 @@ SymCryptFdefModInvGeneric(
         // As the modulus cannot be blinded, it requires a fully side-channel safe algorithm which is much more complicated and
         // slower.
         // When this is necessary, we will add a second ModInv implementation for those cases.
-        SymCryptFatal( 'unsp' );
+        scError = SYMCRYPT_INVALID_ARGUMENT;
+        goto cleanup;
     }
 
     //

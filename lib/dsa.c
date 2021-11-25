@@ -596,7 +596,7 @@ SymCryptDsaVerify(
     peBases[1] = pKey->pePublicKey;
 
     // v = G^U1 * Y^U2
-    SymCryptModMultiExp(
+    scError = SymCryptModMultiExp(
                 pDlgroup->pmP,
                 peBases,
                 piIntQ,
@@ -606,6 +606,10 @@ SymCryptDsaVerify(
                 peResP,
                 pbScratchInternal,
                 cbScratchInternal );
+    if (scError!=SYMCRYPT_NO_ERROR)
+    {
+        goto cleanup;
+    }
 
     // Convert V to a modelement modulo Q
     SymCryptModElementToInt(

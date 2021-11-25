@@ -130,7 +130,11 @@ SymCryptRsaCoreEnc(
     // Convert the public exponent to an Int
     // Future: we can optimize the ModExp to take an UINT64
     piExp = SymCryptIntCreate( SYMCRYPT_ASYM_ALIGN_UP(abExpIntBuffer), sizeof( abExpIntBuffer) - SYMCRYPT_ASYM_ALIGN_VALUE, 1 );
-    SYMCRYPT_HARD_ASSERT( piExp != NULL );
+    if( piExp == NULL )
+    {
+        scError = SYMCRYPT_HARDWARE_FAILURE;
+        goto cleanup;
+    }
     SymCryptIntSetValueUint64( pkRsakey->au64PubExp[0], piExp );
 
     // Modular Exponentiation
@@ -166,18 +170,19 @@ SYMCRYPT_CALL
 SymCryptRsaCoreDecCrtScratchSpace( _In_ PCSYMCRYPT_RSAKEY pkRsakey)
 {
     UINT32 cbModElementTotal = 0;
+    UINT32 nPrimes = pkRsakey->nPrimes;
 
-    if ( pkRsakey->nPrimes > SYMCRYPT_RSAKEY_MAX_NUMOF_PRIMES )
-    {
-        SymCryptFatal( 'rsad' );
-    }
+    SYMCRYPT_ASSERT( nPrimes <= SYMCRYPT_RSAKEY_MAX_NUMOF_PRIMES );
+    // clamp nPrimes to SYMCRYPT_RSAKEY_MAX_NUMOF_PRIMES for scratch memory allocation purposes
+    // SymCryptRsaCoreDecCrt will fail with invalid argument if there are too many primes later
+    nPrimes = SYMCRYPT_MIN( nPrimes, SYMCRYPT_RSAKEY_MAX_NUMOF_PRIMES );
 
     for (UINT32 i=0; i<pkRsakey->nPrimes; i++)
     {
         cbModElementTotal += SYMCRYPT_SIZEOF_MODELEMENT_FROM_BITS( pkRsakey->nBitsOfPrimes[i]);
     }
 
-	// Bounded by 5*2^19 + 2^24 ~ 2^24 (see symcrypt_internal.h)
+    // Bounded by 5*2^19 + 2^24 ~ 2^24 (see symcrypt_internal.h)
     return 3*SymCryptSizeofIntFromDigits( pkRsakey->nDigitsOfModulus ) +
            SymCryptSizeofIntFromDigits( pkRsakey->nMaxDigitsOfPrimes ) +
            cbModElementTotal +
@@ -690,6 +695,9 @@ cleanup:
 
     return scError;
 }
+
+// Ensure SymCryptRoundUpPow2Sizet below will not fail
+C_ASSERT((UINT32) ((SYMCRYPT_RSAKEY_MAX_BITSIZE_MODULUS + 7) / 8) <= ((SIZE_T_MAX / 2) + 1));
 
 SYMCRYPT_ERROR
 SYMCRYPT_CALL

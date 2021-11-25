@@ -108,6 +108,8 @@ SymCryptScsTableSetBuffer(
 
 
 C_ASSERT( SYMCRYPT_SCSTABLE_INTERLEAVE_SIZE == 16 || SYMCRYPT_SCSTABLE_INTERLEAVE_SIZE == 32 );
+// check that an interleave size is exactly 4 words
+C_ASSERT( SYMCRYPT_SCSTABLE_INTERLEAVE_SIZE == 4 * sizeof( SYMCRYPT_SCSTABLE_TYPE ) );
 
 VOID
 SYMCRYPT_CALL
@@ -208,9 +210,6 @@ SymCryptScsTableLoadC(
     SYMCRYPT_ASSERT( cbData >= sizeof( SYMCRYPT_SCSTABLE_TYPE ) * SYMCRYPT_SCSTABLE_GROUP_SIZE );
     SYMCRYPT_ASSERT( cbData == pScsTable->elementSize );
     UNREFERENCED_PARAMETER( cbData );
-
-    // check that an interleave size is exactly 4 words
-    SYMCRYPT_HARD_ASSERT(interleaveSize == 4 * sizeof( SYMCRYPT_SCSTABLE_TYPE ));
 
 #if SYMCRYPT_SCSTABLE_USE64
 #define SCS_MASK_EQUAL32( _a, _b )  ( ~(UINT64) ((INT64) ((UINT64)0 - (_a ^ _b)) >> 32 ) )

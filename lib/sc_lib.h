@@ -1430,7 +1430,7 @@ SymCryptGcmDecryptPartTwoPass(
     _Out_writes_( cbData )  PBYTE               pbDst,
                             SIZE_T              cbData );
 
-VOID
+SYMCRYPT_ERROR
 SYMCRYPT_CALL
 SymCryptParallelHashProcess_serial(
     _In_                                                            PCSYMCRYPT_PARALLEL_HASH            pParHash,
@@ -1441,7 +1441,7 @@ SymCryptParallelHashProcess_serial(
     _Out_writes_( cbScratch )                                       PBYTE                               pbScratch,
                                                                     SIZE_T                              cbScratch );
 
-VOID
+SYMCRYPT_ERROR
 SYMCRYPT_CALL
 SymCryptParallelHashProcess(
     _In_                                                            PCSYMCRYPT_PARALLEL_HASH            pParHash,
@@ -2805,7 +2805,7 @@ SymCryptModExpGeneric(
     _Out_writes_bytes_( cbScratch ) PBYTE                   pbScratch,
                                     SIZE_T                  cbScratch );
 
-VOID
+SYMCRYPT_ERROR
 SYMCRYPT_CALL
 SymCryptModMultiExpGeneric(
     _In_                            PCSYMCRYPT_MODULUS      pmMod,

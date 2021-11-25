@@ -2210,6 +2210,7 @@ ParallelHashImp<ImpSc, AlgParallelSha256>::process(
         _In_reads_( nOperations )   BCRYPT_MULTI_HASH_OPERATION *   pOperations,
                                     SIZE_T                          nOperations )
 {
+    SYMCRYPT_ERROR                      scError;
     SYMCRYPT_PARALLEL_HASH_OPERATION    op[MAX_PARALLEL_HASH_OPERATIONS];
     BYTE                                scratch[SYMCRYPT_PARALLEL_SHA256_FIXED_SCRATCH + SYMCRYPT_PARALLEL_HASH_PER_STATE_SCRATCH * MAX_PARALLEL_HASH_STATES + 128];
 
@@ -2235,13 +2236,14 @@ ParallelHashImp<ImpSc, AlgParallelSha256>::process(
 
     SYMCRYPT_ASSERT( state.nHashes <= MAX_PARALLEL_HASH_STATES );
     initYmmRegisters();
-    SymCryptParallelSha256Process( &state.sc[0],
-                                    state.nHashes,
-                                    &op[0],
-                                    nOperations,
-                                    &scratch[scratchOffset],
-                                    nScratch );
+    scError = SymCryptParallelSha256Process(    &state.sc[0],
+                                                state.nHashes,
+                                                &op[0],
+                                                nOperations,
+                                                &scratch[scratchOffset],
+                                                nScratch );
     verifyYmmRegisters();
+    CHECK( scError == SYMCRYPT_NO_ERROR, "Parallel SHA256 returned an error" );
     CHECK( scratch[scratchOffset + nScratch] == sentinel, "Parallel SHA256 used too much scratch space" );
 }
 
@@ -2367,6 +2369,7 @@ ParallelHashImp<ImpSc, AlgParallelSha384>::process(
         _In_reads_( nOperations )   BCRYPT_MULTI_HASH_OPERATION *   pOperations,
                                     SIZE_T                          nOperations )
 {
+    SYMCRYPT_ERROR                      scError;
     SYMCRYPT_PARALLEL_HASH_OPERATION    op[MAX_PARALLEL_HASH_OPERATIONS];
     BYTE                                scratch[SYMCRYPT_PARALLEL_SHA384_FIXED_SCRATCH + SYMCRYPT_PARALLEL_HASH_PER_STATE_SCRATCH * MAX_PARALLEL_HASH_STATES + 128];
 
@@ -2392,13 +2395,14 @@ ParallelHashImp<ImpSc, AlgParallelSha384>::process(
 
     SYMCRYPT_ASSERT( state.nHashes <= MAX_PARALLEL_HASH_STATES );
     initYmmRegisters();
-    SymCryptParallelSha384Process( &state.sc[0],
-                                    state.nHashes,
-                                    &op[0],
-                                    nOperations,
-                                    &scratch[scratchOffset],
-                                    nScratch );
+    scError = SymCryptParallelSha384Process(    &state.sc[0],
+                                                state.nHashes,
+                                                &op[0],
+                                                nOperations,
+                                                &scratch[scratchOffset],
+                                                nScratch );
     verifyYmmRegisters();
+    CHECK( scError == SYMCRYPT_NO_ERROR, "Parallel SHA384 returned an error" );
     CHECK( scratch[scratchOffset + nScratch] == sentinel, "Parallel SHA384 used too much scratch space" );
 }
 
@@ -2524,6 +2528,7 @@ ParallelHashImp<ImpSc, AlgParallelSha512>::process(
         _In_reads_( nOperations )   BCRYPT_MULTI_HASH_OPERATION *   pOperations,
                                     SIZE_T                          nOperations )
 {
+    SYMCRYPT_ERROR                      scError;
     SYMCRYPT_PARALLEL_HASH_OPERATION    op[MAX_PARALLEL_HASH_OPERATIONS];
     BYTE                                scratch[SYMCRYPT_PARALLEL_SHA512_FIXED_SCRATCH + SYMCRYPT_PARALLEL_HASH_PER_STATE_SCRATCH * MAX_PARALLEL_HASH_STATES + 128];
 
@@ -2549,13 +2554,14 @@ ParallelHashImp<ImpSc, AlgParallelSha512>::process(
 
     SYMCRYPT_ASSERT( state.nHashes <= MAX_PARALLEL_HASH_STATES );
     initYmmRegisters();
-    SymCryptParallelSha512Process( &state.sc[0],
-                                    state.nHashes,
-                                    &op[0],
-                                    nOperations,
-                                    &scratch[scratchOffset],
-                                    nScratch );
+    scError = SymCryptParallelSha512Process(    &state.sc[0],
+                                                state.nHashes,
+                                                &op[0],
+                                                nOperations,
+                                                &scratch[scratchOffset],
+                                                nScratch );
     verifyYmmRegisters();
+    CHECK( scError == SYMCRYPT_NO_ERROR, "Parallel SHA512 returned an error" );
     CHECK( scratch[scratchOffset + nScratch] == sentinel, "Parallel SHA512 used too much scratch space" );
 }
 
@@ -2795,7 +2801,7 @@ algImpDecryptPerfFunction<ImpSc, AlgTlsCbcHmacSha256>( PBYTE buf1, PBYTE buf2, P
         buf2,
         ((dataSize + 16) & ~15) + SYMCRYPT_HMAC_SHA256_RESULT_SIZE);
 
-    SYMCRYPT_HARD_ASSERT( scError == SYMCRYPT_NO_ERROR );
+    SYMCRYPT_ASSERT( scError == SYMCRYPT_NO_ERROR );
 }
 
 
@@ -2900,7 +2906,7 @@ algImpDecryptPerfFunction<ImpSc, AlgTlsCbcHmacSha1>( PBYTE buf1, PBYTE buf2, PBY
         buf2,
         ((dataSize + SYMCRYPT_HMAC_SHA1_RESULT_SIZE + 16) & ~15));
 
-    SYMCRYPT_HARD_ASSERT( scError == SYMCRYPT_NO_ERROR );
+    SYMCRYPT_ASSERT( scError == SYMCRYPT_NO_ERROR );
 }
 
 
@@ -3005,7 +3011,7 @@ algImpDecryptPerfFunction<ImpSc, AlgTlsCbcHmacSha384>( PBYTE buf1, PBYTE buf2, P
         buf2,
         ((dataSize + 16) & ~15) + SYMCRYPT_HMAC_SHA384_RESULT_SIZE);
 
-    SYMCRYPT_HARD_ASSERT( scError == SYMCRYPT_NO_ERROR );
+    SYMCRYPT_ASSERT( scError == SYMCRYPT_NO_ERROR );
 }
 
 /////////////////////////

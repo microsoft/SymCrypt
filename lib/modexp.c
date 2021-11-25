@@ -248,6 +248,8 @@ SymCryptModExpGeneric(
 // 512 - 2048 bits.
 #define SYMCRYPT_MODMULTIEXP_WINDOW_SIZE        (5)
 
+C_ASSERT( (1 << (SYMCRYPT_MODMULTIEXP_WINDOW_SIZE-1)) <= SYMCRYPT_MODMULTIEXP_MAX_NPRECOMP );
+
 //
 // The following function fills the table with odd powers
 // of the base point B.
@@ -324,11 +326,6 @@ SymCryptModMultiExpWnafWithInterleaving(
 
     // Number of recoded digits
     nRecodedDigits = nBitsExp;
-
-    if ( nPrecompPoints > SYMCRYPT_MODMULTIEXP_MAX_NPRECOMP )
-    {
-        SymCryptFatal( 'MExp' );
-    }
 
     //
     // From symcrypt_internal.h we have:
@@ -447,7 +444,7 @@ SymCryptModMultiExpWnafWithInterleaving(
     }
 }
 
-VOID
+SYMCRYPT_ERROR
 SYMCRYPT_CALL
 SymCryptModMultiExpGeneric(
     _In_                            PCSYMCRYPT_MODULUS      pmMod,
@@ -460,11 +457,13 @@ SymCryptModMultiExpGeneric(
     _Out_writes_bytes_( cbScratch ) PBYTE                   pbScratch,
                                     SIZE_T                  cbScratch )
 {
+    SYMCRYPT_ERROR scError = SYMCRYPT_NO_ERROR;
 
     if ( (nBases > SYMCRYPT_MODMULTIEXP_MAX_NBASES) ||
          (nBitsExp > SYMCRYPT_MODMULTIEXP_MAX_NBITSEXP) )
     {
-        SymCryptFatal( 'MExp' );
+        scError = SYMCRYPT_INVALID_ARGUMENT;
+        goto cleanup;
     }
 
     if ((flags & SYMCRYPT_FLAG_DATA_PUBLIC)!=0)
@@ -505,4 +504,7 @@ SymCryptModMultiExpGeneric(
         // Copy the result into the destination
         SymCryptModElementCopy( pmMod, peAcc, peDst );
     }
+
+cleanup:
+    return scError;
 }

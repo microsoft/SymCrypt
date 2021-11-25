@@ -32,6 +32,8 @@
 
 
 #define SYMCRYPT_TRIALDIVISION_MAX_SMALL_PRIME          (1<<22)     // Some large limit to bound memory usage
+C_ASSERT( SYMCRYPT_TRIALDIVISION_MAX_SMALL_PRIME <= UINT32_MAX );
+C_ASSERT( SYMCRYPT_TRIALDIVISION_MAX_SMALL_PRIME == ((UINT32) SYMCRYPT_TRIALDIVISION_MAX_SMALL_PRIME) );
 
 VOID
 SYMCRYPT_CALL
@@ -132,18 +134,24 @@ SymCryptFdefDigitsFromBits( UINT32 nBits )
 {
     UINT32  res;
 
-    if ( nBits == 0 )
+    if( nBits == 0 )
     {
         res = 1;
     }
     else
     {
-        if ( nBits > SYMCRYPT_INT_MAX_BITS )
-        {
-            SymCryptFatal( 'fdgt' );
-        }
+        SYMCRYPT_ASSERT( nBits <= SYMCRYPT_INT_MAX_BITS );
 
-        res = SYMCRYPT_FDEF_DIGITS_FROM_BITS( nBits );
+        // Callers with integers larger than SYMCRYPT_INT_MAX_BITS should not occur in real use cases
+        // To avoid overflow issues, return the 0 digits to indicate an error which can be handled by
+        // callers, or flow through into object allocation which will in turn recognize the invalid
+        // digit count.
+        if( nBits > SYMCRYPT_INT_MAX_BITS )
+        {
+            res = 0;
+        } else {
+            res = SYMCRYPT_FDEF_DIGITS_FROM_BITS( nBits );
+        }
     }
 
     return res;
@@ -156,7 +164,7 @@ PSYMCRYPT_INT
 SYMCRYPT_CALL
 SymCryptFdefIntAllocate( UINT32 nDigits )
 {
-    PVOID               p;
+    PVOID               p = NULL;
     UINT32              cb;
     PSYMCRYPT_INT       res = NULL;
 
@@ -166,7 +174,10 @@ SymCryptFdefIntAllocate( UINT32 nDigits )
     //
     cb = SymCryptFdefSizeofIntFromDigits( nDigits );
 
-    p = SymCryptCallbackAlloc( cb );
+    if( cb != 0 )
+    {
+        p = SymCryptCallbackAlloc( cb );
+    }
 
     if( p == NULL )
     {
@@ -184,11 +195,13 @@ UINT32
 SYMCRYPT_CALL
 SymCryptFdefSizeofIntFromDigits( UINT32 nDigits )
 {
-    // With this check we can verify that the following calculation will not overflow and
-    // is not larger than 2^18.
-    if ( (nDigits == 0) || (nDigits > SYMCRYPT_FDEF_UPB_DIGITS) )
+    SYMCRYPT_ASSERT( nDigits != 0 );
+    SYMCRYPT_ASSERT( nDigits <= SYMCRYPT_FDEF_UPB_DIGITS );
+
+    // Ensure we do not overflow the following calculation when provided with invalid inputs
+    if( nDigits == 0 || nDigits > SYMCRYPT_FDEF_UPB_DIGITS )
     {
-        SymCryptFatal( 'digt' );
+        return 0;
     }
 
     // Note: ti stands for 'Type-Int' and it helps catch type errors when type-casting macros are used.
@@ -202,19 +215,18 @@ SymCryptFdefIntCreate(
                                     SIZE_T  cbBuffer,
                                     UINT32  nDigits )
 {
-    PSYMCRYPT_INT  pInt;
+    PSYMCRYPT_INT pInt = NULL;
     UINT32 cb = SymCryptFdefSizeofIntFromDigits( nDigits );
 
-    if ( cbBuffer < cb )
-    {
-        SymCryptFatal( 'intc' );
-    }
     SYMCRYPT_ASSERT( cb >= sizeof(SYMCRYPT_INT) );
     SYMCRYPT_ASSERT( cbBuffer >= cb );
+    if( (cb == 0) || (cbBuffer < cb) )
+    {
+        goto cleanup; // return NULL
+    }
 
     SYMCRYPT_ASSERT_ASYM_ALIGNED( pbBuffer );
     pInt = (PSYMCRYPT_INT) pbBuffer;
-
 
     pInt->type = 'gI' << 16;
     pInt->nDigits = nDigits;
@@ -227,6 +239,7 @@ SymCryptFdefIntCreate(
 
     SYMCRYPT_SET_MAGIC( pInt );
 
+cleanup:
     return pInt;
 }
 
@@ -257,8 +270,8 @@ SymCryptFdefIntCopy(
     //
     if( piSrc != piDst )
     {
-		// This is normally considered a banned, unsafe function. A note about why it is safe in this use
-		// would be good.
+        // This is normally considered a banned, unsafe function. A note about why it is safe in this use
+        // would be good.
         memcpy( SYMCRYPT_FDEF_INT_PUINT32( piDst ), SYMCRYPT_FDEF_INT_PUINT32( piSrc ), SYMCRYPT_OBJ_NBYTES( piDst ));
     }
 }
@@ -792,7 +805,7 @@ PSYMCRYPT_DIVISOR
 SYMCRYPT_CALL
 SymCryptFdefDivisorAllocate( UINT32 nDigits )
 {
-    PVOID               p;
+    PVOID               p = NULL;
     UINT32              cb;
     PSYMCRYPT_DIVISOR   res = NULL;
 
@@ -802,7 +815,10 @@ SymCryptFdefDivisorAllocate( UINT32 nDigits )
     //
     cb = SymCryptFdefSizeofDivisorFromDigits( nDigits );
 
-    p = SymCryptCallbackAlloc( cb );
+    if( cb != 0 )
+    {
+        p = SymCryptCallbackAlloc( cb );
+    }
 
     if( p == NULL )
     {
@@ -819,10 +835,15 @@ UINT32
 SYMCRYPT_CALL
 SymCryptFdefSizeofDivisorFromDigits( UINT32 nDigits )
 {
-    //
-    // The nDigits requirements are enforced by SymCryptFdefSizeofIntFromDigits. Thus
-    // the result does not overflow and is upper bounded by 2^19.
-    //
+    SYMCRYPT_ASSERT( nDigits != 0 );
+    SYMCRYPT_ASSERT( nDigits <= SYMCRYPT_FDEF_UPB_DIGITS );
+
+    // Ensure we do not overflow the following calculation when provided with invalid inputs
+    if( nDigits == 0 || nDigits > SYMCRYPT_FDEF_UPB_DIGITS )
+    {
+        return 0;
+    }
+
     return SYMCRYPT_FIELD_OFFSET( SYMCRYPT_DIVISOR, Int ) + SymCryptFdefSizeofIntFromDigits( nDigits );
 }
 
@@ -833,23 +854,24 @@ SymCryptFdefDivisorCreate(
                                     SIZE_T  cbBuffer,
                                     UINT32  nDigits )
 {
-    PSYMCRYPT_DIVISOR  pdDiv = (PSYMCRYPT_DIVISOR) pbBuffer;
+    PSYMCRYPT_DIVISOR  pdDiv = NULL;
     UINT32 cb = SymCryptSizeofDivisorFromDigits( nDigits );
 
-    if ( cbBuffer < cb )
-    {
-        SymCryptFatal( 'divc' );
-    }
     SYMCRYPT_ASSERT( cb >= sizeof(SYMCRYPT_DIVISOR) );
     SYMCRYPT_ASSERT( cbBuffer >= cb );
+    if( (cb == 0) || (cbBuffer < cb) )
+    {
+        goto cleanup; // return NULL
+    }
 
     SYMCRYPT_ASSERT_ASYM_ALIGNED( pbBuffer );
+    pdDiv = (PSYMCRYPT_DIVISOR) pbBuffer;
 
     pdDiv->type = 'gD' << 16;
     pdDiv->nDigits = nDigits;
 
     //
-    // The nDigits requirements are enforced by SymCryptSizeofDivisorFromDigits. Thus
+    // The nDigits requirements are enforced by SymCryptFdefSizeofDivisorFromDigits. Thus
     // the result does not overflow and is upper bounded by 2^19.
     //
     pdDiv->cbSize = cb;
@@ -858,6 +880,7 @@ SymCryptFdefDivisorCreate(
 
     SymCryptIntCreate( (PBYTE)&pdDiv->Int, cbBuffer - SYMCRYPT_FIELD_OFFSET( SYMCRYPT_DIVISOR, Int ), nDigits );
 
+cleanup:
     return pdDiv;
 }
 
@@ -1158,6 +1181,10 @@ SymCryptFdefCreateTrialDivisionContext( UINT32 nDigits )
     if( nDigits <= 1000 )
     {
         // nDigits is small enough to not have any overflows in this computation
+        if( nDigits == 0 )
+        {
+            goto cleanup; // return NULL
+        }
 
         cRabinMillerCost = (UINT64) nDigits * nDigits * nDigits * (SYMCRYPT_RABINMILLER_DIGIT_CYCLES * 8 / 10);
         i = 0;
@@ -1182,11 +1209,10 @@ SymCryptFdefCreateTrialDivisionContext( UINT32 nDigits )
         tmp64 = cRabinMillerCost / cPerPrimeCost;
         tmp64 = SYMCRYPT_MIN( tmp64, SYMCRYPT_TRIALDIVISION_MAX_SMALL_PRIME );
         maxPrime = (UINT32) tmp64;
-        SYMCRYPT_HARD_ASSERT( maxPrime == tmp64 );
         maxPrime = SYMCRYPT_MAX( maxPrime, minPrime );       // Make sure we don't fall into the previous group size that we don't want
     }
-	else
-	{
+    else
+    {
         maxPrime = SYMCRYPT_TRIALDIVISION_MAX_SMALL_PRIME;
     }
 

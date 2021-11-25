@@ -18,8 +18,9 @@ SymCryptTwistedEdwardsFillScratchSpaces( _In_ PSYMCRYPT_ECURVE pCurve )
     // All the scratch space computations are upper bounded by the SizeofXXX bound (2^19) and
     // the SCRATCH_BYTES_FOR_XXX bound (2^24) (see symcrypt_internal.h).
     //
-    // One caveat is SymCryptSizeofEcpointEx which calculates the size of EcPoint with
-    // 4 coordinates (each one a modelement of max size 2^17). Thus upper bounded by 2^20.
+    // One caveat is SymCryptSizeofEcpointFromCurve and SymCryptSizeofEcpointEx which calculate
+    // the size of EcPoint with 4 coordinates (each one a modelement of max size 2^17). Thus upper
+    // bounded by 2^20.
     //
     // Another is the precomp points computation where the nPrecompPoints are up to
     // 2^SYMCRYPT_ECURVE_SW_DEF_WINDOW = 2^6 and the nRecodedDigits are equal to the
@@ -32,12 +33,12 @@ SymCryptTwistedEdwardsFillScratchSpaces( _In_ PSYMCRYPT_ECURVE pCurve )
 
     pCurve->cbScratchScalar =
             (pCurve->cbModElement) +
-            2 * SymCryptSizeofEcpointEx( pCurve->cbModElement, SYMCRYPT_INTERNAL_NUMOF_COORDINATES( pCurve->eCoordinates ) ) +
+            2 * SymCryptSizeofEcpointFromCurve( pCurve ) +
             2 * SymCryptSizeofIntFromDigits( pCurve->GOrdDigits ) +
             SYMCRYPT_MAX( pCurve->cbScratchCommon, SYMCRYPT_SCRATCH_BYTES_FOR_COMMON_MOD_OPERATIONS( pCurve->GOrdDigits ));
 
     pCurve->cbScratchScalarMulti =
-            pCurve->info.sw.nPrecompPoints * SymCryptSizeofEcpointEx( pCurve->cbModElement, SYMCRYPT_INTERNAL_NUMOF_COORDINATES( pCurve->eCoordinates ) ) +
+            pCurve->info.sw.nPrecompPoints * SymCryptSizeofEcpointFromCurve( pCurve ) +
             ((2*pCurve->info.sw.nRecodedDigits * sizeof(UINT32) + SYMCRYPT_ASYM_ALIGN_VALUE - 1 )/SYMCRYPT_ASYM_ALIGN_VALUE) * SYMCRYPT_ASYM_ALIGN_VALUE;
 
     pCurve->cbScratchGetSetValue =
@@ -50,7 +51,7 @@ SymCryptTwistedEdwardsFillScratchSpaces( _In_ PSYMCRYPT_ECURVE pCurve )
 
     pCurve->cbScratchEckey =
         SYMCRYPT_MAX( pCurve->cbModElement + SymCryptSizeofIntFromDigits(SymCryptEcurveDigitsofScalarMultiplier(pCurve)),
-                SymCryptSizeofEcpointEx( pCurve->cbModElement, SYMCRYPT_INTERNAL_NUMOF_COORDINATES( pCurve->eCoordinates ) ) ) +
+                SymCryptSizeofEcpointFromCurve( pCurve ) ) +
         SYMCRYPT_MAX( pCurve->cbScratchScalar + pCurve->cbScratchScalarMulti, pCurve->cbScratchGetSetValue );
 }
 

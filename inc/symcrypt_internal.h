@@ -209,6 +209,10 @@ typedef uint8_t         BYTE;
 // Size_t
 typedef size_t          SIZE_T;
 
+#ifndef SIZE_T_MAX
+#define SIZE_T_MAX      SIZE_MAX
+#endif
+
 typedef long INT_PTR, *PINT_PTR;
 typedef unsigned long UINT_PTR, *PUINT_PTR;
 
@@ -1688,11 +1692,11 @@ typedef const SYMCRYPT_ECPOINT * PCSYMCRYPT_ECPOINT;
 //
 
 SYMCRYPT_ASYM_ALIGN_STRUCT _SYMCRYPT_INT {
-    UINT32                  type;
-    UINT32                  nDigits;                    // digit size depends on run-time decisions...
-    UINT32                  cbSize;
-    SYMCRYPT_MAGIC_FIELD
+                                                    UINT32  type;
+    _Field_range_( 1, SYMCRYPT_FDEF_UPB_DIGITS )    UINT32  nDigits;    // digit size depends on run-time decisions...
+                                                    UINT32  cbSize;
 
+    SYMCRYPT_MAGIC_FIELD
     SYMCRYPT_ASYM_ALIGN union {
         struct {
             UINT32          uint32[SYMCRYPT_ANYSIZE];   // FDEF: array UINT32[nDigits * # uint32 per digit]
@@ -1707,13 +1711,13 @@ SYMCRYPT_ASYM_ALIGN_STRUCT _SYMCRYPT_INT {
 #define SYMCRYPT_FDEF_SIZEOF_INT_FROM_BITS( _bits )         SYMCRYPT_FDEF_SIZEOF_INT_FROM_DIGITS( SYMCRYPT_FDEF_DIGITS_FROM_BITS( _bits ))
 
 SYMCRYPT_ASYM_ALIGN_STRUCT _SYMCRYPT_DIVISOR {
-    UINT32                  type;
-    UINT32                  nDigits;                    // digit size depends on run-time decisions...
-    UINT32                  cbSize;
+                                                    UINT32  type;
+    _Field_range_( 1, SYMCRYPT_FDEF_UPB_DIGITS )    UINT32  nDigits;    // digit size depends on run-time decisions...
+                                                    UINT32  cbSize;
 
-    UINT32                  nBits;                  // # bits in divisor
+                                                    UINT32  nBits;      // # bits in divisor
+
     SYMCRYPT_MAGIC_FIELD
-
     union{
         struct {
             UINT64                  W;              // approximate inverse of the divisor. Some implementations will use 64 bits, others 32 bits.
@@ -1727,12 +1731,12 @@ SYMCRYPT_ASYM_ALIGN_STRUCT _SYMCRYPT_DIVISOR {
 #define SYMCRYPT_FDEF_SIZEOF_DIVISOR_FROM_BITS( _bits ) SYMCRYPT_FDEF_SIZEOF_DIVISOR_FROM_DIGITS( SYMCRYPT_FDEF_DIGITS_FROM_BITS( _bits ))
 
 SYMCRYPT_ASYM_ALIGN_STRUCT _SYMCRYPT_MODULUS {
-    UINT32                  type;
-    UINT32                  nDigits;                    // digit size depends on run-time decisions...
-    UINT32                  cbSize;                     // Size of modulus object
+                                                    UINT32  type;
+    _Field_range_( 1, SYMCRYPT_FDEF_UPB_DIGITS )    UINT32  nDigits;        // digit size depends on run-time decisions...
+                                                    UINT32  cbSize;         // Size of modulus object
 
-    UINT32                  flags;          // The flag the modulus was created with
-    UINT32                  cbModElement;   // size of one modElement
+                                                    UINT32  flags;          // The flag the modulus was created with
+                                                    UINT32  cbModElement;   // size of one modElement
 
     SYMCRYPT_MAGIC_FIELD
     union{

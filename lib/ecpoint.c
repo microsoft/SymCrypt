@@ -20,9 +20,15 @@ SymCryptSizeofEcpointEx(
     UINT32 cbModElement,
     UINT32 numOfCoordinates )
 {
-    if ( numOfCoordinates > SYMCRYPT_ECPOINT_FORMAT_MAX_LENGTH )
+    SYMCRYPT_ASSERT(numOfCoordinates > 0);
+    SYMCRYPT_ASSERT(numOfCoordinates <= SYMCRYPT_ECPOINT_FORMAT_MAX_LENGTH);
+
+    // Callers should never specify numOfCoordinates equal to 0 or greater than
+    // SYMCRYPT_ECPOINT_FORMAT_MAX_LENGTH
+    // Return 0 to indicate failure if a caller does specify invalid numOfCoordinates
+    if( (numOfCoordinates == 0) || (numOfCoordinates > SYMCRYPT_ECPOINT_FORMAT_MAX_LENGTH) )
     {
-        SymCryptFatal( 'ecp4' );
+        return 0;
     }
 
     // Since the maximum number of coordinates is 4 this result is bounded
@@ -42,13 +48,16 @@ PSYMCRYPT_ECPOINT
 SYMCRYPT_CALL
 SymCryptEcpointAllocate( _In_ PCSYMCRYPT_ECURVE pCurve )
 {
-    PVOID               p;
+    PVOID               p = NULL;
     SIZE_T              cb;
     PSYMCRYPT_ECPOINT   res = NULL;
 
     cb = SymCryptSizeofEcpointFromCurve( pCurve );
 
-    p = SymCryptCallbackAlloc( cb );
+    if ( cb != 0 )
+    {
+        p = SymCryptCallbackAlloc( cb );
+    }
 
     if ( p==NULL )
     {
@@ -91,6 +100,10 @@ SymCryptEcpointCreateEx(
     SYMCRYPT_ASSERT( pCurve->FMod != 0 );
     SYMCRYPT_ASSERT( pCurve->cbModElement != 0 );
     SYMCRYPT_ASSERT( cbBuffer >= SymCryptSizeofEcpointEx( pCurve->cbModElement, numOfCoordinates ) );
+    if ( cbBuffer == 0 || numOfCoordinates == 0 )
+    {
+        goto cleanup;
+    }
 
     SYMCRYPT_ASSERT_ASYM_ALIGNED( pbBuffer );
 
@@ -105,7 +118,7 @@ SymCryptEcpointCreateEx(
         pmTmp = SymCryptModElementCreate( pbBuffer, cbModElement, pCurve->FMod );
         if ( pmTmp == NULL )
         {
-            pmTmp = NULL;
+            poPoint = NULL;
             goto cleanup;
         }
         pbBuffer += cbModElement;

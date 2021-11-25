@@ -88,14 +88,15 @@ SymCryptIntMillerRabinPrimalityTest(
     // is that Src > 3.
     SymCryptIntCopy( piSrc, piD );
     borrow = SymCryptIntSubUint32( piD, 1, piD );
-    SYMCRYPT_HARD_ASSERT( borrow==0 );
+    SYMCRYPT_ASSERT( borrow==0 );
 
     SYMCRYPT_ASSERT( SymCryptIntGetBit( piD, 0 ) == 0 );
 
     // Check the 3 mod 4 requirement when side-channel safe
-    SYMCRYPT_HARD_ASSERT(
+    SYMCRYPT_ASSERT(
             ((flags & SYMCRYPT_FLAG_DATA_PUBLIC) != 0) ||
             (SymCryptIntGetBit( piD, 1 )!=0) );
+    UNREFERENCED_PARAMETER( flags );
 
     // Calculate R and D such that Src - 1 = D*2^R
     //      Notice that the loop executes only if
@@ -115,7 +116,7 @@ SymCryptIntMillerRabinPrimalityTest(
     for (UINT32 i=0; i<nIterations; i++)
     {
         // Pick a random X in [2, piSrc-2]
-        // Therefore the flags parameter is 0 (default: not allowed 0, 1, -1)
+        // Therefore the flags parameter is 0 (default: not allowed 0, 1, -1 when modulus > 3)
         SymCryptModSetRandom( pmModulus, peX, 0, pbScratch, cbScratch );
 
         // X^D mod piSrc
@@ -204,6 +205,12 @@ SymCryptIntGenerateRandomPrime(
     for( e = 0; e < nPubExp; e++ )
     {
         SYMCRYPT_ASSERT( cbScratch >= cbObj );
+        if( pu64PubExp[e] == 0 )
+        {
+            scError = SYMCRYPT_INVALID_ARGUMENT;
+            goto exit;
+        }
+
         pdPubExp[e] = SymCryptDivisorCreate( pbScratch, cbObj, 1 );
         pbScratch += cbObj;
         cbScratch -= cbObj;

@@ -49,7 +49,10 @@ SymCryptInitEnvCommon( UINT32 version )
 
     // Assertion that verifies that the calling application was compiled with
     // the same version header files as the library.
-    SYMCRYPT_HARD_ASSERT( version == SYMCRYPT_API_VERSION );
+    if( version != SYMCRYPT_API_VERSION )
+    {
+        SymCryptFatal( 'apiv' );
+    }
 
     //
     // Use an interlocked to set the flag in case we add other flags

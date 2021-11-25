@@ -7,7 +7,7 @@
 
 #include "precomp.h"
 
-VOID
+SYMCRYPT_ERROR
 SYMCRYPT_CALL
 SymCryptParallelHashProcess_serial(
     _In_                                                            PCSYMCRYPT_PARALLEL_HASH            pParHash,
@@ -18,6 +18,7 @@ SymCryptParallelHashProcess_serial(
     _Out_writes_( cbScratch )                                       PBYTE                               pbScratch,
                                                                     SIZE_T                              cbScratch )
 {
+    SYMCRYPT_ERROR scError = SYMCRYPT_NO_ERROR;
     SIZE_T i;
     PSYMCRYPT_PARALLEL_HASH_OPERATION op;
     PCSYMCRYPT_HASH pHash;
@@ -32,8 +33,8 @@ SymCryptParallelHashProcess_serial(
     //
     if( cbScratch < pParHash->parScratchFixed + nStates * SYMCRYPT_PARALLEL_HASH_PER_STATE_SCRATCH )
     {
-        SymCryptFatal( 'ps2s' );
-        return;                 // prefast doesn't understand that SymCryptFatal doesn't return despite the annotation
+        scError = SYMCRYPT_BUFFER_TOO_SMALL;
+        goto cleanup;
     }
     SymCryptWipeKnownSize( pbScratch, pParHash->parScratchFixed + nStates * SYMCRYPT_PARALLEL_HASH_PER_STATE_SCRATCH );
 
@@ -41,8 +42,8 @@ SymCryptParallelHashProcess_serial(
     {
         if( op->iHash >= nStates )
         {
-            SymCryptFatal( 'ps2i' );
-            return;                 // prefast doesn't understand that SymCryptFatal doesn't return despite the annotation
+            scError = SYMCRYPT_INVALID_ARGUMENT;
+            goto cleanup;
         }
         switch( op->hashOperation )
         {
@@ -53,16 +54,21 @@ SymCryptParallelHashProcess_serial(
         case SYMCRYPT_HASH_OPERATION_RESULT:
             if( op->cbBuffer != pHash->resultSize )
             {
-                SymCryptFatal( 'ps2r' );
+                scError = SYMCRYPT_INVALID_ARGUMENT;
+                goto cleanup;
             }
             (*pHash->resultFunc)( (PBYTE)pStates + pHash->stateSize * op->iHash, op->pbBuffer );
             break;
 
         default:
-            SymCryptFatal( 'ps2o');
+            scError = SYMCRYPT_INVALID_ARGUMENT;
+            goto cleanup;
         }
         op++;
     }
+
+cleanup:
+    return scError;
 }
 
 //
@@ -285,7 +291,7 @@ compareRequestSize( const void * p1, const void * p2 )
     }
 }
 
-VOID
+SYMCRYPT_ERROR
 SYMCRYPT_CALL
 SymCryptParallelHashProcess(
     _In_                                                            PCSYMCRYPT_PARALLEL_HASH            pParHash,
@@ -297,6 +303,7 @@ SymCryptParallelHashProcess(
                                                                     SIZE_T                              cbScratch,
                                                                     UINT32                              maxParallel )
 {
+    SYMCRYPT_ERROR                          scError = SYMCRYPT_NO_ERROR;
     PSYMCRYPT_PARALLEL_HASH_SCRATCH_STATE   pScratchState;
     PSYMCRYPT_PARALLEL_HASH_SCRATCH_STATE * pWork;
     SIZE_T                                  nWork;
@@ -316,7 +323,7 @@ SymCryptParallelHashProcess(
 
     if( nOperations == 0 )
     {
-        return;
+        goto cleanup;
     }
 
     pHash = pParHash->pHash;
@@ -339,7 +346,8 @@ SymCryptParallelHashProcess(
 
     if( pbFixedScratch + cbFixedScratch > pbScratchEnd )
     {
-        SymCryptFatal( 'ps2.' );
+        scError = SYMCRYPT_BUFFER_TOO_SMALL;
+        goto cleanup;
     }
 
     //
@@ -365,7 +373,8 @@ SymCryptParallelHashProcess(
 
         if( pOp->iHash >= nStates )
         {
-            SymCryptFatal( 'ps2x' );
+            scError = SYMCRYPT_INVALID_ARGUMENT;
+            goto cleanup;
         }
 
         pSc = &pScratchState[ pOp->iHash ];
@@ -396,7 +405,8 @@ SymCryptParallelHashProcess(
             //
             pSc->bytes += pHash->inputBlockSize;
         } else {
-            SymCryptFatal( 'ps2y' );
+            scError = SYMCRYPT_INVALID_ARGUMENT;
+            goto cleanup;
         }
 
         //
@@ -501,4 +511,7 @@ SymCryptParallelHashProcess(
         }
     }
     SymCryptWipe( pbFixedScratch, cbFixedScratch );
+
+cleanup:
+    return scError;
 }

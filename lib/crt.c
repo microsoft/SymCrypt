@@ -157,6 +157,13 @@ SymCryptCrtSolve(
     cbModElement = SymCryptSizeofModElementFromModulus( ppmCoprimes[0] );
     cbDouble = SymCryptSizeofIntFromDigits( 2*nDigitsMax );
 
+    if( cbDouble == 0 )
+    {
+        // It is possible that cbDouble would not fit within the maximum integer
+        scError = SYMCRYPT_INVALID_ARGUMENT;
+        goto cleanup;
+    }
+
     SYMCRYPT_ASSERT( cbScratch >= cbInt + cbModElement + cbDouble +
                                   SYMCRYPT_MAX( SYMCRYPT_SCRATCH_BYTES_FOR_COMMON_MOD_OPERATIONS( nDigitsMax ),
                                        SYMCRYPT_SCRATCH_BYTES_FOR_INT_MUL( 2*nDigitsMax ) )

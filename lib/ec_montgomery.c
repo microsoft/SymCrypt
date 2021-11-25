@@ -20,8 +20,9 @@ SymCryptMontgomeryFillScratchSpaces(_In_ PSYMCRYPT_ECURVE pCurve)
     // All the scratch space computations are upper bounded by the SizeofXXX bound (2^19) and
     // the SCRATCH_BYTES_FOR_XXX bound (2^24) (see symcrypt_internal.h).
     //
-    // One caveat is SymCryptSizeofEcpointEx which calculates the size of EcPoint with
-    // 4 coordinates (each one a modelement of max size 2^17). Thus upper bounded by 2^20.
+    // One caveat is SymCryptSizeofEcpointFromCurve and SymCryptSizeofEcpointEx which calculate the
+    // size of EcPoint with 4 coordinates (each one a modelement of max size 2^17). Thus upper
+    // bounded by 2^20.
     //
 
     pCurve->cbScratchCommon = nCommon;
@@ -40,8 +41,8 @@ SymCryptMontgomeryFillScratchSpaces(_In_ PSYMCRYPT_ECURVE pCurve)
     pCurve->cbScratchGetSetValue = SYMCRYPT_MAX( pCurve->cbScratchGetSetValue, SymCryptSizeofIntFromDigits( nDigits ) );
 
     pCurve->cbScratchEckey =
-        SYMCRYPT_MAX( pCurve->cbModElement + SymCryptSizeofIntFromDigits(SymCryptEcurveDigitsofScalarMultiplier(pCurve)),
-            SymCryptSizeofEcpointEx( pCurve->cbModElement, SYMCRYPT_INTERNAL_NUMOF_COORDINATES( pCurve->eCoordinates ) ) ) +
+        SYMCRYPT_MAX( cbModElement + SymCryptSizeofIntFromDigits(SymCryptEcurveDigitsofScalarMultiplier(pCurve)),
+            SymCryptSizeofEcpointFromCurve( pCurve ) ) +
         SYMCRYPT_MAX( pCurve->cbScratchScalar, pCurve->cbScratchGetSetValue );
 }
 

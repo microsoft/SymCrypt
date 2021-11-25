@@ -241,7 +241,7 @@ SymCryptEcurveAllocate(
 
     if( (SymCryptIntGetValueLsbits32( pTempInt ) & 1) == 0 )
     {
-        // 'prime' must be odd to avoid fatal errors
+        // 'Prime' must be odd to avoid errors in conversion to modulus
         scError = SYMCRYPT_INVALID_ARGUMENT;
         goto cleanup;
     }
@@ -312,7 +312,7 @@ SymCryptEcurveAllocate(
         goto cleanup;
     }
 
-    pTempInt = SymCryptIntFromModulus( pCurve->GOrd);
+    pTempInt = SymCryptIntFromModulus( pCurve->GOrd );
     if ( pTempInt == NULL)
     {
         goto cleanup;
@@ -334,7 +334,7 @@ SymCryptEcurveAllocate(
 
     if( (SymCryptIntGetValueLsbits32( pTempInt ) & 1) == 0 )
     {
-        // 'Prime' must be odd to avoid fatal errors
+        // 'Prime' must be odd to avoid errors in conversion to modulus
         scError = SYMCRYPT_INVALID_ARGUMENT;
         goto cleanup;
     }

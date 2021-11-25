@@ -119,7 +119,7 @@ SymCryptRsakeyCreate(
 
     pkObj->cbTotalSize = (UINT32) cbNeeded;
     // The result should always be within 4 GB, but we check to avoid security bugs
-    SYMCRYPT_HARD_ASSERT( pkObj->cbTotalSize == cbNeeded );
+    SYMCRYPT_ASSERT( pkObj->cbTotalSize == cbNeeded );
 
     pkObj->hasPrivateKey = FALSE;
 
@@ -192,13 +192,14 @@ SymCryptRsakeyWipe( _Out_ PSYMCRYPT_RSAKEY pkDst )
     SymCryptWipe( pkDst, pkDst->cbTotalSize );
 }
 
+#if 0
 VOID
 SYMCRYPT_CALL
 SymCryptRsakeyCopy(
     _In_    PCSYMCRYPT_RSAKEY  pkSrc,
     _Out_   PSYMCRYPT_RSAKEY   pkDst )
 {
-    SYMCRYPT_HARD_ASSERT( FALSE );
+    SymCryptFatal( 'rsac' );
     // This function doesn't work correctly because subobjects might
     // not have been created yet.
     // Future: fix this
@@ -248,6 +249,7 @@ SymCryptRsakeyCopy(
         }
     }
 }
+#endif
 
 BOOLEAN
 SYMCRYPT_CALL
@@ -276,7 +278,8 @@ SymCryptRsakeySizeofPublicExponent(
     _In_    PCSYMCRYPT_RSAKEY pRsakey,
             UINT32            index )
 {
-    SYMCRYPT_HARD_ASSERT( index == 0 );
+    SYMCRYPT_ASSERT( index == 0 );
+    UNREFERENCED_PARAMETER( index );
     return SymCryptUint64Bytesize( pRsakey->au64PubExp[0] );
 }
 
@@ -770,7 +773,7 @@ SymCryptRsakeySetValue(
     if( nPrimes!=0 )
     {
         cbMod = SymCryptSizeofIntFromDigits( ndMod );
-        cbLarge = SymCryptSizeofIntFromDigits( 2 * ndMod );
+        cbLarge = SymCryptSizeofIntFromDigits( 2 * ndMod ); // 2*ndMod is still < SymCryptDigitsFromBits(SYMCRYPT_INT_MAX_BITS)
         cbDivisor = SymCryptSizeofDivisorFromDigits( ndMod );
 
         cbScratch = cbMod + cbLarge + cbDivisor +

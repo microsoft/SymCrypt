@@ -124,10 +124,10 @@ in the current version). This bound is used to ensure that no object sizes and s
 have a value of magnitude more than 32 bits. Note that the computed upper bounds are very loose and the
 actual values are much smaller.
 
-Functions calls and arithmetic operations with values exceeding this bound will trigger a hard fail on the
-calling application. The rationale behind accepting this approach is that executing arithmetic operations
-with integers of such magnitude will consume so much CPU time that it will be indistinguishable from
-an application hang.
+Attempts to create objects larger than this bound will result in NULL being returned. Callers either have
+to ensure they do not exceed the bounds, or check that create objects are not NULL before using them. The
+rationale behind this approach is to avoid any potential route for malicious inputs to trigger DoS by
+taking excessive CPU time which would be indistinguishable from an application hang.
 
 
 Digit size and radix can vary widely; on some CPU steppings the library might use a digit that contains
@@ -191,7 +191,7 @@ a ModElement object.
 //  The object will be able to store values up to R^nDigits where R is the digit radix.
 //  Requirement:
 //      - 1 <= nDigits <= SymCryptDigitsFromBits(SYMCRYPT_INT_MAX_BITS)
-//          If the value is outside these bounds the call will trigger a hard fail.
+//          If the value is outside these bounds it will return NULL
 //      - cbBuffer >= SymCryptSizeofXxxFromDigits( nDigits )
 //      - (pbBuffer,cbBuffer) memory must be exclusively used by this object.
 //  The last requirement ensures that all objects are non-overlapping (except for API functions
@@ -239,8 +239,8 @@ a ModElement object.
 //  Memory size that is sufficient to store an XXX object with nDigits digits.
 //  This is a runtime function as the # digits and size of a digit are run-time decision that depend on the CPU stepping.
 //  Requirement:
-//      - nDigits <= SymCryptDigitsFromBits(SYMCRYPT_INT_MAX_BITS)
-//          If the value is outside these bounds the call will trigger a hard fail.
+//      - 1 <= nDigits <= SymCryptDigitsFromBits(SYMCRYPT_INT_MAX_BITS)
+//          If the value is outside these bounds the returned value will be 0 indicating failure.
 //  This function is has the following property:
 //    SymCryptSizeofXxxFromDigits( a + b ) <= SymCryptSizeofXxxFromDigits( a ) + SymCryptSizeofXxxFromDigits( b )
 //  for all a and b.
@@ -274,8 +274,9 @@ a ModElement object.
 //
 
 // The maximum number of bits in any integer value that the library supports. If the
-// caller's input exceed this bound then the result of the application will be
-// to hard fail.
+// caller's input exceed this bound then the the integer object will not be created.
+// The caller either must ensure the bound is not exceeded, or check for NULL before
+// using created SymCrypt objects.
 // The primary purpose of this limit is to avoid integer overlows in size computations.
 // Having a reasonable upper bound avoids all size overflows, even on 32-bit CPUs
 #define SYMCRYPT_INT_MAX_BITS               ((UINT32)(1 << 20))
@@ -289,13 +290,13 @@ SymCryptDigitsFromBits( UINT32 nBits );
 // Remarks:
 //  If nBits==0 the returned number is 1.
 //
+//  If nBits exceeds SYMCRYPT_INT_MAX_BITS the function will return 0 to indicate an object with
+//  this many bits is not supported.
+//
 //  This is a run-time decision; the return value can depend on the exact CPU stepping
 //  the program is running on, or run-time configurations.
-//  It is always true that
+//  For a and b in the range 0..SYMCRYPT_INT_MAX_BITS, it is always true that
 //  SymCryptDigitsFromBits( a + b ) <= SymCryptDigitsFromBits( a ) + SymCryptDigitsFromBits( b )
-//
-//  If nBits exceeds SYMCRYPT_INT_MAX_BITS the function will cause a hard fail
-//  to the calling application.
 //
 
 //========================================================================
@@ -1139,6 +1140,7 @@ SymCryptIntExtendedGcd(
 //  - Lcm.nDigits >= Src1.nDigits + Src2.nDigits
 //  - InvSrc1ModSrc2.nDigits >= max(Src1.nDigits, Src2.nDigits)     // Future work: Make these bounds Src2 and Src1 respectively.
 //  - InvSrc2ModSrc1.nDigits >= max(Src1.nDigits, Src2.nDigits)
+//  - if piInvSrc2ModSrc1 is not NULL, max( Src1.nDigits, Src2.nDigits ) * 2 <= SymCryptDigitsFromBits(SYMCRYPT_INT_MAX_BITS)
 //  - cbScratch >= SYMCRYPT_SCRATCH_BYTES_FOR_EXTENDED_GCD( max( Src1.nDigits, Src2.nDigits ) )
 //
 // If only one inverse value is needed, it is most efficient to use only InvSrc1ModSrc2.
@@ -1240,10 +1242,11 @@ SymCryptCrtSolve(
 // The number of inputs nCoprimes is public.
 //
 // Requirements:
-//  - nCoprimes >= 2
+//  - nCoprimes == 2
 //  - ppmCoprimes, ppeCrtInverses, and ppeCrtRemainders must be arrays of pointers of exactly nCoprimes elements. All
 //    of them non-NULL.
 //  - piSolution must be large enough to hold the result modulo the product of all the coprimes.
+//  - max( ppmCoprimes[0].nDigits, ppmCoprimes[1].nDigits ) * 2 <= SymCryptDigitsFromBits(SYMCRYPT_INT_MAX_BITS)
 //  - cbScratch >= SYMCRYPT_SCRATCH_BYTES_FOR_CRT_SOLUTION( nDigits ) where nDigits is the maximum number
 //    of digits of the input moduli.
 //
@@ -1259,7 +1262,7 @@ SymCryptCreateTrialDivisionContext( UINT32 nDigits );
 // The Trial division context can be used in multiple threads in parallel.
 // The context should be freed with SymCryptFreeTrialDivisionContext after use.
 // A context can be fairly large (100 kB) so freeing it is important.
-// Returns NULL if out of memory.
+// Returns NULL if out of memory or an invalid digit count is provided.
 //
 
 VOID
@@ -1365,6 +1368,7 @@ SymCryptIntGenerateRandomPrime(
 // Requirements:
 //  - SymCryptIntBitsizeOfValue( piHigh ) <= SymCryptIntBitsizeOfObject(piDst)
 //  - piLow > 3
+//  - Each public exponent must be greater than 0
 //  - 0 <= nPubExp <= SYMCRYPT_RSAKEY_MAX_NUMOF_PUBEXPS
 //  - cbScratch >=  SYMCRYPT_SCRATCH_BYTES_FOR_INT_PRIME_GEN( Dst.nDigits )
 //
@@ -1420,7 +1424,7 @@ SymCryptIntToModulus(
     _Out_writes_bytes_( cbScratch ) PBYTE               pbScratch,
                                     SIZE_T              cbScratch );
 //
-// Create  a modulus from an INT.
+// Create a modulus from an INT.
 // Requirements:
 //  - Src != 0
 //  - Dst.nDigits == Src.nDigits
@@ -1467,7 +1471,7 @@ SymCryptIntToModElement(
 // Dst = Src mod Mod
 // Requirements:
 //  - Dst.nDigits == Mod.nDigits
-//  - piSrc.nDigits <= 2 * MOd.nDigits
+//  - piSrc.nDigits <= 2 * Mod.nDigits
 //  - cbScratch >= SYMCRYPT_SCRATCH_BYTES_FOR_COMMON_MOD_OPERATIONS( Mod.nDigits )
 //
 // Note: the input is limited in size to be no more than twice the modulus size (in digits).
@@ -1613,7 +1617,7 @@ SymCryptModSetRandom(
 //  - cbScratch >= SYMCRYPT_SCRATCH_BYTES_FOR_COMMON_MOD_OPERATIONS( Mod.nDigits )
 //
 // Random value is chosen uniformly from the set of allowed values.
-// By default this function does not return the values 0, 1, or -1.
+// By default this function does not return the values 0, 1, or -1 (see below NOTE for small moduli exception)
 // Flags parameter can signal that these special values are allowed.
 // flags parameter is published.
 //
@@ -1624,8 +1628,19 @@ SymCryptModSetRandom(
 //  SYMCRYPT_FLAG_MODRANDOM_ALLOW_ZERO
 //  SYMCRYPT_FLAG_MODRANDOM_ALLOW_ONE
 //  SYMCRYPT_FLAG_MODRANDOM_ALLOW_MINUSONE
-// Specifying ALLOW_ZERO is only valid if ALLOW_ONE is also specified.
+// Specifying ALLOW_ZERO implies ALLOW_ONE, there is no way to allow 0 and disallow 1.
 //
+// NOTE:
+// For very small moduli (1, 2, and 3), not allowing 0, 1, or -1 by default does not make sense because this would
+// exclude all possible values! Instead the default behavior is to allow -1 for these moduli.
+//  Modulo 1 => return 0 by default
+//  Modulo 2 => return 1 by default
+//      may also return 0 if SYMCRYPT_FLAG_MODRANDOM_ALLOW_ZERO is specified
+//  Modulo 3 => return 2 by default
+//      may also return 1 if SYMCRYPT_FLAG_MODRANDOM_ALLOW_ONE is specified, and
+//      may also return 0 or 1 if SYMCRYPT_FLAG_MODRANDOM_ALLOW_ZERO is specified,
+//
+// Callers relying on not having 0, 1, or -1 are required to pass a larger modulus.
 
 #define SYMCRYPT_FLAG_MODRANDOM_ALLOW_ZERO      (0x01)
 #define SYMCRYPT_FLAG_MODRANDOM_ALLOW_ONE       (0x02)
@@ -1758,8 +1773,8 @@ SymCryptModInv(
 //
 // - pmMod: Modulus, must have the SYMCRYPT_FLAG_MODULUS_PRIME and SYMCRYPT_FLAG_DATA_PUBLIC flag set.
 //      Non-prime or non-public moduli are currently not supported.
-// - peSrc: Source value, modulu pmMod
-// - peDst: Destination value, mod element modulu pmMod
+// - peSrc: Source value, modulo pmMod
+// - peDst: Destination value, mod element modulo pmMod
 // - flags: SYMCRYPT_FLAG_DATA_PUBLIC signals that peSrc is a public value.
 // - pbScratch/cbScratch: scratch space >= SYMCRYPT_SCRATCH_BYTES_FOR_MODINV( nDigits( pmMod ) )
 //
@@ -1816,7 +1831,7 @@ SymCryptModExp(
 
 #define SYMCRYPT_SCRATCH_BYTES_FOR_MODMULTIEXP( _nDigits, _nBases, _nBitsExp ) SYMCRYPT_INTERNAL_SCRATCH_BYTES_FOR_MODMULTIEXP( _nDigits, _nBases, _nBitsExp )
 
-VOID
+SYMCRYPT_ERROR
 SYMCRYPT_CALL
 SymCryptModMultiExp(
     _In_                            PCSYMCRYPT_MODULUS      pmMod,
@@ -2003,7 +2018,11 @@ SIZE_T
 SYMCRYPT_CALL
 SymCryptRoundUpPow2Sizet( SIZE_T v );
 // Round up to the next power of 2
-
+//
+// Requirements:
+//  v <= (SIZE_T_MAX / 2) + 1
+//    i.e. rounding v up to the next power of 2 fits within SIZE_T, so v is
+//    less than or equal to the maximum power of 2 representable in SIZE_T
 
 
 //=====================================================

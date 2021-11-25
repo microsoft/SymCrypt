@@ -1744,7 +1744,7 @@ testIntPrimalityTest()
         CHECK( piSrc != NULL, "?" );
         do {
             index = g_rng.uint32();
-            index |= 1;        
+            index |= 1;
         } while( index < 5 );
         SymCryptIntSetValueUint32( index, piSrc );
         primActual = RefIsPrime( piSrc, pbScratch, cbScratch ) ? 0xffffffff : 0;
@@ -3031,59 +3031,32 @@ testModSetRandom()
     ArithModulus *pMod = NULL;
     ArithModElement *pSrc = NULL;
 
-    UINT32 numOfValidFlags = 6;     // Default number of flag combinations
     UINT32 flags = 0;               // Flags for the SymCryptModSetRandom
-    UINT32 smallM = 0;
 
     // Pick a random modulus
     nDigits = g_rng.sizet( 1, g_digitLimit );
     pMod = randomArithModulus( nDigits );
 
     //
-    // Pick proper flags out of 6 possible combinations
+    // Pick proper flags out of 8 possible combinations
     //  N: Not allowed, A: Allowed
     //    #  Zero    One     MinusOne
     //    0   A       A       A
     //    1   A       A       N
-    //    2   N       A       A
-    //    3   N       A       N
-    //    4   N       N       A
-    //    5   N       N       N
+    //    2   A       N       A     <-- here allow Zero implies allow One
+    //    3   A       N       N     <-- here allow Zero implies allow One
+    //    4   N       A       A
+    //    5   N       A       N
+    //    6   N       N       A
+    //    7   N       N       N
     //
-    //  Special cases:
-    //  When the modulus is 1 only the first combination
-    //  is valid. For 2, only the first 3 combinations
-    //  are valid. And for 3, everything except the last
-    //  combination is valid.
-    //
-
-    // Special cases' treatment
-    if (SymCryptIntBitsizeOfValue( pMod->m_pScInt ) < 3)
-    {
-        smallM = SymCryptIntGetValueLsbits32( pMod->m_pScInt );
-
-        if (smallM==1)
-        {
-            numOfValidFlags = 1;
-        }
-        else if (smallM==2)
-        {
-            numOfValidFlags = 3;
-        }
-        else
-        {
-            numOfValidFlags = 5;
-        }
-    }
 
     // Pick one of the valid combinations uniformly at random
-    do {
-        r = g_rng.byte() & 0x07;
-    } while (r > numOfValidFlags - 1);
+    r = g_rng.byte() & 0x07;
 
     // Set the flags accordingly
-    if (r<2)        { flags |= SYMCRYPT_FLAG_MODRANDOM_ALLOW_ZERO; }
-    if (r<4)        { flags |= SYMCRYPT_FLAG_MODRANDOM_ALLOW_ONE; }
+    if ((r&4)==0)   { flags |= SYMCRYPT_FLAG_MODRANDOM_ALLOW_ZERO; }
+    if ((r&2)==0)   { flags |= SYMCRYPT_FLAG_MODRANDOM_ALLOW_ONE; }
     if ((r&1)==0)   { flags |= SYMCRYPT_FLAG_MODRANDOM_ALLOW_MINUSONE; }
 
     //
@@ -3256,6 +3229,7 @@ testModExp()
 VOID
 testModMultiExp()
 {
+    SYMCRYPT_ERROR scError = SYMCRYPT_NO_ERROR;
     UINT32 nFail;
 
     UINT32 nD;
@@ -3326,7 +3300,7 @@ testModMultiExp()
 
 
     // MultiExp
-    SymCryptModMultiExp(
+    scError = SymCryptModMultiExp(
             pmMod,
             peBases,
             piExps,
@@ -3336,6 +3310,7 @@ testModMultiExp()
             peTmp2,         // Set it into Tmp2
             pbScratch,
             SYMCRYPT_SCRATCH_BYTES_FOR_MODMULTIEXP( nD, nBases, nBitsExpMax ) );
+    CHECK( scError == SYMCRYPT_NO_ERROR, "SymCryptModMultiExp failure");
 
     CHECK( SymCryptModElementIsEqual( pMod->m_pScModulus, peTmp1, peTmp2 ), "testModMultiExp mismatch");
 }

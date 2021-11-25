@@ -945,10 +945,16 @@ SymCryptFdefIntToDivisor(
     //
 
     nBits = SymCryptIntBitsizeOfValue( &pdDst->Int );
+
+    SYMCRYPT_ASSERT( nBits != 0 );
     if( nBits == 0 )
     {
         // Can't create a divisor from a Int whose value is 0
-        SymCryptFatal( 'div0' );
+
+        // We really should not have any callers which get here (it is a requirement that Src != 0)
+        // We assert in CHKed builds
+        // In release set the divisor to 1 instead
+        SymCryptIntSetValueUint32( 1, &pdDst->Int );
     }
 
     pdDst->nBits = nBits;

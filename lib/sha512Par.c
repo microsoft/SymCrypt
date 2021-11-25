@@ -89,7 +89,7 @@ SymCryptParallelSha384Init(
 // No parallel support on this CPU
 //
 
-VOID
+SYMCRYPT_ERROR
 SYMCRYPT_CALL
 SymCryptParallelSha512Process(
     _Inout_updates_( nStates )      PSYMCRYPT_SHA512_STATE              pStates,
@@ -99,10 +99,10 @@ SymCryptParallelSha512Process(
     _Out_writes_( cbScratch )       PBYTE                               pbScratch,
                                     SIZE_T                              cbScratch )
 {
-    SymCryptParallelHashProcess_serial( SymCryptParallelSha512Algorithm, pStates, nStates, pOperations, nOperations, pbScratch, cbScratch );
+    return SymCryptParallelHashProcess_serial( SymCryptParallelSha512Algorithm, pStates, nStates, pOperations, nOperations, pbScratch, cbScratch );
 }
 
-VOID
+SYMCRYPT_ERROR
 SYMCRYPT_CALL
 SymCryptParallelSha384Process(
     _Inout_updates_( nStates )      PSYMCRYPT_SHA384_STATE              pStates,
@@ -112,7 +112,7 @@ SymCryptParallelSha384Process(
     _Out_writes_( cbScratch )       PBYTE                               pbScratch,
                                     SIZE_T                              cbScratch )
 {
-    SymCryptParallelHashProcess_serial( SymCryptParallelSha384Algorithm, pStates, nStates, pOperations, nOperations, pbScratch, cbScratch );
+    return SymCryptParallelHashProcess_serial( SymCryptParallelSha384Algorithm, pStates, nStates, pOperations, nOperations, pbScratch, cbScratch );
 }
 
 #endif
@@ -233,7 +233,7 @@ C_ASSERT( (SYMCRYPT_SIMD_ELEMENT_SIZE & (SYMCRYPT_SIMD_ELEMENT_SIZE - 1 )) == 0 
 
 
 
-VOID
+SYMCRYPT_ERROR
 SYMCRYPT_CALL
 SymCryptParallelSha512Sha384Process(
     _In_                            PCSYMCRYPT_PARALLEL_HASH            pParHash,
@@ -244,8 +244,8 @@ SymCryptParallelSha512Sha384Process(
     _Out_writes_( cbScratch )       PBYTE                               pbScratch,
                                     SIZE_T                              cbScratch )
 {
+    SYMCRYPT_ERROR scError = SYMCRYPT_NO_ERROR;
     UINT32 maxParallel;
-
 
 #if SYMCRYPT_CPU_AMD64 | SYMCRYPT_CPU_X86
     SYMCRYPT_EXTENDED_SAVE_DATA SaveState;
@@ -253,31 +253,30 @@ SymCryptParallelSha512Sha384Process(
     if( SYMCRYPT_CPU_FEATURES_PRESENT( SYMCRYPT_CPU_FEATURE_AVX2 | SYMCRYPT_CPU_FEATURE_SSSE3 ) && SymCryptSaveYmm( &SaveState ) == SYMCRYPT_NO_ERROR )
     {
         maxParallel = 4;
-
-        SymCryptParallelHashProcess(    pParHash,
-                                        pStates,
-                                        nStates,
-                                        pOperations,
-                                        nOperations,
-                                        pbScratch,
-                                        cbScratch,
-                                        maxParallel );
+        scError = SymCryptParallelHashProcess(  pParHash,
+                                                pStates,
+                                                nStates,
+                                                pOperations,
+                                                nOperations,
+                                                pbScratch,
+                                                cbScratch,
+                                                maxParallel );
 
         SymCryptRestoreYmm( &SaveState );
     } else if( SYMCRYPT_CPU_FEATURES_PRESENT( SYMCRYPT_CPU_FEATURE_SSSE3 ) && SymCryptSaveXmm( &SaveState ) == SYMCRYPT_NO_ERROR )
     {
         maxParallel = 2;
-        SymCryptParallelHashProcess(    pParHash,
-                                        pStates,
-                                        nStates,
-                                        pOperations,
-                                        nOperations,
-                                        pbScratch,
-                                        cbScratch,
-                                        maxParallel );
+        scError = SymCryptParallelHashProcess(  pParHash,
+                                                pStates,
+                                                nStates,
+                                                pOperations,
+                                                nOperations,
+                                                pbScratch,
+                                                cbScratch,
+                                                maxParallel );
         SymCryptRestoreXmm( &SaveState );
     } else {
-        SymCryptParallelHashProcess_serial( pParHash, pStates, nStates, pOperations, nOperations, pbScratch, cbScratch );
+        scError = SymCryptParallelHashProcess_serial( pParHash, pStates, nStates, pOperations, nOperations, pbScratch, cbScratch );
     }
 
 #elif SYMCRYPT_CPU_ARM
@@ -285,23 +284,24 @@ SymCryptParallelSha512Sha384Process(
 
     if( SYMCRYPT_CPU_FEATURES_PRESENT( SYMCRYPT_CPU_FEATURE_NEON ) )
     {
-        SymCryptParallelHashProcess(    pParHash,
-                                        pStates,
-                                        nStates,
-                                        pOperations,
-                                        nOperations,
-                                        pbScratch,
-                                        cbScratch,
-                                        maxParallel );
+        scError = SymCryptParallelHashProcess(  pParHash,
+                                                pStates,
+                                                nStates,
+                                                pOperations,
+                                                nOperations,
+                                                pbScratch,
+                                                cbScratch,
+                                                maxParallel );
     } else {
-        SymCryptParallelHashProcess_serial( pParHash, pStates, nStates, pOperations, nOperations, pbScratch, cbScratch );
+        scError = SymCryptParallelHashProcess_serial( pParHash, pStates, nStates, pOperations, nOperations, pbScratch, cbScratch );
     }
 #else
-        SymCryptParallelHashProcess_serial( pParHash, pStates, nStates, pOperations, nOperations, pbScratch, cbScratch );
+    scError = SymCryptParallelHashProcess_serial( pParHash, pStates, nStates, pOperations, nOperations, pbScratch, cbScratch );
 #endif
+    return scError;
 }
 
-VOID
+SYMCRYPT_ERROR
 SYMCRYPT_CALL
 SymCryptParallelSha512Process(
     _Inout_updates_( nStates )      PSYMCRYPT_SHA512_STATE              pStates,
@@ -311,11 +311,11 @@ SymCryptParallelSha512Process(
     _Out_writes_( cbScratch )       PBYTE                               pbScratch,
                                     SIZE_T                              cbScratch )
 {
-    SymCryptParallelSha512Sha384Process( SymCryptParallelSha512Algorithm, pStates, nStates, pOperations, nOperations, pbScratch, cbScratch );
+    return SymCryptParallelSha512Sha384Process( SymCryptParallelSha512Algorithm, pStates, nStates, pOperations, nOperations, pbScratch, cbScratch );
 }
 
 
-VOID
+SYMCRYPT_ERROR
 SYMCRYPT_CALL
 SymCryptParallelSha384Process(
     _Inout_updates_( nStates )      PSYMCRYPT_SHA384_STATE              pStates,
@@ -325,7 +325,7 @@ SymCryptParallelSha384Process(
     _Out_writes_( cbScratch )       PBYTE                               pbScratch,
                                     SIZE_T                              cbScratch )
 {
-    SymCryptParallelSha512Sha384Process( SymCryptParallelSha384Algorithm, pStates, nStates, pOperations, nOperations, pbScratch, cbScratch );
+    return SymCryptParallelSha512Sha384Process( SymCryptParallelSha384Algorithm, pStates, nStates, pOperations, nOperations, pbScratch, cbScratch );
 }
 
 
@@ -706,6 +706,7 @@ VOID
 SYMCRYPT_CALL
 SymCryptParallelSha384Selftest()
 {
+    SYMCRYPT_ERROR                      scError;
     SYMCRYPT_SHA384_STATE               states[N_SELFTEST_STATES];
     BYTE                                result[N_SELFTEST_STATES][SYMCRYPT_SHA384_RESULT_SIZE];
     SYMCRYPT_PARALLEL_HASH_OPERATION    op[2*N_SELFTEST_STATES];
@@ -726,7 +727,11 @@ SymCryptParallelSha384Selftest()
         op[2*i + 1].cbBuffer = SYMCRYPT_SHA384_RESULT_SIZE;
     }
 
-    SymCryptParallelSha384Process( &states[0], N_SELFTEST_STATES, op, 2*N_SELFTEST_STATES, scratch, sizeof( scratch ) );
+    scError = SymCryptParallelSha384Process( &states[0], N_SELFTEST_STATES, op, 2*N_SELFTEST_STATES, scratch, sizeof( scratch ) );
+    if( scError != SYMCRYPT_NO_ERROR )
+    {
+        SymCryptFatal( 'PS38' );
+    }
 
     for( i=0; i<N_SELFTEST_STATES; i++ )
     {
@@ -742,6 +747,7 @@ VOID
 SYMCRYPT_CALL
 SymCryptParallelSha512Selftest()
 {
+    SYMCRYPT_ERROR                      scError;
     SYMCRYPT_SHA512_STATE               states[N_SELFTEST_STATES];
     BYTE                                result[N_SELFTEST_STATES][SYMCRYPT_SHA512_RESULT_SIZE];
     SYMCRYPT_PARALLEL_HASH_OPERATION    op[2*N_SELFTEST_STATES];
@@ -762,7 +768,11 @@ SymCryptParallelSha512Selftest()
         op[2*i + 1].cbBuffer = SYMCRYPT_SHA512_RESULT_SIZE;
     }
 
-    SymCryptParallelSha512Process( &states[0], N_SELFTEST_STATES, op, 2*N_SELFTEST_STATES, scratch, sizeof( scratch ) );
+    scError = SymCryptParallelSha512Process( &states[0], N_SELFTEST_STATES, op, 2*N_SELFTEST_STATES, scratch, sizeof( scratch ) );
+    if( scError != SYMCRYPT_NO_ERROR )
+    {
+        SymCryptFatal( 'PS51' );
+    }
 
     for( i=0; i<N_SELFTEST_STATES; i++ )
     {

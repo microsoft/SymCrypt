@@ -168,7 +168,6 @@ SymCryptChaCha20CryptBlocks(
     while( cbData >= 64 )
     {
         // Initialize the state
-
         s0  = 0x61707865;
         s1  = 0x3320646e;
         s2  = 0x79622d32;
@@ -234,10 +233,8 @@ SymCryptChaCha20CryptBlocks(
         SYMCRYPT_STORE_LSBFIRST32( pbDst + 60, s15 ^ SYMCRYPT_LOAD_LSBFIRST32( pbSrc + 60 ) );
 
         counter ++;
-        if( counter == 0 )
-        {
-            SymCryptFatal( 'Chax' );
-        }
+        // If counter overflows then the caller has encrypted more than 256GB of data with a single stream, which is
+        // called out as being insecure. It is the caller's responsibility to avoid this!
         pbSrc += 64;
         pbDst += 64;
         cbData -= 64;

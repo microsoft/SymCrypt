@@ -1395,7 +1395,7 @@ SymCryptParallelSha256Init(
     _Out_writes_( nStates ) PSYMCRYPT_SHA256_STATE pStates,
                             SIZE_T                 nStates );
 
-VOID
+SYMCRYPT_ERROR
 SYMCRYPT_CALL
 SymCryptParallelSha256Process(
     _Inout_updates_( nStates )      PSYMCRYPT_SHA256_STATE              pStates,
@@ -1412,7 +1412,7 @@ SymCryptParallelSha384Init(
     _Out_writes_( nStates ) PSYMCRYPT_SHA384_STATE pStates,
                             SIZE_T                 nStates );
 
-VOID
+SYMCRYPT_ERROR
 SYMCRYPT_CALL
 SymCryptParallelSha384Process(
     _Inout_updates_( nStates )      PSYMCRYPT_SHA384_STATE              pStates,
@@ -1429,7 +1429,7 @@ SymCryptParallelSha512Init(
     _Out_writes_( nStates ) PSYMCRYPT_SHA512_STATE pStates,
                             SIZE_T                 nStates );
 
-VOID
+SYMCRYPT_ERROR
 SYMCRYPT_CALL
 SymCryptParallelSha512Process(
     _Inout_updates_( nStates )      PSYMCRYPT_SHA512_STATE              pStates,
@@ -3546,7 +3546,7 @@ SymCryptChaCha20Crypt(
 // The key stream used is the one generated from the key and nonce, starting at the specified
 // offset into the key stream. This function updates the offset of the state by adding cbData to
 // it so that the next call will use the next part of the key stream.
-// Any attempt to use the key stream at offset >= 2^38 will result in a fatal error.
+// Any attempt to use the key stream at offset >= 2^38 will result in catastrophic loss of security.
 //
 
 VOID
@@ -6270,14 +6270,12 @@ SymCryptMapUint32(
 // This function is particularly useful when mapping error codes in situations where
 // the actual error cannot be revealed through side channels.
 
-#define SYMCRYPT_HARD_ASSERT( _x ) \
+#if SYMCRYPT_DEBUG
+#define SYMCRYPT_ASSERT( _x ) \
     {\
         if( !(_x) ){ SymCryptFatal( 'asrt' ); }\
     }\
     _Analysis_assume_( _x )
-
-#if SYMCRYPT_DEBUG
-#define SYMCRYPT_ASSERT( _x ) SYMCRYPT_HARD_ASSERT( _x )
 #else
 #define SYMCRYPT_ASSERT( _x ) \
     _Analysis_assume_( _x )
