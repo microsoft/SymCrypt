@@ -188,8 +188,7 @@ SymCryptEcDsaSignEx(
     }
 
     // Calculating the digits for the temporary integers
-    nDigitsInt = SymCryptDigitsFromBits( (UINT32)cbHashValue * 8 );
-    nDigitsInt = SYMCRYPT_MAX( nDigitsInt, pCurve->GOrdDigits );
+    nDigitsInt = pCurve->GOrdDigits;
 
     nDigitsMul = SymCryptEcurveDigitsofScalarMultiplier(pCurve);
 
@@ -446,7 +445,6 @@ SymCryptEcDsaVerify(
 
     // Calculating the digits for the temporary integer
     nDigitsInt = SYMCRYPT_MAX( pCurve->FModDigits, pCurve->GOrdDigits );
-    nDigitsInt = SYMCRYPT_MAX( nDigitsInt, SymCryptDigitsFromBits( (UINT32)cbHashValue * 8 ) );
     nDigitsInt = SYMCRYPT_MAX( nDigitsInt, SymCryptDigitsFromBits( (UINT32)cbSignature * 4 ) );  // pbSignature contains (c,d)
 
     nDigitsMul = SymCryptEcurveDigitsofScalarMultiplier(pCurve);
