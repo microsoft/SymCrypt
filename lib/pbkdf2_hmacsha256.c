@@ -1,5 +1,5 @@
 //
-// pbkdf2_hmacsha1.c
+// pbkdf2_hmacsha256.c
 //
 // Copyright (c) Microsoft Corporation. Licensed under the MIT license.
 //
@@ -8,7 +8,7 @@
 
 //
 // The PBKDF SHA-256 test 
-// This is in a separate module to avoid pullingin SHA-1 whenever we use PBKDF-SHA-1
+// This is in a separate module to avoid pulling in SHA-256 whenever we use PBKDF
 //
 
 static const UINT64 pbkdf2_IterationCnt = 5;

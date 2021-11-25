@@ -1,15 +1,14 @@
 //
-// pbkdf2_hmacsha1.c
+// sp800_108_hmacsha1.c
 //
 // Copyright (c) Microsoft Corporation. Licensed under the MIT license.
 //
 
 #include "precomp.h"
 
-
 //
-// The SP800-108 SHA-1 test 
-// This is in a separate module to avoid pullingin SHA-1 whenever we use PBKDF-SHA-256
+// The SP800-108 SHA-1 test
+// This is in a separate module to avoid pulling in SHA-1 whenever we use SP800_108
 //
 
 static const BYTE    sp800_108_sha1Answer[] =

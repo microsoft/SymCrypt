@@ -90,6 +90,7 @@ set(SOURCES_COMMON
     sha512Par-ymm.c
     sp800_108_hmacsha1.c
     sp800_108_hmacsha256.c
+    sp800_108_hmacsha512.c
     sp800_108.c
     tlsCbcVerify.c
     tlsprf_selftest.c

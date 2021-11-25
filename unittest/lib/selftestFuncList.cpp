@@ -54,6 +54,8 @@ const SELFTEST_INFO g_selfTests[] =
     {&SymCryptPbkdf2_HmacSha256SelfTest, "Pbkdf2_HmacSha256"},
     {&SymCryptSp800_108_HmacSha1SelfTest, "SP800-108_HmacSha1" },
     {&SymCryptSp800_108_HmacSha256SelfTest, "SP800-108_HmacSha256" },
+    {&SymCryptSp800_108_HmacSha384SelfTest, "SP800-108_HmacSha384" },
+    {&SymCryptSp800_108_HmacSha512SelfTest, "SP800-108_HmacSha512" },
     {&SymCryptTlsPrf1_1SelfTest, "TLS PRF 1.1" },
     {&SymCryptTlsPrf1_2SelfTest, "TLS PRF 1.2" },
     {&SymCryptHkdfSelfTest, "HKDF" },

@@ -6,10 +6,9 @@
 
 #include "precomp.h"
 
-
 //
 // The PBKDF SHA-1 test 
-// This is in a separate module to avoid pullingin SHA-1 whenever we use PBKDF-SHA-256
+// This is in a separate module to avoid pulling in SHA-1 whenever we use PBKDF
 //
 
 static const UINT64 pbkdf2_IterationCnt = 5;
