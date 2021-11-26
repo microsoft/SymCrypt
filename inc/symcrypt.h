@@ -5220,8 +5220,6 @@ SymCryptDlgroupSetValueSafePrime(
 // to 0 in allocation (equivalent to nBitsOfQ = (nBitsOfP-1)) when creating a safe-prime group.
 //
 // Requirements:
-//  - pDlgroup!=NULL. Otherwise it returns SYMCRYPT_INVALID_ARGUMENT.
-//
 //  - pDlgroup was allocated with sufficient bits for the selected P (and Q) to fit. If there is no
 //    named safe-prime group with bit size <= the allocated size, it returns SYMCRYPT_INVALID_ARGUMENT.
 //    The minimum currently supported bitsize of named safe-prime groups is nBitsOfP = 2048.

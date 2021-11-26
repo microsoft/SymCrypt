@@ -1097,7 +1097,7 @@ SymCryptDlgroupSetValueSafePrime(
     UINT32 nMaxBitsOfP = SYMCRYPT_MIN(pDlgroup->nMaxBitsOfP, pDlgroup->nMaxBitsOfQ+1);
     UINT32 nMaxDigitsOfP;
 
-    if ( pDlgroup == NULL || dhSafePrimeType == SYMCRYPT_DLGROUP_DH_SAFEPRIMETYPE_NONE )
+    if ( dhSafePrimeType == SYMCRYPT_DLGROUP_DH_SAFEPRIMETYPE_NONE )
     {
         scError = SYMCRYPT_INVALID_ARGUMENT;
         goto cleanup;
