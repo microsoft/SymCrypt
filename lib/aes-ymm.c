@@ -621,7 +621,7 @@ SymCryptAesGcmEncryptStitchedYmm_2048(
     _mm_storeu_si128((__m128i *) pState, state );
 
     cbData &= ( GCM_YMM_MINBLOCKS*SYMCRYPT_AES_BLOCK_SIZE ) - 1;
-    SYMCRYPT_ASSERT( cbData == nBlocks*SYMCRYPT_AES_BLOCK_SIZE );
+    SYMCRYPT_ASSERT( cbData == (nBlocks-16)*SYMCRYPT_AES_BLOCK_SIZE );
     if ( cbData >= SYMCRYPT_AES_BLOCK_SIZE )
     {
         SymCryptAesGcmEncryptStitchedXmm( pExpandedKey, pbChainingValue, expandedKeyTable, pState, pbSrc, pbDst, cbData);
