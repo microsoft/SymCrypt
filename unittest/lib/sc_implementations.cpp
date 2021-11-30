@@ -5677,6 +5677,13 @@ dlkeyObjectFromTestBlob( PCSYMCRYPT_DLGROUP pGroup, PCDLKEY_TESTBLOB pBlob, BOOL
     {
         pbPrivKey = &pBlob->abPrivKey[0];
         cbPrivKey = pBlob->cbPrivKey;
+
+        if (pBlob->nBitsPriv != 0)
+        {
+            scError = SymCryptDlkeySetPrivateKeyLength( pRes, pBlob->nBitsPriv, 0 );
+            CHECK4( scError == SYMCRYPT_NO_ERROR, "Error setting private key length pBlob->nBitsPriv %d pBlob->pGroup->cbPrimeP %d",
+                    pBlob->nBitsPriv, pBlob->pGroup->cbPrimeP );
+        }
     }
 
     if (!setPrivate)

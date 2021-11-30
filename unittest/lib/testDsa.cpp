@@ -360,6 +360,7 @@ testDsatestGroups( DsaImplementation  * pDsa, INT64 line )
         DLKEY_TESTBLOB  blob;
 
         blob.pGroup = pGroupBlob;
+        blob.nBitsPriv = 0;
 
         blob.cbPrivKey = SymCryptDlkeySizeofPrivateKey( pKey );
 
@@ -494,6 +495,7 @@ testDsaKats()
                 memcpy( bGroup.abGenG, G.data(), bGroup.cbPrimeP );
 
                 bKey.pGroup = &bGroup;
+                bKey.nBitsPriv = 0;
 
                 bKey.cbPrivKey = (UINT32) X.size();
 

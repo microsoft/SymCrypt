@@ -963,6 +963,7 @@ testDhtestGroups( DhImplementation  * pDh, INT64 line )
     SYMCRYPT_ERROR scError;
     NTSTATUS ntStatus;
     UINT32 nBitsPriv;
+    UINT32 nBitsPrivGenerated = 0;
 
     UNREFERENCED_PARAMETER( line );
 
@@ -994,15 +995,17 @@ testDhtestGroups( DhImplementation  * pDh, INT64 line )
         PSYMCRYPT_DLKEY pKey2 = SymCryptDlkeyAllocate( pGroup );
         CHECK( pKey1 != NULL && pKey2 != NULL, "Could not create keys" );
 
+        nBitsPriv = 0;
         if( pGroup->isSafePrimeGroup )
         {
-            // 50% chance to set private key lengths to a random value in range [2s, len(q)] rather
+            // 50% chance to set private key lengths to random values in range [2s, len(q)] rather
             // than using the default value
             if( g_rng.byte() & 1 )
             {
-                nBitsPriv = (UINT32) g_rng.sizet(pGroup->nMinBitsPriv, pGroup->nBitsOfQ + 1);
-                SymCryptDlkeySetPrivateKeyLength( pKey1, nBitsPriv, 0 );
-                SymCryptDlkeySetPrivateKeyLength( pKey2, nBitsPriv, 0 );
+                // Set nBitsPriv in range [2s, len(q)]
+                nBitsPriv = (UINT32) g_rng.sizet(pGroup->nMinBitsPriv, pGroup->nBitsOfQ + 1 );
+                scError = SymCryptDlkeySetPrivateKeyLength( pKey1, nBitsPriv, 0 );
+                CHECK4( scError == SYMCRYPT_NO_ERROR, "Error setting private key length nBitsPriv %d cbP %d", nBitsPriv, cbP );
             }
         }
 
@@ -1018,6 +1021,9 @@ testDhtestGroups( DhImplementation  * pDh, INT64 line )
 
         blob1.pGroup = pGroupBlob;
         blob2.pGroup = pGroupBlob;
+
+        blob1.nBitsPriv = nBitsPriv;
+        blob2.nBitsPriv = 0;
 
         blob1.cbPrivKey = SymCryptDlkeySizeofPrivateKey( pKey1 );
         blob2.cbPrivKey = SymCryptDlkeySizeofPrivateKey( pKey2 );
@@ -1039,6 +1045,51 @@ testDhtestGroups( DhImplementation  * pDh, INT64 line )
                 SYMCRYPT_NUMBER_FORMAT_MSB_FIRST,
                 0 );
         CHECK( scError == SYMCRYPT_NO_ERROR, "Error exporting key" );
+
+        if( nBitsPriv != 0 )
+        {
+            // If we set private key length, check our validation logic for importing private keys
+            nBitsPrivGenerated = SymCryptIntBitsizeOfValue(pKey1->piPrivateKey);
+
+            // We should always be able to import blob1 into pKey1 - nBitsPrivGenerated <= nBitsPriv
+            scError = SymCryptDlkeySetValue(
+                    &blob1.abPrivKey[0], blob1.cbPrivKey,
+                    &blob1.abPubKey[0], cbP,
+                    SYMCRYPT_NUMBER_FORMAT_MSB_FIRST,
+                    SYMCRYPT_FLAG_KEY_RANGE_AND_PUBLIC_KEY_ORDER_VALIDATION | SYMCRYPT_FLAG_KEY_KEYPAIR_REGENERATION_VALIDATION,
+                    pKey1 );
+            CHECK4( scError == SYMCRYPT_NO_ERROR, "Error (%d) importing key - nBitsPriv %d", scError, nBitsPriv );
+
+            // Try to import generated key when we have set the private key to be explicitly shorter
+            if( nBitsPrivGenerated > pGroup->nMinBitsPriv )
+            {
+                scError = SymCryptDlkeySetPrivateKeyLength( pKey1, nBitsPrivGenerated-1, 0 );
+                CHECK( scError == SYMCRYPT_NO_ERROR, "Error setting private key length" );
+
+                scError = SymCryptDlkeySetValue(
+                        &blob1.abPrivKey[0], blob1.cbPrivKey,
+                        &blob1.abPubKey[0], cbP,
+                        SYMCRYPT_NUMBER_FORMAT_MSB_FIRST,
+                        SYMCRYPT_FLAG_KEY_RANGE_AND_PUBLIC_KEY_ORDER_VALIDATION | SYMCRYPT_FLAG_KEY_KEYPAIR_REGENERATION_VALIDATION,
+                        pKey1 );
+                CHECK5( scError == SYMCRYPT_INVALID_ARGUMENT, "Unexpected return (%d) importing key - nBitsPrivGenerated %d nBitsPriv %d", scError, nBitsPrivGenerated, nBitsPriv );
+            }
+
+            // Try to import generated key when we have set the private key to be explicitly longer
+            if( nBitsPrivGenerated < pGroup->nBitsOfQ )
+            {
+                scError = SymCryptDlkeySetPrivateKeyLength( pKey1, SYMCRYPT_MAX(nBitsPrivGenerated+1, pGroup->nMinBitsPriv), 0 );
+                CHECK4( scError == SYMCRYPT_NO_ERROR, "Error setting private key length nBitsPrivGenerated+1 %d cbP %d", nBitsPrivGenerated+1, cbP );
+                
+                scError = SymCryptDlkeySetValue(
+                        &blob1.abPrivKey[0], blob1.cbPrivKey,
+                        &blob1.abPubKey[0], cbP,
+                        SYMCRYPT_NUMBER_FORMAT_MSB_FIRST,
+                        SYMCRYPT_FLAG_KEY_RANGE_AND_PUBLIC_KEY_ORDER_VALIDATION | SYMCRYPT_FLAG_KEY_KEYPAIR_REGENERATION_VALIDATION,
+                        pKey1 );
+                CHECK5( scError == SYMCRYPT_NO_ERROR, "Error (%d) importing key - nBitsPrivGenerated %d nBitsPriv %d", scError, nBitsPrivGenerated, nBitsPriv );
+            }
+        }
 
         GENRANDOM( buf1, sizeof( buf1 ) );
         GENRANDOM( buf2, sizeof( buf2 ) );
@@ -1146,6 +1197,9 @@ testDhKats()
 
                 bKey1.pGroup = &bGroup;
                 bKey2.pGroup = &bGroup;
+
+                bKey1.nBitsPriv = 0;
+                bKey2.nBitsPriv = 0;
 
                 bKey1.cbPrivKey = (UINT32) X1.size();
                 bKey2.cbPrivKey = (UINT32) X2.size();

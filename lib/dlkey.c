@@ -170,7 +170,14 @@ SymCryptDlkeySizeofPrivateKey( _In_ PCSYMCRYPT_DLKEY pkDlkey )
     {
         if (pDlgroup->fHasPrimeQ)
         {
-            return pDlgroup->cbPrimeQ;
+            if (pkDlkey->nBitsPriv != pDlgroup->nBitsOfQ)
+            {
+                return (pkDlkey->nBitsPriv + 7) / 8;
+            }
+            else
+            {
+                return pDlgroup->cbPrimeQ;
+            }
         }
         else
         {
@@ -319,7 +326,7 @@ SymCryptDlkeyGenerate(
         nBitsPriv = pDlgroup->nBitsOfQ;
         fFlagsForModSetRandom = SYMCRYPT_FLAG_MODRANDOM_ALLOW_ONE | SYMCRYPT_FLAG_MODRANDOM_ALLOW_MINUSONE; // 1 to Q-1
 
-        if ( pDlgroup->isSafePrimeGroup )
+        if ( pDlgroup->isSafePrimeGroup && (pkDlkey->nBitsPriv != pDlgroup->nBitsOfQ) )
         {
             useModSetRandom = FALSE;
             SYMCRYPT_ASSERT( pkDlkey->nBitsPriv < pDlgroup->nBitsOfQ );     // 2^nBitsPriv < Q
