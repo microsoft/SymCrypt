@@ -1159,7 +1159,7 @@ SymCryptFdefCreateTrialDivisionContext( UINT32 nDigits )
     UINT64 tmp64;
     UINT32 maxPrime;
     UINT32 minPrime;
-    UINT32 nSmallPrimes;
+    UINT32 nSmallPrimes = 0;
     UINT32 n;
     UINT32 nP;
     UINT32 nG;
