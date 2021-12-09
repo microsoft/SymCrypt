@@ -3771,18 +3771,23 @@ SymCryptTlsPrf1_2SelfTest();
 // PRF used in the key derivation functions of the TLS protocol, version
 // 1.3. It is defined in RFC 5869.
 //
-// The SymCrypt ExpandKey functions correspond to the "HKDF-Extract" function
-// of the RFC 5869, while the SymCrypt Derive function corresponds to the
-// "HKDF-Expand" function of the RFC.
+// The SymCrypt ExtractPrk function corresponds to the "HKDF-Extract" function
+// of the RFC 5869, while the SymCrypt PrkExpandKey and Derive functions
+// correspond to the "HKDF-Expand" function of the RFC.
 //
-// SymCryptHkdfExpandKey takes as inputs the MAC algorithm, the IKM (input
+// SymCryptHkdfExtractPrk takes as inputs the MAC algorithm, the IKM (input
 // keying material), and the optional salt. It executes the full "HKDF-Extract"
-// function and produces the final (MAC) key to be used by the "HKDF-Expand"
-// function.
+// function to produce the PRK (pseudorandom key).
 //
-// SymCryptHkdfPrkExpandKey takes as inputs just the MAC algorithm and the PRK
-// (pseudorandom key). It immediately produces the final (MAC) key to be used by the
-// "HKDF-Expand" function.
+// SymCryptHkdfPrkExpandKey takes as inputs just the MAC algorithm and the PRK.
+// It produces the final (MAC) key to be used by the "HKDF-Expand" function.
+//
+// SymCryptHkdfExpandKey performs SymCryptHkdfExtractPrk followed by
+// SymCryptHkdfPrkExpandKey to produce the final (MAC) key to be used by the
+// "HKDF-Expand" function, without exposing the PRK to the caller.
+//
+// SymCryptHkdfDerive takes as inpt the final MAC key and the optional info. It
+// performs the rest of the "HKDF-Expand" function to produce the HKDF result.
 //
 
 SYMCRYPT_ERROR
@@ -3794,6 +3799,17 @@ SymCryptHkdfExpandKey(
                             SIZE_T                          cbIkm,
     _In_reads_opt_(cbSalt)  PCBYTE                          pbSalt,
                             SIZE_T                          cbSalt );
+
+SYMCRYPT_ERROR
+SYMCRYPT_CALL
+SymCryptHkdfExtractPrk(
+    _In_                    PCSYMCRYPT_MAC                  macAlgorithm,
+    _In_reads_(cbIkm)       PCBYTE                          pbIkm,
+                            SIZE_T                          cbIkm,
+    _In_reads_opt_(cbSalt)  PCBYTE                          pbSalt,
+                            SIZE_T                          cbSalt,
+    _Out_writes_(cbPrk)     PBYTE                           pbPrk,
+                            SIZE_T                          cbPrk );
 
 SYMCRYPT_ERROR
 SYMCRYPT_CALL

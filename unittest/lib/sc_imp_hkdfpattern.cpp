@@ -60,6 +60,7 @@ KdfImp<ImpSc, AlgHkdf, BaseAlgXxx>::derive(
     BYTE buf1[1024];
     BYTE buf2[sizeof(buf1)];
     SYMCRYPT_ERROR scError;
+    SYMCRYPT_ALIGN BYTE rbPrk[SYMCRYPT_MAC_MAX_RESULT_SIZE] = { 0 };
     SYMCRYPT_HKDF_EXPANDED_KEY expandedKey;
     BYTE expandedKeyChecksum[SYMCRYPT_MARVIN32_RESULT_SIZE];
 
@@ -84,6 +85,7 @@ KdfImp<ImpSc, AlgHkdf, BaseAlgXxx>::derive(
             return;
     }
 
+    // 1) Full HKDF
     initXmmRegisters();
     scError = SymCryptHkdf(
         SYMCRYPT_BaseXxxAlgorithm,
@@ -95,10 +97,38 @@ KdfImp<ImpSc, AlgHkdf, BaseAlgXxx>::derive(
 
     CHECK(scError == SYMCRYPT_NO_ERROR, "Error in SymCrypt HKDF");
 
+    // 2) ExpandKey then Derive
     scError = SymCryptHkdfExpandKey(    &expandedKey,
                                         SYMCRYPT_BaseXxxAlgorithm,
                                         pbKey, cbKey,
                                         pbSalt, cbSalt );
+    verifyXmmRegisters();
+    CHECK(scError == SYMCRYPT_NO_ERROR, "Error in SymCrypt HKDF");
+
+    SymCryptMarvin32(SymCryptMarvin32DefaultSeed, (PCBYTE)&expandedKey, sizeof(expandedKey), expandedKeyChecksum);
+
+    scError = SymCryptHkdfDerive(   &expandedKey,
+                                    pbInfo, cbInfo,
+                                    &buf2[0], cbDst);
+    verifyXmmRegisters();
+    CHECK(scError == SYMCRYPT_NO_ERROR, "Error in SymCrypt HKDF");
+
+    CHECK(memcmp(buf1, buf2, cbDst) == 0, "SymCrypt HKDF calling versions disagree");
+
+    SymCryptMarvin32(SymCryptMarvin32DefaultSeed, (PCBYTE)&expandedKey, sizeof(expandedKey), buf2);
+    CHECK(memcmp(expandedKeyChecksum, buf2, SYMCRYPT_MARVIN32_RESULT_SIZE) == 0, "SymCrypt HKDF modified expanded key");
+
+    // 3) ExtractPrk then PrkExpandKey then Derive
+    scError = SymCryptHkdfExtractPrk(   SYMCRYPT_BaseXxxAlgorithm,
+                                        pbKey, cbKey,
+                                        pbSalt, cbSalt,
+                                        rbPrk, SYMCRYPT_BaseXxxAlgorithm->resultSize );
+    verifyXmmRegisters();
+    CHECK(scError == SYMCRYPT_NO_ERROR, "Error in SymCrypt HKDF");
+
+    scError = SymCryptHkdfPrkExpandKey( &expandedKey,
+                                        SYMCRYPT_BaseXxxAlgorithm,
+                                        rbPrk, SYMCRYPT_BaseXxxAlgorithm->resultSize );
     verifyXmmRegisters();
     CHECK(scError == SYMCRYPT_NO_ERROR, "Error in SymCrypt HKDF");
 

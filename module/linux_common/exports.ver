@@ -191,6 +191,7 @@ VERSION_100.20 {
       SymCryptHkdf;
       SymCryptHkdfDerive;
       SymCryptHkdfExpandKey;
+      SymCryptHkdfExtractPrk;
       SymCryptHkdfPrkExpandKey;
       SymCryptHkdfSelfTest;
       SymCryptHmacMd5;
