@@ -3667,6 +3667,14 @@ VOID
 SYMCRYPT_CALL
 SymCryptSp800_108_HmacSha256SelfTest();
 
+VOID
+SYMCRYPT_CALL
+SymCryptSp800_108_HmacSha384SelfTest();
+
+VOID
+SYMCRYPT_CALL
+SymCryptSp800_108_HmacSha512SelfTest();
+
 ////////////////////////////////////////////////////////////////////////////
 // TLS Key Derivation PRFs
 //

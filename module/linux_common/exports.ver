@@ -499,6 +499,8 @@ VERSION_100.20 {
       SymCryptSp800_108ExpandKey;
       SymCryptSp800_108_HmacSha1SelfTest;
       SymCryptSp800_108_HmacSha256SelfTest;
+      SymCryptSp800_108_HmacSha384SelfTest;
+      SymCryptSp800_108_HmacSha512SelfTest;
       SymCryptStoreLsbFirstUint32;
       SymCryptStoreLsbFirstUint64;
       SymCryptStoreMsbFirstUint32;

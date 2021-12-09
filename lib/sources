@@ -130,6 +130,7 @@ SOURCES= \
     sp800_108.c \
     sp800_108_hmacsha1.c \
     sp800_108_hmacsha256.c \
+    sp800_108_hmacsha512.c \
     tlsprf.c \
     tlsprf_selftest.c \
     hkdf.c \

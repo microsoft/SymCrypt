@@ -52,6 +52,11 @@ VOID __attribute__((constructor)) SymCryptModuleMain()
 
         SymCryptHkdfSelfTest();
 
+        SymCryptSp800_108_HmacSha1SelfTest();
+        SymCryptSp800_108_HmacSha256SelfTest();
+        SymCryptSp800_108_HmacSha384SelfTest();
+        SymCryptSp800_108_HmacSha512SelfTest();
+
         g_SymCryptFipsSelftestsPerformed |= SYMCRYPT_SELFTEST_STARTUP;
     }
 }
