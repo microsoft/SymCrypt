@@ -161,7 +161,8 @@ SymCryptDlgroupCreate(
     pDlgroup->nMaxBitsOfQ = (nBitsOfQ==0)?(nBitsOfP-1):nBitsOfQ;
 
     pDlgroup->isSafePrimeGroup = FALSE;
-    pDlgroup->nBitsPriv = nBitsOfQ;                                            // 0 value possible
+    pDlgroup->nMinBitsPriv = 0;
+    pDlgroup->nDefaultBitsPriv = nBitsOfQ;                                     // 0 value possible
 
     pDlgroup->nBitsOfSeed = nBitsOfQ;                                          // 0 value possible
     pDlgroup->cbSeed = (pDlgroup->nBitsOfSeed+7)/8;                            // 0 value possible
@@ -243,7 +244,8 @@ SymCryptDlgroupCopy(
         pgDst->nMaxBitsOfQ = pgSrc->nMaxBitsOfQ;
 
         pgDst->isSafePrimeGroup = pgSrc->isSafePrimeGroup;
-        pgDst->nBitsPriv = pgSrc->nBitsPriv;
+        pgDst->nMinBitsPriv = pgSrc->nMinBitsPriv;
+        pgDst->nDefaultBitsPriv = pgSrc->nDefaultBitsPriv;
 
         pgDst->nBitsOfSeed = pgSrc->nBitsOfSeed;
         pgDst->cbSeed = pgSrc->cbSeed;
@@ -924,7 +926,7 @@ SymCryptDlgroupGenerate(
 
         pDlgroup->cbPrimeQ = (pDlgroup->nBitsOfQ + 7)/8;
         pDlgroup->nDigitsOfQ = SymCryptDigitsFromBits( pDlgroup->nBitsOfQ );
-        pDlgroup->nBitsPriv = pDlgroup->nBitsOfQ;
+        pDlgroup->nDefaultBitsPriv = pDlgroup->nBitsOfQ;
         pDlgroup->nBitsOfSeed = pDlgroup->nBitsOfQ;
         pDlgroup->cbSeed = (pDlgroup->nBitsOfSeed+7)/8;
     }
@@ -1143,7 +1145,8 @@ SymCryptDlgroupSetValueSafePrime(
     // Set fields marking the Dlgroup as being a named safe-prime group
     pDlgroup->isSafePrimeGroup  = TRUE;
     pDlgroup->eFipsStandard     = SYMCRYPT_DLGROUP_FIPS_NONE;
-    pDlgroup->nBitsPriv         = safePrimeParams->nBitsPriv;
+    pDlgroup->nMinBitsPriv      = safePrimeParams->nMinBitsPriv;
+    pDlgroup->nDefaultBitsPriv  = safePrimeParams->nDefaultBitsPriv;
 
     // Ensure that fields which don't apply to named safe-prime groups are cleared
     pDlgroup->pHashAlgorithm = NULL;
@@ -1355,7 +1358,8 @@ SymCryptDlgroupAutoCompleteNamedSafePrimeGroup(
         // Set fields marking the Dlgroup as being a named safe-prime group
         pDlgroup->isSafePrimeGroup  = TRUE;
         pDlgroup->eFipsStandard     = SYMCRYPT_DLGROUP_FIPS_NONE;
-        pDlgroup->nBitsPriv         = safePrimeParams->nBitsPriv;
+        pDlgroup->nMinBitsPriv      = safePrimeParams->nMinBitsPriv;
+        pDlgroup->nDefaultBitsPriv  = safePrimeParams->nDefaultBitsPriv;
 
         // Ensure that fields which don't apply to named safe-prime groups are cleared
         pDlgroup->pHashAlgorithm = NULL;
@@ -1616,7 +1620,7 @@ SymCryptDlgroupSetValue(
         pDlgroup->nBitsOfQ = nBitsOfQ;
         pDlgroup->cbPrimeQ = (nBitsOfQ + 7)/8;
         pDlgroup->nDigitsOfQ = SymCryptDigitsFromBits(nBitsOfQ);
-        pDlgroup->nBitsPriv = nBitsOfQ;
+        pDlgroup->nDefaultBitsPriv = nBitsOfQ;
         pDlgroup->nBitsOfSeed = nBitsOfQ;
         pDlgroup->cbSeed = (nBitsOfQ+7)/8;
 
@@ -1651,7 +1655,7 @@ SymCryptDlgroupSetValue(
         pDlgroup->nBitsOfQ = 0;
         pDlgroup->nDigitsOfQ = 0;
 
-        pDlgroup->nBitsPriv = 0;
+        pDlgroup->nDefaultBitsPriv = 0;
         pDlgroup->nBitsOfSeed = 0;
         pDlgroup->cbSeed = 0;
 
@@ -1660,6 +1664,7 @@ SymCryptDlgroupSetValue(
     }
 
     pDlgroup->isSafePrimeGroup = FALSE;
+    pDlgroup->nMinBitsPriv = 0;
 
     //
     // Provided Generator G

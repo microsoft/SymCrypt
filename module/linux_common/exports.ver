@@ -96,6 +96,7 @@ VERSION_100.20 {
       SymCryptDlkeyGetGroup;
       SymCryptDlkeyGetValue;
       SymCryptDlkeyHasPrivateKey;
+      SymCryptDlkeySetPrivateKeyLength;
       SymCryptDlkeySetValue;
       SymCryptDlkeySizeofPrivateKey;
       SymCryptDlkeySizeofPublicKey;

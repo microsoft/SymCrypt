@@ -593,6 +593,8 @@ typedef const DLGROUP_TESTBLOB * PCDLGROUP_TESTBLOB;
 
 typedef struct _DLKEY_TESTBLOB {
     PCDLGROUP_TESTBLOB  pGroup;
+    UINT32              nBitsPriv;                      // Non-zero value indicates Dlkey in DH safe-prime group with
+                                                        // specified private key length
     UINT32              cbPrivKey;                      //
     BYTE                abPubKey[DLKEY_MAXKEYSIZE];     // cbPrimeP bytes
     BYTE                abPrivKey[DLKEY_MAXKEYSIZE];    // cbPrivKey bytes

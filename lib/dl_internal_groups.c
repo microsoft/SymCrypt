@@ -808,7 +808,8 @@ static const SYMCRYPT_DLGROUP_DH_SAFEPRIME_PARAMS paramsModp2048 =
     .eDhSafePrimeType = SYMCRYPT_DLGROUP_DH_SAFEPRIMETYPE_IKE_3526,
     .pcbPrimeP = rgbIke3526Modp2048,
     .nBitsOfP = 2048,
-    .nBitsPriv = 256 // rounding 112 * 2 up to the nearest 128
+    .nMinBitsPriv = 224,    // 2s = 2 * 112
+    .nDefaultBitsPriv = 256 // rounding nMinBitsPriv up to the nearest 128
 };
 
 static const SYMCRYPT_DLGROUP_DH_SAFEPRIME_PARAMS paramsModp3072 =
@@ -816,7 +817,8 @@ static const SYMCRYPT_DLGROUP_DH_SAFEPRIME_PARAMS paramsModp3072 =
     .eDhSafePrimeType = SYMCRYPT_DLGROUP_DH_SAFEPRIMETYPE_IKE_3526,
     .pcbPrimeP = rgbIke3526Modp3072,
     .nBitsOfP = 3072,
-    .nBitsPriv = 256 // rounding 128 * 2 up to the nearest 128
+    .nMinBitsPriv = 256,    // 2s = 2 * 128
+    .nDefaultBitsPriv = 256 // rounding nMinBitsPriv up to the nearest 128
 };
 
 static const SYMCRYPT_DLGROUP_DH_SAFEPRIME_PARAMS paramsModp4096 =
@@ -824,7 +826,8 @@ static const SYMCRYPT_DLGROUP_DH_SAFEPRIME_PARAMS paramsModp4096 =
     .eDhSafePrimeType = SYMCRYPT_DLGROUP_DH_SAFEPRIMETYPE_IKE_3526,
     .pcbPrimeP = rgbIke3526Modp4096,
     .nBitsOfP = 4096,
-    .nBitsPriv = 384 // rounding 152 * 2 up to the nearest 128
+    .nMinBitsPriv = 304,    // 2s = 2 * 152
+    .nDefaultBitsPriv = 384 // rounding nMinBitsPriv up to the nearest 128
 };
 
 static const SYMCRYPT_DLGROUP_DH_SAFEPRIME_PARAMS paramsModp6144 =
@@ -832,7 +835,8 @@ static const SYMCRYPT_DLGROUP_DH_SAFEPRIME_PARAMS paramsModp6144 =
     .eDhSafePrimeType = SYMCRYPT_DLGROUP_DH_SAFEPRIMETYPE_IKE_3526,
     .pcbPrimeP = rgbIke3526Modp6144,
     .nBitsOfP = 6144,
-    .nBitsPriv = 384 // rounding 176 * 2 up to the nearest 128
+    .nMinBitsPriv = 352,    // 2s = 2 * 176
+    .nDefaultBitsPriv = 384 // rounding nMinBitsPriv up to the nearest 128
 };
 
 static const SYMCRYPT_DLGROUP_DH_SAFEPRIME_PARAMS paramsModp8192 =
@@ -840,7 +844,8 @@ static const SYMCRYPT_DLGROUP_DH_SAFEPRIME_PARAMS paramsModp8192 =
     .eDhSafePrimeType = SYMCRYPT_DLGROUP_DH_SAFEPRIMETYPE_IKE_3526,
     .pcbPrimeP = rgbIke3526Modp8192,
     .nBitsOfP = 8192,
-    .nBitsPriv = 512 // rounding 200 * 2 up to the nearest 128
+    .nMinBitsPriv = 400,    // 2s = 2 * 200
+    .nDefaultBitsPriv = 512 // rounding nMinBitsPriv up to the nearest 128
 };
 
 static const SYMCRYPT_DLGROUP_DH_SAFEPRIME_PARAMS paramsffdhe2048 =
@@ -848,7 +853,8 @@ static const SYMCRYPT_DLGROUP_DH_SAFEPRIME_PARAMS paramsffdhe2048 =
     .eDhSafePrimeType = SYMCRYPT_DLGROUP_DH_SAFEPRIMETYPE_TLS_7919,
     .pcbPrimeP = rgbTls7919ffdhe2048,
     .nBitsOfP = 2048,
-    .nBitsPriv = 256 // rounding 112 * 2 up to the nearest 128
+    .nMinBitsPriv = 224,    // 2s = 2 * 112
+    .nDefaultBitsPriv = 256 // rounding nMinBitsPriv up to the nearest 128
 };
 
 static const SYMCRYPT_DLGROUP_DH_SAFEPRIME_PARAMS paramsffdhe3072 =
@@ -856,7 +862,8 @@ static const SYMCRYPT_DLGROUP_DH_SAFEPRIME_PARAMS paramsffdhe3072 =
     .eDhSafePrimeType = SYMCRYPT_DLGROUP_DH_SAFEPRIMETYPE_TLS_7919,
     .pcbPrimeP = rgbTls7919ffdhe3072,
     .nBitsOfP = 3072,
-    .nBitsPriv = 256 // rounding 128 * 2 up to the nearest 128
+    .nMinBitsPriv = 256,    // 2s = 2 * 128
+    .nDefaultBitsPriv = 256 // rounding nMinBitsPriv up to the nearest 128
 };
 
 static const SYMCRYPT_DLGROUP_DH_SAFEPRIME_PARAMS paramsffdhe4096 =
@@ -864,7 +871,8 @@ static const SYMCRYPT_DLGROUP_DH_SAFEPRIME_PARAMS paramsffdhe4096 =
     .eDhSafePrimeType = SYMCRYPT_DLGROUP_DH_SAFEPRIMETYPE_TLS_7919,
     .pcbPrimeP = rgbTls7919ffdhe4096,
     .nBitsOfP = 4096,
-    .nBitsPriv = 384 // rounding 152 * 2 up to the nearest 128
+    .nMinBitsPriv = 304,    // 2s = 2 * 152
+    .nDefaultBitsPriv = 384 // rounding nMinBitsPriv up to the nearest 128
 };
 
 static const SYMCRYPT_DLGROUP_DH_SAFEPRIME_PARAMS paramsffdhe6144 =
@@ -872,7 +880,8 @@ static const SYMCRYPT_DLGROUP_DH_SAFEPRIME_PARAMS paramsffdhe6144 =
     .eDhSafePrimeType = SYMCRYPT_DLGROUP_DH_SAFEPRIMETYPE_TLS_7919,
     .pcbPrimeP = rgbTls7919ffdhe6144,
     .nBitsOfP = 6144,
-    .nBitsPriv = 384 // rounding 176 * 2 up to the nearest 128
+    .nMinBitsPriv = 352,    // 2s = 2 * 176
+    .nDefaultBitsPriv = 384 // rounding nMinBitsPriv up to the nearest 128
 };
 
 static const SYMCRYPT_DLGROUP_DH_SAFEPRIME_PARAMS paramsffdhe8192 =
@@ -880,7 +889,8 @@ static const SYMCRYPT_DLGROUP_DH_SAFEPRIME_PARAMS paramsffdhe8192 =
     .eDhSafePrimeType = SYMCRYPT_DLGROUP_DH_SAFEPRIMETYPE_TLS_7919,
     .pcbPrimeP = rgbTls7919ffdhe8192,
     .nBitsOfP = 8192,
-    .nBitsPriv = 512 // rounding 200 * 2 up to the nearest 128
+    .nMinBitsPriv = 400,    // 2s = 2 * 200
+    .nDefaultBitsPriv = 512 // rounding nMinBitsPriv up to the nearest 128
 };
 
 const PCSYMCRYPT_DLGROUP_DH_SAFEPRIME_PARAMS SymCryptDlgroupDhSafePrimeParamsModp2048 = &paramsModp2048;
