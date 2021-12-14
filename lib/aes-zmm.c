@@ -144,10 +144,10 @@ SymCryptXtsAesEncryptDataUnitZmm_2048(
         pbSrc += 16 * SYMCRYPT_AES_BLOCK_SIZE;
 
         AES_ENCRYPT_ZMM_2048( pExpandedKey, c0, c1, c2, c3 );
-        _mm512_store_si512( ( pbDst +                          0 ), _mm512_xor_si512( c0, T0 ) );
-        _mm512_store_si512( ( pbDst +  4*SYMCRYPT_AES_BLOCK_SIZE ), _mm512_xor_si512( c1, T1 ) );
-        _mm512_store_si512( ( pbDst +  8*SYMCRYPT_AES_BLOCK_SIZE ), _mm512_xor_si512( c2, T2 ) );
-        _mm512_store_si512( ( pbDst + 12*SYMCRYPT_AES_BLOCK_SIZE ), _mm512_xor_si512( c3, T3 ) );
+        _mm512_storeu_si512( ( pbDst +                          0 ), _mm512_xor_si512( c0, T0 ) );
+        _mm512_storeu_si512( ( pbDst +  4*SYMCRYPT_AES_BLOCK_SIZE ), _mm512_xor_si512( c1, T1 ) );
+        _mm512_storeu_si512( ( pbDst +  8*SYMCRYPT_AES_BLOCK_SIZE ), _mm512_xor_si512( c2, T2 ) );
+        _mm512_storeu_si512( ( pbDst + 12*SYMCRYPT_AES_BLOCK_SIZE ), _mm512_xor_si512( c3, T3 ) );
 
         pbDst += 16 * SYMCRYPT_AES_BLOCK_SIZE;
 
@@ -244,10 +244,10 @@ SymCryptXtsAesDecryptDataUnitZmm_2048(
         pbSrc += 16 * SYMCRYPT_AES_BLOCK_SIZE;
 
         AES_DECRYPT_ZMM_2048( pExpandedKey, c0, c1, c2, c3 );
-        _mm512_store_si512( ( pbDst +                          0 ), _mm512_xor_si512( c0, T0 ) );
-        _mm512_store_si512( ( pbDst +  4*SYMCRYPT_AES_BLOCK_SIZE ), _mm512_xor_si512( c1, T1 ) );
-        _mm512_store_si512( ( pbDst +  8*SYMCRYPT_AES_BLOCK_SIZE ), _mm512_xor_si512( c2, T2 ) );
-        _mm512_store_si512( ( pbDst + 12*SYMCRYPT_AES_BLOCK_SIZE ), _mm512_xor_si512( c3, T3 ) );
+        _mm512_storeu_si512( ( pbDst +                          0 ), _mm512_xor_si512( c0, T0 ) );
+        _mm512_storeu_si512( ( pbDst +  4*SYMCRYPT_AES_BLOCK_SIZE ), _mm512_xor_si512( c1, T1 ) );
+        _mm512_storeu_si512( ( pbDst +  8*SYMCRYPT_AES_BLOCK_SIZE ), _mm512_xor_si512( c2, T2 ) );
+        _mm512_storeu_si512( ( pbDst + 12*SYMCRYPT_AES_BLOCK_SIZE ), _mm512_xor_si512( c3, T3 ) );
 
         pbDst += 16 * SYMCRYPT_AES_BLOCK_SIZE;
 
