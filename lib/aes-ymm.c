@@ -173,14 +173,14 @@ SymCryptXtsAesEncryptDataUnitYmm_2048(
 
         AES_ENCRYPT_YMM_2048( pExpandedKey, c0, c1, c2, c3, c4, c5, c6, c7 );
 
-        _mm256_store_si256( ( __m256i * ) ( pbDst +                          0 ), _mm256_xor_si256( c0, T0 ) );
-        _mm256_store_si256( ( __m256i * ) ( pbDst +  2*SYMCRYPT_AES_BLOCK_SIZE ), _mm256_xor_si256( c1, T1 ) );
-        _mm256_store_si256( ( __m256i * ) ( pbDst +  4*SYMCRYPT_AES_BLOCK_SIZE ), _mm256_xor_si256( c2, T2 ) );
-        _mm256_store_si256( ( __m256i * ) ( pbDst +  6*SYMCRYPT_AES_BLOCK_SIZE ), _mm256_xor_si256( c3, T3 ) );
-        _mm256_store_si256( ( __m256i * ) ( pbDst +  8*SYMCRYPT_AES_BLOCK_SIZE ), _mm256_xor_si256( c4, T4 ) );
-        _mm256_store_si256( ( __m256i * ) ( pbDst + 10*SYMCRYPT_AES_BLOCK_SIZE ), _mm256_xor_si256( c5, T5 ) );
-        _mm256_store_si256( ( __m256i * ) ( pbDst + 12*SYMCRYPT_AES_BLOCK_SIZE ), _mm256_xor_si256( c6, T6 ) );
-        _mm256_store_si256( ( __m256i * ) ( pbDst + 14*SYMCRYPT_AES_BLOCK_SIZE ), _mm256_xor_si256( c7, T7 ) );
+        _mm256_storeu_si256( ( __m256i * ) ( pbDst +                          0 ), _mm256_xor_si256( c0, T0 ) );
+        _mm256_storeu_si256( ( __m256i * ) ( pbDst +  2*SYMCRYPT_AES_BLOCK_SIZE ), _mm256_xor_si256( c1, T1 ) );
+        _mm256_storeu_si256( ( __m256i * ) ( pbDst +  4*SYMCRYPT_AES_BLOCK_SIZE ), _mm256_xor_si256( c2, T2 ) );
+        _mm256_storeu_si256( ( __m256i * ) ( pbDst +  6*SYMCRYPT_AES_BLOCK_SIZE ), _mm256_xor_si256( c3, T3 ) );
+        _mm256_storeu_si256( ( __m256i * ) ( pbDst +  8*SYMCRYPT_AES_BLOCK_SIZE ), _mm256_xor_si256( c4, T4 ) );
+        _mm256_storeu_si256( ( __m256i * ) ( pbDst + 10*SYMCRYPT_AES_BLOCK_SIZE ), _mm256_xor_si256( c5, T5 ) );
+        _mm256_storeu_si256( ( __m256i * ) ( pbDst + 12*SYMCRYPT_AES_BLOCK_SIZE ), _mm256_xor_si256( c6, T6 ) );
+        _mm256_storeu_si256( ( __m256i * ) ( pbDst + 14*SYMCRYPT_AES_BLOCK_SIZE ), _mm256_xor_si256( c7, T7 ) );
 
         pbDst += 16 * SYMCRYPT_AES_BLOCK_SIZE;
 
@@ -282,14 +282,14 @@ SymCryptXtsAesDecryptDataUnitYmm_2048(
 
         AES_DECRYPT_YMM_2048( pExpandedKey, c0, c1, c2, c3, c4, c5, c6, c7 );
 
-        _mm256_store_si256( ( __m256i * ) ( pbDst +                          0 ), _mm256_xor_si256( c0, T0 ) );
-        _mm256_store_si256( ( __m256i * ) ( pbDst +  2*SYMCRYPT_AES_BLOCK_SIZE ), _mm256_xor_si256( c1, T1 ) );
-        _mm256_store_si256( ( __m256i * ) ( pbDst +  4*SYMCRYPT_AES_BLOCK_SIZE ), _mm256_xor_si256( c2, T2 ) );
-        _mm256_store_si256( ( __m256i * ) ( pbDst +  6*SYMCRYPT_AES_BLOCK_SIZE ), _mm256_xor_si256( c3, T3 ) );
-        _mm256_store_si256( ( __m256i * ) ( pbDst +  8*SYMCRYPT_AES_BLOCK_SIZE ), _mm256_xor_si256( c4, T4 ) );
-        _mm256_store_si256( ( __m256i * ) ( pbDst + 10*SYMCRYPT_AES_BLOCK_SIZE ), _mm256_xor_si256( c5, T5 ) );
-        _mm256_store_si256( ( __m256i * ) ( pbDst + 12*SYMCRYPT_AES_BLOCK_SIZE ), _mm256_xor_si256( c6, T6 ) );
-        _mm256_store_si256( ( __m256i * ) ( pbDst + 14*SYMCRYPT_AES_BLOCK_SIZE ), _mm256_xor_si256( c7, T7 ) );
+        _mm256_storeu_si256( ( __m256i * ) ( pbDst +                          0 ), _mm256_xor_si256( c0, T0 ) );
+        _mm256_storeu_si256( ( __m256i * ) ( pbDst +  2*SYMCRYPT_AES_BLOCK_SIZE ), _mm256_xor_si256( c1, T1 ) );
+        _mm256_storeu_si256( ( __m256i * ) ( pbDst +  4*SYMCRYPT_AES_BLOCK_SIZE ), _mm256_xor_si256( c2, T2 ) );
+        _mm256_storeu_si256( ( __m256i * ) ( pbDst +  6*SYMCRYPT_AES_BLOCK_SIZE ), _mm256_xor_si256( c3, T3 ) );
+        _mm256_storeu_si256( ( __m256i * ) ( pbDst +  8*SYMCRYPT_AES_BLOCK_SIZE ), _mm256_xor_si256( c4, T4 ) );
+        _mm256_storeu_si256( ( __m256i * ) ( pbDst + 10*SYMCRYPT_AES_BLOCK_SIZE ), _mm256_xor_si256( c5, T5 ) );
+        _mm256_storeu_si256( ( __m256i * ) ( pbDst + 12*SYMCRYPT_AES_BLOCK_SIZE ), _mm256_xor_si256( c6, T6 ) );
+        _mm256_storeu_si256( ( __m256i * ) ( pbDst + 14*SYMCRYPT_AES_BLOCK_SIZE ), _mm256_xor_si256( c7, T7 ) );
 
         pbDst += 16 * SYMCRYPT_AES_BLOCK_SIZE;
 
