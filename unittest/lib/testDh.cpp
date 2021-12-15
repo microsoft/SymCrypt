@@ -1247,6 +1247,7 @@ testDhAlgorithms()
 
     testDhKats();
 
-    CHECK3( g_nOutstandingCheckedAllocs == 0, "Memory leak %d", g_nOutstandingCheckedAllocs );
+    INT64 nOutstandingAllocs = SYMCRYPT_INTERNAL_VOLATILE_READ64(&g_nOutstandingCheckedAllocs);
+    CHECK3( nOutstandingAllocs == 0, "Memory leak %d", nOutstandingAllocs );
 }
 

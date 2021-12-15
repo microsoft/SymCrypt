@@ -1015,9 +1015,12 @@ testRsaSignAlgorithms()
     // Uncomment this function to generate a new KAT file
     // createKatFileRsaSign();
 
-    CHECK( g_nOutstandingCheckedAllocs == 0, "Memory leak" );
+    INT64 nOutstandingAllocs = SYMCRYPT_INTERNAL_VOLATILE_READ64(&g_nOutstandingCheckedAllocs);
+    CHECK3( nOutstandingAllocs == 0, "Memory leak %d", nOutstandingAllocs );
+
     testRsaSignKats();
-    CHECK( g_nOutstandingCheckedAllocs == 0, "Memory leak" );
+    nOutstandingAllocs = SYMCRYPT_INTERNAL_VOLATILE_READ64(&g_nOutstandingCheckedAllocs);
+    CHECK3( nOutstandingAllocs == 0, "Memory leak %d", nOutstandingAllocs );
 
     if( isAlgorithmPresent( "RsaSignPkcs1", FALSE ) )
     {
@@ -1029,6 +1032,7 @@ testRsaSignAlgorithms()
         testRsaSignPss();
     }
 
-    CHECK( g_nOutstandingCheckedAllocs == 0, "Memory leak" );
+    nOutstandingAllocs = SYMCRYPT_INTERNAL_VOLATILE_READ64(&g_nOutstandingCheckedAllocs);
+    CHECK3( nOutstandingAllocs == 0, "Memory leak %d", nOutstandingAllocs );
 }
 

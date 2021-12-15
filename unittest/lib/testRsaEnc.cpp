@@ -959,10 +959,12 @@ testRsaEncAlgorithms()
     // Uncomment this function to generate a new KAT file
     // createKatFileRsaEnc();
 
+    INT64 nOutstandingAllocs = SYMCRYPT_INTERNAL_VOLATILE_READ64(&g_nOutstandingCheckedAllocs);
+    CHECK3( nOutstandingAllocs == 0, "Memory leak %d", nOutstandingAllocs );
 
-    CHECK( g_nOutstandingCheckedAllocs == 0, "Memory leak" );
     testRsaEncKats();
-    CHECK3( g_nOutstandingCheckedAllocs == 0, "Memory leak %d", g_nOutstandingCheckedAllocs );
+    nOutstandingAllocs = SYMCRYPT_INTERNAL_VOLATILE_READ64(&g_nOutstandingCheckedAllocs);
+    CHECK3( nOutstandingAllocs == 0, "Memory leak %d", nOutstandingAllocs );
 
     if( isAlgorithmPresent( "RsaEncRaw", FALSE ) )
     {
@@ -979,6 +981,7 @@ testRsaEncAlgorithms()
         testRsaEncOaep();
     }
 
-    CHECK( g_nOutstandingCheckedAllocs == 0, "Memory leak" );
+    nOutstandingAllocs = SYMCRYPT_INTERNAL_VOLATILE_READ64(&g_nOutstandingCheckedAllocs);
+    CHECK3( nOutstandingAllocs == 0, "Memory leak %d", nOutstandingAllocs );
 }
 

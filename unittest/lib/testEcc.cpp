@@ -703,6 +703,7 @@ testEcc()
     PCSYMCRYPT_ECURVE_PARAMS    pParams = NULL;
 
     INT64 nAllocs = 0;
+    INT64 nOutstandingAllocs = 0;
 
     if( hasRun )
     {
@@ -718,7 +719,8 @@ testEcc()
 
     iprint( "    Elliptic Curve Crypto\n" );
 
-    CHECK( g_nOutstandingCheckedAllocs == 0, "Memory leak" );
+    nOutstandingAllocs = SYMCRYPT_INTERNAL_VOLATILE_READ64(&g_nOutstandingCheckedAllocs);
+    CHECK3( nOutstandingAllocs  == 0, "Memory leak %d", nOutstandingAllocs );
 
     iprint("    > Functional testing");
     vprint(!g_verbose, ": ");
@@ -734,11 +736,11 @@ testEcc()
         }
         vprint(g_verbose, "\n");
 
-        nAllocs = g_nAllocs;
+        nAllocs = SYMCRYPT_INTERNAL_VOLATILE_READ64(&g_nAllocs);
         pParams = rgbInternalCurves[i].pParams;
         pCurve = SymCryptEcurveAllocate( pParams, 0 );
         CHECK( pCurve != NULL, "Curve allocation failed" );
-        CHECK( g_nAllocs == nAllocs + 2, "Undesired allocation" );
+        CHECK( (INT64) SYMCRYPT_INTERNAL_VOLATILE_READ64(&g_nAllocs) == nAllocs + 2, "Undesired allocation" );
 
         rgbInternalCurves[i].pCurve = pCurve;
 
@@ -773,7 +775,8 @@ testEcc()
         SymCryptEcurveFree( rgbInternalCurves[i].pCurve );
     }
 
-    CHECK3( g_nOutstandingCheckedAllocs == 0, "Memory leak, %d outstanding", (unsigned) g_nOutstandingCheckedAllocs );
+    nOutstandingAllocs = SYMCRYPT_INTERNAL_VOLATILE_READ64(&g_nOutstandingCheckedAllocs);
+    CHECK3( nOutstandingAllocs == 0, "Memory leak, %d outstanding", nOutstandingAllocs );
 
     // Put under an if( algorithm_present ) when we refactor this
     testBadCurveParams();

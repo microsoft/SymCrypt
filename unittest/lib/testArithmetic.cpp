@@ -3808,7 +3808,8 @@ testArithmetic()
     // At this point, the test infrastructure has been set up
     //
 
-    CHECK( g_nOutstandingCheckedAllocs == 0, "Memory leak" );
+    INT64 nOutstandingAllocs = SYMCRYPT_INTERNAL_VOLATILE_READ64(&g_nOutstandingCheckedAllocs);
+    CHECK3( nOutstandingAllocs == 0, "Memory leak %d", nOutstandingAllocs );
 
     //debugtestDiv();
     //debugtestModInv();
@@ -3896,7 +3897,8 @@ testArithmetic()
 
     rnddRunTest( 5, 1 );
 
-    CHECK3( g_nOutstandingCheckedAllocs == 0, "Memory leak, %d outstanding", (unsigned) g_nOutstandingCheckedAllocs );
+    nOutstandingAllocs = SYMCRYPT_INTERNAL_VOLATILE_READ64(&g_nOutstandingCheckedAllocs);
+    CHECK3( nOutstandingAllocs == 0, "Memory leak, %d outstanding", nOutstandingAllocs );
 
     // iprint( "ModIsEqual globals: EQ = %x, NEQ = %x\n", modIsEqual, modIsNotEqual );
 

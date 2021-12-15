@@ -65,7 +65,7 @@ rnddRegisterTestFunction( RNDD_TEST_FN func, char * name, UINT32 weight )
     p->func = func;
     p->name = name;
     p->weight = weight;
-    p->count = 0;
+    SYMCRYPT_INTERNAL_VOLATILE_WRITE64(&(p->count), 0);
     g_testFunctions.push_back( std::move(p) );
 
     g_totalWeight += weight;
@@ -159,7 +159,7 @@ rnddRunTest( UINT32 nSeconds, UINT32 nThreads )
     print( "\n" );
     for( std::vector<std::unique_ptr<FUNCTION_RECORD>>::iterator i = g_testFunctions.begin(); i != g_testFunctions.end(); i++ )
     {
-        print( "%30s : %8" PRId64 "\n", (*i)->name, (*i)->count );
+        print( "%30s : %8" PRId64 "\n", (*i)->name, SYMCRYPT_INTERNAL_VOLATILE_READ64(&(*i)->count) );
     }
     iprint( "\n" );
 

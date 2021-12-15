@@ -419,6 +419,71 @@ SymCryptCpuFeaturesNeverPresent();
 #define SYMCRYPT_CPU_FEATURES_PRESENT( x )   ( ((x) & SymCryptCpuFeaturesNeverPresent()) == 0 && ( (x) & g_SymCryptCpuFeaturesNotPresent ) == 0 )
 
 //
+// VOLATILE MEMORY ACCESS
+//
+// These macros are used to explicitly handle volatile memory access independent of compiler settings.
+// If volatile memory is accessed directly without using the appropriate macro, MSVC may emit warning
+// C4746, because the volatile semantics depend on the value of the /volatile flag, which can result in
+// undesired hardware memory barriers that impact performance.
+//
+// More info:
+// https://docs.microsoft.com/en-us/cpp/error-messages/compiler-warnings/compiler-warning-c4746?view=msvc-170
+// https://docs.microsoft.com/en-us/cpp/build/reference/volatile-volatile-keyword-interpretation?view=msvc-170
+//
+
+#if SYMCRYPT_MS_VC  // Microsoft VC++ Compiler
+
+    #if SYMCRYPT_CPU_ARM || SYMCRYPT_CPU_ARM64
+        #define SYMCRYPT_INTERNAL_VOLATILE_READ8( _p )    ( __iso_volatile_load8( (const volatile char*)(_p) ) )
+        #define SYMCRYPT_INTERNAL_VOLATILE_READ16( _p )   ( __iso_volatile_load16( (const volatile short*)(_p) ) )
+        #define SYMCRYPT_INTERNAL_VOLATILE_READ32( _p )   ( __iso_volatile_load32( (const volatile int*)(_p) ) )
+        #define SYMCRYPT_INTERNAL_VOLATILE_READ64( _p )   ( __iso_volatile_load64( (const volatile __int64*)(_p) ) )
+
+        #define SYMCRYPT_INTERNAL_VOLATILE_WRITE8( _p, _v )  ( __iso_volatile_store8( (volatile char*)(_p), (_v) ) )
+        #define SYMCRYPT_INTERNAL_VOLATILE_WRITE16( _p, _v ) ( __iso_volatile_store16( (volatile short*)(_p), (_v) ) )
+        #define SYMCRYPT_INTERNAL_VOLATILE_WRITE32( _p, _v ) ( __iso_volatile_store32( (volatile int*)(_p), (_v) ) )
+        #define SYMCRYPT_INTERNAL_VOLATILE_WRITE64( _p, _v ) ( __iso_volatile_store64( (volatile __int64*)(_p), (_v) ) )
+    #elif SYMCRYPT_CPU_X86 || SYMCRYPT_CPU_AMD64
+        #define SYMCRYPT_INTERNAL_VOLATILE_READ8( _p )    ( *((const volatile BYTE*)  (_p)) )
+        #define SYMCRYPT_INTERNAL_VOLATILE_READ16( _p )   ( *((const volatile UINT16*)(_p)) )
+        #define SYMCRYPT_INTERNAL_VOLATILE_READ32( _p )   ( *((const volatile UINT32*)(_p)) )
+        #define SYMCRYPT_INTERNAL_VOLATILE_READ64( _p )   ( *((const volatile UINT64*)(_p)) )
+
+        #define SYMCRYPT_INTERNAL_VOLATILE_WRITE8( _p, _v )  ( *((volatile BYTE*)  (_p)) = (_v) )
+        #define SYMCRYPT_INTERNAL_VOLATILE_WRITE16( _p, _v ) ( *((volatile UINT16*)(_p)) = (_v) )
+        #define SYMCRYPT_INTERNAL_VOLATILE_WRITE32( _p, _v ) ( *((volatile UINT32*)(_p)) = (_v) )
+        #define SYMCRYPT_INTERNAL_VOLATILE_WRITE64( _p, _v ) ( *((volatile UINT64*)(_p)) = (_v) )
+    #else // Temporary workaround for CMake compilation issues on Windows. Assume X86/ADM64.
+        #define SYMCRYPT_INTERNAL_VOLATILE_READ8( _p )    ( *((const volatile BYTE*)  (_p)) )
+        #define SYMCRYPT_INTERNAL_VOLATILE_READ16( _p )   ( *((const volatile UINT16*)(_p)) )
+        #define SYMCRYPT_INTERNAL_VOLATILE_READ32( _p )   ( *((const volatile UINT32*)(_p)) )
+        #define SYMCRYPT_INTERNAL_VOLATILE_READ64( _p )   ( *((const volatile UINT64*)(_p)) )
+
+        #define SYMCRYPT_INTERNAL_VOLATILE_WRITE8( _p, _v )  ( *((volatile BYTE*)  (_p)) = (_v) )
+        #define SYMCRYPT_INTERNAL_VOLATILE_WRITE16( _p, _v ) ( *((volatile UINT16*)(_p)) = (_v) )
+        #define SYMCRYPT_INTERNAL_VOLATILE_WRITE32( _p, _v ) ( *((volatile UINT32*)(_p)) = (_v) )
+        #define SYMCRYPT_INTERNAL_VOLATILE_WRITE64( _p, _v ) ( *((volatile UINT64*)(_p)) = (_v) )
+    #endif
+
+#elif SYMCRYPT_APPLE_CC || SYMCRYPT_GNUC
+
+    #define SYMCRYPT_INTERNAL_VOLATILE_READ8( _p )    ( *((const volatile BYTE*)  (_p)) )
+    #define SYMCRYPT_INTERNAL_VOLATILE_READ16( _p )   ( *((const volatile UINT16*)(_p)) )
+    #define SYMCRYPT_INTERNAL_VOLATILE_READ32( _p )   ( *((const volatile UINT32*)(_p)) )
+    #define SYMCRYPT_INTERNAL_VOLATILE_READ64( _p )   ( *((const volatile UINT64*)(_p)) )
+
+    #define SYMCRYPT_INTERNAL_VOLATILE_WRITE8( _p, _v )  ( *((volatile BYTE*)  (_p)) = (_v) )
+    #define SYMCRYPT_INTERNAL_VOLATILE_WRITE16( _p, _v ) ( *((volatile UINT16*)(_p)) = (_v) )
+    #define SYMCRYPT_INTERNAL_VOLATILE_WRITE32( _p, _v ) ( *((volatile UINT32*)(_p)) = (_v) )
+    #define SYMCRYPT_INTERNAL_VOLATILE_WRITE64( _p, _v ) ( *((volatile UINT64*)(_p)) = (_v) )
+
+#else
+
+    #error Unknown compiler
+
+#endif
+
+//
 // FORCED MEMORY ACCESS
 //
 // These macros force a memory access. That is, they require that the memory
@@ -427,63 +492,19 @@ SymCryptCpuFeaturesNeverPresent();
 // They provide no other memory ordering requirements, so there are no acquire/release
 // semantics, memory barriers, etc.
 //
-// For Windows (MS_VC compiler) we use the provided by the OS functions.
-//
 // The generic versions are implemented with a volatile access, but that is inefficient on some platforms
 // because it might introduce memory ordering requirements.
 //
 
-#if SYMCRYPT_MS_VC  // Microsoft VC++ Compiler
+#define SYMCRYPT_INTERNAL_FORCE_READ8( _p )    SYMCRYPT_INTERNAL_VOLATILE_READ8( _p )
+#define SYMCRYPT_INTERNAL_FORCE_READ16( _p )   SYMCRYPT_INTERNAL_VOLATILE_READ16( _p )
+#define SYMCRYPT_INTERNAL_FORCE_READ32( _p )   SYMCRYPT_INTERNAL_VOLATILE_READ32( _p )
+#define SYMCRYPT_INTERNAL_FORCE_READ64( _p )   SYMCRYPT_INTERNAL_VOLATILE_READ64( _p )
 
-    #if SYMCRYPT_CPU_ARM || SYMCRYPT_CPU_ARM64
-        #define SYMCRYPT_INTERNAL_FORCE_READ8( _p )    ( __iso_volatile_load8( (const volatile char*)(_p) ) )
-        #define SYMCRYPT_INTERNAL_FORCE_READ16( _p )   ( __iso_volatile_load16( (const volatile short*)(_p) ) )
-        #define SYMCRYPT_INTERNAL_FORCE_READ32( _p )   ( __iso_volatile_load32( (const volatile int*)(_p) ) )
-        #define SYMCRYPT_INTERNAL_FORCE_READ64( _p )   ( __iso_volatile_load64( (const volatile __int64*)(_p) ) )
-
-        #define SYMCRYPT_INTERNAL_FORCE_WRITE8( _p, _v )  ( __iso_volatile_store8( (volatile char*)(_p), (_v) ) )
-        #define SYMCRYPT_INTERNAL_FORCE_WRITE16( _p, _v ) ( __iso_volatile_store16( (volatile short*)(_p), (_v) ) )
-        #define SYMCRYPT_INTERNAL_FORCE_WRITE32( _p, _v ) ( __iso_volatile_store32( (volatile int*)(_p), (_v) ) )
-        #define SYMCRYPT_INTERNAL_FORCE_WRITE64( _p, _v ) ( __iso_volatile_store64( (volatile __int64*)(_p), (_v) ) )
-    #elif SYMCRYPT_CPU_X86 || SYMCRYPT_CPU_AMD64
-        #define SYMCRYPT_INTERNAL_FORCE_READ8( _p )    ( *((const volatile BYTE*)  (_p)) )
-        #define SYMCRYPT_INTERNAL_FORCE_READ16( _p )   ( *((const volatile UINT16*)(_p)) )
-        #define SYMCRYPT_INTERNAL_FORCE_READ32( _p )   ( *((const volatile UINT32*)(_p)) )
-        #define SYMCRYPT_INTERNAL_FORCE_READ64( _p )   ( *((const volatile UINT64*)(_p)) )
-
-        #define SYMCRYPT_INTERNAL_FORCE_WRITE8( _p, _v )  ( *((volatile BYTE*)  (_p)) = (_v) )
-        #define SYMCRYPT_INTERNAL_FORCE_WRITE16( _p, _v ) ( *((volatile UINT16*)(_p)) = (_v) )
-        #define SYMCRYPT_INTERNAL_FORCE_WRITE32( _p, _v ) ( *((volatile UINT32*)(_p)) = (_v) )
-        #define SYMCRYPT_INTERNAL_FORCE_WRITE64( _p, _v ) ( *((volatile UINT64*)(_p)) = (_v) )
-    #else // Temporary workaround for CMake compilation issues on Windows. Assume X86/ADM64.
-        #define SYMCRYPT_INTERNAL_FORCE_READ8( _p )    ( *((const volatile BYTE*)  (_p)) )
-        #define SYMCRYPT_INTERNAL_FORCE_READ16( _p )   ( *((const volatile UINT16*)(_p)) )
-        #define SYMCRYPT_INTERNAL_FORCE_READ32( _p )   ( *((const volatile UINT32*)(_p)) )
-        #define SYMCRYPT_INTERNAL_FORCE_READ64( _p )   ( *((const volatile UINT64*)(_p)) )
-
-        #define SYMCRYPT_INTERNAL_FORCE_WRITE8( _p, _v )  ( *((volatile BYTE*)  (_p)) = (_v) )
-        #define SYMCRYPT_INTERNAL_FORCE_WRITE16( _p, _v ) ( *((volatile UINT16*)(_p)) = (_v) )
-        #define SYMCRYPT_INTERNAL_FORCE_WRITE32( _p, _v ) ( *((volatile UINT32*)(_p)) = (_v) )
-        #define SYMCRYPT_INTERNAL_FORCE_WRITE64( _p, _v ) ( *((volatile UINT64*)(_p)) = (_v) )
-    #endif
-
-#elif SYMCRYPT_APPLE_CC || SYMCRYPT_GNUC
-
-    #define SYMCRYPT_INTERNAL_FORCE_READ8( _p )    ( *((const volatile BYTE*)  (_p)) )
-    #define SYMCRYPT_INTERNAL_FORCE_READ16( _p )   ( *((const volatile UINT16*)(_p)) )
-    #define SYMCRYPT_INTERNAL_FORCE_READ32( _p )   ( *((const volatile UINT32*)(_p)) )
-    #define SYMCRYPT_INTERNAL_FORCE_READ64( _p )   ( *((const volatile UINT64*)(_p)) )
-
-    #define SYMCRYPT_INTERNAL_FORCE_WRITE8( _p, _v )  ( *((volatile BYTE*)  (_p)) = (_v) )
-    #define SYMCRYPT_INTERNAL_FORCE_WRITE16( _p, _v ) ( *((volatile UINT16*)(_p)) = (_v) )
-    #define SYMCRYPT_INTERNAL_FORCE_WRITE32( _p, _v ) ( *((volatile UINT32*)(_p)) = (_v) )
-    #define SYMCRYPT_INTERNAL_FORCE_WRITE64( _p, _v ) ( *((volatile UINT64*)(_p)) = (_v) )
-
-#else
-
-    #error Unknown compiler
-
-#endif
+#define SYMCRYPT_INTERNAL_FORCE_WRITE8( _p, _v )  SYMCRYPT_INTERNAL_VOLATILE_WRITE8( _p, _v )
+#define SYMCRYPT_INTERNAL_FORCE_WRITE16( _p, _v ) SYMCRYPT_INTERNAL_VOLATILE_WRITE16( _p, _v )
+#define SYMCRYPT_INTERNAL_FORCE_WRITE32( _p, _v ) SYMCRYPT_INTERNAL_VOLATILE_WRITE32( _p, _v )
+#define SYMCRYPT_INTERNAL_FORCE_WRITE64( _p, _v ) SYMCRYPT_INTERNAL_VOLATILE_WRITE64( _p, _v )
 
 //
 // FIXED ENDIANNESS ACCESS
