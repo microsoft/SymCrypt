@@ -1,5 +1,5 @@
 set(SOURCES
-    ../linux_common/nointegrity.c
+    ../linux_common/integrity.c
     ../linux_common/optional/rngfipsjitter.c
     ../linux_common/optional/rngsecureurandom.c)
     
@@ -35,11 +35,9 @@ endif()
 set_target_properties(symcrypt_embedded PROPERTIES LIBRARY_OUTPUT_DIRECTORY ${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/embedded)
 set_target_properties(symcrypt_embedded PROPERTIES LIBRARY_OUTPUT_NAME "symcrypt")
 
-#add_custom_target(
-#  symcrypt_embedded_fips ALL
-#  COMMAND python3 ${CMAKE_SOURCE_DIR}/scripts/process_fips_module.py $<TARGET_FILE:symcrypt_embedded> -d
-#  DEPENDS $<TARGET_FILE:symcrypt_embedded>
-#  COMMENT "Postprocessing SymCrypt shared object for FIPS integrity verification"
-#)
-
-#   -Wl,--no-undefined,-Bstatic,-Bsymbolic,--export-dynamic,-pie,--build-id
+add_custom_target(
+  symcrypt_embedded_fips ALL
+  COMMAND python3 ${CMAKE_SOURCE_DIR}/scripts/process_fips_module.py $<TARGET_FILE:symcrypt_embedded> -d
+  DEPENDS $<TARGET_FILE:symcrypt_embedded>
+  COMMENT "Postprocessing SymCrypt shared object for FIPS integrity verification"
+)

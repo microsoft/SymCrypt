@@ -58,7 +58,7 @@ steps:
   # Initialize CMake
   # cd bin; cmake .. -DCMAKE_TOOLCHAIN_FILE=../cmake-toolchain/{env}-{arch}.cmake -DCMAKE_C_COMPILER={CC} -DCMAKE_BUILD_TYPE={buildType} {additionalCMakeArgs}'
   - task: ComponentGovernanceComponentDetection@0
-  - ${{ if eq(parameters.env, 'LinuxUserMode') }}:
+  - ${{ if eq(parameters.hostos, 'Linux') }}:
     - script: |
         python -m pip install --upgrade pip setuptools wheel
         pip install -r $(Build.SourcesDirectory)/scripts/requirements.txt
@@ -137,10 +137,13 @@ steps:
           - script: |
               cd bin/exe/${{parameters.arch}}/${{parameters.env}}
               ./symcryptmoduletest_linux
+            displayName: 'Execute generic module tests'
+          - script: |
+              cd bin/exe/${{parameters.arch}}/${{parameters.env}}
               if lshw -c cpu | grep -q rdseed
               then ./symcryptmoduletest_oe
               fi
-            displayName: 'Execute module tests'
+            displayName: 'Execute OpenEnclave module tests'
       # Execute module and unit test using the inline script
       # Currently skip slower algorithms (DH/RSA), as otherwise we time out the pipeline
       - ${{ if eq(parameters.emulator, 'qemu-aarch64') }}:
@@ -152,7 +155,11 @@ steps:
         - script: |
             cd bin/exe/${{parameters.arch}}/${{parameters.env}}
             qemu-aarch64 -L /usr/aarch64-linux-gnu/ ./symcryptmoduletest_linux
-          displayName: 'Execute module tests'
+          displayName: 'Execute generic module tests'
+        - script: |
+            cd bin/exe/${{parameters.arch}}/${{parameters.env}}
+            qemu-aarch64 -L /usr/aarch64-linux-gnu/ ./symcryptmoduletest_embedded
+          displayName: 'Execute embedded module tests'
     # Execute Generic unit tests in CI and in PRs to publish
     - ${{ if eq(parameters.env, 'Generic') }}:
       - script: |
@@ -171,13 +178,19 @@ steps:
   # Publish artifacts so they're available in the pipeline results
   - publish: $(System.DefaultWorkingDirectory)/bin
     artifact: 'drop-${{parameters.hostos}}-${{parameters.env}}-${{parameters.arch}}-${{parameters.cc}}-${{parameters.buildType}}-${{parameters.additionalCMakeArgs}}'
+    displayName: 'Publish binaries on successful build'
   # Publish artifacts, core dumps and temporary files on failure
   - publish: $(System.DefaultWorkingDirectory)/bin
     artifact: 'failed-${{parameters.hostos}}-${{parameters.env}}-${{parameters.arch}}-${{parameters.cc}}-${{parameters.buildType}}-${{parameters.additionalCMakeArgs}}'
     condition: failed()
-  - publish: $(Agent.TempDirectory)
-    artifact: 'temp-${{parameters.hostos}}-${{parameters.env}}-${{parameters.arch}}-${{parameters.cc}}-${{parameters.buildType}}-${{parameters.additionalCMakeArgs}}'
-    condition: failed()
+    displayName: 'Publish binaries on failed build'
   - publish: $(Agent.WorkFolder)
     artifact: 'work-${{parameters.hostos}}-${{parameters.env}}-${{parameters.arch}}-${{parameters.cc}}-${{parameters.buildType}}-${{parameters.additionalCMakeArgs}}'
     condition: failed()
+    displayName: 'Publish work folder on failed build'
+  - ${{ if eq(parameters.hostos, 'Linux') }}:
+    - publish: /usr/share/apport
+      artifact: 'crash-${{parameters.hostos}}-${{parameters.env}}-${{parameters.arch}}-${{parameters.cc}}-${{parameters.buildType}}-${{parameters.additionalCMakeArgs}}'
+      condition: failed()
+      displayName: 'Publish crash dumps on failed build'
+      
