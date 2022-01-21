@@ -204,9 +204,16 @@ def process_loadable_segments(elf_file):
     is found to be invalid, an exception will be thrown.
     """
 
+    # Find .data and .note.package sections
+    note_package_section = elf_file.get_section_by_name(".note.package")
+    data_section = elf_file.get_section_by_name(".data")
+    if( data_section is None ):
+        logging.error("Did not find .data section in elf file!")
+        raise RuntimeError
+
     # Find all loadable segments and calculate their sizes and offsets
     loadable_segments = []
-    writeable_segment = None
+    data_segment = None
     for segment in elf_file.iter_segments():
         if segment["p_type"] == "PT_LOAD":
 
@@ -221,26 +228,32 @@ def process_loadable_segments(elf_file):
 
             loadable_segments.append(segment)
 
-            if writeable_segment is not None:
-                # There must be exactly one writeable segment, and it must be the last of the
-                # PT_LOAD segments
-                logging.error("Found more than one loadable, writeable segment!")
+            if data_segment is not None:
+                # There must be exactly one segment containing the .data section, and it must be the
+                # last of the PT_LOAD segments
+                logging.error("Found loadable segment after segment containing .data section!")
                 raise RuntimeError
 
-            if segment["p_flags"] & P_FLAGS.PF_W != 0:                
-                writeable_segment = segment
+            if segment["p_flags"] & P_FLAGS.PF_W != 0:
+                # Found a writable segment
+                if segment.section_in_segment(data_section):
+                    # If it contains the data section it should be the last loadable segment
+                    data_segment = segment
+                elif note_package_section is None or not segment.section_in_segment(note_package_section):
+                    logging.error("Found writable segment which does not contain .data or .note.package section!")
+                    raise RuntimeError
 
-    writeable_segment_sections = []
+    data_segment_sections = []
     for section in elf_file.iter_sections():
-        if writeable_segment.section_in_segment(section):
-            writeable_segment_sections.append(section)
+        if data_segment.section_in_segment(section):
+            data_segment_sections.append(section)
 
     # We set our FIPS module boundary based on where the .data section starts (since it and the
     # .bss section cannot be included in the HMAC). Therefore, .data and .bss must be the second
     # last and last sections of that segment, respectively.
-    if writeable_segment_sections[-2].name != ".data" or \
-        writeable_segment_sections[-1].name != ".bss":
-        logging.error("Unexpected section order in writeable segment!")
+    if data_segment_sections[-2].name != ".data" or \
+        data_segment_sections[-1].name != ".bss":
+        logging.error("Unexpected section order in segment containing .data section!")
         raise RuntimeError
 
     return loadable_segments
@@ -271,7 +284,7 @@ def overwrite_jump_slots(elf_file, new_value):
             original_value_int = struct.unpack(QWORD_FORMAT_SPECIFIER, relocation_value.value)[0]
             original_jump_slot_values.append((relocation_value.vaddr, original_value_int))
 
-            logging.debug("Updating relocation at {} with original value {}".format( 
+            logging.debug("Updating relocation at {} with original value {}".format(
                 hex(relocation_value.offset), hex(original_value_int)))
 
             relocation_value.set_value(QWORD_FORMAT_SPECIFIER, new_value)
@@ -291,7 +304,7 @@ def reset_jump_slots(elf_file, original_jump_slot_values):
     for vaddr, original_value in original_jump_slot_values:
         relocation_value = ElfFileValueProxy.from_vaddr(elf_file, vaddr, QWORD_BYTE_SIZE)
 
-        logging.debug("Resetting relocation at {} to original value {}".format( 
+        logging.debug("Resetting relocation at {} to original value {}".format(
                 hex(vaddr), hex(original_value)))
 
         relocation_value.set_value(QWORD_FORMAT_SPECIFIER, original_value)
@@ -376,7 +389,7 @@ def main():
         output_file.write(buffer_stream.getbuffer())
 
     # chmod 0755 the new output file so that it's marked as executable (required by some platforms)
-    os.chmod(args.input, 
+    os.chmod(args.input,
         stat.S_IRUSR | stat.S_IWUSR | stat.S_IXUSR | # User: read, write, execute
         stat.S_IRGRP | stat.S_IXGRP | # Group: read, execute
         stat.S_IXOTH | stat.S_IXOTH) # Other: read, execute
