@@ -35,9 +35,20 @@ endif()
 set_target_properties(symcrypt_embedded PROPERTIES LIBRARY_OUTPUT_DIRECTORY ${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/embedded)
 set_target_properties(symcrypt_embedded PROPERTIES LIBRARY_OUTPUT_NAME "symcrypt")
 
-add_custom_target(
-  symcrypt_embedded_fips ALL
+if(CMAKE_BUILD_TYPE MATCHES Release)
+  add_custom_command(
+      TARGET symcrypt_embedded
+      POST_BUILD
+      COMMAND cp $<TARGET_FILE:symcrypt_embedded> $<TARGET_FILE:symcrypt_embedded>.debug
+      COMMAND ${STRIP_COMMAND} --strip-unneeded ${KEEP_SYMBOL_ARGS} $<TARGET_FILE:symcrypt_embedded>
+      COMMENT "Stripping binary for release build"
+      COMMAND_EXPAND_LISTS
+  )
+endif()
+
+add_custom_command(
+  TARGET symcrypt_embedded
+  POST_BUILD
   COMMAND python3 ${CMAKE_SOURCE_DIR}/scripts/process_fips_module.py $<TARGET_FILE:symcrypt_embedded> -d
-  DEPENDS $<TARGET_FILE:symcrypt_embedded>
   COMMENT "Postprocessing SymCrypt shared object for FIPS integrity verification"
 )

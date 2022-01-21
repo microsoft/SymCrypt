@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 This script facilitaties module integrity verification for FIPS 140 by processing the input ELF
-shared object module and replacing key ElfFileValueProxys so that the module can calculate its own base
+shared object module and replacing key values so that the module can calculate its own base
 address, and thereby HMAC its own memory, at runtime.
 
 Requires PyElfTools: https://github.com/eliben/pyelftools
