@@ -85,6 +85,13 @@ else()
     # using GCC-specific pragmas for the loops of interest)
     add_compile_options(-fno-unroll-loops)
 
+    # Do not optimize Debug builds
+    if (CMAKE_BUILD_TYPE MATCHES Debug)
+        add_compile_options(-O0)
+    else()
+        add_compile_options(-O3)
+    endif()
+
     # In Sanitize version, enable sanitizers
     if (CMAKE_BUILD_TYPE MATCHES Sanitize)
         add_compile_options(-fsanitize=address)

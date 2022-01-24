@@ -209,22 +209,32 @@ size_t SymCryptModuleProcessSectionWithRelocations(
         const Elf64_Rela* rela = relaInfo->rela + i;
 
         // Find the relocation within the section. Note that for a shared object module,
-        // rela->r_offset is actually a virtual address
-        Elf64_Xword* target = (Elf64_Xword*) ( segmentCopy +
-            (Elf64_Off) rela->r_offset - (Elf64_Off) programHeader->p_vaddr );
+        // rela->r_offset is actually a virtual address. Relocations can occur within the .data
+        // section, which is outside our FIPS boundary, so any such relocations can be ignored.
+        Elf64_Off offsetInBuffer = (Elf64_Off) rela->r_offset - (Elf64_Off) programHeader->p_vaddr;
+        if( offsetInBuffer > hashableSectionSize )
+        {
+            continue;
+        }
+
+        Elf64_Xword* target = (Elf64_Xword*) ( segmentCopy + offsetInBuffer);
         
         SymCryptModuleUndoRelocation( module_base, target, rela );
     }
 
-    // Process the GOT entries
+    // Process the GOT entries from the .rela.plt section. Same as process above, just
+    // with a different table.
     for( size_t i = 0; i < relaInfo->pltRelaEntryCount; ++i)
     {
         const Elf64_Rela* rela = relaInfo->pltRela + i;
 
-        // Find the relocation within the section. Note that for a shared object module,
-        // rela->r_offset is actually a virtual address
-        Elf64_Xword* target = (Elf64_Xword*) ( segmentCopy +
-            (Elf64_Off) rela->r_offset - (Elf64_Off) programHeader->p_vaddr );
+        Elf64_Off offsetInBuffer = (Elf64_Off) rela->r_offset - (Elf64_Off) programHeader->p_vaddr;
+        if( offsetInBuffer > hashableSectionSize )
+        {
+            continue;
+        }
+
+        Elf64_Xword* target = (Elf64_Xword*) ( segmentCopy + offsetInBuffer);
         
         SymCryptModuleUndoRelocation( module_base, target, rela );
     }

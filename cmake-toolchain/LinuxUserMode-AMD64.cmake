@@ -10,7 +10,6 @@ set(SYMCRYPT_TARGET_ENV LinuxUserMode)
 
 # Define _AMD64_ to set up the correct SymCrypt macros, e.g. SYMCRYPT_CPU_AMD64
 add_compile_options(-D_AMD64_)
-add_compile_options(-O3)
 
 # Enable FIPS build
 add_compile_options(-DSYMCRYPT_DO_FIPS_SELFTESTS=1)
