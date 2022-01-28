@@ -194,8 +194,8 @@ extern "C" {
 
 typedef _Return_type_success_( return == SYMCRYPT_NO_ERROR ) enum {
     SYMCRYPT_NO_ERROR = 0,
-    SYMCRYPT_UNUSED = SYMCRYPT_API_VERSION << 5,    // This value changes all the time!
-    SYMCRYPT_WRONG_KEY_SIZE,
+    SYMCRYPT_UNUSED = 0x8000, // Start our error codes here so they're easier to distinguish
+    SYMCRYPT_WRONG_KEY_SIZE, 
     SYMCRYPT_WRONG_BLOCK_SIZE,
     SYMCRYPT_WRONG_DATA_SIZE,
     SYMCRYPT_WRONG_NONCE_SIZE,
@@ -513,15 +513,14 @@ VOID
 SYMCRYPT_CALL
 SymCryptModuleInit(
     _In_ UINT32 api,
-    _In_ UINT32 minor,
-    _In_ UINT32 patch);
+    _In_ UINT32 minor);
 
-#define SYMCRYPT_MODULE_INIT() SymCryptModuleInit(SYMCRYPT_CODE_VERSION_API, SYMCRYPT_CODE_VERSION_MINOR, SYMCRYPT_CODE_VERSION_PATCH);
+#define SYMCRYPT_MODULE_INIT() SymCryptModuleInit( SYMCRYPT_CODE_VERSION_API, SYMCRYPT_CODE_VERSION_MINOR );
 //
 // Initialize the SymCrypt shared object module/dynamic-link library. This function verifies
 // that the module version supports the version requested by the application. If the version
-// is unsupported, a fatal error will occur. The macro SYMCRYPT_MODULE_INIT can be used
-// to call SymCryptModuleInit with the correct arguments.
+// is unsupported, a fatal error will occur. Rather than explicitly calling SymCryptModuleInit,
+// the macro SYMCRYPT_MODULE_INIT should be used to call it with the correct arguments.
 //
 
 //==========================================================================

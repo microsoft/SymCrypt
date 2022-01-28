@@ -94,9 +94,10 @@ SymCryptCallbackRandom( PBYTE pbBuffer, SIZE_T cbBuffer )
     return SYMCRYPT_NO_ERROR;
 }
 
-VOID SYMCRYPT_CALL SymCryptModuleInit( UINT32 api, UINT32 minor, UINT32 patch )
+VOID SYMCRYPT_CALL SymCryptModuleInit( UINT32 api, UINT32 minor )
 {
-    if( api > SYMCRYPT_CODE_VERSION_API )
+    if( api != SYMCRYPT_CODE_VERSION_API ||
+        (api == SYMCRYPT_CODE_VERSION_API && minor > SYMCRYPT_CODE_VERSION_MINOR) )
     {
         SymCryptFatal( 'vers' );
     }

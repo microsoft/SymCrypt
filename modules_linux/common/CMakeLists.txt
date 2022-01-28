@@ -1,6 +1,5 @@
 set(SOURCES
     module.c
-    #integrity.c
     rng.c)
 
 include_directories(${CMAKE_SOURCE_DIR}/inc)

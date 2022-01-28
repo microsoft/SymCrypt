@@ -5,7 +5,24 @@ if(WIN32)
     set(CMAKE_SYSTEM_VERSION 10.0.18362)
 endif()
 
-project(SymCrypt)
+# Parse the version number from symcrypt_internal_shared.inc
+file(READ "${CMAKE_SOURCE_DIR}/inc/symcrypt_internal_shared.inc" SYMCRYPT_VERSION_FILE_CONTENTS)
+
+string(REGEX MATCH "SYMCRYPT_CODE_VERSION_API[ \t]+([0-9]+)" _ ${SYMCRYPT_VERSION_FILE_CONTENTS})
+set(SYMCRYPT_CODE_VERSION_API ${CMAKE_MATCH_1})
+
+string(REGEX MATCH "SYMCRYPT_CODE_VERSION_MINOR[ \t]+([0-9]+)" _ ${SYMCRYPT_VERSION_FILE_CONTENTS})
+set(SYMCRYPT_CODE_VERSION_MINOR ${CMAKE_MATCH_1})
+
+string(REGEX MATCH "SYMCRYPT_CODE_VERSION_PATCH[ \t]+([0-9]+)" _ ${SYMCRYPT_VERSION_FILE_CONTENTS})
+set(SYMCRYPT_CODE_VERSION_PATCH ${CMAKE_MATCH_1})
+
+message(STATUS "SymCrypt version ${SYMCRYPT_CODE_VERSION_API}.${SYMCRYPT_CODE_VERSION_MINOR}.${SYMCRYPT_CODE_VERSION_PATCH}")
+
+project(SymCrypt
+    VERSION ${SYMCRYPT_CODE_VERSION_API}.${SYMCRYPT_CODE_VERSION_MINOR}.${SYMCRYPT_CODE_VERSION_PATCH}
+    DESCRIPTION "Cryptographic library"
+    HOMEPAGE_URL "https://github.com/microsoft/SymCrypt")
 
 if(NOT CMAKE_BUILD_TYPE)
   set(CMAKE_BUILD_TYPE Debug)
@@ -71,7 +88,6 @@ else()
     add_compile_options(-g)
     add_compile_options(-Wno-multichar)
     add_compile_options(-fPIC)
-    add_compile_options(-fno-stack-protector)
     add_compile_options(-fno-plt)
     add_compile_options(-fno-builtin-bcmp)
 
@@ -149,12 +165,15 @@ include_directories(inc)
 include_directories(${CMAKE_BINARY_DIR}/inc)
 include(build/buildInfo.cmake)
 
+# Process pkg-config file
+configure_file(build/symcrypt.pc.in symcrypt.pc @ONLY)
+
 add_subdirectory(lib)
 
 if(NOT WIN32 AND NOT CMAKE_BUILD_TYPE MATCHES Sanitize)
     # Module integrity check is seen as OOB access by sanitizers, and sanitizer instrumentation
     # breaks integrity check assumptions. Only enable module when not running with sanitizers
-    add_subdirectory(module)
+    add_subdirectory(modules_linux)
 endif()
 
 add_subdirectory(unittest)
