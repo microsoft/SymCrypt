@@ -23,6 +23,8 @@ extern "C" {
 BOOLEAN     TestSelftestsEnabled = FALSE;
 BOOLEAN     TestSaveXmmEnabled = FALSE;
 BOOLEAN     TestSaveYmmEnabled = FALSE;
+// Set to TRUE when unit tests artificially fail to save Ymm registers
+BOOLEAN     TestSaveYmmFallback = FALSE;
 
 ULONGLONG   TestFatalCount = 0;
 ULONGLONG   TestErrorInjectionCount = 0;
@@ -307,6 +309,11 @@ SymCryptSaveYmmEnvUnittest( _Out_ PSYMCRYPT_EXTENDED_SAVE_DATA pSaveData )
         //
         if( __rdtsc() % 101 == 0 )
         {
+            // If we are testing the fallback path, we want to record this so test for presence of
+            // Ymm save/restore logic is not triggered. If fallback code calls memcpy (for instance)
+            // the CRT may (correctly) use Ymm registers without saving/restoring in user mode.
+            // This is the case for our Parallel SHA implementations.
+            TestSaveYmmFallback = TRUE;
             return SYMCRYPT_EXTERNAL_FAILURE;
         }
 

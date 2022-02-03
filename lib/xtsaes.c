@@ -437,11 +437,15 @@ SymCryptXtsAesEncrypt(
                             SIZE_T                          cbData )
 {
 #if SYMCRYPT_CPU_AMD64
+    SYMCRYPT_EXTENDED_SAVE_DATA SaveData;
     /* if( SYMCRYPT_CPU_FEATURES_PRESENT( SYMCRYPT_CPU_FEATURES_FOR_VAES_512_CODE ) ) {
         SymCryptXtsAesEncryptZmm( pExpandedKey, cbDataUnit, tweak, pbSrc, pbDst, cbData );
     } else */
-    if( SYMCRYPT_CPU_FEATURES_PRESENT( SYMCRYPT_CPU_FEATURES_FOR_VAES_256_CODE ) ) {
+    if( SYMCRYPT_CPU_FEATURES_PRESENT( SYMCRYPT_CPU_FEATURES_FOR_VAES_256_CODE ) &&
+        SymCryptSaveYmm( &SaveData ) == SYMCRYPT_NO_ERROR )
+    {
         SymCryptXtsAesEncryptYmm( pExpandedKey, cbDataUnit, tweak, pbSrc, pbDst, cbData );
+        SymCryptRestoreYmm( &SaveData );
     } else if( SYMCRYPT_CPU_FEATURES_PRESENT( SYMCRYPT_CPU_FEATURES_FOR_AESNI_CODE ) ) {
         SymCryptXtsAesEncryptXmm( pExpandedKey, cbDataUnit, tweak, pbSrc, pbDst, cbData );
     } else {
@@ -760,11 +764,15 @@ SymCryptXtsAesDecrypt(
                             SIZE_T                          cbData )
 {
 #if SYMCRYPT_CPU_AMD64
+    SYMCRYPT_EXTENDED_SAVE_DATA SaveData;
     /* if( SYMCRYPT_CPU_FEATURES_PRESENT( SYMCRYPT_CPU_FEATURES_FOR_VAES_512_CODE ) ) {
         SymCryptXtsAesDecryptZmm( pExpandedKey, cbDataUnit, tweak, pbSrc, pbDst, cbData );
     } else */
-    if( SYMCRYPT_CPU_FEATURES_PRESENT( SYMCRYPT_CPU_FEATURES_FOR_VAES_256_CODE ) ) {
+    if( SYMCRYPT_CPU_FEATURES_PRESENT( SYMCRYPT_CPU_FEATURES_FOR_VAES_256_CODE ) &&
+        SymCryptSaveYmm( &SaveData ) == SYMCRYPT_NO_ERROR )
+    {
         SymCryptXtsAesDecryptYmm( pExpandedKey, cbDataUnit, tweak, pbSrc, pbDst, cbData );
+        SymCryptRestoreYmm( &SaveData );
     } else if( SYMCRYPT_CPU_FEATURES_PRESENT( SYMCRYPT_CPU_FEATURES_FOR_AESNI_CODE ) ) {
         SymCryptXtsAesDecryptXmm( pExpandedKey, cbDataUnit, tweak, pbSrc, pbDst, cbData );
     } else {

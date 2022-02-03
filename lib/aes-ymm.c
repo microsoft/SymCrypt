@@ -330,8 +330,6 @@ SymCryptXtsAesDecryptDataUnitYmm_2048(
     }
 }
 
-#define GCM_YMM_MINBLOCKS 16
-
 #define AES_FULLROUND_16_GHASH_2_Ymm( roundkeys, keyPtr, c0, c1, c2, c3, c4, c5, c6, c7, r0, t0, t1, gHashPointer, byteReverseOrder, gHashExpandedKeyTable, todo, resl, resm, resh ) \
 { \
     roundkeys =  _mm256_broadcastsi128_si256( *( (const __m128i *) keyPtr ) ); \
@@ -460,12 +458,7 @@ SymCryptAesGcmEncryptStitchedYmm_2048(
     PCBYTE pbGhashSrc = pbDst;
 
     SYMCRYPT_ASSERT( (cbData & SYMCRYPT_GCM_BLOCK_MOD_MASK) == 0 ); // cbData is multiple of block size
-
-    if ( nBlocks < GCM_YMM_MINBLOCKS )
-    {
-        SymCryptAesGcmEncryptStitchedXmm( pExpandedKey, pbChainingValue, expandedKeyTable, pState, pbSrc, pbDst, cbData);
-        return;
-    }
+    SYMCRYPT_ASSERT( nBlocks >= GCM_YMM_MINBLOCKS );
 
     todo = SYMCRYPT_MIN( nBlocks, SYMCRYPT_GHASH_PCLMULQDQ_HPOWERS ) & ~(GCM_YMM_MINBLOCKS-1);
     chain = _mm_shuffle_epi8( chain, BYTE_REVERSE_ORDER_xmm );
@@ -662,12 +655,7 @@ SymCryptAesGcmDecryptStitchedYmm_2048(
     PCBYTE pbGhashSrc = pbSrc;
 
     SYMCRYPT_ASSERT( (cbData & SYMCRYPT_GCM_BLOCK_MOD_MASK) == 0 ); // cbData is multiple of block size
-
-    if ( nBlocks < GCM_YMM_MINBLOCKS )
-    {
-        SymCryptAesGcmDecryptStitchedXmm( pExpandedKey, pbChainingValue, expandedKeyTable, pState, pbSrc, pbDst, cbData);
-        return;
-    }
+    SYMCRYPT_ASSERT( nBlocks >= GCM_YMM_MINBLOCKS );
 
     todo = SYMCRYPT_MIN( nBlocks, SYMCRYPT_GHASH_PCLMULQDQ_HPOWERS ) & ~(GCM_YMM_MINBLOCKS-1);
     chain = _mm_shuffle_epi8( chain, BYTE_REVERSE_ORDER_xmm );

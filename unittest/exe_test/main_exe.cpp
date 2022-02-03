@@ -17,12 +17,12 @@ main( int argc, _In_reads_( argc ) char * argv[] )
 
     initTestInfrastructure( argc, argv );
 
-    // As of January 2020, we can't test XMM/YMM register saving and restoring because basic CRT
+    // As of January 2020, we can't test XMM register saving and restoring because basic CRT
     // functions like memcpy and memcmp use the XMM registers. This causes the test to fail on
     // x86, but there's no point in testing this on AMD64 either because it effectively ignores
     // the modified XMM values, meaning it's not actually testing anything.
     TestSaveXmmEnabled = FALSE;
-    TestSaveYmmEnabled = FALSE;
+    TestSaveYmmEnabled = TRUE;
 
     addAllAlgs();
 
@@ -30,6 +30,8 @@ main( int argc, _In_reads_( argc ) char * argv[] )
     {
         runFunctionalTests();
     }
+
+    TestSaveYmmEnabled = FALSE;
 
     if (g_profile)
     {

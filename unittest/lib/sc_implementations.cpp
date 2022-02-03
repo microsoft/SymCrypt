@@ -1296,11 +1296,12 @@ AuthEncImp<ImpSc, AlgAes, ModeGcm>::encrypt(
             cbTag ) == SYMCRYPT_NO_ERROR, "?" );
         verifyXmmRegisters();
 
+        initYmmRegisters();
         SymCryptGcmEncrypt( &state.key,
             pbNonce, cbNonce, pbAuthData, cbAuthData,
             pbSrc, pbDst, cbData,
             pbTag, cbTag );
-        verifyXmmRegisters();
+        verifyYmmRegisters();
 
         // Done
         goto cleanup;
@@ -1338,9 +1339,9 @@ AuthEncImp<ImpSc, AlgAes, ModeGcm>::encrypt(
     }
     // Using gcmState1 which is using gcmKey2 or state.key.
 
-    initXmmRegisters();
+    initYmmRegisters();
     SymCryptGcmEncryptPart( &gcmState1, pbSrc, pbDst, cbData );
-    verifyXmmRegisters();
+    verifyYmmRegisters();
 
     if( pbTag != NULL )
     {
@@ -1388,11 +1389,12 @@ AuthEncImp<ImpSc, AlgAes, ModeGcm>::decrypt(
             cbTag ) == SYMCRYPT_NO_ERROR, "?" );
         verifyXmmRegisters();
 
+        initYmmRegisters();
         scError = SymCryptGcmDecrypt( &state.key,
             pbNonce, cbNonce, pbAuthData, cbAuthData,
             pbSrc, pbDst, cbData,
             pbTag, cbTag );
-        verifyXmmRegisters();
+        verifyYmmRegisters();
 
         // Done
         goto cleanup;
@@ -1430,9 +1432,9 @@ AuthEncImp<ImpSc, AlgAes, ModeGcm>::decrypt(
     }
     // Using gcmState1 which is using gcmKey2 or state.key.
 
-    initXmmRegisters();
+    initYmmRegisters();
     SymCryptGcmDecryptPart( &gcmState1, pbSrc, pbDst, cbData );
-    verifyXmmRegisters();
+    verifyYmmRegisters();
 
     if( pbTag != NULL )
     {
@@ -2670,14 +2672,14 @@ XtsImp<ImpSc, AlgXtsAes>::encrypt(
         _Out_writes_( cbData )          PBYTE       pbDst,
                                         SIZE_T      cbData )
 {
-    initXmmRegisters();
+    initYmmRegisters();
     SymCryptXtsAesEncrypt( &state.key,
                             cbDataUnit,
                             tweak,
                             pbSrc,
                             pbDst,
                             cbData );
-    verifyXmmRegisters();
+    verifyYmmRegisters();
 }
 
 template<>
@@ -2689,14 +2691,14 @@ XtsImp<ImpSc, AlgXtsAes>::decrypt(
         _Out_writes_( cbData )          PBYTE       pbDst,
                                         SIZE_T      cbData )
 {
-    initXmmRegisters();
+    initYmmRegisters();
     SymCryptXtsAesDecrypt( &state.key,
                             cbDataUnit,
                             tweak,
                             pbSrc,
                             pbDst,
                             cbData );
-    verifyXmmRegisters();
+    verifyYmmRegisters();
 }
 
 

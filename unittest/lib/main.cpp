@@ -1807,9 +1807,6 @@ verifyXmmRegisters()
             // no longer test this property, but we can at least detect some violations, which is better
             // than none.
             //
-            // As of January 2020, this now also affects memcpy(), meaning we can no longer test the YMM
-            // registers in user mode either.
-            //
             if( (g_xmmTestState[0].m128i_u64[0] | g_xmmTestState[0].m128i_u64[1]) == 0 &&
                 memcmp( &g_xmmTestState[1], &g_xmmStartState[1], 7 * sizeof( g_xmmStartState[0] ) ) == 0 )
             {
@@ -1879,7 +1876,7 @@ VOID initXmmRegisters()
 #if SYMCRYPT_CPU_X86 | SYMCRYPT_CPU_AMD64
 /////////////////////////////////////////////////////////////
 //
-// Code to set up the XMM registers for testing in SAVE_XMM mode
+// Code to set up the YMM registers for testing in SAVE_YMM mode
 
 #if SYMCRYPT_CPU_AMD64
 __m256i g_ymmStartState[16];
@@ -1902,22 +1899,23 @@ verifyYmmRegisters()
     //
     // We know that AVX2 is present from here on
     //
-    if( TestSaveYmmEnabled )
+    if( TestSaveYmmEnabled && (SYMCRYPT_CPU_X86 || !TestSaveYmmFallback) )
     {
         SymCryptEnvUmSaveYmmRegistersAsm( g_ymmTestState );
 
         //
         // On AMD64 it is perfectly fine for the XMM register values to have been modified.
-        // On x86 it is not.
-        // We don't use memcmp() 'cause it might use XMM registers on x86
+        // Similarly, on x86 C runtime functions which SymCrypt uses may now use XMM registers and
+        // fail to preserve them.
+        // We just test that the top half of the Ymm registers have been preserved.
         //
         for( int i=0; i<sizeof( g_ymmStartState ); i++ )
         {
             if( ((volatile BYTE * )&g_ymmStartState[0])[i] != ((volatile BYTE * )&g_ymmTestState[0])[i] &&
-                (SYMCRYPT_CPU_X86 || (i & 16) == 1 )
+                ((i & 16) == 16 )
                 )
             {
-                FATAL2( "Ymm registers modified without proper save/restore %d", i );
+                FATAL3( "Ymm registers modified without proper save/restore Ymm%d[%d]", i>>5, i&31);
             }
         }
     }
@@ -1935,10 +1933,17 @@ initYmmRegisters()
     if( TestSaveYmmEnabled )
     {
         //
-        // Do the memset outside the save area 'cause it might use XMM registers on x86
+        // Do the memsets outside the save area as it might use XMM registers on x86
+        // Set the initial Ymm registers to a non-trivial value. It is likely (for performance
+        // reasons) that the upper halves are already zero-ed and will be re-zeroed by any function
+        // we call.
         //
         memset( g_ymmTestState, 17, sizeof( g_ymmTestState ) );
-        SymCryptEnvUmSaveYmmRegistersAsm( g_ymmStartState );
+        memset( g_ymmStartState, (__rdtsc() & 255) ^ 0x42, sizeof( g_ymmStartState ) );
+        // Reset TestSaveYmmFallback (set to TRUE when unit-test artificially fails save Ymm, in
+        // which case user mode code can clobber volatile Ymm registers on AMD64)
+        TestSaveYmmFallback = FALSE;
+        SymCryptEnvUmRestoreYmmRegistersAsm( g_ymmStartState );
         verifyYmmRegisters();
     }
 }

@@ -1025,6 +1025,7 @@ std::unique_ptr<std::vector<AlgType *>> getAlgorithmsOfOneType( );
 extern BOOLEAN     TestSelftestsEnabled;
 extern BOOLEAN     TestSaveXmmEnabled;
 extern BOOLEAN     TestSaveYmmEnabled;
+extern BOOLEAN     TestSaveYmmFallback;
 
 extern ULONGLONG   TestFatalCount;
 extern ULONGLONG   TestErrorInjectionCount;

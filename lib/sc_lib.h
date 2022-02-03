@@ -1345,17 +1345,6 @@ SymCryptAesGcmEncryptStitchedXmm(
 
 VOID
 SYMCRYPT_CALL
-SymCryptAesGcmEncryptStitchedYmm_2048(
-    _In_                                    PCSYMCRYPT_AES_EXPANDED_KEY pExpandedKey,
-    _In_reads_( SYMCRYPT_AES_BLOCK_SIZE )   PBYTE                       pbChainingValue,
-    _In_reads_( SYMCRYPT_GF128_FIELD_SIZE ) PCSYMCRYPT_GF128_ELEMENT    expandedKeyTable,
-    _Inout_                                 PSYMCRYPT_GF128_ELEMENT     pState,
-    _In_reads_( cbData )                    PCBYTE                      pbSrc,
-    _Out_writes_( cbData )                  PBYTE                       pbDst,
-                                            SIZE_T                      cbData );
-
-VOID
-SYMCRYPT_CALL
 SymCryptAesGcmDecryptStitchedXmm(
     _In_                                    PCSYMCRYPT_AES_EXPANDED_KEY pExpandedKey,
     _In_reads_( SYMCRYPT_AES_BLOCK_SIZE )   PBYTE                       pbChainingValue,
@@ -1365,6 +1354,21 @@ SymCryptAesGcmDecryptStitchedXmm(
     _Out_writes_( cbData )                  PBYTE                       pbDst,
                                             SIZE_T                      cbData );
 
+#define GCM_YMM_MINBLOCKS 16
+
+// Caller must check cbData >= GCM_YMM_MINBLOCKS * SYMCRYPT_GCM_BLOCK_SIZE
+VOID
+SYMCRYPT_CALL
+SymCryptAesGcmEncryptStitchedYmm_2048(
+    _In_                                    PCSYMCRYPT_AES_EXPANDED_KEY pExpandedKey,
+    _In_reads_( SYMCRYPT_AES_BLOCK_SIZE )   PBYTE                       pbChainingValue,
+    _In_reads_( SYMCRYPT_GF128_FIELD_SIZE ) PCSYMCRYPT_GF128_ELEMENT    expandedKeyTable,
+    _Inout_                                 PSYMCRYPT_GF128_ELEMENT     pState,
+    _In_reads_( cbData )                    PCBYTE                      pbSrc,
+    _Out_writes_( cbData )                  PBYTE                       pbDst,
+                                            SIZE_T                      cbData );
+
+// Caller must check cbData >= GCM_YMM_MINBLOCKS * SYMCRYPT_GCM_BLOCK_SIZE
 VOID
 SYMCRYPT_CALL
 SymCryptAesGcmDecryptStitchedYmm_2048(
@@ -3030,7 +3034,7 @@ typedef struct _SYMCRYPT_DLGROUP_DH_SAFEPRIME_PARAMS {
     PCBYTE  pcbPrimeP;
 
     UINT32  nBitsOfP;           // nBitsOfQ == nBitsOfP-1
-    UINT32  nMinBitsPriv;       // nMinBitsPriv == 2s 
+    UINT32  nMinBitsPriv;       // nMinBitsPriv == 2s
                                 // s is the maximum security strength supported by the group based on SP800-56Arev3
     UINT32  nDefaultBitsPriv;   // nBitsOfQ >= nDefaultBitsPriv >= nMinBitsPriv
                                 // nDefaultBitsPriv will be the default value of nBitsPriv for a Dlkey in this Dlgroup

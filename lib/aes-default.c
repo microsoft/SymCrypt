@@ -416,6 +416,9 @@ SymCryptAesGcmEncryptPartOnePass(
                             SIZE_T              cbData )
 {
     SIZE_T      bytesToProcess;
+#if SYMCRYPT_CPU_AMD64
+    SYMCRYPT_EXTENDED_SAVE_DATA SaveData;
+#endif
 
     //
     // We have entered the encrypt phase, the AAD has been padded to be a multiple of block size
@@ -480,7 +483,10 @@ SymCryptAesGcmEncryptPartOnePass(
         SYMCRYPT_ASSERT( pState->pKey->pBlockCipher->blockSize == SYMCRYPT_GCM_BLOCK_SIZE );
 
 #if SYMCRYPT_CPU_AMD64
-        if( SYMCRYPT_CPU_FEATURES_PRESENT( SYMCRYPT_CPU_FEATURES_FOR_VAES_256_CODE ) ) {
+        if( SYMCRYPT_CPU_FEATURES_PRESENT( SYMCRYPT_CPU_FEATURES_FOR_VAES_256_CODE ) &&
+            (bytesToProcess >= GCM_YMM_MINBLOCKS * SYMCRYPT_GCM_BLOCK_SIZE) &&
+            SymCryptSaveYmm( &SaveData ) == SYMCRYPT_NO_ERROR )
+        {
             SymCryptAesGcmEncryptStitchedYmm_2048(
                 &pState->pKey->blockcipherKey.aes,
                 &pState->counterBlock[0],
@@ -489,6 +495,8 @@ SymCryptAesGcmEncryptPartOnePass(
                 pbSrc,
                 pbDst,
                 bytesToProcess );
+
+            SymCryptRestoreYmm( &SaveData );
         } else {
             SymCryptAesGcmEncryptStitchedXmm(
                 &pState->pKey->blockcipherKey.aes,
@@ -581,6 +589,9 @@ SymCryptAesGcmDecryptPartOnePass(
                             SIZE_T              cbData )
 {
     SIZE_T      bytesToProcess;
+#if SYMCRYPT_CPU_AMD64
+    SYMCRYPT_EXTENDED_SAVE_DATA SaveData;
+#endif
 
     //
     // We have entered the decrypt phase, the AAD has been padded to be a multiple of block size
@@ -646,7 +657,10 @@ SymCryptAesGcmDecryptPartOnePass(
         SYMCRYPT_ASSERT( pState->pKey->pBlockCipher->blockSize == SYMCRYPT_GCM_BLOCK_SIZE );
 
 #if SYMCRYPT_CPU_AMD64
-        if( SYMCRYPT_CPU_FEATURES_PRESENT( SYMCRYPT_CPU_FEATURES_FOR_VAES_256_CODE ) ) {
+        if( SYMCRYPT_CPU_FEATURES_PRESENT( SYMCRYPT_CPU_FEATURES_FOR_VAES_256_CODE ) &&
+            (bytesToProcess >= GCM_YMM_MINBLOCKS * SYMCRYPT_GCM_BLOCK_SIZE) &&
+            SymCryptSaveYmm( &SaveData ) == SYMCRYPT_NO_ERROR )
+        {
             SymCryptAesGcmDecryptStitchedYmm_2048(
                 &pState->pKey->blockcipherKey.aes,
                 &pState->counterBlock[0],
@@ -655,6 +669,8 @@ SymCryptAesGcmDecryptPartOnePass(
                 pbSrc,
                 pbDst,
                 bytesToProcess );
+
+            SymCryptRestoreYmm( &SaveData );
         } else {
             SymCryptAesGcmDecryptStitchedXmm(
                 &pState->pKey->blockcipherKey.aes,
