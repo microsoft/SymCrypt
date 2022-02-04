@@ -13,9 +13,6 @@ set(CMAKE_SYSTEM_PROCESSOR X86)
 # For now this is just used for separating the output directories
 set(SYMCRYPT_TARGET_ENV WindowsUserMode)
 
-# Define _X86_ to set up the correct SymCrypt macros, e.g. SYMCRYPT_CPU_X86
-add_compile_options(-D_X86_)
-
 # We link with modules that use the __stdcall calling convention for X86, but not all of the
 # functions declarations are annotated to specify the calling convention. Thus, we have to
 # set the default to __stdcall.

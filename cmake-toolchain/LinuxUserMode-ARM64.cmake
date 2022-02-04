@@ -31,14 +31,9 @@ endif()
 # For now this is just used for separating the output directories
 set(SYMCRYPT_TARGET_ENV LinuxUserMode)
 
-# Define _ARM64_ to set up the correct SymCrypt macros, e.g. SYMCRYPT_CPU_ARM64
-add_compile_options(-D_ARM64_)
-
 # Enable FIPS build
 add_compile_options(-DSYMCRYPT_DO_FIPS_SELFTESTS=1)
 
 # Enable a baseline of features for the compiler to support everywhere
 # Assumes that the compiler will not emit crypto instructions as a result of normal C code
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -march=armv8a+simd+crypto")
-
-# set(CMAKE_ASM_FLAGS "-x assembler-with-cpp")
