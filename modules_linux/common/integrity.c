@@ -42,7 +42,7 @@ const unsigned char SymCryptVolatileFipsHmacKey[32] = PLACEHOLDER_ARRAY;
 // we calculate at runtime is compared to this digest.
 unsigned char SymCryptVolatileFipsHmacDigest[SYMCRYPT_HMAC_SHA256_RESULT_SIZE] = PLACEHOLDER_ARRAY;
 
-typedef struct 
+typedef struct
 {
     Elf64_Rela* rela;
     size_t relaEntryCount;
@@ -106,15 +106,15 @@ void SymCryptModuleFindRelocationInfo(
             case DT_RELA:
                 relaInfo->rela = ( Elf64_Rela* ) dyn->d_un.d_ptr;
                 break;
-            
+
             case DT_RELASZ:
                 relaTotalSize = dyn->d_un.d_val;
                 break;
-            
+
             case DT_RELAENT:
                 relaEntrySize = dyn->d_un.d_val;
                 break;
-            
+
             case DT_JMPREL:
                 relaInfo->pltRela = ( Elf64_Rela* ) dyn->d_un.d_ptr;
                 break;
@@ -149,7 +149,7 @@ void SymCryptModuleFindRelocationInfo(
     }
 }
 
-size_t SymCryptModuleProcessSectionWithRelocations(
+size_t SymCryptModuleProcessSegmentWithRelocations(
     _In_ const Elf64_Addr module_base,
     _In_ const Elf64_Phdr* const programHeader,
     _In_ const Elf64_Dyn* const dynStart,
@@ -184,14 +184,15 @@ size_t SymCryptModuleProcessSectionWithRelocations(
     // these relocations separately. We find the .dynamic section in the copied buffer based on
     // its offset from the start of the section, which is calculated by subtracting the address
     // of the start of the segment from the address of the .dynamic section in the segment.
-    Elf64_Off dynOffsetInBuffer = (Elf64_Addr) dynStart - (Elf64_Addr) programHeader->p_vaddr - (Elf64_Off) module_base;
+    Elf64_Off dynOffsetInBuffer = (Elf64_Addr) dynStart - (Elf64_Addr) segmentStart;
     Elf64_Dyn* dynStartInBuffer = (Elf64_Dyn*) (segmentCopy + dynOffsetInBuffer);
-    
+
     for( Elf64_Dyn* dyn = dynStartInBuffer; dyn->d_tag != DT_NULL; ++dyn )
     {
         // The following types of .dynamic entries have the module's base address added to
         // their initial value
-        if( dyn->d_tag == DT_STRTAB ||
+        if( dyn->d_tag == DT_HASH ||
+            dyn->d_tag == DT_STRTAB ||
             dyn->d_tag == DT_SYMTAB ||
             dyn->d_tag == DT_RELA ||
             dyn->d_tag == DT_GNU_HASH ||
@@ -218,7 +219,7 @@ size_t SymCryptModuleProcessSectionWithRelocations(
         }
 
         Elf64_Xword* target = (Elf64_Xword*) ( segmentCopy + offsetInBuffer);
-        
+
         SymCryptModuleUndoRelocation( module_base, target, rela );
     }
 
@@ -235,7 +236,7 @@ size_t SymCryptModuleProcessSectionWithRelocations(
         }
 
         Elf64_Xword* target = (Elf64_Xword*) ( segmentCopy + offsetInBuffer);
-        
+
         SymCryptModuleUndoRelocation( module_base, target, rela );
     }
 
@@ -256,7 +257,7 @@ void SymCryptModuleDoHmac(
     SYMCRYPT_HMAC_SHA256_STATE hmacState;
     BYTE actualDigest[SYMCRYPT_HMAC_SHA256_RESULT_SIZE] = {0xFF};
 
-    scError = SymCryptHmacSha256ExpandKey( &hmacKey, SymCryptVolatileFipsHmacKey, 
+    scError = SymCryptHmacSha256ExpandKey( &hmacKey, SymCryptVolatileFipsHmacKey,
         sizeof(SymCryptVolatileFipsHmacKey) );
     SYMCRYPT_FIPS_ASSERT( scError == SYMCRYPT_NO_ERROR );
 
@@ -274,19 +275,24 @@ void SymCryptModuleDoHmac(
         // and always start reading from the segment's virtual address
         Elf64_Addr segmentStart = module_base + (Elf64_Off) programHeader->p_vaddr;
 
-        if( (programHeader->p_flags & PF_W) == 0 )
+        if( (programHeader->p_flags & PF_W) == PF_W &&
+            SYMCRYPT_FORCE_READ64( &SymCryptVolatileFipsBoundaryOffset ) <= programHeader->p_offset + programHeader->p_filesz )
         {
-            // For AMD64, non-writeable segments do not contain relocations, so we can write them in
-            // their entirety without modification. Note that the size in memory of the section may
-            // be larger than the size on disk, but again, the additional size in memory is not
-            // part of our FIPS boundary
-            SymCryptHmacSha256Append( &hmacState, (PCBYTE) segmentStart,
-                programHeader->p_filesz );
+            // If we are processing the final writable segment (containing the .data section which
+            // marks the end of our FIPS boundary), then we need to reverse relocations in it
+            SymCryptModuleProcessSegmentWithRelocations( module_base, programHeader, dynStart,
+                relaInfo, &hmacState );
         }
         else
         {
-            SymCryptModuleProcessSectionWithRelocations( module_base, programHeader, dynStart,
-                relaInfo, &hmacState );
+            // For AMD64/ARM64, non-writeable segments do not contain relocations, so we can write
+            // them in their entirety without modification. Note that the size in memory of the
+            // section may be larger than the size on disk, but again, the additional size in memory
+            // is not part of our FIPS boundary
+            // For now we assume that if there are writable segments before the final writable
+            // segment that they also contain no relocations
+            SymCryptHmacSha256Append( &hmacState, (PCBYTE) segmentStart,
+                programHeader->p_filesz );
         }
     }
 
@@ -314,7 +320,7 @@ void SymCryptModuleVerifyIntegrity()
     SYMCRYPT_FIPS_ASSERT( header->e_version == EV_CURRENT );
     SYMCRYPT_FIPS_ASSERT( header->e_ehsize == sizeof(Elf64_Ehdr) );
     SYMCRYPT_FIPS_ASSERT( header->e_phentsize == sizeof(Elf64_Phdr) );
-    
+
     const Elf64_Phdr* programHeaderStart = (Elf64_Phdr*) ( module_base + header->e_phoff );
 
     Elf64_Rela_Info relaInfo = {};

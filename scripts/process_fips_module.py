@@ -326,6 +326,8 @@ def main():
     else:
         logging.basicConfig(level = logging.INFO)
 
+    debug_files_basename = os.path.join(
+        os.path.dirname(args.input), "processing", os.path.basename(args.input))
     with open(args.input, "rb") as input_file:
         buffer = input_file.read()
         buffer_stream = io.BytesIO(buffer)
@@ -374,7 +376,7 @@ def main():
     assert(digest_variable.value == PLACEHOLDER_ARRAY)
 
     hmac_module(loadable_segments, data_section_offset, key_variable, digest_variable,
-        dump_file_path = args.input + ".loadable.bin" if args.debug else None)
+        dump_file_path = debug_files_basename + ".loadable.bin" if args.debug else None)
 
     # Reset the jump slot relocation values to their original values so that lazy binding will
     # still work. We compensate for this at runtime by also overwriting the jump slot values in
@@ -383,7 +385,7 @@ def main():
         reset_jump_slots(elf_file, original_jump_slot_values)
 
     # Copy the original input file to a backup file before writing our changes back to the original
-    os.replace(args.input, args.input + ".bak")
+    os.replace(args.input, debug_files_basename + ".bak")
 
     with open(args.input, "wb") as output_file:
         output_file.write(buffer_stream.getbuffer())
