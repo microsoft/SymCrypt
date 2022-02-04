@@ -57,21 +57,23 @@ set_target_properties(${TARGET_NAME} PROPERTIES SOVERSION ${PROJECT_VERSION_MAJO
 
 
 if(CMAKE_BUILD_TYPE MATCHES Release)
-  add_custom_command(
-      TARGET ${TARGET_NAME}
-      POST_BUILD
-      COMMAND cp $<TARGET_FILE:${TARGET_NAME}> $<TARGET_FILE:${TARGET_NAME}>.debug
-      COMMAND ${STRIP_COMMAND} --strip-unneeded ${KEEP_SYMBOL_ARGS} $<TARGET_FILE:${TARGET_NAME}>
-      COMMENT "Stripping binary for release build"
-      COMMAND_EXPAND_LISTS
-  )
+    add_custom_command(
+        TARGET ${TARGET_NAME}
+        POST_BUILD
+        COMMAND mkdir -p $<TARGET_FILE_DIR:${TARGET_NAME}>/processing
+        COMMAND cp $<TARGET_FILE:${TARGET_NAME}> $<TARGET_FILE_DIR:${TARGET_NAME}>/processing/$<TARGET_FILE_NAME:${TARGET_NAME}>.debug
+        COMMAND ${STRIP_COMMAND} --strip-unneeded ${KEEP_SYMBOL_ARGS} $<TARGET_FILE:${TARGET_NAME}>
+        COMMENT "Stripping binary for release build"
+        COMMAND_EXPAND_LISTS
+    )
 endif()
 
 if(DO_FIPS_POSTPROCESSING)
     add_custom_command(
-    TARGET ${TARGET_NAME}
-    POST_BUILD
-    COMMAND python3 ${CMAKE_SOURCE_DIR}/scripts/process_fips_module.py $<TARGET_FILE:${TARGET_NAME}> -d
-    COMMENT "Postprocessing SymCrypt shared object for FIPS integrity verification"
+        TARGET ${TARGET_NAME}
+        POST_BUILD
+        COMMAND mkdir -p $<TARGET_FILE_DIR:${TARGET_NAME}>/processing
+        COMMAND python3 ${CMAKE_SOURCE_DIR}/scripts/process_fips_module.py $<TARGET_FILE:${TARGET_NAME}> -d
+        COMMENT "Postprocessing SymCrypt shared object for FIPS integrity verification"
     )
 endif()
