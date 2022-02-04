@@ -34,6 +34,7 @@ target_link_options(${TARGET_NAME} PRIVATE
   $<TARGET_FILE:symcrypt_common>
   -Wl,--no-whole-archive
   -Wl,-Bsymbolic
+  -Wl,-z,relro
   -Wl,-z,noexecstack
   -Wl,-z,now
   -Wl,-gc-sections

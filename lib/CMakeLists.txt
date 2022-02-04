@@ -276,10 +276,6 @@ if(CMAKE_SYSTEM_PROCESSOR MATCHES "AMD64")
     endif()
 endif()
 
-include_directories(${CMAKE_SOURCE_DIR}/inc)
-
-add_library(symcrypt_common STATIC ${SOURCES_COMMON})
-
 if(WIN32)
     # Disable run-time type information for SymCrypt library - we do not use it
     add_compile_options(/GR-)
@@ -316,6 +312,15 @@ endif()
 if(NOT WIN32)
     add_compile_options(-Wno-trigraphs)
 
+    # Mitigate stack buffer overruns, and stack clash attacks
+    add_compile_options(-fstack-protector-strong)
+    add_compile_options(-Wstack-protector)
+    add_compile_options(--param ssp-buffer-size=4)
+
+    if(CMAKE_C_COMPILER_ID MATCHES "GNU")
+        add_compile_options(-fstack-clash-protection)
+    endif()
+
     if (CMAKE_C_COMPILER_ID MATCHES "Clang")
         add_compile_options(-mllvm -x86-speculative-load-hardening)
     endif()
@@ -324,6 +329,10 @@ if(NOT WIN32)
     set_target_properties(symcrypt_linuxusermode PROPERTIES PREFIX "")
     target_link_libraries(symcrypt_linuxusermode symcrypt_common)
 endif()
+
+include_directories(${CMAKE_SOURCE_DIR}/inc)
+
+add_library(symcrypt_common STATIC ${SOURCES_COMMON})
 
 add_library(symcrypt_generic STATIC env_generic.c)
 set_target_properties(symcrypt_generic PROPERTIES PREFIX "")
