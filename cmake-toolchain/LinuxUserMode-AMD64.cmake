@@ -8,9 +8,6 @@ set(CMAKE_SYSTEM_PROCESSOR AMD64)
 # For now this is just used for separating the output directories
 set(SYMCRYPT_TARGET_ENV LinuxUserMode)
 
-# Define _AMD64_ to set up the correct SymCrypt macros, e.g. SYMCRYPT_CPU_AMD64
-add_compile_options(-D_AMD64_)
-
 # Enable FIPS build
 add_compile_options(-DSYMCRYPT_DO_FIPS_SELFTESTS=1)
 
