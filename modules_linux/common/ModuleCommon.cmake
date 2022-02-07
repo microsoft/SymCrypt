@@ -23,8 +23,10 @@ set(KEEP_SYMBOL_ARGS
 # Determine the which executable to use for stripping binaries
 if(CMAKE_SYSTEM_PROCESSOR MATCHES ARM64 AND NOT CMAKE_HOST_SYSTEM_PROCESSOR MATCHES ARM64|aarch64)
     set(STRIP_COMMAND ${TARGET_TRIPLE}-strip)
+    set(OBJCOPY_COMMAND ${TARGET_TRIPLE}-objcopy)
 else()
     set(STRIP_COMMAND strip)
+    set(OBJCOPY_COMMAND objcopy)
 endif()
 
 target_link_options(${TARGET_NAME} PRIVATE
@@ -38,6 +40,7 @@ target_link_options(${TARGET_NAME} PRIVATE
   -Wl,-z,noexecstack
   -Wl,-z,now
   -Wl,-gc-sections
+  -Wl,--build-id
   -Wl,--version-script=${CMAKE_CURRENT_SOURCE_DIR}/../common/exports.ver
   -nostdlib
   -nodefaultlibs
@@ -61,9 +64,9 @@ if(CMAKE_BUILD_TYPE MATCHES Release)
         TARGET ${TARGET_NAME}
         POST_BUILD
         COMMAND mkdir -p $<TARGET_FILE_DIR:${TARGET_NAME}>/processing
-        COMMAND cp $<TARGET_FILE:${TARGET_NAME}> $<TARGET_FILE_DIR:${TARGET_NAME}>/processing/$<TARGET_FILE_NAME:${TARGET_NAME}>.debug
+        COMMAND ${OBJCOPY_COMMAND} --only-keep-debug $<TARGET_FILE:${TARGET_NAME}> $<TARGET_FILE_DIR:${TARGET_NAME}>/processing/$<TARGET_FILE_NAME:${TARGET_NAME}>.debug
         COMMAND ${STRIP_COMMAND} --strip-unneeded ${KEEP_SYMBOL_ARGS} $<TARGET_FILE:${TARGET_NAME}>
-        COMMENT "Stripping binary for release build"
+        COMMENT "Splitting and stripping binary for release build"
         COMMAND_EXPAND_LISTS
     )
 endif()
