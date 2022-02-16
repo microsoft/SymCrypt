@@ -1,4 +1,4 @@
-VERSION_100.20 {
+VERSION_101.0 {
    global:
       g_SymCryptFipsSelftestsPerformed;
       SymCrypt3DesBlockCipher;
