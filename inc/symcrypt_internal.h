@@ -1178,6 +1178,7 @@ typedef union _SYMCRYPT_MAC_STATE
     SYMCRYPT_HMAC_MD5_STATE     md5State;
     SYMCRYPT_HMAC_SHA1_STATE    sha1State;
     SYMCRYPT_HMAC_SHA256_STATE  sha256State;
+    SYMCRYPT_HMAC_SHA384_STATE  sha384State;
     SYMCRYPT_HMAC_SHA512_STATE  sha512State;
     SYMCRYPT_AES_CMAC_STATE     aescmacState;
 } SYMCRYPT_MAC_STATE, *PSYMCRYPT_MAC_STATE;
@@ -1188,6 +1189,7 @@ typedef union _SYMCRYPT_MAC_EXPANDED_KEY
     SYMCRYPT_HMAC_MD5_EXPANDED_KEY      md5Key;
     SYMCRYPT_HMAC_SHA1_EXPANDED_KEY     sha1Key;
     SYMCRYPT_HMAC_SHA256_EXPANDED_KEY   sha256Key;
+    SYMCRYPT_HMAC_SHA384_EXPANDED_KEY   sha384Key;
     SYMCRYPT_HMAC_SHA512_EXPANDED_KEY   sha512Key;
     SYMCRYPT_AES_CMAC_EXPANDED_KEY      aescmacKey;
 } SYMCRYPT_MAC_EXPANDED_KEY, *PSYMCRYPT_MAC_EXPANDED_KEY;
@@ -1678,6 +1680,9 @@ typedef const SYMCRYPT_ECPOINT * PCSYMCRYPT_ECPOINT;
                                                    ((_bits)/ SYMCRYPT_FDEF_DIGIT_BITS) + \
                                                    (( ((_bits) & (SYMCRYPT_FDEF_DIGIT_BITS-1)) + (SYMCRYPT_FDEF_DIGIT_BITS - 1) )/SYMCRYPT_FDEF_DIGIT_BITS) \
                                                   )
+
+#define SYMCRYPT_BYTES_FROM_BITS(bits)          ( ( (bits) + 7 ) / 8 )
+
 //
 // Upper bound for the number of digits: this MUST be enforced on runtime
 // on all Allocate, SizeOf, and Create calls which take as input a digit number.
@@ -2409,6 +2414,7 @@ typedef const SYMCRYPT_ECURVE_FUNCTIONS  *PCSYMCRYPT_ECURVE_FUNCTIONS;
 
 SYMCRYPT_ALIGN_STRUCT _SYMCRYPT_802_11_SAE_CUSTOM_STATE {
     PSYMCRYPT_ECURVE        pCurve;
+    PCSYMCRYPT_MAC          macAlgorithm;
     PSYMCRYPT_MODELEMENT    peRand;
     PSYMCRYPT_MODELEMENT    peMask;
     PSYMCRYPT_ECPOINT       poPWE;

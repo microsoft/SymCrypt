@@ -2694,8 +2694,25 @@ SymCryptEcDsaSignEx(
 // Parts of the protocol that are easy to implement with conventional crypto functions are
 // not included in this custom part.
 //
-// Limitation: currently only the NIST P256 curve is supported.
+// Limitation: The Hunting-and-Pecking method supports only NIST P256 curve. The Hash-to-Element
+//             method supports curves NIST P256 and NIST P384.
 //
+
+//
+// IANA Group numbers identify the elliptic curve and associated parameters to be used in the SAE method.
+//
+typedef enum _SYMCRYPT_802_11_SAE_GROUP {
+    SYMCRYPT_SAE_GROUP_19 = 19,        // NIST P256
+    SYMCRYPT_SAE_GROUP_20,             // NIST P384
+} SYMCRYPT_802_11_SAE_GROUP;
+
+// The sizes of scalars, elliptic curve points, and HMAC outputs will vary depending on which group is selected.
+// The following macros define the largest possible sizes supported.
+#define SYMCRYPT_SAE_MAX_MOD_SIZE_BITS          384
+#define SYMCRYPT_SAE_MAX_MOD_SIZE_BYTES         SYMCRYPT_BYTES_FROM_BITS( SYMCRYPT_SAE_MAX_MOD_SIZE_BITS )
+#define SYMCRYPT_SAE_MAX_EC_POINT_SIZE_BYTES    ( 2 * SYMCRYPT_SAE_MAX_MOD_SIZE_BYTES )
+#define SYMCRYPT_SAE_MAX_HMAC_OUTPUT_SIZE_BYTES SYMCRYPT_BYTES_FROM_BITS( 384 )
+
 
 typedef SYMCRYPT_ALIGN struct _SYMCRYPT_802_11_SAE_CUSTOM_STATE
 SYMCRYPT_802_11_SAE_CUSTOM_STATE,  *PSYMCRYPT_802_11_SAE_CUSTOM_STATE;
@@ -2704,6 +2721,15 @@ typedef const SYMCRYPT_802_11_SAE_CUSTOM_STATE *PCSYMCRYPT_802_11_SAE_CUSTOM_STA
 // The struct itself is opaque and is defined elsewhere.
 // Caller may not rely on the internal fields of the structure as they can
 // change at any time.
+//
+
+void SymCrypt802_11SaeGetGroupSizes(
+                                SYMCRYPT_802_11_SAE_GROUP       group,
+                    _Out_opt_   SIZE_T*                         pcbScalar,
+                    _Out_opt_   SIZE_T*                         pcbPoint );
+//
+// Helper function that returns the sizes of the field elements and elliptic curve points in bytes
+// for a given IANA group number. Both output parameters are optional.
 //
 
 SYMCRYPT_ERROR
@@ -2740,21 +2766,20 @@ SymCrypt802_11SaeCustomInit(
 // This last option is useful for testing as it lets the caller specify all the random choices.
 // Rand and Mask buffers are MSByte first.
 //
-// Note: currently we only support the NIST P256 curve. If we ever want to support other curves
+// Note: currently this method only supports the NIST P256 curve. If we ever want to support other curves
 // we'll update this function to accept a curve parameter and update the SAL annotations
 // of the other functions.
 //
 
 SYMCRYPT_ERROR
 SymCrypt802_11SaeCustomCreatePT(
-    _In_reads_( cbSsid )                   PCBYTE                              pbSsid,
-                                           SIZE_T                              cbSsid,
-    _In_reads_( cbPassword )               PCBYTE                              pbPassword,
-                                           SIZE_T                              cbPassword,
-    _In_reads_opt_( cbPasswordIdentifier ) PCBYTE                              pbPasswordIdentifier,
-                                           SIZE_T                              cbPasswordIdentifier,
-    _Out_writes_( 64 )                     PBYTE                               pbPT );
-
+    _In_reads_( cbSsid )                                    PCBYTE                              pbSsid,
+                                                            SIZE_T                              cbSsid,
+    _In_reads_( cbPassword )                                PCBYTE                              pbPassword,
+                                                            SIZE_T                              cbPassword,
+    _In_reads_opt_( cbPasswordIdentifier )                  PCBYTE                              pbPasswordIdentifier,
+                                                            SIZE_T                              cbPasswordIdentifier,
+    _Out_writes_( 64 )                                      PBYTE                               pbPT );
 //
 // Generate the PT secret element for use with the SAE Hash-to-Element algorithm, as described in
 // section 12.4.4.2.3 of the 802.11 spec ("Hash-to-curve generation of the password element with
@@ -2765,37 +2790,94 @@ SymCrypt802_11SaeCustomCreatePT(
 // - pbPasswordIdentifier, cbPasswordIdentifier  Optional password identifier, as a string of bytes
 // - pbPT                                        Out pointer to PT (as a byte buffer)
 //
-// As above, we only support NIST P256.
+// This function uses the NIST P256 curve.
 //
+
+
+SYMCRYPT_ERROR
+SymCrypt802_11SaeCustomCreatePTGeneric(
+                                                            SYMCRYPT_802_11_SAE_GROUP           group,
+    _In_reads_( cbSsid )                                    PCBYTE                              pbSsid,
+                                                            SIZE_T                              cbSsid,
+    _In_reads_( cbPassword )                                PCBYTE                              pbPassword,
+                                                            SIZE_T                              cbPassword,
+    _In_reads_opt_( cbPasswordIdentifier )                  PCBYTE                              pbPasswordIdentifier,
+                                                            SIZE_T                              cbPasswordIdentifier,
+    _Out_writes_( cbPT )                                    PBYTE                               pbPT,
+                                                            SIZE_T                              cbPT );
+//
+// Generic version of the SymCrypt802_11SaeCustomCreatePT() function that allows elliptic curve 
+// group selection.
+// Generate the PT secret element for use with the SAE Hash-to-Element algorithm, as described in
+// section 12.4.4.2.3 of the 802.11 spec ("Hash-to-curve generation of the password element with
+// ECC groups"). The PT value can be "stored until needed to generate a session specific PWE."
+//
+// - group                                       Group number for the elliptic curve selection
+// - pbSsid, cbSsid                              SSID for the connection as a string of bytes
+// - pbPassword, cbPassword                      Password buffer
+// - pbPasswordIdentifier, cbPasswordIdentifier  Optional password identifier, as a string of bytes
+// - pbPT, cbPt                                  PT (as a byte buffer)
+//
+
 
 SYMCRYPT_ERROR
 SymCrypt802_11SaeCustomInitH2E(
-    _Out_                       PSYMCRYPT_802_11_SAE_CUSTOM_STATE   pState,
-    _In_reads_( 64 )            PCBYTE                              pbPT,
-    _In_reads_( 6 )             PCBYTE                              pbMacA,
-    _In_reads_( 6 )             PCBYTE                              pbMacB,
-    _Inout_updates_opt_( 32 )   PBYTE                               pbRand,
-    _Inout_updates_opt_( 32 )   PBYTE                               pbMask );
-
+    _Out_                                                   PSYMCRYPT_802_11_SAE_CUSTOM_STATE   pState,
+    _In_reads_( 64 )                                        PCBYTE                              pbPT,
+    _In_reads_( 6 )                                         PCBYTE                              pbMacA,
+    _In_reads_( 6 )                                         PCBYTE                              pbMacB,
+    _Inout_updates_opt_( 32 )                               PBYTE                               pbRand,
+    _Inout_updates_opt_( 32 )                               PBYTE                               pbMask );
 //
 // Initialize the state object  using the Hash-to-Element algorithm, using the PT value calculated
 // by SymCrypt802_11SaeCustomCreatePT.
 //
-// - State                      Protocol state to initialize
-// - pbPT                       PT value calculated using SymCrypt802_11SaeCustomCreatePT
-// - pbMacA, pbMacB             Two 6-byte MAC addresses with MacA >= MacB.
-// - pbRand                     Optional pointer to Rand buffer
-// - pbMask                     Optional pointer to Mask buffer
+// - pState                     Protocol state
+// - pbPT                       PT value calculated using SymCrypt802_11SaeCustomCreatePT()
+// - pbMacA, pbMacB             Two 6-byte MAC addresses
+// - pbRand                     Optional pointer to Rand buffer. See SymCrypt802_11SaeCustomInit() documentation for the use of this paameter.
+// - pbMask                     Optional pointer to Mask buffer. See SymCrypt802_11SaeCustomInit() documentation for the use of this paameter.
 //
-// See the comment on SymCrypt802_11SaeCustomInit for more details about the pbRand and pbMask
-// parameters
+// See the comment on SymCrypt802_11SaeCustomInit() for more details about the pbRand and pbMask
+// parameters.
+//
+
+
+SYMCRYPT_ERROR
+SymCrypt802_11SaeCustomInitH2EGeneric(
+    _Out_                           PSYMCRYPT_802_11_SAE_CUSTOM_STATE   pState,
+                                    SYMCRYPT_802_11_SAE_GROUP           group,
+    _In_reads_( cbPT )              PCBYTE                              pbPT,
+                                    SIZE_T                              cbPT,
+    _In_reads_( 6 )                 PCBYTE                              pbMacA,
+    _In_reads_( 6 )                 PCBYTE                              pbMacB,
+    _Inout_updates_opt_( cbRand )   PBYTE                               pbRand,
+                                    SIZE_T                              cbRand,
+    _Inout_updates_opt_( cbMask )   PBYTE                               pbMask,
+                                    SIZE_T                              cbMask );
+//
+// Generic version of the SymCrypt802_11SaeCustomInitH2E() function that allows elliptic curve 
+// group selection.
+// Initialize the state object  using the Hash-to-Element algorithm, using the PT value calculated
+// by SymCrypt802_11SaeCustomCreatePT.
+//
+// - pState                     Protocol state
+// - group                      Group number for the elliptic curve selection
+// - pbPT, cbPT                 PT value (as a byte array) calculated using SymCrypt802_11SaeCustomCreatePTGeneric().
+//                              PT must be generated on the same elliptic curve as the one supplied in the group parameter.
+// - pbMacA, pbMacB             Two 6-byte MAC addresses
+// - pbRand, cbRand             Optional Rand buffer. See SymCrypt802_11SaeCustomInit() documentation for the use of this paameter.
+// - pbMask, cbMask             Optional Mask buffer. See SymCrypt802_11SaeCustomInit() documentation for the use of this paameter.
+//
+// See the comment on SymCrypt802_11SaeCustomInit() for more details about the pbRand and pbMask
+// parameters.
 //
 
 SYMCRYPT_ERROR
 SymCrypt802_11SaeCustomCommitCreate(
-    _In_                        PCSYMCRYPT_802_11_SAE_CUSTOM_STATE  pState,
-    _Out_writes_( 32 )          PBYTE                               pbCommitScalar,
-    _Out_writes_( 64 )          PBYTE                               pbCommitElement );
+    _In_                    PCSYMCRYPT_802_11_SAE_CUSTOM_STATE  pState,
+    _Out_writes_( 32 )      PBYTE                               pbCommitScalar,
+    _Out_writes_( 64 )      PBYTE                               pbCommitElement );
 //
 // Compute the the commit-scalar and commit-element values for the Commit message.
 // This function does not update the pState and is multi-thread safe w.r.t. the pState object.
@@ -2807,12 +2889,31 @@ SymCrypt802_11SaeCustomCommitCreate(
 //
 
 SYMCRYPT_ERROR
+SymCrypt802_11SaeCustomCommitCreateGeneric(
+    _In_                                PCSYMCRYPT_802_11_SAE_CUSTOM_STATE  pState,
+    _Out_writes_( cbCommitScalar )      PBYTE                               pbCommitScalar,
+                                        SIZE_T                              cbCommitScalar,
+    _Out_writes_( cbCommitElement )     PBYTE                               pbCommitElement,
+                                        SIZE_T                              cbCommitElement);
+//
+// Generic version of the SymCrypt802_11SaeCustomCommitCreate() function that uses the
+// state object to determine which elliptic curve group is selected.
+// Compute the the commit-scalar and commit-element values for the Commit message.
+// This function does not update the pState and is multi-thread safe w.r.t. the pState object.
+//
+//  - pState                            Protocol state that was initialized with SymCrypt802_11SaeCustomInit().
+//  - pbCommitScalar, cbCommitScalar    Buffer that receives the commit-scalar value, MSByte first.
+//  - pbCommitElement, cbCommitElement  Buffer that receives the commit-element value encoded as two values
+//                                      (x,y) in order, each value in MSByte first.
+//
+
+SYMCRYPT_ERROR
 SymCrypt802_11SaeCustomCommitProcess(
-    _In_                        PCSYMCRYPT_802_11_SAE_CUSTOM_STATE  pState,
-    _In_reads_( 32 )            PCBYTE                              pbPeerCommitScalar,
-    _In_reads_( 64 )            PCBYTE                              pbPeerCommitElement,
-    _Out_writes_( 32 )          PBYTE                               pbSharedSecret,
-    _Out_writes_( 32 )          PBYTE                               pbScalarSum );
+    _In_                    PCSYMCRYPT_802_11_SAE_CUSTOM_STATE  pState,
+    _In_reads_( 32 )        PCBYTE                              pbPeerCommitScalar,
+    _In_reads_( 64 )        PCBYTE                              pbPeerCommitElement,
+    _Out_writes_( 32 )      PBYTE                               pbSharedSecret,
+    _Out_writes_( 32 )      PBYTE                               pbScalarSum );
 //
 // Process the commit message received from the peer.
 // This function does not update pState and is multi-thread safe w.r.t. the pState object.
@@ -2823,6 +2924,31 @@ SymCrypt802_11SaeCustomCommitProcess(
 // - pbSharedSecret         buffer that receives the 'k' value that is the shared secret, MSByte first
 // - pbScalarSum            buffer that receives the sum of the two commit scalars, MSByte first
 //
+
+SYMCRYPT_ERROR
+SymCrypt802_11SaeCustomCommitProcessGeneric(
+    _In_                                    PCSYMCRYPT_802_11_SAE_CUSTOM_STATE  pState,
+    _In_reads_( cbPeerCommitScalar )        PCBYTE                              pbPeerCommitScalar,
+                                            SIZE_T                              cbPeerCommitScalar,
+    _In_reads_( cbPeerCommitElement )       PCBYTE                              pbPeerCommitElement,
+                                            SIZE_T                              cbPeerCommitElement,
+    _Out_writes_( cbSharedSecret )          PBYTE                               pbSharedSecret,
+                                            SIZE_T                              cbSharedSecret,
+    _Out_writes_( cbScalarSum )             PBYTE                               pbScalarSum,
+                                            SIZE_T                              cbScalarSum );
+//
+// Generic version of the SymCrypt802_11SaeCustomCommitProcess() function that uses the
+// state object to determine which elliptic curve group is selected.
+// Process the commit message received from the peer.
+// This function does not update pState and is multi-thread safe w.r.t. the pState object.
+//
+// - pState                                     pointer to the protocol state.
+// - pbPeerCommitScalar, cbPeerCommitScalar     pointer to the peer's commit scalar value, MSByte first.
+// - pbPeerCommitElement, cbPeerCommitElement   pointer to the peer's commit element, see CommitCreate for format.
+// - pbSharedSecret, cbSharedSecret             buffer that receives the 'k' value that is the shared secret, MSByte first
+// - pbScalarSum, pbSharedSecret                buffer that receives the sum of the two commit scalars, MSByte first
+//
+
 
 VOID
 SymCrypt802_11SaeCustomDestroy(
