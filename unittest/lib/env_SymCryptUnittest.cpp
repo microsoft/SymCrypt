@@ -321,7 +321,6 @@ SymCryptSaveYmmEnvUnittest( _Out_ PSYMCRYPT_EXTENDED_SAVE_DATA pSaveData )
         // Alloc can modify the regs, so save them first so that the modification happens
         // inside the save block
         //
-        memset( &regs[0], 'u', sizeof( regs ) );
         SymCryptEnvUmSaveYmmRegistersAsm( regs );
 
         pRegs = (PSYMCRYPT_ENV_YMM_SAVE_DATA_REGS) malloc_align32( sizeof( *pRegs ) );
