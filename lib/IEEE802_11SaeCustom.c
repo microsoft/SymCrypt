@@ -769,6 +769,7 @@ SymCrypt802_11SaeCustomCreatePTGeneric(
     SIZE_T cbScratch = 0;
 
     PBYTE pbPwdValue = NULL;
+    UINT32 cbPwdValue = 0;
     PBYTE pbScratch = NULL;
     SYMCRYPT_HKDF_EXPANDED_KEY hkdfKey;
 
@@ -805,8 +806,6 @@ SymCrypt802_11SaeCustomCreatePTGeneric(
 
     pMacAlgorithm = *( pGroupData->macAlgorithm );
 
-    const SIZE_T cbHMACOutputSize = pMacAlgorithm->resultSize;
-
     const UINT32 nDigits = SymCryptEcurveDigitsofFieldElement( pCurve );
 
     cbIkm = cbPassword + cbPasswordIdentifier;
@@ -818,7 +817,7 @@ SymCrypt802_11SaeCustomCreatePTGeneric(
     pbScratch = SymCryptCallbackAlloc( cbScratch );
 
     // len = olen( p ) + floor( olen( p ) / 2 )
-    const UINT32 cbPwdValue = SYMCRYPT_BYTES_FROM_BITS(pCurve->FModBitsize) + SYMCRYPT_BYTES_FROM_BITS(pCurve->FModBitsize) / 2;
+    cbPwdValue = SYMCRYPT_BYTES_FROM_BITS(pCurve->FModBitsize) + SYMCRYPT_BYTES_FROM_BITS(pCurve->FModBitsize) / 2;
 
     pbPwdValue = SymCryptCallbackAlloc( cbPwdValue );
 
@@ -1063,7 +1062,6 @@ SymCrypt802_11SaeCustomInitH2EGeneric(
 
     pMacAlgorithm = *( pGroupData->macAlgorithm );
 
-    SIZE_T cbFieldElementSize = SymCryptEcurveSizeofFieldElement( pCurve );
     SIZE_T cbHMACOutputSize = pMacAlgorithm->resultSize;
 
     pState->peRand = SymCryptModElementAllocate( pCurve->GOrd );
@@ -1297,7 +1295,6 @@ SymCrypt802_11SaeCustomCommitCreateGeneric(
     SIZE_T nDigits;
 
     PCSYMCRYPT_ECURVE pCurve = pState->pCurve;
-    PCSYMCRYPT_MAC macAlgorithm = pState->macAlgorithm;
 
     nDigits = SymCryptDigitsFromBits( pCurve->FModBitsize );
     cbScratch = SYMCRYPT_MAX( SYMCRYPT_SCRATCH_BYTES_FOR_COMMON_MOD_OPERATIONS( nDigits ),
@@ -1439,7 +1436,7 @@ SymCrypt802_11SaeCustomCommitProcessGeneric(
     }
 
     // piTmp = peer commit value
-    scError = SymCryptIntSetValue( pbPeerCommitScalar, pCurve->FModBytesize, SYMCRYPT_NUMBER_FORMAT_MSB_FIRST, piTmp );
+    scError = SymCryptIntSetValue( pbPeerCommitScalar, cbPeerCommitScalar, SYMCRYPT_NUMBER_FORMAT_MSB_FIRST, piTmp );
     if( scError != SYMCRYPT_NO_ERROR )
     {
         goto cleanup;
