@@ -1,3 +1,7 @@
+# Version 101.1
+
+- Support for Group 20 in SAE method
+
 # Version 101.0
 
 - Support stable ABI: change SYMCRYPT_ERROR definition so that error values no longer change with version changes
