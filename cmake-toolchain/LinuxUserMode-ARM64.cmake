@@ -36,4 +36,4 @@ add_compile_options(-DSYMCRYPT_DO_FIPS_SELFTESTS=1)
 
 # Enable a baseline of features for the compiler to support everywhere
 # Assumes that the compiler will not emit crypto instructions as a result of normal C code
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -march=armv8a+simd+crypto")
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -march=armv8-a+simd+crypto")

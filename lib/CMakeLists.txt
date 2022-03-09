@@ -321,8 +321,10 @@ if(NOT WIN32)
         add_compile_options(-fstack-clash-protection)
     endif()
 
-    if (CMAKE_C_COMPILER_ID MATCHES "Clang")
-        add_compile_options(-mllvm -x86-speculative-load-hardening)
+    if(CMAKE_SYSTEM_PROCESSOR MATCHES "AMD64|X86")
+        if (CMAKE_C_COMPILER_ID MATCHES "Clang")
+            add_compile_options(-mllvm -x86-speculative-load-hardening)
+        endif()
     endif()
 
     add_library(symcrypt_linuxusermode STATIC env_linuxUserMode.c)

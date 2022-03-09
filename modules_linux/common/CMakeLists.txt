@@ -6,11 +6,19 @@ include_directories(${CMAKE_SOURCE_DIR}/inc)
 
 add_library(symcrypt_module_linux_common STATIC ${SOURCES})
 
-set(jitter_compiler_AMD64 env CC=gcc)
-set(jitter_compiler_ARM64 env CC=aarch64-linux-gnu-gcc)
-set(jitter_cflags "-fwrapv --param ssp-buffer-size=4 -fvisibility=hidden -fPIE -Wcast-align -Wmissing-field-initializers -Wshadow -Wswitch-enum -fno-plt")
+set(jitter_cflags "${CMAKE_C_FLAGS} -fwrapv -fvisibility=hidden")
+set(jitter_ldflags "")
+if (CMAKE_C_COMPILER_ID MATCHES "Clang" AND DEFINED CMAKE_C_COMPILER_TARGET)
+  set(jitter_cflags "--target=${CMAKE_C_COMPILER_TARGET} --sysroot=${CMAKE_SYSROOT_COMPILE} ${jitter_cflags}")
+  set(jitter_ldflags "--target=${CMAKE_C_COMPILER_TARGET}")
+endif()
+
 add_custom_target(jitterentropy_lib ALL
   COMMAND make clean
-  COMMAND ${CMAKE_COMMAND} -E ${jitter_compiler_${CMAKE_SYSTEM_PROCESSOR}} env "CFLAGS=${jitter_cflags}" make
+  COMMAND ${CMAKE_COMMAND} -E
+    env "CC=${CMAKE_C_COMPILER}"
+    env "CFLAGS=${jitter_cflags}"
+    env "LDFLAGS=${jitter_ldflags}"
+    make
   WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/jitterentropy-library
 )
