@@ -477,7 +477,9 @@ testEccArithmetic( _In_ PCSYMCRYPT_ECURVE pCurve )
 
     do
     {
-        scError = SymCryptEckeySetRandom( SYMCRYPT_FLAG_KEY_RANGE_AND_PUBLIC_KEY_ORDER_VALIDATION, pkKey1 );
+        scError = SymCryptEckeySetRandom(
+            SYMCRYPT_FLAG_KEY_RANGE_AND_PUBLIC_KEY_ORDER_VALIDATION | SYMCRYPT_FLAG_ECKEY_SELFTEST_ECDSA | SYMCRYPT_FLAG_ECKEY_SELFTEST_ECDH,
+            pkKey1 );
         CHECK( scError == SYMCRYPT_NO_ERROR, "Set random key failed" );
 
         CHECK( SymCryptEcpointOnCurve( pCurve, pkKey1->poPublicKey, pbScratch, cbScratch), "Public key not on curve");
@@ -886,7 +888,7 @@ testEcdsaVerify(
                 cbQx + cbQy,
                 SYMCRYPT_NUMBER_FORMAT_MSB_FIRST,
                 SYMCRYPT_ECPOINT_FORMAT_XY,
-                SYMCRYPT_FLAG_KEY_RANGE_AND_PUBLIC_KEY_ORDER_VALIDATION,
+                SYMCRYPT_FLAG_KEY_RANGE_AND_PUBLIC_KEY_ORDER_VALIDATION | SYMCRYPT_FLAG_ECKEY_SELFTEST_ECDSA,
                 pkPublic );
     CHECK3( scError == SYMCRYPT_NO_ERROR, "Public key set value failed for ECDSA record at line %lld", line );
 
@@ -972,7 +974,7 @@ testEcdsaSign(
                 0,
                 SYMCRYPT_NUMBER_FORMAT_MSB_FIRST,
                 SYMCRYPT_ECPOINT_FORMAT_XY,
-                SYMCRYPT_FLAG_KEY_RANGE_VALIDATION,
+                SYMCRYPT_FLAG_KEY_RANGE_VALIDATION | SYMCRYPT_FLAG_ECKEY_SELFTEST_ECDSA,
                 pkPrivate );
     CHECK3( scError == SYMCRYPT_NO_ERROR, "Private key set value failed for ECDSA record at line %lld", line );
 
@@ -1049,7 +1051,7 @@ testEcdh(
     PCBYTE pbOptPublicKey = NULL;
     SIZE_T cbOptPublicKey = 0;
     BYTE randByte = g_rng.byte();
-    UINT32 flags = 0;
+    UINT32 flags = SYMCRYPT_FLAG_ECKEY_SELFTEST_ECDH;
 
     // Allocate the keys
     pkPrivate = SymCryptEckeyAllocate( pCurve );

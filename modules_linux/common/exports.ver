@@ -529,3 +529,12 @@ VERSION_101.0 {
    local:
       *;
 };
+VERSION_101.2
+{
+   global:
+      SymCryptDhSecretAgreementPairwiseConsistencyTest;
+      SymCryptDsaSignVerifyTest;
+      SymCryptEcDhSecretAgreementPairwiseConsistencyTest;
+      SymCryptEcDsaSignVerifyTest;
+      SymCryptRsaSignVerifyTest;
+} VERSION_101.0;

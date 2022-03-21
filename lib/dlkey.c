@@ -302,16 +302,22 @@ SymCryptDlkeyGenerate(
     BYTE   privMask;
     UINT32 cntr;
 
-    SYMCRYPT_ON_DEMAND_SELFTEST(SymCryptDsaSelftest, SYMCRYPT_SELFTEST_DSA);
+    // Make sure only allowed flags are specified
+    UINT32 allowedFlags = SYMCRYPT_FLAG_DLKEY_GEN_MODP |
+        SYMCRYPT_FLAG_KEY_RANGE_AND_PUBLIC_KEY_ORDER_VALIDATION |
+        SYMCRYPT_FLAG_DLKEY_SELFTEST_DSA |
+        SYMCRYPT_FLAG_DLKEY_SELFTEST_DH;
 
-    // Make sure only the correct flags are specified
-    // Check if a flag with bits outside of the expected flags is specified
-    // Check if a flag is specified using bits expected, but not one of the expected flags
-    if ( ( ( flags & ~( SYMCRYPT_FLAG_DLKEY_GEN_MODP |
-                        SYMCRYPT_FLAG_KEY_RANGE_AND_PUBLIC_KEY_ORDER_VALIDATION ) ) != 0 ) ||
-        ( flags != 0 &&
-        (flags & SYMCRYPT_FLAG_DLKEY_GEN_MODP) == 0 &&
-        !((flags & SYMCRYPT_FLAG_KEY_VALIDATION_MASK) == SYMCRYPT_FLAG_KEY_RANGE_AND_PUBLIC_KEY_ORDER_VALIDATION) ) )
+    if ( ( flags & ~allowedFlags ) != 0 )
+    {
+        scError = SYMCRYPT_INVALID_ARGUMENT;
+        goto cleanup;
+    }
+
+    // If any bits of SYMCRYPT_FLAG_KEY_VALIDATION_MASK are set, all bits of
+    // SYMCRYPT_FLAG_KEY_RANGE_AND_PUBLIC_KEY_ORDER_VALIDATION must be set
+    if ( ( flags & SYMCRYPT_FLAG_KEY_VALIDATION_MASK ) != 0 &&
+        ( flags & SYMCRYPT_FLAG_KEY_VALIDATION_MASK ) !=  SYMCRYPT_FLAG_KEY_RANGE_AND_PUBLIC_KEY_ORDER_VALIDATION )
     {
         scError = SYMCRYPT_INVALID_ARGUMENT;
         goto cleanup;
@@ -460,6 +466,19 @@ SymCryptDlkeyGenerate(
     // Set the fHasPrivateKey flag
     pkDlkey->fHasPrivateKey = TRUE;
 
+    if( ( flags & SYMCRYPT_FLAG_DLKEY_SELFTEST_DSA ) != 0 )
+    {
+        SYMCRYPT_RUN_KEYGEN_PCT( SymCryptDsaSignVerifyTest, pkDlkey, SYMCRYPT_SELFTEST_DSA );
+    }
+    
+    if( ( flags & SYMCRYPT_FLAG_DLKEY_SELFTEST_DH ) != 0 )
+    {
+        SYMCRYPT_RUN_KEYGEN_PCT(
+            SymCryptDhSecretAgreementPairwiseConsistencyTest,
+            pkDlkey,
+            SYMCRYPT_SELFTEST_DH_SECRET_AGREEMENT );
+    }
+
 cleanup:
     if (pbScratch!=NULL)
     {
@@ -496,8 +515,6 @@ SymCryptDlkeySetValue(
 
     BOOLEAN performRangeValidation = FALSE;
 
-    SYMCRYPT_ON_DEMAND_SELFTEST(SymCryptDsaSelftest, SYMCRYPT_SELFTEST_DSA);
-
     if ( ((pbPrivateKey==NULL) && (cbPrivateKey!=0)) ||
          ((pbPublicKey==NULL) && (cbPublicKey!=0)) ||
          ((pbPrivateKey==NULL) && (pbPublicKey==NULL)) )
@@ -506,13 +523,15 @@ SymCryptDlkeySetValue(
         goto cleanup;
     }
 
-    // Ensure only the correct flags are specified
-    // Check if a flag with bits outside of the expected flags is specified
-    // All bit combinations using the expected flags are valid, so no more flag validation required
-    if ( ( flags & ~(   SYMCRYPT_FLAG_KEY_MINIMAL_VALIDATION |
-                        SYMCRYPT_FLAG_KEY_RANGE_VALIDATION |
-                        SYMCRYPT_FLAG_KEY_RANGE_AND_PUBLIC_KEY_ORDER_VALIDATION |
-                        SYMCRYPT_FLAG_KEY_KEYPAIR_REGENERATION_VALIDATION ) ) != 0 )
+    // Ensure only allowed flags are specified
+    UINT32 allowedFlags = SYMCRYPT_FLAG_KEY_MINIMAL_VALIDATION |
+        SYMCRYPT_FLAG_KEY_RANGE_VALIDATION |
+        SYMCRYPT_FLAG_KEY_RANGE_AND_PUBLIC_KEY_ORDER_VALIDATION |
+        SYMCRYPT_FLAG_KEY_KEYPAIR_REGENERATION_VALIDATION |
+        SYMCRYPT_FLAG_DLKEY_SELFTEST_DSA |
+        SYMCRYPT_FLAG_DLKEY_SELFTEST_DH;
+
+    if ( ( flags & ~allowedFlags ) != 0 )
     {
         scError = SYMCRYPT_INVALID_ARGUMENT;
         goto cleanup;
@@ -695,6 +714,18 @@ SymCryptDlkeySetValue(
                 goto cleanup;
             }
         }
+    }
+
+    if( ( flags & SYMCRYPT_FLAG_DLKEY_SELFTEST_DSA ) != 0 )
+    {
+        SYMCRYPT_RUN_SELFTEST_ONCE( SymCryptDsaSelftest, SYMCRYPT_SELFTEST_DSA );
+    }
+    
+    if( ( flags & SYMCRYPT_FLAG_DLKEY_SELFTEST_DH ) != 0 )
+    {
+        SYMCRYPT_RUN_SELFTEST_ONCE(
+            SymCryptDhSecretAgreementSelftest,
+            SYMCRYPT_SELFTEST_DH_SECRET_AGREEMENT );
     }
 
 cleanup:

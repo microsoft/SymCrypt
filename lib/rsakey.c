@@ -521,9 +521,14 @@ SymCryptRsakeyGenerate(
 
     const UINT64 defaultExponent = RSA_DEFAULT_PUBLIC_EXPONENT;
 
-    UNREFERENCED_PARAMETER( flags );
+    // Ensure only allowed flags are specified
+    UINT32 allowedFlags = SYMCRYPT_FLAG_RSAKEY_SELFTEST;
 
-    SYMCRYPT_ON_DEMAND_SELFTEST(SymCryptRsaSelftest, SYMCRYPT_SELFTEST_RSA);
+    if ( ( flags & ~allowedFlags ) != 0 )
+    {
+        scError = SYMCRYPT_INVALID_ARGUMENT;
+        goto cleanup;
+    }
 
     // Handle the default exponent case
     if( pu64PubExp == NULL && nPubExp == 0 )
@@ -704,6 +709,11 @@ SymCryptRsakeyGenerate(
 
     pkRsakey->hasPrivateKey = TRUE;
 
+    if ( ( flags & SYMCRYPT_FLAG_RSAKEY_SELFTEST ) != 0 )
+    {
+        SYMCRYPT_RUN_KEYGEN_PCT( SymCryptRsaSignVerifyTest, pkRsakey, SYMCRYPT_SELFTEST_RSA );
+    }
+
 cleanup:
     if (pbScratch!=NULL)
     {
@@ -750,9 +760,15 @@ SymCryptRsakeySetValue(
     PBYTE           pbFnScratch = NULL;
     UINT32          cbFnScratch = 0;
 
-    UNREFERENCED_PARAMETER( flags );
+    // Ensure only allowed flags are specified
+    UINT32 allowedFlags = SYMCRYPT_FLAG_RSAKEY_SELFTEST;
 
-    SYMCRYPT_ON_DEMAND_SELFTEST(SymCryptRsaSelftest, SYMCRYPT_SELFTEST_RSA);
+    if ( ( flags & ~allowedFlags ) != 0 )
+    {
+        scError = SYMCRYPT_INVALID_ARGUMENT;
+        goto cleanup;
+    }
+
 
     // Check if the arguments are correct
     if ( (pbModulus==NULL) || (cbModulus==0) ||         // Modulus is needed
@@ -910,6 +926,11 @@ SymCryptRsakeySetValue(
 
         // Everything is set here
         pkRsakey->hasPrivateKey = TRUE;
+    }
+
+    if ( ( flags & SYMCRYPT_FLAG_RSAKEY_SELFTEST ) != 0 )
+    {
+        SYMCRYPT_RUN_SELFTEST_ONCE( SymCryptRsaSelftest, SYMCRYPT_SELFTEST_RSA );
     }
 
 cleanup:

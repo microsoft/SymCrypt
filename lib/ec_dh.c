@@ -32,8 +32,6 @@ SymCryptEcDhSecretAgreement(
     UINT32              cbQ = 0;
     UINT32              cbX = 0;
 
-    SYMCRYPT_ON_DEMAND_SELFTEST(SymCryptEcDhSecretAgreementSelftest, SYMCRYPT_SELFTEST_ECDH_SECRET_AGREEMENT);
-
     // Make sure we only specify the correct flags
     if (flags != 0)
     {

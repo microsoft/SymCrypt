@@ -4935,6 +4935,33 @@ SymCryptEckeyCopy(
 
 
 //=====================================================
+// On-demand self-test flags
+
+// These flags can be passed in at key generation or import time to indicate that the
+// corresponding pairwise consistency test should be run. Running these tests is required
+// to be compliant with FIPS 140-3, but because they are computationally expensive, we do not
+// run them at module start-up. It is the caller's responsibility to pass in the appropriate flag
+// at key generation or import time.
+//
+// Why are these flags algorithm specific? Because SymCrypt does not distinguish between ECC keys
+// used for ECDSA vs. ECC keys used for ECDH, or DL keys used for DSA vs. DL keys used for DH, the
+// caller must use the appropriate flag to indicate what the key will be used for and therefore
+// which selftest needs to be run.
+//
+// Note that per FIPS requirements, testing each imported key is not required, but the appropriate
+// algorithm test must be run once before an algorithm can be used. Therefore, the key import
+// test will be run at most one time per algorithm. SymCrypt handles this internally. For key
+// generation, however, each generated key must be tested, so the key generation test will be run
+// once per key generated.
+#define SYMCRYPT_FLAG_ECKEY_SELFTEST_ECDSA                         (0x100)
+#define SYMCRYPT_FLAG_ECKEY_SELFTEST_ECDH                          (0x200)
+
+#define SYMCRYPT_FLAG_DLKEY_SELFTEST_DSA                           (0x100)
+#define SYMCRYPT_FLAG_DLKEY_SELFTEST_DH                            (0x200)
+
+#define SYMCRYPT_FLAG_RSAKEY_SELFTEST                              (0x100)
+
+//=====================================================
 // Generic key validation flags
 // Currently only apply to DH, DSA, ECDH, and ECDSA.
 
@@ -5073,7 +5100,14 @@ SymCryptRsakeyGenerate(
 // nPubExp must match the # public exponents in the parameters.
 // If pu64PubExp == NULL, nPubExp == 0, and the key requires only one
 // public exponent, then the default exponent 2^16 + 1 is used.
-// Flags: none currently defined
+//
+// Allowed flags: 
+//
+// - SYMCRYPT_FLAG_RSAKEY_SELFTEST
+//   Perform a pairwise consistency test on the generated key.
+//   This flag must be set for callers who require compliance with FIPS 140-3. Any failure
+//   in the selftest will cause a fatal error, as it indicates that the module cannot operate
+//   in a FIPS-compliant mode.
 //
 
 SYMCRYPT_ERROR
@@ -5098,7 +5132,14 @@ SymCryptRsakeySetValue(
 //    the primes. pcbPrimes is an array of nPrimes sizes such that
 //    the size of ppPrimes[i] is equal to pcbPrimes[i] for each i in [0, nPrimes-1].
 //  - numFormat specifies the number format for all inputs
-//  - flags must be 0
+//
+// Allowed flags:
+// 
+// - SYMCRYPT_FLAG_RSAKEY_SELFTEST
+//   Perform an RSA algorithm test, if not already been done.
+//   This flag must be set for callers who require compliance with FIPS 140-3. Any failure
+//   in the selftest will cause a fatal error, as it indicates that the module cannot operate
+//   in a FIPS-compliant mode.
 //
 //  Remarks:
 //  - Modulus and all primes are stored in the same format specified by numFormat.
@@ -5436,6 +5477,15 @@ SymCryptDlkeyGenerate(
 //  or 1 and min(2^nBitsPriv-1, Q-1) for named safe-prime groups
 //  When Q is not known, this does not affect the behavior
 //
+// - SYMCRYPT_FLAG_DLKEY_SELFTEST_DSA
+//   Perform a DSA pairwise consistency test on the generated key. For keys which will be used with
+//   DSA, this flag must be set for callers who require compliance with FIPS 140-3. Any failure
+//   in the selftest will cause a fatal error, as it indicates that the module cannot operate
+//   in a FIPS-compliant mode.
+//
+// - SYMCRYPT_FLAG_DLKEY_SELFTEST_DH
+//   Equivalent to SYMCRYPT_FLAG_DLKEY_SELFTEST_DSA, but for keys which will be used with DH.
+//
 // Note:
 // If SYMCRYPT_FLAG_DLKEY_GEN_MODP is specified in conjuction with
 // SYMCRYPT_FLAG_KEY_RANGE_AND_PUBLIC_KEY_ORDER_VALIDATION a SYMCRYPT_INVALID_ARGUMENT error will be
@@ -5456,6 +5506,16 @@ SymCryptDlkeySetValue(
 // Import key material to a DLKEY object.
 //
 // Allowed flags:
+//
+// - SYMCRYPT_FLAG_DLKEY_SELFTEST_DSA
+//   Perform a DSA algorithm test, if not already done. For keys which will be used with
+//   DSA, this flag must be set for callers who require compliance with FIPS 140-3. Any failure
+//   in the selftest will cause a fatal error, as it indicates that the module cannot operate
+//   in a FIPS-compliant mode.
+//
+// - SYMCRYPT_FLAG_DLKEY_SELFTEST_DH
+//   Equivalent to SYMCRYPT_FLAG_DLKEY_SELFTEST_DSA, but for keys which will be used with DH.
+//
 //  - Optionally, at most 1 of
 //      SYMCRYPT_FLAG_KEY_MINIMAL_VALIDATION,
 //      SYMCRYPT_FLAG_KEY_RANGE_VALIDATION, and
@@ -5661,12 +5721,22 @@ SymCryptEckeySetValue(
 //      The algorithm always sets the corresponding public key
 //
 // Allowed flags:
-//      - Optionally, at most 1 of
-//          SYMCRYPT_FLAG_KEY_MINIMAL_VALIDATION,
-//          SYMCRYPT_FLAG_KEY_RANGE_VALIDATION, and
-//          SYMCRYPT_FLAG_KEY_RANGE_AND_PUBLIC_KEY_ORDER_VALIDATION
-//      - and optionally SYMCRYPT_FLAG_KEY_KEYPAIR_REGENERATION_VALIDATION
-//      Described in the key validation flag definitions above.
+//
+// - SYMCRYPT_FLAG_ECKEY_SELFTEST_ECDSA
+//   Perform an ECDSA algorithm test, if not already done. For keys which will be used with
+//   ECDSA, this flag must be set for callers who require compliance with FIPS 140-3. Any failure
+//   in the selftest will cause a fatal error, as it indicates that the module cannot operate
+//   in a FIPS-compliant mode.
+//
+// - SYMCRYPT_FLAG_ECKEY_SELFTEST_ECDH
+//   Equivalent to SYMCRYPT_FLAG_ECKEY_SELFTEST_ECDSA, but for keys which will be used with ECDH.
+//
+// - Optionally, at most 1 of
+//     SYMCRYPT_FLAG_KEY_MINIMAL_VALIDATION,
+//     SYMCRYPT_FLAG_KEY_RANGE_VALIDATION, and
+//     SYMCRYPT_FLAG_KEY_RANGE_AND_PUBLIC_KEY_ORDER_VALIDATION
+// - and optionally SYMCRYPT_FLAG_KEY_KEYPAIR_REGENERATION_VALIDATION
+//   Described in the key validation flag definitions above.
 //
 
 SYMCRYPT_ERROR
@@ -5685,12 +5755,22 @@ SymCryptEckeySetRandom(
 //    SYMCRYPT_INVALID_ARGUMENT.
 //
 // Allowed flags:
-//      - SYMCRYPT_FLAG_KEY_RANGE_AND_PUBLIC_KEY_ORDER_VALIDATION
-//  Described in the key validation flag definitions above. Intended use is to allow additional
-//  (expensive) checks required by FIPS (SP800-56arev3) to be performed for compliance.
-//  Provided the Ecurve is well formed, generated keypairs will always pass these checks, so it is
-//  not recommended to set this flag unless required, as it makes the operation slower without
-//  affecting the results.
+//
+// - SYMCRYPT_FLAG_ECKEY_SELFTEST_ECDSA
+//   Perform an ECDSA pairwise consistency test on the generated key. For keys which will be used with
+//   ECDSA, this flag must be set for callers who require compliance with FIPS 140-3. Any failure
+//   in the selftest will cause a fatal error, as it indicates that the module cannot operate
+//   in a FIPS-compliant mode.
+//
+// - SYMCRYPT_FLAG_ECKEY_SELFTEST_ECDH
+//   Equivalent to SYMCRYPT_FLAG_ECKEY_SELFTEST_ECDSA, but for keys which will be used with ECDH.
+//
+// - SYMCRYPT_FLAG_KEY_RANGE_AND_PUBLIC_KEY_ORDER_VALIDATION
+//   Described in the key validation flag definitions above. Intended use is to allow additional
+//   (expensive) checks required by FIPS (SP800-56arev3) to be performed for compliance.
+//   Provided the Ecurve is well formed, generated keypairs will always pass these checks, so it is
+//   not recommended to set this flag unless required, as it makes the operation slower without
+//   affecting the results.
 //
 
 SYMCRYPT_ERROR
@@ -6077,11 +6157,23 @@ SymCryptRsaPssVerify(
 
 VOID
 SYMCRYPT_CALL
-SymCryptRsaSelftest( );
+SymCryptRsaSignVerifyTest( PCSYMCRYPT_RSAKEY pkRsakey );
 //
 // FIPS self-test for RSA sign/verify. If the self-test fails, SymCryptFatal will be called to
-// fastfail.
+// fastfail. Rather than calling this function directly, the caller can pass
+// SYMCRYPT_FLAG_RSAKEY_SELFTEST into SymCryptRsakeyGenerate/SymCryptRsakeySetValue.
 //
+
+VOID
+SYMCRYPT_CALL
+SymCryptRsaSelftest( );
+//
+// Wrapper which calls SymCryptRsaSignVerifyTest with a hard-coded key. Used to satisfy the FIPS
+// test-before-use requirement in the case that no keys are generated. Rather than calling this
+// function directly, the caller can pass SYMCRYPT_FLAG_RSAKEY_SELFTEST into
+// SymCryptRsakeyGenerate/SymCryptRsakeySetValue.
+//
+
 
 //
 // DSA
@@ -6130,10 +6222,20 @@ SymCryptDsaVerify(
 
 VOID
 SYMCRYPT_CALL
-SymCryptDsaSelftest( );
+SymCryptDsaSignVerifyTest( PCSYMCRYPT_DLKEY pkDlkey );
 //
 // FIPS self-test for DSA sign/verify. If the self-test fails, SymCryptFatal will be called to
-// fastfail.
+// fastfail. Rather than calling this function directly, the caller can pass
+// SYMCRYPT_FLAG_DLKEY_SELFTEST_DSA into SymCryptDlkeyGenerate/SymCryptDlkeySetValue.
+//
+
+VOID
+SYMCRYPT_CALL
+SymCryptDsaSelftest( );
+//
+// Wrapper which calls SymCryptDsaSignVerifyTest with a hard-coded key. Used to satisfy the FIPS
+// test-before-use requirement. Rather than calling this function directly, the caller can pass
+// SYMCRYPT_FLAG_DLKEY_SELFTEST_DSA into SymCryptDlkeyGenerate/SymCryptDlkeySetValue.
 //
 
 //
@@ -6161,11 +6263,22 @@ SymCryptDhSecretAgreement(
 
 VOID
 SYMCRYPT_CALL
-SymCryptDhSecretAgreementSelftest();
+SymCryptDhSecretAgreementPairwiseConsistencyTest( PCSYMCRYPT_DLKEY pkKey1 );
 //
 // FIPS self-test for DH secret agreement. If the self-test fails, SymCryptFatal will be called to
-// fastfail. Called automatically by SymCryptDhSecretAgreement when SYMCRYPT_DO_FIPS_SELFTESTS is
-// defined during compilation.
+// fastfail. Rather than calling this function directly, the caller can pass
+// SYMCRYPT_FLAG_DLKEY_SELFTEST_DH into SymCryptDlkeyGenerate/SymCryptDlkeySetValue.
+//
+
+VOID
+SYMCRYPT_CALL
+SymCryptDhSecretAgreementSelftest();
+//
+// FIPS self-test for DH secret agreement. Unlike the above function, this function uses two
+// hardcoded keys and a precalculated known answer to perform the selftest without having to
+// generate a key. If the self-test fails, SymCryptFatal will be called to fastfail. Rather than
+// calling this function directly, the caller can pass
+// SYMCRYPT_FLAG_DLKEY_SELFTEST_DH into SymCryptDlkeyGenerate/SymCryptDlkeySetValue.
 //
 
 //
@@ -6221,12 +6334,22 @@ SymCryptEcDsaVerify(
 //      SYMCRYPT_FLAG_ECDSA_NO_TRUNCATION: If set then the hash value will
 //      not be truncated.
 
+
+VOID
+SYMCRYPT_CALL
+SymCryptEcDsaSignVerifyTest( PCSYMCRYPT_ECKEY pkEckey );
+//
+// FIPS self-test for ECDSA sign/verify. If the self-test fails, SymCryptFatal will be called to
+// fastfail. Rather than calling this function directly, the caller can pass
+// SYMCRYPT_FLAG_ECKEY_SELFTEST_ECDSA into SymCryptDlkeyGenerate/SymCryptDlkeySetValue.
+
 VOID
 SYMCRYPT_CALL
 SymCryptEcDsaSelftest( );
 //
-// FIPS self-test for ECDSA sign/verify. If the self-test fails, SymCryptFatal will be called to
-// fastfail.
+// Wrapper which calls SymCryptEcDsaSignVerifyTest with a hard-coded key. Used to satisfy the FIPS
+// test-before-use requirement. Rather than calling this function directly, the caller can pass
+// SYMCRYPT_FLAG_ECKEY_SELFTEST_ECDSA into SymCryptDlkeyGenerate/SymCryptDlkeySetValue.
 //
 
 //
@@ -6253,12 +6376,22 @@ SymCryptEcDhSecretAgreement(
 
 VOID
 SYMCRYPT_CALL
-SymCryptEcDhSecretAgreementSelftest( );
-
+SymCryptEcDhSecretAgreementPairwiseConsistencyTest( PCSYMCRYPT_ECKEY pkKey1 );
 //
 // FIPS self-test for ECDH secret agreement. If the self-test fails, SymCryptFatal will be called
-// to fastfail. Called automatically by SymCryptEcDhSecretAgreement when SYMCRYPT_DO_FIPS_SELFTESTS
-// is defined during compilation.
+// to fastfail. Rather than calling this function directly, the caller can pass
+// SYMCRYPT_FLAG_ECKEY_SELFTEST_ECDH into SymCryptEckeySetRandom/SymCryptEckeySetValue.
+//
+
+VOID
+SYMCRYPT_CALL
+SymCryptEcDhSecretAgreementSelftest( );
+//
+// FIPS self-test for ECDH secret agreement. Unlike the above function, this function uses two
+// hardcoded keys and a precalculated known answer to perform the selftest without having to
+// generate a key. If the self-test fails, SymCryptFatal will be called to fastfail. Rather than
+// calling this function directly, the caller can pass
+// SYMCRYPT_FLAG_ECKEY_SELFTEST_ECDH into SymCryptEckeySetRandom/SymCryptEckeySetValue.
 //
 
 //

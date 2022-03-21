@@ -275,18 +275,18 @@ SymCryptEckeySetValue(
 
     BOOLEAN performRangeValidation = FALSE;
 
-    SYMCRYPT_ON_DEMAND_SELFTEST(SymCryptEcDsaSelftest, SYMCRYPT_SELFTEST_ECDSA);
-
     SYMCRYPT_ASSERT( (cbPrivateKey==0) || (cbPrivateKey == SymCryptEcurveSizeofScalarMultiplier( pEckey->pCurve )) );
     SYMCRYPT_ASSERT( (cbPublicKey==0) || (cbPublicKey == SymCryptEckeySizeofPublicKey( pEckey, ecPointFormat)) );
 
-    // Ensure only the correct flags are specified
-    // Check if a flag with bits outside of the expected flags is specified
-    // All bit combinations using the expected flags are valid, so no more flag validation required
-    if ( ( flags & ~(   SYMCRYPT_FLAG_KEY_MINIMAL_VALIDATION |
-                        SYMCRYPT_FLAG_KEY_RANGE_VALIDATION |
-                        SYMCRYPT_FLAG_KEY_RANGE_AND_PUBLIC_KEY_ORDER_VALIDATION |
-                        SYMCRYPT_FLAG_KEY_KEYPAIR_REGENERATION_VALIDATION ) ) != 0 )
+    // Ensure only allowed flags are specified
+    UINT32 allowedFlags = SYMCRYPT_FLAG_KEY_MINIMAL_VALIDATION |
+        SYMCRYPT_FLAG_KEY_RANGE_VALIDATION |
+        SYMCRYPT_FLAG_KEY_RANGE_AND_PUBLIC_KEY_ORDER_VALIDATION |
+        SYMCRYPT_FLAG_KEY_KEYPAIR_REGENERATION_VALIDATION |
+        SYMCRYPT_FLAG_ECKEY_SELFTEST_ECDSA |
+        SYMCRYPT_FLAG_ECKEY_SELFTEST_ECDH;
+
+    if ( ( flags & ~allowedFlags ) != 0 )
     {
         scError = SYMCRYPT_INVALID_ARGUMENT;
         goto cleanup;
@@ -525,6 +525,18 @@ SymCryptEckeySetValue(
         }
     }
 
+    if ( ( flags & SYMCRYPT_FLAG_ECKEY_SELFTEST_ECDSA ) != 0 )
+    {
+        SYMCRYPT_RUN_SELFTEST_ONCE( SymCryptEcDsaSelftest, SYMCRYPT_SELFTEST_ECDSA );
+    }
+
+    if ( ( flags & SYMCRYPT_FLAG_ECKEY_SELFTEST_ECDH ) != 0 )
+    {
+        SYMCRYPT_RUN_SELFTEST_ONCE(
+            SymCryptEcDhSecretAgreementSelftest,
+            SYMCRYPT_SELFTEST_ECDH_SECRET_AGREEMENT);
+    }
+
 cleanup:
 
     if ( pbScratch != NULL )
@@ -699,14 +711,20 @@ SymCryptEckeySetRandom(
 
     UINT32 highBitRestrictionPosition = pCurve->HighBitRestrictionPosition;
 
-    SYMCRYPT_ON_DEMAND_SELFTEST(SymCryptEcDsaSelftest, SYMCRYPT_SELFTEST_ECDSA);
+    // Ensure only allowed flags are specified
+    UINT32 allowedFlags = SYMCRYPT_FLAG_KEY_RANGE_AND_PUBLIC_KEY_ORDER_VALIDATION |
+        SYMCRYPT_FLAG_ECKEY_SELFTEST_ECDSA |
+        SYMCRYPT_FLAG_ECKEY_SELFTEST_ECDH;
+    if ( ( flags & ~allowedFlags ) != 0)
+    {
+        scError = SYMCRYPT_INVALID_ARGUMENT;
+        goto cleanup;
+    }
 
-    // Ensure only the correct flags are specified
-    // Check if a flag with bits outside of the expected flags is specified
-    // Check if a flag is specified using bits expected, but not one of the expected flags
-    if ( ( ( flags & ~( SYMCRYPT_FLAG_KEY_RANGE_AND_PUBLIC_KEY_ORDER_VALIDATION ) ) != 0 ) ||
-        ( flags != 0 &&
-        !((flags & SYMCRYPT_FLAG_KEY_VALIDATION_MASK) == SYMCRYPT_FLAG_KEY_RANGE_AND_PUBLIC_KEY_ORDER_VALIDATION) ) )
+    // If any bits of SYMCRYPT_FLAG_KEY_VALIDATION_MASK are set, all bits of
+    // SYMCRYPT_FLAG_KEY_RANGE_AND_PUBLIC_KEY_ORDER_VALIDATION must be set
+    if ( ( flags & SYMCRYPT_FLAG_KEY_VALIDATION_MASK ) != 0 &&
+        ( flags & SYMCRYPT_FLAG_KEY_VALIDATION_MASK ) !=  SYMCRYPT_FLAG_KEY_RANGE_AND_PUBLIC_KEY_ORDER_VALIDATION )
     {
         scError = SYMCRYPT_INVALID_ARGUMENT;
         goto cleanup;
@@ -851,6 +869,19 @@ SymCryptEckeySetRandom(
         {
             goto cleanup;
         }
+    }
+
+    if( ( flags & SYMCRYPT_FLAG_ECKEY_SELFTEST_ECDSA ) != 0 )
+    {
+        SYMCRYPT_RUN_KEYGEN_PCT( SymCryptEcDsaSignVerifyTest, pEckey, SYMCRYPT_SELFTEST_ECDSA );
+    }
+    
+    if( ( flags & SYMCRYPT_FLAG_ECKEY_SELFTEST_ECDH ) != 0 )
+    {
+        SYMCRYPT_RUN_KEYGEN_PCT(
+            SymCryptEcDhSecretAgreementPairwiseConsistencyTest,
+            pEckey,
+            SYMCRYPT_SELFTEST_ECDH_SECRET_AGREEMENT );
     }
 
     pEckey->hasPrivateKey = TRUE;

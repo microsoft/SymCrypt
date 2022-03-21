@@ -1,3 +1,7 @@
+# Version 101.2
+
+- Added key pairwise consistency tests for RSA, DSA, DH, ECDSA and ECDH key generation, per FIPS 140-3 requirements
+
 # Version 101.1
 
 - Support for Group 20 in SAE method
