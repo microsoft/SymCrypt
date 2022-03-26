@@ -3016,7 +3016,7 @@ if( ( g_SymCryptFipsSelftestsPerformed & SelftestFlag ) == 0 ) \
 { \
     SelftestFunction( ); \
 \
-    ATOMIC_OR32( &g_SymCryptFipsSelftestsPerformed, SelftestFlag );\
+    SYMCRYPT_ATOMIC_OR32_PRE_RELAXED( &g_SymCryptFipsSelftestsPerformed, SelftestFlag );\
 }
 
 // Macro for executing a key-generation PCT and setting the corresponding flag
@@ -3028,7 +3028,7 @@ if( ( g_SymCryptFipsSelftestsPerformed & SelftestFlag ) == 0 ) \
 { \
     SelftestFunction( Key ); \
 \
-    ATOMIC_OR32( &g_SymCryptFipsSelftestsPerformed, SelftestFlag );\
+    SYMCRYPT_ATOMIC_OR32_PRE_RELAXED( &g_SymCryptFipsSelftestsPerformed, SelftestFlag );\
 }
 
 typedef struct _SYMCRYPT_DLGROUP_DH_SAFEPRIME_PARAMS {
@@ -3455,12 +3455,170 @@ SymCryptPositiveWidthNafRecoding(
 #endif
 
 // Atomics.
+//
+// We define all our SymCrypt atomics below. Different compilers/environments have different
+// intrinsics to handle atomics in different environments.
+//
+// The SymCrypt atomics take the form SYMCRYPT_ATOMIC_<Operation><Bitsize>_<Return>_<Ordering>
+//
+// <Operation> is the atomic operation (i.e. LOAD, OR, XOR, AND, ADD, INC, etc.)
+// <Bitsize> indicates the bitsize of the values that the atomic operation operates on. Pointers to
+// values which atomics operate on must be aligned to the size of the value.
+// <Return> takes the value PRE or POST, indicating whether the return value of the atomic is the
+// value of the destination before (PRE) or after (POST) the operation was performed. Not used when
+// operation is LOAD!
+// <Ordering> specifies the memory ordering of the atomic operation in relation to other loads/stores
+// and can take one of the following values:
+//   RELAXED corresponds to relaxed memory ordering in C++11
+//   SEQ_CST corresponds to sequentially consistent memory ordering in C++11
+//
+
 #if SYMCRYPT_MS_VC
 #include <intrin.h>
-#define ATOMIC_OR32(_dest, _val)     _InterlockedOr( (volatile LONG *)(_dest), (LONG)(_val) )
+
+#if SYMCRYPT_CPU_ARM64
+// 64b loads are naturally atomic on Arm64
+#define SYMCRYPT_ATOMIC_LOAD64_RELAXED(_dest)           SYMCRYPT_FORCE_READ64(_dest)
+#define SYMCRYPT_ATOMIC_OR32_PRE_RELAXED(_dest, _val)   _InterlockedOr_nf( (volatile LONG *)(_dest), (LONG)(_val) )
+#define SYMCRYPT_ATOMIC_ADD64_POST_RELAXED(_dest, _val) _InterlockedAdd64_nf( (volatile LONG64 *)(_dest), (LONG64)(_val) )
+
+#elif SYMCRYPT_CPU_ARM
+#define SYMCRYPT_ATOMIC_LOAD64_RELAXED(_dest)           _InterlockedOr64_nf( (volatile LONG64 *)(_dest), 0 )
+#define SYMCRYPT_ATOMIC_OR32_PRE_RELAXED(_dest, _val)   _InterlockedOr_nf( (volatile LONG *)(_dest), (LONG)(_val) )
+#define SYMCRYPT_ATOMIC_ADD64_POST_RELAXED(_dest, _val) _InterlockedAdd64_nf( (volatile LONG64 *)(_dest), (LONG64)(_val) )
+
+#elif SYMCRYPT_CPU_AMD64
+// For MSVC on AMD64, there are no _nf atomic intrinsics
+// 64b loads are naturally atomic on AMD64
+#define SYMCRYPT_ATOMIC_LOAD64_RELAXED(_dest)           SYMCRYPT_FORCE_READ64(_dest)
+#define SYMCRYPT_ATOMIC_OR32_PRE_RELAXED(_dest, _val)   _InterlockedOr( (volatile LONG *)(_dest), (LONG)(_val) )
+#define SYMCRYPT_ATOMIC_ADD64_POST_RELAXED(_dest, _val) (_InterlockedExchangeAdd64( (volatile LONG64 *)(_dest), (LONG64)(_val) ) + (LONG64)(_val))
+
+#else
+// For MSVC on x86, there is no 64b atomic load intrinsic - use expected to fail CAS, attempting to set from 0 to 0
+#define SYMCRYPT_ATOMIC_LOAD64_RELAXED(_dest)           _InterlockedCompareExchange64( (volatile LONG64 *)(_dest), 0, 0 )
+// For MSVC on x86, there are no _nf atomic intrinsics
+#define SYMCRYPT_ATOMIC_OR32_PRE_RELAXED(_dest, _val)   _InterlockedOr( (volatile LONG *)(_dest), (LONG)(_val) )
+// For MSVC on x86, there is no 64b atomic add intrinsic
+// We could use InterlockedAdd64 function from windows.h if we are using MSVC for Windows, but
+// to remove dependency we just define our own inline function using _InterlockedCompareExchange64
+FORCEINLINE
+LONG64
+SymCryptInlineInterlockedAdd64( volatile LONG64* destination, LONG64 value )
+{
+    LONG64 preValue;
+    do {
+        preValue = *destination;
+    } while (_InterlockedCompareExchange64(destination, preValue + value, preValue) != preValue);
+
+    return preValue + value;
+}
+#define SYMCRYPT_ATOMIC_ADD64_POST_RELAXED(_dest, _val) SymCryptInlineInterlockedAdd64( (volatile LONG64 *)(_dest), (LONG64)(_val) )
+#endif
+
+#define SYMCRYPT_ATOMIC_ADD32_POST_SEQ_CST(_dest, _val) _InterlockedAdd32( (volatile LONG *)(_dest), (LONG)(_val) )
+
 #elif SYMCRYPT_APPLE_CC
 #include <libkern/OSAtomic.h>   // atomic operations
-#define ATOMIC_OR32(_dest, _val)     OSAtomicOr32Barrier( (uint32_t)(_val), (volatile uint32_t *)(_dest) )
+#define SYMCRYPT_ATOMIC_LOAD64_RELAXED(_dest)           OSAtomicOr64Orig( 0, (volatile uint64_t *)(_dest) )
+#define SYMCRYPT_ATOMIC_OR32_PRE_RELAXED(_dest, _val)   OSAtomicOr32Orig( (uint32_t)(_val), (volatile uint32_t *)(_dest) )
+#define SYMCRYPT_ATOMIC_ADD64_POST_RELAXED(_dest, _val) OSAtomicAdd64( (uint64_t)(_val), (volatile uint64_t *)(_dest) )
+
+#define SYMCRYPT_ATOMIC_ADD32_POST_SEQ_CST(_dest, _val) OSAtomicAdd32Barrier( (uint64_t)(_val), (volatile uint64_t *)(_dest) )
+
 #elif SYMCRYPT_GNUC
-#define ATOMIC_OR32(_dest, _val)     __sync_fetch_and_or( (volatile uint32_t *)(_dest), (uint32_t)(_val) )
+#define SYMCRYPT_ATOMIC_LOAD64_RELAXED(_dest)           __atomic_load_n( (volatile uint64_t *)(_dest), __ATOMIC_RELAXED )
+#define SYMCRYPT_ATOMIC_OR32_PRE_RELAXED(_dest, _val)   __atomic_fetch_or( (volatile uint32_t *)(_dest), (uint32_t)(_val), __ATOMIC_RELAXED )
+#define SYMCRYPT_ATOMIC_ADD64_POST_RELAXED(_dest, _val) __atomic_add_fetch( (volatile uint64_t *)(_dest), (uint64_t)(_val), __ATOMIC_RELAXED )
+
+#define SYMCRYPT_ATOMIC_ADD32_POST_SEQ_CST(_dest, _val) __atomic_add_fetch( (volatile uint32_t *)(_dest), (uint32_t)(_val), __ATOMIC_ACQ_REL )
+
+#endif
+
+// Inline CAS-128 functions
+
+// BOOLEAN
+// SymCryptAtomicCas128Relaxed(
+//     _Inout_updates_(2)  PUINT64     destination,
+//     _Inout_updates_(2)  PUINT64     expectedValue,
+//     _In_reads_(2)       PCUINT64    desiredValue);
+// Performs Compare-and-Swap on a 128b memory location.
+// Atomically reads destination, compares with expectedValue, and:
+//   if they are equal, writes desiredValue to destination, and return TRUE
+//   if they are not equal, writes the value read from destination to expectedValue, and returns FALSE
+//
+// Remarks:
+// On success, the value of expectedValue is not guaranteed.
+// Only destination is guaranteed to be read and written atomically, expectedValue should be a buffer
+// which is only owned by the calling thread.
+// destination must be aligned to 16 bytes
+//
+
+#if SYMCRYPT_CPU_AMD64 | SYMCRYPT_CPU_ARM64
+
+#if SYMCRYPT_MS_VC
+
+#if SYMCRYPT_CPU_ARM64
+#define SYMCRYPT_MSVC_CAS128_NF _InterlockedCompareExchange128_nf
+#elif SYMCRYPT_CPU_AMD64
+#define SYMCRYPT_MSVC_CAS128_NF _InterlockedCompareExchange128
+#endif
+
+FORCEINLINE
+BOOLEAN
+SymCryptAtomicCas128Relaxed(
+    _Inout_updates_(2)  PUINT64     destination,
+    _Inout_updates_(2)  PUINT64     expectedValue,
+    _In_reads_(2)       PCUINT64    desiredValue)
+{
+    return SYMCRYPT_MSVC_CAS128_NF(
+        (volatile LONG64 *)destination,
+        (LONG64)desiredValue[1],
+        (LONG64)desiredValue[0],
+        (LONG64 *) expectedValue );
+}
+
+#elif SYMCRYPT_GNUC
+
+FORCEINLINE
+BOOLEAN
+SymCryptAtomicCas128Relaxed(
+    _Inout_updates_(2)  PUINT64     destination,
+    _Inout_updates_(2)  PUINT64     expectedValue,
+    _In_reads_(2)       PCUINT64    desiredValue)
+{
+#if SYMCRYPT_CPU_AMD64
+    // To avoid dynamically linking libatomic in OpenEnclave, use inline assembly for cmpxchg16b
+    // on AMD64. We always need to perform CPU feature detection before we hit this function.
+    BOOLEAN result;
+    __asm__ __volatile__
+    (
+        "lock cmpxchg16b %1\n\t"
+        "sete %0"
+        : "=r" (result)
+        , "+m" (*destination)
+        , "+d" (expectedValue[1])
+        , "+a" (expectedValue[0])
+        : "c"  (desiredValue[1])
+        , "b"  (desiredValue[0])
+        : "cc"
+    );
+    return result;
+#elif SYMCRYPT_CPU_ARM64
+    // clang inlines this but GCC dynamically links to libatomic
+    // For now, just let the compiler decide, and for ARM64 modules, always allow linking to libatomic
+    // We may want to break out into inline asm for LDXP/STXP implementation (v8.0) vs. CASP
+    // implementation (v8.1) in future
+    return __atomic_compare_exchange(
+        (__int128 *)destination,    // ptr
+        (__int128 *)expectedValue,  // expected
+        (__int128 *)desiredValue,   // desired
+        FALSE,                      // weak (set to FALSE => strong)
+        __ATOMIC_RELAXED,           // success_memorder
+        __ATOMIC_RELAXED);          // failure_memorder
+#endif
+}
+
+#endif
+
 #endif

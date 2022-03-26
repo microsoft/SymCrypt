@@ -89,6 +89,7 @@ SOURCES= \
     desx.c \
     rc2.c \
     rc4.c \
+    session.c \
     sha1.c \
     sha256.c \
     sha512.c \

@@ -147,6 +147,34 @@ SymCryptCallbackRandom(
     return NT_SUCCESS( status ) ? SYMCRYPT_NO_ERROR : SYMCRYPT_EXTERNAL_FAILURE;
 }
 
+PVOID
+SYMCRYPT_CALL
+SymCryptCallbackAllocateMutexFastInproc()
+{
+    return ALLOCATE_FAST_INPROC_MUTEX();
+}
+
+VOID
+SYMCRYPT_CALL
+SymCryptCallbackFreeMutexFastInproc( PVOID pMutex )
+{
+    FREE_FAST_INPROC_MUTEX(pMutex);
+}
+
+VOID
+SYMCRYPT_CALL
+SymCryptCallbackAcquireMutexFastInproc( PVOID pMutex )
+{
+    ACQUIRE_FAST_INPROC_MUTEX(pMutex);
+}
+
+VOID
+SYMCRYPT_CALL
+SymCryptCallbackReleaseMutexFastInproc( PVOID pMutex )
+{
+    RELEASE_FAST_INPROC_MUTEX(pMutex);
+}
+
 #if INCLUDE_IMPL_MSBIGNUM
 
 

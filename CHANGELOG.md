@@ -1,6 +1,9 @@
 # Version 101.2
 
 - Added key pairwise consistency tests for RSA, DSA, DH, ECDSA and ECDH key generation, per FIPS 140-3 requirements
+- Added Session APIs for AES-GCM
+  - For Encryption, this enables multithreaded IV generation within the SymCrypt FIPS boundary
+  - For Decryption, this enables multithreaded replay protection detecting reuse of IVs in received messages
 
 # Version 101.1
 

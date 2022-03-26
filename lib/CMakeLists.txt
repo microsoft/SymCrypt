@@ -81,6 +81,7 @@ set(SOURCES_COMMON
     ScsTable.c
     scsTools.c
     selftest.c
+    session.c
     sha1.c
     sha256.c
     sha256Par.c

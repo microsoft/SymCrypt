@@ -18,7 +18,7 @@ VOID __attribute__((constructor)) SymCryptModuleMain()
     {
         // We must test HMAC-SHA256 first since it's used by our integrity verification
         SymCryptHmacSha256Selftest();
-        
+
         SymCryptModuleVerifyIntegrity();
 
         SymCryptRngAesInstantiateSelftest();
@@ -95,6 +95,49 @@ SymCryptCallbackRandom( PBYTE pbBuffer, SIZE_T cbBuffer )
     SymCryptRandom( pbBuffer, cbBuffer );
     return SYMCRYPT_NO_ERROR;
 }
+
+
+PVOID
+SYMCRYPT_CALL
+SymCryptCallbackAllocateMutexFastInproc()
+{
+    PVOID ptr = malloc(sizeof(pthread_mutex_t));
+
+    if( ptr )
+    {
+        if( pthread_mutex_init( (pthread_mutex_t *)ptr, NULL ) != 0 )
+        {
+            free(ptr);
+            ptr = NULL;
+        }
+    }
+
+    return ptr;
+}
+
+VOID
+SYMCRYPT_CALL
+SymCryptCallbackFreeMutexFastInproc( PVOID pMutex )
+{
+    pthread_mutex_destroy( (pthread_mutex_t *)pMutex );
+
+    free(pMutex);
+}
+
+VOID
+SYMCRYPT_CALL
+SymCryptCallbackAcquireMutexFastInproc( PVOID pMutex )
+{
+    pthread_mutex_lock( (pthread_mutex_t *)pMutex );
+}
+
+VOID
+SYMCRYPT_CALL
+SymCryptCallbackReleaseMutexFastInproc( PVOID pMutex )
+{
+    pthread_mutex_unlock( (pthread_mutex_t *)pMutex );
+}
+
 
 VOID SYMCRYPT_CALL SymCryptModuleInit( UINT32 api, UINT32 minor )
 {

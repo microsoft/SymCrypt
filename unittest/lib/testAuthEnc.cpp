@@ -369,7 +369,7 @@ testAuthEncRandom( AuthEncMultiImp * pImp, int rrep, PCBYTE pbResult, SIZE_T cbR
                         &tagBuf[0], cbTag, 0 );
 
         if ( fSupportsPartialEncryption )
-        { 
+        {
             // Encrypt again piecewise
 
             pImp->setTotalCbData( cbData );
@@ -421,7 +421,7 @@ testAuthEncRandom( AuthEncMultiImp * pImp, int rrep, PCBYTE pbResult, SIZE_T cbR
         CHECK3( memcmp( tmp2, &buf[srcIdx], cbData ) == 0, "Decryption mismatch, line %lld", line );
 
         if ( fSupportsPartialEncryption )
-        { 
+        {
             // Now repeat the decryption check with partial calls
             pImp->setTotalCbData( cbData );
             {
@@ -580,9 +580,215 @@ testAuthEncKats()
 }
 
 VOID
+testSessionRandom()
+{
+    Rng rng;
+    SYMCRYPT_ERROR scError = SYMCRYPT_NO_ERROR;
+
+    SYMCRYPT_SESSION senderSession;
+    SYMCRYPT_SESSION receiverSession;
+    SIZE_T seed = g_rng.sizet( (SIZE_T)-1 );
+
+    //
+    // Seed our from g_rng
+    //
+    rng.reset( (PCBYTE) &seed, sizeof(seed) );
+
+    UINT32 senderId = rng.uint32();
+    BYTE key[32] = { 0 };
+    BYTE nonce[12] = { 0 };
+    BYTE authData[16] = { 0 };
+    BYTE sessionPlainText[128] = { 0 };
+    BYTE testPlainText[128] = { 0 };
+    BYTE sessionCipherText[128] = { 0 };
+    BYTE testCipherText[128] = { 0 };
+    BYTE backupCipherText[128] = { 0 };
+    BYTE sessionTag[16] = { 0 };
+    BYTE testTag[16] = { 0 };
+    BYTE backupTag[16] = { 0 };
+    UINT64 messageNumber;
+    UINT64 testMessageNumber;
+    UINT64 backupMessageNumber;
+    SYMCRYPT_GCM_EXPANDED_KEY gcmExpandedKey;
+
+    for (int i = 0; i < sizeof(key); i++)
+    {
+        key[i] = rng.byte();
+    }
+    for (int i = 0; i < sizeof(authData); i++)
+    {
+        authData[i] = rng.byte();
+    }
+    for (int i = 0; i < sizeof(sessionPlainText); i++)
+    {
+        sessionPlainText[i] = rng.byte();
+    }
+
+    scError = SymCryptGcmExpandKey(&gcmExpandedKey, SymCryptAesBlockCipher, key, sizeof(key));
+    CHECK(scError == SYMCRYPT_NO_ERROR, "SymCryptGcmExpandKey failed");
+
+    scError = SymCryptSessionSenderInit(&senderSession, senderId, 0);
+    CHECK(scError == SYMCRYPT_NO_ERROR, "SymCryptSessionSenderInit failed");
+
+    scError = SymCryptSessionReceiverInit(&receiverSession, senderId, 0);
+    CHECK(scError == SYMCRYPT_NO_ERROR, "SymCryptSessionReceiverInit failed");
+
+    SYMCRYPT_STORE_MSBFIRST32(&nonce[0], senderId);
+    SYMCRYPT_STORE_MSBFIRST64(&nonce[4], 1ull);
+
+    scError = SymCryptSessionGcmEncrypt(
+        &senderSession,
+        &gcmExpandedKey,
+        authData, sizeof(authData),
+        sessionPlainText, sessionCipherText, sizeof(sessionPlainText),
+        sessionTag, sizeof(sessionTag),
+        &messageNumber);
+    CHECK3(scError == SYMCRYPT_NO_ERROR, "SymCryptSessionGcmEncrypt failed with 0x%x", scError);
+
+    SymCryptGcmEncrypt(
+        &gcmExpandedKey,
+        nonce, sizeof(nonce),
+        authData, sizeof(authData),
+        sessionPlainText, testCipherText, sizeof(sessionPlainText),
+        testTag, sizeof(testTag));
+    CHECK(memcmp(sessionCipherText, testCipherText, sizeof(sessionCipherText)) == 0, "Session/Non-Session encryption data mismatch");
+    CHECK(memcmp(sessionTag, testTag, sizeof(sessionTag)) == 0, "Session/Non-Session encryption tag mismatch");
+
+    // backup the first encryption
+    memcpy(backupCipherText, sessionCipherText, sizeof(sessionCipherText));
+    memcpy(backupTag, sessionTag, sizeof(sessionTag));
+    backupMessageNumber = messageNumber;
+
+    // Encrypt a stream of messages, and semi-randomly attempt to decrypt them.
+    // Would be good to make a multi-threaded version, but we don't have multi-threaded Linux unit tests yet.
+    for (int i = 0; i < 1024; i++)
+    {
+        scError = SymCryptSessionGcmEncrypt(
+            &senderSession,
+            &gcmExpandedKey,
+            authData, sizeof(authData),
+            sessionPlainText, sessionCipherText, sizeof(sessionPlainText),
+            sessionTag, sizeof(sessionTag),
+            &messageNumber);
+        CHECK3(scError == SYMCRYPT_NO_ERROR, "SymCryptSessionGcmEncrypt failed with 0x%x", scError);
+        CHECK(messageNumber == i+2, "SymCryptSessionGcmEncrypt returned unexpected messageNumber");
+
+        SYMCRYPT_STORE_MSBFIRST64(&nonce[4], messageNumber);
+
+        SymCryptGcmEncrypt(
+            &gcmExpandedKey,
+            nonce, sizeof(nonce),
+            authData, sizeof(authData),
+            sessionPlainText, testCipherText, sizeof(sessionPlainText),
+            testTag, sizeof(testTag));
+        CHECK(memcmp(sessionCipherText, testCipherText, sizeof(sessionCipherText)) == 0, "Session/Non-Session encryption data mismatch");
+        CHECK(memcmp(sessionTag, testTag, sizeof(sessionTag)) == 0, "Session/Non-Session encryption tag mismatch");
+
+        switch (rng.byte() & 3)
+        {
+        // directly decrypt the most recently encrypted message
+        case 0:
+            scError = SymCryptSessionGcmDecrypt(
+                &receiverSession,
+                messageNumber,
+                &gcmExpandedKey,
+                authData, sizeof(authData),
+                sessionCipherText, testPlainText, sizeof(sessionCipherText),
+                sessionTag, sizeof(sessionTag));
+            CHECK3(scError == SYMCRYPT_NO_ERROR, "SymCryptSessionGcmDecrypt failed with 0x%x", scError);
+
+            CHECK(memcmp(sessionPlainText, testPlainText, sizeof(sessionPlainText)) == 0, "Plaintext mismatch in SymCryptSessionGcm");
+
+            testMessageNumber = receiverSession.replayState.messageNumber;
+
+            // try decrypting the same message with an incorrect messageNumber from the future
+            scError = SymCryptSessionGcmDecrypt(
+                &receiverSession,
+                messageNumber + rng.sizet(1,512),
+                &gcmExpandedKey,
+                authData, sizeof(authData),
+                sessionCipherText, testPlainText, sizeof(sessionCipherText),
+                sessionTag, sizeof(sessionTag));
+            CHECK3(scError == SYMCRYPT_AUTHENTICATION_FAILURE,
+                "SymCryptSessionGcmDecrypt did not return SYMCRYPT_AUTHENTICATION_FAILURE but 0x%x", scError);
+            CHECK4(receiverSession.replayState.messageNumber == testMessageNumber,
+                "Unexpected value for receiverSession messageNumber after failed decryption. Expected %d but is %d",
+                testMessageNumber, receiverSession.replayState.messageNumber)
+            break;
+
+        // decrypt the backup message and ensure it can't be decrypted twice
+        case 1:
+            scError = SymCryptSessionGcmDecrypt(
+                &receiverSession,
+                backupMessageNumber,
+                &gcmExpandedKey,
+                authData, sizeof(authData),
+                backupCipherText, testPlainText, sizeof(backupCipherText),
+                backupTag, sizeof(backupTag));
+            if (backupMessageNumber > receiverSession.replayState.messageNumber - 64)
+            {
+                CHECK3(scError == SYMCRYPT_NO_ERROR, "SymCryptSessionGcmDecrypt failed with 0x%x", scError);
+                CHECK(memcmp(sessionPlainText, testPlainText, sizeof(sessionPlainText)) == 0, "Plaintext mismatch in SymCryptSessionGcm");
+            }
+            else
+            {
+                CHECK3(scError == SYMCRYPT_SESSION_REPLAY_FAILURE,
+                    "SymCryptSessionGcmDecrypt did not return SYMCRYPT_SESSION_REPLAY_FAILURE but 0x%x", scError);
+            }
+
+            scError = SymCryptSessionGcmDecrypt(
+                &receiverSession,
+                backupMessageNumber,
+                &gcmExpandedKey,
+                authData, sizeof(authData),
+                backupCipherText, testPlainText, sizeof(backupCipherText),
+                backupTag, sizeof(backupTag));
+            CHECK3(scError == SYMCRYPT_SESSION_REPLAY_FAILURE,
+                "SymCryptSessionGcmDecrypt did not return SYMCRYPT_SESSION_REPLAY_FAILURE but 0x%x", scError);
+            // Intentional fallthrough - once we've used the backup we need to replace with a new valid message
+
+        // backup the most recently encrypted message to decrypt later
+        case 2:
+            memcpy(backupCipherText, sessionCipherText, sizeof(sessionCipherText));
+            memcpy(backupTag, sessionTag, sizeof(sessionTag));
+            backupMessageNumber = messageNumber;
+            break;
+
+        // check a too-old message cannot be decrypted
+        case 3:
+            if (receiverSession.replayState.messageNumber > 64)
+            {
+                // Note that trying to decrypt with a modified messageNumber should not succeed in
+                // decryption, but we are testing here that we fail early because the messageNumber
+                // is too low to even bother trying decryption
+                scError = SymCryptSessionGcmDecrypt(
+                    &receiverSession,
+                    receiverSession.replayState.messageNumber - 64,
+                    &gcmExpandedKey,
+                    authData, sizeof(authData),
+                    backupCipherText, testPlainText, sizeof(backupCipherText),
+                    backupTag, sizeof(backupTag));
+                CHECK3(scError == SYMCRYPT_SESSION_REPLAY_FAILURE,
+                    "SymCryptSessionGcmDecrypt did not return SYMCRYPT_SESSION_REPLAY_FAILURE but 0x%x", scError);
+            }
+            break;
+
+        // do nothing with encryption result
+        default:
+            break;
+        }
+    }
+
+    // Cleanup
+    SymCryptSessionDestroy(&senderSession);
+    SymCryptSessionDestroy(&receiverSession);
+}
+
+VOID
 testAuthEncAlgorithms()
 {
     testAuthEncKats();
+    testSessionRandom();
 }
 
 

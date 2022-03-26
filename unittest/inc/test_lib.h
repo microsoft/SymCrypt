@@ -309,6 +309,25 @@ extern "C" {
 
     #define GENRANDOM(pbBuf, cbBuf)     BCryptGenRandom( NULL, (PBYTE) (pbBuf), (cbBuf), BCRYPT_USE_SYSTEM_PREFERRED_RNG )
 
+    FORCEINLINE
+    PVOID ALLOCATE_FAST_INPROC_MUTEX()
+    {
+        LPCRITICAL_SECTION lpCriticalSection = new CRITICAL_SECTION;
+        InitializeCriticalSection(lpCriticalSection);
+        return (PVOID)lpCriticalSection;
+    }
+
+    FORCEINLINE
+    VOID FREE_FAST_INPROC_MUTEX(PVOID pMutex)
+    {
+        LPCRITICAL_SECTION lpCriticalSection = (LPCRITICAL_SECTION)pMutex;
+        DeleteCriticalSection(lpCriticalSection);
+        delete lpCriticalSection;
+    }
+
+    #define ACQUIRE_FAST_INPROC_MUTEX(pMutex)  EnterCriticalSection((LPCRITICAL_SECTION)pMutex)
+    #define RELEASE_FAST_INPROC_MUTEX(pMutex)  LeaveCriticalSection((LPCRITICAL_SECTION)pMutex)
+
     #define SLEEP                       Sleep
 
     #if defined( _X86_ ) | defined( _ARM_ )
@@ -330,6 +349,8 @@ extern "C" {
     NTSTATUS IosGenRandom( PBYTE pbBuf, UINT32 cbBuf );
 
     #define GENRANDOM(pbBuf, cbBuf)     IosGenRandom( (PBYTE) pbBuf, cbBuf )
+
+    #error "Oh no, need ALLOCATE_FAST_INPROC_MUTEX, FREE_FAST_INPROC_MUTEX, ACQUIRE_FAST_INPROC_MUTEX, RELEASE_FAST_INPROC_MUTEX implementations"
 
     #define SLEEP                       usleep
 
@@ -359,9 +380,39 @@ extern "C" {
     ssize_t GENRANDOM(void * pbBuf, size_t cbBuf) {
         return (getrandom( pbBuf, cbBuf, 0 ) == cbBuf) ? 0 : -1;
     }
+
+    #include <pthread.h>
+    FORCEINLINE
+    PVOID ALLOCATE_FAST_INPROC_MUTEX()
+    {
+        PVOID ptr = malloc(sizeof(pthread_mutex_t));
+
+        if( ptr )
+        {
+            if( pthread_mutex_init( (pthread_mutex_t *)ptr, NULL ) != 0 )
+            {
+                free(ptr);
+                ptr = NULL;
+            }
+        }
+
+        return ptr;
+    }
+
+    FORCEINLINE
+    VOID FREE_FAST_INPROC_MUTEX(PVOID pMutex)
+    {
+        pthread_mutex_destroy( (pthread_mutex_t *)pMutex );
+
+        free(pMutex);
+    }
+
+    #define ACQUIRE_FAST_INPROC_MUTEX(pMutex)   pthread_mutex_lock((pthread_mutex_t *)pMutex)
+    #define RELEASE_FAST_INPROC_MUTEX(pMutex)   pthread_mutex_unlock((pthread_mutex_t *)pMutex)
 #else
     #error "Oh no, need a GENRANDOM() implementation"
 #endif
+
     #define SLEEP                       usleep
 
     #if defined(__LP64__)

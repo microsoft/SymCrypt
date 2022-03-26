@@ -537,4 +537,9 @@ VERSION_101.2
       SymCryptEcDhSecretAgreementPairwiseConsistencyTest;
       SymCryptEcDsaSignVerifyTest;
       SymCryptRsaSignVerifyTest;
+      SymCryptSessionDestroy;
+      SymCryptSessionGcmDecrypt;
+      SymCryptSessionGcmEncrypt;
+      SymCryptSessionReceiverInit;
+      SymCryptSessionSenderInit;
 } VERSION_101.0;

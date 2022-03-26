@@ -1,9 +1,10 @@
 //
-// SymCrypt DLL/shared object library pre-compiled header file
+// SymCrypt linux shared object library pre-compiled header file
 //
 // Copyright (c) Microsoft Corporation. Licensed under the MIT license.
 //
 
+#include <pthread.h>
 #include <stddef.h>
 #include <stdint.h>
 #include <stdlib.h>

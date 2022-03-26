@@ -195,7 +195,7 @@ extern "C" {
 typedef _Return_type_success_( return == SYMCRYPT_NO_ERROR ) enum {
     SYMCRYPT_NO_ERROR = 0,
     SYMCRYPT_UNUSED = 0x8000, // Start our error codes here so they're easier to distinguish
-    SYMCRYPT_WRONG_KEY_SIZE, 
+    SYMCRYPT_WRONG_KEY_SIZE,
     SYMCRYPT_WRONG_BLOCK_SIZE,
     SYMCRYPT_WRONG_DATA_SIZE,
     SYMCRYPT_WRONG_NONCE_SIZE,
@@ -213,6 +213,7 @@ typedef _Return_type_success_( return == SYMCRYPT_NO_ERROR ) enum {
     SYMCRYPT_SIGNATURE_VERIFICATION_FAILURE,
     SYMCRYPT_INCOMPATIBLE_FORMAT,
     SYMCRYPT_VALUE_TOO_LARGE,
+    SYMCRYPT_SESSION_REPLAY_FAILURE,
 } SYMCRYPT_ERROR;
 
 // SYMCRYPT_ECURVE_TYPE needs to be completely defined before including
@@ -3432,6 +3433,153 @@ SymCryptGcmSelftest();
 
 
 //==========================================================================
+//   SESSION BASED APIs
+//==========================================================================
+
+
+SYMCRYPT_ERROR
+SYMCRYPT_CALL
+SymCryptSessionSenderInit(
+    _Inout_ PSYMCRYPT_SESSION   pSession,
+            UINT32              senderId,
+            UINT32              flags );
+//
+//  Initialize an encryption session object. The default nonce size of 12B is used - 8B are provided
+//  by message number, 4B by senderId.
+//      - pSession: Pointer to an uninitialized session object.
+//      - senderId: The id of the sender (must be unique for each user of a given key).
+//        Callers should either choose a senderId which is specific to the sender, or
+//        at least to the software and role in a system in which a key is being used.
+//        Two encryption sessions using the same key and senderId leads to catastrophic loss of security.
+//      - No flags are specified for this function
+//
+//  Remarks:
+//  On some platforms use of a session object requires use of a mutex. On those platforms this
+//  function will call SymCryptCallbackAllocateMutexFastInproc and may indicate failure by returning
+//  SYMCRYPT_MEMORY_ALLOCATION_FAILURE if a mutex object cannot be created.
+//  Callers must call SymCryptSessionDestroy to ensure any associated allocated mutex object is freed
+//  either before calling another Init function on the SYMCRYPT_SESSION object, and instead of directly
+//  calling SymCryptWipeKnownSize on the object.
+//
+
+SYMCRYPT_ERROR
+SYMCRYPT_CALL
+SymCryptSessionReceiverInit(
+    _Inout_ PSYMCRYPT_SESSION   pSession,
+            UINT32              senderId,
+            UINT32              flags );
+//
+//  Initialize an decryption session object. The default nonce size of 12B is used - 8B are provided
+//  by message number, 4B by senderId.
+//      - pSession: Pointer to an uninitialized session object.
+//      - senderId: The id of the sender (must be unique for each user of a given key).
+//        Callers should either choose a senderId which is specific to the sender, or
+//        at least to the software and role in a system in which a key is being used.
+//        The id used in a decryption session must be the same as the id used in the corresponding
+//        encryption session (i.e. sender and receiver must agree upon a senderId for their
+//        communication session)
+//      - No flags are specified for this function
+//
+//  Remarks:
+//  On some platforms use of a session object requires use of a mutex. On those platforms this
+//  function will call SymCryptCallbackAllocateMutexFastInproc and may indicate failure by returning
+//  SYMCRYPT_MEMORY_ALLOCATION_FAILURE if a mutex object cannot be created.
+//  Callers must call SymCryptSessionDestroy to ensure any associated allocated mutex object is freed
+//  either before calling another Init function on the SYMCRYPT_SESSION object, and instead of directly
+//  calling SymCryptWipeKnownSize on the object.
+//
+
+VOID
+SYMCRYPT_CALL
+SymCryptSessionDestroy(
+    _Inout_ PSYMCRYPT_SESSION   pSession );
+//
+//  Clear session object and free any data associated with the object (i.e. allocated locks)
+//  After this call the memory used for pSession is uninitialized and can be used for other purposes.
+//  Note that it is not safe to just wipe the memory of the session object as the session
+//  object contains pointers to other allocations.
+//  The only way to safely destroy a session is to use this function.
+//
+
+SYMCRYPT_ERROR
+SYMCRYPT_CALL
+SymCryptSessionGcmEncrypt(
+    _Inout_                         PSYMCRYPT_SESSION           pSession,
+    _In_                            PCSYMCRYPT_GCM_EXPANDED_KEY pExpandedKey,
+    _In_reads_opt_( cbAuthData )    PCBYTE                      pbAuthData,
+                                    SIZE_T                      cbAuthData,
+    _In_reads_( cbData )            PCBYTE                      pbSrc,
+    _Out_writes_( cbData )          PBYTE                       pbDst,
+                                    SIZE_T                      cbData,
+    _Out_writes_( cbTag )           PBYTE                       pbTag,
+                                    SIZE_T                      cbTag,
+    _Out_opt_                       PUINT64                     pu64MessageNumber );
+//
+//  Encrypt a buffer, in a series, using the block cipher in GCM mode.
+//      - pSession points to the session object for this series of GCM encryptions. It handles
+//        ensuring Nonce uniqueness across several encryption calls using the same key. The message
+//        number in the pSession object is atomically incremented by this call.
+//        If too many messages (2^64 - 2^32) have been encrypted with the same session object,
+//        SYMCRYPT_INVALID_ARGUMENT is returned and no encryption takes place. This should never
+//        occur in real use!
+//      - pExpandedKey points to the expanded key for GCM.
+//      - pbAuthData: pointer to the associated authentication data. This data is not encrypted
+//          but it is included in the authentication. Use NULL if not used.
+//      - cbAuthData: # bytes of associated authentication data. (0 if not used)
+//      - pbSrc: plaintext input
+//      - pbDst: ciphertext output. The ciphertext buffer may be identical to the plaintext
+//          buffer, or non-overlapping. The ciphertext is also cbData bytes long.
+//      - cbData: # bytes of plaintext input. The maximum length is 2^{36} - 32 bytes.
+//      - pbTag: buffer that will receive the authentication tag.
+//      - cbTag: size of tag. cbTag must be one of {12, 13, 14, 15, 16} per SP800-38D
+//          section 5.2.1.2. The optional shorter tag sizes (4 and 8) are not supported.
+//      - pu64MessageNumber: Optional message number output for this encryption. A unique message
+//          number is extracted from the pSession object, this output is set to the value used in
+//          the encryption. The first message number generated in a session will have the value 1,
+//          and subsequent message numbers will be taken by atomically incrementing the counter.
+//
+
+SYMCRYPT_ERROR
+SYMCRYPT_CALL
+SymCryptSessionGcmDecrypt(
+    _Inout_                         PSYMCRYPT_SESSION           pSession,
+                                    UINT64                      messageNumber,
+    _In_                            PCSYMCRYPT_GCM_EXPANDED_KEY pExpandedKey,
+    _In_reads_opt_( cbAuthData )    PCBYTE                      pbAuthData,
+                                    SIZE_T                      cbAuthData,
+    _In_reads_( cbData )            PCBYTE                      pbSrc,
+    _Out_writes_( cbData )          PBYTE                       pbDst,
+                                    SIZE_T                      cbData,
+    _In_reads_( cbTag )             PCBYTE                      pbTag,
+                                    SIZE_T                      cbTag );
+//
+// Decrypt a buffer, in a series, using the block cipher in GCM mode.
+//      - pSession points to the session object for this series of GCM decryptions. It handles
+//          ensuring Nonce uniqueness across several decryption calls using the same key, particularly
+//          ensuring there are no replays.
+//      - messageNumber: The message number to be used for this decryption, forming part of the Nonce.
+//          When performing decryption in a session, it is guaranteed that no 2 decryptions using the
+//          same session and same message number can succeed. This is to provide protection against
+//          replay attacks.
+//          In order to provide this guarantee, pSession tracks a window of used message numbers
+//          preceding the largest messageNumber successfully used so far in the decryption session.
+//          A SYMCRYPT_SESSION_REPLAY_FAILURE error will be returned if either:
+//          a) messageNumber is less than the smallest message number that can be tracked for replays
+//          b) messageNumber is within the window that can be tracked for replays, and the message
+//             number is marked as already having been used in a successful decryption in this session
+//          In either case, the destination buffer is wiped.
+// See SymCryptSessionGcmEncrypt for a description of the other parameters. This function decrypts
+// rather than encrypts, and as a result the pbTag parameter is read rather than filled.
+// If the tag value is not correct the SYMCRYPT_AUTHENTICATION_FAILURE error is returned and the
+// pbDst buffer is wiped of any plaintext.
+// Note: While checking the authentication the purported plaintext is stored in pbDst. It is not safe to reveal
+// purported plaintext when the authentication has not been checked. (Doing so would reveal key stream information
+// that can be used to decrypt any message encrypted with the same nonce value.) Thus, users should be careful
+// to not reveal the pbDst buffer until this function returns (e.g. through other threads or sharing memory).
+//
+
+
+//==========================================================================
 //   STREAM CIPHERS
 //==========================================================================
 
@@ -4348,7 +4496,7 @@ SymCryptCallbackAlloc( SIZE_T nBytes );
 
 VOID
 SYMCRYPT_CALL
-SymCryptCallbackFree( VOID * pMem );
+SymCryptCallbackFree( PVOID pMem );
 //
 // Called by SymCrypt to free a buffer previously allocated by SymCryptCallbackAlloc().
 // Note that callers should never call these functions directly. Buffers that were returned
@@ -4359,10 +4507,50 @@ SYMCRYPT_ERROR
 SYMCRYPT_CALL
 SYMCRYPT_WEAK_SYMBOL
 SymCryptCallbackRandom(
-    _Out_writes_bytes_( cbBuffer )   PBYTE   pbBuffer,
+    _Out_writes_bytes_( cbBuffer )  PBYTE   pbBuffer,
                                     SIZE_T  cbBuffer );
 //
 // Fill the buffer with uniformly distributed random bytes from a cryptographically strong RNG source.
+//
+
+PVOID
+SYMCRYPT_CALL
+SymCryptCallbackAllocateMutexFastInproc();
+//
+// Allocate and initialize a mutex object; returns NULL on failure.
+//
+// Fast indicates that users of the mutex will only hold it for a short period of time, so it
+// is not expected that threads should need to sleep before acquiring the mutex. (i.e. can be
+// implemented by a spinlock in kernel mode).
+// Inproc indicates the mutex is only used for synchronization between threads in a single process.
+//
+// Users of the library in contexts where mutexes are not available can set this callback to always
+// return NULL, and attempts to use APIs requiring it will fail at runtime.
+//
+
+VOID
+SYMCRYPT_CALL
+SymCryptCallbackFreeMutexFastInproc( _Inout_ PVOID pMutex );
+//
+// Free a mutex object previously created by SymCryptCallbackAllocateMutexFastInproc
+//
+
+VOID
+SYMCRYPT_CALL
+SymCryptCallbackAcquireMutexFastInproc( _Inout_ PVOID pMutex );
+//
+// Take exclusive ownership of a mutex object allocated by SymCryptCallbackAllocateMutexFastInproc.
+//
+// This call must also ensure memory ordering such that stores before the previous call to
+// SymCryptCallbackReleaseMutexFastInproc with this mutex are observable by loads after this call.
+//
+
+VOID
+SYMCRYPT_CALL
+SymCryptCallbackReleaseMutexFastInproc( _Inout_ PVOID pMutex );
+//
+// Relinquish ownership of a mutex object allocated by SymCryptCallbackAllocateMutexFastInproc and
+// acquired by SymCryptCallbackAcquireMutexFastInproc.
 //
 
 //==============================================================================================
@@ -4592,7 +4780,7 @@ typedef enum _SYMCRYPT_ECPOINT_FORMAT {
 //
 // VOID
 // SYMCRYPT_CALL
-// SymCryptXxxFree( _Out_ PSYMCRYPT_XXX p )
+// SymCryptXxxFree( _Inout_ PSYMCRYPT_XXX p )
 //  Free an XXX object allocated with SymCryptAllocateXxx().
 //  Any storage location in the object that might have contained private information is wiped.
 //
@@ -5101,7 +5289,7 @@ SymCryptRsakeyGenerate(
 // If pu64PubExp == NULL, nPubExp == 0, and the key requires only one
 // public exponent, then the default exponent 2^16 + 1 is used.
 //
-// Allowed flags: 
+// Allowed flags:
 //
 // - SYMCRYPT_FLAG_RSAKEY_SELFTEST
 //   Perform a pairwise consistency test on the generated key.
@@ -5134,7 +5322,7 @@ SymCryptRsakeySetValue(
 //  - numFormat specifies the number format for all inputs
 //
 // Allowed flags:
-// 
+//
 // - SYMCRYPT_FLAG_RSAKEY_SELFTEST
 //   Perform an RSA algorithm test, if not already been done.
 //   This flag must be set for callers who require compliance with FIPS 140-3. Any failure

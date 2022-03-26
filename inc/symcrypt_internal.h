@@ -268,6 +268,9 @@ typedef const void *    PCVOID;
 // winnt.h
 typedef BYTE  BOOLEAN;
 
+// Useful macros for structs
+#define SYMCRYPT_FIELD_OFFSET(type, field)      (offsetof(type, field))
+#define SYMCRYPT_FIELD_SIZE(type, field)        (sizeof( ((type *)0)->field ))
 
 #if SYMCRYPT_MS_VC
 
@@ -397,6 +400,8 @@ C_ASSERT( (SYMCRYPT_ALIGN_VALUE & (SYMCRYPT_ALIGN_VALUE - 1 )) == 0 );
 #define SYMCRYPT_CPU_FEATURE_RDSEED             0x0400
 #define SYMCRYPT_CPU_FEATURE_VAES_256           0x0800
 #define SYMCRYPT_CPU_FEATURE_VAES_512           0x1000
+
+#define SYMCRYPT_CPU_FEATURE_CMPXCHG16B         0x2000          // Compare and Swap 128b value
 
 #endif
 
@@ -1444,8 +1449,86 @@ struct _SYMCRYPT_BLOCKCIPHER {
 
 
 
+//
+// Session structs
+//
 
+#define SYMCRYPT_FLAG_SESSION_ENCRYPT       (0x1)
 
+//
+// SYMCRYPT_SESSION tracks the Nonces being used in a session. It is used differently depending on
+// whether the session is an Encryption session or a Decryption session.
+//
+// In Encryption sessions, SYMCRYPT_SESSION tracks the Nonce which was used in the most recent
+// attempted encryption in the session.
+// messageNumber is atomically incremented by each encryption call, and the encryption method uses
+// the messageNumber value that is the _result_ of the increment.
+//
+// In Decryption sessions, SYMCRYPT_SESSION tracks the most recently received Nonces in a series of
+// successful decryptions. Nonces used in unsuccessful decryption calls do not update SYMCRYPT_SESSION.
+// Information is tracked such that the decryption function can detect repeated Nonce values and
+// fail decryption in this case. In order for this to work the message numbers that are provided
+// to decrypt calls must be somewhat ordered. Provided message numbers may be arbitrarily far ahead
+// of previously successfully decrypted message numbers, but may only be up to 63 behind the highest
+// message number successfully decrypted so far.
+// messageNumber normally represents the highest message number used in a successful decryption in
+// this session. (The exception is at initialization, where messageNumber is initialized to 64
+// without the corresponding 0th bit in the replayMask being set - this initial state represents
+// there have been no successful decryptions yet, and that the earliest messageNumber that can be
+// successfully received is 1)
+// replayMask represents whether a window of 64 message numbers up to messageNumber have already been
+// successfully used;
+// bit n of replayMask (from n=0 to n=63) represents message number = (messageNumber-n), 0 means not
+// yet used, and 1 means already used in a successful decryption call
+//
+
+// Nested struct used within SYMCRYPT_SESSION
+typedef SYMCRYPT_ALIGN_STRUCT _SYMCRYPT_SESSION_REPLAY_STATE {
+    UINT64  replayMask;
+    // 64 bit mask representing message numbers previously successfully decrypted up to 63
+    // before the most recent message number.
+
+    UINT64  messageNumber;
+    // the last 8 bytes of the Nonce (MSB-first)
+} SYMCRYPT_SESSION_REPLAY_STATE, * PSYMCRYPT_SESSION_REPLAY_STATE;
+typedef const SYMCRYPT_SESSION_REPLAY_STATE * PCSYMCRYPT_SESSION_REPLAY_STATE;
+
+typedef SYMCRYPT_ALIGN_STRUCT _SYMCRYPT_SESSION {
+    SYMCRYPT_SESSION_REPLAY_STATE replayState;
+    // nested replayState struct is to improve code clarity in SymCryptSessionDecryptUpdate*
+
+    UINT32  senderId;
+    // the first 4 bytes of the Nonce (MSB-first)
+    // (set by the caller and constant for the lifetime of a session)
+
+    UINT32  flags;
+    // SYMCRYPT_FLAG_SESSION_ENCRYPT indicates the struct is to be used for an encryption session,
+    // otherwise the struct is to be used for a decryption session
+
+    PVOID   pMutex;
+    // Pointer to a fast single-process mutex object used to enable atomic update of replayMask and
+    // messageNumber in the absence of support for a 128b CAS operation
+} SYMCRYPT_SESSION, * PSYMCRYPT_SESSION;
+
+#define SYMCRYPT_SESSION_MAX_MESSAGE_NUMBER (0xffffffff00000000ull)
+// We do not allow messageNumber to go above some maximum value (currently 2^64 - 2^32)
+// This gives us a large window to prevent many concurrent encryption threads from updating the
+// session such that the messageNumber overflows and the same IV is used in many encryptions
+// (i.e. we would only potentially get a spurious success using a repeated IV when there are
+// >2^32 concurrent threads!)
+
+#if SYMCRYPT_CPU_AMD64 | SYMCRYPT_CPU_ARM64
+#define SYMCRYPT_USE_CAS128 (1)
+
+C_ASSERT(SYMCRYPT_ALIGN_VALUE >= 16);
+// For CompareAndSwap128 method, SYMCRYPT_SESSION must be aligned to 16B
+
+C_ASSERT(SYMCRYPT_FIELD_OFFSET(SYMCRYPT_SESSION, replayState.replayMask) == 0);
+C_ASSERT(SYMCRYPT_FIELD_OFFSET(SYMCRYPT_SESSION, replayState.messageNumber) == 8);
+// For CompareAndSwap128 method, replayMask and messageNumber must be tightly packed
+#else
+#define SYMCRYPT_USE_CAS128 (0)
+#endif
 
 //
 // RC4
@@ -1671,9 +1754,6 @@ typedef const SYMCRYPT_ECPOINT * PCSYMCRYPT_ECPOINT;
 //
 
 #define SYMCRYPT_ANYSIZE    1       // used to mark arrays of arbitrary size
-#define SYMCRYPT_FIELD_OFFSET(type, field)      (offsetof(type, field))
-#define SYMCRYPT_FIELD_SIZE(type, field)        (sizeof( ((type *)0)->field ))
-
 
 #define SYMCRYPT_FDEF_DIGIT_BITS    (8*SYMCRYPT_FDEF_DIGIT_SIZE)
 #define SYMCRYPT_FDEF_DIGITS_FROM_BITS( _bits )   ( \

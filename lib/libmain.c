@@ -58,7 +58,7 @@ SymCryptInitEnvCommon( UINT32 version )
     // Use an interlocked to set the flag in case we add other flags
     // that are modified by different threads.
     //
-    ATOMIC_OR32( &g_SymCryptFlags, SYMCRYPT_FLAG_LIB_INITIALIZED );
+    SYMCRYPT_ATOMIC_OR32_PRE_RELAXED( &g_SymCryptFlags, SYMCRYPT_FLAG_LIB_INITIALIZED );
 
     //
     // Do a forced write of our code version. This ensures that the code

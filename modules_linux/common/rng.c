@@ -8,7 +8,6 @@
 #include "precomp.h"
 #include "rng.h"
 
-#include <pthread.h>
 
 // Size of small entropy request cache, same as Windows
 #define  RANDOM_NUM_CACHE_SIZE         128
@@ -28,7 +27,7 @@ SymCryptRngReseed( PCBYTE pbEntropy, SIZE_T cbEntropy );
 
 // This function must be called during module initialization. It sets up
 // the internal SymCrypt RNG state by seeding from Fips and secure entropy sources.
-// First 64 bytes are from Fips source and last 64 are from the secure source, as per 
+// First 64 bytes are from Fips source and last 64 are from the secure source, as per
 // SP800-90A section 10.2.1.3.2.
 // The Fips input constitutes the entropy_input and nonce, while secure input is
 // the personalization_string.
@@ -39,7 +38,10 @@ SymCryptRngInit()
     SYMCRYPT_ERROR error = SYMCRYPT_NO_ERROR;
     BYTE seed[128];
 
-    pthread_mutex_init( &g_rngLock, NULL );
+    if( pthread_mutex_init( &g_rngLock, NULL ) != 0)
+    {
+        SymCryptFatal( 'rngi' );
+    }
 
     // Initialize both entropy sources
     SymCryptEntropyFipsInit();
