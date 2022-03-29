@@ -151,6 +151,13 @@ SymCryptSaveYmmEnvWindowsKernelmodeWin8_1nLater( _Out_ PSYMCRYPT_EXTENDED_SAVE_D
         SymCryptFatal( ' mmy' );
     }
 
+    // KeSaveExtendedProcessorState must only be called at IRQL <= DISPATCH_LEVEL
+    if( KeGetCurrentIrql() > DISPATCH_LEVEL )
+    {
+        result = SYMCRYPT_EXTERNAL_FAILURE;
+        goto cleanup;
+    }
+
     //
     // Our init routine disabled AVX2 if the XSTATE_MASK_AVX isn't supported, so we don't have to check
     // for that anymore.
