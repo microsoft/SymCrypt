@@ -28,7 +28,11 @@
 
 SYMCRYPT_CPU_FEATURES SYMCRYPT_CALL SymCryptCpuFeaturesNeverPresentEnvWindowsKernelmodeWin8_1nLater()
 {
-    return 0;
+    #if SYMCRYPT_CPU_X86 | SYMCRYPT_CPU_AMD64
+        return ( SYMCRYPT_CPU_FEATURE_AVX2 | SYMCRYPT_CPU_FEATURE_VAES_256 | SYMCRYPT_CPU_FEATURE_VAES_512 );
+    #else
+        return 0;
+    #endif
 }
 
 
@@ -149,13 +153,6 @@ SymCryptSaveYmmEnvWindowsKernelmodeWin8_1nLater( _Out_ PSYMCRYPT_EXTENDED_SAVE_D
     if( !SYMCRYPT_CPU_FEATURES_PRESENT( SYMCRYPT_CPU_FEATURE_AVX2 ) )
     {
         SymCryptFatal( ' mmy' );
-    }
-
-    // KeSaveExtendedProcessorState must only be called at IRQL <= DISPATCH_LEVEL
-    if( KeGetCurrentIrql() > DISPATCH_LEVEL )
-    {
-        result = SYMCRYPT_EXTERNAL_FAILURE;
-        goto cleanup;
     }
 
     //
