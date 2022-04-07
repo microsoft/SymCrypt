@@ -27,6 +27,14 @@
 #include "symcrypt.h"
 #include "sc_lib.h"
 
+#if SYMCRYPT_CPU_AMD64
+//
+// KeGetCurrentIrql must be inlined on AMD64 to prevent linking errors with winload.sys, which
+// runs in an environment that does not define/implement KeGetCurrentIrql.
+//
+#define KeGetCurrentIrql() ((KIRQL)ReadCR8())
+#endif
+
 SYMCRYPT_CPU_FEATURES SYMCRYPT_CALL SymCryptCpuFeaturesNeverPresentEnvWindowsKernelmodeWin7nLater()
 {
     return 0;
@@ -122,6 +130,13 @@ SymCryptSaveXmmEnvWindowsKernelmodeWin7nLater( _Out_ PSYMCRYPT_EXTENDED_SAVE_DAT
 {
     SYMCRYPT_ERROR result = SYMCRYPT_NO_ERROR;
 
+    // KeSaveExtendedProcessorState must only be called at IRQL <= DISPATCH_LEVEL
+    if( KeGetCurrentIrql() > DISPATCH_LEVEL )
+    {
+        result = SYMCRYPT_EXTERNAL_FAILURE;
+        goto cleanup;
+    }
+
     if( !NT_SUCCESS( KeSaveExtendedProcessorState( XSTATE_MASK_LEGACY_SSE, (PXSTATE_SAVE)&pSaveData->data[0] ) ) )
     {
         result = SYMCRYPT_EXTERNAL_FAILURE;
@@ -191,6 +206,13 @@ SymCryptSaveYmmEnvWindowsKernelmodeWin7nLater( _Out_ PSYMCRYPT_EXTENDED_SAVE_DAT
     if( !SYMCRYPT_CPU_FEATURES_PRESENT( SYMCRYPT_CPU_FEATURE_AVX2 ) )
     {
         SymCryptFatal( ' mmy' );
+    }
+
+    // KeSaveExtendedProcessorState must only be called at IRQL <= DISPATCH_LEVEL
+    if( KeGetCurrentIrql() > DISPATCH_LEVEL )
+    {
+        result = SYMCRYPT_EXTERNAL_FAILURE;
+        goto cleanup;
     }
 
     //
