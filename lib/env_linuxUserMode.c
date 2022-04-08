@@ -56,6 +56,14 @@ SymCryptInitEnvLinuxUsermode( UINT32 version )
     SymCryptInitEnvCommon( version );
 }
 
+// UGLY HACK: Forward declare __stack_chk_fail introduced by -fstack-protector-strong
+// For OpenEnclave binaries we cannot have any PLT entries, but clang ignores -fno-plt for
+// __stack_chk_fail.
+// Opened issue against clang here: https://github.com/llvm/llvm-project/issues/54816
+// If we introduce a direct reference to it in our code then clang does figure out it must be linked
+// without PLT
+void __stack_chk_fail();
+
 _Analysis_noreturn_
 VOID
 SYMCRYPT_CALL
@@ -83,6 +91,10 @@ SymCryptFatalEnvLinuxUsermode( ULONG fatalCode )
     SYMCRYPT_FORCE_WRITE32( (volatile UINT32 *)NULL, fatalCode );
 
     SymCryptFatalHang( fatalCode );
+
+    // Never reached - call is to force clang not to use PLT entry for this function
+    // See forward declaration above
+    __stack_chk_fail();
 }
 
 #if SYMCRYPT_CPU_AMD64
