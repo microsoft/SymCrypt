@@ -1041,7 +1041,7 @@ SymCryptRsaPssVerifySignaturePadding(
     {
         if (pbPSSFormat[0] != 0)
         {
-            scError = SYMCRYPT_INVALID_ARGUMENT;
+            scError = SYMCRYPT_SIGNATURE_VERIFICATION_FAILURE;
             goto cleanup;
         }
         pbPSSFormat++;
@@ -1063,7 +1063,7 @@ SymCryptRsaPssVerifySignaturePadding(
         pbPSSFormat[cbPSSFormat - 1] != 0xbc
         )
     {
-        scError = SYMCRYPT_INVALID_ARGUMENT;
+        scError = SYMCRYPT_SIGNATURE_VERIFICATION_FAILURE;
         goto cleanup;
     }
 
@@ -1103,7 +1103,7 @@ SymCryptRsaPssVerifySignaturePadding(
     {
         if (pbDBMask[i] != 0x00)
         {
-            scError = SYMCRYPT_INVALID_ARGUMENT;
+            scError = SYMCRYPT_SIGNATURE_VERIFICATION_FAILURE;
             goto cleanup;
         }
     }
@@ -1111,7 +1111,7 @@ SymCryptRsaPssVerifySignaturePadding(
     // ensure the 0x01 byte is part of DB
     if (pbDBMask[cbDB - cbSalt - 1] != 0x01)
     {
-        scError = SYMCRYPT_INVALID_ARGUMENT;
+        scError = SYMCRYPT_SIGNATURE_VERIFICATION_FAILURE;
         goto cleanup;
     }
 
@@ -1127,7 +1127,7 @@ SymCryptRsaPssVerifySignaturePadding(
 
     if ( !SymCryptEqual(pbPSSFormat + cbDB, pbMPrimeHash, cbHashAlg) )
     {
-        scError = SYMCRYPT_INVALID_ARGUMENT;
+        scError = SYMCRYPT_SIGNATURE_VERIFICATION_FAILURE;
         goto cleanup;
     }
 

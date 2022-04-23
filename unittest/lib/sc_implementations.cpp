@@ -4440,9 +4440,13 @@ RsaSignImp<ImpSc, AlgRsaSignPss>::verify(
     case SYMCRYPT_NO_ERROR:
         ntStatus = STATUS_SUCCESS;
         break;
+        // saml 2022/04:
+        // In order to update error message returned from SymCryptRsaPssVerify and not break
+        // multi-implementation test of SymCrypt vs. CNG, we must map SYMCRYPT_SIGNATURE_VERIFICATION_FAILURE
+        // to STATUS_INVALID_PARAMETER rather than STATUS_INVALID_SIGNATURE for now.
+        // Once both CNG and SymCrypt are updated reliably we can reintroduce testing that the two
+        // error responses cohere - but for now they won't.
     case SYMCRYPT_SIGNATURE_VERIFICATION_FAILURE:
-        ntStatus = STATUS_INVALID_SIGNATURE;
-        break;
     case SYMCRYPT_INVALID_ARGUMENT:
         ntStatus = STATUS_INVALID_PARAMETER;
         break;

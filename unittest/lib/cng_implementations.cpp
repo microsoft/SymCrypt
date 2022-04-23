@@ -1823,7 +1823,7 @@ RsaSignImp<ImpCng, AlgRsaSignPss>::verify(
     BCRYPT_PSS_PADDING_INFO paddingInfo;
     PCCNG_HASH_INFO pInfo;
 
-     pInfo = getHashInfo( pcstrHashAlgName);
+    pInfo = getHashInfo( pcstrHashAlgName);
     paddingInfo.pszAlgId = pInfo->wideName;
     paddingInfo.cbSalt = u32Other;
 
@@ -1835,6 +1835,17 @@ RsaSignImp<ImpCng, AlgRsaSignPss>::verify(
         (PBYTE)pbSig,
         (UINT32)cbSig,
         BCRYPT_PAD_PSS );
+
+    // saml 2022/04:
+    // In order to update error message returned from SymCryptRsaPssVerify and not break
+    // multi-implementation test of SymCrypt vs. CNG, we must map STATUS_INVALID_SIGNATURE
+    // to STATUS_INVALID_PARAMETER for now.
+    // Once both CNG and SymCrypt are updated reliably we can reintroduce testing that the two
+    // error responses cohere - but for now they won't.
+    if( ntStatus == STATUS_INVALID_SIGNATURE )
+    {
+        ntStatus = STATUS_INVALID_PARAMETER;
+    }
 
     return ntStatus;
 }

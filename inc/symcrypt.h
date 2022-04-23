@@ -6329,7 +6329,7 @@ SymCryptRsaPssVerify(
 // pbHashValue) with the pkRsakey key using RSA PSS. The signature is input
 // in the pbSignature buffer.
 //
-// It returns SYMCRYPT_NO_ERROR if the verification suceeded or SYMCRYPT_SIGNATURE_VERIFICATION_FAILURE
+// It returns SYMCRYPT_NO_ERROR if the verification succeeded or SYMCRYPT_SIGNATURE_VERIFICATION_FAILURE
 // if it failed.
 //
 // nfSignature is the number format of the signature (i.e. the pbSignature buffer). Currently
