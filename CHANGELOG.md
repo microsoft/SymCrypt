@@ -1,3 +1,10 @@
+# Version 101.3
+
+- Fix for OpenEnclave binary to workaround clang bug
+- Fix SymCryptRsaPssVerify to return SYMCRYPT_SIGNATURE_VERIFICATION_FAILURE for invalid signatures, rather than SYMCRYPT_INVALID_ARGUMENT
+- Fix for SymCryptShortWeierstrassAddSideChannelUnsafe which is only use in ECDSA verification on SW curves
+  - An owner of a private ECC key could create an invalid signature that SymCrypt would verify, leaking their private key in the process
+
 # Version 101.2
 
 - Added key pairwise consistency tests for RSA, DSA, DH, ECDSA and ECDH key generation, per FIPS 140-3 requirements
