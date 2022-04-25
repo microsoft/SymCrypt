@@ -53,6 +53,7 @@ SYMCRYPT_ECC_CURVES rgbInternalCurves[] = {
 ////////////////////////////////////////////////////////////////////
 
 #define SYMCRYPT_ECC_SHA1                     "SHA1"
+#define SYMCRYPT_ECC_SHA224                   "SHA224"
 #define SYMCRYPT_ECC_SHA256                   "SHA256"
 #define SYMCRYPT_ECC_SHA384                   "SHA384"
 #define SYMCRYPT_ECC_SHA512                   "SHA512"
@@ -65,6 +66,7 @@ typedef struct _SYMCRYPT_ECC_HASH_ALGORITHMS {
 
 SYMCRYPT_ECC_HASH_ALGORITHMS rgbHashAlgorithms[] = {
     { SYMCRYPT_ECC_SHA1,        SymCryptSha1Algorithm   },
+    { SYMCRYPT_ECC_SHA224,      NULL                    },
     { SYMCRYPT_ECC_SHA256,      SymCryptSha256Algorithm },
     { SYMCRYPT_ECC_SHA384,      SymCryptSha384Algorithm },
     { SYMCRYPT_ECC_SHA512,      SymCryptSha512Algorithm },
@@ -866,6 +868,8 @@ testEcdsaVerify(
     PSYMCRYPT_ECKEY pkPublic = NULL;
 
     BYTE pbHashValue[SYMCRYPT_SHA512_RESULT_SIZE] = { 0 };
+    PCBYTE pbDigest = NULL;
+    UINT32 cbDigest = 0;
     BYTE pbSignature[2 * ((SYMCRYPT_BITSIZE_P521 + 7)/8)] = { 0 };             // big enough to hold any signature
     BYTE pbPublicKey[2 * ((SYMCRYPT_BITSIZE_P521 + 7)/8)] = { 0 };             // or the X,Y coordinates of a public key
 
@@ -874,8 +878,16 @@ testEcdsaVerify(
     CHECK3( pkPublic!=NULL, "Failure to allocate public key for ECDSA record at line %lld", line );
 
     // Hash the message
-    CHECK3( SYMCRYPT_SHA512_RESULT_SIZE >= pHash->resultSize, "Hash result too big for ECDSA record at line %lld", line );
-    SymCryptHash( pHash, pbMsg, cbMsg, pbHashValue, pHash->resultSize );
+    if( pHash != NULL )
+    {
+        CHECK3( SYMCRYPT_SHA512_RESULT_SIZE >= pHash->resultSize, "Hash result too big for ECDSA record at line %lld", line );
+        SymCryptHash( pHash, pbMsg, cbMsg, pbHashValue, pHash->resultSize );
+        pbDigest = &pbHashValue[0];
+        cbDigest = pHash->resultSize;
+    } else {
+        pbDigest = pbMsg;
+        cbDigest = (UINT32) cbMsg;
+    }
 
     // Set the public key
     memcpy(pbPublicKey, pbQx, cbQx);
@@ -899,8 +911,8 @@ testEcdsaVerify(
     // Verify
     scError = SymCryptEcDsaVerify(
                         pkPublic,
-                        pbHashValue,
-                        pHash->resultSize,
+                        pbDigest,
+                        cbDigest,
                         pbSignature,
                         cbR + cbS,
                         SYMCRYPT_NUMBER_FORMAT_MSB_FIRST,
@@ -914,6 +926,10 @@ testEcdsaVerify(
     if (pbResult[0] == 'F')
     {
         CHECK3( scError == SYMCRYPT_SIGNATURE_VERIFICATION_FAILURE, "Wrong EcDsaVerify result for ECDSA record at line %lld", line );
+    }
+    else
+    {
+        CHECK3( scError == SYMCRYPT_NO_ERROR, "Wrong EcDsaVerify result for ECDSA record at line %lld", line );
     }
 
     SymCryptEckeyFree( pkPublic );
@@ -954,6 +970,8 @@ testEcdsaSign(
     PSYMCRYPT_INT   piK = NULL;
 
     BYTE pbHashValue[SYMCRYPT_SHA512_RESULT_SIZE] = { 0 };
+    PCBYTE pbDigest = NULL;
+    UINT32 cbDigest = 0;
     BYTE pbSignature[2 * ((SYMCRYPT_BITSIZE_P521 + 7)/8)] = { 0 };             // big enough to hold any signature
 
     // Allocate the private key and the random exponent K
@@ -963,6 +981,17 @@ testEcdsaSign(
     CHECK3( piK!=NULL, "Failure to allocate random exponent K for ECDSA record at line %lld", line );
 
     // Hash the message
+    if( pHash != NULL )
+    {
+        CHECK3( SYMCRYPT_SHA512_RESULT_SIZE >= pHash->resultSize, "Hash result too big for ECDSA record at line %lld", line );
+        SymCryptHash( pHash, pbMsg, cbMsg, pbHashValue, pHash->resultSize );
+        pbDigest = &pbHashValue[0];
+        cbDigest = pHash->resultSize;
+    } else {
+        pbDigest = pbMsg;
+        cbDigest = (UINT32) cbMsg;
+    }
+    CHECK( pHash != NULL, "Unsupported ")
     CHECK3( SYMCRYPT_SHA512_RESULT_SIZE >= pHash->resultSize, "Hash result too big for ECDSA record at line %lld", line );
     SymCryptHash( pHash, pbMsg, cbMsg, pbHashValue, pHash->resultSize );
 
@@ -1000,8 +1029,8 @@ testEcdsaSign(
     // Sign
     scError = SymCryptEcDsaSignEx(
                         pkPrivate,
-                        pbHashValue,
-                        pHash->resultSize,
+                        pbDigest,
+                        cbDigest,
                         piK,
                         SYMCRYPT_NUMBER_FORMAT_MSB_FIRST,
                         0,
@@ -1248,14 +1277,21 @@ testEccEcdsaKats()
                         break;
                     }
                 }
-                if (!bHashFound)
-                {
-                    dprint( "Ecdsa record at line %lld is skipped due to unknown hash function.\n", line);
-                    continue;   // Skip this record if the hash algorithm is not in SymCrypt (e.g. SHA224)
-                }
 
-                pHash = rgbHashAlgorithms[i].pHash;
-                CHECK3( pHash != NULL, "NULL hash for ECDSA record at line %lld", line );
+                if (bHashFound)
+                {
+                    pHash = rgbHashAlgorithms[i].pHash;
+                    if( pHash == NULL )
+                    {
+                        dprint( "Ecdsa record at line %lld is skipped due to unsupported hash function (%s).\n", line, rgbHashAlgorithms[i].pszHashName);
+                        continue;   // Skip this record
+                    }
+                }
+                else
+                {
+                    dprint( "Assuming no hash function for unknown hash function.\n", line);
+                    pHash = NULL;
+                }
 
                 BString katMsg = katParseData( katItem, "msg" );
                 BString katQx = katParseData( katItem, "qx" );
@@ -1327,14 +1363,21 @@ testEccEcdsaKats()
                         break;
                     }
                 }
-                if (!bHashFound)
-                {
-                    dprint( "Ecdsa record at line %lld is skipped due to unknown hash function.\n", line);
-                    continue;   // Skip this record if the hash algorithm is not in SymCrypt (e.g. SHA224)
-                }
 
-                pHash = rgbHashAlgorithms[i].pHash;
-                CHECK3( pHash != NULL, "NULL hash for ECDSA record at line %lld", line );
+                if (bHashFound)
+                {
+                    pHash = rgbHashAlgorithms[i].pHash;
+                    if( pHash == NULL )
+                    {
+                        dprint( "Ecdsa record at line %lld is skipped due to unsupported hash function (%s).\n", line, rgbHashAlgorithms[i].pszHashName);
+                        continue;   // Skip this record
+                    }
+                }
+                else
+                {
+                    dprint( "Assuming no hash function for unknown hash function.\n", line);
+                    pHash = NULL;
+                }
 
                 BString katMsg = katParseData( katItem, "msg" );
                 BString katD = katParseData( katItem, "d" );

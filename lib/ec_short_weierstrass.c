@@ -643,7 +643,12 @@ SymCryptShortWeierstrassAddSideChannelUnsafe(
     SymCryptModMul( FMod, peX2, peT[0], peT[3], pbScratch, cbScratch );     /* T3 := X2 * Z1Z1 = U2 */
     SymCryptModSub( FMod, peT[3], peT[2], peT[5], pbScratch, cbScratch );   /* T5 := T3 - T2 = U2 - U1 = H */
 
-    if (SymCryptModElementIsZero( FMod, peT[5] ))
+    SymCryptModMul( FMod, peY2, peT[1], peT[7], pbScratch, cbScratch );     /* T7 := Y2 * T1 = Y2*Z1*Z1Z1 = S2 */
+    SymCryptModMul( FMod, peZ2, peT[6], peT[1], pbScratch, cbScratch );     /* T1 := Z2 * T6 = Z2*Z2Z2 */
+    SymCryptModMul( FMod, peY1, peT[1], peT[1], pbScratch, cbScratch );     /* T1 := Y1 * T1 = Y1*Z2*Z2Z2 = S1 */
+    SymCryptModSub( FMod, peT[7], peT[1], peT[7], pbScratch, cbScratch );   /* T7 := T7 - T1 = S2-S1 */
+
+    if (SymCryptModElementIsZero( FMod, peT[5] ) & SymCryptModElementIsZero( FMod, peT[7] ))
     {
         // Points are equal - run double on poSrc1
 
@@ -698,10 +703,6 @@ SymCryptShortWeierstrassAddSideChannelUnsafe(
         SymCryptModSub( FMod, peT[4], peT[6], peT[4], pbScratch, cbScratch );   /* T4 := T4 - T6 = (Z1 + Z2)^2 - Z1Z1 - Z2Z2 */
         SymCryptModMul( FMod, peT[4], peT[5], peT[4], pbScratch, cbScratch );   /* T4 := T4 * T5 = ((Z1 + Z2)^2 - Z1Z1 - Z2Z2)*H = Z3 */
 
-        SymCryptModMul( FMod, peZ2, peT[6], peT[6], pbScratch, cbScratch );     /* T6 := Z2 * T6 = Z2*Z2Z2 */
-        SymCryptModMul( FMod, peY1, peT[6], peT[6], pbScratch, cbScratch );     /* T6 := Y1 * T6 = Y1*Z2*Z2Z2 = S1 */
-        SymCryptModMul( FMod, peY2, peT[1], peT[7], pbScratch, cbScratch );     /* T7 := Y2*Z1*Z1Z1 = S2 */
-        SymCryptModSub( FMod, peT[7], peT[6], peT[7], pbScratch, cbScratch );   /* T7 := T7 - T6 = S2-S1 */
         SymCryptModAdd( FMod, peT[7], peT[7], peT[7], pbScratch, cbScratch );   /* T7 := T7 + T7 = 2*(S2-S1) = r */
 
         SymCryptModAdd( FMod, peT[5], peT[5], peT[3], pbScratch, cbScratch );   /* T3 := T5 + T5 = 2*H */
@@ -716,7 +717,7 @@ SymCryptShortWeierstrassAddSideChannelUnsafe(
 
         SymCryptModSub( FMod, peT[3], peT[2], peT[3], pbScratch, cbScratch );   /* T3 := T3 - T2 = V - X3 */
         SymCryptModMul( FMod, peT[3], peT[7], peT[3], pbScratch, cbScratch );   /* T3 := T3 * T7 = r*(V-X3) */
-        SymCryptModMul( FMod, peT[6], peT[5], peT[6], pbScratch, cbScratch );   /* T6 := T6 * T5 = S1*J */
+        SymCryptModMul( FMod, peT[1], peT[5], peT[6], pbScratch, cbScratch );   /* T6 := T1 * T5 = S1*J */
         SymCryptModAdd( FMod, peT[6], peT[6], peT[6], pbScratch, cbScratch );   /* T6 := T6 + T6 = 2*S1*J */
         SymCryptModSub( FMod, peT[3], peT[6], peT[3], pbScratch, cbScratch );   /* T3 := T6 - T3 = r*(V-X3) - 2*S1*J = Y3 */
 
