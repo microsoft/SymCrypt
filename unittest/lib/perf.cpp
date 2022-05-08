@@ -1264,7 +1264,7 @@ measurePerf()
     DWORD_PTR affinitymask = (DWORD_PTR)1 << GetCurrentProcessorNumber();
     affinitymask = SetThreadAffinityMask( GetCurrentThread(), affinitymask );
     CHECK( affinitymask != 0, "Failed to set affinity mask" );
-    #endif // SYMCRYPT_MS_VC || SYMCRYPT_GNUC && WIN32
+    #endif // SYMCRYPT_MS_VC || WIN32
 
     initPerfSystem();
 
@@ -1281,7 +1281,7 @@ measurePerf()
     CHECK( SetThreadAffinityMask( GetCurrentThread(), affinitymask ) != 0, "Failed to restore affinity mask" );
     CHECK( GetThreadPriority( GetCurrentThread() ) == THREAD_PRIORITY_TIME_CRITICAL, "Thread priority decay" );
     CHECK( SetThreadPriority( GetCurrentThread(), oldPriority ), "Failed to set priority" );
-    #endif // SYMCRYPT_MS_VC || SYMCRYPT_GNUC && WIN32
+    #endif // SYMCRYPT_MS_VC || WIN32
 
     print( ".%c.\n", ' ' + (g_fixedTimeLoopVariable)%(127-' '));    // DO NOT REMOVE, ensures that do-busy work isn't optimized away
 
