@@ -4,6 +4,7 @@
 // Copyright (c) Microsoft Corporation. Licensed under the MIT license. 
 //
 
+template<>
 VOID
 KdfImp<ImpXxx,AlgSp800_108,BaseAlgXxx>::derive(
         _In_reads_( cbKey )     PCBYTE          pbKey,
@@ -44,6 +45,7 @@ KdfImp<ImpXxx,AlgSp800_108,BaseAlgXxx>::derive(
     CHECK( cbResult == cbDst, "Sp800_108 result size mismatch" );
 }
 
+template<>
 VOID
 algImpDataPerfFunction<ImpXxx, AlgXxx, BaseAlgXxx>( PBYTE buf1, PBYTE buf2, PBYTE buf3, SIZE_T dataSize )
 {

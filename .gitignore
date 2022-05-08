@@ -73,6 +73,7 @@ bin/
 CMakeFiles
 CMakeCache.txt
 **/cmake_install.*
+cmake-*
 
 # Visual Studio project/solution files from CMake
 *.vcxproj

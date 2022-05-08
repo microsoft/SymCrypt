@@ -42,7 +42,7 @@ typedef struct _KAT_RECORD
 class KatData
 {
 public:
-    KatData( _In_ PSTR name, _In_ PCCHAR pbData, SIZE_T cbData );
+    KatData( _In_ PCSTR name, _In_ PCCHAR pbData, SIZE_T cbData );
     // Provide name, pointer, and length of data to be parsed
     ~KatData() {};
 
@@ -68,7 +68,7 @@ public:
     PCCHAR      m_pbData;           // Current data location
     PCCHAR      m_pbEnd;            // End of data
     LONGLONG    m_line;             // Current line number
-    LPSTR       m_name;             // Name of file/resource
+    LPCSTR      m_name;             // Name of file/resource
 
     LONGLONG    line();
 

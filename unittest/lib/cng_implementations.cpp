@@ -8,7 +8,7 @@
 
 #if INCLUDE_IMPL_CNG
 
-char * ImpCng::name = "Cng";
+const char * ImpCng::name = "Cng";
 
 #define BCRYPT_CHAIN_MODE_XXX   CONCAT2( BCRYPT_CHAIN_MODE_, ALG_MODE )
 
@@ -466,33 +466,33 @@ cngAesCmac_HmacMode()
 #define ALG_Name    Pbkdf2
 
 #define ALG_Base    HmacMd5
-#include "cng_imp_kdfpattern.cpp"
 #include "cng_imp_pbkdf2pattern.cpp"
+#include "cng_imp_kdfpattern.cpp"
 #undef ALG_Base
 
 #define ALG_Base    HmacSha1
-#include "cng_imp_kdfpattern.cpp"
 #include "cng_imp_pbkdf2pattern.cpp"
+#include "cng_imp_kdfpattern.cpp"
 #undef ALG_Base
 
 #define ALG_Base    HmacSha256
-#include "cng_imp_kdfpattern.cpp"
 #include "cng_imp_pbkdf2pattern.cpp"
+#include "cng_imp_kdfpattern.cpp"
 #undef ALG_Base
 
 #define ALG_Base    HmacSha384
-#include "cng_imp_kdfpattern.cpp"
 #include "cng_imp_pbkdf2pattern.cpp"
+#include "cng_imp_kdfpattern.cpp"
 #undef ALG_Base
 
 #define ALG_Base    HmacSha512
-#include "cng_imp_kdfpattern.cpp"
 #include "cng_imp_pbkdf2pattern.cpp"
+#include "cng_imp_kdfpattern.cpp"
 #undef ALG_Base
 
 #define ALG_Base    AesCmac
-#include "cng_imp_kdfpattern.cpp"
 #include "cng_imp_pbkdf2pattern.cpp"
+#include "cng_imp_kdfpattern.cpp"
 #undef ALG_Base
 
 #undef ALG_NAME
@@ -502,33 +502,33 @@ cngAesCmac_HmacMode()
 #define ALG_Name    Sp800_108
 
 #define ALG_Base    HmacMd5
-#include "cng_imp_kdfpattern.cpp"
 #include "cng_imp_sp800_108pattern.cpp"
+#include "cng_imp_kdfpattern.cpp"
 #undef ALG_Base
 
 #define ALG_Base    HmacSha1
-#include "cng_imp_kdfpattern.cpp"
 #include "cng_imp_sp800_108pattern.cpp"
+#include "cng_imp_kdfpattern.cpp"
 #undef ALG_Base
 
 #define ALG_Base    HmacSha256
-#include "cng_imp_kdfpattern.cpp"
 #include "cng_imp_sp800_108pattern.cpp"
+#include "cng_imp_kdfpattern.cpp"
 #undef ALG_Base
 
 #define ALG_Base    HmacSha384
-#include "cng_imp_kdfpattern.cpp"
 #include "cng_imp_sp800_108pattern.cpp"
+#include "cng_imp_kdfpattern.cpp"
 #undef ALG_Base
 
 #define ALG_Base    HmacSha512
-#include "cng_imp_kdfpattern.cpp"
 #include "cng_imp_sp800_108pattern.cpp"
+#include "cng_imp_kdfpattern.cpp"
 #undef ALG_Base
 
 #define ALG_Base    AesCmac
-#include "cng_imp_kdfpattern.cpp"
 #include "cng_imp_sp800_108pattern.cpp"
+#include "cng_imp_kdfpattern.cpp"
 #undef ALG_Base
 
 #undef ALG_NAME
@@ -538,8 +538,8 @@ cngAesCmac_HmacMode()
 #define ALG_Name    TlsPrf1_1
 
 #define ALG_Base    HmacMd5
-#include "cng_imp_kdfpattern.cpp"
 #include "cng_imp_tlsprf1_1pattern.cpp"
+#include "cng_imp_kdfpattern.cpp"
 #undef ALG_Base
 
 #undef ALG_NAME
@@ -549,18 +549,18 @@ cngAesCmac_HmacMode()
 #define ALG_Name    TlsPrf1_2
 
 #define ALG_Base    HmacSha256
-#include "cng_imp_kdfpattern.cpp"
 #include "cng_imp_tlsprf1_2pattern.cpp"
+#include "cng_imp_kdfpattern.cpp"
 #undef ALG_Base
 
 #define ALG_Base    HmacSha384
-#include "cng_imp_kdfpattern.cpp"
 #include "cng_imp_tlsprf1_2pattern.cpp"
+#include "cng_imp_kdfpattern.cpp"
 #undef ALG_Base
 
 #define ALG_Base    HmacSha512
-#include "cng_imp_kdfpattern.cpp"
 #include "cng_imp_tlsprf1_2pattern.cpp"
+#include "cng_imp_kdfpattern.cpp"
 #undef ALG_Base
 
 #undef ALG_NAME
@@ -602,7 +602,8 @@ AuthEncImp<ImpCng, AlgAes, ModeGcm>::getNonceSizes()
 //////////////////////////
 // RC4
 
-BCRYPT_ALG_HANDLE StreamCipherImpState<ImpCng, AlgRc4>::hAlg;
+template<>
+BCRYPT_ALG_HANDLE StreamCipherImpState<ImpCng, AlgRc4>::hAlg {};
 
 template<>
 VOID
@@ -645,6 +646,7 @@ algImpCleanPerfFunction<ImpCng,AlgRc4>( PBYTE buf1, PBYTE buf2, PBYTE buf3 )
 }
 
 
+template<>
 StreamCipherImp<ImpCng, AlgRc4>::StreamCipherImp()
 {
     CHECK( CngOpenAlgorithmProviderFn( &state.hAlg, PROVIDER_NAME( RC4 ), NULL, 0 ) == STATUS_SUCCESS,
@@ -1363,7 +1365,7 @@ const CNG_HASH_INFO cngHashInfoTable[] = {
     { NULL },
 };
 
-PCCNG_HASH_INFO getHashInfo( PCSTR pcstrName )
+FORCEINLINE PCCNG_HASH_INFO getHashInfo( PCSTR pcstrName )
 {
     for( int i=0; cngHashInfoTable[i].name != NULL; i++ )
     {
@@ -2021,6 +2023,7 @@ RsaEncImp<ImpCng, AlgRsaEncRaw>::setKey( PCRSAKEY_TESTBLOB pcKeyBlob )
     return ntStatus;
 }
 
+template<>
 NTSTATUS
 RsaEncImp<ImpCng, AlgRsaEncRaw>::encrypt(
         _In_reads_( cbMsg )             PCBYTE  pbMsg,
@@ -2060,6 +2063,7 @@ RsaEncImp<ImpCng, AlgRsaEncRaw>::encrypt(
     return ntStatus;
 }
 
+template<>
 NTSTATUS
 RsaEncImp<ImpCng, AlgRsaEncRaw>::decrypt(
         _In_reads_( cbCiphertext )      PCBYTE  pbCiphertext,
@@ -2265,6 +2269,7 @@ RsaEncImp<ImpCng, AlgRsaEncPkcs1>::setKey( PCRSAKEY_TESTBLOB pcKeyBlob )
     return ntStatus;
 }
 
+template<>
 NTSTATUS
 RsaEncImp<ImpCng, AlgRsaEncPkcs1>::encrypt(
         _In_reads_( cbMsg )             PCBYTE  pbMsg,
@@ -2299,6 +2304,7 @@ RsaEncImp<ImpCng, AlgRsaEncPkcs1>::encrypt(
     return ntStatus;
 }
 
+template<>
 NTSTATUS
 RsaEncImp<ImpCng, AlgRsaEncPkcs1>::decrypt(
         _In_reads_( cbCiphertext )      PCBYTE  pbCiphertext,
@@ -2516,6 +2522,7 @@ RsaEncImp<ImpCng, AlgRsaEncOaep>::setKey( PCRSAKEY_TESTBLOB pcKeyBlob )
     return ntStatus;
 }
 
+template<>
 NTSTATUS
 RsaEncImp<ImpCng, AlgRsaEncOaep>::encrypt(
         _In_reads_( cbMsg )             PCBYTE  pbMsg,
@@ -2550,6 +2557,7 @@ RsaEncImp<ImpCng, AlgRsaEncOaep>::encrypt(
     return NT_SUCCESS( ntStatus ) ? STATUS_SUCCESS : STATUS_UNSUCCESSFUL;
 }
 
+template<>
 NTSTATUS
 RsaEncImp<ImpCng, AlgRsaEncOaep>::decrypt(
         _In_reads_( cbCiphertext )      PCBYTE  pbCiphertext,

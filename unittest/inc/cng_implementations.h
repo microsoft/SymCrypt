@@ -16,7 +16,7 @@ AddBCryptBuffer( BCryptBufferDesc * pBufferDesc, ULONG BufferType, PCVOID pData,
 //
 class ImpCng{
 public:
-    static char * name;
+    static const char * name;
 };
 
 

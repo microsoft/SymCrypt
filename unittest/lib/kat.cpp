@@ -28,7 +28,7 @@ String strip( const String & strIn )
 
 
 
-KatData::KatData( _In_ PSTR name, _In_ PCCHAR pbData, SIZE_T cbData )
+KatData::KatData( _In_ PCSTR name, _In_ PCCHAR pbData, SIZE_T cbData )
 {
     m_line = 1;
     m_pbData = pbData;

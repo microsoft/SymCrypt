@@ -3,7 +3,7 @@
 //
 
 
-PSTR testDriverName = TESTDRIVER_NAME;
+PCSTR testDriverName = TESTDRIVER_NAME;
 
 const char * g_implementationNames[] = 
 {

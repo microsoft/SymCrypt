@@ -16,7 +16,7 @@
 
 class ImpMsBignum{
 public:
-    static char * name;
+    static const char * name;
 };
 
 template<>

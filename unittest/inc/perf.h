@@ -29,5 +29,5 @@ typedef VOID (*PerfCleanFn)( PBYTE buf1, PBYTE buf2, PBYTE buf3 );
 
 VOID measurePerf();
 
-extern PSTR g_perfUnits;
+extern PCSTR g_perfUnits;
 

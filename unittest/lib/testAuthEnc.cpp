@@ -64,7 +64,7 @@ AuthEncMultiImp::AuthEncMultiImp( String algName )
     m_algorithmName = algName;
 
     String sumAlgName;
-    char * sepStr = "<";
+    const char * sepStr = "<";
 
     for( AuthEncImpPtrVector::const_iterator i = m_imps.begin(); i != m_imps.end(); ++i )
     {

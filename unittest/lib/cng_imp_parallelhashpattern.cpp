@@ -4,7 +4,8 @@
 // Copyright (c) Microsoft Corporation. Licensed under the MIT license. 
 //
 
-BCRYPT_ALG_HANDLE ParallelHashImpState<ImpXxx, AlgXxx>::hAlg;
+template<>
+BCRYPT_ALG_HANDLE ParallelHashImpState<ImpXxx, AlgXxx>::hAlg {};
 
 //
 // We compile with down-level targets, so we have to add some prototypes
@@ -12,29 +13,6 @@ BCRYPT_ALG_HANDLE ParallelHashImpState<ImpXxx, AlgXxx>::hAlg;
 #ifndef BCRYPT_MULTI_FLAG
 #define BCRYPT_MULTI_FLAG                       0x00000040
 #endif
-
-ParallelHashImp<ImpXxx, AlgXxx>::ParallelHashImp()
-{
-    CHECK( CngOpenAlgorithmProviderFn( &state.hAlg, AlgXxx::pwstrBasename, NULL, BCRYPT_MULTI_FLAG ) == STATUS_SUCCESS, 
-        "Could not open CNG/" STRING( ALG_Name ) );
-    state.hHash = 0;
-    m_perfDataFunction = &algImpDataPerfFunction<ImpXxx, AlgXxx>;
-    m_perfKeyFunction = &algImpKeyPerfFunction<ImpXxx, AlgXxx>;
-    m_perfCleanFunction = &algImpCleanPerfFunction<ImpXxx, AlgXxx>;
-}
-
-template<>
-ParallelHashImp<ImpXxx, AlgXxx>::~ParallelHashImp()
-{
-    if( state.hHash != 0 )
-    {
-        CHECK( NT_SUCCESS( CngDestroyHashFn( state.hHash ) ), "Could not destroy multi-hash" );
-        state.hHash = 0;
-    }
-    
-    CHECK( NT_SUCCESS( CngCloseAlgorithmProviderFn( state.hAlg, 0 )), "Could not close CNG/" STRING( ALG_Name ) );
-    state.hAlg = 0;
-}
 
 template<>
 PCSYMCRYPT_HASH
@@ -54,6 +32,7 @@ SIZE_T ParallelHashImp<ImpXxx, AlgXxx>::resultLen()
     return len;
 }
 
+template<>
 SIZE_T ParallelHashImp<ImpXxx, AlgXxx>::inputBlockLen()
 {
     ULONG   len;
@@ -64,6 +43,7 @@ SIZE_T ParallelHashImp<ImpXxx, AlgXxx>::inputBlockLen()
     return len;
 }
 
+template<>
 VOID ParallelHashImp<ImpXxx, AlgXxx>::init( SIZE_T nHashes )
 {
     if( nHashes == 0 )
@@ -88,6 +68,7 @@ VOID ParallelHashImp<ImpXxx, AlgXxx>::init( SIZE_T nHashes )
             "Error creating hash CNG/" STRING( ALG_Name ) );
 }
 
+template<>
 VOID ParallelHashImp<ImpXxx, AlgXxx>::process( 
         _In_reads_( nOperations )   BCRYPT_MULTI_HASH_OPERATION *   pOperations,
                                     SIZE_T                          nOperations )
@@ -104,6 +85,7 @@ VOID ParallelHashImp<ImpXxx, AlgXxx>::process(
                                                     0 )), "Failed CNG multi-operation" );
 }
 
+template<>
 NTSTATUS ParallelHashImp<ImpXxx, AlgXxx>::initWithLongMessage( ULONGLONG nBytes )
 {
     UNREFERENCED_PARAMETER( nBytes );
@@ -114,6 +96,7 @@ NTSTATUS ParallelHashImp<ImpXxx, AlgXxx>::initWithLongMessage( ULONGLONG nBytes 
 
 #define N_PARALLEL_FOR_PERF 8
 
+template<>
 VOID 
 algImpKeyPerfFunction<ImpXxx, AlgXxx>(PBYTE buf1, PBYTE buf2, PBYTE buf3, SIZE_T keySize )
 {
@@ -129,6 +112,7 @@ algImpKeyPerfFunction<ImpXxx, AlgXxx>(PBYTE buf1, PBYTE buf2, PBYTE buf3, SIZE_T
                                                 NULL, 0, 0 ) ), "" );
 }
 
+template<>
 VOID
 algImpCleanPerfFunction<ImpXxx, AlgXxx>( PBYTE buf1, PBYTE buf2, PBYTE buf3 )
 {
@@ -138,7 +122,7 @@ algImpCleanPerfFunction<ImpXxx, AlgXxx>( PBYTE buf1, PBYTE buf2, PBYTE buf3 )
     CHECK( NT_SUCCESS( CngDestroyHashFn( *(BCRYPT_HASH_HANDLE *) buf1 )), "" );
 }
 
-
+template<>
 VOID 
 algImpDataPerfFunction<ImpXxx, AlgXxx>(PBYTE buf1, PBYTE buf2, PBYTE buf3, SIZE_T dataSize )
 {
@@ -173,5 +157,29 @@ algImpDataPerfFunction<ImpXxx, AlgXxx>(PBYTE buf1, PBYTE buf2, PBYTE buf3, SIZE_
                                                     2 * N_PARALLEL_FOR_PERF * sizeof( *pOperations ),
                                                     0 )), "CNG Parallel ops failed" );
 
+}
+
+template<>
+ParallelHashImp<ImpXxx, AlgXxx>::ParallelHashImp()
+{
+    CHECK( CngOpenAlgorithmProviderFn( &state.hAlg, AlgXxx::pwstrBasename, NULL, BCRYPT_MULTI_FLAG ) == STATUS_SUCCESS,
+           "Could not open CNG/" STRING( ALG_Name ) );
+    state.hHash = 0;
+    m_perfDataFunction = &algImpDataPerfFunction<ImpXxx, AlgXxx>;
+    m_perfKeyFunction = &algImpKeyPerfFunction<ImpXxx, AlgXxx>;
+    m_perfCleanFunction = &algImpCleanPerfFunction<ImpXxx, AlgXxx>;
+}
+
+template<>
+ParallelHashImp<ImpXxx, AlgXxx>::~ParallelHashImp()
+{
+    if( state.hHash != 0 )
+    {
+        CHECK( NT_SUCCESS( CngDestroyHashFn( state.hHash ) ), "Could not destroy multi-hash" );
+        state.hHash = 0;
+    }
+
+    CHECK( NT_SUCCESS( CngCloseAlgorithmProviderFn( state.hAlg, 0 )), "Could not close CNG/" STRING( ALG_Name ) );
+    state.hAlg = 0;
 }
 

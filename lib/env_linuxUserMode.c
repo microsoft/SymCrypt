@@ -31,7 +31,7 @@ SymCryptInitEnvLinuxUsermode( UINT32 version )
     //
     g_SymCryptCpuFeaturesNotPresent |= SYMCRYPT_CPU_FEATURE_AVX2;
 
-    #if SYMCRYPT_MS_VC
+    #if SYMCRYPT_MS_VC || WIN32
     if( (GetEnabledXStateFeatures() & XSTATE_MASK_AVX) != 0 )
     {
         g_SymCryptCpuFeaturesNotPresent &= ~SYMCRYPT_CPU_FEATURE_AVX2;

@@ -106,3 +106,6 @@ BlockCipherImp<ImpXxx, AlgXxx, ModeXxx>::decrypt( PBYTE pbChain, SIZE_T cbChain,
     verifyXmmRegisters();
 }
 
+
+template class BlockCipherImpState<ImpXxx, AlgXxx, ModeXxx>;
+template class BlockCipherImp<ImpXxx, AlgXxx, ModeXxx>;

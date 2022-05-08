@@ -178,7 +178,7 @@ VOID generateDlGroups()
     UINT32 bitSize;
     UINT32 primResult;
 
-    char * sep = " [group safeprime:";
+    const char * sep = " [group safeprime:";
     UINT32 previousSize = 0;
 
     if( g_nDlgroups >= MAX_TEST_DLGROUPS )

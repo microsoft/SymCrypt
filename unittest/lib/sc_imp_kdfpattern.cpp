@@ -4,26 +4,6 @@
 // Copyright (c) Microsoft Corporation. Licensed under the MIT license. 
 //
 
-template<> VOID algImpKeyPerfFunction<ImpXxx, AlgXxx, BaseAlgXxx>( PBYTE buf1, PBYTE buf2, PBYTE buf3, SIZE_T keySize );
-template<> VOID algImpCleanPerfFunction<ImpXxx, AlgXxx, BaseAlgXxx>( PBYTE buf1, PBYTE buf2, PBYTE buf3 );
-template<> VOID algImpDataPerfFunction<ImpXxx, AlgXxx, BaseAlgXxx>( PBYTE buf1, PBYTE buf2, PBYTE buf3, SIZE_T dataSize );
-
-//
-// Empty constructor. 
-//
-template<>
-KdfImp<ImpXxx, AlgXxx, BaseAlgXxx>::KdfImp()
-{
-    m_perfDataFunction = &algImpDataPerfFunction <ImpXxx, AlgXxx, BaseAlgXxx>;
-    m_perfKeyFunction  = &algImpKeyPerfFunction  <ImpXxx, AlgXxx, BaseAlgXxx>;
-    m_perfCleanFunction= &algImpCleanPerfFunction<ImpXxx, AlgXxx, BaseAlgXxx>;
-}
-
-template<>
-KdfImp<ImpXxx, AlgXxx, BaseAlgXxx>::~KdfImp<ImpXxx, AlgXxx, BaseAlgXxx>()
-{
-}
-
 template<>
 VOID 
 algImpKeyPerfFunction<ImpXxx, AlgXxx, BaseAlgXxx>( PBYTE buf1, PBYTE buf2, PBYTE buf3, SIZE_T keySize )
@@ -41,4 +21,19 @@ algImpCleanPerfFunction<ImpXxx, AlgXxx, BaseAlgXxx>( PBYTE buf1, PBYTE buf2, PBY
     SymCryptWipeKnownSize( buf1, sizeof( SYMCRYPT_XXX_EXPANDED_KEY ) );
 }
 
+//
+// Empty constructor.
+//
+template<>
+KdfImp<ImpXxx, AlgXxx, BaseAlgXxx>::KdfImp()
+{
+    m_perfDataFunction = &algImpDataPerfFunction <ImpXxx, AlgXxx, BaseAlgXxx>;
+    m_perfKeyFunction  = &algImpKeyPerfFunction  <ImpXxx, AlgXxx, BaseAlgXxx>;
+    m_perfCleanFunction= &algImpCleanPerfFunction<ImpXxx, AlgXxx, BaseAlgXxx>;
+}
+
+template<>
+KdfImp<ImpXxx, AlgXxx, BaseAlgXxx>::~KdfImp<ImpXxx, AlgXxx, BaseAlgXxx>()
+{
+}
 

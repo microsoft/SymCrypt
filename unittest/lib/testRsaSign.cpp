@@ -233,7 +233,7 @@ VOID rsaTestKeysGenerate()
         };
     UINT32 bitSize;
 
-    char * sep = " [test key gen: ";
+    const char * sep = " [test key gen: ";
     UINT32 previousSize = 0;
 
     if( g_nRsaTestKeyBlobs >= MAX_RSA_TESTKEYS )

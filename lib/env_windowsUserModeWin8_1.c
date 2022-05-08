@@ -6,7 +6,13 @@
 //
 
 //#include "precomp.h"
+#ifdef __MINGW64__
+#define NOCRYPT
+#endif
 #include <Windows.h>
+#ifdef __MINGW64__
+#undef NOCRYPT
+#endif
 #include "symcrypt.h"
 #include "sc_lib.h"
 
@@ -57,6 +63,9 @@ SymCryptInitEnvWindowsUsermodeWin8_1nLater( UINT32 version )
     SymCryptInitEnvCommon( version );
 }
 
+#if WIN32 && __GNUC__
+[[gnu::optimize("no-stack-clash-protection")]]
+#endif
 _Analysis_noreturn_
 VOID 
 SYMCRYPT_CALL 
@@ -92,6 +101,12 @@ SymCryptFatalEnvWindowsUsermodeWin8_1nLater( UINT32 fatalCode )
     TerminateProcess( GetCurrentProcess(), fatalCode );
 
     SymCryptFatalHang( fatalCode );
+
+#if WIN32 && __GNUC__
+    // ICE in seh_emit_stackalloc, disable stack-clash-protection for this func
+    // https://gcc.gnu.org/bugzilla/show_bug.cgi?id=90458
+    __builtin_unreachable();
+#endif
 }
 
 #if SYMCRYPT_CPU_AMD64 | SYMCRYPT_CPU_X86

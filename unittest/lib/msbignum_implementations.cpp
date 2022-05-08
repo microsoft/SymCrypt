@@ -13,7 +13,7 @@
 #define SCRATCH_BUF_OFFSET  (1 << 15)
 #define SCRATCH_BUF_SIZE    (1 << 15)
 
-char * ImpMsBignum::name = "MsBignum";
+const char * ImpMsBignum::name = "MsBignum";
 
 bigctx_t g_BignumCtx = { 0 };
 

@@ -15,7 +15,7 @@ typedef SYMCRYPT_MARVIN32_EXPANDED_SEED SYMCRYPT_MARVIN32_EXPANDED_KEY, *PSYMCRY
 
 class ImpSc{
 public:
-    static char * name;
+    static const char * name;
 };
 
 //

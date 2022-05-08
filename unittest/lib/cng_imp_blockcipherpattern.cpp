@@ -4,7 +4,8 @@
 // Copyright (c) Microsoft Corporation. Licensed under the MIT license. 
 //
 
-BCRYPT_ALG_HANDLE BlockCipherImpState<ImpXxx, AlgXxx, ModeXxx>::hAlg;
+template<>
+BCRYPT_ALG_HANDLE BlockCipherImpState<ImpXxx, AlgXxx, ModeXxx>::hAlg {};
 
 template<>
 VOID 
@@ -93,6 +94,7 @@ BlockCipherImp<ImpXxx, AlgXxx, ModeXxx>::~BlockCipherImp()
     state.hAlg = 0;
 }
 
+template<>
 SIZE_T BlockCipherImp<ImpXxx, AlgXxx, ModeXxx>::coreBlockLen()
 {
     ULONG   len;
@@ -105,6 +107,7 @@ SIZE_T BlockCipherImp<ImpXxx, AlgXxx, ModeXxx>::coreBlockLen()
     return len;
 }
 
+template<>
 NTSTATUS BlockCipherImp<ImpXxx, AlgXxx, ModeXxx>::setKey( _In_reads_( cbKey ) PCBYTE pbKey, SIZE_T cbKey )
 {
     NTSTATUS status = STATUS_SUCCESS;
@@ -220,7 +223,7 @@ Cleanup:
     
 }
 
-
+template<>
 VOID
 BlockCipherImp<ImpXxx, AlgXxx, ModeXxx>::encrypt( 
         _Inout_updates_opt_( cbChain )   PBYTE pbChain, 
@@ -241,6 +244,7 @@ BlockCipherImp<ImpXxx, AlgXxx, ModeXxx>::encrypt(
     CHECK( res == cbData, "?" );
 }
 
+template<>
 VOID
 BlockCipherImp<ImpXxx, AlgXxx, ModeXxx>::decrypt( 
         _Inout_updates_opt_( cbChain )   PBYTE pbChain, 

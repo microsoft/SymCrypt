@@ -53,7 +53,7 @@ VOID
 HashMultiImp::setImpName()
 {
     String sumAlgName;
-    char * sepStr = "<";
+    const char * sepStr = "<";
 
     for( HashImpPtrVector::const_iterator i = m_imps.begin(); i != m_imps.end(); ++i )
     {
@@ -266,7 +266,7 @@ ParallelHashMultiImp::ParallelHashMultiImp( String algName )
     m_algorithmName = algName;
 
     String sumAlgName;
-    char * sepStr = "<";
+    const char * sepStr = "<";
 
     for( ParallelHashImpPtrVector::const_iterator i = m_imps.begin(); i != m_imps.end(); ++i )
     {

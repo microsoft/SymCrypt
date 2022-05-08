@@ -1525,7 +1525,7 @@ extern const BYTE SymCryptSha512KATAnswer[64];
 #define SYMCRYPT_OBJ_NBYTES( _p )               ((_p)->nDigits * SYMCRYPT_FDEF_DIGIT_SIZE)
 #define SYMCRYPT_OBJ_NUINT32( _p )              ((_p)->nDigits * SYMCRYPT_FDEF_DIGIT_SIZE / sizeof( UINT32 ))
 
-#if SYMCRYPT_MS_VC
+#if SYMCRYPT_MS_VC || WIN32
 #define SYMCRYPT_MUL32x32TO64( _a, _b )         UInt32x32To64( (_a), (_b) )
 #elif SYMCRYPT_GNUC
 #define SYMCRYPT_MUL32x32TO64( _a, _b )         ( (unsigned long)(_a)*(unsigned long)(_b) )
@@ -3448,7 +3448,9 @@ SymCryptPositiveWidthNafRecoding(
 // Ingnore the incompatible pointer types void * to PSYMCRYPT_XXX
 #pragma GCC diagnostic ignored "-Wincompatible-pointer-types"
 
+#ifndef FIELD_OFFSET
 #define FIELD_OFFSET(type,field)    ((UINT32)(uintptr_t)&(((type *)0)->field))
+#endif
 
 #define __fastfail(x)               (*((volatile int *)(0)) = (int) (x))
 
@@ -3473,7 +3475,7 @@ SymCryptPositiveWidthNafRecoding(
 //   SEQ_CST corresponds to sequentially consistent memory ordering in C++11
 //
 
-#if SYMCRYPT_MS_VC
+#if SYMCRYPT_MS_VC || WIN32
 #include <intrin.h>
 
 #if SYMCRYPT_CPU_ARM64
@@ -3556,7 +3558,7 @@ SymCryptInlineInterlockedAdd64( volatile LONG64* destination, LONG64 value )
 
 #if SYMCRYPT_CPU_AMD64 | SYMCRYPT_CPU_ARM64
 
-#if SYMCRYPT_MS_VC
+#if SYMCRYPT_MS_VC || WIN32
 
 #if SYMCRYPT_CPU_ARM64
 #define SYMCRYPT_MSVC_CAS128_NF _InterlockedCompareExchange128_nf

@@ -1189,7 +1189,7 @@ SymCryptSha256AppendBlocks_xmm2(
 // SHA-NI Implementation
 //
 
-#if SYMCRYPT_MS_VC
+#if SYMCRYPT_MS_VC || WIN32
 // Intrinsic definitions included here
 // until the header is updated.
 // *******************************

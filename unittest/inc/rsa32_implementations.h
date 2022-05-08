@@ -80,12 +80,12 @@ extern "C" {
 //
 class ImpRsa32{
 public:
-    static char * name;
+    static const char * name;
 };
 
 class ImpRsa32b{
 public:
-    static char * name;
+    static const char * name;
 };
 
 

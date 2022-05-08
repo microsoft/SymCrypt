@@ -14,7 +14,7 @@ extern HCRYPTPROV g_capiProvider;
 //
 class ImpCapi{
 public:
-    static char * name;
+    static const char * name;
 };
 
 //

@@ -462,7 +462,7 @@ SymCryptRc2CfbDecrypt(
 #define SYMCRYPT_2DES_EXPANDED_KEY  SYMCRYPT_3DES_EXPANDED_KEY
 #define SymCrypt2DesExpandKey       SymCrypt3DesExpandKey
 
-char * ImpSc::name = "SymCrypt";
+const char * ImpSc::name = "SymCrypt";
 
 #define IMP_NAME    SYMCRYPT
 #define IMP_Name    Sc
@@ -666,33 +666,33 @@ char * ImpSc::name = "SymCrypt";
 #define ALG_Name    Pbkdf2
 
 #define ALG_Base    HmacMd5
-#include "sc_imp_kdfpattern.cpp"
 #include "sc_imp_pbkdf2pattern.cpp"
+#include "sc_imp_kdfpattern.cpp"
 #undef ALG_Base
 
 #define ALG_Base    HmacSha1
-#include "sc_imp_kdfpattern.cpp"
 #include "sc_imp_pbkdf2pattern.cpp"
+#include "sc_imp_kdfpattern.cpp"
 #undef ALG_Base
 
 #define ALG_Base    HmacSha256
-#include "sc_imp_kdfpattern.cpp"
 #include "sc_imp_pbkdf2pattern.cpp"
+#include "sc_imp_kdfpattern.cpp"
 #undef ALG_Base
 
 #define ALG_Base    HmacSha384
-#include "sc_imp_kdfpattern.cpp"
 #include "sc_imp_pbkdf2pattern.cpp"
+#include "sc_imp_kdfpattern.cpp"
 #undef ALG_Base
 
 #define ALG_Base    HmacSha512
-#include "sc_imp_kdfpattern.cpp"
 #include "sc_imp_pbkdf2pattern.cpp"
+#include "sc_imp_kdfpattern.cpp"
 #undef ALG_Base
 
 #define ALG_Base    AesCmac
-#include "sc_imp_kdfpattern.cpp"
 #include "sc_imp_pbkdf2pattern.cpp"
+#include "sc_imp_kdfpattern.cpp"
 #undef ALG_Base
 
 #undef ALG_NAME
@@ -702,33 +702,33 @@ char * ImpSc::name = "SymCrypt";
 #define ALG_Name    Sp800_108
 
 #define ALG_Base    HmacMd5
-#include "sc_imp_kdfpattern.cpp"
 #include "sc_imp_sp800_108pattern.cpp"
+#include "sc_imp_kdfpattern.cpp"
 #undef ALG_Base
 
 #define ALG_Base    HmacSha1
-#include "sc_imp_kdfpattern.cpp"
 #include "sc_imp_sp800_108pattern.cpp"
+#include "sc_imp_kdfpattern.cpp"
 #undef ALG_Base
 
 #define ALG_Base    HmacSha256
-#include "sc_imp_kdfpattern.cpp"
 #include "sc_imp_sp800_108pattern.cpp"
+#include "sc_imp_kdfpattern.cpp"
 #undef ALG_Base
 
 #define ALG_Base    HmacSha384
-#include "sc_imp_kdfpattern.cpp"
 #include "sc_imp_sp800_108pattern.cpp"
+#include "sc_imp_kdfpattern.cpp"
 #undef ALG_Base
 
 #define ALG_Base    HmacSha512
-#include "sc_imp_kdfpattern.cpp"
 #include "sc_imp_sp800_108pattern.cpp"
+#include "sc_imp_kdfpattern.cpp"
 #undef ALG_Base
 
 #define ALG_Base    AesCmac
-#include "sc_imp_kdfpattern.cpp"
 #include "sc_imp_sp800_108pattern.cpp"
+#include "sc_imp_kdfpattern.cpp"
 #undef ALG_Base
 
 #undef ALG_NAME
@@ -748,18 +748,18 @@ char * ImpSc::name = "SymCrypt";
 #define ALG_Name    TlsPrf1_2
 
 #define ALG_Base    HmacSha256
-#include "sc_imp_kdfpattern.cpp"
 #include "sc_imp_tlsprf1_2pattern.cpp"
+#include "sc_imp_kdfpattern.cpp"
 #undef ALG_Base
 
 #define ALG_Base    HmacSha384
-#include "sc_imp_kdfpattern.cpp"
 #include "sc_imp_tlsprf1_2pattern.cpp"
+#include "sc_imp_kdfpattern.cpp"
 #undef ALG_Base
 
 #define ALG_Base    HmacSha512
-#include "sc_imp_kdfpattern.cpp"
 #include "sc_imp_tlsprf1_2pattern.cpp"
+#include "sc_imp_kdfpattern.cpp"
 #undef ALG_Base
 
 #undef ALG_NAME
@@ -3988,7 +3988,7 @@ const HASH_INFO hashInfoTable[] = {
     { NULL },
 };
 
-PCHASH_INFO getHashInfo( PCSTR pcstrName )
+FORCEINLINE PCHASH_INFO getHashInfo( PCSTR pcstrName )
 {
     for( int i=0; hashInfoTable[i].name != NULL; i++ )
     {
@@ -6920,7 +6920,7 @@ EccImp<ImpSc, AlgEcdh>::~EccImp()
 }
 
 //============================
-#if SYMCRYPT_MS_VC
+#if SYMCRYPT_MS_VC || WIN32
 template<>
 VOID
 algImpKeyPerfFunction<ImpSc, AlgIEEE802_11SaeCustom>( PBYTE buf1, PBYTE buf2, PBYTE buf3, SIZE_T keySize )
@@ -7127,7 +7127,7 @@ addSymCryptAlgs()
     addImplementationToGlobalList<EccImp<ImpSc, AlgEcdsaVerify>>();
     addImplementationToGlobalList<EccImp<ImpSc, AlgEcdh>>();
 
-#if SYMCRYPT_MS_VC
+#if SYMCRYPT_MS_VC || WIN32
     addImplementationToGlobalList<ArithImp<ImpSc, AlgIEEE802_11SaeCustom>>();
 #endif
 

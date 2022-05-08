@@ -9,7 +9,7 @@
 
 #if INCLUDE_IMPL_REF
 
-char * ImpRef::name = "Ref";
+const char * ImpRef::name = "Ref";
 
 ///////////////////////////////////////////////////////
 // Poly1305

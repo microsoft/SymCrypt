@@ -40,7 +40,7 @@ TlsCbcHmacMultiImp::TlsCbcHmacMultiImp( String algName )
     m_algorithmName = algName;
 
     String sumImpName;
-    char * sepStr = "<";
+    const char * sepStr = "<";
 
     for( TlsCbcHmacImpPtrVector::const_iterator i = m_imps.begin(); i != m_imps.end(); ++i )
     {
@@ -166,8 +166,8 @@ VOID
 testTlsCbcHmacAlgorithms()
 {
     std::unique_ptr<TlsCbcHmacMultiImp> pImp;
-       
-    char * sep = "    ";
+
+    const char * sep = "    ";
     BOOL doneAnything = FALSE;
 
     pImp.reset( new TlsCbcHmacMultiImp( "TlsCbcHmacSha1" ) );

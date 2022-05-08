@@ -9,7 +9,7 @@
 #include "precomp.h"
 
 KatData * 
-getCustomResource( PSTR resourceName, PSTR resourceType )
+getCustomResource( PCSTR resourceName, PCSTR resourceType )
 {
     UNREFERENCED_PARAMETER(resourceType);
     

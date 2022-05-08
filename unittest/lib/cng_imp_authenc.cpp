@@ -4,7 +4,8 @@
 // Copyright (c) Microsoft Corporation. Licensed under the MIT license. 
 //
 
-BCRYPT_ALG_HANDLE AuthEncImpState<ImpXxx, AlgXxx, ModeXxx>::hAlg;
+template<>
+BCRYPT_ALG_HANDLE AuthEncImpState<ImpXxx, AlgXxx, ModeXxx>::hAlg {};
 
 template<>
 VOID 

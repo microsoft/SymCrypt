@@ -59,7 +59,7 @@ public:
     {
         SIZE_T                  keySize;        // key size to add to row header. (0 if not used)
         SIZE_T                  dataSize;       // data size to add to row header. (only used with g_measure_specific_sizes)
-        char *                  strPostfix;     // postfix string, must be 3 characters long
+        const char *            strPostfix;     // postfix string, must be 3 characters long
         double                  cFixed;         // clocks of fixed overhead.
         double                  cPerByte;       // clocks average cost per byte (used only for linear records, 0 for non-linear records)
         double                  cRange;         // 90 percentile of deviation from prediction by previous two numbers

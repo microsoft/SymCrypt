@@ -277,7 +277,7 @@ if(CMAKE_SYSTEM_PROCESSOR MATCHES "AMD64")
     endif()
 endif()
 
-if(WIN32)
+if(MSVC)
     # Disable run-time type information for SymCrypt library - we do not use it
     add_compile_options(/GR-)
 
@@ -310,7 +310,7 @@ if(WIN32)
     target_link_libraries(symcrypt_windows10sgx symcrypt_common)
 endif()
 
-if(NOT WIN32)
+if(NOT MSVC)
     add_compile_options(-Wno-trigraphs)
 
     # Mitigate stack buffer overruns, and stack clash attacks
@@ -328,14 +328,37 @@ if(NOT WIN32)
         endif()
     endif()
 
-    add_library(symcrypt_linuxusermode STATIC env_linuxUserMode.c)
-    set_target_properties(symcrypt_linuxusermode PROPERTIES PREFIX "")
-    target_link_libraries(symcrypt_linuxusermode symcrypt_common)
+    if (WIN32)
+
+        add_library(symcrypt_usermodewin7 STATIC env_windowsUserModeWin7.c)
+        set_target_properties(symcrypt_usermodewin7 PROPERTIES PREFIX "")
+        target_link_libraries(symcrypt_usermodewin7 symcrypt_common ssp)
+
+        add_library(symcrypt_usermodewin8_1 STATIC env_windowsUserModeWin8_1.c)
+        set_target_properties(symcrypt_usermodewin8_1 PROPERTIES PREFIX "")
+        target_link_libraries(symcrypt_usermodewin8_1 symcrypt_common ssp)
+
+        add_library(symcrypt_windowskerneldebugger STATIC env_windowsKernelDebugger.c)
+        set_target_properties(symcrypt_windowskerneldebugger PROPERTIES PREFIX "")
+        target_link_libraries(symcrypt_windowskerneldebugger symcrypt_common ssp)
+
+        add_library(symcrypt_windows10sgx STATIC env_win10Sgx.c)
+        set_target_properties(symcrypt_windows10sgx PROPERTIES PREFIX "")
+        target_link_libraries(symcrypt_windows10sgx symcrypt_common ssp)
+    else ()
+        add_library(symcrypt_linuxusermode STATIC env_linuxUserMode.c)
+        set_target_properties(symcrypt_linuxusermode PROPERTIES PREFIX "")
+        target_link_libraries(symcrypt_linuxusermode symcrypt_common)
+    endif ()
 endif()
 
 include_directories(${CMAKE_SOURCE_DIR}/inc)
 
 add_library(symcrypt_common STATIC ${SOURCES_COMMON})
+
+if (NOT MSVC AND WIN32)
+    target_link_libraries(symcrypt_common ssp)
+endif ()
 
 add_library(symcrypt_generic STATIC env_generic.c)
 set_target_properties(symcrypt_generic PROPERTIES PREFIX "")

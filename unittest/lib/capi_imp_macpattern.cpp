@@ -4,34 +4,19 @@
 // Copyright (c) Microsoft Corporation. Licensed under the MIT license. 
 //
 
-MacImp<ImpXxx, AlgXxx>::MacImp()
-{
-    state.hHash = 0;
-    state.hKey = 0;
-    m_perfDataFunction = &algImpDataPerfFunction <ImpXxx, AlgXxx>;
-    m_perfKeyFunction  = &algImpKeyPerfFunction  <ImpXxx, AlgXxx>;
-    m_perfCleanFunction= &algImpCleanPerfFunction<ImpXxx, AlgXxx>;
-}
-
 template<>
-MacImp<ImpXxx, AlgXxx>::~MacImp()
-{
-    CHECK( state.hKey == 0, "Handle leak" );
-    CHECK( state.hHash == 0, "Handle leak" );
-}
-
 SIZE_T MacImp<ImpXxx, AlgXxx>::inputBlockLen()
 {
     return SYMCRYPT_XXX_INPUT_BLOCK_SIZE;
 }
 
+template<>
 SIZE_T MacImp<ImpXxx, AlgXxx>::resultLen()
 {
     return SYMCRYPT_XXX_RESULT_SIZE;
 }
 
-
-
+template<>
 NTSTATUS 
 MacImp<ImpXxx, AlgXxx>::init( _In_reads_( cbKey ) PCBYTE pbKey, SIZE_T cbKey )
 {
@@ -69,11 +54,13 @@ MacImp<ImpXxx, AlgXxx>::init( _In_reads_( cbKey ) PCBYTE pbKey, SIZE_T cbKey )
     return STATUS_SUCCESS;
 }
 
+template<>
 VOID MacImp<ImpXxx, AlgXxx>::append( _In_reads_( cbData ) PCBYTE pbData, SIZE_T cbData )
 {
     CryptHashData( state.hHash, (PBYTE) pbData, (ULONG) cbData, 0 );
 }
 
+template<>
 VOID MacImp<ImpXxx, AlgXxx>::result( _Out_writes_( cbResult ) PBYTE pbResult, SIZE_T cbResult )
 {
     DWORD resLen = (DWORD) cbResult;
@@ -86,6 +73,7 @@ VOID MacImp<ImpXxx, AlgXxx>::result( _Out_writes_( cbResult ) PBYTE pbResult, SI
 }
 
 
+template<>
 NTSTATUS
 MacImp<ImpXxx, AlgXxx>::mac( 
     _In_reads_( cbKey )      PCBYTE pbKey,   SIZE_T cbKey, 
@@ -99,6 +87,7 @@ MacImp<ImpXxx, AlgXxx>::mac(
 //
 // Perf Invariant: buf 1 contains the key handle
 //
+template<>
 VOID
 algImpKeyPerfFunction<ImpXxx, AlgXxx>(PBYTE buf1, PBYTE buf2, PBYTE buf3, SIZE_T keySize )
 {
@@ -130,6 +119,7 @@ algImpKeyPerfFunction<ImpXxx, AlgXxx>(PBYTE buf1, PBYTE buf2, PBYTE buf3, SIZE_T
     
 }
 
+template<>
 VOID
 algImpCleanPerfFunction<ImpXxx, AlgXxx>( PBYTE buf1, PBYTE buf2, PBYTE buf3 )
 {
@@ -139,6 +129,7 @@ algImpCleanPerfFunction<ImpXxx, AlgXxx>( PBYTE buf1, PBYTE buf2, PBYTE buf3 )
     CHECK( CryptDestroyKey( *(HCRYPTKEY *) buf1 ), "" );
 }
 
+template<>
 VOID 
 algImpDataPerfFunction<ImpXxx, AlgXxx>(PBYTE buf1, PBYTE buf2, PBYTE buf3, SIZE_T dataSize )
 {
@@ -156,3 +147,19 @@ algImpDataPerfFunction<ImpXxx, AlgXxx>(PBYTE buf1, PBYTE buf2, PBYTE buf3, SIZE_
     CHECK( CryptDestroyHash( h ), "" );
 }
 
+template<>
+MacImp<ImpXxx, AlgXxx>::MacImp()
+{
+    state.hHash = 0;
+    state.hKey = 0;
+    m_perfDataFunction = &algImpDataPerfFunction <ImpXxx, AlgXxx>;
+    m_perfKeyFunction  = &algImpKeyPerfFunction  <ImpXxx, AlgXxx>;
+    m_perfCleanFunction= &algImpCleanPerfFunction<ImpXxx, AlgXxx>;
+}
+
+template<>
+MacImp<ImpXxx, AlgXxx>::~MacImp()
+{
+    CHECK( state.hKey == 0, "Handle leak" );
+    CHECK( state.hHash == 0, "Handle leak" );
+}

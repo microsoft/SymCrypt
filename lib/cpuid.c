@@ -350,7 +350,7 @@ SymCryptDetectCpuFeaturesFromRegisters()
         SYMCRYPT_CPU_FEATURE_NEON_SHA256
         );
 
-#if SYMCRYPT_MS_VC
+#if SYMCRYPT_MS_VC || WIN32
     try {
 
         if( READ_ARM64_FEATURE(ARM64_ID_AA64ISAR0_EL1, ISAR0_AES) < ISAR0_AES_INSTRUCTIONS )

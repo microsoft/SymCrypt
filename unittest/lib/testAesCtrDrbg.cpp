@@ -116,7 +116,7 @@ RngSp800_90MultiImp::RngSp800_90MultiImp( String algName )
     m_algorithmName = algName;
 
     String sumAlgName;
-    char * sepStr = "<";
+    const char * sepStr = "<";
 
     for( RngImpPtrVector::const_iterator i = m_imps.begin(); i != m_imps.end(); ++i )
     {

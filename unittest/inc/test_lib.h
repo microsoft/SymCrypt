@@ -41,7 +41,7 @@
 
     #include "precomp_iOS.h"
 
-#elif defined(__GNUC__)
+#elif defined(__GNUC__) && !defined(__MINGW32__)
 
     #include <stdio.h>
     #include <cstring>
@@ -134,21 +134,24 @@
     #define Sleep(x) sleep((x)/1000)
 #else
     #include <ntstatus.h>
+    #ifndef NT_SUCCESS
+    #define NT_SUCCESS(Status)               (((NTSTATUS)(Status)) >= 0)
+    #endif
+    #ifndef STATUS_AUTH_TAG_MISMATCH
+    #define STATUS_AUTH_TAG_MISMATCH         ((NTSTATUS)0xC000A002L)
+    #endif
 
     // Ensure that windows.h doesn't re-define the status_* symbols
     #define WIN32_NO_STATUS
+    #ifdef __MINGW64__
+    #define NOCRYPT
+    #endif
     #include <windows.h>
     #include <winternl.h>
     #include <winioctl.h>
-
-    //
-    // Hack to get all the BCrypt declations even though our binaries target down-level platforms.
-    //
-    #pragma push_macro("NTDDI_VERSION")
-    #undef NTDDI_VERSION
-    #define NTDDI_VERSION NTDDI_WINTHRESHOLD
-    #include <bcrypt.h>
-    #pragma pop_macro("NTDDI_VERSION")
+    #ifdef __MINGW64__
+    #undef NOCRYPT
+    #endif
 
     #include <stdio.h>
     #include <stdlib.h>
@@ -165,6 +168,21 @@
     #include <strstream>
     #include <set>
     #include <strsafe.h>
+
+    //
+    // Hack to get all the BCrypt declations even though our binaries target down-level platforms.
+    //
+    #pragma push_macro("NTDDI_VERSION")
+    #undef NTDDI_VERSION
+    #define NTDDI_VERSION NTDDI_WINTHRESHOLD
+    #ifdef __MINGW64__
+    #include "symcrypt_no_sal.h"
+    #include <shared/bcrypt.h>
+    #include <um/wincrypt.h>
+    #else
+    #include <bcrypt.h>
+    #endif
+    #pragma pop_macro("NTDDI_VERSION")
 
     #ifndef PRIx64
     #define PRIx64       "llx"
@@ -299,7 +317,7 @@ extern "C" {
 // Macros for different environments
 //
 
-#if SYMCRYPT_MS_VC
+#if SYMCRYPT_MS_VC || WIN32
 
     #define STRICMP                     _stricmp
     #define STRNICMP                    _strnicmp
@@ -409,6 +427,8 @@ extern "C" {
 
     #define ACQUIRE_FAST_INPROC_MUTEX(pMutex)   pthread_mutex_lock((pthread_mutex_t *)pMutex)
     #define RELEASE_FAST_INPROC_MUTEX(pMutex)   pthread_mutex_unlock((pthread_mutex_t *)pMutex)
+#elif defined(WIN32)
+#define GENRANDOM(pbBuf, cbBuf)     BCryptGenRandom( NULL, (PBYTE) (pbBuf), (cbBuf), BCRYPT_USE_SYSTEM_PREFERRED_RNG )
 #else
     #error "Oh no, need a GENRANDOM() implementation"
 #endif
@@ -464,8 +484,13 @@ typedef std::basic_string<BYTE> BString;        // String of bytes
 
 #define STRING_INT( x )     #x
 #define STRING( x )         STRING_INT( x )         // This extra macro indirection ensures we get enough macro expansion.
+#if SYMCRYPT_MS_VC
 #define LSTRING_INT( x )    L#x
 #define LSTRING( x )        LSTRING_INT( x )
+#else
+#define LSTRING_INT( x )    L ## x
+#define LSTRING( x )        LSTRING_INT( #x )
+#endif
 
 #define CONCAT_I2( a, b )       a##b
 #define CONCAT_I3( a, b, c )    a##b##c
@@ -530,119 +555,119 @@ typedef std::basic_string<BYTE> BString;        // String of bytes
 
 class AlgMd2{
 public:
-    const static char * name;
+    static const char * name;
 };
 
 class AlgMd4{
 public:
-    const static char * name;
+    static const char * name;
 };
 
 class AlgMd5{
 public:
-    const static char * name;
+    static const char * name;
 };
 
 class AlgSha1{
 public:
-    const static char * name;
+    static const char * name;
 };
 
 class AlgSha256{
 public:
-    const static char * name;
+    static const char * name;
 };
 
 class AlgSha384{
 public:
-    const static char * name;
+    static const char * name;
 };
 
 class AlgSha512{
 public:
-    const static char * name;
+    static const char * name;
 };
 
 class AlgHmacMd5{
 public:
-    const static char * name;
+    static const char * name;
 };
 
 class AlgHmacSha1{
 public:
-    const static char * name;
+    static const char * name;
 };
 
 class AlgHmacSha256{
 public:
-    const static char * name;
+    static const char * name;
 };
 
 class AlgHmacSha384{
 public:
-    const static char * name;
+    static const char * name;
 };
 
 class AlgHmacSha512{
 public:
-    const static char * name;
+    static const char * name;
 };
 
 class AlgAesCmac{
 public:
-	const static char * name;
+	static const char * name;
 };
 
 class AlgMarvin32{
 public:
-	const static char * name;
+	static const char * name;
 };
 
 class AlgAes{
 public:
-    const static char * name;
+    static const char * name;
 };
 
 class AlgDes{
 public:
-    const static char * name;
+    static const char * name;
 };
 
 class Alg2Des{
 public:
-    const static char * name;
+    static const char * name;
 };
 
 class Alg3Des{
 public:
-    const static char * name;
+    static const char * name;
 };
 
 class AlgDesx{
 public:
-    const static char * name;
+    static const char * name;
 };
 
 class AlgRc2{
 public:
-    const static char * name;
+    static const char * name;
 };
 
 class AlgRc4{
 public:
-    const static char * name;
+    static const char * name;
     static BOOL isRandomAccess;
 };
 
 class AlgChaCha20 {
 public:
-    const static char * name;
+    static const char * name;
     static BOOL isRandomAccess;
 };
 
 class AlgPoly1305 {
 public:
-    const static char * name;
+    static const char * name;
 };
 
 class AlgChaCha20Poly1305 {
@@ -652,75 +677,75 @@ public:
 
 class AlgAesCtrDrbg{
 public:
-    const static char * name;
+    static const char * name;
 };
 
 class AlgAesCtrF142{
 public:
-    const static char * name;
+    static const char * name;
 };
 
 class AlgParallelSha256{
 public:
-    const static char * name;
+    static const char * name;
     const static WCHAR * pwstrBasename;      // e.g. L"SHA256"
 };
 
 class AlgParallelSha384{
 public:
-    const static char * name;
+    static const char * name;
     const static WCHAR * pwstrBasename;
 };
 
 class AlgParallelSha512{
 public:
-    const static char * name;
+    static const char * name;
     const static WCHAR * pwstrBasename;
 };
 
 class AlgPbkdf2{
 public:
-    const static char * name;
+    static const char * name;
 };
 
 class AlgSp800_108{
 public:
-    const static char * name;
+    static const char * name;
 };
 
 class AlgTlsPrf1_1{
 public:
-    const static char * name;
+    static const char * name;
 };
 
 class AlgTlsPrf1_2{
 public:
-    const static char * name;
+    static const char * name;
 };
 
 class AlgHkdf{
 public:
-    const static char * name;
+    static const char * name;
 };
 
 class AlgXtsAes{
 public:
-    const static char * name;
+    static const char * name;
 };
 
 class AlgTlsCbcHmacSha1 {
 public:
-    const static char * name;
+    static const char * name;
 };
 
 class AlgTlsCbcHmacSha256 {
 public:
-    const static char * name;
+    static const char * name;
 };
 
 class AlgTlsCbcHmacSha384 {
 public:
-    const static char * name;
+    static const char * name;
 };
 
 #define MODE_FLAG_CHAIN 1
@@ -728,30 +753,30 @@ public:
 
 class ModeEcb{
 public:
-    const static char * name;
+    static const char * name;
     static ULONG flags;
 };
 
 class ModeCbc{
 public:
-    const static char * name;
+    static const char * name;
     static ULONG flags;
 };
 
 class ModeCfb{
 public:
-    const static char * name;
+    static const char * name;
     static ULONG flags;
 };
 
 class ModeCcm{
 public:
-    const static char * name;
+    static const char * name;
 };
 
 class ModeGcm{
 public:
-    const static char * name;
+    static const char * name;
 };
 
 class ModeNone {
@@ -761,202 +786,202 @@ public:
 
 class AlgIntAdd{
 public:
-    const static char * name;
+    static const char * name;
 };
 
 class AlgIntSub{
 public:
-    const static char * name;
+    static const char * name;
 };
 
 class AlgIntMul{
 public:
-    const static char * name;
+    static const char * name;
 };
 
 class AlgIntSquare{
 public:
-    const static char * name;
+    static const char * name;
 };
 
 class AlgIntDivMod{
 public:
-    const static char * name;
+    static const char * name;
 };
 
 class AlgModAdd{
 public:
-    const static char * name;
+    static const char * name;
 };
 
 class AlgModSub{
 public:
-    const static char * name;
+    static const char * name;
 };
 
 class AlgModMul{
 public:
-    const static char * name;
+    static const char * name;
 };
 
 class AlgModSquare{
 public:
-    const static char * name;
+    static const char * name;
 };
 
 class AlgModInv{
 public:
-    const static char * name;
+    static const char * name;
 };
 
 class AlgModExp{
 public:
-    const static char * name;
+    static const char * name;
 };
 
 class AlgScsTable{
 public:
-    const static char * name;
+    static const char * name;
 };
 
 class AlgIEEE802_11SaeCustom{
 public:
-    const static char * name;
+    static const char * name;
 };
 
 class AlgTrialDivision{
 public:
-    const static char * name;
+    static const char * name;
 };
 
 class AlgTrialDivisionContext{
 public:
-    const static char * name;
+    static const char * name;
 };
 
 class AlgWipe{
 public:
-    const static char * name;
+    static const char * name;
 };
 
 class AlgRsaEncRaw{
 public:
-    const static char * name;
+    static const char * name;
 };
 
 class AlgRsaEncPkcs1{
 public:
-    const static char * name;
+    static const char * name;
 };
 
 class AlgRsaEncOaep{
 public:
-    const static char * name;
+    static const char * name;
 };
 
 class AlgRsaSignPkcs1{
 public:
-    const static char * name;
+    static const char * name;
 };
 
 class AlgRsaSignPss{
 public:
-    const static char * name;
+    static const char * name;
 };
 
 class AlgDsaSign{
 public:
-    const static char * name;
+    static const char * name;
 };
 
 class AlgDsaVerify{
 public:
-    const static char * name;
+    static const char * name;
 };
 
 class AlgDh{
 public:
-    const static char * name;
+    static const char * name;
 };
 
 class AlgDsa{
 public:
-    const static char * name;
+    static const char * name;
 };
 
 class AlgEcurveAllocate{
 public:
-    const static char * name;
+    static const char * name;
 };
 
 class AlgEcpointSetZero{
 public:
-    const static char * name;
+    static const char * name;
 };
 
 class AlgEcpointSetDistinguished{
 public:
-    const static char * name;
+    static const char * name;
 };
 
 class AlgEcpointSetRandom{
 public:
-    const static char * name;
+    static const char * name;
 };
 
 class AlgEcpointIsEqual{
 public:
-    const static char * name;
+    static const char * name;
 };
 
 class AlgEcpointIsZero{
 public:
-    const static char * name;
+    static const char * name;
 };
 
 class AlgEcpointOnCurve{
 public:
-    const static char * name;
+    static const char * name;
 };
 
 class AlgEcpointAdd{
 public:
-    const static char * name;
+    static const char * name;
 };
 
 class AlgEcpointAddDiffNz{
 public:
-    const static char * name;
+    static const char * name;
 };
 
 class AlgEcpointDouble{
 public:
-    const static char * name;
+    static const char * name;
 };
 
 class AlgEcpointScalarMul{
 public:
-    const static char * name;
+    static const char * name;
 };
 
 class AlgEcdsaSign{
 public:
-    const static char * name;
+    static const char * name;
 };
 
 class AlgEcdsaVerify{
 public:
-    const static char * name;
+    static const char * name;
 };
 
 class AlgEcdh{
 public:
-    const static char * name;
+    static const char * name;
 };
 
 class AlgDeveloperTest{
 public:
-    const static char * name;
+    static const char * name;
 };
 
 //
@@ -1176,7 +1201,7 @@ VOID
 testDsaAlgorithms();
 
 KatData *
-getCustomResource( _In_ PSTR resourceName, _In_ PSTR resourceType );
+getCustomResource( _In_ PCSTR resourceName, _In_ PCSTR resourceType );
 
 VOID
 randomTestGetSubstringPosition( _In_reads_( bufSize )  PCBYTE buf,
@@ -1563,7 +1588,7 @@ typedef VOID (SYMCRYPT_CALL * SelfTestFn)();
 typedef struct _SELFTEST_INFO
 {
     SelfTestFn  f;
-    LPSTR       name;
+    LPCSTR      name;
 } SELFTEST_INFO;
 
 extern const SELFTEST_INFO g_selfTests[];
@@ -1571,7 +1596,7 @@ extern const SELFTEST_INFO g_selfTests[];
 VOID
 runTestThread( VOID * seed );
 
-extern PSTR testDriverName;
+extern PCSTR testDriverName;
 
 VOID
 printHexArray( PCBYTE pData, SIZE_T nElements, SIZE_T elementSize );

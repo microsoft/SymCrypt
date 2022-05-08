@@ -4,6 +4,9 @@
 // Copyright (c) Microsoft Corporation. Licensed under the MIT license. 
 //
 
+template<>
+ULONG BlockCipherImpState<ImpXxx,AlgXxx,ModeXxx>::calg[CAPI_CALG_ARRAY_SIZE] {};
+
 //
 // Perf Invariant: buf 1 contains the key handle
 //
@@ -78,8 +81,7 @@ algImpDecryptPerfFunction<ImpXxx, AlgXxx, ModeXxx>(PBYTE buf1, PBYTE buf2, PBYTE
     CHECK( CryptDecrypt( *(HCRYPTKEY*) buf1, 0, FALSE, 0, buf3, &len ), "Decryption failure" );
 }
 
-
-
+template<>
 BlockCipherImp<ImpXxx, AlgXxx, ModeXxx>::BlockCipherImp()
 {
     state.hKey = 0;
@@ -102,13 +104,13 @@ BlockCipherImp<ImpXxx, AlgXxx, ModeXxx>::~BlockCipherImp()
     }
 }
 
+template<>
 SIZE_T BlockCipherImp<ImpXxx, AlgXxx, ModeXxx>::coreBlockLen()
 {
     return SYMCRYPT_XXX_BLOCK_SIZE;
 }
 
-ULONG BlockCipherImpState<ImpXxx,AlgXxx,ModeXxx>::calg[CAPI_CALG_ARRAY_SIZE];
-
+template<>
 NTSTATUS 
 BlockCipherImp<ImpXxx, AlgXxx, ModeXxx>::setKey( _In_reads_( cbKey ) PCBYTE pbKey, SIZE_T cbKey )
 {
@@ -156,6 +158,7 @@ BlockCipherImp<ImpXxx, AlgXxx, ModeXxx>::setKey( _In_reads_( cbKey ) PCBYTE pbKe
     return STATUS_SUCCESS;
 }
 
+template<>
 VOID BlockCipherImp<ImpXxx, AlgXxx, ModeXxx>::encrypt( 
         _Inout_updates_opt_( cbChain )   PBYTE pbChain, 
                                         SIZE_T cbChain, 
@@ -249,6 +252,7 @@ VOID BlockCipherImp<ImpXxx, AlgXxx, ModeXxx>::encrypt(
     }
 }
 
+template<>
 VOID BlockCipherImp<ImpXxx, AlgXxx, ModeXxx>::decrypt( 
         _Inout_updates_opt_( cbChain )   PBYTE pbChain, 
                                         SIZE_T cbChain, 

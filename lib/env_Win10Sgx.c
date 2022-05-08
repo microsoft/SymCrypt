@@ -18,6 +18,9 @@ SYMCRYPT_CPU_FEATURES SYMCRYPT_CALL SymCryptCpuFeaturesNeverPresentEnvWin10Sgx()
 #endif    
 }
 
+#if WIN32 && __GNUC__
+[[gnu::optimize("no-stack-clash-protection")]]
+#endif
 _Analysis_noreturn_
 VOID
 SYMCRYPT_CALL
@@ -50,6 +53,12 @@ SymCryptFatalEnvWin10Sgx( UINT32 fatalCode )
     //
 
     SymCryptFatalHang( fatalCode );
+
+#if WIN32 && __GNUC__
+    // ICE in seh_emit_stackalloc, disable stack-clash-protection for this func
+    // https://gcc.gnu.org/bugzilla/show_bug.cgi?id=90458
+    __builtin_unreachable();
+#endif
 }
 
 VOID

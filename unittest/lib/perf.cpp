@@ -31,7 +31,7 @@ double g_tscFreq;
 
 #if (SYMCRYPT_MS_VC || SYMCRYPT_GNUC) && (SYMCRYPT_CPU_AMD64 || SYMCRYPT_CPU_X86)
     // Windows or Linux, x86 or AMD64
-    #if SYMCRYPT_MS_VC
+    #if SYMCRYPT_MS_VC || WIN32
         #include <intrin.h>
     #else
         #include <x86intrin.h>
@@ -100,7 +100,7 @@ double g_tscFreq;
 
 BOOLEAN g_perfClockScaling = ENABLE_PERF_CLOCK_SCALING;
 
-#if SYMCRYPT_MS_VC
+#if SYMCRYPT_MS_VC || WIN32
     #define ALLOCA( n ) _alloca( n )
 #else
     #define ALLOCA( n ) alloca( n )
@@ -151,7 +151,7 @@ GET_PERF_CLOCK()
 }
 */
 
-PSTR g_perfUnits = PERF_UNIT;
+PCSTR g_perfUnits = PERF_UNIT;
 
 PVOID g_stackAllocLinkedList;     // We put alloca's in a linked list so the compiler won't optimize it away.
 
@@ -1041,8 +1041,8 @@ VOID measurePerfData(
 }
 
 const struct {
-    UINT32  exKeyParam;
-    char *  str;
+    UINT32       exKeyParam;
+    const char * str;
 } g_exKeyParamMapping[] = {
     { 0,                                    "   " },
     { PERF_KEY_SECRET,                      "s  " },
@@ -1255,7 +1255,7 @@ measurePerf()
 {
     iprint( "\nStarting performance measurements...\n" );
 
-    #if SYMCRYPT_MS_VC
+    #if SYMCRYPT_MS_VC || WIN32
     int oldPriority = GetThreadPriority( GetCurrentThread() );
 
     CHECK( SetThreadPriority( GetCurrentThread(), THREAD_PRIORITY_TIME_CRITICAL ), "Failed to set priority" );
@@ -1264,7 +1264,7 @@ measurePerf()
     DWORD_PTR affinitymask = (DWORD_PTR)1 << GetCurrentProcessorNumber();
     affinitymask = SetThreadAffinityMask( GetCurrentThread(), affinitymask );
     CHECK( affinitymask != 0, "Failed to set affinity mask" );
-    #endif // SYMCRYPT_MS_VC
+    #endif // SYMCRYPT_MS_VC || SYMCRYPT_GNUC && WIN32
 
     initPerfSystem();
 
@@ -1277,11 +1277,11 @@ measurePerf()
     }
 
 
-    #if SYMCRYPT_MS_VC
+    #if SYMCRYPT_MS_VC || WIN32
     CHECK( SetThreadAffinityMask( GetCurrentThread(), affinitymask ) != 0, "Failed to restore affinity mask" );
     CHECK( GetThreadPriority( GetCurrentThread() ) == THREAD_PRIORITY_TIME_CRITICAL, "Thread priority decay" );
     CHECK( SetThreadPriority( GetCurrentThread(), oldPriority ), "Failed to set priority" );
-    #endif // SYMCRYPT_MS_VC
+    #endif // SYMCRYPT_MS_VC || SYMCRYPT_GNUC && WIN32
 
     print( ".%c.\n", ' ' + (g_fixedTimeLoopVariable)%(127-' '));    // DO NOT REMOVE, ensures that do-busy work isn't optimized away
 

@@ -4,28 +4,10 @@
 // Copyright (c) Microsoft Corporation. Licensed under the MIT license. 
 //
 
-BCRYPT_ALG_HANDLE HashImpState<ImpXxx, AlgXxx>::hAlg;
-
-
-HashImp<ImpXxx, AlgXxx>::HashImp()
-{
-    CHECK( CngOpenAlgorithmProviderFn( &state.hAlg, LSTRING( ALG_NAME ), NULL, bcoapReusableFlag() ) == STATUS_SUCCESS, 
-        "Could not open CNG/" STRING( ALG_Name ) );
-    state.hHash = 0;
-    m_perfDataFunction = &algImpDataPerfFunction<ImpXxx, AlgXxx>;
-    m_perfKeyFunction = &algImpKeyPerfFunction<ImpXxx, AlgXxx>;
-    m_perfCleanFunction = &algImpCleanPerfFunction<ImpXxx, AlgXxx>;
-}
+template<>
+BCRYPT_ALG_HANDLE HashImpState<ImpXxx, AlgXxx>::hAlg {};
 
 template<>
-HashImp<ImpXxx, AlgXxx>::~HashImp()
-{
-    CHECK( state.hHash == 0, "Handle leak" );
-    
-    CHECK( NT_SUCCESS( CngCloseAlgorithmProviderFn( state.hAlg, 0 )), "Could not close CNG/" STRING( ALG_Name ) );
-    state.hAlg = 0;
-}
-
 SIZE_T HashImp<ImpXxx, AlgXxx>::inputBlockLen()
 {
     ULONG   len;
@@ -36,6 +18,7 @@ SIZE_T HashImp<ImpXxx, AlgXxx>::inputBlockLen()
     return len;
 }
 
+template<>
 SIZE_T HashImp<ImpXxx, AlgXxx>::resultLen()
 {
     ULONG   len;
@@ -46,7 +29,7 @@ SIZE_T HashImp<ImpXxx, AlgXxx>::resultLen()
     return len;
 }
 
-
+template<>
 VOID HashImp<ImpXxx, AlgXxx>::init()
 {
     CHECK( state.hHash == 0, "Handle leak");
@@ -60,12 +43,14 @@ VOID HashImp<ImpXxx, AlgXxx>::init()
             "Error creating hash CNG/" STRING( ALG_Name ) );
 }
 
+template<>
 VOID HashImp<ImpXxx, AlgXxx>::append( _In_reads_( cbData ) PCBYTE pbData, SIZE_T cbData )
 {
     CHECK( NT_SUCCESS( CngHashDataFn( state.hHash, (PBYTE) pbData, (ULONG) cbData, 0 ) ),
         "Error hashing CNG/" STRING( ALG_Name ) );
 }
 
+template<>
 VOID HashImp<ImpXxx, AlgXxx>::result( _Out_writes_( cbResult ) PBYTE pbResult, SIZE_T cbResult )
 {
     CHECK( NT_SUCCESS( CngFinishHashFn( state.hHash, pbResult, (ULONG) cbResult, 0 ) ),
@@ -75,6 +60,7 @@ VOID HashImp<ImpXxx, AlgXxx>::result( _Out_writes_( cbResult ) PBYTE pbResult, S
 }
 
 /*
+template<>
 VOID HashImp<ImpXxx, AlgXxx>::hash( PCBYTE pbData, SIZE_T cbData, PBYTE pbResult, SIZE_T cbResult )
 {
     BYTE buf[384];
@@ -87,6 +73,7 @@ VOID HashImp<ImpXxx, AlgXxx>::hash( PCBYTE pbData, SIZE_T cbData, PBYTE pbResult
 }
 */
 
+template<>
 NTSTATUS HashImp<ImpXxx, AlgXxx>::initWithLongMessage( ULONGLONG nBytes )
 {
     UNREFERENCED_PARAMETER( nBytes );
@@ -94,6 +81,7 @@ NTSTATUS HashImp<ImpXxx, AlgXxx>::initWithLongMessage( ULONGLONG nBytes )
     return STATUS_NOT_SUPPORTED;
 }
 
+template<>
 NTSTATUS HashImp<ImpXxx,AlgXxx>::exportSymCryptFormat( PBYTE pbResult, SIZE_T cbResultBufferSize, SIZE_T * pcbResult )
 {
     UNREFERENCED_PARAMETER( pbResult );
@@ -103,6 +91,7 @@ NTSTATUS HashImp<ImpXxx,AlgXxx>::exportSymCryptFormat( PBYTE pbResult, SIZE_T cb
     return STATUS_NOT_SUPPORTED;
 }
 
+template<>
 VOID HashImp<ImpXxx, AlgXxx>::hash( 
         _In_reads_( cbData )       PCBYTE pbData, 
                                     SIZE_T cbData, 
@@ -124,6 +113,7 @@ VOID HashImp<ImpXxx, AlgXxx>::hash(
 // To measure the cost of the setup separately, we pretend to use a key as that matches the perf infrastructure.
 //
 
+template<>
 VOID 
 algImpKeyPerfFunction<ImpXxx, AlgXxx>(PBYTE buf1, PBYTE buf2, PBYTE buf3, SIZE_T keySize )
 {
@@ -144,6 +134,7 @@ algImpKeyPerfFunction<ImpXxx, AlgXxx>(PBYTE buf1, PBYTE buf2, PBYTE buf3, SIZE_T
     }
 }
 
+template<>
 VOID
 algImpCleanPerfFunction<ImpXxx, AlgXxx>( PBYTE buf1, PBYTE buf2, PBYTE buf3 )
 {
@@ -157,6 +148,7 @@ algImpCleanPerfFunction<ImpXxx, AlgXxx>( PBYTE buf1, PBYTE buf2, PBYTE buf3 )
     }
 }
 
+template<>
 VOID 
 algImpDataPerfFunction<ImpXxx, AlgXxx>(PBYTE buf1, PBYTE buf2, PBYTE buf3, SIZE_T dataSize )
 {
@@ -177,5 +169,25 @@ algImpDataPerfFunction<ImpXxx, AlgXxx>(PBYTE buf1, PBYTE buf2, PBYTE buf3, SIZE_
         CHECK( NT_SUCCESS(CngFinishHashFn( h, buf3, (ULONG)(SYMCRYPT_XXX_RESULT_SIZE), 0 )), "" );
         CHECK( NT_SUCCESS(CngDestroyHashFn( h )), "" );
     }
+}
+
+template<>
+HashImp<ImpXxx, AlgXxx>::HashImp()
+{
+    CHECK( CngOpenAlgorithmProviderFn( &state.hAlg, LSTRING( ALG_NAME ), NULL, bcoapReusableFlag() ) == STATUS_SUCCESS,
+           "Could not open CNG/" STRING( ALG_Name ) );
+    state.hHash = 0;
+    m_perfDataFunction = &algImpDataPerfFunction<ImpXxx, AlgXxx>;
+    m_perfKeyFunction = &algImpKeyPerfFunction<ImpXxx, AlgXxx>;
+    m_perfCleanFunction = &algImpCleanPerfFunction<ImpXxx, AlgXxx>;
+}
+
+template<>
+HashImp<ImpXxx, AlgXxx>::~HashImp()
+{
+    CHECK( state.hHash == 0, "Handle leak" );
+
+    CHECK( NT_SUCCESS( CngCloseAlgorithmProviderFn( state.hAlg, 0 )), "Could not close CNG/" STRING( ALG_Name ) );
+    state.hAlg = 0;
 }
 

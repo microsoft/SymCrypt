@@ -9,7 +9,7 @@
 
 typedef struct _FUNCTION_RECORD {
     RNDD_TEST_FN    func;
-    char *          name;
+    const char *    name;
     volatile INT64  count;
     UINT32          weight;
     } FUNCTION_RECORD, *PFUNCTION_RECORD;
@@ -59,7 +59,7 @@ recomputeBuckets()
 
 
 VOID
-rnddRegisterTestFunction( RNDD_TEST_FN func, char * name, UINT32 weight )
+rnddRegisterTestFunction( RNDD_TEST_FN func, _In_ PCSTR name, UINT32 weight )
 {
     std::unique_ptr<FUNCTION_RECORD> p(new FUNCTION_RECORD);
     p->func = func;
@@ -107,7 +107,7 @@ rnddRegisterInvariantFunction( RNDD_TEST_FN func )
 ULONGLONG
 getTimeInMs()    // Will have to move it to the main_exe or main_dll when we support kernel mode
 {
-#if SYMCRYPT_MS_VC
+#if SYMCRYPT_MS_VC || WIN32
     return GetTickCount64();
 #elif SYMCRYPT_GNUC && defined(__linux__)
     struct timespec ts;

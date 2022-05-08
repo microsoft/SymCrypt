@@ -10,7 +10,7 @@
 
 HCRYPTPROV g_capiProvider;
 
-char * ImpCapi::name = "Capi";
+const char * ImpCapi::name = "Capi";
 
 #define CAPI_CALG( x )   CONCAT2( CALG_, x )
 
@@ -388,7 +388,7 @@ algImpCleanPerfFunction<ImpCapi,AlgRc4>( PBYTE buf1, PBYTE buf2, PBYTE buf3 )
     CHECK( CryptDestroyKey( *(HCRYPTKEY *) buf1 ), "Failed to destroy key" );
 }
 
-
+template<>
 StreamCipherImp<ImpCapi, AlgRc4>::StreamCipherImp()
 {
     state.hKey = 0;

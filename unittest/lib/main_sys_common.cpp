@@ -10,7 +10,12 @@
 #include <ntddk.h>
 #include <windef.h>
 #include <symcrypt.h>
+#if WIN32 && __GNUC__
+#include <um/wincrypt.h>
+#include <shared/bcrypt.h>
+#else
 #include <bcrypt.h>
+#endif
 
 #include "ioctlDefs.h"
 
@@ -19,7 +24,7 @@ typedef VOID (SYMCRYPT_CALL * SelfTestFn)();
 typedef struct _SELFTEST_INFO
 {
     SelfTestFn  f;
-    LPSTR       name;
+    LPCSTR      name;
 } SELFTEST_INFO;
 
 ULONGLONG g_nDpcsOnCpu[64];

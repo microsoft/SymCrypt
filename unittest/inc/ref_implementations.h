@@ -9,7 +9,7 @@
 //
 class ImpRef{
 public:
-    static char * name;
+    static const char * name;
 };
 
 typedef struct _REF_POLY1305_STATE {

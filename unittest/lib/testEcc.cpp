@@ -26,7 +26,7 @@ testEccEcdsaKats();
 #define SYMCRYPT_ECC_CURVE_NUMSP512T1         "numsP512t1"
 
 typedef struct _SYMCRYPT_ECC_CURVES {
-    LPSTR                       pszCurveName;
+    LPCSTR                      pszCurveName;
     PCSYMCRYPT_ECURVE_PARAMS    pParams;
     PSYMCRYPT_ECURVE            pCurve;
 } SYMCRYPT_ECC_CURVES;
@@ -60,7 +60,7 @@ SYMCRYPT_ECC_CURVES rgbInternalCurves[] = {
 
 
 typedef struct _SYMCRYPT_ECC_HASH_ALGORITHMS {
-    LPSTR                       pszHashName;
+    LPCSTR                      pszHashName;
     PCSYMCRYPT_HASH             pHash;
 } SYMCRYPT_ECC_HASH_ALGORITHMS;
 
@@ -80,7 +80,7 @@ SYMCRYPT_ECC_HASH_ALGORITHMS rgbHashAlgorithms[] = {
 //
 ////////////////////////////////////////////////////////////////////
 
-LPSTR rgbPrivateKeyFormatNames[] = {
+LPCSTR rgbPrivateKeyFormatNames[] = {
     "Null",
     "Canonical",
     "DivH",

@@ -7,7 +7,7 @@
 typedef VOID (* RNDD_TEST_FN)();
 
 VOID
-rnddRegisterTestFunction( RNDD_TEST_FN func, _In_ PSTR name, UINT32 weight );
+rnddRegisterTestFunction( RNDD_TEST_FN func, _In_ PCSTR name, UINT32 weight );
 
 VOID
 rnddRegisterInitFunction( RNDD_TEST_FN func );

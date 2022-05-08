@@ -397,7 +397,7 @@ BOOL setContainsPrefix( const StringSet & set, const std::string & str )
 }
 
 BOOL
-updateNameSet( _In_z_ PCSTR * names, _Inout_ StringSet * set, CHAR op, _In_ PSTR name )
+updateNameSet( _In_z_ PCSTR * names, _Inout_ StringSet * set, CHAR op, _In_ PCSTR name )
 {
     BOOL nameMatch = FALSE;
     SIZE_T nameLen = strlen( name );
@@ -659,7 +659,7 @@ usage()
 
 typedef struct _CPU_FEATURE_DATA
 {
-    PSTR                    name;
+    PCSTR                   name;
     SYMCRYPT_CPU_FEATURES   mask;
 } CPU_FEATURE_DATA;
 
@@ -928,9 +928,9 @@ fatal( _In_ PCSTR file, ULONG line, _In_ PCSTR format, ... )
     exit( -1 );
 }
 
-#if SYMCRYPT_MS_VC
+#if SYMCRYPT_MS_VC || WIN32
 KatData *
-getCustomResource( _In_ PSTR resourceName, _In_ PSTR resourceType )
+getCustomResource( _In_ PCSTR resourceName, _In_ PCSTR resourceType )
 {
     HRSRC   resourceHandle;
     HGLOBAL resourceDataHandle;
@@ -967,9 +967,11 @@ void getPlatformInformation()
     g_osVersion = (versionInfo.dwMajorVersion << 8) + (versionInfo.dwMinorVersion & 0xff);
 }
 #elif SYMCRYPT_GNUC
+#ifndef WIN32
 #include "resource.h"
+#endif
 KatData *
-getCustomResource( _In_ PSTR resourceName, _In_ PSTR /* resourceType */)
+getCustomResource( _In_ PCSTR resourceName, _In_ PCSTR /* resourceType */)
 {
     PCCHAR pbData = nullptr;
     SIZE_T cbData = GetResourceBytes((const char *)resourceName, &pbData);
@@ -980,7 +982,7 @@ getCustomResource( _In_ PSTR resourceName, _In_ PSTR /* resourceType */)
 
 #endif
 
-void printPlatformInformation( _In_z_ char * text )
+void printPlatformInformation( _In_z_ const char * text )
 {
 
     iprint( "\n%s "
@@ -1227,7 +1229,7 @@ initTestInfrastructure( int argc, _In_reads_( argc ) char * argv[] )
 
     SymCryptInit();
 
-#if SYMCRYPT_MS_VC
+#if SYMCRYPT_MS_VC || WIN32
     getPlatformInformation();
 #endif
 
@@ -1279,7 +1281,7 @@ initTestInfrastructure( int argc, _In_reads_( argc ) char * argv[] )
     printOutput( 0 );
 }
 
-#if SYMCRYPT_MS_VC
+#if SYMCRYPT_MS_VC || WIN32
 VOID
 callKernelmodeTests()
 {
@@ -1524,7 +1526,7 @@ VOID
 runFunctionalTests()
 {
 
-#if SYMCRYPT_MS_VC
+#if SYMCRYPT_MS_VC || WIN32
     if( g_runKernelmodeTest )
     {
         runKernelmodeTests();
@@ -1578,7 +1580,7 @@ runFunctionalTests()
 
     testEcc();
 
-#if SYMCRYPT_MS_VC
+#if SYMCRYPT_MS_VC || WIN32
     testIEEE802_11SaeCustom();
 #endif
 

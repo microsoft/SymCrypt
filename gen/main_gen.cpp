@@ -18,7 +18,12 @@ Copyright (c) Microsoft Corporation. Licensed under the MIT license.
 #pragma push_macro("NTDDI_VERSION")
 #undef NTDDI_VERSION
 #define NTDDI_VERSION NTDDI_WINTHRESHOLD
+#if WIN32 && __GNUC__
+#include <um/wincrypt.h>
+#include <shared/bcrypt.h>
+#else
 #include <bcrypt.h>
+#endif
 #pragma pop_macro("NTDDI_VERSION")
 
 #include <stdio.h>
@@ -167,7 +172,7 @@ printSmallPrimeDifferences( FILE * f, UINT32 primeLimit )
     UINT32 i;
     UINT32 nCache = 0;
     UINT32 nNibbles = 0;
-    char * sep = NULL;
+    const char * sep = NULL;
     UINT32 nib;
     UINT32 diff;
     UINT32 nBytes = 0;
@@ -516,7 +521,7 @@ printIfxTpmWeakKeyTable( FILE * f )
         UINT32 p = primeInfo[i].prime;
         UINT32 nBytes = (p + 7)/8;
         UINT32 count;
-        char * sep = "";
+        const char * sep = "";
 
         fprintf( f, "\n\n    // %d\n    ", p );
         buildGeneratorBitmap( p, 65537, &workBuffer[0], &count );
@@ -552,7 +557,7 @@ printIfxTpmWeakKeyTable( FILE * f )
         if( n < p-1 )
         {
             fprintf( f, "{ %3d, ", p);
-            char * sep = "{";
+            const char * sep = "{";
             for( UINT32 j=0; j<nBytesInTable; j++ )
             {
                 fprintf( f, "%s 0x%02x", sep, buf[j] );

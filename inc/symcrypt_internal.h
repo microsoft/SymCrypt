@@ -63,17 +63,31 @@
 #undef  SYMCRYPT_GNUC
 #define SYMCRYPT_GNUC 1
 // Suppress the SAL annotations
+#if WIN32 && __GNUC__
+#include <sal.h>
+#undef _Analysis_noreturn_
 #include "symcrypt_no_sal.h"
+#else
+#include "symcrypt_no_sal.h"
+#endif
 
 // Ignore the multi-character character constant warnings
 #pragma GCC diagnostic ignored "-Wmultichar"
 
+#ifndef C_ASSERT
 #define C_ASSERT(e)                 typedef char __C_ASSERT__[(e)?1:-1]
+#endif
 #define SYMCRYPT_ANYSIZE_ARRAY               1
+#if !defined(WIN32)
 #define FORCEINLINE                 static inline //__inline__ __attribute__ ((always_inline))
+#endif
 #define SYMCRYPT_NOINLINE           __attribute__ ((noinline))
 #define SYMCRYPT_UNALIGNED
+#if WIN32
+#define SYMCRYPT_CDECL              __cdecl
+#else
 #define SYMCRYPT_CDECL
+#endif
 
 #else
 
@@ -174,7 +188,7 @@
 // with multiple environments, such as Windows, iOS, and Android.
 //
 
-#if SYMCRYPT_MS_VC
+#if SYMCRYPT_MS_VC || WIN32
 
     //
     // Types included in intsafe.h:
@@ -186,7 +200,20 @@
     // and macro:
     //      UINT32_MAX
     //
+#ifdef __MINGW64__
+#define NOCRYPT
+#endif
 #include <intsafe.h>
+#ifdef __MINGW64__
+#undef NOCRYPT
+#endif
+
+#if SYMCRYPT_GNUC
+#include <stdint.h>
+#ifndef SIZE_T_MAX
+#define SIZE_T_MAX      SIZE_MAX
+#endif
+#endif
 
 #else
 
@@ -284,7 +311,9 @@ typedef BYTE  BOOLEAN;
 
 #else
 
+#if !defined(WIN32)
 #define FORCEINLINE static inline
+#endif
 
 #endif
 
@@ -366,7 +395,7 @@ C_ASSERT( (SYMCRYPT_ALIGN_VALUE & (SYMCRYPT_ALIGN_VALUE - 1 )) == 0 );
 // CPU feature detection infrastructure
 //
 
-#if SYMCRYPT_GNUC
+#if SYMCRYPT_GNUC && !defined(WIN32)
     // Forward declarations for CPUID intrinsic replacements
     void __cpuid(int CPUInfo[4], int InfoType);
     void __cpuidex(int CPUInfo[4], int InfoType, int ECXValue);

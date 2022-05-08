@@ -37,7 +37,7 @@ BlockCipherMultiImp::BlockCipherMultiImp( String algName )
     m_algorithmName = algName;
 
     String sumImpName;
-    char * sepStr = "<";
+    const char * sepStr = "<";
 
     for( BlockCipherImpPtrVector::const_iterator i = m_imps.begin(); i != m_imps.end(); ++i )
     {

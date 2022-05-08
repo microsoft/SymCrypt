@@ -202,7 +202,7 @@ PrintTable::print( String heading )
     {
         ::print( "%*s:", colSize[0]-1, m_rows[r].c_str() );
 
-        char * sep = " ";
+        const char * sep = " ";
         for( SIZE_T c=0; c<nCols; c++ )
         {
             ::print( "%-*s%*s", nSpacesBetweenColumns, sep, colSize[ c+1 ], m_items[ make_pair( m_rows[r], m_cols[c] ) ].c_str() );

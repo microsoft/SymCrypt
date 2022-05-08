@@ -10,9 +10,9 @@
 
 
 
-char * ImpRsa32::name = "Rsa32";
+const char * ImpRsa32::name = "Rsa32";
 
-char * ImpRsa32b::name = "Rsa32b";
+const char * ImpRsa32b::name = "Rsa32b";
 
 
 #define RSA32_2DES_BLOCK_SIZE    RSA32_DES_BLOCK_SIZE

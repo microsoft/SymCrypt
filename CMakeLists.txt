@@ -43,13 +43,84 @@ endif()
 
 message(STATUS "Host: ${CMAKE_HOST_SYSTEM_NAME} ${CMAKE_HOST_SYSTEM_PROCESSOR}")
 message(STATUS "Target: ${CMAKE_SYSTEM_NAME} ${CMAKE_SYSTEM_PROCESSOR} ${SYMCRYPT_TARGET_ENV}")
+message(STATUS "Compiler: ${CMAKE_CXX_COMPILER_ID}")
 
 # Set output directories binaries
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib/${CMAKE_SYSTEM_PROCESSOR}/${SYMCRYPT_TARGET_ENV})
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/module/${CMAKE_SYSTEM_PROCESSOR}/${SYMCRYPT_TARGET_ENV})
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/exe/${CMAKE_SYSTEM_PROCESSOR}/${SYMCRYPT_TARGET_ENV})
 
-if(WIN32)
+enable_language(C)
+enable_language(CXX)
+
+function(find_windows_sdk)
+
+    # Find the Windows Kits directory.
+    get_filename_component(windows_kits_dir
+            "[HKEY_LOCAL_MACHINE\\SOFTWARE\\Microsoft\\Windows Kits\\Installed Roots;KitsRoot10]" ABSOLUTE)
+    set(programfilesx86 "ProgramFiles(x86)")
+    if (";${CMAKE_VS_WINDOWS_TARGET_PLATFORM_VERSION};$ENV{UCRTVersion};$ENV{WindowsSDKVersion};" MATCHES [=[;(10\.[0-9.]+)[;\]]]=])
+        set(__ucrt_version "${CMAKE_MATCH_1}/")
+    else ()
+        set(__ucrt_version "*/")
+    endif ()
+
+    if (NOT DEFINED CMAKE_MSVC_ARCH)
+        if (${CMAKE_SYSTEM_PROCESSOR} MATCHES "^ARM")
+            set(CMAKE_MSVC_ARCH "arm")
+        elseif (${CMAKE_SYSTEM_PROCESSOR} MATCHES "64$")
+            set(CMAKE_MSVC_ARCH "x64")
+        else ()
+            set(CMAKE_MSVC_ARCH "x86")
+        endif ()
+    endif ()
+
+
+    set(WINDOWS_KITS_DIR "" PARENT_SCOPE)
+    find_path(WINDOWS_KITS_DIR
+            NAMES
+            "Redist/${__ucrt_version}ucrt/DLLs/${CMAKE_MSVC_ARCH}/ucrtbase.dll"
+            "Redist/ucrt/DLLs/${CMAKE_MSVC_ARCH}/ucrtbase.dll"
+            PATHS
+            $ENV{CMAKE_WINDOWS_KITS_10_DIR}
+            "${windows_kits_dir}"
+            "$ENV{ProgramFiles}/Windows Kits/10"
+            "$ENV{${programfilesx86}}/Windows Kits/10"
+    )
+    mark_as_advanced(WINDOWS_KITS_DIR)
+
+    set(WINDOWSSDK_VERSIONS "" PARENT_SCOPE)
+
+    file(GLOB WINDOWSSDK_VERSIONS
+            LIST_DIRECTORIES true
+            RELATIVE "${WINDOWS_KITS_DIR}/Include"
+            "${WINDOWS_KITS_DIR}/Include/*"
+    )
+    mark_as_advanced(WINDOWSSDK_VERSIONS)
+
+    set(WINDOWSSDK_VERSION "" PARENT_SCOPE)
+    set(_WINDOWSSDK_VERSIONS "${WINDOWSSDK_VERSIONS}")
+    list(GET _WINDOWSSDK_VERSIONS 0 WINDOWSSDK_VERSION)
+    list(REMOVE_AT _WINDOWSSDK_VERSIONS 0)
+    foreach(__version "${_WINDOWSSDK_VERSIONS}")
+        if ("${__version}" VERSION_GREATER "${WINDOWSSDK_VERSION}")
+            set(WINDOWSSDK_VERSION "${__version}")
+        endif ()
+    endforeach()
+    mark_as_advanced(WINDOWSSDK_VERSION)
+
+    set(WINDOWSSDK_INCLUDE_ROOT "${WINDOWS_KITS_DIR}/Include/${WINDOWSSDK_VERSION}" PARENT_SCOPE)
+    mark_as_advanced(WINDOWSSDK_INCLUDE_ROOT)
+
+    set(WINDOWSSDK_INCLUDE_DIRS "${WINDOWSSDK_INCLUDE_ROOT}/shared;${WINDOWSSDK_INCLUDE_ROOT}/um" PARENT_SCOPE)
+    mark_as_advanced(WINDOWSSDK_INCLUDE_DIRS)
+
+endfunction()
+
+
+if(MSVC)
+    find_windows_sdk()
+
     if(NOT SYMCRYPT_TARGET_ENV MATCHES "Generic")
         # Enable ASM_MASM. Annoyingly, this has to be done in the main CMake file rather than in the
         # toolchain file
@@ -76,6 +147,12 @@ if(WIN32)
         add_compile_options(/Gw)
     endif()
 else()
+    if(WIN32)
+        find_windows_sdk()
+        include_directories(SYSTEM "${WINDOWSSDK_INCLUDE_ROOT}")
+        add_compile_definitions(_WIN32_WINNT=0x0A00)
+    endif()
+
     if(NOT SYMCRYPT_TARGET_ENV MATCHES "Generic")
         enable_language(ASM)
         # Suppress noisy warnings about compile options which are ignored for ASM
@@ -154,8 +231,24 @@ else()
     endif()
 endif()
 
+option(RELEASE_USES_IPO "Enable IPO/LTO/LTCG for Release builds." ON)
+
 if(CMAKE_BUILD_TYPE MATCHES Release)
     message("Release mode")
+
+    include(CheckIPOSupported)
+    check_ipo_supported(RESULT HAVE_IPO_SUPPORT OUTPUT IPO_SUPPORT_ERROR)
+
+    if (HAVE_IPO_SUPPORT)
+        if (RELEASE_USES_IPO)
+            message(STATUS "IPO/LTO/LTCG: supported, enabled")
+            set_property(GLOBAL PROPERTY INTERPROCEDURAL_OPTIMIZATION TRUE)
+        else ()
+            message(STATUS "IPO/LTO/LTCG: supported, disabled")
+        endif ()
+    else ()
+        message(STATUS "IPO/LTO/LTCG: not supported, <${IPO_SUPPORT_ERROR}>")
+    endif ()
 else()
     message("Debug mode")
     add_compile_options(-DDBG=1)
