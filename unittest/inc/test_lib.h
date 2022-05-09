@@ -488,8 +488,8 @@ typedef std::basic_string<BYTE> BString;        // String of bytes
 #define LSTRING_INT( x )    L#x
 #define LSTRING( x )        LSTRING_INT( x )
 #else
-#define LSTRING_INT( x )    L ## x
-#define LSTRING( x )        LSTRING_INT( #x )
+#define LSTRING_INT( x )    L ## #x
+#define LSTRING( x )        LSTRING_INT( x )
 #endif
 
 #define CONCAT_I2( a, b )       a##b
