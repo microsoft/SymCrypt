@@ -490,7 +490,7 @@ VOID testDlSimple()
         pkDlkey = SymCryptDlkeyAllocate( pDlgroup );
         CHECK( pkDlkey!=NULL, "?");
 
-        scError = SymCryptDlkeyGenerate( SYMCRYPT_FLAG_DLKEY_SELFTEST_DH, pkDlkey );
+        scError = SymCryptDlkeyGenerate( SYMCRYPT_FLAG_DLKEY_DSA, pkDlkey );
         CHECK( scError == SYMCRYPT_NO_ERROR, "?" );
 
         //printDlKey( pkDlkey );
@@ -598,7 +598,7 @@ VOID testDlSimple()
         //printDlGroup( pDlgroup );
 
         // Create a new key and make sure it is mod P
-        scError = SymCryptDlkeyGenerate( SYMCRYPT_FLAG_DLKEY_SELFTEST_DH, pkDlkey );
+        scError = SymCryptDlkeyGenerate( SYMCRYPT_FLAG_DLKEY_DSA | SYMCRYPT_FLAG_KEY_NO_FIPS, pkDlkey );
         CHECK( scError == SYMCRYPT_NO_ERROR, "?" );
 
         CHECK(SymCryptDlkeySizeofPrivateKey(pkDlkey) == cbExpP, "?")
@@ -696,8 +696,10 @@ VOID testDlSimple()
         //printDlGroup( pDlgroup );
 
         // Create a new key and use the mod P flag
-        scError = SymCryptDlkeyGenerate( SYMCRYPT_FLAG_DLKEY_GEN_MODP | SYMCRYPT_FLAG_DLKEY_SELFTEST_DH, pkDlkey );
-        CHECK( scError == SYMCRYPT_NO_ERROR, "?" );
+        scError = SymCryptDlkeyGenerate(
+            SYMCRYPT_FLAG_DLKEY_DSA | SYMCRYPT_FLAG_DLKEY_GEN_MODP | SYMCRYPT_FLAG_KEY_NO_FIPS,
+            pkDlkey);
+        CHECK(scError == SYMCRYPT_NO_ERROR, "?");
 
         CHECK(SymCryptDlkeySizeofPrivateKey(pkDlkey) == cbExpP, "?")
 
@@ -811,10 +813,10 @@ createKatFileSingleDh( FILE * f, PCDLGROUP_TESTBLOB pBlob )
     PSYMCRYPT_DLKEY pKey1 = SymCryptDlkeyAllocate( pGroup );
     PSYMCRYPT_DLKEY pKey2 = SymCryptDlkeyAllocate( pGroup );
 
-    scError = SymCryptDlkeyGenerate( SYMCRYPT_FLAG_DLKEY_SELFTEST_DH, pKey1 );
+    scError = SymCryptDlkeyGenerate( SYMCRYPT_FLAG_DLKEY_DH, pKey1 );
     CHECK( scError == SYMCRYPT_NO_ERROR, "Error generating DH key" );
 
-    scError = SymCryptDlkeyGenerate( SYMCRYPT_FLAG_DLKEY_SELFTEST_DH, pKey2 );
+    scError = SymCryptDlkeyGenerate( SYMCRYPT_FLAG_DLKEY_DH, pKey2 );
     CHECK( scError == SYMCRYPT_NO_ERROR, "Error generating DH key" );
 
     UINT32 cbPrivKey1 = SymCryptDlkeySizeofPrivateKey( pKey1 );
@@ -1009,15 +1011,11 @@ testDhtestGroups( DhImplementation  * pDh, INT64 line )
             }
         }
 
-        scError = SymCryptDlkeyGenerate( SYMCRYPT_FLAG_DLKEY_SELFTEST_DH, pKey1 );
+        scError = SymCryptDlkeyGenerate( SYMCRYPT_FLAG_DLKEY_DH | SYMCRYPT_FLAG_KEY_NO_FIPS, pKey1 );
         CHECK( scError == SYMCRYPT_NO_ERROR, "Error generating key" );
-        scError = SymCryptDlkeyGenerate(
-            SYMCRYPT_FLAG_KEY_RANGE_AND_PUBLIC_KEY_ORDER_VALIDATION | SYMCRYPT_FLAG_DLKEY_SELFTEST_DH,
-            pKey1 );
+        scError = SymCryptDlkeyGenerate( SYMCRYPT_FLAG_DLKEY_DH | (pGroup->isSafePrimeGroup ? 0 : SYMCRYPT_FLAG_KEY_NO_FIPS), pKey1 );
         CHECK( scError == SYMCRYPT_NO_ERROR, "Error generating key" );
-        scError = SymCryptDlkeyGenerate(
-            SYMCRYPT_FLAG_DLKEY_GEN_MODP | SYMCRYPT_FLAG_DLKEY_SELFTEST_DH,
-            pKey2 );
+        scError = SymCryptDlkeyGenerate( SYMCRYPT_FLAG_DLKEY_DH | SYMCRYPT_FLAG_KEY_NO_FIPS | SYMCRYPT_FLAG_DLKEY_GEN_MODP, pKey2 );
         CHECK( scError == SYMCRYPT_NO_ERROR, "Error generating key" );
 
         DLKEY_TESTBLOB  blob1;
@@ -1060,7 +1058,7 @@ testDhtestGroups( DhImplementation  * pDh, INT64 line )
                     &blob1.abPrivKey[0], blob1.cbPrivKey,
                     &blob1.abPubKey[0], cbP,
                     SYMCRYPT_NUMBER_FORMAT_MSB_FIRST,
-                    SYMCRYPT_FLAG_KEY_RANGE_AND_PUBLIC_KEY_ORDER_VALIDATION | SYMCRYPT_FLAG_KEY_KEYPAIR_REGENERATION_VALIDATION | SYMCRYPT_FLAG_DLKEY_SELFTEST_DH,
+                    SYMCRYPT_FLAG_DLKEY_DH,
                     pKey1 );
             CHECK4( scError == SYMCRYPT_NO_ERROR, "Error (%d) importing key - nBitsPriv %d", scError, nBitsPriv );
 
@@ -1074,7 +1072,7 @@ testDhtestGroups( DhImplementation  * pDh, INT64 line )
                         &blob1.abPrivKey[0], blob1.cbPrivKey,
                         &blob1.abPubKey[0], cbP,
                         SYMCRYPT_NUMBER_FORMAT_MSB_FIRST,
-                        SYMCRYPT_FLAG_KEY_RANGE_AND_PUBLIC_KEY_ORDER_VALIDATION | SYMCRYPT_FLAG_KEY_KEYPAIR_REGENERATION_VALIDATION | SYMCRYPT_FLAG_DLKEY_SELFTEST_DH,
+                        SYMCRYPT_FLAG_DLKEY_DH,
                         pKey1 );
                 CHECK5( scError == SYMCRYPT_INVALID_ARGUMENT, "Unexpected return (%d) importing key - nBitsPrivGenerated %d nBitsPriv %d", scError, nBitsPrivGenerated, nBitsPriv );
             }
@@ -1089,7 +1087,7 @@ testDhtestGroups( DhImplementation  * pDh, INT64 line )
                         &blob1.abPrivKey[0], blob1.cbPrivKey,
                         &blob1.abPubKey[0], cbP,
                         SYMCRYPT_NUMBER_FORMAT_MSB_FIRST,
-                        SYMCRYPT_FLAG_KEY_RANGE_AND_PUBLIC_KEY_ORDER_VALIDATION | SYMCRYPT_FLAG_KEY_KEYPAIR_REGENERATION_VALIDATION | SYMCRYPT_FLAG_DLKEY_SELFTEST_DH,
+                        SYMCRYPT_FLAG_DLKEY_DH,
                         pKey1 );
                 CHECK5( scError == SYMCRYPT_NO_ERROR, "Error (%d) importing key - nBitsPrivGenerated %d nBitsPriv %d", scError, nBitsPrivGenerated, nBitsPriv );
             }

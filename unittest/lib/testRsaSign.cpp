@@ -197,7 +197,7 @@ rsaTestKeysAddOne( UINT32 bitSize )
         u64PubExp = 65537;
     }
 
-    scError = SymCryptRsakeyGenerate( pKey, &u64PubExp, 1, SYMCRYPT_FLAG_RSAKEY_SELFTEST );
+    scError = SymCryptRsakeyGenerate( pKey, &u64PubExp, 1, SYMCRYPT_FLAG_RSAKEY_SIGN | SYMCRYPT_FLAG_RSAKEY_ENCRYPT );
     CHECK( scError == SYMCRYPT_NO_ERROR, "?" );
 
     PRSAKEY_TESTBLOB pBlob = &g_RsaTestKeyBlobs[ g_nRsaTestKeyBlobs++ ];
@@ -324,7 +324,7 @@ rsaKeyFromTestBlob( PCRSAKEY_TESTBLOB pBlob )
         &pBlob->u64PubExp, 1,
         ppPrime, cbPrime, 2,
         SYMCRYPT_NUMBER_FORMAT_MSB_FIRST,
-        SYMCRYPT_FLAG_RSAKEY_SELFTEST,
+        SYMCRYPT_FLAG_RSAKEY_SIGN | SYMCRYPT_FLAG_RSAKEY_ENCRYPT,
         pKey );
     CHECK( scError == SYMCRYPT_NO_ERROR, "?" );
 

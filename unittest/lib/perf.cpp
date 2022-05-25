@@ -1580,7 +1580,7 @@ addRsaKeyGenPerfSymCrypt( PrintTable &table )
             UINT64 start = GET_PERF_CLOCK();
 
             PSYMCRYPT_RSAKEY pScKey = SymCryptRsakeyAllocate( &scRsaParams, 0 );
-            SymCryptRsakeyGenerate( pScKey, NULL, 0, 0 );
+            SymCryptRsakeyGenerate( pScKey, NULL, 0, SYMCRYPT_FLAG_RSAKEY_SIGN | SYMCRYPT_FLAG_RSAKEY_ENCRYPT );
             SymCryptRsakeyFree( pScKey );
 
             UINT64 stop = GET_PERF_CLOCK();

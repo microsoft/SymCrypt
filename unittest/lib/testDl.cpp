@@ -288,9 +288,7 @@ VOID testDlSimple()
         pkDlkey = SymCryptDlkeyAllocate( pDlgroup );
         CHECK( pkDlkey!=NULL, "?");
 
-        scError = SymCryptDlkeyGenerate(
-            SYMCRYPT_FLAG_DLKEY_SELFTEST_DSA | SYMCRYPT_FLAG_DLKEY_SELFTEST_DH,
-            pkDlkey );
+        scError = SymCryptDlkeyGenerate( SYMCRYPT_FLAG_DLKEY_DSA, pkDlkey );
         CHECK( scError == SYMCRYPT_NO_ERROR, "?" );
 
         printDlKey( pkDlkey );
@@ -398,9 +396,7 @@ VOID testDlSimple()
         printDlGroup( pDlgroup );
 
         // Create a new key and make sure it is mod P
-        scError = SymCryptDlkeyGenerate(
-            SYMCRYPT_FLAG_DLKEY_SELFTEST_DSA | SYMCRYPT_FLAG_DLKEY_SELFTEST_DH,
-            pkDlkey );
+        scError = SymCryptDlkeyGenerate( SYMCRYPT_FLAG_DLKEY_DSA, pkDlkey );
         CHECK( scError == SYMCRYPT_NO_ERROR, "?" );
 
         CHECK(SymCryptDlkeySizeofPrivateKey(pkDlkey) == cbExpP, "?")
@@ -498,9 +494,7 @@ VOID testDlSimple()
         printDlGroup( pDlgroup );
 
         // Create a new key and use the mod P flag
-        scError = SymCryptDlkeyGenerate(
-            SYMCRYPT_FLAG_DLKEY_GEN_MODP | SYMCRYPT_FLAG_DLKEY_SELFTEST_DSA | SYMCRYPT_FLAG_DLKEY_SELFTEST_DH,
-            pkDlkey );
+        scError = SymCryptDlkeyGenerate( SYMCRYPT_FLAG_DLKEY_GEN_MODP | SYMCRYPT_FLAG_DLKEY_DSA, pkDlkey );
         CHECK( scError == SYMCRYPT_NO_ERROR, "?" );
 
         CHECK(SymCryptDlkeySizeofPrivateKey(pkDlkey) == cbExpP, "?")

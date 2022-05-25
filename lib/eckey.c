@@ -79,6 +79,7 @@ SymCryptEckeyCreate(
 
     pkObj = (PSYMCRYPT_ECKEY) pbBuffer;
 
+    pkObj->fAlgorithmInfo = 0;
     pkObj->hasPrivateKey = FALSE;
     pkObj->pCurve = pCurve;
 
@@ -118,6 +119,9 @@ SymCryptEckeyCopy(
     //
     if( pkSrc != pkDst )
     {
+        // Copy the fAlgorithmInfo flags
+        pkDst->fAlgorithmInfo = pkSrc->fAlgorithmInfo;
+
         // Copy the hasPrivateKey flag
         pkDst->hasPrivateKey = pkSrc->hasPrivateKey;
 
@@ -160,6 +164,8 @@ SymCryptEckeyHasPrivateKey( _In_ PCSYMCRYPT_ECKEY pkEckey )
     return pkEckey->hasPrivateKey;
 }
 
+#define SYMCRYPT_FLAG_ECKEY_PUBLIC_KEY_ORDER_VALIDATION (0x1)
+
 SYMCRYPT_ERROR
 SYMCRYPT_CALL
 SymCryptEckeyPerformPublicKeyValidation(
@@ -200,7 +206,7 @@ SymCryptEckeyPerformPublicKeyValidation(
     }
 
     // Perform validation that Public key is in a subgroup of order GOrd.
-    if ( (flags & SYMCRYPT_FLAG_KEY_VALIDATION_MASK) == SYMCRYPT_FLAG_KEY_RANGE_AND_PUBLIC_KEY_ORDER_VALIDATION )
+    if ( (flags & SYMCRYPT_FLAG_ECKEY_PUBLIC_KEY_ORDER_VALIDATION) != 0 )
     {
         if ( SymCryptIntIsEqualUint32( pCurve->H, 1 ) )
         {
@@ -273,27 +279,35 @@ SymCryptEckeySetValue(
 
     UINT32 privateKeyDigits = SymCryptEcurveDigitsofScalarMultiplier(pCurve);
 
-    BOOLEAN performRangeValidation = FALSE;
+    UINT32 fValidatePublicKeyOrder = SYMCRYPT_FLAG_ECKEY_PUBLIC_KEY_ORDER_VALIDATION;
 
     SYMCRYPT_ASSERT( (cbPrivateKey==0) || (cbPrivateKey == SymCryptEcurveSizeofScalarMultiplier( pEckey->pCurve )) );
     SYMCRYPT_ASSERT( (cbPublicKey==0) || (cbPublicKey == SymCryptEckeySizeofPublicKey( pEckey, ecPointFormat)) );
 
-    // Ensure only allowed flags are specified
-    UINT32 allowedFlags = SYMCRYPT_FLAG_KEY_MINIMAL_VALIDATION |
-        SYMCRYPT_FLAG_KEY_RANGE_VALIDATION |
-        SYMCRYPT_FLAG_KEY_RANGE_AND_PUBLIC_KEY_ORDER_VALIDATION |
-        SYMCRYPT_FLAG_KEY_KEYPAIR_REGENERATION_VALIDATION |
-        SYMCRYPT_FLAG_ECKEY_SELFTEST_ECDSA |
-        SYMCRYPT_FLAG_ECKEY_SELFTEST_ECDH;
+    // Ensure caller has specified what algorithm(s) the key will be used with
+    UINT32 algorithmFlags = SYMCRYPT_FLAG_ECKEY_ECDSA | SYMCRYPT_FLAG_ECKEY_ECDH;
+    // Make sure only allowed flags are specified
+    UINT32 allowedFlags = SYMCRYPT_FLAG_KEY_NO_FIPS | SYMCRYPT_FLAG_KEY_MINIMAL_VALIDATION | algorithmFlags;
 
-    if ( ( flags & ~allowedFlags ) != 0 )
+    if ( ( ( flags & ~allowedFlags ) != 0 ) || 
+         ( ( flags & algorithmFlags ) == 0 ) )
     {
         scError = SYMCRYPT_INVALID_ARGUMENT;
         goto cleanup;
     }
 
-    performRangeValidation = ((flags & SYMCRYPT_FLAG_KEY_VALIDATION_MASK) == SYMCRYPT_FLAG_KEY_RANGE_VALIDATION) ||
-            ((flags & SYMCRYPT_FLAG_KEY_VALIDATION_MASK) == SYMCRYPT_FLAG_KEY_RANGE_AND_PUBLIC_KEY_ORDER_VALIDATION);
+    // Check that minimal validation flag only specified with no fips
+    if ( ( ( flags & SYMCRYPT_FLAG_KEY_NO_FIPS ) == 0 ) &&
+         ( ( flags & SYMCRYPT_FLAG_KEY_MINIMAL_VALIDATION ) != 0 ) )
+    {
+        scError = SYMCRYPT_INVALID_ARGUMENT;
+        goto cleanup;
+    }
+
+    if ( ( flags & SYMCRYPT_FLAG_KEY_NO_FIPS ) != 0 )
+    {
+        fValidatePublicKeyOrder = 0;
+    }
 
     if ( ( ( cbPrivateKey == 0 ) && ( cbPublicKey == 0 ) ) ||
          ( ( cbPrivateKey != 0 ) && ( cbPrivateKey != SymCryptEcurveSizeofScalarMultiplier( pEckey->pCurve ) ) ) ||
@@ -344,11 +358,10 @@ SymCryptEckeySetValue(
         }
 
         // Validation steps
-        if ( !((flags & SYMCRYPT_FLAG_KEY_VALIDATION_MASK) == SYMCRYPT_FLAG_KEY_MINIMAL_VALIDATION) )
+        if ( ( flags & SYMCRYPT_FLAG_KEY_MINIMAL_VALIDATION ) == 0 )
         {
             // Perform range validation on imported Private key if it is in canonical format
-            if ( performRangeValidation &&
-                (pCurve->PrivateKeyDefaultFormat == SYMCRYPT_ECKEY_PRIVATE_FORMAT_CANONICAL) )
+            if ( pCurve->PrivateKeyDefaultFormat == SYMCRYPT_ECKEY_PRIVATE_FORMAT_CANONICAL )
             {
                 // Check if Private key is greater than or equal to GOrd
                 if ( !SymCryptIntIsLessThan( piTmpInteger, SymCryptIntFromModulus( pCurve->GOrd ) ) )
@@ -415,7 +428,7 @@ SymCryptEckeySetValue(
             pbScratchInternal,
             cbScratchInternal );
 
-        if ( !((flags & SYMCRYPT_FLAG_KEY_VALIDATION_MASK) == SYMCRYPT_FLAG_KEY_MINIMAL_VALIDATION) )
+        if ( ( flags & SYMCRYPT_FLAG_KEY_MINIMAL_VALIDATION ) == 0 )
         {
             // Check if Private key is 0 after dividing it by the subgroup order
             // Other part of range validation
@@ -450,11 +463,11 @@ SymCryptEckeySetValue(
         }
 
         // Perform Public key validation on imported Public key.
-        if ( !((flags & SYMCRYPT_FLAG_KEY_VALIDATION_MASK) == SYMCRYPT_FLAG_KEY_MINIMAL_VALIDATION) )
+        if ( ( flags & SYMCRYPT_FLAG_KEY_MINIMAL_VALIDATION ) == 0 )
         {
             scError = SymCryptEckeyPerformPublicKeyValidation(
                 pEckey,
-                flags,
+                fValidatePublicKeyOrder,
                 pbScratch,
                 cbScratch );
             if ( scError != SYMCRYPT_NO_ERROR )
@@ -467,7 +480,7 @@ SymCryptEckeySetValue(
     // Calculating the public key if no key was provided
     // or if needed for keypair regeneration validation
     if ( (pbPublicKey==NULL) ||
-         ( ( (flags & SYMCRYPT_FLAG_KEY_KEYPAIR_REGENERATION_VALIDATION) != 0 ) &&
+         ( ( ( flags & SYMCRYPT_FLAG_KEY_NO_FIPS ) == 0 ) &&
           (pbPrivateKey!=NULL) && (pbPublicKey!=NULL) ) )
     {
         // Calculate the public key from the private key
@@ -510,12 +523,12 @@ SymCryptEckeySetValue(
                 goto cleanup;
             }
         }
-        else if ( !((flags & SYMCRYPT_FLAG_KEY_VALIDATION_MASK) == SYMCRYPT_FLAG_KEY_MINIMAL_VALIDATION) )
+        else if ( ( flags & SYMCRYPT_FLAG_KEY_MINIMAL_VALIDATION ) == 0 )
         {
             // Perform Public key validation on generated Public key.
             scError = SymCryptEckeyPerformPublicKeyValidation(
                 pEckey,
-                flags,
+                fValidatePublicKeyOrder,
                 pbScratch,
                 cbScratch );
             if ( scError != SYMCRYPT_NO_ERROR )
@@ -525,16 +538,30 @@ SymCryptEckeySetValue(
         }
     }
 
-    if ( ( flags & SYMCRYPT_FLAG_ECKEY_SELFTEST_ECDSA ) != 0 )
-    {
-        SYMCRYPT_RUN_SELFTEST_ONCE( SymCryptEcDsaSelftest, SYMCRYPT_SELFTEST_ECDSA );
-    }
+    pEckey->fAlgorithmInfo = flags; // We want to track all of the flags in the Eckey
 
-    if ( ( flags & SYMCRYPT_FLAG_ECKEY_SELFTEST_ECDH ) != 0 )
+    if ( ( flags & SYMCRYPT_FLAG_KEY_NO_FIPS ) == 0 )
     {
-        SYMCRYPT_RUN_SELFTEST_ONCE(
-            SymCryptEcDhSecretAgreementSelftest,
-            SYMCRYPT_SELFTEST_ECDH_SECRET_AGREEMENT);
+        if ( ( flags & SYMCRYPT_FLAG_ECKEY_ECDSA ) != 0 )
+        {
+            // Ensure ECDSA algorithm selftest is run before first use of ECDSA algorithm
+            SYMCRYPT_RUN_SELFTEST_ONCE(
+                SymCryptEcDsaSelftest,
+                SYMCRYPT_SELFTEST_ALGORITHM_ECDSA );
+
+            if( pEckey->hasPrivateKey )
+            {
+                // We do not need to run an ECDSA PCT on import, indicate that the test has been run
+                pEckey->fAlgorithmInfo |= SYMCRYPT_SELFTEST_KEY_ECDSA;
+            }
+        }
+
+        if ( ( flags & SYMCRYPT_FLAG_ECKEY_ECDH ) != 0 )
+        {
+            SYMCRYPT_RUN_SELFTEST_ONCE(
+                SymCryptEcDhSecretAgreementSelftest,
+                SYMCRYPT_SELFTEST_ALGORITHM_ECDH );
+        }
     }
 
 cleanup:
@@ -628,6 +655,18 @@ SymCryptEckeyGetValue(
             goto cleanup;
         }
 
+        // If this keypair may be used in ECDSA, and does not have the no FIPS flag, run the PCT if
+        // it has not already been run
+        if ( ((pEckey->fAlgorithmInfo & SYMCRYPT_FLAG_ECKEY_ECDSA) != 0) && 
+             ((pEckey->fAlgorithmInfo & SYMCRYPT_FLAG_KEY_NO_FIPS) == 0) )
+        {
+            SYMCRYPT_RUN_KEYGEN_PCT(
+                SymCryptEcDsaSignVerifyTest,
+                pEckey,
+                SYMCRYPT_SELFTEST_ALGORITHM_ECDSA,
+                SYMCRYPT_SELFTEST_KEY_ECDSA );
+        }
+
         // Copy the key into the temporary integer
         SymCryptIntCopy( pEckey->piPrivateKey, piTmpInteger );
 
@@ -711,20 +750,13 @@ SymCryptEckeySetRandom(
 
     UINT32 highBitRestrictionPosition = pCurve->HighBitRestrictionPosition;
 
-    // Ensure only allowed flags are specified
-    UINT32 allowedFlags = SYMCRYPT_FLAG_KEY_RANGE_AND_PUBLIC_KEY_ORDER_VALIDATION |
-        SYMCRYPT_FLAG_ECKEY_SELFTEST_ECDSA |
-        SYMCRYPT_FLAG_ECKEY_SELFTEST_ECDH;
-    if ( ( flags & ~allowedFlags ) != 0)
-    {
-        scError = SYMCRYPT_INVALID_ARGUMENT;
-        goto cleanup;
-    }
+    // Ensure caller has specified what algorithm(s) the key will be used with
+    UINT32 algorithmFlags = SYMCRYPT_FLAG_ECKEY_ECDSA | SYMCRYPT_FLAG_ECKEY_ECDH;
+    // Make sure only allowed flags are specified
+    UINT32 allowedFlags = SYMCRYPT_FLAG_KEY_NO_FIPS | algorithmFlags;
 
-    // If any bits of SYMCRYPT_FLAG_KEY_VALIDATION_MASK are set, all bits of
-    // SYMCRYPT_FLAG_KEY_RANGE_AND_PUBLIC_KEY_ORDER_VALIDATION must be set
-    if ( ( flags & SYMCRYPT_FLAG_KEY_VALIDATION_MASK ) != 0 &&
-        ( flags & SYMCRYPT_FLAG_KEY_VALIDATION_MASK ) !=  SYMCRYPT_FLAG_KEY_RANGE_AND_PUBLIC_KEY_ORDER_VALIDATION )
+    if ( ( ( flags & ~allowedFlags ) != 0 ) || 
+         ( ( flags & algorithmFlags ) == 0 ) )
     {
         scError = SYMCRYPT_INVALID_ARGUMENT;
         goto cleanup;
@@ -855,14 +887,13 @@ SymCryptEckeySetRandom(
     }
 
     // Perform range and public key order validation on generated Public key.
-    if ( (flags & SYMCRYPT_FLAG_KEY_VALIDATION_MASK) == SYMCRYPT_FLAG_KEY_RANGE_AND_PUBLIC_KEY_ORDER_VALIDATION )
+    if ( (flags & SYMCRYPT_FLAG_KEY_NO_FIPS) == 0 )
     {
         // Perform Public key validation.
-        // Always perform range validation
-        // May also perform validation that Public key is in subgroup of order GOrd, depending on flags
+        // Always perform range validation and validation that Public key is in subgroup of order GOrd
         scError = SymCryptEckeyPerformPublicKeyValidation(
             pEckey,
-            flags,
+            SYMCRYPT_FLAG_ECKEY_PUBLIC_KEY_ORDER_VALIDATION,
             pbScratch,
             cbScratch );
         if ( scError != SYMCRYPT_NO_ERROR )
@@ -871,20 +902,24 @@ SymCryptEckeySetRandom(
         }
     }
 
-    if( ( flags & SYMCRYPT_FLAG_ECKEY_SELFTEST_ECDSA ) != 0 )
-    {
-        SYMCRYPT_RUN_KEYGEN_PCT( SymCryptEcDsaSignVerifyTest, pEckey, SYMCRYPT_SELFTEST_ECDSA );
-    }
-    
-    if( ( flags & SYMCRYPT_FLAG_ECKEY_SELFTEST_ECDH ) != 0 )
-    {
-        SYMCRYPT_RUN_KEYGEN_PCT(
-            SymCryptEcDhSecretAgreementPairwiseConsistencyTest,
-            pEckey,
-            SYMCRYPT_SELFTEST_ECDH_SECRET_AGREEMENT );
-    }
-
     pEckey->hasPrivateKey = TRUE;
+
+    pEckey->fAlgorithmInfo = flags; // We want to track all of the flags in the Eckey
+
+    if ( (flags & SYMCRYPT_FLAG_KEY_NO_FIPS) == 0 )
+    {
+        // We defer the ECDSA PCT to before first use of the Eckey in EcDsaSign, or first time
+        // private key is exported - whichever comes first.
+        
+        if( ( flags & SYMCRYPT_FLAG_ECKEY_ECDH ) != 0 )
+        {
+            // No additional per-key tests to perform before first use.
+            // Just ensure we have run the algorithm selftest at least once.
+            SYMCRYPT_RUN_SELFTEST_ONCE(
+                SymCryptEcDhSecretAgreementSelftest,
+                SYMCRYPT_SELFTEST_ALGORITHM_ECDH );
+        }
+    }
 
 cleanup:
 
@@ -894,5 +929,29 @@ cleanup:
         SymCryptCallbackFree( pbScratch );
     }
 
+    return scError;
+}
+
+SYMCRYPT_ERROR
+SYMCRYPT_CALL
+SymCryptEckeyExtendKeyUsage(
+    _Inout_ PSYMCRYPT_ECKEY pEckey,
+            UINT32          flags )
+{
+    SYMCRYPT_ERROR scError = SYMCRYPT_NO_ERROR;
+
+    // Ensure caller has specified what algorithm(s) the key will be used with
+    UINT32 algorithmFlags = SYMCRYPT_FLAG_ECKEY_ECDSA | SYMCRYPT_FLAG_ECKEY_ECDH;
+
+    if ( ( ( flags & ~algorithmFlags ) != 0 ) || 
+         ( ( flags & algorithmFlags ) == 0) )
+    {
+        scError = SYMCRYPT_INVALID_ARGUMENT;
+        goto cleanup;
+    }
+
+    pEckey->fAlgorithmInfo |= flags;
+
+cleanup:
     return scError;
 }

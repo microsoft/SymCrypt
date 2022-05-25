@@ -226,7 +226,7 @@ testMontgomery(PSYMCRYPT_ECURVE  pCurve)
 
     do
     {
-        scError = SymCryptEckeySetRandom( 0, pkKey1 );
+        scError = SymCryptEckeySetRandom( SYMCRYPT_FLAG_ECKEY_ECDH, pkKey1 );
         CHECK( scError == SYMCRYPT_NO_ERROR, "Set random key failed" );
 
         scError = SymCryptEcpointScalarMul( pCurve, pkKey1->piPrivateKey, NULL, 0, poSrc, pbScratch, cbScratch );

@@ -169,7 +169,7 @@ createKatFileSingleDsa( FILE * f, PCDLGROUP_TESTBLOB pBlob )
 
     PSYMCRYPT_DLKEY pKey = SymCryptDlkeyAllocate( pGroup );
 
-    scError = SymCryptDlkeyGenerate( SYMCRYPT_FLAG_DLKEY_SELFTEST_DSA, pKey );
+    scError = SymCryptDlkeyGenerate( SYMCRYPT_FLAG_DLKEY_DSA, pKey );
     CHECK( scError == SYMCRYPT_NO_ERROR, "Error generating DL key" );
 
     UINT32 cbPrivKey = SymCryptDlkeySizeofPrivateKey( pKey );
@@ -354,7 +354,7 @@ testDsatestGroups( DsaImplementation  * pDsa, INT64 line )
         PSYMCRYPT_DLKEY pKey = SymCryptDlkeyAllocate( pGroup );
         CHECK( pKey != NULL, "Could not create keys" );
 
-        scError = SymCryptDlkeyGenerate( SYMCRYPT_FLAG_DLKEY_SELFTEST_DSA, pKey );
+        scError = SymCryptDlkeyGenerate( SYMCRYPT_FLAG_DLKEY_DSA, pKey );
         CHECK( scError == SYMCRYPT_NO_ERROR, "Error generating key" );
 
         DLKEY_TESTBLOB  blob;

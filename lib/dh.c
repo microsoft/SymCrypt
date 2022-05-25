@@ -105,6 +105,14 @@ SymCryptDhSecretAgreement(
 
     UINT32 nBitsOfExp = 0;
 
+    // Make sure that the keys may be used in DH
+    if ( ((pkPrivate->fAlgorithmInfo & SYMCRYPT_FLAG_DLKEY_DH) == 0) ||
+         ((pkPublic->fAlgorithmInfo & SYMCRYPT_FLAG_DLKEY_DH) == 0) )
+    {
+        scError = SYMCRYPT_INVALID_ARGUMENT;
+        goto cleanup;
+    }
+
     // Make sure we only specify the correct flags and that
     // there is a private key
     if ( (flags != 0) || (!pkPrivate->fHasPrivateKey) )

@@ -1,3 +1,9 @@
+# Version 102.0
+
+- Breaking change to Asymmetric key generation and import handling, sanitizing flags required for FIPS
+- Trim symbols exposed in SymCrypt module to those specified in symcrypt.h
+- Introduce logic enabling FIPS per-key tests to be deferred to before first use, rather than at generation time
+
 # Version 101.3
 
 - Fix for OpenEnclave binary to workaround clang bug

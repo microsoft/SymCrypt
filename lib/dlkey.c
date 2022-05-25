@@ -65,6 +65,7 @@ SymCryptDlkeyCreate(
     pkRes = (PSYMCRYPT_DLKEY) pbBuffer;
 
     // DLKEY parameters
+    pkRes->fAlgorithmInfo = 0;
     pkRes->pDlgroup = pDlgroup;
     pkRes->fHasPrivateKey = FALSE;
     pkRes->fPrivateModQ = FALSE;            // This will be properly set during generate or setvalue
@@ -116,6 +117,7 @@ SymCryptDlkeyCopy(
     //
     if( pkSrc != pkDst )
     {
+        pkDst->fAlgorithmInfo = pkSrc->fAlgorithmInfo;
         pkDst->fHasPrivateKey = pkSrc->fHasPrivateKey;
         pkDst->fPrivateModQ = pkSrc->fPrivateModQ;
         pkDst->nBitsPriv = pkSrc->nBitsPriv;
@@ -197,6 +199,8 @@ SymCryptDlkeyHasPrivateKey( _In_ PCSYMCRYPT_DLKEY pkDlkey )
     return pkDlkey->fHasPrivateKey;
 }
 
+#define SYMCRYPT_FLAG_DLKEY_PUBLIC_KEY_ORDER_VALIDATION (0x1)
+
 SYMCRYPT_ERROR
 SYMCRYPT_CALL
 SymCryptDlkeyPerformPublicKeyValidation(
@@ -239,7 +243,7 @@ SymCryptDlkeyPerformPublicKeyValidation(
     }
 
     // Perform validation that Public key is in a subgroup of order Q.
-    if ( (flags & SYMCRYPT_FLAG_KEY_VALIDATION_MASK) == SYMCRYPT_FLAG_KEY_RANGE_AND_PUBLIC_KEY_ORDER_VALIDATION )
+    if ( (flags & SYMCRYPT_FLAG_DLKEY_PUBLIC_KEY_ORDER_VALIDATION) != 0 )
     {
         peTmpPublicKeyExpQ = SymCryptModElementCreate( pbScratch, cbModElement, pDlgroup->pmP);
         pbScratch += cbModElement;
@@ -302,22 +306,24 @@ SymCryptDlkeyGenerate(
     BYTE   privMask;
     UINT32 cntr;
 
+    // Ensure caller has specified what algorithm(s) the key will be used with
+    UINT32 algorithmFlags = SYMCRYPT_FLAG_DLKEY_DSA | SYMCRYPT_FLAG_DLKEY_DH;
     // Make sure only allowed flags are specified
-    UINT32 allowedFlags = SYMCRYPT_FLAG_DLKEY_GEN_MODP |
-        SYMCRYPT_FLAG_KEY_RANGE_AND_PUBLIC_KEY_ORDER_VALIDATION |
-        SYMCRYPT_FLAG_DLKEY_SELFTEST_DSA |
-        SYMCRYPT_FLAG_DLKEY_SELFTEST_DH;
+    UINT32 allowedFlags = SYMCRYPT_FLAG_DLKEY_GEN_MODP | SYMCRYPT_FLAG_KEY_NO_FIPS | algorithmFlags;
 
-    if ( ( flags & ~allowedFlags ) != 0 )
+    if ( ( ( flags & ~allowedFlags ) != 0 ) || 
+         ( ( flags & algorithmFlags ) == 0 ) )
     {
         scError = SYMCRYPT_INVALID_ARGUMENT;
         goto cleanup;
     }
 
-    // If any bits of SYMCRYPT_FLAG_KEY_VALIDATION_MASK are set, all bits of
-    // SYMCRYPT_FLAG_KEY_RANGE_AND_PUBLIC_KEY_ORDER_VALIDATION must be set
-    if ( ( flags & SYMCRYPT_FLAG_KEY_VALIDATION_MASK ) != 0 &&
-        ( flags & SYMCRYPT_FLAG_KEY_VALIDATION_MASK ) !=  SYMCRYPT_FLAG_KEY_RANGE_AND_PUBLIC_KEY_ORDER_VALIDATION )
+    // Extra sanity checks when running with FIPS
+    // Either Dlgroup is named SafePrime group and key is for DH,
+    // or Dlgroup is not named SafePrime group and key is for DSA
+    if ( ( ( flags & SYMCRYPT_FLAG_KEY_NO_FIPS ) == 0 ) && 
+         ( (pDlgroup->isSafePrimeGroup && (flags & SYMCRYPT_FLAG_DLKEY_DSA)) ||
+           (!(pDlgroup->isSafePrimeGroup) && (flags & SYMCRYPT_FLAG_DLKEY_DH)) ) )
     {
         scError = SYMCRYPT_INVALID_ARGUMENT;
         goto cleanup;
@@ -345,7 +351,7 @@ SymCryptDlkeyGenerate(
     {
         // We perform Private key range validation by construction
         // The Private key is constructed in the range [1,min(2^nBitsPriv,Q)-1] precisely when pkDlkey->fPrivateModQ
-        if ( (flags & SYMCRYPT_FLAG_KEY_VALIDATION_MASK) == SYMCRYPT_FLAG_KEY_RANGE_AND_PUBLIC_KEY_ORDER_VALIDATION )
+        if ( (flags & SYMCRYPT_FLAG_KEY_NO_FIPS) == 0 )
         {
             scError = SYMCRYPT_INVALID_ARGUMENT;
             goto cleanup;
@@ -447,14 +453,13 @@ SymCryptDlkeyGenerate(
         cbScratch );
 
     // Perform range validation on generated Public key.
-    if ( (flags & SYMCRYPT_FLAG_KEY_VALIDATION_MASK) == SYMCRYPT_FLAG_KEY_RANGE_AND_PUBLIC_KEY_ORDER_VALIDATION )
+    if ( (flags & SYMCRYPT_FLAG_KEY_NO_FIPS) == 0 )
     {
         // Perform Public key validation.
-        // Always perform range validation
-        // May also perform validation that Public key is in subgroup of order Q, depending on flags
+        // Always perform range validation, and validation that Public key is in subgroup of order Q
         scError = SymCryptDlkeyPerformPublicKeyValidation(
             pkDlkey,
-            flags,
+            SYMCRYPT_FLAG_DLKEY_PUBLIC_KEY_ORDER_VALIDATION,
             pbScratch,
             cbScratch );
         if ( scError != SYMCRYPT_NO_ERROR )
@@ -466,17 +471,28 @@ SymCryptDlkeyGenerate(
     // Set the fHasPrivateKey flag
     pkDlkey->fHasPrivateKey = TRUE;
 
-    if( ( flags & SYMCRYPT_FLAG_DLKEY_SELFTEST_DSA ) != 0 )
+    pkDlkey->fAlgorithmInfo = flags; // We want to track all of the flags in the Dlkey
+
+    if ( (flags & SYMCRYPT_FLAG_KEY_NO_FIPS) == 0 )
     {
-        SYMCRYPT_RUN_KEYGEN_PCT( SymCryptDsaSignVerifyTest, pkDlkey, SYMCRYPT_SELFTEST_DSA );
-    }
-    
-    if( ( flags & SYMCRYPT_FLAG_DLKEY_SELFTEST_DH ) != 0 )
-    {
-        SYMCRYPT_RUN_KEYGEN_PCT(
-            SymCryptDhSecretAgreementPairwiseConsistencyTest,
-            pkDlkey,
-            SYMCRYPT_SELFTEST_DH_SECRET_AGREEMENT );
+        if( ( flags & SYMCRYPT_FLAG_DLKEY_DSA ) != 0 )
+        {
+            // Run PCT eagerly as the key can only be used for DSA - there is no value in deferring
+            SYMCRYPT_RUN_KEYGEN_PCT(
+                SymCryptDsaSignVerifyTest,
+                pkDlkey,
+                SYMCRYPT_SELFTEST_ALGORITHM_DSA,
+                SYMCRYPT_SELFTEST_KEY_DSA );
+        }
+
+        if( ( flags & SYMCRYPT_FLAG_DLKEY_DH ) != 0 )
+        {
+            // No additional per-key tests to perform before first use.
+            // Just ensure we have run the algorithm selftest at least once.
+            SYMCRYPT_RUN_SELFTEST_ONCE(
+                SymCryptDhSecretAgreementSelftest,
+                SYMCRYPT_SELFTEST_ALGORITHM_DH );
+        }
     }
 
 cleanup:
@@ -512,8 +528,7 @@ SymCryptDlkeySetValue(
 
     PSYMCRYPT_MODELEMENT peTmp = NULL;
     UINT32 cbModElement = SymCryptSizeofModElementFromModulus( pDlgroup->pmP );
-
-    BOOLEAN performRangeValidation = FALSE;
+    UINT32 fValidatePublicKeyOrder = SYMCRYPT_FLAG_DLKEY_PUBLIC_KEY_ORDER_VALIDATION;
 
     if ( ((pbPrivateKey==NULL) && (cbPrivateKey!=0)) ||
          ((pbPublicKey==NULL) && (cbPublicKey!=0)) ||
@@ -523,22 +538,41 @@ SymCryptDlkeySetValue(
         goto cleanup;
     }
 
-    // Ensure only allowed flags are specified
-    UINT32 allowedFlags = SYMCRYPT_FLAG_KEY_MINIMAL_VALIDATION |
-        SYMCRYPT_FLAG_KEY_RANGE_VALIDATION |
-        SYMCRYPT_FLAG_KEY_RANGE_AND_PUBLIC_KEY_ORDER_VALIDATION |
-        SYMCRYPT_FLAG_KEY_KEYPAIR_REGENERATION_VALIDATION |
-        SYMCRYPT_FLAG_DLKEY_SELFTEST_DSA |
-        SYMCRYPT_FLAG_DLKEY_SELFTEST_DH;
+    // Ensure caller has specified what algorithm(s) the key will be used with
+    UINT32 algorithmFlags = SYMCRYPT_FLAG_DLKEY_DSA | SYMCRYPT_FLAG_DLKEY_DH;
+    // Make sure only allowed flags are specified
+    UINT32 allowedFlags = SYMCRYPT_FLAG_KEY_NO_FIPS | SYMCRYPT_FLAG_KEY_MINIMAL_VALIDATION | algorithmFlags;
 
-    if ( ( flags & ~allowedFlags ) != 0 )
+    if ( ( ( flags & ~allowedFlags ) != 0 ) || 
+         ( ( flags & algorithmFlags ) == 0 ) )
     {
         scError = SYMCRYPT_INVALID_ARGUMENT;
         goto cleanup;
     }
 
-    performRangeValidation = ((flags & SYMCRYPT_FLAG_KEY_VALIDATION_MASK) == SYMCRYPT_FLAG_KEY_RANGE_VALIDATION) ||
-            ((flags & SYMCRYPT_FLAG_KEY_VALIDATION_MASK) == SYMCRYPT_FLAG_KEY_RANGE_AND_PUBLIC_KEY_ORDER_VALIDATION);
+    // Extra sanity checks when running with FIPS
+    // Either Dlgroup is named SafePrime group and key is for DH,
+    // or Dlgroup is not named SafePrime group and key is for DSA
+    if ( ( ( flags & SYMCRYPT_FLAG_KEY_NO_FIPS ) == 0 ) && 
+         ( (pDlgroup->isSafePrimeGroup && (flags & SYMCRYPT_FLAG_DLKEY_DSA)) ||
+           (!(pDlgroup->isSafePrimeGroup) && (flags & SYMCRYPT_FLAG_DLKEY_DH)) ) )
+    {
+        scError = SYMCRYPT_INVALID_ARGUMENT;
+        goto cleanup;
+    }
+
+    // Check that minimal validation flag only specified with no fips
+    if ( ( ( flags & SYMCRYPT_FLAG_KEY_NO_FIPS ) == 0 ) &&
+         ( ( flags & SYMCRYPT_FLAG_KEY_MINIMAL_VALIDATION ) != 0 ) )
+    {
+        scError = SYMCRYPT_INVALID_ARGUMENT;
+        goto cleanup;
+    }
+
+    if ( ( flags & SYMCRYPT_FLAG_KEY_NO_FIPS ) != 0 )
+    {
+        fValidatePublicKeyOrder = 0;
+    }
 
     //
     // From symcrypt_internal.h we have:
@@ -562,10 +596,13 @@ SymCryptDlkeySetValue(
         // If the group does not have a Q assume that the imported key is modulo P as
         // it wouldn't help us assume otherwise (the bitsize of the private key should be kept
         // secret from SC attacks).
+        // If the private key has had some non-default value set for nBitsPriv then the caller
+        // has explicitly opted in to more stringent range checking.
         //
         pkDlkey->fPrivateModQ = ( (pDlgroup->fHasPrimeQ) &&
             ((cbPrivateKey < pDlgroup->cbPrimeQ) ||
-            ((cbPrivateKey == pDlgroup->cbPrimeQ) && (pDlgroup->cbPrimeQ < pDlgroup->cbPrimeP))) );
+            ((cbPrivateKey == pDlgroup->cbPrimeQ) && (pDlgroup->cbPrimeQ < pDlgroup->cbPrimeP)) ||
+            (pkDlkey->nBitsPriv != pDlgroup->nDefaultBitsPriv)) );
 
         if ( pkDlkey->fPrivateModQ )
         {
@@ -596,17 +633,21 @@ SymCryptDlkeySetValue(
         }
 
         // Perform range validation on imported Private key.
-        if ( performRangeValidation )
+        if ( ( flags & SYMCRYPT_FLAG_KEY_MINIMAL_VALIDATION ) == 0 )
         {
-            // Ensure that Q is specified in the Dlgroup
-            if ( !pDlgroup->fHasPrimeQ )
+            // Check if Private key is 0
+            if ( SymCryptIntIsEqualUint32( pkDlkey->piPrivateKey, 0 ) )
             {
                 scError = SYMCRYPT_INVALID_ARGUMENT;
                 goto cleanup;
             }
+        }
 
-            // Check if Private key is 0
-            if ( SymCryptIntIsEqualUint32( pkDlkey->piPrivateKey, 0 ) )
+        // Continue range validation on imported Private key.
+        if ( ( flags & SYMCRYPT_FLAG_KEY_NO_FIPS ) == 0 )
+        {
+            // Ensure that Q is specified in the Dlgroup
+            if ( !pDlgroup->fHasPrimeQ )
             {
                 scError = SYMCRYPT_INVALID_ARGUMENT;
                 goto cleanup;
@@ -643,14 +684,14 @@ SymCryptDlkeySetValue(
         }
 
         // Perform range validation on imported Public key.
-        if ( performRangeValidation )
+        if ( (flags & SYMCRYPT_FLAG_KEY_MINIMAL_VALIDATION) == 0 )
         {
             // Perform Public key validation.
             // Always perform range validation
             // May also perform validation that Public key is in subgroup of order Q, depending on flags
             scError = SymCryptDlkeyPerformPublicKeyValidation(
                 pkDlkey,
-                flags,
+                fValidatePublicKeyOrder,
                 pbScratch,
                 cbScratch );
             if ( scError != SYMCRYPT_NO_ERROR )
@@ -663,7 +704,7 @@ SymCryptDlkeySetValue(
     // Calculating the public key if no key was provided
     // or if needed for keypair regeneration validation
     if ( (pbPublicKey==NULL) ||
-         ( ( (flags & SYMCRYPT_FLAG_KEY_KEYPAIR_REGENERATION_VALIDATION) != 0 ) &&
+         ( ( ( flags & SYMCRYPT_FLAG_KEY_NO_FIPS ) == 0 ) &&
           (pbPrivateKey!=NULL) && (pbPublicKey!=NULL) ) )
     {
         // Calculate the public key from the private key
@@ -699,14 +740,14 @@ SymCryptDlkeySetValue(
                 goto cleanup;
             }
         }
-        else if ( performRangeValidation )
+        else if ( ( flags & SYMCRYPT_FLAG_KEY_MINIMAL_VALIDATION ) == 0 )
         {
             // Perform Public key validation on generated public key.
             // Always perform range validation
             // May also perform validation that Public key is in subgroup of order Q, depending on flags
             scError = SymCryptDlkeyPerformPublicKeyValidation(
                 pkDlkey,
-                flags,
+                fValidatePublicKeyOrder,
                 pbScratch,
                 cbScratch );
             if ( scError != SYMCRYPT_NO_ERROR )
@@ -716,16 +757,30 @@ SymCryptDlkeySetValue(
         }
     }
 
-    if( ( flags & SYMCRYPT_FLAG_DLKEY_SELFTEST_DSA ) != 0 )
+    pkDlkey->fAlgorithmInfo = flags; // We want to track all of the flags in the Dlkey
+
+    if ( (flags & SYMCRYPT_FLAG_KEY_NO_FIPS) == 0 )
     {
-        SYMCRYPT_RUN_SELFTEST_ONCE( SymCryptDsaSelftest, SYMCRYPT_SELFTEST_DSA );
-    }
-    
-    if( ( flags & SYMCRYPT_FLAG_DLKEY_SELFTEST_DH ) != 0 )
-    {
-        SYMCRYPT_RUN_SELFTEST_ONCE(
-            SymCryptDhSecretAgreementSelftest,
-            SYMCRYPT_SELFTEST_DH_SECRET_AGREEMENT );
+        if( ( flags & SYMCRYPT_FLAG_DLKEY_DSA ) != 0 )
+        {
+            // Ensure DSA algorithm selftest is run before first use of DSA algorithm
+            SYMCRYPT_RUN_SELFTEST_ONCE(
+                SymCryptDsaSelftest,
+                SYMCRYPT_SELFTEST_ALGORITHM_DSA );
+
+            if( pkDlkey->fHasPrivateKey )
+            {
+                // We do not need to run a DSA PCT on import, indicate that the test has been run
+                pkDlkey->fAlgorithmInfo |= SYMCRYPT_SELFTEST_KEY_DSA;
+            }
+        }
+        
+        if( ( flags & SYMCRYPT_FLAG_DLKEY_DH ) != 0 )
+        {
+            SYMCRYPT_RUN_SELFTEST_ONCE(
+                SymCryptDhSecretAgreementSelftest,
+                SYMCRYPT_SELFTEST_ALGORITHM_DH );
+        }
     }
 
 cleanup:
@@ -811,5 +866,29 @@ cleanup:
         SymCryptWipe( pbScratch, cbScratch );
         SymCryptCallbackFree( pbScratch );
     }
+    return scError;
+}
+
+SYMCRYPT_ERROR
+SYMCRYPT_CALL
+SymCryptDlkeyExtendKeyUsage(
+    _Inout_ PSYMCRYPT_DLKEY pkDlkey,
+            UINT32          flags )
+{
+    SYMCRYPT_ERROR scError = SYMCRYPT_NO_ERROR;
+
+    // Ensure caller has specified what algorithm(s) the key will be used with
+    UINT32 algorithmFlags = SYMCRYPT_FLAG_DLKEY_DSA | SYMCRYPT_FLAG_DLKEY_DH;
+
+    if ( ( ( flags & ~algorithmFlags ) != 0 ) || 
+         ( ( flags & algorithmFlags ) == 0) )
+    {
+        scError = SYMCRYPT_INVALID_ARGUMENT;
+        goto cleanup;
+    }
+
+    pkDlkey->fAlgorithmInfo |= flags;
+
+cleanup:
     return scError;
 }

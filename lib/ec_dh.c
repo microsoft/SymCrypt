@@ -32,6 +32,14 @@ SymCryptEcDhSecretAgreement(
     UINT32              cbQ = 0;
     UINT32              cbX = 0;
 
+    // Make sure that the keys may be used in ECDH
+    if ( ((pkPrivate->fAlgorithmInfo & SYMCRYPT_FLAG_ECKEY_ECDH) == 0) ||
+         ((pkPublic->fAlgorithmInfo & SYMCRYPT_FLAG_ECKEY_ECDH) == 0) )
+    {
+        scError = SYMCRYPT_INVALID_ARGUMENT;
+        goto cleanup;
+    }
+
     // Make sure we only specify the correct flags
     if (flags != 0)
     {

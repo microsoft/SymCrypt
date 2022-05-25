@@ -3942,7 +3942,8 @@ SetupRsaKey( PBYTE buf1, SIZE_T keySize )
                 pkRsakey = SymCryptRsakeyAllocate( &rsaParams, 0 );
                 CHECK( pkRsakey != NULL, "?" );
 
-                scError = SymCryptRsakeyGenerate( pkRsakey, NULL, 0, 0 );   // Use default exponent
+                // Use default exponent
+                scError = SymCryptRsakeyGenerate(pkRsakey, NULL, 0, SYMCRYPT_FLAG_RSAKEY_SIGN | SYMCRYPT_FLAG_RSAKEY_ENCRYPT);
                 CHECK( scError == SYMCRYPT_NO_ERROR, "?" );
 
                 g_precomputedRsaKeys[i].pkRsakey = pkRsakey;
@@ -4142,7 +4143,7 @@ RsaSignImp<ImpSc, AlgRsaSignPkcs1>::setKey( PCRSAKEY_TESTBLOB pcKeyBlob )
         &pcKeyBlob->u64PubExp, 1,
         ppPrime, cbPrime, 2,
         SYMCRYPT_NUMBER_FORMAT_MSB_FIRST,
-        0,
+        SYMCRYPT_FLAG_RSAKEY_SIGN,
         state.pKey );
     CHECK( scError == SYMCRYPT_NO_ERROR, "?" );
 
@@ -4371,7 +4372,7 @@ RsaSignImp<ImpSc, AlgRsaSignPss>::setKey( PCRSAKEY_TESTBLOB pcKeyBlob )
         &pcKeyBlob->u64PubExp, 1,
         ppPrime, cbPrime, 2,
         SYMCRYPT_NUMBER_FORMAT_MSB_FIRST,
-        0,
+        SYMCRYPT_FLAG_RSAKEY_SIGN,
         state.pKey );
     CHECK( scError == SYMCRYPT_NO_ERROR, "?" );
 
@@ -4590,7 +4591,7 @@ RsaEncImp<ImpSc, AlgRsaEncRaw>::setKey( PCRSAKEY_TESTBLOB pcKeyBlob )
         &pcKeyBlob->u64PubExp, 1,
         ppPrime, cbPrime, 2,
         SYMCRYPT_NUMBER_FORMAT_MSB_FIRST,
-        0,
+        SYMCRYPT_FLAG_RSAKEY_ENCRYPT,
         state.pKey );
     CHECK( scError == SYMCRYPT_NO_ERROR, "?" );
 
@@ -4801,7 +4802,7 @@ RsaEncImp<ImpSc, AlgRsaEncPkcs1>::setKey( PCRSAKEY_TESTBLOB pcKeyBlob )
         &pcKeyBlob->u64PubExp, 1,
         ppPrime, cbPrime, 2,
         SYMCRYPT_NUMBER_FORMAT_MSB_FIRST,
-        0,
+        SYMCRYPT_FLAG_RSAKEY_ENCRYPT,
         state.pKey );
     CHECK( scError == SYMCRYPT_NO_ERROR, "?" );
 
@@ -5030,7 +5031,7 @@ RsaEncImp<ImpSc, AlgRsaEncOaep>::setKey( PCRSAKEY_TESTBLOB pcKeyBlob )
         &pcKeyBlob->u64PubExp, 1,
         ppPrime, cbPrime, 2,
         SYMCRYPT_NUMBER_FORMAT_MSB_FIRST,
-        0,
+        SYMCRYPT_FLAG_RSAKEY_ENCRYPT,
         state.pKey );
     CHECK( scError == SYMCRYPT_NO_ERROR, "?" );
 
@@ -5477,12 +5478,14 @@ SetupSymCryptDsaAndDh( PBYTE buf1, PBYTE buf2, PBYTE buf3 )
     UINT32 signatureSize = 0;
     PUINT32 puiSignatureSize = NULL;
 
+    UINT32 generateFlags = SYMCRYPT_FLAG_DLKEY_DH | SYMCRYPT_FLAG_DLKEY_DSA | SYMCRYPT_FLAG_KEY_NO_FIPS;
+
     pPtrs[0] = SymCryptDlkeyCreate( buf2 + buff2Offset, dlkeysize, pDlgroup );
-    scError = SymCryptDlkeyGenerate( 0, pPtrs[0] );
+    scError = SymCryptDlkeyGenerate( generateFlags, pPtrs[0] );
     CHECK( scError == SYMCRYPT_NO_ERROR, "?" );
 
     pPtrs[1] = SymCryptDlkeyCreate( buf2 + buff2Offset + dlkeysize, dlkeysize, pDlgroup );
-    scError = SymCryptDlkeyGenerate( 0, pPtrs[1] );
+    scError = SymCryptDlkeyGenerate( generateFlags, pPtrs[1] );
     CHECK( scError == SYMCRYPT_NO_ERROR, "?" );
 
     signatureSize = 2*SymCryptDlkeySizeofPrivateKey( pPtrs[0] );
@@ -5517,7 +5520,7 @@ SetupSymCryptDsaAndDh( PBYTE buf1, PBYTE buf2, PBYTE buf3 )
     // Verify the signature to make sure everything is ok
     scError = SymCryptDsaVerify(
                 ((PSYMCRYPT_DLKEY *) buf2)[0],
-                buf2,           // Sign the keys' buffer
+                buf2,           // Verify the keys' buffer
                 SymCryptDlkeySizeofPrivateKey( ((PSYMCRYPT_DLKEY *)buf2)[0] ),
                 buf3 + sizeof(UINT32),
                 *((PUINT32) buf3),
@@ -5636,11 +5639,11 @@ DlImp<ImpSc, AlgDsaVerify>::~DlImp()
 //============================
 
 PSYMCRYPT_DLKEY
-dlkeyObjectFromTestBlob( PCSYMCRYPT_DLGROUP pGroup, PCDLKEY_TESTBLOB pBlob, BOOL setPrivate = TRUE )
+dlkeyObjectFromTestBlob( PCSYMCRYPT_DLGROUP pGroup, PCDLKEY_TESTBLOB pBlob, UINT32 algFlags, BOOL setPrivate = TRUE )
 {
     PSYMCRYPT_DLKEY pRes;
     SYMCRYPT_ERROR scError;
-    UINT32 flags = 0;
+    UINT32 flags = algFlags;
     PCBYTE pbPrivKey = NULL;
     SIZE_T cbPrivKey = 0;
     PCBYTE pbPubKey = NULL;
@@ -5654,32 +5657,21 @@ dlkeyObjectFromTestBlob( PCSYMCRYPT_DLGROUP pGroup, PCDLKEY_TESTBLOB pBlob, BOOL
 
     BYTE randByte = g_rng.byte();
 
-    if(randByte & 1)
+    if (!pGroup->fHasPrimeQ || 
+        pBlob->fPrivateModP || 
+        ((algFlags == SYMCRYPT_FLAG_DLKEY_DH) && (!pGroup->isSafePrimeGroup)) ||
+        ((algFlags == SYMCRYPT_FLAG_DLKEY_DSA) && (pGroup->isSafePrimeGroup)) ||
+        (randByte & 0x1))
     {
-        flags |= SYMCRYPT_FLAG_KEY_KEYPAIR_REGENERATION_VALIDATION;
-    }
-
-    // If Dlgroup has a set Q and Dlkey wasn't explicitly generated with private key mod P
-    if ( pGroup->fHasPrimeQ && !pBlob->fPrivateModP )
-    {
-        switch((randByte >> 1) & 3)
+        flags |= SYMCRYPT_FLAG_KEY_NO_FIPS;
+        if (randByte & 0x2)
         {
-            case 0:
-                break;
-            case 1:
-                flags |= SYMCRYPT_FLAG_KEY_MINIMAL_VALIDATION;
-                break;
-            case 2:
-                flags |= SYMCRYPT_FLAG_KEY_RANGE_VALIDATION;
-                break;
-            case 3:
-            default:
-                flags |= SYMCRYPT_FLAG_KEY_RANGE_AND_PUBLIC_KEY_ORDER_VALIDATION;
-                break;
+            flags |= SYMCRYPT_FLAG_DLKEY_DSA;
+            flags |= SYMCRYPT_FLAG_DLKEY_DH;
         }
     }
 
-    if (setPrivate || (randByte & 0x8))
+    if (setPrivate || (randByte & 0x4))
     {
         pbPrivKey = &pBlob->abPrivKey[0];
         cbPrivKey = pBlob->cbPrivKey;
@@ -5690,6 +5682,11 @@ dlkeyObjectFromTestBlob( PCSYMCRYPT_DLGROUP pGroup, PCDLKEY_TESTBLOB pBlob, BOOL
             CHECK4( scError == SYMCRYPT_NO_ERROR, "Error setting private key length pBlob->nBitsPriv %d pBlob->pGroup->cbPrimeP %d",
                     pBlob->nBitsPriv, pBlob->pGroup->cbPrimeP );
         }
+    }
+
+    if (((flags & SYMCRYPT_FLAG_KEY_NO_FIPS) != 0) && (randByte & 0x8))
+    {
+        flags |= SYMCRYPT_FLAG_KEY_MINIMAL_VALIDATION;
     }
 
     if (!setPrivate)
@@ -5725,12 +5722,14 @@ algImpKeyPerfFunction<ImpSc, AlgDh>( PBYTE buf1, PBYTE buf2, PBYTE buf3, SIZE_T 
     PSYMCRYPT_DLKEY pKey1 = SymCryptDlkeyCreate( buf2 + 64, PERF_BUFFER_SIZE/4, pGroup );
     PSYMCRYPT_DLKEY pKey2 = SymCryptDlkeyCreate( buf2 + 64 + PERF_BUFFER_SIZE/4, PERF_BUFFER_SIZE/4, pGroup );
 
+    UINT32 generateFlags = SYMCRYPT_FLAG_DLKEY_DH | (pGroup->isSafePrimeGroup ? 0 : SYMCRYPT_FLAG_KEY_NO_FIPS);
+
     CHECK( pKey1 != NULL && pKey2 != NULL, "Failed to create keys" );
 
-    scError = SymCryptDlkeyGenerate( 0, pKey1 );
+    scError = SymCryptDlkeyGenerate( generateFlags, pKey1 );
     CHECK( scError == SYMCRYPT_NO_ERROR, "?" );
 
-    scError = SymCryptDlkeyGenerate( 0, pKey2 );
+    scError = SymCryptDlkeyGenerate( generateFlags, pKey2 );
     CHECK( scError == SYMCRYPT_NO_ERROR, "?" );
 
     ((PSYMCRYPT_DLKEY *) buf2)[0] = pKey1;
@@ -5758,10 +5757,12 @@ algImpDataPerfFunction< ImpSc, AlgDh>( PBYTE buf1, PBYTE buf2, PBYTE buf3, SIZE_
 
     PSYMCRYPT_DLGROUP pGroup = *(PSYMCRYPT_DLGROUP *) buf1;
 
+    UINT32 generateFlags = SYMCRYPT_FLAG_DLKEY_DH | (pGroup->isSafePrimeGroup ? 0 : SYMCRYPT_FLAG_KEY_NO_FIPS);
+
     PSYMCRYPT_DLKEY pKey = SymCryptDlkeyCreate( buf3, (1 << 16), pGroup );
     CHECK( pKey != NULL, "?" );
 
-    scError = SymCryptDlkeyGenerate( 0, pKey );
+    scError = SymCryptDlkeyGenerate( generateFlags, pKey );
     CHECK( scError == SYMCRYPT_NO_ERROR, "?" );
 
     scError = SymCryptDlkeyGetValue( pKey, NULL, 0, buf3 + (1 << 16), pGroup->cbPrimeP, SYMCRYPT_NUMBER_FORMAT_MSB_FIRST, 0 );
@@ -5828,7 +5829,7 @@ DhImp<ImpSc, AlgDh>::setKey( _In_    PCDLKEY_TESTBLOB    pcKeyBlob )
     if( pcKeyBlob != NULL )
     {
         state.pGroup = dlgroupObjectFromTestBlob( pcKeyBlob->pGroup );
-        state.pKey = dlkeyObjectFromTestBlob( state.pGroup, pcKeyBlob );
+        state.pKey = dlkeyObjectFromTestBlob( state.pGroup, pcKeyBlob, SYMCRYPT_FLAG_DLKEY_DH );
 
         CHECK( state.pGroup != NULL && state.pKey != NULL, "?" );
     }
@@ -5846,7 +5847,7 @@ DhImp<ImpSc, AlgDh>::sharedSecret(
     PSYMCRYPT_DLKEY pKey2;
     SYMCRYPT_ERROR scError;
 
-    pKey2 = dlkeyObjectFromTestBlob( state.pGroup, pcPubkey, /*setPrivate=*/ FALSE );
+    pKey2 = dlkeyObjectFromTestBlob( state.pGroup, pcPubkey, SYMCRYPT_FLAG_DLKEY_DH, /*setPrivate=*/ FALSE );
     CHECK( pKey2 != NULL, "?")
 
     scError = SymCryptDhSecretAgreement(    state.pKey,
@@ -5878,7 +5879,7 @@ algImpKeyPerfFunction<ImpSc, AlgDsa>( PBYTE buf1, PBYTE buf2, PBYTE buf3, SIZE_T
 
     CHECK( pKey != NULL, "Failed to create key" );
 
-    scError = SymCryptDlkeyGenerate( 0, pKey );
+    scError = SymCryptDlkeyGenerate( SYMCRYPT_FLAG_DLKEY_DSA, pKey );
     CHECK( scError == SYMCRYPT_NO_ERROR, "?" );
 
     ((PSYMCRYPT_DLKEY *) buf2)[0] = pKey;
@@ -5977,7 +5978,7 @@ DsaImp<ImpSc, AlgDsa>::setKey( _In_    PCDLKEY_TESTBLOB    pcKeyBlob )
     if( pcKeyBlob != NULL )
     {
         state.pGroup = dlgroupObjectFromTestBlob( pcKeyBlob->pGroup );
-        state.pKey = dlkeyObjectFromTestBlob( state.pGroup, pcKeyBlob );
+        state.pKey = dlkeyObjectFromTestBlob( state.pGroup, pcKeyBlob, SYMCRYPT_FLAG_DLKEY_DSA );
 
         CHECK( state.pGroup != NULL && state.pKey != NULL, "?" );
     }
@@ -6143,7 +6144,7 @@ SetupSymCryptEcdsaAndEcdh( PBYTE buf1, PBYTE buf2, PBYTE buf3 )
     PSYMCRYPT_ECKEY * pPtrs = ((PSYMCRYPT_ECKEY *) buf2);
     pPtrs[0] = SymCryptEckeyCreate( buf2 + 32, eckeySize, pCurve );
 
-    scError = SymCryptEckeySetRandom( 0, pPtrs[0] );
+    scError = SymCryptEckeySetRandom( SYMCRYPT_FLAG_ECKEY_ECDSA | SYMCRYPT_FLAG_ECKEY_ECDH, pPtrs[0] );
     CHECK( scError == SYMCRYPT_NO_ERROR, "?" );
 
     pPtrs[1] = (PSYMCRYPT_ECKEY) ((PBYTE)buf2 + 32 + eckeySize);    // This will hold the hash of the message
@@ -6168,19 +6169,19 @@ SetupSymCryptEcdsaAndEcdh( PBYTE buf1, PBYTE buf2, PBYTE buf3 )
                 SymCryptEcurveSizeofFieldElement( *(PSYMCRYPT_ECURVE *) buf1 ));
     CHECK( scError == SYMCRYPT_NO_ERROR, "SymCryptEcDhSecretAgreement failed" );
 
-    // Same for ECDSA
-    scError = SymCryptEcDsaSign(
-                    pPtrs[0],
-                    (PBYTE) pPtrs[1],
-                    SYMCRYPT_SHA512_RESULT_SIZE,
-                    SYMCRYPT_NUMBER_FORMAT_MSB_FIRST,
-                    0,
-                    buf3 + sizeof(UINT32),
-                    signatureSize );
-    CHECK( scError == SYMCRYPT_NO_ERROR, "SymCryptEcDsaSign failed" );
-
     if (pCurve->type != SYMCRYPT_ECURVE_TYPE_MONTGOMERY)
     {
+        // Same for ECDSA
+        scError = SymCryptEcDsaSign(
+                        pPtrs[0],
+                        (PBYTE) pPtrs[1],
+                        SYMCRYPT_SHA512_RESULT_SIZE,
+                        SYMCRYPT_NUMBER_FORMAT_MSB_FIRST,
+                        0,
+                        buf3 + sizeof(UINT32),
+                        signatureSize );
+        CHECK( scError == SYMCRYPT_NO_ERROR, "SymCryptEcDsaSign failed" );
+
         // Verify the signature to make sure everything is ok
         scError = SymCryptEcDsaVerify(
                     ((PSYMCRYPT_ECKEY *) buf2)[0],

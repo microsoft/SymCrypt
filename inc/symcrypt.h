@@ -370,7 +370,7 @@ SymCryptStoreMsbFirstUint64(
                             SIZE_T  cbDst );
 
 //
-// Functions to retreive the bitsize/bytesize of UINT32/UINT64 values
+// Functions to retrieve the bitsize/bytesize of UINT32/UINT64 values
 // Note: the bitsize/bytesize of the value 0 is defined as 0.
 // Some data formats don't allow empty encodings, so the caller
 // should ensure they handle the 0-case properly.
@@ -5123,86 +5123,41 @@ SymCryptEckeyCopy(
 
 
 //=====================================================
-// On-demand self-test flags
+// Flags for asymmetric key generation and import
 
-// These flags can be passed in at key generation or import time to indicate that the
-// corresponding pairwise consistency test should be run. Running these tests is required
-// to be compliant with FIPS 140-3, but because they are computationally expensive, we do not
-// run them at module start-up. It is the caller's responsibility to pass in the appropriate flag
-// at key generation or import time.
-//
-// Why are these flags algorithm specific? Because SymCrypt does not distinguish between ECC keys
-// used for ECDSA vs. ECC keys used for ECDH, or DL keys used for DSA vs. DL keys used for DH, the
-// caller must use the appropriate flag to indicate what the key will be used for and therefore
-// which selftest needs to be run.
-//
-// Note that per FIPS requirements, testing each imported key is not required, but the appropriate
-// algorithm test must be run once before an algorithm can be used. Therefore, the key import
-// test will be run at most one time per algorithm. SymCrypt handles this internally. For key
-// generation, however, each generated key must be tested, so the key generation test will be run
-// once per key generated.
-#define SYMCRYPT_FLAG_ECKEY_SELFTEST_ECDSA                         (0x100)
-#define SYMCRYPT_FLAG_ECKEY_SELFTEST_ECDH                          (0x200)
+// These flags are introduced primarily for FIPS purposes. For FIPS 140-3 rather than expose to the
+// caller the specifics of what tests will be run with various algorithms, we are sanitizing flags
+// provided on asymmetric key generation and import to enable the caller to indicate their intent,
+// and for SymCrypt to perform the required testing.
+// Below we define the flags that can be passed and when a caller should set them.
+// The specifics of what tests will be run are likely to change over time, as FIPS requirements and
+// our understanding of how best to implement them, change over time. Callers should not rely on
+// specific behavior.
 
-#define SYMCRYPT_FLAG_DLKEY_SELFTEST_DSA                           (0x100)
-#define SYMCRYPT_FLAG_DLKEY_SELFTEST_DH                            (0x200)
 
-#define SYMCRYPT_FLAG_RSAKEY_SELFTEST                              (0x100)
+// Validation required by FIPS is enabled by default. This flag enables a caller to opt out of this
+// validation.
+#define SYMCRYPT_FLAG_KEY_NO_FIPS               (0x100)
 
-//=====================================================
-// Generic key validation flags
-// Currently only apply to DH, DSA, ECDH, and ECDSA.
+// When opting out of FIPS, SymCrypt may still perform some sanity checks on key import
+// In very performance sensitive situations where a caller strongly trusts the values it is passing
+// to SymCrypt and does not care about FIPS (or can statically prove properties about the imported
+// keys), a caller may specify SYMCRYPT_FLAG_KEY_MINIMAL_VALIDATION in addition to
+// SYMCRYPT_FLAG_KEY_NO_FIPS to skip costly checks
+#define SYMCRYPT_FLAG_KEY_MINIMAL_VALIDATION    (0x200)
 
-// SYMCRYPT_FLAG_KEY_MINIMAL_VALIDATION: When set in a SetValue call, minimize costly validation.
-//      Only to be used in very performance sensitive situations where the caller strongly trusts the values
-//      it is passing to SymCrypt
-//      Cannot be specified with SYMCRYPT_FLAG_KEY_RANGE_VALIDATION or SYMCRYPT_FLAG_KEY_RANGE_AND_PUBLIC_KEY_ORDER_VALIDATION
-#define SYMCRYPT_FLAG_KEY_MINIMAL_VALIDATION                    (0x10)
+// Callers must specify what algorithm(s) a given asymmetric key will be used for.
+// This information will be tracked by SymCrypt, and attempting to use the key in an algorithm it
+// was not generated or imported for will result in failure.
+// If no algorithm is specified then the key generation or import function will fail.
+#define SYMCRYPT_FLAG_DLKEY_DSA         (0x1000)
+#define SYMCRYPT_FLAG_DLKEY_DH          (0x2000)
 
-// Maintain old ECC specific flag for backwards compatibility
-#define SYMCRYPT_FLAG_ECC_NO_VALIDATION     SYMCRYPT_FLAG_KEY_MINIMAL_VALIDATION
+#define SYMCRYPT_FLAG_ECKEY_ECDSA       (0x1000)
+#define SYMCRYPT_FLAG_ECKEY_ECDH        (0x2000)
 
-// SYMCRYPT_FLAG_KEY_RANGE_VALIDATION: When set in a SetValue call, ensure that:
-//      Generated or imported Private key:
-//          For DH/DSA:
-//              Check private key is in the range: [1, q-1]
-//                  If Dlgroup is a named safe-prime group, nBitsPriv is specified either using a default
-//                  value or using SymCryptDlkeySetPrivateKeyLength, such that 2s <= nBitsPriv <= nBitsOfQ.
-//                  In this case, we enforce that the private key is in the reduced range [1, min(2^nBitsPriv, q)-1]
-//                      (s is the maximum security strength for a named safe-prime group as specified in SP800-56arev3)
-//              If q is not known, this will cause SYMCRYPT_INVALID_ARGUMENT
-//          For ECDH/ECDSA:
-//              For Curves with Canonical Private key format: Private key is in range [1, GOrd-1]
-//                  Currently only Short-Weierstrass curves use the SYMCRYPT_ECKEY_PRIVATE_FORMAT_CANONICAL format
-//              For other Curves: Private key is non-zero
-//      Generated or imported Public key:
-//          For DH/DSA: Public key in range [2, p-2]
-//          For ECDH/ECDSA:
-//              Public key is nonzero, has coordinates in the underlying field
-//              and for non-Montgomery Curves: Public key is on the curve
-//      Cannot be specified with SYMCRYPT_FLAG_KEY_MINIMAL_VALIDATION or SYMCRYPT_FLAG_KEY_RANGE_AND_PUBLIC_KEY_ORDER_VALIDATION
-#define SYMCRYPT_FLAG_KEY_RANGE_VALIDATION                      (0x20)
-
-// SYMCRYPT_FLAG_KEY_RANGE_AND_PUBLIC_KEY_ORDER_VALIDATION: When set in a SetValue, Generate, or SetRandom call, ensure that:
-//      Range validation ensured as for SYMCRYPT_FLAG_KEY_RANGE_VALIDATION
-//          In the case of generation of a Private key this is done by construction
-//      and
-//      Generated or imported Public key is in a subgroup of the correct order. i.e.:
-//          For DH/DSA: Verify that (Public key)^Q == 1 mod P
-//              If Q is not known, this will cause SYMCRYPT_INVALID_ARGUMENT
-//          For ECDH/ECDSA: Verify that GOrd*(Public key) == O
-//      Cannot be specified with SYMCRYPT_FLAG_KEY_MINIMAL_VALIDATION or SYMCRYPT_FLAG_KEY_RANGE_VALIDATION
-#define SYMCRYPT_FLAG_KEY_RANGE_AND_PUBLIC_KEY_ORDER_VALIDATION (0x30)
-
-// SYMCRYPT_FLAG_KEY_KEYPAIR_REGENERATION_VALIDATION: When set in a SetValue call, ensure that:
-//      If a Public and Private key are imported:
-//          Use the imported Private key to generate a Public key, and check the generated Public key is equal
-//          to the imported Public key
-#define SYMCRYPT_FLAG_KEY_KEYPAIR_REGENERATION_VALIDATION       (0x40)
-
-// Maintain old DL specific flag for backwards compatibility
-#define SYMCRYPT_FLAG_DLKEY_VERIFY      SYMCRYPT_FLAG_KEY_KEYPAIR_REGENERATION_VALIDATION
-
+#define SYMCRYPT_FLAG_RSAKEY_SIGN       (0x1000)
+#define SYMCRYPT_FLAG_RSAKEY_ENCRYPT    (0x2000)
 
 //=====================================================
 // RSA key operations
@@ -5291,11 +5246,14 @@ SymCryptRsakeyGenerate(
 //
 // Allowed flags:
 //
-// - SYMCRYPT_FLAG_RSAKEY_SELFTEST
-//   Perform a pairwise consistency test on the generated key.
-//   This flag must be set for callers who require compliance with FIPS 140-3. Any failure
-//   in the selftest will cause a fatal error, as it indicates that the module cannot operate
-//   in a FIPS-compliant mode.
+// - SYMCRYPT_FLAG_KEY_NO_FIPS
+//   Opt-out of performing validation required for FIPS
+//
+// - At least one of the flags indicating what the Rsakey is to be used for must be specified:
+//      SYMCRYPT_FLAG_RSAKEY_SIGN
+//      SYMCRYPT_FLAG_RSAKEY_ENCRYPT
+
+// Described in more detail in the "Flags for asymmetric key generation and import" section above
 //
 
 SYMCRYPT_ERROR
@@ -5323,11 +5281,17 @@ SymCryptRsakeySetValue(
 //
 // Allowed flags:
 //
-// - SYMCRYPT_FLAG_RSAKEY_SELFTEST
-//   Perform an RSA algorithm test, if not already been done.
-//   This flag must be set for callers who require compliance with FIPS 140-3. Any failure
-//   in the selftest will cause a fatal error, as it indicates that the module cannot operate
-//   in a FIPS-compliant mode.
+// - SYMCRYPT_FLAG_KEY_NO_FIPS
+//   Opt-out of performing validation required for FIPS
+//
+// - SYMCRYPT_FLAG_KEY_MINIMAL_VALIDATION
+//   Opt-out of performing almost all validation - must be specified with SYMCRYPT_FLAG_KEY_NO_FIPS
+//
+// - At least one of the flags indicating what the Rsakey is to be used for must be specified:
+//      SYMCRYPT_FLAG_RSAKEY_SIGN
+//      SYMCRYPT_FLAG_RSAKEY_ENCRYPT
+//
+// Described in more detail in the "Flags for asymmetric key generation and import" section above
 //
 //  Remarks:
 //  - Modulus and all primes are stored in the same format specified by numFormat.
@@ -5403,6 +5367,20 @@ SymCryptRsakeyGetCrtValue(
 //  - Currently, the only acceptable value of nCrtExponent is 2 or 0.
 //    pbCrtCoefficient, pbPrivateExponent can be NULL;
 
+SYMCRYPT_ERROR
+SYMCRYPT_CALL
+SymCryptRsakeyExtendKeyUsage(
+    _Inout_ PSYMCRYPT_RSAKEY    pkRsakey,
+            UINT32              flags );
+//
+// Enable an existing key which has been generated or imported to be used in specified algorithms.
+// Some callers may not know at key generation or import time what algorithms a key will be used for
+// and this API allows the key to be extended for use in additional algorithms. Use of this API may
+// not be compliant with FIPS 140-3
+//
+// - flags must be some bitwise OR of the following flags:
+//      SYMCRYPT_FLAG_RSAKEY_SIGN
+//      SYMCRYPT_FLAG_RSAKEY_ENCRYPT
 
 #define SYMCRYPT_DLGROUP_FIPS_LATEST    (SYMCRYPT_DLGROUP_FIPS_186_3)
 
@@ -5652,32 +5630,22 @@ SymCryptDlkeyGenerate(
     _Inout_ PSYMCRYPT_DLKEY             pkDlkey );
 //
 // Allowed flags:
-//  - SYMCRYPT_FLAG_KEY_RANGE_AND_PUBLIC_KEY_ORDER_VALIDATION
-//  Described in the key validation flag definitions above. Intended use is to allow additional
-//  (expensive) checks required by FIPS (SP800-56arev3) to be performed for compliance.
-//  Provided the Dlgroup is well formed, and the prime Q is known, generated keypairs will always
-//  pass these checks, so it is not recommended to set this flag unless required, as it makes the
-//  operation slower without affecting the results.
-//
 //  - SYMCRYPT_FLAG_DLKEY_GEN_MODP
 //  When set, generate a private key between 1 and P-2.
 //  When Q is known, this overrides the default behavior of generating a private key between 1 and Q-1,
 //  or 1 and min(2^nBitsPriv-1, Q-1) for named safe-prime groups
 //  When Q is not known, this does not affect the behavior
 //
-// - SYMCRYPT_FLAG_DLKEY_SELFTEST_DSA
-//   Perform a DSA pairwise consistency test on the generated key. For keys which will be used with
-//   DSA, this flag must be set for callers who require compliance with FIPS 140-3. Any failure
-//   in the selftest will cause a fatal error, as it indicates that the module cannot operate
-//   in a FIPS-compliant mode.
+// - SYMCRYPT_FLAG_KEY_NO_FIPS
+//   Opt-out of performing validation required for FIPS
 //
-// - SYMCRYPT_FLAG_DLKEY_SELFTEST_DH
-//   Equivalent to SYMCRYPT_FLAG_DLKEY_SELFTEST_DSA, but for keys which will be used with DH.
+// - At least one of the flags indicating what the Dlkey is to be used for must be specified:
+//      SYMCRYPT_FLAG_DLKEY_DSA
+//      SYMCRYPT_FLAG_DLKEY_DH
 //
 // Note:
-// If SYMCRYPT_FLAG_DLKEY_GEN_MODP is specified in conjuction with
-// SYMCRYPT_FLAG_KEY_RANGE_AND_PUBLIC_KEY_ORDER_VALIDATION a SYMCRYPT_INVALID_ARGUMENT error will be
-// returned, as Private key range validation requires the default generation behavior
+// If SYMCRYPT_FLAG_DLKEY_GEN_MODP is specified then SYMCRYPT_FLAG_KEY_NO_FIPS must also be
+// specified to avoid SYMCRYPT_INVALID_ARGUMENT, as FIPS requires the default generation behavior
 //
 
 SYMCRYPT_ERROR
@@ -5695,21 +5663,17 @@ SymCryptDlkeySetValue(
 //
 // Allowed flags:
 //
-// - SYMCRYPT_FLAG_DLKEY_SELFTEST_DSA
-//   Perform a DSA algorithm test, if not already done. For keys which will be used with
-//   DSA, this flag must be set for callers who require compliance with FIPS 140-3. Any failure
-//   in the selftest will cause a fatal error, as it indicates that the module cannot operate
-//   in a FIPS-compliant mode.
+// - SYMCRYPT_FLAG_KEY_NO_FIPS
+//   Opt-out of performing validation required for FIPS
 //
-// - SYMCRYPT_FLAG_DLKEY_SELFTEST_DH
-//   Equivalent to SYMCRYPT_FLAG_DLKEY_SELFTEST_DSA, but for keys which will be used with DH.
+// - SYMCRYPT_FLAG_KEY_MINIMAL_VALIDATION
+//   Opt-out of performing almost all validation - must be specified with SYMCRYPT_FLAG_KEY_NO_FIPS
 //
-//  - Optionally, at most 1 of
-//      SYMCRYPT_FLAG_KEY_MINIMAL_VALIDATION,
-//      SYMCRYPT_FLAG_KEY_RANGE_VALIDATION, and
-//      SYMCRYPT_FLAG_KEY_RANGE_AND_PUBLIC_KEY_ORDER_VALIDATION
-//  - and optionally SYMCRYPT_FLAG_KEY_KEYPAIR_REGENERATION_VALIDATION
-//  Described in the key validation flag definitions above.
+// - At least one of the flags indicating what the Dlkey is to be used for must be specified:
+//      SYMCRYPT_FLAG_DLKEY_DSA
+//      SYMCRYPT_FLAG_DLKEY_DH
+//
+// Described in more detail in the "Flags for asymmetric key generation and import" section above
 //
 
 SYMCRYPT_ERROR
@@ -5728,6 +5692,21 @@ SymCryptDlkeyGetValue(
 // Retrieve the public or the private key (or both) from a DLKEY. The buffers should be
 // allocated by the caller.
 //
+
+SYMCRYPT_ERROR
+SYMCRYPT_CALL
+SymCryptDlkeyExtendKeyUsage(
+    _Inout_ PSYMCRYPT_DLKEY pkDlkey,
+            UINT32          flags );
+//
+// Enable an existing key which has been generated or imported to be used in specified algorithms.
+// Some callers may not know at key generation or import time what algorithms a key will be used for
+// and this API allows the key to be extended for use in additional algorithms. Use of this API may
+// not be compliant with FIPS 140-3
+//
+// - flags must be some bitwise OR of the following flags:
+//      SYMCRYPT_FLAG_DLKEY_DSA
+//      SYMCRYPT_FLAG_DLKEY_DH
 
 //=====================================================
 // Elliptic curve operations and supported curves
@@ -5903,28 +5882,23 @@ SymCryptEckeySetValue(
 //
 //      At least one of the public and private keys must be provided.
 //
-//      If both are provided, then they should match. They are required to match when
-//      SYMCRYPT_FLAG_KEY_KEYPAIR_REGENERATION_VALIDATION is specified.
+//      If both are provided, then they must match.
 //
 //      The algorithm always sets the corresponding public key
 //
 // Allowed flags:
 //
-// - SYMCRYPT_FLAG_ECKEY_SELFTEST_ECDSA
-//   Perform an ECDSA algorithm test, if not already done. For keys which will be used with
-//   ECDSA, this flag must be set for callers who require compliance with FIPS 140-3. Any failure
-//   in the selftest will cause a fatal error, as it indicates that the module cannot operate
-//   in a FIPS-compliant mode.
+// - SYMCRYPT_FLAG_KEY_NO_FIPS
+//   Opt-out of performing validation required for FIPS
 //
-// - SYMCRYPT_FLAG_ECKEY_SELFTEST_ECDH
-//   Equivalent to SYMCRYPT_FLAG_ECKEY_SELFTEST_ECDSA, but for keys which will be used with ECDH.
+// - SYMCRYPT_FLAG_KEY_MINIMAL_VALIDATION
+//   Opt-out of performing almost all validation - must be specified with SYMCRYPT_FLAG_KEY_NO_FIPS
 //
-// - Optionally, at most 1 of
-//     SYMCRYPT_FLAG_KEY_MINIMAL_VALIDATION,
-//     SYMCRYPT_FLAG_KEY_RANGE_VALIDATION, and
-//     SYMCRYPT_FLAG_KEY_RANGE_AND_PUBLIC_KEY_ORDER_VALIDATION
-// - and optionally SYMCRYPT_FLAG_KEY_KEYPAIR_REGENERATION_VALIDATION
-//   Described in the key validation flag definitions above.
+// - At least one of the flags indicating what the Eckey is to be used for must be specified:
+//      SYMCRYPT_FLAG_ECKEY_ECDSA
+//      SYMCRYPT_FLAG_ECKEY_ECDH
+//
+// Described in more detail in the "Flags for asymmetric key generation and import" section above
 //
 
 SYMCRYPT_ERROR
@@ -5944,21 +5918,14 @@ SymCryptEckeySetRandom(
 //
 // Allowed flags:
 //
-// - SYMCRYPT_FLAG_ECKEY_SELFTEST_ECDSA
-//   Perform an ECDSA pairwise consistency test on the generated key. For keys which will be used with
-//   ECDSA, this flag must be set for callers who require compliance with FIPS 140-3. Any failure
-//   in the selftest will cause a fatal error, as it indicates that the module cannot operate
-//   in a FIPS-compliant mode.
+// - SYMCRYPT_FLAG_KEY_NO_FIPS
+//   Opt-out of performing validation required for FIPS
 //
-// - SYMCRYPT_FLAG_ECKEY_SELFTEST_ECDH
-//   Equivalent to SYMCRYPT_FLAG_ECKEY_SELFTEST_ECDSA, but for keys which will be used with ECDH.
-//
-// - SYMCRYPT_FLAG_KEY_RANGE_AND_PUBLIC_KEY_ORDER_VALIDATION
-//   Described in the key validation flag definitions above. Intended use is to allow additional
-//   (expensive) checks required by FIPS (SP800-56arev3) to be performed for compliance.
-//   Provided the Ecurve is well formed, generated keypairs will always pass these checks, so it is
-//   not recommended to set this flag unless required, as it makes the operation slower without
-//   affecting the results.
+// - At least one of the flags indicating what the Eckey is to be used for must be specified:
+//      SYMCRYPT_FLAG_ECKEY_ECDSA
+//      SYMCRYPT_FLAG_ECKEY_ECDH
+
+// Described in more detail in the "Flags for asymmetric key generation and import" section above
 //
 
 SYMCRYPT_ERROR
@@ -5979,11 +5946,10 @@ SymCryptEckeyGetValue(
 // allocated by the caller.
 //
 // If (pbPrivateKey != NULL), then the function will return the private key in pbPrivateKey
-// in the format specified by the numFormat parameter **as long as** the following two
+// in the format specified by the numFormat parameter **as long as** the following three
 // requirements are satisfied:
 //      1. cbPrivateKey >= SymCryptEckeyGetSizeofPrivateKey( pEckey )
 //      2. pEckey contains a private key part (If this fails the function returns SYMCRYPT_INVALID_BLOB)
-// If (pbPrivateKey == NULL) and (cbPrivateKey != 0), then it returns SYMCRYPT_INVALID_ARGUMENT.
 // If (pbPrivateKey == NULL) and (cbPrivateKey == 0), then these parameters are ignored
 // and no private key is returned.
 //
@@ -5991,13 +5957,27 @@ SymCryptEckeyGetValue(
 // in the format specified by the numFormat and the ecPointFormat parameters
 // **as long as** the following requirement is satisfied:
 //      1. cbPublicKey >= SymCryptEckeyGetSizeofPublicKey( pEckey, ecPointFormat )
-// If (pbPublicKey == NULL) and (cbPublicKey != 0), then it returns SYMCRYPT_INVALID_ARGUMENT.
 // If (pbPublicKey == NULL) and (cbPublicKey == 0), then these parameters are ignored
 // and no public key is returned.
 //
 // Allowed flags:
 //      - None.
 //
+
+SYMCRYPT_ERROR
+SYMCRYPT_CALL
+SymCryptEckeyExtendKeyUsage(
+    _Inout_ PSYMCRYPT_ECKEY pEckey,
+            UINT32          flags );
+//
+// Enable an existing key which has been generated or imported to be used in specified algorithms.
+// Some callers may not know at key generation or import time what algorithms a key will be used for
+// and this API allows the key to be extended for use in additional algorithms. Use of this API may
+// not be compliant with FIPS 140-3
+//
+// - flags must be some bitwise OR of the following flags:
+//      SYMCRYPT_FLAG_ECKEY_ECDSA
+//      SYMCRYPT_FLAG_ECKEY_ECDH
 
 /************************
  * Crypto algorithm API *
@@ -6345,21 +6325,13 @@ SymCryptRsaPssVerify(
 
 VOID
 SYMCRYPT_CALL
-SymCryptRsaSignVerifyTest( PCSYMCRYPT_RSAKEY pkRsakey );
-//
-// FIPS self-test for RSA sign/verify. If the self-test fails, SymCryptFatal will be called to
-// fastfail. Rather than calling this function directly, the caller can pass
-// SYMCRYPT_FLAG_RSAKEY_SELFTEST into SymCryptRsakeyGenerate/SymCryptRsakeySetValue.
-//
-
-VOID
-SYMCRYPT_CALL
 SymCryptRsaSelftest( );
 //
-// Wrapper which calls SymCryptRsaSignVerifyTest with a hard-coded key. Used to satisfy the FIPS
-// test-before-use requirement in the case that no keys are generated. Rather than calling this
-// function directly, the caller can pass SYMCRYPT_FLAG_RSAKEY_SELFTEST into
-// SymCryptRsakeyGenerate/SymCryptRsakeySetValue.
+// FIPS self-test for RSA sign/verify. This function uses a hardcoded key to perform the self-test
+// without having to generate a key. If the self-test fails, SymCryptFatal will be called to
+// fastfail.
+// The self-test will automatically be performed before first operational use of RSA if using a key
+// with FIPS validation, so most callers should never use this function.
 //
 
 
@@ -6410,20 +6382,13 @@ SymCryptDsaVerify(
 
 VOID
 SYMCRYPT_CALL
-SymCryptDsaSignVerifyTest( PCSYMCRYPT_DLKEY pkDlkey );
-//
-// FIPS self-test for DSA sign/verify. If the self-test fails, SymCryptFatal will be called to
-// fastfail. Rather than calling this function directly, the caller can pass
-// SYMCRYPT_FLAG_DLKEY_SELFTEST_DSA into SymCryptDlkeyGenerate/SymCryptDlkeySetValue.
-//
-
-VOID
-SYMCRYPT_CALL
 SymCryptDsaSelftest( );
 //
-// Wrapper which calls SymCryptDsaSignVerifyTest with a hard-coded key. Used to satisfy the FIPS
-// test-before-use requirement. Rather than calling this function directly, the caller can pass
-// SYMCRYPT_FLAG_DLKEY_SELFTEST_DSA into SymCryptDlkeyGenerate/SymCryptDlkeySetValue.
+// FIPS self-test for DSA sign/verify. This function uses a hardcoded key to perform the self-test
+// without having to generate a key. If the self-test fails, SymCryptFatal will be called to
+// fastfail.
+// The self-test will automatically be performed before first operational use of DSA if using a key
+// with FIPS validation, so most callers should never use this function.
 //
 
 //
@@ -6451,22 +6416,13 @@ SymCryptDhSecretAgreement(
 
 VOID
 SYMCRYPT_CALL
-SymCryptDhSecretAgreementPairwiseConsistencyTest( PCSYMCRYPT_DLKEY pkKey1 );
-//
-// FIPS self-test for DH secret agreement. If the self-test fails, SymCryptFatal will be called to
-// fastfail. Rather than calling this function directly, the caller can pass
-// SYMCRYPT_FLAG_DLKEY_SELFTEST_DH into SymCryptDlkeyGenerate/SymCryptDlkeySetValue.
-//
-
-VOID
-SYMCRYPT_CALL
 SymCryptDhSecretAgreementSelftest();
 //
-// FIPS self-test for DH secret agreement. Unlike the above function, this function uses two
-// hardcoded keys and a precalculated known answer to perform the selftest without having to
-// generate a key. If the self-test fails, SymCryptFatal will be called to fastfail. Rather than
-// calling this function directly, the caller can pass
-// SYMCRYPT_FLAG_DLKEY_SELFTEST_DH into SymCryptDlkeyGenerate/SymCryptDlkeySetValue.
+// FIPS self-test for DH secret agreement. This function uses two hardcoded keys and a precalculated
+// known answer to perform the self-test without having to generate a key. If the self-test fails,
+// SymCryptFatal will be called to fastfail.
+// The self-test will automatically be performed before first operational use of DH if using keys
+// with FIPS validation, so most callers should never use this function.
 //
 
 //
@@ -6522,22 +6478,15 @@ SymCryptEcDsaVerify(
 //      SYMCRYPT_FLAG_ECDSA_NO_TRUNCATION: If set then the hash value will
 //      not be truncated.
 
-
-VOID
-SYMCRYPT_CALL
-SymCryptEcDsaSignVerifyTest( PCSYMCRYPT_ECKEY pkEckey );
-//
-// FIPS self-test for ECDSA sign/verify. If the self-test fails, SymCryptFatal will be called to
-// fastfail. Rather than calling this function directly, the caller can pass
-// SYMCRYPT_FLAG_ECKEY_SELFTEST_ECDSA into SymCryptDlkeyGenerate/SymCryptDlkeySetValue.
-
 VOID
 SYMCRYPT_CALL
 SymCryptEcDsaSelftest( );
 //
-// Wrapper which calls SymCryptEcDsaSignVerifyTest with a hard-coded key. Used to satisfy the FIPS
-// test-before-use requirement. Rather than calling this function directly, the caller can pass
-// SYMCRYPT_FLAG_ECKEY_SELFTEST_ECDSA into SymCryptDlkeyGenerate/SymCryptDlkeySetValue.
+// FIPS self-test for ECDSA sign/verify. This function uses a hardcoded key to perform the self-test
+// without having to generate a key. If the self-test fails, SymCryptFatal will be called to
+// fastfail.
+// The self-test will automatically be performed before first operational use of ECDSA if using a
+// key with FIPS validation, so most callers should never use this function.
 //
 
 //
@@ -6564,22 +6513,13 @@ SymCryptEcDhSecretAgreement(
 
 VOID
 SYMCRYPT_CALL
-SymCryptEcDhSecretAgreementPairwiseConsistencyTest( PCSYMCRYPT_ECKEY pkKey1 );
-//
-// FIPS self-test for ECDH secret agreement. If the self-test fails, SymCryptFatal will be called
-// to fastfail. Rather than calling this function directly, the caller can pass
-// SYMCRYPT_FLAG_ECKEY_SELFTEST_ECDH into SymCryptEckeySetRandom/SymCryptEckeySetValue.
-//
-
-VOID
-SYMCRYPT_CALL
 SymCryptEcDhSecretAgreementSelftest( );
 //
-// FIPS self-test for ECDH secret agreement. Unlike the above function, this function uses two
-// hardcoded keys and a precalculated known answer to perform the selftest without having to
-// generate a key. If the self-test fails, SymCryptFatal will be called to fastfail. Rather than
-// calling this function directly, the caller can pass
-// SYMCRYPT_FLAG_ECKEY_SELFTEST_ECDH into SymCryptEckeySetRandom/SymCryptEckeySetValue.
+// FIPS self-test for ECDH secret agreement. This function uses two hardcoded keys and a
+// precalculated known answer to perform the self-test without having to generate a key. If the
+// self-test fails, SymCryptFatal will be called to fastfail.
+// The self-test will automatically be performed before first operational use of ECDH if using keys
+// with FIPS validation, so most callers should never use this function.
 //
 
 //

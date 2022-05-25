@@ -191,7 +191,7 @@ testRsaGenerateOneKey( UINT32 iSize, UINT32 iImpl )
             pubExp |= (UINT64)1 << (nPubBits - 1);
             pubExp |= 1;
 
-            scError = SymCryptRsakeyGenerate( pkSymCryptKey, &pubExp, 1, 0 );
+            scError = SymCryptRsakeyGenerate( pkSymCryptKey, &pubExp, 1, SYMCRYPT_FLAG_RSAKEY_SIGN | SYMCRYPT_FLAG_RSAKEY_ENCRYPT );
             CHECK( scError == SYMCRYPT_NO_ERROR, "?" );
 
             pRes = (PBYTE) pkSymCryptKey;
@@ -630,7 +630,7 @@ testRsaImportOneKey(
                             pcbPrimes,
                             2,
                             SYMCRYPT_NUMBER_FORMAT_MSB_FIRST,
-                            0,
+                            SYMCRYPT_FLAG_RSAKEY_SIGN | SYMCRYPT_FLAG_RSAKEY_ENCRYPT,
                             pkSymCryptKey );
             CHECK( scError == SYMCRYPT_NO_ERROR, "?" );
 
@@ -1013,7 +1013,7 @@ testRsaPkcs1Errors()
     pKey = SymCryptRsakeyAllocate( &params, 0 );
     CHECK( pKey != 0, "?" );
 
-    scError = SymCryptRsakeyGenerate( pKey, 0, 0, 0 );
+    scError = SymCryptRsakeyGenerate( pKey, 0, 0, SYMCRYPT_FLAG_RSAKEY_SIGN | SYMCRYPT_FLAG_RSAKEY_ENCRYPT );
     CHECK( scError == SYMCRYPT_NO_ERROR, "Error generating pkcs1 key" );
 
     for( i=0; i<sizeof( paddedData ); i++ )

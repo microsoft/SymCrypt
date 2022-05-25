@@ -479,9 +479,7 @@ testEccArithmetic( _In_ PCSYMCRYPT_ECURVE pCurve )
 
     do
     {
-        scError = SymCryptEckeySetRandom(
-            SYMCRYPT_FLAG_KEY_RANGE_AND_PUBLIC_KEY_ORDER_VALIDATION | SYMCRYPT_FLAG_ECKEY_SELFTEST_ECDSA | SYMCRYPT_FLAG_ECKEY_SELFTEST_ECDH,
-            pkKey1 );
+        scError = SymCryptEckeySetRandom( SYMCRYPT_FLAG_ECKEY_ECDSA | SYMCRYPT_FLAG_ECKEY_ECDH, pkKey1 );
         CHECK( scError == SYMCRYPT_NO_ERROR, "Set random key failed" );
 
         CHECK( SymCryptEcpointOnCurve( pCurve, pkKey1->poPublicKey, pbScratch, cbScratch), "Public key not on curve");
@@ -900,7 +898,7 @@ testEcdsaVerify(
                 cbQx + cbQy,
                 SYMCRYPT_NUMBER_FORMAT_MSB_FIRST,
                 SYMCRYPT_ECPOINT_FORMAT_XY,
-                SYMCRYPT_FLAG_KEY_RANGE_AND_PUBLIC_KEY_ORDER_VALIDATION | SYMCRYPT_FLAG_ECKEY_SELFTEST_ECDSA,
+                SYMCRYPT_FLAG_ECKEY_ECDSA,
                 pkPublic );
     CHECK3( scError == SYMCRYPT_NO_ERROR, "Public key set value failed for ECDSA record at line %lld", line );
 
@@ -1003,7 +1001,7 @@ testEcdsaSign(
                 0,
                 SYMCRYPT_NUMBER_FORMAT_MSB_FIRST,
                 SYMCRYPT_ECPOINT_FORMAT_XY,
-                SYMCRYPT_FLAG_KEY_RANGE_VALIDATION | SYMCRYPT_FLAG_ECKEY_SELFTEST_ECDSA,
+                SYMCRYPT_FLAG_ECKEY_ECDSA,
                 pkPrivate );
     CHECK3( scError == SYMCRYPT_NO_ERROR, "Private key set value failed for ECDSA record at line %lld", line );
 
@@ -1080,7 +1078,7 @@ testEcdh(
     PCBYTE pbOptPublicKey = NULL;
     SIZE_T cbOptPublicKey = 0;
     BYTE randByte = g_rng.byte();
-    UINT32 flags = SYMCRYPT_FLAG_ECKEY_SELFTEST_ECDH;
+    UINT32 flags = SYMCRYPT_FLAG_ECKEY_ECDH;
 
     // Allocate the keys
     pkPrivate = SymCryptEckeyAllocate( pCurve );
@@ -1090,26 +1088,15 @@ testEcdh(
 
     // Set the private and public key for party A
     // Randomize flags and whether we provide the public key to exercise more codepaths
-    if (randByte & 1)
+    if (randByte & 0x1)
     {
-        flags |= SYMCRYPT_FLAG_KEY_KEYPAIR_REGENERATION_VALIDATION;
+        flags |= SYMCRYPT_FLAG_KEY_NO_FIPS;
     }
-    switch((randByte >> 1) & 0x3)
+    if (randByte & 0x2)
     {
-        case 0:
-            break;
-        case 1:
-            flags |= SYMCRYPT_FLAG_KEY_MINIMAL_VALIDATION;
-            break;
-        case 2:
-            flags |= SYMCRYPT_FLAG_KEY_RANGE_VALIDATION;
-            break;
-        case 3:
-        default:
-            flags |= SYMCRYPT_FLAG_KEY_RANGE_AND_PUBLIC_KEY_ORDER_VALIDATION;
-            break;
+        flags |= SYMCRYPT_FLAG_ECKEY_ECDSA;
     }
-    if (randByte & 0x8)
+    if (randByte & 0x4)
     {
         memcpy(pbPublicKey, pbQxa, cbQxa);
         memcpy(pbPublicKey+cbQxa, pbQya, cbQya);
@@ -1145,26 +1132,18 @@ testEcdh(
 
     // Set the public key for party B
     // Randomize flags to exercise more codepaths
-    flags = 0;
+    flags = SYMCRYPT_FLAG_ECKEY_ECDH;
     if (randByte & 0x10)
     {
-        // Should do nothing as we won't provide private key, but doesn't hurt to check!
-        flags |= SYMCRYPT_FLAG_KEY_KEYPAIR_REGENERATION_VALIDATION;
+        flags |= SYMCRYPT_FLAG_KEY_NO_FIPS;
     }
-    switch((randByte >> 5) & 0x3)
+    if ((randByte & 0x20) && (flags & SYMCRYPT_FLAG_KEY_NO_FIPS))
     {
-        case 0:
-            break;
-        case 1:
-            flags |= SYMCRYPT_FLAG_KEY_MINIMAL_VALIDATION;
-            break;
-        case 2:
-            flags |= SYMCRYPT_FLAG_KEY_RANGE_VALIDATION;
-            break;
-        case 3:
-        default:
-            flags |= SYMCRYPT_FLAG_KEY_RANGE_AND_PUBLIC_KEY_ORDER_VALIDATION;
-            break;
+        flags |= SYMCRYPT_FLAG_KEY_MINIMAL_VALIDATION;
+    }
+    if (randByte & 0x40)
+    {
+        flags |= SYMCRYPT_FLAG_ECKEY_ECDSA;
     }
     memcpy(pbPublicKey, pbQxb, cbQxb);
     memcpy(pbPublicKey+cbQxb, pbQyb, cbQyb);

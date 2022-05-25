@@ -102,6 +102,13 @@ SymCryptDsaSignEx(
 
     UNREFERENCED_PARAMETER( flags );
 
+    // Make sure that the key may be used in DSA
+    if ( ((pKey->fAlgorithmInfo & SYMCRYPT_FLAG_DLKEY_DSA) == 0) )
+    {
+        scError = SYMCRYPT_INVALID_ARGUMENT;
+        goto cleanup;
+    }
+
     // Make sure that the group and the key have all the
     // information for dsa, i.e. prime q and private key
     // modulo q, and we are not using a named DH safe-prime
@@ -421,6 +428,13 @@ SymCryptDsaVerify(
     PSYMCRYPT_MODELEMENT peT = NULL;    // Temp
 
     UNREFERENCED_PARAMETER( flags );
+
+    // Make sure that the key may be used in DSA
+    if ( ((pKey->fAlgorithmInfo & SYMCRYPT_FLAG_DLKEY_DSA) == 0) )
+    {
+        scError = SYMCRYPT_INVALID_ARGUMENT;
+        goto cleanup;
+    }
 
     // Make sure that the group has a prime q, and we are not using a named DH safe-prime group
     if (!pDlgroup->fHasPrimeQ || pDlgroup->isSafePrimeGroup)

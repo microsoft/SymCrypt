@@ -59,7 +59,7 @@ VOID __attribute__((constructor)) SymCryptModuleMain()
 
         SymCryptPbkdf2_HmacSha1SelfTest();
 
-        g_SymCryptFipsSelftestsPerformed |= SYMCRYPT_SELFTEST_STARTUP;
+        g_SymCryptFipsSelftestsPerformed |= SYMCRYPT_SELFTEST_ALGORITHM_STARTUP;
     }
 }
 

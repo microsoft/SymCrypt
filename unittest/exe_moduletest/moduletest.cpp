@@ -42,7 +42,7 @@ main( int argc, _In_reads_( argc ) char * argv[] )
     }
     else
     {
-        SYMCRYPT_FIPS_ASSERT( (g_SymCryptFipsSelftestsPerformed & SYMCRYPT_SELFTEST_STARTUP) != 0 );
+        SYMCRYPT_FIPS_ASSERT( (g_SymCryptFipsSelftestsPerformed & SYMCRYPT_SELFTEST_ALGORITHM_STARTUP) != 0 );
 
         SymCryptDhSecretAgreementSelftest();
         SymCryptEcDhSecretAgreementSelftest();

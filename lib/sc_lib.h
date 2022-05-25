@@ -3003,33 +3003,250 @@ SYMCRYPT_CALL
 SymCryptFdefMontgomeryReduceMulx1024(
     _In_                            PCSYMCRYPT_MODULUS      pmMod,
     _Inout_                         PUINT32                 pSrc,
-    _Out_                           PUINT32                 pDst );
+    _Out_                           PUINT32                 pDst);
 
-// Helper macro for checking for specific key validation flag using bits 4 and 5 in a flags variable
-// Must be updated if SYMCRYPT_FLAG_KEY_MINIMAL_VALIDATION, SYMCRYPT_FLAG_KEY_RANGE_VALIDATION, or
-// SYMCRYPT_FLAG_KEY_RANGE_AND_PUBLIC_KEY_ORDER_VALIDATION are updated.
-#define SYMCRYPT_FLAG_KEY_VALIDATION_MASK   SYMCRYPT_FLAG_KEY_RANGE_AND_PUBLIC_KEY_ORDER_VALIDATION
 
-// Macro for executing a module selftest and setting the corresponding flag
-#define SYMCRYPT_RUN_SELFTEST_ONCE(SelftestFunction, SelftestFlag) \
-if( ( g_SymCryptFipsSelftestsPerformed & SelftestFlag ) == 0 ) \
+//=====================================================
+// Current state of FIPS tests for asymmetric keys
+//=====================================================
+
+// --------------------------------------------------------------------
+// Key type |       |
+//     &    | Alg   | Description
+// Operation|       |
+// --------------------------------------------------------------------
+// Dlkey    | DH    | Requires use of named safe-prime group (otherwise we cannot perform private 
+// Generate |       | key range check, or public key order validation).
+//          |       |
+//          |       | From SP800-56Ar3:
+//          |       | Check private key is in the range [1, min(2^nBitsPriv, q)-1]
+//          |       |   nBitsPriv is specified either using a default value or using
+//          |       |   SymCryptDlkeySetPrivateKeyLength, such that 2s <= nBitsPriv <= nBitsOfQ.
+//          |       |   (s is the maximum security strength for a named safe-prime group as
+//          |       |   specified in SP800 - 56arev3)
+//          |       | Check public key is in the range [2, p-2]
+//          |       | Check that (Public key)^q == 1 mod p
+//          |       |
+//          |       | FIPS 140-3 does not require a further PCT before first use of the key.
+//          |-----------------------------------------------------------
+//          | DSA   | Requires use of a Dlgroup which has q, but is not a named safe-prime group.
+//          |       | 
+//          |       | FIPS 186-4 and SP800-89 do not require DSA keypair owners to perform
+//          |       | validation of keypairs they generate.
+//          |       |
+//          |       | FIPS 140-3 requires that a module generating a Dlkey keypair for use in DSA
+//          |       | must perform a PCT on the keypair before first operational use in DSA.
+//          |       | As the Dlgroups supported by FIPS are distinct for DH and DSA, we can perform
+//          |       | this PCT on key generation without fear of adverse performance.
+// --------------------------------------------------------------------
+// Dlkey    | DH    | Requires use of named safe-prime group (otherwise we cannot perform private 
+// SetValue |       | key range check, or public key order validation).
+//          |       |
+//          |       | From SP800-56Ar3:
+//          |       | If importing a private key:
+//          |       |   Check private key is in the range [1, min(2^nBitsPriv, q)-1]
+//          |       |     nBitsPriv is specified either using a default value or using
+//          |       |     SymCryptDlkeySetPrivateKeyLength, such that 2s <= nBitsPriv <= nBitsOfQ.
+//          |       |     (s is the maximum security strength for a named safe-prime group as
+//          |       |     specified in SP800-56Arev3)
+//          |       | 
+//          |       | If importing a public key:
+//          |       |   Check public key is in the range [2, p-2]
+//          |       |   Check that (Public key)^q == 1 mod p
+//          |       |
+//          |       | If importing both a private and public key, as above and also:
+//          |       |   Use the imported Private key to generate a Public key, and check the 
+//          |       |   generated Public key is equal to the imported Public key.
+//          |-----------------------------------------------------------
+//          | DSA   | Requires use of a Dlgroup which is not a named safe-prime group.
+//          |       |
+//          |       | FIPS 184-4 refers to SP800-89:
+//          |       | If importing a public key:
+//          |       |   Check public key is in the range [2, p-2]
+//          |       |   Check that (Public key)^q == 1 mod p
+//          |       | If importing a private and public key:
+//          |       |   Use the imported Private key to generate a Public key, and check the 
+//          |       |   generated Public key is equal to the imported Public key.
+// --------------------------------------------------------------------
+// Eckey    | ECDH  | Requires use of a NIST prime Elliptic Curve (P224, P256, P384, or P521)
+// SetRandom|       |
+//          |       | From SP800-56Ar3:
+//          |       | Check private key is in range [1, GOrd-1]
+//          |       | Check public key is nonzero, has coordinates in the underlying field, and is a
+//          |       | point on the curve
+//          |       | Check that GOrd*(Public key) == O
+//          |       | 
+//          |       | FIPS 140-3 does not require a further PCT before first use of the key
+//          |----------------------------------------------------------
+//          | ECDSA | Requires use of a NIST prime Elliptic Curve (P224, P256, P384, or P521)
+//          |       |
+//          |       | FIPS 186-4 and SP800-89 do not require ECDSA keypair owners to perform
+//          |       | validation of keypairs they generate.
+//          |       |
+//          |       | FIPS 140-3 requires that a module generating an Eckey keypair for use in ECDSA
+//          |       | must perform a PCT on the keypair before first operational use in ECDSA.
+//          |       | As the Elliptic curves used in ECDH and ECDSA are the same, an Eckey may be
+//          |       | used for both ECDH and ECDSA. We defer the ECDSA PCT from the EckeySetRandom
+//          |       | call to the first use of EcDsaSign, or the first export of the keypair.
+// --------------------------------------------------------------------
+// Eckey    | ECDH  | Requires use of a NIST prime Elliptic Curve (P224, P256, P384, or P521)
+// SetValue |       |
+//          |       | From SP800-56Ar3:
+//          |       | If importing a private key:
+//          |       |   Check private key is in range [1, GOrd-1]
+//          |       |
+//          |       | If importing a public key:
+//          |       |   Check public key is nonzero, has coordinates in the underlying field, and is
+//          |       |   a point on the curve
+//          |       |   Check that GOrd*(Public key) == O
+//          |       |
+//          |       | If importing a private and public key:
+//          |       |   Use the imported Private key to generate a Public key, and check the 
+//          |       |   generated Public key is equal to the imported Public key.
+//          |----------------------------------------------------------
+//          | ECDSA | Requires use of a NIST prime Elliptic Curve (P224, P256, P384, or P521)
+//          |       |
+//          |       | FIPS 184-4 refers to SP800-89:
+//          |       | If importing a public key:
+//          |       |   SP800-89 refers to ANS X9.62. Assume same tests required as SP800-56Ar3:
+//          |       |   Check public key is nonzero, has coordinates in the underlying field, and is
+//          |       |   a point on the curve
+//          |       |   Check that GOrd*(Public key) == O
+//          |       |
+//          |       | If importing a private and public key:
+//          |       |   Use the imported Private key to generate a Public key, and check the 
+//          |       |   generated Public key is equal to the imported Public key.
+// --------------------------------------------------------------------
+// Rsakey   | RSA   | From FIPS 186-4 (SIGN) and SP800-56Br2 (ENCRYPT for key transport):
+// Generate |ENCRYPT| Ensure p and q are in open range (2 ^ ((nBits - 1) / 2), 2 ^ (nBits / 2))
+//          | and   | Ensure |p-q| > 2^((nBits/2)-100)
+//          | RSA   | Ensure e is coprime with (p-1) and (q-1)
+//          | SIGN  | Ensure d is in range [2 ^ (nBits/2) + 1, LCM(p-1,q-1) - 1]
+//          |       | Ensure that d*e == 1 mod LCM(p-1,q-1)
+//          |       |
+//          |       | FIPS 140-3 requires that a module generating an Rsakey keypair for use in an
+//          |       | RSA algorithm must perform a PCT on the keypair before first operational use.
+//          |       |
+//          |       | For ENCRYPT, SP800-56Br2 specifies the PCT to perform as part of key
+//          |       | generation is:
+//          |       |   Check (m^e)^d == m mod n for some m in range [2, n-2]
+//          |       |
+//          |       | For SIGN, FIPS 186-4 refers to SP800-89, which does not clearly specify a
+//          |       | PCT, but does specify that for an owner to have assurance of Private Key
+//          |       | Possession they can sign a message with the private key and validate it with
+//          |       | the public key to check they correspond to each other. Notably, this
+//          |       | internally will verify (m^d)^e == m mod n for some m (along with testing 
+//          |       | additional padding logic)
+//          |       |
+//          |       | FIPS 140-2 explicitly says that only one PCT is required if a keypair may be
+//          |       | used in either algorithm, with the module able to choose the PCT.
+//          |       | FIPS 140-3 does not say anything specific about only requiring one PCT, but
+//          |       | given that mathematically (m^e)^d == (m^ed) == (m^d)^e mod n, our
+//          |       | current understanding is that the SIGN PCT works in lieu of the ENCRYPT PCT
+//          |       |
+//          |       | NOTE: FIPS 140-3 explicitly says that an RSA PCT cannot be used in lieu of an
+//          |       | RSA algorithm selftest (CAST)
+// --------------------------------------------------------------------
+// Rsakey   | RSA   | If importing a keypair (primes and modulus):
+// SetValue |ENCRYPT| SP800-56Br2 specifies:
+//          |       | Check (m^e)^d mod n == m for some m in range [2, n-2]
+//          |       | Check n == p*q
+//          |       | Check p and q are in open range (2 ^ ((nBits - 1) / 2), 2 ^ (nBits / 2))
+//          |       | Check |p-q| > 2^((nBits/2)-100)
+//          |       | Check e is coprime with (p-1) and (q-1)
+//          |       | Check p and q are probably prime
+//          |       | Check d is in range [2 ^ (nBits/2) + 1, LCM(p-1,q-1) - 1]
+//          |       | Check that d*e == 1 mod LCM(p-1,q-1)
+//          |       |
+//          |       | If importing a public key (only modulus):
+//          |       | SP800-56Br2, refers to SP800-89 which details the following Partial Public Key
+//          |       | Validation:
+//          |       | Check n is odd
+//          |       | Check n is not a prime or a power of a prime
+//          |       | Check n has no factors smaller than 752
+//          |----------------------------------------------------------
+//          | RSA   | FIPS 186-4 refers only to SP800-89 which has weaker tests for a keypair than
+//          | SIGN  | SP800-56Br2 (i.e. success at SP800-56Br2 tests implies success in SP800-89)
+//          |       | The current strategy will be to always perform the stronger tests.
+// --------------------------------------------------------------------
+
+// Macro for executing a module selftest and setting the corresponding algorithm selftest flag
+#define SYMCRYPT_RUN_SELFTEST_ONCE(AlgorithmSelftestFunction, AlgorithmSelftestFlag) \
+if( ( g_SymCryptFipsSelftestsPerformed & AlgorithmSelftestFlag ) == 0 ) \
 { \
-    SelftestFunction( ); \
+    AlgorithmSelftestFunction( ); \
 \
-    SYMCRYPT_ATOMIC_OR32_PRE_RELAXED( &g_SymCryptFipsSelftestsPerformed, SelftestFlag );\
+    SYMCRYPT_ATOMIC_OR32_PRE_RELAXED( &g_SymCryptFipsSelftestsPerformed, AlgorithmSelftestFlag ); \
 }
 
-// Macro for executing a key-generation PCT and setting the corresponding flag
-// Note that key generation PCTs must be run on every key generated, so the selftest function
-// is run regardless of whether the flag is already set. However, the key generation PCT satisfies
-// the module test requirement, so setting the flag here prevents subsequent tests from being run
-// on key import.
-#define SYMCRYPT_RUN_KEYGEN_PCT(SelftestFunction, Key, SelftestFlag) \
+// Macro for executing a key-generation PCT, setting the corresponding algorithm selftest flag, and
+// setting the per-key selftest flag.
+// Note that key generation PCTs must be run on every key generated, so the KeySelftestFunction
+// function is run regardless of whether the algorithm selftest flag is already set. Normally the
+// per-key PCT satisfies the algorithm test requirement, so setting the AlgorithmSelftestFlag here
+// prevents subsequent algorithm selftests from being run on key import. If the PCT does not satisfy
+// an algorithm test requirment, the caller can specify 0, and no flag will be set.
+#define SYMCRYPT_RUN_KEYGEN_PCT(KeySelftestFunction, Key, AlgorithmSelftestFlag, KeySelftestFlag) \
+if( ( Key->fAlgorithmInfo & (KeySelftestFlag | SYMCRYPT_FLAG_KEY_NO_FIPS) ) == 0 ) \
 { \
-    SelftestFunction( Key ); \
+    KeySelftestFunction( Key ); \
 \
-    SYMCRYPT_ATOMIC_OR32_PRE_RELAXED( &g_SymCryptFipsSelftestsPerformed, SelftestFlag );\
+    if( ( g_SymCryptFipsSelftestsPerformed & AlgorithmSelftestFlag ) != AlgorithmSelftestFlag ) \
+    { \
+        SYMCRYPT_ATOMIC_OR32_PRE_RELAXED(&g_SymCryptFipsSelftestsPerformed, AlgorithmSelftestFlag); \
+    } \
+\
+    SYMCRYPT_ATOMIC_OR32_PRE_RELAXED(&Key->fAlgorithmInfo, KeySelftestFlag); \
 }
+
+// Macro to check flag used in fAlgorithmInfo is non-zero and a power of 2
+#define CHECK_ALGORITHM_INFO_FLAG_POW2( flag ) \
+    C_ASSERT( (flag != 0) && ((flag & (flag-1)) == 0) );
+
+// Macro to check flags used together in fAlgorithmInfo are distinct
+#define CHECK_ALGORITHM_INFO_FLAGS_DISTINCT( flag0, flag1, flag2, flag3, flag4 ) \
+    C_ASSERT( (flag0 < flag1) && (flag1 < flag2) && (flag2 < flag3) && (flag3 < flag4) );
+
+CHECK_ALGORITHM_INFO_FLAG_POW2(SYMCRYPT_SELFTEST_KEY_DSA);
+CHECK_ALGORITHM_INFO_FLAG_POW2(SYMCRYPT_SELFTEST_KEY_ECDSA);
+CHECK_ALGORITHM_INFO_FLAG_POW2(SYMCRYPT_SELFTEST_KEY_RSA_SIGN);
+
+CHECK_ALGORITHM_INFO_FLAG_POW2(SYMCRYPT_FLAG_KEY_NO_FIPS);
+CHECK_ALGORITHM_INFO_FLAG_POW2(SYMCRYPT_FLAG_KEY_MINIMAL_VALIDATION);
+
+CHECK_ALGORITHM_INFO_FLAG_POW2(SYMCRYPT_FLAG_DLKEY_DSA);
+CHECK_ALGORITHM_INFO_FLAG_POW2(SYMCRYPT_FLAG_DLKEY_DH);
+
+CHECK_ALGORITHM_INFO_FLAG_POW2(SYMCRYPT_FLAG_ECKEY_ECDSA);
+CHECK_ALGORITHM_INFO_FLAG_POW2(SYMCRYPT_FLAG_ECKEY_ECDH);
+
+CHECK_ALGORITHM_INFO_FLAG_POW2(SYMCRYPT_FLAG_RSAKEY_SIGN);
+CHECK_ALGORITHM_INFO_FLAG_POW2(SYMCRYPT_FLAG_RSAKEY_ENCRYPT);
+
+CHECK_ALGORITHM_INFO_FLAGS_DISTINCT(SYMCRYPT_SELFTEST_KEY_DSA, SYMCRYPT_FLAG_KEY_NO_FIPS, SYMCRYPT_FLAG_KEY_MINIMAL_VALIDATION, SYMCRYPT_FLAG_DLKEY_DSA, SYMCRYPT_FLAG_DLKEY_DH);
+CHECK_ALGORITHM_INFO_FLAGS_DISTINCT(SYMCRYPT_SELFTEST_KEY_ECDSA, SYMCRYPT_FLAG_KEY_NO_FIPS, SYMCRYPT_FLAG_KEY_MINIMAL_VALIDATION, SYMCRYPT_FLAG_ECKEY_ECDSA, SYMCRYPT_FLAG_ECKEY_ECDH);
+CHECK_ALGORITHM_INFO_FLAGS_DISTINCT(SYMCRYPT_SELFTEST_KEY_RSA_SIGN, SYMCRYPT_FLAG_KEY_NO_FIPS, SYMCRYPT_FLAG_KEY_MINIMAL_VALIDATION, SYMCRYPT_FLAG_RSAKEY_SIGN, SYMCRYPT_FLAG_RSAKEY_ENCRYPT);
+
+VOID
+SYMCRYPT_CALL
+SymCryptRsaSignVerifyTest( PCSYMCRYPT_RSAKEY pkRsakey );
+//
+// FIPS PCT for RSA sign/verify. If the self-test fails, SymCryptFatal will be called to fastfail.
+//
+
+VOID
+SYMCRYPT_CALL
+SymCryptDsaSignVerifyTest( PCSYMCRYPT_DLKEY pkDlkey );
+//
+// FIPS PCT for DSA sign/verify. If the self-test fails, SymCryptFatal will be called to fastfail.
+//
+
+VOID
+SYMCRYPT_CALL
+SymCryptEcDsaSignVerifyTest( PCSYMCRYPT_ECKEY pkEckey );
+//
+// FIPS PCT for ECDSA sign/verify. If the self-test fails, SymCryptFatal will be called to fastfail.
+//
 
 typedef struct _SYMCRYPT_DLGROUP_DH_SAFEPRIME_PARAMS {
     SYMCRYPT_DLGROUP_DH_SAFEPRIMETYPE eDhSafePrimeType;

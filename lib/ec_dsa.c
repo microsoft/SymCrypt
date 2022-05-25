@@ -180,6 +180,13 @@ SymCryptEcDsaSignEx(
     UINT32  cbRs = 0;
     UINT32  cbX  = 0;
 
+    // Make sure that the key may be used in ECDSA
+    if ( ((pKey->fAlgorithmInfo & SYMCRYPT_FLAG_ECKEY_ECDSA) == 0)  )
+    {
+        scError = SYMCRYPT_INVALID_ARGUMENT;
+        goto cleanup;
+    }
+
     // Make sure that only the correct flags are set
     if ( (flags & ~SYMCRYPT_FLAG_ECDSA_NO_TRUNCATION) != 0 )
     {
@@ -389,6 +396,13 @@ SymCryptEcDsaSign(
     _Out_writes_bytes_( cbSignature )   PBYTE                   pbSignature,
                                         SIZE_T                  cbSignature )
 {
+    // If the key was generated and a PCT has not yet been performed - perform PCT before first use
+    SYMCRYPT_RUN_KEYGEN_PCT(
+        SymCryptEcDsaSignVerifyTest,
+        pKey,
+        SYMCRYPT_SELFTEST_ALGORITHM_ECDSA,
+        SYMCRYPT_SELFTEST_KEY_ECDSA );
+
     return SymCryptEcDsaSignEx( pKey, pbHashValue, cbHashValue, NULL, format, flags, pbSignature, cbSignature );
 }
 
@@ -435,6 +449,13 @@ SymCryptEcDsaVerify(
     UINT32  cbKG = 0;
     UINT32  cbRs = 0;
     UINT32  cbX  = 0;
+
+    // Make sure that the key may be used in ECDSA
+    if ( ((pKey->fAlgorithmInfo & SYMCRYPT_FLAG_ECKEY_ECDSA) == 0)  )
+    {
+        scError = SYMCRYPT_INVALID_ARGUMENT;
+        goto cleanup;
+    }
 
     // Make sure that only the correct flags are set
     if ( (flags & ~SYMCRYPT_FLAG_ECDSA_NO_TRUNCATION) != 0 )

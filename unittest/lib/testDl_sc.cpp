@@ -25,21 +25,29 @@ template<> VOID algImpTestInteropGenerateKeyEntry< ImpSc >(PBYTE pKeyEntry)
 
     pKE->pGroups[IMPSC_INDEX] = (PBYTE) pDlgroup;
 
-    // Dsa and first Dh keys
+    // Dsa keys
     pkSymCryptKey = SymCryptDlkeyAllocate( pDlgroup );
     CHECK( pkSymCryptKey != NULL, "?" );
 
-    scError = SymCryptDlkeyGenerate( 0, pkSymCryptKey );
+    scError = SymCryptDlkeyGenerate( SYMCRYPT_FLAG_DLKEY_DSA, pkSymCryptKey );
     CHECK( scError == SYMCRYPT_NO_ERROR, "?" );
 
     pKE->pKeysDsa[IMPSC_INDEX] = (PBYTE) pkSymCryptKey;
+
+    // First Dh key
+    pkSymCryptKey = SymCryptDlkeyAllocate( pDlgroup );
+    CHECK( pkSymCryptKey != NULL, "?" );
+
+    scError = SymCryptDlkeyGenerate( SYMCRYPT_FLAG_DLKEY_DH | SYMCRYPT_FLAG_KEY_NO_FIPS, pkSymCryptKey );
+    CHECK( scError == SYMCRYPT_NO_ERROR, "?" );
+
     pKE->pKeysDhA[IMPSC_INDEX] = (PBYTE) pkSymCryptKey;
 
     // Second Dh key
     pkSymCryptKey = SymCryptDlkeyAllocate( pDlgroup );
     CHECK( pkSymCryptKey != NULL, "?" );
 
-    scError = SymCryptDlkeyGenerate( 0, pkSymCryptKey );
+    scError = SymCryptDlkeyGenerate( SYMCRYPT_FLAG_DLKEY_DH | SYMCRYPT_FLAG_KEY_NO_FIPS, pkSymCryptKey );
     CHECK( scError == SYMCRYPT_NO_ERROR, "?" );
 
     pKE->pKeysDhB[IMPSC_INDEX] = (PBYTE) pkSymCryptKey;

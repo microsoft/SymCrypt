@@ -209,6 +209,7 @@ SymCryptRsakeyCopy(
     //
     if( pkSrc != pkDst )
     {
+        pkDst->fAlgorithmInfo = pkSrc->fAlgorithmInfo;
         pkDst->cbTotalSize = pkSrc->cbTotalSize;
         pkDst->hasPrivateKey = pkSrc->hasPrivateKey;
         pkDst->nSetBitsOfModulus = pkSrc->nSetBitsOfModulus;
@@ -521,10 +522,13 @@ SymCryptRsakeyGenerate(
 
     const UINT64 defaultExponent = RSA_DEFAULT_PUBLIC_EXPONENT;
 
+    // Ensure caller has specified what algorithm(s) the key will be used with
+    UINT32 algorithmFlags = SYMCRYPT_FLAG_RSAKEY_SIGN | SYMCRYPT_FLAG_RSAKEY_ENCRYPT;
     // Ensure only allowed flags are specified
-    UINT32 allowedFlags = SYMCRYPT_FLAG_RSAKEY_SELFTEST;
+    UINT32 allowedFlags = SYMCRYPT_FLAG_KEY_NO_FIPS | algorithmFlags;
 
-    if ( ( flags & ~allowedFlags ) != 0 )
+    if ( ( ( flags & ~allowedFlags ) != 0 ) || 
+         ( ( flags & algorithmFlags ) == 0) )
     {
         scError = SYMCRYPT_INVALID_ARGUMENT;
         goto cleanup;
@@ -702,16 +706,30 @@ SymCryptRsakeyGenerate(
 
     // Calculate the rest of the fields
     scError = SymCryptRsakeyCalculatePrivateFields( pkRsakey, pdTmp, piPhi, piAcc, pbFnScratch, cbFnScratch );
-    if (scError != SYMCRYPT_NO_ERROR )
+    if ( scError != SYMCRYPT_NO_ERROR )
     {
         goto cleanup;
     }
 
     pkRsakey->hasPrivateKey = TRUE;
 
-    if ( ( flags & SYMCRYPT_FLAG_RSAKEY_SELFTEST ) != 0 )
+    pkRsakey->fAlgorithmInfo = flags; // We want to track all of the flags in the Rsakey
+
+    if ( ( flags & SYMCRYPT_FLAG_KEY_NO_FIPS ) == 0 )
     {
-        SYMCRYPT_RUN_KEYGEN_PCT( SymCryptRsaSignVerifyTest, pkRsakey, SYMCRYPT_SELFTEST_RSA );
+        // Ensure RSA algorithm selftest is run before first use of RSA algorithm
+        // Per FIPS 140-3 IG, this selftest cannot be a PCT
+        SYMCRYPT_RUN_SELFTEST_ONCE(
+            SymCryptRsaSelftest,
+            SYMCRYPT_SELFTEST_ALGORITHM_RSA);
+
+        // Run SignVerify PCT on generated keypair
+        // Our current understanding is that this PCT is sufficient for both RSA_SIGN and RSA_ENCRYPT
+        SYMCRYPT_RUN_KEYGEN_PCT(
+            SymCryptRsaSignVerifyTest,
+            pkRsakey,
+            0, /* Do not set any algorithm selftest as run with this PCT */
+            SYMCRYPT_SELFTEST_KEY_RSA_SIGN );
     }
 
 cleanup:
@@ -760,15 +778,25 @@ SymCryptRsakeySetValue(
     PBYTE           pbFnScratch = NULL;
     UINT32          cbFnScratch = 0;
 
+    // Ensure caller has specified what algorithm(s) the key will be used with
+    UINT32 algorithmFlags = SYMCRYPT_FLAG_RSAKEY_SIGN | SYMCRYPT_FLAG_RSAKEY_ENCRYPT;
     // Ensure only allowed flags are specified
-    UINT32 allowedFlags = SYMCRYPT_FLAG_RSAKEY_SELFTEST;
+    UINT32 allowedFlags = SYMCRYPT_FLAG_KEY_NO_FIPS | SYMCRYPT_FLAG_KEY_MINIMAL_VALIDATION | algorithmFlags;
 
-    if ( ( flags & ~allowedFlags ) != 0 )
+    if ( ( ( flags & ~allowedFlags ) != 0 ) || 
+         ( ( flags & algorithmFlags ) == 0) )
     {
         scError = SYMCRYPT_INVALID_ARGUMENT;
         goto cleanup;
     }
 
+    // Check that minimal validation flag only specified with no fips
+    if ( ( ( flags & SYMCRYPT_FLAG_KEY_NO_FIPS ) == 0 ) &&
+         ( ( flags & SYMCRYPT_FLAG_KEY_MINIMAL_VALIDATION ) != 0 ) )
+    {
+        scError = SYMCRYPT_INVALID_ARGUMENT;
+        goto cleanup;
+    }
 
     // Check if the arguments are correct
     if ( (pbModulus==NULL) || (cbModulus==0) ||         // Modulus is needed
@@ -928,9 +956,20 @@ SymCryptRsakeySetValue(
         pkRsakey->hasPrivateKey = TRUE;
     }
 
-    if ( ( flags & SYMCRYPT_FLAG_RSAKEY_SELFTEST ) != 0 )
+    pkRsakey->fAlgorithmInfo = flags; // We want to track all of the flags in the Rsakey
+
+    if ( ( flags & SYMCRYPT_FLAG_KEY_NO_FIPS ) == 0 )
     {
-        SYMCRYPT_RUN_SELFTEST_ONCE( SymCryptRsaSelftest, SYMCRYPT_SELFTEST_RSA );
+        // Ensure RSA algorithm selftest is run before first use of RSA algorithm
+        SYMCRYPT_RUN_SELFTEST_ONCE(
+            SymCryptRsaSelftest,
+            SYMCRYPT_SELFTEST_ALGORITHM_RSA);
+
+        if( pkRsakey->hasPrivateKey )
+        {
+            // We do not need to run an RSA PCT on import, indicate that the test has been run
+            pkRsakey->fAlgorithmInfo |= SYMCRYPT_SELFTEST_KEY_RSA_SIGN;
+        }
     }
 
 cleanup:
@@ -1106,5 +1145,29 @@ cleanup:
         SymCryptCallbackFree(pbScratch);
     }
 
+    return scError;
+}
+
+SYMCRYPT_ERROR
+SYMCRYPT_CALL
+SymCryptRsakeyExtendKeyUsage(
+    _Inout_ PSYMCRYPT_RSAKEY    pkRsakey,
+            UINT32              flags )
+{
+    SYMCRYPT_ERROR scError = SYMCRYPT_NO_ERROR;
+
+    // Ensure caller has specified what algorithm(s) the key will be used with
+    UINT32 algorithmFlags = SYMCRYPT_FLAG_RSAKEY_SIGN | SYMCRYPT_FLAG_RSAKEY_ENCRYPT;
+
+    if ( ( ( flags & ~algorithmFlags ) != 0 ) || 
+         ( ( flags & algorithmFlags ) == 0) )
+    {
+        scError = SYMCRYPT_INVALID_ARGUMENT;
+        goto cleanup;
+    }
+
+    pkRsakey->fAlgorithmInfo |= flags;
+
+cleanup:
     return scError;
 }

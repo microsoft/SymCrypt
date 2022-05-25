@@ -2070,6 +2070,11 @@ SYMCRYPT_ASYM_ALIGN_STRUCT _SYMCRYPT_MODELEMENT {
 // the RSA modulus and each prime.
 
 typedef SYMCRYPT_ASYM_ALIGN_STRUCT _SYMCRYPT_RSAKEY {
+                    UINT32              fAlgorithmInfo;     // Tracks which algorithms the key can be used in
+                                                            // Also tracks which per-key selftests have been performed on this key
+                                                            // A bitwise OR of SYMCRYPT_FLAG_KEY_*, SYMCRYPT_FLAG_RSAKEY_*, and
+                                                            // SYMCRYPT_SELFTEST_KEY_* values
+
                     UINT32              cbTotalSize;        // Total size of the rsa key
                     BOOLEAN             hasPrivateKey;      // Set to true if there is private key information set
 
@@ -2219,11 +2224,16 @@ typedef const SYMCRYPT_DLGROUP * PCSYMCRYPT_DLGROUP;
 // DLKEY type
 //
 typedef SYMCRYPT_ASYM_ALIGN_STRUCT _SYMCRYPT_DLKEY {
-                    PCSYMCRYPT_DLGROUP      pDlgroup;       // Handle to the group which created the key
+                    UINT32                  fAlgorithmInfo; // Tracks which algorithms the key can be used in
+                                                            // Also tracks which per-key selftests have been performed on this key
+                                                            // A bitwise OR of SYMCRYPT_FLAG_KEY_*, SYMCRYPT_FLAG_DLKEY_*, and
+                                                            // SYMCRYPT_SELFTEST_KEY_* values
 
                     BOOLEAN                 fHasPrivateKey; // Set to true if there is a private key set
                     BOOLEAN                 fPrivateModQ;   // Set to true if the private key is at most Q-1, otherwise it is at most P-2
                     UINT32                  nBitsPriv;      // Number of bits used in private keys
+
+                    PCSYMCRYPT_DLGROUP      pDlgroup;       // Handle to the group which created the key
 
                     PBYTE                   pbPrivate;      // SYMCRYPT_ASYM_ALIGN'ed buffer that points to the memory allocated for the private key
 
@@ -2380,11 +2390,15 @@ typedef SYMCRYPT_ASYM_ALIGN_STRUCT _SYMCRYPT_ECPOINT {
 typedef const SYMCRYPT_ECPOINT * PCSYMCRYPT_ECPOINT;
 
 typedef SYMCRYPT_ASYM_ALIGN_STRUCT _SYMCRYPT_ECKEY {
-                    BOOLEAN                 hasPrivateKey;  // Set to true if there is a private key set
-                    PCSYMCRYPT_ECURVE       pCurve;         // Handle to the curve which created the key
+                    UINT32              fAlgorithmInfo; // Tracks which algorithms the key can be used in
+                                                        // Also tracks which per-key selftests have been performed on this key
+                                                        // A bitwise OR of SYMCRYPT_FLAG_KEY_*, SYMCRYPT_FLAG_ECKEY_*, and
+                                                        // SYMCRYPT_SELFTEST_KEY_* values
+                    BOOLEAN             hasPrivateKey;  // Set to true if there is a private key set
+                    PCSYMCRYPT_ECURVE   pCurve;         // Handle to the curve which created the key
 
-                    PSYMCRYPT_ECPOINT       poPublicKey;    // Public key (ECPOINT)
-                    PSYMCRYPT_INT           piPrivateKey;   // Private key
+                    PSYMCRYPT_ECPOINT   poPublicKey;    // Public key (ECPOINT)
+                    PSYMCRYPT_INT       piPrivateKey;   // Private key
 
                     SYMCRYPT_MAGIC_FIELD
 
@@ -2766,17 +2780,46 @@ SymCryptWipeKnownSize(_Out_writes_bytes_(cbData) PVOID pbData, SIZE_T cbData)
 
 #define SYMCRYPT_FIPS_ASSERT(x) { if(!(x)){ SymCryptFatal('FIPS'); } }
 
-// Flags for on-demand selftests. When an on-demand selftest succeeds, the corresponding flag
+// Flags for FIPS on-demand selftests. When an on-demand selftest succeeds, the corresponding flag
 // will be set in g_SymCryptFipsSelftestsPerformed. Other selftests are performed automatically
 // when the module is loaded, so they don't have a corresponding flag.
-typedef enum {
-    SYMCRYPT_SELFTEST_NONE = 0x0,
-    SYMCRYPT_SELFTEST_STARTUP = 0x1,
-    SYMCRYPT_SELFTEST_DSA = 0x2,
-    SYMCRYPT_SELFTEST_ECDSA = 0x4,
-    SYMCRYPT_SELFTEST_RSA = 0x8,
-    SYMCRYPT_SELFTEST_DH_SECRET_AGREEMENT = 0x10,
-    SYMCRYPT_SELFTEST_ECDH_SECRET_AGREEMENT = 0x20
-} SYMCRYPT_FIPS_SELFTEST;
+typedef enum _SYMCRYPT_SELFTEST_ALGORITHM {
+    SYMCRYPT_SELFTEST_ALGORITHM_NONE    =  0x0,
+    SYMCRYPT_SELFTEST_ALGORITHM_STARTUP =  0x1,
+    SYMCRYPT_SELFTEST_ALGORITHM_DSA     =  0x2,
+    SYMCRYPT_SELFTEST_ALGORITHM_ECDSA   =  0x4,
+    SYMCRYPT_SELFTEST_ALGORITHM_RSA     =  0x8,
+    SYMCRYPT_SELFTEST_ALGORITHM_DH      = 0x10,
+    SYMCRYPT_SELFTEST_ALGORITHM_ECDH    = 0x20,
+} SYMCRYPT_SELFTEST_ALGORITHM;
 
-extern SYMCRYPT_FIPS_SELFTEST g_SymCryptFipsSelftestsPerformed;
+// Takes values which are some bitwise OR combination of SYMCRYPT_SELFTEST_ALGORITHM values
+// Specified as UINT32 as we will update with 32 bit atomics, and compilers may choose to make enum
+// types smaller than 32 bits.
+extern UINT32 g_SymCryptFipsSelftestsPerformed;
+
+// Flags for per-key selftests.
+// When an asymmetric key is generated or imported, and SYMCRYPT_FLAG_KEY_NO_FIPS is not specified,
+// some selftests must be performed on the key, before its operational use in an algorithm, to
+// comply with FIPS.
+// The algorithms the key may be used in will be tracked in the key's fAlgorithmInfo field, as a
+// bitwise OR of SYMCRYPT_FLAG_<keytype>_<algorithm> (e.g. SYMCRYPT_FLAG_DLKEY_DH).
+// This field will also track which per-key selftests have been run on the key using the below flags
+// We want to track which selftests have been run independently of which algorithms the key may be
+// used in as in some scenarios at key generation / import time we may not know what algorithm the
+// key will actually be used in. Tracking the run per-key selftests in fAlgorithmInfo allows us to
+// defer running expensive tests until we know they are required (e.g. if we generate an Eckey which
+// may be used in ECDH or ECDSA, and only use it for ECDH, the ECDSA PCT is deferred until we first
+// attempt to use the key in ECDSA, or export the private key).
+
+// Dlkey selftest flags
+// DSA Pairwise Consistency Test to be run generated keys
+#define SYMCRYPT_SELFTEST_KEY_DSA       (0x1)
+
+// Eckey selftest flags
+// ECDSA Pairwise Consistency Test to be run generated keys
+#define SYMCRYPT_SELFTEST_KEY_ECDSA     (0x1)
+
+// Rsakey selftest flags
+// RSA Pairwise Consistency Test to be run generated keys
+#define SYMCRYPT_SELFTEST_KEY_RSA_SIGN  (0x1)

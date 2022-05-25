@@ -22,8 +22,8 @@
 // The API numbering starts at 100 to avoid number conficts with the old system.
 //
 
-#define SYMCRYPT_CODE_VERSION_API       101
-#define SYMCRYPT_CODE_VERSION_MINOR     3
+#define SYMCRYPT_CODE_VERSION_API       102
+#define SYMCRYPT_CODE_VERSION_MINOR     0
 #define SYMCRYPT_CODE_VERSION_PATCH     0
 
 #if defined(DBG)

@@ -521,6 +521,13 @@ SymCryptRsaRawEncrypt(
     PBYTE   pbScratch = NULL;
     UINT32  cbScratch = 0;
 
+    // Make sure that the key may be used in Encrypt/Decrypt
+    if ( (pkRsakey->fAlgorithmInfo & SYMCRYPT_FLAG_RSAKEY_ENCRYPT) == 0 )
+    {
+        scError = SYMCRYPT_INVALID_ARGUMENT;
+        goto cleanup;
+    }
+
     cbScratch = SymCryptRsaCoreEncScratchSpace( pkRsakey );
 
     pbScratch = (PBYTE)SymCryptCallbackAlloc( cbScratch );
@@ -563,6 +570,13 @@ SymCryptRsaRawDecrypt(
 
     PBYTE   pbScratch = NULL;
     UINT32  cbScratch = 0;
+
+    // Make sure that the key may be used in Encrypt/Decrypt
+    if ( (pkRsakey->fAlgorithmInfo & SYMCRYPT_FLAG_RSAKEY_ENCRYPT) == 0 )
+    {
+        scError = SYMCRYPT_INVALID_ARGUMENT;
+        goto cleanup;
+    }
 
     // Make sure that the key has a private key
     if (!pkRsakey->hasPrivateKey)
@@ -633,6 +647,13 @@ SymCryptRsaPkcs1Encrypt(
     cbScratch = cbTmp + SymCryptRsaCoreEncScratchSpace( pkRsakey );
 
     UNREFERENCED_PARAMETER( flags );
+
+    // Make sure that the key may be used in Encrypt/Decrypt
+    if ( (pkRsakey->fAlgorithmInfo & SYMCRYPT_FLAG_RSAKEY_ENCRYPT) == 0 )
+    {
+        scError = SYMCRYPT_INVALID_ARGUMENT;
+        goto cleanup;
+    }
 
     *pcbDst = cbTmp;
 
@@ -719,6 +740,13 @@ SymCryptRsaPkcs1Decrypt(
     PBYTE   pbTmp = NULL;
     SIZE_T  cbModulus = SymCryptRsakeySizeofModulus(pkRsakey);
     SIZE_T  cbTmp = SymCryptRoundUpPow2Sizet( cbModulus );      // tmp buffer needs to be a power of 2
+
+    // Make sure that the key may be used in Encrypt/Decrypt
+    if ( (pkRsakey->fAlgorithmInfo & SYMCRYPT_FLAG_RSAKEY_ENCRYPT) == 0 )
+    {
+        scError = SYMCRYPT_INVALID_ARGUMENT;
+        goto cleanup;
+    }
 
     // Make sure that the key has a private key
     if (!pkRsakey->hasPrivateKey)
@@ -825,6 +853,13 @@ SymCryptRsaOaepEncrypt(
 
     UNREFERENCED_PARAMETER( flags );
 
+    // Make sure that the key may be used in Encrypt/Decrypt
+    if ( (pkRsakey->fAlgorithmInfo & SYMCRYPT_FLAG_RSAKEY_ENCRYPT) == 0 )
+    {
+        scError = SYMCRYPT_INVALID_ARGUMENT;
+        goto cleanup;
+    }
+
     *pcbDst = cbTmp;
 
     // Check if only *pcbDst is needed
@@ -922,6 +957,13 @@ SymCryptRsaOaepDecrypt(
     SIZE_T  cbTmp = SymCryptRsakeySizeofModulus(pkRsakey);
 
     UNREFERENCED_PARAMETER( flags );
+
+    // Make sure that the key may be used in Encrypt/Decrypt
+    if ( (pkRsakey->fAlgorithmInfo & SYMCRYPT_FLAG_RSAKEY_ENCRYPT) == 0 )
+    {
+        scError = SYMCRYPT_INVALID_ARGUMENT;
+        goto cleanup;
+    }
 
     if (cbSrc > cbTmp)
     {
@@ -1054,6 +1096,13 @@ SymCryptRsaPkcs1Sign(
     pbOID = pHashOIDs ? pHashOIDs->pbOID : NULL;
     cbOID = pHashOIDs ? pHashOIDs->cbOID : 0;
 
+    // Make sure that the key may be used in Sign/Verify
+    if ( (pkRsakey->fAlgorithmInfo & SYMCRYPT_FLAG_RSAKEY_SIGN) == 0 )
+    {
+        scError = SYMCRYPT_INVALID_ARGUMENT;
+        goto cleanup;
+    }
+
     // Make sure that the key has a private key
     if (!pkRsakey->hasPrivateKey)
     {
@@ -1166,6 +1215,13 @@ SymCryptRsaPkcs1Verify(
     PBYTE   pbTmp = NULL;
     SIZE_T  cbTmp = SymCryptRsakeySizeofModulus(pkRsakey);
 
+    // Make sure that the key may be used in Sign/Verify
+    if ( (pkRsakey->fAlgorithmInfo & SYMCRYPT_FLAG_RSAKEY_SIGN) == 0 )
+    {
+        scError = SYMCRYPT_INVALID_ARGUMENT;
+        goto cleanup;
+    }
+
     if (cbSignature > cbTmp)
     {
         scError = SYMCRYPT_INVALID_ARGUMENT;
@@ -1257,6 +1313,13 @@ SymCryptRsaPssSign(
 
     PBYTE   pbTmp = NULL;
     SIZE_T  cbTmp = SymCryptRsakeySizeofModulus(pkRsakey);
+
+    // Make sure that the key may be used in Sign/Verify
+    if ( (pkRsakey->fAlgorithmInfo & SYMCRYPT_FLAG_RSAKEY_SIGN) == 0 )
+    {
+        scError = SYMCRYPT_INVALID_ARGUMENT;
+        goto cleanup;
+    }
 
     if (cbHashValue > cbTmp)
     {
@@ -1385,6 +1448,13 @@ SymCryptRsaPssVerify(
 
     PBYTE   pbTmp = NULL;
     SIZE_T  cbTmp = SymCryptRsakeySizeofModulus(pkRsakey);
+
+    // Make sure that the key may be used in Sign/Verify
+    if ( (pkRsakey->fAlgorithmInfo & SYMCRYPT_FLAG_RSAKEY_SIGN) == 0 )
+    {
+        scError = SYMCRYPT_INVALID_ARGUMENT;
+        goto cleanup;
+    }
 
     if (cbHashValue > cbTmp)
     {
