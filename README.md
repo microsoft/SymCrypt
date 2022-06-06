@@ -83,7 +83,7 @@ released publicly in the future.
 
 # Security Bugs
 If you believe you have found a problem that affects the security of this code, please do **NOT** create an issue
-or pull request, but instead email your comments to secure@microsoft.com.
+or pull request, but instead email your comments to secure@microsoft.com. See [SECURITY.md](SECURITY.md) for more info.
 
 # Contribute
 We love to receive comments and suggestions. Unfortunately we cannot accept external code contributions at this time.
