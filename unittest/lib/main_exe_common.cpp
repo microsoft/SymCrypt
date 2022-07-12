@@ -2,9 +2,6 @@
 // Copyright (c) Microsoft Corporation. Licensed under the MIT license. 
 //
 
-
-PSTR testDriverName = TESTDRIVER_NAME;
-
 const char * g_implementationNames[] = 
 {
     ImpSc::name,
@@ -56,49 +53,55 @@ addAllAlgs()
 #endif        
 }
 
-
-DWORD WINAPI umThreadFunc( LPVOID param )
+int SYMCRYPT_CDECL
+main( int argc, _In_reads_( argc ) char * argv[] )
 {
-    runTestThread( param );
+    initTestInfrastructure( argc, argv );
+
+    // Set up vector registers to be in a state that should not be modified by unit tests
+    // This may do nothing if TestSaveXXXEnabled is FALSE, but it can also:
+    //  On Windows AMD64 set Xmm6-Xmm15 to random values
+    //    these values are non-volatile in Window x64 ABI, so should be preserved. If they are not
+    //    preserved it indicates a problem with our assembly not adhering to the Windows ABI
+    //  On Linux AMD64 set Ymm0-Ymm15 to random values
+    //    these values are naturally volatile on Linux, but symcryptunittest callers may specify the
+    //    following environment variable:
+    //      GLIBC_TUNABLES=glibc.cpu.hwcaps=-AVX_Usable,-AVX_Fast_Unaligned_Load,-AVX2_Usable
+    //    to avoid use of AVX in glibc. This means we can test the Ymm save/restore logic that is
+    //    used in Windows kernel using Linux user mode.
+    initVectorRegisters();
+
+    addAllAlgs();
+
+    if (!g_profile && !g_measure_specific_sizes)
+    {
+        runFunctionalTests();
+    }
+
+    // Check that all uses of vector registers in the functional unit tests correctly saved/restored
+    verifyVectorRegisters();
+
+
+    if (g_profile)
+    {
+        runProfiling();
+    }
+    else
+    {
+        runPerfTests();
+
+        if (!g_measure_specific_sizes)
+        {
+            testSelftest();
+
+            // Disable Vector save tests for multithreaded tests
+            TestSaveXmmEnabled = FALSE;
+            TestSaveYmmEnabled = FALSE;
+            testMultiThread();
+        }
+    }
+
+    exitTestInfrastructure();
+
     return 0;
-}
-
-VOID
-scheduleAsyncTest( SelfTestFn f )
-{
-    //
-    // No async testing in user mode, just run the test in-line.
-    //
-    f();
-}
-
-
-VOID
-testMultiThread()
-{
-    HANDLE threads[64];
-    int i;
-    g_fExitMultithreadTest = FALSE;
-    g_nMultithreadTestsRun = 0;
-
-    iprint( "\nMulti-thread test..." );
-
-    for( i=0; i<ARRAY_SIZE( threads ); i++ )
-    {
-        threads[i] = CreateThread( NULL, 0, &umThreadFunc, (LPVOID) g_rng.sizet( (SIZE_T)-1 ), 0, NULL );
-        CHECK3( threads[i] != NULL, "Failed to start thread i", i)
-    }
-
-    Sleep( 1000 * 5 );
-
-    g_fExitMultithreadTest = TRUE;
-
-    for( i=0; i<ARRAY_SIZE( threads ); i++ )
-    {
-        // Timeout increased from 15 seconds to 2 minutes. In Entropy Validation test, we run several SymCryptUnitTests in parallel, and
-        // the timeout wasn't enough in that case.
-        CHECK( WaitForSingleObject( threads[i], 120000 ) == 0, "Thread did not exit in time" );
-        CloseHandle( threads[i] );
-    }
-    iprint( " done. %lld tests run.\n", g_nMultithreadTestsRun );
 }

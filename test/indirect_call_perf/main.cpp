@@ -102,7 +102,7 @@ void printPerfNumbers()
 }
 
 
-int __cdecl
+int SYMCRYPT_CDECL
 main( int argc, _In_reads_( argc ) LPSTR * argv[] )
 {
     UNREFERENCED_PARAMETER( argv );

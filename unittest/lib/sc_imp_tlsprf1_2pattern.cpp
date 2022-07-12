@@ -40,21 +40,20 @@ KdfImp<ImpSc, AlgTlsPrf1_2, BaseAlgXxx>::derive(
             return;
     }
 
-    initXmmRegisters();
     scError = SymCryptTlsPrf1_2(
         SYMCRYPT_BaseXxxAlgorithm,
         pbKey, cbKey,
         pbLabel, cbLabel,
         pbSeed, cbSeed,
         &buf1[0], cbDst);
-    verifyXmmRegisters();
+    verifyVectorRegisters();
 
     CHECK(scError == SYMCRYPT_NO_ERROR, "Error in SymCrypt TLS PRF 1.2");
 
     scError = SymCryptTlsPrf1_2ExpandKey( &expandedKey,
                                           SYMCRYPT_BaseXxxAlgorithm,
                                           pbKey, cbKey);
-    verifyXmmRegisters();
+    verifyVectorRegisters();
     CHECK(scError == SYMCRYPT_NO_ERROR, "Error in SymCrypt TLS PRF 1.2");
 
     SymCryptMarvin32(SymCryptMarvin32DefaultSeed, (PCBYTE)&expandedKey, sizeof(expandedKey), expandedKeyChecksum);
@@ -63,7 +62,7 @@ KdfImp<ImpSc, AlgTlsPrf1_2, BaseAlgXxx>::derive(
                                        pbLabel, cbLabel,
                                        pbSeed, cbSeed,
                                        &buf2[0], cbDst);
-    verifyXmmRegisters();
+    verifyVectorRegisters();
     CHECK(scError == SYMCRYPT_NO_ERROR, "Error in SymCrypt TLS PRF 1.2");
 
     CHECK(memcmp(buf1, buf2, cbDst) == 0, "SymCrypt TLS PRF 1.2 calling versions disagree");

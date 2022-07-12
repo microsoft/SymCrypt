@@ -68,9 +68,8 @@ BlockCipherImp<ImpXxx, AlgXxx, ModeXxx>::setKey( PCBYTE pbKey, SIZE_T cbKey )
 {
     SYMCRYPT_ERROR e;
 
-    initXmmRegisters();
     e = SYMCRYPT_XxxExpandKey( &state.key, pbKey, cbKey );
-    verifyXmmRegisters();
+    verifyVectorRegisters();
 
     if( e != SYMCRYPT_NO_ERROR )
     {
@@ -88,9 +87,8 @@ BlockCipherImp<ImpXxx, AlgXxx, ModeXxx>::encrypt( PBYTE pbChain, SIZE_T cbChain,
     CHECK( cbData % msgBlockLen() == 0, "Wrong data length" );
     CHECK( cbChain == chainBlockLen(), "Wrong chain len" );
 
-    initXmmRegisters();
     SYMCRYPT_XxxXxxEncrypt( &state.key, pbChain, pbSrc, pbDst, cbData );
-    verifyXmmRegisters();
+    verifyVectorRegisters();
 }
 
 template<>
@@ -101,8 +99,7 @@ BlockCipherImp<ImpXxx, AlgXxx, ModeXxx>::decrypt( PBYTE pbChain, SIZE_T cbChain,
     CHECK( cbData % msgBlockLen() == 0, "Wrong data length" );
     CHECK( cbChain == chainBlockLen(), "Wrong chain len" );
 
-    initXmmRegisters();
     SYMCRYPT_XxxXxxDecrypt( &state.key, pbChain, pbSrc, pbDst, cbData );
-    verifyXmmRegisters();
+    verifyVectorRegisters();
 }
 

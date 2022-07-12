@@ -47,21 +47,20 @@ KdfImp<ImpSc,AlgSp800_108,BaseAlgXxx>::derive(
         return;
     }
 
-    initXmmRegisters();
     scError = SymCryptSp800_108(
             SYMCRYPT_BaseXxxAlgorithm,
             pbKey,  cbKey,
             pbLabel, cbLabel,
             pbContext, cbContext,
             &buf1[0], cbDst );
-    verifyXmmRegisters();
+    verifyVectorRegisters();
 
     CHECK( scError == SYMCRYPT_NO_ERROR, "Error in SymCrypt SP800_108" );
 
     scError = SymCryptSp800_108ExpandKey(   &expandedKey,
                                             SYMCRYPT_BaseXxxAlgorithm,
                                             pbKey, cbKey );
-    verifyXmmRegisters();
+    verifyVectorRegisters();
     CHECK( scError == SYMCRYPT_NO_ERROR, "Error in SymCrypt SP800_108" );
 
     SymCryptMarvin32( SymCryptMarvin32DefaultSeed, (PCBYTE) &expandedKey, sizeof( expandedKey ), expandedKeyChecksum );
@@ -70,7 +69,7 @@ KdfImp<ImpSc,AlgSp800_108,BaseAlgXxx>::derive(
                                         pbLabel, cbLabel,
                                         pbContext, cbContext,
                                         &buf2[0], cbDst );
-    verifyXmmRegisters();
+    verifyVectorRegisters();
     CHECK( scError == SYMCRYPT_NO_ERROR, "Error in SymCrypt SP800_108" );
 
     CHECK( memcmp( buf1, buf2, cbDst ) == 0, "SymCrypt SP800_108 calling versions disagree" );

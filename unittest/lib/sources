@@ -50,7 +50,7 @@ SOURCES= \
     testUtil.cpp \
     testKdf.cpp \
     testTlsCbcHmac.cpp \
-    env_symcryptunittest.cpp \
+    env_windowssymcryptunittest.cpp \
     testMultiThread.cpp \
     rndDriver.cpp \
     testArithmetic.cpp \
@@ -76,10 +76,10 @@ SOURCES= \
     testPaddingPkcs7.cpp \
 
 I386_SOURCES = \
-    savexmm.asm \
+    savevectors.asm \
 
 AMD64_SOURCES = \
-    saveymm.asm
+    savevectors.asm
 
 TARGETLIBS= \
 #		$(DS_LIB_PATH)\rsa32.lib \

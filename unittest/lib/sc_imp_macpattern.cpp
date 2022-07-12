@@ -64,13 +64,11 @@ NTSTATUS MacImp<ImpXxx, AlgXxx>::mac(
 
     CHECK( cbResult == SYMCRYPT_XXX_RESULT_SIZE, "Result len error in SymCrypt" STRING( MAC_Name ) );
 
-    initXmmRegisters();
-
     SYMCRYPT_XxxExpandKey( &state.key, pbKey, cbKey );
-    verifyXmmRegisters();
+    verifyVectorRegisters();
 
     SYMCRYPT_Xxx( &state.key, pbData, cbData, pbResult );
-    verifyXmmRegisters();
+    verifyVectorRegisters();
 
     //
     // Test the key & state duplication functions
@@ -78,7 +76,7 @@ NTSTATUS MacImp<ImpXxx, AlgXxx>::mac(
     SYMCRYPT_XxxExpandKey( &key1, pbKey, cbKey );
     SYMCRYPT_XxxKeyCopy( &key1, &key2 );
     SymCryptWipe( &key1, sizeof( key1 ) );
-    verifyXmmRegisters();
+    verifyVectorRegisters();
 
     SYMCRYPT_XxxInit( &state1, &key2 );
     SYMCRYPT_XxxAppend( &state1, pbData, halfSize );
@@ -86,13 +84,13 @@ NTSTATUS MacImp<ImpXxx, AlgXxx>::mac(
     SYMCRYPT_XxxAppend( &state2, pbData+halfSize, cbData-halfSize );
     SYMCRYPT_XxxResult( &state2, splitResult );
     CHECK( memcmp( splitResult, pbResult, SYMCRYPT_XXX_RESULT_SIZE ) == 0, "State copy error in SymCrypt" STRING( ALG_Name ) );
-    verifyXmmRegisters();
+    verifyVectorRegisters();
 
     SYMCRYPT_XxxStateCopy( &state1, &state.key, &state2 );
     SYMCRYPT_XxxAppend( &state2, pbData+halfSize, cbData-halfSize );
     SYMCRYPT_XxxResult( &state2, splitResult );
     CHECK( memcmp( splitResult, pbResult, SYMCRYPT_XXX_RESULT_SIZE ) == 0, "State copy error in SymCrypt" STRING( ALG_Name ) );
-    verifyXmmRegisters();
+    verifyVectorRegisters();
 
     SymCryptWipeKnownSize( &state.key, sizeof( state.key ) );
     SymCryptWipeKnownSize( &state1, sizeof( state1 ) );
@@ -110,10 +108,9 @@ NTSTATUS MacImp<ImpXxx, AlgXxx>::mac(
 template<>
 NTSTATUS MacImp<ImpXxx, AlgXxx>::init( _In_reads_( cbKey ) PCBYTE pbKey, SIZE_T cbKey )
 {
-    initXmmRegisters();
     SYMCRYPT_XxxExpandKey( &state.key, pbKey, cbKey );
     SYMCRYPT_XxxInit( &state.state, &state.key );
-    verifyXmmRegisters();
+    verifyVectorRegisters();
 
     return STATUS_SUCCESS;
 }
@@ -121,9 +118,8 @@ NTSTATUS MacImp<ImpXxx, AlgXxx>::init( _In_reads_( cbKey ) PCBYTE pbKey, SIZE_T 
 template<>
 VOID MacImp<ImpXxx, AlgXxx>::append( _In_reads_( cbData ) PCBYTE pbData, SIZE_T cbData )
 {
-    initXmmRegisters();
     SYMCRYPT_XxxAppend( &state.state, pbData, cbData );
-    verifyXmmRegisters();
+    verifyVectorRegisters();
 }
 
 template<>
@@ -131,9 +127,8 @@ VOID MacImp<ImpXxx, AlgXxx>::result( _Out_writes_( cbResult ) PBYTE pbResult, SI
 {
     CHECK( cbResult == SYMCRYPT_XXX_RESULT_SIZE, "Result len error in SymCrypt " STRING( MAC_Name ) );
 
-    initXmmRegisters();
     SYMCRYPT_XxxResult( &state.state, pbResult );
-    verifyXmmRegisters();
+    verifyVectorRegisters();
 }
 
 template<>

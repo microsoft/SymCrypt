@@ -132,6 +132,14 @@ steps:
             ./symcryptunittest
           displayName: 'Execute unit tests'
           name: '${{parameters.env}}UnitTest_${{parameters.buildType}}'
+        - ${{ if eq(parameters.arch, 'AMD64') }}:
+          # Run unit tests in a mode where the Ymm registers must not be modified by the functional tests
+          # Set GLIBC to not use AVX using GLIBC_TUNABLES
+          - script: |
+              cd bin/exe/${{parameters.arch}}/${{parameters.env}}
+              GLIBC_TUNABLES=glibc.cpu.hwcaps=-AVX_Usable,-AVX_Fast_Unaligned_Load,-AVX2_Usable ./symcryptunittest testSaveYmm
+            displayName: 'Execute unit tests (Test Ymm Save/Restore)'
+            name: '${{parameters.env}}UnitTest_TestYmm_${{parameters.buildType}}'
         - ${{ if ne(parameters.buildType, 'Sanitize') }}:
           # Only run oe module test if rdseed is present on the CPU
           - script: |

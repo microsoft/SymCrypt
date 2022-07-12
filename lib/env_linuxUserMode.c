@@ -26,19 +26,6 @@ SymCryptInitEnvLinuxUsermode( UINT32 version )
     SymCryptDetectCpuFeaturesByCpuid( SYMCRYPT_CPUID_DETECT_FLAG_CHECK_OS_SUPPORT_FOR_YMM );
 
     //
-    // Don't use Ymm registers if the OS doesn't report them as available.
-    // We assume Ymm register swapping isn't supported unless we can verify that it is.
-    //
-    g_SymCryptCpuFeaturesNotPresent |= SYMCRYPT_CPU_FEATURE_AVX2;
-
-    #if SYMCRYPT_MS_VC
-    if( (GetEnabledXStateFeatures() & XSTATE_MASK_AVX) != 0 )
-    {
-        g_SymCryptCpuFeaturesNotPresent &= ~SYMCRYPT_CPU_FEATURE_AVX2;
-    }
-    #endif
-
-    //
     // Our SaveXmm function never fails because it doesn't have to do anything in User mode.
     //
     g_SymCryptCpuFeaturesNotPresent &= ~SYMCRYPT_CPU_FEATURE_SAVEXMM_NOFAIL;

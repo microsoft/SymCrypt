@@ -19,7 +19,6 @@ set(SOURCES
     testutil.cpp
     testKdf.cpp
     testTlsCbcHmac.cpp
-    env_SymCryptUnittest.cpp
     testMultiThread.cpp
     rndDriver.cpp
     testArithmetic.cpp
@@ -39,6 +38,7 @@ set(SOURCES
 # Append Windows-specific sources
 if(WIN32)
     list(APPEND SOURCES
+        env_windowsSymCryptUnittest.cpp
         rsa32_implementations.cpp
         capi_implementations.cpp
         cng_implementations.cpp
@@ -54,15 +54,19 @@ if(WIN32)
         # testDl_msbignum.cpp
         # testDl_cng.cpp
     )
+else()
+    list(APPEND SOURCES
+        env_linuxSymCryptUnittest.cpp
+    )
 endif()
 
 if(WIN32 AND NOT SYMCRYPT_TARGET_ENV MATCHES "Generic")
     if(CMAKE_SYSTEM_PROCESSOR MATCHES "AMD64")
-        list(APPEND SOURCES amd64/saveymm.asm)
-        set_source_files_properties(amd64/saveymm.asm PROPERTY LANGUAGE ASM_MASM)
+        list(APPEND SOURCES amd64/savevectors.asm)
+        set_source_files_properties(amd64/savevectors.asm PROPERTY LANGUAGE ASM_MASM)
     elseif(CMAKE_SYSTEM_PROCESSOR MATCHES "X86")
-        list(APPEND SOURCES i386/savexmm.asm)
-        set_source_files_properties(i386/savexmm.asm PROPERTY LANGUAGE ASM_MASM)
+        list(APPEND SOURCES i386/savevectors.asm)
+        set_source_files_properties(i386/savevectors.asm PROPERTY LANGUAGE ASM_MASM)
     endif()
 elseif(NOT SYMCRYPT_TARGET_ENV MATCHES "Generic")
     if(CMAKE_SYSTEM_PROCESSOR MATCHES "AMD64")

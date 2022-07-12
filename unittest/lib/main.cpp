@@ -596,7 +596,7 @@ usage()
             "  sizeprefix:<prefix>      Only applies when sizes: parameter is also specified. Prefixes\n"
             "                           output of test command with a specific string. This can enable\n"
             "                           easier concatenation of many test runs on differing platforms into\n"
-            "                           a single .csv for postprocessing."
+            "                           a single .csv for postprocessing.\n"
             "  kernel            Run the kernel-mode tests \n"
             "  verbose           Print detailed information for some algorithms\n"
             "  noperftests       Skip running the performance tests - only run functional tests\n"
@@ -609,6 +609,9 @@ usage()
             "  rsakgp            Run perf measurement of RSA key generation.\n"
             "  sgx               Run CNG and symcrypt test implementations against BCrypt in SGX enclave.\n"
             "                    This option is only valid for win8_1 version and newer of the tests.\n"
+            "  testSaveYmm       This option enables the unit tests to test the save/restore logic for\n"
+            "                    Ymm registers. Normally the C runtime may overwrite Ymm registers and\n"
+            "                    these tests will fail, so the test is disabled by default.\n"
             "\n"
 #if SYMCRYPT_CPU_X86 | SYMCRYPT_CPU_AMD64
             " CPU feature:       aesni, pclmulqdq, sse2, sse3, ssse3, avx2,\n"
@@ -677,8 +680,8 @@ const CPU_FEATURE_DATA g_cpuFeatureData[] =
     { "shani", SYMCRYPT_CPU_FEATURE_SHANI },
     { "adx", SYMCRYPT_CPU_FEATURE_ADX },
     { "bmi2", SYMCRYPT_CPU_FEATURE_BMI2 },
-    { "vaes512", SYMCRYPT_CPU_FEATURE_VAES_512 },
-    { "vaes256", SYMCRYPT_CPU_FEATURE_VAES_256 },
+    { "vaes", SYMCRYPT_CPU_FEATURE_VAES },
+    { "avx512", SYMCRYPT_CPU_FEATURE_AVX512 },
     { "cmpxchg16b", SYMCRYPT_CPU_FEATURE_CMPXCHG16B },
 #elif SYMCRYPT_CPU_ARM64
     { "neon", SYMCRYPT_CPU_FEATURE_NEON },
@@ -707,6 +710,25 @@ VOID printSymCryptCpuInfo( PCSTR text, SYMCRYPT_CPU_FEATURES notPresent )
     print( "\n" );
 }
 
+VOID printTestVectorSaveOptions()
+{
+    CHAR sep = ' ';
+    print("\nTest Vector Save/Restore options:");
+    if (TestSaveXmmEnabled)
+    {
+        print("%cTestSaveXmmEnabled", sep);
+        sep = ',';
+    }
+    if (TestSaveYmmEnabled)
+    {
+        print("%cTestSaveYmmEnabled", sep);
+        sep = ',';
+    }
+    if (sep == ' ')
+    {
+        print(" None");
+    }
+}
 
 VOID
 processSingleOption( _In_ PSTR option )
@@ -856,6 +878,11 @@ processSingleOption( _In_ PSTR option )
         if (STRICMP(&option[0], "sgx") == 0)
         {
             g_sgx = TRUE;
+            optionHandled = TRUE;
+        }
+        if (STRICMP(&option[0], "testSaveYmm") == 0)
+        {
+            TestSaveYmmEnabled = TRUE;
             optionHandled = TRUE;
         }
     }
@@ -1243,6 +1270,8 @@ initTestInfrastructure( int argc, _In_reads_( argc ) char * argv[] )
         printPlatformInformation( "Modified System information for this test" );
         printSymCryptCpuInfo( "Modified CPU features for this test", g_SymCryptCpuFeaturesNotPresent );
     }
+
+    printTestVectorSaveOptions();
 
     if( g_rngSeed == 0 )
     {
@@ -1761,204 +1790,6 @@ rdrandTest()
     }
 #endif
 }
-
-//
-// Below some of the code used to test the XMM registers.
-// This is Unittest code, so outside the extern "C" block.
-//
-
-
-#if SYMCRYPT_CPU_X86
-/////////////////////////////////////////////////////////////
-//
-// Code to set up the XMM registers for testing in SAVE_XMM mode
-
-__m128i g_xmmStartState[8];
-__m128i g_xmmTestState[8];
-
-//
-// The save/restore functions work on an aligned subset of the structure.
-// We don't care which part is used, we copy the start structure, store the
-// XMM registers in it, and check that it is the same.
-//
-
-VOID
-verifyXmmRegisters()
-{
-    BOOL difference = FALSE;
-    if( TestSaveXmmEnabled && SYMCRYPT_CPU_FEATURES_PRESENT( SYMCRYPT_CPU_FEATURE_SSE2 ) && !SYMCRYPT_CPU_FEATURES_PRESENT( SYMCRYPT_CPU_FEATURE_SAVEXMM_NOFAIL ) )
-    {
-        memset( g_xmmTestState, 0, sizeof( g_xmmTestState ) );
-        SymCryptEnvUmSaveXmmRegistersAsm( g_xmmTestState );
-
-        difference = memcmp( g_xmmTestState, g_xmmStartState, sizeof( g_xmmStartState ) ) != 0;
-
-        if( difference )
-        {
-            //
-            // Starting late 2018 our compiler & CRT are now using XMM registers for transient things.
-            // In particular, the compiler calls memset() on a large local struct to wipe the memory.
-            // (Part of the security mitigations against leaking data from uninitialized stack variables.)
-            // The CRT in turn uses XMM0 to wipe more efficiently.
-            // This is indistinguishable from a SymCrypt bug where we use XMM registers in X86 code without
-            // proper save/restore logic.
-            // In short: we cannot test this anymore in user mode. We'd have to compile for Win7 kernel mode
-            // to even run this test.
-            // For now we will relax this test to not be triggered by the compiler/CRT. This means that we
-            // no longer test this property, but we can at least detect some violations, which is better
-            // than none.
-            //
-            if( (g_xmmTestState[0].m128i_u64[0] | g_xmmTestState[0].m128i_u64[1]) == 0 &&
-                memcmp( &g_xmmTestState[1], &g_xmmStartState[1], 7 * sizeof( g_xmmStartState[0] ) ) == 0 )
-            {
-                difference = FALSE;
-            }
-        }
-
-        if( difference )
-        {
-            print( "\n" );
-            print( "Registers different: " );
-            for( int i=0; i<8; i++ )
-            {
-                if( memcmp( &g_xmmTestState[i], &g_xmmStartState[i], 16 ) != 0 )
-                {
-                    print( "xmm%d ", i );
-                }
-
-            }
-            print( "\nStartState:\n" );
-            printHexArray( (PCBYTE) g_xmmStartState, 8, 16 );
-            print( "TestState:\n");
-            printHexArray( (PCBYTE) g_xmmTestState, 8, 16 );
-
-            ULONGLONG checksum;
-            SymCryptMarvin32( SymCryptMarvin32DefaultSeed, (PCBYTE) g_xmmStartState, 8*16, (PBYTE) &checksum );
-            print( "%04x\n", (ULONG) checksum & 0xffff );
-            SymCryptMarvin32( SymCryptMarvin32DefaultSeed, (PCBYTE) g_xmmTestState, 8*16, (PBYTE) &checksum );
-            print( "%04x\n", (ULONG) checksum & 0xffff );
-
-            FATAL( "Xmm registers modified without proper save/restore" );
-        }
-    }
-}
-
-
-VOID
-initXmmRegisters()
-{
-/*
-#pragma prefast(push)
-#pragma prefast(disable:6031)
-    BCryptGenRandom( NULL, (PBYTE) g_xmmStartState, sizeof( g_xmmStartState ), BCRYPT_USE_SYSTEM_PREFERRED_RNG );
-#pragma prefast(pop)
-    memcpy( g_xmmTestState, g_xmmStartState, sizeof( g_xmmStartState ) );
-
-    SymCryptEnvUmRestoreXmmRegistersAsm( g_xmmStartState );
-*/
-    if( TestSaveXmmEnabled && SYMCRYPT_CPU_FEATURES_PRESENT( SYMCRYPT_CPU_FEATURE_SSE2 ) && !SYMCRYPT_CPU_FEATURES_PRESENT( SYMCRYPT_CPU_FEATURE_SAVEXMM_NOFAIL ) )
-    {
-        SymCryptEnvUmSaveXmmRegistersAsm( g_xmmStartState );
-        verifyXmmRegisters();
-    }
-}
-
-#else
-
-VOID verifyXmmRegisters()
-{
-}
-
-VOID initXmmRegisters()
-{
-}
-#endif
-
-#if SYMCRYPT_CPU_X86 | SYMCRYPT_CPU_AMD64
-/////////////////////////////////////////////////////////////
-//
-// Code to set up the YMM registers for testing in SAVE_YMM mode
-
-#if SYMCRYPT_CPU_AMD64
-__m256i g_ymmStartState[16];
-__m256i g_ymmTestState[16];
-#else
-__m256i g_ymmStartState[8];
-__m256i g_ymmTestState[8];
-#endif
-
-
-VOID
-verifyYmmRegisters()
-{
-    if( !SYMCRYPT_CPU_FEATURES_PRESENT( SYMCRYPT_CPU_FEATURE_AVX2 ) )
-    {
-        verifyXmmRegisters();
-        return;
-    }
-
-    //
-    // We know that AVX2 is present from here on
-    //
-    if( TestSaveYmmEnabled && (SYMCRYPT_CPU_X86 || !TestSaveYmmFallback) )
-    {
-        SymCryptEnvUmSaveYmmRegistersAsm( g_ymmTestState );
-
-        //
-        // On AMD64 it is perfectly fine for the XMM register values to have been modified.
-        // Similarly, on x86 C runtime functions which SymCrypt uses may now use XMM registers and
-        // fail to preserve them.
-        // We just test that the top half of the Ymm registers have been preserved.
-        //
-        for( int i=0; i<sizeof( g_ymmStartState ); i++ )
-        {
-            if( ((volatile BYTE * )&g_ymmStartState[0])[i] != ((volatile BYTE * )&g_ymmTestState[0])[i] &&
-                ((i & 16) == 16 )
-                )
-            {
-                FATAL3( "Ymm registers modified without proper save/restore Ymm%d[%d]", i>>5, i&31);
-            }
-        }
-    }
-}
-
-
-VOID
-initYmmRegisters()
-{
-    if( !SYMCRYPT_CPU_FEATURES_PRESENT( SYMCRYPT_CPU_FEATURE_AVX2 ) )
-    {
-        initXmmRegisters();
-        return;
-    }
-    if( TestSaveYmmEnabled )
-    {
-        //
-        // Do the memsets outside the save area as it might use XMM registers on x86
-        // Set the initial Ymm registers to a non-trivial value. It is likely (for performance
-        // reasons) that the upper halves are already zero-ed and will be re-zeroed by any function
-        // we call.
-        //
-        memset( g_ymmTestState, 17, sizeof( g_ymmTestState ) );
-        memset( g_ymmStartState, (__rdtsc() & 255) ^ 0x42, sizeof( g_ymmStartState ) );
-        // Reset TestSaveYmmFallback (set to TRUE when unit-test artificially fails save Ymm, in
-        // which case user mode code can clobber volatile Ymm registers on AMD64)
-        TestSaveYmmFallback = FALSE;
-        SymCryptEnvUmRestoreYmmRegistersAsm( g_ymmStartState );
-        verifyYmmRegisters();
-    }
-}
-
-#else
-
-VOID verifyYmmRegisters()
-{
-}
-
-VOID initYmmRegisters()
-{
-}
-#endif
 
 VOID
 printHexArray( PCBYTE pData, SIZE_T nElements, SIZE_T elementSize )

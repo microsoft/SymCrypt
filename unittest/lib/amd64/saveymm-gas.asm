@@ -5,8 +5,6 @@
 #
 .intel_syntax noprefix
 
-        # TITLE   saveymm.asm
-
 .text
 
 #VOID SYMCRYPT_CALL SymCryptEnvUmSaveYmmRegistersAsm( __m256i * buffer );

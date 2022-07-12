@@ -25,7 +25,6 @@ HashImp< ImpXxx, AlgXxx >::HashImp()
     SYMCRYPT_XXX_STATE hashState;
     BYTE exportBlob[SYMCRYPT_XXX_STATE_EXPORT_SIZE];
 
-    initXmmRegisters();
     SYMCRYPT_XxxInit( &hashState );
     for( int i=0; i<200; i++ )
     {
@@ -44,7 +43,7 @@ HashImp< ImpXxx, AlgXxx >::HashImp()
     CHECK( SymCryptHashStateSize( SYMCRYPT_XxxAlgorithm ) == sizeof( SYMCRYPT_XXX_STATE ), "State size mismatch" );
 
     state.isReset = FALSE;
-    verifyXmmRegisters();
+    verifyVectorRegisters();
 }
 
 //
@@ -90,15 +89,13 @@ VOID HashImp<ImpXxx,AlgXxx>::hash(
     SYMCRYPT_XXX_STATE  state2;
     SIZE_T halfSize = cbData >> 1;
 
-    initXmmRegisters();
     CHECK( cbResult == SYMCRYPT_XXX_RESULT_SIZE, "Result len error in SymCrypt" STRING( ALG_Name ) );
     SYMCRYPT_Xxx( pbData, cbData, pbResult );
-    verifyXmmRegisters();
+    verifyVectorRegisters();
 
-    initXmmRegisters();
     SymCryptHash( SYMCRYPT_XxxAlgorithm, pbData, cbData, splitResult, cbResult );
     CHECK( memcmp( splitResult, pbResult, SYMCRYPT_XXX_RESULT_SIZE ) == 0, "Generic hash error in SymCrypt" STRING( ALG_Name ) );
-    verifyXmmRegisters();
+    verifyVectorRegisters();
 
     SYMCRYPT_XxxInit( &state1 );
     SYMCRYPT_XxxAppend( &state1, pbData, halfSize );
@@ -106,7 +103,7 @@ VOID HashImp<ImpXxx,AlgXxx>::hash(
     SYMCRYPT_XxxAppend( &state2, pbData+halfSize, cbData-halfSize );
     SYMCRYPT_XxxResult( &state2, splitResult );
     CHECK( memcmp( splitResult, pbResult, SYMCRYPT_XXX_RESULT_SIZE ) == 0, "State copy error in SymCrypt" STRING( ALG_Name ) );
-    verifyXmmRegisters();
+    verifyVectorRegisters();
 
     SYMCRYPT_XxxInit( &state1 );
     SYMCRYPT_XxxAppend( &state1, pbData, halfSize );
@@ -117,7 +114,7 @@ VOID HashImp<ImpXxx,AlgXxx>::hash(
     SYMCRYPT_XxxAppend( &state2, pbData+halfSize, cbData-halfSize );
     SYMCRYPT_XxxResult( &state2, splitResult );
     CHECK( memcmp( splitResult, pbResult, SYMCRYPT_XXX_RESULT_SIZE ) == 0, "Import/Export error in SymCrypt" STRING( ALG_Name ) );
-    verifyXmmRegisters();
+    verifyVectorRegisters();
 }
 
 
@@ -129,24 +126,22 @@ VOID HashImp<ImpXxx,AlgXxx>::hash(
 template<>
 VOID HashImp<ImpXxx,AlgXxx>::init()
 {
-    initXmmRegisters();
     if( !state.isReset || (g_rng.byte() & 1) == 0 )
     {
         SYMCRYPT_XxxInit( &state.sc );
         SymCryptHashInit( SYMCRYPT_XxxAlgorithm, &state.scHash );
     }
     state.isReset = TRUE;
-    verifyXmmRegisters();
+    verifyVectorRegisters();
 }
 
 template<>
 VOID HashImp<ImpXxx,AlgXxx>::append( _In_reads_( cbData ) PCBYTE pbData, SIZE_T cbData )
 {
-    initXmmRegisters();
     SYMCRYPT_XxxAppend( &state.sc, pbData, cbData );
     SymCryptHashAppend( SYMCRYPT_XxxAlgorithm, &state.scHash, pbData, cbData );
     state.isReset = FALSE;
-    verifyXmmRegisters();
+    verifyVectorRegisters();
 }
 
 template<>
@@ -155,12 +150,11 @@ VOID HashImp<ImpXxx,AlgXxx>::result( _Out_writes_( cbResult ) PBYTE pbResult, SI
     BYTE    buf[SYMCRYPT_HASH_MAX_RESULT_SIZE];
 
     CHECK( cbResult == SYMCRYPT_XXX_RESULT_SIZE, "Result len error in SymCrypt " STRING( ALG_Name ) );
-    initXmmRegisters();
     SYMCRYPT_XxxResult( &state.sc, pbResult );
     SymCryptHashResult( SYMCRYPT_XxxAlgorithm, &state.scHash, buf, sizeof( buf ) );
     CHECK( memcmp( pbResult, buf, cbResult ) == 0, "Inconsistent result" );
     state.isReset = TRUE;
-    verifyXmmRegisters();
+    verifyVectorRegisters();
 }
 
 template<>
@@ -171,12 +165,11 @@ NTSTATUS HashImp<ImpXxx,AlgXxx>::exportSymCryptFormat(
 {
     CHECK( cbResultBufferSize >= SYMCRYPT_XXX_STATE_EXPORT_SIZE, "Export buffer too small" );
 
-    initXmmRegisters();
     SYMCRYPT_XxxStateExport( &state.sc, pbResult );
     *pcbResult = SYMCRYPT_XXX_STATE_EXPORT_SIZE;
     SymCryptWipeKnownSize( &state.sc, sizeof( state.sc ) );
     SYMCRYPT_XxxStateImport( &state.sc, pbResult );
-    verifyXmmRegisters();
+    verifyVectorRegisters();
     return STATUS_SUCCESS;
 }
 

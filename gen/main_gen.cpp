@@ -590,7 +590,7 @@ createIfxTpmWeakKeyTable()
     fclose( f );
 }
 
-int __cdecl
+int SYMCRYPT_CDECL
 main( int argc, _In_reads_( argc ) char * argv[] )
 {
     printf( "SymCrypt constants generation program\n" );

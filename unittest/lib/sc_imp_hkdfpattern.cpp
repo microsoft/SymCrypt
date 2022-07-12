@@ -86,14 +86,13 @@ KdfImp<ImpSc, AlgHkdf, BaseAlgXxx>::derive(
     }
 
     // 1) Full HKDF
-    initXmmRegisters();
     scError = SymCryptHkdf(
         SYMCRYPT_BaseXxxAlgorithm,
         pbKey, cbKey,
         pbSalt, cbSalt,
         pbInfo, cbInfo,
         &buf1[0], cbDst);
-    verifyXmmRegisters();
+    verifyVectorRegisters();
 
     CHECK(scError == SYMCRYPT_NO_ERROR, "Error in SymCrypt HKDF");
 
@@ -102,7 +101,7 @@ KdfImp<ImpSc, AlgHkdf, BaseAlgXxx>::derive(
                                         SYMCRYPT_BaseXxxAlgorithm,
                                         pbKey, cbKey,
                                         pbSalt, cbSalt );
-    verifyXmmRegisters();
+    verifyVectorRegisters();
     CHECK(scError == SYMCRYPT_NO_ERROR, "Error in SymCrypt HKDF");
 
     SymCryptMarvin32(SymCryptMarvin32DefaultSeed, (PCBYTE)&expandedKey, sizeof(expandedKey), expandedKeyChecksum);
@@ -110,7 +109,7 @@ KdfImp<ImpSc, AlgHkdf, BaseAlgXxx>::derive(
     scError = SymCryptHkdfDerive(   &expandedKey,
                                     pbInfo, cbInfo,
                                     &buf2[0], cbDst);
-    verifyXmmRegisters();
+    verifyVectorRegisters();
     CHECK(scError == SYMCRYPT_NO_ERROR, "Error in SymCrypt HKDF");
 
     CHECK(memcmp(buf1, buf2, cbDst) == 0, "SymCrypt HKDF calling versions disagree");
@@ -123,13 +122,13 @@ KdfImp<ImpSc, AlgHkdf, BaseAlgXxx>::derive(
                                         pbKey, cbKey,
                                         pbSalt, cbSalt,
                                         rbPrk, SYMCRYPT_BaseXxxAlgorithm->resultSize );
-    verifyXmmRegisters();
+    verifyVectorRegisters();
     CHECK(scError == SYMCRYPT_NO_ERROR, "Error in SymCrypt HKDF");
 
     scError = SymCryptHkdfPrkExpandKey( &expandedKey,
                                         SYMCRYPT_BaseXxxAlgorithm,
                                         rbPrk, SYMCRYPT_BaseXxxAlgorithm->resultSize );
-    verifyXmmRegisters();
+    verifyVectorRegisters();
     CHECK(scError == SYMCRYPT_NO_ERROR, "Error in SymCrypt HKDF");
 
     SymCryptMarvin32(SymCryptMarvin32DefaultSeed, (PCBYTE)&expandedKey, sizeof(expandedKey), expandedKeyChecksum);
@@ -137,7 +136,7 @@ KdfImp<ImpSc, AlgHkdf, BaseAlgXxx>::derive(
     scError = SymCryptHkdfDerive(   &expandedKey,
                                     pbInfo, cbInfo,
                                     &buf2[0], cbDst);
-    verifyXmmRegisters();
+    verifyVectorRegisters();
     CHECK(scError == SYMCRYPT_NO_ERROR, "Error in SymCrypt HKDF");
 
     CHECK(memcmp(buf1, buf2, cbDst) == 0, "SymCrypt HKDF calling versions disagree");

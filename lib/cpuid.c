@@ -69,19 +69,19 @@ CPUID_BIT_INFO  cpuidBitInfo[] = {
     {1, WORD_EDX, CPUID_1_EDX_SSE2_BIT,         SYMCRYPT_CPU_FEATURE_SSE2 | SYMCRYPT_CPU_FEATURE_SSSE3 },
     {1, WORD_ECX, CPUID_1_ECX_SSE3_BIT,         SYMCRYPT_CPU_FEATURE_SSSE3 },
     {1, WORD_ECX, CPUID_1_ECX_SSSE3_BIT,        SYMCRYPT_CPU_FEATURE_SSSE3 },
-    {1, WORD_ECX, CPUID_1_ECX_AVX_BIT,          SYMCRYPT_CPU_FEATURE_AVX2 | SYMCRYPT_CPU_FEATURE_VAES_256 },
+    {1, WORD_ECX, CPUID_1_ECX_AVX_BIT,          SYMCRYPT_CPU_FEATURE_AVX2 },
     {1, WORD_ECX, CPUID_1_ECX_CMPXCHG16B_BIT,   SYMCRYPT_CPU_FEATURE_CMPXCHG16B },
-    {7, WORD_EBX, CPUID_70_EBX_AVX2_BIT,        SYMCRYPT_CPU_FEATURE_AVX2 | SYMCRYPT_CPU_FEATURE_VAES_256 },
+    {7, WORD_EBX, CPUID_70_EBX_AVX2_BIT,        SYMCRYPT_CPU_FEATURE_AVX2 },
     {7, WORD_EBX, CPUID_70_EBX_RDSEED_BIT,      SYMCRYPT_CPU_FEATURE_RDSEED },
     {7, WORD_EBX, CPUID_70_EBX_SHANI_BIT,       SYMCRYPT_CPU_FEATURE_SHANI },
     {7, WORD_EBX, CPUID_70_EBX_ADX_BIT,         SYMCRYPT_CPU_FEATURE_ADX },
     {7, WORD_EBX, CPUID_70_EBX_BMI2_BIT,        SYMCRYPT_CPU_FEATURE_BMI2 },
-    {7, WORD_EBX, CPUID_70_EBX_AVX512F_BIT,     SYMCRYPT_CPU_FEATURE_VAES_512 },
-    {7, WORD_EBX, CPUID_70_EBX_AVX512VL_BIT,    SYMCRYPT_CPU_FEATURE_VAES_512 },
-    {7, WORD_EBX, CPUID_70_EBX_AVX512BW_BIT,    SYMCRYPT_CPU_FEATURE_VAES_512 },
-    {7, WORD_EBX, CPUID_70_EBX_AVX512DQ_BIT,    SYMCRYPT_CPU_FEATURE_VAES_512 },
-    {7, WORD_ECX, CPUID_70_ECX_VAES_BIT,        SYMCRYPT_CPU_FEATURE_VAES_512 | SYMCRYPT_CPU_FEATURE_VAES_256 },
-    {7, WORD_ECX, CPUID_70_ECX_VPCLMULQDQ_BIT,  SYMCRYPT_CPU_FEATURE_VAES_512 | SYMCRYPT_CPU_FEATURE_VAES_256 },
+    {7, WORD_EBX, CPUID_70_EBX_AVX512F_BIT,     SYMCRYPT_CPU_FEATURE_AVX512 },
+    {7, WORD_EBX, CPUID_70_EBX_AVX512VL_BIT,    SYMCRYPT_CPU_FEATURE_AVX512 },
+    {7, WORD_EBX, CPUID_70_EBX_AVX512BW_BIT,    SYMCRYPT_CPU_FEATURE_AVX512 },
+    {7, WORD_EBX, CPUID_70_EBX_AVX512DQ_BIT,    SYMCRYPT_CPU_FEATURE_AVX512 },
+    {7, WORD_ECX, CPUID_70_ECX_VAES_BIT,        SYMCRYPT_CPU_FEATURE_VAES },
+    {7, WORD_ECX, CPUID_70_ECX_VPCLMULQDQ_BIT,  SYMCRYPT_CPU_FEATURE_VAES },
 };
 
 extern void __cpuid( _Out_writes_(4) int a[4], int b);          // Add SAL annotation to intrinsic declaration to keep Prefast happy.
@@ -95,7 +95,7 @@ SymCryptDetectCpuFeaturesByCpuid( UINT32 flags )
     int     InfoType;
     int     maxInfoType;
     int     i;
-    BOOLEAN allowYmm;
+    BOOLEAN allowYmm, allowZmm;
     INT64 xGetBvResult;
 
     //
@@ -112,8 +112,8 @@ SymCryptDetectCpuFeaturesByCpuid( UINT32 flags )
         SYMCRYPT_CPU_FEATURE_ADX        |
         SYMCRYPT_CPU_FEATURE_RDRAND     |
         SYMCRYPT_CPU_FEATURE_RDSEED     |
-        // SYMCRYPT_CPU_FEATURE_VAES_512   |
-        SYMCRYPT_CPU_FEATURE_VAES_256   |
+        SYMCRYPT_CPU_FEATURE_AVX512     |
+        SYMCRYPT_CPU_FEATURE_VAES       |
         SYMCRYPT_CPU_FEATURE_CMPXCHG16B
         );
 
@@ -150,6 +150,7 @@ SymCryptDetectCpuFeaturesByCpuid( UINT32 flags )
         // all our (known) OSes have it.
         //
         allowYmm = FALSE;
+        allowZmm = FALSE;
         SymCryptCpuidExFunc( CPUInfo, 1, 0 );
 
         if( (CPUInfo[WORD_ECX] & (1 << CPUID_1_ECX_OSXSAVE_BIT)) != 0 )
@@ -161,13 +162,40 @@ SymCryptDetectCpuFeaturesByCpuid( UINT32 flags )
             if( (xGetBvResult & 0x6) == 0x6)
             {
                 allowYmm = TRUE;
+
+                //
+                // For AVX-512, also check that bits 5, 6, and 7 are set, corresponding to the
+                // opmask, ZMM (0-15), and ZMM (16-31) register states
+                // This follows the recommendation in the Intel 64 and IA-32 Architectures Software
+                // Developer's Manual, Volume 1, 15.3 / 15.4.
+                //
+                // It seems plausible that on some system the OS would not support save/restore of
+                // AVX-512 state, but use of AVX-512VL instructions on Ymm or Xmm registers would be
+                // OK, however Intel explicitly suggests that we should only use AVX512-VL if the
+                // support is indicated by xgetbv, so we use the same logic as for AVX2 (our
+                // SymCrypt feature indicates both CPU support, and OS support for saving/restoring
+                // the extended state)
+                //
+                if( (xGetBvResult & 0xe0) == 0xe0)
+                {
+                    allowZmm = TRUE;
+                }
             }
         }
 
         if( !allowYmm )
         {
             // Disallow the AVX2-dependent code because we don't have OS YMM support.
-            result |= SYMCRYPT_CPU_FEATURE_AVX2 | SYMCRYPT_CPU_FEATURE_VAES_512 | SYMCRYPT_CPU_FEATURE_VAES_256;
+            result |= SYMCRYPT_CPU_FEATURE_AVX2;
+        }
+
+        if( !allowZmm )
+        {
+            // Disallow any AVX512-dependent code because we don't have OS ZMM support.
+            // Note that not all AVX-512 dependent code will need to save/restore ZMM state, but we
+            // do not support AVX-512 instructions (even acting on YMM or XMM registers), unless the
+            // OS indicates support via XCR0
+            result |= SYMCRYPT_CPU_FEATURE_AVX512;
         }
     }
 

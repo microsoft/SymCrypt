@@ -390,7 +390,7 @@ C_ASSERT( (SYMCRYPT_ALIGN_VALUE & (SYMCRYPT_ALIGN_VALUE - 1 )) == 0 );
 #define SYMCRYPT_CPU_FEATURE_SSSE3              0x0002          // includes SSE, SSE2, SSE3, SSSE3
 #define SYMCRYPT_CPU_FEATURE_AESNI              0x0004
 #define SYMCRYPT_CPU_FEATURE_PCLMULQDQ          0x0008
-#define SYMCRYPT_CPU_FEATURE_AVX2               0x0010          // includes AVX, AVX2
+#define SYMCRYPT_CPU_FEATURE_AVX2               0x0010          // includes AVX, AVX2 - also indicates support for saving/restoring Ymm registers
 #define SYMCRYPT_CPU_FEATURE_SAVEXMM_NOFAIL     0x0020          // if SymCryptSaveXmm() will never fail
 #define SYMCRYPT_CPU_FEATURE_SHANI              0x0040
 #define SYMCRYPT_CPU_FEATURE_BMI2               0x0080          // MULX, RORX, SARX, SHLX, SHRX
@@ -398,8 +398,9 @@ C_ASSERT( (SYMCRYPT_ALIGN_VALUE & (SYMCRYPT_ALIGN_VALUE - 1 )) == 0 );
 #define SYMCRYPT_CPU_FEATURE_ADX                0x0100          // ADCX, ADOX
 #define SYMCRYPT_CPU_FEATURE_RDRAND             0x0200
 #define SYMCRYPT_CPU_FEATURE_RDSEED             0x0400
-#define SYMCRYPT_CPU_FEATURE_VAES_256           0x0800
-#define SYMCRYPT_CPU_FEATURE_VAES_512           0x1000
+#define SYMCRYPT_CPU_FEATURE_VAES               0x0800          // support for VAES and VPCLMULQDQ (may only be supported on Ymm registers (i.e. Zen3))
+#define SYMCRYPT_CPU_FEATURE_AVX512             0x1000          // includes F, VL, DQ, BW (VL allows AVX-512 instructions to be used on Xmm and Ymm registers)
+                                                                // also indicates support for saving/restoring additional AVX-512 state
 
 #define SYMCRYPT_CPU_FEATURE_CMPXCHG16B         0x2000          // Compare and Swap 128b value
 

@@ -970,9 +970,8 @@ NTSTATUS
 AuthEncImp<ImpSc, AlgAes, ModeCcm>::setKey( PCBYTE pbKey, SIZE_T cbKey )
 {
     CHECK( cbKey == 16 || cbKey == 24 || cbKey == 32, "?" );
-    initXmmRegisters();
     SymCryptAesExpandKey( &state.key, pbKey, cbKey );
-    verifyXmmRegisters();
+    verifyVectorRegisters();
 
     state.inComputation = FALSE;
     return STATUS_SUCCESS;
@@ -1008,19 +1007,18 @@ AuthEncImp<ImpSc, AlgAes, ModeCcm>::encrypt(
     if( (flags & AUTHENC_FLAG_PARTIAL) == 0 )
     {
         // simple straight CCM computation.
-        initXmmRegisters();
         CHECK( SymCryptCcmValidateParameters(   SymCryptAesBlockCipher,
             cbNonce,
             cbAuthData,
             cbData,
             cbTag ) == SYMCRYPT_NO_ERROR, "?" );
-        verifyXmmRegisters();
+        verifyVectorRegisters();
 
         SymCryptCcmEncrypt( SymCryptAesBlockCipher, &state.key,
             pbNonce, cbNonce, pbAuthData, cbAuthData,
             pbSrc, pbDst, cbData,
             pbTag, cbTag );
-        verifyXmmRegisters();
+        verifyVectorRegisters();
 
         // Done
         goto cleanup;
@@ -1030,23 +1028,20 @@ AuthEncImp<ImpSc, AlgAes, ModeCcm>::encrypt(
     {
         CHECK( (flags & AUTHENC_FLAG_PARTIAL) != 0, "?" );
         // total cbData is passed in the cbTag parameter in the first partial call
-        initXmmRegisters();
         SymCryptCcmInit( &state.ccmState, SymCryptAesBlockCipher, &state.key, pbNonce, cbNonce, pbAuthData, cbAuthData, state.totalCbData, cbTag );
-        verifyXmmRegisters();
+        verifyVectorRegisters();
 
         state.inComputation = TRUE;
     }
 
     // We can process the next part before we decide whether to produce the tag.
-    initXmmRegisters();
     SymCryptCcmEncryptPart( &state.ccmState, pbSrc, pbDst, cbData );
-    verifyXmmRegisters();
+    verifyVectorRegisters();
 
     if( pbTag != NULL )
     {
-        initXmmRegisters();
         SymCryptCcmEncryptFinal( &state.ccmState, pbTag, cbTag );
-        verifyXmmRegisters();
+        verifyVectorRegisters();
 
         state.inComputation = FALSE;
     }
@@ -1081,19 +1076,18 @@ AuthEncImp<ImpSc, AlgAes, ModeCcm>::decrypt(
     if( (flags & AUTHENC_FLAG_PARTIAL) == 0 )
     {
         // simple straight CCM computation.
-        initXmmRegisters();
         CHECK( SymCryptCcmValidateParameters(   SymCryptAesBlockCipher,
             cbNonce,
             cbAuthData,
             cbData,
             cbTag ) == SYMCRYPT_NO_ERROR, "?" );
-        verifyXmmRegisters();
+        verifyVectorRegisters();
 
         scError = SymCryptCcmDecrypt( SymCryptAesBlockCipher, &state.key,
             pbNonce, cbNonce, pbAuthData, cbAuthData,
             pbSrc, pbDst, cbData,
             pbTag, cbTag );
-        verifyXmmRegisters();
+        verifyVectorRegisters();
 
         if( scError == SYMCRYPT_AUTHENTICATION_FAILURE )
         {
@@ -1109,21 +1103,18 @@ AuthEncImp<ImpSc, AlgAes, ModeCcm>::decrypt(
     if( !state.inComputation )
     {
         // First call of a partial computation.
-        initXmmRegisters();
         SymCryptCcmInit( &state.ccmState, SymCryptAesBlockCipher, &state.key, pbNonce, cbNonce, pbAuthData, cbAuthData, state.totalCbData, cbTag );
-        verifyXmmRegisters();
+        verifyVectorRegisters();
 
         state.inComputation = TRUE;
     }
 
     // We can process the next part before we decide whether to produce the tag.
-    initXmmRegisters();
     SymCryptCcmDecryptPart( &state.ccmState, pbSrc, pbDst, cbData );
-    verifyXmmRegisters();
+    verifyVectorRegisters();
 
     if( pbTag != NULL )
     {
-        initXmmRegisters();
         scError = SymCryptCcmDecryptFinal( &state.ccmState, pbTag, cbTag );
         if( scError == SYMCRYPT_AUTHENTICATION_FAILURE )
         {
@@ -1131,7 +1122,7 @@ AuthEncImp<ImpSc, AlgAes, ModeCcm>::decrypt(
         } else {
             CHECK( scError == SYMCRYPT_NO_ERROR, "?" );
         }
-        verifyXmmRegisters();
+        verifyVectorRegisters();
 
         state.inComputation = FALSE;
     }
@@ -1252,9 +1243,8 @@ AuthEncImp<ImpSc, AlgAes, ModeGcm>::setKey( PCBYTE pbKey, SIZE_T cbKey )
 {
     CHECK( cbKey == 16 || cbKey == 24 || cbKey == 32, "?" );
 
-    initXmmRegisters();
     SymCryptGcmExpandKey( &state.key, SymCryptAesBlockCipher, pbKey, cbKey );
-    verifyXmmRegisters();
+    verifyVectorRegisters();
 
     state.inComputation = FALSE;
     return STATUS_SUCCESS;
@@ -1288,20 +1278,18 @@ AuthEncImp<ImpSc, AlgAes, ModeGcm>::encrypt(
     if( (flags & AUTHENC_FLAG_PARTIAL) == 0 )
     {
         // simple straight GCM computation.
-        initXmmRegisters();
         CHECK( SymCryptGcmValidateParameters(   SymCryptAesBlockCipher,
             cbNonce,
             cbAuthData,
             cbData,
             cbTag ) == SYMCRYPT_NO_ERROR, "?" );
-        verifyXmmRegisters();
+        verifyVectorRegisters();
 
-        initYmmRegisters();
         SymCryptGcmEncrypt( &state.key,
             pbNonce, cbNonce, pbAuthData, cbAuthData,
             pbSrc, pbDst, cbData,
             pbTag, cbTag );
-        verifyYmmRegisters();
+        verifyVectorRegisters();
 
         // Done
         goto cleanup;
@@ -1317,37 +1305,32 @@ AuthEncImp<ImpSc, AlgAes, ModeGcm>::encrypt(
     {
         CHECK( (flags & AUTHENC_FLAG_PARTIAL) != 0, "?" );
         // total cbData is passed in the cbTag parameter in the first partial call
-        initXmmRegisters();
         SymCryptGcmInit( &gcmState1, (g_rng.byte() & 1) ? &state.key : &gcmKey2, pbNonce, cbNonce );
-        verifyXmmRegisters();
+        verifyVectorRegisters();
 
         SIZE_T bytesDone = 0;
         while( bytesDone != cbAuthData )
         {
             SIZE_T bytesThisLoop = g_rng.sizet( cbAuthData - bytesDone + 1);
-            initXmmRegisters();
             SymCryptGcmAuthPart( &gcmState1, &pbAuthData[bytesDone], bytesThisLoop );
-            verifyXmmRegisters();
+            verifyVectorRegisters();
             bytesDone += bytesThisLoop;
         }
 
         state.inComputation = TRUE;
     } else {
-        initXmmRegisters();
         SymCryptGcmStateCopy( &state.gcmState, (g_rng.byte() & 1) ? &gcmKey2 : NULL , &gcmState1 );
-        verifyXmmRegisters();
+        verifyVectorRegisters();
     }
     // Using gcmState1 which is using gcmKey2 or state.key.
 
-    initYmmRegisters();
     SymCryptGcmEncryptPart( &gcmState1, pbSrc, pbDst, cbData );
-    verifyYmmRegisters();
+    verifyVectorRegisters();
 
     if( pbTag != NULL )
     {
-        initXmmRegisters();
         SymCryptGcmEncryptFinal( &gcmState1, pbTag, cbTag );
-        verifyXmmRegisters();
+        verifyVectorRegisters();
 
         state.inComputation = FALSE;
     } else {
@@ -1381,20 +1364,18 @@ AuthEncImp<ImpSc, AlgAes, ModeGcm>::decrypt(
     if( (flags & AUTHENC_FLAG_PARTIAL) == 0 )
     {
         // simple straight GCM computation.
-        initXmmRegisters();
         CHECK( SymCryptGcmValidateParameters(   SymCryptAesBlockCipher,
             cbNonce,
             cbAuthData,
             cbData,
             cbTag ) == SYMCRYPT_NO_ERROR, "?" );
-        verifyXmmRegisters();
+        verifyVectorRegisters();
 
-        initYmmRegisters();
         scError = SymCryptGcmDecrypt( &state.key,
             pbNonce, cbNonce, pbAuthData, cbAuthData,
             pbSrc, pbDst, cbData,
             pbTag, cbTag );
-        verifyYmmRegisters();
+        verifyVectorRegisters();
 
         // Done
         goto cleanup;
@@ -1410,37 +1391,32 @@ AuthEncImp<ImpSc, AlgAes, ModeGcm>::decrypt(
     {
         CHECK( (flags & AUTHENC_FLAG_PARTIAL) != 0, "?" );
         // total cbData is passed in the cbTag parameter in the first partial call
-        initXmmRegisters();
         SymCryptGcmInit( &gcmState1, (g_rng.byte() & 1) ? &state.key : &gcmKey2, pbNonce, cbNonce );
-        verifyXmmRegisters();
+        verifyVectorRegisters();
 
         SIZE_T bytesDone = 0;
         while( bytesDone != cbAuthData )
         {
             SIZE_T bytesThisLoop = g_rng.sizet( cbAuthData - bytesDone + 1);
-            initXmmRegisters();
             SymCryptGcmAuthPart( &gcmState1, &pbAuthData[bytesDone], bytesThisLoop );
-            verifyXmmRegisters();
+            verifyVectorRegisters();
             bytesDone += bytesThisLoop;
         }
 
         state.inComputation = TRUE;
     } else {
-        initXmmRegisters();
         SymCryptGcmStateCopy( &state.gcmState, (g_rng.byte() & 1) ? &gcmKey2 : NULL , &gcmState1 );
-        verifyXmmRegisters();
+        verifyVectorRegisters();
     }
     // Using gcmState1 which is using gcmKey2 or state.key.
 
-    initYmmRegisters();
     SymCryptGcmDecryptPart( &gcmState1, pbSrc, pbDst, cbData );
-    verifyYmmRegisters();
+    verifyVectorRegisters();
 
     if( pbTag != NULL )
     {
-        initXmmRegisters();
         scError = SymCryptGcmDecryptFinal( &gcmState1, pbTag, cbTag );
-        verifyXmmRegisters();
+        verifyVectorRegisters();
 
         state.inComputation = FALSE;
     } else {
@@ -1982,9 +1958,8 @@ RngSp800_90Imp<ImpSc, AlgAesCtrDrbg>::instantiate( _In_reads_( cbEntropy ) PCBYT
 {
     SYMCRYPT_ERROR scError;
 
-    initXmmRegisters();
     scError = SymCryptRngAesInstantiate( &state.state, pbEntropy, cbEntropy );
-    verifyXmmRegisters();
+    verifyVectorRegisters();
 
     CHECK( scError == SYMCRYPT_NO_ERROR, "Error during instantiation" );
 
@@ -1997,9 +1972,8 @@ RngSp800_90Imp<ImpSc, AlgAesCtrDrbg>::reseed( _In_reads_( cbEntropy ) PCBYTE pbE
 {
     SYMCRYPT_ERROR scError;
 
-    initXmmRegisters();
     scError = SymCryptRngAesReseed( &state.state, pbEntropy, cbEntropy );
-    verifyXmmRegisters();
+    verifyVectorRegisters();
 
     CHECK3( scError == SYMCRYPT_NO_ERROR, "Error during reseed, len=%lld", (ULONGLONG) cbEntropy );
 
@@ -2010,10 +1984,8 @@ template<>
 VOID
 RngSp800_90Imp<ImpSc, AlgAesCtrDrbg>::generate(  _Out_writes_( cbData ) PBYTE pbData, SIZE_T cbData )
 {
-
-    initXmmRegisters();
     SymCryptRngAesGenerate( &state.state, pbData, cbData );
-    verifyXmmRegisters();
+    verifyVectorRegisters();
 }
 
 
@@ -2067,9 +2039,8 @@ RngSp800_90Imp<ImpSc, AlgAesCtrF142>::instantiate( _In_reads_( cbEntropy ) PCBYT
 {
     SYMCRYPT_ERROR scError;
 
-    initXmmRegisters();
     scError = SymCryptRngAesFips140_2Instantiate( &state.state, pbEntropy, cbEntropy );
-    verifyXmmRegisters();
+    verifyVectorRegisters();
 
     CHECK( scError == SYMCRYPT_NO_ERROR, "Error during instantiation" );
 
@@ -2082,9 +2053,8 @@ RngSp800_90Imp<ImpSc, AlgAesCtrF142>::reseed( _In_reads_( cbEntropy ) PCBYTE pbE
 {
     SYMCRYPT_ERROR scError;
 
-    initXmmRegisters();
     scError = SymCryptRngAesFips140_2Reseed( &state.state, pbEntropy, cbEntropy );
-    verifyXmmRegisters();
+    verifyVectorRegisters();
 
     CHECK3( scError == SYMCRYPT_NO_ERROR, "Error during reseed, len=%lld", (ULONGLONG) cbEntropy );
 
@@ -2095,10 +2065,8 @@ template<>
 VOID
 RngSp800_90Imp<ImpSc, AlgAesCtrF142>::generate(  _Out_writes_( cbData ) PBYTE pbData, SIZE_T cbData )
 {
-
-    initXmmRegisters();
     SymCryptRngAesFips140_2Generate( &state.state, pbData, cbData );
-    verifyXmmRegisters();
+    verifyVectorRegisters();
 }
 
 
@@ -2201,9 +2169,8 @@ ParallelHashImp<ImpSc, AlgParallelSha256>::init( SIZE_T nHashes )
     CHECK( nHashes <= MAX_PARALLEL_HASH_STATES, "Too many hash states requested" );
     state.nHashes = nHashes;
 
-    initYmmRegisters();
     SymCryptParallelSha256Init( &state.sc[0], nHashes );
-    verifyYmmRegisters();
+    verifyVectorRegisters();
 }
 
 template<>
@@ -2237,14 +2204,13 @@ ParallelHashImp<ImpSc, AlgParallelSha256>::process(
     scratch[scratchOffset + nScratch] = sentinel;
 
     SYMCRYPT_ASSERT( state.nHashes <= MAX_PARALLEL_HASH_STATES );
-    initYmmRegisters();
     scError = SymCryptParallelSha256Process(    &state.sc[0],
                                                 state.nHashes,
                                                 &op[0],
                                                 nOperations,
                                                 &scratch[scratchOffset],
                                                 nScratch );
-    verifyYmmRegisters();
+    verifyVectorRegisters();
     CHECK( scError == SYMCRYPT_NO_ERROR, "Parallel SHA256 returned an error" );
     CHECK( scratch[scratchOffset + nScratch] == sentinel, "Parallel SHA256 used too much scratch space" );
 }
@@ -2360,9 +2326,8 @@ ParallelHashImp<ImpSc, AlgParallelSha384>::init( SIZE_T nHashes )
 {
     CHECK( nHashes <= MAX_PARALLEL_HASH_STATES, "Too many hash states requested" );
     state.nHashes = nHashes;
-    initYmmRegisters();
     SymCryptParallelSha384Init( &state.sc[0], nHashes );
-    verifyYmmRegisters();
+    verifyVectorRegisters();
 }
 
 template<>
@@ -2396,14 +2361,13 @@ ParallelHashImp<ImpSc, AlgParallelSha384>::process(
     scratch[scratchOffset + nScratch] = sentinel;
 
     SYMCRYPT_ASSERT( state.nHashes <= MAX_PARALLEL_HASH_STATES );
-    initYmmRegisters();
     scError = SymCryptParallelSha384Process(    &state.sc[0],
                                                 state.nHashes,
                                                 &op[0],
                                                 nOperations,
                                                 &scratch[scratchOffset],
                                                 nScratch );
-    verifyYmmRegisters();
+    verifyVectorRegisters();
     CHECK( scError == SYMCRYPT_NO_ERROR, "Parallel SHA384 returned an error" );
     CHECK( scratch[scratchOffset + nScratch] == sentinel, "Parallel SHA384 used too much scratch space" );
 }
@@ -2519,9 +2483,8 @@ ParallelHashImp<ImpSc, AlgParallelSha512>::init( SIZE_T nHashes )
 {
     CHECK( nHashes <= MAX_PARALLEL_HASH_STATES, "Too many hash states requested" );
     state.nHashes = nHashes;
-    initYmmRegisters();
     SymCryptParallelSha512Init( &state.sc[0], nHashes );
-    verifyYmmRegisters();
+    verifyVectorRegisters();
 }
 
 template<>
@@ -2555,14 +2518,13 @@ ParallelHashImp<ImpSc, AlgParallelSha512>::process(
     scratch[scratchOffset + nScratch] = sentinel;
 
     SYMCRYPT_ASSERT( state.nHashes <= MAX_PARALLEL_HASH_STATES );
-    initYmmRegisters();
     scError = SymCryptParallelSha512Process(    &state.sc[0],
                                                 state.nHashes,
                                                 &op[0],
                                                 nOperations,
                                                 &scratch[scratchOffset],
                                                 nScratch );
-    verifyYmmRegisters();
+    verifyVectorRegisters();
     CHECK( scError == SYMCRYPT_NO_ERROR, "Parallel SHA512 returned an error" );
     CHECK( scratch[scratchOffset + nScratch] == sentinel, "Parallel SHA512 used too much scratch space" );
 }
@@ -2656,9 +2618,8 @@ XtsImp<ImpSc, AlgXtsAes>::setKey( PCBYTE pbKey, SIZE_T cbKey )
 {
     SYMCRYPT_ERROR scError;
 
-    initXmmRegisters();
     scError = SymCryptXtsAesExpandKey( &state.key, pbKey, cbKey );
-    verifyXmmRegisters();
+    verifyVectorRegisters();
 
     return scError == SYMCRYPT_NO_ERROR ? 0 : STATUS_NOT_SUPPORTED;
 }
@@ -2672,14 +2633,13 @@ XtsImp<ImpSc, AlgXtsAes>::encrypt(
         _Out_writes_( cbData )          PBYTE       pbDst,
                                         SIZE_T      cbData )
 {
-    initYmmRegisters();
     SymCryptXtsAesEncrypt( &state.key,
                             cbDataUnit,
                             tweak,
                             pbSrc,
                             pbDst,
                             cbData );
-    verifyYmmRegisters();
+    verifyVectorRegisters();
 }
 
 template<>
@@ -2691,14 +2651,13 @@ XtsImp<ImpSc, AlgXtsAes>::decrypt(
         _Out_writes_( cbData )          PBYTE       pbDst,
                                         SIZE_T      cbData )
 {
-    initYmmRegisters();
     SymCryptXtsAesDecrypt( &state.key,
                             cbDataUnit,
                             tweak,
                             pbSrc,
                             pbDst,
                             cbData );
-    verifyYmmRegisters();
+    verifyVectorRegisters();
 }
 
 

@@ -9,31 +9,4 @@
 
 SYMCRYPT_ENVIRONMENT_WINDOWS_USERMODE_LEGACY;
 
-#include "main_exe_common.cpp"
-
-int __cdecl
-main( int argc, _In_reads_( argc ) char * argv[] )
-{
-
-    initTestInfrastructure( argc, argv );
-
-    addAllAlgs();
-
-    if (g_profile)
-    {
-        runProfiling();
-    }
-    else
-    {
-        runFunctionalTests();
-
-        testMultiThread();
-
-        runPerfTests();
-    }
-
-    exitTestInfrastructure();
-
-    return 0;
-}
-
+#include "main_exe_common_windows.cpp"

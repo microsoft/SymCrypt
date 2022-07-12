@@ -1076,7 +1076,6 @@ std::unique_ptr<std::vector<AlgType *>> getAlgorithmsOfOneType( );
 extern BOOLEAN     TestSelftestsEnabled;
 extern BOOLEAN     TestSaveXmmEnabled;
 extern BOOLEAN     TestSaveYmmEnabled;
-extern BOOLEAN     TestSaveYmmFallback;
 
 extern ULONGLONG   TestFatalCount;
 extern ULONGLONG   TestErrorInjectionCount;
@@ -1085,21 +1084,14 @@ extern ULONG       TestErrorInjectionProb;
 
 extern BYTE TestErrorInjectionSeed[ SYMCRYPT_SHA1_RESULT_SIZE ];
 
-#if SYMCRYPT_CPU_X86
+#if SYMCRYPT_CPU_X86 | SYMCRYPT_CPU_AMD64
 //
-// These Save/Restore functions are used by user mode SaveXmm code, plus the testing code.
+// These Save/Restore functions are used by user mode SaveXmm and Ymm code, plus the testing code.
 //
 extern "C" {
 VOID SYMCRYPT_CALL SymCryptEnvUmSaveXmmRegistersAsm( __m128i * buffer );
 VOID SYMCRYPT_CALL SymCryptEnvUmRestoreXmmRegistersAsm( __m128i * buffer );
-}
-#endif
 
-#if SYMCRYPT_CPU_X86 | SYMCRYPT_CPU_AMD64
-//
-// These Save/Restore functions are used by user mode SaveXmm code, plus the testing code.
-//
-extern "C" {
 VOID SYMCRYPT_CALL SymCryptEnvUmSaveYmmRegistersAsm( __m256i * buffer );
 VOID SYMCRYPT_CALL SymCryptEnvUmRestoreYmmRegistersAsm( __m256i * buffer );
 }
@@ -1202,16 +1194,10 @@ CHAR charToLower( CHAR c );
 extern double g_wipePerf[PERF_WIPE_MAX_SIZE+1][PERF_WIPE_N_OFFSETS];
 
 VOID
-initXmmRegisters();
+initVectorRegisters();
 
 VOID
-verifyXmmRegisters();
-
-VOID
-initYmmRegisters();
-
-VOID
-verifyYmmRegisters();
+verifyVectorRegisters();
 
 
 VOID
