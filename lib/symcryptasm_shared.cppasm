@@ -34,7 +34,7 @@ include ksamd64.inc
 
 #define FILE_END()
 #define ALIGN(__alignment)              .align __alignment
-#define GET_SYMBOL_ADDRESS(__symbol)    __symbol+rip
+#define GET_SYMBOL_ADDRESS(__symbol)    __symbol@plt+rip
 #define HEX(__constant)                 0x##__constant
 #define TEXTAREA()
 #define EXTERN(__label)

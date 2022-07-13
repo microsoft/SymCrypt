@@ -8,8 +8,9 @@
 #include "precomp.h"
 #include "rng.h"
 
-// Forward declare, get host entropy from urandom
-int oe_sgx_get_additional_host_entropy(uint8_t* data, size_t size);
+// Forward declaration of OpenEnclave function to get host entropy.
+// This is dynamically linked at runtime by OE.
+__attribute__((weak)) int oe_sgx_get_additional_host_entropy(uint8_t* data, size_t size);
 
 // RDSEED is our SP 800-90B compliant entropy source.
 VOID
