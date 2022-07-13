@@ -9,4 +9,6 @@
 
 SYMCRYPT_ENVIRONMENT_DEFS( Unittest );
 
+#define SYMCRYPT_TEST_SELFTEST (1)
+
 #include "main_exe_common_windows.cpp"

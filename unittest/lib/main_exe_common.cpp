@@ -92,7 +92,9 @@ main( int argc, _In_reads_( argc ) char * argv[] )
 
         if (!g_measure_specific_sizes)
         {
+#if SYMCRYPT_TEST_SELFTEST
             testSelftest();
+#endif
 
             // Disable Vector save tests for multithreaded tests
             TestSaveXmmEnabled = FALSE;

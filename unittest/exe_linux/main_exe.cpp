@@ -86,4 +86,6 @@ VOID testMultiThread()
 {
 }
 
+#define SYMCRYPT_TEST_SELFTEST (1)
+
 #include "main_exe_common.cpp"

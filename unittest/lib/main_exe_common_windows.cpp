@@ -52,7 +52,7 @@ verifyVectorRegisters()
     // The CRT is also free to trash the state semi-arbitrarily (observationally the CRT tends to
     // only trash Xmm0 - Xmm5, same as AMD64, but it is free to use all Xmm registers)
     //
-    if (TestSaveXmmEnabled && SYMCRYPT_CPU_FEATURES_PRESENT(SYMCRYPT_CPU_FEATURE_SSE2) && !SYMCRYPT_CPU_FEATURES_PRESENT(SYMCRYPT_CPU_FEATURE_SAVEXMM_NOFAIL))
+    else if (TestSaveXmmEnabled && SYMCRYPT_CPU_FEATURES_PRESENT(SYMCRYPT_CPU_FEATURE_SSE2) && !SYMCRYPT_CPU_FEATURES_PRESENT(SYMCRYPT_CPU_FEATURE_SAVEXMM_NOFAIL))
     {
         memset( g_xmmTestState, 0, sizeof( g_xmmTestState ) );
         SymCryptEnvUmSaveXmmRegistersAsm(g_xmmTestState);
@@ -89,7 +89,7 @@ initVectorRegisters()
         verifyVectorRegisters();
     }
 #if SYMCRYPT_CPU_AMD64
-    if (TestSaveXmmEnabled && SYMCRYPT_CPU_FEATURES_PRESENT(SYMCRYPT_CPU_FEATURE_SSE2) && !SYMCRYPT_CPU_FEATURES_PRESENT(SYMCRYPT_CPU_FEATURE_SAVEXMM_NOFAIL))
+    else if (TestSaveXmmEnabled && SYMCRYPT_CPU_FEATURES_PRESENT(SYMCRYPT_CPU_FEATURE_SSE2) && !SYMCRYPT_CPU_FEATURES_PRESENT(SYMCRYPT_CPU_FEATURE_SAVEXMM_NOFAIL))
     {
         //
         // Do the memsets outside the save area as it might use Xmm registers
