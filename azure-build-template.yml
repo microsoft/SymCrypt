@@ -164,10 +164,6 @@ steps:
             cd bin/exe/${{parameters.arch}}/${{parameters.env}}
             qemu-aarch64 -L /usr/aarch64-linux-gnu/ ./symcryptmoduletest_linux
           displayName: 'Execute generic module tests'
-        - script: |
-            cd bin/exe/${{parameters.arch}}/${{parameters.env}}
-            qemu-aarch64 -L /usr/aarch64-linux-gnu/ ./symcryptmoduletest_embedded
-          displayName: 'Execute embedded module tests'
     # Execute Generic unit tests in CI and in PRs to publish
     - ${{ if eq(parameters.env, 'Generic') }}:
       - script: |
