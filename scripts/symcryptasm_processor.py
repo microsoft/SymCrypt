@@ -19,7 +19,12 @@ appropriate to enable this effort.
 
 Normally the processing of symcryptasm files takes place in 2 passes. The first pass is performed by
 this symcryptasm_processor.py script, which does the more stateful processing, outputting a .cppasm
-file.
+file. If the processed symcryptasm file includes other files via the INCLUDE directive, the contents
+of the included files are merged at their point of inclusion to generate a single expanded symcryptasm 
+file which is saved with a .symcryptasmexp extension to the output folder. For symcryptasm files which 
+do not include other files, there's no corresponding .symcryptasmexp file as it would be identical to 
+the source file.
+
 The .cppasm files are further processed by the C preprocessor to do more simple stateless text
 substitutions, outputting a .asm file which can be assembled by the target assembler for the target
 environment.
@@ -41,7 +46,7 @@ the notation R<n> to denote registers in the symcryptasm register naming scheme.
 
 
 A leaf function (a function which does not call another function) begins with an invocation of the
-FUNCTION_START macro which currently takes 3 arguments:
+FUNCTION_START macro which currently takes 3 mandatory and 2 optional arguments:
 1) The function name
     This must be the name that matches the corresponding declaration of the function
 2) The number of arguments (arg_count) that the function takes
@@ -53,6 +58,20 @@ FUNCTION_START macro which currently takes 3 arguments:
     if the assembly does not use some tail of the arguments
 3) The number of registers (reg_count) that the function uses
     These registers will be accessible as R0..R<reg_count-1>
+4) Stack allocation size (stack_alloc_size) for local variables (amd64 only)
+    This parameter is optional, default = 0 if not provided.
+    Allows reserving space for local variables on the stack. This value will be rounded to nearest
+    multiple of 8 and the stack pointer will be aligned on 16B boundary. The allocated space does
+    not include the space needed to save non-volatile registers or shadow space and for function use only.
+    If the function is not nested, rsp will point to the beginning of the buffer after the prologue.
+    Otherwise, rsp will point to shadow space, which is right below the allocated buffer on the stack.
+    In this case, the function has to access the local buffer by using an offset equal to the size of the
+    shadow space (32B).
+5) The number of Xmm registers (xmm_reg_count) that the function uses (amd64 only)
+    This parameter is optional and can take on values [0,16], default = 0 if not provided.
+    If a non-zero value is specified, used registers are assumed to be Xmm0..Xmm<xmm_reg_count-1>
+    When xmm_reg_count > 6, used Xmm registers starting from Xmm6 will be saved on the
+    stack on amd64 Windows environment.
 
 A leaf function ends with the FUNCTION_END macro, which also takes the function name
     (a FUNCTION_END macro's function name must match the preceding FUNCTION_START's name)
@@ -75,20 +94,51 @@ number of macros argument names. It ends with MACRO_END.
 
 ### amd64 ###
 We allow up to 15 registers to be addressed, with the names:
-Q0-Q15 (64-bit registers), D0-D15 (32-bit registers), W0-W15 (16-bit registers), and B0-B15 (8-bit
+Q0-Q14 (64-bit registers), D0-D14 (32-bit registers), W0-W14 (16-bit registers), and B0-B14 (8-bit
 registers)
 Xmm0-Xmm5 registers may be used directly in assembly too, as in both amd64 calling conventions we
-currently support, these registers are volatile so do not need any special handling
+currently support, these registers are volatile so do not need any special handling. If the number
+of used Xmm registers specified in FUNCTION_START macro is greater than 6, those registers among
+Xmm6..Xmm15 are saved/restored on amd64 Windows. There is no save/restore for Xmm16-Xmm31 as of now.
 
 On function entry we insert a prologue which ensures:
 Q0 is the result register (the return value of the function, and the low half of a multiplication)
 Q1-Q6 are the first 6 arguments passed to the function
 
 Additionally, there is a special case for functions using mul or mulx instructions, as these
-instructions make rdx a special register. Functions using these instructions may address Q0-Q14,
+instructions make rdx a special register. Functions using these instructions may address Q0-Q13,
 and QH. As rdx is used to pass arguments, its value is moved to another register in the function
 prologue. The MUL_FUNCTION_START and MUL_FUNCTION_END macros are used in this case.
     We currently do not support nested mul functions, as we have none of them.
+
+Stack layout for amd64 is as follows. Xmm registers are volatile and not saved on Linux.
+                         
+            Memory          Exists if
+    |-------------------|
+    |                   | 
+    |   Shadow space    | 
+    |                   |
+    |-------------------|
+    |   Return address  | 
+    |-------------------|
+    |   Non-volatile    |
+    |   general purpose |   reg_count > volatile_registers
+    |   registers       |
+    |-------------------|
+    |   Non-volatile    |
+    |   Xmm registers   |   xmm_reg_count > 6 and Windows
+    |  (Windows only)   |
+    |-------------------|---> 16B aligned
+    |                   |
+    |   Local variables |   stack_alloc_size > 0
+    |                   |
+    |-------------------|---> 16B aligned
+    |                   |
+    |   Shadow space    |   nested
+    | (nested function) |
+    |-------------------|---> 16B aligned
+
+
 
 ### arm64 ###
 We allow up to 23 registers to be addressed, with the names:
@@ -104,6 +154,7 @@ X_1-X_7 are the arguments 2-8 passed to the function
 import re
 import types
 import logging
+import os
 
 class Register:
     """A class to represent registers"""
@@ -227,82 +278,150 @@ MAPPING_AMD64_MSFT = {
     # currently not mapping rsp
 }
 
-def calc_amd64_shadow_space_allocation_size(self, reg_count):
-    # If we are a nested function, we must allocate 32B of shadow space on the stack, and ensure the
-    # stack pointer is aligned to 16B
-    # Before the prologue we have rsp % 16 == 8 - as the call pushed an 8B return address on an
-    # aligned stack
-    alignment = 8
-    # We then pushed some number of additional 8B registers onto the stack
-    if reg_count > self.volatile_registers:
-        alignment = (alignment + (8 * (self.volatile_registers - reg_count))) % 16
-    shadow_space_allocation_size = 32
-    if alignment == 8:
-        # possibly allocate 8 more bytes to align the stack to 16B
-        shadow_space_allocation_size += 8
-    return shadow_space_allocation_size
 
-def gen_prologue_amd64_msft(self, arg_count, reg_count, mul_fixup="", nested=False):
+def calc_amd64_stack_allocation_sizes(self, reg_count, stack_alloc_size, xmm_reg_count, nested):
+    """ Calculate the sizes of different regions on the stack for adjusting the stack pointer
+        in the function prologue/epilogue accordingly.
+
+        Given the number of general purpose and Xmm registers used by a function and the amount of
+        local buffer it requires, this function calculates and returns as a tuple:
+            1 - reg_save_size : space required to save general purpose registers
+            2 - xmm_save_size : space required to save Xmm registers if any, including 16B alignment
+                                padding if necessary
+            3 - stack_alloc_aligned_size : space required to store local variables based on the requested
+                                buffer size in stack_alloc_size, rounded to multiple of 8 and 16B aligned
+            4 - shadow_space_allocation_size : space required for shadow store/home location if the function
+                                is nested, including 16B alignment padding if necesssary
+    """
+
+    # Keep track of stack alignment during each step
+    # We assume rsp % 16 is either 0 or 8 all the time
+    # Initially we have rsp % 16 = 8 because return address is pushed on 16B aligned stack
+    aligned_on_16B = False
+
+    # Calculate the space needed to save general purpose registers on the stack
+    saved_reg_gp = 0 if reg_count <= self.volatile_registers else (reg_count - self.volatile_registers)
+    reg_save_size = 8 * saved_reg_gp
+    if saved_reg_gp % 2:
+        aligned_on_16B = True
+
+    # Calculate the space needed to save Xmm registers on the stack
+    saved_reg_xmm = 0 if xmm_reg_count <= 6 else (xmm_reg_count - 6)    
+    xmm_save_size = 16 * saved_reg_xmm
+    if xmm_save_size > 0 and not aligned_on_16B:
+        xmm_save_size += 8
+        aligned_on_16B = True
+
+    # Calculate space needed for local buffer
+    # Round the requested buffer size to multiple of 8 and align it on 16B boundary
+    stack_alloc_aligned_size = 0
+    if stack_alloc_size > 0:
+        stack_alloc_qwords = (stack_alloc_size + 7) // 8
+        stack_alloc_adjusted_size = 8 * stack_alloc_qwords
+        stack_alloc_aligned_size = stack_alloc_adjusted_size
+        if aligned_on_16B ^ ((stack_alloc_aligned_size % 16) == 0):
+            stack_alloc_aligned_size += 8
+            aligned_on_16B = True
+
+    # If we are a nested function, we need to align the stack to 16B, and allocate space for up to 4
+    # memory slots not in the redzone. We can use the same logic as on the MSFT x64 side to allocate
+    # our own space for 32B of local variables (whereas on the MSFT side, we use this for allocating
+    # space for a function we are about to call)
+    shadow_space_allocation_size = 32 + 8 * (not aligned_on_16B) if nested else 0
+
+    return reg_save_size, xmm_save_size, stack_alloc_aligned_size, shadow_space_allocation_size
+
+
+
+def gen_prologue_amd64_msft(self, arg_count, reg_count, stack_alloc_size, xmm_reg_count, mul_fixup="", nested=False):
+
     prologue = "\n"
+
+    # Calculate the sizes of the buffers needed for saving registers, local variable buffer and shadow space. 
+    # Each of the sections other than general purpose registers are aligned on 16B boundary and some of them
+    # may include an 8B padding in their size.
+    reg_save_size, xmm_save_size, stack_alloc_aligned_size, shadow_space_allocation_size = calc_amd64_stack_allocation_sizes(
+        self, reg_count, stack_alloc_size, xmm_reg_count, nested)
+
+    # Save general purpose registers
     if reg_count > self.volatile_registers:
         prologue += "rex_push_reg Q%s\n" % self.volatile_registers
         for i in range(self.volatile_registers+1, reg_count):
             prologue += "push_reg Q%s\n" % i
+
+    # Allocate space on the stack
+    stack_total_size = xmm_save_size + stack_alloc_aligned_size + shadow_space_allocation_size
+    if stack_total_size > 0:
+        prologue += "alloc_stack %d\n" % stack_total_size
+
+    # Save Xmm registers
+    if xmm_save_size > 0:
+        for i in range(6, xmm_reg_count):
+            prologue += "save_xmm128 xmm%d, %d\n" % (i, shadow_space_allocation_size + stack_alloc_aligned_size + 16 * (i - 6))
+
+    if prologue != "\n":
         prologue += "\nEND_PROLOGUE\n\n"
-
-    shadow_space_allocation_size = 0
-
-    if nested:
-        shadow_space_allocation_size = calc_amd64_shadow_space_allocation_size(self, reg_count)
-        prologue += "sub rsp, %d // allocate shadow space and align stack\n\n" % shadow_space_allocation_size
 
     prologue += mul_fixup
 
     # put additional arguments into Q5-Q6 (we do not support more than 6 arguments for now)
     # stack_offset to get the 5th argument is:
-    # 32B of shadow space + 8B for return address + (8*#pushed registers in prologue) + shadow_space_allocation_size
-    stack_offset = 32 + 8 + (8*(reg_count-self.volatile_registers)) + shadow_space_allocation_size
+    # 32B of shadow space + 8B return address + (8*#pushed registers in prologue) + (16*#saved xmm registers in prologue) + local buffer size + shadow_space_allocation_size
+    stack_offset = 32 + 8 + reg_save_size + xmm_save_size + stack_alloc_aligned_size + shadow_space_allocation_size
     for i in range(self.argument_registers+1, arg_count+1):
         prologue += "mov Q%s, [rsp + %d]\n" % (i, stack_offset)
         stack_offset += 8
     return prologue
 
-def gen_prologue_amd64_msft_mul(self, arg_count, reg_count):
-    return gen_prologue_amd64_msft(self, arg_count, reg_count, "mov Q2, QH\n")
+def gen_prologue_amd64_msft_mul(self, arg_count, reg_count, stack_alloc_size, xmm_reg_count):
+    return gen_prologue_amd64_msft(self, arg_count, reg_count, stack_alloc_size, xmm_reg_count, mul_fixup = "mov Q2, QH\n", nested = False)
 
-def gen_prologue_amd64_msft_nested(self, arg_count, reg_count):
-    return gen_prologue_amd64_msft(self, arg_count, reg_count, "", nested=True)
+def gen_prologue_amd64_msft_nested(self, arg_count, reg_count, stack_alloc_size, xmm_reg_count):
+    return gen_prologue_amd64_msft(self, arg_count, reg_count, stack_alloc_size, xmm_reg_count, mul_fixup = "", nested = True)
 
-def gen_epilogue_amd64_msft(self, arg_count, reg_count, nested=False):
-    epilogue = ""
+def gen_epilogue_amd64_msft(self, arg_count, reg_count, stack_alloc_size, xmm_reg_count, nested = False):
+    
+    epilogue = "\n"
 
-    if nested:
-        shadow_space_allocation_size = calc_amd64_shadow_space_allocation_size(self, reg_count)
-        epilogue += "add rsp, %d // deallocate shadow space and align stack\n\n" % shadow_space_allocation_size
+    reg_save_size, xmm_save_size, stack_alloc_aligned_size, shadow_space_allocation_size = calc_amd64_stack_allocation_sizes(
+        self, reg_count, stack_alloc_size, xmm_reg_count, nested)
+    
+    # Restore non-volatile Xmm registers
+    if xmm_save_size > 0:
+        for i in range(6, xmm_reg_count):
+            epilogue += "movdqa xmm%d, xmmword ptr [rsp + %d]\n" % (i, shadow_space_allocation_size + stack_alloc_aligned_size + 16 * (i - 6))
+
+    # Restore stack pointer
+    stack_total_size = xmm_save_size + stack_alloc_aligned_size + shadow_space_allocation_size
+    if stack_total_size > 0:
+        epilogue += "add rsp, %d\n" % stack_total_size
+
+    epilogue += "BEGIN_EPILOGUE\n"
 
     if reg_count > self.volatile_registers:
-        epilogue += "BEGIN_EPILOGUE\n"
         for i in reversed(range(self.volatile_registers, reg_count)):
             epilogue += "pop Q%s\n" % i
+
     epilogue += "ret\n"
     return epilogue
 
-def gen_epilogue_amd64_msft_nested(self, arg_count, reg_count):
-    return gen_epilogue_amd64_msft(self, arg_count, reg_count, nested=True)
+def gen_epilogue_amd64_msft_nested(self, arg_count, reg_count, stack_alloc_size, xmm_reg_count):
+    return gen_epilogue_amd64_msft(self, arg_count, reg_count, stack_alloc_size, xmm_reg_count, nested = True)
 
-def gen_get_memslot_offset_amd64_msft(self, slot, arg_count, reg_count, nested=False):
+def gen_get_memslot_offset_amd64_msft(self, slot, arg_count, reg_count, stack_alloc_size, xmm_reg_count, nested = False):
     # only support 4 memory slots for now (in shadow space)
     if(slot >= 4):
         logging.error("symcryptasm currently only support 4 memory slots! (requested slot%d)" % slot)
         exit(1)
-    # 8B for return address + (8*#pushed registers in prologue)
-    stack_offset = 8 + (8*(reg_count-self.volatile_registers))
-    if nested:
-        stack_offset += calc_amd64_shadow_space_allocation_size(self, reg_count)
+
+    # 8B for return address + (8*#pushed registers in prologue) + (16*#saved XMM registers) + local buffer size + shadow space
+    reg_save_size, xmm_save_size, stack_alloc_aligned_size, shadow_space_allocation_size = calc_amd64_stack_allocation_sizes(
+        self, reg_count, stack_alloc_size, xmm_reg_count, nested)
+    stack_offset = 8 + reg_save_size + xmm_save_size + stack_alloc_aligned_size + shadow_space_allocation_size
     return "%d /*MEMSLOT%d*/" % (stack_offset+(8*slot), slot)
 
-def gen_get_memslot_offset_amd64_msft_nested(self, slot, arg_count, reg_count):
-    return gen_get_memslot_offset_amd64_msft(self, slot, arg_count, reg_count, nested=True)
+def gen_get_memslot_offset_amd64_msft_nested(self, slot, arg_count, reg_count, stack_alloc_size, xmm_reg_count):
+    return gen_get_memslot_offset_amd64_msft(self, slot, arg_count, reg_count, stack_alloc_size, xmm_reg_count, nested = True)
 
 CALLING_CONVENTION_AMD64_MSFT = CallingConvention(
     "msft_x64", "amd64", MAPPING_AMD64_MSFT, 6, 4, 7,
@@ -334,20 +453,23 @@ MAPPING_AMD64_SYSTEMV = {
     # currently not mapping rsp
 }
 
-def gen_prologue_amd64_systemv(self, arg_count, reg_count, mul_fixup="", nested=False):
+def gen_prologue_amd64_systemv(self, arg_count, reg_count, stack_alloc_size, xmm_reg_count, mul_fixup = "", nested = False):
+    
+    # Calculate the sizes required for each section
+    # We need to call with xmm_reg_count=0 to avoid allocation/alignment for saving Xmm registers since they're
+    # volatile for this calling convention.
+    reg_save_size, xmm_save_size, stack_alloc_aligned_size, shadow_space_allocation_size = calc_amd64_stack_allocation_sizes(
+        self, reg_count, stack_alloc_size, 0, nested)
+
     # push volatile registers onto the stack
     prologue = "\n"
     if reg_count > self.volatile_registers:
         for i in range(self.volatile_registers, reg_count):
             prologue += "push Q%s\n" % i
 
-    # If we are a nested function, we need to align the stack to 16B, and allocate space for up to 4
-    # memory slots not in the redzone. We can use the same logic as on the MSFT x64 side to allocate
-    # our own space for 32B of local variables (whereas on the MSFT side, we use this for allocating
-    # space for a function we are about to call)
-    if nested:
-        allocation_size = calc_amd64_shadow_space_allocation_size(self, reg_count)
-        prologue += "sub rsp, %d // allocate memslot space and align stack\n\n" % allocation_size
+    # update stack pointer if local buffer size is nonzero or shadow space exists
+    if stack_alloc_aligned_size + shadow_space_allocation_size > 0:
+        prologue += "sub rsp, %s // allocate local buffer, memslot space and align stack\n\n" % str(stack_alloc_aligned_size + shadow_space_allocation_size)
 
     prologue += mul_fixup
 
@@ -362,18 +484,25 @@ def gen_prologue_amd64_systemv(self, arg_count, reg_count, mul_fixup="", nested=
 
     return prologue
 
-def gen_prologue_amd64_systemv_mul(self, arg_count, reg_count):
-    return gen_prologue_amd64_systemv(self, arg_count, reg_count, "mov Q3, QH\n")
+def gen_prologue_amd64_systemv_mul(self, arg_count, reg_count, stack_alloc_size, xmm_reg_count):
+    return gen_prologue_amd64_systemv(self, arg_count, reg_count, stack_alloc_size, xmm_reg_count, mul_fixup = "mov Q3, QH\n", nested = False)
 
-def gen_prologue_amd64_systemv_nested(self, arg_count, reg_count):
-    return gen_prologue_amd64_systemv(self, arg_count, reg_count, "", nested=True)
+def gen_prologue_amd64_systemv_nested(self, arg_count, reg_count, stack_alloc_size, xmm_reg_count):
+    return gen_prologue_amd64_systemv(self, arg_count, reg_count, stack_alloc_size, xmm_reg_count, mul_fixup = "", nested = True)
 
-def gen_epilogue_amd64_systemv(self, arg_count, reg_count, nested=False):
+def gen_epilogue_amd64_systemv(self, arg_count, reg_count, stack_alloc_size, xmm_reg_count, nested = False):
+    
     epilogue = ""
 
-    if nested:
-        allocation_size = calc_amd64_shadow_space_allocation_size(self, reg_count)
-        epilogue += "add rsp, %d // deallocate memslot space and align stack\n\n" % allocation_size
+    # Calculate the sizes required for each section
+    # We need to call with xmm_reg_count=0 to avoid allocation/alignment for saving Xmm registers since they're
+    # volatile for this calling convention.
+    reg_save_size, xmm_save_size, stack_alloc_aligned_size, shadow_space_allocation_size = calc_amd64_stack_allocation_sizes(
+        self, reg_count, stack_alloc_size, 0, nested)
+
+    # update stack pointer if local buffer size is nonzero or shadow space exists
+    if stack_alloc_aligned_size + shadow_space_allocation_size > 0:
+        epilogue += "add rsp, %s // deallocate local buffer, memslot space and align stack\n\n" % str(stack_alloc_aligned_size + shadow_space_allocation_size)
 
     if reg_count > self.volatile_registers:
         for i in reversed(range(self.volatile_registers, reg_count)):
@@ -381,10 +510,10 @@ def gen_epilogue_amd64_systemv(self, arg_count, reg_count, nested=False):
     epilogue += "ret\n"
     return epilogue
 
-def gen_epilogue_amd64_systemv_nested(self, arg_count, reg_count):
-    return gen_epilogue_amd64_systemv(self, arg_count, reg_count, nested=True)
+def gen_epilogue_amd64_systemv_nested(self, arg_count, reg_count, stack_alloc_size, xmm_reg_count):
+    return gen_epilogue_amd64_systemv(self, arg_count, reg_count, stack_alloc_size, xmm_reg_count, nested=True)
 
-def gen_get_memslot_offset_amd64_systemv(self, slot, arg_count, reg_count, nested=False):
+def gen_get_memslot_offset_amd64_systemv(self, slot, arg_count, reg_count, stack_alloc_size, xmm_reg_count, nested = False):
     # only support 4 memory slots for now
     if(slot >= 4):
         logging.error("symcryptasm currently only support 4 memory slots! (requested slot%d)" % slot)
@@ -396,8 +525,8 @@ def gen_get_memslot_offset_amd64_systemv(self, slot, arg_count, reg_count, neste
         offset = 8*slot
     return "%d /*MEMSLOT%d*/" % (offset, slot)
 
-def gen_get_memslot_offset_amd64_systemv_nested(self, slot, arg_count, reg_count):
-    return gen_get_memslot_offset_amd64_systemv(self, slot, arg_count, reg_count, nested=True)
+def gen_get_memslot_offset_amd64_systemv_nested(self, slot, arg_count, reg_count, stack_alloc_size, xmm_reg_count):
+    return gen_get_memslot_offset_amd64_systemv(self, slot, arg_count, reg_count, stack_alloc_size, xmm_reg_count, nested=True)
 
 CALLING_CONVENTION_AMD64_SYSTEMV = CallingConvention(
     "amd64_systemv", "amd64", MAPPING_AMD64_SYSTEMV, 6, 6, 9,
@@ -472,7 +601,7 @@ MAPPING_ARM64_ARM64ECMSFT = {
     # R28 is reserved in ARM64EC
 }
 
-def gen_prologue_aapcs64(self, arg_count, reg_count):
+def gen_prologue_aapcs64(self, arg_count, reg_count, stack_alloc_size, xmm_reg_count):
     prologue = ""
 
     if reg_count > self.volatile_registers:
@@ -481,7 +610,7 @@ def gen_prologue_aapcs64(self, arg_count, reg_count):
 
     return prologue
 
-def gen_epilogue_aapcs64(self, arg_count, reg_count):
+def gen_epilogue_aapcs64(self, arg_count, reg_count, stack_alloc_size, xmm_reg_count):
     epilogue = ""
 
     if reg_count > self.volatile_registers:
@@ -492,7 +621,7 @@ def gen_epilogue_aapcs64(self, arg_count, reg_count):
 
     return epilogue
 
-def gen_prologue_arm64ec(self, arg_count, reg_count):
+def gen_prologue_arm64ec(self, arg_count, reg_count, stack_alloc_size, xmm_reg_count):
     prologue = ""
 
     if reg_count > self.volatile_registers:
@@ -512,7 +641,7 @@ def gen_prologue_arm64ec(self, arg_count, reg_count):
 
     return prologue
 
-def gen_epilogue_arm64ec(self, arg_count, reg_count):
+def gen_epilogue_arm64ec(self, arg_count, reg_count, stack_alloc_size, xmm_reg_count):
     epilogue = ""
 
     if reg_count > self.volatile_registers:
@@ -536,7 +665,7 @@ def gen_epilogue_arm64ec(self, arg_count, reg_count):
 
     return epilogue
 
-def gen_get_memslot_offset_arm64(self, slot, arg_count, reg_count, nested=False):
+def gen_get_memslot_offset_arm64(self, slot, arg_count, reg_count, stack_alloc_size, xmm_reg_count, nested=False):
     logging.error("symcryptasm currently does not support memory slots for arm64!")
     exit(1)
 
@@ -591,6 +720,12 @@ def gen_function_start_defines(architecture, mapping, arg_count, reg_count):
 def gen_function_end_defines(architecture, mapping, arg_count, reg_count):
     return gen_function_defines(architecture, mapping, arg_count, reg_count, start=False)
 
+def replace_identifier(arg, newarg, line):
+    """Replaces all instances of identifier arg with newarg in string line."""
+    argmatch = r"(^|[^a-zA-Z0-9_])" + arg + r"(?![a-zA-Z0-9_])"
+    line = re.sub(argmatch, r"\1" + newarg, line)
+    return line
+
 MASM_FRAMELESS_FUNCTION_ENTRY   = "LEAF_ENTRY %s"
 MASM_FRAMELESS_FUNCTION_END     = "LEAF_END %s"
 MASM_FRAME_FUNCTION_ENTRY       = "NESTED_ENTRY %s"
@@ -604,11 +739,14 @@ ARMASM64_FUNCTION_TEMPLATE  = "    %s\n"
 GAS_FUNCTION_ENTRY    = "%s: .global %s\n"
 GAS_FUNCTION_END      = ""
 
-def generate_prologue(assembler, calling_convention, function_name, arg_count, reg_count, nested):
+def generate_prologue(assembler, calling_convention, function_name, arg_count, reg_count, stack_alloc_size, xmm_reg_count, nested):
     function_entry = None
     if assembler in ["masm", "armasm64"]:
         # need to identify and mark up frame functions in masm and armasm64
-        if nested or (reg_count > calling_convention.volatile_registers):
+        # for masm we also consider Xmm register and local buffer use (stack_alloc_size)
+        if assembler == "masm" and (nested or (reg_count > calling_convention.volatile_registers) or (xmm_reg_count > 6) or (stack_alloc_size > 0)):
+            function_entry = MASM_FRAME_FUNCTION_ENTRY % (function_name)
+        elif nested or (reg_count > calling_convention.volatile_registers):
             function_entry = MASM_FRAME_FUNCTION_ENTRY % (function_name)
         else:
             function_entry = MASM_FRAMELESS_FUNCTION_ENTRY % (function_name)
@@ -625,15 +763,18 @@ def generate_prologue(assembler, calling_convention, function_name, arg_count, r
 
     prologue = gen_function_start_defines(calling_convention.architecture, calling_convention.mapping, arg_count, reg_count)
     prologue += "%s" % (function_entry)
-    prologue += calling_convention.gen_prologue_fn(arg_count, reg_count)
+    prologue += calling_convention.gen_prologue_fn(arg_count, reg_count, stack_alloc_size, xmm_reg_count)
 
     return prologue
 
-def generate_epilogue(assembler, calling_convention, function_name, arg_count, reg_count, nested):
+def generate_epilogue(assembler, calling_convention, function_name, arg_count, reg_count, stack_alloc_size, xmm_reg_count, nested):
     function_end = None
     if assembler in ["masm", "armasm64"]:
         # need to identify and mark up frame functions in masm
-        if nested or (reg_count > calling_convention.volatile_registers):
+        # for masm we also consider Xmm register and local buffer use (stack_alloc_size)
+        if assembler == "masm" and (nested or (reg_count > calling_convention.volatile_registers) or (xmm_reg_count > 6) or (stack_alloc_size > 0)):
+            function_end = MASM_FRAME_FUNCTION_END % (function_name)
+        elif nested or (reg_count > calling_convention.volatile_registers):
             function_end = MASM_FRAME_FUNCTION_END % (function_name)
         else:
             function_end = MASM_FRAMELESS_FUNCTION_END % (function_name)
@@ -648,7 +789,7 @@ def generate_epilogue(assembler, calling_convention, function_name, arg_count, r
         logging.error("Unhandled assembler (%s) in generate_epilogue" % assembler)
         exit(1)
 
-    epilogue = calling_convention.gen_epilogue_fn(arg_count, reg_count)
+    epilogue = calling_convention.gen_epilogue_fn(arg_count, reg_count, stack_alloc_size, xmm_reg_count)
     epilogue += "%s" % (function_end)
     epilogue += gen_function_end_defines(calling_convention.architecture, calling_convention.mapping, arg_count, reg_count)
 
@@ -664,12 +805,13 @@ MASM_ALTERNATE_ENTRY= "ALTERNATE_ENTRY %s\n"
 GAS_ALTERNATE_ENTRY = "%s: .global %s\n"
 
 
-FUNCTION_START_PATTERN  = re.compile("\s*(NESTED_)?(MUL_)?FUNCTION_START\s*\(\s*([a-zA-Z0-9_\(\)]+)\s*,\s*([0-9]+)\s*,\s*([0-9]+)\s*\)")
+FUNCTION_START_PATTERN  = re.compile("\s*(NESTED_)?(MUL_)?FUNCTION_START\s*\(\s*([a-zA-Z0-9_\(\)]+)\s*,\s*([0-9]+)\s*,\s*([0-9]+)\s*(,\s*[0-9\*\+\-]+)?\s*(,\s*[0-9]+)?\s*\)")
 FUNCTION_END_PATTERN    = re.compile("\s*(NESTED_)?(MUL_)?FUNCTION_END\s*\(\s*([a-zA-Z0-9_\(\)]+)\s*\)")
 GET_MEMSLOT_PATTERN     = re.compile("GET_MEMSLOT_OFFSET\s*\(\s*slot([0-9]+)\s*\)")
 ALTERNATE_ENTRY_PATTERN = re.compile("\s*ALTERNATE_ENTRY\s*\(\s*([a-zA-Z0-9]+)\s*\)")
 MACRO_START_PATTERN     = re.compile("\s*MACRO_START\s*\(\s*([A-Z_0-9]+)\s*,([^\)]+)\)")
 MACRO_END_PATTERN       = re.compile("\s*MACRO_END\s*\(\s*\)")
+INCLUDE_PATTERN         = re.compile("\s*INCLUDE\s*\(\s*([^\s]+)\s*\)")
 
 class ProcessingStateMachine:
     """A class to hold the state when processing a file and handle files line by line"""
@@ -688,6 +830,8 @@ class ProcessingStateMachine:
         self.function_name = None
         self.arg_count = None
         self.reg_count = None
+        self.stack_alloc_size = None
+        self.xmm_reg_count = None
 
         self.macro_start_match = None
         self.macro_name = None
@@ -723,9 +867,12 @@ class ProcessingStateMachine:
         self.function_start_line = line_num
         self.is_nested_function = (match.group(1) == "NESTED_")
         self.is_mul_function = (match.group(2) == "MUL_")
-        self.function_name = match.groups()[-3]
-        self.arg_count = int(match.groups()[-2])
-        self.reg_count = int(match.groups()[-1])
+        self.function_name = match.group(3)
+        self.arg_count = int(match.group(4))
+        self.reg_count = int(match.group(5))
+        # last two parameters are optional and their corresponding capturing groups will be None if not supplied
+        self.stack_alloc_size = 0 if not match.group(6) else eval(match.group(6).strip(", \'\""))
+        self.xmm_reg_count = 0 if not match.group(7) else int(match.group(7).strip(", "))
 
         if self.is_nested_function and self.nested_calling_convention is None:
             logging.error(
@@ -763,6 +910,13 @@ class ProcessingStateMachine:
                 "%s (line %d)"
                 % (self.reg_count, len(self.mul_calling_convention.mapping)-1, self.mul_calling_convention.name, match.group(0), line_num))
             exit(1)
+        if not 0 <= self.xmm_reg_count <= 16:
+            logging.error(
+                "Invalid number of used XMM registers (%d) specified for calling convention (%s) - must be in range [0,16]\n\t"
+                "%s (line %d)"
+                % (self.xmm_reg_count, self.mul_calling_convention.name, match.group(6), line_num))
+            exit(1)
+
 
         logging.info("%d: function start %s, %d, %d" % (line_num, self.function_name, self.arg_count, self.reg_count))
 
@@ -773,7 +927,15 @@ class ProcessingStateMachine:
         else:
             self.calling_convention = self.normal_calling_convention
 
-        return generate_prologue(self.assembler, self.calling_convention, self.function_name, self.arg_count, self.reg_count, self.is_nested_function)
+        return generate_prologue(self.assembler, 
+                                 self.calling_convention, 
+                                 self.function_name, 
+                                 self.arg_count, 
+                                 self.reg_count, 
+                                 self.stack_alloc_size,
+                                 self.xmm_reg_count,
+                                 self.is_nested_function
+                                 )
 
     def process_start_macro(self, match, line, line_num):
         self.macro_start_match = match
@@ -793,7 +955,7 @@ class ProcessingStateMachine:
                 prefixed_args = "$" + prefixed_args
             return ARMASM64_MACRO_START % (self.macro_name, prefixed_args)
         else:
-            logging.error("Unhandled assembler (%s) in process_start_macro" % assembler)
+            logging.error("Unhandled assembler (%s) in process_start_macro" % self.assembler)
             exit(1)
 
     def process_function_line(self, line, line_num):
@@ -819,7 +981,7 @@ class ProcessingStateMachine:
                     % (self.function_name, self.function_start_line, match.groups()[-1], line_num))
                 exit(1)
 
-            epilogue = generate_epilogue(self.assembler, self.calling_convention, self.function_name, self.arg_count, self.reg_count, self.is_nested_function)
+            epilogue = generate_epilogue(self.assembler, self.calling_convention, self.function_name, self.arg_count, self.reg_count, self.stack_alloc_size, self.xmm_reg_count, self.is_nested_function)
 
             logging.info("%d: function end %s" % (line_num, self.function_name))
 
@@ -831,6 +993,8 @@ class ProcessingStateMachine:
             self.function_name = None
             self.arg_count = None
             self.reg_count = None
+            self.stack_alloc_size = None
+            self.xmm_reg_count = None
 
             return epilogue
 
@@ -838,7 +1002,7 @@ class ProcessingStateMachine:
         match = GET_MEMSLOT_PATTERN.search(line)
         while(match):
             slot = int(match.group(1))
-            replacement = self.calling_convention.gen_get_memslot_offset_fn(slot, self.arg_count, self.reg_count)
+            replacement = self.calling_convention.gen_get_memslot_offset_fn(slot, self.arg_count, self.reg_count, self.stack_alloc_size, self.xmm_reg_count)
             line = GET_MEMSLOT_PATTERN.sub(replacement, line)
             match = GET_MEMSLOT_PATTERN.search(line)
 
@@ -867,18 +1031,66 @@ class ProcessingStateMachine:
                 logging.error("Unhandled assembler (%s) in process_macro_line" % self.assembler)
                 exit(1)
 
-
+        arg_prefix = ""
         if self.assembler == "armasm64":
             # In armasm64 macros we need to escape all of the macro arguments with a $ in the macro body
-            for arg in self.macro_args:
-                line = re.sub(arg, "$%s" % arg, line)
+            arg_prefix = "$"
         elif self.assembler == "gas":
             # In GAS macros we need to escape all of the macro arguments with a backslash in the macro body
+            arg_prefix = r"\\"
+
+        if arg_prefix:
             for arg in self.macro_args:
-                line = re.sub(arg, r"\\%s" % arg, line)
+                line = replace_identifier(arg, arg_prefix + arg, line)
 
         # Not modifying the line any further
         return line
+
+
+def expand_files(filename, line_num_parent, line_parent):
+    ''' Read the contents of filename and insert include files where there's an INCLUDE directive'''
+    if line_parent:
+        logging.info(
+        "expand file %s\n\t"
+        "%s (line %d)"
+        % (filename, line_parent, line_num_parent))
+    base_dir = os.path.dirname(filename)
+    expanded_lines = []
+    has_includes = False
+    try:
+        infile = open(filename)
+        for line_num, line in enumerate(infile.readlines()):
+            match = INCLUDE_PATTERN.match(line)
+            if (match):
+                include_file = match.group(1)
+                full_path = base_dir + "/" + include_file
+                logging.info("%d: including file %s" % (line_num + 1, include_file))
+                logging.info("%d: full path %s" % (line_num + 1, full_path))
+                include_lines, _ = expand_files(full_path, line_num + 1, line)
+                expanded_lines.extend(include_lines)
+                has_includes = True
+            else:
+                expanded_lines.append(line)
+        infile.close()
+    except IOError:
+        logging.error(
+            "cannot open include file %s\n\t"
+            "%s (line %d)"
+            % (filename, line_parent, line_num_parent))
+        exit(1)
+
+    return expanded_lines, has_includes
+
+def gen_file_header(assembler, architecture, calling_convention):
+    """ Generate header to be inserted at the beginning of each symcryptasm file"""
+    header = ""
+
+    if assembler == "masm":
+        header += "// begin masm header\n"
+        header += "option casemap:none\n"
+        header += "// end masm header\n\n"
+
+    return header
 
 def process_file(assembler, architecture, calling_convention, infilename, outfilename):
     normal_calling_convention = None
@@ -915,15 +1127,37 @@ def process_file(assembler, architecture, calling_convention, infilename, outfil
             % (assembler, architecture, calling_convention))
         exit(1)
 
-    # iterate through file line by line in one pass
     file_processing_state = ProcessingStateMachine(
         assembler, normal_calling_convention, mul_calling_convention, nested_calling_convention)
 
-    with open(infilename) as infile:
-        with open(outfilename, "w") as outfile:
-            for line_num, line in enumerate(infile):
-                processed_line = file_processing_state.process_line(line, line_num)
-                outfile.write(processed_line)
+    #
+    # expand included files
+    #
+    expanded_lines = []
+
+    # suppress header insertion
+    header = ""
+    # insert assembler specific header per symcryptasm file
+    #header = gen_file_header(assembler, architecture, calling_convention)
+    #expanded_lines.extend(header)
+
+    # expand_files() is called recursively when a .symcryptasm file contains an INCLUDE directive,
+    # except for the first call here where we're starting to process the input source file
+    # as if it was included by some other file. 
+    expanded_file, infile_has_includes = expand_files(infilename, 0, "")
+    expanded_lines.extend(expanded_file)
+
+    # if header was nonempty or there were any INCLUDE directives, output the expanded source file for debugging
+    if header or infile_has_includes:
+        expanded_filename = os.path.dirname(outfilename) + "/" + os.path.basename(infilename) + "exp"
+        with open(expanded_filename, "w") as outfile:
+            outfile.writelines(expanded_lines)
+
+    # iterate through file line by line in one pass
+    with open(outfilename, "w") as outfile:
+        for line_num, line in enumerate(expanded_lines):
+            processed_line = file_processing_state.process_line(line, line_num)
+            outfile.write(processed_line)
 
 if __name__ == "__main__":
     import argparse

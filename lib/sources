@@ -42,6 +42,10 @@ NTTARGETFILE0=\
     $(OBJ_PATH)\$(O)\..\amd64\aesasm.asm \
     $(OBJ_PATH)\$(O)\..\amd64\fdef369_asm.asm \
     $(OBJ_PATH)\$(O)\..\amd64\fdef_mulx.asm \
+    $(OBJ_PATH)\$(O)\..\amd64\sha256xmm_asm.asm \
+    $(OBJ_PATH)\$(O)\..\amd64\sha256ymm_asm.asm \
+    $(OBJ_PATH)\$(O)\..\amd64\sha512ymm_asm.asm \
+    $(OBJ_PATH)\$(O)\..\amd64\sha512ymm_avx512vl_asm.asm \
 !ELSEIF "$(_BUILDARCH)" == "x86"
     $(OBJ_PATH)\$(O)\..\i386\aesasm.asm \
     $(OBJ_PATH)\$(O)\..\i386\fdef_asm.asm \
@@ -92,7 +96,10 @@ SOURCES= \
     session.c \
     sha1.c \
     sha256.c \
+    sha256-xmm.c \
+    sha256-ymm.c \
     sha512.c \
+    sha512-ymm.c \
     md5.c \
     md4.c \
     md2.c \
@@ -181,6 +188,10 @@ AMD64_SOURCES = \
     fdef_asm.asm \
     fdef369_asm.asm \
     fdef_mulx.asm \
+    sha256xmm_asm.asm \
+    sha256ymm_asm.asm \
+    sha512ymm_asm.asm \
+    sha512ymm_avx512vl_asm.asm \
 
 I386_SOURCES = \
     aesasm.asm \

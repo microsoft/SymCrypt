@@ -515,6 +515,42 @@ SymCryptSha256AppendBlocks(
                             SIZE_T                              cbData,
     _Out_                   SIZE_T                            * pcbRemaining );
 
+// Intrinsics implementation processing 4 message blocks in parallel using XMM registers
+VOID
+SYMCRYPT_CALL
+SymCryptSha256AppendBlocks_xmm_4blocks(
+    _Inout_                 SYMCRYPT_SHA256_CHAINING_STATE    * pChain,
+    _In_reads_( cbData )    PCBYTE                              pbData,
+                            SIZE_T                              cbData,
+    _Out_                   SIZE_T                            * pcbRemaining );
+
+// Assembly implementation processing 4 message blocks in parallel using XMM registers
+VOID
+SYMCRYPT_CALL
+SymCryptSha256AppendBlocks_xmm_ssse3_asm(
+    _Inout_                 SYMCRYPT_SHA256_CHAINING_STATE    * pChain,
+    _In_reads_( cbData )    PCBYTE                              pbData,
+                            SIZE_T                              cbData,
+    _Out_                   SIZE_T                            * pcbRemaining );
+
+// Intrinsics implementation processing 8 message blocks in parallel using YMM registers
+VOID
+SYMCRYPT_CALL
+SymCryptSha256AppendBlocks_ymm_8blocks(
+    _Inout_                 SYMCRYPT_SHA256_CHAINING_STATE    * pChain,
+    _In_reads_( cbData )    PCBYTE                              pbData,
+                            SIZE_T                              cbData,
+    _Out_                   SIZE_T                            * pcbRemaining );
+
+// Assembly implementation processing 8 message blocks in parallel using YMM registers
+VOID
+SYMCRYPT_CALL
+SymCryptSha256AppendBlocks_ymm_avx2_asm(
+    _Inout_                 SYMCRYPT_SHA256_CHAINING_STATE    * pChain,
+    _In_reads_( cbData )    PCBYTE                              pbData,
+                            SIZE_T                              cbData,
+    _Out_                   SIZE_T                            * pcbRemaining );
+
 
 //
 // SymCryptSha512AppendBlocks
@@ -540,6 +576,52 @@ SymCryptSha512AppendBlocks_xmm(
     _In_reads_(cbData)      PCBYTE                              pbData,
                             SIZE_T                              cbData,
     _Out_                   SIZE_T                            * pcbRemaining );
+
+// Intrinsics implementation using YMM registers
+VOID
+SYMCRYPT_CALL
+SymCryptSha512AppendBlocks_ymm_1block(
+    _Inout_                 SYMCRYPT_SHA512_CHAINING_STATE  *   pChain,
+    _In_reads_(cbData)      PCBYTE                              pbData,
+                            SIZE_T                              cbData,
+    _Out_                   SIZE_T                            * pcbRemaining );
+
+// Intrinsics implementation processing 2 message blocks in parallel using YMM registers
+VOID
+SYMCRYPT_CALL
+SymCryptSha512AppendBlocks_ymm_2blocks(
+    _Inout_                 SYMCRYPT_SHA512_CHAINING_STATE  *   pChain,
+    _In_reads_(cbData)      PCBYTE                              pbData,
+                            SIZE_T                              cbData,
+    _Out_                   SIZE_T                            * pcbRemaining );
+
+// Intrinsics implementation processing 4 message blocks in parallel using YMM registers
+VOID
+SYMCRYPT_CALL
+SymCryptSha512AppendBlocks_ymm_4blocks(
+    _Inout_                 SYMCRYPT_SHA512_CHAINING_STATE  *   pChain,
+    _In_reads_(cbData)      PCBYTE                              pbData,
+                            SIZE_T                              cbData,
+    _Out_                   SIZE_T                            * pcbRemaining );
+
+// Assembly implementation processing 4 message blocks in parallel using YMM registers
+VOID
+SYMCRYPT_CALL
+SymCryptSha512AppendBlocks_ymm_avx2_asm(
+    _Inout_                 SYMCRYPT_SHA512_CHAINING_STATE  *   pChain,
+    _In_reads_(cbData)      PCBYTE                              pbData,
+                            SIZE_T                              cbData,
+    _Out_                   SIZE_T                            * pcbRemaining );
+
+// Assembly implementation processing 4 message blocks in parallel using YMM registers with AVX512 instruction set
+VOID
+SYMCRYPT_CALL
+SymCryptSha512AppendBlocks_ymm_avx512vl_asm(
+    _Inout_                 SYMCRYPT_SHA512_CHAINING_STATE  *   pChain,
+    _In_reads_(cbData)      PCBYTE                              pbData,
+                            SIZE_T                              cbData,
+    _Out_                   SIZE_T                            * pcbRemaining );
+
 
 //
 // SymCryptMd5AppendBlocks

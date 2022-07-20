@@ -577,17 +577,17 @@ SymCryptSha256AppendBlocks_ul1(
     int round;
     UINT32 Wt;
 
-    ah[7] = pChain->H[0];
-    ah[6] = pChain->H[1];
-    ah[5] = pChain->H[2];
-    ah[4] = pChain->H[3];
-    ah[3] = pChain->H[4];
-    ah[2] = pChain->H[5];
-    ah[1] = pChain->H[6];
-    ah[0] = pChain->H[7];
-
     while( cbData >= 64 )
     {
+        ah[7] = pChain->H[0];
+        ah[6] = pChain->H[1];
+        ah[5] = pChain->H[2];
+        ah[4] = pChain->H[3];
+        ah[3] = pChain->H[4];
+        ah[2] = pChain->H[5];
+        ah[1] = pChain->H[6];
+        ah[0] = pChain->H[7];
+
         //
         // initial rounds 1 to 16
         //
@@ -633,14 +633,14 @@ SymCryptSha256AppendBlocks_ul1(
             FROUND( 15, round );
         }
 
-        pChain->H[0] = ah[7] = ah[7] + pChain->H[0];
-        pChain->H[1] = ah[6] = ah[6] + pChain->H[1];
-        pChain->H[2] = ah[5] = ah[5] + pChain->H[2];
-        pChain->H[3] = ah[4] = ah[4] + pChain->H[3];
-        pChain->H[4] = ah[3] = ah[3] + pChain->H[4];
-        pChain->H[5] = ah[2] = ah[2] + pChain->H[5];
-        pChain->H[6] = ah[1] = ah[1] + pChain->H[6];
-        pChain->H[7] = ah[0] = ah[0] + pChain->H[7];
+        pChain->H[0] = ah[7] + pChain->H[0];
+        pChain->H[1] = ah[6] + pChain->H[1];
+        pChain->H[2] = ah[5] + pChain->H[2];
+        pChain->H[3] = ah[4] + pChain->H[3];
+        pChain->H[4] = ah[3] + pChain->H[4];
+        pChain->H[5] = ah[2] + pChain->H[5];
+        pChain->H[6] = ah[1] + pChain->H[6];
+        pChain->H[7] = ah[0] + pChain->H[7];
 
         pbData += 64;
         cbData -= 64;
@@ -1614,17 +1614,43 @@ SymCryptSha256AppendBlocks_instr(
 VOID
 SYMCRYPT_CALL
 SymCryptSha256AppendBlocks(
-    _Inout_                 SYMCRYPT_SHA256_CHAINING_STATE *    pChain,
-    _In_reads_( cbData )    PCBYTE                              pbData,
-                            SIZE_T                              cbData,
-    _Out_                   SIZE_T                            * pcbRemaining )
+    _Inout_                 SYMCRYPT_SHA256_CHAINING_STATE* pChain,
+    _In_reads_(cbData)      PCBYTE                          pbData,
+                            SIZE_T                          cbData,
+    _Out_                   SIZE_T*                         pcbRemaining)
 {
 #if SYMCRYPT_CPU_AMD64
-    if( SYMCRYPT_CPU_FEATURES_PRESENT( SYMCRYPT_CPU_FEATURES_FOR_SHANI_CODE ) )
+
+    SYMCRYPT_EXTENDED_SAVE_DATA SaveData;
+
+    if (SYMCRYPT_CPU_FEATURES_PRESENT(SYMCRYPT_CPU_FEATURES_FOR_SHANI_CODE) &&
+        SymCryptSaveXmm(&SaveData) == SYMCRYPT_NO_ERROR)
     {
-        SymCryptSha256AppendBlocks_shani( pChain, pbData, cbData, pcbRemaining );
-    } else {
-        SymCryptSha256AppendBlocks_ul1( pChain, pbData, cbData, pcbRemaining );
+        SymCryptSha256AppendBlocks_shani(pChain, pbData, cbData, pcbRemaining);
+
+        SymCryptRestoreXmm(&SaveData);
+    }
+    else if (SYMCRYPT_CPU_FEATURES_PRESENT(SYMCRYPT_CPU_FEATURE_AVX2 | SYMCRYPT_CPU_FEATURE_BMI2) &&
+            SymCryptSaveYmm(&SaveData) == SYMCRYPT_NO_ERROR)
+    {
+        //SymCryptSha256AppendBlocks_ul1(pChain, pbData, cbData, pcbRemaining);
+        //SymCryptSha256AppendBlocks_ymm_8blocks(pChain, pbData, cbData, pcbRemaining);
+        SymCryptSha256AppendBlocks_ymm_avx2_asm(pChain, pbData, cbData, pcbRemaining);
+
+        SymCryptRestoreYmm(&SaveData);
+    }
+    else if (SYMCRYPT_CPU_FEATURES_PRESENT(SYMCRYPT_CPU_FEATURE_SSSE3 | SYMCRYPT_CPU_FEATURE_BMI2) &&
+            SymCryptSaveXmm(&SaveData) == SYMCRYPT_NO_ERROR)
+    {
+        //SymCryptSha256AppendBlocks_xmm_4blocks(pChain, pbData, cbData, pcbRemaining);
+        SymCryptSha256AppendBlocks_xmm_ssse3_asm(pChain, pbData, cbData, pcbRemaining);
+ 
+        SymCryptRestoreXmm(&SaveData);
+    }
+    else
+    {
+       SymCryptSha256AppendBlocks_ul1( pChain, pbData, cbData, pcbRemaining );
+       //SymCryptSha256AppendBlocks_ul2(pChain, pbData, cbData, pcbRemaining);
     }
 #elif SYMCRYPT_CPU_X86
     SYMCRYPT_EXTENDED_SAVE_DATA  SaveData;
@@ -1634,7 +1660,14 @@ SymCryptSha256AppendBlocks(
     {
         SymCryptSha256AppendBlocks_shani( pChain, pbData, cbData, pcbRemaining );
         SymCryptRestoreXmm( &SaveData );
-    } else {
+    } 
+    else if (SYMCRYPT_CPU_FEATURES_PRESENT(SYMCRYPT_CPU_FEATURE_SSSE3 | SYMCRYPT_CPU_FEATURE_BMI2) 
+            && SymCryptSaveXmm(&SaveData) == SYMCRYPT_NO_ERROR)
+    {
+        SymCryptSha256AppendBlocks_xmm_4blocks(pChain, pbData, cbData, pcbRemaining);
+        SymCryptRestoreXmm(&SaveData);
+    }
+    else {
         SymCryptSha256AppendBlocks_ul1( pChain, pbData, cbData, pcbRemaining );
     }
 #elif SYMCRYPT_CPU_ARM64

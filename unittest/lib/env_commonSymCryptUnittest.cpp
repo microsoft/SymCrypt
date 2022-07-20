@@ -87,8 +87,9 @@ VOID free_align32( PVOID p )
 
 #if SYMCRYPT_CPU_AMD64 | SYMCRYPT_CPU_X86
 
-char g_saveInProgressType = 0;
-PVOID g_savePtr = NULL;
+char g_saveInProgressTypes[16] = { 0 };
+int g_savesInProgress = 0;
+PVOID g_savePtrs[sizeof(g_saveInProgressTypes)] = { 0 };
 extern "C" {
 ULONG g_nSaves = 0;
 }
@@ -156,9 +157,10 @@ SymCryptSaveXmmEnvUnittest( _Out_ PSYMCRYPT_EXTENDED_SAVE_DATA pSaveData )
         p->pRegs = pRegs;
         SYMCRYPT_SET_MAGIC( p );
 
-        CHECK( g_saveInProgressType == 0, "Nested register saves are not supported at IRQL=DISPATCH_LEVEL" );
-        g_savePtr = pSaveData;
-        g_saveInProgressType = 'X';
+        CHECK(g_savesInProgress < sizeof(g_saveInProgressTypes), "Too many nested saves!");
+        g_saveInProgressTypes[g_savesInProgress] = 'X';
+        g_savePtrs[g_savesInProgress] = pSaveData;
+        g_savesInProgress++;
     }
 
     return SYMCRYPT_NO_ERROR;
@@ -181,8 +183,10 @@ SymCryptRestoreXmmEnvUnittest( _Inout_ PSYMCRYPT_EXTENDED_SAVE_DATA pSaveData )
         pRegs = p->pRegs;
         SYMCRYPT_CHECK_MAGIC( pRegs );
 
-        CHECK( g_saveInProgressType == 'X', "XMM not saved" );
-        CHECK( g_savePtr == pSaveData, "?" );
+        CHECK(g_savesInProgress > 0, "No saves in progress!");
+        g_savesInProgress--;
+        CHECK(g_saveInProgressTypes[g_savesInProgress] == 'X', "XMM not saved");
+        CHECK(g_savePtrs[g_savesInProgress] == pSaveData, "?" );
 
         memcpy( &regs[0], &pRegs->xmm[0], sizeof( regs ) );
         SYMCRYPT_WIPE_MAGIC( pRegs );
@@ -191,8 +195,6 @@ SymCryptRestoreXmmEnvUnittest( _Inout_ PSYMCRYPT_EXTENDED_SAVE_DATA pSaveData )
         SYMCRYPT_WIPE_MAGIC( p );
 
         SymCryptEnvUmRestoreXmmRegistersAsm( &regs[0] );
-
-        g_saveInProgressType = 0;
     }
 }
 
@@ -276,11 +278,10 @@ SymCryptSaveYmmEnvUnittest( _Out_ PSYMCRYPT_EXTENDED_SAVE_DATA pSaveData )
         p->pRegs = pRegs;
         SYMCRYPT_SET_MAGIC( p );
 
-
-        CHECK( g_saveInProgressType == 0, "Nested register saves are not supported at IRQL=DISPATCH_LEVEL" );
-        g_savePtr = pSaveData;
-        g_saveInProgressType = 'Y';
-
+        CHECK(g_savesInProgress < sizeof(g_saveInProgressTypes), "Too many nested saves!");
+        g_saveInProgressTypes[g_savesInProgress] = 'Y';
+        g_savePtrs[g_savesInProgress] = pSaveData;
+        g_savesInProgress++;
     }
 
     return SYMCRYPT_NO_ERROR;
@@ -303,8 +304,10 @@ SymCryptRestoreYmmEnvUnittest( _Inout_ PSYMCRYPT_EXTENDED_SAVE_DATA pSaveData )
         pRegs = p->pRegs;
         SYMCRYPT_CHECK_MAGIC( pRegs );
 
-        CHECK( g_saveInProgressType == 'Y', "YMM not saved" );
-        CHECK( g_savePtr == pSaveData, "?" );
+        CHECK(g_savesInProgress > 0, "No saves in progress!");
+        g_savesInProgress--;
+        CHECK(g_saveInProgressTypes[g_savesInProgress] == 'Y', "YMM not saved");
+        CHECK(g_savePtrs[g_savesInProgress] == pSaveData, "?" );
 
         memcpy( regs, pRegs->ymm, sizeof( regs ) );
         SYMCRYPT_WIPE_MAGIC( pRegs );
@@ -313,8 +316,6 @@ SymCryptRestoreYmmEnvUnittest( _Inout_ PSYMCRYPT_EXTENDED_SAVE_DATA pSaveData )
         SYMCRYPT_WIPE_MAGIC( p );
 
         SymCryptEnvUmRestoreYmmRegistersAsm( regs );
-
-        g_saveInProgressType = 0;
     }
 }
 

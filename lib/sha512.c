@@ -563,10 +563,18 @@ SymCryptSha384Selftest()
 //
 // The four Sigma functions
 //
-#define CSIGMA0( x )    (ROR64((x), 28) ^ ROR64((x), 34) ^ ROR64((x), 39))
-#define CSIGMA1( x )    (ROR64((x), 14) ^ ROR64((x), 18) ^ ROR64((x), 41))
-#define LSIGMA0( x )    (ROR64((x),  1) ^ ROR64((x),  8) ^ ((x)>> 7))
-#define LSIGMA1( x )    (ROR64((x), 19) ^ ROR64((x), 61) ^ ((x)>> 6))
+
+//#define CSIGMA0( x )    (ROR64((x), 28) ^ ROR64((x), 34) ^ ROR64((x), 39))
+//#define CSIGMA1( x )    (ROR64((x), 14) ^ ROR64((x), 18) ^ ROR64((x), 41))
+//#define LSIGMA0( x )    (ROR64((x),  1) ^ ROR64((x),  8) ^ ((x)>> 7))
+//#define LSIGMA1( x )    (ROR64((x), 19) ^ ROR64((x), 61) ^ ((x)>> 6))
+
+#define CSIGMA0( x )	(ROR64((ROR64((x), 6) ^ ROR64((x), 11) ^ (x)), 28))
+#define CSIGMA1( x )	(ROR64((ROR64((x), 4) ^ ROR64((x), 27) ^ (x)), 14))
+#define LSIGMA0( x )    (ROR64((x) ^ ROR64((x),  7),  1) ^ ((x)>> 7))
+#define LSIGMA1( x )    (ROR64((x) ^ ROR64((x), 42), 19) ^ ((x)>> 6))
+
+
 
 //
 // The values a-h were stored in an array called ah.
@@ -636,17 +644,18 @@ SymCryptSha512AppendBlocks_ull(
     int round;
     UINT64 Wt;
 
-    A = pChain->H[0];
-    B = pChain->H[1];
-    C = pChain->H[2];
-    D = pChain->H[3];
-    E = pChain->H[4];
-    F = pChain->H[5];
-    G = pChain->H[6];
-    H = pChain->H[7];
 
     while( cbData >= 128 )
     {
+        A = pChain->H[0];
+        B = pChain->H[1];
+        C = pChain->H[2];
+        D = pChain->H[3];
+        E = pChain->H[4];
+        F = pChain->H[5];
+        G = pChain->H[6];
+        H = pChain->H[7];
+
         //
         // initial rounds 1 to 16
         //
@@ -688,14 +697,14 @@ SymCryptSha512AppendBlocks_ull(
             FROUND( B, C, D, E, F, G, H, A, round + 15, 15 );
         }
 
-        pChain->H[0] = A = A + pChain->H[0];
-        pChain->H[1] = B = B + pChain->H[1];
-        pChain->H[2] = C = C + pChain->H[2];
-        pChain->H[3] = D = D + pChain->H[3];
-        pChain->H[4] = E = E + pChain->H[4];
-        pChain->H[5] = F = F + pChain->H[5];
-        pChain->H[6] = G = G + pChain->H[6];
-        pChain->H[7] = H = H + pChain->H[7];
+        pChain->H[0] = A + pChain->H[0];
+        pChain->H[1] = B + pChain->H[1];
+        pChain->H[2] = C + pChain->H[2];
+        pChain->H[3] = D + pChain->H[3];
+        pChain->H[4] = E + pChain->H[4];
+        pChain->H[5] = F + pChain->H[5];
+        pChain->H[6] = G + pChain->H[6];
+        pChain->H[7] = H + pChain->H[7];
 
         pbData += 128;
         cbData -= 128;
@@ -841,7 +850,7 @@ SymCryptSha512AppendBlocks_ull2(
     pChain->H[6] = ha[1];
     pChain->H[7] = ha[0];
 
-    *pcbRemaining = 0;
+    *pcbRemaining = cbData;
 
     //
     // Wipe the variables;
@@ -1353,10 +1362,33 @@ SymCryptSha512AppendBlocks(
     _Out_                   SIZE_T                            * pcbRemaining )
 {
 #if SYMCRYPT_CPU_AMD64
+    
+    SYMCRYPT_EXTENDED_SAVE_DATA SaveData;
 
-    SymCryptSha512AppendBlocks_ull( pChain, pbData, cbData, pcbRemaining );       // core2: 10.66 c/B
-    //SymCryptSha512AppendBlocks_ull2( pChain, pbData, cbData, pcbRemaining );      // core2: 11.53 c/B
-    //SymCryptSha512AppendBlocks_ull3( pChain, pbData, cbData, pcbRemaining );      // core2: 11.07 c/B
+    if (SYMCRYPT_CPU_FEATURES_PRESENT(SYMCRYPT_CPU_FEATURE_AVX512 | SYMCRYPT_CPU_FEATURE_BMI2) &&
+        SymCryptSaveYmm(&SaveData) == SYMCRYPT_NO_ERROR)
+    {
+        SymCryptSha512AppendBlocks_ymm_avx512vl_asm(pChain, pbData, cbData, pcbRemaining);
+
+        SymCryptRestoreYmm(&SaveData);
+    }
+    else if (SYMCRYPT_CPU_FEATURES_PRESENT(SYMCRYPT_CPU_FEATURE_AVX2 | SYMCRYPT_CPU_FEATURE_BMI2) &&
+        SymCryptSaveYmm(&SaveData) == SYMCRYPT_NO_ERROR)
+    {
+        //SymCryptSha512AppendBlocks_ymm_1block(pChain, pbData, cbData, pcbRemaining);
+        //SymCryptSha512AppendBlocks_ymm_2blocks(pChain, pbData, cbData, pcbRemaining);
+        //SymCryptSha512AppendBlocks_ymm_4blocks(pChain, pbData, cbData, pcbRemaining);
+        SymCryptSha512AppendBlocks_ymm_avx2_asm(pChain, pbData, cbData, pcbRemaining);
+
+        SymCryptRestoreYmm(&SaveData);
+    }
+    else
+    {
+        SymCryptSha512AppendBlocks_ull( pChain, pbData, cbData, pcbRemaining );
+        //SymCryptSha512AppendBlocks_ull2( pChain, pbData, cbData, pcbRemaining );
+        //SymCryptSha512AppendBlocks_ull3( pChain, pbData, cbData, pcbRemaining );
+    }
+
 
 #elif SYMCRYPT_CPU_ARM
 

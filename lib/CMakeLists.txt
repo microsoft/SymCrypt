@@ -86,9 +86,12 @@ set(SOURCES_COMMON
     sha256.c
     sha256Par.c
     sha256Par-ymm.c
+    sha256-xmm.c
+    sha256-ymm.c
     sha512.c
     sha512Par.c
     sha512Par-ymm.c
+    sha512-ymm.c
     sp800_108_hmacsha1.c
     sp800_108_hmacsha256.c
     sp800_108_hmacsha512.c
@@ -200,19 +203,31 @@ if(WIN32 AND NOT(SYMCRYPT_TARGET_ENV MATCHES "Generic"))
         process_symcryptasm(amd64/fdef369_asm.symcryptasm masm amd64 msft)
         process_symcryptasm(amd64/fdef_mulx.symcryptasm masm amd64 msft)
         process_symcryptasm(amd64/wipe.symcryptasm masm amd64 msft)
+        process_symcryptasm(amd64/sha256xmm_asm.symcryptasm masm amd64 msft)
+        process_symcryptasm(amd64/sha256ymm_asm.symcryptasm masm amd64 msft)
+        process_symcryptasm(amd64/sha512ymm_asm.symcryptasm masm amd64 msft)
+        process_symcryptasm(amd64/sha512ymm_avx512vl_asm.symcryptasm masm amd64 msft)
 
         list(APPEND SOURCES_COMMON
             amd64/aesasm-masm.asm
             amd64/fdef_asm-masm.asm
             amd64/fdef369_asm-masm.asm
             amd64/fdef_mulx-masm.asm
-            amd64/wipe-masm.asm)
+            amd64/wipe-masm.asm
+            amd64/sha256xmm_asm-masm.asm            
+            amd64/sha256ymm_asm-masm.asm            
+            amd64/sha512ymm_asm-masm.asm
+            amd64/sha512ymm_avx512vl_asm-masm.asm)
         set_source_files_properties(
             amd64/aesasm-masm.asm
             amd64/fdef_asm-masm.asm
             amd64/fdef369_asm-masm.asm
             amd64/fdef_mulx-masm.asm
             amd64/wipe-masm.asm
+            amd64/sha256xmm_asm-masm.asm            
+            amd64/sha256ymm_asm-masm.asm            
+            amd64/sha512ymm_asm-masm.asm
+            amd64/sha512ymm_avx512vl_asm-masm.asm
             PROPERTY LANGUAGE ASM_MASM)
 
     elseif(CMAKE_SYSTEM_PROCESSOR MATCHES "X86")
@@ -238,19 +253,31 @@ elseif(NOT(SYMCRYPT_TARGET_ENV MATCHES "Generic"))
         process_symcryptasm(amd64/fdef369_asm.symcryptasm gas amd64 systemv)
         process_symcryptasm(amd64/fdef_mulx.symcryptasm gas amd64 systemv)
         process_symcryptasm(amd64/wipe.symcryptasm gas amd64 systemv)
+        process_symcryptasm(amd64/sha256xmm_asm.symcryptasm gas amd64 systemv)
+        process_symcryptasm(amd64/sha256ymm_asm.symcryptasm gas amd64 systemv)
+        process_symcryptasm(amd64/sha512ymm_asm.symcryptasm gas amd64 systemv)
+        process_symcryptasm(amd64/sha512ymm_avx512vl_asm.symcryptasm gas amd64 systemv)
 
         list(APPEND SOURCES_COMMON
             amd64/aesasm-gas.asm
             amd64/fdef_asm-gas.asm
             amd64/fdef369_asm-gas.asm
             amd64/fdef_mulx-gas.asm
-            amd64/wipe-gas.asm)
+            amd64/wipe-gas.asm
+            amd64/sha256xmm_asm-gas.asm
+            amd64/sha256ymm_asm-gas.asm
+            amd64/sha512ymm_asm-gas.asm
+            amd64/sha512ymm_avx512vl_asm-gas.asm)
         set_source_files_properties(
             amd64/aesasm-gas.asm
             amd64/fdef_asm-gas.asm
             amd64/fdef369_asm-gas.asm
             amd64/fdef_mulx-gas.asm
             amd64/wipe-gas.asm
+            amd64/sha256xmm_asm-gas.asm
+            amd64/sha256ymm_asm-gas.asm
+            amd64/sha512ymm_asm-gas.asm
+            amd64/sha512ymm_avx512vl_asm-gas.asm
             PROPERTY LANGUAGE ASM)
     elseif(CMAKE_SYSTEM_PROCESSOR MATCHES "ARM64")
         process_symcryptasm(arm64/fdef_asm.symcryptasm gas arm64 aapcs64)
@@ -274,6 +301,9 @@ if(CMAKE_SYSTEM_PROCESSOR MATCHES "AMD64")
         set_source_files_properties(aes-ymm.c PROPERTIES COMPILE_OPTIONS "-mavx;-mavx2;-mvaes;-mvpclmulqdq")
         set_source_files_properties(sha256Par-ymm.c PROPERTIES COMPILE_OPTIONS "-mavx;-mavx2")
         set_source_files_properties(sha512Par-ymm.c PROPERTIES COMPILE_OPTIONS "-mavx;-mavx2")
+        set_source_files_properties(sha256-xmm.c PROPERTIES COMPILE_OPTIONS "-mssse3")
+        set_source_files_properties(sha256-ymm.c PROPERTIES COMPILE_OPTIONS "-mavx;-mavx2;-mbmi2")
+        set_source_files_properties(sha512-ymm.c PROPERTIES COMPILE_OPTIONS "-mavx;-mavx2;-mbmi2")
     endif()
 endif()
 
