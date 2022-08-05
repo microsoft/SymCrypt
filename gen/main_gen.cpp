@@ -13,7 +13,7 @@ Copyright (c) Microsoft Corporation. Licensed under the MIT license.
 #include <winioctl.h>
 
 //
-// Hack to get all the BCrypt declations even though our binaries target down-level platforms.
+// Hack to get all the BCrypt declarations even though our binaries target down-level platforms.
 //
 #pragma push_macro("NTDDI_VERSION")
 #undef NTDDI_VERSION

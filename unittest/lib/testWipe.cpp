@@ -13,6 +13,12 @@ testWipe()
     BYTE    buf[128];
     SIZE_T  i,len,j;
 
+    if (!SCTEST_LOOKUP_DISPATCHSYM(SymCryptWipe))
+    {
+        print("    testWipe skipped\n");
+        return;
+    }
+
     print( "    wipe" );
 
     for( len=0; len<sizeof( buf ); len++ )
@@ -20,7 +26,7 @@ testWipe()
         for( i=0; i<sizeof( buf ) - len; i++ )
         {
             memset( buf, 'n', sizeof( buf ) );
-            SymCryptWipe( &buf[i], len );
+            ScDispatchSymCryptWipe( &buf[i], len );
             for( j=0; j<sizeof( buf ); j++ )
             {
                 b = buf[j];
@@ -44,8 +50,3 @@ testWipe()
     
     print ( "\n" );
 }
-
-
-
-
-

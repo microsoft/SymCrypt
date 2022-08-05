@@ -10,6 +10,14 @@ VOID
 testBitByteSize()
 {
     UINT64 v;
+    if (!SCTEST_LOOKUP_DISPATCHSYM(SymCryptUint64Bitsize)   ||
+        !SCTEST_LOOKUP_DISPATCHSYM(SymCryptUint64Bytesize)  ||
+        !SCTEST_LOOKUP_DISPATCHSYM(SymCryptUint32Bitsize)   ||
+        !SCTEST_LOOKUP_DISPATCHSYM(SymCryptUint32Bytesize) )
+    {
+        print("    testBitByteSize skipped\n");
+        return;
+    }
 
     CHECK( NT_SUCCESS( GENRANDOM( &v, sizeof( v ) ) ), "?" );
     v |= ((UINT64)1) << 63;
@@ -18,13 +26,13 @@ testBitByteSize()
     while( bits != (UINT32) -1 )
     {
         UINT32 bytes = (bits + 7)/8;
-        CHECK( SymCryptUint64Bitsize(v) == bits, "Wrong bitsize 64" );
-        CHECK( SymCryptUint64Bytesize(v) == bytes, "Wrong bytesize 64" );
+        CHECK( ScDispatchSymCryptUint64Bitsize( v ) == bits, "Wrong bitsize 64" );
+        CHECK( ScDispatchSymCryptUint64Bytesize( v ) == bytes, "Wrong bytesize 64" );
 
         if( bits <= 32 )
         {
-            CHECK( SymCryptUint32Bitsize( (UINT32)v ) == bits, "Wrong bitsize 32" );
-            CHECK( SymCryptUint32Bytesize( (UINT32) v ) == bytes, "Wrong bytesize 32" );
+            CHECK( ScDispatchSymCryptUint32Bitsize( (UINT32)v ) == bits, "Wrong bitsize 32" );
+            CHECK( ScDispatchSymCryptUint32Bytesize( (UINT32) v ) == bytes, "Wrong bytesize 32" );
         }
         v >>= 1;
         bits -= 1;
@@ -48,12 +56,22 @@ testLoadStore()
     UINT32 w32;
     UINT64 w64;
 
+    if (!SCTEST_LOOKUP_DISPATCHSYM(SymCryptWipe)                ||
+        !SCTEST_LOOKUP_DISPATCHSYM(SymCryptLoadLsbFirstUint64)  ||
+        !SCTEST_LOOKUP_DISPATCHSYM(SymCryptLoadLsbFirstUint32)  ||
+        !SCTEST_LOOKUP_DISPATCHSYM(SymCryptLoadMsbFirstUint64)  ||
+        !SCTEST_LOOKUP_DISPATCHSYM(SymCryptLoadMsbFirstUint64) )
+    {
+        print("    testLoadStore skipped\n");
+        return;
+    }
+
     // Try each byte size
     for( UINT32 nBytes = 0; nBytes <= 8; nBytes++ )
     {
         // Generate a random value, and extend to 12 bytes
         CHECK( NT_SUCCESS( GENRANDOM( val, sizeof( val ) )), "?" );
-        SymCryptWipe( &val[nBytes], sizeof(val) - nBytes );
+        ScDispatchSymCryptWipe( &val[nBytes], sizeof(val) - nBytes );
 
         // Make sure the size is tight.
         if( nBytes > 0 )
@@ -73,10 +91,10 @@ testLoadStore()
             memset( buf2, 'n', 12 );
             memset( buf3, 'n', 12 );
             memset( buf4, 'n', 12 );
-            sc1 = SymCryptStoreLsbFirstUint64( v64, buf1, n );
-            sc2 = SymCryptStoreLsbFirstUint32( v32, buf2, n );
-            sc3 = SymCryptStoreMsbFirstUint64( v64, buf3, n );
-            sc4 = SymCryptStoreMsbFirstUint32( v32, buf4, n );
+            sc1 = ScDispatchSymCryptStoreLsbFirstUint64( v64, buf1, n );
+            sc2 = ScDispatchSymCryptStoreLsbFirstUint32( v32, buf2, n );
+            sc3 = ScDispatchSymCryptStoreMsbFirstUint64( v64, buf3, n );
+            sc4 = ScDispatchSymCryptStoreMsbFirstUint32( v32, buf4, n );
             CHECK( n == 12 || (buf1[n] == 'n' && buf2[n] == 'n' && buf3[n] == 'n' && buf4[n] == 'n'), "?" );
 
             // Check that we get the right error conditions
@@ -102,10 +120,10 @@ testLoadStore()
             }
 
             // Now we try the loads
-            sc1 = SymCryptLoadLsbFirstUint64( buf1, n, &v64 );
-            sc2 = SymCryptLoadLsbFirstUint32( buf2, n, &v32 );
-            sc3 = SymCryptLoadMsbFirstUint64( buf3, n, &w64 );
-            sc4 = SymCryptLoadMsbFirstUint32( buf4, n, &w32 );
+            sc1 = ScDispatchSymCryptLoadLsbFirstUint64( buf1, n, &v64 );
+            sc2 = ScDispatchSymCryptLoadLsbFirstUint32( buf2, n, &v32 );
+            sc3 = ScDispatchSymCryptLoadMsbFirstUint64( buf3, n, &w64 );
+            sc4 = ScDispatchSymCryptLoadMsbFirstUint32( buf4, n, &w32 );
 
                 // Check the results
             CHECK( sc1 == SYMCRYPT_NO_ERROR && sc2 == SYMCRYPT_NO_ERROR && sc3 == SYMCRYPT_NO_ERROR && sc4 == SYMCRYPT_NO_ERROR, "?" );
@@ -118,19 +136,18 @@ testLoadStore()
     // Remains to check the errors on the loads
     for( UINT32 j=0; j < 12; j++ )
     {
-        SymCryptWipe( buf1, sizeof( buf1 ) );
+        ScDispatchSymCryptWipe( buf1, sizeof( buf1 ) );
         buf1[ j ] = 1;
 
-        sc1 = SymCryptLoadLsbFirstUint64( buf1, 12, &v64 );
-        sc2 = SymCryptLoadLsbFirstUint32( buf1, 12, &v32 );
-        sc3 = SymCryptLoadMsbFirstUint64( buf1, 12, &w64 );
-        sc4 = SymCryptLoadMsbFirstUint32( buf1, 12, &w32 );
+        sc1 = ScDispatchSymCryptLoadLsbFirstUint64( buf1, 12, &v64 );
+        sc2 = ScDispatchSymCryptLoadLsbFirstUint32( buf1, 12, &v32 );
+        sc3 = ScDispatchSymCryptLoadMsbFirstUint64( buf1, 12, &w64 );
+        sc4 = ScDispatchSymCryptLoadMsbFirstUint32( buf1, 12, &w32 );
         CHECK( (sc1 == SYMCRYPT_NO_ERROR) == (j < 8), "?" );
         CHECK( (sc2 == SYMCRYPT_NO_ERROR) == (j < 4), "?" );
         CHECK( (sc3 == SYMCRYPT_NO_ERROR) == (j >= 4), "?" );
         CHECK( (sc4 == SYMCRYPT_NO_ERROR) == (j >= 8), "?" );
     }
-   
 
 }
 
@@ -141,6 +158,12 @@ testUint64Gcd()
     UINT64 b;
     UINT64 gcd;
     UINT64 t;
+
+    if ( !SCTEST_LOOKUP_DISPATCHSYM(SymCryptUint64Gcd) )
+    {
+        print("    testUint64Gcd skipped\n");
+        return;
+    }
 
     // First we just test that the GCD result is a divisor of both inputs
     // The probability that a GCD != 1 is about 40% so we will hit this
@@ -161,7 +184,7 @@ testUint64Gcd()
             b |= 1-t;
         }
 
-        gcd = SymCryptUint64Gcd( a, b, SYMCRYPT_FLAG_GCD_INPUTS_NOT_BOTH_EVEN );
+        gcd = ScDispatchSymCryptUint64Gcd( a, b, SYMCRYPT_FLAG_GCD_INPUTS_NOT_BOTH_EVEN );
 
         CHECK( gcd != 0 && a % gcd == 0 && b % gcd == 0, "Wrong GCD output from SymCryptUint64Gcd()" );
     }
@@ -184,7 +207,7 @@ testUint64Gcd()
             b -= b % t;
         } while( ((a | b) & 1) == 0 );
 
-        gcd = SymCryptUint64Gcd( a, b, SYMCRYPT_FLAG_GCD_INPUTS_NOT_BOTH_EVEN );
+        gcd = ScDispatchSymCryptUint64Gcd( a, b, SYMCRYPT_FLAG_GCD_INPUTS_NOT_BOTH_EVEN );
 
         // Check that the factor t was found; there might be other common factors.
         CHECK( gcd >= t && gcd % t == 0, "SymCryptUint64Gcd did not detect a common factor" );
@@ -193,22 +216,20 @@ testUint64Gcd()
     // Test a usecase that uses the max # iterations
     // This case uses 63 iterations to change 1<<63 to 1,
     // Another 63 to reduce the 2nd number to 1, and one more to get (0,1)
-    CHECK( SymCryptUint64Gcd( (UINT64)1 << 63, ((UINT64)1 << 31) + 1, SYMCRYPT_FLAG_GCD_INPUTS_NOT_BOTH_EVEN) == 1, "Wrong uint64GCD result" );
+    CHECK( ScDispatchSymCryptUint64Gcd( (UINT64)1 << 63, ((UINT64)1 << 31) + 1, SYMCRYPT_FLAG_GCD_INPUTS_NOT_BOTH_EVEN) == 1, "Wrong uint64GCD result" );
 }
 
 
 VOID
 testUtil()
 {
-    print( "    utilities" );
+    print( "    utilities\n" );
 
     testBitByteSize();
 
     testLoadStore();
 
     testUint64Gcd();
-    
-    print ( "\n" );
 }
 
 

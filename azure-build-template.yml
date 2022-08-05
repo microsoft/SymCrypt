@@ -125,7 +125,7 @@ steps:
         cp $(Build.SourcesDirectory)/.artifactignore $(Agent.WorkFolder)
       displayName: 'Enable core dumps & Place .artifactignore file'
     - ${{ if ne(parameters.env, 'Generic') }}:
-      # Execute module and unit test using the inline script
+      # Execute unit test using the inline script
       - ${{ if eq(parameters.emulator, 'native') }}:
         - script: |
             cd bin/exe/${{parameters.arch}}/${{parameters.env}}
@@ -141,18 +141,21 @@ steps:
             displayName: 'Execute unit tests (Test Ymm Save/Restore)'
             name: '${{parameters.env}}UnitTest_TestYmm_${{parameters.buildType}}'
         - ${{ if ne(parameters.buildType, 'Sanitize') }}:
-          # Only run oe module test if rdseed is present on the CPU
+          # Run unit tests against the generic SymCrypt module
           - script: |
               cd bin/exe/${{parameters.arch}}/${{parameters.env}}
-              ./symcryptmoduletest_linux
-            displayName: 'Execute generic module tests'
+              ./symcryptunittest dynamic:../../../module/${{parameters.arch}}/${{parameters.env}}/generic/libsymcrypt.so
+            displayName: 'Execute unit tests with generic SymCrypt module'
+            name: '${{parameters.env}}UnitTestDynamicGeneric_${{parameters.buildType}}'
+          # Only run unit tests against the oe module if rdseed is present on the CPU
           - script: |
               cd bin/exe/${{parameters.arch}}/${{parameters.env}}
               if lshw -c cpu | grep -q rdseed
-              then ./symcryptmoduletest_oe
+              then ./symcryptunittest dynamic:../../../module/${{parameters.arch}}/${{parameters.env}}/oe_full/libsymcrypt.so
               fi
-            displayName: 'Execute OpenEnclave module tests'
-      # Execute module and unit test using the inline script
+            displayName: 'Execute unit tests with OpenEnclave SymCrypt module'
+            name: '${{parameters.env}}UnitTestDynamicOE_${{parameters.buildType}}'
+      # Execute unit test using the inline script
       # Currently skip slower algorithms (DH/RSA), as otherwise we time out the pipeline
       - ${{ if eq(parameters.emulator, 'qemu-aarch64') }}:
         - script: |
@@ -162,8 +165,9 @@ steps:
           name: '${{parameters.env}}UnitTest_${{parameters.buildType}}_QEMU_AARCH64'
         - script: |
             cd bin/exe/${{parameters.arch}}/${{parameters.env}}
-            qemu-aarch64 -L /usr/aarch64-linux-gnu/ ./symcryptmoduletest_linux
-          displayName: 'Execute generic module tests'
+            qemu-aarch64 -L /usr/aarch64-linux-gnu/ ./symcryptunittest noperftests +symcrypt -dh -dsa -rsa dynamic:../../../module/${{parameters.arch}}/${{parameters.env}}/generic/libsymcrypt.so
+          displayName: 'Execute unit tests with generic SymCrypt module'
+          name: '${{parameters.env}}UnitTestDynamicGeneric_${{parameters.buildType}}_QEMU_AARCH64'
     # Execute Generic unit tests in CI and in PRs to publish
     - ${{ if eq(parameters.env, 'Generic') }}:
       - script: |
@@ -173,11 +177,14 @@ steps:
         displayName: 'Execute unit tests'
         name: '${{parameters.env}}UnitTest_${{parameters.buildType}}'
         condition: or(eq(variables['System.PullRequest.TargetBranch'], 'refs/heads/publish'), in(variables['Build.Reason'], 'IndividualCI', 'BatchedCI'))
+      # Run unit tests against the generic SymCrypt module
       - script: |
           archName=`uname -m`
           cd bin/exe/${archName}/${{parameters.env}}
-          ./symcryptmoduletest_linux
-        displayName: 'Execute generic linux module tests'
+          ./symcryptunittest dynamic:../../../module/${archName}/${{parameters.env}}/generic/libsymcrypt.so
+        displayName: 'Execute unit tests with generic SymCrypt module'
+        name: '${{parameters.env}}UnitTestDynamicGeneric_${{parameters.buildType}}'
+        condition: or(eq(variables['System.PullRequest.TargetBranch'], 'refs/heads/publish'), in(variables['Build.Reason'], 'IndividualCI', 'BatchedCI'))
 
   # Publish artifacts so they're available in the pipeline results
   - publish: $(System.DefaultWorkingDirectory)/bin

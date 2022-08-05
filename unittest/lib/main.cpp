@@ -247,6 +247,10 @@ ULONGLONG g_nTotalErrors = 0;
 
 SYMCRYPT_CPU_FEATURES g_disabledOnCommandLine = 0;
 
+PVOID g_dynamicSymCryptModuleHandle = nullptr;
+
+BOOL g_useDynamicFunctionsInTestCall = FALSE;
+
 //
 // For most performance data we compute a line (a*n + b) for the time it takes to process an n-byte
 // message. We also compute the 90 percentile of the deviation of the cloud points from this line.
@@ -255,7 +259,7 @@ SYMCRYPT_CPU_FEATURES g_disabledOnCommandLine = 0;
 BOOL g_showPerfRangeInfo = FALSE;
 
 //
-// For the ECC algorithms we show detailed information if this flag is set.
+// We show detailed information if this flag is set.
 //
 BOOL g_verbose = FALSE;
 
@@ -281,6 +285,8 @@ UINT32 g_measure_sizes_end = 0;
 UINT32 g_measure_sizes_increment = 1;
 UINT32 g_measure_sizes_repetitions = 1;
 String g_measure_sizes_stringPrefix = "";
+
+String g_dynamicModulePath = "";
 
 //
 // Flag that specifies that we run performance tests
@@ -612,6 +618,11 @@ usage()
             "  testSaveYmm       This option enables the unit tests to test the save/restore logic for\n"
             "                    Ymm registers. Normally the C runtime may overwrite Ymm registers and\n"
             "                    these tests will fail, so the test is disabled by default.\n"
+            "  dynamic:<path_to_module>\n"
+            "                    This option instructs the unit tests to load <path_to_module> as another\n"
+            "                    external implementation of the SymCrypt APIs, which will be added as an\n"
+            "                    implementation called SymCryptDynamic. By default, all calls to SymCrypt\n"
+            "                    are passed to both the statically and dynamically linked SymCrypt versions\n"
             "\n"
 #if SYMCRYPT_CPU_X86 | SYMCRYPT_CPU_AMD64
             " CPU feature:       aesni, pclmulqdq, sse2, sse3, ssse3, avx2,\n"
@@ -727,6 +738,23 @@ VOID printTestVectorSaveOptions()
     if (sep == ' ')
     {
         print(" None");
+    }
+    print("\n");
+}
+
+VOID
+printSymCryptFipsGetSelftestsPerformed()
+{
+    UINT32 fipsSelfTestsPerformed = SymCryptFipsGetSelftestsPerformed();
+    print("static  SymCryptFipsGetSelftestsPerformed() %x\n", fipsSelfTestsPerformed);
+
+    if( g_dynamicSymCryptModuleHandle != NULL )
+    {
+        decltype(&SymCryptFipsGetSelftestsPerformed) dynamicSymCryptFipsGetSelftestsPerformed = SCTEST_GET_DYNSYM(SymCryptFipsGetSelftestsPerformed);
+        if (dynamicSymCryptFipsGetSelftestsPerformed != NULL)
+        {
+            print("dynamic SymCryptFipsGetSelftestsPerformed() %x\n", dynamicSymCryptFipsGetSelftestsPerformed());
+        }
     }
 }
 
@@ -883,6 +911,13 @@ processSingleOption( _In_ PSTR option )
         if (STRICMP(&option[0], "testSaveYmm") == 0)
         {
             TestSaveYmmEnabled = TRUE;
+            optionHandled = TRUE;
+        }
+        if (STRNICMP(&option[0], "dynamic:", 8) == 0)
+        {
+            __analysis_assume(strlen(option) >= 8);
+
+            g_dynamicModulePath = String(&option[8]);
             optionHandled = TRUE;
         }
     }
@@ -1236,7 +1271,7 @@ testpbkdf2()
 #endif
 
 //
-// Reach into the internals of Symcrypt to retrieve the build string
+// Reach into the internals of SymCrypt to retrieve the build string
 extern "C" {
 extern const CHAR * const SymCryptBuildString;
 };
@@ -1272,6 +1307,21 @@ initTestInfrastructure( int argc, _In_reads_( argc ) char * argv[] )
     }
 
     printTestVectorSaveOptions();
+
+    if( !g_dynamicModulePath.empty() )
+    {
+        g_dynamicSymCryptModuleHandle = loadDynamicModuleFromPath(g_dynamicModulePath.c_str());
+        CHECK(g_dynamicSymCryptModuleHandle != NULL, "!");
+    }
+
+    if( g_dynamicSymCryptModuleHandle != NULL )
+    {
+        iprint("\nLoaded %s to %llx\n", g_dynamicModulePath.c_str(), (UINT64)g_dynamicSymCryptModuleHandle);
+
+        SCTEST_GET_DYNSYM(SymCryptModuleInit)(SYMCRYPT_CODE_VERSION_API, SYMCRYPT_CODE_VERSION_MINOR);
+    }
+
+    printSymCryptFipsGetSelftestsPerformed();
 
     if( g_rngSeed == 0 )
     {
@@ -1561,15 +1611,47 @@ runFunctionalTests()
     }
 #endif
 
-    print( "\nFunctional tests:\n" );
+    print( "\n\nFunctional tests:\n" );
 
     developertest();
 
-    rdrandTest();
+    // Optionally rerun tests which directly call SymCrypt APIs specifying g_useDynamicFunctionsInTestCall
+    // to dispatch the calls to the dynamic SymCrypt module.
+    for( BOOL useDynamicFunctions : {FALSE, TRUE} )
+    {
+        // Unfortunately range based for loop needs a new variable declaration
+        g_useDynamicFunctionsInTestCall = useDynamicFunctions;
+        if( g_useDynamicFunctionsInTestCall && !g_dynamicSymCryptModuleHandle )
+        {
+            break;
+        }
 
-    testWipe();
+        iprint("SymCrypt %s function tests\n", g_useDynamicFunctionsInTestCall ? "dynamic" : "static");
 
-    testUtil();
+        rdrandTest();
+
+        testWipe();
+
+        testUtil();
+
+        testScsTable();
+
+        testScsTools();
+
+        testPaddingPkcs7();
+
+#if SYMCRYPT_MS_VC
+        testIEEE802_11SaeCustom();
+#endif
+    }
+
+    iprint("Multi-implementation tests\n");
+
+    g_useDynamicFunctionsInTestCall = FALSE;
+    // From here we will have the dynamic SymCrypt module act as an alternative implementation
+    // which will enable comparative functional and performance tests
+    // The tests may modify g_useDynamicFunctionsInTestCall themselves to perform specific subtests
+    // with dispatch functions
 
     testHashAlgorithms();
 
@@ -1591,12 +1673,6 @@ runFunctionalTests()
 
     testArithmetic();
 
-    testScsTable();
-
-    testPaddingPkcs7();
-
-    testScsTools();
-
     testRsaSignAlgorithms();
 
     testRsaEncAlgorithms();
@@ -1607,9 +1683,7 @@ runFunctionalTests()
 
     testEcc();
 
-#if SYMCRYPT_MS_VC
-    testIEEE802_11SaeCustom();
-#endif
+    printSymCryptFipsGetSelftestsPerformed();
 
     iprint( "Functional testing done.\n" );
 
@@ -1729,7 +1803,11 @@ runPerfTests()
         if( g_runRsaAverageKeyPerf )
         {
             PrintTable ptRsaKeygen;
-            addRsaKeyGenPerfSymCrypt( ptRsaKeygen );
+            addRsaKeyGenPerfSymCrypt<ImpScStatic>(ptRsaKeygen);
+            if( g_dynamicSymCryptModuleHandle != NULL )
+            {
+                addRsaKeyGenPerfSymCrypt<ImpScDynamic>( ptRsaKeygen );
+            }
 #if INCLUDE_IMPL_MSBIGNUM
             addRsaKeyGenPerfMsBignum( ptRsaKeygen );
 #endif
@@ -1762,14 +1840,23 @@ VOID
 rdrandTest()
 {
 #if SYMCRYPT_CPU_X86 | SYMCRYPT_CPU_AMD64
-    BOOL present = SymCryptRdrandStatus() == SYMCRYPT_NO_ERROR;
+    if( !SCTEST_LOOKUP_DISPATCHSYM(SymCryptRdrandStatus)    ||
+        !SCTEST_LOOKUP_DISPATCHSYM(SymCryptRdrandGet)       ||
+        !SCTEST_LOOKUP_DISPATCHSYM(SymCryptRdseedStatus)    ||
+        !SCTEST_LOOKUP_DISPATCHSYM(SymCryptRdseedGet) )
+    {
+        print("    rdrandTest skipped\n");
+        return;
+    }
+
+    BOOL present = ScDispatchSymCryptRdrandStatus() == SYMCRYPT_NO_ERROR;
     BYTE buf[SYMCRYPT_SHA512_RESULT_SIZE];
 
     if( present )
     {
         BYTE * p = new BYTE[ 3 * SYMCRYPT_RDRAND_RESEED_SIZE ];
         CHECK( p != NULL, "Out of memory in rdrandTest()" );
-        SymCryptRdrandGet( p, 3 * SYMCRYPT_RDRAND_RESEED_SIZE, buf );
+        ScDispatchSymCryptRdrandGet( p, 3 * SYMCRYPT_RDRAND_RESEED_SIZE, buf );
 
         //
         // print part of the result, so that the compiler can't optimize it all away
@@ -1778,10 +1865,10 @@ rdrandTest()
         delete [] p;
     }
 
-    present = SymCryptRdseedStatus() == SYMCRYPT_NO_ERROR;
+    present = ScDispatchSymCryptRdseedStatus() == SYMCRYPT_NO_ERROR;
     if( present )
     {
-        SymCryptRdseedGet( buf, sizeof( buf ) );
+        ScDispatchSymCryptRdseedGet( buf, sizeof( buf ) );
 
         //
         // print part of the result, so that the compiler can't optimize it all away

@@ -165,7 +165,7 @@ createKatFileSingleDsa( FILE * f, PCDLGROUP_TESTBLOB pBlob )
     BYTE sig[ DLKEY_MAXKEYSIZE ];
     BYTE privKey[ DLKEY_MAXKEYSIZE ];
 
-    PSYMCRYPT_DLGROUP pGroup = dlgroupObjectFromTestBlob( pBlob );
+    PSYMCRYPT_DLGROUP pGroup = dlgroupObjectFromTestBlob<ImpSc>( pBlob );
 
     PSYMCRYPT_DLKEY pKey = SymCryptDlkeyAllocate( pGroup );
 

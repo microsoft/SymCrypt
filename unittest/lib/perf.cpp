@@ -1237,7 +1237,7 @@ measurePerfOfWipe()
 {
     UINT32 t;
 
-    // Use the measurement fucntion with memset to avoid fixed target optimizations
+    // Use the measurement function with memset to avoid fixed target optimizations
     SYMCRYPT_FORCE_WRITE32( &t, (UINT32) measureWipePerfOneSize( 16, 0, &memsetWrapper ) );
 
     for( SIZE_T offset = 0; offset < PERF_WIPE_N_OFFSETS; offset ++ )
@@ -1545,56 +1545,19 @@ runProfiling()
     g_perfTestsRunning = FALSE;
 }
 
+#include "sc_imp_shims.h"
 
-VOID
-addRsaKeyGenPerfSymCrypt( PrintTable &table )
-{
-    UINT32 bitSizes[] = {512, 3*256, 1024, 3*512, 2048, 3*1024, 4096, 3*2048, 8192, };
-    SYMCRYPT_RSA_PARAMS scRsaParams = {0};
+#define IMP_Name ScStatic
+#define IMP_PrettyNameStr "SymCryptStatic"
+#include "perf_sc_imp_pattern.cpp"
+#undef IMP_PrettyNameStr
+#undef IMP_Name
 
-    iprint( "\n"
-        " Trial division limits: \n" );
-    for( UINT32 i=0; i<ARRAY_SIZE( bitSizes ); i++ )
-    {
-        PCSYMCRYPT_TRIALDIVISION_CONTEXT pContext = SymCryptCreateTrialDivisionContext( SymCryptDigitsFromBits( bitSizes[i] / 2 ) );
-        CHECK( pContext != NULL, "Out of memory" );
-        iprint( "%5d -> %7d\n", bitSizes[i], SymCryptTestTrialdivisionMaxSmallPrime( pContext ) );
-        SymCryptFreeTrialDivisionContext( pContext );
-    }
-
-    for( UINT32 i=0; i<ARRAY_SIZE( bitSizes ); i++ )
-    {
-        UINT32 bitSize = bitSizes[i];
-
-        UINT64 scTicks;
-        double scCost;
-        double scTotal = 0.0;
-
-        scRsaParams.version = 1;
-        scRsaParams.nBitsOfModulus = bitSize;
-        scRsaParams.nPrimes = 2;
-        scRsaParams.nPubExp = 1;
-
-        for( UINT32 j=0; j<10; j++ )
-        {
-            UINT64 start = GET_PERF_CLOCK();
-
-            PSYMCRYPT_RSAKEY pScKey = SymCryptRsakeyAllocate( &scRsaParams, 0 );
-            SymCryptRsakeyGenerate( pScKey, NULL, 0, SYMCRYPT_FLAG_RSAKEY_SIGN | SYMCRYPT_FLAG_RSAKEY_ENCRYPT );
-            SymCryptRsakeyFree( pScKey );
-
-            UINT64 stop = GET_PERF_CLOCK();
-            scTicks = stop - start;
-
-            scCost = scTicks * g_perfScaleFactor - g_perfMeasurementOverhead;
-            scTotal += scCost;
-
-            String row = formatNumber( bitSize ) + "-" + formatNumber(j+1);
-            table.addItem( row, "SymCrypt", formatNumber( scCost ) );
-            table.addItem( row, "SymCryptav", formatNumber( scTotal / (j+1) ));
-        }
-    }
-}
+#define IMP_Name ScDynamic
+#define IMP_PrettyNameStr "SymCryptDynamic"
+#include "perf_sc_imp_pattern.cpp"
+#undef IMP_PrettyNameStr
+#undef IMP_Name
 
 #if INCLUDE_IMPL_MSBIGNUM
 VOID

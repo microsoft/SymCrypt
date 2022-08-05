@@ -1,3 +1,6 @@
+# Request C++17 standard to enable `if constexpr`
+set(CMAKE_CXX_STANDARD 17)
+
 set(SOURCES
     main.cpp
     testAesCtrDrbg.cpp

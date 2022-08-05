@@ -24,7 +24,7 @@ VOID addImplementationToGlobalList()
         catch( NTSTATUS status )
         {
             UNREFERENCED_PARAMETER( status );
-            iprint( "\nUnsupported algorithm %s/%s, skipping...\n", impName.c_str(), algName.c_str() );
+            iprint( "\nUnsupported algorithm %s/%s, skipping...", impName.c_str(), algName.c_str() );
             return;
         }
         p->m_algorithmName = algName;
@@ -49,7 +49,7 @@ VOID addImplementationToList(AlgorithmImplementationVector * pAlgorithmImplement
     catch( NTSTATUS status )
     {
         UNREFERENCED_PARAMETER( status );
-        iprint( "\nUnsupported algorithm %s/%s, skipping...\n", impName.c_str(), algName.c_str() );
+        iprint( "\nUnsupported algorithm %s/%s, skipping...", impName.c_str(), algName.c_str() );
         return;
     }
 

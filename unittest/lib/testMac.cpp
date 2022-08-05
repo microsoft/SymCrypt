@@ -533,6 +533,7 @@ VOID
 testMacAlgorithms()
 {
     BYTE    buf[8];
+    BYTE    bufDynamic[8];
 
     testMacKats();
 
@@ -543,12 +544,24 @@ testMacAlgorithms()
     // Msg = "Marvin"
     // Mac = 7c0ae124d1185a37
     //
-    SymCryptMarvin32( SymCryptMarvin32DefaultSeed, (PCBYTE) "Marvin", 6, buf );
+    ScDispatchSymCryptMarvin32( ScDispatchSymCryptMarvin32DefaultSeed, (PCBYTE) "Marvin", 6, buf );
 
     if( memcmp( buf, "\x7c\x0a\xe1\x24\xd1\x18\x5a\x37", sizeof( buf ) ) != 0 )
     {
         FATAL( "Wrong result for default seeded Marvin API" );
     }
 
+    if( (g_dynamicSymCryptModuleHandle != NULL) &&
+        (SCTEST_LOOKUP_DYNSYM(SymCryptMarvin32) != NULL) )
+    {
+        g_useDynamicFunctionsInTestCall = TRUE;
+        ScDispatchSymCryptMarvin32( ScDispatchSymCryptMarvin32DefaultSeed, (PCBYTE)"Marvin", 6, bufDynamic );
+        g_useDynamicFunctionsInTestCall = FALSE;
+
+        if( memcmp( bufDynamic, buf, sizeof( buf ) ) != 0 )
+        {
+            FATAL( "Wrong result for default seeded Marvin API" );
+        }
+    }
 }
 

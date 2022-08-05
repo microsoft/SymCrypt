@@ -6,8 +6,6 @@
 
 #include "precomp.h"
 
-#include <sstream>
-
 PrintTable::PrintTable()
 {
 }

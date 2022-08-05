@@ -4,6 +4,19 @@
 
 PSTR testDriverName = TESTDRIVER_NAME;
 
+//
+// These two functions should work as is, but have yet to be tested against a real SymCrypt dll
+//
+PVOID loadDynamicModuleFromPath(PCSTR dynamicModulePath)
+{
+    return (PVOID) LoadLibraryExA(dynamicModulePath, NULL, 0);
+}
+
+PVOID getDynamicSymbolPointerFromString(PVOID hModule, PCSTR pSymbolName)
+{
+    return (PVOID) GetProcAddress((HMODULE) hModule, pSymbolName);
+}
+
 #if SYMCRYPT_CPU_X86 | SYMCRYPT_CPU_AMD64
 
 /////////////////////////////////////////////////////////////
@@ -103,6 +116,11 @@ initVectorRegisters()
 #endif
 }
 
+VOID
+cleanVectorRegisters()
+{
+}
+
 #else
 
 VOID verifyVectorRegisters()
@@ -110,6 +128,11 @@ VOID verifyVectorRegisters()
 }
 
 VOID initVectorRegisters()
+{
+}
+
+VOID
+cleanVectorRegisters()
 {
 }
 

@@ -7,7 +7,55 @@
 
 #include "precomp.h"
 
-SYMCRYPT_ENVIRONMENT_DEFS( Unittest );
+SYMCRYPT_ENVIRONMENT_DEFS(Unittest);
+
+#include <dlfcn.h>
+#include <sys/random.h>
+
+PVOID loadDynamicModuleFromPath(PCSTR dynamicModulePath)
+{
+    //
+    // Considered using dlmopen, which loads the module in its own fresh namespace which would help
+    // to ensure there is no symbol confusion of any kind. Unfortunately, I found that using dlmopen
+    // is not supported by gdb so you cannot set breakpoints on functions in the dlmopen-ed library.
+    // As RTLD_DEEPBIND seems to do the trick in preventing symbol confusion, sticking with dlopen
+    // for now.
+    //
+    // dlmopen(LM_ID_NEWLM, dynamicModulePath, RTLD_NOW | RTLD_DEEPBIND);
+
+    //
+    // RTLD_NOW means that all unresolved symbols in the library are resolved eagerly before dlopen
+    // returns
+    // RTLD_DEEPBIND means that the symbols within the loaded library are used in preference to
+    // those in the global scope (which ensures that the library will call its own copies of
+    // internal SymCrypt functions)
+    //
+    PVOID hModule = dlopen(dynamicModulePath, RTLD_NOW | RTLD_DEEPBIND);
+    if (!hModule) {
+        iprint("\nFailed to load dynamic module with: %s\n", dlerror());
+    }
+    return hModule;
+}
+
+PVOID getDynamicSymbolPointerFromString(PVOID hModule, PCSTR pSymbolName)
+{
+    return dlsym(hModule, pSymbolName);
+}
+
+// Define oe_sgx_get_additional_host_entropy so we can test the oe module with our symcryptunittest
+// executable
+extern "C"
+{
+    int oe_sgx_get_additional_host_entropy(uint8_t* data, size_t size)
+    {
+        SIZE_T result = getrandom( data, size, 0 );
+        if (result != size )
+        {
+            SymCryptFatal( 'oehe' );
+        }
+        return 1; // 1 indicates success
+    }
+}
 
 #if SYMCRYPT_CPU_AMD64
 /////////////////////////////////////////////////////////////
@@ -20,6 +68,7 @@ __m256i g_ymmTestState[16];
 VOID
 verifyVectorRegisters()
 {
+    
     if( !SYMCRYPT_CPU_FEATURES_PRESENT( SYMCRYPT_CPU_FEATURE_AVX2 ) )
     {
         return;
@@ -70,6 +119,17 @@ initVectorRegisters()
     }
 }
 
+VOID
+cleanVectorRegisters()
+{
+    if( !SYMCRYPT_CPU_FEATURES_PRESENT( SYMCRYPT_CPU_FEATURE_AVX2 ) )
+    {
+        return;
+    }
+
+    _mm256_zeroupper();
+}
+
 #else
 
 VOID verifyVectorRegisters()
@@ -77,6 +137,11 @@ VOID verifyVectorRegisters()
 }
 
 VOID initVectorRegisters()
+{
+}
+
+VOID
+cleanVectorRegisters()
 {
 }
 

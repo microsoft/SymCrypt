@@ -585,6 +585,18 @@ testSessionRandom()
     Rng rng;
     SYMCRYPT_ERROR scError = SYMCRYPT_NO_ERROR;
 
+    if( !SCTEST_LOOKUP_DISPATCHSYM(SymCryptGcmExpandKey) ||
+        !SCTEST_LOOKUP_DISPATCHSYM(SymCryptSessionSenderInit) ||
+        !SCTEST_LOOKUP_DISPATCHSYM(SymCryptSessionReceiverInit) ||
+        !SCTEST_LOOKUP_DISPATCHSYM(SymCryptSessionGcmEncrypt) ||
+        !SCTEST_LOOKUP_DISPATCHSYM(SymCryptGcmEncrypt) ||
+        !SCTEST_LOOKUP_DISPATCHSYM(SymCryptSessionGcmDecrypt) ||
+        !SCTEST_LOOKUP_DISPATCHSYM(SymCryptSessionDestroy) )
+    {
+        print("    skipped\n");
+        return;
+    }
+
     SYMCRYPT_SESSION senderSession;
     SYMCRYPT_SESSION receiverSession;
     SIZE_T seed = g_rng.sizet( (SIZE_T)-1 );
@@ -624,19 +636,19 @@ testSessionRandom()
         sessionPlainText[i] = rng.byte();
     }
 
-    scError = SymCryptGcmExpandKey(&gcmExpandedKey, SymCryptAesBlockCipher, key, sizeof(key));
+    scError = ScDispatchSymCryptGcmExpandKey(&gcmExpandedKey, ScDispatchSymCryptAesBlockCipher, key, sizeof(key));
     CHECK(scError == SYMCRYPT_NO_ERROR, "SymCryptGcmExpandKey failed");
 
-    scError = SymCryptSessionSenderInit(&senderSession, senderId, 0);
+    scError = ScDispatchSymCryptSessionSenderInit(&senderSession, senderId, 0);
     CHECK(scError == SYMCRYPT_NO_ERROR, "SymCryptSessionSenderInit failed");
 
-    scError = SymCryptSessionReceiverInit(&receiverSession, senderId, 0);
+    scError = ScDispatchSymCryptSessionReceiverInit(&receiverSession, senderId, 0);
     CHECK(scError == SYMCRYPT_NO_ERROR, "SymCryptSessionReceiverInit failed");
 
     SYMCRYPT_STORE_MSBFIRST32(&nonce[0], senderId);
     SYMCRYPT_STORE_MSBFIRST64(&nonce[4], 1ull);
 
-    scError = SymCryptSessionGcmEncrypt(
+    scError = ScDispatchSymCryptSessionGcmEncrypt(
         &senderSession,
         &gcmExpandedKey,
         authData, sizeof(authData),
@@ -645,7 +657,7 @@ testSessionRandom()
         &messageNumber);
     CHECK3(scError == SYMCRYPT_NO_ERROR, "SymCryptSessionGcmEncrypt failed with 0x%x", scError);
 
-    SymCryptGcmEncrypt(
+    ScDispatchSymCryptGcmEncrypt(
         &gcmExpandedKey,
         nonce, sizeof(nonce),
         authData, sizeof(authData),
@@ -663,7 +675,7 @@ testSessionRandom()
     // Would be good to make a multi-threaded version, but we don't have multi-threaded Linux unit tests yet.
     for (int i = 0; i < 1024; i++)
     {
-        scError = SymCryptSessionGcmEncrypt(
+        scError = ScDispatchSymCryptSessionGcmEncrypt(
             &senderSession,
             &gcmExpandedKey,
             authData, sizeof(authData),
@@ -675,7 +687,7 @@ testSessionRandom()
 
         SYMCRYPT_STORE_MSBFIRST64(&nonce[4], messageNumber);
 
-        SymCryptGcmEncrypt(
+        ScDispatchSymCryptGcmEncrypt(
             &gcmExpandedKey,
             nonce, sizeof(nonce),
             authData, sizeof(authData),
@@ -688,7 +700,7 @@ testSessionRandom()
         {
         // directly decrypt the most recently encrypted message
         case 0:
-            scError = SymCryptSessionGcmDecrypt(
+            scError = ScDispatchSymCryptSessionGcmDecrypt(
                 &receiverSession,
                 messageNumber,
                 &gcmExpandedKey,
@@ -702,7 +714,7 @@ testSessionRandom()
             testMessageNumber = receiverSession.replayState.messageNumber;
 
             // try decrypting the same message with an incorrect messageNumber from the future
-            scError = SymCryptSessionGcmDecrypt(
+            scError = ScDispatchSymCryptSessionGcmDecrypt(
                 &receiverSession,
                 messageNumber + rng.sizet(1,512),
                 &gcmExpandedKey,
@@ -718,7 +730,7 @@ testSessionRandom()
 
         // decrypt the backup message and ensure it can't be decrypted twice
         case 1:
-            scError = SymCryptSessionGcmDecrypt(
+            scError = ScDispatchSymCryptSessionGcmDecrypt(
                 &receiverSession,
                 backupMessageNumber,
                 &gcmExpandedKey,
@@ -736,7 +748,7 @@ testSessionRandom()
                     "SymCryptSessionGcmDecrypt did not return SYMCRYPT_SESSION_REPLAY_FAILURE but 0x%x", scError);
             }
 
-            scError = SymCryptSessionGcmDecrypt(
+            scError = ScDispatchSymCryptSessionGcmDecrypt(
                 &receiverSession,
                 backupMessageNumber,
                 &gcmExpandedKey,
@@ -761,7 +773,7 @@ testSessionRandom()
                 // Note that trying to decrypt with a modified messageNumber should not succeed in
                 // decryption, but we are testing here that we fail early because the messageNumber
                 // is too low to even bother trying decryption
-                scError = SymCryptSessionGcmDecrypt(
+                scError = ScDispatchSymCryptSessionGcmDecrypt(
                     &receiverSession,
                     receiverSession.replayState.messageNumber - 64,
                     &gcmExpandedKey,
@@ -780,15 +792,25 @@ testSessionRandom()
     }
 
     // Cleanup
-    SymCryptSessionDestroy(&senderSession);
-    SymCryptSessionDestroy(&receiverSession);
+    ScDispatchSymCryptSessionDestroy(&senderSession);
+    ScDispatchSymCryptSessionDestroy(&receiverSession);
 }
 
 VOID
 testAuthEncAlgorithms()
 {
     testAuthEncKats();
+
+    print("    testSessionRandom static\n");
     testSessionRandom();
+
+    if (g_dynamicSymCryptModuleHandle != NULL)
+    {
+        print("    testSessionRandom dynamic\n");
+        g_useDynamicFunctionsInTestCall = TRUE;
+        testSessionRandom();
+        g_useDynamicFunctionsInTestCall = FALSE;
+    }
 }
 
 

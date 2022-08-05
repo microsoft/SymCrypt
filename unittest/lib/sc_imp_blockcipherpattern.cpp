@@ -1,12 +1,12 @@
 //
-// Pattern file for the Symcrypt block cipher implementations.
+// Pattern file for the SymCrypt block cipher implementations.
 //
 // Copyright (c) Microsoft Corporation. Licensed under the MIT license. 
 //
 
 template<>
 VOID 
-algImpKeyPerfFunction< ImpXxx, AlgXxx, ModeXxx>( PBYTE buf1, PBYTE buf2, PBYTE buf3, SIZE_T keySize )
+algImpKeyPerfFunction<ImpXxx, AlgXxx, ModeXxx>( PBYTE buf1, PBYTE buf2, PBYTE buf3, SIZE_T keySize )
 {
     UNREFERENCED_PARAMETER( buf3 );
 
@@ -15,16 +15,18 @@ algImpKeyPerfFunction< ImpXxx, AlgXxx, ModeXxx>( PBYTE buf1, PBYTE buf2, PBYTE b
 
 template<>
 VOID
-algImpDataPerfFunction<ImpXxx,AlgXxx, ModeXxx>( PBYTE buf1, PBYTE buf2, PBYTE buf3, SIZE_T dataSize )
+algImpDataPerfFunction<ImpXxx, AlgXxx, ModeXxx>( PBYTE buf1, PBYTE buf2, PBYTE buf3, SIZE_T dataSize )
 {
-    SYMCRYPT_XxxXxxEncrypt( (SYMCRYPT_XXX_EXPANDED_KEY *)buf1, buf2 + PERF_BUFFER_SIZE/2, buf2, buf3, dataSize );
+    SYMCRYPT_EncryptTest<ImpXxx, AlgXxx, ModeXxx>(
+        (SYMCRYPT_XXX_EXPANDED_KEY*)buf1, buf2 + PERF_BUFFER_SIZE / 2, buf2, buf3, dataSize);
 }
 
 template<>
 VOID
-algImpDecryptPerfFunction<ImpXxx,AlgXxx, ModeXxx>( PBYTE buf1, PBYTE buf2, PBYTE buf3, SIZE_T dataSize )
+algImpDecryptPerfFunction<ImpXxx, AlgXxx, ModeXxx>( PBYTE buf1, PBYTE buf2, PBYTE buf3, SIZE_T dataSize )
 {
-    SYMCRYPT_XxxXxxDecrypt( (SYMCRYPT_XXX_EXPANDED_KEY *)buf1, buf2 + PERF_BUFFER_SIZE/2, buf2, buf3, dataSize );
+    SYMCRYPT_DecryptTest<ImpXxx, AlgXxx, ModeXxx>(
+        (SYMCRYPT_XXX_EXPANDED_KEY*)buf1, buf2 + PERF_BUFFER_SIZE / 2, buf2, buf3, dataSize);
 }
 
 template<>
@@ -68,8 +70,14 @@ BlockCipherImp<ImpXxx, AlgXxx, ModeXxx>::setKey( PCBYTE pbKey, SIZE_T cbKey )
 {
     SYMCRYPT_ERROR e;
 
-    e = SYMCRYPT_XxxExpandKey( &state.key, pbKey, cbKey );
-    verifyVectorRegisters();
+#if ALG_Rc2SetKeyOverride
+    //
+    // An ugly hack, we re-map the RC2 key expansion to use the global key size variable.
+    //
+    e = ScShimSymCryptRc2ExpandKeyEx( &state.key, pbKey, cbKey, g_rc2EffectiveKeyLength ? g_rc2EffectiveKeyLength : 8 * (ULONG)cbKey);
+#else
+    e = SYMCRYPT_XxxExpandKey( &state.key, pbKey, cbKey);
+#endif
 
     if( e != SYMCRYPT_NO_ERROR )
     {
@@ -87,8 +95,7 @@ BlockCipherImp<ImpXxx, AlgXxx, ModeXxx>::encrypt( PBYTE pbChain, SIZE_T cbChain,
     CHECK( cbData % msgBlockLen() == 0, "Wrong data length" );
     CHECK( cbChain == chainBlockLen(), "Wrong chain len" );
 
-    SYMCRYPT_XxxXxxEncrypt( &state.key, pbChain, pbSrc, pbDst, cbData );
-    verifyVectorRegisters();
+    SYMCRYPT_EncryptTest<ImpXxx, AlgXxx, ModeXxx>( &state.key, pbChain, pbSrc, pbDst, cbData );
 }
 
 template<>
@@ -99,7 +106,6 @@ BlockCipherImp<ImpXxx, AlgXxx, ModeXxx>::decrypt( PBYTE pbChain, SIZE_T cbChain,
     CHECK( cbData % msgBlockLen() == 0, "Wrong data length" );
     CHECK( cbChain == chainBlockLen(), "Wrong chain len" );
 
-    SYMCRYPT_XxxXxxDecrypt( &state.key, pbChain, pbSrc, pbDst, cbData );
-    verifyVectorRegisters();
+    SYMCRYPT_DecryptTest<ImpXxx, AlgXxx, ModeXxx>( &state.key, pbChain, pbSrc, pbDst, cbData );
 }
 

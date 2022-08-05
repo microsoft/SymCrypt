@@ -70,13 +70,20 @@ testAesCtrDrbgDetailedVectors()
     SYMCRYPT_RNG_AES_STATE rng;
     BYTE buf[32];
 
-    SymCryptRngAesInstantiate( &rng, g_abInstantiateEntropyInputPlusNonce, sizeof( g_abInstantiateEntropyInputPlusNonce ) );
+    if( !SCTEST_LOOKUP_DISPATCHSYM(SymCryptRngAesInstantiate)    ||
+        !SCTEST_LOOKUP_DISPATCHSYM(SymCryptRngAesGenerate) )
+    {
+        print("    skipped\n");
+        return;
+    }
 
-    SymCryptRngAesGenerate( &rng, buf, sizeof( buf ) );
+    ScDispatchSymCryptRngAesInstantiate( &rng, g_abInstantiateEntropyInputPlusNonce, sizeof( g_abInstantiateEntropyInputPlusNonce ) );
+
+    ScDispatchSymCryptRngAesGenerate( &rng, buf, sizeof( buf ) );
 
     CHECK( memcmp( buf, g_abOutput1, sizeof( buf ) ) == 0, "Wrong output of AES_CTR_DRBG" );
 
-    SymCryptRngAesGenerate( &rng, buf, sizeof( buf ) );
+    ScDispatchSymCryptRngAesGenerate( &rng, buf, sizeof( buf ) );
 
     CHECK( memcmp( buf, g_abOutput2, sizeof( buf ) ) == 0, "Wrong output of AES_CTR_DRBG 2" );
 
@@ -312,11 +319,18 @@ testRngs()
 VOID
 testAesCtrDrbg()
 {
-
+    print("    testAesCtrDrbgDetailedVectors static\n");
     testAesCtrDrbgDetailedVectors();
 
-    testRngs();
+    if (g_dynamicSymCryptModuleHandle != NULL)
+    {
+        print("    testAesCtrDrbgDetailedVectors dynamic\n");
+        g_useDynamicFunctionsInTestCall = TRUE;
+        testAesCtrDrbgDetailedVectors();
+        g_useDynamicFunctionsInTestCall = FALSE;
+    }
 
+    testRngs();
 }
 
 

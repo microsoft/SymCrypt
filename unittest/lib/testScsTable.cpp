@@ -15,9 +15,9 @@ testScsTableSingle(UINT32 elementSize, UINT32 nElements)
     PBYTE pbValues;
     PBYTE pbTest;
 
-    cbBuffer = SymCryptScsTableInit( &scsTable, nElements, elementSize );
+    cbBuffer = ScDispatchSymCryptScsTableInit( &scsTable, nElements, elementSize );
     pbBuffer = (PBYTE) AllocWithChecksSc( cbBuffer );
-    SymCryptScsTableSetBuffer( &scsTable, pbBuffer, cbBuffer );
+    ScDispatchSymCryptScsTableSetBuffer( &scsTable, pbBuffer, cbBuffer );
 
     pbValues = (PBYTE) AllocWithChecksSc( elementSize * nElements );
     pbTest = (PBYTE) AllocWithChecksSc( elementSize );
@@ -26,7 +26,7 @@ testScsTableSingle(UINT32 elementSize, UINT32 nElements)
 
     for( UINT32 i=0; i<nElements; i++ )
     {
-        SymCryptScsTableStore( &scsTable, i, pbValues + elementSize * i, elementSize );
+        ScDispatchSymCryptScsTableStore( &scsTable, i, pbValues + elementSize * i, elementSize );
     }
 
     for( UINT32 i = 0; i < 6 * nElements; i++ )
@@ -36,7 +36,7 @@ testScsTableSingle(UINT32 elementSize, UINT32 nElements)
         if (b & 1)
         {
             // read
-            SymCryptScsTableLoad( &scsTable, entry, pbTest, elementSize );
+            ScDispatchSymCryptScsTableLoad( &scsTable, entry, pbTest, elementSize );
             CHECK( memcmp( pbTest, pbValues + elementSize * entry, elementSize ) == 0, "Scs table data mismatch" );
             //iprint( "." );
         } else {
@@ -44,17 +44,17 @@ testScsTableSingle(UINT32 elementSize, UINT32 nElements)
             {
                 pbTest[j] = g_rng.byte();
             }
-            SymCryptScsTableStore( &scsTable, entry, pbTest, elementSize );
+            ScDispatchSymCryptScsTableStore( &scsTable, entry, pbTest, elementSize );
             memcpy( pbValues + elementSize * entry, pbTest, elementSize );
             //iprint( "+" );
         }
     }
 
     // Test the wipe
-    SymCryptScsTableWipe( &scsTable );
+    ScDispatchSymCryptScsTableWipe( &scsTable );
 
-    SymCryptWipe( pbTest, elementSize );
-    SymCryptWipe( pbValues, elementSize * nElements );
+    ScDispatchSymCryptWipe( pbTest, elementSize );
+    ScDispatchSymCryptWipe( pbValues, elementSize * nElements );
 
     FreeWithChecksSc( pbTest );
     FreeWithChecksSc( pbValues );
@@ -77,6 +77,17 @@ testScsTable()
 {
     if( !isAlgorithmPresent( "ScsTable", FALSE ) )
     {
+        return;
+    }
+
+    if (!SCTEST_LOOKUP_DISPATCHSYM(SymCryptScsTableInit) ||
+        !SCTEST_LOOKUP_DISPATCHSYM(SymCryptScsTableSetBuffer) ||
+        !SCTEST_LOOKUP_DISPATCHSYM(SymCryptScsTableStore) ||
+        !SCTEST_LOOKUP_DISPATCHSYM(SymCryptScsTableLoad) ||
+        !SCTEST_LOOKUP_DISPATCHSYM(SymCryptScsTableWipe) ||
+        !SCTEST_LOOKUP_DISPATCHSYM(SymCryptWipe))
+    {
+        print("    testScsTable skipped\n");
         return;
     }
 

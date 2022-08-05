@@ -1,0 +1,3 @@
+{
+    oe_sgx_get_additional_host_entropy;
+};

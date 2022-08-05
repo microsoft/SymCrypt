@@ -31,7 +31,7 @@ testSaeCustom(
     BYTE abSharedSecret[32];
     BYTE abScalarSum[32];
 
-    scError = SymCrypt802_11SaeCustomInit(  &state,
+    scError = ScDispatchSymCrypt802_11SaeCustomInit(  &state,
                                             pbMACa,
                                             pbMACb,
                                             pbPassword,
@@ -43,7 +43,7 @@ testSaeCustom(
 
     CHECK4( cnt == bCounter, "Counter mismatch %02x, %02x", cnt, bCounter );
 
-    scError = SymCrypt802_11SaeCustomCommitCreate( &state, abScalar, abElement );
+    scError = ScDispatchSymCrypt802_11SaeCustomCommitCreate( &state, abScalar, abElement );
     CHECK( scError == SYMCRYPT_NO_ERROR, "Error in 802_11SaeCustomCommitCreate" );
 
     //iprint( "\n" );
@@ -56,11 +56,13 @@ testSaeCustom(
     CHECK( memcmp( abElement, pbCommitElement, 64) == 0, "Commit element error" );
 
 
-    scError = SymCrypt802_11SaeCustomCommitProcess( &state, pbPeerScalar, pbPeerElement, abSharedSecret, abScalarSum );
+    scError = ScDispatchSymCrypt802_11SaeCustomCommitProcess( &state, pbPeerScalar, pbPeerElement, abSharedSecret, abScalarSum );
     CHECK( scError == SYMCRYPT_NO_ERROR, "Error in 802_11SaeCustomCommitProcess" );
 
     CHECK( memcmp( abScalarSum, pbScalarSum, 32) == 0, "Scalar sum error" );
     CHECK( memcmp( abSharedSecret, pbSharedSecret, 32) == 0, "Shared secret error" );
+
+    ScDispatchSymCrypt802_11SaeCustomDestroy(&state);
 
     pAlgImp->m_nResults++;
 }
@@ -94,18 +96,21 @@ testSaeCustomConsistency( ArithImplementation * pAlgImp )
         GENRANDOM( abPassword, sizeof( abPassword ) );
 
         // Actor A creates a commit
-        SymCrypt802_11SaeCustomInit( &stateA, abMac1, abMac2, abPassword, cbPassword, NULL, NULL, NULL );
-        SymCrypt802_11SaeCustomCommitCreate( &stateA, abCommitScalarA, abCommitElementA );
+        ScDispatchSymCrypt802_11SaeCustomInit( &stateA, abMac1, abMac2, abPassword, cbPassword, nullptr, nullptr, nullptr );
+        ScDispatchSymCrypt802_11SaeCustomCommitCreate( &stateA, abCommitScalarA, abCommitElementA );
 
         // Actor B processes it
-        SymCrypt802_11SaeCustomInit( &stateB, abMac2, abMac1, abPassword, cbPassword, NULL, NULL, NULL );
-        SymCrypt802_11SaeCustomCommitCreate( &stateB, abCommitScalarB, abCommitElementB );
-        SymCrypt802_11SaeCustomCommitProcess( &stateB, abCommitScalarA, abCommitElementA, abSharedB, abSumB );
+        ScDispatchSymCrypt802_11SaeCustomInit( &stateB, abMac2, abMac1, abPassword, cbPassword, nullptr, nullptr, nullptr );
+        ScDispatchSymCrypt802_11SaeCustomCommitCreate( &stateB, abCommitScalarB, abCommitElementB );
+        ScDispatchSymCrypt802_11SaeCustomCommitProcess( &stateB, abCommitScalarA, abCommitElementA, abSharedB, abSumB );
 
-        SymCrypt802_11SaeCustomCommitProcess( &stateA, abCommitScalarB, abCommitElementB, abSharedA, abSumA );
+        ScDispatchSymCrypt802_11SaeCustomCommitProcess( &stateA, abCommitScalarB, abCommitElementB, abSharedA, abSumA );
 
         CHECK( memcmp( abSharedA, abSharedB, 32 ) == 0, "Shared secret mismatch" );
         CHECK( memcmp( abSumA, abSumB, 32 ) == 0, "Scalar sum mismatch" );
+
+        ScDispatchSymCrypt802_11SaeCustomDestroy(&stateA);
+        ScDispatchSymCrypt802_11SaeCustomDestroy(&stateB);
 
         pAlgImp->m_nResults++;
     }
@@ -138,18 +143,20 @@ testSaeCustomNegative(
     GENRANDOM( abPassword, sizeof( abPassword ) );
 
     // Actor A creates a commit
-    SymCrypt802_11SaeCustomInit( &stateA, abMac1, abMac2, abPassword, cbPassword, NULL, NULL, NULL );
-    SymCrypt802_11SaeCustomCommitCreate( &stateA, abCommitScalarA, abCommitElementA );
+    ScDispatchSymCrypt802_11SaeCustomInit( &stateA, abMac1, abMac2, abPassword, cbPassword, nullptr, nullptr, nullptr );
+    ScDispatchSymCrypt802_11SaeCustomCommitCreate( &stateA, abCommitScalarA, abCommitElementA );
 
     // Process the fake reply
-    scError = SymCrypt802_11SaeCustomCommitProcess( &stateA, pbPeerScalar, pbPeerElement, abSharedA, abSumA );
+    scError = ScDispatchSymCrypt802_11SaeCustomCommitProcess( &stateA, pbPeerScalar, pbPeerElement, abSharedA, abSumA );
 
-    CHECK3( scError != SYMCRYPT_NO_ERROR, "No error when receiving invalid peer commit scalar or element at line %lld", line );
+    CHECK3(scError != SYMCRYPT_NO_ERROR, "No error when receiving invalid peer commit scalar or element at line %lld", line);
+
+    ScDispatchSymCrypt802_11SaeCustomDestroy(&stateA);
 
     pAlgImp->m_nResults++;
 }
 
-VOID 
+VOID
 testSaeCustomH2E_PWE(
                                                         ArithImplementation* pAlgImp,
     _In_                                                SYMCRYPT_802_11_SAE_GROUP group,
@@ -170,12 +177,12 @@ testSaeCustomH2E_PWE(
     BYTE abPWE[SYMCRYPT_SAE_MAX_EC_POINT_SIZE_BYTES] = { 0 };
     SIZE_T cbScalar = {};
     SIZE_T cbPoint = {};
- 
-    SymCrypt802_11SaeGetGroupSizes( group, &cbScalar, &cbPoint );
+
+    ScDispatchSymCrypt802_11SaeGetGroupSizes( group, &cbScalar, &cbPoint );
     CHECK( cbScalar != 0, "Invalid field element size" );
     CHECK( cbPoint != 0, "Invalid elliptic curve point size" );
 
-    scError = SymCrypt802_11SaeCustomCreatePTGeneric(
+    scError = ScDispatchSymCrypt802_11SaeCustomCreatePTGeneric(
         group,
         pbSsid,
         cbSsid,
@@ -188,18 +195,18 @@ testSaeCustomH2E_PWE(
 
     CHECK(scError == SYMCRYPT_NO_ERROR, "Error in 802_11SaeCustomCreatePT");
 
-    CHECK(SymCryptEqual(abPT, pbExpectedPT, cbPoint), "Incorrect PT value");
+    CHECK(ScDispatchSymCryptEqual(abPT, pbExpectedPT, cbPoint), "Incorrect PT value");
 
-    scError = SymCrypt802_11SaeCustomInitH2EGeneric(
+    scError = ScDispatchSymCrypt802_11SaeCustomInitH2EGeneric(
         &state,
         group,
         abPT,
         cbPoint,
         pbMacA,
         pbMacB,
-        NULL,
+        nullptr,
         0,
-        NULL,
+        nullptr,
         0 );
 
     CHECK(scError == SYMCRYPT_NO_ERROR, "Error in 802_11SaeCustomInitH2E");
@@ -209,7 +216,7 @@ testSaeCustomH2E_PWE(
 
     CHECK(pbScratch != NULL, "Failed to allocate scratch space");
 
-    scError = SymCryptEcpointGetValue(
+    scError = ScDispatchSymCryptEcpointGetValue(
         state.pCurve,
         state.poPWE,
         SYMCRYPT_NUMBER_FORMAT_MSB_FIRST,
@@ -222,9 +229,10 @@ testSaeCustomH2E_PWE(
 
     CHECK(scError == SYMCRYPT_NO_ERROR, "Failed to get PWE XY value");
 
-    CHECK(SymCryptEqual(abPWE, pbExpectedPWE, cbPoint), "Incorrect PWE value");
+    CHECK(ScDispatchSymCryptEqual(abPWE, pbExpectedPWE, cbPoint), "Incorrect PWE value");
 
-    SymCryptWipe(pbScratch, cbScratch);
+    ScDispatchSymCrypt802_11SaeCustomDestroy(&state);
+    ScDispatchSymCryptWipe(pbScratch, cbScratch);
     SymCryptCallbackFree(pbScratch);
 
     pAlgImp->m_nResults++;
@@ -246,7 +254,7 @@ VOID testSaeCustomSimulateKeyExchange(
     SIZE_T cbScalar{ };
     SIZE_T cbPoint{ };
 
-    SymCrypt802_11SaeGetGroupSizes( group, &cbScalar, &cbPoint );
+    ScDispatchSymCrypt802_11SaeGetGroupSizes( group, &cbScalar, &cbPoint );
     CHECK( cbScalar != 0, "Invalid field element size" );
     CHECK( cbPoint != 0, "Invalid elliptic curve point size" );
 
@@ -306,7 +314,7 @@ VOID testSaeCustomSimulateKeyExchange(
         // Peer A
         //
         {
-            scError = SymCrypt802_11SaeCustomCreatePTGeneric(
+            scError = ScDispatchSymCrypt802_11SaeCustomCreatePTGeneric(
                 group,
                 abSsid,
                 cbSsid,
@@ -319,7 +327,7 @@ VOID testSaeCustomSimulateKeyExchange(
 
             CHECK3( scError == SYMCRYPT_NO_ERROR, "Error in 802_11SaeCustomCreatePT : %x", scError );
 
-            scError = SymCrypt802_11SaeCustomInitH2EGeneric(
+            scError = ScDispatchSymCrypt802_11SaeCustomInitH2EGeneric(
                 &stateA,
                 group,
                 abPTA,
@@ -333,7 +341,7 @@ VOID testSaeCustomSimulateKeyExchange(
 
             CHECK3( scError == SYMCRYPT_NO_ERROR, "Error in 802_11SaeCustomInitH2E : %x", scError );
 
-            scError = SymCrypt802_11SaeCustomCommitCreateGeneric(
+            scError = ScDispatchSymCrypt802_11SaeCustomCommitCreateGeneric(
                 &stateA,
                 abCommitScalarA,
                 cbScalar,
@@ -347,7 +355,7 @@ VOID testSaeCustomSimulateKeyExchange(
         // Peer B
         //
         {
-            scError = SymCrypt802_11SaeCustomCreatePTGeneric(
+            scError = ScDispatchSymCrypt802_11SaeCustomCreatePTGeneric(
                 group,
                 abSsid,
                 cbSsid,
@@ -360,7 +368,7 @@ VOID testSaeCustomSimulateKeyExchange(
 
             CHECK3( scError == SYMCRYPT_NO_ERROR, "Error in 802_11SaeCustomCreatePT : %x", scError );
 
-            scError = SymCrypt802_11SaeCustomInitH2EGeneric(
+            scError = ScDispatchSymCrypt802_11SaeCustomInitH2EGeneric(
                 &stateB,
                 group,
                 abPTB,
@@ -374,7 +382,7 @@ VOID testSaeCustomSimulateKeyExchange(
 
             CHECK3( scError == SYMCRYPT_NO_ERROR, "Error in 802_11SaeCustomInitH2E : %x", scError );
 
-            scError = SymCrypt802_11SaeCustomCommitCreateGeneric(
+            scError = ScDispatchSymCrypt802_11SaeCustomCommitCreateGeneric(
                 &stateB,
                 abCommitScalarB,
                 cbScalar,
@@ -388,7 +396,7 @@ VOID testSaeCustomSimulateKeyExchange(
         // Final phase
         //
         {
-            scError = SymCrypt802_11SaeCustomCommitProcessGeneric(
+            scError = ScDispatchSymCrypt802_11SaeCustomCommitProcessGeneric(
                 &stateA,
                 abCommitScalarB,
                 cbScalar,
@@ -401,7 +409,7 @@ VOID testSaeCustomSimulateKeyExchange(
 
             CHECK3( scError == SYMCRYPT_NO_ERROR, "Error in 802_11SaeCustomCommitProcess : %x", scError );
 
-            scError = SymCrypt802_11SaeCustomCommitProcessGeneric(
+            scError = ScDispatchSymCrypt802_11SaeCustomCommitProcessGeneric(
                 &stateB,
                 abCommitScalarA,
                 cbScalar,
@@ -414,14 +422,14 @@ VOID testSaeCustomSimulateKeyExchange(
 
             CHECK3( scError == SYMCRYPT_NO_ERROR, "Error in 802_11SaeCustomCommitProcess : %x", scError );
         }
- 
+
         // The sizes of SharedSecret and ScalarSum will vary depending on the group selected. We can compare the produced shared values
         // by comparing the whole buffer since the buffer is initialized to zero and the generated values have the same size.
         CHECK( memcmp( abSharedSecretA, abSharedSecretB, MAX_SCALAR_SIZE ) == 0, "Shared secret mismatch" );
         CHECK( memcmp( abScalarSumA, abScalarSumB, MAX_EC_POINT_SIZE ) == 0, "Scalar sum mismatch" );
 
-        SymCrypt802_11SaeCustomDestroy( &stateA );
-        SymCrypt802_11SaeCustomDestroy( &stateB );
+        ScDispatchSymCrypt802_11SaeCustomDestroy( &stateA );
+        ScDispatchSymCrypt802_11SaeCustomDestroy( &stateB );
 
         if ( pAlgImp != NULL )
         {
@@ -478,7 +486,7 @@ testIEEE802_11SaeCustomKats()
                 BString PT = katParseData(katItem, "pt");
                 BString PWE = katParseData(katItem, "pwe");
 
-                CHECK3(MACa.size() == 6, "Inavlid length for MACa at line %lld", line);
+                CHECK3(MACa.size() == 6, "Invalid length for MACa at line %lld", line);
                 CHECK3(MACb.size() == 6, "Invalid length for MACb at line %lld", line);
 
                 testSaeCustomH2E_PWE(
@@ -520,7 +528,7 @@ testIEEE802_11SaeCustomKats()
                 BString sharedSecret = katParseData( katItem, "sharedsecret" );
                 BString scalarSum = katParseData( katItem, "scalarsum" );
 
-                CHECK3( MACa.size() == 6, "Inavlid length for MACa at line %lld", line );
+                CHECK3( MACa.size() == 6, "Invalid length for MACa at line %lld", line );
                 CHECK3( MACb.size() == 6, "Invalid length for MACb at line %lld", line );
                 CHECK3( random.size() == 32, "Invalid length for random at line %lld", line );
                 CHECK3( mask.size() == 32, "Invalid length for mask at line %lld", line );
@@ -569,6 +577,25 @@ testIEEE802_11SaeCustomKats()
 VOID
 testIEEE802_11SaeCustom()
 {
-    testIEEE802_11SaeCustomKats();
-}
+    if( !SCTEST_LOOKUP_DISPATCHSYM(SymCrypt802_11SaeCustomInit) ||
+        !SCTEST_LOOKUP_DISPATCHSYM(SymCrypt802_11SaeCustomInitH2EGeneric) ||
+        !SCTEST_LOOKUP_DISPATCHSYM(SymCrypt802_11SaeCustomCreatePTGeneric) ||
+        !SCTEST_LOOKUP_DISPATCHSYM(SymCrypt802_11SaeCustomCommitCreate) ||
+        !SCTEST_LOOKUP_DISPATCHSYM(SymCrypt802_11SaeCustomCommitCreateGeneric) ||
+        !SCTEST_LOOKUP_DISPATCHSYM(SymCrypt802_11SaeCustomCommitProcess) ||
+        !SCTEST_LOOKUP_DISPATCHSYM(SymCrypt802_11SaeCustomCommitProcessGeneric) ||
+        !SCTEST_LOOKUP_DISPATCHSYM(SymCrypt802_11SaeCustomDestroy) ||
+        !SCTEST_LOOKUP_DISPATCHSYM(SymCrypt802_11SaeGetGroupSizes) ||
+        !SCTEST_LOOKUP_DISPATCHSYM(SymCryptEcpointGetValue) ||
+        !SCTEST_LOOKUP_DISPATCHSYM(SymCryptEqual) ||
+        !SCTEST_LOOKUP_DISPATCHSYM(SymCryptWipe) )
+    {
+        print("    testIEEE802_11SaeCustom skipped\n");
+        return;
+    }
 
+    testIEEE802_11SaeCustomKats();
+
+    INT64 nOutstandingAllocs = SYMCRYPT_INTERNAL_VOLATILE_READ64(&g_nOutstandingCheckedAllocs);
+    CHECK3(nOutstandingAllocs == 0, "Memory leak %d", nOutstandingAllocs);
+}

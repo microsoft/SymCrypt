@@ -1,5 +1,5 @@
 //
-// Pattern file for the Symcrypt hash implementations.
+// Pattern file for the CNG PBKDF2 implementations.
 //
 // Copyright (c) Microsoft Corporation. Licensed under the MIT license. 
 //

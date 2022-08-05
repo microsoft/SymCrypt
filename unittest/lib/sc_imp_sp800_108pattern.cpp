@@ -1,12 +1,12 @@
 //
-// Pattern file for the Symcrypt Sp800_108 implementations.
+// Pattern file for the SymCrypt Sp800_108 implementations.
 //
 // Copyright (c) Microsoft Corporation. Licensed under the MIT license. 
 //
 
 template<>
 VOID
-KdfImp<ImpSc,AlgSp800_108,BaseAlgXxx>::derive(
+KdfImp<ImpXxx,AlgSp800_108,BaseAlgXxx>::derive(
         _In_reads_( cbKey )     PCBYTE          pbKey,
                                 SIZE_T          cbKey,
         _In_                    PKDF_ARGUMENTS  pArgs,
@@ -47,34 +47,33 @@ KdfImp<ImpSc,AlgSp800_108,BaseAlgXxx>::derive(
         return;
     }
 
-    scError = SymCryptSp800_108(
+    scError = ScShimSymCryptSp800_108(
             SYMCRYPT_BaseXxxAlgorithm,
             pbKey,  cbKey,
             pbLabel, cbLabel,
             pbContext, cbContext,
             &buf1[0], cbDst );
-    verifyVectorRegisters();
 
     CHECK( scError == SYMCRYPT_NO_ERROR, "Error in SymCrypt SP800_108" );
 
-    scError = SymCryptSp800_108ExpandKey(   &expandedKey,
-                                            SYMCRYPT_BaseXxxAlgorithm,
-                                            pbKey, cbKey );
-    verifyVectorRegisters();
+    scError = ScShimSymCryptSp800_108ExpandKey(
+        &expandedKey,
+        SYMCRYPT_BaseXxxAlgorithm,
+        pbKey, cbKey );
     CHECK( scError == SYMCRYPT_NO_ERROR, "Error in SymCrypt SP800_108" );
 
-    SymCryptMarvin32( SymCryptMarvin32DefaultSeed, (PCBYTE) &expandedKey, sizeof( expandedKey ), expandedKeyChecksum );
+    ScShimSymCryptMarvin32( ScShimSymCryptMarvin32DefaultSeed, (PCBYTE) &expandedKey, sizeof( expandedKey ), expandedKeyChecksum );
 
-    scError = SymCryptSp800_108Derive(  &expandedKey,
-                                        pbLabel, cbLabel,
-                                        pbContext, cbContext,
-                                        &buf2[0], cbDst );
-    verifyVectorRegisters();
+    scError = ScShimSymCryptSp800_108Derive(
+        &expandedKey,
+        pbLabel, cbLabel,
+        pbContext, cbContext,
+        &buf2[0], cbDst );
     CHECK( scError == SYMCRYPT_NO_ERROR, "Error in SymCrypt SP800_108" );
 
     CHECK( memcmp( buf1, buf2, cbDst ) == 0, "SymCrypt SP800_108 calling versions disagree" );
 
-    SymCryptMarvin32( SymCryptMarvin32DefaultSeed, (PCBYTE) &expandedKey, sizeof( expandedKey ), buf2 );
+    ScShimSymCryptMarvin32( ScShimSymCryptMarvin32DefaultSeed, (PCBYTE) &expandedKey, sizeof( expandedKey ), buf2 );
     CHECK( memcmp( expandedKeyChecksum, buf2, SYMCRYPT_MARVIN32_RESULT_SIZE ) == 0, "SymCrypt SP800_108 modified expanded key" );
 
     memcpy( pbDst, buf1, cbDst );
@@ -85,5 +84,5 @@ template<>
 VOID
 algImpDataPerfFunction<ImpXxx, AlgXxx, BaseAlgXxx>( PBYTE buf1, PBYTE buf2, PBYTE buf3, SIZE_T dataSize )
 {
-    SymCryptSp800_108Derive( (PCSYMCRYPT_SP800_108_EXPANDED_KEY) buf1, NULL, 0, buf2, 32, buf3, dataSize );
+    ScShimSymCryptSp800_108Derive( (PCSYMCRYPT_SP800_108_EXPANDED_KEY) buf1, nullptr, 0, buf2, 32, buf3, dataSize );
 }

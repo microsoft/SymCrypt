@@ -7,7 +7,7 @@
 
 //
 // AlgorithmImplementation class
-// This is the abstact class that represents the common properties
+// This is the abstract class that represents the common properties
 // of all algorithm implementations.
 //
 class AlgorithmImplementation

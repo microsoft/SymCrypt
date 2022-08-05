@@ -36,8 +36,9 @@
     #include <memory>
     #include <algorithm>
     #include <map>
-    #include <strstream>
+    #include <sstream>
     #include <set>
+    #include <type_traits>
 
     #include "precomp_iOS.h"
 
@@ -55,9 +56,10 @@
     #include <memory>
     #include <algorithm>
     #include <map>
-    #include <strstream>
+    #include <sstream>
     #include <set>
     #include <cstdarg>
+    #include <type_traits>
 
     #include "symcrypt_no_sal.h"
 
@@ -142,7 +144,7 @@
     #include <winioctl.h>
 
     //
-    // Hack to get all the BCrypt declations even though our binaries target down-level platforms.
+    // Hack to get all the BCrypt declarations even though our binaries target down-level platforms.
     //
     #pragma push_macro("NTDDI_VERSION")
     #undef NTDDI_VERSION
@@ -162,9 +164,10 @@
     #include <memory>
     #include <algorithm>
     #include <map>
-    #include <strstream>
+    #include <sstream>
     #include <set>
     #include <strsafe.h>
+    #include <type_traits>
 
     #ifndef PRIx64
     #define PRIx64       "llx"
@@ -241,7 +244,7 @@ extern "C"
 #include <memory>
 #include <algorithm>
 #include <map>
-#include <strstream>
+#include <sstream>
 #include <set>
 
 //
@@ -482,26 +485,26 @@ typedef std::basic_string<BYTE> BString;        // String of bytes
 #define BaseAlgXxx          CONCAT2( Alg, ALG_Base )
 
 
-#define SYMCRYPT_Xxx                    CONCAT2( SymCrypt, ALG_Name )
+#define SYMCRYPT_Xxx(...)               CONCAT2( ScShimSymCrypt, ALG_Name )(__VA_ARGS__)
 #define SYMCRYPT_XXX_STATE              CONCAT3( SYMCRYPT_, ALG_NAME, _STATE )
 #define SYMCRYPT_XXX_EXPANDED_KEY       CONCAT3( SYMCRYPT_, ALG_NAME, _EXPANDED_KEY )
 
-#define SYMCRYPT_XxxStateCopy           CONCAT3( SymCrypt, ALG_Name, StateCopy )
-#define SYMCRYPT_XxxInit                CONCAT3( SymCrypt, ALG_Name, Init )
-#define SYMCRYPT_XxxAppend              CONCAT3( SymCrypt, ALG_Name, Append )
-#define SYMCRYPT_XxxResult              CONCAT3( SymCrypt, ALG_Name, Result )
-#define SYMCRYPT_XxxAppendBlocks        CONCAT3( SymCrypt, ALG_Name, AppendBlocks )
-#define SYMCRYPT_XxxExpandKey           CONCAT3( SymCrypt, ALG_Name, ExpandKey )
-#define SYMCRYPT_XxxKeyCopy             CONCAT3( SymCrypt, ALG_Name, KeyCopy )
-#define SYMCRYPT_XxxEncrypt             CONCAT3( SymCrypt, ALG_Name, Encrypt )
-#define SYMCRYPT_XxxDecrypt             CONCAT3( SymCrypt, ALG_Name, Decrypt )
-#define SYMCRYPT_XxxXxxEncrypt          CONCAT4( SymCrypt, ALG_Name, ALG_Mode, Encrypt )
-#define SYMCRYPT_XxxXxxDecrypt          CONCAT4( SymCrypt, ALG_Name, ALG_Mode, Decrypt )
-#define SYMCRYPT_XxxStateExport         CONCAT3( SymCrypt, ALG_Name, StateExport )
-#define SYMCRYPT_XxxStateImport         CONCAT3( SymCrypt, ALG_Name, StateImport )
-#define SYMCRYPT_XxxAlgorithm           CONCAT3( SymCrypt, ALG_Name, Algorithm )
+#define SYMCRYPT_XxxStateCopy(...)      CONCAT3( ScShimSymCrypt, ALG_Name, StateCopy )(__VA_ARGS__)
+#define SYMCRYPT_XxxInit(...)           CONCAT3( ScShimSymCrypt, ALG_Name, Init )(__VA_ARGS__)
+#define SYMCRYPT_XxxAppend(...)         CONCAT3( ScShimSymCrypt, ALG_Name, Append )(__VA_ARGS__)
+#define SYMCRYPT_XxxResult(...)         CONCAT3( ScShimSymCrypt, ALG_Name, Result )(__VA_ARGS__)
+#define SYMCRYPT_XxxAppendBlocks(...)   CONCAT3( ScShimSymCrypt, ALG_Name, AppendBlocks )(__VA_ARGS__)
+#define SYMCRYPT_XxxExpandKey(...)      CONCAT3( ScShimSymCrypt, ALG_Name, ExpandKey )(__VA_ARGS__)
+#define SYMCRYPT_XxxKeyCopy(...)        CONCAT3( ScShimSymCrypt, ALG_Name, KeyCopy )(__VA_ARGS__)
+#define SYMCRYPT_XxxEncrypt(...)        CONCAT3( ScShimSymCrypt, ALG_Name, Encrypt )(__VA_ARGS__)
+#define SYMCRYPT_XxxDecrypt(...)        CONCAT3( ScShimSymCrypt, ALG_Name, Decrypt )(__VA_ARGS__)
+#define SYMCRYPT_XxxXxxEncrypt(...)     CONCAT4( ScShimSymCrypt, ALG_Name, ALG_Mode, Encrypt )(__VA_ARGS__)
+#define SYMCRYPT_XxxXxxDecrypt(...)     CONCAT4( ScShimSymCrypt, ALG_Name, ALG_Mode, Decrypt )(__VA_ARGS__)
+#define SYMCRYPT_XxxStateExport(...)    CONCAT3( ScShimSymCrypt, ALG_Name, StateExport )(__VA_ARGS__)
+#define SYMCRYPT_XxxStateImport(...)    CONCAT3( ScShimSymCrypt, ALG_Name, StateImport )(__VA_ARGS__)
+#define SYMCRYPT_XxxAlgorithm           CONCAT3( ScShimSymCrypt, ALG_Name, Algorithm )
 
-#define SYMCRYPT_BaseXxxAlgorithm        CONCAT3( SymCrypt, ALG_Base, Algorithm )
+#define SYMCRYPT_BaseXxxAlgorithm       CONCAT3( ScShimSymCrypt, ALG_Base, Algorithm )
 
 #define SYMCRYPT_XXX_BLOCK_SIZE         CONCAT3( SYMCRYPT_, ALG_NAME, _BLOCK_SIZE )
 #define SYMCRYPT_XXX_INPUT_BLOCK_SIZE   CONCAT3( SYMCRYPT_, ALG_NAME, _INPUT_BLOCK_SIZE )
@@ -1069,6 +1072,186 @@ extern double g_tscFreq;
 
 extern BOOL g_sgx;
 
+extern PVOID g_dynamicSymCryptModuleHandle;
+
+extern BOOL g_useDynamicFunctionsInTestCall;
+
+// Environment specific functions for handling dynamic modules
+
+PVOID loadDynamicModuleFromPath(PCSTR dynamicModulePath);
+// dlopen on Linux, LoadLibraryA on Windows
+
+PVOID getDynamicSymbolPointerFromString(PVOID hModule, PCSTR pSymbolName);
+// dlsym on Linux, GetProcAddress on Windows
+
+VOID
+initVectorRegisters();
+
+VOID
+verifyVectorRegisters();
+
+VOID
+cleanVectorRegisters();
+
+//
+// Wrappers for calls into SymCrypt which check that vector registers are saved/restored appropriately
+//
+// initVectorRegisters sets up vector registers to be in a state that should not be modified by a call
+// verifyVectorRegisters checks that the state that should not have been modified has not been modified
+//
+// These additional calls may do nothing if TestSaveXXXEnabled is FALSE, but it can also:
+//  On Windows AMD64 set Xmm6-Xmm15 to random values
+//    these values are non-volatile in Window x64 ABI, so should be preserved. If they are not
+//    preserved it indicates a problem with our assembly not adhering to the Windows ABI
+//  On Linux AMD64 set Ymm0-Ymm15 to random values
+//    these values are naturally volatile on Linux, but symcryptunittest callers may specify the
+//    following environment variable:
+//      GLIBC_TUNABLES=glibc.cpu.hwcaps=-AVX_Usable,-AVX_Fast_Unaligned_Load,-AVX2_Usable
+//    to avoid use of AVX in glibc. This means we can test the Ymm save/restore logic that is
+//    used in Windows kernel using Linux user mode.
+//
+template<typename Functor, typename... Args>
+auto ScTestCallFunctionWithVectorRegistersTest(Functor f, Args&&... args)
+-> typename std::enable_if < std::is_same<decltype(f(std::forward<Args>(args)...)), void>::value, void>::type
+{
+    initVectorRegisters();
+    f(std::forward<Args>(args)...);
+    verifyVectorRegisters();
+    return;
+}
+
+template<typename Functor, typename... Args>
+auto ScTestCallFunctionWithVectorRegistersTest(Functor f, Args&&... args)
+-> typename std::enable_if < !std::is_same<decltype(f(std::forward<Args>(args)...)), void>::value, decltype(f(std::forward<Args>(args)...))>::type
+{
+    initVectorRegisters();
+    auto result = f(std::forward<Args>(args)...);
+    verifyVectorRegisters();
+    return result;
+}
+
+//
+// Lookup dynamic symbol, may return NULL if symbol cannot be found
+//
+// Note that because we use static variables here, 1 call to getDynamicSymbolPointerFromString (the 
+// actual environment specific dynamic symbol lookup function) is performed per scope in which this
+// lambda function is instantiated
+// This means we have a few more (maybe ~10x - depending on how many locations lookup the same symbol)
+// dynamic symbol lookups than are strictly needed, but it does not materially impact on unit test
+// runtime, and our performance testing infrastructure can easily handle the first run of a function
+// of interest being more costly
+//
+#define SCTEST_LOOKUP_DYNSYM(SymCryptSymbol) \
+    []() { \
+        static PVOID dynamicSymbolStatic = NULL; \
+        static bool lookupAttempted = false; \
+        if (!lookupAttempted) \
+        { \
+            dynamicSymbolStatic = getDynamicSymbolPointerFromString(g_dynamicSymCryptModuleHandle, #SymCryptSymbol); \
+            lookupAttempted = true; \
+        } \
+        return (decltype(&SymCryptSymbol)) dynamicSymbolStatic; \
+    }()
+
+// Get dynamic symbol - Fatal if symbol cannot be found
+#define SCTEST_GET_DYNSYM(SymCryptSymbol) \
+    []() { \
+        decltype(&SymCryptSymbol) dynamicSymbol = SCTEST_LOOKUP_DYNSYM(SymCryptSymbol); \
+        CHECK3(dynamicSymbol != NULL, "Could not find symbol %s", #SymCryptSymbol); \
+        return dynamicSymbol; \
+    }()
+
+// In a template for ImpSc call statically linked function with Vector register save/restore tests
+// In a template for ImpScStatic call statically linked function directly
+// In a template for ImpScDynamic call dynamically linked function
+#define SCTEST_CALL_SCIMPFN(SymCryptFunction, ...) \
+    [&]() { \
+        if constexpr ( std::is_same<ImpXxx, ImpSc>::value ) \
+        { \
+            return ScTestCallFunctionWithVectorRegistersTest(SymCryptFunction, __VA_ARGS__); \
+        } \
+        else if constexpr ( std::is_same<ImpXxx, ImpScStatic>::value ) \
+        { \
+            return SymCryptFunction(__VA_ARGS__); \
+        } \
+        else if constexpr ( std::is_same<ImpXxx, ImpScDynamic>::value ) \
+        { \
+            return SCTEST_GET_DYNSYM(SymCryptFunction)(__VA_ARGS__); \
+        } \
+        else \
+        { \
+            CHECK(FALSE, "Instantiation of SCTEST_CALL_SCIMPFN in unexpected scope"); \
+        } \
+    }()
+
+// In a template for ImpSc or ImpScStatic return pointer to statically linked symbol
+// In a template for ImpScDynamic return pointer to dynamically linked symbol if it is available
+#define SCTEST_LOOKUP_SCIMPSYM(SymCryptSymbol) \
+    []() { \
+        if constexpr (  std::is_same<ImpXxx, ImpSc>::value || \
+                        std::is_same<ImpXxx, ImpScStatic>::value ) \
+        { \
+            return &SymCryptSymbol; \
+        } \
+        else if constexpr ( std::is_same<ImpXxx, ImpScDynamic>::value ) \
+        { \
+            return SCTEST_LOOKUP_DYNSYM(SymCryptSymbol); \
+        } \
+        else \
+        { \
+            CHECK(FALSE, "Instantiation of SCTEST_LOOKUP_SCIMPSYM in unexpected scope"); \
+        } \
+    }()
+
+// In a template for ImpSc or ImpScStatic return statically linked symbol
+// In a template for ImpScDynamic return dynamically linked symbol - Fatal if it cannot be found
+#define SCTEST_GET_SCIMPSYM(SymCryptSymbol) \
+    []() { \
+        decltype(&SymCryptSymbol) dynamicSymbol = SCTEST_LOOKUP_SCIMPSYM(SymCryptSymbol); \
+        CHECK3(dynamicSymbol != NULL, "Could not find symbol %s", #SymCryptSymbol); \
+        return *dynamicSymbol; \
+    }()
+
+// Some tests do not use the multi-implementation setup with templates, but instead call the SymCrypt
+// API directly. We can refactor these tests to optionally call the static or dynamic functions based
+// on the value of g_useDynamicFunctionsInTestCall, using the following SCTEST_CALL_DISPATCHFN macros
+
+#define SCTEST_CALL_DISPATCHFN_0(SymCryptFunction) \
+    []() { \
+        if( g_useDynamicFunctionsInTestCall ) \
+        { \
+            return SCTEST_GET_DYNSYM(SymCryptFunction)(); \
+        } \
+        return ScTestCallFunctionWithVectorRegistersTest(SymCryptFunction); \
+    }()
+
+#define SCTEST_CALL_DISPATCHFN(SymCryptFunction, ...) \
+    [&]() { \
+        if( g_useDynamicFunctionsInTestCall ) \
+        { \
+            return SCTEST_GET_DYNSYM(SymCryptFunction)(__VA_ARGS__); \
+        } \
+        return ScTestCallFunctionWithVectorRegistersTest(SymCryptFunction, __VA_ARGS__); \
+    }()
+
+#define SCTEST_LOOKUP_DISPATCHSYM(SymCryptSymbol) \
+    []() { \
+        if( g_useDynamicFunctionsInTestCall ) \
+        { \
+            return SCTEST_LOOKUP_DYNSYM(SymCryptSymbol); \
+        } \
+        return &SymCryptSymbol; \
+    }()
+
+#define SCTEST_GET_DISPATCHSYM(SymCryptSymbol) \
+    []() { \
+        decltype(&SymCryptSymbol) dynamicSymbol = SCTEST_LOOKUP_DISPATCHSYM(SymCryptSymbol); \
+        CHECK3(dynamicSymbol != NULL, "Could not find symbol %s", #SymCryptSymbol); \
+        return *dynamicSymbol; \
+    }()
+
+#include "sc_dispatch_shims.h"
+
 template< typename AlgType >
 std::unique_ptr<std::vector<AlgType *>> getAlgorithmsOfOneType( );
 
@@ -1193,12 +1376,6 @@ CHAR charToLower( CHAR c );
 
 extern double g_wipePerf[PERF_WIPE_MAX_SIZE+1][PERF_WIPE_N_OFFSETS];
 
-VOID
-initVectorRegisters();
-
-VOID
-verifyVectorRegisters();
-
 
 VOID
 addAllAlgs();
@@ -1217,6 +1394,9 @@ addMsBignumAlgs();
 
 VOID
 addSymCryptAlgs();
+
+VOID
+updateSymCryptStaticAlgs();
 
 VOID
 addRefAlgs();
@@ -1648,6 +1828,7 @@ const struct {
 VOID
 testMontgomery(PSYMCRYPT_ECURVE  pCurve);
 
+template<class Implementation>
 VOID
 addRsaKeyGenPerfSymCrypt( PrintTable &table );
 
@@ -1660,10 +1841,10 @@ addRsaKeyGenPerfMsBignum( PrintTable &table );
 #define PERF_RSA_LABEL_LENGTH               (8)
 #define PERF_RSA_SALT_LENGTH                (8)
 
-#define PERF_RSA_HASH_ALG_SC                (SymCryptSha256Algorithm)
+#define PERF_RSA_HASH_ALG_SC                (ScShimSymCryptSha256Algorithm)
 #define PERF_RSA_HASH_ALG_CNG               (BCRYPT_SHA256_ALGORITHM)
 #define PERF_RSA_HASH_ALG_SIZE              (SYMCRYPT_SHA256_RESULT_SIZE)
-#define PERF_RSA_HASH_ALG_OIDS_SC           (SymCryptSha256OidList)
+#define PERF_RSA_HASH_ALG_OIDS_SC           (ScShimSymCryptSha256OidList)
 #define PERF_RSA_HASH_ALG_NOIDS_SC          (SYMCRYPT_SHA256_OID_COUNT)
 
 #define PERF_RSA_OAEP_LESS_BYTES            (2 + 2*SYMCRYPT_SHA256_RESULT_SIZE)
@@ -1697,6 +1878,7 @@ dlgroupForSize( SIZE_T nBits, BOOLEAN forDiffieHellman );
 
 VOID generateDlGroups();
 
+template<class Implementation>
 PSYMCRYPT_DLGROUP
 dlgroupObjectFromTestBlob( PCDLGROUP_TESTBLOB pBlob );  // Must free object after use
 

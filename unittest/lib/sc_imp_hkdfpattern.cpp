@@ -1,5 +1,5 @@
 //
-// Pattern file for the Symcrypt HKDF implementation.
+// Pattern file for the SymCrypt HKDF implementation.
 //
 // Copyright (c) Microsoft Corporation. Licensed under the MIT license. 
 //
@@ -50,7 +50,7 @@ algImpCleanPerfFunction<ImpXxx, AlgXxx, BaseAlgXxx>(PBYTE buf1, PBYTE buf2, PBYT
 
 template<>
 VOID
-KdfImp<ImpSc, AlgHkdf, BaseAlgXxx>::derive(
+KdfImp<ImpXxx, AlgHkdf, BaseAlgXxx>::derive(
     _In_reads_(cbKey)       PCBYTE          pbKey,
                             SIZE_T          cbKey,
     _In_                    PKDF_ARGUMENTS  pArgs,
@@ -63,6 +63,7 @@ KdfImp<ImpSc, AlgHkdf, BaseAlgXxx>::derive(
     SYMCRYPT_ALIGN BYTE rbPrk[SYMCRYPT_MAC_MAX_RESULT_SIZE] = { 0 };
     SYMCRYPT_HKDF_EXPANDED_KEY expandedKey;
     BYTE expandedKeyChecksum[SYMCRYPT_MARVIN32_RESULT_SIZE];
+    PCSYMCRYPT_MAC pcmBaseAlgorithm = SYMCRYPT_BaseXxxAlgorithm;
 
     PCBYTE  pbSalt;
     SIZE_T  cbSalt;
@@ -86,62 +87,61 @@ KdfImp<ImpSc, AlgHkdf, BaseAlgXxx>::derive(
     }
 
     // 1) Full HKDF
-    scError = SymCryptHkdf(
-        SYMCRYPT_BaseXxxAlgorithm,
+    scError = ScShimSymCryptHkdf(
+        pcmBaseAlgorithm,
         pbKey, cbKey,
         pbSalt, cbSalt,
         pbInfo, cbInfo,
         &buf1[0], cbDst);
-    verifyVectorRegisters();
 
     CHECK(scError == SYMCRYPT_NO_ERROR, "Error in SymCrypt HKDF");
 
     // 2) ExpandKey then Derive
-    scError = SymCryptHkdfExpandKey(    &expandedKey,
-                                        SYMCRYPT_BaseXxxAlgorithm,
-                                        pbKey, cbKey,
-                                        pbSalt, cbSalt );
-    verifyVectorRegisters();
+    scError = ScShimSymCryptHkdfExpandKey(
+        &expandedKey,
+        pcmBaseAlgorithm,
+        pbKey, cbKey,
+        pbSalt, cbSalt );
     CHECK(scError == SYMCRYPT_NO_ERROR, "Error in SymCrypt HKDF");
 
-    SymCryptMarvin32(SymCryptMarvin32DefaultSeed, (PCBYTE)&expandedKey, sizeof(expandedKey), expandedKeyChecksum);
+    ScShimSymCryptMarvin32(ScShimSymCryptMarvin32DefaultSeed, (PCBYTE)&expandedKey, sizeof(expandedKey), expandedKeyChecksum);
 
-    scError = SymCryptHkdfDerive(   &expandedKey,
-                                    pbInfo, cbInfo,
-                                    &buf2[0], cbDst);
-    verifyVectorRegisters();
+    scError = ScShimSymCryptHkdfDerive(
+        &expandedKey,
+        pbInfo, cbInfo,
+        &buf2[0], cbDst);
     CHECK(scError == SYMCRYPT_NO_ERROR, "Error in SymCrypt HKDF");
 
     CHECK(memcmp(buf1, buf2, cbDst) == 0, "SymCrypt HKDF calling versions disagree");
 
-    SymCryptMarvin32(SymCryptMarvin32DefaultSeed, (PCBYTE)&expandedKey, sizeof(expandedKey), buf2);
+    ScShimSymCryptMarvin32(ScShimSymCryptMarvin32DefaultSeed, (PCBYTE)&expandedKey, sizeof(expandedKey), buf2);
     CHECK(memcmp(expandedKeyChecksum, buf2, SYMCRYPT_MARVIN32_RESULT_SIZE) == 0, "SymCrypt HKDF modified expanded key");
 
     // 3) ExtractPrk then PrkExpandKey then Derive
-    scError = SymCryptHkdfExtractPrk(   SYMCRYPT_BaseXxxAlgorithm,
-                                        pbKey, cbKey,
-                                        pbSalt, cbSalt,
-                                        rbPrk, SYMCRYPT_BaseXxxAlgorithm->resultSize );
-    verifyVectorRegisters();
+    scError = ScShimSymCryptHkdfExtractPrk(
+        pcmBaseAlgorithm,
+        pbKey, cbKey,
+        pbSalt, cbSalt,
+        rbPrk, pcmBaseAlgorithm->resultSize );
     CHECK(scError == SYMCRYPT_NO_ERROR, "Error in SymCrypt HKDF");
 
-    scError = SymCryptHkdfPrkExpandKey( &expandedKey,
-                                        SYMCRYPT_BaseXxxAlgorithm,
-                                        rbPrk, SYMCRYPT_BaseXxxAlgorithm->resultSize );
-    verifyVectorRegisters();
+    scError = ScShimSymCryptHkdfPrkExpandKey(
+        &expandedKey,
+        pcmBaseAlgorithm,
+        rbPrk, pcmBaseAlgorithm->resultSize );
     CHECK(scError == SYMCRYPT_NO_ERROR, "Error in SymCrypt HKDF");
 
-    SymCryptMarvin32(SymCryptMarvin32DefaultSeed, (PCBYTE)&expandedKey, sizeof(expandedKey), expandedKeyChecksum);
+    ScShimSymCryptMarvin32(ScShimSymCryptMarvin32DefaultSeed, (PCBYTE)&expandedKey, sizeof(expandedKey), expandedKeyChecksum);
 
-    scError = SymCryptHkdfDerive(   &expandedKey,
-                                    pbInfo, cbInfo,
-                                    &buf2[0], cbDst);
-    verifyVectorRegisters();
+    scError = ScShimSymCryptHkdfDerive(
+        &expandedKey,
+        pbInfo, cbInfo,
+        &buf2[0], cbDst);
     CHECK(scError == SYMCRYPT_NO_ERROR, "Error in SymCrypt HKDF");
 
     CHECK(memcmp(buf1, buf2, cbDst) == 0, "SymCrypt HKDF calling versions disagree");
 
-    SymCryptMarvin32(SymCryptMarvin32DefaultSeed, (PCBYTE)&expandedKey, sizeof(expandedKey), buf2);
+    ScShimSymCryptMarvin32(ScShimSymCryptMarvin32DefaultSeed, (PCBYTE)&expandedKey, sizeof(expandedKey), buf2);
     CHECK(memcmp(expandedKeyChecksum, buf2, SYMCRYPT_MARVIN32_RESULT_SIZE) == 0, "SymCrypt HKDF modified expanded key");
 
     memcpy(pbDst, buf1, cbDst);
@@ -153,6 +153,6 @@ VOID
 algImpDataPerfFunction<ImpXxx, AlgXxx, BaseAlgXxx>(PBYTE buf1, PBYTE buf2, PBYTE buf3, SIZE_T dataSize)
 {
     // The size of the Info parameter is set constant to 32 bytes.
-    SymCryptHkdfDerive((PCSYMCRYPT_HKDF_EXPANDED_KEY)buf1, buf2, 32, buf3, dataSize);
+    ScShimSymCryptHkdfDerive((PCSYMCRYPT_HKDF_EXPANDED_KEY)buf1, buf2, 32, buf3, dataSize);
 }
 

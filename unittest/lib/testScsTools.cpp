@@ -15,6 +15,12 @@ testScsRotateBuffer()
     BYTE buf1[1 << 13];
     BYTE buf2[sizeof( buf1 )];
 
+    if (!SCTEST_LOOKUP_DISPATCHSYM(SymCryptScsRotateBuffer))
+    {
+        print("    testScsRotateBuffer skipped\n");
+        return;
+    }
+
     for( bufSize = 32; bufSize <= sizeof( buf1 ); bufSize *= 2 )
     {
         GENRANDOM( buf1, bufSize );
@@ -22,7 +28,7 @@ testScsRotateBuffer()
         for( UINT32 s = 0; s < bufSize; s ++ )
         {
             memcpy( buf2, buf1, bufSize );
-            SymCryptScsRotateBuffer( buf2, bufSize, s );
+            ScDispatchSymCryptScsRotateBuffer( buf2, bufSize, s );
 
             for( UINT32 i = 0; i < bufSize; i++ )
             {
@@ -39,6 +45,13 @@ testScsCopy()
     BYTE buf2[ sizeof( buf1 ) ];
     BYTE hashValue[ SYMCRYPT_SHA256_RESULT_SIZE ];
 
+    if (!SCTEST_LOOKUP_DISPATCHSYM(SymCryptSha256) ||
+        !SCTEST_LOOKUP_DISPATCHSYM(SymCryptScsCopy))
+    {
+        print("    testScsCopy skipped\n");
+        return;
+    }
+
     for( UINT32 i = 0; i < 1000; i++ )
     {
         UINT32 nSrc;
@@ -54,12 +67,12 @@ testScsCopy()
         GENRANDOM( buf2, sizeof( buf2 ) ); 
 
         // Checksum to check we don't write past the Dst buffer
-        SymCryptSha256( &buf2[nCopied], sizeof( buf2 ) - nCopied, &hashValue[0] );
+        ScDispatchSymCryptSha256( &buf2[nCopied], sizeof( buf2 ) - nCopied, &hashValue[0] );
 
-        SymCryptScsCopy( buf1, nSrc, buf2, nDst );
+        ScDispatchSymCryptScsCopy( buf1, nSrc, buf2, nDst );
 
         CHECK( memcmp( buf1, buf2, nCopied) == 0, "Value not copied properly" );
-        SymCryptSha256( &buf2[nCopied], sizeof( buf2 ) - nCopied, buf1 );
+        ScDispatchSymCryptSha256( &buf2[nCopied], sizeof( buf2 ) - nCopied, buf1 );
         CHECK( memcmp( buf1, hashValue, sizeof( hashValue )) == 0, "Copy overran destination buffer" );
     }
 }
@@ -75,6 +88,16 @@ testBasicMaskFunctions()
     UINT32 b31;
 
     UINT32 rnd;
+
+    if (!SCTEST_LOOKUP_DISPATCHSYM(SymCryptMask32IsZeroU31)     ||
+        !SCTEST_LOOKUP_DISPATCHSYM(SymCryptMask32IsNonzeroU31)  ||
+        !SCTEST_LOOKUP_DISPATCHSYM(SymCryptMask32EqU32)         ||
+        !SCTEST_LOOKUP_DISPATCHSYM(SymCryptMask32NeqU31)        ||
+        !SCTEST_LOOKUP_DISPATCHSYM(SymCryptMask32LtU31))
+    {
+        print("    testBasicMaskFunctions skipped\n");
+        return;
+    }
 
     for( UINT32 i=0; i<1000; i++ )
     {
@@ -117,13 +140,13 @@ testBasicMaskFunctions()
         a31 = a32 & 0x7fffffff;
         b31 = b32 & 0x7fffffff;
 
-        CHECK( SymCryptMask32IsZeroU31( a31 )    == 0 - (UINT32)(a31 == 0), "SymCryptMask32IsZeroU31" );
-        CHECK( SymCryptMask32IsNonzeroU31( a31 ) == 0 - (UINT32)(a31 != 0), "SymCryptMask32IsZeroU31" );
+        CHECK( ScDispatchSymCryptMask32IsZeroU31( a31 )    == 0 - (UINT32)(a31 == 0), "SymCryptMask32IsZeroU31" );
+        CHECK( ScDispatchSymCryptMask32IsNonzeroU31( a31 ) == 0 - (UINT32)(a31 != 0), "SymCryptMask32IsZeroU31" );
 
-        CHECK5( SymCryptMask32EqU32( a32, b32 )  == 0 - (UINT32)(a32 == b32), "SymCryptMask32EqU32( %04x, %04x ), %d", a32, b32, i );
+        CHECK5( ScDispatchSymCryptMask32EqU32( a32, b32 )  == 0 - (UINT32)(a32 == b32), "SymCryptMask32EqU32( %04x, %04x ), %d", a32, b32, i );
 
-        CHECK( SymCryptMask32NeqU31( a31, b31 )  == 0 - (UINT32)(a31 != b31), "SymCryptMask32NeqU31" );
-        CHECK( SymCryptMask32LtU31( a31, b31 )   == 0 - (UINT32)(a31 < b31), "SymCryptMask32LtU31" );
+        CHECK( ScDispatchSymCryptMask32NeqU31( a31, b31 )  == 0 - (UINT32)(a31 != b31), "SymCryptMask32NeqU31" );
+        CHECK( ScDispatchSymCryptMask32LtU31( a31, b31 )   == 0 - (UINT32)(a31 < b31), "SymCryptMask32LtU31" );
     }
 
 }
@@ -171,7 +194,7 @@ validateMapping(UINT32 u32Input, PCSYMCRYPT_UINT32_MAP pMap, UINT32 uMapLen)
 
     GENRANDOM(&u32Default, sizeof(u32Default));
 
-    u32Result = SymCryptMapUint32(u32Input, u32Default, pMap, uMapLen);
+    u32Result = ScDispatchSymCryptMapUint32(u32Input, u32Default, pMap, uMapLen);
 
     for (UINT32 i = 0; i < uMapLen; ++i)
     {
@@ -199,6 +222,12 @@ testScsMapUint32()
 {
     UINT32 uMapLen;
     GENRANDOM(&uMapLen, sizeof(uMapLen));
+
+    if (!SCTEST_LOOKUP_DISPATCHSYM(SymCryptMapUint32))
+    {
+        print("    testScsMapUint32 skipped\n");
+        return;
+    }
 
     // Limiting the length of the map to be between 1 to 100.
     // We want to avoid a creation of huge map.

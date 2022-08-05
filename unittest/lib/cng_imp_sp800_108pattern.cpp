@@ -1,5 +1,5 @@
 //
-// Pattern file for the Symcrypt hash implementations.
+// Pattern file for the CNG Sp800_108 implementations.
 //
 // Copyright (c) Microsoft Corporation. Licensed under the MIT license. 
 //

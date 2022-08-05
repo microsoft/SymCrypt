@@ -1,6 +1,5 @@
 VERSION_101.0 {
    global:
-      g_SymCryptFipsSelftestsPerformed;
       SymCrypt3DesBlockCipher;
       SymCrypt3DesCbcDecrypt;
       SymCrypt3DesCbcEncrypt;
@@ -408,3 +407,8 @@ VERSION_102.0
       SymCryptRsakeyExtendKeyUsage;
       SymCryptRsakeyCreate;
 } VERSION_101.2;
+VERSION_103.0
+{
+   global:
+      SymCryptFipsGetSelftestsPerformed;
+} VERSION_102.0;

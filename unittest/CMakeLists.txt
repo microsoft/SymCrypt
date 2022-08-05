@@ -92,8 +92,4 @@ if(WIN32)
   add_subdirectory(exe_Win8_1nLater)
 else()
   add_subdirectory(exe_linux)
-
-  if(NOT CMAKE_BUILD_TYPE MATCHES Sanitize)
-    add_subdirectory(exe_moduletest)
-  endif()
 endif()

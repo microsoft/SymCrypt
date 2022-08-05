@@ -22,7 +22,7 @@ verifyAddPadding(SIZE_T cbBlockSize, PCBYTE pbSrc, UINT32 cbSrc, PBYTE pbDst, UI
     UINT32 cbPadVal = (UINT32)(cbBlockSize - (cbSrc % cbBlockSize));
     UINT32 cbPredictedResult = cbSrc + cbPadVal;
 
-    SymCryptPaddingPkcs7Add(cbBlockSize, pbSrc, cbSrc, pbDst, cbDst, &cbResult);
+    ScDispatchSymCryptPaddingPkcs7Add(cbBlockSize, pbSrc, cbSrc, pbDst, cbDst, &cbResult);
 
     // Verify cbResult value
     CHECK(cbResult == cbPredictedResult, "testPaddingPkcs7Add : cbResult is incorrect.");
@@ -64,7 +64,7 @@ verifyRemovePadding(SIZE_T cbBlockSize, PCBYTE pbSrc, UINT32 cbSrc, PBYTE pbDst,
     CHECK(pbDstCpy != NULL, "Out of memory in verifyRemovePadding");
     memcpy(pbDstCpy, pbDst, cbDst);
 
-    SYMCRYPT_ERROR err = SymCryptPaddingPkcs7Remove(cbBlockSize, pbSrc, cbSrc, pbDst, cbDst, &cbResult);
+    SYMCRYPT_ERROR err = ScDispatchSymCryptPaddingPkcs7Remove(cbBlockSize, pbSrc, cbSrc, pbDst, cbDst, &cbResult);
 
     // if cbDst is less than block size, we don't need to check the padding.
     if (!bufferTooSmall)
@@ -134,6 +134,13 @@ testPaddingPkcs7()
     UINT32 cbMsg;
     UINT32 cbAddPad;
     UINT32 cbRemovePad;
+    
+    if (!SCTEST_LOOKUP_DISPATCHSYM(SymCryptPaddingPkcs7Add) ||
+        !SCTEST_LOOKUP_DISPATCHSYM(SymCryptPaddingPkcs7Remove) )
+    {
+        print("    testPaddingPkcs7 skipped\n");
+        return;
+    }
 
     // Prerequisites: cbBlockSize is a power of 2 and <= 128
     SIZE_T cbBlockSize;

@@ -9,6 +9,14 @@
 // Takes values which are some bitwise OR combination of SYMCRYPT_SELFTEST_ALGORITHM values
 UINT32 g_SymCryptFipsSelftestsPerformed = SYMCRYPT_SELFTEST_ALGORITHM_NONE;
 
+// Simple accessor function so callers can inspect which selftests have run
+UINT32
+SYMCRYPT_CALL
+SymCryptFipsGetSelftestsPerformed()
+{
+    return g_SymCryptFipsSelftestsPerformed;
+}
+
 //
 // Convenience structs for selftest data
 //

@@ -313,13 +313,13 @@ rsaKeyFromTestBlob( PCRSAKEY_TESTBLOB pBlob )
     params.nPrimes = 2;
     params.nPubExp = 1;
 
-    PSYMCRYPT_RSAKEY pKey = SymCryptRsakeyAllocate( &params, 0 );
+    PSYMCRYPT_RSAKEY pKey = ScDispatchSymCryptRsakeyAllocate( &params, 0 );
     CHECK( pKey != NULL, "?" );
 
     PCBYTE ppPrime[2] = {&pBlob->abPrime1[0], &pBlob->abPrime2[0] };
     SIZE_T cbPrime[2] = {pBlob->cbPrime1, pBlob->cbPrime2 };
 
-    scError = SymCryptRsakeySetValue(
+    scError = ScDispatchSymCryptRsakeySetValue(
         &pBlob->abModulus[0], pBlob->cbModulus,
         &pBlob->u64PubExp, 1,
         ppPrime, cbPrime, 2,
@@ -882,7 +882,19 @@ testRsaSignPkcs1()
     // This removes any parsing errors, so we don't need tests that try to find
     // the corner-cases of the parser.
     //
-    iprint( "    RsaSignPkcs1+" );
+    if( !SCTEST_LOOKUP_DISPATCHSYM(SymCryptRsaPkcs1Sign) ||
+        !SCTEST_LOOKUP_DISPATCHSYM(SymCryptSha256OidList) ||
+        !SCTEST_LOOKUP_DISPATCHSYM(SymCryptRsakeySizeofModulus) ||
+        !SCTEST_LOOKUP_DISPATCHSYM(SymCryptRsaPkcs1Verify) ||
+        !SCTEST_LOOKUP_DISPATCHSYM(SymCryptRsakeyAllocate) ||
+        !SCTEST_LOOKUP_DISPATCHSYM(SymCryptRsakeySetValue) ||
+        !SCTEST_LOOKUP_DISPATCHSYM(SymCryptRsakeyFree) )
+    {
+        iprint( "    RsaSignPkcs1+ skipped\n");
+        return;
+    }
+
+    iprint("    RsaSignPkcs1+");
 
     BYTE sig[ RSAKEY_MAXKEYSIZE ];
     PSYMCRYPT_RSAKEY pKey;
@@ -895,68 +907,68 @@ testRsaSignPkcs1()
         pKey = rsaTestKeyRandom();
 
         GENRANDOM( hash, sizeof( hash ) );
-        scError = SymCryptRsaPkcs1Sign(
+        scError = ScDispatchSymCryptRsaPkcs1Sign(
                     pKey,
                     hash, sizeof( hash ),
-                    SymCryptSha256OidList, SYMCRYPT_SHA256_OID_COUNT,
+                    ScDispatchSymCryptSha256OidList, SYMCRYPT_SHA256_OID_COUNT,
                     0,
                     SYMCRYPT_NUMBER_FORMAT_MSB_FIRST,
-                    sig, SymCryptRsakeySizeofModulus( pKey ),
+                    sig, ScDispatchSymCryptRsakeySizeofModulus( pKey ),
                     &cbSig );
         CHECK( scError == SYMCRYPT_NO_ERROR, "?" );
 
-        scError = SymCryptRsaPkcs1Verify(
+        scError = ScDispatchSymCryptRsaPkcs1Verify(
                     pKey,
                     hash, sizeof( hash ),
                     sig, cbSig,
                     SYMCRYPT_NUMBER_FORMAT_MSB_FIRST,
-                    SymCryptSha256OidList, SYMCRYPT_SHA256_OID_COUNT,
+                    ScDispatchSymCryptSha256OidList, SYMCRYPT_SHA256_OID_COUNT,
                     0 );
         CHECK3( scError == SYMCRYPT_NO_ERROR, "ScError = %08x", scError );
 
         // Now check for an error if we don't include the first OID that the signing used
 
-        scError = SymCryptRsaPkcs1Verify(
+        scError = ScDispatchSymCryptRsaPkcs1Verify(
                     pKey,
                     hash, sizeof( hash ),
                     sig, cbSig,
                     SYMCRYPT_NUMBER_FORMAT_MSB_FIRST,
-                    SymCryptSha256OidList + 1, SYMCRYPT_SHA256_OID_COUNT - 1,
+                    ScDispatchSymCryptSha256OidList + 1, SYMCRYPT_SHA256_OID_COUNT - 1,
                     0 );
         CHECK( scError != SYMCRYPT_NO_ERROR, "?" );
 
         // Sign with the second OID
-        scError = SymCryptRsaPkcs1Sign(
+        scError = ScDispatchSymCryptRsaPkcs1Sign(
                     pKey,
                     hash, sizeof( hash ),
-                    SymCryptSha256OidList + 1, SYMCRYPT_SHA256_OID_COUNT - 1,
+                    ScDispatchSymCryptSha256OidList + 1, SYMCRYPT_SHA256_OID_COUNT - 1,
                     0,
                     SYMCRYPT_NUMBER_FORMAT_MSB_FIRST,
-                    sig, SymCryptRsakeySizeofModulus( pKey ),
+                    sig, ScDispatchSymCryptRsakeySizeofModulus( pKey ),
                     &cbSig );
         CHECK( scError == SYMCRYPT_NO_ERROR, "?" );
 
-        scError = SymCryptRsaPkcs1Verify(
+        scError = ScDispatchSymCryptRsaPkcs1Verify(
                     pKey,
                     hash, sizeof( hash ),
                     sig, cbSig,
                     SYMCRYPT_NUMBER_FORMAT_MSB_FIRST,
-                    SymCryptSha256OidList+ 1, SYMCRYPT_SHA256_OID_COUNT - 1,
+                    ScDispatchSymCryptSha256OidList+ 1, SYMCRYPT_SHA256_OID_COUNT - 1,
                     0 );
         CHECK3( scError == SYMCRYPT_NO_ERROR, "ScError = %08x", scError );
 
         // Now check for success if we verify with both
 
-        scError = SymCryptRsaPkcs1Verify(
+        scError = ScDispatchSymCryptRsaPkcs1Verify(
                     pKey,
                     hash, sizeof( hash ),
                     sig, cbSig,
                     SYMCRYPT_NUMBER_FORMAT_MSB_FIRST,
-                    SymCryptSha256OidList, SYMCRYPT_SHA256_OID_COUNT,
+                    ScDispatchSymCryptSha256OidList, SYMCRYPT_SHA256_OID_COUNT,
                     0 );
         CHECK( scError == SYMCRYPT_NO_ERROR, "?" );
 
-        SymCryptRsakeyFree( pKey );
+        ScDispatchSymCryptRsakeyFree( pKey );
         pKey = NULL;
     }
 
@@ -1025,6 +1037,14 @@ testRsaSignAlgorithms()
     if( isAlgorithmPresent( "RsaSignPkcs1", FALSE ) )
     {
         testRsaSignPkcs1();
+
+        if( g_dynamicSymCryptModuleHandle != NULL )
+        {
+            print("    testRsaSignPkcs1 dynamic\n");
+            g_useDynamicFunctionsInTestCall = TRUE;
+            testRsaSignPkcs1();
+            g_useDynamicFunctionsInTestCall = FALSE;
+        }
     }
 
     if( isAlgorithmPresent( "RsaSignPss", FALSE ) )

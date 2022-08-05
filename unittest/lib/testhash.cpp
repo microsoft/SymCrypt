@@ -325,21 +325,18 @@ PCSYMCRYPT_HASH
 ParallelHashMultiImp::SymCryptHash()
 {
     PCSYMCRYPT_HASH res;
-    PCSYMCRYPT_HASH tmp;
 
-    res = NULL;
     for( ParallelHashImpPtrVector::iterator i = m_imps.begin(); i != m_imps.end(); ++i )
     {
-        tmp = (*i)->SymCryptHash();
-        if( tmp != NULL )
+        res = (*i)->SymCryptHash();
+        if( res != NULL )
         {
-            CHECK( res == NULL || tmp == res, "Symcrypt hash property mismatch" );
-            res = tmp;
+            return res;
         }
     }
 
-    CHECK( res != NULL, "No parallel hash implementation provided SymCrypt hash object" );
-    return res;
+    CHECK( FALSE, "No parallel hash implementation provided SymCrypt hash object" );
+    return NULL;
 }
 
 

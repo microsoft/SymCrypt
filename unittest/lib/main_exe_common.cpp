@@ -58,19 +58,6 @@ main( int argc, _In_reads_( argc ) char * argv[] )
 {
     initTestInfrastructure( argc, argv );
 
-    // Set up vector registers to be in a state that should not be modified by unit tests
-    // This may do nothing if TestSaveXXXEnabled is FALSE, but it can also:
-    //  On Windows AMD64 set Xmm6-Xmm15 to random values
-    //    these values are non-volatile in Window x64 ABI, so should be preserved. If they are not
-    //    preserved it indicates a problem with our assembly not adhering to the Windows ABI
-    //  On Linux AMD64 set Ymm0-Ymm15 to random values
-    //    these values are naturally volatile on Linux, but symcryptunittest callers may specify the
-    //    following environment variable:
-    //      GLIBC_TUNABLES=glibc.cpu.hwcaps=-AVX_Usable,-AVX_Fast_Unaligned_Load,-AVX2_Usable
-    //    to avoid use of AVX in glibc. This means we can test the Ymm save/restore logic that is
-    //    used in Windows kernel using Linux user mode.
-    initVectorRegisters();
-
     addAllAlgs();
 
     if (!g_profile && !g_measure_specific_sizes)
@@ -78,9 +65,22 @@ main( int argc, _In_reads_( argc ) char * argv[] )
         runFunctionalTests();
     }
 
-    // Check that all uses of vector registers in the functional unit tests correctly saved/restored
-    verifyVectorRegisters();
+    // In performance testing we don't care about ImpSc which has overhead from vector save/restore
+    // testing shim
+    // Instead we want to test ImpScStatic which just directly calls into statically linked SymCrypt
+    // functions
+    // We call updateSymCryptStaticAlgs to switch out the static SymCrypt implementations
+    updateSymCryptStaticAlgs();
 
+    // Disable Vector save testing for non-functional tests
+    // This avoids unnecessary costs in the statically linked SymCrypt functions which use the unit
+    // test environment so may save/restore in user mode unnecessarily for test purposes
+    TestSaveXmmEnabled = FALSE;
+    TestSaveYmmEnabled = FALSE;
+
+    // Clean vector registers of any random values
+    // (having dirty Ymm state hurts SSE performance)
+    cleanVectorRegisters();
 
     if (g_profile)
     {
@@ -96,9 +96,6 @@ main( int argc, _In_reads_( argc ) char * argv[] )
             testSelftest();
 #endif
 
-            // Disable Vector save tests for multithreaded tests
-            TestSaveXmmEnabled = FALSE;
-            TestSaveYmmEnabled = FALSE;
             testMultiThread();
         }
     }

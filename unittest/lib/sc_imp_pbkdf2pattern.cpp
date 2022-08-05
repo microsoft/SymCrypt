@@ -1,12 +1,12 @@
 //
-// Pattern file for the Symcrypt PBKDF2 implementations.
+// Pattern file for the SymCrypt PBKDF2 implementations.
 //
 // Copyright (c) Microsoft Corporation. Licensed under the MIT license. 
 //
 
 template<>
 VOID
-KdfImp<ImpSc,AlgPbkdf2,BaseAlgXxx>::derive(
+KdfImp<ImpXxx,AlgPbkdf2,BaseAlgXxx>::derive(
         _In_reads_( cbKey )     PCBYTE          pbKey,
                                 SIZE_T          cbKey,
         _In_                    PKDF_ARGUMENTS  pArgs,
@@ -43,34 +43,33 @@ KdfImp<ImpSc,AlgPbkdf2,BaseAlgXxx>::derive(
 
     CHECK( cbDst <= sizeof( buf1 ), "PBKDF2 output too large" );
 
-    scError = SymCryptPbkdf2(
-            SYMCRYPT_BaseXxxAlgorithm,
-            pbKey,  cbKey,
-            pbSalt,  cbSalt,
-            iterationCnt,
-            &buf1[0], cbDst );
-    verifyVectorRegisters();
+    scError = ScShimSymCryptPbkdf2(
+        SYMCRYPT_BaseXxxAlgorithm,
+        pbKey,  cbKey,
+        pbSalt,  cbSalt,
+        iterationCnt,
+        &buf1[0], cbDst );
 
     CHECK( scError == SYMCRYPT_NO_ERROR, "Error in SymCrypt PBKDF2" );
 
-    scError = SymCryptPbkdf2ExpandKey(  &expandedKey,
-                                        SYMCRYPT_BaseXxxAlgorithm,
-                                        pbKey, cbKey );
-    verifyVectorRegisters();
+    scError = ScShimSymCryptPbkdf2ExpandKey(
+        &expandedKey,
+        SYMCRYPT_BaseXxxAlgorithm,
+        pbKey, cbKey );
     CHECK( scError == SYMCRYPT_NO_ERROR, "Error in SymCrypt PBKDF2" );
 
-    SymCryptMarvin32( SymCryptMarvin32DefaultSeed, (PCBYTE) &expandedKey, sizeof( expandedKey ), expandedKeyChecksum );
+    ScShimSymCryptMarvin32( ScShimSymCryptMarvin32DefaultSeed, (PCBYTE) &expandedKey, sizeof( expandedKey ), expandedKeyChecksum );
 
-    scError = SymCryptPbkdf2Derive( &expandedKey,
-                                    pbSalt, cbSalt,
-                                    iterationCnt,
-                                    &buf2[0], cbDst );
-    verifyVectorRegisters();
+    scError = ScShimSymCryptPbkdf2Derive(
+        &expandedKey,
+        pbSalt, cbSalt,
+        iterationCnt,
+        &buf2[0], cbDst );
     CHECK( scError == SYMCRYPT_NO_ERROR, "Error in SymCrypt PBKDF2" );
 
     CHECK( memcmp( buf1, buf2, cbDst ) == 0, "SymCrypt PBKDF2 calling versions disagree" );
 
-    SymCryptMarvin32( SymCryptMarvin32DefaultSeed, (PCBYTE) &expandedKey, sizeof( expandedKey ), buf2 );
+    ScShimSymCryptMarvin32( ScShimSymCryptMarvin32DefaultSeed, (PCBYTE) &expandedKey, sizeof( expandedKey ), buf2 );
     CHECK( memcmp( expandedKeyChecksum, buf2, SYMCRYPT_MARVIN32_RESULT_SIZE ) == 0, "SymCrypt PBKDF2 modified expanded key" );
 
     memcpy( pbDst, buf1, cbDst );
@@ -81,5 +80,5 @@ template<>
 VOID
 algImpDataPerfFunction<ImpXxx, AlgXxx, BaseAlgXxx>( PBYTE buf1, PBYTE buf2, PBYTE buf3, SIZE_T dataSize )
 {
-    SymCryptPbkdf2Derive( (PCSYMCRYPT_PBKDF2_EXPANDED_KEY) buf1, buf2, 32, 1, buf3, dataSize );
+    ScShimSymCryptPbkdf2Derive( (PCSYMCRYPT_PBKDF2_EXPANDED_KEY) buf1, buf2, 32, 1, buf3, dataSize );
 }

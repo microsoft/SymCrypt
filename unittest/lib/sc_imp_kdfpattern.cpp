@@ -1,5 +1,5 @@
 //
-// Pattern file for the Symcrypt hash implementations.
+// Pattern file for the SymCrypt KDF implementations.
 //
 // Copyright (c) Microsoft Corporation. Licensed under the MIT license. 
 //

@@ -2799,6 +2799,12 @@ typedef enum _SYMCRYPT_SELFTEST_ALGORITHM {
 // types smaller than 32 bits.
 extern UINT32 g_SymCryptFipsSelftestsPerformed;
 
+UINT32
+SYMCRYPT_CALL
+SymCryptFipsGetSelftestsPerformed();
+// Returns current value of g_SymCryptFipsSelftestsPerformed so callers may inspect which FIPS
+// algorithm selftests have run
+
 // Flags for per-key selftests.
 // When an asymmetric key is generated or imported, and SYMCRYPT_FLAG_KEY_NO_FIPS is not specified,
 // some selftests must be performed on the key, before its operational use in an algorithm, to
