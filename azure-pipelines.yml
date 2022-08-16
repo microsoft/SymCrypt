@@ -77,6 +77,7 @@ jobs:
       cxx: cl
       buildType: Debug
       additionalCMakeArgs: -DSYMCRYPT_INTERNAL_BUILD=1 -A Win32
+  timeoutInMinutes: 90
 
 - job: Windows_x86_Release
   pool:
@@ -91,6 +92,7 @@ jobs:
       cxx: cl
       buildType: Release
       additionalCMakeArgs: -DSYMCRYPT_INTERNAL_BUILD=1 -A Win32
+  timeoutInMinutes: 90
 
 - job: Linux_AMD64_gcc_Debug
   pool:
@@ -219,6 +221,7 @@ jobs:
       cxx: cl
       buildType: Release
       additionalCMakeArgs:
+  timeoutInMinutes: 120
 
 - job: Generic_Windows_Win32_Release
   pool:
@@ -233,6 +236,7 @@ jobs:
       cxx: cl
       buildType: Release
       additionalCMakeArgs: -A Win32
+  timeoutInMinutes: 120
 
 - job: Generic_Linux_gcc_Release
   pool:
@@ -247,6 +251,7 @@ jobs:
       cxx: g++
       buildType: Release
       additionalCMakeArgs:
+  timeoutInMinutes: 120
 
 - job: Generic_Linux_clang_Release
   pool:
@@ -261,3 +266,4 @@ jobs:
       cxx: clang++
       buildType: Release
       additionalCMakeArgs:
+  timeoutInMinutes: 120

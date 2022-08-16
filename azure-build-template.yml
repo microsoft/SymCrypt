@@ -101,15 +101,15 @@ steps:
     - ${{ if ne(parameters.env, 'Generic') }}:
       - script: |
           cd bin\exe\${{parameters.arch}}\${{parameters.env}}\${{parameters.buildType}}
-          .\symcryptunittest.exe
-        displayName: 'Execute unit tests'
+          .\symcryptunittest.exe dynamic:symcrypttestmodule.dll
+        displayName: 'Execute unit tests with SymCrypt test module'
         name: '${{parameters.env}}UnitTest_${{parameters.buildType}}'
     # Execute Generic unit tests in CI and in PRs to publish
     - ${{ if eq(parameters.env, 'Generic') }}:
       - script: |
           cd bin\exe\%PROCESSOR_ARCHITECTURE%\${{parameters.env}}\${{parameters.buildType}}
-          .\symcryptunittest.exe
-        displayName: 'Execute unit tests'
+          .\symcryptunittest.exe dynamic:symcrypttestmodule.dll
+        displayName: 'Execute unit tests with SymCrypt test module'
         name: '${{parameters.env}}UnitTest_${{parameters.buildType}}'
         condition: or(eq(variables['System.PullRequest.TargetBranch'], 'refs/heads/publish'), in(variables['Build.Reason'], 'IndividualCI', 'BatchedCI'))
   - ${{ if eq(parameters.hostos, 'Linux') }}:

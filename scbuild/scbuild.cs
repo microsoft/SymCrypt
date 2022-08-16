@@ -609,14 +609,17 @@ class ScBuild
         CopyFile(testFileName2 + ".exe", @"release\lib\" + arch + @"\symcryptunittest_win7nlater.exe");
         CopyFile(testFileName2 + ".pdb", @"release\lib\" + arch + @"\symcryptunittest_win7nlater.pdb");
 
-        string testFileName4 = object_root + @"\symcrypt\unittest\exe_win8_1nlater\" + objDirName(arch) + "symcryptunittest_win8_1nlater";
-        CopyFile(testFileName4 + ".exe", @"release\lib\" + arch + @"\symcryptunittest_win8_1nlater.exe");
-        CopyFile(testFileName4 + ".pdb", @"release\lib\" + arch + @"\symcryptunittest_win8_1nlater.pdb");
+        string testFileName3 = object_root + @"\symcrypt\unittest\exe_win8_1nlater\" + objDirName(arch) + "symcryptunittest_win8_1nlater";
+        CopyFile(testFileName3 + ".exe", @"release\lib\" + arch + @"\symcryptunittest_win8_1nlater.exe");
+        CopyFile(testFileName3 + ".pdb", @"release\lib\" + arch + @"\symcryptunittest_win8_1nlater.pdb");
 
-        string testFileName3 = object_root + @"\symcrypt\unittest\exe_legacy\" + objDirName(arch) + "symcryptunittest_legacy";
-        CopyFile(testFileName3 + ".exe", @"release\lib\" + arch + @"\symcryptunittest_legacy.exe");
-        CopyFile(testFileName3 + ".pdb", @"release\lib\" + arch + @"\symcryptunittest_legacy.pdb");
+        string testFileName4 = object_root + @"\symcrypt\unittest\exe_legacy\" + objDirName(arch) + "symcryptunittest_legacy";
+        CopyFile(testFileName4 + ".exe", @"release\lib\" + arch + @"\symcryptunittest_legacy.exe");
+        CopyFile(testFileName4 + ".pdb", @"release\lib\" + arch + @"\symcryptunittest_legacy.pdb");
 
+        string testFileName5 = object_root + @"\symcrypt\unittest\module_windows\" + objDirName(arch) + "symcrypttestmodule";
+        CopyFile(testFileName5 + ".dll", @"release\lib\" + arch + @"\symcrypttestmodule.dll");
+        CopyFile(testFileName5 + ".pdb", @"release\lib\" + arch + @"\symcrypttestmodule.pdb");
     }
 
     public string objDirName( string arch )

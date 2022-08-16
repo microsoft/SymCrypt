@@ -4,11 +4,7 @@ DIRS = \
     exe_Win7nLater \
     exe_Win8_1nLater \
     exe_legacy \
+    module_windows \
     sys_test \
     sys_Win7nLater \
     sys_legacy \
-
-
-
-    
-
