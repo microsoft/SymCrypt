@@ -29,6 +29,11 @@ addRsaKeyGenPerfSymCrypt<ImpXxx>( PrintTable &table )
     for( UINT32 i=0; i<ARRAY_SIZE( bitSizes ); i++ )
     {
         UINT32 bitSize = bitSizes[i];
+        UINT32 generateFlags = SYMCRYPT_FLAG_RSAKEY_SIGN | SYMCRYPT_FLAG_RSAKEY_ENCRYPT;
+        if( bitSize < SYMCRYPT_RSAKEY_FIPS_MIN_BITSIZE_MODULUS )
+        {
+            generateFlags |= SYMCRYPT_FLAG_KEY_NO_FIPS;
+        }
 
         UINT64 scTicks;
         double scCost;
@@ -44,7 +49,7 @@ addRsaKeyGenPerfSymCrypt<ImpXxx>( PrintTable &table )
             UINT64 start = GET_PERF_CLOCK();
 
             PSYMCRYPT_RSAKEY pScKey = ScShimSymCryptRsakeyAllocate( &scRsaParams, 0 );
-            ScShimSymCryptRsakeyGenerate( pScKey, nullptr, 0, SYMCRYPT_FLAG_RSAKEY_SIGN | SYMCRYPT_FLAG_RSAKEY_ENCRYPT );
+            ScShimSymCryptRsakeyGenerate( pScKey, nullptr, 0, generateFlags );
             ScShimSymCryptRsakeyFree( pScKey );
 
             UINT64 stop = GET_PERF_CLOCK();

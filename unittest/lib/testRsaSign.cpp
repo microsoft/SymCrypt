@@ -197,7 +197,13 @@ rsaTestKeysAddOne( UINT32 bitSize )
         u64PubExp = 65537;
     }
 
-    scError = SymCryptRsakeyGenerate( pKey, &u64PubExp, 1, SYMCRYPT_FLAG_RSAKEY_SIGN | SYMCRYPT_FLAG_RSAKEY_ENCRYPT );
+    UINT32 generateFlags = SYMCRYPT_FLAG_RSAKEY_SIGN | SYMCRYPT_FLAG_RSAKEY_ENCRYPT;
+    if( bitSize < SYMCRYPT_RSAKEY_FIPS_MIN_BITSIZE_MODULUS )
+    {
+        generateFlags |= SYMCRYPT_FLAG_KEY_NO_FIPS;
+    }
+
+    scError = SymCryptRsakeyGenerate( pKey, &u64PubExp, 1, generateFlags );
     CHECK( scError == SYMCRYPT_NO_ERROR, "?" );
 
     PRSAKEY_TESTBLOB pBlob = &g_RsaTestKeyBlobs[ g_nRsaTestKeyBlobs++ ];
@@ -275,7 +281,10 @@ VOID rsaTestKeysGenerate()
         } else if( (r % 3) == 0 ) {
             bitSize = (UINT32) g_rng.sizet( 1024, 2048 );
         } else {
-            bitSize = (UINT32) g_rng.sizet( 512, 2048 );
+            bitSize = (UINT32) g_rng.sizet( 496, 2048 );
+            // Arguably we should generate even smaller RSA keys to catch regressions for small keys
+            // but the tests assume we can do PKCS1 signing with SHA256 for all generated keys, and
+            // this 496 is the minimum
         }
 
         if( bitSize == previousSize )
@@ -755,11 +764,13 @@ testRsaSignTestkeys(
         UINT32 cbHash = 32;
         UINT32 cbSalt = (UINT32) g_rng.sizet( 0, pBlob->cbModulus - 48 );
 
-        // Calling the 'sign' function performs sign-and-verify, which is what we want to do.
         // We always use the SHA256 alg for MGF as we've tested the others already
         // iprint( "%d, ", i );
         ntStatus = pRsaSign->sign( hash, cbHash, "SHA256", cbSalt, &sig[0], pBlob->cbModulus );
         CHECK( NT_SUCCESS( ntStatus ), "Error in RSA signing validation" );
+
+        ntStatus = pRsaSign->verify( hash, cbHash, &sig[0], pBlob->cbModulus, "SHA256", cbSalt );
+        CHECK( NT_SUCCESS( ntStatus ), "Error in RSA verification validation" );
     }
     CHECK( pRsaSign->setKey( NULL ) == STATUS_SUCCESS, "Failed to clear key" );
 }

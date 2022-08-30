@@ -2064,6 +2064,12 @@ SYMCRYPT_ASYM_ALIGN_STRUCT _SYMCRYPT_MODELEMENT {
 
 #define SYMCRYPT_RSAKEY_MIN_BITSIZE_MODULUS         (256)               // Some of our SCS code requires at least 32 bytes...
 #define SYMCRYPT_RSAKEY_MAX_BITSIZE_MODULUS         (1 << 16)           // Avoid any integer overflows in size calculations
+
+// RSA FIPS self-tests require at least 496 bits to avoid fatal
+// Require caller to specify NO_FIPS for up to 1024 bits as running FIPS tests on too-small keys
+// does not make it FIPS certifiable and gives the wrong impression to callers
+#define SYMCRYPT_RSAKEY_FIPS_MIN_BITSIZE_MODULUS    (1024)      
+
 #define SYMCRYPT_RSAKEY_MIN_BITSIZE_PRIME           (128)
 #define SYMCRYPT_RSAKEY_MAX_BITSIZE_PRIME           (SYMCRYPT_RSAKEY_MAX_BITSIZE_MODULUS / 2)
 

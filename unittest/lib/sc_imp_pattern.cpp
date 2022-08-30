@@ -2517,20 +2517,28 @@ ArithImp<ImpXxx, AlgDeveloperTest>::~ArithImp()
 // Table with the RSA keys' sizes and pointers to keys
 struct {
     SIZE_T                      keySize;
+    UINT32                      generateFlags;
     PSYMCRYPT_RSAKEY            pkRsakey;
 } CONCAT2(g_precomputedRsaKeys, ImpXxx)[] = {
-    {  32, NULL },
-    {  64, NULL },
-    { 128, NULL },
-    { 256, NULL },
-    { 384, NULL },
-    { 512, NULL },
-    {1024, NULL },
+    {  32, SYMCRYPT_FLAG_RSAKEY_SIGN, NULL },
+    {  64, SYMCRYPT_FLAG_RSAKEY_SIGN, NULL },
+    { 128, SYMCRYPT_FLAG_RSAKEY_SIGN, NULL },
+    { 256, SYMCRYPT_FLAG_RSAKEY_SIGN, NULL },
+    { 384, SYMCRYPT_FLAG_RSAKEY_SIGN, NULL },
+    { 512, SYMCRYPT_FLAG_RSAKEY_SIGN, NULL },
+    {1024, SYMCRYPT_FLAG_RSAKEY_SIGN, NULL },
+    {  32, SYMCRYPT_FLAG_RSAKEY_ENCRYPT, NULL },
+    {  64, SYMCRYPT_FLAG_RSAKEY_ENCRYPT, NULL },
+    { 128, SYMCRYPT_FLAG_RSAKEY_ENCRYPT, NULL },
+    { 256, SYMCRYPT_FLAG_RSAKEY_ENCRYPT, NULL },
+    { 384, SYMCRYPT_FLAG_RSAKEY_ENCRYPT, NULL },
+    { 512, SYMCRYPT_FLAG_RSAKEY_ENCRYPT, NULL },
+    {1024, SYMCRYPT_FLAG_RSAKEY_ENCRYPT, NULL },
 };
 
 template<>
 void
-SetupRsaKey<ImpXxx>( PBYTE buf1, SIZE_T keySize )
+SetupSymCryptRsaKey<ImpXxx>( PBYTE buf1, SIZE_T keySize, UINT32 generateFlags )
 {
     int i = 0;
     BOOLEAN bFound = FALSE;
@@ -2539,7 +2547,8 @@ SetupRsaKey<ImpXxx>( PBYTE buf1, SIZE_T keySize )
 
     for( i=0; i < ARRAY_SIZE(CONCAT2(g_precomputedRsaKeys, ImpXxx)); i++ )
     {
-        if ( keySize == CONCAT2(g_precomputedRsaKeys, ImpXxx)[i].keySize )
+        if ( keySize == CONCAT2(g_precomputedRsaKeys, ImpXxx)[i].keySize &&
+             generateFlags == CONCAT2(g_precomputedRsaKeys, ImpXxx)[i].generateFlags )
         {
             bFound = TRUE;
 
@@ -2557,8 +2566,13 @@ SetupRsaKey<ImpXxx>( PBYTE buf1, SIZE_T keySize )
                 pkRsakey = ScShimSymCryptRsakeyAllocate( &rsaParams, 0 );
                 CHECK( pkRsakey != NULL, "?" );
 
+                if ( rsaParams.nBitsOfModulus < SYMCRYPT_RSAKEY_FIPS_MIN_BITSIZE_MODULUS )
+                {
+                    generateFlags |= SYMCRYPT_FLAG_KEY_NO_FIPS;
+                }
+
                 // Use default exponent
-                scError = ScShimSymCryptRsakeyGenerate( pkRsakey, nullptr, 0, SYMCRYPT_FLAG_RSAKEY_SIGN | SYMCRYPT_FLAG_RSAKEY_ENCRYPT );
+                scError = ScShimSymCryptRsakeyGenerate( pkRsakey, nullptr, 0, generateFlags );
                 CHECK( scError == SYMCRYPT_NO_ERROR, "?" );
 
                 CONCAT2(g_precomputedRsaKeys, ImpXxx)[i].pkRsakey = pkRsakey;
@@ -2575,11 +2589,11 @@ SetupRsaKey<ImpXxx>( PBYTE buf1, SIZE_T keySize )
 
 template<>
 void
-sc_RsaKeyPerf<ImpXxx>( PBYTE buf1, PBYTE buf2, SIZE_T keySize )
+sc_RsaKeyPerf<ImpXxx>( PBYTE buf1, PBYTE buf2, SIZE_T keySize, UINT32 generateFlags )
 {
     SYMCRYPT_ERROR scError = SYMCRYPT_NO_ERROR;
 
-    SetupRsaKey<ImpXxx>( buf1, keySize );
+    SetupSymCryptRsaKey<ImpXxx>( buf1, keySize, generateFlags );
 
     buf2[0] = 0;
     // Don't fill it up so that it is smaller than the modulus
@@ -2627,7 +2641,7 @@ algImpKeyPerfFunction<ImpXxx, AlgRsaSignPkcs1>( PBYTE buf1, PBYTE buf2, PBYTE bu
     SYMCRYPT_ERROR scError = SYMCRYPT_NO_ERROR;
     SIZE_T cbDst = 0;
 
-    sc_RsaKeyPerf<ImpXxx>( buf1, buf2, keySize );
+    sc_RsaKeyPerf<ImpXxx>( buf1, buf2, keySize, SYMCRYPT_FLAG_RSAKEY_SIGN );
 
     scError = ScShimSymCryptRsaPkcs1Sign(
                     *((PSYMCRYPT_RSAKEY *) buf1),
@@ -2856,7 +2870,7 @@ algImpKeyPerfFunction<ImpXxx, AlgRsaSignPss>( PBYTE buf1, PBYTE buf2, PBYTE buf3
     SYMCRYPT_ERROR scError = SYMCRYPT_NO_ERROR;
     SIZE_T cbDst = 0;
 
-    sc_RsaKeyPerf<ImpXxx>( buf1, buf2, keySize );
+    sc_RsaKeyPerf<ImpXxx>( buf1, buf2, keySize, SYMCRYPT_FLAG_RSAKEY_SIGN );
 
     scError = ScShimSymCryptRsaPssSign(
                     *((PSYMCRYPT_RSAKEY *) buf1),
@@ -3086,7 +3100,7 @@ algImpKeyPerfFunction<ImpXxx, AlgRsaEncRaw>( PBYTE buf1, PBYTE buf2, PBYTE buf3,
 {
     SYMCRYPT_ERROR scError = SYMCRYPT_NO_ERROR;
 
-    sc_RsaKeyPerf<ImpXxx>( buf1, buf2, keySize );
+    sc_RsaKeyPerf<ImpXxx>( buf1, buf2, keySize, SYMCRYPT_FLAG_RSAKEY_ENCRYPT );
 
     scError = ScShimSymCryptRsaRawEncrypt(
                     *((PSYMCRYPT_RSAKEY *) buf1),
@@ -3289,7 +3303,7 @@ algImpKeyPerfFunction<ImpXxx, AlgRsaEncPkcs1>( PBYTE buf1, PBYTE buf2, PBYTE buf
     SYMCRYPT_ERROR scError = SYMCRYPT_NO_ERROR;
     SIZE_T cbDst = 0;
 
-    sc_RsaKeyPerf<ImpXxx>( buf1, buf2, keySize );
+    sc_RsaKeyPerf<ImpXxx>( buf1, buf2, keySize, SYMCRYPT_FLAG_RSAKEY_ENCRYPT );
 
     scError = ScShimSymCryptRsaPkcs1Encrypt(
                     *((PSYMCRYPT_RSAKEY *) buf1),
@@ -3505,7 +3519,7 @@ algImpKeyPerfFunction<ImpXxx, AlgRsaEncOaep>( PBYTE buf1, PBYTE buf2, PBYTE buf3
     SYMCRYPT_ERROR scError = SYMCRYPT_NO_ERROR;
     SIZE_T cbDst = 0;
 
-    sc_RsaKeyPerf<ImpXxx>( buf1, buf2, keySize );
+    sc_RsaKeyPerf<ImpXxx>( buf1, buf2, keySize, SYMCRYPT_FLAG_RSAKEY_ENCRYPT );
 
     scError = ScShimSymCryptRsaOaepEncrypt(
                     *((PSYMCRYPT_RSAKEY *) buf1),
@@ -3796,7 +3810,7 @@ algImpKeyPerfFunction<ImpXxx, AlgRsaEncOaep>( PBYTE buf1, PBYTE buf2, PBYTE buf3
     BYTE rbResult[1024] = { 0 };
     SIZE_T cbDst = 0;
 
-    sc_RsaKeyPerf<ImpXxx>( buf1, buf2, keySize );
+    sc_RsaKeyPerf<ImpXxx>( buf1, buf2, keySize, SYMCRYPT_FLAG_RSAKEY_ENCRYPT );
 
     scError = ScShimSymCryptRsaOaepEncrypt(
                     *((PSYMCRYPT_RSAKEY *) buf1),
@@ -4088,7 +4102,7 @@ SetupDlGroup<ImpXxx>( PBYTE buf1, SIZE_T keySize )
 
 template<>
 void
-SetupSymCryptDsaAndDh<ImpXxx>( PBYTE buf1, PBYTE buf2, PBYTE buf3 )
+SetupSymCryptDsa<ImpXxx>( PBYTE buf1, PBYTE buf2, PBYTE buf3 )
 {
     SYMCRYPT_ERROR scError = SYMCRYPT_NO_ERROR;
 
@@ -4104,7 +4118,7 @@ SetupSymCryptDsaAndDh<ImpXxx>( PBYTE buf1, PBYTE buf2, PBYTE buf3 )
     PUINT32 puiSignatureSize = NULL;
     UINT32 cbAgreedSecret, cbHashValue;
 
-    UINT32 generateFlags = SYMCRYPT_FLAG_DLKEY_DH | SYMCRYPT_FLAG_DLKEY_DSA | SYMCRYPT_FLAG_KEY_NO_FIPS;
+    UINT32 generateFlags = SYMCRYPT_FLAG_DLKEY_DSA;
 
     pPtrs[0] = ScShimSymCryptDlkeyCreate( buf2 + buff2Offset, dlkeysize, pDlgroup );
     scError = ScShimSymCryptDlkeyGenerate( generateFlags, pPtrs[0] );
@@ -4123,17 +4137,7 @@ SetupSymCryptDsaAndDh<ImpXxx>( PBYTE buf1, PBYTE buf2, PBYTE buf3 )
 
     *puiSignatureSize = signatureSize;
 
-    // Verify that DH can work
-    scError = ScShimSymCryptDhSecretAgreement(
-                ((PSYMCRYPT_DLKEY *) buf2)[0],
-                ((PSYMCRYPT_DLKEY *) buf2)[1],
-                SYMCRYPT_NUMBER_FORMAT_MSB_FIRST,
-                0,
-                buf3 + sizeof(UINT32),
-                cbAgreedSecret );
-    CHECK( scError == SYMCRYPT_NO_ERROR, "SymCryptDhSecretAgreement failed" );
-
-    // Same for DSA
+    // Verify that DSA can work
     cbHashValue = ScShimSymCryptDlkeySizeofPrivateKey( ((PSYMCRYPT_DLKEY *)buf2)[0] );
     scError = ScShimSymCryptDsaSign(
                 ((PSYMCRYPT_DLKEY *) buf2)[0],
@@ -4167,7 +4171,7 @@ algImpKeyPerfFunction<ImpXxx, AlgDsaSign>( PBYTE buf1, PBYTE buf2, PBYTE buf3, S
     UNREFERENCED_PARAMETER( buf3 );
 
     SetupDlGroup<ImpXxx>( buf1, keySize );
-    SetupSymCryptDsaAndDh<ImpXxx>( buf1, buf2, buf3 );
+    SetupSymCryptDsa<ImpXxx>( buf1, buf2, buf3 );
 }
 
 template<>
@@ -4222,7 +4226,7 @@ algImpKeyPerfFunction<ImpXxx, AlgDsaVerify>( PBYTE buf1, PBYTE buf2, PBYTE buf3,
     UNREFERENCED_PARAMETER( buf3 );
 
     SetupDlGroup<ImpXxx>( buf1, keySize );
-    SetupSymCryptDsaAndDh<ImpXxx>( buf1, buf2, buf3 );
+    SetupSymCryptDsa<ImpXxx>( buf1, buf2, buf3 );
 }
 
 template<>
@@ -4768,7 +4772,7 @@ SetupSymCryptCurves<ImpXxx>( PBYTE buf1, SIZE_T keySize )
 
 template<>
 void
-SetupSymCryptEcdsaAndEcdh<ImpXxx>( PBYTE buf1, PBYTE buf2, PBYTE buf3 )
+SetupSymCryptEckey<ImpXxx>( PBYTE buf1, PBYTE buf2, PBYTE buf3, UINT32 setRandomFlags )
 {
     SYMCRYPT_ERROR scError = SYMCRYPT_NO_ERROR;
 
@@ -4780,7 +4784,7 @@ SetupSymCryptEcdsaAndEcdh<ImpXxx>( PBYTE buf1, PBYTE buf2, PBYTE buf3 )
     PSYMCRYPT_ECKEY * pPtrs = ((PSYMCRYPT_ECKEY *) buf2);
     pPtrs[0] = ScShimSymCryptEckeyCreate( buf2 + 32, eckeySize, pCurve );
 
-    scError = ScShimSymCryptEckeySetRandom( SYMCRYPT_FLAG_ECKEY_ECDSA | SYMCRYPT_FLAG_ECKEY_ECDH, pPtrs[0] );
+    scError = ScShimSymCryptEckeySetRandom( setRandomFlags, pPtrs[0] );
     CHECK( scError == SYMCRYPT_NO_ERROR, "?" );
 
     pPtrs[1] = (PSYMCRYPT_ECKEY) ((PBYTE)buf2 + 32 + eckeySize);    // This will hold the hash of the message
@@ -4795,20 +4799,23 @@ SetupSymCryptEcdsaAndEcdh<ImpXxx>( PBYTE buf1, PBYTE buf2, PBYTE buf3 )
     *puiSignatureSize = signatureSize;
 
     // Verify that ECDH can work
-    UINT32 cbAgreedSecret = ScShimSymCryptEcurveSizeofFieldElement( *(PSYMCRYPT_ECURVE *) buf1 );
-    CHECK( cbAgreedSecret <= *((PUINT32)buf3), "Buffer 3 too small for ECDH");
-    scError = ScShimSymCryptEcDhSecretAgreement(
-                ((PSYMCRYPT_ECKEY *) buf2)[0],
-                ((PSYMCRYPT_ECKEY *) buf2)[0],      // Same private and public key
-                SYMCRYPT_NUMBER_FORMAT_MSB_FIRST,
-                0,
-                buf3 + sizeof(UINT32),
-                cbAgreedSecret);
-    CHECK( scError == SYMCRYPT_NO_ERROR, "SymCryptEcDhSecretAgreement failed" );
-
-    if (pCurve->type != SYMCRYPT_ECURVE_TYPE_MONTGOMERY)
+    if ( setRandomFlags & SYMCRYPT_FLAG_ECKEY_ECDH )
     {
-        // Same for ECDSA
+        UINT32 cbAgreedSecret = ScShimSymCryptEcurveSizeofFieldElement( *(PSYMCRYPT_ECURVE *) buf1 );
+        CHECK( cbAgreedSecret <= *((PUINT32)buf3), "Buffer 3 too small for ECDH");
+        scError = ScShimSymCryptEcDhSecretAgreement(
+                    ((PSYMCRYPT_ECKEY *) buf2)[0],
+                    ((PSYMCRYPT_ECKEY *) buf2)[0],      // Same private and public key
+                    SYMCRYPT_NUMBER_FORMAT_MSB_FIRST,
+                    0,
+                    buf3 + sizeof(UINT32),
+                    cbAgreedSecret);
+        CHECK( scError == SYMCRYPT_NO_ERROR, "SymCryptEcDhSecretAgreement failed" );
+    }
+
+    // Verify that ECDSA can work
+    if ( (setRandomFlags & SYMCRYPT_FLAG_ECKEY_ECDSA) != 0 )
+    {
         scError = ScShimSymCryptEcDsaSign(
                         pPtrs[0],
                         (PBYTE) pPtrs[1],
@@ -4901,7 +4908,7 @@ VOID
 algImpKeyPerfFunction<ImpXxx, AlgEcdsaSign>( PBYTE buf1, PBYTE buf2, PBYTE buf3, SIZE_T keySize )
 {
     SetupSymCryptCurves<ImpXxx>( buf1, keySize );
-    SetupSymCryptEcdsaAndEcdh<ImpXxx>( buf1, buf2, buf3 );
+    SetupSymCryptEckey<ImpXxx>( buf1, buf2, buf3, SYMCRYPT_FLAG_ECKEY_ECDSA );
 }
 
 template<>
@@ -4952,7 +4959,7 @@ VOID
 algImpKeyPerfFunction<ImpXxx, AlgEcdsaVerify>( PBYTE buf1, PBYTE buf2, PBYTE buf3, SIZE_T keySize )
 {
     SetupSymCryptCurves<ImpXxx>( buf1, keySize );
-    SetupSymCryptEcdsaAndEcdh<ImpXxx>( buf1, buf2, buf3 );
+    SetupSymCryptEckey<ImpXxx>( buf1, buf2, buf3, SYMCRYPT_FLAG_ECKEY_ECDSA );
 }
 
 template<>
@@ -5003,7 +5010,7 @@ VOID
 algImpKeyPerfFunction<ImpXxx, AlgEcdh>( PBYTE buf1, PBYTE buf2, PBYTE buf3, SIZE_T keySize )
 {
     SetupSymCryptCurves<ImpXxx>( buf1, keySize );
-    SetupSymCryptEcdsaAndEcdh<ImpXxx>( buf1, buf2, buf3 );
+    SetupSymCryptEckey<ImpXxx>( buf1, buf2, buf3, SYMCRYPT_FLAG_ECKEY_ECDH );
 }
 
 template<>

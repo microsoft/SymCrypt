@@ -502,8 +502,6 @@ SymCryptRsakeyGenerate(
     UINT32 cbDivisor = 0;
     PSYMCRYPT_DIVISOR pdTmp = NULL;
 
-	// dcl - why are we reading an out parameter? Looks like it is really _InOut_
-	// should there be some level of sanity checking here?
     UINT32 ndMod = pkRsakey->nDigitsOfModulus;
     UINT32 cbMod = 0;
     PSYMCRYPT_INT piPhi = NULL;
@@ -529,6 +527,16 @@ SymCryptRsakeyGenerate(
 
     if ( ( ( flags & ~allowedFlags ) != 0 ) || 
          ( ( flags & algorithmFlags ) == 0) )
+    {
+        scError = SYMCRYPT_INVALID_ARGUMENT;
+        goto cleanup;
+    }
+
+    // SymCryptRsaSignVerifyTest self-test requires generated key to be at least 496 bits to avoid fatal
+    // Require caller to specify NO_FIPS for up to 1024 bits as running FIPS tests on too-small keys
+    // does not make it FIPS certifiable and gives the wrong impression to callers
+    if ( ( (flags & SYMCRYPT_FLAG_KEY_NO_FIPS) == 0 ) &&
+         ( pkRsakey->nSetBitsOfModulus < SYMCRYPT_RSAKEY_FIPS_MIN_BITSIZE_MODULUS ) )
     {
         scError = SYMCRYPT_INVALID_ARGUMENT;
         goto cleanup;
@@ -725,11 +733,21 @@ SymCryptRsakeyGenerate(
 
         // Run SignVerify PCT on generated keypair
         // Our current understanding is that this PCT is sufficient for both RSA_SIGN and RSA_ENCRYPT
+
+        // Unconditionally set the sign flag to enable SignVerify PCT on encrypt-only keypair
+        pkRsakey->fAlgorithmInfo |= SYMCRYPT_FLAG_RSAKEY_SIGN;
+
         SYMCRYPT_RUN_KEYGEN_PCT(
             SymCryptRsaSignVerifyTest,
             pkRsakey,
             0, /* Do not set any algorithm selftest as run with this PCT */
             SYMCRYPT_SELFTEST_KEY_RSA_SIGN );
+
+        // Unset the sign flag before returning encrypt-only keypair
+        if ( ( flags & SYMCRYPT_FLAG_RSAKEY_SIGN ) == 0 )
+        {
+            pkRsakey->fAlgorithmInfo ^= SYMCRYPT_FLAG_RSAKEY_SIGN;
+        }
     }
 
 cleanup:

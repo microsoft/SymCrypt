@@ -51,11 +51,11 @@ setupModOperations( PBYTE buf1, PBYTE buf2, PBYTE buf3, SIZE_T keySize );
 
 template<class Implementation>
 void
-SetupRsaKey( PBYTE buf1, SIZE_T keySize );
+SetupSymCryptRsaKey( PBYTE buf1, SIZE_T keySize, UINT32 generateFlags );
 
 template<class Implementation>
 void
-sc_RsaKeyPerf( PBYTE buf1, PBYTE buf2, SIZE_T keySize );
+sc_RsaKeyPerf( PBYTE buf1, PBYTE buf2, SIZE_T keySize, UINT32 generateFlags );
 
 template<class Implementation>
 VOID
@@ -67,7 +67,7 @@ SetupDlGroup( PBYTE buf1, SIZE_T keySize );
 
 template<class Implementation>
 void
-SetupSymCryptDsaAndDh( PBYTE buf1, PBYTE buf2, PBYTE buf3 );
+SetupSymCryptDsa( PBYTE buf1, PBYTE buf2, PBYTE buf3 );
 
 template<class Implementation>
 PSYMCRYPT_DLKEY
@@ -88,7 +88,7 @@ SetupSymCryptEcpoints( PBYTE buf1, PBYTE buf2, PBYTE buf3 );
 
 template<class Implementation>
 void
-SetupSymCryptEcdsaAndEcdh( PBYTE buf1, PBYTE buf2, PBYTE buf3 );
+SetupSymCryptEckey( PBYTE buf1, PBYTE buf2, PBYTE buf3, UINT32 setRandomFlags );
 
 VOID
 trialDivisionSetFakePrime( PSYMCRYPT_TRIALDIVISION_PRIME p )
