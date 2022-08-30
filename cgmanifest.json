@@ -1,25 +1,26 @@
 {
-    "Registrations": [ 
-        {
-            "Component": { 
-                "Type": "Other", 
-                "Other": {
-                    "Name": "elfdefinitions.h", 
-                    "Version": "3769",
-                    "DownloadUrl": "https://cgit.freebsd.org/src/plain/contrib/elftoolchain/common/elfdefinitions.h"
-                    }
-            },
-            "DevelopmentDependency": false
-        },
-        {
-            "Component": {
-                "Type": "git",
-                "Git": {
-                    "RepositoryUrl": "https://github.com/smuellerDD/jitterentropy-library",
-                    "CommitHash": "887c9871ea110e397812ff7f3b28a6269f0a2ffc"
-                }
-            },
-            "DevelopmentDependency": false
+  "$schema": "https://json.schemastore.org/component-detection-manifest.json",
+  "Registrations": [
+    {
+      "Component": {
+        "Type": "Other",
+        "Other": {
+          "Name": "elfdefinitions.h",
+          "Version": "3769",
+          "DownloadUrl": "https://cgit.freebsd.org/src/plain/contrib/elftoolchain/common/elfdefinitions.h"
         }
-    ]
+      },
+      "DevelopmentDependency": false
+    },
+    {
+      "Component": {
+        "Type": "git",
+        "Git": {
+          "RepositoryUrl": "https://github.com/smuellerDD/jitterentropy-library",
+          "CommitHash": "887c9871ea110e397812ff7f3b28a6269f0a2ffc"
+        }
+      },
+      "DevelopmentDependency": false
+    }
+  ]
 }
