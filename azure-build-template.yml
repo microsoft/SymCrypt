@@ -51,6 +51,9 @@ parameters:
   values:
   - native
   - qemu-aarch64
+- name: testInPrBuild
+  type: boolean
+  default: true
 
 steps:
   - checkout: self  # self represents the repo where the initial Pipelines YAML file was found
@@ -63,12 +66,17 @@ steps:
         python -m pip install --upgrade pip setuptools wheel
         pip install -r $(Build.SourcesDirectory)/scripts/requirements.txt
       displayName: 'Install Python requirements'
-  - ${{ if eq(parameters.emulator, 'qemu-aarch64') }}:
-    - script: |
-        sudo apt-get update
-        sudo apt-get install qemu-user binutils-aarch64-linux-gnu
-        sudo apt-get install gcc-aarch64-linux-gnu g++-aarch64-linux-gnu
-      displayName: 'Install arm64 cross-compilation and emulation tools'
+    - ${{ if eq(parameters.arch, 'X86') }}:
+      - script: |
+          sudo apt-get update
+          sudo apt-get install gcc-multilib g++-multilib
+        displayName: 'Install x86 headers and libraries'
+    - ${{ if eq(parameters.emulator, 'qemu-aarch64') }}:
+      - script: |
+          sudo apt-get update
+          sudo apt-get install qemu-user binutils-aarch64-linux-gnu
+          sudo apt-get install gcc-aarch64-linux-gnu g++-aarch64-linux-gnu
+        displayName: 'Install arm64 cross-compilation and emulation tools'
   # Specify no toolchain file for generic build
   - ${{ if eq(parameters.env, 'Generic') }}:
     - task: CMake@1
@@ -98,14 +106,14 @@ steps:
         workingDirectory: '$(Build.SourcesDirectory)/bin'
         cmakeArgs: '--build . -j --config ${{parameters.buildType}}'
     # Execute unit tests using the inline script
-    - ${{ if ne(parameters.env, 'Generic') }}:
+    - ${{ if eq(parameters.testInPrBuild, true) }}:
       - script: |
           cd bin\exe\${{parameters.arch}}\${{parameters.env}}\${{parameters.buildType}}
           .\symcryptunittest.exe dynamic:symcrypttestmodule.dll
         displayName: 'Execute unit tests with SymCrypt test module'
         name: '${{parameters.env}}UnitTest_${{parameters.buildType}}'
     # Execute Generic unit tests in CI and in PRs to publish
-    - ${{ if eq(parameters.env, 'Generic') }}:
+    - ${{ if eq(parameters.testInPrBuild, false) }}:
       - script: |
           cd bin\exe\%PROCESSOR_ARCHITECTURE%\${{parameters.env}}\${{parameters.buildType}}
           .\symcryptunittest.exe dynamic:symcrypttestmodule.dll
@@ -124,7 +132,7 @@ steps:
         ulimit -c unlimited
         cp $(Build.SourcesDirectory)/.artifactignore $(Agent.WorkFolder)
       displayName: 'Enable core dumps & Place .artifactignore file'
-    - ${{ if ne(parameters.env, 'Generic') }}:
+    - ${{ if eq(parameters.testInPrBuild, true) }}:
       # Execute unit test using the inline script
       - ${{ if eq(parameters.emulator, 'native') }}:
         - script: |
@@ -169,11 +177,11 @@ steps:
           displayName: 'Execute unit tests with generic SymCrypt module'
           name: '${{parameters.env}}UnitTestDynamicGeneric_${{parameters.buildType}}_QEMU_AARCH64'
     # Execute Generic unit tests in CI and in PRs to publish
-    - ${{ if eq(parameters.env, 'Generic') }}:
+    - ${{ if eq(parameters.testInPrBuild, false) }}:
       - script: |
           archName=`uname -m`
           cd bin/exe/${archName}/${{parameters.env}}
-          ./symcryptunittest
+          ./symcryptunittest noperftests
         displayName: 'Execute unit tests'
         name: '${{parameters.env}}UnitTest_${{parameters.buildType}}'
         condition: or(eq(variables['System.PullRequest.TargetBranch'], 'refs/heads/publish'), in(variables['Build.Reason'], 'IndividualCI', 'BatchedCI'))
@@ -181,7 +189,7 @@ steps:
       - script: |
           archName=`uname -m`
           cd bin/exe/${archName}/${{parameters.env}}
-          ./symcryptunittest dynamic:../../../module/${archName}/${{parameters.env}}/generic/libsymcrypt.so
+          ./symcryptunittest dynamic:../../../module/${archName}/${{parameters.env}}/generic/libsymcrypt.so noperftests
         displayName: 'Execute unit tests with generic SymCrypt module'
         name: '${{parameters.env}}UnitTestDynamicGeneric_${{parameters.buildType}}'
         condition: or(eq(variables['System.PullRequest.TargetBranch'], 'refs/heads/publish'), in(variables['Build.Reason'], 'IndividualCI', 'BatchedCI'))

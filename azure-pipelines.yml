@@ -32,8 +32,9 @@ pr:
 # The following 4 jobs only run the unit tests on CI and PRs to publish (they are always built)
 # 13. Windows 64b with no CPU optimizations in Release mode
 # 14. Windows 32b with no CPU optimizations in Release mode
-# 15. Linux with no CPU optimizations using GCC in Release mode
-# 16. Linux with no CPU optimizations using clang in Release mode
+# 15. Linux 64b with no CPU optimizations using GCC in Release mode
+# 16. Linux 64b with no CPU optimizations using clang in Release mode
+# 17. Linux 32b with no CPU optimizations using GCC in Release mode
 
 jobs:
 - job: Windows_AMD64_Debug
@@ -106,7 +107,6 @@ jobs:
       cc: gcc
       cxx: g++
       buildType: Debug
-      additionalCMakeArgs:
 
 - job: Linux_AMD64_gcc_Sanitize
   pool:
@@ -120,7 +120,6 @@ jobs:
       cc: gcc
       cxx: g++
       buildType: Sanitize
-      additionalCMakeArgs:
 
 - job: Linux_AMD64_gcc_Release
   pool:
@@ -134,7 +133,6 @@ jobs:
       cc: gcc
       cxx: g++
       buildType: Release
-      additionalCMakeArgs:
 
 - job: Linux_AMD64_clang_Debug
   pool:
@@ -148,7 +146,6 @@ jobs:
       cc: clang
       cxx: clang++
       buildType: Debug
-      additionalCMakeArgs:
 
 - job: Linux_AMD64_clang_Sanitize
   pool:
@@ -162,7 +159,6 @@ jobs:
       cc: clang
       cxx: clang++
       buildType: Sanitize
-      additionalCMakeArgs:
 
 - job: Linux_AMD64_clang_Release
   pool:
@@ -176,7 +172,6 @@ jobs:
       cc: clang
       cxx: clang++
       buildType: Release
-      additionalCMakeArgs:
 
 - job: Linux_QEMU_ARM64_clang_Debug
   pool:
@@ -190,7 +185,6 @@ jobs:
       cc: clang
       cxx: clang++
       buildType: Debug
-      additionalCMakeArgs:
       emulator: qemu-aarch64
 
 - job: Linux_QEMU_ARM64_clang_Release
@@ -205,7 +199,6 @@ jobs:
       cc: clang
       cxx: clang++
       buildType: Release
-      additionalCMakeArgs:
       emulator: qemu-aarch64
 
 - job: Generic_Windows_Win64_Release
@@ -220,7 +213,7 @@ jobs:
       cc: cl
       cxx: cl
       buildType: Release
-      additionalCMakeArgs:
+      testInPrBuild: false
   timeoutInMinutes: 120
 
 - job: Generic_Windows_Win32_Release
@@ -236,9 +229,10 @@ jobs:
       cxx: cl
       buildType: Release
       additionalCMakeArgs: -A Win32
+      testInPrBuild: false
   timeoutInMinutes: 120
 
-- job: Generic_Linux_gcc_Release
+- job: Generic_Linux64_gcc_Release
   pool:
     vmImage: 'ubuntu-20.04'
   steps:
@@ -250,10 +244,10 @@ jobs:
       cc: gcc
       cxx: g++
       buildType: Release
-      additionalCMakeArgs:
+      testInPrBuild: false
   timeoutInMinutes: 120
 
-- job: Generic_Linux_clang_Release
+- job: Generic_Linux64_clang_Release
   pool:
     vmImage: 'ubuntu-20.04'
   steps:
@@ -265,5 +259,20 @@ jobs:
       cc: clang
       cxx: clang++
       buildType: Release
-      additionalCMakeArgs:
+      testInPrBuild: false
+  timeoutInMinutes: 120
+
+- job: Generic_Linux32_gcc_Release
+  pool:
+    vmImage: 'ubuntu-20.04'
+  steps:
+  - template: azure-build-template.yml
+    parameters:
+      hostos: Linux
+      env: LinuxUserMode # Not using Generic environment because we have to add -m32 compiler/linker options
+      arch: X86
+      cc: gcc
+      cxx: g++
+      buildType: Release
+      testInPrBuild: false
   timeoutInMinutes: 120

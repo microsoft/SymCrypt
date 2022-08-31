@@ -1610,7 +1610,7 @@ extern const BYTE SymCryptSha512KATAnswer[64];
 #if SYMCRYPT_MS_VC
 #define SYMCRYPT_MUL32x32TO64( _a, _b )         UInt32x32To64( (_a), (_b) )
 #elif SYMCRYPT_GNUC
-#define SYMCRYPT_MUL32x32TO64( _a, _b )         ( (unsigned long)(_a)*(unsigned long)(_b) )
+#define SYMCRYPT_MUL32x32TO64( _a, _b )         ( (UINT64)(_a)*(UINT64)(_b) )
 #else
     #error Unknown compiler
 #endif

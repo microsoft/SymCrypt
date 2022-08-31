@@ -18,7 +18,7 @@ Like any engineering project, SymCrypt is a compromise between conflicting requi
 - Support FIPS 140-2 certification of products using SymCrypt.
 - Provide high assurance in the proper functionality of the library.
 
-# Clone the Repo
+# Cloning the Repo
 In some of our Linux modules, SymCrypt uses [Jitterentropy](https://github.com/smuellerDD/jitterentropy-library)
 as a source of FIPS-certifiable entropy. To build these modules, you will need to ensure that the
 jitterentropy-library submodule is also cloned. You can do this by running
@@ -30,36 +30,56 @@ publicly, so this submodule will only be cloneable by Microsoft employees with a
 Azure DevOps repository. If you are external to Microsoft, you can ignore this submodule. It is only used in
 the unit tests and does not change the behavior of the SymCrypt product code.
 
-# Build and Test
+# Building
+## Prerequisites
 SymCrypt can be compiled with CMake >= 3.13.0 and Visual Studio 2019 (with Windows 10 SDK version 18362) on Windows
-or gcc 7.4.0 or clang 10.0.0 on Linux. Note that CMake ships with Visual Studio 2019.
+or gcc 7.4.0 or clang 10.0.0 on Linux. Note that CMake ships with Visual Studio 2019; you can use Visual Studio's
+included CMake by setting `$env:PATH="C:\Program Files (x86)\Microsoft Visual Studio\2019\Enterprise\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\bin\;${env:PATH}"`.
 
-Python3 is also required for translation of SymCryptAsm, and for building the SymCrypt module with integrity check.
+Python 3 is also required for translation of SymCryptAsm, and for building the SymCrypt module with integrity check.
 The integrity check additionally requires pip and pyelftools: `pip3 install -r ./scripts/requirements.txt`
 
-1. Optionally use CMake from Visual Studio `$env:PATH="C:\Program Files (x86)\Microsoft Visual Studio\2019\Enterprise\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\bin\;${env:PATH}"`
-2. For Microsoft employees building the library internally, to include msbignum and RSA32 implementation benchmarks in the unit tests:
+## Supported Configurations
+SymCrypt has pure C implementations of all supported functionality. These "generic" implementations are designed to
+be portable to various architectures. However, they do not offer optimal performance because they do not take
+advantage of CPU-specific optimizations. To that end, we also have hand-written assembly implementations of
+performance-critical internal functions. Our CMake build scripts do not currently support ASM optimizations on all
+combinations of architectures and platforms; the Build Instructions section below lists some of the currently supported
+combinations, and we're working on adding support for more.
+
+The ability to build SymCrypt on any particular platform or architecture, with or without CPU optimizations, does not
+imply that it has been tested for or is actively supported by Microsoft on that platform/architecture. While we make
+every effort to ensure that SymCrypt is reliable, stable and bug-free on every platform we run on, the code in this
+repository is provided *as is*, without warranty of any kind, express or implied, including but not limited to the
+warranties of merchantability, fitness for a particular purpose and noninfringement (see our [LICENSE](./LICENSE)).
+
+## Build Instructions
+1. For Microsoft employees building the library internally, to include msbignum and RSA32 implementation benchmarks in the unit tests:
     1. Make sure the SymCryptDependencies submodule is initialized by following the steps above (`git submodule update --init`)
-    2. In step 4 below, add the additional cmake argument `-DSYMCRYPT_INTERNAL_BUILD=1`
-3. `mkdir bin; cd bin`
-4. Configure CMake compilation:
-    * For x86 Windows targets: `cmake .. -DCMAKE_TOOLCHAIN_FILE="../cmake-toolchain/WindowsUserMode-X86.cmake" -A Win32`
+    1. In step 4 below, add the additional cmake argument `-DSYMCRYPT_INTERNAL_BUILD=1`
+1. `mkdir bin; cd bin`
+1. Use the appropriate CMake arguments to specify which architecture you want to compile for:
     * For x86-64 Windows targets: `cmake .. -DCMAKE_TOOLCHAIN_FILE="../cmake-toolchain/WindowsUserMode-AMD64.cmake"`
+    * For x86 Windows targets: `cmake .. -DCMAKE_TOOLCHAIN_FILE="../cmake-toolchain/WindowsUserMode-X86.cmake" -A Win32`
     * For x86-64 Linux targets: `cmake .. -DCMAKE_TOOLCHAIN_FILE="../cmake-toolchain/LinuxUserMode-AMD64.cmake"`
+    * For x86 Linux targets **no ASM optimizations**: `cmake .. -DCMAKE_TOOLCHAIN_FILE="../cmake-toolchain/LinuxUserMode-X86.cmake"`
     * For ARM64 Linux targets: `cmake .. -DCMAKE_TOOLCHAIN_FILE="../cmake-toolchain/LinuxUserMode-ARM64.cmake"`
-    * For no CPU optimizations: `cmake ..`
+    * To use the host system architecture **with no ASM optimizations**: `cmake ..`
     * Optionally, for a release build, specify `-DCMAKE_BUILD_TYPE=Release`
-5. `cmake --build .`
+1. `cmake --build .`
     * Optionally, for a release build on Windows, specify `--config Release`
     * Optionally specify `-jN` where N is the number of processes you wish to spawn for the build
 
-If compilation succeeds, the output will be put in the `exe` subdirectory relative to where compilation occurred
-(i.e. `bin/exe` if you followed the instructions above).
+After successful compilation, the generated binaries will be placed in the following directories relative
+to your build directory:
+* `lib/\<arch\>/\<environment\>/` - static libraries
+* `module\<arch\>/\<environment\>/` - shared object libraries (currently only on Linux)
+* `exe/\<arch\>/\<environment\>/` - unit tests
 
-The SymCrypt unit test is in the `unittest` directory. It runs extensive functional tests on the SymCrypt
-library. On Windows it also compares results against on other implementations such as the Windows APIs CNG
-and CAPI, and the older crypto libraries rsa32 and msbignum, if they are available. It also provides
-detailed performance information.
+# Testing
+The SymCrypt unit test runs extensive functional tests on the SymCrypt library. On Windows it also compares results
+against on other implementations such as the Windows APIs CNG and CAPI, and the older crypto libraries rsa32 and
+msbignum, if they are available. It also provides detailed performance information.
 
 # Versioning and Servicing
 As of version 101.0.0, SymCrypt uses the version scheme defined by the

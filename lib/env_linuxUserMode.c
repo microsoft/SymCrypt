@@ -51,6 +51,13 @@ SymCryptInitEnvLinuxUsermode( UINT32 version )
 // without PLT
 void __stack_chk_fail();
 
+// On X86, __stack_chk_fail_local is used as a wrapper for __stack_chk_fail. The compiler should
+// generate it for us, but for some reason it is not doing so on gcc 9.4.0.
+void __stack_chk_fail_local()
+{
+    __stack_chk_fail();
+}
+
 _Analysis_noreturn_
 VOID
 SYMCRYPT_CALL
