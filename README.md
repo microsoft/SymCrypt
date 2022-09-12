@@ -45,9 +45,9 @@ be portable to various architectures. However, they do not offer optimal perform
 advantage of CPU-specific optimizations. To that end, we also have hand-written assembly implementations of
 performance-critical internal functions. Our CMake build scripts do not currently support ASM optimizations on all
 combinations of architectures and platforms; the Build Instructions section below lists some of the currently supported
-combinations, and we're working on adding support for more.
+combinations, and we're working on adding support for more. 
 
-The ability to build SymCrypt on any particular platform or architecture, with or without CPU optimizations, does not
+The ability to build SymCrypt on any particular platform or architecture, with or without ASM optimizations, does not
 imply that it has been tested for or is actively supported by Microsoft on that platform/architecture. While we make
 every effort to ensure that SymCrypt is reliable, stable and bug-free on every platform we run on, the code in this
 repository is provided *as is*, without warranty of any kind, express or implied, including but not limited to the
@@ -57,24 +57,22 @@ warranties of merchantability, fitness for a particular purpose and noninfringem
 1. For Microsoft employees building the library internally, to include msbignum and RSA32 implementation benchmarks in the unit tests:
     1. Make sure the SymCryptDependencies submodule is initialized by following the steps above (`git submodule update --init`)
     1. In step 4 below, add the additional cmake argument `-DSYMCRYPT_INTERNAL_BUILD=1`
-1. `mkdir bin; cd bin`
-1. Use the appropriate CMake arguments to specify which architecture you want to compile for:
-    * For x86-64 Windows targets: `cmake .. -DCMAKE_TOOLCHAIN_FILE="../cmake-toolchain/WindowsUserMode-AMD64.cmake"`
-    * For x86 Windows targets: `cmake .. -DCMAKE_TOOLCHAIN_FILE="../cmake-toolchain/WindowsUserMode-X86.cmake" -A Win32`
-    * For x86-64 Linux targets: `cmake .. -DCMAKE_TOOLCHAIN_FILE="../cmake-toolchain/LinuxUserMode-AMD64.cmake"`
-    * For x86 Linux targets **no ASM optimizations**: `cmake .. -DCMAKE_TOOLCHAIN_FILE="../cmake-toolchain/LinuxUserMode-X86.cmake"`
-    * For ARM64 Linux targets: `cmake .. -DCMAKE_TOOLCHAIN_FILE="../cmake-toolchain/LinuxUserMode-ARM64.cmake"`
-    * To use the host system architecture **with no ASM optimizations**: `cmake ..`
-    * Optionally, for a release build, specify `-DCMAKE_BUILD_TYPE=Release`
-1. `cmake --build .`
+1. Run `cmake -S . -B bin` to configure your build. You can add the following optional CMake arguments to change build options:
+    * `-DSYMCRYPT_TARGET_ARCH=<AMD64|X86|ARM64>` to choose a target architecture. If not specified, it will default to the host system architecture.
+      * To cross-compile for Windows X86 from Windows AMD64, you must also use `-A Win32`
+      * To cross-compile for Linux ARM64, you must also use `--toolchain=cmake-configs/Toolchain-Clang-ARM64.cmake`
+    * `-DSYMCRYPT_USE_ASM=<ON|OFF>` to choose whether to use assembly optimizations. Defaults to `ON`. 
+    * `-DSYMCRYPT_FIPS_BUILD=<ON|OFF>` to choose whether to enable FIPS self-tests in the SymCrypt shared object module. Defaults to `ON`. Currently only affects Linux builds.
+    * For a release build, specify `-DCMAKE_BUILD_TYPE=Release`
+1. `cmake --build bin`
     * Optionally, for a release build on Windows, specify `--config Release`
     * Optionally specify `-jN` where N is the number of processes you wish to spawn for the build
 
 After successful compilation, the generated binaries will be placed in the following directories relative
 to your build directory:
-* `lib/\<arch\>/\<environment\>/` - static libraries
-* `module\<arch\>/\<environment\>/` - shared object libraries (currently only on Linux)
-* `exe/\<arch\>/\<environment\>/` - unit tests
+* `lib` - static libraries
+* `module` - shared object libraries (currently only on Linux)
+* `exe` - unit tests
 
 # Testing
 The SymCrypt unit test runs extensive functional tests on the SymCrypt library. On Windows it also compares results

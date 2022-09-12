@@ -3,8 +3,6 @@
 #
 # TARGET_NAME - name of the target being built. This should be the same value given to add_library
 # OUTPUT_DIR - the directory to output the module to
-# DO_FIPS_POSTPROCESSING - optional, set to true if the module uses FIPS integrity verification and
-#     needs to be run through the FIPS postprocessing Python script.
 
 # For release builds, we strip the modules of symbols except for the following symbols which are
 # required by the FIPS post-processing script. On some systems, symbol stripping would normally
@@ -21,7 +19,7 @@ set(KEEP_SYMBOL_ARGS
 )
 
 # Determine the which executable to use for stripping binaries
-if(CMAKE_SYSTEM_PROCESSOR MATCHES ARM64 AND NOT CMAKE_HOST_SYSTEM_PROCESSOR MATCHES ARM64|aarch64)
+if(SYMCRYPT_TARGET_ARCH MATCHES ARM64 AND NOT CMAKE_HOST_SYSTEM_PROCESSOR MATCHES "ARM64|aarch64")
     set(STRIP_COMMAND ${TARGET_TRIPLE}-strip)
     set(OBJCOPY_COMMAND ${TARGET_TRIPLE}-objcopy)
 else()
@@ -71,7 +69,7 @@ if(CMAKE_BUILD_TYPE MATCHES Release)
     )
 endif()
 
-if(DO_FIPS_POSTPROCESSING)
+if(SYMCRYPT_FIPS_BUILD)
     add_custom_command(
         TARGET ${TARGET_NAME}
         POST_BUILD

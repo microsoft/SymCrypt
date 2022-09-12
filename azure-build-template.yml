@@ -3,19 +3,12 @@
 # instantiated in azure-pipelines.yml. For more information on templates, see
 # https://docs.microsoft.com/en-us/azure/devops/pipelines/process/templates?view=azure-devops
 
-
 parameters:
 - name: hostos
   type: string
   values:
   - Windows
   - Linux
-- name: env
-  type: string
-  values:
-  - WindowsUserMode
-  - LinuxUserMode
-  - Generic
 - name: arch
   type: string
   values:
@@ -23,7 +16,18 @@ parameters:
   - X86
   - ARM64
   - ARM
-  - Unknown
+- name: asmEnabled
+  type: string
+  values:
+  - ON
+  - OFF
+  default: ON
+- name: fipsEnabled
+  type: string
+  values:
+  - ON
+  - OFF
+  default: ON
 - name: cc
   type: string
   values:
@@ -58,73 +62,72 @@ parameters:
 steps:
   - checkout: self  # self represents the repo where the initial Pipelines YAML file was found
     submodules: recursive
-  # Initialize CMake
-  # cd bin; cmake .. -DCMAKE_TOOLCHAIN_FILE=../cmake-toolchain/{env}-{arch}.cmake -DCMAKE_C_COMPILER={CC} -DCMAKE_BUILD_TYPE={buildType} {additionalCMakeArgs}'
+
   - task: ComponentGovernanceComponentDetection@0
+
   - ${{ if eq(parameters.hostos, 'Linux') }}:
     - script: |
         python -m pip install --upgrade pip setuptools wheel
         pip install -r $(Build.SourcesDirectory)/scripts/requirements.txt
       displayName: 'Install Python requirements'
+
     - ${{ if eq(parameters.arch, 'X86') }}:
       - script: |
           sudo apt-get update
           sudo apt-get install gcc-multilib g++-multilib
         displayName: 'Install x86 headers and libraries'
+
     - ${{ if eq(parameters.emulator, 'qemu-aarch64') }}:
       - script: |
           sudo apt-get update
           sudo apt-get install qemu-user binutils-aarch64-linux-gnu
           sudo apt-get install gcc-aarch64-linux-gnu g++-aarch64-linux-gnu
         displayName: 'Install arm64 cross-compilation and emulation tools'
-  # Specify no toolchain file for generic build
-  - ${{ if eq(parameters.env, 'Generic') }}:
-    - task: CMake@1
-      inputs:
-        workingDirectory: '$(Build.SourcesDirectory)/bin'
-        cmakeArgs: >-
-          ..
-          -DCMAKE_C_COMPILER=${{parameters.cc}} -DCMAKE_CXX_COMPILER=${{parameters.cxx}}
-          -DCMAKE_BUILD_TYPE=${{parameters.buildType}}
-          ${{parameters.additionalCMakeArgs}}
-  # Specify toolchain file based on env and arch for non-generic build
-  - ${{ if ne(parameters.env, 'Generic') }}:
-    - task: CMake@1
-      inputs:
-        workingDirectory: '$(Build.SourcesDirectory)/bin'
-        cmakeArgs: >-
-          ..
-          -DCMAKE_TOOLCHAIN_FILE=../cmake-toolchain/${{parameters.env}}-${{parameters.arch}}.cmake
-          -DCMAKE_C_COMPILER=${{parameters.cc}} -DCMAKE_CXX_COMPILER=${{parameters.cxx}}
-          -DCMAKE_BUILD_TYPE=${{parameters.buildType}}
-          ${{parameters.additionalCMakeArgs}}
+
+  # Initialize CMake
+  - task: CMake@1
+    inputs:
+      workingDirectory: '$(Build.SourcesDirectory)'
+      cmakeArgs: >-
+        -S . -B bin
+        -DSYMCRYPT_TARGET_ARCH=${{parameters.arch}}
+        -DSYMCRYPT_USE_ASM=${{parameters.asmEnabled}}
+        -DSYMCRYPT_FIPS_BUILD=${{parameters.fipsEnabled}}
+        -DCMAKE_C_COMPILER=${{parameters.cc}} -DCMAKE_CXX_COMPILER=${{parameters.cxx}}
+        -DCMAKE_BUILD_TYPE=${{parameters.buildType}}
+        ${{parameters.additionalCMakeArgs}}
+
   # Build with CMake
   # cmake --build . -j
   - ${{ if eq(parameters.hostos, 'Windows') }}:
     - task: CMake@1
       inputs:
-        workingDirectory: '$(Build.SourcesDirectory)/bin'
-        cmakeArgs: '--build . -j --config ${{parameters.buildType}}'
+        workingDirectory: '$(Build.SourcesDirectory)'
+        cmakeArgs: '--build bin -j --config ${{parameters.buildType}}'
+
     # Execute unit tests using the inline script
     - ${{ if eq(parameters.testInPrBuild, true) }}:
       - script: |
-          cd bin\exe\${{parameters.arch}}\${{parameters.env}}\${{parameters.buildType}}
-          .\symcryptunittest.exe dynamic:symcrypttestmodule.dll
+          cd bin\exe\${{parameters.buildType}}
+          .\symcryptunittest.exe dynamic:symcrypttestmodule.dll noperftests
         displayName: 'Execute unit tests with SymCrypt test module'
-        name: '${{parameters.env}}UnitTest_${{parameters.buildType}}'
+        name: '${{parameters.hostos}}_UnitTest_${{parameters.buildType}}'
+
     # Execute Generic unit tests in CI and in PRs to publish
     - ${{ if eq(parameters.testInPrBuild, false) }}:
       - script: |
-          cd bin\exe\%PROCESSOR_ARCHITECTURE%\${{parameters.env}}\${{parameters.buildType}}
-          .\symcryptunittest.exe dynamic:symcrypttestmodule.dll
+          cd bin\exe\${{parameters.buildType}}
+          .\symcryptunittest.exe dynamic:symcrypttestmodule.dll noperftests
         displayName: 'Execute unit tests with SymCrypt test module'
-        name: '${{parameters.env}}UnitTest_${{parameters.buildType}}'
-        condition: or(eq(variables['System.PullRequest.TargetBranch'], 'refs/heads/publish'), in(variables['Build.Reason'], 'IndividualCI', 'BatchedCI'))
+        name: '${{parameters.hostos}}_UnitTest_${{parameters.buildType}}'
+        condition: or(eq(variables['System.PullRequest.TargetBranch'], 'refs/heads/publish'), in(variables['Build.Reason'], 'Manual', 'IndividualCI', 'BatchedCI'))
+
   - ${{ if eq(parameters.hostos, 'Linux') }}:
     - task: CMake@1
       inputs:
-        workingDirectory: '$(Build.SourcesDirectory)/bin'
-        cmakeArgs: '--build . -j'
+        workingDirectory: '$(Build.SourcesDirectory)'
+        cmakeArgs: '--build bin -j'
+        
     # Increase ulimit to enable core dump in case of a test crash
     # Place .artifactignore file so it is used in the publish $(Agent.WorkFolder) task on failure
     # This prevents failure to upload due to apparent infinite recursion in jitterentropy-library submodule
@@ -132,84 +135,90 @@ steps:
         ulimit -c unlimited
         cp $(Build.SourcesDirectory)/.artifactignore $(Agent.WorkFolder)
       displayName: 'Enable core dumps & Place .artifactignore file'
+
     - ${{ if eq(parameters.testInPrBuild, true) }}:
       # Execute unit test using the inline script
       - ${{ if eq(parameters.emulator, 'native') }}:
         - script: |
-            cd bin/exe/${{parameters.arch}}/${{parameters.env}}
-            ./symcryptunittest
+            cd bin/exe
+            ./symcryptunittest noperftests
           displayName: 'Execute unit tests'
-          name: '${{parameters.env}}UnitTest_${{parameters.buildType}}'
+          name: '${{parameters.hostos}}_UnitTest_${{parameters.buildType}}'
+
         - ${{ if eq(parameters.arch, 'AMD64') }}:
           # Run unit tests in a mode where the Ymm registers must not be modified by the functional tests
           # Set GLIBC to not use AVX using GLIBC_TUNABLES
           - script: |
-              cd bin/exe/${{parameters.arch}}/${{parameters.env}}
+              cd bin/exe
               GLIBC_TUNABLES=glibc.cpu.hwcaps=-AVX_Usable,-AVX_Fast_Unaligned_Load,-AVX2_Usable ./symcryptunittest testSaveYmm
             displayName: 'Execute unit tests (Test Ymm Save/Restore)'
-            name: '${{parameters.env}}UnitTest_TestYmm_${{parameters.buildType}}'
+            name: '${{parameters.hostos}}UnitTest_TestYmm_${{parameters.buildType}}'
+            
         - ${{ if ne(parameters.buildType, 'Sanitize') }}:
           # Run unit tests against the generic SymCrypt module
           - script: |
-              cd bin/exe/${{parameters.arch}}/${{parameters.env}}
-              ./symcryptunittest dynamic:../../../module/${{parameters.arch}}/${{parameters.env}}/generic/libsymcrypt.so
+              cd bin/exe
+              ./symcryptunittest dynamic:../module/generic/libsymcrypt.so noperftests
             displayName: 'Execute unit tests with generic SymCrypt module'
-            name: '${{parameters.env}}UnitTestDynamicGeneric_${{parameters.buildType}}'
+            name: '${{parameters.hostos}}_UnitTestDynamicGeneric_${{parameters.buildType}}'
+
           # Only run unit tests against the oe module if rdseed is present on the CPU
           - script: |
-              cd bin/exe/${{parameters.arch}}/${{parameters.env}}
+              cd bin/exe
               if lshw -c cpu | grep -q rdseed
-              then ./symcryptunittest dynamic:../../../module/${{parameters.arch}}/${{parameters.env}}/oe_full/libsymcrypt.so
+              then ./symcryptunittest dynamic:../module//oe_full/libsymcrypt.so noperftests
               fi
             displayName: 'Execute unit tests with OpenEnclave SymCrypt module'
-            name: '${{parameters.env}}UnitTestDynamicOE_${{parameters.buildType}}'
+            name: '${{parameters.hostos}}_UnitTestDynamicOE_${{parameters.buildType}}'
+
       # Execute unit test using the inline script
       # Currently skip slower algorithms (DH/RSA), as otherwise we time out the pipeline
       - ${{ if eq(parameters.emulator, 'qemu-aarch64') }}:
         - script: |
-            cd bin/exe/${{parameters.arch}}/${{parameters.env}}
+            cd bin/exe
             qemu-aarch64 -L /usr/aarch64-linux-gnu/ ./symcryptunittest noperftests +symcrypt -dh -dsa -rsa
           displayName: 'Execute unit tests'
-          name: '${{parameters.env}}UnitTest_${{parameters.buildType}}_QEMU_AARCH64'
+          name: '${{parameters.hostos}}_UnitTest_${{parameters.buildType}}_QEMU_AARCH64'
+
         - script: |
-            cd bin/exe/${{parameters.arch}}/${{parameters.env}}
-            qemu-aarch64 -L /usr/aarch64-linux-gnu/ ./symcryptunittest noperftests +symcrypt -dh -dsa -rsa dynamic:../../../module/${{parameters.arch}}/${{parameters.env}}/generic/libsymcrypt.so
+            cd bin/exe
+            qemu-aarch64 -L /usr/aarch64-linux-gnu/ ./symcryptunittest noperftests +symcrypt -dh -dsa -rsa dynamic:../module/generic/libsymcrypt.so
           displayName: 'Execute unit tests with generic SymCrypt module'
-          name: '${{parameters.env}}UnitTestDynamicGeneric_${{parameters.buildType}}_QEMU_AARCH64'
-    # Execute Generic unit tests in CI and in PRs to publish
+          name: '${{parameters.hostos}}_UnitTestDynamicGeneric_${{parameters.buildType}}_QEMU_AARCH64'
+
+    # Execute additional unit tests in CI and in PRs to publish
     - ${{ if eq(parameters.testInPrBuild, false) }}:
       - script: |
-          archName=`uname -m`
-          cd bin/exe/${archName}/${{parameters.env}}
+          cd bin/exe
           ./symcryptunittest noperftests
         displayName: 'Execute unit tests'
-        name: '${{parameters.env}}UnitTest_${{parameters.buildType}}'
-        condition: or(eq(variables['System.PullRequest.TargetBranch'], 'refs/heads/publish'), in(variables['Build.Reason'], 'IndividualCI', 'BatchedCI'))
+        name: '${{parameters.hostos}}_UnitTest_${{parameters.buildType}}'
+        condition: or(eq(variables['System.PullRequest.TargetBranch'], 'refs/heads/publish'), in(variables['Build.Reason'], 'Manual', 'IndividualCI', 'BatchedCI'))
+
       # Run unit tests against the generic SymCrypt module
       - script: |
-          archName=`uname -m`
-          cd bin/exe/${archName}/${{parameters.env}}
-          ./symcryptunittest dynamic:../../../module/${archName}/${{parameters.env}}/generic/libsymcrypt.so noperftests
+          cd bin/exe
+          ./symcryptunittest dynamic:../module/generic/libsymcrypt.so noperftests
         displayName: 'Execute unit tests with generic SymCrypt module'
-        name: '${{parameters.env}}UnitTestDynamicGeneric_${{parameters.buildType}}'
-        condition: or(eq(variables['System.PullRequest.TargetBranch'], 'refs/heads/publish'), in(variables['Build.Reason'], 'IndividualCI', 'BatchedCI'))
+        name: '${{parameters.hostos}}_UnitTestDynamicGeneric_${{parameters.buildType}}'
+        condition: or(eq(variables['System.PullRequest.TargetBranch'], 'refs/heads/publish'), in(variables['Build.Reason'], 'Manual', 'IndividualCI', 'BatchedCI'))
 
   # Publish artifacts so they're available in the pipeline results
   - publish: $(System.DefaultWorkingDirectory)/bin
-    artifact: 'drop-${{parameters.hostos}}-${{parameters.env}}-${{parameters.arch}}-${{parameters.cc}}-${{parameters.buildType}}-${{parameters.additionalCMakeArgs}}'
+    artifact: 'drop-${{parameters.hostos}}-${{parameters.arch}}-${{parameters.cc}}-${{parameters.buildType}}-$(System.JobId)'
     displayName: 'Publish binaries on successful build'
   # Publish artifacts, core dumps and temporary files on failure
   - publish: $(System.DefaultWorkingDirectory)/bin
-    artifact: 'failed-${{parameters.hostos}}-${{parameters.env}}-${{parameters.arch}}-${{parameters.cc}}-${{parameters.buildType}}-${{parameters.additionalCMakeArgs}}'
+    artifact: 'failed-${{parameters.hostos}}-${{parameters.arch}}-${{parameters.cc}}-${{parameters.buildType}}-$(System.JobId)'
     condition: failed()
     displayName: 'Publish binaries on failed build'
   - publish: $(Agent.WorkFolder)
-    artifact: 'work-${{parameters.hostos}}-${{parameters.env}}-${{parameters.arch}}-${{parameters.cc}}-${{parameters.buildType}}-${{parameters.additionalCMakeArgs}}'
+    artifact: 'work-${{parameters.hostos}}-${{parameters.arch}}-${{parameters.cc}}-${{parameters.buildType}}-$(System.JobId)'
     condition: failed()
     displayName: 'Publish work folder on failed build'
   - ${{ if eq(parameters.hostos, 'Linux') }}:
     - publish: /usr/share/apport
-      artifact: 'crash-${{parameters.hostos}}-${{parameters.env}}-${{parameters.arch}}-${{parameters.cc}}-${{parameters.buildType}}-${{parameters.additionalCMakeArgs}}'
+      artifact: 'crash-${{parameters.hostos}}-${{parameters.arch}}-${{parameters.cc}}-${{parameters.buildType}}-$(System.JobId)'
       condition: failed()
       displayName: 'Publish crash dumps on failed build'
       

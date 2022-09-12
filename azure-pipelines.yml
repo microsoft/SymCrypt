@@ -25,11 +25,11 @@ pr:
 # 9. Linux AMD64 with CPU optimizations using clang in Sanitize mode
 # 10. Linux AMD64 with CPU optimizations using clang in Release mode
 
-# The following 2 jobs assume running on an AMD64 host, install cross compilation tools for Arm64 and runs a subset of units tests in QEMU
+# The following jobs assume running on an AMD64 host, install cross compilation tools for Arm64 and runs a subset of units tests in QEMU
 # 11. Linux Arm64 with CPU optimizations using clang in Debug mode
 # 12. Linux Arm64 with CPU optimizations using clang in Release mode
 
-# The following 4 jobs only run the unit tests on CI and PRs to publish (they are always built)
+# The following jobs only run the unit tests on CI and PRs to publish (they are always built)
 # 13. Windows 64b with no CPU optimizations in Release mode
 # 14. Windows 32b with no CPU optimizations in Release mode
 # 15. Linux 64b with no CPU optimizations using GCC in Release mode
@@ -44,8 +44,9 @@ jobs:
   - template: azure-build-template.yml
     parameters:
       hostos: Windows
-      env: WindowsUserMode
       arch: AMD64
+      asmEnabled: ON
+      fipsEnabled: OFF
       cc: cl
       cxx: cl
       buildType: Debug
@@ -58,8 +59,9 @@ jobs:
   - template: azure-build-template.yml
     parameters:
       hostos: Windows
-      env: WindowsUserMode
       arch: AMD64
+      asmEnabled: ON
+      fipsEnabled: OFF
       cc: cl
       cxx: cl
       buildType: Release
@@ -72,8 +74,9 @@ jobs:
   - template: azure-build-template.yml
     parameters:
       hostos: Windows
-      env: WindowsUserMode
       arch: X86
+      asmEnabled: ON
+      fipsEnabled: OFF
       cc: cl
       cxx: cl
       buildType: Debug
@@ -87,8 +90,9 @@ jobs:
   - template: azure-build-template.yml
     parameters:
       hostos: Windows
-      env: WindowsUserMode
       arch: X86
+      asmEnabled: ON
+      fipsEnabled: OFF
       cc: cl
       cxx: cl
       buildType: Release
@@ -102,8 +106,9 @@ jobs:
   - template: azure-build-template.yml
     parameters:
       hostos: Linux
-      env: LinuxUserMode
       arch: AMD64
+      asmEnabled: ON
+      fipsEnabled: ON
       cc: gcc
       cxx: g++
       buildType: Debug
@@ -115,8 +120,9 @@ jobs:
   - template: azure-build-template.yml
     parameters:
       hostos: Linux
-      env: LinuxUserMode
       arch: AMD64
+      asmEnabled: ON
+      fipsEnabled: OFF
       cc: gcc
       cxx: g++
       buildType: Sanitize
@@ -128,8 +134,9 @@ jobs:
   - template: azure-build-template.yml
     parameters:
       hostos: Linux
-      env: LinuxUserMode
       arch: AMD64
+      asmEnabled: ON
+      fipsEnabled: ON
       cc: gcc
       cxx: g++
       buildType: Release
@@ -141,8 +148,9 @@ jobs:
   - template: azure-build-template.yml
     parameters:
       hostos: Linux
-      env: LinuxUserMode
       arch: AMD64
+      asmEnabled: ON
+      fipsEnabled: ON
       cc: clang
       cxx: clang++
       buildType: Debug
@@ -154,8 +162,9 @@ jobs:
   - template: azure-build-template.yml
     parameters:
       hostos: Linux
-      env: LinuxUserMode
       arch: AMD64
+      asmEnabled: ON
+      fipsEnabled: OFF
       cc: clang
       cxx: clang++
       buildType: Sanitize
@@ -167,8 +176,9 @@ jobs:
   - template: azure-build-template.yml
     parameters:
       hostos: Linux
-      env: LinuxUserMode
       arch: AMD64
+      asmEnabled: ON
+      fipsEnabled: ON
       cc: clang
       cxx: clang++
       buildType: Release
@@ -180,11 +190,13 @@ jobs:
   - template: azure-build-template.yml
     parameters:
       hostos: Linux
-      env: LinuxUserMode
       arch: ARM64
+      asmEnabled: ON
+      fipsEnabled: ON
       cc: clang
       cxx: clang++
       buildType: Debug
+      additionalCMakeArgs: --toolchain=../cmake-configs/Toolchain-Clang-ARM64.cmake
       emulator: qemu-aarch64
 
 - job: Linux_QEMU_ARM64_clang_Release
@@ -194,37 +206,41 @@ jobs:
   - template: azure-build-template.yml
     parameters:
       hostos: Linux
-      env: LinuxUserMode
       arch: ARM64
+      asmEnabled: ON
+      fipsEnabled: ON
       cc: clang
       cxx: clang++
       buildType: Release
+      additionalCMakeArgs: --toolchain=../cmake-configs/Toolchain-Clang-ARM64.cmake
       emulator: qemu-aarch64
 
-- job: Generic_Windows_Win64_Release
+- job: Windows_Win64_Release_NoAsm
   pool:
     vmImage: 'windows-2019'
   steps:
   - template: azure-build-template.yml
     parameters:
       hostos: Windows
-      env: Generic
-      arch: Unknown
+      arch: AMD64
+      asmEnabled: OFF
+      fipsEnabled: OFF
       cc: cl
       cxx: cl
       buildType: Release
       testInPrBuild: false
   timeoutInMinutes: 120
 
-- job: Generic_Windows_Win32_Release
+- job: Windows_Win32_Release_NoAsm
   pool:
     vmImage: 'windows-2019'
   steps:
   - template: azure-build-template.yml
     parameters:
       hostos: Windows
-      env: Generic
-      arch: Unknown
+      arch: X86
+      asmEnabled: OFF
+      fipsEnabled: OFF
       cc: cl
       cxx: cl
       buildType: Release
@@ -232,45 +248,46 @@ jobs:
       testInPrBuild: false
   timeoutInMinutes: 120
 
-- job: Generic_Linux64_gcc_Release
+- job: Linux_64bit_gcc_Release_NoAsm
   pool:
     vmImage: 'ubuntu-20.04'
   steps:
   - template: azure-build-template.yml
     parameters:
       hostos: Linux
-      env: Generic
-      arch: Unknown
+      arch: AMD64
       cc: gcc
       cxx: g++
       buildType: Release
       testInPrBuild: false
   timeoutInMinutes: 120
 
-- job: Generic_Linux64_clang_Release
+- job: Linux_64bit_clang_Release_NoAsm
   pool:
     vmImage: 'ubuntu-20.04'
   steps:
   - template: azure-build-template.yml
     parameters:
       hostos: Linux
-      env: Generic
-      arch: Unknown
+      arch: AMD64
+      asmEnabled: OFF
+      fipsEnabled: OFF
       cc: clang
       cxx: clang++
       buildType: Release
       testInPrBuild: false
   timeoutInMinutes: 120
 
-- job: Generic_Linux32_gcc_Release
+- job: Linux_32bit_gcc_Release_NoAsm
   pool:
     vmImage: 'ubuntu-20.04'
   steps:
   - template: azure-build-template.yml
     parameters:
       hostos: Linux
-      env: LinuxUserMode # Not using Generic environment because we have to add -m32 compiler/linker options
       arch: X86
+      asmEnabled: OFF
+      fipsEnabled: OFF
       cc: gcc
       cxx: g++
       buildType: Release

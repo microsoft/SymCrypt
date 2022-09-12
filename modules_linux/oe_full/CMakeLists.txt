@@ -8,6 +8,5 @@ add_library(symcrypt_oe SHARED ${SOURCES})
 
 set(TARGET_NAME symcrypt_oe)
 set(OUTPUT_DIR ${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/oe_full)
-set(DO_FIPS_POSTPROCESSING True)
 
 include(../common/ModuleCommon.cmake)

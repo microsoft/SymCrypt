@@ -9,7 +9,7 @@ add_library(symcrypt_module_linux_common STATIC ${SOURCES})
 set(jitter_cflags "${CMAKE_C_FLAGS} -fwrapv -fvisibility=hidden")
 set(jitter_ldflags "")
 
-if(CMAKE_SYSTEM_PROCESSOR MATCHES X86)
+if(SYMCRYPT_TARGET_ARCH MATCHES "X86")
   set(jitter_cflags "${jitter_cflags} -m32")
   set(jitter_ldflags "-m32")
 endif()

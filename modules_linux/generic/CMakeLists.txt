@@ -3,9 +3,8 @@ set(SOURCES
     ../common/optional/rngsecureurandom.c)
 
 # Enable integrity verification if compiling for AMD64 or ARM64
-if(CMAKE_SYSTEM_PROCESSOR MATCHES "AMD64" OR CMAKE_SYSTEM_PROCESSOR MATCHES "ARM64")
+if(SYMCRYPT_TARGET_ARCH MATCHES "AMD64|ARM64")
     list(APPEND SOURCES ../common/integrity.c)
-    set(DO_FIPS_POSTPROCESSING True)
 else()
     list(APPEND SOURCES ../common/nointegrity.c)
 endif()
