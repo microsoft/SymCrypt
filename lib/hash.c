@@ -205,4 +205,13 @@ SymCryptHashResult(
     SymCryptWipe( buf, pHash->resultSize );
 }
 
+VOID
+SYMCRYPT_CALL
+SymCryptHashStateCopy(
+    _In_                                PCSYMCRYPT_HASH pHash,
+    _In_reads_( pHash->stateSize )      PCVOID          pSrc,
+    _Out_writes_( pHash->stateSize )    PVOID           pDst)
+{
+    (*pHash->stateCopyFunc)( pSrc, pDst );
+}
 

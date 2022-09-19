@@ -418,6 +418,147 @@ testKdfKats()
                 continue;
             }
 
+            if (katIsFieldPresent(katItem, "session_id"))
+            {
+                args.argType = KdfArgumentSshKdf;
+                CHECK3(katItem.dataItems.size() == 14, "Incorrect number of fields in SSH-KDF record in line %lld", line);
+
+                BString hashName = katParseData(katItem, "hash");
+
+                // The following fields are not used.
+                // We use the size of the data fields from the test vector..
+                //SIZE_T cbSharedSecret = katParseInteger(katItem, "shared secret length");
+                //SIZE_T cbIVLength = katParseInteger(katItem, "iv length");
+                //SIZE_T cbEncryptionKeyLength = katParseInteger(katItem, "encryption key length");
+
+                BString SharedKey = katParseData(katItem, "k");
+                BString HashValue = katParseData(katItem, "h");
+                BString SessionId = katParseData(katItem, "session_id");
+
+                args.uSshKdf.pbHashValue = HashValue.data();
+                args.uSshKdf.cbHashValue = HashValue.size();
+                args.uSshKdf.pbSessionId = SessionId.data();
+                args.uSshKdf.cbSessionId = SessionId.size();
+                args.uSshKdf.hash = nullptr;
+
+                if (!strcmp((const char*)hashName.c_str(), "SHA-1"))
+                {
+                    args.uSshKdf.hash = SymCryptSha1Algorithm;
+                }
+                else if (!strcmp((const char*)hashName.c_str(), "SHA-256"))
+                {
+                    args.uSshKdf.hash = SymCryptSha256Algorithm;
+                }
+                else if (!strcmp((const char*)hashName.c_str(), "SHA-384"))
+                {
+                    args.uSshKdf.hash = SymCryptSha384Algorithm;
+                }
+                else if (!strcmp((const char*)hashName.c_str(), "SHA-512"))
+                {
+                    args.uSshKdf.hash = SymCryptSha512Algorithm;
+                }
+
+                CHECK3(args.uSshKdf.hash != nullptr, "Invalid hash function for SSH-KDF record in line %lld", line);
+
+                BString katInitialIV_ClientToServer = katParseData(katItem, "initial iv (client to server)");
+                BString katInitialIV_ServerToClient = katParseData(katItem, "initial iv (server to client)");
+                BString katEncryptionKey_ClientToServer = katParseData(katItem, "encryption key (client to server)");
+                BString katEncryptionKey_ServerToClient = katParseData(katItem, "encryption key (server to client)");
+                BString katIntegrityKey_ClientToServer = katParseData(katItem, "integrity key (client to server)");
+                BString katIntegrityKey_ServerToClient = katParseData(katItem, "integrity key (server to client)");
+
+                args.uSshKdf.label = SYMCRYPT_SSHKDF_IV_CLIENT_TO_SERVER;          
+                katKdfSingle(pKdfMultiImp.get(), SharedKey.data(), SharedKey.size(), &args, katInitialIV_ClientToServer.data(), katInitialIV_ClientToServer.size(), line);
+
+                args.uSshKdf.label = SYMCRYPT_SSHKDF_IV_SERVER_TO_CLIENT;
+                katKdfSingle(pKdfMultiImp.get(), SharedKey.data(), SharedKey.size(), &args, katInitialIV_ServerToClient.data(), katInitialIV_ServerToClient.size(), line);
+
+                args.uSshKdf.label = SYMCRYPT_SSHKDF_ENCRYPTION_KEY_CLIENT_TO_SERVER;
+                katKdfSingle(pKdfMultiImp.get(), SharedKey.data(), SharedKey.size(), &args, katEncryptionKey_ClientToServer.data(), katEncryptionKey_ClientToServer.size(), line);
+
+                args.uSshKdf.label = SYMCRYPT_SSHKDF_ENCRYPTION_KEY_SERVER_TO_CLIENT;
+                katKdfSingle(pKdfMultiImp.get(), SharedKey.data(), SharedKey.size(), &args, katEncryptionKey_ServerToClient.data(), katEncryptionKey_ServerToClient.size(), line);
+
+                args.uSshKdf.label = SYMCRYPT_SSHKDF_INTEGRITY_KEY_CLIENT_TO_SERVER;
+                katKdfSingle(pKdfMultiImp.get(), SharedKey.data(), SharedKey.size(), &args, katIntegrityKey_ClientToServer.data(), katIntegrityKey_ClientToServer.size(), line);
+
+                args.uSshKdf.label = SYMCRYPT_SSHKDF_INTEGRITY_KEY_SERVER_TO_CLIENT;
+                katKdfSingle(pKdfMultiImp.get(), SharedKey.data(), SharedKey.size(), &args, katIntegrityKey_ServerToClient.data(), katIntegrityKey_ServerToClient.size(), line);
+
+                continue;
+            }
+
+            if (katIsFieldPresent(katItem, "srtp k_e"))
+            {
+                args.argType = KdfArgumentSrtpKdf;
+                CHECK3(katItem.dataItems.size() == 12, "Incorrect number of fields in SRTP-KDF record in line %lld", line);
+
+                BString k_master = katParseData(katItem, "k_master");
+                BString master_salt = katParseData(katItem, "master_salt");
+                BString kdr = katParseData(katItem, "kdr");
+                BString index = katParseData(katItem, "index");
+                BString indexSRTCP = katParseData(katItem, "index (srtcp)");
+
+                args.uSrtpKdf.pbSalt = master_salt.data();
+                args.uSrtpKdf.cbSalt = master_salt.size();
+
+                args.uSrtpKdf.uKeyDerivationRate = 0;
+                for (auto x : kdr)
+                {
+                    args.uSrtpKdf.uKeyDerivationRate <<= 8;
+                    args.uSrtpKdf.uKeyDerivationRate |= x;
+                }
+
+                BString katSRTPk_e = katParseData(katItem, "srtp k_e");
+                BString katSRTPk_a = katParseData(katItem, "srtp k_a");
+                BString katSRTPk_s = katParseData(katItem, "srtp k_s");
+                BString katSRTCPk_e = katParseData(katItem, "srtcp k_e");
+                BString katSRTCPk_a = katParseData(katItem, "srtcp k_a");
+                BString katSRTCPk_s = katParseData(katItem, "srtcp k_s");
+
+                {
+                    args.uSrtpKdf.uIndexWidth = 48;
+                    
+                    args.uSrtpKdf.uIndex = 0;
+                    for (auto x : index)
+                    {
+                        args.uSrtpKdf.uIndex <<= 8;
+                        args.uSrtpKdf.uIndex |= x;
+                    }
+
+                    args.uSrtpKdf.label = SYMCRYPT_SRTP_ENCRYPTION_KEY;
+                    katKdfSingle(pKdfMultiImp.get(), k_master.data(), k_master.size(), &args, katSRTPk_e.data(), katSRTPk_e.size(), line);
+
+                    args.uSrtpKdf.label = SYMCRYPT_SRTP_AUTHENTICATION_KEY;
+                    katKdfSingle(pKdfMultiImp.get(), k_master.data(), k_master.size(), &args, katSRTPk_a.data(), katSRTPk_a.size(), line);
+
+                    args.uSrtpKdf.label = SYMCRYPT_SRTP_SALTING_KEY;
+                    katKdfSingle(pKdfMultiImp.get(), k_master.data(), k_master.size(), &args, katSRTPk_s.data(), katSRTPk_s.size(), line);
+                }
+
+                {
+                    args.uSrtpKdf.uIndexWidth = 32;
+
+                    args.uSrtpKdf.uIndex = 0;
+                    for (auto x : indexSRTCP)
+                    {
+                        args.uSrtpKdf.uIndex <<= 8;
+                        args.uSrtpKdf.uIndex |= x;
+                    }
+
+                    args.uSrtpKdf.label = SYMCRYPT_SRTCP_ENCRYPTION_KEY;
+                    katKdfSingle(pKdfMultiImp.get(), k_master.data(), k_master.size(), &args, katSRTCPk_e.data(), katSRTCPk_e.size(), line);
+
+                    args.uSrtpKdf.label = SYMCRYPT_SRTCP_AUTHENTICATION_KEY;
+                    katKdfSingle(pKdfMultiImp.get(), k_master.data(), k_master.size(), &args, katSRTCPk_a.data(), katSRTCPk_a.size(), line);
+
+                    args.uSrtpKdf.label = SYMCRYPT_SRTCP_SALTING_KEY;
+                    katKdfSingle(pKdfMultiImp.get(), k_master.data(), k_master.size(), &args, katSRTCPk_s.data(), katSRTCPk_s.size(), line);
+                }
+
+                continue;
+            }
+
             FATAL2( "Unknown data record at line %lld", line );
         }
 

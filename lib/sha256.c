@@ -21,6 +21,7 @@ const SYMCRYPT_HASH SymCryptSha256Algorithm_default = {
     &SymCryptSha256Append,
     &SymCryptSha256Result,
     &SymCryptSha256AppendBlocks,
+    &SymCryptSha256StateCopy,
     sizeof( SYMCRYPT_SHA256_STATE ),
     SYMCRYPT_SHA256_RESULT_SIZE,
     SYMCRYPT_SHA256_INPUT_BLOCK_SIZE,

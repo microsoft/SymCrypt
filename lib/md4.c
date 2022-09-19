@@ -35,6 +35,7 @@ const SYMCRYPT_HASH SymCryptMd4Algorithm_default = {
     &SymCryptMd4Append,
     &SymCryptMd4Result,
     &SymCryptMd4AppendBlocks,
+    &SymCryptMd4StateCopy,
     sizeof( SYMCRYPT_MD4_STATE ),
     SYMCRYPT_MD4_RESULT_SIZE,
     SYMCRYPT_MD4_INPUT_BLOCK_SIZE,

@@ -29,6 +29,7 @@ const SYMCRYPT_HASH SymCryptMd2Algorithm_default = {
     &SymCryptMd2Append,
     &SymCryptMd2Result,
     &SymCryptMd2AppendBlocks,
+    &SymCryptMd2StateCopy,
     sizeof( SYMCRYPT_MD2_STATE ),
     SYMCRYPT_MD2_RESULT_SIZE,
     SYMCRYPT_MD2_INPUT_BLOCK_SIZE,

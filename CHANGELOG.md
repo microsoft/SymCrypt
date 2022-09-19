@@ -1,3 +1,16 @@
+# Version 103.0
+
+- Add SRTP-KDF and SSH-KDF implementations
+- Add optimized SHA-2 implementations
+- Fix integer truncation issue in 32-bit Linux builds
+- Refactor CMake files to simplify build steps and increase flexibility
+- Fix bug for SymCryptRsakeyGenerate for encrypt-only keys
+- Create and test against simple SymCrypt Windows test module (DLL)
+- Remove the module export of g_SymCryptFipsSelftestsPerformed and replace it with SymCryptFipsGetSelftestsPerformed
+- Enable SymCrypt unit tests to drive a dynamically-linked module
+- Removed Linux embedded module, as generic ARM64 module is the same
+- Rejig CPUID logic for VAES and AVX
+
 # Version 102.0
 
 - Breaking change to Asymmetric key generation and import handling, sanitizing flags required for FIPS

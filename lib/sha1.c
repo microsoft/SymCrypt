@@ -18,6 +18,7 @@ const SYMCRYPT_HASH SymCryptSha1Algorithm_default = {
     &SymCryptSha1Append,
     &SymCryptSha1Result,
     &SymCryptSha1AppendBlocks,
+    &SymCryptSha1StateCopy,
     sizeof( SYMCRYPT_SHA1_STATE ),
     SYMCRYPT_SHA1_RESULT_SIZE,
     SYMCRYPT_SHA1_INPUT_BLOCK_SIZE,

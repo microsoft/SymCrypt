@@ -701,6 +701,16 @@ public:
     const static char * name;
 };
 
+class AlgSshKdf{
+public:
+    const static char * name;
+};
+
+class AlgSrtpKdf{
+public:
+    const static char * name;
+};
+
 class AlgHkdf{
 public:
     const static char * name;

@@ -357,6 +357,42 @@
 #undef ALG_Name
 
 
+#define ALG_NAME    SSHKDF
+#define ALG_Name    SshKdf
+
+#define ALG_Base    Sha1
+#include "sc_imp_kdfpattern.cpp"
+#include "sc_imp_sshkdfpattern.cpp"
+#undef ALG_Base
+
+#define ALG_Base    Sha256
+#include "sc_imp_kdfpattern.cpp"
+#include "sc_imp_sshkdfpattern.cpp"
+#undef ALG_Base
+
+#define ALG_Base    Sha384
+#include "sc_imp_kdfpattern.cpp"
+#include "sc_imp_sshkdfpattern.cpp"
+#undef ALG_Base
+
+#define ALG_Base    Sha512
+#include "sc_imp_kdfpattern.cpp"
+#include "sc_imp_sshkdfpattern.cpp"
+#undef ALG_Base
+
+#undef ALG_NAME
+#undef ALG_Name
+
+#define ALG_NAME    SRTPKDF
+#define ALG_Name    SrtpKdf
+
+#define ALG_Base    Aes
+#include "sc_imp_srtpkdfpattern.cpp"
+#undef ALG_Base
+
+#undef ALG_NAME
+#undef ALG_Name
+
 //
 // There is not enough structure to the CCM & GCM modes to share an implementation
 //

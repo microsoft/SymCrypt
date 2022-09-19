@@ -760,6 +760,9 @@ SIZE_T
 SYMCRYPT_CALL
 SymCryptHashInputBlockSize( _In_ PCSYMCRYPT_HASH pHash );
 
+SIZE_T
+SYMCRYPT_CALL
+SymCryptHashStateSize( _In_ PCSYMCRYPT_HASH pHash );
 //
 // SymCryptHashStateSize
 //
@@ -769,19 +772,9 @@ SymCryptHashInputBlockSize( _In_ PCSYMCRYPT_HASH pHash );
 // any Symcrypt-implemented hash state, so sizeof( SYMCRYPT_HASH_STATE ) is always
 // large enough to contain a hash state.
 //
-SIZE_T
-SYMCRYPT_CALL
-SymCryptHashStateSize( _In_ PCSYMCRYPT_HASH pHash );
 
 
 
-//
-// SymCryptHash
-//
-// Compute a hash value using any hash function.
-// The number of bytes written to the pbResult buffer is
-//      min( cbResult, SymCryptHashResultSize( pHash ) )
-//
 VOID
 SYMCRYPT_CALL
 SymCryptHash(
@@ -790,6 +783,14 @@ SymCryptHash(
                                                                  SIZE_T          cbData,
     _Out_writes_( SYMCRYPT_MIN( cbResult, pHash->resultSize ) )  PBYTE           pbResult,
                                                                  SIZE_T          cbResult );
+//
+// SymCryptHash
+//
+// Compute a hash value using any hash function.
+// The number of bytes written to the pbResult buffer is
+//      min( cbResult, SymCryptHashResultSize( pHash ) )
+//
+
 
 VOID
 SYMCRYPT_CALL
@@ -805,6 +806,7 @@ SymCryptHashAppend(
     _In_reads_( cbData )                        PCBYTE          pbData,
                                                 SIZE_T          cbData );
 
+
 VOID
 SYMCRYPT_CALL
 SymCryptHashResult(
@@ -812,7 +814,22 @@ SymCryptHashResult(
     _Inout_updates_bytes_( pHash->stateSize )                    PVOID           pState,
     _Out_writes_( SYMCRYPT_MIN( cbResult, pHash->resultSize ) )  PBYTE           pbResult,
                                                                  SIZE_T          cbResult );
+//
+// SymCryptHashResult
+// 
+// Finalizes the hash computation by calling the resultFunc member
+// of pHash.
+// The hash result is produced to an internal buffer and
+// the number of bytes written to the pbResult buffer is
+//      min( cbResult, SymCryptHashResultSize( pHash ) )
 
+
+VOID
+SYMCRYPT_CALL
+SymCryptHashStateCopy(
+    _In_                            PCSYMCRYPT_HASH pHash,
+    _In_reads_(pHash->stateSize)    PCVOID          pSrc,
+    _Out_writes_(pHash->stateSize)  PVOID           pDst);
 
 ////////////////////////////////////////////////////////////////////////////
 //   MD2
@@ -3911,6 +3928,217 @@ SymCryptTlsPrf1_2(
 VOID
 SYMCRYPT_CALL
 SymCryptTlsPrf1_2SelfTest();
+
+
+////////////////////////////////////////////////////////////////////////////
+// SSH-KDF as specified in RFC 4253 Section 7.2.
+//
+
+
+// Labels defined in RFC 4253
+#define SYMCRYPT_SSHKDF_IV_CLIENT_TO_SERVER                0x41        // 'A'
+#define SYMCRYPT_SSHKDF_IV_SERVER_TO_CLIENT                0x42        // 'B'
+#define SYMCRYPT_SSHKDF_ENCRYPTION_KEY_CLIENT_TO_SERVER    0x43        // 'C'
+#define SYMCRYPT_SSHKDF_ENCRYPTION_KEY_SERVER_TO_CLIENT    0x44        // 'D'
+#define SYMCRYPT_SSHKDF_INTEGRITY_KEY_CLIENT_TO_SERVER     0x45        // 'E'
+#define SYMCRYPT_SSHKDF_INTEGRITY_KEY_SERVER_TO_CLIENT     0x46        // 'F'
+
+
+SYMCRYPT_ERROR
+SYMCRYPT_CALL
+SymCryptSshKdfExpandKey(
+    _Out_               PSYMCRYPT_SSHKDF_EXPANDED_KEY   pExpandedKey,
+    _In_                PCSYMCRYPT_HASH                 pHashFunc,
+    _In_reads_(cbKey)   PCBYTE                          pbKey,
+                        SIZE_T                          cbKey);
+//
+// Process the key using the specified hash function and store the result in
+// SYMCRYPT_SSHKDF_EXPANDED_KEY structure. Once the key is expanded,
+// SymCryptSshKdfDerive can be called multiple times to generate keys for
+// different uses/labels. 
+// 
+// After all the keys are derived from a particular "shared secret" key,
+// SYMCRYPT_SSHKDF_EXPANDED_KEY structure must be wiped.
+// 
+// Parameters:
+//      - pExpandedKey  :   Pointer to a SYMCRYPT_SSHKDF_EXPANDED_KEY structure that
+//                          will contain the expanded key after the function returns.
+//      - pHashFunc     :   Hash function that will be used in the key derivation.
+//                          This function is saved in SYMCRYPT_SSHKDF_EXPANDED_KEY
+//                          so that it is also used by the SymCryptSshKdfDerive function.
+//      - pbKey, cbKey  :   Buffer contatining the secret key for the KDF.
+// 
+// Returns SYMCRYPT_NO_ERROR
+// 
+
+
+SYMCRYPT_ERROR
+SYMCRYPT_CALL
+SymCryptSshKdfDerive(
+    _In_                        PCSYMCRYPT_SSHKDF_EXPANDED_KEY  pExpandedKey,
+    _In_reads_(cbHashValue)     PCBYTE                          pbHashValue,
+                                SIZE_T                          cbHashValue,
+                                BYTE                            label,
+    _In_reads_(cbSessionId)     PCBYTE                          pbSessionId,
+                                SIZE_T                          cbSessionId,
+    _Inout_updates_(cbOutput)   PBYTE                           pbOutput,
+                                SIZE_T                          cbOutput);
+//
+// Derive keys using the expanded key that was initialized with SymCryptSshKdfExpandKey
+// along with other inputs. This function can be called consecutively with varying label
+// values to generate keys for different purposes as defined in the RFC.
+// 
+// Parameters:
+//      - pExpandedKey              :   Pointer to a SYMCRYPT_SSHKDF_EXPANDED_KEY structure that is
+//                                      initialized by a prior call to SymCryptSshKdfExpandKey.
+//                                      Must be wiped when SymCryptSshKdfDerive is not going to be called
+//                                      again with the same expanded key.
+//      - pbHashValue, cbHashValue  :   Buffer pointing to "exchange hash" value. cbHashValue must be equal
+//                                      to the output size of the hash function passed to SymCryptSshKdfExpandKey.
+//      - label                     :   Label value used to indicate the type of the derived key.
+//      - pbSessionId, cbSessionId  :   Buffer pointing to the session identifier. cbSessionId must be equal
+//                                      to the output size of the hash function passed to SymCryptSshKdfExpandKey.
+//      - pbOutput, cbOutput        :   Buffer to store the derived key. Exactly cbOutput bytes of output will be generated.
+// 
+// Returns SYMCRYPT_NO_ERROR
+//
+
+
+SYMCRYPT_ERROR
+SYMCRYPT_CALL
+SymCryptSshKdf(
+    _In_                    PCSYMCRYPT_HASH     pHashFunc,
+    _In_reads_(cbKey)       PCBYTE              pbKey,
+                            SIZE_T              cbKey,
+    _In_reads_(cbHashValue) PCBYTE              pbHashValue,
+                            SIZE_T              cbHashValue,
+                            BYTE                label,
+    _In_reads_(cbSessionId) PCBYTE              pbSessionId,
+                            SIZE_T              cbSessionId,
+    _Out_writes_(cbOutput)  PBYTE               pbOutput,
+                            SIZE_T              cbOutput);
+// 
+// This function is a wrapper for using SymCryptSshKdfExpandKey followed by SymCryptSshKdfDerive
+// in order to produce SSH-KDF output.
+//
+// All of the function arguments are forwarded to SymCryptSshKdfExpandKey and SymCryptSshKdfDerive
+// functions, hence the documentation on those functions apply here as well.
+//
+
+
+VOID
+SYMCRYPT_CALL
+SymCryptSshKdfSha256SelfTest();
+
+VOID
+SYMCRYPT_CALL
+SymCryptSshKdfSha512SelfTest();
+
+
+////////////////////////////////////////////////////////////////////////////
+// SRTP-KDF as specified in RFC 3711 Section 4.3.1.
+//
+
+
+// Labels defined in RFC 3711
+#define SYMCRYPT_SRTP_ENCRYPTION_KEY        0x00
+#define SYMCRYPT_SRTP_AUTHENTICATION_KEY    0x01
+#define SYMCRYPT_SRTP_SALTING_KEY           0x02
+#define SYMCRYPT_SRTCP_ENCRYPTION_KEY       0x03
+#define SYMCRYPT_SRTCP_AUTHENTICATION_KEY   0x04
+#define SYMCRYPT_SRTCP_SALTING_KEY          0x05
+
+
+SYMCRYPT_ERROR
+SYMCRYPT_CALL
+SymCryptSrtpKdfExpandKey(
+    _Out_                PSYMCRYPT_SRTPKDF_EXPANDED_KEY  pExpandedKey,
+    _In_reads_(cbKey)    PCBYTE                          pbKey,
+                         SIZE_T                          cbKey);
+//
+// Process the key and store the result in SYMCRYPT_SRTPKDF_EXPANDED_KEY structure. 
+// Once the key is expanded, SymCryptSrtpKdfDerive can be called multiple times to 
+// generate keys for different uses/labels. 
+// 
+// After all the keys are derived from a particular "shared secret" key,
+// SYMCRYPT_SRTPKDF_EXPANDED_KEY structure must be wiped.
+// 
+// Parameters:
+//      - pExpandedKey  :   Pointer to a SYMCRYPT_SRTPKDF_EXPANDED_KEY structure that
+//                          will contain the expanded key after the function returns.
+//      - pbKey, cbKey  :   Buffer contatining the secret key for the KDF. cbKey must be
+//                          a valid AES key size (16-, 24-, or 32-bytes).
+// 
+// Returns:
+//      SYMCRYPT_WRONG_KEY_SIZE : If cbKey is not a valid AES key size
+//      SYMCRYPT_NO_ERROR       : On success
+// 
+
+SYMCRYPT_ERROR
+SYMCRYPT_CALL
+SymCryptSrtpKdfDerive(
+    _In_                    PCSYMCRYPT_SRTPKDF_EXPANDED_KEY pExpandedKey,
+    _In_reads_(cbSalt)      PCBYTE                          pbSalt,
+                            SIZE_T                          cbSalt,
+                            UINT32                          uKeyDerivationRate,
+                            UINT64                          uIndex,
+                            UINT32                          uIndexWidth,
+                            BYTE                            label,
+    _Out_writes_(cbOutput)  PBYTE                           pbOutput,
+                            SIZE_T                          cbOutput);
+//
+// Derive keys using the expanded key that was initialized with SymCryptSrtpKdfExpandKey
+// along with other inputs. This function can be called consecutively with varying label
+// values to generate keys for different purposes as defined in the RFC.
+// 
+// Parameters:
+//      - pExpandedKey              :   Pointer to a SYMCRYPT_SRTPKDF_EXPANDED_KEY structure that is
+//                                      initialized by a prior call to SymCryptSrtpKdfExpandKey.
+//                                      Must be wiped when SymCryptSrtpKdfDerive is not going to be called
+//                                      again with the same expanded key.
+//      - pbSalt, cbSalt            :   Buffer pointing to the salt value. cbSalt must always be 14 (112-bits).
+//      - uKeyDerivationRate        :   Key derivation rate; must be zero or 2^i for 0 <= i <= 24.
+//      - uIndex                    :   Denotes an SRTP index value when label is 0x00, 0x01, or 0x02, otherwise
+//                                      denotes an SRTCP index value.
+//      - uIndexWidth               :   Denotes how wide uIndex value is. Must be one of 0, 32, or 48. By default,
+//                                      (when uIndexWidth = 0) uIndex is treated as 48-bits.
+//                                      RFC 3711 initially defined SRTCP indices to be 32-bit values. It was updated
+//                                      to be 48-bits by Errata ID 3712. SRTP index values are defined to be 48-bits.
+//      - label                     :   Label value used to indicate the type of the derived key.
+//      - pbOutput, cbOutput        :   Buffer to store the derived key. Exactly cbOutput bytes of output will be generated.
+// 
+// Returns:
+//      SYMCRYPT_INVALID_ARGUMENT   :   If cbSalt is not 14-bytes, or uKeyDerivationRate in invalid.                                      
+//      SYMCRYPT_NO_ERROR           :   On success.
+//
+
+
+SYMCRYPT_ERROR
+SYMCRYPT_CALL
+SymCryptSrtpKdf(
+    _In_reads_(cbKey)           PCBYTE  pbKey,
+                                SIZE_T  cbKey,
+    _In_reads_(cbSalt)          PCBYTE  pbSalt,
+                                SIZE_T  cbSalt,
+                                UINT32  uKeyDerivationRate,
+                                UINT64  uIndex,
+                                UINT32  uIndexWidth,
+                                BYTE    label,
+    _Out_writes_(cbOutput)      PBYTE   pbOutput,
+                                SIZE_T  cbOutput);
+// 
+// This function is a wrapper for using SymCryptSrtpKdfExpandKey followed by SymCryptSrtpKdfDerive
+// in order to produce SRTP-KDF output.
+//
+// All of the function arguments are forwarded to SymCryptSrtpKdfExpandKey and SymCryptSrtpKdfDerive
+// functions, hence the documentation on those functions apply here as well.
+//
+
+
+VOID
+SYMCRYPT_CALL
+SymCryptSrtpKdfSelfTest();
+
 
 ////////////////////////////////////////////////////////////////////////////
 // HKDF

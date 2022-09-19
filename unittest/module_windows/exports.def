@@ -372,6 +372,15 @@ EXPORTS
     SymCryptTlsPrf1_2Derive
     SymCryptTlsPrf1_2ExpandKey
     SymCryptTlsPrf1_2SelfTest
+    SymCryptSrtpKdf
+    SymCryptSrtpKdfExpandKey
+    SymCryptSrtpKdfDerive
+    SymCryptSrtpKdfSelfTest
+    SymCryptSshKdf
+    SymCryptSshKdfExpandKey
+    SymCryptSshKdfDerive
+    SymCryptSshKdfSha256SelfTest
+    SymCryptSshKdfSha512SelfTest
     SymCryptUint32Bitsize
     SymCryptUint32Bytesize
     SymCryptUint64Bitsize

@@ -96,6 +96,11 @@ set(SOURCES_COMMON
     sp800_108_hmacsha256.c
     sp800_108_hmacsha512.c
     sp800_108.c
+    srtp_kdf.c
+    srtp_kdf_selftest.c
+    ssh_kdf.c
+    ssh_kdf_sha256.c
+    ssh_kdf_sha512.c
     tlsCbcVerify.c
     tlsprf_selftest.c
     tlsprf.c

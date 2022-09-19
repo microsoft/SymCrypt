@@ -86,7 +86,7 @@ BString katParseData( KAT_ITEM & item, LPCSTR name );
     //
 
 LONGLONG katParseInteger( KAT_ITEM & item, LPCSTR name );
-
+ 
 BOOL katIsFieldPresent( KAT_ITEM & item, LPCSTR name );
 
 const KAT_DATA_ITEM * findDataItem( KAT_ITEM & item, LPCSTR name );

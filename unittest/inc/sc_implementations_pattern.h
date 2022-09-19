@@ -259,6 +259,18 @@ public:
     SYMCRYPT_HKDF_EXPANDED_KEY     key;
 };
 
+template<class BaseAlg>
+class KdfImpState<ImpXxx, AlgSshKdf, BaseAlg> {
+public:
+    SYMCRYPT_SSHKDF_EXPANDED_KEY     key;
+};
+
+template<class BaseAlg>
+class KdfImpState<ImpXxx, AlgSrtpKdf, BaseAlg> {
+public:
+    SYMCRYPT_SRTPKDF_EXPANDED_KEY     key;
+};
+
 template<>
 class XtsImpState<ImpXxx, AlgXtsAes> {
 public:

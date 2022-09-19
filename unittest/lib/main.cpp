@@ -112,6 +112,10 @@ const char * AlgTlsPrf1_1::name = "TlsPrf1_1";
 
 const char * AlgTlsPrf1_2::name = "TlsPrf1_2";
 
+const char * AlgSshKdf::name = "SshKdf";
+
+const char * AlgSrtpKdf::name = "SrtpKdf";
+
 const char * AlgHkdf::name = "Hkdf";
 
 const char * AlgXtsAes::name = "XtsAes";
@@ -505,6 +509,8 @@ const char * g_algorithmNames[] = {
     AlgSp800_108::name,
     AlgTlsPrf1_1::name,
     AlgTlsPrf1_2::name,
+    AlgSshKdf::name,
+    AlgSrtpKdf::name,
     AlgHkdf::name,
     AlgXtsAes::name,
     AlgTlsCbcHmacSha1::name,

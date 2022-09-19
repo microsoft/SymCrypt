@@ -63,7 +63,10 @@ const SELFTEST_INFO g_selfTests[] =
     {&SymCryptParallelSha256Selftest, "ParallelSha256" },
     {&SymCryptParallelSha384Selftest, "ParallelSha384" },
     {&SymCryptParallelSha512Selftest, "ParallelSha512" },
-    
+    {&SymCryptSrtpKdfSelfTest, "SrtpKdf" },
+    {&SymCryptSshKdfSha256SelfTest, "SshKdfSha256" },
+    {&SymCryptSshKdfSha512SelfTest, "SshKdfSha512" },
+   
     {NULL, NULL},
 };
 

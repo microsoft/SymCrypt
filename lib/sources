@@ -139,6 +139,11 @@ SOURCES= \
     sp800_108_hmacsha1.c \
     sp800_108_hmacsha256.c \
     sp800_108_hmacsha512.c \
+    srtp_kdf.c \
+    srtp_kdf_selftest.c \
+    ssh_kdf.c \
+    ssh_kdf_sha256.c \
+    ssh_kdf_sha512.c \
     tlsprf.c \
     tlsprf_selftest.c \
     hkdf.c \

@@ -32,6 +32,7 @@ const SYMCRYPT_HASH SymCryptMd5Algorithm_default = {
     &SymCryptMd5Append,
     &SymCryptMd5Result,
     &SymCryptMd5AppendBlocks,
+    &SymCryptMd5StateCopy,
     sizeof( SYMCRYPT_MD5_STATE ),
     SYMCRYPT_MD5_RESULT_SIZE,
     SYMCRYPT_MD5_INPUT_BLOCK_SIZE,

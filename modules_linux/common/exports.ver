@@ -411,4 +411,13 @@ VERSION_103.0
 {
    global:
       SymCryptFipsGetSelftestsPerformed;
+      SymCryptSrtpKdf;
+      SymCryptSrtpKdfExpandKey;
+      SymCryptSrtpKdfDerive;
+      SymCryptSrtpKdfSelfTest;
+      SymCryptSshKdf;
+      SymCryptSshKdfExpandKey;
+      SymCryptSshKdfDerive;
+      SymCryptSshKdfSha256SelfTest;
+      SymCryptSshKdfSha512SelfTest;
 } VERSION_102.0;

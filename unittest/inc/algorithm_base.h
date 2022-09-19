@@ -384,6 +384,8 @@ typedef enum _KDF_ARGUMENT_TYPE {
     KdfArgumentSp800_108 = 3,
     KdfArgumentTlsPrf = 4,
     KdfArgumentHkdf = 5,
+    KdfArgumentSshKdf = 6,
+    KdfArgumentSrtpKdf = 7,
 } KDF_ARGUMENT_TYPE;
 
 typedef struct _KDF_GENERIC_ARGUMENTS {
@@ -418,6 +420,24 @@ typedef struct _KDF_HKDF_ARGUMENTS {
     SIZE_T      cbInfo;
 } KDF_HKDF_ARGUMENTS;
 
+typedef struct _KDF_SSHKDF_ARGUMENTS {
+    PCSYMCRYPT_HASH hash;
+    PCBYTE          pbHashValue;
+    SIZE_T          cbHashValue;
+    PCBYTE          pbSessionId;
+    SIZE_T          cbSessionId;
+    BYTE            label;
+} KDF_SSHKDF_ARGUMENTS;
+
+typedef struct _KDF_SRTPKDF_ARGUMENTS {
+    PCBYTE                      pbSalt;
+    SIZE_T                      cbSalt;
+    UINT32                      uKeyDerivationRate;
+    UINT64                      uIndex;
+    UINT32                      uIndexWidth;
+    BYTE                        label;
+} KDF_SRTPKDF_ARGUMENTS;
+
 typedef struct _KDF_ARGUMENTS {
     KDF_ARGUMENT_TYPE   argType;
     union {
@@ -426,6 +446,8 @@ typedef struct _KDF_ARGUMENTS {
         KDF_SP800_108_ARGUMENTS uSp800_108;
         KDF_TLSPRF_ARGUMENTS    uTlsPrf;
         KDF_HKDF_ARGUMENTS      uHkdf;
+        KDF_SSHKDF_ARGUMENTS    uSshKdf;
+        KDF_SRTPKDF_ARGUMENTS   uSrtpKdf;
     };
 } KDF_ARGUMENTS, *PKDF_ARGUMENTS;
 typedef const KDF_ARGUMENTS *PCKDF_ARGUMENTS;
