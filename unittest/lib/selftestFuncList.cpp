@@ -22,13 +22,13 @@ SymCryptAesSelftestVoid()
 
 const SELFTEST_INFO g_selfTests[] = 
 {
-    {&SymCryptMd2Selftest, "Md2"},
-    {&SymCryptMd4Selftest, "Md4"},
-    {&SymCryptMd5Selftest, "Md5"},
-    {&SymCryptSha1Selftest, "Sha1"},
-    {&SymCryptSha256Selftest, "Sha256"},
-    {&SymCryptSha384Selftest, "Sha384"},
-    {&SymCryptSha512Selftest, "Sha512"},
+    {&SymCryptMd2Selftest, "Md2" },
+    {&SymCryptMd4Selftest, "Md4" },
+    {&SymCryptMd5Selftest, "Md5" },
+    {&SymCryptSha1Selftest, "Sha1" },
+    {&SymCryptSha256Selftest, "Sha256" },
+    {&SymCryptSha384Selftest, "Sha384" },
+    {&SymCryptSha512Selftest, "Sha512" },
     {&SymCryptHmacMd5Selftest, "HmacMd5" },
     {&SymCryptHmacSha1Selftest, "HmacSha1" },
     {&SymCryptHmacSha256Selftest, "HmacSha256" },
@@ -66,7 +66,12 @@ const SELFTEST_INFO g_selfTests[] =
     {&SymCryptSrtpKdfSelfTest, "SrtpKdf" },
     {&SymCryptSshKdfSha256SelfTest, "SshKdfSha256" },
     {&SymCryptSshKdfSha512SelfTest, "SshKdfSha512" },
-   
+    {&SymCryptDhSecretAgreementSelftest, "DHSecretAgreement" },
+    {&SymCryptEcDhSecretAgreementSelftest, "ECDHSecretAgreement" },
+    {&SymCryptDsaSelftest, "DSA" },
+    {&SymCryptEcDsaSelftest, "ECDSA" },
+    {&SymCryptRsaSelftest, "RSA" },
+    
     {NULL, NULL},
 };
 

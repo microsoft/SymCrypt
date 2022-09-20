@@ -54,9 +54,6 @@ typedef struct _SYMCRYPT_SELFTEST_RSAKEY_2048
 // DL groups and keys for DH secret agreement selftest
 //
 
-// Generator for the DL group used with the two following DH keys
-const BYTE dhGenerator = 2;
-
 // Keys generated from Oakley group 14 (IKE group mod p2048 from RFC 3526)
 // aka SymCryptDlgroupDhSafePrimeParamsModp2048
 const SYMCRYPT_SELFTEST_DLKEY_2048 dhKey1 =
@@ -499,27 +496,16 @@ SymCryptDhSecretAgreementSelftest()
     PSYMCRYPT_DLKEY pkKey1 = NULL;
     PSYMCRYPT_DLKEY pkKey2 = NULL;
 
-    BYTE rgbSecret[sizeof(dhKey1.public)];
+    BYTE rgbSecret[ sizeof(rgbDhKnownSecret) ];
 
     pDlgroup = SymCryptDlgroupAllocate(
         SymCryptDlgroupDhSafePrimeParamsModp2048->nBitsOfP,
         0 );
     SYMCRYPT_FIPS_ASSERT( pDlgroup != NULL );
 
-    scError = SymCryptDlgroupSetValue(
-        SymCryptDlgroupDhSafePrimeParamsModp2048->pcbPrimeP,
-        SymCryptDlgroupDhSafePrimeParamsModp2048->nBitsOfP / 8,
-        NULL, // pbPrimeQ
-        0,  // cbPrimeQ
-        (PBYTE) &dhGenerator,
-        sizeof(dhGenerator),
-        SYMCRYPT_NUMBER_FORMAT_MSB_FIRST,
-        NULL, // pHashAlgorithm
-        NULL, // pbSeed
-        0, // cbSeed
-        0, // genCounter
-        SYMCRYPT_DLGROUP_FIPS_NONE,
-        pDlgroup);
+    scError = SymCryptDlgroupSetValueSafePrime(
+        SYMCRYPT_DLGROUP_DH_SAFEPRIMETYPE_IKE_3526,
+        pDlgroup );
     SYMCRYPT_FIPS_ASSERT( scError == SYMCRYPT_NO_ERROR );
 
     pkKey1 = SymCryptDlkeyAllocate( pDlgroup );
@@ -531,7 +517,7 @@ SymCryptDhSecretAgreementSelftest()
         dhKey1.public,
         sizeof(dhKey1.public),
         SYMCRYPT_NUMBER_FORMAT_MSB_FIRST,
-        SYMCRYPT_FLAG_DLKEY_DH | SYMCRYPT_FLAG_KEY_NO_FIPS, // flags
+        SYMCRYPT_FLAG_DLKEY_DH | SYMCRYPT_FLAG_KEY_NO_FIPS,
         pkKey1 );
     SYMCRYPT_FIPS_ASSERT( scError == SYMCRYPT_NO_ERROR );
 
@@ -544,7 +530,7 @@ SymCryptDhSecretAgreementSelftest()
         dhKey2.public,
         sizeof(dhKey2.public),
         SYMCRYPT_NUMBER_FORMAT_MSB_FIRST,
-        SYMCRYPT_FLAG_DLKEY_DH | SYMCRYPT_FLAG_KEY_NO_FIPS, // flags
+        SYMCRYPT_FLAG_DLKEY_DH | SYMCRYPT_FLAG_KEY_NO_FIPS,
         pkKey2 );
     SYMCRYPT_FIPS_ASSERT( scError == SYMCRYPT_NO_ERROR );
 
@@ -558,8 +544,8 @@ SymCryptDhSecretAgreementSelftest()
         sizeof(rgbSecret) );
     SYMCRYPT_FIPS_ASSERT( scError == SYMCRYPT_NO_ERROR );
 
-#pragma warning( suppress: 4127 )       // conditional expression is constant
-    SYMCRYPT_FIPS_ASSERT( sizeof(rgbSecret) == sizeof(rgbDhKnownSecret) );
+    SymCryptInjectError( rgbSecret, sizeof(rgbSecret) );
+
     SYMCRYPT_FIPS_ASSERT( memcmp( rgbSecret, rgbDhKnownSecret, sizeof(rgbDhKnownSecret) ) == 0 );
 
     SymCryptDlkeyFree( pkKey2 );
@@ -592,7 +578,7 @@ SymCryptEcDhSecretAgreementSelftest( )
         sizeof(eckey1.Qxy),
         SYMCRYPT_NUMBER_FORMAT_MSB_FIRST,
         SYMCRYPT_ECPOINT_FORMAT_XY,
-        SYMCRYPT_FLAG_ECKEY_ECDH | SYMCRYPT_FLAG_KEY_NO_FIPS, // flags
+        SYMCRYPT_FLAG_ECKEY_ECDH | SYMCRYPT_FLAG_KEY_NO_FIPS,
         pkKey1);
     SYMCRYPT_FIPS_ASSERT( scError == SYMCRYPT_NO_ERROR );
 
@@ -606,7 +592,7 @@ SymCryptEcDhSecretAgreementSelftest( )
         sizeof(eckey2.Qxy),
         SYMCRYPT_NUMBER_FORMAT_MSB_FIRST,
         SYMCRYPT_ECPOINT_FORMAT_XY,
-        SYMCRYPT_FLAG_ECKEY_ECDH | SYMCRYPT_FLAG_KEY_NO_FIPS, // flags
+        SYMCRYPT_FLAG_ECKEY_ECDH | SYMCRYPT_FLAG_KEY_NO_FIPS,
         pkKey2);
     SYMCRYPT_FIPS_ASSERT( scError == SYMCRYPT_NO_ERROR );
 
@@ -620,7 +606,9 @@ SymCryptEcDhSecretAgreementSelftest( )
         sizeof(rgbSecret));
     SYMCRYPT_FIPS_ASSERT( scError == SYMCRYPT_NO_ERROR );
 
-    SYMCRYPT_FIPS_ASSERT( memcmp(rgbSecret, rgbEcdhKnownSecret, sizeof(rgbSecret)) == 0);
+    SymCryptInjectError( rgbSecret, sizeof(rgbSecret) );
+
+    SYMCRYPT_FIPS_ASSERT( memcmp(rgbSecret, rgbEcdhKnownSecret, sizeof(rgbSecret)) == 0 );
 
     SymCryptEckeyFree( pkKey2 );
     SymCryptEckeyFree( pkKey1 );
@@ -647,6 +635,8 @@ SymCryptDsaSignVerifyTest( PCSYMCRYPT_DLKEY pkDlkey )
         cbSignature );
     SYMCRYPT_FIPS_ASSERT( scError == SYMCRYPT_NO_ERROR );
 
+    SymCryptInjectError( pbSignature, cbSignature );
+
     scError = SymCryptDsaVerify(
         pkDlkey,
         rgbSha256Hash,
@@ -672,8 +662,8 @@ SymCryptDsaSelftest( )
 
     pDlgroup = SymCryptDlgroupAllocate(
         sizeof(dsaDlgroup.primeP) * 8,
-        sizeof(dsaDlgroup.primeQ) * 8);
-    SYMCRYPT_FIPS_ASSERT(pDlgroup != NULL);
+        sizeof(dsaDlgroup.primeQ) * 8 );
+    SYMCRYPT_FIPS_ASSERT( pDlgroup != NULL );
 
     scError = SymCryptDlgroupSetValue(
         dsaDlgroup.primeP,
@@ -687,8 +677,8 @@ SymCryptDsaSelftest( )
         dsaDlgroup.seed,
         sizeof(dsaDlgroup.seed),
         dsaDlgroup.counter,
-        SYMCRYPT_DLGROUP_FIPS_LATEST,
-        pDlgroup);
+        SYMCRYPT_DLGROUP_FIPS_NONE,
+        pDlgroup );
     SYMCRYPT_FIPS_ASSERT( scError == SYMCRYPT_NO_ERROR );
 
     pkDlkey = SymCryptDlkeyAllocate( pDlgroup );
@@ -700,7 +690,7 @@ SymCryptDsaSelftest( )
         dsaKey.public,
         sizeof(dsaKey.public),
         SYMCRYPT_NUMBER_FORMAT_MSB_FIRST,
-        SYMCRYPT_FLAG_DLKEY_DSA | SYMCRYPT_FLAG_KEY_NO_FIPS, // flags
+        SYMCRYPT_FLAG_DLKEY_DSA | SYMCRYPT_FLAG_KEY_NO_FIPS,
         pkDlkey );
     SYMCRYPT_FIPS_ASSERT( scError == SYMCRYPT_NO_ERROR );
 
@@ -731,6 +721,8 @@ SymCryptEcDsaSignVerifyTest( PCSYMCRYPT_ECKEY pkEckey )
         pbSignature,
         cbSignature );
     SYMCRYPT_FIPS_ASSERT( scError == SYMCRYPT_NO_ERROR );
+
+    SymCryptInjectError( pbSignature, cbSignature );
 
     scError = SymCryptEcDsaVerify(
         pkEckey,
@@ -768,7 +760,7 @@ SymCryptEcDsaSelftest( )
         sizeof(eckey1.Qxy),
         SYMCRYPT_NUMBER_FORMAT_MSB_FIRST,
         SYMCRYPT_ECPOINT_FORMAT_XY,
-        SYMCRYPT_FLAG_ECKEY_ECDSA | SYMCRYPT_FLAG_KEY_NO_FIPS, // flags
+        SYMCRYPT_FLAG_ECKEY_ECDSA | SYMCRYPT_FLAG_KEY_NO_FIPS,
         pkEckey);
     SYMCRYPT_FIPS_ASSERT( scError == SYMCRYPT_NO_ERROR );
 
@@ -800,6 +792,8 @@ SymCryptRsaSignVerifyTest( PCSYMCRYPT_RSAKEY pkRsakey )
         cbSignature,
         &cbSignature );
     SYMCRYPT_FIPS_ASSERT( scError == SYMCRYPT_NO_ERROR );
+
+    SymCryptInjectError( pbSignature, cbSignature );
 
     scError = SymCryptRsaPkcs1Verify(
         pkRsakey,

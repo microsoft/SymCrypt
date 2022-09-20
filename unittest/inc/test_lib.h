@@ -31,6 +31,7 @@
     #include <math.h>
     #include <unistd.h>
 
+    #include <chrono>
     #include <vector>
     #include <string>
     #include <memory>
@@ -51,6 +52,7 @@
     #include <math.h>
     #include <unistd.h>
 
+    #include <chrono>
     #include <vector>
     #include <string>
     #include <memory>
@@ -159,6 +161,7 @@
 
     #include <powrprof.h>
 
+    #include <chrono>
     #include <vector>
     #include <string>
     #include <memory>
@@ -1376,6 +1379,8 @@ VOID measurePerf( AlgorithmImplementation * pAlgImp );
 VOID measurePerfOfWipe();
 
 VOID initPerfSystem();
+
+VOID testSelftestPerf();
 
 VOID testSelftest();
 
