@@ -93,6 +93,10 @@ testSelftest()
     {
         testSelftestOne( &g_selfTests[i], &selftestPerfTable );
     }
+    for( int i=0; g_selfTests_allocating[i].f != NULL; i++ )
+    {
+        testSelftestOne( &g_selfTests_allocating[i], &selftestPerfTable );
+    }
 
     selftestPerfTable.print( "Self test performance" );
 }

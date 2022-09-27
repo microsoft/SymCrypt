@@ -1498,7 +1498,7 @@ runKernelmodeTests()
     dw = GetCurrentDirectory( PATH_BUFFER_LEN - index, &quotedPathName[index] );
     if( dw == 0 )
     {
-        print( "Failed to get current direcotry, error = %08x", GetLastError() );
+        print( "Failed to get current directory, error = %08x", GetLastError() );
         g_nTotalErrors++;
         goto cleanup;
     }

@@ -1748,6 +1748,8 @@ typedef struct _SELFTEST_INFO
 } SELFTEST_INFO;
 
 extern const SELFTEST_INFO g_selfTests[];
+// Some selftests require allocations, and we do not support them in KM test driver yet
+extern const SELFTEST_INFO g_selfTests_allocating[];
 
 VOID
 runTestThread( VOID * seed );

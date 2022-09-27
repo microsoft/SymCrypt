@@ -37,9 +37,8 @@ set %1=%date:~-4%-%date:~-10,2%-%date:~-7,2%T%time:~,-3%
 goto :EOF
 
 :GetBranchName
-git status | findstr /C:"On branch" >%TmpBuildStringFile%
-set /P T=<%TmpBuildStringFile%
-for /f "tokens=3" %%i in ("%T%") do set %1=%%i
+git symbolic-ref --short HEAD >%TmpBuildStringFile%
+set /p %1=<%TmpBuildStringFile%
 goto :EOF
 
 :GetVersionNumber
