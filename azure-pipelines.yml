@@ -292,4 +292,4 @@ jobs:
       cxx: g++
       buildType: Release
       testInPrBuild: false
-  timeoutInMinutes: 120
+  timeoutInMinutes: 240
