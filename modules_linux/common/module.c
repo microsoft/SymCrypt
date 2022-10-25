@@ -64,6 +64,8 @@ VOID __attribute__((constructor)) SymCryptModuleMain()
         SymCryptSshKdfSha256SelfTest();
         SymCryptSshKdfSha512SelfTest();
 
+        SymCryptSha3_256Selftest();
+
         g_SymCryptFipsSelftestsPerformed |= SYMCRYPT_SELFTEST_ALGORITHM_STARTUP;
     }
 }

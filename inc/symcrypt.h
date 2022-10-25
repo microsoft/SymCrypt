@@ -1100,7 +1100,7 @@ extern const PCSYMCRYPT_HASH SymCryptSha1Algorithm;
 //   SHA-256
 //
 //
-// Tha SHA-256 hash algorithm per FIPS 180-4.
+// The SHA-256 hash algorithm per FIPS 180-4.
 // This implementation is limited to data strings that are in whole bytes.
 // Odd bit length are not supported.
 //
@@ -1165,7 +1165,7 @@ extern const PCSYMCRYPT_HASH SymCryptSha256Algorithm;
 //   SHA-384
 //
 //
-// Tha SHA-384 hash algorithm per FIPS 180-4.
+// The SHA-384 hash algorithm per FIPS 180-4.
 // This implementation is limited to data strings that are in whole bytes.
 // Odd bit length are not supported.
 //
@@ -1230,7 +1230,7 @@ extern const PCSYMCRYPT_HASH SymCryptSha384Algorithm;
 //   SHA-512
 //
 //
-// Tha SHA-512 hash algorithm per FIPS 180-4.
+// The SHA-512 hash algorithm per FIPS 180-4.
 // This implementation is limited to data strings that are in whole bytes.
 // Odd bit length are not supported.
 //
@@ -1290,6 +1290,181 @@ SYMCRYPT_CALL
 SymCryptSha512Selftest();
 
 extern const PCSYMCRYPT_HASH SymCryptSha512Algorithm;
+
+
+////////////////////////////////////////////////////////////////////////////
+//   SHA-3
+//
+// The SHA-3 family of hash algorithms per FIPS 202.
+// This implementation is limited to data strings that are in whole bytes.
+// Odd bit length are not supported.
+//
+//
+// For details on this API see the description above about the generic hash function API.
+//
+
+
+//
+// SHA-3-256
+//
+
+#define SYMCRYPT_SHA3_256_RESULT_SIZE         (32)
+#define SYMCRYPT_SHA3_256_INPUT_BLOCK_SIZE    (136)
+
+VOID
+SYMCRYPT_CALL
+SymCryptSha3_256(
+    _In_reads_(cbData)                          PCBYTE  pbData,
+                                                SIZE_T  cbData,
+    _Out_writes_(SYMCRYPT_SHA3_256_RESULT_SIZE) PBYTE   pbResult);
+
+VOID
+SYMCRYPT_CALL
+SymCryptSha3_256Init(_Out_ PSYMCRYPT_SHA3_256_STATE pState);
+
+VOID
+SYMCRYPT_CALL
+SymCryptSha3_256Append(
+    _Inout_                 PSYMCRYPT_SHA3_256_STATE    pState,
+    _In_reads_(cbData)      PCBYTE                      pbData,
+                            SIZE_T                      cbData);
+
+VOID
+SYMCRYPT_CALL
+SymCryptSha3_256Result(
+    _Inout_                                     PSYMCRYPT_SHA3_256_STATE    pState,
+    _Out_writes_(SYMCRYPT_SHA3_256_RESULT_SIZE) PBYTE                       pbResult);
+
+VOID
+SYMCRYPT_CALL
+SymCryptSha3_256StateCopy(_In_ PCSYMCRYPT_SHA3_256_STATE pSrc, _Out_ PSYMCRYPT_SHA3_256_STATE pDst);
+
+VOID
+SYMCRYPT_CALL
+SymCryptSha3_256StateExport(
+    _In_                                                    PCSYMCRYPT_SHA3_256_STATE   pState,
+    _Out_writes_bytes_(SYMCRYPT_SHA3_256_STATE_EXPORT_SIZE) PBYTE                       pbBlob);
+
+SYMCRYPT_ERROR
+SYMCRYPT_CALL
+SymCryptSha3_256StateImport(
+    _Out_                                                   PSYMCRYPT_SHA3_256_STATE    pState,
+    _In_reads_bytes_(SYMCRYPT_SHA3_256_STATE_EXPORT_SIZE)   PCBYTE                      pbBlob);
+
+VOID
+SYMCRYPT_CALL
+SymCryptSha3_256Selftest();
+
+extern const PCSYMCRYPT_HASH SymCryptSha3_256Algorithm;
+
+
+//
+// SHA-3-384
+//
+
+#define SYMCRYPT_SHA3_384_RESULT_SIZE         (48)
+#define SYMCRYPT_SHA3_384_INPUT_BLOCK_SIZE    (104)
+
+VOID
+SYMCRYPT_CALL
+SymCryptSha3_384(
+    _In_reads_(cbData)                          PCBYTE  pbData,
+                                                SIZE_T  cbData,
+    _Out_writes_(SYMCRYPT_SHA3_384_RESULT_SIZE) PBYTE   pbResult);
+
+VOID
+SYMCRYPT_CALL
+SymCryptSha3_384Init(_Out_ PSYMCRYPT_SHA3_384_STATE pState);
+
+VOID
+SYMCRYPT_CALL
+SymCryptSha3_384Append(
+    _Inout_                 PSYMCRYPT_SHA3_384_STATE    pState,
+    _In_reads_(cbData)      PCBYTE                      pbData,
+                            SIZE_T                      cbData);
+
+VOID
+SYMCRYPT_CALL
+SymCryptSha3_384Result(
+    _Inout_                                     PSYMCRYPT_SHA3_384_STATE    pState,
+    _Out_writes_(SYMCRYPT_SHA3_384_RESULT_SIZE) PBYTE                       pbResult);
+
+VOID
+SYMCRYPT_CALL
+SymCryptSha3_384StateCopy(_In_ PCSYMCRYPT_SHA3_384_STATE pSrc, _Out_ PSYMCRYPT_SHA3_384_STATE pDst);
+
+VOID
+SYMCRYPT_CALL
+SymCryptSha3_384StateExport(
+    _In_                                                    PCSYMCRYPT_SHA3_384_STATE   pState,
+    _Out_writes_bytes_(SYMCRYPT_SHA3_384_STATE_EXPORT_SIZE) PBYTE                       pbBlob);
+
+SYMCRYPT_ERROR
+SYMCRYPT_CALL
+SymCryptSha3_384StateImport(
+    _Out_                                                   PSYMCRYPT_SHA3_384_STATE    pState,
+    _In_reads_bytes_(SYMCRYPT_SHA3_384_STATE_EXPORT_SIZE)   PCBYTE                      pbBlob);
+
+VOID
+SYMCRYPT_CALL
+SymCryptSha3_384Selftest();
+
+extern const PCSYMCRYPT_HASH SymCryptSha3_384Algorithm;
+
+
+//
+// SHA-3-512
+//
+
+#define SYMCRYPT_SHA3_512_RESULT_SIZE         (64)
+#define SYMCRYPT_SHA3_512_INPUT_BLOCK_SIZE    (72)
+
+VOID
+SYMCRYPT_CALL
+SymCryptSha3_512(
+    _In_reads_( cbData )                            PCBYTE  pbData,
+                                                    SIZE_T  cbData,
+    _Out_writes_( SYMCRYPT_SHA3_512_RESULT_SIZE )   PBYTE   pbResult );
+
+VOID
+SYMCRYPT_CALL
+SymCryptSha3_512Init( _Out_ PSYMCRYPT_SHA3_512_STATE pState );
+
+VOID
+SYMCRYPT_CALL
+SymCryptSha3_512Append(
+    _Inout_                 PSYMCRYPT_SHA3_512_STATE    pState,
+    _In_reads_( cbData )    PCBYTE                      pbData,
+                            SIZE_T                      cbData );
+
+VOID
+SYMCRYPT_CALL
+SymCryptSha3_512Result(
+    _Inout_                                         PSYMCRYPT_SHA3_512_STATE    pState,
+    _Out_writes_( SYMCRYPT_SHA3_512_RESULT_SIZE )   PBYTE                       pbResult );
+
+VOID
+SYMCRYPT_CALL
+SymCryptSha3_512StateCopy( _In_ PCSYMCRYPT_SHA3_512_STATE pSrc, _Out_ PSYMCRYPT_SHA3_512_STATE pDst );
+
+VOID
+SYMCRYPT_CALL
+SymCryptSha3_512StateExport(
+    _In_                                                        PCSYMCRYPT_SHA3_512_STATE   pState,
+    _Out_writes_bytes_( SYMCRYPT_SHA3_512_STATE_EXPORT_SIZE )   PBYTE                       pbBlob );
+
+SYMCRYPT_ERROR
+SYMCRYPT_CALL
+SymCryptSha3_512StateImport(
+    _Out_                                                   PSYMCRYPT_SHA3_512_STATE    pState,
+    _In_reads_bytes_( SYMCRYPT_SHA3_512_STATE_EXPORT_SIZE)  PCBYTE                      pbBlob );
+
+VOID
+SYMCRYPT_CALL
+SymCryptSha3_512Selftest();
+
+extern const PCSYMCRYPT_HASH SymCryptSha3_512Algorithm;
+
 
 //==========================================================================
 //   PARALLELISED HASH FUNCTIONS
@@ -6418,6 +6593,15 @@ extern const SYMCRYPT_OID SymCryptSha384OidList[SYMCRYPT_SHA384_OID_COUNT];
 
 #define SYMCRYPT_SHA512_OID_COUNT      (2)
 extern const SYMCRYPT_OID SymCryptSha512OidList[SYMCRYPT_SHA512_OID_COUNT];
+
+#define SYMCRYPT_SHA3_256_OID_COUNT      (2)
+extern const SYMCRYPT_OID SymCryptSha3_256OidList[SYMCRYPT_SHA3_256_OID_COUNT];
+
+#define SYMCRYPT_SHA3_384_OID_COUNT      (2)
+extern const SYMCRYPT_OID SymCryptSha3_384OidList[SYMCRYPT_SHA3_384_OID_COUNT];
+
+#define SYMCRYPT_SHA3_512_OID_COUNT      (2)
+extern const SYMCRYPT_OID SymCryptSha3_512OidList[SYMCRYPT_SHA3_512_OID_COUNT];
 
 //
 // SYMCRYPT_FLAG_RSA_PKCS1_NO_ASN1: For RSA PKCS1 to not use the OID on signing or verifying.

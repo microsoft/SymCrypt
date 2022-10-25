@@ -61,6 +61,36 @@
 #undef ALG_Name
 #undef ALG_name
 
+#define ALG_NAME   SHA3_256
+#define ALG_Name   Sha3_256
+#define ALG_name   sha3_256
+#define HashImpSha3_256
+#include "sc_imp_hashpattern.cpp"
+#undef HashImpSha3_256
+#undef ALG_NAME
+#undef ALG_Name
+#undef ALG_name
+
+#define ALG_NAME   SHA3_384
+#define ALG_Name   Sha3_384
+#define ALG_name   sha3_384
+#define HashImpSha3_384
+#include "sc_imp_hashpattern.cpp"
+#undef HashImpSha3_384
+#undef ALG_NAME
+#undef ALG_Name
+#undef ALG_name
+
+#define ALG_NAME   SHA3_512
+#define ALG_Name   Sha3_512
+#define ALG_name   sha3_512
+#define HashImpSha3_512
+#include "sc_imp_hashpattern.cpp"
+#undef HashImpSha3_512
+#undef ALG_NAME
+#undef ALG_Name
+#undef ALG_name
+
 
 #define ALG_NAME    HMAC_MD5
 #define ALG_Name    HmacMd5
@@ -2644,7 +2674,7 @@ sc_RsaKeyPerf<ImpXxx>( PBYTE buf1, PBYTE buf2, SIZE_T keySize, UINT32 generateFl
 //================================================
 
 
-HASH_INFO CONCAT2(hashInfoTable, ImpXxx)[6] = { 0 };
+HASH_INFO CONCAT2(hashInfoTable, ImpXxx)[9] = { 0 };
 
 template<>
 PCHASH_INFO getHashInfo<ImpXxx>(PCSTR pcstrName)
@@ -2656,6 +2686,9 @@ PCHASH_INFO getHashInfo<ImpXxx>(PCSTR pcstrName)
         CONCAT2(hashInfoTable, ImpXxx)[2] = { "SHA256", ScShimSymCryptSha256Algorithm,  ScShimSymCryptSha256OidList, SYMCRYPT_SHA256_OID_COUNT };
         CONCAT2(hashInfoTable, ImpXxx)[3] = { "SHA384", ScShimSymCryptSha384Algorithm,  ScShimSymCryptSha384OidList, SYMCRYPT_SHA384_OID_COUNT };
         CONCAT2(hashInfoTable, ImpXxx)[4] = { "SHA512", ScShimSymCryptSha512Algorithm,  ScShimSymCryptSha512OidList, SYMCRYPT_SHA512_OID_COUNT };
+        CONCAT2(hashInfoTable, ImpXxx)[5] = { "SHA3_256", ScShimSymCryptSha3_256Algorithm,  ScShimSymCryptSha3_256OidList, SYMCRYPT_SHA3_256_OID_COUNT };
+        CONCAT2(hashInfoTable, ImpXxx)[6] = { "SHA3_384", ScShimSymCryptSha3_384Algorithm,  ScShimSymCryptSha3_384OidList, SYMCRYPT_SHA3_384_OID_COUNT };
+        CONCAT2(hashInfoTable, ImpXxx)[7] = { "SHA3_512", ScShimSymCryptSha3_512Algorithm,  ScShimSymCryptSha3_512OidList, SYMCRYPT_SHA3_512_OID_COUNT };
     }
 
     for (int i = 0; CONCAT2(hashInfoTable, ImpXxx)[i].name != NULL; i++)

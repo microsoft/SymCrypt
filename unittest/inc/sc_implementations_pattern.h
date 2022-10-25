@@ -65,6 +65,30 @@ public:
 };
 
 template<>
+class HashImpState<ImpXxx, AlgSha3_256> {
+public:
+    SYMCRYPT_SHA3_256_STATE sc;
+    SYMCRYPT_HASH_STATE     scHash;
+    BOOLEAN                 isReset;
+};
+
+template<>
+class HashImpState<ImpXxx, AlgSha3_384> {
+public:
+    SYMCRYPT_SHA3_384_STATE sc;
+    SYMCRYPT_HASH_STATE     scHash;
+    BOOLEAN                 isReset;
+};
+
+template<>
+class HashImpState<ImpXxx, AlgSha3_512> {
+public:
+    SYMCRYPT_SHA3_512_STATE sc;
+    SYMCRYPT_HASH_STATE     scHash;
+    BOOLEAN                 isReset;
+};
+
+template<>
 class ParallelHashImpState<ImpXxx, AlgParallelSha256> {
 public:
                                                 SYMCRYPT_SHA256_STATE       sc[MAX_PARALLEL_HASH_STATES];

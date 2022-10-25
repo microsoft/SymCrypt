@@ -155,5 +155,10 @@ else() # Windows
         add_compile_options(/GF)
         add_compile_options(/Gy)
         add_compile_options(/Gw)
+    else()
+        if(SYMCRYPT_TARGET_ARCH MATCHES "AMD64")
+            # Prevent error C1128 for AMD64/Debug builds: number of sections exceeded object file format limit
+            add_compile_options(/bigobj)
+        endif()
     endif()
 endif()

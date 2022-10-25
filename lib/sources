@@ -100,6 +100,10 @@ SOURCES= \
     sha256-ymm.c \
     sha512.c \
     sha512-ymm.c \
+    sha3.c \
+    sha3_256.c \
+    sha3_384.c \
+    sha3_512.c \
     md5.c \
     md4.c \
     md2.c \

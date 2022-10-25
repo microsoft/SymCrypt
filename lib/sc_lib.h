@@ -623,6 +623,8 @@ SymCryptSha512AppendBlocks_ymm_avx512vl_asm(
     _Out_                   SIZE_T                            * pcbRemaining );
 
 
+
+
 //
 // SymCryptMd5AppendBlocks
 //
@@ -939,6 +941,9 @@ typedef enum _SYMCRYPT_BLOB_TYPE {
     SymCryptBlobTypeSha256State = SymCryptBlobTypeHashState + 5,
     SymCryptBlobTypeSha384State = SymCryptBlobTypeHashState + 6,
     SymCryptBlobTypeSha512State = SymCryptBlobTypeHashState + 7,
+    SymCryptBlobTypeSha3_256State = SymCryptBlobTypeHashState + 8,
+    SymCryptBlobTypeSha3_384State = SymCryptBlobTypeHashState + 9,
+    SymCryptBlobTypeSha3_512State = SymCryptBlobTypeHashState + 10,
 } SYMCRYPT_BLOB_TYPE;
 
 #define SYMCRYPT_BLOB_MAGIC ('cmys')
@@ -1030,6 +1035,22 @@ typedef struct _SYMCRYPT_SHA512_STATE_EXPORT_BLOB {
 } SYMCRYPT_SHA512_STATE_EXPORT_BLOB;
 
 C_ASSERT( sizeof( SYMCRYPT_SHA512_STATE_EXPORT_BLOB ) == SYMCRYPT_SHA512_STATE_EXPORT_SIZE );
+
+typedef struct _SYMCRYPT_SHA3_STATE_EXPORT_BLOB {
+    SYMCRYPT_BLOB_HEADER    header;
+    BYTE                    state[200];         // Keccak state
+    UINT32                  mergedBytes;        // number of bytes merged into the state for the current block
+    BYTE                    rfu[8];             // rfu = Reserved for Future Use.
+    SYMCRYPT_BLOB_TRAILER   trailer;
+} SYMCRYPT_SHA3_STATE_EXPORT_BLOB;
+
+typedef SYMCRYPT_SHA3_STATE_EXPORT_BLOB SYMCRYPT_SHA3_256_STATE_EXPORT_BLOB;
+typedef SYMCRYPT_SHA3_STATE_EXPORT_BLOB SYMCRYPT_SHA3_384_STATE_EXPORT_BLOB;
+typedef SYMCRYPT_SHA3_STATE_EXPORT_BLOB SYMCRYPT_SHA3_512_STATE_EXPORT_BLOB;
+
+C_ASSERT(sizeof(SYMCRYPT_SHA3_256_STATE_EXPORT_BLOB) == SYMCRYPT_SHA3_256_STATE_EXPORT_SIZE);
+C_ASSERT(sizeof(SYMCRYPT_SHA3_384_STATE_EXPORT_BLOB) == SYMCRYPT_SHA3_384_STATE_EXPORT_SIZE);
+C_ASSERT(sizeof(SYMCRYPT_SHA3_512_STATE_EXPORT_BLOB) == SYMCRYPT_SHA3_512_STATE_EXPORT_SIZE);
 
 #pragma pack(pop)
 
@@ -1582,6 +1603,53 @@ SymCryptParallelSha512AppendBlocks_ymm(
 extern const SYMCRYPT_HASH SymCryptSha256Algorithm_default;
 extern const SYMCRYPT_HASH SymCryptSha384Algorithm_default;
 extern const SYMCRYPT_HASH SymCryptSha512Algorithm_default;
+extern const SYMCRYPT_HASH SymCryptSha3_256Algorithm_default;
+extern const SYMCRYPT_HASH SymCryptSha3_384Algorithm_default;
+extern const SYMCRYPT_HASH SymCryptSha3_512Algorithm_default;
+
+
+// Keccak-f[1600] permutation
+VOID
+SYMCRYPT_CALL
+SymCryptKeccakPermute(_Inout_updates_(25) UINT64* pState);
+
+//
+// Generic SHA-3 functions that act on all SHA-3 family of hash functions
+//
+SYMCRYPT_NOINLINE
+VOID
+SYMCRYPT_CALL
+SymCryptSha3Init(_Out_ PSYMCRYPT_SHA3_STATE pState, UINT32 uOutputBits);
+
+SYMCRYPT_NOINLINE
+VOID
+SYMCRYPT_CALL
+SymCryptSha3Append(
+    _Inout_                 PSYMCRYPT_SHA3_STATE    pState,
+    _In_reads_(cbData)      PCBYTE                  pbData,
+                            SIZE_T                  cbData);
+
+SYMCRYPT_NOINLINE
+VOID
+SYMCRYPT_CALL
+SymCryptSha3Result(
+    _Inout_                             PSYMCRYPT_SHA3_STATE    pState,
+    _Out_writes_(pState->resultSize)    PBYTE                   pbResult);
+
+VOID
+SYMCRYPT_CALL
+SymCryptSha3StateExport(
+                                                        SYMCRYPT_BLOB_TYPE      type,
+    _In_                                                PCSYMCRYPT_SHA3_STATE   pState,
+    _Out_writes_bytes_(SYMCRYPT_SHA3_STATE_EXPORT_SIZE) PBYTE                   pbBlob);
+
+SYMCRYPT_ERROR
+SYMCRYPT_CALL
+SymCryptSha3StateImport(
+                                                        SYMCRYPT_BLOB_TYPE      type,
+    _Out_                                               PSYMCRYPT_SHA3_STATE    pState,
+    _In_reads_bytes_(SYMCRYPT_SHA3_STATE_EXPORT_SIZE)   PCBYTE                  pbBlob);
+
 
 VOID
 SYMCRYPT_CALL

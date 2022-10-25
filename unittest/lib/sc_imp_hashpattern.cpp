@@ -197,10 +197,23 @@ algImpCleanPerfFunction<ImpXxx,AlgXxx>( PBYTE buf1, PBYTE buf2, PBYTE buf3 )
 template<>
 NTSTATUS HashImp<ImpXxx, AlgXxx>::initWithLongMessage( ULONGLONG nBytes )
 {
-    memset( &state.sc.chain, 'b', sizeof( state.sc.chain ) );
-    state.sc.dataLengthL = nBytes;
-    state.sc.dataLengthH = 0;
-    state.sc.bytesInBuffer = nBytes & 0x3f;
+
+//
+// This test is not meaningful for SHA-3 hash functions as their state does not
+// store the length of the message. Still, this function performs in a similar 
+// fashion in order for the test to execute.
+//
+// SHA-3 state is different from the state of other hash functions, we need to 
+// separate its implementation at compile time.
+#if defined(HashImpSha3_256) || defined(HashImpSha3_384) || defined(HashImpSha3_512)
+        memset( &state.sc.state, 'b', sizeof( state.sc.state ) );
+        state.sc.mergedBytes = nBytes % state.sc.inputBlockSize;
+#else
+        memset( &state.sc.chain, 'b', sizeof( state.sc.chain ) );
+        state.sc.dataLengthL = nBytes;
+        state.sc.dataLengthH = 0;
+        state.sc.bytesInBuffer = nBytes & 0x3f;
+#endif
 
     SYMCRYPT_XxxStateCopy( &state.sc, &state.scHash.CONCAT2(ALG_name, State) );
     return STATUS_SUCCESS;

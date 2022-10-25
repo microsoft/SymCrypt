@@ -92,6 +92,10 @@ set(SOURCES_COMMON
     sha512Par.c
     sha512Par-ymm.c
     sha512-ymm.c
+    sha3.c
+    sha3_256.c
+    sha3_384.c
+    sha3_512.c
     sp800_108_hmacsha1.c
     sp800_108_hmacsha256.c
     sp800_108_hmacsha512.c

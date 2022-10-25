@@ -57,6 +57,12 @@ const char * AlgSha384::name = "Sha384";
 
 const char * AlgSha512::name = "Sha512";
 
+const char * AlgSha3_256::name = "Sha3-256";
+
+const char * AlgSha3_384::name = "Sha3-384";
+
+const char * AlgSha3_512::name = "Sha3-512";
+
 const char * AlgHmacMd5::name = "HmacMd5";
 
 const char * AlgHmacSha1::name = "HmacSha1";
@@ -483,6 +489,9 @@ const char * g_algorithmNames[] = {
     AlgSha256::name,
     AlgSha384::name,
     AlgSha512::name,
+    AlgSha3_256::name,
+    AlgSha3_384::name,
+    AlgSha3_512::name,
     AlgHmacMd5::name,
     AlgHmacSha1::name,
     AlgHmacSha256::name,

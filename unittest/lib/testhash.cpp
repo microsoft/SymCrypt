@@ -846,7 +846,7 @@ testHashKats()
 
             if( katIsFieldPresent( katItem, "export" ) )
             {
-                CHECK3( katItem.dataItems.size() == 1, "Too manyh items in EXPORT record engind at line %lld", katHash->m_line );
+                CHECK3( katItem.dataItems.size() == 1, "Too many items in EXPORT record ending at line %lld", katHash->m_line );
                 BString exportBlob = katParseData( katItem, "export" );
                 testExport( pHashMultiImp.get(), exportBlob.data(), exportBlob.size(), katHash->m_line );
                 continue;

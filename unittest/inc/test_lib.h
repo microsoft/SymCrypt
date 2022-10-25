@@ -569,6 +569,21 @@ public:
     const static char * name;
 };
 
+class AlgSha3_256{
+public:
+    const static char * name;
+};
+
+class AlgSha3_384{
+public:
+    const static char * name;
+};
+
+class AlgSha3_512{
+public:
+    const static char * name;
+};
+
 class AlgHmacMd5{
 public:
     const static char * name;

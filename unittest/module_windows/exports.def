@@ -348,6 +348,33 @@ EXPORTS
     SymCryptSha512StateCopy
     SymCryptSha512StateExport
     SymCryptSha512StateImport
+    SymCryptSha3_256
+    SymCryptSha3_256Algorithm
+    SymCryptSha3_256Append
+    SymCryptSha3_256Init
+    SymCryptSha3_256OidList
+    SymCryptSha3_256Result
+    SymCryptSha3_256StateCopy
+    SymCryptSha3_256StateExport
+    SymCryptSha3_256StateImport
+    SymCryptSha3_384
+    SymCryptSha3_384Algorithm
+    SymCryptSha3_384Append
+    SymCryptSha3_384Init
+    SymCryptSha3_384OidList
+    SymCryptSha3_384Result
+    SymCryptSha3_384StateCopy
+    SymCryptSha3_384StateExport
+    SymCryptSha3_384StateImport
+    SymCryptSha3_512
+    SymCryptSha3_512Algorithm
+    SymCryptSha3_512Append
+    SymCryptSha3_512Init
+    SymCryptSha3_512OidList
+    SymCryptSha3_512Result
+    SymCryptSha3_512StateCopy
+    SymCryptSha3_512StateExport
+    SymCryptSha3_512StateImport
     SymCryptSizeofDlgroupFromBitsizes
     SymCryptSizeofDlkeyFromDlgroup
     SymCryptSizeofEckeyFromCurve
