@@ -352,13 +352,15 @@ endif()
 if(NOT WIN32)
     add_compile_options(-Wno-trigraphs)
 
-    # Mitigate stack buffer overruns, and stack clash attacks
-    add_compile_options(-fstack-protector-strong)
-    add_compile_options(-Wstack-protector)
-    add_compile_options(--param ssp-buffer-size=4)
+    if (SYMCRYPT_STACK_PROTECTION)
+        # Mitigate stack buffer overruns, and stack clash attacks
+        add_compile_options(-fstack-protector-strong)
+        add_compile_options(-Wstack-protector)
+        add_compile_options(--param ssp-buffer-size=4)
 
-    if(CMAKE_C_COMPILER_ID MATCHES "GNU")
-        add_compile_options(-fstack-clash-protection)
+        if(CMAKE_C_COMPILER_ID MATCHES "GNU")
+            add_compile_options(-fstack-clash-protection)
+        endif()
     endif()
 
     if(SYMCRYPT_TARGET_ARCH MATCHES "AMD64|X86")

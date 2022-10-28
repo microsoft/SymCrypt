@@ -223,13 +223,13 @@ typedef int                 BOOL;
 typedef unsigned int        UINT;
 typedef unsigned long       ULONG;
 
-typedef signed char         INT8, *PINT8;
-typedef signed short        INT16, *PINT16;
-typedef signed int          INT32, *PINT32;
+typedef int8_t              INT8, *PINT8;
+typedef int16_t             INT16, *PINT16;
+typedef int32_t             INT32, *PINT32;
 typedef int64_t             INT64, *PINT64;
-typedef unsigned char       UINT8, *PUINT8;
-typedef unsigned short      UINT16, *PUINT16;
-typedef unsigned int        UINT32, *PUINT32;
+typedef uint8_t             UINT8, *PUINT8;
+typedef uint16_t            UINT16, *PUINT16;
+typedef uint32_t            UINT32, *PUINT32;
 typedef uint64_t            UINT64, *PUINT64;
 
 typedef uint32_t            ULONG32, *PULONG32;
@@ -526,10 +526,9 @@ SymCryptCpuFeaturesNeverPresent();
         #define SYMCRYPT_BSWAP32( x ) _byteswap_ulong(x)
         #define SYMCRYPT_BSWAP64( x ) _byteswap_uint64(x)
     #elif SYMCRYPT_GNUC
-        #include <byteswap.h>
-        #define SYMCRYPT_BSWAP16( x ) bswap_16(x)
-        #define SYMCRYPT_BSWAP32( x ) bswap_32(x)
-        #define SYMCRYPT_BSWAP64( x ) bswap_64(x)
+        #define SYMCRYPT_BSWAP16( x ) __builtin_bswap16(x)
+        #define SYMCRYPT_BSWAP32( x ) __builtin_bswap32(x)
+        #define SYMCRYPT_BSWAP64( x ) __builtin_bswap64(x)
     #elif SYMCRYPT_APPLE_CC
         #include <libkern/OSByteOrder.h>
         #define SYMCRYPT_BSWAP16( x ) OSSwapInt16(x)

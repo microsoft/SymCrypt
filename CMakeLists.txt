@@ -45,6 +45,18 @@ if(SYMCRYPT_FIPS_BUILD)
     add_compile_options(-DSYMCRYPT_DO_FIPS_SELFTESTS=1)
 endif()
 
+option(
+    SYMCRYPT_STACK_PROTECTION
+    "When enabled, SymCrypt will enable various stack protection mechanisms to protect against buffer overruns and the like. Only
+    applicable to non-Windows systems. Defaults to ON, but may need to be disabled for specialized targets such as embedded systems."
+    ON)
+
+option(
+    SYMCRYPT_PIC
+    "When enabled, SymCrypt will be compiled as position-independent code (PIC). Only applicable to non-Windows systems. Defaults to
+    ON, but may need to be disabled for specialized targets such as embedded systems."
+    ON)
+
 include(${CMAKE_SOURCE_DIR}/cmake-configs/SymCrypt-Platforms.cmake)
 
 if(NOT DEFINED CMAKE_BUILD_TYPE)
