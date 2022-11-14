@@ -30,18 +30,14 @@ BlStatusError (
 
 SYMCRYPT_CPU_FEATURES SYMCRYPT_CALL SymCryptCpuFeaturesNeverPresentEnvWindowsBootlibrary()
 {
-#if SYMCRYPT_CPU_X86 
+#if SYMCRYPT_CPU_X86 | SYMCRYPT_CPU_AMD64
     //
-    // We disable AVX2 for X86.
+    // We disable AVX2 for X86 (including X86-64)
     // This reduces codesize for bootmgr on PCAT which is codesize-constrained,
     // and is simpler than creating a separate PCAT-bootlib SymCrypt environment.
-    // We expect that very few AVX2-capable machines will boot x86, and x86 still has XMM-based parallel
-    // hashing, so the performance loss is quite small.
-    // We considered locking out AES-NI as well; that would reduce codesize, but slow down BitLocker boot on
-    // x86 which is an important mobile scenario.
     //
     return SYMCRYPT_CPU_FEATURE_AVX2;
-#elif SYMCRYPT_CPU_ARM | SYMCRYPT_CPU_ARM64 | SYMCRYPT_CPU_AMD64
+#elif SYMCRYPT_CPU_ARM | SYMCRYPT_CPU_ARM64
     return 0;
 #endif
 }
