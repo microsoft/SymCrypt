@@ -1026,6 +1026,7 @@ testDhtestGroups( DhImplementation  * pDh, INT64 line )
         blob1.cbPrivKey = SymCryptDlkeySizeofPrivateKey( pKey1 );
         blob2.cbPrivKey = SymCryptDlkeySizeofPrivateKey( pKey2 );
 
+        blob1.fPrivateModP = FALSE;
         blob2.fPrivateModP = TRUE;
 
         scError = SymCryptDlkeyGetValue(
@@ -1078,7 +1079,7 @@ testDhtestGroups( DhImplementation  * pDh, INT64 line )
             {
                 scError = SymCryptDlkeySetPrivateKeyLength( pKey1, SYMCRYPT_MAX(nBitsPrivGenerated+1, pGroup->nMinBitsPriv), 0 );
                 CHECK4( scError == SYMCRYPT_NO_ERROR, "Error setting private key length nBitsPrivGenerated+1 %d cbP %d", nBitsPrivGenerated+1, cbP );
-                
+
                 scError = SymCryptDlkeySetValue(
                         &blob1.abPrivKey[0], blob1.cbPrivKey,
                         &blob1.abPubKey[0], cbP,

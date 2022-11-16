@@ -2774,6 +2774,7 @@ DhImp<ImpCng, AlgDh>::setKey( PCDLKEY_TESTBLOB pcKeyBlob )
     BCRYPT_DH_KEY_BLOB * pBlob = (BCRYPT_DH_KEY_BLOB *) blobBuf;
     PBYTE p;
     UINT32 cbP;
+    UINT32 flags = 0;
 
     if( state.hKey != NULL )
     {
@@ -2802,13 +2803,20 @@ DhImp<ImpCng, AlgDh>::setKey( PCDLKEY_TESTBLOB pcKeyBlob )
     memcpy( p + cbP - pcKeyBlob->cbPrivKey, pcKeyBlob->abPrivKey, pcKeyBlob->cbPrivKey );
     p += cbP;
 
+    if( pcKeyBlob->fPrivateModP )
+    {
+        // Having a private key mod P is incompatible with FIPS SP800-56ar3 checks
+        // Ensure we have opted out of running these checks in BCrypt
+        flags |= BCRYPT_NO_KEY_VALIDATION;
+    }
+
     ntStatus = BCryptImportKeyPair( BCRYPT_DH_ALG_HANDLE,
                                     NULL,
                                     BCRYPT_DH_PRIVATE_BLOB,
                                     &state.hKey,
                                     blobBuf,
                                     (UINT32)(p - blobBuf),
-                                    0 );
+                                    flags );
     CHECK( NT_SUCCESS( ntStatus ), "?" );
 
 cleanup:
