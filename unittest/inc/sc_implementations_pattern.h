@@ -1,7 +1,7 @@
 //
 // SymCrypt implementation classes pattern
 //
-// Copyright (c) Microsoft Corporation. Licensed under the MIT license. 
+// Copyright (c) Microsoft Corporation. Licensed under the MIT license.
 //
 
 //
@@ -239,7 +239,7 @@ public:
     UINT64  offset;
     SYMCRYPT_CHACHA20_STATE state;
 };
-    
+
 template<>
 class RngSp800_90ImpState<ImpXxx, AlgAesCtrDrbg> {
 public:
@@ -252,6 +252,9 @@ public:
     SYMCRYPT_RNG_AES_FIPS140_2_STATE state;
 };
 
+template<>
+class RngSp800_90ImpState<ImpXxx, AlgDynamicRandom> {
+};
 
 template<class BaseAlg>
 class KdfImpState<ImpXxx, AlgPbkdf2, BaseAlg> {

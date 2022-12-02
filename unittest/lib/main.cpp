@@ -101,6 +101,8 @@ const char * AlgAesCtrDrbg::name = "AesCtrDrbg";
 
 const char * AlgAesCtrF142::name = "AesCtrF142";
 
+const char * AlgDynamicRandom::name = "DynamicRandom";
+
 const char * AlgParallelSha256::name = "ParSha256";
 const WCHAR * AlgParallelSha256::pwstrBasename = L"SHA256";
 
@@ -511,6 +513,7 @@ const char * g_algorithmNames[] = {
     AlgChaCha20Poly1305::name,
     AlgAesCtrDrbg::name,
     AlgAesCtrF142::name,
+    AlgDynamicRandom::name,
     AlgParallelSha256::name,
     AlgParallelSha384::name,
     AlgParallelSha512::name,
@@ -1294,6 +1297,7 @@ extern const CHAR * const SymCryptBuildString;
 VOID
 initTestInfrastructure( int argc, _In_reads_( argc ) char * argv[] )
 {
+    ULONGLONG moduleLoadStart, moduleLoadEnd;
     iprint( "SymCrypt unit test program, "
              "Library version %s\n"
              "Copyright (c) Microsoft Corporation. Licensed under the MIT license.\n", SymCryptBuildString );
@@ -1325,13 +1329,12 @@ initTestInfrastructure( int argc, _In_reads_( argc ) char * argv[] )
 
     if( !g_dynamicModulePath.empty() )
     {
+        moduleLoadStart = GET_PERF_CLOCK();
         g_dynamicSymCryptModuleHandle = loadDynamicModuleFromPath(g_dynamicModulePath.c_str());
+        moduleLoadEnd = GET_PERF_CLOCK();
         CHECK(g_dynamicSymCryptModuleHandle != NULL, "!");
-    }
 
-    if( g_dynamicSymCryptModuleHandle != NULL )
-    {
-        iprint("\nLoaded %s to %llx\n", g_dynamicModulePath.c_str(), (UINT64)g_dynamicSymCryptModuleHandle);
+        iprint("\nLoaded %s to %llx\nTook ~%d cycles.\n", g_dynamicModulePath.c_str(), (UINT64)g_dynamicSymCryptModuleHandle, moduleLoadEnd-moduleLoadStart);
 
         SCTEST_GET_DYNSYM(SymCryptModuleInit)(SYMCRYPT_CODE_VERSION_API, SYMCRYPT_CODE_VERSION_MINOR);
     }

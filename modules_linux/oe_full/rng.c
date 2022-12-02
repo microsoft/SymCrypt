@@ -54,3 +54,16 @@ SymCryptEntropySecureGet( _Out_writes_( cbResult ) PBYTE pbResult, SIZE_T cbResu
         SymCryptFatal( 'rngs' );
     }
 }
+
+// Fork is not supported in OE so no need to detect it
+VOID
+SYMCRYPT_CALL
+SymCryptRngForkDetectionInit()
+{}
+
+BOOLEAN
+SYMCRYPT_CALL
+SymCryptRngForkDetect()
+{
+    return FALSE;
+}

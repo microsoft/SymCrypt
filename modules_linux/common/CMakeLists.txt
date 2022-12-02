@@ -6,7 +6,7 @@ include_directories(${CMAKE_SOURCE_DIR}/inc)
 
 add_library(symcrypt_module_linux_common STATIC ${SOURCES})
 
-set(jitter_cflags "${CMAKE_C_FLAGS} -fwrapv -fvisibility=hidden")
+set(jitter_cflags "${CMAKE_C_FLAGS} -fwrapv -fvisibility=hidden -DCONFIG_CRYPTO_CPU_JITTERENTROPY_SECURE_MEMORY")
 set(jitter_ldflags "")
 
 if(SYMCRYPT_TARGET_ARCH MATCHES "X86")

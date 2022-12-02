@@ -51,3 +51,21 @@ SymCryptEntropySecureUninit();
 VOID
 SYMCRYPT_CALL
 SymCryptEntropySecureGet( _Out_writes_( cbResult ) PBYTE pbResult, SIZE_T cbResult );
+
+//
+// Fork detection function declarations.
+// RNG system uses these functions to reseed the RNG state if a fork is detected. Each module
+// must define these, as each module may have different constraints around whether forks are
+// possible and which system calls are available.
+//
+
+// Initializes fork detection system (may do nothing)
+VOID
+SYMCRYPT_CALL
+SymCryptRngForkDetectionInit();
+
+// Returns true if a fork has been detected since last call to SymCryptRngForkDetectionInit or
+// SymCryptRngForkDetect. (may always return false)
+BOOLEAN
+SYMCRYPT_CALL
+SymCryptRngForkDetect();

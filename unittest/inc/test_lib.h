@@ -681,6 +681,11 @@ public:
     const static char * name;
 };
 
+class AlgDynamicRandom{
+public:
+    const static char * name;
+};
+
 class AlgParallelSha256{
 public:
     const static char * name;

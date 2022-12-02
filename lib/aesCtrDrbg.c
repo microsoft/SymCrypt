@@ -11,7 +11,6 @@
 #include "precomp.h"
 
 #define SYMCRYPT_RNG_AES_KEY_SIZE                   (32)
-#define SYMCRYPT_RNG_AES_INTERNAL_SEED_SIZE         (32 + 16)
 #define SYMCRYPT_RNG_AES_KEY_AND_V_SIZE             (32 + 16)
 #define SYMCRYPT_RNG_AES_MAX_REQUEST_SIZE           (1<<16)
 #define SYMCRYPT_RNG_AES_MAX_REQUESTS_PER_RESEED    ((UINT64)1<<48)
@@ -380,7 +379,7 @@ VOID
 SYMCRYPT_CALL
 SymCryptRngAesUpdate(
     _Inout_                                                 PSYMCRYPT_RNG_AES_STATE     pState,
-    _In_reads_opt_( SYMCRYPT_RNG_AES_INTERNAL_SEED_SIZE )   PBYTE                       pbProvidedData,
+    _In_reads_opt_( SYMCRYPT_RNG_AES_INTERNAL_SEED_SIZE )   PCBYTE                      pbProvidedData,
     _In_opt_                                                PSYMCRYPT_AES_EXPANDED_KEY  pAesKey)
 //
 // Implement the CTR_DRBG Update function.
@@ -435,26 +434,19 @@ SymCryptRngAesUpdate(
 SYMCRYPT_ERROR
 SYMCRYPT_CALL
 SymCryptRngAesGenerateSmall(
-    _Inout_                 PSYMCRYPT_RNG_AES_STATE pRngState,
-    _Out_writes_(cbRandom)  PBYTE                   pbRandom,
-                            SIZE_T                  cbRandom )
+    _Inout_                             PSYMCRYPT_RNG_AES_STATE pRngState,
+    _Out_writes_( cbRandom )            PBYTE                   pbRandom,
+                                        SIZE_T                  cbRandom,
+    _In_reads_opt_( cbAdditionalInput ) PCBYTE                  pbAdditionalInput,
+                                        SIZE_T                  cbAdditionalInput )
 //
-// The core generation function that produces upto 64 kB at a time
-// This function returns an error code so that we can test the
-// error handling of having done more than 2^48 requests between reseeds,
-// as required by SP 800-90.
-// This is also the Generate function of our SP800-90 compliant implementation.
-// If fips140-2Check is true, this function runs the continuous self test required
-// by FIPS 140-2 (but not by FIPS 140-3 as far as we know).
+// This is the Generate function of our SP800-90 compliant implementation.
+// It follows the method specified in SP800-90A 10.2.1.5.2
 //
 {
     SYMCRYPT_AES_EXPANDED_KEY   aesKey;
     SYMCRYPT_ALIGN BYTE         buf[SYMCRYPT_AES_BLOCK_SIZE];
-
-    if( cbRandom == 0 )
-    {
-        return SYMCRYPT_NO_ERROR;
-    }
+    SYMCRYPT_ALIGN BYTE         abSeed[SYMCRYPT_RNG_AES_INTERNAL_SEED_SIZE];
 
     //
     // SP 800-90 9.3.1 requires a check on the length of the request.
@@ -466,12 +458,22 @@ SymCryptRngAesGenerateSmall(
     //
     // The requestCounter test is useless as it can never happen. (It would require
     // 2^48 calls to this function to trigger this error.)
-    // Unfortunatly, SP800-90 section 11 requires a test of this error, so we have
-    // to impelement the error.
+    // Unfortunately, SP800-90 section 11 requires a test of this error, so we have
+    // to implement the error.
     //
     if( pRngState->requestCounter > SYMCRYPT_RNG_AES_MAX_REQUESTS_PER_RESEED )
     {
         return SYMCRYPT_FIPS_FAILURE;
+    }
+
+    if( pbAdditionalInput != NULL )
+    {
+        // Update additional input using Derivation function
+        SymCryptRngAesDf( pbAdditionalInput, cbAdditionalInput, abSeed );
+        pbAdditionalInput = &abSeed[0];
+
+        // Update state with modified additional input
+        SymCryptRngAesUpdate( pRngState, pbAdditionalInput, NULL );
     }
 
     SymCryptAesExpandKeyEncryptOnly( &aesKey, pRngState->keyAndV, SYMCRYPT_RNG_AES_KEY_SIZE );
@@ -507,11 +509,12 @@ SymCryptRngAesGenerateSmall(
         SymCryptWipeKnownSize( buf, sizeof( buf ) );
     }
 
-    SymCryptRngAesUpdate( pRngState, NULL, &aesKey );
+    SymCryptRngAesUpdate( pRngState, pbAdditionalInput, &aesKey );
 
     ++pRngState->requestCounter;
 
     SymCryptWipeKnownSize( &aesKey, sizeof( aesKey ) );
+    SymCryptWipeKnownSize( abSeed, sizeof( abSeed ) );
 
     return SYMCRYPT_NO_ERROR;
 }
@@ -574,7 +577,7 @@ SymCryptRngAesGenerate( PSYMCRYPT_RNG_AES_STATE pRngState,
     while( cbRandom > SYMCRYPT_RNG_AES_MAX_REQUEST_SIZE )
     {
 
-        scError = SymCryptRngAesGenerateSmall( pRngState, pbRandom, SYMCRYPT_RNG_AES_MAX_REQUEST_SIZE );
+        scError = SymCryptRngAesGenerateSmall( pRngState, pbRandom, SYMCRYPT_RNG_AES_MAX_REQUEST_SIZE, NULL, 0 );
         if( scError != SYMCRYPT_NO_ERROR )
         {
             SymCryptFatal( 'acdx' );
@@ -583,10 +586,13 @@ SymCryptRngAesGenerate( PSYMCRYPT_RNG_AES_STATE pRngState,
         cbRandom -= SYMCRYPT_RNG_AES_MAX_REQUEST_SIZE;
     }
 
-    scError = SymCryptRngAesGenerateSmall( pRngState, pbRandom, cbRandom );
-    if( scError != SYMCRYPT_NO_ERROR )
+    if( cbRandom > 0 )
     {
-        SymCryptFatal( 'acdx' );
+        scError = SymCryptRngAesGenerateSmall( pRngState, pbRandom, cbRandom, NULL, 0 );
+        if( scError != SYMCRYPT_NO_ERROR )
+        {
+            SymCryptFatal( 'acdx' );
+        }
     }
 }
 
@@ -811,7 +817,7 @@ SymCryptRngAesTestGenerate( PSYMCRYPT_RNG_AES_STATE pRngState )
     //
 
     pRngState->requestCounter = SYMCRYPT_RNG_AES_MAX_REQUESTS_PER_RESEED + 1;
-    scError = SymCryptRngAesGenerateSmall( pRngState, abOutput, sizeof( g_abOutput1 ) );
+    scError = SymCryptRngAesGenerateSmall( pRngState, abOutput, sizeof( g_abOutput1 ), NULL, 0 );
 
     if( scError == SYMCRYPT_NO_ERROR )
     {
@@ -820,7 +826,7 @@ SymCryptRngAesTestGenerate( PSYMCRYPT_RNG_AES_STATE pRngState )
     pRngState->requestCounter = 7;
 
 #pragma prefast( suppress: 6202 26000, "buffer size of cbOutput is purposely incorrect");
-    scError = SymCryptRngAesGenerateSmall( pRngState, abOutput, SYMCRYPT_RNG_AES_MAX_REQUEST_SIZE + 1);
+    scError = SymCryptRngAesGenerateSmall( pRngState, abOutput, SYMCRYPT_RNG_AES_MAX_REQUEST_SIZE + 1, NULL, 0 );
 
     if( scError == SYMCRYPT_NO_ERROR )
     {
@@ -830,7 +836,7 @@ SymCryptRngAesTestGenerate( PSYMCRYPT_RNG_AES_STATE pRngState )
     //
     // Now test for correct output data.
     //
-    scError = SymCryptRngAesGenerateSmall( pRngState, abOutput, sizeof( g_abOutput1 ) );
+    scError = SymCryptRngAesGenerateSmall( pRngState, abOutput, sizeof( g_abOutput1 ), NULL, 0 );
 
     SymCryptInjectError( abOutput, sizeof( abOutput ) );
 

@@ -1,5 +1,6 @@
 set(SOURCES
     ../common/optional/rngfipsjitter.c
+    ../common/optional/rngforkdetection.c
     ../common/optional/rngsecureurandom.c)
 
 # Enable integrity verification if compiling for AMD64 or ARM64

@@ -7,13 +7,14 @@
 
 #include "precomp.h"
 #include "rng.h"
-
+#include "symcrypt_low_level.h"
 
 // Size of small entropy request cache, same as Windows
 #define  RANDOM_NUM_CACHE_SIZE         128
 #define  MAX_GENERATE_BEFORE_RESEED    8192
 
-pthread_mutex_t g_rngLock; // lock around access to g_AesRngState
+pthread_mutex_t g_rngLock; // lock around access to following global variable
+BOOLEAN g_RngStateInstantiated = FALSE;
 SYMCRYPT_RNG_AES_STATE g_AesRngState;
 
 BYTE g_randomBytesCache[RANDOM_NUM_CACHE_SIZE];
@@ -21,44 +22,70 @@ SIZE_T g_cbRandomBytesCache = 0;
 
 UINT32 g_rngCounter = 0; // reseed when counter exceeds MAX_GENERATE_BEFORE_RESEED, increments 1 per generate
 
-// Helper function for reseeding with entropy from Fips and secure sources, and user-provided pbEntropy
+// This function reseeds the RNG state using the Fips entropy source and the secure entropy source.
+// Seed is constructed as per SP800-90A for CTR_DRBG with a derivation function, that is
+// entropy_input || additional_input, where entropy input is from the SP800-90B compliant (if applicable)
+// Fips entropy source and the additional input is from the secure entropy source.
 VOID
-SymCryptRngReseed( PCBYTE pbEntropy, SIZE_T cbEntropy );
+SymCryptRngReseed()
+{
+    BYTE seed[64]; // 256 bits of entropy input and 256 bits of additional input
+
+    // Second half of seed is 'additional input' of SP800-90A for DRBG.
+    // Additional input is simply data from secure entropy source. Place directly in second half of seed buffer
+    SymCryptEntropySecureGet( seed + 32, 32 );
+
+    // Fill first half of seed with SP800-90B compliant (if applicable) Fips entropy source
+    SymCryptEntropyFipsGet( seed, 32 );
+
+    // Perform the reseed
+    SymCryptRngAesReseed( &g_AesRngState, seed, sizeof(seed) );
+
+    // Don't use any existing cached random data
+    g_cbRandomBytesCache = 0;
+
+    SymCryptWipeKnownSize( seed, sizeof(seed) );
+}
 
 // This function must be called during module initialization. It sets up
-// the internal SymCrypt RNG state by seeding from Fips and secure entropy sources.
-// First 64 bytes are from Fips source and last 64 are from the secure source, as per
-// SP800-90A section 10.2.1.3.2.
-// The Fips input constitutes the entropy_input and nonce, while secure input is
-// the personalization_string.
+// the mutex used in following calls to Rng infrastructure.
 VOID
 SYMCRYPT_CALL
 SymCryptRngInit()
 {
-    SYMCRYPT_ERROR error = SYMCRYPT_NO_ERROR;
-    BYTE seed[128];
-
     if( pthread_mutex_init( &g_rngLock, NULL ) != 0)
     {
         SymCryptFatal( 'rngi' );
     }
+}
+
+// This sets up the internal SymCrypt RNG state by initializing the entropy sources,
+// then instantiating the RNG state by seeding from Fips and secure entropy sources.
+// First 32 bytes are from Fips source and last 32 are from the secure source, as per
+// SP800-90A section 10.2.1.3.2.
+// The Fips input constitutes the entropy_input while secure input is the nonce.
+VOID
+SYMCRYPT_CALL
+SymCryptRngInstantiate()
+{
+    SYMCRYPT_ERROR error = SYMCRYPT_NO_ERROR;
+    BYTE seed[64];
 
     // Initialize both entropy sources
     SymCryptEntropyFipsInit();
     SymCryptEntropySecureInit();
 
-    // Get entropy and nonce from Fips entropy source
-    SymCryptEntropyFipsGet( seed, 64 );
+    // Get entropy from Fips entropy source
+    SymCryptEntropyFipsGet( seed, 32 );
 
-    // Get personalization string from secure entropy source
-    SymCryptEntropySecureGet( seed + 64, 64 );
+    // Get nonce and personalization string from secure entropy source
+    SymCryptEntropySecureGet( seed + 32, 32 );
 
     // Instantiate internal RNG state
     error = SymCryptRngAesInstantiate(
         &g_AesRngState,
         seed,
-        sizeof(seed)
-    );
+        sizeof(seed) );
 
     if( error != SYMCRYPT_NO_ERROR )
     {
@@ -68,6 +95,10 @@ SymCryptRngInit()
     }
 
     SymCryptWipeKnownSize( seed, sizeof(seed) );
+
+    SymCryptRngForkDetectionInit();
+
+    g_RngStateInstantiated = TRUE;
 }
 
 // This function must be called during module uninitialization. Cleans
@@ -102,15 +133,22 @@ SymCryptRandom( PBYTE pbRandom, SIZE_T cbRandom )
 
     pthread_mutex_lock( &g_rngLock );
 
-    // If counter is high enough, we reseed the RNG state
-    ++g_rngCounter;
-    if( g_rngCounter > MAX_GENERATE_BEFORE_RESEED )
+    if( !g_RngStateInstantiated )
     {
-        // Call the Module reseed function defined below - this will reseed for us with
-        // Fips and secure entropy sources
-        SymCryptRngReseed( NULL, 0 );
+        SymCryptRngInstantiate();
+    }
+    else
+    {
+        // If a fork is detected, or counter is high enough, we reseed the RNG state
+        ++g_rngCounter;
+        if( SymCryptRngForkDetect() || (g_rngCounter > MAX_GENERATE_BEFORE_RESEED) )
+        {
+            // Call the Module reseed function
+            // This will reseed for us with Fips and secure entropy sources
+            SymCryptRngReseed();
 
-        g_rngCounter = 0;
+            g_rngCounter = 0;
+        }
     }
 
     // Big or small request?
@@ -186,62 +224,43 @@ SymCryptRandom( PBYTE pbRandom, SIZE_T cbRandom )
     }
 
     pthread_mutex_unlock( &g_rngLock );
-
-    return;
 }
 
-// This function reseeds the RNG state using the Fips entropy source, pbEntropy that the user provides,
-// and the secure entropy source.
-// Seed is constructed as per SP800-90A for CTR_DRBG with a derivation function, that is
-// entropy_input || additional_input, where entropy input is the SP800-90B compliant (if applicable) Fips entropy source and the additional
-// input is the hash of pbEntropy and the secure entropy source.
+// This function mixes the provided entropy into the RNG state using a call to SymCryptRngAesGenerateSmall
+// We mix the caller provided entropy with secure entropy using SHA256 to form the 32-bytes of additional input
 VOID
 SYMCRYPT_CALL
 SymCryptProvideEntropy( PCBYTE pbEntropy, SIZE_T cbEntropy )
 {
-    pthread_mutex_lock( &g_rngLock );
-
-    SymCryptRngReseed( pbEntropy, cbEntropy );
-
-    pthread_mutex_unlock( &g_rngLock );
-}
-
-// RNG reseed function, no locking, used in SymCryptProvideEntropy and SymCryptRandom since they
-// both use this same flow of reseeding.
-// This function reseeds the RNG state using the Fips entropy source, pbEntropy that the user provides,
-// and the secure entropy source.
-// Seed is constructed as per SP800-90A for CTR_DRBG with a derivation function, that is
-// entropy_input || additional_input, where entropy input is the SP800-90B compliant (if applicable) Fips entropy source and the additional
-// input is the hash of pbEntropy and the secure entropy source.
-VOID
-SymCryptRngReseed( PCBYTE pbEntropy, SIZE_T cbEntropy )
-{
-    BYTE seed[128]; // 256 bits of entropy input and 256 bits of additional input
-    BYTE* hash = seed + 64; // Second half of seed will be output of SHA256 below
+    BYTE additionalInput[32];
+    SYMCRYPT_ERROR scError;
     SYMCRYPT_SHA256_STATE hashState;
 
-    // Second half of seed is 'additional input' of SP800-90A for DRBG. We hash together pbEntropy and secure
-    // entropy source to force it to size 256 bits
     SymCryptSha256Init( &hashState );
     SymCryptSha256Append( &hashState, pbEntropy, cbEntropy );
 
-    // Mix in data from secure entropy source. Place in first half of seed buffer to store until we hash it
-    SymCryptEntropySecureGet( seed, 64 );
-    SymCryptSha256Append( &hashState, seed, 64 );
+    // Mix in data from secure entropy source.
+    // Place in additionalInput buffer to store until we hash it.
+    SymCryptEntropySecureGet( additionalInput, 32 );
+    SymCryptSha256Append( &hashState, additionalInput, 32 );
 
-    // Get hash result
-    SymCryptSha256Result( &hashState, hash );
+    // Get hash result in additionalInput buffer.
+    SymCryptSha256Result( &hashState, additionalInput );
 
-    // Fill first half of seed with SP800-90B compliant (if applicable) Fips entropy source
-    SymCryptEntropyFipsGet( seed, 64 );
+    pthread_mutex_lock( &g_rngLock );
 
-    // Perform the reseed
-    SymCryptRngAesReseed( &g_AesRngState, seed, sizeof(seed) );
+    scError = SymCryptRngAesGenerateSmall(
+        &g_AesRngState,
+        NULL,
+        0,
+        additionalInput,
+        sizeof(additionalInput) );
+    if( scError != SYMCRYPT_NO_ERROR )
+    {
+        SymCryptFatal( 'acdx' );
+    }
 
-    // Don't use any existing cached random data
-    g_cbRandomBytesCache = 0;
+    pthread_mutex_unlock( &g_rngLock );
 
-    SymCryptWipeKnownSize( seed, sizeof(seed) );
-
-    return;
+    SymCryptWipeKnownSize( additionalInput, sizeof(additionalInput) );
 }

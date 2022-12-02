@@ -1615,6 +1615,79 @@ RngSp800_90Imp<ImpXxx, AlgAesCtrF142>::generate(  _Out_writes_( cbData ) PBYTE p
     ScShimSymCryptRngAesFips140_2Generate( &state.state, pbData, cbData );
 }
 
+#if IMP_UseSymCryptRandom
+///////////////////////////////////////////////////////
+// Dynamic Random
+//
+
+template<>
+VOID
+algImpKeyPerfFunction<ImpXxx,AlgDynamicRandom>( PBYTE buf1, PBYTE buf2, PBYTE buf3, SIZE_T keySize )
+{
+    UNREFERENCED_PARAMETER( buf1 );
+    UNREFERENCED_PARAMETER( buf2 );
+
+    ScShimSymCryptProvideEntropy( buf3, keySize );
+}
+
+
+template<>
+VOID
+algImpCleanPerfFunction<ImpXxx,AlgDynamicRandom>( PBYTE buf1, PBYTE buf2, PBYTE buf3 )
+{
+    UNREFERENCED_PARAMETER( buf1 );
+    UNREFERENCED_PARAMETER( buf2 );
+    UNREFERENCED_PARAMETER( buf3 );
+}
+
+template<>
+VOID
+algImpDataPerfFunction<ImpXxx,AlgDynamicRandom>( PBYTE buf1, PBYTE buf2, PBYTE buf3, SIZE_T dataSize )
+{
+    UNREFERENCED_PARAMETER( buf1 );
+    UNREFERENCED_PARAMETER( buf2 );
+
+    ScShimSymCryptRandom( buf3, dataSize );
+}
+
+template<>
+RngSp800_90Imp<ImpXxx, AlgDynamicRandom>::RngSp800_90Imp()
+{
+    m_perfKeyFunction     = &algImpKeyPerfFunction<ImpXxx, AlgDynamicRandom>;
+    m_perfCleanFunction   = &algImpCleanPerfFunction<ImpXxx, AlgDynamicRandom>;
+    m_perfDataFunction    = &algImpDataPerfFunction<ImpXxx, AlgDynamicRandom>;
+}
+
+template<>
+RngSp800_90Imp<ImpXxx, AlgDynamicRandom>::~RngSp800_90Imp()
+{
+}
+
+template<>
+NTSTATUS
+RngSp800_90Imp<ImpXxx, AlgDynamicRandom>::instantiate( _In_reads_( cbEntropy ) PCBYTE pbEntropy, SIZE_T cbEntropy )
+{
+    ScShimSymCryptProvideEntropy( pbEntropy, cbEntropy );
+
+    return STATUS_SUCCESS;
+}
+
+template<>
+NTSTATUS
+RngSp800_90Imp<ImpXxx, AlgDynamicRandom>::reseed( _In_reads_( cbEntropy ) PCBYTE pbEntropy, SIZE_T cbEntropy )
+{
+    ScShimSymCryptProvideEntropy( pbEntropy, cbEntropy );
+
+    return STATUS_SUCCESS;
+}
+
+template<>
+VOID
+RngSp800_90Imp<ImpXxx, AlgDynamicRandom>::generate(  _Out_writes_( cbData ) PBYTE pbData, SIZE_T cbData )
+{
+    ScShimSymCryptRandom( pbData, cbData );
+}
+#endif
 
 //=============================================================================
 // Parallel hashing

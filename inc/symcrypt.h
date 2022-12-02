@@ -816,7 +816,7 @@ SymCryptHashResult(
                                                                  SIZE_T          cbResult );
 //
 // SymCryptHashResult
-// 
+//
 // Finalizes the hash computation by calling the resultFunc member
 // of pHash.
 // The hash result is produced to an internal buffer and
@@ -4130,11 +4130,11 @@ SymCryptSshKdfExpandKey(
 // Process the key using the specified hash function and store the result in
 // SYMCRYPT_SSHKDF_EXPANDED_KEY structure. Once the key is expanded,
 // SymCryptSshKdfDerive can be called multiple times to generate keys for
-// different uses/labels. 
-// 
+// different uses/labels.
+//
 // After all the keys are derived from a particular "shared secret" key,
 // SYMCRYPT_SSHKDF_EXPANDED_KEY structure must be wiped.
-// 
+//
 // Parameters:
 //      - pExpandedKey  :   Pointer to a SYMCRYPT_SSHKDF_EXPANDED_KEY structure that
 //                          will contain the expanded key after the function returns.
@@ -4142,9 +4142,9 @@ SymCryptSshKdfExpandKey(
 //                          This function is saved in SYMCRYPT_SSHKDF_EXPANDED_KEY
 //                          so that it is also used by the SymCryptSshKdfDerive function.
 //      - pbKey, cbKey  :   Buffer contatining the secret key for the KDF.
-// 
+//
 // Returns SYMCRYPT_NO_ERROR
-// 
+//
 
 
 SYMCRYPT_ERROR
@@ -4162,7 +4162,7 @@ SymCryptSshKdfDerive(
 // Derive keys using the expanded key that was initialized with SymCryptSshKdfExpandKey
 // along with other inputs. This function can be called consecutively with varying label
 // values to generate keys for different purposes as defined in the RFC.
-// 
+//
 // Parameters:
 //      - pExpandedKey              :   Pointer to a SYMCRYPT_SSHKDF_EXPANDED_KEY structure that is
 //                                      initialized by a prior call to SymCryptSshKdfExpandKey.
@@ -4174,7 +4174,7 @@ SymCryptSshKdfDerive(
 //      - pbSessionId, cbSessionId  :   Buffer pointing to the session identifier. cbSessionId must be equal
 //                                      to the output size of the hash function passed to SymCryptSshKdfExpandKey.
 //      - pbOutput, cbOutput        :   Buffer to store the derived key. Exactly cbOutput bytes of output will be generated.
-// 
+//
 // Returns SYMCRYPT_NO_ERROR
 //
 
@@ -4192,7 +4192,7 @@ SymCryptSshKdf(
                             SIZE_T              cbSessionId,
     _Out_writes_(cbOutput)  PBYTE               pbOutput,
                             SIZE_T              cbOutput);
-// 
+//
 // This function is a wrapper for using SymCryptSshKdfExpandKey followed by SymCryptSshKdfDerive
 // in order to produce SSH-KDF output.
 //
@@ -4231,23 +4231,23 @@ SymCryptSrtpKdfExpandKey(
     _In_reads_(cbKey)    PCBYTE                          pbKey,
                          SIZE_T                          cbKey);
 //
-// Process the key and store the result in SYMCRYPT_SRTPKDF_EXPANDED_KEY structure. 
-// Once the key is expanded, SymCryptSrtpKdfDerive can be called multiple times to 
-// generate keys for different uses/labels. 
-// 
+// Process the key and store the result in SYMCRYPT_SRTPKDF_EXPANDED_KEY structure.
+// Once the key is expanded, SymCryptSrtpKdfDerive can be called multiple times to
+// generate keys for different uses/labels.
+//
 // After all the keys are derived from a particular "shared secret" key,
 // SYMCRYPT_SRTPKDF_EXPANDED_KEY structure must be wiped.
-// 
+//
 // Parameters:
 //      - pExpandedKey  :   Pointer to a SYMCRYPT_SRTPKDF_EXPANDED_KEY structure that
 //                          will contain the expanded key after the function returns.
 //      - pbKey, cbKey  :   Buffer contatining the secret key for the KDF. cbKey must be
 //                          a valid AES key size (16-, 24-, or 32-bytes).
-// 
+//
 // Returns:
 //      SYMCRYPT_WRONG_KEY_SIZE : If cbKey is not a valid AES key size
 //      SYMCRYPT_NO_ERROR       : On success
-// 
+//
 
 SYMCRYPT_ERROR
 SYMCRYPT_CALL
@@ -4265,7 +4265,7 @@ SymCryptSrtpKdfDerive(
 // Derive keys using the expanded key that was initialized with SymCryptSrtpKdfExpandKey
 // along with other inputs. This function can be called consecutively with varying label
 // values to generate keys for different purposes as defined in the RFC.
-// 
+//
 // Parameters:
 //      - pExpandedKey              :   Pointer to a SYMCRYPT_SRTPKDF_EXPANDED_KEY structure that is
 //                                      initialized by a prior call to SymCryptSrtpKdfExpandKey.
@@ -4281,9 +4281,9 @@ SymCryptSrtpKdfDerive(
 //                                      to be 48-bits by Errata ID 3712. SRTP index values are defined to be 48-bits.
 //      - label                     :   Label value used to indicate the type of the derived key.
 //      - pbOutput, cbOutput        :   Buffer to store the derived key. Exactly cbOutput bytes of output will be generated.
-// 
+//
 // Returns:
-//      SYMCRYPT_INVALID_ARGUMENT   :   If cbSalt is not 14-bytes, or uKeyDerivationRate in invalid.                                      
+//      SYMCRYPT_INVALID_ARGUMENT   :   If cbSalt is not 14-bytes, or uKeyDerivationRate in invalid.
 //      SYMCRYPT_NO_ERROR           :   On success.
 //
 
@@ -4301,7 +4301,7 @@ SymCryptSrtpKdf(
                                 BYTE    label,
     _Out_writes_(cbOutput)      PBYTE   pbOutput,
                                 SIZE_T  cbOutput);
-// 
+//
 // This function is a wrapper for using SymCryptSrtpKdfExpandKey followed by SymCryptSrtpKdfDerive
 // in order to produce SRTP-KDF output.
 //
@@ -4428,7 +4428,7 @@ SymCryptRngAesInstantiate(
 // Initialize a new SYMCRYPT_RNG_AES_STATE, and seed it with the seed material.
 //
 // 'Instantiate' is the SP800-90 terminology.
-// The seed material must be at least SYMCRYPT_RNG_AES_MIN_SEED_SIZE bytes,
+// The seed material must be at least SYMCRYPT_RNG_AES_MIN_INSTANTIATE_SIZE bytes,
 // and at most SYMCRYPT_RNG_AES_MAX_SEED_SIZE bytes.
 //
 // This implementation always uses 256-bit security strength, and
@@ -4446,7 +4446,7 @@ SymCryptRngAesInstantiate(
 //  Nonce: must either be a random value with 128-bits of entropy, or a value that does not
 //      repeat with a probability of more than 2^{-128}.
 // Together these requirements imply that cbSeedMaterial should be at least
-//  SYMCRYPT_RNG_AES_MIN_SEED_SIZE
+//  SYMCRYPT_RNG_AES_MIN_INSTANTIATE_SIZE
 //
 // This function only returns an error if the cbSeedMaterial value is out of range.
 //

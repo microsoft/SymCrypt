@@ -160,6 +160,7 @@ const ALG_MEASURE_PARAMS g_algMeasureParams[] =
     "ChaCha20Poly1305"      , 0, {32}, {64, 128, 256, 512, 4096},
     "AesCtrDrbg"            , 0, {48}, {128,512,4096},
     "AesCtrF142"            , 0, {48}, {128,512,4096},
+    "DynamicRandom"         , 0, {}, {8,16,24,32,128,512,4096},
     "ParSha256"             , 0, {}, {1024,1 << 14},
     "ParSha384"             , 0, {}, {1024,1 << 14},
     "ParSha512"             , 0, {}, {1024,1 << 14},

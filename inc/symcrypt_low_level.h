@@ -2654,6 +2654,35 @@ SymCryptEcpointMultiScalarMul(
 //  - cbScratch >= SYMCRYPT_SCRATCH_BYTES_FOR_MULTI_SCALAR_ECURVE_OPERATIONS( pCurve, nPoints ).
 //
 
+
+////////////////////////////////////////////////////////////////////////////
+// AES-CTR-DRBG
+//
+
+#define SYMCRYPT_RNG_AES_INTERNAL_SEED_SIZE         (32 + 16)
+
+SYMCRYPT_ERROR
+SYMCRYPT_CALL
+SymCryptRngAesGenerateSmall(
+    _Inout_                             PSYMCRYPT_RNG_AES_STATE pRngState,
+    _Out_writes_( cbRandom )            PBYTE                   pbRandom,
+                                        SIZE_T                  cbRandom,
+    _In_reads_opt_( cbAdditionalInput ) PCBYTE                  pbAdditionalInput,
+                                        SIZE_T                  cbAdditionalInput );
+//
+// Generate random output from the state per SP 800-90.
+// Callers should almost always use SymCryptRngAesGenerate from symcrypt.h instead.
+//
+// This is the core generation function that produces up to 64 kB at a time
+// This function returns an error code so that we can test the
+// error handling of having done more than 2^48 requests between reseeds,
+// as required by SP 800-90.
+// This is also the Generate function of our SP800-90 compliant implementation.
+// If pRngState->fips140-2Check is true, this function runs the continuous self test
+// required by FIPS 140-2 (but not by FIPS 140-3 as far as we know).
+// pbAdditionalInput is optional.
+//
+
 //=====================================================
 // ECDSA-EX
 //
@@ -2806,7 +2835,7 @@ SymCrypt802_11SaeCustomCreatePTGeneric(
     _Out_writes_( cbPT )                                    PBYTE                               pbPT,
                                                             SIZE_T                              cbPT );
 //
-// Generic version of the SymCrypt802_11SaeCustomCreatePT() function that allows elliptic curve 
+// Generic version of the SymCrypt802_11SaeCustomCreatePT() function that allows elliptic curve
 // group selection.
 // Generate the PT secret element for use with the SAE Hash-to-Element algorithm, as described in
 // section 12.4.4.2.3 of the 802.11 spec ("Hash-to-curve generation of the password element with
@@ -2856,7 +2885,7 @@ SymCrypt802_11SaeCustomInitH2EGeneric(
     _Inout_updates_opt_( cbMask )   PBYTE                               pbMask,
                                     SIZE_T                              cbMask );
 //
-// Generic version of the SymCrypt802_11SaeCustomInitH2E() function that allows elliptic curve 
+// Generic version of the SymCrypt802_11SaeCustomInitH2E() function that allows elliptic curve
 // group selection.
 // Initialize the state object  using the Hash-to-Element algorithm, using the PT value calculated
 // by SymCrypt802_11SaeCustomCreatePT.

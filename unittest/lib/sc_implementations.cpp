@@ -365,6 +365,7 @@ addSymCryptAlgs()
     if (g_dynamicSymCryptModuleHandle)
     {
         addSymCryptImplementationToGlobalList<ImpScDynamic>();
+        addImplementationToGlobalList<RngSp800_90Imp<ImpScDynamic, AlgDynamicRandom>>();
     }
 }
 
