@@ -146,6 +146,12 @@ typedef struct _HASH_INFO {
 } HASH_INFO;
 typedef const HASH_INFO * PCHASH_INFO;
 
+typedef struct _DLGROUP_INFO {
+    PCDLGROUP_TESTBLOB pBlob;
+    PSYMCRYPT_DLGROUP pGroup;
+} DLGROUP_INFO;
+typedef DLGROUP_INFO * PDLGROUP_INFO;
+
 template<class Implementation>
 PCHASH_INFO getHashInfo(PCSTR pcstrName);
 

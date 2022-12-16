@@ -1,5 +1,6 @@
 LIBRARY symcrypttestmodule.dll
 EXPORTS
+    SctestDisableCpuFeatures
     SymCrypt3DesBlockCipher
     SymCrypt3DesCbcDecrypt
     SymCrypt3DesCbcEncrypt

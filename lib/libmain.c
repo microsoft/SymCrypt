@@ -261,7 +261,7 @@ SymCryptXorBytes(
 UINT32
 SymCryptUint32Bitsize( UINT32 value )
 //
-// Some CPUs/compilers have intriniscs for this,
+// Some CPUs/compilers have intrinsics for this,
 // but this is portable and works everywhere.
 //
 {

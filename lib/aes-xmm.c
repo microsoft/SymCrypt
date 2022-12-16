@@ -887,7 +887,7 @@ SymCryptAesCtrMsb64Xmm(
     chain = _mm_shuffle_epi8( chain, BYTE_REVERSE_ORDER );
     _mm_storeu_si128( (__m128i *) pbChainingValue, chain );
 }
-#pragma runtime_checks( "u", off )
+#pragma runtime_checks( "u", restore )
 #pragma warning(pop)
 
 /*
@@ -1592,6 +1592,9 @@ SymCryptAesGcmEncryptStitchedXmm(
     _mm_storeu_si128( (__m128i *) pState, state );
 }
 
+#pragma warning(push)
+#pragma warning( disable:4701 )
+#pragma runtime_checks( "u", off )
 // This call is functionally identical to:
 // SymCryptGHashAppendDataPclmulqdq(   expandedKeyTable,
 //                                     pState,
@@ -1750,5 +1753,7 @@ SymCryptAesGcmDecryptStitchedXmm(
     _mm_storeu_si128( (__m128i *) pbChainingValue, chain );
     _mm_storeu_si128((__m128i *)pState, state );
 }
+#pragma runtime_checks( "u", restore )
+#pragma warning(pop)
 
 #endif // CPU_X86 | CPU_AMD64

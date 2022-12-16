@@ -1,20 +1,34 @@
 //
-// Copyright (c) Microsoft Corporation. Licensed under the MIT license. 
+// Copyright (c) Microsoft Corporation. Licensed under the MIT license.
 //
 
 PSTR testDriverName = TESTDRIVER_NAME;
 
-//
-// These two functions should work as is, but have yet to be tested against a real SymCrypt dll
-//
 PVOID loadDynamicModuleFromPath(PCSTR dynamicModulePath)
 {
     return (PVOID) LoadLibraryExA(dynamicModulePath, NULL, 0);
 }
 
-PVOID getDynamicSymbolPointerFromString(PVOID hModule, PCSTR pSymbolName)
+PVOID getDynamicSymbolPointerFromString(PVOID hModule, PCSTR pSymbolName, SCTEST_DYNSYM_TYPE symbolType)
 {
-    return (PVOID) GetProcAddress((HMODULE) hModule, pSymbolName);
+    static decltype(&getDynamicSymbolPointerFromString) pSctestGetSymbolAddress = nullptr;
+    static bool lookupAttempted = false;
+
+    if (!lookupAttempted)
+    {
+        pSctestGetSymbolAddress = (decltype(&getDynamicSymbolPointerFromString))GetProcAddress((HMODULE)hModule, "SctestGetSymbolAddress");
+        lookupAttempted = true;
+    }
+
+    if (pSctestGetSymbolAddress == nullptr)
+    {
+        // Ignore symbolType if looking up symbols directly in dynamic module
+        return GetProcAddress((HMODULE)hModule, pSymbolName);
+    }
+    else
+    {
+        return pSctestGetSymbolAddress((HMODULE)hModule, pSymbolName, symbolType);
+    }
 }
 
 #if SYMCRYPT_CPU_X86 | SYMCRYPT_CPU_AMD64

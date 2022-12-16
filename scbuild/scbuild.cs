@@ -592,7 +592,7 @@ class ScBuild
     }
 
 
-    public void CopySymCryptToRelaseDir( string arch )
+    public void CopySymCryptToReleaseDir( string arch )
     {
         // We have to construct our own object_root as the copy command runs in the environment
         // of the razzle that called scbuild, not the razzle that builds the flavour.
@@ -620,6 +620,14 @@ class ScBuild
         string testFileName5 = object_root + @"\symcrypt\unittest\module_windows\" + objDirName(arch) + "symcrypttestmodule";
         CopyFile(testFileName5 + ".dll", @"release\lib\" + arch + @"\symcrypttestmodule.dll");
         CopyFile(testFileName5 + ".pdb", @"release\lib\" + arch + @"\symcrypttestmodule.pdb");
+
+        string testFileName6 = object_root + @"\symcrypt\unittest\module_windows_sys_um\" + objDirName(arch) + "SymCryptKernelTestModule_UM";
+        CopyFile(testFileName6 + ".dll", @"release\lib\" + arch + @"\SymCryptKernelTestModule_UM.dll");
+        CopyFile(testFileName6 + ".pdb", @"release\lib\" + arch + @"\SymCryptKernelTestModule_UM.pdb");
+
+        string testFileName7 = object_root + @"\symcrypt\unittest\module_windows_sys_km\" + objDirName(arch) + "SymCryptKernelTestModule";
+        CopyFile(testFileName7 + ".sys", @"release\lib\" + arch + @"\SymCryptKernelTestModule.sys");
+        CopyFile(testFileName7 + ".pdb", @"release\lib\" + arch + @"\SymCryptKernelTestModule.pdb");
     }
 
     public string objDirName( string arch )
@@ -669,7 +677,7 @@ class ScBuild
         foreach( string flavor in flavors )
         {
             Build( "", flavor );
-            CopySymCryptToRelaseDir( flavor );
+            CopySymCryptToReleaseDir( flavor );
         }
 
         if( m_nBuildError > 0 )

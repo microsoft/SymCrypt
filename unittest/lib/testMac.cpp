@@ -552,7 +552,7 @@ testMacAlgorithms()
     }
 
     if( (g_dynamicSymCryptModuleHandle != NULL) &&
-        (SCTEST_LOOKUP_DYNSYM(SymCryptMarvin32) != NULL) )
+        (SCTEST_LOOKUP_DYNSYM(SymCryptMarvin32, TRUE) != NULL) )
     {
         g_useDynamicFunctionsInTestCall = TRUE;
         ScDispatchSymCryptMarvin32( ScDispatchSymCryptMarvin32DefaultSeed, (PCBYTE)"Marvin", 6, bufDynamic );

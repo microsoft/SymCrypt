@@ -84,6 +84,24 @@ for %%a in (amd64chk amd64fre armchk armfre x86chk x86fre arm64fre arm64chk) do 
 	echo Copy failed
 	goto error
 	)
+	copy %ScTempDir%\lib\%%a\symcrypttestmodule.dll %%a\symcrypttestmodule.dlx
+	@if ERRORLEVEL 1 (
+	echo Copy failed
+	goto error
+	)
+)
+
+for %%a in (amd64chk amd64fre arm64fre arm64chk) do (
+	copy %ScTempDir%\lib\%%a\SymCryptKernelTestModule_UM.dll %%a\symcryptkerneltestmodule_um.dlx
+	@if ERRORLEVEL 1 (
+	echo Copy failed
+	goto error
+	)
+	copy %ScTempDir%\lib\%%a\SymCryptKernelTestModule.sys %%a\symcryptkerneltestmodule.syx
+	@if ERRORLEVEL 1 (
+	echo Copy failed
+	goto error
+	)
 )
 
 popd

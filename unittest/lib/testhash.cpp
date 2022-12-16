@@ -718,7 +718,7 @@ VOID
 testExport( HashMultiImp * pHash, PCBYTE pbExport, SIZE_T cbExport, LONGLONG line )
 {
     //
-    // We export the state after hashing 1657 bytes of the message consiting of
+    // We export the state after hashing 1657 bytes of the message consisting of
     // bytes 0, 1, 2, ..., 255, 0, 1, ...
     // 1657 is the golden ratio times 1024.
     //

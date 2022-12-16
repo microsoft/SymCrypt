@@ -421,12 +421,12 @@ typedef struct _KDF_HKDF_ARGUMENTS {
 } KDF_HKDF_ARGUMENTS;
 
 typedef struct _KDF_SSHKDF_ARGUMENTS {
-    PCSYMCRYPT_HASH hash;
-    PCBYTE          pbHashValue;
-    SIZE_T          cbHashValue;
-    PCBYTE          pbSessionId;
-    SIZE_T          cbSessionId;
-    BYTE            label;
+    PCSTR       hashName;
+    PCBYTE      pbHashValue;
+    SIZE_T      cbHashValue;
+    PCBYTE      pbSessionId;
+    SIZE_T      cbSessionId;
+    BYTE        label;
 } KDF_SSHKDF_ARGUMENTS;
 
 typedef struct _KDF_SRTPKDF_ARGUMENTS {
@@ -605,6 +605,10 @@ typedef struct _DLGROUP_TESTBLOB {
     PCSYMCRYPT_HASH         pHashAlgorithm;     // Used for FIPS group generation
     UINT32                  cbSeed;             // FIPS group generation seed
     UINT32                  genCounter;         // FIPS group generation counter
+
+    BOOLEAN                 fHasPrimeQ;         // Flag that specifies whether the object has a Q parameter
+    BOOLEAN                 isSafePrimeGroup;   // Boolean indicating if this is a Safe Prime group
+    PCSTR                   pcstrHashAlgName;   // Used for FIPS group generation in multi-implementation tests
 
     BYTE    abPrimeP[DLKEY_MAXKEYSIZE];     // cbPrimeP bytes
     BYTE    abPrimeQ[DLKEY_MAXKEYSIZE];     // cbPrimeQ bytes (optional)

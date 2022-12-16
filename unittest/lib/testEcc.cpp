@@ -58,21 +58,37 @@ SYMCRYPT_ECC_CURVES rgbInternalCurves[] = {
 #define SYMCRYPT_ECC_SHA384                   "SHA384"
 #define SYMCRYPT_ECC_SHA512                   "SHA512"
 
+BOOL getHashAlgorithm(LPCSTR pszHashName, ULONGLONG line, PCSYMCRYPT_HASH* ppHash)
+{
+    if( strcmp( pszHashName, SYMCRYPT_ECC_SHA1 ) == 0 )
+    {
+        *ppHash = ScDispatchSymCryptSha1Algorithm;
+    }
+    else if( strcmp( pszHashName, SYMCRYPT_ECC_SHA224 ) == 0 )
+    {
+        dprint( "Ecdsa record at line %lld is skipped due to unsupported hash function (%s).\n", line, pszHashName );
+        return FALSE;
+    }
+    else if( strcmp( pszHashName, SYMCRYPT_ECC_SHA256 ) == 0 )
+    {
+        *ppHash = ScDispatchSymCryptSha256Algorithm;
+    }
+    else if( strcmp( pszHashName, SYMCRYPT_ECC_SHA384 ) == 0 )
+    {
+        *ppHash = ScDispatchSymCryptSha384Algorithm;
+    }
+    else if( strcmp( pszHashName, SYMCRYPT_ECC_SHA512 ) == 0 )
+    {
+        *ppHash = ScDispatchSymCryptSha512Algorithm;
+    }
+    else
+    {
+        dprint( "Assuming no hash function at line %lld for unknown hash function (%s).\n", line, pszHashName );
+        *ppHash = NULL;
+    }
 
-typedef struct _SYMCRYPT_ECC_HASH_ALGORITHMS {
-    LPSTR                       pszHashName;
-    PCSYMCRYPT_HASH             pHash;
-} SYMCRYPT_ECC_HASH_ALGORITHMS;
-
-SYMCRYPT_ECC_HASH_ALGORITHMS rgbHashAlgorithms[] = {
-    { SYMCRYPT_ECC_SHA1,        SymCryptSha1Algorithm   },
-    { SYMCRYPT_ECC_SHA224,      NULL                    },
-    { SYMCRYPT_ECC_SHA256,      SymCryptSha256Algorithm },
-    { SYMCRYPT_ECC_SHA384,      SymCryptSha384Algorithm },
-    { SYMCRYPT_ECC_SHA512,      SymCryptSha512Algorithm },
-};
-
-#define NUM_OF_ECC_HASH_ALGORITHMS       (sizeof(rgbHashAlgorithms) / sizeof(rgbHashAlgorithms[0]))
+    return TRUE;
+}
 
 ////////////////////////////////////////////////////////////////////
 //
@@ -912,6 +928,7 @@ testEcdsaVerify(
 
     if( !SCTEST_LOOKUP_DISPATCHSYM(SymCryptEckeyAllocate) ||
         !SCTEST_LOOKUP_DISPATCHSYM(SymCryptHash) ||
+        !SCTEST_LOOKUP_DISPATCHSYM(SymCryptHashResultSize) ||
         !SCTEST_LOOKUP_DISPATCHSYM(SymCryptEckeySetValue) ||
         !SCTEST_LOOKUP_DISPATCHSYM(SymCryptEcDsaVerify) ||
         !SCTEST_LOOKUP_DISPATCHSYM(SymCryptEckeyFree) )
@@ -927,10 +944,10 @@ testEcdsaVerify(
     // Hash the message
     if( pHash != NULL )
     {
-        CHECK3( SYMCRYPT_SHA512_RESULT_SIZE >= pHash->resultSize, "Hash result too big for ECDSA record at line %lld", line );
-        ScDispatchSymCryptHash( pHash, pbMsg, cbMsg, pbHashValue, pHash->resultSize );
+        cbDigest = (UINT32) ScDispatchSymCryptHashResultSize( pHash );
+        CHECK3( SYMCRYPT_SHA512_RESULT_SIZE >= cbDigest, "Hash result too big for ECDSA record at line %lld", line );
+        ScDispatchSymCryptHash( pHash, pbMsg, cbMsg, pbHashValue, cbDigest );
         pbDigest = &pbHashValue[0];
-        cbDigest = pHash->resultSize;
     } else {
         pbDigest = pbMsg;
         cbDigest = (UINT32) cbMsg;
@@ -1044,19 +1061,13 @@ testEcdsaSign(
     CHECK3( piK!=NULL, "Failure to allocate random exponent K for ECDSA record at line %lld", line );
 
     // Hash the message
-    if( pHash != NULL )
-    {
-        CHECK3( SYMCRYPT_SHA512_RESULT_SIZE >= pHash->resultSize, "Hash result too big for ECDSA record at line %lld", line );
-        ScDispatchSymCryptHash( pHash, pbMsg, cbMsg, pbHashValue, pHash->resultSize );
-        pbDigest = &pbHashValue[0];
-        cbDigest = pHash->resultSize;
-    } else {
-        pbDigest = pbMsg;
-        cbDigest = (UINT32) cbMsg;
-    }
-    CHECK( pHash != NULL, "Unsupported ")
-    CHECK3( SYMCRYPT_SHA512_RESULT_SIZE >= pHash->resultSize, "Hash result too big for ECDSA record at line %lld", line );
-    ScDispatchSymCryptHash( pHash, pbMsg, cbMsg, pbHashValue, pHash->resultSize );
+    CHECK( pHash != NULL, "Unsupported test case for ECDSA sign")
+
+    pbDigest = &pbHashValue[0];
+    cbDigest = (UINT32) ScDispatchSymCryptHashResultSize( pHash );
+
+    CHECK3( SYMCRYPT_SHA512_RESULT_SIZE >= cbDigest, "Hash result too big for ECDSA record at line %lld", line );
+    ScDispatchSymCryptHash( pHash, pbMsg, cbMsg, pbHashValue, cbDigest );
 
     // Set the new key
     scError = ScDispatchSymCryptEckeySetValue(
@@ -1263,7 +1274,6 @@ testEccEcdsaKats()
     int i = 0;
     BOOLEAN bCurveFound = FALSE;
     PSYMCRYPT_ECURVE pCurve = NULL;
-    BOOLEAN bHashFound = FALSE;
     PCSYMCRYPT_HASH pHash = NULL;
 
     UINT32 cEcdsaSignSamples = 0;
@@ -1324,29 +1334,9 @@ testEccEcdsaKats()
                 const KAT_DATA_ITEM * pKatHash = findDataItem( katItem, "hash" );
                 CHECK3( pKatHash != NULL, "No hash data item in ECDSA record at line %lld", line );
 
-                bHashFound = FALSE;
-                for( i=0; i < NUM_OF_ECC_HASH_ALGORITHMS; i++ )
+                if( !getHashAlgorithm( pKatHash->data.substr(1,pKatHash->data.size()-2).c_str(), line, &pHash ) )
                 {
-                    if ( strcmp( pKatHash->data.substr(1,pKatHash->data.size()-2).c_str(), rgbHashAlgorithms[i].pszHashName ) == 0 )
-                    {
-                        bHashFound = TRUE;
-                        break;
-                    }
-                }
-
-                if (bHashFound)
-                {
-                    pHash = rgbHashAlgorithms[i].pHash;
-                    if( pHash == NULL )
-                    {
-                        dprint( "Ecdsa record at line %lld is skipped due to unsupported hash function (%s).\n", line, rgbHashAlgorithms[i].pszHashName);
-                        continue;   // Skip this record
-                    }
-                }
-                else
-                {
-                    dprint( "Assuming no hash function for unknown hash function.\n", line);
-                    pHash = NULL;
+                    continue; // skip this record
                 }
 
                 BString katMsg = katParseData( katItem, "msg" );
@@ -1410,29 +1400,9 @@ testEccEcdsaKats()
                 const KAT_DATA_ITEM * pKatHash = findDataItem( katItem, "hash" );
                 CHECK3( pKatHash != NULL, "No hash data item in ECDSA record at line %lld", line );
 
-                bHashFound = FALSE;
-                for( i=0; i < NUM_OF_ECC_HASH_ALGORITHMS; i++ )
+                if( !getHashAlgorithm( pKatHash->data.substr(1,pKatHash->data.size()-2).c_str(), line, &pHash ) )
                 {
-                    if ( strcmp( pKatHash->data.substr(1,pKatHash->data.size()-2).c_str(), rgbHashAlgorithms[i].pszHashName ) == 0 )
-                    {
-                        bHashFound = TRUE;
-                        break;
-                    }
-                }
-
-                if (bHashFound)
-                {
-                    pHash = rgbHashAlgorithms[i].pHash;
-                    if( pHash == NULL )
-                    {
-                        dprint( "Ecdsa record at line %lld is skipped due to unsupported hash function (%s).\n", line, rgbHashAlgorithms[i].pszHashName);
-                        continue;   // Skip this record
-                    }
-                }
-                else
-                {
-                    dprint( "Assuming no hash function for unknown hash function.\n", line);
-                    pHash = NULL;
+                    continue; // skip this record
                 }
 
                 BString katMsg = katParseData( katItem, "msg" );

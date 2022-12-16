@@ -33,7 +33,7 @@ UINT32 g_nDhNamedGroups = 0;
 // Creating DL groups for all DH and DSA tests that need random groups
 
 VOID
-addDlgroupToGlobalTestBlobArray( UINT32 nBitsP, PSYMCRYPT_DLGROUP pGroup )
+addDlgroupToGlobalTestBlobArray( UINT32 nBitsP, PSYMCRYPT_DLGROUP pGroup, PCSTR pcstrHashAlgName )
 {
     SYMCRYPT_ERROR scError;
     PDLGROUP_TESTBLOB pBlob = &g_DlGroup[ g_nDlgroups++ ];
@@ -54,6 +54,10 @@ addDlgroupToGlobalTestBlobArray( UINT32 nBitsP, PSYMCRYPT_DLGROUP pGroup )
     pBlob->nBitsP = nBitsP;
     pBlob->fipsStandard = pGroup->eFipsStandard;
 
+    pBlob->fHasPrimeQ = pGroup->fHasPrimeQ;
+    pBlob->isSafePrimeGroup = pGroup->isSafePrimeGroup;
+    pBlob->pcstrHashAlgName = pcstrHashAlgName;
+
     scError = SymCryptDlgroupGetValue(  pGroup,
                                         &pBlob->abPrimeP[0], pBlob->cbPrimeP,
                                         &pBlob->abPrimeQ[0], pBlob->cbPrimeQ,
@@ -73,6 +77,7 @@ addOneDlgroup( UINT32 nBitsP, BOOL randomQsize )
     // nBitsP = size of P
     SYMCRYPT_ERROR scError;
     PCSYMCRYPT_HASH hashAlgorithm;
+    PCSTR pcstrHashAlgName;
     SYMCRYPT_DLGROUP_FIPS fipsStandard;
     UINT32 nBitsQ = 0;
 
@@ -100,13 +105,29 @@ addOneDlgroup( UINT32 nBitsP, BOOL randomQsize )
         }
 
         hashAlgorithm = NULL;
+        pcstrHashAlgName = NULL;
         switch( b % 5 )
         {
-        case 0: hashAlgorithm = SymCryptSha1Algorithm; break;
-        case 1: hashAlgorithm = SymCryptSha256Algorithm; break;
-        case 2: hashAlgorithm = SymCryptSha384Algorithm; break;
-        case 3: hashAlgorithm = SymCryptSha512Algorithm; break;
-        case 4: hashAlgorithm = NULL; break;
+        case 0:
+            hashAlgorithm = SymCryptSha1Algorithm;
+            pcstrHashAlgName = "SHA1";
+            break;
+        case 1:
+            hashAlgorithm = SymCryptSha256Algorithm;
+            pcstrHashAlgName = "SHA256";
+            break;
+        case 2:
+            hashAlgorithm = SymCryptSha384Algorithm;
+            pcstrHashAlgName = "SHA384";
+            break;
+        case 3:
+            hashAlgorithm = SymCryptSha512Algorithm;
+            pcstrHashAlgName = "SHA512";
+            break;
+        case 4:
+            hashAlgorithm = NULL;
+            pcstrHashAlgName = NULL;
+            break;
         }
 
         // Hash algorithm defaults to SHA-1
@@ -149,7 +170,7 @@ addOneDlgroup( UINT32 nBitsP, BOOL randomQsize )
     scError = SymCryptDlgroupGenerate( hashAlgorithm, fipsStandard, pGroup );
     CHECK( scError == SYMCRYPT_NO_ERROR, "Error generating DL group" );
 
-    addDlgroupToGlobalTestBlobArray( nBitsP, pGroup );
+    addDlgroupToGlobalTestBlobArray( nBitsP, pGroup, pcstrHashAlgName );
 }
 
 const int g_maxSafePrimeGroupBitSize = 8192;
@@ -252,7 +273,7 @@ VOID generateDlGroups()
             if (pGroup->nBitsOfP <= 4096)
             {
                 g_nDhNamedGroups++;
-                addDlgroupToGlobalTestBlobArray( pGroup->nBitsOfP, pGroup );
+                addDlgroupToGlobalTestBlobArray( pGroup->nBitsOfP, pGroup, NULL );
             }
             else
             {

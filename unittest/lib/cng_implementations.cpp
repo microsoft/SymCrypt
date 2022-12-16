@@ -2905,8 +2905,8 @@ DsaKeyBlobToHandle( PCDLKEY_TESTBLOB pcKeyBlob, BYTE * pbTmp )
     NTSTATUS ntStatus;
 
     // DSA key import is a bit weird due to the way the API grew over time.
-    //  There are two blob formats, one for keys <= 1024 bits ane one is for keys > 1024 bits.
-    // There are also other restriction
+    //  There are two blob formats, one for keys <= 1024 bits and one is for keys > 1024 bits.
+    // There are also other restrictions
     // - bitsize of the key must be a multiple of 64 between 512 and 3072.
     // - group size must be 160 bits for keys <= 1024 bits, and 256 bits for keys > 1024 bits
 

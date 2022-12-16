@@ -639,7 +639,7 @@ SymCryptRsaPkcs1ApplySignaturePadding(
         if ( (pbHashOid!=NULL) && (cbHashOid>0) )
         {
             // determine the length of the ASN1 Encoding
-            // 2 sequence bytes, 1 octect id byte and 3 length bytes
+            // 2 sequence bytes, 1 id byte and 3 length bytes
             cbEncoding = 6 + cbHashOid + cbHash;
         }
         else
@@ -853,7 +853,7 @@ cleanup:
 //                        +--------+----------+----------+
 //                                       |
 //             +--------+----------+     V
-//       DB =  |Padding2|    salt  |   Hash
+//       DB =  |Padding2|   salt   |   Hash
 //             +--------+----------+     |
 //                       |               |
 //                       V               |    +--+
@@ -862,7 +862,7 @@ cleanup:
 //                       |               |      |
 //                       V               V      V
 //             +-------------------+----------+--+
-//       EM =  |    maskedDB       |maskedseed|bc|
+//       EM =  |    maskedDB       |     H    |bc|
 //             +-------------------+----------+--+
 //
 SYMCRYPT_ERROR
@@ -1050,7 +1050,7 @@ SymCryptRsaPssVerifySignaturePadding(
         goto cleanup;
     }
 
-    // Corner case of rfc34447 for PSS:
+    // Corner case of rfc3447 for PSS:
     //  If nBitsOfModulus == 1 mod 8, then emBits = nBitsOfModulus - 1 == 0 mod 8
     //  Thus the size of the input buffer in bytes is emLen = ceil(emBits /8),
     //  one smaller than the size of the modulus. Fix this here by checking that the

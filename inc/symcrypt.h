@@ -6697,7 +6697,7 @@ SymCryptRsaPssSign(
 // - pcbSignature: receives the size of the signature.
 //
 // Return value:
-//  If cbHashValue + cbSalt is too large (abover modulus size minus 2 or 3 depending on details) then
+//  If cbHashValue + cbSalt is too large (above modulus size minus 2 or 3 depending on details) then
 //  signature generation fails.
 //
 // Allowed flags:

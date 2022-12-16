@@ -439,26 +439,7 @@ testKdfKats()
                 args.uSshKdf.cbHashValue = HashValue.size();
                 args.uSshKdf.pbSessionId = SessionId.data();
                 args.uSshKdf.cbSessionId = SessionId.size();
-                args.uSshKdf.hash = nullptr;
-
-                if (!strcmp((const char*)hashName.c_str(), "SHA-1"))
-                {
-                    args.uSshKdf.hash = SymCryptSha1Algorithm;
-                }
-                else if (!strcmp((const char*)hashName.c_str(), "SHA-256"))
-                {
-                    args.uSshKdf.hash = SymCryptSha256Algorithm;
-                }
-                else if (!strcmp((const char*)hashName.c_str(), "SHA-384"))
-                {
-                    args.uSshKdf.hash = SymCryptSha384Algorithm;
-                }
-                else if (!strcmp((const char*)hashName.c_str(), "SHA-512"))
-                {
-                    args.uSshKdf.hash = SymCryptSha512Algorithm;
-                }
-
-                CHECK3(args.uSshKdf.hash != nullptr, "Invalid hash function for SSH-KDF record in line %lld", line);
+                args.uSshKdf.hashName = (PCSTR)hashName.c_str();
 
                 BString katInitialIV_ClientToServer = katParseData(katItem, "initial iv (client to server)");
                 BString katInitialIV_ServerToClient = katParseData(katItem, "initial iv (server to client)");
@@ -467,7 +448,7 @@ testKdfKats()
                 BString katIntegrityKey_ClientToServer = katParseData(katItem, "integrity key (client to server)");
                 BString katIntegrityKey_ServerToClient = katParseData(katItem, "integrity key (server to client)");
 
-                args.uSshKdf.label = SYMCRYPT_SSHKDF_IV_CLIENT_TO_SERVER;          
+                args.uSshKdf.label = SYMCRYPT_SSHKDF_IV_CLIENT_TO_SERVER;
                 katKdfSingle(pKdfMultiImp.get(), SharedKey.data(), SharedKey.size(), &args, katInitialIV_ClientToServer.data(), katInitialIV_ClientToServer.size(), line);
 
                 args.uSshKdf.label = SYMCRYPT_SSHKDF_IV_SERVER_TO_CLIENT;
@@ -518,7 +499,7 @@ testKdfKats()
 
                 {
                     args.uSrtpKdf.uIndexWidth = 48;
-                    
+
                     args.uSrtpKdf.uIndex = 0;
                     for (auto x : index)
                     {

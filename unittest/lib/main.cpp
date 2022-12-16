@@ -768,7 +768,7 @@ printSymCryptFipsGetSelftestsPerformed()
 
     if( g_dynamicSymCryptModuleHandle != NULL )
     {
-        decltype(&SymCryptFipsGetSelftestsPerformed) dynamicSymCryptFipsGetSelftestsPerformed = SCTEST_GET_DYNSYM(SymCryptFipsGetSelftestsPerformed);
+        decltype(&SymCryptFipsGetSelftestsPerformed) dynamicSymCryptFipsGetSelftestsPerformed = SCTEST_LOOKUP_DYNSYM(SymCryptFipsGetSelftestsPerformed, TRUE);
         if (dynamicSymCryptFipsGetSelftestsPerformed != NULL)
         {
             print("dynamic SymCryptFipsGetSelftestsPerformed() %x\n", dynamicSymCryptFipsGetSelftestsPerformed());
@@ -1336,7 +1336,15 @@ initTestInfrastructure( int argc, _In_reads_( argc ) char * argv[] )
 
         iprint("\nLoaded %s to %llx\nTook ~%d cycles.\n", g_dynamicModulePath.c_str(), (UINT64)g_dynamicSymCryptModuleHandle, moduleLoadEnd-moduleLoadStart);
 
-        SCTEST_GET_DYNSYM(SymCryptModuleInit)(SYMCRYPT_CODE_VERSION_API, SYMCRYPT_CODE_VERSION_MINOR);
+        SCTEST_GET_DYNSYM(SymCryptModuleInit, TRUE)(SYMCRYPT_CODE_VERSION_API, SYMCRYPT_CODE_VERSION_MINOR);
+
+        // If dynamic module supports disabling CPU features, then disable them
+        // Note this currently assumes the target under test has the same architecture as the unit tests
+        decltype(&SctestDisableCpuFeatures) dynamicSctestDisableCpuFeatures = SCTEST_LOOKUP_DYNSYM(SctestDisableCpuFeatures, TRUE);
+        if( dynamicSctestDisableCpuFeatures != NULL )
+        {
+            printSymCryptCpuInfo( "Dynamic Hardware CPU features", dynamicSctestDisableCpuFeatures(g_disabledOnCommandLine) );
+        }
     }
 
     printSymCryptFipsGetSelftestsPerformed();

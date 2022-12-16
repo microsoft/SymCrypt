@@ -1,21 +1,21 @@
 //
 // Pattern file for the SymCrypt HKDF implementation.
 //
-// Copyright (c) Microsoft Corporation. Licensed under the MIT license. 
+// Copyright (c) Microsoft Corporation. Licensed under the MIT license.
 //
 
 //
 // The following (up to // <<<<<<<) is (almost) duplicate code from the sc_imp_kdfpattern.cpp file.
 // We add it here due to the uniqueness of the expand key algorithm (It takes as input the salt which
 // for the perf function we set it of size equal to keySize).
-// 
+//
 
 template<> VOID algImpKeyPerfFunction<ImpXxx, AlgXxx, BaseAlgXxx>(PBYTE buf1, PBYTE buf2, PBYTE buf3, SIZE_T keySize);
 template<> VOID algImpCleanPerfFunction<ImpXxx, AlgXxx, BaseAlgXxx>(PBYTE buf1, PBYTE buf2, PBYTE buf3);
 template<> VOID algImpDataPerfFunction<ImpXxx, AlgXxx, BaseAlgXxx>(PBYTE buf1, PBYTE buf2, PBYTE buf3, SIZE_T dataSize);
 
 //
-// Empty constructor. 
+// Empty constructor.
 //
 template<>
 KdfImp<ImpXxx, AlgXxx, BaseAlgXxx>::KdfImp()
@@ -122,13 +122,13 @@ KdfImp<ImpXxx, AlgHkdf, BaseAlgXxx>::derive(
         pcmBaseAlgorithm,
         pbKey, cbKey,
         pbSalt, cbSalt,
-        rbPrk, pcmBaseAlgorithm->resultSize );
+        rbPrk, SYMCRYPT_XXX_BASE_RESULT_SIZE );
     CHECK(scError == SYMCRYPT_NO_ERROR, "Error in SymCrypt HKDF");
 
     scError = ScShimSymCryptHkdfPrkExpandKey(
         &expandedKey,
         pcmBaseAlgorithm,
-        rbPrk, pcmBaseAlgorithm->resultSize );
+        rbPrk, SYMCRYPT_XXX_BASE_RESULT_SIZE );
     CHECK(scError == SYMCRYPT_NO_ERROR, "Error in SymCrypt HKDF");
 
     ScShimSymCryptMarvin32(ScShimSymCryptMarvin32DefaultSeed, (PCBYTE)&expandedKey, sizeof(expandedKey), expandedKeyChecksum);

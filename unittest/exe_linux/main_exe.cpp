@@ -37,8 +37,9 @@ PVOID loadDynamicModuleFromPath(PCSTR dynamicModulePath)
     return hModule;
 }
 
-PVOID getDynamicSymbolPointerFromString(PVOID hModule, PCSTR pSymbolName)
+PVOID getDynamicSymbolPointerFromString(PVOID hModule, PCSTR pSymbolName, SCTEST_DYNSYM_TYPE symbolType)
 {
+    UNREFERENCED_PARAMETER(symbolType);
     return dlsym(hModule, pSymbolName);
 }
 
@@ -68,7 +69,7 @@ __m256i g_ymmTestState[16];
 VOID
 verifyVectorRegisters()
 {
-    
+
     if( !SYMCRYPT_CPU_FEATURES_PRESENT( SYMCRYPT_CPU_FEATURE_AVX2 ) )
     {
         return;

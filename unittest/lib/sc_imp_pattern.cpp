@@ -2,7 +2,7 @@
 // Pattern file for the SymCrypt implementations. Shared between static and dynamically linked
 // SymCrypt implementations.
 //
-// Copyright (c) Microsoft Corporation. Licensed under the MIT license. 
+// Copyright (c) Microsoft Corporation. Licensed under the MIT license.
 //
 
 #define ALG_NAME   MD2
@@ -376,11 +376,15 @@
 #define ALG_Name    Hkdf
 
 #define ALG_Base    HmacSha256
+#define SYMCRYPT_XXX_BASE_RESULT_SIZE   SYMCRYPT_HMAC_SHA256_RESULT_SIZE
 #include "sc_imp_hkdfpattern.cpp"
+#undef SYMCRYPT_XXX_BASE_RESULT_SIZE
 #undef ALG_Base
 
 #define ALG_Base    HmacSha1
+#define SYMCRYPT_XXX_BASE_RESULT_SIZE   SYMCRYPT_HMAC_SHA1_RESULT_SIZE
 #include "sc_imp_hkdfpattern.cpp"
+#undef SYMCRYPT_XXX_BASE_RESULT_SIZE
 #undef ALG_Base
 
 #undef ALG_NAME
@@ -391,23 +395,31 @@
 #define ALG_Name    SshKdf
 
 #define ALG_Base    Sha1
+#define SYMCRYPT_XXX_BASE_RESULT_SIZE   SYMCRYPT_SHA1_RESULT_SIZE
 #include "sc_imp_kdfpattern.cpp"
 #include "sc_imp_sshkdfpattern.cpp"
+#undef SYMCRYPT_XXX_BASE_RESULT_SIZE
 #undef ALG_Base
 
 #define ALG_Base    Sha256
+#define SYMCRYPT_XXX_BASE_RESULT_SIZE   SYMCRYPT_SHA256_RESULT_SIZE
 #include "sc_imp_kdfpattern.cpp"
 #include "sc_imp_sshkdfpattern.cpp"
+#undef SYMCRYPT_XXX_BASE_RESULT_SIZE
 #undef ALG_Base
 
 #define ALG_Base    Sha384
+#define SYMCRYPT_XXX_BASE_RESULT_SIZE   SYMCRYPT_SHA384_RESULT_SIZE
 #include "sc_imp_kdfpattern.cpp"
 #include "sc_imp_sshkdfpattern.cpp"
+#undef SYMCRYPT_XXX_BASE_RESULT_SIZE
 #undef ALG_Base
 
 #define ALG_Base    Sha512
+#define SYMCRYPT_XXX_BASE_RESULT_SIZE   SYMCRYPT_SHA512_RESULT_SIZE
 #include "sc_imp_kdfpattern.cpp"
 #include "sc_imp_sshkdfpattern.cpp"
+#undef SYMCRYPT_XXX_BASE_RESULT_SIZE
 #undef ALG_Base
 
 #undef ALG_NAME
@@ -4169,8 +4181,15 @@ VOID
 DlgroupSetup<ImpXxx>( PBYTE buf1, SIZE_T keySize, BOOLEAN forDiffieHellman )
 {
     SYMCRYPT_ERROR scError;
+    PDLGROUP_INFO pInfo = (PDLGROUP_INFO)buf1;
 
     PCDLGROUP_TESTBLOB pBlob = dlgroupForSize( keySize * 8, forDiffieHellman );
+
+    PCSYMCRYPT_HASH pHashAlgorithm = NULL;
+    if( pBlob->pcstrHashAlgName != NULL )
+    {
+        pHashAlgorithm = getHashInfo<ImpXxx>(pBlob->pcstrHashAlgName)->pcHash;
+    }
 
     CHECK( pBlob != NULL, "?" );
 
@@ -4183,7 +4202,7 @@ DlgroupSetup<ImpXxx>( PBYTE buf1, SIZE_T keySize, BOOLEAN forDiffieHellman )
         pBlob->cbPrimeQ == 0 ? NULL : &pBlob->abPrimeQ[0], pBlob->cbPrimeQ,
         &pBlob->abGenG[0], pBlob->cbPrimeP,
         SYMCRYPT_NUMBER_FORMAT_MSB_FIRST,
-        pBlob->pHashAlgorithm,
+        pHashAlgorithm,
         &pBlob->abSeed[0], pBlob->cbSeed,
         pBlob->genCounter,
         pBlob->fipsStandard,
@@ -4191,7 +4210,8 @@ DlgroupSetup<ImpXxx>( PBYTE buf1, SIZE_T keySize, BOOLEAN forDiffieHellman )
 
     CHECK( scError == SYMCRYPT_NO_ERROR, "Error setting group values" );
 
-    *((PSYMCRYPT_DLGROUP *) buf1) = pGroup;
+    pInfo->pBlob = pBlob;
+    pInfo->pGroup = pGroup;
 }
 
 // Table with the DL groups sizes and pointers to the groups
@@ -4227,7 +4247,7 @@ SetupDlGroup<ImpXxx>( PBYTE buf1, SIZE_T keySize )
 
                 scError = ScShimSymCryptDlgroupGenerate(
                     ScShimSymCryptSha256Algorithm, SYMCRYPT_DLGROUP_FIPS_LATEST, pDlgroup );
-                    // This algorithm is safe for all our sizes   
+                    // This algorithm is safe for all our sizes
                 CHECK( scError == SYMCRYPT_NO_ERROR, "?" );
 
                 CONCAT2(g_precomputedDlGroups, ImpXxx)[i].pDlgroup = pDlgroup;
@@ -4388,7 +4408,7 @@ algImpDataPerfFunction< ImpXxx, AlgDsaVerify>( PBYTE buf1, PBYTE buf2, PBYTE buf
     UNREFERENCED_PARAMETER( dataSize );
 
     UINT32 cbHashValue = ScShimSymCryptDlkeySizeofPrivateKey( ((PSYMCRYPT_DLKEY *)buf2)[0] );
-    
+
     ScShimSymCryptDsaVerify(
                 ((PSYMCRYPT_DLKEY *) buf2)[0],
                 buf2,           // Sign the keys' buffer
@@ -4423,6 +4443,12 @@ dlgroupObjectFromTestBlob<ImpXxx>( PCDLGROUP_TESTBLOB pBlob )
 
     PSYMCRYPT_DLGROUP pGroup = NULL;
 
+    PCSYMCRYPT_HASH pHashAlgorithm = NULL;
+    if( pBlob->pcstrHashAlgName != NULL )
+    {
+        pHashAlgorithm = getHashInfo<ImpXxx>(pBlob->pcstrHashAlgName)->pcHash;
+    }
+
     pGroup = ScShimSymCryptDlgroupAllocate( pBlob->nBitsP, 8*pBlob->cbPrimeQ );
     CHECK( pGroup != NULL, "Could not create group" );
 
@@ -4431,7 +4457,7 @@ dlgroupObjectFromTestBlob<ImpXxx>( PCDLGROUP_TESTBLOB pBlob )
         pBlob->cbPrimeQ == 0 ? NULL : &pBlob->abPrimeQ[0], pBlob->cbPrimeQ,
         &pBlob->abGenG[0], pBlob->cbPrimeP,
         SYMCRYPT_NUMBER_FORMAT_MSB_FIRST,
-        pBlob->pHashAlgorithm,
+        pHashAlgorithm,
         pBlob->cbSeed == 0 ? NULL : &pBlob->abSeed[0], pBlob->cbSeed,
         pBlob->genCounter,
         pBlob->fipsStandard,
@@ -4462,10 +4488,10 @@ dlkeyObjectFromTestBlob<ImpXxx>( PCSYMCRYPT_DLGROUP pGroup, PCDLKEY_TESTBLOB pBl
 
     BYTE randByte = g_rng.byte();
 
-    if (!pGroup->fHasPrimeQ || 
-        pBlob->fPrivateModP || 
-        ((algFlags == SYMCRYPT_FLAG_DLKEY_DH) && (!pGroup->isSafePrimeGroup)) ||
-        ((algFlags == SYMCRYPT_FLAG_DLKEY_DSA) && (pGroup->isSafePrimeGroup)) ||
+    if (!pBlob->pGroup->fHasPrimeQ ||
+        pBlob->fPrivateModP ||
+        ((algFlags == SYMCRYPT_FLAG_DLKEY_DH) && (!pBlob->pGroup->isSafePrimeGroup)) ||
+        ((algFlags == SYMCRYPT_FLAG_DLKEY_DSA) && (pBlob->pGroup->isSafePrimeGroup)) ||
         (randByte & 0x1))
     {
         flags |= SYMCRYPT_FLAG_KEY_NO_FIPS;
@@ -4523,12 +4549,13 @@ algImpKeyPerfFunction<ImpXxx, AlgDh>( PBYTE buf1, PBYTE buf2, PBYTE buf3, SIZE_T
     DlgroupSetup<ImpXxx>( buf1, keySize, TRUE );
 
     // Set up two keys in buf2
-    PSYMCRYPT_DLGROUP pGroup = *(PSYMCRYPT_DLGROUP *) buf1;
+    PDLGROUP_INFO pInfo = (PDLGROUP_INFO) buf1;
+    PSYMCRYPT_DLGROUP pGroup = pInfo->pGroup;
 
     PSYMCRYPT_DLKEY pKey1 = ScShimSymCryptDlkeyCreate( buf2 + 64, PERF_BUFFER_SIZE/4, pGroup );
     PSYMCRYPT_DLKEY pKey2 = ScShimSymCryptDlkeyCreate( buf2 + 64 + PERF_BUFFER_SIZE/4, PERF_BUFFER_SIZE/4, pGroup );
 
-    UINT32 generateFlags = SYMCRYPT_FLAG_DLKEY_DH | (pGroup->isSafePrimeGroup ? 0 : SYMCRYPT_FLAG_KEY_NO_FIPS);
+    UINT32 generateFlags = SYMCRYPT_FLAG_DLKEY_DH | (pInfo->pBlob->isSafePrimeGroup ? 0 : SYMCRYPT_FLAG_KEY_NO_FIPS);
 
     CHECK( pKey1 != NULL && pKey2 != NULL, "Failed to create keys" );
 
@@ -4561,9 +4588,10 @@ algImpDataPerfFunction< ImpXxx, AlgDh>( PBYTE buf1, PBYTE buf2, PBYTE buf3, SIZE
     UNREFERENCED_PARAMETER( buf2 );
     UNREFERENCED_PARAMETER( dataSize );
 
-    PSYMCRYPT_DLGROUP pGroup = *(PSYMCRYPT_DLGROUP *) buf1;
+    PDLGROUP_INFO pInfo = (PDLGROUP_INFO) buf1;
+    PSYMCRYPT_DLGROUP pGroup = pInfo->pGroup;
 
-    UINT32 generateFlags = SYMCRYPT_FLAG_DLKEY_DH | (pGroup->isSafePrimeGroup ? 0 : SYMCRYPT_FLAG_KEY_NO_FIPS);
+    UINT32 generateFlags = SYMCRYPT_FLAG_DLKEY_DH | (pInfo->pBlob->isSafePrimeGroup ? 0 : SYMCRYPT_FLAG_KEY_NO_FIPS);
 
     PSYMCRYPT_DLKEY pKey = ScShimSymCryptDlkeyCreate( buf3, (1 << 16), pGroup );
     CHECK( pKey != NULL, "?" );
@@ -4571,7 +4599,7 @@ algImpDataPerfFunction< ImpXxx, AlgDh>( PBYTE buf1, PBYTE buf2, PBYTE buf3, SIZE
     scError = ScShimSymCryptDlkeyGenerate( generateFlags, pKey );
     CHECK( scError == SYMCRYPT_NO_ERROR, "?" );
 
-    scError = ScShimSymCryptDlkeyGetValue( pKey, nullptr, 0, buf3 + (1 << 16), pGroup->cbPrimeP, SYMCRYPT_NUMBER_FORMAT_MSB_FIRST, 0 );
+    scError = ScShimSymCryptDlkeyGetValue( pKey, nullptr, 0, buf3 + (1 << 16), pInfo->pBlob->cbPrimeP, SYMCRYPT_NUMBER_FORMAT_MSB_FIRST, 0 );
     CHECK( scError == SYMCRYPT_NO_ERROR, "?" );
 }
 
@@ -4679,8 +4707,8 @@ algImpKeyPerfFunction<ImpXxx, AlgDsa>( PBYTE buf1, PBYTE buf2, PBYTE buf3, SIZE_
 
     DlgroupSetup<ImpXxx>( buf1, keySize, FALSE );  // Set buf1 to contain a DL group of size keySize
 
-    // Set up a keys in buf2
-    PSYMCRYPT_DLGROUP pGroup = *(PSYMCRYPT_DLGROUP *) buf1;
+    // Set up a key in buf2
+    PSYMCRYPT_DLGROUP pGroup = ((PDLGROUP_INFO) buf1)->pGroup;
 
     PSYMCRYPT_DLKEY pKey = ScShimSymCryptDlkeyCreate( buf2 + 64, PERF_BUFFER_SIZE/4, pGroup );
 
@@ -4711,14 +4739,14 @@ algImpDataPerfFunction< ImpXxx, AlgDsa>( PBYTE buf1, PBYTE buf2, PBYTE buf3, SIZ
     UNREFERENCED_PARAMETER( dataSize );
 
     PSYMCRYPT_DLKEY pKey = *(PSYMCRYPT_DLKEY *) buf2;
-    PSYMCRYPT_DLGROUP pGroup = *(PSYMCRYPT_DLGROUP *) buf1;
+    PDLGROUP_INFO pInfo = (PDLGROUP_INFO) buf1;
 
     scError = ScShimSymCryptDsaSign(
                                 pKey,
                                 buf3, 32,
                                 SYMCRYPT_NUMBER_FORMAT_MSB_FIRST,
                                 0,
-                                buf3 + 64, 2 * pGroup->cbPrimeQ );
+                                buf3 + 64, 2 * pInfo->pBlob->cbPrimeQ );
     CHECK( scError == SYMCRYPT_NO_ERROR, "?" );
 }
 
@@ -4731,12 +4759,12 @@ algImpDecryptPerfFunction< ImpXxx, AlgDsa>( PBYTE buf1, PBYTE buf2, PBYTE buf3, 
     UNREFERENCED_PARAMETER( dataSize );
 
     PSYMCRYPT_DLKEY pKey = *(PSYMCRYPT_DLKEY *) buf2;
-    PSYMCRYPT_DLGROUP pGroup = *(PSYMCRYPT_DLGROUP *) buf1;
+    PDLGROUP_INFO pInfo = (PDLGROUP_INFO) buf1;
 
     scError = ScShimSymCryptDsaVerify(
                                 pKey,
                                 buf3, 32,
-                                buf3 + 64, 2 * pGroup->cbPrimeQ,
+                                buf3 + 64, 2 * pInfo->pBlob->cbPrimeQ,
                                 SYMCRYPT_NUMBER_FORMAT_MSB_FIRST,
                                 0 );
     CHECK( scError == SYMCRYPT_NO_ERROR, "?" );
@@ -5240,6 +5268,11 @@ algImpDecryptPerfFunction<ImpXxx,AlgIEEE802_11SaeCustom>( PBYTE buf1, PBYTE buf2
 template<>
 ArithImp<ImpXxx, AlgIEEE802_11SaeCustom>::ArithImp()
 {
+    if( !SCTEST_LOOKUP_SCIMPSYM(SymCrypt802_11SaeCustomInit) )
+    {
+        throw STATUS_NOT_SUPPORTED;
+    }
+
     m_perfDataFunction      = &algImpDataPerfFunction <ImpXxx, AlgIEEE802_11SaeCustom>;
     m_perfDecryptFunction   = &algImpDecryptPerfFunction<ImpXxx, AlgIEEE802_11SaeCustom>;
     m_perfKeyFunction       = &algImpKeyPerfFunction  <ImpXxx, AlgIEEE802_11SaeCustom>;

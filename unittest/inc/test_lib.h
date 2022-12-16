@@ -1114,8 +1114,42 @@ extern BOOL g_useDynamicFunctionsInTestCall;
 PVOID loadDynamicModuleFromPath(PCSTR dynamicModulePath);
 // dlopen on Linux, LoadLibraryA on Windows
 
-PVOID getDynamicSymbolPointerFromString(PVOID hModule, PCSTR pSymbolName);
+typedef enum {
+    SCTEST_DYNSYM_FUNCTION_PTR = 1,
+    SCTEST_DYNSYM_SYMBOL_PTR = 2,
+    SCTEST_DYNSYM_ARRAY = 3,
+} SCTEST_DYNSYM_TYPE;
+
+PVOID getDynamicSymbolPointerFromString(PVOID hModule, PCSTR pSymbolName, SCTEST_DYNSYM_TYPE symbolType);
 // dlsym on Linux, GetProcAddress on Windows
+//
+// We distinguish between looking up function pointers and symbols
+// Looked up function pointers must be callable by the unit test executable, so the
+// pointers must be to functions in the address space of the unit tests, which invoke
+// the SymCrypt API in the module under test
+//
+// Looked up symbols may or may not be in the address space of the unit tests.
+// Looked up extern arrays (i.e. SymCryptSha256OidList) are _not_ dereferenced by the unit tests
+// before being passed back to dynamic SymCrypt functions. They must be a symbol address which is
+// directly consumed by the eventual SymCrypt module under test (i.e. may not be in the address
+// space of the unit tests)
+// Looked up extern pointers (i.e. SymCryptSha256Algorithm) _are_ dereferenced by the unit tests
+// before being passed back to dynamic SymCrypt functions. They must be an address in the unit tests'
+// address space which contains a value of the pointer which is consumed by the SymCrypt module under
+// test
+
+SYMCRYPT_CPU_FEATURES SctestDisableCpuFeatures(SYMCRYPT_CPU_FEATURES disable);
+// Optional function that dynamic test modules may expose to enable the unit tests to disable certain
+// CPU features from being used.
+//
+// If present must only be called once just after a call to SymCryptModuleInit as some test modules may
+// defer full initialization until they know which features to disable. We do it this way as CPU features
+// may affect the memory layout of internal SymCrypt structures, so for the lifetime of the module the
+// CPU features available must be consistent.
+//
+// Returns the CPU features mask that will be used in the dynamic test module.
+//
+// Currently assumes that the unit test binary will have the same CPU architecture as the module under test
 
 VOID
 initVectorRegisters();
@@ -1166,7 +1200,7 @@ auto ScTestCallFunctionWithVectorRegistersTest(Functor f, Args&&... args)
 //
 // Lookup dynamic symbol, may return NULL if symbol cannot be found
 //
-// Note that because we use static variables here, 1 call to getDynamicSymbolPointerFromString (the 
+// Note that because we use static variables here, 1 call to getDynamicSymbolPointerFromString (the
 // actual environment specific dynamic symbol lookup function) is performed per scope in which this
 // lambda function is instantiated
 // This means we have a few more (maybe ~10x - depending on how many locations lookup the same symbol)
@@ -1174,23 +1208,33 @@ auto ScTestCallFunctionWithVectorRegistersTest(Functor f, Args&&... args)
 // runtime, and our performance testing infrastructure can easily handle the first run of a function
 // of interest being more costly
 //
-#define SCTEST_LOOKUP_DYNSYM(SymCryptSymbol) \
+// We have the IsCallable parameter to distinguish between symbols the unit tests are looking up in
+// the module to call vs. symbols the module is looking up to pass back to the module.
+//
+#define SCTEST_LOOKUP_DYNSYM(SymCryptSymbol, IsCallable) \
     []() { \
         static PVOID dynamicSymbolStatic = NULL; \
         static bool lookupAttempted = false; \
         if (!lookupAttempted) \
         { \
-            dynamicSymbolStatic = getDynamicSymbolPointerFromString(g_dynamicSymCryptModuleHandle, #SymCryptSymbol); \
+            SCTEST_DYNSYM_TYPE symbolType = SCTEST_DYNSYM_SYMBOL_PTR; \
+            if( IsCallable ) \
+            { \
+                symbolType = SCTEST_DYNSYM_FUNCTION_PTR; \
+            } else if( std::is_array<decltype(SymCryptSymbol)>::value ) { \
+                symbolType = SCTEST_DYNSYM_ARRAY; \
+            } \
+            dynamicSymbolStatic = getDynamicSymbolPointerFromString(g_dynamicSymCryptModuleHandle, #SymCryptSymbol, symbolType); \
             lookupAttempted = true; \
         } \
         return (decltype(&SymCryptSymbol)) dynamicSymbolStatic; \
     }()
 
 // Get dynamic symbol - Fatal if symbol cannot be found
-#define SCTEST_GET_DYNSYM(SymCryptSymbol) \
+#define SCTEST_GET_DYNSYM(SymCryptSymbol, IsCallable) \
     []() { \
-        decltype(&SymCryptSymbol) dynamicSymbol = SCTEST_LOOKUP_DYNSYM(SymCryptSymbol); \
-        CHECK3(dynamicSymbol != NULL, "Could not find symbol %s", #SymCryptSymbol); \
+        decltype(&SymCryptSymbol) dynamicSymbol = SCTEST_LOOKUP_DYNSYM(SymCryptSymbol, IsCallable); \
+        CHECK4(dynamicSymbol != NULL, "Could not find %s %s", #SymCryptSymbol, "Function" ); \
         return dynamicSymbol; \
     }()
 
@@ -1209,7 +1253,7 @@ auto ScTestCallFunctionWithVectorRegistersTest(Functor f, Args&&... args)
         } \
         else if constexpr ( std::is_same<ImpXxx, ImpScDynamic>::value ) \
         { \
-            return SCTEST_GET_DYNSYM(SymCryptFunction)(__VA_ARGS__); \
+            return SCTEST_GET_DYNSYM(SymCryptFunction, TRUE)(__VA_ARGS__); \
         } \
         else \
         { \
@@ -1228,7 +1272,7 @@ auto ScTestCallFunctionWithVectorRegistersTest(Functor f, Args&&... args)
         } \
         else if constexpr ( std::is_same<ImpXxx, ImpScDynamic>::value ) \
         { \
-            return SCTEST_LOOKUP_DYNSYM(SymCryptSymbol); \
+            return SCTEST_LOOKUP_DYNSYM(SymCryptSymbol, FALSE); \
         } \
         else \
         { \
@@ -1253,7 +1297,7 @@ auto ScTestCallFunctionWithVectorRegistersTest(Functor f, Args&&... args)
     []() { \
         if( g_useDynamicFunctionsInTestCall ) \
         { \
-            return SCTEST_GET_DYNSYM(SymCryptFunction)(); \
+            return SCTEST_GET_DYNSYM(SymCryptFunction, TRUE)(); \
         } \
         return ScTestCallFunctionWithVectorRegistersTest(SymCryptFunction); \
     }()
@@ -1262,7 +1306,7 @@ auto ScTestCallFunctionWithVectorRegistersTest(Functor f, Args&&... args)
     [&]() { \
         if( g_useDynamicFunctionsInTestCall ) \
         { \
-            return SCTEST_GET_DYNSYM(SymCryptFunction)(__VA_ARGS__); \
+            return SCTEST_GET_DYNSYM(SymCryptFunction, TRUE)(__VA_ARGS__); \
         } \
         return ScTestCallFunctionWithVectorRegistersTest(SymCryptFunction, __VA_ARGS__); \
     }()
@@ -1271,7 +1315,7 @@ auto ScTestCallFunctionWithVectorRegistersTest(Functor f, Args&&... args)
     []() { \
         if( g_useDynamicFunctionsInTestCall ) \
         { \
-            return SCTEST_LOOKUP_DYNSYM(SymCryptSymbol); \
+            return SCTEST_LOOKUP_DYNSYM(SymCryptSymbol, FALSE); \
         } \
         return &SymCryptSymbol; \
     }()

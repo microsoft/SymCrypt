@@ -289,7 +289,7 @@ SymCryptEckeySetValue(
     // Make sure only allowed flags are specified
     UINT32 allowedFlags = SYMCRYPT_FLAG_KEY_NO_FIPS | SYMCRYPT_FLAG_KEY_MINIMAL_VALIDATION | algorithmFlags;
 
-    if ( ( ( flags & ~allowedFlags ) != 0 ) || 
+    if ( ( ( flags & ~allowedFlags ) != 0 ) ||
          ( ( flags & algorithmFlags ) == 0 ) )
     {
         scError = SYMCRYPT_INVALID_ARGUMENT;
@@ -657,7 +657,7 @@ SymCryptEckeyGetValue(
 
         // If this keypair may be used in ECDSA, and does not have the no FIPS flag, run the PCT if
         // it has not already been run
-        if ( ((pEckey->fAlgorithmInfo & SYMCRYPT_FLAG_ECKEY_ECDSA) != 0) && 
+        if ( ((pEckey->fAlgorithmInfo & SYMCRYPT_FLAG_ECKEY_ECDSA) != 0) &&
              ((pEckey->fAlgorithmInfo & SYMCRYPT_FLAG_KEY_NO_FIPS) == 0) )
         {
             SYMCRYPT_RUN_KEYGEN_PCT(
@@ -755,7 +755,7 @@ SymCryptEckeySetRandom(
     // Make sure only allowed flags are specified
     UINT32 allowedFlags = SYMCRYPT_FLAG_KEY_NO_FIPS | algorithmFlags;
 
-    if ( ( ( flags & ~allowedFlags ) != 0 ) || 
+    if ( ( ( flags & ~allowedFlags ) != 0 ) ||
          ( ( flags & algorithmFlags ) == 0 ) )
     {
         scError = SYMCRYPT_INVALID_ARGUMENT;
@@ -910,7 +910,7 @@ SymCryptEckeySetRandom(
     {
         // We defer the ECDSA PCT to before first use of the Eckey in EcDsaSign, or first time
         // private key is exported - whichever comes first.
-        
+
         if( ( flags & SYMCRYPT_FLAG_ECKEY_ECDH ) != 0 )
         {
             // No additional per-key tests to perform before first use.
@@ -943,7 +943,7 @@ SymCryptEckeyExtendKeyUsage(
     // Ensure caller has specified what algorithm(s) the key will be used with
     UINT32 algorithmFlags = SYMCRYPT_FLAG_ECKEY_ECDSA | SYMCRYPT_FLAG_ECKEY_ECDH;
 
-    if ( ( ( flags & ~algorithmFlags ) != 0 ) || 
+    if ( ( ( flags & ~algorithmFlags ) != 0 ) ||
          ( ( flags & algorithmFlags ) == 0) )
     {
         scError = SYMCRYPT_INVALID_ARGUMENT;

@@ -1,0 +1,2 @@
+BUILD_PASS1_CONSUMES= \
+    symcrypt\lib|PASS1 \

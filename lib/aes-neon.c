@@ -1721,6 +1721,9 @@ SymCryptAesGcmEncryptStitchedNeon(
     *(__n128 *)pState = state;
 }
 
+#pragma warning(push)
+#pragma warning( disable:4701 ) // "Use of uninitialized variable" -
+#pragma runtime_checks( "u", off )
 // This call is functionally identical to:
 // SymCryptGHashAppendDataPmull(expandedKeyTable,
 //                              pState,
@@ -1879,5 +1882,7 @@ SymCryptAesGcmDecryptStitchedNeon(
     *(__n128 *)pbChainingValue = chain;
     *(__n128 *)pState = state;
 }
+#pragma runtime_checks( "u", restore )
+#pragma warning(pop)
 
 #endif

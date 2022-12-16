@@ -1,5 +1,5 @@
 //
-// module.c
+// module.cpp
 // Main file for SymCrypt DLL/shared object library
 //
 // Copyright (c) Microsoft Corporation. Licensed under the MIT license.
@@ -9,9 +9,11 @@
 
 SYMCRYPT_ENVIRONMENT_WINDOWS_USERMODE_LATEST;
 
-BYTE g_bAllocFill= 0;
+BYTE g_bAllocFill = 0;
 
 UINT64 g_magic;
+
+SYMCRYPT_CPU_FEATURES g_originalSymCryptCpuFeaturesNotPresent;
 
 VOID
 SYMCRYPT_CALL
@@ -150,7 +152,6 @@ fatal( _In_ PCSTR file, ULONG line, _In_ PCSTR format, ... )
     exit( -1 );
 }
 
-
 VOID SYMCRYPT_CALL SymCryptModuleInit( UINT32 api, UINT32 minor )
 {
     SymCryptInit();
@@ -162,4 +163,14 @@ VOID SYMCRYPT_CALL SymCryptModuleInit( UINT32 api, UINT32 minor )
     {
         SymCryptFatal( 'vers' );
     }
+
+    // Save the original CPU features flags.
+    g_originalSymCryptCpuFeaturesNotPresent = g_SymCryptCpuFeaturesNotPresent;
+}
+
+SYMCRYPT_CPU_FEATURES SctestDisableCpuFeatures(SYMCRYPT_CPU_FEATURES disable)
+{
+    // Ugly hack, directly manipulate the CPU features flags.
+    g_SymCryptCpuFeaturesNotPresent = g_originalSymCryptCpuFeaturesNotPresent | disable;
+    return g_SymCryptCpuFeaturesNotPresent;
 }
