@@ -57,12 +57,12 @@ set_target_properties(${TARGET_NAME} PROPERTIES VERSION ${PROJECT_VERSION})
 set_target_properties(${TARGET_NAME} PROPERTIES SOVERSION ${PROJECT_VERSION_MAJOR})
 
 
-if(CMAKE_BUILD_TYPE MATCHES Release)
+if(CMAKE_BUILD_TYPE MATCHES "Release|RelWithDebInfo")
     add_custom_command(
         TARGET ${TARGET_NAME}
         POST_BUILD
-        COMMAND mkdir -p $<TARGET_FILE_DIR:${TARGET_NAME}>/processing
-        COMMAND ${OBJCOPY_COMMAND} --only-keep-debug $<TARGET_FILE:${TARGET_NAME}> $<TARGET_FILE_DIR:${TARGET_NAME}>/processing/$<TARGET_FILE_NAME:${TARGET_NAME}>.debug
+        COMMAND mkdir -p $<TARGET_FILE_DIR:${TARGET_NAME}>/.debug
+        COMMAND ${OBJCOPY_COMMAND} --only-keep-debug $<TARGET_FILE:${TARGET_NAME}> $<TARGET_FILE_DIR:${TARGET_NAME}>/.debug/$<TARGET_FILE_NAME:${TARGET_NAME}>
         COMMAND ${STRIP_COMMAND} --strip-unneeded ${KEEP_SYMBOL_ARGS} $<TARGET_FILE:${TARGET_NAME}>
         COMMENT "Splitting and stripping binary for release build"
         COMMAND_EXPAND_LISTS
@@ -74,7 +74,7 @@ if(SYMCRYPT_FIPS_BUILD)
         TARGET ${TARGET_NAME}
         POST_BUILD
         COMMAND mkdir -p $<TARGET_FILE_DIR:${TARGET_NAME}>/processing
-        COMMAND python3 ${CMAKE_SOURCE_DIR}/scripts/process_fips_module.py $<TARGET_FILE:${TARGET_NAME}> -d
+        COMMAND ${Python3_EXECUTABLE} ${CMAKE_SOURCE_DIR}/scripts/process_fips_module.py $<TARGET_FILE:${TARGET_NAME}> -d
         COMMENT "Postprocessing SymCrypt shared object for FIPS integrity verification"
     )
 endif()

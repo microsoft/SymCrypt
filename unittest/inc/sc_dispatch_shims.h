@@ -23,7 +23,6 @@
 #define ScDispatchSymCryptInit(...) SCTEST_CALL_DISPATCHFN(SymCryptInit, __VA_ARGS__)
 #define ScDispatchSymCryptModuleInit(...) SCTEST_CALL_DISPATCHFN(SymCryptModuleInit, __VA_ARGS__)
 #define ScDispatchSymCryptWipe(...) SCTEST_CALL_DISPATCHFN(SymCryptWipe, __VA_ARGS__)
-#define ScDispatchSymCryptWipeKnownSize(...) SCTEST_CALL_DISPATCHFN(SymCryptWipeKnownSize, __VA_ARGS__)
 #define ScDispatchSymCryptXorBytes(...) SCTEST_CALL_DISPATCHFN(SymCryptXorBytes, __VA_ARGS__)
 #define ScDispatchSymCryptEqual(...) SCTEST_CALL_DISPATCHFN(SymCryptEqual, __VA_ARGS__)
 #define ScDispatchSymCryptHashResultSize(...) SCTEST_CALL_DISPATCHFN(SymCryptHashResultSize, __VA_ARGS__)

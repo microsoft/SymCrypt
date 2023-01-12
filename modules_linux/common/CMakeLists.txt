@@ -26,5 +26,5 @@ add_custom_target(jitterentropy_lib ALL
     env "CFLAGS=${jitter_cflags}"
     env "LDFLAGS=${jitter_ldflags}"
     make
-  WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/jitterentropy-library
+  WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/3rdparty/jitterentropy-library
 )

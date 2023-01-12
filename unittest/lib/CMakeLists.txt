@@ -80,8 +80,6 @@ endif()
 
 # Need to include an asm file from here.
 include_directories(${CMAKE_SOURCE_DIR}/lib)
-include_directories(${CMAKE_SOURCE_DIR}/SymCryptDependencies/inc)
-include_directories(../inc)
 
 if(WIN32)
     # DNDEBUG is required to link with msbignum. This should eventually be removed.

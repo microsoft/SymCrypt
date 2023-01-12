@@ -130,6 +130,9 @@ else() # Windows
 
     add_compile_options(/MP)
     add_compile_options(/Zp8)
+    add_compile_options(/guard:cf)
+    add_link_options(/guard:cf)
+    add_link_options(/dynamicbase)
 
     # Architecture-specific compiler flags
     if(SYMCRYPT_TARGET_ARCH MATCHES "X86")
@@ -140,7 +143,7 @@ else() # Windows
         add_compile_options(/Gz)
     endif()
 
-    # Remove /RTC1, incompatible of /Ox
+    # Remove /RTC1, incompatible with /Ox
     string( REPLACE "/RTC1" "" CMAKE_CXX_FLAGS_DEBUG ${CMAKE_CXX_FLAGS_DEBUG})
     string( REPLACE "/RTC1" "" CMAKE_C_FLAGS_DEBUG ${CMAKE_C_FLAGS_DEBUG})
     string( REPLACE "/RTC1" "" CMAKE_CXX_FLAGS_RELEASE ${CMAKE_CXX_FLAGS_RELEASE})

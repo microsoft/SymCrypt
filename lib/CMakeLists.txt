@@ -136,7 +136,7 @@ function(process_cppasm filepath outformat archdefine)
     endif()
 
     set(dbg_definition "")
-    if(CMAKE_BUILD_TYPE MATCHES (Debug|Sanitize))
+    if(CMAKE_BUILD_TYPE MATCHES "Debug|Sanitize")
         set(dbg_definition "-DDBG=1")
     endif()
 
@@ -188,7 +188,7 @@ function(process_symcryptasm filepath outformat archdefine callingconvention)
     add_custom_command(
         OUTPUT ${output_cppasm}
         COMMAND ${CMAKE_COMMAND} -E make_directory ${output_directory}
-        COMMAND python3 ${CMAKE_SOURCE_DIR}/scripts/symcryptasm_processor.py ${outformat} ${archdefine} ${callingconvention} ${filepath} ${output_cppasm}
+        COMMAND ${Python3_EXECUTABLE} ${CMAKE_SOURCE_DIR}/scripts/symcryptasm_processor.py ${outformat} ${archdefine} ${callingconvention} ${filepath} ${output_cppasm}
         MAIN_DEPENDENCY ${filepath}
         DEPENDS ${CMAKE_SOURCE_DIR}/scripts/symcryptasm_processor.py
         COMMENT "Python preprocessing ${filepath} to ${outformat} (${output_cppasm})"

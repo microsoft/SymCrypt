@@ -79,9 +79,16 @@ if(WIN32 AND SYMCRYPT_TARGET_ARCH MATCHES "X86")
   add_link_options(/SAFESEH:NO)
 endif()
 
-include_directories(${CMAKE_SOURCE_DIR}/unittest/inc)
-include_directories(${CMAKE_SOURCE_DIR}/unittest/lib)
-include_directories(${CMAKE_SOURCE_DIR}/unittest/resource)
+include_directories(inc)
+include_directories(lib)
+include_directories(resource)
+
+if(SYMCRYPT_INTERNAL_BUILD)
+  find_library(RSA32_LIB rsa32.lib HINTS SymCryptDependencies/${SYMCRYPT_TARGET_ARCH})
+  find_library(MSBIGNUM_LIB msbignum.lib HINTS SymCryptDependencies/${SYMCRYPT_TARGET_ARCH})
+
+  include_directories(SymCryptDependencies/inc)
+endif()
 
 add_subdirectory(lib)
 

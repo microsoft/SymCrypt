@@ -1,0 +1,142 @@
+parameters:
+- name: arch
+  type: string
+  values:
+  - AMD64
+  - X86
+  - ARM64
+  - ARM
+- name: config
+  type: string
+  values:
+  - Debug
+  - Release
+  - Sanitize
+- name: cc
+  type: string
+  values:
+  - gcc
+  - clang
+- name: cxx
+  type: string
+  values:
+  - g++
+  - clang++
+- name: additionalArgs # Additional arguments to pass to the build script
+  type: string
+  default: ''
+- name: identifier # Additional identifier for job name
+  type: string
+  default: ''
+
+jobs:
+- job: Linux_${{ parameters.arch}}_${{ parameters.cc }}_${{parameters.config}}_${{parameters.identifier}}
+  displayName: Linux ${{ parameters.arch}} ${{ parameters.cc }} ${{parameters.config}} ${{ parameters.identifier }}
+
+  pool:
+    type: linux
+
+  variables:
+    ob_outputDirectory: $(Build.SourcesDirectory)/bin
+    ob_sdl_binskim_break: ${{ eq(parameters.config, 'Release') }} # Only break on binskim failures for Release binaries https://aka.ms/obpipelines/sdl
+
+  steps:
+
+    # TODO: Need to make this match the SymCrypt version (major.minor.patch). We also shouldn't have to update it manually.
+    # https://microsoft.visualstudio.com/DefaultCollection/OS/_workitems/edit/42880140/
+    - task: onebranch.pipeline.version@1
+      displayName: 'Setup BuildNumber'
+      inputs:
+        system: 'RevisionCounter'
+        major: '103'
+        minor: '0'
+        exclude_commit: false
+
+    - ${{ if eq(parameters.cc, 'clang') }}:
+      # Install clang-11 and manually add symlinks so that it can be run via just "clang" rather
+      # than clang-11. This is required because we can't explicitly specify clang-11 for
+      # parameters.cc (it breaks the job name, because job names aren't allowed to have '-' in them)
+      - script: |
+          apt-get update
+          apt-get install -y clang-11
+          ln -s /usr/bin/clang-11 /usr/bin/clang
+          ln -s /usr/bin/clang++-11 /usr/bin/clang++
+        displayName: 'Install clang'
+
+    - ${{ if eq(parameters.arch, 'X86') }}:
+      - script: |
+          apt-get update
+          apt-get install -y gcc-multilib g++-multilib
+        displayName: 'Install x86 headers and libraries'
+
+    # Note: this assumes that the pipeline is always running on an AMD64 machine. When we have
+    # native ARM64 pipelines, we'll need to change this.
+    - ${{ if eq(parameters.arch, 'ARM64') }}:
+      - script: |
+          apt-get update
+          apt-get install -y binutils-aarch64-linux-gnu gcc-aarch64-linux-gnu g++-aarch64-linux-gnu qemu-user
+        displayName: 'Install arm64 cross-compilation tools'
+
+    - script: |
+        pip install -r scripts/requirements.txt
+      displayName: 'Install Python dependencies'
+
+    - task: PythonScript@0
+      displayName: 'Run build script'
+      inputs:
+        scriptSource: 'filePath'
+        scriptPath: scripts/build.py
+        arguments: 'bin --arch ${{ parameters.arch }} --config ${{ parameters.config }} --cc ${{ parameters.cc }} --cxx ${{ parameters.cxx }} ${{ parameters.additionalArgs }}'
+        workingDirectory: $(Build.SourcesDirectory)
+
+    - ${{ if ne(parameters.arch, 'ARM64') }}:
+      - task: PythonScript@0
+        displayName: 'Run unit tests'
+        inputs:
+          scriptSource: 'filePath'
+          scriptPath: scripts/test.py
+          arguments: 'bin noperftests'
+          workingDirectory: $(Build.SourcesDirectory)
+
+      - ${{ if ne(parameters.config, 'Sanitize') }}:
+        - task: PythonScript@0
+          displayName: 'Run dynamic unit tests'
+          inputs:
+            scriptSource: 'filePath'
+            scriptPath: scripts/test.py
+            arguments: 'bin dynamic:bin/module/generic/libsymcrypt.so noperftests'
+            workingDirectory: $(Build.SourcesDirectory)
+
+    - ${{ if eq(parameters.arch, 'AMD64') }}:
+      - task: PythonScript@0
+        displayName: 'Run unit tests (test YMM save/restore)'
+        inputs:
+          scriptSource: 'filePath'
+          scriptPath: scripts/test.py
+          arguments: '--glibc-disable-ymm bin testSaveYmm'
+          workingDirectory: $(Build.SourcesDirectory)
+
+    - ${{ if eq(parameters.arch, 'ARM64') }}:
+      - task: PythonScript@0
+        displayName: 'Run unit tests'
+        inputs:
+          scriptSource: 'filePath'
+          scriptPath: scripts/test.py
+          arguments: '--emulator qemu-aarch64 --emulator-lib-dir /usr/aarch64-linux-gnu/ bin noperftests +symcrypt -dh -dsa -rsa'
+          workingDirectory: $(Build.SourcesDirectory)
+
+      - task: PythonScript@0
+        displayName: 'Run dynamic unit tests'
+        inputs:
+          scriptSource: 'filePath'
+          scriptPath: scripts/test.py
+          arguments: '--emulator qemu-aarch64 --emulator-lib-dir /usr/aarch64-linux-gnu/ bin dynamic:bin/module/generic/libsymcrypt.so noperftests +symcrypt -dh -dsa -rsa'
+          workingDirectory: $(Build.SourcesDirectory)
+
+    - task: PythonScript@0
+      displayName: 'Package build output'
+      inputs:
+        scriptSource: 'filePath'
+        scriptPath: scripts/package.py
+        arguments: 'bin ${{ parameters.arch }} ${{ parameters.config }} generic bin'
+        workingDirectory: $(Build.SourcesDirectory) 

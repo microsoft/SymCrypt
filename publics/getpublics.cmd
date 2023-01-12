@@ -1,5 +1,5 @@
 set SYMCRYPT_PUBLICS=%OBJECT_ROOT%\SymCrypt\Publics\%O%
-set SYMCRYPT_PUBLICS_CACHE=..\SymCryptDependencies
+set SYMCRYPT_PUBLICS_CACHE=..\unittest\SymCryptDependencies
 
 echo obj entry: %O%,  %OBJ_PATH%
 

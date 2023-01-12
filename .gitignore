@@ -69,7 +69,7 @@ release/
 scbuild.log
 
 # Cmake output
-bin/
+bin*/
 CMakeFiles
 CMakeCache.txt
 **/cmake_install.*
@@ -82,3 +82,6 @@ CMakeCache.txt
 
 # Makefiles from CMake
 Makefile
+
+# Local Guardian configuration
+.gdn

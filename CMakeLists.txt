@@ -1,5 +1,8 @@
 cmake_minimum_required(VERSION 3.13.0)
 
+find_package(Python3 REQUIRED COMPONENTS Interpreter)
+message("Python 3 path: ${Python3_EXECUTABLE}")
+
 if(WIN32)
     # Require Windows 10 SDK version 18362 for BCRYPT_TLS_CBC_HMAC_VERIFY_FLAG
     # Must be done before the "project" directive
@@ -69,11 +72,15 @@ message(STATUS "ASM optimizations: ${SYMCRYPT_USE_ASM}")
 message(STATUS "FIPS build: ${SYMCRYPT_FIPS_BUILD}")
 
 # Set output directories binaries
-set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
-set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/module)
-set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/exe)
+# Note: we use a generator expression because "Multi-configuration generators [e.g. Visual Studio]
+# append a per-configuration subdirectory to the specified directory unless a generator expression
+# is used." We don't want this, because we want the output directories to be consistent between different
+# platforms/generators so that we can more easily automate the build and packaging process.
+set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY $<1:${CMAKE_BINARY_DIR}/lib>)
+set(CMAKE_LIBRARY_OUTPUT_DIRECTORY $<1:${CMAKE_BINARY_DIR}/module>)
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY $<1:${CMAKE_BINARY_DIR}/exe>)
 
-if(CMAKE_BUILD_TYPE MATCHES Release)
+if(CMAKE_BUILD_TYPE MATCHES "Release|RelWithDebInfo")
     message(STATUS "Release mode")
 else()
     message(STATUS "Debug mode")

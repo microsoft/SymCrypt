@@ -30,7 +30,6 @@
 #define ScShimSymCryptInit(...) SCTEST_CALL_SCIMPFN(SymCryptInit, __VA_ARGS__)
 #define ScShimSymCryptModuleInit(...) SCTEST_CALL_SCIMPFN(SymCryptModuleInit, __VA_ARGS__)
 #define ScShimSymCryptWipe(...) SCTEST_CALL_SCIMPFN(SymCryptWipe, __VA_ARGS__)
-#define ScShimSymCryptWipeKnownSize(...) SCTEST_CALL_SCIMPFN(SymCryptWipeKnownSize, __VA_ARGS__)
 #define ScShimSymCryptXorBytes(...) SCTEST_CALL_SCIMPFN(SymCryptXorBytes, __VA_ARGS__)
 #define ScShimSymCryptEqual(...) SCTEST_CALL_SCIMPFN(SymCryptEqual, __VA_ARGS__)
 #define ScShimSymCryptHashResultSize(...) SCTEST_CALL_SCIMPFN(SymCryptHashResultSize, __VA_ARGS__)

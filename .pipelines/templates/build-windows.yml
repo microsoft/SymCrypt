@@ -1,0 +1,76 @@
+parameters:
+- name: arch
+  type: string
+  values:
+  - AMD64
+  - X86
+  - ARM64
+  - ARM
+- name: config
+  type: string
+  values:
+  - Debug
+  - Release
+- name: additionalArgs # Additional arguments to pass to the build script
+  type: string
+  default: ''
+- name: identifier # Additional identifier for job name
+  type: string
+  default: ''
+
+jobs:
+- job: Windows_${{ parameters.arch}}_${{parameters.config}}_${{parameters.identifier}}
+  displayName: Windows ${{ parameters.arch}} ${{parameters.config}} ${{ parameters.identifier }}
+
+  pool:
+    type: windows
+
+  variables:
+    ob_outputDirectory: $(Build.SourcesDirectory)\bin
+    ob_sdl_binskim_break: ${{ eq(parameters.config, 'Release') }} # Only break on binskim failures for Release binaries https://aka.ms/obpipelines/sdl
+
+  steps:
+  
+  # TODO: Need to make this match the SymCrypt version (major.minor.patch). We also shouldn't have to update it manually.
+  # https://microsoft.visualstudio.com/DefaultCollection/OS/_workitems/edit/42880140/
+  - task: onebranch.pipeline.version@1
+    displayName: 'Setup BuildNumber'
+    inputs:
+      system: 'RevisionCounter'
+      major: '103'
+      minor: '0'
+      exclude_commit: false
+
+  - task: PythonScript@0
+    displayName: 'Run build script'
+    inputs:
+      scriptSource: 'filePath'
+      scriptPath: scripts\build.py
+      arguments: 'bin --arch ${{ parameters.arch }} --config ${{ parameters.config }} ${{ parameters.additionalArgs }}'
+      workingDirectory: $(Build.SourcesDirectory)
+
+  - task: PythonScript@0
+    displayName: 'Run unit tests'
+    inputs:
+      scriptSource: 'filePath'
+      scriptPath: scripts\test.py
+      arguments: 'bin noperftests'
+      workingDirectory: $(Build.SourcesDirectory)
+
+  # Cannot currently run ARM/ARM64 binaries on the Windows pipeline
+  - ${{ if or(eq(parameters.arch, 'AMD64'), eq(parameters.arch, 'X86')) }}:
+    - task: PythonScript@0
+      displayName: 'Run dynamic unit tests'
+      inputs:
+        scriptSource: 'filePath'
+        scriptPath: scripts/test.py
+        arguments: 'bin dynamic:bin\exe\symcrypttestmodule.dll noperftests'
+        workingDirectory: $(Build.SourcesDirectory)      
+
+    - task: PythonScript@0
+      displayName: 'Package build output'
+      inputs:
+        scriptSource: 'filePath'
+        scriptPath: scripts\package.py
+        arguments: 'bin ${{ parameters.arch }} ${{ parameters.config }} generic bin'
+        workingDirectory: $(Build.SourcesDirectory) 

@@ -1,4 +1,4 @@
 # Do not try to upload git submodules when publishing ADO artifacts
 
 **/SymCryptDependencies/
-**/jitterentropy-library/
+**/3rdparty/
