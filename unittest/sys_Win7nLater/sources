@@ -12,8 +12,6 @@ LINK_TIME_CODE_GENERATION = 1
 
 INCLUDES= \
     ..\..\..\released\windows\ntrsa32\inc; \
-    $(DS_INC_PATH);                 \
-#    $(DS_INC_PATH)\crypto; \
     ..\..\inc ; \
     ..\lib ; \
     ..\inc ; \

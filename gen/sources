@@ -11,8 +11,6 @@ TEST_CODE= 1
 LINK_TIME_CODE_GENERATION = 1
 
 INCLUDES= \
-    $(DS_INC_PATH);                 \
-#    $(DS_INC_PATH)\crypto; \
     ..\lib ; \
     ..\inc ; \
     $(DDK_INC_PATH); \

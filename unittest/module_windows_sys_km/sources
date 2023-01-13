@@ -5,7 +5,6 @@ MSC_WARNING_LEVEL=/W4 /WX
 
 INCLUDES= \
     ..\..\..\released\windows\ntrsa32\inc; \
-    $(DS_INC_PATH); \
     ..\..\inc ; \
     ..\lib ; \
     ..\inc ; \

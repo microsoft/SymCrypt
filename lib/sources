@@ -62,7 +62,6 @@ NTTARGETFILE0=\
 
 INCLUDES=  \
     ..\inc; \
-    $(DS_INC_PATH)\crypto; \
     $(IFSKIT_INC_PATH); \
 #    $(MINWIN_PRIVATE_PRIV_SDK_INC_PATH_L)\boot; \
     $(OBJECT_ROOT)\SymCrypt\Publics\$(O); \

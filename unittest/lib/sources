@@ -13,10 +13,7 @@ TEST_CODE= 1
 LINK_TIME_CODE_GENERATION = 1
 
 INCLUDES= \
-    $(DS_INC_PATH);                 \
-    $(DS_INC_PATH)\crypto; \
     $(ONECOREDS_INTERNAL_INC_PATH_L)\crypto; \
-    $(MINWIN_PRIV_SDK_INC_PATH)\crypto; \
     ..\..\inc ; \
     ..\inc ; \
     ..\..\lib ; \

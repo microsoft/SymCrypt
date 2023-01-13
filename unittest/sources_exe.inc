@@ -18,13 +18,7 @@ INCLUDES= \
     ..\..\inc; \
     ..\lib; \
     $(OBJECT_ROOT)\SymCrypt\Publics\$(O); \
-    $(DS_INC_PATH);                 \
-    $(DS_INC_PATH)\crypto; \
-    $(ONECOREDS_INC_PATH)\crypto; \
-    $(ONECOREDS_PRIVATE_INC_PATH_L)\crypto; \
     $(ONECOREDS_INTERNAL_INC_PATH_L)\crypto; \
-    $(MINWIN_PRIV_SDK_INC_PATH)\crypto; \
-#   $(ONECORE_PRIVATE_PATH)\ds\inc\crypto; \
     $(DDK_INC_PATH); \
 
 SOURCES= \

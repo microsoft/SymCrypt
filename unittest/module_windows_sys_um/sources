@@ -13,7 +13,6 @@ C_DEFINES=$(C_DEFINES) -DINCLUDE_IMPL_MSBIGNUM=0 -DINCLUDE_IMPL_RSA32=0
 INCLUDES= \
     ..\inc; \
     ..\..\inc ; \
-    $(MINWIN_PRIV_SDK_INC_PATH)\crypto; \
     $(DDK_INC_PATH); \
 
 SOURCES= \
