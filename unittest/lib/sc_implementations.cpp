@@ -212,6 +212,13 @@ addSymCryptImplementationToGlobalList()
     addImplementationToGlobalList<HashImp<ImpScVariant, AlgSha3_384>>();
     addImplementationToGlobalList<HashImp<ImpScVariant, AlgSha3_512>>();
 
+    addImplementationToGlobalList<XofImp<ImpScVariant, AlgShake128>>();
+    addImplementationToGlobalList<XofImp<ImpScVariant, AlgShake256>>();
+    addImplementationToGlobalList<CustomizableXofImp<ImpScVariant, AlgCShake128>>();
+    addImplementationToGlobalList<CustomizableXofImp<ImpScVariant, AlgCShake256>>();
+    addImplementationToGlobalList<KmacImp<ImpScVariant, AlgKmac128>>();
+    addImplementationToGlobalList<KmacImp<ImpScVariant, AlgKmac256>>();
+
     addImplementationToGlobalList<MacImp<ImpScVariant, AlgHmacMd5>>();
     addImplementationToGlobalList<MacImp<ImpScVariant, AlgHmacSha1>>();
     addImplementationToGlobalList<MacImp<ImpScVariant, AlgHmacSha256>>();

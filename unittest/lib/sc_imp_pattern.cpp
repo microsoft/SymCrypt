@@ -91,6 +91,53 @@
 #undef ALG_Name
 #undef ALG_name
 
+ #define ALG_NAME   SHAKE128
+ #define ALG_Name   Shake128
+ #define ALG_name   shake128
+ #include "sc_imp_xofpattern.cpp"
+ #undef ALG_NAME
+ #undef ALG_Name
+ #undef ALG_name
+
+ #define ALG_NAME   SHAKE256
+ #define ALG_Name   Shake256
+ #define ALG_name   shake256
+ #include "sc_imp_xofpattern.cpp"
+ #undef ALG_NAME
+ #undef ALG_Name
+ #undef ALG_name
+
+ #define ALG_NAME   CSHAKE128
+ #define ALG_Name   CShake128
+ #define ALG_name   cshake128
+ #include "sc_imp_cxofpattern.cpp"
+ #undef ALG_NAME
+ #undef ALG_Name
+ #undef ALG_name
+
+ #define ALG_NAME   CSHAKE256
+ #define ALG_Name   CShake256
+ #define ALG_name   cshake256
+ #include "sc_imp_cxofpattern.cpp"
+ #undef ALG_NAME
+ #undef ALG_Name
+ #undef ALG_name
+
+ #define ALG_NAME   KMAC128
+ #define ALG_Name   Kmac128
+ #define ALG_name   kmac128
+ #include "sc_imp_kmacpattern.cpp"
+ #undef ALG_NAME
+ #undef ALG_Name
+ #undef ALG_name
+
+ #define ALG_NAME   KMAC256
+ #define ALG_Name   Kmac256
+ #define ALG_name   kmac256
+ #include "sc_imp_kmacpattern.cpp"
+ #undef ALG_NAME
+ #undef ALG_Name
+ #undef ALG_name
 
 #define ALG_NAME    HMAC_MD5
 #define ALG_Name    HmacMd5

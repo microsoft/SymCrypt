@@ -167,132 +167,318 @@ SymCryptKeccakPermute(_Inout_updates_(25) UINT64* pState)
 
 
 //
-// SymCryptSha3Init
+// SymCryptKeccakInit
 //
-SYMCRYPT_NOINLINE
 VOID
 SYMCRYPT_CALL
-SymCryptSha3Init(_Out_ PSYMCRYPT_SHA3_STATE pState, UINT32 uOutputBits)
+SymCryptKeccakInit(_Out_ PSYMCRYPT_SHA3_STATE pState, UINT32 inputBlockSize, UINT8 paddingValue)
 {
-    SYMCRYPT_ASSERT(uOutputBits == 256 || uOutputBits == 384 || uOutputBits == 512);
-
     SYMCRYPT_SET_MAGIC(pState);
 
-    pState->resultSize = uOutputBits / 8;
-    pState->inputBlockSize = (UINT32)(200 - (2 * pState->resultSize));    // rate = state - capacity, capacity = 2 * resultSize
-    pState->mergedBytes = 0;
+    pState->inputBlockSize = inputBlockSize;
+    pState->paddingValue = paddingValue;
 
+    // Initialize the Keccak permutation state and set mutable state variables
+    // to their default values.
+    SymCryptKeccakReset(pState);
+}
+
+VOID
+SYMCRYPT_CALL
+SymCryptKeccakReset(_Out_ PSYMCRYPT_SHA3_STATE pState)
+{
+    //
+    // Wipe & re-initialize
+    //
+    // Wipe the Keccak permutation state and set the mutable state variables to their
+    // default values. Non-mutable state variables retain their values. State becomes
+    // re-initialized after this call.
     SymCryptWipeKnownSize(pState->state, sizeof(pState->state));
+    pState->stateIndex = 0;
+    pState->squeezeMode = FALSE;
+}
+
+//
+// SymCryptKeccakAppendByte
+//
+FORCEINLINE
+VOID
+SYMCRYPT_CALL
+SymCryptKeccakAppendByte(_Inout_ PSYMCRYPT_SHA3_STATE  pState, BYTE val)
+{
+    SYMCRYPT_ASSERT(!pState->squeezeMode);
+    SYMCRYPT_ASSERT(pState->stateIndex < pState->inputBlockSize);
+
+    pState->state[pState->stateIndex / sizeof(UINT64)] ^= ((UINT64)val << (8 * (pState->stateIndex % 8)));
+    pState->stateIndex++;
+}
+
+//
+// SymCryptKeccakAppendBytes
+//
+FORCEINLINE
+VOID
+SYMCRYPT_CALL
+SymCryptKeccakAppendBytes(_Inout_ PSYMCRYPT_SHA3_STATE  pState, PCBYTE pbBuffer, SIZE_T cbBuffer)
+{
+    SYMCRYPT_ASSERT(!pState->squeezeMode);
+    SYMCRYPT_ASSERT((pState->stateIndex + cbBuffer) <= pState->inputBlockSize);
+
+    for (SIZE_T i = 0; i < cbBuffer; i++)
+    {
+        pState->state[(pState->stateIndex + i) / sizeof(UINT64)] ^= ((UINT64)pbBuffer[i] << (8 * ((pState->stateIndex + i) % 8)));
+    }
+
+    pState->stateIndex += (UINT32)cbBuffer;
 }
 
 
 //
-// SymCryptSha3Append
+// SymCryptKeccakAppendLanes
 //
-SYMCRYPT_NOINLINE
 VOID
 SYMCRYPT_CALL
-SymCryptSha3Append(
+SymCryptKeccakAppendLanes(
+    _Inout_                                 PSYMCRYPT_SHA3_STATE    pState,
+    _In_reads_(uLaneCount * sizeof(UINT64)) PCBYTE                  pbData,
+                                            SIZE_T                  uLaneCount)
+{
+    SYMCRYPT_ASSERT(!pState->squeezeMode);
+    SYMCRYPT_ASSERT((pState->inputBlockSize & 0x7) == 0);
+    SYMCRYPT_ASSERT((pState->stateIndex & 0x7) == 0);
+    SYMCRYPT_ASSERT(pState->stateIndex != pState->inputBlockSize);
+
+    // Locate the lane in the state for next append.
+    // Currently, pState->stateIndex/sizeof(UINT64) of the lanes are used.
+    UINT32 uLaneIndex = pState->stateIndex / sizeof(UINT64);
+
+    for (SIZE_T i = 0; i < uLaneCount; i++)
+    {
+        pState->state[uLaneIndex] ^= SYMCRYPT_LOAD_LSBFIRST64(pbData + i * sizeof(UINT64));
+        pState->stateIndex += sizeof(UINT64);
+        uLaneIndex++;
+
+        if (pState->stateIndex == pState->inputBlockSize)
+        {
+            SymCryptKeccakPermute(pState->state);
+            pState->stateIndex = 0;
+            uLaneIndex = 0;
+        }
+    }
+}
+
+//
+// SymCryptKeccakZeroAppendBlock
+//
+VOID
+SYMCRYPT_CALL
+SymCryptKeccakZeroAppendBlock(_Inout_ PSYMCRYPT_SHA3_STATE  pState)
+{
+    SYMCRYPT_ASSERT(!pState->squeezeMode);
+    SymCryptKeccakPermute(pState->state);
+    pState->stateIndex = 0;
+}
+
+//
+// SymCryptKeccakAppend
+//
+VOID
+SYMCRYPT_CALL
+SymCryptKeccakAppend(
     _Inout_                 PSYMCRYPT_SHA3_STATE    pState,
     _In_reads_(cbData)      PCBYTE                  pbData,
                             SIZE_T                  cbData)
 {
-    PBYTE   pbState = (PBYTE)pState->state;
-    SIZE_T  cbFree = pState->inputBlockSize - pState->mergedBytes;
+    SYMCRYPT_ASSERT(pState->inputBlockSize % 8 == 0);
 
-    // If there are already merged bytes and appended bytes fill one block,
-    // consume them here.
-    if (pState->mergedBytes > 0 && cbData >= cbFree)
+    // If we were in squeeze mode (Append is called after an Extract without wiping),
+    // switch to absorb mode to start a new hash computation.
+    if (pState->squeezeMode)
     {
-        for (SIZE_T i = 0; i < cbFree; i++)
-        {
-            pbState[pState->mergedBytes + i] ^= pbData[i];
-        }
+        SymCryptKeccakReset(pState);
+    }
 
-        pbData += cbFree;
-        cbData -= cbFree;
-        pState->mergedBytes = 0;
+    SYMCRYPT_ASSERT(pState->stateIndex < pState->inputBlockSize);
 
+    // Make pState->stateIndex a multiple of 8.
+    // Message block boundary will not be crossed, check
+    // if permutation is needed after this part.
+    while (cbData > 0 && (pState->stateIndex & 0x7))
+    {
+        SymCryptKeccakAppendByte(pState, *pbData);
+        pbData++;
+        cbData--;
+    }
+
+    // Permute if input message block is filled
+    if (pState->stateIndex == pState->inputBlockSize)
+    {
         SymCryptKeccakPermute(pState->state);
+        pState->stateIndex = 0;
     }
 
-    // Process full blocks
-    while (cbData >= pState->inputBlockSize)
+    // Append full lanes
+    SIZE_T uFullLanes = cbData / sizeof(UINT64);
+    if (uFullLanes > 0)
     {
-        // Absorb
-        for (SIZE_T i = 0; i < pState->inputBlockSize / sizeof(UINT64); i++)
-        {
-            pState->state[i] ^= SYMCRYPT_LOAD_LSBFIRST64(pbData + i * sizeof(UINT64));
-        }
-
-        SymCryptKeccakPermute(pState->state);
-
-        pbData += pState->inputBlockSize;
-        cbData -= pState->inputBlockSize;
+        SymCryptKeccakAppendLanes(pState, pbData, uFullLanes);
+        pbData += uFullLanes * sizeof(UINT64);
+        cbData -= uFullLanes * sizeof(UINT64);
     }
 
-    SYMCRYPT_ASSERT(cbData < pState->inputBlockSize);
+    SYMCRYPT_ASSERT(cbData < sizeof(UINT64));
+    SymCryptKeccakAppendBytes(pState, pbData, cbData);
 
-    // Merge remaining bytes if any into the state
-    if (cbData > 0)
-    {
-        for (SIZE_T i = 0; i < cbData; i++)
-        {
-            pbState[pState->mergedBytes + i] ^= pbData[i];
-        }
-
-        pState->mergedBytes += (UINT32)cbData;
-    }
+    SYMCRYPT_ASSERT(pState->stateIndex != pState->inputBlockSize)
 }
 
-
 //
-// SymCryptSha3Result
+// SymCryptKeccakApplyPadding
 //
-SYMCRYPT_NOINLINE
 VOID
 SYMCRYPT_CALL
-SymCryptSha3Result(
-    _Inout_                             PSYMCRYPT_SHA3_STATE    pState,
-    _Out_writes_(pState->resultSize)    PBYTE                   pbResult)
+SymCryptKeccakApplyPadding(_Inout_ PSYMCRYPT_SHA3_STATE pState)
 {
-    PBYTE   pbState = (PBYTE)pState->state;
+    SYMCRYPT_ASSERT(!pState->squeezeMode);
 
-    SYMCRYPT_CHECK_MAGIC(pState);
+    // Locate the lane and byte position for the padding byte
+    UINT32 uLanePos = pState->stateIndex / sizeof(UINT64);
+    UINT32 uBytePos = pState->stateIndex % sizeof(UINT64);
+    pState->state[uLanePos] ^= ((UINT64)pState->paddingValue << (8 * uBytePos));
 
-    // Apply padding:
-    // 01 domain separator represents SHA-3 (0x2 in little endian bit ordering)
-    // This is immediately followed by first 1 in 10*1 Keccak multi-rate padding giving us 0x06
-    pbState[pState->mergedBytes] ^= 0x06;
+    // Pad the final 1 bit to the msb of the last lane in the rate portion of the state
+    pState->state[pState->inputBlockSize / sizeof(UINT64) - 1] ^= (1ULL << 63);
 
-    // Pad the final 1 bit
-    pbState[pState->inputBlockSize - 1] ^= 0x80;
-
+    // Process the padded block and switch to squeeze mode
     SymCryptKeccakPermute(pState->state);
-
-    // Squeeze
-    for (int i = 0; i < pState->resultSize / sizeof(UINT64); i++)
-    {
-        SYMCRYPT_STORE_LSBFIRST64(pbResult + i * sizeof(UINT64), pState->state[i]);
-    }
-
-    //
-    // Wipe & re-initialize
-    //
-    // We don't have to call the Init function as wiping the Keccak state and
-    // setting the mergedBytes to zero has the desired effect. The other state 
-    // variables remain unchanged.
-    SymCryptWipeKnownSize(pState->state, sizeof(pState->state));
-    pState->mergedBytes = 0;
+    pState->stateIndex = 0;
+    pState->squeezeMode = TRUE;
 }
 
+//
+// SymCryptKeccakExtractByte
+//
+FORCEINLINE
+BYTE
+SYMCRYPT_CALL
+SymCryptKeccakExtractByte(_Inout_ PSYMCRYPT_SHA3_STATE  pState)
+{
+    SYMCRYPT_ASSERT(pState->squeezeMode);
+    SYMCRYPT_ASSERT(pState->stateIndex < pState->inputBlockSize);
+
+    BYTE ret = (BYTE)((pState->state[pState->stateIndex / sizeof(UINT64)] >> (8 * (pState->stateIndex % 8))) & 0xff);
+    pState->stateIndex++;
+    return ret;
+}
 
 //
-// SymCryptSha3StateExport
+// SymCryptKeccakExtractLanes
 //
 VOID
 SYMCRYPT_CALL
-SymCryptSha3StateExport(
+SymCryptKeccakExtractLanes(
+    _Inout_                                     PSYMCRYPT_SHA3_STATE    pState,
+    _Out_writes_(uLaneCount * sizeof(UINT64))   PBYTE                   pbResult,
+                                                SIZE_T                  uLaneCount)
+{
+    SYMCRYPT_ASSERT(pState->squeezeMode);
+    SYMCRYPT_ASSERT((pState->inputBlockSize & 0x7) == 0);
+    SYMCRYPT_ASSERT((pState->stateIndex & 0x7) == 0);
+
+    // Locate the lane in the state for next extraction
+    UINT32 uLaneIndex = pState->stateIndex / sizeof(UINT64);
+
+    for (SIZE_T i = 0; i < uLaneCount; i++)
+    {
+        SYMCRYPT_ASSERT(pState->stateIndex <= pState->inputBlockSize);
+
+        if (pState->stateIndex == pState->inputBlockSize)
+        {
+            SymCryptKeccakPermute(pState->state);
+            pState->stateIndex = 0;
+            uLaneIndex = 0;
+        }
+
+        SYMCRYPT_STORE_LSBFIRST64(pbResult + i * sizeof(UINT64), pState->state[uLaneIndex]);
+        pState->stateIndex += sizeof(UINT64);
+        uLaneIndex++;
+    }
+}
+
+//
+// SymCryptKeccakExtract
+//
+VOID
+SYMCRYPT_CALL
+SymCryptKeccakExtract(
+    _Inout_                 PSYMCRYPT_SHA3_STATE    pState,
+    _Out_writes_(cbResult)  PBYTE                   pbResult,
+                            SIZE_T                  cbResult,
+                            BOOLEAN                 bWipe)
+{
+    // Apply padding and switch to squeeze mode if this is the first call to Extract
+    if (!pState->squeezeMode)
+    {
+        SymCryptKeccakApplyPadding(pState);
+    }
+
+    // Do the permutation if there are no bytes available in the state
+    if ( (cbResult > 0) && (pState->stateIndex == pState->inputBlockSize) )
+    {
+        SymCryptKeccakPermute(pState->state);
+        pState->stateIndex= 0;
+    }
+
+    // Make stateIndex a multiple of 8 so that the extraction can be performed in lanes.
+    // We don't call the permutation as soon as the stateIndex reaches inputBlockSize,
+    // cbResult must also be non-zero for that. This condition is checked
+    // in ExtractLanes or in the 'remaining bytes' block that follows it.
+    while (cbResult > 0 && (pState->stateIndex & 0x7))
+    {
+        *pbResult = SymCryptKeccakExtractByte(pState);
+        pbResult++;
+        cbResult--;
+    }
+
+    SYMCRYPT_ASSERT((cbResult == 0) || ((pState->stateIndex & 0x7) == 0));
+
+    // Extract full lanes
+    SIZE_T uFullLanes = cbResult / sizeof(UINT64);
+    if (uFullLanes > 0)
+    {
+        SymCryptKeccakExtractLanes(pState, pbResult, uFullLanes);
+        pbResult += uFullLanes * sizeof(UINT64);
+        cbResult -= uFullLanes * sizeof(UINT64);
+    }
+
+    // Extract the remaining bytes
+    SYMCRYPT_ASSERT(cbResult < sizeof(UINT64));
+    while (cbResult > 0)
+    {
+        if (pState->stateIndex == pState->inputBlockSize)
+        {
+            SymCryptKeccakPermute(pState->state);
+            pState->stateIndex = 0;
+        }
+
+        *pbResult = SymCryptKeccakExtractByte(pState);
+        pbResult++;
+        cbResult--;
+    }
+
+    if (bWipe)
+    {
+        // Wipe the Keccak state and make it ready for a new hash computation
+        SymCryptKeccakReset(pState);
+    }
+}
+
+//
+// SymCryptKeccakStateExport
+//
+VOID
+SYMCRYPT_CALL
+SymCryptKeccakStateExport(
                                                         SYMCRYPT_BLOB_TYPE      type,
     _In_                                                PCSYMCRYPT_SHA3_STATE   pState,
     _Out_writes_bytes_(SYMCRYPT_SHA3_STATE_EXPORT_SIZE) PBYTE                   pbBlob)
@@ -313,8 +499,10 @@ SymCryptSha3StateExport(
     // Copy the relevant data. Buffer will be 0-padded.
     //
 
-    SymCryptUint64ToMsbFirst(&pState->state[0], &blob.state[0], 25);
-    blob.mergedBytes = pState->mergedBytes;
+    SymCryptUint64ToLsbFirst(&pState->state[0], &blob.state[0], 25);
+    blob.stateIndex = pState->stateIndex;
+    blob.paddingValue = pState->paddingValue;
+    blob.squeezeMode = pState->squeezeMode;
 
     SYMCRYPT_ASSERT((PCBYTE)&blob + sizeof(blob) - sizeof(SYMCRYPT_BLOB_TRAILER) == (PCBYTE)&blob.trailer);
     SymCryptMarvin32(SymCryptMarvin32DefaultSeed, (PCBYTE)&blob, sizeof(blob) - sizeof(SYMCRYPT_BLOB_TRAILER), &blob.trailer.checksum[0]);
@@ -327,11 +515,11 @@ SymCryptSha3StateExport(
 
 
 //
-// SymCryptSha3StateImport
+// SymCryptKeccakStateImport
 //
 SYMCRYPT_ERROR
 SYMCRYPT_CALL
-SymCryptSha3StateImport(
+SymCryptKeccakStateImport(
                                                         SYMCRYPT_BLOB_TYPE      type,
     _Out_                                               PSYMCRYPT_SHA3_STATE    pState,
     _In_reads_bytes_(SYMCRYPT_SHA3_STATE_EXPORT_SIZE)   PCBYTE                  pbBlob)
@@ -359,23 +547,63 @@ SymCryptSha3StateImport(
         goto cleanup;
     }
 
-    SymCryptMsbFirstToUint64(&blob.state[0], &pState->state[0], 25);
-    pState->mergedBytes = blob.mergedBytes;
+    SymCryptLsbFirstToUint64(&blob.state[0], &pState->state[0], 25);
+    pState->stateIndex = blob.stateIndex;
+    pState->paddingValue = blob.paddingValue;
+    pState->squeezeMode = blob.squeezeMode;
 
-    if (type == SymCryptBlobTypeSha3_256State)
+    //
+    // Set state fields based on the blob type and do validation
+    //
+
+    // default values indicate error
+    pState->inputBlockSize = 0;
+    pState->paddingValue = 0;
+
+    switch (blob.header.type)
     {
-        pState->inputBlockSize = SYMCRYPT_SHA3_256_INPUT_BLOCK_SIZE;
-        pState->resultSize = SYMCRYPT_SHA3_256_RESULT_SIZE;
+        case SymCryptBlobTypeSha3_256State:
+            pState->inputBlockSize = SYMCRYPT_SHA3_256_INPUT_BLOCK_SIZE;
+            if (blob.paddingValue == SYMCRYPT_SHA3_PADDING_VALUE)
+            {
+                pState->paddingValue = blob.paddingValue;
+            }
+            break;
+
+        case SymCryptBlobTypeSha3_384State:
+            pState->inputBlockSize = SYMCRYPT_SHA3_384_INPUT_BLOCK_SIZE;
+            if (blob.paddingValue == SYMCRYPT_SHA3_PADDING_VALUE)
+            {
+                pState->paddingValue = blob.paddingValue;
+            }
+            break;
+
+        case SymCryptBlobTypeSha3_512State:
+            pState->inputBlockSize = SYMCRYPT_SHA3_512_INPUT_BLOCK_SIZE;
+            if (blob.paddingValue == SYMCRYPT_SHA3_PADDING_VALUE)
+            {
+                pState->paddingValue = blob.paddingValue;
+            }
+            break;
     }
-    else if (type == SymCryptBlobTypeSha3_384State)
+
+    if (pState->inputBlockSize == 0 || pState->paddingValue == 0)
     {
-        pState->inputBlockSize = SYMCRYPT_SHA3_384_INPUT_BLOCK_SIZE;
-        pState->resultSize = SYMCRYPT_SHA3_384_RESULT_SIZE;
+        scError = SYMCRYPT_INVALID_BLOB;
+        goto cleanup;
     }
-    else if (type == SymCryptBlobTypeSha3_512State)
+
+    if (pState->stateIndex > pState->inputBlockSize)
     {
-        pState->inputBlockSize = SYMCRYPT_SHA3_512_INPUT_BLOCK_SIZE;
-        pState->resultSize = SYMCRYPT_SHA3_512_RESULT_SIZE;
+        scError = SYMCRYPT_INVALID_BLOB;
+        goto cleanup;
+    }
+
+    // Allow stateIndex = inputBlockSize only in squeeze mode
+    if ((pState->stateIndex == pState->inputBlockSize) && !pState->squeezeMode)
+    {
+        scError = SYMCRYPT_INVALID_BLOB;
+        goto cleanup;
     }
 
     SYMCRYPT_SET_MAGIC(pState);

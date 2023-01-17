@@ -57,6 +57,7 @@ set(SOURCES_COMMON
     hmacsha256.c
     hmacsha384.c
     hmacsha512.c
+    kmac.c
     libmain.c
     marvin32.c
     md2.c
@@ -96,6 +97,7 @@ set(SOURCES_COMMON
     sha3_256.c
     sha3_384.c
     sha3_512.c
+    shake.c
     sp800_108_hmacsha1.c
     sp800_108_hmacsha256.c
     sp800_108_hmacsha512.c

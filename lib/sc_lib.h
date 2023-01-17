@@ -73,6 +73,8 @@ typedef int                 BOOL;
 
 
 #define SYMCRYPT_XXX_STATE              CONCAT3( SYMCRYPT_, ALG, _STATE )
+#define PSYMCRYPT_XXX_STATE             CONCAT3( PSYMCRYPT_, ALG, _STATE )
+#define PCSYMCRYPT_XXX_STATE            CONCAT3( PCSYMCRYPT_, ALG, _STATE )
 
 #define SYMCRYPT_Xxx                    CONCAT2( SymCrypt, Alg )
 
@@ -81,6 +83,20 @@ typedef int                 BOOL;
 #define SYMCRYPT_XxxAppend              CONCAT3( SymCrypt, Alg, Append )
 #define SYMCRYPT_XxxResult              CONCAT3( SymCrypt, Alg, Result )
 #define SYMCRYPT_XxxAppendBlocks        CONCAT3( SymCrypt, Alg, AppendBlocks )
+#define SYMCRYPT_XxxStateImport         CONCAT3( SymCrypt, Alg, StateImport)
+#define SYMCRYPT_XxxStateExport         CONCAT3( SymCrypt, Alg, StateExport)
+
+// for XOFs and KMAC
+#define SYMCRYPT_XXX_EXPANDED_KEY       CONCAT3( SYMCRYPT_, ALG, _EXPANDED_KEY )
+#define PSYMCRYPT_XXX_EXPANDED_KEY      CONCAT3( PSYMCRYPT_, ALG, _EXPANDED_KEY )
+#define PCSYMCRYPT_XXX_EXPANDED_KEY     CONCAT3( PCSYMCRYPT_, ALG, _EXPANDED_KEY )
+#define SYMCRYPT_XxxEx                  CONCAT3( SymCrypt, Alg, Ex)
+#define SYMCRYPT_XxxDefault             CONCAT3( SymCrypt, Alg, Default )
+#define SYMCRYPT_XxxExpandKey           CONCAT3( SymCrypt, Alg, ExpandKey )
+#define SYMCRYPT_XxxExpandKeyEx         CONCAT3( SymCrypt, Alg, ExpandKeyEx )
+#define SYMCRYPT_XxxExtract             CONCAT3( SymCrypt, Alg, Extract )
+#define SYMCRYPT_XxxResultEx            CONCAT3( SymCrypt, Alg, ResultEx )
+#define SYMCRYPT_XxxKeyCopy             CONCAT3( SymCrypt, Alg, KeyCopy )
 
 #define SYMCRYPT_HmacXxx                CONCAT2( SymCryptHmac, Alg )
 #define SYMCRYPT_HmacXxxStateCopy       CONCAT3( SymCryptHmac, Alg, StateCopy )
@@ -406,7 +422,7 @@ SymCryptLsbFirstToUint32( _In_reads_(4*cuResult) PCBYTE  pbData,
     memcpy( puResult, pbData, 4*cuResult );
 }
 
-#else // not AMD64_ or X86_
+#else // not (AMD64_ or X86_ or ARM or ARM64)
 
 FORCEINLINE
 VOID
@@ -442,6 +458,72 @@ SymCryptLsbFirstToUint32( _In_reads_(4*cuResult) PCBYTE  pbData,
 
 #endif // Platform switch for SymCryptUint32ToLsbFirst
 
+
+//
+// SymCryptUint64ToLsbFirst & SymCryptLsbFirstToUint64
+// These are used by Keccak.
+//
+#if SYMCRYPT_CPU_X86 | SYMCRYPT_CPU_AMD64 | SYMCRYPT_CPU_ARM | SYMCRYPT_CPU_ARM64
+
+//
+// On AMD64, X86, and ARM this is just a memcpy
+//
+FORCEINLINE
+VOID
+SYMCRYPT_CALL
+SymCryptUint64ToLsbFirst( _In_reads_(cuData)     PCUINT64 puData,
+                          _Out_writes_(8*cuData) PBYTE    pbResult,
+                                                 SIZE_T   cuData )
+
+{
+    memcpy( pbResult, puData, 8*cuData );
+}
+
+FORCEINLINE
+VOID
+SYMCRYPT_CALL
+SymCryptLsbFirstToUint64( _In_reads_(8*cuResult) PCBYTE  pbData,
+                          _Out_writes_(cuResult) PUINT64 puResult,
+                                                 SIZE_T  cuResult )
+{
+    memcpy( puResult, pbData, 8*cuResult );
+}
+
+#else // not (AMD64_ or X86_ or ARM or ARM64)
+
+FORCEINLINE
+VOID
+SYMCRYPT_CALL
+SymCryptUint64ToLsbFirst( _In_reads_(cuData)     PCUINT64 puData,
+                          _Out_writes_(8*cuData) PBYTE    pbResult,
+                                                 SIZE_T   cuData )
+{
+    while( cuData != 0 )
+    {
+        SYMCRYPT_STORE_LSBFIRST64( pbResult, *puData );
+        puData++;
+        pbResult += 8;
+        cuData--;
+    }
+}
+
+FORCEINLINE
+VOID
+SYMCRYPT_CALL
+SymCryptLsbFirstToUint64( _In_reads_(8*cuResult) PCBYTE  pbData,
+                          _Out_writes_(cuResult) PUINT64 puResult,
+                                                 SIZE_T  cuResult )
+{
+    while( cuResult != 0 )
+    {
+        *puResult = SYMCRYPT_LOAD_LSBFIRST64( pbData );
+        pbData += 8;
+        puResult++;
+        cuResult--;
+    }
+}
+
+#endif // Platform switch for SymCryptUint64ToLsbFirst & SymCryptLsbFirstToUint64
 
 
 //
@@ -1036,10 +1118,13 @@ typedef struct _SYMCRYPT_SHA512_STATE_EXPORT_BLOB {
 
 C_ASSERT( sizeof( SYMCRYPT_SHA512_STATE_EXPORT_BLOB ) == SYMCRYPT_SHA512_STATE_EXPORT_SIZE );
 
+// Refer to SYMCRYPT_KECCAK_STATE documentation for the explanation of each struct member
 typedef struct _SYMCRYPT_SHA3_STATE_EXPORT_BLOB {
     SYMCRYPT_BLOB_HEADER    header;
-    BYTE                    state[200];         // Keccak state
-    UINT32                  mergedBytes;        // number of bytes merged into the state for the current block
+    BYTE                    state[200];    
+    UINT32                  stateIndex;
+    UINT8                   paddingValue;
+    BOOLEAN                 squeezeMode;
     BYTE                    rfu[8];             // rfu = Reserved for Future Use.
     SYMCRYPT_BLOB_TRAILER   trailer;
 } SYMCRYPT_SHA3_STATE_EXPORT_BLOB;
@@ -1608,47 +1693,94 @@ extern const SYMCRYPT_HASH SymCryptSha3_384Algorithm_default;
 extern const SYMCRYPT_HASH SymCryptSha3_512Algorithm_default;
 
 
-// Keccak-f[1600] permutation
+
+// Paddings used by various SHA-3 derived algorithms
+#define SYMCRYPT_SHA3_PADDING_VALUE     0x06    // 01 10* padding
+#define SYMCRYPT_SHAKE_PADDING_VALUE    0x1f    // 11 11 10* padding
+#define SYMCRYPT_CSHAKE_PADDING_VALUE   0x04    // 00 10* padding (used when N or S are non-empty strings)
+
+//
+// Functions operating on the Keccak state
+//
+
 VOID
 SYMCRYPT_CALL
 SymCryptKeccakPermute(_Inout_updates_(25) UINT64* pState);
+// Keccak-f[1600] permutation
 
-//
-// Generic SHA-3 functions that act on all SHA-3 family of hash functions
-//
-SYMCRYPT_NOINLINE
 VOID
 SYMCRYPT_CALL
-SymCryptSha3Init(_Out_ PSYMCRYPT_SHA3_STATE pState, UINT32 uOutputBits);
+SymCryptKeccakInit(_Out_ PSYMCRYPT_SHA3_STATE pState, UINT32 inputBlockSize, UINT8 padding);
 
-SYMCRYPT_NOINLINE
 VOID
 SYMCRYPT_CALL
-SymCryptSha3Append(
+SymCryptKeccakReset(_Out_ PSYMCRYPT_SHA3_STATE pState);
+
+VOID
+SYMCRYPT_CALL
+SymCryptKeccakZeroAppendBlock(_Inout_ PSYMCRYPT_SHA3_STATE  pState);
+// Zero pads the current block by invoking the permutation and setting 
+// pState->stateIndex to 0.
+
+VOID
+SYMCRYPT_CALL
+SymCryptKeccakAppend(
     _Inout_                 PSYMCRYPT_SHA3_STATE    pState,
     _In_reads_(cbData)      PCBYTE                  pbData,
                             SIZE_T                  cbData);
-
-SYMCRYPT_NOINLINE
-VOID
-SYMCRYPT_CALL
-SymCryptSha3Result(
-    _Inout_                             PSYMCRYPT_SHA3_STATE    pState,
-    _Out_writes_(pState->resultSize)    PBYTE                   pbResult);
+// Generic append function.
 
 VOID
 SYMCRYPT_CALL
-SymCryptSha3StateExport(
+SymCryptKeccakExtract(
+    _Inout_                 PSYMCRYPT_SHA3_STATE    pState,
+    _Out_writes_(cbResult)  PBYTE                   pbResult,
+                            SIZE_T                  cbResult,
+                            BOOLEAN                 bWipe);
+// Generic extract function, no restriction on cbResult.
+// bWipe denotes whether to wipe the Keccak state and initialize it
+// for a new computation.
+
+VOID
+SYMCRYPT_CALL
+SymCryptKeccakStateExport(
                                                         SYMCRYPT_BLOB_TYPE      type,
     _In_                                                PCSYMCRYPT_SHA3_STATE   pState,
     _Out_writes_bytes_(SYMCRYPT_SHA3_STATE_EXPORT_SIZE) PBYTE                   pbBlob);
 
 SYMCRYPT_ERROR
 SYMCRYPT_CALL
-SymCryptSha3StateImport(
+SymCryptKeccakStateImport(
                                                         SYMCRYPT_BLOB_TYPE      type,
     _Out_                                               PSYMCRYPT_SHA3_STATE    pState,
     _In_reads_bytes_(SYMCRYPT_SHA3_STATE_EXPORT_SIZE)   PCBYTE                  pbBlob);
+
+VOID
+SYMCRYPT_CALL
+SymCryptKeccakAppendEncodeTimes8(
+    _Inout_ SYMCRYPT_KECCAK_STATE *pState,
+            SIZE_T  uValue,
+            BOOLEAN bLeftEncode);
+// Appends the left-encoding of uValue * 8 to the state
+
+VOID
+SYMCRYPT_CALL
+SymCryptKeccakAppendEncodedString(
+    _Inout_                 PSYMCRYPT_KECCAK_STATE  pState,
+    _In_reads_(cbString)    PCBYTE                  pbString,
+                            SIZE_T                  cbString);
+// Appends 'left_encode(cbString * 8) || pbString' to the state
+
+VOID
+SYMCRYPT_CALL
+SymCryptCShakeEncodeInputStrings(
+    _Inout_                             PSYMCRYPT_KECCAK_STATE  pState,
+    _In_reads_( cbFunctionNameString )  PCBYTE                  pbFunctionNameString,
+                                        SIZE_T                  cbFunctionNameString,
+    _In_reads_( cbCustomizationString ) PCBYTE                  pbCustomizationString,
+                                        SIZE_T                  cbCustomizationString);
+// Process CShake input strings
+// Appends byte_pad( encode_string( pbFunctionNameString ) || encode_string( pbCustomizationString ), pState->inputBlockSize )
 
 
 VOID

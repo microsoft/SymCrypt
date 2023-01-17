@@ -89,6 +89,46 @@ public:
 };
 
 template<>
+class XofImpState<ImpXxx, AlgShake128> {
+public:
+    SYMCRYPT_SHAKE128_STATE sc;
+    BOOLEAN                 isReset;
+};
+
+template<>
+class XofImpState<ImpXxx, AlgShake256> {
+public:
+    SYMCRYPT_SHAKE256_STATE sc;
+    BOOLEAN                 isReset;
+};
+
+template<>
+class CustomizableXofImpState<ImpXxx, AlgCShake128> {
+public:
+    SYMCRYPT_CSHAKE128_STATE    sc;
+};
+
+template<>
+class CustomizableXofImpState<ImpXxx, AlgCShake256> {
+public:
+    SYMCRYPT_CSHAKE256_STATE    sc;
+};
+
+template<>
+class KmacImpState<ImpXxx, AlgKmac128> {
+public:
+    SYMCRYPT_KMAC128_EXPANDED_KEY   key;
+    SYMCRYPT_KMAC128_STATE          state;
+};
+
+template<>
+class KmacImpState<ImpXxx, AlgKmac256> {
+public:
+    SYMCRYPT_KMAC256_EXPANDED_KEY   key;
+    SYMCRYPT_KMAC256_STATE          state;
+};
+
+template<>
 class ParallelHashImpState<ImpXxx, AlgParallelSha256> {
 public:
                                                 SYMCRYPT_SHA256_STATE       sc[MAX_PARALLEL_HASH_STATES];

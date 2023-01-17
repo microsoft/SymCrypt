@@ -207,7 +207,7 @@ NTSTATUS HashImp<ImpXxx, AlgXxx>::initWithLongMessage( ULONGLONG nBytes )
 // separate its implementation at compile time.
 #if defined(HashImpSha3_256) || defined(HashImpSha3_384) || defined(HashImpSha3_512)
         memset( &state.sc.state, 'b', sizeof( state.sc.state ) );
-        state.sc.mergedBytes = nBytes % state.sc.inputBlockSize;
+        state.sc.stateIndex = nBytes % state.sc.inputBlockSize;
 #else
         memset( &state.sc.chain, 'b', sizeof( state.sc.chain ) );
         state.sc.dataLengthL = nBytes;

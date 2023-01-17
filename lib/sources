@@ -103,6 +103,7 @@ SOURCES= \
     sha3_256.c \
     sha3_384.c \
     sha3_512.c \
+    shake.c \
     md5.c \
     md4.c \
     md2.c \
@@ -111,6 +112,7 @@ SOURCES= \
     hmacsha256.c \
     hmacsha384.c \
     hmacsha512.c \
+    kmac.c \
     tlsCbcVerify.c \
     aesCtrDrbg.c \
     libmain.c \

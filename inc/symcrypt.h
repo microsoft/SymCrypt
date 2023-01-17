@@ -1299,7 +1299,10 @@ extern const PCSYMCRYPT_HASH SymCryptSha512Algorithm;
 // This implementation is limited to data strings that are in whole bytes.
 // Odd bit length are not supported.
 //
-//
+// SHA3-256(M) = KECCAK[512](M || 01, 256)
+// SHA3-384(M) = KECCAK[768](M || 01, 384)
+// SHA3-512(M) = KECCAK[1024](M || 01, 512)
+// 
 // For details on this API see the description above about the generic hash function API.
 //
 
@@ -1464,6 +1467,433 @@ SYMCRYPT_CALL
 SymCryptSha3_512Selftest();
 
 extern const PCSYMCRYPT_HASH SymCryptSha3_512Algorithm;
+
+
+//==========================================================================
+//   Extendable-Output Functions (XOFs)
+//==========================================================================
+//
+//  XOFs are similar to hash functions except that the output can be arbitrary length. 
+//  SHAKE128 and SHAKE256 are XOFs specified in FIPS 202.
+// 
+//  SHAKE128(M, d) = KECCAK[256] (M || 1111, d)
+//  SHAKE256(M, d) = KECCAK[512] (M || 1111, d)
+// 
+//  SHAKEs share the same Keccak state as the other Keccak based algorithms under
+//  the name SYMCRYPT_SHAKEXxx_STATE, which is a typedef for SYMCRYPT_KECCAK_STATE.
+// 
+//  Both SHAKE128 and SHAKE256 have default result sizes (32- and 64-bytes resp.) 
+//  that allows them to be used as substitutes for hash functions with the Init-Append-Result
+//  pattern. 
+// 
+//  Extract is a new type of function that does not exist in hash functions, which can 
+//  be called multiple times to successively generate output from the state. Extract 
+//  function also provides the caller with a flag to wipe the state when no further Extract
+//  calls will be made. If the caller does not know in advance whether an Extract call is 
+//  the final one, wiping can be performed later with an Init call or an Extract call with 
+//  zero bytes output.
+//
+//  If Append is called after an Extract call which did not wipe the state (i.e., the state
+//  is still in 'extract' mode), Append will notice this and switch from 'extract' mode to 
+//  'append' mode by wiping and initializing the state. This Append call effectively appends 
+//  data for a fresh computation, saving an additional call to wipe/initialize the state.
+//
+// 
+//  SYMCRYPT_SHAKEXXX_RESULT_SIZE
+// 
+//      Default output size, used by the SymCryptShakeXxxResult function.
+// 
+//  SYMCRYPT_SHAKEXXX_INPUT_BLOCK_SIZE
+// 
+//      Rate for the Keccak permutation.
+//
+//  VOID
+//  SYMCRYPT_CALL
+//  SymCryptShakeXxxDefault(
+//      _In_reads_( cbData )                            PCBYTE  pbData,
+//                                                      SIZE_T  cbData,
+//      _Out_writes_( SYMCRYPT_SHAKEXXX_RESULT_SIZE )   PBYTE   pbResult);
+//
+//      SHAKE single-call function that produces default output size defined by
+//      SYMCRYPT_SHAKEXXX_RESULT_SIZE.
+//
+//  VOID
+//  SYMCRYPT_CALL
+//  SymCryptShakeXxx(
+//      _In_reads_( cbData )        PCBYTE  pbData,
+//                                  SIZE_T  cbData,
+//      _Out_writes_( cbResult )    PBYTE   pbResult,
+//                                  SIZE_T  cbResult);
+//
+//      SHAKE single-call function that produces variable-length output specified
+//      by the cbResult parameter.
+// 
+//  VOID
+//  SYMCRYPT_CALL
+//  SymCryptShakeXxxInit( _Out_ PSYMCRYPT_XXX_STATE pState );
+// 
+//      Initializes the SHAKE state.
+//
+//  VOID
+//  SYMCRYPT_CALL
+//  SymCryptShakeXxxAppend(
+//      _Inout_                 PSYMCRYPT_XXX_STATE pState,
+//      _In_reads_( cbData )    PCBYTE              pbData,
+//                              SIZE_T              cbData );
+//
+//      Appends data to the SHAKE state. 
+//      
+//      Append cannot be the first call to an uninitialized SHAKE state. All
+//      other uses independent of whether the state is in 'append' mode or 'extract'
+//      mode are well defined. If the state was previously in 'extract' mode, (i.e., after
+//      an Extract call with bWipe=FALSE) it wipes/resets the state and the data is
+//      appended to a fresh state.
+// 
+//  VOID
+//  SYMCRYPT_CALL
+//  SymCryptShakeXxxExtract(
+//      _Inout_                 PSYMCRYPT_XXX_STATE pState,
+//      _Out_writes_(cbResult)  PBYTE               pbResult,
+//                              SIZE_T              cbResult,
+//                              BOOLEAN             bWipe);
+//
+//      Generates output from the SHAKE state. 
+// 
+//      Extract cannot be the first call to an uninitialized SHAKE state. All
+//      other uses independent of whether the state is in 'append' mode or 'extract' mode
+//      are well defined. 
+// 
+//      If the state was in 'append' mode before the Extract call, Extract switches 
+//      the state to 'extract' mode and generates the requested number of bytes from 
+//      the state. Extract wipes/resets the state and transitions the state to 'append'
+//      mode if bWipe=TRUE, otherwise leaving the state in 'extract' mode, available for 
+//      further extractions.
+// 
+//  VOID
+//  SYMCRYPT_CALL
+//  SymCryptShakeXxxResult(
+//      _Inout_                                     PSYMCRYPT_XXX_STATE pState,
+//      _Out_writes_(SYMCRYPT_SHAKEXXX_RESULT_SIZE) PBYTE               pbResult );
+//
+//      Extracts SYMCRYPT_SHAKEXXX_RESULT_SIZE bytes from the state and wipes/resets
+//      it for a new computation.
+//      
+//      Result cannot be called with an uninitialized state. All other uses are well
+//      defined. If it is called after an Extract call with bWipe=FALSE, it does the
+//      final extraction from the state for SYMCRYPT_SHAKEXXX_RESULT_SIZE bytes,
+//      effectively calling Extract with cbResult=SYMCRYPT_SHAKEXXX_RESULT_SIZE and
+//      bWipe=TRUE.
+//
+//  VOID
+//  SYMCRYPT_CALL
+//  SymCryptShakeXxxStateCopy(_In_ PCSYMCRYPT_SHAKEXXX_STATE pSrc, _Out_ PSYMCRYPT_SHAKEXXX_STATE pDst);
+//
+//      Create a new copy of the state object.
+//
+// VOID
+// SYMCRYPT_CALL
+// SymCryptShakeXxxSelftest();
+//
+//      Perform a minimal self-test on the ShakeXxx algorithm.
+//      This function is designed to be used for achieving FIPS 140-2 compliance or
+//      to provide a simple self-test when an application starts.
+//
+//      If an error is detected, a platform-specific fatal error action is taken.
+//      Callers do not need to handle any error conditions.
+
+
+//
+// SHAKE128
+//
+#define SYMCRYPT_SHAKE128_RESULT_SIZE           (32)
+#define SYMCRYPT_SHAKE128_INPUT_BLOCK_SIZE      (168)
+
+VOID
+SYMCRYPT_CALL
+SymCryptShake128Default(
+    _In_reads_( cbData )                            PCBYTE  pbData,
+                                                    SIZE_T  cbData,
+    _Out_writes_( SYMCRYPT_SHAKE128_RESULT_SIZE )   PBYTE   pbResult);
+
+VOID
+SYMCRYPT_CALL
+SymCryptShake128(
+    _In_reads_( cbData )        PCBYTE  pbData,
+                                SIZE_T  cbData,
+    _Out_writes_( cbResult )    PBYTE   pbResult,
+                                SIZE_T  cbResult);
+
+VOID
+SYMCRYPT_CALL
+SymCryptShake128Init( _Out_ PSYMCRYPT_SHAKE128_STATE pState );
+
+VOID
+SYMCRYPT_CALL
+SymCryptShake128Append(
+    _Inout_                 PSYMCRYPT_SHAKE128_STATE    pState,
+    _In_reads_( cbData )    PCBYTE                      pbData,
+                            SIZE_T                      cbData );
+
+VOID
+SYMCRYPT_CALL
+SymCryptShake128Extract(
+    _Inout_                 PSYMCRYPT_SHAKE128_STATE    pState,
+    _Out_writes_(cbResult)  PBYTE                       pbResult,
+                            SIZE_T                      cbResult,
+                            BOOLEAN                     bWipe);
+
+VOID
+SYMCRYPT_CALL
+SymCryptShake128Result(
+    _Inout_                                     PSYMCRYPT_SHAKE128_STATE    pState,
+    _Out_writes_(SYMCRYPT_SHAKE128_RESULT_SIZE) PBYTE                       pbResult );
+
+VOID
+SYMCRYPT_CALL
+SymCryptShake128StateCopy(_In_ PCSYMCRYPT_SHAKE128_STATE pSrc, _Out_ PSYMCRYPT_SHAKE128_STATE pDst);
+
+VOID
+SYMCRYPT_CALL
+SymCryptShake128Selftest();
+
+extern const PCSYMCRYPT_HASH SymCryptShake128HashAlgorithm;
+
+//
+// SHAKE256
+//
+#define SYMCRYPT_SHAKE256_RESULT_SIZE           (64)
+#define SYMCRYPT_SHAKE256_INPUT_BLOCK_SIZE      (136)
+
+VOID
+SYMCRYPT_CALL
+SymCryptShake256Default(
+    _In_reads_( cbData )                            PCBYTE  pbData,
+                                                    SIZE_T  cbData,
+    _Out_writes_( SYMCRYPT_SHAKE256_RESULT_SIZE )   PBYTE   pbResult);
+
+VOID
+SYMCRYPT_CALL
+SymCryptShake256(
+    _In_reads_( cbData )        PCBYTE  pbData,
+                                SIZE_T  cbData,
+    _Out_writes_( cbResult )    PBYTE   pbResult,
+                                SIZE_T  cbResult);
+
+VOID
+SYMCRYPT_CALL
+SymCryptShake256Init( _Out_ PSYMCRYPT_SHAKE256_STATE pState );
+
+VOID
+SYMCRYPT_CALL
+SymCryptShake256Append(
+    _Inout_                 PSYMCRYPT_SHAKE256_STATE    pState,
+    _In_reads_( cbData )    PCBYTE                      pbData,
+                            SIZE_T                      cbData );
+
+VOID
+SYMCRYPT_CALL
+SymCryptShake256Extract(
+    _Inout_                 PSYMCRYPT_SHAKE256_STATE    pState,
+    _Out_writes_(cbResult)  PBYTE                       pbResult,
+                            SIZE_T                      cbResult,
+                            BOOLEAN                     bWipe);
+
+VOID
+SYMCRYPT_CALL
+SymCryptShake256Result(
+    _Inout_                                     PSYMCRYPT_SHAKE256_STATE    pState,
+    _Out_writes_(SYMCRYPT_SHAKE256_RESULT_SIZE) PBYTE                       pbResult );
+
+
+VOID
+SYMCRYPT_CALL
+SymCryptShake256StateCopy(_In_ PCSYMCRYPT_SHAKE256_STATE pSrc, _Out_ PSYMCRYPT_SHAKE256_STATE pDst);
+
+VOID
+SYMCRYPT_CALL
+SymCryptShake256Selftest();
+
+extern const PCSYMCRYPT_HASH SymCryptShake256HashAlgorithm;
+
+//==========================================================================
+//   Customizable Extendable-Output Functions (XOFs)
+//==========================================================================
+//
+//  cSHAKE128 and cSHAKE256 are customizable SHAKE functions specified in NIST SP 800-185.
+//
+//  When cSHAKE input strings N (function name string) and S (customization string) are 
+//  both empty, cSHAKE is equivalent to SHAKE:
+// 
+//  cSHAKE128(X, L, "", "") = SHAKE128(X, L)
+//  cSHAKE256(X, L, "", "") = SHAKE256(X, L)
+//
+//  If at least one of N and S is non-empty, cSHAKE is defined as follows:
+//
+//  cSHAKE128(X, L, N, S) = KECCAK[256](bytepad(encode_string(N) || encode_string(S), 168) || X || 00, L)
+//  cSHAKE256(X, L, N, S) = KECCAK[512](bytepad(encode_string(N) || encode_string(S), 136) || X || 00, L)
+//
+//  The following functions are equivalent to their SHAKE counterparts.
+//  SymCryptCShakeXxxExtract with bWipe=TRUE and SymCryptCShakeXxxResult functions reset
+//  the cSHAKE state to an empty SHAKE state after generating output. This behavior is 
+//  equivalent to calling SymCryptCShakeXxxInit with empty input strings.
+// 
+//      SymCryptCShakeXxxAppend
+//      SymCryptCShakeXxxExtract
+//      SymCryptCShakeXxxResult
+//
+//  Calling SymCryptCShakeXxxAppend when cSHAKE state is in 'extract' mode results
+//  in the same behavior described above: the state is wiped and initialized with
+//  empty input strings, after which the data is appended to the empty state. This
+//  converts the state to a SHAKE state since cSHAKE with empty input strings is 
+//  equivalent to SHAKE. This is a consequence of not being able to store the input
+//  strings to cSHAKE and re-initialize it with them. Thus, if multiple cSHAKE 
+//  computations with the same input strings are to be carried out, cSHAKE state must
+//  be initialized with the input strings each time.
+// 
+//  The following functions differ from the SHAKE by the introduction of customization
+//  strings:
+//
+//  VOID
+//  SYMCRYPT_CALL
+//  SymCryptCShakeXxx(
+//      _In_reads_( cbFunctionNameString )  PCBYTE  pbFunctionNameString,
+//                                          SIZE_T  cbFunctionNameString,
+//      _In_reads_( cbCustomizationString ) PCBYTE  pbCustomizationString,
+//                                          SIZE_T  cbCustomizationString,
+//      _In_reads_( cbData )                PCBYTE  pbData,
+//                                          SIZE_T  cbData,
+//      _Out_writes_( cbResult )            PBYTE   pbResult,
+//                                          SIZE_T  cbResult);
+//
+//      Single-call cSHAKE computation.
+//
+//  VOID
+//  SYMCRYPT_CALL
+//  SymCryptCShakeXxxInit(  
+//      _Out_                               PSYMCRYPT_CSHAKEXXX_STATE   pState,
+//      _In_reads_( cbFunctionNameString )  PCBYTE                      pbFunctionNameString,
+//                                          SIZE_T                      cbFunctionNameString,
+//      _In_reads_( cbCustomizationString ) PCBYTE                      pbCustomizationString,
+//                                          SIZE_T                      cbCustomizationString);
+//
+//      Initializes the cSHAKE state with the provided input strings. If both of 
+//      the input strings are empty, the call is equivalent to SymCryptShakeXxxInit,
+//      otherwise the input strings will be encoded and appended to the state.
+
+
+//
+// cSHAKE128
+//
+#define SYMCRYPT_CSHAKE128_RESULT_SIZE           SYMCRYPT_SHAKE128_RESULT_SIZE
+#define SYMCRYPT_CSHAKE128_INPUT_BLOCK_SIZE      SYMCRYPT_SHAKE128_INPUT_BLOCK_SIZE
+
+VOID
+SYMCRYPT_CALL
+SymCryptCShake128(
+    _In_reads_( cbFunctionNameString )  PCBYTE  pbFunctionNameString,
+                                        SIZE_T  cbFunctionNameString,
+    _In_reads_( cbCustomizationString ) PCBYTE  pbCustomizationString,
+                                        SIZE_T  cbCustomizationString,
+    _In_reads_( cbData )                PCBYTE  pbData,
+                                        SIZE_T  cbData,
+    _Out_writes_( cbResult )            PBYTE   pbResult,
+                                        SIZE_T  cbResult);
+
+VOID
+SYMCRYPT_CALL
+SymCryptCShake128Init(  
+    _Out_                               PSYMCRYPT_CSHAKE128_STATE   pState,
+    _In_reads_( cbFunctionNameString )  PCBYTE                      pbFunctionNameString,
+                                        SIZE_T                      cbFunctionNameString,
+    _In_reads_( cbCustomizationString ) PCBYTE                      pbCustomizationString,
+                                        SIZE_T                      cbCustomizationString);
+
+VOID
+SYMCRYPT_CALL
+SymCryptCShake128Append(
+    _Inout_                 PSYMCRYPT_CSHAKE128_STATE   pState,
+    _In_reads_( cbData )    PCBYTE                      pbData,
+                            SIZE_T                      cbData );
+
+VOID
+SYMCRYPT_CALL
+SymCryptCShake128Extract(
+    _Inout_                 PSYMCRYPT_CSHAKE128_STATE   pState,
+    _Out_writes_(cbResult)  PBYTE                       pbResult,
+                            SIZE_T                      cbResult,
+                            BOOLEAN                     bWipe);
+
+VOID
+SYMCRYPT_CALL
+SymCryptCShake128Result(
+    _Inout_                                         PSYMCRYPT_CSHAKE128_STATE   pState,
+    _Out_writes_( SYMCRYPT_CSHAKE128_RESULT_SIZE )  PBYTE                       pbResult);
+
+VOID
+SYMCRYPT_CALL
+SymCryptCShake128StateCopy(_In_ PCSYMCRYPT_CSHAKE128_STATE pSrc, _Out_ PSYMCRYPT_CSHAKE128_STATE pDst);
+
+VOID
+SYMCRYPT_CALL
+SymCryptCShake128Selftest();
+
+
+//
+// cSHAKE256
+//
+#define SYMCRYPT_CSHAKE256_RESULT_SIZE           SYMCRYPT_SHAKE256_RESULT_SIZE
+#define SYMCRYPT_CSHAKE256_INPUT_BLOCK_SIZE      SYMCRYPT_SHAKE256_INPUT_BLOCK_SIZE
+
+VOID
+SYMCRYPT_CALL
+SymCryptCShake256(
+    _In_reads_( cbFunctionNameString )  PCBYTE  pbFunctionNameString,
+                                        SIZE_T  cbFunctionNameString,
+    _In_reads_( cbCustomizationString ) PCBYTE  pbCustomizationString,
+                                        SIZE_T  cbCustomizationString,
+    _In_reads_( cbData )                PCBYTE  pbData,
+                                        SIZE_T  cbData,
+    _Out_writes_( cbResult )            PBYTE   pbResult,
+                                        SIZE_T  cbResult);
+
+VOID
+SYMCRYPT_CALL
+SymCryptCShake256Init(  
+    _Out_                               PSYMCRYPT_CSHAKE256_STATE   pState,
+    _In_reads_( cbFunctionNameString )  PCBYTE                      pbFunctionNameString,
+                                        SIZE_T                      cbFunctionNameString,
+    _In_reads_( cbCustomizationString ) PCBYTE                      pbCustomizationString,
+                                        SIZE_T                      cbCustomizationString);
+
+VOID
+SYMCRYPT_CALL
+SymCryptCShake256Append(
+    _Inout_                 PSYMCRYPT_CSHAKE256_STATE   pState,
+    _In_reads_( cbData )    PCBYTE                      pbData,
+                            SIZE_T                      cbData );
+
+VOID
+SYMCRYPT_CALL
+SymCryptCShake256Extract(
+    _Inout_                 PSYMCRYPT_CSHAKE256_STATE   pState,
+    _Out_writes_(cbResult)  PBYTE                       pbResult,
+                            SIZE_T                      cbResult,
+                            BOOLEAN                     bWipe);
+
+VOID
+SYMCRYPT_CALL
+SymCryptCShake256Result(
+    _Inout_                                         PSYMCRYPT_CSHAKE256_STATE   pState,
+    _Out_writes_( SYMCRYPT_CSHAKE256_RESULT_SIZE )  PBYTE                      pbResult);
+
+VOID
+SYMCRYPT_CALL
+SymCryptCShake256StateCopy(_In_ PCSYMCRYPT_CSHAKE256_STATE pSrc, _Out_ PSYMCRYPT_CSHAKE256_STATE pDst);
+
+VOID
+SYMCRYPT_CALL
+SymCryptCShake256Selftest();
+
 
 
 //==========================================================================
@@ -2222,6 +2652,353 @@ SYMCRYPT_CALL
 SymCryptAesCmacSelftest();
 
 extern const PCSYMCRYPT_MAC SymCryptAesCmacAlgorithm;
+
+////////////////////////////////////////////////////////////////////////////
+// KMAC
+//
+// Keccak Message Authentication Code (KMAC) is specified in NIST SP 800-185
+// and has two variants; KMAC128 and KMAC256, using cSHAKE128 and cSHAKE256
+// as the underlying functions, respectively.
+// 
+// KMAC128(K, X, L, S) = cSHAKE128(bytepad(encode_string(K), 168) || X || right_encode(L), L, “KMAC”, S)
+// KMAC256(K, X, L, S) = cSHAKE256(bytepad(encode_string(K), 136) || X || right_encode(L), L, “KMAC”, S)
+//
+// KMAC accepts a variable-size key. There's no restriction on the size of the key.
+// 
+// KMAC differs from other MAC algorithms in SymCrypt by having two additional input
+// parameters; a customization string and the length of the output. Output generated
+// by KMAC also depends on the specified output length, i.e., outputs generated from
+// two KMAC calls with the same key, message, customization string, but different output
+// lengths will be unrelated/uncorrelated. This differs from SHAKE and cSHAKE where an
+// output of size N bytes from the algorithm is a prefix of the output of size M bytes
+// where N < M, when the inputs are the same.
+// 
+// KMAC works in two modes; fixed-length mode and XOF mode. XOF variants are named KMACXOF128
+// and  KMACXOF256. SymCrypt does not provide a separate KMACXOF API but supports them via 
+// the KMAC interface. 
+// 
+// KMACXOF128(K, X, L, S) = cSHAKE128(bytepad(encode_string(K), 168) || X || right_encode(0), L, “KMAC”, S)
+// KMACXOF256(K, X, L, S) = cSHAKE256(bytepad(encode_string(K), 136) || X || right_encode(0), L, “KMAC”, S)
+//
+// KMAC output generation mode is determined by the output length parameter 
+// L in SP 800-185; if it is non-zero then KMAC works in fixed-length mode, otherwise (i.e., L=0)
+// it works in XOF mode.
+//  - Fixed-length mode generates result with SymCryptKmacXxxResult or SymCryptKmacXxxResultEx.
+//    These functions wipe the state after generating output, thus can only be used
+//    once per initialized state. The result size is SYMCRYPT_KMAC_XXX_RESULT
+//    for SymCryptKmacXxxResult and specified by the caller for SymCryptKmacXxxResultEx.
+//  - XOF mode can produce arbitrary length output. SymCryptKmacXxxExtract function puts KMAC
+//    state into XOF mode and all the successive calls that generate output from the KMAC state will be
+//    from the XOF mode. SymCryptKmacXxxResult and SymCryptKmacXxxResultEx functions
+//    will also generate output in XOF mode IF they are called after a SymCryptKmacXxxExtract
+//    function with bWipe=FALSE (so that the state ramains in XOF mode). Note that 
+//    SymCryptKmacXxxResult and SymCryptKmacXxxResultEx functions wipe the state afterwards,
+//    thus KMAC state can only be used to generate output in XOF mode once with these two functions.
+//
+//  SYMCRYPT_KMACXXX_RESULT_SIZE
+//
+//      Default result size when KMAC is used with the existing MAC interface.
+//      Equals to twice the SYMCRYPT_KMACXXX_KEY_SIZE.
+//
+//  SYMCRYPT_ERROR
+//  SYMCRYPT_CALL
+//  SymCryptKmacXxxExpandKey(
+//          _Out_                                       PSYMCRYPT_KMACXXX_EXPANDED_KEY pExpandedKey,
+//          _In_reads_bytes_( cbKey )                   PCBYTE  pbKey,
+//                                                      SIZE_T  cbKey);
+//
+//      Performs key expansion with empty customization string.
+//      There's no restriction on the size of the key.
+// 
+//  SYMCRYPT_ERROR
+//  SYMCRYPT_CALL
+//  SymCryptKmacXxxExpandKeyEx(
+//          _Out_                                       PSYMCRYPT_KMAXXX_EXPANDED_KEY pExpandedKey,
+//          _In_reads_bytes_( cbKey )                   PCBYTE  pbKey,
+//                                                      SIZE_T  cbKey,
+//          _In_reads_bytes_( cbCustomizationString )   PCBYTE  pbCustomizationString,
+//                                                      SIZE_T  cbCustomizationString);
+//
+//      Performs key expansion for the provided key and customization string.
+//      There's no restriction on the size of the key.
+//
+//  VOID
+//  SYMCRYPT_CALL
+//  SymCryptKmacXxx(
+//          _In_                                                PCSYMCRYPT_KMACXXX_EXPANDED_KEY pExpandedKey,
+//          _In_reads_bytes_( cbInput )                         PCBYTE  pbInput,
+//                                                              SIZE_T  cbInput,
+//          _Out_writes_bytes_( SYMCRYPT_KMACXXX_RESULT_SIZE )  PBYTE   pbResult);
+//
+//      Single-call KMAC computation for the given input producing default result
+//      size SYMCRYPT_KMACXXX_RESULT_SIZE.
+// 
+//      pExpandedKey must be initialized before the call. This function is equivalent
+//      to SymCryptKmacXxxEx with output size set to SYMCRYPT_KMACXXX_RESULT_SIZE.
+//      If a result size different than the default value is desired, SymCryptKmacXxxEx 
+//      must be called.
+//  
+//  VOID
+//  SYMCRYPT_CALL
+//  SymCryptKmacXxxEx(
+//          _In_                            PCSYMCRYPT_KMACXXX_EXPANDED_KEY pExpandedKey,
+//          _In_reads_bytes_( cbInput )     PCBYTE  pbInput,
+//                                          SIZE_T  cbInput,
+//          _Out_writes_bytes_( cbResult )  PBYTE   pbResult,
+//                                          SIZE_T  cbResult);
+//
+//      Single-call KMAC computation for the given input producing cbResult bytes result.
+//      pExpandedKey must be initialized before the call.
+//
+//  VOID
+//  SYMCRYPT_CALL
+//  SymCryptKmacXxxInit(
+//      _Out_   PSYMCRYPT_KMACXXX_STATE         pState,
+//      _In_    PCSYMCRYPT_KMACXXX_EXPANDED_KEY pExpandedKey);
+//
+//      Initializes KMAC state for appending data for the provided key. Expanded
+//      key must be generated prior to this call.
+// 
+//  VOID
+//  SYMCRYPT_CALL
+//  SymCryptKmacXxxAppend(
+//      _Inout_                 PSYMCRYPT_KMACXXX_STATE pState,
+//      _In_reads_( cbData )    PCBYTE                  pbData,
+//                              SIZE_T                  cbData );
+//
+//      Appends data to the KMAC state.
+// 
+//      This function must only be called after SymCryptKmacXxxInit or SymCryptKmacXxxAppend.
+//      Calling SymCryptKmacXxxAppend after SymCryptKmacXxxExtract with bWipe=FALSE 
+//      is not well-defined. KMAC state must be initialized with SymCryptKmacXxxInit before 
+//      the first call to SymCryptKmacXxxAppend.
+// 
+//  VOID
+//  SYMCRYPT_CALL
+//  SymCryptKmacXxxExtract(
+//      _Inout_                     PSYMCRYPT_KMACXXX_STATE pState,
+//      _Out_writes_( cbOutput )    PBYTE                   pbOutput,
+//                                  SIZE_T                  cbOutput,
+//                                  BOOLEAN                 bWipe);
+//
+//      Generates KMAC output in XOF mode.
+// 
+//      Extract can only be called after an Init, Append or Extract call.
+//      The state is cleared if bWipe=TRUE, otherwise further Extract calls 
+//      can be made to generate more output.
+// 
+//  VOID
+//  SYMCRYPT_CALL
+//  SymCryptKmacXxxResult(
+//      _Inout_                                         PSYMCRYPT_KMACXXX_STATE pState,
+//      _Out_writes_( SYMCRYPT_KMACXXX_RESULT_SIZE )    PBYTE   pbResult);
+//
+//      Produces SYMCRYPT_KMACXXX_RESULT_SIZE bytes of output from the KMAC state.
+//      The state is wiped on return.
+// 
+//      This function internally calls SymCryptKmacXxxResultEx with result size 
+//      SYMCRYPT_KMACXXX_RESULT_SIZE.
+//      If Result is called in XOF mode (i.e., after an Extract with bWipe=FALSE), it
+//      performs a final extraction of SYMCRYPT_KMACXXX_RESULT_SIZE bytes in XOF mode
+//      and clears the state afterwards.
+//      Result function does not re-initialize the state for a new computation like
+//      the Result for hash functions do. Computing a new MAC with the same key 
+//      requires calling the SymCryptKmacXxxInit function first.
+// 
+//  VOID
+//  SYMCRYPT_CALL
+//  SymCryptKmacXxxResultEx(
+//      _Inout_                     PSYMCRYPT_KMACXXX_STATE pState,
+//      _Out_writes_( cbResult )    PBYTE   pbResult,
+//                                  SIZE_T  cbResult);
+//
+//      Produces cbResult bytes of output from the KMAC state. The state is 
+//      wiped on return.
+// 
+//      If ResultEx is called in XOF mode (i.e., after an Extract with bWipe=FALSE), it
+//      performs a final extraction of cbResult bytes in XOF mode and clears the state 
+//      afterwards.
+//      ResultEx function does not re-initialize the state for a new computation like
+//      the Result for hash functions do. Computing a new MAC with the same key 
+//      requires calling the SymCryptKmacXxxInit function first.
+//
+
+
+//
+//  KMAC128
+//
+#define SYMCRYPT_KMAC128_RESULT_SIZE        SYMCRYPT_CSHAKE128_RESULT_SIZE
+#define SYMCRYPT_KMAC128_INPUT_BLOCK_SIZE   SYMCRYPT_CSHAKE128_INPUT_BLOCK_SIZE
+
+VOID
+SYMCRYPT_CALL
+SymCryptKmac128(
+        _In_                                                PCSYMCRYPT_KMAC128_EXPANDED_KEY pExpandedKey,
+        _In_reads_bytes_( cbInput )                         PCBYTE  pbInput,
+                                                            SIZE_T  cbInput,
+        _Out_writes_bytes_( SYMCRYPT_KMAC128_RESULT_SIZE )  PBYTE   pbResult);
+
+VOID
+SYMCRYPT_CALL
+SymCryptKmac128Ex(
+        _In_                            PCSYMCRYPT_KMAC128_EXPANDED_KEY pExpandedKey,
+        _In_reads_bytes_( cbInput )     PCBYTE  pbInput,
+                                        SIZE_T  cbInput,
+        _Out_writes_bytes_( cbResult )  PBYTE   pbResult,
+                                        SIZE_T  cbResult);
+
+
+SYMCRYPT_ERROR
+SYMCRYPT_CALL
+SymCryptKmac128ExpandKey(
+        _Out_                                       PSYMCRYPT_KMAC128_EXPANDED_KEY pExpandedKey,
+        _In_reads_bytes_( cbKey )                   PCBYTE  pbKey,
+                                                    SIZE_T  cbKey);
+
+SYMCRYPT_ERROR
+SYMCRYPT_CALL
+SymCryptKmac128ExpandKeyEx(
+        _Out_                                       PSYMCRYPT_KMAC128_EXPANDED_KEY pExpandedKey,
+        _In_reads_bytes_( cbKey )                   PCBYTE  pbKey,
+                                                    SIZE_T  cbKey,
+        _In_reads_bytes_( cbCustomizationString )   PCBYTE  pbCustomizationString,
+                                                    SIZE_T  cbCustomizationString);
+
+VOID
+SYMCRYPT_CALL
+SymCryptKmac128Init(
+    _Out_   PSYMCRYPT_KMAC128_STATE         pState,
+    _In_    PCSYMCRYPT_KMAC128_EXPANDED_KEY pExpandedKey);
+
+VOID
+SYMCRYPT_CALL
+SymCryptKmac128Append(
+    _Inout_                 PSYMCRYPT_KMAC128_STATE pState,
+    _In_reads_( cbData )    PCBYTE                  pbData,
+                            SIZE_T                  cbData );
+
+VOID
+SYMCRYPT_CALL
+SymCryptKmac128Extract(
+    _Inout_                     PSYMCRYPT_KMAC128_STATE pState,
+    _Out_writes_( cbOutput )    PBYTE                   pbOutput,
+                                SIZE_T                  cbOutput,
+                                BOOLEAN                 bWipe);
+
+VOID
+SYMCRYPT_CALL
+SymCryptKmac128Result(
+    _Inout_                                         PSYMCRYPT_KMAC128_STATE pState,
+    _Out_writes_( SYMCRYPT_KMAC128_RESULT_SIZE )    PBYTE   pbResult);
+
+VOID
+SYMCRYPT_CALL
+SymCryptKmac128ResultEx(
+    _Inout_                     PSYMCRYPT_KMAC128_STATE pState,
+    _Out_writes_( cbResult )    PBYTE   pbResult,
+                                SIZE_T  cbResult);
+
+VOID
+SYMCRYPT_CALL
+SymCryptKmac128KeyCopy(_In_ PCSYMCRYPT_KMAC128_EXPANDED_KEY pSrc, _Out_ PSYMCRYPT_KMAC128_EXPANDED_KEY pDst);
+
+VOID
+SYMCRYPT_CALL
+SymCryptKmac128StateCopy(_In_ const SYMCRYPT_KMAC128_STATE* pSrc, _Out_ SYMCRYPT_KMAC128_STATE* pDst);
+
+VOID
+SYMCRYPT_CALL
+SymCryptKmac128Selftest();
+
+extern const PCSYMCRYPT_MAC SymCryptKmac128Algorithm;
+
+//
+//  KMAC256
+//
+#define SYMCRYPT_KMAC256_RESULT_SIZE        SYMCRYPT_CSHAKE256_RESULT_SIZE
+#define SYMCRYPT_KMAC256_INPUT_BLOCK_SIZE   SYMCRYPT_CSHAKE256_INPUT_BLOCK_SIZE
+
+VOID
+SYMCRYPT_CALL
+SymCryptKmac256(
+        _In_                                                PCSYMCRYPT_KMAC256_EXPANDED_KEY pExpandedKey,
+        _In_reads_bytes_( cbInput )                         PCBYTE  pbInput,
+                                                            SIZE_T  cbInput,
+        _Out_writes_bytes_( SYMCRYPT_KMAC256_RESULT_SIZE )  PBYTE   pbResult);
+
+VOID
+SYMCRYPT_CALL
+SymCryptKmac256Ex(
+        _In_                            PCSYMCRYPT_KMAC256_EXPANDED_KEY pExpandedKey,
+        _In_reads_bytes_( cbInput )     PCBYTE  pbInput,
+                                        SIZE_T  cbInput,
+        _Out_writes_bytes_( cbResult )  PBYTE   pbResult,
+                                        SIZE_T  cbResult);
+
+SYMCRYPT_ERROR
+SYMCRYPT_CALL
+SymCryptKmac256ExpandKey(
+        _Out_                                       PSYMCRYPT_KMAC256_EXPANDED_KEY pExpandedKey,
+        _In_reads_bytes_( cbKey )                   PCBYTE  pbKey,
+                                                    SIZE_T  cbKey);
+
+SYMCRYPT_ERROR
+SYMCRYPT_CALL
+SymCryptKmac256ExpandKeyEx(
+        _Out_                                       PSYMCRYPT_KMAC256_EXPANDED_KEY pExpandedKey,
+        _In_reads_bytes_( cbKey )                   PCBYTE  pbKey,
+                                                    SIZE_T  cbKey,
+        _In_reads_bytes_( cbCustomizationString )   PCBYTE  pbCustomizationString,
+                                                    SIZE_T  cbCustomizationString);
+
+VOID
+SYMCRYPT_CALL
+SymCryptKmac256Init(
+    _Out_   PSYMCRYPT_KMAC256_STATE         pState,
+    _In_    PCSYMCRYPT_KMAC256_EXPANDED_KEY pExpandedKey);
+
+VOID
+SYMCRYPT_CALL
+SymCryptKmac256Append(
+    _Inout_                 PSYMCRYPT_KMAC256_STATE pState,
+    _In_reads_( cbData )    PCBYTE                  pbData,
+                            SIZE_T                  cbData );
+
+VOID
+SYMCRYPT_CALL
+SymCryptKmac256Extract(
+    _Inout_                     PSYMCRYPT_KMAC256_STATE pState,
+    _Out_writes_( cbOutput )    PBYTE                   pbOutput,
+                                SIZE_T                  cbOutput,
+                                BOOLEAN                 bWipe);
+
+VOID
+SYMCRYPT_CALL
+SymCryptKmac256Result(
+    _Inout_                                         PSYMCRYPT_KMAC256_STATE pState,
+    _Out_writes_( SYMCRYPT_KMAC256_RESULT_SIZE )    PBYTE   pbResult);
+
+VOID
+SYMCRYPT_CALL
+SymCryptKmac256ResultEx(
+    _Inout_                     PSYMCRYPT_KMAC256_STATE pState,
+    _Out_writes_( cbResult )    PBYTE                   pbResult,
+                                SIZE_T                  cbResult);
+
+VOID
+SYMCRYPT_CALL
+SymCryptKmac256KeyCopy(_In_ PCSYMCRYPT_KMAC256_EXPANDED_KEY pSrc, _Out_ PSYMCRYPT_KMAC256_EXPANDED_KEY pDst);
+
+VOID
+SYMCRYPT_CALL
+SymCryptKmac256StateCopy(_In_ const SYMCRYPT_KMAC256_STATE* pSrc, _Out_ SYMCRYPT_KMAC256_STATE* pDst);
+
+VOID
+SYMCRYPT_CALL
+SymCryptKmac256Selftest();
+
+extern const PCSYMCRYPT_MAC SymCryptKmac256Algorithm;
+
 
 ////////////////////////////////////////////////////////////////////////////
 // POLY1305

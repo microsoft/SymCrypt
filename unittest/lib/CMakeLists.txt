@@ -14,6 +14,9 @@ set(SOURCES
     testhash.cpp
     testSelftest.cpp
     testMac.cpp
+    testXof.cpp
+    testCustomizableXof.cpp
+    testKmac.cpp
     testBlockCiphers.cpp
     testXts.cpp
     testAuthEnc.cpp

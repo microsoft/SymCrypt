@@ -116,6 +116,82 @@ public:
             _Out_                                                   SIZE_T *pcbResult ) = 0;
 };
 
+class XofImplementation : public AlgorithmImplementation
+{
+public:
+    XofImplementation() {};
+    virtual ~XofImplementation() {};
+
+private:
+    XofImplementation(const XofImplementation&);
+    VOID operator=(const XofImplementation&);
+
+public:
+
+    virtual SIZE_T inputBlockLen() = 0;
+    // Return the input block length of this XOF
+
+    virtual VOID init() = 0;
+    // Initialize for a new XOF computation.
+
+    virtual VOID append(_In_reads_(cbData) PCBYTE pbData, SIZE_T cbData) = 0;
+    // Append data to the running XOF computation.
+
+    virtual VOID extract(_Out_writes_(cbResult) PBYTE pbResult, SIZE_T cbResult, BOOLEAN bWipe) = 0;
+    // XOF extraction.
+    // Extracts cbResult bytes from the XOF. Wipes and re-initializes the state if bWipe=TRUE.
+
+    virtual VOID result(_Out_writes_(cbResult) PBYTE pbResult, SIZE_T cbResult) = 0;
+    // Get the result of the running XOF computation.
+    // Default implementation calls extract with bWipe=TRUE.
+
+    virtual VOID xof(_In_reads_(cbData) PCBYTE pbData, SIZE_T cbData,
+                    _Out_writes_(cbResult) PBYTE pbResult, SIZE_T cbResult);
+    // Single-call XOF computation.
+    // The default implementation calls init/append/result.
+};
+
+class CustomizableXofImplementation : public AlgorithmImplementation
+{
+public:
+    CustomizableXofImplementation() {};
+    virtual ~CustomizableXofImplementation() {};
+
+private:
+    CustomizableXofImplementation(const CustomizableXofImplementation&);
+    VOID operator=(const CustomizableXofImplementation&);
+
+public:
+
+    virtual SIZE_T inputBlockLen() = 0;
+    // Return the input block length of this XOF
+
+	virtual VOID init(  _In_reads_(cbNstr)  PCBYTE pbNstr, 
+                                            SIZE_T cbNstr,
+                        _In_reads_(cbSstr)  PCBYTE pbSstr, 
+                                            SIZE_T cbSstr) = 0;
+    // Initialize for a new XOF computation.
+
+    virtual VOID append(_In_reads_(cbData) PCBYTE pbData, SIZE_T cbData) = 0;
+    // Append data to the running XOF computation.
+
+    virtual VOID extract(_Out_writes_(cbResult) PBYTE pbResult, SIZE_T cbResult, BOOLEAN bWipe) = 0;
+    // XOF extraction.
+    // Extracts cbResult bytes from the XOF. Wipes and re-initializes the state if bWipe=TRUE.
+
+    virtual VOID result(_Out_writes_(cbResult) PBYTE pbResult, SIZE_T cbResult) = 0;
+    // Get the result of the running XOF computation.
+    // Default implementation calls extract with bWipe=TRUE.
+
+    virtual VOID xof(
+        _In_reads_( cbNstr )        PCBYTE  pbNstr, SIZE_T  cbNstr,
+        _In_reads_( cbSstr )        PCBYTE  pbSstr, SIZE_T  cbSstr,
+        _In_reads_( cbData )        PCBYTE  pbData, SIZE_T cbData,
+        _Out_writes_( cbResult )    PBYTE   pbResult, SIZE_T cbResult) = 0;
+    // Single-call XOF computation.
+    // The default implementation calls init/append/result.
+};
+
 #define MAX_PARALLEL_HASH_STATES        32
 #define MAX_PARALLEL_HASH_OPERATIONS    128
 
@@ -195,6 +271,56 @@ public:
         // Return zero if success, NT status error if not supported.
 };
 
+class KmacImplementation : public AlgorithmImplementation
+{
+public:
+    KmacImplementation() {};
+    ~KmacImplementation() {};
+
+private:
+    KmacImplementation(const KmacImplementation&);
+    VOID operator=(const KmacImplementation&);
+
+public:
+
+    virtual SIZE_T inputBlockLen() = 0;
+    // return the input block length of this MAC
+
+    virtual VOID init(
+        _In_reads_(cbCustomizationStr) PCBYTE pbCustomizationStr, SIZE_T cbCustomizationStr,
+        _In_reads_(cbKey) PCBYTE pbKey, SIZE_T cbKey) = 0;
+    // Start a new MAC computation with the given key and customization string.
+    // Return zero if success, NT status error if not supported.
+
+    virtual VOID append(_In_reads_(cbData) PCBYTE pbData, SIZE_T cbData) = 0;
+    // Append data to the running MAC computation.
+
+    virtual VOID extract(_Out_writes_(cbData) PBYTE pbResult, SIZE_T cbResult, BOOLEAN bWipe) = 0;
+    // Extract data in XOF mode.
+
+    virtual VOID result(_Out_writes_(cbResult) PBYTE pbResult, SIZE_T cbResult) = 0;
+    // Get the result of the running MAC computation.
+
+    virtual VOID mac(
+        _In_reads_(cbCustomizationStr) PCBYTE pbCustomizationStr, SIZE_T cbCustomizationStr,
+        _In_reads_(cbKey)      PCBYTE pbKey, SIZE_T cbKey,
+        _In_reads_(cbData)     PCBYTE pbData, SIZE_T cbData,
+        _Out_writes_(cbResult)  PBYTE pbResult, SIZE_T cbResult);
+    // Complete a full MAC computation.
+    // The default implementation merely calls the init/append/result members.
+    // Return zero if success, NT status error if not supported.
+
+    virtual VOID xof(
+        _In_reads_(cbCustomizationStr) PCBYTE pbCustomizationStr, SIZE_T cbCustomizationStr,
+        _In_reads_(cbKey)      PCBYTE pbKey, SIZE_T cbKey,
+        _In_reads_(cbData)     PCBYTE pbData, SIZE_T cbData,
+        _Out_writes_(cbResult)  PBYTE pbResult, SIZE_T cbResult);
+    // Generate a fixed size output in XOF mode.
+    // The default implementation merely calls the init/append/extract members.
+    // Return zero if success, NT status error if not supported.
+};
+
+
 class BlockCipherImplementation: public AlgorithmImplementation
 //
 // Implements block cipher encryption modes.
@@ -234,7 +360,6 @@ public:
                                         SIZE_T cbData ) = 0;
 
 };
-
 
 class AuthEncImplementation: public AlgorithmImplementation
 //
@@ -355,7 +480,6 @@ public:
         _Out_writes_( cbData )  PBYTE   pbDst,
                                 SIZE_T  cbData ) = 0;
 };
-
 
 class RngSp800_90Implementation: public AlgorithmImplementation
 {
@@ -814,6 +938,95 @@ public:
 
 
 //
+// A template class to store the state of a XOF implementation in.
+//
+template< class Implementation, class Algorithm> class XofImpState;
+
+//
+// A template class for the actual XOF implementations
+//
+template< class Implementation, class Algorithm >
+class XofImp: public XofImplementation
+{
+public:
+    XofImp();
+    virtual ~XofImp();
+
+private:
+    XofImp( const XofImp & );
+    VOID operator=( const XofImp & );
+
+public:
+
+    static const String s_algName;             // Algorithm name
+    static const String s_modeName;
+    static const String s_impName;             // Implementation name
+
+    virtual SIZE_T inputBlockLen();
+
+    virtual void init();
+    virtual void append( _In_reads_( cbData ) PCBYTE pbData, SIZE_T cbData );
+    virtual void extract( _Out_writes_( cbResult ) PBYTE pbResult, SIZE_T cbResult, BOOLEAN bWipe);
+    virtual void result( _Out_writes_( cbResult ) PBYTE pbResult, SIZE_T cbResult );
+    virtual VOID xof(
+        _In_reads_( cbData )        PCBYTE  pbData,
+                                    SIZE_T  cbData,
+        _Out_writes_( cbResult )    PBYTE   pbResult,
+                                    SIZE_T  cbResult );
+
+    XofImpState<Implementation,Algorithm> state;
+};
+
+//
+// A template class to store the state of a customizable XOF implementation in.
+//
+template< class Implementation, class Algorithm> class CustomizableXofImpState;
+
+//
+// A template class for the actual XOF implementations
+//
+template< class Implementation, class Algorithm >
+class CustomizableXofImp : public CustomizableXofImplementation
+{
+public:
+    CustomizableXofImp();
+    virtual ~CustomizableXofImp();
+
+private:
+    CustomizableXofImp(const CustomizableXofImp&);
+    VOID operator=(const CustomizableXofImp&);
+
+public:
+
+    static const String s_algName;             // Algorithm name
+    static const String s_modeName;
+    static const String s_impName;             // Implementation name
+
+    virtual SIZE_T inputBlockLen();
+
+    virtual void init(
+        _In_reads_( cbNstr )        PCBYTE  pbNstr,
+                                    SIZE_T  cbNstr,
+        _In_reads_( cbSstr )        PCBYTE  pbSstr,
+                                    SIZE_T  cbSstr);
+    virtual void append(_In_reads_(cbData) PCBYTE pbData, SIZE_T cbData);
+    virtual void extract(_Out_writes_(cbResult) PBYTE pbResult, SIZE_T cbResult, BOOLEAN bWipe);
+    virtual void result(_Out_writes_(cbResult) PBYTE pbResult, SIZE_T cbResult);
+    virtual VOID xof(
+        _In_reads_( cbNstr )        PCBYTE  pbNstr,
+                                    SIZE_T  cbNstr,
+        _In_reads_( cbSstr )        PCBYTE  pbSstr,
+                                    SIZE_T  cbSstr,
+        _In_reads_( cbData )        PCBYTE  pbData,
+                                    SIZE_T  cbData,
+        _Out_writes_( cbResult )    PBYTE   pbResult,
+                                    SIZE_T  cbResult );
+
+    CustomizableXofImpState<Implementation, Algorithm> state;
+};
+
+
+//
 // Template class to store the state of a MAC implementation
 //
 template< class Implementation, class Algorithm> class MacImpState;
@@ -853,6 +1066,65 @@ public:
                                     SIZE_T cbResult );
 
     MacImpState<Implementation,Algorithm> state;
+};
+
+//
+// A template class to store the state of a KMAC implementation in.
+//
+template< class Implementation, class Algorithm> class KmacImpState;
+
+//
+// Template class for the actual MAC implementations
+//
+template< class Implementation, class Algorithm >
+class KmacImp : public KmacImplementation
+{
+public:
+    KmacImp();
+    virtual ~KmacImp();
+
+private:
+    KmacImp(const KmacImp&);
+    VOID operator=(const KmacImp&);
+
+public:
+
+    static const String s_algName;
+    static const String s_modeName;
+    static const String s_impName;
+
+    virtual SIZE_T inputBlockLen();
+
+    virtual VOID init(
+        _In_reads_(cbCustomizationStr)  PCBYTE  pbCustomizationStr,
+                                        SIZE_T  cbCustomizationStr,
+        _In_reads_(cbKey)               PCBYTE  pbKey, 
+                                        SIZE_T  cbKey);
+
+    virtual VOID append(_In_reads_(cbData) PCBYTE pbData, SIZE_T cbData);
+    virtual VOID result(_Out_writes_(cbResult) PBYTE pbResult, SIZE_T cbResult);
+    virtual VOID extract(_Out_writes_(cbResult) PBYTE pbResult, SIZE_T cbResult, BOOLEAN bWipe);
+    virtual VOID mac(
+        _In_reads_(cbCustomizationStr)  PCBYTE  pbCustomizationStr,
+                                        SIZE_T  cbCustomizationStr,
+        _In_reads_(cbKey)               PCBYTE  pbKey,
+                                        SIZE_T  cbKey,
+        _In_reads_(cbData)              PCBYTE  pbData,
+                                        SIZE_T  cbData,
+        _Out_writes_(cbResult)          PBYTE   pbResult,
+                                        SIZE_T  cbResult);
+
+    virtual VOID xof(
+        _In_reads_(cbCustomizationStr)  PCBYTE  pbCustomizationStr,
+                                        SIZE_T  cbCustomizationStr,
+        _In_reads_(cbKey)               PCBYTE  pbKey,
+                                        SIZE_T  cbKey,
+        _In_reads_(cbData)              PCBYTE  pbData,
+                                        SIZE_T  cbData,
+        _Out_writes_(cbResult)          PBYTE   pbResult,
+                                        SIZE_T  cbResult);
+
+    KmacImpState<Implementation, Algorithm> state;
 };
 
 
@@ -1376,6 +1648,33 @@ const String ParallelHashImp<Implementation,Algorithm>::s_modeName;
 
 template< class Implementation, class Algorithm >
 const String ParallelHashImp<Implementation,Algorithm>::s_impName = Implementation::name;
+
+template< class Implementation, class Algorithm >
+const String XofImp<Implementation,Algorithm>::s_algName = Algorithm::name;
+
+template< class Implementation, class Algorithm >
+const String XofImp<Implementation,Algorithm>::s_modeName;
+
+template< class Implementation, class Algorithm >
+const String XofImp<Implementation,Algorithm>::s_impName = Implementation::name;
+
+template< class Implementation, class Algorithm >
+const String CustomizableXofImp<Implementation,Algorithm>::s_algName = Algorithm::name;
+
+template< class Implementation, class Algorithm >
+const String CustomizableXofImp<Implementation,Algorithm>::s_modeName;
+
+template< class Implementation, class Algorithm >
+const String CustomizableXofImp<Implementation,Algorithm>::s_impName = Implementation::name;
+
+template< class Implementation, class Algorithm >
+const String KmacImp<Implementation,Algorithm>::s_algName = Algorithm::name;
+
+template< class Implementation, class Algorithm >
+const String KmacImp<Implementation,Algorithm>::s_modeName;
+
+template< class Implementation, class Algorithm >
+const String KmacImp<Implementation,Algorithm>::s_impName = Implementation::name;
 
 
 template< class Implementation, class Algorithm >

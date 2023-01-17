@@ -12,7 +12,7 @@
 // With the switch to Git this no longer works due to having multiple branches.
 // We move to having the version here only specify the API and minor version number
 // These will NOT be changed for every build. The API version only changes when there are
-// changes to the API in symcrypt.h. (Note: symcrypt_low_level.h is not stable and can change
+// breaking changes to the API in symcrypt.h. (Note: symcrypt_low_level.h is not stable and can change
 // at any time.) The minor version is changed at regular intervals, but not necessarily at
 // every build of the library.
 //
@@ -23,8 +23,8 @@
 //
 
 #define SYMCRYPT_CODE_VERSION_API       103
-#define SYMCRYPT_CODE_VERSION_MINOR     0
-#define SYMCRYPT_CODE_VERSION_PATCH     1
+#define SYMCRYPT_CODE_VERSION_MINOR     1
+#define SYMCRYPT_CODE_VERSION_PATCH     0
 
 #if defined(DBG)
 #define SYMCRYPT_DEBUG 1

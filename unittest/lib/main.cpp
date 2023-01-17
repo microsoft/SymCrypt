@@ -63,6 +63,18 @@ const char * AlgSha3_384::name = "Sha3-384";
 
 const char * AlgSha3_512::name = "Sha3-512";
 
+const char * AlgShake128::name = "Shake128";
+
+const char * AlgShake256::name = "Shake256";
+
+const char * AlgCShake128::name = "CShake128";
+
+const char * AlgCShake256::name = "CShake256";
+
+const char * AlgKmac128::name = "Kmac128";
+
+const char * AlgKmac256::name = "Kmac256";
+
 const char * AlgHmacMd5::name = "HmacMd5";
 
 const char * AlgHmacSha1::name = "HmacSha1";
@@ -494,6 +506,12 @@ const char * g_algorithmNames[] = {
     AlgSha3_256::name,
     AlgSha3_384::name,
     AlgSha3_512::name,
+    AlgShake128::name,
+    AlgShake256::name,
+    AlgCShake128::name,
+    AlgCShake256::name,
+    AlgKmac128::name,
+    AlgKmac256::name,
     AlgHmacMd5::name,
     AlgHmacSha1::name,
     AlgHmacSha256::name,
@@ -1684,6 +1702,12 @@ runFunctionalTests()
     testBlockCipherAlgorithms();
 
     testMacAlgorithms();
+
+    testXofAlgorithms();
+
+    testCustomizableXofAlgorithms();
+
+    testKmacAlgorithms();
 
     testStreamCipherAlgorithms();
 

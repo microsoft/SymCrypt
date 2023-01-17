@@ -1,0 +1,638 @@
+#
+# Known answer test vectors for customizable XOFs
+#
+# This file contains test vectors for the following algorithms:
+#	- cSHAKE128, cSHAKE256
+#
+# cSHAKE test vectors are generated with Extended Keccak Code Package (XKCP)
+# https://github.com/XKCP/XKCP
+#
+# Range test goes over all possible sizes of input parameters up to the specified
+# value, and computes a SHA3-256 hash value generated from the concatenation of
+# the outputs from each case. The following variables are used:
+#
+# MaxInputSize    : Input size in bytes, optional, default is zero.
+# MaxNameStrSize  : Function name string size in bytes, optional, default is zero.
+# MaxCustomStrSize: Customization string size in bytes, optional, default is zero.
+# OutputSize      : Output size in bytes from the algorithm to be appended to 
+#                   the running SHA3-256 computation.
+# Range           : SHA3-256 hash of the concatenation of the intermediate outputs.
+#
+# The values of input byte sequences set according to the following:
+#
+#  - Input is a sequence of bytes of size MaxInputSize+1. The value of an entry 
+#    at index i is (i & 0xff) | 0x80.
+#  - Function name string is a sequence of bytes of size MaxNameStrSize+1. The value of the
+#    entry at index i is ('N' + i) & 0xff.
+#  - Customization string is a sequence of bytes of size MaxNameStrSize+1. The value of the
+#    entry at index i is ('S' + i) & 0xff.
+#
+# The test generates an output of size OutputSize for each size combination of Input, Function
+# Name, and Customization string. If the value of a parameter is not specified, it is taken to be zero.
+# 
+# MaxInputSize = 504
+# OutputSize = 16
+# Range = b33f12ba009f28826291bdbb5eff44a4aab7bc59e6d977ce1d57a5fd4bb547b1
+#
+# In the above test vector, only input size is specified, thus function name and customization
+# strings will be empty. The input size will range from 0 to 504 bytes and the input buffer is
+# initialized according to the above description. For each of the 505 cases, an output of
+# 16 bytes will be generated and these will be appended to a running SHA3-256 computation. Range
+# value in the test vector is the hash value of this computation.
+#
+# If more than one parameter is specified, the test cases will include each combination of sizes 
+# of those parameters.
+#
+
+[CShake128]
+
+Msg = "abc"
+N = ""
+S = ""
+Outputlen = 256
+Output = 5881092dd818bf5cf8a3ddb793fbcba74097d5c526a6d35f97b83351940f2cc8
+
+#
+# Test the repeating pattern of "abcdefg" for N string
+#
+Msg = "abc"
+N = repeat( 1 ) "abcdefg"
+S = ""
+Outputlen = 256
+Output = 25e4b8ad6968a2977a3f036b1e1fd8d47a4c8f9e52a01a3943ef5b6ec11d3206
+
+Msg = "abc"
+N = repeat( 2 ) "abcdefg"
+S = ""
+Outputlen = 256
+Output = 749e28b60c66cc61f650fd84589ca2e570735250c9b77ec39ba1944046f542a4
+
+Msg = "abc"
+N = repeat( 3 ) "abcdefg"
+S = ""
+Outputlen = 256
+Output = 319301ec12bcfd16175f1fb99c85bbfcea2e7d09f56e580bb3d55ae2ff6b43ca
+
+Msg = "abc"
+N = repeat( 4 ) "abcdefg"
+S = ""
+Outputlen = 256
+Output = c1203f041230b241c22098feb24e0af2b04e295cc3a9cfa9d3745395b1773039
+
+Msg = "abc"
+N = repeat( 5 ) "abcdefg"
+S = ""
+Outputlen = 256
+Output = f19d58871380b15e146e6d33e98a4214ba86495cac08c08a24f5bed8d2a792a1
+
+Msg = "abc"
+N = repeat( 6 ) "abcdefg"
+S = ""
+Outputlen = 256
+Output = af32111ef4e73b4d58fcb9cc7f41ce9038572d937f04aee21456422f5a05b0bc
+
+Msg = "abc"
+N = repeat( 7 ) "abcdefg"
+S = ""
+Outputlen = 256
+Output = 74ca43e59412fe8855bac50ec455658f9ce5f121fe5668e53f636417a375b77b
+
+Msg = "abc"
+N = repeat( 8 ) "abcdefg"
+S = ""
+Outputlen = 256
+Output = 10b51056a9b00f8016b455be8b333ccac07738b325a0d7a35d5c51f96b3cda97
+
+Msg = "abc"
+N = repeat( 9 ) "abcdefg"
+S = ""
+Outputlen = 256
+Output = 5be9a7fe13829faba70cafc1ae6854324614fe16943a47f1bdd10e95a884cbb4
+
+Msg = "abc"
+N = repeat( 10 ) "abcdefg"
+S = ""
+Outputlen = 256
+Output = 274267cafb4e1a55ea02778966c6e2b04951099b9c276ebb6f4392d57c0ec1d2
+
+Msg = "abc"
+N = repeat( 11 ) "abcdefg"
+S = ""
+Outputlen = 256
+Output = e4489512f8616fc1c5a8de88f79fdabe5169c8a8ba85c2c0be6b6b050ff61500
+
+Msg = "abc"
+N = repeat( 12 ) "abcdefg"
+S = ""
+Outputlen = 256
+Output = db29223c9eff8f7159bfd2a6766cb8b0fda0fb5810e34210dba732bc80fcdde9
+
+Msg = "abc"
+N = repeat( 13 ) "abcdefg"
+S = ""
+Outputlen = 256
+Output = 88dcac6dd931beb3b30f8e32b2bf563a27c9c467cacaa3c9d2ace328c89a4b57
+
+Msg = "abc"
+N = repeat( 14 ) "abcdefg"
+S = ""
+Outputlen = 256
+Output = 44d2b6951c461c1cc3ca488a2975ccfe5f0f03db7f68ad69744ee9749830509c
+
+Msg = "abc"
+N = repeat( 15 ) "abcdefg"
+S = ""
+Outputlen = 256
+Output = b5447a82a7917b25a2517736d0b028a604427786397eae2835bb7676527be8e0
+
+Msg = "abc"
+N = repeat( 16 ) "abcdefg"
+S = ""
+Outputlen = 256
+Output = 9f398d741b13c3a0f51ba53dc0a869e0f1ecc80f03cb1966243353370b770785
+
+Msg = "abc"
+N = repeat( 17 ) "abcdefg"
+S = ""
+Outputlen = 256
+Output = 7ff3e1395dcc56451c65ae2ad53c55bd97c0491af4e0d271989f53f8a465ed13
+
+Msg = "abc"
+N = repeat( 18 ) "abcdefg"
+S = ""
+Outputlen = 256
+Output = 555ed80ee484f2c15b213163b144cceb327214135e9c419f9a1273b2e16f9770
+
+Msg = "abc"
+N = repeat( 19 ) "abcdefg"
+S = ""
+Outputlen = 256
+Output = 97e88b70b7350375bbe72a7e0a1988a028a4695a36af54697a009620392a3aa8
+
+Msg = "abc"
+N = repeat( 20 ) "abcdefg"
+S = ""
+Outputlen = 256
+Output = 6240c5a7eb10b7aeda648d2db9338fbfc0ff486cb146de0ca28e972b9f5109be
+
+Msg = "abc"
+N = repeat( 21 ) "abcdefg"
+S = ""
+Outputlen = 256
+Output = 5555f9a2b90d0bb42f5237f46b5c9023549d474088e33558300d8bdfe0f5e836
+
+Msg = "abc"
+N = repeat( 22 ) "abcdefg"
+S = ""
+Outputlen = 256
+Output = f9e3070d92d33b74889293ade446efe77240e8aa3242bf21a3f3a2511a4f0084
+
+Msg = "abc"
+N = repeat( 23 ) "abcdefg"
+S = ""
+Outputlen = 256
+Output = a84f144e78774ab43b975b174ea402889d65f7ddf08f9160536ac1f3778e7081
+
+Msg = "abc"
+N = repeat( 24 ) "abcdefg"
+S = ""
+Outputlen = 256
+Output = 7d3f866b0759fbd50567b347b6b8082dea589fb8660b383764150c4780034d0c
+
+Msg = "abc"
+N = repeat( 25 ) "abcdefg"
+S = ""
+Outputlen = 256
+Output = 51fee3a39055e5c95b026907347feef2011c01af9a375ab5a8a3fc1ec5392663
+
+#
+# Test the repeating pattern of "abcdefg" for S string
+#
+Msg = "abc"
+N = ""
+S = repeat( 1 ) "abcdefg"
+Outputlen = 256
+Output = 7d5a80c2dc19a5a130528e0a6bdcb920f6561eea1ee614a5371086c73ab2e018
+
+Msg = "abc"
+N = ""
+S = repeat( 2 ) "abcdefg"
+Outputlen = 256
+Output = af59e7ffcaa36f22174b5d3dc0419c4f54bcba2d3246c3a6a43ed186de5920cc
+
+Msg = "abc"
+N = ""
+S = repeat( 3 ) "abcdefg"
+Outputlen = 256
+Output = 445c6aa3c6382077fed101d97ae5755fd149cfbb0f265b1e59bcb0f2ad9f40ab
+
+Msg = "abc"
+N = ""
+S = repeat( 4 ) "abcdefg"
+Outputlen = 256
+Output = 5cc462cd51ecbf5c818511e84936f8c71a931bc8ef256aa05f62665373f8fb8b
+
+Msg = "abc"
+N = ""
+S = repeat( 5 ) "abcdefg"
+Outputlen = 256
+Output = 8e6e611b278c3abdb8921a4a21b9dc6dec8926f2504a4b4be07322ef47e21719
+
+Msg = "abc"
+N = ""
+S = repeat( 6 ) "abcdefg"
+Outputlen = 256
+Output = 55acba96561ac8f9e7556f2fd6fce7d9a1ef29f7ae50efddd850e4993ba3feb7
+
+Msg = "abc"
+N = ""
+S = repeat( 7 ) "abcdefg"
+Outputlen = 256
+Output = e60586693e7d8d2cf75b5ddf0d033f1ecd954b21f4114a739a4cc4651cc4fba2
+
+Msg = "abc"
+N = ""
+S = repeat( 8 ) "abcdefg"
+Outputlen = 256
+Output = f0583b6bed074d1f16df745bf3014958f4a507889140c960efb8102c9a4871bf
+
+Msg = "abc"
+N = ""
+S = repeat( 9 ) "abcdefg"
+Outputlen = 256
+Output = 9e4ddbe246438226467bcb07b5ec23f4b46590abf20befc7d7e6032c6b7a9aa3
+
+Msg = "abc"
+N = ""
+S = repeat( 10 ) "abcdefg"
+Outputlen = 256
+Output = 4ec5e42bfe6b31827336dca6adfe9bd63e40b5fdc0e345bf99bc17d29e8418fa
+
+Msg = "abc"
+N = ""
+S = repeat( 11 ) "abcdefg"
+Outputlen = 256
+Output = a768f08f3f36aebc06e3deb09c1110af7e3dd21cf96c641f83d0c0f2f6daa940
+
+Msg = "abc"
+N = ""
+S = repeat( 12 ) "abcdefg"
+Outputlen = 256
+Output = 30737aa7773ed72d46cfa4c23b32daa8965da2a775569e3c6b9359fff160c36d
+
+Msg = "abc"
+N = ""
+S = repeat( 13 ) "abcdefg"
+Outputlen = 256
+Output = e96a1bdc85682a9d8cc527b574b9a5c84c5759cd398e4d6ae2622b1264864559
+
+Msg = "abc"
+N = ""
+S = repeat( 14 ) "abcdefg"
+Outputlen = 256
+Output = f69d166632a278a9c3f8ae437a9c7d439096bcde95396a0b6a4712b1ad39415a
+
+Msg = "abc"
+N = ""
+S = repeat( 15 ) "abcdefg"
+Outputlen = 256
+Output = e1d4889cc3df95209fc3344d337841e51d588952528c6c9e8cf1505efa0234f4
+
+Msg = "abc"
+N = ""
+S = repeat( 16 ) "abcdefg"
+Outputlen = 256
+Output = 31d19f06efe522033626085f101f87cad000453e4faddc5dd92681d86e59743d
+
+Msg = "abc"
+N = ""
+S = repeat( 17 ) "abcdefg"
+Outputlen = 256
+Output = 1def2c735c3cf94e7c464b2b6822f4f14c9ecfd241ad43e318fa3089d91ecfca
+
+Msg = "abc"
+N = ""
+S = repeat( 18 ) "abcdefg"
+Outputlen = 256
+Output = 72f6dd45bc5976c4f25cbe8b0009a6725a8bce7d284a1b433aa3ce38566d49cf
+
+Msg = "abc"
+N = ""
+S = repeat( 19 ) "abcdefg"
+Outputlen = 256
+Output = b6bf3cacd7cf7e5bceda45aebe59f3988c4460858da757071e4b5e895489159d
+
+Msg = "abc"
+N = ""
+S = repeat( 20 ) "abcdefg"
+Outputlen = 256
+Output = 8fa7cd30f01b89379d381e69ce8cd3ee3d763ac489b9bf8886cd38d25e93da6f
+
+Msg = "abc"
+N = ""
+S = repeat( 21 ) "abcdefg"
+Outputlen = 256
+Output = db527888b30855c124096d2280ee8a571850ae2150af1ad40b1da2ec8c1062f3
+
+Msg = "abc"
+N = ""
+S = repeat( 22 ) "abcdefg"
+Outputlen = 256
+Output = 837562f7cae579c0de8df06d533032c8ab0792e34bf6006bc8cebb86445536ad
+
+Msg = "abc"
+N = ""
+S = repeat( 23 ) "abcdefg"
+Outputlen = 256
+Output = 7da3261a401568f27d6709ccd1fcaa9e484872c8ddaff495b4f6dd8857d5044c
+
+Msg = "abc"
+N = ""
+S = repeat( 24 ) "abcdefg"
+Outputlen = 256
+Output = 3d340fefe64125ec42a1e455e1afc12d849dd062565cdb70a2b894ca0020f257
+
+Msg = "abc"
+N = ""
+S = repeat( 25 ) "abcdefg"
+Outputlen = 256
+Output = ff311fda306da65c46ce76eda4b719d1716fe792e3179818b19766a4c566a095
+
+
+# cSHAKE128 - Msg
+MaxInputSize = 504
+OutputSize = 16
+Range = b33f12ba009f28826291bdbb5eff44a4aab7bc59e6d977ce1d57a5fd4bb547b1
+
+# cSHAKE128 - Nlen and Slen
+MaxNameStrSize = 504
+MaxCustomStrSize = 504
+OutputSize = 16
+Range = 4b95d842788343f0e3f10151a0f4a37a54ecdd93a77b5d9f3823a3cfa9447747
+
+
+[CShake256]
+
+Msg = "abc"
+N = ""
+S = ""
+Outputlen = 512
+Output = 483366601360a8771c6863080cc4114d8db44530f8f1e1ee4f94ea37e78b5739d5a15bef186a5386c75744c0527e1faa9f8726e462a12a4feb06bd8801e751e4
+
+#
+# Test the repeating pattern of "abcdefg" for N string
+#
+Msg = "abc"
+N = repeat( 1 ) "abcdefg"
+S = ""
+Outputlen = 512
+Output = b27db29262835aa3623dc2b19bcbffaca0e39601394b57c802ea6638f122ea3c7fc6aa999e7309314fe36da8ce0652220d75323785820dde2896fb2a25533a0d
+
+Msg = "abc"
+N = repeat( 2 ) "abcdefg"
+S = ""
+Outputlen = 512
+Output = 276c5d17698c3d9162a20414887dc349c4d0c7cb1b48f3d7ac8696afbf82cec32fb73ba5af770fdf4db7876d222cad93f2bb83d6f423cef4cc773b501824f242
+
+Msg = "abc"
+N = repeat( 3 ) "abcdefg"
+S = ""
+Outputlen = 512
+Output = 4335f1354a580e778bec3fd75ea59753c55b32c67086ddfbb88846c540a92accd588ab082f9f218ea9e53767ce445350f8a9994feca099ccd95c4eb6302dc58c
+
+Msg = "abc"
+N = repeat( 4 ) "abcdefg"
+S = ""
+Outputlen = 512
+Output = 78219c43870bfc7fe2058c1142c2f3c900aca2a33ae615395d1bef138e1677a5a4e18d41d09d6ebdb3059e0d728dfca34a07c3f615fe756ea53c042081a91cb0
+
+Msg = "abc"
+N = repeat( 5 ) "abcdefg"
+S = ""
+Outputlen = 512
+Output = 222c91acebd9eb284467d3e9f41aae312b4fec608dc3c0e7314abc4ee41b3cce9bb9b54b1350d73142cbb24fc391a629d23de56a576dd1c4f52807d288922921
+
+Msg = "abc"
+N = repeat( 6 ) "abcdefg"
+S = ""
+Outputlen = 512
+Output = 3edc56e8535df958c46cb4058b4862ee638e43971936be8ffc0cae31fc4e71f4fb3c454d7ce95cc847f2e0a4128bf39f47f156fc4b0778eb652861c9dabe3b4e
+
+Msg = "abc"
+N = repeat( 7 ) "abcdefg"
+S = ""
+Outputlen = 512
+Output = ddc45f027872f97c7e1775e80c9eda2ad906c84480a1485bc11f50ef28f0759b18c66ea841b908ca04a7efbce9994b34bb0a9597b244758ddf4b9dc421699c6a
+
+Msg = "abc"
+N = repeat( 8 ) "abcdefg"
+S = ""
+Outputlen = 512
+Output = 398cf7f54adc6253c3b1e5fb800b89fb59ba097e9644d5c77271537a15321f73e462d4cd4a998413508ea539d4d28d86e19f385e2c924cd6d9e1c46e7971f159
+
+Msg = "abc"
+N = repeat( 9 ) "abcdefg"
+S = ""
+Outputlen = 512
+Output = 9e53534d09685d6577c8ff29184df17048bb12b53b215b8a7630e4c992d815b3a5fe353f5fb4d62c802c217b256cdf457f5ae3df98a1218a35b77c361c78059e
+
+Msg = "abc"
+N = repeat( 10 ) "abcdefg"
+S = ""
+Outputlen = 512
+Output = b2d3836c97439deb6760c44d17ee82bb8a5943df4869849bb5e5450cf10fce828ef03a9a2d2a1b1bab51f8cf9ed27b75f39f0ecf843649c21704d6b513cf2a37
+
+Msg = "abc"
+N = repeat( 11 ) "abcdefg"
+S = ""
+Outputlen = 512
+Output = e6571745fb89c9aaf65332e7d1a78ea20cef8793473177de853751ff3419fc2e29e9e59769057ff1e141496a1ca12e99528711398d7fc818d3ef9903b26aeea5
+
+Msg = "abc"
+N = repeat( 12 ) "abcdefg"
+S = ""
+Outputlen = 512
+Output = e11a832a8d3a9aee4c0298c2d67b0a93ee1bd250e18cc14ab1258f20e054aa3403e54ac7e8f475ba7d3b73debb637a63e9a8deec1fd6de9fbe77a891b9ebda10
+
+Msg = "abc"
+N = repeat( 13 ) "abcdefg"
+S = ""
+Outputlen = 512
+Output = 50a2b0e16262dd83730725577fbf19b3b1a520df1ea66f5ff0882356505980a561234ff7c2d9a8e8baa1ed77f9913eb1ff9cbd8afabfb66dabcd19b856de8e1c
+
+Msg = "abc"
+N = repeat( 14 ) "abcdefg"
+S = ""
+Outputlen = 512
+Output = 50700b235c07dd9bc7beba812545e8982fd70b75bd9d78d7308880cf66a9741b7ab11e8679366ac6ad34833cca875db329870b550b03a27fa92abaf232da6e1f
+
+Msg = "abc"
+N = repeat( 15 ) "abcdefg"
+S = ""
+Outputlen = 512
+Output = 30023370acb862af84a52149be70006a71c26b59a82e950f5b1c38ba563bfdc565963c6f9fffdfe1df439204d475dff63915093b19005859b860ae776ffd38f8
+
+Msg = "abc"
+N = repeat( 16 ) "abcdefg"
+S = ""
+Outputlen = 512
+Output = c979dcfac267debe6d21e9884d38d3824169481bafa8988a9e7354f564be4df29591e4987b924f81e5733c3adc139f43cf70aec526dc20fa40fa1ba2c210f33f
+
+Msg = "abc"
+N = repeat( 17 ) "abcdefg"
+S = ""
+Outputlen = 512
+Output = 767aa870f4d7787bed4c3cefc8a72edf0e81fed30c512ab8e0d432d7fd28f81f86699179d79200626ad1ea2ce7985528202c6ed4b3fcd38b44296f10f0b73fe8
+
+Msg = "abc"
+N = repeat( 18 ) "abcdefg"
+S = ""
+Outputlen = 512
+Output = 6cecf0e1004bd7535243e4dc5730e98030b559d23fc8619ce77a03bce6166377795065be7ea40c984b6b987d91555f7c37e40f05feb8dea3b5f00fa0d29f38c5
+
+Msg = "abc"
+N = repeat( 19 ) "abcdefg"
+S = ""
+Outputlen = 512
+Output = 8779f0910174c466aabccc0a1c9f62263f34a056006f6168603c2e309382fff254ac052f1fcab8ab200b3cd319c321d5e0435c27acb0dc049853f93efcb28f48
+
+Msg = "abc"
+N = repeat( 20 ) "abcdefg"
+S = ""
+Outputlen = 512
+Output = fc96f0e133223b57123979de99f19d81e5751c4f1d1ef233041da243c74824444b57a3bea3c8db9bca4bdfdbf325cfa83dd234f2d9b6f275c0959851c9303846
+
+#
+# Test the repeating pattern of "abcdefg" for S string
+#
+Msg = "abc"
+N = ""
+S = repeat( 1 ) "abcdefg"
+Outputlen = 512
+Output = 7f87259691299f15468bee4dfe6c862044e583d65b54b532d57520abcf72ae77692d02f8635bdf5f62e0d3ad520c6ccc915637c63a80eefadc7f9ac687427054
+
+Msg = "abc"
+N = ""
+S = repeat( 2 ) "abcdefg"
+Outputlen = 512
+Output = c5900d83629303c9615b13a35e170da3bd56b8bae7649143c933a071a6c8996a2e96c6e62805b741c037602398528d97e42e2aa0e69d5a677fba7a64de2a45fa
+
+Msg = "abc"
+N = ""
+S = repeat( 3 ) "abcdefg"
+Outputlen = 512
+Output = 6a89e185eb5fd9a452ce890dcbfb336864a2bf8392abc1767276fd6e0c216026ab9170b82ae8295f828dc8eba5030cc076c5dd4a1a212f6887f209bdbcc3fcbc
+
+Msg = "abc"
+N = ""
+S = repeat( 4 ) "abcdefg"
+Outputlen = 512
+Output = 05370e77b9c326162adf936fb00a6bc4c06f9865d60c7c306e2dcb81c476c8f4f701b35046d3cec86267de2818211df158e4416577aa4e8538eae98c58287cdb
+
+Msg = "abc"
+N = ""
+S = repeat( 5 ) "abcdefg"
+Outputlen = 512
+Output = edb9c0437041c9ff866773f4c0b0c1cde61d3301d2024137fd17cae2898e8415d233b4f6a7fcae1a51ff1aed02747bcf5a1ab4f074c1ff99da7d1c5b5bbea84e
+
+Msg = "abc"
+N = ""
+S = repeat( 6 ) "abcdefg"
+Outputlen = 512
+Output = 7b0cb8d76d2d214a8085d18144fa7fccf91bf511cf2c4484fca1a3535f60ecd818e6ae29629fc58406e39ce2c9077661db108a6c4c3907c10fc9c279c76afaf2
+
+Msg = "abc"
+N = ""
+S = repeat( 7 ) "abcdefg"
+Outputlen = 512
+Output = b54533540a1944b92f286a9091dc63f0812a41bcc2fefed4bae113b3cbd14ff9d79d2f67153febb4b29c45022344383008fd41e15278ae040492f4f11e1ed8d1
+
+Msg = "abc"
+N = ""
+S = repeat( 8 ) "abcdefg"
+Outputlen = 512
+Output = 9dd7be27a16015c48740e242c2f81a43c76c54a5ee2f63c0367657fdf913428a3bfa7947bb726d196766f4537153f01df1a2bc45d3a680f86c71894ada8e4247
+
+Msg = "abc"
+N = ""
+S = repeat( 9 ) "abcdefg"
+Outputlen = 512
+Output = 01559999405c6539677daa9ef7440ed4a73b276e693dde2e3df8766abf88ce1d69f7b411e691314fb00527d4388d5a7e171d242a5f4b40dbc527aafcb513c77c
+
+Msg = "abc"
+N = ""
+S = repeat( 10 ) "abcdefg"
+Outputlen = 512
+Output = 7284708091319c220b37001c8760c6a48654bd49ac61813165e1cb5b233d970e43278dda8bf46d396668f13a544fbdef94623287bd59bf7ce6096597c84b6d4b
+
+Msg = "abc"
+N = ""
+S = repeat( 11 ) "abcdefg"
+Outputlen = 512
+Output = 27d11fb78b57b42462ce9e47439653a26899ea4f049389e888eb7d578b4b18d8b687931690527cbc508a9b11aba8438bc146549afb82bb34a29ded9b854d07d5
+
+Msg = "abc"
+N = ""
+S = repeat( 12 ) "abcdefg"
+Outputlen = 512
+Output = ea76690b6eb60ae8697b456a123c939b4d373d31dbb6ac50e80d7161b7a84b3e5081813681f7a37fc3aa554b20b2f66494b895a2be9076a47ddfadde95e3c17c
+
+Msg = "abc"
+N = ""
+S = repeat( 13 ) "abcdefg"
+Outputlen = 512
+Output = b7bfbcc837fcaeefaa0c90f3e359dd4124fa9f4825d469b01f3cc6a0e92891b6a9b139043ad373a897299ad0d927e8b5dcf1a9de6eb6ef830cd48bb61ba18ce2
+
+Msg = "abc"
+N = ""
+S = repeat( 14 ) "abcdefg"
+Outputlen = 512
+Output = 2865396be84603f13ae01e19eb8eccec898b6c68495f45612db3291f4e697fda215f12416c65d5ff0840d23d99ffa1d902c18fe276f66d7151bc587ac2e79305
+
+Msg = "abc"
+N = ""
+S = repeat( 15 ) "abcdefg"
+Outputlen = 512
+Output = d681e45479d391eb8acf4b90b4c3675c0a0f4ea961ea43fd60f24a8673973e4f8da8503fc9a523e01579ca00afa7dc00401a275327318efa448b21564067fbb3
+
+Msg = "abc"
+N = ""
+S = repeat( 16 ) "abcdefg"
+Outputlen = 512
+Output = 4560fcf206b705f057d257a8b9233372091c5af0c263bf6ebb68622bf8e9b62da20b0bf43caecbb0c699c5b29e1b9a6cabd29c9bd83d9cfd80f60e4e14a67a6a
+
+Msg = "abc"
+N = ""
+S = repeat( 17 ) "abcdefg"
+Outputlen = 512
+Output = f9b52941c202a0a65fae2198d4fe8acac10467856a6c818f19b23515c1b610b2b736ed3b377bf08698556a5b4479aeaa4bbb72b8a6be2e6978c589e6d8615754
+
+Msg = "abc"
+N = ""
+S = repeat( 18 ) "abcdefg"
+Outputlen = 512
+Output = 1b3c8a414f9c883ec89a8e7b84159034ca2c3383f0bb4206381898fa5bf70e1e110bc0a6a5e1f7ed98446bc36c03798d51f0707aad96a2f951a831820bb95a02
+
+Msg = "abc"
+N = ""
+S = repeat( 19 ) "abcdefg"
+Outputlen = 512
+Output = 85c9bce5232693a9075ba9724b2d573ddc43fb61a1482ac3b14ba611fa81e02801e1dbc22b28a6622644ca82e16beee60b441455f68d365c8f928645aa94dbad
+
+Msg = "abc"
+N = ""
+S = repeat( 20 ) "abcdefg"
+Outputlen = 512
+Output = da500c8dbc6ab6dfd75b84ecb0cd3fc08dabe0b0f345987eeacbef14066bfdb22328784ef9474a5e931bdd504914d32173854af4fc93c4d3d88c3dbaab919c47
+
+
+# cSHAKE256 - Msg
+MaxInputSize = 408
+OutputSize = 16
+Range = ff740ca4ab3426faf5f94c4bfe61b0b080ad29f9ed48950dd51b83d230877bef
+
+# cSHAKE256 - Nlen and Slen
+MaxNameStrSize = 408
+MaxCustomStrSize = 408
+OutputSize = 16
+Range = 0ee7ab5b8f20c69d4811337e99c56e05da3aa944dd32569549e93460a1d10862

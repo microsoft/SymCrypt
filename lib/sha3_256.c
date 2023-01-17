@@ -40,19 +40,19 @@ const PCSYMCRYPT_HASH SymCryptSha3_256Algorithm = &SymCryptSha3_256Algorithm_def
 //
 // SymCryptSha3_256Init
 //
-SYMCRYPT_NOINLINE
 VOID
 SYMCRYPT_CALL
 SymCryptSha3_256Init(_Out_ PSYMCRYPT_SHA3_256_STATE pState)
 {
-    SymCryptSha3Init(pState, 256);
+    SymCryptKeccakInit(pState,
+                        SYMCRYPT_SHA3_256_INPUT_BLOCK_SIZE,
+                        SYMCRYPT_SHA3_PADDING_VALUE);
 }
 
 
 //
 // SymCryptSha3_256Append
 //
-SYMCRYPT_NOINLINE
 VOID
 SYMCRYPT_CALL
 SymCryptSha3_256Append(
@@ -60,21 +60,20 @@ SymCryptSha3_256Append(
     _In_reads_(cbData)  PCBYTE                      pbData,
                         SIZE_T                      cbData)
 {
-    SymCryptSha3Append(pState, pbData, cbData);
+    SymCryptKeccakAppend(pState, pbData, cbData);
 }
 
 
 //
 // SymCryptSha3_256Result
 //
-SYMCRYPT_NOINLINE
 VOID
 SYMCRYPT_CALL
 SymCryptSha3_256Result(
     _Inout_                                     PSYMCRYPT_SHA3_256_STATE    pState,
     _Out_writes_(SYMCRYPT_SHA3_256_RESULT_SIZE) PBYTE                       pbResult)
 {
-    SymCryptSha3Result(pState, pbResult);
+    SymCryptKeccakExtract(pState, pbResult, SYMCRYPT_SHA3_256_RESULT_SIZE, TRUE);
 }
 
 
@@ -87,7 +86,7 @@ SymCryptSha3_256StateExport(
     _In_                                                    PCSYMCRYPT_SHA3_256_STATE   pState,
     _Out_writes_bytes_(SYMCRYPT_SHA3_512_STATE_EXPORT_SIZE) PBYTE                       pbBlob)
 {
-    SymCryptSha3StateExport(SymCryptBlobTypeSha3_256State, pState, pbBlob);
+    SymCryptKeccakStateExport(SymCryptBlobTypeSha3_256State, pState, pbBlob);
 }
 
 
@@ -100,7 +99,7 @@ SymCryptSha3_256StateImport(
     _Out_                                                   PSYMCRYPT_SHA3_256_STATE    pState,
     _In_reads_bytes_(SYMCRYPT_SHA3_256_STATE_EXPORT_SIZE)   PCBYTE                      pbBlob)
 {
-    return SymCryptSha3StateImport(SymCryptBlobTypeSha3_256State, pState, pbBlob);
+    return SymCryptKeccakStateImport(SymCryptBlobTypeSha3_256State, pState, pbBlob);
 }
 
 

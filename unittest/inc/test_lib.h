@@ -496,8 +496,11 @@ typedef std::basic_string<BYTE> BString;        // String of bytes
 #define SYMCRYPT_XxxInit(...)           CONCAT3( ScShimSymCrypt, ALG_Name, Init )(__VA_ARGS__)
 #define SYMCRYPT_XxxAppend(...)         CONCAT3( ScShimSymCrypt, ALG_Name, Append )(__VA_ARGS__)
 #define SYMCRYPT_XxxResult(...)         CONCAT3( ScShimSymCrypt, ALG_Name, Result )(__VA_ARGS__)
+#define SYMCRYPT_XxxResultEx(...)       CONCAT3( ScShimSymCrypt, ALG_Name, ResultEx )(__VA_ARGS__)
+#define SYMCRYPT_XxxExtract(...)        CONCAT3( ScShimSymCrypt, ALG_Name, Extract )(__VA_ARGS__)
 #define SYMCRYPT_XxxAppendBlocks(...)   CONCAT3( ScShimSymCrypt, ALG_Name, AppendBlocks )(__VA_ARGS__)
 #define SYMCRYPT_XxxExpandKey(...)      CONCAT3( ScShimSymCrypt, ALG_Name, ExpandKey )(__VA_ARGS__)
+#define SYMCRYPT_XxxExpandKeyEx(...)    CONCAT3( ScShimSymCrypt, ALG_Name, ExpandKeyEx )(__VA_ARGS__)
 #define SYMCRYPT_XxxKeyCopy(...)        CONCAT3( ScShimSymCrypt, ALG_Name, KeyCopy )(__VA_ARGS__)
 #define SYMCRYPT_XxxEncrypt(...)        CONCAT3( ScShimSymCrypt, ALG_Name, Encrypt )(__VA_ARGS__)
 #define SYMCRYPT_XxxDecrypt(...)        CONCAT3( ScShimSymCrypt, ALG_Name, Decrypt )(__VA_ARGS__)
@@ -580,6 +583,36 @@ public:
 };
 
 class AlgSha3_512{
+public:
+    const static char * name;
+};
+
+class AlgShake128{
+public:
+    const static char * name;
+};
+
+class AlgShake256{
+public:
+    const static char * name;
+};
+
+class AlgCShake128{
+public:
+    const static char * name;
+};
+
+class AlgCShake256{
+public:
+    const static char * name;
+};
+
+class AlgKmac128{
+public:
+    const static char * name;
+};
+
+class AlgKmac256{
 public:
     const static char * name;
 };
@@ -1369,6 +1402,15 @@ testHashAlgorithms();
 
 VOID
 testMacAlgorithms();
+
+VOID
+testXofAlgorithms();
+
+VOID
+testCustomizableXofAlgorithms();
+
+VOID
+testKmacAlgorithms();
 
 VOID
 testBlockCipherAlgorithms();
