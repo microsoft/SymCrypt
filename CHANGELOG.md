@@ -1,3 +1,7 @@
+# Version 103.1.0
+
+- Add SHA-3 based algorithms: SHAKE, cSHAKE, KMAC
+
 # Version 103.0.1
 
 - Linux RNG improvements and additional testing
