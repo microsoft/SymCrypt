@@ -247,16 +247,16 @@ testXofSingle(                          XofImplementation*      pXof,
 VOID testXofMonteCarlo(                         XofImplementation*  pXof,
                         _In_reads_( cbSeed )    PCBYTE              pbSeed,
                                                 SIZE_T              cbSeed,
-                                                LONGLONG            uMinOutputBytes,
-                                                LONGLONG            uMaxOutputBytes,
-                                                LONGLONG            uIteration,
+                                                SIZE_T              uMinOutputBytes,
+                                                SIZE_T              uMaxOutputBytes,
+                                                SIZE_T              uIteration,
                         _In_reads_( cbResult )  PCBYTE              pbResult,
                                                 SIZE_T              cbResult,
                                                 LONGLONG            line)
 {
     BYTE md[MAX_XOF_RESULT_SIZE];
-    const LONGLONG range = (uMaxOutputBytes - uMinOutputBytes + 1);
-    LONGLONG outputLength = uMaxOutputBytes;
+    const SIZE_T range = (uMaxOutputBytes - uMinOutputBytes + 1);
+    SIZE_T outputLength = uMaxOutputBytes;
 
     CHECK3(cbResult <= MAX_XOF_RESULT_SIZE, "Xof result too large at line %lld", line);
 
@@ -275,7 +275,7 @@ VOID testXofMonteCarlo(                         XofImplementation*  pXof,
         memset(md + cbSeed, 0, 16 - cbSeed);
     }
 
-    for (LONGLONG j = 0; j <= uIteration; j++)
+    for (SIZE_T j = 0; j <= uIteration; j++)
     {
         for (UINT32 i = 0; i < 1000; i++)
         {
@@ -435,14 +435,14 @@ testXofKats()
                 //
                 // Monte Carlo test
                 //
-                LONGLONG minOutputBytes = katParseInteger(katItem, "minimumoutputlengthbits") / 8;
-                LONGLONG maxOutputBytes = katParseInteger(katItem, "maximumoutputlengthbits") / 8;
-                LONGLONG iteration = katParseInteger(katItem, "count");
-                LONGLONG outputSize = katParseInteger(katItem, "outputlen") / 8;
+                SIZE_T minOutputBytes = (SIZE_T) katParseInteger(katItem, "minimumoutputlengthbits") / 8;
+                SIZE_T maxOutputBytes = (SIZE_T) katParseInteger(katItem, "maximumoutputlengthbits") / 8;
+                SIZE_T iteration = (SIZE_T) katParseInteger(katItem, "count");
+                SIZE_T outputSize = (SIZE_T) katParseInteger(katItem, "outputlen") / 8;
 
                 BString katSeed = katParseData(katItem, "msg");
                 BString katOutput = katParseData(katItem, "output");
-                CHECK3(outputSize == (LONGLONG)katOutput.size(), "Outputlen does not match the length of the output at line %lld", katXof->m_line);
+                CHECK3(outputSize == katOutput.size(), "Outputlen does not match the length of the output at line %lld", katXof->m_line);
 
                 testXofMonteCarlo(pXofMultiImp.get(),
                                 (PCBYTE)katSeed.data(), katSeed.size(), 

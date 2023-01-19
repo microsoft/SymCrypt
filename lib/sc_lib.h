@@ -1759,7 +1759,7 @@ VOID
 SYMCRYPT_CALL
 SymCryptKeccakAppendEncodeTimes8(
     _Inout_ SYMCRYPT_KECCAK_STATE *pState,
-            SIZE_T  uValue,
+            UINT64  uValue,
             BOOLEAN bLeftEncode);
 // Appends the left-encoding of uValue * 8 to the state
 

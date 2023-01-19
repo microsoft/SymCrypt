@@ -447,28 +447,28 @@ testKmacKats()
         {
             if (katIsFieldPresent(katItem, "range"))
             {
-                LONGLONG katMaxInputSize = 0;
-                LONGLONG katMaxKeySize = 0;
-                LONGLONG katMaxCustomStrSize = 0;
+                SIZE_T katMaxInputSize = 0;
+                SIZE_T katMaxKeySize = 0;
+                SIZE_T katMaxCustomStrSize = 0;
 
                 if (katIsFieldPresent(katItem, "maxinputsize"))
                 {
-                    katMaxInputSize = katParseInteger(katItem, "maxinputsize");
+                    katMaxInputSize = (SIZE_T) katParseInteger(katItem, "maxinputsize");
                 }
 
                 if (katIsFieldPresent(katItem, "maxkeysize"))
                 {
-                    katMaxKeySize = katParseInteger(katItem, "maxkeysize");
+                    katMaxKeySize = (SIZE_T) katParseInteger(katItem, "maxkeysize");
                 }
 
                 if (katIsFieldPresent(katItem, "maxcustomstrsize"))
                 {
-                    katMaxCustomStrSize = katParseInteger(katItem, "maxcustomstrsize");
+                    katMaxCustomStrSize = (SIZE_T) katParseInteger(katItem, "maxcustomstrsize");
                 }
 
                 CHECK3((katMaxInputSize || katMaxKeySize || katMaxCustomStrSize), "Invalid range test record ending at line %lld", katKmac->m_line);
 
-                UINT64 katOutputSize = (UINT64)katParseInteger(katItem, "outputsize");
+                SIZE_T katOutputSize = (SIZE_T)katParseInteger(katItem, "outputsize");
                 BString katRange = katParseData(katItem, "range");
 
                 testKmacRange(pKmacMultiImp.get(),

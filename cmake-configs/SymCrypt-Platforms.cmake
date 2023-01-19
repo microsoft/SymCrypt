@@ -52,6 +52,7 @@ if(CMAKE_SYSTEM_NAME MATCHES "Linux")
     
     # add_compile_options(-Wall)
     # add_compile_options(-Wno-unknown-pragmas)
+    add_compile_options(-Werror)
     add_compile_options(-Wno-deprecated-declarations -Wno-deprecated)
     add_compile_options(-g)
     add_compile_options(-Wno-multichar)
@@ -133,6 +134,7 @@ else() # Windows
     add_compile_options(/guard:cf)
     add_link_options(/guard:cf)
     add_link_options(/dynamicbase)
+    add_compile_options(/WX)
 
     # Architecture-specific compiler flags
     if(SYMCRYPT_TARGET_ARCH MATCHES "X86")

@@ -264,7 +264,7 @@ SymCryptCShakeEncodeInputStrings(
 SIZE_T
 SYMCRYPT_CALL
 SymCryptKeccakEncodeTimes8(
-                            SIZE_T  uInput,
+                            UINT64  uInput,
     _Out_writes_(cbOutput)  PBYTE   pbOutput,
                             SIZE_T  cbOutput,
                             BOOLEAN bLeftEncode)
@@ -321,7 +321,7 @@ VOID
 SYMCRYPT_CALL
 SymCryptKeccakAppendEncodeTimes8(
     _Inout_ SYMCRYPT_KECCAK_STATE *pState,
-            SIZE_T  uValue,
+            UINT64  uValue,
             BOOLEAN bLeftEncode)
 
 {

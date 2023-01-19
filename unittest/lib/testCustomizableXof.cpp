@@ -406,28 +406,28 @@ testCustomizableXofKats()
         {
             if (katIsFieldPresent(katItem, "range"))
             {
-                LONGLONG katMaxInputSize = 0;
-                LONGLONG katMaxNameStrSize = 0;
-                LONGLONG katMaxCustomStrSize = 0;
+                SIZE_T katMaxInputSize = 0;
+                SIZE_T katMaxNameStrSize = 0;
+                SIZE_T katMaxCustomStrSize = 0;
 
                 if (katIsFieldPresent(katItem, "maxinputsize"))
                 {
-                    katMaxInputSize = katParseInteger(katItem, "maxinputsize");
+                    katMaxInputSize = (SIZE_T) katParseInteger(katItem, "maxinputsize");
                 }
 
                 if (katIsFieldPresent(katItem, "maxnamestrsize"))
                 {
-                    katMaxNameStrSize = katParseInteger(katItem, "maxnamestrsize");
+                    katMaxNameStrSize = (SIZE_T) katParseInteger(katItem, "maxnamestrsize");
                 }
 
                 if (katIsFieldPresent(katItem, "maxcustomstrsize"))
                 {
-                    katMaxCustomStrSize = katParseInteger(katItem, "maxcustomstrsize");
+                    katMaxCustomStrSize = (SIZE_T) katParseInteger(katItem, "maxcustomstrsize");
                 }
 
                 CHECK3((katMaxInputSize || katMaxNameStrSize || katMaxCustomStrSize), "Invalid range test record ending at line %lld", katXof->m_line);
 
-                UINT64 katOutputSize = (UINT64)katParseInteger(katItem, "outputsize");
+                SIZE_T katOutputSize = (SIZE_T) katParseInteger(katItem, "outputsize");
                 BString katRange = katParseData(katItem, "range");
 
                 testCustomizableXofRange(pXofMultiImp.get(), 
