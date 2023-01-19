@@ -396,10 +396,11 @@ testCustomizableXofKats()
                 iprint( "%s%s", sep.c_str(), g_currentCategory.c_str() );
                 sep = ", ";
                 doneAnything = TRUE;
+
+                testCustomizableXofStateTransition(pXofMultiImp.get(), katXof->m_line);
             }
 
             //print( "%s, %d\n", g_currentCategory.c_str(), pXofMultiImp->m_imps.size() );
-            testCustomizableXofStateTransition(pXofMultiImp.get(), katXof->m_line);
         }
 
         if( katItem.type == KAT_TYPE_DATASET && !skipData )
