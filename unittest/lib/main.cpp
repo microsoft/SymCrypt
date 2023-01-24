@@ -1009,11 +1009,15 @@ processOptions( int argc, _In_reads_( argc ) char * argv[] )
 
 AlgorithmImplementationVector g_algorithmImplementation;
 
+VOID printCpuidInfo();
+
 _Analysis_noreturn_
 VOID
 fatal( _In_ PCSTR file, ULONG line, _In_ PCSTR format, ... )
 {
     va_list vl;
+
+    printCpuidInfo();
     printOutput( 0 );
 
     fprintf( stdout, "*\n\n***** FATAL ERROR %s(%lu): ", file, line );
@@ -1148,6 +1152,7 @@ printCpuidInfo()
 #define WORD_EBX    1
 #define WORD_ECX    2
 #define WORD_EDX    3
+#define CPUID_1_ECX_OSXSAVE_BIT 27
 
     int CPUInfo[4];
 
@@ -1158,11 +1163,18 @@ printCpuidInfo()
         __cpuidex( CPUInfo, i, 0 );
         print( "%1d         %08x, %08x, %08x, %08x\n", i, CPUInfo[WORD_EAX], CPUInfo[WORD_EBX], CPUInfo[WORD_ECX], CPUInfo[WORD_EDX] );
     }
+
+    __cpuidex(CPUInfo, 1, 0);
+    if( (CPUInfo[WORD_ECX] & (1 << CPUID_1_ECX_OSXSAVE_BIT)) != 0 )
+    {
+        INT64 xGetBvResult = _xgetbv( _XCR_XFEATURE_ENABLED_MASK );
+        print( "\nxGetBv(0)\n%016llx", xGetBvResult );
+    }
+
     iprint( "\n" );
 
 #endif
 }
-
 
 #if 0   // superseded by the testKdf infrastructure
 const LPWSTR cngMacAlgorithmName[] = {
@@ -1332,8 +1344,6 @@ initTestInfrastructure( int argc, _In_reads_( argc ) char * argv[] )
 
     printPlatformInformation( "System information" );
     printSymCryptCpuInfo( "Hardware CPU features", g_SymCryptCpuFeaturesNotPresent );
-
-    // printCpuidInfo();
 
     processOptions( argc, argv );
 

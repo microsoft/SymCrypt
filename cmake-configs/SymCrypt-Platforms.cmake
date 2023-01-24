@@ -34,16 +34,17 @@ if(CMAKE_SYSTEM_NAME MATCHES "Linux")
     endif()
 
     # Architecture-specific compiler flags
-    if(SYMCRYPT_TARGET_ARCH MATCHES "AMD64")
+    if(SYMCRYPT_TARGET_ARCH MATCHES "AMD64|X86")
         # Enable a baseline of features for the compiler to support everywhere
         # Other than SSSE3 we do not expect the compiler to generate these instructions except with intrinsics
         #
         # We cannot globally enable AVX and later, as we need to keep use of these instructions behind CPU detection,
         # and the instructions are definitely useful enough for a smart compiler to use them in C code (i.e. in memcpy)
-        set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -mssse3 -mxsave -maes -mpclmul -msha -mrdrnd -mrdseed")
-    elseif(SYMCRYPT_TARGET_ARCH MATCHES "X86")
-        add_compile_options("-m32")
-        add_link_options("-m32")
+        add_compile_options(-mssse3 -mxsave -maes -mpclmul -msha -mrdrnd -mrdseed)
+        if(SYMCRYPT_TARGET_ARCH MATCHES "X86")
+            add_compile_options("-m32")
+            add_link_options("-m32")
+        endif()
     elseif(SYMCRYPT_TARGET_ARCH MATCHES "ARM64")
         # Enable a baseline of features for the compiler to support everywhere
         # Assumes that the compiler will not emit crypto instructions as a result of normal C code

@@ -205,6 +205,7 @@
 
     #if SYMCRYPT_GNUC
         #include <x86intrin.h>
+        #define _XCR_XFEATURE_ENABLED_MASK (0)
     #endif
 #endif
 

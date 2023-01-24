@@ -28,22 +28,26 @@ SymCryptInitEnvUnittest( UINT32 version )
     SymCryptDetectCpuFeaturesByCpuid( SYMCRYPT_CPUID_DETECT_FLAG_CHECK_OS_SUPPORT_FOR_YMM );
 
     //
-    // Check OS reports the same AVX2 availability through GetEnabledXStateFeatures and _xgetbv
+    // Check that when SymCrypt thinks AVX2 available (using _xgetbv and __cpuidex)
+    // Windows also reports AVX state available with GetEnabledXStateFeatures
+    // Note: AVX state may be available without SymCrypt's AVX2 feature (i.e. IvyBridge supports AVX but not AVX2)
     //
-    if (((GetEnabledXStateFeatures() & XSTATE_MASK_AVX) != 0) ^
+    if (((GetEnabledXStateFeatures() & XSTATE_MASK_AVX) == 0) &&
         ((g_SymCryptCpuFeaturesNotPresent & SYMCRYPT_CPU_FEATURE_AVX2) == 0) )
     {
-        FATAL3("GetEnabledXStateFeatures (%d) and g_SymCryptCpuFeaturesNotPresent (%d) set by _xgetbv disagree on whether AVX2 should be enabled!",
-            GetEnabledXStateFeatures() & XSTATE_MASK_AVX, g_SymCryptCpuFeaturesNotPresent & SYMCRYPT_CPU_FEATURE_AVX2);
+        FATAL3("GetEnabledXStateFeatures (%016lx) and g_SymCryptCpuFeaturesNotPresent (%08x) set by _xgetbv disagree on whether AVX2 should be enabled!",
+            GetEnabledXStateFeatures(), g_SymCryptCpuFeaturesNotPresent);
     }
     //
-    // Check OS reports the same AVX512 availability through GetEnabledXStateFeatures and _xgetbv
+    // Check that when SymCrypt thinks AVX512 available (using _xgetbv and __cpuidex)
+    // Windows also reports AVX512 state available with GetEnabledXStateFeatures
+    // Note: AVX512 state may be available without SymCrypt's AVX512 feature (i.e. Knights Landing does not support AVX512VL)
     //
-    if (((GetEnabledXStateFeatures() & XSTATE_MASK_AVX512) != 0) ^
+    if (((GetEnabledXStateFeatures() & XSTATE_MASK_AVX512) == 0) &&
         ((g_SymCryptCpuFeaturesNotPresent & SYMCRYPT_CPU_FEATURE_AVX512) == 0) )
     {
-        FATAL3("GetEnabledXStateFeatures (%d) and g_SymCryptCpuFeaturesNotPresent (%d) set by _xgetbv disagree on whether AVX512 should be enabled!",
-            GetEnabledXStateFeatures() & XSTATE_MASK_AVX512, g_SymCryptCpuFeaturesNotPresent & SYMCRYPT_CPU_FEATURE_AVX512);
+        FATAL3("GetEnabledXStateFeatures (%016lx) and g_SymCryptCpuFeaturesNotPresent (%08x) set by _xgetbv disagree on whether AVX512 should be enabled!",
+            GetEnabledXStateFeatures(), g_SymCryptCpuFeaturesNotPresent);
     }
 
     //
