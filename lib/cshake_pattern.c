@@ -50,7 +50,9 @@ SYMCRYPT_XxxInit(
     _In_reads_( cbCustomizationString ) PCBYTE              pbCustomizationString,
                                         SIZE_T              cbCustomizationString)
 {
-    SYMCRYPT_SHAKEXXX_INIT(pState);
+    C_ASSERT( sizeof(SYMCRYPT_XXX_STATE) == sizeof(SYMCRYPT_SHAKEXXX_STATE) );
+
+    SYMCRYPT_SHAKEXXX_INIT( (SYMCRYPT_SHAKEXXX_STATE*)pState );
 
     // Perform cSHAKE processing of input strings when any of the input strings is non-empty
     if (cbFunctionNameString != 0 || cbCustomizationString != 0)
@@ -59,12 +61,14 @@ SYMCRYPT_XxxInit(
         // is set to SYMCRYPT_SHAKE_PADDING_VALUE in the SHAKE initialization above.
         // We update the padding value here because at least one of the input strings
         // is non-empty and cSHAKE will not default to SHAKE.
-        pState->paddingValue = SYMCRYPT_CSHAKE_PADDING_VALUE;
+        pState->ks.paddingValue = SYMCRYPT_CSHAKE_PADDING_VALUE;
 
-        SymCryptCShakeEncodeInputStrings(pState,
+        SymCryptCShakeEncodeInputStrings(&pState->ks,
                                         pbFunctionNameString, cbFunctionNameString,
                                         pbCustomizationString, cbCustomizationString);
     }
+
+    SYMCRYPT_SET_MAGIC(pState);
 }
 
 //
@@ -86,12 +90,12 @@ SYMCRYPT_XxxAppend(
     //
     // cSHAKE and SHAKE have different paddings, so we have to update the 
     // padding value in case it was cSHAKE padding before.
-    if (pState->squeezeMode)
+    if (pState->ks.squeezeMode)
     {
-        pState->paddingValue = SYMCRYPT_SHAKE_PADDING_VALUE;
+        pState->ks.paddingValue = SYMCRYPT_SHAKE_PADDING_VALUE;
     }
 
-    SymCryptKeccakAppend(pState, pbData, cbData);
+    SymCryptKeccakAppend(&pState->ks, pbData, cbData);
 }
 
 //
@@ -105,7 +109,7 @@ SYMCRYPT_XxxExtract(
                             SIZE_T              cbResult,
                             BOOLEAN             bWipe)
 {
-    SymCryptKeccakExtract(pState, pbResult, cbResult, bWipe);
+    SymCryptKeccakExtract(&pState->ks, pbResult, cbResult, bWipe);
 
     if (bWipe)
     {
@@ -113,7 +117,7 @@ SYMCRYPT_XxxExtract(
         // with empty strings, which is equivalent to empty SHAKE state.
         // We have no way to store the Function Name string and Customization 
         // string information to go back to the initial cSHAKE state.
-        pState->paddingValue = SYMCRYPT_SHAKE_PADDING_VALUE;
+        pState->ks.paddingValue = SYMCRYPT_SHAKE_PADDING_VALUE;
     }
 }
 
@@ -126,10 +130,10 @@ SYMCRYPT_XxxResult(
     _Inout_                                         PSYMCRYPT_XXX_STATE pState,
     _Out_writes_( SYMCRYPT_CSHAKEXXX_RESULT_SIZE )  PBYTE               pbResult)
 {
-    SymCryptKeccakExtract(pState, pbResult, SYMCRYPT_CSHAKEXXX_RESULT_SIZE, TRUE);
+    SymCryptKeccakExtract(&pState->ks, pbResult, SYMCRYPT_CSHAKEXXX_RESULT_SIZE, TRUE);
 
     // Revert to cSHAKE initialized with empty strings state, i.e., empty SHAKE state
-    pState->paddingValue = SYMCRYPT_SHAKE_PADDING_VALUE;
+    pState->ks.paddingValue = SYMCRYPT_SHAKE_PADDING_VALUE;
 }
 
 //
@@ -143,29 +147,3 @@ SYMCRYPT_XxxStateCopy(_In_ const SYMCRYPT_XXX_STATE* pSrc, _Out_ SYMCRYPT_XXX_ST
     *pDst = *pSrc;
     SYMCRYPT_SET_MAGIC(pDst);
 }
-
-# if 0
-//
-// SymCryptCShakeStateExport
-//
-VOID
-SYMCRYPT_CALL
-SYMCRYPT_XxxStateExport(
-    _In_                                                        PCSYMCRYPT_XXX_STATE    pState,
-    _Out_writes_bytes_(SYMCRYPT_CSHAKEXXX_STATE_EXPORT_SIZE)    PBYTE                   pbBlob)
-{
-    SymCryptKeccakStateExport(SYMCRYPT_BLOB_TYPE_XXX, pState, pbBlob);
-}
-
-//
-// SymCryptCShakeStateImport
-//
-SYMCRYPT_ERROR
-SYMCRYPT_CALL
-SYMCRYPT_XxxStateImport(
-    _Out_                                                   PSYMCRYPT_XXX_STATE pState,
-    _In_reads_bytes_(SYMCRYPT_CSHAKEXXX_STATE_EXPORT_SIZE)  PCBYTE              pbBlob)
-{
-    return SymCryptKeccakStateImport(SYMCRYPT_BLOB_TYPE_XXX, pState, pbBlob);
-}
-#endif

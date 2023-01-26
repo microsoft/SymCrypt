@@ -1,3 +1,7 @@
+# Version 103.2.0
+
+- Add HMAC-SHA-3 implementations
+
 # Version 103.1.0
 
 - Add SHA-3 based algorithms: SHAKE, cSHAKE, KMAC

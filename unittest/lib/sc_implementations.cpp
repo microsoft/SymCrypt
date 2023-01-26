@@ -224,6 +224,9 @@ addSymCryptImplementationToGlobalList()
     addImplementationToGlobalList<MacImp<ImpScVariant, AlgHmacSha256>>();
     addImplementationToGlobalList<MacImp<ImpScVariant, AlgHmacSha384>>();
     addImplementationToGlobalList<MacImp<ImpScVariant, AlgHmacSha512>>();
+    addImplementationToGlobalList<MacImp<ImpScVariant, AlgHmacSha3_256>>();
+    addImplementationToGlobalList<MacImp<ImpScVariant, AlgHmacSha3_384>>();
+    addImplementationToGlobalList<MacImp<ImpScVariant, AlgHmacSha3_512>>();
     addImplementationToGlobalList<MacImp<ImpScVariant, AlgAesCmac>>();
     addImplementationToGlobalList<MacImp<ImpScVariant, AlgMarvin32>>();
 

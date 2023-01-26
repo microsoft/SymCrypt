@@ -1480,7 +1480,7 @@ extern const PCSYMCRYPT_HASH SymCryptSha3_512Algorithm;
 //  SHAKE256(M, d) = KECCAK[512] (M || 1111, d)
 // 
 //  SHAKEs share the same Keccak state as the other Keccak based algorithms under
-//  the name SYMCRYPT_SHAKEXxx_STATE, which is a typedef for SYMCRYPT_KECCAK_STATE.
+//  the name SYMCRYPT_SHAKEXxx_STATE.
 // 
 //  Both SHAKE128 and SHAKE256 have default result sizes (32- and 64-bytes resp.) 
 //  that allows them to be used as substitutes for hash functions with the Init-Append-Result
@@ -2264,6 +2264,66 @@ SymCryptParallelSha512Selftest();
 //      If an error is detected, a platform-specific fatal error action is taken.
 //      Callers do not need to handle any error conditions.
 //
+//
+// We also have the Generic HMAC API where the hash function to be used in the HMAC
+// computation can be selected at runtime.
+//
+
+
+//
+// Generic HMAC API with parametrized hash function
+// 
+VOID
+SYMCRYPT_CALL
+SymCryptHmacStateCopy(
+    _In_        PCSYMCRYPT_HMAC_STATE           pSrc,
+    _In_opt_    PCSYMCRYPT_HMAC_EXPANDED_KEY    pExpandedKey,
+    _Out_       PSYMCRYPT_HMAC_STATE            pDst );
+
+VOID
+SYMCRYPT_CALL
+SymCryptHmacKeyCopy(
+    _In_    PCSYMCRYPT_HMAC_EXPANDED_KEY    pSrc, 
+    _Out_   PSYMCRYPT_HMAC_EXPANDED_KEY     pDst );
+
+SYMCRYPT_ERROR
+SYMCRYPT_CALL
+SymCryptHmacExpandKey(
+    _In_                    PCSYMCRYPT_HASH             pHash,
+    _Out_                   PSYMCRYPT_HMAC_EXPANDED_KEY pExpandedKey,
+    _In_reads_opt_(cbKey)   PCBYTE                      pbKey,
+                            SIZE_T                      cbKey );
+
+SYMCRYPT_NOINLINE
+VOID
+SYMCRYPT_CALL
+SymCryptHmacInit(
+    _Out_   PSYMCRYPT_HMAC_STATE            pState,
+    _In_    PCSYMCRYPT_HMAC_EXPANDED_KEY    pExpandedKey );
+
+VOID
+SYMCRYPT_CALL
+SymCryptHmacAppend(
+    _Inout_                 PSYMCRYPT_HMAC_STATE    pState,
+    _In_reads_( cbData )    PCBYTE                  pbData,
+                            SIZE_T                  cbData );
+
+SYMCRYPT_NOINLINE
+VOID
+SYMCRYPT_CALL
+SymCryptHmacResult(
+    _Inout_                                         PSYMCRYPT_HMAC_STATE    pState,
+    _Out_writes_( pState->pKey->pHash->resultSize ) PBYTE                   pbResult );
+
+SYMCRYPT_NOINLINE
+VOID
+SYMCRYPT_CALL
+SymCryptHmac(
+    _In_                                            PCSYMCRYPT_HMAC_EXPANDED_KEY    pExpandedKey,
+    _In_reads_( cbData )                            PCBYTE                          pbData,
+                                                    SIZE_T                          cbData,
+    _Out_writes_( pExpandedKey->pHash->resultSize ) PBYTE                           pbResult );
+
 
 ////////////////////////////////////////////////////////////////////////////
 //   HMAC-MD5
@@ -2588,6 +2648,199 @@ SymCryptHmacSha512Selftest();
 extern const PCSYMCRYPT_MAC  SymCryptHmacSha512Algorithm;
 
 ////////////////////////////////////////////////////////////////////////////
+//   HMAC-SHA3-256
+//
+//
+
+#define SYMCRYPT_HMAC_SHA3_256_RESULT_SIZE       SYMCRYPT_SHA3_256_RESULT_SIZE
+#define SYMCRYPT_HMAC_SHA3_256_INPUT_BLOCK_SIZE  SYMCRYPT_SHA3_256_INPUT_BLOCK_SIZE
+
+SYMCRYPT_ERROR
+SYMCRYPT_CALL
+SymCryptHmacSha3_256ExpandKey(
+    _Out_                   PSYMCRYPT_HMAC_SHA3_256_EXPANDED_KEY    pExpandedKey,
+    _In_reads_opt_(cbKey)   PCBYTE                                  pbKey,
+                            SIZE_T                                  cbKey );
+//
+// Supports all key lengths; never returns an error.
+//
+
+VOID
+SYMCRYPT_CALL
+SymCryptHmacSha3_256KeyCopy(
+    _In_    PCSYMCRYPT_HMAC_SHA3_256_EXPANDED_KEY pSrc,
+    _Out_   PSYMCRYPT_HMAC_SHA3_256_EXPANDED_KEY  pDst );
+
+VOID
+SYMCRYPT_CALL
+SymCryptHmacSha3_256(
+    _In_                                                PCSYMCRYPT_HMAC_SHA3_256_EXPANDED_KEY   pExpandedKey,
+    _In_reads_( cbData )                                PCBYTE                                  pbData,
+                                                        SIZE_T                                  cbData,
+    _Out_writes_( SYMCRYPT_HMAC_SHA3_256_RESULT_SIZE )  PBYTE                                   pbResult );
+
+VOID
+SYMCRYPT_CALL
+SymCryptHmacSha3_256StateCopy(
+    _In_        PCSYMCRYPT_HMAC_SHA3_256_STATE        pSrc,
+    _In_opt_    PCSYMCRYPT_HMAC_SHA3_256_EXPANDED_KEY pExpandedKey,
+    _Out_       PSYMCRYPT_HMAC_SHA3_256_STATE         pDst );
+
+VOID
+SYMCRYPT_CALL
+SymCryptHmacSha3_256Init(
+    _Out_   PSYMCRYPT_HMAC_SHA3_256_STATE         pState,
+    _In_    PCSYMCRYPT_HMAC_SHA3_256_EXPANDED_KEY pExpandedKey);
+
+VOID
+SYMCRYPT_CALL
+SymCryptHmacSha3_256Append(
+    _Inout_                 PSYMCRYPT_HMAC_SHA3_256_STATE   pState,
+    _In_reads_( cbData )    PCBYTE                          pbData,
+                            SIZE_T                          cbData );
+
+VOID
+SYMCRYPT_CALL
+SymCryptHmacSha3_256Result(
+    _Inout_                                             PSYMCRYPT_HMAC_SHA3_256_STATE   pState,
+    _Out_writes_( SYMCRYPT_HMAC_SHA3_256_RESULT_SIZE )  PBYTE                           pbResult );
+
+VOID
+SYMCRYPT_CALL
+SymCryptHmacSha3_256Selftest();
+
+extern const PCSYMCRYPT_MAC  SymCryptHmacSha3_256Algorithm;
+
+////////////////////////////////////////////////////////////////////////////
+//   HMAC-SHA3-384
+//
+//
+
+#define SYMCRYPT_HMAC_SHA3_384_RESULT_SIZE       SYMCRYPT_SHA3_384_RESULT_SIZE
+#define SYMCRYPT_HMAC_SHA3_384_INPUT_BLOCK_SIZE  SYMCRYPT_SHA3_384_INPUT_BLOCK_SIZE
+
+SYMCRYPT_ERROR
+SYMCRYPT_CALL
+SymCryptHmacSha3_384ExpandKey(
+    _Out_                   PSYMCRYPT_HMAC_SHA3_384_EXPANDED_KEY    pExpandedKey,
+    _In_reads_opt_(cbKey)   PCBYTE                                  pbKey,
+                            SIZE_T                                  cbKey );
+//
+// Supports all key lengths; never returns an error.
+//
+
+VOID
+SYMCRYPT_CALL
+SymCryptHmacSha3_384KeyCopy(
+    _In_    PCSYMCRYPT_HMAC_SHA3_384_EXPANDED_KEY pSrc,
+    _Out_   PSYMCRYPT_HMAC_SHA3_384_EXPANDED_KEY  pDst );
+
+VOID
+SYMCRYPT_CALL
+SymCryptHmacSha3_384(
+    _In_                                                PCSYMCRYPT_HMAC_SHA3_384_EXPANDED_KEY   pExpandedKey,
+    _In_reads_( cbData )                                PCBYTE                                  pbData,
+                                                        SIZE_T                                  cbData,
+    _Out_writes_( SYMCRYPT_HMAC_SHA3_384_RESULT_SIZE )  PBYTE                                   pbResult );
+
+VOID
+SYMCRYPT_CALL
+SymCryptHmacSha3_384StateCopy(
+    _In_        PCSYMCRYPT_HMAC_SHA3_384_STATE        pSrc,
+    _In_opt_    PCSYMCRYPT_HMAC_SHA3_384_EXPANDED_KEY pExpandedKey,
+    _Out_       PSYMCRYPT_HMAC_SHA3_384_STATE         pDst );
+
+VOID
+SYMCRYPT_CALL
+SymCryptHmacSha3_384Init(
+    _Out_   PSYMCRYPT_HMAC_SHA3_384_STATE         pState,
+    _In_    PCSYMCRYPT_HMAC_SHA3_384_EXPANDED_KEY pExpandedKey);
+
+VOID
+SYMCRYPT_CALL
+SymCryptHmacSha3_384Append(
+    _Inout_                 PSYMCRYPT_HMAC_SHA3_384_STATE   pState,
+    _In_reads_( cbData )    PCBYTE                          pbData,
+                            SIZE_T                          cbData );
+
+VOID
+SYMCRYPT_CALL
+SymCryptHmacSha3_384Result(
+    _Inout_                                             PSYMCRYPT_HMAC_SHA3_384_STATE   pState,
+    _Out_writes_( SYMCRYPT_HMAC_SHA3_384_RESULT_SIZE )  PBYTE                           pbResult );
+
+VOID
+SYMCRYPT_CALL
+SymCryptHmacSha3_384Selftest();
+
+extern const PCSYMCRYPT_MAC  SymCryptHmacSha3_384Algorithm;
+
+////////////////////////////////////////////////////////////////////////////
+//   HMAC-SHA3-512
+//
+//
+
+#define SYMCRYPT_HMAC_SHA3_512_RESULT_SIZE       SYMCRYPT_SHA3_512_RESULT_SIZE
+#define SYMCRYPT_HMAC_SHA3_512_INPUT_BLOCK_SIZE  SYMCRYPT_SHA3_512_INPUT_BLOCK_SIZE
+
+SYMCRYPT_ERROR
+SYMCRYPT_CALL
+SymCryptHmacSha3_512ExpandKey(
+    _Out_                   PSYMCRYPT_HMAC_SHA3_512_EXPANDED_KEY    pExpandedKey,
+    _In_reads_opt_(cbKey)   PCBYTE                                  pbKey,
+                            SIZE_T                                  cbKey );
+//
+// Supports all key lengths; never returns an error.
+//
+
+VOID
+SYMCRYPT_CALL
+SymCryptHmacSha3_512KeyCopy(
+    _In_    PCSYMCRYPT_HMAC_SHA3_512_EXPANDED_KEY pSrc,
+    _Out_   PSYMCRYPT_HMAC_SHA3_512_EXPANDED_KEY  pDst );
+
+VOID
+SYMCRYPT_CALL
+SymCryptHmacSha3_512(
+    _In_                                                PCSYMCRYPT_HMAC_SHA3_512_EXPANDED_KEY   pExpandedKey,
+    _In_reads_( cbData )                                PCBYTE                                  pbData,
+                                                        SIZE_T                                  cbData,
+    _Out_writes_( SYMCRYPT_HMAC_SHA3_512_RESULT_SIZE )  PBYTE                                   pbResult );
+
+VOID
+SYMCRYPT_CALL
+SymCryptHmacSha3_512StateCopy(
+    _In_        PCSYMCRYPT_HMAC_SHA3_512_STATE        pSrc,
+    _In_opt_    PCSYMCRYPT_HMAC_SHA3_512_EXPANDED_KEY pExpandedKey,
+    _Out_       PSYMCRYPT_HMAC_SHA3_512_STATE         pDst );
+
+VOID
+SYMCRYPT_CALL
+SymCryptHmacSha3_512Init(
+    _Out_   PSYMCRYPT_HMAC_SHA3_512_STATE         pState,
+    _In_    PCSYMCRYPT_HMAC_SHA3_512_EXPANDED_KEY pExpandedKey);
+
+VOID
+SYMCRYPT_CALL
+SymCryptHmacSha3_512Append(
+    _Inout_                 PSYMCRYPT_HMAC_SHA3_512_STATE   pState,
+    _In_reads_( cbData )    PCBYTE                          pbData,
+                            SIZE_T                          cbData );
+
+VOID
+SYMCRYPT_CALL
+SymCryptHmacSha3_512Result(
+    _Inout_                                             PSYMCRYPT_HMAC_SHA3_512_STATE   pState,
+    _Out_writes_( SYMCRYPT_HMAC_SHA3_512_RESULT_SIZE )  PBYTE                           pbResult );
+
+VOID
+SYMCRYPT_CALL
+SymCryptHmacSha3_512Selftest();
+
+extern const PCSYMCRYPT_MAC  SymCryptHmacSha3_512Algorithm;
+
+
+////////////////////////////////////////////////////////////////////////////
 //   AES-CMAC
 //
 // This is the AES-CMAC algorithm per SP 800-38B & RFC 4493.
@@ -2660,8 +2913,8 @@ extern const PCSYMCRYPT_MAC SymCryptAesCmacAlgorithm;
 // and has two variants; KMAC128 and KMAC256, using cSHAKE128 and cSHAKE256
 // as the underlying functions, respectively.
 // 
-// KMAC128(K, X, L, S) = cSHAKE128(bytepad(encode_string(K), 168) || X || right_encode(L), L, “KMAC”, S)
-// KMAC256(K, X, L, S) = cSHAKE256(bytepad(encode_string(K), 136) || X || right_encode(L), L, “KMAC”, S)
+// KMAC128(K, X, L, S) = cSHAKE128(bytepad(encode_string(K), 168) || X || right_encode(L), L, "KMAC", S)
+// KMAC256(K, X, L, S) = cSHAKE256(bytepad(encode_string(K), 136) || X || right_encode(L), L, "KMAC", S)
 //
 // KMAC accepts a variable-size key. There's no restriction on the size of the key.
 // 
@@ -2677,8 +2930,8 @@ extern const PCSYMCRYPT_MAC SymCryptAesCmacAlgorithm;
 // and  KMACXOF256. SymCrypt does not provide a separate KMACXOF API but supports them via 
 // the KMAC interface. 
 // 
-// KMACXOF128(K, X, L, S) = cSHAKE128(bytepad(encode_string(K), 168) || X || right_encode(0), L, “KMAC”, S)
-// KMACXOF256(K, X, L, S) = cSHAKE256(bytepad(encode_string(K), 136) || X || right_encode(0), L, “KMAC”, S)
+// KMACXOF128(K, X, L, S) = cSHAKE128(bytepad(encode_string(K), 168) || X || right_encode(0), L, "KMAC", S)
+// KMACXOF256(K, X, L, S) = cSHAKE256(bytepad(encode_string(K), 136) || X || right_encode(0), L, "KMAC", S)
 //
 // KMAC output generation mode is determined by the output length parameter 
 // L in SP 800-185; if it is non-zero then KMAC works in fixed-length mode, otherwise (i.e., L=0)

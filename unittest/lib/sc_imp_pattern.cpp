@@ -8,7 +8,9 @@
 #define ALG_NAME   MD2
 #define ALG_Name   Md2
 #define ALG_name   md2
+#define SYMCRYPT_HASH_MD_SHA
 #include "sc_imp_hashpattern.cpp"
+#undef SYMCRYPT_HASH_MD_SHA
 #undef ALG_NAME
 #undef ALG_Name
 #undef ALG_name
@@ -16,7 +18,9 @@
 #define ALG_NAME   MD4
 #define ALG_Name   Md4
 #define ALG_name   md4
+#define SYMCRYPT_HASH_MD_SHA
 #include "sc_imp_hashpattern.cpp"
+#undef SYMCRYPT_HASH_MD_SHA
 #undef ALG_NAME
 #undef ALG_Name
 #undef ALG_name
@@ -24,7 +28,9 @@
 #define ALG_NAME   MD5
 #define ALG_Name   Md5
 #define ALG_name   md5
+#define SYMCRYPT_HASH_MD_SHA
 #include "sc_imp_hashpattern.cpp"
+#undef SYMCRYPT_HASH_MD_SHA
 #undef ALG_NAME
 #undef ALG_Name
 #undef ALG_name
@@ -32,7 +38,9 @@
 #define ALG_NAME   SHA1
 #define ALG_Name   Sha1
 #define ALG_name   sha1
+#define SYMCRYPT_HASH_MD_SHA
 #include "sc_imp_hashpattern.cpp"
+#undef SYMCRYPT_HASH_MD_SHA
 #undef ALG_NAME
 #undef ALG_Name
 #undef ALG_name
@@ -40,7 +48,9 @@
 #define ALG_NAME   SHA256
 #define ALG_Name   Sha256
 #define ALG_name   sha256
+#define SYMCRYPT_HASH_MD_SHA
 #include "sc_imp_hashpattern.cpp"
+#undef SYMCRYPT_HASH_MD_SHA
 #undef ALG_NAME
 #undef ALG_Name
 #undef ALG_name
@@ -48,7 +58,9 @@
 #define ALG_NAME   SHA384
 #define ALG_Name   Sha384
 #define ALG_name   sha384
+#define SYMCRYPT_HASH_MD_SHA
 #include "sc_imp_hashpattern.cpp"
+#undef SYMCRYPT_HASH_MD_SHA
 #undef ALG_NAME
 #undef ALG_Name
 #undef ALG_name
@@ -56,7 +68,9 @@
 #define ALG_NAME   SHA512
 #define ALG_Name   Sha512
 #define ALG_name   sha512
+#define SYMCRYPT_HASH_MD_SHA
 #include "sc_imp_hashpattern.cpp"
+#undef SYMCRYPT_HASH_MD_SHA
 #undef ALG_NAME
 #undef ALG_Name
 #undef ALG_name
@@ -64,9 +78,7 @@
 #define ALG_NAME   SHA3_256
 #define ALG_Name   Sha3_256
 #define ALG_name   sha3_256
-#define HashImpSha3_256
 #include "sc_imp_hashpattern.cpp"
-#undef HashImpSha3_256
 #undef ALG_NAME
 #undef ALG_Name
 #undef ALG_name
@@ -74,9 +86,7 @@
 #define ALG_NAME   SHA3_384
 #define ALG_Name   Sha3_384
 #define ALG_name   sha3_384
-#define HashImpSha3_384
 #include "sc_imp_hashpattern.cpp"
-#undef HashImpSha3_384
 #undef ALG_NAME
 #undef ALG_Name
 #undef ALG_name
@@ -84,9 +94,7 @@
 #define ALG_NAME   SHA3_512
 #define ALG_Name   Sha3_512
 #define ALG_name   sha3_512
-#define HashImpSha3_512
 #include "sc_imp_hashpattern.cpp"
-#undef HashImpSha3_512
 #undef ALG_NAME
 #undef ALG_Name
 #undef ALG_name
@@ -165,6 +173,24 @@
 
 #define ALG_NAME    HMAC_SHA512
 #define ALG_Name    HmacSha512
+#include "sc_imp_macpattern.cpp"
+#undef ALG_NAME
+#undef ALG_Name
+
+#define ALG_NAME    HMAC_SHA3_256
+#define ALG_Name    HmacSha3_256
+#include "sc_imp_macpattern.cpp"
+#undef ALG_NAME
+#undef ALG_Name
+
+#define ALG_NAME    HMAC_SHA3_384
+#define ALG_Name    HmacSha3_384
+#include "sc_imp_macpattern.cpp"
+#undef ALG_NAME
+#undef ALG_Name
+
+#define ALG_NAME    HMAC_SHA3_512
+#define ALG_Name    HmacSha3_512
 #include "sc_imp_macpattern.cpp"
 #undef ALG_NAME
 #undef ALG_Name
@@ -1897,6 +1923,12 @@ template<>
 NTSTATUS
 ParallelHashImp<ImpXxx, AlgParallelSha256>::initWithLongMessage( ULONGLONG nBytes )
 {
+    // Discard this test for dynamic modules as it modifies state internals
+    if constexpr ( std::is_same<ImpXxx, ImpScDynamic>::value )
+    {
+        return STATUS_NOT_SUPPORTED;
+    }
+
     CHECK( nBytes % 64 == 0, "Odd bytes in initWithLongMessage" );
     CHECK( state.nHashes <= MAX_PARALLEL_HASH_STATES, "?" );
 
@@ -2054,6 +2086,12 @@ template<>
 NTSTATUS
 ParallelHashImp<ImpXxx, AlgParallelSha384>::initWithLongMessage( ULONGLONG nBytes )
 {
+    // Discard this test for dynamic modules as it modifies state internals
+    if constexpr ( std::is_same<ImpXxx, ImpScDynamic>::value )
+    {
+        return STATUS_NOT_SUPPORTED;
+    }
+
     CHECK( nBytes % 128 == 0, "Odd bytes in initWithLongMessage" );
     CHECK( state.nHashes <= MAX_PARALLEL_HASH_STATES, "?" );
 
@@ -2211,6 +2249,12 @@ template<>
 NTSTATUS
 ParallelHashImp<ImpXxx, AlgParallelSha512>::initWithLongMessage( ULONGLONG nBytes )
 {
+    // Discard this test for dynamic modules as it modifies state internals
+    if constexpr ( std::is_same<ImpXxx, ImpScDynamic>::value )
+    {
+        return STATUS_NOT_SUPPORTED;
+    }
+
     CHECK( nBytes % 128 == 0, "Odd bytes in initWithLongMessage" );
     CHECK( state.nHashes <= MAX_PARALLEL_HASH_STATES, "?" );
 

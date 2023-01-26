@@ -77,15 +77,19 @@ SYMCRYPT_XxxExpandKeyEx(
 {
     static const BYTE nameString[] = { 0x4b, 0x4d, 0x41, 0x43 };  // "KMAC"
 
-    SYMCRYPT_CSHAKEXXX_INIT(pExpandedKey, nameString, sizeof(nameString), pbCustomizationString, cbCustomizationString);
+    C_ASSERT( sizeof(SYMCRYPT_XXX_EXPANDED_KEY) == sizeof(SYMCRYPT_CSHAKEXXX_STATE) );
+
+    SYMCRYPT_CSHAKEXXX_INIT( (SYMCRYPT_CSHAKEXXX_STATE*)pExpandedKey, nameString, sizeof(nameString), pbCustomizationString, cbCustomizationString);
     
+    SYMCRYPT_KECCAK_STATE* pks = &pExpandedKey->ks;
+
     // byte_pad( encode_string( K ) )
-    SymCryptKeccakAppendEncodeTimes8(pExpandedKey, pExpandedKey->inputBlockSize / 8, TRUE);
-    SymCryptKeccakAppendEncodedString(pExpandedKey, pbKey, cbKey);
+    SymCryptKeccakAppendEncodeTimes8(pks, pks->inputBlockSize / 8, TRUE);
+    SymCryptKeccakAppendEncodedString(pks, pbKey, cbKey);
     
-    if (pExpandedKey->stateIndex != 0)
+    if (pks->stateIndex != 0)
     {
-        SymCryptKeccakZeroAppendBlock(pExpandedKey);
+        SymCryptKeccakZeroAppendBlock(pks);
     }
 
     return SYMCRYPT_NO_ERROR;
@@ -117,8 +121,8 @@ SYMCRYPT_XxxAppend(
     _In_reads_( cbData )    PCBYTE              pbData,
                             SIZE_T              cbData )
 {
-    SYMCRYPT_ASSERT(!pState->squeezeMode);
-    SymCryptKeccakAppend(pState, pbData, cbData);
+    SYMCRYPT_ASSERT(!pState->ks.squeezeMode);
+    SymCryptKeccakAppend(&pState->ks, pbData, cbData);
 }
 
 //
@@ -137,12 +141,12 @@ SYMCRYPT_XxxExtract(
     // If this is the first time Extract is being called, append right_encode(0)
     // to indicate that we're in XOF mode. This padding will be applied only once
     // as SymCryptKeccakExtract will transition the state to squeeze mode.
-    if (!pState->squeezeMode)
+    if (!pState->ks.squeezeMode)
     {
-        SymCryptKeccakAppendEncodeTimes8(pState, 0, FALSE);
+        SymCryptKeccakAppendEncodeTimes8(&pState->ks, 0, FALSE);
     }
 
-    SymCryptKeccakExtract(pState, pbOutput, cbOutput, bWipe);
+    SymCryptKeccakExtract(&pState->ks, pbOutput, cbOutput, bWipe);
 }
 
 //
@@ -177,13 +181,13 @@ SYMCRYPT_XxxResultEx(
     // applied. In this case, Result and ResultEx functions extract data one last
     // time in XOF mode and wipe the state afterwards.
 
-    if (!pState->squeezeMode)
+    if (!pState->ks.squeezeMode)
     {
         // Append right_encode(L)
-        SymCryptKeccakAppendEncodeTimes8(pState, cbOutput, FALSE);
+        SymCryptKeccakAppendEncodeTimes8(&pState->ks, cbOutput, FALSE);
     }
 
-    SymCryptKeccakExtract(pState, pbOutput, cbOutput, TRUE);
+    SymCryptKeccakExtract(&pState->ks, pbOutput, cbOutput, TRUE);
 }
 
 //

@@ -61,9 +61,11 @@ VOID
 SYMCRYPT_CALL
 SYMCRYPT_XxxInit(_Out_ PSYMCRYPT_XXX_STATE pState)
 {
-    SymCryptKeccakInit(pState,
+    SymCryptKeccakInit(&pState->ks,
                         SYMCRYPT_SHAKEXXX_INPUT_BLOCK_SIZE,
                         SYMCRYPT_SHAKE_PADDING_VALUE);
+
+    SYMCRYPT_SET_MAGIC(pState);
 }
 
 //
@@ -76,7 +78,7 @@ SYMCRYPT_XxxAppend(
     _In_reads_(cbData)  PCBYTE              pbData,
                         SIZE_T              cbData)
 {
-    SymCryptKeccakAppend(pState, pbData, cbData);
+    SymCryptKeccakAppend(&pState->ks, pbData, cbData);
 }
 
 //
@@ -90,7 +92,7 @@ SYMCRYPT_XxxExtract(
                             SIZE_T              cbResult,
                             BOOLEAN             bWipe)
 {
-    SymCryptKeccakExtract(pState, pbResult, cbResult, bWipe);
+    SymCryptKeccakExtract(&pState->ks, pbResult, cbResult, bWipe);
 }
 
 //
@@ -102,31 +104,5 @@ SYMCRYPT_XxxResult(
     _Inout_                                     PSYMCRYPT_XXX_STATE pState,
     _Out_writes_(SYMCRYPT_SHAKEXXX_RESULT_SIZE) PBYTE               pbResult)
 {
-    SymCryptKeccakExtract(pState, pbResult, SYMCRYPT_SHAKEXXX_RESULT_SIZE, TRUE);
+    SymCryptKeccakExtract(&pState->ks, pbResult, SYMCRYPT_SHAKEXXX_RESULT_SIZE, TRUE);
 }
-
-#if 0
-//
-// SymCryptShakeStateExport
-//
-VOID
-SYMCRYPT_CALL
-SYMCRYPT_XxxStateExport(
-    _In_                                                    PCSYMCRYPT_XXX_STATE    pState,
-    _Out_writes_bytes_(SYMCRYPT_SHAKEXXX_STATE_EXPORT_SIZE) PBYTE                   pbBlob)
-{
-    SymCryptKeccakStateExport(SYMCRYPT_BLOB_TYPE_XXX, pState, pbBlob);
-}
-
-//
-// SymCryptShakeStateImport
-//
-SYMCRYPT_ERROR
-SYMCRYPT_CALL
-SYMCRYPT_XxxStateImport(
-    _Out_                                                   PSYMCRYPT_XXX_STATE pState,
-    _In_reads_bytes_(SYMCRYPT_SHAKEXXX_STATE_EXPORT_SIZE)   PCBYTE              pbBlob)
-{
-    return SymCryptKeccakStateImport(SYMCRYPT_BLOB_TYPE_XXX, pState, pbBlob);
-}
-#endif

@@ -171,10 +171,8 @@ SymCryptKeccakPermute(_Inout_updates_(25) UINT64* pState)
 //
 VOID
 SYMCRYPT_CALL
-SymCryptKeccakInit(_Out_ PSYMCRYPT_SHA3_STATE pState, UINT32 inputBlockSize, UINT8 paddingValue)
+SymCryptKeccakInit(_Out_ PSYMCRYPT_KECCAK_STATE pState, UINT32 inputBlockSize, UINT8 paddingValue)
 {
-    SYMCRYPT_SET_MAGIC(pState);
-
     pState->inputBlockSize = inputBlockSize;
     pState->paddingValue = paddingValue;
 
@@ -185,7 +183,7 @@ SymCryptKeccakInit(_Out_ PSYMCRYPT_SHA3_STATE pState, UINT32 inputBlockSize, UIN
 
 VOID
 SYMCRYPT_CALL
-SymCryptKeccakReset(_Out_ PSYMCRYPT_SHA3_STATE pState)
+SymCryptKeccakReset(_Out_ PSYMCRYPT_KECCAK_STATE pState)
 {
     //
     // Wipe & re-initialize
@@ -204,7 +202,7 @@ SymCryptKeccakReset(_Out_ PSYMCRYPT_SHA3_STATE pState)
 FORCEINLINE
 VOID
 SYMCRYPT_CALL
-SymCryptKeccakAppendByte(_Inout_ PSYMCRYPT_SHA3_STATE  pState, BYTE val)
+SymCryptKeccakAppendByte(_Inout_ PSYMCRYPT_KECCAK_STATE  pState, BYTE val)
 {
     SYMCRYPT_ASSERT(!pState->squeezeMode);
     SYMCRYPT_ASSERT(pState->stateIndex < pState->inputBlockSize);
@@ -219,7 +217,7 @@ SymCryptKeccakAppendByte(_Inout_ PSYMCRYPT_SHA3_STATE  pState, BYTE val)
 FORCEINLINE
 VOID
 SYMCRYPT_CALL
-SymCryptKeccakAppendBytes(_Inout_ PSYMCRYPT_SHA3_STATE  pState, PCBYTE pbBuffer, SIZE_T cbBuffer)
+SymCryptKeccakAppendBytes(_Inout_ PSYMCRYPT_KECCAK_STATE  pState, PCBYTE pbBuffer, SIZE_T cbBuffer)
 {
     SYMCRYPT_ASSERT(!pState->squeezeMode);
     SYMCRYPT_ASSERT((pState->stateIndex + cbBuffer) <= pState->inputBlockSize);
@@ -239,7 +237,7 @@ SymCryptKeccakAppendBytes(_Inout_ PSYMCRYPT_SHA3_STATE  pState, PCBYTE pbBuffer,
 VOID
 SYMCRYPT_CALL
 SymCryptKeccakAppendLanes(
-    _Inout_                                 PSYMCRYPT_SHA3_STATE    pState,
+    _Inout_                                 PSYMCRYPT_KECCAK_STATE  pState,
     _In_reads_(uLaneCount * sizeof(UINT64)) PCBYTE                  pbData,
                                             SIZE_T                  uLaneCount)
 {
@@ -272,7 +270,7 @@ SymCryptKeccakAppendLanes(
 //
 VOID
 SYMCRYPT_CALL
-SymCryptKeccakZeroAppendBlock(_Inout_ PSYMCRYPT_SHA3_STATE  pState)
+SymCryptKeccakZeroAppendBlock(_Inout_ PSYMCRYPT_KECCAK_STATE  pState)
 {
     SYMCRYPT_ASSERT(!pState->squeezeMode);
     SymCryptKeccakPermute(pState->state);
@@ -285,7 +283,7 @@ SymCryptKeccakZeroAppendBlock(_Inout_ PSYMCRYPT_SHA3_STATE  pState)
 VOID
 SYMCRYPT_CALL
 SymCryptKeccakAppend(
-    _Inout_                 PSYMCRYPT_SHA3_STATE    pState,
+    _Inout_                 PSYMCRYPT_KECCAK_STATE  pState,
     _In_reads_(cbData)      PCBYTE                  pbData,
                             SIZE_T                  cbData)
 {
@@ -337,7 +335,7 @@ SymCryptKeccakAppend(
 //
 VOID
 SYMCRYPT_CALL
-SymCryptKeccakApplyPadding(_Inout_ PSYMCRYPT_SHA3_STATE pState)
+SymCryptKeccakApplyPadding(_Inout_ PSYMCRYPT_KECCAK_STATE pState)
 {
     SYMCRYPT_ASSERT(!pState->squeezeMode);
 
@@ -361,7 +359,7 @@ SymCryptKeccakApplyPadding(_Inout_ PSYMCRYPT_SHA3_STATE pState)
 FORCEINLINE
 BYTE
 SYMCRYPT_CALL
-SymCryptKeccakExtractByte(_Inout_ PSYMCRYPT_SHA3_STATE  pState)
+SymCryptKeccakExtractByte(_Inout_ PSYMCRYPT_KECCAK_STATE  pState)
 {
     SYMCRYPT_ASSERT(pState->squeezeMode);
     SYMCRYPT_ASSERT(pState->stateIndex < pState->inputBlockSize);
@@ -377,7 +375,7 @@ SymCryptKeccakExtractByte(_Inout_ PSYMCRYPT_SHA3_STATE  pState)
 VOID
 SYMCRYPT_CALL
 SymCryptKeccakExtractLanes(
-    _Inout_                                     PSYMCRYPT_SHA3_STATE    pState,
+    _Inout_                                     PSYMCRYPT_KECCAK_STATE  pState,
     _Out_writes_(uLaneCount * sizeof(UINT64))   PBYTE                   pbResult,
                                                 SIZE_T                  uLaneCount)
 {
@@ -411,7 +409,7 @@ SymCryptKeccakExtractLanes(
 VOID
 SYMCRYPT_CALL
 SymCryptKeccakExtract(
-    _Inout_                 PSYMCRYPT_SHA3_STATE    pState,
+    _Inout_                 PSYMCRYPT_KECCAK_STATE  pState,
     _Out_writes_(cbResult)  PBYTE                   pbResult,
                             SIZE_T                  cbResult,
                             BOOLEAN                 bWipe)
@@ -479,20 +477,18 @@ SymCryptKeccakExtract(
 VOID
 SYMCRYPT_CALL
 SymCryptKeccakStateExport(
-                                                        SYMCRYPT_BLOB_TYPE      type,
-    _In_                                                PCSYMCRYPT_SHA3_STATE   pState,
-    _Out_writes_bytes_(SYMCRYPT_SHA3_STATE_EXPORT_SIZE) PBYTE                   pbBlob)
+                                                            SYMCRYPT_BLOB_TYPE      type,
+    _In_                                                    PCSYMCRYPT_KECCAK_STATE pState,
+    _Out_writes_bytes_(SYMCRYPT_KECCAK_STATE_EXPORT_SIZE)   PBYTE                   pbBlob)
 {
 
-    SYMCRYPT_ALIGN SYMCRYPT_SHA3_STATE_EXPORT_BLOB    blob;           // local copy to have proper alignment.
-    C_ASSERT(sizeof(blob) == SYMCRYPT_SHA3_STATE_EXPORT_SIZE);
-
-    SYMCRYPT_CHECK_MAGIC(pState);
+    SYMCRYPT_ALIGN SYMCRYPT_KECCAK_STATE_EXPORT_BLOB    blob;           // local copy to have proper alignment.
+    C_ASSERT(sizeof(blob) == SYMCRYPT_KECCAK_STATE_EXPORT_SIZE);
 
     SymCryptWipeKnownSize(&blob, sizeof(blob)); // wipe to avoid any data leakage
 
     blob.header.magic = SYMCRYPT_BLOB_MAGIC;
-    blob.header.size = SYMCRYPT_SHA3_STATE_EXPORT_SIZE;
+    blob.header.size = SYMCRYPT_KECCAK_STATE_EXPORT_SIZE;
     blob.header.type = type;
 
     //
@@ -521,19 +517,19 @@ SYMCRYPT_ERROR
 SYMCRYPT_CALL
 SymCryptKeccakStateImport(
                                                         SYMCRYPT_BLOB_TYPE      type,
-    _Out_                                               PSYMCRYPT_SHA3_STATE    pState,
-    _In_reads_bytes_(SYMCRYPT_SHA3_STATE_EXPORT_SIZE)   PCBYTE                  pbBlob)
+    _Out_                                               PSYMCRYPT_KECCAK_STATE  pState,
+    _In_reads_bytes_(SYMCRYPT_KECCAK_STATE_EXPORT_SIZE) PCBYTE                  pbBlob)
 {
     SYMCRYPT_ERROR                  scError = SYMCRYPT_NO_ERROR;
 
-    SYMCRYPT_ALIGN SYMCRYPT_SHA3_STATE_EXPORT_BLOB blob;                       // local copy to have proper alignment.
+    SYMCRYPT_ALIGN SYMCRYPT_KECCAK_STATE_EXPORT_BLOB blob;                       // local copy to have proper alignment.
     BYTE checksum[8];
 
-    C_ASSERT(sizeof(blob) == SYMCRYPT_SHA3_STATE_EXPORT_SIZE);
+    C_ASSERT(sizeof(blob) == SYMCRYPT_KECCAK_STATE_EXPORT_SIZE);
     memcpy(&blob, pbBlob, sizeof(blob));
 
     if (blob.header.magic != SYMCRYPT_BLOB_MAGIC ||
-        blob.header.size != SYMCRYPT_SHA3_STATE_EXPORT_SIZE ||
+        blob.header.size != SYMCRYPT_KECCAK_STATE_EXPORT_SIZE ||
         blob.header.type != (UINT32)type)
     {
         scError = SYMCRYPT_INVALID_BLOB;
@@ -585,6 +581,9 @@ SymCryptKeccakStateImport(
                 pState->paddingValue = blob.paddingValue;
             }
             break;
+        default:
+            scError = SYMCRYPT_INVALID_BLOB;
+            goto cleanup;
     }
 
     if (pState->inputBlockSize == 0 || pState->paddingValue == 0)
@@ -605,8 +604,6 @@ SymCryptKeccakStateImport(
         scError = SYMCRYPT_INVALID_BLOB;
         goto cleanup;
     }
-
-    SYMCRYPT_SET_MAGIC(pState);
 
 cleanup:
     SymCryptWipeKnownSize(&blob, sizeof(blob));

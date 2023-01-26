@@ -201,6 +201,33 @@ EXPORTS
     SymCryptHmacSha512Result
     SymCryptHmacSha512Selftest
     SymCryptHmacSha512StateCopy
+    SymCryptHmacSha3_256
+    SymCryptHmacSha3_256Algorithm
+    SymCryptHmacSha3_256Append
+    SymCryptHmacSha3_256ExpandKey
+    SymCryptHmacSha3_256Init
+    SymCryptHmacSha3_256KeyCopy
+    SymCryptHmacSha3_256Result
+    SymCryptHmacSha3_256Selftest
+    SymCryptHmacSha3_256StateCopy
+    SymCryptHmacSha3_384
+    SymCryptHmacSha3_384Algorithm
+    SymCryptHmacSha3_384Append
+    SymCryptHmacSha3_384ExpandKey
+    SymCryptHmacSha3_384Init
+    SymCryptHmacSha3_384KeyCopy
+    SymCryptHmacSha3_384Result
+    SymCryptHmacSha3_384Selftest
+    SymCryptHmacSha3_384StateCopy
+    SymCryptHmacSha3_512
+    SymCryptHmacSha3_512Algorithm
+    SymCryptHmacSha3_512Append
+    SymCryptHmacSha3_512ExpandKey
+    SymCryptHmacSha3_512Init
+    SymCryptHmacSha3_512KeyCopy
+    SymCryptHmacSha3_512Result
+    SymCryptHmacSha3_512Selftest
+    SymCryptHmacSha3_512StateCopy
     SymCryptLoadLsbFirstUint32
     SymCryptLoadLsbFirstUint64
     SymCryptLoadMsbFirstUint32

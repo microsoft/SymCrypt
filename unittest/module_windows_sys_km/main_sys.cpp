@@ -164,6 +164,9 @@ initSymCrypt(
     SymCryptHmacSha256Selftest();
     SymCryptHmacSha384Selftest();
     SymCryptHmacSha512Selftest();
+    SymCryptHmacSha3_256Selftest();
+    SymCryptHmacSha3_384Selftest();
+    SymCryptHmacSha3_512Selftest();
 
     SymCryptParallelSha256Selftest();
     SymCryptParallelSha512Selftest();

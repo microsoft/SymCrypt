@@ -186,6 +186,27 @@ public:
 };
 
 template<>
+class MacImpState<ImpXxx, AlgHmacSha3_256> {
+public:
+    SYMCRYPT_HMAC_SHA3_256_EXPANDED_KEY   key;
+    SYMCRYPT_HMAC_SHA3_256_STATE          state;
+};
+
+template<>
+class MacImpState<ImpXxx, AlgHmacSha3_384> {
+public:
+    SYMCRYPT_HMAC_SHA3_384_EXPANDED_KEY   key;
+    SYMCRYPT_HMAC_SHA3_384_STATE          state;
+};
+
+template<>
+class MacImpState<ImpXxx, AlgHmacSha3_512> {
+public:
+    SYMCRYPT_HMAC_SHA3_512_EXPANDED_KEY   key;
+    SYMCRYPT_HMAC_SHA3_512_STATE          state;
+};
+
+template<>
 class MacImpState<ImpXxx, AlgAesCmac> {
 public:
     SYMCRYPT_AES_CMAC_EXPANDED_KEY      key;

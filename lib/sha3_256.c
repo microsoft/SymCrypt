@@ -20,8 +20,8 @@ const SYMCRYPT_HASH SymCryptSha3_256Algorithm_default = {
     sizeof(SYMCRYPT_SHA3_256_STATE),
     SYMCRYPT_SHA3_256_RESULT_SIZE,
     SYMCRYPT_SHA3_256_INPUT_BLOCK_SIZE,
-    SYMCRYPT_FIELD_OFFSET(SYMCRYPT_SHA3_256_STATE, state),
-    SYMCRYPT_FIELD_SIZE(SYMCRYPT_SHA3_256_STATE, state),
+    SYMCRYPT_FIELD_OFFSET(SYMCRYPT_SHA3_256_STATE, ks.state),
+    SYMCRYPT_FIELD_SIZE(SYMCRYPT_SHA3_256_STATE, ks.state),
 };
 
 const PCSYMCRYPT_HASH SymCryptSha3_256Algorithm = &SymCryptSha3_256Algorithm_default;
@@ -44,9 +44,11 @@ VOID
 SYMCRYPT_CALL
 SymCryptSha3_256Init(_Out_ PSYMCRYPT_SHA3_256_STATE pState)
 {
-    SymCryptKeccakInit(pState,
+    SymCryptKeccakInit(&pState->ks,
                         SYMCRYPT_SHA3_256_INPUT_BLOCK_SIZE,
                         SYMCRYPT_SHA3_PADDING_VALUE);
+    
+    SYMCRYPT_SET_MAGIC(pState);
 }
 
 
@@ -60,7 +62,7 @@ SymCryptSha3_256Append(
     _In_reads_(cbData)  PCBYTE                      pbData,
                         SIZE_T                      cbData)
 {
-    SymCryptKeccakAppend(pState, pbData, cbData);
+    SymCryptKeccakAppend(&pState->ks, pbData, cbData);
 }
 
 
@@ -73,7 +75,7 @@ SymCryptSha3_256Result(
     _Inout_                                     PSYMCRYPT_SHA3_256_STATE    pState,
     _Out_writes_(SYMCRYPT_SHA3_256_RESULT_SIZE) PBYTE                       pbResult)
 {
-    SymCryptKeccakExtract(pState, pbResult, SYMCRYPT_SHA3_256_RESULT_SIZE, TRUE);
+    SymCryptKeccakExtract(&pState->ks, pbResult, SYMCRYPT_SHA3_256_RESULT_SIZE, TRUE);
 }
 
 
@@ -86,7 +88,8 @@ SymCryptSha3_256StateExport(
     _In_                                                    PCSYMCRYPT_SHA3_256_STATE   pState,
     _Out_writes_bytes_(SYMCRYPT_SHA3_512_STATE_EXPORT_SIZE) PBYTE                       pbBlob)
 {
-    SymCryptKeccakStateExport(SymCryptBlobTypeSha3_256State, pState, pbBlob);
+    SYMCRYPT_CHECK_MAGIC(pState);
+    SymCryptKeccakStateExport(SymCryptBlobTypeSha3_256State, &pState->ks, pbBlob);
 }
 
 
@@ -99,7 +102,14 @@ SymCryptSha3_256StateImport(
     _Out_                                                   PSYMCRYPT_SHA3_256_STATE    pState,
     _In_reads_bytes_(SYMCRYPT_SHA3_256_STATE_EXPORT_SIZE)   PCBYTE                      pbBlob)
 {
-    return SymCryptKeccakStateImport(SymCryptBlobTypeSha3_256State, pState, pbBlob);
+    SYMCRYPT_ERROR scError = SymCryptKeccakStateImport(SymCryptBlobTypeSha3_256State, &pState->ks, pbBlob);
+
+    if (scError == SYMCRYPT_NO_ERROR)
+    {
+        SYMCRYPT_SET_MAGIC(pState);
+    }
+
+    return scError;
 }
 
 

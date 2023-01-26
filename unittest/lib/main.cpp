@@ -85,6 +85,12 @@ const char * AlgHmacSha384::name = "HmacSha384";
 
 const char * AlgHmacSha512::name = "HmacSha512";
 
+const char * AlgHmacSha3_256::name = "HmacSha3-256";
+
+const char * AlgHmacSha3_384::name = "HmacSha3-384";
+
+const char * AlgHmacSha3_512::name = "HmacSha3-512";
+
 const char * AlgAesCmac::name = "AesCmac";
 
 const char * AlgMarvin32::name = "Marvin32";
@@ -517,6 +523,9 @@ const char * g_algorithmNames[] = {
     AlgHmacSha256::name,
     AlgHmacSha384::name,
     AlgHmacSha512::name,
+    AlgHmacSha3_256::name,
+    AlgHmacSha3_384::name,
+    AlgHmacSha3_512::name,
     AlgAesCmac::name,
     AlgMarvin32::name,
     AlgAes::name,

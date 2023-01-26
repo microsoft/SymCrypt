@@ -21,3 +21,5 @@ if(SYMCRYPT_INTERNAL_BUILD)
     # Calling target_link_libraries again appends to the existing list.
     target_link_libraries(symcryptunittest_win7nlater ${RSA32_LIB} ${MSBIGNUM_LIB})
 endif()
+
+add_dependencies(symcryptunittest_win7nlater symcrypttestmodule)

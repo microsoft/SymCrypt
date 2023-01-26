@@ -197,22 +197,28 @@ algImpCleanPerfFunction<ImpXxx,AlgXxx>( PBYTE buf1, PBYTE buf2, PBYTE buf3 )
 template<>
 NTSTATUS HashImp<ImpXxx, AlgXxx>::initWithLongMessage( ULONGLONG nBytes )
 {
+    // Discard this test for dynamic modules as it modifies state internals
+    if constexpr ( std::is_same<ImpXxx, ImpScDynamic>::value )
+    {
+        return STATUS_NOT_SUPPORTED;
+    }
 
-//
-// This test is not meaningful for SHA-3 hash functions as their state does not
-// store the length of the message. Still, this function performs in a similar 
-// fashion in order for the test to execute.
-//
-// SHA-3 state is different from the state of other hash functions, we need to 
-// separate its implementation at compile time.
-#if defined(HashImpSha3_256) || defined(HashImpSha3_384) || defined(HashImpSha3_512)
-        memset( &state.sc.state, 'b', sizeof( state.sc.state ) );
-        state.sc.stateIndex = nBytes % state.sc.inputBlockSize;
+    //
+    // Long message initialization for MD/SHA family of hash functions.
+    // Needs to be guarded as not every hash state (e.g., SHA-3) has those members.
+    //
+#ifdef SYMCRYPT_HASH_MD_SHA
+    memset( &state.sc.chain, 'b', sizeof( state.sc.chain ) );
+    state.sc.dataLengthL = nBytes;
+    state.sc.dataLengthH = 0;
+    state.sc.bytesInBuffer = nBytes % sizeof( state.sc.buffer );
 #else
-        memset( &state.sc.chain, 'b', sizeof( state.sc.chain ) );
-        state.sc.dataLengthL = nBytes;
-        state.sc.dataLengthH = 0;
-        state.sc.bytesInBuffer = nBytes & 0x3f;
+    UNREFERENCED_PARAMETER( nBytes );
+    // We don't perform the long message test for non-MD/SHA algorithms,
+    // they should not have the 'Long' entry in the KAT file to trigger it.
+    // This block needs to be updated when the long message test is enabled
+    // for other hash functions in the future.
+    SymCryptFatal('lmsg');
 #endif
 
     SYMCRYPT_XxxStateCopy( &state.sc, &state.scHash.CONCAT2(ALG_name, State) );

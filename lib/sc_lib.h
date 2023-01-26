@@ -1119,7 +1119,7 @@ typedef struct _SYMCRYPT_SHA512_STATE_EXPORT_BLOB {
 C_ASSERT( sizeof( SYMCRYPT_SHA512_STATE_EXPORT_BLOB ) == SYMCRYPT_SHA512_STATE_EXPORT_SIZE );
 
 // Refer to SYMCRYPT_KECCAK_STATE documentation for the explanation of each struct member
-typedef struct _SYMCRYPT_SHA3_STATE_EXPORT_BLOB {
+typedef struct _SYMCRYPT_KECCAK_STATE_EXPORT_BLOB {
     SYMCRYPT_BLOB_HEADER    header;
     BYTE                    state[200];    
     UINT32                  stateIndex;
@@ -1127,11 +1127,11 @@ typedef struct _SYMCRYPT_SHA3_STATE_EXPORT_BLOB {
     BOOLEAN                 squeezeMode;
     BYTE                    rfu[8];             // rfu = Reserved for Future Use.
     SYMCRYPT_BLOB_TRAILER   trailer;
-} SYMCRYPT_SHA3_STATE_EXPORT_BLOB;
+} SYMCRYPT_KECCAK_STATE_EXPORT_BLOB;
 
-typedef SYMCRYPT_SHA3_STATE_EXPORT_BLOB SYMCRYPT_SHA3_256_STATE_EXPORT_BLOB;
-typedef SYMCRYPT_SHA3_STATE_EXPORT_BLOB SYMCRYPT_SHA3_384_STATE_EXPORT_BLOB;
-typedef SYMCRYPT_SHA3_STATE_EXPORT_BLOB SYMCRYPT_SHA3_512_STATE_EXPORT_BLOB;
+typedef SYMCRYPT_KECCAK_STATE_EXPORT_BLOB SYMCRYPT_SHA3_256_STATE_EXPORT_BLOB;
+typedef SYMCRYPT_KECCAK_STATE_EXPORT_BLOB SYMCRYPT_SHA3_384_STATE_EXPORT_BLOB;
+typedef SYMCRYPT_KECCAK_STATE_EXPORT_BLOB SYMCRYPT_SHA3_512_STATE_EXPORT_BLOB;
 
 C_ASSERT(sizeof(SYMCRYPT_SHA3_256_STATE_EXPORT_BLOB) == SYMCRYPT_SHA3_256_STATE_EXPORT_SIZE);
 C_ASSERT(sizeof(SYMCRYPT_SHA3_384_STATE_EXPORT_BLOB) == SYMCRYPT_SHA3_384_STATE_EXPORT_SIZE);
@@ -1710,22 +1710,22 @@ SymCryptKeccakPermute(_Inout_updates_(25) UINT64* pState);
 
 VOID
 SYMCRYPT_CALL
-SymCryptKeccakInit(_Out_ PSYMCRYPT_SHA3_STATE pState, UINT32 inputBlockSize, UINT8 padding);
+SymCryptKeccakInit(_Out_ PSYMCRYPT_KECCAK_STATE pState, UINT32 inputBlockSize, UINT8 padding);
 
 VOID
 SYMCRYPT_CALL
-SymCryptKeccakReset(_Out_ PSYMCRYPT_SHA3_STATE pState);
+SymCryptKeccakReset(_Out_ PSYMCRYPT_KECCAK_STATE pState);
 
 VOID
 SYMCRYPT_CALL
-SymCryptKeccakZeroAppendBlock(_Inout_ PSYMCRYPT_SHA3_STATE  pState);
+SymCryptKeccakZeroAppendBlock(_Inout_ PSYMCRYPT_KECCAK_STATE pState);
 // Zero pads the current block by invoking the permutation and setting 
 // pState->stateIndex to 0.
 
 VOID
 SYMCRYPT_CALL
 SymCryptKeccakAppend(
-    _Inout_                 PSYMCRYPT_SHA3_STATE    pState,
+    _Inout_                 PSYMCRYPT_KECCAK_STATE  pState,
     _In_reads_(cbData)      PCBYTE                  pbData,
                             SIZE_T                  cbData);
 // Generic append function.
@@ -1733,7 +1733,7 @@ SymCryptKeccakAppend(
 VOID
 SYMCRYPT_CALL
 SymCryptKeccakExtract(
-    _Inout_                 PSYMCRYPT_SHA3_STATE    pState,
+    _Inout_                 PSYMCRYPT_KECCAK_STATE  pState,
     _Out_writes_(cbResult)  PBYTE                   pbResult,
                             SIZE_T                  cbResult,
                             BOOLEAN                 bWipe);
@@ -1744,16 +1744,16 @@ SymCryptKeccakExtract(
 VOID
 SYMCRYPT_CALL
 SymCryptKeccakStateExport(
-                                                        SYMCRYPT_BLOB_TYPE      type,
-    _In_                                                PCSYMCRYPT_SHA3_STATE   pState,
-    _Out_writes_bytes_(SYMCRYPT_SHA3_STATE_EXPORT_SIZE) PBYTE                   pbBlob);
+                                                            SYMCRYPT_BLOB_TYPE      type,
+    _In_                                                    PCSYMCRYPT_KECCAK_STATE pState,
+    _Out_writes_bytes_(SYMCRYPT_KECCAK_STATE_EXPORT_SIZE)   PBYTE                   pbBlob);
 
 SYMCRYPT_ERROR
 SYMCRYPT_CALL
 SymCryptKeccakStateImport(
                                                         SYMCRYPT_BLOB_TYPE      type,
-    _Out_                                               PSYMCRYPT_SHA3_STATE    pState,
-    _In_reads_bytes_(SYMCRYPT_SHA3_STATE_EXPORT_SIZE)   PCBYTE                  pbBlob);
+    _Out_                                               PSYMCRYPT_KECCAK_STATE  pState,
+    _In_reads_bytes_(SYMCRYPT_KECCAK_STATE_EXPORT_SIZE) PCBYTE                  pbBlob);
 
 VOID
 SYMCRYPT_CALL

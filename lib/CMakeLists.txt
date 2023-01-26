@@ -52,11 +52,15 @@ set(SOURCES_COMMON
     hash.c
     hkdf_selftest.c
     hkdf.c
+    hmac.c
     hmacmd5.c
     hmacsha1.c
     hmacsha256.c
     hmacsha384.c
     hmacsha512.c
+    hmacsha3_256.c
+    hmacsha3_384.c
+    hmacsha3_512.c
     kmac.c
     libmain.c
     marvin32.c
