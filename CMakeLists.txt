@@ -49,6 +49,14 @@ if(SYMCRYPT_FIPS_BUILD)
 endif()
 
 option(
+    SYMCRYPT_TEST_LEGACY_IMPL
+    "When enabled, the SymCrypt unit tests will be linked against and configured to run compatibility and performance tests on the legacy
+    RSA32 and msbignum cryptographic implementations. This requires access to private static libraries which are not licensed
+    for use outside of Windows, and thus can only be used by Microsoft employees building internally. It only affects the unit tests, 
+    and does not change the functionality of the SymCrypt library itself."
+    OFF)
+
+option(
     SYMCRYPT_STACK_PROTECTION
     "When enabled, SymCrypt will enable various stack protection mechanisms to protect against buffer overruns and the like. Only
     applicable to non-Windows systems. Defaults to ON, but may need to be disabled for specialized targets such as embedded systems."

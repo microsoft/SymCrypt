@@ -22,11 +22,11 @@ Like any engineering project, SymCrypt is a compromise between conflicting requi
 In some of our Linux modules, SymCrypt uses [Jitterentropy](https://github.com/smuellerDD/jitterentropy-library)
 as a source of FIPS-certifiable entropy. To build these modules, you will need to ensure that the
 jitterentropy-library submodule is also cloned. You can do this by running
-`git submodule update --init -- jitterentropy-library` after cloning.
+`git submodule update --init -- 3rdparty/jitterentropy-library` after cloning.
 
-The SymCryptDependencies submodule provides the RSA32 and msbignum implementations which are used as benchmarks
-in the unit tests when compiled on Windows. Due to licensing restrictions, we cannot release these libraries
-publicly, so this submodule will only be cloneable by Microsoft employees with access to our private
+The `unittest/SymCryptDependencies` submodule provides the RSA32 and msbignum implementations which are used as
+benchmarks in the unit tests when compiled on Windows. Due to licensing restrictions, we cannot release these
+libraries publicly, so this submodule will only be cloneable by Microsoft employees with access to our private
 Azure DevOps repository. If you are external to Microsoft, you can ignore this submodule. It is only used in
 the unit tests and does not change the behavior of the SymCrypt product code.
 
@@ -54,9 +54,32 @@ repository is provided *as is*, without warranty of any kind, express or implied
 warranties of merchantability, fitness for a particular purpose and noninfringement (see our [LICENSE](./LICENSE)).
 
 ## Build Instructions
-1. For Microsoft employees building the library internally, to include msbignum and RSA32 implementation benchmarks in the unit tests:
-    1. Make sure the SymCryptDependencies submodule is initialized by following the steps above (`git submodule update --init`)
-    1. In step 4 below, add the additional cmake argument `-DSYMCRYPT_INTERNAL_BUILD=1`
+For Microsoft employees building the library internally, to include msbignum and RSA32 implementation benchmarks in
+the unit tests, make sure the SymCryptDependencies submodule is initialized by following the steps above
+(`git submodule update --init`). When building, provide the additional CMake argument `-DSYMCRYPT_TEST_LEGACY_IMPL=ON`.
+This only affects the unit tests, and does not change the functionality of the SymCrypt library itself.
+
+### Using Python scripts
+Building SymCrypt can be complicated due to the number of platforms, architectures and targets supported. To improve
+ease of use and have a consistent build solution that can be leveraged by both developers and our automated CI pipelines,
+we have created a set of Python scripts to help with building, testing and packaging.
+
+1. To build SymCrypt, run `scripts/build.py build_dir` where `build_dir` is the desired build output directory.
+    * To see additional options, run `scripts/build.py --help`.
+1. To run the unit tests after a build has finished, run `scripts/test.py build_dir`.
+    * Additional positional arguments will be passed directly to the unit test executable.
+1. To package up the built binaries into an archive, run `scripts/package.py build_dir arch configuration module_name release_dir`, were:
+    * `build_dir` is the build output directory
+    * `arch` is the architecture that the build was created for
+    * `configuration` is the build configuration (Debug, Release, Sanitize)
+    * `module_name` is the name of the module you wish to package (currently only relevant for Linux builds)
+    * `release_dir` is the output directory for the release archive
+
+### Building with CMake
+If you don't want to use the Python helper scripts, or if they do not support the specific build flags you desire, you can
+build SymCrypt by directly invoking CMake. Note that Python is still required for translating SymCryptAsm and building the
+Linux modules with FIPS integrity checks.
+
 1. Run `cmake -S . -B bin` to configure your build. You can add the following optional CMake arguments to change build options:
     * `-DSYMCRYPT_TARGET_ARCH=<AMD64|X86|ARM64>` to choose a target architecture. If not specified, it will default to the host system architecture.
       * To cross-compile for Windows X86 from Windows AMD64, you must also use `-A Win32`

@@ -93,9 +93,11 @@ def configure(args : argparse.Namespace) -> None:
     if not args.fips:
         cmake_args.append("-DSYMCRYPT_FIPS_BUILD=OFF")
 
+    if args.test_legacy_impl:
+        cmake_args.append("-DSYMCRYPT_TEST_LEGACY_IMPL=ON")
+
     if args.toolchain:
         cmake_args.append("-DCMAKE_TOOLCHAIN_FILE=" + str(args.toolchain))
-
 
     if args.verbose:
         cmake_args.append("-DCMAKE_VERBOSE_MAKEFILE=ON")
@@ -140,6 +142,9 @@ def main() -> None:
     parser.add_argument("--cxx", type = str, help = "Specify the C++ compiler to use. If not provided, uses platform default.")
     parser.add_argument("--no-asm", action = "store_false", dest = "asm", help = "Disable handwritten ASM optimizations.", default = True)
     parser.add_argument("--no-fips", action = "store_false", dest = "fips", help = "Disable FIPS selftests and postprocessing of binary. Currently only affects Linux targets.", default = True)
+    parser.add_argument("--test-legacy-impl", action = "store_true",
+        help = "Build unit tests with support for legacy Windows cryptographic implementations. Requires access to private static libraries.",
+        default = False)
     parser.add_argument("--toolchain", type = pathlib.Path, help = "Toolchain file to use for cross-compiling.")
     parser.add_argument("--clean", action = "store_true", help = "Clean output directory before building.")
     parser.add_argument("--configure-only", action = "store_true", help = "Run CMake configuration, but do not build.")

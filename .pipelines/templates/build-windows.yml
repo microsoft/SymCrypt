@@ -11,6 +11,9 @@ parameters:
   values:
   - Debug
   - Release
+- name: skipTests # Skip time-consuming tests for PR builds (e.g. no-ASM build)
+  type: boolean
+  default: false
 - name: additionalArgs # Additional arguments to pass to the build script
   type: string
   default: ''
@@ -49,16 +52,15 @@ jobs:
       arguments: 'bin --arch ${{ parameters.arch }} --config ${{ parameters.config }} ${{ parameters.additionalArgs }}'
       workingDirectory: $(Build.SourcesDirectory)
 
-  - task: PythonScript@0
-    displayName: 'Run unit tests'
-    inputs:
-      scriptSource: 'filePath'
-      scriptPath: scripts\test.py
-      arguments: 'bin noperftests'
-      workingDirectory: $(Build.SourcesDirectory)
+  - ${{ if ne(parameters.skipTests, true) }}:
+    - task: PythonScript@0
+      displayName: 'Run unit tests'
+      inputs:
+        scriptSource: 'filePath'
+        scriptPath: scripts\test.py
+        arguments: 'bin noperftests'
+        workingDirectory: $(Build.SourcesDirectory)
 
-  # Cannot currently run ARM/ARM64 binaries on the Windows pipeline
-  - ${{ if or(eq(parameters.arch, 'AMD64'), eq(parameters.arch, 'X86')) }}:
     - task: PythonScript@0
       displayName: 'Run dynamic unit tests'
       inputs:
@@ -67,10 +69,10 @@ jobs:
         arguments: 'bin dynamic:bin\exe\symcrypttestmodule.dll noperftests'
         workingDirectory: $(Build.SourcesDirectory)      
 
-    - task: PythonScript@0
-      displayName: 'Package build output'
-      inputs:
-        scriptSource: 'filePath'
-        scriptPath: scripts\package.py
-        arguments: 'bin ${{ parameters.arch }} ${{ parameters.config }} generic bin'
-        workingDirectory: $(Build.SourcesDirectory) 
+  - task: PythonScript@0
+    displayName: 'Package build output'
+    inputs:
+      scriptSource: 'filePath'
+      scriptPath: scripts\package.py
+      arguments: 'bin ${{ parameters.arch }} ${{ parameters.config }} generic bin'
+      workingDirectory: $(Build.SourcesDirectory) 

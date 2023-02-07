@@ -39,28 +39,34 @@ extends:
         parameters:
           arch: 'AMD64'
           config: 'Debug'
+          additionalArgs: '--test-legacy-impl'
       - template: .pipelines/templates/build-windows.yml@self
         parameters:
           arch: 'AMD64'
           config: 'Release'
+          additionalArgs: '--test-legacy-impl'
       - template: .pipelines/templates/build-windows.yml@self
         parameters:
           arch: 'X86'
           config: 'Debug'
+          additionalArgs: '--test-legacy-impl'
       - template: .pipelines/templates/build-windows.yml@self
         parameters:
           arch: 'X86'
           config: 'Release'
+          additionalArgs: '--test-legacy-impl'
       - template: .pipelines/templates/build-windows.yml@self
         parameters:
           arch: 'AMD64'
           config: 'Release'
+          skipTests: true
           additionalArgs: '--no-asm'
           identifier: 'NoAsm'
       - template: .pipelines/templates/build-windows.yml@self
         parameters:
           arch: 'X86'
           config: 'Release'
+          skipTests: true
           additionalArgs: '--no-asm'
           identifier: 'NoAsm'
 
@@ -109,6 +115,7 @@ extends:
           config: 'Release'
           cc: 'gcc'
           cxx: 'g++'
+          skipTests: true
           additionalArgs: '--no-asm'
           identifier: 'NoAsm'
       - template: .pipelines/templates/build-linux.yml@self
@@ -117,6 +124,7 @@ extends:
           config: 'Release'
           cc: 'clang'
           cxx: 'clang++'
+          skipTests: true
           additionalArgs: '--no-asm'
           identifier: 'NoAsm'
       - template: .pipelines/templates/build-linux.yml@self
@@ -125,6 +133,7 @@ extends:
           config: 'Release'
           cc: 'gcc'
           cxx: 'g++'
+          skipTests: true
           additionalArgs: '--no-asm --no-fips'
           identifier: 'NoAsm'
       - template: .pipelines/templates/build-linux.yml@self

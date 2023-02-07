@@ -22,6 +22,9 @@ parameters:
   values:
   - g++
   - clang++
+- name: skipTests # Skip time-consuming tests for PR builds (e.g. no-ASM build)
+  type: boolean
+  default: false
 - name: additionalArgs # Additional arguments to pass to the build script
   type: string
   default: ''
@@ -89,49 +92,50 @@ jobs:
         arguments: 'bin --arch ${{ parameters.arch }} --config ${{ parameters.config }} --cc ${{ parameters.cc }} --cxx ${{ parameters.cxx }} ${{ parameters.additionalArgs }}'
         workingDirectory: $(Build.SourcesDirectory)
 
-    - ${{ if ne(parameters.arch, 'ARM64') }}:
-      - task: PythonScript@0
-        displayName: 'Run unit tests'
-        inputs:
-          scriptSource: 'filePath'
-          scriptPath: scripts/test.py
-          arguments: 'bin noperftests'
-          workingDirectory: $(Build.SourcesDirectory)
+    - ${{ if ne(parameters.skipTests, true) }}:
+      - ${{ if ne(parameters.arch, 'ARM64') }}:
+        - task: PythonScript@0
+          displayName: 'Run unit tests'
+          inputs:
+            scriptSource: 'filePath'
+            scriptPath: scripts/test.py
+            arguments: 'bin noperftests'
+            workingDirectory: $(Build.SourcesDirectory)
 
-      - ${{ if ne(parameters.config, 'Sanitize') }}:
+        - ${{ if ne(parameters.config, 'Sanitize') }}:
+          - task: PythonScript@0
+            displayName: 'Run dynamic unit tests'
+            inputs:
+              scriptSource: 'filePath'
+              scriptPath: scripts/test.py
+              arguments: 'bin dynamic:bin/module/generic/libsymcrypt.so noperftests'
+              workingDirectory: $(Build.SourcesDirectory)
+
+      - ${{ if eq(parameters.arch, 'AMD64') }}:
+        - task: PythonScript@0
+          displayName: 'Run unit tests (test YMM save/restore)'
+          inputs:
+            scriptSource: 'filePath'
+            scriptPath: scripts/test.py
+            arguments: '--glibc-disable-ymm bin testSaveYmm'
+            workingDirectory: $(Build.SourcesDirectory)
+
+      - ${{ if eq(parameters.arch, 'ARM64') }}:
+        - task: PythonScript@0
+          displayName: 'Run unit tests'
+          inputs:
+            scriptSource: 'filePath'
+            scriptPath: scripts/test.py
+            arguments: '--emulator qemu-aarch64 --emulator-lib-dir /usr/aarch64-linux-gnu/ bin noperftests +symcrypt -dh -dsa -rsa'
+            workingDirectory: $(Build.SourcesDirectory)
+
         - task: PythonScript@0
           displayName: 'Run dynamic unit tests'
           inputs:
             scriptSource: 'filePath'
             scriptPath: scripts/test.py
-            arguments: 'bin dynamic:bin/module/generic/libsymcrypt.so noperftests'
+            arguments: '--emulator qemu-aarch64 --emulator-lib-dir /usr/aarch64-linux-gnu/ bin dynamic:bin/module/generic/libsymcrypt.so noperftests +symcrypt -dh -dsa -rsa'
             workingDirectory: $(Build.SourcesDirectory)
-
-    - ${{ if eq(parameters.arch, 'AMD64') }}:
-      - task: PythonScript@0
-        displayName: 'Run unit tests (test YMM save/restore)'
-        inputs:
-          scriptSource: 'filePath'
-          scriptPath: scripts/test.py
-          arguments: '--glibc-disable-ymm bin testSaveYmm'
-          workingDirectory: $(Build.SourcesDirectory)
-
-    - ${{ if eq(parameters.arch, 'ARM64') }}:
-      - task: PythonScript@0
-        displayName: 'Run unit tests'
-        inputs:
-          scriptSource: 'filePath'
-          scriptPath: scripts/test.py
-          arguments: '--emulator qemu-aarch64 --emulator-lib-dir /usr/aarch64-linux-gnu/ bin noperftests +symcrypt -dh -dsa -rsa'
-          workingDirectory: $(Build.SourcesDirectory)
-
-      - task: PythonScript@0
-        displayName: 'Run dynamic unit tests'
-        inputs:
-          scriptSource: 'filePath'
-          scriptPath: scripts/test.py
-          arguments: '--emulator qemu-aarch64 --emulator-lib-dir /usr/aarch64-linux-gnu/ bin dynamic:bin/module/generic/libsymcrypt.so noperftests +symcrypt -dh -dsa -rsa'
-          workingDirectory: $(Build.SourcesDirectory)
 
     - task: PythonScript@0
       displayName: 'Package build output'

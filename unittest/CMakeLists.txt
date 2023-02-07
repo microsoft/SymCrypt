@@ -83,11 +83,15 @@ include_directories(inc)
 include_directories(lib)
 include_directories(resource)
 
-if(SYMCRYPT_INTERNAL_BUILD)
+if(SYMCRYPT_TEST_LEGACY_IMPL)
   find_library(RSA32_LIB rsa32.lib HINTS SymCryptDependencies/${SYMCRYPT_TARGET_ARCH})
   find_library(MSBIGNUM_LIB msbignum.lib HINTS SymCryptDependencies/${SYMCRYPT_TARGET_ARCH})
 
   include_directories(SymCryptDependencies/inc)
+else()
+  # For external builds, do not include msbignum and RSA32 which are not licensed for external use
+  add_compile_options(-DINCLUDE_IMPL_MSBIGNUM=0)
+  add_compile_options(-DINCLUDE_IMPL_RSA32=0)
 endif()
 
 add_subdirectory(lib)
