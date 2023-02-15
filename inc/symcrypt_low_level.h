@@ -500,6 +500,64 @@ SymCryptModElementConditionalSwap(
      _In_       UINT32                cond );
 
 //========================================================================
+// ECURVE objects
+
+BOOLEAN
+SYMCRYPT_CALL
+SymCryptEcurveBufferSizesFromParams(
+    _In_    PCSYMCRYPT_ECURVE_PARAMS    pParams,
+    _Out_   SIZE_T *                    pcbCurve,
+    _Out_   SIZE_T *                    pcbScratch );
+//
+// This call computes the memory size necessary to create the ECURVE object described by pParams,
+// including the amount of scratch space needed for the operation.
+//
+// Returns FALSE if the given parameters are deemed invalid.
+//
+
+PSYMCRYPT_ECURVE
+SYMCRYPT_CALL
+SymCryptEcurveCreate(
+    _In_                                PSYMCRYPT_ECURVE_PARAMS pParams,
+    _In_                                UINT32                  flags,
+    _Out_writes_bytes_( cbCurve )       PBYTE                   pbCurve,
+                                        SIZE_T                  cbCurve,
+    _Out_writes_bytes_( cbScratch )     PBYTE                   pbScratch,
+                                        SIZE_T                  cbScratch );
+//
+// Use caller-allocated memory to create an ECURVE object which
+// is defined by the parameters in pParams.
+//
+// - pParams: parameters that define the curve
+// - flags: Not used, must be zero.
+// - pbCurve: caller-allocated memory region to hold the curve object
+// - cbCurve: size of memory region to hold the curve object
+// - pbScratch: caller-allocated memory region used as scratch space to create the curve
+// - cbScratch: size of scratch space memory region
+//
+// Caller should use SymCryptSizeofEcurveBuffersFromParams to determine the necessary sizes for
+// pbCurve and pbScratch. These buffers must be SYMCRYPT_ALIGNed.
+//
+// Future versions might use the flags to enable different features/tradeoffs.
+// There are a number of interesting memory/speed/pre-computation cost trades that can be made.
+// For example, pre-computing multiples of the distinguished point, or (parallel?) pre-computation
+// of (r, rG) pairs for random r values.
+//
+// This function applies limited validation of the pParams. The validation is intended to eliminate
+// the threat of denial-of-service when hostile parameters are presented. It does not ensure that
+// the parameters make sense, define a proper curve, or that any elliptic-curve operations made on
+// the curve built from these parameters will fail, succeed or provide any security.
+// The only guarantee provided for invalid parameters is that all operations on this curve will
+// not crash and will return in some reasonable amount of time.
+//
+// Returns NULL if the given memory regions are not large enough or the
+// parameters are deemed invalid. If the return value is not NULL, then
+// pbCurve buffer must later be wiped with SymCryptWipe(). And as with all
+// pbScratch buffers, it is the caller's responsibility to wipe after
+// completing all operations that require scratch space.
+//
+
+//========================================================================
 // ECPOINT objects' API is slightly different than the above API schema in the sense that they
 // take as input an ECURVE object pointer instead of the number of digits.
 //

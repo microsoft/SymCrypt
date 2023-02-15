@@ -21,44 +21,31 @@
 // Our largest curve is 521 bits, and we won't see curves > 1024 bits for a while yet.
 #define SYMCRYPT_INTERNAL_MAX_ECURVE_SIZE   (1024)
 
-PSYMCRYPT_ECURVE
-SYMCRYPT_CALL
-SymCryptEcurveAllocate(
+// Private struct which records the sizes of various different parts of the elliptic curve
+// structure.
+typedef struct _SYMCRYPT_ECURVE_SIZES {
+    UINT32                          nDigitsFieldLength;
+    UINT32                          nDigitsSubgroupOrder;
+    UINT32                          nDigitsCoFactor;
+    UINT32                          cbAlloc; // Length of the whole curve buffer
+    UINT32                          cbModulus;
+    UINT32                          cbModElement;
+    UINT32                          cbEcpoint;
+    UINT32                          cbSubgroupOrder;
+    UINT32                          cbCoFactor;
+    UINT32                          cbScratch;
+    SYMCRYPT_ECPOINT_COORDINATES    eCoordinates;
+} SYMCRYPT_ECURVE_SIZES, *PSYMCRYPT_ECURVE_SIZES;
+typedef const SYMCRYPT_ECURVE_SIZES * PCSYMCRYPT_ECURVE_SIZES;
+
+// Helper function which validates curve parameters and computes various buffer sizes.
+static
+BOOLEAN
+SymCryptEcurveValidateAndComputeSizes(
     _In_    PCSYMCRYPT_ECURVE_PARAMS    pParams,
-    _In_    UINT32                      flags )
+    _Out_   PSYMCRYPT_ECURVE_SIZES      pSizes )
 {
-    BOOLEAN         fSuccess = FALSE;
-    SYMCRYPT_ERROR  scError = SYMCRYPT_NO_ERROR;
-
-    PSYMCRYPT_ECURVE pCurve = NULL;
-    PBYTE            pDst = NULL;   // Destination pointer
-    PBYTE            pSrc = NULL;   // Source pointer
-
-    PBYTE            pSrcGenerator = NULL;  // We have to set the generator point
-                                            // only after we have fully initialized the curve
-
-    UINT32  cbAlloc = 0;
-    UINT32  cbModulus = 0;
-    UINT32  cbModElement = 0;
-    UINT32  cbEcpoint = 0;
-    UINT32  cbSubgroupOrder = 0;
-    UINT32  cbCoFactor = 0;
-
-    UINT32  nDigitsFieldLength = 0;
-    UINT32  nDigitsSubgroupOrder = 0;
-    UINT32  nDigitsCoFactor = 0;
-
-    PSYMCRYPT_INT   pTempInt = 0;
-    PBYTE           pbScratch = NULL;
-    UINT32          cbScratch = 0;
-
-    PSYMCRYPT_MODELEMENT  peTemp = NULL;
-
-    SYMCRYPT_ECPOINT_COORDINATES     eCoordinates;
-
-    PCSYMCRYPT_ECURVE_PARAMS_V2_EXTENSION   pcParamsV2Ext = NULL;
-
-    UNREFERENCED_PARAMETER( flags );
+    BOOLEAN fSuccess = FALSE;
 
     // Check that the parameters are well formatted
     SYMCRYPT_ASSERT( pParams != NULL );
@@ -80,50 +67,50 @@ SymCryptEcurveAllocate(
     }
 
     // Getting the # of digits of the various parameters
-    nDigitsFieldLength = SymCryptDigitsFromBits( pParams->cbFieldLength * 8 );
-    nDigitsSubgroupOrder = SymCryptDigitsFromBits( pParams->cbSubgroupOrder * 8 );
-    nDigitsCoFactor = SymCryptDigitsFromBits( pParams->cbCofactor * 8 );
+    pSizes->nDigitsFieldLength = SymCryptDigitsFromBits( pParams->cbFieldLength * 8 );
+    pSizes->nDigitsSubgroupOrder = SymCryptDigitsFromBits( pParams->cbSubgroupOrder * 8 );
+    pSizes->nDigitsCoFactor = SymCryptDigitsFromBits( pParams->cbCofactor * 8 );
 
     // -----------------------------------------------
     // Getting the byte sizes of different objects
     // -----------------------------------------------
-    cbModulus = SymCryptSizeofModulusFromDigits( nDigitsFieldLength );
-    cbSubgroupOrder = SymCryptSizeofModulusFromDigits( nDigitsSubgroupOrder );
-    cbCoFactor =  SymCryptSizeofIntFromDigits( nDigitsCoFactor );
+    pSizes->cbModulus = SymCryptSizeofModulusFromDigits( pSizes->nDigitsFieldLength );
+    pSizes->cbSubgroupOrder = SymCryptSizeofModulusFromDigits( pSizes->nDigitsSubgroupOrder );
+    pSizes->cbCoFactor =  SymCryptSizeofIntFromDigits( pSizes->nDigitsCoFactor );
 
-    cbModElement = SYMCRYPT_SIZEOF_MODELEMENT_FROM_BITS( pParams->cbFieldLength * 8 );
+    pSizes->cbModElement = SYMCRYPT_SIZEOF_MODELEMENT_FROM_BITS( pParams->cbFieldLength * 8 );
 
     // EcPoint: The curve is not initialized yet, we call the helper function.
     // It depends on the default format of each curve type
     switch (pParams->type)
     {
     case (SYMCRYPT_ECURVE_TYPE_SHORT_WEIERSTRASS):
-        eCoordinates = SYMCRYPT_ECPOINT_COORDINATES_JACOBIAN;
+        pSizes->eCoordinates = SYMCRYPT_ECPOINT_COORDINATES_JACOBIAN;
         break;
     case (SYMCRYPT_ECURVE_TYPE_TWISTED_EDWARDS):
-        eCoordinates = SYMCRYPT_ECPOINT_COORDINATES_EXTENDED_PROJECTIVE;
+        pSizes->eCoordinates = SYMCRYPT_ECPOINT_COORDINATES_EXTENDED_PROJECTIVE;
         break;
     case (SYMCRYPT_ECURVE_TYPE_MONTGOMERY):
-        eCoordinates = SYMCRYPT_ECPOINT_COORDINATES_SINGLE_PROJECTIVE;
+        pSizes->eCoordinates = SYMCRYPT_ECPOINT_COORDINATES_SINGLE_PROJECTIVE;
         break;
     default:
         goto cleanup;
     }
 
-    cbEcpoint = SymCryptSizeofEcpointEx( cbModElement, SYMCRYPT_INTERNAL_NUMOF_COORDINATES( eCoordinates ) );
+    pSizes->cbEcpoint = SymCryptSizeofEcpointEx( pSizes->cbModElement, SYMCRYPT_INTERNAL_NUMOF_COORDINATES( pSizes->eCoordinates ) );
     // -----------------------------------------------
 
-    // Allocating the memory for the curve
+    // Compute memory needed for the curve
     //
     // From symcrypt_internal.h we have:
     //      - sizeof results are upper bounded by 2^19
     // Thus the following calculation does not overflow cbAlloc.
     //
-    cbAlloc =   sizeof( SYMCRYPT_ECURVE ) +
-                cbModulus +
-                2 * cbModElement +
-                cbSubgroupOrder +
-                cbCoFactor;
+    pSizes->cbAlloc =   sizeof( SYMCRYPT_ECURVE ) +
+                        pSizes->cbModulus +
+                        2 * pSizes->cbModElement +
+                        pSizes->cbSubgroupOrder +
+                        pSizes->cbCoFactor;
 
     if ( (pParams->type == SYMCRYPT_ECURVE_TYPE_SHORT_WEIERSTRASS) ||
          (pParams->type == SYMCRYPT_ECURVE_TYPE_TWISTED_EDWARDS) )
@@ -133,23 +120,15 @@ SymCryptEcurveAllocate(
         //
         // Note: The window width is fixed now. In later versions we can pass it in as a parameter.
         // SYMCRYPT_ASSERT( (1 << (SYMCRYPT_ECURVE_SW_DEF_WINDOW-2)) <= SYMCRYPT_ECURVE_SW_MAX_NPRECOMP_POINTS );
-        cbAlloc += (1 << (SYMCRYPT_ECURVE_SW_DEF_WINDOW-2))*cbEcpoint;
+        pSizes->cbAlloc += (1 << (SYMCRYPT_ECURVE_SW_DEF_WINDOW-2))*pSizes->cbEcpoint;
     }
     else
     {
         // Otherwise just allocate space for just the distinguished point
-        cbAlloc += cbEcpoint;
+        pSizes->cbAlloc += pSizes->cbEcpoint;
     }
 
-    pCurve = SymCryptCallbackAlloc( cbAlloc );
-    if ( pCurve == NULL )
-    {
-        goto cleanup;
-    }
-
-    // Allocating internal scratch space for this function
-    // **   We have to calculate it here ourselves as the curve object does not have
-    //      any fields initialized here **
+    // Compute memory needed for internal scratch space
     // EcpointSetValue and SymCryptOfflinePrecomputation
 
     //
@@ -159,22 +138,76 @@ SymCryptEcurveAllocate(
     //      - SymCryptSizeofEcpointEx is bounded by 2^20
     // Thus the following calculation does not overflow cbScratch.
     //
-    cbScratch = SymCryptSizeofEcpointEx( cbModElement, SYMCRYPT_ECPOINT_FORMAT_MAX_LENGTH ) +
-                8 * cbModElement +
-                SYMCRYPT_MAX( SYMCRYPT_SCRATCH_BYTES_FOR_COMMON_MOD_OPERATIONS( nDigitsFieldLength ),
-                     SYMCRYPT_SCRATCH_BYTES_FOR_MODINV( nDigitsFieldLength ) );
+    pSizes->cbScratch = SymCryptSizeofEcpointEx( pSizes->cbModElement, SYMCRYPT_ECPOINT_FORMAT_MAX_LENGTH ) +
+                        8 * pSizes->cbModElement +
+                        SYMCRYPT_MAX( SYMCRYPT_SCRATCH_BYTES_FOR_COMMON_MOD_OPERATIONS( pSizes->nDigitsFieldLength ),
+                                      SYMCRYPT_SCRATCH_BYTES_FOR_MODINV( pSizes->nDigitsFieldLength ) );
     // IntToModulus( FMod and GOrd )
-    cbScratch = SYMCRYPT_MAX( cbScratch,
-                     SYMCRYPT_SCRATCH_BYTES_FOR_INT_TO_MODULUS( SYMCRYPT_MAX(nDigitsFieldLength, nDigitsSubgroupOrder) ) );
+    pSizes->cbScratch = SYMCRYPT_MAX( pSizes->cbScratch,
+                            SYMCRYPT_SCRATCH_BYTES_FOR_INT_TO_MODULUS( SYMCRYPT_MAX(pSizes->nDigitsFieldLength, pSizes->nDigitsSubgroupOrder) ) );
     // ModElementSetValue( FMod )
-    cbScratch = SYMCRYPT_MAX( cbScratch,
-                     SYMCRYPT_SCRATCH_BYTES_FOR_COMMON_MOD_OPERATIONS( nDigitsFieldLength ) );
+    pSizes->cbScratch = SYMCRYPT_MAX( pSizes->cbScratch,
+                            SYMCRYPT_SCRATCH_BYTES_FOR_COMMON_MOD_OPERATIONS( pSizes->nDigitsFieldLength ) );
 
-    pbScratch = SymCryptCallbackAlloc( cbScratch );
-    if ( pbScratch == NULL )
+    fSuccess = TRUE;
+
+cleanup:
+    return fSuccess;
+}
+
+BOOLEAN
+SYMCRYPT_CALL
+SymCryptEcurveBufferSizesFromParams(
+    _In_    PCSYMCRYPT_ECURVE_PARAMS        pParams,
+    _Out_   SIZE_T *                        pcbCurve,
+    _Out_   SIZE_T *                        pcbScratch )
+{
+    BOOLEAN fSuccess = FALSE;
+    SYMCRYPT_ECURVE_SIZES sizes;
+
+    if ( !SymCryptEcurveValidateAndComputeSizes( pParams, &sizes ))
     {
         goto cleanup;
     }
+
+    *pcbCurve = sizes.cbAlloc;
+    *pcbScratch = sizes.cbScratch;
+
+    fSuccess = TRUE;
+
+cleanup:
+    return fSuccess;
+}
+
+// Internal function which actually computes and writes curve into the given buffer.
+//
+// This is called internally by both SymCryptEcurveCreate() and SymCryptEcurveAllocate().
+static
+PSYMCRYPT_ECURVE
+SymCryptEcurveInitialize(
+    _In_                                    PCSYMCRYPT_ECURVE_PARAMS    pParams,
+    _In_                                    UINT32                      flags,
+    _In_                                    PCSYMCRYPT_ECURVE_SIZES     pSizes,
+    _Out_writes_bytes_( pSizes->cbAlloc )   PBYTE                       pbCurve,
+    _Out_writes_bytes_( pSizes->cbScratch)  PBYTE                       pbScratch )
+{
+    BOOLEAN         fSuccess = FALSE;
+    SYMCRYPT_ERROR  scError = SYMCRYPT_NO_ERROR;
+
+    PSYMCRYPT_ECURVE pCurve = (PSYMCRYPT_ECURVE)pbCurve;
+    PBYTE            pDst = NULL;   // Destination pointer
+    PBYTE            pSrc = NULL;   // Source pointer
+
+    PBYTE            pSrcGenerator = NULL;  // We have to set the generator point
+                                            // only after we have fully initialized the curve
+
+    PSYMCRYPT_INT   pTempInt = 0;
+
+    PSYMCRYPT_MODELEMENT  peTemp = NULL;
+
+    PCSYMCRYPT_ECURVE_PARAMS_V2_EXTENSION   pcParamsV2Ext = NULL;
+
+    UNREFERENCED_PARAMETER( flags );
 
     // -----------------------------------------------
     // Populating the fields of the curve object
@@ -187,13 +220,13 @@ SymCryptEcurveAllocate(
     pCurve->type = pParams->type;
 
     // Curve point format
-    pCurve->eCoordinates = eCoordinates;
+    pCurve->eCoordinates = pSizes->eCoordinates;
 
     // Number of digits of the field modulus
-    pCurve->FModDigits = nDigitsFieldLength;
+    pCurve->FModDigits = pSizes->nDigitsFieldLength;
 
     // Number of digits of the group order
-    pCurve->GOrdDigits = nDigitsSubgroupOrder;
+    pCurve->GOrdDigits = pSizes->nDigitsSubgroupOrder;
 
     // Byte size of field elements
     pCurve->FModBytesize = (UINT32)pParams->cbFieldLength;
@@ -203,17 +236,17 @@ SymCryptEcurveAllocate(
     pCurve->GOrdBytesize = (UINT32)pParams->cbSubgroupOrder;
 
     // Byte size of mod elements
-    pCurve->cbModElement = cbModElement;
+    pCurve->cbModElement = pSizes->cbModElement;
 
     // Total bytesize of the curve (used to free the curve object)
-    pCurve->cbAlloc = cbAlloc;
+    pCurve->cbAlloc = pSizes->cbAlloc;
 
     // Set destination and source pointers
     pDst = ((PBYTE) pCurve) + sizeof( SYMCRYPT_ECURVE );
     pSrc = ((PBYTE) pParams) + sizeof( SYMCRYPT_ECURVE_PARAMS );
 
     // Field Modulus
-    pCurve->FMod = SymCryptModulusCreate( pDst, cbModulus, nDigitsFieldLength );
+    pCurve->FMod = SymCryptModulusCreate( pDst, pSizes->cbModulus, pSizes->nDigitsFieldLength );
     if ( pCurve->FMod == NULL )
     {
         goto cleanup;
@@ -254,13 +287,13 @@ SymCryptEcurveAllocate(
                     SYMCRYPT_INTERNAL_ECURVE_MODULUS_NUMOF_OPERATIONS( 8 * pParams->cbFieldLength ),
                     SYMCRYPT_FLAG_DATA_PUBLIC | SYMCRYPT_FLAG_MODULUS_PRIME,
                     pbScratch,
-                    cbScratch );
+                    pSizes->cbScratch );
 
-    pDst += cbModulus;
+    pDst += pSizes->cbModulus;
     pSrc += pParams->cbFieldLength;
 
     // A constant
-    pCurve->A = SymCryptModElementCreate( pDst, cbModElement, pCurve->FMod );
+    pCurve->A = SymCryptModElementCreate( pDst, pSizes->cbModElement, pCurve->FMod );
     if ( pCurve->A == NULL )
     {
         goto cleanup;
@@ -272,16 +305,16 @@ SymCryptEcurveAllocate(
                     pCurve->FMod,
                     pCurve->A,
                     pbScratch,
-                    cbScratch );
+                    pSizes->cbScratch );
     if ( scError != SYMCRYPT_NO_ERROR )
     {
         goto cleanup;
     }
-    pDst += cbModElement;
+    pDst += pSizes->cbModElement;
     pSrc += pParams->cbFieldLength;
 
     // B constant
-    pCurve->B = SymCryptModElementCreate( pDst, cbModElement, pCurve->FMod );
+    pCurve->B = SymCryptModElementCreate( pDst, pSizes->cbModElement, pCurve->FMod );
     if ( pCurve->B == NULL )
     {
         goto cleanup;
@@ -293,12 +326,12 @@ SymCryptEcurveAllocate(
                     pCurve->FMod,
                     pCurve->B,
                     pbScratch,
-                    cbScratch );
+                    pSizes->cbScratch );
     if ( scError != SYMCRYPT_NO_ERROR )
     {
         goto cleanup;
     }
-    pDst += cbModElement;
+    pDst += pSizes->cbModElement;
     pSrc += pParams->cbFieldLength;
 
     // Skip over the distinguished point until we fix all the parameters and scratch space sizes
@@ -306,7 +339,7 @@ SymCryptEcurveAllocate(
     pSrc += pParams->cbFieldLength * 2;
 
     // Subgroup Order
-    pCurve->GOrd = SymCryptModulusCreate( pDst, cbSubgroupOrder, nDigitsSubgroupOrder );
+    pCurve->GOrd = SymCryptModulusCreate( pDst, pSizes->cbSubgroupOrder, pSizes->nDigitsSubgroupOrder );
     if ( pCurve->GOrd == NULL )
     {
         goto cleanup;
@@ -347,13 +380,13 @@ SymCryptEcurveAllocate(
             SYMCRYPT_INTERNAL_ECURVE_GROUP_ORDER_NUMOF_OPERATIONS,
             SYMCRYPT_FLAG_DATA_PUBLIC | SYMCRYPT_FLAG_MODULUS_PRIME,
             pbScratch,
-            cbScratch );
+            pSizes->cbScratch );
 
-    pDst += cbSubgroupOrder;
+    pDst += pSizes->cbSubgroupOrder;
     pSrc += pParams->cbSubgroupOrder;
 
     // Cofactor
-    pCurve->H = SymCryptIntCreate( pDst, cbCoFactor, nDigitsCoFactor );
+    pCurve->H = SymCryptIntCreate( pDst, pSizes->cbCoFactor, pSizes->nDigitsCoFactor );
     if ( pCurve->H == NULL )
     {
         goto cleanup;
@@ -382,7 +415,7 @@ SymCryptEcurveAllocate(
         goto cleanup;
     }
 
-    pDst += cbCoFactor;
+    pDst += pSizes->cbCoFactor;
     pSrc += pParams->cbCofactor;
 
     // Calculate scratch spaces' sizes
@@ -408,7 +441,7 @@ SymCryptEcurveAllocate(
     }
 
     // Now set the distinguished point
-    pCurve->G = SymCryptEcpointCreate( pDst, cbEcpoint, pCurve );
+    pCurve->G = SymCryptEcpointCreate( pDst, pSizes->cbEcpoint, pCurve );
     if ( pCurve->G == NULL )
     {
         goto cleanup;
@@ -422,12 +455,12 @@ SymCryptEcurveAllocate(
                     pCurve->G,
                     SYMCRYPT_FLAG_DATA_PUBLIC,
                     pbScratch,
-                    cbScratch );
+                    pSizes->cbScratch );
     if ( scError != SYMCRYPT_NO_ERROR )
     {
         goto cleanup;
     }
-    pDst += cbEcpoint;
+    pDst += pSizes->cbEcpoint;
 
     // Fill the precomputed table
     if ( (pParams->type == SYMCRYPT_ECURVE_TYPE_SHORT_WEIERSTRASS) ||
@@ -438,27 +471,27 @@ SymCryptEcurveAllocate(
 
         for (UINT32 i=1; i<pCurve->info.sw.nPrecompPoints; i++)
         {
-            pCurve->info.sw.poPrecompPoints[i] = SymCryptEcpointCreate( pDst, cbEcpoint, pCurve );
+            pCurve->info.sw.poPrecompPoints[i] = SymCryptEcpointCreate( pDst, pSizes->cbEcpoint, pCurve );
             if ( pCurve->info.sw.poPrecompPoints[i] == NULL )
             {
                 goto cleanup;
             }
-            pDst += cbEcpoint;
+            pDst += pSizes->cbEcpoint;
         }
 
-        SymCryptOfflinePrecomputation( pCurve, pbScratch, cbScratch );
+        SymCryptOfflinePrecomputation( pCurve, pbScratch, pSizes->cbScratch );
     }
 
     // For Montgomery curve, we calculate A = (A + 2) / 4
     if (pParams->type == SYMCRYPT_ECURVE_TYPE_MONTGOMERY)
     {
-        peTemp = SymCryptModElementCreate( pbScratch, cbModElement, pCurve->FMod );
+        peTemp = SymCryptModElementCreate( pbScratch, pSizes->cbModElement, pCurve->FMod );
 
         // SetValueUint32 requirements:
         //  FMod > 2 since it has more than SYMCRYPT_ECURVE_MIN_BITSIZE_FMOD bits
-        SymCryptModElementSetValueUint32( 2, pCurve->FMod, peTemp, pbScratch + cbModElement, cbScratch - cbModElement );
-        SymCryptModAdd (pCurve->FMod, pCurve->A, peTemp, pCurve->A, pbScratch + cbModElement, cbScratch - cbModElement );   // A = A + 2;
-        SymCryptModDivPow2( pCurve->FMod, pCurve->A, 2, pCurve->A, pbScratch + cbModElement, cbScratch - cbModElement );    // A = (A + 2) / 4
+        SymCryptModElementSetValueUint32( 2, pCurve->FMod, peTemp, pbScratch + pSizes->cbModElement, pSizes->cbScratch - pSizes->cbModElement );
+        SymCryptModAdd (pCurve->FMod, pCurve->A, peTemp, pCurve->A, pbScratch + pSizes->cbModElement, pSizes->cbScratch - pSizes->cbModElement );   // A = A + 2;
+        SymCryptModDivPow2( pCurve->FMod, pCurve->A, 2, pCurve->A, pbScratch + pSizes->cbModElement, pSizes->cbScratch - pSizes->cbModElement );    // A = (A + 2) / 4
     }
 
     // Set the default curve policy for parameters of version 2
@@ -508,17 +541,96 @@ SymCryptEcurveAllocate(
     fSuccess = TRUE;
 
 cleanup:
+    if (!fSuccess)
+    {
+        SymCryptWipe( pbCurve, pSizes->cbAlloc );
+        pCurve = NULL;
+    }
+
+    return pCurve;
+}
+
+PSYMCRYPT_ECURVE
+SYMCRYPT_CALL
+SymCryptEcurveCreate(
+    _In_                                PSYMCRYPT_ECURVE_PARAMS pParams,
+    _In_                                UINT32                  flags,
+    _Out_writes_bytes_( cbCurve )       PBYTE                   pbCurve,
+                                        SIZE_T                  cbCurve,
+    _Out_writes_bytes_( cbScratch )     PBYTE                   pbScratch,
+                                        SIZE_T                  cbScratch)
+{
+    SYMCRYPT_ECURVE_SIZES sizes;
+
+    PSYMCRYPT_ECURVE pCurve = NULL;
+
+    if ( !SymCryptEcurveValidateAndComputeSizes(pParams, &sizes) )
+    {
+        goto cleanup;
+    }
+
+    if ( cbCurve < sizes.cbAlloc )
+    {
+        goto cleanup;
+    }
+
+    if ( cbScratch < sizes.cbScratch )
+    {
+        goto cleanup;
+    }
+
+    pCurve = SymCryptEcurveInitialize( pParams, flags, &sizes, pbCurve, pbScratch );
+
+cleanup:
+    return pCurve;
+}
+
+PSYMCRYPT_ECURVE
+SYMCRYPT_CALL
+SymCryptEcurveAllocate(
+    _In_    PCSYMCRYPT_ECURVE_PARAMS    pParams,
+    _In_    UINT32                      flags )
+{
+    SYMCRYPT_ECURVE_SIZES sizes;
+
+    PBYTE pbCurve = NULL;
+    PBYTE pbScratch = NULL;
+
+    PSYMCRYPT_ECURVE pCurve = NULL;
+
+    if ( !SymCryptEcurveValidateAndComputeSizes(pParams, &sizes) )
+    {
+        goto cleanup;
+    }
+
+    pbCurve = SymCryptCallbackAlloc( sizes.cbAlloc );
+    if ( pbCurve == NULL )
+    {
+        goto cleanup;
+    }
+
+    pbScratch = SymCryptCallbackAlloc( sizes.cbScratch );
+    if ( pbScratch == NULL )
+    {
+        goto cleanup;
+    }
+
+    pCurve = SymCryptEcurveInitialize( pParams, flags, &sizes, pbCurve, pbScratch );
+    if ( pCurve != NULL )
+    {
+        pbCurve = NULL;
+    }
+
+cleanup:
     if ( pbScratch != NULL )
     {
-        SymCryptWipe( pbScratch, cbScratch );
+        SymCryptWipe( pbScratch, sizes.cbScratch );
         SymCryptCallbackFree( pbScratch );
     }
 
-    if ((!fSuccess) && (pCurve != NULL))
+    if ( pbCurve != NULL )
     {
-        SymCryptWipe( (PBYTE) pCurve, cbAlloc );
-        SymCryptCallbackFree( pCurve );
-        pCurve = NULL;
+        SymCryptCallbackFree( pbCurve );
     }
 
     return pCurve;
