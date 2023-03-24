@@ -19,7 +19,10 @@ VOID
 SYMCRYPT_CALL
 AllocWithChecksInit()
 {
-    GENRANDOM( (PBYTE) &g_bAllocFill, sizeof( g_bAllocFill ) );
+    while( g_bAllocFill == 0 )
+    {
+        GENRANDOM( (PBYTE) &g_bAllocFill, sizeof( g_bAllocFill ) );
+    }
     GENRANDOM( (PBYTE) &g_magic, sizeof( g_magic ) );
 }
 

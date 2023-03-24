@@ -45,7 +45,10 @@ AllocWithChecksInit()
 {
     ExInitializeFastMutex(&g_AllocationMutex);
     memset(g_OutstandingAllocationsArray, 0, sizeof(g_OutstandingAllocationsArray));
-    GENRANDOM( (PBYTE) &g_bAllocFill, sizeof( g_bAllocFill ) );
+    while( g_bAllocFill == 0 )
+    {
+        GENRANDOM( (PBYTE) &g_bAllocFill, sizeof( g_bAllocFill ) );
+    }
     GENRANDOM( (PBYTE) &g_magic, sizeof( g_magic ) );
 }
 
