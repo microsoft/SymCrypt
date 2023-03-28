@@ -84,8 +84,6 @@ CPUID_BIT_INFO  cpuidBitInfo[] = {
     {7, WORD_ECX, CPUID_70_ECX_VPCLMULQDQ_BIT,  SYMCRYPT_CPU_FEATURE_VAES },
 };
 
-extern void __cpuid( _Out_writes_(4) int a[4], int b);          // Add SAL annotation to intrinsic declaration to keep Prefast happy.
-
 VOID
 SYMCRYPT_CALL
 SymCryptDetectCpuFeaturesByCpuid( UINT32 flags )

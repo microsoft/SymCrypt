@@ -1127,13 +1127,13 @@ void printPlatformInformation( _In_z_ char * text )
     int CPUInfo[4];
     char nameBuf[20];
 
-    __cpuid( CPUInfo, 0 );
+    __cpuidex( CPUInfo, 0, 0 );
     memcpy( &nameBuf[0], (BYTE *)&CPUInfo[1], 4 );
     memcpy( &nameBuf[4], (BYTE *)&CPUInfo[3], 4 );
     memcpy( &nameBuf[8], (BYTE *)&CPUInfo[2], 4 );
     nameBuf[12] = 0;
 
-    __cpuid( CPUInfo, 1 );
+    __cpuidex( CPUInfo, 1, 0 );
     DWORD cpuidfammod = CPUInfo[0];
     DWORD family;
 

@@ -179,14 +179,6 @@
     #define PRId64       "lld"
     #endif
 
-    //
-    // Missing from our standard headers when compiling C++
-    //
-    extern "C"
-    {
-        void __cpuid(int CPUInfo[4], int InfoType );
-    }
-
 #endif
 
 
@@ -228,14 +220,6 @@
 
 #include <wincrypt.h>
 #include <bcrypt.h>
-
-//
-// Missing from our standard headers when compiling C++
-//
-extern "C"
-{
-    void __cpuid(int CPUInfo[4], int InfoType );
-}
 
 #include <stdio.h>
 #include <stdlib.h>

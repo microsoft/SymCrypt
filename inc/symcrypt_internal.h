@@ -368,7 +368,6 @@ C_ASSERT( (SYMCRYPT_ALIGN_VALUE & (SYMCRYPT_ALIGN_VALUE - 1 )) == 0 );
 
 #if SYMCRYPT_GNUC
     // Forward declarations for CPUID intrinsic replacements
-    void __cpuid(int CPUInfo[4], int InfoType);
     void __cpuidex(int CPUInfo[4], int InfoType, int ECXValue);
 #endif
 

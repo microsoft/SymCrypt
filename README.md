@@ -68,7 +68,7 @@ we have created a set of Python scripts to help with building, testing and packa
     * To see additional options, run `scripts/build.py --help`.
 1. To run the unit tests after a build has finished, run `scripts/test.py build_dir`.
     * Additional positional arguments will be passed directly to the unit test executable.
-1. To package up the built binaries into an archive, run `scripts/package.py build_dir arch configuration module_name release_dir`, were:
+1. To package up the built binaries into an archive, run `scripts/package.py build_dir arch configuration module_name release_dir`, where:
     * `build_dir` is the build output directory
     * `arch` is the architecture that the build was created for
     * `configuration` is the build configuration (Debug, Release, Sanitize)
