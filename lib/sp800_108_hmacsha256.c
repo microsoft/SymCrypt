@@ -18,7 +18,7 @@ static const BYTE    sp800_108_sha256Answer[] =
 
 VOID
 SYMCRYPT_CALL
-SymCryptSp800_108_HmacSha256SelfTest()
+SymCryptSp800_108_HmacSha256SelfTest(void)
 {
     BYTE    res[sizeof(sp800_108_sha256Answer)];
     

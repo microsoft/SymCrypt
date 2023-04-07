@@ -11,12 +11,12 @@
 // Nothing to init
 VOID
 SYMCRYPT_CALL
-SymCryptEntropySecureInit(){}
+SymCryptEntropySecureInit(void){}
 
 // Nothing to uninit
 VOID
 SYMCRYPT_CALL
-SymCryptEntropySecureUninit(){}
+SymCryptEntropySecureUninit(void){}
 
 // urandom is our secure entropy source.
 VOID

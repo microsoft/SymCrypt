@@ -411,7 +411,7 @@ static const BYTE   md4KATAnswer[ 16 ] = {
 
 VOID
 SYMCRYPT_CALL
-SymCryptMd4Selftest()
+SymCryptMd4Selftest(void)
 {
     BYTE result[SYMCRYPT_MD4_RESULT_SIZE];
 

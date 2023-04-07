@@ -317,7 +317,7 @@ static const BYTE   marvin32KATAnswer[ 8 ] = {
 
 VOID
 SYMCRYPT_CALL
-SymCryptMarvin32Selftest()
+SymCryptMarvin32Selftest(void)
 {
     BYTE res[SYMCRYPT_MARVIN32_RESULT_SIZE];
 

@@ -49,7 +49,7 @@ static const BYTE shake128KATAnswer[SYMCRYPT_SHAKE128_RESULT_SIZE] = {
 
 VOID
 SYMCRYPT_CALL
-SymCryptShake128Selftest()
+SymCryptShake128Selftest(void)
 {
     BYTE result[SYMCRYPT_SHAKE128_RESULT_SIZE];
 
@@ -101,7 +101,7 @@ static const BYTE shake256KATAnswer[SYMCRYPT_SHAKE256_RESULT_SIZE] = {
 
 VOID
 SYMCRYPT_CALL
-SymCryptShake256Selftest()
+SymCryptShake256Selftest(void)
 {
     BYTE result[SYMCRYPT_SHAKE256_RESULT_SIZE];
 
@@ -143,7 +143,7 @@ static const BYTE cshake128KATAnswer[SYMCRYPT_CSHAKE128_RESULT_SIZE] = {
 
 VOID
 SYMCRYPT_CALL
-SymCryptCShake128Selftest()
+SymCryptCShake128Selftest(void)
 {
     BYTE result[SYMCRYPT_CSHAKE128_RESULT_SIZE];
     static const unsigned char Nstr[] = { 'N' };
@@ -190,7 +190,7 @@ static const BYTE cshake256KATAnswer[SYMCRYPT_CSHAKE256_RESULT_SIZE] = {
 
 VOID
 SYMCRYPT_CALL
-SymCryptCShake256Selftest()
+SymCryptCShake256Selftest(void)
 {
     BYTE result[SYMCRYPT_CSHAKE256_RESULT_SIZE];
     static const unsigned char Nstr[] = { 'N' };

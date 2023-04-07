@@ -2801,8 +2801,7 @@ typedef enum _SYMCRYPT_802_11_SAE_GROUP {
 #define SYMCRYPT_SAE_MAX_HMAC_OUTPUT_SIZE_BYTES SYMCRYPT_BYTES_FROM_BITS( 384 )
 
 
-typedef SYMCRYPT_ALIGN struct _SYMCRYPT_802_11_SAE_CUSTOM_STATE
-SYMCRYPT_802_11_SAE_CUSTOM_STATE,  *PSYMCRYPT_802_11_SAE_CUSTOM_STATE;
+typedef struct _SYMCRYPT_802_11_SAE_CUSTOM_STATE SYMCRYPT_802_11_SAE_CUSTOM_STATE, *PSYMCRYPT_802_11_SAE_CUSTOM_STATE;
 typedef const SYMCRYPT_802_11_SAE_CUSTOM_STATE *PCSYMCRYPT_802_11_SAE_CUSTOM_STATE;
 //
 // The struct itself is opaque and is defined elsewhere.
@@ -2810,7 +2809,7 @@ typedef const SYMCRYPT_802_11_SAE_CUSTOM_STATE *PCSYMCRYPT_802_11_SAE_CUSTOM_STA
 // change at any time.
 //
 
-void SymCrypt802_11SaeGetGroupSizes(
+VOID SymCrypt802_11SaeGetGroupSizes(
                                 SYMCRYPT_802_11_SAE_GROUP       group,
                     _Out_opt_   SIZE_T*                         pcbScalar,
                     _Out_opt_   SIZE_T*                         pcbPoint );

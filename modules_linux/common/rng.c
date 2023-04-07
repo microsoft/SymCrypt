@@ -27,7 +27,7 @@ UINT32 g_rngCounter = 0; // reseed when counter exceeds MAX_GENERATE_BEFORE_RESE
 // entropy_input || additional_input, where entropy input is from the SP800-90B compliant (if applicable)
 // Fips entropy source and the additional input is from the secure entropy source.
 VOID
-SymCryptRngReseed()
+SymCryptRngReseed(void)
 {
     BYTE seed[64]; // 256 bits of entropy input and 256 bits of additional input
 
@@ -51,7 +51,7 @@ SymCryptRngReseed()
 // the mutex used in following calls to Rng infrastructure.
 VOID
 SYMCRYPT_CALL
-SymCryptRngInit()
+SymCryptRngInit(void)
 {
     if( pthread_mutex_init( &g_rngLock, NULL ) != 0)
     {
@@ -66,7 +66,7 @@ SymCryptRngInit()
 // The Fips input constitutes the entropy_input while secure input is the nonce.
 VOID
 SYMCRYPT_CALL
-SymCryptRngInstantiate()
+SymCryptRngInstantiate(void)
 {
     SYMCRYPT_ERROR error = SYMCRYPT_NO_ERROR;
     BYTE seed[64];
@@ -107,7 +107,7 @@ SymCryptRngInstantiate()
 // output and so are not secret
 VOID
 SYMCRYPT_CALL
-SymCryptRngUninit()
+SymCryptRngUninit(void)
 {
     SymCryptEntropyFipsUninit();
     SymCryptEntropySecureUninit();

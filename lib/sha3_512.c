@@ -129,7 +129,7 @@ static const BYTE sha3_512KATAnswer[64] = {
 
 VOID
 SYMCRYPT_CALL
-SymCryptSha3_512Selftest()
+SymCryptSha3_512Selftest(void)
 {
     BYTE result[SYMCRYPT_SHA3_512_RESULT_SIZE];
 

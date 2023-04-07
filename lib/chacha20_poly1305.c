@@ -6,7 +6,7 @@
 
 #include "precomp.h"
 
-#define CHACHA20_POLY1305_MAX_DATA_SIZE    ((((UINT64)1 << 32) - 1) * 64)
+#define CHACHA20_POLY1305_MAX_DATA_SIZE    (((1ull << 32) - 1) * 64)
 
 VOID
 SYMCRYPT_CALL
@@ -79,7 +79,7 @@ SymCryptChaCha20Poly1305Encrypt(
     SYMCRYPT_POLY1305_STATE Poly1305State;
     SYMCRYPT_ALIGN BYTE     key[SYMCRYPT_POLY1305_KEY_SIZE];
 
-    if ( cbData > CHACHA20_POLY1305_MAX_DATA_SIZE )
+    if ( SIZE_T_MAX > CHACHA20_POLY1305_MAX_DATA_SIZE && cbData > CHACHA20_POLY1305_MAX_DATA_SIZE )
     {
         status = SYMCRYPT_WRONG_DATA_SIZE;
         goto cleanup;
@@ -150,7 +150,7 @@ SymCryptChaCha20Poly1305Decrypt(
     SYMCRYPT_ALIGN BYTE     buf[SYMCRYPT_POLY1305_RESULT_SIZE];
     SYMCRYPT_ALIGN BYTE     key[SYMCRYPT_POLY1305_KEY_SIZE];
 
-    if ( cbData > CHACHA20_POLY1305_MAX_DATA_SIZE )
+    if ( SIZE_T_MAX > CHACHA20_POLY1305_MAX_DATA_SIZE && cbData > CHACHA20_POLY1305_MAX_DATA_SIZE )
     {
         status = SYMCRYPT_WRONG_DATA_SIZE;
         goto cleanup;
@@ -216,7 +216,7 @@ static const BYTE SymCryptChaCha20Poly1305Result[3 + SYMCRYPT_POLY1305_RESULT_SI
 
 VOID
 SYMCRYPT_CALL
-SymCryptChaCha20Poly1305Selftest()
+SymCryptChaCha20Poly1305Selftest(void)
 {
     BYTE    buf[3 + SYMCRYPT_POLY1305_RESULT_SIZE];
     SYMCRYPT_ERROR err;

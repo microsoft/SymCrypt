@@ -282,7 +282,7 @@ SymCryptDetectCpuFeaturesByCpuid( UINT32 flags )
 
 VOID
 SYMCRYPT_CALL
-SymCryptDetectCpuFeaturesFromRegisters()
+SymCryptDetectCpuFeaturesFromRegisters(void)
 {
     ULONG result;
 
@@ -365,7 +365,7 @@ SymCryptDetectCpuFeaturesFromRegisters()
 
 VOID
 SYMCRYPT_CALL
-SymCryptDetectCpuFeaturesFromRegisters()
+SymCryptDetectCpuFeaturesFromRegisters(void)
 {
     ULONG result;
 

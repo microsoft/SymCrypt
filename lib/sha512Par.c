@@ -704,7 +704,7 @@ const PCSYMCRYPT_PARALLEL_HASH SymCryptParallelSha512Algorithm = &SymCryptParall
 
 VOID
 SYMCRYPT_CALL
-SymCryptParallelSha384Selftest()
+SymCryptParallelSha384Selftest(void)
 {
     SYMCRYPT_ERROR                      scError;
     SYMCRYPT_SHA384_STATE               states[N_SELFTEST_STATES];
@@ -745,7 +745,7 @@ SymCryptParallelSha384Selftest()
 
 VOID
 SYMCRYPT_CALL
-SymCryptParallelSha512Selftest()
+SymCryptParallelSha512Selftest(void)
 {
     SYMCRYPT_ERROR                      scError;
     SYMCRYPT_SHA512_STATE               states[N_SELFTEST_STATES];

@@ -835,7 +835,7 @@ static const BYTE SymCryptGcmSelftestResult[3 + SYMCRYPT_AES_BLOCK_SIZE ] =
 
 VOID
 SYMCRYPT_CALL
-SymCryptGcmSelftest()
+SymCryptGcmSelftest(void)
 {
     BYTE    buf[ 3 + SYMCRYPT_AES_BLOCK_SIZE ];
     SYMCRYPT_GCM_EXPANDED_KEY key;

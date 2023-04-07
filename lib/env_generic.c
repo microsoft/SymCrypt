@@ -8,7 +8,7 @@
 
 #include "precomp.h"
 
-SYMCRYPT_CPU_FEATURES SYMCRYPT_CALL SymCryptCpuFeaturesNeverPresentEnvGeneric()
+SYMCRYPT_CPU_FEATURES SYMCRYPT_CALL SymCryptCpuFeaturesNeverPresentEnvGeneric(void)
 {
 #if SYMCRYPT_CPU_X86 | SYMCRYPT_CPU_AMD64
     // Avoid all CPU features except RDRAND and RDSEED

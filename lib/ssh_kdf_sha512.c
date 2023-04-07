@@ -47,7 +47,7 @@ static const BYTE pbResult[] =
 
 VOID
 SYMCRYPT_CALL
-SymCryptSshKdfSha512SelfTest()
+SymCryptSshKdfSha512SelfTest(void)
 {
     SYMCRYPT_SSHKDF_EXPANDED_KEY expandedKey;
     SYMCRYPT_ALIGN BYTE rbResult[sizeof(pbResult)];

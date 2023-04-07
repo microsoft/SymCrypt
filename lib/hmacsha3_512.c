@@ -104,7 +104,7 @@ static const BYTE hmacSha3_512Kat[] =
 
 VOID
 SYMCRYPT_CALL
-SymCryptHmacSha3_512Selftest()
+SymCryptHmacSha3_512Selftest(void)
 {
     SYMCRYPT_HMAC_SHA3_512_EXPANDED_KEY xKey;
     BYTE res[SYMCRYPT_HMAC_SHA3_512_RESULT_SIZE];

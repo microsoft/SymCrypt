@@ -293,7 +293,7 @@ static const BYTE   md2KATAnswer[ 16 ] = {
 
 VOID
 SYMCRYPT_CALL
-SymCryptMd2Selftest()
+SymCryptMd2Selftest(void)
 {
     BYTE result[SYMCRYPT_MD2_RESULT_SIZE];
 

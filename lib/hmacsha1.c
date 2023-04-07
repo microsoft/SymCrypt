@@ -43,7 +43,7 @@ static const BYTE hmacSha1Kat[20] = {
 
 VOID
 SYMCRYPT_CALL
-SymCryptHmacSha1Selftest()
+SymCryptHmacSha1Selftest(void)
 {
     SYMCRYPT_HMAC_SHA1_EXPANDED_KEY xKey;
     BYTE res[SYMCRYPT_HMAC_SHA1_RESULT_SIZE];

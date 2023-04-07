@@ -407,7 +407,7 @@ static const BYTE testCiphertext[8] = {
 
 VOID
 SYMCRYPT_CALL
-SymCryptRc2Selftest()
+SymCryptRc2Selftest(void)
 {
     SYMCRYPT_RC2_EXPANDED_KEY key;
     BYTE buf[SYMCRYPT_RC2_BLOCK_SIZE];

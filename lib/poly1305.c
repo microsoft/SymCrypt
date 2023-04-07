@@ -453,7 +453,7 @@ static const BYTE poly1305Kat[16] = {
 
 VOID
 SYMCRYPT_CALL
-SymCryptPoly1305Selftest()
+SymCryptPoly1305Selftest(void)
 {
     BYTE res[16];
 

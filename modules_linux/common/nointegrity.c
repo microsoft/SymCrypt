@@ -5,4 +5,6 @@
 // Copyright (c) Microsoft Corporation. Licensed under the MIT license.
 //
 
-void SymCryptModuleVerifyIntegrity() {}
+#include "precomp.h"
+
+VOID SymCryptModuleVerifyIntegrity(void) {}

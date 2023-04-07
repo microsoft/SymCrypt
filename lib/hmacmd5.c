@@ -34,7 +34,7 @@ static const BYTE hmacMd5Kat[16] = {
 
 VOID
 SYMCRYPT_CALL
-SymCryptHmacMd5Selftest()
+SymCryptHmacMd5Selftest(void)
 {
     SYMCRYPT_HMAC_MD5_EXPANDED_KEY xKey;
     BYTE res[SYMCRYPT_HMAC_MD5_RESULT_SIZE];

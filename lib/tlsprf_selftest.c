@@ -18,7 +18,7 @@ static const BYTE pbResult1_2Sha512[] =
 
 VOID
 SYMCRYPT_CALL
-SymCryptTlsPrf1_1SelfTest()
+SymCryptTlsPrf1_1SelfTest(void)
 {
     SYMCRYPT_ALIGN BYTE rbResult[sizeof(pbResult1_1)];
 
@@ -38,7 +38,7 @@ SymCryptTlsPrf1_1SelfTest()
 
 VOID
 SYMCRYPT_CALL
-SymCryptTlsPrf1_2SelfTest()
+SymCryptTlsPrf1_2SelfTest(void)
 {
     SYMCRYPT_ALIGN BYTE rbResult[sizeof(pbResult1_2Sha512)];
 

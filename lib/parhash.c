@@ -269,7 +269,7 @@ SymCryptParallelHashSetNextWork( PCSYMCRYPT_PARALLEL_HASH pParHash, PSYMCRYPT_PA
 // Comparison function used to sort the work into largest-first order.
 //
 int SYMCRYPT_CDECL
-compareRequestSize( const void * p1, const void * p2 )
+compareRequestSize( PCVOID p1, PCVOID p2 )
 {
     PSYMCRYPT_PARALLEL_HASH_SCRATCH_STATE * pp1 = (PSYMCRYPT_PARALLEL_HASH_SCRATCH_STATE *) p1;
     PSYMCRYPT_PARALLEL_HASH_SCRATCH_STATE * pp2 = (PSYMCRYPT_PARALLEL_HASH_SCRATCH_STATE *) p2;

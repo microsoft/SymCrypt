@@ -621,7 +621,7 @@ static const BYTE desKnownCiphertext[8] = {
 
 VOID
 SYMCRYPT_CALL
-SymCryptDesSelftest()
+SymCryptDesSelftest(void)
 {
     BYTE                        buf[SYMCRYPT_DES_BLOCK_SIZE];
     SYMCRYPT_DES_EXPANDED_KEY   key;
@@ -653,7 +653,7 @@ SymCryptDesSelftest()
 
 VOID
 SYMCRYPT_CALL
-SymCrypt3DesSelftest()
+SymCrypt3DesSelftest(void)
 {
     BYTE                        buf[SYMCRYPT_3DES_BLOCK_SIZE];
     SYMCRYPT_3DES_EXPANDED_KEY  key;

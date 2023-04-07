@@ -5,7 +5,7 @@
 // Copyright (c) Microsoft Corporation. Licensed under the MIT license.
 //
 
-void SymCryptModuleVerifyIntegrity();
+VOID SymCryptModuleVerifyIntegrity(void);
 //
 // This function verifies the integrity of the loadable segments of the SymCrypt ELF module using
 // HMAC-SHA256. The module must have been postprocessed after compilation using

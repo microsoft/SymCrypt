@@ -48,7 +48,7 @@ SymCryptRdseedSizet( SIZE_T * p )
 
 SYMCRYPT_ERROR
 SYMCRYPT_CALL
-SymCryptRdseedStatus()
+SymCryptRdseedStatus(void)
 {
     //
     // Check that the library is initialized; otherwise the CPUID info

@@ -38,7 +38,7 @@ static const BYTE hmacSha384Kat[48] = {
 
 VOID
 SYMCRYPT_CALL
-SymCryptHmacSha384Selftest()
+SymCryptHmacSha384Selftest(void)
 {
     SYMCRYPT_HMAC_SHA384_EXPANDED_KEY xKey;
     BYTE res[SYMCRYPT_HMAC_SHA384_RESULT_SIZE];

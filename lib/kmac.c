@@ -46,7 +46,7 @@ static const BYTE kmac128KATAnswer[SYMCRYPT_KMAC128_RESULT_SIZE] = {
 
 VOID
 SYMCRYPT_CALL
-SymCryptKmac128Selftest()
+SymCryptKmac128Selftest(void)
 {
     BYTE result[SYMCRYPT_KMAC128_RESULT_SIZE];
     static const unsigned char Sstr[] = { 'S' };
@@ -104,7 +104,7 @@ static const BYTE kmac256KATAnswer[SYMCRYPT_KMAC256_RESULT_SIZE] = {
 
 VOID
 SYMCRYPT_CALL
-SymCryptKmac256Selftest()
+SymCryptKmac256Selftest(void)
 {
     BYTE result[SYMCRYPT_KMAC256_RESULT_SIZE];
     static const unsigned char Sstr[] = { 'S' };

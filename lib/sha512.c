@@ -491,7 +491,7 @@ const BYTE SymCryptSha512KATAnswer[64] =
 
 VOID
 SYMCRYPT_CALL
-SymCryptSha512Selftest()
+SymCryptSha512Selftest(void)
 {
     BYTE result[SYMCRYPT_SHA512_RESULT_SIZE];
 
@@ -522,7 +522,7 @@ const BYTE SymCryptSha384KATAnswer[ 48 ] =
 
 VOID
 SYMCRYPT_CALL
-SymCryptSha384Selftest()
+SymCryptSha384Selftest(void)
 {
     BYTE result[SYMCRYPT_SHA384_RESULT_SIZE];
 
@@ -1030,7 +1030,7 @@ SymCryptSha512AppendBlocks_ull3(
 #define XMMROR( _a, _n ) _mm_xor_si128( _mm_slli_epi64( (_a), 64-(_n)), _mm_srli_epi64( (_a), (_n)) )
 #define XMMSHR( _a, _n ) _mm_srli_epi64((_a), (_n))
 #define XMMXOR( _a, _b ) _mm_xor_si128((_a), (_b))
-#define XMMTO_UINT64( _a ) ((_a).m128i_u64[0])
+#define XMMSTORE_UINT64( _a, _addr ) _mm_storeu_si64((_addr), (_a))
 
 #define XMMMAJ( x, y, z )  XMMOR( XMMAND( XMMOR( (z), (y)), (x)), XMMAND( (z), (y) ) )
 #define XMMCH(  x, y, z )  XMMXOR( XMMAND( XMMXOR( (z), (y) ), (x)), (z))
@@ -1179,14 +1179,14 @@ SymCryptSha512AppendBlocks_xmm(
 
     }
 
-    pChain->H[0] = XMMTO_UINT64( ah[7] );
-    pChain->H[1] = XMMTO_UINT64( ah[6] );
-    pChain->H[2] = XMMTO_UINT64( ah[5] );
-    pChain->H[3] = XMMTO_UINT64( ah[4] );
-    pChain->H[4] = XMMTO_UINT64( ah[3] );
-    pChain->H[5] = XMMTO_UINT64( ah[2] );
-    pChain->H[6] = XMMTO_UINT64( ah[1] );
-    pChain->H[7] = XMMTO_UINT64( ah[0] );
+    XMMSTORE_UINT64( ah[7], &(pChain->H[0]) );
+    XMMSTORE_UINT64( ah[6], &(pChain->H[1]) );
+    XMMSTORE_UINT64( ah[5], &(pChain->H[2]) );
+    XMMSTORE_UINT64( ah[4], &(pChain->H[3]) );
+    XMMSTORE_UINT64( ah[3], &(pChain->H[4]) );
+    XMMSTORE_UINT64( ah[2], &(pChain->H[5]) );
+    XMMSTORE_UINT64( ah[1], &(pChain->H[6]) );
+    XMMSTORE_UINT64( ah[0], &(pChain->H[7]) );
 
     *pcbRemaining = cbData;
 

@@ -12,7 +12,7 @@ UINT32 g_SymCryptFipsSelftestsPerformed = SYMCRYPT_SELFTEST_ALGORITHM_NONE;
 // Simple accessor function so callers can inspect which selftests have run
 UINT32
 SYMCRYPT_CALL
-SymCryptFipsGetSelftestsPerformed()
+SymCryptFipsGetSelftestsPerformed(void)
 {
     return g_SymCryptFipsSelftestsPerformed;
 }
@@ -488,7 +488,7 @@ const BYTE rgbSha256Hash[] =
 
 VOID
 SYMCRYPT_CALL
-SymCryptDhSecretAgreementSelftest()
+SymCryptDhSecretAgreementSelftest(void)
 {
     SYMCRYPT_ERROR scError = SYMCRYPT_NO_ERROR;
 
@@ -555,7 +555,7 @@ SymCryptDhSecretAgreementSelftest()
 
 VOID
 SYMCRYPT_CALL
-SymCryptEcDhSecretAgreementSelftest( )
+SymCryptEcDhSecretAgreementSelftest(void)
 {
     SYMCRYPT_ERROR scError = SYMCRYPT_NO_ERROR;
 
@@ -653,7 +653,7 @@ SymCryptDsaSignVerifyTest( PCSYMCRYPT_DLKEY pkDlkey )
 
 VOID
 SYMCRYPT_CALL
-SymCryptDsaSelftest( )
+SymCryptDsaSelftest(void)
 {
     SYMCRYPT_ERROR scError = SYMCRYPT_NO_ERROR;
 
@@ -740,7 +740,7 @@ SymCryptEcDsaSignVerifyTest( PCSYMCRYPT_ECKEY pkEckey )
 
 VOID
 SYMCRYPT_CALL
-SymCryptEcDsaSelftest( )
+SymCryptEcDsaSelftest(void)
 {
     SYMCRYPT_ERROR scError = SYMCRYPT_NO_ERROR;
 
@@ -813,7 +813,7 @@ SymCryptRsaSignVerifyTest( PCSYMCRYPT_RSAKEY pkRsakey )
 
 VOID
 SYMCRYPT_CALL
-SymCryptRsaSelftest( )
+SymCryptRsaSelftest(void)
 {
     SYMCRYPT_ERROR scError = SYMCRYPT_NO_ERROR;
 

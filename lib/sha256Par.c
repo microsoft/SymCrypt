@@ -1193,7 +1193,7 @@ const PCSYMCRYPT_PARALLEL_HASH SymCryptParallelSha256Algorithm = &SymCryptParall
 
 VOID
 SYMCRYPT_CALL
-SymCryptParallelSha256Selftest()
+SymCryptParallelSha256Selftest(void)
 {
     SYMCRYPT_ERROR                      scError;
     SYMCRYPT_SHA256_STATE               states[N_SELFTEST_STATES];

@@ -20,7 +20,7 @@ static const BYTE    pbkdf2_sha256Answer[] =
 
 VOID
 SYMCRYPT_CALL
-SymCryptPbkdf2_HmacSha256SelfTest()
+SymCryptPbkdf2_HmacSha256SelfTest(void)
 {
     BYTE    res[sizeof(pbkdf2_sha256Answer)];
     

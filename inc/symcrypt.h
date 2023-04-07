@@ -490,7 +490,7 @@ SymCryptUint64Bytesize( UINT64 value );
 
 VOID
 SYMCRYPT_CALL
-SymCryptInit();
+SymCryptInit(void);
 //
 // Initialize the static library.
 // This function MUST be called before any other function in the library.
@@ -730,7 +730,7 @@ SymCryptEqual(
 //
 // VOID
 // SYMCRYPT_CALL
-// SymCryptXxxSelftest();
+// SymCryptXxxSelftest(void);
 //
 //      Perform a minimal self-test on the XXX algorithm.
 //      This function is designed to be used for achieving FIPS 140-2 compliance or
@@ -893,7 +893,7 @@ SymCryptMd2StateImport(
 
 VOID
 SYMCRYPT_CALL
-SymCryptMd2Selftest();
+SymCryptMd2Selftest(void);
 
 extern const PCSYMCRYPT_HASH SymCryptMd2Algorithm;
 
@@ -956,7 +956,7 @@ SymCryptMd4StateImport(
 
 VOID
 SYMCRYPT_CALL
-SymCryptMd4Selftest();
+SymCryptMd4Selftest(void);
 
 extern const PCSYMCRYPT_HASH SymCryptMd4Algorithm;
 
@@ -1019,7 +1019,7 @@ SymCryptMd5StateImport(
 
 VOID
 SYMCRYPT_CALL
-SymCryptMd5Selftest();
+SymCryptMd5Selftest(void);
 
 extern const PCSYMCRYPT_HASH SymCryptMd5Algorithm;
 
@@ -1092,7 +1092,7 @@ SymCryptSha1StateImport(
 
 VOID
 SYMCRYPT_CALL
-SymCryptSha1Selftest( VOID );
+SymCryptSha1Selftest(void);
 
 extern const PCSYMCRYPT_HASH SymCryptSha1Algorithm;
 
@@ -1157,7 +1157,7 @@ SymCryptSha256StateImport(
 
 VOID
 SYMCRYPT_CALL
-SymCryptSha256Selftest();
+SymCryptSha256Selftest(void);
 
 extern const PCSYMCRYPT_HASH SymCryptSha256Algorithm;
 
@@ -1222,7 +1222,7 @@ SymCryptSha384StateImport(
 
 VOID
 SYMCRYPT_CALL
-SymCryptSha384Selftest();
+SymCryptSha384Selftest(void);
 
 extern const PCSYMCRYPT_HASH SymCryptSha384Algorithm;
 
@@ -1287,7 +1287,7 @@ SymCryptSha512StateImport(
 
 VOID
 SYMCRYPT_CALL
-SymCryptSha512Selftest();
+SymCryptSha512Selftest(void);
 
 extern const PCSYMCRYPT_HASH SymCryptSha512Algorithm;
 
@@ -1356,7 +1356,7 @@ SymCryptSha3_256StateImport(
 
 VOID
 SYMCRYPT_CALL
-SymCryptSha3_256Selftest();
+SymCryptSha3_256Selftest(void);
 
 extern const PCSYMCRYPT_HASH SymCryptSha3_256Algorithm;
 
@@ -1410,7 +1410,7 @@ SymCryptSha3_384StateImport(
 
 VOID
 SYMCRYPT_CALL
-SymCryptSha3_384Selftest();
+SymCryptSha3_384Selftest(void);
 
 extern const PCSYMCRYPT_HASH SymCryptSha3_384Algorithm;
 
@@ -1464,7 +1464,7 @@ SymCryptSha3_512StateImport(
 
 VOID
 SYMCRYPT_CALL
-SymCryptSha3_512Selftest();
+SymCryptSha3_512Selftest(void);
 
 extern const PCSYMCRYPT_HASH SymCryptSha3_512Algorithm;
 
@@ -1592,7 +1592,7 @@ extern const PCSYMCRYPT_HASH SymCryptSha3_512Algorithm;
 //
 // VOID
 // SYMCRYPT_CALL
-// SymCryptShakeXxxSelftest();
+// SymCryptShakeXxxSelftest(void);
 //
 //      Perform a minimal self-test on the ShakeXxx algorithm.
 //      This function is designed to be used for achieving FIPS 140-2 compliance or
@@ -1654,7 +1654,7 @@ SymCryptShake128StateCopy(_In_ PCSYMCRYPT_SHAKE128_STATE pSrc, _Out_ PSYMCRYPT_S
 
 VOID
 SYMCRYPT_CALL
-SymCryptShake128Selftest();
+SymCryptShake128Selftest(void);
 
 extern const PCSYMCRYPT_HASH SymCryptShake128HashAlgorithm;
 
@@ -1711,7 +1711,7 @@ SymCryptShake256StateCopy(_In_ PCSYMCRYPT_SHAKE256_STATE pSrc, _Out_ PSYMCRYPT_S
 
 VOID
 SYMCRYPT_CALL
-SymCryptShake256Selftest();
+SymCryptShake256Selftest(void);
 
 extern const PCSYMCRYPT_HASH SymCryptShake256HashAlgorithm;
 
@@ -1835,7 +1835,7 @@ SymCryptCShake128StateCopy(_In_ PCSYMCRYPT_CSHAKE128_STATE pSrc, _Out_ PSYMCRYPT
 
 VOID
 SYMCRYPT_CALL
-SymCryptCShake128Selftest();
+SymCryptCShake128Selftest(void);
 
 
 //
@@ -1892,7 +1892,7 @@ SymCryptCShake256StateCopy(_In_ PCSYMCRYPT_CSHAKE256_STATE pSrc, _Out_ PSYMCRYPT
 
 VOID
 SYMCRYPT_CALL
-SymCryptCShake256Selftest();
+SymCryptCShake256Selftest(void);
 
 
 
@@ -2064,15 +2064,15 @@ SymCryptParallelSha512Process(
 
 VOID
 SYMCRYPT_CALL
-SymCryptParallelSha256Selftest();
+SymCryptParallelSha256Selftest(void);
 
 VOID
 SYMCRYPT_CALL
-SymCryptParallelSha384Selftest();
+SymCryptParallelSha384Selftest(void);
 
 VOID
 SYMCRYPT_CALL
-SymCryptParallelSha512Selftest();
+SymCryptParallelSha512Selftest(void);
 
 
 
@@ -2255,7 +2255,7 @@ SymCryptParallelSha512Selftest();
 //
 // VOID
 // SYMCRYPT_CALL
-// SymCryptXxxSelftest();
+// SymCryptXxxSelftest(void);
 //
 //      Perform a minimal self-test on the XXX algorithm.
 //      This function is designed to be used for achieving FIPS 140-2 compliance or
@@ -2386,7 +2386,7 @@ SymCryptHmacMd5Result(
 
 VOID
 SYMCRYPT_CALL
-SymCryptHmacMd5Selftest();
+SymCryptHmacMd5Selftest(void);
 
 extern const PCSYMCRYPT_MAC SymCryptHmacMd5Algorithm;
 
@@ -2451,7 +2451,7 @@ SymCryptHmacSha1Result(
 
 VOID
 SYMCRYPT_CALL
-SymCryptHmacSha1Selftest();
+SymCryptHmacSha1Selftest(void);
 
 extern const PCSYMCRYPT_MAC SymCryptHmacSha1Algorithm;
 
@@ -2515,7 +2515,7 @@ SymCryptHmacSha256Result(
 
 VOID
 SYMCRYPT_CALL
-SymCryptHmacSha256Selftest();
+SymCryptHmacSha256Selftest(void);
 
 extern const PCSYMCRYPT_MAC  SymCryptHmacSha256Algorithm;
 
@@ -2579,7 +2579,7 @@ SymCryptHmacSha384Result(
 
 VOID
 SYMCRYPT_CALL
-SymCryptHmacSha384Selftest();
+SymCryptHmacSha384Selftest(void);
 
 extern const PCSYMCRYPT_MAC  SymCryptHmacSha384Algorithm;
 
@@ -2643,7 +2643,7 @@ SymCryptHmacSha512Result(
 
 VOID
 SYMCRYPT_CALL
-SymCryptHmacSha512Selftest();
+SymCryptHmacSha512Selftest(void);
 
 extern const PCSYMCRYPT_MAC  SymCryptHmacSha512Algorithm;
 
@@ -2707,7 +2707,7 @@ SymCryptHmacSha3_256Result(
 
 VOID
 SYMCRYPT_CALL
-SymCryptHmacSha3_256Selftest();
+SymCryptHmacSha3_256Selftest(void);
 
 extern const PCSYMCRYPT_MAC  SymCryptHmacSha3_256Algorithm;
 
@@ -2771,7 +2771,7 @@ SymCryptHmacSha3_384Result(
 
 VOID
 SYMCRYPT_CALL
-SymCryptHmacSha3_384Selftest();
+SymCryptHmacSha3_384Selftest(void);
 
 extern const PCSYMCRYPT_MAC  SymCryptHmacSha3_384Algorithm;
 
@@ -2835,7 +2835,7 @@ SymCryptHmacSha3_512Result(
 
 VOID
 SYMCRYPT_CALL
-SymCryptHmacSha3_512Selftest();
+SymCryptHmacSha3_512Selftest(void);
 
 extern const PCSYMCRYPT_MAC  SymCryptHmacSha3_512Algorithm;
 
@@ -2902,7 +2902,7 @@ SymCryptAesCmacResult(
 
 VOID
 SYMCRYPT_CALL
-SymCryptAesCmacSelftest();
+SymCryptAesCmacSelftest(void);
 
 extern const PCSYMCRYPT_MAC SymCryptAesCmacAlgorithm;
 
@@ -3161,7 +3161,7 @@ SymCryptKmac128StateCopy(_In_ const SYMCRYPT_KMAC128_STATE* pSrc, _Out_ SYMCRYPT
 
 VOID
 SYMCRYPT_CALL
-SymCryptKmac128Selftest();
+SymCryptKmac128Selftest(void);
 
 extern const PCSYMCRYPT_MAC SymCryptKmac128Algorithm;
 
@@ -3248,7 +3248,7 @@ SymCryptKmac256StateCopy(_In_ const SYMCRYPT_KMAC256_STATE* pSrc, _Out_ SYMCRYPT
 
 VOID
 SYMCRYPT_CALL
-SymCryptKmac256Selftest();
+SymCryptKmac256Selftest(void);
 
 extern const PCSYMCRYPT_MAC SymCryptKmac256Algorithm;
 
@@ -3300,7 +3300,7 @@ SymCryptPoly1305Result(
 
 VOID
 SYMCRYPT_CALL
-SymCryptPoly1305Selftest();
+SymCryptPoly1305Selftest(void);
 
 //
 // We do NOT define a SYMCRYPT_MAC structure SymCryptPoly1305Algorithm
@@ -3356,7 +3356,7 @@ SymCryptChaCha20Poly1305Decrypt(
 
 VOID
 SYMCRYPT_CALL
-SymCryptChaCha20Poly1305Selftest();
+SymCryptChaCha20Poly1305Selftest(void);
 
 ////////////////////////////////////////////////////////////////////////////
 //   MARVIN32
@@ -3458,7 +3458,7 @@ SymCryptMarvin32Result(
 
 VOID
 SYMCRYPT_CALL
-SymCryptMarvin32Selftest();
+SymCryptMarvin32Selftest(void);
 
 
 //==========================================================================
@@ -3615,7 +3615,7 @@ SymCryptMarvin32Selftest();
 //
 // VOID
 // SYMCRYPT_CALL
-// SymCryptXxxSelftest();
+// SymCryptXxxSelftest(void);
 //
 //      Perform a minimal self-test on the XXX algorithm.
 //      This function is designed to be used for achieving FIPS 140-2 compliance or
@@ -3824,7 +3824,7 @@ SymCryptDesSetOddParity(
 
 VOID
 SYMCRYPT_CALL
-SymCryptDesSelftest();
+SymCryptDesSelftest(void);
 
 extern const PCSYMCRYPT_BLOCKCIPHER SymCryptDesBlockCipher;
 
@@ -3887,7 +3887,7 @@ SymCrypt3DesCbcDecrypt(
 
 VOID
 SYMCRYPT_CALL
-SymCrypt3DesSelftest();
+SymCrypt3DesSelftest(void);
 
 extern const PCSYMCRYPT_BLOCKCIPHER SymCrypt3DesBlockCipher;
 
@@ -3925,7 +3925,7 @@ SymCryptDesxDecrypt(
 
 VOID
 SYMCRYPT_CALL
-SymCryptDesxSelftest();
+SymCryptDesxSelftest(void);
 
 extern const PCSYMCRYPT_BLOCKCIPHER SymCryptDesxBlockCipher;
 
@@ -3996,7 +3996,7 @@ SymCryptRc2Decrypt(
 
 VOID
 SYMCRYPT_CALL
-SymCryptRc2Selftest();
+SymCryptRc2Selftest(void);
 
 extern const PCSYMCRYPT_BLOCKCIPHER SymCryptRc2BlockCipher;
 
@@ -4454,7 +4454,7 @@ SymCryptCcmDecryptFinal(
 
 VOID
 SYMCRYPT_CALL
-SymCryptCcmSelftest();
+SymCryptCcmSelftest(void);
 //
 // Self test for CCM cipher mode
 //
@@ -4648,7 +4648,7 @@ SymCryptGcmDecryptFinal(
 
 VOID
 SYMCRYPT_CALL
-SymCryptGcmSelftest();
+SymCryptGcmSelftest(void);
 //
 // Self test for GCM cipher mode
 //
@@ -4844,7 +4844,7 @@ SymCryptRc4Crypt(
 
 VOID
 SYMCRYPT_CALL
-SymCryptRc4Selftest();
+SymCryptRc4Selftest(void);
 
 
 //
@@ -4920,7 +4920,7 @@ SymCryptChaCha20Crypt(
 
 VOID
 SYMCRYPT_CALL
-SymCryptChaCha20Selftest();
+SymCryptChaCha20Selftest(void);
 
 
 
@@ -4979,11 +4979,11 @@ SymCryptPbkdf2(
 
 VOID
 SYMCRYPT_CALL
-SymCryptPbkdf2_HmacSha1SelfTest();
+SymCryptPbkdf2_HmacSha1SelfTest(void);
 
 VOID
 SYMCRYPT_CALL
-SymCryptPbkdf2_HmacSha256SelfTest();
+SymCryptPbkdf2_HmacSha256SelfTest(void);
 
 ////////////////////////////////////////////////////////////////////////////
 // SP800-108 Counter mode
@@ -5030,19 +5030,19 @@ SymCryptSp800_108(
 
 VOID
 SYMCRYPT_CALL
-SymCryptSp800_108_HmacSha1SelfTest();
+SymCryptSp800_108_HmacSha1SelfTest(void);
 
 VOID
 SYMCRYPT_CALL
-SymCryptSp800_108_HmacSha256SelfTest();
+SymCryptSp800_108_HmacSha256SelfTest(void);
 
 VOID
 SYMCRYPT_CALL
-SymCryptSp800_108_HmacSha384SelfTest();
+SymCryptSp800_108_HmacSha384SelfTest(void);
 
 VOID
 SYMCRYPT_CALL
-SymCryptSp800_108_HmacSha512SelfTest();
+SymCryptSp800_108_HmacSha512SelfTest(void);
 
 ////////////////////////////////////////////////////////////////////////////
 // TLS Key Derivation PRFs
@@ -5093,7 +5093,7 @@ SymCryptTlsPrf1_1(
 
 VOID
 SYMCRYPT_CALL
-SymCryptTlsPrf1_1SelfTest();
+SymCryptTlsPrf1_1SelfTest(void);
 
 //
 //  Version 1.2
@@ -5132,7 +5132,7 @@ SymCryptTlsPrf1_2(
 
 VOID
 SYMCRYPT_CALL
-SymCryptTlsPrf1_2SelfTest();
+SymCryptTlsPrf1_2SelfTest(void);
 
 
 ////////////////////////////////////////////////////////////////////////////
@@ -5233,11 +5233,11 @@ SymCryptSshKdf(
 
 VOID
 SYMCRYPT_CALL
-SymCryptSshKdfSha256SelfTest();
+SymCryptSshKdfSha256SelfTest(void);
 
 VOID
 SYMCRYPT_CALL
-SymCryptSshKdfSha512SelfTest();
+SymCryptSshKdfSha512SelfTest(void);
 
 
 ////////////////////////////////////////////////////////////////////////////
@@ -5342,7 +5342,7 @@ SymCryptSrtpKdf(
 
 VOID
 SYMCRYPT_CALL
-SymCryptSrtpKdfSelfTest();
+SymCryptSrtpKdfSelfTest(void);
 
 
 ////////////////////////////////////////////////////////////////////////////
@@ -5423,7 +5423,7 @@ SymCryptHkdf(
 
 VOID
 SYMCRYPT_CALL
-SymCryptHkdfSelfTest();
+SymCryptHkdfSelfTest(void);
 
 //==========================================================================
 //   RNG ALGORITHMS
@@ -5527,7 +5527,7 @@ SymCryptRngAesUninstantiate(
 
 VOID
 SYMCRYPT_CALL
-SymCryptRngAesInstantiateSelftest();
+SymCryptRngAesInstantiateSelftest(void);
 //
 // For FIPS-certified modules, this function should be called before every instantiation.
 // If multiple DRBGs are instantiated 'in quick succession', a single self-test is sufficient
@@ -5537,14 +5537,14 @@ SymCryptRngAesInstantiateSelftest();
 
 VOID
 SYMCRYPT_CALL
-SymCryptRngAesReseedSelftest();
+SymCryptRngAesReseedSelftest(void);
 //
 // FIPS-certified modules should call this function before every call to the reseed function.
 //
 
 VOID
 SYMCRYPT_CALL
-SymCryptRngAesGenerateSelftest();
+SymCryptRngAesGenerateSelftest(void);
 //
 // FIPS-certified modules should call this function at least once on startup, and whenever
 // they want to re-test the generate function.
@@ -5641,7 +5641,7 @@ SymCryptProvideEntropy(
 
 SYMCRYPT_ERROR
 SYMCRYPT_CALL
-SymCryptRdrandStatus();
+SymCryptRdrandStatus(void);
 //
 // Returns SYMCRYPT_NO_ERROR if RdRand is available.
 // returns SYMCRYPT_NOT_IMPLEMENTED if RdRand is not available.
@@ -5695,7 +5695,7 @@ SymCryptRdrandGet(
 
 SYMCRYPT_ERROR
 SYMCRYPT_CALL
-SymCryptRdseedStatus();
+SymCryptRdseedStatus(void);
 //
 // Returns SYMCRYPT_NO_ERROR if RdSeed is available.
 // returns SYMCRYPT_NOT_IMPLEMENTED if RdSeed is not available.
@@ -5767,7 +5767,7 @@ SymCryptXtsAesDecrypt(
 
 VOID
 SYMCRYPT_CALL
-SymCryptXtsAesSelftest();
+SymCryptXtsAesSelftest(void);
 
 
 ////////////////////////////////////////////////////////////////////////////////////////////
@@ -5948,7 +5948,7 @@ SymCryptCallbackRandom(
 
 PVOID
 SYMCRYPT_CALL
-SymCryptCallbackAllocateMutexFastInproc();
+SymCryptCallbackAllocateMutexFastInproc(void);
 //
 // Allocate and initialize a mutex object; returns NULL on failure.
 //
@@ -7767,7 +7767,7 @@ SymCryptRsaPssVerify(
 
 VOID
 SYMCRYPT_CALL
-SymCryptRsaSelftest( );
+SymCryptRsaSelftest(void);
 //
 // FIPS self-test for RSA sign/verify. This function uses a hardcoded key to perform the self-test
 // without having to generate a key. If the self-test fails, SymCryptFatal will be called to
@@ -7824,7 +7824,7 @@ SymCryptDsaVerify(
 
 VOID
 SYMCRYPT_CALL
-SymCryptDsaSelftest( );
+SymCryptDsaSelftest(void);
 //
 // FIPS self-test for DSA sign/verify. This function uses a hardcoded key to perform the self-test
 // without having to generate a key. If the self-test fails, SymCryptFatal will be called to
@@ -7858,7 +7858,7 @@ SymCryptDhSecretAgreement(
 
 VOID
 SYMCRYPT_CALL
-SymCryptDhSecretAgreementSelftest();
+SymCryptDhSecretAgreementSelftest(void);
 //
 // FIPS self-test for DH secret agreement. This function uses two hardcoded keys and a precalculated
 // known answer to perform the self-test without having to generate a key. If the self-test fails,
@@ -7922,7 +7922,7 @@ SymCryptEcDsaVerify(
 
 VOID
 SYMCRYPT_CALL
-SymCryptEcDsaSelftest( );
+SymCryptEcDsaSelftest(void);
 //
 // FIPS self-test for ECDSA sign/verify. This function uses a hardcoded key to perform the self-test
 // without having to generate a key. If the self-test fails, SymCryptFatal will be called to
@@ -7955,7 +7955,7 @@ SymCryptEcDhSecretAgreement(
 
 VOID
 SYMCRYPT_CALL
-SymCryptEcDhSecretAgreementSelftest( );
+SymCryptEcDhSecretAgreementSelftest(void);
 //
 // FIPS self-test for ECDH secret agreement. This function uses two hardcoded keys and a
 // precalculated known answer to perform the self-test without having to generate a key. If the

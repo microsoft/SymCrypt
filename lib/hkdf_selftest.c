@@ -13,7 +13,7 @@ static const BYTE pbResultHkdfSha512[] =
 
 VOID
 SYMCRYPT_CALL
-SymCryptHkdfSelfTest()
+SymCryptHkdfSelfTest(void)
 {
     SYMCRYPT_ALIGN BYTE rbResult[sizeof(pbResultHkdfSha512)];
 

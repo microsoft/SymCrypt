@@ -25,7 +25,7 @@ SYMCRYPT_CPU_FEATURES g_SymCryptCpuFeaturesPresentCheck = 0;
 SYMCRYPT_NOINLINE
 VOID
 SYMCRYPT_CALL
-SymCryptLibraryWasNotInitialized()
+SymCryptLibraryWasNotInitialized(void)
 {
     SymCryptFatal( 'init' );    // Function name helps figure out what the problem is.
 }

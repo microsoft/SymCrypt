@@ -246,7 +246,7 @@ static const BYTE   chacha20KatAnswer[ 3 ] = { 0xb5, 0xe0, 0x54 };
 
 VOID
 SYMCRYPT_CALL
-SymCryptChaCha20Selftest()
+SymCryptChaCha20Selftest(void)
 {
     BYTE buf[3];
     SYMCRYPT_CHACHA20_STATE  state;

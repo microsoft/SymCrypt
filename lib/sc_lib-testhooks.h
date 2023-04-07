@@ -28,18 +28,18 @@ SymCryptDetectCpuFeaturesByCpuid( UINT32 flags );
 
 VOID
 SYMCRYPT_CALL
-SymCryptDetectCpuFeaturesFromRegisters();
+SymCryptDetectCpuFeaturesFromRegisters(void);
 
 VOID
 SYMCRYPT_CALL
-SymCryptDetectCpuFeaturesFromIsProcessorFeaturePresent();
+SymCryptDetectCpuFeaturesFromIsProcessorFeaturePresent(void);
 #endif
 
 #if SYMCRYPT_CPU_ARM64
 
 VOID
 SYMCRYPT_CALL
-SymCryptDetectCpuFeaturesFromRegistersNoTry();
+SymCryptDetectCpuFeaturesFromRegistersNoTry(void);
 
 #endif
 

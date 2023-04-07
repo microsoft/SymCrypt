@@ -100,7 +100,7 @@ static const BYTE desxKnownCiphertext[] = {
 
 VOID
 SYMCRYPT_CALL
-SymCryptDesxSelftest()
+SymCryptDesxSelftest(void)
 {
     SYMCRYPT_DESX_EXPANDED_KEY key;
     BYTE buf[SYMCRYPT_DESX_BLOCK_SIZE];

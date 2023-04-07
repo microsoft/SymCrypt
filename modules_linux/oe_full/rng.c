@@ -15,12 +15,12 @@ __attribute__((weak)) int oe_sgx_get_additional_host_entropy(uint8_t* data, size
 // RDSEED is our SP 800-90B compliant entropy source.
 VOID
 SYMCRYPT_CALL
-SymCryptEntropyFipsInit()
+SymCryptEntropyFipsInit(void)
 {}
 
 VOID
 SYMCRYPT_CALL
-SymCryptEntropyFipsUninit()
+SymCryptEntropyFipsUninit(void)
 {}
 
 VOID
@@ -33,12 +33,12 @@ SymCryptEntropyFipsGet( _Out_writes_( cbResult ) PBYTE pbResult, SIZE_T cbResult
 // urandom is our secure entropy source. This call is implemented by Open Enclave.
 VOID
 SYMCRYPT_CALL
-SymCryptEntropySecureInit()
+SymCryptEntropySecureInit(void)
 {}
 
 VOID
 SYMCRYPT_CALL
-SymCryptEntropySecureUninit()
+SymCryptEntropySecureUninit(void)
 {}
 
 VOID
@@ -58,12 +58,12 @@ SymCryptEntropySecureGet( _Out_writes_( cbResult ) PBYTE pbResult, SIZE_T cbResu
 // Fork is not supported in OE so no need to detect it
 VOID
 SYMCRYPT_CALL
-SymCryptRngForkDetectionInit()
+SymCryptRngForkDetectionInit(void)
 {}
 
 BOOLEAN
 SYMCRYPT_CALL
-SymCryptRngForkDetect()
+SymCryptRngForkDetect(void)
 {
     return FALSE;
 }

@@ -2,7 +2,7 @@ set(SOURCES
     main_exe.cpp
   )
 
-if(SYMCRYPT_TARGET_ARCH MATCHES "AMD64")
+if(SYMCRYPT_TARGET_ARCH MATCHES "AMD64|X86")
   if (CMAKE_C_COMPILER_ID MATCHES "Clang|GNU")
     set_source_files_properties(main_exe.cpp PROPERTIES COMPILE_OPTIONS "-mavx;-mavx2")
   endif()

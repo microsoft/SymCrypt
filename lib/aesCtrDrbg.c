@@ -887,7 +887,7 @@ SymCryptRngAesTestUninstantiate( PSYMCRYPT_RNG_AES_STATE pRngState )
 
 VOID
 SYMCRYPT_CALL
-SymCryptRngAesInstantiateSelftest()
+SymCryptRngAesInstantiateSelftest(void)
 {
     SYMCRYPT_RNG_AES_STATE rng;
 
@@ -901,7 +901,7 @@ SymCryptRngAesInstantiateSelftest()
 
 VOID
 SYMCRYPT_CALL
-SymCryptRngAesReseedSelftest()
+SymCryptRngAesReseedSelftest(void)
 {
     SYMCRYPT_RNG_AES_STATE rng;
 
@@ -915,7 +915,7 @@ SymCryptRngAesReseedSelftest()
 
 VOID
 SYMCRYPT_CALL
-SymCryptRngAesGenerateSelftest()
+SymCryptRngAesGenerateSelftest(void)
 {
     SYMCRYPT_RNG_AES_STATE rng;
 

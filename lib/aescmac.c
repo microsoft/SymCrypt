@@ -237,7 +237,7 @@ static const BYTE aesCmacKat[SYMCRYPT_AES_CMAC_RESULT_SIZE] = {
 
 VOID
 SYMCRYPT_CALL
-SymCryptAesCmacSelftest()
+SymCryptAesCmacSelftest(void)
 {
     SYMCRYPT_AES_CMAC_EXPANDED_KEY xKey;
     BYTE res[SYMCRYPT_AES_CMAC_RESULT_SIZE];

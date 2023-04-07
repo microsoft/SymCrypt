@@ -37,7 +37,7 @@
 
 VOID
 SYMCRYPT_CALL
-SymCryptDetectCpuFeaturesFromRegistersNoTry()
+SymCryptDetectCpuFeaturesFromRegistersNoTry(void)
 {
     ULONG result;
 

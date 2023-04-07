@@ -37,6 +37,7 @@
 #define SYMCRYPT_ANYSIZE_ARRAY               1
 #define SYMCRYPT_NOINLINE __declspec(noinline)
 #define SYMCRYPT_CDECL __cdecl
+#define SYMCRYPT_FASTCALL __fastcall
 
 #define SYMCRYPT_UNALIGNED
 
@@ -58,6 +59,7 @@
 #define SYMCRYPT_NOINLINE
 #define SYMCRYPT_UNALIGNED
 #define SYMCRYPT_CDECL
+#define SYMCRYPT_FASTCALL
 
 #elif __GNUC__
 #undef  SYMCRYPT_GNUC
@@ -74,6 +76,7 @@
 #define SYMCRYPT_NOINLINE           __attribute__ ((noinline))
 #define SYMCRYPT_UNALIGNED
 #define SYMCRYPT_CDECL
+#define SYMCRYPT_FASTCALL           __attribute__((fastcall))
 
 #else
 
@@ -120,7 +123,7 @@
 #undef  SYMCRYPT_CPU_X86
 #define SYMCRYPT_CPU_X86        1
 
-#define SYMCRYPT_CALL           __fastcall
+#define SYMCRYPT_CALL           SYMCRYPT_FASTCALL
 #define SYMCRYPT_ALIGN_VALUE    4
 
 #ifndef _PREFAST_
@@ -292,21 +295,21 @@ C_ASSERT( (SYMCRYPT_ALIGN_VALUE & (SYMCRYPT_ALIGN_VALUE - 1 )) == 0 );
 #define SYMCRYPT_ALIGN_UP( _p ) ((PBYTE) ( ((UINT_PTR) (_p) + SYMCRYPT_ALIGN_VALUE - 1) & ~(SYMCRYPT_ALIGN_VALUE - 1 ) ) )
 
 #if SYMCRYPT_MS_VC
-    #define SYMCRYPT_ALIGN  __declspec(align(SYMCRYPT_ALIGN_VALUE))
-    #define SYMCRYPT_ALIGN_STRUCT SYMCRYPT_ALIGN struct
-    #define SYMCRYPT_ALIGN_AT(x)  __declspec(align(x))
+    #define SYMCRYPT_ALIGN_AT(alignment)                 __declspec(align(alignment))
+    #define SYMCRYPT_ALIGN_TYPE_AT(typename, alignment)  SYMCRYPT_ALIGN_AT(alignment) typename
     #define SYMCRYPT_WEAK_SYMBOL
 #elif SYMCRYPT_GNUC
-    #define SYMCRYPT_ALIGN  __attribute__((aligned(SYMCRYPT_ALIGN_VALUE)))
-    #define SYMCRYPT_ALIGN_STRUCT struct SYMCRYPT_ALIGN
-    #define SYMCRYPT_ALIGN_AT(x) __attribute__((aligned(x)))
-    #define SYMCRYPT_WEAK_SYMBOL __attribute__((weak))
+    #define SYMCRYPT_ALIGN_AT(alignment)                 __attribute__((aligned(alignment)))
+    #define SYMCRYPT_ALIGN_TYPE_AT(typename, alignment)  typename SYMCRYPT_ALIGN_AT(alignment)
+    #define SYMCRYPT_WEAK_SYMBOL                         __attribute__((weak))
 #else
-    #define SYMCRYPT_ALIGN
-    #define SYMCRYPT_ALIGN_STRUCT
-    #define SYMCRYPT_ALIGN_AT(x)
+    #define SYMCRYPT_ALIGN_AT(alignment)
+    #define SYMCRYPT_ALIGN_TYPE_AT(typename, alignment)  typename
     #define SYMCRYPT_WEAK_SYMBOL
 #endif
+#define SYMCRYPT_ALIGN          SYMCRYPT_ALIGN_AT(SYMCRYPT_ALIGN_VALUE)
+#define SYMCRYPT_ALIGN_STRUCT   SYMCRYPT_ALIGN_TYPE_AT(struct, SYMCRYPT_ALIGN_VALUE)
+#define SYMCRYPT_ALIGN_UNION    SYMCRYPT_ALIGN_TYPE_AT(union, SYMCRYPT_ALIGN_VALUE)
 
 
 #define SYMCRYPT_MAX( _a, _b )  ((_a)>(_b)?(_a):(_b))
@@ -419,7 +422,7 @@ extern SYMCRYPT_CPU_FEATURES g_SymCryptCpuFeaturesNotPresent;
 
 SYMCRYPT_CPU_FEATURES
 SYMCRYPT_CALL
-SymCryptCpuFeaturesNeverPresent();
+SymCryptCpuFeaturesNeverPresent(void);
 
 #define SYMCRYPT_CPU_FEATURES_PRESENT( x )   ( ((x) & SymCryptCpuFeaturesNeverPresent()) == 0 && ( (x) & g_SymCryptCpuFeaturesNotPresent ) == 0 )
 
@@ -1611,7 +1614,7 @@ typedef union _SYMCRYPT_GCM_SUPPORTED_BLOCKCIPHER_KEYS
 // __m128i, which works as both the UINT64s, UINT32s, and the __m128i use
 // LSBfirst convention.
 //
-typedef SYMCRYPT_ALIGN union _SYMCRYPT_GF128_ELEMENT {
+typedef SYMCRYPT_ALIGN_UNION _SYMCRYPT_GF128_ELEMENT {
     UINT64 ull[2];
 #if SYMCRYPT_GHASH_ALLOW_XMM
     //
@@ -1732,7 +1735,7 @@ struct _SYMCRYPT_BLOCKCIPHER {
 //
 
 // Nested struct used within SYMCRYPT_SESSION
-typedef SYMCRYPT_ALIGN_STRUCT _SYMCRYPT_SESSION_REPLAY_STATE {
+typedef SYMCRYPT_ALIGN_TYPE_AT(struct, 16) _SYMCRYPT_SESSION_REPLAY_STATE {
     UINT64  replayMask;
     // 64 bit mask representing message numbers previously successfully decrypted up to 63
     // before the most recent message number.
@@ -2862,14 +2865,14 @@ typedef struct _SYMCRYPT_EXTENDED_SAVE_DATA      SYMCRYPT_EXTENDED_SAVE_DATA, *P
 #define SYMCRYPT_ENVIRONMENT_DEFS( envName ) \
 SYMCRYPT_EXTERN_C \
     VOID SYMCRYPT_CALL SymCryptInitEnv##envName( UINT32 version ); \
-    VOID SYMCRYPT_CALL SymCryptInit() \
+    VOID SYMCRYPT_CALL SymCryptInit(void) \
         { SymCryptInitEnv##envName( SYMCRYPT_API_VERSION ); } \
     \
     _Analysis_noreturn_ VOID SYMCRYPT_CALL SymCryptFatalEnv##envName( UINT32 fatalCode ); \
     _Analysis_noreturn_ VOID SYMCRYPT_CALL SymCryptFatal( UINT32 fatalCode ) \
         { SymCryptFatalEnv##envName( fatalCode ); } \
-    SYMCRYPT_CPU_FEATURES SYMCRYPT_CALL SymCryptCpuFeaturesNeverPresentEnv##envName(); \
-    SYMCRYPT_CPU_FEATURES SYMCRYPT_CALL SymCryptCpuFeaturesNeverPresent() \
+    SYMCRYPT_CPU_FEATURES SYMCRYPT_CALL SymCryptCpuFeaturesNeverPresentEnv##envName(void); \
+    SYMCRYPT_CPU_FEATURES SYMCRYPT_CALL SymCryptCpuFeaturesNeverPresent(void) \
         { return SymCryptCpuFeaturesNeverPresentEnv##envName(); } \
     \
     SYMCRYPT_ENVIRONMENT_DEFS_SAVEXMM( envName ) \
@@ -3077,7 +3080,7 @@ extern UINT32 g_SymCryptFipsSelftestsPerformed;
 
 UINT32
 SYMCRYPT_CALL
-SymCryptFipsGetSelftestsPerformed();
+SymCryptFipsGetSelftestsPerformed(void);
 // Returns current value of g_SymCryptFipsSelftestsPerformed so callers may inspect which FIPS
 // algorithm selftests have run
 

@@ -14,7 +14,7 @@ static struct rand_data* g_jitter_entropy_collector = NULL;
 // Initialize Jitter source and allocate entropy collector
 VOID
 SYMCRYPT_CALL
-SymCryptEntropyFipsInit()
+SymCryptEntropyFipsInit(void)
 {
     if (jent_entropy_init() != 0)
     {
@@ -38,7 +38,7 @@ SymCryptEntropyFipsInit()
 // Free entropy collector
 VOID
 SYMCRYPT_CALL
-SymCryptEntropyFipsUninit()
+SymCryptEntropyFipsUninit(void)
 {
     if (g_jitter_entropy_collector != NULL)
     {

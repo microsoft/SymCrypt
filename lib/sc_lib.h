@@ -236,12 +236,12 @@ SymCryptRestoreYmm( _Inout_ PSYMCRYPT_EXTENDED_SAVE_DATA pSaveData );
 
 VOID
 SYMCRYPT_CALL
-SymCryptLibraryWasNotInitialized();
+SymCryptLibraryWasNotInitialized(void);
 
 FORCEINLINE
 VOID
 SYMCRYPT_CALL
-SymCryptCheckLibraryInitialized()
+SymCryptCheckLibraryInitialized(void)
 {
     if( !(g_SymCryptFlags & SYMCRYPT_FLAG_LIB_INITIALIZED)  )
     {
@@ -252,7 +252,7 @@ SymCryptCheckLibraryInitialized()
 FORCEINLINE
 VOID
 SYMCRYPT_CALL
-SymCryptCheckLibraryInitialized()
+SymCryptCheckLibraryInitialized(void)
 {
 }
 #endif
@@ -988,15 +988,15 @@ SymCryptDetectCpuFeaturesByCpuid( UINT32 flags );
 
 VOID
 SYMCRYPT_CALL
-SymCryptDetectCpuFeaturesFromRegisters();
+SymCryptDetectCpuFeaturesFromRegisters(void);
 
 VOID
 SYMCRYPT_CALL
-SymCryptDetectCpuFeaturesFromRegistersNoTry();
+SymCryptDetectCpuFeaturesFromRegistersNoTry(void);
 
 VOID
 SYMCRYPT_CALL
-SymCryptDetectCpuFeaturesFromIsProcessorFeaturePresent();
+SymCryptDetectCpuFeaturesFromIsProcessorFeaturePresent(void);
 
 VOID
 SYMCRYPT_CALL
@@ -3944,7 +3944,7 @@ SymCryptPositiveWidthNafRecoding(
 
 #if !SYMCRYPT_MS_VC
 
-// Ingnore the incompatible pointer types void * to PSYMCRYPT_XXX
+// Ignore the incompatible pointer types void * to PSYMCRYPT_XXX
 #pragma GCC diagnostic ignored "-Wincompatible-pointer-types"
 
 #define FIELD_OFFSET(type,field)    ((UINT32)(uintptr_t)&(((type *)0)->field))

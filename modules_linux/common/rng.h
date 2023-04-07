@@ -8,11 +8,11 @@
 
 VOID
 SYMCRYPT_CALL
-SymCryptRngInit();
+SymCryptRngInit(void);
 
 VOID
 SYMCRYPT_CALL
-SymCryptRngUninit();
+SymCryptRngUninit(void);
 
 //
 // Entropy function declarations
@@ -25,12 +25,12 @@ SymCryptRngUninit();
 // Initializes FIPS entropy source (may do nothing)
 VOID
 SYMCRYPT_CALL
-SymCryptEntropyFipsInit();
+SymCryptEntropyFipsInit(void);
 
 // Uninitializes FIPS entropy source (may do nothing)
 VOID
 SYMCRYPT_CALL
-SymCryptEntropyFipsUninit();
+SymCryptEntropyFipsUninit(void);
 
 // Fills pbResult with entropy from the FIPS entropy source, which is SP 800-90B compliant source
 VOID
@@ -40,12 +40,12 @@ SymCryptEntropyFipsGet( _Out_writes_( cbResult ) PBYTE pbResult, SIZE_T cbResult
 // Initializes secure entropy source (may do nothing)
 VOID
 SYMCRYPT_CALL
-SymCryptEntropySecureInit();
+SymCryptEntropySecureInit(void);
 
 // Uninitializes secure entropy source (may do nothing)
 VOID
 SYMCRYPT_CALL
-SymCryptEntropySecureUninit();
+SymCryptEntropySecureUninit(void);
 
 // Fills pbResult with entropy from the secure entropy source.
 VOID
@@ -62,10 +62,10 @@ SymCryptEntropySecureGet( _Out_writes_( cbResult ) PBYTE pbResult, SIZE_T cbResu
 // Initializes fork detection system (may do nothing)
 VOID
 SYMCRYPT_CALL
-SymCryptRngForkDetectionInit();
+SymCryptRngForkDetectionInit(void);
 
 // Returns true if a fork has been detected since last call to SymCryptRngForkDetectionInit or
 // SymCryptRngForkDetect. (may always return false)
 BOOLEAN
 SYMCRYPT_CALL
-SymCryptRngForkDetect();
+SymCryptRngForkDetect(void);

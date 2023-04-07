@@ -382,7 +382,7 @@ SymCryptAesInitMatrixMultiplyTable( _Out_   SYMCRYPT_ALIGN BYTE MatrixMult[256][
 static
 VOID
 SYMCRYPT_CALL
-SymCryptAesInitialize()
+SymCryptAesInitialize(void)
 {
     int i,j;
     BYTE S;

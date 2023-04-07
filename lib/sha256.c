@@ -339,7 +339,7 @@ const BYTE SymCryptSha256KATAnswer[ 32 ] = {
 
 VOID
 SYMCRYPT_CALL
-SymCryptSha256Selftest()
+SymCryptSha256Selftest(void)
 {
     BYTE result[SYMCRYPT_SHA256_RESULT_SIZE];
 
@@ -364,9 +364,9 @@ SymCryptSha256Selftest()
 //
 
 //
-// Enable frame pointer ommision to free up an extra register on X86.
+// Enable frame pointer omission to free up an extra register on X86.
 //
-#if SYMCRYPT_CPU_X86
+#if SYMCRYPT_CPU_X86 && SYMCRYPT_MS_VC
 #pragma optimize( "y", on )
 #endif
 
@@ -791,7 +791,7 @@ SymCryptSha256AppendBlocks_ul2(
 //
 // Don't omit frame pointer for XMM code; it isn't register-starved as much
 //
-#if SYMCRYPT_CPU_X86
+#if SYMCRYPT_CPU_X86 && SYMCRYPT_MS_VC
 #pragma optimize( "y", off )
 #endif
 

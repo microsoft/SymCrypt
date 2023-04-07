@@ -8,7 +8,7 @@
 #include "precomp.h"
 
 
-SYMCRYPT_CPU_FEATURES SYMCRYPT_CALL SymCryptCpuFeaturesNeverPresentEnvLinuxUsermode()
+SYMCRYPT_CPU_FEATURES SYMCRYPT_CALL SymCryptCpuFeaturesNeverPresentEnvLinuxUsermode(void)
 {
     return 0;
 }
@@ -49,11 +49,11 @@ SymCryptInitEnvLinuxUsermode( UINT32 version )
 // Opened issue against clang here: https://github.com/llvm/llvm-project/issues/54816
 // If we introduce a direct reference to it in our code then clang does figure out it must be linked
 // without PLT
-void __stack_chk_fail();
+void __stack_chk_fail(void);
 
 // On X86, __stack_chk_fail_local is used as a wrapper for __stack_chk_fail. The compiler should
 // generate it for us, but for some reason it is not doing so on gcc 9.4.0.
-void __stack_chk_fail_local()
+void __stack_chk_fail_local(void)
 {
     __stack_chk_fail();
 }

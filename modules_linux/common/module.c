@@ -10,7 +10,7 @@
 SYMCRYPT_ENVIRONMENT_LINUX_USERMODE
 
 // Module main function executed by the runtime upon load
-VOID __attribute__((constructor)) SymCryptModuleMain()
+VOID __attribute__((constructor)) SymCryptModuleMain(void)
 {
     SymCryptInit();
 
@@ -70,7 +70,7 @@ VOID __attribute__((constructor)) SymCryptModuleMain()
     }
 }
 
-VOID __attribute__((destructor)) SymCryptModuleDestructor()
+VOID __attribute__((destructor)) SymCryptModuleDestructor(void)
 {
     SymCryptRngUninit();
 }
@@ -106,7 +106,7 @@ SymCryptCallbackRandom( PBYTE pbBuffer, SIZE_T cbBuffer )
 
 PVOID
 SYMCRYPT_CALL
-SymCryptCallbackAllocateMutexFastInproc()
+SymCryptCallbackAllocateMutexFastInproc(void)
 {
     PVOID ptr = malloc(sizeof(pthread_mutex_t));
 

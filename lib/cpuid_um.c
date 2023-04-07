@@ -23,7 +23,7 @@
 
 VOID
 SYMCRYPT_CALL
-SymCryptDetectCpuFeaturesFromIsProcessorFeaturePresent()
+SymCryptDetectCpuFeaturesFromIsProcessorFeaturePresent(void)
 {
     if( IsProcessorFeaturePresent(PF_ARM_V8_CRYPTO_INSTRUCTIONS_AVAILABLE) )
     {
@@ -48,7 +48,7 @@ SymCryptDetectCpuFeaturesFromIsProcessorFeaturePresent()
 
 VOID
 SYMCRYPT_CALL
-SymCryptDetectCpuFeaturesFromIsProcessorFeaturePresent()
+SymCryptDetectCpuFeaturesFromIsProcessorFeaturePresent(void)
 {
     unsigned long hwcaps = getauxval( AT_HWCAP );
 

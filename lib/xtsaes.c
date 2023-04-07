@@ -987,7 +987,7 @@ static const BYTE SymCryptXtsAesCiphertext[32] = {
 
 VOID
 SYMCRYPT_CALL
-SymCryptXtsAesSelftest()
+SymCryptXtsAesSelftest(void)
 {
     SYMCRYPT_XTS_AES_EXPANDED_KEY key;
     BYTE buf[32];

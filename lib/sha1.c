@@ -458,7 +458,7 @@ static const BYTE sha1KATAnswer[ 20 ] = {
 
 VOID
 SYMCRYPT_CALL
-SymCryptSha1Selftest()
+SymCryptSha1Selftest(void)
 {
     BYTE result[SYMCRYPT_SHA1_RESULT_SIZE];
 

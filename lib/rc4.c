@@ -137,7 +137,7 @@ static const BYTE   rc4KatAnswer[ 3 ] = { 0x71, 0x46, 0x92 };
 
 VOID
 SYMCRYPT_CALL
-SymCryptRc4Selftest()
+SymCryptRc4Selftest(void)
 {
     BYTE buf[3];
     SYMCRYPT_RC4_STATE  state;

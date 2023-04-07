@@ -228,7 +228,7 @@ SymCryptRestoreXmmEnvUnittest( _Inout_ PSYMCRYPT_EXTENDED_SAVE_DATA pSaveData )
 // We can disable these tests through a flag to get reasonable performance measurements on the same code.
 //
 
-typedef SYMCRYPT_ALIGN_AT(32) struct _SYMCRYPT_ENV_YMM_SAVE_DATA_REGS {
+typedef SYMCRYPT_ALIGN_TYPE_AT(struct, 32) _SYMCRYPT_ENV_YMM_SAVE_DATA_REGS {
     __m256i ymm[16];         // 16 for the XMM registers
     SYMCRYPT_MAGIC_FIELD
 } SYMCRYPT_ENV_YMM_SAVE_DATA_REGS, *PSYMCRYPT_ENV_YMM_SAVE_DATA_REGS;

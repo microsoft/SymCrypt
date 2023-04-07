@@ -489,7 +489,7 @@ static const BYTE   md5KATAnswer[ 16 ] = {
 
 VOID
 SYMCRYPT_CALL
-SymCryptMd5Selftest()
+SymCryptMd5Selftest(void)
 {
     BYTE result[SYMCRYPT_MD5_RESULT_SIZE];
 

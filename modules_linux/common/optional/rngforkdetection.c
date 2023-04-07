@@ -13,7 +13,7 @@ pid_t g_pid = 0;
 // Sets the initial pid
 VOID
 SYMCRYPT_CALL
-SymCryptRngForkDetectionInit()
+SymCryptRngForkDetectionInit(void)
 {
     g_pid = getpid();
 }
@@ -21,7 +21,7 @@ SymCryptRngForkDetectionInit()
 // Returns true if pid has changed since init or last call
 BOOLEAN
 SYMCRYPT_CALL
-SymCryptRngForkDetect()
+SymCryptRngForkDetect(void)
 {
     BOOLEAN forkDetected = FALSE;
     pid_t currPid = getpid();

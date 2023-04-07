@@ -50,7 +50,7 @@ typedef struct
     size_t pltRelaEntryCount;
 } Elf64_Rela_Info;
 
-void SymCryptModuleUndoRelocation(
+VOID SymCryptModuleUndoRelocation(
     _In_ const Elf64_Addr module_base,
     _Inout_ Elf64_Xword* const target,
     _In_ const Elf64_Rela* rela )
@@ -86,7 +86,7 @@ void SymCryptModuleUndoRelocation(
     *target = replacement;
 }
 
-void SymCryptModuleFindRelocationInfo(
+VOID SymCryptModuleFindRelocationInfo(
     _In_ const Elf64_Dyn* const dynStart,
     _Out_ Elf64_Rela_Info* relaInfo)
 {
@@ -247,7 +247,7 @@ size_t SymCryptModuleProcessSegmentWithRelocations(
     return hashableSectionSize;
 }
 
-void SymCryptModuleDoHmac(
+VOID SymCryptModuleDoHmac(
     _In_ const Elf64_Addr module_base,
     _In_ const Elf64_Dyn* const dynStart,
     _In_ const Elf64_Rela_Info* const relaInfo )
@@ -303,7 +303,7 @@ void SymCryptModuleDoHmac(
         memcmp( actualDigest, SymCryptVolatileFipsHmacDigest, SYMCRYPT_HMAC_SHA256_RESULT_SIZE ) == 0 );
 }
 
-void SymCryptModuleVerifyIntegrity()
+VOID SymCryptModuleVerifyIntegrity(void)
 {
     // Verify that our placeholder values were modified after compile time. The build script
     // should have replaced the placeholder values with their expected values

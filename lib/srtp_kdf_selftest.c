@@ -32,7 +32,7 @@ static const BYTE pbResultAes128[] =
 
 VOID
 SYMCRYPT_CALL
-SymCryptSrtpKdfSelfTest()
+SymCryptSrtpKdfSelfTest(void)
 {
     SYMCRYPT_SRTPKDF_EXPANDED_KEY expandedKey;
     SYMCRYPT_ALIGN BYTE rbResultAes128[sizeof(pbResultAes128)];
