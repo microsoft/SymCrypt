@@ -1024,6 +1024,13 @@ SymCryptSha512AppendBlocks_ull3(
 //
 #if SYMCRYPT_CPU_X86 // only on X86; AMD64 is faster when using UINT64s
 
+#if SYMCRYPT_MS_VC
+#ifndef _mm_storeu_si64
+    // Workaround missing intrinsic on some versions of MSVC
+    #define _mm_storeu_si64(p, a) (_mm_storel_epi64((__m128i*)(p), (a)))
+#endif
+#endif
+
 #define XMMADD( _a, _b ) _mm_add_epi64((_a), (_b))
 #define XMMAND( _a, _b ) _mm_and_si128((_a), (_b))
 #define XMMOR(  _a, _b ) _mm_or_si128((_a), (_b))

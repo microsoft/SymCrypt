@@ -1568,7 +1568,7 @@ typedef union _SYMCRYPT_GCM_SUPPORTED_BLOCKCIPHER_KEYS
 
 
 #if SYMCRYPT_CPU_ARM
-#include <arm_neon.h>
+    #include <arm_neon.h>
 #elif SYMCRYPT_CPU_ARM64
 
     #if SYMCRYPT_MS_VC
@@ -1734,8 +1734,20 @@ struct _SYMCRYPT_BLOCKCIPHER {
 // yet used, and 1 means already used in a successful decryption call
 //
 
+#if SYMCRYPT_CPU_AMD64 | SYMCRYPT_CPU_ARM64
+#define SYMCRYPT_USE_CAS128 (1)
+
+// For CompareAndSwap128 method, SYMCRYPT_SESSION must be aligned to 16B
+#define SYMCRYPT_ALIGN_SESSION SYMCRYPT_ALIGN_TYPE_AT(struct, 16)
+#else
+#define SYMCRYPT_USE_CAS128 (0)
+
+// For method with only 64-bit atomics, SYMCRYPT_SESSION must be aligned to 8B
+#define SYMCRYPT_ALIGN_SESSION SYMCRYPT_ALIGN_TYPE_AT(struct, 8)
+#endif
+
 // Nested struct used within SYMCRYPT_SESSION
-typedef SYMCRYPT_ALIGN_TYPE_AT(struct, 16) _SYMCRYPT_SESSION_REPLAY_STATE {
+typedef SYMCRYPT_ALIGN_SESSION _SYMCRYPT_SESSION_REPLAY_STATE {
     UINT64  replayMask;
     // 64 bit mask representing message numbers previously successfully decrypted up to 63
     // before the most recent message number.
@@ -1745,7 +1757,7 @@ typedef SYMCRYPT_ALIGN_TYPE_AT(struct, 16) _SYMCRYPT_SESSION_REPLAY_STATE {
 } SYMCRYPT_SESSION_REPLAY_STATE, * PSYMCRYPT_SESSION_REPLAY_STATE;
 typedef const SYMCRYPT_SESSION_REPLAY_STATE * PCSYMCRYPT_SESSION_REPLAY_STATE;
 
-typedef SYMCRYPT_ALIGN_STRUCT _SYMCRYPT_SESSION {
+typedef SYMCRYPT_ALIGN_SESSION _SYMCRYPT_SESSION {
     SYMCRYPT_SESSION_REPLAY_STATE replayState;
     // nested replayState struct is to improve code clarity in SymCryptSessionDecryptUpdate*
 
@@ -1769,17 +1781,10 @@ typedef SYMCRYPT_ALIGN_STRUCT _SYMCRYPT_SESSION {
 // (i.e. we would only potentially get a spurious success using a repeated IV when there are
 // >2^32 concurrent threads!)
 
-#if SYMCRYPT_CPU_AMD64 | SYMCRYPT_CPU_ARM64
-#define SYMCRYPT_USE_CAS128 (1)
-
-C_ASSERT(SYMCRYPT_ALIGN_VALUE >= 16);
-// For CompareAndSwap128 method, SYMCRYPT_SESSION must be aligned to 16B
-
+#if SYMCRYPT_USE_CAS128
 C_ASSERT(SYMCRYPT_FIELD_OFFSET(SYMCRYPT_SESSION, replayState.replayMask) == 0);
 C_ASSERT(SYMCRYPT_FIELD_OFFSET(SYMCRYPT_SESSION, replayState.messageNumber) == 8);
 // For CompareAndSwap128 method, replayMask and messageNumber must be tightly packed
-#else
-#define SYMCRYPT_USE_CAS128 (0)
 #endif
 
 //

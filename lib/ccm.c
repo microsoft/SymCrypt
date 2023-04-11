@@ -16,6 +16,10 @@
 #define AUTHDATA_16BIT_LIMIT    ((1<<16) - (1<<8))
 #define AUTHDATA_32BIT_LIMIT    (1ull << 32)
 
+// Compile time BOOL statically determines if we need to check cbAuthData < AUTHDATA_32BIT_LIMIT
+// Used to suppress MSVC C4127 and clang Wtautological-constant-out-of-range-compare on 32b platforms
+const BOOL fcbAuthDataLt32bitLimitStatic = SIZE_T_MAX < AUTHDATA_32BIT_LIMIT;
+
 #define CCM_BLOCK_MOD_MASK      (SYMCRYPT_CCM_BLOCK_SIZE - 1)
 #define CCM_BLOCK_ROUND_MASK    (~CCM_BLOCK_MOD_MASK)
 
@@ -398,7 +402,7 @@ SymCryptCcmInit(
         //
         SYMCRYPT_STORE_MSBFIRST16( &tmpBuf[0], (UINT16) cbAuthData );
         SymCryptCcmAddMacData( pState, &tmpBuf[0], 2 );
-    } else if( SIZE_T_MAX < AUTHDATA_32BIT_LIMIT || cbAuthData < AUTHDATA_32BIT_LIMIT )
+    } else if( fcbAuthDataLt32bitLimitStatic || cbAuthData < AUTHDATA_32BIT_LIMIT )
     {
         //
         // 32-bit length
