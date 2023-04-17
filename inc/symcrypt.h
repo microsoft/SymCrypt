@@ -117,7 +117,15 @@ extern "C" {
 // In some situations this library will detect improper parameters or
 // calling sequences. In those situations the library will generate a fatal
 // error, which leads to an abrupt termination of the process (bugcheck in
-// kernel mode).
+// kernel mode). Exceptional circumstances may also induce fatal errors within
+// the library (i.e. a caller provided buffer causes an access violation when
+// it is read, or the library is called without sufficient stack space for the
+// requested operation).
+// If a fatal error is generated within the library, the internal state of the
+// library may be inconsistent (i.e. there may be outstanding memory allocations
+// that will never be freed, or a lock may have been taken which will never be
+// released). Callers should not catch fatal errors and continue executing, as
+// there is no guarantee of stability.
 // The checked version of the library has additional error checking which detects
 // the most common errors. We strongly recommend that callers build and test a
 // checked version of their binary to catch these common errors.
