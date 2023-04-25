@@ -1,3 +1,10 @@
+# Version 103.3.0
+
+- Add SymCryptEcurveCreate and SymCryptEcurveBufferSizesFromParams
+- Address some problems with building for 32-bit platforms
+- Update documentation around exceptions
+- Fix some Windows test module issues
+
 # Version 103.2.0
 
 - Add HMAC-SHA-3 implementations
