@@ -80,8 +80,12 @@ jobs:
           apt-get install -y binutils-aarch64-linux-gnu gcc-aarch64-linux-gnu g++-aarch64-linux-gnu qemu-user
         displayName: 'Install arm64 cross-compilation tools'
 
+    - task: PipAuthenticate@1
+      inputs:
+        artifactFeeds: 'OS/SymCrypt_PublicPackages'
+
     - script: |
-        pip install -r scripts/requirements.txt
+        pip install -v -r scripts/requirements.txt
       displayName: 'Install Python dependencies'
 
     - task: PythonScript@0
