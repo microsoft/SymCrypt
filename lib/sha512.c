@@ -1372,26 +1372,27 @@ SymCryptSha512AppendBlocks(
 {
 #if SYMCRYPT_CPU_AMD64
     
-    SYMCRYPT_EXTENDED_SAVE_DATA SaveData;
+    // Temporarily disabling use of Ymm in SHA2
+    // SYMCRYPT_EXTENDED_SAVE_DATA SaveData;
 
-    if (SYMCRYPT_CPU_FEATURES_PRESENT(SYMCRYPT_CPU_FEATURE_AVX512 | SYMCRYPT_CPU_FEATURE_BMI2) &&
-        SymCryptSaveYmm(&SaveData) == SYMCRYPT_NO_ERROR)
-    {
-        SymCryptSha512AppendBlocks_ymm_avx512vl_asm(pChain, pbData, cbData, pcbRemaining);
+    // if (SYMCRYPT_CPU_FEATURES_PRESENT(SYMCRYPT_CPU_FEATURE_AVX512 | SYMCRYPT_CPU_FEATURE_BMI2) &&
+    //     SymCryptSaveYmm(&SaveData) == SYMCRYPT_NO_ERROR)
+    // {
+    //     SymCryptSha512AppendBlocks_ymm_avx512vl_asm(pChain, pbData, cbData, pcbRemaining);
 
-        SymCryptRestoreYmm(&SaveData);
-    }
-    else if (SYMCRYPT_CPU_FEATURES_PRESENT(SYMCRYPT_CPU_FEATURE_AVX2 | SYMCRYPT_CPU_FEATURE_BMI2) &&
-        SymCryptSaveYmm(&SaveData) == SYMCRYPT_NO_ERROR)
-    {
-        //SymCryptSha512AppendBlocks_ymm_1block(pChain, pbData, cbData, pcbRemaining);
-        //SymCryptSha512AppendBlocks_ymm_2blocks(pChain, pbData, cbData, pcbRemaining);
-        //SymCryptSha512AppendBlocks_ymm_4blocks(pChain, pbData, cbData, pcbRemaining);
-        SymCryptSha512AppendBlocks_ymm_avx2_asm(pChain, pbData, cbData, pcbRemaining);
+    //     SymCryptRestoreYmm(&SaveData);
+    // }
+    // else if (SYMCRYPT_CPU_FEATURES_PRESENT(SYMCRYPT_CPU_FEATURE_AVX2 | SYMCRYPT_CPU_FEATURE_BMI2) &&
+    //     SymCryptSaveYmm(&SaveData) == SYMCRYPT_NO_ERROR)
+    // {
+    //     //SymCryptSha512AppendBlocks_ymm_1block(pChain, pbData, cbData, pcbRemaining);
+    //     //SymCryptSha512AppendBlocks_ymm_2blocks(pChain, pbData, cbData, pcbRemaining);
+    //     //SymCryptSha512AppendBlocks_ymm_4blocks(pChain, pbData, cbData, pcbRemaining);
+    //     SymCryptSha512AppendBlocks_ymm_avx2_asm(pChain, pbData, cbData, pcbRemaining);
 
-        SymCryptRestoreYmm(&SaveData);
-    }
-    else
+    //     SymCryptRestoreYmm(&SaveData);
+    // }
+    // else
     {
         SymCryptSha512AppendBlocks_ull( pChain, pbData, cbData, pcbRemaining );
         //SymCryptSha512AppendBlocks_ull2( pChain, pbData, cbData, pcbRemaining );

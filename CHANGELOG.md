@@ -1,3 +1,7 @@
+# Version 103.3.1
+
+- Temporarily disable use of AVX in SHA-2
+
 # Version 103.3.0
 
 - Add SymCryptEcurveCreate and SymCryptEcurveBufferSizesFromParams

@@ -1631,15 +1631,16 @@ SymCryptSha256AppendBlocks(
 
         SymCryptRestoreXmm(&SaveData);
     }
-    else if (SYMCRYPT_CPU_FEATURES_PRESENT(SYMCRYPT_CPU_FEATURE_AVX2 | SYMCRYPT_CPU_FEATURE_BMI2) &&
-            SymCryptSaveYmm(&SaveData) == SYMCRYPT_NO_ERROR)
-    {
-        //SymCryptSha256AppendBlocks_ul1(pChain, pbData, cbData, pcbRemaining);
-        //SymCryptSha256AppendBlocks_ymm_8blocks(pChain, pbData, cbData, pcbRemaining);
-        SymCryptSha256AppendBlocks_ymm_avx2_asm(pChain, pbData, cbData, pcbRemaining);
+    // Temporarily disabling use of Ymm in SHA2
+    // else if (SYMCRYPT_CPU_FEATURES_PRESENT(SYMCRYPT_CPU_FEATURE_AVX2 | SYMCRYPT_CPU_FEATURE_BMI2) &&
+    //         SymCryptSaveYmm(&SaveData) == SYMCRYPT_NO_ERROR)
+    // {
+    //     //SymCryptSha256AppendBlocks_ul1(pChain, pbData, cbData, pcbRemaining);
+    //     //SymCryptSha256AppendBlocks_ymm_8blocks(pChain, pbData, cbData, pcbRemaining);
+    //     SymCryptSha256AppendBlocks_ymm_avx2_asm(pChain, pbData, cbData, pcbRemaining);
 
-        SymCryptRestoreYmm(&SaveData);
-    }
+    //     SymCryptRestoreYmm(&SaveData);
+    // }
     else if (SYMCRYPT_CPU_FEATURES_PRESENT(SYMCRYPT_CPU_FEATURE_SSSE3 | SYMCRYPT_CPU_FEATURE_BMI2) &&
             SymCryptSaveXmm(&SaveData) == SYMCRYPT_NO_ERROR)
     {
