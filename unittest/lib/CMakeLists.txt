@@ -1,5 +1,6 @@
 # Request C++17 standard to enable `if constexpr`
 set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 set(SOURCES
     main.cpp

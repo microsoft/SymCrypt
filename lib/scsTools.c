@@ -97,7 +97,7 @@ SymCryptRoundUpPow2Sizet( SIZE_T v )
 {
     SIZE_T res;
 
-    SYMCRYPT_ASSERT( v <= (SIZE_T_MAX / 2) + 1)
+    SYMCRYPT_ASSERT( v <= (SIZE_T_MAX / 2) + 1);
     // If v is very large, then the result res might overflow.
     // As SIZE_T is an unsigned type, the overflow is defined to
     // be modulo 2^n for some n, and therefore we'll get res==0

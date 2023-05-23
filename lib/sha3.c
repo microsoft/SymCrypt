@@ -327,7 +327,7 @@ SymCryptKeccakAppend(
     SYMCRYPT_ASSERT(cbData < sizeof(UINT64));
     SymCryptKeccakAppendBytes(pState, pbData, cbData);
 
-    SYMCRYPT_ASSERT(pState->stateIndex != pState->inputBlockSize)
+    SYMCRYPT_ASSERT(pState->stateIndex != pState->inputBlockSize);
 }
 
 //

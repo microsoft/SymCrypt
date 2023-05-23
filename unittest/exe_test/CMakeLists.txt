@@ -5,8 +5,6 @@ set(SOURCES
 
 set_source_files_properties(symcryptunittest.rc PROPERTIES LANGUAGE RC)
 
-add_compile_options(-DTESTDRIVER_NAME=\"SymCryptDriver_test.sys\")
-
 add_executable(symcryptunittest ${SOURCES})
 target_link_libraries(symcryptunittest symcryptunittest_lib symcrypt_common bcrypt ntdll)
 

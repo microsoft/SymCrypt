@@ -49,7 +49,7 @@ jobs:
     inputs:
       scriptSource: 'filePath'
       scriptPath: scripts\build.py
-      arguments: 'bin --arch ${{ parameters.arch }} --config ${{ parameters.config }} ${{ parameters.additionalArgs }}'
+      arguments: 'cmake bin --arch ${{ parameters.arch }} --config ${{ parameters.config }} ${{ parameters.additionalArgs }}'
       workingDirectory: $(Build.SourcesDirectory)
 
   - ${{ if ne(parameters.skipTests, true) }}:

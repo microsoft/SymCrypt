@@ -41,7 +41,8 @@
     #include <set>
     #include <type_traits>
 
-    #include "precomp_iOS.h"
+    #define ALIGNED_ALLOC( alignment, size ) aligned_alloc( alignment, size )
+    #define ALIGNED_FREE( ptr ) free( ptr )
 
 #elif defined(__GNUC__)
 
@@ -134,9 +135,12 @@
     #define InterlockedIncrement64(ptr) __sync_fetch_and_add(ptr, 1)
     #define InterlockedDecrement64(ptr) __sync_fetch_and_sub(ptr, 1)
 
+    #define ALIGNED_ALLOC( alignment, size ) aligned_alloc( alignment, size )
+    #define ALIGNED_FREE( ptr ) free( ptr )
+
     #include <unistd.h>
     #define Sleep(x) sleep((x)/1000)
-#else
+#else // MSVC
     #include <ntstatus.h>
 
     // Ensure that windows.h doesn't re-define the status_* symbols
@@ -178,6 +182,9 @@
     #ifndef PRId64
     #define PRId64       "lld"
     #endif
+
+    #define ALIGNED_ALLOC( alignment, size ) _aligned_malloc( size, alignment )
+    #define ALIGNED_FREE( ptr ) _aligned_free( ptr )
 
 #endif
 
@@ -1859,8 +1866,6 @@ extern const SELFTEST_INFO g_selfTests_allocating[];
 
 VOID
 runTestThread( VOID * seed );
-
-extern PSTR testDriverName;
 
 VOID
 printHexArray( PCBYTE pData, SIZE_T nElements, SIZE_T elementSize );

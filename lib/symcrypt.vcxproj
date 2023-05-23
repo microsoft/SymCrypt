@@ -1,0 +1,195 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="Current" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup Label="Globals">
+    <ProjectGuid>{7C3BD5D2-7213-4CFA-B6CB-EB41623601BC}</ProjectGuid>
+    <TemplateGuid>{0a049372-4c4d-4ea0-a64e-dc6ad88ceca1}</TemplateGuid>
+    <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
+    <MinimumVisualStudioVersion>12.0</MinimumVisualStudioVersion>
+    <UseInternalMSUniCrtPackage>true</UseInternalMSUniCrtPackage>
+    <TargetName>symcrypt</TargetName>
+    <UndockedType>lib</UndockedType>
+    <UndockedDir>$(SolutionDir)msbuild\</UndockedDir>
+    <UndockedOut>$(SolutionDir)</UndockedOut>
+    <SymCryptKernelTarget>true</SymCryptKernelTarget>
+    <IncludePath>$(ProjectDir);$(IncludePath);</IncludePath>
+  </PropertyGroup>
+  <Import Project="$(UndockedDir)symcrypt.undocked.props" />
+  <ItemDefinitionGroup>
+    <ClCompile>
+      <AdditionalIncludeDirectories>$(ProjectDir);</AdditionalIncludeDirectories>
+    </ClCompile>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <ClCompile Include="3des.c" />
+    <ClCompile Include="aes-asm.c" />
+    <ClCompile Include="aes-c.c" />
+    <ClCompile Include="aes-default-bc.c" />
+    <ClCompile Include="aes-default.c" />
+    <ClCompile Include="aes-key.c" />
+    <ClCompile Include="aes-neon.c" />
+    <ClCompile Include="aes-selftest.c" />
+    <ClCompile Include="aes-xmm.c" />
+    <ClCompile Include="aes-ymm.c" />
+    <ClCompile Include="aescmac.c" />
+    <ClCompile Include="aesCtrDrbg.c" />
+    <ClCompile Include="AesTables.c" />
+    <ClCompile Include="a_dispatch.c" />
+    <ClCompile Include="blockciphermodes.c" />
+    <ClCompile Include="ccm.c" />
+    <ClCompile Include="chacha20.c" />
+    <ClCompile Include="chacha20_poly1305.c" />
+    <ClCompile Include="cpuid.c" />
+    <ClCompile Include="cpuid_notry.c" />
+    <ClCompile Include="cpuid_um.c" />
+    <ClCompile Include="crt.c" />
+    <ClCompile Include="DesTables.c" />
+    <ClCompile Include="desx.c" />
+    <ClCompile Include="dh.c" />
+    <ClCompile Include="dlgroup.c" />
+    <ClCompile Include="dlkey.c" />
+    <ClCompile Include="dl_internal_groups.c" />
+    <ClCompile Include="dsa.c" />
+    <ClCompile Include="eckey.c" />
+    <ClCompile Include="ecpoint.c" />
+    <ClCompile Include="ecurve.c" />
+    <ClCompile Include="ec_dh.c" />
+    <ClCompile Include="ec_dispatch.c" />
+    <ClCompile Include="ec_dsa.c" />
+    <ClCompile Include="ec_internal_curves.c" />
+    <ClCompile Include="ec_montgomery.c" />
+    <ClCompile Include="ec_mul.c" />
+    <ClCompile Include="ec_short_weierstrass.c" />
+    <ClCompile Include="ec_twisted_edwards.c" />
+    <ClCompile Include="env_generic.c" />
+    <ClCompile Include="env_Win10Sgx.c" />
+    <ClCompile Include="env_windowsBootLib.c" />
+    <ClCompile Include="env_windowsKernelDebugger.c" />
+    <ClCompile Include="env_windowsKernelModeWin7.c" />
+    <ClCompile Include="env_windowsKernelModeWin8_1.c" />
+    <ClCompile Include="env_windowsUserModeWin7.c" />
+    <ClCompile Include="env_windowsUserModeWin8_1.c" />
+    <ClCompile Include="equal.c" />
+    <ClCompile Include="FatalIntercept.c" />
+    <ClCompile Include="fdef369_mod.c" />
+    <ClCompile Include="fdef_general.c" />
+    <ClCompile Include="fdef_int.c" />
+    <ClCompile Include="fdef_mod.c" />
+    <ClCompile Include="fips_selftest.c" />
+    <ClCompile Include="gcm.c" />
+    <ClCompile Include="gen_int.c" />
+    <ClCompile Include="ghash.c" />
+    <ClCompile Include="hash.c" />
+    <ClCompile Include="hkdf.c" />
+    <ClCompile Include="hkdf_selftest.c" />
+    <ClCompile Include="hmac.c" />
+    <ClCompile Include="hmacmd5.c" />
+    <ClCompile Include="hmacsha1.c" />
+    <ClCompile Include="hmacsha256.c" />
+    <ClCompile Include="hmacsha384.c" />
+    <ClCompile Include="hmacsha512.c" />
+    <ClCompile Include="hmacsha3_256.c" />
+    <ClCompile Include="hmacsha3_384.c" />
+    <ClCompile Include="hmacsha3_512.c" />
+    <ClCompile Include="IEEE802_11SaeCustom.c" />
+    <ClCompile Include="kmac.c" />
+    <ClCompile Include="libmain.c" />
+    <ClCompile Include="marvin32.c" />
+    <ClCompile Include="md2.c" />
+    <ClCompile Include="md4.c" />
+    <ClCompile Include="md5.c" />
+    <ClCompile Include="modexp.c" />
+    <ClCompile Include="paddingPkcs7.c" />
+    <ClCompile Include="parhash.c" />
+    <ClCompile Include="pbkdf2.c" />
+    <ClCompile Include="pbkdf2_hmacsha1.c" />
+    <ClCompile Include="pbkdf2_hmacsha256.c" />
+    <ClCompile Include="poly1305.c" />
+    <ClCompile Include="primes.c" />
+    <ClCompile Include="rc2.c" />
+    <ClCompile Include="rc4.c" />
+    <ClCompile Include="rdrand.c" />
+    <ClCompile Include="rdseed.c" />
+    <ClCompile Include="recoding.c" />
+    <ClCompile Include="rsakey.c" />
+    <ClCompile Include="rsa_enc.c" />
+    <ClCompile Include="rsa_padding.c" />
+    <ClCompile Include="ScsTable.c" />
+    <ClCompile Include="scsTools.c" />
+    <ClCompile Include="selftest.c" />
+    <ClCompile Include="session.c" />
+    <ClCompile Include="sha1.c" />
+    <ClCompile Include="sha256-xmm.c" />
+    <ClCompile Include="sha256-ymm.c" />
+    <ClCompile Include="sha256.c" />
+    <ClCompile Include="sha256Par-ymm.c" />
+    <ClCompile Include="sha256Par.c" />
+    <ClCompile Include="sha3.c" />
+    <ClCompile Include="sha3_256.c" />
+    <ClCompile Include="sha3_384.c" />
+    <ClCompile Include="sha3_512.c" />
+    <ClCompile Include="sha512-ymm.c" />
+    <ClCompile Include="sha512.c" />
+    <ClCompile Include="sha512Par-ymm.c" />
+    <ClCompile Include="sha512Par.c" />
+    <ClCompile Include="shake.c" />
+    <ClCompile Include="sp800_108.c" />
+    <ClCompile Include="sp800_108_hmacsha1.c" />
+    <ClCompile Include="sp800_108_hmacsha256.c" />
+    <ClCompile Include="sp800_108_hmacsha512.c" />
+    <ClCompile Include="srtp_kdf.c" />
+    <ClCompile Include="srtp_kdf_selftest.c" />
+    <ClCompile Include="ssh_kdf.c" />
+    <ClCompile Include="ssh_kdf_sha256.c" />
+    <ClCompile Include="ssh_kdf_sha512.c" />
+    <ClCompile Include="tlsCbcVerify.c" />
+    <ClCompile Include="tlsprf.c" />
+    <ClCompile Include="tlsprf_selftest.c" />
+    <ClCompile Include="xtsaes.c" />
+  </ItemGroup>
+  <ItemGroup Condition="'$(Platform)'=='x64'">
+    <SymCryptAsm Include="amd64\aesasm.symcryptasm" Dialect="masm" Arch="amd64" Convention="msft" />
+    <SymCryptAsm Include="amd64\fdef_asm.symcryptasm" Dialect="masm" Arch="amd64" Convention="msft" />
+    <SymCryptAsm Include="amd64\wipe.symcryptasm" Dialect="masm" Arch="amd64" Convention="msft" />
+    <SymCryptAsm Include="amd64\fdef369_asm.symcryptasm" Dialect="masm" Arch="amd64" Convention="msft" />
+    <SymCryptAsm Include="amd64\fdef_mulx.symcryptasm" Dialect="masm" Arch="amd64" Convention="msft" />
+    <SymCryptAsm Include="amd64\sha256xmm_asm.symcryptasm" Dialect="masm" Arch="amd64" Convention="msft" />
+    <SymCryptAsm Include="amd64\sha256ymm_asm.symcryptasm" Dialect="masm" Arch="amd64" Convention="msft" />
+    <SymCryptAsm Include="amd64\sha512ymm_asm.symcryptasm" Dialect="masm" Arch="amd64" Convention="msft" />
+    <SymCryptAsm Include="amd64\sha512ymm_avx512vl_asm.symcryptasm" Dialect="masm" Arch="amd64" Convention="msft" />
+  </ItemGroup>
+  <ItemGroup Condition="'$(Platform)'=='Win32'">
+    <CppAsm Include="i386\aesasm.cppasm" />
+    <CppAsm Include="i386\fdef_asm.cppasm" />
+    <MASM Include="i386\wipe.asm" />
+  </ItemGroup>
+  <ItemGroup Condition="'$(Platform)'=='ARM'">
+    <MASM Include="arm\aesasm.asm" />
+    <MASM Include="arm\fdef_asm.asm" />
+    <MASM Include="arm\wipe.asm" />
+  </ItemGroup>
+  <ItemGroup Condition="'$(Platform)'=='ARM64'">
+    <SymCryptAsm Include="arm64\fdef_asm.symcryptasm" Dialect="armasm64" Arch="arm64" Convention="aapcs64" />
+    <SymCryptAsm Include="arm64\fdef369_asm.symcryptasm" Dialect="armasm64" Arch="arm64" Convention="aapcs64" />
+    <SymCryptAsm Include="arm64\wipe.symcryptasm" Dialect="armasm64" Arch="arm64" Convention="aapcs64" />
+  </ItemGroup>
+  <ItemGroup Condition="'$(Platform)' == 'ARM64' AND $(EnableArm64x) == 'true'">
+    <SymCryptAsm Include="arm64\fdef_asm.symcryptasm" Dialect="armasm64" Arch="arm64" Convention="arm64ec" />
+    <SymCryptAsm Include="arm64\fdef369_asm.symcryptasm" Dialect="armasm64" Arch="arm64" Convention="arm64ec" />
+    <SymCryptAsm Include="arm64\wipe.symcryptasm" Dialect="armasm64" Arch="arm64" Convention="arm64ec" />
+  </ItemGroup>
+
+  <PropertyGroup Label="Configuration">
+    <TargetVersion>Windows10</TargetVersion>
+    <PlatformToolset>v143</PlatformToolset>
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+  </PropertyGroup>
+
+    <!-- Generate buildInfo.h -->
+  <Target Name="GenerateBuildInfo" BeforeTargets="ClCompile">
+    <Message Importance="high" Text="Generating build info header" />
+    <Exec Command="python ..\scripts\version.py --build-info" />
+  </Target>
+
+  <Target Name="GetDriverProjectAttributes" Returns="@(DriverProjectAttributes)" />
+  <Target Name="GetPackageFiles" Returns="@(FullyQualifiedFilesToPackage)" />
+</Project>

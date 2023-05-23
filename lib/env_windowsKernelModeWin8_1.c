@@ -17,10 +17,7 @@
 //
 #define _NTSYSTEM_
 
-#include <nt.h>
-#include <ntrtl.h>
-#include <ntosp.h>
-#include <windef.h>
+#include <ntddk.h>
 
 #include "symcrypt.h"
 #include "sc_lib.h"

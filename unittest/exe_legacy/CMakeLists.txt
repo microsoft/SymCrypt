@@ -5,9 +5,6 @@ set(SOURCES
 
 set_source_files_properties(symcryptunittest.rc PROPERTIES LANGUAGE RC)
 
-add_compile_options(-DTESTDRIVER_NAME=\"SymCryptDriver_legacy.sys\")
-
-
 add_executable(symcryptunittest_legacy ${SOURCES})
 target_link_libraries(symcryptunittest_legacy symcryptunittest_lib symcrypt_generic bcrypt ntdll)
 

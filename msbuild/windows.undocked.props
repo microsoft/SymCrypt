@@ -1,0 +1,320 @@
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <!-- Set up properties -->
+  <PropertyGroup>
+    <Error Condition="'$(UndockedType)' == ''">Must set UndockedType in project file</Error>
+    <UndockedDir Condition="'$(UndockedDir)' == ''">$(SolutionDir)undocking\</UndockedDir>
+    <UndockedOut Condition="'$(UndockedOut)' == ''">$(SolutionDir)</UndockedOut>
+    <UndockedSdkOnly Condition="'$(UndockedSdkOnly)' == ''">false</UndockedSdkOnly>
+    <UndockedLoc Condition="'$(UndockedLoc)' == ''">false</UndockedLoc>
+    <UndockedVerFile Condition="'$(UndockedVerFile)' == ''">$(SolutionDir)version.json</UndockedVerFile>
+    <UndockedBuildId Condition="'$(UndockedBuildId)' == ''">0</UndockedBuildId>
+    <UndockedOfficial Condition="'$(UndockedOfficial)' == ''">false</UndockedOfficial>
+    <!-- Use the official LKG complier when available -->
+    <UseInternalMSUniCrtPackage>true</UseInternalMSUniCrtPackage>
+  </PropertyGroup>
+  <!-- The set of supported user mode configurations (x86,x64,arm,arm64) -->
+  <ItemGroup Label="ProjectConfigurations" Condition="'$(UndockedType)' != 'sys'">
+    <ProjectConfiguration Include="Debug|Win32">
+      <Configuration>Debug</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|Win32">
+      <Configuration>Release</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Debug|x64">
+      <Configuration>Debug</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|x64">
+      <Configuration>Release</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Debug|ARM">
+      <Configuration>Debug</Configuration>
+      <Platform>ARM</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|ARM">
+      <Configuration>Release</Configuration>
+      <Platform>ARM</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Debug|ARM64">
+      <Configuration>Debug</Configuration>
+      <Platform>ARM64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|ARM64">
+      <Configuration>Release</Configuration>
+      <Platform>ARM64</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <!-- The set of supported kernel configurations (only 64-bit platforms) -->
+  <ItemGroup Label="ProjectConfigurations" Condition="'$(UndockedType)' == 'sys'">
+    <ProjectConfiguration Include="Debug|x64">
+      <Configuration>Debug</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|x64">
+      <Configuration>Release</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Debug|ARM64">
+      <Configuration>Debug</Configuration>
+      <Platform>ARM64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|ARM64">
+      <Configuration>Release</Configuration>
+      <Platform>ARM64</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <!-- Configuration properties to match Windows -->
+  <PropertyGroup>
+    <WinConfig Condition="'$(Configuration)' == 'Release'">fre</WinConfig>
+    <WinConfig Condition="'$(Configuration)' == 'Debug'">chk</WinConfig>
+  </PropertyGroup>
+  <PropertyGroup>
+    <WinPlat Condition="'$(Platform)' == 'Win32'">x86</WinPlat>
+    <WinPlat Condition="'$(Platform)' == 'x64'">amd64</WinPlat>
+    <WinPlat Condition="'$(Platform)' == 'ARM'">arm</WinPlat>
+    <WinPlat Condition="'$(Platform)' == 'ARM64'">arm64</WinPlat>
+  </PropertyGroup>
+  <!-- Default global properties -->
+  <PropertyGroup Condition="'$(UndockedSdkOnly)' != 'true'">
+    <TargetVersion>Windows10</TargetVersion>
+    <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
+    <MinimumVisualStudioVersion>16.0</MinimumVisualStudioVersion>
+    <Keyword>Win32Proj</Keyword>
+    <!-- <CharacterSet>Unicode</CharacterSet> -->
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(UndockedSdkOnly)' == 'true'">
+    <VCProjectVersion>16.0</VCProjectVersion>
+    <Keyword>Win32Proj</Keyword>
+    <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
+    <!-- <CharacterSet>Unicode</CharacterSet> -->
+    <PlatformToolset Condition="$(VisualStudioVersion) &gt; 16.0">v143</PlatformToolset>
+    <PlatformToolset Condition="$(VisualStudioVersion) == 16.0">v142</PlatformToolset>
+    <Error Condition="$(VisualStudioVersion) &lt; 16.0">Use Visual Studio 2019 or higher</Error>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <!-- Per-type Configuration -->
+  <PropertyGroup Condition="'$(UndockedType)|$(UndockedSdkOnly)' == 'lib|false'">
+    <PlatformToolset>WindowsKernelModeDriver10.0</PlatformToolset>
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <DriverTargetPlatform>Universal</DriverTargetPlatform>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(UndockedType)|$(UndockedSdkOnly)' == 'lib|true'">
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(UndockedType)|$(UndockedSdkOnly)' == 'dll|false'">
+    <PlatformToolset>WindowsApplicationForDrivers10.0</PlatformToolset>
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(UndockedType)|$(UndockedSdkOnly)' == 'dll|true'">
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(UndockedType)|$(UndockedSdkOnly)' == 'exe|false'">
+    <PlatformToolset>WindowsApplicationForDrivers10.0</PlatformToolset>
+    <ConfigurationType>Application</ConfigurationType>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(UndockedType)|$(UndockedSdkOnly)' == 'exe|true'">
+    <ConfigurationType>Application</ConfigurationType>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(UndockedType)' == 'sys'">
+    <PlatformToolset>WindowsKernelModeDriver10.0</PlatformToolset>
+    <ConfigurationType>Driver</ConfigurationType>
+    <DriverType>KMDF</DriverType>
+  </PropertyGroup>
+  <!-- Import the default build properties first -->
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <!-- Official Windows compiler and linker settings -->
+  <PropertyGroup>
+    <IntDir>$(UndockedOut)build\obj\$(WinPlat)$(WinConfig)\$(ProjectName)\</IntDir>
+    <OutDir>$(UndockedOut)build\bin\$(WinPlat)$(WinConfig)\</OutDir>
+    <UseDebugLibraries Condition="'$(Configuration)'=='Debug'">true</UseDebugLibraries>
+    <UseDebugLibraries Condition="'$(Configuration)'=='Release'">false</UseDebugLibraries>
+    <SignMode>Off</SignMode>
+    <EnableInf2cat>false</EnableInf2cat>
+    <SpectreMitigation>Spectre</SpectreMitigation>
+    <Driver_SpectreMitigation>Spectre</Driver_SpectreMitigation>
+  </PropertyGroup>
+  <ItemDefinitionGroup>
+    <ResourceCompile>
+      <AdditionalIncludeDirectories>$(UndockedDir)\vs;$(IntDir);$(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ResourceCompile>
+    <ClCompile>
+      <SDLCheck>true</SDLCheck>
+      <ControlFlowGuard>Guard</ControlFlowGuard>
+      <WarningLevel>Level4</WarningLevel>
+      <DebugInformationFormat>OldStyle</DebugInformationFormat>
+      <AdditionalIncludeDirectories>$(IntDir);$(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ClCompile>
+    <Link>
+      <SubSystem Condition="'$(UndockedType)' == 'exe'">Console</SubSystem>
+      <CETCompat Condition="'$(Platform)'!='ARM64' And '$(Platform)'!='ARM'">true</CETCompat>
+    </Link>
+  </ItemDefinitionGroup>
+  <!-- Unofficial build flags, but close enough for local testing -->
+  <ItemDefinitionGroup Condition="'$(UndockedOfficial)' == 'false'">
+    <ClCompile>
+      <PreprocessorDefinitions>
+        Brepo;
+        __WRL_CONFIGURATION_LEGACY__;
+        _APISET_MINCORE_VERSION=0x0110;
+        _APISET_MINWIN_VERSION=0x0111;
+        _CONTROL_FLOW_GUARD_SVCTAB=1;
+        _CONTROL_FLOW_GUARD_XFG=1;
+        _CRT_STDIO_IMP_ALT=;
+        _CRT_STDIO_IMP=;
+        _DLL=1;
+        _FULL_IOBUF;
+        _HAS_MAGIC_STATICS=1;
+        _MT=1;
+        _NT1X_=100;
+        _USE_DECLSPECS_FOR_SAL=1;
+        _USE_DEV11_CRT;
+        _WIN32_IE=0x0A00;
+        BUILD_UMS_ENABLED=1;
+        BUILD_WINDOWS;
+        CONDITION_HANDLING=1;
+        DEVL=1;
+        DONT_DISABLE_PCH_WARNINGS_IN_WARNING_H;
+        EXECUTABLE_WRITES_SUPPORT=0;
+        FE_IME;
+        FE_SB;
+        NT;
+        NT_INST=0;
+        NT_UP=1;
+        UNDOCKED_WINDOWS_UCRT;
+        WIN32=100;
+        WINBLUE_KBSPRING14;
+        %(PreprocessorDefinitions)
+      </PreprocessorDefinitions>
+      <AdditionalOptions>
+        /d1guard:xfg
+        /d1ignorePragmaWarningError
+        /d1import_no_registry
+        /d1nodatetime
+        /d2AllowCompatibleILVersions
+        /d2DeepThoughtInliner-
+        /d2FH4
+        /d2guardehcont
+        /d2guardspecanalysismode:v1_0
+        /d2guardspecmode2
+        /d2guardxfg
+        /d2Qvec-mathlib-
+        /d2Qvec-sse2only
+        /d2Zi+
+        /GF
+        /Gw
+        /Gy
+        /MP
+        /Zc:alignedNew-
+        /Zc:noexceptTypes
+        /Zc:rvalueCast
+        /Zc:sizedDealloc-
+        /Zc:tlsGuards-
+        /ZH:SHA_256
+        /Zp8
+      </AdditionalOptions>
+      <AdditionalOptions Condition="'$(UndockedType)'=='SYS'">
+        /kernel
+        %(AdditionalOptions)
+      </AdditionalOptions>
+    </ClCompile>
+    <Link>
+      <AdditionalOptions>
+        /baserelocclustering
+        /Brepro
+        /d2:-DeepThoughtInliner-
+        /d2:-FH4
+        /d2:-guard4
+        /d2:-guardcfgfuncptr
+        /d2:-guardspecanalysismode:v1_0
+        /d2:-guardspecload
+        /d2:-guardspecmode2
+        /d2:-nocfgrngchk
+        /d2:-SpecDevirt-
+        /d2:-TypeProp-
+        /debugtype:cv,fixup,pdata
+        /filealign:0x1000
+        /functionpadmin:6
+        /guard:export
+        /guard:longjmp
+        /guard:mixed
+        /NODEFAULTLIB:libucrt.lib
+        /NOVCFEATURE
+        /OPT:ICF
+        /OPT:REF
+        /osversion:10.0
+        /pdbcompress
+        /PDBDLL:mspdbcore.dll
+        /pdbrpc:no
+        /release
+        /RetryOnFileOpenFailure
+        /RunBelow4GB
+        /STACK:0x80000,0x2000
+        /version:10.0
+      </AdditionalOptions>
+      <AdditionalOptions Condition="'$(UndockedType)'=='EXE'">
+        /tsaware
+        %(AdditionalOptions)
+      </AdditionalOptions>
+      <AdditionalOptions Condition="'$(UndockedType)'=='SYS'">
+        /d2:-guardcfgdispatch
+        /guard:exportsuppress
+        /kernel
+        /merge:.gfids=GFIDS
+        /merge:.orpc=.text
+        /merge:_RDATA=.rdata
+        /section:GFIDS,d
+        %(AdditionalOptions)
+      </AdditionalOptions>
+      <AdditionalOptions Condition="'$(Platform)'=='x86'">
+        /DynamicValueFixupSym:mm_shared_user_data_va=0x7FFE0000
+        /guard:xfg
+        %(AdditionalOptions)
+      </AdditionalOptions>
+      <AdditionalOptions Condition="'$(Platform)'=='x64'">
+        /DynamicValueFixupSym:mm_shared_user_data_va=0x7FFE0000
+        /DynamicValueFixupSym:ki_user_shared_data=0xFFFFF78000000000
+        /guard:ehcont
+        /guard:xfg
+        /highentropyva
+        %(AdditionalOptions)
+      </AdditionalOptions>
+      <AdditionalOptions Condition="'$(Platform)'=='ARM64'">
+        /DynamicValueFixupSym:mm_shared_user_data_va=0x7FFE0000
+        /DynamicValueFixupSym:ki_user_shared_data=0xFFFFF78000000000
+        /highentropyva
+        %(AdditionalOptions)
+      </AdditionalOptions>
+    </Link>
+  </ItemDefinitionGroup>
+  <!-- Enable static analysis during the build (currently breaks in official builds) -->
+  <!--
+  <PropertyGroup Condition="'$(UndockedOfficial)' == 'false'">
+    <RunCodeAnalysis>true</RunCodeAnalysis>
+    <CodeAnalysisTreatWarningsAsErrors>true</CodeAnalysisTreatWarningsAsErrors>
+    <CodeAnalysisLogFile>$(IntDir)CodeAnalysisLog.xml</CodeAnalysisLogFile>
+    <CodeAnalysisSucceededFile>$(IntDir)build.lastcodeanalysissucceeded</CodeAnalysisSucceededFile>
+  </PropertyGroup>
+  -->
+  <!-- Helpers for localization -->
+  <ItemDefinitionGroup Condition="$(UndockedLoc)">
+    <ResourceCompile>
+      <AdditionalOptions Condition="'$(UndockedType)' != 'sys'">/r /fm $(IntDir)$(TargetName).muires /q $(UndockedDir)vs\mui.rcconfig /g 0x0409 %(AdditionalOptions)</AdditionalOptions>
+      <AdditionalOptions Condition="'$(UndockedType)' == 'sys'">/r /fm $(IntDir)$(TargetName).muires /q $(UndockedDir)vs\mui_drv.rcconfig /g 0x0409 %(AdditionalOptions)</AdditionalOptions>
+    </ResourceCompile>
+    <PostBuildEvent>
+      <Command>mkdir $(OutDir)en-US >nul 2>&amp;1
+link.exe /OUT:"$(OutDir)en-US\$(TargetFileName).mui" /DLL /NOENTRY /MACHINE:$(WinPlat) "$(IntDir)$(TargetName).muires"
+muirct.exe -c $(TargetPath) -e "$(OutDir)en-US\$(TargetFileName).mui"
+      </Command>
+    </PostBuildEvent>
+  </ItemDefinitionGroup>
+  <!-- Other Imports -->
+  <ImportGroup Label="ExtensionSettings" />
+  <ImportGroup Label="Shared" />
+  <ImportGroup Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+</Project>

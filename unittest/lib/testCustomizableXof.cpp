@@ -271,7 +271,6 @@ testCustomizableXofRange(CustomizableXofImplementation*                 pXof,
     SYMCRYPT_SHA3_256_STATE sha3state;
     BYTE result[SYMCRYPT_SHA3_256_RESULT_SIZE];
 
-    const SIZE_T SHAKE_BLOCK_SIZE = pXof->inputBlockLen();
     const SIZE_T MAX_INPUT_SIZE = 3 * 200;
     unsigned char input[MAX_INPUT_SIZE];
     unsigned char nameStr[MAX_INPUT_SIZE];

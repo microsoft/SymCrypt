@@ -138,6 +138,10 @@ else() # Windows
     add_link_options(/dynamicbase)
     add_compile_options(/WX)
 
+    # Disable warning caused by Windows SDK headers
+    # C5105: macro expansion producing 'defined' has undefined behavior
+    add_compile_options(/wd5105)
+
     # Architecture-specific compiler flags
     if(SYMCRYPT_TARGET_ARCH MATCHES "X86")
         set(CMAKE_GENERATOR_PLATFORM "Win32")

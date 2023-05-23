@@ -822,6 +822,23 @@ algImpCleanPerfFunction<ImpXxx,AlgAes, ModeGcm>( PBYTE buf1, PBYTE buf2, PBYTE b
     SymCryptWipeKnownSize( buf1, sizeof( SYMCRYPT_GCM_EXPANDED_KEY ) );
 }
 
+// AuthEncImp<..., AlgAes, ModeGcm> contains a corresponding AuthEncImpState with a SYMCRYPT_GCM_STATE.
+// It must be aligned on a 16-byte boundary, so we use SymCryptCallbackAlloc which aligns to
+// SYMCRYPT_ASYM_ALIGN_VALUE.
+template<>
+PVOID 
+AuthEncImp<ImpXxx, AlgAes, ModeGcm>::operator new( size_t size )
+{
+    return ALIGNED_ALLOC( SYMCRYPT_ALIGN_VALUE, size );
+}
+
+template<>
+VOID
+AuthEncImp<ImpXxx, AlgAes, ModeGcm>::operator delete( PVOID p )
+{
+    ALIGNED_FREE( p );
+}
+
 template<>
 AuthEncImp<ImpXxx, AlgAes, ModeGcm>::AuthEncImp()
 {

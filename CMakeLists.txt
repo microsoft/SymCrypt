@@ -9,22 +9,28 @@ if(WIN32)
     set(CMAKE_SYSTEM_VERSION 10.0.18362)
 endif()
 
-# Parse the version number from symcrypt_internal_shared.inc
-file(READ "${CMAKE_SOURCE_DIR}/inc/symcrypt_internal_shared.inc" SYMCRYPT_VERSION_FILE_CONTENTS)
+# Set version number using helper script
+execute_process(
+    COMMAND ${Python3_EXECUTABLE} ${CMAKE_SOURCE_DIR}/scripts/version.py --build-info
+    OUTPUT_VARIABLE SYMCRYPT_VERSION
+    RESULT_VARIABLE SYMCRYPT_VERSION_RESULT
+)
 
-string(REGEX MATCH "SYMCRYPT_CODE_VERSION_API[ \t]+([0-9]+)" _ ${SYMCRYPT_VERSION_FILE_CONTENTS})
+if(NOT SYMCRYPT_VERSION_RESULT EQUAL 0)
+    message(FATAL_ERROR "Failed to determine SymCrypt version: ${SYMCRYPT_VERSION_RESULT}")
+endif()
+
+string(STRIP ${SYMCRYPT_VERSION} SYMCRYPT_VERSION)
+
+string(REGEX MATCH "([0-9]+).([0-9]+).([0-9]+)" _ ${SYMCRYPT_VERSION})
 set(SYMCRYPT_CODE_VERSION_API ${CMAKE_MATCH_1})
-
-string(REGEX MATCH "SYMCRYPT_CODE_VERSION_MINOR[ \t]+([0-9]+)" _ ${SYMCRYPT_VERSION_FILE_CONTENTS})
-set(SYMCRYPT_CODE_VERSION_MINOR ${CMAKE_MATCH_1})
-
-string(REGEX MATCH "SYMCRYPT_CODE_VERSION_PATCH[ \t]+([0-9]+)" _ ${SYMCRYPT_VERSION_FILE_CONTENTS})
-set(SYMCRYPT_CODE_VERSION_PATCH ${CMAKE_MATCH_1})
+set(SYMCRYPT_CODE_VERSION_MINOR ${CMAKE_MATCH_2})
+set(SYMCRYPT_CODE_VERSION_PATCH ${CMAKE_MATCH_3})
 
 message(STATUS "SymCrypt version ${SYMCRYPT_CODE_VERSION_API}.${SYMCRYPT_CODE_VERSION_MINOR}.${SYMCRYPT_CODE_VERSION_PATCH}")
 
 project(SymCrypt
-    VERSION ${SYMCRYPT_CODE_VERSION_API}.${SYMCRYPT_CODE_VERSION_MINOR}.${SYMCRYPT_CODE_VERSION_PATCH}
+    VERSION ${SYMCRYPT_VERSION}
     DESCRIPTION "Cryptographic library"
     HOMEPAGE_URL "https://github.com/microsoft/SymCrypt")
 
@@ -74,6 +80,9 @@ if(NOT DEFINED CMAKE_BUILD_TYPE)
   set(CMAKE_BUILD_TYPE Debug)
 endif()
 
+set(CMAKE_C_STANDARD 11)
+set(CMAKE_C_STANDARD_REQUIRED ON)
+
 message(STATUS "Host: ${CMAKE_HOST_SYSTEM_NAME} ${CMAKE_HOST_SYSTEM_PROCESSOR}")
 message(STATUS "Target: ${CMAKE_SYSTEM_NAME} ${SYMCRYPT_TARGET_ARCH} ${SYMCRYPT_TARGET_ENV}")
 message(STATUS "ASM optimizations: ${SYMCRYPT_USE_ASM}")
@@ -97,17 +106,10 @@ endif()
 
 include_directories(inc)
 include_directories(${CMAKE_BINARY_DIR}/inc)
-include(build/buildInfo.cmake)
 
 # Process pkg-config file
 configure_file(build/symcrypt.pc.in symcrypt.pc @ONLY)
 
 add_subdirectory(lib)
-
-if(NOT WIN32 AND NOT CMAKE_BUILD_TYPE MATCHES Sanitize)
-    # Module integrity check is seen as OOB access by sanitizers, and sanitizer instrumentation
-    # breaks integrity check assumptions. Only enable module when not running with sanitizers
-    add_subdirectory(modules_linux)
-endif()
-
+add_subdirectory(modules)
 add_subdirectory(unittest)

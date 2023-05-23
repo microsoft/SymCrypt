@@ -1,0 +1,132 @@
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+
+  <Import Project="$(UndockedDir)windows.undocked.props" />
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+
+  <PropertyGroup Label="IncludePath">
+    <IncludePath>$(SolutionDir)inc;$(WindowsSdkDir)Include\$(TargetPlatformVersion)\km;$(IncludePath);</IncludePath>
+  </PropertyGroup>
+  <PropertyGroup Label="Globals">
+    <EnableArm64x Condition="$(ARM64X_DISABLED) != '1'">true</EnableArm64x>
+  </PropertyGroup>
+  <ItemDefinitionGroup>
+    <ClCompile>
+      <!--
+        Disable warnings
+        C4456: declaration of 'identifier' hides previous local declaration
+        C4296: 'operator' : expression is always false
+      -->
+      <DisableSpecificWarnings>4456;4296;%(DisableSpecificWarnings)</DisableSpecificWarnings>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
+      <DebugInformationFormat>OldStyle</DebugInformationFormat>
+      <BasicRuntimeChecks></BasicRuntimeChecks>
+      <Optimization>Full</Optimization>
+      <TreatWChar_tAsBuiltInType>false</TreatWChar_tAsBuiltInType>
+      <CharacterSet>MultiByte</CharacterSet>
+      <WholeProgramOptimization>true</WholeProgramOptimization>
+      <AdditionalOptions Condition="'$(SymCryptKernelTarget)'=='true'">
+        /kernel
+        %(AdditionalOptions)
+      </AdditionalOptions>
+    </ClCompile>
+    <MASM>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <PreprocessorDefinitions>SYMCRYPT_MASM;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+    </MASM>
+    <Link>
+      <AdditionalOptions Condition="'$(SymCryptKernelTarget)'=='true'">
+        /d2:-guardcfgdispatch
+        /guard:exportsuppress
+        /kernel
+        /merge:.gfids=GFIDS
+        /merge:.orpc=.text
+        /merge:_RDATA=.rdata
+        /section:GFIDS,d
+        %(AdditionalOptions)
+      </AdditionalOptions>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)'=='Debug'">
+    <ClCompile>
+      <PreprocessorDefinitions>_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
+    </ClCompile>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Platform)'=='x64'">
+    <ClCompile>
+      <PreprocessorDefinitions>_AMD64_;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+    </ClCompile>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Platform)'=='Win32'">
+    <ClCompile>
+      <CallingConvention>StdCall</CallingConvention>
+      <PreprocessorDefinitions>_X86_;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+    </ClCompile>
+    <Link>
+      <!-- Workaround for LNK2026: module unsafe for SAFESEH image -->
+      <AdditionalOptions>
+        /SAFESEH:NO
+        %(AdditionalOptions)
+      </AdditionalOptions>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Platform)'=='ARM64'">
+    <ClCompile>
+      <PreprocessorDefinitions>_ARM64_;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+    </ClCompile>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Platform)'=='ARM'">
+    <ClCompile>
+      <PreprocessorDefinitions>_ARM_;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+    </ClCompile>
+  </ItemDefinitionGroup>
+
+  <!-- Enable ARM64X compilation -->
+  <ItemDefinitionGroup Condition="'$(Platform)' == 'ARM64' AND $(EnableArm64x) == 'true'">
+    <ClCompile>
+      <Arm64x>EC</Arm64x>
+    </ClCompile>
+  </ItemDefinitionGroup>
+
+  <!-- Helper properties for processing CppAsm -->
+  <PropertyGroup Condition="'$(Platform)'=='x64'">
+    <CppAsmArch>SYMCRYPT_CPU_AMD64</CppAsmArch>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Platform)'=='Win32'">
+      <CppAsmArch>SYMCRYPT_CPU_X86</CppAsmArch>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Platform)'=='ARM64'">
+      <CppAsmArch>SYMCRYPT_CPU_ARM64</CppAsmArch>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Platform)'=='ARM'">
+      <CppAsmArch>SYMCRYPT_CPU_ARM</CppAsmArch>
+  </PropertyGroup>
+
+  <!-- Preprocess SymCryptAsm into CppAsm -->
+  <Target Name="ProcessSymCryptAsm" BeforeTargets="_MASM" Condition="'@(SymCryptAsm)' != ''">
+    <MakeDir Directories="$(IntDir)" />
+    <Message Importance="high" Text="Processing SymCryptAsm" />
+    <Exec Command="python ..\scripts\symcryptasm_processor.py %(SymCryptAsm.Dialect) %(SymCryptAsm.Arch) %(SymCryptAsm.Convention) &quot;%(SymCryptAsm.Identity)&quot; &quot;$(IntDir)%(SymCryptAsm.Filename).%(SymCryptAsm.Dialect).%(SymCryptAsm.Arch).%(SymCryptAsm.Convention).cppasm&quot;" />
+    <ItemGroup>
+      <CppAsm Include="$(IntDir)%(SymCryptAsm.Filename).%(SymCryptAsm.Dialect).%(SymCryptAsm.Arch).%(SymCryptAsm.Convention).cppasm" Convention="%(SymCryptAsm.Convention)"/>
+    </ItemGroup>
+  </Target>
+
+  <!--
+    Preprocess CppAsm into MASM
+    Note that for ARM64, MSBuild and Razzle both have an automatic pre-processing step that runs the C preprocessor on ASM files before assembling them.
+    This should mean that we don't have to explicitly preprocess ARM64 CppAsm, except that we need a different set of preprocessor definitions for CppAsm vs. C code.
+    I couldn't find a way to do that with MSBuild, so we just explicitly preprocess it here. The file will get preprocessed twice, but this doesn't cause any harm.
+  -->
+  <Target Name="ProcessCppAsm" AfterTargets="ProcessSymcryptAsm" Condition="'@(CppAsm)' != ''">
+    <MakeDir Directories="$(IntDir)" />
+    <Message Importance="high" Text="Processing CppAsm" />
+    <Exec Command="cl.exe /EP /P /I..\inc /I.\ /D$(CppAsmArch) /DSYMCRYPT_MASM /Fi&quot;$(IntDir)%(CppAsm.Filename).asm&quot; &quot;%(CppAsm.Identity)&quot;" Condition="'%(CppAsm.Convention)' != 'arm64ec'"/>
+    <!-- Special case for ARM64EC -->
+    <Exec Command="cl.exe /EP /P /I..\inc /I.\ /D$(CppAsmArch) /D_M_ARM64EC /DSYMCRYPT_MASM /Fi&quot;$(IntDir)%(CppAsm.Filename).asm&quot; &quot;%(CppAsm.Identity)&quot;" Condition="'%(CppAsm.Convention)' == 'arm64ec'"/>
+    <ItemGroup>
+      <MASM Include="$(IntDir)%(CppAsm.Filename).asm" />
+    </ItemGroup>
+  </Target>
+
+</Project>

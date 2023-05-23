@@ -2,8 +2,6 @@ ARM64X_EC_ENABLED=1
 
 TARGETNAME=symcryptunittest_Win8_1nLater
 
-# TODO: update this to a Win8.1 test driver
-C_DEFINES=$(C_DEFINES) -DTESTDRIVER_NAME=\"SymCryptDriver_win7nlater.sys\"
 !include ..\sources_exe.inc
 
 _NT_TARGET_VERSION=$(_NT_TARGET_VERSION_WINBLUE)

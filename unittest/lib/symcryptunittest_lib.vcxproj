@@ -1,0 +1,87 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup Label="Globals">
+    <ProjectGuid>{1146804C-B04F-43F1-83B0-081A5187BA02}</ProjectGuid>
+    <TemplateGuid>{0a049372-4c4d-4ea0-a64e-dc6ad88ceca1}</TemplateGuid>
+    <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
+    <MinimumVisualStudioVersion>12.0</MinimumVisualStudioVersion>
+    <UseInternalMSUniCrtPackage>true</UseInternalMSUniCrtPackage>
+    <TargetName>symcryptunittest_lib</TargetName>
+    <UndockedType>lib</UndockedType>
+    <UndockedDir>$(SolutionDir)msbuild\</UndockedDir>
+    <UndockedOut>$(SolutionDir)</UndockedOut>
+    <SymCryptKernelTarget>false</SymCryptKernelTarget>
+  </PropertyGroup>
+  <Import Project="$(UndockedDir)symcrypt.undocked.props" />
+  <ItemDefinitionGroup>
+    <ClCompile>
+      <AdditionalIncludeDirectories>..\;..\inc;..\SymCryptDependencies\inc;..\..\inc;..\..\lib;</AdditionalIncludeDirectories>
+      <LanguageStandard>stdcpp17</LanguageStandard>
+      <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalOptions>/Zc:strictStrings- /bigobj /wd5252 %(AdditionalOptions)</AdditionalOptions>
+      <WholeProgramOptimization>true</WholeProgramOptimization>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
+      <ExceptionHandling>Sync</ExceptionHandling>
+      <RuntimeTypeInfo>true</RuntimeTypeInfo>
+    </ClCompile>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <ClCompile Include="callback.cpp" />
+    <ClCompile Include="capi_implementations.cpp" />
+    <ClCompile Include="cng_implementations.cpp" />
+    <ClCompile Include="env_windowsSymCryptUnittest.cpp" />
+    <ClCompile Include="kat.cpp" />
+    <ClCompile Include="main.cpp" />
+    <ClCompile Include="msbignum_implementations.cpp" />
+    <ClCompile Include="perf.cpp" />
+    <ClCompile Include="perfPrint.cpp" />
+    <ClCompile Include="printtable.cpp" />
+    <ClCompile Include="ref_implementations.cpp" />
+    <ClCompile Include="resultMerge.cpp" />
+    <ClCompile Include="rndDriver.cpp" />
+    <ClCompile Include="rng.cpp" />
+    <ClCompile Include="rsa32_implementations.cpp" />
+    <ClCompile Include="sc_implementations.cpp" />
+    <ClCompile Include="testAesCtrDrbg.cpp" />
+    <ClCompile Include="testArithmetic.cpp" />
+    <ClCompile Include="testAuthEnc.cpp" />
+    <ClCompile Include="testBlockCiphers.cpp" />
+    <ClCompile Include="testCustomizableXof.cpp" />
+    <ClCompile Include="testDh.cpp" />
+    <ClCompile Include="testDsa.cpp" />
+    <ClCompile Include="testEcc.cpp" />
+    <ClCompile Include="testhash.cpp" />
+    <ClCompile Include="testIEEE802_11SaeCustom.cpp" />
+    <ClCompile Include="testKdf.cpp" />
+    <ClCompile Include="testKmac.cpp" />
+    <ClCompile Include="testMac.cpp" />
+    <ClCompile Include="testMontgomery.cpp" />
+    <ClCompile Include="testMultiThread.cpp" />
+    <ClCompile Include="testPaddingPkcs7.cpp" />
+    <ClCompile Include="testRsaEnc.cpp" />
+    <ClCompile Include="testRsaSign.cpp" />
+    <ClCompile Include="testScsTable.cpp" />
+    <ClCompile Include="testScsTools.cpp" />
+    <ClCompile Include="testSelftest.cpp" />
+    <ClCompile Include="testStreamCipher.cpp" />
+    <ClCompile Include="testTlsCbcHmac.cpp" />
+    <ClCompile Include="testutil.cpp" />
+    <ClCompile Include="testWipe.cpp" />
+    <ClCompile Include="testXof.cpp" />
+    <ClCompile Include="testXts.cpp" />
+  </ItemGroup>
+  <ItemGroup Condition="'$(Platform)'=='x64'">
+    <MASM Include="amd64\savevectors.asm" />
+  </ItemGroup>
+  <ItemGroup Condition="'$(Platform)'=='Win32'">
+    <MASM Include="i386\savevectors.asm" />
+  </ItemGroup>
+  <PropertyGroup Label="Configuration">
+    <TargetVersion>Windows10</TargetVersion>
+    <PlatformToolset>v143</PlatformToolset>
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+  </PropertyGroup>
+
+  <Target Name="GetDriverProjectAttributes" Returns="@(DriverProjectAttributes)" />
+  <Target Name="GetPackageFiles" Returns="@(FullyQualifiedFilesToPackage)" />
+</Project>

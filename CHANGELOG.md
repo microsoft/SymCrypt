@@ -1,3 +1,7 @@
+# Version 103.3.2
+
+- Various small tweaks to support building with MSBuild
+
 # Version 103.3.1
 
 - Temporarily disable use of AVX in SHA-2

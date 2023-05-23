@@ -2,8 +2,6 @@
 // Copyright (c) Microsoft Corporation. Licensed under the MIT license.
 //
 
-PSTR testDriverName = TESTDRIVER_NAME;
-
 PVOID loadDynamicModuleFromPath(PCSTR dynamicModulePath)
 {
     return (PVOID) LoadLibraryExA(dynamicModulePath, NULL, 0);

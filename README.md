@@ -31,82 +31,22 @@ Azure DevOps repository. If you are external to Microsoft, you can ignore this s
 the unit tests and does not change the behavior of the SymCrypt product code.
 
 # Building
-## Prerequisites
-SymCrypt can be compiled with CMake >= 3.13.0 and Visual Studio 2019 (with Windows 10 SDK version 18362) on Windows
-or gcc 7.4.0 or clang 10.0.0 on Linux. Note that CMake ships with Visual Studio 2019; you can use Visual Studio's
-included CMake by setting `$env:PATH="C:\Program Files (x86)\Microsoft Visual Studio\2019\Enterprise\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\bin\;${env:PATH}"`.
-
-Python 3 is also required for translation of SymCryptAsm, and for building the SymCrypt module with integrity check.
-The integrity check additionally requires pip and pyelftools: `pip3 install -r ./scripts/requirements.txt`
-
-## Supported Configurations
-SymCrypt has pure C implementations of all supported functionality. These "generic" implementations are designed to
-be portable to various architectures. However, they do not offer optimal performance because they do not take
-advantage of CPU-specific optimizations. To that end, we also have hand-written assembly implementations of
-performance-critical internal functions. Our CMake build scripts do not currently support ASM optimizations on all
-combinations of architectures and platforms; the Build Instructions section below lists some of the currently supported
-combinations, and we're working on adding support for more. 
-
-The ability to build SymCrypt on any particular platform or architecture, with or without ASM optimizations, does not
-imply that it has been tested for or is actively supported by Microsoft on that platform/architecture. While we make
-every effort to ensure that SymCrypt is reliable, stable and bug-free on every platform we run on, the code in this
-repository is provided *as is*, without warranty of any kind, express or implied, including but not limited to the
-warranties of merchantability, fitness for a particular purpose and noninfringement (see our [LICENSE](./LICENSE)).
-
-## Build Instructions
-For Microsoft employees building the library internally, to include msbignum and RSA32 implementation benchmarks in
-the unit tests, make sure the SymCryptDependencies submodule is initialized by following the steps above
-(`git submodule update --init`). When building, provide the additional CMake argument `-DSYMCRYPT_TEST_LEGACY_IMPL=ON`.
-This only affects the unit tests, and does not change the functionality of the SymCrypt library itself.
-
-### Using Python scripts
-Building SymCrypt can be complicated due to the number of platforms, architectures and targets supported. To improve
-ease of use and have a consistent build solution that can be leveraged by both developers and our automated CI pipelines,
-we have created a set of Python scripts to help with building, testing and packaging.
-
-1. To build SymCrypt, run `scripts/build.py build_dir` where `build_dir` is the desired build output directory.
-    * To see additional options, run `scripts/build.py --help`.
-1. To run the unit tests after a build has finished, run `scripts/test.py build_dir`.
-    * Additional positional arguments will be passed directly to the unit test executable.
-1. To package up the built binaries into an archive, run `scripts/package.py build_dir arch configuration module_name release_dir`, where:
-    * `build_dir` is the build output directory
-    * `arch` is the architecture that the build was created for
-    * `configuration` is the build configuration (Debug, Release, Sanitize)
-    * `module_name` is the name of the module you wish to package (currently only relevant for Linux builds)
-    * `release_dir` is the output directory for the release archive
-
-### Building with CMake
-If you don't want to use the Python helper scripts, or if they do not support the specific build flags you desire, you can
-build SymCrypt by directly invoking CMake. Note that Python is still required for translating SymCryptAsm and building the
-Linux modules with FIPS integrity checks.
-
-1. Run `cmake -S . -B bin` to configure your build. You can add the following optional CMake arguments to change build options:
-    * `-DSYMCRYPT_TARGET_ARCH=<AMD64|X86|ARM64>` to choose a target architecture. If not specified, it will default to the host system architecture.
-      * To cross-compile for Windows X86 from Windows AMD64, you must also use `-A Win32`
-      * To cross-compile for Linux ARM64, you must also use `--toolchain=cmake-configs/Toolchain-Clang-ARM64.cmake`
-    * `-DSYMCRYPT_USE_ASM=<ON|OFF>` to choose whether to use assembly optimizations. Defaults to `ON`. 
-    * `-DSYMCRYPT_FIPS_BUILD=<ON|OFF>` to choose whether to enable FIPS self-tests in the SymCrypt shared object module. Defaults to `ON`. Currently only affects Linux builds.
-    * For a release build, specify `-DCMAKE_BUILD_TYPE=Release`
-1. `cmake --build bin`
-    * Optionally, for a release build on Windows, specify `--config Release`
-    * Optionally specify `-jN` where N is the number of processes you wish to spawn for the build
-
-After successful compilation, the generated binaries will be placed in the following directories relative
-to your build directory:
-* `lib` - static libraries
-* `module` - shared object libraries (currently only on Linux)
-* `exe` - unit tests
+The easiest way to get started building SymCrypt is to use the Python build script, `scripts/build.py`. You
+can run it with the `--help` argument to get help about which arguments are required and what each one does. For
+detailed build instructions, including alternative ways to build, see [BUILD.md](BUILD.md).
 
 # Testing
 The SymCrypt unit test runs extensive functional tests on the SymCrypt library. On Windows it also compares results
 against on other implementations such as the Windows APIs CNG and CAPI, and the older crypto libraries rsa32 and
 msbignum, if they are available. It also provides detailed performance information.
 
+After a successful build, you can use the `scripts/test.py` helper script to run the unit tests.
+
 # Versioning and Servicing
 As of version 101.0.0, SymCrypt uses the version scheme defined by the
 [Semantic Versioning 2.0.0](https://semver.org/spec/v2.0.0.html) specification. This means:
 
-- Major version changes introduce ABI and/or API breaking changes
+- Major version changes introduce ABI and/or API breaking changes (including behavior changes)
 - Minor version changes introduce backwards compatible additional functionality or improvements, and/or bug fixes
 - Patch version changes introduce backwards compatible bug fixes
 

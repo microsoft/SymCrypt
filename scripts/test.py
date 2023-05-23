@@ -12,7 +12,7 @@ import subprocess
 import sys
 from typing import List
 
-UNITTEST_RELATIVE_PATH = ("exe", "symcryptunittest")
+UNITTEST_FILENAME = "symcryptunittest"
 UNITTEST_EXTENSION_WINDOWS = ".exe"
 
 def run_unittest(build_dir : pathlib.Path, emulator : str,
@@ -26,17 +26,24 @@ def run_unittest(build_dir : pathlib.Path, emulator : str,
     additional_args: A list of additional arguments to pass to the unit test executable.
     """
 
-    # Build the path to the executable
-    path_to_exe = os.path.join(build_dir, *UNITTEST_RELATIVE_PATH)
-    
-    if sys.platform == "win32":
-        path_to_exe += UNITTEST_EXTENSION_WINDOWS
-
-        if disable_ymm:
+    if sys.platform == "win32" and disable_ymm:
             print("Warning: --glibc-disable-ymm is not supported on Windows.", file = sys.stderr)
             disable_ymm = False
 
-    unittest_invocation = [path_to_exe]
+        # Build the path to the executable
+    unittest_search_path = pathlib.Path(build_dir)
+    unittest_candidates = unittest_search_path.rglob("**/{}{}".format(
+        UNITTEST_FILENAME, UNITTEST_EXTENSION_WINDOWS if sys.platform == "win32" else ""))
+
+    unittest_path = next(unittest_candidates, None)
+    if unittest_path is None:
+        print("Error: Unit test executable not found under directory {}".format(build_dir), file = sys.stderr)
+        exit(-1)
+
+    if next(unittest_candidates, None) is not None:
+        print("Warning: found multiple unittest executables under {}. Executing the first one.".format(build_dir), file = sys.stderr)
+
+    unittest_invocation = [str(unittest_path)]
     unittest_invocation.extend(additional_args)
 
     # If we're using an emulator, prepend the unit test invocation with the emulator information

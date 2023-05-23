@@ -1237,6 +1237,16 @@ public:
     AuthEncImp();
     virtual ~AuthEncImp();
 
+    PVOID operator new( size_t size )
+    {
+        return std::malloc( size );
+    }
+
+    VOID operator delete( PVOID p )
+    {
+        std::free( p );
+    }
+
 private:
     AuthEncImp( const AuthEncImp & );
     VOID operator=( const AuthEncImp & );

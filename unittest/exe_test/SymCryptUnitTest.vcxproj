@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup Label="Globals">
+    <ProjectGuid>{1651c608-dd2f-4d18-8e5b-e3c1d11bd7b9}</ProjectGuid>
+    <TemplateGuid>{0a049372-4c4d-4ea0-a64e-dc6ad88ceca1}</TemplateGuid>
+    <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
+    <MinimumVisualStudioVersion>12.0</MinimumVisualStudioVersion>
+    <UseInternalMSUniCrtPackage>true</UseInternalMSUniCrtPackage>
+    <TargetName>symcryptunittest</TargetName>
+    <UndockedType>exe</UndockedType>
+    <UndockedDir>$(SolutionDir)msbuild\</UndockedDir>
+    <UndockedOut>$(SolutionDir)</UndockedOut>
+    <UndockedSdkOnly>true</UndockedSdkOnly>
+    <SymCryptKernelTarget>false</SymCryptKernelTarget>
+  </PropertyGroup>
+  <Import Project="$(UndockedDir)symcrypt.undocked.props" />
+  <ItemGroup>
+    <ProjectReference Include="..\..\lib\symcrypt.vcxproj">
+      <Project>{7c3bd5d2-7213-4cfa-b6cb-eb41623601bc}</Project>
+    </ProjectReference>
+    <ProjectReference Include="..\lib\symcryptunittest_lib.vcxproj">
+      <Project>{1146804c-b04f-43f1-83b0-081a5187ba02}</Project>
+    </ProjectReference>
+  </ItemGroup>
+  <ItemDefinitionGroup>
+    <ClCompile>
+      <PreprocessorDefinitions>_CONSOLE;%(PreprocessorDefinitions);</PreprocessorDefinitions>
+      <LanguageStandard>stdcpp17</LanguageStandard>
+      <AdditionalIncludeDirectories>..\;..\inc;..\lib;..\SymCryptDependencies\inc;..\..\inc;</AdditionalIncludeDirectories>
+      <!--
+        Disable warnings
+        C4324	'structname': structure was padded due to __declspec(align())
+        C4714: function 'function' marked as __forceinline not inlined
+        C5252: Multiple different types resulted in the same XFG type-hash hash-value; the PDB will only record information for one of them
+      -->
+      <DisableSpecificWarnings>4324;4714;5252;%(DisableSpecificWarnings)</DisableSpecificWarnings>
+      <AdditionalOptions>/Zc:strictStrings- %(AdditionalOptions)</AdditionalOptions>
+      <WholeProgramOptimization>true</WholeProgramOptimization>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
+      <ExceptionHandling>Sync</ExceptionHandling>
+      <BasicRuntimeChecks>Default</BasicRuntimeChecks>
+    </ClCompile>
+    <Link>
+      <SubSystem>Console</SubSystem>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <LinkTimeCodeGeneration>UseLinkTimeCodeGeneration</LinkTimeCodeGeneration>
+      <AdditionalDependencies>%(AdditionalDependencies);rsa32.lib;msbignum.lib;ntdll.lib;Bcrypt.lib</AdditionalDependencies>
+      <AdditionalLibraryDirectories>..\SymCryptDependencies\$(ProcessorArchitecture)</AdditionalLibraryDirectories>
+      <AdditionalOptions>/nodefaultlib:libcmt.lib %(AdditionalOptions)</AdditionalOptions>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <ClCompile Include="main_exe.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="symcryptunittest.rc" />
+  </ItemGroup>
+</Project>

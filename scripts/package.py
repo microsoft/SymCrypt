@@ -14,8 +14,7 @@ import subprocess
 import sys
 import tempfile
 from typing import Dict, Tuple
-
-SYMCRYPT_VERSION_FILE = "inc/symcrypt_internal_shared.inc"
+from version import SymCryptVersion, get_version_info
 
 # Common files shared between all packages
 PACKAGE_FILE_MAP_TEMPLATE_COMMON = {
@@ -26,7 +25,8 @@ PACKAGE_FILE_MAP_TEMPLATE_COMMON = {
     "${SOURCE_DIR}/inc/symcrypt.h" : "inc/symcrypt.h",
     "${SOURCE_DIR}/inc/symcrypt_low_level.h" : "inc/symcrypt_low_level.h",
     "${SOURCE_DIR}/inc/symcrypt_internal.h" : "inc/symcrypt_internal.h",
-    "${SOURCE_DIR}/inc/symcrypt_internal_shared.inc" : "inc/symcrypt_internal_shared.inc"
+    "${SOURCE_DIR}/inc/symcrypt_internal_shared.inc" : "inc/symcrypt_internal_shared.inc",
+    "${SOURCE_DIR}/inc/symcrypt_no_sal.h" : "inc/symcrypt_no_sal.h"
 }
 
 # Linux sanitize package - doesn't build shared object libraries
@@ -84,49 +84,6 @@ PACKAGE_FILE_TEMPLATES = {
     # Sanitize is not currently supported on Windows
 }
 
-def get_git_hash() -> str:
-    """
-    Returns the short git hash of the current commit.
-    """
-
-    git_hash_cmd = "git rev-parse --short HEAD"
-    git_hash = subprocess.check_output(git_hash_cmd, shell = True).decode("utf-8").strip()
-
-    return git_hash
-
-def read_version() -> Tuple[int, int, int]:
-    """
-    Reads the current version of SymCrypt from the version file. Returns a tuple of (major, minor, patch).
-    """
-
-    # Store the version in a "static" variable so we don't have to read it from disk every time
-    if not hasattr(read_version, "version_api"):
-        read_version.version_api = None
-        read_version.version_minor = None
-        read_version.version_patch = None
-
-    if read_version.version_api is None:
-        version_file = pathlib.Path(SYMCRYPT_VERSION_FILE)
-
-        if not version_file.exists():
-            raise Exception("Version file " + str(version_file) + " does not exist.")
-
-        with open(version_file, "r") as f:
-            version_file_contents = f.read()
-
-            version_api_match = re.search(r"#define SYMCRYPT_CODE_VERSION_API[ \t]+([0-9]+)", version_file_contents)
-            version_minor_match = re.search(r"#define SYMCRYPT_CODE_VERSION_MINOR[ \t]+([0-9]+)", version_file_contents)
-            version_patch_match = re.search(r"#define SYMCRYPT_CODE_VERSION_PATCH[ \t]+([0-9]+)", version_file_contents)
-
-            if not version_api_match or not version_minor_match or not version_patch_match:
-                raise Exception("Could not parse version from version file " + str(version_file))
-
-            read_version.version_api = int(version_api_match.group(1))
-            read_version.version_minor = int(version_minor_match.group(1))
-            read_version.version_patch = int(version_patch_match.group(1))
-
-    return (read_version.version_api, read_version.version_minor, read_version.version_patch)
-
 def get_package_file_map(bin_dir : pathlib.Path, config : str, module_name : str) -> Dict[str, str]:
     """
     Replaces variables in the package file map with their actual values.
@@ -137,15 +94,15 @@ def get_package_file_map(bin_dir : pathlib.Path, config : str, module_name : str
     """
 
     source_dir = pathlib.Path(__file__).parent.parent.resolve()
-    version_api, version_minor, version_patch = read_version()
+    version = get_version_info()
 
     replacement_map = {
         "${SOURCE_DIR}" : str(source_dir),
         "${BIN_DIR}" : str(bin_dir.resolve()),
         "${MODULE_NAME}" : module_name,
-        "${VERSION_API}" : str(version_api),
-        "${VERSION_MINOR}" : str(version_minor),
-        "${VERSION_PATCH}" : str(version_patch)
+        "${VERSION_API}" : str(version.major),
+        "${VERSION_MINOR}" : str(version.minor),
+        "${VERSION_PATCH}" : str(version.patch)
     }
 
     try:
@@ -181,6 +138,9 @@ def package_module(build_dir : pathlib.Path, arch : str, config : str, module_na
 
         package_file_map = get_package_file_map(build_dir, config, module_name)
         for source, destination in package_file_map.items():
+
+            print("Copying " + destination)
+
             source = pathlib.Path(source)
             destination = pathlib.Path(destination)
 
@@ -199,17 +159,16 @@ def package_module(build_dir : pathlib.Path, arch : str, config : str, module_na
         if not release_dir.exists():
             release_dir.mkdir(parents = True)
 
-        version_api, version_minor, version_patch = read_version()
-        git_hash = get_git_hash()
+        version = get_version_info()
 
         archive_name = "symcrypt-{}-{}-{}-{}.{}.{}-{}".format(
             sys.platform,
             module_name,
             arch,
-            str(version_api),
-            str(version_minor),
-            str(version_patch),
-            git_hash
+            str(version.major),
+            str(version.minor),
+            str(version.patch),
+            version.commit_hash
         )
 
         archive_type = None
@@ -224,16 +183,20 @@ def package_module(build_dir : pathlib.Path, arch : str, config : str, module_na
             raise Exception("Unsupported platform: " + sys.platform)
 
         cwd = os.getcwd()
-        os.chdir(release_dir)
+        try:
+            os.chdir(release_dir)
 
-        if os.path.exists(archive_name + archive_ext):
-            raise Exception("Archive " + archive_name + archive_ext + " already exists.")
+            if os.path.exists(archive_name + archive_ext):
+                raise Exception("Archive " + archive_name + archive_ext + " already exists.")
 
-        print("Creating archive " + archive_name + " in " + str(release_dir.resolve()) + "...")
+            print("Creating archive " + archive_name + " in " + str(release_dir.resolve()) + "...")
 
-        shutil.make_archive(archive_name, archive_type, temp_dir, owner = "root", group = "root")
+            shutil.make_archive(archive_name, archive_type, temp_dir, owner = "root", group = "root")
 
-        os.chdir(cwd)
+            print("Done.")
+
+        finally:
+            os.chdir(cwd)
 
 def main() -> None:
     """

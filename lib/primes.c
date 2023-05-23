@@ -174,7 +174,7 @@ SymCryptIntGenerateRandomPrime(
                                     UINT32              nPubExp,
                                     UINT32              nTries,
                                     UINT32              flags,
-    _Out_                           PSYMCRYPT_INT       piDst,
+    _Inout_                         PSYMCRYPT_INT       piDst,
     _Out_writes_bytes_( cbScratch ) PBYTE               pbScratch,
                                     SIZE_T              cbScratch )
 {

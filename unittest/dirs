@@ -7,6 +7,3 @@ DIRS = \
     module_windows \
     module_windows_sys_km \
     module_windows_sys_um \
-    sys_test \
-    sys_Win7nLater \
-    sys_legacy \

@@ -222,6 +222,7 @@ lookupSymCryptSymbol(
 {
     SCKTM_LOOKUP_SYMBOL_RESULT result;
     SCKTM_LOOKUP_SYMBOL_INPUT input;
+    PCSYMCRYPT_SYMBOL_INFO pSymbolInfo = NULL;
 
     memset( &result, 0, sizeof( result ) );
 
@@ -233,7 +234,7 @@ lookupSymCryptSymbol(
 
     memcpy( &input, pbBuffer, cbInput );
 
-    PCSYMCRYPT_SYMBOL_INFO pSymbolInfo = &g_SymCryptSymbolTable[0];
+    pSymbolInfo = &g_SymCryptSymbolTable[0];
     while( pSymbolInfo->symbolName != NULL )
     {
         if( strcmp(input.pcstrSymCryptSymbolName, pSymbolInfo->symbolName) == 0 )
@@ -355,6 +356,7 @@ runSymCryptFunction(
     SCKTM_FUNCTION_RESULT result;
     SCKTM_FUNCTION_INPUT input;
     PUINT64 pArgs;
+    PCSYMCRYPT_SYMBOL_INFO pSymbolInfo = NULL;
 
     memset( &result, 0, sizeof( result ) );
 
@@ -367,7 +369,7 @@ runSymCryptFunction(
     memcpy( &input, pbBuffer, cbInput );
     ResetFatalGlobals();
 
-    PCSYMCRYPT_SYMBOL_INFO pSymbolInfo = &g_SymCryptSymbolTable[0];
+    pSymbolInfo = &g_SymCryptSymbolTable[0];
     while( pSymbolInfo->symbolName != NULL )
     {
         if( strcmp(input.pcstrSymCryptFunctionName, pSymbolInfo->symbolName) == 0 )
