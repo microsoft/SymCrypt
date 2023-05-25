@@ -354,8 +354,10 @@ with the modulo reduction.
 #define GHASH_H_POWER( ghashTable, ind )  ( (ghashTable)[  SYMCRYPT_GHASH_PMULL_HPOWERS - (ind)].n128 )
 #define GHASH_Hx_POWER( ghashTable, ind ) ( (ghashTable)[2*SYMCRYPT_GHASH_PMULL_HPOWERS - (ind)].n128 )
 
+#if SYMCRYPT_MS_VC
 #ifndef vshl_n_u64
 #define vshl_n_u64(src1, src2) neon_shlis64(src1, src2)
+#endif
 #endif
 //
 // CLMUL_4 multiplies two operands into three intermediate results using 4 pmull instructions

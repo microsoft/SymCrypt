@@ -49,6 +49,9 @@ if(CMAKE_SYSTEM_NAME MATCHES "Linux")
         # Enable a baseline of features for the compiler to support everywhere
         # Assumes that the compiler will not emit crypto instructions as a result of normal C code
         set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -march=armv8-a+simd+crypto")
+        # GCC complains about implicit casting between ASIMD registers (i.e. uint8x16_t -> uint64x2_t) by default,
+        # whereas clang and MSVC do not. Setting -flax-vector-conversions to build Arm64 intrinsics code with GCC.
+        set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -flax-vector-conversions")
     endif()
     
     # add_compile_options(-Wall)
