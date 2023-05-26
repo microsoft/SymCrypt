@@ -134,16 +134,16 @@ else() # Windows
         enable_language(ASM_MASM)
     endif()
 
-    add_compile_options(/MP)
-    add_compile_options(/Zp8)
-    add_compile_options(/guard:cf)
+    add_compile_options($<$<COMPILE_LANGUAGE:C,CXX>:/MP>)
+    add_compile_options($<$<COMPILE_LANGUAGE:C,CXX>:/Zp8>)
+    add_compile_options($<$<COMPILE_LANGUAGE:C,CXX>:/guard:cf>)
     add_link_options(/guard:cf)
     add_link_options(/dynamicbase)
-    add_compile_options(/WX)
+    add_compile_options($<$<COMPILE_LANGUAGE:C,CXX>:/WX>)
 
     # Disable warning caused by Windows SDK headers
     # C5105: macro expansion producing 'defined' has undefined behavior
-    add_compile_options(/wd5105)
+    add_compile_options($<$<COMPILE_LANGUAGE:C,CXX>:/wd5105>)
 
     # Architecture-specific compiler flags
     if(SYMCRYPT_TARGET_ARCH MATCHES "X86")
@@ -151,7 +151,7 @@ else() # Windows
         # We link with modules that use the __stdcall calling convention for X86, but not all of the
         # functions declarations are annotated to specify the calling convention. Thus, we have to
         # set the default to __stdcall.
-        add_compile_options(/Gz)
+        add_compile_options($<$<COMPILE_LANGUAGE:C,CXX>:/Gz>)
     endif()
 
     # Remove /RTC1, incompatible with /Ox
@@ -166,15 +166,15 @@ else() # Windows
     string( REPLACE "/Od" "" CMAKE_C_FLAGS_RELEASE ${CMAKE_C_FLAGS_RELEASE})
 
     if(CMAKE_BUILD_TYPE MATCHES Release)
-        add_compile_options(/Oxs)
-        add_compile_options(/GL)
-        add_compile_options(/GF)
-        add_compile_options(/Gy)
-        add_compile_options(/Gw)
+        add_compile_options($<$<COMPILE_LANGUAGE:C,CXX>:/Oxs>)
+        add_compile_options($<$<COMPILE_LANGUAGE:C,CXX>:/GL>)
+        add_compile_options($<$<COMPILE_LANGUAGE:C,CXX>:/GF>)
+        add_compile_options($<$<COMPILE_LANGUAGE:C,CXX>:/Gy>)
+        add_compile_options($<$<COMPILE_LANGUAGE:C,CXX>:/Gw>)
     else()
         if(SYMCRYPT_TARGET_ARCH MATCHES "AMD64")
             # Prevent error C1128 for AMD64/Debug builds: number of sections exceeded object file format limit
-            add_compile_options(/bigobj)
+            add_compile_options($<$<COMPILE_LANGUAGE:C,CXX>:/bigobj>)
         endif()
     endif()
 endif()

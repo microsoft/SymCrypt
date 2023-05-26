@@ -324,7 +324,7 @@ endif()
 
 if(WIN32)
     # Disable run-time type information for SymCrypt library - we do not use it
-    add_compile_options(/GR-)
+    add_compile_options($<$<COMPILE_LANGUAGE:C,CXX>:/GR->)
 
     add_library(symcrypt_usermodewin7 STATIC env_windowsUserModeWin7.c)
     set_target_properties(symcrypt_usermodewin7 PROPERTIES PREFIX "")
