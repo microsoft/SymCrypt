@@ -23,6 +23,7 @@
 SET(SymCryptModulusNdigitsOffsetAmd64,          4);
 SET(SymCryptModulusMontgomeryInv64OffsetAmd64,  32);
 SET(SymCryptModulusValueOffsetAmd64,            128);
+SET(SymCryptNegDivisorSingleDigitOffsetAmd64,   256);
 
 SET(SymCryptModulusNdigitsOffsetX86,            4);
 SET(SymCryptModulusMontgomeryInv64OffsetX86,    24);
@@ -46,6 +47,7 @@ SET(SymCryptModulusValueOffsetArm,              96);
     SYMCRYPT_CHECK_ASM_OFFSET( SymCryptModulusNdigitsOffsetAmd64, SYMCRYPT_FIELD_OFFSET( SYMCRYPT_MODULUS, nDigits ) );\
     SYMCRYPT_CHECK_ASM_OFFSET( SymCryptModulusMontgomeryInv64OffsetAmd64, SYMCRYPT_FIELD_OFFSET( SYMCRYPT_MODULUS, tm.montgomery.inv64 ));\
     SYMCRYPT_CHECK_ASM_OFFSET( SymCryptModulusValueOffsetAmd64, SYMCRYPT_FIELD_OFFSET( SYMCRYPT_MODULUS, Divisor.Int.ti.fdef.uint32 ));\
+    SYMCRYPT_CHECK_ASM_OFFSET( SymCryptNegDivisorSingleDigitOffsetAmd64, SYMCRYPT_FIELD_OFFSET( SYMCRYPT_MODULUS, Divisor.Int.ti.fdef.uint32 ) + (2*SYMCRYPT_FDEF_DIGIT_SIZE) );\
 
 #elif SYMCRYPT_CPU_X86
 #define SYMCRYPT_CHECK_ASM_OFFSETS \

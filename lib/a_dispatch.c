@@ -25,11 +25,17 @@ const SYMCRYPT_MODULAR_FUNCTIONS g_SymCryptModFns[] = {
 #if SYMCRYPT_CPU_AMD64
 
     SYMCRYPT_MOD_FUNCTIONS_FDEF369_MONTGOMERY,          // optimized for 384 and 576-bit moduli
-    SYMCRYPT_MOD_FUNCTIONS_FDEF_MONTGOMERY256,          // Special faster code for 256-bit Montgomery moduli
+    SYMCRYPT_MOD_FUNCTIONS_FDEF_MONTGOMERY_MULX256,     // Special faster code for 256-bit Montgomery moduli, MULX-based code
+    SYMCRYPT_MOD_FUNCTIONS_FDEF_MONTGOMERY_MULXP384,    // Special faster code for P-384 field modulus, MULX-based code
     SYMCRYPT_MOD_FUNCTIONS_FDEF_MONTGOMERY_MULX,        // MULX-based code, for any size (digit size = 512 bits)
-    SYMCRYPT_MOD_FUNCTIONS_FDEF_MONTGOMERY512,          // Special faster code for 512-bit Montgomery moduli
-    SYMCRYPT_MOD_FUNCTIONS_FDEF_MONTGOMERY1024,         // Special faster code for 1024-bit Montgomery moduli
     SYMCRYPT_MOD_FUNCTIONS_FDEF_MONTGOMERY_MULX1024,    // Special faster code for 1024-bit Montgomery moduli, MULX-based code
+    {NULL,},
+
+    // SYMCRYPT_MOD_FUNCTIONS_FDEF_MONTGOMERY_MULXP256,    // Special faster code for P-256 field modulus, MULX-based code
+    // SYMCRYPT_MOD_FUNCTIONS_FDEF_MONTGOMERY_MULX384,     // Special faster code for 384-bit Montgomery moduli, MULX-based code
+    // SYMCRYPT_MOD_FUNCTIONS_FDEF_MONTGOMERY256,          // Special faster code for 256-bit Montgomery moduli
+    // SYMCRYPT_MOD_FUNCTIONS_FDEF_MONTGOMERY512,          // Special faster code for 512-bit Montgomery moduli
+    // SYMCRYPT_MOD_FUNCTIONS_FDEF_MONTGOMERY1024,         // Special faster code for 1024-bit Montgomery moduli
 
 #elif SYMCRYPT_CPU_ARM64
 
@@ -39,14 +45,20 @@ const SYMCRYPT_MODULAR_FUNCTIONS g_SymCryptModFns[] = {
 #endif
 };
 
-#define SymCryptModFntableGeneric               (0 * SYMCRYPT_MODULAR_FUNCTIONS_SIZE)
-#define SymCryptModFntableMontgomery            (1 * SYMCRYPT_MODULAR_FUNCTIONS_SIZE)
-#define SymCryptModFntable369Montgomery         (2 * SYMCRYPT_MODULAR_FUNCTIONS_SIZE)
-#define SymCryptModFntableMontgomery256         (3 * SYMCRYPT_MODULAR_FUNCTIONS_SIZE)
-#define SymCryptModFntableMontgomeryMulx        (4 * SYMCRYPT_MODULAR_FUNCTIONS_SIZE)
-#define SymCryptModFntableMontgomery512         (5 * SYMCRYPT_MODULAR_FUNCTIONS_SIZE)
-#define SymCryptModFntableMontgomery1024        (6 * SYMCRYPT_MODULAR_FUNCTIONS_SIZE)
-#define SymCryptModFntableMontgomeryMulx1024    (7 * SYMCRYPT_MODULAR_FUNCTIONS_SIZE)
+#define SymCryptModLabel(_label)                (_label << 16)
+#define SymCryptModFntableGeneric               (SymCryptModLabel('gM') + (0 * SYMCRYPT_MODULAR_FUNCTIONS_SIZE))
+#define SymCryptModFntableMontgomery            (SymCryptModLabel('mM') + (1 * SYMCRYPT_MODULAR_FUNCTIONS_SIZE))
+#define SymCryptModFntable369Montgomery         (SymCryptModLabel('9m') + (2 * SYMCRYPT_MODULAR_FUNCTIONS_SIZE))
+#define SymCryptModFntableMontgomeryMulx256     (SymCryptModLabel('2x') + (3 * SYMCRYPT_MODULAR_FUNCTIONS_SIZE))
+#define SymCryptModFntableMontgomeryMulxP384    (SymCryptModLabel('3n') + (4 * SYMCRYPT_MODULAR_FUNCTIONS_SIZE))
+#define SymCryptModFntableMontgomeryMulx        (SymCryptModLabel('xM') + (5 * SYMCRYPT_MODULAR_FUNCTIONS_SIZE))
+#define SymCryptModFntableMontgomeryMulx1024    (SymCryptModLabel('1x') + (6 * SYMCRYPT_MODULAR_FUNCTIONS_SIZE))
+
+// #define SymCryptModFntableMontgomeryMulxP256    (SymCryptModLabel('2n') + (xx * SYMCRYPT_MODULAR_FUNCTIONS_SIZE))
+// #define SymCryptModFntableMontgomeryMulx384     (SymCryptModLabel('3x') + (xx * SYMCRYPT_MODULAR_FUNCTIONS_SIZE))
+// #define SymCryptModFntableMontgomery256         (SymCryptModLabel('2m') + (xx * SYMCRYPT_MODULAR_FUNCTIONS_SIZE))
+// #define SymCryptModFntableMontgomery512         (SymCryptModLabel('5m') + (xx * SYMCRYPT_MODULAR_FUNCTIONS_SIZE))
+// #define SymCryptModFntableMontgomery1024        (SymCryptModLabel('1m') + (xx * SYMCRYPT_MODULAR_FUNCTIONS_SIZE))
 
 C_ASSERT( (sizeof( g_SymCryptModFns ) & (sizeof( g_SymCryptModFns) - 1 )) == 0 ); // size of the table must be a power of 2 to be CFG-safe.
 
@@ -58,27 +70,27 @@ const UINT32 g_SymCryptModFnsMask = sizeof( g_SymCryptModFns ) - sizeof( g_SymCr
 const SYMCRYPT_MODULUS_TYPE_SELECTION_ENTRY SymCryptModulusTypeSelections[] =
 {
 #if SYMCRYPT_CPU_AMD64
-    // Mulx used for 257-512 and 577-... bits
-    {('2M' << 16) + SymCryptModFntableMontgomery256,        0,                               256,    SYMCRYPT_MODULUS_FEATURE_MONTGOMERY },
-    {('xM' << 16) + SymCryptModFntableMontgomeryMulx,       SYMCRYPT_CPU_FEATURES_FOR_MULX,  512,    SYMCRYPT_MODULUS_FEATURE_MONTGOMERY },
-    {('9M' << 16) + SymCryptModFntable369Montgomery,        0,                               384,    SYMCRYPT_MODULUS_FEATURE_MONTGOMERY },
-    {('5M' << 16) + SymCryptModFntableMontgomery512,        0,                               512,    SYMCRYPT_MODULUS_FEATURE_MONTGOMERY },
-    {('9M' << 16) + SymCryptModFntable369Montgomery,        0,                               576,    SYMCRYPT_MODULUS_FEATURE_MONTGOMERY },
-    {('xM' << 16) + SymCryptModFntableMontgomeryMulx1024,   SYMCRYPT_CPU_FEATURES_FOR_MULX, 1024,    SYMCRYPT_MODULUS_FEATURE_MONTGOMERY },
-    {('xM' << 16) + SymCryptModFntableMontgomeryMulx,       SYMCRYPT_CPU_FEATURES_FOR_MULX,    0,    SYMCRYPT_MODULUS_FEATURE_MONTGOMERY },
-    {('1M' << 16) + SymCryptModFntableMontgomery1024,       0,                              1024,    SYMCRYPT_MODULUS_FEATURE_MONTGOMERY },
+    // Mulx used for 0-512 and 577-... bits
+    {SymCryptModFntableMontgomeryMulxP384,  SYMCRYPT_CPU_FEATURES_FOR_MULX,  384,   SYMCRYPT_MODULUS_FEATURE_MONTGOMERY | SYMCRYPT_MODULUS_FEATURE_NISTP384 },
+    {SymCryptModFntableMontgomeryMulx256,   SYMCRYPT_CPU_FEATURES_FOR_MULX,  256,   SYMCRYPT_MODULUS_FEATURE_MONTGOMERY },
+    {SymCryptModFntableMontgomeryMulx,      SYMCRYPT_CPU_FEATURES_FOR_MULX,  512,   SYMCRYPT_MODULUS_FEATURE_MONTGOMERY },
+    {SymCryptModFntable369Montgomery,       0,                               384,   SYMCRYPT_MODULUS_FEATURE_MONTGOMERY },
+    {SymCryptModFntableMontgomery,          0,                               512,   SYMCRYPT_MODULUS_FEATURE_MONTGOMERY },
+    {SymCryptModFntable369Montgomery,       0,                               576,   SYMCRYPT_MODULUS_FEATURE_MONTGOMERY },
+    {SymCryptModFntableMontgomeryMulx1024,  SYMCRYPT_CPU_FEATURES_FOR_MULX, 1024,   SYMCRYPT_MODULUS_FEATURE_MONTGOMERY },
+    {SymCryptModFntableMontgomeryMulx,      SYMCRYPT_CPU_FEATURES_FOR_MULX,    0,   SYMCRYPT_MODULUS_FEATURE_MONTGOMERY },
 
 #elif SYMCRYPT_CPU_ARM64
 
-    {('mM' << 16) + SymCryptModFntableMontgomery,           0,                               256,    SYMCRYPT_MODULUS_FEATURE_MONTGOMERY },
-    {('9M' << 16) + SymCryptModFntable369Montgomery,        0,                               384,    SYMCRYPT_MODULUS_FEATURE_MONTGOMERY },
-    {('mM' << 16) + SymCryptModFntableMontgomery,           0,                               512,    SYMCRYPT_MODULUS_FEATURE_MONTGOMERY },
-    {('9M' << 16) + SymCryptModFntable369Montgomery,        0,                               576,    SYMCRYPT_MODULUS_FEATURE_MONTGOMERY },
+    {SymCryptModFntableMontgomery,          0,                               256,   SYMCRYPT_MODULUS_FEATURE_MONTGOMERY },
+    {SymCryptModFntable369Montgomery,       0,                               384,   SYMCRYPT_MODULUS_FEATURE_MONTGOMERY },
+    {SymCryptModFntableMontgomery,          0,                               512,   SYMCRYPT_MODULUS_FEATURE_MONTGOMERY },
+    {SymCryptModFntable369Montgomery,       0,                               576,   SYMCRYPT_MODULUS_FEATURE_MONTGOMERY },
 
 #endif
 
-    {('mM' << 16) + SymCryptModFntableMontgomery,           0,                                 0,    SYMCRYPT_MODULUS_FEATURE_MONTGOMERY },
-    {('gM' << 16) + SymCryptModFntableGeneric,              0,                                 0,    0 },
+    {SymCryptModFntableMontgomery,          0,                                 0,   SYMCRYPT_MODULUS_FEATURE_MONTGOMERY },
+    {SymCryptModFntableGeneric,             0,                                 0,   0 },
     // This last entry always matches, so the code never falls off the end of this table.
 };
 

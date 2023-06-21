@@ -1121,7 +1121,7 @@ C_ASSERT( sizeof( SYMCRYPT_SHA512_STATE_EXPORT_BLOB ) == SYMCRYPT_SHA512_STATE_E
 // Refer to SYMCRYPT_KECCAK_STATE documentation for the explanation of each struct member
 typedef struct _SYMCRYPT_KECCAK_STATE_EXPORT_BLOB {
     SYMCRYPT_BLOB_HEADER    header;
-    BYTE                    state[200];    
+    BYTE                    state[200];
     UINT32                  stateIndex;
     UINT8                   paddingValue;
     BOOLEAN                 squeezeMode;
@@ -1719,7 +1719,7 @@ SymCryptKeccakReset(_Out_ PSYMCRYPT_KECCAK_STATE pState);
 VOID
 SYMCRYPT_CALL
 SymCryptKeccakZeroAppendBlock(_Inout_ PSYMCRYPT_KECCAK_STATE pState);
-// Zero pads the current block by invoking the permutation and setting 
+// Zero pads the current block by invoking the permutation and setting
 // pState->stateIndex to 0.
 
 VOID
@@ -1906,6 +1906,7 @@ extern const UINT32 g_SymCryptModFnsMask;
 #define SYMCRYPT_MODULUS_FEATURE_MONTGOMERY         1       // Modulus is suitable for Montgomery processing
 // #define SYMCRYPT_MODULUS_FEATURE_PSEUDO_MERSENNE    2       // Modulus is suitable for Pseudo-Mersenne processing
 // #define SYMCRYPT_MODULUS_FEATURE_NISTP256           4       // Modulus is the NIST P256 curve prime
+#define SYMCRYPT_MODULUS_FEATURE_NISTP384           8       // Modulus is the NIST P384 curve prime
 
 typedef struct _SYMCRYPT_MODULUS_TYPE_SELECTION_ENTRY
 {
@@ -1952,16 +1953,68 @@ C_ASSERT( (SYMCRYPT_MODULAR_FUNCTIONS_SIZE & (SYMCRYPT_MODULAR_FUNCTIONS_SIZE-1)
 }
 
 #define SYMCRYPT_MOD_FUNCTIONS_FDEF_MONTGOMERY256 {\
-    &SymCryptFdefModAdd256Asm,\
-    &SymCryptFdefModSub256Asm,\
+    (SYMCRYPT_MOD_BINARY_OP_FN) &SymCryptFdefModAdd256Asm,\
+    (SYMCRYPT_MOD_BINARY_OP_FN) &SymCryptFdefModSub256Asm,\
     &SymCryptFdefModNegGeneric,\
-    &SymCryptFdefModMulMontgomery256Asm,\
-    &SymCryptFdefModSquareMontgomery256Asm,\
+    (SYMCRYPT_MOD_BINARY_OP_FN) &SymCryptFdefModMulMontgomery256Asm,\
+    (SYMCRYPT_MOD_UNARY_OP_FN) &SymCryptFdefModSquareMontgomery256Asm,\
     &SymCryptFdefModInvMontgomery256,\
     &SymCryptFdefModSetPostMontgomery256,\
     &SymCryptFdefModPreGetMontgomery256,\
     &SymCryptFdefModulusCopyFixupMontgomery,\
     &SymCryptFdefModulusInitMontgomery256,\
+}
+
+#define SYMCRYPT_MOD_FUNCTIONS_FDEF_MONTGOMERY_MULX256 {\
+    (SYMCRYPT_MOD_BINARY_OP_FN) &SymCryptFdefModAddMulx256Asm,\
+    (SYMCRYPT_MOD_BINARY_OP_FN) &SymCryptFdefModSub256Asm,\
+    &SymCryptFdefModNegGeneric,\
+    (SYMCRYPT_MOD_BINARY_OP_FN) &SymCryptFdefModMulMontgomeryMulx256Asm,\
+    (SYMCRYPT_MOD_UNARY_OP_FN) &SymCryptFdefModSquareMontgomeryMulx256Asm,\
+    &SymCryptFdefModInvMontgomery256,\
+    &SymCryptFdefModSetPostMontgomeryMulx256,\
+    &SymCryptFdefModPreGetMontgomery256,\
+    &SymCryptFdefModulusCopyFixupMontgomery,\
+    &SymCryptFdefModulusInitMontgomery256,\
+}
+
+#define SYMCRYPT_MOD_FUNCTIONS_FDEF_MONTGOMERY_MULXP256 {\
+    (SYMCRYPT_MOD_BINARY_OP_FN) &SymCryptFdefModAddMulx256Asm,\
+    (SYMCRYPT_MOD_BINARY_OP_FN) &SymCryptFdefModSub256Asm,\
+    &SymCryptFdefModNegGeneric,\
+    (SYMCRYPT_MOD_BINARY_OP_FN) &SymCryptFdefModMulMontgomeryMulxP256Asm,\
+    (SYMCRYPT_MOD_UNARY_OP_FN) &SymCryptFdefModSquareMontgomeryMulxP256Asm,\
+    &SymCryptFdefModInvMontgomery256,\
+    &SymCryptFdefModSetPostMontgomeryMulx256,\
+    &SymCryptFdefModPreGetMontgomery256,\
+    &SymCryptFdefModulusCopyFixupMontgomery,\
+    &SymCryptFdefModulusInitMontgomery256,\
+}
+
+#define SYMCRYPT_MOD_FUNCTIONS_FDEF_MONTGOMERY_MULX384 {\
+    (SYMCRYPT_MOD_BINARY_OP_FN) &SymCryptFdefModAddMulx384Asm,\
+    (SYMCRYPT_MOD_BINARY_OP_FN) &SymCryptFdefModSub384Asm,\
+    &SymCryptFdefModNegGeneric,\
+    (SYMCRYPT_MOD_BINARY_OP_FN) &SymCryptFdefModMulMontgomeryMulx384Asm,\
+    (SYMCRYPT_MOD_UNARY_OP_FN) &SymCryptFdefModSquareMontgomeryMulx384Asm,\
+    &SymCryptFdef369ModInvMontgomery,\
+    &SymCryptFdefModSetPostMontgomeryMulx384,\
+    &SymCryptFdef369ModPreGetMontgomery,\
+    &SymCryptFdefModulusCopyFixupMontgomery,\
+    &SymCryptFdef369ModulusInitMontgomery,\
+}
+
+#define SYMCRYPT_MOD_FUNCTIONS_FDEF_MONTGOMERY_MULXP384 {\
+    (SYMCRYPT_MOD_BINARY_OP_FN) &SymCryptFdefModAddMulx384Asm,\
+    (SYMCRYPT_MOD_BINARY_OP_FN) &SymCryptFdefModSub384Asm,\
+    &SymCryptFdefModNegGeneric,\
+    (SYMCRYPT_MOD_BINARY_OP_FN) &SymCryptFdefModMulMontgomeryMulxP384Asm,\
+    (SYMCRYPT_MOD_UNARY_OP_FN) &SymCryptFdefModSquareMontgomeryMulxP384Asm,\
+    &SymCryptFdef369ModInvMontgomery,\
+    &SymCryptFdefModSetPostMontgomeryMulxP384,\
+    &SymCryptFdef369ModPreGetMontgomery,\
+    &SymCryptFdefModulusCopyFixupMontgomery,\
+    &SymCryptFdef369ModulusInitMontgomery,\
 }
 
 #define SYMCRYPT_MOD_FUNCTIONS_FDEF369_MONTGOMERY {\
@@ -2577,16 +2630,21 @@ SymCryptFdefModAddGeneric(
     _Out_                           PSYMCRYPT_MODELEMENT    peDst,
     _Out_writes_bytes_( cbScratch ) PBYTE                   pbScratch,
                                     SIZE_T                  cbScratch );
-
 VOID
 SYMCRYPT_CALL
-SymCryptFdefModAdd256Asm(
+SymCryptFdefModAddMulx256Asm(
     _In_                            PCSYMCRYPT_MODULUS      pmMod,
     _In_                            PCSYMCRYPT_MODELEMENT   peSrc1,
     _In_                            PCSYMCRYPT_MODELEMENT   peSrc2,
-    _Out_                           PSYMCRYPT_MODELEMENT    peDst,
-    _Out_writes_bytes_( cbScratch ) PBYTE                   pbScratch,
-                                    SIZE_T                  cbScratch );
+    _Out_                           PSYMCRYPT_MODELEMENT    peDst );
+
+VOID
+SYMCRYPT_CALL
+SymCryptFdefModAddMulx384Asm(
+    _In_                            PCSYMCRYPT_MODULUS      pmMod,
+    _In_                            PCSYMCRYPT_MODELEMENT   peSrc1,
+    _In_                            PCSYMCRYPT_MODELEMENT   peSrc2,
+    _Out_                           PSYMCRYPT_MODELEMENT    peDst );
 
 VOID
 SYMCRYPT_CALL
@@ -2624,9 +2682,15 @@ SymCryptFdefModSub256Asm(
     _In_                            PCSYMCRYPT_MODULUS      pmMod,
     _In_                            PCSYMCRYPT_MODELEMENT   peSrc1,
     _In_                            PCSYMCRYPT_MODELEMENT   peSrc2,
-    _Out_                           PSYMCRYPT_MODELEMENT    peDst,
-    _Out_writes_bytes_( cbScratch ) PBYTE                   pbScratch,
-                                    SIZE_T                  cbScratch );
+    _Out_                           PSYMCRYPT_MODELEMENT    peDst );
+
+VOID
+SYMCRYPT_CALL
+SymCryptFdefModSub384Asm(
+    _In_                            PCSYMCRYPT_MODULUS      pmMod,
+    _In_                            PCSYMCRYPT_MODELEMENT   peSrc1,
+    _In_                            PCSYMCRYPT_MODELEMENT   peSrc2,
+    _Out_                           PSYMCRYPT_MODELEMENT    peDst );
 
 VOID
 SYMCRYPT_CALL
@@ -2664,7 +2728,15 @@ SymCryptFdefModSetPostMontgomery(
 
 VOID
 SYMCRYPT_CALL
-SymCryptFdefModSetPostMontgomery256(
+SymCryptFdefModSetPostMontgomeryMulx256(
+    _In_                            PCSYMCRYPT_MODULUS      pmMod,
+    _Inout_                         PSYMCRYPT_MODELEMENT    peObj,
+    _Out_writes_bytes_( cbScratch ) PBYTE                   pbScratch,
+                                    SIZE_T                  cbScratch );
+
+VOID
+SYMCRYPT_CALL
+SymCryptFdefModSetPostMontgomeryMulxP384(
     _In_                            PCSYMCRYPT_MODULUS      pmMod,
     _Inout_                         PSYMCRYPT_MODELEMENT    peObj,
     _Out_writes_bytes_( cbScratch ) PBYTE                   pbScratch,
@@ -2802,13 +2874,19 @@ SymCryptFdefModMulMontgomery(
 
 VOID
 SYMCRYPT_CALL
-SymCryptFdefModMulMontgomery256Asm(
+SymCryptFdefModMulMontgomeryMulx256Asm(
     _In_                            PCSYMCRYPT_MODULUS      pMod,
     _In_                            PCSYMCRYPT_MODELEMENT   pSrc1,
     _In_                            PCSYMCRYPT_MODELEMENT   pSrc2,
-    _Out_                           PSYMCRYPT_MODELEMENT    pDst,
-    _Out_writes_bytes_( cbScratch ) PBYTE                   pbScratch,
-                                    SIZE_T                  cbScratch );
+    _Out_                           PSYMCRYPT_MODELEMENT    pDst );
+
+VOID
+SYMCRYPT_CALL
+SymCryptFdefModMulMontgomeryMulxP384Asm(
+    _In_                            PCSYMCRYPT_MODULUS      pMod,
+    _In_                            PCSYMCRYPT_MODELEMENT   pSrc1,
+    _In_                            PCSYMCRYPT_MODELEMENT   pSrc2,
+    _Out_                           PSYMCRYPT_MODELEMENT    pDst );
 
 VOID
 SYMCRYPT_CALL
@@ -2840,25 +2918,6 @@ SymCryptFdefModMulMontgomeryMulx1024(
     _Out_writes_bytes_( cbScratch ) PBYTE                   pbScratch,
                                     SIZE_T                  cbScratch );
 
-VOID
-SYMCRYPT_CALL
-SymCryptFdefModMulMontgomery512(
-    _In_                            PCSYMCRYPT_MODULUS      pMod,
-    _In_                            PCSYMCRYPT_MODELEMENT   pSrc1,
-    _In_                            PCSYMCRYPT_MODELEMENT   pSrc2,
-    _Out_                           PSYMCRYPT_MODELEMENT    pDst,
-    _Out_writes_bytes_( cbScratch ) PBYTE                   pbScratch,
-                                    SIZE_T                  cbScratch );
-
-VOID
-SYMCRYPT_CALL
-SymCryptFdefModMulMontgomery1024(
-    _In_                            PCSYMCRYPT_MODULUS      pMod,
-    _In_                            PCSYMCRYPT_MODELEMENT   pSrc1,
-    _In_                            PCSYMCRYPT_MODELEMENT   pSrc2,
-    _Out_                           PSYMCRYPT_MODELEMENT    pDst,
-    _Out_writes_bytes_( cbScratch ) PBYTE                   pbScratch,
-                                    SIZE_T                  cbScratch );
 
 VOID
 SYMCRYPT_CALL
@@ -2880,21 +2939,17 @@ SymCryptFdefModSquareMontgomery(
 
 VOID
 SYMCRYPT_CALL
-SymCryptFdefModSquareMontgomery256(
+SymCryptFdefModSquareMontgomeryMulx256Asm(
     _In_                            PCSYMCRYPT_MODULUS      pMod,
     _In_                            PCSYMCRYPT_MODELEMENT   pSrc,
-    _Out_                           PSYMCRYPT_MODELEMENT    pDst,
-    _Out_writes_bytes_( cbScratch ) PBYTE                   pbScratch,
-                                    SIZE_T                  cbScratch );
+    _Out_                           PSYMCRYPT_MODELEMENT    pDst );
 
 VOID
 SYMCRYPT_CALL
-SymCryptFdefModSquareMontgomery256Asm(
+SymCryptFdefModSquareMontgomeryMulxP384Asm(
     _In_                            PCSYMCRYPT_MODULUS      pMod,
     _In_                            PCSYMCRYPT_MODELEMENT   pSrc,
-    _Out_                           PSYMCRYPT_MODELEMENT    pDst,
-    _Out_writes_bytes_( cbScratch ) PBYTE                   pbScratch,
-                                    SIZE_T                  cbScratch );
+    _Out_                           PSYMCRYPT_MODELEMENT    pDst );
 
 VOID
 SYMCRYPT_CALL
@@ -2920,24 +2975,6 @@ SymCryptFdefModSquareMontgomeryMulx1024(
     _In_                            PCSYMCRYPT_MODULUS      pMod,
     _In_                            PCSYMCRYPT_MODELEMENT   pSrc,
     _Out_                           PSYMCRYPT_MODELEMENT    pDst,
-    _Out_writes_bytes_( cbScratch ) PBYTE                   pbScratch,
-                                    SIZE_T                  cbScratch );
-
-VOID
-SYMCRYPT_CALL
-SymCryptFdefModSquareMontgomery512(
-    _In_                            PCSYMCRYPT_MODULUS      pmMod,
-    _In_                            PCSYMCRYPT_MODELEMENT   peSrc,
-    _Out_                           PSYMCRYPT_MODELEMENT    peDst,
-    _Out_writes_bytes_( cbScratch ) PBYTE                   pbScratch,
-                                    SIZE_T                  cbScratch );
-
-VOID
-SYMCRYPT_CALL
-SymCryptFdefModSquareMontgomery1024(
-    _In_                            PCSYMCRYPT_MODULUS      pmMod,
-    _In_                            PCSYMCRYPT_MODELEMENT   peSrc,
-    _Out_                           PSYMCRYPT_MODELEMENT    peDst,
     _Out_writes_bytes_( cbScratch ) PBYTE                   pbScratch,
                                     SIZE_T                  cbScratch );
 
@@ -3297,7 +3334,7 @@ SymCryptFdefMontgomeryReduceMulx1024(
 //     &    | Alg   | Description
 // Operation|       |
 // --------------------------------------------------------------------
-// Dlkey    | DH    | Requires use of named safe-prime group (otherwise we cannot perform private 
+// Dlkey    | DH    | Requires use of named safe-prime group (otherwise we cannot perform private
 // Generate |       | key range check, or public key order validation).
 //          |       |
 //          |       | From SP800-56Ar3:
@@ -3312,7 +3349,7 @@ SymCryptFdefMontgomeryReduceMulx1024(
 //          |       | FIPS 140-3 does not require a further PCT before first use of the key.
 //          |-----------------------------------------------------------
 //          | DSA   | Requires use of a Dlgroup which has q, but is not a named safe-prime group.
-//          |       | 
+//          |       |
 //          |       | FIPS 186-4 and SP800-89 do not require DSA keypair owners to perform
 //          |       | validation of keypairs they generate.
 //          |       |
@@ -3321,7 +3358,7 @@ SymCryptFdefMontgomeryReduceMulx1024(
 //          |       | As the Dlgroups supported by FIPS are distinct for DH and DSA, we can perform
 //          |       | this PCT on key generation without fear of adverse performance.
 // --------------------------------------------------------------------
-// Dlkey    | DH    | Requires use of named safe-prime group (otherwise we cannot perform private 
+// Dlkey    | DH    | Requires use of named safe-prime group (otherwise we cannot perform private
 // SetValue |       | key range check, or public key order validation).
 //          |       |
 //          |       | From SP800-56Ar3:
@@ -3331,13 +3368,13 @@ SymCryptFdefMontgomeryReduceMulx1024(
 //          |       |     SymCryptDlkeySetPrivateKeyLength, such that 2s <= nBitsPriv <= nBitsOfQ.
 //          |       |     (s is the maximum security strength for a named safe-prime group as
 //          |       |     specified in SP800-56Arev3)
-//          |       | 
+//          |       |
 //          |       | If importing a public key:
 //          |       |   Check public key is in the range [2, p-2]
 //          |       |   Check that (Public key)^q == 1 mod p
 //          |       |
 //          |       | If importing both a private and public key, as above and also:
-//          |       |   Use the imported Private key to generate a Public key, and check the 
+//          |       |   Use the imported Private key to generate a Public key, and check the
 //          |       |   generated Public key is equal to the imported Public key.
 //          |-----------------------------------------------------------
 //          | DSA   | Requires use of a Dlgroup which is not a named safe-prime group.
@@ -3347,7 +3384,7 @@ SymCryptFdefMontgomeryReduceMulx1024(
 //          |       |   Check public key is in the range [2, p-2]
 //          |       |   Check that (Public key)^q == 1 mod p
 //          |       | If importing a private and public key:
-//          |       |   Use the imported Private key to generate a Public key, and check the 
+//          |       |   Use the imported Private key to generate a Public key, and check the
 //          |       |   generated Public key is equal to the imported Public key.
 // --------------------------------------------------------------------
 // Eckey    | ECDH  | Requires use of a NIST prime Elliptic Curve (P224, P256, P384, or P521)
@@ -3357,7 +3394,7 @@ SymCryptFdefMontgomeryReduceMulx1024(
 //          |       | Check public key is nonzero, has coordinates in the underlying field, and is a
 //          |       | point on the curve
 //          |       | Check that GOrd*(Public key) == O
-//          |       | 
+//          |       |
 //          |       | FIPS 140-3 does not require a further PCT before first use of the key
 //          |----------------------------------------------------------
 //          | ECDSA | Requires use of a NIST prime Elliptic Curve (P224, P256, P384, or P521)
@@ -3383,7 +3420,7 @@ SymCryptFdefMontgomeryReduceMulx1024(
 //          |       |   Check that GOrd*(Public key) == O
 //          |       |
 //          |       | If importing a private and public key:
-//          |       |   Use the imported Private key to generate a Public key, and check the 
+//          |       |   Use the imported Private key to generate a Public key, and check the
 //          |       |   generated Public key is equal to the imported Public key.
 //          |----------------------------------------------------------
 //          | ECDSA | Requires use of a NIST prime Elliptic Curve (P224, P256, P384, or P521)
@@ -3396,7 +3433,7 @@ SymCryptFdefMontgomeryReduceMulx1024(
 //          |       |   Check that GOrd*(Public key) == O
 //          |       |
 //          |       | If importing a private and public key:
-//          |       |   Use the imported Private key to generate a Public key, and check the 
+//          |       |   Use the imported Private key to generate a Public key, and check the
 //          |       |   generated Public key is equal to the imported Public key.
 // --------------------------------------------------------------------
 // Rsakey   | RSA   | From FIPS 186-4 (SIGN) and SP800-56Br2 (ENCRYPT for key transport):
@@ -3417,7 +3454,7 @@ SymCryptFdefMontgomeryReduceMulx1024(
 //          |       | PCT, but does specify that for an owner to have assurance of Private Key
 //          |       | Possession they can sign a message with the private key and validate it with
 //          |       | the public key to check they correspond to each other. Notably, this
-//          |       | internally will verify (m^d)^e == m mod n for some m (along with testing 
+//          |       | internally will verify (m^d)^e == m mod n for some m (along with testing
 //          |       | additional padding logic)
 //          |       |
 //          |       | FIPS 140-2 explicitly says that only one PCT is required if a keypair may be
@@ -4121,3 +4158,28 @@ SymCryptAtomicCas128Relaxed(
 #endif
 
 #endif
+
+FORCEINLINE
+UINT32
+SymCryptCountTrailingZeros32( UINT32 value )
+{
+    ULONG index = 0;
+    if( value == 0 )
+    {
+        return 32;
+    }
+
+#if SYMCRYPT_MS_VC && (SYMCRYPT_CPU_AMD64 | SYMCRYPT_CPU_ARM64 | SYMCRYPT_CPU_X86 | SYMCRYPT_CPU_ARM)
+    _BitScanForward(&index, value);
+#elif SYMCRYPT_GNUC
+    index = __builtin_ctz(value);
+#else
+    while( (value & 1) == 0 )
+    {
+        index++;
+        value >>= 1;
+    }
+#endif
+
+    return (UINT32) index;
+}

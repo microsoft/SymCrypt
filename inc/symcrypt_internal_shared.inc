@@ -19,7 +19,7 @@
 // Separate from these numbers the build system includes information about the branch,
 // last commit, build time, etc.
 //
-// The API numbering starts at 100 to avoid number conficts with the old system.
+// The API numbering starts at 100 to avoid number conflicts with the old system.
 //
 
 #define SYMCRYPT_CODE_VERSION_API       103

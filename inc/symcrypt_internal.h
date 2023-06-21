@@ -2141,9 +2141,10 @@ SYMCRYPT_ASYM_ALIGN_STRUCT _SYMCRYPT_MODULUS {
     //  The extensions of the Divisor object
     // and after that:
     // FDEF: Rsqr as an array of UINT32, size = nDigits * digitsize
+    // FDEF: negDivisor as an array of UINT32, size = nDigits * digitsize
 };
 
-#define SYMCRYPT_FDEF_SIZEOF_MODULUS_FROM_DIGITS( _nDigits )    (sizeof( SYMCRYPT_MODULUS ) + SYMCRYPT_FDEF_SIZEOF_DIVISOR_FROM_DIGITS( _nDigits ) + _nDigits * SYMCRYPT_FDEF_DIGIT_SIZE )
+#define SYMCRYPT_FDEF_SIZEOF_MODULUS_FROM_DIGITS( _nDigits )    (sizeof( SYMCRYPT_MODULUS ) + SYMCRYPT_FDEF_SIZEOF_DIVISOR_FROM_DIGITS( _nDigits ) + (2 * _nDigits * SYMCRYPT_FDEF_DIGIT_SIZE) )
 #define SYMCRYPT_FDEF_SIZEOF_MODULUS_FROM_BITS( _bits )         SYMCRYPT_FDEF_SIZEOF_MODULUS_FROM_DIGITS(SYMCRYPT_FDEF_DIGITS_FROM_BITS( _bits ))
 
 SYMCRYPT_ASYM_ALIGN_STRUCT _SYMCRYPT_MODELEMENT {

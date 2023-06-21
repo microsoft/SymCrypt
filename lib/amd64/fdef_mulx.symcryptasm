@@ -29,12 +29,17 @@ MACRO_START(MULADD18, R0, R1, R2, R3, R4, R5, R6, R7, pD, pA, pB, T0, T1, QH)
     // Pre: Cy = Ov = 0
     // Post: Cy = Ov = 0
 
+    xor     T0, T0      // clear flags
+                        // makes following carry chains architecturally independent of previous ones
+
     mov     QH, [pB]
     adox    R0, [pD]
 
     mulx    T1, T0, [pA + 0 * 8]
     adcx    R0, T0
     adox    R1, T1
+
+    mov     [pD], R0
 
     mulx    T1, T0, [pA + 1 * 8]
     adcx    R1, T0
@@ -62,11 +67,11 @@ MACRO_START(MULADD18, R0, R1, R2, R3, R4, R5, R6, R7, pD, pA, pB, T0, T1, QH)
 
     mulx    T1, T0, [pA + 7 * 8]
     adcx    R7, T0
-    mov     [pD], R0
 
     mov     R0, 0
-    adcx    R0, R0
-    adox    R0, T1
+    adox    R0, R0
+
+    adcx    R0, T1
 MACRO_END()
 
 MACRO_START(MULADD88, R0, R1, R2, R3, R4, R5, R6, R7, pD, pA, pB, T0, T1, QH)
@@ -129,12 +134,14 @@ MACRO_START(HALF_SQUARE_NODIAG8, R0, R1, R2, R3, R4, R5, R6, R7, pD, pA, T0, T1,
     adcx    R7, T0
     mov     [pD + 1 * 8], R1
 
-    adcx    R0, R0
-    adox    R0, T1
+    adox    R0, R0
+    adcx    R0, T1
     mov     [pD + 2 * 8], R2
     mov     QH, [pA + 1 * 8]        // QH = A1
 
     //=======
+    xor     T0, T0      // clear flags
+                        // makes following carry chains architecturally independent of previous ones
 
     mulx    T1, T0, [pA + 2 * 8]
     adcx    R3, T0
@@ -173,6 +180,8 @@ MACRO_START(HALF_SQUARE_NODIAG8, R0, R1, R2, R3, R4, R5, R6, R7, pD, pA, T0, T1,
     mov     QH, [pA + 2 * 8]        // QH = A2
 
     //======
+    xor     T0, T0      // clear flags
+                        // makes following carry chains architecturally independent of previous ones
 
     mulx    T1, T0, [pA + 3 * 8]
     adcx    R5, T0
@@ -213,6 +222,8 @@ MACRO_START(HALF_SQUARE_NODIAG8, R0, R1, R2, R3, R4, R5, R6, R7, pD, pA, T0, T1,
     mov     [pD + 6 * 8], R6
 
     //======
+    xor     T0, T0      // clear flags
+                        // makes following carry chains architecturally independent of previous ones
 
     mulx    T1, T0, [pA + 4 * 8]
     adcx    R7, T0
@@ -818,6 +829,699 @@ SymCryptFdefMontgomeryReduceMulxMaskedCopyLoop:
 MUL_FUNCTION_END(SymCryptFdefMontgomeryReduceMulx)
 
 // --------------------------------
+// 256-bit size specific functions
+// --------------------------------
+
+//VOID
+//SYMCRYPT_CALL
+//SymCryptFdefModAddMulx256Asm(
+//    _In_                            PCSYMCRYPT_MODULUS      pmMod,
+//    _In_                            PCSYMCRYPT_MODELEMENT   peSrc1,
+//    _In_                            PCSYMCRYPT_MODELEMENT   peSrc2,
+//    _Out_                           PSYMCRYPT_MODELEMENT    peDst,
+//    _Out_writes_bytes_( cbScratch ) PBYTE                   pbScratch,
+//                                    SIZE_T                  cbScratch )
+
+FUNCTION_START(SymCryptFdefModAddMulx256Asm, 4, 9)
+
+        // Q1 = pmMod
+        // Q2 = peSrc1
+        // Q3 = peSrc2
+        // Q4 = peDst
+
+        add     Q1, SymCryptNegDivisorSingleDigitOffsetAmd64
+
+        // compute Src1 + Src2 into (Q0, Q5, Q6, Q2), Cy = addition carry
+        // Compute sum + (-Mod) into (Q7, Q8, Q3, Q1), Ov = inverted subtraction borrow
+
+        xor     Q0, Q0 // Clear the flags
+
+        mov     Q0, [Q2 + 0*8]
+        adcx    Q0, [Q3 + 0*8]
+
+        mov     Q5, [Q2 + 1*8]
+        adcx    Q5, [Q3 + 1*8]
+
+        mov     Q6, [Q2 + 2*8]
+        adcx    Q6, [Q3 + 2*8]
+
+        mov     Q2, [Q2 + 3*8]
+        adcx    Q2, [Q3 + 3*8]
+
+        mov     Q7, [Q1 + 0*8]
+        adox    Q7, Q0
+
+        mov     Q8, [Q1 + 1*8]
+        adox    Q8, Q5
+
+        mov     Q3, [Q1 + 2*8]
+        adox    Q3, Q6
+
+        mov     Q1, [Q1 + 3*8]
+        adox    Q1, Q2
+
+        // Choose between the two
+        // addition carry = 1, then subtraction borrow = 1 and we pick the 2nd result.
+        // addition carry = 0 and subtraction borrow = 0: pick 2nd result
+        // addition carry = 0 and subtraction borrow = 1: pick first result
+
+        cmovc   Q0, Q7
+        cmovc   Q5, Q8
+        cmovc   Q6, Q3
+        cmovc   Q2, Q1
+
+        cmovo   Q0, Q7
+        cmovo   Q5, Q8
+        cmovo   Q6, Q3
+        cmovo   Q2, Q1
+
+        mov     [Q4 + 0*8], Q0
+        mov     [Q4 + 1*8], Q5
+        mov     [Q4 + 2*8], Q6
+        mov     [Q4 + 3*8], Q2
+
+FUNCTION_END(SymCryptFdefModAddMulx256Asm)
+
+MACRO_START(MUL_AND_MONTGOMERY_REDUCE14_INTERLEAVE, T0, T1, QH, pA, Aoff, pB, pM, K, R0, R1, R2, R3, R4, R5)
+    // (R1, R2, R3, R4, R5) = A[Aoff] * (B0..3) + (R1, R2, R3, R4, R5)
+    // (xx, R1, R2, R3, R4, R5, R0) = K * (M0..3) + (R0, R1, R2, R3, R4, R5)
+    // K = modInv * R1
+    // Note K is chosen using pMod's montgomery inverse s.t. xx would get set to 0
+    // pM is a pointer the the bytes of the modulus (i.e. offset into SYMCRYPT_MODULUS structure)
+    // R5 is 0 or 1 at start
+    // R0 is 0 or 1 at end
+    // T0, T1 = scratch
+
+    mov     QH, [pA + Aoff]
+    xor     T0, T0      // clear flags
+                        // makes following carry chains architecturally independent of previous ones
+
+    mulx    T1, T0, [pB + 0*8]
+    adox    R1, T0
+    adcx    R2, T1
+
+    mulx    T1, T0, [pB + 1*8]
+    adox    R2, T0
+    adcx    R3, T1
+
+    mulx    T1, T0, [pB + 2*8]
+    adox    R3, T0
+    adcx    R4, T1
+
+    mulx    T1, T0, [pB + 3*8]
+    adox    R4, T0
+    mov     T0, 0
+    adcx    T1, T0      // T1 in range [0, 2^64-1]
+
+    adox    R5, T0      // R5 in range [0, 2]
+                        // defer adding T1 to avoid overflowing earlier than necessary (we are bound by adox/adcx throughput)
+                        // Multiplication result in R1, R2, R3, R4, R5+T1
+
+    xor     T0, T0      // clear flags
+
+    mov     QH, K       // now use K as a temporary while T1 has the value to add to R5
+
+    mulx    K, T0, [pM + 0*8]
+    adcx    R0, T0
+    adox    R1, K
+
+    mulx    K, T0, [pM + 1*8]
+    adcx    R1, T0
+    adox    R2, K
+
+    mulx    K, T0, [pM + 2*8]
+    adcx    R2, T0
+    adox    R3, K
+
+    mulx    K, T0, [pM + 3*8]
+    adcx    R3, T0
+    adox    R4, K       // This may overflow
+
+    mov     R0, 0
+    adcx    R4, R0      // This may overflow
+    adox    R5, R0      // R5 in range [0, 3]
+
+    adc     R5, T1      // This may overflow
+
+    adc     R0, R0
+
+    mov     K, R1
+    imul    K, [pM - SymCryptModulusValueOffsetAmd64 + SymCryptModulusMontgomeryInv64OffsetAmd64]
+MACRO_END()
+
+//VOID
+//SYMCRYPT_CALL
+//SymCryptFdefModMulMontgomeryMulx256Asm(
+//    _In_                            PCSYMCRYPT_MODULUS      pMod,
+//    _In_                            PCSYMCRYPT_MODELEMENT   pSrc1,
+//    _In_                            PCSYMCRYPT_MODELEMENT   pSrc2,
+//    _Out_                           PSYMCRYPT_MODELEMENT    pDst,
+//    _Out_writes_bytes_( cbScratch ) PBYTE                   pbScratch,
+//                                    SIZE_T                  cbScratch )
+
+#if defined(SYMCRYPT_MASM)
+altentry SymCryptFdefModMulMontgomeryMulx256AsmInternal
+#endif
+
+// Note we specify only 4 arguments as we never use arguments 5 and 6 (saves some prolog code in MSFT calling convention)
+MUL_FUNCTION_START(SymCryptFdefModMulMontgomeryMulx256Asm, 4, 13)
+
+        // Q1 = pMod
+        // Q2 = pSrc1
+        // Q3 = pSrc2
+        // Q4 = pDst
+
+ALTERNATE_ENTRY(SymCryptFdefModMulMontgomeryMulx256AsmInternal)
+
+        //
+        // SamL: We previously did small modular multiplication by doing a full integer multiplication followed by a
+        // Montgomery reduction on the full result.
+        // I observed that this approach could have an issue with dependency chains in the Montgomery reduction step,
+        // if the multiple K we need to add to the result to zero out the bottom 64b is not computed early enough we
+        // can be bound by the latency of multiplication rather than the throughput of multiplication and carry chain
+        // handling.
+        // Additionally, I wanted the new 384-bit specific code to follow a similar pattern to the new 256-bit code, and
+        // producing a full 384bx384b->768b multiplication would mean we run out of registers and have to spill in the
+        // body of the 384-bit function.
+        //
+        // The approach I have taken is to interleave the multiplication with the Montgomery reduction, so we only have
+        // to keep n+2 words in registers for accumulators in the inner processing. Additionally, for all but the
+        // Montgomery reduction of the final least-significant word, we have a word*limb multiplication (4 or 6 mulx)
+        // between issuing the computation of K and using the result.
+        //
+
+        xor     Q11, Q11  // clear flags
+        mov     QH, [Q2]
+
+        mulx    Q7, Q6,  [Q3 + 0*8]
+
+        mulx    Q8, Q0,  [Q3 + 1*8]
+        adc     Q7, Q0        // Note: this is intentionally adc as, if we issue an add here it is
+                              // liable to contend with a multiplication uop on the critical path
+                              // (adc issues on different ports to mulx/imul so does not contend)
+
+        mulx    Q9, Q0,  [Q3 + 2*8]
+        adc     Q8, Q0
+
+        mulx    Q10, Q0, [Q3 + 3*8]
+        adc     Q9, Q0
+
+        adc     Q10, Q11      // Multiplication result in Q6, Q7, Q8, Q9, Q10
+
+        // Compute K for reducing Multiplication result
+        mov     Q12, Q6
+        imul    Q12, [Q1 + SymCryptModulusMontgomeryInv64OffsetAmd64]
+        add     Q1, SymCryptModulusValueOffsetAmd64
+
+        MUL_AND_MONTGOMERY_REDUCE14_INTERLEAVE Q0, Q5, QH, Q2,  8, Q3, Q1, Q12, Q6, Q7, Q8, Q9, Q10, Q11
+
+        MUL_AND_MONTGOMERY_REDUCE14_INTERLEAVE Q0, Q5, QH, Q2, 16, Q3, Q1, Q12, Q7, Q8, Q9, Q10, Q11, Q6
+
+        MUL_AND_MONTGOMERY_REDUCE14_INTERLEAVE Q0, Q5, QH, Q2, 24, Q3, Q1, Q12, Q8, Q9, Q10, Q11, Q6, Q7
+
+        xor     Q0, Q0      // clear flags
+        mov     QH, Q12
+
+        mulx    Q5, Q0, [Q1 + 0*8]
+        adcx    Q9, Q0      // Set Cy when Q9 is non-zero
+        adox    Q10, Q5
+
+        mulx    Q5, Q0, [Q1 + 1*8]
+        adcx    Q10, Q0
+        adox    Q11, Q5
+
+        mulx    Q5, Q0, [Q1 + 2*8]
+        adcx    Q11, Q0
+        adox    Q6, Q5
+
+        mulx    Q5, Q0, [Q1 + 3*8]
+        adcx    Q6, Q0
+        adox    Q7, Q5      // This may overflow
+
+        mov     Q0, 0
+        adcx    Q7, Q0      // This may overflow
+        adox    Q8, Q0
+
+        adcx    Q8, Q0
+
+        // Montgomery-reduced multiplication value in (Q10, Q11, Q6, Q7, Q8), and it is less than 2*Modulus
+        // Compute value + (-Mod) into (Q0, Q2, Q3, Q5), Cy = inverted subtraction borrow
+
+        add     Q1, SymCryptNegDivisorSingleDigitOffsetAmd64 - SymCryptModulusValueOffsetAmd64
+
+        mov     Q0, [Q1 + 0*8]
+        add     Q0, Q10
+        mov     Q2, [Q1 + 1*8]
+        adc     Q2, Q11
+        mov     Q3, [Q1 + 2*8]
+        adc     Q3, Q6
+        mov     Q5, [Q1 + 3*8]
+        adc     Q5, Q7
+
+        // Choose between the two
+        // addition carry = 1, then subtraction borrow = 1 and we pick the 2nd result.
+        // addition carry = 0 and subtraction borrow = 0: pick 2nd result
+        // addition carry = 0 and subtraction borrow = 1: pick first result
+
+        adc     Q8, Q8  // This is non-zero iff
+                        //      the reduced value did not fit in 256-bits; or
+                        //      the subtraction by Mod did not borrow
+                        // adc sets the ZF appropriately
+
+        cmovnz  Q10, Q0
+        cmovnz  Q11, Q2
+        cmovnz  Q6, Q3
+        cmovnz  Q7, Q5
+
+        mov     [Q4 + 0*8], Q10
+        mov     [Q4 + 1*8], Q11
+        mov     [Q4 + 2*8], Q6
+        mov     [Q4 + 3*8], Q7
+
+MUL_FUNCTION_END(SymCryptFdefModMulMontgomeryMulx256Asm)
+
+//VOID
+//SYMCRYPT_CALL
+//SymCryptFdefModSquareMontgomeryMulx256Asm(
+//    _In_                            PCSYMCRYPT_MODULUS      pMod,
+//    _In_                            PCSYMCRYPT_MODELEMENT   pSrc,
+//    _Out_                           PSYMCRYPT_MODELEMENT    pDst,
+//    _Out_writes_bytes_( cbScratch ) PBYTE                   pbScratch,
+//                                    SIZE_T                  cbScratch )
+
+// Note we specify 4 arguments to keep prolog of this and SymCryptFdefModMulMontgomeryMulx256Asm the same
+MUL_FUNCTION_START(SymCryptFdefModSquareMontgomeryMulx256Asm, 4, 13)
+
+        // Q1 = pMod
+        // Q2 = pSrc
+        // Q3 = pDst
+
+        mov     Q4, Q3
+        mov     Q3, Q2
+
+        // Normal code doesn't jump from the body of one function to the body of another function.
+        // Here we have ensured that our stack frames are identical, so it is safe.
+        // We just have to convince the other system components that this works...
+
+        // Use conditional jump so that stack unwinder doesn't think it is an epilogue
+        test    rsp,rsp
+        jne     SymCryptFdefModMulMontgomeryMulx256AsmInternal       // jumps always
+
+        int     3       // Dummy instruction because the debugger seems to have an off-by-one
+                        // error and still see the (wrong) epilogue when on the JNE instruction
+                        // Best guess: the debugger starts the stack trace *after* the current instruction
+
+MUL_FUNCTION_END(SymCryptFdefModSquareMontgomeryMulx256Asm)
+
+// --------------------------------
+// 384-bit size specific functions
+// --------------------------------
+
+//VOID
+//SYMCRYPT_CALL
+//SymCryptFdefModAddMulx384(
+//    _In_                            PCSYMCRYPT_MODULUS      pmMod,
+//    _In_                            PCSYMCRYPT_MODELEMENT   peSrc1,
+//    _In_                            PCSYMCRYPT_MODELEMENT   peSrc2,
+//    _Out_                           PSYMCRYPT_MODELEMENT    peDst,
+//    _Out_writes_bytes_( cbScratch ) PBYTE                   pbScratch,
+//                                    SIZE_T                  cbScratch )
+
+FUNCTION_START(SymCryptFdefModAddMulx384Asm, 4, 13)
+
+        // Q1 = pmMod
+        // Q2 = peSrc1
+        // Q3 = peSrc2
+        // Q4 = peDst
+
+        add     Q1, SymCryptNegDivisorSingleDigitOffsetAmd64
+
+        // compute Src1 + Src2 into (Q0, Q5, Q6, Q7, Q8, Q2), Cy = addition carry
+        // Compute sum + (-Mod) into (Q9, Q10, Q11, Q12, Q3, Q1), Ov = inverted subtraction borrow
+
+        xor     Q0, Q0  // clear flags
+
+        mov     Q0, [Q2 + 0*8]
+        adcx    Q0, [Q3 + 0*8]
+
+        mov     Q5, [Q2 + 1*8]
+        adcx    Q5, [Q3 + 1*8]
+
+        mov     Q6, [Q2 + 2*8]
+        adcx    Q6, [Q3 + 2*8]
+
+        mov     Q7, [Q2 + 3*8]
+        adcx    Q7, [Q3 + 3*8]
+
+        mov     Q8, [Q2 + 4*8]
+        adcx    Q8, [Q3 + 4*8]
+
+        mov     Q2, [Q2 + 5*8]
+        adcx    Q2, [Q3 + 5*8]
+
+        mov     Q9,  [Q1 + 0*8]
+        adox    Q9,  Q0
+
+        mov     Q10, [Q1 + 1*8]
+        adox    Q10, Q5
+
+        mov     Q11, [Q1 + 2*8]
+        adox    Q11, Q6
+
+        mov     Q12, [Q1 + 3*8]
+        adox    Q12, Q7
+
+        mov     Q3,  [Q1 + 4*8]
+        adox    Q3,  Q8
+
+        mov     Q1,  [Q1 + 5*8]
+        adox    Q1,  Q2
+
+        // Choose between the two
+        // addition carry = 1, then subtraction borrow = 1 and we pick the 2nd result.
+        // addition carry = 0 and subtraction borrow = 0: pick 2nd result
+        // addition carry = 0 and subtraction borrow = 1: pick first result
+
+        cmovc   Q0, Q9
+        cmovc   Q5, Q10
+        cmovc   Q6, Q11
+        cmovc   Q7, Q12
+        cmovc   Q8, Q3
+        cmovc   Q2, Q1
+
+        cmovo   Q0, Q9
+        cmovo   Q5, Q10
+        cmovo   Q6, Q11
+        cmovo   Q7, Q12
+        cmovo   Q8, Q3
+        cmovo   Q2, Q1
+
+        mov     [Q4 + 0*8], Q0
+        mov     [Q4 + 1*8], Q5
+        mov     [Q4 + 2*8], Q6
+        mov     [Q4 + 3*8], Q7
+        mov     [Q4 + 4*8], Q8
+        mov     [Q4 + 5*8], Q2
+
+FUNCTION_END(SymCryptFdefModAddMulx384Asm)
+
+MACRO_START(MUL16_P384, T0, T1, QH, pA, Aoff, pB, R0, R1, R2, R3, R4, R5, R6, R7)
+    // (R0, R1, R2, R3, R4, R5, R6, R7) = A[Aoff] * (B0..5) + (R0, R1, R2, R3, R4, R5, R6)
+    // R6 in [0, 2] at start
+    // R7 in [0, 1] at end
+    // T0, T1 = scratch
+
+    mov     QH, [pA + Aoff]
+    xor     R7, R7      // clear flags
+                        // makes following carry chains architecturally independent of previous ones
+
+    mulx    T1, T0, [pB + 0*8]
+    adcx    R0, T0
+    adox    R1, T1
+
+    mulx    T1, T0, [pB + 1*8]
+    adcx    R1, T0
+    adox    R2, T1
+
+    mulx    T1, T0, [pB + 2*8]
+    adcx    R2, T0
+    adox    R3, T1
+
+    mulx    T1, T0, [pB + 3*8]
+    adcx    R3, T0
+    adox    R4, T1
+
+    mulx    T1, T0, [pB + 4*8]
+    adcx    R4, T0
+    adox    R5, T1
+
+    mulx    T1, T0, [pB + 5*8]
+    adcx    R5, T0
+    adox    R6, R7      // R6 in [0, 3]
+
+
+    adc     R6, T1      // overflow possible
+    adc     R7, R7
+MACRO_END()
+
+MACRO_START(MONT16_P384, T0, T1, QH, pM, N4, R0, R1, R2, R3, R4, R5, R6, R7)
+    // K = modInv * R0
+    // (R3, N4) = R3 - (K-N4)
+    // (R0, R1, R2, R3, N4) = K * (M0..2) + (R0, R1, R2, R3, N4)
+    // (R6, R7) = K + (R6, R7)
+    //
+    // Note K is chosen using pMod's montgomery inverse s.t. R0 is set to 0
+    // pM is a pointer the the bytes of the modulus (i.e. offset into SYMCRYPT_MODULUS structure)
+    // N4 is 0 or -1 at start and end
+    // R7 in [0, 1] at start and in [0, 2] at end
+    // R0 is 0 at end
+    // T0, T1 = scratch
+    //
+    // P384 has a modulus with a form which makes it possible to perform Montgomery reduction
+    // in an interesting way. The modulus is:
+    // 2^384 - 2^128 - 2^96 + 2^32 - 1
+    // This means when we want to add a multiple of the Modulus in reduction, we can consider
+    // not performing the full multiplication, but taking shortcuts.
+    // It is hard to get much benefit from this, as doing the full multiplication of
+    // 1 digit * 6 digits takes approximately 6 cycles with mulx, adox and adcx
+    //
+    // The approach taken here notes that K*M will always add 2^384 * K to the value to reduce
+    // with a subtraction of a value < 2^256.
+    // On entry to this macro we have N4 representing a deferred borrow (value 0 or -1) from the
+    // 4th word of the last macro (now aligned to the 3rd word of this macro), on exit we set N4
+    // to be the borrow to defer to the next round.
+    //
+    //            ____ ____ ____ ____ ____ ____
+    //           | M5 | M4 | M3 | M2 | M1 | M0 |
+    //           | ff | ff | ff | fe | f0 | 0f | (P384 modulus if you sign extend each nibble to 32b)
+    //           |____|____|____|____|____|____|
+    //  ____ ____ ____ ____ ____ ____ ____ ____
+    // |    |    |\  /|\  /|    |    |    |    |
+    // | R7 | R6 | R5 | R4 | R3 | R2 | R1 | R0 |
+    // |____|____|/__\|/__\|____|____|____|____|
+    //                                      | x modInv (0x0000000100000001)
+    //                      ____           _v__
+    //                     |    |         |    |
+    //                   + |N4in|         |  K |
+    //                     |____|         |____|
+    //       ____           ____
+    //      |    |         |    |
+    //    + |  K |       - |  K | This row is equivalent to multiplying K by (M3..5)
+    //      |____|     ____|____| once the borrow is propagated
+    //                |    |
+    //                | N4 |
+    //                |____|     ____ ____ ____
+    //                          |M2*K|M1*K|M0*K|
+    //                        + | lo | lo | lo |
+    //                      ____|____|____|____|
+    //                     |M2*K|M1*K|M0*K|
+    //                   + | hi | hi | hi |
+    //                     |____|____|____|
+    //
+    // It is tempting to avoid the multiplication of K by M2, and subtract 2*K from R2 instead, but the
+    // deferred subtraction (N3) then can be in the range [0,-2], and it is no longer possible to do the
+    // subtraction using the borrow flag. It ends up being more expensive than just doing another multiplication
+    // in my testing.
+    // It is also tempting to compute K using a shift and add, rather than imul, but experimentally, this
+    // performs worse.
+    //
+
+    mov     QH, R0
+    imul    QH, [pM - SymCryptModulusValueOffsetAmd64 + SymCryptModulusMontgomeryInv64OffsetAmd64]
+
+    add     N4, -1
+    sbb     R3, QH
+    sbb     N4, N4      // sets N4 to 0 if no borrow, or -1 if there is a borrow
+
+    xor     T0, T0      // clear flags
+
+    mulx    T1, T0, [pM + 0*8]
+    adcx    R0, T0      // sets R0 to 0
+    adox    R1, T1
+
+    mulx    T1, T0, [pM + 1*8]
+    adcx    R1, T0
+    adox    R2, T1
+
+    mulx    T1, T0, [pM + 2*8]
+    adcx    R2, T0
+    adox    R3, T1
+
+    adcx    R3, R0
+    adox    N4, R0
+
+    adc     N4, R0      // A carry into N4 can occur iff the previous subtraction borrowed
+                        // The value of N4 is guaranteed to be 0 or -1 here
+
+    add     R6, QH
+    adc     R7, R0
+
+MACRO_END()
+
+#if defined(SYMCRYPT_MASM)
+altentry SymCryptFdefModMulMontgomeryMulxP384AsmInternal
+#endif
+
+//VOID
+//SYMCRYPT_CALL
+//SymCryptFdefModMulMontgomeryMulxP384Asm(
+//    _In_                            PCSYMCRYPT_MODULUS      pMod,
+//    _In_                            PCSYMCRYPT_MODELEMENT   pSrc1,
+//    _In_                            PCSYMCRYPT_MODELEMENT   pSrc2,
+//    _Out_                           PSYMCRYPT_MODELEMENT    pDst,
+//    _Out_writes_bytes_( cbScratch ) PBYTE                   pbScratch,
+//                                    SIZE_T                  cbScratch )
+
+// Note we specify only 4 arguments as we never use arguments 5 and 6 (saves some prolog code in MSFT calling convention)
+MUL_FUNCTION_START(SymCryptFdefModMulMontgomeryMulxP384Asm, 4, 14)
+
+        // Q1 = pMod
+        // Q2 = pSrc1
+        // Q3 = pSrc2
+        // Q4 = pDst
+
+ALTERNATE_ENTRY(SymCryptFdefModMulMontgomeryMulxP384AsmInternal)
+
+        mov     [rsp + GET_MEMSLOT_OFFSET(slot0)], Q4   // save pDst
+
+        // SamL: In optimizing for P384 specifically, we need to keep an extra register
+        // free for deferring a borrow (N4 in the MONT16_P384 macro). This means that it
+        // is not possible to do the INTERLEAVE approach taken in the other small Mulx
+        // multiplication variants (and described in SymCryptFdefModMulMontgomeryMulx256Asm),
+        // as there is too much register pressure.
+        // Although we reintroduce possible dependency chain issues with the generation and
+        // use of K for the Montgomery reduction, we generate fewer total micro-ops and the
+        // overall performance is a few % better at the time of writing.
+
+        xor     Q13, Q13  // clear flags
+        mov     QH, [Q2]
+
+        mulx    Q7, Q6,  [Q3 + 0*8]
+
+        mulx    Q8, Q0,  [Q3 + 1*8]
+        adc     Q7, Q0        // Note: this is intentionally adc as, if we issue an add here it is
+                              // liable to contend with a multiplication uop on the critical path
+                              // (adc issues on different ports to mulx/imul so does not contend)
+
+        mulx    Q9, Q0,  [Q3 + 2*8]
+        adc     Q8, Q0
+
+        mulx    Q10, Q0, [Q3 + 3*8]
+        adc     Q9, Q0
+
+        mulx    Q11, Q0, [Q3 + 4*8]
+        adc     Q10, Q0
+
+        mulx    Q12, Q0, [Q3 + 5*8]
+        adc     Q11, Q0
+
+        adc     Q12, Q13        // Multiplication result in Q6, Q7, Q8, Q9, Q10, Q11, Q12
+        add     Q1, SymCryptModulusValueOffsetAmd64
+        xor     Q4, Q4
+
+        MONT16_P384     Q0, Q5, QH, Q1, Q4,     Q6, Q7, Q8, Q9, Q10, Q11, Q12, Q13
+
+        MUL16_P384      Q0, Q5, QH, Q2,  8, Q3, Q7, Q8, Q9, Q10, Q11, Q12, Q13, Q6
+        MONT16_P384     Q0, Q5, QH, Q1, Q4,     Q7, Q8, Q9, Q10, Q11, Q12, Q13, Q6
+
+        MUL16_P384      Q0, Q5, QH, Q2, 16, Q3, Q8, Q9, Q10, Q11, Q12, Q13, Q6, Q7
+        MONT16_P384     Q0, Q5, QH, Q1, Q4,     Q8, Q9, Q10, Q11, Q12, Q13, Q6, Q7
+
+        MUL16_P384      Q0, Q5, QH, Q2, 24, Q3, Q9, Q10, Q11, Q12, Q13, Q6, Q7, Q8
+        MONT16_P384     Q0, Q5, QH, Q1, Q4,     Q9, Q10, Q11, Q12, Q13, Q6, Q7, Q8
+
+        MUL16_P384      Q0, Q5, QH, Q2, 32, Q3, Q10, Q11, Q12, Q13, Q6, Q7, Q8, Q9
+        MONT16_P384     Q0, Q5, QH, Q1, Q4,     Q10, Q11, Q12, Q13, Q6, Q7, Q8, Q9
+
+        MUL16_P384      Q0, Q5, QH, Q2, 40, Q3, Q11, Q12, Q13, Q6, Q7, Q8, Q9, Q10
+        MONT16_P384     Q0, Q5, QH, Q1, Q4,     Q11, Q12, Q13, Q6, Q7, Q8, Q9, Q10
+
+        xor     Q0, Q0
+
+        adox    Q7, Q4  // Q4 is 0 or -1
+                        // Adding it to Q7..Q10 sign extends it correctly; a carry represents an inverted borrow
+        adox    Q8, Q4
+        adox    Q9, Q4
+        adox    Q10, Q4
+
+        // Montgomery-reduced multiplication value in (Q12, Q13, Q6, Q7, Q8, Q9, Q10), and it is less than 2*Modulus
+        // Compute value + (-Mod) into (Q2, Q3, Q5, Q0, Q1, Q11), Cy = inverted subtraction borrow
+        // (-Mod) is (0xffffffff00000001, 0x00000000ffffffff, 1, 0, 0, 0)
+
+        mov     Q2,  [Q1 + SymCryptNegDivisorSingleDigitOffsetAmd64 - SymCryptModulusValueOffsetAmd64 + 0*8]
+        add     Q2,  Q12
+        mov     Q3,  [Q1 + 0*8] // Modulus word 0 is equal to Negated Modulus word 1
+        adc     Q3,  Q13
+        mov     Q5,  1  // Don't need to load 1 and 0 values from memory - we statically know these values for P384
+        adc     Q5,  Q6
+        mov     Q1,  Q0 // Q0 and Q11 are already zero, set Q1 to zero too
+        adc     Q0,  Q7
+        adc     Q1,  Q8
+        adc     Q11, Q9
+
+        // Choose between the two
+        // addition carry = 1, then subtraction borrow = 1 and we pick the 2nd result.
+        // addition carry = 0 and subtraction borrow = 0: pick 2nd result
+        // addition carry = 0 and subtraction borrow = 1: pick first result
+
+        adc     Q10, Q10        // This is non-zero iff
+                                //      the reduced value did not fit in 384-bits; or
+                                //      the subtraction by Mod did not borrow
+                                // adc sets the ZF appropriately
+
+        cmovnz  Q12, Q2
+        cmovnz  Q13, Q3
+        cmovnz  Q6,  Q5
+        cmovnz  Q7,  Q0
+        cmovnz  Q8,  Q1
+        cmovnz  Q9,  Q11
+
+        mov     Q4, [rsp + GET_MEMSLOT_OFFSET(slot0)]   // restore pDst
+
+        mov     [Q4 + 0*8], Q12
+        mov     [Q4 + 1*8], Q13
+        mov     [Q4 + 2*8], Q6
+        mov     [Q4 + 3*8], Q7
+        mov     [Q4 + 4*8], Q8
+        mov     [Q4 + 5*8], Q9
+
+MUL_FUNCTION_END(SymCryptFdefModMulMontgomeryMulxP384Asm)
+
+//VOID
+//SYMCRYPT_CALL
+//SymCryptFdefModSquareMontgomeryMulxP384Asm(
+//    _In_                            PCSYMCRYPT_MODULUS      pMod,
+//    _In_                            PCSYMCRYPT_MODELEMENT   pSrc,
+//    _Out_                           PSYMCRYPT_MODELEMENT    pDst,
+//    _Out_writes_bytes_( cbScratch ) PBYTE                   pbScratch,
+//                                    SIZE_T                  cbScratch )
+
+// Note we specify 4 arguments to keep prolog of this and SymCryptFdefModMulMontgomeryMulx384Asm the same
+MUL_FUNCTION_START(SymCryptFdefModSquareMontgomeryMulxP384Asm, 4, 14)
+
+        // Q1 = pMod
+        // Q2 = pSrc
+        // Q3 = pDst
+
+        mov     Q4, Q3
+        mov     Q3, Q2
+
+        // Normal code doesn't jump from the body of one function to the body of another function.
+        // Here we have ensured that our stack frames are identical, so it is safe.
+        // We just have to convince the other system components that this works...
+
+        // Use conditional jump so that stack unwinder doesn't think it is an epilogue
+        test    rsp,rsp
+        jne     SymCryptFdefModMulMontgomeryMulxP384AsmInternal       // jumps always
+
+        int     3       // Dummy instruction because the debugger seems to have an off-by-one
+                        // error and still see the (wrong) epilogue when on the JNE instruction
+                        // Best guess: the debugger starts the stack trace *after* the current instruction
+
+MUL_FUNCTION_END(SymCryptFdefModSquareMontgomeryMulxP384Asm)
+
+
+// --------------------------------
 // 1024-bit size specific functions
 // --------------------------------
 
@@ -1261,5 +1965,481 @@ SymCryptFdefMontgomeryReduceMulx1024OuterLoop:
         movdqa  [Q3 + 7 * 16], xmm2
 
 MUL_FUNCTION_END(SymCryptFdefMontgomeryReduceMulx1024)
+
+#if 0
+//////////////////////////////////////////////////////////////
+//
+// UNUSED ASSEMBLY FROM HERE
+// Kept in case we need it later, but removed at compile time
+// to avoid inclusion in produced binaries (the linker struggles
+// to remove unused assembly functions)
+//
+//////////////////////////////////////////////////////////////
+
+#if defined(SYMCRYPT_MASM)
+altentry SymCryptFdefModMulMontgomeryMulxP256AsmInternal
+#endif
+
+MACRO_START(MUL_AND_MONTGOMERY_REDUCE14_INTERLEAVE_P256, T0, T1, QH, pA, Aoff, pB, pM, R0, R1, R2, R3, R4, R5)
+    // (R1, R2, R3, R4, R5) = A[Aoff] * (B0..3) + (R1, R2, R3, R4, R5)
+    // (xx, R1, R2, R3, R4, R5, R0) = R0 * (M0..3) + (R0, R1, R2, R3, R4, R5)
+    // R1 = K = modInv * R1, as modInv == 1
+    // Note K is chosen using pMod's montgomery inverse s.t. xx would get set to 0
+    // pM is a pointer the the bytes of the modulus (i.e. offset into SYMCRYPT_MODULUS structure)
+    // R5 is 0 or 1 at start
+    // R0 is 0 or 1 at end
+    // T0, T1 = scratch
+
+    mov     QH, [pA + Aoff]
+    xor     T0, T0      // clear flags
+                        // makes following carry chains architecturally independent of previous ones
+
+    mulx    T1, T0, [pB + 0*8]
+    adox    R1, T0
+    adcx    R2, T1
+
+    mulx    T1, T0, [pB + 1*8]
+    adox    R2, T0
+    adcx    R3, T1
+
+    mulx    T1, T0, [pB + 2*8]
+    adox    R3, T0
+    adcx    R4, T1
+
+    mulx    T1, T0, [pB + 3*8]
+    adox    R4, T0
+    mov     T0, 0
+    adcx    T1, T0      // T1 in range [0, 2^64-1]
+
+    adox    R5, T0      // R5 in range [0, 2]
+                        // defer adding T1 to avoid overflowing earlier than necessary (we are bound by adox/adcx throughput)
+                        // Multiplication result in R1, R2, R3, R4, R5+T1
+
+    xor     T0, T0      // clear flags
+
+    mov     QH, R0      // now use R0 as a temporary while T1 has the value to add to R5
+
+    adox    R1, R0
+
+    mulx    R0, T0, [pM + 1*8]
+    adcx    R1, T0
+    adox    R2, R0
+
+    mov     T0, 0       // For P256, 3rd digit of the modulus is 0
+    adcx    R2, T0
+    adox    R3, T0
+
+    mulx    R0, T0, [pM + 3*8]
+    adcx    R3, T0
+    adox    R4, R0      // This may overflow
+
+    mov     R0, 0
+    adcx    R4, R0      // This may overflow
+    adox    R5, R0      // R5 in range [0, 3]
+
+    adcx    R5, T1      // This may overflow
+
+    adcx    R0, R0
+MACRO_END()
+
+//VOID
+//SYMCRYPT_CALL
+//SymCryptFdefModMulMontgomeryMulxP256Asm(
+//    _In_                            PCSYMCRYPT_MODULUS      pMod,
+//    _In_                            PCSYMCRYPT_MODELEMENT   pSrc,
+//    _Out_                           PSYMCRYPT_MODELEMENT    pDst,
+//    _Out_writes_bytes_( cbScratch ) PBYTE                   pbScratch,
+//                                    SIZE_T                  cbScratch )
+
+// Note we specify only 4 arguments as we never use arguments 5 and 6 (saves some prolog code in MSFT calling convention)
+MUL_FUNCTION_START(SymCryptFdefModMulMontgomeryMulxP256Asm, 4, 14)
+
+        // Q1 = pMod
+        // Q2 = pSrc1
+        // Q3 = pSrc2
+        // Q4 = pDst
+
+ALTERNATE_ENTRY(SymCryptFdefModMulMontgomeryMulxP256AsmInternal)
+
+        // See SymCryptFdefModMulMontgomeryMulx256Asm for the rationale behind this function!
+
+        xor     Q11, Q11  // clear flags
+        mov     QH, [Q2]
+
+        mulx    Q7, Q6,  [Q3 + 0*8]
+
+        mulx    Q8, Q0,  [Q3 + 1*8]
+        adc     Q7, Q0
+
+        mulx    Q9, Q0,  [Q3 + 2*8]
+        adc     Q8, Q0
+
+        mulx    Q10, Q0, [Q3 + 3*8]
+        adc     Q9, Q0
+
+        adc     Q10, Q11      // Multiplication result in Q6, Q7, Q8, Q9, Q10
+
+        add     Q1, SymCryptModulusValueOffsetAmd64
+
+        MUL_AND_MONTGOMERY_REDUCE14_INTERLEAVE_P256 Q0, Q5, QH, Q2,  8, Q3, Q1, Q6, Q7, Q8, Q9, Q10, Q11
+
+        MUL_AND_MONTGOMERY_REDUCE14_INTERLEAVE_P256 Q0, Q5, QH, Q2, 16, Q3, Q1, Q7, Q8, Q9, Q10, Q11, Q6
+
+        MUL_AND_MONTGOMERY_REDUCE14_INTERLEAVE_P256 Q0, Q5, QH, Q2, 24, Q3, Q1, Q8, Q9, Q10, Q11, Q6, Q7
+
+        xor     Q0, Q0      // clear flags
+        mov     QH, Q9
+
+        adox    Q10, Q9
+
+        mulx    Q5, Q0, [Q1 + 1*8]
+        adcx    Q10, Q0
+        adox    Q11, Q5
+
+        mov     Q0, 0       // For P256, 3rd digit of the modulus is 0
+        adcx    Q11, Q0
+        adox    Q6, Q0
+
+        mulx    Q5, Q0, [Q1 + 3*8]
+        adcx    Q6, Q0
+        adox    Q7, Q5      // This may overflow
+
+        mov     Q0, 0
+        adcx    Q7, Q0      // This may overflow
+        adox    Q8, Q0
+
+        adcx    Q8, Q0
+
+        // Montgomery-reduced multiplication value in (Q10, Q11, Q6, Q7, Q8), and it is less than 2*Modulus
+        // Compute value + (-Mod) into (Q0, Q2, Q3, Q5), Cy = inverted subtraction borrow
+
+        add     Q1, SymCryptNegDivisorSingleDigitOffsetAmd64 - SymCryptModulusValueOffsetAmd64
+
+        mov     Q0, 1
+        add     Q0, Q10
+        mov     Q2, [Q1 + 1*8]
+        adc     Q2, Q11
+        mov     Q3, [Q1 + 2*8]
+        adc     Q3, Q6
+        mov     Q5, [Q1 + 3*8]
+        adc     Q5, Q7
+
+        // Choose between the two
+        // addition carry = 1, then subtraction borrow = 1 and we pick the 2nd result.
+        // addition carry = 0 and subtraction borrow = 0: pick 2nd result
+        // addition carry = 0 and subtraction borrow = 1: pick first result
+
+        adc     Q8, Q8  // This is non-zero iff
+                        //      the reduced value did not fit in 256-bits; or
+                        //      the subtraction by Mod did not borrow
+                        // adc sets the ZF appropriately
+
+        cmovnz  Q10, Q0
+        cmovnz  Q11, Q2
+        cmovnz  Q6, Q3
+        cmovnz  Q7, Q5
+
+        mov     [Q4 + 0*8], Q10
+        mov     [Q4 + 1*8], Q11
+        mov     [Q4 + 2*8], Q6
+        mov     [Q4 + 3*8], Q7
+
+MUL_FUNCTION_END(SymCryptFdefModMulMontgomeryMulxP256Asm)
+
+
+//VOID
+//SYMCRYPT_CALL
+//SymCryptFdefModSquareMontgomeryMulxP256Asm(
+//    _In_                            PCSYMCRYPT_MODULUS      pMod,
+//    _In_                            PCSYMCRYPT_MODELEMENT   pSrc,
+//    _Out_                           PSYMCRYPT_MODELEMENT    pDst,
+//    _Out_writes_bytes_( cbScratch ) PBYTE                   pbScratch,
+//                                    SIZE_T                  cbScratch )
+
+// Note we specify 4 arguments to keep prolog of this and SymCryptFdefModMulMontgomeryMulxP256Asm the same
+MUL_FUNCTION_START(SymCryptFdefModSquareMontgomeryMulxP256Asm, 3, 14)
+
+        // Q1 = pMod
+        // Q2 = pSrc
+        // Q3 = pDst
+
+        mov     Q4, Q3
+        mov     Q3, Q2
+
+        // Normal code doesn't jump from the body of one function to the body of another function.
+        // Here we have ensured that our stack frames are identical, so it is safe.
+        // We just have to convince the other system components that this works...
+
+        // Use conditional jump so that stack unwinder doesn't think it is an epilogue
+        test    rsp,rsp
+        jne     SymCryptFdefModMulMontgomeryMulxP256AsmInternal       // jumps always
+
+        int     3       // Dummy instruction because the debugger seems to have an off-by-one
+                        // error and still see the (wrong) epilogue when on the JNE instruction
+                        // Best guess: the debugger starts the stack trace *after* the current instruction
+
+MUL_FUNCTION_END(SymCryptFdefModSquareMontgomeryMulxP256Asm)
+
+
+MACRO_START(MUL_AND_MONTGOMERY_REDUCE16_INTERLEAVE, T0, T1, QH, pA, Aoff, pB, pM, K, R0, R1, R2, R3, R4, R5, R6, R7)
+    // (R1, R2, R3, R4, R5, R6, R7) = A[Aoff] * (B0..5) + (R1, R2, R3, R4, R5, R6, R7)
+    // (xx, R1, R2, R3, R4, R5, R6, R7, R0) = K * (M0..5) + (R0, R1, R2, R3, R4, R5, R6, R7)
+    // K = modInv * R1
+    // Note K is chosen using pMod's montgomery inverse s.t. xx would get set to 0
+    // pM is a pointer the the bytes of the modulus (i.e. offset into SYMCRYPT_MODULUS structure)
+    // R7 is 0 or 1 at start
+    // R0 is 0 or 1 at end
+    // T0, T1 = scratch
+
+    mov     QH, [pA + Aoff]
+    xor     T0, T0      // clear flags
+                        // makes following carry chains architecturally independent of previous ones
+
+    mulx    T1, T0, [pB + 0*8]
+    adox    R1, T0
+    adcx    R2, T1
+
+    mulx    T1, T0, [pB + 1*8]
+    adox    R2, T0
+    adcx    R3, T1
+
+    mulx    T1, T0, [pB + 2*8]
+    adox    R3, T0
+    adcx    R4, T1
+
+    mulx    T1, T0, [pB + 3*8]
+    adox    R4, T0
+    adcx    R5, T1
+
+    mulx    T1, T0, [pB + 4*8]
+    adox    R5, T0
+    adcx    R6, T1
+
+    mulx    T1, T0, [pB + 5*8]
+    adox    R6, T0
+    mov     T0, 0
+    adcx    T1, T0      // T1 in range [0, 2^64-1]
+    adox    R7, T0      // R7 in range [0, 2]
+                        // defer adding T1 to avoid overflowing earlier than necessary (we are bound by adox/adcx throughput)
+                        // Multiplication result in R1, R2, R3, R4, R5, R6, R7+T1
+
+    xor     T0, T0      // clear flags
+
+    mov     QH, K       // now use K as a temporary while T1 has the value to add to R7
+
+    mulx    K, T0, [pM + 0*8]
+    adcx    R0, T0
+    adox    R1, K
+
+    mulx    K, T0, [pM + 1*8]
+    adcx    R1, T0
+    adox    R2, K
+
+    mulx    K, T0, [pM + 2*8]
+    adcx    R2, T0
+    adox    R3, K
+
+    mulx    K, T0, [pM + 3*8]
+    adcx    R3, T0
+    adox    R4, K
+
+    mulx    K, T0, [pM + 4*8]
+    adcx    R4, T0
+    adox    R5, K
+
+    mulx    K, T0, [pM + 5*8]
+    adcx    R5, T0
+    adox    R6, K       // This may overflow
+
+    mov     R0, 0
+    adcx    R6, R0      // This may overflow
+    adox    R7, R0      // R7 in range [0,3]
+
+    adc     R7, T1      // This may overflow
+
+    adc     R0, R0
+
+    mov     K, R1
+    imul    K, [pM - SymCryptModulusValueOffsetAmd64 + SymCryptModulusMontgomeryInv64OffsetAmd64]
+MACRO_END()
+
+#if defined(SYMCRYPT_MASM)
+altentry SymCryptFdefModMulMontgomeryMulx384AsmInternal
+#endif
+
+//VOID
+//SYMCRYPT_CALL
+//SymCryptFdefModMulMontgomeryMulx384Asm(
+//    _In_                            PCSYMCRYPT_MODULUS      pMod,
+//    _In_                            PCSYMCRYPT_MODELEMENT   pSrc1,
+//    _In_                            PCSYMCRYPT_MODELEMENT   pSrc2,
+//    _Out_                           PSYMCRYPT_MODELEMENT    pDst,
+//    _Out_writes_bytes_( cbScratch ) PBYTE                   pbScratch,
+//                                    SIZE_T                  cbScratch )
+
+// Note we specify only 4 arguments as we never use arguments 5 and 6 (saves some prolog code in MSFT calling convention)
+MUL_FUNCTION_START(SymCryptFdefModMulMontgomeryMulx384Asm, 4, 14)
+
+        // Q1 = pMod
+        // Q2 = pSrc1
+        // Q3 = pSrc2
+        // Q4 = pDst
+
+ALTERNATE_ENTRY(SymCryptFdefModMulMontgomeryMulx384AsmInternal)
+
+        mov     [rsp + GET_MEMSLOT_OFFSET(slot0)], Q4   // save pDst
+
+        // See SymCryptFdefModMulMontgomeryMulx256Asm for the rationale behind this function!
+
+        xor     Q13, Q13  // clear flags
+        mov     QH, [Q2]
+
+        mulx    Q7, Q6,  [Q3 + 0*8]
+
+        mulx    Q8, Q0,  [Q3 + 1*8]
+        adc     Q7, Q0
+
+        mulx    Q9, Q0,  [Q3 + 2*8]
+        adc     Q8, Q0
+
+        mulx    Q10, Q0, [Q3 + 3*8]
+        adc     Q9, Q0
+
+        mulx    Q11, Q0, [Q3 + 4*8]
+        adc     Q10, Q0
+
+        mulx    Q12, Q0, [Q3 + 5*8]
+        adc     Q11, Q0
+
+        adc     Q12, Q13        // Multiplication result in Q6, Q7, Q8, Q9, Q10, Q11, Q12
+
+        // Compute K for reducing Multiplication result
+        mov     Q4, Q6
+        imul    Q4, [Q1 + SymCryptModulusMontgomeryInv64OffsetAmd64]
+        add     Q1, SymCryptModulusValueOffsetAmd64
+
+        MUL_AND_MONTGOMERY_REDUCE16_INTERLEAVE Q0, Q5, QH, Q2,  8, Q3, Q1, Q4, Q6, Q7, Q8, Q9, Q10, Q11, Q12, Q13
+
+        MUL_AND_MONTGOMERY_REDUCE16_INTERLEAVE Q0, Q5, QH, Q2, 16, Q3, Q1, Q4, Q7, Q8, Q9, Q10, Q11, Q12, Q13, Q6
+
+        MUL_AND_MONTGOMERY_REDUCE16_INTERLEAVE Q0, Q5, QH, Q2, 24, Q3, Q1, Q4, Q8, Q9, Q10, Q11, Q12, Q13, Q6, Q7
+
+        MUL_AND_MONTGOMERY_REDUCE16_INTERLEAVE Q0, Q5, QH, Q2, 32, Q3, Q1, Q4, Q9, Q10, Q11, Q12, Q13, Q6, Q7, Q8
+
+        MUL_AND_MONTGOMERY_REDUCE16_INTERLEAVE Q0, Q5, QH, Q2, 40, Q3, Q1, Q4, Q10, Q11, Q12, Q13, Q6, Q7, Q8, Q9
+
+        xor     Q0, Q0          // clear flags
+        mov     QH, Q4
+
+        mulx    Q5, Q0, [Q1 + 0*8]
+        adcx    Q11, Q0         // Set Cy when Q11 is non-zero
+        adox    Q12, Q5
+
+        mulx    Q5, Q0, [Q1 + 1*8]
+        adcx    Q12, Q0
+        adox    Q13, Q5
+
+        mulx    Q5, Q0, [Q1 + 2*8]
+        adcx    Q13, Q0
+        adox    Q6, Q5
+
+        mulx    Q5, Q0, [Q1 + 3*8]
+        adcx    Q6, Q0
+        adox    Q7, Q5
+
+        mulx    Q5, Q0, [Q1 + 4*8]
+        adcx    Q7, Q0
+        adox    Q8, Q5
+
+        mulx    Q5, Q0, [Q1 + 5*8]
+        adcx    Q8, Q0
+        adox    Q9, Q5          // This may overflow
+
+        mov     Q0, 0
+        adcx    Q9, Q0          // This may overflow
+        adox    Q10, Q0
+
+        adcx    Q10, Q0
+
+        // Montgomery-reduced multiplication value in (Q12, Q13, Q6, Q7, Q8, Q9, Q10), and it is less than 2*Modulus
+        // Compute value + (-Mod) into (Q0, Q2, Q3, Q5, Q11, Q1), Cy = inverted subtraction borrow
+
+        add     Q1, SymCryptNegDivisorSingleDigitOffsetAmd64 - SymCryptModulusValueOffsetAmd64
+
+        mov     Q0,  [Q1 + 0*8]
+        add     Q0,  Q12
+        mov     Q2,  [Q1 + 1*8]
+        adc     Q2,  Q13
+        mov     Q3,  [Q1 + 2*8]
+        adc     Q3,  Q6
+        mov     Q5,  [Q1 + 3*8]
+        adc     Q5,  Q7
+        mov     Q11, [Q1 + 4*8]
+        adc     Q11, Q8
+        mov     Q1,  [Q1 + 5*8]
+        adc     Q1,  Q9
+
+        // Choose between the two
+        // addition carry = 1, then subtraction borrow = 1 and we pick the 2nd result.
+        // addition carry = 0 and subtraction borrow = 0: pick 2nd result
+        // addition carry = 0 and subtraction borrow = 1: pick first result
+
+        adc     Q10, Q10        // This is non-zero iff
+                                //      the reduced value did not fit in 384-bits; or
+                                //      the subtraction by Mod did not borrow
+                                // adc sets the ZF appropriately
+
+        cmovnz  Q12, Q0
+        cmovnz  Q13, Q2
+        cmovnz  Q6,  Q3
+        cmovnz  Q7,  Q5
+        cmovnz  Q8,  Q11
+        cmovnz  Q9,  Q1
+
+        mov     Q4, [rsp + GET_MEMSLOT_OFFSET(slot0)]   // restore pDst
+
+        mov     [Q4 + 0*8], Q12
+        mov     [Q4 + 1*8], Q13
+        mov     [Q4 + 2*8], Q6
+        mov     [Q4 + 3*8], Q7
+        mov     [Q4 + 4*8], Q8
+        mov     [Q4 + 5*8], Q9
+
+MUL_FUNCTION_END(SymCryptFdefModMulMontgomeryMulx384Asm)
+
+//VOID
+//SYMCRYPT_CALL
+//SymCryptFdefModSquareMontgomeryMulx384Asm(
+//    _In_                            PCSYMCRYPT_MODULUS      pMod,
+//    _In_                            PCSYMCRYPT_MODELEMENT   pSrc,
+//    _Out_                           PSYMCRYPT_MODELEMENT    pDst,
+//    _Out_writes_bytes_( cbScratch ) PBYTE                   pbScratch,
+//                                    SIZE_T                  cbScratch )
+
+// Note we specify 4 arguments to keep prolog of this and SymCryptFdefModMulMontgomeryMulx384Asm the same
+MUL_FUNCTION_START(SymCryptFdefModSquareMontgomeryMulx384Asm, 3, 14)
+
+        // Q1 = pMod
+        // Q2 = pSrc
+        // Q3 = pDst
+
+        mov     Q4, Q3
+        mov     Q3, Q2
+
+        // Normal code doesn't jump from the body of one function to the body of another function.
+        // Here we have ensured that our stack frames are identical, so it is safe.
+        // We just have to convince the other system components that this works...
+
+        // Use conditional jump so that stack unwinder doesn't think it is an epilogue
+        test    rsp,rsp
+        jne     SymCryptFdefModMulMontgomeryMulx384AsmInternal       // jumps always
+
+        int     3       // Dummy instruction because the debugger seems to have an off-by-one
+                        // error and still see the (wrong) epilogue when on the JNE instruction
+                        // Best guess: the debugger starts the stack trace *after* the current instruction
+
+MUL_FUNCTION_END(SymCryptFdefModSquareMontgomeryMulx384Asm)
+
+#endif
 
 FILE_END()

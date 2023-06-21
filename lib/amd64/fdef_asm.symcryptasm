@@ -835,131 +835,111 @@ MUL_FUNCTION_END(SymCryptFdefMontgomeryReduceAsm)
 
 
 // --------------------------------
-// 256-bit size specific functions
+// 256 and 384-bit size specific functions
 // --------------------------------
 
-//VOID
-//SYMCRYPT_CALL
-//SymCryptFdefModAdd256(
-//    _In_                            PCSYMCRYPT_MODULUS      pmMod,
-//    _In_                            PCSYMCRYPT_MODELEMENT   peSrc1,
-//    _In_                            PCSYMCRYPT_MODELEMENT   peSrc2,
-//    _Out_                           PSYMCRYPT_MODELEMENT    peDst,
-//    _Out_writes_bytes_( cbScratch ) PBYTE                   pbScratch,
-//                                    SIZE_T                  cbScratch )
-
-FUNCTION_START(SymCryptFdefModAdd256Asm, 4, 11)
+FUNCTION_START(SymCryptFdefModSub256Asm, 4, 9)
 
         // Q1 = pmMod
         // Q2 = peSrc1
         // Q3 = peSrc2
         // Q4 = peDst
 
-        // compute Src1 + Src2 into (Q0, Q5, Q6, Q7) with carry out mask in Q8
-
-        mov     Q0, [Q2]
-        add     Q0, [Q3 ]
-        mov     Q5, [Q2 + 8]
-        adc     Q5, [Q3 + 8]
-        mov     Q6, [Q2 + 16]
-        adc     Q6, [Q3 + 16]
-        mov     Q7, [Q2 + 24]
-        adc     Q7, [Q3 + 24]
-        sbb     Q8, Q8                  // Q8 = carry out mask
-
-        // Q2, Q3: free
-        // Compute sum - Mod into (Q2, Q3, Q9, Q10) = sum - modulus, Q1 = carry out mask
-
         add     Q1, SymCryptModulusValueOffsetAmd64
 
-        mov     Q2, Q0
-        sub     Q2, [Q1]
-        mov     Q3, Q5
-        sbb     Q3, [Q1 + 8]
-        mov     Q9, Q6
-        sbb     Q9, [Q1 + 16]
-        mov     Q10, Q7
-        sbb     Q10, [Q1 + 24]
+        // compute Src1 - Src2 into (Q0, Q5, Q6, Q7), Cy = inverted subtraction borrow
 
-        sbb     Q1, Q1                 // Q1 = carry out mask
-
-        // Choose between the two
-        // addition carry = 1, then subtraction carry = 1 and we pick the 2nd result.
-        // addition carry = 0 and subtraction carry = 0: pick 2nd result
-        // addition carry = 0 and subtraction carry = 1: pick first result
-
-        xor     Q1, Q8            // 0 = 2nd result, 1 = first result
-
-        xor     Q0, Q2
-        xor     Q5, Q3
-        xor     Q6, Q9
-        xor     Q7, Q10
-
-        and     Q0, Q1
-        and     Q5, Q1
-        and     Q6, Q1
-        and     Q7, Q1
-
-        xor     Q2, Q0
-        xor     Q3, Q5
-        xor     Q9, Q6
-        xor     Q10, Q7
-
-        mov     [Q4 +  0], Q2
-        mov     [Q4 +  8], Q3
-        mov     [Q4 + 16], Q9
-        mov     [Q4 + 24], Q10
-
-FUNCTION_END(SymCryptFdefModAdd256Asm)
-
-
-FUNCTION_START(SymCryptFdefModSub256Asm, 4, 10)
-
-        // Q1 = pmMod
-        // Q2 = peSrc1
-        // Q3 = peSrc2
-        // Q4 = peDst
-
-        // compute Src1 - Src2 into (Q0, Q5, Q6, Q7) with carry out mask in Q8
-
-        mov     Q0, [Q2]
-        sub     Q0, [Q3]
-        mov     Q5, [Q2 + 8]
-        sbb     Q5, [Q3 + 8]
-        mov     Q6, [Q2 + 16]
-        sbb     Q6, [Q3 + 16]
-        mov     Q7, [Q2 + 24]
-        sbb     Q7, [Q3 + 24]
-        sbb     Q8, Q8                  // Q8 = carry out mask
+        mov     Q0, [Q2 + 0*8]
+        sub     Q0, [Q3 + 0*8]
+        mov     Q5, [Q2 + 1*8]
+        sbb     Q5, [Q3 + 1*8]
+        mov     Q6, [Q2 + 2*8]
+        sbb     Q6, [Q3 + 2*8]
+        mov     Q7, [Q2 + 3*8]
+        sbb     Q7, [Q3 + 3*8]
 
         // Q2, Q3: free
-        // Load Mod into (Q2, Q3, Q9, Q1)
+        // Load Mod into (Q2, Q3, Q8, Q1)
 
-        add     Q1, SymCryptModulusValueOffsetAmd64
-
-        mov     Q2, [Q1]
-        mov     Q3, [Q1 + 8]
-        mov     Q9, [Q1 + 16]
-        mov     Q1, [Q1 + 24]
-
-        // Mask the value to be added to zero if there was no underflow
-        and     Q2, Q8
-        and     Q3, Q8
-        and     Q9, Q8
-        and     Q1, Q8
+        mov     Q2, 0
+        cmovb   Q2, [Q1 + 0*8]
+        mov     Q3, 0
+        cmovb   Q3, [Q1 + 1*8]
+        mov     Q8, 0
+        cmovb   Q8, [Q1 + 2*8]
+        mov     Q1, [Q1 + 3*8]
+        cmovnb  Q1, Q2
 
         // Add the (masked) modulus
         add     Q0, Q2
         adc     Q5, Q3
-        adc     Q6, Q9
+        adc     Q6, Q8
         adc     Q7, Q1
 
-        mov     [Q4 +  0], Q0
-        mov     [Q4 +  8], Q5
-        mov     [Q4 + 16], Q6
-        mov     [Q4 + 24], Q7
+        mov     [Q4 + 0*8], Q0
+        mov     [Q4 + 1*8], Q5
+        mov     [Q4 + 2*8], Q6
+        mov     [Q4 + 3*8], Q7
 
 FUNCTION_END(SymCryptFdefModSub256Asm)
+
+
+FUNCTION_START(SymCryptFdefModSub384Asm, 4, 13)
+
+        // Q1 = pmMod
+        // Q2 = peSrc1
+        // Q3 = peSrc2
+        // Q4 = peDst
+
+        add     Q1, SymCryptModulusValueOffsetAmd64
+
+        // compute Src1 - Src2 into (Q0, Q5, Q6, Q7, Q8, Q9), Cy = inverted subtraction borrow
+
+        mov     Q0, [Q2 + 0*8]
+        sub     Q0, [Q3 + 0*8]
+        mov     Q5, [Q2 + 1*8]
+        sbb     Q5, [Q3 + 1*8]
+        mov     Q6, [Q2 + 2*8]
+        sbb     Q6, [Q3 + 2*8]
+        mov     Q7, [Q2 + 3*8]
+        sbb     Q7, [Q3 + 3*8]
+        mov     Q8, [Q2 + 4*8]
+        sbb     Q8, [Q3 + 4*8]
+        mov     Q9, [Q2 + 5*8]
+        sbb     Q9, [Q3 + 5*8]
+
+        // Q2, Q3: free
+        // Load Mod into (Q2, Q3, Q10, Q11, Q12, Q1)
+
+        mov     Q2,  0
+        cmovb   Q2,  [Q1 + 0*8]
+        mov     Q3,  0
+        cmovb   Q3,  [Q1 + 1*8]
+        mov     Q10, 0
+        cmovb   Q10, [Q1 + 2*8]
+        mov     Q11, 0
+        cmovb   Q11, [Q1 + 3*8]
+        mov     Q12, 0
+        cmovb   Q12, [Q1 + 4*8]
+        mov     Q1,  [Q1 + 5*8]
+        cmovnb  Q1,  Q2
+
+        // Add the (masked) modulus
+        add     Q0, Q2
+        adc     Q5, Q3
+        adc     Q6, Q10
+        adc     Q7, Q11
+        adc     Q8, Q12
+        adc     Q9, Q1
+
+        mov     [Q4 + 0*8], Q0
+        mov     [Q4 + 1*8], Q5
+        mov     [Q4 + 2*8], Q6
+        mov     [Q4 + 3*8], Q7
+        mov     [Q4 + 4*8], Q8
+        mov     [Q4 + 5*8], Q9
+
+FUNCTION_END(SymCryptFdefModSub384Asm)
 
 //=================================================
 // Multiplication
@@ -1087,25 +1067,15 @@ ALTERNATE_ENTRY(SymCryptFdefMontgomeryReduce256AsmInternal)
 
         xor     Q1, Q5        // 0 = 2nd result, 1 = first result
 
-        xor     Q10, Q6
-        xor     Q11, Q7
-        xor     Q12, Q8
-        xor     Q13, Q9
+        cmovz   Q10, Q6
+        cmovz   Q11, Q7
+        cmovz   Q12, Q8
+        cmovz   Q13, Q9
 
-        and     Q10, Q1
-        and     Q11, Q1
-        and     Q12, Q1
-        and     Q13, Q1
-
-        xor     Q6, Q10
-        xor     Q7, Q11
-        xor     Q8, Q12
-        xor     Q9, Q13
-
-        mov     [Q4 +  0], Q6
-        mov     [Q4 +  8], Q7
-        mov     [Q4 + 16], Q8
-        mov     [Q4 + 24], Q9
+        mov     [Q4 +  0], Q10
+        mov     [Q4 +  8], Q11
+        mov     [Q4 + 16], Q12
+        mov     [Q4 + 24], Q13
 
 MUL_FUNCTION_END(SymCryptFdefModMulMontgomery256Asm)
 
@@ -1144,6 +1114,79 @@ MUL_FUNCTION_START(SymCryptFdefMontgomeryReduce256Asm, 4, 14)
 
 MUL_FUNCTION_END(SymCryptFdefMontgomeryReduce256Asm)
 
+#if 0
+//////////////////////////////////////////////////////////////
+//
+// UNUSED ASSEMBLY FROM HERE
+// Kept in case we need it later, but removed at compile time
+// to avoid inclusion in produced binaries (the linker struggles
+// to remove unused assembly functions)
+//
+//////////////////////////////////////////////////////////////
+
+//VOID
+//SYMCRYPT_CALL
+//SymCryptFdefModAdd256(
+//    _In_                            PCSYMCRYPT_MODULUS      pmMod,
+//    _In_                            PCSYMCRYPT_MODELEMENT   peSrc1,
+//    _In_                            PCSYMCRYPT_MODELEMENT   peSrc2,
+//    _Out_                           PSYMCRYPT_MODELEMENT    peDst,
+//    _Out_writes_bytes_( cbScratch ) PBYTE                   pbScratch,
+//                                    SIZE_T                  cbScratch )
+
+FUNCTION_START(SymCryptFdefModAdd256Asm, 4, 11)
+
+        // Q1 = pmMod
+        // Q2 = peSrc1
+        // Q3 = peSrc2
+        // Q4 = peDst
+
+        // compute Src1 + Src2 into (Q0, Q5, Q6, Q7) with carry out mask in Q8
+
+        mov     Q0, [Q2 + 0*8]
+        add     Q0, [Q3 + 0*8]
+        mov     Q5, [Q2 + 1*8]
+        adc     Q5, [Q3 + 1*8]
+        mov     Q6, [Q2 + 2*8]
+        adc     Q6, [Q3 + 2*8]
+        mov     Q7, [Q2 + 3*8]
+        adc     Q7, [Q3 + 3*8]
+        sbb     Q8, Q8                  // Q8 = carry out mask
+
+        // Q2, Q3: free
+        // Compute sum - Mod into (Q2, Q3, Q9, Q10) = sum - modulus, Q1 = carry out mask
+
+        add     Q1, SymCryptModulusValueOffsetAmd64
+
+        mov     Q2,  Q0
+        sub     Q2,  [Q1 + 0*8]
+        mov     Q3,  Q5
+        sbb     Q3,  [Q1 + 1*8]
+        mov     Q9,  Q6
+        sbb     Q9,  [Q1 + 2*8]
+        mov     Q10, Q7
+        sbb     Q10, [Q1 + 3*8]
+
+        sbb     Q1, Q1                 // Q1 = carry out mask
+
+        // Choose between the two
+        // addition carry = 1, then subtraction carry = 1 and we pick the 2nd result.
+        // addition carry = 0 and subtraction carry = 0: pick 2nd result
+        // addition carry = 0 and subtraction carry = 1: pick first result
+
+        xor     Q1, Q8            // 0 = 2nd result, 1 = first result
+
+        cmovz   Q0, Q2
+        cmovz   Q5, Q3
+        cmovz   Q6, Q9
+        cmovz   Q7, Q10
+
+        mov     [Q4 + 0*8], Q0
+        mov     [Q4 + 1*8], Q5
+        mov     [Q4 + 2*8], Q6
+        mov     [Q4 + 3*8], Q7
+
+FUNCTION_END(SymCryptFdefModAdd256Asm)
 
 //VOID
 //SYMCRYPT_CALL
@@ -2131,5 +2174,6 @@ SymCryptFdefMontgomeryReduce1024AsmMaskedCopyLoop:
         jnz     SymCryptFdefMontgomeryReduce1024AsmMaskedCopyLoop
 
 MUL_FUNCTION_END(SymCryptFdefMontgomeryReduce1024Asm)
+#endif
 
 FILE_END()

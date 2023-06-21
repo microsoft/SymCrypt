@@ -57,9 +57,9 @@ SymCryptFdefSizeofModulusFromDigits( UINT32 nDigits )
         return 0;
     }
 
-    // Room for the Modulus structure, the Divisor, and the R^2 Montgomery factor
+    // Room for the Modulus structure, the Divisor, the negated divisor, and the R^2 Montgomery factor
     //
-    return SYMCRYPT_FIELD_OFFSET( SYMCRYPT_MODULUS, Divisor ) + SymCryptFdefSizeofDivisorFromDigits( nDigits ) + nDigits * SYMCRYPT_FDEF_DIGIT_SIZE;
+    return SYMCRYPT_FIELD_OFFSET( SYMCRYPT_MODULUS, Divisor ) + SymCryptFdefSizeofDivisorFromDigits( nDigits ) + (2 * nDigits * SYMCRYPT_FDEF_DIGIT_SIZE);
 }
 
 PSYMCRYPT_MODULUS
@@ -291,6 +291,7 @@ SymCryptFdefDecideModulusType( PCSYMCRYPT_INT piSrc, UINT32 nDigits, UINT32 aver
 {
     UINT32 res = 0;
     BOOLEAN disableMontgomery = 0;
+    BYTE tempBuf[64];
     PCSYMCRYPT_MODULUS_TYPE_SELECTION_ENTRY pEntry;
 
     UINT32 nBitsizeOfValue = SymCryptIntBitsizeOfValue( piSrc );
@@ -302,6 +303,32 @@ SymCryptFdefDecideModulusType( PCSYMCRYPT_INT piSrc, UINT32 nDigits, UINT32 aver
         averageOperations >= 10 )
     {
         modulusFeatures |= SYMCRYPT_MODULUS_FEATURE_MONTGOMERY;
+
+        // Specific modulus value detection
+        if( (flags & SYMCRYPT_FLAG_DATA_PUBLIC) != 0 )
+        {
+            // Detect if modulus value is the P384 field modulus (convert piSrc to big endian and do comparison with known value of P384 modulus)
+            if( nBitsizeOfValue == 384 &&
+                SymCryptFdefRawGetValue(SYMCRYPT_FDEF_INT_PUINT32(piSrc), SYMCRYPT_FDEF_DIGITS_FROM_BITS(384), tempBuf, 64, SYMCRYPT_NUMBER_FORMAT_MSB_FIRST) == SYMCRYPT_NO_ERROR )
+            {
+                // First 16 bytes are guaranteed to be zero because nBitsizeOfValue is 384
+                if( memcmp(tempBuf+16, ((PBYTE)SymCryptEcurveParamsNistP384) + sizeof(SYMCRYPT_ECURVE_PARAMS), 48) == 0 )
+                {
+                    modulusFeatures |= SYMCRYPT_MODULUS_FEATURE_NISTP384;
+                }
+            }
+
+            // Detect if modulus value is the P256 field modulus (not currently used)
+            // if( nBitsizeOfValue == 256 && 
+            //     SymCryptFdefRawGetValue(SYMCRYPT_FDEF_INT_PUINT32(piSrc), SYMCRYPT_FDEF_DIGITS_FROM_BITS(256), tempBuf, 64, SYMCRYPT_NUMBER_FORMAT_MSB_FIRST) == SYMCRYPT_NO_ERROR )
+            // {
+            //     // First 32 bytes are guaranteed to be zero because nBitsizeOfValue is 256
+            //     if( memcmp(tempBuf+32, ((PBYTE)SymCryptEcurveParamsNistP256) + sizeof(SYMCRYPT_ECURVE_PARAMS), 32) == 0 )
+            //     {
+            //         modulusFeatures |= SYMCRYPT_MODULUS_FEATURE_NISTP256;
+            //     }
+            // }
+        }
     }
 
     pEntry = SymCryptModulusTypeSelections;
@@ -881,9 +908,16 @@ SymCryptFdefModInvGeneric(
     UINT32 nDigits = pmMod->nDigits;
     UINT32 nBytes;
     UINT32 c;
+    UINT32 leastSignificantUint32;
+    UINT32 trailingZeros;
 
     //
-    // This function is called on Montgomery moduli, so it is very careful to only use the generic modular operations.
+    // This function is called on Montgomery moduli so we can't directly call specifically optimized modular operations from here.
+    //
+    // For now we use dispatch functions with pmMod to perform potentially optimized modular operations.
+    // This approach makes sense when on average the cost of dispatch is less than the benefit using an optimized operation.
+    // The alternative is to make specialized ModInv routines for different types of moduli, but we do not yet do this to
+    // reduce code duplication / code size.
     //
 
     SYMCRYPT_ASSERT( cbScratch >= SYMCRYPT_SCRATCH_BYTES_FOR_MODINV( nDigits ) );
@@ -953,11 +987,11 @@ SymCryptFdefModInvGeneric(
     // If the data is not public, multiply by a random blinding factor; otherwise copy the value
     if( (flags & SYMCRYPT_FLAG_DATA_PUBLIC) == 0 )
     {
-        SymCryptFdefModSetRandomGeneric( pmMod, peR, SYMCRYPT_FLAG_MODRANDOM_ALLOW_ONE | SYMCRYPT_FLAG_MODRANDOM_ALLOW_MINUSONE, pbScratch, cbScratch );   //R = random
-        SymCryptFdefModMulGeneric( pmMod, peR, peSrc, peX, pbScratch, cbScratch );     // X = R * Src
+        SymCryptModSetRandom( pmMod, peR, SYMCRYPT_FLAG_MODRANDOM_ALLOW_ONE | SYMCRYPT_FLAG_MODRANDOM_ALLOW_MINUSONE, pbScratch, cbScratch );   //R = random
+        SymCryptModMul( pmMod, peR, peSrc, peX, pbScratch, cbScratch );     // X = R * Src
     } else
     {
-        SymCryptFdefModElementCopy( pmMod, peSrc, peX );
+        SymCryptModElementCopy( pmMod, peSrc, peX );
     }
 
     // Set up piA and piB
@@ -988,11 +1022,13 @@ SymCryptFdefModInvGeneric(
     {
         // invariant: A = Va*X (mod Mod), B = Vb*X (mod Mod), A != 0, B > 1.
         // Remove factors of 2 from A. This loop terminates because A != 0
-        // We can speed this up by counting how many times we will do this loop, and then updating A and VA once
-        while( (SymCryptIntGetValueLsbits32( piA ) & 1) == 0 )
+        leastSignificantUint32 = SymCryptIntGetValueLsbits32(piA);
+        while( (leastSignificantUint32 & 1) == 0 )
         {
-            SymCryptIntDivPow2( piA, 1, piA );
-            SymCryptModDivPow2( pmMod, peVa, 1, peVa, pbScratch, cbScratch );
+            trailingZeros = SymCryptCountTrailingZeros32( leastSignificantUint32 );
+            SymCryptIntDivPow2( piA, trailingZeros, piA );
+            SymCryptModDivPow2( pmMod, peVa, trailingZeros, peVa, pbScratch, cbScratch );
+            leastSignificantUint32 = SymCryptIntGetValueLsbits32(piA);
         }
 
         if( SymCryptIntIsEqualUint32( piA, 1 ) )
@@ -1016,30 +1052,30 @@ SymCryptFdefModInvGeneric(
             // that way we continue our halving on B-A
 
             SymCryptIntCopy( piT, piB );
-            SymCryptFdefModSubGeneric( pmMod, peVb, peVa, peVb, pbScratch, cbScratch );
+            SymCryptModSub( pmMod, peVb, peVa, peVb, pbScratch, cbScratch );
 
             piTmpPtr  = piB;  piB  = piA;  piA  = piTmpPtr;
             peVtmpPtr = peVb; peVb = peVa; peVa = peVtmpPtr;
         } else {
             // B < A, Set A to A-B and continue halving A
             SymCryptIntNeg( piT, piA );
-            SymCryptFdefModSubGeneric( pmMod, peVa, peVb, peVa, pbScratch, cbScratch );
+            SymCryptModSub( pmMod, peVa, peVb, peVa, pbScratch, cbScratch );
         }
     }
 
     // 1 = A = Va * X (mod Mod), so Va is the inverse of X
     // Check computation that we can test in the debugger
-    SymCryptFdefModMulGeneric( pmMod, peVa, peX, peVb, pbScratch, cbScratch );
+    SymCryptModMul( pmMod, peVa, peX, peVb, pbScratch, cbScratch );
 
     // Actual answer
 
     // If the data is not public, multiply by the random blinding factor; otherwise copy the value
     if( (flags & SYMCRYPT_FLAG_DATA_PUBLIC) == 0 )
     {
-        SymCryptFdefModMulGeneric( pmMod, peVa, peR, peDst, pbScratch, cbScratch );
+        SymCryptModMul( pmMod, peVa, peR, peDst, pbScratch, cbScratch );
     } else
     {
-        SymCryptFdefModElementCopy( pmMod, peVa, peDst );
+        SymCryptModElementCopy( pmMod, peVa, peDst );
     }
 
 cleanup:
@@ -1067,6 +1103,7 @@ SymCryptFdefModulusInitMontgomeryInternal(
     UINT64 M64;
     UINT32 M32;
     PUINT32 modR2;
+    PUINT32 negDivisor;
 
     nDigits = pmMod->nDigits;
     pMvalue = SYMCRYPT_FDEF_INT_PUINT32( &pmMod->Divisor.Int );
@@ -1078,8 +1115,7 @@ SymCryptFdefModulusInitMontgomeryInternal(
     SYMCRYPT_ASSERT_ASYM_ALIGNED( pbScratch );
 
     pmMod->tm.montgomery.Rsqr = modR2;
-	// dcl - cleanup?
-    //pmMod->tm.montgomery.nUint32Used = nUint32Used;
+    negDivisor = (PUINT32)((PBYTE)modR2 + (nDigits * SYMCRYPT_FDEF_DIGIT_SIZE));
 
     // We pre-compute R^2 mod M
 
@@ -1094,6 +1130,8 @@ SymCryptFdefModulusInitMontgomeryInternal(
     SymCryptFdefRawDivMod( pR2, 2*nDigits + 1, &pmMod->Divisor, NULL, modR2, pbScratch + cbR2, cbScratch - cbR2 );
 
     pmMod->tm.montgomery.inv64 = 0 - SymCryptInverseMod2e64( M64 );
+
+    SymCryptFdefRawNeg( SYMCRYPT_FDEF_INT_PUINT32( &pmMod->Divisor.Int ), 0, negDivisor, nDigits );
 }
 
 VOID
@@ -1386,18 +1424,6 @@ SymCryptFdefModInvMontgomery(
 // 256-bit Montgomery modulus code
 //
 
-VOID
-SYMCRYPT_CALL
-SymCryptFdefModSquareMontgomery256(
-    _In_                            PCSYMCRYPT_MODULUS      pmMod,
-    _In_                            PCSYMCRYPT_MODELEMENT   peSrc,
-    _Out_                           PSYMCRYPT_MODELEMENT    peDst,
-    _Out_writes_bytes_( cbScratch ) PBYTE                   pbScratch,
-                                    SIZE_T                  cbScratch )
-{
-    SymCryptFdefModMulMontgomery256Asm( pmMod, peSrc, peSrc, peDst, pbScratch, cbScratch );
-}
-
 SYMCRYPT_ERROR
 SYMCRYPT_CALL
 SymCryptFdefModInvMontgomery256(
@@ -1434,7 +1460,7 @@ SymCryptFdefModInvMontgomery256(
 
 VOID
 SYMCRYPT_CALL
-SymCryptFdefModSetPostMontgomery256(
+SymCryptFdefModSetPostMontgomeryMulx256(
     _In_                            PCSYMCRYPT_MODULUS      pmMod,
     _Inout_                         PSYMCRYPT_MODELEMENT    peObj,
     _Out_writes_bytes_( cbScratch ) PBYTE                   pbScratch,
@@ -1446,10 +1472,11 @@ SymCryptFdefModSetPostMontgomery256(
     UINT32 nDigits = pmMod->nDigits;
 
     SYMCRYPT_ASSERT( cbScratch >= nDigits * 2 * SYMCRYPT_FDEF_DIGIT_SIZE );
+    UNREFERENCED_PARAMETER( pbScratch );
     UNREFERENCED_PARAMETER( cbScratch );
     UNREFERENCED_PARAMETER( nDigits );
 
-    SymCryptFdefModMulMontgomery256Asm( pmMod, (PSYMCRYPT_MODELEMENT) pmMod->tm.montgomery.Rsqr, peObj, peObj, pbScratch, cbScratch );
+    SymCryptFdefModMulMontgomeryMulx256Asm( pmMod, (PSYMCRYPT_MODELEMENT) pmMod->tm.montgomery.Rsqr, peObj, peObj );
 }
 
 PCUINT32
@@ -1492,6 +1519,32 @@ SymCryptFdefModulusInitMontgomery256(
     SymCryptFdefModulusInitMontgomeryInternal( pmMod, 8, pbScratch, cbScratch );
 }
 
+//=====================================
+// 384-bit Montgomery modulus code
+//
+
+VOID
+SYMCRYPT_CALL
+SymCryptFdefModSetPostMontgomeryMulxP384(
+    _In_                            PCSYMCRYPT_MODULUS      pmMod,
+    _Inout_                         PSYMCRYPT_MODELEMENT    peObj,
+    _Out_writes_bytes_( cbScratch ) PBYTE                   pbScratch,
+                                    SIZE_T                  cbScratch )
+{
+    // Montgomery representation for X is R*X mod M where R = 2^<nDigits * bits-per-digit>
+    // Montgomery reduction performs an implicit division by R
+    // This function converts to the internal representation by multiplying by R^2 mod M and then performing a Montgomery reduction
+    UINT32 nDigits = pmMod->nDigits;
+
+    SYMCRYPT_ASSERT( cbScratch >= nDigits * 2 * SYMCRYPT_FDEF_DIGIT_SIZE );
+    UNREFERENCED_PARAMETER( pbScratch );
+    UNREFERENCED_PARAMETER( cbScratch );
+    UNREFERENCED_PARAMETER( nDigits );
+
+    SymCryptFdefModMulMontgomeryMulxP384Asm( pmMod, (PSYMCRYPT_MODELEMENT) pmMod->tm.montgomery.Rsqr, peObj, peObj );
+}
+
+#if 0
 //=====================================
 // 512-bit Montgomery modulus code
 //
@@ -1577,5 +1630,6 @@ SymCryptFdefModSquareMontgomery1024(
     SymCryptFdefRawSquare1024Asm( &peSrc->d.uint32[0], nDigits, pTmp );
     SymCryptFdefMontgomeryReduce1024Asm( pmMod, pTmp, &peDst->d.uint32[0] );
 }
+#endif
 
 #endif
