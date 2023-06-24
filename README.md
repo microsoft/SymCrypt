@@ -67,7 +67,8 @@ If you believe you have found a problem that affects the security of this code, 
 or pull request, but instead email your comments to secure@microsoft.com. See [SECURITY.md](SECURITY.md) for more info.
 
 # Contribute
-We love to receive comments and suggestions. Unfortunately we cannot accept external code contributions at this time.
+We love to receive comments and suggestions. Unfortunately we cannot accept external code contributions except in
+specific circumstances from vetted partners with whom we have a pre-arranged agreement.
 Cryptographic code is considered highly sensitive by many of our large customers.
 We have some very big customers who put great value in the assurance of the crypto code used in their organization.
 By restricting the coding to a handful of employees we can greatly reduce the (perceived) risk of malicious contributions.

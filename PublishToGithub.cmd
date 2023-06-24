@@ -1,1 +1,1 @@
-git push https://github.com/Microsoft/SymCrypt.git publish:master
+git push https://github.com/Microsoft/SymCrypt.git publish:main
