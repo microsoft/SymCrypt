@@ -1369,7 +1369,7 @@ initTestInfrastructure( int argc, _In_reads_( argc ) char * argv[] )
         moduleLoadStart = GET_PERF_CLOCK();
         g_dynamicSymCryptModuleHandle = loadDynamicModuleFromPath(g_dynamicModulePath.c_str());
         moduleLoadEnd = GET_PERF_CLOCK();
-        CHECK(g_dynamicSymCryptModuleHandle != NULL, "!");
+        CHECK(g_dynamicSymCryptModuleHandle != NULL, "Failed to load dynamic module. Is the path correct?");
 
         iprint("\nLoaded %s to %llx\nTook ~%d cycles.\n", g_dynamicModulePath.c_str(), (UINT64)g_dynamicSymCryptModuleHandle, moduleLoadEnd-moduleLoadStart);
 

@@ -30,7 +30,7 @@ def run_unittest(build_dir : pathlib.Path, emulator : str,
             print("Warning: --glibc-disable-ymm is not supported on Windows.", file = sys.stderr)
             disable_ymm = False
 
-        # Build the path to the executable
+    # Build the path to the executable
     unittest_search_path = pathlib.Path(build_dir)
     unittest_candidates = unittest_search_path.rglob("**/{}{}".format(
         UNITTEST_FILENAME, UNITTEST_EXTENSION_WINDOWS if sys.platform == "win32" else ""))
@@ -65,7 +65,7 @@ def run_unittest(build_dir : pathlib.Path, emulator : str,
         subprocess.run(unittest_invocation, env = env, check = True)
     except subprocess.CalledProcessError as e:
         print("Unit test exited unsuccessfully with code " + str(e.returncode), file = sys.stderr)
-        return e.returncode
+        exit(e.returncode)
 
     return 0
 
@@ -84,7 +84,6 @@ def main() -> int:
     args = parser.parse_args()
 
     result = run_unittest(args.build_dir, args.emulator, args.emulator_lib_dir, args.glibc_disable_ymm, *args.additional_args)
-    return result
 
 if __name__ == "__main__":
     main()

@@ -291,7 +291,9 @@ extern "C" {
 #pragma warning( disable: 4127 )        // conditional expression is constant
 #pragma warning( disable: 6262 )        // excessive stack usage. This is test code, I don't care.
 #pragma warning( disable: 4702 )        // unreachable code. The compilers are not equally smart, and some complain
-                                        // aobut 'function must return a value' and some about 'unreachable code'
+                                        // about 'function must return a value' and some about 'unreachable code'
+#pragma warning( disable: 4296 )        // expression is always false - this warning is forced to be an error by a
+                                        // pragma in the SDK warning.h, but we don't consider it useful
 
 //
 // Macros for different environments

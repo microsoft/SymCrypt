@@ -1,0 +1,44 @@
+################################################################################
+#                  OneBranch Pipelines - PR Build                              #
+################################################################################
+#                                                                              #
+# This pipeline is for validation of pull requests. Useful links:              #
+#                                                                              #
+#   https://www.osgwiki.com/wiki/Windows_Undocked_Template                     #
+#   https://aka.ms/obpipelines                                                 #
+#   https://aka.ms/obpipelines/yaml/schema                                     #
+#   https://aka.ms/obpipelines/tasks                                           #
+#   https://aka.ms/onebranchsup                                                #
+#                                                                              #
+################################################################################
+
+trigger: none # https://aka.ms/obpipelines/triggers
+
+pr:
+- main
+
+variables:
+  # https://aka.ms/obpipelines/containers
+  WindowsContainerImage: 'onebranch.azurecr.io/windows/ltsc2022/vse2022:latest'
+
+resources:
+  repositories:
+  - repository: templates
+    type: git
+    name: OneBranch.Pipelines/GovernedTemplates
+    ref: refs/heads/main
+
+extends:
+  # https://aka.ms/obpipelines/templates
+  template: v2/Microsoft.NonOfficial.yml@templates
+  parameters:
+    platform:
+      name: 'windows_undocked'
+    featureFlags:
+      WindowsHostVersion: '1ESWindows2022'
+    stages:
+    - stage: Build
+      jobs:
+      - template: .pipelines/templates/build-windows-undocked.yml@self
+        parameters:
+          sln: SymCrypt.sln

@@ -31,6 +31,10 @@ jobs:
   variables:
     ob_outputDirectory: $(Build.SourcesDirectory)\bin
     ob_sdl_binskim_break: ${{ eq(parameters.config, 'Release') }} # Only break on binskim failures for Release binaries https://aka.ms/obpipelines/sdl
+    ${{ if eq(variables['system.debug'], true) }}:
+      verbose_build_flag: '--verbose'
+    ${{ else }}:
+      verbose_build_flag: ''
 
   steps:
   
@@ -49,7 +53,7 @@ jobs:
     inputs:
       scriptSource: 'filePath'
       scriptPath: scripts\build.py
-      arguments: 'cmake bin --arch ${{ parameters.arch }} --config ${{ parameters.config }} ${{ parameters.additionalArgs }}'
+      arguments: 'cmake bin --arch ${{ parameters.arch }} --config ${{ parameters.config }} ${{ parameters.additionalArgs }} $(verbose_build_flag)'
       workingDirectory: $(Build.SourcesDirectory)
 
   - ${{ if ne(parameters.skipTests, true) }}:
@@ -65,7 +69,7 @@ jobs:
       displayName: 'Run dynamic unit tests'
       inputs:
         scriptSource: 'filePath'
-        scriptPath: scripts/test.py
+        scriptPath: scripts\test.py
         arguments: 'bin dynamic:bin\exe\symcrypttestmodule.dll noperftests'
         workingDirectory: $(Build.SourcesDirectory)      
 

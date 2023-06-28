@@ -1,0 +1,133 @@
+# This template is for building, signing, packaging and ingesting undocked Windows binaries.
+parameters:
+  # Build args
+  sln: ''
+  msbuildArgs: ''
+  restoreNugetPackages: false
+  targetOsBranch: 'official/main'
+  config: 'Debug,Release'
+  platform: 'x86,x64,arm64'
+  nativeCompiler: true
+  sign: false # Only signs UM binaries, for external (to Windows repo) release
+
+jobs:
+# Build the solution for all the necessary configurations.
+- job: build_sln
+  displayName: ${{ parameters.sln }}
+  ${{ if eq(parameters.package, true) }}:
+    dependsOn: set_version
+  strategy:
+    matrix:
+      ${{ if and(contains(parameters.config, 'Debug'), contains(parameters.platform, 'x86')) }}:
+        x86chk:
+          ob_build_platform: x86
+          ob_build_platform_win: x86
+          ob_build_config: Debug
+          ob_build_config_win: chk
+      ${{ if and(contains(parameters.config, 'Release'), contains(parameters.platform, 'x86')) }}:
+        x86fre:
+          ob_build_platform: x86
+          ob_build_platform_win: x86
+          ob_build_config: Release
+          ob_build_config_win: fre
+      ${{ if and(contains(parameters.config, 'Debug'), contains(parameters.platform, 'x64')) }}:
+        amd64chk:
+          ob_build_platform: x64
+          ob_build_platform_win: amd64
+          ob_build_config: Debug
+          ob_build_config_win: chk
+      ${{ if and(contains(parameters.config, 'Release'), contains(parameters.platform, 'x64')) }}:
+        amd64fre:
+          ob_build_platform: x64
+          ob_build_platform_win: amd64
+          ob_build_config: Release
+          ob_build_config_win: fre
+      ${{ if and(contains(parameters.config, 'Debug'), contains(parameters.platform, 'arm64')) }}:
+        arm64chk:
+          ob_build_platform: arm64
+          ob_build_platform_win: arm64
+          ob_build_config: Debug
+          ob_build_config_win: chk
+      ${{ if and(contains(parameters.config, 'Release'), contains(parameters.platform, 'arm64')) }}:
+        arm64fre:
+          ob_build_platform: arm64
+          ob_build_platform_win: arm64
+          ob_build_config: Release
+          ob_build_config_win: fre
+      # Note: must specify "arm32" for ARM because "arm" is a substring of "arm64" and ADO YAML
+      # does not support true arrays, so we can't use "contains" to check for "arm" in the platform.
+      ${{ if and(contains(parameters.config, 'Debug'), contains(parameters.platform, 'arm32')) }}:
+        armchk:
+          ob_build_platform: arm
+          ob_build_platform_win: arm
+          ob_build_config: Debug
+          ob_build_config_win: chk
+      ${{ if and(contains(parameters.config, 'Release'), contains(parameters.platform, 'arm32')) }}:
+        armfre:
+          ob_build_platform: arm
+          ob_build_platform_win: arm
+          ob_build_config: Release
+          ob_build_config_win: fre
+
+  pool:
+    type: windows
+
+  variables:
+    # Build variables
+    ob_outputDirectory: $(Build.SourcesDirectory)\build\bin\$(ob_build_platform_win)$(ob_build_config_win)
+    ob_artifactSuffix: _$(ob_build_platform_win)$(ob_build_config_win)
+    # https://aka.ms/obpipelines/sdl
+    ob_sdl_tsa_enabled: false # When TSA is disabled all SDL tools will forced into 'break' build mode.
+    ob_sdl_binskim_break: true
+    ob_sdl_policheck_break: true
+    ${{ if eq(parameters.sign, true) }}:
+      ob_sdl_codeSignValidation_excludes: -|**\*.sys # Signing is not supported for KM drivers
+    ${{ if eq(parameters.sign, false) }}:
+      ob_sdl_codeSignValidation_excludes: -|**\*.sys;-|**\*.dll;-|**\*.exe # Disable signing requirements for UM & KM builds
+    # https://eng.ms/docs/cloud-ai-platform/azure-edge-platform-aep/aep-engineering-systems/productivity-and-experiences/onebranch-windows-undocked/onebranch-windows-undocked/test/onebranchwindowsundocked
+    ob_NativeCompiler_enabled: ${{ parameters.nativeCompiler }}
+    ob_NativeCompiler_TaskVerbosity: 'Detailed'
+    ob_NativeCompiler_UseOSBranchVersion: true
+    ob_NativeCompiler_TargetOsBranch: ${{ parameters.targetOsBranch }}
+    ob_NativeCompiler_UcrtPlatform: $(ob_build_platform_win)
+
+  steps:
+  - task: VSBuild@1
+    displayName: Build
+    target: windows_build_container
+    inputs:
+      solution: ${{ parameters.sln }}
+      platform: $(ob_build_platform)
+      configuration: $(ob_build_config)
+      maximumCpuCount: true
+      restoreNugetPackages: ${{ parameters.restoreNugetPackages }}
+      msbuildArgs: '-p:UndockedOfficial=${{ parameters.nativeCompiler }} -p:UndockedBuildId=$(Build.BuildId) ${{ parameters.msbuildArgs }}'
+
+  # Only run tests on x86/x64 builds for now
+  - task: PythonScript@0
+    displayName: 'Run unit tests'
+    condition: or(eq(variables['ob_build_platform'], 'x64'), eq(variables['ob_build_platform'], 'x86')) 
+    inputs:
+      scriptSource: 'filePath'
+      scriptPath: scripts\test.py
+      arguments: 'build\bin noperftests'
+      workingDirectory: $(Build.SourcesDirectory)
+
+  - task: PythonScript@0
+    displayName: 'Run dynamic unit tests'
+    condition: or(eq(variables['ob_build_platform'], 'x64'), eq(variables['ob_build_platform'], 'x86')) 
+    inputs:
+      scriptSource: 'filePath'
+      scriptPath: scripts\test.py
+      arguments: 'build\bin dynamic:build\bin\$(ob_build_platform_win)$(ob_build_config_win)\symcrypttestmodule.dll noperftests'
+      workingDirectory: $(Build.SourcesDirectory)      
+
+  - ${{ if eq(parameters.sign, true) }}:
+    - task: onebranch.pipeline.signing@1 # https://aka.ms/obpipelines/signing
+      displayName: 'Sign Binaries'
+      target: windows_build_container
+      inputs:
+        command: 'sign'
+        signing_profile: 'external_distribution'
+        files_to_sign: '**\*.exe;**\*.dll' # Only supports user mode binaries
+        search_root: 'build/bin'

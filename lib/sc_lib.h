@@ -48,6 +48,8 @@ typedef int                 BOOL;
 #pragma prefast( disable:28113 )
 #pragma warning( disable: 4702 )        // unreachable code. The compilers are not equally smart, and some complain
                                         // about 'function must return a value' and some about 'unreachable code'
+#pragma warning( disable: 4296 )        // expression is always false - this warning is forced to be an error by a
+                                        // pragma in the SDK warning.h, but we don't consider it useful
 
 
 //
