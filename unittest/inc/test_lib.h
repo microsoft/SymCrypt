@@ -24,27 +24,7 @@
     #include <string>
     #include <winternl.h>
 
-#elif defined(__APPLE_CC__)
-
-    #include <stdio.h>
-    #include <stdlib.h>
-    #include <math.h>
-    #include <unistd.h>
-
-    #include <chrono>
-    #include <vector>
-    #include <string>
-    #include <memory>
-    #include <algorithm>
-    #include <map>
-    #include <sstream>
-    #include <set>
-    #include <type_traits>
-
-    #define ALIGNED_ALLOC( alignment, size ) aligned_alloc( alignment, size )
-    #define ALIGNED_FREE( ptr ) free( ptr )
-
-#elif defined(__GNUC__)
+#elif defined(__GNUC__) || defined(__APPLE__)
 
     #include <stdio.h>
     #include <cstring>
@@ -383,6 +363,7 @@ extern "C" {
     ssize_t GENRANDOM(void * pbBuf, size_t cbBuf) {
         return (getrandom( pbBuf, cbBuf, 0 ) == (ssize_t) cbBuf) ? 0 : -1;
     }
+#endif
 
     #include <pthread.h>
     FORCEINLINE
@@ -412,9 +393,6 @@ extern "C" {
 
     #define ACQUIRE_FAST_INPROC_MUTEX(pMutex)   pthread_mutex_lock((pthread_mutex_t *)pMutex)
     #define RELEASE_FAST_INPROC_MUTEX(pMutex)   pthread_mutex_unlock((pthread_mutex_t *)pMutex)
-#else
-    #error "Oh no, need a GENRANDOM() implementation"
-#endif
 
     #define SLEEP                       usleep
 

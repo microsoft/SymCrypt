@@ -30,7 +30,17 @@ PVOID loadDynamicModuleFromPath(PCSTR dynamicModulePath)
     // those in the global scope (which ensures that the library will call its own copies of
     // internal SymCrypt functions)
     //
+
+#ifdef __APPLE__
+
+    PVOID hModule = dlopen(dynamicModulePath, RTLD_NOW);
+
+#else
+
     PVOID hModule = dlopen(dynamicModulePath, RTLD_NOW | RTLD_DEEPBIND);
+
+#endif
+
     if (!hModule) {
         iprint("\nFailed to load dynamic module with: %s\n", dlerror());
     }
@@ -49,11 +59,15 @@ extern "C"
 {
     int oe_sgx_get_additional_host_entropy(uint8_t* data, size_t size)
     {
+#ifdef __APPLE__
+        arc4random_buf( data, size);
+#else
         SIZE_T result = getrandom( data, size, 0 );
         if (result != size )
         {
             SymCryptFatal( 'oehe' );
         }
+#endif
         return 1; // 1 indicates success
     }
 }

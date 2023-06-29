@@ -281,7 +281,7 @@ if(WIN32 AND SYMCRYPT_USE_ASM)
             arm64/wipe-armasm64.asm
             PROPERTIES LANGUAGE ASM_MARMASM)
     endif()
-elseif(SYMCRYPT_USE_ASM) # Linux
+elseif(SYMCRYPT_USE_ASM)
     if(SYMCRYPT_TARGET_ARCH MATCHES "AMD64")
         process_symcryptasm(amd64/aesasm.symcryptasm gas amd64 systemv)
         process_symcryptasm(amd64/fdef_asm.symcryptasm gas amd64 systemv)

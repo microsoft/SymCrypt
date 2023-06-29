@@ -1093,7 +1093,7 @@ void getPlatformInformation()
 
     g_osVersion = (versionInfo.dwMajorVersion << 8) + (versionInfo.dwMinorVersion & 0xff);
 }
-#elif SYMCRYPT_GNUC
+#elif SYMCRYPT_GNUC || SYMCRYPT_APPLE_CC
 #include "resource.h"
 KatData *
 getCustomResource( _In_ PSTR resourceName, _In_ PSTR /* resourceType */)

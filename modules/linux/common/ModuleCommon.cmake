@@ -1,4 +1,4 @@
-# Common build steps for all SymCrypt Linux modules
+# Common build steps for all SymCrypt modules for unix-like systems
 # Set the following variables before including this file:
 #
 # TARGET_NAME - name of the target being built. This should be the same value given to add_library
@@ -29,8 +29,8 @@ endif()
 
 target_link_options(${TARGET_NAME} PRIVATE
   -Wl,--whole-archive
-  $<TARGET_FILE:symcrypt_module_linux_common>
-  $<TARGET_FILE:symcrypt_linuxusermode>
+  $<TARGET_FILE:symcrypt_module_${SYMCRYPT_TARGET_ENV}_common>
+  $<TARGET_FILE:symcrypt_${SYMCRYPT_TARGET_ENV}usermode>
   $<TARGET_FILE:symcrypt_common>
   -Wl,--no-whole-archive
   -Wl,-Bsymbolic
@@ -45,7 +45,7 @@ target_link_options(${TARGET_NAME} PRIVATE
   -nostartfiles
 )
 
-add_dependencies(${TARGET_NAME} symcrypt_linuxusermode symcrypt_common symcrypt_module_linux_common)
+add_dependencies(${TARGET_NAME} symcrypt_${SYMCRYPT_TARGET_ENV}usermode symcrypt_common symcrypt_module_${SYMCRYPT_TARGET_ENV}_common)
 
 if (CMAKE_C_COMPILER_ID MATCHES "Clang")
     add_compile_options(-mllvm -x86-speculative-load-hardening)

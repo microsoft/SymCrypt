@@ -33,7 +33,7 @@ def get_normalized_host_arch() -> str:
         normalized_arch = "x86"
     elif re.fullmatch("AMD64|x86_64", host_arch):
         normalized_arch = "amd64"
-    elif re.fullmatch("ARM64|aarch64", host_arch):
+    elif re.fullmatch("ARM64|aarch64|arm64", host_arch):
         normalized_arch = "arm64"
     elif re.fullmatch("ARM32|aarch32|armv8l", host_arch):
         normalized_arch = "arm"
