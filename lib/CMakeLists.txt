@@ -371,9 +371,9 @@ if(NOT WIN32)
         endif()
     endif()
 
-    add_library(symcrypt_linuxusermode STATIC env_linuxUserMode.c)
-    set_target_properties(symcrypt_linuxusermode PROPERTIES PREFIX "")
-    target_link_libraries(symcrypt_linuxusermode symcrypt_common)
+    add_library(symcrypt_${SYMCRYPT_TARGET_ENV}usermode STATIC env_linuxUserMode.c)
+    set_target_properties(symcrypt_${SYMCRYPT_TARGET_ENV}usermode PROPERTIES PREFIX "")
+    target_link_libraries(symcrypt_${SYMCRYPT_TARGET_ENV}usermode symcrypt_common)
 endif()
 
 include_directories(${CMAKE_SOURCE_DIR}/inc)
