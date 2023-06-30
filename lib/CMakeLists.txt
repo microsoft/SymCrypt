@@ -257,7 +257,7 @@ if(WIN32 AND SYMCRYPT_USE_ASM)
         set_source_files_properties(
             i386/fdef_asm-masm.asm PROPERTIES INCLUDE_DIRECTORIES ${CMAKE_CURRENT_SOURCE_DIR}/i386)
     endif()
-elseif(SYMCRYPT_USE_ASM) # Linux
+elseif(SYMCRYPT_USE_ASM)
     if(SYMCRYPT_TARGET_ARCH MATCHES "AMD64")
         process_symcryptasm(amd64/aesasm.symcryptasm gas amd64 systemv)
         process_symcryptasm(amd64/fdef_asm.symcryptasm gas amd64 systemv)
