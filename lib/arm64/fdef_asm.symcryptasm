@@ -525,6 +525,712 @@ FUNCTION_END(ARM64EC_NAME_MANGLE(SymCryptFdefRawSquareAsm))
 
 //VOID
 //SYMCRYPT_CALL
+//SymCryptFdefModAdd256Asm(
+//    _In_                            PCSYMCRYPT_MODULUS      pmMod,
+//    _In_                            PCSYMCRYPT_MODELEMENT   peSrc1,
+//    _In_                            PCSYMCRYPT_MODELEMENT   peSrc2,
+//    _Out_                           PSYMCRYPT_MODELEMENT    peDst )
+
+FUNCTION_START(ARM64EC_NAME_MANGLE(SymCryptFdefModAdd256Asm), 4, 10)
+
+    add     X_0, X_0, #SymCryptModulusValueOffsetArm64 // pMod
+
+    // compute Src1 + Src2 into (X_4, X_5, X_6, X_7)
+    ldp     X_4, X_5, [X_1]       // Load two words of peSrc1
+    ldp     X_8, X_9, [X_2]       // Load two words of peSrc2
+    adds    X_4, X_4, X_8
+    adcs    X_5, X_5, X_9
+
+    ldp     X_6, X_7, [X_1, #16]  // Load two words of peSrc1
+    ldp     X_8, X_9, [X_2, #16]  // Load two words of peSrc2
+    adcs    X_6, X_6, X_8
+    adcs    X_7, X_7, X_9
+
+    cset    X_1, cs                 // If the carry is set, set X_1 to 1 (else 0)
+
+    // Compute sum - Mod into (X_2, X_8, X_9, X_0) = sum - modulus
+
+    ldp     X_2, X_8, [X_0]       // Load two words of pMod
+    subs    X_2, X_4, X_2
+    sbcs    X_8, X_5, X_8
+
+    ldp     X_9, X_0, [X_0, #16]  // Load two words of pMod
+    sbcs    X_9, X_6, X_9
+    sbcs    X_0, X_7, X_0
+
+    // Choose between the two
+    // addition carry = 1, then subtraction borrow = 1 and we pick the 2nd result.
+    // addition carry = 0 and subtraction borrow = 0: pick 2nd result
+    // addition carry = 0 and subtraction borrow = 1: pick first result
+
+    // We set borrow condition (cc) when subtracting with carry from X_1
+    // iff addition carry 0 and subtraction borrow 1
+    sbcs    X_1, X_1, XZR
+
+    csel    X_4, X_4, X_2, cc
+    csel    X_5, X_5, X_8, cc
+    stp     X_4, X_5, [X_3]
+
+    csel    X_6, X_6, X_9, cc
+    csel    X_7, X_7, X_0, cc
+    stp     X_6, X_7, [X_3, #16]
+
+FUNCTION_END(ARM64EC_NAME_MANGLE(SymCryptFdefModAdd256Asm))
+
+//VOID
+//SYMCRYPT_CALL
+//SymCryptFdefModSub256Asm(
+//    _In_                            PCSYMCRYPT_MODULUS      pmMod,
+//    _In_                            PCSYMCRYPT_MODELEMENT   peSrc1,
+//    _In_                            PCSYMCRYPT_MODELEMENT   peSrc2,
+//    _Out_                           PSYMCRYPT_MODELEMENT    peDst )
+
+FUNCTION_START(ARM64EC_NAME_MANGLE(SymCryptFdefModSub256Asm), 4, 10)
+
+    add     X_0, X_0, #SymCryptModulusValueOffsetArm64 // pMod
+
+    // compute Src1 - Src2 into (X_4, X_5, X_6, X_7)
+    ldp     X_4, X_5, [X_1]         // Load two words of peSrc1
+    ldp     X_8, X_9, [X_2]         // Load two words of peSrc2
+    subs    X_4, X_4, X_8
+    sbcs    X_5, X_5, X_9
+
+    ldp     X_6, X_7, [X_1, #16]    // Load two words of peSrc1
+    ldp     X_8, X_9, [X_2, #16]    // Load two words of peSrc2
+    sbcs    X_6, X_6, X_8
+    sbcs    X_7, X_7, X_9
+
+    // Load the masked modulus into (X_1, X_2, X_8, X_9)
+    ldp     X_1, X_2, [X_0]         // Load two words of pMod
+    csel    X_1, X_1, XZR, cc       // If we did not borrow, zero the modulus
+    csel    X_2, X_2, XZR, cc
+
+    ldp     X_8, X_9, [X_0, #16]    // Load two words of pMod
+    csel    X_8, X_8, XZR, cc
+    csel    X_9, X_9, XZR, cc
+
+    // Add the masked modulus
+    adds    X_4, X_4, X_1
+    adcs    X_5, X_5, X_2
+    stp     X_4, X_5, [X_3]
+
+    adcs    X_6, X_6, X_8
+    adc     X_7, X_7, X_9
+    stp     X_6, X_7, [X_3, #16]
+
+FUNCTION_END(ARM64EC_NAME_MANGLE(SymCryptFdefModSub256Asm))
+
+
+MACRO_START(MUL_AND_MONTGOMERY_REDUCE14_INTERLEAVE, T0, T1, Ai, pB, pM, K, Inv64, R0, R1, R2, R3, R4, R5)
+    // (R1, R2, R3, R4, R5) = Ai * (B0..3) + (R1, R2, R3, R4, R5)
+    // (xx, R1, R2, R3, R4, R5, R0) = K * (M0..3) + (R0, R1, R2, R3, R4, R5)
+    // K = Inv64 * R1
+    // Note K is chosen using pMod's montgomery inverse s.t. xx would get set to 0
+    // pM is a pointer the the bytes of the modulus (i.e. offset into SYMCRYPT_MODULUS structure)
+    // R5 is 0 or 1 at start
+    // R0 is 0 or 1 at end
+    // T0, T1 = scratch
+    // Ai is also used as scratch when it's no longer needed
+
+    // (R1, R2, R3, R4, R5) += Ai * B even
+    ldr     T0, [pB]
+    mul     T1, Ai, T0
+    adds    R1, R1, T1
+    umulh   T0, Ai, T0
+    adcs    R2, R2, T0
+
+    ldr     T0, [pB, #16]
+    mul     T1, Ai, T0
+    adcs    R3, R3, T1
+    umulh   T0, Ai, T0
+    adcs    R4, R4, T0
+
+    adc     R5, R5, XZR // R5 in range [0,2]
+
+    // (R2, R3, R4, R5) += Ai * B odd
+    ldr     T0, [pB, #8]
+    mul     T1, Ai, T0
+    adds    R2, R2, T1
+    umulh   T0, Ai, T0
+    adcs    R3, R3, T0
+
+    ldr     T0, [pB, #24]
+    mul     T1, Ai, T0
+    adcs    R4, R4, T1
+    umulh   Ai, Ai, T0
+    adc     Ai, Ai, XZR // Ai in range [0, 2^64-1]
+                        // defer adding Ai to R5 to avoid overflowing earlier than necessary
+
+    // (xx, R1, R2, R3, R4, R5) = K * M even + (R0, R1, R2, R3, R4, R5)
+    ldr     T0, [pM]
+    mul     T1,  K, T0
+    adds    R0, R0, T1  // Sets R0 to 0
+    umulh   T0,  K, T0
+    adcs    R1, R1, T0
+
+    ldr     T0, [pM, #16]
+    mul     T1,  K, T0
+    adcs    R2, R2, T1
+    umulh   T0,  K, T0
+    adcs    R3, R3, T0
+
+    adcs    R4, R4, XZR
+    adc     R5, R5, XZR // R5 in range [0,3]
+
+    // (R1, R2, R3, R4, R5, R0) = K * M odd + (R1, R2, R3, R4, R5, R0)
+    ldr     T0, [pM, #8]
+    mul     T1,  K, T0
+    adds    R1, R1, T1
+    umulh   T0,  K, T0
+    adcs    R2, R2, T0
+
+    ldr     T0, [pM, #24]
+    mul     T1,  K, T0
+    adcs    R3, R3, T1
+    umulh   T0,  K, T0
+    adcs    R4, R4, T0
+
+    mul     K, R1, Inv64
+    adcs    R5, R5, Ai
+    cset    R0, cs
+MACRO_END()
+
+//VOID
+//SYMCRYPT_CALL
+//SymCryptFdefModMulMontgomery256Asm(
+//    _In_                            PCSYMCRYPT_MODULUS      pMod,
+//    _In_                            PCSYMCRYPT_MODELEMENT   pSrc1,
+//    _In_                            PCSYMCRYPT_MODELEMENT   pSrc2,
+//    _Out_                           PSYMCRYPT_MODELEMENT    pDst );
+
+FUNCTION_START(ARM64EC_NAME_MANGLE(SymCryptFdefModMulMontgomery256Asm), 4, 15)
+
+    // X_0 = pMod
+    // X_1 = pSrc1
+    // X_2 = pSrc2
+    // X_3 = pDst
+    // X_4 = Ai
+    // X_5, X_6 = T0, T1
+    // X_7 = Inv64
+    // X_8 = K
+    // X_9, X_10, X_11, X_12, X_13, X_14 = R0..R5
+
+ALTERNATE_ENTRY(ARM64EC_NAME_MANGLE(SymCryptFdefModMulMontgomery256AsmInternal))
+
+    ldr     X_4, [X_1]              // Load pSrc1
+
+    ldp     X_10, X_11, [X_2]       // Load pSrc2 B[0], B[1]
+    mul      X_9,  X_4, X_10        // R0 = <63:0>   of A[0]*B[0]
+    umulh   X_10,  X_4, X_10        // R1 = <127:64> of A[0]*B[0]
+
+    mul      X_5,  X_4, X_11        // T0 = <63:0>   of A[0]*B[1]
+    adds    X_10, X_10,  X_5        // Adding the previous word
+    umulh   X_11,  X_4, X_11        // R2 = <127:64> of A[0]*B[1]
+
+    ldp     X_12, X_13, [X_2, #16]  // Load pSrc2 B[2], B[3]
+    mul      X_5,  X_4, X_12        // T0 = <63:0>   of A[0]*B[2]
+    adcs    X_11, X_11,  X_5        // Adding the previous word (if there was a carry from the last addition it is added)
+    umulh   X_12,  X_4, X_12        // R3 = <127:64> of A[0]*B[2]
+
+    mul      X_5,  X_4, X_13        // T0 = <63:0>   of A[0]*B[3]
+    adcs    X_12, X_12,  X_5        // Adding the previous word (if there was a carry from the last addition it is added)
+    umulh   X_13,  X_4, X_13        // R4 = <127:64> of A[0]*B[3]
+    adc     X_13, X_13,  XZR
+
+    eor     X_14, X_14, X_14
+
+    ldr     X_7, [X_0, #SymCryptModulusMontgomeryInv64OffsetArm64]
+    mul     X_8, X_9, X_7           // K = R0 * Inv64
+
+    add     X_0, X_0, #SymCryptModulusValueOffsetArm64
+
+    ldr     X_4, [X_1, #8]
+    MUL_AND_MONTGOMERY_REDUCE14_INTERLEAVE X_5, X_6, X_4, X_2, X_0, X_8, X_7, X_9, X_10, X_11, X_12, X_13, X_14
+
+    ldr     X_4, [X_1, #16]
+    MUL_AND_MONTGOMERY_REDUCE14_INTERLEAVE X_5, X_6, X_4, X_2, X_0, X_8, X_7, X_10, X_11, X_12, X_13, X_14, X_9
+
+    ldr     X_4, [X_1, #24]
+    MUL_AND_MONTGOMERY_REDUCE14_INTERLEAVE X_5, X_6, X_4, X_2, X_0, X_8, X_7, X_11, X_12, X_13, X_14, X_9, X_10
+
+    // (xx, R1, R2, R3, R4, R5) = K * M even + (R0, R1, R2, R3, R4, R5)
+
+    ldp      X_4,  X_5, [X_0]   // Load Mod
+    mul      X_1,  X_8, X_4
+    adds    X_12, X_12, X_1     // Sets R0 to 0
+    umulh    X_2,  X_8, X_4
+    adcs    X_13, X_13, X_2
+
+    ldp      X_6,  X_7, [X_0, #16]
+    mul      X_1,  X_8, X_6
+    adcs    X_14, X_14, X_1
+    umulh    X_2,  X_8, X_6
+    adcs     X_9,  X_9, X_2
+
+    adcs    X_10, X_10, XZR
+    adc     X_11, X_11, XZR
+
+    // (R1, R2, R3, R4, R5) = K * M odd + (R1, R2, R3, R4, R5)
+    mul      X_1,  X_8, X_5
+    adds    X_13, X_13, X_1
+    umulh    X_2,  X_8, X_5
+    adcs    X_14, X_14, X_2
+
+    mul      X_1,  X_8, X_7
+    adcs     X_9,  X_9, X_1
+    umulh    X_2,  X_8, X_7
+    adcs    X_10, X_10, X_2
+
+    adc     X_11, X_11, XZR
+
+    // Montgomery-reduced multiplication value in (X_13, X_14, X_9, X_10, X_11), and it is less than 2*Modulus
+    // Compute value - Mod into (X_4, X_5, X_6, X_7), Cy = inverted subtraction borrow
+
+    subs    X_4, X_13, X_4
+    sbcs    X_5, X_14, X_5
+    sbcs    X_6,  X_9, X_6
+    sbcs    X_7, X_10, X_7
+
+    // Choose between the two
+    // addition carry = 1, then subtraction borrow = 1 and we pick the 2nd result.
+    // addition carry = 0 and subtraction borrow = 0: pick 2nd result
+    // addition carry = 0 and subtraction borrow = 1: pick first result
+
+    // We set borrow condition (cc) when subtracting with carry from X_11
+    // iff addition carry 0 and subtraction borrow 1
+    sbcs    X_11, X_11, XZR
+
+    csel    X_13, X_13, X_4, cc
+    csel    X_14, X_14, X_5, cc
+    stp     X_13, X_14, [X_3]
+
+    csel     X_9,  X_9, X_6, cc
+    csel    X_10, X_10, X_7, cc
+    stp      X_9, X_10, [X_3, #16]
+
+FUNCTION_END(ARM64EC_NAME_MANGLE(SymCryptFdefModMulMontgomery256Asm))
+
+//VOID
+//SYMCRYPT_CALL
+//SymCryptFdefModSquareMontgomery256Asm(
+//    _In_                            PCSYMCRYPT_MODULUS      pMod,
+//    _In_                            PCSYMCRYPT_MODELEMENT   pSrc,
+//    _Out_                           PSYMCRYPT_MODELEMENT    pDst );
+
+// Note we specify 4 arguments to keep prolog of this and SymCryptFdefModMulMontgomery256Asm the same
+FUNCTION_START(ARM64EC_NAME_MANGLE(SymCryptFdefModSquareMontgomery256Asm), 4, 15)
+
+    // X_0 = pMod
+    // X_1 = pSrc
+    // X_2 = pDst
+
+    mov     X_3, X_2
+    mov     X_2, X_1
+
+    // Just jump into multiply, similar to SymCryptWipeAsm jumping into memset.
+
+    b       ARM64EC_NAME_MANGLE(SymCryptFdefModMulMontgomery256AsmInternal)
+
+FUNCTION_END(ARM64EC_NAME_MANGLE(SymCryptFdefModSquareMontgomery256Asm))
+
+//VOID
+//SYMCRYPT_CALL
+//SymCryptFdefModAdd384Asm(
+//    _In_                            PCSYMCRYPT_MODULUS      pmMod,
+//    _In_                            PCSYMCRYPT_MODELEMENT   peSrc1,
+//    _In_                            PCSYMCRYPT_MODELEMENT   peSrc2,
+//    _Out_                           PSYMCRYPT_MODELEMENT    peDst )
+
+FUNCTION_START(ARM64EC_NAME_MANGLE(SymCryptFdefModAdd384Asm), 4, 14)
+
+    add     X_0, X_0, #SymCryptModulusValueOffsetArm64 // pMod
+
+    // compute Src1 + Src2 into (X_4, X_5, X_6, X_7, X_8, X_9)
+    ldp     X_4,  X_5,  [X_1]       // Load two words of peSrc1
+    ldp     X_10, X_11, [X_2]       // Load two words of peSrc2
+    adds    X_4,  X_4,  X_10
+    adcs    X_5,  X_5,  X_11
+
+    ldp     X_6,  X_7,  [X_1, #16]  // Load two words of peSrc1
+    ldp     X_10, X_11, [X_2, #16]  // Load two words of peSrc2
+    adcs    X_6,  X_6,  X_10
+    adcs    X_7,  X_7,  X_11
+
+    ldp     X_8,  X_9,  [X_1, #32]  // Load two words of peSrc1
+    ldp     X_10, X_11, [X_2, #32]  // Load two words of peSrc2
+    adcs    X_8,  X_8,  X_10
+    adcs    X_9,  X_9,  X_11
+
+    cset    X_1, cs                 // If the carry is set, set X_1 to 1 (else 0)
+
+    // Compute sum - Mod into (X_2, X_10, X_11, X_12, X_13, X_0) = sum - modulus
+
+    ldp     X_2, X_10,  [X_0]       // Load two words of pMod
+    subs    X_2,  X_4,  X_2
+    sbcs    X_10, X_5,  X_10
+
+    ldp     X_11, X_12, [X_0, #16]  // Load two words of pMod
+    sbcs    X_11, X_6,  X_11
+    sbcs    X_12, X_7,  X_12
+
+    ldp     X_13, X_0,  [X_0, #32]  // Load two words of pMod
+    sbcs    X_13, X_8,  X_13
+    sbcs    X_0,  X_9,  X_0
+
+    // Choose between the two
+    // addition carry = 1, then subtraction borrow = 1 and we pick the 2nd result.
+    // addition carry = 0 and subtraction borrow = 0: pick 2nd result
+    // addition carry = 0 and subtraction borrow = 1: pick first result
+
+    // We set borrow condition (cc) when subtracting with carry from X_1
+    // iff addition carry 0 and subtraction borrow 1
+    sbcs    X_1, X_1, XZR
+
+    csel    X_4, X_4, X_2,  cc
+    csel    X_5, X_5, X_10, cc
+    stp     X_4, X_5, [X_3]
+
+    csel    X_6, X_6, X_11, cc
+    csel    X_7, X_7, X_12, cc
+    stp     X_6, X_7, [X_3, #16]
+
+    csel    X_8, X_8, X_13, cc
+    csel    X_9, X_9, X_0,  cc
+    stp     X_8, X_9, [X_3, #32]
+
+FUNCTION_END(ARM64EC_NAME_MANGLE(SymCryptFdefModAdd384Asm))
+
+//VOID
+//SYMCRYPT_CALL
+//SymCryptFdefModSub384Asm(
+//    _In_                            PCSYMCRYPT_MODULUS      pmMod,
+//    _In_                            PCSYMCRYPT_MODELEMENT   peSrc1,
+//    _In_                            PCSYMCRYPT_MODELEMENT   peSrc2,
+//    _Out_                           PSYMCRYPT_MODELEMENT    peDst )
+
+FUNCTION_START(ARM64EC_NAME_MANGLE(SymCryptFdefModSub384Asm), 4, 13)
+
+    add     X_0, X_0, #SymCryptModulusValueOffsetArm64 // pMod
+
+    // compute Src1 - Src2 into (X_4, X_5, X_6, X_7, X_8, X_9)
+    ldp     X_4,  X_5,  [X_1]         // Load two words of peSrc1
+    ldp     X_10, X_11, [X_2]         // Load two words of peSrc2
+    subs    X_4,  X_4,  X_10
+    sbcs    X_5,  X_5,  X_11
+
+    ldp     X_6,  X_7,  [X_1, #16]    // Load two words of peSrc1
+    ldp     X_10, X_11, [X_2, #16]    // Load two words of peSrc2
+    sbcs    X_6,  X_6,  X_10
+    sbcs    X_7,  X_7,  X_11
+
+    ldp     X_8,  X_9,  [X_1, #32]    // Load two words of peSrc1
+    ldp     X_10, X_11, [X_2, #32]    // Load two words of peSrc2
+    sbcs    X_8,  X_8,  X_10
+    sbcs    X_9,  X_9,  X_11
+
+    // Load the masked modulus into (X_1, X_2, X_10, X_11, X_12, X_0)
+    ldp     X_1, X_2, [X_0]         // Load two words of pMod
+    csel    X_1, X_1, XZR, cc       // If we did not borrow, zero the modulus
+    csel    X_2, X_2, XZR, cc
+
+    ldp     X_10, X_11, [X_0, #16]  // Load two words of pMod
+    csel    X_10, X_10, XZR, cc
+    csel    X_11, X_11, XZR, cc
+
+    ldp     X_12, X_0,  [X_0, #32]  // Load two words of pMod
+    csel    X_12, X_12, XZR, cc
+    csel    X_0,  X_0,  XZR, cc
+
+    // Add the masked modulus
+    adds    X_4, X_4, X_1
+    adcs    X_5, X_5, X_2
+    stp     X_4, X_5, [X_3]
+
+    adcs    X_6, X_6, X_10
+    adcs    X_7, X_7, X_11
+    stp     X_6, X_7, [X_3, #16]
+
+    adcs    X_8, X_8, X_12
+    adc     X_9, X_9, X_0
+    stp     X_8, X_9, [X_3, #32]
+
+FUNCTION_END(ARM64EC_NAME_MANGLE(SymCryptFdefModSub384Asm))
+
+
+MACRO_START(MUL_AND_MONTGOMERY_REDUCE16_P384_INTERLEAVE, T0, T1, Ai, pB, K, N3, R0, R1, R2, R3, R4, R5, R6, R7)
+    // (R1, R2, R3, R4, R5, R6, R7) = Ai * (B0..5) + (R1, R2, R3, R4, R5, R6, R7)
+    // (xx, R1, R2, R3, R4, R5, R6, R7, R0) = K * (M0..5) + (R0, R1, R2, R3, R4, R5, R6, R7)
+    // Note K is chosen using pMod's montgomery inverse s.t. xx would get set to 0
+    // R7 is 0 or 1 at start
+    // R0 is 0 or 1 at end
+    // N3 in [0, 2] at start and end
+    // T0, T1 = scratch
+    // Ai is also used as scratch when it's no longer needed
+
+    // (R1, R2, R3, R4, R5, R6, R7) += Ai * B even
+    ldr     T0, [pB]
+    mul     T1, Ai, T0
+    adds    R1, R1, T1
+    umulh   T0, Ai, T0
+    adcs    R2, R2, T0
+
+    ldr     T0, [pB, #16]
+    mul     T1, Ai, T0
+    adcs    R3, R3, T1
+    umulh   T0, Ai, T0
+    adcs    R4, R4, T0
+
+    ldr     T0, [pB, #32]
+    mul     T1, Ai, T0
+    adcs    R5, R5, T1
+    umulh   T0, Ai, T0
+    adcs    R6, R6, T0
+
+    adc     R7, R7, XZR // R7 in range [0,2]
+
+    // (R2, R3, R4, R5, R6, R7) += Ai * B odd
+    ldr     T0, [pB, #8]
+    mul     T1, Ai, T0
+    adds    R2, R2, T1
+    umulh   T0, Ai, T0
+    adcs    R3, R3, T0
+
+    ldr     T0, [pB, #24]
+    mul     T1, Ai, T0
+    adcs    R4, R4, T1
+    umulh   T0, Ai, T0
+    adcs    R5, R5, T0
+
+    ldr     T0, [pB, #40]
+    mul     T1, Ai, T0
+    adcs    R6, R6, T1
+    umulh   Ai, Ai, T0
+    adc     Ai, Ai, XZR // Ai in range [0, 2^64-1]
+                        // defer adding Ai to R7 to avoid overflowing earlier than necessary
+
+    // P384 has a modulus with a form which makes it possible to perform Montgomery reduction
+    // in an interesting way. The modulus is:
+    // 2^384 - 2^128 - 2^96 + 2^32 - 1
+    // This means when we want to add a multiple of the Modulus in reduction, we can actually
+    // avoid multiplication instructions entirely.
+    // On Arm64, multiplication instruction throughput is often the bottleneck, and there is no
+    // distinction in cost between addition and subtraction (unlike on AMD64).
+    // So we do the reduction directly using shifts, adds, and subtracts.
+    // On entry to this macro we have N3 representing a deferred subtraction (in range [0,2]) from the
+    // 3rd word of the last macro (now aligned to the 2nd word of this macro), on exit we set N3 to be
+    // the subtraction to defer to the next round.
+    //
+    //            ____ ____ ____ ____ ____ ____
+    //           | M5 | M4 | M3 | M2 | M1 | M0 |
+    //           | ff | ff | ff | fe | f0 | 0f | (P384 modulus if you sign extend each nibble to 32b)
+    //           |____|____|____|____|____|____|
+    //  ____ ____ ____ ____ ____ ____ ____ ____
+    // |    |    |\  /|\  /|\  /|    |    |    |
+    // | R7 | R6 | R5 | R4 | R3 | R2 | R1 | R0 |   R0h = R0 >> 32
+    // |____|____|/__\|/__\|/__\|____|____|____|   R0l = R0 mod 2^32
+    //                                      | x Inv64 (0x0000000100000001)
+    //                                     _v__
+    //                      ____          |    |
+    //                     |    |         |  K | K = (R0 + (R0 << 32)) mod 2^64
+    //                     | N3 |         |____|   = ((R0h +32 R0l) << 32) + R0l
+    //       ____          |____|____                      ^^^ by +32 we mean addition modulo 2^32
+    //      |    |              |    |
+    //    + |  K |            - |  K |
+    //      |____|              |____|____
+    //                          |  K |  K |
+    //                        - |>>32|<<32|   K << 32 mod 2^64 = R0l << 32
+    //                          |____|____|   K >> 32 mod 2^64 = R0h +32 R0l
+    //                               |    |
+    //                             + |  J |   J = (K*M0 + R0) >> 64
+    //                           ____|____|
+    //                          |    |
+    //                        - |N3in|
+    //                          |____|
+    //
+    // The logic for how we compute J is a little involved:
+    // (K * M0) + R0 = (((R0h +32 R0l) << 32) + R0l) * (1<<32 - 1)                        + R0
+    //               = (((R0h +32 R0l) << 64) + R0l<<32) - (((R0h +32 R0l) << 32) + R0l)  + R0h<<32 + R0l
+    //               =  ((R0h +32 R0l) << 64) + R0l<<32  -  ((R0h +32 R0l) << 32)         + R0h<<32
+    //               =  ((R0h +32 R0l) << 64) + (((R0h + R0l) - (R0h +32 R0l)) << 32)
+    //                                            ^^^^^^^^^^^^^^^^^^^^^^^^^^^ this is exactly bit 33 of R0h+R0l
+    //               =  ((R0h +32 R0l) + ((R0h +33 R0l)>>32)) << 64
+    // => J = (R0h +32 R0l) + ((R0h +33 R0l)>>32)
+
+    lsl     T0, R0, #32     // T0 = R0<<32 = K<<32
+    adds     K, R0, T0      //  K = R0 + T0 = R0 + (R0<<32) = R0 * Inv64
+    lsr     T1, K, #32      // T1 = K>>32
+    adcs    R1, R1, T1      // R1 = R1 + J = R1 + T1 + carry from setting K
+    add     T1, T1, N3      // T1 += N3in; cannot overflow as T1 < 2^32
+    adcs    R2, R2, XZR
+    csetm   N3, cs          // N3 -1 if carry, else 0
+
+    subs    R1, R1, T0      // subtract [ K>>32 + N3in || K<<32 ]
+    sbcs    R2, R2, T1
+    cinc    N3, N3, cc      // N3 += 1 iff borrow; N3 in [0, 1] as carry in addition => borrow here
+
+    subs    R2, R2, K       // subtract K
+    cinc    N3, N3, cc      // N3 += 1 iff borrow; N3 in [0, 2]
+
+    adds    R6, R6, K       // add K
+    adcs    R7, R7, Ai
+    cset    R0, cs
+MACRO_END()
+
+//VOID
+//SYMCRYPT_CALL
+//SymCryptFdefModMulMontgomeryP384Asm(
+//    _In_                            PCSYMCRYPT_MODULUS      pMod,
+//    _In_                            PCSYMCRYPT_MODELEMENT   pSrc1,
+//    _In_                            PCSYMCRYPT_MODELEMENT   pSrc2,
+//    _Out_                           PSYMCRYPT_MODELEMENT    pDst );
+
+FUNCTION_START(ARM64EC_NAME_MANGLE(SymCryptFdefModMulMontgomeryP384Asm), 4, 17)
+
+    // X_0 = pMod
+    // X_1 = pSrc1
+    // X_2 = pSrc2
+    // X_3 = pDst
+    // X_4 = Ai
+    // X_5, X_6, X_7 = T0, T1, N3
+    // X_8 = K
+    // X_9, X_10, X_11, X_12, X_13, X_14, X_15, X_16 = R0..R7
+
+ALTERNATE_ENTRY(ARM64EC_NAME_MANGLE(SymCryptFdefModMulMontgomeryP384AsmInternal))
+
+    ldr     X_4, [X_1]              // Load pSrc1
+
+    ldp     X_10, X_11, [X_2]       // Load pSrc2 B[0], B[1]
+    mul      X_9,  X_4, X_10        // R0 = <63:0>   of A[0]*B[0]
+    umulh   X_10,  X_4, X_10        // R1 = <127:64> of A[0]*B[0]
+
+    mul      X_5,  X_4, X_11        // T0 = <63:0>   of A[0]*B[1]
+    adds    X_10, X_10,  X_5        // Adding the previous word
+    umulh   X_11,  X_4, X_11        // R2 = <127:64> of A[0]*B[1]
+
+    ldp     X_12, X_13, [X_2, #16]  // Load pSrc2 B[2], B[3]
+    mul      X_5,  X_4, X_12        // T0 = <63:0>   of A[0]*B[2]
+    adcs    X_11, X_11,  X_5        // Adding the previous word (if there was a carry from the last addition it is added)
+    umulh   X_12,  X_4, X_12        // R3 = <127:64> of A[0]*B[2]
+
+    mul      X_5,  X_4, X_13        // T0 = <63:0>   of A[0]*B[3]
+    adcs    X_12, X_12,  X_5        // Adding the previous word (if there was a carry from the last addition it is added)
+    umulh   X_13,  X_4, X_13        // R4 = <127:64> of A[0]*B[3]
+
+    ldp     X_14, X_15, [X_2, #32]  // Load pSrc2 B[4], B[5]
+    mul      X_5,  X_4, X_14        // T0 = <63:0>   of A[0]*B[4]
+    adcs    X_13, X_13,  X_5        // Adding the previous word (if there was a carry from the last addition it is added)
+    umulh   X_14,  X_4, X_14        // R3 = <127:64> of A[0]*B[4]
+
+    mul      X_5,  X_4, X_15        // T0 = <63:0>   of A[0]*B[5]
+    adcs    X_14, X_14,  X_5        // Adding the previous word (if there was a carry from the last addition it is added)
+    umulh   X_15,  X_4, X_15        // R4 = <127:64> of A[0]*B[5]
+    adc     X_15, X_15,  XZR
+
+    eor     X_16, X_16, X_16
+    eor     X_7, X_7, X_7
+
+    ldr     X_4, [X_1, #8]
+    MUL_AND_MONTGOMERY_REDUCE16_P384_INTERLEAVE X_5, X_6, X_4, X_2, X_8, X_7, X_9, X_10, X_11, X_12, X_13, X_14, X_15, X_16
+
+    ldr     X_4, [X_1, #16]
+    MUL_AND_MONTGOMERY_REDUCE16_P384_INTERLEAVE X_5, X_6, X_4, X_2, X_8, X_7, X_10, X_11, X_12, X_13, X_14, X_15, X_16, X_9
+
+    ldr     X_4, [X_1, #24]
+    MUL_AND_MONTGOMERY_REDUCE16_P384_INTERLEAVE X_5, X_6, X_4, X_2, X_8, X_7, X_11, X_12, X_13, X_14, X_15, X_16, X_9, X_10
+
+    ldr     X_4, [X_1, #32]
+    MUL_AND_MONTGOMERY_REDUCE16_P384_INTERLEAVE X_5, X_6, X_4, X_2, X_8, X_7, X_12, X_13, X_14, X_15, X_16, X_9, X_10, X_11
+
+    ldr     X_4, [X_1, #40]
+    MUL_AND_MONTGOMERY_REDUCE16_P384_INTERLEAVE X_5, X_6, X_4, X_2, X_8, X_7, X_13, X_14, X_15, X_16, X_9, X_10, X_11, X_12
+
+    // see MUL_AND_MONTGOMERY_REDUCE16_P384_INTERLEAVE for how this reduction works
+    lsl     X_5, X_14, #32  // T0 = R0<<32 = K<<32
+    adds    X_8, X_14, X_5  //  K = R0 + T0 = R0 + (R0<<32)
+    lsr     X_6, X_8, #32   // T1 = K>>32
+    adcs    X_15, X_15, X_6 // R1 = R1 + J = R1 + T1 + carry from setting K
+    add     X_6, X_6, X_7   // T1 += N3in; cannot overflow as T1 < 2^32
+    adcs    X_16, X_16, XZR
+    csetm   X_7, cs         // N3 -1 if carry, else 0
+
+    subs    X_15, X_15, X_5 // subtract K<<32
+    sbcs    X_16, X_16, X_6
+    cinc    X_7, X_7, cc    // N3 += 1 iff borrow; N3 in [0, 1] as carry in addition => borrow here
+
+    subs    X_16, X_16, X_8 // subtract K
+    sbcs    X_9, X_9, X_7   // subtract N3 and borrow if any
+    sbcs    X_10, X_10, XZR
+    sbcs    X_11, X_11, XZR
+    sbcs    X_12, X_12, XZR
+    sbc     X_13, X_13, XZR
+
+    adds    X_12, X_12, X_8 // add K
+    adc     X_13, X_13, XZR
+
+    // Montgomery-reduced multiplication value in (X_15, X_16, X_9, X_10, X_11, X_12, X_13), and it is less than 2*Modulus
+    // Compute value - Mod into (X_4, X_5, X_6, X_7, X_14, X_0), Cy = inverted subtraction borrow
+
+    // "Load" Mod into X4, X5, X6, X0
+    mov     X_4, 0x00000000ffffffff
+    mov     X_5, 0xffffffff00000000
+    mov     X_6, 0xfffffffffffffffe
+    mov     X_0, 0xffffffffffffffff
+
+    subs     X_4, X_15,  X_4
+    sbcs     X_5, X_16,  X_5
+    sbcs     X_6,  X_9,  X_6
+    sbcs     X_7, X_10,  X_0
+    sbcs    X_14, X_11,  X_0
+    sbcs     X_0, X_12,  X_0
+
+    // Choose between the two
+    // addition carry = 1, then subtraction borrow = 1 and we pick the 2nd result.
+    // addition carry = 0 and subtraction borrow = 0: pick 2nd result
+    // addition carry = 0 and subtraction borrow = 1: pick first result
+
+    // We set borrow condition (cc) when subtracting with carry from X_11
+    // iff addition carry 0 and subtraction borrow 1
+    sbcs    X_13, X_13, XZR
+
+    csel    X_15, X_15,  X_4, cc
+    csel    X_16, X_16,  X_5, cc
+    stp     X_15, X_16, [X_3]
+
+    csel     X_9,  X_9,  X_6, cc
+    csel    X_10, X_10,  X_7, cc
+    stp      X_9, X_10, [X_3, #16]
+
+    csel    X_11, X_11, X_14, cc
+    csel    X_12, X_12,  X_0, cc
+    stp     X_11, X_12, [X_3, #32]
+
+FUNCTION_END(ARM64EC_NAME_MANGLE(SymCryptFdefModMulMontgomeryP384Asm))
+
+//VOID
+//SYMCRYPT_CALL
+//SymCryptFdefModSquareMontgomeryP384Asm(
+//    _In_                            PCSYMCRYPT_MODULUS      pMod,
+//    _In_                            PCSYMCRYPT_MODELEMENT   pSrc,
+//    _Out_                           PSYMCRYPT_MODELEMENT    pDst );
+
+// Note we specify 4 arguments to keep prolog of this and SymCryptFdefModMulMontgomeryP384Asm the same
+FUNCTION_START(ARM64EC_NAME_MANGLE(SymCryptFdefModSquareMontgomeryP384Asm), 4, 17)
+
+    // X_0 = pMod
+    // X_1 = pSrc
+    // X_2 = pDst
+
+    mov     X_3, X_2
+    mov     X_2, X_1
+
+    // Just jump into multiply, similar to SymCryptWipeAsm jumping into memset.
+
+    b       ARM64EC_NAME_MANGLE(SymCryptFdefModMulMontgomeryP384AsmInternal)
+
+FUNCTION_END(ARM64EC_NAME_MANGLE(SymCryptFdefModSquareMontgomeryP384Asm))
+
+//VOID
+//SYMCRYPT_CALL
 //SymCryptFdefMontgomeryReduceAsm(
 //    _In_                            PCSYMCRYPT_MODULUS      pmMod,
 //    _Inout_                         PUINT32                 pSrc,

@@ -40,6 +40,10 @@ const SYMCRYPT_MODULAR_FUNCTIONS g_SymCryptModFns[] = {
 #elif SYMCRYPT_CPU_ARM64
 
     SYMCRYPT_MOD_FUNCTIONS_FDEF369_MONTGOMERY,
+    SYMCRYPT_MOD_FUNCTIONS_FDEF_MONTGOMERY_ARM64256,
+    SYMCRYPT_MOD_FUNCTIONS_FDEF_MONTGOMERY_ARM64P384,
+    {NULL,},
+    {NULL,},
     {NULL,},
 
 #endif
@@ -53,6 +57,9 @@ const SYMCRYPT_MODULAR_FUNCTIONS g_SymCryptModFns[] = {
 #define SymCryptModFntableMontgomeryMulxP384    (SymCryptModLabel('3n') + (4 * SYMCRYPT_MODULAR_FUNCTIONS_SIZE))
 #define SymCryptModFntableMontgomeryMulx        (SymCryptModLabel('xM') + (5 * SYMCRYPT_MODULAR_FUNCTIONS_SIZE))
 #define SymCryptModFntableMontgomeryMulx1024    (SymCryptModLabel('1x') + (6 * SYMCRYPT_MODULAR_FUNCTIONS_SIZE))
+
+#define SymCryptModFntableMontgomeryArm64256    (SymCryptModLabel('2m') + (3 * SYMCRYPT_MODULAR_FUNCTIONS_SIZE))
+#define SymCryptModFntableMontgomeryArm64P384   (SymCryptModLabel('3n') + (4 * SYMCRYPT_MODULAR_FUNCTIONS_SIZE))
 
 // #define SymCryptModFntableMontgomeryMulxP256    (SymCryptModLabel('2n') + (xx * SYMCRYPT_MODULAR_FUNCTIONS_SIZE))
 // #define SymCryptModFntableMontgomeryMulx384     (SymCryptModLabel('3x') + (xx * SYMCRYPT_MODULAR_FUNCTIONS_SIZE))
@@ -82,7 +89,8 @@ const SYMCRYPT_MODULUS_TYPE_SELECTION_ENTRY SymCryptModulusTypeSelections[] =
 
 #elif SYMCRYPT_CPU_ARM64
 
-    {SymCryptModFntableMontgomery,          0,                               256,   SYMCRYPT_MODULUS_FEATURE_MONTGOMERY },
+    {SymCryptModFntableMontgomeryArm64P384, 0,                               384,   SYMCRYPT_MODULUS_FEATURE_MONTGOMERY | SYMCRYPT_MODULUS_FEATURE_NISTP384 },
+    {SymCryptModFntableMontgomeryArm64256,  0,                               256,   SYMCRYPT_MODULUS_FEATURE_MONTGOMERY },
     {SymCryptModFntable369Montgomery,       0,                               384,   SYMCRYPT_MODULUS_FEATURE_MONTGOMERY },
     {SymCryptModFntableMontgomery,          0,                               512,   SYMCRYPT_MODULUS_FEATURE_MONTGOMERY },
     {SymCryptModFntable369Montgomery,       0,                               576,   SYMCRYPT_MODULUS_FEATURE_MONTGOMERY },

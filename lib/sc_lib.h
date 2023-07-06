@@ -1954,17 +1954,30 @@ C_ASSERT( (SYMCRYPT_MODULAR_FUNCTIONS_SIZE & (SYMCRYPT_MODULAR_FUNCTIONS_SIZE-1)
     &SymCryptFdefModulusInitMontgomery,\
 }
 
-#define SYMCRYPT_MOD_FUNCTIONS_FDEF_MONTGOMERY256 {\
+#define SYMCRYPT_MOD_FUNCTIONS_FDEF_MONTGOMERY_ARM64256 {\
     (SYMCRYPT_MOD_BINARY_OP_FN) &SymCryptFdefModAdd256Asm,\
     (SYMCRYPT_MOD_BINARY_OP_FN) &SymCryptFdefModSub256Asm,\
     &SymCryptFdefModNegGeneric,\
-    (SYMCRYPT_MOD_BINARY_OP_FN) &SymCryptFdefModMulMontgomery256Asm,\
-    (SYMCRYPT_MOD_UNARY_OP_FN) &SymCryptFdefModSquareMontgomery256Asm,\
-    &SymCryptFdefModInvMontgomery256,\
-    &SymCryptFdefModSetPostMontgomery256,\
-    &SymCryptFdefModPreGetMontgomery256,\
+    (SYMCRYPT_MOD_BINARY_OP_FN) &SymCryptFdefModMulMontgomery256Asm, \
+    (SYMCRYPT_MOD_UNARY_OP_FN) &SymCryptFdefModSquareMontgomery256Asm, \
+    &SymCryptFdefModInvMontgomery,\
+    &SymCryptFdefModSetPostMontgomery,\
+    &SymCryptFdefModPreGetMontgomery,\
     &SymCryptFdefModulusCopyFixupMontgomery,\
-    &SymCryptFdefModulusInitMontgomery256,\
+    &SymCryptFdefModulusInitMontgomery,\
+}
+
+#define SYMCRYPT_MOD_FUNCTIONS_FDEF_MONTGOMERY_ARM64P384 {\
+    (SYMCRYPT_MOD_BINARY_OP_FN) &SymCryptFdefModAdd384Asm,\
+    (SYMCRYPT_MOD_BINARY_OP_FN) &SymCryptFdefModSub384Asm,\
+    &SymCryptFdefModNegGeneric,\
+    (SYMCRYPT_MOD_BINARY_OP_FN) &SymCryptFdefModMulMontgomeryP384Asm, \
+    (SYMCRYPT_MOD_UNARY_OP_FN) &SymCryptFdefModSquareMontgomeryP384Asm, \
+    &SymCryptFdef369ModInvMontgomery,\
+    &SymCryptFdef369ModSetPostMontgomery,\
+    &SymCryptFdef369ModPreGetMontgomery,\
+    &SymCryptFdefModulusCopyFixupMontgomery,\
+    &SymCryptFdef369ModulusInitMontgomery,\
 }
 
 #define SYMCRYPT_MOD_FUNCTIONS_FDEF_MONTGOMERY_MULX256 {\
@@ -2632,6 +2645,7 @@ SymCryptFdefModAddGeneric(
     _Out_                           PSYMCRYPT_MODELEMENT    peDst,
     _Out_writes_bytes_( cbScratch ) PBYTE                   pbScratch,
                                     SIZE_T                  cbScratch );
+
 VOID
 SYMCRYPT_CALL
 SymCryptFdefModAddMulx256Asm(
@@ -2643,6 +2657,22 @@ SymCryptFdefModAddMulx256Asm(
 VOID
 SYMCRYPT_CALL
 SymCryptFdefModAddMulx384Asm(
+    _In_                            PCSYMCRYPT_MODULUS      pmMod,
+    _In_                            PCSYMCRYPT_MODELEMENT   peSrc1,
+    _In_                            PCSYMCRYPT_MODELEMENT   peSrc2,
+    _Out_                           PSYMCRYPT_MODELEMENT    peDst );
+
+VOID
+SYMCRYPT_CALL
+SymCryptFdefModAdd256Asm(
+    _In_                            PCSYMCRYPT_MODULUS      pmMod,
+    _In_                            PCSYMCRYPT_MODELEMENT   peSrc1,
+    _In_                            PCSYMCRYPT_MODELEMENT   peSrc2,
+    _Out_                           PSYMCRYPT_MODELEMENT    peDst );
+
+VOID
+SYMCRYPT_CALL
+SymCryptFdefModAdd384Asm(
     _In_                            PCSYMCRYPT_MODULUS      pmMod,
     _In_                            PCSYMCRYPT_MODELEMENT   peSrc1,
     _In_                            PCSYMCRYPT_MODELEMENT   peSrc2,
@@ -2892,6 +2922,22 @@ SymCryptFdefModMulMontgomeryMulxP384Asm(
 
 VOID
 SYMCRYPT_CALL
+SymCryptFdefModMulMontgomery256Asm(
+    _In_                            PCSYMCRYPT_MODULUS      pMod,
+    _In_                            PCSYMCRYPT_MODELEMENT   pSrc1,
+    _In_                            PCSYMCRYPT_MODELEMENT   pSrc2,
+    _Out_                           PSYMCRYPT_MODELEMENT    pDst );
+
+VOID
+SYMCRYPT_CALL
+SymCryptFdefModMulMontgomeryP384Asm(
+    _In_                            PCSYMCRYPT_MODULUS      pMod,
+    _In_                            PCSYMCRYPT_MODELEMENT   pSrc1,
+    _In_                            PCSYMCRYPT_MODELEMENT   pSrc2,
+    _Out_                           PSYMCRYPT_MODELEMENT    pDst );
+
+VOID
+SYMCRYPT_CALL
 SymCryptFdef369ModMulMontgomery(
     _In_                            PCSYMCRYPT_MODULUS      pMod,
     _In_                            PCSYMCRYPT_MODELEMENT   pSrc1,
@@ -2951,6 +2997,22 @@ SYMCRYPT_CALL
 SymCryptFdefModSquareMontgomeryMulxP384Asm(
     _In_                            PCSYMCRYPT_MODULUS      pMod,
     _In_                            PCSYMCRYPT_MODELEMENT   pSrc,
+    _Out_                           PSYMCRYPT_MODELEMENT    pDst );
+
+VOID
+SYMCRYPT_CALL
+SymCryptFdefModSquareMontgomery256Asm(
+    _In_                            PCSYMCRYPT_MODULUS      pMod,
+    _In_                            PCSYMCRYPT_MODELEMENT   pSrc1,
+    _In_                            PCSYMCRYPT_MODELEMENT   pSrc2,
+    _Out_                           PSYMCRYPT_MODELEMENT    pDst );
+
+VOID
+SYMCRYPT_CALL
+SymCryptFdefModSquareMontgomeryP384Asm(
+    _In_                            PCSYMCRYPT_MODULUS      pMod,
+    _In_                            PCSYMCRYPT_MODELEMENT   pSrc1,
+    _In_                            PCSYMCRYPT_MODELEMENT   pSrc2,
     _Out_                           PSYMCRYPT_MODELEMENT    pDst );
 
 VOID
