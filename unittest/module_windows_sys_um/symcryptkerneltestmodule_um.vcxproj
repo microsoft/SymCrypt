@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup Label="Globals">
+    <ProjectGuid>{07dbf66b-64ea-4d2c-9182-9c6e2d89c7db}</ProjectGuid>
+    <TemplateGuid>{0a049372-4c4d-4ea0-a64e-dc6ad88ceca1}</TemplateGuid>
+    <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
+    <MinimumVisualStudioVersion>12.0</MinimumVisualStudioVersion>
+    <UseInternalMSUniCrtPackage>true</UseInternalMSUniCrtPackage>
+    <TargetName>SymCryptKernelTestModule_UM</TargetName>
+    <UndockedType>dll</UndockedType>
+    <UndockedDir>$(SolutionDir)msbuild\</UndockedDir>
+    <UndockedOut>$(SolutionDir)</UndockedOut>
+    <UndockedSdkOnly>true</UndockedSdkOnly>
+    <SymCryptKernelTarget>false</SymCryptKernelTarget>
+  </PropertyGroup>
+  <Import Project="$(UndockedDir)symcrypt.undocked.props" />
+  <ItemGroup>
+    <ProjectReference Include="..\..\lib\symcrypt.vcxproj">
+      <Project>{7c3bd5d2-7213-4cfa-b6cb-eb41623601bc}</Project>
+    </ProjectReference>
+  </ItemGroup>
+  <ItemDefinitionGroup>
+    <ClCompile>
+      <PreprocessorDefinitions>_WINDOWS;_USRDLL;%(PreprocessorDefinitions);</PreprocessorDefinitions>
+      <LanguageStandard>stdcpp17</LanguageStandard>
+      <AdditionalIncludeDirectories>..\;..\inc;..\lib;..\SymCryptDependencies\inc;..\..\inc;</AdditionalIncludeDirectories>
+      <!--
+        Disable warnings
+        C4324	'structname': structure was padded due to __declspec(align())
+        C4714: function 'function' marked as __forceinline not inlined
+        C5252: Multiple different types resulted in the same XFG type-hash hash-value; the PDB will only record information for one of them
+      -->
+      <DisableSpecificWarnings>4324;4714;5252;%(DisableSpecificWarnings)</DisableSpecificWarnings>
+      <AdditionalOptions>/Zc:strictStrings- %(AdditionalOptions)</AdditionalOptions>
+      <WholeProgramOptimization>true</WholeProgramOptimization>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
+      <ExceptionHandling>Sync</ExceptionHandling>
+    </ClCompile>
+    <Link>
+      <SubSystem>Windows</SubSystem>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <EnableUAC>false</EnableUAC>
+      <LinkTimeCodeGeneration>UseLinkTimeCodeGeneration</LinkTimeCodeGeneration>
+      <AdditionalDependencies>%(AdditionalDependencies);ntdll.lib;Bcrypt.lib</AdditionalDependencies>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <ClCompile Include="module.cpp" />
+  </ItemGroup>
+</Project>

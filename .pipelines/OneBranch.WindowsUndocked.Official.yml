@@ -1,0 +1,92 @@
+#####################################################################################################################################
+#                                               OneBranch Pipelines - Official                                                      #
+#####################################################################################################################################
+#                                                                                                                                   #
+# This pipeline was created by EasyStart from a sample located at:                                                                  #
+#                               https://aka.ms/obpipelines/easystart/samples                                                        #
+#                                                                                                                                   #
+# Windows Undocked Wiki:        https://www.osgwiki.com/wiki/Windows_Undocked_Template                                              #
+# General OB Documentation:     https://aka.ms/obpipelines                                                                          #
+# Build MSBuild project:        https://dev.azure.com/onebranch/OneBranch/_wiki/wikis/OneBranch.wiki/6045/Build-MSBuild-project     #
+# Yaml Schema:                  https://aka.ms/obpipelines/yaml/schema                                                              #
+# Retail Tasks:                 https://aka.ms/obpipelines/tasks                                                                    #
+# Support:                      https://aka.ms/onebranchsup                                                                         #
+#                                                                                                                                   #
+#####################################################################################################################################
+
+name: $(BuildDefinitionName)_$(date:yyMM).$(date:dd)$(rev:rrr)
+
+# https://aka.ms/obpipelines/triggers
+trigger:
+  batch: true
+  branches:
+    include:
+    - main
+    - publish
+
+schedules:
+- cron: "0 8 * * *" # Daily at 1am UTC (midnight PST/1am PDT)
+  displayName: Daily build
+  branches:
+    include:
+    - main
+
+# Package and ingestion are disabled by default.
+# Manual runs on the main pipeline are required for packaging/ingestion.
+parameters:
+- name: package
+  type: boolean
+  displayName: Create VPack
+  default: false
+# - name: ingest
+#   type: boolean
+#   displayName: Create Ingest PR
+#   default: false
+# - name: branch
+#   type: string
+#   displayName: Branch to PR to
+#   default: official/rs_onecore_ens_cs1
+# - name: title
+#   type: string
+#   displayName: PR Title
+#   default: 'Automated: Ingest SymCrypt'
+
+variables:
+  # https://aka.ms/obpipelines/containers
+  WindowsContainerImage: 'onebranch.azurecr.io/windows/ltsc2022/vse2022:latest'
+
+resources:
+  repositories:
+  - repository: templates
+    type: git
+    name: OneBranch.Pipelines/GovernedTemplates
+    ref: refs/heads/main
+
+extends:
+  # https://aka.ms/obpipelines/templates
+  template: v2/Microsoft.Official.yml@templates
+  parameters:
+    platform:
+      name: 'windows_undocked'
+    globalSdl:
+      # Disable TSA to force build breaks
+      tsa:
+        enabled: false
+    featureFlags:
+      WindowsHostVersion: '1ESWindows2022'
+    stages:
+    - stage: Build
+      jobs:
+      - template: .pipelines/templates/build-windows-undocked.yml@self
+        parameters:
+          sln: symcrypt.sln
+          # Package args
+          package: ${{ parameters.package }}
+          name: 'SymCrypt'
+          description: 'SymCrypt cryptographic library'
+          owner: 'ensciacrypto@microsoft.com'
+          # Windows ingestion args
+          # ingest: ${{ parameters.ingest }}
+          # osPath: 'onecore/ds/security/symcrypt'
+          # osBranch: ${{ parameters.branch }}
+          # osPrTitle: ${{ parameters.title }}

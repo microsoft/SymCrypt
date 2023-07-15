@@ -25,6 +25,11 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "SymCryptKernelTestModule", 
 		{7C3BD5D2-7213-4CFA-B6CB-EB41623601BC} = {7C3BD5D2-7213-4CFA-B6CB-EB41623601BC}
 	EndProjectSection
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "SymCryptKernelTestModule_UM", "unittest\module_windows_sys_um\SymCryptKernelTestModule_UM.vcxproj", "{07DBF66B-64EA-4D2C-9182-9C6E2D89C7DB}"
+	ProjectSection(ProjectDependencies) = postProject
+		{7C3BD5D2-7213-4CFA-B6CB-EB41623601BC} = {7C3BD5D2-7213-4CFA-B6CB-EB41623601BC}
+	EndProjectSection
+EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "symcrypt_sys", "modules\windows\kernel\symcrypt_sys.vcxproj", "{5A666AF4-35C9-42FE-817D-9D9A07AAF253}"
 	ProjectSection(ProjectDependencies) = postProject
 		{7C3BD5D2-7213-4CFA-B6CB-EB41623601BC} = {7C3BD5D2-7213-4CFA-B6CB-EB41623601BC}
@@ -162,6 +167,27 @@ Global
 		{0C2652ED-2CCD-4FAF-910B-74FB90E0C31C}.Release|x64.Build.0 = Release|x64
 
 		{0C2652ED-2CCD-4FAF-910B-74FB90E0C31C}.Release|x86.ActiveCfg = Release|Win32
+
+		# SymCryptKernelTestModule_UM.dll
+		{07DBF66B-64EA-4D2C-9182-9C6E2D89C7DB}.Debug|ARM.ActiveCfg = Debug|ARM
+
+		{07DBF66B-64EA-4D2C-9182-9C6E2D89C7DB}.Debug|ARM64.ActiveCfg = Debug|ARM64
+		{07DBF66B-64EA-4D2C-9182-9C6E2D89C7DB}.Debug|ARM64.Build.0 = Debug|ARM64
+
+		{07DBF66B-64EA-4D2C-9182-9C6E2D89C7DB}.Debug|x64.ActiveCfg = Debug|x64
+		{07DBF66B-64EA-4D2C-9182-9C6E2D89C7DB}.Debug|x64.Build.0 = Debug|x64
+
+		{07DBF66B-64EA-4D2C-9182-9C6E2D89C7DB}.Debug|x86.ActiveCfg = Debug|Win32
+
+		{07DBF66B-64EA-4D2C-9182-9C6E2D89C7DB}.Release|ARM.ActiveCfg = Release|ARM
+
+		{07DBF66B-64EA-4D2C-9182-9C6E2D89C7DB}.Release|ARM64.ActiveCfg = Release|ARM64
+		{07DBF66B-64EA-4D2C-9182-9C6E2D89C7DB}.Release|ARM64.Build.0 = Release|ARM64
+
+		{07DBF66B-64EA-4D2C-9182-9C6E2D89C7DB}.Release|x64.ActiveCfg = Release|x64
+		{07DBF66B-64EA-4D2C-9182-9C6E2D89C7DB}.Release|x64.Build.0 = Release|x64
+
+		{07DBF66B-64EA-4D2C-9182-9C6E2D89C7DB}.Release|x86.ActiveCfg = Release|Win32
 
 		# symcrypt.sys
 		{5A666AF4-35C9-42FE-817D-9D9A07AAF253}.Debug|ARM.ActiveCfg = Debug|ARM

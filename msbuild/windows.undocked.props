@@ -4,8 +4,6 @@
     <Error Condition="'$(UndockedType)' == ''">Must set UndockedType in project file</Error>
     <UndockedDir Condition="'$(UndockedDir)' == ''">$(SolutionDir)undocking\</UndockedDir>
     <UndockedOut Condition="'$(UndockedOut)' == ''">$(SolutionDir)</UndockedOut>
-    <UndockedSdkOnly Condition="'$(UndockedSdkOnly)' == ''">false</UndockedSdkOnly>
-    <UndockedLoc Condition="'$(UndockedLoc)' == ''">false</UndockedLoc>
     <UndockedVerFile Condition="'$(UndockedVerFile)' == ''">$(SolutionDir)version.json</UndockedVerFile>
     <UndockedBuildId Condition="'$(UndockedBuildId)' == ''">0</UndockedBuildId>
     <UndockedOfficial Condition="'$(UndockedOfficial)' == ''">false</UndockedOfficial>
@@ -83,39 +81,28 @@
     <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
     <MinimumVisualStudioVersion>16.0</MinimumVisualStudioVersion>
     <Keyword>Win32Proj</Keyword>
-    <!-- <CharacterSet>Unicode</CharacterSet> -->
   </PropertyGroup>
   <PropertyGroup Condition="'$(UndockedSdkOnly)' == 'true'">
     <VCProjectVersion>16.0</VCProjectVersion>
     <Keyword>Win32Proj</Keyword>
     <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
-    <!-- <CharacterSet>Unicode</CharacterSet> -->
     <PlatformToolset Condition="$(VisualStudioVersion) &gt; 16.0">v143</PlatformToolset>
     <PlatformToolset Condition="$(VisualStudioVersion) == 16.0">v142</PlatformToolset>
     <Error Condition="$(VisualStudioVersion) &lt; 16.0">Use Visual Studio 2019 or higher</Error>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <!-- Per-type Configuration -->
-  <PropertyGroup Condition="'$(UndockedType)|$(UndockedSdkOnly)' == 'lib|false'">
+  <PropertyGroup Condition="'$(UndockedType)' == 'lib'">
     <PlatformToolset>WindowsKernelModeDriver10.0</PlatformToolset>
     <ConfigurationType>StaticLibrary</ConfigurationType>
     <DriverTargetPlatform>Universal</DriverTargetPlatform>
   </PropertyGroup>
-  <PropertyGroup Condition="'$(UndockedType)|$(UndockedSdkOnly)' == 'lib|true'">
-    <ConfigurationType>StaticLibrary</ConfigurationType>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(UndockedType)|$(UndockedSdkOnly)' == 'dll|false'">
+  <PropertyGroup Condition="'$(UndockedType)' == 'dll'">
     <PlatformToolset>WindowsApplicationForDrivers10.0</PlatformToolset>
     <ConfigurationType>DynamicLibrary</ConfigurationType>
   </PropertyGroup>
-  <PropertyGroup Condition="'$(UndockedType)|$(UndockedSdkOnly)' == 'dll|true'">
-    <ConfigurationType>DynamicLibrary</ConfigurationType>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(UndockedType)|$(UndockedSdkOnly)' == 'exe|false'">
+  <PropertyGroup Condition="'$(UndockedType)' == 'exe'">
     <PlatformToolset>WindowsApplicationForDrivers10.0</PlatformToolset>
-    <ConfigurationType>Application</ConfigurationType>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(UndockedType)|$(UndockedSdkOnly)' == 'exe|true'">
     <ConfigurationType>Application</ConfigurationType>
   </PropertyGroup>
   <PropertyGroup Condition="'$(UndockedType)' == 'sys'">
@@ -128,7 +115,7 @@
   <!-- Official Windows compiler and linker settings -->
   <PropertyGroup>
     <IntDir>$(UndockedOut)build\obj\$(WinPlat)$(WinConfig)\$(ProjectName)\</IntDir>
-    <OutDir>$(UndockedOut)build\bin\$(WinPlat)$(WinConfig)\</OutDir>
+    <OutDir>$(UndockedOut)build\bin\$(WinPlat)$(WinConfig)\$(UndockedType)\</OutDir>
     <UseDebugLibraries Condition="'$(Configuration)'=='Debug'">true</UseDebugLibraries>
     <UseDebugLibraries Condition="'$(Configuration)'=='Release'">false</UseDebugLibraries>
     <SignMode>Off</SignMode>
@@ -298,19 +285,6 @@
     <CodeAnalysisSucceededFile>$(IntDir)build.lastcodeanalysissucceeded</CodeAnalysisSucceededFile>
   </PropertyGroup>
   -->
-  <!-- Helpers for localization -->
-  <ItemDefinitionGroup Condition="$(UndockedLoc)">
-    <ResourceCompile>
-      <AdditionalOptions Condition="'$(UndockedType)' != 'sys'">/r /fm $(IntDir)$(TargetName).muires /q $(UndockedDir)vs\mui.rcconfig /g 0x0409 %(AdditionalOptions)</AdditionalOptions>
-      <AdditionalOptions Condition="'$(UndockedType)' == 'sys'">/r /fm $(IntDir)$(TargetName).muires /q $(UndockedDir)vs\mui_drv.rcconfig /g 0x0409 %(AdditionalOptions)</AdditionalOptions>
-    </ResourceCompile>
-    <PostBuildEvent>
-      <Command>mkdir $(OutDir)en-US >nul 2>&amp;1
-link.exe /OUT:"$(OutDir)en-US\$(TargetFileName).mui" /DLL /NOENTRY /MACHINE:$(WinPlat) "$(IntDir)$(TargetName).muires"
-muirct.exe -c $(TargetPath) -e "$(OutDir)en-US\$(TargetFileName).mui"
-      </Command>
-    </PostBuildEvent>
-  </ItemDefinitionGroup>
   <!-- Other Imports -->
   <ImportGroup Label="ExtensionSettings" />
   <ImportGroup Label="Shared" />

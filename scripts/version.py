@@ -16,6 +16,8 @@ import sys
 from dataclasses import dataclass
 from typing import Tuple
 
+from devops_utils import set_task_variable
+
 BUILD_INFO_INPUT_PATH = "build/buildInfo.h.in"
 BUILD_INFO_OUTPUT_PATH = "inc/buildInfo.h"
 VERSION_INFO_RELATIVE_PATH = "inc/symcrypt_internal_shared.inc"
@@ -136,23 +138,36 @@ def generate_build_info(version_info: SymCryptVersion) -> None:
     with open(build_info_output_absolute_path, 'w', encoding = "utf-8") as build_info_output:
         build_info_output.write(build_info)
 
+def print_devops_vars(version_info: SymCryptVersion) -> None:
+    """
+    Prints the version information in a format suitable for setting Azure DevOps variables.
+    """
+
+    set_task_variable("VER_MAJOR", version_info.major)
+    set_task_variable("VER_MINOR", version_info.minor)
+    set_task_variable("VER_PATCH", version_info.patch)
+
 def main() -> None:
     """
     Entrypoint
     """
 
     parser = argparse.ArgumentParser(description = "Versioning helper script for SymCrypt.")
-    parser.add_argument("-b", "--build-info", help = "Generate buildInfo.h", action = "store_true")
+    group = parser.add_mutually_exclusive_group()
+    group.add_argument("-b", "--build-info", help = "Generate buildInfo.h", action = "store_true")
+    group.add_argument("--devops", help = "Format output to set Azure DevOps variables", action = "store_true")
 
     args = parser.parse_args()
 
     # Parse the version information from the SymCrypt headers
     version_info = get_version_info()
 
+    print("{}.{}.{}".format(version_info.major, version_info.minor, version_info.patch))
+
     if args.build_info:
         generate_build_info(version_info)
-
-    print("{}.{}.{}".format(version_info.major, version_info.minor, version_info.patch))
+    elif args.devops:
+        print_devops_vars(version_info)
 
 if __name__ == "__main__":
     main()

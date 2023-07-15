@@ -49,16 +49,6 @@ jobs:
 
   steps:
 
-    # TODO: Need to make this match the SymCrypt version (major.minor.patch). We also shouldn't have to update it manually.
-    # https://microsoft.visualstudio.com/DefaultCollection/OS/_workitems/edit/42880140/
-    - task: onebranch.pipeline.version@1
-      displayName: 'Setup BuildNumber'
-      inputs:
-        system: 'RevisionCounter'
-        major: '103'
-        minor: '0'
-        exclude_commit: false
-
     - ${{ if eq(parameters.cc, 'clang') }}:
       # Install clang-11 and manually add symlinks so that it can be run via just "clang" rather
       # than clang-11. This is required because we can't explicitly specify clang-11 for

@@ -2,10 +2,46 @@
 """
 Packaging helper script for SymCrypt.
 
+NOTE: For Windows targets, this script only works with MSBuild builds, because CMake cannot build
+Windows kernel drivers.
+
+This script reads the package configuration from package.json in the repo root, which contains a
+list of files in the following format:
+
+   {
+       "source" : "...",
+       "dest" : "...",
+       "platform" : "...",
+       "arch"  : "...",
+       "config" : "..."
+   }
+
+where:
+
+  source: The source file path
+  dest: The destination file path
+  platform: Platforms to include the file ("win32", "linux")
+  arch: Architectures to include the file ("x86", "amd64", "arm", "arm64")
+  config: Configurations to include the file ("debug", "release", "sanitize")
+
+Multiple platforms, architectures, and configurations can be specified by separating them with commas,
+e.g. "windows,linux" or "x86,amd64". If platform, arch or config are omitted, the file will be included
+on all platforms, architectures, or configurations, respectively.
+
+The following special tokens in the source and destination paths:
+
+  ${SOURCE_DIR}: The root of the SymCrypt source tree
+  ${BIN_DIR}: The build output directory
+  ${MODULE_NAME}: The name of the module to package (currently only relevant for Linux)
+  ${VERSION_API}: SymCrypt API version
+  ${VERSION_MINOR}: Minor version
+  ${VERSION_PATCH}: Patch version
+
 Copyright (c) Microsoft Corporation. Licensed under the MIT license.
 """
 
 import argparse
+import json
 import os
 import pathlib
 import re
@@ -14,77 +50,10 @@ import subprocess
 import sys
 import tempfile
 from typing import Dict, Tuple
+
 from version import SymCryptVersion, get_version_info
 
-# Common files shared between all packages
-PACKAGE_FILE_MAP_TEMPLATE_COMMON = {
-    "${SOURCE_DIR}/CHANGELOG.md" : "CHANGELOG.md",
-    "${SOURCE_DIR}/LICENSE" : "LICENSE",
-    "${SOURCE_DIR}/NOTICE" : "NOTICE",
-    "${SOURCE_DIR}/README.md" : "README.md",
-    "${SOURCE_DIR}/inc/symcrypt.h" : "inc/symcrypt.h",
-    "${SOURCE_DIR}/inc/symcrypt_low_level.h" : "inc/symcrypt_low_level.h",
-    "${SOURCE_DIR}/inc/symcrypt_internal.h" : "inc/symcrypt_internal.h",
-    "${SOURCE_DIR}/inc/symcrypt_internal_shared.inc" : "inc/symcrypt_internal_shared.inc",
-    "${SOURCE_DIR}/inc/symcrypt_no_sal.h" : "inc/symcrypt_no_sal.h"
-}
-
-# Linux sanitize package - doesn't build shared object libraries
-PACKAGE_FILE_MAP_TEMPLATE_LINUX_SANITIZE = PACKAGE_FILE_MAP_TEMPLATE_COMMON.copy()
-PACKAGE_FILE_MAP_TEMPLATE_LINUX_SANITIZE.update({
-    "${BIN_DIR}/symcrypt.pc" : "lib/pkgconfig/symcrypt.pc",
-    "${BIN_DIR}/exe/symcryptunittest" : "test/symcryptunittest"
-})
-
-# Linux debug package
-PACKAGE_FILE_MAP_TEMPLATE_LINUX_DEBUG = PACKAGE_FILE_MAP_TEMPLATE_LINUX_SANITIZE.copy()
-PACKAGE_FILE_MAP_TEMPLATE_LINUX_DEBUG.update({
-    "${BIN_DIR}/module/${MODULE_NAME}/libsymcrypt.so" : "lib/libsymcrypt.so",
-    "${BIN_DIR}/module/${MODULE_NAME}/libsymcrypt.so.${VERSION_API}" : "lib/libsymcrypt.so.${VERSION_API}",
-    "${BIN_DIR}/module/${MODULE_NAME}/libsymcrypt.so.${VERSION_API}.${VERSION_MINOR}.${VERSION_PATCH}" : "lib/libsymcrypt.so.${VERSION_API}.${VERSION_MINOR}.${VERSION_PATCH}",
-})
-
-# Linux release package
-# The release package is the same as the debug package, except that we add the debug copy of
-# libsymcrypt.so, which is placed in the .debug subdirectory. The debug package does not include
-# this file because the main binary is not stripped of debugging symbols in the debug package.
-PACKAGE_FILE_MAP_TEMPLATE_LINUX_RELEASE = PACKAGE_FILE_MAP_TEMPLATE_LINUX_DEBUG.copy()
-PACKAGE_FILE_MAP_TEMPLATE_LINUX_RELEASE.update({
-    "${BIN_DIR}/module/${MODULE_NAME}/.debug/libsymcrypt.so.${VERSION_API}.${VERSION_MINOR}.${VERSION_PATCH}" : "lib/.debug/libsymcrypt.so.${VERSION_API}.${VERSION_MINOR}.${VERSION_PATCH}",
-})
-
-# Windows debug package
-PACKAGE_FILE_MAP_TEMPLATE_WINDOWS_DEBUG = PACKAGE_FILE_MAP_TEMPLATE_COMMON.copy()
-PACKAGE_FILE_MAP_TEMPLATE_WINDOWS_DEBUG.update({
-    "${BIN_DIR}\\exe\\symcrypttestmodule.dll" : "test\\symcrypttestmodule.dll", 
-    "${BIN_DIR}\\exe\\symcryptunittest.exe" : "test\\symcryptunittest.exe", 
-    "${BIN_DIR}\\exe\\symcryptunittest_legacy.exe" : "test\\symcryptunittest_legacy.exe", 
-    "${BIN_DIR}\\exe\\symcryptunittest_win7nlater.exe" : "test\\symcryptunittest_win7nlater.exe", 
-    "${BIN_DIR}\\exe\\symcryptunittest_win8_1nlater.exe" : "test\\symcryptunittest_win8_1nlater.exe", 
-})
-
-# Windows release package
-# Like Linux, we need to add debugging information (PDB files) which are stripped from the binaries
-# in Release builds
-PACKAGE_FILE_MAP_TEMPLATE_WINDOWS_RELEASE = PACKAGE_FILE_MAP_TEMPLATE_WINDOWS_DEBUG.copy()
-PACKAGE_FILE_MAP_TEMPLATE_WINDOWS_RELEASE.update({
-    "${BIN_DIR}\\exe\\symcrypttestmodule.pdb" : "test\\symcrypttestmodule.pdb", 
-    "${BIN_DIR}\\exe\\symcryptunittest.pdb" :  "test\\symcryptunittest.pdb", 
-    "${BIN_DIR}\\exe\\symcryptunittest_legacy.pdb" : "test\\symcryptunittest_legacy.pdb", 
-    "${BIN_DIR}\\exe\\symcryptunittest_win7nlater.pdb" : "test\\symcryptunittest_win7nlater.pdb",
-    "${BIN_DIR}\\exe\\symcryptunittest_win8_1nlater.pdb" : "test\\symcryptunittest_win8_1nlater.pdb"
-})
-
-PACKAGE_FILE_TEMPLATES = {
-    ("linux", "release") : PACKAGE_FILE_MAP_TEMPLATE_LINUX_RELEASE,
-    ("linux", "debug") : PACKAGE_FILE_MAP_TEMPLATE_LINUX_DEBUG,
-    ("linux", "sanitize") : PACKAGE_FILE_MAP_TEMPLATE_LINUX_SANITIZE,
-    ("win32", "release") : PACKAGE_FILE_MAP_TEMPLATE_WINDOWS_RELEASE,
-    ("win32", "debug") : PACKAGE_FILE_MAP_TEMPLATE_WINDOWS_DEBUG
-    # Sanitize is not currently supported on Windows
-}
-
-def get_package_file_map(bin_dir : pathlib.Path, config : str, module_name : str) -> Dict[str, str]:
+def get_file_list(bin_dir : pathlib.Path, config : str, module_name : str) -> Dict[str, str]:
     """
     Replaces variables in the package file map with their actual values.
 
@@ -105,98 +74,121 @@ def get_package_file_map(bin_dir : pathlib.Path, config : str, module_name : str
         "${VERSION_PATCH}" : str(version.patch)
     }
 
-    try:
-        template = PACKAGE_FILE_TEMPLATES[(sys.platform, config.lower())]
-    except KeyError:
-        raise Exception("Unsupported platform or configuration: " + sys.platform + " " + config)
+    file_list = []
+    with open(source_dir / "package.json") as f:
+        file_json = json.load(f)
 
-    package_file_map = {}
+        for file in file_json:
+            for replacement_key, replacement_value in replacement_map.items():
+                file["source"] = file["source"].replace(replacement_key, replacement_value)
+                file["dest"] = file["dest"].replace(replacement_key, replacement_value)
 
-    for key, value in template.items():
-        for replacement_key, replacement_value in replacement_map.items():
-            key = key.replace(replacement_key, replacement_value)
-            value = value.replace(replacement_key, replacement_value)
+            file_list.append(file)
 
-        package_file_map[key] = value
+    return file_list
 
-    return package_file_map
-
-def package_module(build_dir : pathlib.Path, arch : str, config : str, module_name : str,
-    release_dir : pathlib.Path) -> None:
+def prepare_package(build_dir : pathlib.Path, package_dir : pathlib.Path,
+    arch : str, config : str, module_name : str) -> None:
     """
-    Packages the module.
+    Prepares the files for packaging by copying them into a temporary directory. Does not create the archive.
 
     build_dir: The build output directory.
+    package_dir: The directory to copy the files to. Must be an existing directory.
     arch: Architecture of the binaries to package (for inclusion in the package name).
     config: The build configuration (Debug/Release/Sanitize).
     module_name: The name of the module to package.
-    release_dir: The directory to place the release in.
     """
 
-    with tempfile.TemporaryDirectory() as temp_dir:
-        temp_dir = pathlib.Path(temp_dir)
+    file_list = get_file_list(build_dir, config, module_name)
+    for file in file_list:
 
-        package_file_map = get_package_file_map(build_dir, config, module_name)
-        for source, destination in package_file_map.items():
+        target_platform = file.get("platform")
+        target_arch = file.get("arch")
+        target_config = file.get("config")
 
-            print("Copying " + destination)
+        if target_platform is not None and sys.platform not in target_platform.split(","):
+            continue
 
-            source = pathlib.Path(source)
-            destination = pathlib.Path(destination)
+        if target_arch is not None and arch not in target_arch.split(","):
+            continue
 
-            if not source.exists():
-                raise Exception("Source file " + str(source) + " does not exist.")
+        if target_config is not None and config not in target_config.split(","):
+            continue
 
-            destination = temp_dir / destination
+        print("Copying " + file["dest"])
 
-            if not destination.parent.exists():
-                destination.parent.mkdir(parents = True)
+        source = pathlib.Path(file["source"])
+        destination = pathlib.Path(file["dest"])
 
-            # Do not follow symlinks, as we want to preserve relative symlinks in the package
-            # e.g. libsymcrypt.so -> libsymcrypt.so.x
-            shutil.copy(source, destination, follow_symlinks = False)
+        if not source.exists():
+            if source.suffix == ".sys" and arch == "X86":
+                # Ignore missing drivers on x86, since we don't build them for that arch
+                print("Skipping driver " + str(source) + " for x86 package")
+                continue
 
-        if not release_dir.exists():
-            release_dir.mkdir(parents = True)
+            raise Exception("Source file " + str(source) + " does not exist.")
 
-        version = get_version_info()
+        destination = package_dir / destination
 
-        archive_name = "symcrypt-{}-{}-{}-{}.{}.{}-{}".format(
-            sys.platform,
-            module_name,
-            arch,
-            str(version.major),
-            str(version.minor),
-            str(version.patch),
-            version.commit_hash
-        )
+        if not destination.parent.exists():
+            destination.parent.mkdir(parents = True)
 
-        archive_type = None
-        archive_ext = None
-        if sys.platform == "linux":
-            archive_type = "gztar"
-            archive_ext = ".tar.gz"
-        elif sys.platform == "win32":
-            archive_type = "zip"
-            archive_ext = ".zip"
-        else:
-            raise Exception("Unsupported platform: " + sys.platform)
+        # Do not follow symlinks, as we want to preserve relative symlinks in the package
+        # e.g. libsymcrypt.so -> libsymcrypt.so.x
+        shutil.copy(source, destination, follow_symlinks = False)
 
-        cwd = os.getcwd()
-        try:
-            os.chdir(release_dir)
+def create_archive(package_dir : pathlib.Path, release_dir : pathlib.Path, 
+    arch : str, config : str, module_name : str) -> None:
+    """
+    Creates an archive of the package by compressing the files in the package directory into a zip
+    or tar.gz archive, depending on the platform.
 
-            if os.path.exists(archive_name + archive_ext):
-                raise Exception("Archive " + archive_name + archive_ext + " already exists.")
+    package_dir: The directory to place the package files in. Must be an existing directory.
+    release_dir: The directory to place the archive in. Must be an existing directory.
+    arch: Architecture of the binaries to package (for inclusion in the package name).
+    config: The build configuration (Debug/Release/Sanitize).
+    module_name: The name of the module to package.
+    """
 
-            print("Creating archive " + archive_name + " in " + str(release_dir.resolve()) + "...")
+    version = get_version_info()
 
-            shutil.make_archive(archive_name, archive_type, temp_dir, owner = "root", group = "root")
+    archive_name = "symcrypt-{}-{}-{}-{}-{}.{}.{}-{}".format(
+        sys.platform,
+        module_name,
+        arch,
+        config,
+        str(version.major),
+        str(version.minor),
+        str(version.patch),
+        version.commit_hash
+    )
 
-            print("Done.")
+    archive_type = None
+    archive_ext = None
+    if sys.platform == "linux":
+        archive_type = "gztar"
+        archive_ext = ".tar.gz"
+    elif sys.platform == "win32":
+        archive_type = "zip"
+        archive_ext = ".zip"
+    else:
+        raise Exception("Unsupported platform: " + sys.platform)
 
-        finally:
-            os.chdir(cwd)
+    cwd = os.getcwd()
+    try:
+        os.chdir(release_dir)
+
+        if os.path.exists(archive_name + archive_ext):
+            raise Exception("Archive " + archive_name + archive_ext + " already exists.")
+
+        print("Creating archive " + archive_name + " in " + str(release_dir.resolve()) + "...")
+
+        shutil.make_archive(archive_name, archive_type, package_dir, owner = "root", group = "root")
+
+        print("Done.")
+
+    finally:
+        os.chdir(cwd)
 
 def main() -> None:
     """
@@ -205,14 +197,31 @@ def main() -> None:
 
     parser = argparse.ArgumentParser(description = "Packaging helper script for SymCrypt.")
     parser.add_argument("build_dir", type = pathlib.Path, help = "Build output directory.")
-    parser.add_argument("arch", type = str, help = "Architecture of the binaries to package (for inclusion in the package name).", choices = ["X86", "AMD64", "ARM64"])
+    parser.add_argument("arch", type = str.lower, help = "Architecture of the binaries to package (for inclusion in the package name).", choices = ("x86", "amd64", "arm64"))
     parser.add_argument("config", type = str, help = "Build configuration.", choices = ["Debug", "Release", "Sanitize"])
     parser.add_argument("module_name", type = str, help = "Name of the module to package.")
     parser.add_argument("release_dir", type = pathlib.Path, help = "Directory to place the release in.")
+    parser.add_argument("--no-archive", action = "store_true", help = "Do not create a compressed archive, just copy the files.", default = False)
 
     args = parser.parse_args()
 
-    package_module(args.build_dir, args.arch, args.config, args.module_name, args.release_dir)
+    # Try to create the release directory first to check for permissions
+    if args.no_archive and args.release_dir.exists():
+        print("Directory " + str(args.release_dir) + " already exists; please remove it first.")
+        exit(-1)
+
+    args.release_dir.mkdir(parents = True, exist_ok = True)
+
+    with tempfile.TemporaryDirectory() as temp_dir:
+        temp_dir = pathlib.Path(temp_dir)
+        prepare_package(args.build_dir, temp_dir, args.arch, args.config, args.module_name)
+
+        if args.no_archive:
+            print("Copying tree to " + str(args.release_dir.resolve()) + "...")
+            shutil.copytree(temp_dir, args.release_dir, symlinks = True, dirs_exist_ok = True)
+            print("Done.")
+        else:
+            create_archive(temp_dir, args.release_dir, args.arch, args.config, args.module_name)
 
 if __name__ == "__main__":
     main()

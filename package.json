@@ -1,0 +1,140 @@
+[
+    {
+        "source" : "${SOURCE_DIR}/CHANGELOG.md",
+        "dest" : "CHANGELOG.md"
+    },
+    {
+        "source" : "${SOURCE_DIR}/LICENSE",
+        "dest" : "LICENSE"
+    },
+    {
+        "source" : "${SOURCE_DIR}/NOTICE",
+        "dest" : "NOTICE"
+    },
+    {
+        "source" : "${SOURCE_DIR}/README.md",
+        "dest" : "README.md"
+    },
+    {
+        "source" : "${SOURCE_DIR}/inc/symcrypt.h",
+        "dest" : "inc/symcrypt.h"
+    },
+    {
+        "source" : "${SOURCE_DIR}/inc/symcrypt_low_level.h",
+        "dest" : "inc/symcrypt_low_level.h"
+    },
+    {
+        "source" : "${SOURCE_DIR}/inc/symcrypt_internal.h",
+        "dest" : "inc/symcrypt_internal.h"
+    },
+    {
+        "source" : "${SOURCE_DIR}/inc/symcrypt_internal_shared.inc", 
+        "dest" : "inc/symcrypt_internal_shared.inc"
+    },
+    {
+        "source" : "${SOURCE_DIR}/inc/symcrypt_no_sal.h",
+        "dest" : "inc/symcrypt_no_sal.h",
+        "platform" : "linux"
+    },
+    {
+        "source" : "${BIN_DIR}/symcrypt.pc",
+        "dest" : "lib/pkgconfig/symcrypt.pc",
+        "platform" : "linux"
+    },
+    {
+        "source" : "${BIN_DIR}/exe/symcryptunittest",
+        "dest" : "test/symcryptunittest",
+        "platform" : "linux"
+    },
+    {
+        "source" : "${BIN_DIR}/module/${MODULE_NAME}/libsymcrypt.so",
+        "dest" : "lib/libsymcrypt.so",
+        "platform" : "linux",
+        "config" : "debug,release"
+    },
+    {
+        "source" : "${BIN_DIR}/module/${MODULE_NAME}/libsymcrypt.so.${VERSION_API}",
+        "dest" : "lib/libsymcrypt.so.${VERSION_API}",
+        "platform" : "linux",
+        "config" : "debug,release"
+    },
+    {
+        "source" : "${BIN_DIR}/module/${MODULE_NAME}/libsymcrypt.so.${VERSION_API}.${VERSION_MINOR}.${VERSION_PATCH}",
+        "dest" : "lib/libsymcrypt.so.${VERSION_API}.${VERSION_MINOR}.${VERSION_PATCH}",
+        "platform" : "linux",
+        "config" : "debug,release"
+    },
+    {
+        "source" : "${BIN_DIR}/module/${MODULE_NAME}/.debug/libsymcrypt.so.${VERSION_API}.${VERSION_MINOR}.${VERSION_PATCH}",
+        "dest" : "lib/.debug/libsymcrypt.so.${VERSION_API}.${VERSION_MINOR}.${VERSION_PATCH}",
+        "platform" : "linux",
+        "config" : "release"
+    },
+    {
+        "source" : "${BIN_DIR}/lib/symcrypt.lib",
+        "dest" : "lib/symcrypt.lib",
+        "platform" : "win32"
+    },
+    {
+        "source" : "${BIN_DIR}/sys/symcrypt.sys",
+        "dest" : "sys/symcrypt.sys",
+        "platform" : "win32",
+        "arch" : "amd64,arm64"
+    },
+    {
+        "source" : "${BIN_DIR}/sys/symcrypt.lib",
+        "dest" : "sys/symcrypt.lib",
+        "platform" : "win32",
+        "arch" : "amd64,arm64"
+    },
+    {
+        "source" : "${BIN_DIR}/sys/SymCryptKernelTestModule.sys",
+        "dest" : "test/SymCryptKernelTestModule.sys",
+        "platform" : "win32",
+        "arch" : "amd64,arm64"
+    },
+    {
+        "source" : "${BIN_DIR}/dll/symcrypttestmodule.dll",
+        "dest" : "test/symcrypttestmodule.dll",
+        "platform" : "win32"
+    },
+    {
+        "source" : "${BIN_DIR}/dll/SymCryptKernelTestModule_UM.dll",
+        "dest" : "test/SymCryptKernelTestModule_UM.dll",
+        "platform" : "win32",
+        "arch" : "amd64,arm64"
+    },
+    {
+        "source" : "${BIN_DIR}/exe/symcryptunittest.exe",
+        "dest" : "test/symcryptunittest.exe",
+        "platform" : "win32"
+    },
+    {
+        "source" : "${BIN_DIR}/sys/symcrypt.pdb",
+        "dest" : "sys/symcrypt.pdb",
+        "platform" : "win32",
+        "arch" : "amd64,arm64"
+    },
+    {
+        "source" : "${BIN_DIR}/sys/SymCryptKernelTestModule.pdb",
+        "dest" : "test/SymCryptKernelTestModule.pdb",
+        "platform" : "win32",
+        "arch" : "amd64,arm64"
+    },
+    {
+        "source" : "${BIN_DIR}/dll/SymCryptKernelTestModule_UM.pdb",
+        "dest" : "test/SymCryptKernelTestModule_UM.pdb",
+        "platform" : "win32",
+        "arch" : "amd64,arm64"
+    },
+    {
+        "source" : "${BIN_DIR}/dll/symcrypttestmodule.pdb",
+        "dest" : "test/symcrypttestmodule.pdb",
+        "platform" : "win32"
+    },
+    {
+        "source" : "${BIN_DIR}/exe/symcryptunittest.pdb",
+        "dest" : "test/symcryptunittest.pdb",
+        "platform" : "win32"
+    }
+]

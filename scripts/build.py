@@ -15,10 +15,10 @@ import subprocess
 import sys
 from typing import List
 
-ARCH_CMAKE = ("X86", "AMD64", "ARM64")
+ARCH_CMAKE = ("x86", "amd64", "arm64")
 CONFIG_CMAKE = ("Debug", "Release", "Sanitize")
 
-ARCH_MSBUILD = ("X86", "AMD64", "ARM", "ARM64")
+ARCH_MSBUILD = ("x86", "amd64", "arm", "arm64")
 CONFIG_MSBUILD = ("Debug", "Release")
 
 def get_normalized_host_arch() -> str:
@@ -30,11 +30,11 @@ def get_normalized_host_arch() -> str:
     host_arch = platform.machine()
 
     if re.fullmatch("[Xx]86|i[3456]86", host_arch):
-        normalized_arch = "X86"
+        normalized_arch = "x86"
     elif re.fullmatch("AMD64|x86_64", host_arch):
-        normalized_arch = "AMD64"
+        normalized_arch = "amd64"
     elif re.fullmatch("ARM64|aarch64", host_arch):
-        normalized_arch = "ARM64"
+        normalized_arch = "arm64"
 
     # No support for ARM32 right now
 
@@ -76,17 +76,17 @@ def configure_cmake(args : argparse.Namespace) -> None:
 
     if args.host_os == "win32":
         cmake_args.append("-A")
-        if args.arch == "X86":
+        if args.arch == "x86":
             cmake_args.append("Win32")
-        elif args.arch == "AMD64":
+        elif args.arch == "amd64":
             cmake_args.append("x64")
-        elif args.arch == "ARM64":
+        elif args.arch == "arm64":
             cmake_args.append("arm64")
         
         # No support for ARM32 right now
     
     if args.host_arch != args.arch:
-        cmake_args.append("-DSYMCRYPT_TARGET_ARCH=" + args.arch)
+        cmake_args.append("-DSYMCRYPT_TARGET_ARCH=" + args.arch.upper())
 
     if args.cc:
         cmake_args.append("-DCMAKE_C_COMPILER=" + args.cc)
@@ -147,10 +147,10 @@ def build_msbuild(args : argparse.Namespace) -> None:
     # Note: these aliases aren't the same as the ones used by the Visual Studio CMake generator :|
     # (Specifically, MSBuild uses x86 whereas the CMake Visual Studio generator uses Win32)
     ARCH_MSBUILD_ALIASES = {
-        "X86": "x86",
-        "AMD64": "x64",
-        "ARM": "ARM",
-        "ARM64": "ARM64"
+        "x86": "x86",
+        "amd64": "x64",
+        "arm": "ARM",
+        "arm64": "ARM64"
     }
 
     if args.all:
@@ -189,7 +189,7 @@ def main() -> None:
     parser_cmake = subparsers.add_parser("cmake", help = "Build using CMake.")
 
     parser_cmake.add_argument("build_dir", type = pathlib.Path, help = "Build output directory.")
-    parser_cmake.add_argument("--arch", type = str, help = "Target architecture. Defaults to host architecture.", choices = ARCH_CMAKE, default = "")
+    parser_cmake.add_argument("--arch", type = str.lower, help = "Target architecture. Defaults to host architecture.", choices = ARCH_CMAKE, default = "")
     parser_cmake.add_argument("--config", type = str, help = "Build configuration. Defaults to Debug.", choices = CONFIG_CMAKE, default = "Debug")
     parser_cmake.add_argument("--cc", type = str, help = "Specify the C compiler to use. If not provided, uses platform default.")
     parser_cmake.add_argument("--cxx", type = str, help = "Specify the C++ compiler to use. If not provided, uses platform default.")
@@ -207,7 +207,7 @@ def main() -> None:
     # MSBuild build options
     parser_msbuild = subparsers.add_parser("msbuild", help = "Build using MSBuild.")
 
-    parser_msbuild.add_argument("--arch", type = str, help = "Target architecture. Defaults to host architecture.", choices = ARCH_MSBUILD, default = "")
+    parser_msbuild.add_argument("--arch", type = str.lower, help = "Target architecture. Defaults to host architecture.", choices = ARCH_MSBUILD, default = "")
     parser_msbuild.add_argument("--config", type = str, help = "Build configuration. Defaults to Debug.", choices = CONFIG_MSBUILD, default = "Debug")
     parser_msbuild.add_argument("--all", action = "store_true", help = "Build for all architecture/configuration combinations.", default = False)
 
@@ -215,17 +215,18 @@ def main() -> None:
 
     args.source_dir = pathlib.Path(__file__).parent.parent.resolve()
 
+    # Add some additional helper values to to the input arguments
+    args.host_os = sys.platform # e.g. win32, linux
+    args.host_arch = get_normalized_host_arch()
+
+    if not args.arch:
+        args.arch = args.host_arch
+
     if args.build_tool == "cmake":
-        # Add some additional helper values to to the input arguments, and clean up the given build path
-        args.host_os = sys.platform # e.g. win32, linux
-        args.host_arch = get_normalized_host_arch()
 
         # Always convert "Release" builds to "RelWithDebInfo" or the build will not output debug symbols
         if args.config == "Release":
             args.config = "RelWithDebInfo"
-
-        if not args.arch:
-            args.arch = args.host_arch
 
         configure_cmake(args)
 

@@ -4,13 +4,39 @@ parameters:
   sln: ''
   msbuildArgs: ''
   restoreNugetPackages: false
-  targetOsBranch: 'official/main'
+  targetOsBranch: 'official/rs_lkg'
   config: 'Debug,Release'
   platform: 'x86,x64,arm64'
   nativeCompiler: true
   sign: false # Only signs UM binaries, for external (to Windows repo) release
+  # Packaging args
+  package: false
+  name: ''
+  description: ''
+  owner: ''
 
 jobs:
+
+- job: set_version
+  displayName: Set Version
+  pool:
+    type: windows
+  variables:
+    ob_outputDirectory: $(Build.SourcesDirectory)\build
+  steps:
+  - task: PythonScript@0
+    displayName: 'Set version number'
+    name: verStep
+    inputs:
+      scriptSource: 'filePath'
+      scriptPath: scripts\version.py
+      arguments: '--devops'
+      workingDirectory: $(Build.SourcesDirectory)
+  - task: onebranch.pipeline.version@1
+    inputs:
+      system: 'Custom'
+      customVersion: '$(verStep.VER_MAJOR).$(verStep.VER_MINOR).$(verStep.VER_PATCH)-$(Build.BuildId)'
+
 # Build the solution for all the necessary configurations.
 - job: build_sln
   displayName: ${{ parameters.sln }}
@@ -73,6 +99,10 @@ jobs:
     type: windows
 
   variables:
+    ver_branch: $(Build.SourceBranchName)
+    ver_major: $[ dependencies.set_version.outputs['verStep.VER_MAJOR'] ]
+    ver_minor: $[ dependencies.set_version.outputs['verStep.VER_MINOR'] ]
+    ver_patch: $[ dependencies.set_version.outputs['verStep.VER_PATCH'] ]
     # Build variables
     ob_outputDirectory: $(Build.SourcesDirectory)\build\bin\$(ob_build_platform_win)$(ob_build_config_win)
     ob_artifactSuffix: _$(ob_build_platform_win)$(ob_build_config_win)
@@ -90,6 +120,15 @@ jobs:
     ob_NativeCompiler_UseOSBranchVersion: true
     ob_NativeCompiler_TargetOsBranch: ${{ parameters.targetOsBranch }}
     ob_NativeCompiler_UcrtPlatform: $(ob_build_platform_win)
+    # https://www.osgwiki.com/wiki/OneBranch_Windows_Undocked_Pipelines#2._Set_feature_flags_-_createVPack_and_updateOSManifest.
+    ${{ if eq(parameters.package, true) }}:
+      ob_createvpack_enabled: true
+      ob_createvpack_owneralias: ${{ parameters.owner }}
+      ob_createvpack_packagename: "${{ parameters.name }}.$(ob_build_platform_win)$(ob_build_config_win)"
+      ob_createvpack_description: "${{ parameters.name }}.$(ver_branch)"
+      ob_createvpack_versionAs: string
+      ob_createvpack_version: $(ver_major).$(ver_minor).$(ver_patch)-$(Build.BuildId)
+      ob_createvpack_vpackdirectory: $(ob_outputDirectory)\vpack
 
   steps:
   - task: VSBuild@1
@@ -101,12 +140,12 @@ jobs:
       configuration: $(ob_build_config)
       maximumCpuCount: true
       restoreNugetPackages: ${{ parameters.restoreNugetPackages }}
-      msbuildArgs: '-p:UndockedOfficial=${{ parameters.nativeCompiler }} -p:UndockedBuildId=$(Build.BuildId) ${{ parameters.msbuildArgs }}'
+      msbuildArgs: '-p:UndockedOfficial=${{ parameters.nativeCompiler }} -p:UndockedBuildId=$(Build.BuildId) ${{ parameters.msbuildArgs }}'   
 
   # Only run tests on x86/x64 builds for now
   - task: PythonScript@0
     displayName: 'Run unit tests'
-    condition: or(eq(variables['ob_build_platform'], 'x64'), eq(variables['ob_build_platform'], 'x86')) 
+    condition: or(eq(variables['ob_build_platform'], 'x64'), eq(variables['ob_build_platform'], 'x86'))
     inputs:
       scriptSource: 'filePath'
       scriptPath: scripts\test.py
@@ -115,19 +154,28 @@ jobs:
 
   - task: PythonScript@0
     displayName: 'Run dynamic unit tests'
-    condition: or(eq(variables['ob_build_platform'], 'x64'), eq(variables['ob_build_platform'], 'x86')) 
+    condition: or(eq(variables['ob_build_platform'], 'x64'), eq(variables['ob_build_platform'], 'x86'))
     inputs:
       scriptSource: 'filePath'
       scriptPath: scripts\test.py
-      arguments: 'build\bin dynamic:build\bin\$(ob_build_platform_win)$(ob_build_config_win)\symcrypttestmodule.dll noperftests'
-      workingDirectory: $(Build.SourcesDirectory)      
+      arguments: 'build\bin dynamic:build\bin\$(ob_build_platform_win)$(ob_build_config_win)\dll\symcrypttestmodule.dll noperftests'
+      workingDirectory: $(Build.SourcesDirectory)
 
-  - ${{ if eq(parameters.sign, true) }}:
-    - task: onebranch.pipeline.signing@1 # https://aka.ms/obpipelines/signing
-      displayName: 'Sign Binaries'
-      target: windows_build_container
-      inputs:
-        command: 'sign'
-        signing_profile: 'external_distribution'
-        files_to_sign: '**\*.exe;**\*.dll' # Only supports user mode binaries
-        search_root: 'build/bin'
+  - task: onebranch.pipeline.signing@1 # https://aka.ms/obpipelines/signing
+    displayName: 'Sign Binaries'
+    condition: eq('${{ parameters.sign }}', true)
+    target: windows_build_container
+    inputs:
+      command: 'sign'
+      signing_profile: 'external_distribution'
+      files_to_sign: '**\*.exe;**\*.dll' # Only supports user mode binaries
+      search_root: 'build/bin'
+    
+  - task: PythonScript@0
+    displayName: 'Copy files to package'
+    inputs:
+      scriptSource: 'filePath'
+      scriptPath: scripts\package.py
+      arguments: --no-archive $(ob_outputDirectory) $(ob_build_platform_win) $(ob_build_config) Windows $(ob_outputDirectory)\vpack
+      workingDirectory: $(Build.SourcesDirectory)
+  

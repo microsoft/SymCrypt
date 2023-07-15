@@ -32,37 +32,59 @@ extends:
         enabled: false # Temporarily disable binskim until we sort out BA2018 errors
 
     stages:
+    - stage: Set_Version
+      jobs:
+      - job: set_version
+        displayName: Set Version
+        pool:
+          type: linux
+        variables:
+          ob_outputDirectory: $(Build.SourcesDirectory)/bin
+        steps:
+        - task: PythonScript@0
+          displayName: 'Set version number'
+          name: verStep
+          inputs:
+            scriptSource: 'filePath'
+            scriptPath: scripts/version.py
+            arguments: '--devops'
+            workingDirectory: $(Build.SourcesDirectory)
+        - task: onebranch.pipeline.version@1
+          inputs:
+            system: 'Custom'
+            customVersion: '$(verStep.VER_MAJOR).$(verStep.VER_MINOR).$(verStep.VER_PATCH)-$(Build.BuildId)'
+          
     - stage: Build_Windows
       displayName: Build Windows
       jobs:
-      - template: .pipelines/templates/build-windows.yml@self
+      - template: .pipelines/templates/build-windows-cmake.yml@self
         parameters:
           arch: 'AMD64'
           config: 'Debug'
           additionalArgs: '--test-legacy-impl'
-      - template: .pipelines/templates/build-windows.yml@self
+      - template: .pipelines/templates/build-windows-cmake.yml@self
         parameters:
           arch: 'AMD64'
           config: 'Release'
           additionalArgs: '--test-legacy-impl'
-      - template: .pipelines/templates/build-windows.yml@self
+      - template: .pipelines/templates/build-windows-cmake.yml@self
         parameters:
           arch: 'X86'
           config: 'Debug'
           additionalArgs: '--test-legacy-impl'
-      - template: .pipelines/templates/build-windows.yml@self
+      - template: .pipelines/templates/build-windows-cmake.yml@self
         parameters:
           arch: 'X86'
           config: 'Release'
           additionalArgs: '--test-legacy-impl'
-      - template: .pipelines/templates/build-windows.yml@self
+      - template: .pipelines/templates/build-windows-cmake.yml@self
         parameters:
           arch: 'AMD64'
           config: 'Release'
           skipTests: true
           additionalArgs: '--no-asm'
           identifier: 'NoAsm'
-      - template: .pipelines/templates/build-windows.yml@self
+      - template: .pipelines/templates/build-windows-cmake.yml@self
         parameters:
           arch: 'X86'
           config: 'Release'

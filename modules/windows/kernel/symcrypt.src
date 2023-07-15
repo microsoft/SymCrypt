@@ -1,4 +1,4 @@
-NAME symcrypt_sys.sys
+NAME symcrypt.sys
 
 EXPORTS
     SymCrypt3DesBlockCipher
