@@ -428,15 +428,13 @@ SymCryptEckeySetValue(
             pbScratchInternal,
             cbScratchInternal );
 
-        if ( ( flags & SYMCRYPT_FLAG_KEY_MINIMAL_VALIDATION ) == 0 )
+        // Check if Private key is 0 after dividing it by the subgroup order
+        // Other part of range validation - perform unconditionally as it is cheap
+        // and it never makes sense for private key to be 0 intentionally
+        if (SymCryptIntIsEqualUint32( piTmpInteger, 0 ))
         {
-            // Check if Private key is 0 after dividing it by the subgroup order
-            // Other part of range validation
-            if (SymCryptIntIsEqualUint32( piTmpInteger, 0 ))
-            {
-                scError = SYMCRYPT_INVALID_ARGUMENT;
-                goto cleanup;
-            }
+            scError = SYMCRYPT_INVALID_ARGUMENT;
+            goto cleanup;
         }
 
         // Copy into the ECKEY

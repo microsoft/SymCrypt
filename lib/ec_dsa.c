@@ -139,6 +139,8 @@ cleanup:
     return scError;
 }
 
+#define SYMCRYPT_MAX_ECDSA_SIGNATURE_COUNT (100)
+
 SYMCRYPT_ERROR
 SYMCRYPT_CALL
 SymCryptEcDsaSignEx(
@@ -179,6 +181,8 @@ SymCryptEcDsaSignEx(
     UINT32  cbKG = 0;
     UINT32  cbRs = 0;
     UINT32  cbX  = 0;
+
+    UINT32 signatureCount = 0;
 
     // Make sure that the key may be used in ECDSA
     if ( ((pKey->fAlgorithmInfo & SYMCRYPT_FLAG_ECKEY_ECDSA) == 0)  )
@@ -272,7 +276,7 @@ SymCryptEcDsaSignEx(
     //
     // Main loop: Stop when both c and d are not zero (unless a specific k is provided)
     //
-    while ( TRUE )
+    while( TRUE )
     {
         if ( piK == NULL )
         {
@@ -350,6 +354,15 @@ SymCryptEcDsaSignEx(
         if (piK != NULL)
         {
             // piK resulted in 0 signature
+            scError = SYMCRYPT_INVALID_ARGUMENT;
+            goto cleanup;
+        }
+
+        signatureCount++;
+        if ( signatureCount >= SYMCRYPT_MAX_ECDSA_SIGNATURE_COUNT )
+        {
+            // We have not generated a non-zero signature after SYMCRYPT_MAX_ECDSA_SIGNATURE_COUNT attempts;
+            // Something is wrong with the group setup
             scError = SYMCRYPT_INVALID_ARGUMENT;
             goto cleanup;
         }

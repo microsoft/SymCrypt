@@ -52,6 +52,8 @@ cleanup:
     return scError;
 }
 
+#define SYMCRYPT_MAX_DSA_SIGNATURE_COUNT (100)
+
 SYMCRYPT_ERROR
 SYMCRYPT_CALL
 SymCryptDsaSignEx(
@@ -99,6 +101,8 @@ SymCryptDsaSignEx(
     PSYMCRYPT_MODELEMENT peRmodQ = NULL;
     PSYMCRYPT_MODELEMENT peK = NULL;
     PSYMCRYPT_MODELEMENT peS = NULL;
+
+    UINT32 signatureCount = 0;
 
     UNREFERENCED_PARAMETER( flags );
 
@@ -186,8 +190,10 @@ SymCryptDsaSignEx(
         goto cleanup;
     }
 
-    // Stop until both R,S are not zero
-    do
+    //
+    // Main loop: Stop when both R and S are not zero (unless a specific k is provided)
+    //
+    while( TRUE )
     {
         if (piK==NULL)
         {
@@ -318,9 +324,28 @@ SymCryptDsaSignEx(
                 pbScratchInternal,
                 cbScratchInternal );
 
-    } while ( (piK == NULL) &&
-              ( SymCryptModElementIsZero( pDlgroup->pmQ, peRmodQ ) ||
-                SymCryptModElementIsZero( pDlgroup->pmQ, peS ) ) );
+        if ( !( SymCryptModElementIsZero( pDlgroup->pmQ, peRmodQ ) |
+                SymCryptModElementIsZero( pDlgroup->pmQ, peS ) ) )
+        {
+            break;
+        }
+
+        if (piK != NULL)
+        {
+            // piK resulted in 0 signature
+            scError = SYMCRYPT_INVALID_ARGUMENT;
+            goto cleanup;
+        }
+
+        signatureCount++;
+        if ( signatureCount >= SYMCRYPT_MAX_DSA_SIGNATURE_COUNT )
+        {
+            // We have not generated a non-zero signature after SYMCRYPT_MAX_DSA_SIGNATURE_COUNT attempts;
+            // Something is wrong with the group setup
+            scError = SYMCRYPT_INVALID_ARGUMENT;
+            goto cleanup;
+        }
+    }
 
     // Output R
     scError = SymCryptModElementGetValue(

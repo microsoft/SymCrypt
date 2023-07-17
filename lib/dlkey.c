@@ -633,14 +633,12 @@ SymCryptDlkeySetValue(
         }
 
         // Perform range validation on imported Private key.
-        if ( ( flags & SYMCRYPT_FLAG_KEY_MINIMAL_VALIDATION ) == 0 )
+        // Check if Private key is 0 - perform unconditionally as it is cheap
+        // and it never makes sense for private key to be 0 intentionally
+        if ( SymCryptIntIsEqualUint32( pkDlkey->piPrivateKey, 0 ) )
         {
-            // Check if Private key is 0
-            if ( SymCryptIntIsEqualUint32( pkDlkey->piPrivateKey, 0 ) )
-            {
-                scError = SYMCRYPT_INVALID_ARGUMENT;
-                goto cleanup;
-            }
+            scError = SYMCRYPT_INVALID_ARGUMENT;
+            goto cleanup;
         }
 
         // Continue range validation on imported Private key.
