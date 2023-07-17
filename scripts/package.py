@@ -5,8 +5,8 @@ Packaging helper script for SymCrypt.
 NOTE: For Windows targets, this script only works with MSBuild builds, because CMake cannot build
 Windows kernel drivers.
 
-This script reads the package configuration from package.json in the repo root, which contains a
-list of files in the following format:
+This script reads the package configuration from SymCryptPackage.json in the repo root, which
+contains a list of files in the following format:
 
    {
        "source" : "...",
@@ -75,7 +75,7 @@ def get_file_list(bin_dir : pathlib.Path, config : str, module_name : str) -> Di
     }
 
     file_list = []
-    with open(source_dir / "package.json") as f:
+    with open(source_dir / "SymCryptPackage.json") as f:
         file_json = json.load(f)
 
         for file in file_json:
