@@ -55,7 +55,7 @@ SymCryptMontgomerySetDistinguished(
             PBYTE               pbScratch,
             SIZE_T              cbScratch )
 {
-    SYMCRYPT_ASSERT( pCurve->type == SYMCRYPT_ECURVE_TYPE_MONTGOMERY );
+    SYMCRYPT_ASSERT( SYMCRYPT_CURVE_IS_MONTGOMERY_TYPE(pCurve) );
     SYMCRYPT_ASSERT( SymCryptEcurveIsSame(pCurve, poDst->pCurve) );
 
     UNREFERENCED_PARAMETER( pbScratch );
@@ -91,7 +91,7 @@ SymCryptMontgomeryIsEqual(
     SIZE_T nBytes;
 
     SYMCRYPT_ASSERT( (flags & ~(SYMCRYPT_FLAG_ECPOINT_EQUAL|SYMCRYPT_FLAG_ECPOINT_NEG_EQUAL)) == 0 );
-    SYMCRYPT_ASSERT( pCurve->type == SYMCRYPT_ECURVE_TYPE_MONTGOMERY );
+    SYMCRYPT_ASSERT( SYMCRYPT_CURVE_IS_MONTGOMERY_TYPE(pCurve) );
     SYMCRYPT_ASSERT( SymCryptEcurveIsSame(pCurve, poSrc1->pCurve) && SymCryptEcurveIsSame(pCurve, poSrc2->pCurve) );
     SYMCRYPT_ASSERT( cbScratch >= SYMCRYPT_INTERNAL_SCRATCH_BYTES_FOR_COMMON_ECURVE_OPERATIONS( pCurve ) );
 
@@ -135,7 +135,7 @@ SymCryptMontgomeryIsZero(
     PCSYMCRYPT_MODULUS FMod = pCurve->FMod;
     PSYMCRYPT_MODELEMENT peZ = NULL;    // Pointer to Z
 
-    SYMCRYPT_ASSERT( pCurve->type == SYMCRYPT_ECURVE_TYPE_MONTGOMERY );
+    SYMCRYPT_ASSERT( SYMCRYPT_CURVE_IS_MONTGOMERY_TYPE(pCurve) );
     SYMCRYPT_ASSERT( SymCryptEcurveIsSame(pCurve, poSrc->pCurve) );
 
     UNREFERENCED_PARAMETER( pbScratch );
@@ -299,7 +299,7 @@ SymCryptMontgomeryPointScalarMul(
     _In_    PCSYMCRYPT_INT         piScalar,
     _In_opt_
             PCSYMCRYPT_ECPOINT     poSrc,
-    _In_    UINT32                 flags,
+            UINT32                 flags,
     _Out_   PSYMCRYPT_ECPOINT      poDst,
     _Out_writes_bytes_( cbScratch )
             PBYTE                  pbScratch,
@@ -313,7 +313,7 @@ SymCryptMontgomeryPointScalarMul(
     PBYTE                 pBegin;
     SIZE_T                cbAllScratch;
 
-    SYMCRYPT_ASSERT( pCurve->type == SYMCRYPT_ECURVE_TYPE_MONTGOMERY );
+    SYMCRYPT_ASSERT( SYMCRYPT_CURVE_IS_MONTGOMERY_TYPE(pCurve) );
     SYMCRYPT_ASSERT( (poSrc == NULL || SymCryptEcurveIsSame(pCurve, poSrc->pCurve)) && SymCryptEcurveIsSame(pCurve, poDst->pCurve) );
 
     // Make sure we only specify the correct flags

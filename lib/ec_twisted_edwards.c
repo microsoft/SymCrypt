@@ -64,7 +64,7 @@ SymCryptTwistedEdwardsSetDistinguished(
             PBYTE               pbScratch,
             SIZE_T              cbScratch )
 {
-    SYMCRYPT_ASSERT( pCurve->type == SYMCRYPT_ECURVE_TYPE_TWISTED_EDWARDS );
+    SYMCRYPT_ASSERT( SYMCRYPT_CURVE_IS_TWISTED_EDWARDS_TYPE(pCurve) );
     SYMCRYPT_ASSERT( SymCryptEcurveIsSame(pCurve, poDst->pCurve) );
 
     UNREFERENCED_PARAMETER( pbScratch );
@@ -85,7 +85,7 @@ SymCryptTwistedEdwardsIsZero(
     PSYMCRYPT_MODULUS     pmMod = pCurve->FMod;
     UINT32 dResX = 0, dResY = 0;
 
-    SYMCRYPT_ASSERT( pCurve->type == SYMCRYPT_ECURVE_TYPE_TWISTED_EDWARDS );
+    SYMCRYPT_ASSERT( SYMCRYPT_CURVE_IS_TWISTED_EDWARDS_TYPE(pCurve) );
     SYMCRYPT_ASSERT( SymCryptEcurveIsSame(pCurve, poSrc->pCurve) );
 
     UNREFERENCED_PARAMETER( pbScratch );
@@ -121,7 +121,7 @@ SymCryptTwistedEdwardsOnCurve(
     PSYMCRYPT_MODULUS     pmMod = pCurve->FMod;
     SIZE_T nBytes;
 
-    SYMCRYPT_ASSERT( pCurve->type == SYMCRYPT_ECURVE_TYPE_TWISTED_EDWARDS );
+    SYMCRYPT_ASSERT( SYMCRYPT_CURVE_IS_TWISTED_EDWARDS_TYPE(pCurve) );
     SYMCRYPT_ASSERT( SymCryptEcurveIsSame(pCurve, poSrc->pCurve) );
     SYMCRYPT_ASSERT( cbScratch >= SYMCRYPT_INTERNAL_SCRATCH_BYTES_FOR_COMMON_ECURVE_OPERATIONS( pCurve ) );
 
@@ -193,19 +193,19 @@ SymCryptTwistedEdwardsOnCurve(
 VOID
 SYMCRYPT_CALL
 SymCryptTwistedEdwardsDouble(
-     _In_    PCSYMCRYPT_ECURVE   pCurve,
-     _In_    PCSYMCRYPT_ECPOINT  poSrc,
-     _Out_   PSYMCRYPT_ECPOINT   poDst,
-     _In_    UINT32              flags,
-     _Out_writes_bytes_( cbScratch )
-             PBYTE               pbScratch,
-             SIZE_T              cbScratch)
+    _In_    PCSYMCRYPT_ECURVE   pCurve,
+    _In_    PCSYMCRYPT_ECPOINT  poSrc,
+    _Out_   PSYMCRYPT_ECPOINT   poDst,
+            UINT32              flags,
+    _Out_writes_bytes_( cbScratch )
+            PBYTE               pbScratch,
+            SIZE_T              cbScratch)
 {
     PSYMCRYPT_MODELEMENT  peTemp[8];
     PSYMCRYPT_MODULUS     pmMod = pCurve->FMod;
     SIZE_T nBytes;
 
-    SYMCRYPT_ASSERT( pCurve->type == SYMCRYPT_ECURVE_TYPE_TWISTED_EDWARDS );
+    SYMCRYPT_ASSERT( SYMCRYPT_CURVE_IS_TWISTED_EDWARDS_TYPE(pCurve) );
     SYMCRYPT_ASSERT( SymCryptEcurveIsSame(pCurve, poSrc->pCurve) && SymCryptEcurveIsSame(pCurve, poDst->pCurve) );
     SYMCRYPT_ASSERT( cbScratch >= SYMCRYPT_INTERNAL_SCRATCH_BYTES_FOR_COMMON_ECURVE_OPERATIONS( pCurve ) );
 
@@ -311,20 +311,20 @@ SymCryptTwistedEdwardsDouble(
 VOID
 SYMCRYPT_CALL
 SymCryptTwistedEdwardsAdd(
-     _In_    PCSYMCRYPT_ECURVE   pCurve,
-     _In_    PCSYMCRYPT_ECPOINT  poSrc1,
-     _In_    PCSYMCRYPT_ECPOINT  poSrc2,
-     _Out_   PSYMCRYPT_ECPOINT   poDst,
-     _In_    UINT32              flags,
-     _Out_writes_bytes_( cbScratch )
-             PBYTE               pbScratch,
-             SIZE_T              cbScratch )
+    _In_    PCSYMCRYPT_ECURVE   pCurve,
+    _In_    PCSYMCRYPT_ECPOINT  poSrc1,
+    _In_    PCSYMCRYPT_ECPOINT  poSrc2,
+    _Out_   PSYMCRYPT_ECPOINT   poDst,
+            UINT32              flags,
+    _Out_writes_bytes_( cbScratch )
+            PBYTE               pbScratch,
+            SIZE_T              cbScratch )
 {
     PSYMCRYPT_MODELEMENT  peTemp[8];
     PSYMCRYPT_MODULUS     pmMod = pCurve->FMod;
     SIZE_T nBytes;
 
-    SYMCRYPT_ASSERT( pCurve->type == SYMCRYPT_ECURVE_TYPE_TWISTED_EDWARDS );
+    SYMCRYPT_ASSERT( SYMCRYPT_CURVE_IS_TWISTED_EDWARDS_TYPE(pCurve) );
     SYMCRYPT_ASSERT( SymCryptEcurveIsSame(pCurve, poSrc1->pCurve) && SymCryptEcurveIsSame(pCurve, poSrc2->pCurve) && SymCryptEcurveIsSame(pCurve, poDst->pCurve) );
     SYMCRYPT_ASSERT( cbScratch >= SYMCRYPT_INTERNAL_SCRATCH_BYTES_FOR_COMMON_ECURVE_OPERATIONS( pCurve ) );
 
@@ -423,13 +423,13 @@ SymCryptTwistedEdwardsAdd(
 VOID
 SYMCRYPT_CALL
 SymCryptTwistedEdwardsAddDiffNonZero(
-     _In_    PCSYMCRYPT_ECURVE   pCurve,
-     _In_    PCSYMCRYPT_ECPOINT  poSrc1,
-     _In_    PCSYMCRYPT_ECPOINT  poSrc2,
-     _Out_   PSYMCRYPT_ECPOINT   poDst,
-     _Out_writes_bytes_(cbScratch)
-             PBYTE               pbScratch,
-             SIZE_T              cbScratch )
+    _In_    PCSYMCRYPT_ECURVE   pCurve,
+    _In_    PCSYMCRYPT_ECPOINT  poSrc1,
+    _In_    PCSYMCRYPT_ECPOINT  poSrc2,
+    _Out_   PSYMCRYPT_ECPOINT   poDst,
+    _Out_writes_bytes_(cbScratch)
+            PBYTE               pbScratch,
+            SIZE_T              cbScratch )
 {
     SymCryptTwistedEdwardsAdd( pCurve, poSrc1, poSrc2, poDst, 0, pbScratch, cbScratch );
 }
@@ -462,7 +462,7 @@ SymCryptTwistedEdwardsIsEqual(
     UINT32  dResXN = 0;
     UINT32  dResY = 0;
 
-    SYMCRYPT_ASSERT( pCurve->type == SYMCRYPT_ECURVE_TYPE_TWISTED_EDWARDS );
+    SYMCRYPT_ASSERT( SYMCRYPT_CURVE_IS_TWISTED_EDWARDS_TYPE(pCurve) );
     SYMCRYPT_ASSERT( SymCryptEcurveIsSame(pCurve, poSrc1->pCurve) && SymCryptEcurveIsSame(pCurve, poSrc2->pCurve) );
     SYMCRYPT_ASSERT( cbScratch >= SYMCRYPT_INTERNAL_SCRATCH_BYTES_FOR_COMMON_ECURVE_OPERATIONS( pCurve ) );
 
@@ -521,7 +521,7 @@ SymCryptTwistedEdwardsSetZero(
             PBYTE               pbScratch,
             SIZE_T              cbScratch)
 {
-    SYMCRYPT_ASSERT( pCurve->type == SYMCRYPT_ECURVE_TYPE_TWISTED_EDWARDS );
+    SYMCRYPT_ASSERT( SYMCRYPT_CURVE_IS_TWISTED_EDWARDS_TYPE(pCurve) );
     SYMCRYPT_ASSERT( SymCryptEcurveIsSame(pCurve, poDst->pCurve) );
     SYMCRYPT_ASSERT( cbScratch >= SYMCRYPT_INTERNAL_SCRATCH_BYTES_FOR_COMMON_ECURVE_OPERATIONS( pCurve ) );
 
@@ -554,7 +554,7 @@ SymCryptTwistedEdwardsNegate(
 
     PSYMCRYPT_MODELEMENT peTmp = NULL;
 
-    SYMCRYPT_ASSERT( pCurve->type == SYMCRYPT_ECURVE_TYPE_TWISTED_EDWARDS );
+    SYMCRYPT_ASSERT( SYMCRYPT_CURVE_IS_TWISTED_EDWARDS_TYPE(pCurve) );
     SYMCRYPT_ASSERT( SymCryptEcurveIsSame(pCurve, poSrc->pCurve) );
     SYMCRYPT_ASSERT( cbScratch >= SYMCRYPT_SCRATCH_BYTES_FOR_COMMON_MOD_OPERATIONS( pCurve->FModDigits ) + pCurve->cbModElement );
 

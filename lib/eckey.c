@@ -199,7 +199,7 @@ SymCryptEckeyPerformPublicKeyValidation(
 
     // Check that Public key is on the curve
     // Skip check for Montgomery curves as we do not have an EcpointOnCurve function for them
-    if ( pCurve->type != SYMCRYPT_ECURVE_TYPE_MONTGOMERY &&
+    if ( !SYMCRYPT_CURVE_IS_MONTGOMERY_TYPE(pCurve) &&
         !SymCryptEcpointOnCurve( pCurve, pEckey->poPublicKey, pbScratch, cbScratch ) )
     {
         return SYMCRYPT_INVALID_ARGUMENT;
@@ -681,7 +681,7 @@ SymCryptEckeyGetValue(
                     SymCryptDivisorFromModulus(pCurve->GOrd),
                     NULL,
                     piTmpInteger,
-                    pbScratch,
+                    pbScratchInternal,
                     cbScratchInternal );
             }
 

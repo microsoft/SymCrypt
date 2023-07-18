@@ -31,8 +31,6 @@ SymCryptCrtGenerateForTwoCoprimes(
 
     BOOLEAN oddP = FALSE;
 
-    UNREFERENCED_PARAMETER( flags );
-
     SYMCRYPT_ASSERT( pmP != NULL );
     SYMCRYPT_ASSERT( pmQ != NULL );
 

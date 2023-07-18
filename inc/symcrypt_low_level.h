@@ -2359,7 +2359,7 @@ SymCryptEcpointSetValue(
 // eformat determines the layout (and the number) of the coordinates.
 //
 // Requirements:
-//  - cbSrc = X * SymCryptEcurveSizeofFieldModulus( pCurve ) where X depends on the
+//  - cbSrc = X * SymCryptEcurveSizeofFieldElement( pCurve ) where X depends on the
 //    eformat specified and denotes the number of coordinates. For example, for
 //    SYMCRYPT_ECPOINT_FORMAT_XY it is equal to 2.
 //  - cbScratch >= SYMCRYPT_SCRATCH_BYTES_FOR_GETSET_VALUE_ECURVE_OPERATIONS( pCurve )
@@ -2372,13 +2372,13 @@ SymCryptEcpointSetValue(
 //
 // Example:
 //    Set an ECPOINT to (X,Y) point in affine coordinates where the size of each coordinate
-//    is t = SymCryptEcurveSizeofFieldModulus( pCurve ) bytes. The coordinates are
+//    is t = SymCryptEcurveSizeofFieldElement( pCurve ) bytes. The coordinates are
 //    X=(X_(t-1), ... , X_1, X_0) and Y=(Y_(t-1), ... , Y_1, Y_0) with t-1 the
 //    most significant byte. Then the function can be called with
 //      pbSrc = { X_(t-1), ... , X_1, X_0, Y_(t-1), ... , Y_1, Y_0 }
 //      cbSrc = 2 * t
 //      nformat = SYMCRYPT_NUMBER_FORMAT_MSB_FIRST
-//      eformat = SYMCRYPT_ECPOINT_AFFINE
+//      eformat = SYMCRYPT_ECPOINT_FORMAT_XY
 //
 
 SYMCRYPT_ERROR
@@ -2407,7 +2407,7 @@ SymCryptEcpointGetValue(
 //    required ECPOINT_FORMAT (XY or X), the function fails with SYMCRYPT_INCOMPATIBLE_FORMAT.
 //
 // Requirements:
-//  - cbDst = X * SymCryptEcurveSizeofFieldModulus( pCurve ) where X depends on the
+//  - cbDst = X * SymCryptEcurveSizeofFieldElement( pCurve ) where X depends on the
 //    eformat specified and denotes the number of coordinates. For example for SYMCRYPT_ECPOINT_FORMAT_XY it is equal to 2.
 //  - cbScratch >= SYMCRYPT_SCRATCH_BYTES_FOR_GETSET_VALUE_ECURVE_OPERATIONS( pCurve )
 //
@@ -2530,7 +2530,7 @@ SymCryptEcpointAdd(
     _In_    PCSYMCRYPT_ECPOINT  poSrc1,
     _In_    PCSYMCRYPT_ECPOINT  poSrc2,
     _Out_   PSYMCRYPT_ECPOINT   poDst,
-    _In_    UINT32              flags,
+            UINT32              flags,
     _Out_writes_bytes_opt_( cbScratch )
             PBYTE               pbScratch,
             SIZE_T              cbScratch );
@@ -2545,6 +2545,7 @@ SymCryptEcpointAdd(
 //
 // Remarks:
 //      - Complete (i.e. works for all points)
+//      - Writes intermediate results to poDst breaking the read-once/write-once rule
 //
 // Requirements:
 //  - cbScratch >= SYMCRYPT_SCRATCH_BYTES_FOR_COMMON_ECURVE_OPERATIONS( pCurve ).
@@ -2567,6 +2568,7 @@ SymCryptEcpointAddDiffNonZero(
 // Remarks:
 //      - Side-channel safe
 //      - Complete (i.e. works for all points)
+//      - Writes intermediate results to poDst breaking the read-once/write-once rule
 //
 // Requirements:
 //  - cbScratch >= SYMCRYPT_SCRATCH_BYTES_FOR_COMMON_ECURVE_OPERATIONS( pCurve ).
@@ -2578,7 +2580,7 @@ SymCryptEcpointDouble(
     _In_    PCSYMCRYPT_ECURVE   pCurve,
     _In_    PCSYMCRYPT_ECPOINT  poSrc,
     _Out_   PSYMCRYPT_ECPOINT   poDst,
-    _In_    UINT32              flags,
+            UINT32              flags,
     _Out_writes_bytes_opt_( cbScratch )
             PBYTE               pbScratch,
             SIZE_T              cbScratch );
@@ -2592,6 +2594,7 @@ SymCryptEcpointDouble(
 //
 // Remarks:
 //      - Side-channel safe
+//      - Writes intermediate results to poDst breaking the read-once/write-once rule
 //
 // Requirements:
 //  - cbScratch >= SYMCRYPT_SCRATCH_BYTES_FOR_COMMON_ECURVE_OPERATIONS( pCurve ).
@@ -2643,12 +2646,12 @@ SymCryptEcpointSetRandom(
 SYMCRYPT_ERROR
 SYMCRYPT_CALL
 SymCryptEcpointScalarMul(
-    _In_    PCSYMCRYPT_ECURVE       pCurve,
-    _In_    PCSYMCRYPT_INT          piScalar,
+    _In_    PCSYMCRYPT_ECURVE   pCurve,
+    _In_    PCSYMCRYPT_INT      piScalar,
     _In_opt_
-            PCSYMCRYPT_ECPOINT      poSrc,
-    _In_    UINT32                  flags,
-    _Out_   PSYMCRYPT_ECPOINT       poDst,
+            PCSYMCRYPT_ECPOINT  poSrc,
+            UINT32              flags,
+    _Out_   PSYMCRYPT_ECPOINT   poDst,
     _Out_writes_bytes_opt_( cbScratch )
             PBYTE               pbScratch,
             SIZE_T              cbScratch );
@@ -2686,12 +2689,12 @@ SymCryptEcpointMultiScalarMul(
     _In_    PCSYMCRYPT_ECURVE       pCurve,
     _In_    PCSYMCRYPT_INT *        piSrcScalarArray,
     _In_    PCSYMCRYPT_ECPOINT *    poSrcEcpointArray,
-    _In_    UINT32                  nPoints,
-    _In_    UINT32                  flags,
+            UINT32                  nPoints,
+            UINT32                  flags,
     _Out_   PSYMCRYPT_ECPOINT       poDst,
     _Out_writes_bytes_opt_( cbScratch )
-            PBYTE               pbScratch,
-            SIZE_T              cbScratch );
+            PBYTE                   pbScratch,
+            SIZE_T                  cbScratch );
 //
 // It executes the multi scalar - add operation for nPoints
 // pairs of (exponents, points) in (piSrcScalarArray, poSrcEcpointArray).

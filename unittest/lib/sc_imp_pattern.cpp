@@ -6232,7 +6232,7 @@ SetupSymCryptEcpoints<ImpXxx>( PBYTE buf1, PBYTE buf2, PBYTE buf3 )
 
     ScShimSymCryptEcpointSetRandom( pCurve, piScalar, pPtrs[1], buf3 + SCRATCH_BUF_OFFSET, SCRATCH_BUF_SIZE );
 
-    if( pCurve->type != SYMCRYPT_ECURVE_TYPE_MONTGOMERY )
+    if( !SYMCRYPT_CURVE_IS_MONTGOMERY_TYPE( pCurve ) )
     {
         ScShimSymCryptEcpointSetZero( pCurve, ((PSYMCRYPT_ECPOINT *) buf3)[0], buf3 + SCRATCH_BUF_OFFSET, SCRATCH_BUF_SIZE );
     }

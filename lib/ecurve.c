@@ -217,7 +217,7 @@ SymCryptEcurveInitialize(
     pCurve->version = SYMCRYPT_INTERNAL_ECURVE_VERSION_LATEST;
 
     // Type of curve
-    pCurve->type = pParams->type;
+    pCurve->type = (int) pParams->type;
 
     // Curve point format
     pCurve->eCoordinates = pSizes->eCoordinates;
@@ -319,6 +319,28 @@ SymCryptEcurveInitialize(
     {
         goto cleanup;
     }
+
+    // Detect Short-Weierstrass curves with A == -3 (NIST prime curves are all of this form)
+    // Use B's ModElement space for check
+    if( pParams->type == SYMCRYPT_ECURVE_TYPE_SHORT_WEIERSTRASS )
+    {
+        SymCryptModElementSetValueNegUint32(
+            3,
+            pCurve->FMod,
+            pCurve->B,
+            pbScratch,
+            pSizes->cbScratch );
+        if ( scError != SYMCRYPT_NO_ERROR )
+        {
+            goto cleanup;
+        }
+        if( SymCryptModElementIsEqual( pCurve->FMod, pCurve->A, pCurve->B ) )
+        {
+            pCurve->type = SYMCRYPT_INTERNAL_ECURVE_TYPE_SHORT_WEIERSTRASS_AM3;
+        }
+    }
+
+    // Set B to the correct value
     scError = SymCryptModElementSetValue(
                     pSrc,
                     pParams->cbFieldLength,

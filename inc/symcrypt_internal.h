@@ -2585,10 +2585,22 @@ typedef struct _SYMCRYPT_ECURVE_INFO_PRECOMP {
 
 #define SYMCRYPT_INTERNAL_ECURVE_VERSION_LATEST                         1
 
+typedef enum _SYMCRYPT_INTERNAL_ECURVE_TYPE {
+    SYMCRYPT_INTERNAL_ECURVE_TYPE_SHORT_WEIERSTRASS     = 1,
+    SYMCRYPT_INTERNAL_ECURVE_TYPE_TWISTED_EDWARDS       = 2,
+    SYMCRYPT_INTERNAL_ECURVE_TYPE_MONTGOMERY            = 3,
+    SYMCRYPT_INTERNAL_ECURVE_TYPE_SHORT_WEIERSTRASS_AM3 = 4,// This type is a specialization of Short-Weierstrass when A == -3
+                                                            // This condition is detected and used for all NIST prime curves
+} SYMCRYPT_INTERNAL_ECURVE_TYPE;
+
+C_ASSERT((int)SYMCRYPT_INTERNAL_ECURVE_TYPE_SHORT_WEIERSTRASS   == (int)SYMCRYPT_ECURVE_TYPE_SHORT_WEIERSTRASS );
+C_ASSERT((int)SYMCRYPT_INTERNAL_ECURVE_TYPE_TWISTED_EDWARDS     == (int)SYMCRYPT_ECURVE_TYPE_TWISTED_EDWARDS );
+C_ASSERT((int)SYMCRYPT_INTERNAL_ECURVE_TYPE_MONTGOMERY          == (int)SYMCRYPT_ECURVE_TYPE_MONTGOMERY );
+
 typedef SYMCRYPT_ASYM_ALIGN_STRUCT _SYMCRYPT_ECURVE {
                     UINT32                  version;        // Version #
-                    SYMCRYPT_ECURVE_TYPE    type;           // Type of the curve
-
+                    SYMCRYPT_INTERNAL_ECURVE_TYPE
+                                            type;           // Internal type of the curve
                     SYMCRYPT_ECPOINT_COORDINATES
                                             eCoordinates;   // Default representation of the EC points
 
@@ -2647,6 +2659,17 @@ typedef const SYMCRYPT_ECURVE * PCSYMCRYPT_ECURVE;
 #define SYMCRYPT_INTERNAL_ECPOINT_COORDINATE_OFFSET( _pCurve, _ord )        ( sizeof(SYMCRYPT_ECPOINT) + (_ord) * (_pCurve)->cbModElement )
 #define SYMCRYPT_INTERNAL_ECPOINT_COORDINATE( _ord, _pCurve, _pEcpoint )    (PSYMCRYPT_MODELEMENT)( (PBYTE)(_pEcpoint) + SYMCRYPT_INTERNAL_ECPOINT_COORDINATE_OFFSET( (_pCurve), _ord ) )
 
+// Convenience macros to make adding internal specializations easier
+#define SYMCRYPT_CURVE_IS_SHORT_WEIERSTRASS_TYPE( _pCurve ) \
+    ( _pCurve->type == SYMCRYPT_INTERNAL_ECURVE_TYPE_SHORT_WEIERSTRASS || \
+      _pCurve->type == SYMCRYPT_INTERNAL_ECURVE_TYPE_SHORT_WEIERSTRASS_AM3 )
+
+#define SYMCRYPT_CURVE_IS_TWISTED_EDWARDS_TYPE( _pCurve ) \
+    ( _pCurve->type == SYMCRYPT_INTERNAL_ECURVE_TYPE_TWISTED_EDWARDS )
+
+#define SYMCRYPT_CURVE_IS_MONTGOMERY_TYPE( _pCurve ) \
+    ( _pCurve->type == SYMCRYPT_INTERNAL_ECURVE_TYPE_MONTGOMERY )
+
 //
 // Scratch space sizes for ECURVE operations
 //
@@ -2693,104 +2716,6 @@ typedef SYMCRYPT_ASYM_ALIGN_STRUCT _SYMCRYPT_ECKEY {
 } SYMCRYPT_ECKEY;
 typedef       SYMCRYPT_ECKEY * PSYMCRYPT_ECKEY;
 typedef const SYMCRYPT_ECKEY * PCSYMCRYPT_ECKEY;
-
-typedef VOID (SYMCRYPT_CALL * PSYMCRYPT_ECPOINT_SET_ZERO_FUNC) (
-                    PCSYMCRYPT_ECURVE   pCurve,
-                    PSYMCRYPT_ECPOINT   poDst,
-                    PBYTE               pbScratch,
-                    SIZE_T              cbScratch );
-typedef VOID (SYMCRYPT_CALL * PSYMCRYPT_ECPOINT_SET_DISTINGUISHED_FUNC) (
-                    PCSYMCRYPT_ECURVE   pCurve,
-                    PSYMCRYPT_ECPOINT   poDst,
-                    PBYTE               pbScratch,
-                    SIZE_T              cbScratch );
-typedef VOID (SYMCRYPT_CALL * PSYMCRYPT_ECPOINT_SET_RANDOM_FUNC) (
-                    PCSYMCRYPT_ECURVE       pCurve,
-                    PSYMCRYPT_INT           piScalar,
-                    PSYMCRYPT_ECPOINT       poDst,
-                    PBYTE                   pbScratch,
-                    SIZE_T                  cbScratch );
-
-typedef UINT32 (SYMCRYPT_CALL * PSYMCRYPT_ECPOINT_ISEQUAL_FUNC) (
-                    PCSYMCRYPT_ECURVE   pCurve,
-                    PCSYMCRYPT_ECPOINT  poSrc1,
-                    PCSYMCRYPT_ECPOINT  poSrc2,
-                    UINT32              flags,
-                    PBYTE               pbScratch,
-                    SIZE_T              cbScratch );
-typedef UINT32 (SYMCRYPT_CALL * PSYMCRYPT_ECPOINT_ONCURVE_FUNC) (
-                    PCSYMCRYPT_ECURVE   pCurve,
-                    PCSYMCRYPT_ECPOINT  poSrc,
-                    PBYTE               pbScratch,
-                    SIZE_T              cbScratch );
-typedef UINT32 (SYMCRYPT_CALL * PSYMCRYPT_ECPOINT_ISZERO_FUNC) (
-                    PCSYMCRYPT_ECURVE   pCurve,
-                    PCSYMCRYPT_ECPOINT  poSrc,
-                    PBYTE               pbScratch,
-                    SIZE_T              cbScratch );
-
-typedef VOID (SYMCRYPT_CALL * PSYMCRYPT_ECPOINT_ADD_FUNC) (
-                    PCSYMCRYPT_ECURVE   pCurve,
-                    PCSYMCRYPT_ECPOINT  poSrc1,
-                    PCSYMCRYPT_ECPOINT  poSrc2,
-                    PSYMCRYPT_ECPOINT   poDst,
-                    UINT32              flags,
-                    PBYTE               pbScratch,
-                    SIZE_T              cbScratch );
-typedef VOID (SYMCRYPT_CALL * PSYMCRYPT_ECPOINT_ADD_DIFF_NONZERO_FUNC) (
-                    PCSYMCRYPT_ECURVE   pCurve,
-                    PCSYMCRYPT_ECPOINT  poSrc1,
-                    PCSYMCRYPT_ECPOINT  poSrc2,
-                    PSYMCRYPT_ECPOINT   poDst,
-                    PBYTE               pbScratch,
-                    SIZE_T              cbScratch );
-typedef VOID (SYMCRYPT_CALL * PSYMCRYPT_ECPOINT_DOUBLE_FUNC) (
-                    PCSYMCRYPT_ECURVE   pCurve,
-                    PCSYMCRYPT_ECPOINT  poSrc,
-                    PSYMCRYPT_ECPOINT   poDst,
-                    UINT32              flags,
-                    PBYTE               pbScratch,
-                    SIZE_T              cbScratch );
-typedef VOID (SYMCRYPT_CALL * PSYMCRYPT_ECPOINT_NEGATE_FUNC) (
-                    PCSYMCRYPT_ECURVE   pCurve,
-                    PSYMCRYPT_ECPOINT   poSrc,
-                    UINT32              mask,
-                    PBYTE               pbScratch,
-                    SIZE_T              cbScratch );
-typedef SYMCRYPT_ERROR (SYMCRYPT_CALL * PSYMCRYPT_ECPOINT_SCALAR_MUL_FUNC) (
-                    PCSYMCRYPT_ECURVE       pCurve,
-                    PCSYMCRYPT_INT          piScalar,
-                    PCSYMCRYPT_ECPOINT      poSrc,
-                    UINT32                  flags,
-                    PSYMCRYPT_ECPOINT       poDst,
-                    PBYTE                   pbScratch,
-                    SIZE_T                  cbScratch );
-typedef SYMCRYPT_ERROR (SYMCRYPT_CALL * PSYMCRYPT_ECPOINT_MULTI_SCALAR_MUL_FUNC) (
-                    PCSYMCRYPT_ECURVE       pCurve,
-                    PCSYMCRYPT_INT *        piSrcScalarArray,
-                    PCSYMCRYPT_ECPOINT*     peSrcEcpointArray,
-                    UINT32                  nPoints,
-                    UINT32                  flags,
-                    PSYMCRYPT_ECPOINT       poDst,
-                    PBYTE                   pbScratch,
-                    SIZE_T                  cbScratch );
-
-typedef struct _SYMCRYPT_ECURVE_FUNCTIONS
-{
-    PSYMCRYPT_ECPOINT_SET_ZERO_FUNC             setZeroFunc;
-    PSYMCRYPT_ECPOINT_SET_DISTINGUISHED_FUNC    setDistinguishedFunc;
-    PSYMCRYPT_ECPOINT_SET_RANDOM_FUNC           setRandomFunc;
-    PSYMCRYPT_ECPOINT_ISEQUAL_FUNC              isEqualFunc;
-    PSYMCRYPT_ECPOINT_ISZERO_FUNC               isZeroFunc;
-    PSYMCRYPT_ECPOINT_ONCURVE_FUNC              onCurveFunc;
-    PSYMCRYPT_ECPOINT_ADD_FUNC                  addFunc;
-    PSYMCRYPT_ECPOINT_ADD_DIFF_NONZERO_FUNC     addDiffFunc;
-    PSYMCRYPT_ECPOINT_DOUBLE_FUNC               doubleFunc;
-    PSYMCRYPT_ECPOINT_NEGATE_FUNC               negateFunc;
-    PSYMCRYPT_ECPOINT_SCALAR_MUL_FUNC           scalarMulFunc;
-    PSYMCRYPT_ECPOINT_MULTI_SCALAR_MUL_FUNC     multiScalarMulFunc;
-} SYMCRYPT_ECURVE_FUNCTIONS, *PSYMCRYPT_ECURVE_FUNCTIONS;
-typedef const SYMCRYPT_ECURVE_FUNCTIONS  *PCSYMCRYPT_ECURVE_FUNCTIONS;
 
 SYMCRYPT_ALIGN_STRUCT _SYMCRYPT_802_11_SAE_CUSTOM_STATE {
     PSYMCRYPT_ECURVE        pCurve;

@@ -92,7 +92,7 @@ SymCryptEcpointScalarMulFixedWindow(
     _In_    PCSYMCRYPT_INT          piScalar,
     _In_opt_
             PCSYMCRYPT_ECPOINT      poSrc,
-    _In_    UINT32                  flags,
+            UINT32                  flags,
     _Out_   PSYMCRYPT_ECPOINT       poDst,
     _Out_writes_bytes_( cbScratch )
             PBYTE               pbScratch,
@@ -151,8 +151,8 @@ SymCryptEcpointScalarMulFixedWindow(
         bPrecompOffline = TRUE;
     }
 
-    SYMCRYPT_ASSERT( (pCurve->type == SYMCRYPT_ECURVE_TYPE_SHORT_WEIERSTRASS) ||
-                     (pCurve->type == SYMCRYPT_ECURVE_TYPE_TWISTED_EDWARDS) );
+    SYMCRYPT_ASSERT( SYMCRYPT_CURVE_IS_SHORT_WEIERSTRASS_TYPE(pCurve) ||
+                     SYMCRYPT_CURVE_IS_TWISTED_EDWARDS_TYPE(pCurve) );
     SYMCRYPT_ASSERT( SymCryptEcurveIsSame(pCurve, poSrc->pCurve) && SymCryptEcurveIsSame(pCurve, poDst->pCurve) );
     SYMCRYPT_ASSERT( cbScratch >= SYMCRYPT_INTERNAL_SCRATCH_BYTES_FOR_SCALAR_ECURVE_OPERATIONS(pCurve, 1) );
 
@@ -406,8 +406,8 @@ SymCryptEcpointMultiScalarMulWnafWithInterleaving(
         goto exit;
     }
 
-    SYMCRYPT_ASSERT( (pCurve->type == SYMCRYPT_ECURVE_TYPE_SHORT_WEIERSTRASS) ||
-                     (pCurve->type == SYMCRYPT_ECURVE_TYPE_TWISTED_EDWARDS) );
+    SYMCRYPT_ASSERT( SYMCRYPT_CURVE_IS_SHORT_WEIERSTRASS_TYPE(pCurve) ||
+                     SYMCRYPT_CURVE_IS_TWISTED_EDWARDS_TYPE(pCurve) );
     SYMCRYPT_ASSERT( SymCryptEcurveIsSame(pCurve, poDst->pCurve) );
     SYMCRYPT_ASSERT( cbScratch >= SYMCRYPT_INTERNAL_SCRATCH_BYTES_FOR_SCALAR_ECURVE_OPERATIONS(pCurve, nPoints) );
 

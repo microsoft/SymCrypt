@@ -122,6 +122,7 @@ testMontgomery(PSYMCRYPT_ECURVE  pCurve)
     PSYMCRYPT_ECPOINT   poDst = SymCryptEcpointAllocate(pCurve);
     PSYMCRYPT_ECPOINT   poDst2 = SymCryptEcpointAllocate(pCurve);
     PSYMCRYPT_ECKEY     pkKey1 = SymCryptEckeyAllocate(pCurve);
+    PSYMCRYPT_ECKEY     pkKey2 = SymCryptEckeyAllocate(pCurve);
 
     vprint( g_verbose, "    %-41s", "G_x * private_key_1");
     vprint( g_verbose, " %-40s", "SymCryptEcpointScalarMul");
@@ -249,6 +250,21 @@ testMontgomery(PSYMCRYPT_ECURVE  pCurve)
         CHECK5( (msbActual & msbMask) == msbValue,
         "High bit restriction failed. \n  Recvd: 0x%04X\n  Mask : 0x%04X\n  Bits : 0x%04X", msbActual, msbMask, msbValue);
 
+        // Check roundtrip through EckeyGetValue and EckeySetValue preserves private key without error
+        scError = SymCryptEckeySetValue(
+                            pbScratch,
+                            SymCryptEckeySizeofPrivateKey( pkKey1 ),
+                            NULL,
+                            0,
+                            SYMCRYPT_NUMBER_FORMAT_MSB_FIRST,
+                            SYMCRYPT_ECPOINT_FORMAT_XY,
+                            SYMCRYPT_FLAG_ECKEY_ECDSA | SYMCRYPT_FLAG_ECKEY_ECDH,
+                            pkKey2 );
+        CHECK( scError == SYMCRYPT_NO_ERROR, "SymCryptEckeySetValue private key failed" );
+
+        CHECK( SymCryptIntIsEqual(pkKey1->piPrivateKey, pkKey2->piPrivateKey), " pkKey1->piPrivateKey != pkKey2->piPrivateKey " );
+        CHECK( SymCryptEcpointIsEqual(pCurve, pkKey1->poPublicKey, pkKey2->poPublicKey, 0, pbScratch, cbScratch), " pkKey1->poPublicKey != pkKey2->poPublicKey " );
+
         msbCounter--;
     } while ((msbCounter > 0) && (msbNumOfBits>0));
 
@@ -262,6 +278,7 @@ testMontgomery(PSYMCRYPT_ECURVE  pCurve)
     SymCryptEcpointFree(pCurve, poDst);
     SymCryptEcpointFree(pCurve, poDst2);
     SymCryptEckeyFree(pkKey1);
+    SymCryptEckeyFree(pkKey2);
 
     SymCryptWipe(pbScratch, cbScratch);
     SymCryptCallbackFree(pbScratch);

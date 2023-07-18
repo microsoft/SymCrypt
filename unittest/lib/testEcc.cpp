@@ -25,6 +25,9 @@ testEccEcdsaKats();
 #define SYMCRYPT_ECC_CURVE_NUMSP384T1         "numsP384t1"
 #define SYMCRYPT_ECC_CURVE_NUMSP512T1         "numsP512t1"
 
+#define SYMCRYPT_ECC_CURVE_W25519             "W25519"
+#define SYMCRYPT_ECC_CURVE_W448               "W448"
+
 typedef struct _SYMCRYPT_ECC_CURVES {
     LPSTR                       pszCurveName;
     PCSYMCRYPT_ECURVE_PARAMS    pParams;
@@ -42,6 +45,8 @@ SYMCRYPT_ECC_CURVES rgbInternalCurves[] = {
     { SYMCRYPT_ECC_CURVE_NUMSP384T1,   SymCryptEcurveParamsNumsP384t1,  NULL},
     { SYMCRYPT_ECC_CURVE_NUMSP512T1,   SymCryptEcurveParamsNumsP512t1,  NULL},
     { SYMCRYPT_ECC_CURVE_25519,        SymCryptEcurveParamsCurve25519,  NULL},
+    { SYMCRYPT_ECC_CURVE_W25519,       SymCryptEcurveParamsW25519,      NULL},
+    { SYMCRYPT_ECC_CURVE_W448,         SymCryptEcurveParamsW448,        NULL},
 };
 
 #define NUM_OF_INTERNAL_CURVES       (sizeof(rgbInternalCurves) / sizeof(rgbInternalCurves[0]))
@@ -129,6 +134,7 @@ testEccArithmetic( _In_ PCSYMCRYPT_ECURVE pCurve )
     PCSYMCRYPT_INT      piTable[MULTIMUL_POINTS] = { 0 };
 
     PSYMCRYPT_ECKEY     pkKey1 = NULL;
+    PSYMCRYPT_ECKEY     pkKey2 = NULL;
 
     // Temporary Object sizes
     SIZE_T  cbEcpointSize = 0;
@@ -186,7 +192,7 @@ testEccArithmetic( _In_ PCSYMCRYPT_ECURVE pCurve )
     cbSignature = 2 * SymCryptEcurveSizeofFieldElement( pCurve );
     cbBuffer = cbSignature; // This is due to the fact that ecdsa and XY format both use 2 field elements
 
-    cbWorkSpace = 3 * cbEcpointSize + 2 * cbIntScalarSize + cbIntLargeSize + cbEckeySize + cbScratch + cbScratchMul + cbScratchMultiMul + cbScratchGetSet + cbSignature + cbBuffer;
+    cbWorkSpace = 3 * cbEcpointSize + 2 * cbIntScalarSize + cbIntLargeSize + 2 * cbEckeySize + cbScratch + cbScratchMul + cbScratchMultiMul + cbScratchGetSet + cbSignature + cbBuffer;
 
     // =================================
     // Allocation
@@ -220,11 +226,15 @@ testEccArithmetic( _In_ PCSYMCRYPT_ECURVE pCurve )
     pCurr += cbIntScalarSize;
 
     piLarge = SymCryptIntCreate( pCurr, cbIntLargeSize, SymCryptEcurveDigitsofScalarMultiplier(pCurve) + 1 );
-    CHECK( piLarge != NULL, "S2 allocation failed" );
+    CHECK( piLarge != NULL, "Large int allocation failed" );
     pCurr += cbIntLargeSize;
 
     pkKey1 = SymCryptEckeyCreate( pCurr, cbEckeySize, pCurve );
-    CHECK( pkKey1 != NULL, "Eckey allocation failed" );
+    CHECK( pkKey1 != NULL, "Eckey 1 allocation failed" );
+    pCurr += cbEckeySize;
+
+    pkKey2 = SymCryptEckeyCreate( pCurr, cbEckeySize, pCurve );
+    CHECK( pkKey2 != NULL, "Eckey 2 allocation failed" );
     pCurr += cbEckeySize;
 
     pbScratch = pCurr;
@@ -519,6 +529,21 @@ testEccArithmetic( _In_ PCSYMCRYPT_ECURVE pCurve )
 
         CHECK5( (msbActual & msbMask) == msbValue,
         "High bit restriction failed. \n  Recvd: 0x%04X\n  Mask : 0x%04X\n  Bits : 0x%04X", msbActual, msbMask, msbValue);
+
+        // Check roundtrip through EckeyGetValue and EckeySetValue preserves private key without error
+        scError = SymCryptEckeySetValue(
+                            pbSignature,
+                            SymCryptEckeySizeofPrivateKey( pkKey1 ),
+                            NULL,
+                            0,
+                            SYMCRYPT_NUMBER_FORMAT_MSB_FIRST,
+                            SYMCRYPT_ECPOINT_FORMAT_XY,
+                            SYMCRYPT_FLAG_ECKEY_ECDSA | SYMCRYPT_FLAG_ECKEY_ECDH,
+                            pkKey2 );
+        CHECK( scError == SYMCRYPT_NO_ERROR, "SymCryptEckeySetValue private key failed" );
+
+        CHECK( SymCryptIntIsEqual(pkKey1->piPrivateKey, pkKey2->piPrivateKey), " pkKey1->piPrivateKey != pkKey2->piPrivateKey " );
+        CHECK( SymCryptEcpointIsEqual(pCurve, pkKey1->poPublicKey, pkKey2->poPublicKey, 0, pbScratch, cbScratch), " pkKey1->poPublicKey != pkKey2->poPublicKey " );
 
         msbCounter--;
     } while ((msbCounter > 0) && (msbNumOfBits>0));

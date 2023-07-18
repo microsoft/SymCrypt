@@ -127,7 +127,7 @@ SymCryptShortWeierstrassSetZero(
     PCSYMCRYPT_MODULUS FMod = pCurve->FMod;
     PSYMCRYPT_MODELEMENT peTmp = NULL;
 
-    SYMCRYPT_ASSERT( pCurve->type == SYMCRYPT_ECURVE_TYPE_SHORT_WEIERSTRASS );
+    SYMCRYPT_ASSERT( SYMCRYPT_CURVE_IS_SHORT_WEIERSTRASS_TYPE(pCurve) );
     SYMCRYPT_ASSERT( SymCryptEcurveIsSame(pCurve, poDst->pCurve) );
     SYMCRYPT_ASSERT( cbScratch >= SYMCRYPT_SCRATCH_BYTES_FOR_COMMON_MOD_OPERATIONS( pCurve->FModDigits ) );
 
@@ -159,7 +159,7 @@ SymCryptShortWeierstrassSetDistinguished(
             PBYTE               pbScratch,
             SIZE_T              cbScratch )
 {
-    SYMCRYPT_ASSERT( pCurve->type == SYMCRYPT_ECURVE_TYPE_SHORT_WEIERSTRASS );
+    SYMCRYPT_ASSERT( SYMCRYPT_CURVE_IS_SHORT_WEIERSTRASS_TYPE(pCurve) );
     SYMCRYPT_ASSERT( SymCryptEcurveIsSame(pCurve, poDst->pCurve) );
 
     UNREFERENCED_PARAMETER( pbScratch );
@@ -202,7 +202,7 @@ SymCryptShortWeierstrassIsEqual(
 
     PSYMCRYPT_MODELEMENT peT[4] = { 0 };  // Temporaries
 
-    SYMCRYPT_ASSERT( pCurve->type == SYMCRYPT_ECURVE_TYPE_SHORT_WEIERSTRASS );
+    SYMCRYPT_ASSERT( SYMCRYPT_CURVE_IS_SHORT_WEIERSTRASS_TYPE(pCurve) );
     SYMCRYPT_ASSERT( SymCryptEcurveIsSame(pCurve, poSrc1->pCurve) && SymCryptEcurveIsSame(pCurve, poSrc2->pCurve) );
     SYMCRYPT_ASSERT( (flags & ~(SYMCRYPT_FLAG_ECPOINT_EQUAL|SYMCRYPT_FLAG_ECPOINT_NEG_EQUAL)) == 0 );
     SYMCRYPT_ASSERT( cbScratch >= SYMCRYPT_SCRATCH_BYTES_FOR_COMMON_MOD_OPERATIONS( pCurve->FModDigits ) + 4 * pCurve->cbModElement );
@@ -269,7 +269,7 @@ SymCryptShortWeierstrassIsZero(
     PCSYMCRYPT_MODULUS FMod = pCurve->FMod;
     PSYMCRYPT_MODELEMENT peZ = NULL;    // Pointer to Z
 
-    SYMCRYPT_ASSERT( pCurve->type == SYMCRYPT_ECURVE_TYPE_SHORT_WEIERSTRASS );
+    SYMCRYPT_ASSERT( SYMCRYPT_CURVE_IS_SHORT_WEIERSTRASS_TYPE(pCurve) );
     SYMCRYPT_ASSERT( SymCryptEcurveIsSame(pCurve, poSrc->pCurve) );
 
     UNREFERENCED_PARAMETER( pbScratch );
@@ -303,7 +303,7 @@ SymCryptShortWeierstrassOnCurve(
 
     PSYMCRYPT_MODELEMENT peT[2] = { 0 }; // Temporaries
 
-    SYMCRYPT_ASSERT( pCurve->type == SYMCRYPT_ECURVE_TYPE_SHORT_WEIERSTRASS );
+    SYMCRYPT_ASSERT( SYMCRYPT_CURVE_IS_SHORT_WEIERSTRASS_TYPE(pCurve) );
     SYMCRYPT_ASSERT( SymCryptEcurveIsSame(pCurve, poSrc->pCurve) );
     SYMCRYPT_ASSERT( cbScratch >= SYMCRYPT_SCRATCH_BYTES_FOR_COMMON_MOD_OPERATIONS( pCurve->FModDigits ) + 2 * pCurve->cbModElement );
 
@@ -350,30 +350,40 @@ SymCryptShortWeierstrassOnCurve(
 }
 
 //
-// dbl-2007-bl formula:
+// based on dbl-2007-bl formula
+// but tweaked by saml to
+//   a) remove overeager conversions from modular multiplication to modular squaring which introduce 
+//      more addition/subtraction. With current implementations (based on montgomery reduction),
+//      the cost of [a square and an add/sub] is greater than the cost of [a multiplication]
+//   b) share intermediate results of producing 8YYYY. [add/sub] is ~10% of cost of mul, so reducing
+//      count of these operation has a real impact
+//
+//      2Y = 2*Y1
+//      2YY = 2Y*Y1
+//      4YY = 2*2YY
+//      8YYYY = 2YY*4YY
+//      S = X1*4YY
 //      XX = X1^2
-//      YY = Y1^2
-//      YYYY = YY^2
 //      ZZ = Z1^2
-//      S = 2*((X1+YY)^2-XX-YYYY)
-//      M = 3*XX+a*ZZ^2
+//      ZZZZ = ZZ^2
+//      M = 3*XX+a*ZZZZ
 //      T = M^2-2*S
 //      X3 = T
-//      Y3 = M*(S-T)-8*YYYY
-//      Z3 = (Y1+Z1)^2-YY-ZZ
+//      Y3 = M*(S-T)-8YYYY
+//      Z3 = Z1*2Y
 //
 // Total cost:
-//      2 Mul (1 by a)
-//      8 Sqr
-//      4 Add
-//      8 Sub
-//      5 Dbl
+//      6 Mul (1 by a)
+//      4 Sqr
+//      2 Add
+//      4 Sub
+//      3 Dbl
 //
 // Special Case:
 //      If the source point is equal to the identity
 //      point of the curve (i.e. Z1 = 0 in Jacobian
 //      coordinates) then the resulting point has
-//      Z3 = Y1^2 - YY = 0. Thus, this formula is
+//      Z3 = Z1*2Y1 = 0. Thus, this formula is
 //      complete (it works for all points).
 //
 VOID
@@ -382,26 +392,30 @@ SymCryptShortWeierstrassDouble(
     _In_    PCSYMCRYPT_ECURVE   pCurve,
     _In_    PCSYMCRYPT_ECPOINT  poSrc,
     _Out_   PSYMCRYPT_ECPOINT   poDst,
-    _In_    UINT32              flags,
+            UINT32              flags,
     _Out_writes_bytes_( cbScratch )
             PBYTE               pbScratch,
             SIZE_T              cbScratch )
 {
     PCSYMCRYPT_MODULUS FMod = pCurve->FMod;
-    PSYMCRYPT_MODELEMENT peT[6] = { 0 };    // Temporaries
+    PSYMCRYPT_MODELEMENT peT[3] = { 0 };    // Temporaries
 
     PCSYMCRYPT_MODELEMENT peX1 = SYMCRYPT_INTERNAL_ECPOINT_COORDINATE( 0, pCurve, poSrc );
     PCSYMCRYPT_MODELEMENT peY1 = SYMCRYPT_INTERNAL_ECPOINT_COORDINATE( 1, pCurve, poSrc );
     PCSYMCRYPT_MODELEMENT peZ1 = SYMCRYPT_INTERNAL_ECPOINT_COORDINATE( 2, pCurve, poSrc );
 
-    SYMCRYPT_ASSERT( pCurve->type == SYMCRYPT_ECURVE_TYPE_SHORT_WEIERSTRASS );
+    PSYMCRYPT_MODELEMENT  peX3 = SYMCRYPT_INTERNAL_ECPOINT_COORDINATE( 0, pCurve, poDst );
+    PSYMCRYPT_MODELEMENT  peY3 = SYMCRYPT_INTERNAL_ECPOINT_COORDINATE( 1, pCurve, poDst );
+    PSYMCRYPT_MODELEMENT  peZ3 = SYMCRYPT_INTERNAL_ECPOINT_COORDINATE( 2, pCurve, poDst );
+
+    SYMCRYPT_ASSERT( pCurve->type == SYMCRYPT_INTERNAL_ECURVE_TYPE_SHORT_WEIERSTRASS );
     SYMCRYPT_ASSERT( SymCryptEcurveIsSame(pCurve, poSrc->pCurve) && SymCryptEcurveIsSame(pCurve, poDst->pCurve) );
-    SYMCRYPT_ASSERT( cbScratch >= SYMCRYPT_SCRATCH_BYTES_FOR_COMMON_MOD_OPERATIONS( pCurve->FModDigits ) + 6 * pCurve->cbModElement );
+    SYMCRYPT_ASSERT( cbScratch >= SYMCRYPT_SCRATCH_BYTES_FOR_COMMON_MOD_OPERATIONS( pCurve->FModDigits ) + 3 * pCurve->cbModElement );
 
     UNREFERENCED_PARAMETER( flags );
 
     // Creating temporaries
-    for (UINT32 i=0; i<6; i++)
+    for (UINT32 i=0; i<3; i++)
     {
         peT[i] = SymCryptModElementCreate(
                 pbScratch,
@@ -414,51 +428,149 @@ SymCryptShortWeierstrassDouble(
     }
 
     // Fixing remaining scratch space size
-    cbScratch -= 6*pCurve->cbModElement;
+    cbScratch -= 3*pCurve->cbModElement;
 
     // Calculate the points
-    SymCryptModSquare( FMod, peX1, peT[0], pbScratch, cbScratch );              /* T0 := X1 * X1 = XX */
-    SymCryptModSquare( FMod, peY1, peT[3], pbScratch, cbScratch );              /* T3 := Y1 * Y1 = YY */
-    SymCryptModSquare( FMod, peT[3], peT[5], pbScratch, cbScratch );            /* T5 := T3 * T3 = YYYY */
+    SymCryptModAdd( FMod, peY1, peY1, peT[0], pbScratch, cbScratch );           /* T0 := Y1 + Y1 = 2Y */
+    SymCryptModSquare( FMod, peZ1, peT[1], pbScratch, cbScratch );              /* T1 := Z1 * Z1 = ZZ */
+    SymCryptModMul( FMod, peT[0], peZ1, peZ3, pbScratch, cbScratch );           /* Z3 := 2Y * Z1 = 2YZ */
 
-    SymCryptModAdd( FMod, peX1, peT[3], peT[1], pbScratch, cbScratch );         /* T1 := X1 + T3 = X + YY */
-    SymCryptModSquare( FMod, peT[1], peT[1], pbScratch, cbScratch );            /* T1 := T1 * T1 = (X + YY)^2 */
-    SymCryptModSub( FMod, peT[1], peT[0], peT[1], pbScratch, cbScratch );       /* T1 := T1 - T0 = (X + YY)^2 - XX */
-    SymCryptModSub( FMod, peT[1], peT[5], peT[1], pbScratch, cbScratch );       /* T1 := T1 - T5 = (X + YY)^2 - XX - YYYY */
-    SymCryptModAdd( FMod, peT[1], peT[1], peT[1], pbScratch, cbScratch );       /* T1 := T1 + T1 = 2*((X + YY)^2 - XX - YYYY) = S */
+    SymCryptModMul( FMod, peY1, peT[0], peY3, pbScratch, cbScratch );           /* Y3 := 2Y * Y1 = 2YY */
+    SymCryptModAdd( FMod, peY3, peY3, peT[0], pbScratch, cbScratch );           /* T0 := 2YY + 2YY = 4YY */
+    SymCryptModMul( FMod, peT[0], peY3, peY3, pbScratch, cbScratch );           /* Y3 := 2YY * 4YY = 8YYYY */
 
-    SymCryptModSquare( FMod, peZ1, peT[4], pbScratch, cbScratch );              /* T4 := Z1 * Z1 = ZZ */
+    SymCryptModMul( FMod, peT[0], peX1, peT[0], pbScratch, cbScratch );         /* T0 := X1 * 4YY = 4XYY = S */
 
-    SymCryptModSquare( FMod, peT[4], peT[2], pbScratch, cbScratch );            /* T2 := T4 * T4 = ZZ^2 */
-    SymCryptModMul( FMod, peT[2], pCurve->A, peT[2], pbScratch, cbScratch );    /* T2 := T2 * a  = a*ZZ^2 */
-    SymCryptModAdd( FMod, peT[2], peT[0], peT[2], pbScratch, cbScratch );       /* T2 := T2 + T0 = XX + a*ZZ^2 */
-    SymCryptModAdd( FMod, peT[0], peT[0], peT[0], pbScratch, cbScratch );       /* T0 := T0 + T0 = 2*XX */
-    SymCryptModAdd( FMod, peT[2], peT[0], peT[2], pbScratch, cbScratch );       /* T2 := T2 + T0 = 3*XX + a*ZZ^2 = M */
+    SymCryptModSquare( FMod, peT[1], peT[1], pbScratch, cbScratch );            /* T1 := T1 * T1 = ZZZZ */
+    SymCryptModSquare( FMod, peX1, peT[2], pbScratch, cbScratch );              /* T2 := X1 * X1 = XX */
+    SymCryptModMul( FMod, peT[1], pCurve->A, peT[1], pbScratch, cbScratch );    /* T1 := T1 * a  = a*ZZZZ */
+    SymCryptModAdd( FMod, peT[2], peT[1], peT[1], pbScratch, cbScratch );       /* T1 := T2 + T1 = XX + a*ZZZZ */
+    SymCryptModAdd( FMod, peT[2], peT[2], peT[2], pbScratch, cbScratch );       /* T2 := T2 + T2 = 2*XX */
+    SymCryptModAdd( FMod, peT[0], peT[0], peX3, pbScratch, cbScratch );         /* X3 := 2*S */
+    SymCryptModAdd( FMod, peT[2], peT[1], peT[1], pbScratch, cbScratch );       /* T1 := T2 + T1 = 3*XX + a*ZZZZ = M */
 
-    SymCryptModSquare( FMod, peT[2], peT[0], pbScratch, cbScratch );            /* T0 := T2 * T2 = M^2 */
-    SymCryptModSub( FMod, peT[0], peT[1], peT[0], pbScratch, cbScratch );       /* T0 := T0 - T1 = M^2 - S */
-    SymCryptModSub( FMod, peT[0], peT[1], peT[0], pbScratch, cbScratch );       /* T0 := T0 - T1 = M^2 - 2*S = T = X3 */
+    SymCryptModSquare( FMod, peT[1], peT[2], pbScratch, cbScratch );            /* T2 := M^2 */
+    SymCryptModSub( FMod, peT[2], peX3, peX3, pbScratch, cbScratch );           /* X3 := M^2 - 2*S = T */
 
-    SymCryptModSub( FMod, peT[1], peT[0], peT[1], pbScratch, cbScratch );       /* T1 := T1 - T0 = S - T */
-    SymCryptModMul( FMod, peT[2], peT[1], peT[1], pbScratch, cbScratch );       /* T1 := T2 * T1 = M * (S - T) */
-    SymCryptModAdd( FMod, peT[5], peT[5], peT[5], pbScratch, cbScratch );       /* T5 := T5 + T5 = 2*YYYY */
-    SymCryptModAdd( FMod, peT[5], peT[5], peT[5], pbScratch, cbScratch );       /* T5 := T5 + T5 = 4*YYYY */
-    SymCryptModAdd( FMod, peT[5], peT[5], peT[5], pbScratch, cbScratch );       /* T5 := T5 + T5 = 8*YYYY */
-    SymCryptModSub( FMod, peT[1], peT[5], peT[1], pbScratch, cbScratch );       /* T1 := T1 - T5 = M * (S - T) - 8*YYYY = Y3 */
+    SymCryptModSub( FMod, peT[0], peX3, peT[0], pbScratch, cbScratch );         /* T0 := S - T */
+    SymCryptModMul( FMod, peT[1], peT[0], peT[0], pbScratch, cbScratch );       /* T0 := M * (S - T) */
+    SymCryptModSub( FMod, peT[0], peY3, peY3, pbScratch, cbScratch );           /* Y3 := M * (S - T) - 8*YYYY */
+}
 
-    SymCryptModAdd( FMod, peY1, peZ1, peT[2], pbScratch, cbScratch );           /* T2 := Y1 + Z1 */
-    SymCryptModSquare( FMod, peT[2], peT[2], pbScratch, cbScratch );            /* T2 := T2 * T2 = (Y + Z )^2 */
-    SymCryptModSub( FMod, peT[2], peT[3], peT[2], pbScratch, cbScratch );       /* T2 := T2 - T3 = (Y + Z )^2 - YY */
-    SymCryptModSub( FMod, peT[2], peT[4], peT[2], pbScratch, cbScratch );       /* T2 := T2 - T4 = (Y + Z )^2 - YY - ZZ = Z3 */
 
-    // Setting the result
-    SymCryptModElementCopy( FMod, peT[0], SYMCRYPT_INTERNAL_ECPOINT_COORDINATE( 0, pCurve, poDst ) );
-    SymCryptModElementCopy( FMod, peT[1], SYMCRYPT_INTERNAL_ECPOINT_COORDINATE( 1, pCurve, poDst ) );
-    SymCryptModElementCopy( FMod, peT[2], SYMCRYPT_INTERNAL_ECPOINT_COORDINATE( 2, pCurve, poDst ) );
+//
+// based on dbl-2007-bl / dbl-2001-b formulae
+// but tweaked by saml to
+//   a) remove overeager conversions from modular multiplication to modular squaring which introduce 
+//      more addition/subtraction. With current implementations (based on montgomery reduction),
+//      the cost of [a square and an add/sub] is greater than the cost of [a multiplication]
+//   b) share intermediate results of producing 8YYYY. [add/sub] is ~10% of cost of mul, so reducing
+//      count of these operation has a real impact
+//   c) make use of knowledge that curve has a == -3, so M can be calculated more efficiently
+//
+//      2Y = 2*Y1
+//      2YY = 2Y*Y1
+//      4YY = 2*2YY
+//      8YYYY = 2YY*4YY
+//      ZZ = Z1^2
+//      S = X1*4YY
+//      M = 3*(X1+ZZ)*(X1-ZZ) = 3*(XX - ZZZZ)
+//      T = M^2-2*S
+//      X3 = T
+//      Y3 = M*(S-T)-8YYYY
+//      Z3 = 2Y*Z1
+//
+// Total cost:
+//      6 Mul
+//      2 Sqr
+//      2 Add
+//      4 Sub
+//      4 Dbl
+//
+// Special Case:
+//      If the source point is equal to the identity
+//      point of the curve (i.e. Z1 = 0 in Jacobian
+//      coordinates) then the resulting point has
+//      Z3 = Z1*2Y1 = 0. Thus, this formula is
+//      complete (it works for all points).
+//
+VOID
+SYMCRYPT_CALL
+SymCryptShortWeierstrassDoubleSpecializedAm3(
+    _In_    PCSYMCRYPT_ECURVE   pCurve,
+    _In_    PCSYMCRYPT_ECPOINT  poSrc,
+    _Out_   PSYMCRYPT_ECPOINT   poDst,
+            UINT32              flags,
+    _Out_writes_bytes_( cbScratch )
+            PBYTE               pbScratch,
+            SIZE_T              cbScratch )
+{
+    PCSYMCRYPT_MODULUS FMod = pCurve->FMod;
+    PSYMCRYPT_MODELEMENT peT[3] = { 0 };    // Temporaries
+
+    PCSYMCRYPT_MODELEMENT peX1 = SYMCRYPT_INTERNAL_ECPOINT_COORDINATE( 0, pCurve, poSrc );
+    PCSYMCRYPT_MODELEMENT peY1 = SYMCRYPT_INTERNAL_ECPOINT_COORDINATE( 1, pCurve, poSrc );
+    PCSYMCRYPT_MODELEMENT peZ1 = SYMCRYPT_INTERNAL_ECPOINT_COORDINATE( 2, pCurve, poSrc );
+
+    PSYMCRYPT_MODELEMENT  peX3 = SYMCRYPT_INTERNAL_ECPOINT_COORDINATE( 0, pCurve, poDst );
+    PSYMCRYPT_MODELEMENT  peY3 = SYMCRYPT_INTERNAL_ECPOINT_COORDINATE( 1, pCurve, poDst );
+    PSYMCRYPT_MODELEMENT  peZ3 = SYMCRYPT_INTERNAL_ECPOINT_COORDINATE( 2, pCurve, poDst );
+
+    SYMCRYPT_ASSERT( pCurve->type == SYMCRYPT_INTERNAL_ECURVE_TYPE_SHORT_WEIERSTRASS_AM3 );
+    SYMCRYPT_ASSERT( SymCryptEcurveIsSame(pCurve, poSrc->pCurve) && SymCryptEcurveIsSame(pCurve, poDst->pCurve) );
+    SYMCRYPT_ASSERT( cbScratch >= SYMCRYPT_SCRATCH_BYTES_FOR_COMMON_MOD_OPERATIONS( pCurve->FModDigits ) + 3 * pCurve->cbModElement );
+
+    UNREFERENCED_PARAMETER( flags );
+
+    // Creating temporaries
+    for (UINT32 i=0; i<3; i++)
+    {
+        peT[i] = SymCryptModElementCreate(
+                pbScratch,
+                pCurve->cbModElement,
+                FMod );
+
+        SYMCRYPT_ASSERT( peT[i] != NULL);
+
+        pbScratch += pCurve->cbModElement;
+    }
+
+    // Fixing remaining scratch space size
+    cbScratch -= 3*pCurve->cbModElement;
+ 
+    // Calculate the points
+    SymCryptModAdd( FMod, peY1, peY1, peT[0], pbScratch, cbScratch );       /* T0 := Y1 + Y1 = 2Y */
+    SymCryptModSquare( FMod, peZ1, peT[1], pbScratch, cbScratch );          /* T1 := Z1 * Z1 = ZZ */
+    SymCryptModMul( FMod, peY1, peT[0], peY3, pbScratch, cbScratch );       /* Y3 := 2Y * Y1 = 2YY */
+
+    SymCryptModMul( FMod, peT[0], peZ1, peZ3, pbScratch, cbScratch );       /* Z3 := 2Y * Z1 = 2YZ */
+
+    SymCryptModAdd( FMod, peY3, peY3, peT[0], pbScratch, cbScratch );       /* T0 := 2YY + 2YY = 4YY */
+    SymCryptModAdd( FMod, peX1, peT[1], peT[2], pbScratch, cbScratch );     /* T2 := X1 + ZZ */
+    SymCryptModMul( FMod, peT[0], peY3, peY3, pbScratch, cbScratch );       /* Y3 := 2YY * 4YY = 8YYYY */
+
+    SymCryptModSub( FMod, peX1, peT[1], peT[1], pbScratch, cbScratch );     /* T1 := X1 - ZZ */
+    SymCryptModMul( FMod, peT[0], peX1, peT[0], pbScratch, cbScratch );     /* T0 := X1 * 4YY = 4XYY = S */
+
+    SymCryptModMul( FMod, peT[2], peT[1], peT[2], pbScratch, cbScratch );   /* T2 := (X1 + ZZ)*(X1 - ZZ) = XX - ZZZZ */
+    SymCryptModAdd( FMod, peT[2], peT[2], peT[1], pbScratch, cbScratch );   /* T1 := 2*(XX - ZZZZ) */
+    SymCryptModAdd( FMod, peT[0], peT[0], peX3, pbScratch, cbScratch );     /* X3 := 2*S */
+    SymCryptModAdd( FMod, peT[1], peT[2], peT[1], pbScratch, cbScratch );   /* T1 := 3*(XX - ZZZZ) = M */
+
+    SymCryptModSquare( FMod, peT[1], peT[2], pbScratch, cbScratch );        /* T2 := M^2 */
+    SymCryptModSub( FMod, peT[2], peX3, peX3, pbScratch, cbScratch );       /* X3 := M^2 - 2*S = T */
+
+    SymCryptModSub( FMod, peT[0], peX3, peT[0], pbScratch, cbScratch );     /* T0 := S - T */
+    SymCryptModMul( FMod, peT[1], peT[0], peT[0], pbScratch, cbScratch );   /* T0 := M * (S - T) */
+    SymCryptModSub( FMod, peT[0], peY3, peY3, pbScratch, cbScratch );       /* Y3 := M * (S - T) - 8*YYYY */
 }
 
 //
-// add-2007-bl formula:
+// based on add-2007-bl formula
+// but tweaked by saml to
+//      remove overeager conversions from modular multiplication to modular squaring which introduce 
+//      more addition/subtraction.
+//
 //      Z1Z1 = Z1^2
 //      Z2Z2 = Z2^2
 //      U1 = X1*Z2Z2
@@ -466,19 +578,20 @@ SymCryptShortWeierstrassDouble(
 //      S1 = Y1*Z2*Z2Z2
 //      S2 = Y2*Z1*Z1Z1
 //      H = U2-U1
-//      I = (2*H)^2
+//      2H = 2*H
+//      I = (2H)^2
 //      J = H*I
 //      r = 2*(S2-S1)
 //      V = U1*I
 //      X3 = r^2-J-2*V
 //      Y3 = r*(V-X3)-2*S1*J
-//      Z3 = ((Z1+Z2)^2-Z1Z1-Z2Z2)*H
+//      Z3 = (Z1*Z2)*2H
 //
 // Total cost:
-//     11 Mul
-//      5 Sqr
-//      1 Add
-//      9 Sub
+//     12 Mul
+//      4 Sqr
+//      0 Add
+//      7 Sub
 //      3 Dbl
 //
 // Special Case:
@@ -506,14 +619,18 @@ SymCryptShortWeierstrassAddDiffNonZero(
     PCSYMCRYPT_MODELEMENT peY2 = SYMCRYPT_INTERNAL_ECPOINT_COORDINATE( 1, pCurve, poSrc2 );
     PCSYMCRYPT_MODELEMENT peZ2 = SYMCRYPT_INTERNAL_ECPOINT_COORDINATE( 2, pCurve, poSrc2 );
 
-    PSYMCRYPT_MODELEMENT peT[8] = { 0 };  // Temporaries
+    PSYMCRYPT_MODELEMENT  peX3 = SYMCRYPT_INTERNAL_ECPOINT_COORDINATE( 0, pCurve, poDst );
+    PSYMCRYPT_MODELEMENT  peY3 = SYMCRYPT_INTERNAL_ECPOINT_COORDINATE( 1, pCurve, poDst );
+    PSYMCRYPT_MODELEMENT  peZ3 = SYMCRYPT_INTERNAL_ECPOINT_COORDINATE( 2, pCurve, poDst );
 
-    SYMCRYPT_ASSERT( pCurve->type == SYMCRYPT_ECURVE_TYPE_SHORT_WEIERSTRASS );
+    PSYMCRYPT_MODELEMENT peT[7] = { 0 };  // Temporaries
+
+    SYMCRYPT_ASSERT( SYMCRYPT_CURVE_IS_SHORT_WEIERSTRASS_TYPE(pCurve) );
     SYMCRYPT_ASSERT( SymCryptEcurveIsSame(pCurve, poSrc1->pCurve) && SymCryptEcurveIsSame(pCurve, poSrc2->pCurve) && SymCryptEcurveIsSame(pCurve, poDst->pCurve) );
-    SYMCRYPT_ASSERT( cbScratch >= SYMCRYPT_SCRATCH_BYTES_FOR_COMMON_MOD_OPERATIONS( pCurve->FModDigits ) + 8 * pCurve->cbModElement );
+    SYMCRYPT_ASSERT( cbScratch >= SYMCRYPT_SCRATCH_BYTES_FOR_COMMON_MOD_OPERATIONS( pCurve->FModDigits ) + 7 * pCurve->cbModElement );
 
     // Creating temporaries
-    for (UINT32 i=0; i<8; i++)
+    for (UINT32 i=0; i<7; i++)
     {
         peT[i] = SymCryptModElementCreate(
                 pbScratch,
@@ -526,7 +643,7 @@ SymCryptShortWeierstrassAddDiffNonZero(
     }
 
     // Fixing remaining scratch space size
-    cbScratch -= 8*pCurve->cbModElement;
+    cbScratch -= 7*pCurve->cbModElement;
 
     // Calculation
 
@@ -537,39 +654,32 @@ SymCryptShortWeierstrassAddDiffNonZero(
     SymCryptModMul( FMod, peX1, peT[6], peT[2], pbScratch, cbScratch );     /* T2 := X1 * T6 = X1*Z2Z2 = U1 */
     SymCryptModMul( FMod, peX2, peT[0], peT[3], pbScratch, cbScratch );     /* T3 := X2 * Z1Z1 = U2 */
     SymCryptModSub( FMod, peT[3], peT[2], peT[5], pbScratch, cbScratch );   /* T5 := T3 - T2 = U2 - U1 = H */
+    SymCryptModAdd( FMod, peT[5], peT[5], peT[3], pbScratch, cbScratch );   /* T3 := T5 + T5 = 2H */
 
-    SymCryptModAdd( FMod, peZ1, peZ2, peT[4], pbScratch, cbScratch );       /* T4 := Z1 + Z2 */
-    SymCryptModSquare( FMod, peT[4], peT[4], pbScratch, cbScratch );        /* T4 := T4 * T4 = (Z1 + Z2)^2 */
-    SymCryptModSub( FMod, peT[4], peT[0], peT[4], pbScratch, cbScratch );   /* T4 := T4 - Z1Z1 = (Z1 + Z2)^2 - Z1Z1 */
-    SymCryptModSub( FMod, peT[4], peT[6], peT[4], pbScratch, cbScratch );   /* T4 := T4 - T6 = (Z1 + Z2)^2 - Z1Z1 - Z2Z2 */
-    SymCryptModMul( FMod, peT[4], peT[5], peT[4], pbScratch, cbScratch );   /* T4 := T4 * T5 = ((Z1 + Z2)^2 - Z1Z1 - Z2Z2)*H = Z3 */
+    SymCryptModMul( FMod, peZ1, peZ2, peT[4], pbScratch, cbScratch );       /* T4 := Z1 * Z2 */
 
     SymCryptModMul( FMod, peZ2, peT[6], peT[6], pbScratch, cbScratch );     /* T6 := Z2 * T6 = Z2*Z2Z2 */
-    SymCryptModMul( FMod, peY1, peT[6], peT[6], pbScratch, cbScratch );     /* T6 := Y1 * T6 = Y1*Z2*Z2Z2 = S1 */
-    SymCryptModMul( FMod, peY2, peT[1], peT[7], pbScratch, cbScratch );     /* T7 := Y2*Z1*Z1Z1 = S2 */
-    SymCryptModSub( FMod, peT[7], peT[6], peT[7], pbScratch, cbScratch );   /* T7 := T7 - T6 = S2-S1 */
-    SymCryptModAdd( FMod, peT[7], peT[7], peT[7], pbScratch, cbScratch );   /* T7 := T7 + T7 = 2*(S2-S1) = r */
+    SymCryptModMul( FMod, peT[4], peT[3], peZ3, pbScratch, cbScratch );     /* Z3 := T4 * T3 = Z1*Z2*2H */
 
-    SymCryptModAdd( FMod, peT[5], peT[5], peT[3], pbScratch, cbScratch );   /* T3 := T5 + T5 = 2*H */
+    SymCryptModMul( FMod, peY1, peT[6], peT[6], pbScratch, cbScratch );     /* T6 := Y1 * T6 = Y1*Z2*Z2Z2 = S1 */
+    SymCryptModMul( FMod, peY2, peT[1], peT[4], pbScratch, cbScratch );     /* T4 := Y2*Z1*Z1Z1 = S2 */
+    SymCryptModSub( FMod, peT[4], peT[6], peT[4], pbScratch, cbScratch );   /* T4 := T4 - T6 = S2-S1 */
+    SymCryptModAdd( FMod, peT[4], peT[4], peT[4], pbScratch, cbScratch );   /* T4 := T4 + T4 = 2*(S2-S1) = r */
+
     SymCryptModSquare( FMod, peT[3], peT[3], pbScratch, cbScratch );        /* T3 := T3 * T3 = (2*H)^2 = I */
     SymCryptModMul( FMod, peT[3], peT[5], peT[5], pbScratch, cbScratch );   /* T5 := T3 * T5 = H*I = J */
     SymCryptModMul( FMod, peT[2], peT[3], peT[3], pbScratch, cbScratch );   /* T3 := T2 * T3 = U1*I = V */
 
-    SymCryptModSquare( FMod, peT[7], peT[2], pbScratch, cbScratch );        /* T2 := T7 * T7 = r^2 */
+    SymCryptModSquare( FMod, peT[4], peT[2], pbScratch, cbScratch );        /* T2 := T4 * T4 = r^2 */
     SymCryptModSub( FMod, peT[2], peT[5], peT[2], pbScratch, cbScratch );   /* T2 := T2 - T5 = r^2 - J */
     SymCryptModSub( FMod, peT[2], peT[3], peT[2], pbScratch, cbScratch );   /* T2 := T2 - T3 = r^2 - J - V */
-    SymCryptModSub( FMod, peT[2], peT[3], peT[2], pbScratch, cbScratch );   /* T2 := T2 - T3 = r^2 - J - 2*V = X3 */
+    SymCryptModSub( FMod, peT[2], peT[3], peX3, pbScratch, cbScratch );     /* T2 := T2 - T3 = r^2 - J - 2*V = X3 */
 
-    SymCryptModSub( FMod, peT[3], peT[2], peT[3], pbScratch, cbScratch );   /* T3 := T3 - T2 = V - X3 */
-    SymCryptModMul( FMod, peT[3], peT[7], peT[3], pbScratch, cbScratch );   /* T3 := T3 * T7 = r*(V-X3) */
+    SymCryptModSub( FMod, peT[3], peX3, peT[3], pbScratch, cbScratch );     /* T3 := T3 - T2 = V - X3 */
+    SymCryptModMul( FMod, peT[3], peT[4], peT[3], pbScratch, cbScratch );   /* T3 := T3 * T4 = r*(V-X3) */
     SymCryptModMul( FMod, peT[6], peT[5], peT[6], pbScratch, cbScratch );   /* T6 := T6 * T5 = S1*J */
     SymCryptModAdd( FMod, peT[6], peT[6], peT[6], pbScratch, cbScratch );   /* T6 := T6 + T6 = 2*S1*J */
-    SymCryptModSub( FMod, peT[3], peT[6], peT[3], pbScratch, cbScratch );   /* T3 := T6 - T3 = r*(V-X3) - 2*S1*J = Y3 */
-
-    // Setting the result
-    SymCryptModElementCopy( FMod, peT[2], SYMCRYPT_INTERNAL_ECPOINT_COORDINATE( 0, pCurve, poDst ) );
-    SymCryptModElementCopy( FMod, peT[3], SYMCRYPT_INTERNAL_ECPOINT_COORDINATE( 1, pCurve, poDst ) );
-    SymCryptModElementCopy( FMod, peT[4], SYMCRYPT_INTERNAL_ECPOINT_COORDINATE( 2, pCurve, poDst ) );
+    SymCryptModSub( FMod, peT[3], peT[6], peY3, pbScratch, cbScratch );     /* Y3 := T6 - T3 = r*(V-X3) - 2*S1*J */
 }
 
 //
@@ -600,7 +710,7 @@ SymCryptShortWeierstrassAddSideChannelUnsafe(
 
     PSYMCRYPT_MODELEMENT peT[8] = { 0 };  // Temporaries
 
-    SYMCRYPT_ASSERT( pCurve->type == SYMCRYPT_ECURVE_TYPE_SHORT_WEIERSTRASS );
+    SYMCRYPT_ASSERT( SYMCRYPT_CURVE_IS_SHORT_WEIERSTRASS_TYPE(pCurve) );
     SYMCRYPT_ASSERT( SymCryptEcurveIsSame(pCurve, poSrc1->pCurve) && SymCryptEcurveIsSame(pCurve, poSrc2->pCurve) && SymCryptEcurveIsSame(pCurve, poDst->pCurve) );
     SYMCRYPT_ASSERT( cbScratch >= SYMCRYPT_SCRATCH_BYTES_FOR_COMMON_MOD_OPERATIONS( pCurve->FModDigits ) + 8 * pCurve->cbModElement );
 
@@ -735,7 +845,7 @@ SymCryptShortWeierstrassAdd(
     _In_    PCSYMCRYPT_ECPOINT  poSrc1,
     _In_    PCSYMCRYPT_ECPOINT  poSrc2,
     _Out_   PSYMCRYPT_ECPOINT   poDst,
-    _In_    UINT32              flags,
+            UINT32              flags,
     _Out_writes_bytes_( cbScratch )
             PBYTE               pbScratch,
             SIZE_T              cbScratch )
@@ -750,7 +860,7 @@ SymCryptShortWeierstrassAdd(
 
     SIZE_T cbEcpoint = SymCryptSizeofEcpointFromCurve( pCurve );
 
-    SYMCRYPT_ASSERT( pCurve->type == SYMCRYPT_ECURVE_TYPE_SHORT_WEIERSTRASS );
+    SYMCRYPT_ASSERT( SYMCRYPT_CURVE_IS_SHORT_WEIERSTRASS_TYPE(pCurve) );
     SYMCRYPT_ASSERT( SymCryptEcurveIsSame(pCurve, poSrc1->pCurve) && SymCryptEcurveIsSame(pCurve, poSrc2->pCurve) && SymCryptEcurveIsSame(pCurve, poDst->pCurve) );
     SYMCRYPT_ASSERT( cbScratch >= SYMCRYPT_INTERNAL_SCRATCH_BYTES_FOR_COMMON_ECURVE_OPERATIONS( pCurve ) );     // We will need the entire scratch space
 
@@ -762,7 +872,6 @@ SymCryptShortWeierstrassAdd(
     }
     else
     {
-
         // Creating temporary points
         poQ0 = SymCryptEcpointCreate( pbScratch, cbEcpoint, pCurve );
         SYMCRYPT_ASSERT( poQ0 != NULL);
@@ -781,9 +890,9 @@ SymCryptShortWeierstrassAdd(
         dSrcEqual = SymCryptShortWeierstrassIsEqual( pCurve, poSrc1, poSrc2, SYMCRYPT_FLAG_ECPOINT_EQUAL, pbScratch, cbScratch );
 
         // Side-channel safe computations
-        SymCryptShortWeierstrassAddDiffNonZero( pCurve, poSrc1, poSrc2, poQ0, pbScratch, cbScratch );  // This cover the cases where Src1 != Scr2 or Src1 = -Src2
+        SymCryptShortWeierstrassAddDiffNonZero( pCurve, poSrc1, poSrc2, poQ0, pbScratch, cbScratch );   // This covers the cases where Src1 != Src2 or Src1 = -Src2
 
-        SymCryptShortWeierstrassDouble( pCurve, poSrc1, poQ1, 0, pbScratch, cbScratch );
+        SymCryptEcpointDouble( pCurve, poSrc1, poQ1, 0, pbScratch, cbScratch );     // Dispatch to Double function; enables type assertion on SymCryptShortWeierstrassDouble to be specific
         SymCryptEcpointMaskedCopy( pCurve, poQ1, poQ0, dSrcEqual );                                     // (Masked) copy if the points are equal
 
         SymCryptEcpointMaskedCopy( pCurve, poSrc1, poQ0, dSrc2Zero );                                   // (Masked) copy if Src2 = 0
@@ -808,7 +917,7 @@ SymCryptShortWeierstrassNegate(
 
     PSYMCRYPT_MODELEMENT peTmp = NULL;
 
-    SYMCRYPT_ASSERT( pCurve->type == SYMCRYPT_ECURVE_TYPE_SHORT_WEIERSTRASS );
+    SYMCRYPT_ASSERT( SYMCRYPT_CURVE_IS_SHORT_WEIERSTRASS_TYPE(pCurve) );
     SYMCRYPT_ASSERT( SymCryptEcurveIsSame(pCurve, poSrc->pCurve) );
     SYMCRYPT_ASSERT( cbScratch >= SYMCRYPT_SCRATCH_BYTES_FOR_COMMON_MOD_OPERATIONS( pCurve->FModDigits ) + pCurve->cbModElement);
 
