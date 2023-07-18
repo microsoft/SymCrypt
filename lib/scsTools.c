@@ -6,33 +6,13 @@
 
 #include "precomp.h"
 
-// Buffer limits for SymCryptScsRotateBuffer
-#define MIN_BUFFER_SIZE (32)
-
 //
 // This code needs to process data in words, and we'd like to use 32-bit words on 32-bit
-// architectures and 64-bit words on 64-bit architectures.
-// We don't want to use 64-bit words on 32-bit architectures because the 64-bit shift/rotate
-// code might not be constant-time, and it puts further register pressure on the x86 that can only
-// use 6 registers in C code.
+// architectures and 64-bit words on 64-bit architectures. So we use NATIVE_UINT & friends.
 //
-#if SYMCRYPT_CPU_AMD64 | SYMCRYPT_CPU_ARM64
 
-typedef INT64               NATIVE_INT;
-typedef UINT64              NATIVE_UINT;
-#define NATIVE_BITS         (64)
-#define NATIVE_BYTES        (8)
-#define NATIVE_BYTES_2LOG   (3)
-#define NATIVE_01           (0x0101010101010101)
-
-#else
-typedef INT32               NATIVE_INT;
-typedef UINT32              NATIVE_UINT;
-#define NATIVE_BITS         (32)
-#define NATIVE_BYTES        (4)
-#define NATIVE_BYTES_2LOG   (2)
-#define NATIVE_01           (0x01010101)
-#endif
+// Buffer limits for SymCryptScsRotateBuffer
+#define MIN_BUFFER_SIZE (32)
 
 //
 // Masking functions
@@ -250,7 +230,7 @@ SymCryptScsRotateBuffer(
     } while( i > 0 );
 
     // Now that the rotation is word-aligned, we can start our word rotation
-    lshift >>= NATIVE_BYTES_2LOG;           // convert to # words to rotate.
+    lshift >>= NATIVE_BYTES_LOG2;           // convert to # words to rotate.
 
     // We know we have at least 4 words, so we start with a pass do do 4-word rotations
     SYMCRYPT_ASSERT( n >= 4 );

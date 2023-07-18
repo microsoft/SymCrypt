@@ -278,11 +278,11 @@ MUL_FUNCTION_END(SymCryptFdef369RawMulAsm)
 
 MUL_FUNCTION_START(SymCryptFdef369MontgomeryReduceAsm, 3, 13)
 
-        mov     D4, [Q1 + SymCryptModulusNdigitsOffsetAmd64]                   // nDigits
+        mov     D4, [Q1 + SymCryptModulusNdigitsOffsetAmd64]    // nDigits
         inc     D4
-        mov     Q5, [Q1 + SymCryptModulusMontgomeryInv64OffsetAmd64]          // inv64
+        mov     Q5, [Q1 + SymCryptModulusInv64OffsetAmd64]      // inv64
 
-        lea     Q1, [Q1 + SymCryptModulusValueOffsetAmd64]                     // modulus value
+        lea     Q1, [Q1 + SymCryptModulusValueOffsetAmd64]      // modulus value
 
         lea     D12, [D4 + 2*D4]  // outer loop counter, in words
 
@@ -295,7 +295,7 @@ MUL_FUNCTION_START(SymCryptFdef369MontgomeryReduceAsm, 3, 13)
         // Q2 = pSrc (updated in outer loop)
         // Q3 = pDst
         // D4 = nDigits
-        // Q5 = pmMod->tm.montgomery.inv64
+        // Q5 = pmMod->inv64
         // Q6 = multiplier in inner loop
         // Q7 = carry
         // Q8 = carry out from last word of previous loop iteration

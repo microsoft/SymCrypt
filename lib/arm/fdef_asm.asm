@@ -588,7 +588,7 @@ SymCryptFdefRawSquareAsmThirdPass
 ;VOID
 ;SymCryptFdefMontgomeryReduceAsm(
 ;    _In_                            PCSYMCRYPT_MODULUS      pmMod,
-;    _In_                            PUINT32                 pSrc,
+;    _Inout_                         PUINT32                 pSrc,
 ;    _Out_                           PUINT32                 pDst )
 ;
 ; Initial inputs to registers:
@@ -618,11 +618,11 @@ inv64           EQU 12              ; Inv64 of modulus
     PROLOG_PUSH         {r4-r12, lr}
     PROLOG_STACK_ALLOC  16
 
-    str     r2, [sp, #pDst]                                       ; Store pDst in the stack
-    ldr     r3, [r0, #SymCryptModulusNdigitsOffsetArm]            ; # of Digits
-    ldr     r5, [r0, #SymCryptModulusMontgomeryInv64OffsetArm]    ; Inv64 of modulus
-    add     r0, r0, #SymCryptModulusValueOffsetArm                ; pMod
-    str     r5, [sp, #inv64]                                      ; Store inv64 in the stack
+    str     r2, [sp, #pDst]                             ; Store pDst in the stack
+    ldr     r3, [r0, #SymCryptModulusNdigitsOffsetArm]  ; # of Digits
+    ldr     r5, [r0, #SymCryptModulusInv64OffsetArm]    ; Inv64 of modulus
+    add     r0, r0, #SymCryptModulusValueOffsetArm      ; pMod
+    str     r5, [sp, #inv64]                            ; Store inv64 in the stack
 
     lsl     r4, r3, #2                  ; Multiply by 4 to get the number of words
 

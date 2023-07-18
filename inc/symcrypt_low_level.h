@@ -1807,7 +1807,11 @@ SymCryptModDivPow2(
 //      - Src.modulus == Dst.modulus == Mod.
 //      - cbScratch >= SYMCRYPT_SCRATCH_BYTES_FOR_COMMON_MOD_OPERATIONS( Mod.nDigits )
 //
-
+// Remarks:
+//  - The value exp is *** public ***; hence it should be treated as known to the attacker.
+//  - This function may write intermediate values to peDst and read them back, violating the
+//    read-once/write-once rule, so the caller must ensure that the peDst buffer is trusted.
+//
 
 #define SYMCRYPT_SCRATCH_BYTES_FOR_MODINV( _nDigits ) SYMCRYPT_INTERNAL_SCRATCH_BYTES_FOR_MODINV( _nDigits )
 
@@ -1869,7 +1873,7 @@ SymCryptModExp(
 //
 // Remarks:
 //  - The undefined operation 0^0 will return 1.
-//  - The nBitsExp is *** public ***; hence it should be treated as known to the attacker.
+//  - The value nBitsExp is *** public ***; hence it should be treated as known to the attacker.
 //      Examples:
 //          -   nBitsExp = SymCryptIntBitsizeOfObject( piExp ) => This processes all the
 //              bits of the exponent object.

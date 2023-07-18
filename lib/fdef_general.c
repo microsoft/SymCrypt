@@ -939,63 +939,65 @@ SymCryptTestTrialdivisionMaxSmallPrime(
 }
 
 UINT64
-SymCryptInverseMod2e64( UINT64 M )
+SymCryptInverseMod2e64( UINT64 m )
 {
-    // Compute the inv64 value such that inv64 * M = 1 mod 2^64.
+    // Compute the inv64 value such that inv64 * m = 1 mod 2^64 for odd m.
+    // If m is even, there exists no inverse, this function will return a
+    // useless value in constant time.
     //
-    // We use Newton's method that works in general mod p^n
-    // Looking for a zero of f(x) := 1/x - m
-    // we get the iteration formula
-    //  x_{i+1} = x_i - f(x)/f'(x)
-    //          = x_i - (1/x_i - m)/(-1/x_i^2)
+    // We use Newton's method to search for a zero of f(x) := x^-1 - m, working modulo 2^64
+    // We get the iteration formula
+    //  x_{i+1} = x_i - f(x_i)/f'(x_i)
+    //          = x_i - (x_i^-1 - m)/(-x_i^-2)
     //          = x_i + x_i^2(1/x_i - m)
-    //          = x_i + x_i - x_i^2*m
+    //          = x_i + x_i - (x_i^2 * m)
     //          = x_i (2 - x_i*m)
     //
-    // Let x_i = d + 2^n * e where d is the desired answer 1/m mod 2^64 and 2^n * e is the error term that is zero in the n least significant bits.
-    // We have
-    //  x_{i+1} = (d + 2^n * e) (2 - (d + 2^n * e) * m )
-    //          = (d + 2^n * e) (2 - d*m - 2^n * e * m )
-    //          = 2d - d^2*m - 2^n*e*d*m + 2^{n+1}*e - 2^n*e*d*m - 2^{2n}*e*e*m
-    //          = 2d - d - 2^n*e + 2^{n+1}*e - 2^n*e - 2^{2n}*e*e*m
-    //          = d - 2^{2n}*e^2*m
-    // In other words, the error has been squared and multiplied by m. In our case, the number of correct bits on the least significant
-    // side is doubled.
-    // It is easy to see that x = 1/x mod 8 for all odd values of x, so x is a 3-bit correct estimate for 1/x.
-    // Simple inspection shows that 1/x mod 16 can be computed as follows:
-    //  Xinv = X ^ (((X & 0x6) * 6) & 0x8)
-    // Once we have 4 correct bits, we can double that multiple times
+    // Let x_i = d + 2^n * e where d = inv64 = m^-1 mod 2^64, and 2^n * e is the error term that is zero in the n least
+    // significant bits. We have
+    //  x_{i+1} = (d + 2^n * e) (2 - (d + 2^n * e) * m)
+    //          = (d + 2^n * e) (2 - d*m - 2^n * e * m)
+    //          = (d + 2^n * e) (2 - 1 - 2^n * e * m)
+    //          = (d + 2^n * e) (1 - 2^n * e * m)
+    //          = d - (2^n * e * (d*m)) + (2^n * e) - (2^{2n} * e^2 * m)
+    //          = d - (2^{2n} * e^2 * m)
+    // In other words, the error has been squared and multiplied by m. In our case, working modulo 2^64, the number of correct bits
+    // on the least significant side is doubled.
+    //
+    // To get a 4-bit correct estimate for m^-1 given odd m, we consider the least significant 4 bits of m and inv:
+    // m   = ... m_3 m_2 m_1 m_0
+    // inv = ... i_3 i_2 i_1 i_0
+    // We want to directly compute i_[3..0] s.t. (m*inv) & 0xf == 1
+    // working through some simple simultaneous equations it is easily shown that:
+    // i_0 = m_0 = 1
+    // i_1 = m_1
+    // i_2 = m_2
+    // i_3 = m_1 ^ m_2 ^ m_3
+    // Once we have 4 correct bits, we can double that multiple times using Newton's method.
+    //
     // We use 32-bit operations for most of the iterations for speed on 32-bit platforms.
     //
     UINT32 inv32;
     UINT64 inv64;
-    UINT32 M32;
+    UINT32 m32;
 
-    M32 = (UINT32)M;
+    m32 = (UINT32)m;
 
-    inv32 = M32;
-	// dcl - I am not sure I see the value in this assert -
-	// The multiplication will occur as 32 bits, and may overflow. Except for the constraint that inv32 == M32,
-	// We can produce any 32-bit value from (2^32-1) * (2^32-1) = 2^64 - 2^33 + 1 by truncation.
-	// Possibly there is some constraint on M such that this cannot occur, but this is not apparent, or documented.
-	// Did you perhaps intend to do the multiplication as 64-bit?
-    SYMCRYPT_ASSERT( ((inv32 * M32) & 0x7) == 1 );
+    inv32 = m32 ^ (((m32 - 1) * 0x6) & 0x8); // sets inv32 bits [3..0]
+    SYMCRYPT_ASSERT( ((m&1) == 0) || (((inv32 * m32) & 0xf) == 1) );
 
-    inv32 = inv32 ^ (((inv32 & 0x6) * 0x6) & 0x8);
-    SYMCRYPT_ASSERT( ((inv32 * M32) & 0xf) == 1 );
+    inv32 = inv32 * (2 - inv32 * m32 );
+    SYMCRYPT_ASSERT( ((m&1) == 0) || (((inv32 * m32) & 0xff) == 1) );
 
-    inv32 = inv32 * (2 - inv32 * M32 );
-    SYMCRYPT_ASSERT( ((inv32 * M32) & 0xff) == 1 );
+    inv32 = inv32 * (2 - inv32 * m32 );
+    SYMCRYPT_ASSERT( ((m&1) == 0) || (((inv32 * m32) & 0xffff) == 1) );
 
-    inv32 = inv32 * (2 - inv32 * M32 );
-    SYMCRYPT_ASSERT( ((inv32 * M32) & 0xffff) == 1 );
-
-    inv32 = inv32 * (2 - inv32 * M32 );
-    SYMCRYPT_ASSERT( ((inv32 * M32) & 0xffffffff) == 1 );
+    inv32 = inv32 * (2 - inv32 * m32 );
+    SYMCRYPT_ASSERT( ((m&1) == 0) || ((inv32 * m32) == 1) );
 
     inv64 = inv32;
-    inv64 = inv64 * (2 - inv64 * M );
-    SYMCRYPT_ASSERT( (inv64 * M) == 1 );
+    inv64 = inv64 * (2 - inv64 * m );
+    SYMCRYPT_ASSERT( ((m&1) == 0) || ((inv64 * m) == 1) );
 
     return inv64;
 }

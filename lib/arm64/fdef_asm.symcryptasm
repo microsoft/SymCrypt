@@ -739,7 +739,7 @@ ALTERNATE_ENTRY(ARM64EC_NAME_MANGLE(SymCryptFdefModMulMontgomery256AsmInternal))
 
     eor     X_14, X_14, X_14
 
-    ldr     X_7, [X_0, #SymCryptModulusMontgomeryInv64OffsetArm64]
+    ldr     X_7, [X_0, #SymCryptModulusInv64OffsetArm64]
     mul     X_8, X_9, X_7           // K = R0 * Inv64
 
     add     X_0, X_0, #SymCryptModulusValueOffsetArm64
@@ -1256,9 +1256,9 @@ FUNCTION_END(ARM64EC_NAME_MANGLE(SymCryptFdefModSquareMontgomeryP384Asm))
 
 FUNCTION_START(ARM64EC_NAME_MANGLE(SymCryptFdefMontgomeryReduceAsm), 3, 18)
 
-    ldr     W_3, [X_0, #SymCryptModulusNdigitsOffsetArm64]          // # of Digits
-    ldr     X_5, [X_0, #SymCryptModulusMontgomeryInv64OffsetArm64]  // Inv64 of modulus
-    add     X_0, X_0, #SymCryptModulusValueOffsetArm64              // pMod
+    ldr     W_3, [X_0, #SymCryptModulusNdigitsOffsetArm64]  // # of Digits
+    ldr     X_5, [X_0, #SymCryptModulusInv64OffsetArm64]    // Inv64 of modulus
+    add     X_0, X_0, #SymCryptModulusValueOffsetArm64      // pMod
 
     lsl     X_4, X_3, #2                // Multiply by 4 to get the number of words
 
@@ -1407,5 +1407,160 @@ LABEL(SymCryptFdefMontgomeryReduceMaskedCopyAsmLoop)
     // Done, no return value
 
 FUNCTION_END(ARM64EC_NAME_MANGLE(SymCryptFdefMontgomeryReduceAsm))
+
+MACRO_START(MULADD_LOADSTORE18, pS, pM, pD, K, Tc, T0, T1, T2, T3, T4, T5)
+    // Tc:D[3:0] = (M[3:0] * K) + S[3:0] + Tc
+    //
+    // QH = K
+    // T0..T5 = scratch
+    // Tc is carry in at start and carry out at end (in [0,2^64-1])
+
+    // Tc:T[5:2] = S[3:0] + (K * M odd) + Tc
+    ldp     T2, T3, [pS]        // load S[0], S[1]
+    adds    T2, T2, Tc
+
+    ldr     T0, [pM, #8]
+    mul     T1,  K, T0
+    adcs    T3, T3, T1
+    umulh   T0,  K, T0
+    ldp     T4, T5, [pS, #16]   // load S[2], S[3]
+    adcs    T4, T4, T0
+
+    ldr     T0, [pM, #24]
+    mul     T1,  K, T0
+    adcs    T5, T5, T1
+    umulh   Tc,  K, T0
+    adc     Tc, Tc, XZR
+
+    // Tc:D[3:0] = Tc:T[5:2] + (K * M even)
+    ldr     T0, [pM]
+    mul     T1,  K, T0
+    adds    T2, T2, T1
+    umulh   T0,  K, T0
+    adcs    T3, T3, T0
+    stp     T2, T3, [pD]        // store D[0], D[1]
+
+    ldr     T0, [pM, #16]
+    mul     T1,  K, T0
+    adcs    T4, T4, T1
+    umulh   T0,  K, T0
+    adcs    T5, T5, T0
+    stp     T4, T5, [pD, #16]   // store D[2], D[3]
+
+    adc     Tc, Tc, XZR
+MACRO_END()
+
+MACRO_START(SHIFTRIGHT2, pD, index, shrVal, shrMask, shlVal, Tcin, Tcout, T0, T1)
+    // T0:Tcout = D[index + 1:index]
+    // D[index + 1] = Tcin:T0 >> shrVal (== ((T0>>shrVal)&shrMask) | (Tcin<<shlVal))
+    // D[index] = T0:Tcout >> shrVal
+    //
+    // shrVal in [1,64]
+    // shrMask = (shrVal == 64) ? 0 : -1
+    // shlVal = 64-shrVal
+    // 
+    // T0, T1 = scratch
+    // Value of Tcin is bits to shift in the top at start
+    // Value of Tcout is bits to shift into next macro invocation at end
+
+    ldp     Tcout, T0, [pD, #(index*8)]
+
+    lsr     T1, T0, shrVal
+    lsl     Tcin, Tcin, shlVal
+    and     T1, T1, shrMask
+    orr     T1, T1, Tcin
+
+    lsr     Tcin, Tcout, shrVal
+    lsl     T0, T0, shlVal
+    and     Tcin, Tcin, shrMask
+    orr     Tcin, Tcin, T0
+
+    stp     Tcin, T1, [pD, #(index*8)]
+MACRO_END()
+
+//VOID
+//SYMCRYPT_CALL
+//SymCryptFdefModDivSmallPow2Asm(
+//    _In_                            PCSYMCRYPT_MODULUS      pmMod,
+//    _In_                            PCSYMCRYPT_MODELEMENT   peSrc,
+//    _In_range_(1, 64)               UINT32                  exp,
+//    _Out_                           PSYMCRYPT_MODELEMENT    peDst );
+
+FUNCTION_START(ARM64EC_NAME_MANGLE(SymCryptFdefModDivSmallPow2Asm), 4, 14)
+    ldr     X_7, [X_1]
+    ldr     X_5, [X_0, #SymCryptModulusInv64OffsetArm64]    // Inv64 of modulus
+
+    mul     X_7, X_7, X_5   // <63:0> bits of pSrc[0]*Inv64
+                            // this is the multiple of the modulus that must be added to peSrc
+                            // s.t. the least significant **64** bits are all zero
+
+    // Form bitmask to mask out bottom exp bits from multiplication result
+    mov     X_6, #-1
+    neg     X_5, X_2
+    lsr     X_6, X_6, X_5   // mask = -1 >> (-exp % 64)
+                            //      = 0xffffffffffffffff >> (64-exp)
+                            //      = (((UINT65)1)<<exp)-1
+
+    and     X_7, X_7, X_6   // Extract the least significant exp bits from X_7 to produce K
+                            // K is the minimal multiple of the modulus that when added to peSrc
+                            // sets the least significant **exp** bits to zero
+
+    ldr     W_4, [X_0, #SymCryptModulusNdigitsOffsetArm64]  // # of Digits, used directly as loop counter
+    add     X_5, X_0, #SymCryptModulusValueOffsetArm64      // pointer to modulus value
+
+    eor     X_6, X_6, X_6   // zero one word carry
+
+LABEL(SymCryptFdefModDivSmallPow2AsmMulAddLoop)
+    // Set peDst = peSrc + (K * mod)
+    // Also has up to 64b of carry out the top which is stored in Q7 at the end of the loop
+    //
+    // W_4  loop ctr (one iteration per digit)
+    // X_7  K
+    // X_1  running pointer peSrc inner loop (we directly modify X_1 as we only need to read peSrc once)
+    // X_5  running pointer pMod inner loop
+    // X_3  running pointer peDst inner loop (we directly modify X_3 as we read/write peDst in reverse in second loop)
+    // X_6  one word carry
+    // X_8..X_13 scratch
+
+    MULADD_LOADSTORE18 X_1, X_5, X_3, X_7, X_6, X_8, X_9, X10, X_11, X_12, X_13
+
+    // Move on to the next digit
+    add     X_1, X_1, #32
+    add     X_5, X_5, #32
+    add     X_3, X_3, #32
+
+    sub     W_4, W_4, #1
+    cbnz    W_4, SymCryptFdefModDivSmallPow2AsmMulAddLoop
+
+    ldr     W_0, [X_0, #SymCryptModulusNdigitsOffsetArm64]  // # of Digits, used directly as loop counter
+    mov     X_1, #64
+    subs    X_1, X_1, X_2   // shlVal = 64-exp
+    csetm   X_4, ne         // shrMask = ((exp != 64) ? -1 : 0) = ((exp == 64) ? 0 : -1)
+
+    sub     X_3, X_3, #32  // X_3 points to the most significant digit of peDst
+
+LABEL(SymCryptFdefModDivSmallPow2AsmShiftRightLoop)
+    // Set peDst = peDst >> exp
+    // We work backwards (from MSB to LSB) so we avoid having to do special handling of the one word
+    // carry out of the top of the multiply add loop
+    //
+    // W_0  loop ctr (one iteration per digit)
+    // X_1  shlVal
+    // X_4  shrMask
+    // X_2  shrVal
+    // X_3  running pointer peDst inner loop (decreasing)
+    // X_6  one word carry even
+    // X_7  one word carry odd
+    // X_8, X_9 scratch
+
+    SHIFTRIGHT2 X_3, 2, X_2, X_4, X_1, X_6, X_7, X_8, X_9
+    SHIFTRIGHT2 X_3, 0, X_2, X_4, X_1, X_7, X_6, X_8, X_9
+        
+    sub     X_3, X_3, #32
+
+    sub     W_0, W_0, #1
+    cbnz    W_0, SymCryptFdefModDivSmallPow2AsmShiftRightLoop
+
+FUNCTION_END(ARM64EC_NAME_MANGLE(SymCryptFdefModDivSmallPow2Asm))
 
     FILE_END()

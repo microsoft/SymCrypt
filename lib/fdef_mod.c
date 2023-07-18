@@ -395,6 +395,10 @@ SymCryptFdefIntToModulus(
 
     pmDst->type = SymCryptFdefDecideModulusType( piSrc, pmDst->nDigits, averageOperations, flags );
 
+    // Set inv64 - note the value is only valid if the modulus is odd, but the computation
+    // is constant time regardless of the parity, so we can safely compute it in all cases
+    pmDst->inv64 = 0 - SymCryptInverseMod2e64( SymCryptIntGetValueLsbits64(piSrc) );
+
     SYMCRYPT_MOD_CALL( pmDst ) modulusInit( pmDst, pbScratch, cbScratch );
 }
 
@@ -788,13 +792,11 @@ SymCryptFdefModSetRandomGeneric(
 
 VOID
 SYMCRYPT_CALL
-SymCryptFdefModDivPow2(
-    _In_                            PCSYMCRYPT_MODULUS      pmMod,
-    _In_                            PCSYMCRYPT_MODELEMENT   peSrc,
-                                    UINT32                  exp,
-    _Out_                           PSYMCRYPT_MODELEMENT    peDst,
-    _Out_writes_bytes_( cbScratch ) PBYTE                   pbScratch,
-                                    SIZE_T                  cbScratch )
+SymCryptFdefModDivSmallPow2Generic(
+    _In_                        PCSYMCRYPT_MODULUS      pmMod,
+    _In_                        PCSYMCRYPT_MODELEMENT   peSrc,
+    _In_range_(1, NATIVE_BITS)  UINT32                  exp,
+    _Out_                       PSYMCRYPT_MODELEMENT    peDst)
 {
     UINT32 nDigits = pmMod->nDigits;
     UINT32 mask;
@@ -803,19 +805,11 @@ SymCryptFdefModDivPow2(
     UINT32 i;
     PCUINT32 pMod = SYMCRYPT_FDEF_INT_PUINT32( &pmMod->Divisor.Int );
 
-    SymCryptFdefClaimScratch( pbScratch, cbScratch, SYMCRYPT_SCRATCH_BYTES_FOR_COMMON_MOD_OPERATIONS( nDigits ) );
-
     // mod must be odd
     SYMCRYPT_ASSERT( (pMod[0] & 1) != 0 );
+    SYMCRYPT_ASSERT( (exp >= 1) && (exp <= NATIVE_BITS) );
 
-    if( exp > 1 && peSrc != peDst)
-    {
-        // If more than one bit, we copy to the destination and work in a loop in-place.
-        memcpy( &peDst->d.uint32[0], &peSrc->d.uint32[0], nDigits * SYMCRYPT_FDEF_DIGIT_SIZE );
-        peSrc = peDst;
-    }
-
-    while( exp > 0 )
+    do
     {
         mask = (UINT32)0 - (peSrc->d.uint32[0] & 1);
 
@@ -838,9 +832,76 @@ SymCryptFdefModDivPow2(
         peDst->d.uint32[i-1] = (UINT32)( u >> 1 );
 
         exp -= 1;
+
+        // First iteration reads from peSrc and writes to peDst
+        // subsequent iterations must read from and write to peDst
+        peSrc = peDst;
+    } while (exp > 0);
+}
+
+VOID
+SYMCRYPT_CALL
+SymCryptFdefModDivSmallPow2(
+    _In_                        PCSYMCRYPT_MODULUS      pmMod,
+    _In_                        PCSYMCRYPT_MODELEMENT   peSrc,
+    _In_range_(1, NATIVE_BITS)  UINT32                  exp,
+    _Out_                       PSYMCRYPT_MODELEMENT    peDst )
+{
+    
+#if SYMCRYPT_CPU_AMD64
+    if( SYMCRYPT_CPU_FEATURES_PRESENT( SYMCRYPT_CPU_FEATURES_FOR_MULX ) )
+    {
+        SymCryptFdefModDivSmallPow2Mulx( pmMod, peSrc, exp, peDst );
+    }
+    else
+    {
+        // Currently SymCryptAsm does not support AMD64 functions with shl/shr/shrd
+        // by a variable count, as this needs special handling of the rcx (cl) register
+        // For now we just fallback to the generic implementation on machines without MULX
+        SymCryptFdefModDivSmallPow2Generic( pmMod, peSrc, exp, peDst );
+    }
+#elif SYMCRYPT_CPU_ARM64
+    SymCryptFdefModDivSmallPow2Asm( pmMod, peSrc, exp, peDst );
+#else
+    SymCryptFdefModDivSmallPow2Generic( pmMod, peSrc, exp, peDst );
+#endif
+}
+
+VOID
+SYMCRYPT_CALL
+SymCryptFdefModDivPow2(
+    _In_                            PCSYMCRYPT_MODULUS      pmMod,
+    _In_                            PCSYMCRYPT_MODELEMENT   peSrc,
+                                    UINT32                  exp,
+    _Out_                           PSYMCRYPT_MODELEMENT    peDst,
+    _Out_writes_bytes_( cbScratch ) PBYTE                   pbScratch,
+                                    SIZE_T                  cbScratch )
+{
+    UINT32 shiftAmount;
+
+    UNREFERENCED_PARAMETER(pbScratch);
+    UNREFERENCED_PARAMETER(cbScratch);
+
+    // mod must be odd
+    SYMCRYPT_ASSERT( (SYMCRYPT_FDEF_INT_PUINT32(&pmMod->Divisor.Int)[0] & 1) != 0 );
+
+    if( exp == 0 )
+    {
+        // If exp is 0 we just need to copy peSrc to peDst
+        SymCryptFdefModElementCopy( pmMod, peSrc, peDst );
+        return;
     }
 
-    return;
+    do
+    {
+        shiftAmount = SYMCRYPT_MIN(NATIVE_BITS, exp);
+        SymCryptFdefModDivSmallPow2( pmMod, peSrc, shiftAmount, peDst );
+        exp -= shiftAmount;
+
+        // First iteration reads from peSrc and writes to peDst
+        // subsequent iterations must read from and write to peDst
+        peSrc = peDst;
+    } while( exp > 0 );
 }
 
 VOID
@@ -1027,7 +1088,7 @@ SymCryptFdefModInvGeneric(
         {
             trailingZeros = SymCryptCountTrailingZeros32( leastSignificantUint32 );
             SymCryptIntDivPow2( piA, trailingZeros, piA );
-            SymCryptModDivPow2( pmMod, peVa, trailingZeros, peVa, pbScratch, cbScratch );
+            SymCryptFdefModDivSmallPow2( pmMod, peVa, trailingZeros, peVa );
             leastSignificantUint32 = SymCryptIntGetValueLsbits32(piA);
         }
 
@@ -1098,19 +1159,12 @@ SymCryptFdefModulusInitMontgomeryInternal(
     PUINT32 pR2;
     UINT32  cbR2;
     UINT32 nDigits;
-    PCUINT32 pMvalue;
 
-    UINT64 M64;
-    UINT32 M32;
     PUINT32 modR2;
     PUINT32 negDivisor;
 
     nDigits = pmMod->nDigits;
-    pMvalue = SYMCRYPT_FDEF_INT_PUINT32( &pmMod->Divisor.Int );
     modR2 = (PUINT32)((PBYTE)&pmMod->Divisor + SymCryptFdefSizeofDivisorFromDigits( nDigits ));
-
-    M32 = pMvalue[0];
-    M64 = M32 | ((UINT64)pMvalue[1] << 32);
 
     SYMCRYPT_ASSERT_ASYM_ALIGNED( pbScratch );
 
@@ -1129,8 +1183,6 @@ SymCryptFdefModulusInitMontgomeryInternal(
     pR2[ 2 * nUint32Used ] = 1;
     SymCryptFdefRawDivMod( pR2, 2*nDigits + 1, &pmMod->Divisor, NULL, modR2, pbScratch + cbR2, cbScratch - cbR2 );
 
-    pmMod->tm.montgomery.inv64 = 0 - SymCryptInverseMod2e64( M64 );
-
     SymCryptFdefRawNeg( SYMCRYPT_FDEF_INT_PUINT32( &pmMod->Divisor.Int ), 0, negDivisor, nDigits );
 }
 
@@ -1146,9 +1198,9 @@ SymCryptFdefModulusInitMontgomery(
 
 VOID
 SymCryptFdefMontgomeryReduceC(
-    _In_                                                            PCSYMCRYPT_MODULUS  pmMod,
-    _In_reads_( 2 * pmMod->nDigits * SYMCRYPT_FDEF_DIGIT_NUINT32 )  PUINT32             pSrc,
-    _Out_writes_( pmMod->nDigits * SYMCRYPT_FDEF_DIGIT_NUINT32 )    PUINT32             pDst )
+    _In_                                                                PCSYMCRYPT_MODULUS  pmMod,
+    _Inout_updates_( 2 * pmMod->nDigits * SYMCRYPT_FDEF_DIGIT_NUINT32 ) PUINT32             pSrc,
+    _Out_writes_( pmMod->nDigits * SYMCRYPT_FDEF_DIGIT_NUINT32 )        PUINT32             pDst )
 {
     UINT32 nDigits = pmMod->nDigits;
     UINT32 nWords = nDigits * SYMCRYPT_FDEF_DIGIT_NUINT32;
@@ -1157,7 +1209,7 @@ SymCryptFdefMontgomeryReduceC(
     UINT32 hc = 0;
     for( UINT32 i=0; i<nWords; i++ )
     {
-        UINT32 m = (UINT32)pmMod->tm.montgomery.inv64 * pSrc[0];
+        UINT32 m = (UINT32)pmMod->inv64 * pSrc[0];
         UINT64 c = 0;
         for( UINT32 j = 0; j < nWords; j++ )
         {
@@ -1185,9 +1237,9 @@ SymCryptFdefMontgomeryReduceC(
 
 VOID
 SymCryptFdefMontgomeryReduce(
-    _In_                                                            PCSYMCRYPT_MODULUS  pmMod,
-    _In_reads_( pmMod->nDigits * SYMCRYPT_FDEF_DIGIT_NUINT32 )      PUINT32             pSrc,
-    _Out_writes_( pmMod->nDigits * SYMCRYPT_FDEF_DIGIT_NUINT32 )    PUINT32             pDst )
+    _In_                                                                PCSYMCRYPT_MODULUS  pmMod,
+    _Inout_updates_( 2 * pmMod->nDigits * SYMCRYPT_FDEF_DIGIT_NUINT32 ) PUINT32             pSrc,
+    _Out_writes_( pmMod->nDigits * SYMCRYPT_FDEF_DIGIT_NUINT32 )        PUINT32             pDst )
 {
 #if SYMCRYPT_CPU_AMD64
     if( SYMCRYPT_CPU_FEATURES_PRESENT( SYMCRYPT_CPU_FEATURES_FOR_MULX ) )

@@ -3,6 +3,10 @@
 //
 // Copyright (c) Microsoft Corporation. Licensed under the MIT license.
 //
+// Internal definitions for the symcrypt library.
+// This include file is used only for the files inside the library, not by
+// the code that calls the library.
+//
 
 
 //#define SYMCRYPT_DISABLE_CFG
@@ -37,6 +41,29 @@ typedef int                 BOOL;
 #endif
 
 //
+// We want to write some of our code to use the native register size provided by the platform we are using to enable
+// generic code to compile into reasonable performant versions on 32b and 64b platforms. Below definitions give us
+// this flexibility without relying on compiler specifics.
+//
+// WARNING: Some use of NATIVE_UINT also relies on the little-endianness of the 64b platform; our generic code normally
+// uses UINT32, and at the time of writing mixing UINT32 and NATIVE_UINT will not work on a big-endian 64b platform!
+//
+#if SYMCRYPT_CPU_AMD64 | SYMCRYPT_CPU_ARM64
+typedef INT64               NATIVE_INT;
+typedef UINT64              NATIVE_UINT;
+#define NATIVE_BITS         (64)
+#define NATIVE_BYTES        (8)
+#define NATIVE_BYTES_LOG2   (3)
+#else
+typedef INT32               NATIVE_INT;
+typedef UINT32              NATIVE_UINT;
+#define NATIVE_BITS         (32)
+#define NATIVE_BYTES        (4)
+#define NATIVE_BYTES_LOG2   (2)
+#endif
+
+
+//
 // Our Wipe code uses FORCE_WRITE* which are implemented using
 // WriteNoFence* functions. Unfortunately, they declare their parameter
 // to be interlocked, and the compiler complains when we also access the variable
@@ -51,12 +78,6 @@ typedef int                 BOOL;
 #pragma warning( disable: 4296 )        // expression is always false - this warning is forced to be an error by a
                                         // pragma in the SDK warning.h, but we don't consider it useful
 
-
-//
-// Internal definitions for the symcrypt library.
-// This include file is used only for the files inside the library, not by
-// the code that calls the library.
-//
 
 //
 // These macros allow a bunch of generic code to be written.
@@ -1800,9 +1821,6 @@ extern const BYTE SymCryptSha512KATAnswer[64];
 #define SYMCRYPT_ASSERT_ASYM_ALIGNED( _p )           SYMCRYPT_ASSERT( ((ULONG_PTR)(_p) & (SYMCRYPT_ASYM_ALIGN_VALUE - 1)) == 0 );
 
 
-//typedef const UINT32 * PCUINT32;
-
-
 #define SYMCRYPT_FDEF_DIGIT_NUINT32             ((UINT32)(SYMCRYPT_FDEF_DIGIT_SIZE / sizeof( UINT32 ) ))
 
 #define SYMCRYPT_OBJ_NDIGITS( _p )              ((_p)->nDigits)
@@ -3140,6 +3158,30 @@ SymCryptFdefModDivPow2(
     _Out_writes_bytes_( cbScratch ) PBYTE                   pbScratch,
                                     SIZE_T                  cbScratch );
 
+VOID
+SYMCRYPT_CALL
+SymCryptFdefModDivSmallPow2(
+    _In_                        PCSYMCRYPT_MODULUS      pmMod,
+    _In_                        PCSYMCRYPT_MODELEMENT   peSrc,
+    _In_range_(1, NATIVE_BITS)  UINT32                  exp,
+    _Out_                       PSYMCRYPT_MODELEMENT    peDst );
+
+VOID
+SYMCRYPT_CALL
+SymCryptFdefModDivSmallPow2Asm(
+    _In_                        PCSYMCRYPT_MODULUS      pmMod,
+    _In_                        PCSYMCRYPT_MODELEMENT   peSrc,
+    _In_range_(1, NATIVE_BITS)  UINT32                  exp,
+    _Out_                       PSYMCRYPT_MODELEMENT    peDst );
+
+VOID
+SYMCRYPT_CALL
+SymCryptFdefModDivSmallPow2Mulx(
+    _In_                        PCSYMCRYPT_MODULUS      pmMod,
+    _In_                        PCSYMCRYPT_MODELEMENT   peSrc,
+    _In_range_(1, NATIVE_BITS)  UINT32                  exp,
+    _Out_                       PSYMCRYPT_MODELEMENT    peDst );
+
 SYMCRYPT_ERROR
 SYMCRYPT_CALL
 SymCryptFdefModInvGeneric(
@@ -3386,7 +3428,7 @@ SYMCRYPT_CALL
 SymCryptFdefMontgomeryReduceMulx1024(
     _In_                            PCSYMCRYPT_MODULUS      pmMod,
     _Inout_                         PUINT32                 pSrc,
-    _Out_                           PUINT32                 pDst);
+    _Out_                           PUINT32                 pDst );
 
 
 //=====================================================
@@ -4002,7 +4044,7 @@ SYMCRYPT_CALL
 SymCryptFdefFreeTrialDivisionContext( PCSYMCRYPT_TRIALDIVISION_CONTEXT pContext );
 
 UINT64
-SymCryptInverseMod2e64( UINT64 v );
+SymCryptInverseMod2e64( UINT64 m );
 
 
 //--------------------------------------------------------

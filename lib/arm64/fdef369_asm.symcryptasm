@@ -317,9 +317,9 @@ FUNCTION_END(ARM64EC_NAME_MANGLE(SymCryptFdef369RawMulAsm))
 
 FUNCTION_START(ARM64EC_NAME_MANGLE(SymCryptFdef369MontgomeryReduceAsm), 3, 18)
 
-    ldr     W_3, [X_0, #SymCryptModulusNdigitsOffsetArm64]          // # of Digits
-    ldr     X_5, [X_0, #SymCryptModulusMontgomeryInv64OffsetArm64]  // Inv64 of modulus
-    add     X_0, X_0, #SymCryptModulusValueOffsetArm64              // pMod
+    ldr     W_3, [X_0, #SymCryptModulusNdigitsOffsetArm64]  // # of Digits
+    ldr     X_5, [X_0, #SymCryptModulusInv64OffsetArm64]    // Inv64 of modulus
+    add     X_0, X_0, #SymCryptModulusValueOffsetArm64      // pMod
 
     add     X_4, X_3, X_3, LSL #1       // Calculate word count (X_3 * 3)
 

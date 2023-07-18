@@ -17,6 +17,8 @@ add_library(symcrypt_generic_linux SHARED ${SOURCES})
 # Link jitterentropy and libatomic
 target_link_libraries(symcrypt_generic_linux ${CMAKE_SOURCE_DIR}/3rdparty/jitterentropy-library/libjitterentropy.a pthread atomic)
 
+add_dependencies(symcrypt_generic_linux jitterentropy_lib)
+
 set(TARGET_NAME symcrypt_generic_linux)
 set(OUTPUT_DIR ${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/generic)
 

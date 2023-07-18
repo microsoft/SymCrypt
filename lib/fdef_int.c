@@ -444,6 +444,26 @@ cleanup:
     ;
 }
 
+// In shift-based operations which we have no assembly for, and we'd like to use 32-bit words
+// on 32-bit architectures and 64-bit words on 64-bit architectures. So we use NATIVE_UINT &
+// friends.
+
+// Note that accessing the FDEF uint32 array as an array of NATIVE_UINTs relies on
+// the little-endianness of the target if NATIVE_UINT is larger than 32 bits.
+// AMD64 is little endian and ARM64 code is always expected to execute in little
+// endian mode, but this is not true in general for an arbitrary 64 bit platform.
+//
+// If we need to support a 64 bit big endian platform, we need to either
+// restrict its NATIVE_UINT to 32 bits, or introduce load and store macros.
+#define SYMCRYPT_FDEF_INT_PNATIVE_UINT(p) ((NATIVE_UINT*) SYMCRYPT_FDEF_INT_PUINT32( p ))
+// Ensure that sizeof(NATIVE_UINT) > 4 only when compiling for known little endian target
+C_ASSERT( (NATIVE_BYTES <= 4) || SYMCRYPT_CPU_AMD64 || SYMCRYPT_CPU_ARM64 );
+
+#define SYMCRYPT_FDEF_DIGIT_NNATIVE_UINT  ((NATIVE_UINT)(SYMCRYPT_FDEF_DIGIT_SIZE / NATIVE_BYTES))
+
+// Ensure that digit is divisible by native word size!
+C_ASSERT(SYMCRYPT_FDEF_DIGIT_NNATIVE_UINT * NATIVE_BYTES == SYMCRYPT_FDEF_DIGIT_SIZE);
+
 VOID
 SYMCRYPT_CALL
 SymCryptFdefIntDivPow2(
@@ -451,39 +471,39 @@ SymCryptFdefIntDivPow2(
             SIZE_T          exp,
     _Out_   PSYMCRYPT_INT   piDst )
 {
-    SIZE_T  shiftWords = exp / (8 * sizeof( UINT32 ) );
-    SIZE_T  shiftBits  = exp % (8 * sizeof( UINT32 ) );
+    SIZE_T  shiftWords = exp / NATIVE_BITS;
+    SIZE_T  shiftRightBits  = exp % NATIVE_BITS;
+    SIZE_T  shiftLeftBits   = (NATIVE_BITS-1) - shiftRightBits;
+    NATIVE_UINT lowWord, highWord, highPart;
+    SIZE_T i = 0;
 
-    UINT32  nWords = piDst->nDigits * SYMCRYPT_FDEF_DIGIT_NUINT32;
+    NATIVE_UINT nWords = piDst->nDigits * SYMCRYPT_FDEF_DIGIT_NNATIVE_UINT;
 
     SYMCRYPT_ASSERT( piSrc->nDigits == piDst->nDigits );
 
-    if( shiftWords >= nWords )
+    shiftWords = SYMCRYPT_MIN(shiftWords, nWords);
+    if( shiftWords < nWords )
     {
-        SymCryptWipe( SYMCRYPT_FDEF_INT_PUINT32( piDst ), nWords * sizeof( UINT32 ) );
-        goto cleanup;
-    }
-
-    SIZE_T i = 0;
-    while( i < nWords - shiftWords )
-    {
-        UINT64 t = SYMCRYPT_FDEF_INT_PUINT32( piSrc )[i + shiftWords ];
-        if( i  + shiftWords + 1 < nWords )
+        lowWord = SYMCRYPT_FDEF_INT_PNATIVE_UINT(piSrc)[shiftWords];
+        while( i+shiftWords+1 < nWords )
         {
-            t |= (UINT64)SYMCRYPT_FDEF_INT_PUINT32( piSrc )[i + shiftWords + 1] << 32;
+            highWord = SYMCRYPT_FDEF_INT_PNATIVE_UINT(piSrc)[i+shiftWords+1];
+
+            // We always shift highWord left by 1 to keep variable shiftLeftBits in range [0,NATIVE_BITS-1]
+            highPart = (highWord << shiftLeftBits)<<1;
+
+            SYMCRYPT_FDEF_INT_PNATIVE_UINT(piDst)[i] = (lowWord >> shiftRightBits) | highPart;
+
+            lowWord = highWord;
+            i++;
         }
-        SYMCRYPT_FDEF_INT_PUINT32( piDst )[i] = (UINT32)(t >> shiftBits);
+        SYMCRYPT_FDEF_INT_PNATIVE_UINT(piDst)[i] = (lowWord >> shiftRightBits);
         i++;
     }
 
-    while( i < nWords )
-    {
-        SYMCRYPT_FDEF_INT_PUINT32( piDst )[i] = 0;
-        i++;
-    }
+    SYMCRYPT_ASSERT(i + shiftWords == nWords);
 
-cleanup:
-    ;
+    SymCryptWipe( &SYMCRYPT_FDEF_INT_PNATIVE_UINT( piDst )[nWords-shiftWords], shiftWords * NATIVE_BYTES );
 }
 
 VOID
@@ -493,29 +513,25 @@ SymCryptFdefIntShr1(
     _In_    PCSYMCRYPT_INT  piSrc,
     _Out_   PSYMCRYPT_INT   piDst )
 {
-    UINT32  nWords = piDst->nDigits * SYMCRYPT_FDEF_DIGIT_NUINT32;
-
-    UINT32  t;
+    UINT32  nWords = piDst->nDigits * SYMCRYPT_FDEF_DIGIT_NNATIVE_UINT;
 
     SYMCRYPT_ASSERT( piSrc->nDigits == piDst->nDigits );
     SYMCRYPT_ASSERT( highestBit < 2 );
 
     SIZE_T i = 0;
-    while( i < nWords )
+    NATIVE_UINT lowWord = SYMCRYPT_FDEF_INT_PNATIVE_UINT(piSrc)[0];
+    NATIVE_UINT highWord = 0;
+    while( i+1 < nWords )
     {
-        t = SYMCRYPT_FDEF_INT_PUINT32( piSrc )[i] >> 1;
-        if( i + 1 < nWords )
-        {
-            t |= (SYMCRYPT_FDEF_INT_PUINT32( piSrc )[i + 1] << 31);
-        }
-        else
-        {
-            t |= (highestBit << 31);
-        }
-        SYMCRYPT_FDEF_INT_PUINT32( piDst )[i] = t;
+        highWord = SYMCRYPT_FDEF_INT_PNATIVE_UINT(piSrc)[i+1];
+
+        SYMCRYPT_FDEF_INT_PNATIVE_UINT(piDst)[i] = (lowWord >> 1) | (highWord << (NATIVE_BITS - 1));
+
+        lowWord = highWord;
         i++;
     }
-
+    
+    SYMCRYPT_FDEF_INT_PNATIVE_UINT(piDst)[i] = (lowWord >> 1) | ((NATIVE_UINT)highestBit) << (NATIVE_BITS - 1);
 }
 
 VOID

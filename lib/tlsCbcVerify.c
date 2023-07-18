@@ -8,27 +8,19 @@
 
 //
 // This code needs to process data in words, and we'd like to use 32-bit words on 32-bit
-// architectures and 64-bit words on 64-bit architectures.
+// architectures and 64-bit words on 64-bit architectures. So we use NATIVE_UINT & friends.
+//
 // We don't want to use 64-bit words on 32-bit architectures because the 64-bit shift/rotate
 // code might not be constant-time, and it puts further register pressure on the x86 that can only
 // use 6 registers in C code.
 //
-#if SYMCRYPT_CPU_AMD64 | SYMCRYPT_CPU_ARM64
 
-typedef INT64               NATIVE_INT;
-typedef UINT64              NATIVE_UINT;
-#define NATIVE_BITS         (64)
-#define NATIVE_BYTES        (8)
-#define NATIVE_BYTES_2LOG   (3)
-#define NATIVE_01           (0x0101010101010101)
-
+#if NATIVE_BYTES == 8
+#define NATIVE_01   (0x0101010101010101)
+#elif NATIVE_BYTES == 4
+#define NATIVE_01   (0x01010101)
 #else
-typedef INT32               NATIVE_INT;
-typedef UINT32              NATIVE_UINT;
-#define NATIVE_BITS         (32)
-#define NATIVE_BYTES        (4)
-#define NATIVE_BYTES_2LOG   (2)
-#define NATIVE_01           (0x01010101)
+#error Unexpected NATIVE_BYTES value
 #endif
 
 //

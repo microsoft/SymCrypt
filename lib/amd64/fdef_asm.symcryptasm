@@ -645,15 +645,15 @@ MUL_FUNCTION_END(SymCryptFdefRawSquareAsm)
 //VOID
 //SymCryptFdefMontgomeryReduceAsm(
 //    _In_                            PCSYMCRYPT_MODULUS      pmMod,
-//    _In_                            PUINT32                 pSrc,
+//    _Inout_                         PUINT32                 pSrc,
 //    _Out_                           PUINT32                 pDst )
 
 MUL_FUNCTION_START(SymCryptFdefMontgomeryReduceAsm, 3, 14)
 
-        mov     D4, [Q1 + SymCryptModulusNdigitsOffsetAmd64]            // nDigits
-        mov     Q5, [Q1 + SymCryptModulusMontgomeryInv64OffsetAmd64]    // inv64
+        mov     D4, [Q1 + SymCryptModulusNdigitsOffsetAmd64]    // nDigits
+        mov     Q5, [Q1 + SymCryptModulusInv64OffsetAmd64]      // inv64
 
-        lea     Q1, [Q1 + SymCryptModulusValueOffsetAmd64]              // modulus value
+        lea     Q1, [Q1 + SymCryptModulusValueOffsetAmd64]      // modulus value
 
         mov     D13, D4         // outer loop counter
         shl     D13, 3          // D13 is in words
@@ -667,7 +667,7 @@ MUL_FUNCTION_START(SymCryptFdefMontgomeryReduceAsm, 3, 14)
         // Q2 = pSrc (updated in outer loop)
         // Q3 = pDst
         // D4 = nDigits
-        // Q5 = pmMod->tm.montgomery.inv64
+        // Q5 = pmMod->inv64
         // Q6 = multiplier in inner loop
         // Q7 = carry for even words (64 bits)
         // Q8 = carry for odd words (64 bits)
@@ -1017,7 +1017,7 @@ ALTERNATE_ENTRY(SymCryptFdefMontgomeryReduce256AsmInternal)
         //   Q1 = pmMod
         //   Q4 = pDst
 
-        mov     Q3, [Q1 + SymCryptModulusMontgomeryInv64OffsetAmd64]      // inv64
+        mov     Q3, [Q1 + SymCryptModulusInv64OffsetAmd64]      // inv64
         add     Q1, SymCryptModulusValueOffsetAmd64
 
         mov     Q5, Q6
@@ -1084,7 +1084,7 @@ MUL_FUNCTION_END(SymCryptFdefModMulMontgomery256Asm)
 //SYMCRYPT_CALL
 //SymCryptFdefMontgomeryReduce256Asm(
 //    _In_                            PCSYMCRYPT_MODULUS      pmMod,
-//    _In_                            PUINT32                 pSrc,
+//    _Inout_                         PUINT32                 pSrc,
 //    _Out_                           PUINT32                 pDst )
 
 // Note we specify 4 arguments so that our prolog matches SymCryptFdefModMulMontgomery256Asm
@@ -1504,15 +1504,15 @@ MUL_FUNCTION_END(SymCryptFdefRawSquare512Asm)
 //VOID
 //SymCryptFdefMontgomeryReduce512Asm(
 //    _In_                            PCSYMCRYPT_MODULUS      pmMod,
-//    _In_                            PUINT32                 pSrc,
+//    _Inout_                         PUINT32                 pSrc,
 //    _Out_                           PUINT32                 pDst )
 
 MUL_FUNCTION_START(SymCryptFdefMontgomeryReduce512Asm, 3, 13)
 
-        mov     D4, [Q1 + SymCryptModulusNdigitsOffsetAmd64]                   // nDigits
-        mov     Q5, [Q1 + SymCryptModulusMontgomeryInv64OffsetAmd64]           // inv64
+        mov     D4, [Q1 + SymCryptModulusNdigitsOffsetAmd64]            // nDigits
+        mov     Q5, [Q1 + SymCryptModulusInv64OffsetAmd64]              // inv64
 
-        lea     Q1, [Q1 + SymCryptModulusValueOffsetAmd64]                     // modulus value
+        lea     Q1, [Q1 + SymCryptModulusValueOffsetAmd64]              // modulus value
 
         mov     D12, D4         // outer loop counter
         shl     D12, 3          // D12 is in words
@@ -1526,7 +1526,7 @@ MUL_FUNCTION_START(SymCryptFdefMontgomeryReduce512Asm, 3, 13)
         // Q2 = pSrc (updated in outer loop)
         // Q3 = pDst
         // D4 = nDigits
-        // Q5 = pmMod->tm.montgomery.inv64
+        // Q5 = pmMod->inv64
         // Q6 = multiplier in inner loop
         // Q7 = carry for even words (64 bits)
         // Q8 = carry for odd words (64 bits)
@@ -1992,15 +1992,15 @@ MUL_FUNCTION_END(SymCryptFdefRawSquare1024Asm)
 //VOID
 //SymCryptFdefMontgomeryReduce1024Asm(
 //    _In_                            PCSYMCRYPT_MODULUS      pmMod,
-//    _In_                            PUINT32                 pSrc,
+//    _Inout_                         PUINT32                 pSrc,
 //    _Out_                           PUINT32                 pDst )
 
 MUL_FUNCTION_START(SymCryptFdefMontgomeryReduce1024Asm, 3, 13)
 
-        mov     D4, [Q1 + SymCryptModulusNdigitsOffsetAmd64]                    // nDigits
-        mov     Q5, [Q1 + SymCryptModulusMontgomeryInv64OffsetAmd64]            // inv64
+        mov     D4, [Q1 + SymCryptModulusNdigitsOffsetAmd64]    // nDigits
+        mov     Q5, [Q1 + SymCryptModulusInv64OffsetAmd64]      // inv64
 
-        lea     Q1, [Q1 + SymCryptModulusValueOffsetAmd64]                      // modulus value
+        lea     Q1, [Q1 + SymCryptModulusValueOffsetAmd64]      // modulus value
 
         mov     D12, D4         // outer loop counter
         shl     D12, 3          // D12 is in words
@@ -2014,7 +2014,7 @@ MUL_FUNCTION_START(SymCryptFdefMontgomeryReduce1024Asm, 3, 13)
         // Q2 = pSrc (updated in outer loop)
         // Q3 = pDst
         // D4 = nDigits
-        // Q5 = pmMod->tm.montgomery.inv64
+        // Q5 = pmMod->inv64
         // Q6 = multiplier in inner loop
         // Q7 = carry for even words (64 bits)
         // Q8 = carry for odd words (64 bits)

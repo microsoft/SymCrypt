@@ -468,7 +468,7 @@ SymCryptFdefRawMulAsmLoop2:
 ;VOID
 ;SymCryptFdefMontgomeryReduceAsm(
 ;    _In_                            PCSYMCRYPT_MODULUS      pmMod,
-;    _In_                            PUINT32                 pSrc,
+;    _Inout_                         PUINT32                 pSrc,
 ;    _Out_                           PUINT32                 pDst )
 
 SymCryptFdefMontgomeryReduceAsmFrame struct 4, NONUNIQUE
@@ -519,7 +519,7 @@ SymCryptFdefMontgomeryReduceOuterLoop:
         ; ebp = <undef>
 
         ; compute multiplier for this outer loop iteration.
-        mov     ebx, [esi - SymCryptModulusValueOffsetX86 + SymCryptModulusMontgomeryInv64OffsetX86 ]
+        mov     ebx, [esi - SymCryptModulusValueOffsetX86 + SymCryptModulusInv64OffsetX86 ]
         imul    ebx, [edi]              ; word we want to zero out, ebx = multiplier for this inner loop
 
         mov     ecx, [esi - SymCryptModulusValueOffsetX86 + SymCryptModulusNdigitsOffsetX86]        ; ecx = nDigits

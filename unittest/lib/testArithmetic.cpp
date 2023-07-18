@@ -602,7 +602,7 @@ ArithInt::setRandom()
         // First we construct the input buffer.
         // Most of the time we use one that will fit, sometimes we make it too big.
         // To generate corner cases, the numbers we generate are random, low-Hamming weight,
-        // somtimes inverted (for high Hamming weight)
+        // sometimes inverted (for high Hamming weight)
         //
         rand = g_rng.byte();
 
@@ -2890,11 +2890,18 @@ testModDivPow2()
     UINT32 c;
 
     pDst->checkValue();
-    // Pick an exponent, heavilly weighted to small values
-    exp = 1;
+    // Pick an exponent, heavily weighted to small values
+    exp = 0;
     while( exp < 128 && (g_rng.byte() & 1) == 0 )
     {
         exp++;
+    }
+
+    // Test shift right greater than native word size 1/8th of the time
+    // This exercises masking logic in architecture specific SymCryptFdefModDivSmallPow2 implementations
+    if( (g_rng.byte() & 7) == 0 )
+    {
+        exp += 64;
     }
 
     SymCryptModDivPow2( pMod->m_pScModulus, pSrc->m_pScModElement, exp, pDst->m_pScModElement, g_scratch, SYMCRYPT_SCRATCH_BYTES_FOR_COMMON_MOD_OPERATIONS( nD ) );

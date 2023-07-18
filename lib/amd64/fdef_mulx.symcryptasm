@@ -589,7 +589,7 @@ MUL_FUNCTION_END(SymCryptFdefRawSquareMulx)
 // SYMCRYPT_CALL
 // SymCryptFdefMontgomeryReduceMulx(
 //     _In_                            PCSYMCRYPT_MODULUS      pmMod,
-//     _In_                            PUINT32                 pSrc,
+//     _Inout_                         PUINT32                 pSrc,
 //     _Out_                           PUINT32                 pDst )
 MUL_FUNCTION_START(SymCryptFdefMontgomeryReduceMulx, 3, 14)
 
@@ -617,9 +617,9 @@ SymCryptFdefMontgomeryReduceMulxOuterLoop:
         mov     Q12, [Q2 + 6 * 8]
         mov     Q13, [Q2 + 7 * 8]
 
-        mov     Q3, [Q1 + SymCryptModulusMontgomeryInv64OffsetAmd64]            // inv64
+        mov     Q3, [Q1 + SymCryptModulusInv64OffsetAmd64]      // inv64
         mov     D4, [Q1 + SymCryptModulusNdigitsOffsetAmd64]
-        lea     Q1, [Q1 + SymCryptModulusValueOffsetAmd64]                      // modulus value
+        lea     Q1, [Q1 + SymCryptModulusValueOffsetAmd64]      // modulus value
 
         // Q2 = value to reduce
         // Q6 - Q13 = Q2[0..7]
@@ -828,6 +828,179 @@ SymCryptFdefMontgomeryReduceMulxMaskedCopyLoop:
 
 MUL_FUNCTION_END(SymCryptFdefMontgomeryReduceMulx)
 
+MACRO_START(MULADD_LOADSTORE18, pS, pM, pD, QH, Tc, T0, T1)
+    // Tc:D[7:0] = (M[7:0] * K) + S[7:0] + Tc
+    //
+    // QH = K
+    // T0, T1 = scratch
+    // Tc is carry in at start and carry out at end (in [0,2^64-1])
+
+    xor     T0, T0 // clear flags
+
+    mulx    T1, T0, [pM + 0 * 8]
+    adox    T0, Tc
+    adcx    T0, [pS + 0 * 8]
+    mov     [pD + 0 * 8], T0
+
+    mulx    Tc, T0, [pM + 1 * 8]
+    adox    T0, T1
+    adcx    T0, [pS + 1 * 8]
+    mov     [pD + 1 * 8], T0
+
+    mulx    T1, T0, [pM + 2 * 8]
+    adox    T0, Tc
+    adcx    T0, [pS + 2 * 8]
+    mov     [pD + 2 * 8], T0
+
+    mulx    Tc, T0, [pM + 3 * 8]
+    adox    T0, T1
+    adcx    T0, [pS + 3 * 8]
+    mov     [pD + 3 * 8], T0
+
+    mulx    T1, T0, [pM + 4 * 8]
+    adox    T0, Tc
+    adcx    T0, [pS + 4 * 8]
+    mov     [pD + 4 * 8], T0
+
+    mulx    Tc, T0, [pM + 5 * 8]
+    adox    T0, T1
+    adcx    T0, [pS + 5 * 8]
+    mov     [pD + 5 * 8], T0
+
+    mulx    T1, T0, [pM + 6 * 8]
+    adox    T0, Tc
+    adcx    T0, [pS + 6 * 8]
+    mov     [pD + 6 * 8], T0
+
+    mulx    Tc, T0, [pM + 7 * 8]
+    adox    T0, T1
+    adcx    T0, [pS + 7 * 8]
+    mov     [pD + 7 * 8], T0
+
+    mov     T1, 0
+    adox    Tc, T1 // cannot overflow
+    adcx    Tc, T1 // cannot overflow
+MACRO_END()
+
+MACRO_START(SHIFTRIGHT2, pD, index, shrVal, shrMask, shlVal, Tc, T0, T1)
+    // T0 = D[index + 1]
+    // D[index + 1] = Tc:T0 >> shrVal (== ((T0>>shrVal)&shrMask) | (Tc<<shlVal))
+    // Tc = D[index]
+    // D[index] = T0:Tc >> shrVal
+    //
+    // shrVal in [1,64]
+    // shrMask = (shrVal==64) ? 0 : -1
+    // shlVal = 64-shrVal
+    //
+    // T0, T1 = scratch
+    // Value of Tc is bits to shift in the top at start, and bits to shift
+    // into next macro invocation at end
+
+    mov     T0, [pD + ((index+1)*8)]
+    shrx    T1, T0, shrVal
+    shlx    Tc, Tc, shlVal
+    and     T1, shrMask
+    or      T1, Tc
+    mov     [pD + ((index+1)*8)], T1
+
+    mov     Tc, [pD + (index*8)]
+    shrx    T1, Tc, shrVal
+    shlx    T0, T0, shlVal
+    and     T1, shrMask
+    or      T1, T0
+    mov     [pD + (index*8)], T1
+MACRO_END()
+
+//VOID
+//SYMCRYPT_CALL
+//SymCryptFdefModDivSmallPow2Mulx(
+//    _In_                            PCSYMCRYPT_MODULUS      pmMod,
+//    _In_                            PCSYMCRYPT_MODELEMENT   peSrc,
+//    _In_range_(1, 64)               UINT32                  exp,
+//    _Out_                           PSYMCRYPT_MODELEMENT    peDst );
+
+MUL_FUNCTION_START(SymCryptFdefModDivSmallPow2Mulx, 4, 9)
+
+        mov     Q7, [Q2]
+        mov     QH, [Q1 + SymCryptModulusInv64OffsetAmd64]      // inv64
+
+        imul    QH, Q7  // QH = inv64 * peSrc[0]
+                        // this is the multiple of the modulus that must be added to peSrc
+                        // s.t. the least significant **64** bits are all zero
+
+        // Form bitmask to mask out bottom exp bits from multiplication result
+        xor     D0, D0
+        mov     Q7, -1
+        sub     D0, D3
+        shrx    Q7, Q7, Q0      // mask = -1 >> (-exp % 64)
+                                //      = 0xffffffffffffffff >> (64-exp)
+                                //      = (((UINT65)1)<<exp)-1
+
+        and     QH, Q7          // Extract the least significant exp bits from QH to produce K
+                                // K is the minimal multiple of the modulus that when added to peSrc
+                                // sets the least significant **exp** bits to zero
+
+        mov     D0, [Q1 + SymCryptModulusNdigitsOffsetAmd64]            // numDigits, used directly as loop counter
+        lea     Q5, [Q1 + SymCryptModulusValueOffsetAmd64]              // pointer to modulus value
+
+        xor     Q6, Q6 // zero one word carry
+
+SymCryptFdefModDivSmallPow2MulxMulAddLoop:
+        // Set peDst = peSrc + (K * mod)
+        // Also has up to 64b of carry out the top which is stored in Q6 at the end of the loop
+        //
+        // D0   loop ctr (one iteration per digit)
+        // QH   K
+        // Q2   running pointer peSrc inner loop (we directly modify Q2 as we only need to read peSrc once)
+        // Q5   running pointer pMod inner loop
+        // Q4   running pointer peDst inner loop (we directly modify Q4 as we read/write peDst in reverse in second loop)
+        // Q6   one word carry
+        // Q7, Q8 scratch
+
+        MULADD_LOADSTORE18 Q2, Q5, Q4, QH, Q6, Q7, Q8
+
+        // Move on to the next digit
+        add     Q2, 64
+        add     Q5, 64
+        add     Q4, 64
+
+        dec     D0
+        jnz     SymCryptFdefModDivSmallPow2MulxMulAddLoop
+
+        mov     D0, [Q1 + SymCryptModulusNdigitsOffsetAmd64]            // numDigits, used directly as loop counter
+        mov     D1, 64
+        xor     Q7, Q7
+        sub     D1, D3  // shlVal (also sets ZF iff exp == 64)
+        mov     Q2, -1
+        cmovz   Q2, Q7  // shrMask = ((exp == 64) ? 0 : -1)
+
+        sub     Q4, 64  // Q4 points to the most significant digit of peDst
+
+SymCryptFdefModDivSmallPow2MulxShiftRightLoop:
+        // Set peDst = peDst >> exp
+        // We work backwards (from MSB to LSB) so we avoid having to do special handling of the one word
+        // carry out of the top of the multiply add loop
+        //
+        // D0   loop ctr (one iteration per digit)
+        // Q1   shlVal
+        // Q2   shrMask
+        // Q3   shrVal
+        // Q4   running pointer peDst inner loop (decreasing)
+        // Q6   one word carry
+        // Q7, Q8 scratch
+
+        SHIFTRIGHT2 Q4, 6, Q3, Q2, Q1, Q6, Q7, Q8
+        SHIFTRIGHT2 Q4, 4, Q3, Q2, Q1, Q6, Q7, Q8
+        SHIFTRIGHT2 Q4, 2, Q3, Q2, Q1, Q6, Q7, Q8
+        SHIFTRIGHT2 Q4, 0, Q3, Q2, Q1, Q6, Q7, Q8
+        
+        sub     Q4, 64
+
+        dec     D0
+        jnz     SymCryptFdefModDivSmallPow2MulxShiftRightLoop
+
+MUL_FUNCTION_END(SymCryptFdefModDivSmallPow2Mulx)
+
 // --------------------------------
 // 256-bit size specific functions
 // --------------------------------
@@ -942,7 +1115,7 @@ MACRO_START(MUL_AND_MONTGOMERY_REDUCE14_INTERLEAVE, T0, T1, QH, pA, Aoff, pB, pM
     mov     QH, K       // now use K as a temporary while T1 has the value to add to R5
 
     mulx    K, T0, [pM + 0*8]
-    adcx    R0, T0
+    adcx    R0, T0      // sets R0 to 0
     adox    R1, K
 
     mulx    K, T0, [pM + 1*8]
@@ -957,7 +1130,6 @@ MACRO_START(MUL_AND_MONTGOMERY_REDUCE14_INTERLEAVE, T0, T1, QH, pA, Aoff, pB, pM
     adcx    R3, T0
     adox    R4, K       // This may overflow
 
-    mov     R0, 0
     adcx    R4, R0      // This may overflow
     adox    R5, R0      // R5 in range [0, 3]
 
@@ -966,7 +1138,7 @@ MACRO_START(MUL_AND_MONTGOMERY_REDUCE14_INTERLEAVE, T0, T1, QH, pA, Aoff, pB, pM
     adc     R0, R0
 
     mov     K, R1
-    imul    K, [pM - SymCryptModulusValueOffsetAmd64 + SymCryptModulusMontgomeryInv64OffsetAmd64]
+    imul    K, [pM - SymCryptModulusValueOffsetAmd64 + SymCryptModulusInv64OffsetAmd64]
 MACRO_END()
 
 //VOID
@@ -1030,7 +1202,7 @@ ALTERNATE_ENTRY(SymCryptFdefModMulMontgomeryMulx256AsmInternal)
 
         // Compute K for reducing Multiplication result
         mov     Q12, Q6
-        imul    Q12, [Q1 + SymCryptModulusMontgomeryInv64OffsetAmd64]
+        imul    Q12, [Q1 + SymCryptModulusInv64OffsetAmd64]
         add     Q1, SymCryptModulusValueOffsetAmd64
 
         MUL_AND_MONTGOMERY_REDUCE14_INTERLEAVE Q0, Q5, QH, Q2,  8, Q3, Q1, Q12, Q6, Q7, Q8, Q9, Q10, Q11
@@ -1062,7 +1234,7 @@ ALTERNATE_ENTRY(SymCryptFdefModMulMontgomeryMulx256AsmInternal)
         adcx    Q7, Q0      // This may overflow
         adox    Q8, Q0
 
-        adcx    Q8, Q0
+        adc     Q8, Q0
 
         // Montgomery-reduced multiplication value in (Q10, Q11, Q6, Q7, Q8), and it is less than 2*Modulus
         // Compute value + (-Mod) into (Q0, Q2, Q3, Q5), Cy = inverted subtraction borrow
@@ -1327,7 +1499,7 @@ MACRO_START(MONT16_P384, T0, T1, QH, pM, N4, R0, R1, R2, R3, R4, R5, R6, R7)
     //
 
     mov     QH, R0
-    imul    QH, [pM - SymCryptModulusValueOffsetAmd64 + SymCryptModulusMontgomeryInv64OffsetAmd64]
+    imul    QH, [pM - SymCryptModulusValueOffsetAmd64 + SymCryptModulusInv64OffsetAmd64]
 
     add     N4, -1
     sbb     R3, QH
@@ -1734,7 +1906,7 @@ SymCryptFdefMontgomeryReduceMulx1024OuterLoop:
         mov     Q12, [Q2 + 6 * 8]
         mov     Q13, [Q2 + 7 * 8]
 
-        mov     Q3, [Q1 - SymCryptModulusValueOffsetAmd64 + SymCryptModulusMontgomeryInv64OffsetAmd64]            // inv64
+        mov     Q3, [Q1 - SymCryptModulusValueOffsetAmd64 + SymCryptModulusInv64OffsetAmd64]    // inv64
 
         // Q2 = value to reduce
         // Q6 - Q13 = Q2[0..7]
@@ -2260,7 +2432,7 @@ MACRO_START(MUL_AND_MONTGOMERY_REDUCE16_INTERLEAVE, T0, T1, QH, pA, Aoff, pB, pM
     adc     R0, R0
 
     mov     K, R1
-    imul    K, [pM - SymCryptModulusValueOffsetAmd64 + SymCryptModulusMontgomeryInv64OffsetAmd64]
+    imul    K, [pM - SymCryptModulusValueOffsetAmd64 + SymCryptModulusInv64OffsetAmd64]
 MACRO_END()
 
 #if defined(SYMCRYPT_MASM)
@@ -2315,7 +2487,7 @@ ALTERNATE_ENTRY(SymCryptFdefModMulMontgomeryMulx384AsmInternal)
 
         // Compute K for reducing Multiplication result
         mov     Q4, Q6
-        imul    Q4, [Q1 + SymCryptModulusMontgomeryInv64OffsetAmd64]
+        imul    Q4, [Q1 + SymCryptModulusInv64OffsetAmd64]
         add     Q1, SymCryptModulusValueOffsetAmd64
 
         MUL_AND_MONTGOMERY_REDUCE16_INTERLEAVE Q0, Q5, QH, Q2,  8, Q3, Q1, Q4, Q6, Q7, Q8, Q9, Q10, Q11, Q12, Q13

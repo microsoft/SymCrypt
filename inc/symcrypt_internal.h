@@ -2122,11 +2122,11 @@ SYMCRYPT_ASYM_ALIGN_STRUCT _SYMCRYPT_MODULUS {
 
                                                     UINT32  flags;          // The flag the modulus was created with
                                                     UINT32  cbModElement;   // size of one modElement
+                                                    UINT64  inv64;          // -1/modulus mod 2^64 (always set but only to a useful value when the modulus is odd)
 
     SYMCRYPT_MAGIC_FIELD
     union{
         struct {
-            UINT64          inv64;          // 1/modulus mod 2^64
             //UINT32          nUint32Used;    // # 32-bit words used in representing numbers. modulus < 2^{32*nUint32Used}.
                                             // only values used are nDigits * uint32-per-digit or specific smaller values for optimized implementations
             PCUINT32        Rsqr;           // R^2 mod modulus, in uint32 form, nUint32Used words. Stored after Divisor. R = 2^{32*nUint32Used}

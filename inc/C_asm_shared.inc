@@ -21,20 +21,20 @@
 #endif
 
 SET(SymCryptModulusNdigitsOffsetAmd64,          4);
-SET(SymCryptModulusMontgomeryInv64OffsetAmd64,  32);
+SET(SymCryptModulusInv64OffsetAmd64,            24);
 SET(SymCryptModulusValueOffsetAmd64,            128);
 SET(SymCryptNegDivisorSingleDigitOffsetAmd64,   256);
 
 SET(SymCryptModulusNdigitsOffsetX86,            4);
-SET(SymCryptModulusMontgomeryInv64OffsetX86,    24);
+SET(SymCryptModulusInv64OffsetX86,              24);
 SET(SymCryptModulusValueOffsetX86,              96);
 
 SET(SymCryptModulusNdigitsOffsetArm64,          4);
-SET(SymCryptModulusMontgomeryInv64OffsetArm64,  32);
+SET(SymCryptModulusInv64OffsetArm64,            24);
 SET(SymCryptModulusValueOffsetArm64,            128);
 
 SET(SymCryptModulusNdigitsOffsetArm,            4);
-SET(SymCryptModulusMontgomeryInv64OffsetArm,    24);
+SET(SymCryptModulusInv64OffsetArm,              24);
 SET(SymCryptModulusValueOffsetArm,              96);
 
 #if !defined(SYMCRYPT_MASM) && !defined(SYMCRYPT_GAS)
@@ -45,26 +45,26 @@ SET(SymCryptModulusValueOffsetArm,              96);
 #if SYMCRYPT_CPU_AMD64
 #define SYMCRYPT_CHECK_ASM_OFFSETS \
     SYMCRYPT_CHECK_ASM_OFFSET( SymCryptModulusNdigitsOffsetAmd64, SYMCRYPT_FIELD_OFFSET( SYMCRYPT_MODULUS, nDigits ) );\
-    SYMCRYPT_CHECK_ASM_OFFSET( SymCryptModulusMontgomeryInv64OffsetAmd64, SYMCRYPT_FIELD_OFFSET( SYMCRYPT_MODULUS, tm.montgomery.inv64 ));\
+    SYMCRYPT_CHECK_ASM_OFFSET( SymCryptModulusInv64OffsetAmd64, SYMCRYPT_FIELD_OFFSET( SYMCRYPT_MODULUS, inv64 ));\
     SYMCRYPT_CHECK_ASM_OFFSET( SymCryptModulusValueOffsetAmd64, SYMCRYPT_FIELD_OFFSET( SYMCRYPT_MODULUS, Divisor.Int.ti.fdef.uint32 ));\
     SYMCRYPT_CHECK_ASM_OFFSET( SymCryptNegDivisorSingleDigitOffsetAmd64, SYMCRYPT_FIELD_OFFSET( SYMCRYPT_MODULUS, Divisor.Int.ti.fdef.uint32 ) + (2*SYMCRYPT_FDEF_DIGIT_SIZE) );\
 
 #elif SYMCRYPT_CPU_X86
 #define SYMCRYPT_CHECK_ASM_OFFSETS \
     SYMCRYPT_CHECK_ASM_OFFSET( SymCryptModulusNdigitsOffsetX86, SYMCRYPT_FIELD_OFFSET( SYMCRYPT_MODULUS, nDigits ) );\
-    SYMCRYPT_CHECK_ASM_OFFSET( SymCryptModulusMontgomeryInv64OffsetX86, SYMCRYPT_FIELD_OFFSET( SYMCRYPT_MODULUS, tm.montgomery.inv64 ));\
+    SYMCRYPT_CHECK_ASM_OFFSET( SymCryptModulusInv64OffsetX86, SYMCRYPT_FIELD_OFFSET( SYMCRYPT_MODULUS, inv64 ));\
     SYMCRYPT_CHECK_ASM_OFFSET( SymCryptModulusValueOffsetX86, SYMCRYPT_FIELD_OFFSET( SYMCRYPT_MODULUS, Divisor.Int.ti.fdef.uint32 ));\
 
 #elif SYMCRYPT_CPU_ARM64
 #define SYMCRYPT_CHECK_ASM_OFFSETS \
     SYMCRYPT_CHECK_ASM_OFFSET( SymCryptModulusNdigitsOffsetArm64, SYMCRYPT_FIELD_OFFSET( SYMCRYPT_MODULUS, nDigits ) );\
-    SYMCRYPT_CHECK_ASM_OFFSET( SymCryptModulusMontgomeryInv64OffsetArm64, SYMCRYPT_FIELD_OFFSET( SYMCRYPT_MODULUS, tm.montgomery.inv64 ));\
+    SYMCRYPT_CHECK_ASM_OFFSET( SymCryptModulusInv64OffsetArm64, SYMCRYPT_FIELD_OFFSET( SYMCRYPT_MODULUS, inv64 ));\
     SYMCRYPT_CHECK_ASM_OFFSET( SymCryptModulusValueOffsetArm64, SYMCRYPT_FIELD_OFFSET( SYMCRYPT_MODULUS, Divisor.Int.ti.fdef.uint32 ));\
 
 #elif SYMCRYPT_CPU_ARM
 #define SYMCRYPT_CHECK_ASM_OFFSETS \
     SYMCRYPT_CHECK_ASM_OFFSET( SymCryptModulusNdigitsOffsetArm, SYMCRYPT_FIELD_OFFSET( SYMCRYPT_MODULUS, nDigits ) );\
-    SYMCRYPT_CHECK_ASM_OFFSET( SymCryptModulusMontgomeryInv64OffsetArm, SYMCRYPT_FIELD_OFFSET( SYMCRYPT_MODULUS, tm.montgomery.inv64 ));\
+    SYMCRYPT_CHECK_ASM_OFFSET( SymCryptModulusInv64OffsetArm, SYMCRYPT_FIELD_OFFSET( SYMCRYPT_MODULUS, inv64 ));\
     SYMCRYPT_CHECK_ASM_OFFSET( SymCryptModulusValueOffsetArm, SYMCRYPT_FIELD_OFFSET( SYMCRYPT_MODULUS, Divisor.Int.ti.fdef.uint32 ));\
 
 #endif // CPU_*
