@@ -152,6 +152,7 @@ testEccArithmetic( _In_ PCSYMCRYPT_ECURVE pCurve )
     //  ScratchMultiMul:Scratch space for the multi multiplication operation
     //  ScratchGetSet:  Scratch space for get/set value ecpoint operations
     //  Signature:      Space for the signature (and the get/set value operations)
+    //  AgreedSecret1/2:Space for the agreed secrets - overlaps with signature
     //  Buffer:         Space for the get/set value operations (and or printing points)
     //  WorkSpace:      Entire allocated memory
     PBYTE   pbScratch = NULL;
@@ -164,6 +165,9 @@ testEccArithmetic( _In_ PCSYMCRYPT_ECURVE pCurve )
     SIZE_T  cbScratchGetSet = 0;
     PBYTE   pbSignature = NULL;
     SIZE_T  cbSignature = 0;
+    PBYTE   pbAgreedSecret1 = NULL;
+    PBYTE   pbAgreedSecret2 = NULL;
+    SIZE_T  cbAgreedSecret = 0;
     PBYTE   pbBuffer = NULL;
     SIZE_T  cbBuffer = 0;
     PBYTE   pbWorkSpace = NULL;
@@ -190,6 +194,7 @@ testEccArithmetic( _In_ PCSYMCRYPT_ECURVE pCurve )
     cbScratchMultiMul = SYMCRYPT_SCRATCH_BYTES_FOR_MULTI_SCALAR_ECURVE_OPERATIONS( pCurve, MULTIMUL_POINTS );
     cbScratchGetSet = SYMCRYPT_SCRATCH_BYTES_FOR_GETSET_VALUE_ECURVE_OPERATIONS( pCurve );
     cbSignature = 2 * SymCryptEcurveSizeofFieldElement( pCurve );
+    cbAgreedSecret = SymCryptEcurveSizeofFieldElement( pCurve );
     cbBuffer = cbSignature; // This is due to the fact that ecdsa and XY format both use 2 field elements
 
     cbWorkSpace = 3 * cbEcpointSize + 2 * cbIntScalarSize + cbIntLargeSize + 2 * cbEckeySize + cbScratch + cbScratchMul + cbScratchMultiMul + cbScratchGetSet + cbSignature + cbBuffer;
@@ -242,6 +247,8 @@ testEccArithmetic( _In_ PCSYMCRYPT_ECURVE pCurve )
     pbScratchMultiMul = pbScratchMul + cbScratchMul;
     pbScratchGetSet = pbScratchMultiMul + cbScratchMultiMul;
     pbSignature = pbScratchGetSet + cbScratchGetSet;
+    pbAgreedSecret1 = pbSignature;
+    pbAgreedSecret2 = pbSignature + cbAgreedSecret;
     pbBuffer = pbSignature + cbSignature;
 
     poTable[0] = poP1;
@@ -618,19 +625,37 @@ testEccArithmetic( _In_ PCSYMCRYPT_ECURVE pCurve )
     vprint( g_verbose, "Success\n");
 
     // =================================
+    scError = SymCryptEckeySetRandom( SYMCRYPT_FLAG_ECKEY_ECDH, pkKey2 );
+    CHECK( scError == SYMCRYPT_NO_ERROR, "Set random key failed" );
+
     vprint( g_verbose, "    %-41s", "ECDH Algorithm" );
     vprint( g_verbose, " %-40s", "SymCryptEcDhSecretAgreement");
     scError = SymCryptEcDhSecretAgreement(
                     pkKey1,
-                    pkKey1,
+                    pkKey2,
                     SYMCRYPT_NUMBER_FORMAT_MSB_FIRST,
                     0,
-                    pbSignature,
-                    cbSignature/2 );
+                    pbAgreedSecret1,
+                    cbAgreedSecret );
 
     CHECK( scError == SYMCRYPT_NO_ERROR, "SymCryptEcDhSecretAgreement failed" );
     vprint( g_verbose, "Success\n");
 
+    scError = SymCryptEcDhSecretAgreement(
+                    pkKey2,
+                    pkKey1,
+                    SYMCRYPT_NUMBER_FORMAT_MSB_FIRST,
+                    0,
+                    pbAgreedSecret2,
+                    cbAgreedSecret );
+
+    CHECK( scError == SYMCRYPT_NO_ERROR, "SymCryptEcDhSecretAgreement failed" );
+    vprint( g_verbose, "Success\n");
+
+    CHECK( memcmp( pbAgreedSecret1, pbAgreedSecret2, cbAgreedSecret ) == 0, "SymCryptEcDhSecretAgreement is inconsistent between two parties");
+    vprint( g_verbose, "Success\n");
+
+    // =================================
     SymCryptEcpointSetZero(pCurve, pkKey1->poPublicKey, pbScratchMul, cbScratchMul);
 
     vprint( g_verbose, "    %-41s", "Verify signature with 0 public key" );

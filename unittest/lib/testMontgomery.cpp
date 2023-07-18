@@ -92,7 +92,7 @@ testSymCryptMontgomeryPointScalarMul(
 }
 
 VOID
-testMontgomery(PSYMCRYPT_ECURVE  pCurve)
+testMontgomery(PSYMCRYPT_ECURVE pCurve)
 {
     SYMCRYPT_ERROR scError = SYMCRYPT_NO_ERROR;
 
@@ -101,6 +101,11 @@ testMontgomery(PSYMCRYPT_ECURVE  pCurve)
     UINT32  msbValue = 0;
     UINT32  msbMask = 0;
     UINT32  msbActual = 0;
+    PBYTE   pbAgreedSecret1 = NULL;
+    PBYTE   pbAgreedSecret2 = NULL;
+    SIZE_T  cbAgreedSecret = SymCryptEcurveSizeofFieldElement( pCurve );
+    PBYTE   pbScratch = NULL;
+    SIZE_T  cbScratch = SYMCRYPT_SCRATCH_BYTES_FOR_SCALAR_ECURVE_OPERATIONS(pCurve);
 
     vprint( g_verbose, "    ..................................................................................................\n");
     vprint( g_verbose, "    %-41s","Operation");
@@ -108,14 +113,18 @@ testMontgomery(PSYMCRYPT_ECURVE  pCurve)
     vprint( g_verbose, "Result\n");
     vprint( g_verbose, "    ..................................................................................................\n");
 
-    SIZE_T cbScratch = SYMCRYPT_SCRATCH_BYTES_FOR_SCALAR_ECURVE_OPERATIONS(pCurve);
+    SIZE_T cbWorkspace = 2*cbAgreedSecret + cbScratch;
 
-    PBYTE  pbScratch = (PBYTE)SymCryptCallbackAlloc(cbScratch);
-    if (pbScratch == NULL)
+    PBYTE pbWorkspace = (PBYTE)SymCryptCallbackAlloc(cbWorkspace);
+    if (pbWorkspace == NULL)
     {
         vprint( g_verbose, " Memory allocation failed in Test.");
         return;
     }
+
+    pbAgreedSecret1 = pbWorkspace;
+    pbAgreedSecret2 = pbWorkspace + cbAgreedSecret;
+    pbScratch       = pbWorkspace + 2*cbAgreedSecret;
 
     PSYMCRYPT_INT       piScalar = SymCryptIntAllocate(SymCryptEcurveDigitsofScalarMultiplier(pCurve));
     PSYMCRYPT_ECPOINT   poSrc = SymCryptEcpointAllocate(pCurve);
@@ -271,6 +280,37 @@ testMontgomery(PSYMCRYPT_ECURVE  pCurve)
     vprint( g_verbose, "Success\n");
     // =================================
 
+    scError = SymCryptEckeySetRandom( SYMCRYPT_FLAG_ECKEY_ECDH, pkKey2 );
+    CHECK( scError == SYMCRYPT_NO_ERROR, "Set random key failed" );
+
+    vprint( g_verbose, "    %-41s", "ECDH Algorithm" );
+    vprint( g_verbose, " %-40s", "SymCryptEcDhSecretAgreement");
+    scError = SymCryptEcDhSecretAgreement(
+                    pkKey1,
+                    pkKey2,
+                    SYMCRYPT_NUMBER_FORMAT_MSB_FIRST,
+                    0,
+                    pbAgreedSecret1,
+                    cbAgreedSecret );
+
+    CHECK( scError == SYMCRYPT_NO_ERROR, "SymCryptEcDhSecretAgreement failed" );
+    vprint( g_verbose, "Success\n");
+
+    scError = SymCryptEcDhSecretAgreement(
+                    pkKey2,
+                    pkKey1,
+                    SYMCRYPT_NUMBER_FORMAT_MSB_FIRST,
+                    0,
+                    pbAgreedSecret2,
+                    cbAgreedSecret );
+
+    CHECK( scError == SYMCRYPT_NO_ERROR, "SymCryptEcDhSecretAgreement failed" );
+    vprint( g_verbose, "Success\n");
+
+    CHECK( memcmp( pbAgreedSecret1, pbAgreedSecret2, cbAgreedSecret ) == 0, "SymCryptEcDhSecretAgreement is inconsistent between two parties");
+    vprint( g_verbose, "Success\n");
+    // =================================
+
     vprint( g_verbose, "    %-41s", "Wiping and freeing stuff ");
     vprint( g_verbose, " %-40s", "SymCryptWipe");
     SymCryptIntFree(piScalar);
@@ -280,7 +320,7 @@ testMontgomery(PSYMCRYPT_ECURVE  pCurve)
     SymCryptEckeyFree(pkKey1);
     SymCryptEckeyFree(pkKey2);
 
-    SymCryptWipe(pbScratch, cbScratch);
-    SymCryptCallbackFree(pbScratch);
+    SymCryptWipe(pbWorkspace, cbWorkspace);
+    SymCryptCallbackFree(pbWorkspace);
     vprint( g_verbose, "Success\n");
 }

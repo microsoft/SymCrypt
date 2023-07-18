@@ -40,8 +40,10 @@ SymCryptEcDhSecretAgreement(
         goto cleanup;
     }
 
-    // Make sure we only specify the correct flags
-    if (flags != 0)
+    // Make sure we only specify the correct flags and that
+    // there is a private key
+    if ( (flags != 0) ||
+         (!pkPrivate->hasPrivateKey) )
     {
         scError = SYMCRYPT_INVALID_ARGUMENT;
         goto cleanup;

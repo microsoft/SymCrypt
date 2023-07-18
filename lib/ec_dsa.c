@@ -191,8 +191,10 @@ SymCryptEcDsaSignEx(
         goto cleanup;
     }
 
-    // Make sure that only the correct flags are set
-    if ( (flags & ~SYMCRYPT_FLAG_ECDSA_NO_TRUNCATION) != 0 )
+    // Make sure we only specify the correct flags and that
+    // there is a private key
+    if ( ((flags & ~SYMCRYPT_FLAG_ECDSA_NO_TRUNCATION) != 0) ||
+         (!pKey->hasPrivateKey) )
     {
         scError = SYMCRYPT_INVALID_ARGUMENT;
         goto cleanup;
@@ -409,6 +411,12 @@ SymCryptEcDsaSign(
     _Out_writes_bytes_( cbSignature )   PBYTE                   pbSignature,
                                         SIZE_T                  cbSignature )
 {
+    // We must have a private key to perform PCT or signature
+    if( !pKey->hasPrivateKey )
+    {
+        return SYMCRYPT_INVALID_ARGUMENT;
+    }
+
     // If the key was generated and a PCT has not yet been performed - perform PCT before first use
     SYMCRYPT_RUN_KEYGEN_PCT(
         SymCryptEcDsaSignVerifyTest,
