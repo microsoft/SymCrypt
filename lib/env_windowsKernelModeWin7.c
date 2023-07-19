@@ -43,9 +43,6 @@ SYMCRYPT_CALL
 SymCryptInitEnvWindowsKernelmodeWin7nLater( UINT32 version )
 {
     RTL_OSVERSIONINFOW  verInfo;
-#if SYMCRYPT_CPU_X86 | SYMCRYPT_CPU_AMD64 
-    ULONGLONG   FeatureMask;
-#endif
 
     if( g_SymCryptFlags & SYMCRYPT_FLAG_LIB_INITIALIZED )
     {
@@ -75,11 +72,18 @@ SymCryptInitEnvWindowsKernelmodeWin7nLater( UINT32 version )
     //
     // We also need to be sure that the OS supports the extended registers.
     //
-    FeatureMask = RtlGetEnabledExtendedFeatures( (ULONGLONG) -1 );
-
-    if( !(FeatureMask & XSTATE_MASK_AVX ) )
     {
-        g_SymCryptCpuFeaturesNotPresent |= SYMCRYPT_CPU_FEATURE_AVX2;
+        ULONGLONG FeatureMask = RtlGetEnabledExtendedFeatures( (ULONGLONG) -1 );
+
+        if( !(FeatureMask & XSTATE_MASK_AVX) )
+        {
+            g_SymCryptCpuFeaturesNotPresent |= SYMCRYPT_CPU_FEATURE_AVX2;
+        }
+        
+        if( !(FeatureMask & XSTATE_MASK_AVX512) )
+        {
+            g_SymCryptCpuFeaturesNotPresent |= SYMCRYPT_CPU_FEATURE_AVX512;
+        }
     }
 
 #elif SYMCRYPT_CPU_ARM | SYMCRYPT_CPU_ARM64

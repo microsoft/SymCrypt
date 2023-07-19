@@ -19,7 +19,6 @@ VOID
 SYMCRYPT_CALL
 SymCryptInitEnvWindowsUsermodeWin8_1nLater( UINT32 version )
 {
-
     if( g_SymCryptFlags & SYMCRYPT_FLAG_LIB_INITIALIZED )
     {
         return;
@@ -31,12 +30,21 @@ SymCryptInitEnvWindowsUsermodeWin8_1nLater( UINT32 version )
     // 
     SymCryptDetectCpuFeaturesByCpuid( SYMCRYPT_CPUID_DETECT_FLAG_CHECK_OS_SUPPORT_FOR_YMM );
 
-    if( (GetEnabledXStateFeatures() & XSTATE_MASK_AVX) == 0 )
+    //
+    // We also need to be sure that the OS supports the extended registers.
+    //
     {
-        //
-        // Don't use Ymm registers if the OS doesn't report them as available.
-        //
-        g_SymCryptCpuFeaturesNotPresent |= SYMCRYPT_CPU_FEATURE_AVX2;
+        ULONGLONG FeatureMask = GetEnabledXStateFeatures();
+
+        if( !(FeatureMask & XSTATE_MASK_AVX) )
+        {
+            g_SymCryptCpuFeaturesNotPresent |= SYMCRYPT_CPU_FEATURE_AVX2;
+        }
+
+        if( !(FeatureMask & XSTATE_MASK_AVX512) )
+        {
+            g_SymCryptCpuFeaturesNotPresent |= SYMCRYPT_CPU_FEATURE_AVX512;
+        }
     }
 
     //
