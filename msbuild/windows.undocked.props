@@ -276,6 +276,12 @@
       </AdditionalOptions>
     </Link>
   </ItemDefinitionGroup>
+  <!-- Enable retpoline for MASM in official builds - template does not currently set this -->
+  <ItemDefinitionGroup Condition="'$(UndockedOfficial)' == 'true' And '$(Platform)'=='x64'">
+    <MASM>
+      <AdditionalOptions>/GuardRetpoline</AdditionalOptions>
+    </MASM>
+  </ItemDefinitionGroup>
   <!-- Enable static analysis during the build (currently breaks in official builds) -->
   <!--
   <PropertyGroup Condition="'$(UndockedOfficial)' == 'false'">
