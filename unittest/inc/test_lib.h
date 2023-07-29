@@ -24,26 +24,7 @@
     #include <string>
     #include <winternl.h>
 
-#elif defined(__APPLE_CC__)
-
-    #include <stdio.h>
-    #include <stdlib.h>
-    #include <math.h>
-    #include <unistd.h>
-
-    #include <chrono>
-    #include <vector>
-    #include <string>
-    #include <memory>
-    #include <algorithm>
-    #include <map>
-    #include <sstream>
-    #include <set>
-    #include <type_traits>
-
-    #include "precomp_iOS.h"
-
-#elif defined(__GNUC__)
+#elif defined(__GNUC__) || defined(__APPLE__)
 
     #include <stdio.h>
     #include <cstring>
