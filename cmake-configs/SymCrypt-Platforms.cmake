@@ -26,6 +26,19 @@ if(NOT DEFINED SYMCRYPT_TARGET_ARCH)
 endif()
 
 # Platform/architecture specific compiler options
+
+if(CMAKE_SYSTEM_NAME MATCHES "Darwin")
+    # CMake doesn't properly detect clang/clang++ as the compilers on macOS.
+    # It defaults to compilers that symlink to the correct compilers but the
+    # part of CMake that sets things like language standards doesn't recognize
+    # the default non-clang compilers. We can only properly set things like
+    # language standards after setting the compilers to clang/clang++. Good
+    # for clarity anyway!
+    set(CMAKE_C_COMPILER clang)
+    set(CMAKE_CXX_COMPILER clang++)
+    set(CMAKE_CXX_STANDARD 17)
+endif()
+
 if(CMAKE_SYSTEM_NAME MATCHES "Linux|Darwin")
     if(SYMCRYPT_USE_ASM)
         enable_language(ASM)
