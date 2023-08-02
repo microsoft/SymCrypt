@@ -1,6 +1,15 @@
+# Version x.y.z
+
+New changes will be listed here as they are developed. The version number is determined
+prior to the creation of a new release, based on the changes contained in that release.
+
 # Version 103.3.2
 
-- Various small tweaks to support building with MSBuild
+- Performance improvements for ECC NIST prime curves
+- Performance improvements for modular arithmetic
+- Added maximum iteration count for (Ec)Dsa signing
+- Additional checks for OS support of AVX512 registers on Windows
+- Various build system tweaks
 
 # Version 103.3.1
 
