@@ -49,11 +49,15 @@ extern "C"
 {
     int oe_sgx_get_additional_host_entropy(uint8_t* data, size_t size)
     {
+#ifdef __APPLE__
+        arc4random_buf( data, size);
+#else
         SIZE_T result = getrandom( data, size, 0 );
         if (result != size )
         {
             SymCryptFatal( 'oehe' );
         }
+#endif
         return 1; // 1 indicates success
     }
 }

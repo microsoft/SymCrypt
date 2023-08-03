@@ -40,22 +40,21 @@
 
 #define SYMCRYPT_UNALIGNED
 
-#elif defined(__APPLE_CC__)
+#elif defined(__APPLE__)
 
 #undef  SYMCRYPT_APPLE_CC
 #define SYMCRYPT_APPLE_CC  1
 
-// Suppress the SAL annotations for the APPLE compiler
+// Suppress the SAL annotations
 #include "symcrypt_no_sal.h"
 
 // Ignore the multi-character character constant warnings
 #pragma GCC diagnostic ignored "-Wmultichar"
 
-#define SYMCRYPT_IGNORE_PLATFORM
-
 #define C_ASSERT(e)                 typedef char __C_ASSERT__[(e)?1:-1]
+#define SYMCRYPT_ANYSIZE_ARRAY               1
 #define FORCEINLINE                 static inline //__inline__ __attribute__ ((always_inline))
-#define SYMCRYPT_NOINLINE
+#define SYMCRYPT_NOINLINE           __attribute__ ((noinline))
 #define SYMCRYPT_UNALIGNED
 #define SYMCRYPT_CDECL
 
@@ -296,7 +295,7 @@ C_ASSERT( (SYMCRYPT_ALIGN_VALUE & (SYMCRYPT_ALIGN_VALUE - 1 )) == 0 );
     #define SYMCRYPT_ALIGN_STRUCT SYMCRYPT_ALIGN struct
     #define SYMCRYPT_ALIGN_AT(x)  __declspec(align(x))
     #define SYMCRYPT_WEAK_SYMBOL
-#elif SYMCRYPT_GNUC
+#elif SYMCRYPT_GNUC || SYMCRYPT_APPLE_CC
     #define SYMCRYPT_ALIGN  __attribute__((aligned(SYMCRYPT_ALIGN_VALUE)))
     #define SYMCRYPT_ALIGN_STRUCT struct SYMCRYPT_ALIGN
     #define SYMCRYPT_ALIGN_AT(x) __attribute__((aligned(x)))
@@ -1387,7 +1386,7 @@ typedef union _SYMCRYPT_GCM_SUPPORTED_BLOCKCIPHER_KEYS
             ((__n64) {.n64_u64 = {d0}})
         #define SYMCRYPT_SET_N128_U8(b0, b1, b2, b3, b4, b5, b6, b7, b8, b9, b10, b11, b12, b13, b14, b15) \
             ((__n128) {.n128_u8 = {b0, b1, b2, b3, b4, b5, b6, b7, b8, b9, b10, b11, b12, b13, b14, b15}})
-    #elif SYMCRYPT_GNUC
+    #elif SYMCRYPT_GNUC || SYMCRYPT_APPLE_CC
         #include <arm_neon.h>
 
         #define __n128 uint8x16_t
@@ -1795,8 +1794,7 @@ typedef const SYMCRYPT_HKDF_EXPANDED_KEY *PCSYMCRYPT_HKDF_EXPANDED_KEY;
 #if SYMCRYPT_MS_VC
 #define SYMCRYPT_ASYM_ALIGN  __declspec(align(SYMCRYPT_ASYM_ALIGN_VALUE))
 #define SYMCRYPT_ASYM_ALIGN_STRUCT SYMCRYPT_ASYM_ALIGN struct
-#elif SYMCRYPT_GNUC
-// FIXME:
+#elif SYMCRYPT_GNUC || SYMCRYPT_APPLE_CC
 #define SYMCRYPT_ASYM_ALIGN __attribute__((aligned(SYMCRYPT_ASYM_ALIGN_VALUE)))
 #define SYMCRYPT_ASYM_ALIGN_STRUCT struct SYMCRYPT_ASYM_ALIGN
 #else

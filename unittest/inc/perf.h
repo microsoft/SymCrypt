@@ -73,8 +73,8 @@
     // We rely on performance scaling logic to convert the raw nanoseconds readings into cycles
     #define PERF_UNIT   "cycles"
 
-#elif SYMCRYPT_GNUC
-    // Linux, not x86 or AMD64
+#elif SYMCRYPT_GNUC || SYMCRYPT_APPLE_CC
+    // Linux or macOS, not x86 or AMD64
     FORCEINLINE
     ULONGLONG
     GET_PERF_CLOCK()

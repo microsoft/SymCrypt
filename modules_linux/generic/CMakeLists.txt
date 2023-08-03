@@ -12,12 +12,12 @@ endif()
 
 include_directories(${CMAKE_SOURCE_DIR}/inc ../common ${CMAKE_SOURCE_DIR}/3rdparty/jitterentropy-library)
 
-add_library(symcrypt_generic_linux SHARED ${SOURCES})
+add_library(symcrypt_generic_${SYMCRYPT_TARGET_ENV} SHARED ${SOURCES})
 
 # Link jitterentropy and libatomic
-target_link_libraries(symcrypt_generic_linux ${CMAKE_SOURCE_DIR}/3rdparty/jitterentropy-library/libjitterentropy.a pthread atomic)
+target_link_libraries(symcrypt_generic_${SYMCRYPT_TARGET_ENV} ${CMAKE_SOURCE_DIR}/3rdparty/jitterentropy-library/libjitterentropy.a pthread atomic)
 
-set(TARGET_NAME symcrypt_generic_linux)
+set(TARGET_NAME symcrypt_generic_${SYMCRYPT_TARGET_ENV})
 set(OUTPUT_DIR ${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/generic)
 
 include(../common/ModuleCommon.cmake)

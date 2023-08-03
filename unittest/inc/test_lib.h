@@ -24,26 +24,7 @@
     #include <string>
     #include <winternl.h>
 
-#elif defined(__APPLE_CC__)
-
-    #include <stdio.h>
-    #include <stdlib.h>
-    #include <math.h>
-    #include <unistd.h>
-
-    #include <chrono>
-    #include <vector>
-    #include <string>
-    #include <memory>
-    #include <algorithm>
-    #include <map>
-    #include <sstream>
-    #include <set>
-    #include <type_traits>
-
-    #include "precomp_iOS.h"
-
-#elif defined(__GNUC__)
+#elif defined(__GNUC__) || defined(__APPLE__)
 
     #include <stdio.h>
     #include <cstring>
@@ -344,7 +325,7 @@ extern "C" {
 
     #define SECUREZEROMEMORY(dest, sz)  RtlSecureZeroMemory( (dest), (sz) )
 
-#elif SYMCRYPT_APPLE_CC
+#elif SYMCRYPT_GNUC || SYMCRYPT_APPLE_CC
 
     #define STRICMP                     strcasecmp
     #define STRNICMP                    strncasecmp
@@ -352,40 +333,21 @@ extern "C" {
     #define SNPRINTF_S(a,b,c,d,...)     std::snprintf((a),(b),(d),__VA_ARGS__)
     #define VSNPRINTF_S(a,b,c,d,...)    std::vsnprintf((a),(b),(d),__VA_ARGS__)
 
-    NTSTATUS IosGenRandom( PBYTE pbBuf, UINT32 cbBuf );
-
-    #define GENRANDOM(pbBuf, cbBuf)     IosGenRandom( (PBYTE) pbBuf, cbBuf )
-
-    #error "Oh no, need ALLOCATE_FAST_INPROC_MUTEX, FREE_FAST_INPROC_MUTEX, ACQUIRE_FAST_INPROC_MUTEX, RELEASE_FAST_INPROC_MUTEX implementations"
-
-    #define SLEEP                       usleep
-
-    #if defined(__LP64__)
-        #define SIZET_BITS_1            63
-    #else
-        #define SIZET_BITS_1            31
-    #endif
-
-    #define BitScanReverseSizeT(pInd, mask)  \
-            ({*(pInd) = SIZET_BITS_1 - __builtin_clzl( (mask) ); \
-            ( (mask)==0 )? 0 : 1; })
-
-    #define SECUREZEROMEMORY(dest, sz)  memset_s( (dest), (sz), 0, (sz) )
-
-#elif SYMCRYPT_GNUC
-
-    #define STRICMP                     strcasecmp
-    #define STRNICMP                    strncasecmp
-
-    #define SNPRINTF_S(a,b,c,d,...)     std::snprintf((a),(b),(d),__VA_ARGS__)
-    #define VSNPRINTF_S(a,b,c,d,...)    std::vsnprintf((a),(b),(d),__VA_ARGS__)
-#ifdef __linux__
+#if SYMCRYPT_APPLE_CC
+    // write as a function wrapper to handle unexpected return values as errors
+    FORCEINLINE
+    ssize_t GENRANDOM(void * pbBuf, size_t cbBuf) {
+        arc4random_buf( pbBuf, cbBuf );
+        return 0;
+    }
+#else
     #include <sys/random.h>
     // write as a function wrapper to handle unexpected return values as errors
     FORCEINLINE
     ssize_t GENRANDOM(void * pbBuf, size_t cbBuf) {
         return (getrandom( pbBuf, cbBuf, 0 ) == cbBuf) ? 0 : -1;
     }
+#endif
 
     #include <pthread.h>
     FORCEINLINE
@@ -415,9 +377,6 @@ extern "C" {
 
     #define ACQUIRE_FAST_INPROC_MUTEX(pMutex)   pthread_mutex_lock((pthread_mutex_t *)pMutex)
     #define RELEASE_FAST_INPROC_MUTEX(pMutex)   pthread_mutex_unlock((pthread_mutex_t *)pMutex)
-#else
-    #error "Oh no, need a GENRANDOM() implementation"
-#endif
 
     #define SLEEP                       usleep
 
