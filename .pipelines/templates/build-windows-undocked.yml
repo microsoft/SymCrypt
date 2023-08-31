@@ -80,20 +80,6 @@ jobs:
           ob_build_platform_win: arm64
           ob_build_config: Release
           ob_build_config_win: fre
-      # Note: must specify "arm32" for ARM because "arm" is a substring of "arm64" and ADO YAML
-      # does not support true arrays, so we can't use "contains" to check for "arm" in the platform.
-      ${{ if and(contains(parameters.config, 'Debug'), contains(parameters.platform, 'arm32')) }}:
-        armchk:
-          ob_build_platform: arm
-          ob_build_platform_win: arm
-          ob_build_config: Debug
-          ob_build_config_win: chk
-      ${{ if and(contains(parameters.config, 'Release'), contains(parameters.platform, 'arm32')) }}:
-        armfre:
-          ob_build_platform: arm
-          ob_build_platform_win: arm
-          ob_build_config: Release
-          ob_build_config_win: fre
 
   pool:
     type: windows

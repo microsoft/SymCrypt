@@ -18,12 +18,12 @@ from typing import List
 ARCH_CMAKE = ("x86", "amd64", "arm64")
 CONFIG_CMAKE = ("Debug", "Release", "Sanitize")
 
-ARCH_MSBUILD = ("x86", "amd64", "arm", "arm64")
+ARCH_MSBUILD = ("x86", "amd64", "arm64")
 CONFIG_MSBUILD = ("Debug", "Release")
 
 def get_normalized_host_arch() -> str:
     """
-    Gets the host architecture, normalized to Windows conventions, e.g. X86, AMD64, ARM, ARM64
+    Gets the host architecture, normalized to Windows conventions, e.g. X86, AMD64, ARM64
     """
 
     normalized_arch = None
@@ -149,7 +149,6 @@ def build_msbuild(args : argparse.Namespace) -> None:
     ARCH_MSBUILD_ALIASES = {
         "x86": "x86",
         "amd64": "x64",
-        "arm": "ARM",
         "arm64": "ARM64"
     }
 

@@ -377,7 +377,7 @@ SymCryptDetectCpuFeaturesFromRegisters(void)
         );
 
 #if SYMCRYPT_MS_VC
-    try {
+    __try {
 
         if( READ_ARM64_FEATURE(ARM64_ID_AA64ISAR0_EL1, ISAR0_AES) < ISAR0_AES_INSTRUCTIONS )
         {
@@ -396,7 +396,7 @@ SymCryptDetectCpuFeaturesFromRegisters(void)
 
         g_SymCryptCpuFeaturesNotPresent = (SYMCRYPT_CPU_FEATURES) result;
 
-    } except(EXCEPTION_EXECUTE_HANDLER) {
+    } __except(EXCEPTION_EXECUTE_HANDLER) {
         ; //NOTHING;
     }
 #endif

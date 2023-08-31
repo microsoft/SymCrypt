@@ -162,29 +162,18 @@
     <CppAsm Include="i386\fdef_asm.cppasm" />
     <MASM Include="i386\wipe.asm" />
   </ItemGroup>
-  <ItemGroup Condition="'$(Platform)'=='ARM'">
-    <MASM Include="arm\aesasm.asm" />
-    <MASM Include="arm\fdef_asm.asm" />
-    <MASM Include="arm\wipe.asm" />
-  </ItemGroup>
   <ItemGroup Condition="'$(Platform)'=='ARM64'">
     <SymCryptAsm Include="arm64\fdef_asm.symcryptasm" Dialect="armasm64" Arch="arm64" Convention="aapcs64" />
     <SymCryptAsm Include="arm64\fdef369_asm.symcryptasm" Dialect="armasm64" Arch="arm64" Convention="aapcs64" />
     <SymCryptAsm Include="arm64\wipe.symcryptasm" Dialect="armasm64" Arch="arm64" Convention="aapcs64" />
   </ItemGroup>
-  <ItemGroup Condition="'$(Platform)' == 'ARM64' AND $(EnableArm64x) == 'true'">
+  <ItemGroup Condition="'$(Platform)'=='ARM64' AND '$(EnableArm64x)' == 'true'">
     <SymCryptAsm Include="arm64\fdef_asm.symcryptasm" Dialect="armasm64" Arch="arm64" Convention="arm64ec" />
     <SymCryptAsm Include="arm64\fdef369_asm.symcryptasm" Dialect="armasm64" Arch="arm64" Convention="arm64ec" />
     <SymCryptAsm Include="arm64\wipe.symcryptasm" Dialect="armasm64" Arch="arm64" Convention="arm64ec" />
   </ItemGroup>
-
-  <PropertyGroup Label="Configuration">
-    <TargetVersion>Windows10</TargetVersion>
-    <PlatformToolset>v143</PlatformToolset>
-    <ConfigurationType>StaticLibrary</ConfigurationType>
-  </PropertyGroup>
-
-    <!-- Generate buildInfo.h -->
+ 
+  <!-- Generate buildInfo.h -->
   <Target Name="GenerateBuildInfo" BeforeTargets="ClCompile">
     <Message Importance="high" Text="Generating build info header" />
     <Exec Command="python ..\scripts\version.py --build-info" />

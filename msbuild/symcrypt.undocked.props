@@ -2,12 +2,14 @@
 
   <Import Project="$(UndockedDir)windows.undocked.props" />
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionSettings" Condition="'$(UndockedType)' != 'sys'">
+    <!-- The kernel driver toolset already imports MASM props/targets, so only import this for non-drivers -->
+    <Import Project="$(VCTargetsPath)\BuildCustomizations\masm.props" />
+    <Import Project="$(VCTargetsPath)\BuildCustomizations\marmasm.props" />
+  </ImportGroup>
 
   <PropertyGroup Label="IncludePath">
     <IncludePath>$(SolutionDir)inc;$(WindowsSdkDir)Include\$(TargetPlatformVersion)\km;$(IncludePath);</IncludePath>
-  </PropertyGroup>
-  <PropertyGroup Label="Globals">
-    <EnableArm64x Condition="$(ARM64X_DISABLED) != '1'">true</EnableArm64x>
   </PropertyGroup>
   <ItemDefinitionGroup>
     <ClCompile>
@@ -15,8 +17,9 @@
         Disable warnings
         C4456: declaration of 'identifier' hides previous local declaration
         C4296: 'operator' : expression is always false
+        C4324: structure was padded due to __declspec(align())
       -->
-      <DisableSpecificWarnings>4456;4296;%(DisableSpecificWarnings)</DisableSpecificWarnings>
+      <DisableSpecificWarnings>4456;4296;4324;%(DisableSpecificWarnings)</DisableSpecificWarnings>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <DebugInformationFormat>OldStyle</DebugInformationFormat>
       <BasicRuntimeChecks></BasicRuntimeChecks>
@@ -80,21 +83,9 @@
       <UseSafeExceptionHandlers>true</UseSafeExceptionHandlers>
     </MASM>
   </ItemDefinitionGroup>
-  <ItemDefinitionGroup Condition="'$(Platform)'=='ARM64'">
+  <ItemDefinitionGroup Condition="$(Platform.StartsWith('ARM64'))">
     <ClCompile>
       <PreprocessorDefinitions>_ARM64_;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-    </ClCompile>
-  </ItemDefinitionGroup>
-  <ItemDefinitionGroup Condition="'$(Platform)'=='ARM'">
-    <ClCompile>
-      <PreprocessorDefinitions>_ARM_;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-    </ClCompile>
-  </ItemDefinitionGroup>
-
-  <!-- Enable ARM64X compilation -->
-  <ItemDefinitionGroup Condition="'$(Platform)' == 'ARM64' AND $(EnableArm64x) == 'true'">
-    <ClCompile>
-      <Arm64x>EC</Arm64x>
     </ClCompile>
   </ItemDefinitionGroup>
 
@@ -105,15 +96,12 @@
   <PropertyGroup Condition="'$(Platform)'=='Win32'">
       <CppAsmArch>SYMCRYPT_CPU_X86</CppAsmArch>
   </PropertyGroup>
-  <PropertyGroup Condition="'$(Platform)'=='ARM64'">
+  <PropertyGroup Condition="$(Platform.StartsWith('ARM64'))">
       <CppAsmArch>SYMCRYPT_CPU_ARM64</CppAsmArch>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(Platform)'=='ARM'">
-      <CppAsmArch>SYMCRYPT_CPU_ARM</CppAsmArch>
   </PropertyGroup>
 
   <!-- Preprocess SymCryptAsm into CppAsm -->
-  <Target Name="ProcessSymCryptAsm" BeforeTargets="_MASM" Condition="'@(SymCryptAsm)' != ''">
+  <Target Name="ProcessSymCryptAsm" BeforeTargets="_MASM;_MARMASM" Condition="'@(SymCryptAsm)' != ''">
     <MakeDir Directories="$(IntDir)" />
     <Message Importance="high" Text="Processing SymCryptAsm" />
     <Exec Command="python ..\scripts\symcryptasm_processor.py %(SymCryptAsm.Dialect) %(SymCryptAsm.Arch) %(SymCryptAsm.Convention) &quot;%(SymCryptAsm.Identity)&quot; &quot;$(IntDir)%(SymCryptAsm.Filename).%(SymCryptAsm.Dialect).%(SymCryptAsm.Arch).%(SymCryptAsm.Convention).cppasm&quot;" />
@@ -134,9 +122,19 @@
     <Exec Command="cl.exe /EP /P /I..\inc /I.\ /D$(CppAsmArch) /DSYMCRYPT_MASM /Fi&quot;$(IntDir)%(CppAsm.Filename).asm&quot; &quot;%(CppAsm.Identity)&quot;" Condition="'%(CppAsm.Convention)' != 'arm64ec'"/>
     <!-- Special case for ARM64EC -->
     <Exec Command="cl.exe /EP /P /I..\inc /I.\ /D$(CppAsmArch) /D_M_ARM64EC /DSYMCRYPT_MASM /Fi&quot;$(IntDir)%(CppAsm.Filename).asm&quot; &quot;%(CppAsm.Identity)&quot;" Condition="'%(CppAsm.Convention)' == 'arm64ec'"/>
-    <ItemGroup>
+    <ItemGroup Condition="'$(Platform)'!='ARM64'">
       <MASM Include="$(IntDir)%(CppAsm.Filename).asm" />
     </ItemGroup>
+    <ItemGroup Condition="'$(Platform)'=='ARM64'">
+      <MARMASM Include="$(IntDir)%(CppAsm.Filename).asm" PreprocessWithCl="false">
+        <AdditionalOptions Condition="'%(CppAsm.Convention)' == 'arm64ec'">-machine arm64ec</AdditionalOptions>
+      </MARMASM>
+    </ItemGroup>
   </Target>
+
+  <ImportGroup Label="MASMTargets" Condition="'$(UndockedType)' != 'sys'">
+    <Import Project="$(VCTargetsPath)\BuildCustomizations\masm.targets" />
+    <Import Project="$(VCTargetsPath)\BuildCustomizations\marmasm.targets" />
+  </ImportGroup>
 
 </Project>
