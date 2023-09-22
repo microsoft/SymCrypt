@@ -73,6 +73,9 @@
     <ClCompile>
       <PreprocessorDefinitions>_AMD64_;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
+    <MASM>
+      <AdditionalOptions>/Gy %(AdditionalOptions)</AdditionalOptions>
+    </MASM>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Platform)'=='Win32'">
     <ClCompile>
@@ -81,6 +84,7 @@
     </ClCompile>
     <MASM>
       <UseSafeExceptionHandlers>true</UseSafeExceptionHandlers>
+      <AdditionalOptions>/Gy %(AdditionalOptions)</AdditionalOptions>
     </MASM>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="$(Platform.StartsWith('ARM64'))">

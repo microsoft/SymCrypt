@@ -4,7 +4,7 @@ parameters:
   sln: ''
   msbuildArgs: ''
   restoreNugetPackages: false
-  targetOsBranch: 'official/rs_lkg'
+  targetOsBranch: 'official/rs_onecore_ens'
   config: 'Debug,Release'
   platform: 'x86,x64,arm64'
   nativeCompiler: true
