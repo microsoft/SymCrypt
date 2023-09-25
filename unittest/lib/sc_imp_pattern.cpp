@@ -5183,6 +5183,63 @@ EccImp<ImpXxx, AlgEcurveAllocate>::~EccImp()
 
 template<>
 VOID
+algImpKeyPerfFunction<ImpXxx, AlgEckeySetRandom>( PBYTE buf1, PBYTE buf2, PBYTE buf3, SIZE_T keySize )
+{
+    SetupSymCryptCurves<ImpXxx>( buf1, keySize );
+    PCSYMCRYPT_ECURVE pCurve = *((PCSYMCRYPT_ECURVE *)buf1);
+
+    UINT32 eckeySize = ScShimSymCryptSizeofEckeyFromCurve( pCurve );
+    UINT32 signatureSize = 2 * ScShimSymCryptEcurveSizeofFieldElement( pCurve );
+
+    PSYMCRYPT_ECKEY * pPtrs = ((PSYMCRYPT_ECKEY *) buf2);
+    pPtrs[0] = ScShimSymCryptEckeyCreate( buf2 + 32, eckeySize, pCurve );
+}
+
+template<>
+VOID
+algImpCleanPerfFunction<ImpXxx, AlgEckeySetRandom>( PBYTE buf1, PBYTE buf2, PBYTE buf3 )
+{
+    UNREFERENCED_PARAMETER( buf1 );
+    UNREFERENCED_PARAMETER( buf2 );
+    UNREFERENCED_PARAMETER( buf3 );
+}
+
+template<>
+VOID
+algImpDataPerfFunction< ImpXxx, AlgEckeySetRandom>( PBYTE buf1, PBYTE buf2, PBYTE buf3, SIZE_T dataSize )
+{
+    UNREFERENCED_PARAMETER( buf1 );
+    UNREFERENCED_PARAMETER( buf3 );
+    UNREFERENCED_PARAMETER( dataSize );
+
+    PSYMCRYPT_ECKEY * pPtrs = ((PSYMCRYPT_ECKEY *) buf2);
+    ScShimSymCryptEckeySetRandom( SYMCRYPT_FLAG_ECKEY_ECDH, pPtrs[0] );
+}
+
+
+template<>
+EccImp<ImpXxx, AlgEckeySetRandom>::EccImp()
+{
+    if (!SCTEST_LOOKUP_SCIMPSYM(SymCryptEckeySetRandom))
+    {
+        throw STATUS_NOT_SUPPORTED;
+    }
+
+    m_perfDataFunction      = &algImpDataPerfFunction <ImpXxx, AlgEckeySetRandom>;
+    m_perfDecryptFunction   = NULL;
+    m_perfKeyFunction       = &algImpKeyPerfFunction  <ImpXxx, AlgEckeySetRandom>;
+    m_perfCleanFunction     = &algImpCleanPerfFunction<ImpXxx, AlgEckeySetRandom>;
+}
+
+template<>
+EccImp<ImpXxx, AlgEckeySetRandom>::~EccImp()
+{
+}
+
+//============================
+
+template<>
+VOID
 algImpKeyPerfFunction<ImpXxx, AlgEcdsaSign>( PBYTE buf1, PBYTE buf2, PBYTE buf3, SIZE_T keySize )
 {
     SetupSymCryptCurves<ImpXxx>( buf1, keySize );

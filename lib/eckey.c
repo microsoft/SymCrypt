@@ -739,6 +739,9 @@ SymCryptEckeySetRandom(
     UINT32              cbScratchInternal = 0;
 
     PCSYMCRYPT_ECURVE   pCurve = pEckey->pCurve;
+    
+    PSYMCRYPT_ECPOINT   poTmp = NULL;
+    UINT32              cbTmp = 0;
 
     INT32 cntr = SYMCRYPT_ECPOINT_SET_RANDOM_MAX_TRIES;
 
@@ -911,11 +914,42 @@ SymCryptEckeySetRandom(
 
         if( ( flags & SYMCRYPT_FLAG_ECKEY_ECDH ) != 0 )
         {
-            // No additional per-key tests to perform before first use.
-            // Just ensure we have run the algorithm selftest at least once.
+            // Ensure we have run the algorithm selftest at least once.
             SYMCRYPT_RUN_SELFTEST_ONCE(
                 SymCryptEcDhSecretAgreementSelftest,
                 SYMCRYPT_SELFTEST_ALGORITHM_ECDH );
+
+            // Run PCT eagerly so it only needs to be defined here
+            // The important case for performance is ECDH key generation
+
+            // ECDH PCT per SP80056a-rev3 5.6.2.1.4 b)
+            // Recompute the public key from the private key
+            // Option a) appears to be explicitly overruled by 140-3 IG
+            pbScratchInternal = pbScratch;
+            cbScratchInternal = cbScratch;
+
+            cbTmp = SymCryptSizeofEcpointFromCurve( pCurve );
+            poTmp = SymCryptEcpointCreate( pbScratchInternal, cbTmp, pCurve );
+            pbScratchInternal += cbTmp;
+            cbScratchInternal -= cbTmp;
+            
+            SYMCRYPT_ASSERT( poTmp != NULL );
+
+            // Always multiply by the cofactor since the internal format is "DIVH"
+            scError = SymCryptEcpointScalarMul(
+                pCurve,
+                pEckey->piPrivateKey,
+                NULL,
+                SYMCRYPT_FLAG_ECC_LL_COFACTOR_MUL,
+                poTmp,
+                pbScratchInternal,
+                cbScratchInternal );
+            if ( scError != SYMCRYPT_NO_ERROR )
+            {
+                goto cleanup;
+            }
+
+            SYMCRYPT_FIPS_ASSERT( SymCryptEcpointIsEqual( pCurve, poTmp, pEckey->poPublicKey, 0, pbScratchInternal, cbScratchInternal ) );
         }
     }
 

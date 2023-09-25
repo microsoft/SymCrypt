@@ -306,6 +306,9 @@ SymCryptDlkeyGenerate(
     BYTE   privMask;
     UINT32 cntr;
 
+    PSYMCRYPT_MODELEMENT peTmp = NULL;
+    UINT32 cbModElement = SymCryptSizeofModElementFromModulus( pDlgroup->pmP );
+
     // Ensure caller has specified what algorithm(s) the key will be used with
     UINT32 algorithmFlags = SYMCRYPT_FLAG_DLKEY_DSA | SYMCRYPT_FLAG_DLKEY_DH;
     // Make sure only allowed flags are specified
@@ -372,7 +375,7 @@ SymCryptDlkeyGenerate(
     // Thus the following calculation does not overflow cbScratch.
     //
     cbScratch = SYMCRYPT_MAX( cbPrivateKey + SYMCRYPT_SCRATCH_BYTES_FOR_COMMON_MOD_OPERATIONS(nDigitsPriv),
-                    (2 * SymCryptSizeofModElementFromModulus( pDlgroup->pmP )) + SYMCRYPT_SCRATCH_BYTES_FOR_MODEXP(pDlgroup->nDigitsOfP));
+                    (2 * cbModElement) + SYMCRYPT_SCRATCH_BYTES_FOR_MODEXP(pDlgroup->nDigitsOfP));
     pbScratch = SymCryptCallbackAlloc( cbScratch );
     if (pbScratch == NULL)
     {
@@ -487,11 +490,36 @@ SymCryptDlkeyGenerate(
 
         if( ( flags & SYMCRYPT_FLAG_DLKEY_DH ) != 0 )
         {
-            // No additional per-key tests to perform before first use.
-            // Just ensure we have run the algorithm selftest at least once.
+            // Ensure we have run the algorithm selftest at least once.
             SYMCRYPT_RUN_SELFTEST_ONCE(
                 SymCryptDhSecretAgreementSelftest,
                 SYMCRYPT_SELFTEST_ALGORITHM_DH );
+
+            // Run PCT eagerly as the key can only be used for DH
+
+            // DH PCT per SP80056a-rev3 5.6.2.1.4 b)
+            // Recompute the public key from the private key
+            // Option a) appears to be explicitly overruled by 140-3 IG
+
+            // Calculate the public key from the private key in scratch
+            pbScratchInternal = pbScratch;
+            cbScratchInternal = cbScratch;
+
+            peTmp = SymCryptModElementCreate( pbScratchInternal, cbModElement, pDlgroup->pmP );
+            pbScratchInternal += cbModElement;
+            cbScratchInternal -= cbModElement;
+
+            SymCryptModExp(
+                    pDlgroup->pmP,
+                    pDlgroup->peG,
+                    pkDlkey->piPrivateKey,
+                    nBitsPriv,  // This is either bits of P, Q, or some caller-defined value i.e. public values
+                    0,          // Side-channel safe
+                    peTmp,
+                    pbScratchInternal,
+                    cbScratchInternal );
+
+            SYMCRYPT_FIPS_ASSERT( SymCryptModElementIsEqual(pDlgroup->pmP, peTmp, pkDlkey->pePublicKey) );
         }
     }
 

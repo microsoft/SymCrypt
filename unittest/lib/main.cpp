@@ -214,6 +214,8 @@ const char * AlgDsa::name = "Dsa";
 
 const char * AlgEcurveAllocate::name = "EcurveAllocateAndFree";
 
+const char * AlgEckeySetRandom::name = "EckeySetRandom";
+
 const char * AlgEcpointSetZero::name = "EcpointSetZero";
 
 const char * AlgEcpointSetDistinguished::name = "EcpointSetDistinguished";
@@ -586,6 +588,7 @@ const char * g_algorithmNames[] = {
     AlgDh::name,
     AlgDsa::name,
     AlgEcurveAllocate::name,
+    AlgEckeySetRandom::name,
     AlgEcpointSetZero::name,
     AlgEcpointSetDistinguished::name,
     AlgEcpointSetRandom::name,

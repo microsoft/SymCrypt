@@ -330,6 +330,8 @@ addSymCryptImplementationToGlobalList()
 
     addImplementationToGlobalList<EccImp<ImpScVariant, AlgEcurveAllocate>>();
 
+    addImplementationToGlobalList<EccImp<ImpScVariant, AlgEckeySetRandom>>();
+
     addImplementationToGlobalList<EccImp<ImpScVariant, AlgEcdsaSign>>();
     addImplementationToGlobalList<EccImp<ImpScVariant, AlgEcdsaVerify>>();
     addImplementationToGlobalList<EccImp<ImpScVariant, AlgEcdh>>();

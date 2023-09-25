@@ -967,6 +967,11 @@ public:
     const static char * name;
 };
 
+class AlgEckeySetRandom{
+public:
+    const static char * name;
+};
+
 class AlgEcpointSetZero{
 public:
     const static char * name;
