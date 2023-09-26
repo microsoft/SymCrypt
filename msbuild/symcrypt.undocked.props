@@ -27,6 +27,7 @@
       <TreatWChar_tAsBuiltInType>false</TreatWChar_tAsBuiltInType>
       <CharacterSet>MultiByte</CharacterSet>
       <WholeProgramOptimization>true</WholeProgramOptimization>
+      <AdditionalOptions>/Gy %(AdditionalOptions)</AdditionalOptions>
       <AdditionalOptions Condition="'$(SymCryptKernelTarget)'=='true'">
         /kernel
         %(AdditionalOptions)
@@ -35,6 +36,7 @@
     <MASM>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <PreprocessorDefinitions>SYMCRYPT_MASM;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalOptions>/Gy %(AdditionalOptions)</AdditionalOptions>
     </MASM>
     <Link>
       <AdditionalOptions Condition="'$(SymCryptKernelTarget)'=='true'">
@@ -71,22 +73,16 @@
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Platform)'=='x64'">
     <ClCompile>
-      <AdditionalOptions>/Gy %(AdditionalOptions)</AdditionalOptions>
       <PreprocessorDefinitions>_AMD64_;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
-    <MASM>
-      <AdditionalOptions>/Gy %(AdditionalOptions)</AdditionalOptions>
-    </MASM>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Platform)'=='Win32'">
     <ClCompile>
       <CallingConvention>StdCall</CallingConvention>
-      <AdditionalOptions>/Gy %(AdditionalOptions)</AdditionalOptions>
       <PreprocessorDefinitions>_X86_;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <MASM>
       <UseSafeExceptionHandlers>true</UseSafeExceptionHandlers>
-      <AdditionalOptions>/Gy %(AdditionalOptions)</AdditionalOptions>
     </MASM>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="$(Platform.StartsWith('ARM64'))">
