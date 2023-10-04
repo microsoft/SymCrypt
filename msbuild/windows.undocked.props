@@ -9,7 +9,10 @@
     <UndockedOfficial Condition="'$(UndockedOfficial)' == ''">false</UndockedOfficial>
     <!-- Use the official LKG complier when available -->
     <UseInternalMSUniCrtPackage>true</UseInternalMSUniCrtPackage>
+    <!-- Enable ARM64X unless explicitly disabled -->
     <EnableArm64x Condition="$(ARM64X_DISABLED) != '1'">true</EnableArm64x>
+    <!-- Set UndockedKernelModeBuild when building .sys files -->
+    <UndockedKernelModeBuild Condition="'$(UndockedType)' == 'sys'">true</UndockedKernelModeBuild>
   </PropertyGroup>
 
   <!-- The set of supported user mode configurations (x86,x64,arm,arm64) -->

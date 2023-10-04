@@ -36,7 +36,6 @@
       <LinkTimeCodeGeneration>UseLinkTimeCodeGeneration</LinkTimeCodeGeneration>
       <AdditionalDependencies>%(AdditionalDependencies);cng.lib;ntoskrnl.lib</AdditionalDependencies>
       <EntryPointSymbol>GsDriverEntry</EntryPointSymbol>
-      <AdditionalOptions>/nodefaultlib:libcmt.lib /nodefaultlib:libcmtd.lib %(AdditionalOptions)</AdditionalOptions>
     </Link>
   </ItemDefinitionGroup>
   <PropertyGroup Label="DbgEng">

@@ -44,7 +44,6 @@
       <LinkTimeCodeGeneration>UseLinkTimeCodeGeneration</LinkTimeCodeGeneration>
       <AdditionalDependencies>%(AdditionalDependencies);rsa32.lib;msbignum.lib;ntdll.lib;Bcrypt.lib</AdditionalDependencies>
       <AdditionalLibraryDirectories>..\SymCryptDependencies\$(ProcessorArchitecture)</AdditionalLibraryDirectories>
-      <AdditionalOptions>/nodefaultlib:libcmt.lib /nodefaultlib:libcmtd.lib %(AdditionalOptions)</AdditionalOptions>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>

@@ -39,6 +39,11 @@
       <AdditionalOptions>/Gy %(AdditionalOptions)</AdditionalOptions>
     </MASM>
     <Link>
+      <AdditionalOptions>
+        /nodefaultlib:libcmt.lib
+        /nodefaultlib:libcmtd.lib 
+        %(AdditionalOptions)
+      </AdditionalOptions>
       <AdditionalOptions Condition="'$(SymCryptKernelTarget)'=='true'">
         /d2:-guardcfgdispatch
         /guard:exportsuppress

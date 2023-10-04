@@ -41,7 +41,6 @@
       <EnableUAC>false</EnableUAC>
       <LinkTimeCodeGeneration>UseLinkTimeCodeGeneration</LinkTimeCodeGeneration>
       <AdditionalDependencies>%(AdditionalDependencies);ntdll.lib;Bcrypt.lib</AdditionalDependencies>
-      <AdditionalOptions>/nodefaultlib:libcmt.lib /nodefaultlib:libcmtd.lib  %(AdditionalOptions)</AdditionalOptions>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
