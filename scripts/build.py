@@ -15,7 +15,7 @@ import subprocess
 import sys
 from typing import List
 
-ARCH_CMAKE = ("x86", "amd64", "arm64")
+ARCH_CMAKE = ("x86", "amd64", "arm64", "arm")
 CONFIG_CMAKE = ("Debug", "Release", "Sanitize")
 
 ARCH_MSBUILD = ("x86", "amd64", "arm64")
@@ -35,8 +35,8 @@ def get_normalized_host_arch() -> str:
         normalized_arch = "amd64"
     elif re.fullmatch("ARM64|aarch64", host_arch):
         normalized_arch = "arm64"
-
-    # No support for ARM32 right now
+    elif re.fullmatch("ARM32|aarch32", host_arch):
+        normalized_arch = "arm"
 
     if not normalized_arch:
         print("Unrecognized host architecture " + host_arch, file = sys.stderr)
@@ -82,7 +82,8 @@ def configure_cmake(args : argparse.Namespace) -> None:
             cmake_args.append("x64")
         elif args.arch == "arm64":
             cmake_args.append("arm64")
-        
+        elif args.arch == "arm":
+            cmake_args.append("arm")
         # No support for ARM32 right now
     
     if args.host_arch != args.arch:

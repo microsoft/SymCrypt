@@ -18,6 +18,6 @@ target_link_libraries(symcryptunittest symcryptunittest_lib symcrypt_common atom
 
 # Export oe_sgx_get_additional_host_entropy from the executable so that if we dynamically load
 # oe module, the linker can find the version which is locally defined in the executable
-target_link_options(symcryptunittest PRIVATE 
+target_link_options(symcryptunittest PRIVATE
   -Wl,--dynamic-list=${CMAKE_CURRENT_SOURCE_DIR}/dynamic-list.ver
 )

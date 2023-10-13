@@ -74,6 +74,12 @@ jobs:
           apt-get install -y binutils-aarch64-linux-gnu gcc-aarch64-linux-gnu g++-aarch64-linux-gnu qemu-user
         displayName: 'Install arm64 cross-compilation tools'
 
+    - ${{ if eq(parameters.arch, 'ARM') }}:
+      - script: |
+          apt-get update
+          apt-get install -y gcc-arm-linux-gnueabihf g++-arm-linux-gnueabihf qemu-user
+        displayName: 'Install arm64 cross-compilation tools'
+
     - task: PipAuthenticate@1
       inputs:
         artifactFeeds: 'OS/SymCrypt_PublicPackages'
@@ -92,22 +98,23 @@ jobs:
 
     - ${{ if ne(parameters.skipTests, true) }}:
       - ${{ if ne(parameters.arch, 'ARM64') }}:
-        - task: PythonScript@0
-          displayName: 'Run unit tests'
-          inputs:
-            scriptSource: 'filePath'
-            scriptPath: scripts/test.py
-            arguments: 'bin noperftests'
-            workingDirectory: $(Build.SourcesDirectory)
-
-        - ${{ if ne(parameters.config, 'Sanitize') }}:
+        - ${{ if ne(parameters.arch, 'ARM') }}:
           - task: PythonScript@0
-            displayName: 'Run dynamic unit tests'
+            displayName: 'Run unit tests'
             inputs:
               scriptSource: 'filePath'
               scriptPath: scripts/test.py
-              arguments: 'bin dynamic:bin/module/generic/libsymcrypt.so noperftests'
+              arguments: 'bin noperftests'
               workingDirectory: $(Build.SourcesDirectory)
+
+          - ${{ if ne(parameters.config, 'Sanitize') }}:
+            - task: PythonScript@0
+              displayName: 'Run dynamic unit tests'
+              inputs:
+                scriptSource: 'filePath'
+                scriptPath: scripts/test.py
+                arguments: 'bin dynamic:bin/module/generic/libsymcrypt.so noperftests'
+                workingDirectory: $(Build.SourcesDirectory)
 
       - ${{ if eq(parameters.arch, 'AMD64') }}:
         - task: PythonScript@0
@@ -133,6 +140,23 @@ jobs:
             scriptSource: 'filePath'
             scriptPath: scripts/test.py
             arguments: '--emulator qemu-aarch64 --emulator-lib-dir /usr/aarch64-linux-gnu/ bin dynamic:bin/module/generic/libsymcrypt.so noperftests +symcrypt -dh -dsa -rsa'
+            workingDirectory: $(Build.SourcesDirectory)
+      
+      - ${{ if eq(parameters.arch, 'ARM') }}:
+        - task: PythonScript@0
+          displayName: 'Run unit tests'
+          inputs:
+            scriptSource: 'filePath'
+            scriptPath: scripts/test.py
+            arguments: '--emulator qemu-arm --emulator-lib-dir /usr/arm-linux-gnueabihf/ bin noperftests +symcrypt -dh -dsa -rsa'
+            workingDirectory: $(Build.SourcesDirectory)
+
+        - task: PythonScript@0
+          displayName: 'Run dynamic unit tests'
+          inputs:
+            scriptSource: 'filePath'
+            scriptPath: scripts/test.py
+            arguments: '--emulator qemu-arm --emulator-lib-dir /usr/arm-linux-gnueabihf/ bin dynamic:bin/module/generic/libsymcrypt.so noperftests +symcrypt -dh -dsa -rsa'
             workingDirectory: $(Build.SourcesDirectory)
 
     - task: PythonScript@0

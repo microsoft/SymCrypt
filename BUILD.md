@@ -80,3 +80,24 @@ be released externally due to licensing restrictions.  If you wish to build dire
 helper script, you can run `msbuild /p:Platform=<platform> /p:Architecture=<arch> symcrypt.sln`. Note that Python is
 still required for translating SymCryptAsm. The output directory for MSBuild is always `build\bin`, and all compiled
 outputs are placed in this directory.
+
+## Building Linux targets
+
+Requires the following packages on debian-based systems to build:
+```
+apt-get -y install --no-install-recommends \
+    cmake \
+    python3-pyelftools \                             # integrity
+    gcc-arm-linux-gnueabihf g++-arm-linux-gnueabihf  # for arm
+```
+
+And for running the test:
+```
+apt-get -y install --no-install-recommends qemu-user
+```
+
+To build and test for example for arm:
+```
+python3 scripts/build.py cmake --arch arm --toolchain cmake-configs/Toolchain-GCC-ARM.cmake bin_arm
+qemu-arm -L /usr/arm-linux-gnueabihf/ ./bin_arm/exe/symcryptunittest -rsa -dsa -dh -ec -int -mod dynamic:bin_arm/module/generic/libsymcrypt.so
+```

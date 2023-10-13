@@ -8,8 +8,152 @@
 
 #include "precomp.h"
 
+#if UINTPTR_MAX == 0xFFFFFFFF
+#define Elf_Shdr          Elf32_Shdr
+#define Elf_Phdr          Elf32_Phdr
+#define Elf_Sym           Elf32_Sym
+#define Elf_Dyn           Elf32_Dyn
+#define Elf_Ehdr          Elf32_Ehdr
+#define Elf_Addr          Elf32_Addr
+#define Elf_Off           Elf32_Off
+#define Elf_Rel           Elf32_Rel
+#define Elf_Rela          Elf32_Rela
+#define ELF_R_TYPE(X)     ELF32_R_TYPE(X)
+#define ELF_R_SYM(X)      ELF32_R_SYM(X)
+#define Elf_Word          Elf32_Word
+#define SYMCRYPT_FORCE_READ_ADDR SYMCRYPT_FORCE_READ32
+#elif UINTPTR_MAX == 0xFFFFFFFFFFFFFFFFu
+#define Elf_Shdr          Elf64_Shdr
+#define Elf_Phdr          Elf64_Phdr
+#define Elf_Sym           Elf64_Sym
+#define Elf_Dyn           Elf64_Dyn
+#define Elf_Ehdr          Elf64_Ehdr
+#define Elf_Addr          Elf64_Addr
+#define Elf_Off           Elf64_Off
+#define Elf_Rel           Elf64_Rel
+#define Elf_Rela          Elf64_Rela
+#define ELF_R_TYPE(X)     ELF64_R_TYPE(X)
+#define ELF_R_SYM(X)      ELF64_R_SYM(X)
+#define Elf_Word          Elf64_Word
+#define SYMCRYPT_FORCE_READ_ADDR SYMCRYPT_FORCE_READ64
+#else
+#error Unknown CPU pointer size
+#endif
+
+#ifdef SYMCRYPT_DEBUG_INTEGRITY
+#include <stdio.h>
+
+VOID
+DbgDumpHex(PCBYTE pbData, SIZE_T cbData)
+{
+    ULONG i,count;
+    CHAR digits[]="0123456789abcdef";
+    CHAR pbLine[256];
+    ULONG cbLine, cbHeader = 0;
+    ULONG_PTR address;
+
+    if(pbData == NULL && cbData != 0)
+    {
+        // strcat_s(pbLine, RTL_NUMBER_OF(pbLine), "<null> buffer!!!\n");
+        fprintf(stderr, "<null> buffer!!!\n");
+        return;
+    }
+
+    for(; cbData ; cbData -= count, pbData += count)
+    {
+        count = (cbData > 16) ? 16:cbData;
+
+        cbLine = cbHeader;
+
+        address = (ULONG_PTR)pbData;
+
+#if UINTPTR_MAX == 0xFFFFFFFFFFFFFFFFu
+        // 64 bit addresses.
+        pbLine[cbLine++] = digits[(address >> 0x3c) & 0x0f];
+        pbLine[cbLine++] = digits[(address >> 0x38) & 0x0f];
+        pbLine[cbLine++] = digits[(address >> 0x34) & 0x0f];
+        pbLine[cbLine++] = digits[(address >> 0x30) & 0x0f];
+        pbLine[cbLine++] = digits[(address >> 0x2c) & 0x0f];
+        pbLine[cbLine++] = digits[(address >> 0x28) & 0x0f];
+        pbLine[cbLine++] = digits[(address >> 0x24) & 0x0f];
+        pbLine[cbLine++] = digits[(address >> 0x20) & 0x0f];
+#endif
+        pbLine[cbLine++] = digits[(address >> 0x1c) & 0x0f];
+        pbLine[cbLine++] = digits[(address >> 0x18) & 0x0f];
+        pbLine[cbLine++] = digits[(address >> 0x14) & 0x0f];
+        pbLine[cbLine++] = digits[(address >> 0x10) & 0x0f];
+        pbLine[cbLine++] = digits[(address >> 0x0c) & 0x0f];
+        pbLine[cbLine++] = digits[(address >> 0x08) & 0x0f];
+        pbLine[cbLine++] = digits[(address >> 0x04) & 0x0f];
+        pbLine[cbLine++] = digits[(address        ) & 0x0f];
+        pbLine[cbLine++] = ' ';
+        pbLine[cbLine++] = ' ';
+
+        for(i = 0; i < count; i++)
+        {
+            pbLine[cbLine++] = digits[pbData[i]>>4];
+            pbLine[cbLine++] = digits[pbData[i]&0x0f];
+            if(i == 7)
+            {
+                pbLine[cbLine++] = ':';
+            }
+            else
+            {
+                pbLine[cbLine++] = ' ';
+            }
+        }
+
+        for(; i < 16; i++)
+        {
+            pbLine[cbLine++] = ' ';
+            pbLine[cbLine++] = ' ';
+            pbLine[cbLine++] = ' ';
+        }
+
+        pbLine[cbLine++] = ' ';
+
+        for(i = 0; i < count; i++)
+        {
+            if(pbData[i] < 32 || pbData[i] > 126)
+            {
+                pbLine[cbLine++] = '.';
+            }
+            else
+            {
+                pbLine[cbLine++] = pbData[i];
+            }
+        }
+
+        pbLine[cbLine++] = 0;
+
+        fprintf(stderr, "%s\n", pbLine);
+    }
+}
+
+VOID
+SYMCRYPT_CALL
+SymCryptHmacSha256AppendDbg(
+    _In_                    CHAR*                       pszLabel,
+    _Inout_                 PSYMCRYPT_HMAC_SHA256_STATE pState,
+    _In_reads_( cbData )    PCBYTE                      pbData,
+                            SIZE_T                      cbData )
+{
+    fprintf(stderr, "\nHMAC append: %s size %lx\n", pszLabel, cbData);
+    DbgDumpHexString(pbData, (ULONG)cbData);
+    SymCryptHmacSha256Append(pState, pbData, cbData);
+}
+
+#endif
+
 // These placeholder vaulues must match the values in process_fips_module.py
+#if UINTPTR_MAX == 0xFFFFFFFF
 #define PLACEHOLDER_VALUE 0x8BADF00D
+#elif UINTPTR_MAX == 0xFFFFFFFFFFFFFFFFu
+#define PLACEHOLDER_VALUE 0x4BADF00D8BADF00D
+#else
+#error Unknown CPU pointer size
+#endif
+
 #define PLACEHOLDER_ARRAY \
 {\
     0x5B, 0x75, 0xBB, 0xE4, 0x9E, 0x18, 0x03, 0x55,\
@@ -29,11 +173,11 @@
 
 // Relative virtual address of the HMAC key. Used to calculate where the module starts in memory
 // at runtime.
-const Elf64_Addr SymCryptVolatileFipsHmacKeyRva = (Elf64_Addr) PLACEHOLDER_VALUE;
+const Elf_Addr SymCryptVolatileFipsHmacKeyRva = (Elf_Addr) PLACEHOLDER_VALUE;
 
 // Offset to the end of the FIPS module. Bytes after this offset are not considered part of our
 // FIPS module and are not included in the HMAC digest.
-const Elf64_Off SymCryptVolatileFipsBoundaryOffset = PLACEHOLDER_VALUE;
+const Elf_Off SymCryptVolatileFipsBoundaryOffset = PLACEHOLDER_VALUE;
 
 // Key used for HMAC.
 const unsigned char SymCryptVolatileFipsHmacKey[32] = PLACEHOLDER_ARRAY;
@@ -44,32 +188,43 @@ unsigned char SymCryptVolatileFipsHmacDigest[SYMCRYPT_HMAC_SHA256_RESULT_SIZE] =
 
 typedef struct
 {
-    Elf64_Rela* rela;
+    Elf_Rela* rela;
+    Elf_Rel* rel;
     size_t relaEntryCount;
-    Elf64_Rela* pltRela;
+    size_t relEntryCount;
+    union {
+        Elf_Rela* rela;
+        Elf_Rel* rel;
+        Elf_Addr addr;
+    } plt;
     size_t pltRelaEntryCount;
-} Elf64_Rela_Info;
+    Elf_Addr pltRelAddendType;
+} Elf_Rela_Info;
+
 
 VOID SymCryptModuleUndoRelocation(
-    _In_ const Elf64_Addr module_base,
-    _Inout_ Elf64_Xword* const target,
-    _In_ const Elf64_Rela* rela )
+    _In_ const Elf_Addr module_base,
+    _Inout_ Elf_Addr* const target,
+    _In_ const Elf_Word relType )
 {
-    Elf64_Xword replacement = 0;
+    Elf_Addr replacement = 0;
 
-    switch( ELF64_R_TYPE( rela->r_info ) )
+    switch( relType )
     {
         case R_X86_64_RELATIVE:
         case R_AARCH64_RELATIVE:
-            replacement = *target - (Elf64_Off) module_base;
+        case R_ARM_RELATIVE:
+            replacement = *target - (Elf_Off) module_base;
             break;
         case R_X86_64_64:
         case R_X86_64_GLOB_DAT:
         case R_X86_64_JUMP_SLOT:
         case R_AARCH64_GLOB_DAT:
         case R_AARCH64_JUMP_SLOT:
-            // R_X86_64_64, R_X86_64_GLOB_DAT and R_AARCH64_GLOB_DAT relocations all have initial
-            // values of zero. R_X86_64_JUMP_SLOT and R_AARCH64_JUMP_SLOT relocations have initial
+        case R_ARM_GLOB_DAT:
+        case R_ARM_JUMP_SLOT:
+            // R_X86_64_64 and R_*_GLOB_DAT relocations all have initial
+            // values of zero. R_*_JUMP_SLOT relocations have initial
             // values that point into the PLT, but we set these to zero in our post-processing
             // script before HMACing the module. These relocation targets are excluded from our
             // FIPS module boundary because they're used for external function calls, which we
@@ -87,36 +242,51 @@ VOID SymCryptModuleUndoRelocation(
 }
 
 VOID SymCryptModuleFindRelocationInfo(
-    _In_ const Elf64_Dyn* const dynStart,
-    _Out_ Elf64_Rela_Info* relaInfo)
+    _In_ const Elf_Dyn* const dynStart,
+    _Out_ Elf_Rela_Info* relaInfo)
 {
     relaInfo->rela = NULL;
     relaInfo->relaEntryCount = 0;
-    relaInfo->pltRela = NULL;
+    relaInfo->relEntryCount = 0;
+    relaInfo->plt.addr = 0;
     relaInfo->pltRelaEntryCount = 0;
 
     size_t relaTotalSize = 0;
+    size_t relTotalSize = 0;
     size_t relaEntrySize = 0;
+    size_t relEntrySize = 0;
     size_t pltTotalSize = 0;
 
-    for( const Elf64_Dyn* dyn = dynStart; dyn->d_tag != DT_NULL; ++dyn )
+    for( const Elf_Dyn* dyn = dynStart; dyn->d_tag != DT_NULL; ++dyn )
     {
         switch( dyn->d_tag )
         {
             case DT_RELA:
-                relaInfo->rela = ( Elf64_Rela* ) dyn->d_un.d_ptr;
+                relaInfo->rela = ( Elf_Rela* ) dyn->d_un.d_ptr;
+                break;
+
+            case DT_REL:
+                relaInfo->rel = ( Elf_Rel* ) dyn->d_un.d_ptr;
                 break;
 
             case DT_RELASZ:
                 relaTotalSize = dyn->d_un.d_val;
                 break;
 
+            case DT_RELSZ:
+                relTotalSize = dyn->d_un.d_val;
+                break;
+
             case DT_RELAENT:
                 relaEntrySize = dyn->d_un.d_val;
                 break;
 
+            case DT_RELENT:
+                relEntrySize = dyn->d_un.d_val;
+                break;
+
             case DT_JMPREL:
-                relaInfo->pltRela = ( Elf64_Rela* ) dyn->d_un.d_ptr;
+                relaInfo->plt.addr = ( Elf_Addr ) dyn->d_un.d_ptr;
                 break;
 
             case DT_PLTRELSZ:
@@ -124,9 +294,8 @@ VOID SymCryptModuleFindRelocationInfo(
                 break;
 
             case DT_PLTREL:
-                // Make sure PLT entries are DT_RELA entries and not DT_REL; we do not suppport
-                // the latter
-                SYMCRYPT_FIPS_ASSERT( dyn->d_un.d_val == DT_RELA );
+                SYMCRYPT_FIPS_ASSERT( dyn->d_un.d_val == DT_RELA || dyn->d_un.d_val == DT_REL );
+                relaInfo->pltRelAddendType = dyn->d_un.d_val;
                 break;
 
             default:
@@ -134,26 +303,45 @@ VOID SymCryptModuleFindRelocationInfo(
         }
     }
 
-    SYMCRYPT_FIPS_ASSERT( relaInfo->rela != NULL );
-    SYMCRYPT_FIPS_ASSERT( relaEntrySize == sizeof( Elf64_Rela ) );
-    SYMCRYPT_FIPS_ASSERT( relaTotalSize != 0 && relaTotalSize % relaEntrySize == 0 );
+    // Need to have at least one type of relocations.
+    SYMCRYPT_FIPS_ASSERT( relaInfo->rela != NULL || relaInfo->rel != NULL );
 
-    relaInfo->relaEntryCount = relaTotalSize / relaEntrySize;
-
-    // On AMD64 there should not be a PLT section, because we can't currently handle AMD64 PLT
-    // relocations
-    if( relaInfo->pltRela != NULL)
+    if ( relaInfo->rela != NULL)
     {
-        SYMCRYPT_FIPS_ASSERT( pltTotalSize != 0 && pltTotalSize % sizeof( Elf64_Rela ) == 0 );
-        relaInfo->pltRelaEntryCount = pltTotalSize / sizeof( Elf64_Rela );
+        SYMCRYPT_FIPS_ASSERT( relaEntrySize == sizeof( Elf_Rela ) );
+        SYMCRYPT_FIPS_ASSERT( relaTotalSize != 0 && relaTotalSize % relaEntrySize == 0 );
+        relaInfo->relaEntryCount = relaTotalSize / relaEntrySize;
+    }
+    if ( relaInfo->rel != NULL )
+    {
+        SYMCRYPT_FIPS_ASSERT( relaInfo->rel != NULL );
+        SYMCRYPT_FIPS_ASSERT( relEntrySize == sizeof( Elf_Rel ) );
+        SYMCRYPT_FIPS_ASSERT( relTotalSize != 0 && relTotalSize % relEntrySize == 0 );
+        relaInfo->relEntryCount = relTotalSize / relEntrySize;
+    }
+
+    if( relaInfo->plt.addr != 0)
+    {
+        SYMCRYPT_FIPS_ASSERT( pltTotalSize != 0 );
+        // PLT relocations are either all rel or all rela.
+        if ( relaInfo->pltRelAddendType == DT_RELA )
+        {
+            SYMCRYPT_FIPS_ASSERT( pltTotalSize % sizeof( Elf_Rela ) == 0 );
+            relaInfo->pltRelaEntryCount = pltTotalSize / sizeof( Elf_Rela );
+        }
+        else
+        {
+            SYMCRYPT_FIPS_ASSERT( pltTotalSize % sizeof( Elf_Rel ) == 0 );
+            relaInfo->pltRelaEntryCount = pltTotalSize / sizeof( Elf_Rel );
+        }
     }
 }
 
 size_t SymCryptModuleProcessSegmentWithRelocations(
-    _In_ const Elf64_Addr module_base,
-    _In_ const Elf64_Phdr* const programHeader,
-    _In_ const Elf64_Dyn* const dynStart,
-    _In_ const Elf64_Rela_Info* const relaInfo,
+    _In_ const Elf_Addr module_base,
+    _In_ const Elf_Phdr* const programHeader,
+    _In_ const Elf_Dyn* const dynStart,
+    _In_ const Elf_Rela_Info* const relaInfo,
     _Inout_ SYMCRYPT_HMAC_SHA256_STATE* hmacState )
 {
     // The segment that contains relocations consists of the following sections, in this order:
@@ -169,10 +357,19 @@ size_t SymCryptModuleProcessSegmentWithRelocations(
     // the module on disk is usually a different size than at runtime, so we cannot include it in
     // our HMAC either.
     //
+    // In arm (32 bit) relocations also exist in .text section so we'll do SymCryptModuleProcessSegmentWithRelocations
+    // on every section.
+    // 
     // FipsBoundaryOffset marks the start of the .data section, so we read from the start of the
     // segment up to that offset.
-    size_t hashableSectionSize = SYMCRYPT_FORCE_READ64( &SymCryptVolatileFipsBoundaryOffset ) - programHeader->p_offset;
-    Elf64_Addr segmentStart = module_base + programHeader->p_vaddr;
+    size_t hashableSectionSize = programHeader->p_filesz;
+    Elf_Addr segmentStart = module_base + programHeader->p_vaddr;
+
+    // If the data section is in this segment then exclude that from being hashed.
+    if( SYMCRYPT_FORCE_READ_ADDR( &SymCryptVolatileFipsBoundaryOffset ) <= programHeader->p_offset + programHeader->p_filesz )
+    {
+        hashableSectionSize = SYMCRYPT_FORCE_READ_ADDR( &SymCryptVolatileFipsBoundaryOffset ) - programHeader->p_offset;
+    }
 
     BYTE* segmentCopy = SymCryptCallbackAlloc( hashableSectionSize );
     SYMCRYPT_FIPS_ASSERT( segmentCopy != NULL );
@@ -184,63 +381,103 @@ size_t SymCryptModuleProcessSegmentWithRelocations(
     // these relocations separately. We find the .dynamic section in the copied buffer based on
     // its offset from the start of the section, which is calculated by subtracting the address
     // of the start of the segment from the address of the .dynamic section in the segment.
-    Elf64_Off dynOffsetInBuffer = (Elf64_Addr) dynStart - (Elf64_Addr) segmentStart;
-    Elf64_Dyn* dynStartInBuffer = (Elf64_Dyn*) (segmentCopy + dynOffsetInBuffer);
+    Elf_Off dynOffsetInBuffer = (Elf_Addr) dynStart - (Elf_Addr) segmentStart;
+    Elf_Dyn* dynStartInBuffer = (Elf_Dyn*) (segmentCopy + dynOffsetInBuffer);
 
-    for( Elf64_Dyn* dyn = dynStartInBuffer; dyn->d_tag != DT_NULL; ++dyn )
+    // If this segment contains the dynamic section then we need to process the relocations in it.
+    if ((Elf_Addr)dynStart > segmentStart && (Elf_Addr)dynStart < segmentStart + hashableSectionSize)
     {
-        // The following types of .dynamic entries have the module's base address added to
-        // their initial value
-        if( dyn->d_tag == DT_HASH ||
-            dyn->d_tag == DT_STRTAB ||
-            dyn->d_tag == DT_SYMTAB ||
-            dyn->d_tag == DT_RELA ||
-            dyn->d_tag == DT_GNU_HASH ||
-            dyn->d_tag == DT_VERSYM ||
-            dyn->d_tag == DT_PLTGOT ||
-            dyn->d_tag == DT_JMPREL)
+        for( Elf_Dyn* dyn = dynStartInBuffer; dyn->d_tag != DT_NULL; ++dyn )
         {
-            dyn->d_un.d_val -= (Elf64_Xword) module_base;
+            // The following types of .dynamic entries have the module's base address added to
+            // their initial value
+            if( dyn->d_tag == DT_HASH ||
+                dyn->d_tag == DT_STRTAB ||
+                dyn->d_tag == DT_SYMTAB ||
+                dyn->d_tag == DT_RELA ||
+                dyn->d_tag == DT_GNU_HASH ||
+                dyn->d_tag == DT_VERSYM ||
+                dyn->d_tag == DT_PLTGOT ||
+                dyn->d_tag == DT_JMPREL ||
+                dyn->d_tag == DT_REL)
+            {
+                dyn->d_un.d_val -= module_base;
+            }
         }
     }
 
     // Now we can process the normal relocations listed in the relocation table
     for( size_t i = 0; i < relaInfo->relaEntryCount; ++i )
     {
-        const Elf64_Rela* rela = relaInfo->rela + i;
+        const Elf_Rela* rela = relaInfo->rela + i;
 
         // Find the relocation within the section. Note that for a shared object module,
         // rela->r_offset is actually a virtual address. Relocations can occur within the .data
         // section, which is outside our FIPS boundary, so any such relocations can be ignored.
-        Elf64_Off offsetInBuffer = (Elf64_Off) rela->r_offset - (Elf64_Off) programHeader->p_vaddr;
+        Elf_Off offsetInBuffer = (Elf_Off) rela->r_offset - (Elf_Off) programHeader->p_vaddr;
         if( offsetInBuffer > hashableSectionSize )
         {
             continue;
         }
 
-        Elf64_Xword* target = (Elf64_Xword*) ( segmentCopy + offsetInBuffer);
+        Elf_Addr* target = (Elf_Addr*) ( segmentCopy + offsetInBuffer);
 
-        SymCryptModuleUndoRelocation( module_base, target, rela );
+        SymCryptModuleUndoRelocation( module_base, target, ELF_R_TYPE( rela->r_info ) );
     }
 
-    // Process the GOT entries from the .rela.plt section. Same as process above, just
+    for( size_t i = 0; i < relaInfo->relEntryCount; ++i )
+    {
+        const Elf_Rel* rel = relaInfo->rel + i;
+
+        // Find the relocation within the section. Note that for a shared object module,
+        // rela->r_offset is actually a virtual address. Relocations can occur within the .data
+        // section, which is outside our FIPS boundary, so any such relocations can be ignored.
+        Elf_Off offsetInBuffer = (Elf_Off) rel->r_offset - (Elf_Off) programHeader->p_vaddr;
+        if( offsetInBuffer > hashableSectionSize )
+        {
+            continue;
+        }
+
+        Elf_Addr* target = (Elf_Addr*) ( segmentCopy + offsetInBuffer);
+
+        SymCryptModuleUndoRelocation( module_base, target, ELF_R_TYPE( rel->r_info ) );
+    }
+
+    // Process the GOT entries from the .rela.plt or .rel.plt section. Same as process above, just
     // with a different table.
     for( size_t i = 0; i < relaInfo->pltRelaEntryCount; ++i)
     {
-        const Elf64_Rela* rela = relaInfo->pltRela + i;
+        Elf_Word type = 0;
+        Elf_Off offsetInBuffer = 0;
 
-        Elf64_Off offsetInBuffer = (Elf64_Off) rela->r_offset - (Elf64_Off) programHeader->p_vaddr;
+        if (relaInfo->pltRelAddendType == DT_RELA)
+        {
+            const Elf_Rela* rela = relaInfo->plt.rela + i;
+            type = ELF_R_TYPE( rela->r_info );
+            offsetInBuffer = (Elf_Off) rela->r_offset - (Elf_Off) programHeader->p_vaddr;
+        }
+        else
+        {
+            const Elf_Rel* rel = relaInfo->plt.rel + i;
+            type = ELF_R_TYPE( rel->r_info );
+            offsetInBuffer = (Elf_Off) rel->r_offset - (Elf_Off) programHeader->p_vaddr;
+        }
+
         if( offsetInBuffer > hashableSectionSize )
         {
             continue;
         }
 
-        Elf64_Xword* target = (Elf64_Xword*) ( segmentCopy + offsetInBuffer);
+        Elf_Addr* target = (Elf_Addr*) ( segmentCopy + offsetInBuffer);
 
-        SymCryptModuleUndoRelocation( module_base, target, rela );
+        SymCryptModuleUndoRelocation( module_base, target, type );
     }
 
+#if SYMCRYPT_DEBUG_INTEGRITY
+    SymCryptHmacSha256AppendDbg( "Append after relocation adjust", hmacState, segmentCopy, hashableSectionSize );
+#else 
     SymCryptHmacSha256Append( hmacState, segmentCopy, hashableSectionSize );
+#endif
 
     SymCryptCallbackFree( segmentCopy );
 
@@ -248,9 +485,9 @@ size_t SymCryptModuleProcessSegmentWithRelocations(
 }
 
 VOID SymCryptModuleDoHmac(
-    _In_ const Elf64_Addr module_base,
-    _In_ const Elf64_Dyn* const dynStart,
-    _In_ const Elf64_Rela_Info* const relaInfo )
+    _In_ const Elf_Addr module_base,
+    _In_ const Elf_Dyn* const dynStart,
+    _In_ const Elf_Rela_Info* const relaInfo )
 {
     SYMCRYPT_ERROR scError = SYMCRYPT_NO_ERROR;
     SYMCRYPT_HMAC_SHA256_EXPANDED_KEY hmacKey;
@@ -263,37 +500,20 @@ VOID SymCryptModuleDoHmac(
 
     SymCryptHmacSha256Init( &hmacState, &hmacKey );
 
-    const Elf64_Ehdr* header = (Elf64_Ehdr*) module_base;
-    const Elf64_Phdr* programHeaderStart = (Elf64_Phdr*) ( module_base + header->e_phoff );
+    const Elf_Ehdr* header = (Elf_Ehdr*) module_base;
+    const Elf_Phdr* programHeaderStart = (Elf_Phdr*) ( module_base + header->e_phoff );
 
-    for( const Elf64_Phdr* programHeader = programHeaderStart;
+    for( const Elf_Phdr* programHeader = programHeaderStart;
         programHeader->p_type == PT_LOAD; ++programHeader )
     {
         // Sometimes the virtual address of a segment is greater than its offset into the module
         // file on disk. This means extra NULL bytes will be inserted into the module's memory
         // space at runtime. Those bytes are not part of our FIPS boundary, so we skip over them
         // and always start reading from the segment's virtual address
-        Elf64_Addr segmentStart = module_base + (Elf64_Off) programHeader->p_vaddr;
+        Elf_Addr segmentStart = module_base + (Elf_Off) programHeader->p_vaddr;
 
-        if( (programHeader->p_flags & PF_W) == PF_W &&
-            SYMCRYPT_FORCE_READ64( &SymCryptVolatileFipsBoundaryOffset ) <= programHeader->p_offset + programHeader->p_filesz )
-        {
-            // If we are processing the final writable segment (containing the .data section which
-            // marks the end of our FIPS boundary), then we need to reverse relocations in it
-            SymCryptModuleProcessSegmentWithRelocations( module_base, programHeader, dynStart,
+        SymCryptModuleProcessSegmentWithRelocations( module_base, programHeader, dynStart,
                 relaInfo, &hmacState );
-        }
-        else
-        {
-            // For AMD64/ARM64, non-writeable segments do not contain relocations, so we can write
-            // them in their entirety without modification. Note that the size in memory of the
-            // section may be larger than the size on disk, but again, the additional size in memory
-            // is not part of our FIPS boundary
-            // For now we assume that if there are writable segments before the final writable
-            // segment that they also contain no relocations
-            SymCryptHmacSha256Append( &hmacState, (PCBYTE) segmentStart,
-                programHeader->p_filesz );
-        }
     }
 
     SymCryptHmacSha256Result( &hmacState, actualDigest );
@@ -307,32 +527,32 @@ VOID SymCryptModuleVerifyIntegrity(void)
 {
     // Verify that our placeholder values were modified after compile time. The build script
     // should have replaced the placeholder values with their expected values
-    SYMCRYPT_FIPS_ASSERT( SYMCRYPT_FORCE_READ64( &SymCryptVolatileFipsHmacKeyRva ) != PLACEHOLDER_VALUE );
-    SYMCRYPT_FIPS_ASSERT( SYMCRYPT_FORCE_READ64( &SymCryptVolatileFipsBoundaryOffset ) != PLACEHOLDER_VALUE );
+    SYMCRYPT_FIPS_ASSERT( SYMCRYPT_FORCE_READ_ADDR( &SymCryptVolatileFipsHmacKeyRva ) != PLACEHOLDER_VALUE );
+    SYMCRYPT_FIPS_ASSERT( SYMCRYPT_FORCE_READ_ADDR( &SymCryptVolatileFipsBoundaryOffset ) != PLACEHOLDER_VALUE );
 
-    const Elf64_Addr module_base = (Elf64_Addr) SymCryptVolatileFipsHmacKey -
-        SYMCRYPT_FORCE_READ64( &SymCryptVolatileFipsHmacKeyRva );
+    const Elf_Addr module_base = (Elf_Addr) SymCryptVolatileFipsHmacKey -
+        SYMCRYPT_FORCE_READ_ADDR( &SymCryptVolatileFipsHmacKeyRva );
 
-    const Elf64_Ehdr* header = (Elf64_Ehdr*) module_base;
+    const Elf_Ehdr* header = (Elf_Ehdr*) module_base;
     SYMCRYPT_FIPS_ASSERT( memcmp(header->e_ident.ident.magic, ElfMagic, sizeof(ElfMagic)) == 0 );
     SYMCRYPT_FIPS_ASSERT( header->e_type == ET_DYN );
-    SYMCRYPT_FIPS_ASSERT( header->e_machine == EM_X86_64 || header->e_machine == EM_AARCH64 );
+    SYMCRYPT_FIPS_ASSERT( header->e_machine == EM_X86_64 || header->e_machine == EM_AARCH64 || header->e_machine == EM_ARM );
     SYMCRYPT_FIPS_ASSERT( header->e_version == EV_CURRENT );
-    SYMCRYPT_FIPS_ASSERT( header->e_ehsize == sizeof(Elf64_Ehdr) );
-    SYMCRYPT_FIPS_ASSERT( header->e_phentsize == sizeof(Elf64_Phdr) );
+    SYMCRYPT_FIPS_ASSERT( header->e_ehsize == sizeof(Elf_Ehdr) );
+    SYMCRYPT_FIPS_ASSERT( header->e_phentsize == sizeof(Elf_Phdr) );
 
-    const Elf64_Phdr* programHeaderStart = (Elf64_Phdr*) ( module_base + header->e_phoff );
+    const Elf_Phdr* programHeaderStart = (Elf_Phdr*) ( module_base + header->e_phoff );
 
-    Elf64_Rela_Info relaInfo = {};
+    Elf_Rela_Info relaInfo = {};
 
-    Elf64_Dyn* dynStart = NULL;
+    Elf_Dyn* dynStart = NULL;
 
     for( unsigned int i = 0; i < header->e_phnum; ++i )
     {
-        const Elf64_Phdr* programHeader = programHeaderStart + i;
+        const Elf_Phdr* programHeader = programHeaderStart + i;
         if( programHeader->p_type == PT_DYNAMIC )
         {
-            dynStart = (Elf64_Dyn*) (module_base + (Elf64_Off) programHeader->p_vaddr);
+            dynStart = (Elf_Dyn*) (module_base + (Elf_Off) programHeader->p_vaddr);
 
             SymCryptModuleFindRelocationInfo( dynStart, &relaInfo );
 

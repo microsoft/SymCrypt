@@ -18,4 +18,5 @@ VOID SymCryptModuleVerifyIntegrity(void);
 //
 // If the integrity check fails for any reason, the module will fastfail, crashing the process,
 // since a failed integrity check means it cannot operate in compliance with FIPS 140-3.
-// 
+//
+

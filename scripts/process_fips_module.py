@@ -21,7 +21,7 @@ import struct
 
 from elftools.elf.constants import P_FLAGS
 from elftools.elf.elffile import ELFFile
-from elftools.elf.enums import ENUM_RELOC_TYPE_x64, ENUM_RELOC_TYPE_AARCH64
+from elftools.elf.enums import ENUM_RELOC_TYPE_x64, ENUM_RELOC_TYPE_AARCH64, ENUM_RELOC_TYPE_ARM
 
 # Names of global constants in the FIPS module that need to be replaced
 KEY_NAME = "SymCryptVolatileFipsHmacKey"
@@ -33,9 +33,27 @@ DIGEST_NAME = "SymCryptVolatileFipsHmacDigest"
 CHAR_FORMAT_SPECIFIER = "s"
 QWORD_FORMAT_SPECIFIER = "Q"
 QWORD_BYTE_SIZE = struct.calcsize(QWORD_FORMAT_SPECIFIER)
+DWORD_FORMAT_SPECIFIER = "I"
+DWORD_BYTE_SIZE = struct.calcsize(DWORD_FORMAT_SPECIFIER)
+
+RELOCATION_TYPE_SIZES = {
+    ENUM_RELOC_TYPE_x64["R_X86_64_JUMP_SLOT"]: {
+        'size': QWORD_BYTE_SIZE,
+        'format': QWORD_FORMAT_SPECIFIER,
+    },
+    ENUM_RELOC_TYPE_AARCH64["R_AARCH64_JUMP_SLOT"]: {
+        'size': QWORD_BYTE_SIZE,
+        'format': QWORD_FORMAT_SPECIFIER,
+    },
+    ENUM_RELOC_TYPE_ARM["R_ARM_JUMP_SLOT"]: {
+        'size': DWORD_BYTE_SIZE,
+        'format': DWORD_FORMAT_SPECIFIER,
+    },
+}
 
 # Must match the placeholder values in integrity.c
-PLACEHOLDER_VALUE = struct.pack(QWORD_FORMAT_SPECIFIER, 0x8BADF00D)
+PLACEHOLDER_VALUE_64BIT = struct.pack(QWORD_FORMAT_SPECIFIER, 0x4BADF00D8BADF00D)
+PLACEHOLDER_VALUE_32BIT = struct.pack(DWORD_FORMAT_SPECIFIER, 0x8BADF00D)
 PLACEHOLDER_ARRAY = bytes((
     0x5B, 0x75, 0xBB, 0xE4, 0x9E, 0x18, 0x03, 0x55,
     0x08, 0x4E, 0x3F, 0xE7, 0x60, 0x7E, 0x4F, 0x08,
@@ -136,7 +154,8 @@ class ElfFileValueProxy(object):
         # The .data() method returns a bytes object. We can't use it to write back to the original
         # buffer, so we need to find the appropriate section within the stream using sh_offset and
         # write to that.
-        logging.debug("Writing {} to offset {}".format(value.hex(), hex(self.offset)))
+        # Note self.section.stream == self.elf_file.stream.
+        logging.debug("Changing {} writing {} to offset {}".format(self.name, value.hex(), hex(self.offset)))
         self.section.stream.seek(self.offset)
         self.section.stream.write(value)
 
@@ -145,7 +164,7 @@ class ElfFileValueProxy(object):
         assert(len(new_value) == self.length)
 
         if self.name is not None:
-            logging.debug("Changing {} value".format(self.name))
+            logging.debug("Changing {} value to {}".format(self.name, *args))
 
         self.value = new_value
 
@@ -156,6 +175,36 @@ def log_value(var):
         hex(var.vaddr),
         var.value.hex()))
 
+def dbg_dump_hex(data, address=0, file=None):
+    digits = "0123456789abcdef"
+    char_per_line = 16
+    remaining = len(data)
+    for line_pos in range(0, len(data), char_per_line):
+        chars_line = char_per_line if remaining > char_per_line else remaining
+        line = "{:08x}  ".format(address)
+        address += chars_line
+
+        for i in range(char_per_line):
+            if i < chars_line:
+                line += "{:02x}".format(data[line_pos + i])
+                if i == 7:
+                    line += ":"
+                else:
+                    line += " "
+            else:
+                line += "   "
+
+        line += " "
+
+        for i in range(chars_line):
+            if data[line_pos + i] < 32 or data[line_pos + i] > 126:
+                line += "."
+            else:
+                line += chr(data[line_pos + i])
+        print(line, file=file)
+        remaining -= char_per_line
+
+
 def hmac_module(loadable_segments, data_section_offset, key, digest, dump_file_path = None):
     """
     Performs HMAC-SHA256 on module contents and writes it back to the module buffer
@@ -163,6 +212,10 @@ def hmac_module(loadable_segments, data_section_offset, key, digest, dump_file_p
 
     module_bytes = bytearray()
     last_segment_offset = -1
+
+    dump_file = None
+    if dump_file_path is not None:
+        dump_file = open(dump_file_path + '.txt', "w")
 
     for (index, segment) in enumerate(loadable_segments):
 
@@ -175,9 +228,13 @@ def hmac_module(loadable_segments, data_section_offset, key, digest, dump_file_p
         if segment["p_offset"] + segment["p_filesz"] > data_section_offset:
             segment_hashable_length = data_section_offset - segment["p_offset"]
             module_bytes += segment.data()[:segment_hashable_length]
+            print("\nHMAC append: off {:08x} past data segment size {:x}".format(segment['p_offset'], segment_hashable_length), file=dump_file)
         else:
             module_bytes += segment.data()
             segment_hashable_length = len(segment.data())
+            print("\nHMAC append: off {:08x} normal size {:x}".format(segment['p_offset'], segment_hashable_length), file=dump_file)
+
+        dbg_dump_hex(segment.data()[:segment_hashable_length], file=dump_file)
 
         logging.info("Segment {}: {} - {}".format(
             index,
@@ -186,7 +243,8 @@ def hmac_module(loadable_segments, data_section_offset, key, digest, dump_file_p
 
         last_segment_offset = segment["p_offset"]
 
-    if dump_file_path is not None:
+    if dump_file is not None:
+        dump_file.close()
         with open(dump_file_path, "wb") as dump_file:
             dump_file.write(module_bytes)
 
@@ -265,29 +323,34 @@ def overwrite_jump_slots(elf_file, new_value):
     (vaddr, original value), so that they can be reset after the HMAC digest is calculated.
     """
 
-    rela_plt_section = elf_file.get_section_by_name(".rela.plt")
 
-    # Jump slot relocations always live in the .rela.plt section. If there is no .rela.plt section,
-    # there will be no jump slot relocations
-    if rela_plt_section is None:
-        return []
 
     original_jump_slot_values = []
-    for relocation in rela_plt_section.iter_relocations():
+
+    # Jump slot relocations live in .rela.plt or .rel.plt sections.
+    rela_plt_section = elf_file.get_section_by_name(".rela.plt")
+    rel_plt_section = elf_file.get_section_by_name(".rel.plt")
+    relocations = []
+    if rela_plt_section is not None:
+        relocations += rela_plt_section.iter_relocations()
+    if rel_plt_section is not None:
+        relocations += rel_plt_section.iter_relocations()
+
+    for relocation in relocations:
         relocation_type = relocation["r_info_type"]
-        if (relocation_type == ENUM_RELOC_TYPE_x64["R_X86_64_JUMP_SLOT"]
-            or relocation_type == ENUM_RELOC_TYPE_AARCH64["R_AARCH64_JUMP_SLOT"]):
-
+        logging.debug("Found relocation type {}".format(relocation_type))
+        if relocation_type in RELOCATION_TYPE_SIZES:
             # Note that r_offset is actually a virtual address
-            relocation_value = ElfFileValueProxy.from_vaddr(elf_file, relocation["r_offset"], QWORD_BYTE_SIZE)
+            relocation_value = ElfFileValueProxy.from_vaddr(elf_file, relocation["r_offset"],
+                                                            RELOCATION_TYPE_SIZES[relocation_type]["size"])
 
-            original_value_int = struct.unpack(QWORD_FORMAT_SPECIFIER, relocation_value.value)[0]
-            original_jump_slot_values.append((relocation_value.vaddr, original_value_int))
+            original_value_int = struct.unpack(RELOCATION_TYPE_SIZES[relocation_type]["format"], relocation_value.value)[0]
+            original_jump_slot_values.append((relocation_value.vaddr, original_value_int, relocation_type))
 
             logging.debug("Updating relocation at {} with original value {}".format(
                 hex(relocation_value.offset), hex(original_value_int)))
 
-            relocation_value.set_value(QWORD_FORMAT_SPECIFIER, new_value)
+            relocation_value.set_value(RELOCATION_TYPE_SIZES[relocation_type]["format"], new_value)
         else:
             logging.warning("Unknown relocation type {} found at offset {}".format(
                 relocation_type, relocation["r_offset"]))
@@ -301,13 +364,14 @@ def reset_jump_slots(elf_file, original_jump_slot_values):
     lazy binding still works.
     """
 
-    for vaddr, original_value in original_jump_slot_values:
-        relocation_value = ElfFileValueProxy.from_vaddr(elf_file, vaddr, QWORD_BYTE_SIZE)
+    for vaddr, original_value, relocation_type in original_jump_slot_values:
+        relocation_value = ElfFileValueProxy.from_vaddr(elf_file, vaddr,
+                                                        RELOCATION_TYPE_SIZES[relocation_type]["size"])
 
         logging.debug("Resetting relocation at {} to original value {}".format(
                 hex(vaddr), hex(original_value)))
 
-        relocation_value.set_value(QWORD_FORMAT_SPECIFIER, original_value)
+        relocation_value.set_value(RELOCATION_TYPE_SIZES[relocation_type]["format"], original_value)
 
 def main():
     """
@@ -335,7 +399,7 @@ def main():
     elf_file = ELFFile(buffer_stream)
 
     arch = elf_file["e_machine"]
-    if not arch == "EM_X86_64" and not arch == "EM_AARCH64":
+    if not arch == "EM_X86_64" and not arch == "EM_AARCH64" and not arch == "EM_ARM":
         logging.error("Unsupported architecture {}".format(arch))
         raise RuntimeError
 
@@ -354,20 +418,32 @@ def main():
     # Find the HMAC key relative virtual address placeholder and replace it with
     # the actual relative virtual address of the HMAC key
     key_rva_variable = ElfFileValueProxy.from_symbol_name(elf_file, KEY_RVA_NAME)
-    assert(key_rva_variable.value == PLACEHOLDER_VALUE)
+    if arch == "EM_ARM":
+        assert(key_rva_variable.value == PLACEHOLDER_VALUE_32BIT)
+    else:
+        assert(key_rva_variable.value == PLACEHOLDER_VALUE_64BIT)
 
-    key_rva_variable.set_value(QWORD_FORMAT_SPECIFIER, key_variable.vaddr)
+    if arch == "EM_ARM":
+        key_rva_variable.set_value(DWORD_FORMAT_SPECIFIER, key_variable.vaddr)
+    else:
+        key_rva_variable.set_value(QWORD_FORMAT_SPECIFIER, key_variable.vaddr)
     log_value(key_rva_variable)
 
     # Find the FIPS module boundary placeholder and replace it with the our actual
     # FIPS module boundary, which we have defined to be the start of the .data section
     fips_boundary_variable = ElfFileValueProxy.from_symbol_name(elf_file, BOUNDARY_OFFSET_NAME)
-    assert(fips_boundary_variable.value == PLACEHOLDER_VALUE)
+    if arch == "EM_ARM":
+        assert(fips_boundary_variable.value == PLACEHOLDER_VALUE_32BIT)
+    else:
+        assert(fips_boundary_variable.value == PLACEHOLDER_VALUE_64BIT)
 
     data_section = elf_file.get_section_by_name(".data")
     data_section_offset = data_section["sh_offset"]
 
-    fips_boundary_variable.set_value(QWORD_FORMAT_SPECIFIER, data_section_offset)
+    if arch == "EM_ARM":
+        fips_boundary_variable.set_value(DWORD_FORMAT_SPECIFIER, data_section_offset)
+    else:
+        fips_boundary_variable.set_value(QWORD_FORMAT_SPECIFIER, data_section_offset)
     log_value(fips_boundary_variable)
 
     # Find the HMAC digest placeholder, HMAC the loadable segments of the module, and replace

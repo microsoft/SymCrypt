@@ -181,3 +181,17 @@ extends:
           cc: 'clang'
           cxx: 'clang++'
           additionalArgs: '--toolchain=cmake-configs/Toolchain-Clang-ARM64.cmake'
+      - template: .pipelines/templates/build-linux.yml@self
+        parameters:
+          arch: 'ARM'
+          config: 'Debug'
+          cc: 'gcc'
+          cxx: 'g++'
+          additionalArgs: '--toolchain=cmake-configs/Toolchain-GCC-ARM.cmake'
+      - template: .pipelines/templates/build-linux.yml@self
+        parameters:
+          arch: 'ARM'
+          config: 'Release'
+          cc: 'gcc'
+          cxx: 'g++'
+          additionalArgs: '--toolchain=cmake-configs/Toolchain-GCC-ARM.cmake'

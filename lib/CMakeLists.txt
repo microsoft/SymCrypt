@@ -125,10 +125,12 @@ function(process_cppasm filepath outformat archdefine)
     if((NOT outformat STREQUAL gas) AND (NOT outformat STREQUAL masm))
         message(FATAL_ERROR "cppasm processing invoked with unrecognized outformat (${outformat})")
     endif()
-    if((NOT archdefine STREQUAL amd64) AND (NOT archdefine STREQUAL x86) AND (NOT archdefine STREQUAL arm64))
+    if((NOT archdefine STREQUAL amd64) AND (NOT archdefine STREQUAL x86) AND (NOT archdefine STREQUAL arm64) AND (NOT archdefine STREQUAL arm))
         message(FATAL_ERROR "cppasm processing invoked with unrecognized archdefine (${archdefine})")
     endif()
+
     get_filename_component(rootpath ${filepath} DIRECTORY)
+
     get_filename_component(filestem ${filepath} NAME_WE) # filestem is the filename w/out extension
     string(TOUPPER ${outformat} outformatupper)
     string(TOUPPER ${archdefine} archdefineupper)
@@ -179,10 +181,10 @@ function(process_symcryptasm filepath outformat archdefine callingconvention)
     if((NOT outformat STREQUAL gas) AND (NOT outformat STREQUAL masm) AND (NOT outformat STREQUAL armasm64))
         message(FATAL_ERROR "symcryptasm processing invoked with unrecognized outformat (${outformat})")
     endif()
-    if((NOT archdefine STREQUAL amd64) AND (NOT archdefine STREQUAL x86) AND (NOT archdefine STREQUAL arm64))
+    if((NOT archdefine STREQUAL amd64) AND (NOT archdefine STREQUAL x86) AND (NOT archdefine STREQUAL arm64) AND (NOT archdefine STREQUAL arm))
         message(FATAL_ERROR "symcryptasm processing invoked with unrecognized archdefine (${archdefine})")
     endif()
-    if((NOT callingconvention STREQUAL msft) AND (NOT callingconvention STREQUAL systemv) AND (NOT callingconvention STREQUAL aapcs64) AND (NOT callingconvention STREQUAL arm64ec))
+    if((NOT callingconvention STREQUAL msft) AND (NOT callingconvention STREQUAL systemv) AND (NOT callingconvention STREQUAL aapcs64) AND (NOT callingconvention STREQUAL arm64ec) AND (NOT callingconvention STREQUAL aapcs32))
         message(FATAL_ERROR "symcryptasm processing invoked with unrecognized callingconvention (${callingconvention})")
     endif()
     get_filename_component(rootpath ${filepath} DIRECTORY)
@@ -229,8 +231,8 @@ if(WIN32 AND SYMCRYPT_USE_ASM)
             amd64/fdef369_asm-masm.asm
             amd64/fdef_mulx-masm.asm
             amd64/wipe-masm.asm
-            amd64/sha256xmm_asm-masm.asm            
-            amd64/sha256ymm_asm-masm.asm            
+            amd64/sha256xmm_asm-masm.asm
+            amd64/sha256ymm_asm-masm.asm
             amd64/sha512ymm_asm-masm.asm
             amd64/sha512ymm_avx512vl_asm-masm.asm)
         set_source_files_properties(
@@ -239,8 +241,8 @@ if(WIN32 AND SYMCRYPT_USE_ASM)
             amd64/fdef369_asm-masm.asm
             amd64/fdef_mulx-masm.asm
             amd64/wipe-masm.asm
-            amd64/sha256xmm_asm-masm.asm            
-            amd64/sha256ymm_asm-masm.asm            
+            amd64/sha256xmm_asm-masm.asm
+            amd64/sha256ymm_asm-masm.asm
             amd64/sha512ymm_asm-masm.asm
             amd64/sha512ymm_avx512vl_asm-masm.asm
             PROPERTY LANGUAGE ASM_MASM)
@@ -294,7 +296,7 @@ elseif(SYMCRYPT_USE_ASM) # Linux
             amd64/sha512ymm_asm-gas.asm
             amd64/sha512ymm_avx512vl_asm-gas.asm
             PROPERTY LANGUAGE ASM)
-    elseif(SYMCRYPT_TARGET_ARCH MATCHES "ARM64")
+    elseif(SYMCRYPT_TARGET_ARCH STREQUAL "ARM64")
         process_symcryptasm(arm64/fdef_asm.symcryptasm gas arm64 aapcs64)
         process_symcryptasm(arm64/fdef369_asm.symcryptasm gas arm64 aapcs64)
         process_symcryptasm(arm64/wipe.symcryptasm gas arm64 aapcs64)
@@ -308,6 +310,22 @@ elseif(SYMCRYPT_USE_ASM) # Linux
             arm64/fdef369_asm-gas.asm
             arm64/wipe-gas.asm
             PROPERTY LANGUAGE ASM)
+    elseif(SYMCRYPT_TARGET_ARCH STREQUAL "ARM")
+        process_symcryptasm(arm/aesasm.symcryptasm gas arm aapcs32)
+        process_symcryptasm(arm/fdef_asm.symcryptasm gas arm aapcs32)
+        process_symcryptasm(arm/wipe.symcryptasm gas arm aapcs32)
+
+        list(APPEND SOURCES_COMMON
+            arm/aesasm-gas.asm
+            arm/fdef_asm-gas.asm
+            arm/wipe-gas.asm)
+        set_source_files_properties(
+            arm/aesasm-gas.asm
+            arm/fdef_asm-gas.asm
+            arm/wipe-gas.asm
+            PROPERTY LANGUAGE ASM)
+        set_source_files_properties(
+            arm/fdef_asm-gas.asm PROPERTIES INCLUDE_DIRECTORIES ${CMAKE_CURRENT_SOURCE_DIR}/arm)
     endif()
 endif()
 

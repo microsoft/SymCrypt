@@ -20,9 +20,9 @@ appropriate to enable this effort.
 Normally the processing of symcryptasm files takes place in 2 passes. The first pass is performed by
 this symcryptasm_processor.py script, which does the more stateful processing, outputting a .cppasm
 file. If the processed symcryptasm file includes other files via the INCLUDE directive, the contents
-of the included files are merged at their point of inclusion to generate a single expanded symcryptasm 
-file which is saved with a .symcryptasmexp extension to the output folder. For symcryptasm files which 
-do not include other files, there's no corresponding .symcryptasmexp file as it would be identical to 
+of the included files are merged at their point of inclusion to generate a single expanded symcryptasm
+file which is saved with a .symcryptasmexp extension to the output folder. For symcryptasm files which
+do not include other files, there's no corresponding .symcryptasmexp file as it would be identical to
 the source file.
 
 The .cppasm files are further processed by the C preprocessor to do more simple stateless text
@@ -78,7 +78,7 @@ A leaf function ends with the FUNCTION_END macro, which also takes the function 
 
 At the function start a prologue is generated which arranges the arguments appropriately in
 registers, and saves non-volatile registers that have been requested to be used.
-At the function end an epilogue is generated with restores the non-volatile registers and returns.
+At the function end an epilogue is generated which restores the non-volatile registers and returns.
 
 
 A nested function (a function which does call another function) is specified similarly, only using
@@ -112,14 +112,14 @@ prologue. The MUL_FUNCTION_START and MUL_FUNCTION_END macros are used in this ca
     We currently do not support nested mul functions, as we have none of them.
 
 Stack layout for amd64 is as follows. Xmm registers are volatile and not saved on Linux.
-                         
+
             Memory          Exists if
     |-------------------|
-    |                   | 
-    |   Shadow space    | 
+    |                   |
+    |   Shadow space    |
     |                   |
     |-------------------|
-    |   Return address  | 
+    |   Return address  |
     |-------------------|
     |   Non-volatile    |
     |   general purpose |   reg_count > volatile_registers
@@ -148,6 +148,11 @@ currently support, these registers are volatile so do not need any special handl
 
 X_0 is always the result register and the first argument passed to the function.
 X_1-X_7 are the arguments 2-8 passed to the function
+
+
+### arm (32) ###
+We allow the registers r0-r12 to be addressed as r13-r15 are special registers that we cannot use as general purpose registers.
+As r12 is volatile in a leaf function, it should be used in preference to r4, to avoid spilling/restoring a register.
 
 """
 
@@ -215,6 +220,24 @@ ARM64_R27 = Register("x27", "w27")
 ARM64_R28 = Register("x28", "w28")
 ARM64_R29 = Register("x29", "w29") # Frame Pointer
 ARM64_R30 = Register("x30", "w30") # Link Register
+
+# arm32 registers
+ARM32_R0  = Register(None,  "r0")
+ARM32_R1  = Register(None,  "r1")
+ARM32_R2  = Register(None,  "r2")
+ARM32_R3  = Register(None,  "r3")
+ARM32_R4  = Register(None,  "r4")
+ARM32_R5  = Register(None,  "r5")
+ARM32_R6  = Register(None,  "r6")
+ARM32_R7  = Register(None,  "r7")
+ARM32_R8  = Register(None,  "r8")
+ARM32_R9  = Register(None,  "r9")
+ARM32_R10 = Register(None, "r10")
+ARM32_R11 = Register(None, "r11")
+ARM32_R12 = Register(None, "r12")
+ARM32_R13 = Register(None, "r13")
+ARM32_R14 = Register(None, "r14")
+ARM32_R15 = Register(None, "r15")
 
 class CallingConvention:
     """A class to represent calling conventions"""
@@ -306,7 +329,7 @@ def calc_amd64_stack_allocation_sizes(self, reg_count, stack_alloc_size, xmm_reg
         aligned_on_16B = True
 
     # Calculate the space needed to save Xmm registers on the stack
-    saved_reg_xmm = 0 if xmm_reg_count <= 6 else (xmm_reg_count - 6)    
+    saved_reg_xmm = 0 if xmm_reg_count <= 6 else (xmm_reg_count - 6)
     xmm_save_size = 16 * saved_reg_xmm
     if xmm_save_size > 0 and not aligned_on_16B:
         xmm_save_size += 8
@@ -337,7 +360,7 @@ def gen_prologue_amd64_msft(self, arg_count, reg_count, stack_alloc_size, xmm_re
 
     prologue = "\n"
 
-    # Calculate the sizes of the buffers needed for saving registers, local variable buffer and shadow space. 
+    # Calculate the sizes of the buffers needed for saving registers, local variable buffer and shadow space.
     # Each of the sections other than general purpose registers are aligned on 16B boundary and some of them
     # may include an 8B padding in their size.
     reg_save_size, xmm_save_size, stack_alloc_aligned_size, shadow_space_allocation_size = calc_amd64_stack_allocation_sizes(
@@ -380,12 +403,12 @@ def gen_prologue_amd64_msft_nested(self, arg_count, reg_count, stack_alloc_size,
     return gen_prologue_amd64_msft(self, arg_count, reg_count, stack_alloc_size, xmm_reg_count, mul_fixup = "", nested = True)
 
 def gen_epilogue_amd64_msft(self, arg_count, reg_count, stack_alloc_size, xmm_reg_count, nested = False):
-    
+
     epilogue = "\n"
 
     reg_save_size, xmm_save_size, stack_alloc_aligned_size, shadow_space_allocation_size = calc_amd64_stack_allocation_sizes(
         self, reg_count, stack_alloc_size, xmm_reg_count, nested)
-    
+
     # Restore non-volatile Xmm registers
     if xmm_save_size > 0:
         for i in range(6, xmm_reg_count):
@@ -454,7 +477,7 @@ MAPPING_AMD64_SYSTEMV = {
 }
 
 def gen_prologue_amd64_systemv(self, arg_count, reg_count, stack_alloc_size, xmm_reg_count, mul_fixup = "", nested = False):
-    
+
     # Calculate the sizes required for each section
     # We need to call with xmm_reg_count=0 to avoid allocation/alignment for saving Xmm registers since they're
     # volatile for this calling convention.
@@ -491,7 +514,7 @@ def gen_prologue_amd64_systemv_nested(self, arg_count, reg_count, stack_alloc_si
     return gen_prologue_amd64_systemv(self, arg_count, reg_count, stack_alloc_size, xmm_reg_count, mul_fixup = "", nested = True)
 
 def gen_epilogue_amd64_systemv(self, arg_count, reg_count, stack_alloc_size, xmm_reg_count, nested = False):
-    
+
     epilogue = ""
 
     # Calculate the sizes required for each section
@@ -601,6 +624,27 @@ MAPPING_ARM64_ARM64ECMSFT = {
     # R28 is reserved in ARM64EC
 }
 
+# ARM32 calling convention
+# A subroutine must preserve the contents of the registers r4-r8, r10, r11 and SP (and r9 in PCS variants that designate r9 as v6).
+MAPPING_ARM32_AAPCS32 = {
+    0: ARM32_R0,  # Argument 1 / Result register / volatile
+    1: ARM32_R1,  # Argument 2 / Result register / volatile
+    2: ARM32_R2,  # Argument 3 / volatile
+    3: ARM32_R3,  # Argument 4 / volatile
+    4: ARM32_R4,  # non-volatile
+    5: ARM32_R5,  # non-volatile
+    6: ARM32_R6,  # non-volatile
+    7: ARM32_R7,  # non-volatile
+    8: ARM32_R8,  # non-volatile
+    9: ARM32_R9,  # reserved for something
+    10:ARM32_R10, # non-volatile
+    11:ARM32_R11, # FP non-volatile
+    12:ARM32_R12, # volatile for leaf functions
+    13:ARM32_R13, # SP
+    14:ARM32_R14, # LR
+    15:ARM32_R15, # PC
+}
+
 def gen_prologue_aapcs64(self, arg_count, reg_count, stack_alloc_size, xmm_reg_count):
     prologue = ""
 
@@ -619,6 +663,38 @@ def gen_epilogue_aapcs64(self, arg_count, reg_count, stack_alloc_size, xmm_reg_c
 
     epilogue += "    ret\n"
 
+    return epilogue
+
+def gen_prologue_aapcs32(self, arg_count, reg_count, stack_alloc_size, xmm_reg_count):
+    assert(not stack_alloc_size and not xmm_reg_count)
+    prologue = ""
+    # Always spill at least 1 register (LR).
+    # LR needs to be saved for nested functions but for now we'll store it always
+    # since we don't differentiate between nested and leaf functions for arm yet.
+    registers_to_spill = []
+    logging.info(f"prologue {reg_count} > {self.volatile_registers}")
+    if reg_count > self.volatile_registers:
+        for i in range(self.volatile_registers, reg_count):
+            registers_to_spill.append('r%s' % i)
+        # Stack pointer is word 4B aligned
+        # required_stack_space = 4 * len(registers_to_spill)
+    registers_to_spill.append('lr')
+    prologue += "push {" + ",".join(registers_to_spill) + "}\n"
+    return prologue
+
+def gen_epilogue_aapcs32(self, arg_count, reg_count, stack_alloc_size, xmm_reg_count):
+    assert(not stack_alloc_size and not xmm_reg_count)
+    epilogue = ""
+
+    registers_to_spill = []
+    logging.info(f"epilogue {reg_count} > {self.volatile_registers}")
+    if reg_count > self.volatile_registers:
+        for i in range(self.volatile_registers, reg_count):
+            registers_to_spill.append('r%s' % i)
+        # Stack pointer is word 4B aligned
+        # required_stack_space = 4 * len(registers_to_spill)
+    registers_to_spill.append('pc')
+    epilogue += "pop {" + ",".join(registers_to_spill) + "}\n"
     return epilogue
 
 def gen_prologue_arm64ec(self, arg_count, reg_count, stack_alloc_size, xmm_reg_count):
@@ -677,6 +753,10 @@ CALLING_CONVENTION_ARM64EC_MSFT = CallingConvention(
     "arm64ec_msft", "arm64", MAPPING_ARM64_ARM64ECMSFT, 8, 8, 16,
     gen_prologue_arm64ec, gen_epilogue_arm64ec, gen_get_memslot_offset_arm64)
 
+CALLING_CONVENTION_ARM32_AAPCS32 = CallingConvention(
+    "arm32_aapcs32", "arm32", MAPPING_ARM32_AAPCS32, 4, 4, 4,
+    gen_prologue_aapcs32, gen_epilogue_aapcs32, gen_get_memslot_offset_arm64)
+
 def gen_function_defines(architecture, mapping, arg_count, reg_count, start=True):
     defines = ""
     if architecture == "amd64":
@@ -687,6 +767,8 @@ def gen_function_defines(architecture, mapping, arg_count, reg_count, start=True
     elif architecture == "arm64":
         prefix64 = "X_"
         prefix32 = "W_"
+    elif architecture == "arm32":
+        return defines
     else:
         logging.error("Unhandled architecture (%s) in gen_function_defines" % architecture)
         exit(1)
@@ -736,8 +818,8 @@ MASM_FUNCTION_TEMPLATE      = "%s, _TEXT\n"
 # ARMASM64 function macros must be correctly indented
 ARMASM64_FUNCTION_TEMPLATE  = "    %s\n"
 
-GAS_FUNCTION_ENTRY    = "%s: .global %s\n"
-GAS_FUNCTION_END      = ""
+GAS_FUNCTION_ENTRY    = "%s: .global %s\n.type %s, %%function\n// .func %s\n"
+GAS_FUNCTION_END      = "// .endfunc // %s"
 
 def generate_prologue(assembler, calling_convention, function_name, arg_count, reg_count, stack_alloc_size, xmm_reg_count, nested):
     function_entry = None
@@ -756,7 +838,7 @@ def generate_prologue(assembler, calling_convention, function_name, arg_count, r
         elif assembler == "armasm64":
             function_entry = ARMASM64_FUNCTION_TEMPLATE % function_entry
     elif assembler == "gas":
-        function_entry = GAS_FUNCTION_ENTRY % (function_name, function_name)
+        function_entry = GAS_FUNCTION_ENTRY % (function_name, function_name, function_name, function_name)
     else:
         logging.error("Unhandled assembler (%s) in generate_prologue" % assembler)
         exit(1)
@@ -784,7 +866,7 @@ def generate_epilogue(assembler, calling_convention, function_name, arg_count, r
         elif assembler == "armasm64":
             function_end = ARMASM64_FUNCTION_TEMPLATE % function_end
     elif assembler == "gas":
-        function_end = GAS_FUNCTION_END
+        function_end = GAS_FUNCTION_END % function_name
     else:
         logging.error("Unhandled assembler (%s) in generate_epilogue" % assembler)
         exit(1)
@@ -928,11 +1010,11 @@ class ProcessingStateMachine:
         else:
             self.calling_convention = self.normal_calling_convention
 
-        return generate_prologue(self.assembler, 
-                                 self.calling_convention, 
-                                 self.function_name, 
-                                 self.arg_count, 
-                                 self.reg_count, 
+        return generate_prologue(self.assembler,
+                                 self.calling_convention,
+                                 self.function_name,
+                                 self.arg_count,
+                                 self.reg_count,
                                  self.stack_alloc_size,
                                  self.xmm_reg_count,
                                  self.is_nested_function
@@ -1115,6 +1197,10 @@ def process_file(assembler, architecture, calling_convention, infilename, outfil
             normal_calling_convention = CALLING_CONVENTION_ARM64_AAPCS64
             mul_calling_convention = None
             nested_calling_convention = None
+        elif architecture == "arm" and calling_convention == "aapcs32":
+            normal_calling_convention = CALLING_CONVENTION_ARM32_AAPCS32
+            mul_calling_convention = None
+            nested_calling_convention = None
     elif assembler == "armasm64":
         if architecture == "arm64" and calling_convention == "aapcs64":
             normal_calling_convention = CALLING_CONVENTION_ARM64_AAPCS64
@@ -1149,7 +1235,7 @@ def process_file(assembler, architecture, calling_convention, infilename, outfil
 
     # expand_files() is called recursively when a .symcryptasm file contains an INCLUDE directive,
     # except for the first call here where we're starting to process the input source file
-    # as if it was included by some other file. 
+    # as if it was included by some other file.
     expanded_file, infile_has_includes = expand_files(infilename, 0, "")
     expanded_lines.extend(expanded_file)
 
@@ -1163,17 +1249,20 @@ def process_file(assembler, architecture, calling_convention, infilename, outfil
     with open(outfilename, "w") as outfile:
         for line_num, line in enumerate(expanded_lines):
             processed_line = file_processing_state.process_line(line, line_num)
+            # logging.info("processed line: %s" % processed_line)
             outfile.write(processed_line)
 
 if __name__ == "__main__":
     import argparse
 
+    # logging.basicConfig(level=logging.INFO)
     parser = argparse.ArgumentParser(description="Preprocess symcryptasm into files that will be further processed with C preprocessor to generate MASM or GAS")
     parser.add_argument('assembler', type=str, help='Assembler that we want to preprocess for', choices=['masm', 'gas', 'armasm64'])
-    parser.add_argument('architecture', type=str, help='Architecture that we want to preprocess for', choices=['amd64', 'arm64'])
-    parser.add_argument('calling_convention', type=str, help='Calling convention that we want to preprocess for', choices=['msft', 'systemv', 'aapcs64', 'arm64ec'])
+    parser.add_argument('architecture', type=str, help='Architecture that we want to preprocess for', choices=['amd64', 'arm64', 'arm'])
+    parser.add_argument('calling_convention', type=str, help='Calling convention that we want to preprocess for', choices=['msft', 'systemv', 'aapcs64', 'arm64ec', 'aapcs32'])
     parser.add_argument('inputfile', type=str, help='Path to input file')
     parser.add_argument('outputfile', type=str, help='Path to output file')
 
     args = parser.parse_args()
     process_file(args.assembler, args.architecture, args.calling_convention, args.inputfile, args.outputfile)
+    logging.info("Done")

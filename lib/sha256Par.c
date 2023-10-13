@@ -825,48 +825,46 @@ SymCryptParallelSha256AppendBlocks_neon(
     //
     // This can probably be done faster, but we are missing the VTRN.64 instruction
     // which makes it hard to do this efficient in intrinsics.
-    // The vsetq_lane_u32 seems to be completely ignored by the compiler.
     //
-    ha[7].n128_u32[0] = pChain[0]->H[0];
-    ha[7].n128_u32[1] = pChain[1]->H[0];
-    ha[7].n128_u32[2] = pChain[2]->H[0];
-    ha[7].n128_u32[3] = pChain[3]->H[0];
+    ha[7] = vsetq_lane_u32( pChain[0]->H[0], ha[7], 0 );
+    ha[7] = vsetq_lane_u32( pChain[1]->H[0], ha[7], 1 );
+    ha[7] = vsetq_lane_u32( pChain[2]->H[0], ha[7], 2 );
+    ha[7] = vsetq_lane_u32( pChain[3]->H[0], ha[7], 3 );
 
-    ha[6].n128_u32[0] = pChain[0]->H[1];
-    ha[6].n128_u32[1] = pChain[1]->H[1];
-    ha[6].n128_u32[2] = pChain[2]->H[1];
-    ha[6].n128_u32[3] = pChain[3]->H[1];
+    ha[6] = vsetq_lane_u32( pChain[0]->H[1], ha[6], 0 );
+    ha[6] = vsetq_lane_u32( pChain[1]->H[1], ha[6], 1 );
+    ha[6] = vsetq_lane_u32( pChain[2]->H[1], ha[6], 2 );
+    ha[6] = vsetq_lane_u32( pChain[3]->H[1], ha[6], 3 );
 
-    ha[5].n128_u32[0] = pChain[0]->H[2];
-    ha[5].n128_u32[1] = pChain[1]->H[2];
-    ha[5].n128_u32[2] = pChain[2]->H[2];
-    ha[5].n128_u32[3] = pChain[3]->H[2];
+    ha[5] = vsetq_lane_u32( pChain[0]->H[2], ha[5], 0 );
+    ha[5] = vsetq_lane_u32( pChain[1]->H[2], ha[5], 1 );
+    ha[5] = vsetq_lane_u32( pChain[2]->H[2], ha[5], 2 );
+    ha[5] = vsetq_lane_u32( pChain[3]->H[2], ha[5], 3 );
 
-    ha[4].n128_u32[0] = pChain[0]->H[3];
-    ha[4].n128_u32[1] = pChain[1]->H[3];
-    ha[4].n128_u32[2] = pChain[2]->H[3];
-    ha[4].n128_u32[3] = pChain[3]->H[3];
+    ha[4] = vsetq_lane_u32( pChain[0]->H[3], ha[4], 0 );
+    ha[4] = vsetq_lane_u32( pChain[1]->H[3], ha[4], 1 );
+    ha[4] = vsetq_lane_u32( pChain[2]->H[3], ha[4], 2 );
+    ha[4] = vsetq_lane_u32( pChain[3]->H[3], ha[4], 3 );
 
-    ha[3].n128_u32[0] = pChain[0]->H[4];
-    ha[3].n128_u32[1] = pChain[1]->H[4];
-    ha[3].n128_u32[2] = pChain[2]->H[4];
-    ha[3].n128_u32[3] = pChain[3]->H[4];
+    ha[3] = vsetq_lane_u32( pChain[0]->H[4], ha[3], 0 );
+    ha[3] = vsetq_lane_u32( pChain[1]->H[4], ha[3], 1 );
+    ha[3] = vsetq_lane_u32( pChain[2]->H[4], ha[3], 2 );
+    ha[3] = vsetq_lane_u32( pChain[3]->H[4], ha[3], 3 );
 
-    ha[2].n128_u32[0] = pChain[0]->H[5];
-    ha[2].n128_u32[1] = pChain[1]->H[5];
-    ha[2].n128_u32[2] = pChain[2]->H[5];
-    ha[2].n128_u32[3] = pChain[3]->H[5];
+    ha[2] = vsetq_lane_u32( pChain[0]->H[5], ha[2], 0 );
+    ha[2] = vsetq_lane_u32( pChain[1]->H[5], ha[2], 1 );
+    ha[2] = vsetq_lane_u32( pChain[2]->H[5], ha[2], 2 );
+    ha[2] = vsetq_lane_u32( pChain[3]->H[5], ha[2], 3 );
 
-    ha[1].n128_u32[0] = pChain[0]->H[6];
-    ha[1].n128_u32[1] = pChain[1]->H[6];
-    ha[1].n128_u32[2] = pChain[2]->H[6];
-    ha[1].n128_u32[3] = pChain[3]->H[6];
+    ha[1] = vsetq_lane_u32( pChain[0]->H[6], ha[1], 0 );
+    ha[1] = vsetq_lane_u32( pChain[1]->H[6], ha[1], 1 );
+    ha[1] = vsetq_lane_u32( pChain[2]->H[6], ha[1], 2 );
+    ha[1] = vsetq_lane_u32( pChain[3]->H[6], ha[1], 3 );
 
-    ha[0].n128_u32[0] = pChain[0]->H[7];
-    ha[0].n128_u32[1] = pChain[1]->H[7];
-    ha[0].n128_u32[2] = pChain[2]->H[7];
-    ha[0].n128_u32[3] = pChain[3]->H[7];
-
+    ha[0] = vsetq_lane_u32( pChain[0]->H[7], ha[0], 0 );
+    ha[0] = vsetq_lane_u32( pChain[1]->H[7], ha[0], 1 );
+    ha[0] = vsetq_lane_u32( pChain[2]->H[7], ha[0], 2 );
+    ha[0] = vsetq_lane_u32( pChain[3]->H[7], ha[0], 3 );
 
     buf[0] = ha[4];
     buf[1] = ha[5];
@@ -881,10 +879,10 @@ SymCryptParallelSha256AppendBlocks_neon(
         //
         for( r=0; r<16; r ++ )
         {
-            T0.n128_u32[0] = SYMCRYPT_LOAD_MSBFIRST32( ppByte[0] ); ppByte[0] += 4;
-            T0.n128_u32[1] = SYMCRYPT_LOAD_MSBFIRST32( ppByte[1] ); ppByte[1] += 4;
-            T0.n128_u32[2] = SYMCRYPT_LOAD_MSBFIRST32( ppByte[2] ); ppByte[2] += 4;
-            T0.n128_u32[3] = SYMCRYPT_LOAD_MSBFIRST32( ppByte[3] ); ppByte[3] += 4;
+            T0 = vsetq_lane_u32( SYMCRYPT_LOAD_MSBFIRST32( ppByte[0] ), T0, 0 ); ppByte[0] += 4;
+            T0 = vsetq_lane_u32( SYMCRYPT_LOAD_MSBFIRST32( ppByte[1] ), T0, 1 ); ppByte[1] += 4;
+            T0 = vsetq_lane_u32( SYMCRYPT_LOAD_MSBFIRST32( ppByte[2] ), T0, 2 ); ppByte[2] += 4;
+            T0 = vsetq_lane_u32( SYMCRYPT_LOAD_MSBFIRST32( ppByte[3] ), T0, 3 ); ppByte[3] += 4;
             W[r] = T0;
         }
 
@@ -964,46 +962,45 @@ SymCryptParallelSha256AppendBlocks_neon(
     //
     // Copy the chaining state back into the hash structure
     //
+    pChain[0]->H[0] = vgetq_lane_u32( ha[7], 0 );
+    pChain[1]->H[0] = vgetq_lane_u32( ha[7], 1 );
+    pChain[2]->H[0] = vgetq_lane_u32( ha[7], 2 );
+    pChain[3]->H[0] = vgetq_lane_u32( ha[7], 3 );
 
-    pChain[0]->H[0] = ha[7].n128_u32[0];
-    pChain[1]->H[0] = ha[7].n128_u32[1];
-    pChain[2]->H[0] = ha[7].n128_u32[2];
-    pChain[3]->H[0] = ha[7].n128_u32[3];
+    pChain[0]->H[1] = vgetq_lane_u32( ha[6], 0 );
+    pChain[1]->H[1] = vgetq_lane_u32( ha[6], 1 );
+    pChain[2]->H[1] = vgetq_lane_u32( ha[6], 2 );
+    pChain[3]->H[1] = vgetq_lane_u32( ha[6], 3 );
 
-    pChain[0]->H[1] = ha[6].n128_u32[0];
-    pChain[1]->H[1] = ha[6].n128_u32[1];
-    pChain[2]->H[1] = ha[6].n128_u32[2];
-    pChain[3]->H[1] = ha[6].n128_u32[3];
+    pChain[0]->H[2] = vgetq_lane_u32( ha[5], 0 );
+    pChain[1]->H[2] = vgetq_lane_u32( ha[5], 1 );
+    pChain[2]->H[2] = vgetq_lane_u32( ha[5], 2 );
+    pChain[3]->H[2] = vgetq_lane_u32( ha[5], 3 );
 
-    pChain[0]->H[2] = ha[5].n128_u32[0];
-    pChain[1]->H[2] = ha[5].n128_u32[1];
-    pChain[2]->H[2] = ha[5].n128_u32[2];
-    pChain[3]->H[2] = ha[5].n128_u32[3];
+    pChain[0]->H[3] = vgetq_lane_u32( ha[4], 0 );
+    pChain[1]->H[3] = vgetq_lane_u32( ha[4], 1 );
+    pChain[2]->H[3] = vgetq_lane_u32( ha[4], 2 );
+    pChain[3]->H[3] = vgetq_lane_u32( ha[4], 3 );
 
-    pChain[0]->H[3] = ha[4].n128_u32[0];
-    pChain[1]->H[3] = ha[4].n128_u32[1];
-    pChain[2]->H[3] = ha[4].n128_u32[2];
-    pChain[3]->H[3] = ha[4].n128_u32[3];
+    pChain[0]->H[4] = vgetq_lane_u32( ha[3], 0 );
+    pChain[1]->H[4] = vgetq_lane_u32( ha[3], 1 );
+    pChain[2]->H[4] = vgetq_lane_u32( ha[3], 2 );
+    pChain[3]->H[4] = vgetq_lane_u32( ha[3], 3 );
 
-    pChain[0]->H[4] = ha[3].n128_u32[0];
-    pChain[1]->H[4] = ha[3].n128_u32[1];
-    pChain[2]->H[4] = ha[3].n128_u32[2];
-    pChain[3]->H[4] = ha[3].n128_u32[3];
+    pChain[0]->H[5] = vgetq_lane_u32( ha[2], 0 );
+    pChain[1]->H[5] = vgetq_lane_u32( ha[2], 1 );
+    pChain[2]->H[5] = vgetq_lane_u32( ha[2], 2 );
+    pChain[3]->H[5] = vgetq_lane_u32( ha[2], 3 );
 
-    pChain[0]->H[5] = ha[2].n128_u32[0];
-    pChain[1]->H[5] = ha[2].n128_u32[1];
-    pChain[2]->H[5] = ha[2].n128_u32[2];
-    pChain[3]->H[5] = ha[2].n128_u32[3];
+    pChain[0]->H[6] = vgetq_lane_u32( ha[1], 0 );
+    pChain[1]->H[6] = vgetq_lane_u32( ha[1], 1 );
+    pChain[2]->H[6] = vgetq_lane_u32( ha[1], 2 );
+    pChain[3]->H[6] = vgetq_lane_u32( ha[1], 3 );
 
-    pChain[0]->H[6] = ha[1].n128_u32[0];
-    pChain[1]->H[6] = ha[1].n128_u32[1];
-    pChain[2]->H[6] = ha[1].n128_u32[2];
-    pChain[3]->H[6] = ha[1].n128_u32[3];
-
-    pChain[0]->H[7] = ha[0].n128_u32[0];
-    pChain[1]->H[7] = ha[0].n128_u32[1];
-    pChain[2]->H[7] = ha[0].n128_u32[2];
-    pChain[3]->H[7] = ha[0].n128_u32[3];
+    pChain[0]->H[7] = vgetq_lane_u32( ha[0], 0 );
+    pChain[1]->H[7] = vgetq_lane_u32( ha[0], 1 );
+    pChain[2]->H[7] = vgetq_lane_u32( ha[0], 2 );
+    pChain[3]->H[7] = vgetq_lane_u32( ha[0], 3 );
 
     SymCryptWipeKnownSize( buf, sizeof( buf ) );
 }

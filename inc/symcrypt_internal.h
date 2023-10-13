@@ -1568,7 +1568,12 @@ typedef union _SYMCRYPT_GCM_SUPPORTED_BLOCKCIPHER_KEYS
 
 
 #if SYMCRYPT_CPU_ARM
-    #include <arm_neon.h>
+#include <arm_neon.h>
+#if SYMCRYPT_GNUC
+    #define __n128 uint32x4_t
+    #define __n64 uint64x1_t
+#endif
+
 #elif SYMCRYPT_CPU_ARM64
 
     #if SYMCRYPT_MS_VC

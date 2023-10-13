@@ -97,5 +97,11 @@ else()
     add_compile_options(-DINCLUDE_IMPL_RSA32=0)
 endif()
 
+if(SYMCRYPT_TARGET_ARCH STREQUAL "ARM" AND CMAKE_C_COMPILER_ID MATCHES "GNU")
+    # Hide warning due to abi change.
+    set_source_files_properties(kat.cpp PROPERTIES COMPILE_OPTIONS "-Wno-psabi")
+    set_source_files_properties(perf.cpp PROPERTIES COMPILE_OPTIONS "-Wno-psabi")
+endif()
+
 add_library(symcryptunittest_lib STATIC ${SOURCES})
 set_target_properties(symcryptunittest_lib PROPERTIES PREFIX "")

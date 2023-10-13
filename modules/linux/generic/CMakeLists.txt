@@ -3,8 +3,8 @@ set(SOURCES
     ../common/optional/rngforkdetection.c
     ../common/optional/rngsecureurandom.c)
 
-# Enable integrity verification if compiling for AMD64 or ARM64
-if(SYMCRYPT_TARGET_ARCH MATCHES "AMD64|ARM64")
+# Enable integrity verification if compiling for AMD64 or ARM64 or ARM
+if(SYMCRYPT_TARGET_ARCH MATCHES "AMD64|ARM")
     list(APPEND SOURCES ../common/integrity.c)
 else()
     list(APPEND SOURCES ../common/nointegrity.c)

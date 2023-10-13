@@ -52,6 +52,8 @@ if(CMAKE_SYSTEM_NAME MATCHES "Linux")
         # GCC complains about implicit casting between ASIMD registers (i.e. uint8x16_t -> uint64x2_t) by default,
         # whereas clang and MSVC do not. Setting -flax-vector-conversions to build Arm64 intrinsics code with GCC.
         set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -flax-vector-conversions")
+    elseif(SYMCRYPT_TARGET_ARCH MATCHES "ARM")
+        set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -march=armv7-a+neon-vfpv4 -flax-vector-conversions -mfpu=neon")
     endif()
     
     # add_compile_options(-Wall)

@@ -37,7 +37,7 @@ include ksamd64.inc
 #define GET_SYMBOL_ADDRESS(__symbol)    __symbol@plt+rip
 #define HEX(__constant)                 0x##__constant
 #define TEXTAREA()
-#define EXTERN(__label)
+#define EXTERN(__label)                 .extern __label
 #define LABEL(__labelname)              __labelname:
 
 #else

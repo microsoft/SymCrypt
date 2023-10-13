@@ -197,7 +197,7 @@ def main() -> None:
 
     parser = argparse.ArgumentParser(description = "Packaging helper script for SymCrypt.")
     parser.add_argument("build_dir", type = pathlib.Path, help = "Build output directory.")
-    parser.add_argument("arch", type = str.lower, help = "Architecture of the binaries to package (for inclusion in the package name).", choices = ("x86", "amd64", "arm64"))
+    parser.add_argument("arch", type = str.lower, help = "Architecture of the binaries to package (for inclusion in the package name).", choices = ("x86", "amd64", "arm64", "arm"))
     parser.add_argument("config", type = str, help = "Build configuration.", choices = ["Debug", "Release", "Sanitize"])
     parser.add_argument("module_name", type = str, help = "Name of the module to package.")
     parser.add_argument("release_dir", type = pathlib.Path, help = "Directory to place the release in.")
