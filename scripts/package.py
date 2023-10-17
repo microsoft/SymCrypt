@@ -121,11 +121,6 @@ def prepare_package(build_dir : pathlib.Path, package_dir : pathlib.Path,
         destination = pathlib.Path(file["dest"])
 
         if not source.exists():
-            if source.suffix == ".sys" and arch == "X86":
-                # Ignore missing drivers on x86, since we don't build them for that arch
-                print("Skipping driver " + str(source) + " for x86 package")
-                continue
-
             raise Exception("Source file " + str(source) + " does not exist.")
 
         destination = package_dir / destination
@@ -198,7 +193,7 @@ def main() -> None:
     parser = argparse.ArgumentParser(description = "Packaging helper script for SymCrypt.")
     parser.add_argument("build_dir", type = pathlib.Path, help = "Build output directory.")
     parser.add_argument("arch", type = str.lower, help = "Architecture of the binaries to package (for inclusion in the package name).", choices = ("x86", "amd64", "arm64", "arm"))
-    parser.add_argument("config", type = str, help = "Build configuration.", choices = ["Debug", "Release", "Sanitize"])
+    parser.add_argument("config", type = str.lower, help = "Build configuration.", choices = ("debug", "release", "sanitize"))
     parser.add_argument("module_name", type = str, help = "Name of the module to package.")
     parser.add_argument("release_dir", type = pathlib.Path, help = "Directory to place the release in.")
     parser.add_argument("--no-archive", action = "store_true", help = "Do not create a compressed archive, just copy the files.", default = False)
