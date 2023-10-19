@@ -889,7 +889,7 @@ XtsImp<ImpCng, AlgXtsAes>::~XtsImp()
 
 template<>
 NTSTATUS
-XtsImp<ImpCng, AlgXtsAes>::setKey( PCBYTE pbKey, SIZE_T cbKey )
+XtsImp<ImpCng, AlgXtsAes>::setKey( PCBYTE pbKey, SIZE_T cbKey, UINT32 flags )
 {
     NTSTATUS status = STATUS_SUCCESS;
     BYTE blob[1024];
@@ -897,6 +897,12 @@ XtsImp<ImpCng, AlgXtsAes>::setKey( PCBYTE pbKey, SIZE_T cbKey )
     static int keyType = 0;
     PBYTE   pKeyObject;
     DWORD   cbKeyObject;
+    ULONG   cngFlags = g_cngKeySizeFlag;
+
+    if( flags != SYMCRYPT_FLAG_KEY_NO_FIPS )
+    {
+        cngFlags |= BCRYPT_ENABLE_INCOMPATIBLE_FIPS_CHECKS;
+    }
 
     if( state.hKey != 0 )
     {
@@ -932,7 +938,7 @@ XtsImp<ImpCng, AlgXtsAes>::setKey( PCBYTE pbKey, SIZE_T cbKey )
                             &state.hKey,
                             pKeyObject, cbKeyObject,
                             (PBYTE) pbKey, (ULONG) cbKey,
-                            g_cngKeySizeFlag );
+                            cngFlags );
 
     if( !NT_SUCCESS( status ) )
     {
@@ -961,7 +967,7 @@ Cleanup:
 }
 
 template<>
-VOID
+NTSTATUS
 XtsImp<ImpCng, AlgXtsAes>::encrypt(
                                         SIZE_T      cbDataUnit,
                                         ULONGLONG   tweak,
@@ -971,14 +977,19 @@ XtsImp<ImpCng, AlgXtsAes>::encrypt(
 {
     ULONG dataUnitSize = (ULONG) cbDataUnit;
     ULONG res;
+    NTSTATUS status;
 
-    CHECK( NT_SUCCESS( CngSetPropertyFn( state.hKey, BCRYPT_MESSAGE_BLOCK_LENGTH, (PBYTE)&dataUnitSize, sizeof( dataUnitSize ), 0 ) ), "?" );
-    CHECK( NT_SUCCESS( CngEncryptFn( state.hKey, (PBYTE)pbSrc, (ULONG) cbData, NULL, (PBYTE)&tweak, 8, pbDst, (ULONG) cbData, &res, 0 ) ), "?" );
-    CHECK( res == cbData, "?" );
+    status = CngSetPropertyFn( state.hKey, BCRYPT_MESSAGE_BLOCK_LENGTH, (PBYTE)&dataUnitSize, sizeof(dataUnitSize), 0 );
+    if( NT_SUCCESS( status ) )
+    {
+        CHECK( NT_SUCCESS( CngEncryptFn( state.hKey, (PBYTE)pbSrc, (ULONG) cbData, NULL, (PBYTE)&tweak, 8, pbDst, (ULONG) cbData, &res, 0 ) ), "?" );
+        CHECK( res == cbData, "?" );
+    }
+    return status;
 }
 
 template<>
-VOID
+NTSTATUS
 XtsImp<ImpCng, AlgXtsAes>::decrypt(
                                         SIZE_T      cbDataUnit,
                                         ULONGLONG   tweak,
@@ -988,10 +999,49 @@ XtsImp<ImpCng, AlgXtsAes>::decrypt(
 {
     ULONG dataUnitSize = (ULONG) cbDataUnit;
     ULONG res;
+    NTSTATUS status;
 
-    CHECK( NT_SUCCESS( CngSetPropertyFn( state.hKey, BCRYPT_MESSAGE_BLOCK_LENGTH, (PBYTE)&dataUnitSize, sizeof( dataUnitSize ), 0 ) ), "?" );
-    CHECK( NT_SUCCESS( CngDecryptFn( state.hKey, (PBYTE)pbSrc, (ULONG) cbData, NULL, (PBYTE)&tweak, 8, pbDst, (ULONG) cbData, &res, 0 ) ), "?" );
-    CHECK( res == cbData, "?" );
+    status = CngSetPropertyFn( state.hKey, BCRYPT_MESSAGE_BLOCK_LENGTH, (PBYTE)&dataUnitSize, sizeof(dataUnitSize), 0 );
+    if( NT_SUCCESS( status ) )
+    {
+        CHECK( NT_SUCCESS( CngDecryptFn( state.hKey, (PBYTE)pbSrc, (ULONG) cbData, NULL, (PBYTE)&tweak, 8, pbDst, (ULONG) cbData, &res, 0 ) ), "?" );
+        CHECK( res == cbData, "?" );
+    }
+    return status;
+}
+
+template<>
+NTSTATUS
+XtsImp<ImpCng, AlgXtsAes>::encryptWith128bTweak(
+                                                SIZE_T  cbDataUnit,
+        _In_reads_( SYMCRYPT_AES_BLOCK_SIZE )   PCBYTE  pbTweak,
+        _In_reads_( cbData )                    PCBYTE  pbSrc,
+        _Out_writes_( cbData )                  PBYTE   pbDst,
+                                                SIZE_T  cbData )
+{
+    UNREFERENCED_PARAMETER( cbDataUnit );
+    UNREFERENCED_PARAMETER( pbTweak );
+    UNREFERENCED_PARAMETER( pbSrc );
+    UNREFERENCED_PARAMETER( pbDst );
+    UNREFERENCED_PARAMETER( cbData );
+    return STATUS_NOT_SUPPORTED;
+}
+
+template<>
+NTSTATUS
+XtsImp<ImpCng, AlgXtsAes>::decryptWith128bTweak(
+                                                SIZE_T  cbDataUnit,
+        _In_reads_( SYMCRYPT_AES_BLOCK_SIZE )   PCBYTE  pbTweak,
+        _In_reads_( cbData )                    PCBYTE  pbSrc,
+        _Out_writes_( cbData )                  PBYTE   pbDst,
+                                                SIZE_T  cbData )
+{
+    UNREFERENCED_PARAMETER( cbDataUnit );
+    UNREFERENCED_PARAMETER( pbTweak );
+    UNREFERENCED_PARAMETER( pbSrc );
+    UNREFERENCED_PARAMETER( pbDst );
+    UNREFERENCED_PARAMETER( cbData );
+    return STATUS_NOT_SUPPORTED;
 }
 
 //

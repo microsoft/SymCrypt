@@ -130,9 +130,25 @@ SymCryptXtsAesEncryptDataUnitYmm_2048(
     // Load tweaks into big T
     __m256i T0, T1, T2, T3, T4, T5, T6, T7;
 
-    if( cbData < 16 * SYMCRYPT_AES_BLOCK_SIZE )
+    SIZE_T cbDataMain;  // number of bytes to handle in the main loop
+    SIZE_T cbDataTail;  // number of bytes to handle in the tail loop
+
+    // To simplify logic and unusual size processing, we handle all
+    // data not a multiple of 16 blocks in the tail loop
+    cbDataTail = cbData & ((16*SYMCRYPT_AES_BLOCK_SIZE)-1);
+    // Additionally, so that ciphertext stealing logic does not rely on
+    // reading back from the destination buffer, when we have a non-zero
+    // tail, we ensure that we handle at least 1 whole block in the tail
+    cbDataTail += ((cbDataTail > 0) && (cbDataTail < SYMCRYPT_AES_BLOCK_SIZE)) ? (16*SYMCRYPT_AES_BLOCK_SIZE) : 0;
+    cbDataMain = cbData - cbDataTail;
+
+    SYMCRYPT_ASSERT(cbDataMain <= cbData);
+    SYMCRYPT_ASSERT(cbDataTail <= cbData);
+    SYMCRYPT_ASSERT((cbDataMain & ((16*SYMCRYPT_AES_BLOCK_SIZE)-1)) == 0);
+
+    if( cbDataMain == 0 )
     {
-        SymCryptXtsAesEncryptDataUnitXmm( pExpandedKey, pbTweakBlock, pbScratch, pbSrc, pbDst, cbData );
+        SymCryptXtsAesEncryptDataUnitXmm( pExpandedKey, pbTweakBlock, pbScratch, pbSrc, pbDst, cbDataTail );
         return;
     }
 
@@ -184,8 +200,8 @@ SymCryptXtsAesEncryptDataUnitYmm_2048(
 
         pbDst += 16 * SYMCRYPT_AES_BLOCK_SIZE;
 
-        cbData -= 16 * SYMCRYPT_AES_BLOCK_SIZE;
-        if( cbData < 16 * SYMCRYPT_AES_BLOCK_SIZE )
+        cbDataMain -= 16 * SYMCRYPT_AES_BLOCK_SIZE;
+        if( cbDataMain < 16 * SYMCRYPT_AES_BLOCK_SIZE )
         {
             break;
         }
@@ -202,7 +218,7 @@ SymCryptXtsAesEncryptDataUnitYmm_2048(
 
     // We won't do another 16-block set so we don't update the tweak blocks
 
-    if( cbData > 0  )
+    if( cbDataTail > 0 )
     {
         //
         // This is a rare case: the data unit length is not a multiple of 256 bytes.
@@ -214,7 +230,7 @@ SymCryptXtsAesEncryptDataUnitYmm_2048(
         XTS_MUL_ALPHA( t7, t0 );
         _mm_storeu_si128( (__m128i *) pbTweakBlock, t0 );
 
-        SymCryptXtsAesEncryptDataUnitXmm( pExpandedKey, pbTweakBlock, pbScratch, pbSrc, pbDst, cbData );
+        SymCryptXtsAesEncryptDataUnitXmm( pExpandedKey, pbTweakBlock, pbScratch, pbSrc, pbDst, cbDataTail );
     }
     else {
         _mm256_zeroupper();
@@ -239,9 +255,25 @@ SymCryptXtsAesDecryptDataUnitYmm_2048(
     // Load tweaks into big T
     __m256i T0, T1, T2, T3, T4, T5, T6, T7;
 
-    if( cbData < 16 * SYMCRYPT_AES_BLOCK_SIZE )
+    SIZE_T cbDataMain;  // number of bytes to handle in the main loop
+    SIZE_T cbDataTail;  // number of bytes to handle in the tail loop
+
+    // To simplify logic and unusual size processing, we handle all
+    // data not a multiple of 16 blocks in the tail loop
+    cbDataTail = cbData & ((16*SYMCRYPT_AES_BLOCK_SIZE)-1);
+    // Additionally, so that ciphertext stealing logic does not rely on
+    // reading back from the destination buffer, when we have a non-zero
+    // tail, we ensure that we handle at least 1 whole block in the tail
+    cbDataTail += ((cbDataTail > 0) && (cbDataTail < SYMCRYPT_AES_BLOCK_SIZE)) ? (16*SYMCRYPT_AES_BLOCK_SIZE) : 0;
+    cbDataMain = cbData - cbDataTail;
+
+    SYMCRYPT_ASSERT(cbDataMain <= cbData);
+    SYMCRYPT_ASSERT(cbDataTail <= cbData);
+    SYMCRYPT_ASSERT((cbDataMain & ((16*SYMCRYPT_AES_BLOCK_SIZE)-1)) == 0);
+
+    if( cbDataMain == 0 )
     {
-        SymCryptXtsAesDecryptDataUnitXmm( pExpandedKey, pbTweakBlock, pbScratch, pbSrc, pbDst, cbData );
+        SymCryptXtsAesDecryptDataUnitXmm( pExpandedKey, pbTweakBlock, pbScratch, pbSrc, pbDst, cbDataTail );
         return;
     }
 
@@ -293,8 +325,8 @@ SymCryptXtsAesDecryptDataUnitYmm_2048(
 
         pbDst += 16 * SYMCRYPT_AES_BLOCK_SIZE;
 
-        cbData -= 16 * SYMCRYPT_AES_BLOCK_SIZE;
-        if( cbData < 16 * SYMCRYPT_AES_BLOCK_SIZE )
+        cbDataMain -= 16 * SYMCRYPT_AES_BLOCK_SIZE;
+        if( cbDataMain < 16 * SYMCRYPT_AES_BLOCK_SIZE )
         {
             break;
         }
@@ -311,7 +343,7 @@ SymCryptXtsAesDecryptDataUnitYmm_2048(
 
     // We won't do another 16-block set so we don't update the tweak blocks
 
-    if( cbData > 0  )
+    if( cbDataTail > 0 )
     {
         //
         // This is a rare case: the data unit length is not a multiple of 256 bytes.
@@ -323,7 +355,7 @@ SymCryptXtsAesDecryptDataUnitYmm_2048(
         XTS_MUL_ALPHA( t7, t0 );
         _mm_storeu_si128( (__m128i *) pbTweakBlock, t0 );
 
-        SymCryptXtsAesDecryptDataUnitXmm( pExpandedKey, pbTweakBlock, pbScratch, pbSrc, pbDst, cbData );
+        SymCryptXtsAesDecryptDataUnitXmm( pExpandedKey, pbTweakBlock, pbScratch, pbSrc, pbDst, cbDataTail );
     }
     else {
         _mm256_zeroupper();

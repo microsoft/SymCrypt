@@ -15,21 +15,36 @@ private:
     VOID operator=( const XtsMultiImp & );
 
 public:
-    virtual NTSTATUS setKey( PCBYTE pbKey, SIZE_T cbKey );
+    virtual NTSTATUS setKey( PCBYTE pbKey, SIZE_T cbKey, UINT32 flags );
 
-    virtual VOID encrypt(
+    virtual NTSTATUS encrypt(
                                         SIZE_T      cbDataUnit,
                                         ULONGLONG   tweak,
         _In_reads_( cbData )            PCBYTE      pbSrc,
         _Out_writes_( cbData )          PBYTE       pbDst,
                                         SIZE_T      cbData );
 
-    virtual VOID decrypt(
+    virtual NTSTATUS decrypt(
                                         SIZE_T      cbDataUnit,
                                         ULONGLONG   tweak,
         _In_reads_( cbData )            PCBYTE      pbSrc,
         _Out_writes_( cbData )          PBYTE       pbDst,
                                         SIZE_T      cbData );
+
+    virtual NTSTATUS encryptWith128bTweak(
+                                                SIZE_T  cbDataUnit,
+        _In_reads_( SYMCRYPT_AES_BLOCK_SIZE )   PCBYTE  pbTweak,
+        _In_reads_( cbData )                    PCBYTE  pbSrc,
+        _Out_writes_( cbData )                  PBYTE   pbDst,
+                                                SIZE_T  cbData );
+
+    virtual NTSTATUS decryptWith128bTweak(
+                                                SIZE_T  cbDataUnit,
+        _In_reads_( SYMCRYPT_AES_BLOCK_SIZE )   PCBYTE  pbTweak,
+        _In_reads_( cbData )                    PCBYTE  pbSrc,
+        _Out_writes_( cbData )                  PBYTE   pbDst,
+                                                SIZE_T  cbData );
+
 
     typedef std::vector<XtsImplementation *> XtsImpPtrVector;
 
@@ -37,6 +52,7 @@ public:
 
     XtsImpPtrVector m_comps;                   // Subset of m_imps; set of ongoing computations
 
+    bool m_operateInPlace;
 };
 
 XtsMultiImp::XtsMultiImp( String algName )
@@ -53,6 +69,8 @@ XtsMultiImp::XtsMultiImp( String algName )
         sepStr = "+";
     }
     m_implementationName = sumImpName + ">";
+
+    m_operateInPlace = false;
 }
 
 XtsMultiImp::~XtsMultiImp()
@@ -66,7 +84,7 @@ XtsMultiImp::~XtsMultiImp()
     }
 }
 
-NTSTATUS XtsMultiImp::setKey( PCBYTE pbKey, SIZE_T cbKey )
+NTSTATUS XtsMultiImp::setKey( PCBYTE pbKey, SIZE_T cbKey, UINT32 flags )
 {
     //
     // copy list of implementations to the ongoing computation list
@@ -75,7 +93,7 @@ NTSTATUS XtsMultiImp::setKey( PCBYTE pbKey, SIZE_T cbKey )
 
     for( XtsImpPtrVector::const_iterator i = m_imps.begin(); i != m_imps.end(); ++i )
     {
-        if( (*i)->setKey( pbKey, cbKey ) == 0 )
+        if( (*i)->setKey( pbKey, cbKey, flags ) == 0 )
         {
             m_comps.push_back( *i );
         }
@@ -83,7 +101,7 @@ NTSTATUS XtsMultiImp::setKey( PCBYTE pbKey, SIZE_T cbKey )
     return m_comps.size() == 0 ? STATUS_NOT_SUPPORTED : STATUS_SUCCESS;
 }
 
-VOID
+NTSTATUS
 XtsMultiImp::encrypt(
                                         SIZE_T      cbDataUnit,
                                         ULONGLONG   tweak,
@@ -91,20 +109,39 @@ XtsMultiImp::encrypt(
         _Out_writes_( cbData )          PBYTE       pbDst,
                                         SIZE_T      cbData )
 {
-    BYTE        bufData[1 << 14];
+    NTSTATUS    status = STATUS_SUCCESS;
+    NTSTATUS    res;
+    BYTE        bufData[(1 << 14) + 1];
     ResultMerge resData;
+    PCBYTE      pbInternalSrc;
 
     CHECK( cbData <= sizeof( bufData ), "Buffer too small" );
+
+    res = STATUS_UNSUCCESSFUL;
     for( XtsImpPtrVector::const_iterator i = m_comps.begin(); i != m_comps.end(); ++i )
     {
-        SymCryptWipe( bufData, sizeof( cbData ) );
-        (*i)->encrypt( cbDataUnit, tweak, pbSrc, bufData, cbData );
-        resData.addResult( (*i), bufData, cbData );
+        memset( bufData, 'd', cbData + 1);
+        if( m_operateInPlace )
+        {
+            memcpy(bufData, pbSrc, cbData);
+            pbInternalSrc = bufData;
+        } else {
+            pbInternalSrc = pbSrc;
+        }
+        status = (*i)->encrypt( cbDataUnit, tweak, pbInternalSrc, bufData, cbData );
+        CHECK( bufData[cbData] == 'd', "?" );
+        if( NT_SUCCESS( status ) )
+        {
+            resData.addResult( (*i), bufData, cbData );
+            res = STATUS_SUCCESS;   // At least one implementation liked it.
+        }
     }
     resData.getResult( pbDst, cbData );
+
+    return res;
 }
 
-VOID
+NTSTATUS
 XtsMultiImp::decrypt(
                                         SIZE_T      cbDataUnit,
                                         ULONGLONG   tweak,
@@ -112,19 +149,117 @@ XtsMultiImp::decrypt(
         _Out_writes_( cbData )          PBYTE       pbDst,
                                         SIZE_T      cbData )
 {
-    BYTE        bufData[1 << 14];
+    NTSTATUS    status = STATUS_SUCCESS;
+    NTSTATUS    res;
+    BYTE        bufData[(1 << 14) + 1];
     ResultMerge resData;
+    PCBYTE      pbInternalSrc;
 
     CHECK( cbData <= sizeof( bufData ), "Buffer too small" );
+
+    res = STATUS_UNSUCCESSFUL;
     for( XtsImpPtrVector::const_iterator i = m_comps.begin(); i != m_comps.end(); ++i )
     {
-        SymCryptWipe( bufData, sizeof( cbData ) );
-        (*i)->decrypt( cbDataUnit, tweak, pbSrc, bufData, cbData );
-        resData.addResult( (*i), bufData, cbData );
+        memset( bufData, 'd', cbData + 1);
+        if( m_operateInPlace )
+        {
+            memcpy(bufData, pbSrc, cbData);
+            pbInternalSrc = bufData;
+        } else {
+            pbInternalSrc = pbSrc;
+        }
+        status = (*i)->decrypt( cbDataUnit, tweak, pbInternalSrc, bufData, cbData );
+        CHECK( bufData[cbData] == 'd', "?" );
+        if( NT_SUCCESS( status ) )
+        {
+            resData.addResult( (*i), bufData, cbData );
+            res = STATUS_SUCCESS;   // At least one implementation liked it.
+        }
     }
     resData.getResult( pbDst, cbData );
+
+    return res;
 }
 
+NTSTATUS
+XtsMultiImp::encryptWith128bTweak(
+                                                SIZE_T  cbDataUnit,
+        _In_reads_( SYMCRYPT_AES_BLOCK_SIZE )   PCBYTE  pbTweak,
+        _In_reads_( cbData )                    PCBYTE  pbSrc,
+        _Out_writes_( cbData )                  PBYTE   pbDst,
+                                                SIZE_T  cbData )
+{
+    NTSTATUS    status = STATUS_SUCCESS;
+    NTSTATUS    res;
+    BYTE        bufData[(1 << 14) + 1];
+    ResultMerge resData;
+    PCBYTE      pbInternalSrc;
+
+    CHECK( cbData <= sizeof( bufData ), "Buffer too small" );
+
+    res = STATUS_UNSUCCESSFUL;
+    for( XtsImpPtrVector::const_iterator i = m_comps.begin(); i != m_comps.end(); ++i )
+    {
+        memset( bufData, 'd', cbData + 1);
+        if( m_operateInPlace )
+        {
+            memcpy(bufData, pbSrc, cbData);
+            pbInternalSrc = bufData;
+        } else {
+            pbInternalSrc = pbSrc;
+        }
+        status = (*i)->encryptWith128bTweak( cbDataUnit, pbTweak, pbInternalSrc, bufData, cbData );
+        CHECK( bufData[cbData] == 'd', "?" );
+        if( status != STATUS_NOT_SUPPORTED )
+        {
+            resData.addResult( (*i), bufData, cbData );
+            res = STATUS_SUCCESS;   // At least one implementation liked it.
+        }
+    }
+    resData.getResult( pbDst, cbData );
+
+    return res;
+}
+
+NTSTATUS
+XtsMultiImp::decryptWith128bTweak(
+                                                SIZE_T  cbDataUnit,
+        _In_reads_( SYMCRYPT_AES_BLOCK_SIZE )   PCBYTE  pbTweak,
+        _In_reads_( cbData )                    PCBYTE  pbSrc,
+        _Out_writes_( cbData )                  PBYTE   pbDst,
+                                                SIZE_T  cbData )
+{
+    NTSTATUS    status = STATUS_SUCCESS;
+    NTSTATUS    res;
+    BYTE        bufData[(1 << 14) + 1];
+    ResultMerge resData;
+    PCBYTE      pbInternalSrc;
+
+    CHECK( cbData <= sizeof( bufData ), "Buffer too small" );
+
+    res = STATUS_UNSUCCESSFUL;
+    for( XtsImpPtrVector::const_iterator i = m_comps.begin(); i != m_comps.end(); ++i )
+    {
+        memset( bufData, 'd', cbData + 1);
+        if( m_operateInPlace )
+        {
+            memcpy(bufData, pbSrc, cbData);
+            pbInternalSrc = bufData;
+        } else {
+            pbInternalSrc = pbSrc;
+        }
+        status = (*i)->decryptWith128bTweak( cbDataUnit, pbTweak, pbInternalSrc, bufData, cbData );
+        CHECK( bufData[cbData] == 'd', "?" );
+        if( status != STATUS_NOT_SUPPORTED )
+        {
+            resData.addResult( (*i), bufData, cbData );
+            res = STATUS_SUCCESS;   // At least one implementation liked it.
+        }
+    }
+    resData.getResult( pbDst, cbData );
+
+    return res;
+}
 
 VOID
 katXtsSingle(
@@ -145,8 +280,7 @@ katXtsSingle(
     CHECK3( cbPlaintext == cbCiphertext, "Plaintext/Ciphertext size mismatch in line %lld", line );
     CHECK3( cbDataUnit <= (1 << 16), "cbDataUnit too large in line %lld", line )
 
-    CHECK( pImp->setKey( pbKey, cbKey ) == 0, "Error in setting key" );
-    CHECK3( (cbDataUnit & (cbDataUnit - 1) ) == 0, "Data unit size is not a power of 2 in line %lld", line );
+    CHECK( pImp->setKey( pbKey, cbKey, SYMCRYPT_FLAG_KEY_NO_FIPS ) == 0, "Error in setting key" );
 
     //
     // Do single encryption
@@ -200,10 +334,9 @@ testXtsRandom( XtsMultiImp * pImp, int rrep, SIZE_T keyLen, PCBYTE pbResult, SIZ
     {
         keyIdx = rng.sizet( bufSize - keyLen );
 
-        // iprint( "Eff key size = %d\n", g_rc2EffectiveKeyLength );
-        CHECK3( NT_SUCCESS( pImp->setKey( &buf1[keyIdx], keyLen ) ), "Key setting failure, line %lld", line );
+        CHECK3( pImp->setKey( &buf1[keyIdx], keyLen, SYMCRYPT_FLAG_KEY_NO_FIPS ) == 0, "Key setting failure, line %lld", line );
 
-        SIZE_T cbDataUnit = SYMCRYPT_AES_BLOCK_SIZE + (rng.sizet( 8192 ) & ~(SYMCRYPT_AES_BLOCK_SIZE - 1));     // Random size, 16 - 8192 bytes in multiples of 16
+        SIZE_T cbDataUnit = SYMCRYPT_AES_BLOCK_SIZE + rng.sizet( 8192 );     // Random size, 16 - 8207 bytes
         CHECK( cbDataUnit < bufSize, "Data unit size too large" );
         SIZE_T maxDataUnits = bufSize / cbDataUnit;
         SIZE_T nDataUnits = rng.sizet( maxDataUnits + 1 );
@@ -211,38 +344,106 @@ testXtsRandom( XtsMultiImp * pImp, int rrep, SIZE_T keyLen, PCBYTE pbResult, SIZ
 
         CHECK( cbData <= bufSize, "?" );
 
+        PBYTE pbData = &buf1[rng.sizet( bufSize - cbData + 1 )];
+
         //
         // Pick a tweak not too far from a power of two, as that tests various
         // overflows in the increment operation.
         // Overflow from -1 to 0 is tested from the tweak=1 starting point.
         //
-        ULONGLONG tweak = 1ULL << rng.sizet( 64 );
-        tweak += (ULONGLONG)rng.sizet( 1 + 4 * nDataUnits ) - 2 * nDataUnits;   // cast to ensure we do the offset computation in 64 bits, not in 32 bits.
-
-        PBYTE pbData = &buf1[rng.sizet( bufSize - cbData + 1 ) ];
-
-        pImp->encrypt( cbDataUnit, tweak, pbData, buf2, cbData );
-        pImp->decrypt( cbDataUnit, tweak, buf2, buf3, cbData );
-        CHECK3( memcmp( buf3, pbData, cbData ) == 0, "Encrypt/Decrypt mismatch, line %lld", line );
-
-        if( nDataUnits > 1 )
+        // 3/4s of the time test the 64-b tweak API, 1/4 of the time test the 128-b tweak API
+        if( rng.byte() & 3 )
         {
-            for( int i=0; i<5; i++ )
+            ULONGLONG tweak = 1ULL << rng.sizet( 64 );
+            tweak += (ULONGLONG)rng.sizet( 1 + 4 * nDataUnits ) - 2 * nDataUnits;   // cast to ensure we do the offset computation in 64 bits, not in 32 bits.
+
+            CHECK3( NT_SUCCESS( pImp->encrypt( cbDataUnit, tweak, pbData, buf2, cbData ) ), "Encrypt failure, line %lld", line );
+            CHECK3( NT_SUCCESS( pImp->decrypt( cbDataUnit, tweak, buf2, buf3, cbData ) ),   "Decrypt failure, line %lld", line );
+            CHECK3( memcmp( buf3, pbData, cbData ) == 0, "Encrypt/Decrypt mismatch, line %lld", line );
+
+            pImp->m_operateInPlace = true;
+            CHECK3( NT_SUCCESS( pImp->encrypt( cbDataUnit, tweak, buf3, buf3, cbData ) ), "In-place encrypt failure, line %lld", line );
+            CHECK3( memcmp( buf3, buf2, cbData ) == 0, "In-place/Out-of-place Encrypt mismatch, line %lld", line );
+
+            CHECK3( NT_SUCCESS( pImp->decrypt( cbDataUnit, tweak, buf3, buf3, cbData ) ), "In-place decrypt failure, line %lld", line );
+            CHECK3( memcmp( buf3, pbData, cbData ) == 0, "In-place Encrypt/Decrypt mismatch, line %lld", line );
+            pImp->m_operateInPlace = false;
+
+            if( nDataUnits > 1 )
             {
-                //
-                // Pick a subset of the big request and check the encrypt/decrypt
-                //
-                SIZE_T nSubUnits = rng.sizet( nDataUnits );
-                SIZE_T cbSubUnits = nSubUnits * cbDataUnit;
-                SIZE_T unitOffset = rng.sizet( nDataUnits - nSubUnits + 1 );
-                SIZE_T cbOffset = unitOffset * cbDataUnit;
-                CHECK( unitOffset + nSubUnits <= nDataUnits, "?" );
+                for( int i=0; i<5; i++ )
+                {
+                    //
+                    // Pick a subset of the big request and check the encrypt/decrypt
+                    //
+                    SIZE_T nSubUnits = rng.sizet( nDataUnits );
+                    SIZE_T cbSubUnits = nSubUnits * cbDataUnit;
+                    SIZE_T unitOffset = rng.sizet( nDataUnits - nSubUnits + 1 );
+                    SIZE_T cbOffset = unitOffset * cbDataUnit;
+                    CHECK( unitOffset + nSubUnits <= nDataUnits, "?" );
 
-                pImp->encrypt( cbDataUnit, tweak + unitOffset, pbData + cbOffset, buf3, cbSubUnits );
-                CHECK3( memcmp( buf3, &buf2[cbOffset], cbSubUnits ) == 0, "Partial encrypt mismatch, line %lld", line );
+                    CHECK3( NT_SUCCESS( pImp->encrypt( cbDataUnit, tweak + unitOffset, pbData + cbOffset, buf3, cbSubUnits ) ), "Encrypt failure, line %lld", line );
+                    CHECK3( memcmp( buf3, &buf2[cbOffset], cbSubUnits ) == 0, "Partial Encrypt mismatch, line %lld", line );
 
-                pImp->decrypt( cbDataUnit, tweak + unitOffset, buf2 + cbOffset, buf3, cbSubUnits );
-                CHECK3( memcmp( buf3, &pbData[cbOffset], cbSubUnits ) == 0, "Partial decrypt mismatch, line %lld", line );
+                    CHECK3( NT_SUCCESS( pImp->decrypt( cbDataUnit, tweak + unitOffset, buf2 + cbOffset, buf3, cbSubUnits ) ), "Decrypt failure, line %lld", line );
+                    CHECK3( memcmp( buf3, &pbData[cbOffset], cbSubUnits ) == 0, "Partial Decrypt mismatch, line %lld", line );
+                }
+            }
+        } else {
+            UINT64 tweakPower = rng.sizet(128);
+            UINT64 tweakLow = 1ULL << (tweakPower & 63);
+            UINT64 tweakHigh = 0;
+
+            if( tweakPower & 64 )
+            {
+                tweakHigh = tweakLow;
+                tweakLow = 0;
+            }
+
+            tweakLow += (UINT64)rng.sizet( 1 + 4 * nDataUnits ) - 2 * nDataUnits;   // cast to ensure we do the offset computation in 64 bits, not in 32 bits.
+            if( (INT64)tweakLow < 0 )
+            {
+                tweakHigh--;
+            }
+
+            BYTE tweak[SYMCRYPT_AES_BLOCK_SIZE];
+            SYMCRYPT_STORE_LSBFIRST64( &tweak[0], tweakLow );
+            SYMCRYPT_STORE_LSBFIRST64( &tweak[8], tweakHigh );
+
+            CHECK3( NT_SUCCESS( pImp->encryptWith128bTweak( cbDataUnit, &tweak[0], pbData, buf2, cbData ) ), "EncryptWith128bTweak failure, line %lld", line );
+            CHECK3( NT_SUCCESS( pImp->decryptWith128bTweak( cbDataUnit, &tweak[0], buf2, buf3, cbData ) ),   "DecryptWith128bTweak failure, line %lld", line );
+            CHECK3( memcmp( buf3, pbData, cbData ) == 0, "EncryptWith128bTweak/DecryptWith128bTweak mismatch, line %lld", line );
+
+            pImp->m_operateInPlace = true;
+            CHECK3( NT_SUCCESS( pImp->encryptWith128bTweak( cbDataUnit, tweak, buf3, buf3, cbData ) ), "In-place encrypt failure, line %lld", line );
+            CHECK3( memcmp( buf3, buf2, cbData ) == 0, "In-place/Out-of-place EncryptWith128bTweak mismatch, line %lld", line );
+
+            CHECK3( NT_SUCCESS( pImp->decryptWith128bTweak( cbDataUnit, tweak, buf3, buf3, cbData ) ), "In-place decrypt failure, line %lld", line );
+            CHECK3( memcmp( buf3, pbData, cbData ) == 0, "In-place EncryptWith128bTweak/DecryptWith128bTweak mismatch, line %lld", line );
+            pImp->m_operateInPlace = false;
+
+            if( nDataUnits > 1 )
+            {
+                for( int i=0; i<5; i++ )
+                {
+                    //
+                    // Pick a subset of the big request and check the encrypt/decrypt
+                    //
+                    SIZE_T nSubUnits = rng.sizet( nDataUnits );
+                    SIZE_T cbSubUnits = nSubUnits * cbDataUnit;
+                    SIZE_T unitOffset = rng.sizet( nDataUnits - nSubUnits + 1 );
+                    SIZE_T cbOffset = unitOffset * cbDataUnit;
+                    CHECK( unitOffset + nSubUnits <= nDataUnits, "?" );
+
+                    SYMCRYPT_STORE_LSBFIRST64( &tweak[0], tweakLow + unitOffset);
+                    SYMCRYPT_STORE_LSBFIRST64( &tweak[8], tweakHigh + (((tweakLow + unitOffset) < tweakLow) ? 1 : 0) );
+
+                    CHECK3( NT_SUCCESS( pImp->encryptWith128bTweak( cbDataUnit, &tweak[0], pbData + cbOffset, buf3, cbSubUnits ) ), "EncryptWith128bTweak failure, line %lld", line );
+                    CHECK3( memcmp( buf3, &buf2[cbOffset], cbSubUnits ) == 0, "Partial EncryptWith128bTweak mismatch, line %lld", line );
+
+                    CHECK3( NT_SUCCESS( pImp->decryptWith128bTweak( cbDataUnit, &tweak[0], buf2 + cbOffset, buf3, cbSubUnits ) ), "DecryptWith128bTweak failure, line %lld", line );
+                    CHECK3( memcmp( buf3, &pbData[cbOffset], cbSubUnits ) == 0, "Partial DecryptWith128bTweak mismatch, line %lld", line );
+                }
             }
         }
 

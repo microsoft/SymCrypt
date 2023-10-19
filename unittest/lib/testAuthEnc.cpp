@@ -187,7 +187,7 @@ AuthEncMultiImp::encrypt(
                 resTag.addResult( (*i), bufTag, cbTag );
             }
             res = STATUS_SUCCESS;   // At least one implementation liked it.
-         }
+        }
     }
 
     if( pbTag != NULL )

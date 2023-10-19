@@ -935,6 +935,30 @@ SymCryptXtsAesEncryptDataUnitXmm(
     UINT64 lastTweakLow, lastTweakHigh;
     int aesEncryptXtsLoop;
 
+    SIZE_T cbDataMain;  // number of bytes to handle in the main loop
+    SIZE_T cbDataTail;  // number of bytes to handle in the tail loop
+
+    SYMCRYPT_ASSERT(cbData >= SYMCRYPT_AES_BLOCK_SIZE);
+
+    // To simplify logic and unusual size processing, we handle all
+    // data not a multiple of 8 blocks in the tail loop
+    cbDataTail = cbData & ((8*SYMCRYPT_AES_BLOCK_SIZE)-1);
+    // Additionally, so that ciphertext stealing logic does not rely on
+    // reading back from the destination buffer, when we have a non-zero
+    // tail, we ensure that we handle at least 1 whole block in the tail
+    //
+    // Note that our caller has ensured we have at least 1 whole block
+    // to process, this is checked in debug build
+    // This means that cbDataTail is in [1,15] at this point iff there are
+    // at least 8 whole blocks to process; so the below does not cause
+    // cbDataTail or cbDataMain to exceed cbData
+    cbDataTail += ((cbDataTail > 0) && (cbDataTail < SYMCRYPT_AES_BLOCK_SIZE)) ? (8*SYMCRYPT_AES_BLOCK_SIZE) : 0;
+    cbDataMain = cbData - cbDataTail;
+
+    SYMCRYPT_ASSERT(cbDataMain <= cbData);
+    SYMCRYPT_ASSERT(cbDataTail <= cbData);
+    SYMCRYPT_ASSERT((cbDataMain & ((8*SYMCRYPT_AES_BLOCK_SIZE)-1)) == 0);
+
     c0 = _mm_loadu_si128( (__m128i *) pbTweakBlock );
     XTS_MUL_ALPHA( c0, c1 );
     XTS_MUL_ALPHA( c1, c2 );
@@ -959,7 +983,7 @@ SymCryptXtsAesEncryptDataUnitXmm(
     firstRoundKey = _mm_loadu_si128( (__m128i *) &pExpandedKey->RoundKey[0] );
     lastRoundKey = _mm_loadu_si128( (__m128i *) pExpandedKey->lastEncRoundKey );
 
-    while( cbData >= 8 * SYMCRYPT_AES_BLOCK_SIZE )
+    while( cbDataMain > 0 )
     {
         // At loop entry, tweakBuffer[0-7] are tweakValues for the next 8 blocks
         c0 = _mm_xor_si128( tweakBuffer[0].m128i, firstRoundKey );
@@ -1029,26 +1053,81 @@ SymCryptXtsAesEncryptDataUnitXmm(
 
         pbSrc += 8 * SYMCRYPT_AES_BLOCK_SIZE;
         pbDst += 8 * SYMCRYPT_AES_BLOCK_SIZE;
-        cbData -= 8 * SYMCRYPT_AES_BLOCK_SIZE;
+        cbDataMain -= 8 * SYMCRYPT_AES_BLOCK_SIZE;
+    }
+
+    if( cbDataTail == 0 )
+    {
+        return; // <-- expected case; early return here
     }
 
     // Rare case, with data unit length not being multiple of 128 bytes, handle the tail one block at a time
-    // NOTE: we enforce that cbData is a multiple of SYMCRYPT_AES_BLOCK_SIZE for XTS
-    if( cbData >= SYMCRYPT_AES_BLOCK_SIZE)
-    {
-        t0 = tweakBuffer[0].m128i;
+    t0 = tweakBuffer[0].m128i;
 
-        do
-        {
-            c0 = _mm_xor_si128( t0, _mm_loadu_si128( ( __m128i * ) pbSrc ) );
-            pbSrc += SYMCRYPT_AES_BLOCK_SIZE;
-            AES_ENCRYPT_1( pExpandedKey, c0 );
-            _mm_storeu_si128( (__m128i *) pbDst, _mm_xor_si128( c0, t0 ) );
-            pbDst += SYMCRYPT_AES_BLOCK_SIZE;
-            XTS_MUL_ALPHA ( t0, t0 );
-            cbData -= SYMCRYPT_AES_BLOCK_SIZE;
-        } while( cbData >= SYMCRYPT_AES_BLOCK_SIZE );
+    while( cbDataTail >= 2*SYMCRYPT_AES_BLOCK_SIZE )
+    {
+        c0 = _mm_xor_si128( _mm_loadu_si128( ( __m128i * ) pbSrc ), t0 );
+        pbSrc += SYMCRYPT_AES_BLOCK_SIZE;
+        AES_ENCRYPT_1( pExpandedKey, c0 );
+        _mm_storeu_si128( (__m128i *) pbDst, _mm_xor_si128( c0, t0 ) );
+        pbDst += SYMCRYPT_AES_BLOCK_SIZE;
+        XTS_MUL_ALPHA( t0, t0 );
+        cbDataTail -= SYMCRYPT_AES_BLOCK_SIZE;
     }
+    
+    if( cbDataTail > SYMCRYPT_AES_BLOCK_SIZE )
+    {
+        // Ciphertext stealing encryption
+        // 
+        //                      +--------------+
+        //                      |              |
+        //                      |              V
+        // +-----------------+  |  +-----+-----------+
+        // |      P_m-1      |  |  | P_m |++++CP+++++|
+        // +-----------------+  |  +-----+-----------+
+        //          |           |           |
+        //       enc_m-1        |         enc_m
+        //          |           |           |
+        //          V           |           V
+        // +-----+-----------+  |  +-----------------+
+        // | C_m |++++CP+++++|--+  |      C_m-1      |
+        // +-----+-----------+     +-----------------+
+        //    |                   /
+        //    +----------------  /  --+
+        //                      /     |
+        //                      |     V
+        // +-----------------+  |  +-----+
+        // |      C_m-1      |<-+  | C_m |
+        // +-----------------+     +-----+
+
+        // Encrypt penultimate plaintext block into tweakBuffer[0]
+        c0 = _mm_xor_si128( _mm_loadu_si128( (__m128i *) pbSrc ), t0 );
+        AES_ENCRYPT_1( pExpandedKey, c0 );
+        tweakBuffer[0].m128i = _mm_xor_si128( c0, t0 );
+
+        cbDataTail -= SYMCRYPT_AES_BLOCK_SIZE;
+
+        // Copy tweakBuffer[0] to tweakBuffer[1]
+        tweakBuffer[1].m128i = tweakBuffer[0].m128i;
+        // Copy final plaintext bytes to prefix of tweakBuffer[0] - we must read before writing to support in-place encryption
+        memcpy( &tweakBuffer[0].ul[0], pbSrc + SYMCRYPT_AES_BLOCK_SIZE, cbDataTail );
+        // Copy prefix of tweakBuffer[1] to the right place in the destination buffer
+        memcpy( pbDst + SYMCRYPT_AES_BLOCK_SIZE, &tweakBuffer[1].ul[0], cbDataTail );
+
+        // Do final tweak update
+        XTS_MUL_ALPHA( t0, t0 );
+
+        // Load updated tweakBuffer[0] into c0
+        c0 = tweakBuffer[0].m128i;
+    } else {
+        // Just load final plaintext block into c0
+        c0 = _mm_loadu_si128( (__m128i*) pbSrc );
+    }
+
+    // Final full block encryption
+    c0 = _mm_xor_si128( c0, t0 );
+    AES_ENCRYPT_1( pExpandedKey, c0 );
+    _mm_storeu_si128( (__m128i *) pbDst, _mm_xor_si128( c0, t0 ) );
 }
 
 VOID
@@ -1071,6 +1150,30 @@ SymCryptXtsAesDecryptDataUnitXmm(
     const BYTE (*keyLimit)[4][4] = pExpandedKey->lastDecRoundKey;
     UINT64 lastTweakLow, lastTweakHigh;
     int aesDecryptXtsLoop;
+
+    SIZE_T cbDataMain;  // number of bytes to handle in the main loop
+    SIZE_T cbDataTail;  // number of bytes to handle in the tail loop
+    
+    SYMCRYPT_ASSERT(cbData >= SYMCRYPT_AES_BLOCK_SIZE);
+
+    // To simplify logic and unusual size processing, we handle all
+    // data not a multiple of 8 blocks in the tail loop
+    cbDataTail = cbData & ((8*SYMCRYPT_AES_BLOCK_SIZE)-1);
+    // Additionally, so that ciphertext stealing logic does not rely on
+    // reading back from the destination buffer, when we have a non-zero
+    // tail, we ensure that we handle at least 1 whole block in the tail
+    //
+    // Note that our caller has ensured we have at least 1 whole block
+    // to process, this is checked in debug build
+    // This means that cbDataTail is in [1,15] at this point iff there are
+    // at least 8 whole blocks to process; so the below does not cause
+    // cbDataTail or cbDataMain to exceed cbData
+    cbDataTail += ((cbDataTail > 0) && (cbDataTail < SYMCRYPT_AES_BLOCK_SIZE)) ? (8*SYMCRYPT_AES_BLOCK_SIZE) : 0;
+    cbDataMain = cbData - cbDataTail;
+
+    SYMCRYPT_ASSERT(cbDataMain <= cbData);
+    SYMCRYPT_ASSERT(cbDataTail <= cbData);
+    SYMCRYPT_ASSERT((cbDataMain & ((8*SYMCRYPT_AES_BLOCK_SIZE)-1)) == 0);
 
     c0 = _mm_loadu_si128( (__m128i *) pbTweakBlock );
     XTS_MUL_ALPHA( c0, c1 );
@@ -1096,7 +1199,7 @@ SymCryptXtsAesDecryptDataUnitXmm(
     firstRoundKey = _mm_loadu_si128( (__m128i *) pExpandedKey->lastEncRoundKey );
     lastRoundKey = _mm_loadu_si128( (__m128i *) pExpandedKey->lastDecRoundKey );
 
-    while( cbData >= 8 * SYMCRYPT_AES_BLOCK_SIZE )
+    while( cbDataMain > 0 )
     {
         // At loop entry, tweakBuffer[0-7] are tweakValues for the next 8 blocks
         c0 = _mm_xor_si128( tweakBuffer[0].m128i, firstRoundKey );
@@ -1166,26 +1269,83 @@ SymCryptXtsAesDecryptDataUnitXmm(
 
         pbSrc += 8 * SYMCRYPT_AES_BLOCK_SIZE;
         pbDst += 8 * SYMCRYPT_AES_BLOCK_SIZE;
-        cbData -= 8 * SYMCRYPT_AES_BLOCK_SIZE;
+        cbDataMain -= 8 * SYMCRYPT_AES_BLOCK_SIZE;
+    }
+
+    if( cbDataTail == 0 )
+    {
+        return; // <-- expected case; early return here
     }
 
     // Rare case, with data unit length not being multiple of 128 bytes, handle the tail one block at a time
-    // NOTE: we enforce that cbData is a multiple of SYMCRYPT_AES_BLOCK_SIZE for XTS
-    if( cbData >= SYMCRYPT_AES_BLOCK_SIZE)
-    {
-        t0 = tweakBuffer[0].m128i;
+    t0 = tweakBuffer[0].m128i;
 
-        do
-        {
-            c0 = _mm_xor_si128( t0, _mm_loadu_si128( ( __m128i * ) pbSrc ) );
-            pbSrc += SYMCRYPT_AES_BLOCK_SIZE;
-            AES_DECRYPT_1( pExpandedKey, c0 );
-            _mm_storeu_si128( (__m128i *) pbDst, _mm_xor_si128( c0, t0 ) );
-            pbDst += SYMCRYPT_AES_BLOCK_SIZE;
-            XTS_MUL_ALPHA ( t0, t0 );
-            cbData -= SYMCRYPT_AES_BLOCK_SIZE;
-        } while( cbData >= SYMCRYPT_AES_BLOCK_SIZE );
+    while( cbDataTail >= 2*SYMCRYPT_AES_BLOCK_SIZE )
+    {
+        c0 = _mm_xor_si128( _mm_loadu_si128( ( __m128i * ) pbSrc ), t0 );
+        pbSrc += SYMCRYPT_AES_BLOCK_SIZE;
+        AES_DECRYPT_1( pExpandedKey, c0 );
+        _mm_storeu_si128( (__m128i *) pbDst, _mm_xor_si128( c0, t0 ) );
+        pbDst += SYMCRYPT_AES_BLOCK_SIZE;
+        c7 = t0;
+        XTS_MUL_ALPHA( t0, t0 );
+        cbDataTail -= SYMCRYPT_AES_BLOCK_SIZE;
     }
+    
+    if( cbDataTail > SYMCRYPT_AES_BLOCK_SIZE )
+    {
+        // Ciphertext stealing decryption
+        // 
+        //                      +--------------+
+        //                      |              |
+        //                      |              V
+        // +-----------------+  |  +-----+-----------+
+        // |      C_m-1      |  |  | C_m |++++CP+++++|
+        // +-----------------+  |  +-----+-----------+
+        //          |           |           |
+        //        dec_m         |        dec_m-1
+        //          |           |           |
+        //          V           |           V
+        // +-----+-----------+  |  +-----------------+
+        // | P_m |++++CP+++++|--+  |      P_m-1      |
+        // +-----+-----------+     +-----------------+
+        //    |                   /
+        //    +----------------  /  --+
+        //                      /     |
+        //                      |     V
+        // +-----------------+  |  +-----+
+        // |      P_m-1      |<-+  | P_m |
+        // +-----------------+     +-----+
+
+        // Do final tweak update into c1
+        // Penultimate tweak is in t0, ready for final decryption
+        XTS_MUL_ALPHA( t0, c1 );
+
+        // Decrypt penultimate ciphertext block into tweakBuffer[0]
+        c0 = _mm_xor_si128( _mm_loadu_si128( (__m128i *) pbSrc ), c1 );
+        AES_DECRYPT_1( pExpandedKey, c0 );
+        tweakBuffer[0].m128i = _mm_xor_si128( c0, c1 );
+
+        cbDataTail -= SYMCRYPT_AES_BLOCK_SIZE;
+
+        // Copy tweakBuffer[0] to tweakBuffer[1]
+        tweakBuffer[1].m128i = tweakBuffer[0].m128i;
+        // Copy final ciphertext bytes to prefix of tweakBuffer[0] - we must read before writing to support in-place decryption
+        memcpy( &tweakBuffer[0].ul[0], pbSrc + SYMCRYPT_AES_BLOCK_SIZE, cbDataTail );
+        // Copy prefix of tweakBuffer[1] to the right place in the destination buffer
+        memcpy( pbDst + SYMCRYPT_AES_BLOCK_SIZE, &tweakBuffer[1].ul[0], cbDataTail );
+
+        // Load updated tweakBuffer[0] into c0
+        c0 = tweakBuffer[0].m128i;
+    } else {
+        // Just load final ciphertext block into c0
+        c0 = _mm_loadu_si128( (__m128i*) pbSrc );
+    }
+
+    // Final full block decryption
+    c0 = _mm_xor_si128( c0, t0 );
+    AES_DECRYPT_1( pExpandedKey, c0 );
+    _mm_storeu_si128( (__m128i *) pbDst, _mm_xor_si128( c0, t0 ) );
 }
 
 #define AES_FULLROUND_4_GHASH_1( roundkey, keyPtr, c0, c1, c2, c3, r0, t0, t1, gHashPointer, byteReverseOrder, gHashExpandedKeyTable, todo, resl, resm, resh ) \

@@ -473,8 +473,12 @@ EXPORTS
     SymCryptUint64Bytesize
     SymCryptWipe
     SymCryptXtsAesDecrypt
+    SymCryptXtsAesDecryptWith128bTweak
     SymCryptXtsAesEncrypt
+    SymCryptXtsAesEncryptWith128bTweak
     SymCryptXtsAesExpandKey
+    SymCryptXtsAesExpandKeyEx
+    SymCryptXtsAesKeyCopy
     SymCryptXtsAesSelftest
     SymCryptSessionDestroy
     SymCryptSessionGcmDecrypt

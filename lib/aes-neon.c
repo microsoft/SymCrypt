@@ -1063,15 +1063,38 @@ SymCryptXtsAesEncryptDataUnitNeon(
 {
     __n128 t0, t1, t2, t3, t4, t5, t6, t7;
     __n128 c0, c1, c2, c3, c4, c5, c6, c7;
-    const __n128 *  pSrc;
-    __n128 *        pDst;
     const __n128 vZero = vmovq_n_u8(0);
     const __n128 vAlphaMask = SYMCRYPT_SET_N128_U8(0x87, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1);
     const __n64 vAlphaMultiplier = SYMCRYPT_SET_N64_U64(0x0000000000000086);
 
+    SIZE_T cbDataMain;  // number of bytes to handle in the main loop
+    SIZE_T cbDataTail;  // number of bytes to handle in the tail loop
+    BYTE tailBuf[2*SYMCRYPT_AES_BLOCK_SIZE];
+
+    SYMCRYPT_ASSERT(cbData >= SYMCRYPT_AES_BLOCK_SIZE);
+
+    // To simplify logic and unusual size processing, we handle all
+    // data not a multiple of 8 blocks in the tail loop
+    cbDataTail = cbData & ((8*SYMCRYPT_AES_BLOCK_SIZE)-1);
+    // Additionally, so that ciphertext stealing logic does not rely on
+    // reading back from the destination buffer, when we have a non-zero
+    // tail, we ensure that we handle at least 1 whole block in the tail
+    //
+    // Note that our caller has ensured we have at least 1 whole block
+    // to process, this is checked in debug build
+    // This means that cbDataTail is in [1,15] at this point iff there are
+    // at least 8 whole blocks to process; so the below does not cause
+    // cbDataTail or cbDataMain to exceed cbData
+    cbDataTail += ((cbDataTail > 0) && (cbDataTail < SYMCRYPT_AES_BLOCK_SIZE)) ? (8*SYMCRYPT_AES_BLOCK_SIZE) : 0;
+    cbDataMain = cbData - cbDataTail;
+
+    SYMCRYPT_ASSERT(cbDataMain <= cbData);
+    SYMCRYPT_ASSERT(cbDataTail <= cbData);
+    SYMCRYPT_ASSERT((cbDataMain & ((8*SYMCRYPT_AES_BLOCK_SIZE)-1)) == 0);
+
     t0 = *(__n128 *)pbTweakBlock;
 
-    if( cbData >= 8 * SYMCRYPT_AES_BLOCK_SIZE )
+    if( cbDataMain > 0 )
     {
         // Set up for main loop entry
         // NOTE: We load the first 8 blocks and store the last 8 blocks out of the loop to allow
@@ -1086,15 +1109,14 @@ SymCryptXtsAesEncryptDataUnitNeon(
         XTS_MUL_ALPHA ( t2, t3 );
         XTS_MUL_ALPHA ( t6, t7 );
 
-        pSrc = (const __n128 *) pbSrc;
-        c0 = veorq_u32( t0, pSrc[0] );
-        c1 = veorq_u32( t1, pSrc[1] );
-        c2 = veorq_u32( t2, pSrc[2] );
-        c3 = veorq_u32( t3, pSrc[3] );
-        c4 = veorq_u32( t4, pSrc[4] );
-        c5 = veorq_u32( t5, pSrc[5] );
-        c6 = veorq_u32( t6, pSrc[6] );
-        c7 = veorq_u32( t7, pSrc[7] );
+        c0 = veorq_u32( vld1q_u8( pbSrc + (0*16) ), t0 );
+        c1 = veorq_u32( vld1q_u8( pbSrc + (1*16) ), t1 );
+        c2 = veorq_u32( vld1q_u8( pbSrc + (2*16) ), t2 );
+        c3 = veorq_u32( vld1q_u8( pbSrc + (3*16) ), t3 );
+        c4 = veorq_u32( vld1q_u8( pbSrc + (4*16) ), t4 );
+        c5 = veorq_u32( vld1q_u8( pbSrc + (5*16) ), t5 );
+        c6 = veorq_u32( vld1q_u8( pbSrc + (6*16) ), t6 );
+        c7 = veorq_u32( vld1q_u8( pbSrc + (7*16) ), t7 );
 
         for(;;)
         {
@@ -1102,24 +1124,22 @@ SymCryptXtsAesEncryptDataUnitNeon(
 
             AES_ENCRYPT_8( pExpandedKey, c0, c1, c2, c3, c4, c5, c6, c7 );
 
-            cbData -= 8 * SYMCRYPT_AES_BLOCK_SIZE;
-            if( cbData < 8 * SYMCRYPT_AES_BLOCK_SIZE )
+            cbDataMain -= 8 * SYMCRYPT_AES_BLOCK_SIZE;
+            if( cbDataMain < 8 * SYMCRYPT_AES_BLOCK_SIZE )
             {
                 break;
             }
 
             // Interleave the final xor, write, and compute next tweak block, and load, and first xor.
             // This reduces register pressure and is more efficient.
-            pDst = (__n128 *) pbDst;
-            pSrc = (const __n128 *) pbSrc;
-            pDst[0] = veorq_u32( c0, t0 );
-            pDst[1] = veorq_u32( c1, t1 );
-            pDst[2] = veorq_u32( c2, t2 );
-            pDst[3] = veorq_u32( c3, t3 );
-            pDst[4] = veorq_u32( c4, t4 );
-            pDst[5] = veorq_u32( c5, t5 );
-            pDst[6] = veorq_u32( c6, t6 );
-            pDst[7] = veorq_u32( c7, t7 );
+            vst1q_u8( pbDst + (0*16), veorq_u32( c0, t0 ) );
+            vst1q_u8( pbDst + (1*16), veorq_u32( c1, t1 ) );
+            vst1q_u8( pbDst + (2*16), veorq_u32( c2, t2 ) );
+            vst1q_u8( pbDst + (3*16), veorq_u32( c3, t3 ) );
+            vst1q_u8( pbDst + (4*16), veorq_u32( c4, t4 ) );
+            vst1q_u8( pbDst + (5*16), veorq_u32( c5, t5 ) );
+            vst1q_u8( pbDst + (6*16), veorq_u32( c6, t6 ) );
+            vst1q_u8( pbDst + (7*16), veorq_u32( c7, t7 ) );
 
             XTS_MUL_ALPHA8( t0, t0 );
             XTS_MUL_ALPHA8( t1, t1 );
@@ -1130,27 +1150,26 @@ SymCryptXtsAesEncryptDataUnitNeon(
             XTS_MUL_ALPHA8( t6, t6 );
             XTS_MUL_ALPHA8( t7, t7 );
 
-            c0 = veorq_u32( pSrc[0], t0 );
-            c1 = veorq_u32( pSrc[1], t1 );
-            c2 = veorq_u32( pSrc[2], t2 );
-            c3 = veorq_u32( pSrc[3], t3 );
-            c4 = veorq_u32( pSrc[4], t4 );
-            c5 = veorq_u32( pSrc[5], t5 );
-            c6 = veorq_u32( pSrc[6], t6 );
-            c7 = veorq_u32( pSrc[7], t7 );
+            c0 = veorq_u32( vld1q_u8( pbSrc + (0*16) ), t0 );
+            c1 = veorq_u32( vld1q_u8( pbSrc + (1*16) ), t1 );
+            c2 = veorq_u32( vld1q_u8( pbSrc + (2*16) ), t2 );
+            c3 = veorq_u32( vld1q_u8( pbSrc + (3*16) ), t3 );
+            c4 = veorq_u32( vld1q_u8( pbSrc + (4*16) ), t4 );
+            c5 = veorq_u32( vld1q_u8( pbSrc + (5*16) ), t5 );
+            c6 = veorq_u32( vld1q_u8( pbSrc + (6*16) ), t6 );
+            c7 = veorq_u32( vld1q_u8( pbSrc + (7*16) ), t7 );
 
             pbDst += 8 * SYMCRYPT_AES_BLOCK_SIZE;
         }
 
-        pDst = (__n128 *) pbDst;
-        pDst[0] = veorq_u32( c0, t0 );
-        pDst[1] = veorq_u32( c1, t1 );
-        pDst[2] = veorq_u32( c2, t2 );
-        pDst[3] = veorq_u32( c3, t3 );
-        pDst[4] = veorq_u32( c4, t4 );
-        pDst[5] = veorq_u32( c5, t5 );
-        pDst[6] = veorq_u32( c6, t6 );
-        pDst[7] = veorq_u32( c7, t7 );
+        vst1q_u8( pbDst + (0*16), veorq_u32( c0, t0 ) );
+        vst1q_u8( pbDst + (1*16), veorq_u32( c1, t1 ) );
+        vst1q_u8( pbDst + (2*16), veorq_u32( c2, t2 ) );
+        vst1q_u8( pbDst + (3*16), veorq_u32( c3, t3 ) );
+        vst1q_u8( pbDst + (4*16), veorq_u32( c4, t4 ) );
+        vst1q_u8( pbDst + (5*16), veorq_u32( c5, t5 ) );
+        vst1q_u8( pbDst + (6*16), veorq_u32( c6, t6 ) );
+        vst1q_u8( pbDst + (7*16), veorq_u32( c7, t7 ) );
 
         // We won't do another 8-block set
         // Update only the first tweak block in case it is needed for tail
@@ -1159,24 +1178,76 @@ SymCryptXtsAesEncryptDataUnitNeon(
         pbDst += 8 * SYMCRYPT_AES_BLOCK_SIZE;
     }
 
-    // Rare case, with data unit length not being multiple of 128 bytes, handle the tail one block at a time
-    // NOTE: we enforce that cbData is a multiple of SYMCRYPT_AES_BLOCK_SIZE for XTS
-    while( cbData >= SYMCRYPT_AES_BLOCK_SIZE )
+    if( cbDataTail == 0 )
     {
-        pSrc = (const __n128 *) pbSrc;
-        c0 = veorq_u32( pSrc[0], t0 );
-        pbSrc += SYMCRYPT_AES_BLOCK_SIZE;
-
-        AES_ENCRYPT_1( pExpandedKey, c0 );
-
-        pDst = (__n128 *) pbDst;
-        pDst[0] = veorq_u32( c0, t0 );
-        pbDst += SYMCRYPT_AES_BLOCK_SIZE;
-
-        XTS_MUL_ALPHA ( t0, t0 );
-
-        cbData -= SYMCRYPT_AES_BLOCK_SIZE;
+        return; // <-- expected case; early return here
     }
+
+    // Rare case, with data unit length not being multiple of 128 bytes, handle the tail one block at a time
+    while( cbDataTail >= 2*SYMCRYPT_AES_BLOCK_SIZE )
+    {
+        c0 = veorq_u32( vld1q_u8(pbSrc), t0 );
+        pbSrc += SYMCRYPT_AES_BLOCK_SIZE;
+        AES_ENCRYPT_1( pExpandedKey, c0 );
+        vst1q_u8( pbDst, veorq_u32( c0, t0 ) );
+        pbDst += SYMCRYPT_AES_BLOCK_SIZE;
+        XTS_MUL_ALPHA( t0, t0 );
+        cbDataTail -= SYMCRYPT_AES_BLOCK_SIZE;
+    }
+
+    if( cbDataTail > SYMCRYPT_AES_BLOCK_SIZE )
+    {
+        // Ciphertext stealing encryption
+        // 
+        //                      +--------------+
+        //                      |              |
+        //                      |              V
+        // +-----------------+  |  +-----+-----------+
+        // |      P_m-1      |  |  | P_m |++++CP+++++|
+        // +-----------------+  |  +-----+-----------+
+        //          |           |           |
+        //       enc_m-1        |         enc_m
+        //          |           |           |
+        //          V           |           V
+        // +-----+-----------+  |  +-----------------+
+        // | C_m |++++CP+++++|--+  |      C_m-1      |
+        // +-----+-----------+     +-----------------+
+        //    |                   /
+        //    +----------------  /  --+
+        //                      /     |
+        //                      |     V
+        // +-----------------+  |  +-----+
+        // |      C_m-1      |<-+  | C_m |
+        // +-----------------+     +-----+
+
+        // Encrypt penultimate plaintext block into tailBuf
+        c0 = veorq_u32( vld1q_u8(pbSrc), t0 );
+        AES_ENCRYPT_1( pExpandedKey, c0 );
+        c0 = veorq_u32( c0, t0 );
+        vst1q_u8( &tailBuf[0], c0 );
+        vst1q_u8( &tailBuf[SYMCRYPT_AES_BLOCK_SIZE], c0 );
+
+        cbDataTail -= SYMCRYPT_AES_BLOCK_SIZE;
+
+        // Copy final plaintext bytes to prefix of tailBuf - we must read before writing to support in-place encryption
+        memcpy( &tailBuf[0], pbSrc + SYMCRYPT_AES_BLOCK_SIZE, cbDataTail );
+        // Copy prefix of tailBuf[SYMCRYPT_AES_BLOCK_SIZE] to the right place in the destination buffer
+        memcpy( pbDst + SYMCRYPT_AES_BLOCK_SIZE, &tailBuf[SYMCRYPT_AES_BLOCK_SIZE], cbDataTail );
+
+        // Do final tweak update
+        XTS_MUL_ALPHA( t0, t0 );
+
+        // Load updated tailBuf into c0
+        c0 = vld1q_u8( &tailBuf[0] );
+    } else {
+        // Just load final plaintext block into c0
+        c0 = vld1q_u8( pbSrc );
+    }
+    
+    // Final full block encryption
+    c0 = veorq_u32( c0, t0 );
+    AES_ENCRYPT_1( pExpandedKey, c0 );
+    vst1q_u8( pbDst, veorq_u32( c0, t0 ) );
 }
 
 
@@ -1191,15 +1262,39 @@ SymCryptXtsAesDecryptDataUnitNeon(
 {
     __n128 t0, t1, t2, t3, t4, t5, t6, t7;
     __n128 c0, c1, c2, c3, c4, c5, c6, c7;
-    const __n128 *  pSrc;
-    __n128 *        pDst;
     const __n128 vZero = vmovq_n_u8(0);
     const __n128 vAlphaMask = SYMCRYPT_SET_N128_U8(0x87, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1);
     const __n64 vAlphaMultiplier = SYMCRYPT_SET_N64_U64(0x0000000000000086);
 
-    t0 = *(__n128 *)pbTweakBlock;
+    SIZE_T cbDataMain;  // number of bytes to handle in the main loop
+    SIZE_T cbDataTail;  // number of bytes to handle in the tail loop
+    BYTE tailBuf[2*SYMCRYPT_AES_BLOCK_SIZE];
 
-    if( cbData >= 8 * SYMCRYPT_AES_BLOCK_SIZE )
+    SYMCRYPT_ASSERT(cbData >= SYMCRYPT_AES_BLOCK_SIZE);
+
+    // To simplify logic and unusual size processing, we handle all
+    // data not a multiple of 8 blocks in the tail loop
+    cbDataTail = cbData & ((8*SYMCRYPT_AES_BLOCK_SIZE)-1);
+    // Additionally, so that ciphertext stealing logic does not rely on
+    // reading back from the destination buffer, when we have a non-zero
+    // tail, we ensure that we handle at least 1 whole block in the tail
+    //
+    // Note that our caller has ensured we have at least 1 whole block
+    // to process, this is checked in debug build
+    // This means that cbDataTail is in [1,15] at this point iff there are
+    // at least 8 whole blocks to process; so the below does not cause
+    // cbDataTail or cbDataMain to exceed cbData
+    cbDataTail += ((cbDataTail > 0) && (cbDataTail < SYMCRYPT_AES_BLOCK_SIZE)) ? (8*SYMCRYPT_AES_BLOCK_SIZE) : 0;
+    cbDataMain = cbData - cbDataTail;
+
+    SYMCRYPT_ASSERT(cbDataMain <= cbData);
+    SYMCRYPT_ASSERT(cbDataTail <= cbData);
+    SYMCRYPT_ASSERT((cbDataMain & ((8*SYMCRYPT_AES_BLOCK_SIZE)-1)) == 0);
+
+    t0 = *(__n128 *)pbTweakBlock;
+    t7 = t0;
+
+    if( cbDataMain > 0 )
     {
         // Set up for main loop entry
         // NOTE: We load the first 8 blocks and store the last 8 blocks out of the loop to allow
@@ -1214,15 +1309,14 @@ SymCryptXtsAesDecryptDataUnitNeon(
         XTS_MUL_ALPHA ( t2, t3 );
         XTS_MUL_ALPHA ( t6, t7 );
 
-        pSrc = (const __n128 *) pbSrc;
-        c0 = veorq_u32( t0, pSrc[0] );
-        c1 = veorq_u32( t1, pSrc[1] );
-        c2 = veorq_u32( t2, pSrc[2] );
-        c3 = veorq_u32( t3, pSrc[3] );
-        c4 = veorq_u32( t4, pSrc[4] );
-        c5 = veorq_u32( t5, pSrc[5] );
-        c6 = veorq_u32( t6, pSrc[6] );
-        c7 = veorq_u32( t7, pSrc[7] );
+        c0 = veorq_u32( vld1q_u8( pbSrc + (0*16) ), t0 );
+        c1 = veorq_u32( vld1q_u8( pbSrc + (1*16) ), t1 );
+        c2 = veorq_u32( vld1q_u8( pbSrc + (2*16) ), t2 );
+        c3 = veorq_u32( vld1q_u8( pbSrc + (3*16) ), t3 );
+        c4 = veorq_u32( vld1q_u8( pbSrc + (4*16) ), t4 );
+        c5 = veorq_u32( vld1q_u8( pbSrc + (5*16) ), t5 );
+        c6 = veorq_u32( vld1q_u8( pbSrc + (6*16) ), t6 );
+        c7 = veorq_u32( vld1q_u8( pbSrc + (7*16) ), t7 );
 
         for(;;)
         {
@@ -1230,24 +1324,22 @@ SymCryptXtsAesDecryptDataUnitNeon(
 
             AES_DECRYPT_8( pExpandedKey, c0, c1, c2, c3, c4, c5, c6, c7 );
 
-            cbData -= 8 * SYMCRYPT_AES_BLOCK_SIZE;
-            if( cbData < 8 * SYMCRYPT_AES_BLOCK_SIZE )
+            cbDataMain -= 8 * SYMCRYPT_AES_BLOCK_SIZE;
+            if( cbDataMain < 8 * SYMCRYPT_AES_BLOCK_SIZE )
             {
                 break;
             }
 
             // Interleave the final xor, write, and compute next tweak block, and load, and first xor.
             // This reduces register pressure and is more efficient.
-            pDst = (__n128 *) pbDst;
-            pSrc = (const __n128 *) pbSrc;
-            pDst[0] = veorq_u32( c0, t0 );
-            pDst[1] = veorq_u32( c1, t1 );
-            pDst[2] = veorq_u32( c2, t2 );
-            pDst[3] = veorq_u32( c3, t3 );
-            pDst[4] = veorq_u32( c4, t4 );
-            pDst[5] = veorq_u32( c5, t5 );
-            pDst[6] = veorq_u32( c6, t6 );
-            pDst[7] = veorq_u32( c7, t7 );
+            vst1q_u8( pbDst + (0*16), veorq_u32( c0, t0 ) );
+            vst1q_u8( pbDst + (1*16), veorq_u32( c1, t1 ) );
+            vst1q_u8( pbDst + (2*16), veorq_u32( c2, t2 ) );
+            vst1q_u8( pbDst + (3*16), veorq_u32( c3, t3 ) );
+            vst1q_u8( pbDst + (4*16), veorq_u32( c4, t4 ) );
+            vst1q_u8( pbDst + (5*16), veorq_u32( c5, t5 ) );
+            vst1q_u8( pbDst + (6*16), veorq_u32( c6, t6 ) );
+            vst1q_u8( pbDst + (7*16), veorq_u32( c7, t7 ) );
 
             XTS_MUL_ALPHA8( t0, t0 );
             XTS_MUL_ALPHA8( t1, t1 );
@@ -1258,27 +1350,26 @@ SymCryptXtsAesDecryptDataUnitNeon(
             XTS_MUL_ALPHA8( t6, t6 );
             XTS_MUL_ALPHA8( t7, t7 );
 
-            c0 = veorq_u32( pSrc[0], t0 );
-            c1 = veorq_u32( pSrc[1], t1 );
-            c2 = veorq_u32( pSrc[2], t2 );
-            c3 = veorq_u32( pSrc[3], t3 );
-            c4 = veorq_u32( pSrc[4], t4 );
-            c5 = veorq_u32( pSrc[5], t5 );
-            c6 = veorq_u32( pSrc[6], t6 );
-            c7 = veorq_u32( pSrc[7], t7 );
+            c0 = veorq_u32( vld1q_u8( pbSrc + (0*16) ), t0 );
+            c1 = veorq_u32( vld1q_u8( pbSrc + (1*16) ), t1 );
+            c2 = veorq_u32( vld1q_u8( pbSrc + (2*16) ), t2 );
+            c3 = veorq_u32( vld1q_u8( pbSrc + (3*16) ), t3 );
+            c4 = veorq_u32( vld1q_u8( pbSrc + (4*16) ), t4 );
+            c5 = veorq_u32( vld1q_u8( pbSrc + (5*16) ), t5 );
+            c6 = veorq_u32( vld1q_u8( pbSrc + (6*16) ), t6 );
+            c7 = veorq_u32( vld1q_u8( pbSrc + (7*16) ), t7 );
 
             pbDst += 8 * SYMCRYPT_AES_BLOCK_SIZE;
         }
 
-        pDst = (__n128 *) pbDst;
-        pDst[0] = veorq_u32( c0, t0 );
-        pDst[1] = veorq_u32( c1, t1 );
-        pDst[2] = veorq_u32( c2, t2 );
-        pDst[3] = veorq_u32( c3, t3 );
-        pDst[4] = veorq_u32( c4, t4 );
-        pDst[5] = veorq_u32( c5, t5 );
-        pDst[6] = veorq_u32( c6, t6 );
-        pDst[7] = veorq_u32( c7, t7 );
+        vst1q_u8( pbDst + (0*16), veorq_u32( c0, t0 ) );
+        vst1q_u8( pbDst + (1*16), veorq_u32( c1, t1 ) );
+        vst1q_u8( pbDst + (2*16), veorq_u32( c2, t2 ) );
+        vst1q_u8( pbDst + (3*16), veorq_u32( c3, t3 ) );
+        vst1q_u8( pbDst + (4*16), veorq_u32( c4, t4 ) );
+        vst1q_u8( pbDst + (5*16), veorq_u32( c5, t5 ) );
+        vst1q_u8( pbDst + (6*16), veorq_u32( c6, t6 ) );
+        vst1q_u8( pbDst + (7*16), veorq_u32( c7, t7 ) );
 
         // We won't do another 8-block set
         // Update only the first tweak block in case it is needed for tail
@@ -1287,24 +1378,77 @@ SymCryptXtsAesDecryptDataUnitNeon(
         pbDst += 8 * SYMCRYPT_AES_BLOCK_SIZE;
     }
 
-    // Rare case, with data unit length not being multiple of 128 bytes, handle the tail one block at a time
-    // NOTE: we enforce that cbData is a multiple of SYMCRYPT_AES_BLOCK_SIZE for XTS
-    while( cbData >= SYMCRYPT_AES_BLOCK_SIZE )
+    if( cbDataTail == 0 )
     {
-        pSrc = (const __n128 *) pbSrc;
-        c0 = veorq_u32( pSrc[0], t0 );
-        pbSrc += SYMCRYPT_AES_BLOCK_SIZE;
-
-        AES_DECRYPT_1( pExpandedKey, c0 );
-
-        pDst = (__n128 *) pbDst;
-        pDst[0] = veorq_u32( c0, t0 );
-        pbDst += SYMCRYPT_AES_BLOCK_SIZE;
-
-        XTS_MUL_ALPHA ( t0, t0 );
-
-        cbData -= SYMCRYPT_AES_BLOCK_SIZE;
+        return; // <-- expected case; early return here
     }
+
+    // Rare case, with data unit length not being multiple of 128 bytes, handle the tail one block at a time
+    while( cbDataTail >= 2*SYMCRYPT_AES_BLOCK_SIZE )
+    {
+        c0 = veorq_u32( vld1q_u8( pbSrc ), t0 );
+        pbSrc += SYMCRYPT_AES_BLOCK_SIZE;
+        AES_DECRYPT_1( pExpandedKey, c0 );
+        vst1q_u8( pbDst, veorq_u32( c0, t0 ) );
+        pbDst += SYMCRYPT_AES_BLOCK_SIZE;
+        XTS_MUL_ALPHA( t0, t0 );
+        cbDataTail -= SYMCRYPT_AES_BLOCK_SIZE;
+    }
+    
+    if( cbDataTail > SYMCRYPT_AES_BLOCK_SIZE )
+    {
+        // Ciphertext stealing decryption
+        // 
+        //                      +--------------+
+        //                      |              |
+        //                      |              V
+        // +-----------------+  |  +-----+-----------+
+        // |      C_m-1      |  |  | C_m |++++CP+++++|
+        // +-----------------+  |  +-----+-----------+
+        //          |           |           |
+        //        dec_m         |        dec_m-1
+        //          |           |           |
+        //          V           |           V
+        // +-----+-----------+  |  +-----------------+
+        // | P_m |++++CP+++++|--+  |      P_m-1      |
+        // +-----+-----------+     +-----------------+
+        //    |                   /
+        //    +----------------  /  --+
+        //                      /     |
+        //                      |     V
+        // +-----------------+  |  +-----+
+        // |      P_m-1      |<-+  | P_m |
+        // +-----------------+     +-----+
+
+        // Do final tweak update into t1
+        // Penultimate tweak is in t0, ready for final decryption
+        XTS_MUL_ALPHA( t0, t1 );
+
+        // Decrypt penultimate ciphertext block into tailBuf
+        c0 = veorq_u32( vld1q_u8( pbSrc ), t1 );
+        AES_DECRYPT_1( pExpandedKey, c0 );
+        c0 = veorq_u32( c0, t1 );
+        vst1q_u8( &tailBuf[0], c0 );
+        vst1q_u8( &tailBuf[SYMCRYPT_AES_BLOCK_SIZE], c0 );
+
+        cbDataTail -= SYMCRYPT_AES_BLOCK_SIZE;
+
+        // Copy final ciphertext bytes to prefix of tailBuf - we must read before writing to support in-place decryption
+        memcpy( &tailBuf[0], pbSrc + SYMCRYPT_AES_BLOCK_SIZE, cbDataTail );
+        // Copy prefix of tailBuf[SYMCRYPT_AES_BLOCK_SIZE] to the right place in the destination buffer
+        memcpy( pbDst + SYMCRYPT_AES_BLOCK_SIZE, &tailBuf[SYMCRYPT_AES_BLOCK_SIZE], cbDataTail );
+
+        // Load updated tailBuf into c0
+        c0 = vld1q_u8( &tailBuf[0] );
+    } else {
+        // Just load final ciphertext block into c0
+        c0 = vld1q_u8( pbSrc );
+    }
+
+    // Final full block decryption
+    c0 = veorq_u32( c0, t0 );
+    AES_DECRYPT_1( pExpandedKey, c0 );
+    vst1q_u8( pbDst, veorq_u32( c0, t0 ) );
 }
 
 #include "ghash_definitions.h"

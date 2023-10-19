@@ -36,6 +36,8 @@
 
 // An improved approach; use arithmetic shift-right to duplicate the carry-out, PSHUFD to re-arrange, and an AND to
 // implement both the polynomial and mask the other words down to 1 bit again.
+
+// __m128i XTS_ALPHA_MASK = _mm_set_epi32( 1, 1, 1, 0x87 );
 #define XTS_MUL_ALPHA( _in, _res ) \
 {\
     __m128i _t1, _t2;\
@@ -125,20 +127,20 @@
 {\
     __m256i _t2;\
 \
-    _t2 = _mm256_srli_si256( _in, 15); /* AVX2 */ \
+    _t2 = _mm256_srli_si256( _in, 15 ); /* AVX2 */ \
     _res = _mm256_slli_si256( _in, 1 ); \
     _t2 = _mm256_clmulepi64_epi128( _t2, XTS_ALPHA_MULTIPLIER_Ymm, 0x00 ); \
-    _res = _mm256_xor_si256(_res, _t2 ); \
+    _res = _mm256_xor_si256( _res, _t2 ); \
 }
 
 #define XTS_MUL_ALPHA16_YMM( _in, _res ) \
 {\
     __m256i _t2;\
 \
-    _t2 = _mm256_srli_si256( _in, 14); /* AVX2 */ \
+    _t2 = _mm256_srli_si256( _in, 14 ); /* AVX2 */ \
     _res = _mm256_slli_si256( _in, 2 ); \
     _t2 = _mm256_clmulepi64_epi128( _t2, XTS_ALPHA_MULTIPLIER_Ymm, 0x00 ); \
-    _res = _mm256_xor_si256(_res, _t2 ); \
+    _res = _mm256_xor_si256( _res, _t2 ); \
 }
 
 // __m512i XTS_ALPHA_MULTIPLIER_Zmm = _mm512_set_epi64( 0, 0x87, 0, 0x87, 0, 0x87, 0, 0x87 );
@@ -146,8 +148,8 @@
 {\
     __m512i _t2; \
 \
-    _t2 = _mm512_bsrli_epi128( _in, 15); \
-    _res = _mm512_bslli_epi128( _in, 1); \
+    _t2 = _mm512_bsrli_epi128( _in, 15 ); \
+    _res = _mm512_bslli_epi128( _in, 1 ); \
     _t2 = _mm512_clmulepi64_epi128( _t2, XTS_ALPHA_MULTIPLIER_Zmm, 0x00 ); \
     _res = _mm512_xor_si512( _res, _t2 ); \
 }
@@ -156,8 +158,8 @@
 {\
     __m512i _t2; \
 \
-    _t2 = _mm512_bsrli_epi128( _in, 14); \
-    _res = _mm512_bslli_epi128( _in, 2); \
+    _t2 = _mm512_bsrli_epi128( _in, 14 ); \
+    _res = _mm512_bslli_epi128( _in, 2 ); \
     _t2 = _mm512_clmulepi64_epi128( _t2, XTS_ALPHA_MULTIPLIER_Zmm, 0x00 ); \
     _res = _mm512_xor_si512( _res, _t2 ); \
 }

@@ -5752,26 +5752,127 @@ SymCryptXtsAesExpandKey(
     _Out_               PSYMCRYPT_XTS_AES_EXPANDED_KEY  pExpandedKey,
     _In_reads_( cbKey ) PCBYTE                          pbKey,
                         SIZE_T                          cbKey );
+// Note that this key expansion function does not perform FIPS checks for backwards compatibility.
+// Use SymCryptXtsAesExpandKeyEx for FIPS-approved XTS key expansion.
+
+SYMCRYPT_ERROR
+SYMCRYPT_CALL
+SymCryptXtsAesExpandKeyEx(
+    _Out_               PSYMCRYPT_XTS_AES_EXPANDED_KEY  pExpandedKey,
+    _In_reads_( cbKey ) PCBYTE                          pbKey,
+                        SIZE_T                          cbKey,
+                        UINT32                          flags );
+// Allowed flags:
+//
+// - SYMCRYPT_FLAG_KEY_NO_FIPS
+//   Opt-out of performing validation required for FIPS.
+//   Currently this is just checking that 2 AES keys used in XTS are non-equal.
+
+VOID
+SYMCRYPT_CALL
+SymCryptXtsAesKeyCopy(
+    _In_    PCSYMCRYPT_XTS_AES_EXPANDED_KEY pSrc,
+    _Out_   PSYMCRYPT_XTS_AES_EXPANDED_KEY  pDst );
+//
+// Create a copy of an expanded key
+//
 
 VOID
 SYMCRYPT_CALL
 SymCryptXtsAesEncrypt(
     _In_                    PCSYMCRYPT_XTS_AES_EXPANDED_KEY pExpandedKey,
-                            SIZE_T                          cbDataUnit,         // size of each data unit, must be a multiple of the AES block size.
-                            UINT64                          tweak,              // Tweak value of first block (incremented for subsequent blocks)
+                            SIZE_T                          cbDataUnit,
+                            UINT64                          tweak,
     _In_reads_( cbData )    PCBYTE                          pbSrc,
     _Out_writes_( cbData )  PBYTE                           pbDst,
-                            SIZE_T                          cbData );           // must be a multiple of cbDataUnit
+                            SIZE_T                          cbData );
+//
+// Encrypt a buffer using XTS-AES and 64 bit tweak.
+//      - pExpandedKey points to the expanded key for XTS.
+//      - cbDataUnit: size of each data unit, must be at least 16 and cannot exceed 2^{24} bytes. Typically 512.
+//      - tweak: 64 bit tweak value used for the first data unit in the buffer, incremented for subsequent data units.
+//      - pbSrc: plaintext input
+//      - pbDst: ciphertext output. The ciphertext buffer may be identical to the plaintext
+//          buffer, or non-overlapping. The ciphertext is also cbData bytes long.
+//      - cbData: # bytes of plaintext input. Must be a multiple of cbDataUnit.
+//
+// XTS-AES works on equal-sized data units, with each data unit being uniquely encrypted using a combination of
+// an integer "tweak" value and the XTS key (a pair of AES keys). A data unit typically corresponds to a sector
+// size on a disk.
+//
+// This API encrypts a buffer consisting of several consecutive data units, which use consecutive tweak values.
+// As the tweak is 64 bits, if there is an overflow of 64 bits, the value of the tweak will wrap to 0.
+//
+// i.e. encryption with tweak 0xffffffffffffffff for a buffer consisting of 2 data units will correspond to:
+// encryption using tweak 0xffffffffffffffff for the first data unit,
+// encryption using tweak 0x0000000000000000 for the second data unit
+//
+// Note, using cbDataUnit which is a power of 2 >= 256, will likely be more performant.
+//
 
 VOID
 SYMCRYPT_CALL
 SymCryptXtsAesDecrypt(
     _In_                    PCSYMCRYPT_XTS_AES_EXPANDED_KEY pExpandedKey,
-                            SIZE_T                          cbDataUnit,         // size of each data unit, must be a multiple of the AES block size.
-                            UINT64                          tweak,              // Tweak value of first block (incremented for subsequent blocks)
+                            SIZE_T                          cbDataUnit,
+                            UINT64                          tweak,
     _In_reads_( cbData )    PCBYTE                          pbSrc,
     _Out_writes_( cbData )  PBYTE                           pbDst,
-                            SIZE_T                          cbData );           // must be a multiple of cbDataUnit
+                            SIZE_T                          cbData );
+// 
+// Decrypt a buffer using XTS-AES and 64 bit tweak.
+// See SymCryptXtsAesEncrypt for a more in depth description, everything is the same, only this decrypts rather than encrypts.
+//
+
+VOID
+SYMCRYPT_CALL
+SymCryptXtsAesEncryptWith128bTweak(
+    _In_                                    PCSYMCRYPT_XTS_AES_EXPANDED_KEY pExpandedKey,
+                                            SIZE_T                          cbDataUnit,
+    _In_reads_( SYMCRYPT_AES_BLOCK_SIZE )   PCBYTE                          pbTweak,
+    _In_reads_( cbData )                    PCBYTE                          pbSrc,
+    _Out_writes_( cbData )                  PBYTE                           pbDst,
+                                            SIZE_T                          cbData );
+//
+// Encrypt a buffer using XTS-AES and 128 bit tweak.
+//      - pExpandedKey points to the expanded key for XTS.
+//      - cbDataUnit: size of each data unit, must be at least 16 and cannot exceed 2^{24} bytes. Typically 512.
+//      - pbTweak: 128 bit tweak value used for the first data unit in the buffer, incremented for subsequent data units.
+//      - pbSrc: plaintext input
+//      - pbDst: ciphertext output. The ciphertext buffer may be identical to the plaintext
+//          buffer, or non-overlapping. The ciphertext is also cbData bytes long.
+//      - cbData: # bytes of plaintext input. Must be a multiple of cbDataUnit.
+//
+// XTS-AES works on equal-sized data units, with each data unit being uniquely encrypted using a combination of
+// an integer "tweak" value and the XTS key (a pair of AES keys). A data unit typically corresponds to a sector
+// size on a disk.
+//
+// This API encrypts a buffer consisting of several consecutive data units, which use consecutive tweak values.
+// As the tweak is 128 bits, if there is an overflow of 128 bits, the value of the tweak will wrap to 0.
+//
+// i.e. encryption with tweak 0x0000000000000000ffffffffffffffff for a buffer consisting of 2 data units will correspond to:
+// encryption using tweak 0x0000000000000000ffffffffffffffff for the first data unit,
+// encryption using tweak 0x00000000000000010000000000000000 for the second data unit
+//  but encryption with tweak 0xffffffffffffffffffffffffffffffff for a buffer consisting of 2 data units will correspond to:
+// encryption using tweak 0xffffffffffffffffffffffffffffffff for the first data unit,
+// encryption using tweak 0x00000000000000000000000000000000 for the second data unit
+//
+// Note, using cbDataUnit which is a power of 2 >= 256, will likely be more performant.
+//
+
+VOID
+SYMCRYPT_CALL
+SymCryptXtsAesDecryptWith128bTweak(
+    _In_                                    PCSYMCRYPT_XTS_AES_EXPANDED_KEY pExpandedKey,
+                                            SIZE_T                          cbDataUnit,
+    _In_reads_( SYMCRYPT_AES_BLOCK_SIZE )   PCBYTE                          pbTweak,
+    _In_reads_( cbData )                    PCBYTE                          pbSrc,
+    _Out_writes_( cbData )                  PBYTE                           pbDst,
+                                            SIZE_T                          cbData );
+// 
+// Decrypt a buffer using XTS-AES and 128 bit tweak.
+// See SymCryptXtsAesEncryptWith128bTweak for a more in depth description, everything is the same, only this decrypts rather than encrypts.
+//
 
 VOID
 SYMCRYPT_CALL

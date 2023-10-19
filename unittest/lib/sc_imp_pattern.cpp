@@ -2298,7 +2298,7 @@ algImpKeyPerfFunction< ImpXxx, AlgXtsAes>( PBYTE buf1, PBYTE buf2, PBYTE buf3, S
 {
     UNREFERENCED_PARAMETER( buf3 );
 
-    ScShimSymCryptXtsAesExpandKey( (SYMCRYPT_XTS_AES_EXPANDED_KEY *) buf1, buf2, keySize );
+    ScShimSymCryptXtsAesExpandKeyEx( (SYMCRYPT_XTS_AES_EXPANDED_KEY *) buf1, buf2, keySize, SYMCRYPT_FLAG_KEY_NO_FIPS );
 }
 
 template<>
@@ -2355,17 +2355,17 @@ XtsImp<ImpXxx, AlgXtsAes>::~XtsImp()
 
 template<>
 NTSTATUS
-XtsImp<ImpXxx, AlgXtsAes>::setKey( PCBYTE pbKey, SIZE_T cbKey )
+XtsImp<ImpXxx, AlgXtsAes>::setKey( PCBYTE pbKey, SIZE_T cbKey, UINT32 flags )
 {
     SYMCRYPT_ERROR scError;
 
-    scError = ScShimSymCryptXtsAesExpandKey( &state.key, pbKey, cbKey );
+    scError = ScShimSymCryptXtsAesExpandKeyEx( &state.key, pbKey, cbKey, flags );
 
     return scError == SYMCRYPT_NO_ERROR ? 0 : STATUS_NOT_SUPPORTED;
 }
 
 template<>
-VOID
+NTSTATUS
 XtsImp<ImpXxx, AlgXtsAes>::encrypt(
                                         SIZE_T      cbDataUnit,
                                         ULONGLONG   tweak,
@@ -2380,10 +2380,11 @@ XtsImp<ImpXxx, AlgXtsAes>::encrypt(
                         pbSrc,
                         pbDst,
                         cbData );
+    return 0;
 }
 
 template<>
-VOID
+NTSTATUS
 XtsImp<ImpXxx, AlgXtsAes>::decrypt(
                                         SIZE_T      cbDataUnit,
                                         ULONGLONG   tweak,
@@ -2398,6 +2399,45 @@ XtsImp<ImpXxx, AlgXtsAes>::decrypt(
                         pbSrc,
                         pbDst,
                         cbData );
+    return 0;
+}
+
+template<>
+NTSTATUS
+XtsImp<ImpXxx, AlgXtsAes>::encryptWith128bTweak(
+                                                SIZE_T  cbDataUnit,
+        _In_reads_( SYMCRYPT_AES_BLOCK_SIZE )   PCBYTE  pbTweak,
+        _In_reads_( cbData )                    PCBYTE  pbSrc,
+        _Out_writes_( cbData )                  PBYTE   pbDst,
+                                                SIZE_T  cbData )
+{
+    ScShimSymCryptXtsAesEncryptWith128bTweak(
+                        &state.key,
+                        cbDataUnit,
+                        pbTweak,
+                        pbSrc,
+                        pbDst,
+                        cbData );
+    return 0;
+}
+
+template<>
+NTSTATUS
+XtsImp<ImpXxx, AlgXtsAes>::decryptWith128bTweak(
+                                                SIZE_T  cbDataUnit,
+        _In_reads_( SYMCRYPT_AES_BLOCK_SIZE )   PCBYTE  pbTweak,
+        _In_reads_( cbData )                    PCBYTE  pbSrc,
+        _Out_writes_( cbData )                  PBYTE   pbDst,
+                                                SIZE_T  cbData )
+{
+    ScShimSymCryptXtsAesDecryptWith128bTweak(
+                        &state.key,
+                        cbDataUnit,
+                        pbTweak,
+                        pbSrc,
+                        pbDst,
+                        cbData );
+    return 0;
 }
 
 
@@ -5185,11 +5225,12 @@ template<>
 VOID
 algImpKeyPerfFunction<ImpXxx, AlgEckeySetRandom>( PBYTE buf1, PBYTE buf2, PBYTE buf3, SIZE_T keySize )
 {
+    UNREFERENCED_PARAMETER( buf3 );
+
     SetupSymCryptCurves<ImpXxx>( buf1, keySize );
     PCSYMCRYPT_ECURVE pCurve = *((PCSYMCRYPT_ECURVE *)buf1);
 
     UINT32 eckeySize = ScShimSymCryptSizeofEckeyFromCurve( pCurve );
-    UINT32 signatureSize = 2 * ScShimSymCryptEcurveSizeofFieldElement( pCurve );
 
     PSYMCRYPT_ECKEY * pPtrs = ((PSYMCRYPT_ECKEY *) buf2);
     pPtrs[0] = ScShimSymCryptEckeyCreate( buf2 + 32, eckeySize, pCurve );

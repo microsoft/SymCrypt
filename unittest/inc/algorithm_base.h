@@ -290,7 +290,6 @@ public:
         _In_reads_(cbCustomizationStr) PCBYTE pbCustomizationStr, SIZE_T cbCustomizationStr,
         _In_reads_(cbKey) PCBYTE pbKey, SIZE_T cbKey) = 0;
     // Start a new MAC computation with the given key and customization string.
-    // Return zero if success, NT status error if not supported.
 
     virtual VOID append(_In_reads_(cbData) PCBYTE pbData, SIZE_T cbData) = 0;
     // Append data to the running MAC computation.
@@ -308,7 +307,6 @@ public:
         _Out_writes_(cbResult)  PBYTE pbResult, SIZE_T cbResult);
     // Complete a full MAC computation.
     // The default implementation merely calls the init/append/result members.
-    // Return zero if success, NT status error if not supported.
 
     virtual VOID xof(
         _In_reads_(cbCustomizationStr) PCBYTE pbCustomizationStr, SIZE_T cbCustomizationStr,
@@ -317,7 +315,6 @@ public:
         _Out_writes_(cbResult)  PBYTE pbResult, SIZE_T cbResult);
     // Generate a fixed size output in XOF mode.
     // The default implementation merely calls the init/append/extract members.
-    // Return zero if success, NT status error if not supported.
 };
 
 
@@ -434,21 +431,39 @@ private:
     VOID operator=( const XtsImplementation & );
 
 public:
-    virtual NTSTATUS setKey( PCBYTE pbKey, SIZE_T cbKey ) = 0;
+    virtual NTSTATUS setKey( PCBYTE pbKey, SIZE_T cbKey, UINT32 flags ) = 0;
 
-    virtual VOID encrypt(
+    virtual NTSTATUS encrypt(
                                         SIZE_T      cbDataUnit,
                                         ULONGLONG   tweak,
         _In_reads_( cbData )            PCBYTE      pbSrc,
         _Out_writes_( cbData )          PBYTE       pbDst,
                                         SIZE_T      cbData ) = 0;
+        // Return zero if success, NT status error if not supported.
 
-    virtual VOID decrypt(
+    virtual NTSTATUS decrypt(
                                         SIZE_T      cbDataUnit,
                                         ULONGLONG   tweak,
         _In_reads_( cbData )            PCBYTE      pbSrc,
         _Out_writes_( cbData )          PBYTE       pbDst,
                                         SIZE_T      cbData ) = 0;
+        // Return zero if success, NT status error if not supported.
+
+    virtual NTSTATUS encryptWith128bTweak(
+                                                SIZE_T  cbDataUnit,
+        _In_reads_( SYMCRYPT_AES_BLOCK_SIZE )   PCBYTE  pbTweak,
+        _In_reads_( cbData )                    PCBYTE  pbSrc,
+        _Out_writes_( cbData )                  PBYTE   pbDst,
+                                                SIZE_T  cbData ) = 0;
+        // Return zero if success, NT status error if not supported.
+
+    virtual NTSTATUS decryptWith128bTweak(
+                                                SIZE_T  cbDataUnit,
+        _In_reads_( SYMCRYPT_AES_BLOCK_SIZE )   PCBYTE  pbTweak,
+        _In_reads_( cbData )                    PCBYTE  pbSrc,
+        _Out_writes_( cbData )                  PBYTE   pbDst,
+                                                SIZE_T  cbData ) = 0;
+        // Return zero if success, NT status error if not supported.
 
 };
 
@@ -1187,21 +1202,39 @@ public:
     static const String s_modeName;
     static const String s_impName;
 
-    virtual NTSTATUS setKey( PCBYTE pbKey, SIZE_T cbKey );
+    virtual NTSTATUS setKey( PCBYTE pbKey, SIZE_T cbKey, UINT32 flags );
 
-    virtual VOID encrypt(
+    virtual NTSTATUS encrypt(
                                         SIZE_T      cbDataUnit,
                                         ULONGLONG   tweak,
         _In_reads_( cbData )            PCBYTE      pbSrc,
         _Out_writes_( cbData )          PBYTE       pbDst,
                                         SIZE_T      cbData );
+        // Return zero if success, NT status error if not supported.
 
-    virtual VOID decrypt(
+    virtual NTSTATUS decrypt(
                                         SIZE_T      cbDataUnit,
                                         ULONGLONG   tweak,
         _In_reads_( cbData )            PCBYTE      pbSrc,
         _Out_writes_( cbData )          PBYTE       pbDst,
                                         SIZE_T      cbData );
+        // Return zero if success, NT status error if not supported.
+
+    virtual NTSTATUS encryptWith128bTweak(
+                                                SIZE_T  cbDataUnit,
+        _In_reads_( SYMCRYPT_AES_BLOCK_SIZE )   PCBYTE  pbTweak,
+        _In_reads_( cbData )                    PCBYTE  pbSrc,
+        _Out_writes_( cbData )                  PBYTE   pbDst,
+                                                SIZE_T  cbData );
+        // Return zero if success, NT status error if not supported.
+
+    virtual NTSTATUS decryptWith128bTweak(
+                                                SIZE_T  cbDataUnit,
+        _In_reads_( SYMCRYPT_AES_BLOCK_SIZE )   PCBYTE  pbTweak,
+        _In_reads_( cbData )                    PCBYTE  pbSrc,
+        _Out_writes_( cbData )                  PBYTE   pbDst,
+                                                SIZE_T  cbData );
+        // Return zero if success, NT status error if not supported.
 
     XtsImpState< Implementation, Algorithm > state;
 };

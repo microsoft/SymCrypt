@@ -95,7 +95,12 @@ jobs:
         scriptPath: scripts/build.py
         arguments: 'cmake bin --arch ${{ parameters.arch }} --config ${{ parameters.config }} --cc ${{ parameters.cc }} --cxx ${{ parameters.cxx }} ${{ parameters.additionalArgs }} $(verbose_build_flag)'
         workingDirectory: $(Build.SourcesDirectory)
-
+  
+    # Overwrite default artifact publishing with our copy (enables publishing binaries for failed runs)
+    - script: |
+          cp .artifactignore "$(ob_outputDirectory)/.artifactignore"
+      displayName: 'Overwrite .artifactignore'
+    
     - ${{ if ne(parameters.skipTests, true) }}:
       - ${{ if ne(parameters.arch, 'ARM64') }}:
         - ${{ if ne(parameters.arch, 'ARM') }}:

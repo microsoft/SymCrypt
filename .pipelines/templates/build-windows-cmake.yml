@@ -47,6 +47,14 @@ jobs:
       arguments: 'cmake bin --arch ${{ parameters.arch }} --config ${{ parameters.config }} ${{ parameters.additionalArgs }} $(verbose_build_flag)'
       workingDirectory: $(Build.SourcesDirectory)
 
+  # Overwrite default artifact publishing with our copy (enables publishing binaries for failed runs)
+  - task: PowerShell@2
+    displayName: 'Overwrite .artifactignore'
+    inputs:
+      targetType: 'inline'
+      script: |
+        Copy-Item .artifactignore "$(ob_outputDirectory)\.artifactignore"
+  
   - ${{ if ne(parameters.skipTests, true) }}:
     - task: PythonScript@0
       displayName: 'Run unit tests'

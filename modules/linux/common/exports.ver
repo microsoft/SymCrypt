@@ -541,3 +541,14 @@ VERSION_103.2
       SymCryptHmacSha3_512Selftest;
       SymCryptHmacSha3_512StateCopy;
 } VERSION_103.1;
+VERSION_103.3
+{
+   global:
+      SymCryptMapUint32;
+      SymCryptPaddingPkcs7Add;
+      SymCryptPaddingPkcs7Remove;
+      SymCryptXtsAesDecryptWith128bTweak;
+      SymCryptXtsAesEncryptWith128bTweak;
+      SymCryptXtsAesExpandKeyEx;
+      SymCryptXtsAesKeyCopy;
+} VERSION_103.2;

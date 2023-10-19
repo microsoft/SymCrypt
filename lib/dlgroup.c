@@ -321,7 +321,7 @@ SymCryptDlgroupGeneratePrimeQ_FIPS(
         carry = SymCryptIntAddUint32( piDivTwoQ, 1, piDivTwoQ );
         if (carry > 0)
         {
-            // This shoudl never happen as the size of piDivTwoQ is at least one bit bigger than Q
+            // This should never happen as the size of piDivTwoQ is at least one bit bigger than Q
             scError = SYMCRYPT_FIPS_FAILURE;
             goto cleanup;
         }
