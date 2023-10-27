@@ -472,6 +472,7 @@ EXPORTS
     SymCryptUint64Bitsize
     SymCryptUint64Bytesize
     SymCryptWipe
+    SymCryptXorBytes
     SymCryptXtsAesDecrypt
     SymCryptXtsAesDecryptWith128bTweak
     SymCryptXtsAesEncrypt

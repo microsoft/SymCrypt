@@ -398,6 +398,7 @@
 #define ScShimSymCryptXtsAesEncryptWith128bTweak(...) SCTEST_CALL_SCIMPFN(SymCryptXtsAesEncryptWith128bTweak, __VA_ARGS__)
 #define ScShimSymCryptXtsAesDecrypt(...) SCTEST_CALL_SCIMPFN(SymCryptXtsAesDecrypt, __VA_ARGS__)
 #define ScShimSymCryptXtsAesDecryptWith128bTweak(...) SCTEST_CALL_SCIMPFN(SymCryptXtsAesDecryptWith128bTweak, __VA_ARGS__)
+#define ScShimSymCryptXtsAesKeyCopy(...) SCTEST_CALL_SCIMPFN(SymCryptXtsAesKeyCopy, __VA_ARGS__)
 #define ScShimSymCryptXtsAesSelftest(...) SCTEST_CALL_SCIMPFN(SymCryptXtsAesSelftest, __VA_ARGS__)
 #define ScShimSymCryptTlsCbcHmacVerify(...) SCTEST_CALL_SCIMPFN(SymCryptTlsCbcHmacVerify, __VA_ARGS__)
 #define ScShimSymCryptCallbackAlloc(...) SCTEST_CALL_SCIMPFN(SymCryptCallbackAlloc, __VA_ARGS__)

@@ -7701,8 +7701,10 @@ SymCryptRsaOaepDecrypt(
 // RSA Signing Algorithms
 //
 
-#define SYMCRYPT_FLAG_RSA_PKCS1_NO_ASN1             (0x01)
-#define SYMCRYPT_FLAG_RSA_PKCS1_OPTIONAL_HASH_OID   (0x02)
+#define SYMCRYPT_FLAG_RSA_PKCS1_NO_ASN1                 (0x01)
+#define SYMCRYPT_FLAG_RSA_PKCS1_OPTIONAL_HASH_OID       (0x02)
+
+#define SYMCRYPT_FLAG_RSA_PSS_VERIFY_WITH_MINIMUM_SALT  (0x04)
 
 typedef struct _SYMCRYPT_OID {
     UINT32  cbOID;
@@ -7866,12 +7868,18 @@ SymCryptRsaPssVerify(
 // nfSignature is the number format of the signature (i.e. the pbSignature buffer). Currently
 // only SYMCRYPT_NUMBER_FORMAT_MSB_FIRST is supported.
 //
-// Requirement:
-//  - cbHashValue <= SymCryptRsakeySizeofModulus( pkRsakey ). Otherwise the function
-//    returns SYMCRYPT_INVALID_ARGUMENT.
+// Requirements:
+//  - cbHashValue <= SymCryptRsakeySizeofModulus( pkRsakey )
+//  - cbSalt <= SymCryptRsakeySizeofModulus( pkRsakey )
+//  - cbSignature <= SymCryptRsakeySizeofModulus( pkRsakey )
 //
 // Allowed flags:
-//      None
+//      SYMCRYPT_FLAG_RSA_PSS_VERIFY_WITH_MINIMUM_SALT
+//
+//      When the flag is set, this function will do signature verification using the cbSalt parameter as
+//      a minimum value for the salt length, rather than using it as an exact value. Specifying this and
+//      setting cbSalt = 0 allows callers to verify a signature which has a valid encoding with any salt
+//      length using a single call.
 //
 
 VOID

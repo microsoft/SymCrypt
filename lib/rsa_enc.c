@@ -1321,7 +1321,8 @@ SymCryptRsaPssSign(
         goto cleanup;
     }
 
-    if (cbHashValue > cbTmp)
+    if ( (cbHashValue > cbTmp) ||
+         (cbSalt > cbTmp) )
     {
         scError = SYMCRYPT_INVALID_ARGUMENT;
         goto cleanup;
@@ -1456,13 +1457,9 @@ SymCryptRsaPssVerify(
         goto cleanup;
     }
 
-    if (cbHashValue > cbTmp)
-    {
-        scError = SYMCRYPT_INVALID_ARGUMENT;
-        goto cleanup;
-    }
-
-    if (cbSignature > cbTmp)
+    if ( (cbHashValue > cbTmp) ||
+         (cbSalt > cbTmp) ||
+         (cbSignature > cbTmp) )
     {
         scError = SYMCRYPT_INVALID_ARGUMENT;
         goto cleanup;

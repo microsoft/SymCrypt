@@ -3368,6 +3368,99 @@ RsaSignImp<ImpXxx, AlgRsaSignPss>::verify(
                     u32Other,
                     0 );
 
+    // Test corner cases of PSS verification w.r.t. cbSalt when we have a known-good signature we can work with
+    // This does not test that we don't spuriously verify some signature with a random signature modification and
+    // incorrect cbSalt; but such a failure in our verification routine is highly implausible
+    if( scError == SYMCRYPT_NO_ERROR )
+    {
+        scError = ScShimSymCryptRsaPssVerify(
+                        state.pKey,
+                        pbHash,
+                        cbHash,
+                        pbSig,
+                        cbSig,
+                        SYMCRYPT_NUMBER_FORMAT_MSB_FIRST,
+                        pInfo->pcHash,
+                        u32Other+1,
+                        0 );
+        if( scError == SYMCRYPT_NO_ERROR )
+        {
+            iprint( "Unexpected PSS verification success with too-large cbSalt: %d, %d, %d, %s\n",
+                    u32Other+1, cbHash, cbSig, pcstrHashAlgName );
+            CHECK( FALSE, "?" );
+        }
+        
+        scError = ScShimSymCryptRsaPssVerify(
+                        state.pKey,
+                        pbHash,
+                        cbHash,
+                        pbSig,
+                        cbSig,
+                        SYMCRYPT_NUMBER_FORMAT_MSB_FIRST,
+                        pInfo->pcHash,
+                        u32Other-1,
+                        0 );
+        if( scError == SYMCRYPT_NO_ERROR )
+        {
+            iprint( "Unexpected PSS verification success with too-small cbSalt: %d, %d, %d, %s\n",
+                    u32Other-1, cbHash, cbSig, pcstrHashAlgName );
+            CHECK( FALSE, "?" );
+        }
+
+        scError = ScShimSymCryptRsaPssVerify(
+                        state.pKey,
+                        pbHash,
+                        cbHash,
+                        pbSig,
+                        cbSig,
+                        SYMCRYPT_NUMBER_FORMAT_MSB_FIRST,
+                        pInfo->pcHash,
+                        u32Other,
+                        SYMCRYPT_FLAG_RSA_PSS_VERIFY_WITH_MINIMUM_SALT );
+        if( scError != SYMCRYPT_NO_ERROR )
+        {
+            iprint( "Unexpected PSS verification failure with MINIMUM_SALT flag and unchanged cbSalt: %08x, %d, %d, %d, %s\n",
+                    scError, u32Other, cbHash, cbSig, pcstrHashAlgName );
+            CHECK( FALSE, "?" );
+        }
+
+        scError = ScShimSymCryptRsaPssVerify(
+                        state.pKey,
+                        pbHash,
+                        cbHash,
+                        pbSig,
+                        cbSig,
+                        SYMCRYPT_NUMBER_FORMAT_MSB_FIRST,
+                        pInfo->pcHash,
+                        0,
+                        SYMCRYPT_FLAG_RSA_PSS_VERIFY_WITH_MINIMUM_SALT );
+        if( scError != SYMCRYPT_NO_ERROR )
+        {
+            iprint( "Unexpected PSS verification failure with MINIMUM_SALT flag and 0 cbSalt: %08x, %d, %d, %s\n",
+                    scError, cbHash, cbSig, pcstrHashAlgName );
+            CHECK( FALSE, "?" );
+        }
+
+        scError = ScShimSymCryptRsaPssVerify(
+                        state.pKey,
+                        pbHash,
+                        cbHash,
+                        pbSig,
+                        cbSig,
+                        SYMCRYPT_NUMBER_FORMAT_MSB_FIRST,
+                        pInfo->pcHash,
+                        u32Other+1,
+                        SYMCRYPT_FLAG_RSA_PSS_VERIFY_WITH_MINIMUM_SALT );
+        if( scError == SYMCRYPT_NO_ERROR )
+        {
+            iprint( "Unexpected PSS verification success with MINIMUM_SALT flag and too-large cbSalt: %d, %d, %d, %s\n",
+                    u32Other+1, cbHash, cbSig, pcstrHashAlgName );
+            CHECK( FALSE, "?" );
+        }
+
+        scError = SYMCRYPT_NO_ERROR;
+    }
+
     switch( scError )
     {
     case SYMCRYPT_NO_ERROR:

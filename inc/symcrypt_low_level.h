@@ -2253,7 +2253,7 @@ SymCryptRsaPssApplySignaturePadding(
     _In_                        PCSYMCRYPT_HASH             hashAlgorithm,
     _In_reads_bytes_opt_( cbSalt )
                                 PCBYTE                      pbSalt,
-                                SIZE_T                      cbSalt,
+    _In_range_(0, cbPSSFormat)  SIZE_T                      cbSalt,
                                 UINT32                      nBitsOfModulus,
                                 UINT32                      flags,
     _Out_writes_bytes_( cbPSSFormat )
@@ -2283,7 +2283,7 @@ SymCryptRsaPssVerifySignaturePadding(
     _In_reads_bytes_( cbHash )  PCBYTE                      pbHash,
                                 SIZE_T                      cbHash,
     _In_                        PCSYMCRYPT_HASH             hashAlgorithm,
-                                SIZE_T                      cbSalt,
+    _In_range_(0, cbPSSFormat)  SIZE_T                      cbSalt,
     _In_reads_bytes_( cbPSSFormat )
                                 PCBYTE                      pbPSSFormat,
                                 SIZE_T                      cbPSSFormat,
@@ -2295,11 +2295,17 @@ SymCryptRsaPssVerifySignaturePadding(
 //
 // Verifies that the RSA PSS signature padding is valid.
 //
-// It returns SYMCRYPT_NO_ERROR if the verification suceeded or SYMCRYPT_VERIFICATION_FAIL
+// It returns SYMCRYPT_NO_ERROR if the verification succeeded or SYMCRYPT_VERIFICATION_FAIL
 // if it failed.
 //
 // Allowed flags:
-//      None
+//      SYMCRYPT_FLAG_RSA_PSS_VERIFY_WITH_MINIMUM_SALT
+//
+//      When the flag is set, this function will do signature verification using the cbSalt parameter as
+//      a minimum value for the salt length, rather than using it as an exact value. Specifying this and
+//      setting cbSalt = 0 allows callers to verify a signature which has a valid encoding with any salt
+//      length using a single call.
+//
 //
 // Requirements:
 //      cbScratch >= SYMCRYPT_SCRATCH_BYTES_FOR_RSA_PSS( hashAlgorithm, cbHash, cbPSSFormat )

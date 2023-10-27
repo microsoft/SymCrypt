@@ -391,6 +391,7 @@
 #define ScDispatchSymCryptXtsAesEncryptWith128bTweak(...) SCTEST_CALL_DISPATCHFN(SymCryptXtsAesEncryptWith128bTweak, __VA_ARGS__)
 #define ScDispatchSymCryptXtsAesDecrypt(...) SCTEST_CALL_DISPATCHFN(SymCryptXtsAesDecrypt, __VA_ARGS__)
 #define ScDispatchSymCryptXtsAesDecryptWith128bTweak(...) SCTEST_CALL_DISPATCHFN(SymCryptXtsAesDecryptWith128bTweak, __VA_ARGS__)
+#define ScDispatchSymCryptXtsAesKeyCopy(...) SCTEST_CALL_DISPATCHFN(SymCryptXtsAesKeyCopy, __VA_ARGS__)
 #define ScDispatchSymCryptXtsAesSelftest(...) SCTEST_CALL_DISPATCHFN(SymCryptXtsAesSelftest, __VA_ARGS__)
 #define ScDispatchSymCryptTlsCbcHmacVerify(...) SCTEST_CALL_DISPATCHFN(SymCryptTlsCbcHmacVerify, __VA_ARGS__)
 #define ScDispatchSymCryptCallbackAlloc(...) SCTEST_CALL_DISPATCHFN(SymCryptCallbackAlloc, __VA_ARGS__)

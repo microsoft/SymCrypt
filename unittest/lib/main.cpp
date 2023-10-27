@@ -1168,7 +1168,7 @@ printCpuidInfo()
 
     int CPUInfo[4];
 
-    print( "CPUID raw information\n" );
+    print( "\nCPUID raw information\n" );
     print( "leaf        eax       ebx       ecx       edx\n");
     for( int i=0; i<=7; i++)
     {

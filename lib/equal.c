@@ -18,7 +18,7 @@ SymCryptEqual(  _In_reads_( cbBytes )  PCBYTE pbSrc1,
     volatile BYTE * p2 = (volatile BYTE *) pbSrc2;
 
     //
-    // We use foreced-access memory reads to ensure that the compiler doesn't get
+    // We use forced-access memory reads to ensure that the compiler doesn't get
     // smart and implement an early-out solution.
     //
 

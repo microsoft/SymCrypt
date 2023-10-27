@@ -873,7 +873,7 @@ SymCryptRsaPssApplySignaturePadding(
     _In_                        PCSYMCRYPT_HASH             hashAlgorithm,
     _In_reads_bytes_opt_( cbSalt )
                                 PCBYTE                      pbSalt,
-                                SIZE_T                      cbSalt,
+    _In_range_(0, cbPSSFormat)  SIZE_T                      cbSalt,
                                 UINT32                      nBitsOfModulus,
                                 UINT32                      flags,
     _Out_writes_bytes_( cbPSSFormat )
@@ -897,19 +897,8 @@ SymCryptRsaPssApplySignaturePadding(
 
     SIZE_T dwZeroBits  = 0; // Number of bits of the leftmost bit to be zeroed
 
-    // //
-    // //Size of cbSalt cannot exceed the maximal RSA key size CNG supports.
-    // //
-    // if (cbSalt > MSCRYPT_RSA_MAX_KEY_LENGTH ||
-        // cbHash > MSCRYPT_RSA_MAX_KEY_LENGTH)
-    // {
-        // Status = STATUS_INVALID_PARAMETER;
-        // TRACE_ERROR_STATUS(Status);
-        // goto cleanup;
-    // }
-
-    SIZE_T  cbHashAlg = SymCryptHashResultSize( hashAlgorithm );
-    SIZE_T  cbHashState = SymCryptHashStateSize( hashAlgorithm );
+    SIZE_T cbHashAlg = SymCryptHashResultSize( hashAlgorithm );
+    SIZE_T cbHashState = SymCryptHashStateSize( hashAlgorithm );
 
     UNREFERENCED_PARAMETER( cbScratch );
 
@@ -919,7 +908,7 @@ SymCryptRsaPssApplySignaturePadding(
         goto cleanup;
     }
 
-    // Corner case of rfc34447 for PSS:
+    // Corner case of RFC 3447 for PSS:
     //  If nBitsOfModulus == 1 mod 8, then emBits = nBitsOfModulus - 1 == 0 mod 8
     //  Thus the size of the input buffer in bytes is emLen = ceil(emBits /8),
     //  one smaller than the size of the modulus. Fix this here by setting the
@@ -1015,7 +1004,7 @@ SymCryptRsaPssVerifySignaturePadding(
     _In_reads_bytes_( cbHash )  PCBYTE                      pbHash,
                                 SIZE_T                      cbHash,
     _In_                        PCSYMCRYPT_HASH             hashAlgorithm,
-                                SIZE_T                      cbSalt,
+    _In_range_(0, cbPSSFormat)  SIZE_T                      cbSalt,
     _In_reads_bytes_( cbPSSFormat )
                                 PCBYTE                      pbPSSFormat,
                                 SIZE_T                      cbPSSFormat,
@@ -1036,21 +1025,25 @@ SymCryptRsaPssVerifySignaturePadding(
 
     SIZE_T cbDB;
     SIZE_T cbMPrime;
+    SIZE_T cbPadding2;
+    SIZE_T cbSaltObserved;
 
     SIZE_T dwZeroBits  = 0; // Number of bits of the leftmost bit to be zeroed
 
-    SIZE_T  cbHashAlg = SymCryptHashResultSize( hashAlgorithm );
-    SIZE_T  cbHashState = SymCryptHashStateSize( hashAlgorithm );
+    SIZE_T cbHashAlg = SymCryptHashResultSize( hashAlgorithm );
+    SIZE_T cbHashState = SymCryptHashStateSize( hashAlgorithm );
 
     UNREFERENCED_PARAMETER( cbScratch );
 
-    if ((flags != 0) || (cbPSSFormat == 0) || (pbPSSFormat == NULL))
+    if (((flags & ~SYMCRYPT_FLAG_RSA_PSS_VERIFY_WITH_MINIMUM_SALT) != 0) ||
+        (cbPSSFormat == 0) ||
+        (pbPSSFormat == NULL))
     {
         scError = SYMCRYPT_INVALID_ARGUMENT;
         goto cleanup;
     }
 
-    // Corner case of rfc3447 for PSS:
+    // Corner case of RFC 3447 for PSS:
     //  If nBitsOfModulus == 1 mod 8, then emBits = nBitsOfModulus - 1 == 0 mod 8
     //  Thus the size of the input buffer in bytes is emLen = ceil(emBits /8),
     //  one smaller than the size of the modulus. Fix this here by checking that the
@@ -1071,13 +1064,8 @@ SymCryptRsaPssVerifySignaturePadding(
 
     // check the most significant dwZeroBits bits to ensure they're zero and
     // check the least significant byte
-    //
-    // Size of cbSalt cannot exceed the maximal RSA key size CNG supports.
-    //
-    if ( cbPSSFormat < (cbHashAlg + cbSalt + 2) ||
+    if( (cbPSSFormat < (cbHashAlg + cbSalt + 2)) ||
         (pbPSSFormat[0] & (BYTE)(0xff << (8 - dwZeroBits))) != 0 ||
-        // cbSalt > MSCRYPT_RSA_MAX_KEY_LENGTH ||
-        // cbHash > MSCRYPT_RSA_MAX_KEY_LENGTH ||
         pbPSSFormat[cbPSSFormat - 1] != 0xbc
         )
     {
@@ -1086,14 +1074,9 @@ SymCryptRsaPssVerifySignaturePadding(
     }
 
     cbDB = cbPSSFormat - (cbHashAlg + 1);
-    cbMPrime = 8 + cbHash + cbSalt;
-
-    SYMCRYPT_ASSERT( cbScratch >= cbHashState + cbDB + cbMPrime + cbHashAlg );
 
     pHashState = (PVOID) pbScratch;
     pbDBMask = pbScratch + cbHashState;
-    pbMPrime = pbDBMask + cbDB;
-    pbMPrimeHash = pbMPrime + cbMPrime;
 
     // index to hash of M Prime
     pbHashOfMPrimeIndex = pbPSSFormat + (cbPSSFormat - (cbHashAlg + 1));
@@ -1116,29 +1099,60 @@ SymCryptRsaPssVerifySignaturePadding(
     // mask off the first dwZeroBits
     pbDBMask[0] &= (BYTE)(0xff >> dwZeroBits);
 
-    // check that the padding 2 on the DB is all zeros
-    for (UINT32 i = 0; i < (cbDB - cbSalt - 1); i++)
+    // find the length of the all-zeroes padding2 in pbDBMask
+    // padding2 must be terminated by a 0x01 byte
+    for (cbPadding2 = 0; cbPadding2 < (cbDB - cbSalt); cbPadding2++)
     {
-        if (pbDBMask[i] != 0x00)
+        if (pbDBMask[cbPadding2] == 0x01)
         {
+            // we have reached the end of padding2
+            break;
+        }
+
+        if (pbDBMask[cbPadding2] != 0x00)
+        {
+            // non-zero byte in what should be padding2
             scError = SYMCRYPT_SIGNATURE_VERIFICATION_FAILURE;
             goto cleanup;
         }
     }
 
-    // ensure the 0x01 byte is part of DB
-    if (pbDBMask[cbDB - cbSalt - 1] != 0x01)
+    // Here we have either:
+    // cbPadding2 == cbDB - cbSalt, which means the padding is too long
+    // or
+    // cbPadding2 <= cbDB - cbSalt - 1, and we have broken out of the loop when we found the 0x01 byte
+    if( cbPadding2 == cbDB - cbSalt )
     {
         scError = SYMCRYPT_SIGNATURE_VERIFICATION_FAILURE;
         goto cleanup;
     }
 
+    cbSaltObserved = cbDB - cbPadding2 - 1;
+    // cbSalt <= cbDB - cbPadding2 - 1 = cbSaltObserved
+    // so cbSaltObserved is acceptable value for signature verification
+    // with SYMCRYPT_FLAG_RSA_PSS_VERIFY_WITH_MINIMUM_SALT
+
+    if( ((flags & SYMCRYPT_FLAG_RSA_PSS_VERIFY_WITH_MINIMUM_SALT) == 0) &&
+        cbSaltObserved != cbSalt )
+    {
+        // When SYMCRYPT_FLAG_RSA_PSS_VERIFY_WITH_MINIMUM_SALT not specified,
+        // we require salt length observed to exactly match the caller provided salt length
+        scError = SYMCRYPT_SIGNATURE_VERIFICATION_FAILURE;
+        goto cleanup;
+    }
+
+    pbMPrime = pbDBMask + cbDB;
+    cbMPrime = 8 + cbHash + cbSaltObserved;
+    pbMPrimeHash = pbMPrime + cbMPrime;
+
+    SYMCRYPT_ASSERT( cbScratch >= cbHashState + cbDB + cbMPrime + cbHashAlg );
+
     // create the M Prime
     SymCryptWipe(pbMPrime, 8);
     memcpy(pbMPrime + 8, pbHash, cbHash);
     memcpy(pbMPrime + 8 + cbHash,
-           pbDBMask + (cbDB - cbSalt),
-           cbSalt);
+           pbDBMask + (cbDB - cbSaltObserved),
+           cbSaltObserved);
 
     // hash the M Prime
     SymCryptHash( hashAlgorithm, pbMPrime, cbMPrime, pbMPrimeHash, cbHashAlg );
