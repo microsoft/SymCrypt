@@ -160,6 +160,12 @@
     </Link>
   </ItemDefinitionGroup>
 
+  <ItemDefinitionGroup Condition="'$(Platform)'=='x64'">
+    <ClCompile>
+      <AdditionalOptions>-d2jumptablerdata -d2epilogunwindrequirev2 %(AdditionalOptions)</AdditionalOptions>
+    </ClCompile>
+  </ItemDefinitionGroup>
+
   <!-- Enable ARM64X compilation -->
   <PropertyGroup Condition="'$(Platform)'=='ARM64' AND '$(UndockedType)' != 'sys' AND '$(UndockedType)' != 'exe' AND '$(EnableArm64x)' == 'true'">
     <BuildAsX>true</BuildAsX>
