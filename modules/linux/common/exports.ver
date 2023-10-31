@@ -541,7 +541,7 @@ VERSION_103.2
       SymCryptHmacSha3_512Selftest;
       SymCryptHmacSha3_512StateCopy;
 } VERSION_103.1;
-VERSION_103.3
+VERSION_103.4
 {
    global:
       SymCryptEqual;
