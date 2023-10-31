@@ -727,166 +727,26 @@ SymCryptAesCbcMacXmm(
 #pragma warning( disable:4701 ) // "Use of uninitialized variable"
 #pragma runtime_checks( "u", off )
 
-VOID
-SYMCRYPT_CALL
-SymCryptAesCtrMsb64Xmm(
-    _In_                                        PCSYMCRYPT_AES_EXPANDED_KEY pExpandedKey,
-    _Inout_updates_( SYMCRYPT_AES_BLOCK_SIZE )  PBYTE                       pbChainingValue,
-    _In_reads_( cbData )                        PCBYTE                      pbSrc,
-    _Out_writes_( cbData )                      PBYTE                       pbDst,
-                                                SIZE_T                      cbData )
-{
-    __m128i chain = _mm_loadu_si128( (__m128i *) pbChainingValue );
+#define SYMCRYPT_AesCtrMsbXxXmm     SymCryptAesCtrMsb64Xmm
+#define MM_ADD_EPIXX               _mm_add_epi64
+#define MM_SUB_EPIXX               _mm_sub_epi64
 
-    __m128i BYTE_REVERSE_ORDER = _mm_set_epi8(
-            0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15 );
+#include "aes-pattern.c"
 
-    __m128i chainIncrement1 = _mm_set_epi32( 0, 0, 0, 1 );
-    __m128i chainIncrement2 = _mm_set_epi32( 0, 0, 0, 2 );
-    __m128i chainIncrement3 = _mm_set_epi32( 0, 0, 0, 3 );
-    //__m128i chainIncrement8 = _mm_set_epi32( 0, 0, 0, 8 );
+#undef MM_SUB_EPIXX
+#undef MM_ADD_EPIXX
+#undef SYMCRYPT_AesCtrMsbXxXmm
 
-    __m128i c0, c1, c2, c3, c4, c5, c6, c7;
+#define SYMCRYPT_AesCtrMsbXxXmm     SymCryptAesCtrMsb32Xmm
+#define MM_ADD_EPIXX               _mm_add_epi32
+#define MM_SUB_EPIXX               _mm_sub_epi32
 
-    cbData &= ~(SYMCRYPT_AES_BLOCK_SIZE - 1);
+#include "aes-pattern.c"
 
-    chain = _mm_shuffle_epi8( chain, BYTE_REVERSE_ORDER );
+#undef MM_SUB_EPIXX
+#undef MM_ADD_EPIXX
+#undef SYMCRYPT_AesCtrMsbXxXmm
 
-/*
-    while cbData >= 5 * block
-        generate 8 blocks of key stream
-        if cbData < 8 * block
-            break;
-        process 8 blocks
-    if cbData >= 5 * block
-        process 5-7 blocks
-        done
-    if cbData > 1 block
-        generate 4 blocks of key stream
-        process 2-4 blocks
-        done
-    if cbData == 1 block
-        generate 1 block of key stream
-        process block
-*/
-    while( cbData >= 5 * SYMCRYPT_AES_BLOCK_SIZE )
-    {
-        c0 = chain;
-        c1 = _mm_add_epi64( chain, chainIncrement1 );
-        c2 = _mm_add_epi64( chain, chainIncrement2 );
-        c3 = _mm_add_epi64( c1, chainIncrement2 );
-        c4 = _mm_add_epi64( c2, chainIncrement2 );
-        c5 = _mm_add_epi64( c3, chainIncrement2 );
-        c6 = _mm_add_epi64( c4, chainIncrement2 );
-        c7 = _mm_add_epi64( c5, chainIncrement2 );
-        chain = _mm_add_epi64( c6, chainIncrement2 );
-
-        c0 = _mm_shuffle_epi8( c0, BYTE_REVERSE_ORDER );
-        c1 = _mm_shuffle_epi8( c1, BYTE_REVERSE_ORDER );
-        c2 = _mm_shuffle_epi8( c2, BYTE_REVERSE_ORDER );
-        c3 = _mm_shuffle_epi8( c3, BYTE_REVERSE_ORDER );
-        c4 = _mm_shuffle_epi8( c4, BYTE_REVERSE_ORDER );
-        c5 = _mm_shuffle_epi8( c5, BYTE_REVERSE_ORDER );
-        c6 = _mm_shuffle_epi8( c6, BYTE_REVERSE_ORDER );
-        c7 = _mm_shuffle_epi8( c7, BYTE_REVERSE_ORDER );
-
-        AES_ENCRYPT_8( pExpandedKey, c0, c1, c2, c3, c4, c5, c6, c7 );
-
-        if( cbData < 8 * SYMCRYPT_AES_BLOCK_SIZE )
-        {
-            break;
-        }
-
-        _mm_storeu_si128( (__m128i *) (pbDst +  0), _mm_xor_si128( c0, _mm_loadu_si128( ( __m128i * ) (pbSrc +  0 ) ) ) );
-        _mm_storeu_si128( (__m128i *) (pbDst + 16), _mm_xor_si128( c1, _mm_loadu_si128( ( __m128i * ) (pbSrc + 16 ) ) ) );
-        _mm_storeu_si128( (__m128i *) (pbDst + 32), _mm_xor_si128( c2, _mm_loadu_si128( ( __m128i * ) (pbSrc + 32 ) ) ) );
-        _mm_storeu_si128( (__m128i *) (pbDst + 48), _mm_xor_si128( c3, _mm_loadu_si128( ( __m128i * ) (pbSrc + 48 ) ) ) );
-        _mm_storeu_si128( (__m128i *) (pbDst + 64), _mm_xor_si128( c4, _mm_loadu_si128( ( __m128i * ) (pbSrc + 64 ) ) ) );
-        _mm_storeu_si128( (__m128i *) (pbDst + 80), _mm_xor_si128( c5, _mm_loadu_si128( ( __m128i * ) (pbSrc + 80 ) ) ) );
-        _mm_storeu_si128( (__m128i *) (pbDst + 96), _mm_xor_si128( c6, _mm_loadu_si128( ( __m128i * ) (pbSrc + 96 ) ) ) );
-        _mm_storeu_si128( (__m128i *) (pbDst +112), _mm_xor_si128( c7, _mm_loadu_si128( ( __m128i * ) (pbSrc +112 ) ) ) );
-        pbDst  += 8 * SYMCRYPT_AES_BLOCK_SIZE;
-        pbSrc  += 8 * SYMCRYPT_AES_BLOCK_SIZE;
-        cbData -= 8 * SYMCRYPT_AES_BLOCK_SIZE;
-    }
-
-    //
-    // At this point we have one of the two following cases:
-    // - cbData >= 5 * 16 and we have 8 blocks of key stream in c0-c7. chain is set to c7 + 1
-    // - cbData < 5 * 16 and we have no blocks of key stream, with chain the next value to use
-    //
-
-    if( cbData >= SYMCRYPT_AES_BLOCK_SIZE ) // quick exit of function if the request was a multiple of 8 blocks
-    {
-        if( cbData >= 5 * SYMCRYPT_AES_BLOCK_SIZE )
-        {
-            //
-            // We already have the key stream
-            //
-            _mm_storeu_si128( (__m128i *) (pbDst +  0), _mm_xor_si128( c0, _mm_loadu_si128( ( __m128i * ) (pbSrc +  0 ) ) ) );
-            _mm_storeu_si128( (__m128i *) (pbDst + 16), _mm_xor_si128( c1, _mm_loadu_si128( ( __m128i * ) (pbSrc + 16 ) ) ) );
-            _mm_storeu_si128( (__m128i *) (pbDst + 32), _mm_xor_si128( c2, _mm_loadu_si128( ( __m128i * ) (pbSrc + 32 ) ) ) );
-            _mm_storeu_si128( (__m128i *) (pbDst + 48), _mm_xor_si128( c3, _mm_loadu_si128( ( __m128i * ) (pbSrc + 48 ) ) ) );
-            _mm_storeu_si128( (__m128i *) (pbDst + 64), _mm_xor_si128( c4, _mm_loadu_si128( ( __m128i * ) (pbSrc + 64 ) ) ) );
-            chain = _mm_sub_epi64( chain, chainIncrement3 );
-
-            if( cbData >= 96 )
-            {
-            chain = _mm_add_epi64( chain, chainIncrement1 );
-            _mm_storeu_si128( (__m128i *) (pbDst + 80), _mm_xor_si128( c5, _mm_loadu_si128( ( __m128i * ) (pbSrc + 80 ) ) ) );
-                if( cbData >= 112 )
-                {
-            chain = _mm_add_epi64( chain, chainIncrement1 );
-            _mm_storeu_si128( (__m128i *) (pbDst + 96), _mm_xor_si128( c6, _mm_loadu_si128( ( __m128i * ) (pbSrc + 96 ) ) ) );
-                }
-            }
-        }
-        else if( cbData >= 2 * SYMCRYPT_AES_BLOCK_SIZE )
-        {
-            // Produce 4 blocks of key stream
-
-            c0 = chain;
-            c1 = _mm_add_epi64( chain, chainIncrement1 );
-            c2 = _mm_add_epi64( chain, chainIncrement2 );
-            c3 = _mm_add_epi64( c1, chainIncrement2 );
-            chain = c2;             // chain is only incremented by 2 for now
-
-            c0 = _mm_shuffle_epi8( c0, BYTE_REVERSE_ORDER );
-            c1 = _mm_shuffle_epi8( c1, BYTE_REVERSE_ORDER );
-            c2 = _mm_shuffle_epi8( c2, BYTE_REVERSE_ORDER );
-            c3 = _mm_shuffle_epi8( c3, BYTE_REVERSE_ORDER );
-
-            AES_ENCRYPT_4( pExpandedKey, c0, c1, c2, c3 );
-
-            _mm_storeu_si128( (__m128i *) (pbDst +  0), _mm_xor_si128( c0, _mm_loadu_si128( ( __m128i * ) (pbSrc +  0 ) ) ) );
-            _mm_storeu_si128( (__m128i *) (pbDst + 16), _mm_xor_si128( c1, _mm_loadu_si128( ( __m128i * ) (pbSrc + 16 ) ) ) );
-            if( cbData >= 48 )
-            {
-            chain = _mm_add_epi64( chain, chainIncrement1 );
-            _mm_storeu_si128( (__m128i *) (pbDst + 32), _mm_xor_si128( c2, _mm_loadu_si128( ( __m128i * ) (pbSrc + 32 ) ) ) );
-                if( cbData >= 64 )
-                {
-            chain = _mm_add_epi64( chain, chainIncrement1 );
-            _mm_storeu_si128( (__m128i *) (pbDst + 48), _mm_xor_si128( c3, _mm_loadu_si128( ( __m128i * ) (pbSrc + 48 ) ) ) );
-                }
-            }
-        }
-        else
-        {
-            // Exactly 1 block to process
-            c0 = chain;
-            chain = _mm_add_epi64( chain, chainIncrement1 );
-
-            c0 = _mm_shuffle_epi8( c0, BYTE_REVERSE_ORDER );
-
-            AES_ENCRYPT_1( pExpandedKey, c0 );
-            _mm_storeu_si128( (__m128i *) (pbDst +  0), _mm_xor_si128( c0, _mm_loadu_si128( ( __m128i * ) (pbSrc +  0 ) ) ) );
-        }
-    }
-
-    chain = _mm_shuffle_epi8( chain, BYTE_REVERSE_ORDER );
-    _mm_storeu_si128( (__m128i *) pbChainingValue, chain );
-}
 #pragma runtime_checks( "u", restore )
 #pragma warning(pop)
 
@@ -1558,13 +1418,13 @@ SymCryptAesGcmEncryptStitchedXmm(
 
     // Do 8 blocks of CTR either for tail (if total blocks <8) or for encryption of first 8 blocks
     c0 = chain;
-    c1 = _mm_add_epi64( chain, chainIncrement1 );
-    c2 = _mm_add_epi64( chain, chainIncrement2 );
-    c3 = _mm_add_epi64( c1, chainIncrement2 );
-    c4 = _mm_add_epi64( c2, chainIncrement2 );
-    c5 = _mm_add_epi64( c3, chainIncrement2 );
-    c6 = _mm_add_epi64( c4, chainIncrement2 );
-    c7 = _mm_add_epi64( c5, chainIncrement2 );
+    c1 = _mm_add_epi32( chain, chainIncrement1 );
+    c2 = _mm_add_epi32( chain, chainIncrement2 );
+    c3 = _mm_add_epi32( c1, chainIncrement2 );
+    c4 = _mm_add_epi32( c2, chainIncrement2 );
+    c5 = _mm_add_epi32( c3, chainIncrement2 );
+    c6 = _mm_add_epi32( c4, chainIncrement2 );
+    c7 = _mm_add_epi32( c5, chainIncrement2 );
 
     c0 = _mm_shuffle_epi8( c0, BYTE_REVERSE_ORDER );
     c1 = _mm_shuffle_epi8( c1, BYTE_REVERSE_ORDER );
@@ -1580,7 +1440,7 @@ SymCryptAesGcmEncryptStitchedXmm(
     if( nBlocks >= 8 )
     {
         // Encrypt first 8 blocks - update chain
-        chain = _mm_add_epi64( chain, chainIncrement8 );
+        chain = _mm_add_epi32( chain, chainIncrement8 );
 
         _mm_storeu_si128( (__m128i *) (pbDst +  0), _mm_xor_si128( c0, _mm_loadu_si128( ( __m128i * ) (pbSrc +  0) ) ) );
         _mm_storeu_si128( (__m128i *) (pbDst + 16), _mm_xor_si128( c1, _mm_loadu_si128( ( __m128i * ) (pbSrc + 16) ) ) );
@@ -1598,14 +1458,14 @@ SymCryptAesGcmEncryptStitchedXmm(
         {
             // In this loop we always have 8 blocks to encrypt and we have already encrypted the previous 8 blocks ready for GHASH
             c0 = chain;
-            c1 = _mm_add_epi64( chain, chainIncrement1 );
-            c2 = _mm_add_epi64( chain, chainIncrement2 );
-            c3 = _mm_add_epi64( c1, chainIncrement2 );
-            c4 = _mm_add_epi64( c2, chainIncrement2 );
-            c5 = _mm_add_epi64( c3, chainIncrement2 );
-            c6 = _mm_add_epi64( c4, chainIncrement2 );
-            c7 = _mm_add_epi64( c5, chainIncrement2 );
-            chain = _mm_add_epi64( c6, chainIncrement2 );
+            c1 = _mm_add_epi32( chain, chainIncrement1 );
+            c2 = _mm_add_epi32( chain, chainIncrement2 );
+            c3 = _mm_add_epi32( c1, chainIncrement2 );
+            c4 = _mm_add_epi32( c2, chainIncrement2 );
+            c5 = _mm_add_epi32( c3, chainIncrement2 );
+            c6 = _mm_add_epi32( c4, chainIncrement2 );
+            c7 = _mm_add_epi32( c5, chainIncrement2 );
+            chain = _mm_add_epi32( c6, chainIncrement2 );
 
             c0 = _mm_shuffle_epi8( c0, BYTE_REVERSE_ORDER );
             c1 = _mm_shuffle_epi8( c1, BYTE_REVERSE_ORDER );
@@ -1647,10 +1507,10 @@ SymCryptAesGcmEncryptStitchedXmm(
         if (nBlocks > 0)
         {
             c0 = chain;
-            c1 = _mm_add_epi64( chain, chainIncrement1 );
-            c2 = _mm_add_epi64( chain, chainIncrement2 );
-            c3 = _mm_add_epi64( c1, chainIncrement2 );
-            c4 = _mm_add_epi64( c2, chainIncrement2 );
+            c1 = _mm_add_epi32( chain, chainIncrement1 );
+            c2 = _mm_add_epi32( chain, chainIncrement2 );
+            c3 = _mm_add_epi32( c1, chainIncrement2 );
+            c4 = _mm_add_epi32( c2, chainIncrement2 );
 
             c0 = _mm_shuffle_epi8( c0, BYTE_REVERSE_ORDER );
             c1 = _mm_shuffle_epi8( c1, BYTE_REVERSE_ORDER );
@@ -1660,8 +1520,8 @@ SymCryptAesGcmEncryptStitchedXmm(
             if (nBlocks > 4)
             {
                 // Do 8 rounds of AES-CTR for tail in parallel with 8 rounds of GHASH
-                c5 = _mm_add_epi64( c4, chainIncrement1 );
-                c6 = _mm_add_epi64( c4, chainIncrement2 );
+                c5 = _mm_add_epi32( c4, chainIncrement1 );
+                c6 = _mm_add_epi32( c4, chainIncrement2 );
 
                 c4 = _mm_shuffle_epi8( c4, BYTE_REVERSE_ORDER );
                 c5 = _mm_shuffle_epi8( c5, BYTE_REVERSE_ORDER );
@@ -1705,7 +1565,7 @@ SymCryptAesGcmEncryptStitchedXmm(
         // Encrypt 1-7 blocks with pre-generated AES-CTR blocks and GHASH the results
         while( nBlocks >= 2 )
         {
-            chain = _mm_add_epi64( chain, chainIncrement2 );
+            chain = _mm_add_epi32( chain, chainIncrement2 );
 
             r0 = _mm_xor_si128( c0, _mm_loadu_si128( ( __m128i * ) (pbSrc +  0) ) );
             r1 = _mm_xor_si128( c1, _mm_loadu_si128( ( __m128i * ) (pbSrc + 16) ) );
@@ -1732,7 +1592,7 @@ SymCryptAesGcmEncryptStitchedXmm(
 
         if( nBlocks > 0 )
         {
-            chain = _mm_add_epi64( chain, chainIncrement1 );
+            chain = _mm_add_epi32( chain, chainIncrement1 );
 
             r0 = _mm_xor_si128( c0, _mm_loadu_si128( ( __m128i * ) (pbSrc +  0) ) );
 
@@ -1805,14 +1665,14 @@ SymCryptAesGcmDecryptStitchedXmm(
     {
         // In this loop we always have 8 blocks to decrypt and GHASH
         c0 = chain;
-        c1 = _mm_add_epi64( chain, chainIncrement1 );
-        c2 = _mm_add_epi64( chain, chainIncrement2 );
-        c3 = _mm_add_epi64( c1, chainIncrement2 );
-        c4 = _mm_add_epi64( c2, chainIncrement2 );
-        c5 = _mm_add_epi64( c3, chainIncrement2 );
-        c6 = _mm_add_epi64( c4, chainIncrement2 );
-        c7 = _mm_add_epi64( c5, chainIncrement2 );
-        chain = _mm_add_epi64( c6, chainIncrement2 );
+        c1 = _mm_add_epi32( chain, chainIncrement1 );
+        c2 = _mm_add_epi32( chain, chainIncrement2 );
+        c3 = _mm_add_epi32( c1, chainIncrement2 );
+        c4 = _mm_add_epi32( c2, chainIncrement2 );
+        c5 = _mm_add_epi32( c3, chainIncrement2 );
+        c6 = _mm_add_epi32( c4, chainIncrement2 );
+        c7 = _mm_add_epi32( c5, chainIncrement2 );
+        chain = _mm_add_epi32( c6, chainIncrement2 );
 
         c0 = _mm_shuffle_epi8( c0, BYTE_REVERSE_ORDER );
         c1 = _mm_shuffle_epi8( c1, BYTE_REVERSE_ORDER );
@@ -1856,10 +1716,10 @@ SymCryptAesGcmDecryptStitchedXmm(
         // We have 1-7 blocks to GHASH and decrypt
         // Do the exact number of GHASH blocks we need in parallel with generating either 4 or 8 blocks of AES-CTR
         c0 = chain;
-        c1 = _mm_add_epi64( chain, chainIncrement1 );
-        c2 = _mm_add_epi64( chain, chainIncrement2 );
-        c3 = _mm_add_epi64( c1, chainIncrement2 );
-        c4 = _mm_add_epi64( c2, chainIncrement2 );
+        c1 = _mm_add_epi32( chain, chainIncrement1 );
+        c2 = _mm_add_epi32( chain, chainIncrement2 );
+        c3 = _mm_add_epi32( c1, chainIncrement2 );
+        c4 = _mm_add_epi32( c2, chainIncrement2 );
 
         c0 = _mm_shuffle_epi8( c0, BYTE_REVERSE_ORDER );
         c1 = _mm_shuffle_epi8( c1, BYTE_REVERSE_ORDER );
@@ -1868,8 +1728,8 @@ SymCryptAesGcmDecryptStitchedXmm(
 
         if( nBlocks > 4 )
         {
-            c5 = _mm_add_epi64( c4, chainIncrement1 );
-            c6 = _mm_add_epi64( c4, chainIncrement2 );
+            c5 = _mm_add_epi32( c4, chainIncrement1 );
+            c6 = _mm_add_epi32( c4, chainIncrement2 );
 
             c4 = _mm_shuffle_epi8( c4, BYTE_REVERSE_ORDER );
             c5 = _mm_shuffle_epi8( c5, BYTE_REVERSE_ORDER );
@@ -1886,7 +1746,7 @@ SymCryptAesGcmDecryptStitchedXmm(
         // Decrypt 1-7 blocks with pre-generated AES-CTR blocks
         while( nBlocks >= 2 )
         {
-            chain = _mm_add_epi64( chain, chainIncrement2 );
+            chain = _mm_add_epi32( chain, chainIncrement2 );
 
             _mm_storeu_si128( (__m128i *) (pbDst +  0), _mm_xor_si128( c0, _mm_loadu_si128( ( __m128i * ) (pbSrc +  0) ) ) );
             _mm_storeu_si128( (__m128i *) (pbDst + 16), _mm_xor_si128( c1, _mm_loadu_si128( ( __m128i * ) (pbSrc + 16) ) ) );
@@ -1903,7 +1763,7 @@ SymCryptAesGcmDecryptStitchedXmm(
 
         if( nBlocks > 0 )
         {
-            chain = _mm_add_epi64( chain, chainIncrement1 );
+            chain = _mm_add_epi32( chain, chainIncrement1 );
 
             _mm_storeu_si128( (__m128i *) (pbDst +  0), _mm_xor_si128( c0, _mm_loadu_si128( ( __m128i * ) (pbSrc +  0) ) ) );
         }

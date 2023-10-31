@@ -363,6 +363,51 @@ SymCryptAesCbcMac(
 
 VOID
 SYMCRYPT_CALL
+SymCryptAesCtrMsb32(
+    _In_                                        PCSYMCRYPT_AES_EXPANDED_KEY pExpandedKey,
+    _Inout_updates_( SYMCRYPT_AES_BLOCK_SIZE )  PBYTE                       pbChainingValue,
+    _In_reads_( cbData )                        PCBYTE                      pbSrc,
+    _Out_writes_( cbData )                      PBYTE                       pbDst,
+                                                SIZE_T                      cbData )
+{
+#if SYMCRYPT_CPU_AMD64
+    if( SYMCRYPT_CPU_FEATURES_PRESENT( SYMCRYPT_CPU_FEATURES_FOR_AESNI_CODE ) )
+    {
+        SymCryptAesCtrMsb32Xmm( pExpandedKey, pbChainingValue, pbSrc, pbDst, cbData );
+    } else {
+        SYMCRYPT_ASSERT( SymCryptAesBlockCipherNoOpt.blockSize == SYMCRYPT_AES_BLOCK_SIZE ); // keep Prefast happy
+        SymCryptCtrMsb32( &SymCryptAesBlockCipherNoOpt, pExpandedKey, pbChainingValue, pbSrc, pbDst, cbData );
+    }
+
+#elif SYMCRYPT_CPU_X86
+    SYMCRYPT_EXTENDED_SAVE_DATA  SaveData;
+
+    if( SYMCRYPT_CPU_FEATURES_PRESENT( SYMCRYPT_CPU_FEATURES_FOR_AESNI_CODE ) &&
+        SymCryptSaveXmm( &SaveData ) == SYMCRYPT_NO_ERROR )
+    {
+        SymCryptAesCtrMsb32Xmm( pExpandedKey, pbChainingValue, pbSrc, pbDst, cbData );
+        SymCryptRestoreXmm( &SaveData );
+    } else {
+        SYMCRYPT_ASSERT( SymCryptAesBlockCipherNoOpt.blockSize == SYMCRYPT_AES_BLOCK_SIZE ); // keep Prefast happy
+        SymCryptCtrMsb32( &SymCryptAesBlockCipherNoOpt, pExpandedKey, pbChainingValue, pbSrc, pbDst, cbData );
+    }
+
+#elif SYMCRYPT_CPU_ARM64
+    if( SYMCRYPT_CPU_FEATURES_PRESENT( SYMCRYPT_CPU_FEATURE_NEON_AES ) )
+    {
+        SymCryptAesCtrMsb32Neon( pExpandedKey, pbChainingValue, pbSrc, pbDst, cbData );
+    } else {
+        SymCryptCtrMsb32( &SymCryptAesBlockCipherNoOpt, pExpandedKey, pbChainingValue, pbSrc, pbDst, cbData );
+    }
+
+#else
+    SYMCRYPT_ASSERT( SymCryptAesBlockCipherNoOpt.blockSize == SYMCRYPT_AES_BLOCK_SIZE ); // keep Prefast happy
+    SymCryptCtrMsb32( &SymCryptAesBlockCipherNoOpt, pExpandedKey, pbChainingValue, pbSrc, pbDst, cbData );
+#endif
+}
+
+VOID
+SYMCRYPT_CALL
 SymCryptAesCtrMsb64(
     _In_                                        PCSYMCRYPT_AES_EXPANDED_KEY pExpandedKey,
     _Inout_updates_( SYMCRYPT_AES_BLOCK_SIZE )  PBYTE                       pbChainingValue,
@@ -529,7 +574,7 @@ SymCryptAesGcmEncryptPartOnePass(
             bytesToProcess );
 
 #else
-        SymCryptAesCtrMsb64(&pState->pKey->blockcipherKey.aes,
+        SymCryptAesCtrMsb32(&pState->pKey->blockcipherKey.aes,
                             &pState->counterBlock[0],
                             pbSrc,
                             pbDst,
@@ -563,7 +608,7 @@ SymCryptAesGcmEncryptPartOnePass(
         SymCryptWipeKnownSize( &pState->keystreamBlock[0], SYMCRYPT_GCM_BLOCK_SIZE );
 
         SYMCRYPT_ASSERT( pState->pKey->pBlockCipher->blockSize == SYMCRYPT_GCM_BLOCK_SIZE );
-        SymCryptAesCtrMsb64(&pState->pKey->blockcipherKey.aes,
+        SymCryptAesCtrMsb32(&pState->pKey->blockcipherKey.aes,
                             &pState->counterBlock[0],
                             &pState->keystreamBlock[0],
                             &pState->keystreamBlock[0],
@@ -712,7 +757,7 @@ SymCryptAesGcmDecryptPartOnePass(
         // This violates the read-once rule, but it is safe for the same reasons as above
         // in the encryption case.
         //
-        SymCryptAesCtrMsb64(&pState->pKey->blockcipherKey.aes,
+        SymCryptAesCtrMsb32(&pState->pKey->blockcipherKey.aes,
                             &pState->counterBlock[0],
                             pbSrc,
                             pbDst,
@@ -729,7 +774,7 @@ SymCryptAesGcmDecryptPartOnePass(
         SymCryptWipeKnownSize( &pState->keystreamBlock[0], SYMCRYPT_GCM_BLOCK_SIZE );
 
         SYMCRYPT_ASSERT( pState->pKey->pBlockCipher->blockSize == SYMCRYPT_GCM_BLOCK_SIZE );
-        SymCryptAesCtrMsb64(&pState->pKey->blockcipherKey.aes,
+        SymCryptAesCtrMsb32(&pState->pKey->blockcipherKey.aes,
                             &pState->counterBlock[0],
                             &pState->keystreamBlock[0],
                             &pState->keystreamBlock[0],

@@ -874,7 +874,10 @@ AuthEncImp<ImpXxx, AlgAes, ModeGcm>::getNonceSizes()
 {
     std::set<SIZE_T> res;
 
-    res.insert( 12 );
+    for(int i = 1; i <= 256; ++i)
+    {
+        res.insert( i );
+    }
 
     return res;
 }

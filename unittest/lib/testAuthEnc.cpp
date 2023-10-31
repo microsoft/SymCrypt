@@ -270,7 +270,7 @@ katAuthEncSingle(
                                 SIZE_T                      cbTag,
                                 ULONGLONG                   line)
 {
-    BYTE bufData[512];
+    BYTE bufData[4096];
     BYTE bufTag[32];
     NTSTATUS status;
 
@@ -333,15 +333,7 @@ testAuthEncRandom( AuthEncMultiImp * pImp, int rrep, PCBYTE pbResult, SIZE_T cbR
     std::sort( nonceSizes.begin(), nonceSizes.end() );
     std::sort( tagSizes.begin(), tagSizes.end() );
 
-    //iprint( "# sizes: %d, %d, %d\n", keySizes.size(), nonceSizes.size(), tagSizes.size() );
-    //
-    //for( int i=0; i< tagSizes.size(); i++ )
-    //{
-    //    iprint( "tag %d: %d\n", i, tagSizes[i] );
-    //}
-
     memset( buf, 0, sizeof( buf ) );
-
 
     for( int i=0; i<rrep; i++ )
     {
@@ -349,8 +341,19 @@ testAuthEncRandom( AuthEncMultiImp * pImp, int rrep, PCBYTE pbResult, SIZE_T cbR
         SIZE_T cbNonce = nonceSizes[ rng.sizet( nonceSizes.size() )];
         SIZE_T cbTag = tagSizes[ rng.sizet( tagSizes.size() )];
 
+        // Kludge: previous implementations of AES-GCM only support 12-byte nonces. That doesn't
+        // block this test case, as those implementations will just be ignored if a different
+        // nonce size is used, but since the nonce size is abitrary for GCM, if we choose
+        // randomly we will rarely get a 12-byte nonce, meaning that we'll have few results to
+        // compare against. So, we force a 12-byte nonce 50% of the time.
+        if( pImp->m_algorithmName == "AesGcm" && (rng.byte() & 1) )
+        {
+            cbNonce = 12;
+        }
+
         CHECK( cbKey <= bufSize && cbNonce <= bufSize && cbTag <= sizeof( tagBuf ), "??" );
 
+        SIZE_T keyIdx = rng.sizet( bufSize - cbKey );
         SIZE_T nonceIdx = rng.sizet( bufSize - cbNonce );
         SIZE_T tagIdx = rng.sizet( bufSize - cbTag );
 
@@ -362,6 +365,8 @@ testAuthEncRandom( AuthEncMultiImp * pImp, int rrep, PCBYTE pbResult, SIZE_T cbR
         SIZE_T srcIdx;
         rng.randomSubRange( bufSize, &srcIdx, &cbData );
         SIZE_T dstIdx = rng.sizet( bufSize - cbData );
+
+        pImp->setKey( &buf[keyIdx], cbKey );
 
         pImp->encrypt( &buf[nonceIdx], cbNonce,
                         &buf[authDataIdx], cbAuthData,

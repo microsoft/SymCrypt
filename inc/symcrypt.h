@@ -3495,7 +3495,7 @@ SymCryptMarvin32Selftest(void);
 //      for different block cipher computations as the expanded key is not modified once initialized.
 //
 // SymCryptXxxBlockCipher
-//      A SYMCRYPT_BLOCK_CIPHER structure that provides a description
+//      A SYMCRYPT_BLOCKCIPHER structure that provides a description
 //      of the block cipher and its primary functions. This is used by cipher modes to pass
 //      all the block-cipher specific information in a single structure.
 //
@@ -4152,8 +4152,7 @@ SymCryptCtrMsb64(
                                 SIZE_T                  cbData );
 //
 // This function implements the CTR cipher mode.
-// It is not intended to be used as-is, rather it is a building block
-// for modes like CCM and GCM.
+// It is not intended to be used as-is, rather it is a building block for modes like CCM.
 // On some platforms we have optimized code for AES-CTR, on other platforms
 // we use this generic construction to achieve the same effect.
 //
@@ -4173,7 +4172,6 @@ SymCryptCtrMsb64(
 // - pbDst is the output buffer that receives the encrypted/decrypted data. The input and output
 //      buffers may be the same or non-overlapping, but may not partially overlap.
 //
-
 
 VOID
 SYMCRYPT_CALL

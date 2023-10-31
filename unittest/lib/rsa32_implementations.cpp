@@ -2945,6 +2945,12 @@ AuthEncImp<ImpRsa32, AlgAes, ModeGcm>::encrypt(
         goto cleanup;
     }
 
+    if( cbNonce != 12 )
+    {
+        status = STATUS_NOT_SUPPORTED;
+        goto cleanup;
+    }
+
     status = AesGcm (   &state.key,
                          NULL,
                          16,
@@ -2953,6 +2959,7 @@ AuthEncImp<ImpRsa32, AlgAes, ModeGcm>::encrypt(
                          (PBYTE) pbAuthData, (ULONG) cbAuthData,
                          pbTag, (ULONG) cbTag,
                          ENCRYPT );
+
     CHECK( NT_SUCCESS( status ), "GCM encrypt failure" );
 
 cleanup:
@@ -2977,6 +2984,12 @@ AuthEncImp<ImpRsa32, AlgAes, ModeGcm>::decrypt(
     NTSTATUS status = STATUS_SUCCESS;
 
     if( flags != 0 )
+    {
+        status = STATUS_NOT_SUPPORTED;
+        goto cleanup;
+    }
+
+    if( cbNonce != 12 )
     {
         status = STATUS_NOT_SUPPORTED;
         goto cleanup;

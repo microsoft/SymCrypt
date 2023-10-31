@@ -59,11 +59,14 @@ SymCryptGHashExpandKeyC(
 VOID
 SYMCRYPT_CALL
 SymCryptGHashAppendDataC(
-    _In_reads_( SYMCRYPT_GF128_FIELD_SIZE )    PCSYMCRYPT_GF128_ELEMENT    expandedKeyTable,
-    _Inout_                                     PSYMCRYPT_GF128_ELEMENT     pState,
-    _In_reads_( cbData )                       PCBYTE                      pbData,
-    _In_                                        SIZE_T                      cbData )
+    _In_reads_( SYMCRYPT_GF128_FIELD_SIZE )                   PCSYMCRYPT_GF128_ELEMENT    expandedKeyTable,
+    _Inout_                                                   PSYMCRYPT_GF128_ELEMENT     pState,
+    _In_reads_( cbData )                                      PCBYTE                      pbData,
+    _In_range_( SYMCRYPT_GF128_BLOCK_SIZE, SIZE_T_MAX & ~0xf) SIZE_T                      cbData )
 {
+    SYMCRYPT_ASSERT(cbData >= SYMCRYPT_GF128_BLOCK_SIZE);
+    SYMCRYPT_ASSERT((cbData & 0xf) == 0);
+
     UINT64 R0, R1;
     UINT64 mask;
     SYMCRYPT_ALIGN UINT32 state32[4];

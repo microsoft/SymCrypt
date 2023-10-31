@@ -769,172 +769,26 @@ SymCryptAesEcbEncryptNeon(
 #pragma warning( disable:4701 ) // "Use of uninitialized variable"
 #pragma runtime_checks( "u", off )
 
-VOID
-SYMCRYPT_CALL
-SymCryptAesCtrMsb64Neon(
-    _In_                                        PCSYMCRYPT_AES_EXPANDED_KEY pExpandedKey,
-    _Inout_updates_( SYMCRYPT_AES_BLOCK_SIZE )  PBYTE                       pbChainingValue,
-    _In_reads_( cbData )                        PCBYTE                      pbSrc,
-    _Out_writes_( cbData )                      PBYTE                       pbDst,
-                                                SIZE_T                      cbData )
-{
-    __n128          chain = *(__n128 *)pbChainingValue;
-    const __n128 *  pSrc = (const __n128 *) pbSrc;
-    __n128 *        pDst = (__n128 *) pbDst;
+#define SYMCRYPT_AesCtrMsbXxNeon    SymCryptAesCtrMsb64Neon
+#define VADDQ_UXX                   vaddq_u64
+#define VSUBQ_UXX                   vsubq_u64
 
-    const __n128 chainIncrement1 = SYMCRYPT_SET_N128_U64( 0, 1 );
-    const __n128 chainIncrement2 = SYMCRYPT_SET_N128_U64( 0, 2 );
-    const __n128 chainIncrement8 = SYMCRYPT_SET_N128_U64( 0, 8 );
+#include "aes-pattern.c"
 
-    __n128 ctr0, ctr1, ctr2, ctr3, ctr4, ctr5, ctr6, ctr7;
-    __n128 c0, c1, c2, c3, c4, c5, c6, c7;
+#undef VSUBQ_UXX
+#undef VADDQ_UXX
+#undef SYMCRYPT_AesCtrMsbXxNeon
 
-    cbData &= ~(SYMCRYPT_AES_BLOCK_SIZE - 1);
+#define SYMCRYPT_AesCtrMsbXxNeon    SymCryptAesCtrMsb32Neon
+#define VADDQ_UXX                   vaddq_u32
+#define VSUBQ_UXX                   vsubq_u32
 
-    // Our chain variable is in integer format, not the MSBfirst format loaded from memory.
-    ctr0 = vrev64q_u8( chain );
-    ctr1 = vaddq_u64( ctr0, chainIncrement1 );
-    ctr2 = vaddq_u64( ctr0, chainIncrement2 );
-    ctr3 = vaddq_u64( ctr1, chainIncrement2 );
-    ctr4 = vaddq_u64( ctr2, chainIncrement2 );
-    ctr5 = vaddq_u64( ctr3, chainIncrement2 );
-    ctr6 = vaddq_u64( ctr4, chainIncrement2 );
-    ctr7 = vaddq_u64( ctr5, chainIncrement2 );
+#include "aes-pattern.c"
 
-/*
-    while cbData >= 5 * block
-        generate 8 blocks of key stream
-        if cbData < 8 * block
-            break;
-        process 8 blocks
-    if cbData >= 5 * block
-        process 5-7 blocks
-        done
-    if cbData >= 2 * block
-        generate 4 blocks of key stream
-        process 2-4 blocks
-        done
-    if cbData == 1 block
-        generate 1 block of key stream
-        process block
-*/
-    while( cbData >= 5 * SYMCRYPT_AES_BLOCK_SIZE )
-    {
-        c0 = vrev64q_u8( ctr0 );
-        c1 = vrev64q_u8( ctr1 );
-        c2 = vrev64q_u8( ctr2 );
-        c3 = vrev64q_u8( ctr3 );
-        c4 = vrev64q_u8( ctr4 );
-        c5 = vrev64q_u8( ctr5 );
-        c6 = vrev64q_u8( ctr6 );
-        c7 = vrev64q_u8( ctr7 );
+#undef VSUBQ_UXX
+#undef VADDQ_UXX
+#undef SYMCRYPT_AesCtrMsbXxNeon
 
-        ctr0 = vaddq_u64( ctr0, chainIncrement8 );
-        ctr1 = vaddq_u64( ctr1, chainIncrement8 );
-        ctr2 = vaddq_u64( ctr2, chainIncrement8 );
-        ctr3 = vaddq_u64( ctr3, chainIncrement8 );
-        ctr4 = vaddq_u64( ctr4, chainIncrement8 );
-        ctr5 = vaddq_u64( ctr5, chainIncrement8 );
-        ctr6 = vaddq_u64( ctr6, chainIncrement8 );
-        ctr7 = vaddq_u64( ctr7, chainIncrement8 );
-
-        AES_ENCRYPT_8( pExpandedKey, c0, c1, c2, c3, c4, c5, c6, c7 );
-
-        if( cbData < 8 * SYMCRYPT_AES_BLOCK_SIZE )
-        {
-            break;
-        }
-
-        pDst[0] = veorq_u64( pSrc[0], c0 );
-        pDst[1] = veorq_u64( pSrc[1], c1 );
-        pDst[2] = veorq_u64( pSrc[2], c2 );
-        pDst[3] = veorq_u64( pSrc[3], c3 );
-        pDst[4] = veorq_u64( pSrc[4], c4 );
-        pDst[5] = veorq_u64( pSrc[5], c5 );
-        pDst[6] = veorq_u64( pSrc[6], c6 );
-        pDst[7] = veorq_u64( pSrc[7], c7 );
-
-        pDst  += 8;
-        pSrc  += 8;
-        cbData -= 8 * SYMCRYPT_AES_BLOCK_SIZE;
-    }
-
-    //
-    // At this point we have one of the two following cases:
-    // - cbData >= 5 * 16 and we have 8 blocks of key stream in c0-c7. ctr0-ctr7 is set to (c0+8)-(c7+8)
-    // - cbData < 5 * 16 and we have no blocks of key stream, and ctr0-ctr7 set to the next 8 counters to use
-    //
-
-    if( cbData >= SYMCRYPT_AES_BLOCK_SIZE ) // quick exit of function if the request was a multiple of 8 blocks
-    {
-        if( cbData >= 5 * SYMCRYPT_AES_BLOCK_SIZE )
-        {
-            //
-            // We already have the key stream
-            //
-            pDst[0] = veorq_u64( pSrc[0], c0 );
-            pDst[1] = veorq_u64( pSrc[1], c1 );
-            pDst[2] = veorq_u64( pSrc[2], c2 );
-            pDst[3] = veorq_u64( pSrc[3], c3 );
-            pDst[4] = veorq_u64( pSrc[4], c4 );
-            chain = vsubq_u64( ctr5, chainIncrement8 );
-
-            if( cbData >= 96 )
-            {
-            chain = vsubq_u64( ctr6, chainIncrement8 );
-            pDst[5] = veorq_u64( pSrc[5], c5 );
-                if( cbData >= 112 )
-                {
-            chain = vsubq_u64( ctr7, chainIncrement8 );
-            pDst[6] = veorq_u64( pSrc[6], c6 );
-                }
-            }
-        }
-        else if( cbData >= 2 * SYMCRYPT_AES_BLOCK_SIZE )
-        {
-            // Produce 4 blocks of key stream
-
-            chain = ctr2;           // chain is only incremented by 2 for now
-
-            c0 = vrev64q_u8( ctr0 );
-            c1 = vrev64q_u8( ctr1 );
-            c2 = vrev64q_u8( ctr2 );
-            c3 = vrev64q_u8( ctr3 );
-
-            AES_ENCRYPT_4( pExpandedKey, c0, c1, c2, c3 );
-
-            pDst[0] = veorq_u64( pSrc[0], c0 );
-            pDst[1] = veorq_u64( pSrc[1], c1 );
-            if( cbData >= 48 )
-            {
-            chain = ctr3;
-            pDst[2] = veorq_u64( pSrc[2], c2 );
-                if( cbData >= 64 )
-                {
-            chain = ctr4;
-            pDst[3] = veorq_u64( pSrc[3], c3 );
-                }
-            }
-        }
-        else
-        {
-            // Exactly 1 block to process
-            chain = ctr1;
-
-            c0 = vrev64q_u8( ctr0 );
-
-            AES_ENCRYPT_1( pExpandedKey, c0 );
-            pDst[0] = veorq_u64( pSrc[0], c0 );
-        }
-    }
-    else
-    {
-        chain = ctr0;
-    }
-
-    chain = vrev64q_u8( chain );
-    *(__n128 *)pbChainingValue = chain;
-}
 #pragma runtime_checks( "u", restore )
 #pragma warning(pop)
 
@@ -1662,13 +1516,13 @@ SymCryptAesGcmEncryptStitchedNeon(
 
     // Our chain variable is in integer format, not the MSBfirst format loaded from memory.
     ctr0 = vrev64q_u8( chain );
-    ctr1 = vaddq_u64( ctr0, chainIncrement1 );
-    ctr2 = vaddq_u64( ctr0, chainIncrement2 );
-    ctr3 = vaddq_u64( ctr1, chainIncrement2 );
-    ctr4 = vaddq_u64( ctr2, chainIncrement2 );
-    ctr5 = vaddq_u64( ctr3, chainIncrement2 );
-    ctr6 = vaddq_u64( ctr4, chainIncrement2 );
-    ctr7 = vaddq_u64( ctr5, chainIncrement2 );
+    ctr1 = vaddq_u32( ctr0, chainIncrement1 );
+    ctr2 = vaddq_u32( ctr0, chainIncrement2 );
+    ctr3 = vaddq_u32( ctr1, chainIncrement2 );
+    ctr4 = vaddq_u32( ctr2, chainIncrement2 );
+    ctr5 = vaddq_u32( ctr3, chainIncrement2 );
+    ctr6 = vaddq_u32( ctr4, chainIncrement2 );
+    ctr7 = vaddq_u32( ctr5, chainIncrement2 );
 
     state = *(__n128 *) pState;
 
@@ -1689,14 +1543,14 @@ SymCryptAesGcmEncryptStitchedNeon(
 
     if ( cbData >= 8 * SYMCRYPT_AES_BLOCK_SIZE )
     {
-        ctr0 = vaddq_u64( ctr0, chainIncrement8 );
-        ctr1 = vaddq_u64( ctr1, chainIncrement8 );
-        ctr2 = vaddq_u64( ctr2, chainIncrement8 );
-        ctr3 = vaddq_u64( ctr3, chainIncrement8 );
-        ctr4 = vaddq_u64( ctr4, chainIncrement8 );
-        ctr5 = vaddq_u64( ctr5, chainIncrement8 );
-        ctr6 = vaddq_u64( ctr6, chainIncrement8 );
-        ctr7 = vaddq_u64( ctr7, chainIncrement8 );
+        ctr0 = vaddq_u32( ctr0, chainIncrement8 );
+        ctr1 = vaddq_u32( ctr1, chainIncrement8 );
+        ctr2 = vaddq_u32( ctr2, chainIncrement8 );
+        ctr3 = vaddq_u32( ctr3, chainIncrement8 );
+        ctr4 = vaddq_u32( ctr4, chainIncrement8 );
+        ctr5 = vaddq_u32( ctr5, chainIncrement8 );
+        ctr6 = vaddq_u32( ctr6, chainIncrement8 );
+        ctr7 = vaddq_u32( ctr7, chainIncrement8 );
 
         // Encrypt first 8 blocks
         pDst[0] = veorq_u64( pSrc[0], c0 );
@@ -1723,14 +1577,14 @@ SymCryptAesGcmEncryptStitchedNeon(
             c6 = vrev64q_u8( ctr6 );
             c7 = vrev64q_u8( ctr7 );
 
-            ctr0 = vaddq_u64( ctr0, chainIncrement8 );
-            ctr1 = vaddq_u64( ctr1, chainIncrement8 );
-            ctr2 = vaddq_u64( ctr2, chainIncrement8 );
-            ctr3 = vaddq_u64( ctr3, chainIncrement8 );
-            ctr4 = vaddq_u64( ctr4, chainIncrement8 );
-            ctr5 = vaddq_u64( ctr5, chainIncrement8 );
-            ctr6 = vaddq_u64( ctr6, chainIncrement8 );
-            ctr7 = vaddq_u64( ctr7, chainIncrement8 );
+            ctr0 = vaddq_u32( ctr0, chainIncrement8 );
+            ctr1 = vaddq_u32( ctr1, chainIncrement8 );
+            ctr2 = vaddq_u32( ctr2, chainIncrement8 );
+            ctr3 = vaddq_u32( ctr3, chainIncrement8 );
+            ctr4 = vaddq_u32( ctr4, chainIncrement8 );
+            ctr5 = vaddq_u32( ctr5, chainIncrement8 );
+            ctr6 = vaddq_u32( ctr6, chainIncrement8 );
+            ctr7 = vaddq_u32( ctr7, chainIncrement8 );
 
             AES_GCM_ENCRYPT_8( pExpandedKey, c0, c1, c2, c3, c4, c5, c6, c7, pGhashSrc, 8, expandedKeyTable, todo, a0, a1, a2 );
 
@@ -1814,7 +1668,7 @@ SymCryptAesGcmEncryptStitchedNeon(
         // Encrypt 1-7 blocks with pre-generated AES-CTR blocks and GHASH the results
         while( nBlocks >= 2 )
         {
-            ctr0 = vaddq_u64( ctr0, chainIncrement2 );
+            ctr0 = vaddq_u32( ctr0, chainIncrement2 );
 
             r0 = veorq_u64( pSrc[0], c0 );
             r1 = veorq_u64( pSrc[1], c1 );
@@ -1845,7 +1699,7 @@ SymCryptAesGcmEncryptStitchedNeon(
 
         if( nBlocks > 0 )
         {
-            ctr0 = vaddq_u64( ctr0, chainIncrement1 );
+            ctr0 = vaddq_u32( ctr0, chainIncrement1 );
 
             r0 = veorq_u64( pSrc[0], c0 );
             pDst[0] = r0;
@@ -1911,13 +1765,13 @@ SymCryptAesGcmDecryptStitchedNeon(
 
     // Our chain variable is in integer format, not the MSBfirst format loaded from memory.
     ctr0 = vrev64q_u8( chain );
-    ctr1 = vaddq_u64( ctr0, chainIncrement1 );
-    ctr2 = vaddq_u64( ctr0, chainIncrement2 );
-    ctr3 = vaddq_u64( ctr1, chainIncrement2 );
-    ctr4 = vaddq_u64( ctr2, chainIncrement2 );
-    ctr5 = vaddq_u64( ctr3, chainIncrement2 );
-    ctr6 = vaddq_u64( ctr4, chainIncrement2 );
-    ctr7 = vaddq_u64( ctr5, chainIncrement2 );
+    ctr1 = vaddq_u32( ctr0, chainIncrement1 );
+    ctr2 = vaddq_u32( ctr0, chainIncrement2 );
+    ctr3 = vaddq_u32( ctr1, chainIncrement2 );
+    ctr4 = vaddq_u32( ctr2, chainIncrement2 );
+    ctr5 = vaddq_u32( ctr3, chainIncrement2 );
+    ctr6 = vaddq_u32( ctr4, chainIncrement2 );
+    ctr7 = vaddq_u32( ctr5, chainIncrement2 );
 
     state = *(__n128 *) pState;
 
@@ -1937,14 +1791,14 @@ SymCryptAesGcmDecryptStitchedNeon(
         c6 = vrev64q_u8( ctr6 );
         c7 = vrev64q_u8( ctr7 );
 
-        ctr0 = vaddq_u64( ctr0, chainIncrement8 );
-        ctr1 = vaddq_u64( ctr1, chainIncrement8 );
-        ctr2 = vaddq_u64( ctr2, chainIncrement8 );
-        ctr3 = vaddq_u64( ctr3, chainIncrement8 );
-        ctr4 = vaddq_u64( ctr4, chainIncrement8 );
-        ctr5 = vaddq_u64( ctr5, chainIncrement8 );
-        ctr6 = vaddq_u64( ctr6, chainIncrement8 );
-        ctr7 = vaddq_u64( ctr7, chainIncrement8 );
+        ctr0 = vaddq_u32( ctr0, chainIncrement8 );
+        ctr1 = vaddq_u32( ctr1, chainIncrement8 );
+        ctr2 = vaddq_u32( ctr2, chainIncrement8 );
+        ctr3 = vaddq_u32( ctr3, chainIncrement8 );
+        ctr4 = vaddq_u32( ctr4, chainIncrement8 );
+        ctr5 = vaddq_u32( ctr5, chainIncrement8 );
+        ctr6 = vaddq_u32( ctr6, chainIncrement8 );
+        ctr7 = vaddq_u32( ctr7, chainIncrement8 );
 
         AES_GCM_ENCRYPT_8( pExpandedKey, c0, c1, c2, c3, c4, c5, c6, c7, pGhashSrc, 8, expandedKeyTable, todo, a0, a1, a2 );
 
@@ -1999,7 +1853,7 @@ SymCryptAesGcmDecryptStitchedNeon(
         // Decrypt 1-7 blocks with pre-generated AES-CTR blocks
         while( nBlocks >= 2 )
         {
-            ctr0 = vaddq_u64( ctr0, chainIncrement2 );
+            ctr0 = vaddq_u32( ctr0, chainIncrement2 );
 
             pDst[0] = veorq_u64( pSrc[0], c0 );
             pDst[1] = veorq_u64( pSrc[1], c1 );
@@ -2016,7 +1870,7 @@ SymCryptAesGcmDecryptStitchedNeon(
 
         if( nBlocks > 0 )
         {
-            ctr0 = vaddq_u64( ctr0, chainIncrement1 );
+            ctr0 = vaddq_u32( ctr0, chainIncrement1 );
 
             pDst[0] = veorq_u64( pSrc[0], c0 );
         }

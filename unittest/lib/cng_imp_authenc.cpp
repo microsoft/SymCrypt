@@ -344,6 +344,13 @@ AuthEncImp<ImpXxx, AlgXxx, ModeXxx>::encrypt(
         return status;
     }
 
+    auto nonceSizes = getNonceSizes();
+    if( nonceSizes.find( cbNonce ) == nonceSizes.end() )
+    {
+        status = STATUS_NOT_SUPPORTED;
+        return status;
+    }
+
     if( !state.inComputation )
     {
         // Only init the authInfo if we are starting a new computation
@@ -385,7 +392,6 @@ AuthEncImp<ImpXxx, AlgXxx, ModeXxx>::encrypt(
     return status;
 }
 
-
 template<>
 NTSTATUS
 AuthEncImp<ImpXxx, AlgXxx, ModeXxx>::decrypt(
@@ -408,8 +414,16 @@ AuthEncImp<ImpXxx, AlgXxx, ModeXxx>::decrypt(
     if( flags != 0 )
     {
         status = STATUS_NOT_SUPPORTED;
-        goto cleanup;
+        return status;
     }
+
+    auto nonceSizes = getNonceSizes();
+    if( nonceSizes.find( cbNonce ) == nonceSizes.end() )
+    {
+        status = STATUS_NOT_SUPPORTED;
+        return status;
+    }
+
 
     authInfo.pbNonce = (PBYTE) pbNonce;
     authInfo.cbNonce = (ULONG) cbNonce;
@@ -417,11 +431,6 @@ AuthEncImp<ImpXxx, AlgXxx, ModeXxx>::decrypt(
     authInfo.cbAuthData = (ULONG) cbAuthData;
     authInfo.pbTag = (PBYTE) pbTag;
     authInfo.cbTag = (ULONG) cbTag;
-    //authInfo.pbMacContext = NULL;
-    //authInfo.cbMacContext = 0;
-    //authInfo.cbAAD = 0;
-    //authInfo.cbData = 0;
-    //authInfo.dwFlags = 0;
 
     ULONG res;
     status = CngDecryptFn( state.hKey, (PBYTE) pbSrc, (ULONG) cbData, &authInfo, NULL, 0, pbDst, (ULONG) cbData, &res, 0 );
@@ -438,7 +447,6 @@ AuthEncImp<ImpXxx, AlgXxx, ModeXxx>::decrypt(
         CHECK( res == cbData, "?" );
     }
 
-cleanup:    
     return status;
 }
 

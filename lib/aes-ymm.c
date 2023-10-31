@@ -497,14 +497,14 @@ SymCryptAesGcmEncryptStitchedYmm_2048(
 
     state = _mm_loadu_si128( (__m128i *) pState );
     ctr0 = _mm256_insertf128_si256( _mm256_castsi128_si256( chain ), chain, 1); // AVX
-    ctr0 = _mm256_add_epi64( ctr0, chainIncrementUpper1 );
-    ctr1 = _mm256_add_epi64( ctr0, chainIncrement2 );
-    ctr2 = _mm256_add_epi64( ctr0, chainIncrement4 );
-    ctr3 = _mm256_add_epi64( ctr1, chainIncrement4 );
-    ctr4 = _mm256_add_epi64( ctr2, chainIncrement4 );
-    ctr5 = _mm256_add_epi64( ctr3, chainIncrement4 );
-    ctr6 = _mm256_add_epi64( ctr4, chainIncrement4 );
-    ctr7 = _mm256_add_epi64( ctr5, chainIncrement4 );
+    ctr0 = _mm256_add_epi32( ctr0, chainIncrementUpper1 );
+    ctr1 = _mm256_add_epi32( ctr0, chainIncrement2 );
+    ctr2 = _mm256_add_epi32( ctr0, chainIncrement4 );
+    ctr3 = _mm256_add_epi32( ctr1, chainIncrement4 );
+    ctr4 = _mm256_add_epi32( ctr2, chainIncrement4 );
+    ctr5 = _mm256_add_epi32( ctr3, chainIncrement4 );
+    ctr6 = _mm256_add_epi32( ctr4, chainIncrement4 );
+    ctr7 = _mm256_add_epi32( ctr5, chainIncrement4 );
 
     CLMUL_3( state, GHASH_H_POWER(expandedKeyTable, todo), GHASH_Hx_POWER(expandedKeyTable, todo), a0_xmm, a1_xmm, a2_xmm );
     a0 = a1 = a2 = _mm256_setzero_si256();
@@ -518,14 +518,14 @@ SymCryptAesGcmEncryptStitchedYmm_2048(
     c6 = _mm256_shuffle_epi8( ctr6, BYTE_REVERSE_ORDER );
     c7 = _mm256_shuffle_epi8( ctr7, BYTE_REVERSE_ORDER );
 
-    ctr0 = _mm256_add_epi64( ctr0, chainIncrement16 );
-    ctr1 = _mm256_add_epi64( ctr1, chainIncrement16 );
-    ctr2 = _mm256_add_epi64( ctr2, chainIncrement16 );
-    ctr3 = _mm256_add_epi64( ctr3, chainIncrement16 );
-    ctr4 = _mm256_add_epi64( ctr4, chainIncrement16 );
-    ctr5 = _mm256_add_epi64( ctr5, chainIncrement16 );
-    ctr6 = _mm256_add_epi64( ctr6, chainIncrement16 );
-    ctr7 = _mm256_add_epi64( ctr7, chainIncrement16 );
+    ctr0 = _mm256_add_epi32( ctr0, chainIncrement16 );
+    ctr1 = _mm256_add_epi32( ctr1, chainIncrement16 );
+    ctr2 = _mm256_add_epi32( ctr2, chainIncrement16 );
+    ctr3 = _mm256_add_epi32( ctr3, chainIncrement16 );
+    ctr4 = _mm256_add_epi32( ctr4, chainIncrement16 );
+    ctr5 = _mm256_add_epi32( ctr5, chainIncrement16 );
+    ctr6 = _mm256_add_epi32( ctr6, chainIncrement16 );
+    ctr7 = _mm256_add_epi32( ctr7, chainIncrement16 );
 
     AES_ENCRYPT_YMM_2048( pExpandedKey, c0, c1, c2, c3, c4, c5, c6, c7 );
 
@@ -552,14 +552,14 @@ SymCryptAesGcmEncryptStitchedYmm_2048(
         c6 = _mm256_shuffle_epi8( ctr6, BYTE_REVERSE_ORDER );
         c7 = _mm256_shuffle_epi8( ctr7, BYTE_REVERSE_ORDER );
 
-        ctr0 = _mm256_add_epi64( ctr0, chainIncrement16 );
-        ctr1 = _mm256_add_epi64( ctr1, chainIncrement16 );
-        ctr2 = _mm256_add_epi64( ctr2, chainIncrement16 );
-        ctr3 = _mm256_add_epi64( ctr3, chainIncrement16 );
-        ctr4 = _mm256_add_epi64( ctr4, chainIncrement16 );
-        ctr5 = _mm256_add_epi64( ctr5, chainIncrement16 );
-        ctr6 = _mm256_add_epi64( ctr6, chainIncrement16 );
-        ctr7 = _mm256_add_epi64( ctr7, chainIncrement16 );
+        ctr0 = _mm256_add_epi32( ctr0, chainIncrement16 );
+        ctr1 = _mm256_add_epi32( ctr1, chainIncrement16 );
+        ctr2 = _mm256_add_epi32( ctr2, chainIncrement16 );
+        ctr3 = _mm256_add_epi32( ctr3, chainIncrement16 );
+        ctr4 = _mm256_add_epi32( ctr4, chainIncrement16 );
+        ctr5 = _mm256_add_epi32( ctr5, chainIncrement16 );
+        ctr6 = _mm256_add_epi32( ctr6, chainIncrement16 );
+        ctr7 = _mm256_add_epi32( ctr7, chainIncrement16 );
 
         AES_GCM_ENCRYPT_16_Ymm( pExpandedKey, c0, c1, c2, c3, c4, c5, c6, c7, pbGhashSrc, BYTE_REVERSE_ORDER, expandedKeyTable, todo, a0, a1, a2 );
 
@@ -694,14 +694,14 @@ SymCryptAesGcmDecryptStitchedYmm_2048(
 
     state = _mm_loadu_si128( (__m128i *) pState );
     ctr0 = _mm256_insertf128_si256( _mm256_castsi128_si256( chain ), chain, 1); // AVX
-    ctr0 = _mm256_add_epi64( ctr0, chainIncrementUpper1 );
-    ctr1 = _mm256_add_epi64( ctr0, chainIncrement2 );
-    ctr2 = _mm256_add_epi64( ctr0, chainIncrement4 );
-    ctr3 = _mm256_add_epi64( ctr1, chainIncrement4 );
-    ctr4 = _mm256_add_epi64( ctr2, chainIncrement4 );
-    ctr5 = _mm256_add_epi64( ctr3, chainIncrement4 );
-    ctr6 = _mm256_add_epi64( ctr4, chainIncrement4 );
-    ctr7 = _mm256_add_epi64( ctr5, chainIncrement4 );
+    ctr0 = _mm256_add_epi32( ctr0, chainIncrementUpper1 );
+    ctr1 = _mm256_add_epi32( ctr0, chainIncrement2 );
+    ctr2 = _mm256_add_epi32( ctr0, chainIncrement4 );
+    ctr3 = _mm256_add_epi32( ctr1, chainIncrement4 );
+    ctr4 = _mm256_add_epi32( ctr2, chainIncrement4 );
+    ctr5 = _mm256_add_epi32( ctr3, chainIncrement4 );
+    ctr6 = _mm256_add_epi32( ctr4, chainIncrement4 );
+    ctr7 = _mm256_add_epi32( ctr5, chainIncrement4 );
 
     CLMUL_3( state, GHASH_H_POWER(expandedKeyTable, todo), GHASH_Hx_POWER(expandedKeyTable, todo), a0_xmm, a1_xmm, a2_xmm );
     a0 = a1 = a2 = _mm256_setzero_si256();
@@ -717,14 +717,14 @@ SymCryptAesGcmDecryptStitchedYmm_2048(
         c6 = _mm256_shuffle_epi8( ctr6, BYTE_REVERSE_ORDER );
         c7 = _mm256_shuffle_epi8( ctr7, BYTE_REVERSE_ORDER );
 
-        ctr0 = _mm256_add_epi64( ctr0, chainIncrement16 );
-        ctr1 = _mm256_add_epi64( ctr1, chainIncrement16 );
-        ctr2 = _mm256_add_epi64( ctr2, chainIncrement16 );
-        ctr3 = _mm256_add_epi64( ctr3, chainIncrement16 );
-        ctr4 = _mm256_add_epi64( ctr4, chainIncrement16 );
-        ctr5 = _mm256_add_epi64( ctr5, chainIncrement16 );
-        ctr6 = _mm256_add_epi64( ctr6, chainIncrement16 );
-        ctr7 = _mm256_add_epi64( ctr7, chainIncrement16 );
+        ctr0 = _mm256_add_epi32( ctr0, chainIncrement16 );
+        ctr1 = _mm256_add_epi32( ctr1, chainIncrement16 );
+        ctr2 = _mm256_add_epi32( ctr2, chainIncrement16 );
+        ctr3 = _mm256_add_epi32( ctr3, chainIncrement16 );
+        ctr4 = _mm256_add_epi32( ctr4, chainIncrement16 );
+        ctr5 = _mm256_add_epi32( ctr5, chainIncrement16 );
+        ctr6 = _mm256_add_epi32( ctr6, chainIncrement16 );
+        ctr7 = _mm256_add_epi32( ctr7, chainIncrement16 );
 
         AES_GCM_ENCRYPT_16_Ymm( pExpandedKey, c0, c1, c2, c3, c4, c5, c6, c7, pbGhashSrc, BYTE_REVERSE_ORDER, expandedKeyTable, todo, a0, a1, a2 );
 

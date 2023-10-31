@@ -246,6 +246,57 @@ SymCryptCbcMac(
 
 VOID
 SYMCRYPT_CALL
+SymCryptCtrMsb32(
+    _In_                        PCSYMCRYPT_BLOCKCIPHER  pBlockCipher,
+    _In_                        PCVOID                  pExpandedKey,
+    _Inout_updates_( pBlockCipher->blockSize )
+                                PBYTE                   pbChainingValue,
+    _In_reads_( cbData )        PCBYTE                  pbSrc,
+    _Out_writes_( cbData )      PBYTE                   pbDst,
+                                SIZE_T                  cbData )
+{
+    SYMCRYPT_ALIGN BYTE buf[2 * SYMCRYPT_MAX_BLOCK_SIZE];
+    PBYTE count = &buf[0];
+    PBYTE keystream= &buf[SYMCRYPT_MAX_BLOCK_SIZE];
+    SIZE_T blockSize;
+    PCBYTE pbSrcEnd;
+
+    blockSize = pBlockCipher->blockSize;
+    SYMCRYPT_ASSERT( blockSize <= SYMCRYPT_MAX_BLOCK_SIZE );
+
+    //
+    // Compute the end of the data, rounding the size down to a multiple of the block size.
+    //
+    pbSrcEnd = &pbSrc[ cbData & ~(blockSize - 1) ];
+
+    //
+    // We keep the chaining state in a local buffer to enforce the read-once write-once rule.
+    // It also improves memory locality.
+    //
+    #pragma warning(suppress: 22105)
+    memcpy( count, pbChainingValue, blockSize );
+    while( pbSrc < pbSrcEnd )
+    {
+        SYMCRYPT_ASSERT( pbSrc <= pbSrcEnd - blockSize );   // help PreFast
+        (*pBlockCipher->encryptFunc)( pExpandedKey, count, keystream );
+        SymCryptXorBytes( keystream, pbSrc, pbDst, blockSize );
+
+        //
+        // We only need to increment the last 32 bits of the counter value.
+        //
+        SYMCRYPT_STORE_MSBFIRST32( &count[ blockSize-4 ], 1 + SYMCRYPT_LOAD_MSBFIRST32( &count[ blockSize-4 ] ) );
+
+        pbSrc += blockSize;
+        pbDst += blockSize;
+    }
+
+    memcpy( pbChainingValue, count, blockSize );
+
+    SymCryptWipeKnownSize( buf, sizeof( buf ));
+}
+
+VOID
+SYMCRYPT_CALL
 SymCryptCtrMsb64(
     _In_                        PCSYMCRYPT_BLOCKCIPHER  pBlockCipher,
     _In_                        PCVOID                  pExpandedKey,

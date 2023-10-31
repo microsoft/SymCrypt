@@ -6,6 +6,7 @@ prior to the creation of a new release, based on the changes contained in that r
 - Extended SymCrypt support for XTS-AES adding support for 128-bit tweak and ciphertext-stealing
 - Added support for salt length detection in RSA-PSS verification
 - Export various constant time operations from SymCrypt Linux modules
+- Added support for nonce sizes other than 12 bytes for AES-GCM
 
 # Version 103.3.2
 

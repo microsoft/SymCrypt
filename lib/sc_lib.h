@@ -1409,6 +1409,24 @@ SymCryptAesCtrMsb64Neon(
 
 VOID
 SYMCRYPT_CALL
+SymCryptAesCtrMsb32Xmm(
+    _In_                                        PCSYMCRYPT_AES_EXPANDED_KEY pExpandedKey,
+    _Inout_updates_( SYMCRYPT_AES_BLOCK_SIZE )  PBYTE                       pbChainingValue,
+    _In_reads_( cbData )                        PCBYTE                      pbSrc,
+    _Out_writes_( cbData )                      PBYTE                       pbDst,
+                                                SIZE_T                      cbData );
+
+VOID
+SYMCRYPT_CALL
+SymCryptAesCtrMsb32Neon(
+    _In_                                        PCSYMCRYPT_AES_EXPANDED_KEY pExpandedKey,
+    _Inout_updates_( SYMCRYPT_AES_BLOCK_SIZE )  PBYTE                       pbChainingValue,
+    _In_reads_( cbData )                        PCBYTE                      pbSrc,
+    _Out_writes_( cbData )                      PBYTE                       pbDst,
+                                                SIZE_T                      cbData );
+
+VOID
+SYMCRYPT_CALL
 SymCryptXtsAesEncryptDataUnitC(
     _In_                                        PCSYMCRYPT_AES_EXPANDED_KEY pExpandedKey,
     _Inout_updates_( SYMCRYPT_AES_BLOCK_SIZE )  PBYTE                       pbTweakBlock,
@@ -1644,6 +1662,40 @@ SymCryptGcmDecryptPartTwoPass(
     _In_reads_( cbData )    PCBYTE              pbSrc,
     _Out_writes_( cbData )  PBYTE               pbDst,
                             SIZE_T              cbData );
+
+VOID
+SYMCRYPT_CALL
+SymCryptCtrMsb32(
+    _In_                        PCSYMCRYPT_BLOCKCIPHER  pBlockCipher,
+    _In_                        PCVOID                  pExpandedKey,
+    _Inout_updates_( pBlockCipher->blockSize )
+                                PBYTE                   pbChainingValue,
+    _In_reads_( cbData )        PCBYTE                  pbSrc,
+    _Out_writes_( cbData )      PBYTE                   pbDst,
+                                SIZE_T                  cbData );
+//
+// SymCryptCtrMsb32 implements the CTR cipher mode with a 32-bit increment function.
+// It is not intended to be used as-is, rather it is a building block for modes like GCM.
+// See the description of SymCryptCtrMsb64 in symcrypt.h for more details.
+//
+// For now, this function is only intended for use with GCM, which specifies the use a
+// 32-bit increment function. It's only used in cases where we can't use one of the optimized
+// implementations (i.e. on ARM32 or x86[-64] without AESNI). Therefore, unlike the 64-bit version,
+// there are no optimized implementations of the CTR function to call. If we ever need this
+// functionality for other block cipher modes, this function will need to be updated and we'll
+// need to add an additional pointer to SYMCRYPT_BLOCKCIPHER for the optimized CTR function.
+
+VOID
+SYMCRYPT_CALL
+SymCryptAesCtrMsb32(
+    _In_                                        PCSYMCRYPT_AES_EXPANDED_KEY pExpandedKey,
+    _Inout_updates_( SYMCRYPT_AES_BLOCK_SIZE )  PBYTE                       pbChainingValue,
+    _In_reads_( cbData )                        PCBYTE                      pbSrc,
+    _Out_writes_( cbData )                      PBYTE                       pbDst,
+                                                SIZE_T                      cbData );
+
+// SymCryptAesCtrMsb32 is a dispatch function for the optimized AES CTR implementations that use
+//a 32-bit counter function (currently only relevant to GCM).
 
 SYMCRYPT_ERROR
 SYMCRYPT_CALL
