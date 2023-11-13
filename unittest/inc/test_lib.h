@@ -1483,6 +1483,9 @@ testDhAlgorithms();
 VOID
 testDsaAlgorithms();
 
+VOID
+testStatusIndicator(BOOL);
+
 KatData *
 getCustomResource( _In_ PSTR resourceName, _In_ PSTR resourceType );
 

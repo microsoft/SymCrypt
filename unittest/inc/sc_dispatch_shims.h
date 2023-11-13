@@ -564,6 +564,9 @@
 #define ScDispatchSymCrypt802_11SaeCustomInitH2EGeneric(...) SCTEST_CALL_DISPATCHFN(SymCrypt802_11SaeCustomInitH2EGeneric, __VA_ARGS__)
 #define ScDispatchSymCrypt802_11SaeGetGroupSizes(...) SCTEST_CALL_DISPATCHFN(SymCrypt802_11SaeGetGroupSizes, __VA_ARGS__)
 
+#define ScDispatchSymCryptDeprecatedStatusIndicator(...) SCTEST_CALL_DISPATCHFN(SymCryptDeprecatedStatusIndicator, __VA_ARGS__)
+
+
 #define ScDispatchSymCryptMarvin32DefaultSeed SCTEST_GET_DISPATCHSYM(SymCryptMarvin32DefaultSeed)
 #define ScDispatchSymCryptMd2Algorithm SCTEST_GET_DISPATCHSYM(SymCryptMd2Algorithm)
 #define ScDispatchSymCryptMd4Algorithm SCTEST_GET_DISPATCHSYM(SymCryptMd4Algorithm)

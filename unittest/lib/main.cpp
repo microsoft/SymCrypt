@@ -326,6 +326,11 @@ String g_dynamicModulePath = "";
 BOOL g_perfTestsRunning = FALSE;
 
 //
+// Flag to print the FIPS status indicator
+//
+BOOL g_printStatusIndicator = FALSE;
+
+//
 // Flag that specifies tests are running against BCrypt SGX enclave proxy.
 //
 BOOL g_sgx = FALSE;
@@ -671,6 +676,7 @@ usage()
             "                    external implementation of the SymCrypt APIs, which will be added as an\n"
             "                    implementation called SymCryptDynamic. By default, all calls to SymCrypt\n"
             "                    are passed to both the statically and dynamically linked SymCrypt versions\n"
+            " statusindicator    Print FIPS status indicator string\n"
             "\n"
 #if SYMCRYPT_CPU_X86 | SYMCRYPT_CPU_AMD64
             " CPU feature:       aesni, pclmulqdq, sse2, sse3, ssse3, avx2,\n"
@@ -968,6 +974,12 @@ processSingleOption( _In_ PSTR option )
             g_dynamicModulePath = String(&option[8]);
             optionHandled = TRUE;
         }
+        if (STRICMP(&option[0], "statusindicator") == 0)
+        {
+            g_printStatusIndicator = TRUE;
+            optionHandled = TRUE;
+        }
+
     }
     if( !optionHandled )
     {
@@ -1506,6 +1518,8 @@ runFunctionalTests()
     testEcc();
 
     printSymCryptFipsGetSelftestsPerformed();
+
+    testStatusIndicator(g_printStatusIndicator);
 
     iprint( "Functional testing done.\n" );
 

@@ -74,6 +74,7 @@ SOURCES= \
     testDh.cpp \
     testDsa.cpp \
     testPaddingPkcs7.cpp \
+    testStatusIndicator.cpp \
 
 I386_SOURCES = \
     savevectors.asm \

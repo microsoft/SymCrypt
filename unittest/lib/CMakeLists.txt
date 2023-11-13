@@ -40,6 +40,7 @@ set(SOURCES
     testScsTools.cpp
     perf.cpp
     testPaddingPkcs7.cpp
+    testStatusIndicator.cpp
   )
 
 # Append Windows-specific sources

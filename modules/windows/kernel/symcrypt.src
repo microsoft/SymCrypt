@@ -648,3 +648,4 @@ EXPORTS
     SymCrypt802_11SaeCustomCommitProcessGeneric
     SymCrypt802_11SaeCustomDestroy
     SymCryptFipsGetSelftestsPerformed
+    SymCryptDeprecatedStatusIndicator

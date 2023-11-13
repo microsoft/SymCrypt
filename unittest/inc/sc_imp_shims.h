@@ -551,6 +551,9 @@
 #define ScShimSymCrypt802_11SaeCustomCommitCreate(...) SCTEST_CALL_SCIMPFN(SymCrypt802_11SaeCustomCommitCreate, __VA_ARGS__)
 #define ScShimSymCrypt802_11SaeCustomCommitProcess(...) SCTEST_CALL_SCIMPFN(SymCrypt802_11SaeCustomCommitProcess, __VA_ARGS__)
 
+#define ScShimSymCryptDeprecatedStatusIndicator(...) SCTEST_CALL_SCIMPFN(SymCryptDeprecatedStatusIndicator, __VA_ARGS__)
+
+
 #define ScShimSymCryptMarvin32DefaultSeed SCTEST_GET_SCIMPSYM(SymCryptMarvin32DefaultSeed)
 #define ScShimSymCryptMd2Algorithm SCTEST_GET_SCIMPSYM(SymCryptMd2Algorithm)
 #define ScShimSymCryptMd4Algorithm SCTEST_GET_SCIMPSYM(SymCryptMd4Algorithm)

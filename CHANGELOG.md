@@ -7,6 +7,7 @@ prior to the creation of a new release, based on the changes contained in that r
 - Added support for salt length detection in RSA-PSS verification
 - Export various constant time operations from SymCrypt Linux modules
 - Added support for nonce sizes other than 12 bytes for AES-GCM
+- Add FIPS status indicator
 
 # Version 103.3.2
 

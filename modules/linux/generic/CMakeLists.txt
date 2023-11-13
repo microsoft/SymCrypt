@@ -1,4 +1,5 @@
 set(SOURCES
+    statusindicator.c
     ../common/optional/rngfipsjitter.c
     ../common/optional/rngforkdetection.c
     ../common/optional/rngsecureurandom.c)

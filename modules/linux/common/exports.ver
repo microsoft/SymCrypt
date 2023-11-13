@@ -544,6 +544,7 @@ VERSION_103.2
 VERSION_103.4
 {
    global:
+      SymCryptDeprecatedStatusIndicator;
       SymCryptEqual;
       SymCryptMapUint32;
       SymCryptPaddingPkcs7Add;

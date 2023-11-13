@@ -3045,3 +3045,18 @@ SymCryptFipsGetSelftestsPerformed(void);
 // Rsakey selftest flags
 // RSA Pairwise Consistency Test to be run generated keys
 #define SYMCRYPT_SELFTEST_KEY_RSA_SIGN  (0x1)
+
+UINT32
+SYMCRYPT_CALL
+SymCryptDeprecatedStatusIndicator(PBYTE pbOutput, UINT32 cbOutput);
+//
+// Returns the FIPS Approved Services Status Indicator as an ASCII string.
+// This API is required to satisfy FIPS 140-3 requirements, but is *not* recommended
+// to be used in production code. It should be considered unstable,
+// and may be removed at any time.
+// 
+// The output string will be copied to pbOutput if the size of the buffer 
+// cbOutput is large enough. The function returns the required buffer size
+// when pbOutput is passed as NULL. If pbOutput is not NULL, the function 
+// returns the number of bytes copied to pbOutput.
+//

@@ -9,6 +9,10 @@
 
 SYMCRYPT_ENVIRONMENT_WINDOWS_USERMODE_LATEST;
 
+#define SYMCRYPT_FIPS_STATUS_INDICATOR
+#include "../modules/statusindicator_common.h"
+#include "../lib/status_indicator.h"
+
 BYTE g_bAllocFill = 0;
 
 UINT64 g_magic;

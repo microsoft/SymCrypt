@@ -16,6 +16,11 @@
 
 SYMCRYPT_ENVIRONMENT_WINDOWS_KERNELMODE_LATEST;
 
+#define SYMCRYPT_FIPS_STATUS_INDICATOR
+#include "../modules/statusindicator_common.h"
+#include "../lib/status_indicator.h"
+
+
 #define GENRANDOM(pbBuf, cbBuf)     BCryptGenRandom( NULL, (PBYTE) (pbBuf), (UINT32) (cbBuf), BCRYPT_USE_SYSTEM_PREFERRED_RNG )
 
 SYMCRYPT_CPU_FEATURES   g_originalCpuFeatures;

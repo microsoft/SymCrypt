@@ -69,6 +69,7 @@
     <ClCompile Include="testWipe.cpp" />
     <ClCompile Include="testXof.cpp" />
     <ClCompile Include="testXts.cpp" />
+    <ClCompile Include="testStatusIndicator.cpp" />
   </ItemGroup>
   <ItemGroup Condition="'$(Platform)'=='x64'">
     <MASM Include="amd64\savevectors.asm" />
@@ -81,7 +82,6 @@
     <PlatformToolset>v143</PlatformToolset>
     <ConfigurationType>StaticLibrary</ConfigurationType>
   </PropertyGroup>
-
   <Target Name="GetDriverProjectAttributes" Returns="@(DriverProjectAttributes)" />
   <Target Name="GetPackageFiles" Returns="@(FullyQualifiedFilesToPackage)" />
 </Project>

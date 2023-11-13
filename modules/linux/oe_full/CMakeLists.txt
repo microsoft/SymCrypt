@@ -1,5 +1,6 @@
 set(SOURCES
     ../common/integrity.c
+    statusindicator.c
     rng.c)
 
 include_directories(${CMAKE_SOURCE_DIR}/inc ../common)
