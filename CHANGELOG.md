@@ -3,6 +3,8 @@
 New changes will be listed here as they are developed. The version number is determined
 prior to the creation of a new release, based on the changes contained in that release.
 
+# Version 103.4.0
+
 - Extended SymCrypt support for XTS-AES adding support for 128-bit tweak and ciphertext-stealing
 - Added support for salt length detection in RSA-PSS verification
 - Export various constant time operations from SymCrypt Linux modules
