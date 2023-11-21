@@ -307,8 +307,8 @@
     </Link>
   </ItemDefinitionGroup>
 
-  <!-- Enable retpoline for MASM in official builds - template does not currently set this -->
-  <ItemDefinitionGroup Condition="'$(UndockedOfficial)' == 'true' And '$(Platform)'=='x64'">
+  <!-- Enable retpoline for MASM - template does not currently set this -->
+  <ItemDefinitionGroup Condition="'$(Platform)'=='x64'">
     <MASM>
       <AdditionalOptions>/GuardRetpoline</AdditionalOptions>
     </MASM>

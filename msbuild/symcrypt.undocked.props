@@ -41,7 +41,7 @@
     <Link>
       <AdditionalOptions>
         /nodefaultlib:libcmt.lib
-        /nodefaultlib:libcmtd.lib 
+        /nodefaultlib:libcmtd.lib
         %(AdditionalOptions)
       </AdditionalOptions>
       <AdditionalOptions Condition="'$(SymCryptKernelTarget)'=='true'">
@@ -80,6 +80,9 @@
     <ClCompile>
       <PreprocessorDefinitions>_AMD64_;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
+    <Link>
+      <AdditionalOptions>/guard:retpoline %(AdditionalOptions)</AdditionalOptions>
+    </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Platform)'=='Win32'">
     <ClCompile>
