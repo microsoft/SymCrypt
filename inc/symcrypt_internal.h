@@ -475,15 +475,30 @@ SymCryptCpuFeaturesNeverPresent(void);
 
 #elif SYMCRYPT_APPLE_CC || SYMCRYPT_GNUC
 
-    #define SYMCRYPT_INTERNAL_VOLATILE_READ8( _p )    ( *((const volatile BYTE*)  (_p)) )
-    #define SYMCRYPT_INTERNAL_VOLATILE_READ16( _p )   ( *((const volatile UINT16*)(_p)) )
-    #define SYMCRYPT_INTERNAL_VOLATILE_READ32( _p )   ( *((const volatile UINT32*)(_p)) )
-    #define SYMCRYPT_INTERNAL_VOLATILE_READ64( _p )   ( *((const volatile UINT64*)(_p)) )
+    #if !SYMCRYPT_CPU_ARM
+        #define SYMCRYPT_INTERNAL_VOLATILE_READ8( _p )    ( *((const volatile BYTE*)  (_p)) )
+        #define SYMCRYPT_INTERNAL_VOLATILE_READ16( _p )   ( *((const volatile UINT16*)(_p)) )
+        #define SYMCRYPT_INTERNAL_VOLATILE_READ32( _p )   ( *((const volatile UINT32*)(_p)) )
+        #define SYMCRYPT_INTERNAL_VOLATILE_READ64( _p )   ( *((const volatile UINT64*)(_p)) )
 
-    #define SYMCRYPT_INTERNAL_VOLATILE_WRITE8( _p, _v )  ( *((volatile BYTE*)  (_p)) = (_v) )
-    #define SYMCRYPT_INTERNAL_VOLATILE_WRITE16( _p, _v ) ( *((volatile UINT16*)(_p)) = (_v) )
-    #define SYMCRYPT_INTERNAL_VOLATILE_WRITE32( _p, _v ) ( *((volatile UINT32*)(_p)) = (_v) )
-    #define SYMCRYPT_INTERNAL_VOLATILE_WRITE64( _p, _v ) ( *((volatile UINT64*)(_p)) = (_v) )
+        #define SYMCRYPT_INTERNAL_VOLATILE_WRITE8( _p, _v )  ( *((volatile BYTE*)  (_p)) = (_v) )
+        #define SYMCRYPT_INTERNAL_VOLATILE_WRITE16( _p, _v ) ( *((volatile UINT16*)(_p)) = (_v) )
+        #define SYMCRYPT_INTERNAL_VOLATILE_WRITE32( _p, _v ) ( *((volatile UINT32*)(_p)) = (_v) )
+        #define SYMCRYPT_INTERNAL_VOLATILE_WRITE64( _p, _v ) ( *((volatile UINT64*)(_p)) = (_v) )
+    #else // SYMCRYPT_CPU_ARM
+        #define SYMCRYPT_INTERNAL_VOLATILE_READ8( _p )    ( *((const volatile BYTE*)  (_p)) )
+        #define SYMCRYPT_INTERNAL_VOLATILE_READ16( _p )   ( *((const volatile UINT16*)(_p)) )
+        #define SYMCRYPT_INTERNAL_VOLATILE_READ32( _p )   ( *((const volatile UINT32*)(_p)) )
+        #define SYMCRYPT_INTERNAL_VOLATILE_READ64( p ) ( (UINT64)SYMCRYPT_INTERNAL_VOLATILE_READ32(&((PBYTE)p)[4]) << 32 |  SYMCRYPT_INTERNAL_VOLATILE_READ32(&((PBYTE)p)[0]) )
+
+        #define SYMCRYPT_INTERNAL_VOLATILE_WRITE8( _p, _v )  ( *((volatile BYTE*)  (_p)) = (_v) )
+        #define SYMCRYPT_INTERNAL_VOLATILE_WRITE16( _p, _v ) ( *((volatile UINT16*)(_p)) = (_v) )
+        #define SYMCRYPT_INTERNAL_VOLATILE_WRITE32( _p, _v ) ( *((volatile UINT32*)(_p)) = (_v) )
+        #define SYMCRYPT_INTERNAL_VOLATILE_WRITE64( p, x ) { \
+            SYMCRYPT_INTERNAL_VOLATILE_WRITE32( &((PBYTE)p)[0], (UINT32)((x)    ) );\
+            SYMCRYPT_INTERNAL_VOLATILE_WRITE32( &((PBYTE)p)[4], (UINT32)(((UINT64)(x))>>32) );\
+            }
+    #endif
 
 #else
 
@@ -521,23 +536,23 @@ SymCryptCpuFeaturesNeverPresent(void);
 // We do this by platform because it affected by both endianness and alignment requirements
 // The p pointer is always a pointer to BYTE
 //
-#if SYMCRYPT_CPU_X86 | SYMCRYPT_CPU_AMD64 | SYMCRYPT_CPU_ARM | SYMCRYPT_CPU_ARM64
+#if SYMCRYPT_MS_VC  // Microsoft VC++ Compiler
+    #define SYMCRYPT_BSWAP16( x ) _byteswap_ushort(x)
+    #define SYMCRYPT_BSWAP32( x ) _byteswap_ulong(x)
+    #define SYMCRYPT_BSWAP64( x ) _byteswap_uint64(x)
+#elif SYMCRYPT_GNUC
+    #define SYMCRYPT_BSWAP16( x ) __builtin_bswap16(x)
+    #define SYMCRYPT_BSWAP32( x ) __builtin_bswap32(x)
+    #define SYMCRYPT_BSWAP64( x ) __builtin_bswap64(x)
+#elif SYMCRYPT_APPLE_CC
+    #include <libkern/OSByteOrder.h>
+    #define SYMCRYPT_BSWAP16( x ) OSSwapInt16(x)
+    #define SYMCRYPT_BSWAP32( x ) OSSwapInt32(x)
+    #define SYMCRYPT_BSWAP64( x ) OSSwapInt64(x)
 
-    #if SYMCRYPT_MS_VC  // Microsoft VC++ Compiler
-        #define SYMCRYPT_BSWAP16( x ) _byteswap_ushort(x)
-        #define SYMCRYPT_BSWAP32( x ) _byteswap_ulong(x)
-        #define SYMCRYPT_BSWAP64( x ) _byteswap_uint64(x)
-    #elif SYMCRYPT_GNUC
-        #define SYMCRYPT_BSWAP16( x ) __builtin_bswap16(x)
-        #define SYMCRYPT_BSWAP32( x ) __builtin_bswap32(x)
-        #define SYMCRYPT_BSWAP64( x ) __builtin_bswap64(x)
-    #elif SYMCRYPT_APPLE_CC
-        #include <libkern/OSByteOrder.h>
-        #define SYMCRYPT_BSWAP16( x ) OSSwapInt16(x)
-        #define SYMCRYPT_BSWAP32( x ) OSSwapInt32(x)
-        #define SYMCRYPT_BSWAP64( x ) OSSwapInt64(x)
+#endif
+#if SYMCRYPT_CPU_X86 | SYMCRYPT_CPU_AMD64 | SYMCRYPT_CPU_ARM64
 
-    #endif
 
 //
 // X86, AMD64, ARM, and ARM64 have no alignment restrictions, and are little-endian.
@@ -561,6 +576,34 @@ SymCryptCpuFeaturesNeverPresent(void);
 #define SYMCRYPT_INTERNAL_STORE_MSBFIRST64( p, x ) ( *(UINT64 *)(p) = SYMCRYPT_BSWAP64(x) )
 #define SYMCRYPT_INTERNAL_STORE_LSBFIRST64( p, x ) ( *(UINT64 *)(p) =                 (x) )
 
+#elif SYMCRYPT_CPU_ARM
+
+//
+// Only 64 bit accesses need to be aligned.
+//
+#define SYMCRYPT_INTERNAL_LOAD_MSBFIRST16( p ) SYMCRYPT_BSWAP16( *((UINT16 *)(p)) )
+#define SYMCRYPT_INTERNAL_LOAD_LSBFIRST16( p )                 ( *((UINT16 *)(p)) )
+#define SYMCRYPT_INTERNAL_LOAD_MSBFIRST32( p ) SYMCRYPT_BSWAP32( *((UINT32 *)(p)) )
+#define SYMCRYPT_INTERNAL_LOAD_LSBFIRST32( p )                 ( *((UINT32 *)(p)) )
+
+#define SYMCRYPT_INTERNAL_LOAD_MSBFIRST64( p ) ( (UINT64)SYMCRYPT_INTERNAL_LOAD_MSBFIRST32(&((PBYTE)p)[0]) << 32 | SYMCRYPT_INTERNAL_LOAD_MSBFIRST32(&((PBYTE)p)[4]) )
+#define SYMCRYPT_INTERNAL_LOAD_LSBFIRST64( p ) ( (UINT64)SYMCRYPT_INTERNAL_LOAD_LSBFIRST32(&((PBYTE)p)[4]) << 32 | SYMCRYPT_INTERNAL_LOAD_LSBFIRST32(&((PBYTE)p)[0]) )
+
+
+
+#define SYMCRYPT_INTERNAL_STORE_MSBFIRST16( p, x ) ( *(UINT16 *)(p) = SYMCRYPT_BSWAP16(x) )
+#define SYMCRYPT_INTERNAL_STORE_LSBFIRST16( p, x ) ( *(UINT16 *)(p) =                 (x) )
+#define SYMCRYPT_INTERNAL_STORE_MSBFIRST32( p, x ) ( *(UINT32 *)(p) = SYMCRYPT_BSWAP32(x) )
+#define SYMCRYPT_INTERNAL_STORE_LSBFIRST32( p, x ) ( *(UINT32 *)(p) =                 (x) )
+#define SYMCRYPT_INTERNAL_STORE_MSBFIRST64( p, x ) { \
+    SYMCRYPT_INTERNAL_STORE_MSBFIRST32( &((PBYTE)p)[0],(UINT32)(((UINT64)(x))>>32) );\
+    SYMCRYPT_INTERNAL_STORE_MSBFIRST32( &((PBYTE)p)[4],(UINT32)(x));\
+    }
+
+#define SYMCRYPT_INTERNAL_STORE_LSBFIRST64( p, x ) { \
+    SYMCRYPT_INTERNAL_STORE_LSBFIRST32( &((PBYTE)p)[0], (UINT32)((x)    ) );\
+    SYMCRYPT_INTERNAL_STORE_LSBFIRST32( &((PBYTE)p)[4], (UINT32)(((UINT64)(x))>>32) );\
+    }
 #else // unknown platform
 
 //

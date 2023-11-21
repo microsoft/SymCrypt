@@ -130,7 +130,7 @@ testKdfRandom( KdfMultiImp * pImp, KDF_ARGUMENT_TYPE argType, int rrep, SIZE_T k
     SIZE_T algNameSize = pImp->m_algorithmName.size();
     CHECK( algNameSize < sizeof( buf ) - sizeof( ULONGLONG ), "Algorithm name too long" );
     memcpy( buf, pImp->m_algorithmName.data(), algNameSize );
-    *(ULONGLONG SYMCRYPT_UNALIGNED *)&buf[algNameSize] = keyLen;
+    SYMCRYPT_STORE_LSBFIRST64(&buf[algNameSize], keyLen);
     rng.reset( buf, algNameSize + sizeof( ULONGLONG ) );
 
     memset( buf, 0, sizeof( buf ) );

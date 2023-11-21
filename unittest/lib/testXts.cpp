@@ -320,7 +320,7 @@ testXtsRandom( XtsMultiImp * pImp, int rrep, SIZE_T keyLen, PCBYTE pbResult, SIZ
     SIZE_T algNameSize = pImp->m_algorithmName.size();
     CHECK( algNameSize < sizeof( buf1 ) - sizeof( ULONGLONG ), "Algorithm name too long" );
     memcpy( buf1, pImp->m_algorithmName.data(), algNameSize );
-    *(ULONGLONG SYMCRYPT_UNALIGNED *)&buf1[algNameSize] = keyLen;
+    SYMCRYPT_STORE_LSBFIRST64(&buf1[algNameSize], keyLen);
     rng.reset( buf1, algNameSize + sizeof( ULONGLONG ) );
 
     const SIZE_T bufSize = sizeof( buf1 );

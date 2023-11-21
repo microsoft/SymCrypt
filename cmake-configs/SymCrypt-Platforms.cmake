@@ -18,8 +18,10 @@ if(NOT DEFINED SYMCRYPT_TARGET_ARCH)
         set(SYMCRYPT_TARGET_ARCH "X86")
     elseif(CMAKE_SYSTEM_PROCESSOR MATCHES "ARM64|aarch64")
         set(SYMCRYPT_TARGET_ARCH "ARM64")
+    elseif(CMAKE_SYSTEM_PROCESSOR MATCHES "ARM|ARM32|aarch32|armv8l")
+        set(SYMCRYPT_TARGET_ARCH "ARM")
     else()
-        message(FATAL_ERROR "Unsupported architecture")
+        message(FATAL_ERROR "Unsupported architecture ${CMAKE_SYSTEM_PROCESSOR}")
     endif()
 endif()
 
@@ -53,7 +55,12 @@ if(CMAKE_SYSTEM_NAME MATCHES "Linux")
         # whereas clang and MSVC do not. Setting -flax-vector-conversions to build Arm64 intrinsics code with GCC.
         set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -flax-vector-conversions")
     elseif(SYMCRYPT_TARGET_ARCH MATCHES "ARM")
-        set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -march=armv7-a+neon-vfpv4 -flax-vector-conversions -mfpu=neon")
+        # Not sure if -mno-unaligned-access actually helps but here it is.
+        set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -march=armv7-a+neon-vfpv4 -flax-vector-conversions -mfpu=neon -mno-unaligned-access")
+        # Show undefined symbols errors at link time.
+        link_libraries(-Wl,--no-undefined)
+        link_libraries(c)
+        link_libraries(gcc)
     endif()
     
     # add_compile_options(-Wall)

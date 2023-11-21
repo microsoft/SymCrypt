@@ -260,7 +260,7 @@ testBlockCipherRandom( BlockCipherMultiImp * pImp, int rrep, SIZE_T keyLen, PCBY
     SIZE_T algNameSize = pImp->m_algorithmName.size();
     CHECK( algNameSize < sizeof( buf ) - sizeof( ULONGLONG ), "Algorithm name too long" );
     memcpy( buf, pImp->m_algorithmName.data(), algNameSize );
-    *(ULONGLONG SYMCRYPT_UNALIGNED *)&buf[algNameSize] = keyLen;
+    SYMCRYPT_STORE_LSBFIRST64(&buf[algNameSize], keyLen);
     rng.reset( buf, algNameSize + sizeof( ULONGLONG ) );
 
     const SIZE_T chainBlockLen = pImp->chainBlockLen();

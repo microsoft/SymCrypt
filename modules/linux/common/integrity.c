@@ -40,7 +40,7 @@
 #error Unknown CPU pointer size
 #endif
 
-#ifdef SYMCRYPT_DEBUG_INTEGRITY
+#if SYMCRYPT_DEBUG_INTEGRITY
 #include <stdio.h>
 
 VOID
@@ -139,7 +139,7 @@ SymCryptHmacSha256AppendDbg(
                             SIZE_T                      cbData )
 {
     fprintf(stderr, "\nHMAC append: %s size %lx\n", pszLabel, cbData);
-    DbgDumpHexString(pbData, (ULONG)cbData);
+    DbgDumpHex(pbData, (ULONG)cbData);
     SymCryptHmacSha256Append(pState, pbData, cbData);
 }
 
@@ -503,9 +503,14 @@ VOID SymCryptModuleDoHmac(
     const Elf_Ehdr* header = (Elf_Ehdr*) module_base;
     const Elf_Phdr* programHeaderStart = (Elf_Phdr*) ( module_base + header->e_phoff );
 
-    for( const Elf_Phdr* programHeader = programHeaderStart;
-        programHeader->p_type == PT_LOAD; ++programHeader )
+    for( int i = 0; i < header->e_phnum; ++i)
     {
+        const Elf_Phdr* programHeader = programHeaderStart + i;
+        if (programHeader->p_type != PT_LOAD)
+        {
+            continue;
+        }
+
         // Sometimes the virtual address of a segment is greater than its offset into the module
         // file on disk. This means extra NULL bytes will be inserted into the module's memory
         // space at runtime. Those bytes are not part of our FIPS boundary, so we skip over them

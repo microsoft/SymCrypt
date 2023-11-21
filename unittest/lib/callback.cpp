@@ -60,7 +60,7 @@ AllocWithChecks( SIZE_T nBytes, volatile INT64 * pOutstandingAllocs, volatile IN
     CHECK( offset >= 16 && offset < 256, "?" );
 
     *(UINT64 *) &res[-8] = g_magic ^ (SIZE_T) res ^ 'strt';
-    *(UINT64 *) &res[nBytes ] = g_magic ^ (SIZE_T) res ^ 'end.';
+    SYMCRYPT_STORE_LSBFIRST64(&res[nBytes], g_magic ^ (SIZE_T) res ^ 'end.');
     *(UINT32 *) &res[-12] = (UINT32) nBytes;
     *(UINT32 *) &res[-16] = offset;
 
@@ -101,7 +101,7 @@ FreeWithChecks( PVOID ptr, volatile INT64 * pOutstandingAllocs )
     }
 
     CHECK( *(ULONGLONG *)&p[-8] == (g_magic ^ (SIZE_T) p ^ 'strt'), "Left magic corrupted" );
-    CHECK( *(ULONGLONG *)&p[nBytes] == (g_magic ^ (SIZE_T) p ^ 'end.'), "Right magic corrupted" );
+    CHECK( SYMCRYPT_LOAD_LSBFIRST64(&p[nBytes]) == (g_magic ^ (SIZE_T) p ^ 'end.'), "Right magic corrupted" );
     CHECK( InterlockedDecrement64( pOutstandingAllocs ) != -1, "?" );
     delete[] ( p - *(UINT32 *)&p[-16] );
 }
