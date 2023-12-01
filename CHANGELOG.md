@@ -3,6 +3,10 @@
 New changes will be listed here as they are developed. The version number is determined
 prior to the creation of a new release, based on the changes contained in that release.
 
+# Version 103.4.1
+- Add retpoline guard flags for undocked Windows build
+- Support ARM32 for Linux
+
 # Version 103.4.0
 
 - Extended SymCrypt support for XTS-AES adding support for 128-bit tweak and ciphertext-stealing
