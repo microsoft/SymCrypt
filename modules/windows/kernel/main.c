@@ -10,25 +10,23 @@
 #include <windef.h>
 #include <symcrypt.h>
 #include <symcrypt_low_level.h>
-#include <bcrypt.h>
 
 SYMCRYPT_ENVIRONMENT_WINDOWS_KERNELMODE_LATEST;
-
-#define GENRANDOM(pbBuf, cbBuf)     BCryptGenRandom( NULL, (PBYTE) (pbBuf), (UINT32) (cbBuf), BCRYPT_USE_SYSTEM_PREFERRED_RNG )
-
 
 #define SYMCRYPT_FIPS_STATUS_INDICATOR
 #include "../modules/statusindicator_common.h"
 #include "../lib/status_indicator.h"
 
+// Our DriverEntry function is not used, as this module acts as an export driver which is linked
+// directly to the kernel. In other words, it's not initialized by WDF, and we don't create any
+// device objects or use other WDF functions. However, we need to define the function to be able
+// to link with some of the KMDF libs.
 NTSTATUS
 DriverEntry(
     _In_  struct _DRIVER_OBJECT* DriverObject,
     _In_ PUNICODE_STRING RegistryPath
     )
 {
-    SymCryptInit();
-
     UNREFERENCED_PARAMETER( DriverObject );
     UNREFERENCED_PARAMETER( RegistryPath );
 
@@ -42,6 +40,8 @@ VOID SYMCRYPT_CALL SymCryptModuleInit(UINT32 api, UINT32 minor)
     {
         SymCryptFatal('vers');
     }
+
+    SymCryptInit();
 }
 
 PVOID
@@ -94,8 +94,11 @@ SymCryptRandom(
     _Out_writes_bytes_( cbBuffer )  PBYTE   pbBuffer,
                                     SIZE_T  cbBuffer )
 {
-    // Need to remove dependency on BCrypt
-    GENRANDOM( pbBuffer, cbBuffer );
+    UNREFERENCED_PARAMETER( pbBuffer );
+    UNREFERENCED_PARAMETER( cbBuffer );
+
+    // No one should be using this yet
+    SymCryptFatal( 'rnd1' );
 }
 
 SYMCRYPT_ERROR
@@ -104,12 +107,11 @@ SymCryptCallbackRandom(
     _Out_writes_bytes_( cbBuffer )  PBYTE   pbBuffer,
                                     SIZE_T  cbBuffer )
 {
-    NTSTATUS status = STATUS_SUCCESS;
+    UNREFERENCED_PARAMETER( pbBuffer );
+    UNREFERENCED_PARAMETER( cbBuffer );
 
-    // Need to remove dependency on BCrypt
-    status = GENRANDOM( pbBuffer, cbBuffer );
-
-    return NT_SUCCESS( status ) ? SYMCRYPT_NO_ERROR : SYMCRYPT_EXTERNAL_FAILURE;
+    // No one should be using this yet
+    SymCryptFatal( 'rnd2' );
 }
 
 PVOID

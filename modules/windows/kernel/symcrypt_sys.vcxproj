@@ -58,7 +58,7 @@
       <ModuleDefinitionFile>symcrypt.src</ModuleDefinitionFile>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <LinkTimeCodeGeneration>UseLinkTimeCodeGeneration</LinkTimeCodeGeneration>
-      <AdditionalDependencies>%(AdditionalDependencies);ntoskrnl.lib;cng.lib</AdditionalDependencies>
+      <AdditionalDependencies>%(AdditionalDependencies);ntoskrnl.lib</AdditionalDependencies>
       <EntryPointSymbol>GsDriverEntry</EntryPointSymbol>
     </Link>
   </ItemDefinitionGroup>
