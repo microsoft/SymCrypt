@@ -72,6 +72,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="main.c" />
+    <ClCompile Include="entropy_accumulator.c" />
   </ItemGroup>
   <ItemGroup>
     <None Include="symcrypt.src" />

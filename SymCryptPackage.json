@@ -32,6 +32,18 @@
         "dest" : "inc/symcrypt_internal_shared.inc"
     },
     {
+        "source" : "${SOURCE_DIR}/modules/windows/kernel/symcrypt_winkernel_types.h",
+        "dest" : "inc/symcrypt_winkernel_types.h",
+        "platform" : "win32",
+        "arch" : "amd64,arm64"
+    },
+    {
+        "source" : "${SOURCE_DIR}/modules/windows/kernel/symcrypt_winkernel.h",
+        "dest" : "inc/symcrypt_winkernel.h",
+        "platform" : "win32",
+        "arch" : "amd64,arm64"
+    },
+    {
         "source" : "${SOURCE_DIR}/inc/symcrypt_no_sal.h",
         "dest" : "inc/symcrypt_no_sal.h",
         "platform" : "linux"

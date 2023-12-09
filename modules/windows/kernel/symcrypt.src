@@ -649,3 +649,6 @@ EXPORTS
     SymCrypt802_11SaeCustomDestroy
     SymCryptFipsGetSelftestsPerformed
     SymCryptDeprecatedStatusIndicator
+    SymCryptEntropyAccumulatorInit
+    SymCryptEntropyAccumulatorAccumulateSample
+    SymCryptEntropyAccumulatorSetCallbackProvideEntropyFn

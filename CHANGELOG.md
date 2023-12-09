@@ -3,6 +3,8 @@
 New changes will be listed here as they are developed. The version number is determined
 prior to the creation of a new release, based on the changes contained in that release.
 
+- Add SymCryptEntropyAccumulator to Windows kernel module
+
 # Version 103.4.1
 - Add retpoline guard flags for undocked Windows build
 - Support ARM32 for Linux
