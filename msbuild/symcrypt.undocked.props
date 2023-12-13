@@ -81,7 +81,11 @@
       <PreprocessorDefinitions>_AMD64_;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
-      <AdditionalOptions>/guard:retpoline %(AdditionalOptions)</AdditionalOptions>
+        <!-- 
+          Ignore warning LNK4287 (object file is missing /guard:retpoline metadata) which happens
+          when linking to debug versions of the CRT.
+        -->
+      <AdditionalOptions>/guard:retpoline /IGNORE:4287 %(AdditionalOptions)</AdditionalOptions>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Platform)'=='Win32'">
