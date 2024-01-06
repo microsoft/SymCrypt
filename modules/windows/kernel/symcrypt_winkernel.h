@@ -26,30 +26,51 @@
 //
 
 // Check at compile time that constants are powers of 2
-C_ASSERT((SYMCRYPT_ENTROPY_ACCUMULATOR_LOGICAL_BUFFER_SIZE        & (SYMCRYPT_ENTROPY_ACCUMULATOR_LOGICAL_BUFFER_SIZE-1))        == 0);
-C_ASSERT((SYMCRYPT_ENTROPY_ACCUMULATOR_SAMPLES_PER_LOGICAL_BUFFER & (SYMCRYPT_ENTROPY_ACCUMULATOR_SAMPLES_PER_LOGICAL_BUFFER-1)) == 0);
-C_ASSERT((SYMCRYPT_ENTROPY_ACCUMULATOR_ACTUAL_BUFFER_SIZE         & (SYMCRYPT_ENTROPY_ACCUMULATOR_ACTUAL_BUFFER_SIZE-1))         == 0);
-C_ASSERT((SYMCRYPT_ENTROPY_ACCUMULATOR_SAMPLES_PER_ACTUAL_BUFFER  & (SYMCRYPT_ENTROPY_ACCUMULATOR_SAMPLES_PER_ACTUAL_BUFFER-1))  == 0);
+C_ASSERT((SYMCRYPT_ENTROPY_ACCUMULATOR_SEGMENT_SIZE        & (SYMCRYPT_ENTROPY_ACCUMULATOR_SEGMENT_SIZE-1))        == 0);
+C_ASSERT((SYMCRYPT_ENTROPY_ACCUMULATOR_SAMPLES_PER_SEGMENT & (SYMCRYPT_ENTROPY_ACCUMULATOR_SAMPLES_PER_SEGMENT-1)) == 0);
+C_ASSERT((SYMCRYPT_ENTROPY_ACCUMULATOR_BUFFER_SIZE         & (SYMCRYPT_ENTROPY_ACCUMULATOR_BUFFER_SIZE-1))         == 0);
+C_ASSERT((SYMCRYPT_ENTROPY_ACCUMULATOR_SAMPLES_PER_BUFFER  & (SYMCRYPT_ENTROPY_ACCUMULATOR_SAMPLES_PER_BUFFER-1))  == 0);
 
 #define SYMCRYPT_FLAG_ENTROPY_ACCUMULATOR_ALLOW_RAW_SAMPLE_COLLECTION (0x01)
 
+VOID
+SYMCRYPT_CALL
+SymCryptEntropyAccumulatorInit0(
+    _Out_   PSYMCRYPT_ENTROPY_ACCUMULATOR_STATE pState );
+//
+// Step 0 initialization of a SYMCRYPT_ENTROPY_ACCUMULATOR_STATE.
+// 
+// - pState points to a preallocated SYMCRYPT_ENTROPY_ACCUMULATOR_STATE
+//
+// Note: This function calls KeInitializeDpc, so must be called only when this
+// API is available.
+//
+// This call makes it safe to call SymCryptEntropyAccumulatorAccumulateSample
+// with this state, but these calls will not affect the entropy output until
+// the state is further initialized with SymCryptEntropyAccumulatorInit1.
+//
+
+
 SYMCRYPT_ERROR
 SYMCRYPT_CALL
-SymCryptEntropyAccumulatorInit(
-    _Out_   PSYMCRYPT_ENTROPY_ACCUMULATOR_STATE pState,
-            UINT32                              flags );
+SymCryptEntropyAccumulatorInit1(
+    _Inout_ PSYMCRYPT_ENTROPY_ACCUMULATOR_STATE pState,
+            UINT64                              config );
 //
-// Initialize a SYMCRYPT_ENTROPY_ACCUMULATOR_STATE for subsequent use.
+// Step 1 initialization of a SYMCRYPT_ENTROPY_ACCUMULATOR_STATE.
 //
-// - pState points to a SYMCRYPT_ENTROPY_ACCUMULATOR_STATE
-// - flags must be 0 or SYMCRYPT_FLAG_ENTROPY_ACCUMULATOR_ALLOW_RAW_SAMPLE_COLLECTION
-//   SYMCRYPT_FLAG_ENTROPY_ACCUMULATOR_ALLOW_RAW_SAMPLE_COLLECTION will enable the entropy
-//   accumulator to log raw samples if the configuration read at time of
-//   SymCryptEntropyAccumulatorSetCallbackProvideEntropyFn also allows it.
-//   It is expected that the release kernel sets this flag only for logical processor 0
-//   and only when test signing is enabled in the boot configuration.
+// - pState points to a preallocated SYMCRYPT_ENTROPY_ACCUMULATOR_STATE
+//   which has already had SymCryptEntropyAccumulatorInit0 called on it
+// - config is an opaque value read from the registry by the kernel to
+//   control internal details about how the accumulator state is initialized
 //
-//  Returns SYMCRYPT_NO_ERROR on successful initialization.
+// Note: This function may call ExAllocatePool2, so must be called only when
+// this allocator is available
+//
+// After a successful call, subsequent calls to SymCryptEntropyAccumulatorAccumulateSample
+// may affect entropy output.
+//
+// Returns SYMCRYPT_NO_ERROR on successful initialization.
 //
 
 VOID
@@ -61,6 +82,13 @@ SymCryptEntropyAccumulatorAccumulateSample(
 // further processing in a DPC.
 //
 
+VOID
+SYMCRYPT_CALL
+SymCryptEntropyAccumulatorGlobalInitFromRegistry( VOID );
+//
+// This function must be called once by the kernel when the registry is ready to be read and written
+// to enable the collection if configured in the registry.
+//
 
 //
 // Callback routine
@@ -70,11 +98,7 @@ VOID
 (SYMCRYPT_CALL * PSYMCRYPT_CALLBACK_ENTROPY_ACCUMULATOR_PROVIDE_ENTROPY_FUNC) (
     _In_reads_( cbData )        PCBYTE                          pbData,
                                 SIZE_T                          cbData,
-                                UINT32                          entropyEstimateInMilliBits,
-    _In_reads_opt_( nSamples )  PCSYMCRYPT_ENTROPY_RAW_SAMPLE   pRawSampleBuffer,
-                                SIZE_T                          nSamples,
-                                UINT32                          accumulatorId,
-                                UINT64                          nSamplesProcessed );
+                                UINT32                          entropyEstimateInMilliBits );
 // The form of the callback function to be defined by our caller to process entropy produced
 // by any initialized entropy accumulators
 //
@@ -82,18 +106,10 @@ VOID
 // - cbData is the number of bytes in the buffer
 // - entropyEstimateInMilliBits is the number of millibits of entropy that the entropy accumulator
 //   asserts is in the entropy buffer
-// - pRawSampleBuffer is a pointer to a buffer of raw samples (may be NULL depending on config)
-// - nSamples is the number of raw samples in the raw sample buffer
-// - accumulatorId is the identifier of the entropy accumulator (this will be unique per instantiated
-//   entropy accumulator)
-// - nSamplesProcessed is the number of samples the entropy accumulator has processed since it was
-//   instantiated. This should increment by SYMCRYPT_ENTROPY_ACCUMULATOR_SAMPLES_PER_LOGICAL_BUFFER each
-//   time an entropy accumulator calls this callback function, but it may not start at 0, depending on
-//   how many samples are accumulated before the callback is set.
 
 BOOLEAN
 SYMCRYPT_CALL
-SymCryptEntropyAccumulatorSetCallbackProvideEntropyFn(
+SymCryptEntropyAccumulatorGlobalSetCallbackProvideEntropyFn(
     _In_ PSYMCRYPT_CALLBACK_ENTROPY_ACCUMULATOR_PROVIDE_ENTROPY_FUNC provideEntropyCallbackFn );
 //
 // Sets the callback function that all entropy accumulators initialized by the module will call into periodically

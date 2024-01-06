@@ -11,50 +11,46 @@
 // The next accumulator ID to be used when an entropy accumulator is initialized. Atomically incremented in each initialization.
 UINT32 g_SymCryptEntropyAccumulatorNextId = 0;
 
+typedef enum _SYMCRYPT_ENTROPY_ACCUMULATOR_RAW_SAMPLE_COLLECTION_TYPE {
+    SYMCRYPT_ENTROPY_ACCUMULATOR_RAW_SAMPLE_COLLECTION_UNINITIALIZED = 0,
+    SYMCRYPT_ENTROPY_ACCUMULATOR_RAW_SAMPLE_COLLECTION_ON            = 1,
+    SYMCRYPT_ENTROPY_ACCUMULATOR_RAW_SAMPLE_COLLECTION_OFF           = 2,
+} SYMCRYPT_ENTROPY_ACCUMULATOR_RAW_SAMPLE_COLLECTION_TYPE;
+
+// Enum indicating whether configuration read from registry indicates that raw samples should be collected
+UINT32 g_SymCryptEntropyAccumulatorCollectRawSamples = SYMCRYPT_ENTROPY_ACCUMULATOR_RAW_SAMPLE_COLLECTION_UNINITIALIZED;
+
 // Callback function entropy accumulators call in DPC to provide entropy and raw samples to other components
 PSYMCRYPT_CALLBACK_ENTROPY_ACCUMULATOR_PROVIDE_ENTROPY_FUNC g_SymCryptCallbackEntropyAccumulatorProvideEntropy = NULL;
-
-// Flag indicating whether configuration read at time of setting callback indicates that raw samples should be collected
-BOOLEAN g_SymCryptEntropyAccumulatorCollectRawSamples = FALSE;
 
 VOID
 SYMCRYPT_CALL
 SymCryptEntropyAccumulatorDpcRoutine(
     _In_        PKDPC   Dpc,
     _In_opt_    PVOID   Context,
-    _In_opt_    PVOID   SystemArgument1,
+    _In_        PVOID   SystemArgument1,
     _In_opt_    PVOID   SystemArgument2 );
+    
+VOID
+SYMCRYPT_CALL
+SymCryptEntropyAccumulatorInit0(
+    _Out_   PSYMCRYPT_ENTROPY_ACCUMULATOR_STATE pState )
+{
+    KeInitializeDpc(&pState->Dpc,
+                    &SymCryptEntropyAccumulatorDpcRoutine,
+                    pState);
+    pState->pRawSampleBuffer = NULL;
+    pState->nRawSamples = 0;
+}
 
 SYMCRYPT_ERROR
 SYMCRYPT_CALL
-SymCryptEntropyAccumulatorInit(
+SymCryptEntropyAccumulatorInit1(
     _Out_   PSYMCRYPT_ENTROPY_ACCUMULATOR_STATE pState,
-            UINT32                              flags )
+            UINT64                              config )
 {
-    UINT32 accumulatorId;
-
-    if( (flags & ~SYMCRYPT_FLAG_ENTROPY_ACCUMULATOR_ALLOW_RAW_SAMPLE_COLLECTION) != 0 )
-    {
-        return SYMCRYPT_INVALID_ARGUMENT;
-    }
-
-    SymCryptWipeKnownSize(pState->buffer, SYMCRYPT_ENTROPY_ACCUMULATOR_ACTUAL_BUFFER_SIZE);
-
-    // The first logical buffer we will process will be when nSamplesAccumulated == SYMCRYPT_ENTROPY_ACCUMULATOR_SAMPLES_PER_LOGICAL_BUFFER
-    //
-    // The initial value of nSamplesAccumulated is biased by the accumulatorId in order
-    // to avoid having a large number of processors deliver entropy at a single point in
-    // time. This can cause issues on a large system where many processors do not receive
-    // independent device interrupts and therefore remain in sync with respect to clock
-    // interrupts or profiling interrupts.
-    // The bias is a small value which effectively means the first logical buffer processed
-    // may not be full of entropy.
-    accumulatorId = SYMCRYPT_ATOMIC_ADD32_PRE_RELAXED(&g_SymCryptEntropyAccumulatorNextId, 1);
-    pState->nSamplesAccumulated = (accumulatorId * 3) % SYMCRYPT_ENTROPY_ACCUMULATOR_SAMPLES_PER_LOGICAL_BUFFER;
-    pState->nSamplesProcessed = 0;
+    UINT32 accumulatorId = SYMCRYPT_ATOMIC_ADD32_PRE_RELAXED(&g_SymCryptEntropyAccumulatorNextId, 1);
     pState->accumulatorId = accumulatorId;
-    pState->pRawSampleBuffer = NULL;
-    pState->pRawSampleBufferToFree = NULL;
 
     // The intent is that we collect raw samples only for logical processor 0, when test signing is enabled, a regkey
     // with restricted control has a value with specific data, and we successfully delete the value.
@@ -62,24 +58,36 @@ SymCryptEntropyAccumulatorInit(
     // Unfortunately there is no public API we can call to query test signing which will be available at the time in
     // boot when this function will be called (NtQuerySystemInformation with SystemCodeIntegrityInformation cannot be
     // used at this point in boot, and also might not be stable across Windows versions).
-    // Instead we rely on the kernel to pass us a flag indicating whether test signing is enabled, and based on that
-    // we will allocate a raw sample buffer and begin collecting raw samples to it.
+    // Instead we rely on the kernel to pass us a config UINT64 value read from the registry.
     //
-    // We also cannot query the registry yet when this function is called, so we defer interacting with the registry
-    // to later, when SymCryptEntropyAccumulatorSetCallbackProvideEntropyFn is called.
+    // As we cannot query the registry yet when this function is called, we defer interacting with the registry to later,
+    // when SymCryptEntropyAccumulatorSetCallbackProvideEntropyFn is called.
     // At that point based on our interaction with the registry we may either mark all allocated raw sample buffers to
-    // be wiped and freed, or keep them and provide the raw samples to the callback so it may log them for certification
-    // or testing purposes.
-    if(flags & SYMCRYPT_FLAG_ENTROPY_ACCUMULATOR_ALLOW_RAW_SAMPLE_COLLECTION)
+    // be wiped, log them for certification or testing purposes.
+
+    // For now we just take the config value provided to us to indicate the number of samples to collect for logical processor 0.
+    if( (accumulatorId == 0) && config )
     {
-        pState->pRawSampleBuffer = ExAllocatePool2(NonPagedPoolNx,
-                                                sizeof(SYMCRYPT_ENTROPY_RAW_SAMPLE) *
-                                                SYMCRYPT_ENTROPY_ACCUMULATOR_SAMPLES_PER_ACTUAL_BUFFER,
-                                                'aeCS');
+        pState->pRawSampleBuffer = ExAllocatePool2(POOL_FLAG_NON_PAGED, config * sizeof(SYMCRYPT_ENTROPY_RAW_SAMPLE), 'aeCS');
+        pState->nRawSamples = config;
     }
-    KeInitializeDpc(&pState->Dpc,
-                    &SymCryptEntropyAccumulatorDpcRoutine,
-                    pState);
+
+    // Discard any interrupt data up to this point; we cannot use it because we cannot get raw samples for it
+    // We reset here in case there are any interrupts in ExAllocatePool2.
+    // In practice we discard low 10s of samples only for logical processor 0.
+    SymCryptWipeKnownSize(pState->buffer, SYMCRYPT_ENTROPY_ACCUMULATOR_BUFFER_SIZE);
+
+    // The first segment will be processed when nSamplesAccumulated == SYMCRYPT_ENTROPY_ACCUMULATOR_SAMPLES_PER_SEGMENT
+    //
+    // The initial value of nSamplesAccumulated is biased by the accumulatorId in order
+    // to avoid having a large number of processors deliver entropy at a single point in
+    // time. This can cause issues on a large system where many processors do not receive
+    // independent device interrupts and therefore remain in sync with respect to clock
+    // interrupts or profiling interrupts.
+    // The bias is a small value which effectively means the first segment processed
+    // may not be full of entropy.
+    pState->nSamplesAccumulated = (accumulatorId * 3) % SYMCRYPT_ENTROPY_ACCUMULATOR_SAMPLES_PER_SEGMENT;
+    pState->nHealthTestFailures = 0;
 
     return SYMCRYPT_NO_ERROR;
 }
@@ -110,53 +118,55 @@ SymCryptEntropyAccumulatorAccumulateSample(
     // Compute the UINT64-index at which to store the current sample.
     // The entropy accumulator code mixes 64 consecutive samples into a single UINT64.
     //
-    SIZE_T bufferIndex = (nSamplesAccumulated & (SYMCRYPT_ENTROPY_ACCUMULATOR_SAMPLES_PER_ACTUAL_BUFFER - 1)) / 64;
+    SIZE_T bufferIndex = (nSamplesAccumulated & (SYMCRYPT_ENTROPY_ACCUMULATOR_SAMPLES_PER_BUFFER - 1)) / 64;
     PUINT64 bufferTarget = ((PUINT64)(&pState->buffer[0])) + bufferIndex;
 
     *bufferTarget = ROR64(*bufferTarget, 19) ^ sample;
 
     //
     // Save raw sample to raw sample buffer if raw sample buffer exists.
-    // This is only used in certification or testing. The DPC will copy the portion of this buffer
-    // corresponding to a logical buffer to the raw sample collection logic.
+    // This is only used in certification or testing.
     //
     if( pState->pRawSampleBuffer != NULL )
     {
-        PSYMCRYPT_ENTROPY_RAW_SAMPLE pRawSample = &pState->pRawSampleBuffer[nSamplesAccumulated & (SYMCRYPT_ENTROPY_ACCUMULATOR_SAMPLES_PER_ACTUAL_BUFFER - 1)];
-        pRawSample->sampleIndex = nSamplesAccumulated;
-        pRawSample->sampleValue = sample;
+        if( nSamplesAccumulated < pState->nRawSamples )
+        {
+            PSYMCRYPT_ENTROPY_RAW_SAMPLE pRawSample = &pState->pRawSampleBuffer[nSamplesAccumulated];
+            pRawSample->sampleIndex = nSamplesAccumulated;
+            pRawSample->sampleValue = sample;
+        }
     }
 
     //
-    // Trigger entropy processing if sufficient samples have been collected to fill a logical buffer.
+    // Trigger entropy processing if sufficient samples have been collected to fill a segment.
     //
     nSamplesAccumulated++;
 
-    if( (nSamplesAccumulated & (SYMCRYPT_ENTROPY_ACCUMULATOR_SAMPLES_PER_LOGICAL_BUFFER - 1)) == 0 )
+    if( (nSamplesAccumulated & (SYMCRYPT_ENTROPY_ACCUMULATOR_SAMPLES_PER_SEGMENT - 1)) == 0 )
     {
         // Schedule DPC to process the accumulated samples
-        if( KeInsertQueueDpc(&pState->Dpc, NULL, NULL) == FALSE )
+        if( KeInsertQueueDpc(&pState->Dpc, (PVOID) nSamplesAccumulated, NULL) == FALSE )
         {
             //
             // If KeInsertQueueDpc returns FALSE, this indicates that the DPC is already queued
-            // (i.e. the processing of a previous logical buffer is still in progress)
+            // (i.e. the processing of a previous segment is still in progress)
             //
             // This is an unexpected case. To make it easy to keep a 1:1 correspondence between
-            // collected raw samples and the accumulated samples in the logical buffers, we discard
-            // the logical buffer we just filled, and reuse it, starting from a zero-ed state.
-            // We do this by resetting nSamplesAccumulated and wiping the logical buffer.
+            // collected raw samples and the accumulated samples in the segment, we discard
+            // the segment we just filled, and reuse it, starting from a zero-ed state.
+            // We do this by resetting nSamplesAccumulated and wiping the segment.
             // If we are collecting raw samples, we do not need to wipe the raw sample buffer as
             // it is written to destructively, rather than accumulated into.
             //
-            nSamplesAccumulated -= SYMCRYPT_ENTROPY_ACCUMULATOR_SAMPLES_PER_LOGICAL_BUFFER;
+            nSamplesAccumulated -= SYMCRYPT_ENTROPY_ACCUMULATOR_SAMPLES_PER_SEGMENT;
 
-            // Compute the byte-index we will next accumulate into; this is the start of logical buffer we wish to wipe
+            // Compute the byte-index we will next accumulate into; this is the start of segment we wish to wipe
             // As we know nSamplesAccumulated is a multiple of 128, we can just align to the nearest byte
-            bufferIndex = (nSamplesAccumulated & (SYMCRYPT_ENTROPY_ACCUMULATOR_SAMPLES_PER_ACTUAL_BUFFER - 1)) / 8;
+            bufferIndex = (nSamplesAccumulated & (SYMCRYPT_ENTROPY_ACCUMULATOR_SAMPLES_PER_BUFFER - 1)) / 8;
 
             // use memset here because the compiler can't optimize it away, and it should have the best codegen.
             // SymCryptWipeKnownSize would also work but it is not optimized for buffers this large.
-            memset( &pState->buffer[bufferIndex], 0, SYMCRYPT_ENTROPY_ACCUMULATOR_LOGICAL_BUFFER_SIZE );
+            memset( &pState->buffer[bufferIndex], 0, SYMCRYPT_ENTROPY_ACCUMULATOR_SEGMENT_SIZE );
         }
     }
 
@@ -166,7 +176,44 @@ SymCryptEntropyAccumulatorAccumulateSample(
     pState->nSamplesAccumulated = nSamplesAccumulated;
 }
 
-// For entropy estimation purposes, we estimate 6 bits of entropy per byte of logical buffer.
+VOID
+SYMCRYPT_CALL
+SymCryptEntropyAccumulatorLogRawSamples(
+    PCSYMCRYPT_ENTROPY_RAW_SAMPLE   pRawSampleBuffer,
+    SIZE_T                          nSamples,
+    UINT32                          accumulatorId,
+    SIZE_T                          nSamplesProcessed )
+{
+    SIZE_T i;
+    UINT64 prevSample = 0;
+
+    // NOT INTENDED FOR PRODUCTION!
+    // Don't do anything with the data just yet; just fatal if it has an unexpected form
+    // Really this should queue some work item to write the data to a file specified by the registry.
+
+    if( accumulatorId != 0 )
+    {
+        // collecting raw samples for an unexpected accumulator!
+        SymCryptFatal('eaai');
+    }
+
+    for(i = 0; i < nSamples; i++)
+    {
+        if( pRawSampleBuffer[i].sampleIndex != (nSamplesProcessed + i) )
+        {
+            // samples are not from the expected period of time!
+            SymCryptFatal('easi');
+        }
+        if( prevSample > pRawSampleBuffer[i].sampleValue )
+        {
+            // samples are not monotonic increasing!
+            SymCryptFatal('eami');
+        }
+        prevSample = pRawSampleBuffer[i].sampleValue;
+    }
+}
+
+// For entropy estimation purposes, we estimate 6 bits of entropy per byte of the buffer.
 // This corresponds to each raw sample having a little more than 0.75 bits of entropy.
 // This value can be tweaked later based on observed data and what is allowed by health tests.
 #define SYMCRYPT_ENTROPY_ACCUMULATOR_ENTROPY_ESTIMATE_PER_BYTE (6000)
@@ -176,51 +223,50 @@ SYMCRYPT_CALL
 SymCryptEntropyAccumulatorDpcRoutine(
     _In_        PKDPC   Dpc,
     _In_opt_    PVOID   Context,
-    _In_opt_    PVOID   SystemArgument1,
+    _In_        PVOID   SystemArgument1,
     _In_opt_    PVOID   SystemArgument2 )
 {
     UNREFERENCED_PARAMETER(Dpc);
-    UNREFERENCED_PARAMETER(SystemArgument1);
     UNREFERENCED_PARAMETER(SystemArgument2);
 
     PSYMCRYPT_ENTROPY_ACCUMULATOR_STATE pState = (PSYMCRYPT_ENTROPY_ACCUMULATOR_STATE)Context;
-    UINT64 nSamplesProcessed = pState->nSamplesProcessed;
-    SIZE_T logicalBuffer;
+    const UINT64 nSamplesAtDpcQueueTime = (UINT64)SystemArgument1;
+    const UINT64 nSamplesProcessed = nSamplesAtDpcQueueTime - SYMCRYPT_ENTROPY_ACCUMULATOR_SAMPLES_PER_SEGMENT;
+    SIZE_T segmentId;
     SIZE_T i;
-    PUINT64 pu64LogicalBuffer;
-    UINT32 entropyEstimateInMilliBits = SYMCRYPT_ENTROPY_ACCUMULATOR_LOGICAL_BUFFER_SIZE * SYMCRYPT_ENTROPY_ACCUMULATOR_ENTROPY_ESTIMATE_PER_BYTE;
+    PUINT64 pu64SampleSegment;
+    UINT32 entropyEstimateInMilliBits = SYMCRYPT_ENTROPY_ACCUMULATOR_SEGMENT_SIZE * SYMCRYPT_ENTROPY_ACCUMULATOR_ENTROPY_ESTIMATE_PER_BYTE;
 
     // 
-    // Conceptually we have a series of up to 2^(54) logical buffers, each logical buffer being filled by accumulating
-    // 2^(10) consecutive samples.
-    // In reality we keep 1 actual buffer consisting of 2 logical buffers at any given time.
+    // Conceptually we have a series of up to 2^(54) accumulators, each being filled by accumulating 2^(10) consecutive samples.
+    // In reality we keep 1 actual buffer consisting of 2 segments at any given time.
     //
     // As this DPC runs at a lower IRQL (and could even run on a different logical processor) than the sample accumulation
-    // logic, it is possible that in a scenario with a large number of interrupts, we do not complete this DPC before another
-    // logical buffer is filled. If this ever happens, the following logical buffer is simply discarded and refilled.
+    // logic, it is possible that in a scenario with a large number of interrupts, we do not complete this DPC before the other
+    // segment is filled. If this ever happens, the following segment is simply discarded and refilled.
     //
 
-    SYMCRYPT_ASSERT( pState->nSamplesProcessed+SYMCRYPT_ENTROPY_ACCUMULATOR_SAMPLES_PER_LOGICAL_BUFFER <= pState->nSamplesAccumulated );
-    SYMCRYPT_ASSERT( pState->nSamplesProcessed+(2*SYMCRYPT_ENTROPY_ACCUMULATOR_SAMPLES_PER_LOGICAL_BUFFER) > pState->nSamplesAccumulated );
+    SYMCRYPT_ASSERT( nSamplesAtDpcQueueTime >= SYMCRYPT_ENTROPY_ACCUMULATOR_SAMPLES_PER_SEGMENT );
+    SYMCRYPT_ASSERT( (nSamplesAtDpcQueueTime & (SYMCRYPT_ENTROPY_ACCUMULATOR_SAMPLES_PER_SEGMENT - 1)) == 0 );
 
     //
-    // Compute the starting offset of the logical buffer we will process
+    // Compute the starting offset of the segment we will process
     //
-    logicalBuffer = (nSamplesProcessed / SYMCRYPT_ENTROPY_ACCUMULATOR_SAMPLES_PER_LOGICAL_BUFFER) %
-                        SYMCRYPT_ENTROPY_ACCUMULATOR_LOGICAL_BUFFERS;
-    pu64LogicalBuffer = (PUINT64) &pState->buffer[logicalBuffer * SYMCRYPT_ENTROPY_ACCUMULATOR_LOGICAL_BUFFER_SIZE];
+    segmentId = (nSamplesProcessed / SYMCRYPT_ENTROPY_ACCUMULATOR_SAMPLES_PER_SEGMENT) %
+                        SYMCRYPT_ENTROPY_ACCUMULATOR_SEGMENT_COUNT;
+    pu64SampleSegment = (PUINT64) &pState->buffer[segmentId * SYMCRYPT_ENTROPY_ACCUMULATOR_SEGMENT_SIZE];
 
     //
     // FIPS health tests
     //
     // The raw samples are 64-bit counter values which monotonically increase.
-    // Logical buffers are initialized to 0, and each 64-bit value within the logical buffer is constructed
+    // Segments are initialized to 0, and each 64-bit value within the segment is constructed
     // by rotation and exclusive-or of 64 consecutive counter values.
     //
     // We can guarantee to detect if any counter value is repeated 127 times consecutively, by checking if
-    // each 64-bit logical value is 0 or -1. If a repeated counter value has an even number of set bits, then one
-    // 64-bit value in the logical buffer will take a value of 0, if the repeated counter has an odd number of set
-    // bits then the 64-bit value in the logical buffer will take a value of -1.
+    // each 64-bit value is 0 or -1. If a repeated counter value has an even number of set bits, then one
+    // 64-bit value in the segment will take a value of 0. If the repeated counter has an odd number of set
+    // bits then one 64-bit value in the segment will take a value of -1.
     //
     // This corresponds to a Developer-Defined Alternative continuous health test with:
     // a) The probability of detecting a single value appearing consecutively more than ceil(100/0.75) = 133 > 127 being
@@ -234,68 +280,63 @@ SymCryptEntropyAccumulatorDpcRoutine(
     // 
     // If there are any 64-bit 0 or -1 values in the buffer, then mark the buffer as having no entropy to indicate failure.
     //
-    for (i = 0; i < (SYMCRYPT_ENTROPY_ACCUMULATOR_LOGICAL_BUFFER_SIZE / sizeof(UINT64)); i++)
+    for(i = 0; i < (SYMCRYPT_ENTROPY_ACCUMULATOR_SEGMENT_SIZE / sizeof(UINT64)); i++)
     {
-        if( pu64LogicalBuffer[i] + 1 <= 1 )
+        if( pu64SampleSegment[i] + 1 <= 1 )
         {
             entropyEstimateInMilliBits = 0;
+            pState->nHealthTestFailures++;
+            break;
         }
     }
 
-    // If entropy pool ready (callback is set), feed the logical buffer into it
-    // Load callback function pointer with atomic acquire semantics to ensure that we have updated view
-    // of g_SymCryptEntropyAccumulatorCollectRawSamples
-    if( SYMCRYPT_ATOMIC_LOADPTR_ACQUIRE(&g_SymCryptCallbackEntropyAccumulatorProvideEntropy) != NULL )
+    // If entropy pool ready (callback is set), feed the segment into it
+    if( g_SymCryptCallbackEntropyAccumulatorProvideEntropy != NULL )
     {
-        PCSYMCRYPT_ENTROPY_RAW_SAMPLE pLogicalRawSampleBuffer = NULL;
-        SIZE_T nSamples = 0;
-
         if( pState->pRawSampleBuffer != NULL )
         {
-            if( g_SymCryptEntropyAccumulatorCollectRawSamples )
+            if( g_SymCryptEntropyAccumulatorCollectRawSamples == SYMCRYPT_ENTROPY_ACCUMULATOR_RAW_SAMPLE_COLLECTION_ON )
             {
-                pLogicalRawSampleBuffer = pState->pRawSampleBuffer + (logicalBuffer * SYMCRYPT_ENTROPY_ACCUMULATOR_SAMPLES_PER_LOGICAL_BUFFER);
-                nSamples = SYMCRYPT_ENTROPY_ACCUMULATOR_SAMPLES_PER_LOGICAL_BUFFER;
-            } else {
-                // In this case this is the first DPC after callbacks were set and the config read at callback
-                // setting time indicates that we should not collect raw samples even though the kernel indicated
-                // test signing is enabled.
-                //
-                // Ideally we could wipe and free pRawSampleBuffer here, but this could lead to a race with a
-                // simultaneous interrupt which is accumulating a sample, which could cause a use-after-free issue.
-                // Instead we save pRawSampleBuffer to the separate field pRawSampleBufferToFree and set pRawSampleBuffer
-                // to NULL here. It is guaranteed that no interrupt is using pRawSampleBuffer in the subsequent DPC.
-                // Synchronizing this way avoids having to use any locks in the interrupt handler.
-                pState->pRawSampleBufferToFree = pState->pRawSampleBuffer;
-                pState->pRawSampleBuffer = NULL;
+                if( nSamplesAtDpcQueueTime >= pState->nRawSamples )
+                {
+                    SymCryptEntropyAccumulatorLogRawSamples(
+                        pState->pRawSampleBuffer,
+                        pState->nRawSamples,
+                        pState->accumulatorId,
+                        nSamplesAtDpcQueueTime );
+
+                    pState->pRawSampleBuffer = NULL; // Only log raw samples once!
+                }
             }
-        }
-        else if( pState->pRawSampleBufferToFree != NULL )
-        {
-            // This is a special case to wipe and free an unused raw sample buffer without use-after-free issues.
-            // It should only be hit in the second DPC after the callback is set.
-            // See longer comment above.
-            SymCryptWipeKnownSize(
-                pState->pRawSampleBufferToFree, sizeof(SYMCRYPT_ENTROPY_RAW_SAMPLE) * SYMCRYPT_ENTROPY_ACCUMULATOR_SAMPLES_PER_ACTUAL_BUFFER);
-            ExFreePool2(pState->pRawSampleBufferToFree, 'aeCS', NULL, 0);
-            pState->pRawSampleBufferToFree = NULL;
+            else if( g_SymCryptEntropyAccumulatorCollectRawSamples == SYMCRYPT_ENTROPY_ACCUMULATOR_RAW_SAMPLE_COLLECTION_OFF )
+            {
+                // In this case this is the first DPC after callbacks were set and the config read in 
+                // SymCryptEntropyAccumulatorGlobalInitFromRegistry indicates that we should not collect raw samples even though
+                // the config we were passed at SymCryptEntropyAccumulatorInit time indicated we should allocate a raw sample
+                // buffer.
+                //
+                // We simply discard the pointer to our raw sample buffer, though we technically leak the sample buffer in this
+                // case, freeing it would introduce more complexity than is worth it given that we should not allocate at all
+                // in the real world.
+                //
+                // We also wipe the buffer here. This does not guarantee that the unused raw sample buffer is completely
+                // zero-ed for the rest of time, as we may race with concurrent interrupts, but the window of time in which
+                // raw samples can be preserved in the unused buffer is shortened significantly.
+                PSYMCRYPT_ENTROPY_RAW_SAMPLE pRawSampleBufferToWipe = pState->pRawSampleBuffer;
+                SIZE_T nSamplesToWipe = SYMCRYPT_MIN(nSamplesAtDpcQueueTime, pState->nRawSamples);
+                pState->pRawSampleBuffer = NULL;
+                SymCryptWipe(pRawSampleBufferToWipe, nSamplesToWipe * sizeof(SYMCRYPT_ENTROPY_RAW_SAMPLE));
+            }
         }
 
         g_SymCryptCallbackEntropyAccumulatorProvideEntropy(
-            (PCBYTE)pu64LogicalBuffer,
-            SYMCRYPT_ENTROPY_ACCUMULATOR_LOGICAL_BUFFER_SIZE,
-            entropyEstimateInMilliBits,
-            pLogicalRawSampleBuffer,
-            nSamples,
-            pState->accumulatorId,
-            nSamplesProcessed );
+            (PCBYTE)pu64SampleSegment,
+            SYMCRYPT_ENTROPY_ACCUMULATOR_SEGMENT_SIZE,
+            entropyEstimateInMilliBits );
     }
 
     // Zero the logical buffer
-    SymCryptWipeKnownSize(pu64LogicalBuffer, SYMCRYPT_ENTROPY_ACCUMULATOR_LOGICAL_BUFFER_SIZE);
-
-    // Update nSamplesProcessed
-    pState->nSamplesProcessed = nSamplesProcessed + SYMCRYPT_ENTROPY_ACCUMULATOR_SAMPLES_PER_LOGICAL_BUFFER;
+    SymCryptWipeKnownSize(pu64SampleSegment, SYMCRYPT_ENTROPY_ACCUMULATOR_SEGMENT_SIZE);
 }
 
 #define SYMCRYPT_ENTROPY_ANALYSIS_KEY_NAME (L"\\Registry\\Machine\\SYSTEM\\RNG\\EntropyAnalysis")
@@ -383,32 +424,46 @@ cleanup:
     return enableRawSampleCollection;
 }
 
+
+VOID
+SYMCRYPT_CALL
+SymCryptEntropyAccumulatorGlobalInitFromRegistry( VOID )
+{
+    if( g_SymCryptEntropyAccumulatorCollectRawSamples == SYMCRYPT_ENTROPY_ACCUMULATOR_RAW_SAMPLE_COLLECTION_UNINITIALIZED )
+    {
+        //
+        // Read config to determine whether raw samples should be collected
+        //
+        if( SymCryptEntropyAccumulatorConfigEnablesRawSampleCollection() )
+        {
+            g_SymCryptEntropyAccumulatorCollectRawSamples = SYMCRYPT_ENTROPY_ACCUMULATOR_RAW_SAMPLE_COLLECTION_ON;
+        } else {
+            g_SymCryptEntropyAccumulatorCollectRawSamples = SYMCRYPT_ENTROPY_ACCUMULATOR_RAW_SAMPLE_COLLECTION_OFF;
+        }
+    }
+}
+
 BOOLEAN
 SYMCRYPT_CALL
-SymCryptEntropyAccumulatorSetCallbackProvideEntropyFn(
+SymCryptEntropyAccumulatorGlobalSetCallbackProvideEntropyFn(
     _In_ PSYMCRYPT_CALLBACK_ENTROPY_ACCUMULATOR_PROVIDE_ENTROPY_FUNC provideEntropyCallbackFn )
 {
-    // The provide entropy callback function can only be set once
+    // The provide entropy callback function can only be set once, and currently only
+    // after the raw sample collection config has been set.
+    if( g_SymCryptEntropyAccumulatorCollectRawSamples == SYMCRYPT_ENTROPY_ACCUMULATOR_RAW_SAMPLE_COLLECTION_UNINITIALIZED )
+    {
+        return FALSE;
+    }
+
     if( g_SymCryptCallbackEntropyAccumulatorProvideEntropy != NULL )
     {
         return FALSE;
     }
 
     //
-    // Read config to determine whether raw samples should be collected
-    //
-    g_SymCryptEntropyAccumulatorCollectRawSamples = SymCryptEntropyAccumulatorConfigEnablesRawSampleCollection();
-
-    //
     // Set the global pointer to the callback function
     //
-    // Use atomic store with release semantics to ensure that other threads which observe a non-NULL
-    // g_SymCryptCallbackEntropyAccumulatorProvideEntropy also observe the updated value of
-    // g_SymCryptEntropyAccumulatorCollectRawSamples
-    //
-    // We could use a compare-exchange if we wanted to guarantee only one caller sees success, but we
-    // should only have one caller
-    //
-    SYMCRYPT_ATOMIC_STOREPTR_RELEASE(&g_SymCryptCallbackEntropyAccumulatorProvideEntropy, provideEntropyCallbackFn);
+    g_SymCryptCallbackEntropyAccumulatorProvideEntropy = provideEntropyCallbackFn;
+
     return TRUE;
 }
