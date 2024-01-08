@@ -95,7 +95,7 @@
     },
     {
         "source" : "${BIN_DIR}/kmdll/symcryptk.lib",
-        "dest" : "dll/symcryptk.dll",
+        "dest" : "dll/symcryptk.lib",
         "platform" : "win32",
         "arch" : "amd64,arm64"
     },
