@@ -30,7 +30,7 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "SymCryptKernelTestModule_UM
 		{7C3BD5D2-7213-4CFA-B6CB-EB41623601BC} = {7C3BD5D2-7213-4CFA-B6CB-EB41623601BC}
 	EndProjectSection
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "symcrypt_sys", "modules\windows\kernel\symcrypt_sys.vcxproj", "{5A666AF4-35C9-42FE-817D-9D9A07AAF253}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "symcryptk", "modules\windows\kernel\symcryptk.vcxproj", "{5A666AF4-35C9-42FE-817D-9D9A07AAF253}"
 	ProjectSection(ProjectDependencies) = postProject
 		{7C3BD5D2-7213-4CFA-B6CB-EB41623601BC} = {7C3BD5D2-7213-4CFA-B6CB-EB41623601BC}
 	EndProjectSection
@@ -191,7 +191,7 @@ Global
 
 		{07DBF66B-64EA-4D2C-9182-9C6E2D89C7DB}.Release|x86.ActiveCfg = Release|Win32
 
-		# symcrypt.sys
+		# symcryptk.dll
 		{5A666AF4-35C9-42FE-817D-9D9A07AAF253}.Debug|ARM64.ActiveCfg = Debug|ARM64
 		{5A666AF4-35C9-42FE-817D-9D9A07AAF253}.Debug|ARM64.Build.0 = Debug|ARM64
 

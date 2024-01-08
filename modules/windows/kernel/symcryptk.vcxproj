@@ -32,8 +32,8 @@
     <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
     <MinimumVisualStudioVersion>12.0</MinimumVisualStudioVersion>
     <UseInternalMSUniCrtPackage>true</UseInternalMSUniCrtPackage>
-    <TargetName>symcrypt</TargetName>
-    <UndockedType>sys</UndockedType>
+    <TargetName>symcryptk</TargetName>
+    <UndockedType>kmdll</UndockedType>
     <UndockedDir>$(SolutionDir)msbuild\</UndockedDir>
     <UndockedOut>$(SolutionDir)</UndockedOut>
     <SymCryptKernelTarget>true</SymCryptKernelTarget>
@@ -55,7 +55,7 @@
       <Optimization>Full</Optimization>
     </ClCompile>
     <Link>
-      <ModuleDefinitionFile>symcrypt.src</ModuleDefinitionFile>
+      <ModuleDefinitionFile>symcryptk.def</ModuleDefinitionFile>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <LinkTimeCodeGeneration>UseLinkTimeCodeGeneration</LinkTimeCodeGeneration>
       <AdditionalDependencies>%(AdditionalDependencies);ntoskrnl.lib</AdditionalDependencies>
@@ -65,16 +65,19 @@
   <PropertyGroup Label="DbgEng">
     <DebuggerFlavor>DbgengKernelDebugger</DebuggerFlavor>
   </PropertyGroup>
-  <ItemDefinitionGroup Label="DriverSign">
-    <DriverSign>
-      <FileDigestAlgorithm>sha256</FileDigestAlgorithm>
-    </DriverSign>
-  </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="main.c" />
     <ClCompile Include="entropy_accumulator.c" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="symcrypt.src" />
+    <None Include="symcrypt.def" />
   </ItemGroup>
+  <PropertyGroup>
+    <!--
+      Have to explicitly set these properties at the end of the file, because otherwise they get overriden by other
+      imported property sheets.
+    -->
+    <TargetExt>.dll</TargetExt>
+    <TargetPath>$(UndockedOut)build\bin\$(WinPlat)$(WinConfig)\$(UndockedType)\$(TargetName)$(TargetExt)</TargetPath>
+  </PropertyGroup>
 </Project>

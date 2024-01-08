@@ -88,14 +88,14 @@
         "platform" : "win32"
     },
     {
-        "source" : "${BIN_DIR}/sys/symcrypt.sys",
-        "dest" : "sys/symcrypt.sys",
+        "source" : "${BIN_DIR}/kmdll/symcryptk.dll",
+        "dest" : "dll/symcryptk.dll",
         "platform" : "win32",
         "arch" : "amd64,arm64"
     },
     {
-        "source" : "${BIN_DIR}/sys/symcrypt.lib",
-        "dest" : "sys/symcrypt.lib",
+        "source" : "${BIN_DIR}/kmdll/symcryptk.lib",
+        "dest" : "dll/symcryptk.dll",
         "platform" : "win32",
         "arch" : "amd64,arm64"
     },
@@ -122,8 +122,8 @@
         "platform" : "win32"
     },
     {
-        "source" : "${BIN_DIR}/sys/symcrypt.pdb",
-        "dest" : "sys/symcrypt.pdb",
+        "source" : "${BIN_DIR}/kmdll/symcryptk.pdb",
+        "dest" : "dll/symcryptk.pdb",
         "platform" : "win32",
         "arch" : "amd64,arm64"
     },

@@ -2,7 +2,7 @@
 
   <Import Project="$(UndockedDir)windows.undocked.props" />
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
-  <ImportGroup Label="ExtensionSettings" Condition="'$(UndockedType)' != 'sys'">
+  <ImportGroup Label="ExtensionSettings" Condition="'$(UndockedType)' != 'sys' AND '$(UndockedType)' != 'kmdll'">
     <!-- The kernel driver toolset already imports MASM props/targets, so only import this for non-drivers -->
     <Import Project="$(VCTargetsPath)\BuildCustomizations\masm.props" />
     <Import Project="$(VCTargetsPath)\BuildCustomizations\marmasm.props" />
@@ -146,7 +146,7 @@
     </ItemGroup>
   </Target>
 
-  <ImportGroup Label="MASMTargets" Condition="'$(UndockedType)' != 'sys'">
+  <ImportGroup Label="MASMTargets" Condition="'$(UndockedType)' != 'sys' AND '$(UndockedType)' != 'kmdll'">
     <Import Project="$(VCTargetsPath)\BuildCustomizations\masm.targets" />
     <Import Project="$(VCTargetsPath)\BuildCustomizations\marmasm.targets" />
   </ImportGroup>

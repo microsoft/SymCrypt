@@ -12,11 +12,11 @@
     <!-- Enable ARM64X unless explicitly disabled -->
     <EnableArm64x Condition="$(ARM64X_DISABLED) != '1'">true</EnableArm64x>
     <!-- Set UndockedKernelModeBuild when building .sys files -->
-    <UndockedKernelModeBuild Condition="'$(UndockedType)' == 'sys'">true</UndockedKernelModeBuild>
+    <UndockedKernelModeBuild Condition="'$(UndockedType)' == 'sys' OR '$(UndockedType)' == 'kmdll'">true</UndockedKernelModeBuild>
   </PropertyGroup>
 
   <!-- The set of supported user mode configurations (x86,x64,arm,arm64) -->
-  <ItemGroup Label="ProjectConfigurations" Condition="'$(UndockedType)' != 'sys'">
+  <ItemGroup Label="ProjectConfigurations" Condition="'$(UndockedKernelModeBuild)' != 'true'">
     <ProjectConfiguration Include="Debug|Win32">
       <Configuration>Debug</Configuration>
       <Platform>Win32</Platform>
@@ -52,7 +52,7 @@
   </ItemGroup>
 
   <!-- The set of supported kernel configurations (only 64-bit platforms) -->
-  <ItemGroup Label="ProjectConfigurations" Condition="'$(UndockedType)' == 'sys'">
+  <ItemGroup Label="ProjectConfigurations" Condition="'$(UndockedKernelModeBuild)' == 'true'">
     <ProjectConfiguration Include="Debug|x64">
       <Configuration>Debug</Configuration>
       <Platform>x64</Platform>
@@ -118,6 +118,12 @@
     <PlatformToolset>v143</PlatformToolset>
     <ConfigurationType>DynamicLibrary</ConfigurationType>
   </PropertyGroup>
+  <PropertyGroup Condition="'$(UndockedType)' == 'kmdll'">
+    <PlatformToolset>WindowsKernelModeDriver10.0</PlatformToolset>
+    <DriverTargetPlatform>Universal</DriverTargetPlatform>
+    <DriverType>ExportDriver</DriverType>
+    <ConfigurationType>Driver</ConfigurationType>
+  </PropertyGroup>
   <PropertyGroup Condition="'$(UndockedType)' == 'exe'">
     <PlatformToolset>v143</PlatformToolset>
     <ConfigurationType>Application</ConfigurationType>
@@ -167,7 +173,7 @@
   </ItemDefinitionGroup>
 
   <!-- Enable ARM64X compilation -->
-  <PropertyGroup Condition="'$(Platform)'=='ARM64' AND '$(UndockedType)' != 'sys' AND '$(UndockedType)' != 'exe' AND '$(EnableArm64x)' == 'true'">
+  <PropertyGroup Condition="'$(Platform)'=='ARM64' AND '$(UndockedKernelModeBuild)' != 'true' AND '$(UndockedType)' != 'exe' AND '$(EnableArm64x)' == 'true'">
     <BuildAsX>true</BuildAsX>
   </PropertyGroup>
 
@@ -234,7 +240,7 @@
         /ZH:SHA_256
         /Zp8
       </AdditionalOptions>
-      <AdditionalOptions Condition="'$(UndockedType)'=='SYS'">
+      <AdditionalOptions Condition="'$(UndockedKernelModeBuild)' == 'true'">
         /kernel
         %(AdditionalOptions)
       </AdditionalOptions>
@@ -277,7 +283,7 @@
         /tsaware
         %(AdditionalOptions)
       </AdditionalOptions>
-      <AdditionalOptions Condition="'$(UndockedType)'=='SYS'">
+      <AdditionalOptions Condition="'$(UndockedKernelModeBuild)' == 'true'">
         /d2:-guardcfgdispatch
         /guard:exportsuppress
         /kernel
