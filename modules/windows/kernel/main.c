@@ -1,6 +1,6 @@
 //
-// main.cpp
-// Main file for symcrypt.sys
+// main.c
+// Main file for symcryptk.dll
 //
 // Copyright (c) Microsoft Corporation. Licensed under the MIT license.
 //

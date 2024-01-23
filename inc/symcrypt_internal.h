@@ -296,7 +296,7 @@ C_ASSERT( (SYMCRYPT_ALIGN_VALUE & (SYMCRYPT_ALIGN_VALUE - 1 )) == 0 );
 
 #if SYMCRYPT_MS_VC
     #define SYMCRYPT_ALIGN_AT(alignment)                 __declspec(align(alignment))
-    #define SYMCRYPT_ALIGN_TYPE_AT(typename, alignment)  SYMCRYPT_ALIGN_AT(alignment) typename
+    #define SYMCRYPT_ALIGN_TYPE_AT(typename, alignment)  typename SYMCRYPT_ALIGN_AT(alignment)
     #define SYMCRYPT_WEAK_SYMBOL
 #elif SYMCRYPT_GNUC
     #define SYMCRYPT_ALIGN_AT(alignment)                 __attribute__((aligned(alignment)))

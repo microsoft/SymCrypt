@@ -46,7 +46,7 @@ typedef struct _SYMCRYPT_ENTROPY_RAW_SAMPLE {
 typedef       SYMCRYPT_ENTROPY_RAW_SAMPLE * PSYMCRYPT_ENTROPY_RAW_SAMPLE;
 typedef const SYMCRYPT_ENTROPY_RAW_SAMPLE * PCSYMCRYPT_ENTROPY_RAW_SAMPLE;
 
-typedef DECLSPEC_CACHEALIGN struct _SYMCRYPT_ENTROPY_ACCUMULATOR_STATE {
+typedef struct DECLSPEC_CACHEALIGN _SYMCRYPT_ENTROPY_ACCUMULATOR_STATE {
     UCHAR                           buffer[SYMCRYPT_ENTROPY_ACCUMULATOR_BUFFER_SIZE];
     KDPC                            Dpc;
     UINT64                          nSamplesAccumulated;    // The number of samples accumulated

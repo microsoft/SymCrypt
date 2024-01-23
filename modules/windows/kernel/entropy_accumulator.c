@@ -61,9 +61,9 @@ SymCryptEntropyAccumulatorInit1(
     // Instead we rely on the kernel to pass us a config UINT64 value read from the registry.
     //
     // As we cannot query the registry yet when this function is called, we defer interacting with the registry to later,
-    // when SymCryptEntropyAccumulatorSetCallbackProvideEntropyFn is called.
+    // when SymCryptEntropyAccumulatorGlobalInitFromRegistry is called.
     // At that point based on our interaction with the registry we may either mark all allocated raw sample buffers to
-    // be wiped, log them for certification or testing purposes.
+    // be wiped, or log them for certification or testing purposes.
 
     // For now we just take the config value provided to us to indicate the number of samples to collect for logical processor 0.
     if( (accumulatorId == 0) && config )
