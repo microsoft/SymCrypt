@@ -48,10 +48,6 @@
         /d2:-guardcfgdispatch
         /guard:exportsuppress
         /kernel
-        /merge:.gfids=GFIDS
-        /merge:.orpc=.text
-        /merge:_RDATA=.rdata
-        /section:GFIDS,d
         %(AdditionalOptions)
       </AdditionalOptions>
     </Link>
