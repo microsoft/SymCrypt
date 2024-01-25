@@ -65,7 +65,7 @@ SIZE_T BlockCipherMultiImp::msgBlockLen()
     for( BlockCipherImpPtrVector::const_iterator i = m_imps.begin(); i != m_imps.end(); ++i )
     {
         SIZE_T v = (*i)->msgBlockLen();
-        CHECK( res == -1 || res == v, "Inconsistent result len" );
+        CHECK( res == (SIZE_T) -1 || res == v, "Inconsistent result len" );
         res = v;
     }
 
@@ -78,7 +78,7 @@ SIZE_T BlockCipherMultiImp::chainBlockLen()
     for( BlockCipherImpPtrVector::const_iterator i = m_imps.begin(); i != m_imps.end(); ++i )
     {
         SIZE_T v = (*i)->chainBlockLen();
-        CHECK( res == -1 || res == v, "Inconsistent result len" );
+        CHECK( res == (SIZE_T) -1 || res == v, "Inconsistent result len" );
         res = v;
     }
 
@@ -91,7 +91,7 @@ SIZE_T BlockCipherMultiImp::coreBlockLen()
     for( BlockCipherImpPtrVector::const_iterator i = m_imps.begin(); i != m_imps.end(); ++i )
     {
         SIZE_T v = (*i)->coreBlockLen();
-        CHECK( res == -1 || res == v, "Inconsistent result len" );
+        CHECK( res == (SIZE_T) -1 || res == v, "Inconsistent result len" );
         res = v;
     }
 

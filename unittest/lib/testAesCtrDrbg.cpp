@@ -211,7 +211,7 @@ testAesCtrDrbgSingle(
     BYTE buf[64];
 
     CHECK3( cbRes <= sizeof( buf ), "RNG result size too large in record on line %lld", line );
-    CHECK3( generateAfterInstantiate == -1 || generateAfterInstantiate <= sizeof( buf ),
+    CHECK3( generateAfterInstantiate == -1 || generateAfterInstantiate <= (LONGLONG) sizeof( buf ),
             "RNG result size too large in record -2- on line %lld", line );
 
     pRng->instantiate( pbEntropy, cbEntropy );

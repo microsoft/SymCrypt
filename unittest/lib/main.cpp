@@ -764,7 +764,7 @@ VOID printSymCryptCpuInfo( PCSTR text, SYMCRYPT_CPU_FEATURES notPresent )
 {
     CHAR sep = ' ';
     print( "%s: ", text );
-    for( int i=0; i < sizeof( g_cpuFeatureData ) / sizeof( g_cpuFeatureData[0] ); i++ )
+    for( SIZE_T i=0; i < sizeof( g_cpuFeatureData ) / sizeof( g_cpuFeatureData[0] ); i++ )
     {
         if( !(notPresent & g_cpuFeatureData[i].mask) )
         {
@@ -829,7 +829,7 @@ processSingleOption( _In_ PSTR option )
 #endif
         }
 
-        for( int i=0; i < sizeof(g_cpuFeatureData)/sizeof(g_cpuFeatureData[0]); i++ )
+        for( SIZE_T i=0; i < sizeof(g_cpuFeatureData)/sizeof(g_cpuFeatureData[0]); i++ )
         {
             if( STRICMP( &option[1], g_cpuFeatureData[i].name ) == 0 )
             {

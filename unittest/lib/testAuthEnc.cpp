@@ -628,15 +628,15 @@ testSessionRandom()
     UINT64 backupMessageNumber;
     SYMCRYPT_GCM_EXPANDED_KEY gcmExpandedKey;
 
-    for (int i = 0; i < sizeof(key); i++)
+    for (SIZE_T i = 0; i < sizeof(key); i++)
     {
         key[i] = rng.byte();
     }
-    for (int i = 0; i < sizeof(authData); i++)
+    for (SIZE_T i = 0; i < sizeof(authData); i++)
     {
         authData[i] = rng.byte();
     }
-    for (int i = 0; i < sizeof(sessionPlainText); i++)
+    for (SIZE_T i = 0; i < sizeof(sessionPlainText); i++)
     {
         sessionPlainText[i] = rng.byte();
     }
@@ -688,7 +688,7 @@ testSessionRandom()
             sessionTag, sizeof(sessionTag),
             &messageNumber);
         CHECK3(scError == SYMCRYPT_NO_ERROR, "SymCryptSessionGcmEncrypt failed with 0x%x", scError);
-        CHECK(messageNumber == i+2, "SymCryptSessionGcmEncrypt returned unexpected messageNumber");
+        CHECK(messageNumber == (UINT64) i+2, "SymCryptSessionGcmEncrypt returned unexpected messageNumber");
 
         SYMCRYPT_STORE_MSBFIRST64(&nonce[4], messageNumber);
 

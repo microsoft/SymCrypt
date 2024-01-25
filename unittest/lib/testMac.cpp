@@ -71,7 +71,7 @@ SIZE_T MacMultiImp::resultLen()
     for( MacImpPtrVector::const_iterator i = m_imps.begin(); i != m_imps.end(); ++i )
     {
         SIZE_T v = (*i)->resultLen();
-        CHECK( res == -1 || res == v, "Inconsistent result len" );
+        CHECK( res == (SIZE_T) -1 || res == v, "Inconsistent result len" );
         res = v;
     }
 
@@ -84,7 +84,7 @@ SIZE_T MacMultiImp::inputBlockLen()
     for( MacImpPtrVector::const_iterator i = m_imps.begin(); i != m_imps.end(); ++i )
     {
         SIZE_T v = (*i)->inputBlockLen();
-        CHECK( res == -1 || res == v, "Inconsistent input block len" );
+        CHECK( res == (SIZE_T) -1 || res == v, "Inconsistent input block len" );
         res = v;
     }
 
@@ -303,7 +303,7 @@ testMacRandom( MacMultiImp * pMac, int rrep, SIZE_T keyLen, PCBYTE pbResult, SIZ
         //
         keyIdx = rng.sizet( bufSize );
 
-        if( keyLen == -1 )
+        if( keyLen == (SIZE_T) -1 )
         {
             cbKey = rng.sizetNonUniform( bufSize - keyIdx, 64, 2 );
         }
@@ -349,7 +349,7 @@ testMacRandom( MacMultiImp * pMac, int rrep, SIZE_T keyLen, PCBYTE pbResult, SIZ
 
     }
 
-    CHECK( pMac->mac( &buf[0], keyLen == -1 ? 0 : keyLen, &buf[0], bufSize, res, cbMac ) == 0, "MAC failure" );
+    CHECK( pMac->mac( &buf[0], keyLen == (SIZE_T) -1 ? 0 : keyLen, &buf[0], bufSize, res, cbMac ) == 0, "MAC failure" );
     if( cbResult != 0 )
     {
         CHECK5( cbResult == cbMac, "Wrong result length in line %lld, expected %d, got %d", line, cbMac, cbResult );

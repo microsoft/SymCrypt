@@ -207,7 +207,7 @@ VOID generateDlGroups()
         goto cleanup;
     }
 
-    for( int i = 0; i<ARRAY_SIZE(g_safePrimeTypes); i++)
+    for( SIZE_T i = 0; i<ARRAY_SIZE(g_safePrimeTypes); i++)
     {
         SYMCRYPT_ERROR scError;
         SYMCRYPT_DLGROUP_DH_SAFEPRIMETYPE eDhSafePrimeType = g_safePrimeTypes[i];

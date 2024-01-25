@@ -24,6 +24,9 @@ VERSION_INFO_RELATIVE_PATH = "inc/symcrypt_internal_shared.inc"
 GIT_BRANCH_CMD = "git branch --show"
 GIT_COMMIT_HASH_CMD = "git log -1 --format=%h"
 GIT_COMMIT_TIMESTAMP_CMD = "git log -1 --date=iso-strict-local --format=%cd"
+ENV_SYMCRYPT_BRANCH = "SYMCRYPT_BRANCH"
+ENV_SYMCRYPT_COMMIT_HASH = "SYMCRYPT_COMMIT_HASH"
+ENV_SYMCRYPT_COMMIT_TIMESTAMP = "SYMCRYPT_COMMIT_TIMESTAMP"
 
 @dataclass
 class SymCryptVersion:
@@ -53,26 +56,33 @@ def get_commit_info() -> Tuple[str, str, datetime.datetime]:
     try:
         os.chdir(pathlib.Path(__file__).parent.parent)
 
-        # Parse the branch and commit information from the Git log
+        # Parse the branch and commit information from the Git log unless set in environment variables
 
-        try:
-            version_branch = subprocess.check_output(GIT_BRANCH_CMD.split()).decode("utf-8").strip()
-        except subprocess.CalledProcessError as e:
-            print("git exited unsuccessfully with code {}".format(str(e.returncode)), file = sys.stderr)
-            exit(e.returncode)
+        version_branch = os.environ.get(ENV_SYMCRYPT_BRANCH)
+        if version_branch is None:
+            try:
+                version_branch = subprocess.check_output(GIT_BRANCH_CMD.split()).decode("utf-8").strip()
+            except subprocess.CalledProcessError as e:
+                print("git exited unsuccessfully with code {}".format(str(e.returncode)), file = sys.stderr)
+                exit(e.returncode)
 
-        try:
-            version_commit_hash = subprocess.check_output(GIT_COMMIT_HASH_CMD.split()).decode("utf-8").strip()
-        except subprocess.CalledProcessError as e:
-            print("git exited unsuccessfully with code {}".format(str(e.returncode)), file = sys.stderr)
-            exit(e.returncode)
+        version_commit_hash = os.environ.get(ENV_SYMCRYPT_COMMIT_HASH)
+        if version_commit_hash is None:
+            try:
+                version_commit_hash = subprocess.check_output(GIT_COMMIT_HASH_CMD.split()).decode("utf-8").strip()
+            except subprocess.CalledProcessError as e:
+                print("git exited unsuccessfully with code {}".format(str(e.returncode)), file = sys.stderr)
+                exit(e.returncode)
 
-        try:
-            version_commit_timestamp = subprocess.check_output(GIT_COMMIT_TIMESTAMP_CMD.split()).decode("utf-8").strip()
-            version_commit_timestamp = datetime.datetime.fromisoformat(version_commit_timestamp)
-        except subprocess.CalledProcessError as e:
-            print("git exited unsuccessfully with code {}".format(str(e.returncode)), file = sys.stderr)
-            exit(e.returncode)
+        version_commit_timestamp = os.environ.get(ENV_SYMCRYPT_COMMIT_TIMESTAMP)
+        if version_commit_timestamp is None:
+            try:
+                version_commit_timestamp = subprocess.check_output(GIT_COMMIT_TIMESTAMP_CMD.split()).decode("utf-8").strip()
+            except subprocess.CalledProcessError as e:
+                print("git exited unsuccessfully with code {}".format(str(e.returncode)), file = sys.stderr)
+                exit(e.returncode)
+        version_commit_timestamp = datetime.datetime.fromisoformat(version_commit_timestamp)
+
     finally:
         os.chdir(cwd)
 
@@ -106,7 +116,6 @@ def get_version_info() -> SymCryptVersion:
     (version_branch, version_commit_hash, version_commit_timestamp) = get_commit_info()
 
     version_build_timestamp = datetime.datetime.now()
-    
     get_version_info.symcrypt_version = SymCryptVersion(
         int(version_api_match.group(1)),
         int(version_minor_match.group(1)),

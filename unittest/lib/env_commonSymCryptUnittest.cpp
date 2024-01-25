@@ -157,7 +157,7 @@ SymCryptSaveXmmEnvUnittest( _Out_ PSYMCRYPT_EXTENDED_SAVE_DATA pSaveData )
         p->pRegs = pRegs;
         SYMCRYPT_SET_MAGIC( p );
 
-        CHECK(g_savesInProgress < sizeof(g_saveInProgressTypes), "Too many nested saves!");
+        CHECK(g_savesInProgress < (int) sizeof(g_saveInProgressTypes), "Too many nested saves!");
         g_saveInProgressTypes[g_savesInProgress] = 'X';
         g_savePtrs[g_savesInProgress] = pSaveData;
         g_savesInProgress++;
@@ -278,7 +278,7 @@ SymCryptSaveYmmEnvUnittest( _Out_ PSYMCRYPT_EXTENDED_SAVE_DATA pSaveData )
         p->pRegs = pRegs;
         SYMCRYPT_SET_MAGIC( p );
 
-        CHECK(g_savesInProgress < sizeof(g_saveInProgressTypes), "Too many nested saves!");
+        CHECK(g_savesInProgress < (int) sizeof(g_saveInProgressTypes), "Too many nested saves!");
         g_saveInProgressTypes[g_savesInProgress] = 'Y';
         g_savePtrs[g_savesInProgress] = pSaveData;
         g_savesInProgress++;

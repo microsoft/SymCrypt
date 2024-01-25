@@ -95,7 +95,7 @@ SIZE_T HashMultiImp::resultLen()
     for( HashImpPtrVector::const_iterator i = m_imps.begin(); i != m_imps.end(); ++i )
     {
         SIZE_T v = (*i)->resultLen();
-        CHECK( res == -1 || res == v, "Inconsistent result len" );
+        CHECK( res == (SIZE_T) -1 || res == v, "Inconsistent result len" );
         res = v;
     }
 
@@ -108,7 +108,7 @@ SIZE_T HashMultiImp::inputBlockLen()
     for( HashImpPtrVector::const_iterator i = m_imps.begin(); i != m_imps.end(); ++i )
     {
         SIZE_T v = (*i)->inputBlockLen();
-        CHECK( res == -1 || res == v, "Inconsistent input block len" );
+        CHECK( res == (SIZE_T) -1 || res == v, "Inconsistent input block len" );
         res = v;
     }
 
@@ -217,7 +217,7 @@ HashMultiImp::exportSymCryptFormat(
         }
    }
 
-   CHECK( size != -1, "No implementation supports SymCrypt hash state export format" );
+   CHECK( size != (SIZE_T) -1, "No implementation supports SymCrypt hash state export format" );
    CHECK( size <= cbResultBufferSize, "Export blob too large" );
 
    *pcbResult = size;
@@ -729,7 +729,7 @@ testExport( HashMultiImp * pHash, PCBYTE pbExport, SIZE_T cbExport, LONGLONG lin
 
     UNREFERENCED_PARAMETER( line );
 
-    for( int i=0; i<sizeof( msg1 ); i++ )
+    for( SIZE_T i=0; i<sizeof( msg1 ); i++ )
     {
         msg1[i] = (BYTE) (i & 0xff);
     }

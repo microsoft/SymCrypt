@@ -378,7 +378,7 @@ extern "C" {
     // write as a function wrapper to handle unexpected return values as errors
     FORCEINLINE
     ssize_t GENRANDOM(void * pbBuf, size_t cbBuf) {
-        return (getrandom( pbBuf, cbBuf, 0 ) == cbBuf) ? 0 : -1;
+        return (getrandom( pbBuf, cbBuf, 0 ) == (ssize_t) cbBuf) ? 0 : -1;
     }
 
     #include <pthread.h>

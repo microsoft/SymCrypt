@@ -86,7 +86,7 @@ verifyVectorRegisters()
         // It is perfectly fine for the XMM register values to have been modified.
         // We just test that the top half of the Ymm registers have been preserved.
         //
-        for( int i=0; i<sizeof( g_ymmStartState ); i++ )
+        for( SIZE_T i=0; i<sizeof( g_ymmStartState ); i++ )
         {
             if( ((volatile BYTE * )&g_ymmStartState[0])[i] != ((volatile BYTE * )&g_ymmTestState[0])[i] &&
                 ((i & 16) == 16 )

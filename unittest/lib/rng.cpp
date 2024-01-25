@@ -30,7 +30,7 @@ VOID Rng::reset( PCBYTE pbData, SIZE_T cbData )
 
 BYTE Rng::byte()
 {
-    CHECK( m_blockCtr != -1, "Use of unseeded Rng object" );
+    CHECK( m_blockCtr != (ULONGLONG) -1, "Use of unseeded Rng object" );
 
     if( m_bytesInBuf == 0 )
     {
@@ -51,7 +51,7 @@ BYTE Rng::byte()
 
 UINT32 Rng::uint32()
 {
-    CHECK( m_blockCtr != -1, "Use of unseeded Rng object" );
+    CHECK( m_blockCtr != (ULONGLONG) -1, "Use of unseeded Rng object" );
 
     if( m_bytesInBuf < 4 )
     {

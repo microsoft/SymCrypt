@@ -385,8 +385,8 @@ nullPerfFunction( PBYTE, PBYTE, PBYTE, SIZE_T )
 {
 }
 
-int g_sanityCheckLoopRuns = 1;
-int g_fixedTimeLoopRuns = 1;
+SIZE_T g_sanityCheckLoopRuns = 1;
+SIZE_T g_fixedTimeLoopRuns = 1;
 
 #define SANITY_CHECK_LOOP_CYCLES (32 * g_sanityCheckLoopRuns)
 
@@ -396,7 +396,7 @@ sanityCheckPerfFunction( PBYTE, PBYTE, PBYTE, SIZE_T )
 {
     SIZE_T x = g_fixedTimeLoopVariable;
     SIZE_T y = g_fixedTimeLoopRuns;
-    for( int i=0; i < g_sanityCheckLoopRuns; ++i )
+    for( SIZE_T i=0; i < g_sanityCheckLoopRuns; ++i )
     {
         FIXED_TIME_LOOP_ITER_32()
     }
@@ -412,7 +412,7 @@ fixedTimeLoopPerfFunction( PBYTE, PBYTE, PBYTE, SIZE_T )
 {
     SIZE_T x = g_fixedTimeLoopVariable;
     SIZE_T y = g_fixedTimeLoopRuns;
-    for( int i=0; i < g_fixedTimeLoopRuns; ++i )
+    for( SIZE_T i=0; i < g_fixedTimeLoopRuns; ++i )
     {
         FIXED_TIME_LOOP_ITER_512()
     }
@@ -1005,7 +1005,7 @@ VOID measurePerfOneAlg( AlgorithmImplementation * pAlgImp )
 
     //print( "%s\n", algMode.c_str() );
 
-    for( int i=0; i<ARRAY_SIZE( g_algMeasureParams ); i++ )
+    for( SIZE_T i=0; i<ARRAY_SIZE( g_algMeasureParams ); i++ )
     {
         if( g_algMeasureParams[i].algName == algMode )
         {
@@ -1061,7 +1061,7 @@ VOID measurePerfOneAlg( AlgorithmImplementation * pAlgImp )
             } else {
                 perfInfo.strPostfix = NULL;
 
-                for( int i=0; i < ARRAY_SIZE( g_exKeyParamMapping ); i++ )
+                for( SIZE_T i=0; i < ARRAY_SIZE( g_exKeyParamMapping ); i++ )
                 {
                     if( keyFlags == g_exKeyParamMapping[i].exKeyParam )
                     {
@@ -1381,7 +1381,7 @@ runProfiling()
         String algMode = pAlgImp->m_algorithmName + pAlgImp->m_modeName;
         String fullName = pAlgImp->m_implementationName + algMode;
 
-        for( int i=0; i<ARRAY_SIZE( g_algMeasureParams ); i++ )
+        for( SIZE_T i=0; i<ARRAY_SIZE( g_algMeasureParams ); i++ )
         {
             if( g_algMeasureParams[i].algName == algMode )
             {

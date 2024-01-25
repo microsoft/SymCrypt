@@ -2842,7 +2842,7 @@ template<>
 void
 SetupSymCryptRsaKey<ImpXxx>( PBYTE buf1, SIZE_T keySize, UINT32 generateFlags )
 {
-    int i = 0;
+    SIZE_T i = 0;
     BOOLEAN bFound = FALSE;
 
     SYMCRYPT_ERROR scError = SYMCRYPT_NO_ERROR;
@@ -4472,7 +4472,7 @@ template<>
 void
 SetupDlGroup<ImpXxx>( PBYTE buf1, SIZE_T keySize )
 {
-    int i = 0;
+    SIZE_T i = 0;
     BOOLEAN bFound = FALSE;
 
     SYMCRYPT_ERROR scError = SYMCRYPT_NO_ERROR;
@@ -5138,7 +5138,7 @@ template<>
 void
 CleanupSymCryptCurves<ImpXxx>()
 {
-    int i = 0;
+    SIZE_T i = 0;
     for( i=0; i < ARRAY_SIZE(g_exKeyToCurve); i++ )
     {
         if (CONCAT2(g_pCurves, ImpXxx)[i] != NULL)
@@ -5153,7 +5153,7 @@ template<>
 void
 SetupSymCryptCurves<ImpXxx>( PBYTE buf1, SIZE_T keySize )
 {
-    int i = 0;
+    SIZE_T i = 0;
     BOOLEAN bKeyFound = FALSE;
     PCSYMCRYPT_ECURVE pCurve = NULL;
 
@@ -5259,7 +5259,7 @@ template<>
 VOID
 algImpKeyPerfFunction<ImpXxx, AlgEcurveAllocate>( PBYTE buf1, PBYTE buf2, PBYTE buf3, SIZE_T keySize )
 {
-    int i = 0;
+    SIZE_T i = 0;
     BOOLEAN bKeyFound = FALSE;
 
     UNREFERENCED_PARAMETER( buf2 );

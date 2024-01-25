@@ -93,7 +93,7 @@ SIZE_T CustomizableXofMultiImp::inputBlockLen()
     for(CustomizableXofImpPtrVector::const_iterator i = m_imps.begin(); i != m_imps.end(); ++i )
     {
         SIZE_T v = (*i)->inputBlockLen();
-        CHECK( res == -1 || res == v, "Inconsistent input block len" );
+        CHECK( res == (SIZE_T) -1 || res == v, "Inconsistent input block len" );
         res = v;
     }
 

@@ -64,7 +64,7 @@ if(CMAKE_SYSTEM_NAME MATCHES "Linux")
     endif()
     
     # add_compile_options(-Wall)
-    # add_compile_options(-Wno-unknown-pragmas)
+    add_compile_options(-Wno-unknown-pragmas)
     add_compile_options(-Werror)
     add_compile_options(-Wno-deprecated-declarations -Wno-deprecated)
     add_compile_options(-g)

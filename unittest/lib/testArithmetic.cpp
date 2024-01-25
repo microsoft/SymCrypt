@@ -368,7 +368,7 @@ getPerfTestModulus( UINT32 exKeySize )
         keyFlags = PERF_KEY_PUB_ODD;
     }
 
-    for( int i=0; i< ARRAY_SIZE( g_testPrimes ); i++ )
+    for( SIZE_T i=0; i< ARRAY_SIZE( g_testPrimes ); i++ )
     {
         if( g_testPrimes[i].perfCategory == keyFlags && g_testPrimes[i].nBytes == keyBytes )
         {

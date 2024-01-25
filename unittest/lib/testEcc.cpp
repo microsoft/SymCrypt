@@ -796,11 +796,11 @@ testEcc()
     vprint(!g_verbose, ": ");
     vprint(g_verbose, "\n");
 
-    for (int i=0; i<NUM_OF_INTERNAL_CURVES; i++)
+    for (SIZE_T i=0; i<NUM_OF_INTERNAL_CURVES; i++)
     {
         vprint( g_verbose, "    > Curve ");
         iprint("%s", rgbInternalCurves[i].pszCurveName );
-        if (i<NUM_OF_INTERNAL_CURVES-1)
+        if (i+1<NUM_OF_INTERNAL_CURVES)
         {
             vprint(!g_verbose, ", ");
         }
@@ -842,7 +842,7 @@ testEcc()
     testEccEcdsaKats();
     print( "    %d skipped KATS\n", skippedKats);
 
-    for (int i=0; i<NUM_OF_INTERNAL_CURVES; i++)
+    for (SIZE_T i=0; i<NUM_OF_INTERNAL_CURVES; i++)
     {
         SymCryptEcurveFree( rgbInternalCurves[i].pCurve );
     }
@@ -855,11 +855,11 @@ testEcc()
         print("    testEccEcdsaKats dynamic\n");
         g_useDynamicFunctionsInTestCall = TRUE;
 
-        for (int i=0; i<NUM_OF_INTERNAL_CURVES; i++)
+        for (SIZE_T i=0; i<NUM_OF_INTERNAL_CURVES; i++)
         {
             vprint( g_verbose, "    > Curve ");
             iprint("%s", rgbInternalCurves[i].pszCurveName );
-            if (i<NUM_OF_INTERNAL_CURVES-1)
+            if (i+1<NUM_OF_INTERNAL_CURVES)
             {
                 vprint(!g_verbose, ", ");
             }
@@ -878,7 +878,7 @@ testEcc()
         testEccEcdsaKats();
         print( "    %d skipped KATS\n", skippedKats);
 
-        for (int i=0; i<NUM_OF_INTERNAL_CURVES; i++)
+        for (SIZE_T i=0; i<NUM_OF_INTERNAL_CURVES; i++)
         {
             ScDispatchSymCryptEcurveFree( rgbInternalCurves[i].pCurve );
         }
@@ -1321,7 +1321,7 @@ testEccEcdsaKats()
 
     String sep = "";
 
-    int i = 0;
+    SIZE_T i = 0;
     BOOLEAN bCurveFound = FALSE;
     PSYMCRYPT_ECURVE pCurve = NULL;
     PCSYMCRYPT_HASH pHash = NULL;
