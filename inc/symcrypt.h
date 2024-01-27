@@ -4833,7 +4833,6 @@ SymCryptRc4Init(
 // Initialize an RC4 encryption/decryption state.
 // WARNING: the most common error in using RC4 is to use the same key to encrypt two different pieces of data.
 // This is insecure and should never be done; you need a unique key for each data element that is encrypted.
-// Typically this is done by concatenating the key and a nonce or IV to generate the RC4 key.
 //
 
 VOID
