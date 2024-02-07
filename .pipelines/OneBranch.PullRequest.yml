@@ -25,6 +25,8 @@ resources:
 extends:
   template: v2/OneBranch.NonOfficial.CrossPlat.yml@templates # https://aka.ms/obpipelines/templates
   parameters:
+    featureFlags:
+      needExceptionForUbuntuUsage: true # Mariner does not currently support all of our cross-compilation targets
     globalSdl: # https://aka.ms/obpipelines/sdl
       policheck:
         break: true # always break the build on policheck issues.
