@@ -54,6 +54,9 @@ typedef struct DECLSPEC_CACHEALIGN _SYMCRYPT_ENTROPY_ACCUMULATOR_STATE {
     PSYMCRYPT_ENTROPY_RAW_SAMPLE    pRawSampleBuffer;       // Pointer to a raw sample buffer (normally NULL)
     UINT64                          nRawSamples;            // The number of raw samples to collect (normally 0)
     UINT32                          accumulatorId;
+    UINT32                          nDPCScheduleFailures;   // Number of times we failed to schedule a DPC
+    BOOLEAN                         dpcInProgress;          // Indicates whether the DPC is currently in progress (is
+                                                            // either queued or running)
 } SYMCRYPT_ENTROPY_ACCUMULATOR_STATE;
 typedef       SYMCRYPT_ENTROPY_ACCUMULATOR_STATE * PSYMCRYPT_ENTROPY_ACCUMULATOR_STATE;
 typedef const SYMCRYPT_ENTROPY_ACCUMULATOR_STATE * PCSYMCRYPT_ENTROPY_ACCUMULATOR_STATE;

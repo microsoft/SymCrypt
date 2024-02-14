@@ -36,11 +36,11 @@ SYMCRYPT_CALL
 SymCryptEntropyAccumulatorInit0(
     _Out_   PSYMCRYPT_ENTROPY_ACCUMULATOR_STATE pState )
 {
+    SymCryptWipeKnownSize( pState, sizeof(*pState) );
+
     KeInitializeDpc(&pState->Dpc,
                     &SymCryptEntropyAccumulatorDpcRoutine,
                     pState);
-    pState->pRawSampleBuffer = NULL;
-    pState->nRawSamples = 0;
 }
 
 SYMCRYPT_ERROR
@@ -88,6 +88,7 @@ SymCryptEntropyAccumulatorInit1(
     // may not be full of entropy.
     pState->nSamplesAccumulated = (accumulatorId * 3) % SYMCRYPT_ENTROPY_ACCUMULATOR_SAMPLES_PER_SEGMENT;
     pState->nHealthTestFailures = 0;
+    pState->nDPCScheduleFailures = 0;
 
     return SYMCRYPT_NO_ERROR;
 }
@@ -144,14 +145,29 @@ SymCryptEntropyAccumulatorAccumulateSample(
 
     if( (nSamplesAccumulated & (SYMCRYPT_ENTROPY_ACCUMULATOR_SAMPLES_PER_SEGMENT - 1)) == 0 )
     {
-        // Schedule DPC to process the accumulated samples
-        if( KeInsertQueueDpc(&pState->Dpc, (PVOID) nSamplesAccumulated, NULL) == FALSE )
+        BOOLEAN successfullyScheduledDPC = FALSE;
+
+        //
+        // Schedule DPC to process the accumulated samples if there is no DPC in progress (expected case)
+        //
+        if( pState->dpcInProgress == FALSE )
+        {
+            // KeInsertQueueDpc returns TRUE on success; it should always succeed here, as we guarantee to
+            // only try queuing the DPC if it's completed the previous call, but if we fail, we discard the
+            // segment.
+            successfullyScheduledDPC = KeInsertQueueDpc(&pState->Dpc, (PVOID) nSamplesAccumulated, NULL);
+            pState->dpcInProgress = successfullyScheduledDPC;
+        }
+
+        if( !successfullyScheduledDPC )
         {
             //
-            // If KeInsertQueueDpc returns FALSE, this indicates that the DPC is already queued
-            // (i.e. the processing of a previous segment is still in progress)
+            // If successfullyScheduledDPC is FALSE, this indicates that the DPC is already either queued or
+            // is still running (i.e. the processing of a previous segment has not completed), or there was some
+            // other failure in queueing the DPC.
             //
-            // This is an unexpected case. To make it easy to keep a 1:1 correspondence between
+            // This is an unexpected case, as it is highly unlikely that 1024 interrupts occur before the
+            // previous DPC completes. However, to make it easy to keep a 1:1 correspondence between
             // collected raw samples and the accumulated samples in the segment, we discard
             // the segment we just filled, and reuse it, starting from a zero-ed state.
             // We do this by resetting nSamplesAccumulated and wiping the segment.
@@ -167,6 +183,8 @@ SymCryptEntropyAccumulatorAccumulateSample(
             // use memset here because the compiler can't optimize it away, and it should have the best codegen.
             // SymCryptWipeKnownSize would also work but it is not optimized for buffers this large.
             memset( &pState->buffer[bufferIndex], 0, SYMCRYPT_ENTROPY_ACCUMULATOR_SEGMENT_SIZE );
+
+            pState->nDPCScheduleFailures++;
         }
     }
 
@@ -335,8 +353,12 @@ SymCryptEntropyAccumulatorDpcRoutine(
             entropyEstimateInMilliBits );
     }
 
-    // Zero the logical buffer
+    // Zero the segment
     SymCryptWipeKnownSize(pu64SampleSegment, SYMCRYPT_ENTROPY_ACCUMULATOR_SEGMENT_SIZE);
+
+    // Indicate that the DPC processing is complete
+    // Use volatile write to ensure compiler doesn't reorder this write w.r.t. the wipe above
+    SYMCRYPT_INTERNAL_VOLATILE_WRITE8( &pState->dpcInProgress, FALSE );
 }
 
 #define SYMCRYPT_ENTROPY_ANALYSIS_KEY_NAME (L"\\Registry\\Machine\\SYSTEM\\RNG\\EntropyAnalysis")
