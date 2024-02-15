@@ -80,6 +80,7 @@ extends:
       - template: .pipelines/templates/build-windows-undocked.yml@self
         parameters:
           sln: symcrypt.sln
+          buildSuffix: '-official'
           # Package args
           package: ${{ parameters.package }}
           name: 'SymCrypt'

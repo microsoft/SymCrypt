@@ -174,7 +174,7 @@
   </ItemGroup>
  
   <!-- Generate buildInfo.h -->
-  <Target Name="GenerateBuildInfo" BeforeTargets="ClCompile">
+  <Target Name="GenerateBuildInfo" BeforeTargets="ClCompile;ResourceCompile">
     <Message Importance="high" Text="Generating build info header" />
     <Exec Command="python ..\scripts\version.py --build-info" />
   </Target>

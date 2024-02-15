@@ -69,6 +69,16 @@
     <ClCompile Include="main.c" />
     <ClCompile Include="entropy_accumulator.c" />
   </ItemGroup>
+  <!-- Default properties for ResourceCompile in case they're not set -->
+  <PropertyGroup>
+    <VER_BUILD_ID Condition="'$(VER_BUILD_ID)' == ''">0</VER_BUILD_ID>
+    <VER_SUFFIX Condition="'$(VER_SUFFIX)' == ''">-private</VER_SUFFIX>
+  </PropertyGroup>
+  <ItemGroup>
+    <ResourceCompile Include="symcryptk.rc">
+      <PreprocessorDefinitions>VER_BUILD_ID=$(VER_BUILD_ID);VER_SUFFIX=$(VER_SUFFIX);%(PreprocessorDefinitions)</PreprocessorDefinitions>
+    </ResourceCompile>
+  </ItemGroup>
   <ItemGroup>
     <None Include="symcrypt.def" />
   </ItemGroup>

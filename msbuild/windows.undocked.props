@@ -4,7 +4,6 @@
     <Error Condition="'$(UndockedType)' == ''">Must set UndockedType in project file</Error>
     <UndockedDir Condition="'$(UndockedDir)' == ''">$(SolutionDir)undocking\</UndockedDir>
     <UndockedOut Condition="'$(UndockedOut)' == ''">$(SolutionDir)</UndockedOut>
-    <UndockedVerFile Condition="'$(UndockedVerFile)' == ''">$(SolutionDir)version.json</UndockedVerFile>
     <UndockedBuildId Condition="'$(UndockedBuildId)' == ''">0</UndockedBuildId>
     <UndockedOfficial Condition="'$(UndockedOfficial)' == ''">false</UndockedOfficial>
     <!-- Use the official LKG complier when available -->

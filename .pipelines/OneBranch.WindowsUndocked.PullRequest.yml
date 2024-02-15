@@ -46,3 +46,4 @@ extends:
       - template: .pipelines/templates/build-windows-undocked.yml@self
         parameters:
           sln: SymCrypt.sln
+          buildSuffix: '-pr'
