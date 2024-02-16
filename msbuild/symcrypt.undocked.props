@@ -80,6 +80,11 @@
   <ItemDefinitionGroup Condition="'$(Platform)'=='x64'">
     <ClCompile>
       <PreprocessorDefinitions>_AMD64_;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+        <!-- 
+          Specifying /cbstring- will generate warning D9025 overriding '/cbstring' with '/cbstring-'
+          in the official build for now. We cannot avoid this until the flags are updated.
+        -->
+      <AdditionalOptions>%(AdditionalOptions) /cbstring-</AdditionalOptions>
     </ClCompile>
     <Link>
         <!-- 
