@@ -51,8 +51,14 @@ typedef struct DECLSPEC_CACHEALIGN _SYMCRYPT_ENTROPY_ACCUMULATOR_STATE {
     KDPC                            Dpc;
     UINT64                          nSamplesAccumulated;    // The number of samples accumulated
     UINT64                          nHealthTestFailures;    // Number of times the continuous health test has failed
-    PSYMCRYPT_ENTROPY_RAW_SAMPLE    pRawSampleBuffer;       // Pointer to a raw sample buffer (normally NULL)
+    PUCHAR                          pCombinedSampleBuffer;  // Pointer to the buffer containing raw samples and conditioned
+                                                            // samples (segments). The first part of the buffer contains
+                                                            // nRawSamples many raw samples. The remaining part is
+                                                            // nRawSamples / SYMCRYPT_ENTROPY_ACCUMULATOR_SAMPLES_PER_SEGMENT
+                                                            // conditioned samples.
     UINT64                          nRawSamples;            // The number of raw samples to collect (normally 0)
+                                                            // Truncated to a multiple of SYMCRYPT_ENTROPY_ACCUMULATOR_SAMPLES_PER_SEGMENT
+                                                            // when set by the config value.
     UINT32                          accumulatorId;
     UINT32                          nDPCScheduleFailures;   // Number of times we failed to schedule a DPC
     BOOLEAN                         dpcInProgress;          // Indicates whether the DPC is currently in progress (is
