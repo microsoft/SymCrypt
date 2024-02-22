@@ -14,7 +14,10 @@
 SYMCRYPT_ENVIRONMENT_WINDOWS_KERNELMODE_LATEST;
 
 #define SYMCRYPT_FIPS_STATUS_INDICATOR
-#include "../modules/statusindicator_common.h"
+#define FIPS_SERVICE_DESC_ENTROPY_SOURCE
+#define FIPS_SERVICE_DESC_SELF_TESTS
+#define FIPS_SERVICE_DESC_SHOW_STATUS
+#define FIPS_SERVICE_DESC_SHOW_VERSION
 #include "../lib/status_indicator.h"
 
 // Our DriverEntry function is not used, as this module acts as an export driver which is linked
