@@ -10,7 +10,7 @@
     <UndockedType>sys</UndockedType>
     <UndockedDir>$(SolutionDir)msbuild\</UndockedDir>
     <UndockedOut>$(SolutionDir)</UndockedOut>
-    <SymCryptKernelTarget>true</SymCryptKernelTarget>
+    <UndockedKernelModeBuild>true</UndockedKernelModeBuild>
   </PropertyGroup>
   <Import Project="$(UndockedDir)symcrypt.undocked.props" />
   <ItemGroup>
@@ -29,7 +29,8 @@
       <AdditionalOptions>/Zc:strictStrings- %(AdditionalOptions)</AdditionalOptions>
       <WholeProgramOptimization>true</WholeProgramOptimization>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
-      <ExceptionHandling>Sync</ExceptionHandling>
+      <!-- Official undocked builds handle setting the ExceptionHandling flags -->
+      <ExceptionHandling Condition="'$(UndockedOfficial)' != 'true'">Sync</ExceptionHandling>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>

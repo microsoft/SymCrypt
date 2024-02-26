@@ -36,7 +36,7 @@
     <UndockedType>kmdll</UndockedType>
     <UndockedDir>$(SolutionDir)msbuild\</UndockedDir>
     <UndockedOut>$(SolutionDir)</UndockedOut>
-    <SymCryptKernelTarget>true</SymCryptKernelTarget>
+    <UndockedKernelModeBuild>true</UndockedKernelModeBuild>
   </PropertyGroup>
   <Import Project="$(UndockedDir)symcrypt.undocked.props" />
   <ItemGroup>
@@ -59,7 +59,7 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <LinkTimeCodeGeneration>UseLinkTimeCodeGeneration</LinkTimeCodeGeneration>
       <AdditionalDependencies>%(AdditionalDependencies);ntoskrnl.lib</AdditionalDependencies>
-      <EntryPointSymbol>GsDriverEntry</EntryPointSymbol>
+      <NoEntryPoint>true</NoEntryPoint>
     </Link>
   </ItemDefinitionGroup>
   <PropertyGroup Label="DbgEng">

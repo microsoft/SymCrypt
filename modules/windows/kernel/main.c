@@ -20,24 +20,13 @@ SYMCRYPT_ENVIRONMENT_WINDOWS_KERNELMODE_LATEST;
 #define FIPS_SERVICE_DESC_SHOW_VERSION
 #include "../lib/status_indicator.h"
 
-// Our DriverEntry function is not used, as this module acts as an export driver which is linked
-// directly to the kernel. In other words, it's not initialized by WDF, and we don't create any
-// device objects or use other WDF functions. However, we need to define the function to be able
-// to link with some of the KMDF libs.
-NTSTATUS
-DriverEntry(
-    _In_  struct _DRIVER_OBJECT* DriverObject,
-    _In_ PUNICODE_STRING RegistryPath
-    )
-{
-    UNREFERENCED_PARAMETER( DriverObject );
-    UNREFERENCED_PARAMETER( RegistryPath );
-
-    return STATUS_SUCCESS;
-}
+void __cdecl __security_init_cookie(void);
 
 VOID SYMCRYPT_CALL SymCryptModuleInit(UINT32 api, UINT32 minor)
 {
+    // Initialize the /GS flag stack overflow cookie
+    __security_init_cookie();
+
     if (api != SYMCRYPT_CODE_VERSION_API ||
         (api == SYMCRYPT_CODE_VERSION_API && minor > SYMCRYPT_CODE_VERSION_MINOR))
     {

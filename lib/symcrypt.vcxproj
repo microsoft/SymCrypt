@@ -10,7 +10,7 @@
     <UndockedType>lib</UndockedType>
     <UndockedDir>$(SolutionDir)msbuild\</UndockedDir>
     <UndockedOut>$(SolutionDir)</UndockedOut>
-    <SymCryptKernelTarget>true</SymCryptKernelTarget>
+    <UndockedKernelModeBuild>true</UndockedKernelModeBuild>
     <IncludePath>$(ProjectDir);$(IncludePath);</IncludePath>
   </PropertyGroup>
   <Import Project="$(UndockedDir)symcrypt.undocked.props" />
@@ -167,7 +167,7 @@
     <SymCryptAsm Include="arm64\fdef369_asm.symcryptasm" Dialect="armasm64" Arch="arm64" Convention="aapcs64" />
     <SymCryptAsm Include="arm64\wipe.symcryptasm" Dialect="armasm64" Arch="arm64" Convention="aapcs64" />
   </ItemGroup>
-  <ItemGroup Condition="'$(Platform)'=='ARM64' AND '$(EnableArm64x)' == 'true'">
+  <ItemGroup Condition="'$(Platform)'=='ARM64EC'">
     <SymCryptAsm Include="arm64\fdef_asm.symcryptasm" Dialect="armasm64" Arch="arm64" Convention="arm64ec" />
     <SymCryptAsm Include="arm64\fdef369_asm.symcryptasm" Dialect="armasm64" Arch="arm64" Convention="arm64ec" />
     <SymCryptAsm Include="arm64\wipe.symcryptasm" Dialect="armasm64" Arch="arm64" Convention="arm64ec" />

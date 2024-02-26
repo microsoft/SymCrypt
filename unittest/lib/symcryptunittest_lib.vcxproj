@@ -10,7 +10,6 @@
     <UndockedType>lib</UndockedType>
     <UndockedDir>$(SolutionDir)msbuild\</UndockedDir>
     <UndockedOut>$(SolutionDir)</UndockedOut>
-    <SymCryptKernelTarget>false</SymCryptKernelTarget>
   </PropertyGroup>
   <Import Project="$(UndockedDir)symcrypt.undocked.props" />
   <ItemDefinitionGroup>

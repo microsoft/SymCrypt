@@ -222,9 +222,7 @@ SymCryptEntropyAccumulatorAccumulateSample(
             // As we know nSamplesAccumulated is a multiple of 128, we can just align to the nearest byte
             bufferIndex = (nSamplesAccumulated & (SYMCRYPT_ENTROPY_ACCUMULATOR_SAMPLES_PER_BUFFER - 1)) / 8;
 
-            // use memset here because the compiler can't optimize it away, and it should have the best codegen.
-            // SymCryptWipeKnownSize would also work but it is not optimized for buffers this large.
-            memset( &pState->buffer[bufferIndex], 0, SYMCRYPT_ENTROPY_ACCUMULATOR_SEGMENT_SIZE );
+            SymCryptWipeKnownSize( &pState->buffer[bufferIndex], SYMCRYPT_ENTROPY_ACCUMULATOR_SEGMENT_SIZE );
 
             pState->nDPCScheduleFailures++;
         }

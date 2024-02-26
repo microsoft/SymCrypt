@@ -41,6 +41,7 @@ VOID
 SYMCRYPT_CALL
 SymCryptInitEnvWindowsKernelmodeWin8_1nLater( UINT32 version )
 {
+    __declspec(no_init_all)
     RTL_OSVERSIONINFOW  verInfo;
 
     if( g_SymCryptFlags & SYMCRYPT_FLAG_LIB_INITIALIZED )

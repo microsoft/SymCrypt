@@ -28,34 +28,12 @@
       <CharacterSet>MultiByte</CharacterSet>
       <WholeProgramOptimization>true</WholeProgramOptimization>
       <AdditionalOptions>/Gy %(AdditionalOptions)</AdditionalOptions>
-      <AdditionalOptions Condition="'$(SymCryptKernelTarget)'=='true'">
-        /kernel
-        %(AdditionalOptions)
-      </AdditionalOptions>
     </ClCompile>
     <MASM>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <PreprocessorDefinitions>SYMCRYPT_MASM;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalOptions>/Gy %(AdditionalOptions)</AdditionalOptions>
     </MASM>
-    <Link>
-      <AdditionalOptions>
-        /nodefaultlib:libcmt.lib
-        /nodefaultlib:libcmtd.lib
-        %(AdditionalOptions)
-      </AdditionalOptions>
-      <AdditionalOptions Condition="'$(SymCryptKernelTarget)'=='true'">
-        /d2:-guardcfgdispatch
-        /guard:exportsuppress
-        /kernel
-        /NOOPTIDATA
-        /merge:.gfids=GFIDS
-        /merge:.orpc=.text
-        /merge:_RDATA=.rdata
-        /section:GFIDS,d
-        %(AdditionalOptions)
-      </AdditionalOptions>
-    </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(UndockedOfficial)'=='Debug|true'">
     <ClCompile>
@@ -77,36 +55,13 @@
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
     </ClCompile>
   </ItemDefinitionGroup>
-  <ItemDefinitionGroup Condition="'$(Platform)'=='x64'">
-    <ClCompile>
-      <PreprocessorDefinitions>_AMD64_;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-        <!-- 
-          Specifying /cbstring- will generate warning D9025 overriding '/cbstring' with '/cbstring-'
-          in the official build for now. We cannot avoid this until the flags are updated.
-        -->
-      <AdditionalOptions>%(AdditionalOptions) /cbstring-</AdditionalOptions>
-    </ClCompile>
-    <Link>
-        <!-- 
-          Ignore warning LNK4287 (object file is missing /guard:retpoline metadata) which happens
-          when linking to debug versions of the CRT.
-        -->
-      <AdditionalOptions>/guard:retpoline /IGNORE:4287 %(AdditionalOptions)</AdditionalOptions>
-    </Link>
-  </ItemDefinitionGroup>
-  <ItemDefinitionGroup Condition="'$(Platform)'=='Win32'">
+  <ItemDefinitionGroup Condition="'$(Platform)'=='Win32' AND ('$(UndockedOfficial)'=='false' OR '$(UndockedKernelModeBuild)'=='false')">
     <ClCompile>
       <CallingConvention>StdCall</CallingConvention>
-      <PreprocessorDefinitions>_X86_;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <MASM>
       <UseSafeExceptionHandlers>true</UseSafeExceptionHandlers>
     </MASM>
-  </ItemDefinitionGroup>
-  <ItemDefinitionGroup Condition="$(Platform.StartsWith('ARM64'))">
-    <ClCompile>
-      <PreprocessorDefinitions>_ARM64_;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-    </ClCompile>
   </ItemDefinitionGroup>
 
   <!-- Helper properties for processing CppAsm -->
@@ -114,10 +69,10 @@
     <CppAsmArch>SYMCRYPT_CPU_AMD64</CppAsmArch>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Platform)'=='Win32'">
-      <CppAsmArch>SYMCRYPT_CPU_X86</CppAsmArch>
+    <CppAsmArch>SYMCRYPT_CPU_X86</CppAsmArch>
   </PropertyGroup>
-  <PropertyGroup Condition="$(Platform.StartsWith('ARM64'))">
-      <CppAsmArch>SYMCRYPT_CPU_ARM64</CppAsmArch>
+  <PropertyGroup Condition="'$(Platform)'=='ARM64' OR '$(Platform)'=='ARM64EC'">
+    <CppAsmArch>SYMCRYPT_CPU_ARM64</CppAsmArch>
   </PropertyGroup>
 
   <!-- Preprocess SymCryptAsm into CppAsm -->
@@ -142,13 +97,11 @@
     <Exec Command="cl.exe /EP /P /I..\inc /I.\ /D$(CppAsmArch) /DSYMCRYPT_MASM /Fi&quot;$(IntDir)%(CppAsm.Filename).asm&quot; &quot;%(CppAsm.Identity)&quot;" Condition="'%(CppAsm.Convention)' != 'arm64ec'"/>
     <!-- Special case for ARM64EC -->
     <Exec Command="cl.exe /EP /P /I..\inc /I.\ /D$(CppAsmArch) /D_M_ARM64EC /DSYMCRYPT_MASM /Fi&quot;$(IntDir)%(CppAsm.Filename).asm&quot; &quot;%(CppAsm.Identity)&quot;" Condition="'%(CppAsm.Convention)' == 'arm64ec'"/>
-    <ItemGroup Condition="'$(Platform)'!='ARM64'">
+    <ItemGroup Condition="'$(Platform)'=='x64' OR '$(Platform)'=='Win32'">
       <MASM Include="$(IntDir)%(CppAsm.Filename).asm" />
     </ItemGroup>
-    <ItemGroup Condition="'$(Platform)'=='ARM64'">
-      <MARMASM Include="$(IntDir)%(CppAsm.Filename).asm" PreprocessWithCl="false">
-        <AdditionalOptions Condition="'%(CppAsm.Convention)' == 'arm64ec'">-machine arm64ec</AdditionalOptions>
-      </MARMASM>
+    <ItemGroup Condition="'$(Platform)'=='ARM64' OR '$(Platform)'=='ARM64EC'">
+      <MARMASM Include="$(IntDir)%(CppAsm.Filename).asm" PreprocessWithCl="false" />
     </ItemGroup>
   </Target>
 
