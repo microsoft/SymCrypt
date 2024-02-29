@@ -59,7 +59,7 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <LinkTimeCodeGeneration>UseLinkTimeCodeGeneration</LinkTimeCodeGeneration>
       <AdditionalDependencies>%(AdditionalDependencies);ntoskrnl.lib</AdditionalDependencies>
-      <NoEntryPoint>true</NoEntryPoint>
+      <EntryPointSymbol>GsDriverEntry</EntryPointSymbol>
     </Link>
   </ItemDefinitionGroup>
   <PropertyGroup Label="DbgEng">
