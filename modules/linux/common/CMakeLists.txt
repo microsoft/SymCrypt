@@ -19,6 +19,12 @@ if (CMAKE_C_COMPILER_ID MATCHES "Clang" AND DEFINED CMAKE_C_COMPILER_TARGET)
   set(jitter_ldflags "--target=${CMAKE_C_COMPILER_TARGET}")
 endif()
 
+if(NOT IS_DIRECTORY "${CMAKE_SOURCE_DIR}/3rdparty/jitterentropy-library" OR NOT EXISTS "${CMAKE_SOURCE_DIR}/3rdparty/jitterentropy-library/Makefile")
+  execute_process(
+    COMMAND git submodule update --init -- 3rdparty/jitterentropy-library
+    WORKING_DIRECTORY ${CMAKE_SOURCE_DIR})
+endif()
+
 add_custom_target(jitterentropy_lib ALL
   COMMAND make clean
   COMMAND ${CMAKE_COMMAND} -E

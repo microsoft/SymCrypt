@@ -58,7 +58,7 @@ option(
     SYMCRYPT_TEST_LEGACY_IMPL
     "When enabled, the SymCrypt unit tests will be linked against and configured to run compatibility and performance tests on the legacy
     RSA32 and msbignum cryptographic implementations. This requires access to private static libraries which are not licensed
-    for use outside of Windows, and thus can only be used by Microsoft employees building internally. It only affects the unit tests, 
+    for use outside of Windows, and thus can only be used by Microsoft employees building internally. It only affects the unit tests,
     and does not change the functionality of the SymCrypt library itself."
     OFF)
 
@@ -74,10 +74,20 @@ option(
     ON, but may need to be disabled for specialized targets such as embedded systems."
     ON)
 
+option(
+    SYMCRYPT_TEST_WITH_OPENSSL
+    "When enabled, the SymCrypt unit tests will be linked against and configured to run performance comparisons against OpenSSL
+    implementations of certain algorithms."
+    OFF)
+
+
+if (SYMCRYPT_TEST_WITH_OPENSSL)
+    include(${CMAKE_SOURCE_DIR}/cmake-configs/OpenSSL.cmake)
+endif()
 include(${CMAKE_SOURCE_DIR}/cmake-configs/SymCrypt-Platforms.cmake)
 
 if(NOT DEFINED CMAKE_BUILD_TYPE)
-  set(CMAKE_BUILD_TYPE Debug)
+    set(CMAKE_BUILD_TYPE Debug)
 endif()
 
 set(CMAKE_C_STANDARD 11)

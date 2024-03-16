@@ -60,7 +60,7 @@ Linux modules with FIPS integrity checks.
     * `-DSYMCRYPT_TARGET_ARCH=<AMD64|X86|ARM64>` to choose a target architecture. If not specified, it will default to the host system architecture.
       * To cross-compile for Windows X86 from Windows AMD64, you must also use `-A Win32`
       * To cross-compile for Linux ARM64, you must also use `--toolchain=cmake-configs/Toolchain-Clang-ARM64.cmake`
-    * `-DSYMCRYPT_USE_ASM=<ON|OFF>` to choose whether to use assembly optimizations. Defaults to `ON`. 
+    * `-DSYMCRYPT_USE_ASM=<ON|OFF>` to choose whether to use assembly optimizations. Defaults to `ON`.
     * `-DSYMCRYPT_FIPS_BUILD=<ON|OFF>` to choose whether to enable FIPS self-tests in the SymCrypt shared object module. Defaults to `ON`. Currently only affects Linux builds.
     * For a release build, specify `-DCMAKE_BUILD_TYPE=RelWithDebInfo`
 1. `cmake --build bin`
@@ -85,19 +85,39 @@ outputs are placed in this directory.
 
 Requires the following packages on debian-based systems to build:
 ```
-apt-get -y install --no-install-recommends \
+apt update
+apt -y install --no-install-recommends \
     cmake \
-    python3-pyelftools \                             # integrity
-    gcc-arm-linux-gnueabihf g++-arm-linux-gnueabihf  # for arm
+    python3-pyelftools \
+    gcc-arm-linux-gnueabihf g++-arm-linux-gnueabihf
 ```
-
+`python3-pyelftools` is for integrity verification and `gcc-arm-linux-gnueabihf` `g++-arm-linux-gnueabihf` are for ARM cross compile
 And for running the test:
 ```
-apt-get -y install --no-install-recommends qemu-user
+apt -y install --no-install-recommends qemu-user
 ```
 
 To build and test for example for arm:
 ```
 python3 scripts/build.py cmake --arch arm --toolchain cmake-configs/Toolchain-GCC-ARM.cmake bin_arm
 qemu-arm -L /usr/arm-linux-gnueabihf/ ./bin_arm/exe/symcryptunittest -rsa -dsa -dh -ec -int -mod dynamic:bin_arm/module/generic/libsymcrypt.so
+```
+
+## Performance comparison with OpenSSL
+`symcryptunittest.exe` can be used to compare and measure performance of algorithms provided by SymCrypt and OpenSSL. On Windows `symcryptunittest.exe` would have to be compiled with OpenSSL. `nasm` and  `strawberryperl` are prerequisites to building OpenSSL.
+```
+winget install nasm strawberryperl
+.\scripts\build.py cmake bin --config Release --openssl-build-from-source
+```
+
+And on Linux we can use OpenSSL installed by system's package manager.
+```
+sudo apt install -y libssl-dev
+./scripts/build.py cmake bin --config Release --openssl
+```
+
+To build OpenSSL on Linux we need to install following prerequisites.
+```
+sudo apt install -y nasm perl
+.\scripts\build.py cmake bin --config Release --openssl-build-from-source
 ```

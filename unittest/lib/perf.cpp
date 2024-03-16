@@ -189,7 +189,8 @@ const ALG_MEASURE_PARAMS g_algMeasureParams[] =
     "SshKdfSha256"          , 0, {128, 256}, {16, 24, 32},
     "HkdfHmacSha256"        , 0, {32}, { 32, 64, 128, 512, 1024 },
     "HkdfHmacSha1"          , 0, {32}, { 32, 64, 128, 512, 1024 },
-    "XtsAes"                , 0, {32,48,64}, {512, 1024, 2048, 4096, 8192, 16384, 32768},
+    "XtsAes"                , 0, {PERF_KEY_XTS_DATA_UNIT_512 | 32, PERF_KEY_XTS_DATA_UNIT_512 | 64,
+                                  PERF_KEY_XTS_DATA_UNIT_4096| 32, PERF_KEY_XTS_DATA_UNIT_4096| 64 }, {4096, 8192, 16384, 32768},
     "TlsCbcHmacSha1"        , 0, {64}, {256, 8192},
     "TlsCbcHmacSha256"      , 0, {64}, {256, 8192},
     "TlsCbcHmacSha384"      , 0, {64}, {256, 8192},
@@ -972,7 +973,7 @@ const struct {
     UINT32  exKeyParam;
     char *  str;
 } g_exKeyParamMapping[] = {
-    { 0,                                    "   " },
+    { 0,                                    "" },
     { PERF_KEY_SECRET,                      "s  " },
     { PERF_KEY_PUB_ODD,                     "po " },
     { PERF_KEY_PUBLIC,                      "p  " },
@@ -987,8 +988,9 @@ const struct {
     { PERF_KEY_NUMS_CURVE,                  "nms" },
     { PERF_KEY_C255_CURVE,                  "c25" },
     { PERF_KEY_SW_TEST_CURVE,               "sw " },
+    { PERF_KEY_XTS_DATA_UNIT_512,           "512" },
+    { PERF_KEY_XTS_DATA_UNIT_4096,          " 4k" },
 };
-
 
 VOID measurePerfOneAlg( AlgorithmImplementation * pAlgImp )
 {
@@ -1029,9 +1031,8 @@ VOID measurePerfOneAlg( AlgorithmImplementation * pAlgImp )
 
     for( std::set<SIZE_T>::const_iterator k = keySizes.begin(); k != keySizes.end(); ++k )
     {
-        UINT32 keyBytes = *k & 0x00ffffff;
-        UINT32 keyFlags = *k & 0xff000000;
-
+        UINT32 keyBytes = *k & ~PERF_KEY_FLAGS_MASK;
+        UINT32 keyFlags = *k & PERF_KEY_FLAGS_MASK;
         AlgorithmImplementation::ALG_PERF_INFO perfInfo;
         if( nKeySizes > 1 )
         {
@@ -1048,28 +1049,29 @@ VOID measurePerfOneAlg( AlgorithmImplementation * pAlgImp )
             perfInfo.dataSize = 0;
             perfInfo.cPerByte = 0;
             perfInfo.cFixed = measurePerfOneSize( *k, 0, keyFn, NULL, NULL, cleanFn, TRUE );
-            perfInfo.strPostfix = "key";
+            perfInfo.operationName = "key";
+            perfInfo.strPostfix = "";
 
             pAlgImp->m_perfInfo.push_back( perfInfo );
         }
 
+        perfInfo.strPostfix = "";
+
+        for( SIZE_T i=0; i < ARRAY_SIZE( g_exKeyParamMapping ); i++ )
+        {
+            if( keyFlags == g_exKeyParamMapping[i].exKeyParam )
+            {
+                perfInfo.strPostfix = g_exKeyParamMapping[i].str;
+                break;
+            }
+        }
+
         if( dataFn != NULL )
         {
+            perfInfo.operationName = "";
             if( decryptFn != NULL )
             {
-                perfInfo.strPostfix = "enc";
-            } else {
-                perfInfo.strPostfix = NULL;
-
-                for( SIZE_T i=0; i < ARRAY_SIZE( g_exKeyParamMapping ); i++ )
-                {
-                    if( keyFlags == g_exKeyParamMapping[i].exKeyParam )
-                    {
-                        perfInfo.strPostfix = g_exKeyParamMapping[i].str;
-                        break;
-                    }
-                }
-                CHECK3( perfInfo.strPostfix != NULL, "Extended key param not found %08x", *k );
+                perfInfo.operationName = "enc";
             }
 
             if(!g_measure_specific_sizes)
@@ -1091,7 +1093,8 @@ VOID measurePerfOneAlg( AlgorithmImplementation * pAlgImp )
 
         if( decryptFn != NULL )
         {
-            perfInfo.strPostfix = "dec";
+            perfInfo.operationName = "dec";
+
             if(!g_measure_specific_sizes)
             {
                 measurePerfData( keyFn, dataFn, decryptFn, cleanFn, &dataSizes, *k, &perfInfo );
@@ -1418,7 +1421,6 @@ runProfiling()
                 if( keyFn != NULL )
                 {
                     (*keyFn)( buf1, buf2, buf3, keySize );
-                    // printf("keyFn called\n");
                 }
 
                 for( std::set<SIZE_T>::const_iterator i = (&dataSizes)->begin(); i != (&dataSizes)->end(); ++i )

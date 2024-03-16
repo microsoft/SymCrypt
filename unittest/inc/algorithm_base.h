@@ -59,7 +59,8 @@ public:
     {
         SIZE_T                  keySize;        // key size to add to row header. (0 if not used)
         SIZE_T                  dataSize;       // data size to add to row header. (only used with g_measure_specific_sizes)
-        char *                  strPostfix;     // postfix string, must be 3 characters long
+        char *                  operationName;  // operation name string, must be 3 characters long
+        char *                  strPostfix;     // postfix string, it is a string associated with a special key size for the given algorithm (i.e. data unit size, elliptic curve type, modulus type, etc.)
         double                  cFixed;         // clocks of fixed overhead.
         double                  cPerByte;       // clocks average cost per byte (used only for linear records, 0 for non-linear records)
         double                  cRange;         // 90 percentile of deviation from prediction by previous two numbers
@@ -166,9 +167,9 @@ public:
     virtual SIZE_T inputBlockLen() = 0;
     // Return the input block length of this XOF
 
-	virtual VOID init(  _In_reads_(cbNstr)  PCBYTE pbNstr, 
+    virtual VOID init(  _In_reads_(cbNstr)  PCBYTE pbNstr,
                                             SIZE_T cbNstr,
-                        _In_reads_(cbSstr)  PCBYTE pbSstr, 
+                        _In_reads_(cbSstr)  PCBYTE pbSstr,
                                             SIZE_T cbSstr) = 0;
     // Initialize for a new XOF computation.
 
@@ -1113,7 +1114,7 @@ public:
     virtual VOID init(
         _In_reads_(cbCustomizationStr)  PCBYTE  pbCustomizationStr,
                                         SIZE_T  cbCustomizationStr,
-        _In_reads_(cbKey)               PCBYTE  pbKey, 
+        _In_reads_(cbKey)               PCBYTE  pbKey,
                                         SIZE_T  cbKey);
 
     virtual VOID append(_In_reads_(cbData) PCBYTE pbData, SIZE_T cbData);

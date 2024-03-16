@@ -1,7 +1,7 @@
 //
 // ResultMerge implementation file
 //
-// Copyright (c) Microsoft Corporation. Licensed under the MIT license. 
+// Copyright (c) Microsoft Corporation. Licensed under the MIT license.
 //
 
 #include "precomp.h"
@@ -72,11 +72,11 @@ ResultMerge::getResult( PBYTE pbResult, SIZE_T cbResult, BOOL countInvocation )
         {
             result = i->strData;
             resultFound = TRUE;
-        } 
+        }
         else if( maxAgree * 2 > nResults )
         {
             i->pAlgImp->m_nErrorDisagreeWithMajority++;
-        } 
+        }
         else
         {
             i->pAlgImp->m_nErrorNoMajority++;

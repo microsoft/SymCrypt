@@ -338,6 +338,11 @@ extern "C" {
 
     #define SECUREZEROMEMORY(dest, sz)  RtlSecureZeroMemory( (dest), (sz) )
 
+    #define TRAP_DEBUGGER() do \
+    { \
+        if( IsDebuggerPresent() ) { DebugBreak(); } \
+    } while (false)
+
 #elif SYMCRYPT_APPLE_CC
 
     #define STRICMP                     strcasecmp
@@ -366,6 +371,7 @@ extern "C" {
 
     #define SECUREZEROMEMORY(dest, sz)  memset_s( (dest), (sz), 0, (sz) )
 
+    #define TRAP_DEBUGGER()
 #elif SYMCRYPT_GNUC
 
     #define STRICMP                     strcasecmp
@@ -429,6 +435,17 @@ extern "C" {
         memset(dest, 0, sz);               \
         asm volatile("" ::: "memory");      \
     })
+
+#if __linux__
+#include <sys/ptrace.h>
+#include <csignal>
+    #define TRAP_DEBUGGER() do \
+    { \
+        if( ptrace(PTRACE_TRACEME, 0, 1, 0) == -1 ) { raise(SIGTRAP); } \
+    } while (false)
+#else
+    #define TRAP_DEBUGGER()
+#endif // __linux__
 
 #endif
 
@@ -1120,6 +1137,9 @@ extern const char * g_implementationNames[];
 #include "rsa32_implementations.h"
 #endif
 
+#if INCLUDE_IMPL_OPENSSL
+#include "openssl_implementations.h"
+#endif
 
 #include "printtable.h"
 
@@ -1892,6 +1912,8 @@ printXmmRegisters( PCSTR text );
 #define MAX_INT_BITS        (1 << 10)
 #define MAX_INT_BYTES       (MAX_INT_BITS/8)
 
+#define PERF_KEY_FLAGS_MASK (0xff000000)
+
 //
 // For testing the different moduli types, we signal the type of modulus in the upper bits of the size parameter.
 //
@@ -1900,6 +1922,12 @@ printXmmRegisters( PCSTR text );
 #define PERF_KEY_PUBLIC     0x03000000  // Modulus is public
 #define PERF_KEY_PUB_PM     0x04000000  // Modulus is public & Pseudo-Mersenne
 #define PERF_KEY_PUB_NIST   0x05000000  // Modulus is public & NIST curve prime
+
+//
+// For testing the different XTS data unit sizes
+//
+#define PERF_KEY_XTS_DATA_UNIT_512     0x06000000  // 512-byte data unit
+#define PERF_KEY_XTS_DATA_UNIT_4096    0x07000000  // 4096-byte data unit
 
 #define PERF_KEY_PRIME      0x80000000  // Modulus is prime (orthogonal to the other flags)
 

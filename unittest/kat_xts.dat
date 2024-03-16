@@ -1,7 +1,7 @@
 #
 # Known answer test vectors for XTS
 #
-# 
+#
 
 [XtsAes]
 
@@ -106,12 +106,12 @@ ciphertext = 38b45812ef43a05bd957e545907e223b954ab4aaf088303ad910eadf14b42be68b2
 
 keylen = 32
 rrep = 10000
-rnd = 921fd0215800de90096f458d81166856
+rnd = 171db05508659132b95f35af6d5b5f15
 
 keylen = 48
 rrep = 10000
-rnd = cdf1c36a1521abadde7ae173dd2efe73
+rnd = 20266ecdf753d5dde4cff0b3d1917528
 
 keylen = 64
 rrep = 10000
-rnd = 0108a199265ab0bba73f1f01cecdbbef
+rnd = 9aafe6b3adc75c849e5951b2edcbbe66

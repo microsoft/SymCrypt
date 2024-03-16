@@ -16,7 +16,7 @@ variables:
   WindowsContainerImage: 'onebranch.azurecr.io/windows/ltsc2019/vse2022@sha256:a3083215a4675bad774ec88005dcf57436b3423584d0db3e82b6de3f780213ba'
 
 resources:
-  repositories: 
+  repositories:
     - repository: templates
       type: git
       name: OneBranch.Pipelines/GovernedTemplates
@@ -55,7 +55,7 @@ extends:
           inputs:
             system: 'Custom'
             customVersion: '$(verStep.VER_MAJOR).$(verStep.VER_MINOR).$(verStep.VER_PATCH)-$(Build.BuildId)'
-          
+
     - stage: Build_Windows
       displayName: Build Windows
       jobs:
@@ -103,36 +103,42 @@ extends:
           config: 'Debug'
           cc: 'gcc'
           cxx: 'g++'
+          openssl: true
       - template: .pipelines/templates/build-linux.yml@self
         parameters:
           arch: 'AMD64'
           config: 'Sanitize'
           cc: 'gcc'
           cxx: 'g++'
+          openssl: true
       - template: .pipelines/templates/build-linux.yml@self
         parameters:
           arch: 'AMD64'
           config: 'Release'
           cc: 'gcc'
-          cxx: 'g++'          
+          cxx: 'g++'
+          openssl: true
       - template: .pipelines/templates/build-linux.yml@self
         parameters:
           arch: 'AMD64'
           config: 'Debug'
           cc: 'clang'
           cxx: 'clang++'
+          openssl: true
       - template: .pipelines/templates/build-linux.yml@self
         parameters:
           arch: 'AMD64'
           config: 'Sanitize'
           cc: 'clang'
           cxx: 'clang++'
+          openssl: true
       - template: .pipelines/templates/build-linux.yml@self
         parameters:
           arch: 'AMD64'
           config: 'Release'
           cc: 'clang'
           cxx: 'clang++'
+          openssl: true
       - template: .pipelines/templates/build-linux.yml@self
         parameters:
           arch: 'AMD64'
@@ -140,7 +146,7 @@ extends:
           cc: 'gcc'
           cxx: 'g++'
           skipTests: true
-          additionalArgs: '--no-asm'
+          additionalArgs: '--no-asm --openssl'
           identifier: 'NoAsm'
       - template: .pipelines/templates/build-linux.yml@self
         parameters:
@@ -149,7 +155,7 @@ extends:
           cc: 'clang'
           cxx: 'clang++'
           skipTests: true
-          additionalArgs: '--no-asm'
+          additionalArgs: '--no-asm --openssl'
           identifier: 'NoAsm'
       - template: .pipelines/templates/build-linux.yml@self
         parameters:

@@ -57,9 +57,9 @@ SYMCRYPT_XtsAesXxx(
             // bOverflow=FALSE allows backwards compatibility with old API which wrapped around at 64-bits
             SYMCRYPT_ASSERT( tweakLow64 < N_PARALLEL_TWEAKS );
 
-            // Increment tweakHigh64 and store new value in high half of the previous tweakLow64+1 tweaks
+            // Increment tweakHigh64 and store new value in high half of the previous tweakLow64 tweaks
             tweakHigh64++;
-            for( i=0; i<=tweakLow64; i++)
+            for( i=0; i<tweakLow64; i++)
             {
                 SYMCRYPT_STORE_LSBFIRST64(&tweakBuf[tweakBytes - (16*i) - 8], tweakHigh64);
             }

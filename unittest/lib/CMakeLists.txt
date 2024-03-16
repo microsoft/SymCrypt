@@ -83,6 +83,12 @@ elseif(SYMCRYPT_USE_ASM) # Linux
     endif()
 endif()
 
+if(SYMCRYPT_TEST_WITH_OPENSSL)
+    list(APPEND SOURCES
+        openssl_implementations.cpp
+    )
+endif()
+
 # Need to include an asm file from here.
 include_directories(${CMAKE_SOURCE_DIR}/lib)
 

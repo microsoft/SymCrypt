@@ -511,7 +511,6 @@
 //
 // There is not enough structure to the CCM & GCM modes to share an implementation
 //
-
 template<>
 VOID
 algImpKeyPerfFunction<ImpXxx, AlgAes, ModeCcm>( PBYTE buf1, PBYTE buf2, PBYTE buf3, SIZE_T keySize )
@@ -771,7 +770,6 @@ cleanup:
     return status;
 }
 
-
 //////////////////////////
 // GCM
 
@@ -826,7 +824,7 @@ algImpCleanPerfFunction<ImpXxx,AlgAes, ModeGcm>( PBYTE buf1, PBYTE buf2, PBYTE b
 // It must be aligned on a 16-byte boundary, so we use SymCryptCallbackAlloc which aligns to
 // SYMCRYPT_ASYM_ALIGN_VALUE.
 template<>
-PVOID 
+PVOID
 AuthEncImp<ImpXxx, AlgAes, ModeGcm>::operator new( size_t size )
 {
     return ALIGNED_ALLOC( SYMCRYPT_ALIGN_VALUE, size );
@@ -1082,7 +1080,6 @@ cleanup:
 
 //////////////////////////
 // CHACHA20POLY1305
-
 //template<>
 //VOID
 //algImpKeyPerfFunction< ImpXxx, AlgChaCha20Poly1305, ModeNone>( PBYTE buf1, PBYTE buf2, PBYTE buf3, SIZE_T keySize )
@@ -1248,7 +1245,6 @@ AuthEncImp<ImpXxx, AlgChaCha20Poly1305, ModeNone>::decrypt(
 }
 
 
-
 //////////////////////////
 // RC4
 
@@ -1355,7 +1351,6 @@ StreamCipherImp<ImpXxx, AlgRc4>::encrypt( PCBYTE pbSrc, PBYTE pbDst, SIZE_T cbDa
 
 //////////////////////////
 // CHACHA20
-
 template<>
 VOID
 algImpKeyPerfFunction< ImpXxx, AlgChaCha20>( PBYTE buf1, PBYTE buf2, PBYTE buf3, SIZE_T keySize )
@@ -2294,23 +2289,36 @@ ParallelHashImp<ImpXxx, AlgParallelSha512>::initWithLongMessage( ULONGLONG nByte
 //////////////////////////////////////////////////////////////////////////////////////////////
 //  XTS-AES
 //
+struct CONCAT2(ImpXxx, XtsAesExpandedKeyContext) {
+    SYMCRYPT_XTS_AES_EXPANDED_KEY expandedKey;
+    SIZE_T dataUnitSize;
+};
 
 template<>
 VOID
-algImpKeyPerfFunction< ImpXxx, AlgXtsAes>( PBYTE buf1, PBYTE buf2, PBYTE buf3, SIZE_T keySize )
+algImpKeyPerfFunction<ImpXxx, AlgXtsAes>( PBYTE buf1, PBYTE buf2, PBYTE buf3, SIZE_T keySize )
 {
     UNREFERENCED_PARAMETER( buf3 );
+    SIZE_T actualKeySize = keySize & ~PERF_KEY_FLAGS_MASK;
+    SIZE_T dataUnitSize = 512;
+    if( (keySize & PERF_KEY_FLAGS_MASK) == PERF_KEY_XTS_DATA_UNIT_4096 )
+    {
+        dataUnitSize = 4096;
+    }
 
-    ScShimSymCryptXtsAesExpandKeyEx( (SYMCRYPT_XTS_AES_EXPANDED_KEY *) buf1, buf2, keySize, SYMCRYPT_FLAG_KEY_NO_FIPS );
+    CONCAT2(ImpXxx, XtsAesExpandedKeyContext) *context = (CONCAT2(ImpXxx, XtsAesExpandedKeyContext) *)buf1;
+    ScShimSymCryptXtsAesExpandKeyEx( &context->expandedKey, buf2, actualKeySize, SYMCRYPT_FLAG_KEY_NO_FIPS );
+    context->dataUnitSize = dataUnitSize;
 }
 
 template<>
 VOID
-algImpDataPerfFunction<ImpXxx,AlgXtsAes>( PBYTE buf1, PBYTE buf2, PBYTE buf3, SIZE_T dataSize )
+algImpDataPerfFunction<ImpXxx, AlgXtsAes>( PBYTE buf1, PBYTE buf2, PBYTE buf3, SIZE_T dataSize )
 {
+    CONCAT2(ImpXxx, XtsAesExpandedKeyContext) *context = (CONCAT2(ImpXxx, XtsAesExpandedKeyContext) *)buf1;
     ScShimSymCryptXtsAesEncrypt(
-                        (SYMCRYPT_XTS_AES_EXPANDED_KEY*)buf1,
-                        512,
+                        &context->expandedKey,
+                        context->dataUnitSize,
                         'twek',
                         buf2,
                         buf3,
@@ -2319,11 +2327,12 @@ algImpDataPerfFunction<ImpXxx,AlgXtsAes>( PBYTE buf1, PBYTE buf2, PBYTE buf3, SI
 
 template<>
 VOID
-algImpDecryptPerfFunction<ImpXxx,AlgXtsAes>( PBYTE buf1, PBYTE buf2, PBYTE buf3, SIZE_T dataSize )
+algImpDecryptPerfFunction<ImpXxx, AlgXtsAes>( PBYTE buf1, PBYTE buf2, PBYTE buf3, SIZE_T dataSize )
 {
+    CONCAT2(ImpXxx, XtsAesExpandedKeyContext) *context = (CONCAT2(ImpXxx, XtsAesExpandedKeyContext) *)buf1;
     ScShimSymCryptXtsAesDecrypt(
-                        (SYMCRYPT_XTS_AES_EXPANDED_KEY*)buf1,
-                        512,
+                        &context->expandedKey,
+                        context->dataUnitSize,
                         'twek',
                         buf2,
                         buf3,
@@ -2332,7 +2341,7 @@ algImpDecryptPerfFunction<ImpXxx,AlgXtsAes>( PBYTE buf1, PBYTE buf2, PBYTE buf3,
 
 template<>
 VOID
-algImpCleanPerfFunction<ImpXxx,AlgXtsAes>( PBYTE buf1, PBYTE buf2, PBYTE buf3 )
+algImpCleanPerfFunction<ImpXxx, AlgXtsAes>( PBYTE buf1, PBYTE buf2, PBYTE buf3 )
 {
     UNREFERENCED_PARAMETER( buf2 );
     UNREFERENCED_PARAMETER( buf3 );
@@ -2344,9 +2353,9 @@ algImpCleanPerfFunction<ImpXxx,AlgXtsAes>( PBYTE buf1, PBYTE buf2, PBYTE buf3 )
 template<>
 XtsImp<ImpXxx, AlgXtsAes>::XtsImp()
 {
-    m_perfDataFunction      = &algImpDataPerfFunction <ImpXxx, AlgXtsAes>;
+    m_perfDataFunction      = &algImpDataPerfFunction<ImpXxx, AlgXtsAes>;
     m_perfDecryptFunction   = &algImpDecryptPerfFunction<ImpXxx, AlgXtsAes>;
-    m_perfKeyFunction       = &algImpKeyPerfFunction  <ImpXxx, AlgXtsAes>;
+    m_perfKeyFunction       = &algImpKeyPerfFunction<ImpXxx, AlgXtsAes>;
     m_perfCleanFunction     = &algImpCleanPerfFunction<ImpXxx, AlgXtsAes>;
 }
 
@@ -2547,7 +2556,6 @@ algImpDecryptPerfFunction<ImpXxx, AlgTlsCbcHmacSha256>( PBYTE buf1, PBYTE buf2, 
 
     SYMCRYPT_ASSERT( scError == SYMCRYPT_NO_ERROR );
 }
-
 
 
 ///////////////////////
@@ -3392,7 +3400,7 @@ RsaSignImp<ImpXxx, AlgRsaSignPss>::verify(
                     u32Other+1, cbHash, cbSig, pcstrHashAlgName );
             CHECK( FALSE, "?" );
         }
-        
+
         scError = ScShimSymCryptRsaPssVerify(
                         state.pKey,
                         pbHash,

@@ -4,6 +4,8 @@ New changes will be listed here as they are developed. The version number is det
 prior to the creation of a new release, based on the changes contained in that release.
 
 - Add SymCryptEntropyAccumulator to Windows kernel module
+- Fix tweak lower 64 bit overflow calculation in SYMCRYPT_XtsAesXxx
+- Add OpenSSL implementation for XtsAes to symcryptunittest
 
 # Version 103.4.1
 - Add retpoline guard flags for undocked Windows build

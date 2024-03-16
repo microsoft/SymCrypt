@@ -826,9 +826,14 @@ VOID
 algImpKeyPerfFunction< ImpCng, AlgXtsAes>( PBYTE buf1, PBYTE buf2, PBYTE buf3, SIZE_T keySize )
 {
     UNREFERENCED_PARAMETER( buf3 );
+    SIZE_T actualKeySize = keySize & ~PERF_KEY_FLAGS_MASK;
     ULONG dataUnitSize = 512;
+    if( (keySize & PERF_KEY_FLAGS_MASK) == PERF_KEY_XTS_DATA_UNIT_4096 )
+    {
+        dataUnitSize = 4096;
+    }
 
-    CHECK( NT_SUCCESS( CngGenerateSymmetricKeyFn( BCRYPT_XTS_AES_ALG_HANDLE, (BCRYPT_KEY_HANDLE *) buf1, buf1 + 64, 2048, buf2, (ULONG)keySize, 0 ) ), "?" );
+    CHECK( NT_SUCCESS( CngGenerateSymmetricKeyFn( BCRYPT_XTS_AES_ALG_HANDLE, (BCRYPT_KEY_HANDLE *) buf1, buf1 + 64, 2048, buf2, (ULONG)actualKeySize, 0 ) ), "?" );
     CHECK( NT_SUCCESS( CngSetPropertyFn( *(BCRYPT_KEY_HANDLE *) buf1, BCRYPT_MESSAGE_BLOCK_LENGTH, (PBYTE)&dataUnitSize, sizeof( dataUnitSize ), 0 ) ), "?" );
 }
 

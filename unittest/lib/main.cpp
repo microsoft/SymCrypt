@@ -1051,6 +1051,7 @@ fatal( _In_ PCSTR file, ULONG line, _In_ PCSTR format, ... )
     vfprintf( stdout, format, vl );
     fprintf( stdout, "\n" );
 
+    TRAP_DEBUGGER();
     exit( -1 );
 }
 
@@ -1569,7 +1570,8 @@ runPerfTests()
         g_perfUnits, g_tscFreq / 1e6);
 
     if( g_measure_specific_sizes )
-        print("AlgorithmName,KeySize,Operation,ImplementationName,DataSize,%s\n", g_perfUnits);
+        print("AlgorithmName,KeySize,Operation,KeyParam,ImplementationName,DataSize,%s\n", g_perfUnits);
+
 
     PrintTable ptPerf;
     PrintTable ptWipe;
@@ -1590,17 +1592,27 @@ runPerfTests()
 
                     name = name + buf;
                 }
-                name = name + " " + j->strPostfix;
+                name = name;
+                if (j->operationName != NULL && strlen(j->operationName) > 0)
+                {
+                    name += String(" ") + j->operationName;
+                }
+
+                if (j->strPostfix != NULL && strlen(j->strPostfix) > 0)
+                {
+                    name += String(" ") + j->strPostfix;
+                }
 
                 ptPerf.addItem( name, (*i)->m_implementationName,
                             j->cPerByte, j->cFixed, j->cRange );
             }
             else
             {
-                print( "%s%s,%lu,%s,%s,%lu,%lu\n",
+                print( "%s%s,%lu,%s,%s,%s,%lu,%lu\n",
                     g_measure_sizes_stringPrefix.c_str(),
                     ((*i)->m_algorithmName + (*i)->m_modeName).c_str(),
                     (ULONG) (j->keySize & 0xffff) * 8,
+                    j->operationName,
                     j->strPostfix,
                     ((*i)->m_implementationName).c_str(),
                     (ULONG) j->dataSize,

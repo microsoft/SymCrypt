@@ -1,7 +1,7 @@
 //
 // cng_implementations.h Header file for CNG implementations
 //
-// Copyright (c) Microsoft Corporation. Licensed under the MIT license. 
+// Copyright (c) Microsoft Corporation. Licensed under the MIT license.
 //
 
 VOID
@@ -65,7 +65,7 @@ public:
     //
     // Data for the key
     //
-    BYTE                keyObjectBuffer[768];   
+    BYTE                keyObjectBuffer[768];
 };
 
 
@@ -122,7 +122,7 @@ public:
     BCRYPT_KEY_HANDLE   hKey;
     PULONG              pMagic;                     // Pointer to magic value that should not be overwritten by the key object.
     DWORD               keyObjSize;
-    BYTE                keyObjectBuffer[2048];   
+    BYTE                keyObjectBuffer[2048];
     //
     // No need for alg handle. XTS is only available when we have Pseudo-handles.
     //

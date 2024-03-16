@@ -286,7 +286,6 @@ katXtsSingle(
     // Do single encryption
     //
     memset( bufData, 0, sizeof( bufData ) );
-
     pImp->encrypt( (SIZE_T) cbDataUnit, tweak, pbPlaintext, bufData, cbPlaintext );
     CHECK3( memcmp( bufData, pbCiphertext, cbPlaintext ) == 0, "Ciphertext mismatch in line %lld", line );
 
@@ -371,7 +370,7 @@ testXtsRandom( XtsMultiImp * pImp, int rrep, SIZE_T keyLen, PCBYTE pbResult, SIZ
 
             if( nDataUnits > 1 )
             {
-                for( int i=0; i<5; i++ )
+                for( int j=0; j<5; j++ )
                 {
                     //
                     // Pick a subset of the big request and check the encrypt/decrypt
@@ -424,7 +423,7 @@ testXtsRandom( XtsMultiImp * pImp, int rrep, SIZE_T keyLen, PCBYTE pbResult, SIZ
 
             if( nDataUnits > 1 )
             {
-                for( int i=0; i<5; i++ )
+                for( int k=0; k<5; k++ )
                 {
                     //
                     // Pick a subset of the big request and check the encrypt/decrypt
@@ -453,13 +452,12 @@ testXtsRandom( XtsMultiImp * pImp, int rrep, SIZE_T keyLen, PCBYTE pbResult, SIZ
     SymCryptSha256( buf1, bufSize, buf2 );
     if( memcmp( buf2, pbResult, cbResult ) != 0 )
     {
-        print( "Wrong xts result in line %lld. \n"
+        print( "\nWrong xts result in line %lld. \n"
             "Expected ", line );
         printHex( pbResult, cbResult );
         print( "\nGot      " );
         printHex( buf2, cbResult );
         iprint( "\n" );
-
         pImp->m_nErrorKatFailure++;
     }
 }

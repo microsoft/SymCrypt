@@ -163,7 +163,7 @@ function(process_cppasm filepath outformat archdefine)
         # assume masm => MSVC C compiler
         add_custom_command(
             OUTPUT ${output_asm}
-            COMMAND "${CMAKE_C_COMPILER}" /EP /P /Fi${output_asm} ${filepath}
+            COMMAND "${CMAKE_C_COMPILER}" /nologo /EP /P /Fi${output_asm} ${filepath}
                 -I${CMAKE_CURRENT_SOURCE_DIR} -I${CMAKE_CURRENT_SOURCE_DIR}/${rootpath} -I${CMAKE_SOURCE_DIR}/inc
                 -DSYMCRYPT_${outformatupper} -DSYMCRYPT_CPU_${archdefineupper} ${dbg_definition}
             MAIN_DEPENDENCY ${filepath}
