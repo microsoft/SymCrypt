@@ -53,8 +53,8 @@ __pycache__/
 *.py[cod]
 *$py.class
 
-# VSCode uses a .vscode directory to store extension data.
-.vscode/
+# Python environment
+.venv
 
 # Visual Studio 2017 uses a .vs directory to store language service database and other files
 .vs/
