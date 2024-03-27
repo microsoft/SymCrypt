@@ -8,6 +8,10 @@
     <Import Project="$(VCTargetsPath)\BuildCustomizations\marmasm.props" />
   </ImportGroup>
 
+  <PropertyGroup>
+    <SymCryptTestLegacyImpl Condition="'$(SymCryptTestLegacyImpl)' == ''">false</SymCryptTestLegacyImpl>
+  </PropertyGroup>
+
   <PropertyGroup Label="IncludePath">
     <IncludePath>$(SolutionDir)inc;$(WindowsSdkDir)Include\$(TargetPlatformVersion)\km;$(IncludePath);</IncludePath>
   </PropertyGroup>
@@ -28,6 +32,8 @@
       <CharacterSet>MultiByte</CharacterSet>
       <WholeProgramOptimization>true</WholeProgramOptimization>
       <AdditionalOptions>/Gy %(AdditionalOptions)</AdditionalOptions>
+      <!-- Only applicable to unit tests: exclude private legacy implementations unless explicitly specified -->
+      <PreprocessorDefinitions Condition="$(SymCryptTestLegacyImpl)!='true'">INCLUDE_IMPL_MSBIGNUM=0;INCLUDE_IMPL_RSA32=0;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <MASM>
       <GenerateDebugInformation>true</GenerateDebugInformation>

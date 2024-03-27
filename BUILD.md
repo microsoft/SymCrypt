@@ -17,9 +17,9 @@ combinations, and we're working on adding support for more.
 SymCrypt supports a variety of operating systems, CPU architectures, and runtime environments, but due to functionality
 gaps in the build systems we use, not every combination is supported by every build system. Specifically, because
 CMake does not currently support building kernel mode components, we also support MSBuild for building kernel-mode
-libraries on Windows. Internally, we used Razzle as our legacy build system, but SymCrypt's support for Razzle builds
-is on a deprecation path and will be removed in a future release. Additionally, it has not been tested with the
-public open source version of Razzle, and is unlikely to work with it.
+libraries on Windows. Internally, we previously used Razzle as our legacy build system, but SymCrypt's support
+for Razzle builds is on a deprecation path and will be removed in a future release. Additionally, it has not been
+tested with the public open source version of Razzle, and is unlikely to work with it.
 
 The ability to build SymCrypt on any particular platform or architecture, with or without ASM optimizations, does not
 imply that it has been tested for or is actively supported by Microsoft on that platform/architecture. While we make
@@ -30,18 +30,19 @@ warranties of merchantability, fitness for a particular purpose and noninfringem
 ## Build Instructions
 For Microsoft employees building the library internally, to include msbignum and RSA32 implementation benchmarks in
 the unit tests, make sure the SymCryptDependencies submodule is initialized by following the steps above
-(`git submodule update --init`). When building, provide the additional CMake argument `-DSYMCRYPT_TEST_LEGACY_IMPL=ON`.
-This only affects the unit tests, and does not change the functionality of the SymCrypt library itself.
+(`git submodule update --init`). When building, specify `/p:SymCryptTestLegacyImpl=true` for MSBuild,
+or `-DSYMCRYPT_TEST_LEGACY_IMPL=ON` for CMake. This only affects the unit tests, and does not change the
+functionality of the SymCrypt library itself.
 
 ### Using Python scripts
 Building SymCrypt can be complicated due to the number of platforms, architectures and targets supported. To improve
-ease of use and have a consistent build solution that can be leveraged by both developers and our automated CI pipelines,
-we have created a set of Python scripts to help with building, testing and packaging. You can run `scripts/build.py --help`
-to get help with supported options.
+ease of use and have a consistent build solution that can be leveraged by both developers and our automated CI
+pipelines, we have created a set of Python scripts to help with building, testing and packaging. You can run
+`scripts/build.py --help` to get help with supported options.
 
 1. To build SymCrypt for Windows or Linux using the CMake build system, run `scripts/build.py cmake build_dir` where `build_dir` is the desired build output directory.
     * To see additional options, run `scripts/build.py cmake --help`.
-    * On Windows, the the build script also supports MSBuild. Currently this is for internal use only. To use MSBuild, run `scripts\build.py msbuild`. The output directory for MSBuild is always `build\bin`.
+    * On Windows, the the build script also supports MSBuild. To use MSBuild, run `scripts\build.py msbuild`. The output directory for MSBuild is always `build\bin`.
 1. To run the unit tests after a build has finished, run `scripts/test.py build_dir`.
     * Additional positional arguments will be passed directly to the unit test executable.
 1. To package up the built binaries into an archive, run `scripts/package.py build_dir arch configuration module_name release_dir`, where:
@@ -52,9 +53,9 @@ to get help with supported options.
     * `release_dir` is the output directory for the release archive
 
 ### Building with CMake
-If you don't want to use the Python helper scripts, or if they do not support the specific build flags you desire, you can
-build SymCrypt by directly invoking CMake. Note that Python is still required for translating SymCryptAsm and building the
-Linux modules with FIPS integrity checks.
+If you don't want to use the Python helper scripts, or if they do not support the specific build flags you desire,
+you can build SymCrypt by directly invoking CMake. Note that Python is still required for translating SymCryptAsm
+and building the Linux modules with FIPS integrity checks.
 
 1. Run `cmake -S . -B bin` to configure your build. You can add the following optional CMake arguments to change build options:
     * `-DSYMCRYPT_TARGET_ARCH=<AMD64|X86|ARM64>` to choose a target architecture. If not specified, it will default to the host system architecture.
@@ -74,12 +75,11 @@ to your build directory:
 * `exe` - unit tests
 
 ### Building with MSBuild
-Currently, MSBuild is only supported internally for use in Azure DevOps pipelines that produce artifacts for Windows.
-Building the SymCrypt unit tests with MSBuild requires access to the msbignum and RSA32 implementations, which cannot
-be released externally due to licensing restrictions.  If you wish to build directly with MSBuild, bypassing the Python
-helper script, you can run `msbuild /p:Platform=<platform> /p:Architecture=<arch> symcrypt.sln`. Note that Python is
-still required for translating SymCryptAsm. The output directory for MSBuild is always `build\bin`, and all compiled
-outputs are placed in this directory.
+SymCrypt also supports building with MSBuild on Windows. This is primarily intended for Microsoft-internal use in
+official builds, for compatibility with the Windows engineering system. If you wish to build directly with MSBuild,
+bypassing the Python helper script, you can run `msbuild /p:Platform=<platform> /p:Architecture=<arch> symcrypt.sln`.
+Note that Python is still required for translating SymCryptAsm. The output directory for MSBuild is always `build\bin`,
+and all compiled outputs are placed in this directory.
 
 ## Building Linux targets
 
@@ -104,19 +104,24 @@ qemu-arm -L /usr/arm-linux-gnueabihf/ ./bin_arm/exe/symcryptunittest -rsa -dsa -
 ```
 
 ## Performance comparison with OpenSSL
-`symcryptunittest.exe` can be used to compare and measure performance of algorithms provided by SymCrypt and OpenSSL. On Windows `symcryptunittest.exe` would have to be compiled with OpenSSL. `nasm` and  `strawberryperl` are prerequisites to building OpenSSL.
+`symcryptunittest.exe` can be used to compare and measure performance of algorithms provided by SymCrypt and OpenSSL.
+On Windows `symcryptunittest.exe` would have to be compiled with OpenSSL. `nasm` and  `strawberryperl` are
+prerequisites to building OpenSSL.
+
 ```
 winget install nasm strawberryperl
 .\scripts\build.py cmake bin --config Release --openssl-build-from-source
 ```
 
 And on Linux we can use OpenSSL installed by system's package manager.
+
 ```
 sudo apt install -y libssl-dev
 ./scripts/build.py cmake bin --config Release --openssl
 ```
 
 To build OpenSSL on Linux we need to install following prerequisites.
+
 ```
 sudo apt install -y nasm perl
 .\scripts\build.py cmake bin --config Release --openssl-build-from-source

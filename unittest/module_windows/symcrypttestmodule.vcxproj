@@ -42,7 +42,7 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <EnableUAC>false</EnableUAC>
       <LinkTimeCodeGeneration>UseLinkTimeCodeGeneration</LinkTimeCodeGeneration>
-      <AdditionalDependencies>%(AdditionalDependencies);rsa32.lib;msbignum.lib;ntdll.lib;Bcrypt.lib</AdditionalDependencies>
+      <AdditionalDependencies>%(AdditionalDependencies);ntdll.lib;Bcrypt.lib</AdditionalDependencies>
       <AdditionalLibraryDirectories>..\SymCryptDependencies\$(ProcessorArchitecture)</AdditionalLibraryDirectories>
       <ModuleDefinitionFile>exports.def</ModuleDefinitionFile>
     </Link>

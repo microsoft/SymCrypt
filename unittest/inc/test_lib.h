@@ -465,9 +465,15 @@ extern "C" {
 #define INCLUDE_IMPL_CNG       (1)
 #endif
 
+#if !defined( INCLUDE_IMPL_OPENSSL )
+// OpenSSL implementation is disabled by default
+#define INCLUDE_IMPL_OPENSSL   (0)
+#endif
+
 #if !defined( INCLUDE_IMPL_REF )
 #define INCLUDE_IMPL_REF       (1)
 #endif
+
 
 
 

@@ -127,7 +127,7 @@ jobs:
       configuration: $(ob_build_config)
       maximumCpuCount: true
       restoreNugetPackages: ${{ parameters.restoreNugetPackages }}
-      msbuildArgs: '-p:UndockedOfficial=${{ parameters.nativeCompiler }} -p:UndockedBuildId=$(Build.BuildId) -p:VER_BUILD_ID=$(Build.BuildId) -p:VER_SUFFIX=${{ parameters.buildSuffix }} ${{ parameters.msbuildArgs }}'
+      msbuildArgs: '-p:UndockedOfficial=${{ parameters.nativeCompiler }} -p:UndockedBuildId=$(Build.BuildId) -p:VER_BUILD_ID=$(Build.BuildId) -p:VER_SUFFIX=${{ parameters.buildSuffix }} -p:SymCryptTestLegacyImpl=true ${{ parameters.msbuildArgs }}'
 
   # Overwrite default artifact publishing with our copy (enables publishing binaries for failed runs)
   - task: PowerShell@2
