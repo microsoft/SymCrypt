@@ -13,7 +13,8 @@
 #define  RANDOM_NUM_CACHE_SIZE         128
 #define  MAX_GENERATE_BEFORE_RESEED    8192
 
-pthread_mutex_t g_rngLock; // lock around access to following global variable
+PVOID g_rngLock; // lock around access to following global variable
+
 BOOLEAN g_RngStateInstantiated = FALSE;
 SYMCRYPT_RNG_AES_STATE g_AesRngState;
 
@@ -53,7 +54,9 @@ VOID
 SYMCRYPT_CALL
 SymCryptRngInit(void)
 {
-    if( pthread_mutex_init( &g_rngLock, NULL ) != 0)
+    g_rngLock = SymCryptCallbackAllocateMutexFastInproc();
+
+    if (g_rngLock == NULL)
     {
         SymCryptFatal( 'rngi' );
     }
@@ -112,7 +115,7 @@ SymCryptRngUninit(void)
     SymCryptEntropyFipsUninit();
     SymCryptEntropySecureUninit();
     SymCryptRngAesUninstantiate( &g_AesRngState );
-    pthread_mutex_destroy( &g_rngLock );
+    SymCryptCallbackFreeMutexFastInproc( g_rngLock );
 }
 
 // This function fills pbRandom with cbRandom bytes. For small requests,
@@ -130,8 +133,8 @@ SymCryptRandom( PBYTE pbRandom, SIZE_T cbRandom )
     {
         return;
     }
-
-    pthread_mutex_lock( &g_rngLock );
+    
+    SymCryptCallbackAcquireMutexFastInproc( g_rngLock );
 
     if( !g_RngStateInstantiated )
     {
@@ -223,7 +226,7 @@ SymCryptRandom( PBYTE pbRandom, SIZE_T cbRandom )
         );
     }
 
-    pthread_mutex_unlock( &g_rngLock );
+    SymCryptCallbackReleaseMutexFastInproc( g_rngLock );
 }
 
 // This function mixes the provided entropy into the RNG state using a call to SymCryptRngAesGenerateSmall
@@ -247,7 +250,7 @@ SymCryptProvideEntropy( PCBYTE pbEntropy, SIZE_T cbEntropy )
     // Get hash result in additionalInput buffer.
     SymCryptSha256Result( &hashState, additionalInput );
 
-    pthread_mutex_lock( &g_rngLock );
+    SymCryptCallbackAcquireMutexFastInproc( g_rngLock );
 
     scError = SymCryptRngAesGenerateSmall(
         &g_AesRngState,
@@ -260,7 +263,7 @@ SymCryptProvideEntropy( PCBYTE pbEntropy, SIZE_T cbEntropy )
         SymCryptFatal( 'acdx' );
     }
 
-    pthread_mutex_unlock( &g_rngLock );
+    SymCryptCallbackReleaseMutexFastInproc( g_rngLock );
 
     SymCryptWipeKnownSize( additionalInput, sizeof(additionalInput) );
 }

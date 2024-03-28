@@ -493,6 +493,8 @@ SymCryptUint64Bytesize( UINT64 value );
 //
 // SYMCRYPT_ENVIRONMENT_LINUX_USERMODE                      // use for Linux
 //
+// SYMCRYPT_ENVIRONMENT_OPTEE_TA                            // use for OPTEE
+//
 // SYMCRYPT_ENVIRONMENT_GENERIC                             // use for all other situations
 //
 

@@ -393,9 +393,24 @@ if(NOT WIN32)
         endif()
     endif()
 
-    add_library(symcrypt_linuxusermode STATIC env_linuxUserMode.c)
-    set_target_properties(symcrypt_linuxusermode PROPERTIES PREFIX "")
-    target_link_libraries(symcrypt_linuxusermode symcrypt_common)
+    if(SYMCRYPT_TARGET_ENV MATCHES "LinuxUserMode")
+        add_library(symcrypt_linuxusermode STATIC env_linuxUserMode.c)
+        set_target_properties(symcrypt_linuxusermode PROPERTIES PREFIX "")
+        target_link_libraries(symcrypt_linuxusermode symcrypt_common)
+    elseif(SYMCRYPT_TARGET_ENV MATCHES "OPTEE")
+        # Remove files from symcrypt_common that are not supported in optee env.
+        # aes-asm.c - use SymCryptAesDecryptAsm which is not defined for ARM64
+        # cpuid_um.c - include auxv.h and use getauxval
+        # session.c - use atomic operations (__atomic_compare_exchange)
+        list(REMOVE_ITEM SOURCES_COMMON
+            aes-asm.c
+            cpuid_um.c
+            session.c)
+
+        add_library(symcrypt_envOpteeTa STATIC env_opteeTa.c)
+        set_target_properties(symcrypt_envOpteeTa PROPERTIES PREFIX "")
+        target_link_libraries(symcrypt_envOpteeTa symcrypt_common)
+    endif()
 endif()
 
 include_directories(${CMAKE_SOURCE_DIR}/inc)

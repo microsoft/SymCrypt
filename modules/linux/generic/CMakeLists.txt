@@ -2,7 +2,9 @@ set(SOURCES
     statusindicator.c
     ../common/optional/rngfipsjitter.c
     ../common/optional/rngforkdetection.c
-    ../common/optional/rngsecureurandom.c)
+    ../common/optional/rngsecureurandom.c
+    ../common/optional/module_linuxUserMode.c
+    ../common/callbacks_pthread.c)
 
 # Enable integrity verification if compiling for AMD64 or ARM64 or ARM
 if(SYMCRYPT_TARGET_ARCH MATCHES "AMD64|ARM")

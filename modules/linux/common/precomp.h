@@ -4,7 +4,6 @@
 // Copyright (c) Microsoft Corporation. Licensed under the MIT license.
 //
 
-#include <pthread.h>
 #include <stddef.h>
 #include <stdint.h>
 #include <stdlib.h>

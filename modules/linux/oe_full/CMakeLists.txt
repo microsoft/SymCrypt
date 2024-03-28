@@ -1,7 +1,9 @@
 set(SOURCES
     ../common/integrity.c
     statusindicator.c
-    rng.c)
+    rng.c
+    ../common/optional/module_linuxUserMode.c
+    ../common/callbacks_pthread.c)
 
 include_directories(${CMAKE_SOURCE_DIR}/inc ../common)
 
