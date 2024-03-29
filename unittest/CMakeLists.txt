@@ -79,6 +79,15 @@ if(WIN32 AND SYMCRYPT_TARGET_ARCH MATCHES "X86")
   add_link_options(/SAFESEH:NO)
 endif()
 
+
+if(SYMCRYPT_TEST_WITH_OPENSSL)
+    include(${CMAKE_SOURCE_DIR}/cmake-configs/OpenSSL.cmake)
+    include_directories(${OPENSSL_INCLUDE_DIR})
+    link_directories(${OPENSSL_LIBRARY_DIR})
+    link_libraries(${OPENSSL_CRYPTO_LIBRARIES})
+    add_compile_options(-DINCLUDE_IMPL_OPENSSL=1)
+endif()
+
 include_directories(inc)
 include_directories(lib)
 include_directories(resource)

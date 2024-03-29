@@ -89,6 +89,7 @@ apt update
 apt -y install --no-install-recommends \
     cmake \
     python3-pyelftools \
+    build-essential \
     gcc-arm-linux-gnueabihf g++-arm-linux-gnueabihf
 ```
 `python3-pyelftools` is for integrity verification and `gcc-arm-linux-gnueabihf` `g++-arm-linux-gnueabihf` are for ARM cross compile
@@ -110,19 +111,19 @@ prerequisites to building OpenSSL.
 
 ```
 winget install nasm strawberryperl
-.\scripts\build.py cmake bin --config Release --openssl-build-from-source
+python3 .\scripts\build.py cmake bin --config Release --openssl-build-from-source
 ```
 
 And on Linux we can use OpenSSL installed by system's package manager.
 
 ```
 sudo apt install -y libssl-dev
-./scripts/build.py cmake bin --config Release --openssl
+python3 ./scripts/build.py cmake bin --config Release --openssl
 ```
 
 To build OpenSSL on Linux we need to install following prerequisites.
 
 ```
 sudo apt install -y nasm perl
-.\scripts\build.py cmake bin --config Release --openssl-build-from-source
+python3 ./scripts/build.py cmake bin --config Release --openssl-build-from-source
 ```

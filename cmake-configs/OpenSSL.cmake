@@ -29,12 +29,12 @@ if(OPENSSL_BUILD_FROM_SOURCE)
         set(ENV{CL} /MP)
         if(OPENSSL_BUILD_TYPE STREQUAL "release")
             execute_process(
-                COMMAND perl Configure no-ssl no-tls1 no-tls1_1 --release
+                COMMAND perl Configure no-ssl no-tls no-dtls no-legacy no-engine no-weak-ssl-ciphers no-rc4 no-rc5 no-rc2 no-md4 no-deprecated no-apps no-docs no-tests  no-shared --release
                 WORKING_DIRECTORY ${OPENSSL_BUILD_ROOT}
                 RESULT_VARIABLE result)
         else()
             execute_process(
-                COMMAND perl Configure no-ssl no-tls1 no-tls1_1 --debug
+                COMMAND perl Configure no-ssl no-tls no-dtls no-legacy no-engine no-weak-ssl-ciphers no-rc4 no-rc5 no-rc2 no-md4 no-deprecated no-apps no-docs no-tests  no-shared --debug
                 WORKING_DIRECTORY ${OPENSSL_BUILD_ROOT}
                 RESULT_VARIABLE result)
         endif()
@@ -61,11 +61,11 @@ if(OPENSSL_BUILD_FROM_SOURCE)
 
     include(${OPENSSL_BUILD_ROOT}/OpenSSLConfig.cmake)
 else()
-    find_package(OpenSSL REQUIRED)
+    find_package(OpenSSL 3 REQUIRED)
 endif()
 
-message("Found OpenSSL include directory ${OPENSSL_INCLUDE_DIR}")
-include_directories(${OPENSSL_INCLUDE_DIR})
-link_directories(${OPENSSL_LIBRARY_DIR})
-link_libraries(${OPENSSL_CRYPTO_LIBRARIES})
-add_compile_options(-DINCLUDE_IMPL_OPENSSL=1)
+if(OPENSSL_VERSION_MAJOR LESS 3)
+    message(FATAL_ERROR "-- Invalid OpenSSL version found ${OPENSSL_VERSION} at ${OPENSSL_INCLUDE_DIR}")
+else()
+    message("-- Found OpenSSL ${OPENSSL_VERSION} include directory ${OPENSSL_INCLUDE_DIR}")
+endif()

@@ -32,6 +32,15 @@ print( const char *format, ...)
 
     va_start( vl, format );
 
+    // TODO: We should use CHECK here but CHECK will re-enter this function via fatal()
+    // so we should fix fatal to use fprintf instead of buffering to Output.
+    if ( OutputOffset >= MAX_OUTPUT_SIZE )
+    {
+        fputs( "Out of output buffer space.\n", stderr );
+        exit(-1);
+    }
+
+    // TODO: We should also replace compiler dependent VSNPRINTF_S with std::vsnprintf.
     res = VSNPRINTF_S( &Output[OutputOffset], MAX_OUTPUT_SIZE - OutputOffset, _TRUNCATE, format, vl );
 
     CHECK( res >= 0 , "WHOA!!!" );
@@ -117,6 +126,12 @@ iprint( const char *format, ...)
 
     va_start( vl, format );
 
+    if ( OutputOffset >= MAX_OUTPUT_SIZE )
+    {
+        fputs( "Out of output buffer space.\n", stderr );
+        exit(-1);
+    }
+
     res = VSNPRINTF_S( &Output[OutputOffset], MAX_OUTPUT_SIZE - OutputOffset, _TRUNCATE, format, vl );
 
     CHECK( res >= 0 , "WHOA!!!" );
@@ -133,6 +148,12 @@ dprint( const char * format, ... )
     int res;
 
     va_start( vl, format );
+
+    if ( OutputOffset >= MAX_OUTPUT_SIZE )
+    {
+        fputs( "Out of output buffer space.\n", stderr );
+        exit(-1);
+    }
 
     res = _vsnprintf_s( &Output[OutputOffset], MAX_OUTPUT_SIZE - OutputOffset, _TRUNCATE, format, vl );
 
@@ -163,6 +184,12 @@ vprint(BOOL bPrint, const char *format, ...)
     if (bPrint)
     {
         va_start( vl, format );
+
+        if ( OutputOffset >= MAX_OUTPUT_SIZE )
+        {
+            fputs( "Out of output buffer space.\n", stderr );
+            exit(-1);
+        }
 
         res = VSNPRINTF_S( &Output[OutputOffset], MAX_OUTPUT_SIZE - OutputOffset, _TRUNCATE, format, vl );
 

@@ -24,5 +24,13 @@ public:
     EVP_CIPHER_CTX* decCtx;
 };
 
+template<>
+class AuthEncImpState<ImpOpenssl, AlgAes, ModeGcm> {
+public:
+    EVP_CIPHER_CTX* encCtx;
+    EVP_CIPHER_CTX* decCtx;
+    BOOLEAN inComputation;
+};
+
 VOID
 addOpensslAlgs();

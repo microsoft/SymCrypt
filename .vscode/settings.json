@@ -11,5 +11,18 @@
             "icon": "terminal-powershell",
             "overrideName": true,
         }
-    }
+    },
+    "terminal.integrated.defaultProfile.linux": "SymCrypt Profile",
+    "terminal.integrated.profiles.linux": {
+        "SymCrypt Profile": {
+            "args": [
+                "-c",
+                "[ -f ./.venv/bin/activate ] && . ./.venv/bin/activate; exec bash"
+            ],
+            "path": "bash",
+            "source": "bash",
+            "icon": "terminal-bash",
+            "overrideName": true,
+        }
+    },
 }

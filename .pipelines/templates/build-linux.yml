@@ -50,7 +50,7 @@ jobs:
     ${{ else }}:
       verbose_build_flag: ''
     ${{ if eq(parameters.openssl, true) }}:
-      openssl_build_flag: '--openssl'
+      openssl_build_flag: '--openssl-build-from-source'
     ${{ else }}:
       openssl_build_flag: ''
 
@@ -86,10 +86,12 @@ jobs:
           apt-get install -y gcc-arm-linux-gnueabihf g++-arm-linux-gnueabihf qemu-user
         displayName: 'Install arm cross-compilation tools'
 
-    - ${{ if eq(parameters.openssl, true) }}:
-      - script: |
-          apt-get install -y libssl-dev
-        displayName: 'Install OpenSSL'
+    # TODO: Once we move to Azure Linux 3 we can use the system-provided OpenSSL package.
+    # For now we will built from source since Ubuntu 20.04 doesn't have OpenSSL 3.
+    # - ${{ if eq(parameters.openssl, true) }}:
+    #   - script: |
+    #       apt-get install -y libssl-dev
+    #     displayName: 'Install OpenSSL'
 
     - task: PipAuthenticate@1
       inputs:

@@ -5,6 +5,14 @@
     "version": "0.2.0",
     "configurations": [
         {
+            "type": "lldb",
+            "request": "launch",
+            "name": "(lldb) symcryptunittest",
+            "program": "${workspaceFolder}/bin/exe/symcryptunittest",
+            "args": [],
+            "cwd": "${workspaceFolder}"
+        },
+        {
             "name": "(Windows) symcryptunittest",
             "type": "cppvsdbg",
             "request": "launch",
@@ -16,35 +24,6 @@
             // "preLaunchTask": "Build",
             "console": "integratedTerminal",
             "internalConsoleOptions": "openOnSessionStart"
-        },
-        {
-            "name": "(Windows) symcryptunittest [+openssl +symcrypt +xtsaes]",
-            "type": "cppvsdbg",
-            "request": "launch",
-            "program": "${workspaceFolder}/bin/exe/symcryptunittest.exe",
-            "args": [
-                "+openssl",
-                "+symcrypt",
-                "+xtsaes",
-            ],
-            "stopAtEntry": false,
-            "cwd": "${fileDirname}",
-            "console": "integratedTerminal",
-        },
-        {
-            "name": "(Windows) symcryptunittest [+openssl +symcrypt +xtsaes -vaes]",
-            "type": "cppvsdbg",
-            "request": "launch",
-            "program": "${workspaceFolder}/bin/exe/symcryptunittest.exe",
-            "args": [
-                "+openssl",
-                "+symcrypt",
-                "+xtsaes",
-                "-vaes"
-            ],
-            "stopAtEntry": false,
-            "cwd": "${fileDirname}",
-            "console": "integratedTerminal",
         },
     ]
 }

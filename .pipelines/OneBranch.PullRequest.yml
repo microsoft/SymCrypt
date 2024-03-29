@@ -146,7 +146,8 @@ extends:
           cc: 'gcc'
           cxx: 'g++'
           skipTests: true
-          additionalArgs: '--no-asm --openssl'
+          additionalArgs: '--no-asm'
+          openssl: true
           identifier: 'NoAsm'
       - template: .pipelines/templates/build-linux.yml@self
         parameters:
@@ -155,7 +156,8 @@ extends:
           cc: 'clang'
           cxx: 'clang++'
           skipTests: true
-          additionalArgs: '--no-asm --openssl'
+          additionalArgs: '--no-asm'
+          openssl: true
           identifier: 'NoAsm'
       - template: .pipelines/templates/build-linux.yml@self
         parameters:

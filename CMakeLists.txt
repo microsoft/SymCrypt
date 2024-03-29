@@ -81,9 +81,6 @@ option(
     OFF)
 
 
-if (SYMCRYPT_TEST_WITH_OPENSSL)
-    include(${CMAKE_SOURCE_DIR}/cmake-configs/OpenSSL.cmake)
-endif()
 include(${CMAKE_SOURCE_DIR}/cmake-configs/SymCrypt-Platforms.cmake)
 
 if(NOT DEFINED CMAKE_BUILD_TYPE)
