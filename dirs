@@ -1,9 +1,0 @@
-DIRS = \
-    build \
-    publics \
-    lib \
-    unittest \
-    gen{amd64} \
-
-    
-

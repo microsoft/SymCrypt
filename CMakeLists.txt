@@ -115,7 +115,7 @@ include_directories(inc)
 include_directories(${CMAKE_BINARY_DIR}/inc)
 
 # Process pkg-config file
-configure_file(build/symcrypt.pc.in symcrypt.pc @ONLY)
+configure_file(conf/symcrypt.pc.in symcrypt.pc @ONLY)
 
 add_subdirectory(lib)
 add_subdirectory(modules)

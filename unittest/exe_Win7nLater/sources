@@ -1,5 +1,0 @@
-TARGETNAME=symcryptunittest_Win7nLater
-
-!include ..\sources_exe.inc
-
-_NT_TARGET_VERSION=$(_NT_TARGET_VERSION_WIN7)

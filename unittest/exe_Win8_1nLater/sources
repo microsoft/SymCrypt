@@ -1,7 +1,0 @@
-ARM64X_EC_ENABLED=1
-
-TARGETNAME=symcryptunittest_Win8_1nLater
-
-!include ..\sources_exe.inc
-
-_NT_TARGET_VERSION=$(_NT_TARGET_VERSION_WINBLUE)

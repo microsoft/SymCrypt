@@ -18,7 +18,7 @@ from typing import Tuple
 
 from devops_utils import set_task_variable
 
-BUILD_INFO_INPUT_PATH = "build/buildInfo.h.in"
+BUILD_INFO_INPUT_PATH = "conf/buildInfo.h.in"
 BUILD_INFO_OUTPUT_PATH = "inc/buildInfo.h"
 VERSION_INFO_RELATIVE_PATH = "inc/symcrypt_internal_shared.inc"
 GIT_BRANCH_CMD = "git branch --show"

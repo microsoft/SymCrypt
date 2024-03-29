@@ -1,6 +1,0 @@
-TARGETNAME=symcryptunittest_legacy
-
-!include ..\sources_exe.inc
-
-_NT_TARGET_VERSION=$(_NT_TARGET_VERSION_VISTA)
-
