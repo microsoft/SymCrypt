@@ -3,34 +3,39 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.4.33213.308
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "symcrypt", "lib\symcrypt.vcxproj", "{7C3BD5D2-7213-4CFA-B6CB-EB41623601BC}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "symcrypt.lib", "lib\symcrypt.vcxproj", "{7C3BD5D2-7213-4CFA-B6CB-EB41623601BC}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "symcryptunittest_lib", "unittest\lib\symcryptunittest_lib.vcxproj", "{1146804C-B04F-43F1-83B0-081A5187BA02}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "symcryptunittest.lib", "unittest\lib\symcryptunittest_lib.vcxproj", "{1146804C-B04F-43F1-83B0-081A5187BA02}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "symcryptunittest", "unittest\exe_test\symcryptunittest.vcxproj", "{1651C608-DD2F-4D18-8E5B-E3C1D11BD7B9}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "symcryptunittest.exe", "unittest\exe_test\symcryptunittest.vcxproj", "{1651C608-DD2F-4D18-8E5B-E3C1D11BD7B9}"
 	ProjectSection(ProjectDependencies) = postProject
 		{1146804C-B04F-43F1-83B0-081A5187BA02} = {1146804C-B04F-43F1-83B0-081A5187BA02}
 		{7C3BD5D2-7213-4CFA-B6CB-EB41623601BC} = {7C3BD5D2-7213-4CFA-B6CB-EB41623601BC}
 	EndProjectSection
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "symcrypttestmodule", "unittest\module_windows\symcrypttestmodule.vcxproj", "{E5919189-A4AF-40C4-81CB-A3685485276E}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "symcrypttestmodule.dll", "unittest\module_windows\symcrypttestmodule.vcxproj", "{E5919189-A4AF-40C4-81CB-A3685485276E}"
 	ProjectSection(ProjectDependencies) = postProject
 		{1146804C-B04F-43F1-83B0-081A5187BA02} = {1146804C-B04F-43F1-83B0-081A5187BA02}
 		{7C3BD5D2-7213-4CFA-B6CB-EB41623601BC} = {7C3BD5D2-7213-4CFA-B6CB-EB41623601BC}
 	EndProjectSection
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "SymCryptKernelTestModule", "unittest\module_windows_sys_km\SymCryptKernelTestModule.vcxproj", "{0C2652ED-2CCD-4FAF-910B-74FB90E0C31C}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "SymCryptKernelTestModule.sys", "unittest\module_windows_sys_km\SymCryptKernelTestModule.vcxproj", "{0C2652ED-2CCD-4FAF-910B-74FB90E0C31C}"
 	ProjectSection(ProjectDependencies) = postProject
 		{1146804C-B04F-43F1-83B0-081A5187BA02} = {1146804C-B04F-43F1-83B0-081A5187BA02}
 		{7C3BD5D2-7213-4CFA-B6CB-EB41623601BC} = {7C3BD5D2-7213-4CFA-B6CB-EB41623601BC}
 	EndProjectSection
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "SymCryptKernelTestModule_UM", "unittest\module_windows_sys_um\SymCryptKernelTestModule_UM.vcxproj", "{07DBF66B-64EA-4D2C-9182-9C6E2D89C7DB}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "SymCryptKernelTestModule.dll", "unittest\module_windows_sys_um\SymCryptKernelTestModule_UM.vcxproj", "{07DBF66B-64EA-4D2C-9182-9C6E2D89C7DB}"
 	ProjectSection(ProjectDependencies) = postProject
 		{7C3BD5D2-7213-4CFA-B6CB-EB41623601BC} = {7C3BD5D2-7213-4CFA-B6CB-EB41623601BC}
 	EndProjectSection
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "symcryptk", "modules\windows\kernel\symcryptk.vcxproj", "{5A666AF4-35C9-42FE-817D-9D9A07AAF253}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "symcryptk.dll", "modules\windows\kernel\symcryptk.vcxproj", "{5A666AF4-35C9-42FE-817D-9D9A07AAF253}"
+	ProjectSection(ProjectDependencies) = postProject
+		{7C3BD5D2-7213-4CFA-B6CB-EB41623601BC} = {7C3BD5D2-7213-4CFA-B6CB-EB41623601BC}
+	EndProjectSection
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "symcrypt.dll", "modules\windows\user\symcrypt.vcxproj", "{c75bcb09-00b2-4008-9700-e3b5e7391c69}"
 	ProjectSection(ProjectDependencies) = postProject
 		{7C3BD5D2-7213-4CFA-B6CB-EB41623601BC} = {7C3BD5D2-7213-4CFA-B6CB-EB41623601BC}
 	EndProjectSection
@@ -211,6 +216,31 @@ Global
 		{5A666AF4-35C9-42FE-817D-9D9A07AAF253}.Release|x64.Build.0 = Release|x64
 
 		{5A666AF4-35C9-42FE-817D-9D9A07AAF253}.Release|x86.ActiveCfg = Release|Win32
+
+		# symcrypt.dll
+		{c75bcb09-00b2-4008-9700-e3b5e7391c69}.Debug|ARM64.ActiveCfg = Debug|ARM64
+		{c75bcb09-00b2-4008-9700-e3b5e7391c69}.Debug|ARM64.Build.0 = Debug|ARM64
+
+		{c75bcb09-00b2-4008-9700-e3b5e7391c69}.Debug|ARM64EC.ActiveCfg = Debug|ARM64EC
+		{c75bcb09-00b2-4008-9700-e3b5e7391c69}.Debug|ARM64EC.Build.0 = Debug|ARM64EC
+
+		{c75bcb09-00b2-4008-9700-e3b5e7391c69}.Debug|x64.ActiveCfg = Debug|x64
+		{c75bcb09-00b2-4008-9700-e3b5e7391c69}.Debug|x64.Build.0 = Debug|x64
+
+		{c75bcb09-00b2-4008-9700-e3b5e7391c69}.Debug|x86.ActiveCfg = Debug|Win32
+		{c75bcb09-00b2-4008-9700-e3b5e7391c69}.Debug|x86.Build.0 = Debug|Win32
+
+		{c75bcb09-00b2-4008-9700-e3b5e7391c69}.Release|ARM64.ActiveCfg = Release|ARM64
+		{c75bcb09-00b2-4008-9700-e3b5e7391c69}.Release|ARM64.Build.0 = Release|ARM64
+
+		{c75bcb09-00b2-4008-9700-e3b5e7391c69}.Release|ARM64EC.ActiveCfg = Release|ARM64EC
+		{c75bcb09-00b2-4008-9700-e3b5e7391c69}.Release|ARM64EC.Build.0 = Release|ARM64EC
+
+		{c75bcb09-00b2-4008-9700-e3b5e7391c69}.Release|x64.ActiveCfg = Release|x64
+		{c75bcb09-00b2-4008-9700-e3b5e7391c69}.Release|x64.Build.0 = Release|x64
+
+		{c75bcb09-00b2-4008-9700-e3b5e7391c69}.Release|x86.ActiveCfg = Release|Win32
+		{c75bcb09-00b2-4008-9700-e3b5e7391c69}.Release|x86.Build.0 = Release|Win32
 
 
 	EndGlobalSection

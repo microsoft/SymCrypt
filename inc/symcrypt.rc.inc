@@ -15,7 +15,7 @@
 #endif
 
 #ifndef VER_SUFFIX
-#define VER_SUFFIX -private
+#define VER_SUFFIX private
 #endif
 
 //
@@ -33,7 +33,7 @@
 #define VER_FILEVERSION             VER_MAJOR,VER_MINOR,VER_PATCH,0
 #define VER_FILEVERSION_STR         STR(VER_MAJOR) "." STR(VER_MINOR) "." STR(VER_PATCH) "." STR(VER_BUILD_ID) "\0"
 
-#define VER_PRODUCTVERSION_STR      STR(VER_MAJOR) "." STR(VER_MINOR) "." STR(VER_PATCH) "." STR(VER_BUILD_ID) STR(VER_SUFFIX) "\0"
+#define VER_PRODUCTVERSION_STR      STR(VER_MAJOR) "." STR(VER_MINOR) "." STR(VER_PATCH) "." STR(VER_BUILD_ID) "-" STR(VER_SUFFIX) "\0"
 
 VS_VERSION_INFO                     VERSIONINFO
 FILEVERSION                         VER_FILEVERSION

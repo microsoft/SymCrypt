@@ -107,7 +107,7 @@
 
   <!-- Official Windows compiler and linker settings -->
   <PropertyGroup>
-    <IntDir>$(UndockedOut)build\obj\$(WinPlat)$(WinConfig)\$(ProjectName)\</IntDir>
+    <IntDir>$(UndockedOut)build\obj\$(WinPlat)$(WinConfig)\$(UndockedType)\$(ProjectName)\</IntDir>
     <OutDir>$(UndockedOut)build\bin\$(WinPlat)$(WinConfig)\$(UndockedType)\</OutDir>
     <UseDebugLibraries Condition="'$(Configuration)'=='Debug'">true</UseDebugLibraries>
     <UseDebugLibraries Condition="'$(Configuration)'=='Release'">false</UseDebugLibraries>

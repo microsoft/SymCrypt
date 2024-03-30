@@ -88,6 +88,16 @@
         "platform" : "win32"
     },
     {
+        "source" : "${BIN_DIR}/dll/symcrypt.dll",
+        "dest" : "dll/symcrypt.dll",
+        "platform" : "win32"
+    },
+    {
+        "source" : "${BIN_DIR}/dll/symcrypt.lib",
+        "dest" : "dll/symcrypt.lib",
+        "platform" : "win32"
+    },
+    {
         "source" : "${BIN_DIR}/kmdll/symcryptk.dll",
         "dest" : "dll/symcryptk.dll",
         "platform" : "win32",
@@ -119,6 +129,11 @@
     {
         "source" : "${BIN_DIR}/exe/symcryptunittest.exe",
         "dest" : "test/symcryptunittest.exe",
+        "platform" : "win32"
+    },
+    {
+        "source" : "${BIN_DIR}/dll/symcrypt.pdb",
+        "dest" : "dll/symcrypt.pdb",
         "platform" : "win32"
     },
     {

@@ -23,7 +23,6 @@
   <ItemDefinitionGroup>
     <ClCompile>
       <PreprocessorDefinitions>_CONSOLE;%(PreprocessorDefinitions);</PreprocessorDefinitions>
-      <LanguageStandard>stdcpp17</LanguageStandard>
       <AdditionalIncludeDirectories>..\;..\inc;..\lib;..\SymCryptDependencies\inc;..\..\inc;</AdditionalIncludeDirectories>
       <!--
         Disable warnings

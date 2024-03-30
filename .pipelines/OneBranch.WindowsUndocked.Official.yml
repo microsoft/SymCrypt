@@ -25,7 +25,7 @@ trigger:
     - publish
 
 schedules:
-- cron: "0 8 * * *" # Daily at 1am UTC (midnight PST/1am PDT)
+- cron: "0 8 * * *" # Daily at 8am UTC (midnight PST/1am PDT)
   displayName: Daily build
   branches:
     include:
@@ -80,12 +80,13 @@ extends:
       - template: .pipelines/templates/build-windows-undocked.yml@self
         parameters:
           sln: symcrypt.sln
-          buildSuffix: '-official'
+          buildType: 'official'
           # Package args
           package: ${{ parameters.package }}
           name: 'SymCrypt'
           description: 'SymCrypt cryptographic library'
           owner: 'ensciacrypto@microsoft.com'
+          sign: true
           # Windows ingestion args
           # ingest: ${{ parameters.ingest }}
           # osPath: 'onecore/ds/security/symcrypt'

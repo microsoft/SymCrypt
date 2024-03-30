@@ -8,7 +8,7 @@ parameters:
   config: 'Debug,Release'
   platform: 'x86,x64,arm64'
   nativeCompiler: true
-  buildSuffix: '-private'
+  buildType: 'private'
   sign: false # Only signs UM binaries, for external (to Windows repo) release
   # Packaging args
   package: false
@@ -127,7 +127,7 @@ jobs:
       configuration: $(ob_build_config)
       maximumCpuCount: true
       restoreNugetPackages: ${{ parameters.restoreNugetPackages }}
-      msbuildArgs: '-p:UndockedOfficial=${{ parameters.nativeCompiler }} -p:UndockedBuildId=$(Build.BuildId) -p:VER_BUILD_ID=$(Build.BuildId) -p:VER_SUFFIX=${{ parameters.buildSuffix }} -p:SymCryptTestLegacyImpl=true ${{ parameters.msbuildArgs }}'
+      msbuildArgs: '-p:UndockedOfficial=${{ parameters.nativeCompiler }} -p:UndockedBuildId=$(Build.BuildId) -p:VER_BUILD_ID=$(Build.BuildId) -p:VER_SUFFIX=${{ parameters.buildType }} -p:SymCryptTestLegacyImpl=true ${{ parameters.msbuildArgs }}'
 
   # Overwrite default artifact publishing with our copy (enables publishing binaries for failed runs)
   - task: PowerShell@2
@@ -148,12 +148,21 @@ jobs:
       workingDirectory: $(Build.SourcesDirectory)
 
   - task: PythonScript@0
-    displayName: 'Run dynamic unit tests'
+    displayName: 'Run dynamic unit tests (test module)'
     condition: or(eq(variables['ob_build_platform'], 'x64'), eq(variables['ob_build_platform'], 'x86'))
     inputs:
       scriptSource: 'filePath'
       scriptPath: scripts\test.py
       arguments: 'build\bin dynamic:build\bin\$(ob_build_platform_win)$(ob_build_config_win)\dll\symcrypttestmodule.dll noperftests'
+      workingDirectory: $(Build.SourcesDirectory)
+
+  - task: PythonScript@0
+    displayName: 'Run dynamic unit tests (prod module)'
+    condition: and(eq('${{ parameters.buildType }}', 'official'), or(eq(variables['ob_build_platform'], 'x64'), eq(variables['ob_build_platform'], 'x86')))
+    inputs:
+      scriptSource: 'filePath'
+      scriptPath: scripts\test.py
+      arguments: 'build\bin dynamic:build\bin\$(ob_build_platform_win)$(ob_build_config_win)\dll\symcrypt.dll noperftests'
       workingDirectory: $(Build.SourcesDirectory)
 
   - task: onebranch.pipeline.signing@1 # https://aka.ms/obpipelines/signing

@@ -24,6 +24,8 @@
         C4324: structure was padded due to __declspec(align())
       -->
       <DisableSpecificWarnings>4456;4296;4324;%(DisableSpecificWarnings)</DisableSpecificWarnings>
+      <LanguageStandard>stdcpp17</LanguageStandard>
+      <LanguageStandard_C>stdc17</LanguageStandard_C>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <DebugInformationFormat>OldStyle</DebugInformationFormat>
       <BasicRuntimeChecks></BasicRuntimeChecks>

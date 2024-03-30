@@ -20,7 +20,6 @@
   <ItemDefinitionGroup>
     <ClCompile>
       <PreprocessorDefinitions>_WINDOWS;_USRDLL;%(PreprocessorDefinitions);</PreprocessorDefinitions>
-      <LanguageStandard>stdcpp17</LanguageStandard>
       <AdditionalIncludeDirectories>..\;..\inc;..\lib;..\SymCryptDependencies\inc;..\..\inc;</AdditionalIncludeDirectories>
       <!--
         Disable warnings

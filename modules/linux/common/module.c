@@ -1,6 +1,6 @@
 //
 // module.c
-// Main file for SymCrypt DLL/shared object library
+// Main file for SymCrypt shared object libraries on Linux-based systems
 //
 // Copyright (c) Microsoft Corporation. Licensed under the MIT license.
 //

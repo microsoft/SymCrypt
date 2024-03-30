@@ -5605,7 +5605,7 @@ SymCryptRngAesFips140_2Uninstantiate(
 // Internal RNG functions
 //
 // To satisfy FIPS 140-3 and SP 800-90B, certain modules of SymCrypt may set up internal
-// RNG state(s) to keep random bit generation behind the module security boundary.
+// RNG state(s) to keep random bit generation behind the module's FIPS boundary.
 // These functions allow the caller to get random bits and provide entropy, respectively,
 // to SymCrypt's internal RNG state(s).
 // Implementation is module dependent, and these functions may not be defined
