@@ -74,12 +74,6 @@ if(NOT WIN32)
     create_resource_h("${DATA_FILES}")
 endif()
 
-if(WIN32 AND SYMCRYPT_TARGET_ARCH MATCHES "X86")
-  # Required on x86 to avoid "error LNK2026: module unsafe for SAFESEH image."
-  add_link_options(/SAFESEH:NO)
-endif()
-
-
 if(SYMCRYPT_TEST_WITH_OPENSSL)
     include(${CMAKE_SOURCE_DIR}/cmake-configs/OpenSSL.cmake)
     include_directories(${OPENSSL_INCLUDE_DIR})

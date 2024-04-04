@@ -245,11 +245,13 @@ if(WIN32 AND SYMCRYPT_USE_ASM)
             amd64/sha256ymm_asm-masm.asm
             amd64/sha512ymm_asm-masm.asm
             amd64/sha512ymm_avx512vl_asm-masm.asm
-            PROPERTY LANGUAGE ASM_MASM)
+            PROPERTIES LANGUAGE ASM_MASM)
 
     elseif(SYMCRYPT_TARGET_ARCH MATCHES "X86")
         process_cppasm(i386/aesasm.cppasm masm x86)
         process_cppasm(i386/fdef_asm.cppasm masm x86)
+
+        set(CMAKE_ASMMASM_FLAGS "${CMAKE_ASMMASM_FLAGS} /safeseh")
 
         list(APPEND SOURCES_COMMON
             i386/aesasm-masm.asm
@@ -259,7 +261,9 @@ if(WIN32 AND SYMCRYPT_USE_ASM)
             i386/aesasm-masm.asm
             i386/fdef_asm-masm.asm
             i386/wipe.asm
-            PROPERTY LANGUAGE ASM_MASM)
+            PROPERTIES
+            LANGUAGE ASM_MASM
+            COMPILE_OPTIONS "/safeseh")
         set_source_files_properties(
             i386/fdef_asm-masm.asm PROPERTIES INCLUDE_DIRECTORIES ${CMAKE_CURRENT_SOURCE_DIR}/i386)
     endif()
@@ -295,7 +299,7 @@ elseif(SYMCRYPT_USE_ASM) # Linux
             amd64/sha256ymm_asm-gas.asm
             amd64/sha512ymm_asm-gas.asm
             amd64/sha512ymm_avx512vl_asm-gas.asm
-            PROPERTY LANGUAGE ASM)
+            PROPERTIES LANGUAGE ASM)
     elseif(SYMCRYPT_TARGET_ARCH STREQUAL "ARM64")
         process_symcryptasm(arm64/fdef_asm.symcryptasm gas arm64 aapcs64)
         process_symcryptasm(arm64/fdef369_asm.symcryptasm gas arm64 aapcs64)
@@ -309,7 +313,7 @@ elseif(SYMCRYPT_USE_ASM) # Linux
             arm64/fdef_asm-gas.asm
             arm64/fdef369_asm-gas.asm
             arm64/wipe-gas.asm
-            PROPERTY LANGUAGE ASM)
+            PROPERTIES LANGUAGE ASM)
     elseif(SYMCRYPT_TARGET_ARCH STREQUAL "ARM")
         process_symcryptasm(arm/aesasm.symcryptasm gas arm aapcs32)
         process_symcryptasm(arm/fdef_asm.symcryptasm gas arm aapcs32)
@@ -323,7 +327,7 @@ elseif(SYMCRYPT_USE_ASM) # Linux
             arm/aesasm-gas.asm
             arm/fdef_asm-gas.asm
             arm/wipe-gas.asm
-            PROPERTY LANGUAGE ASM)
+            PROPERTIES LANGUAGE ASM)
         set_source_files_properties(
             arm/fdef_asm-gas.asm PROPERTIES INCLUDE_DIRECTORIES ${CMAKE_CURRENT_SOURCE_DIR}/arm)
     endif()
