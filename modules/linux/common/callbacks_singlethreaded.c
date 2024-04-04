@@ -11,7 +11,10 @@ PVOID
 SYMCRYPT_CALL
 SymCryptCallbackAlloc( SIZE_T nBytes )
 {
-    return aligned_alloc(SYMCRYPT_ASYM_ALIGN_VALUE, nBytes);;
+    // aligned_alloc requires size to be integer multiple of alignment
+    SIZE_T cbAllocation = (nBytes + (SYMCRYPT_ASYM_ALIGN_VALUE - 1)) & ~(SYMCRYPT_ASYM_ALIGN_VALUE - 1);
+
+    return aligned_alloc(SYMCRYPT_ASYM_ALIGN_VALUE, cbAllocation);
 }
 
 VOID
