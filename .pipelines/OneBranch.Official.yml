@@ -8,7 +8,22 @@
 # Support:        https://aka.ms/onebranchsup                                   #
 #################################################################################
 
-trigger: none
+name: $(BuildDefinitionName)_$(date:yyMM).$(date:dd)$(rev:rrr)
+
+# https://aka.ms/obpipelines/triggers
+trigger:
+  batch: true
+  branches:
+    include:
+    - main
+    - publish
+
+schedules:
+- cron: "0 8 * * *" # Daily at 8am UTC (midnight PST/1am PDT)
+  displayName: Daily build
+  branches:
+    include:
+    - main
 
 variables:
   CDP_DEFINITION_BUILD_COUNT: $[counter('', 0)] # needed for onebranch.pipeline.version task https://aka.ms/obpipelines/versioning
