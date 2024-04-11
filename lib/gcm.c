@@ -353,8 +353,11 @@ SymCryptGcmSetNonce(
         BYTE buf[SYMCRYPT_GF128_BLOCK_SIZE];
         SIZE_T cbNonceRemainder = cbNonce & 0xf;
         
-        SymCryptGHashAppendData( &pState->pKey->ghashKey, &pState->ghashState, pbNonce,
-            cbNonce - cbNonceRemainder );
+        if(cbNonce >= SYMCRYPT_GF128_BLOCK_SIZE)
+        {
+            SymCryptGHashAppendData( &pState->pKey->ghashKey, &pState->ghashState, pbNonce,
+                cbNonce - cbNonceRemainder );
+        }
 
         // If the nonce length is not a multiple of 128 bits, it needs to be padded with zeros
         // until it is, as GHASH is only defined on multiples of 128 bits.

@@ -20,6 +20,9 @@ parameters:
 - name: identifier # Additional identifier for job name
   type: string
   default: ''
+- name: sign # Sign user-mode binaries. Required by Guardian, even though we don't publish Windows binaries from CMake
+  type: boolean
+  default: false
 
 jobs:
 
@@ -71,3 +74,12 @@ jobs:
         scriptPath: scripts\test.py
         arguments: 'bin dynamic:bin\exe\symcrypttestmodule.dll noperftests'
         workingDirectory: $(Build.SourcesDirectory)
+
+    - task: onebranch.pipeline.signing@1 # https://aka.ms/obpipelines/signing
+      displayName: 'Sign Binaries'
+      condition: eq('${{ parameters.sign }}', true)
+      inputs:
+        command: 'sign'
+        signing_profile: 'external_distribution'
+        files_to_sign: '**\*.exe;**\*.dll' # Only supports user mode binaries
+        search_root: 'bin'

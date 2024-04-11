@@ -9,6 +9,7 @@ prior to the creation of a new release, based on the changes contained in that r
 - Fix tweak lower 64 bit overflow calculation in SYMCRYPT_XtsAesXxx
 - Add OpenSSL implementation for XtsAes to symcryptunittest
 - Add Windows user mode DLL
+- Fixed debug assertion failure in AES-GCM with nonce < 12 bytes when ASM is disabled
 
 # Version 103.4.1
 - Add retpoline guard flags for undocked Windows build

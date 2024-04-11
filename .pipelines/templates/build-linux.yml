@@ -178,9 +178,27 @@ jobs:
             workingDirectory: $(Build.SourcesDirectory)
 
     - task: PythonScript@0
-      displayName: 'Package build output'
+      displayName: 'Package generic Linux module'
       inputs:
         scriptSource: 'filePath'
         scriptPath: scripts/package.py
         arguments: 'bin ${{ parameters.arch }} ${{ parameters.config }} generic bin'
+        workingDirectory: $(Build.SourcesDirectory)
+
+    - task: Bash@3
+      displayName: 'Check if OpenEnclave module exists'
+      inputs:
+        targetType: inline
+        script: |
+          if [ -d bin/module/oe_full ]; then
+            echo "##vso[task.setVariable variable=PACKAGE_OE]true"
+          fi
+
+    - task: PythonScript@0
+      displayName: 'Package OpenEnclave module'
+      condition: eq(variables.PACKAGE_OE, 'true')
+      inputs:
+        scriptSource: 'filePath'
+        scriptPath: scripts/package.py
+        arguments: 'bin ${{ parameters.arch }} ${{ parameters.config }} oe_full bin'
         workingDirectory: $(Build.SourcesDirectory)

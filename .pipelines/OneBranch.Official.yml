@@ -23,7 +23,7 @@ resources:
       ref: refs/heads/main
 
 extends:
-  template: v2/OneBranch.NonOfficial.CrossPlat.yml@templates # https://aka.ms/obpipelines/templates
+  template: v2/OneBranch.Official.CrossPlat.yml@templates # https://aka.ms/obpipelines/templates
   parameters:
     featureFlags:
       needExceptionForUbuntuUsage: true # Mariner does not currently support all of our cross-compilation targets
@@ -67,34 +67,38 @@ extends:
         parameters:
           arch: 'AMD64'
           config: 'Debug'
+          sign: true
           additionalArgs: '--test-legacy-impl'
       - template: .pipelines/templates/build-windows-cmake.yml@self
         parameters:
           arch: 'AMD64'
           config: 'Release'
+          sign: true
           additionalArgs: '--test-legacy-impl'
       - template: .pipelines/templates/build-windows-cmake.yml@self
         parameters:
           arch: 'X86'
           config: 'Debug'
+          sign: true
           additionalArgs: '--test-legacy-impl'
       - template: .pipelines/templates/build-windows-cmake.yml@self
         parameters:
           arch: 'X86'
           config: 'Release'
+          sign: true
           additionalArgs: '--test-legacy-impl'
       - template: .pipelines/templates/build-windows-cmake.yml@self
         parameters:
           arch: 'AMD64'
           config: 'Release'
-          skipTests: true
+          sign: true
           additionalArgs: '--no-asm'
           identifier: 'NoAsm'
       - template: .pipelines/templates/build-windows-cmake.yml@self
         parameters:
           arch: 'X86'
           config: 'Release'
-          skipTests: true
+          sign: true
           additionalArgs: '--no-asm'
           identifier: 'NoAsm'
 
@@ -149,7 +153,6 @@ extends:
           config: 'Release'
           cc: 'gcc'
           cxx: 'g++'
-          skipTests: true
           additionalArgs: '--no-asm'
           openssl: true
           identifier: 'NoAsm'
@@ -159,7 +162,6 @@ extends:
           config: 'Release'
           cc: 'clang'
           cxx: 'clang++'
-          skipTests: true
           additionalArgs: '--no-asm'
           openssl: true
           identifier: 'NoAsm'
@@ -169,7 +171,6 @@ extends:
           config: 'Release'
           cc: 'gcc'
           cxx: 'g++'
-          skipTests: true
           additionalArgs: '--no-asm --no-fips'
           identifier: 'NoAsm'
       - template: .pipelines/templates/build-linux.yml@self
@@ -178,7 +179,6 @@ extends:
           config: 'Release'
           cc: 'clang'
           cxx: 'clang++'
-          skipTests: true
           additionalArgs: '--no-asm --no-fips'
           identifier: 'NoAsm'
       - template: .pipelines/templates/build-linux.yml@self
