@@ -75,7 +75,7 @@ if(NOT WIN32)
 endif()
 
 if(SYMCRYPT_TEST_WITH_OPENSSL)
-    include(${CMAKE_SOURCE_DIR}/cmake-configs/OpenSSL.cmake)
+    include(${SYMCRYPT_SOURCE_DIR}/cmake-configs/OpenSSL.cmake)
     include_directories(${OPENSSL_INCLUDE_DIR})
     link_directories(${OPENSSL_LIBRARY_DIR})
     link_libraries(${OPENSSL_CRYPTO_LIBRARIES})

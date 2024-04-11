@@ -9,9 +9,11 @@ if(WIN32)
     set(CMAKE_SYSTEM_VERSION 10.0.18362)
 endif()
 
+set(SYMCRYPT_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR})
+
 # Set version number using helper script
 execute_process(
-    COMMAND ${Python3_EXECUTABLE} ${CMAKE_SOURCE_DIR}/scripts/version.py --build-info
+    COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/scripts/version.py --build-info
     OUTPUT_VARIABLE SYMCRYPT_VERSION
     RESULT_VARIABLE SYMCRYPT_VERSION_RESULT
 )
@@ -81,7 +83,7 @@ option(
     OFF)
 
 
-include(${CMAKE_SOURCE_DIR}/cmake-configs/SymCrypt-Platforms.cmake)
+include(${SYMCRYPT_SOURCE_DIR}/cmake-configs/SymCrypt-Platforms.cmake)
 
 if(NOT DEFINED CMAKE_BUILD_TYPE)
     set(CMAKE_BUILD_TYPE Debug)
@@ -119,4 +121,9 @@ configure_file(conf/symcrypt.pc.in symcrypt.pc @ONLY)
 
 add_subdirectory(lib)
 add_subdirectory(modules)
-add_subdirectory(unittest)
+
+option(SYMCRYPT_BUILD_TESTS "Build tests" ON)
+
+if(SYMCRYPT_BUILD_TESTS)
+  add_subdirectory(unittest)
+endif()

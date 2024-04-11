@@ -3,7 +3,7 @@ set(SOURCES
     symcrypt.def
     symcrypt.rc)
 
-include_directories(${CMAKE_SOURCE_DIR}/inc)
+include_directories(${SYMCRYPT_SOURCE_DIR}/inc)
 
 add_library(symcrypt_usermode_dll SHARED ${SOURCES})
 

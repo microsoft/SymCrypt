@@ -5,7 +5,7 @@ set(SOURCES
     ../common/optional/module_linuxUserMode.c
     ../common/callbacks_pthread.c)
 
-include_directories(${CMAKE_SOURCE_DIR}/inc ../common)
+include_directories(${SYMCRYPT_SOURCE_DIR}/inc ../common)
 
 add_library(symcrypt_oe SHARED ${SOURCES})
 
