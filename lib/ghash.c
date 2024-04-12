@@ -59,14 +59,11 @@ SymCryptGHashExpandKeyC(
 VOID
 SYMCRYPT_CALL
 SymCryptGHashAppendDataC(
-    _In_reads_( SYMCRYPT_GF128_FIELD_SIZE )                   PCSYMCRYPT_GF128_ELEMENT    expandedKeyTable,
-    _Inout_                                                   PSYMCRYPT_GF128_ELEMENT     pState,
-    _In_reads_( cbData )                                      PCBYTE                      pbData,
-    _In_range_( SYMCRYPT_GF128_BLOCK_SIZE, SIZE_T_MAX & ~0xf) SIZE_T                      cbData )
+    _In_reads_( SYMCRYPT_GF128_FIELD_SIZE )  PCSYMCRYPT_GF128_ELEMENT    expandedKeyTable,
+    _Inout_                                  PSYMCRYPT_GF128_ELEMENT     pState,
+    _In_reads_( cbData )                     PCBYTE                      pbData,
+                                             SIZE_T                      cbData )
 {
-    SYMCRYPT_ASSERT(cbData >= SYMCRYPT_GF128_BLOCK_SIZE);
-    SYMCRYPT_ASSERT((cbData & 0xf) == 0);
-
     UINT64 R0, R1;
     UINT64 mask;
     SYMCRYPT_ALIGN UINT32 state32[4];
@@ -145,7 +142,7 @@ SymCryptGHashAppendDataXmm(
     _In_reads_( SYMCRYPT_GF128_FIELD_SIZE ) PCSYMCRYPT_GF128_ELEMENT    expandedKeyTable,
     _Inout_                                 PSYMCRYPT_GF128_ELEMENT     pState,
     _In_reads_( cbData )                    PCBYTE                      pbData,
-    _In_                                    SIZE_T                      cbData )
+                                            SIZE_T                      cbData )
 {
     __m128i R;
     __m128i cmpValue;
@@ -244,7 +241,7 @@ SymCryptGHashAppendDataNeon(
     _In_reads_( SYMCRYPT_GF128_FIELD_SIZE )     PCSYMCRYPT_GF128_ELEMENT    expandedKeyTable,
     _Inout_                                     PSYMCRYPT_GF128_ELEMENT     pState,
     _In_reads_( cbData )                        PCBYTE                      pbData,
-    _In_                                        SIZE_T                      cbData )
+                                                SIZE_T                      cbData )
 {
     // Room for improvement: replace non-crypto NEON code below, based on a bit by bit lookup with
     // pmull on 8b elements - 8x(8bx8b) -> 8x(16b) pmull is NEON instruction since Armv7
@@ -576,7 +573,7 @@ SymCryptGHashAppendDataPclmulqdq(
     _In_reads_( SYMCRYPT_GF128_FIELD_SIZE ) PCSYMCRYPT_GF128_ELEMENT    expandedKeyTable,
     _Inout_                                 PSYMCRYPT_GF128_ELEMENT     pState,
     _In_reads_( cbData )                    PCBYTE                      pbData,
-    _In_                                    SIZE_T                      cbData )
+                                            SIZE_T                      cbData )
 {
     __m128i state;
     __m128i data;
@@ -710,7 +707,7 @@ SymCryptGHashAppendDataPmull(
     _In_reads_( SYMCRYPT_GF128_FIELD_SIZE ) PCSYMCRYPT_GF128_ELEMENT    expandedKeyTable,
     _Inout_                                 PSYMCRYPT_GF128_ELEMENT     pState,
     _In_reads_( cbData )                    PCBYTE                      pbData,
-    _In_                                    SIZE_T                      cbData )
+                                            SIZE_T                      cbData )
 {
     __n128 state;
     __n128 data, datax;
@@ -844,10 +841,10 @@ SymCryptGHashExpandKey(
 VOID
 SYMCRYPT_CALL
 SymCryptGHashAppendData(
-    _In_                    PCSYMCRYPT_GHASH_EXPANDED_KEY   expandedKey,
-    _Inout_                 PSYMCRYPT_GF128_ELEMENT         pState,
-    _In_reads_( cbData )    PCBYTE                          pbData,
-    _In_                    SIZE_T                          cbData )
+    _In_                              PCSYMCRYPT_GHASH_EXPANDED_KEY   expandedKey,
+    _Inout_                           PSYMCRYPT_GF128_ELEMENT         pState,
+    _In_reads_( cbData )              PCBYTE                          pbData,
+                                      SIZE_T                          cbData )
 {
 #if SYMCRYPT_CPU_X86
     PCSYMCRYPT_GF128_ELEMENT pExpandedKeyTable;

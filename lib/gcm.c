@@ -351,16 +351,16 @@ SymCryptGcmSetNonce(
         // If len(nonce) != 96 bits (12 bytes),
         // pre-counter block = GHASH(nonce padded to a multiple of 128 bits || (QWORD) len(nonce))
         BYTE buf[SYMCRYPT_GF128_BLOCK_SIZE];
-        SIZE_T cbNonceRemainder = cbNonce & 0xf;
-        
-        if(cbNonce >= SYMCRYPT_GF128_BLOCK_SIZE)
-        {
-            SymCryptGHashAppendData( &pState->pKey->ghashKey, &pState->ghashState, pbNonce,
-                cbNonce - cbNonceRemainder );
-        }
+        SIZE_T cbNonceRemainder = cbNonce & (SYMCRYPT_GF128_BLOCK_SIZE - 1);
 
-        // If the nonce length is not a multiple of 128 bits, it needs to be padded with zeros
-        // until it is, as GHASH is only defined on multiples of 128 bits.
+        // Process all full blocks of the nonce, i.e. all nonce bytes up to a multiple of
+        // SYMCRYPT_GF128_BLOCK_SIZE. SymCryptGHashAppendData ignores additional data that are
+        // not a multiple of the block size. We will handle any such remaining data below.
+        // (This also works if the nonce is less than the block size.)
+        SymCryptGHashAppendData( &pState->pKey->ghashKey, &pState->ghashState, pbNonce, cbNonce );
+
+        // If the nonce length is not a multiple of SYMCRYPT_GF128_BLOCK_SIZE, we need to pad any
+        // remaining data to a multiple of the block size.
         if(cbNonceRemainder > 0)
         {
             SymCryptWipeKnownSize( buf, sizeof(buf) );

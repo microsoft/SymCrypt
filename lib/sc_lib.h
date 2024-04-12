@@ -933,13 +933,18 @@ SymCryptGHashExpandKeyAmd64(
     _Out_writes_( SYMCRYPT_GF128_FIELD_SIZE )   PSYMCRYPT_GF128_ELEMENT expandedKey,
     _In_reads_( SYMCRYPT_GF128_BLOCK_SIZE )     PCBYTE                  pH );
 
+//
+// For all GHashAppendData functions, data will be appended in multiples of SYMCRYPT_GF128_BLOCK_SIZE.
+// If the data is not a multiple of SYMCRYPT_GF128_BLOCK_SIZE, any remaining data will be ignored.
+//
+
 VOID
 SYMCRYPT_CALL
 SymCryptGHashAppendData(
     _In_                    PCSYMCRYPT_GHASH_EXPANDED_KEY   expandedKey,
     _Inout_                 PSYMCRYPT_GF128_ELEMENT         pState,
     _In_reads_( cbData )    PCBYTE                          pbData,
-    _In_                    SIZE_T                          cbData );
+                            SIZE_T                          cbData );
 
 VOID
 SYMCRYPT_CALL
@@ -947,7 +952,7 @@ SymCryptGHashAppendDataC(
     _In_reads_( SYMCRYPT_GF128_FIELD_SIZE )     PCSYMCRYPT_GF128_ELEMENT    expandedKeyTable,
     _Inout_                                     PSYMCRYPT_GF128_ELEMENT     pState,
     _In_reads_( cbData )                        PCBYTE                      pbData,
-    _In_                                        SIZE_T                      cbData );
+                                                SIZE_T                      cbData );
 
 VOID
 SYMCRYPT_CALL
@@ -955,7 +960,7 @@ SymCryptGHashAppendDataXmm(
     _In_reads_( SYMCRYPT_GF128_FIELD_SIZE ) PCSYMCRYPT_GF128_ELEMENT    expandedKeyTable,
     _Inout_                                 PSYMCRYPT_GF128_ELEMENT     pState,
     _In_reads_( cbData )                    PCBYTE                      pbData,
-    _In_                                    SIZE_T                      cbData );
+                                            SIZE_T                      cbData );
 
 VOID
 SYMCRYPT_CALL
@@ -963,7 +968,7 @@ SymCryptGHashAppendDataNeon(
     _In_reads_( SYMCRYPT_GF128_FIELD_SIZE )     PCSYMCRYPT_GF128_ELEMENT    expandedKeyTable,
     _Inout_                                     PSYMCRYPT_GF128_ELEMENT     pState,
     _In_reads_( cbData )                        PCBYTE                      pbData,
-    _In_                                        SIZE_T                      cbData );
+                                                SIZE_T                      cbData );
 
 VOID
 SYMCRYPT_CALL
@@ -971,7 +976,7 @@ SymCryptGHashAppendDataPclmulqdq(
     _In_reads_( SYMCRYPT_GF128_FIELD_SIZE ) PCSYMCRYPT_GF128_ELEMENT    expandedKeyTable,
     _Inout_                                 PSYMCRYPT_GF128_ELEMENT     pState,
     _In_reads_( cbData )                    PCBYTE                      pbData,
-    _In_                                    SIZE_T                      cbData );
+                                            SIZE_T                      cbData );
 
 VOID
 SYMCRYPT_CALL
