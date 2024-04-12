@@ -6,6 +6,9 @@
 #include <openssl/err.h>
 #include <openssl/evp.h>
 #include <openssl/core_names.h>
+#include <openssl/bn.h>
+#include <openssl/param_build.h>
+#include <openssl/rsa.h>
 #include <algorithm>
 
 char * ImpOpenssl::name = "OpenSSL";
@@ -723,12 +726,385 @@ cleanup:
 // ModeGcm end
 
 
+
+// AlgRsaSignPss
+
+EVP_PKEY *generateOpensslRsaKey(int bits)
+{
+    EVP_PKEY_CTX *genctx = NULL;
+    EVP_PKEY *pkey = NULL;
+
+    genctx = EVP_PKEY_CTX_new_from_name(NULL, "RSA", NULL);
+    if (genctx == NULL) {
+        goto err;
+    }
+
+    if (EVP_PKEY_keygen_init(genctx) <= 0) {
+        goto err;
+    }
+
+    if (EVP_PKEY_CTX_set_rsa_keygen_bits(genctx, bits) <= 0) {
+        goto err;
+    }
+
+    if (EVP_PKEY_CTX_set_rsa_keygen_primes(genctx, 2) <= 0) {
+        goto err;
+    }
+
+    if (EVP_PKEY_generate(genctx, &pkey) <= 0) {
+        goto err;
+    }
+
+err:
+    if (genctx != NULL)
+    {
+        EVP_PKEY_CTX_free(genctx);
+    }
+    return pkey;
+}
+
+// Table with the RSA keys' sizes and pointers to keys
+struct {
+    SIZE_T                      keySize;
+    UINT32                      generateFlags;
+    EVP_PKEY                    *pkey;
+} g_precomputedRsaKeysOpenssl[] = {
+    {  32, SYMCRYPT_FLAG_RSAKEY_SIGN, NULL },
+    {  64, SYMCRYPT_FLAG_RSAKEY_SIGN, NULL },
+    { 128, SYMCRYPT_FLAG_RSAKEY_SIGN, NULL },
+    { 256, SYMCRYPT_FLAG_RSAKEY_SIGN, NULL },
+    { 384, SYMCRYPT_FLAG_RSAKEY_SIGN, NULL },
+    { 512, SYMCRYPT_FLAG_RSAKEY_SIGN, NULL },
+    {1024, SYMCRYPT_FLAG_RSAKEY_SIGN, NULL },
+    {  32, SYMCRYPT_FLAG_RSAKEY_ENCRYPT, NULL },
+    {  64, SYMCRYPT_FLAG_RSAKEY_ENCRYPT, NULL },
+    { 128, SYMCRYPT_FLAG_RSAKEY_ENCRYPT, NULL },
+    { 256, SYMCRYPT_FLAG_RSAKEY_ENCRYPT, NULL },
+    { 384, SYMCRYPT_FLAG_RSAKEY_ENCRYPT, NULL },
+    { 512, SYMCRYPT_FLAG_RSAKEY_ENCRYPT, NULL },
+    {1024, SYMCRYPT_FLAG_RSAKEY_ENCRYPT, NULL },
+};
+
+EVP_PKEY *
+SetupOpensslRsaKeyForPerf( PBYTE buf1, SIZE_T keySize, UINT32 generateFlags )
+{
+    SIZE_T i = 0;
+    BOOLEAN bFound = FALSE;
+
+    SYMCRYPT_ERROR scError = SYMCRYPT_NO_ERROR;
+
+    for( i=0; i < ARRAY_SIZE(g_precomputedRsaKeysOpenssl); i++ )
+    {
+        if ( keySize == g_precomputedRsaKeysOpenssl[i].keySize &&
+             generateFlags == g_precomputedRsaKeysOpenssl[i].generateFlags )
+        {
+            bFound = TRUE;
+
+            if ( g_precomputedRsaKeysOpenssl[i].pkey == NULL )
+            {
+                g_precomputedRsaKeysOpenssl[i].pkey = generateOpensslRsaKey((int)keySize * 8);
+                CHECK( g_precomputedRsaKeysOpenssl[i].pkey != NULL, "generateOpensslRsaKey failed" );
+            }
+
+            break;
+        }
+    }
+
+    CHECK( bFound, "?" );
+
+    return g_precomputedRsaKeysOpenssl[i].pkey;
+}
+
+struct RsaPerfContext
+{
+    EVP_PKEY_CTX* signCtx;
+    EVP_PKEY_CTX* verifyCtx;
+    EVP_MD* md;
+};
+
+template<>
+VOID
+algImpKeyPerfFunction<ImpOpenssl, AlgRsaSignPss>( PBYTE buf1, PBYTE buf2, PBYTE buf3, SIZE_T keySize )
+{
+    EVP_PKEY *pkey = SetupOpensslRsaKeyForPerf(buf1, keySize, SYMCRYPT_FLAG_RSAKEY_SIGN);
+
+    RsaPerfContext *ctx = (RsaPerfContext *)buf1;
+    ctx->signCtx = EVP_PKEY_CTX_new(pkey, NULL);
+    ctx->verifyCtx = EVP_PKEY_CTX_new(pkey, NULL);
+    ctx->md = EVP_MD_fetch(NULL, "SHA256", NULL);
+
+    int cbHash = SYMCRYPT_SHA256_RESULT_SIZE;
+    const unsigned char *pbHash = buf2;
+    unsigned char *pbSig = buf3;
+    size_t outlen = keySize;
+
+    CHECK( EVP_PKEY_sign_init(ctx->signCtx) > 0,
+          "EVP_PKEY_sign_init" );
+    CHECK(EVP_PKEY_CTX_set_rsa_padding(ctx->signCtx, RSA_PKCS1_PSS_PADDING) > 0, "EVP_PKEY_CTX_set_rsa_padding");
+    CHECK(EVP_PKEY_CTX_set_signature_md(ctx->signCtx, ctx->md) > 0, "EVP_PKEY_CTX_set_signature_md");
+    CHECK(EVP_PKEY_CTX_set_rsa_pss_saltlen(ctx->signCtx, SYMCRYPT_SHA256_RESULT_SIZE) > 0, "EVP_PKEY_CTX_set_rsa_pss_saltlen");
+    CHECK(EVP_PKEY_sign(ctx->signCtx, pbSig, &outlen, pbHash, cbHash) > 0, "EVP_PKEY_sign");
+    CHECK( outlen == keySize, "?" );
+
+    CHECK( EVP_PKEY_verify_init(ctx->verifyCtx) > 0,
+          "EVP_PKEY_verify_init" );
+    CHECK(EVP_PKEY_CTX_set_rsa_padding(ctx->verifyCtx, RSA_PKCS1_PSS_PADDING) > 0, "EVP_PKEY_CTX_set_rsa_padding");
+    CHECK(EVP_PKEY_CTX_set_rsa_pss_saltlen(ctx->verifyCtx, SYMCRYPT_SHA256_RESULT_SIZE) > 0, "EVP_PKEY_CTX_set_rsa_pss_saltlen");
+    CHECK(EVP_PKEY_CTX_set_signature_md(ctx->verifyCtx, ctx->md) > 0, "EVP_PKEY_CTX_set_signature_md");
+    CHECK(EVP_PKEY_verify(ctx->verifyCtx, pbSig, keySize, pbHash, cbHash) > 0, "EVP_PKEY_verify");
+}
+
+template<>
+VOID
+algImpCleanPerfFunction<ImpOpenssl, AlgRsaSignPss>( PBYTE buf1, PBYTE buf2, PBYTE buf3 )
+{
+    UNREFERENCED_PARAMETER( buf2 );
+    UNREFERENCED_PARAMETER( buf3 );
+    RsaPerfContext *ctx = (RsaPerfContext *)buf1;
+    EVP_PKEY_CTX_free(ctx->signCtx);
+    EVP_PKEY_CTX_free(ctx->verifyCtx);
+    EVP_MD_free(ctx->md);
+}
+
+template<>
+VOID
+algImpDataPerfFunction< ImpOpenssl, AlgRsaSignPss>( PBYTE buf1, PBYTE buf2, PBYTE buf3, SIZE_T keySize )
+{
+    int cbHash = SYMCRYPT_SHA256_RESULT_SIZE;
+    const unsigned char *pbHash = buf2;
+    unsigned char *pbSig = buf3;
+    size_t outlen = keySize;
+    RsaPerfContext *ctx = (RsaPerfContext *)buf1;
+
+    CHECK( EVP_PKEY_sign_init(ctx->signCtx) > 0, "EVP_PKEY_sign_init" );
+    CHECK(EVP_PKEY_CTX_set_rsa_padding(ctx->signCtx, RSA_PKCS1_PSS_PADDING) > 0, "EVP_PKEY_CTX_set_rsa_padding");
+    CHECK(EVP_PKEY_CTX_set_signature_md(ctx->signCtx, ctx->md) > 0, "EVP_PKEY_CTX_set_signature_md");
+    CHECK(EVP_PKEY_CTX_set_rsa_pss_saltlen(ctx->signCtx, SYMCRYPT_SHA256_RESULT_SIZE) > 0, "EVP_PKEY_CTX_set_rsa_pss_saltlen");
+    CHECK(EVP_PKEY_sign(ctx->signCtx, pbSig, &outlen, pbHash, cbHash) > 0, "EVP_PKEY_sign");
+    CHECK( outlen == keySize, "?" );
+}
+
+template<>
+VOID
+algImpDecryptPerfFunction< ImpOpenssl, AlgRsaSignPss>( PBYTE buf1, PBYTE buf2, PBYTE buf3, SIZE_T keySize )
+{
+    int cbHash = SYMCRYPT_SHA256_RESULT_SIZE;
+    const unsigned char *pbHash = buf2;
+    unsigned char *pbSig = buf3;
+    size_t outlen = keySize;
+    RsaPerfContext *ctx = (RsaPerfContext *)buf1;
+
+    CHECK( EVP_PKEY_verify_init(ctx->verifyCtx) > 0, "EVP_PKEY_verify_init" );
+    CHECK(EVP_PKEY_CTX_set_rsa_padding(ctx->verifyCtx, RSA_PKCS1_PSS_PADDING) > 0, "EVP_PKEY_CTX_set_rsa_padding");
+    CHECK(EVP_PKEY_CTX_set_rsa_pss_saltlen(ctx->verifyCtx, SYMCRYPT_SHA256_RESULT_SIZE) > 0, "EVP_PKEY_CTX_set_rsa_pss_saltlen");
+    CHECK(EVP_PKEY_CTX_set_signature_md(ctx->verifyCtx, ctx->md) > 0, "EVP_PKEY_CTX_set_signature_md");
+    CHECK(EVP_PKEY_verify(ctx->verifyCtx, pbSig, keySize, pbHash, cbHash) > 0, "EVP_PKEY_verify");
+}
+
+template<>
+RsaSignImp<ImpOpenssl, AlgRsaSignPss>::RsaSignImp()
+{
+    m_perfDataFunction      = &algImpDataPerfFunction<ImpOpenssl, AlgRsaSignPss>;
+    m_perfDecryptFunction   = &algImpDecryptPerfFunction<ImpOpenssl, AlgRsaSignPss>;
+    m_perfKeyFunction       = &algImpKeyPerfFunction<ImpOpenssl, AlgRsaSignPss>;
+    m_perfCleanFunction     = &algImpCleanPerfFunction<ImpOpenssl, AlgRsaSignPss>;
+
+    state.pkey_ctx = NULL;
+    state.pkey = NULL;
+}
+
+template<>
+RsaSignImp<ImpOpenssl, AlgRsaSignPss>::~RsaSignImp()
+{
+    if (this->state.pkey_ctx != NULL)
+    {
+        EVP_PKEY_CTX_free(this->state.pkey_ctx);
+        this->state.pkey_ctx = NULL;
+    }
+    if (this->state.pkey != NULL)
+    {
+        EVP_PKEY_free(this->state.pkey);
+        this->state.pkey = NULL;
+    }
+}
+
+EVP_PKEY *createOpensslRsaKey(PRSAKEY_TESTBLOB pcKeyBlob)
+{
+    BIGNUM *n;           /* modulus */
+    BIGNUM *e;           /* public exponent */
+    BIGNUM *d;           /* private exponent */
+
+    OSSL_PARAM_BLD *bld = OSSL_PARAM_BLD_new();
+    OSSL_PARAM *params = NULL;
+    EVP_PKEY_CTX *pkey_ctx = NULL;
+    EVP_PKEY *pkey = NULL;
+
+    BN_CTX *bn_ctx = NULL;
+    PSYMCRYPT_RSAKEY pSymCryptKey = rsaKeyFromTestBlob( pcKeyBlob );
+
+    if ( SymCryptRsakeyGetCrtValue(pSymCryptKey, NULL, NULL, 0, NULL, 0, pcKeyBlob->abPrivateExp, pcKeyBlob->cbModulus, SYMCRYPT_NUMBER_FORMAT_MSB_FIRST, 0) != SYMCRYPT_NO_ERROR )
+    {
+        goto err;
+    }
+
+    bn_ctx = BN_CTX_new();
+    BN_CTX_start(bn_ctx);
+
+    n = BN_CTX_get(bn_ctx);
+    e = BN_CTX_get(bn_ctx);
+    d = BN_CTX_get(bn_ctx);
+
+    BN_set_flags(d, BN_FLG_SECURE | BN_FLG_CONSTTIME);
+    BN_set_flags(e, BN_FLG_SECURE | BN_FLG_CONSTTIME);
+
+    BN_bin2bn(pcKeyBlob->abModulus, pcKeyBlob->cbModulus, n);
+    BN_set_word(e, pcKeyBlob->u64PubExp);
+    BN_bin2bn(pcKeyBlob->abPrivateExp, pcKeyBlob->cbModulus, d);
+
+    if ( bld == NULL
+        || !OSSL_PARAM_BLD_push_BN(bld, "n", n)
+        || !OSSL_PARAM_BLD_push_BN(bld, "e", e)
+        || !OSSL_PARAM_BLD_push_BN(bld, "d", d)
+        || (params = OSSL_PARAM_BLD_to_param(bld)) == NULL )
+        goto err;
+
+    pkey_ctx = EVP_PKEY_CTX_new_from_name(NULL, "RSA", NULL);
+
+    if ( EVP_PKEY_fromdata_init(pkey_ctx) <= 0 || EVP_PKEY_fromdata(pkey_ctx, &pkey, EVP_PKEY_KEYPAIR, params) <= 0 )
+    {
+        goto err;
+    }
+
+err:
+    if ( pSymCryptKey != NULL )
+    {
+        SymCryptRsakeyFree(pSymCryptKey);
+    }
+
+    if ( bn_ctx != NULL )
+    {
+        BN_CTX_end(bn_ctx);
+        BN_CTX_free(bn_ctx);
+    }
+
+    if ( bld != NULL )
+    {
+        OSSL_PARAM_BLD_free(bld);
+    }
+
+    if ( params != NULL )
+    {
+        OSSL_PARAM_free(params);
+    }
+
+    if ( pkey_ctx != NULL )
+    {
+        EVP_PKEY_CTX_free( pkey_ctx );
+    }
+
+    return pkey;
+}
+
+template<>
+NTSTATUS
+RsaSignImp<ImpOpenssl, AlgRsaSignPss>::setKey( PCRSAKEY_TESTBLOB pcKeyBlob )
+{
+    if (this->state.pkey_ctx != NULL)
+    {
+        EVP_PKEY_CTX_free(this->state.pkey_ctx);
+        this->state.pkey_ctx = NULL;
+    }
+    if (this->state.pkey != NULL)
+    {
+        EVP_PKEY_free(this->state.pkey);
+        this->state.pkey = NULL;
+    }
+
+    if ( pcKeyBlob == NULL )
+    {
+        return STATUS_SUCCESS;
+    }
+
+    this->state.pkey = createOpensslRsaKey(const_cast<PRSAKEY_TESTBLOB>(pcKeyBlob));
+    CHECK( this->state.pkey != NULL, "pkey is null" );
+    this->state.pkey_ctx = EVP_PKEY_CTX_new(this->state.pkey, NULL);
+    CHECK( this->state.pkey_ctx != NULL, "pkey_ctx is null" );
+
+    return STATUS_SUCCESS;
+}
+
+template<>
+NTSTATUS
+RsaSignImp<ImpOpenssl, AlgRsaSignPss>::sign(
+    _In_reads_( cbHash)     PCBYTE  pbHash,
+                            SIZE_T  cbHash,
+                            PCSTR   pcstrHashAlgName,
+                            UINT32  u32Other,
+    _Out_writes_( cbSig )   PBYTE   pbSig,
+                            SIZE_T  cbSig )
+{
+    EVP_MD *md = EVP_MD_fetch(NULL, pcstrHashAlgName, NULL);
+    CHECK( md != NULL, "Found hash alg" )
+
+    CHECK( EVP_PKEY_sign_init(this->state.pkey_ctx) > 0,
+          "EVP_PKEY_sign_init" );
+    CHECK(EVP_PKEY_CTX_set_rsa_padding(this->state.pkey_ctx, RSA_PKCS1_PSS_PADDING) > 0, "EVP_PKEY_CTX_set_rsa_padding");
+    CHECK(EVP_PKEY_CTX_set_signature_md(this->state.pkey_ctx, md) > 0, "EVP_PKEY_CTX_set_signature_md");
+    CHECK(EVP_PKEY_CTX_set_rsa_pss_saltlen(this->state.pkey_ctx, u32Other) > 0, "EVP_PKEY_CTX_set_rsa_pss_saltlen");
+
+    size_t outlen = 0;
+    /* Determine signature length. */
+    CHECK(EVP_PKEY_sign(this->state.pkey_ctx, NULL, &outlen, pbHash, cbHash) > 0, "EVP_PKEY_sign");
+
+    CHECK(cbSig >= outlen, "cbSig too small");
+
+    CHECK(EVP_PKEY_sign(this->state.pkey_ctx, pbSig, &outlen, pbHash, cbHash) > 0, "EVP_PKEY_sign");
+    EVP_MD_free(md);
+
+    return STATUS_SUCCESS;
+}
+
+template<>
+NTSTATUS
+RsaSignImp<ImpOpenssl, AlgRsaSignPss>::verify(
+    _In_reads_( cbHash)     PCBYTE  pbHash,
+                            SIZE_T  cbHash,
+    _In_reads_( cbSig )     PCBYTE  pbSig,
+                            SIZE_T  cbSig,
+                            PCSTR   pcstrHashAlgName,
+                            UINT32  u32Other )
+{
+    EVP_MD *md = EVP_MD_fetch(NULL, pcstrHashAlgName, NULL);
+    CHECK( md != NULL, "Invalid hash algorithm" )
+
+    CHECK( EVP_PKEY_verify_init(this->state.pkey_ctx) > 0,
+          "EVP_PKEY_verify_init" );
+    CHECK(EVP_PKEY_CTX_set_rsa_padding(this->state.pkey_ctx, RSA_PKCS1_PSS_PADDING) > 0, "EVP_PKEY_CTX_set_rsa_padding");
+    CHECK(EVP_PKEY_CTX_set_rsa_pss_saltlen(this->state.pkey_ctx, u32Other) > 0, "EVP_PKEY_CTX_set_rsa_pss_saltlen");
+
+    CHECK(EVP_PKEY_CTX_set_signature_md(this->state.pkey_ctx, md) > 0, "EVP_PKEY_CTX_set_signature_md");
+
+    EVP_MD_free(md);
+
+    int ret = EVP_PKEY_verify(this->state.pkey_ctx, pbSig, cbSig, pbHash, cbHash);
+    if (ret > 0)
+    {
+        return STATUS_SUCCESS;
+    }
+    else
+    {
+        return STATUS_INVALID_PARAMETER;
+    }
+}
+
+// AlgRsaSignPss end
+
 VOID
 addOpensslAlgs()
 {
     addImplementationToGlobalList<XtsImp<ImpOpenssl, AlgXtsAes>>();
     addImplementationToGlobalList<AuthEncImp<ImpOpenssl, AlgAes, ModeGcm>>();
-    // addImplementationToGlobalList<RsaSignImp<ImpOpenssl, AlgRsaSignPss>>();
+    addImplementationToGlobalList<RsaSignImp<ImpOpenssl, AlgRsaSignPss>>();
     // addImplementationToGlobalList<HashImp<ImpOpenssl, AlgSha256>>();
     // addImplementationToGlobalList<HashImp<ImpOpenssl, AlgSha384>>();
     // addImplementationToGlobalList<HashImp<ImpOpenssl, AlgSha512>>();

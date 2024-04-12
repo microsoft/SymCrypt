@@ -663,6 +663,8 @@ typedef struct _RSAKEY_TESTBLOB {
     BYTE    abModulus[RSAKEY_MAXKEYSIZE];
     BYTE    abPrime1[RSAKEY_MAXKEYSIZE];
     BYTE    abPrime2[RSAKEY_MAXKEYSIZE];
+    // Only set in OpenSSL implementation right now.
+    BYTE    abPrivateExp[RSAKEY_MAXKEYSIZE];
 
     // And some fields to make debugging easier
     const char *    pcstrSource;    // Where did this key come from

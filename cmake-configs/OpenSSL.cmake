@@ -22,7 +22,6 @@ if(OPENSSL_BUILD_FROM_SOURCE)
                 WORKING_DIRECTORY ${OPENSSL_BUILD_ROOT})
         endif()
     endif()
-
     if(NOT EXISTS "${OPENSSL_BUILD_ROOT}/OpenSSLConfig.cmake")
         set(ENV{LANG} C)
         set(ENV{LC_ALL} C)

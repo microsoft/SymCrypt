@@ -32,5 +32,12 @@ public:
     BOOLEAN inComputation;
 };
 
+template<>
+class RsaSignImpState<ImpOpenssl, AlgRsaSignPss> {
+public:
+    EVP_PKEY *pkey;
+    EVP_PKEY_CTX *pkey_ctx;
+};
+
 VOID
 addOpensslAlgs();

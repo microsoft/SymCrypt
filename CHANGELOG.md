@@ -7,7 +7,8 @@ prior to the creation of a new release, based on the changes contained in that r
 
 - Add SymCryptEntropyAccumulator to Windows kernel module
 - Fix tweak lower 64 bit overflow calculation in SYMCRYPT_XtsAesXxx
-- Add OpenSSL implementation for XtsAes to symcryptunittest
+- Add OpenSSL implementation for XtsAes and AesGcm to symcryptunittest
+- Add OpenSSL implementation for RSA PSS to symcryptunittest
 - Add Windows user mode DLL
 - Fixed debug assertion failure in AES-GCM with nonce < 12 bytes when ASM is disabled
 
