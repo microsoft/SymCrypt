@@ -91,7 +91,7 @@ if(SYMCRYPT_TEST_WITH_OPENSSL)
 endif()
 
 # Need to include an asm file from here.
-include_directories(${CMAKE_SOURCE_DIR}/lib)
+include_directories(${SYMCRYPT_SOURCE_DIR}/lib)
 
 if(WIN32)
     # DNDEBUG is required to link with msbignum. This should eventually be removed.

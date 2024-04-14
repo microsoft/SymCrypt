@@ -153,10 +153,10 @@ function(process_cppasm filepath outformat archdefine)
         add_custom_command(
             OUTPUT ${output_asm}
             COMMAND "${CMAKE_C_COMPILER}" -E -P -x c ${filepath} -o ${output_asm}
-                -I${CMAKE_CURRENT_SOURCE_DIR} -I${CMAKE_CURRENT_SOURCE_DIR}/${rootpath} -I${CMAKE_SOURCE_DIR}/inc
+                -I${CMAKE_CURRENT_SOURCE_DIR} -I${CMAKE_CURRENT_SOURCE_DIR}/${rootpath} -I${SYMCRYPT_SOURCE_DIR}/inc
                 -DSYMCRYPT_${outformatupper} -DSYMCRYPT_CPU_${archdefineupper} ${dbg_definition}
             MAIN_DEPENDENCY ${filepath}
-            DEPENDS ${CMAKE_SOURCE_DIR}/inc/C_asm_shared.inc ${filepath} symcryptasm_shared.cppasm
+            DEPENDS ${SYMCRYPT_SOURCE_DIR}/inc/C_asm_shared.inc ${filepath} symcryptasm_shared.cppasm
             COMMENT "C preprocessing ${filepath} to ${outformat} (${output_asm})"
             VERBATIM)
     elseif(outformat STREQUAL masm)
@@ -164,10 +164,10 @@ function(process_cppasm filepath outformat archdefine)
         add_custom_command(
             OUTPUT ${output_asm}
             COMMAND "${CMAKE_C_COMPILER}" /nologo /EP /P /Fi${output_asm} ${filepath}
-                -I${CMAKE_CURRENT_SOURCE_DIR} -I${CMAKE_CURRENT_SOURCE_DIR}/${rootpath} -I${CMAKE_SOURCE_DIR}/inc
+                -I${CMAKE_CURRENT_SOURCE_DIR} -I${CMAKE_CURRENT_SOURCE_DIR}/${rootpath} -I${SYMCRYPT_SOURCE_DIR}/inc
                 -DSYMCRYPT_${outformatupper} -DSYMCRYPT_CPU_${archdefineupper} ${dbg_definition}
             MAIN_DEPENDENCY ${filepath}
-            DEPENDS ${CMAKE_SOURCE_DIR}/inc/C_asm_shared.inc ${filepath} symcryptasm_shared.cppasm
+            DEPENDS ${SYMCRYPT_SOURCE_DIR}/inc/C_asm_shared.inc ${filepath} symcryptasm_shared.cppasm
             COMMENT "C preprocessing ${filepath} to ${outformat} (${output_asm})"
             VERBATIM)
     endif()
@@ -196,9 +196,9 @@ function(process_symcryptasm filepath outformat archdefine callingconvention)
     add_custom_command(
         OUTPUT ${output_cppasm}
         COMMAND ${CMAKE_COMMAND} -E make_directory ${output_directory}
-        COMMAND ${Python3_EXECUTABLE} ${CMAKE_SOURCE_DIR}/scripts/symcryptasm_processor.py ${outformat} ${archdefine} ${callingconvention} ${filepath} ${output_cppasm}
+        COMMAND ${Python3_EXECUTABLE} ${SYMCRYPT_SOURCE_DIR}/scripts/symcryptasm_processor.py ${outformat} ${archdefine} ${callingconvention} ${filepath} ${output_cppasm}
         MAIN_DEPENDENCY ${filepath}
-        DEPENDS ${CMAKE_SOURCE_DIR}/scripts/symcryptasm_processor.py
+        DEPENDS ${SYMCRYPT_SOURCE_DIR}/scripts/symcryptasm_processor.py
         COMMENT "Python preprocessing ${filepath} to ${outformat} (${output_cppasm})"
         VERBATIM)
 
@@ -417,7 +417,7 @@ if(NOT WIN32)
     endif()
 endif()
 
-include_directories(${CMAKE_SOURCE_DIR}/inc)
+include_directories(${SYMCRYPT_SOURCE_DIR}/inc)
 
 add_library(symcrypt_common STATIC ${SOURCES_COMMON})
 

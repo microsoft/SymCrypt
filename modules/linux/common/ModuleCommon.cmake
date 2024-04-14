@@ -74,7 +74,7 @@ if(SYMCRYPT_FIPS_BUILD)
         TARGET ${TARGET_NAME}
         POST_BUILD
         COMMAND mkdir -p $<TARGET_FILE_DIR:${TARGET_NAME}>/processing
-        COMMAND ${Python3_EXECUTABLE} ${CMAKE_SOURCE_DIR}/scripts/process_fips_module.py $<TARGET_FILE:${TARGET_NAME}> -d
+        COMMAND ${Python3_EXECUTABLE} ${SYMCRYPT_SOURCE_DIR}/scripts/process_fips_module.py $<TARGET_FILE:${TARGET_NAME}> -d
         COMMENT "Postprocessing SymCrypt shared object for FIPS integrity verification"
     )
 endif()

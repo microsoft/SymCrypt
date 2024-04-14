@@ -10,12 +10,12 @@ if(OPENSSL_BUILD_FROM_SOURCE)
         set(OPENSSL_BUILD_BRANCH_SUFFIX -${OPENSSL_BUILD_BRANCH})
     endif()
 
-    set(OPENSSL_BUILD_ROOT ${CMAKE_SOURCE_DIR}/3rdparty/openssl-${OPENSSL_BUILD_TYPE}${OPENSSL_BUILD_BRANCH_SUFFIX})
+    set(OPENSSL_BUILD_ROOT ${SYMCRYPT_SOURCE_DIR}/3rdparty/openssl-${OPENSSL_BUILD_TYPE}${OPENSSL_BUILD_BRANCH_SUFFIX})
 
     if(NOT IS_DIRECTORY "${OPENSSL_BUILD_ROOT}" OR NOT EXISTS "${OPENSSL_BUILD_ROOT}/Configure")
         execute_process(
             COMMAND git clone https://github.com/openssl/openssl.git ${OPENSSL_BUILD_ROOT}
-            WORKING_DIRECTORY ${CMAKE_SOURCE_DIR})
+            WORKING_DIRECTORY ${SYMCRYPT_SOURCE_DIR})
         if(NOT OPENSSL_BUILD_BRANCH STREQUAL "")
             execute_process(
                 COMMAND git checkout ${OPENSSL_BUILD_BRANCH}

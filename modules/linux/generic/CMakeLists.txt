@@ -13,12 +13,12 @@ else()
     list(APPEND SOURCES ../common/nointegrity.c)
 endif()
 
-include_directories(${CMAKE_SOURCE_DIR}/inc ../common ${CMAKE_SOURCE_DIR}/3rdparty/jitterentropy-library)
+include_directories(${SYMCRYPT_SOURCE_DIR}/inc ../common ${SYMCRYPT_SOURCE_DIR}/3rdparty/jitterentropy-library)
 
 add_library(symcrypt_generic_linux SHARED ${SOURCES})
 
 # Link jitterentropy and libatomic
-target_link_libraries(symcrypt_generic_linux ${CMAKE_SOURCE_DIR}/3rdparty/jitterentropy-library/libjitterentropy.a pthread atomic)
+target_link_libraries(symcrypt_generic_linux ${SYMCRYPT_SOURCE_DIR}/3rdparty/jitterentropy-library/libjitterentropy.a pthread atomic)
 
 add_dependencies(symcrypt_generic_linux jitterentropy_lib)
 
