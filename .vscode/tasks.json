@@ -26,7 +26,7 @@
             "label": "Setup",
             "type": "shell",
             "options": {
-                "cwd": "${workspaceFolder}/",
+                "cwd": "${workspaceFolder}/"
             },
             "presentation": {
                 "echo": true,
@@ -34,31 +34,32 @@
                 "focus": false,
                 "panel": "shared",
                 "showReuseMessage": true,
-                "clear": false,
+                "clear": false
             },
             "windows": {
                 "command": [
                     "python -m venv .venv;",
                     ". .\\.venv\\Scripts\\activate.ps1;",
                     "pip install -r .\\scripts\\requirements.txt;",
-                    "Set-Content -value ('pushd;\n& \"\"\"' + (resolve-path 'C:\\Program Files\\Microsoft Visual Studio\\*\\*\\Common7\\Tools\\Launch-VsDevShell.ps1').path + '\"\"\" -Arch $env:PROCESSOR_ARCHITECTURE -HostArch $env:PROCESSOR_ARCHITECTURE;\npopd') -path '${workspaceFolder}\\.venv\\profile.ps1';",
-                ],                
+                    "Set-Content -value ('pushd;\n& \"\"\"' + (resolve-path 'C:\\Program Files\\Microsoft Visual Studio\\*\\*\\Common7\\Tools\\Launch-VsDevShell.ps1').path + '\"\"\" -Arch $env:PROCESSOR_ARCHITECTURE;\npopd') -path '${workspaceFolder}\\.venv\\profile.ps1';"
+                ]
             },
             "linux": {
                 "command": [
                     "python3 -m venv .venv;",
                     ". ./.venv/bin/activate;",
-                    "pip install -r ./scripts/requirements.txt;",
-                ],
-            }
+                    "pip install -r ./scripts/requirements.txt;"
+                ]
+            },
+            "problemMatcher": []
         },
         {
             "label": "Clean",
             "type": "shell",
             "windows": {
                 "command": [
-                    "del -recurse bin_*,bin,.venv;",
-                ],
+                    "del -recurse bin_*,bin,.venv;"
+                ]
             },
             "linux": {
                 "command": [
@@ -66,7 +67,7 @@
                 ]
             },
             "options": {
-                "cwd": "${workspaceFolder}/",
+                "cwd": "${workspaceFolder}/"
             },
             "presentation": {
                 "echo": true,
@@ -74,7 +75,7 @@
                 "focus": false,
                 "panel": "shared",
                 "showReuseMessage": true,
-                "clear": false,
+                "clear": false
             }
         },
         {
@@ -89,18 +90,18 @@
                     "--arch",
                     "amd64",
                     "--config",
-                    "Debug",
-                ],
+                    "Debug"
+                ]
             },
             "linux": {
                 "command": [
                     "[ -f ./.venv/bin/activate ] && . ./.venv/bin/activate;",
                     "python3 ./scripts/build.py cmake bin --arch amd64 --config Debug;",
-                    "exit",
+                    "exit"
                 ]
             },
             "options": {
-                "cwd": "${workspaceFolder}/",
+                "cwd": "${workspaceFolder}/"
             },
             "group": {
                 "kind": "build",
@@ -112,7 +113,7 @@
                 "focus": false,
                 "panel": "shared",
                 "showReuseMessage": true,
-                "clear": false,
+                "clear": false
             }
         },
         {
@@ -121,10 +122,10 @@
             "command": "cmake",
             "args": [
                 "--build",
-                "${workspaceFolder}/bin",
+                "${workspaceFolder}/bin"
             ],
             "options": {
-                "cwd": "${workspaceFolder}/",
+                "cwd": "${workspaceFolder}/"
             },
             "group": {
                 "kind": "build",
@@ -136,7 +137,7 @@
                 "focus": false,
                 "panel": "shared",
                 "showReuseMessage": true,
-                "clear": false,
+                "clear": false
             }
         },
         {
@@ -151,10 +152,10 @@
                 "amd64",
                 "--config",
                 "Debug",
-                "--openssl-build-from-source",
+                "--openssl-build-from-source"
             ],
             "options": {
-                "cwd": "${workspaceFolder}/",
+                "cwd": "${workspaceFolder}/"
             },
             "group": {
                 "kind": "build",
@@ -166,7 +167,7 @@
                 "focus": false,
                 "panel": "shared",
                 "showReuseMessage": true,
-                "clear": false,
+                "clear": false
             }
         },
         {
@@ -177,14 +178,12 @@
                 ".\\scripts\\build.py",
                 "cmake",
                 "bin",
-                "--arch",
-                "amd64",
                 "--config",
                 "Release",
-                "--openssl-build-from-source",
+                "--openssl-build-from-source"
             ],
             "options": {
-                "cwd": "${workspaceFolder}/",
+                "cwd": "${workspaceFolder}/"
             },
             "group": {
                 "kind": "build",
@@ -196,8 +195,8 @@
                 "focus": false,
                 "panel": "shared",
                 "showReuseMessage": true,
-                "clear": false,
+                "clear": false
             }
-        },
+        }
     ]
 }

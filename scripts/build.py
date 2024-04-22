@@ -123,7 +123,7 @@ def configure_cmake(args : argparse.Namespace) -> None:
     # OPTEE
     if args.optee:
         cmake_args.append("-DSYMCRYPT_OPTEE=ON")
-    
+
     if args.ta_dev_kit_inc:
         cmake_args.append("-DTA_DEV_KIT_INC=" + args.ta_dev_kit_inc)
 
@@ -227,7 +227,7 @@ def main() -> None:
     parser_cmake.add_argument("--openssl-branch", type = str, help = "Checkout and build specified branch of OpenSSL.", default = None)
     parser_cmake.add_argument("--openssl-build-from-source", action = "store_true", help = "Build OpenSSL from source.", default = False)
     parser_cmake.add_argument("--target", type = str, help = "Build a specific target.")
-    
+
     # OPTEE
     parser_cmake.add_argument("--optee", action = "store_true", help = "Build SymCrypt for OPTEE env.", default = False)
     parser_cmake.add_argument("--ta_dev_kit_inc", type = str, help = "TA DEV KIT include folder, needed for OPTEE TA compilation.")

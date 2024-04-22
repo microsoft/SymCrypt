@@ -20,6 +20,7 @@ if (CMAKE_C_COMPILER_ID MATCHES "Clang" AND DEFINED CMAKE_C_COMPILER_TARGET)
 endif()
 
 if(NOT IS_DIRECTORY "${SYMCRYPT_SOURCE_DIR}/3rdparty/jitterentropy-library" OR NOT EXISTS "${SYMCRYPT_SOURCE_DIR}/3rdparty/jitterentropy-library/Makefile")
+  file(MAKE_DIRECTORY ${SYMCRYPT_SOURCE_DIR}/3rdparty)
   execute_process(
     COMMAND git submodule update --init -- 3rdparty/jitterentropy-library
     WORKING_DIRECTORY ${SYMCRYPT_SOURCE_DIR})

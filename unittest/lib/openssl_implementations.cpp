@@ -9,6 +9,7 @@
 #include <openssl/bn.h>
 #include <openssl/param_build.h>
 #include <openssl/rsa.h>
+#include <openssl/ec.h>
 #include <algorithm>
 
 char * ImpOpenssl::name = "OpenSSL";
@@ -32,6 +33,7 @@ std::string getOpensslError()
 }
 
 #define CHECK_OPENSSL_SUCCESS(osslInvocation) CHECK(((osslInvocation) == 1), getOpensslError().data())
+#define CHECK_OPENSSL_NONNULL(osslInvocation) CHECK(((osslInvocation) != NULL), getOpensslError().data())
 
 // AlgXtsAes
 
@@ -726,7 +728,6 @@ cleanup:
 // ModeGcm end
 
 
-
 // AlgRsaSignPss
 
 EVP_PKEY *generateOpensslRsaKey(int bits)
@@ -833,7 +834,7 @@ algImpKeyPerfFunction<ImpOpenssl, AlgRsaSignPss>( PBYTE buf1, PBYTE buf2, PBYTE 
     ctx->verifyCtx = EVP_PKEY_CTX_new(pkey, NULL);
     ctx->md = EVP_MD_fetch(NULL, "SHA256", NULL);
 
-    int cbHash = SYMCRYPT_SHA256_RESULT_SIZE;
+    size_t cbHash = SYMCRYPT_SHA256_RESULT_SIZE;
     const unsigned char *pbHash = buf2;
     unsigned char *pbSig = buf3;
     size_t outlen = keySize;
@@ -870,7 +871,7 @@ template<>
 VOID
 algImpDataPerfFunction< ImpOpenssl, AlgRsaSignPss>( PBYTE buf1, PBYTE buf2, PBYTE buf3, SIZE_T keySize )
 {
-    int cbHash = SYMCRYPT_SHA256_RESULT_SIZE;
+    size_t cbHash = SYMCRYPT_SHA256_RESULT_SIZE;
     const unsigned char *pbHash = buf2;
     unsigned char *pbSig = buf3;
     size_t outlen = keySize;
@@ -888,7 +889,7 @@ template<>
 VOID
 algImpDecryptPerfFunction< ImpOpenssl, AlgRsaSignPss>( PBYTE buf1, PBYTE buf2, PBYTE buf3, SIZE_T keySize )
 {
-    int cbHash = SYMCRYPT_SHA256_RESULT_SIZE;
+    size_t cbHash = SYMCRYPT_SHA256_RESULT_SIZE;
     const unsigned char *pbHash = buf2;
     unsigned char *pbSig = buf3;
     size_t outlen = keySize;
@@ -1099,12 +1100,579 @@ RsaSignImp<ImpOpenssl, AlgRsaSignPss>::verify(
 
 // AlgRsaSignPss end
 
+// The first byte denotes the type of curve while the lower bytes the field length.
+// algImpKeyPerfFunction will pass in keySize which will match one of exKeyParam
+// to select the curve. Curves are identified by NID.
+// Compare with g_exKeyToCurve in unittest\inc\test_lib.h.
+const struct {
+    UINT32                      exKeyParam;
+    unsigned int                nid;
+} g_exKeyToCurveNid[] = {
+    { PERF_KEY_NIST192, NID_X9_62_prime192v1 },
+    { PERF_KEY_NIST224, NID_secp224r1 },
+    { PERF_KEY_NIST256, NID_X9_62_prime256v1 },
+    { PERF_KEY_NIST384, NID_secp384r1 },
+    { PERF_KEY_NIST521, NID_secp521r1 },
+    { PERF_KEY_C255_19, NID_X25519 },
+};
+
+// Weierstrass curves not supported by OpenSSL. We will build the curves by parameters.
+const struct {
+    UINT32                      exKeyParam;
+    PCSYMCRYPT_ECURVE_PARAMS    pCurveParams;
+} g_exKeyToCurveParams[] = {
+    { PERF_KEY_W22519, SymCryptEcurveParamsW25519 },
+    { PERF_KEY_W448,   SymCryptEcurveParamsW448   },
+};
+
+EVP_PKEY *generateOpensslEcKeyFromNid(unsigned int nid)
+{
+    EVP_PKEY_CTX *kctx = NULL;
+    EVP_PKEY *key = NULL;
+    EVP_PKEY_CTX *pctx = NULL;
+    EVP_PKEY *params = NULL;
+
+    // This works for new curves like Curve25519, older curves need more steps.
+    // See openssl speed.c.
+    kctx = EVP_PKEY_CTX_new_id(nid, NULL);
+    if (kctx == NULL)
+    {
+        pctx = EVP_PKEY_CTX_new_from_name(NULL, "EC", NULL);
+
+        if (pctx == NULL)
+        {
+            goto cleanup;
+        }
+
+        if (EVP_PKEY_paramgen_init(pctx) <= 0)
+        {
+            goto cleanup;
+        }
+
+        if (EVP_PKEY_CTX_set_ec_paramgen_curve_nid(pctx, nid) <= 0)
+        {
+            goto cleanup;
+        }
+
+        if (EVP_PKEY_paramgen(pctx, &params) <= 0)
+        {
+            goto cleanup;
+        }
+
+        kctx = EVP_PKEY_CTX_new(params, NULL);
+        if (kctx == NULL)
+        {
+            goto cleanup;
+        }
+    }
+
+    if (EVP_PKEY_keygen_init(kctx) <= 0)
+    {
+        goto cleanup;
+    }
+
+    if (EVP_PKEY_keygen(kctx, &key) <= 0)
+    {
+        goto cleanup;
+    }
+
+cleanup:
+    if (pctx != NULL)
+    {
+        EVP_PKEY_CTX_free(pctx);
+    }
+    if (kctx != NULL)
+    {
+        EVP_PKEY_CTX_free(kctx);
+    }
+    if (params != NULL)
+    {
+        EVP_PKEY_free(params);
+    }
+
+    return key;
+}
+
+EVP_PKEY *generateOpensslEcKeyFromParams(PCSYMCRYPT_ECURVE_PARAMS pCurveParams)
+{
+    EVP_PKEY *key = NULL;
+    EVP_PKEY_CTX *pctx = NULL;
+
+    BIGNUM *p = NULL, *a = NULL, *b = NULL;
+    BIGNUM *gx = NULL, *gy = NULL;
+    BIGNUM *n = NULL, *h = NULL;
+    OSSL_PARAM_BLD *bld = NULL;
+    OSSL_PARAM *params = NULL;
+
+    EC_GROUP *group = NULL;
+    EC_POINT *gen = NULL;
+    unsigned char *gen_uncompressed = NULL;
+    PBYTE pSrc = NULL;
+    size_t gen_size = 0;
+
+    pSrc = ((PBYTE)pCurveParams) + sizeof( SYMCRYPT_ECURVE_PARAMS );
+
+    p = BN_bin2bn(pSrc, pCurveParams->cbFieldLength, NULL);
+    pSrc += pCurveParams->cbFieldLength;
+    a = BN_bin2bn(pSrc, pCurveParams->cbFieldLength, NULL);
+    pSrc += pCurveParams->cbFieldLength;
+    b = BN_bin2bn(pSrc, pCurveParams->cbFieldLength, NULL);
+    pSrc += pCurveParams->cbFieldLength;
+    gx = BN_bin2bn(pSrc, pCurveParams->cbFieldLength, NULL);
+    pSrc += pCurveParams->cbFieldLength;
+    gy = BN_bin2bn(pSrc, pCurveParams->cbFieldLength, NULL);
+    pSrc += pCurveParams->cbFieldLength;
+    n = BN_bin2bn(pSrc, pCurveParams->cbSubgroupOrder, NULL);
+    pSrc += pCurveParams->cbFieldLength;
+    h = BN_bin2bn(pSrc, pCurveParams->cbCofactor, NULL);
+    pSrc += pCurveParams->cbFieldLength;
+
+    group = EC_GROUP_new_curve_GFp(p, a, b, NULL);
+    gen_size = (EC_GROUP_get_degree(group) + 7) / 8;
+    gen_size = 1 + 2 * gen_size; /* UNCOMPRESSED_POINT format */
+    gen_uncompressed = (unsigned char *)OPENSSL_malloc(gen_size);
+    if (gen_uncompressed == NULL)
+    {
+        goto cleanup;
+    }
+
+    gen = EC_POINT_new(group);
+    if (gen == NULL)
+    {
+        goto cleanup;
+    }
+
+    if (EC_POINT_set_affine_coordinates(group, gen, gx, gy, NULL) == 0)
+    {
+        goto cleanup;
+    }
+
+    if (EC_POINT_point2oct(group, gen, POINT_CONVERSION_UNCOMPRESSED, gen_uncompressed,
+                           gen_size, NULL) != gen_size)
+    {
+        goto cleanup;
+    }
+
+    bld = OSSL_PARAM_BLD_new();
+    if (bld == NULL)
+    {
+        goto cleanup;
+    }
+
+    OSSL_PARAM_BLD_push_utf8_string(bld,
+                          OSSL_PKEY_PARAM_EC_FIELD_TYPE, SN_X9_62_prime_field, 0);
+    OSSL_PARAM_BLD_push_BN(bld, OSSL_PKEY_PARAM_EC_P, p);
+    OSSL_PARAM_BLD_push_BN(bld, OSSL_PKEY_PARAM_EC_A, a);
+    OSSL_PARAM_BLD_push_BN(bld, OSSL_PKEY_PARAM_EC_B, b);
+    OSSL_PARAM_BLD_push_BN(bld, OSSL_PKEY_PARAM_EC_COFACTOR, h);
+    OSSL_PARAM_BLD_push_octet_string(bld, OSSL_PKEY_PARAM_EC_GENERATOR, gen_uncompressed, gen_size);
+    OSSL_PARAM_BLD_push_BN(bld, OSSL_PKEY_PARAM_EC_ORDER, n);
+
+    params = OSSL_PARAM_BLD_to_param(bld);
+    if (params == NULL)
+    {
+        goto cleanup;
+    }
+
+    pctx = EVP_PKEY_CTX_new_from_name(NULL, "EC", NULL);
+    if (pctx == NULL)
+    {
+        goto cleanup;
+    }
+
+    if (EVP_PKEY_keygen_init(pctx) <= 0)
+    {
+        goto cleanup;
+    }
+
+    if (EVP_PKEY_CTX_set_params(pctx, params) <= 0)
+    {
+        goto cleanup;
+    }
+
+    if (EVP_PKEY_generate(pctx, &key) <= 0)
+    {
+        goto cleanup;
+    }
+
+cleanup:
+    if (gen_uncompressed != NULL)
+    {
+        OPENSSL_free(gen_uncompressed);
+    }
+
+    if (gen != NULL)
+    {
+        EC_POINT_free(gen);
+    }
+
+    if (pctx != NULL)
+    {
+        EVP_PKEY_CTX_free(pctx);
+    }
+    if (bld != NULL)
+    {
+        OSSL_PARAM_BLD_free(bld);
+    }
+    if (params != NULL)
+    {
+        OSSL_PARAM_free(params);
+    }
+
+    if (group != NULL)
+    {
+        EC_GROUP_free(group);
+    }
+
+    if (p != NULL)
+    {
+        BN_free(p);
+    }
+    if (a != NULL)
+    {
+        BN_free(a);
+    }
+    if (b != NULL)
+    {
+        BN_free(b);
+    }
+    if (gx != NULL)
+    {
+        BN_free(gx);
+    }
+    if (gy != NULL)
+    {
+        BN_free(gy);
+    }
+    if (n != NULL)
+    {
+        BN_free(n);
+    }
+    if (h != NULL)
+    {
+        BN_free(h);
+    }
+
+    return key;
+}
+
+EVP_PKEY *
+SetupOpensslEcKeyForPerf( SIZE_T exKeyParam )
+{
+    auto it = std::find_if(g_exKeyToCurveNid, std::end(g_exKeyToCurveNid), [&](auto const& item)
+    {
+        return item.exKeyParam == exKeyParam;
+    });
+    if (it != std::end(g_exKeyToCurveNid))
+    {
+        return generateOpensslEcKeyFromNid(it->nid);
+    }
+
+    auto paramIt = std::find_if(g_exKeyToCurveParams, std::end(g_exKeyToCurveParams), [&](auto const& item)
+    {
+        return item.exKeyParam == exKeyParam;
+    });
+
+    if (paramIt != std::end(g_exKeyToCurveParams))
+    {
+        return generateOpensslEcKeyFromParams(paramIt->pCurveParams);
+    }
+
+    return NULL;
+}
+
+// AlgEcdsaSign
+struct EcContext
+{
+    EVP_PKEY *key;
+    EVP_PKEY_CTX *keyCtx;
+};
+
+template<>
+VOID
+algImpKeyPerfFunction<ImpOpenssl, AlgEcdsaSign>( PBYTE buf1, PBYTE buf2, PBYTE buf3, SIZE_T keySize )
+{
+    UNREFERENCED_PARAMETER( buf2 );
+    UNREFERENCED_PARAMETER( buf3 );
+
+    EcContext *ctx = (EcContext *)buf1;
+
+    if ((keySize & 0xff000000) == PERF_KEY_NUMS_CURVE)
+    {
+        // Not supported.
+        // TODO: add a way to signal to perf testing infrastructure that this is not supported.
+        ctx->key = NULL;
+        ctx->keyCtx = NULL;
+        return;
+    }
+
+    ctx->key = SetupOpensslEcKeyForPerf(keySize);
+    CHECK_OPENSSL_NONNULL(ctx->key);
+    ctx->keyCtx = EVP_PKEY_CTX_new(ctx->key, NULL);
+    CHECK(EVP_PKEY_sign_init(ctx->keyCtx) > 0, "EVP_PKEY_sign_init");
+}
+
+template<>
+VOID
+algImpCleanPerfFunction<ImpOpenssl, AlgEcdsaSign>( PBYTE buf1, PBYTE buf2, PBYTE buf3 )
+{
+    UNREFERENCED_PARAMETER( buf2 );
+    UNREFERENCED_PARAMETER( buf3 );
+    EcContext *ctx = (EcContext *)buf1;
+    if (ctx->keyCtx != NULL)
+    {
+        EVP_PKEY_CTX_free(ctx->keyCtx);
+    }
+    if (ctx->key != NULL)
+    {
+        EVP_PKEY_free(ctx->key);
+    }
+}
+
+template<>
+VOID
+algImpDataPerfFunction<ImpOpenssl, AlgEcdsaSign>( PBYTE buf1, PBYTE buf2, PBYTE buf3, SIZE_T dataSize )
+{
+    UNREFERENCED_PARAMETER( dataSize );
+    EcContext *ctx = (EcContext *)buf1;
+    size_t *pcbSig = (size_t *)buf3;
+    PBYTE pbSig = buf3 + sizeof(*pcbSig);
+
+    if (ctx->key == NULL)
+    {
+        return;
+    }
+
+    PBYTE pbHash = (PBYTE)ctx->key;
+    size_t cbHash = SYMCRYPT_SHA512_RESULT_SIZE;
+    CHECK(EVP_PKEY_sign(ctx->keyCtx, NULL, pcbSig, pbHash, cbHash) > 0, "EVP_PKEY_sign get signature length");
+    CHECK_OPENSSL_SUCCESS(EVP_PKEY_sign(ctx->keyCtx, pbSig, pcbSig, pbHash, cbHash));
+
+    // ScShimSymCryptEcDsaSign(
+    //                 ((PSYMCRYPT_ECKEY *) buf2)[0],
+    //                 ((PBYTE *) buf2)[1],
+    //                 SYMCRYPT_SHA512_RESULT_SIZE,
+    //                 SYMCRYPT_NUMBER_FORMAT_MSB_FIRST,
+    //                 0,
+    //                 buf3 + sizeof(UINT32),
+    //                 *((PUINT32)buf3) );
+}
+
+
+template<>
+EccImp<ImpOpenssl, AlgEcdsaSign>::EccImp()
+{
+    m_perfDataFunction      = &algImpDataPerfFunction <ImpOpenssl, AlgEcdsaSign>;
+    m_perfDecryptFunction   = NULL;
+    m_perfKeyFunction       = &algImpKeyPerfFunction  <ImpOpenssl, AlgEcdsaSign>;
+    m_perfCleanFunction     = &algImpCleanPerfFunction<ImpOpenssl, AlgEcdsaSign>;
+}
+
+template<>
+EccImp<ImpOpenssl, AlgEcdsaSign>::~EccImp()
+{
+}
+
+// AlgEcdsaSign end
+
+// AlgEcdsaVerify
+
+template<>
+VOID
+algImpKeyPerfFunction<ImpOpenssl, AlgEcdsaVerify>( PBYTE buf1, PBYTE buf2, PBYTE buf3, SIZE_T keySize )
+{
+    UNREFERENCED_PARAMETER( keySize );
+    UNREFERENCED_PARAMETER( buf2 );
+
+    EcContext *ctx = (EcContext *)buf1;
+    if ((keySize & 0xff000000) == PERF_KEY_NUMS_CURVE)
+    {
+        // Not supported.
+        // TODO: add a way to signal to perf testing infrastructure that this is not supported.
+        ctx->key = NULL;
+        ctx->keyCtx = NULL;
+        return;
+    }
+
+    ctx->key = SetupOpensslEcKeyForPerf(keySize);
+    CHECK_OPENSSL_NONNULL(ctx->key);
+    ctx->keyCtx = EVP_PKEY_CTX_new(ctx->key, NULL);
+
+    size_t *pcbSig = (size_t *)buf3;
+    PBYTE pbSig = buf3 + sizeof(*pcbSig);
+
+    // Use the key as hash to verify in perf test.
+    PBYTE pbHash = (PBYTE)ctx->key;
+    size_t cbHash = SYMCRYPT_SHA512_RESULT_SIZE;
+    CHECK_OPENSSL_SUCCESS(EVP_PKEY_sign_init(ctx->keyCtx) > 0);
+    CHECK(EVP_PKEY_sign(ctx->keyCtx, NULL, pcbSig, pbHash, cbHash) > 0, "EVP_PKEY_sign get signature length");
+    CHECK_OPENSSL_SUCCESS(EVP_PKEY_sign(ctx->keyCtx, pbSig, pcbSig, pbHash, cbHash));
+
+    // Prepare for verification.
+    CHECK(EVP_PKEY_verify_init(ctx->keyCtx) > 0, "EVP_PKEY_sign_init");
+}
+
+template<>
+VOID
+algImpCleanPerfFunction<ImpOpenssl, AlgEcdsaVerify>( PBYTE buf1, PBYTE buf2, PBYTE buf3 )
+{
+    UNREFERENCED_PARAMETER( buf2 );
+    UNREFERENCED_PARAMETER( buf3 );
+    EcContext *ctx = (EcContext *)buf1;
+    if (ctx->keyCtx != NULL)
+    {
+        EVP_PKEY_CTX_free(ctx->keyCtx);
+    }
+    if (ctx->key != NULL)
+    {
+        EVP_PKEY_free(ctx->key);
+    }
+}
+
+template<>
+VOID
+algImpDataPerfFunction<ImpOpenssl, AlgEcdsaVerify>( PBYTE buf1, PBYTE buf2, PBYTE buf3, SIZE_T dataSize )
+{
+    UNREFERENCED_PARAMETER( dataSize );
+    UNREFERENCED_PARAMETER( buf2 );
+
+    EcContext *ctx = (EcContext *)buf1;
+    if (ctx->key == NULL)
+    {
+        return;
+    }
+
+    size_t *pcbSig = (size_t *)buf3;
+    PBYTE pbSig = buf3 + sizeof(*pcbSig);
+    PBYTE pbHash = (PBYTE)ctx->key;
+    size_t cbHash = SYMCRYPT_SHA512_RESULT_SIZE;
+    CHECK_OPENSSL_SUCCESS(EVP_PKEY_verify(ctx->keyCtx, pbSig, *pcbSig, pbHash, cbHash));
+
+    // ScShimSymCryptEcDsaVerify(
+    //                 ((PSYMCRYPT_ECKEY *) buf2)[0],
+    //                 ((PBYTE *) buf2)[1],
+    //                 SYMCRYPT_SHA512_RESULT_SIZE,
+    //                 buf3 + sizeof(UINT32),
+    //                 *((PUINT32)buf3),
+    //                 SYMCRYPT_NUMBER_FORMAT_MSB_FIRST,
+    //                 0 );
+}
+
+
+template<>
+EccImp<ImpOpenssl, AlgEcdsaVerify>::EccImp()
+{
+    m_perfDataFunction      = &algImpDataPerfFunction <ImpOpenssl, AlgEcdsaVerify>;
+    m_perfDecryptFunction   = NULL;
+    m_perfKeyFunction       = &algImpKeyPerfFunction  <ImpOpenssl, AlgEcdsaVerify>;
+    m_perfCleanFunction     = &algImpCleanPerfFunction<ImpOpenssl, AlgEcdsaVerify>;
+}
+
+template<>
+EccImp<ImpOpenssl, AlgEcdsaVerify>::~EccImp()
+{
+}
+
+// AlgEcdsaVerify end
+
+// AlgEcdh
+
+template<>
+VOID
+algImpKeyPerfFunction<ImpOpenssl, AlgEcdh>( PBYTE buf1, PBYTE buf2, PBYTE buf3, SIZE_T keySize )
+{
+    UNREFERENCED_PARAMETER( buf2 );
+    UNREFERENCED_PARAMETER( buf3 );
+    UNREFERENCED_PARAMETER( keySize );
+
+    EcContext *ctx = (EcContext *)buf1;
+    if ((keySize & 0xff000000) == PERF_KEY_NUMS_CURVE)
+    {
+        // Not supported.
+        // TODO: add a way to signal to perf testing infrastructure that this is not supported.
+        ctx->key = NULL;
+        ctx->keyCtx = NULL;
+        return;
+    }
+
+    ctx->key = SetupOpensslEcKeyForPerf(keySize);
+    CHECK_OPENSSL_NONNULL(ctx->key);
+    ctx->keyCtx = EVP_PKEY_CTX_new(ctx->key, NULL);
+    CHECK_OPENSSL_SUCCESS(EVP_PKEY_derive_init(ctx->keyCtx));
+}
+
+template<>
+VOID
+algImpCleanPerfFunction<ImpOpenssl, AlgEcdh>( PBYTE buf1, PBYTE buf2, PBYTE buf3 )
+{
+    UNREFERENCED_PARAMETER( buf2 );
+    UNREFERENCED_PARAMETER( buf3 );
+    EcContext *ctx = (EcContext *)buf1;
+    if (ctx->keyCtx != NULL)
+    {
+        EVP_PKEY_CTX_free(ctx->keyCtx);
+    }
+    if (ctx->key != NULL)
+    {
+        EVP_PKEY_free(ctx->key);
+    }
+}
+
+template<>
+VOID
+algImpDataPerfFunction<ImpOpenssl, AlgEcdh>( PBYTE buf1, PBYTE buf2, PBYTE buf3, SIZE_T dataSize )
+{
+    UNREFERENCED_PARAMETER( dataSize );
+    EcContext *ctx = (EcContext *)buf1;
+    if (ctx->key == NULL)
+    {
+        return;
+    }
+
+    size_t *secret_len = (size_t *)buf3;
+    unsigned char *secret = buf3 + sizeof(*secret_len);
+    // Same private and public key
+    CHECK_OPENSSL_SUCCESS(EVP_PKEY_derive_set_peer(ctx->keyCtx, ctx->key));
+    CHECK_OPENSSL_SUCCESS(EVP_PKEY_derive(ctx->keyCtx, NULL, secret_len));
+    CHECK_OPENSSL_SUCCESS(EVP_PKEY_derive(ctx->keyCtx, secret, secret_len));
+
+    // UINT32 cbAgreedSecret = ScShimSymCryptEcurveSizeofFieldElement( *(PSYMCRYPT_ECURVE*)buf1);
+
+    // ScShimSymCryptEcDhSecretAgreement(
+    //             ((PSYMCRYPT_ECKEY *) buf2)[0],
+    //             ((PSYMCRYPT_ECKEY *) buf2)[0],      // Same private and public key
+    //             SYMCRYPT_NUMBER_FORMAT_MSB_FIRST,
+    //             0,
+    //             buf3 + sizeof(UINT32),
+    //             cbAgreedSecret );
+}
+
+
+template<>
+EccImp<ImpOpenssl, AlgEcdh>::EccImp()
+{
+    m_perfDataFunction      = &algImpDataPerfFunction <ImpOpenssl, AlgEcdh>;
+    m_perfDecryptFunction   = NULL;
+    m_perfKeyFunction       = &algImpKeyPerfFunction  <ImpOpenssl, AlgEcdh>;
+    m_perfCleanFunction     = &algImpCleanPerfFunction<ImpOpenssl, AlgEcdh>;
+}
+
+template<>
+EccImp<ImpOpenssl, AlgEcdh>::~EccImp()
+{
+}
+
+// AlgEcdh end
+
 VOID
 addOpensslAlgs()
 {
     addImplementationToGlobalList<XtsImp<ImpOpenssl, AlgXtsAes>>();
     addImplementationToGlobalList<AuthEncImp<ImpOpenssl, AlgAes, ModeGcm>>();
     addImplementationToGlobalList<RsaSignImp<ImpOpenssl, AlgRsaSignPss>>();
+    addImplementationToGlobalList<EccImp<ImpOpenssl, AlgEcdsaSign>>();
+    addImplementationToGlobalList<EccImp<ImpOpenssl, AlgEcdsaVerify>>();
+    addImplementationToGlobalList<EccImp<ImpOpenssl, AlgEcdh>>();
     // addImplementationToGlobalList<HashImp<ImpOpenssl, AlgSha256>>();
     // addImplementationToGlobalList<HashImp<ImpOpenssl, AlgSha384>>();
     // addImplementationToGlobalList<HashImp<ImpOpenssl, AlgSha512>>();
