@@ -97,6 +97,23 @@ message(STATUS "Target: ${CMAKE_SYSTEM_NAME} ${SYMCRYPT_TARGET_ARCH} ${SYMCRYPT_
 message(STATUS "ASM optimizations: ${SYMCRYPT_USE_ASM}")
 message(STATUS "FIPS build: ${SYMCRYPT_FIPS_BUILD}")
 
+# Validate compiler versions
+if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
+    if (CMAKE_CXX_COMPILER_VERSION VERSION_LESS 9.4)
+        message(FATAL_ERROR "GCC version must be at least 9.4!")
+    endif()
+elseif ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
+    if (CMAKE_CXX_COMPILER_VERSION VERSION_LESS 10.0)
+        message(FATAL_ERROR "Clang version must be at least 10.0!")
+    endif()
+elseif ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "MSVC")
+    if (CMAKE_CXX_COMPILER_VERSION VERSION_LESS 19.16)
+        message(FATAL_ERROR "MSVC version must be at least 19.16!")
+    endif()
+else()
+    message(WARNING "Compiler ${CMAKE_CXX_COMPILER_ID} is not officially supported; compilation may fail.")
+endif()
+
 # Set output directories binaries
 # Note: we use a generator expression because "Multi-configuration generators [e.g. Visual Studio]
 # append a per-configuration subdirectory to the specified directory unless a generator expression

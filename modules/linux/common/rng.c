@@ -66,7 +66,7 @@ SymCryptRngInit(void)
 // then instantiating the RNG state by seeding from Fips and secure entropy sources.
 // First 32 bytes are from Fips source and last 32 are from the secure source, as per
 // SP800-90A section 10.2.1.3.2.
-// The Fips input constitutes the entropy_input while secure input is the nonce.
+// The FIPS input constitutes the entropy_input while secure input is the nonce.
 VOID
 SYMCRYPT_CALL
 SymCryptRngInstantiate(void)

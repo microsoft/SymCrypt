@@ -4,7 +4,7 @@ parameters:
   sln: ''
   msbuildArgs: ''
   restoreNugetPackages: false
-  targetOsBranch: 'official/rs_onecore_ens'
+  lkgCompilerBranch: 'official/main'
   config: 'Debug,Release'
   platform: 'x86,x64,arm64'
   nativeCompiler: true
@@ -105,7 +105,7 @@ jobs:
     ob_NativeCompiler_enabled: ${{ parameters.nativeCompiler }}
     ob_NativeCompiler_TaskVerbosity: 'Detailed'
     ob_NativeCompiler_UseOSBranchVersion: true
-    ob_NativeCompiler_TargetOsBranch: ${{ parameters.targetOsBranch }}
+    ob_NativeCompiler_TargetOsBranch: ${{ parameters.lkgCompilerBranch }}
     ob_NativeCompiler_UcrtPlatform: $(ob_build_platform_win)
     # https://www.osgwiki.com/wiki/OneBranch_Windows_Undocked_Pipelines#2._Set_feature_flags_-_createVPack_and_updateOSManifest.
     ${{ if eq(parameters.package, true) }}:
