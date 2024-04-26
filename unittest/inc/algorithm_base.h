@@ -1671,6 +1671,80 @@ public:
     static const String s_algName;
 };
 
+class KemImplementation : public AlgorithmImplementation
+{
+public:
+    KemImplementation() {};
+    virtual ~KemImplementation() {};
+
+private:
+    KemImplementation( const KemImplementation & );
+    VOID operator=( const KemImplementation & );
+
+public:
+    virtual NTSTATUS setKey( PCBYTE pcbKeyBlob, SIZE_T cbKeyBlob ) = 0; // Returns an error if this key can't be handled.
+
+    virtual NTSTATUS encapsulate(
+        _Out_writes_bytes_( cbAgreedSecret )    PBYTE               pbAgreedSecret,
+                                                SIZE_T              cbAgreedSecret, 
+        _Out_writes_bytes_( cbCiphertext )      PBYTE               pbCiphertext,
+                                                SIZE_T              cbCiphertext ) = 0;
+
+    virtual NTSTATUS decapsulate(
+        _In_reads_bytes_( cbCiphertext )        PCBYTE              pbCiphertext,
+                                                SIZE_T              cbCiphertext,
+        _Out_writes_bytes_( cbAgreedSecret )    PBYTE               pbAgreedSecret,
+                                                SIZE_T              cbAgreedSecret ) = 0;
+};
+
+enum class MLKEM_PARAMS
+{
+    MLKEM_PARAMS_512,
+    MLKEM_PARAMS_768,
+    MLKEM_PARAMS_1024
+};
+
+typedef struct _MLKEMKEY_TESTBLOB
+{
+    MLKEM_PARAMS params;
+    BYTE seed[64];
+} MLKEMKEY_TESTBLOB, *PMLKEMKEY_TESTBLOB;
+typedef const MLKEMKEY_TESTBLOB * PCMLKEMKEY_TESTBLOB;
+
+template< class Implementation, class Algorithm > class KemImpState;
+
+template< class Implementation, class Algorithm >
+class KemImp : public KemImplementation
+{
+public:
+    KemImp();
+    virtual ~KemImp();
+
+private:
+    KemImp( const KemImp & );
+    VOID operator=( const KemImp & );
+
+public:
+    static const String s_algName;             // Algorithm name
+    static const String s_modeName;
+    static const String s_impName;             // Implementation name
+
+    virtual NTSTATUS setKey( PCBYTE pcbKeyBlob, SIZE_T cbKeyBlob ); // Returns an error if this key can't be handled.
+
+    virtual NTSTATUS encapsulate(
+        _Out_writes_bytes_( cbAgreedSecret )    PBYTE               pbAgreedSecret,
+                                                SIZE_T              cbAgreedSecret, 
+        _Out_writes_bytes_( cbCiphertext )      PBYTE               pbCiphertext,
+                                                SIZE_T              cbCiphertext );
+
+    virtual NTSTATUS decapsulate(
+        _In_reads_bytes_( cbCiphertext )        PCBYTE              pbCiphertext,
+                                                SIZE_T              cbCiphertext,
+        _Out_writes_bytes_( cbAgreedSecret )    PBYTE               pbAgreedSecret,
+                                                SIZE_T              cbAgreedSecret );
+
+    KemImpState<Implementation,Algorithm> state;
+};
 
 //
 // The stub classes we use to distinguish our implementations and algorithms contain the
@@ -1845,6 +1919,13 @@ template< class Imp, class Alg>
 const String DsaImp<Imp,Alg>::s_algName = Alg::name;
 template< class Imp, class Alg>
 const String DsaImp<Imp,Alg>::s_modeName;
+
+template< class Imp, class Alg>
+const String KemImp<Imp,Alg>::s_impName = Imp::name;
+template< class Imp, class Alg>
+const String KemImp<Imp,Alg>::s_algName = Alg::name;
+template< class Imp, class Alg>
+const String KemImp<Imp,Alg>::s_modeName;
 
 //
 // Template declaration for performance functions (for those implementations that wish to use them)

@@ -242,6 +242,8 @@ const char * AlgEcdsaVerify::name = "EcdsaVerify";
 
 const char * AlgEcdh::name = "Ecdh";
 
+const char * AlgMlKem::name = "MlKem";
+
 const char * AlgDeveloperTest::name = "DeveloperTest";
 
 const char * ModeEcb::name = "Ecb";
@@ -607,6 +609,7 @@ const char * g_algorithmNames[] = {
     AlgEcdsaSign::name,
     AlgEcdsaVerify::name,
     AlgEcdh::name,
+    // AlgMlKem::name,
 
     AlgDeveloperTest::name,
     NULL,

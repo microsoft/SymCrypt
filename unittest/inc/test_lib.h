@@ -1057,6 +1057,11 @@ public:
     const static char * name;
 };
 
+class AlgMlKem{
+public:
+    const static char * name;
+};
+
 class AlgDeveloperTest{
 public:
     const static char * name;
@@ -1957,6 +1962,14 @@ printXmmRegisters( PCSTR text );
 
 #define PERF_KEY_W22519     ( PERF_KEY_SW_TEST_CURVE | 32 )
 #define PERF_KEY_W448       ( PERF_KEY_SW_TEST_CURVE | 56 )
+
+//
+// For testing ML-KEM parameters. These are not the key sizes, but refer to the different
+// ML-KEM parameter sets defined in FIPS-203.
+//
+#define PERF_KEY_MLKEM_512             (512 / 8)   // ML-KEM-512
+#define PERF_KEY_MLKEM_768             (768 / 8)   // ML-KEM-768
+#define PERF_KEY_MLKEM_1024            (1024 / 8)  // ML-KEM-1024
 
 PCBYTE
 getPerfTestModulus( UINT32 exKeySize );
