@@ -23,6 +23,9 @@ SYMCRYPT_ENVIRONMENT_WINDOWS_USERMODE_LATEST;
 
 EXTERN_C IMAGE_DOS_HEADER __ImageBase;
 
+PVOID (__cdecl* g_SymCryptAlloc)(size_t, size_t) = NULL;
+void (__cdecl* g_SymCryptFree)(PVOID) = NULL;
+
 VOID
 PerformStartupAlgorithmSelftests()
 {
@@ -86,6 +89,8 @@ DllMain(
             (LPCWSTR) &DllMain,
             &hDummy );
 
+        g_SymCryptAlloc = _aligned_malloc;
+        g_SymCryptFree = _aligned_free;
         SymCryptInit();
 
         // TODO: We should only run these selftests once per boot, when the first process loads the DLL
@@ -102,14 +107,14 @@ PVOID
 SYMCRYPT_CALL
 SymCryptCallbackAlloc( SIZE_T nBytes )
 {
-    return _aligned_malloc( nBytes, SYMCRYPT_ASYM_ALIGN_VALUE );
+    return g_SymCryptAlloc( nBytes, SYMCRYPT_ASYM_ALIGN_VALUE );
 }
 
 VOID
 SYMCRYPT_CALL
 SymCryptCallbackFree(PVOID ptr)
 {
-    _aligned_free( ptr );
+    g_SymCryptFree( ptr );
 }
 
 VOID
@@ -185,4 +190,16 @@ VOID SYMCRYPT_CALL SymCryptModuleInit( UINT32 api, UINT32 minor )
     {
         SymCryptFatal( 'vers' );
     }
+
+}
+
+VOID SYMCRYPT_CALL SymCryptModuleOverrideAllocFree ( PVOID (__cdecl* allocFunc)(size_t, size_t), void (__cdecl* freeFunc)(PVOID) )
+{
+
+    if (allocFunc != NULL && freeFunc != NULL)
+    {
+        g_SymCryptAlloc = allocFunc;
+        g_SymCryptFree = freeFunc;
+    }
+
 }
