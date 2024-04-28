@@ -315,6 +315,7 @@ EXPORTS
     SymCryptMd5StateExport
     SymCryptMd5StateImport
     SymCryptModuleInit
+    SymCryptModuleOverrideAllocFree
     SymCryptPaddingPkcs7Add
     SymCryptPaddingPkcs7Remove
     SymCryptParallelSha256Init
