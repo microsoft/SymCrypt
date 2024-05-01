@@ -178,7 +178,7 @@ VOID HashMultiImp::result( PBYTE pbResult, SIZE_T cbResult )
 NTSTATUS
 HashMultiImp::initWithLongMessage( ULONGLONG nBytes )
 {
-   //
+    //
     // copy list of implementations to the ongoing computation list
     //
     m_comps.clear();

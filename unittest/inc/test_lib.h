@@ -576,32 +576,32 @@ public:
 
 class AlgSha256{
 public:
-    const static char * name;
+    static constexpr const char * name = "Sha256";
 };
 
 class AlgSha384{
 public:
-    const static char * name;
+    static constexpr const char * name = "Sha384";
 };
 
 class AlgSha512{
 public:
-    const static char * name;
+    static constexpr const char * name = "Sha512";
 };
 
 class AlgSha3_256{
 public:
-    const static char * name;
+    static constexpr const char * name = "Sha3-256";
 };
 
 class AlgSha3_384{
 public:
-    const static char * name;
+    static constexpr const char * name = "Sha3-384";
 };
 
 class AlgSha3_512{
 public:
-    const static char * name;
+    static constexpr const char * name = "Sha3-512";
 };
 
 class AlgShake128{

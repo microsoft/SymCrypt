@@ -51,17 +51,17 @@ const char * AlgMd5::name = "Md5";
 
 const char * AlgSha1::name = "Sha1";
 
-const char * AlgSha256::name = "Sha256";
+// const char * AlgSha256::name = "Sha256";
 
-const char * AlgSha384::name = "Sha384";
+// const char * AlgSha384::name = "Sha384";
 
-const char * AlgSha512::name = "Sha512";
+// const char * AlgSha512::name = "Sha512";
 
-const char * AlgSha3_256::name = "Sha3-256";
+// const char * AlgSha3_256::name = "Sha3-256";
 
-const char * AlgSha3_384::name = "Sha3-384";
+// const char * AlgSha3_384::name = "Sha3-384";
 
-const char * AlgSha3_512::name = "Sha3-512";
+// const char * AlgSha3_512::name = "Sha3-512";
 
 const char * AlgShake128::name = "Shake128";
 
