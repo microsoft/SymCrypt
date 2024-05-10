@@ -22,12 +22,12 @@ MacImp<ImpXxx, AlgXxx>::~MacImp()
 
 SIZE_T MacImp<ImpXxx, AlgXxx>::inputBlockLen()
 {
-    return SYMCRYPT_XXX_INPUT_BLOCK_SIZE;
+    return SCSHIM_XXX_INPUT_BLOCK_SIZE;
 }
 
 SIZE_T MacImp<ImpXxx, AlgXxx>::resultLen()
 {
-    return SYMCRYPT_XXX_RESULT_SIZE;
+    return SCSHIM_XXX_RESULT_SIZE;
 }
 
 

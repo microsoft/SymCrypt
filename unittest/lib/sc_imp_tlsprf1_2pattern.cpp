@@ -41,7 +41,7 @@ KdfImp<ImpXxx, AlgTlsPrf1_2, BaseAlgXxx>::derive(
     }
 
     scError = ScShimSymCryptTlsPrf1_2(
-        SYMCRYPT_BaseXxxAlgorithm,
+        SCSHIM_BaseXxxAlgorithm,
         pbKey, cbKey,
         pbLabel, cbLabel,
         pbSeed, cbSeed,
@@ -51,7 +51,7 @@ KdfImp<ImpXxx, AlgTlsPrf1_2, BaseAlgXxx>::derive(
 
     scError = ScShimSymCryptTlsPrf1_2ExpandKey(
         &expandedKey,
-        SYMCRYPT_BaseXxxAlgorithm,
+        SCSHIM_BaseXxxAlgorithm,
         pbKey, cbKey);
     CHECK(scError == SYMCRYPT_NO_ERROR, "Error in SymCrypt TLS PRF 1.2");
 

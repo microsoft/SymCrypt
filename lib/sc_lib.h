@@ -16,7 +16,26 @@
 #define SYMCRYPT_DISABLE_CFG
 #endif
 
-#include "sc_lib-testhooks.h"
+//
+// Global flags
+//
+
+#define SYMCRYPT_FLAG_LIB_INITIALIZED   0x00000001
+
+extern UINT32 g_SymCryptFlags;
+
+//==============================================================================================
+//  Common environment functions
+//==============================================================================================
+
+VOID
+SYMCRYPT_CALL
+SymCryptInitEnvCommon( UINT32 version );
+
+_Analysis_noreturn_
+VOID
+SYMCRYPT_CALL
+SymCryptFatalHang( UINT32 fatalcode );
 
 #include <symcrypt_low_level.h>
 
@@ -994,10 +1013,6 @@ SymCryptMarvin32AppendBlocks(
 
 
 
-
-//
-// See symcrypt_testsupport.h for more details of the testing support infrastructure.
-//
 
 extern const BYTE SymCryptTestMsg3[3];
 extern const BYTE SymCryptTestMsg16[16];
@@ -4275,7 +4290,9 @@ SymCryptPositiveWidthNafRecoding(
 #if !SYMCRYPT_MS_VC
 
 // Ignore the incompatible pointer types void * to PSYMCRYPT_XXX
+#ifndef __cplusplus
 #pragma GCC diagnostic ignored "-Wincompatible-pointer-types"
+#endif
 
 #define FIELD_OFFSET(type,field)    ((UINT32)(uintptr_t)&(((type *)0)->field))
 

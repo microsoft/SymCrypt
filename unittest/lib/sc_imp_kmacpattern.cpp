@@ -34,7 +34,7 @@ SIZE_T KmacImp<ImpXxx, AlgXxx>::inputBlockLen()
     //
     // The macro expands to <IMPNAME>_<ALGNAME>_INPUT_BLOCK_SIZE
     //
-    return SYMCRYPT_XXX_INPUT_BLOCK_SIZE;
+    return SCSHIM_XXX_INPUT_BLOCK_SIZE;
 }
 
 //
@@ -47,11 +47,11 @@ VOID KmacImp<ImpXxx, AlgXxx>::mac(
     _In_reads_( cbData )     PCBYTE pbData,  SIZE_T cbData, 
     _Out_writes_( cbResult )  PBYTE pbResult, SIZE_T cbResult )
 {
-    SYMCRYPT_XxxExpandKeyEx( &state.key, pbKey, cbKey, pbCustomizationStr, cbCustomizationStr );
+    SCSHIM_XxxExpandKeyEx( &state.key, pbKey, cbKey, pbCustomizationStr, cbCustomizationStr );
 
-    SYMCRYPT_XxxInit(&state.state, &state.key);
-    SYMCRYPT_XxxAppend(&state.state, pbData, cbData);
-    SYMCRYPT_XxxResultEx( &state.state, pbResult, cbResult );
+    SCSHIM_XxxInit(&state.state, &state.key);
+    SCSHIM_XxxAppend(&state.state, pbData, cbData);
+    SCSHIM_XxxResultEx( &state.state, pbResult, cbResult );
 }
 
 //
@@ -64,11 +64,11 @@ VOID KmacImp<ImpXxx, AlgXxx>::xof(
     _In_reads_(cbData)     PCBYTE pbData, SIZE_T cbData,
     _Out_writes_(cbResult)  PBYTE pbResult, SIZE_T cbResult)
 {
-    SYMCRYPT_XxxExpandKeyEx(&state.key, pbKey, cbKey, pbCustomizationStr, cbCustomizationStr);
+    SCSHIM_XxxExpandKeyEx(&state.key, pbKey, cbKey, pbCustomizationStr, cbCustomizationStr);
 
-    SYMCRYPT_XxxInit(&state.state, &state.key);
-    SYMCRYPT_XxxAppend(&state.state, pbData, cbData);
-    SYMCRYPT_XxxExtract(&state.state, pbResult, cbResult, true);
+    SCSHIM_XxxInit(&state.state, &state.key);
+    SCSHIM_XxxAppend(&state.state, pbData, cbData);
+    SCSHIM_XxxExtract(&state.state, pbResult, cbResult, true);
 }
 
 
@@ -82,26 +82,26 @@ VOID KmacImp<ImpXxx, AlgXxx>::init(
     _In_reads_(cbCustomizationStr) PCBYTE pbCustomizationStr, SIZE_T cbCustomizationStr,
     _In_reads_( cbKey ) PCBYTE pbKey, SIZE_T cbKey )
 {
-    SYMCRYPT_XxxExpandKeyEx( &state.key, pbKey, cbKey, pbCustomizationStr, cbCustomizationStr );
-    SYMCRYPT_XxxInit( &state.state, &state.key );
+    SCSHIM_XxxExpandKeyEx( &state.key, pbKey, cbKey, pbCustomizationStr, cbCustomizationStr );
+    SCSHIM_XxxInit( &state.state, &state.key );
 }
 
 template<>
 VOID KmacImp<ImpXxx, AlgXxx>::append( _In_reads_( cbData ) PCBYTE pbData, SIZE_T cbData )
 {
-    SYMCRYPT_XxxAppend( &state.state, pbData, cbData );
+    SCSHIM_XxxAppend( &state.state, pbData, cbData );
 }
 
 template<>
 VOID KmacImp<ImpXxx, AlgXxx>::result( _Out_writes_( cbResult ) PBYTE pbResult, SIZE_T cbResult )
 {
-    SYMCRYPT_XxxResultEx( &state.state, pbResult, cbResult );
+    SCSHIM_XxxResultEx( &state.state, pbResult, cbResult );
 }
 
 template<>
 VOID KmacImp<ImpXxx, AlgXxx>::extract(_Out_writes_(cbResult) PBYTE pbResult, SIZE_T cbResult, BOOLEAN bWipe)
 {
-    SYMCRYPT_XxxExtract(&state.state, pbResult, cbResult, bWipe);
+    SCSHIM_XxxExtract(&state.state, pbResult, cbResult, bWipe);
 }
 
 template<>
@@ -110,14 +110,14 @@ algImpKeyPerfFunction< ImpXxx, AlgXxx>( PBYTE buf1, PBYTE buf2, PBYTE buf3, SIZE
 {
     UNREFERENCED_PARAMETER( buf3 );
 
-    SYMCRYPT_XxxExpandKey( (SYMCRYPT_XXX_EXPANDED_KEY *) buf1, buf2, keySize );
+    SCSHIM_XxxExpandKey( (SCSHIM_XXX_EXPANDED_KEY *) buf1, buf2, keySize );
 }
 
 template<>
 VOID
 algImpDataPerfFunction<ImpXxx,AlgXxx>( PBYTE buf1, PBYTE buf2, PBYTE buf3, SIZE_T dataSize )
 {
-    SYMCRYPT_Xxx( (SYMCRYPT_XXX_EXPANDED_KEY *) buf1, buf2, dataSize, buf3 );
+    SCSHIM_Xxx( (SCSHIM_XXX_EXPANDED_KEY *) buf1, buf2, dataSize, buf3 );
 }
 
 template<>
@@ -127,5 +127,5 @@ algImpCleanPerfFunction<ImpXxx,AlgXxx>( PBYTE buf1, PBYTE buf2, PBYTE buf3 )
     UNREFERENCED_PARAMETER( buf2 );
     UNREFERENCED_PARAMETER( buf3 );
 
-    SymCryptWipeKnownSize( buf1, sizeof( SYMCRYPT_XXX_EXPANDED_KEY ) );
+    SymCryptWipeKnownSize( buf1, sizeof( SCSHIM_XXX_EXPANDED_KEY ) );
 }

@@ -122,7 +122,7 @@ function(process_cppasm filepath outformat archdefine)
     if(NOT fileextension STREQUAL .cppasm)
         message(FATAL_ERROR "cppasm processing invoked on file with incorrect extension (${filepath} -> ${fileextension})")
     endif()
-    if((NOT outformat STREQUAL gas) AND (NOT outformat STREQUAL masm))
+    if((NOT outformat STREQUAL gas) AND (NOT outformat STREQUAL masm) AND (NOT outformat STREQUAL armasm64))
         message(FATAL_ERROR "cppasm processing invoked with unrecognized outformat (${outformat})")
     endif()
     if((NOT archdefine STREQUAL amd64) AND (NOT archdefine STREQUAL x86) AND (NOT archdefine STREQUAL arm64) AND (NOT archdefine STREQUAL arm))
@@ -132,7 +132,6 @@ function(process_cppasm filepath outformat archdefine)
     get_filename_component(rootpath ${filepath} DIRECTORY)
 
     get_filename_component(filestem ${filepath} NAME_WE) # filestem is the filename w/out extension
-    string(TOUPPER ${outformat} outformatupper)
     string(TOUPPER ${archdefine} archdefineupper)
     string(FIND ${rootpath} ${CMAKE_CURRENT_BINARY_DIR} findindex) # check whether input is in the output directory
     if(findindex EQUAL -1) # input in the source directory
@@ -154,18 +153,18 @@ function(process_cppasm filepath outformat archdefine)
             OUTPUT ${output_asm}
             COMMAND "${CMAKE_C_COMPILER}" -E -P -x c ${filepath} -o ${output_asm}
                 -I${CMAKE_CURRENT_SOURCE_DIR} -I${CMAKE_CURRENT_SOURCE_DIR}/${rootpath} -I${SYMCRYPT_SOURCE_DIR}/inc
-                -DSYMCRYPT_${outformatupper} -DSYMCRYPT_CPU_${archdefineupper} ${dbg_definition}
+                -DSYMCRYPT_GAS -DSYMCRYPT_CPU_${archdefineupper} ${dbg_definition}
             MAIN_DEPENDENCY ${filepath}
             DEPENDS ${SYMCRYPT_SOURCE_DIR}/inc/C_asm_shared.inc ${filepath} symcryptasm_shared.cppasm
             COMMENT "C preprocessing ${filepath} to ${outformat} (${output_asm})"
             VERBATIM)
-    elseif(outformat STREQUAL masm)
-        # assume masm => MSVC C compiler
+    elseif((outformat STREQUAL masm) OR (outformat STREQUAL armasm64))
+        # assume masm / armasm64 => MSVC C compiler
         add_custom_command(
             OUTPUT ${output_asm}
             COMMAND "${CMAKE_C_COMPILER}" /nologo /EP /P /Fi${output_asm} ${filepath}
                 -I${CMAKE_CURRENT_SOURCE_DIR} -I${CMAKE_CURRENT_SOURCE_DIR}/${rootpath} -I${SYMCRYPT_SOURCE_DIR}/inc
-                -DSYMCRYPT_${outformatupper} -DSYMCRYPT_CPU_${archdefineupper} ${dbg_definition}
+                -DSYMCRYPT_MASM -DSYMCRYPT_CPU_${archdefineupper} ${dbg_definition}
             MAIN_DEPENDENCY ${filepath}
             DEPENDS ${SYMCRYPT_SOURCE_DIR}/inc/C_asm_shared.inc ${filepath} symcryptasm_shared.cppasm
             COMMENT "C preprocessing ${filepath} to ${outformat} (${output_asm})"
@@ -266,6 +265,21 @@ if(WIN32 AND SYMCRYPT_USE_ASM)
             COMPILE_OPTIONS "/safeseh")
         set_source_files_properties(
             i386/fdef_asm-masm.asm PROPERTIES INCLUDE_DIRECTORIES ${CMAKE_CURRENT_SOURCE_DIR}/i386)
+    elseif(SYMCRYPT_TARGET_ARCH STREQUAL "ARM64")
+        # TODO: Investigate supporting Arm64X with CMake Windows build
+        process_symcryptasm(arm64/fdef_asm.symcryptasm armasm64 arm64 aapcs64)
+        process_symcryptasm(arm64/fdef369_asm.symcryptasm armasm64 arm64 aapcs64)
+        process_symcryptasm(arm64/wipe.symcryptasm armasm64 arm64 aapcs64)
+
+        list(APPEND SOURCES_COMMON
+            arm64/fdef_asm-armasm64.asm
+            arm64/fdef369_asm-armasm64.asm
+            arm64/wipe-armasm64.asm)
+        set_source_files_properties(
+            arm64/fdef_asm-armasm64.asm
+            arm64/fdef369_asm-armasm64.asm
+            arm64/wipe-armasm64.asm
+            PROPERTIES LANGUAGE ASM_MARMASM)
     endif()
 elseif(SYMCRYPT_USE_ASM) # Linux
     if(SYMCRYPT_TARGET_ARCH MATCHES "AMD64")

@@ -191,6 +191,9 @@
 
 #include "symcrypt.h"
 #include "symcrypt_low_level.h"
+extern "C" {
+#include "../../lib/sc_lib.h"
+}
 
 #if !SYMCRYPT_APPLE_CC
     #include "ioctlDefs.h"
@@ -271,12 +274,6 @@ extern "C" {
 //
 #include "symcrypt.h"
 
-//
-// Some test hooks to allow the unit test to have its own environment.
-//
-extern "C" {
-#include "..\lib\sc_lib-testhooks.h"
-}
 
 #if SYMCRYPT_CPU_X86 | SYMCRYPT_CPU_AMD64
 #include <wmmintrin.h>
@@ -505,34 +502,34 @@ typedef std::basic_string<BYTE> BString;        // String of bytes
 #define BaseAlgXxx          CONCAT2( Alg, ALG_Base )
 
 
-#define SYMCRYPT_Xxx(...)               CONCAT2( ScShimSymCrypt, ALG_Name )(__VA_ARGS__)
-#define SYMCRYPT_XXX_STATE              CONCAT3( SYMCRYPT_, ALG_NAME, _STATE )
-#define SYMCRYPT_XXX_EXPANDED_KEY       CONCAT3( SYMCRYPT_, ALG_NAME, _EXPANDED_KEY )
+#define SCSHIM_Xxx(...)                 CONCAT2( ScShimSymCrypt, ALG_Name )(__VA_ARGS__)
+#define SCSHIM_XXX_STATE                CONCAT3( SYMCRYPT_, ALG_NAME, _STATE )
+#define SCSHIM_XXX_EXPANDED_KEY         CONCAT3( SYMCRYPT_, ALG_NAME, _EXPANDED_KEY )
 
-#define SYMCRYPT_XxxStateCopy(...)      CONCAT3( ScShimSymCrypt, ALG_Name, StateCopy )(__VA_ARGS__)
-#define SYMCRYPT_XxxInit(...)           CONCAT3( ScShimSymCrypt, ALG_Name, Init )(__VA_ARGS__)
-#define SYMCRYPT_XxxAppend(...)         CONCAT3( ScShimSymCrypt, ALG_Name, Append )(__VA_ARGS__)
-#define SYMCRYPT_XxxResult(...)         CONCAT3( ScShimSymCrypt, ALG_Name, Result )(__VA_ARGS__)
-#define SYMCRYPT_XxxResultEx(...)       CONCAT3( ScShimSymCrypt, ALG_Name, ResultEx )(__VA_ARGS__)
-#define SYMCRYPT_XxxExtract(...)        CONCAT3( ScShimSymCrypt, ALG_Name, Extract )(__VA_ARGS__)
-#define SYMCRYPT_XxxAppendBlocks(...)   CONCAT3( ScShimSymCrypt, ALG_Name, AppendBlocks )(__VA_ARGS__)
-#define SYMCRYPT_XxxExpandKey(...)      CONCAT3( ScShimSymCrypt, ALG_Name, ExpandKey )(__VA_ARGS__)
-#define SYMCRYPT_XxxExpandKeyEx(...)    CONCAT3( ScShimSymCrypt, ALG_Name, ExpandKeyEx )(__VA_ARGS__)
-#define SYMCRYPT_XxxKeyCopy(...)        CONCAT3( ScShimSymCrypt, ALG_Name, KeyCopy )(__VA_ARGS__)
-#define SYMCRYPT_XxxEncrypt(...)        CONCAT3( ScShimSymCrypt, ALG_Name, Encrypt )(__VA_ARGS__)
-#define SYMCRYPT_XxxDecrypt(...)        CONCAT3( ScShimSymCrypt, ALG_Name, Decrypt )(__VA_ARGS__)
-#define SYMCRYPT_XxxXxxEncrypt(...)     CONCAT4( ScShimSymCrypt, ALG_Name, ALG_Mode, Encrypt )(__VA_ARGS__)
-#define SYMCRYPT_XxxXxxDecrypt(...)     CONCAT4( ScShimSymCrypt, ALG_Name, ALG_Mode, Decrypt )(__VA_ARGS__)
-#define SYMCRYPT_XxxStateExport(...)    CONCAT3( ScShimSymCrypt, ALG_Name, StateExport )(__VA_ARGS__)
-#define SYMCRYPT_XxxStateImport(...)    CONCAT3( ScShimSymCrypt, ALG_Name, StateImport )(__VA_ARGS__)
-#define SYMCRYPT_XxxAlgorithm           CONCAT3( ScShimSymCrypt, ALG_Name, Algorithm )
+#define SCSHIM_XxxStateCopy(...)        CONCAT3( ScShimSymCrypt, ALG_Name, StateCopy )(__VA_ARGS__)
+#define SCSHIM_XxxInit(...)             CONCAT3( ScShimSymCrypt, ALG_Name, Init )(__VA_ARGS__)
+#define SCSHIM_XxxAppend(...)           CONCAT3( ScShimSymCrypt, ALG_Name, Append )(__VA_ARGS__)
+#define SCSHIM_XxxResult(...)           CONCAT3( ScShimSymCrypt, ALG_Name, Result )(__VA_ARGS__)
+#define SCSHIM_XxxResultEx(...)         CONCAT3( ScShimSymCrypt, ALG_Name, ResultEx )(__VA_ARGS__)
+#define SCSHIM_XxxExtract(...)          CONCAT3( ScShimSymCrypt, ALG_Name, Extract )(__VA_ARGS__)
+#define SCSHIM_XxxAppendBlocks(...)     CONCAT3( ScShimSymCrypt, ALG_Name, AppendBlocks )(__VA_ARGS__)
+#define SCSHIM_XxxExpandKey(...)        CONCAT3( ScShimSymCrypt, ALG_Name, ExpandKey )(__VA_ARGS__)
+#define SCSHIM_XxxExpandKeyEx(...)      CONCAT3( ScShimSymCrypt, ALG_Name, ExpandKeyEx )(__VA_ARGS__)
+#define SCSHIM_XxxKeyCopy(...)          CONCAT3( ScShimSymCrypt, ALG_Name, KeyCopy )(__VA_ARGS__)
+#define SCSHIM_XxxEncrypt(...)          CONCAT3( ScShimSymCrypt, ALG_Name, Encrypt )(__VA_ARGS__)
+#define SCSHIM_XxxDecrypt(...)          CONCAT3( ScShimSymCrypt, ALG_Name, Decrypt )(__VA_ARGS__)
+#define SCSHIM_XxxXxxEncrypt(...)       CONCAT4( ScShimSymCrypt, ALG_Name, ALG_Mode, Encrypt )(__VA_ARGS__)
+#define SCSHIM_XxxXxxDecrypt(...)       CONCAT4( ScShimSymCrypt, ALG_Name, ALG_Mode, Decrypt )(__VA_ARGS__)
+#define SCSHIM_XxxStateExport(...)      CONCAT3( ScShimSymCrypt, ALG_Name, StateExport )(__VA_ARGS__)
+#define SCSHIM_XxxStateImport(...)      CONCAT3( ScShimSymCrypt, ALG_Name, StateImport )(__VA_ARGS__)
+#define SCSHIM_XxxAlgorithm             CONCAT3( ScShimSymCrypt, ALG_Name, Algorithm )
 
-#define SYMCRYPT_BaseXxxAlgorithm       CONCAT3( ScShimSymCrypt, ALG_Base, Algorithm )
+#define SCSHIM_BaseXxxAlgorithm         CONCAT3( ScShimSymCrypt, ALG_Base, Algorithm )
 
-#define SYMCRYPT_XXX_BLOCK_SIZE         CONCAT3( SYMCRYPT_, ALG_NAME, _BLOCK_SIZE )
-#define SYMCRYPT_XXX_INPUT_BLOCK_SIZE   CONCAT3( SYMCRYPT_, ALG_NAME, _INPUT_BLOCK_SIZE )
-#define SYMCRYPT_XXX_RESULT_SIZE        CONCAT3( SYMCRYPT_, ALG_NAME, _RESULT_SIZE )
-#define SYMCRYPT_XXX_STATE_EXPORT_SIZE  CONCAT3( SYMCRYPT_, ALG_NAME, _STATE_EXPORT_SIZE )
+#define SCSHIM_XXX_BLOCK_SIZE           CONCAT3( SYMCRYPT_, ALG_NAME, _BLOCK_SIZE )
+#define SCSHIM_XXX_INPUT_BLOCK_SIZE     CONCAT3( SYMCRYPT_, ALG_NAME, _INPUT_BLOCK_SIZE )
+#define SCSHIM_XXX_RESULT_SIZE          CONCAT3( SYMCRYPT_, ALG_NAME, _RESULT_SIZE )
+#define SCSHIM_XXX_STATE_EXPORT_SIZE    CONCAT3( SYMCRYPT_, ALG_NAME, _STATE_EXPORT_SIZE )
 
 
 #define RSA32_XXX_INPUT_BLOCK_SIZE      CONCAT3( RSA32_, ALG_NAME, _INPUT_BLOCK_SIZE )

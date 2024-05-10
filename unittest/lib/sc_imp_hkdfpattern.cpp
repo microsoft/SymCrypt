@@ -34,7 +34,7 @@ template<>
 VOID
 algImpKeyPerfFunction<ImpXxx, AlgXxx, BaseAlgXxx>(PBYTE buf1, PBYTE buf2, PBYTE buf3, SIZE_T keySize)
 {
-    SYMCRYPT_XxxExpandKey( (SYMCRYPT_XXX_EXPANDED_KEY *) buf1, SYMCRYPT_BaseXxxAlgorithm, buf2, keySize, buf3, keySize);
+    SCSHIM_XxxExpandKey( (SCSHIM_XXX_EXPANDED_KEY *) buf1, SCSHIM_BaseXxxAlgorithm, buf2, keySize, buf3, keySize);
 }
 
 template<>
@@ -43,7 +43,7 @@ algImpCleanPerfFunction<ImpXxx, AlgXxx, BaseAlgXxx>(PBYTE buf1, PBYTE buf2, PBYT
 {
     UNREFERENCED_PARAMETER(buf2);
     UNREFERENCED_PARAMETER(buf3);
-    SymCryptWipeKnownSize(buf1, sizeof(SYMCRYPT_XXX_EXPANDED_KEY));
+    SymCryptWipeKnownSize(buf1, sizeof(SCSHIM_XXX_EXPANDED_KEY));
 }
 
 // <<<<<<<<<<<<<<<<
@@ -63,7 +63,7 @@ KdfImp<ImpXxx, AlgHkdf, BaseAlgXxx>::derive(
     SYMCRYPT_ALIGN BYTE rbPrk[SYMCRYPT_MAC_MAX_RESULT_SIZE] = { 0 };
     SYMCRYPT_HKDF_EXPANDED_KEY expandedKey;
     BYTE expandedKeyChecksum[SYMCRYPT_MARVIN32_RESULT_SIZE];
-    PCSYMCRYPT_MAC pcmBaseAlgorithm = SYMCRYPT_BaseXxxAlgorithm;
+    PCSYMCRYPT_MAC pcmBaseAlgorithm = SCSHIM_BaseXxxAlgorithm;
 
     PCBYTE  pbSalt;
     SIZE_T  cbSalt;
@@ -122,13 +122,13 @@ KdfImp<ImpXxx, AlgHkdf, BaseAlgXxx>::derive(
         pcmBaseAlgorithm,
         pbKey, cbKey,
         pbSalt, cbSalt,
-        rbPrk, SYMCRYPT_XXX_BASE_RESULT_SIZE );
+        rbPrk, SCSHIM_XXX_BASE_RESULT_SIZE );
     CHECK(scError == SYMCRYPT_NO_ERROR, "Error in SymCrypt HKDF");
 
     scError = ScShimSymCryptHkdfPrkExpandKey(
         &expandedKey,
         pcmBaseAlgorithm,
-        rbPrk, SYMCRYPT_XXX_BASE_RESULT_SIZE );
+        rbPrk, SCSHIM_XXX_BASE_RESULT_SIZE );
     CHECK(scError == SYMCRYPT_NO_ERROR, "Error in SymCrypt HKDF");
 
     ScShimSymCryptMarvin32(ScShimSymCryptMarvin32DefaultSeed, (PCBYTE)&expandedKey, sizeof(expandedKey), expandedKeyChecksum);

@@ -35,7 +35,7 @@ XofImp<ImpXxx,AlgXxx>::~XofImp<ImpXxx, AlgXxx>()
 template<>
 SIZE_T XofImp<ImpXxx,AlgXxx>::inputBlockLen()
 {
-    return SYMCRYPT_XXX_INPUT_BLOCK_SIZE;
+    return SCSHIM_XXX_INPUT_BLOCK_SIZE;
 }
 
 //
@@ -50,19 +50,19 @@ VOID XofImp<ImpXxx,AlgXxx>::xof(
 {
     BYTE splitResult[SYMCRYPT_XOF_MAX_RESULT_SIZE];
 
-    SYMCRYPT_XXX_STATE  state1;
-    SYMCRYPT_XXX_STATE  state2;
+    SCSHIM_XXX_STATE  state1;
+    SCSHIM_XXX_STATE  state2;
     SIZE_T halfSize = cbData >> 1;
 
     CHECK(cbResult <= SYMCRYPT_XOF_MAX_RESULT_SIZE, "Result len too large in SymCrypt " STRING(ALG_Name));
 
-    SYMCRYPT_Xxx( pbData, cbData, pbResult, cbResult );
+    SCSHIM_Xxx( pbData, cbData, pbResult, cbResult );
 
-    SYMCRYPT_XxxInit( &state1 );
-    SYMCRYPT_XxxAppend( &state1, pbData, halfSize );
-    SYMCRYPT_XxxStateCopy( &state1, &state2 );
-    SYMCRYPT_XxxAppend( &state2, pbData+halfSize, cbData-halfSize );
-    SYMCRYPT_XxxExtract( &state2, splitResult, cbResult, true );
+    SCSHIM_XxxInit( &state1 );
+    SCSHIM_XxxAppend( &state1, pbData, halfSize );
+    SCSHIM_XxxStateCopy( &state1, &state2 );
+    SCSHIM_XxxAppend( &state2, pbData+halfSize, cbData-halfSize );
+    SCSHIM_XxxExtract( &state2, splitResult, cbResult, true );
     CHECK( memcmp( splitResult, pbResult, cbResult ) == 0, "State copy error in SymCrypt" STRING( ALG_Name ) );
 }
 
@@ -77,7 +77,7 @@ VOID XofImp<ImpXxx,AlgXxx>::init()
 {
     if( !state.isReset || (g_rng.byte() & 1) == 0 )
     {
-        SYMCRYPT_XxxInit( &state.sc );
+        SCSHIM_XxxInit( &state.sc );
     }
     state.isReset = TRUE;
 }
@@ -85,7 +85,7 @@ VOID XofImp<ImpXxx,AlgXxx>::init()
 template<>
 VOID XofImp<ImpXxx,AlgXxx>::append( _In_reads_( cbData ) PCBYTE pbData, SIZE_T cbData )
 {
-    SYMCRYPT_XxxAppend( &state.sc, pbData, cbData );
+    SCSHIM_XxxAppend( &state.sc, pbData, cbData );
     state.isReset = FALSE;
 }
 
@@ -93,7 +93,7 @@ template<>
 VOID XofImp<ImpXxx,AlgXxx>::result( _Out_writes_( cbResult ) PBYTE pbResult, SIZE_T cbResult )
 {
     CHECK( cbResult <= SYMCRYPT_XOF_MAX_RESULT_SIZE, "Result len too large in SymCrypt " STRING( ALG_Name ) );
-    SYMCRYPT_XxxExtract( &state.sc, pbResult, cbResult, true );
+    SCSHIM_XxxExtract( &state.sc, pbResult, cbResult, true );
     state.isReset = TRUE;
 }
 
@@ -101,7 +101,7 @@ template<>
 VOID XofImp<ImpXxx, AlgXxx>::extract(_Out_writes_(cbResult) PBYTE pbResult, SIZE_T cbResult, BOOLEAN bWipe)
 {
     CHECK( cbResult <= SYMCRYPT_XOF_MAX_RESULT_SIZE, "Result len too large in SymCrypt " STRING( ALG_Name ) );
-    SYMCRYPT_XxxExtract( &state.sc, pbResult, cbResult, bWipe );
+    SCSHIM_XxxExtract( &state.sc, pbResult, cbResult, bWipe );
     state.isReset = bWipe;
 }
 
@@ -113,15 +113,15 @@ algImpKeyPerfFunction< ImpXxx, AlgXxx>( PBYTE buf1, PBYTE buf2, PBYTE buf3, SIZE
     UNREFERENCED_PARAMETER( buf3 );
     UNREFERENCED_PARAMETER( keySize );
 
-    SYMCRYPT_XxxInit( (SYMCRYPT_XXX_STATE *) buf1 );
+    SCSHIM_XxxInit( (SCSHIM_XXX_STATE *) buf1 );
 }
 
 template<>
 VOID
 algImpDataPerfFunction<ImpXxx,AlgXxx>( PBYTE buf1, PBYTE buf2, PBYTE buf3, SIZE_T dataSize )
 {
-    SYMCRYPT_XxxAppend( (SYMCRYPT_XXX_STATE *) buf1, buf2, dataSize );
-    SYMCRYPT_XxxResult( (SYMCRYPT_XXX_STATE *) buf1, buf3 );
+    SCSHIM_XxxAppend( (SCSHIM_XXX_STATE *) buf1, buf2, dataSize );
+    SCSHIM_XxxResult( (SCSHIM_XXX_STATE *) buf1, buf3 );
 }
 
 template<>
@@ -131,5 +131,5 @@ algImpCleanPerfFunction<ImpXxx,AlgXxx>( PBYTE buf1, PBYTE buf2, PBYTE buf3 )
     UNREFERENCED_PARAMETER( buf2 );
     UNREFERENCED_PARAMETER( buf3 );
 
-    SymCryptWipeKnownSize( buf1, sizeof( SYMCRYPT_XXX_STATE ) );
+    SymCryptWipeKnownSize( buf1, sizeof( SCSHIM_XXX_STATE ) );
 }

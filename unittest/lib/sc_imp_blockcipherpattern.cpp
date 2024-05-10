@@ -10,7 +10,7 @@ algImpKeyPerfFunction<ImpXxx, AlgXxx, ModeXxx>( PBYTE buf1, PBYTE buf2, PBYTE bu
 {
     UNREFERENCED_PARAMETER( buf3 );
 
-    SYMCRYPT_XxxExpandKey( (SYMCRYPT_XXX_EXPANDED_KEY *) buf1, buf2, keySize );
+    SCSHIM_XxxExpandKey( (SCSHIM_XXX_EXPANDED_KEY *) buf1, buf2, keySize );
 }
 
 template<>
@@ -18,7 +18,7 @@ VOID
 algImpDataPerfFunction<ImpXxx, AlgXxx, ModeXxx>( PBYTE buf1, PBYTE buf2, PBYTE buf3, SIZE_T dataSize )
 {
     SYMCRYPT_EncryptTest<ImpXxx, AlgXxx, ModeXxx>(
-        (SYMCRYPT_XXX_EXPANDED_KEY*)buf1, buf2 + PERF_BUFFER_SIZE / 2, buf2, buf3, dataSize);
+        (SCSHIM_XXX_EXPANDED_KEY*)buf1, buf2 + PERF_BUFFER_SIZE / 2, buf2, buf3, dataSize);
 }
 
 template<>
@@ -26,7 +26,7 @@ VOID
 algImpDecryptPerfFunction<ImpXxx, AlgXxx, ModeXxx>( PBYTE buf1, PBYTE buf2, PBYTE buf3, SIZE_T dataSize )
 {
     SYMCRYPT_DecryptTest<ImpXxx, AlgXxx, ModeXxx>(
-        (SYMCRYPT_XXX_EXPANDED_KEY*)buf1, buf2 + PERF_BUFFER_SIZE / 2, buf2, buf3, dataSize);
+        (SCSHIM_XXX_EXPANDED_KEY*)buf1, buf2 + PERF_BUFFER_SIZE / 2, buf2, buf3, dataSize);
 }
 
 template<>
@@ -36,7 +36,7 @@ algImpCleanPerfFunction<ImpXxx,AlgXxx, ModeXxx>( PBYTE buf1, PBYTE buf2, PBYTE b
     UNREFERENCED_PARAMETER( buf2 );
     UNREFERENCED_PARAMETER( buf3 );
 
-    SymCryptWipeKnownSize( buf1, sizeof( SYMCRYPT_XXX_EXPANDED_KEY ) );
+    SymCryptWipeKnownSize( buf1, sizeof( SCSHIM_XXX_EXPANDED_KEY ) );
 }
 
 
@@ -61,7 +61,7 @@ template<>
 SIZE_T
 BlockCipherImp<ImpXxx, AlgXxx, ModeXxx>::coreBlockLen()
 {
-    return SYMCRYPT_XXX_BLOCK_SIZE;
+    return SCSHIM_XXX_BLOCK_SIZE;
 }
 
 template<>
@@ -76,7 +76,7 @@ BlockCipherImp<ImpXxx, AlgXxx, ModeXxx>::setKey( PCBYTE pbKey, SIZE_T cbKey )
     //
     e = ScShimSymCryptRc2ExpandKeyEx( &state.key, pbKey, cbKey, g_rc2EffectiveKeyLength ? g_rc2EffectiveKeyLength : 8 * (ULONG)cbKey);
 #else
-    e = SYMCRYPT_XxxExpandKey( &state.key, pbKey, cbKey);
+    e = SCSHIM_XxxExpandKey( &state.key, pbKey, cbKey);
 #endif
 
     if( e != SYMCRYPT_NO_ERROR )

@@ -44,7 +44,7 @@ KdfImp<ImpXxx,AlgPbkdf2,BaseAlgXxx>::derive(
     CHECK( cbDst <= sizeof( buf1 ), "PBKDF2 output too large" );
 
     scError = ScShimSymCryptPbkdf2(
-        SYMCRYPT_BaseXxxAlgorithm,
+        SCSHIM_BaseXxxAlgorithm,
         pbKey,  cbKey,
         pbSalt,  cbSalt,
         iterationCnt,
@@ -54,7 +54,7 @@ KdfImp<ImpXxx,AlgPbkdf2,BaseAlgXxx>::derive(
 
     scError = ScShimSymCryptPbkdf2ExpandKey(
         &expandedKey,
-        SYMCRYPT_BaseXxxAlgorithm,
+        SCSHIM_BaseXxxAlgorithm,
         pbKey, cbKey );
     CHECK( scError == SYMCRYPT_NO_ERROR, "Error in SymCrypt PBKDF2" );
 

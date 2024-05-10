@@ -29,7 +29,7 @@ VOID
 algImpKeyPerfFunction<ImpXxx, AlgXxx, BaseAlgXxx>( PBYTE buf1, PBYTE buf2, PBYTE buf3, SIZE_T keySize )
 {
     UNREFERENCED_PARAMETER( buf3 );
-    SYMCRYPT_XxxExpandKey( (SYMCRYPT_XXX_EXPANDED_KEY *) buf1, SYMCRYPT_BaseXxxAlgorithm, buf2, keySize );
+    SCSHIM_XxxExpandKey( (SCSHIM_XXX_EXPANDED_KEY *) buf1, SCSHIM_BaseXxxAlgorithm, buf2, keySize );
 }
 
 template<>
@@ -38,7 +38,7 @@ algImpCleanPerfFunction<ImpXxx, AlgXxx, BaseAlgXxx>( PBYTE buf1, PBYTE buf2, PBY
 {
     UNREFERENCED_PARAMETER( buf2 );
     UNREFERENCED_PARAMETER( buf3 );
-    SymCryptWipeKnownSize( buf1, sizeof( SYMCRYPT_XXX_EXPANDED_KEY ) );
+    SymCryptWipeKnownSize( buf1, sizeof( SCSHIM_XXX_EXPANDED_KEY ) );
 }
 
 

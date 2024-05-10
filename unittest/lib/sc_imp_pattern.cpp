@@ -449,15 +449,15 @@
 #define ALG_Name    Hkdf
 
 #define ALG_Base    HmacSha256
-#define SYMCRYPT_XXX_BASE_RESULT_SIZE   SYMCRYPT_HMAC_SHA256_RESULT_SIZE
+#define SCSHIM_XXX_BASE_RESULT_SIZE   SYMCRYPT_HMAC_SHA256_RESULT_SIZE
 #include "sc_imp_hkdfpattern.cpp"
-#undef SYMCRYPT_XXX_BASE_RESULT_SIZE
+#undef SCSHIM_XXX_BASE_RESULT_SIZE
 #undef ALG_Base
 
 #define ALG_Base    HmacSha1
-#define SYMCRYPT_XXX_BASE_RESULT_SIZE   SYMCRYPT_HMAC_SHA1_RESULT_SIZE
+#define SCSHIM_XXX_BASE_RESULT_SIZE   SYMCRYPT_HMAC_SHA1_RESULT_SIZE
 #include "sc_imp_hkdfpattern.cpp"
-#undef SYMCRYPT_XXX_BASE_RESULT_SIZE
+#undef SCSHIM_XXX_BASE_RESULT_SIZE
 #undef ALG_Base
 
 #undef ALG_NAME
@@ -468,31 +468,31 @@
 #define ALG_Name    SshKdf
 
 #define ALG_Base    Sha1
-#define SYMCRYPT_XXX_BASE_RESULT_SIZE   SYMCRYPT_SHA1_RESULT_SIZE
+#define SCSHIM_XXX_BASE_RESULT_SIZE   SYMCRYPT_SHA1_RESULT_SIZE
 #include "sc_imp_kdfpattern.cpp"
 #include "sc_imp_sshkdfpattern.cpp"
-#undef SYMCRYPT_XXX_BASE_RESULT_SIZE
+#undef SCSHIM_XXX_BASE_RESULT_SIZE
 #undef ALG_Base
 
 #define ALG_Base    Sha256
-#define SYMCRYPT_XXX_BASE_RESULT_SIZE   SYMCRYPT_SHA256_RESULT_SIZE
+#define SCSHIM_XXX_BASE_RESULT_SIZE   SYMCRYPT_SHA256_RESULT_SIZE
 #include "sc_imp_kdfpattern.cpp"
 #include "sc_imp_sshkdfpattern.cpp"
-#undef SYMCRYPT_XXX_BASE_RESULT_SIZE
+#undef SCSHIM_XXX_BASE_RESULT_SIZE
 #undef ALG_Base
 
 #define ALG_Base    Sha384
-#define SYMCRYPT_XXX_BASE_RESULT_SIZE   SYMCRYPT_SHA384_RESULT_SIZE
+#define SCSHIM_XXX_BASE_RESULT_SIZE   SYMCRYPT_SHA384_RESULT_SIZE
 #include "sc_imp_kdfpattern.cpp"
 #include "sc_imp_sshkdfpattern.cpp"
-#undef SYMCRYPT_XXX_BASE_RESULT_SIZE
+#undef SCSHIM_XXX_BASE_RESULT_SIZE
 #undef ALG_Base
 
 #define ALG_Base    Sha512
-#define SYMCRYPT_XXX_BASE_RESULT_SIZE   SYMCRYPT_SHA512_RESULT_SIZE
+#define SCSHIM_XXX_BASE_RESULT_SIZE   SYMCRYPT_SHA512_RESULT_SIZE
 #include "sc_imp_kdfpattern.cpp"
 #include "sc_imp_sshkdfpattern.cpp"
-#undef SYMCRYPT_XXX_BASE_RESULT_SIZE
+#undef SCSHIM_XXX_BASE_RESULT_SIZE
 #undef ALG_Base
 
 #undef ALG_NAME

@@ -3,8 +3,8 @@ set(SOURCES
     exports.def
     )
 
-add_compile_options(-DINCLUDE_IMPL_MSBIGNUM=0)
-add_compile_options(-DINCLUDE_IMPL_RSA32=0)
+add_compile_definitions(INCLUDE_IMPL_MSBIGNUM=0)
+add_compile_definitions(INCLUDE_IMPL_RSA32=0)
 
 add_library(symcrypttestmodule SHARED ${SOURCES})
 

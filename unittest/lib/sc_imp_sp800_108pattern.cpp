@@ -48,7 +48,7 @@ KdfImp<ImpXxx,AlgSp800_108,BaseAlgXxx>::derive(
     }
 
     scError = ScShimSymCryptSp800_108(
-            SYMCRYPT_BaseXxxAlgorithm,
+            SCSHIM_BaseXxxAlgorithm,
             pbKey,  cbKey,
             pbLabel, cbLabel,
             pbContext, cbContext,
@@ -58,7 +58,7 @@ KdfImp<ImpXxx,AlgSp800_108,BaseAlgXxx>::derive(
 
     scError = ScShimSymCryptSp800_108ExpandKey(
         &expandedKey,
-        SYMCRYPT_BaseXxxAlgorithm,
+        SCSHIM_BaseXxxAlgorithm,
         pbKey, cbKey );
     CHECK( scError == SYMCRYPT_NO_ERROR, "Error in SymCrypt SP800_108" );
 

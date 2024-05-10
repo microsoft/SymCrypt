@@ -18,7 +18,7 @@ HashImp<ImpXxx, AlgXxx>::~HashImp()
 
 SIZE_T HashImp<ImpXxx, AlgXxx>::inputBlockLen()
 {
-    return SYMCRYPT_XXX_INPUT_BLOCK_SIZE;
+    return SCSHIM_XXX_INPUT_BLOCK_SIZE;
 }
 
 SIZE_T HashImp<ImpXxx, AlgXxx>::resultLen()

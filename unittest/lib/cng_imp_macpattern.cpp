@@ -146,11 +146,11 @@ algImpDataPerfFunction<ImpXxx, AlgXxx>(PBYTE buf1, PBYTE buf2, PBYTE buf3, SIZE_
     {
         h = *(BCRYPT_HASH_HANDLE *) buf1;
         CHECK( NT_SUCCESS(CngHashDataFn  ( h, buf2, (ULONG) dataSize, 0 )), "" );
-        CHECK( NT_SUCCESS(CngFinishHashFn( h, buf3, (ULONG)(SYMCRYPT_XXX_RESULT_SIZE), 0 )), "" );
+        CHECK( NT_SUCCESS(CngFinishHashFn( h, buf3, (ULONG)(SCSHIM_XXX_RESULT_SIZE), 0 )), "" );
     } else {
         CHECK( NT_SUCCESS(CngCreateHashFn( MacImpState<ImpXxx, AlgXxx>::hAlg, &h, buf1 + 16, PERF_BUFFER_SIZE, buf3, (ULONG)*(SIZE_T *)buf1, 0 )), "" );
         CHECK( NT_SUCCESS(CngHashDataFn  ( h, buf2, (ULONG) dataSize, 0 )), "" );
-        CHECK( NT_SUCCESS(CngFinishHashFn( h, buf3, (ULONG)(SYMCRYPT_XXX_RESULT_SIZE), 0 )), "" );
+        CHECK( NT_SUCCESS(CngFinishHashFn( h, buf3, (ULONG)(SCSHIM_XXX_RESULT_SIZE), 0 )), "" );
         CHECK( NT_SUCCESS(CngDestroyHashFn( h )), "" );
     }
 }

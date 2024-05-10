@@ -43,7 +43,7 @@ option(
     ON)
 
 if(NOT SYMCRYPT_USE_ASM)
-    add_compile_options("-DSYMCRYPT_IGNORE_PLATFORM")
+    add_compile_definitions(SYMCRYPT_IGNORE_PLATFORM)
 endif()
 
 option(
@@ -53,7 +53,7 @@ option(
     ON)
 
 if(SYMCRYPT_FIPS_BUILD)
-    add_compile_options(-DSYMCRYPT_DO_FIPS_SELFTESTS=1)
+    add_compile_definitions(SYMCRYPT_DO_FIPS_SELFTESTS=1)
 endif()
 
 option(
@@ -127,7 +127,7 @@ if(CMAKE_BUILD_TYPE MATCHES "Release|RelWithDebInfo")
     message(STATUS "Release mode")
 else()
     message(STATUS "Debug mode")
-    add_compile_options(-DDBG=1)
+    add_compile_definitions(DBG=1)
 endif()
 
 include_directories(inc)

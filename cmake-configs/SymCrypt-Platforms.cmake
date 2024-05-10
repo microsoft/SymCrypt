@@ -159,7 +159,26 @@ if(CMAKE_SYSTEM_NAME MATCHES "Linux")
 else() # Windows
 
     if(SYMCRYPT_USE_ASM)
-        enable_language(ASM_MASM)
+        if(SYMCRYPT_TARGET_ARCH MATCHES "AMD64|X86")
+            enable_language(ASM_MASM)
+        elseif(SYMCRYPT_TARGET_ARCH MATCHES "ARM64")
+            if(CMAKE_VERSION VERSION_LESS "3.26.0")
+                message(FATAL_ERROR "CMake version < 3.26.0 does not support ASM_MARMASM")
+            else()
+                enable_language(ASM_MARMASM)
+            endif()
+        endif()
+    endif()
+
+    # Architecture-specific definitions for certain header files from Windows Kits
+    if(SYMCRYPT_TARGET_ARCH MATCHES "X86")
+        add_compile_definitions(_X86_)
+    elseif(SYMCRYPT_TARGET_ARCH MATCHES "AMD64")
+        add_compile_definitions(_AMD64_)
+    elseif(SYMCRYPT_TARGET_ARCH MATCHES "ARM64")
+        add_compile_definitions(_ARM64_)
+    else()
+        message(FATAL_ERROR "Unsupported SYMCRYPT_TARGET_ARCH (${SYMCRYPT_TARGET_ARCH}) for Windows")
     endif()
 
     add_compile_options($<$<COMPILE_LANGUAGE:C,CXX>:/MP>)
@@ -200,9 +219,7 @@ else() # Windows
         add_compile_options($<$<COMPILE_LANGUAGE:C,CXX>:/Gy>)
         add_compile_options($<$<COMPILE_LANGUAGE:C,CXX>:/Gw>)
     else()
-        if(SYMCRYPT_TARGET_ARCH MATCHES "AMD64")
-            # Prevent error C1128 for AMD64/Debug builds: number of sections exceeded object file format limit
-            add_compile_options($<$<COMPILE_LANGUAGE:C,CXX>:/bigobj>)
-        endif()
+        # Prevent error C1128 for AMD64/Debug builds: number of sections exceeded object file format limit
+        add_compile_options($<$<COMPILE_LANGUAGE:C,CXX>:/bigobj>)
     endif()
 endif()

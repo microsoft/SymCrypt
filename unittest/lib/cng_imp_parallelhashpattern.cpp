@@ -161,7 +161,7 @@ algImpDataPerfFunction<ImpXxx, AlgXxx>(PBYTE buf1, PBYTE buf2, PBYTE buf3, SIZE_
         pOp->iHash = i;
         pOp->hashOperation = BCRYPT_HASH_OPERATION_FINISH_HASH;
         pOp->pbBuffer = pDst;
-        pOp->cbBuffer = SYMCRYPT_XXX_RESULT_SIZE;
+        pOp->cbBuffer = SCSHIM_XXX_RESULT_SIZE;
 
         pDst += pOp->cbBuffer;
         pOp++;

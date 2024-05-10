@@ -4,13 +4,6 @@
 //
 
 //
-// Some test hooks to allow the unit test to have its own environment.
-//
-extern "C" {
-#include "sc_lib-testhooks.h"
-}
-
-//
 // We hack and create a NEW environment for our unit test.
 //
 

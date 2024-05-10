@@ -104,7 +104,7 @@ BlockCipherImp<ImpXxx, AlgXxx, ModeXxx>::~BlockCipherImp()
 
 SIZE_T BlockCipherImp<ImpXxx, AlgXxx, ModeXxx>::coreBlockLen()
 {
-    return SYMCRYPT_XXX_BLOCK_SIZE;
+    return SCSHIM_XXX_BLOCK_SIZE;
 }
 
 ULONG BlockCipherImpState<ImpXxx,AlgXxx,ModeXxx>::calg[CAPI_CALG_ARRAY_SIZE];

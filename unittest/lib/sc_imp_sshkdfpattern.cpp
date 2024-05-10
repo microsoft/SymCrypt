@@ -89,9 +89,9 @@ algImpDataPerfFunction<ImpXxx, AlgXxx, BaseAlgXxx>(PBYTE buf1, PBYTE buf2, PBYTE
     PCSYMCRYPT_SSHKDF_EXPANDED_KEY pExpandedKey = (PCSYMCRYPT_SSHKDF_EXPANDED_KEY)buf1;
 
     ScShimSymCryptSshKdfDerive(pExpandedKey,
-                                buf2, SYMCRYPT_XXX_BASE_RESULT_SIZE,
+                                buf2, SCSHIM_XXX_BASE_RESULT_SIZE,
                                 (BYTE)SYMCRYPT_SSHKDF_ENCRYPTION_KEY_CLIENT_TO_SERVER,
-                                buf2, SYMCRYPT_XXX_BASE_RESULT_SIZE,
+                                buf2, SCSHIM_XXX_BASE_RESULT_SIZE,
                                 buf3, dataSize);
 }
 

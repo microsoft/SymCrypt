@@ -94,15 +94,15 @@ endif()
 include_directories(${SYMCRYPT_SOURCE_DIR}/lib)
 
 if(WIN32)
-    # DNDEBUG is required to link with msbignum. This should eventually be removed.
-    add_compile_options(-DNDEBUG)
-    add_compile_options(-D_CRT_SECURE_NO_WARNINGS)
+    # NDEBUG is required to link with msbignum. This should eventually be removed.
+    add_compile_definitions(NDEBUG)
+    add_compile_definitions(_CRT_SECURE_NO_WARNINGS)
 else()
     add_compile_options(-Wno-write-strings)
-    add_compile_options(-DINCLUDE_IMPL_CAPI=0)
-    add_compile_options(-DINCLUDE_IMPL_CNG=0)
-    add_compile_options(-DINCLUDE_IMPL_MSBIGNUM=0)
-    add_compile_options(-DINCLUDE_IMPL_RSA32=0)
+    add_compile_definitions(INCLUDE_IMPL_CAPI=0)
+    add_compile_definitions(INCLUDE_IMPL_CNG=0)
+    add_compile_definitions(INCLUDE_IMPL_MSBIGNUM=0)
+    add_compile_definitions(INCLUDE_IMPL_RSA32=0)
 endif()
 
 if(SYMCRYPT_TARGET_ARCH STREQUAL "ARM" AND CMAKE_C_COMPILER_ID MATCHES "GNU")
