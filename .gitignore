@@ -32,6 +32,7 @@ build/bin/
 inc/*.dat.h
 inc/buildInfo.h
 inc/resource.h
+inc/symcrypt_internal_shared.inc
 
 [Pp]ass*-buildfre.dbb
 [Pp]ass*-buildfre.evt

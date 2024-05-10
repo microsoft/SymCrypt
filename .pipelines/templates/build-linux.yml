@@ -57,6 +57,7 @@ jobs:
   steps:
     - script: |
         apt-get update -y
+      continueOnError: true
       displayName: 'Update package manager'
 
     - ${{ if eq(parameters.cc, 'clang') }}:

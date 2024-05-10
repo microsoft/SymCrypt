@@ -8,6 +8,7 @@ Copyright (c) Microsoft Corporation. Licensed under the MIT license.
 
 import argparse
 import datetime
+import json
 import os
 import pathlib
 import re
@@ -18,9 +19,14 @@ from typing import Tuple
 
 from devops_utils import set_task_variable
 
+VERSION_INFO_PATH = "version.json"
+
+SHARED_HEADER_INPUT_PATH = "conf/symcrypt_internal_shared.inc.in"
+SHARED_HEADER_OUTPUT_PATH = "inc/symcrypt_internal_shared.inc"
+
 BUILD_INFO_INPUT_PATH = "conf/buildInfo.h.in"
 BUILD_INFO_OUTPUT_PATH = "inc/buildInfo.h"
-VERSION_INFO_RELATIVE_PATH = "inc/symcrypt_internal_shared.inc"
+
 GIT_BRANCH_CMD = "git branch --show"
 GIT_COMMIT_HASH_CMD = "git log -1 --format=%h"
 GIT_COMMIT_TIMESTAMP_CMD = "git log -1 --date=iso-strict-local --format=%cd"
@@ -101,25 +107,25 @@ def get_version_info() -> SymCryptVersion:
     if get_version_info.symcrypt_version is not None:
         return get_version_info.symcrypt_version
 
-    version_info_absolute_path = os.path.join(os.path.dirname(os.path.realpath(__file__)), "..", VERSION_INFO_RELATIVE_PATH)
+    version_info_absolute_path = os.path.join(os.path.dirname(os.path.realpath(__file__)), "..", VERSION_INFO_PATH)
 
     # Parse the version information from the SymCrypt headers
-    version_info_contents = open(version_info_absolute_path, "r").read()
+    version_info = json.loads(open(version_info_absolute_path, "r").read())
 
-    version_api_match = re.search(r"#define SYMCRYPT_CODE_VERSION_API\s+(\d+)", version_info_contents)
-    version_minor_match = re.search(r"#define SYMCRYPT_CODE_VERSION_MINOR\s+(\d+)", version_info_contents)
-    version_patch_match = re.search(r"#define SYMCRYPT_CODE_VERSION_PATCH\s+(\d+)", version_info_contents)
+    version_major = version_info.get("major")
+    version_minor = version_info.get("minor")
+    version_patch = version_info.get("patch")
 
-    if not version_api_match or not version_minor_match or not version_patch_match:
+    if type(version_major) is not int or type(version_minor) is not int or type(version_patch) is not int:
                 raise Exception("Could not parse version from version file " + version_info_absolute_path)
 
     (version_branch, version_commit_hash, version_commit_timestamp) = get_commit_info()
 
     version_build_timestamp = datetime.datetime.now()
     get_version_info.symcrypt_version = SymCryptVersion(
-        int(version_api_match.group(1)),
-        int(version_minor_match.group(1)),
-        int(version_patch_match.group(1)),
+        version_major,
+        version_minor,
+        version_patch,
         version_branch,
         version_commit_hash,
         version_commit_timestamp,
@@ -129,10 +135,12 @@ def get_version_info() -> SymCryptVersion:
 
 def generate_build_info(version_info: SymCryptVersion) -> None:
     """
-    Generates buildInfo.h using the given version info.
+    Generates buildInfo.h and symcrypt_internal_shared.inc using the given version info.
     """
 
+    # Generate buildInfo.h from template
     build_info_input_absolute_path = os.path.join(os.path.dirname(os.path.realpath(__file__)), "..", BUILD_INFO_INPUT_PATH)
+    build_info_output_absolute_path = os.path.join(os.path.dirname(os.path.realpath(__file__)), "..", BUILD_INFO_OUTPUT_PATH)
 
     build_info_template = open(build_info_input_absolute_path, "r").read()
 
@@ -142,10 +150,22 @@ def generate_build_info(version_info: SymCryptVersion) -> None:
     build_info = build_info.replace("@SYMCRYPT_BUILD_INFO_COMMIT@", commit_string)
     build_info = build_info.replace("@SYMCRYPT_BUILD_INFO_TIMESTAMP@", version_info.build_timestamp.isoformat(timespec = "seconds"))
 
-    build_info_output_absolute_path = os.path.join(os.path.dirname(os.path.realpath(__file__)), "..", BUILD_INFO_OUTPUT_PATH)
+    # Generate symcrypt_internal_shared.inc from template
+    shared_header_input_absolute_path = os.path.join(os.path.dirname(os.path.realpath(__file__)), "..", SHARED_HEADER_INPUT_PATH)
+    shared_header_output_absolute_path = os.path.join(os.path.dirname(os.path.realpath(__file__)), "..", SHARED_HEADER_OUTPUT_PATH)
 
+    shared_header_template = open(shared_header_input_absolute_path, "r").read()
+
+    shared_header = shared_header_template.replace("@SYMCRYPT_VERSION_MAJOR@", str(version_info.major))
+    shared_header = shared_header.replace("@SYMCRYPT_VERSION_MINOR@", str(version_info.minor))
+    shared_header = shared_header.replace("@SYMCRYPT_VERSION_PATCH@", str(version_info.patch))
+
+    # Write both files to disk
     with open(build_info_output_absolute_path, 'w', encoding = "utf-8") as build_info_output:
         build_info_output.write(build_info)
+
+    with open(shared_header_output_absolute_path, 'w', encoding = "utf-8") as shared_header_output:
+        shared_header_output.write(shared_header)
 
 def print_devops_vars(version_info: SymCryptVersion) -> None:
     """
