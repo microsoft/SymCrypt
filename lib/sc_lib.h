@@ -9,7 +9,6 @@
 //
 
 
-//#define SYMCRYPT_DISABLE_CFG
 #if SYMCRYPT_MS_VC
 #define SYMCRYPT_DISABLE_CFG    __declspec(guard(nocf))
 #else
@@ -4285,20 +4284,6 @@ SymCryptPositiveWidthNafRecoding(
     _Out_writes_( nRecodedDigits )
             PUINT32         absofKIs,
             UINT32          nRecodedDigits );
-
-
-#if !SYMCRYPT_MS_VC
-
-// Ignore the incompatible pointer types void * to PSYMCRYPT_XXX
-#ifndef __cplusplus
-#pragma GCC diagnostic ignored "-Wincompatible-pointer-types"
-#endif
-
-#define FIELD_OFFSET(type,field)    ((UINT32)(uintptr_t)&(((type *)0)->field))
-
-#define __fastfail(x)               (*((volatile int *)(0)) = (int) (x))
-
-#endif
 
 // Atomics.
 //

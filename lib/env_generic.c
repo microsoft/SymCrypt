@@ -59,14 +59,8 @@ SymCryptFatalEnvGeneric( UINT32 fatalCode )
     SYMCRYPT_FORCE_WRITE32( &fatalCodeVar, fatalCode );
 
     //
-    // Our first preference is to fastfail,
-    // the second to create an AV, which triggers a Watson report so that we get to 
+    // Create an AV, which can trigger a core dump or Watson report so that we get to 
     // see what is going wrong.
-    //
-    __fastfail( FAST_FAIL_CRYPTO_LIBRARY );
-
-    //
-    // Next we write to the NULL pointer, this causes an AV
     //
     SYMCRYPT_FORCE_WRITE32( (volatile UINT32 *)NULL, fatalCode );
 

@@ -391,9 +391,12 @@ if(WIN32)
     target_link_libraries(symcrypt_windows10sgx symcrypt_common)
 endif()
 
-if(NOT WIN32)
-    add_compile_options(-Wno-trigraphs)
+if(CMAKE_C_COMPILER_ID MATCHES "Clang|GNU")
+    # Ignore the incompatible pointer types void * to PSYMCRYPT_XXX
+    add_compile_options($<$<COMPILE_LANGUAGE:C>:-Wno-incompatible-pointer-types>)
+endif()
 
+if(NOT WIN32)
     if (SYMCRYPT_STACK_PROTECTION)
         # Mitigate stack buffer overruns, and stack clash attacks
         add_compile_options(-fstack-protector-strong)

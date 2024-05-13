@@ -50,12 +50,10 @@ SymCryptFatalEnvOpteeTa( ULONG fatalCode )
     SYMCRYPT_FORCE_WRITE32( &fatalCodeVar, fatalCode );
 
     //
-    // Our first preference is to fastfail,
+    // Our first preference is to TEE_Panic,
     // the second to create an AV, which can trigger a core dump so that we get to
     // see what is going wrong.
     //
-    __fastfail( FAST_FAIL_CRYPTO_LIBRARY );
-
     TEE_Panic(TEE_ERROR_BAD_STATE);
     
     //
