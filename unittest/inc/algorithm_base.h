@@ -1682,9 +1682,25 @@ private:
     VOID operator=( const KemImplementation & );
 
 public:
-    virtual NTSTATUS setKey( PCBYTE pcbKeyBlob, SIZE_T cbKeyBlob ) = 0; // Returns an error if this key can't be handled.
+    virtual NTSTATUS setKeyFromTestBlob(
+        _In_reads_bytes_( cbTestKeyBlob )       PCBYTE              pcbTestKeyBlob,
+                                                SIZE_T              cbTestKeyBlob,
+                                                BOOL                canDecapsulate ) = 0;
+
+    virtual NTSTATUS getBlobFromKey(
+                                                UINT32              blobType,
+        _Out_writes_bytes_( cbBlob )            PBYTE               pbBlob,
+                                                SIZE_T              cbBlob ) = 0;
 
     virtual NTSTATUS encapsulate(
+        _Out_writes_bytes_( cbAgreedSecret )    PBYTE               pbAgreedSecret,
+                                                SIZE_T              cbAgreedSecret, 
+        _Out_writes_bytes_( cbCiphertext )      PBYTE               pbCiphertext,
+                                                SIZE_T              cbCiphertext ) = 0;
+
+    virtual NTSTATUS encapsulateEx(
+        _In_reads_bytes_( cbRandom )            PCBYTE              pbRandom,
+                                                SIZE_T              cbRandom,
         _Out_writes_bytes_( cbAgreedSecret )    PBYTE               pbAgreedSecret,
                                                 SIZE_T              cbAgreedSecret, 
         _Out_writes_bytes_( cbCiphertext )      PBYTE               pbCiphertext,
@@ -1697,17 +1713,15 @@ public:
                                                 SIZE_T              cbAgreedSecret ) = 0;
 };
 
-enum class MLKEM_PARAMS
-{
-    MLKEM_PARAMS_512,
-    MLKEM_PARAMS_768,
-    MLKEM_PARAMS_1024
-};
+// Currently maximum key blob size is draft ML-KEM1024 decapsulation key blob
+#define MAX_MLKEMKEY_BLOB_SIZE (3168)
 
 typedef struct _MLKEMKEY_TESTBLOB
 {
-    MLKEM_PARAMS params;
-    BYTE seed[64];
+    SYMCRYPT_MLKEM_TYPE type;                   // represents the flavor of ML-KEM
+    SYMCRYPT_MLKEMKEY_FORMAT format;            // represents the format of the ML-KEM key blob
+    BYTE    abKeyBlob[MAX_MLKEMKEY_BLOB_SIZE];  // byte blob representing an ML-KEM key
+    SIZE_T  cbKeyBlob;
 } MLKEMKEY_TESTBLOB, *PMLKEMKEY_TESTBLOB;
 typedef const MLKEMKEY_TESTBLOB * PCMLKEMKEY_TESTBLOB;
 
@@ -1729,9 +1743,25 @@ public:
     static const String s_modeName;
     static const String s_impName;             // Implementation name
 
-    virtual NTSTATUS setKey( PCBYTE pcbKeyBlob, SIZE_T cbKeyBlob ); // Returns an error if this key can't be handled.
+    virtual NTSTATUS setKeyFromTestBlob(
+        _In_reads_bytes_( cbTestKeyBlob )       PCBYTE              pcbTestKeyBlob,
+                                                SIZE_T              cbTestKeyBlob,
+                                                BOOL                canDecapsulate );
+
+    virtual NTSTATUS getBlobFromKey(
+                                                UINT32              blobType,
+        _Out_writes_bytes_( cbBlob )            PBYTE               pbBlob,
+                                                SIZE_T              cbBlob );
 
     virtual NTSTATUS encapsulate(
+        _Out_writes_bytes_( cbAgreedSecret )    PBYTE               pbAgreedSecret,
+                                                SIZE_T              cbAgreedSecret, 
+        _Out_writes_bytes_( cbCiphertext )      PBYTE               pbCiphertext,
+                                                SIZE_T              cbCiphertext );
+
+    virtual NTSTATUS encapsulateEx(
+        _In_reads_bytes_( cbRandom )            PCBYTE              pbRandom,
+                                                SIZE_T              cbRandom,
         _Out_writes_bytes_( cbAgreedSecret )    PBYTE               pbAgreedSecret,
                                                 SIZE_T              cbAgreedSecret, 
         _Out_writes_bytes_( cbCiphertext )      PBYTE               pbCiphertext,

@@ -90,6 +90,10 @@ template<class Implementation>
 void
 SetupSymCryptEckey( PBYTE buf1, PBYTE buf2, PBYTE buf3, UINT32 setRandomFlags );
 
+template<class Implementation>
+PCSYMCRYPT_MLKEM_PARAMS
+SetupSymCryptMlKemKey( PBYTE buf1, SIZE_T keySize );
+
 VOID
 trialDivisionSetFakePrime( PSYMCRYPT_TRIALDIVISION_PRIME p )
 {
@@ -353,6 +357,9 @@ addSymCryptImplementationToGlobalList()
     addImplementationToGlobalList<EccImp<ImpScVariant, AlgEcpointAddDiffNz>>();
     addImplementationToGlobalList<EccImp<ImpScVariant, AlgEcpointDouble>>();
     addImplementationToGlobalList<EccImp<ImpScVariant, AlgEcpointScalarMul>>();
+
+    addImplementationToGlobalList<KemImp<ImpScVariant, AlgMlKem>>();
+    addImplementationToGlobalList<ArithImp<ImpScVariant, AlgMlKemkeySetValue>>();
 
     addImplementationToGlobalList<ArithImp<ImpScVariant, AlgIntAdd>>();
     addImplementationToGlobalList<ArithImp<ImpScVariant, AlgIntSub>>();

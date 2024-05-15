@@ -244,6 +244,8 @@ const char * AlgEcdh::name = "Ecdh";
 
 const char * AlgMlKem::name = "MlKem";
 
+const char * AlgMlKemkeySetValue::name = "MlKemkeySetValue";
+
 const char * AlgDeveloperTest::name = "DeveloperTest";
 
 const char * ModeEcb::name = "Ecb";
@@ -609,7 +611,8 @@ const char * g_algorithmNames[] = {
     AlgEcdsaSign::name,
     AlgEcdsaVerify::name,
     AlgEcdh::name,
-    // AlgMlKem::name,
+    AlgMlKem::name,
+    AlgMlKemkeySetValue::name,
 
     AlgDeveloperTest::name,
     NULL,
@@ -1520,6 +1523,8 @@ runFunctionalTests()
     testDsaAlgorithms();
 
     testEcc();
+
+    testKem();
 
     printSymCryptFipsGetSelftestsPerformed();
 

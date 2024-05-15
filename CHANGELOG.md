@@ -3,6 +3,8 @@
 New changes will be listed here as they are developed. The version number is determined
 prior to the creation of a new release, based on the changes contained in that release.
 
+- Add ML-KEM per draft FIPS 203
+
 # Version 103.4.2
 
 - Add SymCryptEntropyAccumulator to Windows kernel module

@@ -555,3 +555,20 @@ VERSION_103.4
       SymCryptXtsAesExpandKeyEx;
       SymCryptXtsAesKeyCopy;
 } VERSION_103.2;
+VERSION_103.5
+{
+   global:
+      SymCryptMlKemDecapsulate;
+      SymCryptMlKemEncapsulate;
+      SymCryptMlKemkeyAllocate;
+      SymCryptMlKemkeyFree;
+      SymCryptMlKemkeyGenerate;
+      SymCryptMlKemkeyGetValue;
+      SymCryptMlKemkeySetValue;
+      SymCryptMlKemParamsDraft203MlKem1024;
+      SymCryptMlKemParamsDraft203MlKem512;
+      SymCryptMlKemParamsDraft203MlKem768;
+      SymCryptMlKemSelftest;
+      SymCryptMlKemSizeofCiphertextFromParams;
+      SymCryptMlKemSizeofKeyFormatFromParams;
+} VERSION_103.4;

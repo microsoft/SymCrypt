@@ -31,6 +31,7 @@ set(SOURCES
     testArithmetic.cpp
     testEcc.cpp
     callback.cpp
+    testKem.cpp
     testMontgomery.cpp
     testRsaSign.cpp
     testRsaEnc.cpp
@@ -89,9 +90,6 @@ if(SYMCRYPT_TEST_WITH_OPENSSL)
         openssl_implementations.cpp
     )
 endif()
-
-# Need to include an asm file from here.
-include_directories(${SYMCRYPT_SOURCE_DIR}/lib)
 
 if(WIN32)
     # NDEBUG is required to link with msbignum. This should eventually be removed.

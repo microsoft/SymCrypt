@@ -2780,6 +2780,40 @@ SymCryptEcDsaSignEx(
 //    returned.
 //
 
+//=====================================================
+// ML-KEM-EX
+//
+
+SYMCRYPT_ERROR
+SYMCRYPT_CALL
+SymCryptMlKemEncapsulateEx(
+    _In_                                    PCSYMCRYPT_MLKEMKEY pkMlKemkey,
+    _In_reads_bytes_( cbRandom )            PCBYTE              pbRandom,
+                                            SIZE_T              cbRandom, 
+    _Out_writes_bytes_( cbAgreedSecret )    PBYTE               pbAgreedSecret,
+                                            SIZE_T              cbAgreedSecret, 
+    _Out_writes_bytes_( cbCiphertext )      PBYTE               pbCiphertext,
+                                            SIZE_T              cbCiphertext );
+//
+// Performs the Encapsulate operation of ML-KEM using caller-provided random input.
+// It is used in verifying test vectors of ML-KEM.
+//
+// This uses the public information of an ML-KEM keypair to generate an agreed secret
+// and a ciphertext. Only a peer with the private information of an ML-KEM keypair can
+// decapsulate the ciphertext to compute the agreed secret.
+//
+// The arguments are the following:
+// - pkMlKemkey: a key which contains public information required for encapsulation.
+// - (pbRandom, cbRandom): a buffer containing the input random.
+//   Currently cbRandom must be 32 for all parameterizations of ML-KEM.
+// - (pbAgreedSecret, cbAgreedSecret): a buffer into which the generated secret is written.
+//   Currently cbAgreedSecret must be 32 for all parameterizations of ML-KEM.
+// - (pbCiphertext, cbCiphertext): a buffer into which the encapsulated secret is written.
+//   cbCiphertext must equal cbCiphertext given by SymCryptMlKemSizeofCiphertextFromParams,
+//   though typically this value can be known statically (see definition of
+//   SYMCRYPT_MLKEM_CIPHERTEXT_SIZE_*).
+//
+
 //===================================================================
 // 802.11 SAE protocol
 //===================================================================

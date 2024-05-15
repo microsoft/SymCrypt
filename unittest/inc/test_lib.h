@@ -1062,6 +1062,13 @@ public:
     const static char * name;
 };
 
+// Used only for performance testing
+// In ML-KEM, an important operation is importing an encapsulation key to a key object
+class AlgMlKemkeySetValue{
+public:
+    const static char * name;
+};
+
 class AlgDeveloperTest{
 public:
     const static char * name;
@@ -1480,6 +1487,9 @@ testAesCtrDrbg();
 
 VOID
 testArithmetic();
+
+VOID
+testKem();
 
 VOID
 testScsTable();
@@ -1965,11 +1975,11 @@ printXmmRegisters( PCSTR text );
 
 //
 // For testing ML-KEM parameters. These are not the key sizes, but refer to the different
-// ML-KEM parameter sets defined in FIPS-203.
+// ML-KEM parameter sets defined in draft FIPS 203.
 //
-#define PERF_KEY_MLKEM_512             (512 / 8)   // ML-KEM-512
-#define PERF_KEY_MLKEM_768             (768 / 8)   // ML-KEM-768
-#define PERF_KEY_MLKEM_1024            (1024 / 8)  // ML-KEM-1024
+#define PERF_KEY_DRAFTMLKEM_512        (512 / 8)   // Draft ML-KEM-512
+#define PERF_KEY_DRAFTMLKEM_768        (768 / 8)   // Draft ML-KEM-768
+#define PERF_KEY_DRAFTMLKEM_1024       (1024 / 8)  // Draft ML-KEM-1024
 
 PCBYTE
 getPerfTestModulus( UINT32 exKeySize );

@@ -408,3 +408,9 @@ public:
     PSYMCRYPT_DLGROUP   pGroup;
     PSYMCRYPT_DLKEY     pKey;
 };
+
+template<>
+class KemImpState<ImpXxx, AlgMlKem> {
+public:
+    PSYMCRYPT_MLKEMKEY  pKey;
+};
