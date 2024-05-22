@@ -120,6 +120,9 @@ def configure_cmake(args : argparse.Namespace) -> None:
     if args.openssl_branch:
         cmake_args.append("-DOPENSSL_BUILD_BRANCH=" + args.openssl_branch)
 
+    if args.libcrux:
+        cmake_args.append("-DSYMCRYPT_TEST_LIBCRUX=ON")
+
     # OPTEE
     if args.optee:
         cmake_args.append("-DSYMCRYPT_OPTEE=ON")
@@ -223,6 +226,7 @@ def main() -> None:
     parser_cmake.add_argument("--configure-only", action = "store_true", help = "Run CMake configuration, but do not build.")
     parser_cmake.add_argument("--no-parallel-build", action = "store_false", dest = "parallel_build", help = "Disable parallel CMake build.", default = True)
     parser_cmake.add_argument("--verbose", action = "store_true", help = "Enable CMake verbose mode.", default = False)
+    parser_cmake.add_argument("--libcrux", action = "store_true", help = "Enable libcrux performance comparison.", default = False)
     parser_cmake.add_argument("--openssl", action = "store_true", help = "Enable OpenSSL performance comparison.", default = False)
     parser_cmake.add_argument("--openssl-branch", type = str, help = "Checkout and build specified branch of OpenSSL.", default = None)
     parser_cmake.add_argument("--openssl-build-from-source", action = "store_true", help = "Build OpenSSL from source.", default = False)

@@ -1,0 +1,16 @@
+{
+  "tool": "Credential Scanner",
+  "suppressions": [
+    {
+      "file": [
+        "3rdparty/hacl-packages/rust/tests/wycheproof/ecdh_secp256r1_ecpoint_test.json",
+        "3rdparty/hacl-packages/rust/tests/wycheproof/x25519_test.json",
+        "3rdparty/hacl-packages/tests/k256_ecdh/ecdh_secp256k1_test.json",
+        "3rdparty/hacl-packages/tests/kyber/kyber768_nistkats.json",
+        "3rdparty/hacl-packages/tests/p256_ecdh/ecdh_secp256r1_ecpoint_test.json",
+        "3rdparty/hacl-packages/tests/x25519/x25519_test.json"
+      ], 
+      "_justification": "Known answer tests included in hacl-packages submodule are incorrectly identified as secrets"
+    }
+  ]
+}

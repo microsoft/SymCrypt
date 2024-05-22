@@ -23,6 +23,9 @@ parameters:
 - name: sign # Sign user-mode binaries. Required by Guardian, even though we don't publish Windows binaries from CMake
   type: boolean
   default: false
+- name: libcrux # Build with libcrux testing
+  type: boolean
+  default: false
 
 jobs:
 
@@ -39,6 +42,10 @@ jobs:
       verbose_build_flag: '--verbose'
     ${{ else }}:
       verbose_build_flag: ''
+    ${{ if eq(parameters.libcrux, true) }}:
+      libcrux_build_flag: '--libcrux'
+    ${{ else }}:
+      libcrux_build_flag: ''
 
   steps:
 
@@ -47,7 +54,7 @@ jobs:
     inputs:
       scriptSource: 'filePath'
       scriptPath: scripts\build.py
-      arguments: 'cmake bin --arch ${{ parameters.arch }} --config ${{ parameters.config }} ${{ parameters.additionalArgs }} $(verbose_build_flag)'
+      arguments: 'cmake bin --arch ${{ parameters.arch }} --config ${{ parameters.config }} ${{ parameters.additionalArgs }} $(verbose_build_flag) $(libcrux_build_flag)'
       workingDirectory: $(Build.SourcesDirectory)
 
   # Overwrite default artifact publishing with our copy (enables publishing binaries for failed runs)

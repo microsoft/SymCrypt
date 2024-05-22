@@ -6,3 +6,8 @@
 	path = 3rdparty/jitterentropy-library
 	url = https://github.com/smuellerDD/jitterentropy-library
 	ignore = untracked
+
+[submodule "libcrux"]
+	path = 3rdparty/hacl-packages
+	url = https://github.com/samuel-lee-msft/hacl-packages
+	ignore = untracked

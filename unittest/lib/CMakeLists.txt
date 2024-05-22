@@ -1,7 +1,3 @@
-# Request C++17 standard to enable `if constexpr`
-set(CMAKE_CXX_STANDARD 17)
-set(CMAKE_CXX_STANDARD_REQUIRED ON)
-
 set(SOURCES
     main.cpp
     testAesCtrDrbg.cpp
@@ -53,15 +49,6 @@ if(WIN32)
         cng_implementations.cpp
         msbignum_implementations.cpp
         testIEEE802_11SaeCustom.cpp
-        # testInterop.cpp
-        # testRsa.cpp
-        # testRsa_sc.cpp
-        # testRsa_msbignum.cpp
-        # testRsa_cng.cpp
-        # testDl.cpp
-        # testDl_sc.cpp
-        # testDl_msbignum.cpp
-        # testDl_cng.cpp
     )
 else()
     list(APPEND SOURCES
@@ -91,6 +78,12 @@ if(SYMCRYPT_TEST_WITH_OPENSSL)
     )
 endif()
 
+if(SYMCRYPT_TEST_LIBCRUX)
+    list(APPEND SOURCES
+        libcrux_implementations.cpp
+    )
+endif()
+
 if(WIN32)
     # NDEBUG is required to link with msbignum. This should eventually be removed.
     add_compile_definitions(NDEBUG)
@@ -111,3 +104,12 @@ endif()
 
 add_library(symcryptunittest_lib STATIC ${SOURCES})
 set_target_properties(symcryptunittest_lib PROPERTIES PREFIX "")
+
+if(SYMCRYPT_TEST_WITH_OPENSSL)
+    target_include_directories(symcryptunittest_lib PRIVATE ${OPENSSL_INCLUDE_DIR})
+endif()
+
+if(SYMCRYPT_TEST_LIBCRUX)
+    target_include_directories(symcryptunittest_lib PRIVATE ${SYMCRYPT_SOURCE_DIR}/3rdparty/hacl-packages/libcrux/include)
+    target_include_directories(symcryptunittest_lib PRIVATE ${SYMCRYPT_SOURCE_DIR}/3rdparty/hacl-packages/karamel/include)
+endif()

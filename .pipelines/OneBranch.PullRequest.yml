@@ -36,6 +36,7 @@ extends:
         break: true # always break the build on policheck issues.
       binskim:
         enabled: false # Temporarily disable binskim until we sort out BA2018 errors
+      credscanSuppressionsPath: $(Build.SourcesDirectory)/.config/CredScanSuppressions.json
 
     stages:
     - stage: Set_Version
@@ -73,6 +74,7 @@ extends:
           arch: 'AMD64'
           config: 'Release'
           additionalArgs: '--test-legacy-impl'
+          libcrux: true
       - template: .pipelines/templates/build-windows-cmake.yml@self
         parameters:
           arch: 'ARM64'
@@ -87,6 +89,7 @@ extends:
           skipTests: true
           additionalArgs: '--no-asm'
           identifier: 'NoAsm'
+          libcrux: true
       - template: .pipelines/templates/build-windows-cmake.yml@self
         parameters:
           arch: 'X86'
@@ -97,6 +100,7 @@ extends:
           arch: 'X86'
           config: 'Release'
           additionalArgs: '--test-legacy-impl'
+          libcrux: true
       - template: .pipelines/templates/build-windows-cmake.yml@self
         parameters:
           arch: 'AMD64'
@@ -136,6 +140,7 @@ extends:
           cc: 'gcc'
           cxx: 'g++'
           openssl: true
+          libcrux: true
       - template: .pipelines/templates/build-linux.yml@self
         parameters:
           arch: 'AMD64'
@@ -157,6 +162,7 @@ extends:
           cc: 'clang'
           cxx: 'clang++'
           openssl: true
+          libcrux: true
       - template: .pipelines/templates/build-linux.yml@self
         parameters:
           arch: 'AMD64'
@@ -209,6 +215,7 @@ extends:
           cc: 'clang'
           cxx: 'clang++'
           additionalArgs: '--toolchain=cmake-configs/Toolchain-Clang-ARM64.cmake'
+          libcrux: true
       - template: .pipelines/templates/build-linux.yml@self
         parameters:
           arch: 'ARM'
@@ -223,3 +230,4 @@ extends:
           cc: 'gcc'
           cxx: 'g++'
           additionalArgs: '--toolchain=cmake-configs/Toolchain-GCC-ARM.cmake'
+          libcrux: true

@@ -24,6 +24,16 @@
         },
         {
             "Component": {
+                "Type": "git",
+                "Git": {
+                    "RepositoryUrl": "https://github.com/samuel-lee-msft/hacl-packages",
+                    "CommitHash": "705bc4fdd140e376694be2046ab6524747bbcd75"
+                }
+            },
+            "DevelopmentDependency": false
+        },
+        {
+            "Component": {
                 "Type": "pip",
                 "Pip": {
                     "Name": "pyelftools",

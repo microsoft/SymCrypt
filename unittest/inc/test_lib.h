@@ -467,6 +467,11 @@ extern "C" {
 #define INCLUDE_IMPL_OPENSSL   (0)
 #endif
 
+#if !defined( INCLUDE_IMPL_LIBCRUX )
+// libcrux implementation is disabled by default
+#define INCLUDE_IMPL_LIBCRUX   (0)
+#endif
+
 #if !defined( INCLUDE_IMPL_REF )
 #define INCLUDE_IMPL_REF       (1)
 #endif
@@ -1154,6 +1159,10 @@ extern const char * g_implementationNames[];
 
 #if INCLUDE_IMPL_OPENSSL
 #include "openssl_implementations.h"
+#endif
+
+#if INCLUDE_IMPL_LIBCRUX
+#include "libcrux_implementations.h"
 #endif
 
 #include "printtable.h"
