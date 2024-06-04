@@ -109,7 +109,7 @@ getTimeInMs()    // Will have to move it to the main_exe or main_dll when we sup
 {
 #if SYMCRYPT_MS_VC
     return GetTickCount64();
-#elif SYMCRYPT_GNUC || SYMCRYPT_APPLE_CC
+#elif SYMCRYPT_GNUC
     struct timespec ts;
     clock_gettime(CLOCK_MONOTONIC, &ts);
     return (uint64_t)(ts.tv_nsec / 1000000) + ((uint64_t)ts.tv_sec * 1000ull);

@@ -1,0 +1,69 @@
+parameters:
+- name: arch
+  type: string
+  values:
+  - AMD64
+  - ARM64
+- name: config
+  type: string
+  values:
+  - Debug
+  - Release
+- name: skipTests # Skip time-consuming tests for PR builds (e.g. no-ASM build)
+  type: boolean
+  default: false
+- name: additionalArgs # Additional arguments to pass to the build script
+  type: string
+  default: ''
+- name: identifier # Additional identifier for job name
+  type: string
+  default: ''
+
+jobs:
+- job: macOS_${{ parameters.arch }}_${{parameters.config}}_${{parameters.identifier}}
+  displayName: macOS ${{ parameters.arch }} ${{parameters.config}} ${{ parameters.identifier }}
+
+  pool:
+    type: linux
+    isCustom: true
+    name: Azure Pipelines
+    vmImage: 'macOS-14'
+
+  variables:
+    ob_outputDirectory: $(Build.SourcesDirectory)/bin
+    ob_sdl_binskim_break: ${{ eq(parameters.config, 'Release') }} # Only break on binskim failures for Release binaries https://aka.ms/obpipelines/sdl
+    ${{ if eq(variables['system.debug'], true) }}:
+      verbose_build_flag: '--verbose'
+    ${{ else }}:
+      verbose_build_flag: ''
+
+  steps:
+    - task: PythonScript@0
+      displayName: 'Run build script'
+      inputs:
+        scriptSource: 'filePath'
+        scriptPath: scripts/build.py
+        arguments: 'cmake bin --arch ${{ parameters.arch }} --config ${{ parameters.config }}  ${{ parameters.additionalArgs }} $(verbose_build_flag)'
+        workingDirectory: $(Build.SourcesDirectory)
+
+    # Overwrite default artifact publishing with our copy (enables publishing binaries for failed runs)
+    - script: |
+          cp .artifactignore "$(ob_outputDirectory)/.artifactignore"
+      displayName: 'Overwrite .artifactignore'
+
+    - ${{ if ne(parameters.skipTests, true) }}:
+        - task: PythonScript@0
+          displayName: 'Run unit tests'
+          inputs:
+            scriptSource: 'filePath'
+            scriptPath: scripts/test.py
+            arguments: 'bin noperftests'
+            workingDirectory: $(Build.SourcesDirectory)
+
+    - task: PublishPipelineArtifact@1
+      displayName: 'Publish build output'
+      condition: always()
+      inputs:
+        targetPath: '$(ob_outputDirectory)'
+        artifact: 'drop_build_macOS_macOS_${{ parameters.arch }}_${{parameters.config}}_${{ parameters.identifier }}'
+        publishLocation: 'pipeline'

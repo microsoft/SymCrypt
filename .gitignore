@@ -84,3 +84,6 @@ Makefile
 
 # Local Guardian configuration
 .gdn
+
+# macOS folder attributes
+.DS_Store

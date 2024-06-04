@@ -1,4 +1,4 @@
-# Common build steps for all SymCrypt modules for unix-like systems
+# Common build steps for all SymCrypt Linux modules
 # Set the following variables before including this file:
 #
 # TARGET_NAME - name of the target being built. This should be the same value given to add_library
@@ -29,8 +29,8 @@ endif()
 
 target_link_options(${TARGET_NAME} PRIVATE
   -Wl,--whole-archive
-  $<TARGET_FILE:symcrypt_module_${SYMCRYPT_TARGET_ENV}_common>
-  $<TARGET_FILE:symcrypt_${SYMCRYPT_TARGET_ENV}usermode>
+  $<TARGET_FILE:symcrypt_module_linux_common>
+  $<TARGET_FILE:symcrypt_posixusermode>
   $<TARGET_FILE:symcrypt_common>
   -Wl,--no-whole-archive
   -Wl,-Bsymbolic
@@ -45,9 +45,13 @@ target_link_options(${TARGET_NAME} PRIVATE
   -nostartfiles
 )
 
-add_dependencies(${TARGET_NAME} symcrypt_${SYMCRYPT_TARGET_ENV}usermode symcrypt_common symcrypt_module_${SYMCRYPT_TARGET_ENV}_common)
+add_dependencies(${TARGET_NAME} symcrypt_posixusermode symcrypt_common symcrypt_module_linux_common)
 
-if (CMAKE_C_COMPILER_ID MATCHES "Clang")
+if(SYMCRYPT_TARGET_ARCH MATCHES "AMD64" AND
+    CMAKE_C_COMPILER_ID MATCHES "Clang" AND
+    NOT CMAKE_BUILD_TYPE MATCHES "Debug|Sanitize")
+    # Spectre/Meltdown mitigations - these cause segfaults on AMD64 debug due to a Clang bug
+    # https://github.com/llvm/llvm-project/issues/93898
     add_compile_options(-mllvm -x86-speculative-load-hardening)
 endif()
 

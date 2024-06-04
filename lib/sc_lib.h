@@ -329,7 +329,7 @@ SymCryptCheckLibraryInitialized(void)
     #define ROR32( x, n ) _rotr( (x), (n) )
     #define ROL64( x, n ) _rotl64( (x), (n) )
     #define ROR64( x, n ) _rotr64( (x), (n) )
-#elif SYMCRYPT_APPLE_CC || SYMCRYPT_GNUC
+#elif SYMCRYPT_GNUC
     #define ROL32( x, n ) ((UINT32)( ( ((x) << (n)) | ((x) >> (32-(n))) ) ))
     #define ROR32( x, n ) ((UINT32)( ( ((x) >> (n)) | ((x) << (32-(n))) ) ))
     #define ROL64( x, n ) ((UINT64)( ( ((x) << (n)) | ((x) >> (64-(n))) ) ))
@@ -1900,7 +1900,7 @@ extern const BYTE SymCryptSha512KATAnswer[64];
 
 #if SYMCRYPT_MS_VC
 #define SYMCRYPT_MUL32x32TO64( _a, _b )         UInt32x32To64( (_a), (_b) )
-#elif SYMCRYPT_GNUC || SYMCRYPT_APPLE_CC
+#elif SYMCRYPT_GNUC
 #define SYMCRYPT_MUL32x32TO64( _a, _b )         ( (UINT64)(_a)*(UINT64)(_b) )
 #else
     #error Unknown compiler
@@ -4375,7 +4375,7 @@ SymCryptInlineInterlockedAdd64( volatile LONG64* destination, LONG64 value )
 #define SYMCRYPT_ATOMIC_STOREPTR_RELEASE(_dest, _val)   SYMCRYPT_FORCE_WRITE32(_dest, ((UINT32)(_val)))
 #endif
 
-#elif SYMCRYPT_GNUC || SYMCRYPT_APPLE_CC
+#elif SYMCRYPT_GNUC
 #define SYMCRYPT_ATOMIC_LOAD64_RELAXED(_dest)           __atomic_load_n( (volatile uint64_t *)(_dest), __ATOMIC_RELAXED )
 #define SYMCRYPT_ATOMIC_OR32_PRE_RELAXED(_dest, _val)   __atomic_fetch_or( (volatile uint32_t *)(_dest), (uint32_t)(_val), __ATOMIC_RELAXED )
 #define SYMCRYPT_ATOMIC_ADD32_PRE_RELAXED(_dest, _val)  __atomic_fetch_add( (volatile uint32_t *)(_dest), (uint32_t)(_val), __ATOMIC_RELAXED )
@@ -4431,7 +4431,7 @@ SymCryptAtomicCas128Relaxed(
         (LONG64 *) expectedValue );
 }
 
-#elif SYMCRYPT_GNUC || SYMCRYPT_APPLE_CC
+#elif SYMCRYPT_GNUC
 
 FORCEINLINE
 BOOLEAN

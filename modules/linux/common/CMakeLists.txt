@@ -4,7 +4,7 @@ set(SOURCES
 
 include_directories(${SYMCRYPT_SOURCE_DIR}/inc)
 
-add_library(symcrypt_module_${SYMCRYPT_TARGET_ENV}_common STATIC ${SOURCES})
+add_library(symcrypt_module_linux_common STATIC ${SOURCES})
 
 set(jitter_cflags "${CMAKE_C_FLAGS} -fwrapv -fvisibility=hidden -DCONFIG_CRYPTO_CPU_JITTERENTROPY_SECURE_MEMORY")
 set(jitter_ldflags "")
