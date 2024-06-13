@@ -821,8 +821,7 @@ algImpCleanPerfFunction<ImpXxx,AlgAes, ModeGcm>( PBYTE buf1, PBYTE buf2, PBYTE b
 }
 
 // AuthEncImp<..., AlgAes, ModeGcm> contains a corresponding AuthEncImpState with a SYMCRYPT_GCM_STATE.
-// It must be aligned on a 16-byte boundary, so we use SymCryptCallbackAlloc which aligns to
-// SYMCRYPT_ASYM_ALIGN_VALUE.
+// It must be aligned on a SYMCRYPT_ALIGN_VALUE boundary.
 template<>
 PVOID
 AuthEncImp<ImpXxx, AlgAes, ModeGcm>::operator new( size_t size )

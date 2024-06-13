@@ -21,17 +21,38 @@
 #endif
 
 //==============================================================================================
-//  COMPILER DETECTION
+//  PLATFORM/COMPILER DETECTION
 //==============================================================================================
 
-#define SYMCRYPT_MS_VC      0
-#define SYMCRYPT_APPLE_CC   0
-#define SYMCRYPT_GNUC       0
+#define SYMCRYPT_PLATFORM_WINDOWS 0
+#define SYMCRYPT_PLATFORM_APPLE   0 // MacOS and other Apple platforms
+#define SYMCRYPT_PLATFORM_UNIX    0 // Linux and other Unix-likes, besides MacOS. Must support POSIX.
+
+#if defined(_WIN32)
+    #undef  SYMCRYPT_PLATFORM_WINDOWS
+    #define SYMCRYPT_PLATFORM_WINDOWS 1
+#elif defined(__APPLE__)
+    #undef  SYMCRYPT_PLATFORM_APPLE
+    #define SYMCRYPT_PLATFORM_APPLE 1
+#elif (defined(linux) || defined(__unix__))
+    #undef  SYMCRYPT_PLATFORM_UNIX
+    #define SYMCRYPT_PLATFORM_UNIX 1
+#endif
+
+#define SYMCRYPT_MS_VC       0 // Microsoft compiler (cl.exe - Visual Studio/MSBuild)
+#define SYMCRYPT_GNUC        0 // GCC and compatible compilers (including Clang)
 
 #if defined(_MSC_VER)
+    #undef  SYMCRYPT_MS_VC
+    #define SYMCRYPT_MS_VC  1
+#elif defined(__GNUC__)
+    #undef  SYMCRYPT_GNUC
+    #define SYMCRYPT_GNUC 1
+#else
+    #error Unsupported compiler
+#endif
 
-#undef  SYMCRYPT_MS_VC
-#define SYMCRYPT_MS_VC  1
+#if SYMCRYPT_MS_VC
 
 // This should go somewhere else. Same in the other #if branches.
 #define SYMCRYPT_ANYSIZE_ARRAY               1
@@ -41,29 +62,8 @@
 
 #define SYMCRYPT_UNALIGNED
 
-#elif defined(__APPLE_CC__)
+#elif SYMCRYPT_GNUC
 
-#undef  SYMCRYPT_APPLE_CC
-#define SYMCRYPT_APPLE_CC  1
-
-// Suppress the SAL annotations for the APPLE compiler
-#include "symcrypt_no_sal.h"
-
-// Ignore the multi-character character constant warnings
-#pragma GCC diagnostic ignored "-Wmultichar"
-
-#define SYMCRYPT_IGNORE_PLATFORM
-
-#define C_ASSERT(e)                 typedef char __C_ASSERT__[(e)?1:-1]
-#define FORCEINLINE                 static inline //__inline__ __attribute__ ((always_inline))
-#define SYMCRYPT_NOINLINE
-#define SYMCRYPT_UNALIGNED
-#define SYMCRYPT_CDECL
-#define SYMCRYPT_FASTCALL
-
-#elif __GNUC__
-#undef  SYMCRYPT_GNUC
-#define SYMCRYPT_GNUC 1
 // Suppress the SAL annotations
 #include "symcrypt_no_sal.h"
 
@@ -77,10 +77,6 @@
 #define SYMCRYPT_UNALIGNED
 #define SYMCRYPT_CDECL
 #define SYMCRYPT_FASTCALL           __attribute__((fastcall))
-
-#else
-
-#error Unknown compiler
 
 #endif
 
@@ -158,7 +154,7 @@
 #undef  SYMCRYPT_CPU_UNKNOWN
 #define SYMCRYPT_CPU_UNKNOWN    1
 #define SYMCRYPT_CALL
-#define SYMCRYPT_ALIGN_VALUE    4
+#define SYMCRYPT_ALIGN_VALUE    16
 
 #ifndef _PREFAST_
 #pragma warning(push)
@@ -473,7 +469,7 @@ SymCryptCpuFeaturesNeverPresent(void);
         #define SYMCRYPT_INTERNAL_VOLATILE_WRITE64( _p, _v ) ( *((volatile UINT64*)(_p)) = (_v) )
     #endif
 
-#elif SYMCRYPT_APPLE_CC || SYMCRYPT_GNUC
+#elif SYMCRYPT_GNUC
 
     #if !SYMCRYPT_CPU_ARM
         #define SYMCRYPT_INTERNAL_VOLATILE_READ8( _p )    ( *((const volatile BYTE*)  (_p)) )
@@ -544,13 +540,8 @@ SymCryptCpuFeaturesNeverPresent(void);
     #define SYMCRYPT_BSWAP16( x ) __builtin_bswap16(x)
     #define SYMCRYPT_BSWAP32( x ) __builtin_bswap32(x)
     #define SYMCRYPT_BSWAP64( x ) __builtin_bswap64(x)
-#elif SYMCRYPT_APPLE_CC
-    #include <libkern/OSByteOrder.h>
-    #define SYMCRYPT_BSWAP16( x ) OSSwapInt16(x)
-    #define SYMCRYPT_BSWAP32( x ) OSSwapInt32(x)
-    #define SYMCRYPT_BSWAP64( x ) OSSwapInt64(x)
-
 #endif
+
 #if SYMCRYPT_CPU_X86 | SYMCRYPT_CPU_AMD64 | SYMCRYPT_CPU_ARM64
 
 
@@ -2043,7 +2034,6 @@ typedef const SYMCRYPT_HKDF_EXPANDED_KEY *PCSYMCRYPT_HKDF_EXPANDED_KEY;
 #define SYMCRYPT_ASYM_ALIGN  __declspec(align(SYMCRYPT_ASYM_ALIGN_VALUE))
 #define SYMCRYPT_ASYM_ALIGN_STRUCT SYMCRYPT_ASYM_ALIGN struct
 #elif SYMCRYPT_GNUC
-// FIXME:
 #define SYMCRYPT_ASYM_ALIGN __attribute__((aligned(SYMCRYPT_ASYM_ALIGN_VALUE)))
 #define SYMCRYPT_ASYM_ALIGN_STRUCT struct SYMCRYPT_ASYM_ALIGN
 #else
@@ -2915,7 +2905,10 @@ SYMCRYPT_EXTERN_C_END
 #define SYMCRYPT_ENVIRONMENT_WINDOWS_USERMODE_LATEST            SYMCRYPT_ENVIRONMENT_WINDOWS_USERMODE_WIN8_1_N_LATER
 
 
-#define SYMCRYPT_ENVIRONMENT_LINUX_USERMODE                     SYMCRYPT_ENVIRONMENT_DEFS( LinuxUsermode )
+#define SYMCRYPT_ENVIRONMENT_POSIX_USERMODE                     SYMCRYPT_ENVIRONMENT_DEFS( PosixUsermode )
+
+// For backwards compatibility with previous macro name
+#define SYMCRYPT_ENVIRONMENT_LINUX_USERMODE                     SYMCRYPT_ENVIRONMENT_POSIX_USERMODE
 
 
 #define SYMCRYPT_ENVIRONMENT_OPTEE_TA                           SYMCRYPT_ENVIRONMENT_DEFS( OpteeTa )

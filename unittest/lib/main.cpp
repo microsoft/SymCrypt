@@ -1110,34 +1110,43 @@ getCustomResource( _In_ PSTR resourceName, _In_ PSTR /* resourceType */)
 void printPlatformInformation( _In_z_ char * text )
 {
 
-    iprint( "\n%s "
 #if SYMCRYPT_CPU_X86
-        "x86"
+    PCSTR const arch = "x86";
 #elif SYMCRYPT_CPU_AMD64
-        "amd64"
+    PCSTR const arch = "amd64";
 #elif SYMCRYPT_CPU_ARM64
-        "arm64"
+    PCSTR const arch = "arm64";
 #elif SYMCRYPT_CPU_ARM
-        "arm"
+    PCSTR const arch = "arm";
 #else
-        "generic"
+    PCSTR const arch = "generic";
 #endif
 
 #if SYMCRYPT_DEBUG
-        "Chk"
+    PCSTR const flavor = "Debug";
 #else
-        "Fre"
+    PCSTR const flavor = "Release";
 #endif
 
-#if defined(__APPLE__)
-        ", iOS\n", text);
-#elif defined(__linux__)
-        ", Linux\n", text);
-#elif defined(_WIN32)
-        ", Windows %04x\n", text, g_osVersion );
+    std::ostringstream osName;
+#if SYMCRYPT_PLATFORM_WINDOWS
+    osName << "Windows ";
+    osName << std::hex << g_osVersion;
+#elif (SYMCRYPT_PLATFORM_APPLE || SYMCRYPT_PLATFORM_UNIX)
+    utsname nameStruct;
+    if( uname(&nameStruct) >= 0 )
+    {
+        osName << nameStruct.sysname << " " << nameStruct.release;
+    }
+    else
+    {
+        osName << "Unknown platform (uname failed!)";
+    }
 #else
-        ", Unknown platform\n", text);
+    osName << "Unknown platform";
 #endif
+
+    iprint( "\n%s %s %s %s\n", text, arch, flavor, osName.str().c_str() );
 
 #if SYMCRYPT_CPU_X86 | SYMCRYPT_CPU_AMD64
     int CPUInfo[4];
@@ -1367,7 +1376,7 @@ initTestInfrastructure( int argc, _In_reads_( argc ) char * argv[] )
     getPlatformInformation();
 #endif
 
-    printPlatformInformation( "System information" );
+    printPlatformInformation( "System information:" );
     printSymCryptCpuInfo( "Hardware CPU features", g_SymCryptCpuFeaturesNotPresent );
 
     processOptions( argc, argv );

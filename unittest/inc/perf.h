@@ -74,7 +74,7 @@
     #define PERF_UNIT   "cycles"
 
 #elif SYMCRYPT_GNUC
-    // Linux, not x86 or AMD64
+    // Linux or macOS, not x86 or AMD64
     FORCEINLINE
     ULONGLONG
     GET_PERF_CLOCK()

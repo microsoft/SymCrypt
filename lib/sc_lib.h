@@ -329,7 +329,7 @@ SymCryptCheckLibraryInitialized(void)
     #define ROR32( x, n ) _rotr( (x), (n) )
     #define ROL64( x, n ) _rotl64( (x), (n) )
     #define ROR64( x, n ) _rotr64( (x), (n) )
-#elif SYMCRYPT_APPLE_CC || SYMCRYPT_GNUC
+#elif SYMCRYPT_GNUC
     #define ROL32( x, n ) ((UINT32)( ( ((x) << (n)) | ((x) >> (32-(n))) ) ))
     #define ROR32( x, n ) ((UINT32)( ( ((x) >> (n)) | ((x) << (32-(n))) ) ))
     #define ROL64( x, n ) ((UINT64)( ( ((x) << (n)) | ((x) >> (64-(n))) ) ))
@@ -4374,14 +4374,6 @@ SymCryptInlineInterlockedAdd64( volatile LONG64* destination, LONG64 value )
 #define SYMCRYPT_ATOMIC_LOADPTR_ACQUIRE(_dest)          ((PVOID)SYMCRYPT_FORCE_READ32(_dest))
 #define SYMCRYPT_ATOMIC_STOREPTR_RELEASE(_dest, _val)   SYMCRYPT_FORCE_WRITE32(_dest, ((UINT32)(_val)))
 #endif
-
-#elif SYMCRYPT_APPLE_CC
-#include <libkern/OSAtomic.h>   // atomic operations
-#define SYMCRYPT_ATOMIC_LOAD64_RELAXED(_dest)           OSAtomicOr64Orig( 0, (volatile uint64_t *)(_dest) )
-#define SYMCRYPT_ATOMIC_OR32_PRE_RELAXED(_dest, _val)   OSAtomicOr32Orig( (uint32_t)(_val), (volatile uint32_t *)(_dest) )
-#define SYMCRYPT_ATOMIC_ADD64_POST_RELAXED(_dest, _val) OSAtomicAdd64( (uint64_t)(_val), (volatile uint64_t *)(_dest) )
-
-#define SYMCRYPT_ATOMIC_ADD32_POST_SEQ_CST(_dest, _val) OSAtomicAdd32Barrier( (uint64_t)(_val), (volatile uint64_t *)(_dest) )
 
 #elif SYMCRYPT_GNUC
 #define SYMCRYPT_ATOMIC_LOAD64_RELAXED(_dest)           __atomic_load_n( (volatile uint64_t *)(_dest), __ATOMIC_RELAXED )

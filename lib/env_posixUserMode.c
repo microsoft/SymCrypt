@@ -1,6 +1,6 @@
 //
-// env_linuxUserMode.c
-// Platform-specific code for linux user mode.
+// env_posixUserMode.c
+// Platform-specific code for POSIX-compatible systems (Linux, macOS, other Unix-likes)
 //
 // Copyright (c) Microsoft Corporation. Licensed under the MIT license.
 //
@@ -8,14 +8,14 @@
 #include "precomp.h"
 
 
-SYMCRYPT_CPU_FEATURES SYMCRYPT_CALL SymCryptCpuFeaturesNeverPresentEnvLinuxUsermode(void)
+SYMCRYPT_CPU_FEATURES SYMCRYPT_CALL SymCryptCpuFeaturesNeverPresentEnvPosixUsermode(void)
 {
     return 0;
 }
 
 VOID
 SYMCRYPT_CALL
-SymCryptInitEnvLinuxUsermode( UINT32 version )
+SymCryptInitEnvPosixUsermode( UINT32 version )
 {
     if( g_SymCryptFlags & SYMCRYPT_FLAG_LIB_INITIALIZED )
     {
@@ -61,7 +61,7 @@ void __stack_chk_fail_local(void)
 _Analysis_noreturn_
 VOID
 SYMCRYPT_CALL
-SymCryptFatalEnvLinuxUsermode( ULONG fatalCode )
+SymCryptFatalEnvPosixUsermode( ULONG fatalCode )
 {
     UINT32 fatalCodeVar;
 
@@ -89,7 +89,7 @@ SymCryptFatalEnvLinuxUsermode( ULONG fatalCode )
 
 SYMCRYPT_ERROR
 SYMCRYPT_CALL
-SymCryptSaveXmmEnvLinuxUsermode( _Out_ PSYMCRYPT_EXTENDED_SAVE_DATA pSaveData )
+SymCryptSaveXmmEnvPosixUsermode( _Out_ PSYMCRYPT_EXTENDED_SAVE_DATA pSaveData )
 {
     UNREFERENCED_PARAMETER( pSaveData );
 
@@ -98,14 +98,14 @@ SymCryptSaveXmmEnvLinuxUsermode( _Out_ PSYMCRYPT_EXTENDED_SAVE_DATA pSaveData )
 
 VOID
 SYMCRYPT_CALL
-SymCryptRestoreXmmEnvLinuxUsermode( _Inout_ PSYMCRYPT_EXTENDED_SAVE_DATA pSaveData )
+SymCryptRestoreXmmEnvPosixUsermode( _Inout_ PSYMCRYPT_EXTENDED_SAVE_DATA pSaveData )
 {
     UNREFERENCED_PARAMETER( pSaveData );
 }
 
 SYMCRYPT_ERROR
 SYMCRYPT_CALL
-SymCryptSaveYmmEnvLinuxUsermode( _Out_ PSYMCRYPT_EXTENDED_SAVE_DATA pSaveData )
+SymCryptSaveYmmEnvPosixUsermode( _Out_ PSYMCRYPT_EXTENDED_SAVE_DATA pSaveData )
 {
     UNREFERENCED_PARAMETER( pSaveData );
 
@@ -114,14 +114,14 @@ SymCryptSaveYmmEnvLinuxUsermode( _Out_ PSYMCRYPT_EXTENDED_SAVE_DATA pSaveData )
 
 VOID
 SYMCRYPT_CALL
-SymCryptRestoreYmmEnvLinuxUsermode( _Inout_ PSYMCRYPT_EXTENDED_SAVE_DATA pSaveData )
+SymCryptRestoreYmmEnvPosixUsermode( _Inout_ PSYMCRYPT_EXTENDED_SAVE_DATA pSaveData )
 {
     UNREFERENCED_PARAMETER( pSaveData );
 }
 
 VOID
 SYMCRYPT_CALL
-SymCryptCpuidExFuncEnvLinuxUsermode( int cpuInfo[4], int function_id, int subfunction_id )
+SymCryptCpuidExFuncEnvPosixUsermode( int cpuInfo[4], int function_id, int subfunction_id )
 {
     __cpuidex( cpuInfo, function_id, subfunction_id );
 }
@@ -130,7 +130,7 @@ SymCryptCpuidExFuncEnvLinuxUsermode( int cpuInfo[4], int function_id, int subfun
 
 VOID
 SYMCRYPT_CALL
-SymCryptTestInjectErrorEnvLinuxUsermode( PBYTE pbBuf, SIZE_T cbBuf )
+SymCryptTestInjectErrorEnvPosixUsermode( PBYTE pbBuf, SIZE_T cbBuf )
 {
     //
     // This feature is only used during testing. In production it is always

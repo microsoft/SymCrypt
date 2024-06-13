@@ -1,6 +1,6 @@
 add_subdirectory(common) # Common functionality for Linux modules
 
-if(SYMCRYPT_TARGET_ENV MATCHES "LinuxUserMode")
+if(SYMCRYPT_TARGET_ENV MATCHES "PosixUserMode")
 
     add_subdirectory(generic) # Generic Linux module
     

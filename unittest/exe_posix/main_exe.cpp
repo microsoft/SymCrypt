@@ -12,6 +12,12 @@ SYMCRYPT_ENVIRONMENT_DEFS(Unittest);
 #include <dlfcn.h>
 #include <sys/random.h>
 
+#if SYMCRYPT_PLATFORM_APPLE
+    #define DLOPEN_FLAGS (RTLD_NOW)
+#else
+    #define DLOPEN_FLAGS (RTLD_NOW | RTLD_DEEPBIND)
+#endif
+
 PVOID loadDynamicModuleFromPath(PCSTR dynamicModulePath)
 {
     //
@@ -24,13 +30,16 @@ PVOID loadDynamicModuleFromPath(PCSTR dynamicModulePath)
     // dlmopen(LM_ID_NEWLM, dynamicModulePath, RTLD_NOW | RTLD_DEEPBIND);
 
     //
+    // See macro defined above for flags:
     // RTLD_NOW means that all unresolved symbols in the library are resolved eagerly before dlopen
     // returns
     // RTLD_DEEPBIND means that the symbols within the loaded library are used in preference to
     // those in the global scope (which ensures that the library will call its own copies of
-    // internal SymCrypt functions)
+    // internal SymCrypt functions). Note that this is not supported on macOS.
     //
-    PVOID hModule = dlopen(dynamicModulePath, RTLD_NOW | RTLD_DEEPBIND);
+
+    PVOID hModule = dlopen(dynamicModulePath, DLOPEN_FLAGS);
+
     if (!hModule) {
         iprint("\nFailed to load dynamic module with: %s\n", dlerror());
     }
@@ -45,10 +54,12 @@ PVOID getDynamicSymbolPointerFromString(PVOID hModule, PCSTR pSymbolName, SCTEST
 
 // Define oe_sgx_get_additional_host_entropy so we can test the oe module with our symcryptunittest
 // executable
+#if !SYMCRYPT_PLATFORM_APPLE
 extern "C"
 {
     int oe_sgx_get_additional_host_entropy(uint8_t* data, size_t size)
     {
+
         SIZE_T result = getrandom( data, size, 0 );
         if (result != size )
         {
@@ -57,6 +68,7 @@ extern "C"
         return 1; // 1 indicates success
     }
 }
+#endif
 
 #if SYMCRYPT_CPU_AMD64
 /////////////////////////////////////////////////////////////

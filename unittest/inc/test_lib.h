@@ -24,26 +24,6 @@
     #include <string>
     #include <winternl.h>
 
-#elif defined(__APPLE_CC__)
-
-    #include <stdio.h>
-    #include <stdlib.h>
-    #include <math.h>
-    #include <unistd.h>
-
-    #include <chrono>
-    #include <vector>
-    #include <string>
-    #include <memory>
-    #include <algorithm>
-    #include <map>
-    #include <sstream>
-    #include <set>
-    #include <type_traits>
-
-    #define ALIGNED_ALLOC( alignment, size ) aligned_alloc( alignment, size )
-    #define ALIGNED_FREE( ptr ) free( ptr )
-
 #elif defined(__GNUC__)
 
     #include <stdio.h>
@@ -52,6 +32,7 @@
     #include <stdlib.h>
     #include <math.h>
     #include <unistd.h>
+    #include <sys/utsname.h>
 
     #include <chrono>
     #include <vector>
@@ -135,7 +116,8 @@
     #define InterlockedIncrement64(ptr) __sync_fetch_and_add(ptr, 1)
     #define InterlockedDecrement64(ptr) __sync_fetch_and_sub(ptr, 1)
 
-    #define ALIGNED_ALLOC( alignment, size ) aligned_alloc( alignment, size )
+    // aligned_alloc requires size to be integer multiple of alignment
+    #define ALIGNED_ALLOC( alignment, size ) aligned_alloc( alignment, (size + (alignment - 1)) & ~(alignment - 1) )
     #define ALIGNED_FREE( ptr ) free( ptr )
 
     #include <unistd.h>
@@ -188,18 +170,11 @@
 
 #endif
 
-
 #include "symcrypt.h"
 #include "symcrypt_low_level.h"
 extern "C" {
 #include "../../lib/sc_lib.h"
 }
-
-#if !SYMCRYPT_APPLE_CC
-    #include "ioctlDefs.h"
-#else
-    VOID GenRandom( PBYTE  pbBuf, SIZE_T cbBuf );
-#endif
 
 #if SYMCRYPT_CPU_X86 | SYMCRYPT_CPU_AMD64
     #include <wmmintrin.h>
@@ -211,75 +186,6 @@ extern "C" {
     #endif
 #endif
 
-/*
-// Exclude rarely-used stuff from Windows headers
-#if !defined(WIN32_LEAN_AND_MEAN)
-#define WIN32_LEAN_AND_MEAN
-#endif
-
-#define PERF_MEASURE_WIPE   0
-
-//#include <nt.h>
-//#include <ntrtl.h>
-//#include <nturtl.h>
-#include <ntstatus.h>
-
-// Ensure that windows.h doesn't re-define the status_* symbols
-#define WIN32_NO_STATUS
-#include <windows.h>
-
-#include <wincrypt.h>
-#include <bcrypt.h>
-
-#include <stdio.h>
-#include <stdlib.h>
-#include <math.h>
-
-#include <powrprof.h>
-
-#include <vector>
-#include <string>
-#include <memory>
-#include <algorithm>
-#include <map>
-#include <sstream>
-#include <set>
-
-//
-// Header files for RSA32.lib
-//
-//#include <modes.h>
-#include <aes.h>
-#include "aesfast.h"
-#include "sha.h"
-#include "sha2.h"
-#include "md5.h"
-#include "md4.h"
-#include "md2.h"
-#include "hmac.h"
-#include "modes.h"
-#include "aesfast.h"
-#include "des.h"
-#include "tripldes.h"
-#include "rc2.h"
-#include "hmac.h"
-#include "aes_ccm.h"
-extern "C" {
-    #include "aes_gcm.h"
-}
-#include "rc4.h"
-
-//
-// Header files for symcrypt.lib
-//
-#include "symcrypt.h"
-
-
-#if SYMCRYPT_CPU_X86 | SYMCRYPT_CPU_AMD64
-#include <wmmintrin.h>
-#include <immintrin.h>
-#endif
-*/
 //
 // Disable certain strange warnings
 //
@@ -340,35 +246,6 @@ extern "C" {
         if( IsDebuggerPresent() ) { DebugBreak(); } \
     } while (false)
 
-#elif SYMCRYPT_APPLE_CC
-
-    #define STRICMP                     strcasecmp
-    #define STRNICMP                    strncasecmp
-
-    #define SNPRINTF_S(a,b,c,d,...)     std::snprintf((a),(b),(d),__VA_ARGS__)
-    #define VSNPRINTF_S(a,b,c,d,...)    std::vsnprintf((a),(b),(d),__VA_ARGS__)
-
-    NTSTATUS IosGenRandom( PBYTE pbBuf, UINT32 cbBuf );
-
-    #define GENRANDOM(pbBuf, cbBuf)     IosGenRandom( (PBYTE) pbBuf, cbBuf )
-
-    #error "Oh no, need ALLOCATE_FAST_INPROC_MUTEX, FREE_FAST_INPROC_MUTEX, ACQUIRE_FAST_INPROC_MUTEX, RELEASE_FAST_INPROC_MUTEX implementations"
-
-    #define SLEEP                       usleep
-
-    #if defined(__LP64__)
-        #define SIZET_BITS_1            63
-    #else
-        #define SIZET_BITS_1            31
-    #endif
-
-    #define BitScanReverseSizeT(pInd, mask)  \
-            ({*(pInd) = SIZET_BITS_1 - __builtin_clzl( (mask) ); \
-            ( (mask)==0 )? 0 : 1; })
-
-    #define SECUREZEROMEMORY(dest, sz)  memset_s( (dest), (sz), 0, (sz) )
-
-    #define TRAP_DEBUGGER()
 #elif SYMCRYPT_GNUC
 
     #define STRICMP                     strcasecmp
@@ -376,13 +253,18 @@ extern "C" {
 
     #define SNPRINTF_S(a,b,c,d,...)     std::snprintf((a),(b),(d),__VA_ARGS__)
     #define VSNPRINTF_S(a,b,c,d,...)    std::vsnprintf((a),(b),(d),__VA_ARGS__)
-#ifdef __linux__
-    #include <sys/random.h>
-    // write as a function wrapper to handle unexpected return values as errors
-    FORCEINLINE
-    ssize_t GENRANDOM(void * pbBuf, size_t cbBuf) {
-        return (getrandom( pbBuf, cbBuf, 0 ) == (ssize_t) cbBuf) ? 0 : -1;
-    }
+
+    #if SYMCRYPT_PLATFORM_APPLE
+        #include <Security/Security.h>
+        #define GENRANDOM(pbBuf, cbBuf)     SecRandomCopyBytes( kSecRandomDefault, cbBuf, (PBYTE) pbBuf )
+    #else
+        #include <sys/random.h>
+        // write as a function wrapper to handle unexpected return values as errors
+        FORCEINLINE
+        ssize_t GENRANDOM(void * pbBuf, size_t cbBuf) {
+            return (getrandom( pbBuf, cbBuf, 0 ) == (ssize_t) cbBuf) ? 0 : -1;
+        }
+    #endif
 
     #include <pthread.h>
     FORCEINLINE
@@ -412,9 +294,6 @@ extern "C" {
 
     #define ACQUIRE_FAST_INPROC_MUTEX(pMutex)   pthread_mutex_lock((pthread_mutex_t *)pMutex)
     #define RELEASE_FAST_INPROC_MUTEX(pMutex)   pthread_mutex_unlock((pthread_mutex_t *)pMutex)
-#else
-    #error "Oh no, need a GENRANDOM() implementation"
-#endif
 
     #define SLEEP                       usleep
 

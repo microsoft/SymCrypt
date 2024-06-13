@@ -281,7 +281,7 @@ if(WIN32 AND SYMCRYPT_USE_ASM)
             arm64/wipe-armasm64.asm
             PROPERTIES LANGUAGE ASM_MARMASM)
     endif()
-elseif(SYMCRYPT_USE_ASM) # Linux
+elseif(NOT WIN32 AND SYMCRYPT_USE_ASM)
     if(SYMCRYPT_TARGET_ARCH MATCHES "AMD64")
         process_symcryptasm(amd64/aesasm.symcryptasm gas amd64 systemv)
         process_symcryptasm(amd64/fdef_asm.symcryptasm gas amd64 systemv)
@@ -369,26 +369,6 @@ if(WIN32)
     add_library(symcrypt_usermodewin8_1 STATIC env_windowsUserModeWin8_1.c)
     set_target_properties(symcrypt_usermodewin8_1 PROPERTIES PREFIX "")
     target_link_libraries(symcrypt_usermodewin8_1 symcrypt_common)
-
-    # add_library(symcrypt_kernelmodewin7 STATIC env_windowsKernelModeWin7.c)
-    # set_target_properties(symcrypt_kernelmodewin7 PROPERTIES PREFIX "")
-    # target_link_libraries(symcrypt_kernelmodewin7 symcrypt_common)
-
-    # add_library(symcrypt_kernelmodewin8_1 STATIC env_windowsKernelModeWin8_1.c)
-    # set_target_properties(symcrypt_kernelmodewin8_1 PROPERTIES PREFIX "")
-    # target_link_libraries(symcrypt_kernelmodewin8_1 symcrypt_common)
-
-    # add_library(symcrypt_windowsbootlib STATIC env_windowsBootLib.c)
-    # set_target_properties(symcrypt_windowsbootlib PROPERTIES PREFIX "")
-    # target_link_libraries(symcrypt_windowsbootlib symcrypt_common)
-
-    add_library(symcrypt_windowskerneldebugger STATIC env_windowsKernelDebugger.c)
-    set_target_properties(symcrypt_windowskerneldebugger PROPERTIES PREFIX "")
-    target_link_libraries(symcrypt_windowskerneldebugger symcrypt_common)
-
-    add_library(symcrypt_windows10sgx STATIC env_win10Sgx.c)
-    set_target_properties(symcrypt_windows10sgx PROPERTIES PREFIX "")
-    target_link_libraries(symcrypt_windows10sgx symcrypt_common)
 endif()
 
 if(CMAKE_C_COMPILER_ID MATCHES "Clang|GNU")
@@ -408,16 +388,18 @@ if(NOT WIN32)
         endif()
     endif()
 
-    if(SYMCRYPT_TARGET_ARCH MATCHES "AMD64")
-        if (CMAKE_C_COMPILER_ID MATCHES "Clang")
-            add_compile_options(-mllvm -x86-speculative-load-hardening)
-        endif()
+    if(SYMCRYPT_TARGET_ARCH MATCHES "AMD64" AND
+        CMAKE_C_COMPILER_ID MATCHES "Clang" AND
+        NOT CMAKE_BUILD_TYPE MATCHES "Debug|Sanitize")
+        # Spectre/Meltdown mitigations - these cause segfaults on AMD64 debug due to a Clang bug
+        # https://github.com/llvm/llvm-project/issues/93898
+        add_compile_options(-mllvm -x86-speculative-load-hardening)
     endif()
 
-    if(SYMCRYPT_TARGET_ENV MATCHES "LinuxUserMode")
-        add_library(symcrypt_linuxusermode STATIC env_linuxUserMode.c)
-        set_target_properties(symcrypt_linuxusermode PROPERTIES PREFIX "")
-        target_link_libraries(symcrypt_linuxusermode symcrypt_common)
+    if(SYMCRYPT_TARGET_ENV MATCHES "PosixUserMode")
+        add_library(symcrypt_posixusermode STATIC env_posixUserMode.c)
+        set_target_properties(symcrypt_posixusermode PROPERTIES PREFIX "")
+        target_link_libraries(symcrypt_posixusermode symcrypt_common)
     elseif(SYMCRYPT_TARGET_ENV MATCHES "OPTEE")
         # Remove files from symcrypt_common that are not supported in optee env.
         # aes-asm.c - use SymCryptAesDecryptAsm which is not defined for ARM64

@@ -2,11 +2,11 @@
 
 # Choose which environment to use based on the host platform
 # We don't support cross-compiling from one platform to another (e.g. compiling Windows binaries on Linux)
-if(CMAKE_SYSTEM_NAME MATCHES "Linux")
+if(CMAKE_SYSTEM_NAME MATCHES "Linux|Darwin")
     if(SYMCRYPT_OPTEE MATCHES "ON")
         set(SYMCRYPT_TARGET_ENV "OPTEE")
     else()
-        set(SYMCRYPT_TARGET_ENV "LinuxUserMode")
+        set(SYMCRYPT_TARGET_ENV "PosixUserMode")
     endif()
 elseif(CMAKE_SYSTEM_NAME MATCHES "Windows")
     set(SYMCRYPT_TARGET_ENV "WindowsUserMode")
@@ -20,7 +20,7 @@ if(NOT DEFINED SYMCRYPT_TARGET_ARCH)
         set(SYMCRYPT_TARGET_ARCH "AMD64")
     elseif(CMAKE_SYSTEM_PROCESSOR MATCHES "[Xx]86|i[3456]86")
         set(SYMCRYPT_TARGET_ARCH "X86")
-    elseif(CMAKE_SYSTEM_PROCESSOR MATCHES "ARM64|aarch64")
+    elseif(CMAKE_SYSTEM_PROCESSOR MATCHES "ARM64|aarch64|arm64")
         set(SYMCRYPT_TARGET_ARCH "ARM64")
     elseif(CMAKE_SYSTEM_PROCESSOR MATCHES "ARM|ARM32|aarch32|armv8l")
         set(SYMCRYPT_TARGET_ARCH "ARM")
@@ -30,7 +30,33 @@ if(NOT DEFINED SYMCRYPT_TARGET_ARCH)
 endif()
 
 # Platform/architecture specific compiler options
-if(CMAKE_SYSTEM_NAME MATCHES "Linux")
+
+if(CMAKE_SYSTEM_NAME MATCHES "Darwin")
+    # CMake doesn't properly detect clang/clang++ as the compilers on macOS.
+    # It defaults to compilers that symlink to the correct compilers but the
+    # part of CMake that sets things like language standards doesn't recognize
+    # the default non-clang compilers. We can only properly set things like
+    # language standards after setting the compilers to clang/clang++. Good
+    # for clarity anyway!
+    set(CMAKE_C_COMPILER clang)
+    set(CMAKE_CXX_COMPILER clang++)
+
+    add_compile_options(-mmacosx-version-min=10.15)
+    add_link_options(-mmacosx-version-min=10.15)
+
+    # Set cross compilation flags specific to macOS
+    if(SYMCRYPT_TARGET_ARCH MATCHES "ARM64")
+        add_compile_options(--target=arm64-apple-darwin)
+        add_link_options(-arch arm64)
+    elseif(SYMCRYPT_TARGET_ARCH MATCHES "AMD64")
+        add_compile_options(--target=x86_64-apple-darwin)
+        add_link_options(-arch x86_64)
+    else()
+        message(WARNING "Unsupported target architecture for macOS; compilation may fail.")
+    endif()
+endif()
+
+if(CMAKE_SYSTEM_NAME MATCHES "Linux|Darwin")
     if(SYMCRYPT_USE_ASM)
         enable_language(ASM)
         set(CMAKE_ASM_FLAGS "-x assembler-with-cpp")
@@ -51,7 +77,7 @@ if(CMAKE_SYSTEM_NAME MATCHES "Linux")
             add_compile_options("-m32")
             add_link_options("-m32")
         endif()
-    elseif(SYMCRYPT_TARGET_ARCH MATCHES "ARM64")
+    elseif(SYMCRYPT_TARGET_ARCH MATCHES "ARM64" AND NOT CMAKE_SYSTEM_NAME MATCHES "Darwin")
         # Enable a baseline of features for the compiler to support everywhere
         # Assumes that the compiler will not emit crypto instructions as a result of normal C code
         set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -march=armv8-a+simd+crypto")
@@ -73,7 +99,7 @@ if(CMAKE_SYSTEM_NAME MATCHES "Linux")
         # GCC complains about implicit casting between ASIMD registers (i.e. uint8x16_t -> uint64x2_t) by default,
         # whereas clang and MSVC do not. Setting -flax-vector-conversions to build Arm64 intrinsics code with GCC.
         set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -flax-vector-conversions")
-    elseif(SYMCRYPT_TARGET_ARCH MATCHES "ARM")
+    elseif(SYMCRYPT_TARGET_ARCH MATCHES "ARM$")
         # Not sure if -mno-unaligned-access actually helps but here it is.
         set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -march=armv7-a+neon-vfpv4 -flax-vector-conversions -mfpu=neon -mno-unaligned-access")
         # Show undefined symbols errors at link time.
@@ -88,7 +114,6 @@ if(CMAKE_SYSTEM_NAME MATCHES "Linux")
     add_compile_options(-Wno-deprecated-declarations -Wno-deprecated)
     add_compile_options(-g)
     add_compile_options(-Wno-multichar)
-    add_compile_options($<$<COMPILE_LANGUAGE:C>:-Wstrict-prototypes>)
     if(SYMCRYPT_PIC)
         add_compile_options(-fPIC)
     endif()

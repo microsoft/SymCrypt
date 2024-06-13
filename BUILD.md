@@ -6,13 +6,13 @@ included CMake by setting `$env:PATH="C:\Program Files (x86)\Microsoft Visual St
 Python 3 is also required for translation of SymCryptAsm, and for building the SymCrypt module with integrity check.
 The integrity check additionally requires pip and pyelftools: `pip3 install -r ./scripts/requirements.txt`
 
-## Supported Configurations
+## Platform and Architecture Support
 SymCrypt has pure C implementations of all supported functionality. These "generic" implementations are designed to
 be portable to various architectures. However, they do not offer optimal performance because they do not take
 advantage of CPU-specific optimizations. To that end, we also have hand-written assembly implementations of
 performance-critical internal functions. Our CMake build scripts do not currently support ASM optimizations on all
-combinations of architectures and platforms; the Build Instructions section below lists some of the currently supported
-combinations, and we're working on adding support for more.
+combinations of architectures and platforms; the table below lists currently supported
+combinations.
 
 SymCrypt supports a variety of operating systems, CPU architectures, and runtime environments, but due to functionality
 gaps in the build systems we use, not every combination is supported by every build system. Specifically, because
@@ -21,11 +21,22 @@ libraries on Windows. Internally, we previously used Razzle as our legacy build 
 for Razzle builds is on a deprecation path and will be removed in a future release. Additionally, it has not been
 tested with the public open source version of Razzle, and is unlikely to work with it.
 
+### Supported Configurations
+
+| Operating Environment | Architecture      | Supported compilers | ASM enabled | Static lib + unit tests | Dynamic lib | 
+| --------------------- | ----------------- | ------------------- | ----------- | ----------------------- | ----------- |
+| Windows kernel mode   | AMD64, ARM64      | MSVC                | ✅          | ✅                      | ✅          |
+| Windows user mode     | AMD64, ARM64, x86 | MSVC                | ✅          | ✅                      | ✅          |
+| Linux user mode       | AMD64, ARM64      | GCC, Clang          | ✅          | ✅                      | ✅          |
+| Linux user mode       | x86               | GCC, Clang          | ❌          | ✅                      | ✅          |
+| macOS                 | AMD64, ARM64      | Apple Clang         | ❌          | ✅                      | ❌          |
+
 The ability to build SymCrypt on any particular platform or architecture, with or without ASM optimizations, does not
 imply that it has been tested for or is actively supported by Microsoft on that platform/architecture. While we make
 every effort to ensure that SymCrypt is reliable, stable and bug-free on every platform we run on, the code in this
-repository is provided *as is*, without warranty of any kind, express or implied, including but not limited to the
-warranties of merchantability, fitness for a particular purpose and noninfringement (see our [LICENSE](./LICENSE)).
+repository and the binaries we release are provided *as is*, without warranty of any kind, express or implied, including
+but not limited to the warranties of merchantability, fitness for a particular purpose and noninfringement
+(see our [LICENSE](./LICENSE)).
 
 ## Build Instructions
 For Microsoft employees building the library internally, to include msbignum and RSA32 implementation benchmarks in
@@ -81,9 +92,9 @@ bypassing the Python helper script, you can run `msbuild /p:Platform=<platform> 
 Note that Python is still required for translating SymCryptAsm. The output directory for MSBuild is always `build\bin`,
 and all compiled outputs are placed in this directory.
 
-## Building Linux targets
+## Building for Linux
 
-Requires the following packages on debian-based systems to build:
+Requires the following packages on Debian-based systems to build:
 ```
 apt update
 apt -y install --no-install-recommends \
@@ -103,6 +114,15 @@ To build and test for example for arm:
 python3 scripts/build.py cmake --arch arm --toolchain cmake-configs/Toolchain-GCC-ARM.cmake bin_arm
 qemu-arm -L /usr/arm-linux-gnueabihf/ ./bin_arm/exe/symcryptunittest -rsa -dsa -dh -ec -int -mod dynamic:bin_arm/module/generic/libsymcrypt.so
 ```
+
+## Building for macOS
+Building on macOS requires the following prerequisites:
+- XCode (for developer tools, headers, and frameworks)
+- CMake
+- Python 3 (for build scripts)
+
+As described above, the easiest way to build for macOS is to use the Python build script. As we don't currently support ASM
+optimizations on Mac, you must set the `--no-asm` flag. If you are instead building directly with CMake, you must set `-DSYMCRYPT_USE_ASM=OFF`.
 
 ## Performance comparison with OpenSSL
 `symcryptunittest.exe` can be used to compare and measure performance of algorithms provided by SymCrypt and OpenSSL.

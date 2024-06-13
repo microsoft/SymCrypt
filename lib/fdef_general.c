@@ -398,15 +398,6 @@ UINT32
 SYMCRYPT_CALL
 SymCryptFdefBitsizeOfUint32( UINT32 v )
 {
-#if SYMCRYPT_MS_VS & 0  // temporarily disabled to test the normal path
-    UINT32 index;
-    UINT32 t;
-    UINT32 res;
-
-    t = _BitScanReverse( &index, v );
-    res = (t + 1) & SYMCRYPT_MASK32_NONZERO( t );
-    return res;
-#else
     UINT32 res;
     UINT32 mask;
     UINT32 vUpper;
@@ -453,7 +444,6 @@ SymCryptFdefBitsizeOfUint32( UINT32 v )
     res += (v | vBit1) & 1;
 
     return res;
-#endif
 }
 
 UINT32

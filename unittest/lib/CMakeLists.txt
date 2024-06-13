@@ -1,7 +1,3 @@
-# Request C++17 standard to enable `if constexpr`
-set(CMAKE_CXX_STANDARD 17)
-set(CMAKE_CXX_STANDARD_REQUIRED ON)
-
 set(SOURCES
     main.cpp
     testAesCtrDrbg.cpp
@@ -113,3 +109,4 @@ endif()
 
 add_library(symcryptunittest_lib STATIC ${SOURCES})
 set_target_properties(symcryptunittest_lib PROPERTIES PREFIX "")
+target_link_libraries(symcryptunittest_lib symcrypt_common)

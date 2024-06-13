@@ -1,8 +1,11 @@
 # Branches
 This file describes the branch structure used for SymCrypt.
 
-## Branch Names
+## Public branches
 - **main**: The latest fully validated Symcrypt library.
+- **feature/<feature_id>**: Feature branches for larger-scale work in progress or undergoing validation, such as implementations of algorithms that have not had their standards finalized. APIs and ABIs in these branches may change at any time.
+
+## Internal branches
 - **publish**:	This branch gets published to the public GitHub repo as the main branch there. This branch should only be used for publishing, and not for anything else.
 - **user/<alias>/\***: Working branch names for each contributor.
 - **CONF-\***:	Branch names for temporarily confidential changes. One CONF-* branch per change.

@@ -223,3 +223,29 @@ extends:
           cc: 'gcc'
           cxx: 'g++'
           additionalArgs: '--toolchain=cmake-configs/Toolchain-GCC-ARM.cmake'
+
+    - stage: Build_macOS
+      displayName: Build macOS
+      jobs:
+      - template: .pipelines/templates/build-mac.yml@self
+        parameters:
+          arch: 'AMD64'
+          config: 'Debug'
+          additionalArgs: '--no-asm'
+      - template: .pipelines/templates/build-mac.yml@self
+        parameters:
+          arch: 'AMD64'
+          config: 'Release'
+          additionalArgs: '--no-asm'
+      - template: .pipelines/templates/build-mac.yml@self
+        parameters:
+          arch: 'ARM64'
+          config: 'Debug'
+          additionalArgs: '--no-asm'
+          skipTests: true
+      - template: .pipelines/templates/build-mac.yml@self
+        parameters:
+          arch: 'ARM64'
+          config: 'Release'
+          additionalArgs: '--no-asm'
+          skipTests: true
