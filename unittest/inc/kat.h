@@ -63,8 +63,8 @@ private:
 
     BOOL atEol();
 
-
 public:
+    PCCHAR      m_pbStart;          // Start of data
     PCCHAR      m_pbData;           // Current data location
     PCCHAR      m_pbEnd;            // End of data
     LONGLONG    m_line;             // Current line number

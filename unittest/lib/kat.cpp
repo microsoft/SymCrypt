@@ -11,18 +11,36 @@ CHAR charToLower( CHAR c )
 }
 
 
-String strip( const String & strIn )
+String strip( const String & strIn, bool stripAll = true )
+//
+// Strips whitespace from a string.
+// If stripAll is true, then all whitespace is removed, including newlines, unless the string
+// contains quotes, as whitespace must not be removed from string literals.
+// Otherwise, it only strips leading and trailing spaces and tabs.
+//
 {
     String s = strIn;
-    while( s.size() > 0 && (s[0] == ' ' || s[0] == '\t' ))
+    if(stripAll && strIn.find('"') == strIn.npos)
     {
-        s.erase( 0, 1 );
+        for(auto it = s.begin(); it != s.end(); )
+        {
+            if( *it == ' ' || *it == '\t' || *it == '\r' || *it == '\n' || *it == '\\' )
+            {
+                it = s.erase( it );
+            }
+            else
+            {
+                it++;
+            }
+        }
+    }
+    else
+    {
+        size_t start = s.find_first_not_of(" \t");
+        size_t end = s.find_last_not_of(" \t");
+        s = s.substr(start, end - start + 1);
     }
 
-    while( s.size() > 0 && (s[ s.size()-1 ] == ' ' || s[ s.size() - 1 ] == '\t' ) )
-    {
-        s.erase( s.size() - 1 );
-    }
     return s;
 }
 
@@ -31,6 +49,7 @@ String strip( const String & strIn )
 KatData::KatData( _In_ PSTR name, _In_ PCCHAR pbData, SIZE_T cbData )
 {
     m_line = 1;
+    m_pbStart = pbData;
     m_pbData = pbData;
     m_pbEnd = pbData + cbData;
     m_name = name;
@@ -101,10 +120,36 @@ KatData::skipNewlines()
 
 BOOL
 KatData::atEol()
+//
+// Returns true if the next character points to an end-of-line character ('\r' or '\n'),
+// unless the end of line is escaped by a backslash. Returns false otherwise.
+//
 {
-    return isEmpty() || next() == '\r' || next() == '\n';
-}
+    if( isEmpty() )
+    {
+        return TRUE;
+    }
 
+    UINT64 cbLookback = m_pbData - m_pbStart;
+
+    // Handle escaped newlines, both Unix style (\n) and Windows style (\r\n)
+    // For \r, check for \\\r
+    if( next() == '\r' && (cbLookback < 1 || m_pbData[-1] != '\\'))
+    {
+        return TRUE;
+    }
+    else if( next() == '\n' )
+    {
+        // For \n, check for \\\r\n or \\\n
+        if( (cbLookback < 2 || m_pbData[-1] != '\r' || m_pbData[-2] != '\\') &&
+            (cbLookback < 1 || m_pbData[-1] != '\\') )
+        {
+            return TRUE;
+        }
+    }
+
+    return FALSE;
+}
 
 VOID
 KatData::getKatItem( PKAT_ITEM pKatItem )
@@ -207,6 +252,7 @@ KatData::getKatItem( PKAT_ITEM pKatItem )
 
             advance();          // skip '='
             PCCHAR dataStart = m_pbData;
+
             while( !atEol() )
             {
                 advance();
@@ -216,7 +262,7 @@ KatData::getKatItem( PKAT_ITEM pKatItem )
             String name( nameStart, nameEnd - nameStart );
             String data( dataStart, dataEnd - dataStart );
 
-            name = strip( name );
+            name = strip( name, false );
             data = strip( data );
 
             if( !inDataSet )
