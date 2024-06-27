@@ -87,6 +87,10 @@ def get_commit_info() -> Tuple[str, str, datetime.datetime]:
             except subprocess.CalledProcessError as e:
                 print("git exited unsuccessfully with code {}".format(str(e.returncode)), file = sys.stderr)
                 exit(e.returncode)
+        # Workaround for Python < 3.11 not supporting the 'Z' suffix for UTC timestamps
+        if version_commit_timestamp.endswith("Z"):
+            version_commit_timestamp = version_commit_timestamp[:-1] + "+00:00"
+
         version_commit_timestamp = datetime.datetime.fromisoformat(version_commit_timestamp)
 
     finally:

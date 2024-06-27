@@ -888,13 +888,13 @@ GAS_ALTERNATE_ENTRY = "%s: .global %s\n"
 ARMASM64_ALTERNATE_ENTRY= "    ALTERNATE_ENTRY %s\n"
 
 
-FUNCTION_START_PATTERN  = re.compile("\s*(NESTED_)?(MUL_)?FUNCTION_START\s*\(\s*([a-zA-Z0-9_\(\)]+)\s*,\s*([0-9]+)\s*,\s*([0-9]+)\s*(,\s*[0-9\*\+\-]+)?\s*(,\s*[0-9]+)?\s*\)")
-FUNCTION_END_PATTERN    = re.compile("\s*(NESTED_)?(MUL_)?FUNCTION_END\s*\(\s*([a-zA-Z0-9_\(\)]+)\s*\)")
-GET_MEMSLOT_PATTERN     = re.compile("GET_MEMSLOT_OFFSET\s*\(\s*slot([0-9]+)\s*\)")
-ALTERNATE_ENTRY_PATTERN = re.compile("\s*ALTERNATE_ENTRY\s*\(\s*([a-zA-Z0-9_\(\)]+)\s*\)")
-MACRO_START_PATTERN     = re.compile("\s*MACRO_START\s*\(\s*([A-Z_0-9]+)\s*,([^\)]+)\)")
-MACRO_END_PATTERN       = re.compile("\s*MACRO_END\s*\(\s*\)")
-INCLUDE_PATTERN         = re.compile("\s*INCLUDE\s*\(\s*([^\s]+)\s*\)")
+FUNCTION_START_PATTERN  = re.compile(r"\s*(NESTED_)?(MUL_)?FUNCTION_START\s*\(\s*([a-zA-Z0-9_\(\)]+)\s*,\s*([0-9]+)\s*,\s*([0-9]+)\s*(,\s*[0-9\*\+\-]+)?\s*(,\s*[0-9]+)?\s*\)")
+FUNCTION_END_PATTERN    = re.compile(r"\s*(NESTED_)?(MUL_)?FUNCTION_END\s*\(\s*([a-zA-Z0-9_\(\)]+)\s*\)")
+GET_MEMSLOT_PATTERN     = re.compile(r"GET_MEMSLOT_OFFSET\s*\(\s*slot([0-9]+)\s*\)")
+ALTERNATE_ENTRY_PATTERN = re.compile(r"\s*ALTERNATE_ENTRY\s*\(\s*([a-zA-Z0-9_\(\)]+)\s*\)")
+MACRO_START_PATTERN     = re.compile(r"\s*MACRO_START\s*\(\s*([A-Z_0-9]+)\s*,([^\)]+)\)")
+MACRO_END_PATTERN       = re.compile(r"\s*MACRO_END\s*\(\s*\)")
+INCLUDE_PATTERN         = re.compile(r"\s*INCLUDE\s*\(\s*([^\s]+)\s*\)")
 
 class ProcessingStateMachine:
     """A class to hold the state when processing a file and handle files line by line"""
