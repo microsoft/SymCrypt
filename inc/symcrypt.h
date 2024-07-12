@@ -1312,7 +1312,7 @@ extern const PCSYMCRYPT_HASH SymCryptSha512Algorithm;
 // SHA3-256(M) = KECCAK[512](M || 01, 256)
 // SHA3-384(M) = KECCAK[768](M || 01, 384)
 // SHA3-512(M) = KECCAK[1024](M || 01, 512)
-// 
+//
 // For details on this API see the description above about the generic hash function API.
 //
 
@@ -1483,38 +1483,38 @@ extern const PCSYMCRYPT_HASH SymCryptSha3_512Algorithm;
 //   Extendable-Output Functions (XOFs)
 //==========================================================================
 //
-//  XOFs are similar to hash functions except that the output can be arbitrary length. 
+//  XOFs are similar to hash functions except that the output can be arbitrary length.
 //  SHAKE128 and SHAKE256 are XOFs specified in FIPS 202.
-// 
+//
 //  SHAKE128(M, d) = KECCAK[256] (M || 1111, d)
 //  SHAKE256(M, d) = KECCAK[512] (M || 1111, d)
-// 
+//
 //  SHAKEs share the same Keccak state as the other Keccak based algorithms under
 //  the name SYMCRYPT_SHAKEXxx_STATE.
-// 
-//  Both SHAKE128 and SHAKE256 have default result sizes (32- and 64-bytes resp.) 
+//
+//  Both SHAKE128 and SHAKE256 have default result sizes (32- and 64-bytes resp.)
 //  that allows them to be used as substitutes for hash functions with the Init-Append-Result
-//  pattern. 
-// 
-//  Extract is a new type of function that does not exist in hash functions, which can 
-//  be called multiple times to successively generate output from the state. Extract 
+//  pattern.
+//
+//  Extract is a new type of function that does not exist in hash functions, which can
+//  be called multiple times to successively generate output from the state. Extract
 //  function also provides the caller with a flag to wipe the state when no further Extract
-//  calls will be made. If the caller does not know in advance whether an Extract call is 
-//  the final one, wiping can be performed later with an Init call or an Extract call with 
+//  calls will be made. If the caller does not know in advance whether an Extract call is
+//  the final one, wiping can be performed later with an Init call or an Extract call with
 //  zero bytes output.
 //
 //  If Append is called after an Extract call which did not wipe the state (i.e., the state
-//  is still in 'extract' mode), Append will notice this and switch from 'extract' mode to 
-//  'append' mode by wiping and initializing the state. This Append call effectively appends 
+//  is still in 'extract' mode), Append will notice this and switch from 'extract' mode to
+//  'append' mode by wiping and initializing the state. This Append call effectively appends
 //  data for a fresh computation, saving an additional call to wipe/initialize the state.
 //
-// 
+//
 //  SYMCRYPT_SHAKEXXX_RESULT_SIZE
-// 
+//
 //      Default output size, used by the SymCryptShakeXxxResult function.
-// 
+//
 //  SYMCRYPT_SHAKEXXX_INPUT_BLOCK_SIZE
-// 
+//
 //      Rate for the Keccak permutation.
 //
 //  VOID
@@ -1537,11 +1537,11 @@ extern const PCSYMCRYPT_HASH SymCryptSha3_512Algorithm;
 //
 //      SHAKE single-call function that produces variable-length output specified
 //      by the cbResult parameter.
-// 
+//
 //  VOID
 //  SYMCRYPT_CALL
 //  SymCryptShakeXxxInit( _Out_ PSYMCRYPT_XXX_STATE pState );
-// 
+//
 //      Initializes the SHAKE state.
 //
 //  VOID
@@ -1551,14 +1551,14 @@ extern const PCSYMCRYPT_HASH SymCryptSha3_512Algorithm;
 //      _In_reads_( cbData )    PCBYTE              pbData,
 //                              SIZE_T              cbData );
 //
-//      Appends data to the SHAKE state. 
-//      
+//      Appends data to the SHAKE state.
+//
 //      Append cannot be the first call to an uninitialized SHAKE state. All
 //      other uses independent of whether the state is in 'append' mode or 'extract'
 //      mode are well defined. If the state was previously in 'extract' mode, (i.e., after
 //      an Extract call with bWipe=FALSE) it wipes/resets the state and the data is
 //      appended to a fresh state.
-// 
+//
 //  VOID
 //  SYMCRYPT_CALL
 //  SymCryptShakeXxxExtract(
@@ -1567,18 +1567,18 @@ extern const PCSYMCRYPT_HASH SymCryptSha3_512Algorithm;
 //                              SIZE_T              cbResult,
 //                              BOOLEAN             bWipe);
 //
-//      Generates output from the SHAKE state. 
-// 
+//      Generates output from the SHAKE state.
+//
 //      Extract cannot be the first call to an uninitialized SHAKE state. All
 //      other uses independent of whether the state is in 'append' mode or 'extract' mode
-//      are well defined. 
-// 
-//      If the state was in 'append' mode before the Extract call, Extract switches 
-//      the state to 'extract' mode and generates the requested number of bytes from 
+//      are well defined.
+//
+//      If the state was in 'append' mode before the Extract call, Extract switches
+//      the state to 'extract' mode and generates the requested number of bytes from
 //      the state. Extract wipes/resets the state and transitions the state to 'append'
-//      mode if bWipe=TRUE, otherwise leaving the state in 'extract' mode, available for 
+//      mode if bWipe=TRUE, otherwise leaving the state in 'extract' mode, available for
 //      further extractions.
-// 
+//
 //  VOID
 //  SYMCRYPT_CALL
 //  SymCryptShakeXxxResult(
@@ -1587,7 +1587,7 @@ extern const PCSYMCRYPT_HASH SymCryptSha3_512Algorithm;
 //
 //      Extracts SYMCRYPT_SHAKEXXX_RESULT_SIZE bytes from the state and wipes/resets
 //      it for a new computation.
-//      
+//
 //      Result cannot be called with an uninitialized state. All other uses are well
 //      defined. If it is called after an Extract call with bWipe=FALSE, it does the
 //      final extraction from the state for SYMCRYPT_SHAKEXXX_RESULT_SIZE bytes,
@@ -1731,9 +1731,9 @@ extern const PCSYMCRYPT_HASH SymCryptShake256HashAlgorithm;
 //
 //  cSHAKE128 and cSHAKE256 are customizable SHAKE functions specified in NIST SP 800-185.
 //
-//  When cSHAKE input strings N (function name string) and S (customization string) are 
+//  When cSHAKE input strings N (function name string) and S (customization string) are
 //  both empty, cSHAKE is equivalent to SHAKE:
-// 
+//
 //  cSHAKE128(X, L, "", "") = SHAKE128(X, L)
 //  cSHAKE256(X, L, "", "") = SHAKE256(X, L)
 //
@@ -1744,9 +1744,9 @@ extern const PCSYMCRYPT_HASH SymCryptShake256HashAlgorithm;
 //
 //  The following functions are equivalent to their SHAKE counterparts.
 //  SymCryptCShakeXxxExtract with bWipe=TRUE and SymCryptCShakeXxxResult functions reset
-//  the cSHAKE state to an empty SHAKE state after generating output. This behavior is 
+//  the cSHAKE state to an empty SHAKE state after generating output. This behavior is
 //  equivalent to calling SymCryptCShakeXxxInit with empty input strings.
-// 
+//
 //      SymCryptCShakeXxxAppend
 //      SymCryptCShakeXxxExtract
 //      SymCryptCShakeXxxResult
@@ -1754,12 +1754,12 @@ extern const PCSYMCRYPT_HASH SymCryptShake256HashAlgorithm;
 //  Calling SymCryptCShakeXxxAppend when cSHAKE state is in 'extract' mode results
 //  in the same behavior described above: the state is wiped and initialized with
 //  empty input strings, after which the data is appended to the empty state. This
-//  converts the state to a SHAKE state since cSHAKE with empty input strings is 
+//  converts the state to a SHAKE state since cSHAKE with empty input strings is
 //  equivalent to SHAKE. This is a consequence of not being able to store the input
-//  strings to cSHAKE and re-initialize it with them. Thus, if multiple cSHAKE 
+//  strings to cSHAKE and re-initialize it with them. Thus, if multiple cSHAKE
 //  computations with the same input strings are to be carried out, cSHAKE state must
 //  be initialized with the input strings each time.
-// 
+//
 //  The following functions differ from the SHAKE by the introduction of customization
 //  strings:
 //
@@ -1779,14 +1779,14 @@ extern const PCSYMCRYPT_HASH SymCryptShake256HashAlgorithm;
 //
 //  VOID
 //  SYMCRYPT_CALL
-//  SymCryptCShakeXxxInit(  
+//  SymCryptCShakeXxxInit(
 //      _Out_                               PSYMCRYPT_CSHAKEXXX_STATE   pState,
 //      _In_reads_( cbFunctionNameString )  PCBYTE                      pbFunctionNameString,
 //                                          SIZE_T                      cbFunctionNameString,
 //      _In_reads_( cbCustomizationString ) PCBYTE                      pbCustomizationString,
 //                                          SIZE_T                      cbCustomizationString);
 //
-//      Initializes the cSHAKE state with the provided input strings. If both of 
+//      Initializes the cSHAKE state with the provided input strings. If both of
 //      the input strings are empty, the call is equivalent to SymCryptShakeXxxInit,
 //      otherwise the input strings will be encoded and appended to the state.
 
@@ -1811,7 +1811,7 @@ SymCryptCShake128(
 
 VOID
 SYMCRYPT_CALL
-SymCryptCShake128Init(  
+SymCryptCShake128Init(
     _Out_                               PSYMCRYPT_CSHAKE128_STATE   pState,
     _In_reads_( cbFunctionNameString )  PCBYTE                      pbFunctionNameString,
                                         SIZE_T                      cbFunctionNameString,
@@ -1868,7 +1868,7 @@ SymCryptCShake256(
 
 VOID
 SYMCRYPT_CALL
-SymCryptCShake256Init(  
+SymCryptCShake256Init(
     _Out_                               PSYMCRYPT_CSHAKE256_STATE   pState,
     _In_reads_( cbFunctionNameString )  PCBYTE                      pbFunctionNameString,
                                         SIZE_T                      cbFunctionNameString,
@@ -2282,7 +2282,7 @@ SymCryptParallelSha512Selftest(void);
 
 //
 // Generic HMAC API with parametrized hash function
-// 
+//
 VOID
 SYMCRYPT_CALL
 SymCryptHmacStateCopy(
@@ -2293,7 +2293,7 @@ SymCryptHmacStateCopy(
 VOID
 SYMCRYPT_CALL
 SymCryptHmacKeyCopy(
-    _In_    PCSYMCRYPT_HMAC_EXPANDED_KEY    pSrc, 
+    _In_    PCSYMCRYPT_HMAC_EXPANDED_KEY    pSrc,
     _Out_   PSYMCRYPT_HMAC_EXPANDED_KEY     pDst );
 
 SYMCRYPT_ERROR
@@ -2922,12 +2922,12 @@ extern const PCSYMCRYPT_MAC SymCryptAesCmacAlgorithm;
 // Keccak Message Authentication Code (KMAC) is specified in NIST SP 800-185
 // and has two variants; KMAC128 and KMAC256, using cSHAKE128 and cSHAKE256
 // as the underlying functions, respectively.
-// 
+//
 // KMAC128(K, X, L, S) = cSHAKE128(bytepad(encode_string(K), 168) || X || right_encode(L), L, "KMAC", S)
 // KMAC256(K, X, L, S) = cSHAKE256(bytepad(encode_string(K), 136) || X || right_encode(L), L, "KMAC", S)
 //
 // KMAC accepts a variable-size key. There's no restriction on the size of the key.
-// 
+//
 // KMAC differs from other MAC algorithms in SymCrypt by having two additional input
 // parameters; a customization string and the length of the output. Output generated
 // by KMAC also depends on the specified output length, i.e., outputs generated from
@@ -2935,15 +2935,15 @@ extern const PCSYMCRYPT_MAC SymCryptAesCmacAlgorithm;
 // lengths will be unrelated/uncorrelated. This differs from SHAKE and cSHAKE where an
 // output of size N bytes from the algorithm is a prefix of the output of size M bytes
 // where N < M, when the inputs are the same.
-// 
+//
 // KMAC works in two modes; fixed-length mode and XOF mode. XOF variants are named KMACXOF128
-// and  KMACXOF256. SymCrypt does not provide a separate KMACXOF API but supports them via 
-// the KMAC interface. 
-// 
+// and  KMACXOF256. SymCrypt does not provide a separate KMACXOF API but supports them via
+// the KMAC interface.
+//
 // KMACXOF128(K, X, L, S) = cSHAKE128(bytepad(encode_string(K), 168) || X || right_encode(0), L, "KMAC", S)
 // KMACXOF256(K, X, L, S) = cSHAKE256(bytepad(encode_string(K), 136) || X || right_encode(0), L, "KMAC", S)
 //
-// KMAC output generation mode is determined by the output length parameter 
+// KMAC output generation mode is determined by the output length parameter
 // L in SP 800-185; if it is non-zero then KMAC works in fixed-length mode, otherwise (i.e., L=0)
 // it works in XOF mode.
 //  - Fixed-length mode generates result with SymCryptKmacXxxResult or SymCryptKmacXxxResultEx.
@@ -2954,7 +2954,7 @@ extern const PCSYMCRYPT_MAC SymCryptAesCmacAlgorithm;
 //    state into XOF mode and all the successive calls that generate output from the KMAC state will be
 //    from the XOF mode. SymCryptKmacXxxResult and SymCryptKmacXxxResultEx functions
 //    will also generate output in XOF mode IF they are called after a SymCryptKmacXxxExtract
-//    function with bWipe=FALSE (so that the state ramains in XOF mode). Note that 
+//    function with bWipe=FALSE (so that the state ramains in XOF mode). Note that
 //    SymCryptKmacXxxResult and SymCryptKmacXxxResultEx functions wipe the state afterwards,
 //    thus KMAC state can only be used to generate output in XOF mode once with these two functions.
 //
@@ -2972,7 +2972,7 @@ extern const PCSYMCRYPT_MAC SymCryptAesCmacAlgorithm;
 //
 //      Performs key expansion with empty customization string.
 //      There's no restriction on the size of the key.
-// 
+//
 //  SYMCRYPT_ERROR
 //  SYMCRYPT_CALL
 //  SymCryptKmacXxxExpandKeyEx(
@@ -2995,12 +2995,12 @@ extern const PCSYMCRYPT_MAC SymCryptAesCmacAlgorithm;
 //
 //      Single-call KMAC computation for the given input producing default result
 //      size SYMCRYPT_KMACXXX_RESULT_SIZE.
-// 
+//
 //      pExpandedKey must be initialized before the call. This function is equivalent
 //      to SymCryptKmacXxxEx with output size set to SYMCRYPT_KMACXXX_RESULT_SIZE.
-//      If a result size different than the default value is desired, SymCryptKmacXxxEx 
+//      If a result size different than the default value is desired, SymCryptKmacXxxEx
 //      must be called.
-//  
+//
 //  VOID
 //  SYMCRYPT_CALL
 //  SymCryptKmacXxxEx(
@@ -3021,7 +3021,7 @@ extern const PCSYMCRYPT_MAC SymCryptAesCmacAlgorithm;
 //
 //      Initializes KMAC state for appending data for the provided key. Expanded
 //      key must be generated prior to this call.
-// 
+//
 //  VOID
 //  SYMCRYPT_CALL
 //  SymCryptKmacXxxAppend(
@@ -3030,12 +3030,12 @@ extern const PCSYMCRYPT_MAC SymCryptAesCmacAlgorithm;
 //                              SIZE_T                  cbData );
 //
 //      Appends data to the KMAC state.
-// 
+//
 //      This function must only be called after SymCryptKmacXxxInit or SymCryptKmacXxxAppend.
-//      Calling SymCryptKmacXxxAppend after SymCryptKmacXxxExtract with bWipe=FALSE 
-//      is not well-defined. KMAC state must be initialized with SymCryptKmacXxxInit before 
+//      Calling SymCryptKmacXxxAppend after SymCryptKmacXxxExtract with bWipe=FALSE
+//      is not well-defined. KMAC state must be initialized with SymCryptKmacXxxInit before
 //      the first call to SymCryptKmacXxxAppend.
-// 
+//
 //  VOID
 //  SYMCRYPT_CALL
 //  SymCryptKmacXxxExtract(
@@ -3045,11 +3045,11 @@ extern const PCSYMCRYPT_MAC SymCryptAesCmacAlgorithm;
 //                                  BOOLEAN                 bWipe);
 //
 //      Generates KMAC output in XOF mode.
-// 
+//
 //      Extract can only be called after an Init, Append or Extract call.
-//      The state is cleared if bWipe=TRUE, otherwise further Extract calls 
+//      The state is cleared if bWipe=TRUE, otherwise further Extract calls
 //      can be made to generate more output.
-// 
+//
 //  VOID
 //  SYMCRYPT_CALL
 //  SymCryptKmacXxxResult(
@@ -3058,16 +3058,16 @@ extern const PCSYMCRYPT_MAC SymCryptAesCmacAlgorithm;
 //
 //      Produces SYMCRYPT_KMACXXX_RESULT_SIZE bytes of output from the KMAC state.
 //      The state is wiped on return.
-// 
-//      This function internally calls SymCryptKmacXxxResultEx with result size 
+//
+//      This function internally calls SymCryptKmacXxxResultEx with result size
 //      SYMCRYPT_KMACXXX_RESULT_SIZE.
 //      If Result is called in XOF mode (i.e., after an Extract with bWipe=FALSE), it
 //      performs a final extraction of SYMCRYPT_KMACXXX_RESULT_SIZE bytes in XOF mode
 //      and clears the state afterwards.
 //      Result function does not re-initialize the state for a new computation like
-//      the Result for hash functions do. Computing a new MAC with the same key 
+//      the Result for hash functions do. Computing a new MAC with the same key
 //      requires calling the SymCryptKmacXxxInit function first.
-// 
+//
 //  VOID
 //  SYMCRYPT_CALL
 //  SymCryptKmacXxxResultEx(
@@ -3075,14 +3075,14 @@ extern const PCSYMCRYPT_MAC SymCryptAesCmacAlgorithm;
 //      _Out_writes_( cbResult )    PBYTE   pbResult,
 //                                  SIZE_T  cbResult);
 //
-//      Produces cbResult bytes of output from the KMAC state. The state is 
+//      Produces cbResult bytes of output from the KMAC state. The state is
 //      wiped on return.
-// 
+//
 //      If ResultEx is called in XOF mode (i.e., after an Extract with bWipe=FALSE), it
-//      performs a final extraction of cbResult bytes in XOF mode and clears the state 
+//      performs a final extraction of cbResult bytes in XOF mode and clears the state
 //      afterwards.
 //      ResultEx function does not re-initialize the state for a new computation like
-//      the Result for hash functions do. Computing a new MAC with the same key 
+//      the Result for hash functions do. Computing a new MAC with the same key
 //      requires calling the SymCryptKmacXxxInit function first.
 //
 
@@ -5432,6 +5432,124 @@ VOID
 SYMCRYPT_CALL
 SymCryptHkdfSelfTest(void);
 
+////////////////////////////////////////////////////////////////////////////
+// SSKDF
+//
+// Single-Step KDF as specified in SP800-56C section 4.
+//
+// SSKDF requires an auxilary function H. This can be approved hash function,
+// HMAC with an approved hash function, or KMAC. The approved hash functions
+// are listed in SP800-56C section 7.
+//
+// A salt value may be optionally provided if either HMAC or KMAC is used for H.
+// When no salt is provided, an all-zero default salt is used instead. For HMAC,
+// the default salt is the length of an input block of the HMAC's hash function.
+// For KMAC128, the default salt is 164 bytes. For KMAC256, the default salt is 132 bytes.
+//
+
+SYMCRYPT_ERROR
+SYMCRYPT_CALL
+SymCryptSskdfMacExpandSalt(
+    _Out_                   PSYMCRYPT_SSKDF_MAC_EXPANDED_SALT   pExpandedSalt,
+    _In_                    PCSYMCRYPT_MAC                      macAlgorithm,
+    _In_reads_opt_(cbSalt)  PCBYTE                              pbSalt,
+                            SIZE_T                              cbSalt);
+//
+// Initializes *pExpandedSalt with the macAlgorithm, and optionally the salt. Used
+// for SSKDF when H is a MAC function. After calling SymCryptSskdfMacExpandSalt,
+// SymCryptSskdfMacDerive can be called multiple times to generate keys for different
+// uses, fixed infos, and shared secrets. For multiple KDFs using the same MAC and salt,
+// calling SymCryptSskdfMacExpandSalt once and SymCryptSskdfMacDerive multiple times
+// is more efficient than calling SymCryptSskdfMac multiple times.
+//
+// The expanded salt contains no secrets and does not need to be wiped.
+//
+// Parameters:
+//    - pExpandedSalt   :   Pointer to a SYMCRYPT_SSKDF_MAC_EXPANDED_SALT structure that
+//                          will contain the expanded salt after the function returns.
+//    - macAlgorithm    :   MAC algorithm that will be used in the key derivation.
+//                          This function is saved in SYMCRYPT_SSKDF_MAC_EXPANDED_SALT.
+//    - pbSalt, cbSalt  :   Buffer containing the salt for the KDF. cbSalt must be a valid
+//                          key size for the MAC algorithm. If pbSalt is NULL, the default
+//                          all zero-byte salt is used.
+//
+
+SYMCRYPT_ERROR
+SYMCRYPT_CALL
+SymCryptSskdfMacDerive(
+    _In_                    PCSYMCRYPT_SSKDF_MAC_EXPANDED_SALT  pExpandedSalt,
+                            SIZE_T                              cbMacOutputSize,
+    _In_reads_(cbSecret)    PCBYTE                              pbSecret,
+                            SIZE_T                              cbSecret,
+    _In_reads_opt_(cbInfo)  PCBYTE                              pbInfo,
+                            SIZE_T                              cbInfo,
+    _Out_writes_(cbResult)  PBYTE                               pbResult,
+                            SIZE_T                              cbResult);
+//
+// Derive keys using the expanded salt that was initialized with SymCryptSskdfMacExpandSalt
+// along with other inputs. This function can be called consecutively with varying fixed infos
+// and shared secrets to generate keys for different purposes as defined in the SP800-56C.
+// The same pbExpandedKey can be used simultaneously by multiple threads.
+//
+// Parameters:
+//    - pExpandedSalt       :   Pointer to a SYMCRYPT_SSKDF_MAC_EXPANDED_SALT structure that is
+//                              initialized by a prior call to SymCryptSskdfMacExpandSalt.
+//    - cbMacOutputSize     :   Output size used by the MAC algorithm for intermediate computations.
+//                              Set to 0 for MACs that don't support variable output sizes, or to use
+//                              the default output size. The default output size for KMAC128 is 32 bytes,
+//                              and KMAC256 is 64 bytes.
+//    - pbSecret, cbSecret  :   Buffer containing the shared secret.
+//    - pbInfo, cbInfo      :   Buffer containing the fixed info.
+//    - pbResult, cbResult  :   Buffer to store the derived key. Exactly cbResult bytes of output will be generated.
+//                              Must not exceed 2^{32} - 1 times the result size of the MAC algorithm.
+//
+
+SYMCRYPT_ERROR
+SYMCRYPT_CALL
+SymCryptSskdfMac(
+    _In_                    PCSYMCRYPT_MAC  macAlgorithm,
+                            SIZE_T          cbMacOutputSize,
+    _In_reads_(cbSecret)    PCBYTE          pbSecret,
+                            SIZE_T          cbSecret,
+    _In_reads_opt_(cbSalt)  PCBYTE          pbSalt,
+                            SIZE_T          cbSalt,
+    _In_reads_opt_(cbInfo)  PCBYTE          pbInfo,
+                            SIZE_T          cbInfo,
+    _Out_writes_(cbResult)  PBYTE           pbResult,
+                            SIZE_T          cbResult);
+//
+// This function is a wrapper for using SymCryptSskdfMacExpandSalt followed by SymCryptSskdfMacDerive
+// in order to produce SSKDF output.
+//
+// All of the function arguments are forwarded to SymCryptSskdfMacExpandSalt and SymCryptSskdfMacDerive
+// functions, hence the documentation on those functions apply here as well.
+//
+
+SYMCRYPT_ERROR
+SYMCRYPT_CALL
+SymCryptSskdfHash(
+    _In_                    PCSYMCRYPT_HASH hashAlgorithm,
+                            SIZE_T          cbHashOutputSize,
+    _In_reads_(cbSecret)    PCBYTE          pbSecret,
+                            SIZE_T          cbSecret,
+    _In_reads_opt_(cbInfo)  PCBYTE          pbInfo,
+                            SIZE_T          cbInfo,
+    _Out_writes_(cbResult)  PBYTE           pbResult,
+                            SIZE_T          cbResult);
+//
+// Derive keys using the specified hash algorithm as H.
+//
+// Parameters:
+//    - hashAlgorithm       :   Hash algorithm that will be used in the key derivation.
+//    - cbMacOutputSize     :   Output size used by the hash algorithm for intermediate computations.
+//                              Set to 0 for hashes that don't support variable output sizes, or to use
+//                              the default output size.
+//    - pbSecret, cbSecret  :   Buffer containing the shared secret.
+//    - pbInfo, cbInfo      :   Buffer containing the fixed info.
+//    - pbResult, cbResult  :   Buffer to store the derived key. Exactly cbResult bytes of output will be generated.
+//                              Must not exceed 2^{32} - 1 times the result size of hashAlgorithm.
+//
+
 //==========================================================================
 //   RNG ALGORITHMS
 //==========================================================================
@@ -5818,7 +5936,7 @@ SymCryptXtsAesDecrypt(
     _In_reads_( cbData )    PCBYTE                          pbSrc,
     _Out_writes_( cbData )  PBYTE                           pbDst,
                             SIZE_T                          cbData );
-// 
+//
 // Decrypt a buffer using XTS-AES and 64 bit tweak.
 // See SymCryptXtsAesEncrypt for a more in depth description, everything is the same, only this decrypts rather than encrypts.
 //
@@ -5868,7 +5986,7 @@ SymCryptXtsAesDecryptWith128bTweak(
     _In_reads_( cbData )                    PCBYTE                          pbSrc,
     _Out_writes_( cbData )                  PBYTE                           pbDst,
                                             SIZE_T                          cbData );
-// 
+//
 // Decrypt a buffer using XTS-AES and 128 bit tweak.
 // See SymCryptXtsAesEncryptWith128bTweak for a more in depth description, everything is the same, only this decrypts rather than encrypts.
 //
