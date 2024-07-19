@@ -94,9 +94,10 @@ jobs:
     ob_outputDirectory: $(Build.SourcesDirectory)\build\bin\$(ob_build_platform_win)$(ob_build_config_win)
     ob_artifactSuffix: _$(ob_build_platform_win)$(ob_build_config_win)
     # https://aka.ms/obpipelines/sdl
-    ob_sdl_tsa_enabled: false # When TSA is disabled all SDL tools will forced into 'break' build mode.
+    ob_sdl_tsa_enabled: true # When TSA is disabled all SDL tools will forced into 'break' build mode.
     ob_sdl_binskim_break: true
     ob_sdl_policheck_break: true
+    ob_sdl_prefast_break: false
     ${{ if eq(parameters.sign, true) }}:
       ob_sdl_codeSignValidation_excludes: -|**\*.sys # Signing is not supported for KM drivers
     ${{ if eq(parameters.sign, false) }}:
@@ -128,6 +129,17 @@ jobs:
       maximumCpuCount: true
       restoreNugetPackages: ${{ parameters.restoreNugetPackages }}
       msbuildArgs: '-p:UndockedOfficial=${{ parameters.nativeCompiler }} -p:UndockedBuildId=$(Build.BuildId) -p:VER_BUILD_ID=$(Build.BuildId) -p:VER_SUFFIX=${{ parameters.buildType }} -p:SymCryptTestLegacyImpl=true ${{ parameters.msbuildArgs }}'
+
+  - task: SDLNativeRules@3
+    displayName: '🛡 Guardian: PreFast'
+    continueOnError: true
+    inputs:
+      userProvideBuildInfo: auto
+      rulesetName: Custom
+      customRuleset: '$(Build.SourcesDirectory)\tvs.ruleset'
+      excludedPaths: 'c:/program files (x86)/windows kits/'
+    env:
+      SYSTEM_ACCESSTOKEN: $(System.AccessToken)
 
   # Overwrite default artifact publishing with our copy (enables publishing binaries for failed runs)
   - task: PowerShell@2

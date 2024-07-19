@@ -19,7 +19,7 @@ pr:
 
 variables:
   # https://aka.ms/obpipelines/containers
-  WindowsContainerImage: 'onebranch.azurecr.io/windows/ltsc2022/vse2022:latest'
+  WindowsContainerImage: 'onebranch.azurecr.io/windows/ltsc2022/vse2022@sha256:394ae836d8bbb5f5f7659744b85796ac823ab1410527ac26d143837bdecbde2a'
 
 resources:
   repositories:

@@ -1,0 +1,9 @@
+{
+    "instanceUrl"        :  "https://microsoft.visualstudio.com",
+    "projectName"        :  "OS",
+    "areaPath"           :  "OS\\Core\\ENS\\Cloud Security\\Cryptography Infrastructure\\Crypto\\Symcrypt",
+    "notificationAliases":  ["symcryptdevs@microsoft.com"],
+    "ppe"                :  "false",
+    "template"           :  "TFSMSAzure",
+    "codebaseName"       :  "tfsmsazure_SymCrypt"
+}
