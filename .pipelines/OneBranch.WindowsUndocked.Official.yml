@@ -27,6 +27,7 @@ trigger:
 schedules:
 - cron: "0 8 * * *" # Daily at 8am UTC (midnight PST/1am PDT)
   displayName: Daily build
+  always: true # Run even if there has been no churn (to detect build breaks due to container changes)
   branches:
     include:
     - main
