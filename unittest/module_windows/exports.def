@@ -6,14 +6,25 @@ EXPORTS
     SymCryptAesCmacAlgorithm        DATA
     SymCryptDesBlockCipher          DATA
     SymCryptDesxBlockCipher         DATA
+    SymCryptEcurveParamsCurve25519  DATA
+    SymCryptEcurveParamsNistP192    DATA
+    SymCryptEcurveParamsNistP224    DATA
+    SymCryptEcurveParamsNistP256    DATA
+    SymCryptEcurveParamsNistP384    DATA
+    SymCryptEcurveParamsNistP521    DATA
+    SymCryptEcurveParamsNumsP256t1  DATA
+    SymCryptEcurveParamsNumsP384t1  DATA
+    SymCryptEcurveParamsNumsP512t1  DATA
     SymCryptHmacMd5Algorithm        DATA
     SymCryptHmacSha1Algorithm       DATA
     SymCryptHmacSha256Algorithm     DATA
-    SymCryptHmacSha384Algorithm     DATA
-    SymCryptHmacSha512Algorithm     DATA
     SymCryptHmacSha3_256Algorithm   DATA
     SymCryptHmacSha3_384Algorithm   DATA
     SymCryptHmacSha3_512Algorithm   DATA
+    SymCryptHmacSha384Algorithm     DATA
+    SymCryptHmacSha512Algorithm     DATA
+    SymCryptKmac128Algorithm        DATA
+    SymCryptKmac256Algorithm        DATA
     SymCryptMarvin32DefaultSeed     DATA
     SymCryptMd2Algorithm            DATA
     SymCryptMd4Algorithm            DATA
@@ -24,20 +35,18 @@ EXPORTS
     SymCryptSha1OidList             DATA
     SymCryptSha256Algorithm         DATA
     SymCryptSha256OidList           DATA
-    SymCryptSha384Algorithm         DATA
-    SymCryptSha384OidList           DATA
-    SymCryptSha512Algorithm         DATA
-    SymCryptSha512OidList           DATA
     SymCryptSha3_256Algorithm       DATA
     SymCryptSha3_256OidList         DATA
     SymCryptSha3_384Algorithm       DATA
     SymCryptSha3_384OidList         DATA
     SymCryptSha3_512Algorithm       DATA
     SymCryptSha3_512OidList         DATA
+    SymCryptSha384Algorithm         DATA
+    SymCryptSha384OidList           DATA
+    SymCryptSha512Algorithm         DATA
+    SymCryptSha512OidList           DATA
     SymCryptShake128HashAlgorithm   DATA
     SymCryptShake256HashAlgorithm   DATA
-    SymCryptKmac128Algorithm        DATA
-    SymCryptKmac256Algorithm        DATA
     SymCrypt3DesCbcDecrypt
     SymCrypt3DesCbcEncrypt
     SymCrypt3DesDecrypt
@@ -149,15 +158,6 @@ EXPORTS
     SymCryptEcurveHighBitRestrictionPosition
     SymCryptEcurveHighBitRestrictionValue
     SymCryptEcurveIsSame
-    SymCryptEcurveParamsCurve25519
-    SymCryptEcurveParamsNistP192
-    SymCryptEcurveParamsNistP224
-    SymCryptEcurveParamsNistP256
-    SymCryptEcurveParamsNistP384
-    SymCryptEcurveParamsNistP521
-    SymCryptEcurveParamsNumsP256t1
-    SymCryptEcurveParamsNumsP384t1
-    SymCryptEcurveParamsNumsP512t1
     SymCryptEcurvePrivateKeyDefaultFormat
     SymCryptEcurveSizeofFieldElement
     SymCryptEcurveSizeofScalarMultiplier

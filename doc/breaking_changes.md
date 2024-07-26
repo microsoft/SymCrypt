@@ -25,3 +25,6 @@ This is a potentially ABI-breaking change on Windows x86.
 
 ### SYMCRYPT_VERSION_API will be renamed to SYMCRYPT_VERSION_MAJOR
 This is for consistency with the Semantic Versioning specification, as well as various tooling.
+
+### extern variables defined in SymCrypt headers will be removed and replaced by equivalent getter functions
+This simplifies how we define dynamic module exports in a cross-platform way.
