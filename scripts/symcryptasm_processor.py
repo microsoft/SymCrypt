@@ -645,26 +645,6 @@ MAPPING_ARM32_AAPCS32 = {
     15:ARM32_R15, # PC
 }
 
-def gen_prologue_aapcs64(self, arg_count, reg_count, stack_alloc_size, xmm_reg_count):
-    prologue = ""
-
-    if reg_count > self.volatile_registers:
-        logging.error("symcryptasm currently does not support spilling registers in leaf functions in aapcs64")
-        exit(1)
-
-    return prologue
-
-def gen_epilogue_aapcs64(self, arg_count, reg_count, stack_alloc_size, xmm_reg_count):
-    epilogue = ""
-
-    if reg_count > self.volatile_registers:
-        logging.error("symcryptasm currently does not support spilling registers in leaf functions in aapcs64")
-        exit(1)
-
-    epilogue += "    ret\n"
-
-    return epilogue
-
 def gen_prologue_aapcs32(self, arg_count, reg_count, stack_alloc_size, xmm_reg_count):
     assert(not stack_alloc_size and not xmm_reg_count)
     prologue = ""
@@ -697,7 +677,7 @@ def gen_epilogue_aapcs32(self, arg_count, reg_count, stack_alloc_size, xmm_reg_c
     epilogue += "pop {" + ",".join(registers_to_spill) + "}\n"
     return epilogue
 
-def gen_prologue_arm64ec(self, arg_count, reg_count, stack_alloc_size, xmm_reg_count):
+def gen_prologue_arm64_armasm64(self, arg_count, reg_count, stack_alloc_size, xmm_reg_count):
     prologue = ""
 
     if reg_count > self.volatile_registers:
@@ -717,7 +697,7 @@ def gen_prologue_arm64ec(self, arg_count, reg_count, stack_alloc_size, xmm_reg_c
 
     return prologue
 
-def gen_epilogue_arm64ec(self, arg_count, reg_count, stack_alloc_size, xmm_reg_count):
+def gen_epilogue_arm64_armasm64(self, arg_count, reg_count, stack_alloc_size, xmm_reg_count):
     epilogue = ""
 
     if reg_count > self.volatile_registers:
@@ -741,17 +721,63 @@ def gen_epilogue_arm64ec(self, arg_count, reg_count, stack_alloc_size, xmm_reg_c
 
     return epilogue
 
+def gen_prologue_arm64_gas(self, arg_count, reg_count, stack_alloc_size, xmm_reg_count):
+    prologue = ""
+
+    if reg_count > self.volatile_registers:
+        # Calculate required stack space
+        # If we allocate stack space we must spill fp and lr, so we always spill at least 2 registers
+        registers_to_spill = 2 + reg_count - self.volatile_registers
+        # Stack pointer remain 16B aligned, so round up to the nearest multiple of 16B
+        required_stack_space = 16 * ((registers_to_spill + 1) // 2)
+        prologue += "    stp fp, lr, [sp, #-%d]! // allocate %d bytes of stack; store FP/LR\n" % (required_stack_space, required_stack_space)
+
+        stack_offset = 16
+        for i in range(self.volatile_registers, reg_count-1, 2):
+            prologue += "    stp X_%d, X_%d, [sp, #%d]\n" % (i, i+1, stack_offset)
+            stack_offset += 16
+        if registers_to_spill % 2 == 1:
+            prologue += "    str      X_%d, [sp, #%d]\n" % (reg_count-1, stack_offset)
+
+    return prologue
+
+def gen_epilogue_arm64_gas(self, arg_count, reg_count, stack_alloc_size, xmm_reg_count):
+    epilogue = ""
+
+    if reg_count > self.volatile_registers:
+        # Calculate required stack space
+        # If we allocate stack space we must spill fp and lr, so we always spill at least 2 registers
+        registers_to_spill = 2 + reg_count - self.volatile_registers
+        # Stack pointer remain 16B aligned, so round up to the nearest multiple of 16B
+        required_stack_space = 16 * ((registers_to_spill + 1) // 2)
+
+        stack_offset = required_stack_space-16
+        if registers_to_spill % 2 == 1:
+            epilogue += "    ldr      X_%d, [sp, #%d]\n" % (reg_count-1, stack_offset)
+            stack_offset -= 16
+        for i in reversed(range(self.volatile_registers, reg_count-1, 2)):
+            epilogue += "    ldp X_%d, X_%d, [sp, #%d]\n" % (i, i+1, stack_offset)
+            stack_offset -= 16
+        epilogue += "    ldp fp, lr, [sp], #%d // deallocate %d bytes of stack; restore FP/LR\n" % (required_stack_space, required_stack_space)
+    epilogue += "    ret\n"
+
+    return epilogue
+
 def gen_get_memslot_offset_arm64(self, slot, arg_count, reg_count, stack_alloc_size, xmm_reg_count, nested=False):
     logging.error("symcryptasm currently does not support memory slots for arm64!")
     exit(1)
 
-CALLING_CONVENTION_ARM64_AAPCS64 = CallingConvention(
+CALLING_CONVENTION_ARM64_AAPCS64_ARMASM64 = CallingConvention(
     "arm64_aapcs64", "arm64", MAPPING_ARM64_AAPCS64, 8, 8, 18,
-    gen_prologue_aapcs64, gen_epilogue_aapcs64, gen_get_memslot_offset_arm64)
+    gen_prologue_arm64_armasm64, gen_epilogue_arm64_armasm64, gen_get_memslot_offset_arm64)
+
+CALLING_CONVENTION_ARM64_AAPCS64_GAS = CallingConvention(
+    "arm64_aapcs64", "arm64", MAPPING_ARM64_AAPCS64, 8, 8, 18,
+    gen_prologue_arm64_gas, gen_epilogue_arm64_gas, gen_get_memslot_offset_arm64)
 
 CALLING_CONVENTION_ARM64EC_MSFT = CallingConvention(
     "arm64ec_msft", "arm64", MAPPING_ARM64_ARM64ECMSFT, 8, 8, 16,
-    gen_prologue_arm64ec, gen_epilogue_arm64ec, gen_get_memslot_offset_arm64)
+    gen_prologue_arm64_armasm64, gen_epilogue_arm64_armasm64, gen_get_memslot_offset_arm64)
 
 CALLING_CONVENTION_ARM32_AAPCS32 = CallingConvention(
     "arm32_aapcs32", "arm32", MAPPING_ARM32_AAPCS32, 4, 4, 4,
@@ -1194,7 +1220,7 @@ def process_file(assembler, architecture, calling_convention, infilename, outfil
             mul_calling_convention = CALLING_CONVENTION_AMD64_SYSTEMV_MUL
             nested_calling_convention = CALLING_CONVENTION_AMD64_SYSTEMV_NESTED
         elif architecture == "arm64" and calling_convention == "aapcs64":
-            normal_calling_convention = CALLING_CONVENTION_ARM64_AAPCS64
+            normal_calling_convention = CALLING_CONVENTION_ARM64_AAPCS64_GAS
             mul_calling_convention = None
             nested_calling_convention = None
         elif architecture == "arm" and calling_convention == "aapcs32":
@@ -1203,7 +1229,7 @@ def process_file(assembler, architecture, calling_convention, infilename, outfil
             nested_calling_convention = None
     elif assembler == "armasm64":
         if architecture == "arm64" and calling_convention == "aapcs64":
-            normal_calling_convention = CALLING_CONVENTION_ARM64_AAPCS64
+            normal_calling_convention = CALLING_CONVENTION_ARM64_AAPCS64_ARMASM64
             mul_calling_convention = None
             nested_calling_convention = None
         elif architecture == "arm64" and calling_convention == "arm64ec":

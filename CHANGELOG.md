@@ -3,7 +3,10 @@
 New changes will be listed here as they are developed. The version number is determined
 prior to the creation of a new release, based on the changes contained in that release.
 
+# Version 103.4.3
+
 - Added preliminary support for macOS (static libraries and unit tests only, no ASM optimizations)
+- Performance improvements for RSA for modern Arm64 microarchitecture
 
 # Version 103.4.2
 

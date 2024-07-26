@@ -308,11 +308,12 @@ MACRO_START(SQR_DOUBLEADD_64, index, src_reg, dst_reg, mul_word, src_carry, dst_
     ldr     scratch2, [dst_reg, #8*index]   // pDst[2*(i+j)]
 
     mul     scratch1, mul_word, scratch0    // Bits <63:0> of pSrc[i]*pSrc[i+j]
-    adds    scratch1, scratch1, src_carry   // Adding the previous word
     umulh   dst_carry, mul_word, scratch0   // Bits <127:64> of pSrc[i]*pSrc[i+j]
-    adc     dst_carry, dst_carry, xzr       // Add the intermediate carry and don't update the flags
 
     adds    scratch1, scratch1, scratch2    // Add the word from the destination
+    adc     dst_carry, dst_carry, xzr       // Add the intermediate carry and don't update the flags
+
+    adds    scratch1, scratch1, src_carry   // Adding the previous word
     adc     dst_carry, dst_carry, xzr       // Add the intermediate carry and don't update the flags
 
     str     scratch1, [dst_reg, #8*index]   // Store to destination
@@ -384,9 +385,9 @@ FUNCTION_START(ARM64EC_NAME_MANGLE(SymCryptFdefRawSquareAsm), 3, 17)
     //
     // First iteration of main loop (no adding of previous values from pDst)
     //
-    ands    X_12, X_12, xzr             // Clearing the carry flag and setting X_12 = 0
+    mov     X_12, xzr                   // set X_12 = 0
     ldr     X_6, [X_0]                  // load the first word from pSrc1
-    str     X_12, [X_4]                 // store 0 for the first word
+    str     xzr, [X_4]                  // store 0 for the first word
 
     b       SymCryptFdefRawSquareAsmInnerLoopInit_Word1
 
@@ -423,7 +424,8 @@ LABEL(SymCryptFdefRawSquareAsmOuterLoop)
     mov     X_2, X_0                    // set pSrc
     mov     X_4, X_5                    // set pDst
 
-    ands    X_12, X_12, xzr             // Clearing the carry flag and setting X_12 = 0
+    mov     X_11, xzr                   // set X_11 = 0
+    mov     X_12, xzr                   // set X_12 = 0
     ldr     X_6, [X_0, X_8, LSL #3]     // load the next word from pSrc
 
     // Cyclic counter and jump logic
@@ -448,16 +450,16 @@ LABEL(SymCryptFdefRawSquareAsmOuterLoop)
     mov     X_3, X_14               // set the new digit counter
 
 LABEL(SymCryptFdefRawSquareAsmInnerLoop_Word0)
-    SQR_DOUBLEADD_64 0, X_2, X_4, X_6, X_12, X_12, X_7, X_9, X_10
+    SQR_DOUBLEADD_64 0, X_2, X_4, X_6, X_12, X_11, X_7, X_9, X_10
 
 LABEL(SymCryptFdefRawSquareAsmInnerLoop_Word1)
-    SQR_DOUBLEADD_64 1, X_2, X_4, X_6, X_12, X_12, X_7, X_9, X_10
+    SQR_DOUBLEADD_64 1, X_2, X_4, X_6, X_11, X_12, X_7, X_9, X_10
 
 LABEL(SymCryptFdefRawSquareAsmInnerLoop_Word2)
-    SQR_DOUBLEADD_64 2, X_2, X_4, X_6, X_12, X_12, X_7, X_9, X_10
+    SQR_DOUBLEADD_64 2, X_2, X_4, X_6, X_12, X_11, X_7, X_9, X_10
 
 LABEL(SymCryptFdefRawSquareAsmInnerLoop_Word3)
-    SQR_DOUBLEADD_64 3, X_2, X_4, X_6, X_12, X_12, X_7, X_9, X_10
+    SQR_DOUBLEADD_64 3, X_2, X_4, X_6, X_11, X_12, X_7, X_9, X_10
 
     sub     X_3, X_3, #1                // move one digit up
     add     X_2, X_2, #32
@@ -470,8 +472,7 @@ LABEL(SymCryptFdefRawSquareAsmInnerLoop_Word3)
     sub     X_1, X_1, #1                // move one word up
     cbnz    X_1, SymCryptFdefRawSquareAsmOuterLoop
 
-    ands    X_12, X_12, xzr             // Setting X_12 = 0
-    str     X_12, [X_5, #40]            // Store 0 to destination for the top word
+    str     xzr, [X_5, #40]             // Store 0 to destination for the top word
 
     ////////////////////////////////////////////////////////////////
     // Second Pass - Shifting all results 1 bit left
@@ -1240,136 +1241,156 @@ FUNCTION_END(ARM64EC_NAME_MANGLE(SymCryptFdefModSquareMontgomeryP384Asm))
 //       X_0  = pMod (moving forward one *digit* every inner loop)
 //       X_1  = pSrc (moving forward one *digit* every inner loop)
 //       X_2  = pDst (used only in the end for subtract / result)
-//       X_3  = digit count of pSrc and pMod
+//       X_3  = byte count of pSrc and pMod (sometimes byte count - 1 digit of bytes)
 //       X_4  = word count of pSrc
 //       X_5  = Inv64 of the modulus
 //       X_6  = m = pSrc[i]*Inv64
 //       X_7  = hc = high carry variable
-//       X_8, X_9   = Current words loaded in pairs from pSrc
-//       X_10, X_11 = Current words loaded in pairs from pMod
-//       X_12, X_13 = c variable = "128-bit" register to hold the result of multiplies
-//                  It is flipped between [X_12:X_13] and [X_13:X_12] instead of doing c>>=64
-//       X_14 = Temporary intermediate result
-//       X_15 = Stored digit count of pSrc
-//       X_16 = Stored pMod pointer
-//       X_17 = Stored pSrc pointer (moving forward one word every outer loop)
+//       X_8-X_19 = temporaries
+//       X_20 = c
+//       X_21 = Stored byte count of pSrc
 
-FUNCTION_START(ARM64EC_NAME_MANGLE(SymCryptFdefMontgomeryReduceAsm), 3, 18)
+FUNCTION_START(ARM64EC_NAME_MANGLE(SymCryptFdefMontgomeryReduceAsm), 3, 22)
 
-    ldr     W_3, [X_0, #SymCryptModulusNdigitsOffsetArm64]  // # of Digits
+    ldr     W_4, [X_0, #SymCryptModulusNdigitsOffsetArm64]  // # of Digits
     ldr     X_5, [X_0, #SymCryptModulusInv64OffsetArm64]    // Inv64 of modulus
     add     X_0, X_0, #SymCryptModulusValueOffsetArm64      // pMod
 
-    lsl     X_4, X_3, #2                // Multiply by 4 to get the number of words
+    lsl     X_3, X_4, #5                // Multiply by 32 to get the number of bytes
+    lsl     X_4, X_4, #2                // Multiply by 4 to get the number of words
 
-    sub     X_0, X_0, #32               // offset pMod so we can use pre-increment form of loads
-    sub     X_1, X_1, #32               // offset pSrc so we can use pre-increment form of loads
-    sub     X_2, X_2, #32               // offset pDst so we can use pre-increment form of loads
+    sub     X_3, X_3, #32               // offset the byte count to make it easy to restore pointers
 
-    mov     X_15, X_3                   // Store the digit count for later
-    mov     X_16, X_0                   // Store the pMod pointer
-    mov     X_17, X_1                   // Store the pSrc pointer
-
-    and     X_7, X_7, xzr               // Set hc to 0
+    mov     X_7, xzr                    // Set hc to 0
+    mov     X_21, X_3                   // Store the byte count for later
 
     //
     // Main loop
     //
 LABEL(SymCryptFdefMontgomeryReduceAsmOuter)
-    ldr     X_8, [X_1, #32]             // Load 1 word from pSrc
-    mul     X_6, X_8, X_5               // <63:0> bits of pSrc[i]*Inv64 = m
+    ldp     X_16, X_17, [X_1]           // pSrc[i+0], pSrc[i+1]
+    mul     X_6, X_16, X_5              // <63:0> bits of pSrc[i]*Inv64 = m
 
-    and     X_12, X_12, xzr             // Set c to 0
+    ldp     X_8,  X_9,  [X_0]           // pMod[0], pMod[1]
+    umulh   X_8,  X_6, X_8              // Bits <127:64> of m*pMod[0]
+    subs    xzr,  X_16, #1              // Subtract 1 from pSrc[i+0] (generate a carry iff pSrc[i] is non-zero)
+
+    mul     X_13, X_6, X_9              // Bits <63:0> of m*pMod[1]
+    umulh   X_9,  X_6, X_9              // Bits <127:64> of m*pMod[1]
+    adcs    X_8,  X_8,  X_13            // Adding the previous word (if there was a carry from the last addition it is added)
+
+    ldp     X_10, X_11, [X_0, #16]      // pMod[2], pMod[3]
+    mul     X_14, X_6, X_10             // Bits <63:0> of m*pMod[2]
+    umulh   X_10, X_6, X_10             // Bits <127:64> of m*pMod[2]
+    adcs    X_9,  X_9,  X_14            // Adding the previous word (if there was a carry from the last addition it is added)
+
+    ldp     X_18, X_19, [X_1, #16]      // pSrc[i+2], pSrc[i+3]
+    mul     X_15, X_6, X_11             // Bits <63:0> of m*pMod[3]
+    umulh   X_11, X_6, X_11             // Bits <127:64> of m*pMod[3]
+    adcs    X_10, X_10, X_15            // Adding the previous word (if there was a carry from the last addition it is added)
+
+    adc     X_20, X_11, xzr             // Add the carry if any
+
+    // ( X_20, X_10, X_9, X_8, ___ ) = (( pMod[3], pMod[2], pMod[1], pMod[0] ) * m)
+    // We do not compute this --^ because (m*pMod[0] + pSrc[i]) == 0. We already accounted for the carry above.
+
+    adds    X_17, X_17, X_8             // Adding pSrc[i+1]
+    adcs    X_18, X_18, X_9             // Adding pSrc[i+2]
+    adcs    X_19, X_19, X_10            // Adding pSrc[i+3]
+
+    stp     xzr,  X_17, [X_1]           // pSrc[i+0], pSrc[i+1]
+    stp     X_18, X_19, [X_1, #16]      // pSrc[i+2], pSrc[i+3]
+
+    cbz    X_3, SymCryptFdefMontgomeryReduceAsmInnerEnd
 
 LABEL(SymCryptFdefMontgomeryReduceAsmInner)
-    ldp     X_10, X_11, [X_0, #32]!     // pMod[j]
-    ldp     X_8, X_9, [X_1, #32]!       // pSrc[j]
+    // Invariant - X_20 (c) + carry flag is a value in the range [0, 2^64-1]
+    // We could always adc X_20, X_20, xzr before loop entry, but this is a wasted instruction
+    // vs. adcs with X_20 below
 
-    mul     X_14, X_6, X_10             // <63:0> of pMod[j]*m
-    adds    X_14, X_14, X_8             // Adding pSrc[j]
-    umulh   X_13, X_6, X_10             // <127:64> of pMod[j]*m
-    adc     X_13, X_13, xzr             // Add the carry if any (***)
-    adds    X_12, X_12, X_14            // Add the lower bits of c
-    adc     X_13, X_13, xzr             // Add the carry if any (***)
-    // ***: These cannot produce extra carry as the maximum is
-    //      (2^64 - 1)*(2^64-1) + 2^64-1 + 2^64-1 = 2^128 - 1
-    str     X_12, [X_1]                 // pSrc[j] = (UINT64) c
+    ldp     X_8,  X_9,  [X_0, #32]!     // pMod[j+0], pMod[j+1]
+    mul     X_12, X_6, X_8              // Bits <63:0> of m*pMod[j]
+    umulh   X_8,  X_6, X_8              // Bits <127:64> of m*pMod[j]
+    adcs    X_12, X_20, X_12            // Adding the previous word (if there was a carry from the last addition it is added)
 
-    mul     X_14, X_6, X_11             // <63:0> of pMod[j]*m
-    adds    X_14, X_14, X_9             // Adding pSrc[j]
-    umulh   X_12, X_6, X_11             // <127:64> of pMod[j]*m
-    adc     X_12, X_12, xzr             // Add the carry if any (***)
-    adds    X_13, X_13, X_14            // Add the lower bits of c
-    adc     X_12, X_12, xzr             // Add the carry if any (***)
-    str     X_13, [X_1, #8]             // pSrc[j] = (UINT64) c
+    mul     X_13, X_6, X_9              // Bits <63:0> of m*pMod[j+1]
+    umulh   X_9,  X_6, X_9              // Bits <127:64> of m*pMod[j+1]
+    ldp     X_16, X_17, [X_1, #32]!     // pSrc[i+j+0], pSrc[i+j+1]
+    adcs    X_8,  X_8,  X_13            // Adding the previous word (if there was a carry from the last addition it is added)
 
-    ldp     X_10, X_11, [X_0, #16]      // pMod[j]
-    ldp     X_8, X_9, [X_1, #16]        // pSrc[j]
+    ldp     X_10, X_11, [X_0, #16]      // pMod[j+2], pMod[j+3]
+    mul     X_14, X_6, X_10             // Bits <63:0> of m*pMod[j+2]
+    umulh   X_10, X_6, X_10             // Bits <127:64> of m*pMod[j+2]
+    adcs    X_9,  X_9,  X_14            // Adding the previous word (if there was a carry from the last addition it is added)
 
-    mul     X_14, X_6, X_10             // <63:0> of pMod[j]*m
-    adds    X_14, X_14, X_8             // Adding pSrc[j]
-    umulh   X_13, X_6, X_10             // <127:64> of pMod[j]*m
-    adc     X_13, X_13, xzr             // Add the carry if any (***)
-    adds    X_12, X_12, X_14            // Add the lower bits of c
-    adc     X_13, X_13, xzr             // Add the carry if any (***)
-    str     X_12, [X_1, #16]            // pSrc[j] = (UINT64) c
+    ldp     X_18, X_19, [X_1, #16]      // pSrc[i+j+2], pSrc[i+j+3]
+    mul     X_15, X_6, X_11             // Bits <63:0> of m*pMod[j+3]
+    umulh   X_11, X_6, X_11             // Bits <127:64> of m*pMod[j+3]
+    adcs    X_10, X_10, X_15            // Adding the previous word (if there was a carry from the last addition it is added)
 
-    mul     X_14, X_6, X_11             // <63:0> of pMod[j]*m
-    adds    X_14, X_14, X_9             // Adding pSrc[j]
-    umulh   X_12, X_6, X_11             // <127:64> of pMod[j]*m
-    adc     X_12, X_12, xzr             // Add the carry if any (***)
-    adds    X_13, X_13, X_14            // Add the lower bits of c
-    adc     X_12, X_12, xzr             // Add the carry if any (***)
-    str     X_13, [X_1, #24]            // pSrc[j] = (UINT64) c
+    adc     X_20, X_11, xzr             // Add the carry if any
 
-    subs    X_3, X_3, #1                // Move one digit up
-    bne     SymCryptFdefMontgomeryReduceAsmInner
+    // ( X_20, X_10, X_9, X_8, X_12 ) = (( pMod[j+3], pMod[j+2], pMod[j+1], pMod[j+0] ) * m) + c
+
+    adds    X_16, X_16, X_12            // Adding pSrc[i+j+0]
+    adcs    X_17, X_17, X_8             // Adding pSrc[i+j+1]
+    adcs    X_18, X_18, X_9             // Adding pSrc[i+j+2]
+    adcs    X_19, X_19, X_10            // Adding pSrc[i+j+3]
+
+    stp     X_16, X_17, [X_1]           // pSrc[i+j+0], pSrc[i+j+1]
+    stp     X_18, X_19, [X_1, #16]      // pSrc[i+j+2], pSrc[i+j+3]
+
+    sub     X_3, X_3, #32               // Move one digit up
+    cbnz    X_3, SymCryptFdefMontgomeryReduceAsmInner
+
+LABEL(SymCryptFdefMontgomeryReduceAsmInnerEnd)
 
     ldr     X_8, [X_1, #32]             // pSrc[nWords]
-    adds    X_12, X_12, X_8             // c + pSrc[nWords]
-    adc     X_13, xzr, xzr              // Add the carry if any
+    adcs    X_20, X_20, X_7             // c + hc
+    adc     X_7, xzr, xzr               // Add the carry if any
 
-    adds    X_12, X_12, X_7             // c + pSrc[nWords] + hc
-    adc     X_7, X_13, xzr              // Add the carry if any and store into hc
+    adds    X_20, X_20, X_8             // c + hc + pSrc[nWords]
+    adc     X_7, X_7, xzr               // Add the carry if any and store into hc
 
-    str     X_12, [X_1, #32]            // pSrc[nWords] = c
+    str     X_20, [X_1, #32]            // pSrc[nWords] = c
 
     subs    X_4, X_4, #1                // Move one word up
 
-    add     X_17, X_17, #8              // Move stored pSrc pointer one word up
-    mov     X_0, X_16                   // Restore pMod pointer
-    mov     X_1, X_17                   // Restore pSrc pointer
+    sub     X_0, X_0, X_21              // Restore pMod pointer (subtract byte count)
+    sub     X_1, X_1, X_21              // Restore pSrc pointer (subtract byte count)
+    add     X_1, X_1, #8                // Move pSrc pointer one word up
 
-    mov     X_3, X_15                   // Restore the digit counter
+    mov     X_3, X_21                   // Restore the byte counter
 
     bne     SymCryptFdefMontgomeryReduceAsmOuter
 
     //
     // Subtraction
     //
+    add     X_3, X_3, #32           // restore the full byte count for loops using unconditional pre-indexing
+    mov     X_21, X_3               // Store the byte count for later
 
+    sub     X_0, X_0, #32           // offset pMod so we can use pre-increment form of loads
+    sub     X_1, X_1, #32           // offset pSrc so we can use pre-increment form of loads
+    sub     X_2, X_2, #32           // offset pDst so we can use pre-increment form of loads
     mov     X_14, X_2               // Store pDst pointer
 
     // Prepare the pointers for subtract
-    mov     X_0, X_17               // pSrc
-    mov     X_1, X_16               // pMod
-
     mov     X_10, X_7               // X_10 = hc
-    mov     X_3, X_15               // Restore the digit counter
     subs    X_4, X_4, X_4           // Set the carry flag (i.e. no borrow)
 
 LABEL(SymCryptFdefMontgomeryReduceRawSubAsmLoop)
-    sub     X_3, X_3, #1            // Decrement the digit count by one
+    sub     X_3, X_3, #32           // Decrement the byte count by 32
     // borrow is in the carry flag (flipped)
 
-    ldp     X_4, X_6, [X_0, #32]!   // Load two words of pSrc1
-    ldp     X_5, X_7, [X_1, #32]!   // Load two words of pSrc2
+    ldp     X_4, X_6, [X_1, #32]!   // Load two words of pSrc
+    ldp     X_5, X_7, [X_0, #32]!   // Load two words of pMod
     sbcs    X_4, X_4, X_5
     sbcs    X_6, X_6, X_7
     stp     X_4, X_6, [X_2, #32]!   // Store the result in the destination
 
-    ldp     X_4, X_6, [X_0, #16]    // Load two words of pSrc1
-    ldp     X_5, X_7, [X_1, #16]    // Load two words of pSrc2
+    ldp     X_4, X_6, [X_1, #16]    // Load two words of pSrc
+    ldp     X_5, X_7, [X_0, #16]    // Load two words of pMod
     sbcs    X_4, X_4, X_5
     sbcs    X_6, X_6, X_7
     stp     X_4, X_6, [X_2, #16]    // Store the result in the destination
@@ -1381,14 +1402,14 @@ LABEL(SymCryptFdefMontgomeryReduceRawSubAsmLoop)
     orr     X_11, X_10, X_0         // X_11 = hc|d
 
     // Prepare the pointers for masked copy
-    mov     X_0, X_17               // pSrc
+    sub     X_0, X_1, X_21          // Restore pSrc pointer (subtract byte count)
     mov     X_1, X_14               // pDst
 
-    mov     X_2, X_15               // Restore the digit counter
+    mov     X_2, X_21               // Restore the byte counter
     subs    X_4, X_10, X_11         // If (X_11 > X_10) clear the carry flag (i.e. borrow)
 
 LABEL(SymCryptFdefMontgomeryReduceMaskedCopyAsmLoop)
-    sub     X_2, X_2, #1            // decrement the digit count by one
+    sub     X_2, X_2, #32           // decrement the byte count by 32
 
     ldp     X_4, X_6, [X_0, #32]!   // Load two words of the source
     ldp     X_5, X_7, [X_1, #32]!   // Load two words of the destination

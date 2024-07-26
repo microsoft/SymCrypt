@@ -331,7 +331,7 @@ FUNCTION_START(ARM64EC_NAME_MANGLE(SymCryptFdef369MontgomeryReduceAsm), 3, 18)
     mov     X_16, X_0                   // Store the pMod pointer
     mov     X_17, X_1                   // Store the pSrc pointer
 
-    and     X_7, X_7, xzr               // Set hc to 0
+    mov     X_7, xzr                    // Set hc to 0
 
     //
     // Main loop
@@ -340,7 +340,7 @@ LABEL(SymCryptFdef369MontgomeryReduceAsmOuter)
     ldr     X_8, [X_1, #24]             // Load 1 word from pSrc
     mul     X_6, X_8, X_5               // <63:0> bits of pSrc[i]*Inv64 = m
 
-    and     X_12, X_12, xzr             // Set c to 0
+    mov     X_12, xzr                   // Set c to 0
 
 LABEL(SymCryptFdef369MontgomeryReduceAsmInner)
     ldp     X_10, X_11, [X_0, #24]!     // pMod[j]
