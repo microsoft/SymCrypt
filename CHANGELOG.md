@@ -3,6 +3,8 @@
 New changes will be listed here as they are developed. The version number is determined
 prior to the creation of a new release, based on the changes contained in that release.
 
+- Internal self-test changes to support FIPS 140-3 certification
+
 # Version 103.4.3
 
 - Added preliminary support for macOS (static libraries and unit tests only, no ASM optimizations)

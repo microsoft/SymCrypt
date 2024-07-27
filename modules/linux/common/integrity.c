@@ -479,6 +479,7 @@ size_t SymCryptModuleProcessSegmentWithRelocations(
     SymCryptHmacSha256Append( hmacState, segmentCopy, hashableSectionSize );
 #endif
 
+    SymCryptWipe( segmentCopy, hashableSectionSize );
     SymCryptCallbackFree( segmentCopy );
 
     return hashableSectionSize;
@@ -492,7 +493,7 @@ VOID SymCryptModuleDoHmac(
     SYMCRYPT_ERROR scError = SYMCRYPT_NO_ERROR;
     SYMCRYPT_HMAC_SHA256_EXPANDED_KEY hmacKey;
     SYMCRYPT_HMAC_SHA256_STATE hmacState;
-    BYTE actualDigest[SYMCRYPT_HMAC_SHA256_RESULT_SIZE] = {0xFF};
+    BYTE actualDigest[SYMCRYPT_HMAC_SHA256_RESULT_SIZE];
 
     scError = SymCryptHmacSha256ExpandKey( &hmacKey, SymCryptVolatileFipsHmacKey,
         sizeof(SymCryptVolatileFipsHmacKey) );
@@ -526,6 +527,12 @@ VOID SymCryptModuleDoHmac(
     // Verify that the HMAC result matches our expected digest
     SYMCRYPT_FIPS_ASSERT(
         memcmp( actualDigest, SymCryptVolatileFipsHmacDigest, SYMCRYPT_HMAC_SHA256_RESULT_SIZE ) == 0 );
+
+    // FIPS 140-3 TE05.08.02 requires that "any temporary values generated during the integrity
+    // test are zeroised upon completion of the integrity test"
+    SymCryptWipeKnownSize( actualDigest, SYMCRYPT_HMAC_SHA256_RESULT_SIZE );
+    SymCryptWipeKnownSize( &hmacState, sizeof(hmacState) );
+    SymCryptWipeKnownSize( &hmacKey, sizeof(hmacKey) );
 }
 
 VOID SymCryptModuleVerifyIntegrity(void)

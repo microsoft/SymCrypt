@@ -155,7 +155,7 @@ class ElfFileValueProxy(object):
         # buffer, so we need to find the appropriate section within the stream using sh_offset and
         # write to that.
         # Note self.section.stream == self.elf_file.stream.
-        logging.debug("Changing {} writing {} to offset {}".format(self.name, value.hex(), hex(self.offset)))
+        logging.debug("Writing {} to offset {}".format(value.hex(), hex(self.offset)))
         self.section.stream.seek(self.offset)
         self.section.stream.write(value)
 
@@ -164,7 +164,9 @@ class ElfFileValueProxy(object):
         assert(len(new_value) == self.length)
 
         if self.name is not None:
-            logging.debug("Changing {} value to {}".format(self.name, *args))
+            logging.debug("Changing {} value to {}".format(
+                self.name if self.name is not None else "(unnamed)",
+                *args))
 
         self.value = new_value
 
