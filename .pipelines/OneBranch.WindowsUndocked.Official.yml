@@ -39,6 +39,10 @@ parameters:
   type: boolean
   displayName: Create VPack
   default: false
+- name: lkgCompilerBranch
+  type: string
+  displayName: Branch from which to get LKG compiler
+  default: 'official/main'
 # - name: ingest
 #   type: boolean
 #   displayName: Create Ingest PR
@@ -46,7 +50,7 @@ parameters:
 # - name: branch
 #   type: string
 #   displayName: Branch to PR to
-#   default: official/rs_ens1_cs1
+#   default: 'official/rs_ens1_cs1'
 # - name: title
 #   type: string
 #   displayName: PR Title
@@ -87,6 +91,7 @@ extends:
           description: 'SymCrypt cryptographic library'
           owner: 'ensciacrypto@microsoft.com'
           sign: true
+          lkgCompilerBranch: ${{ parameters.lkgCompilerBranch }}
           # Windows ingestion args
           # ingest: ${{ parameters.ingest }}
           # osPath: 'onecore/ds/security/symcrypt'
