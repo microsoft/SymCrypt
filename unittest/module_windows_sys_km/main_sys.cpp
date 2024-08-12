@@ -196,6 +196,8 @@ initSymCrypt(
     SymCryptSshKdfSha256SelfTest();
     SymCryptSshKdfSha512SelfTest();
 
+    SymCryptSskdfSelfTest();
+
     SymCryptSha3_256Selftest();
 
     g_SymCryptFipsSelftestsPerformed |= SYMCRYPT_SELFTEST_ALGORITHM_STARTUP;

@@ -283,6 +283,15 @@ addSymCryptImplementationToGlobalList()
 
     addImplementationToGlobalList<KdfImp<ImpScVariant, AlgSrtpKdf, AlgAes>>();
 
+    addImplementationToGlobalList<KdfImp<ImpScVariant, AlgSskdfHash, AlgSha256>>();
+    addImplementationToGlobalList<KdfImp<ImpScVariant, AlgSskdfHash, AlgSha512>>();
+    addImplementationToGlobalList<KdfImp<ImpScVariant, AlgSskdfHash, AlgSha3_384>>();
+    addImplementationToGlobalList<KdfImp<ImpScVariant, AlgSskdfMac, AlgHmacSha256>>();
+    addImplementationToGlobalList<KdfImp<ImpScVariant, AlgSskdfMac, AlgHmacSha512>>();
+    addImplementationToGlobalList<KdfImp<ImpScVariant, AlgSskdfMac, AlgHmacSha3_384>>();
+    addImplementationToGlobalList<KdfImp<ImpScVariant, AlgSskdfMac, AlgKmac128>>();
+    addImplementationToGlobalList<KdfImp<ImpScVariant, AlgSskdfMac, AlgKmac256>>();
+
     addImplementationToGlobalList<MacImp<ImpScVariant, AlgPoly1305>>();
 
     addImplementationToGlobalList<StreamCipherImp<ImpScVariant, AlgRc4>>();

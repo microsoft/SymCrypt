@@ -508,6 +508,50 @@
 #undef ALG_NAME
 #undef ALG_Name
 
+#define ALG_NAME    SSKDF
+#define ALG_Name    SskdfMac
+
+#define ALG_Base    HmacSha256
+#include "sc_imp_sskdfmacpattern.cpp"
+#undef ALG_Base
+
+#define ALG_Base    HmacSha512
+#include "sc_imp_sskdfmacpattern.cpp"
+#undef ALG_Base
+
+#define ALG_Base    HmacSha3_384
+#include "sc_imp_sskdfmacpattern.cpp"
+#undef ALG_Base
+
+#define ALG_Base    Kmac128
+#include "sc_imp_sskdfmacpattern.cpp"
+#undef ALG_Base
+
+#define ALG_Base    Kmac256
+#include "sc_imp_sskdfmacpattern.cpp"
+#undef ALG_Base
+
+#undef ALG_NAME
+#undef ALG_Name
+
+#define ALG_NAME    SSKDF
+#define ALG_Name    SskdfHash
+
+#define ALG_Base    Sha256
+#include "sc_imp_sskdfhashpattern.cpp"
+#undef ALG_Base
+
+#define ALG_Base    Sha512
+#include "sc_imp_sskdfhashpattern.cpp"
+#undef ALG_Base
+
+#define ALG_Base    Sha3_384
+#include "sc_imp_sskdfhashpattern.cpp"
+#undef ALG_Base
+
+#undef ALG_NAME
+#undef ALG_Name
+
 //
 // There is not enough structure to the CCM & GCM modes to share an implementation
 //

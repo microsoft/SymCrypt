@@ -144,6 +144,10 @@ const char * AlgSrtpKdf::name = "SrtpKdf";
 
 const char * AlgHkdf::name = "Hkdf";
 
+const char * AlgSskdfMac::name = "SskdfMac";
+
+const char * AlgSskdfHash::name = "SskdfHash";
+
 const char * AlgXtsAes::name = "XtsAes";
 
 const char * AlgTlsCbcHmacSha1::name   = "TlsCbcHmacSha1";
@@ -558,6 +562,8 @@ const char * g_algorithmNames[] = {
     AlgSshKdf::name,
     AlgSrtpKdf::name,
     AlgHkdf::name,
+    AlgSskdfMac::name,
+    AlgSskdfHash::name,
     AlgXtsAes::name,
     AlgTlsCbcHmacSha1::name,
     AlgTlsCbcHmacSha256::name,

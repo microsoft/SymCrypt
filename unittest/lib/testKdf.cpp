@@ -540,6 +540,26 @@ testKdfKats()
                 continue;
             }
 
+            if ( katIsFieldPresent(katItem, "fixed_info") )
+            {
+                args.argType = KdfArgumentSskdf;
+                CHECK3( katItem.dataItems.size() == 4, "Incorrect number of fields in SSKDF record in line %lld", line );
+
+                BString katSecret = katParseData( katItem, "z" );
+                BString katFixedInfo = katParseData( katItem, "fixed_info" );
+                BString katSalt = katParseData( katItem, "salt" );
+                BString katRes = katParseData( katItem, "res" );
+
+                args.uSskdf.cbInfo = katFixedInfo.size();
+                args.uSskdf.pbInfo = args.uSskdf.cbInfo > 0 ? katFixedInfo.data() : NULL;
+                args.uSskdf.cbSalt = katSalt.size();
+                args.uSskdf.pbSalt = args.uSskdf.cbSalt > 0 ? katSalt.data() : NULL;
+
+                katKdfSingle( pKdfMultiImp.get(), katSecret.data(), katSecret.size(), &args, katRes.data(), katRes.size(), line );
+
+                continue;
+            }
+
             FATAL2( "Unknown data record at line %lld", line );
         }
 

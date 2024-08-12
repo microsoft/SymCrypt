@@ -21,8 +21,8 @@
         FIPS_SERVICE_DESC("For ECDH and ECDSA, pCurve parameter must refer to one of SymCryptEcurveParamsNistP256, SymCryptEcurveParamsNistP384, SymCryptEcurveParamsNistP521 when calling SymCryptEckeyAllocate, SymCryptEckeyCreate, SymCryptEckeySetRandom.")
 
 #define FIPS_SERVICE_DESC_KEY_DERIVATION \
-        FIPS_SERVICE_DESC("PCSYMCRYPT_MAC parameter must not refer to one of SymCryptMd5HmacAlgorithm, SymCryptHmacSha1Algorithm when calling SymCryptSp800_108, SymCryptTksPrf1_2, SymCryptPbkdf2.") \
-        FIPS_SERVICE_DESC("PCSYMCRYPT_HASH parameter must not refer to one of SymCryptMd2Algorithm, SymCryptMd4Algorithm, SymCryptMd5Algorithm, SymCryptSha1Algorithm when calling SymCryptSshKdf.")
+        FIPS_SERVICE_DESC("PCSYMCRYPT_MAC parameter must not refer to one of SymCryptMd5HmacAlgorithm, SymCryptHmacSha1Algorithm when calling SymCryptSp800_108, SymCryptTksPrf1_2, SymCryptPbkdf2, SymCryptSskdfMac.") \
+        FIPS_SERVICE_DESC("PCSYMCRYPT_HASH parameter must not refer to one of SymCryptMd2Algorithm, SymCryptMd4Algorithm, SymCryptMd5Algorithm, SymCryptSha1Algorithm when calling SymCryptSshKdf, SymCryptSskdfHash.")
 
 #define FIPS_SERVICE_DESC_KEY_ENTRY_AND_OUTPUT \
         FIPS_SERVICE_DESC("For RSA keys, flags parameter must not set SYMCRYPT_FLAG_KEY_NO_FIPS flag, cbModulus parameter must be at least 256 if ppPrimes parameter is not NULL, and at least 128 if ppPrimes parameter is NULL when calling SymCryptRsakeySetValue.") \

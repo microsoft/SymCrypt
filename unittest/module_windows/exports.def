@@ -494,6 +494,11 @@ EXPORTS
     SymCryptSshKdfDerive
     SymCryptSshKdfSha256SelfTest
     SymCryptSshKdfSha512SelfTest
+    SymCryptSskdfMacExpandSalt
+    SymCryptSskdfMacDerive
+    SymCryptSskdfMac
+    SymCryptSskdfHash
+    SymCryptSskdfSelfTest
     SymCryptUint32Bitsize
     SymCryptUint32Bytesize
     SymCryptUint64Bitsize

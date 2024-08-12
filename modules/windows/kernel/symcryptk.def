@@ -492,6 +492,11 @@ EXPORTS
 ;    SymCryptSshKdfExpandKey
 ;    SymCryptSshKdfSha256SelfTest
 ;    SymCryptSshKdfSha512SelfTest
+;    SymCryptSskdfMacExpandSalt
+;    SymCryptSskdfMacDerive
+;    SymCryptSskdfMac
+;    SymCryptSskdfHash
+;    SymCryptSskdfSelfTest
 ;    SymCryptStoreLsbFirstUint32
 ;    SymCryptStoreLsbFirstUint64
 ;    SymCryptStoreMsbFirstUint32

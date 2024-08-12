@@ -141,6 +141,8 @@
     <ClCompile Include="ssh_kdf.c" />
     <ClCompile Include="ssh_kdf_sha256.c" />
     <ClCompile Include="ssh_kdf_sha512.c" />
+    <ClCompile Include="sskdf.c" />
+    <ClCompile Include="sskdf_selftest.c" />
     <ClCompile Include="tlsCbcVerify.c" />
     <ClCompile Include="tlsprf.c" />
     <ClCompile Include="tlsprf_selftest.c" />

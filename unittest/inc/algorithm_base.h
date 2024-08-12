@@ -526,6 +526,7 @@ typedef enum _KDF_ARGUMENT_TYPE {
     KdfArgumentHkdf = 5,
     KdfArgumentSshKdf = 6,
     KdfArgumentSrtpKdf = 7,
+    KdfArgumentSskdf = 8,
 } KDF_ARGUMENT_TYPE;
 
 typedef struct _KDF_GENERIC_ARGUMENTS {
@@ -578,6 +579,13 @@ typedef struct _KDF_SRTPKDF_ARGUMENTS {
     BYTE                        label;
 } KDF_SRTPKDF_ARGUMENTS;
 
+typedef struct _KDF_SSKDF_ARGUMENTS {
+    PCBYTE      pbSalt;
+    SIZE_T      cbSalt;
+    PCBYTE      pbInfo;
+    SIZE_T      cbInfo;
+} KDF_SSKDF_ARGUMENTS;
+
 typedef struct _KDF_ARGUMENTS {
     KDF_ARGUMENT_TYPE   argType;
     union {
@@ -588,6 +596,7 @@ typedef struct _KDF_ARGUMENTS {
         KDF_HKDF_ARGUMENTS      uHkdf;
         KDF_SSHKDF_ARGUMENTS    uSshKdf;
         KDF_SRTPKDF_ARGUMENTS   uSrtpKdf;
+        KDF_SSKDF_ARGUMENTS     uSskdf;
     };
 } KDF_ARGUMENTS, *PKDF_ARGUMENTS;
 typedef const KDF_ARGUMENTS *PCKDF_ARGUMENTS;

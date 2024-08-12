@@ -680,6 +680,16 @@ public:
     const static char * name;
 };
 
+class AlgSskdfMac{
+public:
+    const static char * name;
+};
+
+class AlgSskdfHash{
+public:
+    const static char * name;
+};
+
 class AlgXtsAes{
 public:
     const static char * name;

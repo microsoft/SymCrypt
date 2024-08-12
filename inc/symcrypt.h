@@ -5494,10 +5494,9 @@ SymCryptSskdfMacDerive(
 // Parameters:
 //    - pExpandedSalt       :   Pointer to a SYMCRYPT_SSKDF_MAC_EXPANDED_SALT structure that is
 //                              initialized by a prior call to SymCryptSskdfMacExpandSalt.
-//    - cbMacOutputSize     :   Output size used by the MAC algorithm for intermediate computations.
-//                              Set to 0 for MACs that don't support variable output sizes, or to use
-//                              the default output size. The default output size for KMAC128 is 32 bytes,
-//                              and KMAC256 is 64 bytes.
+//    - cbMacOutputSize     :   Output size used by the MAC algorithm for intermediate computations. Must not be
+//                              greater than 64 bytes. Set to 0 for MACs that don't support variable output sizes,
+//                              or to use the default output size. The default output size when KMAC is used is cbResult.
 //    - pbSecret, cbSecret  :   Buffer containing the shared secret.
 //    - pbInfo, cbInfo      :   Buffer containing the fixed info.
 //    - pbResult, cbResult  :   Buffer to store the derived key. Exactly cbResult bytes of output will be generated.
@@ -5541,14 +5540,19 @@ SymCryptSskdfHash(
 //
 // Parameters:
 //    - hashAlgorithm       :   Hash algorithm that will be used in the key derivation.
-//    - cbMacOutputSize     :   Output size used by the hash algorithm for intermediate computations.
+//    - cbHashOutputSize    :   Output size used by the hash algorithm for intermediate computations.
 //                              Set to 0 for hashes that don't support variable output sizes, or to use
-//                              the default output size.
+//                              the default output size. Currently, no allowed hash algorithms support
+//                              variable output sizes, so this should always be set to 0.
 //    - pbSecret, cbSecret  :   Buffer containing the shared secret.
 //    - pbInfo, cbInfo      :   Buffer containing the fixed info.
 //    - pbResult, cbResult  :   Buffer to store the derived key. Exactly cbResult bytes of output will be generated.
 //                              Must not exceed 2^{32} - 1 times the result size of hashAlgorithm.
 //
+
+VOID
+SYMCRYPT_CALL
+SymCryptSskdfSelfTest(void);
 
 //==========================================================================
 //   RNG ALGORITHMS

@@ -111,6 +111,8 @@ set(SOURCES_COMMON
     ssh_kdf.c
     ssh_kdf_sha256.c
     ssh_kdf_sha512.c
+    sskdf.c
+    sskdf_selftest.c
     tlsCbcVerify.c
     tlsprf_selftest.c
     tlsprf.c

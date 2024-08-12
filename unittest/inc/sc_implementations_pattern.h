@@ -359,6 +359,16 @@ public:
     SYMCRYPT_SRTPKDF_EXPANDED_KEY     key;
 };
 
+template<class BaseAlg>
+class KdfImpState<ImpXxx, AlgSskdfMac, BaseAlg> {
+public:
+    SYMCRYPT_SSKDF_MAC_EXPANDED_SALT     salt;
+};
+
+template<class BaseAlg>
+class KdfImpState<ImpXxx, AlgSskdfHash, BaseAlg> {
+};
+
 template<>
 class XtsImpState<ImpXxx, AlgXtsAes> {
 public:

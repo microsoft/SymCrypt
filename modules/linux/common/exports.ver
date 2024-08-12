@@ -554,4 +554,9 @@ VERSION_103.4
       SymCryptXtsAesEncryptWith128bTweak;
       SymCryptXtsAesExpandKeyEx;
       SymCryptXtsAesKeyCopy;
+      SymCryptSskdfMacExpandSalt;
+      SymCryptSskdfMacDerive;
+      SymCryptSskdfMac;
+      SymCryptSskdfHash;
+      SymCryptSskdfSelfTest;
 } VERSION_103.2;
