@@ -222,6 +222,8 @@ typedef _Return_type_success_( return == SYMCRYPT_NO_ERROR ) enum {
     SYMCRYPT_INCOMPATIBLE_FORMAT,
     SYMCRYPT_VALUE_TOO_LARGE,
     SYMCRYPT_SESSION_REPLAY_FAILURE,
+    SYMCRYPT_HBS_NO_OTS_KEYS_LEFT,
+    SYMCRYPT_HBS_PUBLIC_ROOT_MISMATCH,
 } SYMCRYPT_ERROR;
 
 // SYMCRYPT_ECURVE_TYPE needs to be completely defined before including
@@ -8201,6 +8203,555 @@ SymCryptEcDhSecretAgreementSelftest(void);
 // The self-test will automatically be performed before first operational use of ECDH if using keys
 // with FIPS validation, so most callers should never use this function.
 //
+
+//========================================================================
+//
+// Stateful Hash-based Signatures
+//
+// Hash-based signature schemes are digital signature schemes built out of hash
+// functions. Stateful hash-based signatures are many-time signature schemes
+// composed of a one-time-signature (OTS) scheme and a Merkle-tree representing
+// multiple OTS with a public root value. At each signing operation, one of the
+// (unused) OTS keys is used to sign the message, and the private key is updated
+// so that the same OTS is not used again. Because there is a limited number of
+// OTS keys determined at key generation time, signing cannot be performed after
+// all OTSs are used. This is an important distinction from other digital signature
+// schemes such as RSA or ECDSA.
+// 
+// It is crucial for the security of the *stateful* hash-based signatures that the
+// same private key state NOT be used more than once to sign messages, otherwise all
+// security is lost.
+//
+
+
+//========================================================================
+// XMSS API
+//
+//  XMSS is a stateful hash-based signature scheme specified in RFC 8391. The
+//  multi-tree variant is named XMSS^MT.
+// 
+//  XMSS uses WOTS+ as the one-time-signature (OTS) scheme. Public key consists
+//  of two parts; Merkle-tree hash of OTS public keys called the Root, and a Seed value
+//  used in in hash computations. The private key consists of SK_XMSS which is
+//  used to deterministacally create OTS keys, SK_PRF which is used to generate 
+//  the randomizer for hashing, and an integer Idx is used to select the next OTS key
+//  for signing.
+// 
+
+typedef enum _SYMCRYPT_XMSS_ALGID
+{
+    //                                              Hash Fn.    RFC-8391    SP800-208
+    SYMCRYPT_XMSS_SHA2_10_256       = 0x00000001,   // SHA-256      X           X
+    SYMCRYPT_XMSS_SHA2_16_256       = 0x00000002,   // SHA-256      X           X
+    SYMCRYPT_XMSS_SHA2_20_256       = 0x00000003,   // SHA-256      X           X
+    SYMCRYPT_XMSS_SHA2_10_512       = 0x00000004,   // SHA-512      X
+    SYMCRYPT_XMSS_SHA2_16_512       = 0x00000005,   // SHA-512      X
+    SYMCRYPT_XMSS_SHA2_20_512       = 0x00000006,   // SHA-512      X
+    SYMCRYPT_XMSS_SHAKE_10_256      = 0x00000007,   // SHAKE128     X
+    SYMCRYPT_XMSS_SHAKE_16_256      = 0x00000008,   // SHAKE128     X
+    SYMCRYPT_XMSS_SHAKE_20_256      = 0x00000009,   // SHAKE128     X
+    SYMCRYPT_XMSS_SHAKE_10_512      = 0x0000000A,   // SHAKE256     X
+    SYMCRYPT_XMSS_SHAKE_16_512      = 0x0000000B,   // SHAKE256     X
+    SYMCRYPT_XMSS_SHAKE_20_512      = 0x0000000C,   // SHAKE256     X
+    SYMCRYPT_XMSS_SHA2_10_192       = 0x0000000D,   // SHA-256                  X
+    SYMCRYPT_XMSS_SHA2_16_192       = 0x0000000E,   // SHA-256                  X
+    SYMCRYPT_XMSS_SHA2_20_192       = 0x0000000F,   // SHA-256                  X
+    SYMCRYPT_XMSS_SHAKE256_10_256   = 0x00000010,   // SHAKE256                 X
+    SYMCRYPT_XMSS_SHAKE256_16_256   = 0x00000011,   // SHAKE256                 X
+    SYMCRYPT_XMSS_SHAKE256_20_256   = 0x00000012,   // SHAKE256                 X
+    SYMCRYPT_XMSS_SHAKE256_10_192   = 0x00000013,   // SHAKE256                 X
+    SYMCRYPT_XMSS_SHAKE256_16_192   = 0x00000014,   // SHAKE256                 X
+    SYMCRYPT_XMSS_SHAKE256_20_192   = 0x00000015,   // SHAKE256                 X
+
+} SYMCRYPT_XMSS_ALGID;
+
+typedef enum _SYMCRYPT_XMSSMT_ALGID
+{
+    //                                                  Hash Fn.    RFC-8391    SP800-208
+    //                                                  SHA-256         X           X
+    SYMCRYPT_XMSSMT_SHA2_20_2_256       = 0x00000001,   
+    SYMCRYPT_XMSSMT_SHA2_20_4_256       = 0x00000002, 
+    SYMCRYPT_XMSSMT_SHA2_40_2_256       = 0x00000003, 
+    SYMCRYPT_XMSSMT_SHA2_40_4_256       = 0x00000004, 
+    SYMCRYPT_XMSSMT_SHA2_40_8_256       = 0x00000005, 
+    SYMCRYPT_XMSSMT_SHA2_60_3_256       = 0x00000006, 
+    SYMCRYPT_XMSSMT_SHA2_60_6_256       = 0x00000007, 
+    SYMCRYPT_XMSSMT_SHA2_60_12_256      = 0x00000008, 
+
+    //                                                  SHA-512         X
+    SYMCRYPT_XMSSMT_SHA2_20_2_512       = 0x00000009,   
+    SYMCRYPT_XMSSMT_SHA2_20_4_512       = 0x0000000A,   
+    SYMCRYPT_XMSSMT_SHA2_40_2_512       = 0x0000000B,   
+    SYMCRYPT_XMSSMT_SHA2_40_4_512       = 0x0000000C,   
+    SYMCRYPT_XMSSMT_SHA2_40_8_512       = 0x0000000D,   
+    SYMCRYPT_XMSSMT_SHA2_60_3_512       = 0x0000000E,   
+    SYMCRYPT_XMSSMT_SHA2_60_6_512       = 0x0000000F,   
+    SYMCRYPT_XMSSMT_SHA2_60_12_512      = 0x00000010,   
+
+    //                                                  SHAKE128        X
+    SYMCRYPT_XMSSMT_SHAKE_20_2_256      = 0x00000011,
+    SYMCRYPT_XMSSMT_SHAKE_20_4_256      = 0x00000012,   
+    SYMCRYPT_XMSSMT_SHAKE_40_2_256      = 0x00000013,   
+    SYMCRYPT_XMSSMT_SHAKE_40_4_256      = 0x00000014,   
+    SYMCRYPT_XMSSMT_SHAKE_40_8_256      = 0x00000015,   
+    SYMCRYPT_XMSSMT_SHAKE_60_3_256      = 0x00000016,   
+    SYMCRYPT_XMSSMT_SHAKE_60_6_256      = 0x00000017,   
+    SYMCRYPT_XMSSMT_SHAKE_60_12_256     = 0x00000018,   
+
+    //                                                  SHAKE256        X
+    SYMCRYPT_XMSSMT_SHAKE_20_2_512      = 0x00000019,
+    SYMCRYPT_XMSSMT_SHAKE_20_4_512      = 0x0000001A,
+    SYMCRYPT_XMSSMT_SHAKE_40_2_512      = 0x0000001B,
+    SYMCRYPT_XMSSMT_SHAKE_40_4_512      = 0x0000001C,
+    SYMCRYPT_XMSSMT_SHAKE_40_8_512      = 0x0000001D,
+    SYMCRYPT_XMSSMT_SHAKE_60_3_512      = 0x0000001E,
+    SYMCRYPT_XMSSMT_SHAKE_60_6_512      = 0x0000001F,
+    SYMCRYPT_XMSSMT_SHAKE_60_12_512     = 0x00000020,
+
+    //                                                  SHA-256                     X
+    SYMCRYPT_XMSSMT_SHA2_20_2_192       = 0x00000021,
+    SYMCRYPT_XMSSMT_SHA2_20_4_192       = 0x00000022,
+    SYMCRYPT_XMSSMT_SHA2_40_2_192       = 0x00000023,
+    SYMCRYPT_XMSSMT_SHA2_40_4_192       = 0x00000024,
+    SYMCRYPT_XMSSMT_SHA2_40_8_192       = 0x00000025,
+    SYMCRYPT_XMSSMT_SHA2_60_3_192       = 0x00000026,
+    SYMCRYPT_XMSSMT_SHA2_60_6_192       = 0x00000027,
+    SYMCRYPT_XMSSMT_SHA2_60_12_192      = 0x00000028,
+
+    //                                                  SHAKE256                    X
+    SYMCRYPT_XMSSMT_SHAKE256_20_2_256   = 0x00000029,
+    SYMCRYPT_XMSSMT_SHAKE256_20_4_256   = 0x0000002A,   
+    SYMCRYPT_XMSSMT_SHAKE256_40_2_256   = 0x0000002B,
+    SYMCRYPT_XMSSMT_SHAKE256_40_4_256   = 0x0000002C,
+    SYMCRYPT_XMSSMT_SHAKE256_40_8_256   = 0x0000002D,
+    SYMCRYPT_XMSSMT_SHAKE256_60_3_256   = 0x0000002E,
+    SYMCRYPT_XMSSMT_SHAKE256_60_6_256   = 0x0000002F,
+    SYMCRYPT_XMSSMT_SHAKE256_60_12_256  = 0x00000030,
+
+    //                                                  SHAKE256                    X
+    SYMCRYPT_XMSSMT_SHAKE256_20_2_192   = 0x00000031,
+    SYMCRYPT_XMSSMT_SHAKE256_20_4_192   = 0x00000032,
+    SYMCRYPT_XMSSMT_SHAKE256_40_2_192   = 0x00000033,
+    SYMCRYPT_XMSSMT_SHAKE256_40_4_192   = 0x00000034,
+    SYMCRYPT_XMSSMT_SHAKE256_40_8_192   = 0x00000035,
+    SYMCRYPT_XMSSMT_SHAKE256_60_3_192   = 0x00000036,
+    SYMCRYPT_XMSSMT_SHAKE256_60_6_192   = 0x00000037,
+    SYMCRYPT_XMSSMT_SHAKE256_60_12_192  = 0x00000038,
+
+} SYMCRYPT_XMSSMT_ALGID;
+
+
+typedef enum _SYMCRYPT_XMSSKEY_TYPE
+{
+    SYMCRYPT_XMSSKEY_TYPE_NONE      = 0,
+    SYMCRYPT_XMSSKEY_TYPE_PUBLIC    = 1,    // Key object contains only public key
+    SYMCRYPT_XMSSKEY_TYPE_PRIVATE   = 2,    // Key object contains both public key and private key
+} SYMCRYPT_XMSSKEY_TYPE;
+
+
+SYMCRYPT_ERROR
+SYMCRYPT_CALL
+SymCryptXmssParamsFromAlgId(
+            SYMCRYPT_XMSS_ALGID     id, 
+    _Out_   PSYMCRYPT_XMSS_PARAMS   pParams);
+//
+// Populate SYMCRYPT_XMSS_PARAMS structure for the specified XMSS algorithm identifier
+// using the predefined parameter sets from RFC 8391 and NIST SP800-208
+//
+
+SYMCRYPT_ERROR
+SYMCRYPT_CALL
+SymCryptXmssMtParamsFromAlgId(
+            SYMCRYPT_XMSSMT_ALGID   id,
+    _Out_   PSYMCRYPT_XMSS_PARAMS   pParams);
+//
+// Populate SYMCRYPT_XMSS_PARAMS structure for the specified XMSS^MT algorithm identifier
+// using the predefined parameter sets from RFC 8391 and NIST SP800-208
+//
+
+SYMCRYPT_ERROR
+SYMCRYPT_CALL
+SymCryptXmssSetParams(
+    _Out_   PSYMCRYPT_XMSS_PARAMS   pParams,
+            UINT32                  id,                 // algorithm identifier
+    _In_    PCSYMCRYPT_HASH         pHash,              // hash algorithm
+            UINT32                  cbHashOutput,       // hash output size
+            UINT32                  nWinternitzWidth,   // Winternitz parameter (width of digits)
+            UINT32                  nTotalTreeHeight,   // total tree height
+            UINT32                  nLayers,            // number of levels
+            UINT32                  cbPrefix            // domain separator prefix length
+    );
+//
+// Populates SYMCRYPT_XMSS_PARAMS structure by user defined parameters
+// 
+//
+// Parameters:
+//
+//		pParams. Pointer to the structure that will be populated with the
+//		supplied parameters.
+//
+//		id. Algorithm identifier, will be embedded in key and signature objects.
+//
+//		pHash. Pointer to a hash object that implements a hash function which
+//		will be used in XMSS/XMSS^MT operations.
+//
+//		cbHashOutput. Output size of the hash function in bytes. Leading cbHashOutput
+//      bytes are taken as hash output if the hash algorithm's actual output size is larger.
+//
+//		nWinternitzWidth. Winternitz parameter, width of digits in byte sequences. 
+//      See remark below for more explanation.
+//
+//		nTotalTreeHeight. Height of the XMSS/XMSS^MT tree. In a multi-tree setting,
+//      it is the sum of the tree heights of each layer.
+//
+//		nLayers. Number of layers. For XMSS nLayers=1, otherwise nLayers > 1. When nLayers > 1,
+//      it must divide nTotalTreeHeight without remainder, so that each layer has height
+//      nTotalTreeHeight/nLayers.
+//
+//		cbPrefix. Number of bytes in the prefix to the hash inputs used to domain separate
+//		PRF functions.
+//
+// Requirements:
+// 
+//      cbHashOutput must be nonzero, must be less than or equal to pHash->resultSize,
+//      and must be less than or equal to SYMCRYPT_HASH_MAX_RESULT_SIZE
+// 
+//      nWinternitzWidth must be one of 1, 2, 4, or 8
+// 
+//      nTotalTreeHeight must be non-zero, it must be less than or equal to 32 for 
+//      single-tree (nLayers = 1), and must be less than 64 for multi-tree (nLayers > 1)
+//
+//      nLayers must be non-zero and must divide nTotalTreeHeight without remainder
+// 
+//      cbPrefix must be non-zero
+//
+// Remarks:
+//
+//      RFC 8391 specifies w as the length of the Winternitz chains. Here,
+//      it is used as the width of the digits in an octet string, i.e.,
+//		base2 logarithm of the chain length, which is similar to its use 
+//		in LMS/HSS in RFC 8554.
+//
+
+
+#define SYMCRYPT_FLAG_XMSSKEY_VERIFY_ROOT           (0x00000001)
+// Verifies the public root value when importing a private key
+
+SYMCRYPT_ERROR
+SYMCRYPT_CALL
+SymCryptXmssSizeofKeyBlobFromParams(
+    _In_    PCSYMCRYPT_XMSS_PARAMS  pParams,
+            SYMCRYPT_XMSSKEY_TYPE   keyType,
+    _Out_   SIZE_T*                 pcbKey );
+//
+// Return the size of an XMSS/XMSS^MT key blob associated with the provided XMSS parameters
+//
+// 
+// Parameters:
+//
+//		pParams. Pointer to an XMSS parameters structure that has been properly
+//      initialized before this call.
+//
+//      keyType. SYMCRYPT_XMSSKEY_TYPE_PUBLIC (resp. SYMCRYPT_XMSSKEY_TYPE_PRIVATE) to 
+//      retrieve the size of the public key (resp. private key).
+//
+//      pcbKey. Pointer to the variable to store the size of a public/private
+//      key blob associated with the XMSS parameters.
+//
+//  Remarks:
+//
+//      Callers may provide a NULL pointer for the size they are not interested to query.
+//
+
+PSYMCRYPT_XMSS_KEY
+SYMCRYPT_CALL
+SymCryptXmsskeyAllocate(
+    _In_    PCSYMCRYPT_XMSS_PARAMS  pParams, 
+            UINT32                  flags );
+//
+// Allocate an XMSS/XMSS^MT key object and initialize it
+// 
+// After this call, the key object does not contain a key yet. It must be
+// followed by a call to SymCryptXmsskeyGenerate or SymCryptXmsskeySetValue.
+//
+// Allowed flags: 
+// 
+//      No flags defined for this function
+//
+
+SYMCRYPT_ERROR
+SYMCRYPT_CALL
+SymCryptXmsskeyGenerate(
+    _Inout_ PSYMCRYPT_XMSS_KEY pKey,
+            UINT32             flags );
+//
+// Generate a public/private XMSS/XMSS^MT key-pair
+//
+// Parameters:
+// 
+//      pKey. Key object to store the public/private key-pair
+// 
+//      flags. No flags defined for this function
+//
+// Return values:
+// 
+//      - SYMCRYPT_NO_ERROR
+//      On successfull key generation
+// 
+//      - SYMCRYPT_MEMORY_ALLOCATION_FAILURE
+//      If there is not enough memory to perform key generation
+// 
+// Remarks:
+//
+//      - Generates a random private key (SK_XMSS, SK_PRF) and a random
+//      public seed SEED, and computes the public value Root from it.
+//      - If the function fails, the key object will be in an invalid state.
+// 
+
+SYMCRYPT_ERROR
+SYMCRYPT_CALL
+SymCryptXmsskeySetValue(
+    _In_reads_bytes_( cbSrc )   PCBYTE                  pbInput,
+                                SIZE_T                  cbInput,
+                                SYMCRYPT_XMSSKEY_TYPE   keyType,
+                                UINT32                  flags,
+    _Inout_                     PSYMCRYPT_XMSS_KEY      pKey );
+//
+//  Set an XMSS/XMSS^MT public/private key from key blob
+//
+//  Key formats:
+//      
+//      PubKey: algId | Root | Seed
+//      PrvKey: algId | Root | Seed | Idx | SK_XMSS | SK_PRF 
+// 
+//  algId and Idx are 32-bit and 64-bit integers respectively, stored in big-endian format.
+//  Other values are n-bytes where n is the output size (in bytes) of the hash
+//  algorithm (or the truncated size if the hash output is truncated).
+// 
+//  Public-key format is specified in RFC 8391, whereas private-key format is not.
+//  We define the private-key as an extension of the public-key with the private key
+//  material.
+// 
+//  Parameters:
+//
+//      (pbInput, cbInput). Input key blob to import the key from
+// 
+//      keyType. Indicates whether (pbInput, cbInput) contains a public or a private key.
+//      Must be one of SYMCRYPT_XMSSKEY_TYPE_PUBLIC, or SYMCRYPT_XMSSKEY_TYPE_PRIVATE.
+//      
+//      flags. See below
+// 
+//      pKey. Pointer to the XMSS key object to be initialized from the key blob
+//
+//  Allowed flags:
+// 
+//      - SYMCRYPT_FLAG_XMSSKEY_VERIFY_ROOT
+//      Can only be specified when importing a private key. Recomputes the
+//      public root value and compares it to the one that is imported from the
+//      key blob.
+// 
+//  Return values:
+//      
+//      - SYMCRYPT_NO_ERROR
+//       On successfully updating the key object from the provided key blob
+// 
+//      - SYMCRYPT_INVALID_ARGUMENT
+//       If cbInput does not match a public/private key size indicated by keyType parameter
+//       If an invalid flag is specified, or SYMCRYPT_FLAG_XMSSKEY_VERIFY_ROOT is
+//      specified when setting a public key
+// 
+//      - SYMCRYPT_INLVALID_BLOB
+//       If the XMSS algorithm ID in the key blob does not match the algorithm ID
+//      used in creating the key object pointed to by pKey
+// 
+//      - SYMCRYPT_MEMORY_ALLOCATION_FAILURE
+//       If there is not sufficient memory for public root verification (only if
+//      SYMCRYPT_FLAG_XMSSKEY_VERIFY_ROOT is set in flags)
+// 
+//      - SYMCRYPT_HBS_PUBLIC_ROOT_MISMATCH
+//       If public root value in the key blob does not match the recomputed root value
+//      (only if key blob is for a private key and SYMCRYPT_FLAG_XMSSKEY_VERIFY_ROOT is
+//      specified)
+// 
+//  Remarks:
+//
+//      - The key blob size pbInput must match the size returned by SymCryptXmssSizeofKeyBlobFromParams
+//      for the same keyType and XMSS parameters the key object is created with.
+//      - If the function fails, the key object will be in an invalid state.
+// 
+
+SYMCRYPT_ERROR
+SYMCRYPT_CALL
+SymCryptXmsskeyGetValue(
+    _In_                        PCSYMCRYPT_XMSS_KEY     pKey,
+                                SYMCRYPT_XMSSKEY_TYPE   keyType,
+                                UINT32                  flags,
+    _Out_writes_bytes_( cbKey ) PBYTE                   pbOutput,
+                                SIZE_T                  cbOutput );
+//
+//  Get public/private key value from an XMSS/XMSS^MT key object
+//
+//  Key formats:
+//      
+//      PubKey: algId | Root | Seed
+//      PrvKey: algId | Root | Seed | Idx | SK_XMSS | SK_PRF 
+// 
+//  algId and Idx are 32-bit and 64-bit integers respectively, stored in big-endian format.
+//  Other values are n-bytes where n is the output size (in bytes) of the hash
+//  algorithm (or the truncated size if the hash output is truncated).
+// 
+//  Public-key format is specified in RFC 8391, whereas private-key format is not.
+//  We define the private-key as an extension of the public-key with the private key
+//  material.
+// 
+// Parameters:
+//
+//      pKey. The key object to export the key material from
+// 
+//      keyType. Type of the key (public or private) to get. If the key object
+//      contains a public key, keyType must be SYMCRYPT_XMSSKEY_TYPE_PUBLIC. If
+//      the key object contains a private key, keyType can be one of
+//      SYMCRYPT_XMSSKEY_TYPE_PUBLIC or SYMCRYPT_XMSSKEY_TYPE_PRIVATE
+// 
+//      flags. No flags defined for this function
+// 
+//      (pbOutput, cbOutput). Buffer to store the exported key blob. cbOutput must match
+//      the size of the key to be exported, which can be queried by calling
+//      SymCryptXmssSizeofKeyBlobFromParams.
+//
+// Return values:
+//
+//      - SYMCRYPT_NO_ERROR
+//       On successful exporting of the key
+// 
+//      - SYMCRYPT_INVALID_ARGUMENT
+//       If cbOutput does not match the exact size of the key blob for the specified
+//      keyType
+//       If the key object does not contain private key material when keyType
+//      equals SYMCRYPT_XMSSKEY_TYPE_PRIVATE
+//       If unsupported flags are specified in flags parameter
+//      
+
+VOID
+SYMCRYPT_CALL
+SymCryptXmsskeyFree(
+    _Inout_ PSYMCRYPT_XMSS_KEY pKey);
+//
+// Free an allocated XMSS/XMSS^MT key object
+// 
+
+SIZE_T
+SYMCRYPT_CALL
+SymCryptXmssSizeofSignatureFromParams(
+    _In_ PCSYMCRYPT_XMSS_PARAMS pParams );
+//
+// Return the size of the signature for given XMSS parameters
+//
+
+SYMCRYPT_ERROR
+SYMCRYPT_CALL
+SymCryptXmssSign(
+    _Inout_                             PSYMCRYPT_XMSS_KEY  pKey,
+    _In_reads_bytes_( cbMessage )       PCBYTE              pbMessage,
+                                        SIZE_T              cbMessage,
+                                        UINT32              flags,
+    _Out_writes_bytes_( cbSignature )   PBYTE               pbSignature,
+                                        SIZE_T              cbSignature );
+//
+// Sign a message using XMSS/XMSS^MT
+//
+//  Parameters:
+// 
+//      pKey. Private XMSS/XMSS^MT key used in signing
+// 
+//      (pbMessage, cbMessage). Message to be signed
+// 
+//      flags. No flags defined for this function
+// 
+//      (pbSignature, cbSignature). Buffer to store the generated signature
+// 
+//  Requirements:
+//
+//      pKey must contain the private key
+//
+//      cbSignature must be equal to the generated signature size
+//
+//  Return values:
+//      
+//      - SYMCRYPT_NO_ERROR on successfull signature generation
+// 
+//      - SYMCRYPT_INVALID_ARGUMENT 
+//      If flags parameter is invalid,
+//      or if the key object does not contain private key,
+//      or cbSignature is not of correct size
+// 
+//      - SYMCRYPT_HBS_NO_OTS_KEYS_LEFT
+//      If the key doesn't have any one-time-signatures left for signing
+// 
+//  Remarks:
+//
+//      The input pbMessage can be of arbitrary length and its randomized hash will be the actual
+//      value that is going to be signed with a WOTSP signature. Applications wanting to pass the hash
+//      value of a message to be signed as opposed to the message itself must make sure to have
+//      domain separation between the space of messages and the hashes of the messages.
+// 
+//      The signature size can be queried with SymCryptSizeofXmssSignatureFromParams function.
+//
+
+
+SYMCRYPT_ERROR
+SYMCRYPT_CALL
+SymCryptXmssVerify(
+    _Inout_                         PSYMCRYPT_XMSS_KEY  pKey,
+    _In_reads_bytes_( cbMessage )   PCBYTE              pbMessage,
+                                    SIZE_T              cbMessage,
+                                    UINT32              flags,
+    _In_reads_bytes_( cbSignature ) PCBYTE              pbSignature,
+                                    SIZE_T              cbSignature );
+//
+//  Verify an XMSS/XMSS^MT signature on a message
+//
+//  Parameters:
+// 
+//      pKey. XMSS key used to verify the signature
+// 
+//      (pbMessage, cbMessage) Message for which the signature was created
+// 
+//      flags. No flags defined for this function
+// 
+//      (pbSignature, cbSignature) XMSS or XMSS^MT signature
+// 
+//  Return values:
+// 
+//      - SYMCRYPT_NO_ERROR
+//      If signature verification succeeeds
+// 
+//		- SYMCRYPT_INVALID_ARGUMENT
+//		If flags is invalid or cbSignature is of incorrect size
+//
+//      - SYMCRYPT_SIGNATURE_VERIFICATION_ERROR
+//      If the signature is not valid
+//
+//  Requirements:
+//
+//      cbSignature must be equal to the exact signature size associated with
+//      the XMSS parameters.
+//
+//  Remarks:
+//
+//      In XMSS, the message can be arbitrarily long and a randomized hash of the message
+//      will be computed first to be signed by the WOTSP internally.
+//
+
+VOID
+SYMCRYPT_CALL
+SymCryptXmssSelftest(void);
+//
+//  FIPS self-test for signature verification
+//
+
+
+
 
 //
 // SymCryptFatal

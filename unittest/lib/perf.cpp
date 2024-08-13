@@ -276,6 +276,7 @@ const ALG_MEASURE_PARAMS g_algMeasureParams[] =
     "EcdsaVerify"           , 1, {PERF_KEY_NIST192, PERF_KEY_NIST224, PERF_KEY_NIST256, PERF_KEY_NIST384, PERF_KEY_NIST521, PERF_KEY_NUMS256, PERF_KEY_NUMS384, PERF_KEY_NUMS512, PERF_KEY_W22519, PERF_KEY_W448,}, {},
     "Ecdh"                  , 1, {PERF_KEY_NIST192, PERF_KEY_NIST224, PERF_KEY_NIST256, PERF_KEY_NIST384, PERF_KEY_NIST521, PERF_KEY_NUMS256, PERF_KEY_NUMS384, PERF_KEY_NUMS512, PERF_KEY_W22519, PERF_KEY_W448, PERF_KEY_C255_19,}, {},
     "IEEE802_11SaeCustom"   , 0, {}, {},
+    "Xmss"                  , 1, { PERF_KEY_XMSS_SHA2_10_256, PERF_KEY_XMSS_SHA2_16_256, PERF_KEY_XMSS_SHA2_20_256, PERF_KEY_XMSS_SHA2_10_512,  PERF_KEY_XMSS_SHAKE256_10_256 }, { PERF_DATASIZE_SAME_AS_KEYSIZE },
 
 // Enable the line below if you are running perf on the developer test
 //    "DeveloperTest"         , 1, {1},{},
@@ -998,6 +999,23 @@ const struct {
     { PERF_KEY_XTS_DATA_UNIT_4096,          " 4k" },
 };
 
+const struct {
+    UINT32  algId;
+    BOOL    bMultitree;
+    char*   name;
+} g_XmssIdNameMappings[] = {
+    { SYMCRYPT_XMSS_SHA2_10_256, FALSE, "SHA2_10_256" },
+    { SYMCRYPT_XMSS_SHA2_16_256, FALSE, "SHA2_16_256" },
+    { SYMCRYPT_XMSS_SHA2_20_256, FALSE, "SHA2_20_256" },
+    { SYMCRYPT_XMSS_SHA2_10_512, FALSE, "SHA2_10_512" },
+    { SYMCRYPT_XMSS_SHA2_16_512, FALSE, "SHA2_16_512" },
+    { SYMCRYPT_XMSS_SHA2_20_512, FALSE, "SHA2_20_512" },
+    { SYMCRYPT_XMSS_SHAKE256_10_256, FALSE, "SHAKE256_10_256" },
+    { SYMCRYPT_XMSS_SHAKE256_16_256, FALSE, "SHAKE256_16_256" },
+    { SYMCRYPT_XMSS_SHAKE256_20_256, FALSE, "SHAKE256_20_256" },
+};
+
+
 VOID measurePerfOneAlg( AlgorithmImplementation * pAlgImp )
 {
     PerfDataFn dataFn = pAlgImp->m_perfDataFunction;
@@ -1063,12 +1081,24 @@ VOID measurePerfOneAlg( AlgorithmImplementation * pAlgImp )
 
         perfInfo.strPostfix = "";
 
-        for( SIZE_T i=0; i < ARRAY_SIZE( g_exKeyParamMapping ); i++ )
+        for (SIZE_T i = 0; i < ARRAY_SIZE(g_exKeyParamMapping); i++)
         {
-            if( keyFlags == g_exKeyParamMapping[i].exKeyParam )
+            if (keyFlags == g_exKeyParamMapping[i].exKeyParam)
             {
                 perfInfo.strPostfix = g_exKeyParamMapping[i].str;
                 break;
+            }
+        }
+
+        if (STRICMP(pParams->algName, "Xmss") == 0)
+        {
+            for (SIZE_T i = 0; i < ARRAY_SIZE(g_XmssIdNameMappings); i++)
+            {
+                if (*k == g_XmssIdNameMappings[i].algId)
+                {
+                    perfInfo.strPostfix = g_XmssIdNameMappings[i].name;
+                    break;
+                }
             }
         }
 

@@ -116,6 +116,7 @@ set(SOURCES_COMMON
     tlsCbcVerify.c
     tlsprf_selftest.c
     tlsprf.c
+    xmss.c
     xtsaes.c
   )
 

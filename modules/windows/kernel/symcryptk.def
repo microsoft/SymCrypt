@@ -524,6 +524,19 @@ EXPORTS
 ;    SymCryptXtsAesExpandKeyEx
 ;    SymCryptXtsAesKeyCopy
 ;    SymCryptXtsAesSelftest
+;    SymCryptXmsskeyAllocate
+;    SymCryptXmsskeyFree
+;    SymCryptXmsskeyGenerate
+;    SymCryptXmsskeyGetValue
+;    SymCryptXmsskeySetValue
+;    SymCryptXmssSizeofKeyBlobFromParams
+;    SymCryptXmssMtParamsFromAlgId
+;    SymCryptXmssParamsFromAlgId
+;    SymCryptXmssSetParams
+;    SymCryptXmssSign
+;    SymCryptXmssSizeofSignatureFromParams
+;    SymCryptXmssVerify
+;    SymCryptXmssSelftest
 
     SymCryptDeprecatedStatusIndicator
     SymCryptEntropyAccumulatorInit0

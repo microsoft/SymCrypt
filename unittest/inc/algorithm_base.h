@@ -1681,6 +1681,98 @@ public:
 };
 
 
+// Hash-Based Signatures
+class HbsImplementation : public AlgorithmImplementation
+{
+public:
+    HbsImplementation() {};
+    virtual ~HbsImplementation() {};
+
+private:
+    HbsImplementation(const HbsImplementation&);
+    VOID operator=(const HbsImplementation&);
+
+public:
+
+    virtual NTSTATUS setKey(
+                                UINT32  uAlgId,
+                                BOOL    fMultitree,
+        _In_reads_bytes_(cbSrc) PCBYTE  pbSrc,
+                                SIZE_T  cbSrc,
+                                BOOL    fVerify ) = 0;
+        // Set an XMSS key from algorithm identifier and key blob.
+        // 
+        // If fVerify is TRUE then this function computes the public root
+        // from the private key -only if the key is private- and compares
+        // it to the public root that is in the private key.
+
+
+    virtual NTSTATUS sign(
+        _In_reads_bytes_(cbMsg)         PCBYTE  pbMsg,
+                                        SIZE_T  cbMsg,
+        _Out_writes_bytes_(cbSignature) PBYTE   pbSignature,
+                                        SIZE_T  cbSignature ) = 0;
+    // Sign a message using the private key initialized by setKey()
+
+
+    virtual NTSTATUS verify(
+        _In_reads_bytes_(cbMsg)         PCBYTE  pbMsg,
+                                        SIZE_T  cbMsg,
+        _In_reads_bytes_(cbSignature)   PCBYTE  pbSignature,
+                                        SIZE_T  cbSignature ) = 0;
+    // Verify a signature on a message using the private key initialized 
+    // by setKey()
+};
+
+
+//
+// A template class to store the state of an XMSS implementation in.
+//
+template<class Implementation, class Algorithm> class XmssImpState;
+
+//
+// Template class for the actual XMSS implementations
+//
+template< class Implementation, class Algorithm >
+class XmssImp : public HbsImplementation
+{
+public:
+    XmssImp();
+    virtual ~XmssImp();
+
+private:
+    XmssImp(const XmssImp&);
+    VOID operator=(const XmssImp&);
+
+public:
+
+    virtual NTSTATUS setKey(
+                                UINT32  uAlgId,
+                                BOOL    fMultitree,
+        _In_reads_bytes_(cbSrc) PCBYTE  pbSrc,
+                                SIZE_T  cbSrc,
+                                BOOL    fVerify );
+
+    virtual NTSTATUS sign(
+        _In_reads_bytes_(cbMsg)         PCBYTE  pbMsg,
+                                        SIZE_T  cbMsg,
+        _Out_writes_bytes_(cbSignature) PBYTE   pbSignature,
+                                        SIZE_T  cbSignature ) ;
+
+    virtual NTSTATUS verify(
+        _In_reads_bytes_(cbMsg)         PCBYTE  pbMsg,
+                                        SIZE_T  cbMsg,
+        _In_reads_bytes_(cbSignature)   PCBYTE  pbSignature,
+                                        SIZE_T  cbSignature );
+
+    static const String s_algName;
+    static const String s_modeName;
+    static const String s_impName;
+
+    XmssImpState<Implementation, Algorithm> state;
+};
+
+
 //
 // The stub classes we use to distinguish our implementations and algorithms contain the
 // name of said implementation/algorithm. We use this to auto-define the algorithm name
@@ -1854,6 +1946,15 @@ template< class Imp, class Alg>
 const String DsaImp<Imp,Alg>::s_algName = Alg::name;
 template< class Imp, class Alg>
 const String DsaImp<Imp,Alg>::s_modeName;
+
+template< class Implementation, class Algorithm >
+const String XmssImp<Implementation,Algorithm>::s_algName = Algorithm::name;
+
+template< class Implementation, class Algorithm >
+const String XmssImp<Implementation,Algorithm>::s_modeName;
+
+template< class Implementation, class Algorithm >
+const String XmssImp<Implementation,Algorithm>::s_impName = Implementation::name;
 
 //
 // Template declaration for performance functions (for those implementations that wish to use them)

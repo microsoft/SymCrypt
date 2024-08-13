@@ -946,6 +946,11 @@ public:
     const static char * name;
 };
 
+class AlgXmss {
+public:
+    const static char * name;
+};
+
 class AlgDeveloperTest{
 public:
     const static char * name;
@@ -1398,6 +1403,9 @@ testDsaAlgorithms();
 VOID
 testStatusIndicator(BOOL);
 
+VOID
+testHbs();
+
 KatData *
 getCustomResource( _In_ PSTR resourceName, _In_ PSTR resourceType );
 
@@ -1846,6 +1854,17 @@ printXmmRegisters( PCSTR text );
 
 #define PERF_KEY_W22519     ( PERF_KEY_SW_TEST_CURVE | 32 )
 #define PERF_KEY_W448       ( PERF_KEY_SW_TEST_CURVE | 56 )
+
+#define PERF_KEY_XMSS_SHA2_10_256       (SYMCRYPT_XMSS_SHA2_10_256)
+#define PERF_KEY_XMSS_SHA2_16_256       (SYMCRYPT_XMSS_SHA2_16_256)
+#define PERF_KEY_XMSS_SHA2_20_256       (SYMCRYPT_XMSS_SHA2_20_256)
+#define PERF_KEY_XMSS_SHA2_10_512       (SYMCRYPT_XMSS_SHA2_10_512)
+#define PERF_KEY_XMSS_SHA2_16_512       (SYMCRYPT_XMSS_SHA2_16_512)
+#define PERF_KEY_XMSS_SHA2_20_512       (SYMCRYPT_XMSS_SHA2_20_512)
+#define PERF_KEY_XMSS_SHAKE256_10_256   (SYMCRYPT_XMSS_SHAKE256_10_256)
+#define PERF_KEY_XMSS_SHAKE256_16_256   (SYMCRYPT_XMSS_SHAKE256_16_256)
+#define PERF_KEY_XMSS_SHAKE256_20_256   (SYMCRYPT_XMSS_SHAKE256_20_256)
+
 
 PCBYTE
 getPerfTestModulus( UINT32 exKeySize );

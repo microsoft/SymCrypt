@@ -558,6 +558,19 @@
 
 #define ScShimSymCryptDeprecatedStatusIndicator(...) SCTEST_CALL_SCIMPFN(SymCryptDeprecatedStatusIndicator, __VA_ARGS__)
 
+#define ScShimSymCryptXmsskeyAllocate(...) SCTEST_CALL_SCIMPFN(SymCryptXmsskeyAllocate, __VA_ARGS__)
+#define ScShimSymCryptXmsskeyFree(...) SCTEST_CALL_SCIMPFN(SymCryptXmsskeyFree, __VA_ARGS__)
+#define ScShimSymCryptXmsskeyGenerate(...) SCTEST_CALL_SCIMPFN(SymCryptXmsskeyGenerate, __VA_ARGS__)
+#define ScShimSymCryptXmsskeyGetValue(...) SCTEST_CALL_SCIMPFN(SymCryptXmsskeyGetValue, __VA_ARGS__)
+#define ScShimSymCryptXmsskeySetValue(...) SCTEST_CALL_SCIMPFN(SymCryptXmsskeySetValue, __VA_ARGS__)
+#define ScShimSymCryptXmssSizeofKeyBlobFromParams(...) SCTEST_CALL_SCIMPFN(SymCryptXmssSizeofKeyBlobFromParams, __VA_ARGS__)
+#define ScShimSymCryptXmssMtParamsFromAlgId(...) SCTEST_CALL_SCIMPFN(SymCryptXmssMtParamsFromAlgId, __VA_ARGS__)
+#define ScShimSymCryptXmssParamsFromAlgId(...) SCTEST_CALL_SCIMPFN(SymCryptXmssParamsFromAlgId, __VA_ARGS__)
+#define ScShimSymCryptXmssSetParams(...) SCTEST_CALL_SCIMPFN(SymCryptXmssSetParams, __VA_ARGS__)
+#define ScShimSymCryptXmssSign(...) SCTEST_CALL_SCIMPFN(SymCryptXmssSign, __VA_ARGS__)
+#define ScShimSymCryptXmssSizeofSignatureFromParams(...) SCTEST_CALL_SCIMPFN(SymCryptXmssSizeofSignatureFromParams, __VA_ARGS__)
+#define ScShimSymCryptXmssVerify(...) SCTEST_CALL_SCIMPFN(SymCryptXmssVerify, __VA_ARGS__)
+#define ScShimSymCryptXmssSelftest(...) SCTEST_CALL_SCIMPFN(SymCryptXmssSelftest, __VA_ARGS__)
 
 #define ScShimSymCryptMarvin32DefaultSeed SCTEST_GET_SCIMPSYM(SymCryptMarvin32DefaultSeed)
 #define ScShimSymCryptMd2Algorithm SCTEST_GET_SCIMPSYM(SymCryptMd2Algorithm)

@@ -37,6 +37,7 @@ set(SOURCES
     perf.cpp
     testPaddingPkcs7.cpp
     testStatusIndicator.cpp
+    testHbs.cpp
   )
 
 # Append Windows-specific sources

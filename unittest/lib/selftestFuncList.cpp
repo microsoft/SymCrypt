@@ -90,6 +90,7 @@ const SELFTEST_INFO g_selfTests_allocating[] =
     {&SymCryptDsaSelftest, "DSA" },
     {&SymCryptEcDsaSelftest, "ECDSA" },
     {&SymCryptRsaSelftest, "RSA" },
+    {&SymCryptXmssSelftest, "Xmss" },
 
     {NULL, NULL},
 };

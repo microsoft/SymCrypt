@@ -76,7 +76,7 @@ const SELFTEST_INFO g_selfTests[] =
     {&SymCryptSshKdfSha256SelfTest, "SshKdfSha256" },
     {&SymCryptSshKdfSha512SelfTest, "SshKdfSha512" },
     {&SymCryptSskdfSelfTest, "Sskdf" },
-    
+    {&SymCryptXmssSelftest, "Xmss" },
     {NULL, NULL},
 };
 

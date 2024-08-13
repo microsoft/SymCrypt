@@ -146,6 +146,7 @@
     <ClCompile Include="tlsCbcVerify.c" />
     <ClCompile Include="tlsprf.c" />
     <ClCompile Include="tlsprf_selftest.c" />
+    <ClCompile Include="xmss.c" />
     <ClCompile Include="xtsaes.c" />
   </ItemGroup>
   <ItemGroup Condition="'$(Platform)'=='x64'">
@@ -180,7 +181,6 @@
     <Message Importance="high" Text="Generating build info header" />
     <Exec Command="python ..\scripts\version.py --build-info" />
   </Target>
-
   <Target Name="GetDriverProjectAttributes" Returns="@(DriverProjectAttributes)" />
   <Target Name="GetPackageFiles" Returns="@(FullyQualifiedFilesToPackage)" />
 </Project>

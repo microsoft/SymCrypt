@@ -5,6 +5,7 @@ prior to the creation of a new release, based on the changes contained in that r
 
 - Internal self-test changes to support FIPS 140-3 certification
 - Add SSKDF implementation
+- Add XMSS and XMSS^MT implementations
 
 # Version 103.4.3
 

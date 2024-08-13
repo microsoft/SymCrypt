@@ -2784,6 +2784,42 @@ SYMCRYPT_ALIGN_STRUCT _SYMCRYPT_802_11_SAE_CUSTOM_STATE {
     BYTE                    counter;
 };
 
+//
+// XMSS
+//
+
+typedef SYMCRYPT_ALIGN_STRUCT _SYMCRYPT_XMSS_PARAMS
+{
+    PCSYMCRYPT_HASH hash;           // hash function
+    UINT32          id;             // algorithm identifier
+    UINT32          cbHashOutput;   // hash function output size, must be less than or equal to hash->resultSize
+    UINT32          nWinternitzWidth;// Wintertnitz coefficient, width of digits in bits (chain length = 2^nWinternitzWidth)
+    UINT32          nTotalTreeHeight;// number of layers times the tree height of one layer (each layer has the same height)
+    UINT32          nLayers;        // hyper-tree layers, 1 for single tree
+    UINT32          cbPrefix;       // length of the domain separator prefix in PRFs
+
+    //
+    // The following are derived from the above
+    //
+    UINT32          len1;           // number of w-bit digits in the hash output to be signed ( len1 = ceil(8n / w) )
+    UINT32          len2;           // number of w-bit digits in the checksum
+    UINT32          len;            // len1 + len2
+    UINT32          nLayerHeight;   // tree height of a single layer (h / d)
+    UINT32          cbIdx;          // size of leaf counter in bytes (for single trees cbIdx = 4)
+    UINT32          nLeftShift32;   // left shift count to align the checksum digits to MSB of a 32-bit word
+    
+    BYTE            Reserved[16];   // Reserved for future use
+} SYMCRYPT_XMSS_PARAMS;
+
+typedef SYMCRYPT_XMSS_PARAMS* PSYMCRYPT_XMSS_PARAMS;
+typedef const SYMCRYPT_XMSS_PARAMS* PCSYMCRYPT_XMSS_PARAMS;
+
+struct _SYMCRYPT_XMSS_KEY;
+typedef struct _SYMCRYPT_XMSS_KEY SYMCRYPT_XMSS_KEY;
+typedef       SYMCRYPT_XMSS_KEY* PSYMCRYPT_XMSS_KEY;
+typedef const SYMCRYPT_XMSS_KEY* PCSYMCRYPT_XMSS_KEY;
+
+
 
 #ifndef _PREFAST_
 #if SYMCRYPT_CPU_X86

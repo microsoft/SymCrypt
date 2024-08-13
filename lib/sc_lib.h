@@ -1877,6 +1877,7 @@ SymCryptCShakeEncodeInputStrings(
 // Appends byte_pad( encode_string( pbFunctionNameString ) || encode_string( pbCustomizationString ), pState->inputBlockSize )
 
 
+
 VOID
 SYMCRYPT_CALL
 SymCryptFatalIntercept( UINT32 fatalCode );
@@ -4285,6 +4286,217 @@ SymCryptPositiveWidthNafRecoding(
             PUINT32         absofKIs,
             UINT32          nRecodedDigits );
 
+
+
+//
+// XMSS
+//
+
+//
+// ADRS structure definitions as specified in RFC 8391
+//
+typedef enum _XMSS_ADRS_TYPE
+{
+    XMSS_ADRS_TYPE_OTS          = 0,
+    XMSS_ADRS_TYPE_LTREE        = 1,
+    XMSS_ADRS_TYPE_HASH_TREE    = 2,
+} XMSS_ADRS_TYPE;
+
+typedef struct _XMSS_OTS_ADDRESS
+{
+    BYTE  en32Leaf[4];
+    BYTE  en32Chain[4];
+    BYTE  en32Hash[4];
+} XMSS_OTS_ADDRESS, *PXMSS_OTS_ADDRESS;
+
+typedef struct _XMSS_LTREE_ADDRESS
+{
+    BYTE  en32Leaf[4];
+    BYTE  en32Height[4];
+    BYTE  en32Index[4];
+} XMSS_LTREE_ADDRESS, * PXMSS_LTREE_ADDRESS;
+
+typedef struct _XMSS_HASHTREE_ADDRESS
+{
+    BYTE  padding[4];
+    BYTE  en32Height[4];
+    BYTE  en32Index[4];
+} XMSS_HASHTREE_ADDRESS, * PXMSS_HASHTREE_ADDRESS;
+
+typedef struct _XMSS_ADRS
+{
+    BYTE  en32Layer[4];
+    BYTE  en64Tree[8];
+    BYTE  en32Type[4];
+
+    union {
+        XMSS_OTS_ADDRESS        ots;
+        XMSS_LTREE_ADDRESS      ltree;
+        XMSS_HASHTREE_ADDRESS   hashtree;
+    } u;
+
+    BYTE  en32KeyAndMask[4];
+
+} XMSS_ADRS, *PXMSS_ADRS;
+
+
+typedef SYMCRYPT_ASYM_ALIGN_STRUCT _SYMCRYPT_XMSS_KEY
+{
+    UINT32  version;
+
+    SYMCRYPT_XMSS_PARAMS params;
+
+    SYMCRYPT_XMSSKEY_TYPE keyType;
+
+    // Public key
+    BYTE    Root[SYMCRYPT_HASH_MAX_RESULT_SIZE];
+    BYTE    Seed[SYMCRYPT_HASH_MAX_RESULT_SIZE];
+
+    SYMCRYPT_MAGIC_FIELD
+        
+    // Private key
+    SYMCRYPT_ALIGN_AT(16) UINT64  Idx;  // Aligning on 16-bytes to supress clang warning
+                                        // when atomic increment is performed on it.
+    BYTE    SkXmss[SYMCRYPT_HASH_MAX_RESULT_SIZE];
+    BYTE    SkPrf[SYMCRYPT_HASH_MAX_RESULT_SIZE];
+
+} SYMCRYPT_XMSS_KEY;
+
+typedef SYMCRYPT_XMSS_KEY* PSYMCRYPT_XMSS_KEY;
+
+
+SYMCRYPT_ERROR
+SYMCRYPT_CALL
+SymCryptXmssComputePublicRoot(
+    _In_                            PCSYMCRYPT_XMSS_PARAMS  pParams,
+    _In_reads_bytes_( cbSeed )      PCBYTE                  pbSeed,
+                                    SIZE_T                  cbSeed,
+    _In_reads_bytes_( cbSkXmss )    PCBYTE                  pbSkXmss,
+                                    SIZE_T                  cbSkXmss,
+    _Out_writes_bytes_( cbRoot )    PBYTE                   pbRoot,
+                                    SIZE_T                  cbRoot );
+//
+//  Compute public root value from SEED and SK_XMSS
+//
+
+SYMCRYPT_ERROR
+SYMCRYPT_CALL
+SymCryptXmsskeyVerifyRoot(
+    _In_    PCSYMCRYPT_XMSS_KEY pKey );
+//
+// Verifies that the public root matches the private key by recomputing it
+//
+
+
+VOID
+SYMCRYPT_CALL
+SymCryptHbsGetWinternitzLengths(
+            UINT32  n,      // data size in bytes
+            UINT32  w,      // digit length in bits (Winternitz coefficient)
+    _Out_   PUINT32 puLen1, // number of w-bit digits in n
+    _Out_   PUINT32 puLen2  // number of w-bit digits to store the checksum len1 * (2^w - 1)
+    );
+
+typedef struct _SYMCRYPT_TREEHASH_NODE
+{
+    UINT32  index;
+    UINT32  height;
+    BYTE    value[SYMCRYPT_ANYSIZE_ARRAY];
+} SYMCRYPT_TREEHASH_NODE, * PSYMCRYPT_TREEHASH_NODE;
+
+#define SYMCRYPT_SIZEOF_TREEHASH_NODE(cbValue) (sizeof(SYMCRYPT_TREEHASH_NODE) - 1 + (cbValue))
+
+#define SYMCRYPT_TREEHASH_NODE_GET(aNodes, cbValue, i) ((PSYMCRYPT_TREEHASH_NODE)((PBYTE)(aNodes) + (i) * SYMCRYPT_SIZEOF_TREEHASH_NODE(cbValue)))
+
+
+typedef struct _SYMCRYPT_XMSS_INCREMENTAL_TREEHASH_CONTEXT
+{
+    PCSYMCRYPT_XMSS_PARAMS  pParams;
+    PCBYTE                  pbSeed;
+    XMSS_ADRS               adrs;
+
+} SYMCRYPT_XMSS_INCREMENTAL_TREEHASH_CONTEXT, * PSYMCRYPT_XMSS_INCREMENTAL_TREEHASH_CONTEXT;
+
+
+typedef
+VOID
+(SYMCRYPT_CALL *PSYMCRYPT_INCREMENTAL_TREEHASH_FUNC)(
+    _In_    PSYMCRYPT_TREEHASH_NODE pNodeLeft,
+    _In_    PSYMCRYPT_TREEHASH_NODE pNodeRight,
+    _Out_   PSYMCRYPT_TREEHASH_NODE pNodeOut,
+    _Inout_ PSYMCRYPT_XMSS_INCREMENTAL_TREEHASH_CONTEXT pContext );
+
+
+typedef struct _SYMCRYPT_INCREMENTAL_TREEHASH
+{
+    UINT32 cbNode;      // node size; height + hash result
+    UINT32 nSize;       // current size of the stack
+    UINT32 nCapacity;   // maximum items
+    UINT32 nLastLeafIndex;
+    PSYMCRYPT_INCREMENTAL_TREEHASH_FUNC funcCompressNodes;
+    PSYMCRYPT_XMSS_INCREMENTAL_TREEHASH_CONTEXT pContext;
+
+    SYMCRYPT_TREEHASH_NODE arrNodes[SYMCRYPT_ANYSIZE_ARRAY];
+
+} SYMCRYPT_INCREMENTAL_TREEHASH, *PSYMCRYPT_INCREMENTAL_TREEHASH;
+
+
+PSYMCRYPT_INCREMENTAL_TREEHASH
+SYMCRYPT_CALL
+SymCryptHbsIncrementalTreehashInit(
+    UINT32  nLeaves,
+    PBYTE   pbBuffer,
+    SIZE_T  cbBuffer,
+    UINT32  cbHashResult,
+    PSYMCRYPT_INCREMENTAL_TREEHASH_FUNC funcCompressNodes,
+    PSYMCRYPT_XMSS_INCREMENTAL_TREEHASH_CONTEXT pContext);
+
+PSYMCRYPT_TREEHASH_NODE
+SYMCRYPT_CALL
+SymCryptHbsIncrementalTreehashGetNode(
+    _In_ PSYMCRYPT_INCREMENTAL_TREEHASH pIncHash,
+         SIZE_T                         index );
+
+PSYMCRYPT_TREEHASH_NODE
+SYMCRYPT_CALL
+SymCryptHbsIncrementalTreehashAllocNode(
+    _Inout_ PSYMCRYPT_INCREMENTAL_TREEHASH  pIncHash,
+            UINT32                          nLeafIndex );
+
+VOID
+SYMCRYPT_CALL
+SymCryptHbsIncrementalTreehashGetTopNodes(
+    _Inout_ PSYMCRYPT_INCREMENTAL_TREEHASH  pIncHash,
+    _Out_   PSYMCRYPT_TREEHASH_NODE         *ppNodeLeft,
+    _Out_   PSYMCRYPT_TREEHASH_NODE         *ppNodeRight );
+
+PSYMCRYPT_TREEHASH_NODE
+SYMCRYPT_CALL
+SymCryptHbsIncrementalTreehashProcessCommon(
+    _Inout_ PSYMCRYPT_INCREMENTAL_TREEHASH  pIncHash,
+            BOOLEAN                         fFinal );
+
+PSYMCRYPT_TREEHASH_NODE
+SYMCRYPT_CALL
+SymCryptHbsIncrementalTreehashProcess(
+    _Inout_ PSYMCRYPT_INCREMENTAL_TREEHASH pIncHash);
+
+PSYMCRYPT_TREEHASH_NODE
+SYMCRYPT_CALL
+SymCryptHbsIncrementalTreehashFinalize(
+    _Inout_ PSYMCRYPT_INCREMENTAL_TREEHASH  pIncHash);
+
+UINT32
+SYMCRYPT_CALL
+SymCryptHbsIncrementalTreehashStackDepth(
+    UINT32 nLeaves);
+
+SIZE_T
+SYMCRYPT_CALL
+SymCryptHbsSizeofScratchBytesForIncrementalTreehash(
+    UINT32  cbNode,
+    UINT32  nLeaves);
+
 // Atomics.
 //
 // We define all our SymCrypt atomics below. Different compilers/environments have different
@@ -4499,4 +4711,31 @@ SymCryptCountTrailingZeros32( UINT32 value )
 #endif
 
     return (UINT32) index;
+}
+
+FORCEINLINE
+UINT32
+SymCryptCountLeadingZeros32( UINT32 value )
+{
+    ULONG zeros = 0;
+
+    if(value == 0)
+    {
+        return 32;
+    }
+
+#if SYMCRYPT_MS_VC && (SYMCRYPT_CPU_AMD64 | SYMCRYPT_CPU_ARM64 | SYMCRYPT_CPU_X86 | SYMCRYPT_CPU_ARM)
+    _BitScanReverse(&zeros, value);
+    zeros = 31 - zeros;
+#elif SYMCRYPT_GNUC
+    zeros = __builtin_clz(value);
+#else
+    while( (value & 0x80000000) == 0 )
+    {
+        zeros++;
+        value <<= 1;
+    }
+#endif
+
+    return (UINT32)zeros;
 }

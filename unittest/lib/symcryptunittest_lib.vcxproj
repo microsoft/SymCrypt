@@ -73,6 +73,7 @@
     <ClCompile Include="testXof.cpp" />
     <ClCompile Include="testXts.cpp" />
     <ClCompile Include="testStatusIndicator.cpp" />
+    <ClCompile Include="testHbs.cpp" />
   </ItemGroup>
   <ItemGroup Condition="'$(Platform)'=='x64'">
     <MASM Include="amd64\savevectors.asm" />

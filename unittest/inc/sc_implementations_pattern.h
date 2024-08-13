@@ -418,3 +418,9 @@ public:
     PSYMCRYPT_DLGROUP   pGroup;
     PSYMCRYPT_DLKEY     pKey;
 };
+
+template<>
+class XmssImpState<ImpXxx, AlgXmss> {
+public:
+    PSYMCRYPT_XMSS_KEY pKey;
+};

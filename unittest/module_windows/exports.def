@@ -681,3 +681,16 @@ EXPORTS
     SymCrypt802_11SaeCustomDestroy
     SymCryptFipsGetSelftestsPerformed
     SymCryptDeprecatedStatusIndicator
+    SymCryptXmsskeyAllocate
+    SymCryptXmsskeyFree
+    SymCryptXmsskeyGenerate
+    SymCryptXmsskeyGetValue
+    SymCryptXmsskeySetValue
+    SymCryptXmssSizeofKeyBlobFromParams
+    SymCryptXmssMtParamsFromAlgId
+    SymCryptXmssParamsFromAlgId
+    SymCryptXmssSetParams
+    SymCryptXmssSign
+    SymCryptXmssSizeofSignatureFromParams
+    SymCryptXmssVerify
+    SymCryptXmssSelftest

@@ -246,6 +246,8 @@ const char * AlgEcdsaVerify::name = "EcdsaVerify";
 
 const char * AlgEcdh::name = "Ecdh";
 
+const char * AlgXmss::name = "Xmss";
+
 const char * AlgDeveloperTest::name = "DeveloperTest";
 
 const char * ModeEcb::name = "Ecb";
@@ -613,6 +615,7 @@ const char * g_algorithmNames[] = {
     AlgEcdsaSign::name,
     AlgEcdsaVerify::name,
     AlgEcdh::name,
+    AlgXmss::name,
 
     AlgDeveloperTest::name,
     NULL,
@@ -1532,6 +1535,8 @@ runFunctionalTests()
     testDsaAlgorithms();
 
     testEcc();
+
+    testHbs();
 
     printSymCryptFipsGetSelftestsPerformed();
 

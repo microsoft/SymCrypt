@@ -559,4 +559,17 @@ VERSION_103.4
       SymCryptSskdfMac;
       SymCryptSskdfHash;
       SymCryptSskdfSelfTest;
+      SymCryptXmsskeyAllocate;
+      SymCryptXmsskeyFree;
+      SymCryptXmsskeyGenerate;
+      SymCryptXmsskeyGetValue;
+      SymCryptXmsskeySetValue;
+      SymCryptXmssSizeofKeyBlobFromParams;
+      SymCryptXmssMtParamsFromAlgId;
+      SymCryptXmssParamsFromAlgId;
+      SymCryptXmssSetParams;
+      SymCryptXmssSign;
+      SymCryptXmssSizeofSignatureFromParams;
+      SymCryptXmssVerify;
+      SymCryptXmssSelftest;
 } VERSION_103.2;

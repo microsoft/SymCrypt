@@ -90,6 +90,11 @@ template<class Implementation>
 void
 SetupSymCryptEckey( PBYTE buf1, PBYTE buf2, PBYTE buf3, UINT32 setRandomFlags );
 
+template<class Implementation>
+void
+SetupSymCryptXmsskey( UINT32 algId );
+
+
 VOID
 trialDivisionSetFakePrime( PSYMCRYPT_TRIALDIVISION_PRIME p )
 {
@@ -344,6 +349,8 @@ addSymCryptImplementationToGlobalList()
     addImplementationToGlobalList<EccImp<ImpScVariant, AlgEcdsaSign>>();
     addImplementationToGlobalList<EccImp<ImpScVariant, AlgEcdsaVerify>>();
     addImplementationToGlobalList<EccImp<ImpScVariant, AlgEcdh>>();
+
+    addImplementationToGlobalList<XmssImp<ImpScVariant, AlgXmss>>();
 
 #if SYMCRYPT_MS_VC
     addImplementationToGlobalList<ArithImp<ImpScVariant, AlgIEEE802_11SaeCustom>>();
