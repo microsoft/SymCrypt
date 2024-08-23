@@ -38,6 +38,7 @@ extends:
       tsa:
         enabled: false # Disable TSA to force build breaks
     featureFlags:
+      EnableCDPxPAT: false
       WindowsHostVersion: '1ESWindows2022'
     stages:
     - stage: Build

@@ -26,6 +26,7 @@ extends:
   template: v2/OneBranch.NonOfficial.CrossPlat.yml@templates # https://aka.ms/obpipelines/templates
   parameters:
     featureFlags:
+      EnableCDPxPAT: false
       needExceptionForUbuntuUsage: true # Mariner does not currently support all of our cross-compilation targets
       LinuxHostVersion:
         Distribution: Ubuntu # Mariner kernel is incompatible with Ubuntu container; causes infinite loop in ASAN https://github.com/actions/runner-images/issues/9524
