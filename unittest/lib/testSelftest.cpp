@@ -65,8 +65,14 @@ VOID testSelftestOne( const SELFTEST_INFO * pSelfTestInfo, PrintTable* perfTable
         }
     }
 
-    // Get the average number of clock cycles each selftest takes per iteration, so that we can catch
-    // regressions or unacceptably slow tests when we add new ones.
+    // Get the average number of clock cycles each selftest takes per iteration, so that we can
+    // catch performance regressions or unacceptably slow tests when we add new ones. Note that for
+    // measuring algorithm performance (i.e. not selftests), the unit tests use linear regression
+    // to determine the average number of cycles per byte, and fixed overhead, across many runs.
+    // We do not yet perform linear regression on the selftest performance results, so they will be
+    // less accurate and may show unexpected values for platforms where we don't affinitize the
+    // unit test thread to a single core (e.g. Linux), or on architectures where clock cycle count
+    // varies based on CPU frequency (e.g. AMD64).
     ULONGLONG clockCycleAverage = clockSum / (nTries - nInject);
     perfTable->addItem( pSelfTestInfo->name, "Cycles", clockCycleAverage );
 

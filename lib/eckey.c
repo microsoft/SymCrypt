@@ -547,11 +547,8 @@ SymCryptEckeySetValue(
                 SymCryptEcDsaSelftest,
                 SYMCRYPT_SELFTEST_ALGORITHM_ECDSA );
 
-            if( pEckey->hasPrivateKey )
-            {
-                // We do not need to run an ECDSA PCT on import, indicate that the test has been run
-                pEckey->fAlgorithmInfo |= SYMCRYPT_SELFTEST_KEY_ECDSA;
-            }
+            // ECDSA PCT is deferred until the key is used or exported - see SymCryptEcDsaSign and
+            // SymCryptEckeyGetValue
         }
 
         if ( ( flags & SYMCRYPT_FLAG_ECKEY_ECDH ) != 0 )
@@ -658,11 +655,10 @@ SymCryptEckeyGetValue(
         if ( ((pEckey->fAlgorithmInfo & SYMCRYPT_FLAG_ECKEY_ECDSA) != 0) &&
              ((pEckey->fAlgorithmInfo & SYMCRYPT_FLAG_KEY_NO_FIPS) == 0) )
         {
-            SYMCRYPT_RUN_KEYGEN_PCT(
-                SymCryptEcDsaSignVerifyTest,
+            SYMCRYPT_RUN_KEY_PCT(
+                SymCryptEcDsaPct,
                 pEckey,
-                SYMCRYPT_SELFTEST_ALGORITHM_ECDSA,
-                SYMCRYPT_SELFTEST_KEY_ECDSA );
+                SYMCRYPT_PCT_ECDSA );
         }
 
         // Copy the key into the temporary integer

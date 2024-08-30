@@ -532,7 +532,7 @@ SymCryptRsakeyGenerate(
         goto cleanup;
     }
 
-    // SymCryptRsaSignVerifyTest self-test requires generated key to be at least 496 bits to avoid fatal
+    // SymCryptRsaSignVerifyPct requires the generated key to be at least 496 bits to avoid fatal
     // Require caller to specify NO_FIPS for up to 1024 bits as running FIPS tests on too-small keys
     // does not make it FIPS certifiable and gives the wrong impression to callers
     if ( ( (flags & SYMCRYPT_FLAG_KEY_NO_FIPS) == 0 ) &&
@@ -737,11 +737,10 @@ SymCryptRsakeyGenerate(
         // Unconditionally set the sign flag to enable SignVerify PCT on encrypt-only keypair
         pkRsakey->fAlgorithmInfo |= SYMCRYPT_FLAG_RSAKEY_SIGN;
 
-        SYMCRYPT_RUN_KEYGEN_PCT(
-            SymCryptRsaSignVerifyTest,
+        SYMCRYPT_RUN_KEY_PCT(
+            SymCryptRsaSignVerifyPct,
             pkRsakey,
-            0, /* Do not set any algorithm selftest as run with this PCT */
-            SYMCRYPT_SELFTEST_KEY_RSA_SIGN );
+            SYMCRYPT_PCT_RSA_SIGN );
 
         // Unset the sign flag before returning encrypt-only keypair
         if ( ( flags & SYMCRYPT_FLAG_RSAKEY_SIGN ) == 0 )
@@ -983,10 +982,18 @@ SymCryptRsakeySetValue(
             SymCryptRsaSelftest,
             SYMCRYPT_SELFTEST_ALGORITHM_RSA);
 
-        if( pkRsakey->hasPrivateKey )
+        // Unconditionally set the sign flag to enable SignVerify PCT on encrypt-only keypair
+        pkRsakey->fAlgorithmInfo |= SYMCRYPT_FLAG_RSAKEY_SIGN;
+
+        SYMCRYPT_RUN_KEY_PCT(
+            SymCryptRsaSignVerifyPct,
+            pkRsakey,
+            SYMCRYPT_PCT_RSA_SIGN );
+
+        // Unset the sign flag before returning encrypt-only keypair
+        if ( ( flags & SYMCRYPT_FLAG_RSAKEY_SIGN ) == 0 )
         {
-            // We do not need to run an RSA PCT on import, indicate that the test has been run
-            pkRsakey->fAlgorithmInfo |= SYMCRYPT_SELFTEST_KEY_RSA_SIGN;
+            pkRsakey->fAlgorithmInfo ^= SYMCRYPT_FLAG_RSAKEY_SIGN;
         }
     }
 

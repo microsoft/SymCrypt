@@ -7367,7 +7367,7 @@ SymCryptDlkeyExtendKeyUsage(
 // Enable an existing key which has been generated or imported to be used in specified algorithms.
 // Some callers may not know at key generation or import time what algorithms a key will be used for
 // and this API allows the key to be extended for use in additional algorithms. Use of this API may
-// not be compliant with FIPS 140-3
+// not be compliant with FIPS 140-3.
 //
 // - flags must be some bitwise OR of the following flags:
 //      SYMCRYPT_FLAG_DLKEY_DSA

@@ -2417,7 +2417,7 @@ typedef SYMCRYPT_ASYM_ALIGN_STRUCT _SYMCRYPT_RSAKEY {
                     UINT32              fAlgorithmInfo;     // Tracks which algorithms the key can be used in
                                                             // Also tracks which per-key selftests have been performed on this key
                                                             // A bitwise OR of SYMCRYPT_FLAG_KEY_*, SYMCRYPT_FLAG_RSAKEY_*, and
-                                                            // SYMCRYPT_SELFTEST_KEY_* values
+                                                            // SYMCRYPT_PCT_* values
 
                     UINT32              cbTotalSize;        // Total size of the rsa key
                     BOOLEAN             hasPrivateKey;      // Set to true if there is private key information set
@@ -2571,7 +2571,7 @@ typedef SYMCRYPT_ASYM_ALIGN_STRUCT _SYMCRYPT_DLKEY {
                     UINT32                  fAlgorithmInfo; // Tracks which algorithms the key can be used in
                                                             // Also tracks which per-key selftests have been performed on this key
                                                             // A bitwise OR of SYMCRYPT_FLAG_KEY_*, SYMCRYPT_FLAG_DLKEY_*, and
-                                                            // SYMCRYPT_SELFTEST_KEY_* values
+                                                            // SYMCRYPT_PCT_* values
 
                     BOOLEAN                 fHasPrivateKey; // Set to true if there is a private key set
                     BOOLEAN                 fPrivateModQ;   // Set to true if the private key is at most Q-1, otherwise it is at most P-2
@@ -2760,7 +2760,7 @@ typedef SYMCRYPT_ASYM_ALIGN_STRUCT _SYMCRYPT_ECKEY {
                     UINT32              fAlgorithmInfo; // Tracks which algorithms the key can be used in
                                                         // Also tracks which per-key selftests have been performed on this key
                                                         // A bitwise OR of SYMCRYPT_FLAG_KEY_*, SYMCRYPT_FLAG_ECKEY_*, and
-                                                        // SYMCRYPT_SELFTEST_KEY_* values
+                                                        // SYMCRYPT_PCT_* values
                     BOOLEAN             hasPrivateKey;  // Set to true if there is a private key set
                     PCSYMCRYPT_ECURVE   pCurve;         // Handle to the curve which created the key
 
@@ -3130,18 +3130,25 @@ SymCryptFipsGetSelftestsPerformed(void);
 // defer running expensive tests until we know they are required (e.g. if we generate an Eckey which
 // may be used in ECDH or ECDSA, and only use it for ECDH, the ECDSA PCT is deferred until we first
 // attempt to use the key in ECDSA, or export the private key).
+//
+// For clarity, SYMCRYPT_PCT_* should be used instead of SYMCRYPT_SELFTEST_KEY_* going forward.
+// The latter is retained for compatibility with existing code, but may be removed in a future
+// breaking change.
 
 // Dlkey selftest flags
 // DSA Pairwise Consistency Test to be run generated keys
 #define SYMCRYPT_SELFTEST_KEY_DSA       (0x1)
+#define SYMCRYPT_PCT_DSA                SYMCRYPT_SELFTEST_KEY_DSA
 
 // Eckey selftest flags
 // ECDSA Pairwise Consistency Test to be run generated keys
 #define SYMCRYPT_SELFTEST_KEY_ECDSA     (0x1)
+#define SYMCRYPT_PCT_ECDSA              SYMCRYPT_SELFTEST_KEY_ECDSA
 
 // Rsakey selftest flags
 // RSA Pairwise Consistency Test to be run generated keys
 #define SYMCRYPT_SELFTEST_KEY_RSA_SIGN  (0x1)
+#define SYMCRYPT_PCT_RSA_SIGN           SYMCRYPT_SELFTEST_KEY_RSA_SIGN
 
 UINT32
 SYMCRYPT_CALL

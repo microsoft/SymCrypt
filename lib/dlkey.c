@@ -480,12 +480,16 @@ SymCryptDlkeyGenerate(
     {
         if( ( flags & SYMCRYPT_FLAG_DLKEY_DSA ) != 0 )
         {
+            // Ensure DSA algorithm selftest is run before first use of DSA algorithm
+            SYMCRYPT_RUN_SELFTEST_ONCE(
+                SymCryptDsaSelftest,
+                SYMCRYPT_SELFTEST_ALGORITHM_DSA );
+
             // Run PCT eagerly as the key can only be used for DSA - there is no value in deferring
-            SYMCRYPT_RUN_KEYGEN_PCT(
-                SymCryptDsaSignVerifyTest,
+            SYMCRYPT_RUN_KEY_PCT(
+                SymCryptDsaPct,
                 pkDlkey,
-                SYMCRYPT_SELFTEST_ALGORITHM_DSA,
-                SYMCRYPT_SELFTEST_KEY_DSA );
+                SYMCRYPT_PCT_DSA );
         }
 
         if( ( flags & SYMCRYPT_FLAG_DLKEY_DH ) != 0 )
@@ -796,8 +800,10 @@ SymCryptDlkeySetValue(
 
             if( pkDlkey->fHasPrivateKey )
             {
-                // We do not need to run a DSA PCT on import, indicate that the test has been run
-                pkDlkey->fAlgorithmInfo |= SYMCRYPT_SELFTEST_KEY_DSA;
+                SYMCRYPT_RUN_KEY_PCT(
+                    SymCryptDsaPct,
+                    pkDlkey,
+                    SYMCRYPT_PCT_DSA );
             }
         }
         

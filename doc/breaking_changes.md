@@ -28,3 +28,8 @@ This is for consistency with the Semantic Versioning specification, as well as v
 
 ### extern variables defined in SymCrypt headers will be removed and replaced by equivalent getter functions
 This simplifies how we define dynamic module exports in a cross-platform way.
+
+### Self-test functions and definitions will no longer be exposed/exported
+Various functions and definitions related to FIPS self-tests are exposed to callers in
+symcrypt_internal.h, and exported from the shared object libraries/DLLs. These functions are only
+intended to be used internally for FIPS compliance, so they will be removed from external visibility.

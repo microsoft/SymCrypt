@@ -667,7 +667,7 @@ EXPORTS
     SymCryptEcpointSetRandom
     SymCryptEcpointScalarMul
     SymCryptEcpointMultiScalarMul
-    SymCryptEcDsaSignEx
+    SymCryptEcDsaSignEx     ; deterministic ECDSA signing, only to be used by unit tests
     SymCrypt802_11SaeGetGroupSizes
     SymCrypt802_11SaeCustomInit
     SymCrypt802_11SaeCustomCreatePT

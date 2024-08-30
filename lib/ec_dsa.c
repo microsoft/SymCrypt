@@ -418,11 +418,10 @@ SymCryptEcDsaSign(
     }
 
     // If the key was generated and a PCT has not yet been performed - perform PCT before first use
-    SYMCRYPT_RUN_KEYGEN_PCT(
-        SymCryptEcDsaSignVerifyTest,
+    SYMCRYPT_RUN_KEY_PCT(
+        SymCryptEcDsaPct,
         pKey,
-        SYMCRYPT_SELFTEST_ALGORITHM_ECDSA,
-        SYMCRYPT_SELFTEST_KEY_ECDSA );
+        SYMCRYPT_PCT_ECDSA );
 
     return SymCryptEcDsaSignEx( pKey, pbHashValue, cbHashValue, NULL, format, flags, pbSignature, cbSignature );
 }

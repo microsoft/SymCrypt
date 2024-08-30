@@ -3658,32 +3658,28 @@ SymCryptFdefMontgomeryReduceMulx1024(
 //          |       | The current strategy will be to always perform the stronger tests.
 // --------------------------------------------------------------------
 
-// Macro for executing a module selftest and setting the corresponding algorithm selftest flag
+// Macro for executing a Cryptographic Algorithm Self-Test (CAST) and setting the corresponding
+// flag. These selftests must be run once per algorithm before the algorithm is used. For algorithms
+// like hashing and symmetric encryption which have a low performance cost, we run the CASTs when
+// the module is loaded. For asymmetric algorithms, we defer the CASTs until the first use of the
+// algorithm; hence we need flags to keep track of which CASTs have been run.
 #define SYMCRYPT_RUN_SELFTEST_ONCE(AlgorithmSelftestFunction, AlgorithmSelftestFlag) \
 if( ( g_SymCryptFipsSelftestsPerformed & AlgorithmSelftestFlag ) == 0 ) \
 { \
     AlgorithmSelftestFunction( ); \
-\
     SYMCRYPT_ATOMIC_OR32_PRE_RELAXED( &g_SymCryptFipsSelftestsPerformed, AlgorithmSelftestFlag ); \
 }
 
-// Macro for executing a key-generation PCT, setting the corresponding algorithm selftest flag, and
-// setting the per-key selftest flag.
-// Note that key generation PCTs must be run on every key generated, so the KeySelftestFunction
-// function is run regardless of whether the algorithm selftest flag is already set. Normally the
-// per-key PCT satisfies the algorithm test requirement, so setting the AlgorithmSelftestFlag here
-// prevents subsequent algorithm selftests from being run on key import. If the PCT does not satisfy
-// an algorithm test requirment, the caller can specify 0, and no flag will be set.
-#define SYMCRYPT_RUN_KEYGEN_PCT(KeySelftestFunction, Key, AlgorithmSelftestFlag, KeySelftestFlag) \
+// Macro for executing a pairwise consistency test on a key and setting the per-key selftest flag.
+// Typically PCTs must be run for each key before the key is first used or exported, but the
+// specific requirements vary between algorithms.
+//
+// Note that a PCT is not considered a CAST and thus does not satisfy the aforementioned requirement
+// for algorithm selftests.
+#define SYMCRYPT_RUN_KEY_PCT(KeySelftestFunction, Key, KeySelftestFlag) \
 if( ( Key->fAlgorithmInfo & (KeySelftestFlag | SYMCRYPT_FLAG_KEY_NO_FIPS) ) == 0 ) \
 { \
     KeySelftestFunction( Key ); \
-\
-    if( ( g_SymCryptFipsSelftestsPerformed & AlgorithmSelftestFlag ) != AlgorithmSelftestFlag ) \
-    { \
-        SYMCRYPT_ATOMIC_OR32_PRE_RELAXED(&g_SymCryptFipsSelftestsPerformed, AlgorithmSelftestFlag); \
-    } \
-\
     SYMCRYPT_ATOMIC_OR32_PRE_RELAXED(&Key->fAlgorithmInfo, KeySelftestFlag); \
 }
 
@@ -3695,9 +3691,9 @@ if( ( Key->fAlgorithmInfo & (KeySelftestFlag | SYMCRYPT_FLAG_KEY_NO_FIPS) ) == 0
 #define CHECK_ALGORITHM_INFO_FLAGS_DISTINCT( flag0, flag1, flag2, flag3, flag4 ) \
     C_ASSERT( (flag0 < flag1) && (flag1 < flag2) && (flag2 < flag3) && (flag3 < flag4) );
 
-CHECK_ALGORITHM_INFO_FLAG_POW2(SYMCRYPT_SELFTEST_KEY_DSA);
-CHECK_ALGORITHM_INFO_FLAG_POW2(SYMCRYPT_SELFTEST_KEY_ECDSA);
-CHECK_ALGORITHM_INFO_FLAG_POW2(SYMCRYPT_SELFTEST_KEY_RSA_SIGN);
+CHECK_ALGORITHM_INFO_FLAG_POW2(SYMCRYPT_PCT_DSA);
+CHECK_ALGORITHM_INFO_FLAG_POW2(SYMCRYPT_PCT_ECDSA);
+CHECK_ALGORITHM_INFO_FLAG_POW2(SYMCRYPT_PCT_RSA_SIGN);
 
 CHECK_ALGORITHM_INFO_FLAG_POW2(SYMCRYPT_FLAG_KEY_NO_FIPS);
 CHECK_ALGORITHM_INFO_FLAG_POW2(SYMCRYPT_FLAG_KEY_MINIMAL_VALIDATION);
@@ -3711,29 +3707,29 @@ CHECK_ALGORITHM_INFO_FLAG_POW2(SYMCRYPT_FLAG_ECKEY_ECDH);
 CHECK_ALGORITHM_INFO_FLAG_POW2(SYMCRYPT_FLAG_RSAKEY_SIGN);
 CHECK_ALGORITHM_INFO_FLAG_POW2(SYMCRYPT_FLAG_RSAKEY_ENCRYPT);
 
-CHECK_ALGORITHM_INFO_FLAGS_DISTINCT(SYMCRYPT_SELFTEST_KEY_DSA, SYMCRYPT_FLAG_KEY_NO_FIPS, SYMCRYPT_FLAG_KEY_MINIMAL_VALIDATION, SYMCRYPT_FLAG_DLKEY_DSA, SYMCRYPT_FLAG_DLKEY_DH);
-CHECK_ALGORITHM_INFO_FLAGS_DISTINCT(SYMCRYPT_SELFTEST_KEY_ECDSA, SYMCRYPT_FLAG_KEY_NO_FIPS, SYMCRYPT_FLAG_KEY_MINIMAL_VALIDATION, SYMCRYPT_FLAG_ECKEY_ECDSA, SYMCRYPT_FLAG_ECKEY_ECDH);
-CHECK_ALGORITHM_INFO_FLAGS_DISTINCT(SYMCRYPT_SELFTEST_KEY_RSA_SIGN, SYMCRYPT_FLAG_KEY_NO_FIPS, SYMCRYPT_FLAG_KEY_MINIMAL_VALIDATION, SYMCRYPT_FLAG_RSAKEY_SIGN, SYMCRYPT_FLAG_RSAKEY_ENCRYPT);
+CHECK_ALGORITHM_INFO_FLAGS_DISTINCT(SYMCRYPT_PCT_DSA, SYMCRYPT_FLAG_KEY_NO_FIPS, SYMCRYPT_FLAG_KEY_MINIMAL_VALIDATION, SYMCRYPT_FLAG_DLKEY_DSA, SYMCRYPT_FLAG_DLKEY_DH);
+CHECK_ALGORITHM_INFO_FLAGS_DISTINCT(SYMCRYPT_PCT_ECDSA, SYMCRYPT_FLAG_KEY_NO_FIPS, SYMCRYPT_FLAG_KEY_MINIMAL_VALIDATION, SYMCRYPT_FLAG_ECKEY_ECDSA, SYMCRYPT_FLAG_ECKEY_ECDH);
+CHECK_ALGORITHM_INFO_FLAGS_DISTINCT(SYMCRYPT_PCT_RSA_SIGN, SYMCRYPT_FLAG_KEY_NO_FIPS, SYMCRYPT_FLAG_KEY_MINIMAL_VALIDATION, SYMCRYPT_FLAG_RSAKEY_SIGN, SYMCRYPT_FLAG_RSAKEY_ENCRYPT);
 
 VOID
 SYMCRYPT_CALL
-SymCryptRsaSignVerifyTest( PCSYMCRYPT_RSAKEY pkRsakey );
+SymCryptRsaSignVerifyPct( PCSYMCRYPT_RSAKEY pkRsakey );
 //
-// FIPS PCT for RSA sign/verify. If the self-test fails, SymCryptFatal will be called to fastfail.
-//
-
-VOID
-SYMCRYPT_CALL
-SymCryptDsaSignVerifyTest( PCSYMCRYPT_DLKEY pkDlkey );
-//
-// FIPS PCT for DSA sign/verify. If the self-test fails, SymCryptFatal will be called to fastfail.
+// FIPS pairwise consistency test for RSA sign/verify. Fastfails on error.
 //
 
 VOID
 SYMCRYPT_CALL
-SymCryptEcDsaSignVerifyTest( PCSYMCRYPT_ECKEY pkEckey );
+SymCryptDsaPct( PCSYMCRYPT_DLKEY pkDlkey );
 //
-// FIPS PCT for ECDSA sign/verify. If the self-test fails, SymCryptFatal will be called to fastfail.
+// FIPS pairwise consistency test for DSA sign/verify. Fastfails on error.
+//
+
+VOID
+SYMCRYPT_CALL
+SymCryptEcDsaPct( PCSYMCRYPT_ECKEY pkEckey );
+//
+// FIPS pairwise consistency test for ECDSA sign/verify. Fastfails on error.
 //
 
 typedef struct _SYMCRYPT_DLGROUP_DH_SAFEPRIME_PARAMS {
