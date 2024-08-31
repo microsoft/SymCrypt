@@ -852,7 +852,7 @@ typedef SYMCRYPT_ALIGN_STRUCT _SYMCRYPT_SHA384_STATE
     SYMCRYPT_MAGIC_FIELD
     UINT64                          dataLengthL;            // lower part of msg length
     UINT64                          dataLengthH;            // upper part of msg length
-    SYMCRYPT_ALIGN  BYTE                            buffer[128];            // buffer to keep one input block in
+    SYMCRYPT_ALIGN  BYTE            buffer[128];            // buffer to keep one input block in
     SYMCRYPT_SHA512_CHAINING_STATE  chain;          // chaining state
 } SYMCRYPT_SHA384_STATE, *PSYMCRYPT_SHA384_STATE;
 typedef const SYMCRYPT_SHA384_STATE *PCSYMCRYPT_SHA384_STATE;
@@ -2178,8 +2178,8 @@ SYMCRYPT_ASYM_ALIGN_STRUCT _SYMCRYPT_MODULUS {
     _Field_range_( 1, SYMCRYPT_FDEF_UPB_DIGITS )    UINT32  nDigits;        // digit size depends on run-time decisions...
                                                     UINT32  cbSize;         // Size of modulus object
 
-                                                    UINT32  flags;          // The flag the modulus was created with
-                                                    UINT32  cbModElement;   // size of one modElement
+                                                    UINT32  flags;          // The flags the modulus was created with
+                                                    UINT32  cbModElement;   // Size of one modElement
                                                     UINT64  inv64;          // -1/modulus mod 2^64 (always set but only to a useful value when the modulus is odd)
 
     SYMCRYPT_MAGIC_FIELD
@@ -2362,6 +2362,13 @@ SYMCRYPT_ASYM_ALIGN_STRUCT _SYMCRYPT_MODELEMENT {
 
 #define SYMCRYPT_INTERNAL_SCRATCH_BYTES_FOR_MODMULTIEXP( _nModDigits, _nBases, _nBitsExp )  SYMCRYPT_FDEF_SCRATCH_BYTES_FOR_MODMULTIEXP( _nModDigits, _nBases, _nBitsExp )
 
+//
+// Forward declarations for MlKemkey types
+//
+SYMCRYPT_ASYM_ALIGN_STRUCT _SYMCRYPT_MLKEMKEY;
+typedef struct _SYMCRYPT_MLKEMKEY SYMCRYPT_MLKEMKEY;
+typedef       SYMCRYPT_MLKEMKEY * PSYMCRYPT_MLKEMKEY;
+typedef const SYMCRYPT_MLKEMKEY * PCSYMCRYPT_MLKEMKEY;
 
 //
 // RSA padding scratch definitions
@@ -3104,6 +3111,7 @@ typedef enum _SYMCRYPT_SELFTEST_ALGORITHM {
     SYMCRYPT_SELFTEST_ALGORITHM_RSA     =  0x8,
     SYMCRYPT_SELFTEST_ALGORITHM_DH      = 0x10,
     SYMCRYPT_SELFTEST_ALGORITHM_ECDH    = 0x20,
+    SYMCRYPT_SELFTEST_ALGORITHM_MLKEM   = 0x40,
 } SYMCRYPT_SELFTEST_ALGORITHM;
 
 // Takes values which are some bitwise OR combination of SYMCRYPT_SELFTEST_ALGORITHM values

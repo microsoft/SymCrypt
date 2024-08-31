@@ -554,6 +554,20 @@ VERSION_103.4
       SymCryptXtsAesEncryptWith128bTweak;
       SymCryptXtsAesExpandKeyEx;
       SymCryptXtsAesKeyCopy;
+} VERSION_103.2;
+VERSION_103.5
+{
+   global:
+      SymCryptMlKemDecapsulate;
+      SymCryptMlKemEncapsulate;
+      SymCryptMlKemkeyAllocate;
+      SymCryptMlKemkeyFree;
+      SymCryptMlKemkeyGenerate;
+      SymCryptMlKemkeyGetValue;
+      SymCryptMlKemkeySetValue;
+      SymCryptMlKemSelftest;
+      SymCryptMlKemSizeofCiphertextFromParams;
+      SymCryptMlKemSizeofKeyFormatFromParams;
       SymCryptSskdfMacExpandSalt;
       SymCryptSskdfMacDerive;
       SymCryptSskdfMac;
@@ -572,4 +586,4 @@ VERSION_103.4
       SymCryptXmssSizeofSignatureFromParams;
       SymCryptXmssVerify;
       SymCryptXmssSelftest;
-} VERSION_103.2;
+} VERSION_103.4;

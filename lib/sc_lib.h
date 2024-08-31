@@ -4282,6 +4282,8 @@ SymCryptPositiveWidthNafRecoding(
             PUINT32         absofKIs,
             UINT32          nRecodedDigits );
 
+// ML-KEM internal function definitions are in their own header
+#include "sc_lib_mlkem.h"
 
 
 //

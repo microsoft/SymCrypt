@@ -97,6 +97,8 @@
     <ClCompile Include="md2.c" />
     <ClCompile Include="md4.c" />
     <ClCompile Include="md5.c" />
+    <ClCompile Include="mlkem.c" />
+    <ClCompile Include="mlkem_primitives.c" />
     <ClCompile Include="modexp.c" />
     <ClCompile Include="paddingPkcs7.c" />
     <ClCompile Include="parhash.c" />

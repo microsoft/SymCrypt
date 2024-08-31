@@ -8750,7 +8750,218 @@ SymCryptXmssSelftest(void);
 //  FIPS self-test for signature verification
 //
 
+// MLKEMKEY objects' API
+//
 
+// MLKEM key formats
+// ==================
+//  -   The below formats apply **only to external formats**: When somebody is
+//      importing a key (from test vectors, for example) or exporting a key.
+//      The internal format of the keys is not visible to the caller.
+typedef enum _SYMCRYPT_MLKEMKEY_FORMAT {
+    SYMCRYPT_MLKEMKEY_FORMAT_NULL               = 0,
+    SYMCRYPT_MLKEMKEY_FORMAT_PRIVATE_SEED       = 1,    
+        // 64-byte concatenation of d || z from FIPS 203. Smallest representation of a full
+        // ML-KEM key.
+        // On its own it is ambiguous what type of ML-KEM key this represents; callers wanting to
+        // store this format must track the key type alongside the key.
+    SYMCRYPT_MLKEMKEY_FORMAT_DECAPSULATION_KEY  = 2,
+        // Standard byte encoding of an ML-KEM Decapsulation key, per FIPS 203.
+        // Size is 1632, 2400, or 3168 bytes for ML-KEM 512, 768, and 1024 respectively.
+    SYMCRYPT_MLKEMKEY_FORMAT_ENCAPSULATION_KEY  = 3,
+        // Standard byte encoding of an ML-KEM Encapsulation key, per FIPS 203.
+        // Size is 800, 1184, or 1568 bytes for ML-KEM 512, 768, and 1024 respectively.
+} SYMCRYPT_MLKEMKEY_FORMAT;
+
+
+typedef enum _SYMCRYPT_MLKEM_PARAMS {
+    SYMCRYPT_MLKEM_PARAMS_NULL          = 0,
+    SYMCRYPT_MLKEM_PARAMS_MLKEM512      = 1,
+    SYMCRYPT_MLKEM_PARAMS_MLKEM768      = 2,
+    SYMCRYPT_MLKEM_PARAMS_MLKEM1024     = 3,
+} SYMCRYPT_MLKEM_PARAMS;
+//
+// Currently supported ML-KEM parameter sets are represented externally only by the enum
+//
+
+PSYMCRYPT_MLKEMKEY
+SYMCRYPT_CALL
+SymCryptMlKemkeyAllocate(
+    SYMCRYPT_MLKEM_PARAMS   params );
+//
+// Allocate and create a new MLKEMKEY object sized according to the specified parameters.
+//
+// This call does not initialize the key. It should be
+// followed by a call to SymCryptMlKemkeyGenerate or
+// SymCryptMlKemkeySetValue.
+//
+
+VOID
+SYMCRYPT_CALL
+SymCryptMlKemkeyFree(
+    _Inout_ PSYMCRYPT_MLKEMKEY  pkMlKemkey );
+
+
+SYMCRYPT_ERROR
+SYMCRYPT_CALL
+SymCryptMlKemSizeofKeyFormatFromParams(
+            SYMCRYPT_MLKEM_PARAMS       params,
+            SYMCRYPT_MLKEMKEY_FORMAT    mlKemkeyformat,
+    _Out_   SIZE_T*                     pcbKeyFormat );
+//
+// Gives the size in bytes of the blob of the given format for the given ML-KEM
+// parameters and the specified format via cbKeyFormat output.
+// Returns SYMCRYPT_INCOMPATIBLE_FORMAT if mlKemkeyFormat is an unsupported value,
+// or SYMCRYPT_INVALID_ARGUMENT if other parameters are invalid.
+//
+
+#define SYMCRYPT_MLKEM_CIPHERTEXT_SIZE_MLKEM512    (768)
+#define SYMCRYPT_MLKEM_CIPHERTEXT_SIZE_MLKEM768    (1088)
+#define SYMCRYPT_MLKEM_CIPHERTEXT_SIZE_MLKEM1024   (1568)
+
+SYMCRYPT_ERROR
+SYMCRYPT_CALL
+SymCryptMlKemSizeofCiphertextFromParams(
+            SYMCRYPT_MLKEM_PARAMS       params,
+    _Out_   SIZE_T*                     pcbCiphertext );
+//
+// Gives the size in bytes of the ciphertext for the given ML-KEM parameters.
+// Returns SYMCRYPT_INVALID_ARGUMENT if parameters are invalid.
+//
+
+SYMCRYPT_ERROR
+SYMCRYPT_CALL
+SymCryptMlKemkeyGenerate(
+    _Inout_                     PSYMCRYPT_MLKEMKEY  pkMlKemkey,
+                                UINT32              flags );
+//
+// Generate a new random ML-KEM key using the information from the
+// parameters passed to SymCryptMlKemkeyAllocate.
+//
+// Allowed flags:
+//
+// - SYMCRYPT_FLAG_KEY_NO_FIPS
+//   Opt-out of performing validation required for FIPS
+//
+// Described in more detail in the "Flags for asymmetric key generation and import" section above
+//
+
+SYMCRYPT_ERROR
+SYMCRYPT_CALL
+SymCryptMlKemkeySetValue(
+    _In_reads_bytes_( cbSrc )   PCBYTE                      pbSrc,
+                                SIZE_T                      cbSrc,
+                                SYMCRYPT_MLKEMKEY_FORMAT    mlKemkeyFormat, 
+                                UINT32                      flags,
+    _Inout_                     PSYMCRYPT_MLKEMKEY          pkMlKemkey );
+//
+// Import key material to an ML-KEM key object. The arguments are the following:
+//  - (pbSrc, cbSrc): a buffer containing a representation of an ML-KEM key,
+//    in format specified by mlKemkeyFormat.
+//  - mlKemkeyFormat format of the input
+//
+// Allowed flags:
+//
+// - SYMCRYPT_FLAG_KEY_NO_FIPS
+//   Opt-out of performing validation required for FIPS
+//
+// - SYMCRYPT_FLAG_KEY_MINIMAL_VALIDATION
+//   Opt-out of performing almost all validation - must be specified with SYMCRYPT_FLAG_KEY_NO_FIPS
+//
+// Remarks:
+// - cbSrc must be equal to the cbKeyFormat returned from
+//   SymCryptMlKemSizeofKeyFormatFromParams(params, mlKemkeyFormat, &cbKeyFormat), though typically this
+//   value can be known statically (see definition of SYMCRYPT_MLKEMKEY_FORMAT)
+//
+
+SYMCRYPT_ERROR
+SYMCRYPT_CALL
+SymCryptMlKemkeyGetValue(
+    _In_                        PCSYMCRYPT_MLKEMKEY         pkMlKemkey,
+    _Out_writes_bytes_( cbDst ) PBYTE                       pbDst,
+                                SIZE_T                      cbDst,
+                                SYMCRYPT_MLKEMKEY_FORMAT    mlKemkeyFormat,
+                                UINT32                      flags );
+//
+// Export key material from an ML-KEM key object. The arguments are the following:
+//  - (pbDst, cbDst): a buffer into which a representation of an ML-KEM key is
+//    written, in the format specified by mlKemkeyFormat.
+//  - mlKemkeyFormat format of the output
+//
+// Allowed flags:
+//      - None.
+//
+//  Remarks:
+//  - If the key object does not have the information required to export to the format
+//    specified by mlKemkeyFormat this function will return SYMCRYPT_INCOMPATIBLE_FORMAT.
+//  - cbDst must be equal to the cbKeyFormat returned from
+//    SymCryptMlKemSizeofKeyFormatFromParams(params, mlKemkeyFormat, &cbKeyFormat), though typically this
+//    value can be known statically (see definition of SYMCRYPT_MLKEMKEY_FORMAT)
+//
+
+SYMCRYPT_ERROR
+SYMCRYPT_CALL
+SymCryptMlKemEncapsulate(
+    _In_                                    PCSYMCRYPT_MLKEMKEY pkMlKemkey,
+    _Out_writes_bytes_( cbAgreedSecret )    PBYTE               pbAgreedSecret,
+                                            SIZE_T              cbAgreedSecret, 
+    _Out_writes_bytes_( cbCiphertext )      PBYTE               pbCiphertext,
+                                            SIZE_T              cbCiphertext );
+//
+// Performs the Encapsulate operation of ML-KEM.
+// This uses the public information of an ML-KEM keypair to generate an agreed secret
+// and a ciphertext. Only a peer with the private information of an ML-KEM keypair can
+// decapsulate the ciphertext to compute the agreed secret.
+//
+// The arguments are the following:
+// - pkMlKemkey: a key which contains public information required for encapsulation.
+// - (pbAgreedSecret, cbAgreedSecret): a buffer into which the generated secret is written.
+//   Currently cbAgreedSecret must be 32 for all parameterizations of ML-KEM.
+// - (pbCiphertext, cbCiphertext): a buffer into which the encapsulated secret is written.
+//   cbCiphertext must equal cbCiphertext given by SymCryptMlKemSizeofCiphertextFromParams,
+//   though typically this value can be known statically (see definition of
+//   SYMCRYPT_MLKEM_CIPHERTEXT_SIZE_*).
+//
+
+SYMCRYPT_ERROR
+SYMCRYPT_CALL
+SymCryptMlKemDecapsulate(
+    _In_                                    PCSYMCRYPT_MLKEMKEY pkMlKemkey,
+    _In_reads_bytes_( cbCiphertext )        PCBYTE              pbCiphertext,
+                                            SIZE_T              cbCiphertext,
+    _Out_writes_bytes_( cbAgreedSecret )    PBYTE               pbAgreedSecret,
+                                            SIZE_T              cbAgreedSecret );
+//
+// Performs the Decapsulate operation of ML-KEM.
+// This uses the private information of an ML-KEM keypair to generate an agreed
+// secret and a ciphertext which can be decapsulated with the secret decapsulation key.
+//
+// The arguments are the following:
+// - pkMlKemkey: a key which contains private information required for decapsulation.
+// - (pbCiphertext, cbCiphertext): a buffer containing an encapsulated secret.
+//   cbCiphertext must equal cbCiphertext given by SymCryptMlKemSizeofCiphertextFromParams,
+//   though typically this value can be known statically (see definition of
+//   SYMCRYPT_MLKEM_CIPHERTEXT_SIZE_*).
+// - (pbAgreedSecret, cbAgreedSecret): a buffer into which the generated secret is written.
+//   Currently cbAgreedSecret must be 32 for all parameterizations of ML-KEM.
+//
+// Note: Given an invalid, but correctly-sized, ciphertext, the ML-KEM Decapsulation operation
+// will "implicitly reject" the ciphertext, by returning success in equal time to a valid
+// decapsulation operation, with pseudo-random agreed secret output. This forces higher
+// level protocols to fail later when symmetric keys of peers do not match.
+// So decapsulate will only ever fail if there are programming errors (i.e. incorrect
+// size, use of uninitialized pkMlKemkey), or something fundamentally goes wrong with the
+// environment (i.e. internal memory allocation fails, or self-test detect hardware error).
+//
+
+VOID
+SYMCRYPT_CALL
+SymCryptMlKemSelftest(void);
+//
+// FIPS self-test for ML-KEM. If the self-test fails, SymCryptFatal will be called to fastfail.
+// The self-test will automatically be performed before first operational use of ML-KEM if using
+// keys with FIPS validation, so most callers should never use this function.
+//
 
 
 //

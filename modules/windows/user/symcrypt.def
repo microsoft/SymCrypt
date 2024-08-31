@@ -331,6 +331,16 @@ EXPORTS
     SymCryptMd5StateCopy
     SymCryptMd5StateExport
     SymCryptMd5StateImport
+    SymCryptMlKemDecapsulate
+    SymCryptMlKemEncapsulate
+    SymCryptMlKemkeyAllocate
+    SymCryptMlKemkeyFree
+    SymCryptMlKemkeyGenerate
+    SymCryptMlKemkeyGetValue
+    SymCryptMlKemkeySetValue
+    SymCryptMlKemSelftest
+    SymCryptMlKemSizeofCiphertextFromParams
+    SymCryptMlKemSizeofKeyFormatFromParams
     SymCryptModuleInit
     SymCryptPaddingPkcs7Add
     SymCryptPaddingPkcs7Remove

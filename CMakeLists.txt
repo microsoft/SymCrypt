@@ -82,6 +82,11 @@ option(
     implementations of certain algorithms."
     OFF)
 
+option(
+    SYMCRYPT_TEST_LIBCRUX
+    "When enabled, the SymCrypt unit tests will be linked against and configured to run performance comparisons against libcrux
+    implementations of certain algorithms."
+    OFF)
 
 include(${SYMCRYPT_SOURCE_DIR}/cmake-configs/SymCrypt-Platforms.cmake)
 

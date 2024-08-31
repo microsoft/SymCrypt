@@ -1680,6 +1680,110 @@ public:
     static const String s_algName;
 };
 
+class KemImplementation : public AlgorithmImplementation
+{
+public:
+    KemImplementation() {};
+    virtual ~KemImplementation() {};
+
+private:
+    KemImplementation( const KemImplementation & );
+    VOID operator=( const KemImplementation & );
+
+public:
+    virtual NTSTATUS setKeyFromTestBlob(
+        _In_reads_bytes_( cbTestKeyBlob )       PCBYTE              pcbTestKeyBlob,
+                                                SIZE_T              cbTestKeyBlob,
+                                                BOOL                canDecapsulate ) = 0;
+
+    virtual NTSTATUS getBlobFromKey(
+                                                UINT32              blobType,
+        _Out_writes_bytes_( cbBlob )            PBYTE               pbBlob,
+                                                SIZE_T              cbBlob ) = 0;
+
+    virtual NTSTATUS encapsulate(
+        _Out_writes_bytes_( cbAgreedSecret )    PBYTE               pbAgreedSecret,
+                                                SIZE_T              cbAgreedSecret, 
+        _Out_writes_bytes_( cbCiphertext )      PBYTE               pbCiphertext,
+                                                SIZE_T              cbCiphertext ) = 0;
+
+    virtual NTSTATUS encapsulateEx(
+        _In_reads_bytes_( cbRandom )            PCBYTE              pbRandom,
+                                                SIZE_T              cbRandom,
+        _Out_writes_bytes_( cbAgreedSecret )    PBYTE               pbAgreedSecret,
+                                                SIZE_T              cbAgreedSecret, 
+        _Out_writes_bytes_( cbCiphertext )      PBYTE               pbCiphertext,
+                                                SIZE_T              cbCiphertext ) = 0;
+
+    virtual NTSTATUS decapsulate(
+        _In_reads_bytes_( cbCiphertext )        PCBYTE              pbCiphertext,
+                                                SIZE_T              cbCiphertext,
+        _Out_writes_bytes_( cbAgreedSecret )    PBYTE               pbAgreedSecret,
+                                                SIZE_T              cbAgreedSecret ) = 0;
+};
+
+// Currently maximum key blob size is ML-KEM1024 decapsulation key blob
+#define MAX_MLKEMKEY_BLOB_SIZE (3168)
+
+typedef struct _MLKEMKEY_TESTBLOB
+{
+    SYMCRYPT_MLKEM_PARAMS params;               // represents the parameter set of ML-KEM
+    SYMCRYPT_MLKEMKEY_FORMAT format;            // represents the format of the ML-KEM key blob
+    BYTE    abKeyBlob[MAX_MLKEMKEY_BLOB_SIZE];  // byte blob representing an ML-KEM key
+    SIZE_T  cbKeyBlob;
+} MLKEMKEY_TESTBLOB, *PMLKEMKEY_TESTBLOB;
+typedef const MLKEMKEY_TESTBLOB * PCMLKEMKEY_TESTBLOB;
+
+template< class Implementation, class Algorithm > class KemImpState;
+
+template< class Implementation, class Algorithm >
+class KemImp : public KemImplementation
+{
+public:
+    KemImp();
+    virtual ~KemImp();
+
+private:
+    KemImp( const KemImp & );
+    VOID operator=( const KemImp & );
+
+public:
+    static const String s_algName;             // Algorithm name
+    static const String s_modeName;
+    static const String s_impName;             // Implementation name
+
+    virtual NTSTATUS setKeyFromTestBlob(
+        _In_reads_bytes_( cbTestKeyBlob )       PCBYTE              pcbTestKeyBlob,
+                                                SIZE_T              cbTestKeyBlob,
+                                                BOOL                canDecapsulate );
+
+    virtual NTSTATUS getBlobFromKey(
+                                                UINT32              blobType,
+        _Out_writes_bytes_( cbBlob )            PBYTE               pbBlob,
+                                                SIZE_T              cbBlob );
+
+    virtual NTSTATUS encapsulate(
+        _Out_writes_bytes_( cbAgreedSecret )    PBYTE               pbAgreedSecret,
+                                                SIZE_T              cbAgreedSecret, 
+        _Out_writes_bytes_( cbCiphertext )      PBYTE               pbCiphertext,
+                                                SIZE_T              cbCiphertext );
+
+    virtual NTSTATUS encapsulateEx(
+        _In_reads_bytes_( cbRandom )            PCBYTE              pbRandom,
+                                                SIZE_T              cbRandom,
+        _Out_writes_bytes_( cbAgreedSecret )    PBYTE               pbAgreedSecret,
+                                                SIZE_T              cbAgreedSecret, 
+        _Out_writes_bytes_( cbCiphertext )      PBYTE               pbCiphertext,
+                                                SIZE_T              cbCiphertext );
+
+    virtual NTSTATUS decapsulate(
+        _In_reads_bytes_( cbCiphertext )        PCBYTE              pbCiphertext,
+                                                SIZE_T              cbCiphertext,
+        _Out_writes_bytes_( cbAgreedSecret )    PBYTE               pbAgreedSecret,
+                                                SIZE_T              cbAgreedSecret );
+
+    KemImpState<Implementation,Algorithm> state;
+};
 
 // Hash-Based Signatures
 class HbsImplementation : public AlgorithmImplementation
@@ -1955,6 +2059,13 @@ const String XmssImp<Implementation,Algorithm>::s_modeName;
 
 template< class Implementation, class Algorithm >
 const String XmssImp<Implementation,Algorithm>::s_impName = Implementation::name;
+
+template< class Imp, class Alg>
+const String KemImp<Imp,Alg>::s_impName = Imp::name;
+template< class Imp, class Alg>
+const String KemImp<Imp,Alg>::s_algName = Alg::name;
+template< class Imp, class Alg>
+const String KemImp<Imp,Alg>::s_modeName;
 
 //
 // Template declaration for performance functions (for those implementations that wish to use them)

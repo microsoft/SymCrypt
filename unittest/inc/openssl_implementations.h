@@ -1,5 +1,5 @@
 //
-// Openssl implementation classes
+// OpenSSL implementation classes
 //
 // Copyright (c) Microsoft Corporation. Licensed under the MIT license.
 //

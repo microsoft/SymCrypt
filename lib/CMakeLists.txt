@@ -67,6 +67,8 @@ set(SOURCES_COMMON
     md2.c
     md4.c
     md5.c
+    mlkem.c
+    mlkem_primitives.c
     modexp.c
     paddingPkcs7.c
     parhash.c

@@ -346,6 +346,11 @@ extern "C" {
 #define INCLUDE_IMPL_OPENSSL   (0)
 #endif
 
+#if !defined( INCLUDE_IMPL_LIBCRUX )
+// libcrux implementation is disabled by default
+#define INCLUDE_IMPL_LIBCRUX   (0)
+#endif
+
 #if !defined( INCLUDE_IMPL_REF )
 #define INCLUDE_IMPL_REF       (1)
 #endif
@@ -951,6 +956,18 @@ public:
     const static char * name;
 };
 
+class AlgMlKem{
+public:
+    const static char * name;
+};
+
+// Used only for performance testing
+// In ML-KEM, an important operation is importing an encapsulation key to a key object
+class AlgMlKemkeySetValue{
+public:
+    const static char * name;
+};
+
 class AlgDeveloperTest{
 public:
     const static char * name;
@@ -1036,6 +1053,10 @@ extern const char * g_implementationNames[];
 
 #if INCLUDE_IMPL_OPENSSL
 #include "openssl_implementations.h"
+#endif
+
+#if INCLUDE_IMPL_LIBCRUX
+#include "libcrux_implementations.h"
 #endif
 
 #include "printtable.h"
@@ -1369,6 +1390,9 @@ testAesCtrDrbg();
 
 VOID
 testArithmetic();
+
+VOID
+testKem();
 
 VOID
 testScsTable();
@@ -1865,6 +1889,13 @@ printXmmRegisters( PCSTR text );
 #define PERF_KEY_XMSS_SHAKE256_16_256   (SYMCRYPT_XMSS_SHAKE256_16_256)
 #define PERF_KEY_XMSS_SHAKE256_20_256   (SYMCRYPT_XMSS_SHAKE256_20_256)
 
+//
+// For testing ML-KEM parameters. These are not the key sizes, but refer to the different
+// ML-KEM parameter sets defined in FIPS 203.
+//
+#define PERF_KEY_MLKEM_512  (512 / 8)   // ML-KEM-512
+#define PERF_KEY_MLKEM_768  (768 / 8)   // ML-KEM-768
+#define PERF_KEY_MLKEM_1024 (1024 / 8)  // ML-KEM-1024
 
 PCBYTE
 getPerfTestModulus( UINT32 exKeySize );

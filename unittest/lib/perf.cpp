@@ -20,51 +20,6 @@ BOOLEAN g_perfClockScaling = ENABLE_PERF_CLOCK_SCALING;
     #define ALLOCA( n ) alloca( n )
 #endif // SYMCRYPT_MS_VC
 
-/*
-//
-// Some commented-out definitions that may be useful in the future
-//
-
-// Use linux generic perf event infrastructure to read CPU counter
-// See https://www.man7.org/linux/man-pages/man2/perf_event_open.2.html
-//
-// Seems to work on ARM64 WSL but not AMD64 WSL, so using clock_gettime instead for now
-#include <linux/perf_event.h>
-#include <sys/syscall.h>
-
-static int fdCpuCycles = -1;
-__attribute__((constructor)) static void
-START_PERF_CLOCK()
-{
-    static struct perf_event_attr attr;
-    attr.type = PERF_TYPE_HARDWARE;
-    attr.config = PERF_COUNT_HW_CPU_CYCLES;
-
-    // We need elevated permissions to read CPU cycles unless we specify exclude_kernel
-    // We should be benchmarking code which is predominantly in user mode anyway
-    attr.exclude_kernel = 1;
-    // pid == 0 and cpu == -1 => measure the calling process/thread on any CPU.
-    fdCpuCycles = syscall(__NR_perf_event_open, &attr, 0, -1, -1, 0);
-}
-
-__attribute__((destructor)) static void
-END_PERF_CLOCK()
-{
-    close(fdCpuCycles);
-}
-
-FORCEINLINE
-ULONGLONG
-GET_PERF_CLOCK()
-{
-    ULONGLONG result = 0;
-    // Assume we read the correct length rather than checking return value of read
-    // We want to minimize the code in the performance infrastructure
-    read(fdCpuCycles, &result, sizeof(result));
-    return result;
-}
-*/
-
 PSTR g_perfUnits = PERF_UNIT;
 
 PVOID g_stackAllocLinkedList;     // We put alloca's in a linked list so the compiler won't optimize it away.
@@ -275,6 +230,10 @@ const ALG_MEASURE_PARAMS g_algMeasureParams[] =
     "EcdsaSign"             , 1, {PERF_KEY_NIST192, PERF_KEY_NIST224, PERF_KEY_NIST256, PERF_KEY_NIST384, PERF_KEY_NIST521, PERF_KEY_NUMS256, PERF_KEY_NUMS384, PERF_KEY_NUMS512, PERF_KEY_W22519, PERF_KEY_W448,}, {},
     "EcdsaVerify"           , 1, {PERF_KEY_NIST192, PERF_KEY_NIST224, PERF_KEY_NIST256, PERF_KEY_NIST384, PERF_KEY_NIST521, PERF_KEY_NUMS256, PERF_KEY_NUMS384, PERF_KEY_NUMS512, PERF_KEY_W22519, PERF_KEY_W448,}, {},
     "Ecdh"                  , 1, {PERF_KEY_NIST192, PERF_KEY_NIST224, PERF_KEY_NIST256, PERF_KEY_NIST384, PERF_KEY_NIST521, PERF_KEY_NUMS256, PERF_KEY_NUMS384, PERF_KEY_NUMS512, PERF_KEY_W22519, PERF_KEY_W448, PERF_KEY_C255_19,}, {},
+
+    "MlKem"                 , 0, {PERF_KEY_MLKEM_512, PERF_KEY_MLKEM_768, PERF_KEY_MLKEM_1024}, {PERF_DATASIZE_SAME_AS_KEYSIZE},
+    "MlKemkeySetValue"      , 0, {PERF_KEY_MLKEM_512, PERF_KEY_MLKEM_768, PERF_KEY_MLKEM_1024}, {PERF_DATASIZE_SAME_AS_KEYSIZE},
+
     "IEEE802_11SaeCustom"   , 0, {}, {},
     "Xmss"                  , 1, { PERF_KEY_XMSS_SHA2_10_256, PERF_KEY_XMSS_SHA2_16_256, PERF_KEY_XMSS_SHA2_20_256, PERF_KEY_XMSS_SHA2_10_512,  PERF_KEY_XMSS_SHAKE256_10_256 }, { PERF_DATASIZE_SAME_AS_KEYSIZE },
 

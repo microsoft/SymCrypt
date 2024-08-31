@@ -37,6 +37,7 @@ extends:
     globalSdl:
       tsa:
         enabled: false # Disable TSA to force build breaks
+      credscanSuppressionsPath: $(Build.SourcesDirectory)/.config/CredScanSuppressions.json
     featureFlags:
       EnableCDPxPAT: false
       WindowsHostVersion: '1ESWindows2022'

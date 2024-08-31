@@ -22,6 +22,17 @@
             },
             "DevelopmentDependency": false
         },
+        // To-be updated with final ML-KEM in hacl-packages
+        // {
+        //     "Component": {
+        //         "Type": "git",
+        //         "Git": {
+        //             "RepositoryUrl": "https://github.com/cryspen/hacl-packages",
+        //             "CommitHash": ""
+        //         }
+        //     },
+        //     "DevelopmentDependency": false
+        // },
         {
             "Component": {
                 "Type": "pip",

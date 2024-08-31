@@ -260,6 +260,8 @@ testHbsVerify(
 
     status = pHbs->verify(pbMsg, cbMsg, pbSig, cbSig);
     CHECK3(status == STATUS_SUCCESS, "Hbs verify failed for algid = %u", AlgId);
+
+    CHECK( pHbs->setKey( 0, FALSE, NULL, 0, FALSE ) == STATUS_SUCCESS, "Failed to clear key" );
 }
 
 VOID
@@ -292,6 +294,8 @@ testHbsSign(
     int bMatch = memcmp(pbSig, pbSig2, cbSig) == 0;
     CHECK3(bMatch == TRUE, "generated signature does not match the given one for alg id %d", AlgId);
 
+    CHECK( pHbs->setKey( 0, FALSE, NULL, 0, FALSE ) == STATUS_SUCCESS, "Failed to clear key" );
+
     delete[] pbSig2;
 }
 
@@ -310,6 +314,8 @@ testHbsKeygen(
 
     status = pHbs->setKey(AlgId, fMultitree, pbPrvkey, cbPrvkey, TRUE);
     CHECK3(status == STATUS_SUCCESS, "Hbs setKey failed for algid = %u", AlgId);
+
+    CHECK( pHbs->setKey( 0, FALSE, NULL, 0, FALSE ) == STATUS_SUCCESS, "Failed to clear key" );
 }
 
 VOID
@@ -707,7 +713,7 @@ testXmssMultitree()
 VOID
 testXmss()
 {
-    testWinternitzLengths();    
+    testWinternitzLengths();
 
     testXmssCustomParameters();
 
@@ -720,7 +726,15 @@ testXmss()
 VOID
 testHbs()
 {
+    INT64 nOutstandingAllocs = 0;
+
     testXmss();
 
+    nOutstandingAllocs = SYMCRYPT_INTERNAL_VOLATILE_READ64(&g_nOutstandingCheckedAllocs);
+    CHECK3( nOutstandingAllocs  == 0, "Memory leak %d outstanding", nOutstandingAllocs );
+
     testHbsKats();
+
+    nOutstandingAllocs = SYMCRYPT_INTERNAL_VOLATILE_READ64(&g_nOutstandingCheckedAllocs);
+    CHECK3( nOutstandingAllocs  == 0, "Memory leak %d outstanding", nOutstandingAllocs );
 }

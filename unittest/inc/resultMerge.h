@@ -16,7 +16,7 @@ private:
 public:
     VOID addResult( 
         _In_                        AlgorithmImplementation * pAlgImp, 
-        _In_reads_( cbData )       PCBYTE pbData, 
+        _In_reads_( cbData )        PCBYTE pbData, 
                                     SIZE_T cbData );
 
     VOID getResult( 
@@ -28,7 +28,7 @@ private:
     typedef struct
     {
         AlgorithmImplementation *   pAlgImp;
-        BString                      strData;
+        BString                     strData;
         SIZE_T                      nAgree;
     } ResultItem;
 

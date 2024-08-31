@@ -6,3 +6,9 @@
 	path = 3rdparty/jitterentropy-library
 	url = https://github.com/smuellerDD/jitterentropy-library
 	ignore = untracked
+
+# To-be updated with final ML-KEM in hacl-packages
+# [submodule "libcrux"]
+# 	path = 3rdparty/hacl-packages
+# 	url = https://github.com/cryspen/hacl-packages
+# 	ignore = untracked

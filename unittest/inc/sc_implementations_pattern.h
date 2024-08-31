@@ -424,3 +424,9 @@ class XmssImpState<ImpXxx, AlgXmss> {
 public:
     PSYMCRYPT_XMSS_KEY pKey;
 };
+
+template<>
+class KemImpState<ImpXxx, AlgMlKem> {
+public:
+    PSYMCRYPT_MLKEMKEY  pKey;
+};

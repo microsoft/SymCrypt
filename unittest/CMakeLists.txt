@@ -1,3 +1,7 @@
+# Request C++17 standard to enable `if constexpr`
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+
 # Create variable in caller scope name where
 # "." are converted into "_" in input_file.
 function(make_cxx_name input_file name)
@@ -74,12 +78,68 @@ if(NOT WIN32)
     create_resource_h("${DATA_FILES}")
 endif()
 
+if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "MSVC")
+  add_compile_options($<$<COMPILE_LANGUAGE:CXX>:/Zc:strictStrings->)
+endif()
+
 if(SYMCRYPT_TEST_WITH_OPENSSL)
     include(${SYMCRYPT_SOURCE_DIR}/cmake-configs/OpenSSL.cmake)
-    include_directories(${OPENSSL_INCLUDE_DIR})
     link_directories(${OPENSSL_LIBRARY_DIR})
     link_libraries(${OPENSSL_CRYPTO_LIBRARIES})
     add_compile_definitions(INCLUDE_IMPL_OPENSSL=1)
+endif()
+
+if(SYMCRYPT_TEST_LIBCRUX)
+    message(STATUS "Temporarily not building with libcrux (awaiting Final MlKem implementation)")
+    set(SYMCRYPT_TEST_LIBCRUX OFF)
+
+    # if(NOT IS_DIRECTORY "${SYMCRYPT_SOURCE_DIR}/3rdparty/hacl-packages")
+    #   execute_process(
+    #     COMMAND git submodule update --init -- 3rdparty/hacl-packages
+    #     WORKING_DIRECTORY ${SYMCRYPT_SOURCE_DIR})
+    # endif()
+    # file(TOUCH ${SYMCRYPT_SOURCE_DIR}/3rdparty/hacl-packages/include/LowStar_Ignore.h)
+
+    # set(LIBCRUX_SOURCES
+    #     ${SYMCRYPT_SOURCE_DIR}/3rdparty/hacl-packages/src/Hacl_Hash_SHA3.c
+    #     ${SYMCRYPT_SOURCE_DIR}/3rdparty/hacl-packages/src/Hacl_Hash_SHA3_Scalar.c
+    #     ${SYMCRYPT_SOURCE_DIR}/3rdparty/hacl-packages/libcrux/src/core.c
+    #     ${SYMCRYPT_SOURCE_DIR}/3rdparty/hacl-packages/libcrux/src/Eurydice.c
+    #     ${SYMCRYPT_SOURCE_DIR}/3rdparty/hacl-packages/libcrux/src/libcrux_hacl_glue.c
+    #     ${SYMCRYPT_SOURCE_DIR}/3rdparty/hacl-packages/libcrux/src/libcrux_kyber512.c
+    #     ${SYMCRYPT_SOURCE_DIR}/3rdparty/hacl-packages/libcrux/src/libcrux_kyber768.c
+    #     ${SYMCRYPT_SOURCE_DIR}/3rdparty/hacl-packages/libcrux/src/libcrux_kyber1024.c
+    #     ${SYMCRYPT_SOURCE_DIR}/3rdparty/hacl-packages/libcrux/src/LowStar_Ignore.c)
+
+    # if(SYMCRYPT_TARGET_ARCH MATCHES "AMD64")
+    #     list(APPEND LIBCRUX_SOURCES
+    #         ${SYMCRYPT_SOURCE_DIR}/3rdparty/hacl-packages/src/Hacl_Hash_SHA3_Simd256.c)
+    # endif()
+
+    # add_library(libcrux STATIC ${LIBCRUX_SOURCES})
+    # target_include_directories(libcrux PRIVATE ${SYMCRYPT_SOURCE_DIR}/3rdparty/hacl-packages/libcrux/include)
+    # target_include_directories(libcrux PRIVATE ${SYMCRYPT_SOURCE_DIR}/3rdparty/hacl-packages/karamel/include)
+    # target_include_directories(libcrux PRIVATE ${SYMCRYPT_SOURCE_DIR}/3rdparty/hacl-packages/include)
+    # target_include_directories(libcrux PRIVATE ${SYMCRYPT_SOURCE_DIR}/3rdparty/hacl-packages/karamel/krmllib/dist/minimal)
+
+    # target_compile_definitions(libcrux PRIVATE HACL_CAN_COMPILE_VEC128)
+    # if(SYMCRYPT_TARGET_ARCH MATCHES "AMD64")
+    #     target_compile_definitions(libcrux PRIVATE HACL_CAN_COMPILE_VEC256)
+    # endif()
+
+    # link_libraries(libcrux)
+
+    # if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "MSVC")
+    #   target_compile_options(libcrux PRIVATE /wd4267)
+    #   add_compile_options($<$<COMPILE_LANGUAGE:C,CXX>:/wd4576>)
+    #   add_compile_options($<$<COMPILE_LANGUAGE:C,CXX>:/wd4200>)
+    # endif()
+
+    # if (CMAKE_C_COMPILER_ID MATCHES "Clang|GNU")
+    #   set_source_files_properties(${SYMCRYPT_SOURCE_DIR}/3rdparty/hacl-packages/src/Hacl_Hash_SHA3_Simd256.c PROPERTIES COMPILE_OPTIONS "-mavx;-mavx2;")
+    # endif()
+
+    # add_compile_definitions(INCLUDE_IMPL_LIBCRUX=1)
 endif()
 
 include_directories(inc)

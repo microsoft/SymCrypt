@@ -58,6 +58,7 @@
     <ClCompile Include="testKdf.cpp" />
     <ClCompile Include="testKmac.cpp" />
     <ClCompile Include="testMac.cpp" />
+    <ClCompile Include="testKem.cpp" />
     <ClCompile Include="testMontgomery.cpp" />
     <ClCompile Include="testMultiThread.cpp" />
     <ClCompile Include="testPaddingPkcs7.cpp" />

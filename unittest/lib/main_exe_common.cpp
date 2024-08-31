@@ -24,6 +24,9 @@ const char * g_implementationNames[] =
 #if INCLUDE_IMPL_OPENSSL
     ImpOpenssl::name,
 #endif
+#if INCLUDE_IMPL_LIBCRUX
+    ImpLibcrux::name,
+#endif
     NULL,
 };
 
@@ -56,6 +59,9 @@ addAllAlgs()
 #endif
 #if INCLUDE_IMPL_OPENSSL
     addOpensslAlgs();
+#endif
+#if INCLUDE_IMPL_LIBCRUX
+    addLibcruxAlgs();
 #endif
 }
 

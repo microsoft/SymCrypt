@@ -289,6 +289,17 @@ EXPORTS
     SymCryptMd5StateExport
     SymCryptMd5StateImport
     SymCryptModuleInit
+    SymCryptMlKemDecapsulate
+    SymCryptMlKemEncapsulate
+    SymCryptMlKemEncapsulateEx
+    SymCryptMlKemkeyAllocate
+    SymCryptMlKemkeyFree
+    SymCryptMlKemkeyGenerate
+    SymCryptMlKemkeyGetValue
+    SymCryptMlKemkeySetValue
+    SymCryptMlKemSelftest
+    SymCryptMlKemSizeofCiphertextFromParams
+    SymCryptMlKemSizeofKeyFormatFromParams
     SymCryptParallelSha256Init
     SymCryptParallelSha256Process
     SymCryptParallelSha256Selftest

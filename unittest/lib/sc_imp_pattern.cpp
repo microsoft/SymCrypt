@@ -7887,13 +7887,13 @@ SetupSymCryptXmsskey<ImpXxx>(UINT32 algId)
 
             if (CONCAT2(g_XmssKeys, ImpXxx)[i].pKey == nullptr)
             {
-                scError = ScDispatchSymCryptXmssParamsFromAlgId((SYMCRYPT_XMSS_ALGID)algId, &params);
+                scError = ScShimSymCryptXmssParamsFromAlgId((SYMCRYPT_XMSS_ALGID)algId, &params);
                 CHECK(scError == SYMCRYPT_NO_ERROR, "?");
 
-                CONCAT2(g_XmssKeys, ImpXxx)[i].pKey = ScDispatchSymCryptXmsskeyAllocate(&params, 0);
+                CONCAT2(g_XmssKeys, ImpXxx)[i].pKey = ScShimSymCryptXmsskeyAllocate(&params, 0);
                 CHECK(CONCAT2(g_XmssKeys, ImpXxx)[i].pKey != nullptr, "?");
 
-                scError = ScDispatchSymCryptXmsskeySetValue(
+                scError = ScShimSymCryptXmsskeySetValue(
                     CONCAT2(g_XmssKeys, ImpXxx)[i].pbPrvkeyBlob,
                     CONCAT2(g_XmssKeys, ImpXxx)[i].cbPrvkeyBlob,
                     SYMCRYPT_XMSSKEY_TYPE_PRIVATE,
@@ -7951,7 +7951,7 @@ algImpDecryptPerfFunction<ImpXxx, AlgXmss>(PBYTE buf1, PBYTE buf2, PBYTE buf3, S
         {
             bFound = TRUE;
 
-            scError = ScDispatchSymCryptXmssVerify(
+            scError = ScShimSymCryptXmssVerify(
                 CONCAT2(g_XmssKeys, ImpXxx)[i].pKey,
                 msg,
                 sizeof(msg),
@@ -7993,7 +7993,7 @@ XmssImp<ImpXxx, AlgXmss>::~XmssImp()
 {
     if (state.pKey != nullptr)
     {
-        ScDispatchSymCryptXmsskeyFree(state.pKey);
+        ScShimSymCryptXmsskeyFree(state.pKey);
         state.pKey = nullptr;
     }
 
@@ -8002,7 +8002,7 @@ XmssImp<ImpXxx, AlgXmss>::~XmssImp()
     {
         if (CONCAT2(g_XmssKeys, ImpXxx)[i].pKey != nullptr)
         {
-            ScDispatchSymCryptXmsskeyFree(CONCAT2(g_XmssKeys, ImpXxx)[i].pKey);
+            ScShimSymCryptXmsskeyFree(CONCAT2(g_XmssKeys, ImpXxx)[i].pKey);
             CONCAT2(g_XmssKeys, ImpXxx)[i].pKey = nullptr;
         }
     }
@@ -8026,30 +8026,36 @@ NTSTATUS XmssImp<ImpXxx, AlgXmss>::setKey(
 
     if (state.pKey != nullptr)
     {
-        ScDispatchSymCryptXmsskeyFree(state.pKey);
+        ScShimSymCryptXmsskeyFree(state.pKey);
         state.pKey = nullptr;
+    }
+
+    if( pbSrc == NULL )
+    {
+        // Just used to clear the key state to do leak detection
+        return STATUS_SUCCESS;
     }
 
     if (fMultitree)
     {
-        ScDispatchSymCryptXmssMtParamsFromAlgId((SYMCRYPT_XMSSMT_ALGID)uAlgId, &params);
+        ScShimSymCryptXmssMtParamsFromAlgId((SYMCRYPT_XMSSMT_ALGID)uAlgId, &params);
     }
     else
     {
-        ScDispatchSymCryptXmssParamsFromAlgId((SYMCRYPT_XMSS_ALGID)uAlgId, &params);
+        ScShimSymCryptXmssParamsFromAlgId((SYMCRYPT_XMSS_ALGID)uAlgId, &params);
     }
 
-    state.pKey = ScDispatchSymCryptXmsskeyAllocate(&params, 0);
+    state.pKey = ScShimSymCryptXmsskeyAllocate(&params, 0);
     CHECK3(state.pKey != NULL, "Cannot allocate XMSS key for algid = %u", uAlgId);
 
-    scError = ScDispatchSymCryptXmssSizeofKeyBlobFromParams(&params, SYMCRYPT_XMSSKEY_TYPE_PUBLIC, &cbPublicKey);
+    scError = ScShimSymCryptXmssSizeofKeyBlobFromParams(&params, SYMCRYPT_XMSSKEY_TYPE_PUBLIC, &cbPublicKey);
     CHECK(scError == SYMCRYPT_NO_ERROR, "?");
     if(cbSrc == cbPublicKey)
     {
         keyType = SYMCRYPT_XMSSKEY_TYPE_PUBLIC;
     }
 
-    scError = ScDispatchSymCryptXmssSizeofKeyBlobFromParams(&params, SYMCRYPT_XMSSKEY_TYPE_PRIVATE, &cbPrivateKey);
+    scError = ScShimSymCryptXmssSizeofKeyBlobFromParams(&params, SYMCRYPT_XMSSKEY_TYPE_PRIVATE, &cbPrivateKey);
     CHECK(scError == SYMCRYPT_NO_ERROR, "?");
     if(cbSrc == cbPrivateKey)
     {
@@ -8057,7 +8063,7 @@ NTSTATUS XmssImp<ImpXxx, AlgXmss>::setKey(
     }
 
     UINT32 flags = fVerify ? SYMCRYPT_FLAG_XMSSKEY_VERIFY_ROOT : 0;
-    scError = ScDispatchSymCryptXmsskeySetValue(pbSrc, cbSrc, keyType, flags, state.pKey);
+    scError = ScShimSymCryptXmsskeySetValue(pbSrc, cbSrc, keyType, flags, state.pKey);
     CHECK3(scError == SYMCRYPT_NO_ERROR, "XMSS key initialization error for algid = %u", uAlgId);
 
     return status;
@@ -8073,7 +8079,7 @@ NTSTATUS XmssImp<ImpXxx, AlgXmss>::sign(
     NTSTATUS status = STATUS_SUCCESS;
     SYMCRYPT_ERROR scError;
 
-    scError = ScDispatchSymCryptXmssSign(state.pKey, pbInput, cbInput, 0, pbSignature, cbSignature);
+    scError = ScShimSymCryptXmssSign(state.pKey, pbInput, cbInput, 0, pbSignature, cbSignature);
     CHECK(scError == SYMCRYPT_NO_ERROR, "Xmss signing error");
 
     return status;
@@ -8090,7 +8096,7 @@ NTSTATUS XmssImp<ImpXxx, AlgXmss>::verify(
     NTSTATUS status = STATUS_SUCCESS;
     SYMCRYPT_ERROR scError;
 
-    scError = ScDispatchSymCryptXmssVerify(state.pKey, pbInput, cbInput, 0, pbSignature, cbSignature);
+    scError = ScShimSymCryptXmssVerify(state.pKey, pbInput, cbInput, 0, pbSignature, cbSignature);
 
     switch (scError)
     {
@@ -8110,4 +8116,380 @@ NTSTATUS XmssImp<ImpXxx, AlgXmss>::verify(
     }
 
     return status;
+}
+
+
+// Table with the MlKem keys' sizes and pointers to keys
+struct {
+    SIZE_T                      keySize;
+    SYMCRYPT_MLKEM_PARAMS       params;
+    PSYMCRYPT_MLKEMKEY          pkMlKemkey;
+} CONCAT2(g_precomputedMlKemKeys, ImpXxx)[] = {
+    { PERF_KEY_MLKEM_512,   SYMCRYPT_MLKEM_PARAMS_MLKEM512,  NULL },
+    { PERF_KEY_MLKEM_768,   SYMCRYPT_MLKEM_PARAMS_MLKEM768,  NULL },
+    { PERF_KEY_MLKEM_1024,  SYMCRYPT_MLKEM_PARAMS_MLKEM1024, NULL },
+};
+
+template<>
+SYMCRYPT_MLKEM_PARAMS
+SetupSymCryptMlKemKey<ImpXxx>( PBYTE buf1, SIZE_T keySize )
+{
+    SIZE_T i = 0;
+    BOOLEAN bFound = FALSE;
+    SYMCRYPT_MLKEM_PARAMS params = SYMCRYPT_MLKEM_PARAMS_NULL;
+
+    for( i=0; i < ARRAY_SIZE(CONCAT2(g_precomputedMlKemKeys, ImpXxx)); i++ )
+    {
+        if ( keySize == CONCAT2(g_precomputedMlKemKeys, ImpXxx)[i].keySize  )
+        {
+            bFound = TRUE;
+            params = CONCAT2(g_precomputedMlKemKeys, ImpXxx)[i].params;
+
+            if ( CONCAT2(g_precomputedMlKemKeys, ImpXxx)[i].pkMlKemkey == NULL )
+            {
+                PSYMCRYPT_MLKEMKEY pkMlKemkey = ScShimSymCryptMlKemkeyAllocate( params );
+                CHECK( pkMlKemkey != NULL, "?" );
+
+                CONCAT2(g_precomputedMlKemKeys, ImpXxx)[i].pkMlKemkey = pkMlKemkey;
+            }
+
+            break;
+        }
+    }
+
+    CHECK( bFound, "Invalid ML-KEM parameter set (key size)" );
+
+    *((PSYMCRYPT_MLKEMKEY *) buf1) = CONCAT2(g_precomputedMlKemKeys, ImpXxx)[i].pkMlKemkey;
+
+    return params;
+}
+
+template<>
+VOID
+algImpKeyPerfFunction<ImpXxx, AlgMlKem>( PBYTE pbKey, PBYTE pcbCipherText, PBYTE buf3, SIZE_T keySize )
+{
+    UNREFERENCED_PARAMETER( buf3 );
+
+    PSYMCRYPT_MLKEMKEY* pKey = (PSYMCRYPT_MLKEMKEY*) pbKey;
+    SYMCRYPT_ERROR scError = SYMCRYPT_NO_ERROR;
+    
+    switch(keySize)
+    {
+        case PERF_KEY_MLKEM_512:
+            *((SIZE_T*)pcbCipherText) = SYMCRYPT_MLKEM_CIPHERTEXT_SIZE_MLKEM512;
+            break;
+        case PERF_KEY_MLKEM_768:
+            *((SIZE_T*)pcbCipherText) = SYMCRYPT_MLKEM_CIPHERTEXT_SIZE_MLKEM768;
+            break;
+        case PERF_KEY_MLKEM_1024:
+            *((SIZE_T*)pcbCipherText) = SYMCRYPT_MLKEM_CIPHERTEXT_SIZE_MLKEM1024;
+            break;
+        default:
+            CHECK( FALSE, "Invalid ML-KEM parameter set (key size)" );
+            break;
+    }
+
+    SetupSymCryptMlKemKey<ImpXxx>( pbKey, keySize );
+    scError = ScShimSymCryptMlKemkeyGenerate( *pKey, 0 );
+    CHECK( scError == SYMCRYPT_NO_ERROR, "?" );
+}
+
+template<>
+VOID
+algImpDataPerfFunction<ImpXxx, AlgMlKem>( PBYTE pbKey, PBYTE pcbCipherText, PBYTE pbCipherText, SIZE_T cbData )
+{
+    UNREFERENCED_PARAMETER( cbData );
+
+    PSYMCRYPT_MLKEMKEY pKey = *((PSYMCRYPT_MLKEMKEY*) pbKey);
+    SIZE_T cbCipherText = *((SIZE_T*)pcbCipherText);
+    SYMCRYPT_ERROR scError = SYMCRYPT_NO_ERROR;
+
+    scError = ScShimSymCryptMlKemEncapsulate( pKey, pbCipherText+cbCipherText, 32, pbCipherText, cbCipherText );
+    CHECK( scError == SYMCRYPT_NO_ERROR, "?" );
+}
+
+template<>
+VOID
+algImpDecryptPerfFunction<ImpXxx, AlgMlKem>( PBYTE pbKey, PBYTE pcbCipherText, PBYTE pbCipherText, SIZE_T cbData )
+{
+    UNREFERENCED_PARAMETER( cbData );
+
+    PSYMCRYPT_MLKEMKEY pKey = *((PSYMCRYPT_MLKEMKEY*) pbKey);
+    SIZE_T cbCipherText = *((SIZE_T*)pcbCipherText);
+    BYTE agreedSecret[32];
+    SYMCRYPT_ERROR scError = SYMCRYPT_NO_ERROR;
+
+    scError = ScShimSymCryptMlKemDecapsulate( pKey, pbCipherText, cbCipherText, agreedSecret, 32);
+    CHECK( scError == SYMCRYPT_NO_ERROR, "?" );
+
+    CHECK( memcmp( agreedSecret, pbCipherText+cbCipherText, 32 ) == 0, "Decapsulation failed (secrets do not match)" );
+}
+
+template<>
+VOID
+algImpCleanPerfFunction<ImpXxx, AlgMlKem>( PBYTE pbKey, PBYTE pcbCipherText, PBYTE pbCipherText )
+{
+    UNREFERENCED_PARAMETER( pbKey );
+    UNREFERENCED_PARAMETER( pcbCipherText );
+
+    SymCryptWipeKnownSize( pbCipherText, SYMCRYPT_MLKEM_CIPHERTEXT_SIZE_MLKEM1024+32 );
+}
+
+template<>
+KemImp<ImpXxx, AlgMlKem>::KemImp()
+{
+    m_perfDataFunction      = &algImpDataPerfFunction<ImpXxx, AlgMlKem>;
+    m_perfDecryptFunction   = &algImpDecryptPerfFunction<ImpXxx, AlgMlKem>;
+    m_perfKeyFunction       = &algImpKeyPerfFunction<ImpXxx, AlgMlKem>;
+    m_perfCleanFunction     = &algImpCleanPerfFunction<ImpXxx, AlgMlKem>;
+
+    state.pKey = NULL;
+}
+
+template<>
+KemImp<ImpXxx, AlgMlKem>::~KemImp() = default;
+
+template<>
+NTSTATUS
+KemImp<ImpXxx, AlgMlKem>::setKeyFromTestBlob(
+        _In_reads_bytes_( cbTestKeyBlob )       PCBYTE              pcbTestKeyBlob,
+                                                SIZE_T              cbTestKeyBlob,
+                                                BOOL                canDecapsulate )
+{
+    UNREFERENCED_PARAMETER( canDecapsulate );
+    
+    PCMLKEMKEY_TESTBLOB pcKeyBlob = (PCMLKEMKEY_TESTBLOB) pcbTestKeyBlob;
+    SYMCRYPT_ERROR scError = SYMCRYPT_NO_ERROR;
+
+    if( state.pKey != NULL )
+    {
+        ScShimSymCryptMlKemkeyFree( state.pKey );
+        state.pKey = NULL;
+    }
+
+    if( pcKeyBlob == NULL )
+    {
+        // Just used to clear the key state to do leak detection
+        return STATUS_SUCCESS;
+    }
+
+    CHECK( cbTestKeyBlob == sizeof(MLKEMKEY_TESTBLOB), "Invalid key blob size" );
+
+    state.pKey = ScShimSymCryptMlKemkeyAllocate( pcKeyBlob->params );
+    CHECK( state.pKey != NULL, "?" );
+    
+    scError = ScShimSymCryptMlKemkeySetValue(
+        &pcKeyBlob->abKeyBlob[0], pcKeyBlob->cbKeyBlob,
+        pcKeyBlob->format,
+        0,
+        state.pKey );
+    CHECK( scError == SYMCRYPT_NO_ERROR, "?" );
+
+    return STATUS_SUCCESS;
+}
+
+template<>
+NTSTATUS
+KemImp<ImpXxx, AlgMlKem>::getBlobFromKey(
+                                                UINT32              blobType,
+        _Out_writes_bytes_( cbBlob )            PBYTE               pbBlob,
+                                                SIZE_T              cbBlob )
+{
+    SYMCRYPT_ERROR scError = SYMCRYPT_NO_ERROR;
+
+    scError = ScShimSymCryptMlKemkeyGetValue(
+        state.pKey,
+        pbBlob, cbBlob,
+        (SYMCRYPT_MLKEMKEY_FORMAT)blobType,
+        0 );
+    CHECK( scError == SYMCRYPT_NO_ERROR, "?" );
+    
+    return STATUS_SUCCESS;
+}
+
+template<>
+NTSTATUS
+KemImp<ImpXxx, AlgMlKem>::encapsulateEx(
+    _In_reads_bytes_( cbRandom )            PCBYTE              pbRandom,
+                                            SIZE_T              cbRandom,
+    _Out_writes_bytes_( cbAgreedSecret )    PBYTE               pbAgreedSecret,
+                                            SIZE_T              cbAgreedSecret, 
+    _Out_writes_bytes_( cbCiphertext )      PBYTE               pbCiphertext,
+                                            SIZE_T              cbCiphertext )
+{
+    SYMCRYPT_ERROR scError = SYMCRYPT_NO_ERROR;
+
+    CHECK( cbRandom == 32, "Invalid random size" );
+    CHECK( cbAgreedSecret == 32, "Invalid secret size" );
+
+    if (!SCTEST_LOOKUP_SCIMPSYM(SymCryptMlKemEncapsulateEx))
+    {
+        return STATUS_NOT_SUPPORTED;
+    }
+
+    scError = ScShimSymCryptMlKemEncapsulateEx(
+        state.pKey,
+        pbRandom, cbRandom,
+        pbAgreedSecret, cbAgreedSecret,
+        pbCiphertext, cbCiphertext );
+    CHECK( scError == SYMCRYPT_NO_ERROR, "?" );
+
+    return STATUS_SUCCESS;
+}
+
+template<>
+NTSTATUS
+KemImp<ImpXxx, AlgMlKem>::encapsulate(
+    _Out_writes_bytes_( cbAgreedSecret )    PBYTE               pbAgreedSecret,
+                                            SIZE_T              cbAgreedSecret, 
+    _Out_writes_bytes_( cbCiphertext )      PBYTE               pbCiphertext,
+                                            SIZE_T              cbCiphertext )
+{
+    SYMCRYPT_ERROR scError = SYMCRYPT_NO_ERROR;
+
+    CHECK( cbAgreedSecret == 32, "Invalid secret size" );
+
+    scError = ScShimSymCryptMlKemEncapsulate(
+        state.pKey,
+        pbAgreedSecret, cbAgreedSecret,
+        pbCiphertext, cbCiphertext );
+    CHECK( scError == SYMCRYPT_NO_ERROR, "?" );
+
+    return STATUS_SUCCESS;
+}
+
+template<>
+NTSTATUS
+KemImp<ImpXxx, AlgMlKem>::decapsulate(
+    _In_reads_bytes_( cbCiphertext )        PCBYTE              pbCiphertext,
+                                            SIZE_T              cbCiphertext,
+    _Out_writes_bytes_( cbAgreedSecret )    PBYTE               pbAgreedSecret,
+                                            SIZE_T              cbAgreedSecret )
+{
+    SYMCRYPT_ERROR scError = SYMCRYPT_NO_ERROR;
+    NTSTATUS ntStatus = STATUS_SUCCESS;
+
+    CHECK( cbAgreedSecret == 32, "Invalid secret size" );
+
+    scError = ScShimSymCryptMlKemDecapsulate(
+        state.pKey,
+        pbCiphertext, cbCiphertext,
+        pbAgreedSecret, cbAgreedSecret );
+
+    switch( scError )
+    {
+    case SYMCRYPT_NO_ERROR:
+        ntStatus = STATUS_SUCCESS;
+        break;
+    case SYMCRYPT_INVALID_ARGUMENT:
+        ntStatus = STATUS_INVALID_PARAMETER;
+        break;
+    default:
+        iprint( "Unexpected SymCrypt error %08x\n", scError );
+        CHECK( FALSE, "?" );
+        ntStatus = STATUS_UNSUCCESSFUL;
+    }
+
+    return ntStatus;
+}
+
+//============================
+
+
+template<>
+VOID
+algImpKeyPerfFunction<ImpXxx, AlgMlKemkeySetValue>( PBYTE pbKey, PBYTE pbEncapsKey, PBYTE pbDecapsKey, SIZE_T keySize )
+{
+    SIZE_T cbDecapsKey;
+    SIZE_T cbEncapsKey;
+    SYMCRYPT_ERROR scError = SYMCRYPT_NO_ERROR;
+
+    PSYMCRYPT_MLKEMKEY* pKey = (PSYMCRYPT_MLKEMKEY*) pbKey;
+    SYMCRYPT_MLKEM_PARAMS params = SetupSymCryptMlKemKey<ImpXxx>( pbKey, keySize );
+
+    scError = ScShimSymCryptMlKemkeyGenerate( *pKey, 0 );
+    CHECK( scError == SYMCRYPT_NO_ERROR, "?" );
+
+    scError = ScShimSymCryptMlKemSizeofKeyFormatFromParams( params, SYMCRYPT_MLKEMKEY_FORMAT_DECAPSULATION_KEY, &cbDecapsKey );
+    CHECK( scError == SYMCRYPT_NO_ERROR, "?" );
+    scError = ScShimSymCryptMlKemSizeofKeyFormatFromParams( params, SYMCRYPT_MLKEMKEY_FORMAT_ENCAPSULATION_KEY, &cbEncapsKey );
+    CHECK( scError == SYMCRYPT_NO_ERROR, "?" );
+
+    *((SIZE_T*)pbDecapsKey) = cbDecapsKey;
+    scError = ScShimSymCryptMlKemkeyGetValue(
+        *pKey,
+        pbDecapsKey+sizeof(SIZE_T), cbDecapsKey,
+        SYMCRYPT_MLKEMKEY_FORMAT_DECAPSULATION_KEY,
+        0 );
+    CHECK( scError == SYMCRYPT_NO_ERROR, "?" );
+
+    *((SIZE_T*)pbEncapsKey) = cbEncapsKey;
+    scError = ScShimSymCryptMlKemkeyGetValue(
+        *pKey,
+        pbEncapsKey+sizeof(SIZE_T), cbEncapsKey,
+        SYMCRYPT_MLKEMKEY_FORMAT_ENCAPSULATION_KEY,
+        0 );
+    CHECK( scError == SYMCRYPT_NO_ERROR, "?" );
+}
+
+template<>
+VOID
+algImpDataPerfFunction<ImpXxx, AlgMlKemkeySetValue>( PBYTE pbKey, PBYTE pbEncapsKey, PBYTE pbDecapsKey, SIZE_T cbData )
+{
+    UNREFERENCED_PARAMETER( pbDecapsKey );
+    UNREFERENCED_PARAMETER( cbData );
+
+    SYMCRYPT_ERROR scError = SYMCRYPT_NO_ERROR;
+    PSYMCRYPT_MLKEMKEY pKey = *((PSYMCRYPT_MLKEMKEY*) pbKey);
+    SIZE_T cbEncapsKey = *((SIZE_T*)pbEncapsKey);
+
+    scError = ScShimSymCryptMlKemkeySetValue(
+        pbEncapsKey+sizeof(SIZE_T), cbEncapsKey,
+        SYMCRYPT_MLKEMKEY_FORMAT_ENCAPSULATION_KEY,
+        0,
+        pKey );
+    CHECK( scError == SYMCRYPT_NO_ERROR, "?" );
+}
+
+template<>
+VOID
+algImpDecryptPerfFunction<ImpXxx, AlgMlKemkeySetValue>( PBYTE pbKey, PBYTE pbEncapsKey, PBYTE pbDecapsKey, SIZE_T cbData )
+{
+    UNREFERENCED_PARAMETER( pbEncapsKey );
+    UNREFERENCED_PARAMETER( cbData );
+
+    SYMCRYPT_ERROR scError = SYMCRYPT_NO_ERROR;
+    PSYMCRYPT_MLKEMKEY pKey = *((PSYMCRYPT_MLKEMKEY*) pbKey);
+    SIZE_T cbDecapsKey = *((SIZE_T*)pbDecapsKey);
+
+    scError = ScShimSymCryptMlKemkeySetValue(
+        pbDecapsKey+sizeof(SIZE_T), cbDecapsKey,
+        SYMCRYPT_MLKEMKEY_FORMAT_DECAPSULATION_KEY,
+        0,
+        pKey );
+    CHECK( scError == SYMCRYPT_NO_ERROR, "?" );
+}
+
+template<>
+VOID
+algImpCleanPerfFunction<ImpXxx, AlgMlKemkeySetValue>( PBYTE pbKey, PBYTE pbEncapsKey, PBYTE pbDecapsKey )
+{
+    UNREFERENCED_PARAMETER( pbKey );
+
+    ScShimSymCryptWipe( pbEncapsKey, *((SIZE_T*)pbEncapsKey) );
+    ScShimSymCryptWipe( pbDecapsKey, *((SIZE_T*)pbDecapsKey) );
+}
+
+template<>
+ArithImp<ImpXxx, AlgMlKemkeySetValue>::ArithImp()
+{
+    m_perfDataFunction      = &algImpDataPerfFunction   <ImpXxx, AlgMlKemkeySetValue>;
+    m_perfDecryptFunction   = &algImpDecryptPerfFunction<ImpXxx, AlgMlKemkeySetValue>;
+    m_perfKeyFunction       = &algImpKeyPerfFunction    <ImpXxx, AlgMlKemkeySetValue>;
+    m_perfCleanFunction     = &algImpCleanPerfFunction  <ImpXxx, AlgMlKemkeySetValue>;
+}
+
+template<>
+ArithImp<ImpXxx, AlgMlKemkeySetValue>::~ArithImp()
+{
 }
