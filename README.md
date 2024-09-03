@@ -15,7 +15,7 @@ Like any engineering project, SymCrypt is a compromise between conflicting requi
 - Run on all CPU architectures supported by Windows.
 - Good performance.
 - Minimize maintenance cost.
-- Support FIPS 140-2 certification of products using SymCrypt.
+- Support FIPS 140 certification of products using SymCrypt.
 - Provide high assurance in the proper functionality of the library.
 
 # Cloning the Repo
