@@ -14,7 +14,7 @@ add_compile_definitions(INCLUDE_IMPL_MSBIGNUM=0)
 add_compile_definitions(INCLUDE_IMPL_RSA32=0)
 
 add_executable(symcryptunittest ${SOURCES})
-target_link_libraries(symcryptunittest symcryptunittest_lib dl)
+target_link_libraries(symcryptunittest symcryptunittest_lib symcrypt_common dl)
 
 # Special linking options for MacOS
 if(CMAKE_SYSTEM_NAME MATCHES "Darwin")

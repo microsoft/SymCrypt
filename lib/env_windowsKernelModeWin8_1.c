@@ -17,7 +17,10 @@
 //
 #define _NTSYSTEM_
 
+#pragma warning(push)
+#pragma warning(disable: 5103) // Arm64's wdm.h included below currently generate a lot of 5103 warnings
 #include <ntddk.h>
+#pragma warning(pop)
 
 #include "symcrypt.h"
 #include "sc_lib.h"
@@ -41,6 +44,7 @@ VOID
 SYMCRYPT_CALL
 SymCryptInitEnvWindowsKernelmodeWin8_1nLater( UINT32 version )
 {
+    #pragma warning(suppress: 4845) // Following declspec only applies when compiled with default initialization, in some test builds we don't care whether default initialization is specified
     __declspec(no_init_all)
     RTL_OSVERSIONINFOW  verInfo;
 

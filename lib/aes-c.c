@@ -364,19 +364,12 @@ SymCryptAesEcbEncryptC(
     _Out_writes_( cbData )                      PBYTE                       pbDst,
                                                 SIZE_T                      cbData )
 {
-    SIZE_T cbToDo = cbData & ~(SYMCRYPT_AES_BLOCK_SIZE - 1);
-    SIZE_T i;
-
-    //
-    // This loop condition is slightly strange.
-    // If I use i < cbToDo (which is correct) then Prefast complains about buffer overflows.
-    // Even using SYMCRYPT_ASSERT which does an _Analysis_assume_ I can't fix the Prefast issue.
-    // The +15 in the code is slightly slower but it solves the Prefast issue.
-    //
-
-    for( i=0; (i+SYMCRYPT_AES_BLOCK_SIZE-1) < cbToDo; i+= SYMCRYPT_AES_BLOCK_SIZE )
+    while( cbData >= SYMCRYPT_AES_BLOCK_SIZE )
     {
-        SymCryptAesEncryptC( pExpandedKey, pbSrc + i, pbDst + i );
+        SymCryptAesEncryptC( pExpandedKey, pbSrc, pbDst );
+        pbSrc += SYMCRYPT_AES_BLOCK_SIZE;
+        pbDst += SYMCRYPT_AES_BLOCK_SIZE;
+        cbData -= SYMCRYPT_AES_BLOCK_SIZE;
     }
 }
 
@@ -388,19 +381,12 @@ SymCryptAesEcbDecryptC(
     _Out_writes_( cbData )                      PBYTE                       pbDst,
                                                 SIZE_T                      cbData )
 {
-    SIZE_T cbToDo = cbData & ~(SYMCRYPT_AES_BLOCK_SIZE - 1);
-    SIZE_T i;
-
-    //
-    // This loop condition is slightly strange.
-    // If I use i < cbToDo (which is correct) then Prefast complains about buffer overflows.
-    // Even using SYMCRYPT_ASSERT which does an _Analysis_assume_ I can't fix the Prefast issue.
-    // The +15 in the code is slightly slower but it solves the Prefast issue.
-    //
-
-    for( i=0; (i+SYMCRYPT_AES_BLOCK_SIZE-1) < cbToDo; i+= SYMCRYPT_AES_BLOCK_SIZE )
+    while( cbData >= SYMCRYPT_AES_BLOCK_SIZE )
     {
-        SymCryptAesDecryptC( pExpandedKey, pbSrc + i, pbDst + i );
+        SymCryptAesDecryptC( pExpandedKey, pbSrc, pbDst );
+        pbSrc += SYMCRYPT_AES_BLOCK_SIZE;
+        pbDst += SYMCRYPT_AES_BLOCK_SIZE;
+        cbData -= SYMCRYPT_AES_BLOCK_SIZE;
     }
 }
 

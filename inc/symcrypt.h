@@ -8511,7 +8511,7 @@ SymCryptXmsskeyGenerate(
 SYMCRYPT_ERROR
 SYMCRYPT_CALL
 SymCryptXmsskeySetValue(
-    _In_reads_bytes_( cbSrc )   PCBYTE                  pbInput,
+    _In_reads_bytes_( cbInput ) PCBYTE                  pbInput,
                                 SIZE_T                  cbInput,
                                 SYMCRYPT_XMSSKEY_TYPE   keyType,
                                 UINT32                  flags,
@@ -8583,11 +8583,11 @@ SymCryptXmsskeySetValue(
 SYMCRYPT_ERROR
 SYMCRYPT_CALL
 SymCryptXmsskeyGetValue(
-    _In_                        PCSYMCRYPT_XMSS_KEY     pKey,
-                                SYMCRYPT_XMSSKEY_TYPE   keyType,
-                                UINT32                  flags,
-    _Out_writes_bytes_( cbKey ) PBYTE                   pbOutput,
-                                SIZE_T                  cbOutput );
+    _In_                            PCSYMCRYPT_XMSS_KEY     pKey,
+                                    SYMCRYPT_XMSSKEY_TYPE   keyType,
+                                    UINT32                  flags,
+    _Out_writes_bytes_( cbOutput )  PBYTE                   pbOutput,
+                                    SIZE_T                  cbOutput );
 //
 //  Get public/private key value from an XMSS/XMSS^MT key object
 //

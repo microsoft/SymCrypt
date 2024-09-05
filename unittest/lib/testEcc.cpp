@@ -1188,7 +1188,7 @@ testEcdh(
     _In_reads_( cbQyb )
         PCBYTE                  pbQyb,
         SIZE_T                  cbQyb,
-    _In_reads_( cbSS )
+    _In_reads_( cbSs )
         PCBYTE                  pbSs,
         SIZE_T                  cbSs,
         UINT32                  secretAgreementFlags,

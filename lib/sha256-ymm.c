@@ -307,24 +307,25 @@ SymCryptSha256AppendBlocks_ymm_8blocks(
             ah[1] = pChain->H[6];
             ah[0] = pChain->H[7];
 
-            for (int round = 0; round < 64; round += 16)
+            for (int iterCount=0; iterCount<(64/16); iterCount++)
             {
-                CROUND_8BLOCKS( 0, round, bl);
-                CROUND_8BLOCKS( 1, round, bl);
-                CROUND_8BLOCKS( 2, round, bl);
-                CROUND_8BLOCKS( 3, round, bl);
-                CROUND_8BLOCKS( 4, round, bl);
-                CROUND_8BLOCKS( 5, round, bl);
-                CROUND_8BLOCKS( 6, round, bl);
-                CROUND_8BLOCKS( 7, round, bl);
-                CROUND_8BLOCKS( 8, round, bl);
-                CROUND_8BLOCKS( 9, round, bl);
-                CROUND_8BLOCKS(10, round, bl);
-                CROUND_8BLOCKS(11, round, bl);
-                CROUND_8BLOCKS(12, round, bl);
-                CROUND_8BLOCKS(13, round, bl);
-                CROUND_8BLOCKS(14, round, bl);
-                CROUND_8BLOCKS(15, round, bl);
+                const int roundBase = iterCount*16;
+                CROUND_8BLOCKS( 0, roundBase, bl);
+                CROUND_8BLOCKS( 1, roundBase, bl);
+                CROUND_8BLOCKS( 2, roundBase, bl);
+                CROUND_8BLOCKS( 3, roundBase, bl);
+                CROUND_8BLOCKS( 4, roundBase, bl);
+                CROUND_8BLOCKS( 5, roundBase, bl);
+                CROUND_8BLOCKS( 6, roundBase, bl);
+                CROUND_8BLOCKS( 7, roundBase, bl);
+                CROUND_8BLOCKS( 8, roundBase, bl);
+                CROUND_8BLOCKS( 9, roundBase, bl);
+                CROUND_8BLOCKS(10, roundBase, bl);
+                CROUND_8BLOCKS(11, roundBase, bl);
+                CROUND_8BLOCKS(12, roundBase, bl);
+                CROUND_8BLOCKS(13, roundBase, bl);
+                CROUND_8BLOCKS(14, roundBase, bl);
+                CROUND_8BLOCKS(15, roundBase, bl);
             }
 
             pChain->H[0] = ah[7] + pChain->H[0];
@@ -381,24 +382,25 @@ SymCryptSha256AppendBlocks_ymm_8blocks(
         //
         // rounds 16 to 64.
         //
-        for (int round = 16; round < 64; round += 16)
+        for (int iterCount=1; iterCount<(64/16); iterCount++)
         {
-            FROUND(0, round);
-            FROUND(1, round);
-            FROUND(2, round);
-            FROUND(3, round);
-            FROUND(4, round);
-            FROUND(5, round);
-            FROUND(6, round);
-            FROUND(7, round);
-            FROUND(8, round);
-            FROUND(9, round);
-            FROUND(10, round);
-            FROUND(11, round);
-            FROUND(12, round);
-            FROUND(13, round);
-            FROUND(14, round);
-            FROUND(15, round);
+            const int roundBase = iterCount*16; 
+            FROUND( 0, roundBase);
+            FROUND( 1, roundBase);
+            FROUND( 2, roundBase);
+            FROUND( 3, roundBase);
+            FROUND( 4, roundBase);
+            FROUND( 5, roundBase);
+            FROUND( 6, roundBase);
+            FROUND( 7, roundBase);
+            FROUND( 8, roundBase);
+            FROUND( 9, roundBase);
+            FROUND(10, roundBase);
+            FROUND(11, roundBase);
+            FROUND(12, roundBase);
+            FROUND(13, roundBase);
+            FROUND(14, roundBase);
+            FROUND(15, roundBase);
         }
 
         pChain->H[0] = ah[7] + pChain->H[0];

@@ -295,7 +295,7 @@ public:
     virtual VOID append(_In_reads_(cbData) PCBYTE pbData, SIZE_T cbData) = 0;
     // Append data to the running MAC computation.
 
-    virtual VOID extract(_Out_writes_(cbData) PBYTE pbResult, SIZE_T cbResult, BOOLEAN bWipe) = 0;
+    virtual VOID extract(_Out_writes_(cbResult) PBYTE pbResult, SIZE_T cbResult, BOOLEAN bWipe) = 0;
     // Extract data in XOF mode.
 
     virtual VOID result(_Out_writes_(cbResult) PBYTE pbResult, SIZE_T cbResult) = 0;

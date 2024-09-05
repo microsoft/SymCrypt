@@ -6,7 +6,7 @@ set(SOURCES
 set_source_files_properties(symcryptunittest.rc PROPERTIES LANGUAGE RC)
 
 add_executable(symcryptunittest ${SOURCES})
-target_link_libraries(symcryptunittest symcryptunittest_lib bcrypt ntdll)
+target_link_libraries(symcryptunittest symcryptunittest_lib symcrypt_common bcrypt ntdll)
 
 if(SYMCRYPT_TEST_LEGACY_IMPL)
     # For internal builds, append RSA32 and msbignum.

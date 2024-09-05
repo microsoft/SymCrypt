@@ -8,7 +8,7 @@ parameters:
   config: 'Debug,Release'
   platform: 'x86,x64,arm64'
   nativeCompiler: true
-  buildType: 'private'
+  buildType: 'pr'
   sign: false # Only signs UM binaries, for external (to Windows repo) release
   # Packaging args
   package: false
@@ -94,10 +94,15 @@ jobs:
     ob_outputDirectory: $(Build.SourcesDirectory)\build\bin\$(ob_build_platform_win)$(ob_build_config_win)
     ob_artifactSuffix: _$(ob_build_platform_win)$(ob_build_config_win)
     # https://aka.ms/obpipelines/sdl
-    ob_sdl_tsa_enabled: true # When TSA is disabled all SDL tools will forced into 'break' build mode.
+    # When TSA is enabled bugs are filed on SDL errors. When TSA is disabled, most SDL tools break the build.
+    # Make official builds file bugs but PR builds just break the build.
+    ${{ if eq(parameters.buildType, 'official') }}:
+      ob_sdl_tsa_enabled: true 
+    ${{ if eq(parameters.buildType, 'pr') }}:
+      ob_sdl_tsa_enabled: false
     ob_sdl_binskim_break: true
     ob_sdl_policheck_break: true
-    ob_sdl_prefast_break: false
+    ob_sdl_prefast_break: true
     ${{ if eq(parameters.sign, true) }}:
       ob_sdl_codeSignValidation_excludes: -|**\*.sys # Signing is not supported for KM drivers
     ${{ if eq(parameters.sign, false) }}:
@@ -137,7 +142,7 @@ jobs:
       userProvideBuildInfo: auto
       rulesetName: Custom
       customRuleset: '$(Build.SourcesDirectory)\tvs.ruleset'
-      excludedPaths: 'c:/program files (x86)/windows kits/'
+      excludedPaths: 'c:/program files (x86)/windows kits/#c:/__w/1/s/unittest/symcryptdependencies/inc/'
     env:
       SYSTEM_ACCESSTOKEN: $(System.AccessToken)
 

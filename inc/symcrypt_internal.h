@@ -2100,6 +2100,14 @@ typedef const SYMCRYPT_ECPOINT * PCSYMCRYPT_ECPOINT;
 
 #define SYMCRYPT_BYTES_FROM_BITS(bits)          ( ( (bits) + 7 ) / 8 )
 
+// The maximum number of bits in any integer value that the library supports. If the
+// caller's input exceed this bound then the the integer object will not be created.
+// The caller either must ensure the bound is not exceeded, or check for NULL before
+// using created SymCrypt objects.
+// The primary purpose of this limit is to avoid integer overlows in size computations.
+// Having a reasonable upper bound avoids all size overflows, even on 32-bit CPUs
+#define SYMCRYPT_INT_MAX_BITS       ((UINT32)(1 << 20))
+
 //
 // Upper bound for the number of digits: this MUST be enforced on runtime
 // on all Allocate, SizeOf, and Create calls which take as input a digit number.

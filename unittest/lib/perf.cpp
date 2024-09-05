@@ -1195,7 +1195,7 @@ measurePerf()
 
     measurePerfOfAlgorithms();
 
-    if( TRUE || isAlgorithmPresent( "Wipe", FALSE ) )
+    if( TRUE /*|| isAlgorithmPresent( "Wipe", FALSE )*/ )
     {
         measurePerfOfWipe();
     }

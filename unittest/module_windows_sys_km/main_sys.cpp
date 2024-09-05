@@ -547,7 +547,10 @@ DriverEntry(
     //
     // Create and initialize the Device object.
     //
-
+    
+    // Suppress leaking memory Prefast warning. deviceObject is deleted on success in DrvUnload
+    #pragma prefast(push)
+    #pragma prefast(suppress: 6014)
     Status = IoCreateDevice(
                     DriverObject,
                     0L,
@@ -557,6 +560,8 @@ DriverEntry(
                     TRUE,                       // exclusive, only one handle is allowed.
                     &deviceObject
                     );
+    #pragma prefast(pop)
+
     if (!NT_SUCCESS( Status ))
     {
         goto cleanup;
@@ -569,6 +574,13 @@ DriverEntry(
     AllocWithChecksInit();
 
 cleanup:
+    if (!NT_SUCCESS( Status ))
+    {
+        if(deviceObject != NULL)
+        {
+            IoDeleteDevice(deviceObject);
+        }
+    }
 
     return Status;
 }

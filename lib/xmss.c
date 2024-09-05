@@ -761,13 +761,13 @@ SymCryptXmssPrfKey(
 VOID
 SYMCRYPT_CALL
 SymCryptXmssPrf(
-    _In_                                PCSYMCRYPT_XMSS_PARAMS  pParams, 
-                                        BYTE                    PrfType, 
-    _In_reads_bytes_( cbKey )           PCBYTE                  pbKey, 
-                                        SIZE_T                  cbKey, 
-    _In_reads_bytes_( cbMsg )           PCBYTE                  pbMsg,
-                                        SIZE_T                  cbMsg,
-    _Out_writes_bytes_( pParams->n )    PBYTE                   pbOutput )
+    _In_                                        PCSYMCRYPT_XMSS_PARAMS  pParams, 
+                                                BYTE                    PrfType, 
+    _In_reads_bytes_( cbKey )                   PCBYTE                  pbKey, 
+                                                SIZE_T                  cbKey, 
+    _In_reads_bytes_( cbMsg )                   PCBYTE                  pbMsg,
+                                                SIZE_T                  cbMsg,
+    _Out_writes_bytes_( pParams->cbHashOutput ) PBYTE                   pbOutput )
 {
     SYMCRYPT_HASH_STATE state;
     
@@ -781,40 +781,40 @@ SymCryptXmssPrf(
 VOID
 SYMCRYPT_CALL
 SymCryptXmssRandHash(
-    _In_                                        PCSYMCRYPT_XMSS_PARAMS  params,
+    _In_                                        PCSYMCRYPT_XMSS_PARAMS  pParams,
     _Inout_                                     XMSS_ADRS              *adrs,
-    _In_reads_bytes_( params->cbHashOutput )    PCBYTE                  pbSeed,
-    _In_reads_bytes_( params->cbHashOutput)     PCBYTE                  pbLeft,
-    _In_reads_bytes_( params->cbHashOutput)     PCBYTE                  pbRight,
-    _Out_writes_bytes_( params->cbHashOutput)   PBYTE                   pbOutput )
+    _In_reads_bytes_( pParams->cbHashOutput )   PCBYTE                  pbSeed,
+    _In_reads_bytes_( pParams->cbHashOutput )   PCBYTE                  pbLeft,
+    _In_reads_bytes_( pParams->cbHashOutput )   PCBYTE                  pbRight,
+    _Out_writes_bytes_( pParams->cbHashOutput ) PBYTE                   pbOutput )
 {
     BYTE key[SYMCRYPT_HASH_MAX_RESULT_SIZE];
     BYTE bitmask[2 * SYMCRYPT_HASH_MAX_RESULT_SIZE];
     SYMCRYPT_HASH_STATE stateKeyed;
     SYMCRYPT_HASH_STATE stateMask;
 
-    SYMCRYPT_ASSERT(params->cbHashOutput <= SYMCRYPT_HASH_MAX_RESULT_SIZE);
+    SYMCRYPT_ASSERT(pParams->cbHashOutput <= SYMCRYPT_HASH_MAX_RESULT_SIZE);
 
-    SymCryptXmssPrfKey(params, pbSeed, params->cbHashOutput, &stateKeyed);
+    SymCryptXmssPrfKey(pParams, pbSeed, pParams->cbHashOutput, &stateKeyed);
 
     SYMCRYPT_STORE_MSBFIRST32(adrs->en32KeyAndMask, 1);
-    SymCryptHashStateCopy(params->hash, &stateKeyed, &stateMask);
-    SymCryptHashAppend(params->hash, &stateMask, (PCBYTE)adrs, sizeof(*adrs));
-    SymCryptHashResult(params->hash, &stateMask, &bitmask[0], params->cbHashOutput);
+    SymCryptHashStateCopy(pParams->hash, &stateKeyed, &stateMask);
+    SymCryptHashAppend(pParams->hash, &stateMask, (PCBYTE)adrs, sizeof(*adrs));
+    SymCryptHashResult(pParams->hash, &stateMask, &bitmask[0], pParams->cbHashOutput);
 
     SYMCRYPT_STORE_MSBFIRST32(adrs->en32KeyAndMask, 2);
-    SymCryptHashStateCopy(params->hash, &stateKeyed, &stateMask);
-    SymCryptHashAppend(params->hash, &stateMask, (PCBYTE)adrs, sizeof(*adrs));
-    SymCryptHashResult(params->hash, &stateMask, &bitmask[params->cbHashOutput], params->cbHashOutput);
+    SymCryptHashStateCopy(pParams->hash, &stateKeyed, &stateMask);
+    SymCryptHashAppend(pParams->hash, &stateMask, (PCBYTE)adrs, sizeof(*adrs));
+    SymCryptHashResult(pParams->hash, &stateMask, &bitmask[pParams->cbHashOutput], pParams->cbHashOutput);
 
     SYMCRYPT_STORE_MSBFIRST32(adrs->en32KeyAndMask, 0);
-    SymCryptHashAppend(params->hash, &stateKeyed, (PCBYTE)adrs, sizeof(*adrs));
-    SymCryptHashResult(params->hash, &stateKeyed, key, params->cbHashOutput);
+    SymCryptHashAppend(pParams->hash, &stateKeyed, (PCBYTE)adrs, sizeof(*adrs));
+    SymCryptHashResult(pParams->hash, &stateKeyed, key, pParams->cbHashOutput);
 
-    SymCryptXorBytes(&bitmask[0], pbLeft, &bitmask[0], params->cbHashOutput);
-    SymCryptXorBytes(&bitmask[params->cbHashOutput], pbRight, &bitmask[params->cbHashOutput], params->cbHashOutput);
+    SymCryptXorBytes(&bitmask[0], pbLeft, &bitmask[0], pParams->cbHashOutput);
+    SymCryptXorBytes(&bitmask[pParams->cbHashOutput], pbRight, &bitmask[pParams->cbHashOutput], pParams->cbHashOutput);
 
-    SymCryptXmssPrf(params, SYMCRYPT_XMSS_H, key, params->cbHashOutput, bitmask, 2 * params->cbHashOutput, pbOutput);
+    SymCryptXmssPrf(pParams, SYMCRYPT_XMSS_H, key, pParams->cbHashOutput, bitmask, 2 * pParams->cbHashOutput, pbOutput);
 }
 
 
@@ -868,10 +868,10 @@ VOID
 SYMCRYPT_CALL
 SymCryptXmssCreateWotspSecret(
     _In_                                        PCSYMCRYPT_XMSS_PARAMS  pParams,
-    _In_reads_bytes_( params->cbHashOutput )    PCBYTE                  pbSkXmss,
-    _In_reads_bytes_( params->cbHashOutput)     PCBYTE                  pbSeed,
+    _In_reads_bytes_( pParams->cbHashOutput )   PCBYTE                  pbSkXmss,
+    _In_reads_bytes_( pParams->cbHashOutput )   PCBYTE                  pbSeed,
     _Inout_                                     XMSS_ADRS               *adrs,
-    _Out_writes_bytes_( params->cbHashOutput)   PBYTE                   pbOutput )
+    _Out_writes_bytes_( pParams->cbHashOutput ) PBYTE                   pbOutput )
 {
     SYMCRYPT_HASH_STATE state;
 
@@ -885,13 +885,13 @@ SymCryptXmssCreateWotspSecret(
 VOID
 SYMCRYPT_CALL
 SymCryptXmssChain(
-    _In_                                        PCSYMCRYPT_XMSS_PARAMS  params,
-    _In_reads_bytes_( params->cbHashOutput)     PCBYTE                  pbInput,
+    _In_                                        PCSYMCRYPT_XMSS_PARAMS  pParams,
+    _In_reads_bytes_( pParams->cbHashOutput )   PCBYTE                  pbInput,
                                                 UINT32                  startIndex,
                                                 UINT32                  steps,
-    _In_reads_bytes_( params->cbHashOutput)     PCBYTE                  pbSeed,
+    _In_reads_bytes_( pParams->cbHashOutput )   PCBYTE                  pbSeed,
     _Inout_                                     XMSS_ADRS              *adrs,
-    _Out_writes_bytes_( params->cbHashOutput)   PBYTE                   pbOutput )
+    _Out_writes_bytes_( pParams->cbHashOutput ) PBYTE                   pbOutput )
 {
     BYTE tmp[SYMCRYPT_HASH_MAX_RESULT_SIZE];
     BYTE key[SYMCRYPT_HASH_MAX_RESULT_SIZE];
@@ -899,35 +899,33 @@ SymCryptXmssChain(
     SYMCRYPT_HASH_STATE stateKey;
     SYMCRYPT_HASH_STATE stateMask;
 
-    memcpy(tmp, pbInput, params->cbHashOutput);
+    memcpy(tmp, pbInput, pParams->cbHashOutput);
 
     for (UINT32 i = startIndex; i < startIndex + steps; i++)
     {
         SYMCRYPT_STORE_MSBFIRST32(adrs->u.ots.en32Hash, i);
 
-        SymCryptXmssPrfKey(params, pbSeed, params->cbHashOutput, &stateKey);
-        SymCryptHashStateCopy(params->hash, &stateKey, &stateMask);
+        SymCryptXmssPrfKey(pParams, pbSeed, pParams->cbHashOutput, &stateKey);
+        SymCryptHashStateCopy(pParams->hash, &stateKey, &stateMask);
 
         SYMCRYPT_STORE_MSBFIRST32(adrs->en32KeyAndMask, 0);
-        //SymCryptXmssPrf(params, SYMCRYPT_XMSS_PRF, pbSeed, params->n, (PCBYTE)adrs, sizeof(*adrs), key);
-        SymCryptHashAppend(params->hash, &stateKey, (PCBYTE)adrs, sizeof(*adrs));
-        SymCryptHashResult(params->hash, &stateKey, key, params->cbHashOutput);
+        SymCryptHashAppend(pParams->hash, &stateKey, (PCBYTE)adrs, sizeof(*adrs));
+        SymCryptHashResult(pParams->hash, &stateKey, key, pParams->cbHashOutput);
 
         SYMCRYPT_STORE_MSBFIRST32(adrs->en32KeyAndMask, 1);
-        //SymCryptXmssPrf(params, SYMCRYPT_XMSS_PRF, pbSeed, params->n, (PCBYTE)adrs, sizeof(*adrs), bm);
-        SymCryptHashAppend(params->hash, &stateMask, (PCBYTE)adrs, sizeof(*adrs));
-        SymCryptHashResult(params->hash, &stateMask, bm, params->cbHashOutput);
+        SymCryptHashAppend(pParams->hash, &stateMask, (PCBYTE)adrs, sizeof(*adrs));
+        SymCryptHashResult(pParams->hash, &stateMask, bm, pParams->cbHashOutput);
 
-        SymCryptXorBytes(tmp, bm, tmp, params->cbHashOutput);
+        SymCryptXorBytes(tmp, bm, tmp, pParams->cbHashOutput);
 
-        SymCryptXmssPrf(params, SYMCRYPT_XMSS_F, key, params->cbHashOutput, tmp, params->cbHashOutput, tmp);
+        SymCryptXmssPrf(pParams, SYMCRYPT_XMSS_F, key, pParams->cbHashOutput, tmp, pParams->cbHashOutput, tmp);
     }
 
     // reset used ADRS fields
     SYMCRYPT_STORE_MSBFIRST32(adrs->u.ots.en32Hash, 0);
     SYMCRYPT_STORE_MSBFIRST32(adrs->en32KeyAndMask, 0);
 
-    memcpy(pbOutput, tmp, params->cbHashOutput);
+    memcpy(pbOutput, tmp, pParams->cbHashOutput);
 }
 
 
@@ -1228,7 +1226,7 @@ cleanup:
 SYMCRYPT_ERROR
 SYMCRYPT_CALL
 SymCryptXmsskeySetValue(
-    _In_reads_bytes_( cbSrc )   PCBYTE                  pbInput,
+    _In_reads_bytes_( cbInput ) PCBYTE                  pbInput,
                                 SIZE_T                  cbInput,
                                 SYMCRYPT_XMSSKEY_TYPE   keyType,
                                 UINT32                  flags,
@@ -1325,11 +1323,11 @@ cleanup:
 SYMCRYPT_ERROR
 SYMCRYPT_CALL
 SymCryptXmsskeyGetValue(
-    _In_                        PCSYMCRYPT_XMSS_KEY     pKey,
-                                SYMCRYPT_XMSSKEY_TYPE   keyType,
-                                UINT32                  flags,
-    _Out_writes_bytes_( cbKey ) PBYTE                   pbOutput,
-                                SIZE_T                  cbOutput)
+    _In_                            PCSYMCRYPT_XMSS_KEY     pKey,
+                                    SYMCRYPT_XMSSKEY_TYPE   keyType,
+                                    UINT32                  flags,
+    _Out_writes_bytes_( cbOutput )  PBYTE                   pbOutput,
+                                    SIZE_T                  cbOutput)
 {
     SYMCRYPT_ERROR scError = SYMCRYPT_NO_ERROR;
     SIZE_T cbKey;
@@ -1425,13 +1423,13 @@ SymCryptXmssTreeRootFromAuthenticationPath(
     _In_    PCSYMCRYPT_XMSS_PARAMS  pParams,
     _Inout_ XMSS_ADRS              *adrs,
             UINT32                  uLeaf, 
-    _In_reads_bytes_( params->cbHashOutput)
+    _In_reads_bytes_( pParams->cbHashOutput )
             PCBYTE                  pbStartingNode,
-    _In_reads_bytes_( params->cbHashOutput* params->nTotalTreeHeight )
+    _In_reads_bytes_( pParams->cbHashOutput * pParams->nLayerHeight )
             PCBYTE                  pbAuthNodes,
-    _In_reads_bytes_( params->cbHashOutput)
+    _In_reads_bytes_( pParams->cbHashOutput )
             PCBYTE                  pbSeed,
-    _Out_writes_bytes_( params->cbHashOutput)
+    _Out_writes_bytes_( pParams->cbHashOutput )
             PBYTE                   pbOutput )
 {
     BYTE node[SYMCRYPT_HASH_MAX_RESULT_SIZE];
@@ -1958,7 +1956,7 @@ SYMCRYPT_CALL
 SymCryptXmssComputeRandomness(
     _In_                                            PCSYMCRYPT_XMSS_KEY pKey,
                                                     UINT64              Idx,
-    _Out_writes_bytes_( pKey->params.cbHashOutput)  PBYTE               pbRandomness )
+    _Out_writes_bytes_( pKey->params.cbHashOutput ) PBYTE               pbRandomness )
 {
     BYTE IdxBuffer[32];
 

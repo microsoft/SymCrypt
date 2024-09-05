@@ -21,7 +21,7 @@ public:
 
     virtual NTSTATUS setKey( _In_reads_( cbKey ) PCBYTE pbKey, SIZE_T cbKey );
 
-    virtual NTSTATUS setNonce( _In_reads_( cbKey ) PCBYTE pbNonce, SIZE_T cbNonce );
+    virtual NTSTATUS setNonce( _In_reads_( cbNonce ) PCBYTE pbNonce, SIZE_T cbNonce );
 
     virtual BOOL isRandomAccess();
 

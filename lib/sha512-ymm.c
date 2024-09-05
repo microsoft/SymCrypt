@@ -152,31 +152,33 @@ SymCryptSha512AppendBlocks_ymm_1block(
         Wx.ymm[3] = _mm256_shuffle_epi8(_mm256_loadu_si256((__m256i*) & pbData[0 * SYMCRYPT_SHA512_INPUT_BLOCK_SIZE + (3) * 32]), _mm256_load_si256((__m256i*)BYTE_REVERSE_64X2));
 #endif
 
-        for (int round = 0; round < 64; round += 16)
+        for (int iterCount=0; iterCount<(64/16); iterCount++)
         {
-            CROUND_1BLOCK(A, B, C, D, E, F, G, H, round +  0);
-            CROUND_1BLOCK(H, A, B, C, D, E, F, G, round +  1);
-            CROUND_1BLOCK(G, H, A, B, C, D, E, F, round +  2);
-            CROUND_1BLOCK(F, G, H, A, B, C, D, E, round +  3);
-            SHA512_MSG_EXPAND_1BLOCK_4ROUNDS(round + 16);
+            const int roundBase = iterCount*16;
 
-            CROUND_1BLOCK(E, F, G, H, A, B, C, D, round +  4);
-            CROUND_1BLOCK(D, E, F, G, H, A, B, C, round +  5);
-            CROUND_1BLOCK(C, D, E, F, G, H, A, B, round +  6);
-            CROUND_1BLOCK(B, C, D, E, F, G, H, A, round +  7);
-            SHA512_MSG_EXPAND_1BLOCK_4ROUNDS(round + 20);
+            CROUND_1BLOCK(A, B, C, D, E, F, G, H, roundBase +  0);
+            CROUND_1BLOCK(H, A, B, C, D, E, F, G, roundBase +  1);
+            CROUND_1BLOCK(G, H, A, B, C, D, E, F, roundBase +  2);
+            CROUND_1BLOCK(F, G, H, A, B, C, D, E, roundBase +  3);
+            SHA512_MSG_EXPAND_1BLOCK_4ROUNDS(roundBase + 16);
 
-            CROUND_1BLOCK(A, B, C, D, E, F, G, H, round +  8);
-            CROUND_1BLOCK(H, A, B, C, D, E, F, G, round +  9);
-            CROUND_1BLOCK(G, H, A, B, C, D, E, F, round + 10);
-            CROUND_1BLOCK(F, G, H, A, B, C, D, E, round + 11);
-            SHA512_MSG_EXPAND_1BLOCK_4ROUNDS(round + 24);
+            CROUND_1BLOCK(E, F, G, H, A, B, C, D, roundBase +  4);
+            CROUND_1BLOCK(D, E, F, G, H, A, B, C, roundBase +  5);
+            CROUND_1BLOCK(C, D, E, F, G, H, A, B, roundBase +  6);
+            CROUND_1BLOCK(B, C, D, E, F, G, H, A, roundBase +  7);
+            SHA512_MSG_EXPAND_1BLOCK_4ROUNDS(roundBase + 20);
 
-            CROUND_1BLOCK(E, F, G, H, A, B, C, D, round + 12);
-            CROUND_1BLOCK(D, E, F, G, H, A, B, C, round + 13);
-            CROUND_1BLOCK(C, D, E, F, G, H, A, B, round + 14);
-            CROUND_1BLOCK(B, C, D, E, F, G, H, A, round + 15);
-            SHA512_MSG_EXPAND_1BLOCK_4ROUNDS(round + 28);
+            CROUND_1BLOCK(A, B, C, D, E, F, G, H, roundBase +  8);
+            CROUND_1BLOCK(H, A, B, C, D, E, F, G, roundBase +  9);
+            CROUND_1BLOCK(G, H, A, B, C, D, E, F, roundBase + 10);
+            CROUND_1BLOCK(F, G, H, A, B, C, D, E, roundBase + 11);
+            SHA512_MSG_EXPAND_1BLOCK_4ROUNDS(roundBase + 24);
+
+            CROUND_1BLOCK(E, F, G, H, A, B, C, D, roundBase + 12);
+            CROUND_1BLOCK(D, E, F, G, H, A, B, C, roundBase + 13);
+            CROUND_1BLOCK(C, D, E, F, G, H, A, B, roundBase + 14);
+            CROUND_1BLOCK(B, C, D, E, F, G, H, A, roundBase + 15);
+            SHA512_MSG_EXPAND_1BLOCK_4ROUNDS(roundBase + 28);
         }
 
         CROUND_1BLOCK(A, B, C, D, E, F, G, H, 64 +  0);
@@ -416,16 +418,17 @@ SymCryptSha512AppendBlocks_ymm_2blocks(
             G = pChain->H[6];
             H = pChain->H[7];
 
-            for (int round = 0; round < 80; round += 8)
+            for (int iterCount=0; iterCount<(80/8); iterCount++)
             {
-                CROUND_2BLOCKS(A, B, C, D, E, F, G, H, round +  0, 1);
-                CROUND_2BLOCKS(H, A, B, C, D, E, F, G, round +  1, 1);
-                CROUND_2BLOCKS(G, H, A, B, C, D, E, F, round +  2, 1);
-                CROUND_2BLOCKS(F, G, H, A, B, C, D, E, round +  3, 1);
-                CROUND_2BLOCKS(E, F, G, H, A, B, C, D, round +  4, 1);
-                CROUND_2BLOCKS(D, E, F, G, H, A, B, C, round +  5, 1);
-                CROUND_2BLOCKS(C, D, E, F, G, H, A, B, round +  6, 1);
-                CROUND_2BLOCKS(B, C, D, E, F, G, H, A, round +  7, 1);
+                const int roundBase = iterCount*8;
+                CROUND_2BLOCKS(A, B, C, D, E, F, G, H, roundBase +  0, 1);
+                CROUND_2BLOCKS(H, A, B, C, D, E, F, G, roundBase +  1, 1);
+                CROUND_2BLOCKS(G, H, A, B, C, D, E, F, roundBase +  2, 1);
+                CROUND_2BLOCKS(F, G, H, A, B, C, D, E, roundBase +  3, 1);
+                CROUND_2BLOCKS(E, F, G, H, A, B, C, D, roundBase +  4, 1);
+                CROUND_2BLOCKS(D, E, F, G, H, A, B, C, roundBase +  5, 1);
+                CROUND_2BLOCKS(C, D, E, F, G, H, A, B, roundBase +  6, 1);
+                CROUND_2BLOCKS(B, C, D, E, F, G, H, A, roundBase +  7, 1);
             }
 
             pChain->H[0] = A + pChain->H[0];
@@ -625,19 +628,21 @@ SymCryptSha512AppendBlocks_ymm_4blocks(
         G = pChain->H[6];
         H = pChain->H[7];
 
-        for (int round = 0; round < 64; round += 8)
+        for (int iterCount=0; iterCount<(64/8); iterCount++)
         {
-            SHA512_MSG_EXPAND_4BLOCKS_4ROUNDS(round + 16);
-            CROUND_4BLOCKS(A, B, C, D, E, F, G, H, round + 0, 0);
-            CROUND_4BLOCKS(H, A, B, C, D, E, F, G, round + 1, 0);
-            CROUND_4BLOCKS(G, H, A, B, C, D, E, F, round + 2, 0);
-            CROUND_4BLOCKS(F, G, H, A, B, C, D, E, round + 3, 0);
+            const int roundBase = iterCount*8;
 
-            SHA512_MSG_EXPAND_4BLOCKS_4ROUNDS(round + 20);
-            CROUND_4BLOCKS(E, F, G, H, A, B, C, D, round + 4, 0);
-            CROUND_4BLOCKS(D, E, F, G, H, A, B, C, round + 5, 0);
-            CROUND_4BLOCKS(C, D, E, F, G, H, A, B, round + 6, 0);
-            CROUND_4BLOCKS(B, C, D, E, F, G, H, A, round + 7, 0);
+            SHA512_MSG_EXPAND_4BLOCKS_4ROUNDS(roundBase + 16);
+            CROUND_4BLOCKS(A, B, C, D, E, F, G, H, roundBase + 0, 0);
+            CROUND_4BLOCKS(H, A, B, C, D, E, F, G, roundBase + 1, 0);
+            CROUND_4BLOCKS(G, H, A, B, C, D, E, F, roundBase + 2, 0);
+            CROUND_4BLOCKS(F, G, H, A, B, C, D, E, roundBase + 3, 0);
+
+            SHA512_MSG_EXPAND_4BLOCKS_4ROUNDS(roundBase + 20);
+            CROUND_4BLOCKS(E, F, G, H, A, B, C, D, roundBase + 4, 0);
+            CROUND_4BLOCKS(D, E, F, G, H, A, B, C, roundBase + 5, 0);
+            CROUND_4BLOCKS(C, D, E, F, G, H, A, B, roundBase + 6, 0);
+            CROUND_4BLOCKS(B, C, D, E, F, G, H, A, roundBase + 7, 0);
         }
 
         // Last 16 rounds; add round constants and process. Message expansion is completed above.
@@ -665,24 +670,26 @@ SymCryptSha512AppendBlocks_ymm_4blocks(
             G = pChain->H[6];
             H = pChain->H[7];
 
-            for (int round = 0; round < 80; round += 8)
+            for (int iterCount=0; iterCount<(80/8); iterCount++)
             {
-                CROUND_4BLOCKS(A, B, C, D, E, F, G, H, round +  0, bl);
-                CROUND_4BLOCKS(H, A, B, C, D, E, F, G, round +  1, bl);
-                CROUND_4BLOCKS(G, H, A, B, C, D, E, F, round +  2, bl);
-                CROUND_4BLOCKS(F, G, H, A, B, C, D, E, round +  3, bl);
-                CROUND_4BLOCKS(E, F, G, H, A, B, C, D, round +  4, bl);
-                CROUND_4BLOCKS(D, E, F, G, H, A, B, C, round +  5, bl);
-                CROUND_4BLOCKS(C, D, E, F, G, H, A, B, round +  6, bl);
-                CROUND_4BLOCKS(B, C, D, E, F, G, H, A, round +  7, bl);
-                //CROUND_4BLOCKS(A, B, C, D, E, F, G, H, round +  8, bl);
-                //CROUND_4BLOCKS(H, A, B, C, D, E, F, G, round +  9, bl);
-                //CROUND_4BLOCKS(G, H, A, B, C, D, E, F, round + 10, bl);
-                //CROUND_4BLOCKS(F, G, H, A, B, C, D, E, round + 11, bl);
-                //CROUND_4BLOCKS(E, F, G, H, A, B, C, D, round + 12, bl);
-                //CROUND_4BLOCKS(D, E, F, G, H, A, B, C, round + 13, bl);
-                //CROUND_4BLOCKS(C, D, E, F, G, H, A, B, round + 14, bl);
-                //CROUND_4BLOCKS(B, C, D, E, F, G, H, A, round + 15, bl);
+                const int roundBase = iterCount*8;
+
+                CROUND_4BLOCKS(A, B, C, D, E, F, G, H, roundBase +  0, bl);
+                CROUND_4BLOCKS(H, A, B, C, D, E, F, G, roundBase +  1, bl);
+                CROUND_4BLOCKS(G, H, A, B, C, D, E, F, roundBase +  2, bl);
+                CROUND_4BLOCKS(F, G, H, A, B, C, D, E, roundBase +  3, bl);
+                CROUND_4BLOCKS(E, F, G, H, A, B, C, D, roundBase +  4, bl);
+                CROUND_4BLOCKS(D, E, F, G, H, A, B, C, roundBase +  5, bl);
+                CROUND_4BLOCKS(C, D, E, F, G, H, A, B, roundBase +  6, bl);
+                CROUND_4BLOCKS(B, C, D, E, F, G, H, A, roundBase +  7, bl);
+                //CROUND_4BLOCKS(A, B, C, D, E, F, G, H, roundBase +  8, bl);
+                //CROUND_4BLOCKS(H, A, B, C, D, E, F, G, roundBase +  9, bl);
+                //CROUND_4BLOCKS(G, H, A, B, C, D, E, F, roundBase + 10, bl);
+                //CROUND_4BLOCKS(F, G, H, A, B, C, D, E, roundBase + 11, bl);
+                //CROUND_4BLOCKS(E, F, G, H, A, B, C, D, roundBase + 12, bl);
+                //CROUND_4BLOCKS(D, E, F, G, H, A, B, C, roundBase + 13, bl);
+                //CROUND_4BLOCKS(C, D, E, F, G, H, A, B, roundBase + 14, bl);
+                //CROUND_4BLOCKS(B, C, D, E, F, G, H, A, roundBase + 15, bl);
             }
 
             pChain->H[0] = A + pChain->H[0];
@@ -736,24 +743,26 @@ SymCryptSha512AppendBlocks_ymm_4blocks(
         IROUND(C, D, E, F, G, H, A, B, 14);
         IROUND(B, C, D, E, F, G, H, A, 15);
 
-        for (int round = 16; round < 80; round += 16)
+        for (int iterCount=1; iterCount<(80/16); iterCount++)
         {
-            FROUND(A, B, C, D, E, F, G, H, round + 0, 0);
-            FROUND(H, A, B, C, D, E, F, G, round + 1, 1);
-            FROUND(G, H, A, B, C, D, E, F, round + 2, 2);
-            FROUND(F, G, H, A, B, C, D, E, round + 3, 3);
-            FROUND(E, F, G, H, A, B, C, D, round + 4, 4);
-            FROUND(D, E, F, G, H, A, B, C, round + 5, 5);
-            FROUND(C, D, E, F, G, H, A, B, round + 6, 6);
-            FROUND(B, C, D, E, F, G, H, A, round + 7, 7);
-            FROUND(A, B, C, D, E, F, G, H, round + 8, 8);
-            FROUND(H, A, B, C, D, E, F, G, round + 9, 9);
-            FROUND(G, H, A, B, C, D, E, F, round + 10, 10);
-            FROUND(F, G, H, A, B, C, D, E, round + 11, 11);
-            FROUND(E, F, G, H, A, B, C, D, round + 12, 12);
-            FROUND(D, E, F, G, H, A, B, C, round + 13, 13);
-            FROUND(C, D, E, F, G, H, A, B, round + 14, 14);
-            FROUND(B, C, D, E, F, G, H, A, round + 15, 15);
+            const int roundBase = iterCount*16;
+
+            FROUND(A, B, C, D, E, F, G, H, roundBase + 0, 0);
+            FROUND(H, A, B, C, D, E, F, G, roundBase + 1, 1);
+            FROUND(G, H, A, B, C, D, E, F, roundBase + 2, 2);
+            FROUND(F, G, H, A, B, C, D, E, roundBase + 3, 3);
+            FROUND(E, F, G, H, A, B, C, D, roundBase + 4, 4);
+            FROUND(D, E, F, G, H, A, B, C, roundBase + 5, 5);
+            FROUND(C, D, E, F, G, H, A, B, roundBase + 6, 6);
+            FROUND(B, C, D, E, F, G, H, A, roundBase + 7, 7);
+            FROUND(A, B, C, D, E, F, G, H, roundBase + 8, 8);
+            FROUND(H, A, B, C, D, E, F, G, roundBase + 9, 9);
+            FROUND(G, H, A, B, C, D, E, F, roundBase + 10, 10);
+            FROUND(F, G, H, A, B, C, D, E, roundBase + 11, 11);
+            FROUND(E, F, G, H, A, B, C, D, roundBase + 12, 12);
+            FROUND(D, E, F, G, H, A, B, C, roundBase + 13, 13);
+            FROUND(C, D, E, F, G, H, A, B, roundBase + 14, 14);
+            FROUND(B, C, D, E, F, G, H, A, roundBase + 15, 15);
         }
 
         pChain->H[0] = A + pChain->H[0];

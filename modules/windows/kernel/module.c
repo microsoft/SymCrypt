@@ -59,7 +59,12 @@ SymCryptCallbackAlloc(SIZE_T nBytes)
     PBYTE p, res = NULL;
     ULONG offset;
 
+    // Suppress leaking memory Prefast warning. p is freed with SymCryptCallbackFree
+    #pragma prefast(push)
+    #pragma prefast(suppress: 6014)
     p = (PBYTE) ExAllocatePoolZero(NonPagedPoolNx, nBytes + SYMCRYPT_ASYM_ALIGN_VALUE + 4, 'cmyS');
+    #pragma prefast(pop)
+
     if (!p)
     {
         goto cleanup;

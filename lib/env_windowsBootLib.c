@@ -5,7 +5,10 @@
 // Copyright (c) Microsoft Corporation. Licensed under the MIT license.
 //
 
+#pragma warning(push)
+#pragma warning(disable: 5103) // Arm64's wdm.h included below currently generate a lot of 5103 warnings
 #include <ntddk.h>
+#pragma warning(pop)
 #include <windef.h>
 
 #include "symcrypt.h"
