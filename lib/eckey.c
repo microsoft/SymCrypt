@@ -905,8 +905,13 @@ SymCryptEckeySetRandom(
 
     if ( (flags & SYMCRYPT_FLAG_KEY_NO_FIPS) == 0 )
     {
-        // We defer the ECDSA PCT to before first use of the Eckey in EcDsaSign, or first time
-        // private key is exported - whichever comes first.
+        if( ( flags & SYMCRYPT_FLAG_ECKEY_ECDSA ) != 0 )
+        {
+            // Ensure ECDSA algorithm selftest is run before first use of ECDSA algorithm
+            SYMCRYPT_RUN_SELFTEST_ONCE(
+                SymCryptEcDsaSelftest,
+                SYMCRYPT_SELFTEST_ALGORITHM_ECDSA );
+        }
 
         if( ( flags & SYMCRYPT_FLAG_ECKEY_ECDH ) != 0 )
         {
