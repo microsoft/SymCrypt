@@ -1407,12 +1407,6 @@ VOID
 testEcc();
 
 VOID
-testRsa();
-
-VOID
-testDl();
-
-VOID
 testRsaSignAlgorithms();
 
 VOID
