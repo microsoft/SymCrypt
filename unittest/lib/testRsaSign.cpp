@@ -1056,17 +1056,18 @@ testRsaExportImport()
 
     iprint( "    RsaExportImport" );
 
+    const SIZE_T cbSalt = 32;
+
     RSAKEY_TESTBLOB blob;
     PSYMCRYPT_RSAKEY pKeyPair;
     PSYMCRYPT_RSAKEY pPubKey;
     BYTE hash[32];
-    BYTE salt[32];
     BYTE sig[ RSAKEY_MAXKEYSIZE ];
     SIZE_T cbSig;
     SYMCRYPT_ERROR scError;
     SYMCRYPT_RSA_PARAMS params;
 
-    pKeyPair = rsaTestKeyRandom();
+    pKeyPair = rsaTestKeyForSize( 2048 ); // Ensure the key is large enough for the salt + hash
     GENRANDOM( hash, sizeof( hash ) );
 
     params.version = 1;
@@ -1098,7 +1099,7 @@ testRsaExportImport()
     scError = ScDispatchSymCryptRsaPssSign(
         pKeyPair,
         hash, sizeof( hash ),
-        ScDispatchSymCryptSha256Algorithm, sizeof( salt ),
+        ScDispatchSymCryptSha256Algorithm, cbSalt,
         0,
         SYMCRYPT_NUMBER_FORMAT_MSB_FIRST,
         sig, ScDispatchSymCryptRsakeySizeofModulus( pKeyPair ),
@@ -1111,7 +1112,7 @@ testRsaExportImport()
         sig, cbSig,
         SYMCRYPT_NUMBER_FORMAT_MSB_FIRST,
         ScDispatchSymCryptSha256Algorithm,
-        sizeof( salt ),
+        cbSalt,
         0 );
     CHECK( scError == SYMCRYPT_NO_ERROR, "?" );
 
