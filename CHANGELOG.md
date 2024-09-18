@@ -3,7 +3,11 @@
 New changes will be listed here as they are developed. The version number is determined
 prior to the creation of a new release, based on the changes contained in that release.
 
+# Version 103.5.1
+
 - Additional internal self-test changes to support FIPS 140-3 certification
+- Fixed a regression in v103.5.0 which caused FIPS self-tests to be erroneously executed when importing an RSA public key, resulting in a fastfail
+- Added parameter validation/removed unnecessary assertions in ECDSA functions to reduce sharp edges
 
 # Version 103.5.0
 

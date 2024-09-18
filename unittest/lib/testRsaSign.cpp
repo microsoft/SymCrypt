@@ -1039,6 +1039,89 @@ testRsaSignPss()
 }
 
 VOID
+testRsaExportImport()
+{
+    if( !SCTEST_LOOKUP_DISPATCHSYM(SymCryptRsaPssSign) ||
+        !SCTEST_LOOKUP_DISPATCHSYM(SymCryptRsaPssVerify) ||
+        !SCTEST_LOOKUP_DISPATCHSYM(SymCryptRsakeySizeofModulus) ||
+        !SCTEST_LOOKUP_DISPATCHSYM(SymCryptRsakeyAllocate) ||
+        !SCTEST_LOOKUP_DISPATCHSYM(SymCryptRsakeySetValue) ||
+        !SCTEST_LOOKUP_DISPATCHSYM(SymCryptRsakeyGetValue) ||
+        !SCTEST_LOOKUP_DISPATCHSYM(SymCryptRsakeyFree) ||
+        !SCTEST_LOOKUP_DISPATCHSYM(SymCryptSha256Algorithm) )
+    {
+        iprint( "    RsaExportImport skipped\n");
+        return;
+    }
+
+    iprint( "    RsaExportImport" );
+
+    RSAKEY_TESTBLOB blob;
+    PSYMCRYPT_RSAKEY pKeyPair;
+    PSYMCRYPT_RSAKEY pPubKey;
+    BYTE hash[32];
+    BYTE salt[32];
+    BYTE sig[ RSAKEY_MAXKEYSIZE ];
+    SIZE_T cbSig;
+    SYMCRYPT_ERROR scError;
+    SYMCRYPT_RSA_PARAMS params;
+
+    pKeyPair = rsaTestKeyRandom();
+    GENRANDOM( hash, sizeof( hash ) );
+
+    params.version = 1;
+    params.nBitsOfModulus = pKeyPair->nBitsOfModulus;
+    params.nPrimes = 2;
+    params.nPubExp = 1;
+
+    pPubKey = ScDispatchSymCryptRsakeyAllocate( &params, 0 );
+    CHECK( pPubKey != NULL, "?" );
+
+    scError = ScDispatchSymCryptRsakeyGetValue(
+        pKeyPair,
+        blob.abModulus, sizeof(blob.abModulus),
+        &blob.u64PubExp, 1,
+        nullptr, nullptr, 0,
+        SYMCRYPT_NUMBER_FORMAT_MSB_FIRST,
+        0 );
+    CHECK( scError == SYMCRYPT_NO_ERROR, "?" );
+
+    scError = ScDispatchSymCryptRsakeySetValue(
+        blob.abModulus, sizeof(blob.abModulus),
+        &blob.u64PubExp, 1,
+        nullptr, nullptr, 0,
+        SYMCRYPT_NUMBER_FORMAT_MSB_FIRST,
+        SYMCRYPT_FLAG_RSAKEY_SIGN,
+        pPubKey );
+    CHECK( scError == SYMCRYPT_NO_ERROR, "?" );
+
+    scError = ScDispatchSymCryptRsaPssSign(
+        pKeyPair,
+        hash, sizeof( hash ),
+        ScDispatchSymCryptSha256Algorithm, sizeof( salt ),
+        0,
+        SYMCRYPT_NUMBER_FORMAT_MSB_FIRST,
+        sig, ScDispatchSymCryptRsakeySizeofModulus( pKeyPair ),
+        &cbSig );
+    CHECK( scError == SYMCRYPT_NO_ERROR, "?" );
+
+    scError = ScDispatchSymCryptRsaPssVerify(
+        pPubKey,
+        hash, sizeof( hash ),
+        sig, cbSig,
+        SYMCRYPT_NUMBER_FORMAT_MSB_FIRST,
+        ScDispatchSymCryptSha256Algorithm,
+        sizeof( salt ),
+        0 );
+    CHECK( scError == SYMCRYPT_NO_ERROR, "?" );
+
+    ScDispatchSymCryptRsakeyFree( pKeyPair );
+    ScDispatchSymCryptRsakeyFree( pPubKey );
+
+    iprint( "\n" );
+}
+
+VOID
 testRsaSignAlgorithms()
 {
     // Uncomment this function to generate a new KAT file
@@ -1067,6 +1150,7 @@ testRsaSignAlgorithms()
     if( isAlgorithmPresent( "RsaSignPss", FALSE ) )
     {
         testRsaSignPss();
+        testRsaExportImport();
     }
 
     nOutstandingAllocs = SYMCRYPT_INTERNAL_VOLATILE_READ64(&g_nOutstandingCheckedAllocs);

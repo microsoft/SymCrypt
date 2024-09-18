@@ -982,18 +982,21 @@ SymCryptRsakeySetValue(
             SymCryptRsaSelftest,
             SYMCRYPT_SELFTEST_ALGORITHM_RSA);
 
-        // Unconditionally set the sign flag to enable SignVerify PCT on encrypt-only keypair
-        pkRsakey->fAlgorithmInfo |= SYMCRYPT_FLAG_RSAKEY_SIGN;
-
-        SYMCRYPT_RUN_KEY_PCT(
-            SymCryptRsaSignVerifyPct,
-            pkRsakey,
-            SYMCRYPT_PCT_RSA_SIGN );
-
-        // Unset the sign flag before returning encrypt-only keypair
-        if ( ( flags & SYMCRYPT_FLAG_RSAKEY_SIGN ) == 0 )
+        if( pkRsakey->hasPrivateKey )
         {
-            pkRsakey->fAlgorithmInfo ^= SYMCRYPT_FLAG_RSAKEY_SIGN;
+            // Unconditionally set the sign flag to enable SignVerify PCT on encrypt-only keypair
+            pkRsakey->fAlgorithmInfo |= SYMCRYPT_FLAG_RSAKEY_SIGN;
+
+            SYMCRYPT_RUN_KEY_PCT(
+                SymCryptRsaSignVerifyPct,
+                pkRsakey,
+                SYMCRYPT_PCT_RSA_SIGN );
+
+                // Unset the sign flag before returning encrypt-only keypair
+                if ( ( flags & SYMCRYPT_FLAG_RSAKEY_SIGN ) == 0 )
+                {
+                    pkRsakey->fAlgorithmInfo ^= SYMCRYPT_FLAG_RSAKEY_SIGN;
+                }
         }
     }
 

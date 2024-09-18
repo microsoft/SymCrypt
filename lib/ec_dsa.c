@@ -412,7 +412,7 @@ SymCryptEcDsaSign(
                                         SIZE_T                  cbSignature )
 {
     // We must have a private key to perform PCT or signature
-    if( !pKey->hasPrivateKey )
+    if( !pKey->hasPrivateKey || !(pKey->fAlgorithmInfo & SYMCRYPT_FLAG_ECKEY_ECDSA) )
     {
         return SYMCRYPT_INVALID_ARGUMENT;
     }

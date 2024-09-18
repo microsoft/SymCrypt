@@ -281,9 +281,6 @@ SymCryptEckeySetValue(
 
     UINT32 fValidatePublicKeyOrder = SYMCRYPT_FLAG_ECKEY_PUBLIC_KEY_ORDER_VALIDATION;
 
-    SYMCRYPT_ASSERT( (cbPrivateKey==0) || (cbPrivateKey == SymCryptEcurveSizeofScalarMultiplier( pEckey->pCurve )) );
-    SYMCRYPT_ASSERT( (cbPublicKey==0) || (cbPublicKey == SymCryptEckeySizeofPublicKey( pEckey, ecPointFormat)) );
-
     // Ensure caller has specified what algorithm(s) the key will be used with
     UINT32 algorithmFlags = SYMCRYPT_FLAG_ECKEY_ECDSA | SYMCRYPT_FLAG_ECKEY_ECDH;
     // Make sure only allowed flags are specified
