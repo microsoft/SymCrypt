@@ -122,6 +122,13 @@ jobs:
           cp .artifactignore "$(ob_outputDirectory)/.artifactignore"
       displayName: 'Overwrite .artifactignore'
 
+    # Disable ASAN link order verification
+    # This is a workaround for intermittent failures due to "ASan runtime does not come first in initial library list"
+    # https://github.com/google/sanitizers/issues/796
+    - script: |
+        echo '##vso[task.setvariable variable=ASAN_OPTIONS]verify_asan_link_order=0'
+      displayName: 'Disable ASAN link order verification'
+
     - ${{ if ne(parameters.skipTests, true) }}:
       - ${{ if ne(parameters.arch, 'ARM64') }}:
         - ${{ if ne(parameters.arch, 'ARM') }}:
