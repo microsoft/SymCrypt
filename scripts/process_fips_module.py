@@ -16,6 +16,7 @@ import io
 import logging
 import os
 import secrets
+import shutil
 import stat
 import struct
 
@@ -382,6 +383,8 @@ def main():
 
     parser = argparse.ArgumentParser(description = "Postprocess SymCrypt shared object module")
     parser.add_argument("input", type=str, help = "Path to SymCrypt module")
+    parser.add_argument("-p", "--processing-dir", type=str, default=None,
+        help = "Directory to store temporary debug files during processing. If unspecified, will use the processing directory in the same folder as input.")
     parser.add_argument("-d", "--debug", action = "store_true",
         help = "Enable debug output (also dumps hashable module contents to file)")
 
@@ -392,8 +395,8 @@ def main():
     else:
         logging.basicConfig(level = logging.INFO)
 
-    debug_files_basename = os.path.join(
-        os.path.dirname(args.input), "processing", os.path.basename(args.input))
+    processing_dir = args.processing_dir or os.path.join(os.path.dirname(args.input), "processing")
+    debug_files_basename = os.path.join(processing_dir, os.path.basename(args.input))
     with open(args.input, "rb") as input_file:
         buffer = input_file.read()
         buffer_stream = io.BytesIO(buffer)
@@ -463,7 +466,11 @@ def main():
         reset_jump_slots(elf_file, original_jump_slot_values)
 
     # Copy the original input file to a backup file before writing our changes back to the original
-    os.replace(args.input, debug_files_basename + ".bak")
+    # os.replace doesn't work across mount points so we manually delete and move the file.
+    backup_file = debug_files_basename + ".bak"
+    if os.path.exists(backup_file):
+        os.remove(backup_file)
+    shutil.move(args.input, backup_file)
 
     with open(args.input, "wb") as output_file:
         output_file.write(buffer_stream.getbuffer())
