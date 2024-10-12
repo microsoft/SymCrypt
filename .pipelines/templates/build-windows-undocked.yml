@@ -4,7 +4,7 @@ parameters:
   sln: ''
   msbuildArgs: ''
   restoreNugetPackages: false
-  lkgCompilerBranch: 'official/ge_current_lkg'
+  lkgCompilerBranch: 'official/main'
   config: 'Debug,Release'
   platform: 'x86,x64,arm64'
   nativeCompiler: true
