@@ -180,27 +180,43 @@ def print_devops_vars(version_info: SymCryptVersion) -> None:
     set_task_variable("VER_MINOR", version_info.minor)
     set_task_variable("VER_PATCH", version_info.patch)
 
+def print_commit_info(version_info: SymCryptVersion) -> None:
+    """
+    Prints the commit information as environment variables that would override the commit hash and timestamp.
+    """
+
+    print("export {}={}".format(ENV_SYMCRYPT_BRANCH, version_info.branch))
+    print("export {}={}".format(ENV_SYMCRYPT_COMMIT_HASH, version_info.commit_hash))
+    print("export {}={}".format(ENV_SYMCRYPT_COMMIT_TIMESTAMP, version_info.commit_timestamp.isoformat(timespec = "seconds")))
+
 def main() -> None:
     """
     Entrypoint
     """
 
     parser = argparse.ArgumentParser(description = "Versioning helper script for SymCrypt.")
+    parser.add_argument("--no-print-version-number", dest = "print_version_number", help = "Do not print the version number", action = "store_false", default = True)
     group = parser.add_mutually_exclusive_group()
     group.add_argument("-b", "--build-info", help = "Generate buildInfo.h", action = "store_true")
     group.add_argument("--devops", help = "Format output to set Azure DevOps variables", action = "store_true")
+    group.add_argument("--commit-info",
+        help = "Format commit info as environment variables that would override the commit hash and timestamp, which can then be used when building from the source tarball rather than a git clone.",
+        action = "store_true")
 
     args = parser.parse_args()
 
     # Parse the version information from the SymCrypt headers
     version_info = get_version_info()
 
-    print("{}.{}.{}".format(version_info.major, version_info.minor, version_info.patch))
+    if args.print_version_number:
+        print("{}.{}.{}".format(version_info.major, version_info.minor, version_info.patch))
 
     if args.build_info:
         generate_build_info(version_info)
     elif args.devops:
         print_devops_vars(version_info)
+    elif args.commit_info:
+        print_commit_info(version_info)
 
 if __name__ == "__main__":
     main()
