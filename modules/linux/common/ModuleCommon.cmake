@@ -61,7 +61,7 @@ set_target_properties(${TARGET_NAME} PROPERTIES VERSION ${PROJECT_VERSION})
 set_target_properties(${TARGET_NAME} PROPERTIES SOVERSION ${PROJECT_VERSION_MAJOR})
 
 
-if(CMAKE_BUILD_TYPE MATCHES "Release|RelWithDebInfo")
+if(CMAKE_BUILD_TYPE MATCHES "Release|RelWithDebInfo" AND SYMCRYPT_STRIP_BINARY)
     add_custom_command(
         TARGET ${TARGET_NAME}
         POST_BUILD
@@ -73,7 +73,7 @@ if(CMAKE_BUILD_TYPE MATCHES "Release|RelWithDebInfo")
     )
 endif()
 
-if(SYMCRYPT_FIPS_BUILD)
+if(SYMCRYPT_FIPS_BUILD AND SYMCRYPT_FIPS_POSTPROCESS)
     add_custom_command(
         TARGET ${TARGET_NAME}
         POST_BUILD

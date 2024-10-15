@@ -74,6 +74,8 @@ and building the Linux modules with FIPS integrity checks.
       * To cross-compile for Linux ARM64, you must also use `--toolchain=cmake-configs/Toolchain-Clang-ARM64.cmake`
     * `-DSYMCRYPT_USE_ASM=<ON|OFF>` to choose whether to use assembly optimizations. Defaults to `ON`.
     * `-DSYMCRYPT_FIPS_BUILD=<ON|OFF>` to choose whether to enable FIPS self-tests in the SymCrypt shared object module. Defaults to `ON`. Currently only affects Linux builds.
+    * `-DSYMCRYPT_STRIP_BINARY=<ON|OFF>` to choose whether to strip the binary. Defaults to `ON`.
+    * `-DSYMCRYPT_FIPS_POSTPROCESS=<ON|OFF>` to choose whether to run the FIPS postprocess script. Defaults to `ON`.
     * For a release build, specify `-DCMAKE_BUILD_TYPE=RelWithDebInfo`
 1. `cmake --build bin`
     * Optionally, for a release build on Windows, specify `--config Release`

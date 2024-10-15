@@ -101,6 +101,12 @@ def configure_cmake(args : argparse.Namespace) -> None:
     if not args.fips:
         cmake_args.append("-DSYMCRYPT_FIPS_BUILD=OFF")
 
+    if not args.strip_binary:
+        cmake_args.append("-DSYMCRYPT_STRIP_BINARY=OFF")
+
+    if not args.fips_postprocess:
+        cmake_args.append("-DSYMCRYPT_FIPS_POSTPROCESS=OFF")
+
     if args.test_legacy_impl:
         cmake_args.append("-DSYMCRYPT_TEST_LEGACY_IMPL=ON")
 
@@ -218,6 +224,8 @@ def main() -> None:
     parser_cmake.add_argument("--cxx", type = str, help = "Specify the C++ compiler to use. If not provided, uses platform default.")
     parser_cmake.add_argument("--no-asm", action = "store_false", dest = "asm", help = "Disable handwritten ASM optimizations.", default = True)
     parser_cmake.add_argument("--no-fips", action = "store_false", dest = "fips", help = "Disable FIPS selftests and postprocessing of binary. Currently only affects Linux targets.", default = True)
+    parser_cmake.add_argument("--no-strip-binary", action = "store_false", dest = "strip_binary", help = "Disable stripping of binary.", default = True)
+    parser_cmake.add_argument("--no-fips-postprocess", action = "store_false", dest = "fips_postprocess", help = "Disable FIPS postprocessing of binary.", default = True)
     parser_cmake.add_argument("--test-legacy-impl", action = "store_true",
         help = "Build unit tests with support for legacy Windows cryptographic implementations. Requires access to private static libraries.",
         default = False)

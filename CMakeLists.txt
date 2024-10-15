@@ -57,6 +57,18 @@ if(SYMCRYPT_FIPS_BUILD)
 endif()
 
 option(
+    SYMCRYPT_STRIP_BINARY
+    "When enabled, SymCrypt will strip the binary in release mode."
+    ON
+)
+
+option(
+    SYMCRYPT_FIPS_POSTPROCESS
+    "When enabled, SymCrypt will do postprocessing the binary for FIPS integrity verification."
+    ON
+)
+
+option(
     SYMCRYPT_TEST_LEGACY_IMPL
     "When enabled, the SymCrypt unit tests will be linked against and configured to run compatibility and performance tests on the legacy
     RSA32 and msbignum cryptographic implementations. This requires access to private static libraries which are not licensed
@@ -104,6 +116,8 @@ message(STATUS "Host: ${CMAKE_HOST_SYSTEM_NAME} ${CMAKE_HOST_SYSTEM_PROCESSOR}")
 message(STATUS "Target: ${CMAKE_SYSTEM_NAME} ${SYMCRYPT_TARGET_ARCH} ${SYMCRYPT_TARGET_ENV}")
 message(STATUS "ASM optimizations: ${SYMCRYPT_USE_ASM}")
 message(STATUS "FIPS build: ${SYMCRYPT_FIPS_BUILD}")
+message(STATUS "Strip binary: ${SYMCRYPT_STRIP_BINARY}")
+message(STATUS "FIPS postprocess: ${SYMCRYPT_FIPS_POSTPROCESS}")
 
 # Validate compiler versions
 if("${CMAKE_CXX_COMPILER_ID}" MATCHES "GNU")
