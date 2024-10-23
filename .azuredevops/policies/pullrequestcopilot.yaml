@@ -1,0 +1,28 @@
+# Copilot Pull Request Assistant policy file
+# Additional details and options are described in the documentation at:
+# https://github.com/GitOps-microsoft/docs/blob/main/apps/SampleFiles/PRAssistant_CustomizeCodeReview.md
+
+# metadata 
+name: Copilot Pull Request Policy
+description: This policy configures options for Copilot Pull Request Assistant.
+
+# filters
+resource: repository
+
+# primitive configuration
+configuration:
+  pullRequestCopilotPrimitive:
+    enabled: true
+    maxReviewCommentsAllowed: 10     # Maximum number of review comments allowed, in range [0, 10]
+#   additionalInstructionForReview:  # Additional instructions for review to be considered by LLM
+#   - Instruction 1                  # Max 5 instructions, total max 1000 characters, no hyperlinks
+#   - Instruction 2
+#   severityThreshold: 0.75          # Minimum issue severity to leave a comment, in range [0.5, 1.0]
+
+    onPullRequestCreate:
+
+    - prompt: 'copilot: review'   # Auto-review on pull request creation
+      autoResolve: false          # Code review comments are marked Active by default
+        
+    - prompt: 'copilot: description'  # Post LLM summary as a comment rather than updating the description (the prompt is counterintuitive, but it is the correct one)
+      autoResolve: true               # Summary comment is marked Resolved/Closed by default
