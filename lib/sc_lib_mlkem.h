@@ -11,13 +11,13 @@
 // ML-KEM (also known as Kyber) and ML-DSA (also known as Dilithium) are Post-Quantum algorithms based on the
 // Learning-With-Errors problem over Module Lattices (or the hardness of the M-LWE problem).
 //
-// A Module is a Vector Space over a Ring. That is, elements of the vector spaces are elements in the
-// underlying ring.
+// A Module is a generalization of a Vector Space, where the scalars are defined over a Ring instead of a Field.
 // We refer to Module as MLWE in the below types to avoid naming confusion with Module as in "FIPS module".
 // Though technically components acting on MLWE types could be used outside of the MLWE problem, these types
 // are SymCrypt-internal, and are only currently intended for use in these MLWE-based algorithms.
 //
-// In ML-KEM and ML-DSA, Polynomial Rings are used. That is, a ring defined over polynomials.
+// In ML-KEM and ML-DSA, the underlying Ring of the Module is a Polynomial Ring. That is, elements of the
+// vectors and matrices of the modules are polynomials.
 // For both schemes, the polynomial ring is defined modulo the polynomial (X^256 + 1). This means there is a
 // representative of each polynomial ring element with 256 coefficients (c_255*X^255 + c_254*X^254 + ... + c_0).
 // The coefficients themselves are modulo a small prime in both schemes. For ML-KEM the small prime is 3329

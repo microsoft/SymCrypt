@@ -669,6 +669,15 @@ SymCryptMlKemPolyElementINTTLayer(
 #endif
 }
 
+#define SYMCRYPT_MLKEM_MaxCoeff                   (SYMCRYPT_MLKEM_Q - 1)
+#define SYMCRYPT_MLKEM_MaxCoeffProduct            (SYMCRYPT_MLKEM_MaxCoeff*SYMCRYPT_MLKEM_MaxCoeff)
+
+// max([ ((i*j) + ((((i*j)*NegQInvModR) & Rmask)*Q)) >> Rlog2 for i in range(Q) for j in range(Q) ])
+#define SYMCRYPT_MLKEM_MaxFirstStepReduction      (3494)
+// max([ ( pow(17, (2*i)+1, Q) << Rlog2 ) % Q for i in range(128) ])
+#define SYMCRYPT_MLKEM_MaxZetaTwoTimesPlus1TimesR (3254)
+#define SYMCRYPT_MLKEM_MaxA1B1ZetaPow             (SYMCRYPT_MLKEM_MaxFirstStepReduction*SYMCRYPT_MLKEM_MaxZetaTwoTimesPlus1TimesR)
+
 VOID
 SYMCRYPT_CALL
 SymCryptMlKemPolyElementMulAndAccumulate(
@@ -693,11 +702,11 @@ SymCryptMlKemPolyElementMulAndAccumulate(
         SYMCRYPT_ASSERT( b1 < SYMCRYPT_MLKEM_Q );
 
         c0 = paDst->coeffs[(2*i)  ];
-        SYMCRYPT_ASSERT( c0 <= 3*((3328*3328) + (3494*3312)) );
+        SYMCRYPT_ASSERT( c0 <= 3*(SYMCRYPT_MLKEM_MaxCoeffProduct + SYMCRYPT_MLKEM_MaxA1B1ZetaPow) );
         c1 = paDst->coeffs[(2*i)+1];
-        SYMCRYPT_ASSERT( c1 <= 3*((3328*3328) + (3494*3312)) );
+        SYMCRYPT_ASSERT( c1 <= 3*(SYMCRYPT_MLKEM_MaxCoeffProduct + SYMCRYPT_MLKEM_MaxA1B1ZetaPow) );
 
-        // multiplication results in range [0, 3328*3328]
+        // multiplication results in range [0, MaxCoeffProduct = 3328*3328]
         a0b0 = a0 * b0;
         a1b1 = a1 * b1;
         a0b1 = a0 * b1;
@@ -705,28 +714,31 @@ SymCryptMlKemPolyElementMulAndAccumulate(
 
         // we need a1*b1*zetaTwoTimesBitRevPlus1TimesR[i]
         // eagerly reduce a1*b1 with montgomery reduction
-        // a1b1 = red(a1*b1) -> range [0,3494]
-        //   (3494 is maximum result of first step of montgomery reduction of x*y for x,y in [0,3328])
+        // a1b1 = red(a1*b1) -> range [0, MaxFirstStepReduction = 3494]
+        //   (3494 is maximum result of first step of montgomery reduction of x*y for x,y in [0, 3328])
         // we do not need to do final reduction yet
         inv = (a1b1 * SYMCRYPT_MLKEM_NegQInvModR) & SYMCRYPT_MLKEM_Rmask;
-        a1b1 = (a1b1 + (inv * SYMCRYPT_MLKEM_Q)) >> SYMCRYPT_MLKEM_Rlog2; // in range [0, 3494]
-        SYMCRYPT_ASSERT( a1b1 <= 3494 );
+        a1b1 = (a1b1 + (inv * SYMCRYPT_MLKEM_Q)) >> SYMCRYPT_MLKEM_Rlog2; // in range [0, MaxFirstStepReduction]
+        SYMCRYPT_ASSERT( a1b1 <= SYMCRYPT_MLKEM_MaxFirstStepReduction );
 
         // now multiply a1b1 by power of zeta
         a1b1zetapow = a1b1 * zetaTwoTimesBitRevPlus1TimesR[i];
+        // MaxZetaTwoTimesPlus1TimesR = 3254
+        // MaxA1B1ZetaPow = MaxFirstStepReduction*MaxZetaTwoTimesPlus1TimesR = 3494*3254
+        SYMCRYPT_ASSERT( a1b1zetapow <= SYMCRYPT_MLKEM_MaxA1B1ZetaPow );
 
         // sum pairs of products
-        a0b0 += a1b1zetapow;    // a0*b0 + red(a1*b1)*zetapower in range [0, 3328*3328 + 3494*3312]
-        SYMCRYPT_ASSERT( a0b0 <= (3328*3328) + (3494*3312) );
-        a0b1 += a1b0;           // a0*b1 + a1*b0                in range [0, 2*3328*3328]
-        SYMCRYPT_ASSERT( a0b1 <= 2*3328*3328 );
+        a0b0 += a1b1zetapow;    // a0*b0 + red(a1*b1)*zetapower in range [0, MaxCoeffProduct + MaxA1B1ZetaPow]
+        SYMCRYPT_ASSERT( a0b0 <= SYMCRYPT_MLKEM_MaxCoeffProduct + SYMCRYPT_MLKEM_MaxA1B1ZetaPow );
+        a0b1 += a1b0;           // a0*b1 + a1*b0                in range [0, 2*MaxCoeffProduct]
+        SYMCRYPT_ASSERT( a0b1 <= 2*SYMCRYPT_MLKEM_MaxCoeffProduct );
 
         // We sum at most 4 pairs of products into an accumulator in ML-KEM
         C_ASSERT( SYMCRYPT_MLKEM_MATRIX_MAX_NROWS <= 4 );
-        c0 += a0b0; // in range [0,4*3328*3328 + 4*3494*3312]
-        SYMCRYPT_ASSERT( c0 < (4*3328*3328) + (4*3494*3312) );
-        c1 += a0b1; // in range [0,5*3328*3328 + 3*3494*3312]
-        SYMCRYPT_ASSERT( c1 < (5*3328*3328) + (3*3494*3312) );
+        c0 += a0b0; // in range [0,4*MaxCoeffProduct + 4*MaxA1B1ZetaPow]
+        SYMCRYPT_ASSERT( c0 < (4*SYMCRYPT_MLKEM_MaxCoeffProduct) + (4*SYMCRYPT_MLKEM_MaxA1B1ZetaPow) );
+        c1 += a0b1; // in range [0,5*MaxCoeffProduct + 3*MaxA1B1ZetaPow]
+        SYMCRYPT_ASSERT( c1 < (5*SYMCRYPT_MLKEM_MaxCoeffProduct) + (3*SYMCRYPT_MLKEM_MaxA1B1ZetaPow) );
 
         paDst->coeffs[(2*i)  ] = c0;
         paDst->coeffs[(2*i)+1] = c1;
@@ -745,7 +757,7 @@ SymCryptMlKemMontgomeryReduceAndAddPolyElementAccumulatorToPolyElement(
     for( i=0; i<SYMCRYPT_MLWE_POLYNOMIAL_COEFFICIENTS; i++ )
     {
         a = paSrc->coeffs[i];
-        SYMCRYPT_ASSERT( a <= 4*((3328*3328) + (3494*3312)) );
+        SYMCRYPT_ASSERT( a <= 4*(SYMCRYPT_MLKEM_MaxCoeffProduct + SYMCRYPT_MLKEM_MaxA1B1ZetaPow) );
         paSrc->coeffs[i] = 0;
 
         c = peDst->coeffs[i];
@@ -856,14 +868,14 @@ SymCryptMlKemPolyElementINTTAndMulR(
     }
 }
 
-// ((1<<35) / SYMCRYPT_MLKEM_Q)
+// ((1<<33) / SYMCRYPT_MLKEM_Q) rounded to nearest integer
 //
-// 1<<35 is the smallest power of 2 s.t. the constant has sufficient precision to round
+// 1<<33 is the smallest power of 2 s.t. the constant has sufficient precision to round
 // all inputs correctly in compression for all nBitsPerCoefficient < 12. A smaller
 // constant could be used for smaller nBitsPerCoefficient for a small performance gain
 //
-const UINT32 SYMCRYPT_MLKEM_COMPRESS_MULCONSTANT = 0x9d7dbb;
-const UINT32 SYMCRYPT_MLKEM_COMPRESS_SHIFTCONSTANT = 35;
+const UINT32 SYMCRYPT_MLKEM_COMPRESS_MULCONSTANT = 0x275f6f;
+const UINT32 SYMCRYPT_MLKEM_COMPRESS_SHIFTCONSTANT = 33;
 
 VOID
 SYMCRYPT_CALL
@@ -1004,7 +1016,7 @@ SymCryptMlKemPolyElementDecodeAndDecompress(
             coefficient = SymCryptMlKemModSub( coefficient, SYMCRYPT_MLKEM_Q );
             SYMCRYPT_ASSERT( coefficient < SYMCRYPT_MLKEM_Q );
         }
-        else if( coefficient > SYMCRYPT_MLKEM_Q )
+        else if( coefficient >= SYMCRYPT_MLKEM_Q )
         {
             // input validation failure - this can happen with a malformed or corrupt encapsulation
             // or decapsulation key, but this validation failure only triggers on public data; we

@@ -512,8 +512,15 @@ SymCryptMlKemkeySetValue(
         // transpose A
         SymCryptMlKemMatrixTranspose( pkMlKemkey->pmAtranspose );
 
-        // copy hash of encapsulation key
-        memcpy( pkMlKemkey->encapsKeyHash, pbCurr, sizeof(pkMlKemkey->encapsKeyHash) );
+        // compute hash of encapsulation key blob
+        SymCryptMlKemkeyComputeEncapsulationKeyHash( pkMlKemkey, pCompTemps, cbEncodedVector );
+
+        // check hash of encapsulation key matches hash in the provided blob
+        if( !SymCryptEqual( pbCurr, pkMlKemkey->encapsKeyHash, sizeof(pkMlKemkey->encapsKeyHash) ) )
+        {
+            scError = SYMCRYPT_INVALID_BLOB;
+            goto cleanup;
+        }
         pbCurr += sizeof(pkMlKemkey->encapsKeyHash);
 
         // copy private random

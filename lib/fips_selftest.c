@@ -1511,9 +1511,10 @@ SymCryptMlKemSelftest(void)
     PSYMCRYPT_MLKEMKEY pkMlKemkey = NULL;
 
     PBYTE pbAlloc = SymCryptCallbackAlloc( cbAlloc );
+    SYMCRYPT_FIPS_ASSERT( pbAlloc != NULL );
+    
     PBYTE pbCiphertext = pbAlloc;
     PBYTE pbDecapsKeyBlob = pbAlloc + cbCiphertext;
-    SYMCRYPT_FIPS_ASSERT( pbAlloc != NULL );
 
     pkMlKemkey = SymCryptMlKemkeyAllocate( SYMCRYPT_MLKEM_PARAMS_MLKEM512 );
     SYMCRYPT_FIPS_ASSERT( pkMlKemkey != NULL );
