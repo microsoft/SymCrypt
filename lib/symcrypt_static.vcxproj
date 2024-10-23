@@ -6,12 +6,13 @@
     <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
     <MinimumVisualStudioVersion>12.0</MinimumVisualStudioVersion>
     <UseInternalMSUniCrtPackage>true</UseInternalMSUniCrtPackage>
-    <TargetName>symcrypt</TargetName>
+    <TargetName>symcrypt_static</TargetName>
     <UndockedType>lib</UndockedType>
     <UndockedDir>$(SolutionDir)msbuild\</UndockedDir>
     <UndockedOut>$(SolutionDir)</UndockedOut>
     <UndockedKernelModeBuild>true</UndockedKernelModeBuild>
     <IncludePath>$(ProjectDir);$(IncludePath);</IncludePath>
+    <ProjectName>symcrypt_static</ProjectName>
   </PropertyGroup>
   <Import Project="$(UndockedDir)symcrypt.undocked.props" />
   <ItemDefinitionGroup>
@@ -177,7 +178,6 @@
     <SymCryptAsm Include="arm64\fdef369_asm.symcryptasm" Dialect="armasm64" Arch="arm64" Convention="arm64ec" />
     <SymCryptAsm Include="arm64\wipe.symcryptasm" Dialect="armasm64" Arch="arm64" Convention="arm64ec" />
   </ItemGroup>
- 
   <!-- Generate buildInfo.h and symcrypt_internal_shared.inc -->
   <Target Name="GenerateBuildInfo">
     <Message Importance="high" Text="Generating build info header" />

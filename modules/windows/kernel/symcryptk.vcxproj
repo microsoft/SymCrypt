@@ -40,7 +40,7 @@
   </PropertyGroup>
   <Import Project="$(UndockedDir)symcrypt.undocked.props" />
   <ItemGroup>
-    <ProjectReference Include="..\..\..\lib\symcrypt.vcxproj">
+    <ProjectReference Include="..\..\..\lib\symcrypt_static.vcxproj">
       <Project>{7c3bd5d2-7213-4cfa-b6cb-eb41623601bc}</Project>
     </ProjectReference>
   </ItemGroup>

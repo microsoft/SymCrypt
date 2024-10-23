@@ -83,8 +83,8 @@
         "config" : "release"
     },
     {
-        "source" : "${BIN_DIR}/lib/symcrypt.lib",
-        "dest" : "lib/symcrypt.lib",
+        "source" : "${BIN_DIR}/lib/symcrypt_static.lib",
+        "dest" : "lib/symcrypt_static.lib",
         "platform" : "win32"
     },
     {
