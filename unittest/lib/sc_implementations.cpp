@@ -95,6 +95,10 @@ void
 SetupSymCryptXmsskey( UINT32 algId );
 
 template<class Implementation>
+void
+SetupSymCryptLmskey( UINT32 lmsAlgID, UINT32 lmsOtsAlgID);
+
+template<class Implementation>
 SYMCRYPT_MLKEM_PARAMS
 SetupSymCryptMlKemKey( PBYTE buf1, SIZE_T keySize );
 
@@ -354,6 +358,7 @@ addSymCryptImplementationToGlobalList()
     addImplementationToGlobalList<EccImp<ImpScVariant, AlgEcdh>>();
 
     addImplementationToGlobalList<XmssImp<ImpScVariant, AlgXmss>>();
+    addImplementationToGlobalList<LmsImp<ImpScVariant, AlgLms>>();
 
 #if SYMCRYPT_MS_VC
     addImplementationToGlobalList<ArithImp<ImpScVariant, AlgIEEE802_11SaeCustom>>();

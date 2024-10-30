@@ -1,7 +1,7 @@
 //
 // Test Hash-based Signatures
 //
-// Copyright (c) Microsoft Corporation. Licensed under the MIT license. 
+// Copyright (c) Microsoft Corporation. Licensed under the MIT license.
 //
 
 #include "precomp.h"
@@ -32,13 +32,13 @@ typedef struct _SYMCRYPT_WINTERNITZ_LENGTHS
 
 //
 // Precomputed digit counts in Excel
-// 
+//
 // len1 = CEILING.MATH(8 * n / w)
 // len2 = FLOOR.MATH(LOG(len1 * (POWER(2, w) - 1), 2) / w) + 1
 //
 static const SYMCRYPT_WINTERNITZ_LENGTHS _SymCryptWinternitzLengths[] = {
 
-    //  n   w   len1    len2   
+    //  n   w   len1    len2
     {   24, 1,  192,    8   },
     {   24, 2,  96,     5   },
     {   24, 3,  64,     3   },
@@ -81,7 +81,7 @@ testWinternitzLengths()
             &len2);
 
         CHECK4( len1 == _SymCryptWinternitzLengths[i].len1,
-                "Incorrect Winternitz digit count for len1: expecting %d got %d", 
+                "Incorrect Winternitz digit count for len1: expecting %d got %d",
                 _SymCryptWinternitzLengths[i].len1,
                 len1);
 
@@ -114,7 +114,7 @@ public:
     VOID addImplementation(HbsImplementation* pImp );
     VOID setImpName();
 
-    virtual NTSTATUS setKey(UINT32, BOOL, PCBYTE, SIZE_T, BOOL);
+    virtual NTSTATUS setKey(UINT32, UINT32, BOOL, PCBYTE, SIZE_T, BOOL);
     virtual NTSTATUS sign(PCBYTE, SIZE_T, PBYTE, SIZE_T);
     virtual NTSTATUS verify(PCBYTE, SIZE_T, PCBYTE, SIZE_T);
 };
@@ -163,6 +163,7 @@ HbsMultiImp::~HbsMultiImp()
 NTSTATUS
 HbsMultiImp::setKey(
     UINT32  uAlgId,
+    UINT32  otsAlgid,
     BOOL    fMultitree,
     PCBYTE  pbSrc,
     SIZE_T  cbSrc,
@@ -172,7 +173,7 @@ HbsMultiImp::setKey(
 
     for (HbsImpPtrVector::const_iterator i = m_imps.begin(); i != m_imps.end(); ++i)
     {
-        if ((*i)->setKey(uAlgId, fMultitree, pbSrc, cbSrc, fVerify) == STATUS_SUCCESS)
+        if ((*i)->setKey(uAlgId, otsAlgid, fMultitree, pbSrc, cbSrc, fVerify) == STATUS_SUCCESS)
         {
             m_comps.push_back(*i);
         }
@@ -191,7 +192,7 @@ HbsMultiImp::sign(
     NTSTATUS status = STATUS_SUCCESS;
     ResultMerge res;
     PBYTE pbBuffer = NULL;
-    
+
     pbBuffer = new BYTE[cbSignature];
 
     CHECK(pbBuffer != nullptr, "Memory allocation error");
@@ -242,6 +243,7 @@ VOID
 testHbsVerify(
                             HbsImplementation*      pHbs,
                             UINT32                  AlgId,
+                            UINT32                  otsAlgid,
                             BOOL                    fMultitree,
     _In_reads_(cbMsg)       PCBYTE                  pbMsg,
                             SIZE_T                  cbMsg,
@@ -255,19 +257,20 @@ testHbsVerify(
 
     UNREFERENCED_PARAMETER(line);
 
-    status = pHbs->setKey(AlgId, fMultitree, pbPubkey, cbPubkey, FALSE);
+    status = pHbs->setKey(AlgId, otsAlgid, fMultitree, pbPubkey, cbPubkey, FALSE);
     CHECK3(status == STATUS_SUCCESS, "Hbs setKey failed for algid = %u", AlgId);
 
     status = pHbs->verify(pbMsg, cbMsg, pbSig, cbSig);
     CHECK3(status == STATUS_SUCCESS, "Hbs verify failed for algid = %u", AlgId);
 
-    CHECK( pHbs->setKey( 0, FALSE, NULL, 0, FALSE ) == STATUS_SUCCESS, "Failed to clear key" );
+    CHECK(pHbs->setKey(0, 0, FALSE, NULL, 0, FALSE) == STATUS_SUCCESS, "Failed to clear key");
 }
 
 VOID
 testHbsSign(
                             HbsImplementation*  pHbs,
                             UINT32              AlgId,
+                            UINT32              otsAlgid,
                             BOOL                fMultitree,
     _In_reads_(cbMsg)       PCBYTE              pbMsg,
                             SIZE_T              cbMsg,
@@ -285,7 +288,7 @@ testHbsSign(
     pbSig2 = new BYTE[cbSig];
     CHECK3(pbSig2 != nullptr, "Memory allocation failed for %u bytes", cbSig);
 
-    status = pHbs->setKey(AlgId, fMultitree, pbPrvkey, cbPrvkey, FALSE);
+    status = pHbs->setKey(AlgId, otsAlgid, fMultitree, pbPrvkey, cbPrvkey, FALSE);
     CHECK3(status == STATUS_SUCCESS, "Hbs setKey failed for algid = %u", AlgId);
 
     status = pHbs->sign(pbMsg, cbMsg, pbSig2, cbSig);
@@ -294,7 +297,7 @@ testHbsSign(
     int bMatch = memcmp(pbSig, pbSig2, cbSig) == 0;
     CHECK3(bMatch == TRUE, "generated signature does not match the given one for alg id %d", AlgId);
 
-    CHECK( pHbs->setKey( 0, FALSE, NULL, 0, FALSE ) == STATUS_SUCCESS, "Failed to clear key" );
+    CHECK(pHbs->setKey(0, 0, FALSE, NULL, 0, FALSE) == STATUS_SUCCESS, "Failed to clear key");
 
     delete[] pbSig2;
 }
@@ -303,6 +306,7 @@ VOID
 testHbsKeygen(
                             HbsImplementation*  pHbs,
                             UINT32              AlgId,
+                            UINT32              otsAlgid,
                             BOOL                fMultitree,
     _In_reads_(cbPrvkey)    PCBYTE              pbPrvkey,
                             SIZE_T              cbPrvkey,
@@ -312,10 +316,10 @@ testHbsKeygen(
 
     UNREFERENCED_PARAMETER(line);
 
-    status = pHbs->setKey(AlgId, fMultitree, pbPrvkey, cbPrvkey, TRUE);
+    status = pHbs->setKey(AlgId, otsAlgid, fMultitree, pbPrvkey, cbPrvkey, TRUE);
     CHECK3(status == STATUS_SUCCESS, "Hbs setKey failed for algid = %u", AlgId);
 
-    CHECK( pHbs->setKey( 0, FALSE, NULL, 0, FALSE ) == STATUS_SUCCESS, "Failed to clear key" );
+    CHECK(pHbs->setKey(0, 0, FALSE, NULL, 0, FALSE) == STATUS_SUCCESS, "Failed to clear key");
 }
 
 VOID
@@ -343,7 +347,7 @@ testHbsKats()
         if (katItem.type == KAT_TYPE_CATEGORY)
         {
             g_currentCategory = katItem.categoryName;
-            
+
             pHbsMultiImp.reset(new HbsMultiImp(g_currentCategory));
 
             skipData = (pHbsMultiImp->m_imps.size() == 0);
@@ -370,10 +374,17 @@ testHbsKats()
                 //
                 BOOL fMultitree = FALSE;
                 UINT32 nExpectedItems = 4;
+                UINT32 otsAlgid = 0;
 
                 if (katIsFieldPresent(katItem, "multitree"))
                 {
                     fMultitree = katParseInteger(katItem, "multitree") > 0;
+                    nExpectedItems++;
+                }
+
+                if (katIsFieldPresent(katItem, "otsalgid"))
+                {
+                    otsAlgid = (UINT32)katParseInteger(katItem, "otsalgid");
                     nExpectedItems++;
                 }
 
@@ -383,12 +394,13 @@ testHbsKats()
                 BString katMsg = katParseData(katItem, "msg");
                 BString katPubkey = katParseData(katItem, "pubkey");
                 BString katSig = katParseData(katItem, "sig");
-                
+
                 testHbsVerify(
                     pHbsMultiImp.get(),
                     algId,
+                    otsAlgid,
                     fMultitree,
-                    (PCBYTE)katMsg.data(), 
+                    (PCBYTE)katMsg.data(),
                     katMsg.size(),
                     (PCBYTE)katPubkey.data(),
                     katPubkey.size(),
@@ -399,7 +411,7 @@ testHbsKats()
                 continue;
             }
 
-            
+
             if (katIsFieldPresent(katItem, "prvkey"))
             {
                 if (katIsFieldPresent(katItem, "msg"))
@@ -409,10 +421,17 @@ testHbsKats()
                     //
                     BOOL fMultitree = FALSE;
                     UINT32 nExpectedItems = 4;
+                    UINT32 otsAlgid = 0;
 
                     if (katIsFieldPresent(katItem, "multitree"))
                     {
                         fMultitree = katParseInteger(katItem, "multitree") > 0;
+                        nExpectedItems++;
+                    }
+
+                    if (katIsFieldPresent(katItem, "otsalgid"))
+                    {
+                        otsAlgid = (UINT32)katParseInteger(katItem, "otsalgid");
                         nExpectedItems++;
                     }
 
@@ -426,6 +445,7 @@ testHbsKats()
                     testHbsSign(
                         pHbsMultiImp.get(),
                         algId,
+                        otsAlgid,
                         fMultitree,
                         (PCBYTE)katMsg.data(),
                         katMsg.size(),
@@ -442,10 +462,17 @@ testHbsKats()
                     //
                     BOOL fMultitree = FALSE;
                     UINT32 nExpectedItems = 2;
+                    UINT32 otsAlgid = 0;
 
                     if (katIsFieldPresent(katItem, "multitree"))
                     {
                         fMultitree = katParseInteger(katItem, "multitree") > 0;
+                        nExpectedItems++;
+                    }
+
+                    if (katIsFieldPresent(katItem, "otsalgid"))
+                    {
+                        otsAlgid = (UINT32)katParseInteger(katItem, "otsalgid");
                         nExpectedItems++;
                     }
 
@@ -457,6 +484,7 @@ testHbsKats()
                     testHbsKeygen(
                         pHbsMultiImp.get(),
                         algId,
+                        otsAlgid,
                         fMultitree,
                         (PCBYTE)katPrvkey.data(),
                         katPrvkey.size(),
@@ -465,7 +493,7 @@ testHbsKats()
 
                 continue;
             }
-            
+
             FATAL2("Unknown data record ending at line %lld", katHbs->m_line);
         }
     }
@@ -476,7 +504,6 @@ testHbsKats()
     }
 
     delete katHbs;
-
 }
 
 
@@ -549,6 +576,79 @@ testXmssCustomParameters()
     }
 }
 
+VOID
+testLmsCustomParameters()
+{
+    SYMCRYPT_LMS_PARAMS params;
+    PSYMCRYPT_LMS_KEY pKey;
+    PBYTE pbSignature;
+    SYMCRYPT_ERROR scError;
+    SIZE_T cbSignature;
+    const BYTE msg[] = { 0x61, 0x62, 0x63 };
+    PCSYMCRYPT_HASH pHash = SymCryptSha256Algorithm;
+
+    //
+    // Test varying Winternitz lengths with custom tree heights
+    //
+    for (UINT8 w = 1; w <= 8; w <<= 1)
+    {
+        UINT32 u = 0, v = 0;
+        SymCryptHbsGetWinternitzLengths(
+            pHash->resultSize,
+            w,
+            &u,
+            &v);
+
+        for (UINT8 h = 1; h <= 4; h++)
+        {
+            ScDispatchSymCryptWipe(&params, sizeof(SYMCRYPT_LMS_PARAMS));
+            scError = ScDispatchSymCryptLmsSetParams(
+                &params,
+                0,                          // alg id
+                0,                          // ots alg id
+                pHash,                      // hash alg.
+                (UINT8)pHash->resultSize,   // n
+                h,                          // h
+                w);                         // w
+            CHECK(scError == SYMCRYPT_NO_ERROR, "?");
+
+            pKey = ScDispatchSymCryptLmskeyAllocate(&params, 0);
+            CHECK(pKey != nullptr, "?");
+
+            scError = ScDispatchSymCryptLmskeyGenerate(pKey, 0);
+            CHECK(scError == SYMCRYPT_NO_ERROR, "?");
+
+            cbSignature = ScDispatchSymCryptLmsSizeofSignatureFromParams(&pKey->params);
+            pbSignature = new BYTE[cbSignature];
+            CHECK(pbSignature != nullptr, "?");
+
+            // Sign and Verify with each LMS-OTS key
+            for (UINT32 idx = 0; idx < (1UL << h); idx++)
+            {
+                scError = ScDispatchSymCryptLmsSign(pKey, msg, sizeof(msg), 0, pbSignature, cbSignature);
+                CHECK(scError == SYMCRYPT_NO_ERROR, "?");
+
+                scError = ScDispatchSymCryptLmsVerify(pKey, msg, sizeof(msg), 0, pbSignature, cbSignature);
+                CHECK(scError == SYMCRYPT_NO_ERROR, "?");
+
+                // Modify the signature and expect verification failure
+                UINT32 nModifyPos = g_rng.uint32() % cbSignature;
+                pbSignature[nModifyPos] ^= 1;
+
+                scError = ScDispatchSymCryptLmsVerify(pKey, msg, sizeof(msg), 0, pbSignature, cbSignature);
+                CHECK(scError != SYMCRYPT_NO_ERROR, "?");
+            }
+
+            // All one-time signatures are consumed above, we shouldn't be able to sign anymore
+            scError = ScDispatchSymCryptLmsSign(pKey, msg, sizeof(msg), 0, pbSignature, cbSignature);
+            CHECK(scError == SYMCRYPT_HBS_NO_OTS_KEYS_LEFT, "?");
+
+            delete[] pbSignature;
+
+            ScDispatchSymCryptLmskeyFree(pKey);
+        }
+    }
+}
 
 VOID
 testXmssImportExport()
@@ -641,6 +741,93 @@ testXmssImportExport()
 
 
 VOID
+testLmsImportExport()
+{
+    SYMCRYPT_LMS_PARAMS params;
+    PSYMCRYPT_LMS_KEY pKeyPrivate;
+    PSYMCRYPT_LMS_KEY pKeyPublic;
+    SYMCRYPT_ERROR scError;
+    PBYTE pbPrivateKeyBlob;
+    PBYTE pbPublicKeyBlob;
+    SIZE_T cbPrivateKey;
+    SIZE_T cbPublicKey;
+    PBYTE pbSignature;
+    PBYTE pbSignature2;
+    SIZE_T cbSignature;
+    BYTE msg[] = { 0x01 };
+
+    scError = ScDispatchSymCryptLmsParamsFromAlgId(SYMCRYPT_LMS_SHA256_M32_H5, SYMCRYPT_LMS_OTS_SHA256_N32_W8, &params);
+    CHECK(scError == SYMCRYPT_NO_ERROR, "?");
+
+    // Create a private key
+    pKeyPrivate = ScDispatchSymCryptLmskeyAllocate(&params, 0);
+    CHECK(pKeyPrivate != nullptr, "?");
+    scError = ScDispatchSymCryptLmskeyGenerate(pKeyPrivate, 0);
+    CHECK(scError == SYMCRYPT_NO_ERROR, "?");
+    cbPublicKey = SYMCRYPT_LMS_PUB_KEY_SIZE(params.cbHashOutput);
+    cbPrivateKey = SYMCRYPT_LMS_PRIV_KEY_SIZE(params.cbHashOutput);
+
+    // Export private key
+    pbPrivateKeyBlob = new BYTE[cbPrivateKey];
+    CHECK(pbPrivateKeyBlob != nullptr, "?");
+    scError = ScDispatchSymCryptLmskeyGetValue(pKeyPrivate, SYMCRYPT_LMSKEY_TYPE_PRIVATE, 0, pbPrivateKeyBlob, cbPrivateKey);
+    CHECK(scError == SYMCRYPT_NO_ERROR, "?");
+
+    // Export public key
+    pbPublicKeyBlob = new BYTE[cbPublicKey];
+    CHECK(pbPublicKeyBlob != nullptr, "?");
+    scError = ScDispatchSymCryptLmskeyGetValue(pKeyPrivate, SYMCRYPT_LMSKEY_TYPE_PUBLIC, 0, pbPublicKeyBlob, cbPublicKey);
+    CHECK(scError == SYMCRYPT_NO_ERROR, "?");
+
+    // Sign and verify a message
+    cbSignature = ScDispatchSymCryptLmsSizeofSignatureFromParams(&pKeyPrivate->params);
+    pbSignature = new BYTE[cbSignature];
+    CHECK(pbSignature != nullptr, "?");
+
+    scError = ScDispatchSymCryptLmsSign(pKeyPrivate, msg, sizeof(msg), 0, pbSignature, cbSignature);
+    CHECK(scError == SYMCRYPT_NO_ERROR, "?");
+    scError = ScDispatchSymCryptLmsVerify(pKeyPrivate, msg, sizeof(msg), 0, pbSignature, cbSignature);
+    CHECK(scError == SYMCRYPT_NO_ERROR, "?");
+
+    // Done with the original private key
+    ScDispatchSymCryptLmskeyFree(pKeyPrivate);
+
+    // Import the private key from the key blob
+    pKeyPrivate = ScDispatchSymCryptLmskeyAllocate(&params, 0);
+    CHECK(pKeyPrivate != nullptr, "?");
+    scError = ScDispatchSymCryptLmskeySetValue(pbPrivateKeyBlob, cbPrivateKey, SYMCRYPT_LMSKEY_TYPE_PRIVATE, 0, pKeyPrivate);
+    CHECK(scError == SYMCRYPT_NO_ERROR, "?");
+
+    // Sign the message again with the imported private key and check if the same signature is produced
+    pbSignature2 = new BYTE[cbSignature];
+    CHECK(pbSignature2 != nullptr, "?");
+
+    scError = ScDispatchSymCryptLmsSign(pKeyPrivate, msg, sizeof(msg), 0, pbSignature2, cbSignature);
+    CHECK(scError == SYMCRYPT_NO_ERROR, "?");
+    // We can't compare the signatures as the signature is non-deterministic
+    //CHECK(memcmp(pbSignature, pbSignature2, cbSignature) == 0, "?");
+
+    ScDispatchSymCryptLmskeyFree(pKeyPrivate);
+
+    // Import the public key and verify the signature
+    pKeyPublic = ScDispatchSymCryptLmskeyAllocate(&params, 0);
+    CHECK(pKeyPublic != nullptr, "?");
+    scError = ScDispatchSymCryptLmskeySetValue(pbPublicKeyBlob, cbPublicKey, SYMCRYPT_LMSKEY_TYPE_PUBLIC, 0, pKeyPublic);
+    CHECK(scError == SYMCRYPT_NO_ERROR, "?");
+
+    scError = ScDispatchSymCryptLmsVerify(pKeyPublic, msg, sizeof(msg), 0, pbSignature, cbSignature);
+    CHECK(scError == SYMCRYPT_NO_ERROR, "?");
+
+    ScDispatchSymCryptLmskeyFree(pKeyPublic);
+
+    delete[] pbSignature2;
+    delete[] pbSignature;
+    delete[] pbPublicKeyBlob;
+    delete[] pbPrivateKeyBlob;
+}
+
+
+VOID
 testXmssMultitree()
 {
     SYMCRYPT_XMSS_PARAMS params;
@@ -724,6 +911,17 @@ testXmss()
 
 
 VOID
+testLms()
+{
+    testWinternitzLengths();
+
+    testLmsCustomParameters();
+
+    testLmsImportExport();
+}
+
+
+VOID
 testHbs()
 {
     INT64 nOutstandingAllocs = 0;
@@ -731,10 +929,15 @@ testHbs()
     testXmss();
 
     nOutstandingAllocs = SYMCRYPT_INTERNAL_VOLATILE_READ64(&g_nOutstandingCheckedAllocs);
-    CHECK3( nOutstandingAllocs  == 0, "Memory leak %d outstanding", nOutstandingAllocs );
+    CHECK3(nOutstandingAllocs == 0, "Memory leak %d outstanding", nOutstandingAllocs);
+
+    testLms();
+
+    nOutstandingAllocs = SYMCRYPT_INTERNAL_VOLATILE_READ64(&g_nOutstandingCheckedAllocs);
+    CHECK3(nOutstandingAllocs == 0, "Memory leak %d outstanding", nOutstandingAllocs);
 
     testHbsKats();
 
     nOutstandingAllocs = SYMCRYPT_INTERNAL_VOLATILE_READ64(&g_nOutstandingCheckedAllocs);
-    CHECK3( nOutstandingAllocs  == 0, "Memory leak %d outstanding", nOutstandingAllocs );
+    CHECK3(nOutstandingAllocs == 0, "Memory leak %d outstanding", nOutstandingAllocs);
 }

@@ -587,3 +587,19 @@ VERSION_103.5
       SymCryptXmssVerify;
       SymCryptXmssSelftest;
 } VERSION_103.4;
+VERSION_103.6
+{
+   global:
+      SymCryptLmskeyAllocate;
+      SymCryptLmskeyFree;
+      SymCryptLmskeyGenerate;
+      SymCryptLmskeyGetValue;
+      SymCryptLmskeySetValue;
+      SymCryptLmsParamsFromAlgId;
+      SymCryptLmsSelftest;
+      SymCryptLmsSetParams;
+      SymCryptLmsSign;
+      SymCryptLmsSizeofKeyBlobFromParams;
+      SymCryptLmsSizeofSignatureFromParams;
+      SymCryptLmsVerify;
+} VERSION_103.5;

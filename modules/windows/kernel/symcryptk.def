@@ -270,6 +270,18 @@ EXPORTS
 ;    SymCryptKmac256ResultEx
 ;    SymCryptKmac256Selftest
 ;    SymCryptKmac256StateCopy
+;    SymCryptLmskeyAllocate
+;    SymCryptLmskeyFree
+;    SymCryptLmskeyGenerate
+;    SymCryptLmskeyGetValue
+;    SymCryptLmskeySetValue
+;    SymCryptLmsParamsFromAlgId
+;    SymCryptLmsSelftest
+;    SymCryptLmsSetParams
+;    SymCryptLmsSign
+;    SymCryptLmsSizeofKeyBlobFromParams
+;    SymCryptLmsSizeofSignatureFromParams
+;    SymCryptLmsVerify
 ;    SymCryptLoadLsbFirstUint32
 ;    SymCryptLoadLsbFirstUint64
 ;    SymCryptLoadMsbFirstUint32
@@ -502,10 +514,10 @@ EXPORTS
 ;    SymCryptSshKdfExpandKey
 ;    SymCryptSshKdfSha256SelfTest
 ;    SymCryptSshKdfSha512SelfTest
-;    SymCryptSskdfMacExpandSalt
-;    SymCryptSskdfMacDerive
-;    SymCryptSskdfMac
 ;    SymCryptSskdfHash
+;    SymCryptSskdfMac
+;    SymCryptSskdfMacDerive
+;    SymCryptSskdfMacExpandSalt
 ;    SymCryptSskdfSelfTest
 ;    SymCryptStoreLsbFirstUint32
 ;    SymCryptStoreLsbFirstUint64
@@ -525,6 +537,19 @@ EXPORTS
 ;    SymCryptUint64Bitsize
 ;    SymCryptUint64Bytesize
 ;    SymCryptWipe
+;    SymCryptXmsskeyAllocate
+;    SymCryptXmsskeyFree
+;    SymCryptXmsskeyGenerate
+;    SymCryptXmsskeyGetValue
+;    SymCryptXmsskeySetValue
+;    SymCryptXmssMtParamsFromAlgId
+;    SymCryptXmssParamsFromAlgId
+;    SymCryptXmssSelftest
+;    SymCryptXmssSetParams
+;    SymCryptXmssSign
+;    SymCryptXmssSizeofKeyBlobFromParams
+;    SymCryptXmssSizeofSignatureFromParams
+;    SymCryptXmssVerify
 ;    SymCryptXorBytes
 ;    SymCryptXtsAesDecrypt
 ;    SymCryptXtsAesDecryptWith128bTweak
@@ -534,19 +559,6 @@ EXPORTS
 ;    SymCryptXtsAesExpandKeyEx
 ;    SymCryptXtsAesKeyCopy
 ;    SymCryptXtsAesSelftest
-;    SymCryptXmsskeyAllocate
-;    SymCryptXmsskeyFree
-;    SymCryptXmsskeyGenerate
-;    SymCryptXmsskeyGetValue
-;    SymCryptXmsskeySetValue
-;    SymCryptXmssSizeofKeyBlobFromParams
-;    SymCryptXmssMtParamsFromAlgId
-;    SymCryptXmssParamsFromAlgId
-;    SymCryptXmssSetParams
-;    SymCryptXmssSign
-;    SymCryptXmssSizeofSignatureFromParams
-;    SymCryptXmssVerify
-;    SymCryptXmssSelftest
 
     SymCryptDeprecatedStatusIndicator
     SymCryptEntropyAccumulatorInit0

@@ -63,6 +63,7 @@ set(SOURCES_COMMON
     hmacsha3_512.c
     kmac.c
     libmain.c
+    lms.c
     marvin32.c
     md2.c
     md4.c

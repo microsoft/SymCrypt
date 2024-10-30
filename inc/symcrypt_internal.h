@@ -861,7 +861,7 @@ typedef const SYMCRYPT_SHA384_STATE *PCSYMCRYPT_SHA384_STATE;
 // SYMCRYPT_KECCAK_STATE
 //
 // Data structure that stores the state of an ongoing SHA-3 derived algorithm computation.
-// 
+//
 
 typedef SYMCRYPT_ALIGN_STRUCT _SYMCRYPT_KECCAK_STATE
 {
@@ -2420,7 +2420,7 @@ typedef const SYMCRYPT_MLKEMKEY * PCSYMCRYPT_MLKEMKEY;
 // RSA FIPS self-tests require at least 496 bits to avoid fatal
 // Require caller to specify NO_FIPS for up to 1024 bits as running FIPS tests on too-small keys
 // does not make it FIPS certifiable and gives the wrong impression to callers
-#define SYMCRYPT_RSAKEY_FIPS_MIN_BITSIZE_MODULUS    (1024)      
+#define SYMCRYPT_RSAKEY_FIPS_MIN_BITSIZE_MODULUS    (1024)
 
 #define SYMCRYPT_RSAKEY_MIN_BITSIZE_PRIME           (128)
 #define SYMCRYPT_RSAKEY_MAX_BITSIZE_PRIME           (SYMCRYPT_RSAKEY_MAX_BITSIZE_MODULUS / 2)
@@ -2808,7 +2808,7 @@ typedef SYMCRYPT_ALIGN_STRUCT _SYMCRYPT_XMSS_PARAMS
     PCSYMCRYPT_HASH hash;           // hash function
     UINT32          id;             // algorithm identifier
     UINT32          cbHashOutput;   // hash function output size, must be less than or equal to hash->resultSize
-    UINT32          nWinternitzWidth;// Wintertnitz coefficient, width of digits in bits (chain length = 2^nWinternitzWidth)
+    UINT32          nWinternitzWidth;// Winternitz coefficient, width of digits in bits (chain length = 2^nWinternitzWidth)
     UINT32          nTotalTreeHeight;// number of layers times the tree height of one layer (each layer has the same height)
     UINT32          nLayers;        // hyper-tree layers, 1 for single tree
     UINT32          cbPrefix;       // length of the domain separator prefix in PRFs
@@ -2822,7 +2822,7 @@ typedef SYMCRYPT_ALIGN_STRUCT _SYMCRYPT_XMSS_PARAMS
     UINT32          nLayerHeight;   // tree height of a single layer (h / d)
     UINT32          cbIdx;          // size of leaf counter in bytes (for single trees cbIdx = 4)
     UINT32          nLeftShift32;   // left shift count to align the checksum digits to MSB of a 32-bit word
-    
+
     BYTE            Reserved[16];   // Reserved for future use
 } SYMCRYPT_XMSS_PARAMS;
 
@@ -2835,6 +2835,43 @@ typedef       SYMCRYPT_XMSS_KEY* PSYMCRYPT_XMSS_KEY;
 typedef const SYMCRYPT_XMSS_KEY* PCSYMCRYPT_XMSS_KEY;
 
 
+//==========================================================================
+//   LMS internal structures
+//==========================================================================
+
+typedef SYMCRYPT_ALIGN_STRUCT _SYMCRYPT_LMS_PARAMS
+{
+    // algorithm ID of the LMS signature scheme
+    UINT32                  lmsAlgID;
+
+    // algorithm ID of the LM-OTS signature scheme
+    UINT32                  lmsOtsAlgID;
+
+    // hash function pointer to be used as part of the LMS operations
+    PCSYMCRYPT_HASH         pLmsHashFunction;
+
+    // the height of the LMS tree. There are 2^h leaves in the tree - h
+    UINT32                  nTreeHeight;
+
+    // the number of bytes for each tree node, equals to the output length of the hash function - m, n
+    UINT32                  cbHashOutput;
+
+    // Winternitz coefficient, width of digits in bits (chain length = 2^w) - w
+    UINT32                  nWinternitzChainWidth;
+
+    // the number of n-byte string elements that make up the LM-OTS signature - p
+    UINT32                  nByteStringCount;
+
+    // the number of left-shift bits used in the checksum function Cksm - ls
+    UINT32                  nChecksumLShiftBits;
+} SYMCRYPT_LMS_PARAMS;
+typedef       SYMCRYPT_LMS_PARAMS* PSYMCRYPT_LMS_PARAMS;
+typedef const SYMCRYPT_LMS_PARAMS* PCSYMCRYPT_LMS_PARAMS;
+
+struct _SYMCRYPT_LMS_KEY;
+typedef struct _SYMCRYPT_LMS_KEY SYMCRYPT_LMS_KEY;
+typedef        SYMCRYPT_LMS_KEY* PSYMCRYPT_LMS_KEY;
+typedef const  SYMCRYPT_LMS_KEY* PCSYMCRYPT_LMS_KEY;
 
 #ifndef _PREFAST_
 #if SYMCRYPT_CPU_X86
@@ -3120,6 +3157,8 @@ typedef enum _SYMCRYPT_SELFTEST_ALGORITHM {
     SYMCRYPT_SELFTEST_ALGORITHM_DH      = 0x10,
     SYMCRYPT_SELFTEST_ALGORITHM_ECDH    = 0x20,
     SYMCRYPT_SELFTEST_ALGORITHM_MLKEM   = 0x40,
+    SYMCRYPT_SELFTEST_ALGORITHM_XMSS    = 0x80,
+    SYMCRYPT_SELFTEST_ALGORITHM_LMS     = 0x100,
 } SYMCRYPT_SELFTEST_ALGORITHM;
 
 // Takes values which are some bitwise OR combination of SYMCRYPT_SELFTEST_ALGORITHM values
@@ -3174,9 +3213,9 @@ SymCryptDeprecatedStatusIndicator(PBYTE pbOutput, UINT32 cbOutput);
 // This API is required to satisfy FIPS 140-3 requirements, but is *not* recommended
 // to be used in production code. It should be considered unstable,
 // and may be removed at any time.
-// 
-// The output string will be copied to pbOutput if the size of the buffer 
+//
+// The output string will be copied to pbOutput if the size of the buffer
 // cbOutput is large enough. The function returns the required buffer size
-// when pbOutput is passed as NULL. If pbOutput is not NULL, the function 
+// when pbOutput is passed as NULL. If pbOutput is not NULL, the function
 // returns the number of bytes copied to pbOutput.
 //

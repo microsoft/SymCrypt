@@ -1,7 +1,7 @@
 //
 // File maintaining a set of convenience macros to avoid verbose macro names through our test code
 //
-// Copyright (c) Microsoft Corporation. Licensed under the MIT license. 
+// Copyright (c) Microsoft Corporation. Licensed under the MIT license.
 //
 // In test* we call ScDispatchSymCrypt* functions in place of SymCrypt* to enable optionally
 // dispatching a SymCrypt call to static or dynamic versions based on the value of
@@ -593,6 +593,19 @@
 #define ScDispatchSymCryptXmssSizeofSignatureFromParams(...) SCTEST_CALL_DISPATCHFN(SymCryptXmssSizeofSignatureFromParams, __VA_ARGS__)
 #define ScDispatchSymCryptXmssVerify(...) SCTEST_CALL_DISPATCHFN(SymCryptXmssVerify, __VA_ARGS__)
 #define ScDispatchSymCryptXmssSelftest(...) SCTEST_CALL_DISPATCHFN(SymCryptXmssSelftest, __VA_ARGS__)
+
+#define ScDispatchSymCryptLmskeyAllocate(...) SCTEST_CALL_DISPATCHFN(SymCryptLmskeyAllocate, __VA_ARGS__)
+#define ScDispatchSymCryptLmskeyFree(...) SCTEST_CALL_DISPATCHFN(SymCryptLmskeyFree, __VA_ARGS__)
+#define ScDispatchSymCryptLmskeyGenerate(...) SCTEST_CALL_DISPATCHFN(SymCryptLmskeyGenerate, __VA_ARGS__)
+#define ScDispatchSymCryptLmskeyGetValue(...) SCTEST_CALL_DISPATCHFN(SymCryptLmskeyGetValue, __VA_ARGS__)
+#define ScDispatchSymCryptLmskeySetValue(...) SCTEST_CALL_DISPATCHFN(SymCryptLmskeySetValue, __VA_ARGS__)
+#define ScDispatchSymCryptLmsSizeofKeyBlobFromParams(...) SCTEST_CALL_DISPATCHFN(SymCryptLmsSizeofKeyBlobFromParams, __VA_ARGS__)
+#define ScDispatchSymCryptLmsParamsFromAlgId(...) SCTEST_CALL_DISPATCHFN(SymCryptLmsParamsFromAlgId, __VA_ARGS__)
+#define ScDispatchSymCryptLmsSetParams(...) SCTEST_CALL_DISPATCHFN(SymCryptLmsSetParams, __VA_ARGS__)
+#define ScDispatchSymCryptLmsSign(...) SCTEST_CALL_DISPATCHFN(SymCryptLmsSign, __VA_ARGS__)
+#define ScDispatchSymCryptLmsSizeofSignatureFromParams(...) SCTEST_CALL_DISPATCHFN(SymCryptLmsSizeofSignatureFromParams, __VA_ARGS__)
+#define ScDispatchSymCryptLmsVerify(...) SCTEST_CALL_DISPATCHFN(SymCryptLmsVerify, __VA_ARGS__)
+#define ScDispatchSymCryptLmsSelftest(...) SCTEST_CALL_DISPATCHFN(SymCryptLmsSelftest, __VA_ARGS__)
 
 #define ScDispatchSymCryptMarvin32DefaultSeed SCTEST_GET_DISPATCHSYM(SymCryptMarvin32DefaultSeed)
 #define ScDispatchSymCryptMd2Algorithm SCTEST_GET_DISPATCHSYM(SymCryptMd2Algorithm)

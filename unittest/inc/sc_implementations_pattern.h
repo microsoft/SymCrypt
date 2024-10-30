@@ -426,6 +426,12 @@ public:
 };
 
 template<>
+class LmsImpState<ImpXxx, AlgLms> {
+public:
+    PSYMCRYPT_LMS_KEY pKey;
+};
+
+template<>
 class KemImpState<ImpXxx, AlgMlKem> {
 public:
     PSYMCRYPT_MLKEMKEY  pKey;

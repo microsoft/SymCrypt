@@ -53,6 +53,17 @@ EXPORTS
     SymCrypt3DesEncrypt
     SymCrypt3DesExpandKey
     SymCrypt3DesSelftest
+    SymCrypt802_11SaeCustomCommitCreate
+    SymCrypt802_11SaeCustomCommitCreateGeneric
+    SymCrypt802_11SaeCustomCommitProcess
+    SymCrypt802_11SaeCustomCommitProcessGeneric
+    SymCrypt802_11SaeCustomCreatePT
+    SymCrypt802_11SaeCustomCreatePTGeneric
+    SymCrypt802_11SaeCustomDestroy
+    SymCrypt802_11SaeCustomInit
+    SymCrypt802_11SaeCustomInitH2E
+    SymCrypt802_11SaeCustomInitH2EGeneric
+    SymCrypt802_11SaeGetGroupSizes
     SymCryptAesCbcDecrypt
     SymCryptAesCbcEncrypt
     SymCryptAesCbcMac
@@ -94,7 +105,25 @@ EXPORTS
     SymCryptChaCha20Poly1305Selftest
     SymCryptChaCha20Selftest
     SymCryptChaCha20SetOffset
+    SymCryptCreateTrialDivisionContext
+    SymCryptCrtGenerateInverses
+    SymCryptCrtSolve
+    SymCryptCShake128
+    SymCryptCShake128Append
+    SymCryptCShake128Extract
+    SymCryptCShake128Init
+    SymCryptCShake128Result
+    SymCryptCShake128Selftest
+    SymCryptCShake128StateCopy
+    SymCryptCShake256
+    SymCryptCShake256Append
+    SymCryptCShake256Extract
+    SymCryptCShake256Init
+    SymCryptCShake256Result
+    SymCryptCShake256Selftest
+    SymCryptCShake256StateCopy
     SymCryptCtrMsb64
+    SymCryptDeprecatedStatusIndicator
     SymCryptDesDecrypt
     SymCryptDesEncrypt
     SymCryptDesExpandKey
@@ -105,6 +134,14 @@ EXPORTS
     SymCryptDesxSelftest
     SymCryptDhSecretAgreement
     SymCryptDhSecretAgreementSelftest
+    SymCryptDigitsFromBits
+    SymCryptDivisorAllocate
+    SymCryptDivisorCopy
+    SymCryptDivisorCreate
+    SymCryptDivisorDigitsizeOfObject
+    SymCryptDivisorFree
+    SymCryptDivisorFromModulus
+    SymCryptDivisorWipe
     SymCryptDlgroupAllocate
     SymCryptDlgroupCopy
     SymCryptDlgroupCreate
@@ -119,6 +156,7 @@ EXPORTS
     SymCryptDlkeyAllocate
     SymCryptDlkeyCopy
     SymCryptDlkeyCreate
+    SymCryptDlkeyExtendKeyUsage
     SymCryptDlkeyFree
     SymCryptDlkeyGenerate
     SymCryptDlkeyGetGroup
@@ -132,16 +170,18 @@ EXPORTS
     SymCryptDsaSelftest
     SymCryptDsaSign
     SymCryptDsaVerify
+    SymCryptEcbDecrypt
+    SymCryptEcbEncrypt
     SymCryptEcDhSecretAgreement
     SymCryptEcDhSecretAgreementSelftest
     SymCryptEcDsaSelftest
     SymCryptEcDsaSign
+    SymCryptEcDsaSignEx     ; deterministic ECDSA signing, only to be used by unit tests
     SymCryptEcDsaVerify
-    SymCryptEcbDecrypt
-    SymCryptEcbEncrypt
     SymCryptEckeyAllocate
     SymCryptEckeyCopy
     SymCryptEckeyCreate
+    SymCryptEckeyExtendKeyUsage
     SymCryptEckeyFree
     SymCryptEckeyGetValue
     SymCryptEckeyHasPrivateKey
@@ -150,10 +190,34 @@ EXPORTS
     SymCryptEckeySizeofPrivateKey
     SymCryptEckeySizeofPublicKey
     SymCryptEckeyWipe
+    SymCryptEcpointAdd
+    SymCryptEcpointAddDiffNonZero
+    SymCryptEcpointAllocate
+    SymCryptEcpointCopy
+    SymCryptEcpointCreate
+    SymCryptEcpointDouble
+    SymCryptEcpointFree
+    SymCryptEcpointGetValue
+    SymCryptEcpointIsEqual
+    SymCryptEcpointIsZero
+    SymCryptEcpointMaskedCopy
+    SymCryptEcpointMultiScalarMul
+    SymCryptEcpointNegate
+    SymCryptEcpointOnCurve
+    SymCryptEcpointRetrieveHandle
+    SymCryptEcpointScalarMul
+    SymCryptEcpointSetDistinguishedPoint
+    SymCryptEcpointSetRandom
+    SymCryptEcpointSetValue
+    SymCryptEcpointSetZero
+    SymCryptEcpointWipe
     SymCryptEcurveAllocate
     SymCryptEcurveBitsizeofFieldModulus
     SymCryptEcurveBitsizeofGroupOrder
+    SymCryptEcurveDigitsofFieldElement
+    SymCryptEcurveDigitsofScalarMultiplier
     SymCryptEcurveFree
+    SymCryptEcurveGroupOrder
     SymCryptEcurveHighBitRestrictionNumOfBits
     SymCryptEcurveHighBitRestrictionPosition
     SymCryptEcurveHighBitRestrictionValue
@@ -162,6 +226,8 @@ EXPORTS
     SymCryptEcurveSizeofFieldElement
     SymCryptEcurveSizeofScalarMultiplier
     SymCryptEqual
+    SymCryptFipsGetSelftestsPerformed
+    SymCryptFreeTrialDivisionContext
     SymCryptGcmAuthPart
     SymCryptGcmDecrypt
     SymCryptGcmDecryptFinal
@@ -212,22 +278,6 @@ EXPORTS
     SymCryptHmacSha256Result
     SymCryptHmacSha256Selftest
     SymCryptHmacSha256StateCopy
-    SymCryptHmacSha384
-    SymCryptHmacSha384Append
-    SymCryptHmacSha384ExpandKey
-    SymCryptHmacSha384Init
-    SymCryptHmacSha384KeyCopy
-    SymCryptHmacSha384Result
-    SymCryptHmacSha384Selftest
-    SymCryptHmacSha384StateCopy
-    SymCryptHmacSha512
-    SymCryptHmacSha512Append
-    SymCryptHmacSha512ExpandKey
-    SymCryptHmacSha512Init
-    SymCryptHmacSha512KeyCopy
-    SymCryptHmacSha512Result
-    SymCryptHmacSha512Selftest
-    SymCryptHmacSha512StateCopy
     SymCryptHmacSha3_256
     SymCryptHmacSha3_256Append
     SymCryptHmacSha3_256ExpandKey
@@ -252,10 +302,112 @@ EXPORTS
     SymCryptHmacSha3_512Result
     SymCryptHmacSha3_512Selftest
     SymCryptHmacSha3_512StateCopy
+    SymCryptHmacSha384
+    SymCryptHmacSha384Append
+    SymCryptHmacSha384ExpandKey
+    SymCryptHmacSha384Init
+    SymCryptHmacSha384KeyCopy
+    SymCryptHmacSha384Result
+    SymCryptHmacSha384Selftest
+    SymCryptHmacSha384StateCopy
+    SymCryptHmacSha512
+    SymCryptHmacSha512Append
+    SymCryptHmacSha512ExpandKey
+    SymCryptHmacSha512Init
+    SymCryptHmacSha512KeyCopy
+    SymCryptHmacSha512Result
+    SymCryptHmacSha512Selftest
+    SymCryptHmacSha512StateCopy
+    SymCryptIntAddMixedSize
+    SymCryptIntAddSameSize
+    SymCryptIntAddUint32
+    SymCryptIntAllocate
+    SymCryptIntBitsizeOfObject
+    SymCryptIntBitsizeOfValue
+    SymCryptIntConditionalCopy
+    SymCryptIntConditionalSwap
+    SymCryptIntCopy
+    SymCryptIntCopyMixedSize
+    SymCryptIntCreate
+    SymCryptIntDigitsizeOfObject
+    SymCryptIntDivMod
+    SymCryptIntDivPow2
+    SymCryptIntExtendedGcd
+    SymCryptIntFindSmallDivisor
+    SymCryptIntFree
+    SymCryptIntFromDivisor
+    SymCryptIntFromModulus
+    SymCryptIntGenerateRandomPrime
+    SymCryptIntGetBit
+    SymCryptIntGetBits
+    SymCryptIntGetValue
+    SymCryptIntGetValueLsbits32
+    SymCryptIntGetValueLsbits64
+    SymCryptIntIsEqual
+    SymCryptIntIsEqualUint32
+    SymCryptIntIsLessThan
+    SymCryptIntMaskedCopy
+    SymCryptIntMillerRabinPrimalityTest
+    SymCryptIntModPow2
+    SymCryptIntMulMixedSize
+    SymCryptIntMulPow2
+    SymCryptIntMulSameSize
+    SymCryptIntMulUint32
+    SymCryptIntNeg
+    SymCryptIntSetBits
+    SymCryptIntSetValue
+    SymCryptIntSetValueUint32
+    SymCryptIntSetValueUint64
+    SymCryptIntShr1
+    SymCryptIntSquare
+    SymCryptIntSubMixedSize
+    SymCryptIntSubSameSize
+    SymCryptIntSubUint32
+    SymCryptIntToDivisor
+    SymCryptIntToModElement
+    SymCryptIntToModulus
+    SymCryptIntWipe
+    SymCryptKmac128
+    SymCryptKmac128Append
+    SymCryptKmac128Ex
+    SymCryptKmac128ExpandKey
+    SymCryptKmac128ExpandKeyEx
+    SymCryptKmac128Extract
+    SymCryptKmac128Init
+    SymCryptKmac128KeyCopy
+    SymCryptKmac128Result
+    SymCryptKmac128ResultEx
+    SymCryptKmac128Selftest
+    SymCryptKmac128StateCopy
+    SymCryptKmac256
+    SymCryptKmac256Append
+    SymCryptKmac256Ex
+    SymCryptKmac256ExpandKey
+    SymCryptKmac256ExpandKeyEx
+    SymCryptKmac256Extract
+    SymCryptKmac256Init
+    SymCryptKmac256KeyCopy
+    SymCryptKmac256Result
+    SymCryptKmac256ResultEx
+    SymCryptKmac256Selftest
+    SymCryptKmac256StateCopy
+    SymCryptLmskeyAllocate
+    SymCryptLmskeyFree
+    SymCryptLmskeyGenerate
+    SymCryptLmskeyGetValue
+    SymCryptLmskeySetValue
+    SymCryptLmsParamsFromAlgId
+    SymCryptLmsSelftest
+    SymCryptLmsSetParams
+    SymCryptLmsSign
+    SymCryptLmsSizeofKeyBlobFromParams
+    SymCryptLmsSizeofSignatureFromParams
+    SymCryptLmsVerify
     SymCryptLoadLsbFirstUint32
     SymCryptLoadLsbFirstUint64
     SymCryptLoadMsbFirstUint32
     SymCryptLoadMsbFirstUint64
+    SymCryptMapUint32
     SymCryptMarvin32
     SymCryptMarvin32Append
     SymCryptMarvin32ExpandSeed
@@ -264,6 +416,11 @@ EXPORTS
     SymCryptMarvin32SeedCopy
     SymCryptMarvin32Selftest
     SymCryptMarvin32StateCopy
+    SymCryptMask32EqU32
+    SymCryptMask32IsNonzeroU31
+    SymCryptMask32IsZeroU31
+    SymCryptMask32LtU31
+    SymCryptMask32NeqU31
     SymCryptMd2
     SymCryptMd2Append
     SymCryptMd2Init
@@ -288,7 +445,6 @@ EXPORTS
     SymCryptMd5StateCopy
     SymCryptMd5StateExport
     SymCryptMd5StateImport
-    SymCryptModuleInit
     SymCryptMlKemDecapsulate
     SymCryptMlKemEncapsulate
     SymCryptMlKemEncapsulateEx
@@ -300,6 +456,39 @@ EXPORTS
     SymCryptMlKemSelftest
     SymCryptMlKemSizeofCiphertextFromParams
     SymCryptMlKemSizeofKeyFormatFromParams
+    SymCryptModAdd
+    SymCryptModDivPow2
+    SymCryptModElementAllocate
+    SymCryptModElementConditionalSwap
+    SymCryptModElementCopy
+    SymCryptModElementCreate
+    SymCryptModElementFree
+    SymCryptModElementGetValue
+    SymCryptModElementIsEqual
+    SymCryptModElementIsZero
+    SymCryptModElementMaskedCopy
+    SymCryptModElementSetValue
+    SymCryptModElementSetValueNegUint32
+    SymCryptModElementSetValueUint32
+    SymCryptModElementToInt
+    SymCryptModElementWipe
+    SymCryptModExp
+    SymCryptModInv
+    SymCryptModMul
+    SymCryptModMultiExp
+    SymCryptModNeg
+    SymCryptModSetRandom
+    SymCryptModSquare
+    SymCryptModSub
+    SymCryptModuleInit
+    SymCryptModulusAllocate
+    SymCryptModulusCopy
+    SymCryptModulusCreate
+    SymCryptModulusDigitsizeOfObject
+    SymCryptModulusFree
+    SymCryptModulusWipe
+    SymCryptPaddingPkcs7Add
+    SymCryptPaddingPkcs7Remove
     SymCryptParallelSha256Init
     SymCryptParallelSha256Process
     SymCryptParallelSha256Selftest
@@ -310,10 +499,10 @@ EXPORTS
     SymCryptParallelSha512Process
     SymCryptParallelSha512Selftest
     SymCryptPbkdf2
-    SymCryptPbkdf2Derive
-    SymCryptPbkdf2ExpandKey
     SymCryptPbkdf2_HmacSha1SelfTest
     SymCryptPbkdf2_HmacSha256SelfTest
+    SymCryptPbkdf2Derive
+    SymCryptPbkdf2ExpandKey
     SymCryptPoly1305
     SymCryptPoly1305Append
     SymCryptPoly1305Init
@@ -340,18 +529,10 @@ EXPORTS
     SymCryptRngAesReseed
     SymCryptRngAesReseedSelftest
     SymCryptRngAesUninstantiate
-    SymCryptRsaOaepDecrypt
-    SymCryptRsaOaepEncrypt
-    SymCryptRsaSelftest
-    SymCryptRsaPkcs1Decrypt
-    SymCryptRsaPkcs1Encrypt
-    SymCryptRsaPkcs1Sign
-    SymCryptRsaPkcs1Verify
-    SymCryptRsaPssSign
-    SymCryptRsaPssVerify
-    SymCryptRsaRawDecrypt
-    SymCryptRsaRawEncrypt
+    SymCryptRoundUpPow2Sizet
     SymCryptRsakeyAllocate
+    SymCryptRsakeyCreate
+    SymCryptRsakeyExtendKeyUsage
     SymCryptRsakeyFree
     SymCryptRsakeyGenerate
     SymCryptRsakeyGetCrtValue
@@ -365,6 +546,37 @@ EXPORTS
     SymCryptRsakeySizeofPrime
     SymCryptRsakeySizeofPublicExponent
     SymCryptRsakeyWipe
+    SymCryptRsaOaepApplyEncryptionPadding
+    SymCryptRsaOaepDecrypt
+    SymCryptRsaOaepEncrypt
+    SymCryptRsaOaepRemoveEncryptionPadding
+    SymCryptRsaPkcs1ApplyEncryptionPadding
+    SymCryptRsaPkcs1ApplySignaturePadding
+    SymCryptRsaPkcs1Decrypt
+    SymCryptRsaPkcs1Encrypt
+    SymCryptRsaPkcs1RemoveEncryptionPadding
+    SymCryptRsaPkcs1Sign
+    SymCryptRsaPkcs1Verify
+    SymCryptRsaPkcs1VerifySignaturePadding
+    SymCryptRsaPssApplySignaturePadding
+    SymCryptRsaPssSign
+    SymCryptRsaPssVerify
+    SymCryptRsaPssVerifySignaturePadding
+    SymCryptRsaRawDecrypt
+    SymCryptRsaRawEncrypt
+    SymCryptRsaSelftest
+    SymCryptScsCopy
+    SymCryptScsRotateBuffer
+    SymCryptScsTableInit
+    SymCryptScsTableLoad
+    SymCryptScsTableSetBuffer
+    SymCryptScsTableStore
+    SymCryptScsTableWipe
+    SymCryptSessionDestroy
+    SymCryptSessionGcmDecrypt
+    SymCryptSessionGcmEncrypt
+    SymCryptSessionReceiverInit
+    SymCryptSessionSenderInit
     SymCryptSha1
     SymCryptSha1Append
     SymCryptSha1Init
@@ -381,22 +593,6 @@ EXPORTS
     SymCryptSha256StateCopy
     SymCryptSha256StateExport
     SymCryptSha256StateImport
-    SymCryptSha384
-    SymCryptSha384Append
-    SymCryptSha384Init
-    SymCryptSha384Result
-    SymCryptSha384Selftest
-    SymCryptSha384StateCopy
-    SymCryptSha384StateExport
-    SymCryptSha384StateImport
-    SymCryptSha512
-    SymCryptSha512Append
-    SymCryptSha512Init
-    SymCryptSha512Result
-    SymCryptSha512Selftest
-    SymCryptSha512StateCopy
-    SymCryptSha512StateExport
-    SymCryptSha512StateImport
     SymCryptSha3_256
     SymCryptSha3_256Append
     SymCryptSha3_256Init
@@ -418,71 +614,68 @@ EXPORTS
     SymCryptSha3_512StateCopy
     SymCryptSha3_512StateExport
     SymCryptSha3_512StateImport
+    SymCryptSha384
+    SymCryptSha384Append
+    SymCryptSha384Init
+    SymCryptSha384Result
+    SymCryptSha384Selftest
+    SymCryptSha384StateCopy
+    SymCryptSha384StateExport
+    SymCryptSha384StateImport
+    SymCryptSha512
+    SymCryptSha512Append
+    SymCryptSha512Init
+    SymCryptSha512Result
+    SymCryptSha512Selftest
+    SymCryptSha512StateCopy
+    SymCryptSha512StateExport
+    SymCryptSha512StateImport
     SymCryptShake128
-    SymCryptShake128Extract
-    SymCryptShake128Default
-    SymCryptShake128Init
     SymCryptShake128Append
+    SymCryptShake128Default
+    SymCryptShake128Extract
+    SymCryptShake128Init
     SymCryptShake128Result
-    SymCryptShake128StateCopy
     SymCryptShake128Selftest
+    SymCryptShake128StateCopy
     SymCryptShake256
-    SymCryptShake256Extract
-    SymCryptShake256Default
-    SymCryptShake256Init
     SymCryptShake256Append
+    SymCryptShake256Default
+    SymCryptShake256Extract
+    SymCryptShake256Init
     SymCryptShake256Result
-    SymCryptShake256StateCopy
     SymCryptShake256Selftest
-    SymCryptCShake128
-    SymCryptCShake128Init
-    SymCryptCShake128Append
-    SymCryptCShake128Result
-    SymCryptCShake128Extract
-    SymCryptCShake128StateCopy
-    SymCryptCShake128Selftest
-    SymCryptCShake256
-    SymCryptCShake256Init
-    SymCryptCShake256Append
-    SymCryptCShake256Result
-    SymCryptCShake256Extract
-    SymCryptCShake256StateCopy
-    SymCryptCShake256Selftest
-    SymCryptKmac128
-    SymCryptKmac128Ex
-    SymCryptKmac128ExpandKey
-    SymCryptKmac128ExpandKeyEx
-    SymCryptKmac128Init
-    SymCryptKmac128Append
-    SymCryptKmac128Result
-    SymCryptKmac128ResultEx
-    SymCryptKmac128Extract
-    SymCryptKmac128KeyCopy
-    SymCryptKmac128StateCopy
-    SymCryptKmac128Selftest
-    SymCryptKmac256
-    SymCryptKmac256Ex
-    SymCryptKmac256ExpandKey
-    SymCryptKmac256ExpandKeyEx
-    SymCryptKmac256Init
-    SymCryptKmac256Append
-    SymCryptKmac256Result
-    SymCryptKmac256ResultEx
-    SymCryptKmac256Extract
-    SymCryptKmac256KeyCopy
-    SymCryptKmac256StateCopy
-    SymCryptKmac256Selftest
+    SymCryptShake256StateCopy
+    SymCryptSizeofDivisorFromDigits
     SymCryptSizeofDlgroupFromBitsizes
     SymCryptSizeofDlkeyFromDlgroup
     SymCryptSizeofEckeyFromCurve
+    SymCryptSizeofEcpointFromCurve
+    SymCryptSizeofIntFromDigits
+    SymCryptSizeofModElementFromModulus
+    SymCryptSizeofModulusFromDigits
     SymCryptSizeofRsakeyFromParams
     SymCryptSp800_108
-    SymCryptSp800_108Derive
-    SymCryptSp800_108ExpandKey
     SymCryptSp800_108_HmacSha1SelfTest
     SymCryptSp800_108_HmacSha256SelfTest
     SymCryptSp800_108_HmacSha384SelfTest
     SymCryptSp800_108_HmacSha512SelfTest
+    SymCryptSp800_108Derive
+    SymCryptSp800_108ExpandKey
+    SymCryptSrtpKdf
+    SymCryptSrtpKdfDerive
+    SymCryptSrtpKdfExpandKey
+    SymCryptSrtpKdfSelfTest
+    SymCryptSshKdf
+    SymCryptSshKdfDerive
+    SymCryptSshKdfExpandKey
+    SymCryptSshKdfSha256SelfTest
+    SymCryptSshKdfSha512SelfTest
+    SymCryptSskdfHash
+    SymCryptSskdfMac
+    SymCryptSskdfMacDerive
+    SymCryptSskdfMacExpandSalt
+    SymCryptSskdfSelfTest
     SymCryptStoreLsbFirstUint32
     SymCryptStoreLsbFirstUint64
     SymCryptStoreMsbFirstUint32
@@ -496,25 +689,25 @@ EXPORTS
     SymCryptTlsPrf1_2Derive
     SymCryptTlsPrf1_2ExpandKey
     SymCryptTlsPrf1_2SelfTest
-    SymCryptSrtpKdf
-    SymCryptSrtpKdfExpandKey
-    SymCryptSrtpKdfDerive
-    SymCryptSrtpKdfSelfTest
-    SymCryptSshKdf
-    SymCryptSshKdfExpandKey
-    SymCryptSshKdfDerive
-    SymCryptSshKdfSha256SelfTest
-    SymCryptSshKdfSha512SelfTest
-    SymCryptSskdfMacExpandSalt
-    SymCryptSskdfMacDerive
-    SymCryptSskdfMac
-    SymCryptSskdfHash
-    SymCryptSskdfSelfTest
     SymCryptUint32Bitsize
     SymCryptUint32Bytesize
     SymCryptUint64Bitsize
     SymCryptUint64Bytesize
+    SymCryptUint64Gcd
     SymCryptWipe
+    SymCryptXmsskeyAllocate
+    SymCryptXmsskeyFree
+    SymCryptXmsskeyGenerate
+    SymCryptXmsskeyGetValue
+    SymCryptXmsskeySetValue
+    SymCryptXmssMtParamsFromAlgId
+    SymCryptXmssParamsFromAlgId
+    SymCryptXmssSelftest
+    SymCryptXmssSetParams
+    SymCryptXmssSign
+    SymCryptXmssSizeofKeyBlobFromParams
+    SymCryptXmssSizeofSignatureFromParams
+    SymCryptXmssVerify
     SymCryptXorBytes
     SymCryptXtsAesDecrypt
     SymCryptXtsAesDecryptWith128bTweak
@@ -524,184 +717,3 @@ EXPORTS
     SymCryptXtsAesExpandKeyEx
     SymCryptXtsAesKeyCopy
     SymCryptXtsAesSelftest
-    SymCryptSessionDestroy
-    SymCryptSessionGcmDecrypt
-    SymCryptSessionGcmEncrypt
-    SymCryptSessionReceiverInit
-    SymCryptSessionSenderInit
-    SymCryptDlkeyExtendKeyUsage
-    SymCryptEckeyExtendKeyUsage
-    SymCryptRsakeyExtendKeyUsage
-    SymCryptRsakeyCreate
-    SymCryptDigitsFromBits
-    SymCryptIntAllocate
-    SymCryptIntFree
-    SymCryptSizeofIntFromDigits
-    SymCryptIntCreate
-    SymCryptIntWipe
-    SymCryptIntCopy
-    SymCryptIntMaskedCopy
-    SymCryptIntConditionalCopy
-    SymCryptIntConditionalSwap
-    SymCryptIntBitsizeOfObject
-    SymCryptIntDigitsizeOfObject
-    SymCryptDivisorAllocate
-    SymCryptDivisorFree
-    SymCryptSizeofDivisorFromDigits
-    SymCryptDivisorCreate
-    SymCryptDivisorWipe
-    SymCryptDivisorCopy
-    SymCryptDivisorDigitsizeOfObject
-    SymCryptModulusAllocate
-    SymCryptModulusFree
-    SymCryptSizeofModulusFromDigits
-    SymCryptModulusCreate
-    SymCryptModulusWipe
-    SymCryptModulusCopy
-    SymCryptModulusDigitsizeOfObject
-    SymCryptModElementAllocate
-    SymCryptModElementFree
-    SymCryptSizeofModElementFromModulus
-    SymCryptModElementCreate
-    SymCryptModElementWipe
-    SymCryptModElementCopy
-    SymCryptModElementMaskedCopy
-    SymCryptModElementConditionalSwap
-    SymCryptEcpointAllocate
-    SymCryptEcpointFree
-    SymCryptSizeofEcpointFromCurve
-    SymCryptEcpointCreate
-    SymCryptEcpointRetrieveHandle
-    SymCryptEcpointWipe
-    SymCryptEcpointCopy
-    SymCryptEcpointMaskedCopy
-    SymCryptIntCopyMixedSize
-    SymCryptIntBitsizeOfValue
-    SymCryptIntSetValueUint32
-    SymCryptIntSetValueUint64
-    SymCryptIntSetValue
-    SymCryptIntGetValue
-    SymCryptIntGetValueLsbits32
-    SymCryptIntGetValueLsbits64
-    SymCryptIntIsEqualUint32
-    SymCryptIntIsEqual
-    SymCryptIntIsLessThan
-    SymCryptIntAddUint32
-    SymCryptIntAddSameSize
-    SymCryptIntAddMixedSize
-    SymCryptIntSubUint32
-    SymCryptIntSubSameSize
-    SymCryptIntSubMixedSize
-    SymCryptIntNeg
-    SymCryptIntMulPow2
-    SymCryptIntDivPow2
-    SymCryptIntShr1
-    SymCryptIntModPow2
-    SymCryptIntGetBit
-    SymCryptIntGetBits
-    SymCryptIntSetBits
-    SymCryptIntMulUint32
-    SymCryptIntMulSameSize
-    SymCryptIntSquare
-    SymCryptIntMulMixedSize
-    SymCryptIntFromDivisor
-    SymCryptIntToDivisor
-    SymCryptIntDivMod
-    SymCryptIntExtendedGcd
-    SymCryptUint64Gcd
-    SymCryptCrtGenerateInverses
-    SymCryptCrtSolve
-    SymCryptCreateTrialDivisionContext
-    SymCryptFreeTrialDivisionContext
-    SymCryptIntFindSmallDivisor
-    SymCryptIntMillerRabinPrimalityTest
-    SymCryptIntGenerateRandomPrime
-    SymCryptDivisorFromModulus
-    SymCryptIntFromModulus
-    SymCryptIntToModulus
-    SymCryptIntToModElement
-    SymCryptModElementToInt
-    SymCryptModElementSetValue
-    SymCryptModElementSetValueUint32
-    SymCryptModElementSetValueNegUint32
-    SymCryptModElementGetValue
-    SymCryptModElementIsEqual
-    SymCryptModElementIsZero
-    SymCryptModSetRandom
-    SymCryptModNeg
-    SymCryptModAdd
-    SymCryptModSub
-    SymCryptModMul
-    SymCryptModSquare
-    SymCryptModDivPow2
-    SymCryptModInv
-    SymCryptModExp
-    SymCryptModMultiExp
-    SymCryptScsTableInit
-    SymCryptScsTableSetBuffer
-    SymCryptScsTableStore
-    SymCryptScsTableLoad
-    SymCryptScsTableWipe
-    SymCryptScsRotateBuffer
-    SymCryptScsCopy
-    SymCryptMapUint32
-    SymCryptMask32IsZeroU31
-    SymCryptMask32IsNonzeroU31
-    SymCryptMask32EqU32
-    SymCryptMask32NeqU31
-    SymCryptMask32LtU31
-    SymCryptPaddingPkcs7Add
-    SymCryptPaddingPkcs7Remove
-    SymCryptRoundUpPow2Sizet
-    SymCryptRsaPkcs1ApplyEncryptionPadding
-    SymCryptRsaPkcs1RemoveEncryptionPadding
-    SymCryptRsaOaepApplyEncryptionPadding
-    SymCryptRsaOaepRemoveEncryptionPadding
-    SymCryptRsaPkcs1ApplySignaturePadding
-    SymCryptRsaPkcs1VerifySignaturePadding
-    SymCryptRsaPssApplySignaturePadding
-    SymCryptRsaPssVerifySignaturePadding
-    SymCryptEcurveGroupOrder
-    SymCryptEcurveDigitsofScalarMultiplier
-    SymCryptEcurveDigitsofFieldElement
-    SymCryptEcpointSetValue
-    SymCryptEcpointGetValue
-    SymCryptEcpointSetZero
-    SymCryptEcpointSetDistinguishedPoint
-    SymCryptEcpointIsEqual
-    SymCryptEcpointIsZero
-    SymCryptEcpointOnCurve
-    SymCryptEcpointAdd
-    SymCryptEcpointAddDiffNonZero
-    SymCryptEcpointDouble
-    SymCryptEcpointNegate
-    SymCryptEcpointSetRandom
-    SymCryptEcpointScalarMul
-    SymCryptEcpointMultiScalarMul
-    SymCryptEcDsaSignEx     ; deterministic ECDSA signing, only to be used by unit tests
-    SymCrypt802_11SaeGetGroupSizes
-    SymCrypt802_11SaeCustomInit
-    SymCrypt802_11SaeCustomCreatePT
-    SymCrypt802_11SaeCustomCreatePTGeneric
-    SymCrypt802_11SaeCustomInitH2E
-    SymCrypt802_11SaeCustomInitH2EGeneric
-    SymCrypt802_11SaeCustomCommitCreate
-    SymCrypt802_11SaeCustomCommitCreateGeneric
-    SymCrypt802_11SaeCustomCommitProcess
-    SymCrypt802_11SaeCustomCommitProcessGeneric
-    SymCrypt802_11SaeCustomDestroy
-    SymCryptFipsGetSelftestsPerformed
-    SymCryptDeprecatedStatusIndicator
-    SymCryptXmsskeyAllocate
-    SymCryptXmsskeyFree
-    SymCryptXmsskeyGenerate
-    SymCryptXmsskeyGetValue
-    SymCryptXmsskeySetValue
-    SymCryptXmssSizeofKeyBlobFromParams
-    SymCryptXmssMtParamsFromAlgId
-    SymCryptXmssParamsFromAlgId
-    SymCryptXmssSetParams
-    SymCryptXmssSign
-    SymCryptXmssSizeofSignatureFromParams
-    SymCryptXmssVerify
-    SymCryptXmssSelftest

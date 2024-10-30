@@ -2781,9 +2781,9 @@ SYMCRYPT_CALL
 SymCryptMlKemEncapsulateEx(
     _In_                                    PCSYMCRYPT_MLKEMKEY pkMlKemkey,
     _In_reads_bytes_( cbRandom )            PCBYTE              pbRandom,
-                                            SIZE_T              cbRandom, 
+                                            SIZE_T              cbRandom,
     _Out_writes_bytes_( cbAgreedSecret )    PBYTE               pbAgreedSecret,
-                                            SIZE_T              cbAgreedSecret, 
+                                            SIZE_T              cbAgreedSecret,
     _Out_writes_bytes_( cbCiphertext )      PBYTE               pbCiphertext,
                                             SIZE_T              cbCiphertext );
 //
@@ -2804,6 +2804,24 @@ SymCryptMlKemEncapsulateEx(
 //   cbCiphertext must equal cbCiphertext given by SymCryptMlKemSizeofCiphertextFromParams,
 //   though typically this value can be known statically (see definition of
 //   SYMCRYPT_MLKEM_CIPHERTEXT_SIZE_*).
+//
+
+//=====================================================
+// LmsVerifyInternal
+//
+
+SYMCRYPT_ERROR
+SYMCRYPT_CALL
+SymCryptLmsVerifyInternal(
+    _In_                            PCSYMCRYPT_LMS_KEY  pKey,
+    _In_reads_bytes_(cbMessage)     PCBYTE              pbMessage,
+                                    SIZE_T              cbMessage,
+                                    UINT32              flags,
+    _In_reads_bytes_(cbSignature)   PCBYTE              pbSignature,
+                                    SIZE_T              cbSignature);
+//
+// This function carries out the actual LMS verification process. It's essential to prevent an infinite
+// recursive call in SymCryptLmsVerifySelftest.
 //
 
 //===================================================================

@@ -1800,12 +1800,13 @@ public:
 
     virtual NTSTATUS setKey(
                                 UINT32  uAlgId,
+                                UINT32  uOtsAlgId,
                                 BOOL    fMultitree,
         _In_reads_bytes_(cbSrc) PCBYTE  pbSrc,
                                 SIZE_T  cbSrc,
                                 BOOL    fVerify ) = 0;
         // Set an XMSS key from algorithm identifier and key blob.
-        // 
+        //
         // If fVerify is TRUE then this function computes the public root
         // from the private key -only if the key is private- and compares
         // it to the public root that is in the private key.
@@ -1824,7 +1825,7 @@ public:
                                         SIZE_T  cbMsg,
         _In_reads_bytes_(cbSignature)   PCBYTE  pbSignature,
                                         SIZE_T  cbSignature ) = 0;
-    // Verify a signature on a message using the private key initialized 
+    // Verify a signature on a message using the private key initialized
     // by setKey()
 };
 
@@ -1852,6 +1853,7 @@ public:
 
     virtual NTSTATUS setKey(
                                 UINT32  uAlgId,
+                                UINT32  uOtsAlgId,
                                 BOOL    fMultitree,
         _In_reads_bytes_(cbSrc) PCBYTE  pbSrc,
                                 SIZE_T  cbSrc,
@@ -1876,6 +1878,54 @@ public:
     XmssImpState<Implementation, Algorithm> state;
 };
 
+
+//
+// A template class to store the state of an LMS implementation in.
+//
+template<class Implementation, class Algorithm> class LmsImpState;
+
+//
+// Template class for the actual LMS implementations
+//
+template< class Implementation, class Algorithm >
+class LmsImp : public HbsImplementation
+{
+public:
+    LmsImp();
+    virtual ~LmsImp();
+
+private:
+    LmsImp(const LmsImp&);
+    VOID operator=(const LmsImp&);
+
+public:
+
+    virtual NTSTATUS setKey(
+                                UINT32  uAlgId,
+                                UINT32  uOtsAlgId,
+                                BOOL    fMultitree,
+        _In_reads_bytes_(cbSrc) PCBYTE  pbSrc,
+                                SIZE_T  cbSrc,
+                                BOOL    fVerify );
+
+    virtual NTSTATUS sign(
+        _In_reads_bytes_(cbMsg)         PCBYTE  pbMsg,
+                                        SIZE_T  cbMsg,
+        _Out_writes_bytes_(cbSignature) PBYTE   pbSignature,
+                                        SIZE_T  cbSignature ) ;
+
+    virtual NTSTATUS verify(
+        _In_reads_bytes_(cbMsg)         PCBYTE  pbMsg,
+                                        SIZE_T  cbMsg,
+        _In_reads_bytes_(cbSignature)   PCBYTE  pbSignature,
+                                        SIZE_T  cbSignature );
+
+    static const String s_algName;
+    static const String s_modeName;
+    static const String s_impName;
+
+    LmsImpState<Implementation, Algorithm> state;
+};
 
 //
 // The stub classes we use to distinguish our implementations and algorithms contain the
@@ -2059,6 +2109,15 @@ const String XmssImp<Implementation,Algorithm>::s_modeName;
 
 template< class Implementation, class Algorithm >
 const String XmssImp<Implementation,Algorithm>::s_impName = Implementation::name;
+
+template< class Implementation, class Algorithm >
+const String LmsImp<Implementation,Algorithm>::s_algName = Algorithm::name;
+
+template< class Implementation, class Algorithm >
+const String LmsImp<Implementation,Algorithm>::s_modeName;
+
+template< class Implementation, class Algorithm >
+const String LmsImp<Implementation,Algorithm>::s_impName = Implementation::name;
 
 template< class Imp, class Alg>
 const String KemImp<Imp,Alg>::s_impName = Imp::name;

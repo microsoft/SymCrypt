@@ -236,6 +236,7 @@ const ALG_MEASURE_PARAMS g_algMeasureParams[] =
 
     "IEEE802_11SaeCustom"   , 0, {}, {},
     "Xmss"                  , 1, { PERF_KEY_XMSS_SHA2_10_256, PERF_KEY_XMSS_SHA2_16_256, PERF_KEY_XMSS_SHA2_20_256, PERF_KEY_XMSS_SHA2_10_512,  PERF_KEY_XMSS_SHAKE256_10_256 }, { PERF_DATASIZE_SAME_AS_KEYSIZE },
+    "Lms"                   , 1, { PERF_KEY_LMS_SHA256_M32_H5_W1, PERF_KEY_LMS_SHA256_M32_H5_W2, PERF_KEY_LMS_SHA256_M32_H5_W4, PERF_KEY_LMS_SHA256_M32_H5_W8, PERF_KEY_LMS_SHA256_M32_H10_W8}, { PERF_DATASIZE_SAME_AS_KEYSIZE },
 
 // Enable the line below if you are running perf on the developer test
 //    "DeveloperTest"         , 1, {1},{},
@@ -974,6 +975,24 @@ const struct {
     { SYMCRYPT_XMSS_SHAKE256_20_256, FALSE, "SHAKE256_20_256" },
 };
 
+const struct {
+    UINT32  algId;
+    char*   name;
+} g_LmsIdNameMappings[] = {
+    { PERF_KEY_LMS_SHA256_M32_H5_W1,  "SHA256_M32_H5_W1"  },
+    { PERF_KEY_LMS_SHA256_M32_H5_W2,  "SHA256_M32_H5_W2"  },
+    { PERF_KEY_LMS_SHA256_M32_H5_W4,  "SHA256_M32_H5_W4"  },
+    { PERF_KEY_LMS_SHA256_M32_H5_W8,  "SHA256_M32_H5_W8"  },
+    { PERF_KEY_LMS_SHA256_M32_H10_W8, "SHA256_M32_H10_W8" },
+    { PERF_KEY_LMS_SHA256_M32_H15_W8, "SHA256_M32_H15_W8" },
+    { PERF_KEY_LMS_SHA256_M32_H20_W8, "SHA256_M32_H20_W8" },
+    { PERF_KEY_LMS_SHA256_M32_H25_W8, "SHA256_M32_H25_W8" },
+    { PERF_KEY_LMS_SHAKE_M32_H5_W8,   "SHAKE_M32_H5_W8"   },
+    { PERF_KEY_LMS_SHAKE_M32_H10_W8,  "SHAKE_M32_H10_W8"  },
+    { PERF_KEY_LMS_SHAKE_M32_H15_W8,  "SHAKE_M32_H15_W8"  },
+    { PERF_KEY_LMS_SHAKE_M32_H20_W8,  "SHAKE_M32_H20_W8"  },
+    { PERF_KEY_LMS_SHAKE_M32_H25_W8,  "SHAKE_M32_H25_W8"  },
+};
 
 VOID measurePerfOneAlg( AlgorithmImplementation * pAlgImp )
 {
@@ -1061,6 +1080,18 @@ VOID measurePerfOneAlg( AlgorithmImplementation * pAlgImp )
             }
         }
 
+        if (STRICMP(pParams->algName, "Lms") == 0)
+        {
+            for (SIZE_T i = 0; i < ARRAY_SIZE(g_LmsIdNameMappings); i++)
+            {
+                if (*k == g_LmsIdNameMappings[i].algId)
+                {
+                    perfInfo.strPostfix = g_LmsIdNameMappings[i].name;
+                    break;
+                }
+            }
+        }
+
         if( dataFn != NULL )
         {
             perfInfo.operationName = "";
@@ -1089,6 +1120,11 @@ VOID measurePerfOneAlg( AlgorithmImplementation * pAlgImp )
         if( decryptFn != NULL )
         {
             perfInfo.operationName = "dec";
+
+            if (!STRICMP(pParams->algName, "Lms") || !STRICMP(pParams->algName, "Xmss"))
+            {
+                perfInfo.operationName = "verify";
+            }
 
             if(!g_measure_specific_sizes)
             {

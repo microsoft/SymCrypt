@@ -294,6 +294,18 @@ EXPORTS
     SymCryptKmac256ResultEx
     SymCryptKmac256Selftest
     SymCryptKmac256StateCopy
+    SymCryptLmskeyAllocate
+    SymCryptLmskeyFree
+    SymCryptLmskeyGenerate
+    SymCryptLmskeyGetValue
+    SymCryptLmskeySetValue
+    SymCryptLmsParamsFromAlgId
+    SymCryptLmsSelftest
+    SymCryptLmsSetParams
+    SymCryptLmsSign
+    SymCryptLmsSizeofKeyBlobFromParams
+    SymCryptLmsSizeofSignatureFromParams
+    SymCryptLmsVerify
     SymCryptLoadLsbFirstUint32
     SymCryptLoadLsbFirstUint64
     SymCryptLoadMsbFirstUint32
@@ -353,9 +365,9 @@ EXPORTS
     SymCryptParallelSha512Init
     SymCryptParallelSha512Process
     SymCryptParallelSha512Selftest
+    SymCryptPbkdf2
     SymCryptPbkdf2_HmacSha1SelfTest
     SymCryptPbkdf2_HmacSha256SelfTest
-    SymCryptPbkdf2
     SymCryptPbkdf2Derive
     SymCryptPbkdf2ExpandKey
     SymCryptPoly1305
@@ -489,11 +501,11 @@ EXPORTS
     SymCryptSizeofDlkeyFromDlgroup
     SymCryptSizeofEckeyFromCurve
     SymCryptSizeofRsakeyFromParams
+    SymCryptSp800_108
     SymCryptSp800_108_HmacSha1SelfTest
     SymCryptSp800_108_HmacSha256SelfTest
     SymCryptSp800_108_HmacSha384SelfTest
     SymCryptSp800_108_HmacSha512SelfTest
-    SymCryptSp800_108
     SymCryptSp800_108Derive
     SymCryptSp800_108ExpandKey
     SymCryptSrtpKdf
@@ -505,10 +517,10 @@ EXPORTS
     SymCryptSshKdfExpandKey
     SymCryptSshKdfSha256SelfTest
     SymCryptSshKdfSha512SelfTest
-    SymCryptSskdfMacExpandSalt
-    SymCryptSskdfMacDerive
-    SymCryptSskdfMac
     SymCryptSskdfHash
+    SymCryptSskdfMac
+    SymCryptSskdfMacDerive
+    SymCryptSskdfMacExpandSalt
     SymCryptSskdfSelfTest
     SymCryptStoreLsbFirstUint32
     SymCryptStoreLsbFirstUint64
@@ -528,6 +540,19 @@ EXPORTS
     SymCryptUint64Bitsize
     SymCryptUint64Bytesize
     SymCryptWipe
+    SymCryptXmsskeyAllocate
+    SymCryptXmsskeyFree
+    SymCryptXmsskeyGenerate
+    SymCryptXmsskeyGetValue
+    SymCryptXmsskeySetValue
+    SymCryptXmssMtParamsFromAlgId
+    SymCryptXmssParamsFromAlgId
+    SymCryptXmssSelftest
+    SymCryptXmssSetParams
+    SymCryptXmssSign
+    SymCryptXmssSizeofKeyBlobFromParams
+    SymCryptXmssSizeofSignatureFromParams
+    SymCryptXmssVerify
     SymCryptXorBytes
     SymCryptXtsAesDecrypt
     SymCryptXtsAesDecryptWith128bTweak
@@ -537,17 +562,3 @@ EXPORTS
     SymCryptXtsAesExpandKeyEx
     SymCryptXtsAesKeyCopy
     SymCryptXtsAesSelftest
-    SymCryptXmsskeyAllocate
-    SymCryptXmsskeyFree
-    SymCryptXmsskeyGenerate
-    SymCryptXmsskeyGetValue
-    SymCryptXmsskeySetValue
-    SymCryptXmssSizeofKeyBlobFromParams
-    SymCryptXmssMtParamsFromAlgId
-    SymCryptXmssParamsFromAlgId
-    SymCryptXmssSetParams
-    SymCryptXmssSign
-    SymCryptXmssSizeofSignatureFromParams
-    SymCryptXmssVerify
-    SymCryptXmssSelftest
-    

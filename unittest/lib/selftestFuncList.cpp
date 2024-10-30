@@ -1,15 +1,15 @@
 //
 // Selftestfunclist.cpp
-// Copyright (c) Microsoft Corporation. Licensed under the MIT license. 
+// Copyright (c) Microsoft Corporation. Licensed under the MIT license.
 //
 
-// 
+//
 // Array of self test functions.
 // This is in a separate file so that the Kernel test program can include
-// it directly, and we only have to keep a single list. 
+// it directly, and we only have to keep a single list.
 //
 // The Kernel mode code cannot link to the primary lib or compile the precomp.h
-// header file because the /kernel flag is required for kernel-mode code, and 
+// header file because the /kernel flag is required for kernel-mode code, and
 // it is not compatible with C++ exceptions used in the STL.
 //
 
@@ -20,7 +20,7 @@ SymCryptAesSelftestVoid()
     SymCryptAesSelftest( SYMCRYPT_AES_SELFTEST_ALL );
 }
 
-const SELFTEST_INFO g_selfTests[] = 
+const SELFTEST_INFO g_selfTests[] =
 {
     {&SymCryptMd2Selftest, "Md2" },
     {&SymCryptMd4Selftest, "Md4" },
@@ -91,6 +91,7 @@ const SELFTEST_INFO g_selfTests_allocating[] =
     {&SymCryptEcDsaSelftest, "ECDSA" },
     {&SymCryptRsaSelftest, "RSA" },
     {&SymCryptXmssSelftest, "Xmss" },
+    {&SymCryptLmsSelftest, "Lms" },
     {&SymCryptMlKemSelftest, "MlKem" },
 
     {NULL, NULL},

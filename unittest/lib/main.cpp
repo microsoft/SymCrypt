@@ -248,6 +248,8 @@ const char * AlgEcdh::name = "Ecdh";
 
 const char * AlgXmss::name = "Xmss";
 
+const char * AlgLms::name = "Lms";
+
 const char * AlgMlKem::name = "MlKem";
 
 const char * AlgMlKemkeySetValue::name = "MlKemkeySetValue";
@@ -620,6 +622,7 @@ const char * g_algorithmNames[] = {
     AlgEcdsaVerify::name,
     AlgEcdh::name,
     AlgXmss::name,
+    AlgLms::name,
     AlgMlKem::name,
     AlgMlKemkeySetValue::name,
 

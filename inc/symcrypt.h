@@ -8217,7 +8217,7 @@ SymCryptEcDhSecretAgreementSelftest(void);
 // OTS keys determined at key generation time, signing cannot be performed after
 // all OTSs are used. This is an important distinction from other digital signature
 // schemes such as RSA or ECDSA.
-// 
+//
 // It is crucial for the security of the *stateful* hash-based signatures that the
 // same private key state NOT be used more than once to sign messages, otherwise all
 // security is lost.
@@ -8229,14 +8229,14 @@ SymCryptEcDhSecretAgreementSelftest(void);
 //
 //  XMSS is a stateful hash-based signature scheme specified in RFC 8391. The
 //  multi-tree variant is named XMSS^MT.
-// 
+//
 //  XMSS uses WOTS+ as the one-time-signature (OTS) scheme. Public key consists
 //  of two parts; Merkle-tree hash of OTS public keys called the Root, and a Seed value
 //  used in in hash computations. The private key consists of SK_XMSS which is
-//  used to deterministacally create OTS keys, SK_PRF which is used to generate 
+//  used to deterministacally create OTS keys, SK_PRF which is used to generate
 //  the randomizer for hashing, and an integer Idx is used to select the next OTS key
 //  for signing.
-// 
+//
 
 typedef enum _SYMCRYPT_XMSS_ALGID
 {
@@ -8269,34 +8269,34 @@ typedef enum _SYMCRYPT_XMSSMT_ALGID
 {
     //                                                  Hash Fn.    RFC-8391    SP800-208
     //                                                  SHA-256         X           X
-    SYMCRYPT_XMSSMT_SHA2_20_2_256       = 0x00000001,   
-    SYMCRYPT_XMSSMT_SHA2_20_4_256       = 0x00000002, 
-    SYMCRYPT_XMSSMT_SHA2_40_2_256       = 0x00000003, 
-    SYMCRYPT_XMSSMT_SHA2_40_4_256       = 0x00000004, 
-    SYMCRYPT_XMSSMT_SHA2_40_8_256       = 0x00000005, 
-    SYMCRYPT_XMSSMT_SHA2_60_3_256       = 0x00000006, 
-    SYMCRYPT_XMSSMT_SHA2_60_6_256       = 0x00000007, 
-    SYMCRYPT_XMSSMT_SHA2_60_12_256      = 0x00000008, 
+    SYMCRYPT_XMSSMT_SHA2_20_2_256       = 0x00000001,
+    SYMCRYPT_XMSSMT_SHA2_20_4_256       = 0x00000002,
+    SYMCRYPT_XMSSMT_SHA2_40_2_256       = 0x00000003,
+    SYMCRYPT_XMSSMT_SHA2_40_4_256       = 0x00000004,
+    SYMCRYPT_XMSSMT_SHA2_40_8_256       = 0x00000005,
+    SYMCRYPT_XMSSMT_SHA2_60_3_256       = 0x00000006,
+    SYMCRYPT_XMSSMT_SHA2_60_6_256       = 0x00000007,
+    SYMCRYPT_XMSSMT_SHA2_60_12_256      = 0x00000008,
 
     //                                                  SHA-512         X
-    SYMCRYPT_XMSSMT_SHA2_20_2_512       = 0x00000009,   
-    SYMCRYPT_XMSSMT_SHA2_20_4_512       = 0x0000000A,   
-    SYMCRYPT_XMSSMT_SHA2_40_2_512       = 0x0000000B,   
-    SYMCRYPT_XMSSMT_SHA2_40_4_512       = 0x0000000C,   
-    SYMCRYPT_XMSSMT_SHA2_40_8_512       = 0x0000000D,   
-    SYMCRYPT_XMSSMT_SHA2_60_3_512       = 0x0000000E,   
-    SYMCRYPT_XMSSMT_SHA2_60_6_512       = 0x0000000F,   
-    SYMCRYPT_XMSSMT_SHA2_60_12_512      = 0x00000010,   
+    SYMCRYPT_XMSSMT_SHA2_20_2_512       = 0x00000009,
+    SYMCRYPT_XMSSMT_SHA2_20_4_512       = 0x0000000A,
+    SYMCRYPT_XMSSMT_SHA2_40_2_512       = 0x0000000B,
+    SYMCRYPT_XMSSMT_SHA2_40_4_512       = 0x0000000C,
+    SYMCRYPT_XMSSMT_SHA2_40_8_512       = 0x0000000D,
+    SYMCRYPT_XMSSMT_SHA2_60_3_512       = 0x0000000E,
+    SYMCRYPT_XMSSMT_SHA2_60_6_512       = 0x0000000F,
+    SYMCRYPT_XMSSMT_SHA2_60_12_512      = 0x00000010,
 
     //                                                  SHAKE128        X
     SYMCRYPT_XMSSMT_SHAKE_20_2_256      = 0x00000011,
-    SYMCRYPT_XMSSMT_SHAKE_20_4_256      = 0x00000012,   
-    SYMCRYPT_XMSSMT_SHAKE_40_2_256      = 0x00000013,   
-    SYMCRYPT_XMSSMT_SHAKE_40_4_256      = 0x00000014,   
-    SYMCRYPT_XMSSMT_SHAKE_40_8_256      = 0x00000015,   
-    SYMCRYPT_XMSSMT_SHAKE_60_3_256      = 0x00000016,   
-    SYMCRYPT_XMSSMT_SHAKE_60_6_256      = 0x00000017,   
-    SYMCRYPT_XMSSMT_SHAKE_60_12_256     = 0x00000018,   
+    SYMCRYPT_XMSSMT_SHAKE_20_4_256      = 0x00000012,
+    SYMCRYPT_XMSSMT_SHAKE_40_2_256      = 0x00000013,
+    SYMCRYPT_XMSSMT_SHAKE_40_4_256      = 0x00000014,
+    SYMCRYPT_XMSSMT_SHAKE_40_8_256      = 0x00000015,
+    SYMCRYPT_XMSSMT_SHAKE_60_3_256      = 0x00000016,
+    SYMCRYPT_XMSSMT_SHAKE_60_6_256      = 0x00000017,
+    SYMCRYPT_XMSSMT_SHAKE_60_12_256     = 0x00000018,
 
     //                                                  SHAKE256        X
     SYMCRYPT_XMSSMT_SHAKE_20_2_512      = 0x00000019,
@@ -8320,7 +8320,7 @@ typedef enum _SYMCRYPT_XMSSMT_ALGID
 
     //                                                  SHAKE256                    X
     SYMCRYPT_XMSSMT_SHAKE256_20_2_256   = 0x00000029,
-    SYMCRYPT_XMSSMT_SHAKE256_20_4_256   = 0x0000002A,   
+    SYMCRYPT_XMSSMT_SHAKE256_20_4_256   = 0x0000002A,
     SYMCRYPT_XMSSMT_SHAKE256_40_2_256   = 0x0000002B,
     SYMCRYPT_XMSSMT_SHAKE256_40_4_256   = 0x0000002C,
     SYMCRYPT_XMSSMT_SHAKE256_40_8_256   = 0x0000002D,
@@ -8352,7 +8352,7 @@ typedef enum _SYMCRYPT_XMSSKEY_TYPE
 SYMCRYPT_ERROR
 SYMCRYPT_CALL
 SymCryptXmssParamsFromAlgId(
-            SYMCRYPT_XMSS_ALGID     id, 
+            SYMCRYPT_XMSS_ALGID     id,
     _Out_   PSYMCRYPT_XMSS_PARAMS   pParams);
 //
 // Populate SYMCRYPT_XMSS_PARAMS structure for the specified XMSS algorithm identifier
@@ -8383,7 +8383,7 @@ SymCryptXmssSetParams(
     );
 //
 // Populates SYMCRYPT_XMSS_PARAMS structure by user defined parameters
-// 
+//
 //
 // Parameters:
 //
@@ -8398,7 +8398,7 @@ SymCryptXmssSetParams(
 //		cbHashOutput. Output size of the hash function in bytes. Leading cbHashOutput
 //      bytes are taken as hash output if the hash algorithm's actual output size is larger.
 //
-//		nWinternitzWidth. Winternitz parameter, width of digits in byte sequences. 
+//		nWinternitzWidth. Winternitz parameter, width of digits in byte sequences.
 //      See remark below for more explanation.
 //
 //		nTotalTreeHeight. Height of the XMSS/XMSS^MT tree. In a multi-tree setting,
@@ -8412,24 +8412,24 @@ SymCryptXmssSetParams(
 //		PRF functions.
 //
 // Requirements:
-// 
+//
 //      cbHashOutput must be nonzero, must be less than or equal to pHash->resultSize,
 //      and must be less than or equal to SYMCRYPT_HASH_MAX_RESULT_SIZE
-// 
+//
 //      nWinternitzWidth must be one of 1, 2, 4, or 8
-// 
-//      nTotalTreeHeight must be non-zero, it must be less than or equal to 32 for 
+//
+//      nTotalTreeHeight must be non-zero, it must be less than or equal to 32 for
 //      single-tree (nLayers = 1), and must be less than 64 for multi-tree (nLayers > 1)
 //
 //      nLayers must be non-zero and must divide nTotalTreeHeight without remainder
-// 
+//
 //      cbPrefix must be non-zero
 //
 // Remarks:
 //
 //      RFC 8391 specifies w as the length of the Winternitz chains. Here,
 //      it is used as the width of the digits in an octet string, i.e.,
-//		base2 logarithm of the chain length, which is similar to its use 
+//		base2 logarithm of the chain length, which is similar to its use
 //		in LMS/HSS in RFC 8554.
 //
 
@@ -8446,13 +8446,13 @@ SymCryptXmssSizeofKeyBlobFromParams(
 //
 // Return the size of an XMSS/XMSS^MT key blob associated with the provided XMSS parameters
 //
-// 
+//
 // Parameters:
 //
 //		pParams. Pointer to an XMSS parameters structure that has been properly
 //      initialized before this call.
 //
-//      keyType. SYMCRYPT_XMSSKEY_TYPE_PUBLIC (resp. SYMCRYPT_XMSSKEY_TYPE_PRIVATE) to 
+//      keyType. SYMCRYPT_XMSSKEY_TYPE_PUBLIC (resp. SYMCRYPT_XMSSKEY_TYPE_PRIVATE) to
 //      retrieve the size of the public key (resp. private key).
 //
 //      pcbKey. Pointer to the variable to store the size of a public/private
@@ -8466,16 +8466,16 @@ SymCryptXmssSizeofKeyBlobFromParams(
 PSYMCRYPT_XMSS_KEY
 SYMCRYPT_CALL
 SymCryptXmsskeyAllocate(
-    _In_    PCSYMCRYPT_XMSS_PARAMS  pParams, 
+    _In_    PCSYMCRYPT_XMSS_PARAMS  pParams,
             UINT32                  flags );
 //
 // Allocate an XMSS/XMSS^MT key object and initialize it
-// 
+//
 // After this call, the key object does not contain a key yet. It must be
 // followed by a call to SymCryptXmsskeyGenerate or SymCryptXmsskeySetValue.
 //
-// Allowed flags: 
-// 
+// Allowed flags:
+//
 //      No flags defined for this function
 //
 
@@ -8488,25 +8488,25 @@ SymCryptXmsskeyGenerate(
 // Generate a public/private XMSS/XMSS^MT key-pair
 //
 // Parameters:
-// 
+//
 //      pKey. Key object to store the public/private key-pair
-// 
+//
 //      flags. No flags defined for this function
 //
 // Return values:
-// 
+//
 //      - SYMCRYPT_NO_ERROR
 //      On successfull key generation
-// 
+//
 //      - SYMCRYPT_MEMORY_ALLOCATION_FAILURE
 //      If there is not enough memory to perform key generation
-// 
+//
 // Remarks:
 //
 //      - Generates a random private key (SK_XMSS, SK_PRF) and a random
 //      public seed SEED, and computes the public value Root from it.
 //      - If the function fails, the key object will be in an invalid state.
-// 
+//
 
 SYMCRYPT_ERROR
 SYMCRYPT_CALL
@@ -8520,65 +8520,65 @@ SymCryptXmsskeySetValue(
 //  Set an XMSS/XMSS^MT public/private key from key blob
 //
 //  Key formats:
-//      
+//
 //      PubKey: algId | Root | Seed
-//      PrvKey: algId | Root | Seed | Idx | SK_XMSS | SK_PRF 
-// 
+//      PrvKey: algId | Root | Seed | Idx | SK_XMSS | SK_PRF
+//
 //  algId and Idx are 32-bit and 64-bit integers respectively, stored in big-endian format.
 //  Other values are n-bytes where n is the output size (in bytes) of the hash
 //  algorithm (or the truncated size if the hash output is truncated).
-// 
+//
 //  Public-key format is specified in RFC 8391, whereas private-key format is not.
 //  We define the private-key as an extension of the public-key with the private key
 //  material.
-// 
+//
 //  Parameters:
 //
 //      (pbInput, cbInput). Input key blob to import the key from
-// 
+//
 //      keyType. Indicates whether (pbInput, cbInput) contains a public or a private key.
 //      Must be one of SYMCRYPT_XMSSKEY_TYPE_PUBLIC, or SYMCRYPT_XMSSKEY_TYPE_PRIVATE.
-//      
+//
 //      flags. See below
-// 
+//
 //      pKey. Pointer to the XMSS key object to be initialized from the key blob
 //
 //  Allowed flags:
-// 
+//
 //      - SYMCRYPT_FLAG_XMSSKEY_VERIFY_ROOT
 //      Can only be specified when importing a private key. Recomputes the
 //      public root value and compares it to the one that is imported from the
 //      key blob.
-// 
+//
 //  Return values:
-//      
+//
 //      - SYMCRYPT_NO_ERROR
 //       On successfully updating the key object from the provided key blob
-// 
+//
 //      - SYMCRYPT_INVALID_ARGUMENT
 //       If cbInput does not match a public/private key size indicated by keyType parameter
 //       If an invalid flag is specified, or SYMCRYPT_FLAG_XMSSKEY_VERIFY_ROOT is
 //      specified when setting a public key
-// 
+//
 //      - SYMCRYPT_INLVALID_BLOB
 //       If the XMSS algorithm ID in the key blob does not match the algorithm ID
 //      used in creating the key object pointed to by pKey
-// 
+//
 //      - SYMCRYPT_MEMORY_ALLOCATION_FAILURE
 //       If there is not sufficient memory for public root verification (only if
 //      SYMCRYPT_FLAG_XMSSKEY_VERIFY_ROOT is set in flags)
-// 
+//
 //      - SYMCRYPT_HBS_PUBLIC_ROOT_MISMATCH
 //       If public root value in the key blob does not match the recomputed root value
 //      (only if key blob is for a private key and SYMCRYPT_FLAG_XMSSKEY_VERIFY_ROOT is
 //      specified)
-// 
+//
 //  Remarks:
 //
 //      - The key blob size pbInput must match the size returned by SymCryptXmssSizeofKeyBlobFromParams
 //      for the same keyType and XMSS parameters the key object is created with.
 //      - If the function fails, the key object will be in an invalid state.
-// 
+//
 
 SYMCRYPT_ERROR
 SYMCRYPT_CALL
@@ -8592,29 +8592,29 @@ SymCryptXmsskeyGetValue(
 //  Get public/private key value from an XMSS/XMSS^MT key object
 //
 //  Key formats:
-//      
+//
 //      PubKey: algId | Root | Seed
-//      PrvKey: algId | Root | Seed | Idx | SK_XMSS | SK_PRF 
-// 
+//      PrvKey: algId | Root | Seed | Idx | SK_XMSS | SK_PRF
+//
 //  algId and Idx are 32-bit and 64-bit integers respectively, stored in big-endian format.
 //  Other values are n-bytes where n is the output size (in bytes) of the hash
 //  algorithm (or the truncated size if the hash output is truncated).
-// 
+//
 //  Public-key format is specified in RFC 8391, whereas private-key format is not.
 //  We define the private-key as an extension of the public-key with the private key
 //  material.
-// 
+//
 // Parameters:
 //
 //      pKey. The key object to export the key material from
-// 
+//
 //      keyType. Type of the key (public or private) to get. If the key object
 //      contains a public key, keyType must be SYMCRYPT_XMSSKEY_TYPE_PUBLIC. If
 //      the key object contains a private key, keyType can be one of
 //      SYMCRYPT_XMSSKEY_TYPE_PUBLIC or SYMCRYPT_XMSSKEY_TYPE_PRIVATE
-// 
+//
 //      flags. No flags defined for this function
-// 
+//
 //      (pbOutput, cbOutput). Buffer to store the exported key blob. cbOutput must match
 //      the size of the key to be exported, which can be queried by calling
 //      SymCryptXmssSizeofKeyBlobFromParams.
@@ -8623,14 +8623,14 @@ SymCryptXmsskeyGetValue(
 //
 //      - SYMCRYPT_NO_ERROR
 //       On successful exporting of the key
-// 
+//
 //      - SYMCRYPT_INVALID_ARGUMENT
 //       If cbOutput does not match the exact size of the key blob for the specified
 //      keyType
 //       If the key object does not contain private key material when keyType
 //      equals SYMCRYPT_XMSSKEY_TYPE_PRIVATE
 //       If unsupported flags are specified in flags parameter
-//      
+//
 
 VOID
 SYMCRYPT_CALL
@@ -8638,7 +8638,7 @@ SymCryptXmsskeyFree(
     _Inout_ PSYMCRYPT_XMSS_KEY pKey);
 //
 // Free an allocated XMSS/XMSS^MT key object
-// 
+//
 
 SIZE_T
 SYMCRYPT_CALL
@@ -8661,15 +8661,15 @@ SymCryptXmssSign(
 // Sign a message using XMSS/XMSS^MT
 //
 //  Parameters:
-// 
+//
 //      pKey. Private XMSS/XMSS^MT key used in signing
-// 
+//
 //      (pbMessage, cbMessage). Message to be signed
-// 
+//
 //      flags. No flags defined for this function
-// 
+//
 //      (pbSignature, cbSignature). Buffer to store the generated signature
-// 
+//
 //  Requirements:
 //
 //      pKey must contain the private key
@@ -8677,24 +8677,24 @@ SymCryptXmssSign(
 //      cbSignature must be equal to the generated signature size
 //
 //  Return values:
-//      
+//
 //      - SYMCRYPT_NO_ERROR on successfull signature generation
-// 
-//      - SYMCRYPT_INVALID_ARGUMENT 
+//
+//      - SYMCRYPT_INVALID_ARGUMENT
 //      If flags parameter is invalid,
 //      or if the key object does not contain private key,
 //      or cbSignature is not of correct size
-// 
+//
 //      - SYMCRYPT_HBS_NO_OTS_KEYS_LEFT
 //      If the key doesn't have any one-time-signatures left for signing
-// 
+//
 //  Remarks:
 //
 //      The input pbMessage can be of arbitrary length and its randomized hash will be the actual
 //      value that is going to be signed with a WOTSP signature. Applications wanting to pass the hash
 //      value of a message to be signed as opposed to the message itself must make sure to have
 //      domain separation between the space of messages and the hashes of the messages.
-// 
+//
 //      The signature size can be queried with SymCryptSizeofXmssSignatureFromParams function.
 //
 
@@ -8712,20 +8712,20 @@ SymCryptXmssVerify(
 //  Verify an XMSS/XMSS^MT signature on a message
 //
 //  Parameters:
-// 
+//
 //      pKey. XMSS key used to verify the signature
-// 
+//
 //      (pbMessage, cbMessage) Message for which the signature was created
-// 
+//
 //      flags. No flags defined for this function
-// 
+//
 //      (pbSignature, cbSignature) XMSS or XMSS^MT signature
-// 
+//
 //  Return values:
-// 
+//
 //      - SYMCRYPT_NO_ERROR
 //      If signature verification succeeeds
-// 
+//
 //		- SYMCRYPT_INVALID_ARGUMENT
 //		If flags is invalid or cbSignature is of incorrect size
 //
@@ -8750,6 +8750,405 @@ SymCryptXmssSelftest(void);
 //  FIPS self-test for signature verification
 //
 
+//========================================================================
+// Leighton-Micali Hash-Based Signatures (LMS) - LMS external struct definitions - implementing
+// RFC8554/NIST Special Publication 800-208
+//
+typedef enum _SYMCRYPT_LMS_ALGID
+{
+    //
+    // Algorithm IDs for Leighton-Micali Hash-Based Signatures (LMS)
+    // M equals the output length of the hash function, where H is the tree height.
+    // The M parameter primarily affects the security and size of the signatures, while the H parameter
+    // impacts the number of possible signatures and the computational cost for signing and verification.
+    // Larger M increases security and signature size, but increases the computational cost
+    // Higher H means more signatures but higher computational cost for signing and verification
+    //
+    SYMCRYPT_LMS_SHA256_M32_H5      = 0x00000005,
+    SYMCRYPT_LMS_SHA256_M32_H10     = 0x00000006,
+    SYMCRYPT_LMS_SHA256_M32_H15     = 0x00000007,
+    SYMCRYPT_LMS_SHA256_M32_H20     = 0x00000008,
+    SYMCRYPT_LMS_SHA256_M32_H25     = 0x00000009,
+    SYMCRYPT_LMS_SHA256_M24_H5      = 0x0000000A,
+    SYMCRYPT_LMS_SHA256_M24_H10     = 0x0000000B,
+    SYMCRYPT_LMS_SHA256_M24_H15     = 0x0000000C,
+    SYMCRYPT_LMS_SHA256_M24_H20     = 0x0000000D,
+    SYMCRYPT_LMS_SHA256_M24_H25     = 0x0000000E,
+    SYMCRYPT_LMS_SHAKE_M32_H5       = 0x0000000F,
+    SYMCRYPT_LMS_SHAKE_M32_H10      = 0x00000010,
+    SYMCRYPT_LMS_SHAKE_M32_H15      = 0x00000011,
+    SYMCRYPT_LMS_SHAKE_M32_H20      = 0x00000012,
+    SYMCRYPT_LMS_SHAKE_M32_H25      = 0x00000013,
+    SYMCRYPT_LMS_SHAKE_M24_H5       = 0x00000014,
+    SYMCRYPT_LMS_SHAKE_M24_H10      = 0x00000015,
+    SYMCRYPT_LMS_SHAKE_M24_H15      = 0x00000016,
+    SYMCRYPT_LMS_SHAKE_M24_H20      = 0x00000017,
+    SYMCRYPT_LMS_SHAKE_M24_H25      = 0x00000018,
+} SYMCRYPT_LMS_ALGID;
+
+typedef enum _SYMCRYPT_LMS_OTS_ALGID
+{
+    // Algorithm IDs for Leighton-Micali Hash-Based Signatures (LMS) One-Time-Signature (OTS)
+    // N parameter represents the number of bytes in the hash function output. It determines the size of the hash values used in
+    // the LMS OTS scheme.
+    // W parameter represents the width of the Winternitz parameter used in LMS OTS. A larger value of w results in shorter
+    // signatures but requires more computation during key generation, signature generation, and signature verification.
+    //
+    SYMCRYPT_LMS_OTS_SHA256_N32_W1      = 0x00000001,
+    SYMCRYPT_LMS_OTS_SHA256_N32_W2      = 0x00000002,
+    SYMCRYPT_LMS_OTS_SHA256_N32_W4      = 0x00000003,
+    SYMCRYPT_LMS_OTS_SHA256_N32_W8      = 0x00000004,
+    SYMCRYPT_LMS_OTS_SHA256_N24_W1      = 0x00000005,
+    SYMCRYPT_LMS_OTS_SHA256_N24_W2      = 0x00000006,
+    SYMCRYPT_LMS_OTS_SHA256_N24_W4      = 0x00000007,
+    SYMCRYPT_LMS_OTS_SHA256_N24_W8      = 0x00000008,
+    SYMCRYPT_LMS_OTS_SHAKE_N32_W1       = 0x00000009,
+    SYMCRYPT_LMS_OTS_SHAKE_N32_W2       = 0x0000000A,
+    SYMCRYPT_LMS_OTS_SHAKE_N32_W4       = 0x0000000B,
+    SYMCRYPT_LMS_OTS_SHAKE_N32_W8       = 0x0000000C,
+    SYMCRYPT_LMS_OTS_SHAKE_N24_W1       = 0x0000000D,
+    SYMCRYPT_LMS_OTS_SHAKE_N24_W2       = 0x0000000E,
+    SYMCRYPT_LMS_OTS_SHAKE_N24_W4       = 0x0000000F,
+    SYMCRYPT_LMS_OTS_SHAKE_N24_W8       = 0x00000010,
+} SYMCRYPT_LMS_OTS_ALGID;
+
+// Verifies the public key root value when importing a private key
+#define SYMCRYPT_FLAG_LMSKEY_VERIFY_ROOT           (0x00000001)
+
+typedef enum _SYMCRYPT_LMSKEY_TYPE
+{
+    SYMCRYPT_LMSKEY_TYPE_NONE       = 0,   // Key object does not contain any key material
+    SYMCRYPT_LMSKEY_TYPE_PUBLIC     = 1,   // Key object contains only public key
+    SYMCRYPT_LMSKEY_TYPE_PRIVATE    = 2,   // Key object contains both public key and private key
+} SYMCRYPT_LMSKEY_TYPE;
+//      The format of the private key blob is as follows:
+//                                        [         Public key parts                   ||      Private key parts       ]
+//                                        [    4     ||      4      ||  16 ||    m     ||      4         ||      m     ]
+//                                        [ LmsAlgId || LmsOtsAlgId ||  I  || RootNode || NextUnusedLeaf || Seed ]
+//
+//      The format of the public key blob is as follows:
+//                                        [     4    ||      4      ||  16 ||    m     ]
+//                                        [ LmsAlgId || LmsOtsAlgId ||  I  || RootNode ]
+
+//=====================================================
+// LMS operations
+
+SYMCRYPT_ERROR
+SYMCRYPT_CALL
+SymCryptLmsParamsFromAlgId(
+            SYMCRYPT_LMS_ALGID      lmsAlgID,
+            SYMCRYPT_LMS_OTS_ALGID  lmsOtsAlgID,
+    _Out_   PSYMCRYPT_LMS_PARAMS    pParams);
+//
+// This function populates a SYMCRYPT_LMS_PARAMS structure with the predefined parameter sets for a given LMS
+// algorithm identifier and LMS OTS algorithm identifier. The resulting structure can be used to create LMS key objects.
+// The values defined by SYMCRYPT_LMS_OTS_ALGID and SYMCRYPT_LMS_ALGID are all of the NIST SP 800-208 parameter
+// sets supported by SymCrypt.
+//
+// Parameters:
+//      lmsAlgID: The LMS algorithm identifier to use
+//
+//      lmsOtsAlgID: The LMS OTS algorithm identifier to use
+//
+//      pParams: A pointer to a SYMCRYPT_LMS_PARAMS structure that will be populated with the predefined parameter sets
+//
+// Return value:
+//      If the function succeeds, it returns SYMCRYPT_NO_ERROR
+//      If the function fails, it returns SYMCRYPT_INVALID_ARGUMENT
+//
+
+SYMCRYPT_ERROR
+SYMCRYPT_CALL
+SymCryptLmsSetParams(
+    _Out_   PSYMCRYPT_LMS_PARAMS    pParams,
+            UINT32                  lmsAlgID,
+            UINT32                  lmsOtsAlgID,
+    _In_    PCSYMCRYPT_HASH         pLmsHashFunction,
+            UINT32                  cbHashOutput,
+            UINT32                  nTreeHeight,
+            UINT32                  nWinternitzChainWidth);
+//
+// This function allows for the customization of non-standard parameter sets, which cannot be set using LmsParamsFromAlgId.
+//
+// Parameters:
+//      pParams: A pointer to a SYMCRYPT_LMS_PARAMS structure to be initialized.
+//
+//      lmsAlgID: LMS algorithm identifier, will be embedded in key and signature objects.
+//
+//      lmsOtsAlgID: LMS OTS algorithm identifier, will be embedded in key and signature objects.
+//
+//      pLmsHashFunction: A pointer to the hash function to be used for the LMS system.
+//
+//      cbHashOutput: The number of bytes for each tree node, equal to the output length of the hash function.
+//
+//      nTreeHeight: The height of the LMS tree. Must be < 32, there are (2^nTreeHeight) leaves in the tree.
+//
+//      nWinternitzChainWidth: An integer that specifies the base2 logarithm of Winternitz chain lengths.
+//      Must be one of 1, 2, 4, or 8
+//
+// Return value:
+//      If the function succeeds, it fills PSYMCRYPT_LMS_PARAMS structure by user defined values and return SYMCRYPT_NO_ERROR.
+//      Otherwise, it sets the values of PSYMCRYPT_LMS_PARAMS to 0 and returns SYMCRYPT_INVALID_ARGUMENT.
+//
+
+SYMCRYPT_ERROR
+SYMCRYPT_CALL
+SymCryptLmsSizeofKeyBlobFromParams(
+    _In_    PCSYMCRYPT_LMS_PARAMS   pParams,
+            SYMCRYPT_LMSKEY_TYPE    keyType,
+    _Out_   SIZE_T*                 pcbKey);
+//
+// Returns the size of an LMS key blob based on the provided LMS parameters and keyType.
+//
+// Parameters:
+//      pParams: A pointer to a SYMCRYPT_LMS_PARAMS structure that specifies the parameters of the LMS key.
+//
+//      keyType: Specifies the type of blob for which to retrieve the size.
+//      Must be one of SYMCRYPT_LMSKEY_TYPE_PUBLIC or SYMCRYPT_LMSKEY_TYPE_PRIVATE.
+//
+//      pcbKey: Pointer to the variable to store the size of a public/private
+//      key blob associated with the LMS parameters.
+//
+// Return value:
+//      If the function succeeds, it returns SYMCRYPT_NO_ERROR. In case keyType is not recognized
+//      it returns SYMCRYPT_INVALID_ARGUMENT.
+//
+
+PSYMCRYPT_LMS_KEY
+SYMCRYPT_CALL
+SymCryptLmskeyAllocate(
+    _In_    PCSYMCRYPT_LMS_PARAMS   pParams,
+            UINT32                  flags);
+//
+// This function allocates a new SYMCRYPT_LMS_KEY object, which represents a key for the Leighton-Micali Signature (LMS)
+// scheme, based on the given PCSYMCRYPT_LMS_PARAMS. The function allocates memory for the key object, and returns a pointer to it.
+// The caller is responsible for freeing the memory when the key is no longer needed, using the SymCryptLmskeyFree function.
+//
+// Parameters:
+//      pParams: A pointer to a constant SYMCRYPT_LMS_PARAMS structure that describes
+//          the LMS parameters to be used for the key.
+//          The structure must be non-null, and must be initialized by one of the initialization functions:
+//          SymCryptLmsParamsFromAlgId or SymCryptLmsSetParams.
+//
+//      flags: Currently not used. Must be set to 0.
+//
+// Return value:
+//      If the function succeeds, it returns a pointer to the newly created SYMCRYPT_LMS_KEY object.
+//      Otherwise, it returns NULL, indicating an error that should be handled by the caller.
+//
+
+SYMCRYPT_ERROR
+SYMCRYPT_CALL
+SymCryptLmskeyGenerate(
+    _Inout_ PSYMCRYPT_LMS_KEY   pKey,
+            UINT32              flags);
+//
+// This function generates an LMS public/private key pair in the pKey object.
+//
+// Parameters:
+//      pKey: A pointer to a SYMCRYPT_LMS_KEY structure that represents the LMS key object to be initialized. The structure
+//      must be valid and non-null, and must have been previously created using the SymCryptLmskeyAllocate
+//      function. If the key object already contains key values, they will be overwritten by the generated values.
+//
+//      flags: Currently not used. Must be set to 0.
+//
+// Return value:
+//      If the function succeeds, it returns SYMCRYPT_NO_ERROR. Otherwise, it returns an error code that describes the nature of the
+//      failure, such as SYMCRYPT_INVALID_ARGUMENT.
+//
+
+SYMCRYPT_ERROR
+SYMCRYPT_CALL
+SymCryptLmskeySetValue(
+    _In_reads_bytes_(cbInput)   PCBYTE                  pbInput,
+                                SIZE_T                  cbInput,
+                                SYMCRYPT_LMSKEY_TYPE    keyType,
+                                UINT32                  flags,
+    _Inout_                     PSYMCRYPT_LMS_KEY       pKey);
+//
+// This function imports an LMS key from a buffer, setting the key object with the provided data.
+//
+// Parameters:
+//      pbInput: A pointer to a byte buffer containing the key data to be imported into the LMS key object
+//      The format of the input buffer is specified by the SYMCRYPT_LMSKEY_TYPE enumeration.
+//
+//      cbInput: The size, in bytes, of the key data buffer pointed to by pbInput
+//
+//      keyType: Indicates whether (pbInput, cbInput) contains a public or a private key.
+//      Must be one of SYMCRYPT_LMSKEY_TYPE_PUBLIC, or SYMCRYPT_LMSKEY_TYPE_PRIVATE.
+//
+//      flags: See allowed flags below.
+//
+//      pKey: A pointer to a SYMCRYPT_LMS_KEY structure that will receive the imported key from the buffer pbInput
+//
+// Allowed flags:
+//      SYMCRYPT_FLAG_LMSKEY_VERIFY_ROOT: Can only be specified when importing a private key. Recomputes the
+//      public root value and compares it to the one that is imported from the key blob.
+//
+// Return value:
+//      If the function succeeds, it returns SYMCRYPT_NO_ERROR and the SYMCRYPT_LMS_KEY structure is set with the imported key data.
+//      If the function fails, it returns an error code that describes the nature of the failure, such as SYMCRYPT_INVALID_ARGUMENT.
+//
+
+SYMCRYPT_ERROR
+SYMCRYPT_CALL
+SymCryptLmskeyGetValue(
+    _In_                                PCSYMCRYPT_LMS_KEY      pKey,
+                                        SYMCRYPT_LMSKEY_TYPE    keyType,
+                                        UINT32                  flags,
+    _Out_writes_bytes_(cbOutput)        PBYTE                   pbOutput,
+                                        SIZE_T                  cbOutput);
+//
+// This function retrieves the public or private key value from an LMS key object, depending on the keyType parameter
+//
+// Parameters:
+//      pKey: A pointer to a SYMCRYPT_LMS_KEY structure that represents the LMS key object to retrieve the key value from.
+//      The structure must be valid and non-null, and must contain the key values to retrieve
+//
+//      keyType: Type of the key (public or private) to get. If the key object only
+//      contains a public key, keyType must be SYMCRYPT_LMSKEY_TYPE_PUBLIC. If
+//      the key object contains a private key, keyType can be one of
+//      SYMCRYPT_LMSKEY_TYPE_PUBLIC or SYMCRYPT_LMSKEY_TYPE_PRIVATE
+//
+//      flags: Currently not used. Must be set to 0.
+//
+//      pbOutput: A buffer to hold the key value. The buffer must be large enough to hold the key value.
+//      The format of the output buffer is specified by the SYMCRYPT_LMSKEY_TYPE enumeration.
+//
+//      cbOutput: The size of the pbOutput buffer in bytes
+//
+// Return value:
+//      If the function succeeds, it returns SYMCRYPT_NO_ERROR. Otherwise, it returns SYMCRYPT_INVALID_ARGUMENT.
+//
+
+VOID
+SYMCRYPT_CALL
+SymCryptLmskeyFree(
+    _Inout_ PSYMCRYPT_LMS_KEY   pKey);
+//
+// This function frees the memory that was allocated for the given LMS key object, which was previously created using the
+// SymCryptLmskeyAllocate function. The function wipes and deallocates the memory.
+//
+// Parameters:
+//      pKey: A pointer to a SYMCRYPT_LMS_KEY structure that represents the LMS key object to be freed. The structure
+//      must be valid and non-null, and must have been previously created using the SymCryptLmskeyAllocate function.
+//
+// Return value:
+//      The function does not return a value.
+//
+
+SIZE_T
+SYMCRYPT_CALL
+SymCryptLmsSizeofSignatureFromParams(
+    _In_ PCSYMCRYPT_LMS_PARAMS pParams);
+//
+// This function returns the size, in bytes, of the signature that will be generated by the LMS signature scheme, based on the
+// specified LMS parameters.
+//
+// Parameters:
+//      pParams: A pointer to a SYMCRYPT_LMS_PARAMS structure that represents the parameters associated with the LMS key to
+//      use for computing the signature size. The structure must be valid and non-null.
+//
+// Return value:
+//      Signature size in bytes.
+//
+
+SYMCRYPT_ERROR
+SYMCRYPT_CALL
+SymCryptLmsSign(
+    _Inout_                             PSYMCRYPT_LMS_KEY   pKey,
+    _In_reads_bytes_(cbMessage)         PCBYTE              pbMessage,
+                                        SIZE_T              cbMessage,
+                                        UINT32              flags,
+    _Out_writes_bytes_(cbSignature)     PBYTE               pbSignature,
+                                        SIZE_T              cbSignature);
+//
+// This function generates an LMS signature for the given message, using the private key in the given LMS key object.
+// The function fills the buffer pointed to by pbSignature with the LMS signature. It uses the LMS parameters
+// and key values that were specified when the key object was created to generate the signature.
+// Stateful hash-based signatures are not approved by FIPS for key generation and signature generation in software
+// modules. Special care must be taken to ensure that the same private key state is not used more than once to
+// sign messages. This can be done, for instance, by releasing a signature only after verifying that the private
+// key has been updated and serialized to a physical storage.
+// 
+// Parameters:
+//      pKey: A pointer to a SYMCRYPT_LMS_KEY structure that represents the LMS key object to be used for signing the message.
+//      The structure must be valid and non-null, and must contain the private key values for the LMS scheme. The private key
+//      must have been initialized previously using the SymCryptLmsKeyGenerate or SymCryptLmskeySetValue function.
+//
+//      pbMessage: A pointer to a buffer that contains the message to be signed.
+//
+//      cbMessage: The length in bytes of the message to be signed.
+//
+//      flags: Currently not used. Must be set to 0.
+//
+//      pbSignature: A pointer to the buffer that receives the computed signature. It must be large enough to hold the
+//      generated signature. The required size can be retrieved using: SymCryptLmsSizeofSignatureFromParams.
+//
+//      cbSignature: The size of the signature buffer pbSignature. If the passed size is different than the
+//      required signature size an error will be returned.
+//
+// Return value:
+//      SYMCRYPT_NO_ERROR - If the function succeeds
+//
+//      SYMCRYPT_HBS_NO_OTS_KEYS_LEFT - If the key has run out of available OTS keys
+//
+//      SYMCRYPT_INVALID_ARGUMENT - If one of the input parameters is invalid
+//
+// Remarks:
+//      The LMS signing process inherits its signature from the LMS OTS, which means that it will always compute a digest of the
+//      given message before signing, even if a hash value is provided as the message.
+//      Developers should always be consistent with the input to the LMS sign and verify functions and ensure that the input message
+//      is in the correct format before passing it to these functions
+//
+
+SYMCRYPT_ERROR
+SYMCRYPT_CALL
+SymCryptLmsVerify(
+    _In_                            PCSYMCRYPT_LMS_KEY  pKey,
+    _In_reads_bytes_(cbMessage)     PCBYTE              pbMessage,
+                                    SIZE_T              cbMessage,
+                                    UINT32              flags,
+    _In_reads_bytes_(cbSignature)   PCBYTE              pbSignature,
+                                    SIZE_T              cbSignature);
+//
+// This function verifies the given LMS signature (pbSignature) for the given message (pbMessage), using the public key
+// in the given LMS key object. The function returns SYMCRYPT_NO_ERROR if the signature is valid, and an error code otherwise.
+//
+// Parameters:
+//      pKey: A pointer to a SYMCRYPT_LMS_KEY structure that represents the LMS key object to be used for verifying
+//      the signature. The structure must be valid and non-null, and must contain the public or private key values for the LMS scheme.
+//      The public key must have been generated previously using the SymCryptLmsKeyGenerate or SymCryptLmskeySetValue functions, and must match the
+//      private key that was used to generate the signature.
+//
+//      pbMessage: A pointer to a buffer that contains the message that was signed.The buffer must be valid and non-null, and
+//      must contain at least cbMessage bytes of data.
+//
+//      cbMessage: The length in bytes of the message that was signed. The length should be set to the actual size of the message.
+//      If the message is larger than the maximum size allowed by the LMS parameters, the function will return an error.
+//
+//      flags: Currently not used. Must be set to 0.
+//
+//      pbSignature: A pointer to a buffer that contains the signature that was generated for the message. The buffer must
+//      be valid and non-null, and must contain at least cbSignature bytes.
+//
+//      cbSignature: The length in bytes of the signature buffer that contains the signature. The length must be
+//      equal to the exact signature size associated with the given LMS parameters and key values.
+//
+// Return value:
+//      SYMCRYPT_NO_ERROR - If the function succeeds
+//
+//      SYMCRYPT_INVALID_ARGUMENT - If the signature structure is not correct or if there is a mismatch between the
+//          input parameters.
+//
+//      SYMCRYPT_SIGNATURE_VERIFICATION_FAILURE - If the signature verification fails
+//
+
+VOID
+SYMCRYPT_CALL
+SymCryptLmsSelftest(void);
+
+
 // MLKEMKEY objects' API
 //
 
@@ -8760,7 +9159,7 @@ SymCryptXmssSelftest(void);
 //      The internal format of the keys is not visible to the caller.
 typedef enum _SYMCRYPT_MLKEMKEY_FORMAT {
     SYMCRYPT_MLKEMKEY_FORMAT_NULL               = 0,
-    SYMCRYPT_MLKEMKEY_FORMAT_PRIVATE_SEED       = 1,    
+    SYMCRYPT_MLKEMKEY_FORMAT_PRIVATE_SEED       = 1,
         // 64-byte concatenation of d || z from FIPS 203. Smallest representation of a full
         // ML-KEM key.
         // On its own it is ambiguous what type of ML-KEM key this represents; callers wanting to
@@ -8851,7 +9250,7 @@ SYMCRYPT_CALL
 SymCryptMlKemkeySetValue(
     _In_reads_bytes_( cbSrc )   PCBYTE                      pbSrc,
                                 SIZE_T                      cbSrc,
-                                SYMCRYPT_MLKEMKEY_FORMAT    mlKemkeyFormat, 
+                                SYMCRYPT_MLKEMKEY_FORMAT    mlKemkeyFormat,
                                 UINT32                      flags,
     _Inout_                     PSYMCRYPT_MLKEMKEY          pkMlKemkey );
 //
@@ -8904,7 +9303,7 @@ SYMCRYPT_CALL
 SymCryptMlKemEncapsulate(
     _In_                                    PCSYMCRYPT_MLKEMKEY pkMlKemkey,
     _Out_writes_bytes_( cbAgreedSecret )    PBYTE               pbAgreedSecret,
-                                            SIZE_T              cbAgreedSecret, 
+                                            SIZE_T              cbAgreedSecret,
     _Out_writes_bytes_( cbCiphertext )      PBYTE               pbCiphertext,
                                             SIZE_T              cbCiphertext );
 //
@@ -8962,7 +9361,6 @@ SymCryptMlKemSelftest(void);
 // The self-test will automatically be performed before first operational use of ML-KEM if using
 // keys with FIPS validation, so most callers should never use this function.
 //
-
 
 //
 // SymCryptFatal

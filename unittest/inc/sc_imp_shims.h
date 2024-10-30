@@ -1,7 +1,7 @@
 //
 // File maintaining a set of convenience macros to avoid verbose macro names through our test code
 //
-// Copyright (c) Microsoft Corporation. Licensed under the MIT license. 
+// Copyright (c) Microsoft Corporation. Licensed under the MIT license.
 //
 // In sc_imp* we call ScShimSymCrypt* functions in place of SymCrypt* to enable the use of shims
 // based on the version of the SymCrypt implementation being used.
@@ -582,6 +582,19 @@
 #define ScShimSymCryptXmssSizeofSignatureFromParams(...) SCTEST_CALL_SCIMPFN(SymCryptXmssSizeofSignatureFromParams, __VA_ARGS__)
 #define ScShimSymCryptXmssVerify(...) SCTEST_CALL_SCIMPFN(SymCryptXmssVerify, __VA_ARGS__)
 #define ScShimSymCryptXmssSelftest(...) SCTEST_CALL_SCIMPFN(SymCryptXmssSelftest, __VA_ARGS__)
+
+#define ScShimSymCryptLmskeyAllocate(...) SCTEST_CALL_SCIMPFN(SymCryptLmskeyAllocate, __VA_ARGS__)
+#define ScShimSymCryptLmskeyFree(...) SCTEST_CALL_SCIMPFN(SymCryptLmskeyFree, __VA_ARGS__)
+#define ScShimSymCryptLmskeyGenerate(...) SCTEST_CALL_SCIMPFN(SymCryptLmskeyGenerate, __VA_ARGS__)
+#define ScShimSymCryptLmskeyGetValue(...) SCTEST_CALL_SCIMPFN(SymCryptLmskeyGetValue, __VA_ARGS__)
+#define ScShimSymCryptLmskeySetValue(...) SCTEST_CALL_SCIMPFN(SymCryptLmskeySetValue, __VA_ARGS__)
+#define ScShimSymCryptLmsSizeofKeyBlobFromParams(...) SCTEST_CALL_SCIMPFN(SymCryptLmsSizeofKeyBlobFromParams, __VA_ARGS__)
+#define ScShimSymCryptLmsParamsFromAlgId(...) SCTEST_CALL_SCIMPFN(SymCryptLmsParamsFromAlgId, __VA_ARGS__)
+#define ScShimSymCryptLmsSetParams(...) SCTEST_CALL_SCIMPFN(SymCryptLmsSetParams, __VA_ARGS__)
+#define ScShimSymCryptLmsSign(...) SCTEST_CALL_SCIMPFN(SymCryptLmsSign, __VA_ARGS__)
+#define ScShimSymCryptLmsSizeofSignatureFromParams(...) SCTEST_CALL_SCIMPFN(SymCryptLmsSizeofSignatureFromParams, __VA_ARGS__)
+#define ScShimSymCryptLmsVerify(...) SCTEST_CALL_SCIMPFN(SymCryptLmsVerify, __VA_ARGS__)
+#define ScShimSymCryptLmsSelftest(...) SCTEST_CALL_SCIMPFN(SymCryptLmsSelftest, __VA_ARGS__)
 
 #define ScShimSymCryptMarvin32DefaultSeed SCTEST_GET_SCIMPSYM(SymCryptMarvin32DefaultSeed)
 #define ScShimSymCryptMd2Algorithm SCTEST_GET_SCIMPSYM(SymCryptMd2Algorithm)

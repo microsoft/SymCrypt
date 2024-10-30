@@ -4495,6 +4495,58 @@ SymCryptHbsSizeofScratchBytesForIncrementalTreehash(
     UINT32  cbNode,
     UINT32  nLeaves);
 
+UINT32
+SYMCRYPT_CALL
+SymCryptHbsGetDigit(
+            UINT32 width,
+    _In_    PCBYTE pbBuffer,
+            SIZE_T cbBuffer,
+            UINT32 index);
+
+//
+// LMS
+//
+#define SYMCRYPT_IS_VALID_WINTERNITZ_WIDTH(w) ( ((w) == 1) || ((w) == 2) || ((w) == 4) || ((w) == 8) )
+#define SYMCRYPT_LMS_KEY_PAIR_IDENTIFIER_SIZE   16
+#define SYMCRYPT_LMS_MAX_N                      32
+#define SYMCRYPT_LMS_MAX_P                      265
+#define SYMCRYPT_LMS_MAX_H                      25
+#define SYMCRYPT_LMS_MAX_CUSTOM_TREE_HEIGHT     31
+#define SYMCRYPT_LMS_CHECKSUM_SIZE              16
+
+// LmsAlgId || LmsOtsAlgId ||  I  || RootNode
+#define SYMCRYPT_LMS_PUB_KEY_SIZE(cbHashOutput) (8 + SYMCRYPT_LMS_KEY_PAIR_IDENTIFIER_SIZE + cbHashOutput)
+
+// LmsAlgId || LmsOtsAlgId ||  I  || RootNode || NextUnusedLeaf || Seed
+#define SYMCRYPT_LMS_PRIV_KEY_SIZE(cbHashOutput) (SYMCRYPT_LMS_PUB_KEY_SIZE(cbHashOutput) + sizeof(UINT32) + cbHashOutput)
+
+//==========================================================================
+//   LMS internal structures
+//==========================================================================
+typedef SYMCRYPT_ASYM_ALIGN_STRUCT _SYMCRYPT_LMS_KEY{
+    SIZE_T cbSize;
+    SYMCRYPT_LMS_PARAMS     params;
+
+    // Leaf number of the next LM-OTS private key that has not yet been used
+    UINT64                  nNextUnusedLeaf;
+
+    // The key type, can be: SYMCRYPT_LMSKEY_TYPE_PUBLIC, or SYMCRYPT_LMSKEY_TYPE_PRIVATE
+    UINT32                  keyType;
+
+    // Key identifier
+    BYTE                    abId[SYMCRYPT_LMS_KEY_PAIR_IDENTIFIER_SIZE];
+
+    // Public key root
+    BYTE                    abPublicRoot[SYMCRYPT_LMS_MAX_N];
+
+    // Private key seed
+    BYTE                    abSeed[SYMCRYPT_LMS_MAX_N];
+
+    SYMCRYPT_MAGIC_FIELD
+} SYMCRYPT_LMS_KEY;
+typedef         SYMCRYPT_LMS_KEY* PSYMCRYPT_LMS_KEY;
+typedef const   SYMCRYPT_LMS_KEY* PCSYMCRYPT_LMS_KEY;
+
 // Atomics.
 //
 // We define all our SymCrypt atomics below. Different compilers/environments have different

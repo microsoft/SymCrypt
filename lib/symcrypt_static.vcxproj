@@ -94,6 +94,7 @@
     <ClCompile Include="IEEE802_11SaeCustom.c" />
     <ClCompile Include="kmac.c" />
     <ClCompile Include="libmain.c" />
+    <ClCompile Include="lms.c" />
     <ClCompile Include="marvin32.c" />
     <ClCompile Include="md2.c" />
     <ClCompile Include="md4.c" />
