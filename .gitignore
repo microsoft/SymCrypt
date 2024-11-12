@@ -25,8 +25,7 @@ x64/*
 *.a
 *.bin
 SourcesCop*
-build/obj/
-build/bin/
+build/*
 
 # Generated files
 inc/*.dat.h

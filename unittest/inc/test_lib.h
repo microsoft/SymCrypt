@@ -437,22 +437,22 @@ typedef std::basic_string<BYTE> BString;        // String of bytes
 
 class AlgMd2{
 public:
-    const static char * name;
+    static constexpr const char * name = "Md2";
 };
 
 class AlgMd4{
 public:
-    const static char * name;
+    static constexpr const char * name = "Md4";
 };
 
 class AlgMd5{
 public:
-    const static char * name;
+    static constexpr const char * name = "Md5";
 };
 
 class AlgSha1{
 public:
-    const static char * name;
+    static constexpr const char * name = "Sha1";
 };
 
 class AlgSha256{
@@ -487,232 +487,232 @@ public:
 
 class AlgShake128{
 public:
-    const static char * name;
+    static constexpr const char * name = "Shake128";
 };
 
 class AlgShake256{
 public:
-    const static char * name;
+    static constexpr const char * name = "Shake256";
 };
 
 class AlgCShake128{
 public:
-    const static char * name;
+    static constexpr const char * name = "CShake128";
 };
 
 class AlgCShake256{
 public:
-    const static char * name;
+    static constexpr const char * name = "CShake256";
 };
 
 class AlgKmac128{
 public:
-    const static char * name;
+    static constexpr const char * name = "Kmac128";
 };
 
 class AlgKmac256{
 public:
-    const static char * name;
+    static constexpr const char * name = "Kmac256";
 };
 
 class AlgHmacMd5{
 public:
-    const static char * name;
+    static constexpr const char * name = "HmacMd5";
 };
 
 class AlgHmacSha1{
 public:
-    const static char * name;
+    static constexpr const char * name = "HmacSha1";
 };
 
 class AlgHmacSha256{
 public:
-    const static char * name;
+    static constexpr const char * name = "HmacSha256";
 };
 
 class AlgHmacSha384{
 public:
-    const static char * name;
+    static constexpr const char * name = "HmacSha384";
 };
 
 class AlgHmacSha512{
 public:
-    const static char * name;
+    static constexpr const char * name = "HmacSha512";
 };
 
 class AlgHmacSha3_256{
 public:
-    const static char * name;
+    static constexpr const char * name = "HmacSha3-256";
 };
 
 class AlgHmacSha3_384{
 public:
-    const static char * name;
+    static constexpr const char * name = "HmacSha3-384";
 };
 
 class AlgHmacSha3_512{
 public:
-    const static char * name;
+    static constexpr const char * name = "HmacSha3-512";
 };
 
 class AlgAesCmac{
 public:
-	const static char * name;
+	static constexpr const char * name = "AesCmac";
 };
 
 class AlgMarvin32{
 public:
-	const static char * name;
+	static constexpr const char * name = "Marvin32";
 };
 
 class AlgAes{
 public:
-    const static char * name;
+    static constexpr const char * name = "Aes";
 };
 
 class AlgDes{
 public:
-    const static char * name;
+    static constexpr const char * name = "Des";
 };
 
 class Alg2Des{
 public:
-    const static char * name;
+    static constexpr const char * name = "Des2";
 };
 
 class Alg3Des{
 public:
-    const static char * name;
+    static constexpr const char * name = "Des3";
 };
 
 class AlgDesx{
 public:
-    const static char * name;
+    static constexpr const char * name = "Desx";
 };
 
 class AlgRc2{
 public:
-    const static char * name;
+    static constexpr const char * name = "Rc2";
 };
 
 class AlgRc4{
 public:
-    const static char * name;
+    static constexpr const char * name = "Rc4";
     static BOOL isRandomAccess;
 };
 
 class AlgChaCha20 {
 public:
-    const static char * name;
+    static constexpr const char * name = "ChaCha20";
     static BOOL isRandomAccess;
 };
 
 class AlgPoly1305 {
 public:
-    const static char * name;
+    static constexpr const char * name = "Poly1305";
 };
 
 class AlgChaCha20Poly1305 {
 public:
-    const static char* name;
+    static constexpr const char * name = "ChaCha20Poly1305";
 };
 
 class AlgAesCtrDrbg{
 public:
-    const static char * name;
+    static constexpr const char * name = "AesCtrDrbg";
 };
 
 class AlgAesCtrF142{
 public:
-    const static char * name;
+    static constexpr const char * name = "AesCtrF142";
 };
 
 class AlgDynamicRandom{
 public:
-    const static char * name;
+    static constexpr const char * name = "DynamicRandom";
 };
 
 class AlgParallelSha256{
 public:
-    const static char * name;
-    const static WCHAR * pwstrBasename;      // e.g. L"SHA256"
+    static constexpr const char * name = "ParSha256";
+    static constexpr const WCHAR * pwstrBasename = L"SHA256";
 };
 
 class AlgParallelSha384{
 public:
-    const static char * name;
-    const static WCHAR * pwstrBasename;
+    static constexpr const char * name = "ParSha384";
+    static constexpr const WCHAR * pwstrBasename = L"SHA384";
 };
 
 class AlgParallelSha512{
 public:
-    const static char * name;
-    const static WCHAR * pwstrBasename;
+    static constexpr const char * name = "ParSha512";
+    static constexpr const WCHAR * pwstrBasename = L"SHA512";
 };
 
 class AlgPbkdf2{
 public:
-    const static char * name;
+    static constexpr const char * name = "Pbkdf2";
 };
 
 class AlgSp800_108{
 public:
-    const static char * name;
+    static constexpr const char * name = "Sp800_108";
 };
 
 class AlgTlsPrf1_1{
 public:
-    const static char * name;
+    static constexpr const char * name = "TlsPrf1_1";
 };
 
 class AlgTlsPrf1_2{
 public:
-    const static char * name;
+    static constexpr const char * name = "TlsPrf1_2";
 };
 
 class AlgSshKdf{
 public:
-    const static char * name;
+    static constexpr const char * name = "SshKdf";
 };
 
 class AlgSrtpKdf{
 public:
-    const static char * name;
+    static constexpr const char * name = "SrtpKdf";
 };
 
 class AlgHkdf{
 public:
-    const static char * name;
+    static constexpr const char * name = "Hkdf";
 };
 
 class AlgSskdfMac{
 public:
-    const static char * name;
+    static constexpr const char * name = "SskdfMac";
 };
 
 class AlgSskdfHash{
 public:
-    const static char * name;
+    static constexpr const char * name = "SskdfHash";
 };
 
 class AlgXtsAes{
 public:
-    const static char * name;
+    static constexpr const char * name = "XtsAes";
 };
 
 class AlgTlsCbcHmacSha1 {
 public:
-    const static char * name;
+    static constexpr const char * name = "TlsCbcHmacSha1";
 };
 
 class AlgTlsCbcHmacSha256 {
 public:
-    const static char * name;
+    static constexpr const char * name = "TlsCbcHmacSha256";
 };
 
 class AlgTlsCbcHmacSha384 {
 public:
-    const static char * name;
+    static constexpr const char * name = "TlsCbcHmacSha384";
 };
 
 #define MODE_FLAG_CHAIN 1
@@ -720,262 +720,262 @@ public:
 
 class ModeEcb{
 public:
-    const static char * name;
+    static constexpr const char * name = "Ecb";
     static ULONG flags;
 };
 
 class ModeCbc{
 public:
-    const static char * name;
+    static constexpr const char * name = "Cbc";
     static ULONG flags;
 };
 
 class ModeCfb{
 public:
-    const static char * name;
+    static constexpr const char * name = "Cfb";
     static ULONG flags;
 };
 
 class ModeCcm{
 public:
-    const static char * name;
+    static constexpr const char * name = "Ccm";
 };
 
 class ModeGcm{
 public:
-    const static char * name;
+    static constexpr const char * name = "Gcm";
 };
 
 class ModeNone {
 public:
-    const static char* name;
+    static constexpr const char * name = "";
 };
 
 class AlgIntAdd{
 public:
-    const static char * name;
+    static constexpr const char * name = "IntAdd";
 };
 
 class AlgIntSub{
 public:
-    const static char * name;
+    static constexpr const char * name = "IntSub";
 };
 
 class AlgIntMul{
 public:
-    const static char * name;
+    static constexpr const char * name = "IntMul";
 };
 
 class AlgIntSquare{
 public:
-    const static char * name;
+    static constexpr const char * name = "IntSquare";
 };
 
 class AlgIntDivMod{
 public:
-    const static char * name;
+    static constexpr const char * name = "IntDivMod";
 };
 
 class AlgModAdd{
 public:
-    const static char * name;
+    static constexpr const char * name = "ModAdd";
 };
 
 class AlgModSub{
 public:
-    const static char * name;
+    static constexpr const char * name = "ModSub";
 };
 
 class AlgModMul{
 public:
-    const static char * name;
+    static constexpr const char * name = "ModMul";
 };
 
 class AlgModSquare{
 public:
-    const static char * name;
+    static constexpr const char * name = "ModSquare";
 };
 
 class AlgModInv{
 public:
-    const static char * name;
+    static constexpr const char * name = "ModInv";
 };
 
 class AlgModExp{
 public:
-    const static char * name;
+    static constexpr const char * name = "ModExp";
 };
 
 class AlgScsTable{
 public:
-    const static char * name;
+    static constexpr const char * name = "ScsTable";
 };
 
 class AlgIEEE802_11SaeCustom{
 public:
-    const static char * name;
+    static constexpr const char * name = "IEEE802_11SaeCustom";
 };
 
 class AlgTrialDivision{
 public:
-    const static char * name;
+    static constexpr const char * name = "TrialDivision";
 };
 
 class AlgTrialDivisionContext{
 public:
-    const static char * name;
+    static constexpr const char * name = "TrialDivisionContext";
 };
 
 class AlgWipe{
 public:
-    const static char * name;
+    static constexpr const char * name = "Wipe";
 };
 
 class AlgRsaEncRaw{
 public:
-    const static char * name;
+    static constexpr const char * name = "RsaEncRaw";
 };
 
 class AlgRsaEncPkcs1{
 public:
-    const static char * name;
+    static constexpr const char * name = "RsaEncPkcs1";
 };
 
 class AlgRsaEncOaep{
 public:
-    const static char * name;
+    static constexpr const char * name = "RsaEncOaep";
 };
 
 class AlgRsaSignPkcs1{
 public:
-    const static char * name;
+    static constexpr const char * name = "RsaSignPkcs1";
 };
 
 class AlgRsaSignPss{
 public:
-    const static char * name;
+    static constexpr const char * name = "RsaSignPss";
 };
 
 class AlgDsaSign{
 public:
-    const static char * name;
+    static constexpr const char * name = "DsaSign";
 };
 
 class AlgDsaVerify{
 public:
-    const static char * name;
+    static constexpr const char * name = "DsaVerify";
 };
 
 class AlgDh{
 public:
-    const static char * name;
+    static constexpr const char * name = "Dh";
 };
 
 class AlgDsa{
 public:
-    const static char * name;
+    static constexpr const char * name = "Dsa";
 };
 
 class AlgEcurveAllocate{
 public:
-    const static char * name;
+    static constexpr const char * name = "EcurveAllocateAndFree";
 };
 
 class AlgEckeySetRandom{
 public:
-    const static char * name;
+    static constexpr const char * name = "EckeySetRandom";
 };
 
 class AlgEcpointSetZero{
 public:
-    const static char * name;
+    static constexpr const char * name = "EcpointSetZero";
 };
 
 class AlgEcpointSetDistinguished{
 public:
-    const static char * name;
+    static constexpr const char * name = "EcpointSetDistinguished";
 };
 
 class AlgEcpointSetRandom{
 public:
-    const static char * name;
+    static constexpr const char * name = "EcpointSetRandom";
 };
 
 class AlgEcpointIsEqual{
 public:
-    const static char * name;
+    static constexpr const char * name = "EcpointIsEqual";
 };
 
 class AlgEcpointIsZero{
 public:
-    const static char * name;
+    static constexpr const char * name = "EcpointIsZero";
 };
 
 class AlgEcpointOnCurve{
 public:
-    const static char * name;
+    static constexpr const char * name = "EcpointOnCurve";
 };
 
 class AlgEcpointAdd{
 public:
-    const static char * name;
+    static constexpr const char * name = "EcpointAdd";
 };
 
 class AlgEcpointAddDiffNz{
 public:
-    const static char * name;
+    static constexpr const char * name = "EcpointAddDiffNz";
 };
 
 class AlgEcpointDouble{
 public:
-    const static char * name;
+    static constexpr const char * name = "EcpointDouble";
 };
 
 class AlgEcpointScalarMul{
 public:
-    const static char * name;
+    static constexpr const char * name = "EcpointScalarMul";
 };
 
 class AlgEcdsaSign{
 public:
-    const static char * name;
+    static constexpr const char * name = "EcdsaSign";
 };
 
 class AlgEcdsaVerify{
 public:
-    const static char * name;
+    static constexpr const char * name = "EcdsaVerify";
 };
 
 class AlgEcdh{
 public:
-    const static char * name;
+    static constexpr const char * name = "Ecdh";
 };
 
 class AlgXmss {
 public:
-    const static char * name;
+    static constexpr const char * name = "Xmss";
 };
 
 class AlgLms {
 public:
-    const static char * name;
+    static constexpr const char * name = "Lms";
 };
 
 class AlgMlKem{
 public:
-    const static char * name;
+    static constexpr const char * name = "MlKem";
 };
 
 // Used only for performance testing
 // In ML-KEM, an important operation is importing an encapsulation key to a key object
 class AlgMlKemkeySetValue{
 public:
-    const static char * name;
+    static constexpr const char * name = "MlKemkeySetValue";
 };
 
 class AlgDeveloperTest{
 public:
-    const static char * name;
+    static constexpr const char * name = "DeveloperTest";
 };
 
 //

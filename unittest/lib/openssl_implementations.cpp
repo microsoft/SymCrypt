@@ -8,10 +8,190 @@
 #include <openssl/core_names.h>
 #include <openssl/bn.h>
 #include <openssl/param_build.h>
+#include <openssl/params.h>
 #include <openssl/rsa.h>
 #include <openssl/ec.h>
 #include <openssl/sha.h>
+#include <openssl/hmac.h>
 #include <algorithm>
+
+template<>
+class XtsImpState<ImpOpenssl, AlgXtsAes> {
+public:
+    EVP_CIPHER_CTX* encCtx;
+    EVP_CIPHER_CTX* decCtx;
+};
+
+template<>
+class AuthEncImpState<ImpOpenssl, AlgAes, ModeGcm> {
+public:
+    EVP_CIPHER_CTX* encCtx;
+    EVP_CIPHER_CTX* decCtx;
+    BOOLEAN inComputation;
+};
+
+template<>
+class RsaSignImpState<ImpOpenssl, AlgRsaSignPss> {
+public:
+    EVP_PKEY *pkey;
+    EVP_PKEY_CTX *pkey_ctx;
+};
+
+template<>
+class MacImpState<ImpOpenssl, AlgHmacSha256> {
+public:
+    BOOLEAN isReset;
+    EVP_MAC *pMac;
+    EVP_MAC_CTX *pMacCtx;
+    struct constants_t {
+        static constexpr SIZE_T cbInputBlockLen = SYMCRYPT_SHA256_INPUT_BLOCK_SIZE;
+        static constexpr SIZE_T cbResultLen = SYMCRYPT_SHA256_RESULT_SIZE;
+        static constexpr const char *const pszDigest = "Sha2-256";
+    } constants;
+};
+
+template<>
+class MacImpState<ImpOpenssl, AlgHmacSha384> {
+public:
+    BOOLEAN isReset;
+    EVP_MAC *pMac;
+    EVP_MAC_CTX *pMacCtx;
+    struct constants_t {
+        static constexpr SIZE_T cbInputBlockLen = SYMCRYPT_SHA384_INPUT_BLOCK_SIZE;
+        static constexpr SIZE_T cbResultLen = SYMCRYPT_SHA384_RESULT_SIZE;
+        static constexpr const char *const pszDigest = "Sha2-384";
+    } constants;
+};
+
+template<>
+class MacImpState<ImpOpenssl, AlgHmacSha512> {
+public:
+    BOOLEAN isReset;
+    EVP_MAC *pMac;
+    EVP_MAC_CTX *pMacCtx;
+    struct constants_t {
+        static constexpr SIZE_T cbInputBlockLen = SYMCRYPT_SHA512_INPUT_BLOCK_SIZE;
+        static constexpr SIZE_T cbResultLen = SYMCRYPT_SHA512_RESULT_SIZE;
+        static constexpr const char *const pszDigest = "Sha2-512";
+    } constants;
+};
+
+template<>
+class MacImpState<ImpOpenssl, AlgHmacSha3_256> {
+public:
+    BOOLEAN isReset;
+    EVP_MAC *pMac;
+    EVP_MAC_CTX *pMacCtx;
+    struct constants_t {
+        static constexpr SIZE_T cbInputBlockLen = SYMCRYPT_SHA3_256_INPUT_BLOCK_SIZE;
+        static constexpr SIZE_T cbResultLen = SYMCRYPT_SHA3_256_RESULT_SIZE;
+        static constexpr const char *const pszDigest = "Sha3-256";
+    } constants;
+};
+
+template<>
+class MacImpState<ImpOpenssl, AlgHmacSha3_384> {
+public:
+    BOOLEAN isReset;
+    EVP_MAC *pMac;
+    EVP_MAC_CTX *pMacCtx;
+    struct constants_t {
+        static constexpr SIZE_T cbInputBlockLen = SYMCRYPT_SHA3_384_INPUT_BLOCK_SIZE;
+        static constexpr SIZE_T cbResultLen = SYMCRYPT_SHA3_384_RESULT_SIZE;
+        static constexpr const char *const pszDigest = "Sha3-384";
+    } constants;
+};
+
+template<>
+class MacImpState<ImpOpenssl, AlgHmacSha3_512> {
+public:
+    BOOLEAN isReset;
+    EVP_MAC *pMac;
+    EVP_MAC_CTX *pMacCtx;
+    struct constants_t {
+        static constexpr SIZE_T cbInputBlockLen = SYMCRYPT_SHA3_512_INPUT_BLOCK_SIZE;
+        static constexpr SIZE_T cbResultLen = SYMCRYPT_SHA3_512_RESULT_SIZE;
+        static constexpr const char *const pszDigest = "Sha3-512";
+    } constants;
+};
+
+template<>
+class HashImpState<ImpOpenssl, AlgSha256> {
+public:
+    BOOLEAN isReset;
+    EVP_MD *pmd;
+    EVP_MD_CTX *pmdCtx;
+    struct constants_t {
+        static constexpr SIZE_T cbInputBlockLen = SYMCRYPT_SHA256_INPUT_BLOCK_SIZE;
+        static constexpr SIZE_T cbResultLen = SYMCRYPT_SHA256_RESULT_SIZE;
+        static constexpr const char *const pszAlgId = "Sha2-256"; // Used to fetch implementation via EVP_MD_fetch()
+    } constants;
+};
+
+template<>
+class HashImpState<ImpOpenssl, AlgSha384> {
+public:
+    BOOLEAN isReset;
+    EVP_MD *pmd;
+    EVP_MD_CTX *pmdCtx;
+    struct constants_t {
+        static constexpr SIZE_T cbInputBlockLen = SYMCRYPT_SHA384_INPUT_BLOCK_SIZE;
+        static constexpr SIZE_T cbResultLen = SYMCRYPT_SHA384_RESULT_SIZE;
+        static constexpr const char *const pszAlgId = "Sha2-384";
+    } constants;
+};
+
+template<>
+class HashImpState<ImpOpenssl, AlgSha512> {
+public:
+    BOOLEAN isReset;
+    EVP_MD *pmd;
+    EVP_MD_CTX *pmdCtx;
+    struct constants_t {
+        static constexpr SIZE_T cbInputBlockLen = SYMCRYPT_SHA512_INPUT_BLOCK_SIZE;
+        static constexpr SIZE_T cbResultLen = SYMCRYPT_SHA512_RESULT_SIZE;
+        static constexpr const char *const pszAlgId = "Sha2-512"; 
+    } constants;
+};
+
+template<>
+class HashImpState<ImpOpenssl, AlgSha3_256> {
+public:
+    BOOLEAN isReset;
+    EVP_MD *pmd;
+    EVP_MD_CTX *pmdCtx;
+    struct constants_t {
+        static constexpr SIZE_T cbInputBlockLen = SYMCRYPT_SHA3_256_INPUT_BLOCK_SIZE;
+        static constexpr SIZE_T cbResultLen = SYMCRYPT_SHA3_256_RESULT_SIZE;
+        static constexpr const char *const pszAlgId = "Sha3-256";
+    } constants;
+};
+
+template<>
+class HashImpState<ImpOpenssl, AlgSha3_384> {
+public:
+    BOOLEAN isReset;
+    EVP_MD *pmd;
+    EVP_MD_CTX *pmdCtx;
+    struct constants_t {
+        static constexpr SIZE_T cbInputBlockLen = SYMCRYPT_SHA3_384_INPUT_BLOCK_SIZE;
+        static constexpr SIZE_T cbResultLen = SYMCRYPT_SHA3_384_RESULT_SIZE;
+        static constexpr const char *const pszAlgId = "Sha3-384";
+    } constants;
+};
+
+template<>
+class HashImpState<ImpOpenssl, AlgSha3_512> {
+public:
+    BOOLEAN isReset;
+    EVP_MD *pmd;
+    EVP_MD_CTX *pmdCtx;
+    struct constants_t {
+        static constexpr SIZE_T cbInputBlockLen = SYMCRYPT_SHA3_512_INPUT_BLOCK_SIZE;
+        static constexpr SIZE_T cbResultLen = SYMCRYPT_SHA3_512_RESULT_SIZE;
+        static constexpr const char *const pszAlgId = "Sha3-512";
+    } constants;
+};
 
 bool addcarry_u64(UINT64 a, UINT64 b, UINT64 *result) {
     UINT64 additionResult = a+b;
@@ -957,7 +1137,7 @@ EVP_PKEY *createOpensslRsaKey(PRSAKEY_TESTBLOB pcKeyBlob)
     BN_set_flags(e, BN_FLG_SECURE | BN_FLG_CONSTTIME);
 
     BN_bin2bn(pcKeyBlob->abModulus, pcKeyBlob->cbModulus, n);
-    BN_set_word(e, pcKeyBlob->u64PubExp);
+    BN_set_word(e, (unsigned long long)pcKeyBlob->u64PubExp); // explicit cast required here for msvc on arm64
     BN_bin2bn(pcKeyBlob->abPrivateExp, pcKeyBlob->cbModulus, d);
 
     if ( bld == NULL
@@ -1660,183 +1840,10 @@ template<>
 EccImp<ImpOpenssl, AlgEcdh>::~EccImp()
 {
 }
-
 // AlgEcdh end
 
-// AlgSha256
-
-struct HashContext
-{
-    EVP_MD *md;
-    EVP_MD_CTX *mdCtx;
-};
-
-template<typename Algorithm>
-VOID algImpKeyPerfFunctionImpOpenssl( PBYTE buf1, PBYTE buf2, PBYTE buf3, SIZE_T keySize )
-{
-    UNREFERENCED_PARAMETER( buf2 );
-    UNREFERENCED_PARAMETER( buf3 );
-    UNREFERENCED_PARAMETER( keySize );
-
-    HashContext *ctx = (HashContext *)buf1;
-    ctx->md = EVP_MD_fetch(NULL, HashImpState<ImpOpenssl, Algorithm>::constants_t::algorithm, NULL);
-    ctx->mdCtx = EVP_MD_CTX_new();
-
-    // SYMCRYPT_XxxInit( (SYMCRYPT_XXX_STATE *) buf1 );
-}
-
-VOID algImpDataPerfFunctionImpOpenssl( PBYTE buf1, PBYTE buf2, PBYTE buf3, SIZE_T dataSize )
-{
-    HashContext *ctx = (HashContext *)buf1;
-    CHECK_OPENSSL_SUCCESS(EVP_DigestInit_ex(ctx->mdCtx, ctx->md, NULL));
-    CHECK_OPENSSL_SUCCESS(EVP_DigestUpdate(ctx->mdCtx, buf2, dataSize));
-    unsigned int mdlen;
-    EVP_DigestFinal_ex(ctx->mdCtx, buf3, &mdlen);
-    // SYMCRYPT_XxxAppend( (SYMCRYPT_XXX_STATE *) buf1, buf2, dataSize );
-    // SYMCRYPT_XxxResult( (SYMCRYPT_XXX_STATE *) buf1, buf3 );
-}
-
-VOID algImpCleanPerfFunctionImpOpenssl( PBYTE buf1, PBYTE buf2, PBYTE buf3 )
-{
-    UNREFERENCED_PARAMETER( buf2 );
-    UNREFERENCED_PARAMETER( buf3 );
-    HashContext *ctx = (HashContext *)buf1;
-    EVP_MD_CTX_free(ctx->mdCtx);
-    EVP_MD_free(ctx->md);
-    // SymCryptWipeKnownSize( buf1, sizeof( SYMCRYPT_XXX_STATE ) );
-}
-
-template<typename Algorithm>
-class HashImp<ImpOpenssl, Algorithm>: public HashImplementation
-{
-public:
-    static constexpr const char * s_algName = Algorithm::name;             // Algorithm name
-    static constexpr char * s_modeName = "";
-    static constexpr const char * s_impName = ImpOpenssl::name;             // Implementation name
-    HashImpState<ImpOpenssl, Algorithm> state;
-
-    HashImp()
-    {
-        m_perfDataFunction = algImpDataPerfFunctionImpOpenssl;
-        m_perfKeyFunction  = algImpKeyPerfFunctionImpOpenssl<Algorithm>;
-        m_perfCleanFunction= algImpCleanPerfFunctionImpOpenssl;
-        state.isReset = FALSE;
-
-        state.md = EVP_MD_fetch(NULL, state.constants.algorithm, NULL);
-        state.mdCtx = NULL;
-    }
-
-    ~HashImp<ImpOpenssl, Algorithm>()
-    {
-        EVP_MD_free(state.md);
-        if (state.mdCtx != NULL)
-        {
-            EVP_MD_CTX_free(state.mdCtx);
-        }
-    }
-
-    SIZE_T inputBlockLen()
-    {
-        // CHECK( SYMCRYPT_XXX_INPUT_BLOCK_SIZE == SymCryptHashInputBlockSize(SYMCRYPT_XxxAlgorithm), "?" );
-
-        return state.constants.inputBlockLen;
-    }
-
-    SIZE_T resultLen()
-    {
-        // CHECK( SYMCRYPT_XXX_RESULT_SIZE == SymCryptHashResultSize(SYMCRYPT_XxxAlgorithm), "?" );
-        //
-        // The macro expands to <IMPNAME>_<ALGNAME>_RESULT_SIZE
-        //
-        // return SYMCRYPT_SHA256_RESULT_SIZE;
-        return state.constants.resultLen;
-    }
-
-    //
-    // Compute a hash directly
-    //
-    VOID hash(
-            _In_reads_( cbData )       PCBYTE pbData,
-                                        SIZE_T cbData,
-            _Out_writes_( cbResult )    PBYTE pbResult,
-                                        SIZE_T cbResult )
-    {
-        // BYTE splitResult[SYMCRYPT_SHA256_RESULT_SIZE];
-        // BYTE exportBlob[SYMCRYPT_SHA256_STATE_EXPORT_SIZE];
-        unsigned int mdlen = 0;
-        CHECK(cbResult == state.constants.resultLen, "cbResult too small.");
-        CHECK_OPENSSL_SUCCESS(EVP_Digest(pbData, cbData, pbResult, &mdlen, state.md, NULL));
-        CHECK(mdlen == state.constants.resultLen, "mdlen too small.");
-    }
-
-
-    //
-    // The init/append/result functions map directly to SymCrypt calls
-    // We use macros to generate the correct function names
-    //
-
-    VOID init()
-    {
-        if( !state.isReset )
-        {
-            // SYMCRYPT_XxxInit( &state.sc );
-            // ScShimSymCryptHashInit( SYMCRYPT_XxxAlgorithm, &state.scHash );
-            if (state.mdCtx != NULL)
-            {
-                EVP_MD_CTX_free(state.mdCtx);
-            }
-            state.mdCtx = EVP_MD_CTX_new();
-            CHECK_OPENSSL_NONNULL(state.mdCtx);
-            CHECK_OPENSSL_SUCCESS(EVP_DigestInit_ex(state.mdCtx, state.md, NULL));
-        }
-        state.isReset = TRUE;
-    }
-
-    VOID append( _In_reads_( cbData ) PCBYTE pbData, SIZE_T cbData )
-    {
-        // SYMCRYPT_XxxAppend( &state.sc, pbData, cbData );
-        // ScShimSymCryptHashAppend( SYMCRYPT_XxxAlgorithm, &state.scHash, pbData, cbData );
-        state.isReset = FALSE;
-        CHECK_OPENSSL_SUCCESS(EVP_DigestUpdate(state.mdCtx, pbData, cbData));
-    }
-
-    VOID result( _Out_writes_( cbResult ) PBYTE pbResult, SIZE_T cbResult )
-    {
-        // BYTE    buf[SYMCRYPT_HASH_MAX_RESULT_SIZE];
-
-        // CHECK( cbResult == SYMCRYPT_XXX_RESULT_SIZE, "Result len error in SymCrypt " STRING( ALG_Name ) );
-        // SYMCRYPT_XxxResult( &state.sc, pbResult );
-        // ScShimSymCryptHashResult( SYMCRYPT_XxxAlgorithm, &state.scHash, buf, sizeof( buf ) );
-        // CHECK( memcmp( pbResult, buf, cbResult ) == 0, "Inconsistent result" );
-        state.isReset = FALSE;
-
-        CHECK(cbResult >= state.constants.resultLen, "cbResult too small.");
-        unsigned int mdlen;
-        EVP_DigestFinal_ex(state.mdCtx, pbResult, &mdlen);
-        CHECK(mdlen == state.constants.resultLen, "mdlen too small.");
-    }
-
-    NTSTATUS exportSymCryptFormat(
-        _Out_writes_bytes_to_( cbResultBufferSize, *pcbResult ) PBYTE   pbResult,
-        _In_                                                    SIZE_T  cbResultBufferSize,
-        _Out_                                                   SIZE_T *pcbResult )
-    {
-        // CHECK( cbResultBufferSize >= SYMCRYPT_XXX_STATE_EXPORT_SIZE, "Export buffer too small" );
-
-        // SYMCRYPT_XxxStateExport( &state.sc, pbResult );
-        // *pcbResult = SYMCRYPT_XXX_STATE_EXPORT_SIZE;
-        // SymCryptWipeKnownSize( &state.sc, sizeof( state.sc ) );
-        // SYMCRYPT_XxxStateImport( &state.sc, pbResult );
-        return STATUS_NOT_SUPPORTED;
-    }
-
-    NTSTATUS initWithLongMessage( ULONGLONG nBytes )
-    {
-        return STATUS_NOT_SUPPORTED;
-    }
-};
-
-// AlgSha256 end
+// Pattern file for Hmac and Sha algorithms
+#include "openssl_imp_pattern.cpp"
 
 VOID
 addOpensslAlgs()
@@ -1853,7 +1860,10 @@ addOpensslAlgs()
     addImplementationToGlobalList<HashImp<ImpOpenssl, AlgSha3_256>>();
     addImplementationToGlobalList<HashImp<ImpOpenssl, AlgSha3_384>>();
     addImplementationToGlobalList<HashImp<ImpOpenssl, AlgSha3_512>>();
-    // addImplementationToGlobalList<MacImp<ImpOpenssl, AlgHmacSha256>>();
-    // addImplementationToGlobalList<MacImp<ImpOpenssl, AlgHmacSha384>>();
-    // addImplementationToGlobalList<MacImp<ImpOpenssl, AlgHmacSha512>>();
+    addImplementationToGlobalList<MacImp<ImpOpenssl, AlgHmacSha256>>();
+    addImplementationToGlobalList<MacImp<ImpOpenssl, AlgHmacSha384>>();
+    addImplementationToGlobalList<MacImp<ImpOpenssl, AlgHmacSha512>>();
+    addImplementationToGlobalList<MacImp<ImpOpenssl, AlgHmacSha3_256>>();
+    addImplementationToGlobalList<MacImp<ImpOpenssl, AlgHmacSha3_384>>();
+    addImplementationToGlobalList<MacImp<ImpOpenssl, AlgHmacSha3_512>>();
 }
