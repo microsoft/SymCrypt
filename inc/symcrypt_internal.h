@@ -292,17 +292,15 @@ C_ASSERT( (SYMCRYPT_ALIGN_VALUE & (SYMCRYPT_ALIGN_VALUE - 1 )) == 0 );
 
 #if SYMCRYPT_MS_VC
     #define SYMCRYPT_ALIGN_AT(alignment)                 __declspec(align(alignment))
-    #define SYMCRYPT_ALIGN_TYPE_AT(typename, alignment)  typename SYMCRYPT_ALIGN_AT(alignment)
     #define SYMCRYPT_WEAK_SYMBOL
 #elif SYMCRYPT_GNUC
     #define SYMCRYPT_ALIGN_AT(alignment)                 __attribute__((aligned(alignment)))
-    #define SYMCRYPT_ALIGN_TYPE_AT(typename, alignment)  typename SYMCRYPT_ALIGN_AT(alignment)
     #define SYMCRYPT_WEAK_SYMBOL                         __attribute__((weak))
 #else
     #define SYMCRYPT_ALIGN_AT(alignment)
-    #define SYMCRYPT_ALIGN_TYPE_AT(typename, alignment)  typename
     #define SYMCRYPT_WEAK_SYMBOL
 #endif
+#define SYMCRYPT_ALIGN_TYPE_AT(typename, alignment)  typename SYMCRYPT_ALIGN_AT(alignment)
 #define SYMCRYPT_ALIGN          SYMCRYPT_ALIGN_AT(SYMCRYPT_ALIGN_VALUE)
 #define SYMCRYPT_ALIGN_STRUCT   SYMCRYPT_ALIGN_TYPE_AT(struct, SYMCRYPT_ALIGN_VALUE)
 #define SYMCRYPT_ALIGN_UNION    SYMCRYPT_ALIGN_TYPE_AT(union, SYMCRYPT_ALIGN_VALUE)
@@ -2050,11 +2048,10 @@ typedef const SYMCRYPT_SSKDF_MAC_EXPANDED_SALT *PCSYMCRYPT_SSKDF_MAC_EXPANDED_SA
 //
 // These objects are all aligned to SYMCRYPT_ASYM_ALIGN
 //
+#define SYMCRYPT_ASYM_ALIGN SYMCRYPT_ALIGN_AT(SYMCRYPT_ASYM_ALIGN_VALUE)
 #if SYMCRYPT_MS_VC
-#define SYMCRYPT_ASYM_ALIGN  __declspec(align(SYMCRYPT_ASYM_ALIGN_VALUE))
 #define SYMCRYPT_ASYM_ALIGN_STRUCT SYMCRYPT_ASYM_ALIGN struct
 #elif SYMCRYPT_GNUC
-#define SYMCRYPT_ASYM_ALIGN __attribute__((aligned(SYMCRYPT_ASYM_ALIGN_VALUE)))
 #define SYMCRYPT_ASYM_ALIGN_STRUCT struct SYMCRYPT_ASYM_ALIGN
 #else
 #error Unknown compiler

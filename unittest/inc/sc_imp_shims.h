@@ -596,6 +596,11 @@
 #define ScShimSymCryptLmsVerify(...) SCTEST_CALL_SCIMPFN(SymCryptLmsVerify, __VA_ARGS__)
 #define ScShimSymCryptLmsSelftest(...) SCTEST_CALL_SCIMPFN(SymCryptLmsSelftest, __VA_ARGS__)
 
+#define ScShimSymCryptAesKwDecrypt(...) SCTEST_CALL_SCIMPFN(SymCryptAesKwDecrypt, __VA_ARGS__)
+#define ScShimSymCryptAesKwEncrypt(...) SCTEST_CALL_SCIMPFN(SymCryptAesKwEncrypt, __VA_ARGS__)
+#define ScShimSymCryptAesKwpDecrypt(...) SCTEST_CALL_SCIMPFN(SymCryptAesKwpDecrypt, __VA_ARGS__)
+#define ScShimSymCryptAesKwpEncrypt(...) SCTEST_CALL_SCIMPFN(SymCryptAesKwpEncrypt, __VA_ARGS__)
+
 #define ScShimSymCryptMarvin32DefaultSeed SCTEST_GET_SCIMPSYM(SymCryptMarvin32DefaultSeed)
 #define ScShimSymCryptMd2Algorithm SCTEST_GET_SCIMPSYM(SymCryptMd2Algorithm)
 #define ScShimSymCryptMd4Algorithm SCTEST_GET_SCIMPSYM(SymCryptMd4Algorithm)

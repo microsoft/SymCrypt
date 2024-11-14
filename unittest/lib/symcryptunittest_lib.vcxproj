@@ -49,11 +49,13 @@
     <ClCompile Include="testDsa.cpp" />
     <ClCompile Include="testEcc.cpp" />
     <ClCompile Include="testhash.cpp" />
+    <ClCompile Include="testHbs.cpp" />
     <ClCompile Include="testIEEE802_11SaeCustom.cpp" />
     <ClCompile Include="testKdf.cpp" />
+    <ClCompile Include="testKem.cpp" />
+    <ClCompile Include="testKeyWrap.cpp" />
     <ClCompile Include="testKmac.cpp" />
     <ClCompile Include="testMac.cpp" />
-    <ClCompile Include="testKem.cpp" />
     <ClCompile Include="testMontgomery.cpp" />
     <ClCompile Include="testMultiThread.cpp" />
     <ClCompile Include="testPaddingPkcs7.cpp" />
@@ -62,14 +64,13 @@
     <ClCompile Include="testScsTable.cpp" />
     <ClCompile Include="testScsTools.cpp" />
     <ClCompile Include="testSelftest.cpp" />
+    <ClCompile Include="testStatusIndicator.cpp" />
     <ClCompile Include="testStreamCipher.cpp" />
     <ClCompile Include="testTlsCbcHmac.cpp" />
     <ClCompile Include="testutil.cpp" />
     <ClCompile Include="testWipe.cpp" />
     <ClCompile Include="testXof.cpp" />
     <ClCompile Include="testXts.cpp" />
-    <ClCompile Include="testStatusIndicator.cpp" />
-    <ClCompile Include="testHbs.cpp" />
   </ItemGroup>
   <ItemGroup Condition="'$(Platform)'=='x64'">
     <MASM Include="amd64\savevectors.asm" />

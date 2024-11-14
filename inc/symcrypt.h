@@ -6001,6 +6001,174 @@ VOID
 SYMCRYPT_CALL
 SymCryptXtsAesSelftest(void);
 
+////////////////////////////////////////////////////////////////////////////////////////////
+//
+// AES-KW and AES-KWP
+//
+// These are the AES-KW and AES-KWP algorithms per SP 800-38F.
+//
+// These are very slow compared to most AES modes, requiring a long serial chain of AES
+// block encryption/decryptions, with a best case cost comparable to ~12x AES-CBC encryption
+// for a given buffer size. In practice the cost is often higher.
+// These cipher modes are not recommended.
+//
+
+SYMCRYPT_ERROR
+SYMCRYPT_CALL
+SymCryptAesKwEncrypt(
+    _In_                                PCSYMCRYPT_AES_EXPANDED_KEY pExpandedKey,
+    _In_reads_(cbSrc)                   PCBYTE                      pbSrc,
+                                        SIZE_T                      cbSrc,
+    _Out_writes_to_(cbDst, *pcbResult)  PBYTE                       pbDst,
+                                        SIZE_T                      cbDst,
+    _Out_                               SIZE_T*                     pcbResult );
+//
+// Encrypt a buffer using AES-KW mode.
+//
+// - pExpandedKey points to the expanded key to use.
+// - pbSrc is the plaintext source buffer. The source and destination buffers may be
+//      identical (in-place encryption) or non-overlapping, but they may not partially overlap.
+// - cbSrc. # bytes of plaintext. This must be a multiple of 8, >=16, and <2^31.
+// - pbDst is the ciphertext destination buffer. The source and destination buffers may be
+//      identical (in-place encryption) or non-overlapping, but they may not partially overlap.
+// - cbDst. # bytes in the destination buffer. This must be >= cbSrc+8.
+// - pcbResult pointer to a variable which receives the length of the ciphertext written to pbDst.
+//
+// Returns:
+//      SYMCRYPT_INVALID_ARGUMENT           :   If cbSrc is an invalid size
+//      SYMCRYPT_BUFFER_TOO_SMALL           :   If cbDst is not large enough
+//                                              (this can always be avoided if cbDst >= cbSrc+8)
+//      SYMCRYPT_MEMORY_ALLOCATION_FAILURE  :   If there is insufficient memory for the operation
+//      SYMCRYPT_NO_ERROR                   :   On success
+//
+// Remarks:
+//  The standard allows larger plaintexts but there is no requirement to support them, we only support
+//  plaintext up to 2^31 bytes because it avoids complexity in handling overflow of 32b buffer sizes, and
+//  is larger than practically necessary.
+//  The output parameters (pbDst and pcbResult) are only set on success.
+//
+
+SYMCRYPT_ERROR
+SYMCRYPT_CALL
+SymCryptAesKwDecrypt(
+    _In_                                PCSYMCRYPT_AES_EXPANDED_KEY pExpandedKey,
+    _In_reads_(cbSrc)                   PCBYTE                      pbSrc,
+                                        SIZE_T                      cbSrc,
+    _Out_writes_to_(cbDst, *pcbResult)  PBYTE                       pbDst,
+                                        SIZE_T                      cbDst,
+    _Out_                               SIZE_T*                     pcbResult );
+//
+// Decrypt a buffer using AES-KW mode.
+//
+// - pExpandedKey points to the expanded key to use.
+// - pbSrc is the ciphertext source buffer. The source and destination buffers may be
+//      identical (in-place decryption) or non-overlapping, but they may not partially overlap.
+// - cbSrc. # bytes of ciphertext. This must be a multiple of 8, >=24, and <=2^31.
+// - pbDst is the plaintext destination buffer. The source and destination buffers may be
+//      identical (in-place decryption) or non-overlapping, but they may not partially overlap.
+// - cbDst. # bytes in the destination buffer. This must be >= cbSrc-8.
+// - pcbResult pointer to a variable which receives the length of the plaintext written to pbDst.
+//
+// Returns:
+//      SYMCRYPT_INVALID_ARGUMENT           :   If cbSrc is an invalid size
+//      SYMCRYPT_BUFFER_TOO_SMALL           :   If cbDst is not large enough
+//                                              (this can always be avoided if cbDst >= cbSrc-8)
+//      SYMCRYPT_AUTHENTICATION_FAILURE     :   If pbSrc does not decrypt successfully
+//      SYMCRYPT_MEMORY_ALLOCATION_FAILURE  :   If there is insufficient memory for the operation
+//      SYMCRYPT_NO_ERROR                   :   On success
+//
+// Remarks:
+//  The standard allows larger plaintexts but there is no requirement to support them, we only support
+//  plaintext up to 2^31 bytes because it avoids complexity in handling overflow of 32b buffer sizes, and
+//  is larger than practically necessary.
+//  The output parameters (pbDst and pcbResult) are only set on success.
+//
+
+SYMCRYPT_ERROR
+SYMCRYPT_CALL
+SymCryptAesKwpEncrypt(
+    _In_                                PCSYMCRYPT_AES_EXPANDED_KEY pExpandedKey,
+    _In_reads_(cbSrc)                   PCBYTE                      pbSrc,
+                                        SIZE_T                      cbSrc,
+    _Out_writes_to_(cbDst, *pcbResult)  PBYTE                       pbDst,
+                                        SIZE_T                      cbDst,
+    _Out_                               SIZE_T*                     pcbResult );
+//
+// Encrypt a buffer using AES-KWP mode.
+//
+// - pExpandedKey points to the expanded key to use.
+// - pbSrc is the plaintext source buffer. The source and destination buffers may be
+//      identical (in-place encryption) or non-overlapping, but they may not partially overlap.
+// - cbSrc. # bytes of plaintext. This must be >0 and <=2^31-8.
+// - pbDst is the ciphertext destination buffer. The source and destination buffers may be
+//      identical (in-place encryption) or non-overlapping, but they may not partially overlap.
+// - cbDst. # bytes in the destination buffer. This must be >= cbSrc + 16 - (cbSrc%8) - ((cbSrc%8)==0 ? 8 : 0)
+// - pcbResult pointer to a variable which receives the length of the ciphertext written to pbDst.
+//
+// Returns:
+//      SYMCRYPT_INVALID_ARGUMENT           :   If cbSrc is an invalid size
+//      SYMCRYPT_BUFFER_TOO_SMALL           :   If cbDst is not large enough
+//                                              (this can always be avoided if cbDst >= cbSrc+15)
+//      SYMCRYPT_MEMORY_ALLOCATION_FAILURE  :   If there is insufficient memory for the operation
+//      SYMCRYPT_NO_ERROR                   :   On success
+//
+// Remarks:
+//  The standard allows larger plaintexts but there is no requirement to support them, we only support
+//  plaintext up to 2^31 bytes because it avoids complexity in handling overflow of 32b buffer sizes, and
+//  is larger than practically necessary.
+//  The output parameters (pbDst and pcbResult) are only set on success.
+//
+
+SYMCRYPT_ERROR
+SYMCRYPT_CALL
+SymCryptAesKwpDecrypt(
+    _In_                                PCSYMCRYPT_AES_EXPANDED_KEY pExpandedKey,
+    _In_reads_(cbSrc)                   PCBYTE                      pbSrc,
+                                        SIZE_T                      cbSrc,
+    _Out_writes_to_(cbDst, *pcbResult)  PBYTE                       pbDst,
+                                        SIZE_T                      cbDst,
+    _Out_                               SIZE_T*                     pcbResult );
+//
+// Decrypt a buffer using AES-KWP mode.
+//
+// - pExpandedKey points to the expanded key to use.
+// - pbSrc is the ciphertext source buffer. The source and destination buffers may be
+//      identical (in-place decryption) or non-overlapping, but they may not partially overlap.
+// - cbSrc. # bytes of ciphertext. This must be a multiple of 8, >=16, and <=2^31.
+// - pbDst is the plaintext destination buffer. The source and destination buffers may be
+//      identical (in-place decryption) or non-overlapping, but they may not partially overlap.
+// - cbDst. # bytes in the destination buffer. This must be large enough to fit the plaintext,
+//      a valid plaintext length is in the range [cbSrc-15, cbSrc-8]. If cbDst >= cbSrc-8 then the
+//      destination buffer is guaranteed to be large enough.
+// - pcbResult pointer to a variable which receives the length of the plaintext written to pbDst.
+//
+// Returns:
+//      SYMCRYPT_INVALID_ARGUMENT           :   If cbSrc is an invalid size
+//      SYMCRYPT_BUFFER_TOO_SMALL           :   If cbDst is not large enough
+//                                              (this can always be avoided if cbDst >= cbSrc-8)
+//      SYMCRYPT_AUTHENTICATION_FAILURE     :   If pbSrc does not decrypt successfully
+//      SYMCRYPT_MEMORY_ALLOCATION_FAILURE  :   If there is insufficient memory for the operation
+//      SYMCRYPT_NO_ERROR                   :   On success
+//
+// Remarks:
+//  The standard allows larger plaintexts but there is no requirement to support them, we only support
+//  plaintext up to 2^31 bytes because it avoids complexity in handling overflow of 32b buffer sizes, and
+//  is larger than practically necessary.
+//  The output parameters (pbDst and pcbResult) are only set on success.
+//
+//  If we fail to decrypt due to bad data, we return SYMCRYPT_AUTHENTICATION_FAILURE in constant time with
+//  respect to how the decrypted data is corrupted. While there is no known attack on AES-KWP abusing
+//  differential timing of different failure cases, being constant time for this is cheap, so is a reasonable
+//  hardening measure.
+//
+//  On success we do not attempt to hide the plaintext length from sidechannels, as this could make it hard
+//  for callers with known plaintext length to use precisely sized buffers to decrypt into (i.e. caller
+//  knows the valid plaintext is 15 bytes but the API would require caller to provide a 16 byte pbDst). It
+//  is expected that in any real use case the length of the plaintext would immediately be used to import the
+//  unwrapped key into some other piece of code - so attempting to obscure the plaintext length would not be
+//  of any benefit.
+//
+
 
 ////////////////////////////////////////////////////////////////////////////////////////////
 //

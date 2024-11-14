@@ -590,6 +590,10 @@ VERSION_103.5
 VERSION_103.6
 {
    global:
+      SymCryptAesKwDecrypt;
+      SymCryptAesKwEncrypt;
+      SymCryptAesKwpDecrypt;
+      SymCryptAesKwpEncrypt;
       SymCryptLmskeyAllocate;
       SymCryptLmskeyFree;
       SymCryptLmskeyGenerate;

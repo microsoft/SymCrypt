@@ -607,6 +607,11 @@
 #define ScDispatchSymCryptLmsVerify(...) SCTEST_CALL_DISPATCHFN(SymCryptLmsVerify, __VA_ARGS__)
 #define ScDispatchSymCryptLmsSelftest(...) SCTEST_CALL_DISPATCHFN(SymCryptLmsSelftest, __VA_ARGS__)
 
+#define ScDispatchSymCryptAesKwDecrypt(...) SCTEST_CALL_DISPATCHFN(SymCryptAesKwDecrypt, __VA_ARGS__)
+#define ScDispatchSymCryptAesKwEncrypt(...) SCTEST_CALL_DISPATCHFN(SymCryptAesKwEncrypt, __VA_ARGS__)
+#define ScDispatchSymCryptAesKwpDecrypt(...) SCTEST_CALL_DISPATCHFN(SymCryptAesKwpDecrypt, __VA_ARGS__)
+#define ScDispatchSymCryptAesKwpEncrypt(...) SCTEST_CALL_DISPATCHFN(SymCryptAesKwpEncrypt, __VA_ARGS__)
+
 #define ScDispatchSymCryptMarvin32DefaultSeed SCTEST_GET_DISPATCHSYM(SymCryptMarvin32DefaultSeed)
 #define ScDispatchSymCryptMd2Algorithm SCTEST_GET_DISPATCHSYM(SymCryptMd2Algorithm)
 #define ScDispatchSymCryptMd4Algorithm SCTEST_GET_DISPATCHSYM(SymCryptMd4Algorithm)

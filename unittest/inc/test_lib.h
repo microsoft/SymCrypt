@@ -700,6 +700,16 @@ public:
     static constexpr const char * name = "XtsAes";
 };
 
+class AlgAesKw{
+public:
+    static constexpr const char * name = "AesKw";
+};
+
+class AlgAesKwp{
+public:
+    static constexpr const char * name = "AesKwp";
+};
+
 class AlgTlsCbcHmacSha1 {
 public:
     static constexpr const char * name = "TlsCbcHmacSha1";
@@ -1371,6 +1381,9 @@ testKmacAlgorithms();
 
 VOID
 testBlockCipherAlgorithms();
+
+VOID
+testKeyWrapAlgorithms();
 
 VOID
 testAuthEncAlgorithms();

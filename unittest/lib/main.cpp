@@ -350,6 +350,8 @@ const char * g_algorithmNames[] = {
     AlgSskdfMac::name,
     AlgSskdfHash::name,
     AlgXtsAes::name,
+    AlgAesKw::name,
+    AlgAesKwp::name,
     AlgTlsCbcHmacSha1::name,
     AlgTlsCbcHmacSha256::name,
     AlgTlsCbcHmacSha384::name,
@@ -1290,6 +1292,8 @@ runFunctionalTests()
     testHashAlgorithms();
 
     testBlockCipherAlgorithms();
+
+    testKeyWrapAlgorithms();
 
     testMacAlgorithms();
 

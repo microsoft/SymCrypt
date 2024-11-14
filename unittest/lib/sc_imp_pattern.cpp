@@ -865,22 +865,6 @@ algImpCleanPerfFunction<ImpXxx,AlgAes, ModeGcm>( PBYTE buf1, PBYTE buf2, PBYTE b
     SymCryptWipeKnownSize( buf1, sizeof( SYMCRYPT_GCM_EXPANDED_KEY ) );
 }
 
-// AuthEncImp<..., AlgAes, ModeGcm> contains a corresponding AuthEncImpState with a SYMCRYPT_GCM_STATE.
-// It must be aligned on a SYMCRYPT_ALIGN_VALUE boundary.
-template<>
-PVOID
-AuthEncImp<ImpXxx, AlgAes, ModeGcm>::operator new( size_t size )
-{
-    return ALIGNED_ALLOC( SYMCRYPT_ALIGN_VALUE, size );
-}
-
-template<>
-VOID
-AuthEncImp<ImpXxx, AlgAes, ModeGcm>::operator delete( PVOID p )
-{
-    ALIGNED_FREE( p );
-}
-
 template<>
 AuthEncImp<ImpXxx, AlgAes, ModeGcm>::AuthEncImp()
 {
@@ -2496,6 +2480,293 @@ XtsImp<ImpXxx, AlgXtsAes>::decryptWith128bTweak(
     return 0;
 }
 
+//////////////////////////////////////////////////////////////////////////////////////////////
+//  AES-KW
+//
+
+template<>
+VOID
+algImpDataPerfFunction<ImpXxx, AlgAesKw>( PBYTE buf1, PBYTE buf2, PBYTE buf3, SIZE_T dataSize )
+{
+    SYMCRYPT_ERROR scError;
+    SIZE_T* pcbCiphertext = (SIZE_T*) (buf1 + sizeof(SYMCRYPT_AES_EXPANDED_KEY));
+
+    scError = ScShimSymCryptAesKwEncrypt(
+        (SYMCRYPT_AES_EXPANDED_KEY*)buf1,
+        buf2, dataSize,
+        buf3, dataSize+8,
+        pcbCiphertext);
+    CHECK( scError == SYMCRYPT_NO_ERROR, "SymCryptAesKwEncrypt failed in perf test" );
+}
+
+template<>
+VOID
+algImpDecryptPerfFunction<ImpXxx, AlgAesKw>( PBYTE buf1, PBYTE buf2, PBYTE buf3, SIZE_T dataSize )
+{
+    SYMCRYPT_ERROR scError;
+    SIZE_T  cbResult;
+    SIZE_T* pcbCiphertext = (SIZE_T*) (buf1 + sizeof(SYMCRYPT_AES_EXPANDED_KEY));
+
+    scError = ScShimSymCryptAesKwDecrypt(
+        (SYMCRYPT_AES_EXPANDED_KEY*)buf1,
+        buf3, *pcbCiphertext,
+        buf2, dataSize,
+        &cbResult);
+    CHECK( scError == SYMCRYPT_NO_ERROR, "SymCryptAesKwDecrypt failed in perf test" );
+}
+
+template<>
+KeyWrapImp<ImpXxx, AlgAesKw>::KeyWrapImp()
+{
+    m_perfKeyFunction     = &algImpKeyPerfFunction    <ImpXxx, AlgAes, ModeCcm>;
+    m_perfCleanFunction   = &algImpCleanPerfFunction  <ImpXxx, AlgAes, ModeCcm>;
+    m_perfDataFunction    = &algImpDataPerfFunction   <ImpXxx, AlgAesKw>;
+    m_perfDecryptFunction = &algImpDecryptPerfFunction<ImpXxx, AlgAesKw>;
+}
+
+template<>
+KeyWrapImp<ImpXxx, AlgAesKw>::~KeyWrapImp()
+{
+    SymCryptWipeKnownSize( &state.key, sizeof( state.key ) );
+}
+
+template<>
+SIZE_T
+KeyWrapImp<ImpXxx, AlgAesKw>::getMinPlaintextSize()
+{
+    return 16;
+}
+
+template<>
+SIZE_T
+KeyWrapImp<ImpXxx, AlgAesKw>::getMaxPlaintextSize()
+{
+    return (1u<<31)-8;
+}
+
+template<>
+SIZE_T
+KeyWrapImp<ImpXxx, AlgAesKw>::getPlaintextSizeIncrement()
+{
+    return 8;
+}
+
+template<>
+std::set<SIZE_T>
+KeyWrapImp<ImpXxx, AlgAesKw>::getKeySizes()
+{
+    std::set<SIZE_T> res;
+
+    res.insert( 16 );
+    res.insert( 24 );
+    res.insert( 32 );
+
+    return res;
+}
+
+template<>
+NTSTATUS
+KeyWrapImp<ImpXxx, AlgAesKw>::setKey( PCBYTE pbKey, SIZE_T cbKey )
+{
+    CHECK( cbKey == 16 || cbKey == 24 || cbKey == 32, "Wrong key size for AES KW" );
+    ScShimSymCryptAesExpandKey( &state.key, pbKey, cbKey );
+
+    return STATUS_SUCCESS;
+}
+
+template<>
+NTSTATUS
+KeyWrapImp<ImpXxx, AlgAesKw>::encrypt(
+        _In_reads_(cbSrc)                   PCBYTE  pbSrc,
+                                            SIZE_T  cbSrc,
+        _Out_writes_to_(cbDst, *pcbResult)  PBYTE   pbDst,
+                                            SIZE_T  cbDst,
+                                            SIZE_T* pcbResult )
+{
+    NTSTATUS status = STATUS_SUCCESS;
+    SYMCRYPT_ERROR scError = SYMCRYPT_NO_ERROR;
+
+    scError = ScShimSymCryptAesKwEncrypt(
+        &state.key,
+        pbSrc, cbSrc,
+        pbDst, cbDst,
+        pcbResult );
+    CHECK( scError == SYMCRYPT_NO_ERROR, "SymCryptAesKwEncrypt failed unexpectedly" );
+
+    return status;
+}
+
+template<>
+NTSTATUS
+KeyWrapImp<ImpXxx, AlgAesKw>::decrypt(
+        _In_reads_(cbSrc)                   PCBYTE  pbSrc,
+                                            SIZE_T  cbSrc,
+        _Out_writes_to_(cbDst, *pcbResult)  PBYTE   pbDst,
+                                            SIZE_T  cbDst,
+                                            SIZE_T* pcbResult )
+{
+    NTSTATUS status = STATUS_SUCCESS;
+    SYMCRYPT_ERROR scError = SYMCRYPT_NO_ERROR;
+
+    scError = ScShimSymCryptAesKwDecrypt(
+        &state.key,
+        pbSrc, cbSrc,
+        pbDst, cbDst,
+        pcbResult );
+
+    if( scError == SYMCRYPT_AUTHENTICATION_FAILURE )
+    {
+        status = STATUS_AUTH_TAG_MISMATCH;
+    } else {
+        CHECK( scError == SYMCRYPT_NO_ERROR, "SymCryptAesKwDecrypt failed unexpectedly" );
+    }
+
+    return status;
+}
+
+//////////////////////////////////////////////////////////////////////////////////////////////
+//  AES-KWP
+//
+
+template<>
+VOID
+algImpDataPerfFunction<ImpXxx, AlgAesKwp>( PBYTE buf1, PBYTE buf2, PBYTE buf3, SIZE_T dataSize )
+{
+    SYMCRYPT_ERROR scError;
+    SIZE_T* pcbCiphertext = (SIZE_T*) (buf1 + sizeof(SYMCRYPT_AES_EXPANDED_KEY));
+
+    scError = ScShimSymCryptAesKwpEncrypt(
+        (SYMCRYPT_AES_EXPANDED_KEY*)buf1,
+        buf2, dataSize,
+        buf3, dataSize+16,
+        pcbCiphertext);
+    CHECK( scError == SYMCRYPT_NO_ERROR, "SymCryptAesKwpEncrypt failed in perf test" );
+}
+
+template<>
+VOID
+algImpDecryptPerfFunction<ImpXxx, AlgAesKwp>( PBYTE buf1, PBYTE buf2, PBYTE buf3, SIZE_T dataSize )
+{
+    SYMCRYPT_ERROR scError;
+    SIZE_T  cbResult;
+    SIZE_T* pcbCiphertext = (SIZE_T*) (buf1 + sizeof(SYMCRYPT_AES_EXPANDED_KEY));
+
+    scError = ScShimSymCryptAesKwpDecrypt(
+        (SYMCRYPT_AES_EXPANDED_KEY*)buf1,
+        buf3, *pcbCiphertext,
+        buf2, dataSize,
+        &cbResult);
+    CHECK( scError == SYMCRYPT_NO_ERROR, "SymCryptAesKwpDecrypt failed in perf test" );
+}
+template<>
+KeyWrapImp<ImpXxx, AlgAesKwp>::KeyWrapImp()
+{
+    m_perfKeyFunction     = &algImpKeyPerfFunction    <ImpXxx, AlgAes, ModeCcm>;
+    m_perfCleanFunction   = &algImpCleanPerfFunction  <ImpXxx, AlgAes, ModeCcm>;
+    m_perfDataFunction    = &algImpDataPerfFunction   <ImpXxx, AlgAesKwp>;
+    m_perfDecryptFunction = &algImpDecryptPerfFunction<ImpXxx, AlgAesKwp>;
+}
+
+template<>
+KeyWrapImp<ImpXxx, AlgAesKwp>::~KeyWrapImp()
+{
+    SymCryptWipeKnownSize( &state.key, sizeof( state.key ) );
+}
+
+template<>
+SIZE_T
+KeyWrapImp<ImpXxx, AlgAesKwp>::getMinPlaintextSize()
+{
+    return 1;
+}
+
+template<>
+SIZE_T
+KeyWrapImp<ImpXxx, AlgAesKwp>::getMaxPlaintextSize()
+{
+    return (1u<<31)-8;
+}
+
+template<>
+SIZE_T
+KeyWrapImp<ImpXxx, AlgAesKwp>::getPlaintextSizeIncrement()
+{
+    return 1;
+}
+
+template<>
+std::set<SIZE_T>
+KeyWrapImp<ImpXxx, AlgAesKwp>::getKeySizes()
+{
+    std::set<SIZE_T> res;
+
+    res.insert( 16 );
+    res.insert( 24 );
+    res.insert( 32 );
+
+    return res;
+}
+
+template<>
+NTSTATUS
+KeyWrapImp<ImpXxx, AlgAesKwp>::setKey( PCBYTE pbKey, SIZE_T cbKey )
+{
+    CHECK( cbKey == 16 || cbKey == 24 || cbKey == 32, "Wrong key size for AES KWP" );
+    ScShimSymCryptAesExpandKey( &state.key, pbKey, cbKey );
+
+    return STATUS_SUCCESS;
+}
+
+template<>
+NTSTATUS
+KeyWrapImp<ImpXxx, AlgAesKwp>::encrypt(
+        _In_reads_(cbSrc)                   PCBYTE  pbSrc,
+                                            SIZE_T  cbSrc,
+        _Out_writes_to_(cbDst, *pcbResult)  PBYTE   pbDst,
+                                            SIZE_T  cbDst,
+                                            SIZE_T* pcbResult )
+{
+    NTSTATUS status = STATUS_SUCCESS;
+    SYMCRYPT_ERROR scError = SYMCRYPT_NO_ERROR;
+
+    scError = ScShimSymCryptAesKwpEncrypt(
+        &state.key,
+        pbSrc, cbSrc,
+        pbDst, cbDst,
+        pcbResult );
+    CHECK( scError == SYMCRYPT_NO_ERROR, "SymCryptAesKwpEncrypt failed unexpectedly" );
+
+    return status;
+}
+
+
+template<>
+NTSTATUS
+KeyWrapImp<ImpXxx, AlgAesKwp>::decrypt(
+        _In_reads_(cbSrc)                   PCBYTE  pbSrc,
+                                            SIZE_T  cbSrc,
+        _Out_writes_to_(cbDst, *pcbResult)  PBYTE   pbDst,
+                                            SIZE_T  cbDst,
+                                            SIZE_T* pcbResult )
+{
+    NTSTATUS status = STATUS_SUCCESS;
+    SYMCRYPT_ERROR scError = SYMCRYPT_NO_ERROR;
+
+    scError = ScShimSymCryptAesKwpDecrypt(
+        &state.key,
+        pbSrc, cbSrc,
+        pbDst, cbDst,
+        pcbResult );
+
+    if( scError == SYMCRYPT_AUTHENTICATION_FAILURE )
+    {
+        status = STATUS_AUTH_TAG_MISMATCH;
+    } else {
+        CHECK( scError == SYMCRYPT_NO_ERROR, "SymCryptAesKwpDecrypt failed unexpectedly" );
+    }
+
+    return status;
+}
 
 ///////////////////////
 //  TlsCbcHmacSha256

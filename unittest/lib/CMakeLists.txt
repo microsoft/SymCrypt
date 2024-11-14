@@ -1,44 +1,45 @@
 set(SOURCES
-    main.cpp
-    testAesCtrDrbg.cpp
+    callback.cpp
     kat.cpp
-    rng.cpp
+    main.cpp
+    perf.cpp
     perfPrint.cpp
     printtable.cpp
-    resultMerge.cpp
-    sc_implementations.cpp
     ref_implementations.cpp
-    testhash.cpp
-    testSelftest.cpp
-    testMac.cpp
-    testXof.cpp
-    testCustomizableXof.cpp
-    testKmac.cpp
-    testBlockCiphers.cpp
-    testXts.cpp
-    testAuthEnc.cpp
-    testStreamCipher.cpp
-    testWipe.cpp
-    testutil.cpp
-    testKdf.cpp
-    testTlsCbcHmac.cpp
-    testMultiThread.cpp
+    resultMerge.cpp
     rndDriver.cpp
+    rng.cpp
+    sc_implementations.cpp
+    testAesCtrDrbg.cpp
     testArithmetic.cpp
-    testEcc.cpp
-    callback.cpp
-    testKem.cpp
-    testMontgomery.cpp
-    testRsaSign.cpp
-    testRsaEnc.cpp
+    testAuthEnc.cpp
+    testBlockCiphers.cpp
+    testCustomizableXof.cpp
     testDh.cpp
     testDsa.cpp
+    testEcc.cpp
+    testhash.cpp
+    testHbs.cpp
+    testKdf.cpp
+    testKem.cpp
+    testKeyWrap.cpp
+    testKmac.cpp
+    testMac.cpp
+    testMontgomery.cpp
+    testMultiThread.cpp
+    testPaddingPkcs7.cpp
+    testRsaEnc.cpp
+    testRsaSign.cpp
     testScsTable.cpp
     testScsTools.cpp
-    perf.cpp
-    testPaddingPkcs7.cpp
+    testSelftest.cpp
     testStatusIndicator.cpp
-    testHbs.cpp
+    testStreamCipher.cpp
+    testTlsCbcHmac.cpp
+    testutil.cpp
+    testWipe.cpp
+    testXof.cpp
+    testXts.cpp
   )
 
 # Append Windows-specific sources

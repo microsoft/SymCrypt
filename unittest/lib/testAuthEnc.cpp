@@ -218,11 +218,9 @@ AuthEncMultiImp::decrypt(
     ResultMerge resTagError;
     BOOL tagError = FALSE;
     NTSTATUS status = STATUS_SUCCESS;
-    NTSTATUS res;
 
     CHECK( cbData < sizeof( bufData ), "Buffer too small" );
 
-    res = STATUS_UNSUCCESSFUL;
     for( AuthEncImpPtrVector::const_iterator i = m_comps.begin(); i != m_comps.end(); ++i )
     {
         memset( bufData, 'd', cbData + 1 );

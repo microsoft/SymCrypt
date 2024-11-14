@@ -4,6 +4,7 @@ New changes will be listed here as they are developed. The version number is det
 prior to the creation of a new release, based on the changes contained in that release.
 
 - Add LMS implementation
+- Add AES-KW(P) implementation
 
 # Version 103.5.1
 

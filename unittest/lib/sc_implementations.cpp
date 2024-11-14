@@ -314,6 +314,9 @@ addSymCryptImplementationToGlobalList()
     addImplementationToGlobalList<ParallelHashImp<ImpScVariant, AlgParallelSha512>>();
 
     addImplementationToGlobalList<XtsImp<ImpScVariant, AlgXtsAes>>();
+    
+    addImplementationToGlobalList<KeyWrapImp<ImpScVariant, AlgAesKw>>();
+    addImplementationToGlobalList<KeyWrapImp<ImpScVariant, AlgAesKwp>>();
 
     addImplementationToGlobalList<RngSp800_90Imp<ImpScVariant, AlgAesCtrDrbg>>();
     addImplementationToGlobalList<RngSp800_90Imp<ImpScVariant, AlgAesCtrF142>>();

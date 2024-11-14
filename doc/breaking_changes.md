@@ -33,3 +33,11 @@ This simplifies how we define dynamic module exports in a cross-platform way.
 Various functions and definitions related to FIPS self-tests are exposed to callers in
 symcrypt_internal.h, and exported from the shared object libraries/DLLs. These functions are only
 intended to be used internally for FIPS compliance, so they will be removed from external visibility.
+
+### Several type definitions in symcrypt_internal.h may be updated or removed
+There are several struct definitions with specifics sizes and alignments that a caller should never need
+to use directly in their code (rather than just handling pointers to these structs). A good example would be
+SYMCRYPT_ECPOINT. Exposing these definitions in symcrypt_internal.h means that we cannot change the
+definitions without making a breaking callers, so we will remove them in a breaking change.
+At the same time, we may also update the sizes and alignment of structs that callers may need to use directly;
+in particular we should consider removing the concept of SYMCRYPT_ASYM_ALIGN entirely.

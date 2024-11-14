@@ -12,6 +12,7 @@ set(SOURCES_COMMON
     aes-ymm.c
     aescmac.c
     aesCtrDrbg.c
+    aeskw.c
     AesTables.c
     blockciphermodes.c
     ccm.c

@@ -376,6 +376,18 @@ public:
 };
 
 template<>
+class KeyWrapImpState<ImpXxx, AlgAesKw> {
+public:
+    SYMCRYPT_AES_EXPANDED_KEY   key;
+};
+
+template<>
+class KeyWrapImpState<ImpXxx, AlgAesKwp> {
+public:
+    SYMCRYPT_AES_EXPANDED_KEY   key;
+};
+
+template<>
 class RsaSignImpState<ImpXxx, AlgRsaSignPkcs1> {
 public:
     PSYMCRYPT_RSAKEY    pKey;

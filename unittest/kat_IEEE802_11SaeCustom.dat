@@ -7,244 +7,221 @@
 # - 'repeat(<int)' followed by a data field
 # 
 
-
-
 [IEEE802_11SaeCustom]
 
 # sae 2 case from OidTest.exe
-password        = "Admin!98"
-MACa            = 9cda3ef27dd5
-MACb            = 3413e8bc4d32
-count           = 2
-random          = 781fe26354041421e8c8e1ca5ceb4522a2d9fca6fd4fb931cdbbe0d44a3e5773
-mask            = e621811ddea6de28b511447fbca6375f1223a858294de7630f732151e9f52d60
-commitScalar    = 5e41638232aaf2499dda264a19917c81f816aa517f86020fe975376337d05f82
-commitElement = b2673d35f1de77912176eb746ae3a76ecee660fa086b4693e8ac1b5af9e7386f9fbad6401c105ed947\
-                d1cb76522bb5b145969a1849c3a6ef933fec3596890294
-peerScalar      = d0c16dc659c85f15a5dcf37b7a64f7badcd8c5356b6bc0bda91fb90ea5d5494f
-peerElement = c296950aff00f02af401e5aba24eecc219032a430524ddb5d879eaec903200ab6c9119ae493d89384c97\
-              c23c69522d2428ef4947f1002e2c324f3889b3cf1243
-scalarSum       = 2f02d1498c73515e43b719c593f6743d180874d943da24489edb25aee1428380
-sharedSecret    = 1ba49bfd41bc1a65abeb6945c4c399dc884a7d5ce6d1c4f2e5a353b1b9de37fc
-
+password      = "Admin!98"
+MACa          = 9cda3ef27dd5
+MACb          = 3413e8bc4d32
+count         = 2
+random        = 781fe26354041421e8c8e1ca5ceb4522a2d9fca6fd4fb931cdbbe0d44a3e5773
+mask          = e621811ddea6de28b511447fbca6375f1223a858294de7630f732151e9f52d60
+commitScalar  = 5e41638232aaf2499dda264a19917c81f816aa517f86020fe975376337d05f82
+commitElement = b2673d35f1de77912176eb746ae3a76ecee660fa086b4693e8ac1b5af9e7386f\
+                9fbad6401c105ed947d1cb76522bb5b145969a1849c3a6ef933fec3596890294
+peerScalar    = d0c16dc659c85f15a5dcf37b7a64f7badcd8c5356b6bc0bda91fb90ea5d5494f
+peerElement   = c296950aff00f02af401e5aba24eecc219032a430524ddb5d879eaec903200ab\
+                6c9119ae493d89384c97c23c69522d2428ef4947f1002e2c324f3889b3cf1243
+scalarSum     = 2f02d1498c73515e43b719c593f6743d180874d943da24489edb25aee1428380
+sharedSecret  = 1ba49bfd41bc1a65abeb6945c4c399dc884a7d5ce6d1c4f2e5a353b1b9de37fc
 
 # sae 3 case from OidTest.exe
-password        = "Admin!98"
-MACa            = 9cda3ef27dd5
-MACb            = 3413e8bc4d32
-count           = 2
-random          = 528b7eae49677a6497476100595786b23dfdd5bfadc310448db30ce5b83c91ff
-mask            = 91678733812acd18c8eaffdf17ca8179aa2c1a5fb96138f86bd9b0c9920ae2af
-commitScalar    = e3f305e1ca92477d603260df7122082be829f01f6724493cf98cbdaf4a4774ae
-commitElement = 8796d7d7abe3026efb885d6fc305d02cd07d516ba8680b3cbe63493f798bda9c470fbc3ecf6efed2aa\
-                ba374b8c8d8d089f960a80a4aab5a89f760c8743b7f44b
-peerScalar      = b529285eed665408dac46bb864820f161ad7f00326ae962cc91a5e70b6656e36
-peerElement = a0190c315dbebaf4e635d6507559501121ace4e425b5368ea1e2fa75db7edcbcd9bab22174f8515161d8\
-              bff7e1e51cf521be842eb471aa0f8f070ccf8591b01b
-sharedSecret    = 7fd1db140f1e935db49d22eb91ee57321ce567dc95b72387a4989e49b7660d9a
-scalarSum       = 991c2e41b7f89b853af6cc97d5a41742461ae574e6bb40e4ceed515d0449bd93
+password      = "Admin!98"
+MACa          = 9cda3ef27dd5
+MACb          = 3413e8bc4d32
+count         = 2
+random        = 528b7eae49677a6497476100595786b23dfdd5bfadc310448db30ce5b83c91ff
+mask          = 91678733812acd18c8eaffdf17ca8179aa2c1a5fb96138f86bd9b0c9920ae2af
+commitScalar  = e3f305e1ca92477d603260df7122082be829f01f6724493cf98cbdaf4a4774ae
+commitElement = 8796d7d7abe3026efb885d6fc305d02cd07d516ba8680b3cbe63493f798bda9c\
+                470fbc3ecf6efed2aaba374b8c8d8d089f960a80a4aab5a89f760c8743b7f44b
+peerScalar    = b529285eed665408dac46bb864820f161ad7f00326ae962cc91a5e70b6656e36
+peerElement   = a0190c315dbebaf4e635d6507559501121ace4e425b5368ea1e2fa75db7edcbc\
+                d9bab22174f8515161d8bff7e1e51cf521be842eb471aa0f8f070ccf8591b01b
+sharedSecret  = 7fd1db140f1e935db49d22eb91ee57321ce567dc95b72387a4989e49b7660d9a
+scalarSum     = 991c2e41b7f89b853af6cc97d5a41742461ae574e6bb40e4ceed515d0449bd93
 
 #sae 4 case from OidTest.exe
-password        = "Admin!98-1"
-MACa            = 9cda3ef27dd5
-MACb            = 3413e8bc4d32
-count           = 3
-random          = d2e6ccfcf833126ae6675c3f02d9d173f822f48fc5e5d1b3d62a0e0e1cfe44a3
-mask            = 76755fb628b9b77f019bd0c18ad17c1d34da0c4621b5865e37560080428e7fb1
-commitScalar    = 495c2cb420ecc9e8e8032d008dab4d91701606284083b98d19c643cb63299f03
-commitElement = 132efc90b9d7b5c12a1de9059cb3bac8a693ffbf2302423e58c20d0010e844609dfc345e988ef21267\
-                24d080fb2f1e7ae654010050d4fe664762c03c9f7a1027
-peerScalar      = 934889ab386b72d5ff0d3caa095650202bd03e2696b5905f7b495f3b7dc35b48
-peerElement = 58545e6ca0e886effb052afb632ca2195bb0b0a825e59dba6baa0e93af046ef4c9455fec43fe5eb02a6b\
-              8abc8fd70787873dd1d5d7fde3073a4cf3c2c76f595c
-sharedSecret    = b6790fc6d842a66a37d8921312ff28f44b30db710d83fda1ce3a37f536c2b4dd
-scalarSum       = dca4b65f59583cbee71069aa97019db19be6444ed73949ec950fa306e0ecfa4b
-
+password      = "Admin!98-1"
+MACa          = 9cda3ef27dd5
+MACb          = 3413e8bc4d32
+count         = 3
+random        = d2e6ccfcf833126ae6675c3f02d9d173f822f48fc5e5d1b3d62a0e0e1cfe44a3
+mask          = 76755fb628b9b77f019bd0c18ad17c1d34da0c4621b5865e37560080428e7fb1
+commitScalar  = 495c2cb420ecc9e8e8032d008dab4d91701606284083b98d19c643cb63299f03
+commitElement = 132efc90b9d7b5c12a1de9059cb3bac8a693ffbf2302423e58c20d0010e84460\
+                9dfc345e988ef2126724d080fb2f1e7ae654010050d4fe664762c03c9f7a1027
+peerScalar    = 934889ab386b72d5ff0d3caa095650202bd03e2696b5905f7b495f3b7dc35b48
+peerElement   = 58545e6ca0e886effb052afb632ca2195bb0b0a825e59dba6baa0e93af046ef4\
+                c9455fec43fe5eb02a6b8abc8fd70787873dd1d5d7fde3073a4cf3c2c76f595c
+sharedSecret  = b6790fc6d842a66a37d8921312ff28f44b30db710d83fda1ce3a37f536c2b4dd
+scalarSum     = dca4b65f59583cbee71069aa97019db19be6444ed73949ec950fa306e0ecfa4b
 
 # Neagative test case, invalid peer Element
-NegativeTest    = 1
-peerScalar      = 934889ab386b72d5ff0d3caa095650202bd03e2696b5905f7b495f3b7dc35b48
-peerElement = 5d901c4a9b7f11e7935adeb7a4bac40c5172604f1c1a1a42dbca4753f695aa5ad01e1f8b812f01a3631a\
-              79dab001b372a185535b77e38a46a6faeeffffffffff
+NegativeTest = 1
+peerScalar   = 934889ab386b72d5ff0d3caa095650202bd03e2696b5905f7b495f3b7dc35b48
+peerElement  = 5d901c4a9b7f11e7935adeb7a4bac40c5172604f1c1a1a42dbca4753f695aa5a\
+               d01e1f8b812f01a3631a79dab001b372a185535b77e38a46a6faeeffffffffff
 
 # Negative test case, invalid peer Scalar = 0
-NegativeTest    = 1
-peerScalar      = 0000000000000000000000000000000000000000000000000000000000000000
-peerElement = 58545e6ca0e886effb052afb632ca2195bb0b0a825e59dba6baa0e93af046ef4c9455fec43fe5eb02a6b\
-              8abc8fd70787873dd1d5d7fde3073a4cf3c2c76f595c
+NegativeTest = 1
+peerScalar   = 0000000000000000000000000000000000000000000000000000000000000000
+peerElement  = 58545e6ca0e886effb052afb632ca2195bb0b0a825e59dba6baa0e93af046ef4\
+               c9455fec43fe5eb02a6b8abc8fd70787873dd1d5d7fde3073a4cf3c2c76f595c
 
 # Negative test case, invalid peer Scalar = 1
-NegativeTest    = 1
-peerScalar      = 0000000000000000000000000000000000000000000000000000000000000001
-peerElement = 58545e6ca0e886effb052afb632ca2195bb0b0a825e59dba6baa0e93af046ef4c9455fec43fe5eb02a6b\
-              8abc8fd70787873dd1d5d7fde3073a4cf3c2c76f595c
+NegativeTest = 1
+peerScalar   = 0000000000000000000000000000000000000000000000000000000000000001
+peerElement  = 58545e6ca0e886effb052afb632ca2195bb0b0a825e59dba6baa0e93af046ef4\
+               c9455fec43fe5eb02a6b8abc8fd70787873dd1d5d7fde3073a4cf3c2c76f595c
 
 # Negative test case, invalid peer Scalar = group order
-NegativeTest    = 1
-peerScalar      = FFFFFFFF00000000FFFFFFFFFFFFFFFFBCE6FAADA7179E84F3B9CAC2FC632551
-peerElement = 58545e6ca0e886effb052afb632ca2195bb0b0a825e59dba6baa0e93af046ef4c9455fec43fe5eb02a6b\
-              8abc8fd70787873dd1d5d7fde3073a4cf3c2c76f595c
+NegativeTest = 1
+peerScalar   = FFFFFFFF00000000FFFFFFFFFFFFFFFFBCE6FAADA7179E84F3B9CAC2FC632551
+peerElement  = 58545e6ca0e886effb052afb632ca2195bb0b0a825e59dba6baa0e93af046ef4\
+               c9455fec43fe5eb02a6b8abc8fd70787873dd1d5d7fde3073a4cf3c2c76f595c
 
 # Negative test case, invalid peer Scalar = group order + 1
-NegativeTest    = 1
-peerScalar      = FFFFFFFF00000000FFFFFFFFFFFFFFFFBCE6FAADA7179E84F3B9CAC2FC632552
-peerElement = 58545e6ca0e886effb052afb632ca2195bb0b0a825e59dba6baa0e93af046ef4c9455fec43fe5eb02a6b\
-              8abc8fd70787873dd1d5d7fde3073a4cf3c2c76f595c
+NegativeTest = 1
+peerScalar   = FFFFFFFF00000000FFFFFFFFFFFFFFFFBCE6FAADA7179E84F3B9CAC2FC632552
+peerElement  = 58545e6ca0e886effb052afb632ca2195bb0b0a825e59dba6baa0e93af046ef4\
+               c9455fec43fe5eb02a6b8abc8fd70787873dd1d5d7fde3073a4cf3c2c76f595c
 
 # Negative test case, invalid peer Scalar > group order + 1
-NegativeTest    = 1
-peerScalar      = FFFFFFFF00000000FFFFFFFFFFFFFFFFBCE6FAADA7179E84F3B9CAC2FC632559
-peerElement = 58545e6ca0e886effb052afb632ca2195bb0b0a825e59dba6baa0e93af046ef4c9455fec43fe5eb02a6b\
-              8abc8fd70787873dd1d5d7fde3073a4cf3c2c76f595c
-
+NegativeTest = 1
+peerScalar   = FFFFFFFF00000000FFFFFFFFFFFFFFFFBCE6FAADA7179E84F3B9CAC2FC632559
+peerElement  = 58545e6ca0e886effb052afb632ca2195bb0b0a825e59dba6baa0e93af046ef4\
+               c9455fec43fe5eb02a6b8abc8fd70787873dd1d5d7fde3073a4cf3c2c76f595c
 
 # run the self-consistency checks
 selfconsistent = 1
 
 # Key-Exchange simulation of two parties using H2E
 H2ESelfConsistent = 1
-group           = 19
-count           = 100
+group             = 19
+count             = 100
 
 H2ESelfConsistent = 1
-group           = 20
-count           = 100
+group             = 20
+count             = 100
 
 # H2E PWE calculation tests
-H2EPWETest      = 1
-group           = 19
-ssid            = "byteme"
-password        = "mekmitasdigoat"
-identifier      = "psk4internet"
-MacA            = 00095b66ec1e
-MacB            = 000b6bd90246
-PT = b6e38c98750c684b5d17c3d8c9a4100b39931279187ca6cced5f37ef46ddfa975687e972e50f73e3898861e7edad21\
-     bea7d5f622df88243bb804920ae8e647fa
-PWE = c93049b9e64000f848201649e999f2b5c22dea69b5632c9df4d633b8aa1f6c1e73634e94b53d82e7383a8d258199\
-      d9dc1a5ee8269d060382ccbf33e614ff59a0
+H2EPWETest = 1
+group      = 19
+ssid       = "byteme"
+password   = "mekmitasdigoat"
+identifier = "psk4internet"
+MacA       = 00095b66ec1e
+MacB       = 000b6bd90246
+PT         = b6e38c98750c684b5d17c3d8c9a4100b39931279187ca6cced5f37ef46ddfa975687e972e50f73e3898861e7edad21be\
+             a7d5f622df88243bb804920ae8e647fa
+PWE        = c93049b9e64000f848201649e999f2b5c22dea69b5632c9df4d633b8aa1f6c1e73634e94b53d82e7383a8d258199d9dc\
+             1a5ee8269d060382ccbf33e614ff59a0
 
-H2EPWETest      = 1
-group           = 20
-ssid            = "sae_1"
-password        = "1234567890_1"
-identifier      = ""
-MacA            = d8f883359742
-MacB            = d8f883359bca
-PT = 562e5363d4ee8e1fde4402f6b00266c77ea35894a7ef537cdbd3c6fbc0006bc49c6c221ea3a313c86da43c36f09707\
-     502146e6936219f160935d5f39d59dd42634370e8e4945236aba8cc0e28d5afcdde8aeb288724f9198b6cf95abdb9f\
-     1e8f
-PWE = 874b7a2b7805383da379f430e738429aac2ccde65c9085ebe660acdd82c9fca54dee7833bdb1774ff99bd3e99fcc\
-      e74e1fc593b45db9fe84632185eb96e9648bed85c50f06ea29b691bcf902df41aa1c75b069c79e94aa88eac8da9a\
-      e3a80c52 
+H2EPWETest = 1
+group      = 20
+ssid       = "sae_1"
+password   = "1234567890_1"
+identifier = ""
+MacA       = d8f883359742
+MacB       = d8f883359bca
+PT         = 562e5363d4ee8e1fde4402f6b00266c77ea35894a7ef537cdbd3c6fbc0006bc49c6c221ea3a313c86da43c36f0970750\
+             2146e6936219f160935d5f39d59dd42634370e8e4945236aba8cc0e28d5afcdde8aeb288724f9198b6cf95abdb9f1e8f
+PWE        = 874b7a2b7805383da379f430e738429aac2ccde65c9085ebe660acdd82c9fca54dee7833bdb1774ff99bd3e99fcce74e\
+             1fc593b45db9fe84632185eb96e9648bed85c50f06ea29b691bcf902df41aa1c75b069c79e94aa88eac8da9ae3a80c52
 
-H2EPWETest      = 1
-group           = 20
-ssid            = "sae_2"
-password        = "1234567890_2"
-identifier      = ""
-MacA            = d8f883359742
-MacB            = d8f883359bca
-PT = 2e21e0f199a7f1d34e81165ff15047bc29fbc2658c4b5ee700958ef87e0b7177d0d283eb69e172caeb1e9055fe2f18\
-     ba12ddf052f2b869bf1b0a470a1a3d94e7dac0ad88ef0a24116eab3f13ecd10d98c6e1978b61110797f341fccaeb34\
-     4509
-PWE = c90b8d09ba46ced71ba3fc1b482f951e79b656b1c845dcb364f139a985e2d019700f439fa134a2e91a6533ecbed6\
-      501dd926d237efa207487141453cca0549bb5d7eee3d197cc30ef3ec3b6ed9269af2c5648025ee458e82a10c6b22\
-      bdc4da2c
+H2EPWETest = 1
+group      = 20
+ssid       = "sae_2"
+password   = "1234567890_2"
+identifier = ""
+MacA       = d8f883359742
+MacB       = d8f883359bca
+PT         = 2e21e0f199a7f1d34e81165ff15047bc29fbc2658c4b5ee700958ef87e0b7177d0d283eb69e172caeb1e9055fe2f18ba\
+             12ddf052f2b869bf1b0a470a1a3d94e7dac0ad88ef0a24116eab3f13ecd10d98c6e1978b61110797f341fccaeb344509
+PWE        = c90b8d09ba46ced71ba3fc1b482f951e79b656b1c845dcb364f139a985e2d019700f439fa134a2e91a6533ecbed6501d\
+             d926d237efa207487141453cca0549bb5d7eee3d197cc30ef3ec3b6ed9269af2c5648025ee458e82a10c6b22bdc4da2c
 
-H2EPWETest      = 1
-group           = 20
-ssid            = "sae_3"
-password        = "1234567890_3"
-identifier      = ""
-MacA            = d8f883359742
-MacB            = d8f883359bca
-PT = ad17fc12597371b9084d8fcb3cc2ecb6e056bda17621b4835f8bb96b909b74f82350b433542916cc8d64eabb83455e\
-     33a4c3673cb448b44443050734b8ddee96682db3d717729e26b888a7870c7e872eb5e0c924952b5942a12ea778ea94\
-     bf25
-PWE = 26e62d186f89c1b17d5b2b4ebb66916a363c4b3c5fb466060964d4c26b33ae6a9bb7d63ff54c58c56e32fd25ac9a\
-      f57f597f55ccc20ff9f022b4a82bca63b777081b02fe3acc4de52eee4e6205843d9832b35b65a53143b3d1305350\
-      da2bf30a
+H2EPWETest = 1
+group      = 20
+ssid       = "sae_3"
+password   = "1234567890_3"
+identifier = ""
+MacA       = d8f883359742
+MacB       = d8f883359bca
+PT         = ad17fc12597371b9084d8fcb3cc2ecb6e056bda17621b4835f8bb96b909b74f82350b433542916cc8d64eabb83455e33\
+             a4c3673cb448b44443050734b8ddee96682db3d717729e26b888a7870c7e872eb5e0c924952b5942a12ea778ea94bf25
+PWE        = 26e62d186f89c1b17d5b2b4ebb66916a363c4b3c5fb466060964d4c26b33ae6a9bb7d63ff54c58c56e32fd25ac9af57f\
+             597f55ccc20ff9f022b4a82bca63b777081b02fe3acc4de52eee4e6205843d9832b35b65a53143b3d1305350da2bf30a
 
-H2EPWETest      = 1
-group           = 20
-ssid            = "sae_4"
-password        = "1234567890_4"
-identifier      = ""
-MacA            = d8f883359742
-MacB            = d8f883359bca
-PT = 056f513be041df3f49bc67c7d3d0d723dd978b830851f436f3f1488b0519ab7c9b57d07e1e93761668852b843beb77\
-     93e4d6b58bcda0c3a5ea6731d1ec0a1385ce0d2da0509b52fd9af98d8c6b0d4061b247d452baacdf7022119f83a511\
-     84ef
-PWE = 1df3db26b8a29371b1ad85a94eaae896300567514e30db4df8e0ba92c6d0b371111a80dd3e4352fc6c3cb21b267f\
-      169272b4a9f08d1925d21e32f7eacc3fbf6d97ed57b50472803fe4e346d52f20db30a0c7dfb87076907443d95909\
-      e1446814
+H2EPWETest = 1
+group      = 20
+ssid       = "sae_4"
+password   = "1234567890_4"
+identifier = ""
+MacA       = d8f883359742
+MacB       = d8f883359bca
+PT         = 056f513be041df3f49bc67c7d3d0d723dd978b830851f436f3f1488b0519ab7c9b57d07e1e93761668852b843beb7793\
+             e4d6b58bcda0c3a5ea6731d1ec0a1385ce0d2da0509b52fd9af98d8c6b0d4061b247d452baacdf7022119f83a51184ef
+PWE        = 1df3db26b8a29371b1ad85a94eaae896300567514e30db4df8e0ba92c6d0b371111a80dd3e4352fc6c3cb21b267f1692\
+             72b4a9f08d1925d21e32f7eacc3fbf6d97ed57b50472803fe4e346d52f20db30a0c7dfb87076907443d95909e1446814
 
-H2EPWETest      = 1
-group           = 20
-ssid            = "sae_5"
-password        = "1234567890_5"
-identifier      = ""
-MacA            = d8f883359742
-MacB            = d8f883359bca
-PT = 42aac743ef088e61cbf7f5b5c3c52c70d4ca7165aedf8b032fd19171fadc9e397354354b2fddfcc01f5426b4ee97f2\
-     b11524e3b65695162093373d7940fc8c4842388093db23163ac5af2af80fdf71f294db083b64c47fe46b7ec5f03a1b\
-     e806
-PWE = 2bf2c176eb000ecd61e0c21d7651edc79a09c6c44589e9ce3c3a06ff815108cfa6d0d2026cb4b0a8b5ad6b067909\
-      a736cc7b3df79d621993e36fd7f92424712c5448ba1f943d0a864094c75c52a5c39a3b217a2185259331291db534\
-      dab01722
+H2EPWETest = 1
+group      = 20
+ssid       = "sae_5"
+password   = "1234567890_5"
+identifier = ""
+MacA       = d8f883359742
+MacB       = d8f883359bca
+PT         = 42aac743ef088e61cbf7f5b5c3c52c70d4ca7165aedf8b032fd19171fadc9e397354354b2fddfcc01f5426b4ee97f2b1\
+             1524e3b65695162093373d7940fc8c4842388093db23163ac5af2af80fdf71f294db083b64c47fe46b7ec5f03a1be806
+PWE        = 2bf2c176eb000ecd61e0c21d7651edc79a09c6c44589e9ce3c3a06ff815108cfa6d0d2026cb4b0a8b5ad6b067909a736\
+             cc7b3df79d621993e36fd7f92424712c5448ba1f943d0a864094c75c52a5c39a3b217a2185259331291db534dab01722
 
-H2EPWETest      = 1
-group           = 20
-ssid            = "sae_6"
-password        = "1234567890_6"
-identifier      = ""
-MacA            = d8f883359742
-MacB            = d8f883359bca
-PT = 64e95937cb56ca02f227d9a3d69b0fb5ecdc8af8ee0fe4b71e992322f9be09f3d945d7abb7606075b72c9ae73b305c\
-     0b7566c465b7d88cc35ddfa083926e0d3be653dbf134dae2ea25f5f049fd80c0fa5711e6f872ceee61f1a994981d0c\
-     04bd
-PWE = 3a0fdce8b252b6f941fa9de4bd9d106010cb84d9eef426b1c778176e568d0609b4f6a233771bb57e13233710e325\
-      64f6b3f603e020df48fe00bf8a1f3446e2c70e46cab4deb43f64e70f47e2f9de6e9e2116d5fe8f4d741b1151ff66\
-      0fe46b98
+H2EPWETest = 1
+group      = 20
+ssid       = "sae_6"
+password   = "1234567890_6"
+identifier = ""
+MacA       = d8f883359742
+MacB       = d8f883359bca
+PT         = 64e95937cb56ca02f227d9a3d69b0fb5ecdc8af8ee0fe4b71e992322f9be09f3d945d7abb7606075b72c9ae73b305c0b\
+             7566c465b7d88cc35ddfa083926e0d3be653dbf134dae2ea25f5f049fd80c0fa5711e6f872ceee61f1a994981d0c04bd
+PWE        = 3a0fdce8b252b6f941fa9de4bd9d106010cb84d9eef426b1c778176e568d0609b4f6a233771bb57e13233710e32564f6\
+             b3f603e020df48fe00bf8a1f3446e2c70e46cab4deb43f64e70f47e2f9de6e9e2116d5fe8f4d741b1151ff660fe46b98
 
-H2EPWETest      = 1
-group           = 20
-ssid            = "sae_7"
-password        = "1234567890_7"
-identifier      = ""
-MacA            = d8f883359742
-MacB            = d8f883359bca
-PT = 375edf1cf0677ffddef3cb48f4280b264f0c2daac0feb9e7f674007c640bc76ba10195425c4fcb110f7bac2ef36ccb\
-     412017ab6953eacac9b5f6d9d55f58500cf153dcf002b249339088c40edff871c189a225d0b52612e27a65812622d9\
-     bca7
-PWE = ec8cd29fab1f8a100fe82c05fe0db5340c55b54e1825acc1fb56b564165acf2f9ff07081fe6dcf2dc1dc9811d5cb\
-      0cfeb370420b7b9ac8e9915e99b3d6e71cb48c7930bd39c8544303f9a126f595b674734d88e90627502cb80dea66\
-      8a142448
+H2EPWETest = 1
+group      = 20
+ssid       = "sae_7"
+password   = "1234567890_7"
+identifier = ""
+MacA       = d8f883359742
+MacB       = d8f883359bca
+PT         = 375edf1cf0677ffddef3cb48f4280b264f0c2daac0feb9e7f674007c640bc76ba10195425c4fcb110f7bac2ef36ccb41\
+             2017ab6953eacac9b5f6d9d55f58500cf153dcf002b249339088c40edff871c189a225d0b52612e27a65812622d9bca7
+PWE        = ec8cd29fab1f8a100fe82c05fe0db5340c55b54e1825acc1fb56b564165acf2f9ff07081fe6dcf2dc1dc9811d5cb0cfe\
+             b370420b7b9ac8e9915e99b3d6e71cb48c7930bd39c8544303f9a126f595b674734d88e90627502cb80dea668a142448
 
-H2EPWETest      = 1
-group           = 20
-ssid            = "sae_8"
-password        = "1234567890_8"
-identifier      = ""
-MacA            = d8f883359742
-MacB            = d8f883359bca
-PT = 9328636875bf0fb080d891d1cd2bfa283631a9749f01f711cbb94c692670066147de5660aab014812df94f75d92d5b\
-     8dfbce44dbd00d2da38b9ce5c511c860aea33fc88355cc62eb581ec17f2ab58f37048040374ae71e7a66bb7d9429c8\
-     286b
-PWE = 42aef27604090c09055e66e5288b1aca911322b88ec1f74666359b688a01a2f720f12dfda352fa3e4ad91c4925e1\
-      1a084c15a666486182a8d8cb619fd47aa01e36cf4fb2f58e35c3d339b4530ad292d9561cf51294930e707ea7ae7d\
-      e898657d
+H2EPWETest = 1
+group      = 20
+ssid       = "sae_8"
+password   = "1234567890_8"
+identifier = ""
+MacA       = d8f883359742
+MacB       = d8f883359bca
+PT         = 9328636875bf0fb080d891d1cd2bfa283631a9749f01f711cbb94c692670066147de5660aab014812df94f75d92d5b8d\
+             fbce44dbd00d2da38b9ce5c511c860aea33fc88355cc62eb581ec17f2ab58f37048040374ae71e7a66bb7d9429c8286b
+PWE        = 42aef27604090c09055e66e5288b1aca911322b88ec1f74666359b688a01a2f720f12dfda352fa3e4ad91c4925e11a08\
+             4c15a666486182a8d8cb619fd47aa01e36cf4fb2f58e35c3d339b4530ad292d9561cf51294930e707ea7ae7de898657d
 
-H2EPWETest      = 1
-group           = 20
-ssid            = "sae_9"
-password        = "1234567890_9"
-identifier      = ""
-MacA            = d8f883359742
-MacB            = d8f883359bca
-PT = 2c9f1dbc4f3b9473c7edd7867db43150f93f5dde17118db3787e7bb806be1cb3d1b7578df07a08efcc657ff72d060c\
-     ec264958665b9d8c79b72db5ed5b38957b8dd4e20aaf2bee80a308e5a1bee7dc60ec3450002158d670746ebed30b36\
-     59c4
-PWE = 520355f0779fc07603d14654f0e2776284364057dc9500ce2933b106686d41cfec6124d5a5c234ce9e0c2b9d0426\
-      fbc766911ff1f6196379eff1570a213c6ff1aff38330506c19f71daa140b8cdf848e30b39602865e068cb2cbb751\
-      931ed4b1
+H2EPWETest = 1
+group      = 20
+ssid       = "sae_9"
+password   = "1234567890_9"
+identifier = ""
+MacA       = d8f883359742
+MacB       = d8f883359bca
+PT         = 2c9f1dbc4f3b9473c7edd7867db43150f93f5dde17118db3787e7bb806be1cb3d1b7578df07a08efcc657ff72d060cec\
+             264958665b9d8c79b72db5ed5b38957b8dd4e20aaf2bee80a308e5a1bee7dc60ec3450002158d670746ebed30b3659c4
+PWE        = 520355f0779fc07603d14654f0e2776284364057dc9500ce2933b106686d41cfec6124d5a5c234ce9e0c2b9d0426fbc7\
+             66911ff1f6196379eff1570a213c6ff1aff38330506c19f71daa140b8cdf848e30b39602865e068cb2cbb751931ed4b1

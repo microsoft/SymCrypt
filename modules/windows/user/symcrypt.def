@@ -72,6 +72,10 @@ EXPORTS
     SymCryptAesExpandKey
     SymCryptAesExpandKeyEncryptOnly
     SymCryptAesKeyCopy
+    SymCryptAesKwDecrypt
+    SymCryptAesKwEncrypt
+    SymCryptAesKwpDecrypt
+    SymCryptAesKwpEncrypt
     SymCryptAesSelftest
     SymCryptCbcDecrypt
     SymCryptCbcEncrypt

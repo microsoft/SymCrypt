@@ -33,6 +33,7 @@
     <ClCompile Include="aes-ymm.c" />
     <ClCompile Include="aescmac.c" />
     <ClCompile Include="aesCtrDrbg.c" />
+    <ClCompile Include="aeskw.c" />
     <ClCompile Include="AesTables.c" />
     <ClCompile Include="a_dispatch.c" />
     <ClCompile Include="blockciphermodes.c" />

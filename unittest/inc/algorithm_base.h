@@ -497,6 +497,43 @@ public:
                                 SIZE_T  cbData ) = 0;
 };
 
+class KeyWrapImplementation: public AlgorithmImplementation
+//
+// Implements key-wrap encryption modes.
+//
+{
+public:
+    KeyWrapImplementation() {};
+    virtual ~KeyWrapImplementation() {};
+
+private:
+    KeyWrapImplementation( const KeyWrapImplementation & );
+    VOID operator=( const KeyWrapImplementation & );
+
+public:
+    virtual SIZE_T getMinPlaintextSize() = 0;
+    virtual SIZE_T getMaxPlaintextSize() = 0;
+    virtual SIZE_T getPlaintextSizeIncrement() = 0;
+    virtual std::set<SIZE_T> getKeySizes() = 0;
+
+    virtual NTSTATUS setKey( PCBYTE pbKey, SIZE_T cbKey ) = 0;
+
+    virtual NTSTATUS encrypt(
+        _In_reads_(cbSrc)                   PCBYTE  pbSrc,
+                                            SIZE_T  cbSrc,
+        _Out_writes_to_(cbDst, *pcbResult)  PBYTE   pbDst,
+                                            SIZE_T  cbDst,
+                                            SIZE_T* pcbResult ) = 0;
+
+    virtual NTSTATUS decrypt(
+        _In_reads_(cbSrc)                   PCBYTE  pbSrc,
+                                            SIZE_T  cbSrc,
+        _Out_writes_to_(cbDst, *pcbResult)  PBYTE   pbDst,
+                                            SIZE_T  cbDst,
+                                            SIZE_T* pcbResult ) = 0;
+
+};
+
 class RngSp800_90Implementation: public AlgorithmImplementation
 {
 public:
@@ -1282,16 +1319,6 @@ public:
     AuthEncImp();
     virtual ~AuthEncImp();
 
-    PVOID operator new( size_t size )
-    {
-        return std::malloc( size );
-    }
-
-    VOID operator delete( PVOID p )
-    {
-        std::free( p );
-    }
-
 private:
     AuthEncImp( const AuthEncImp & );
     VOID operator=( const AuthEncImp & );
@@ -1342,6 +1369,48 @@ public:
 
 };
 
+template< class Implementation, class Algorithm > class KeyWrapImpState;
+
+template< class Implementation, class Algorithm >
+class KeyWrapImp: public KeyWrapImplementation
+{
+public:
+    KeyWrapImp();
+    virtual ~KeyWrapImp();
+
+private:
+    KeyWrapImp( const KeyWrapImp & );
+    VOID operator=( const KeyWrapImp & );
+
+public:
+    static const String s_algName;
+    static const String s_modeName;
+    static const String s_impName;
+
+    virtual SIZE_T getMinPlaintextSize();
+    virtual SIZE_T getMaxPlaintextSize();
+    virtual SIZE_T getPlaintextSizeIncrement();
+    virtual std::set<SIZE_T> getKeySizes();
+
+    virtual NTSTATUS setKey( PCBYTE pbKey, SIZE_T cbKey );
+
+    virtual NTSTATUS encrypt(
+        _In_reads_(cbSrc)                   PCBYTE  pbSrc,
+                                            SIZE_T  cbSrc,
+        _Out_writes_to_(cbDst, *pcbResult)  PBYTE   pbDst,
+                                            SIZE_T  cbDst,
+                                            SIZE_T* pcbResult );
+
+    virtual NTSTATUS decrypt(
+        _In_reads_(cbSrc)                   PCBYTE  pbSrc,
+                                            SIZE_T  cbSrc,
+        _Out_writes_to_(cbDst, *pcbResult)  PBYTE   pbDst,
+                                            SIZE_T  cbDst,
+                                            SIZE_T* pcbResult );
+
+    KeyWrapImpState< Implementation, Algorithm > state;
+
+};
 
 template< class Implementation, class Algorithm> class StreamCipherImpState;
 
@@ -2035,6 +2104,13 @@ template< class Implementation, class Algorithm>
 const String XtsImp<Implementation, Algorithm>::s_algName = Algorithm::name;
 template< class Implementation, class Algorithm>
 const String XtsImp<Implementation, Algorithm>::s_modeName;
+
+template< class Implementation, class Algorithm>
+const String KeyWrapImp<Implementation, Algorithm>::s_impName = Implementation::name;
+template< class Implementation, class Algorithm>
+const String KeyWrapImp<Implementation, Algorithm>::s_algName = Algorithm::name;
+template< class Implementation, class Algorithm>
+const String KeyWrapImp<Implementation, Algorithm>::s_modeName;
 
 template< class Implementation, class Algorithm>
 const String TlsCbcHmacImp<Implementation, Algorithm>::s_impName = Implementation::name;
