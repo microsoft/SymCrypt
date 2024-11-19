@@ -1109,6 +1109,73 @@ SymCryptSha1Selftest(void);
 extern const PCSYMCRYPT_HASH SymCryptSha1Algorithm;
 
 ////////////////////////////////////////////////////////////////////////////
+//   SHA-224
+//
+//
+// The SHA-224 hash algorithm per FIPS 180-4.
+// This implementation is limited to data strings that are in whole bytes.
+// Odd bit length are not supported.
+//
+// The SHA-224 standard limits data inputs to a maximum of 2^61-1 bytes.
+// This implementation supports larger inputs, and simply wraps the internal message
+// length counter. Note that the security properties are unknown for
+// such long messages, and their use is not recommended.
+//
+// This implementation is meant for interoperability and is not recommended for use.
+//
+// For details on this API see the description above about the generic hash function API.
+//
+
+#define SYMCRYPT_SHA224_RESULT_SIZE         (28)
+#define SYMCRYPT_SHA224_INPUT_BLOCK_SIZE    (64)
+
+VOID
+SYMCRYPT_CALL
+SymCryptSha224(
+    _In_reads_( cbData )                        PCBYTE  pbData,
+                                                SIZE_T  cbData,
+    _Out_writes_( SYMCRYPT_SHA224_RESULT_SIZE ) PBYTE   pbResult );
+
+VOID
+SYMCRYPT_CALL
+SymCryptSha224Init( _Out_ PSYMCRYPT_SHA224_STATE pState );
+
+VOID
+SYMCRYPT_CALL
+SymCryptSha224Append(
+    _Inout_                 PSYMCRYPT_SHA224_STATE  pState,
+    _In_reads_( cbData )    PCBYTE                  pbData,
+                            SIZE_T                  cbData );
+
+VOID
+SYMCRYPT_CALL
+SymCryptSha224Result(
+    _Inout_                                       PSYMCRYPT_SHA224_STATE pState,
+    _Out_writes_( SYMCRYPT_SHA224_RESULT_SIZE )   PBYTE                  pbResult );
+
+VOID
+SYMCRYPT_CALL
+SymCryptSha224StateCopy( _In_ PCSYMCRYPT_SHA224_STATE pSrc, _Out_ PSYMCRYPT_SHA224_STATE pDst );
+
+VOID
+SYMCRYPT_CALL
+SymCryptSha224StateExport(
+    _In_                                                    PCSYMCRYPT_SHA224_STATE pState,
+    _Out_writes_bytes_( SYMCRYPT_SHA224_STATE_EXPORT_SIZE ) PBYTE                   pbBlob );
+
+SYMCRYPT_ERROR
+SYMCRYPT_CALL
+SymCryptSha224StateImport(
+    _Out_                                                   PSYMCRYPT_SHA224_STATE  pState,
+    _In_reads_bytes_( SYMCRYPT_SHA224_STATE_EXPORT_SIZE)    PCBYTE                  pbBlob );
+
+VOID
+SYMCRYPT_CALL
+SymCryptSha224Selftest(void);
+
+extern const PCSYMCRYPT_HASH SymCryptSha224Algorithm;
+
+////////////////////////////////////////////////////////////////////////////
 //   SHA-256
 //
 //
@@ -1305,18 +1372,211 @@ extern const PCSYMCRYPT_HASH SymCryptSha512Algorithm;
 
 
 ////////////////////////////////////////////////////////////////////////////
+//   SHA-512/224
+//
+//
+// The SHA-512/224 hash algorithm per FIPS 180-4.
+// This implementation is limited to data strings that are in whole bytes.
+// Odd bit length are not supported.
+//
+// The SHA-512/224 standard limits data inputs to a maximum of 2^125-1 bytes.
+// This implementation supports larger inputs, and simply wraps the internal message
+// length counter. Note that the security properties are unknown for
+// such long messages, and their use is not recommended.
+//
+// This implementation is meant for interoperability and is not recommended for use.
+//
+// For details on this API see the description above about the generic hash function API.
+//
+
+#define SYMCRYPT_SHA512_224_RESULT_SIZE         (28)
+#define SYMCRYPT_SHA512_224_INPUT_BLOCK_SIZE    (128)
+
+VOID
+SYMCRYPT_CALL
+SymCryptSha512_224(
+    _In_reads_( cbData )                            PCBYTE  pbData,
+                                                    SIZE_T  cbData,
+    _Out_writes_( SYMCRYPT_SHA512_224_RESULT_SIZE ) PBYTE   pbResult );
+
+VOID
+SYMCRYPT_CALL
+SymCryptSha512_224Init( _Out_ PSYMCRYPT_SHA512_224_STATE pState );
+
+VOID
+SYMCRYPT_CALL
+SymCryptSha512_224Append(
+    _Inout_                 PSYMCRYPT_SHA512_224_STATE  pState,
+    _In_reads_( cbData )    PCBYTE                      pbData,
+                            SIZE_T                      cbData );
+
+VOID
+SYMCRYPT_CALL
+SymCryptSha512_224Result(
+    _Inout_                                         PSYMCRYPT_SHA512_224_STATE  pState,
+    _Out_writes_( SYMCRYPT_SHA512_224_RESULT_SIZE ) PBYTE                       pbResult );
+
+VOID
+SYMCRYPT_CALL
+SymCryptSha512_224StateCopy( _In_ PCSYMCRYPT_SHA512_224_STATE pSrc, _Out_ PSYMCRYPT_SHA512_224_STATE pDst );
+
+VOID
+SYMCRYPT_CALL
+SymCryptSha512_224StateExport(
+    _In_                                                        PCSYMCRYPT_SHA512_224_STATE pState,
+    _Out_writes_bytes_( SYMCRYPT_SHA512_224_STATE_EXPORT_SIZE ) PBYTE                       pbBlob );
+
+SYMCRYPT_ERROR
+SYMCRYPT_CALL
+SymCryptSha512_224StateImport(
+    _Out_                                                       PSYMCRYPT_SHA512_224_STATE  pState,
+    _In_reads_bytes_( SYMCRYPT_SHA512_224_STATE_EXPORT_SIZE)    PCBYTE                      pbBlob );
+
+VOID
+SYMCRYPT_CALL
+SymCryptSha512_224Selftest(void);
+
+extern const PCSYMCRYPT_HASH SymCryptSha512_224Algorithm;
+
+
+////////////////////////////////////////////////////////////////////////////
+//   SHA-512/256
+//
+//
+// The SHA-512/256 hash algorithm per FIPS 180-4.
+// This implementation is limited to data strings that are in whole bytes.
+// Odd bit length are not supported.
+//
+// The SHA-512/256 standard limits data inputs to a maximum of 2^125-1 bytes.
+// This implementation supports larger inputs, and simply wraps the internal message
+// length counter. Note that the security properties are unknown for
+// such long messages, and their use is not recommended.
+//
+// This implementation is meant for interoperability and is not recommended for use.
+//
+// For details on this API see the description above about the generic hash function API.
+//
+
+#define SYMCRYPT_SHA512_256_RESULT_SIZE         (32)
+#define SYMCRYPT_SHA512_256_INPUT_BLOCK_SIZE    (128)
+
+VOID
+SYMCRYPT_CALL
+SymCryptSha512_256(
+    _In_reads_( cbData )                            PCBYTE  pbData,
+                                                    SIZE_T  cbData,
+    _Out_writes_( SYMCRYPT_SHA512_256_RESULT_SIZE ) PBYTE   pbResult );
+
+VOID
+SYMCRYPT_CALL
+SymCryptSha512_256Init( _Out_ PSYMCRYPT_SHA512_256_STATE pState );
+
+VOID
+SYMCRYPT_CALL
+SymCryptSha512_256Append(
+    _Inout_                 PSYMCRYPT_SHA512_256_STATE  pState,
+    _In_reads_( cbData )    PCBYTE                      pbData,
+                            SIZE_T                      cbData );
+
+VOID
+SYMCRYPT_CALL
+SymCryptSha512_256Result(
+    _Inout_                                         PSYMCRYPT_SHA512_256_STATE  pState,
+    _Out_writes_( SYMCRYPT_SHA512_256_RESULT_SIZE ) PBYTE                       pbResult );
+
+VOID
+SYMCRYPT_CALL
+SymCryptSha512_256StateCopy( _In_ PCSYMCRYPT_SHA512_256_STATE pSrc, _Out_ PSYMCRYPT_SHA512_256_STATE pDst );
+
+VOID
+SYMCRYPT_CALL
+SymCryptSha512_256StateExport(
+    _In_                                                        PCSYMCRYPT_SHA512_256_STATE pState,
+    _Out_writes_bytes_( SYMCRYPT_SHA512_256_STATE_EXPORT_SIZE ) PBYTE                       pbBlob );
+
+SYMCRYPT_ERROR
+SYMCRYPT_CALL
+SymCryptSha512_256StateImport(
+    _Out_                                                       PSYMCRYPT_SHA512_256_STATE  pState,
+    _In_reads_bytes_( SYMCRYPT_SHA512_256_STATE_EXPORT_SIZE)    PCBYTE                      pbBlob );
+
+VOID
+SYMCRYPT_CALL
+SymCryptSha512_256Selftest(void);
+
+extern const PCSYMCRYPT_HASH SymCryptSha512_256Algorithm;
+
+
+////////////////////////////////////////////////////////////////////////////
 //   SHA-3
 //
 // The SHA-3 family of hash algorithms per FIPS 202.
 // This implementation is limited to data strings that are in whole bytes.
 // Odd bit length are not supported.
 //
+// SHA3-224 is meant for interoperability and is not recommended for use.
+//
+// SHA3-224(M) = KECCAK[448](M || 01, 224)
 // SHA3-256(M) = KECCAK[512](M || 01, 256)
 // SHA3-384(M) = KECCAK[768](M || 01, 384)
 // SHA3-512(M) = KECCAK[1024](M || 01, 512)
 //
 // For details on this API see the description above about the generic hash function API.
 //
+
+
+//
+// SHA-3-224
+//
+
+#define SYMCRYPT_SHA3_224_RESULT_SIZE         (28)
+#define SYMCRYPT_SHA3_224_INPUT_BLOCK_SIZE    (144)
+
+VOID
+SYMCRYPT_CALL
+SymCryptSha3_224(
+    _In_reads_(cbData)                          PCBYTE  pbData,
+                                                SIZE_T  cbData,
+    _Out_writes_(SYMCRYPT_SHA3_224_RESULT_SIZE) PBYTE   pbResult);
+
+VOID
+SYMCRYPT_CALL
+SymCryptSha3_224Init(_Out_ PSYMCRYPT_SHA3_224_STATE pState);
+
+VOID
+SYMCRYPT_CALL
+SymCryptSha3_224Append(
+    _Inout_                 PSYMCRYPT_SHA3_224_STATE    pState,
+    _In_reads_(cbData)      PCBYTE                      pbData,
+                            SIZE_T                      cbData);
+
+VOID
+SYMCRYPT_CALL
+SymCryptSha3_224Result(
+    _Inout_                                     PSYMCRYPT_SHA3_224_STATE    pState,
+    _Out_writes_(SYMCRYPT_SHA3_224_RESULT_SIZE) PBYTE                       pbResult);
+
+VOID
+SYMCRYPT_CALL
+SymCryptSha3_224StateCopy(_In_ PCSYMCRYPT_SHA3_224_STATE pSrc, _Out_ PSYMCRYPT_SHA3_224_STATE pDst);
+
+VOID
+SYMCRYPT_CALL
+SymCryptSha3_224StateExport(
+    _In_                                                    PCSYMCRYPT_SHA3_224_STATE   pState,
+    _Out_writes_bytes_(SYMCRYPT_SHA3_224_STATE_EXPORT_SIZE) PBYTE                       pbBlob);
+
+SYMCRYPT_ERROR
+SYMCRYPT_CALL
+SymCryptSha3_224StateImport(
+    _Out_                                                   PSYMCRYPT_SHA3_224_STATE    pState,
+    _In_reads_bytes_(SYMCRYPT_SHA3_224_STATE_EXPORT_SIZE)   PCBYTE                      pbBlob);
+
+VOID
+SYMCRYPT_CALL
+SymCryptSha3_224Selftest(void);
+
+extern const PCSYMCRYPT_HASH SymCryptSha3_224Algorithm;
 
 
 //
@@ -2468,6 +2728,72 @@ SymCryptHmacSha1Selftest(void);
 extern const PCSYMCRYPT_MAC SymCryptHmacSha1Algorithm;
 
 ////////////////////////////////////////////////////////////////////////////
+//   HMAC-SHA-224
+//
+// This implementation is meant for interoperability and is not recommended for use.
+//
+//
+
+#define SYMCRYPT_HMAC_SHA224_RESULT_SIZE       SYMCRYPT_SHA224_RESULT_SIZE
+#define SYMCRYPT_HMAC_SHA224_INPUT_BLOCK_SIZE  SYMCRYPT_SHA224_INPUT_BLOCK_SIZE
+
+SYMCRYPT_ERROR
+SYMCRYPT_CALL
+SymCryptHmacSha224ExpandKey(
+    _Out_                   PSYMCRYPT_HMAC_SHA224_EXPANDED_KEY  pExpandedKey,
+    _In_reads_opt_(cbKey)   PCBYTE                              pbKey,
+                            SIZE_T                              cbKey );
+//
+// Supports all key lengths; never returns an error.
+//
+
+VOID
+SYMCRYPT_CALL
+SymCryptHmacSha224KeyCopy(
+    _In_    PCSYMCRYPT_HMAC_SHA224_EXPANDED_KEY pSrc,
+    _Out_   PSYMCRYPT_HMAC_SHA224_EXPANDED_KEY  pDst );
+
+VOID
+SYMCRYPT_CALL
+SymCryptHmacSha224(
+    _In_                                            PCSYMCRYPT_HMAC_SHA224_EXPANDED_KEY pExpandedKey,
+    _In_reads_( cbData )                            PCBYTE                              pbData,
+                                                    SIZE_T                              cbData,
+    _Out_writes_( SYMCRYPT_HMAC_SHA224_RESULT_SIZE )PBYTE                               pbResult );
+
+VOID
+SYMCRYPT_CALL
+SymCryptHmacSha224StateCopy(
+    _In_        PCSYMCRYPT_HMAC_SHA224_STATE        pSrc,
+    _In_opt_    PCSYMCRYPT_HMAC_SHA224_EXPANDED_KEY pExpandedKey,
+    _Out_       PSYMCRYPT_HMAC_SHA224_STATE         pDst );
+
+VOID
+SYMCRYPT_CALL
+SymCryptHmacSha224Init(
+    _Out_   PSYMCRYPT_HMAC_SHA224_STATE         pState,
+    _In_    PCSYMCRYPT_HMAC_SHA224_EXPANDED_KEY pExpandedKey);
+
+VOID
+SYMCRYPT_CALL
+SymCryptHmacSha224Append(
+    _Inout_                 PSYMCRYPT_HMAC_SHA224_STATE pState,
+    _In_reads_( cbData )    PCBYTE                      pbData,
+                            SIZE_T                      cbData );
+
+VOID
+SYMCRYPT_CALL
+SymCryptHmacSha224Result(
+    _Inout_                                         PSYMCRYPT_HMAC_SHA224_STATE pState,
+    _Out_writes_( SYMCRYPT_HMAC_SHA224_RESULT_SIZE )PBYTE                       pbResult );
+
+VOID
+SYMCRYPT_CALL
+SymCryptHmacSha224Selftest(void);
+
+extern const PCSYMCRYPT_MAC  SymCryptHmacSha224Algorithm;
+
+////////////////////////////////////////////////////////////////////////////
 //   HMAC-SHA-256
 //
 //
@@ -2658,6 +2984,204 @@ SYMCRYPT_CALL
 SymCryptHmacSha512Selftest(void);
 
 extern const PCSYMCRYPT_MAC  SymCryptHmacSha512Algorithm;
+
+////////////////////////////////////////////////////////////////////////////
+//   HMAC-SHA-512_224
+//
+// This implementation is meant for interoperability and is not recommended for use.
+//
+//
+
+#define SYMCRYPT_HMAC_SHA512_224_RESULT_SIZE       SYMCRYPT_SHA512_224_RESULT_SIZE
+#define SYMCRYPT_HMAC_SHA512_224_INPUT_BLOCK_SIZE  SYMCRYPT_SHA512_224_INPUT_BLOCK_SIZE
+
+SYMCRYPT_ERROR
+SYMCRYPT_CALL
+SymCryptHmacSha512_224ExpandKey(
+    _Out_                   PSYMCRYPT_HMAC_SHA512_224_EXPANDED_KEY  pExpandedKey,
+    _In_reads_opt_(cbKey)   PCBYTE                                  pbKey,
+                            SIZE_T                                  cbKey );
+//
+// Supports all key lengths; never returns an error.
+//
+
+VOID
+SYMCRYPT_CALL
+SymCryptHmacSha512_224KeyCopy(
+    _In_    PCSYMCRYPT_HMAC_SHA512_224_EXPANDED_KEY pSrc,
+    _Out_   PSYMCRYPT_HMAC_SHA512_224_EXPANDED_KEY  pDst );
+
+VOID
+SYMCRYPT_CALL
+SymCryptHmacSha512_224(
+    _In_                                                    PCSYMCRYPT_HMAC_SHA512_224_EXPANDED_KEY pExpandedKey,
+    _In_reads_( cbData )                                    PCBYTE                                  pbData,
+                                                            SIZE_T                                  cbData,
+    _Out_writes_( SYMCRYPT_HMAC_SHA512_224_RESULT_SIZE )    PBYTE                                   pbResult );
+
+VOID
+SYMCRYPT_CALL
+SymCryptHmacSha512_224StateCopy(
+    _In_        PCSYMCRYPT_HMAC_SHA512_224_STATE        pSrc,
+    _In_opt_    PCSYMCRYPT_HMAC_SHA512_224_EXPANDED_KEY pExpandedKey,
+    _Out_       PSYMCRYPT_HMAC_SHA512_224_STATE         pDst );
+
+VOID
+SYMCRYPT_CALL
+SymCryptHmacSha512_224Init(
+    _Out_   PSYMCRYPT_HMAC_SHA512_224_STATE         pState,
+    _In_    PCSYMCRYPT_HMAC_SHA512_224_EXPANDED_KEY pExpandedKey);
+
+VOID
+SYMCRYPT_CALL
+SymCryptHmacSha512_224Append(
+    _Inout_                 PSYMCRYPT_HMAC_SHA512_224_STATE pState,
+    _In_reads_( cbData )    PCBYTE                          pbData,
+                            SIZE_T                          cbData );
+
+VOID
+SYMCRYPT_CALL
+SymCryptHmacSha512_224Result(
+    _Inout_                                                 PSYMCRYPT_HMAC_SHA512_224_STATE pState,
+    _Out_writes_( SYMCRYPT_HMAC_SHA512_224_RESULT_SIZE )    PBYTE                           pbResult );
+
+VOID
+SYMCRYPT_CALL
+SymCryptHmacSha512_224Selftest(void);
+
+extern const PCSYMCRYPT_MAC  SymCryptHmacSha512_224Algorithm;
+
+////////////////////////////////////////////////////////////////////////////
+//   HMAC-SHA-512_256
+//
+// This implementation is meant for interoperability and is not recommended for use.
+//
+//
+
+#define SYMCRYPT_HMAC_SHA512_256_RESULT_SIZE       SYMCRYPT_SHA512_256_RESULT_SIZE
+#define SYMCRYPT_HMAC_SHA512_256_INPUT_BLOCK_SIZE  SYMCRYPT_SHA512_256_INPUT_BLOCK_SIZE
+
+SYMCRYPT_ERROR
+SYMCRYPT_CALL
+SymCryptHmacSha512_256ExpandKey(
+    _Out_                   PSYMCRYPT_HMAC_SHA512_256_EXPANDED_KEY  pExpandedKey,
+    _In_reads_opt_(cbKey)   PCBYTE                                  pbKey,
+                            SIZE_T                                  cbKey );
+//
+// Supports all key lengths; never returns an error.
+//
+
+VOID
+SYMCRYPT_CALL
+SymCryptHmacSha512_256KeyCopy(
+    _In_    PCSYMCRYPT_HMAC_SHA512_256_EXPANDED_KEY pSrc,
+    _Out_   PSYMCRYPT_HMAC_SHA512_256_EXPANDED_KEY  pDst );
+
+VOID
+SYMCRYPT_CALL
+SymCryptHmacSha512_256(
+    _In_                                                    PCSYMCRYPT_HMAC_SHA512_256_EXPANDED_KEY pExpandedKey,
+    _In_reads_( cbData )                                    PCBYTE                                  pbData,
+                                                            SIZE_T                                  cbData,
+    _Out_writes_( SYMCRYPT_HMAC_SHA512_256_RESULT_SIZE )    PBYTE                                   pbResult );
+
+VOID
+SYMCRYPT_CALL
+SymCryptHmacSha512_256StateCopy(
+    _In_        PCSYMCRYPT_HMAC_SHA512_256_STATE        pSrc,
+    _In_opt_    PCSYMCRYPT_HMAC_SHA512_256_EXPANDED_KEY pExpandedKey,
+    _Out_       PSYMCRYPT_HMAC_SHA512_256_STATE         pDst );
+
+VOID
+SYMCRYPT_CALL
+SymCryptHmacSha512_256Init(
+    _Out_   PSYMCRYPT_HMAC_SHA512_256_STATE         pState,
+    _In_    PCSYMCRYPT_HMAC_SHA512_256_EXPANDED_KEY pExpandedKey);
+
+VOID
+SYMCRYPT_CALL
+SymCryptHmacSha512_256Append(
+    _Inout_                 PSYMCRYPT_HMAC_SHA512_256_STATE pState,
+    _In_reads_( cbData )    PCBYTE                          pbData,
+                            SIZE_T                          cbData );
+
+VOID
+SYMCRYPT_CALL
+SymCryptHmacSha512_256Result(
+    _Inout_                                                 PSYMCRYPT_HMAC_SHA512_256_STATE pState,
+    _Out_writes_( SYMCRYPT_HMAC_SHA512_256_RESULT_SIZE )    PBYTE                           pbResult );
+
+VOID
+SYMCRYPT_CALL
+SymCryptHmacSha512_256Selftest(void);
+
+extern const PCSYMCRYPT_MAC  SymCryptHmacSha512_256Algorithm;
+
+////////////////////////////////////////////////////////////////////////////
+//   HMAC-SHA3-224
+//
+// This implementation is meant for interoperability and is not recommended for use.
+//
+//
+
+#define SYMCRYPT_HMAC_SHA3_224_RESULT_SIZE       SYMCRYPT_SHA3_224_RESULT_SIZE
+#define SYMCRYPT_HMAC_SHA3_224_INPUT_BLOCK_SIZE  SYMCRYPT_SHA3_224_INPUT_BLOCK_SIZE
+
+SYMCRYPT_ERROR
+SYMCRYPT_CALL
+SymCryptHmacSha3_224ExpandKey(
+    _Out_                   PSYMCRYPT_HMAC_SHA3_224_EXPANDED_KEY    pExpandedKey,
+    _In_reads_opt_(cbKey)   PCBYTE                                  pbKey,
+                            SIZE_T                                  cbKey );
+//
+// Supports all key lengths; never returns an error.
+//
+
+VOID
+SYMCRYPT_CALL
+SymCryptHmacSha3_224KeyCopy(
+    _In_    PCSYMCRYPT_HMAC_SHA3_224_EXPANDED_KEY pSrc,
+    _Out_   PSYMCRYPT_HMAC_SHA3_224_EXPANDED_KEY  pDst );
+
+VOID
+SYMCRYPT_CALL
+SymCryptHmacSha3_224(
+    _In_                                                PCSYMCRYPT_HMAC_SHA3_224_EXPANDED_KEY   pExpandedKey,
+    _In_reads_( cbData )                                PCBYTE                                  pbData,
+                                                        SIZE_T                                  cbData,
+    _Out_writes_( SYMCRYPT_HMAC_SHA3_224_RESULT_SIZE )  PBYTE                                   pbResult );
+
+VOID
+SYMCRYPT_CALL
+SymCryptHmacSha3_224StateCopy(
+    _In_        PCSYMCRYPT_HMAC_SHA3_224_STATE        pSrc,
+    _In_opt_    PCSYMCRYPT_HMAC_SHA3_224_EXPANDED_KEY pExpandedKey,
+    _Out_       PSYMCRYPT_HMAC_SHA3_224_STATE         pDst );
+
+VOID
+SYMCRYPT_CALL
+SymCryptHmacSha3_224Init(
+    _Out_   PSYMCRYPT_HMAC_SHA3_224_STATE         pState,
+    _In_    PCSYMCRYPT_HMAC_SHA3_224_EXPANDED_KEY pExpandedKey);
+
+VOID
+SYMCRYPT_CALL
+SymCryptHmacSha3_224Append(
+    _Inout_                 PSYMCRYPT_HMAC_SHA3_224_STATE   pState,
+    _In_reads_( cbData )    PCBYTE                          pbData,
+                            SIZE_T                          cbData );
+
+VOID
+SYMCRYPT_CALL
+SymCryptHmacSha3_224Result(
+    _Inout_                                             PSYMCRYPT_HMAC_SHA3_224_STATE   pState,
+    _Out_writes_( SYMCRYPT_HMAC_SHA3_224_RESULT_SIZE )  PBYTE                           pbResult );
+
+VOID
+SYMCRYPT_CALL
+SymCryptHmacSha3_224Selftest(void);
+
+extern const PCSYMCRYPT_MAC  SymCryptHmacSha3_224Algorithm;
 
 ////////////////////////////////////////////////////////////////////////////
 //   HMAC-SHA3-256
@@ -8017,14 +8541,26 @@ extern const SYMCRYPT_OID SymCryptMd5OidList[SYMCRYPT_MD5_OID_COUNT];
 #define SYMCRYPT_SHA1_OID_COUNT        (2)
 extern const SYMCRYPT_OID SymCryptSha1OidList[SYMCRYPT_SHA1_OID_COUNT];
 
+#define SYMCRYPT_SHA224_OID_COUNT      (2)
+extern const SYMCRYPT_OID SymCryptSha224OidList[SYMCRYPT_SHA224_OID_COUNT];
+
 #define SYMCRYPT_SHA256_OID_COUNT      (2)
 extern const SYMCRYPT_OID SymCryptSha256OidList[SYMCRYPT_SHA256_OID_COUNT];
 
 #define SYMCRYPT_SHA384_OID_COUNT      (2)
 extern const SYMCRYPT_OID SymCryptSha384OidList[SYMCRYPT_SHA384_OID_COUNT];
 
+#define SYMCRYPT_SHA512_224_OID_COUNT      (2)
+extern const SYMCRYPT_OID SymCryptSha512_224OidList[SYMCRYPT_SHA512_224_OID_COUNT];
+
+#define SYMCRYPT_SHA512_256_OID_COUNT      (2)
+extern const SYMCRYPT_OID SymCryptSha512_256OidList[SYMCRYPT_SHA512_256_OID_COUNT];
+
 #define SYMCRYPT_SHA512_OID_COUNT      (2)
 extern const SYMCRYPT_OID SymCryptSha512OidList[SYMCRYPT_SHA512_OID_COUNT];
+
+#define SYMCRYPT_SHA3_224_OID_COUNT      (2)
+extern const SYMCRYPT_OID SymCryptSha3_224OidList[SYMCRYPT_SHA3_224_OID_COUNT];
 
 #define SYMCRYPT_SHA3_256_OID_COUNT      (2)
 extern const SYMCRYPT_OID SymCryptSha3_256OidList[SYMCRYPT_SHA3_256_OID_COUNT];

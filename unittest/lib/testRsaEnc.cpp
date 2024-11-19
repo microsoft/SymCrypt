@@ -128,6 +128,11 @@ RsaEncMultiImp::setKey( PCRSAKEY_TESTBLOB pcKeyBlob )
                                     pbLabel, cbLabel,
                                     msg, sizeof( msg ),
                                     &cbResMsg );
+        if ( ntStatus == STATUS_NOT_SUPPORTED )
+        {
+            continue;
+        }
+
         SYMCRYPT_STORE_MSBFIRST32( b, ntStatus );
         resStatus.addResult( *i, b, 4 );
         resMsg.addResult( *i, msg, cbResMsg );
@@ -166,6 +171,11 @@ RsaEncMultiImp::encrypt(
     for( ImpPtrVector::iterator i = m_comps.begin(); i != m_comps.end(); i++ )
     {
         ntStatus = (*i)->encrypt( pbMsg, cbMsg, pcstrHashAlgName, pbLabel, cbLabel, ciphertext, m_cbCiphertext );
+        if ( ntStatus == STATUS_NOT_SUPPORTED )
+        {
+            continue;
+        }
+        
         if( ntStatusRes == -1 )
         {
             ntStatusRes = ntStatus;
@@ -179,6 +189,11 @@ RsaEncMultiImp::encrypt(
             {
                 msg[0]++;
                 ntStatus = (*j)->decrypt( ciphertext, cbCiphertext, pcstrHashAlgName, pbLabel, cbLabel, msg, sizeof( msg ), &cbMsgRes );
+                if ( ntStatus == STATUS_NOT_SUPPORTED )
+                {
+                    continue;
+                }
+
                 CHECK( ntStatus == STATUS_SUCCESS, "Failure during RSA decryption" );
                 CHECK( cbMsgRes == cbMsg, "Wrong message length" );
                 CHECK( memcmp( pbMsg, msg, cbMsg ) == 0, "Wrong message data" );
@@ -471,13 +486,20 @@ createKatFileRsaEnc()
     {
         PRSAKEY_TESTBLOB pBlob = &g_RsaTestKeyBlobs[ i ];
 
-        switch( g_rng.byte() % 5 )
+        switch( g_rng.byte() % 12 )
         {
-        case 0: createKatFileSingleOaep( f, pBlob, "MD5"   , SymCryptMd5Algorithm,       16 ); break;
-        case 1: createKatFileSingleOaep( f, pBlob, "SHA1"  , SymCryptSha1Algorithm,      20 ); break;
-        case 2: createKatFileSingleOaep( f, pBlob, "SHA256", SymCryptSha256Algorithm,    32 ); break;
-        case 3: createKatFileSingleOaep( f, pBlob, "SHA384", SymCryptSha384Algorithm,    48 ); break;
-        case 4: createKatFileSingleOaep( f, pBlob, "SHA512", SymCryptSha512Algorithm,    64 ); break;
+        case 0:  createKatFileSingleOaep( f, pBlob, "MD5"   , SymCryptMd5Algorithm,       16 ); break;
+        case 1:  createKatFileSingleOaep( f, pBlob, "SHA1"  , SymCryptSha1Algorithm,      20 ); break;
+        case 2:  createKatFileSingleOaep( f, pBlob, "SHA224", SymCryptSha224Algorithm,    28 ); break;
+        case 3:  createKatFileSingleOaep( f, pBlob, "SHA256", SymCryptSha256Algorithm,    32 ); break;
+        case 4:  createKatFileSingleOaep( f, pBlob, "SHA384", SymCryptSha384Algorithm,    48 ); break;
+        case 5:  createKatFileSingleOaep( f, pBlob, "SHA512", SymCryptSha512Algorithm,    64 ); break;
+        case 6:  createKatFileSingleOaep( f, pBlob, "SHA512-224", SymCryptSha512_224Algorithm,    28 ); break;
+        case 7:  createKatFileSingleOaep( f, pBlob, "SHA512-256", SymCryptSha512_256Algorithm,    32 ); break;
+        case 8:  createKatFileSingleOaep( f, pBlob, "SHA3-224", SymCryptSha3_224Algorithm,    28 ); break;
+        case 9:  createKatFileSingleOaep( f, pBlob, "SHA3-256", SymCryptSha3_256Algorithm,    32 ); break;
+        case 10: createKatFileSingleOaep( f, pBlob, "SHA3-384", SymCryptSha3_384Algorithm,    48 ); break;
+        case 11: createKatFileSingleOaep( f, pBlob, "SHA3-512", SymCryptSha3_512Algorithm,    64 ); break;
         }
     }
 

@@ -86,7 +86,7 @@ VOID
 SYMCRYPT_CALL
 SymCryptSha3_384StateExport(
     _In_                                                    PCSYMCRYPT_SHA3_384_STATE   pState,
-    _Out_writes_bytes_(SYMCRYPT_SHA3_512_STATE_EXPORT_SIZE) PBYTE                       pbBlob)
+    _Out_writes_bytes_(SYMCRYPT_SHA3_384_STATE_EXPORT_SIZE) PBYTE                       pbBlob)
 {
     SYMCRYPT_CHECK_MAGIC(pState);
     SymCryptKeccakStateExport(SymCryptBlobTypeSha3_384State, &pState->ks, pbBlob);

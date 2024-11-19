@@ -226,6 +226,15 @@ EXPORTS
     SymCryptHmacSha1Result
     SymCryptHmacSha1Selftest
     SymCryptHmacSha1StateCopy
+    SymCryptHmacSha224
+    SymCryptHmacSha224Algorithm
+    SymCryptHmacSha224Append
+    SymCryptHmacSha224ExpandKey
+    SymCryptHmacSha224Init
+    SymCryptHmacSha224KeyCopy
+    SymCryptHmacSha224Result
+    SymCryptHmacSha224Selftest
+    SymCryptHmacSha224StateCopy
     SymCryptHmacSha256
     SymCryptHmacSha256Append
     SymCryptHmacSha256ExpandKey
@@ -234,6 +243,15 @@ EXPORTS
     SymCryptHmacSha256Result
     SymCryptHmacSha256Selftest
     SymCryptHmacSha256StateCopy
+    SymCryptHmacSha3_224
+    SymCryptHmacSha3_224Algorithm
+    SymCryptHmacSha3_224Append
+    SymCryptHmacSha3_224ExpandKey
+    SymCryptHmacSha3_224Init
+    SymCryptHmacSha3_224KeyCopy
+    SymCryptHmacSha3_224Result
+    SymCryptHmacSha3_224Selftest
+    SymCryptHmacSha3_224StateCopy
     SymCryptHmacSha3_256
     SymCryptHmacSha3_256Append
     SymCryptHmacSha3_256ExpandKey
@@ -266,6 +284,24 @@ EXPORTS
     SymCryptHmacSha384Result
     SymCryptHmacSha384Selftest
     SymCryptHmacSha384StateCopy
+    SymCryptHmacSha512_224
+    SymCryptHmacSha512_224Algorithm
+    SymCryptHmacSha512_224Append
+    SymCryptHmacSha512_224ExpandKey
+    SymCryptHmacSha512_224Init
+    SymCryptHmacSha512_224KeyCopy
+    SymCryptHmacSha512_224Result
+    SymCryptHmacSha512_224Selftest
+    SymCryptHmacSha512_224StateCopy
+    SymCryptHmacSha512_256
+    SymCryptHmacSha512_256Algorithm
+    SymCryptHmacSha512_256Append
+    SymCryptHmacSha512_256ExpandKey
+    SymCryptHmacSha512_256Init
+    SymCryptHmacSha512_256KeyCopy
+    SymCryptHmacSha512_256Result
+    SymCryptHmacSha512_256Selftest
+    SymCryptHmacSha512_256StateCopy
     SymCryptHmacSha512
     SymCryptHmacSha512Append
     SymCryptHmacSha512ExpandKey
@@ -440,6 +476,16 @@ EXPORTS
     SymCryptSha1StateCopy
     SymCryptSha1StateExport
     SymCryptSha1StateImport
+    SymCryptSha224
+    SymCryptSha224Algorithm
+    SymCryptSha224Append
+    SymCryptSha224Init
+    SymCryptSha224OidList
+    SymCryptSha224Result
+    SymCryptSha224Selftest
+    SymCryptSha224StateCopy
+    SymCryptSha224StateExport
+    SymCryptSha224StateImport
     SymCryptSha256
     SymCryptSha256Append
     SymCryptSha256Init
@@ -448,6 +494,15 @@ EXPORTS
     SymCryptSha256StateCopy
     SymCryptSha256StateExport
     SymCryptSha256StateImport
+    SymCryptSha3_224
+    SymCryptSha3_224Algorithm
+    SymCryptSha3_224Append
+    SymCryptSha3_224Init
+    SymCryptSha3_224OidList
+    SymCryptSha3_224Result
+    SymCryptSha3_224StateCopy
+    SymCryptSha3_224StateExport
+    SymCryptSha3_224StateImport
     SymCryptSha3_256
     SymCryptSha3_256Append
     SymCryptSha3_256Init
@@ -477,6 +532,26 @@ EXPORTS
     SymCryptSha384StateCopy
     SymCryptSha384StateExport
     SymCryptSha384StateImport
+    SymCryptSha512_224
+    SymCryptSha512_224Algorithm
+    SymCryptSha512_224Append
+    SymCryptSha512_224Init
+    SymCryptSha512_224OidList
+    SymCryptSha512_224Result
+    SymCryptSha512_224Selftest
+    SymCryptSha512_224StateCopy
+    SymCryptSha512_224StateExport
+    SymCryptSha512_224StateImport
+    SymCryptSha512_256
+    SymCryptSha512_256Algorithm
+    SymCryptSha512_256Append
+    SymCryptSha512_256Init
+    SymCryptSha512_256OidList
+    SymCryptSha512_256Result
+    SymCryptSha512_256Selftest
+    SymCryptSha512_256StateCopy
+    SymCryptSha512_256StateExport
+    SymCryptSha512_256StateImport
     SymCryptSha512
     SymCryptSha512Append
     SymCryptSha512Init

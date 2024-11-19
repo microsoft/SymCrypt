@@ -558,6 +558,13 @@ SymCryptKeccakStateImport(
 
     switch (blob.header.type)
     {
+        case SymCryptBlobTypeSha3_224State:
+            pState->inputBlockSize = SYMCRYPT_SHA3_224_INPUT_BLOCK_SIZE;
+            if (blob.paddingValue == SYMCRYPT_SHA3_PADDING_VALUE)
+            {
+                pState->paddingValue = blob.paddingValue;
+            }
+            break;
         case SymCryptBlobTypeSha3_256State:
             pState->inputBlockSize = SYMCRYPT_SHA3_256_INPUT_BLOCK_SIZE;
             if (blob.paddingValue == SYMCRYPT_SHA3_PADDING_VALUE)

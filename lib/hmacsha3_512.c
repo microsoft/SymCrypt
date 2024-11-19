@@ -90,7 +90,7 @@ const SYMCRYPT_MAC SymCryptHmacSha3_512Algorithm_default = {
 const PCSYMCRYPT_MAC SymCryptHmacSha3_512Algorithm = &SymCryptHmacSha3_512Algorithm_default;
 
 
-static const BYTE hmacSha3_512Kat[] = 
+static const BYTE hmacSha3_512Kat[64] =
 {
     0x83, 0x3b, 0x31, 0xe7, 0x77, 0xd6, 0xb3, 0x3d,
     0x75, 0x23, 0xa5, 0x79, 0xcc, 0x3b, 0xeb, 0x27,

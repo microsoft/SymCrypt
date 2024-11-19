@@ -45,6 +45,16 @@
 #undef ALG_Name
 #undef ALG_name
 
+#define ALG_NAME   SHA224
+#define ALG_Name   Sha224
+#define ALG_name   sha224
+#define SYMCRYPT_HASH_MD_SHA
+#include "sc_imp_hashpattern.cpp"
+#undef SYMCRYPT_HASH_MD_SHA
+#undef ALG_NAME
+#undef ALG_Name
+#undef ALG_name
+
 #define ALG_NAME   SHA256
 #define ALG_Name   Sha256
 #define ALG_name   sha256
@@ -71,6 +81,34 @@
 #define SYMCRYPT_HASH_MD_SHA
 #include "sc_imp_hashpattern.cpp"
 #undef SYMCRYPT_HASH_MD_SHA
+#undef ALG_NAME
+#undef ALG_Name
+#undef ALG_name
+
+#define ALG_NAME   SHA512_224
+#define ALG_Name   Sha512_224
+#define ALG_name   sha512_224
+#define SYMCRYPT_HASH_MD_SHA
+#include "sc_imp_hashpattern.cpp"
+#undef SYMCRYPT_HASH_MD_SHA
+#undef ALG_NAME
+#undef ALG_Name
+#undef ALG_name
+
+#define ALG_NAME   SHA512_256
+#define ALG_Name   Sha512_256
+#define ALG_name   sha512_256
+#define SYMCRYPT_HASH_MD_SHA
+#include "sc_imp_hashpattern.cpp"
+#undef SYMCRYPT_HASH_MD_SHA
+#undef ALG_NAME
+#undef ALG_Name
+#undef ALG_name
+
+#define ALG_NAME   SHA3_224
+#define ALG_Name   Sha3_224
+#define ALG_name   sha3_224
+#include "sc_imp_hashpattern.cpp"
 #undef ALG_NAME
 #undef ALG_Name
 #undef ALG_name
@@ -159,6 +197,12 @@
 #undef ALG_NAME
 #undef ALG_Name
 
+#define ALG_NAME    HMAC_SHA224
+#define ALG_Name    HmacSha224
+#include "sc_imp_macpattern.cpp"
+#undef ALG_NAME
+#undef ALG_Name
+
 #define ALG_NAME    HMAC_SHA256
 #define ALG_Name    HmacSha256
 #include "sc_imp_macpattern.cpp"
@@ -173,6 +217,24 @@
 
 #define ALG_NAME    HMAC_SHA512
 #define ALG_Name    HmacSha512
+#include "sc_imp_macpattern.cpp"
+#undef ALG_NAME
+#undef ALG_Name
+
+#define ALG_NAME    HMAC_SHA512_224
+#define ALG_Name    HmacSha512_224
+#include "sc_imp_macpattern.cpp"
+#undef ALG_NAME
+#undef ALG_Name
+
+#define ALG_NAME    HMAC_SHA512_256
+#define ALG_Name    HmacSha512_256
+#include "sc_imp_macpattern.cpp"
+#undef ALG_NAME
+#undef ALG_Name
+
+#define ALG_NAME    HMAC_SHA3_224
+#define ALG_Name    HmacSha3_224
 #include "sc_imp_macpattern.cpp"
 #undef ALG_NAME
 #undef ALG_Name
@@ -3233,21 +3295,25 @@ sc_RsaKeyPerf<ImpXxx>( PBYTE buf1, PBYTE buf2, SIZE_T keySize, UINT32 generateFl
 //================================================
 
 
-HASH_INFO CONCAT2(hashInfoTable, ImpXxx)[9] = { 0 };
+HASH_INFO CONCAT2(hashInfoTable, ImpXxx)[12] = { 0 };
 
 template<>
 PCHASH_INFO getHashInfo<ImpXxx>(PCSTR pcstrName)
 {
     if( CONCAT2(hashInfoTable, ImpXxx)[0].name == NULL )
     {
-        CONCAT2(hashInfoTable, ImpXxx)[0] = { "MD5",    ScShimSymCryptMd5Algorithm,     ScShimSymCryptMd5OidList,    SYMCRYPT_MD5_OID_COUNT };
-        CONCAT2(hashInfoTable, ImpXxx)[1] = { "SHA1",   ScShimSymCryptSha1Algorithm,    ScShimSymCryptSha1OidList,   SYMCRYPT_SHA1_OID_COUNT };
-        CONCAT2(hashInfoTable, ImpXxx)[2] = { "SHA256", ScShimSymCryptSha256Algorithm,  ScShimSymCryptSha256OidList, SYMCRYPT_SHA256_OID_COUNT };
-        CONCAT2(hashInfoTable, ImpXxx)[3] = { "SHA384", ScShimSymCryptSha384Algorithm,  ScShimSymCryptSha384OidList, SYMCRYPT_SHA384_OID_COUNT };
-        CONCAT2(hashInfoTable, ImpXxx)[4] = { "SHA512", ScShimSymCryptSha512Algorithm,  ScShimSymCryptSha512OidList, SYMCRYPT_SHA512_OID_COUNT };
-        CONCAT2(hashInfoTable, ImpXxx)[5] = { "SHA3_256", ScShimSymCryptSha3_256Algorithm,  ScShimSymCryptSha3_256OidList, SYMCRYPT_SHA3_256_OID_COUNT };
-        CONCAT2(hashInfoTable, ImpXxx)[6] = { "SHA3_384", ScShimSymCryptSha3_384Algorithm,  ScShimSymCryptSha3_384OidList, SYMCRYPT_SHA3_384_OID_COUNT };
-        CONCAT2(hashInfoTable, ImpXxx)[7] = { "SHA3_512", ScShimSymCryptSha3_512Algorithm,  ScShimSymCryptSha3_512OidList, SYMCRYPT_SHA3_512_OID_COUNT };
+        CONCAT2(hashInfoTable, ImpXxx)[0]  = { "MD5",    ScShimSymCryptMd5Algorithm,     ScShimSymCryptMd5OidList,    SYMCRYPT_MD5_OID_COUNT };
+        CONCAT2(hashInfoTable, ImpXxx)[1]  = { "SHA1",   ScShimSymCryptSha1Algorithm,    ScShimSymCryptSha1OidList,   SYMCRYPT_SHA1_OID_COUNT };
+        CONCAT2(hashInfoTable, ImpXxx)[2]  = { "SHA224", ScShimSymCryptSha224Algorithm,  ScShimSymCryptSha224OidList, SYMCRYPT_SHA224_OID_COUNT };
+        CONCAT2(hashInfoTable, ImpXxx)[3]  = { "SHA256", ScShimSymCryptSha256Algorithm,  ScShimSymCryptSha256OidList, SYMCRYPT_SHA256_OID_COUNT };
+        CONCAT2(hashInfoTable, ImpXxx)[4]  = { "SHA384", ScShimSymCryptSha384Algorithm,  ScShimSymCryptSha384OidList, SYMCRYPT_SHA384_OID_COUNT };
+        CONCAT2(hashInfoTable, ImpXxx)[5]  = { "SHA512", ScShimSymCryptSha512Algorithm,  ScShimSymCryptSha512OidList, SYMCRYPT_SHA512_OID_COUNT };
+        CONCAT2(hashInfoTable, ImpXxx)[6]  = { "SHA512-224",    ScShimSymCryptSha512_224Algorithm,  ScShimSymCryptSha512_224OidList, SYMCRYPT_SHA512_224_OID_COUNT };
+        CONCAT2(hashInfoTable, ImpXxx)[7]  = { "SHA512-256",    ScShimSymCryptSha512_256Algorithm,  ScShimSymCryptSha512_256OidList, SYMCRYPT_SHA512_256_OID_COUNT };
+        CONCAT2(hashInfoTable, ImpXxx)[8]  = { "SHA3-224", ScShimSymCryptSha3_224Algorithm,  ScShimSymCryptSha3_224OidList, SYMCRYPT_SHA3_224_OID_COUNT };
+        CONCAT2(hashInfoTable, ImpXxx)[9]  = { "SHA3-256", ScShimSymCryptSha3_256Algorithm,  ScShimSymCryptSha3_256OidList, SYMCRYPT_SHA3_256_OID_COUNT };
+        CONCAT2(hashInfoTable, ImpXxx)[10] = { "SHA3-384", ScShimSymCryptSha3_384Algorithm,  ScShimSymCryptSha3_384OidList, SYMCRYPT_SHA3_384_OID_COUNT };
+        CONCAT2(hashInfoTable, ImpXxx)[11] = { "SHA3-512", ScShimSymCryptSha3_512Algorithm,  ScShimSymCryptSha3_512OidList, SYMCRYPT_SHA3_512_OID_COUNT };
     }
 
     for (int i = 0; CONCAT2(hashInfoTable, ImpXxx)[i].name != NULL; i++)

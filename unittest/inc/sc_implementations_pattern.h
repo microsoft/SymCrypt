@@ -41,6 +41,14 @@ public:
 };
 
 template<>
+class HashImpState<ImpXxx, AlgSha224> {
+public:
+    SYMCRYPT_SHA224_STATE   sc;
+    SYMCRYPT_HASH_STATE     scHash;
+    BOOLEAN                 isReset;
+};
+
+template<>
 class HashImpState<ImpXxx, AlgSha256> {
 public:
     SYMCRYPT_SHA256_STATE   sc;
@@ -60,6 +68,30 @@ template<>
 class HashImpState<ImpXxx, AlgSha512> {
 public:
     SYMCRYPT_SHA512_STATE   sc;
+    SYMCRYPT_HASH_STATE     scHash;
+    BOOLEAN                 isReset;
+};
+
+template<>
+class HashImpState<ImpXxx, AlgSha512_224> {
+public:
+    SYMCRYPT_SHA512_224_STATE   sc;
+    SYMCRYPT_HASH_STATE         scHash;
+    BOOLEAN                     isReset;
+};
+
+template<>
+class HashImpState<ImpXxx, AlgSha512_256> {
+public:
+    SYMCRYPT_SHA512_256_STATE   sc;
+    SYMCRYPT_HASH_STATE         scHash;
+    BOOLEAN                     isReset;
+};
+
+template<>
+class HashImpState<ImpXxx, AlgSha3_224> {
+public:
+    SYMCRYPT_SHA3_224_STATE sc;
     SYMCRYPT_HASH_STATE     scHash;
     BOOLEAN                 isReset;
 };
@@ -165,6 +197,13 @@ public:
 };
 
 template<>
+class MacImpState<ImpXxx, AlgHmacSha224> {
+public:
+    SYMCRYPT_HMAC_SHA224_EXPANDED_KEY   key;
+    SYMCRYPT_HMAC_SHA224_STATE          state;
+};
+
+template<>
 class MacImpState<ImpXxx, AlgHmacSha256> {
 public:
     SYMCRYPT_HMAC_SHA256_EXPANDED_KEY   key;
@@ -183,6 +222,27 @@ class MacImpState<ImpXxx, AlgHmacSha512> {
 public:
     SYMCRYPT_HMAC_SHA512_EXPANDED_KEY   key;
     SYMCRYPT_HMAC_SHA512_STATE          state;
+};
+
+template<>
+class MacImpState<ImpXxx, AlgHmacSha512_224> {
+public:
+    SYMCRYPT_HMAC_SHA512_224_EXPANDED_KEY   key;
+    SYMCRYPT_HMAC_SHA512_224_STATE          state;
+};
+
+template<>
+class MacImpState<ImpXxx, AlgHmacSha512_256> {
+public:
+    SYMCRYPT_HMAC_SHA512_256_EXPANDED_KEY   key;
+    SYMCRYPT_HMAC_SHA512_256_STATE          state;
+};
+
+template<>
+class MacImpState<ImpXxx, AlgHmacSha3_224> {
+public:
+    SYMCRYPT_HMAC_SHA3_224_EXPANDED_KEY   key;
+    SYMCRYPT_HMAC_SHA3_224_STATE          state;
 };
 
 template<>

@@ -1427,7 +1427,7 @@ PCCNG_HASH_INFO getHashInfo( PCSTR pcstrName )
             return &cngHashInfoTable[i];
         }
     }
-    CHECK( FALSE, "?" );
+
     return NULL;
 }
 
@@ -1615,6 +1615,11 @@ RsaSignImp<ImpCng, AlgRsaSignPkcs1>::sign(
     UNREFERENCED_PARAMETER( u32Other );
 
     pInfo = getHashInfo( pcstrHashAlgName);
+    if ( pInfo == NULL )
+    {
+        return STATUS_NOT_SUPPORTED;
+    }
+
     paddingInfo.pszAlgId = pInfo->wideName;
 
     ntStatus = BCryptSignHash(
@@ -1649,6 +1654,11 @@ RsaSignImp<ImpCng, AlgRsaSignPkcs1>::verify(
     UNREFERENCED_PARAMETER( u32Other );
 
     pInfo = getHashInfo( pcstrHashAlgName);
+    if ( pInfo == NULL )
+    {
+        return STATUS_NOT_SUPPORTED;
+    }
+
     paddingInfo.pszAlgId = pInfo->wideName;
 
     ntStatus = BCryptVerifySignature(
@@ -1846,6 +1856,11 @@ RsaSignImp<ImpCng, AlgRsaSignPss>::sign(
     ULONG cbResult;
 
     pInfo = getHashInfo( pcstrHashAlgName);
+    if ( pInfo == NULL )
+    {
+        return STATUS_NOT_SUPPORTED;
+    }
+
     paddingInfo.pszAlgId = pInfo->wideName;
     paddingInfo.cbSalt = u32Other;
 
@@ -1879,6 +1894,11 @@ RsaSignImp<ImpCng, AlgRsaSignPss>::verify(
     PCCNG_HASH_INFO pInfo;
 
     pInfo = getHashInfo( pcstrHashAlgName);
+    if ( pInfo == NULL )
+    {
+        return STATUS_NOT_SUPPORTED;
+    }
+
     paddingInfo.pszAlgId = pInfo->wideName;
     paddingInfo.cbSalt = u32Other;
 
@@ -2587,6 +2607,11 @@ RsaEncImp<ImpCng, AlgRsaEncOaep>::encrypt(
     BCRYPT_OAEP_PADDING_INFO padding;
 
     pHashInfo = getHashInfo( pcstrHashAlgName);
+    if ( pHashInfo == NULL )
+    {
+        return STATUS_NOT_SUPPORTED;
+    }
+
     padding.pszAlgId = pHashInfo->wideName;
     padding.pbLabel = (PBYTE)pbLabel;
     padding.cbLabel = (ULONG)cbLabel;
@@ -2622,6 +2647,11 @@ RsaEncImp<ImpCng, AlgRsaEncOaep>::decrypt(
     BCRYPT_OAEP_PADDING_INFO padding;
 
     pHashInfo = getHashInfo( pcstrHashAlgName);
+    if ( pHashInfo == NULL )
+    {
+        return STATUS_NOT_SUPPORTED;
+    }
+
     padding.pszAlgId = pHashInfo->wideName;
     padding.pbLabel = (PBYTE)pbLabel;
     padding.cbLabel = (ULONG)cbLabel;
@@ -3317,6 +3347,11 @@ RsaSignImp<ImpCng, AlgRsaSignPkcs1>::sign(
     UNREFERENCED_PARAMETER( u32Other );
 
     pInfo = getHashInfo( pcstrHashAlgName);
+    if ( pInfo == NULL )
+    {
+        return STATUS_NOT_SUPPORTED;
+    }
+
     paddingInfo.pszAlgId = pInfo->wideName;
 
     ntStatus = BCryptSignHash(
@@ -3351,6 +3386,11 @@ RsaSignImp<ImpCng, AlgRsaSignPkcs1>::verify(
     UNREFERENCED_PARAMETER( u32Other );
 
     pInfo = getHashInfo( pcstrHashAlgName);
+    if ( pInfo == NULL )
+    {
+        return STATUS_NOT_SUPPORTED;
+    }
+
     paddingInfo.pszAlgId = pInfo->wideName;
 
     ntStatus = BCryptVerifySignature(

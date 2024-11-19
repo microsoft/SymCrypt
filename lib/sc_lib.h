@@ -1068,6 +1068,10 @@ typedef enum _SYMCRYPT_BLOB_TYPE {
     SymCryptBlobTypeSha3_256State = SymCryptBlobTypeHashState + 8,
     SymCryptBlobTypeSha3_384State = SymCryptBlobTypeHashState + 9,
     SymCryptBlobTypeSha3_512State = SymCryptBlobTypeHashState + 10,
+    SymCryptBlobTypeSha224State = SymCryptBlobTypeHashState + 11,
+    SymCryptBlobTypeSha512_224State = SymCryptBlobTypeHashState + 12,
+    SymCryptBlobTypeSha512_256State = SymCryptBlobTypeHashState + 13,
+    SymCryptBlobTypeSha3_224State = SymCryptBlobTypeHashState + 14,
 } SYMCRYPT_BLOB_TYPE;
 
 #define SYMCRYPT_BLOB_MAGIC ('cmys')
@@ -1171,10 +1175,12 @@ typedef struct _SYMCRYPT_KECCAK_STATE_EXPORT_BLOB {
     SYMCRYPT_BLOB_TRAILER   trailer;
 } SYMCRYPT_KECCAK_STATE_EXPORT_BLOB;
 
+typedef SYMCRYPT_KECCAK_STATE_EXPORT_BLOB SYMCRYPT_SHA3_224_STATE_EXPORT_BLOB;
 typedef SYMCRYPT_KECCAK_STATE_EXPORT_BLOB SYMCRYPT_SHA3_256_STATE_EXPORT_BLOB;
 typedef SYMCRYPT_KECCAK_STATE_EXPORT_BLOB SYMCRYPT_SHA3_384_STATE_EXPORT_BLOB;
 typedef SYMCRYPT_KECCAK_STATE_EXPORT_BLOB SYMCRYPT_SHA3_512_STATE_EXPORT_BLOB;
 
+C_ASSERT(sizeof(SYMCRYPT_SHA3_224_STATE_EXPORT_BLOB) == SYMCRYPT_SHA3_224_STATE_EXPORT_SIZE);
 C_ASSERT(sizeof(SYMCRYPT_SHA3_256_STATE_EXPORT_BLOB) == SYMCRYPT_SHA3_256_STATE_EXPORT_SIZE);
 C_ASSERT(sizeof(SYMCRYPT_SHA3_384_STATE_EXPORT_BLOB) == SYMCRYPT_SHA3_384_STATE_EXPORT_SIZE);
 C_ASSERT(sizeof(SYMCRYPT_SHA3_512_STATE_EXPORT_BLOB) == SYMCRYPT_SHA3_512_STATE_EXPORT_SIZE);
@@ -1782,9 +1788,6 @@ SymCryptParallelSha512AppendBlocks_ymm(
 extern const SYMCRYPT_HASH SymCryptSha256Algorithm_default;
 extern const SYMCRYPT_HASH SymCryptSha384Algorithm_default;
 extern const SYMCRYPT_HASH SymCryptSha512Algorithm_default;
-extern const SYMCRYPT_HASH SymCryptSha3_256Algorithm_default;
-extern const SYMCRYPT_HASH SymCryptSha3_384Algorithm_default;
-extern const SYMCRYPT_HASH SymCryptSha3_512Algorithm_default;
 
 
 

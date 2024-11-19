@@ -217,9 +217,13 @@ addSymCryptImplementationToGlobalList()
     addImplementationToGlobalList<HashImp<ImpScVariant, AlgMd4>>();
     addImplementationToGlobalList<HashImp<ImpScVariant, AlgMd5>>();
     addImplementationToGlobalList<HashImp<ImpScVariant, AlgSha1>>();
+    addImplementationToGlobalList<HashImp<ImpScVariant, AlgSha224>>();
     addImplementationToGlobalList<HashImp<ImpScVariant, AlgSha256>>();
     addImplementationToGlobalList<HashImp<ImpScVariant, AlgSha384>>();
     addImplementationToGlobalList<HashImp<ImpScVariant, AlgSha512>>();
+    addImplementationToGlobalList<HashImp<ImpScVariant, AlgSha512_224>>();
+    addImplementationToGlobalList<HashImp<ImpScVariant, AlgSha512_256>>();
+    addImplementationToGlobalList<HashImp<ImpScVariant, AlgSha3_224>>();
     addImplementationToGlobalList<HashImp<ImpScVariant, AlgSha3_256>>();
     addImplementationToGlobalList<HashImp<ImpScVariant, AlgSha3_384>>();
     addImplementationToGlobalList<HashImp<ImpScVariant, AlgSha3_512>>();
@@ -233,9 +237,13 @@ addSymCryptImplementationToGlobalList()
 
     addImplementationToGlobalList<MacImp<ImpScVariant, AlgHmacMd5>>();
     addImplementationToGlobalList<MacImp<ImpScVariant, AlgHmacSha1>>();
+    addImplementationToGlobalList<MacImp<ImpScVariant, AlgHmacSha224>>();
     addImplementationToGlobalList<MacImp<ImpScVariant, AlgHmacSha256>>();
     addImplementationToGlobalList<MacImp<ImpScVariant, AlgHmacSha384>>();
     addImplementationToGlobalList<MacImp<ImpScVariant, AlgHmacSha512>>();
+    addImplementationToGlobalList<MacImp<ImpScVariant, AlgHmacSha512_224>>();
+    addImplementationToGlobalList<MacImp<ImpScVariant, AlgHmacSha512_256>>();
+    addImplementationToGlobalList<MacImp<ImpScVariant, AlgHmacSha3_224>>();
     addImplementationToGlobalList<MacImp<ImpScVariant, AlgHmacSha3_256>>();
     addImplementationToGlobalList<MacImp<ImpScVariant, AlgHmacSha3_384>>();
     addImplementationToGlobalList<MacImp<ImpScVariant, AlgHmacSha3_512>>();

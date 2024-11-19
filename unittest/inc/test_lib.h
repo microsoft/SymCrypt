@@ -455,6 +455,11 @@ public:
     static constexpr const char * name = "Sha1";
 };
 
+class AlgSha224{
+public:
+    static constexpr const char * name = "Sha224";
+};
+
 class AlgSha256{
 public:
     static constexpr const char * name = "Sha256";
@@ -468,6 +473,21 @@ public:
 class AlgSha512{
 public:
     static constexpr const char * name = "Sha512";
+};
+
+class AlgSha512_224{
+public:
+    static constexpr const char * name = "Sha512-224";
+};
+
+class AlgSha512_256{
+public:
+    static constexpr const char * name = "Sha512-256";
+};
+
+class AlgSha3_224{
+public:
+    static constexpr const char * name = "Sha3-224";
 };
 
 class AlgSha3_256{
@@ -525,6 +545,11 @@ public:
     static constexpr const char * name = "HmacSha1";
 };
 
+class AlgHmacSha224{
+public:
+    static constexpr const char * name = "HmacSha224";
+};
+
 class AlgHmacSha256{
 public:
     static constexpr const char * name = "HmacSha256";
@@ -538,6 +563,21 @@ public:
 class AlgHmacSha512{
 public:
     static constexpr const char * name = "HmacSha512";
+};
+
+class AlgHmacSha512_224{
+public:
+    static constexpr const char * name = "HmacSha512-224";
+};
+
+class AlgHmacSha512_256{
+public:
+    static constexpr const char * name = "HmacSha512-256";
+};
+
+class AlgHmacSha3_224{
+public:
+    static constexpr const char * name = "HmacSha3-224";
 };
 
 class AlgHmacSha3_256{

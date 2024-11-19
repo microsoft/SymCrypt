@@ -459,6 +459,11 @@ RsaSignMultiImp::verify(
     for( ImpPtrVector::iterator i = m_comps.begin(); i != m_comps.end(); ++i )
     {
         ntStatus = (*i)->verify( pbHash, cbHash, pbSig, cbSig, pcstrHashAlgName, u32Other );
+        if ( ntStatus == STATUS_NOT_SUPPORTED )
+        {
+            continue;
+        }
+
         SYMCRYPT_STORE_MSBFIRST32( b, ntStatus );
         res.addResult( *i, b, 4 );
     }
@@ -491,10 +496,20 @@ RsaSignMultiImp::sign(
     {
         sig[0]++;
         ntStatus = (*i)->sign( pbHash, cbHash, pcstrHashAlgName, u32Other, &sig[0], m_cbSig );
+        if ( ntStatus == STATUS_NOT_SUPPORTED )
+        {
+            continue;
+        }
+
         CHECK( ntStatus == STATUS_SUCCESS, "Failure during RSA signature" );
         for( ImpPtrVector::iterator j = m_comps.begin(); j != m_comps.end(); ++j )
         {
             ntStatus = (*j)->verify( pbHash, cbHash, &sig[0], m_cbSig, pcstrHashAlgName, u32Other );
+            if ( ntStatus == STATUS_NOT_SUPPORTED )
+            {
+                continue;
+            }
+
             CHECK4( ntStatus == STATUS_SUCCESS, "RSA sig verification failure %s, %s",
                     (*i)->m_implementationName.c_str(),
                     (*j)->m_implementationName.c_str() );
@@ -653,16 +668,20 @@ createKatFileRsaSign()
     {
         PRSAKEY_TESTBLOB pBlob = &g_RsaTestKeyBlobs[ i ];
 
-        switch( g_rng.byte() % 8 )
+        switch( g_rng.byte() % 12 )
         {
-        case 0: createKatFileSinglePkcs1( f, pBlob, "MD5"   ,  16, SymCryptMd5OidList,    SYMCRYPT_MD5_OID_COUNT    ); break;
-        case 1: createKatFileSinglePkcs1( f, pBlob, "SHA1"  ,  20, SymCryptSha1OidList,   SYMCRYPT_SHA1_OID_COUNT   ); break;
-        case 2: createKatFileSinglePkcs1( f, pBlob, "SHA256",  32, SymCryptSha256OidList, SYMCRYPT_SHA256_OID_COUNT ); break;
-        case 3: createKatFileSinglePkcs1( f, pBlob, "SHA384",  48, SymCryptSha384OidList, SYMCRYPT_SHA384_OID_COUNT ); break;
-        case 4: createKatFileSinglePkcs1( f, pBlob, "SHA512",  64, SymCryptSha512OidList, SYMCRYPT_SHA512_OID_COUNT ); break;
-        case 5: createKatFileSinglePkcs1( f, pBlob, "SHA3-256",  32, SymCryptSha3_256OidList, SYMCRYPT_SHA3_256_OID_COUNT ); break;
-        case 6: createKatFileSinglePkcs1( f, pBlob, "SHA3-384",  48, SymCryptSha3_384OidList, SYMCRYPT_SHA3_384_OID_COUNT ); break;
-        case 7: createKatFileSinglePkcs1( f, pBlob, "SHA3-512",  64, SymCryptSha3_512OidList, SYMCRYPT_SHA3_512_OID_COUNT ); break;
+        case 0:  createKatFileSinglePkcs1( f, pBlob, "MD5"   ,  16, SymCryptMd5OidList,    SYMCRYPT_MD5_OID_COUNT    ); break;
+        case 1:  createKatFileSinglePkcs1( f, pBlob, "SHA1"  ,  20, SymCryptSha1OidList,   SYMCRYPT_SHA1_OID_COUNT   ); break;
+        case 2:  createKatFileSinglePkcs1( f, pBlob, "SHA224",  28, SymCryptSha224OidList, SYMCRYPT_SHA224_OID_COUNT ); break;
+        case 3:  createKatFileSinglePkcs1( f, pBlob, "SHA256",  32, SymCryptSha256OidList, SYMCRYPT_SHA256_OID_COUNT ); break;
+        case 4:  createKatFileSinglePkcs1( f, pBlob, "SHA384",  48, SymCryptSha384OidList, SYMCRYPT_SHA384_OID_COUNT ); break;
+        case 5:  createKatFileSinglePkcs1( f, pBlob, "SHA512",  64, SymCryptSha512OidList, SYMCRYPT_SHA512_OID_COUNT ); break;
+        case 6:  createKatFileSinglePkcs1( f, pBlob, "SHA512-224",  28, SymCryptSha512_224OidList, SYMCRYPT_SHA512_224_OID_COUNT ); break;
+        case 7:  createKatFileSinglePkcs1( f, pBlob, "SHA512-256",  32, SymCryptSha512_256OidList, SYMCRYPT_SHA512_256_OID_COUNT ); break;
+        case 8:  createKatFileSinglePkcs1( f, pBlob, "SHA3-224",  28, SymCryptSha3_224OidList, SYMCRYPT_SHA3_224_OID_COUNT ); break;
+        case 9:  createKatFileSinglePkcs1( f, pBlob, "SHA3-256",  32, SymCryptSha3_256OidList, SYMCRYPT_SHA3_256_OID_COUNT ); break;
+        case 10: createKatFileSinglePkcs1( f, pBlob, "SHA3-384",  48, SymCryptSha3_384OidList, SYMCRYPT_SHA3_384_OID_COUNT ); break;
+        case 11: createKatFileSinglePkcs1( f, pBlob, "SHA3-512",  64, SymCryptSha3_512OidList, SYMCRYPT_SHA3_512_OID_COUNT ); break;
         }
     }
 
@@ -674,16 +693,20 @@ createKatFileRsaSign()
     {
         PRSAKEY_TESTBLOB pBlob = &g_RsaTestKeyBlobs[ i ];
 
-        switch( g_rng.byte() % 8 )
+        switch( g_rng.byte() % 12 )
         {
-        case 0: createKatFileSinglePss( f, pBlob, "MD5"   , SymCryptMd5Algorithm,       16, 16 ); break;
-        case 1: createKatFileSinglePss( f, pBlob, "SHA1"  , SymCryptSha1Algorithm,      20, 20 ); break;
-        case 2: createKatFileSinglePss( f, pBlob, "SHA256", SymCryptSha256Algorithm,    32, 32 ); break;
-        case 3: createKatFileSinglePss( f, pBlob, "SHA384", SymCryptSha384Algorithm,    48, 48 ); break;
-        case 4: createKatFileSinglePss( f, pBlob, "SHA512", SymCryptSha512Algorithm,    64, 64 ); break;
-        case 5: createKatFileSinglePss( f, pBlob, "SHA3_256", SymCryptSha3_256Algorithm,    32, 32 ); break;
-        case 6: createKatFileSinglePss( f, pBlob, "SHA3_384", SymCryptSha3_384Algorithm,    48, 48 ); break;
-        case 7: createKatFileSinglePss( f, pBlob, "SHA3_512", SymCryptSha3_512Algorithm,    64, 64 ); break;
+        case 0:  createKatFileSinglePss( f, pBlob, "MD5"   , SymCryptMd5Algorithm,       16, 16 ); break;
+        case 1:  createKatFileSinglePss( f, pBlob, "SHA1"  , SymCryptSha1Algorithm,      20, 20 ); break;
+        case 2:  createKatFileSinglePss( f, pBlob, "SHA224", SymCryptSha224Algorithm,    28, 28 ); break;
+        case 3:  createKatFileSinglePss( f, pBlob, "SHA256", SymCryptSha256Algorithm,    32, 32 ); break;
+        case 4:  createKatFileSinglePss( f, pBlob, "SHA384", SymCryptSha384Algorithm,    48, 48 ); break;
+        case 5:  createKatFileSinglePss( f, pBlob, "SHA512", SymCryptSha512Algorithm,    64, 64 ); break;
+        case 6:  createKatFileSinglePss( f, pBlob, "SHA512-224", SymCryptSha512_224Algorithm,    28, 28 ); break;
+        case 7:  createKatFileSinglePss( f, pBlob, "SHA512-256", SymCryptSha512_256Algorithm,    32, 32 ); break;
+        case 8:  createKatFileSinglePss( f, pBlob, "SHA3-224", SymCryptSha3_224Algorithm,    28, 28 ); break;
+        case 9:  createKatFileSinglePss( f, pBlob, "SHA3-256", SymCryptSha3_256Algorithm,    32, 32 ); break;
+        case 10: createKatFileSinglePss( f, pBlob, "SHA3-384", SymCryptSha3_384Algorithm,    48, 48 ); break;
+        case 11: createKatFileSinglePss( f, pBlob, "SHA3-512", SymCryptSha3_512Algorithm,    64, 64 ); break;
         }
     }
 

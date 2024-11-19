@@ -23,7 +23,7 @@ runTestThread( VOID * seed )
         nTests++;
     }
 
-    CHECK( nTests <= 64, "Too many tests for my RNG system" );
+    CHECK( nTests <= 256, "Too many tests for my RNG system" );
 
     while( !g_fExitMultithreadTest )
     {

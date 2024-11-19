@@ -90,7 +90,7 @@ const SYMCRYPT_MAC SymCryptHmacSha3_384Algorithm_default = {
 const PCSYMCRYPT_MAC SymCryptHmacSha3_384Algorithm = &SymCryptHmacSha3_384Algorithm_default;
 
 
-static const BYTE hmacSha3_384Kat[] = 
+static const BYTE hmacSha3_384Kat[48] =
 {
     0x8f, 0xc4, 0x8a, 0x84, 0xb5, 0xa7, 0xa1, 0x36,
     0x3c, 0x3b, 0x4b, 0x21, 0x3c, 0xfb, 0x65, 0x36,

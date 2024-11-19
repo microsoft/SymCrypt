@@ -56,9 +56,13 @@ set(SOURCES_COMMON
     hmac.c
     hmacmd5.c
     hmacsha1.c
+    hmacsha224.c
     hmacsha256.c
     hmacsha384.c
     hmacsha512.c
+    hmacsha512_224.c
+    hmacsha512_256.c
+    hmacsha3_224.c
     hmacsha3_256.c
     hmacsha3_384.c
     hmacsha3_512.c
@@ -102,6 +106,7 @@ set(SOURCES_COMMON
     sha512Par-ymm.c
     sha512-ymm.c
     sha3.c
+    sha3_224.c
     sha3_256.c
     sha3_384.c
     sha3_512.c

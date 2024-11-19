@@ -5,6 +5,7 @@ prior to the creation of a new release, based on the changes contained in that r
 
 - Add LMS implementation
 - Add AES-KW(P) implementation
+- Add SHA224, SHA512/224, SHA512/256, and SHA3-224
 
 # Version 103.5.1
 

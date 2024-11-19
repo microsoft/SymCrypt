@@ -16,6 +16,19 @@
 // See the symcrypt.h file for documentation on what the various functions do.
 //
 
+const SYMCRYPT_HASH SymCryptSha224Algorithm_default = {
+    &SymCryptSha224Init,
+    &SymCryptSha224Append,
+    &SymCryptSha224Result,
+    &SymCryptSha256AppendBlocks,
+    &SymCryptSha224StateCopy,
+    sizeof( SYMCRYPT_SHA224_STATE ),
+    SYMCRYPT_SHA224_RESULT_SIZE,
+    SYMCRYPT_SHA224_INPUT_BLOCK_SIZE,
+    SYMCRYPT_FIELD_OFFSET( SYMCRYPT_SHA224_STATE, chain ),
+    SYMCRYPT_FIELD_SIZE( SYMCRYPT_SHA224_STATE, chain ),
+};
+
 const SYMCRYPT_HASH SymCryptSha256Algorithm_default = {
     &SymCryptSha256Init,
     &SymCryptSha256Append,
@@ -29,6 +42,7 @@ const SYMCRYPT_HASH SymCryptSha256Algorithm_default = {
     SYMCRYPT_FIELD_SIZE( SYMCRYPT_SHA256_STATE, chain ),
 };
 
+const PCSYMCRYPT_HASH SymCryptSha224Algorithm = &SymCryptSha224Algorithm_default;
 const PCSYMCRYPT_HASH SymCryptSha256Algorithm = &SymCryptSha256Algorithm_default;
 
 //
@@ -60,6 +74,17 @@ SYMCRYPT_ALIGN_AT( 256 ) const  UINT32 SymCryptSha256K[64] = {
 //
 // Initial state
 //
+static const UINT32 sha224InitialState[8] = {
+    0xc1059ed8UL,
+    0x367cd507UL,
+    0x3070dd17UL,
+    0xf70e5939UL,
+    0xffc00b31UL,
+    0x68581511UL,
+    0x64f98fa7UL,
+    0xbefa4fa4UL,
+};
+
 static const UINT32 sha256InitialState[8] = {
     0x6a09e667UL,
     0xbb67ae85UL,
@@ -70,6 +95,15 @@ static const UINT32 sha256InitialState[8] = {
     0x1f83d9abUL,
     0x5be0cd19UL,
 };
+
+//
+// SymCryptSha224
+//
+#define ALG SHA224
+#define Alg Sha224
+#include "hash_pattern.c"
+#undef ALG
+#undef Alg
 
 //
 // SymCryptSha256
@@ -97,6 +131,29 @@ SymCryptSha256Init( _Out_ PSYMCRYPT_SHA256_STATE pState )
     pState->bytesInBuffer = 0;
 
     memcpy( &pState->chain.H[0], &sha256InitialState[0], sizeof( sha256InitialState ) );
+
+    //
+    // There is no need to initialize the buffer part of the state as that will be
+    // filled before it is used.
+    //
+}
+
+
+//
+// SymCryptSha224Init
+//
+SYMCRYPT_NOINLINE
+VOID
+SYMCRYPT_CALL
+SymCryptSha224Init( _Out_ PSYMCRYPT_SHA224_STATE pState )
+{
+    SYMCRYPT_SET_MAGIC( pState );
+
+    pState->dataLengthL = 0;
+    //pState->dataLengthH = 0;      // not used
+    pState->bytesInBuffer = 0;
+
+    memcpy( &pState->chain.H[0], &sha224InitialState[0], sizeof( sha224InitialState ) );
 
     //
     // There is no need to initialize the buffer part of the state as that will be
@@ -182,6 +239,21 @@ SymCryptSha256Append(
 
 
 //
+// SymCryptSha224Append
+//
+SYMCRYPT_NOINLINE
+VOID
+SYMCRYPT_CALL
+SymCryptSha224Append(
+    _Inout_                 PSYMCRYPT_SHA224_STATE  pState,
+    _In_reads_( cbData )    PCBYTE                  pbData,
+                            SIZE_T                  cbData )
+{
+    SymCryptSha256Append( (PSYMCRYPT_SHA256_STATE)pState, pbData, cbData );
+}
+
+
+//
 // SymCryptSha256Result
 //
 SYMCRYPT_NOINLINE
@@ -249,11 +321,40 @@ SymCryptSha256Result(
 }
 
 
+//
+// SymCryptSha224Result
+//
+SYMCRYPT_NOINLINE
 VOID
 SYMCRYPT_CALL
-SymCryptSha256StateExport(
+SymCryptSha224Result(
+    _Inout_                                     PSYMCRYPT_SHA224_STATE  pState,
+    _Out_writes_( SYMCRYPT_SHA224_RESULT_SIZE ) PBYTE                   pbResult )
+{
+    SYMCRYPT_ALIGN BYTE sha256Result[SYMCRYPT_SHA256_RESULT_SIZE];      // Buffer for SHA-256 output
+
+    //
+    // The SHA-3224 result is the first 28 bytes of the SHA-256 result of our state
+    //
+    SymCryptSha256Result( (PSYMCRYPT_SHA256_STATE)pState, sha256Result );
+    memcpy( pbResult, sha256Result, SYMCRYPT_SHA224_RESULT_SIZE );
+
+    //
+    // The buffer was already wiped by the SymCryptSha256Result function, we
+    // just have to re-initialize for SHA-224
+    //
+    SymCryptSha224Init( pState );
+
+    SymCryptWipeKnownSize( sha256Result, sizeof( sha256Result ) );
+}
+
+
+VOID
+SYMCRYPT_CALL
+SymCryptSha256StateExportCore(
     _In_                                                    PCSYMCRYPT_SHA256_STATE pState,
-    _Out_writes_bytes_( SYMCRYPT_SHA256_STATE_EXPORT_SIZE ) PBYTE                   pbBlob )
+    _Out_writes_bytes_( SYMCRYPT_SHA256_STATE_EXPORT_SIZE ) PBYTE                   pbBlob,
+    _In_                                                    UINT32                  type )
 {
     SYMCRYPT_ALIGN SYMCRYPT_SHA256_STATE_EXPORT_BLOB blob;           // local copy to have proper alignment.
     C_ASSERT( sizeof( blob ) == SYMCRYPT_SHA256_STATE_EXPORT_SIZE );
@@ -264,7 +365,7 @@ SymCryptSha256StateExport(
 
     blob.header.magic = SYMCRYPT_BLOB_MAGIC;
     blob.header.size = SYMCRYPT_SHA256_STATE_EXPORT_SIZE;
-    blob.header.type = SymCryptBlobTypeSha256State;
+    blob.header.type = type;
 
     //
     // Copy the relevant data. Buffer will be 0-padded.
@@ -284,11 +385,33 @@ SymCryptSha256StateExport(
     return;
 }
 
+
+VOID
+SYMCRYPT_CALL
+SymCryptSha256StateExport(
+    _In_                                                    PCSYMCRYPT_SHA256_STATE pState,
+    _Out_writes_bytes_( SYMCRYPT_SHA256_STATE_EXPORT_SIZE ) PBYTE                   pbBlob)
+{
+    SymCryptSha256StateExportCore( pState, pbBlob, SymCryptBlobTypeSha256State );
+}
+
+
+VOID
+SYMCRYPT_CALL
+SymCryptSha224StateExport(
+    _In_                                                    PCSYMCRYPT_SHA224_STATE pState,
+    _Out_writes_bytes_( SYMCRYPT_SHA256_STATE_EXPORT_SIZE ) PBYTE                   pbBlob)
+{
+    SymCryptSha256StateExportCore( (PSYMCRYPT_SHA256_STATE)pState, pbBlob, SymCryptBlobTypeSha224State );
+}
+
+
 SYMCRYPT_ERROR
 SYMCRYPT_CALL
-SymCryptSha256StateImport(
+SymCryptSha256StateImportCore(
     _Out_                                                   PSYMCRYPT_SHA256_STATE  pState,
-    _In_reads_bytes_( SYMCRYPT_SHA256_STATE_EXPORT_SIZE)    PCBYTE                  pbBlob )
+    _In_reads_bytes_( SYMCRYPT_SHA256_STATE_EXPORT_SIZE)    PCBYTE                  pbBlob,
+    _In_                                                    UINT32                  type )
 {
     SYMCRYPT_ERROR                      scError = SYMCRYPT_NO_ERROR;
     SYMCRYPT_ALIGN SYMCRYPT_SHA256_STATE_EXPORT_BLOB   blob;                       // local copy to have proper alignment.
@@ -299,7 +422,7 @@ SymCryptSha256StateImport(
 
     if( blob.header.magic != SYMCRYPT_BLOB_MAGIC ||
         blob.header.size != SYMCRYPT_SHA256_STATE_EXPORT_SIZE ||
-        blob.header.type != SymCryptBlobTypeSha256State )
+        blob.header.type != type )
     {
         scError = SYMCRYPT_INVALID_BLOB;
         goto cleanup;
@@ -322,6 +445,26 @@ SymCryptSha256StateImport(
 cleanup:
     SymCryptWipeKnownSize( &blob, sizeof(blob) );
     return scError;
+}
+
+
+SYMCRYPT_ERROR
+SYMCRYPT_CALL
+SymCryptSha256StateImport(
+    _Out_                                                   PSYMCRYPT_SHA256_STATE  pState,
+    _In_reads_bytes_( SYMCRYPT_SHA256_STATE_EXPORT_SIZE)    PCBYTE                  pbBlob )
+{
+    return SymCryptSha256StateImportCore( pState, pbBlob, SymCryptBlobTypeSha256State );
+}
+
+
+SYMCRYPT_ERROR
+SYMCRYPT_CALL
+SymCryptSha224StateImport(
+    _Out_                                                   PSYMCRYPT_SHA224_STATE  pState,
+    _In_reads_bytes_( SYMCRYPT_SHA224_STATE_EXPORT_SIZE)    PCBYTE                  pbBlob )
+{
+    return SymCryptSha256StateImportCore( (PSYMCRYPT_SHA256_STATE)pState, pbBlob, SymCryptBlobTypeSha224State );
 }
 
 
@@ -349,6 +492,32 @@ SymCryptSha256Selftest(void)
 
     if( memcmp( result, SymCryptSha256KATAnswer, sizeof( result ) ) != 0 ) {
         SymCryptFatal( 'SH25' );
+    }
+}
+
+//
+// Simple test vector for FIPS module testing
+//
+
+const BYTE SymCryptSha224KATAnswer[ 28 ] = {
+    0x23, 0x09, 0x7d, 0x22, 0x34, 0x05, 0xd8, 0x22,
+    0x86, 0x42, 0xa4, 0x77, 0xbd, 0xa2, 0x55, 0xb3,
+    0x2a, 0xad, 0xbc, 0xe4, 0xbd, 0xa0, 0xb3, 0xf7,
+    0xe3, 0x6c, 0x9d, 0xa7,
+    } ;
+
+VOID
+SYMCRYPT_CALL
+SymCryptSha224Selftest(void)
+{
+    BYTE result[SYMCRYPT_SHA224_RESULT_SIZE];
+
+    SymCryptSha224( SymCryptTestMsg3, sizeof( SymCryptTestMsg3 ), result );
+
+    SymCryptInjectError( result, sizeof( result ) );
+
+    if( memcmp( result, SymCryptSha224KATAnswer, sizeof( result ) ) != 0 ) {
+        SymCryptFatal( 'SH22' );
     }
 }
 

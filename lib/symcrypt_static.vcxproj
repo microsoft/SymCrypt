@@ -86,9 +86,13 @@
     <ClCompile Include="hmac.c" />
     <ClCompile Include="hmacmd5.c" />
     <ClCompile Include="hmacsha1.c" />
+    <ClCompile Include="hmacsha224.c" />
     <ClCompile Include="hmacsha256.c" />
     <ClCompile Include="hmacsha384.c" />
     <ClCompile Include="hmacsha512.c" />
+    <ClCompile Include="hmacsha512_224.c" />
+    <ClCompile Include="hmacsha512_256.c" />
+    <ClCompile Include="hmacsha3_224.c" />
     <ClCompile Include="hmacsha3_256.c" />
     <ClCompile Include="hmacsha3_384.c" />
     <ClCompile Include="hmacsha3_512.c" />
@@ -129,6 +133,7 @@
     <ClCompile Include="sha256Par-ymm.c" />
     <ClCompile Include="sha256Par.c" />
     <ClCompile Include="sha3.c" />
+    <ClCompile Include="sha3_224.c" />
     <ClCompile Include="sha3_256.c" />
     <ClCompile Include="sha3_384.c" />
     <ClCompile Include="sha3_512.c" />

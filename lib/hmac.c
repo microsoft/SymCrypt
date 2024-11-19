@@ -59,8 +59,8 @@ SymCryptHmacExpandKey(
 { 
     // This buffer has to be large enough to hold one input block
     // and the result of the hash function.
-    // Using SHA3-256 input block size to satisfy those requirements.
-    SYMCRYPT_ALIGN BYTE iblock[ SYMCRYPT_SHA3_256_INPUT_BLOCK_SIZE ];  
+    // Using SHA3-224 input block size to satisfy those requirements.
+    SYMCRYPT_ALIGN BYTE iblock[ SYMCRYPT_SHA3_224_INPUT_BLOCK_SIZE ];
 
     SYMCRYPT_ASSERT( sizeof(iblock) >= pHash->inputBlockSize );
     SYMCRYPT_ASSERT( sizeof(iblock) >= pHash->resultSize );

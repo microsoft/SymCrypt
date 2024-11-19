@@ -87,6 +87,28 @@ const UINT64 SymCryptSha384InitialState[8] = {
     0x47b5481dbefa4fa4UL,
 };
 
+const UINT64 SymCryptSha512_224InitialState[8] = {
+    0x8c3d37c819544da2UL,
+    0x73e1996689dcd4d6UL,
+    0x1dfab7ae32ff9c82UL,
+    0x679dd514582f9fcfUL,
+    0x0f6d2b697bd44da8UL,
+    0x77e36f7304c48942UL,
+    0x3f9d85a86a1d36c8UL,
+    0x1112e6ad91d692a1UL,
+};
+
+const UINT64 SymCryptSha512_256InitialState[8] = {
+    0x22312194fc2bf72cUL,
+    0x9f555fa3c84c64c2UL,
+    0x2393b86b6f53b151UL,
+    0x963877195940eabdUL,
+    0x96283ee2a88effe3UL,
+    0xbe5e1e2553863992UL,
+    0x2b0199fc2c85b8aaUL,
+    0x0eb72ddc81c52ca2UL,
+};
+
 
 //
 // Todo: this structure pulls in the SHA284 code anytime someone uses
@@ -118,8 +140,36 @@ const SYMCRYPT_HASH SymCryptSha512Algorithm_default = {
     SYMCRYPT_FIELD_SIZE( SYMCRYPT_SHA512_STATE, chain ),
 };
 
+const SYMCRYPT_HASH SymCryptSha512_224Algorithm_default = {
+    &SymCryptSha512_224Init,
+    &SymCryptSha512_224Append,
+    &SymCryptSha512_224Result,
+    &SymCryptSha512AppendBlocks,
+    &SymCryptSha512_224StateCopy,
+    sizeof( SYMCRYPT_SHA512_224_STATE ),
+    SYMCRYPT_SHA512_224_RESULT_SIZE,
+    SYMCRYPT_SHA512_224_INPUT_BLOCK_SIZE,
+    SYMCRYPT_FIELD_OFFSET( SYMCRYPT_SHA512_224_STATE, chain ),
+    SYMCRYPT_FIELD_SIZE( SYMCRYPT_SHA512_224_STATE, chain ),
+};
+
+const SYMCRYPT_HASH SymCryptSha512_256Algorithm_default = {
+    &SymCryptSha512_256Init,
+    &SymCryptSha512_256Append,
+    &SymCryptSha512_256Result,
+    &SymCryptSha512AppendBlocks,
+    &SymCryptSha512_256StateCopy,
+    sizeof( SYMCRYPT_SHA512_256_STATE ),
+    SYMCRYPT_SHA512_256_RESULT_SIZE,
+    SYMCRYPT_SHA512_256_INPUT_BLOCK_SIZE,
+    SYMCRYPT_FIELD_OFFSET( SYMCRYPT_SHA512_256_STATE, chain ),
+    SYMCRYPT_FIELD_SIZE( SYMCRYPT_SHA512_256_STATE, chain ),
+};
+
 const PCSYMCRYPT_HASH SymCryptSha384Algorithm = &SymCryptSha384Algorithm_default;
 const PCSYMCRYPT_HASH SymCryptSha512Algorithm = &SymCryptSha512Algorithm_default;
+const PCSYMCRYPT_HASH SymCryptSha512_224Algorithm = &SymCryptSha512_224Algorithm_default;
+const PCSYMCRYPT_HASH SymCryptSha512_256Algorithm = &SymCryptSha512_256Algorithm_default;
 
 //
 // SymCryptSha384
@@ -135,6 +185,24 @@ const PCSYMCRYPT_HASH SymCryptSha512Algorithm = &SymCryptSha512Algorithm_default
 //
 #define ALG SHA512
 #define Alg Sha512
+#include "hash_pattern.c"
+#undef ALG
+#undef Alg
+
+//
+// SymCryptSha512/224
+//
+#define ALG SHA512_224
+#define Alg Sha512_224
+#include "hash_pattern.c"
+#undef ALG
+#undef Alg
+
+//
+// SymCryptSha512/256
+//
+#define ALG SHA512_256
+#define Alg Sha512_256
 #include "hash_pattern.c"
 #undef ALG
 #undef Alg
@@ -172,6 +240,46 @@ SymCryptSha384Init( _Out_ PSYMCRYPT_SHA384_STATE pState )
     pState->bytesInBuffer = 0;
 
     memcpy( &pState->chain.H[0], &SymCryptSha384InitialState[0], sizeof( SymCryptSha384InitialState ) );
+
+    //
+    // There is no need to initialize the buffer part of the state as that will be
+    // filled before it is used.
+    //
+}
+
+
+SYMCRYPT_NOINLINE
+VOID
+SYMCRYPT_CALL
+SymCryptSha512_224Init( _Out_ PSYMCRYPT_SHA512_224_STATE pState )
+{
+    SYMCRYPT_SET_MAGIC( pState );
+
+    pState->dataLengthH = 0;
+    pState->dataLengthL = 0;
+    pState->bytesInBuffer = 0;
+
+    memcpy( &pState->chain.H[0], &SymCryptSha512_224InitialState[0], sizeof( SymCryptSha512_224InitialState ) );
+
+    //
+    // There is no need to initialize the buffer part of the state as that will be
+    // filled before it is used.
+    //
+}
+
+
+SYMCRYPT_NOINLINE
+VOID
+SYMCRYPT_CALL
+SymCryptSha512_256Init( _Out_ PSYMCRYPT_SHA512_256_STATE pState )
+{
+    SYMCRYPT_SET_MAGIC( pState );
+
+    pState->dataLengthH = 0;
+    pState->dataLengthL = 0;
+    pState->bytesInBuffer = 0;
+
+    memcpy( &pState->chain.H[0], &SymCryptSha512_256InitialState[0], sizeof( SymCryptSha512_256InitialState ) );
 
     //
     // There is no need to initialize the buffer part of the state as that will be
@@ -269,6 +377,28 @@ SymCryptSha384Append(
 
 }
 
+SYMCRYPT_NOINLINE
+VOID
+SYMCRYPT_CALL
+SymCryptSha512_224Append(
+    _Inout_                 PSYMCRYPT_SHA512_224_STATE  pState,
+    _In_reads_( cbData )    PCBYTE                      pbData,
+                            SIZE_T                      cbData )
+{
+    SymCryptSha512Append( (PSYMCRYPT_SHA512_STATE)pState, pbData, cbData );
+}
+
+SYMCRYPT_NOINLINE
+VOID
+SYMCRYPT_CALL
+SymCryptSha512_256Append(
+    _Inout_                 PSYMCRYPT_SHA512_256_STATE  pState,
+    _In_reads_( cbData )    PCBYTE                      pbData,
+                            SIZE_T                      cbData )
+{
+    SymCryptSha512Append( (PSYMCRYPT_SHA512_STATE)pState, pbData, cbData );
+}
+
 
 SYMCRYPT_NOINLINE
 VOID
@@ -353,6 +483,56 @@ SymCryptSha384Result(
 }
 
 
+SYMCRYPT_NOINLINE
+VOID
+SYMCRYPT_CALL
+SymCryptSha512_224Result(
+    _Inout_                                         PSYMCRYPT_SHA512_224_STATE  pState,
+    _Out_writes_( SYMCRYPT_SHA512_224_RESULT_SIZE ) PBYTE                       pbResult )
+{
+    SYMCRYPT_ALIGN BYTE sha512Result[SYMCRYPT_SHA512_RESULT_SIZE];      // Buffer for SHA-512 output
+
+    //
+    // The SHA-512/224 result is the first 28 bytes of the SHA-512 result of our state
+    //
+    SymCryptSha512Result( (PSYMCRYPT_SHA512_STATE)pState, sha512Result );
+    memcpy( pbResult, sha512Result, SYMCRYPT_SHA512_224_RESULT_SIZE );
+
+    //
+    // The buffer was already wiped by the SymCryptSha512Result function, we
+    // just have to re-initialize for SHA-512/224
+    //
+    SymCryptSha512_224Init( pState );
+
+    SymCryptWipeKnownSize( sha512Result, sizeof( sha512Result ) );
+}
+
+
+SYMCRYPT_NOINLINE
+VOID
+SYMCRYPT_CALL
+SymCryptSha512_256Result(
+    _Inout_                                         PSYMCRYPT_SHA512_256_STATE  pState,
+    _Out_writes_( SYMCRYPT_SHA512_256_RESULT_SIZE ) PBYTE                       pbResult )
+{
+    SYMCRYPT_ALIGN BYTE sha512Result[SYMCRYPT_SHA512_RESULT_SIZE];      // Buffer for SHA-512 output
+
+    //
+    // The SHA-512/256 result is the first 32 bytes of the SHA-512 result of our state
+    //
+    SymCryptSha512Result( (PSYMCRYPT_SHA512_STATE)pState, sha512Result );
+    memcpy( pbResult, sha512Result, SYMCRYPT_SHA512_256_RESULT_SIZE );
+
+    //
+    // The buffer was already wiped by the SymCryptSha512Result function, we
+    // just have to re-initialize for SHA-512/256
+    //
+    SymCryptSha512_256Init( pState );
+
+    SymCryptWipeKnownSize( sha512Result, sizeof( sha512Result ) );
+}
+
+
 VOID
 SYMCRYPT_CALL
 SymCryptSha512StateExportCore(
@@ -406,6 +586,24 @@ SymCryptSha384StateExport(
     _Out_writes_bytes_( SYMCRYPT_SHA384_STATE_EXPORT_SIZE ) PBYTE                   pbBlob )
 {
     SymCryptSha512StateExportCore( (PCSYMCRYPT_SHA512_STATE)pState, pbBlob, SymCryptBlobTypeSha384State );
+}
+
+VOID
+SYMCRYPT_CALL
+SymCryptSha512_224StateExport(
+    _In_                                                        PCSYMCRYPT_SHA512_224_STATE pState,
+    _Out_writes_bytes_( SYMCRYPT_SHA512_224_STATE_EXPORT_SIZE ) PBYTE                       pbBlob )
+{
+    SymCryptSha512StateExportCore( (PCSYMCRYPT_SHA512_STATE)pState, pbBlob, SymCryptBlobTypeSha512_224State );
+}
+
+VOID
+SYMCRYPT_CALL
+SymCryptSha512_256StateExport(
+    _In_                                                        PCSYMCRYPT_SHA512_256_STATE pState,
+    _Out_writes_bytes_( SYMCRYPT_SHA512_256_STATE_EXPORT_SIZE ) PBYTE                       pbBlob )
+{
+    SymCryptSha512StateExportCore( (PCSYMCRYPT_SHA512_STATE)pState, pbBlob, SymCryptBlobTypeSha512_256State );
 }
 
 
@@ -469,6 +667,23 @@ SymCryptSha384StateImport(
     return SymCryptSha512StateImportCore( (PSYMCRYPT_SHA512_STATE)pState, pbBlob, SymCryptBlobTypeSha384State );
 }
 
+SYMCRYPT_ERROR
+SYMCRYPT_CALL
+SymCryptSha512_224StateImport(
+    _Out_                                                       PSYMCRYPT_SHA512_224_STATE  pState,
+    _In_reads_bytes_( SYMCRYPT_SHA512_224_STATE_EXPORT_SIZE)    PCBYTE                      pbBlob )
+{
+    return SymCryptSha512StateImportCore( (PSYMCRYPT_SHA512_STATE)pState, pbBlob, SymCryptBlobTypeSha512_224State );
+}
+
+SYMCRYPT_ERROR
+SYMCRYPT_CALL
+SymCryptSha512_256StateImport(
+    _Out_                                                       PSYMCRYPT_SHA512_256_STATE  pState,
+    _In_reads_bytes_( SYMCRYPT_SHA512_256_STATE_EXPORT_SIZE)    PCBYTE                      pbBlob )
+{
+    return SymCryptSha512StateImportCore( (PSYMCRYPT_SHA512_STATE)pState, pbBlob, SymCryptBlobTypeSha512_256State );
+}
 
 
 //
@@ -532,6 +747,60 @@ SymCryptSha384Selftest(void)
 
     if( memcmp( result, SymCryptSha384KATAnswer, sizeof( result ) ) != 0 ) {
         SymCryptFatal( 'SH38' );
+    }
+}
+
+//
+// Simple test vector for FIPS module testing
+//
+
+const BYTE SymCryptSha512_224KATAnswer[ 28 ] =
+{
+    0x46, 0x34, 0x27, 0x0f, 0x70, 0x7b, 0x6a, 0x54,
+    0xda, 0xae, 0x75, 0x30, 0x46, 0x08, 0x42, 0xe2,
+    0x0e, 0x37, 0xed, 0x26, 0x5c, 0xee, 0xe9, 0xa4,
+    0x3e, 0x89, 0x24, 0xaa,
+};
+
+VOID
+SYMCRYPT_CALL
+SymCryptSha512_224Selftest(void)
+{
+    BYTE result[SYMCRYPT_SHA512_224_RESULT_SIZE];
+
+    SymCryptSha512_224( SymCryptTestMsg3, sizeof( SymCryptTestMsg3 ), result );
+
+    SymCryptInjectError( result, sizeof( result ) );
+
+    if( memcmp( result, SymCryptSha512_224KATAnswer, sizeof( result ) ) != 0 ) {
+        SymCryptFatal( 'SH51' );
+    }
+}
+
+//
+// Simple test vector for FIPS module testing
+//
+
+const BYTE SymCryptSha512_256KATAnswer[ 32 ] =
+{
+    0x53, 0x04, 0x8e, 0x26, 0x81, 0x94, 0x1e, 0xf9,
+    0x9b, 0x2e, 0x29, 0xb7, 0x6b, 0x4c, 0x7d, 0xab,
+    0xe4, 0xc2, 0xd0, 0xc6, 0x34, 0xfc, 0x6d, 0x46,
+    0xe0, 0xe2, 0xf1, 0x31, 0x07, 0xe7, 0xaf, 0x23,
+};
+
+VOID
+SYMCRYPT_CALL
+SymCryptSha512_256Selftest(void)
+{
+    BYTE result[SYMCRYPT_SHA512_256_RESULT_SIZE];
+
+    SymCryptSha512_256( SymCryptTestMsg3, sizeof( SymCryptTestMsg3 ), result );
+
+    SymCryptInjectError( result, sizeof( result ) );
+
+    if( memcmp( result, SymCryptSha512_256KATAnswer, sizeof( result ) ) != 0 ) {
+        SymCryptFatal( 'SH51' );
     }
 }
 
