@@ -486,7 +486,7 @@ SymCryptDlkeyGenerate(
                 SYMCRYPT_SELFTEST_ALGORITHM_DSA );
 
             // Run PCT eagerly as the key can only be used for DSA - there is no value in deferring
-            SYMCRYPT_RUN_KEY_PCT(
+            SYMCRYPT_RUN_KEY_GEN_PCT(
                 SymCryptDsaPct,
                 pkDlkey,
                 SYMCRYPT_PCT_DSA );
@@ -800,10 +800,15 @@ SymCryptDlkeySetValue(
 
             if( pkDlkey->fHasPrivateKey )
             {
-                SYMCRYPT_RUN_KEY_PCT(
+                SYMCRYPT_RUN_KEY_IMPORT_PCT(
+                    scError,
                     SymCryptDsaPct,
                     pkDlkey,
                     SYMCRYPT_PCT_DSA );
+                if( scError != SYMCRYPT_NO_ERROR )
+                {
+                    goto cleanup;
+                }
             }
         }
         

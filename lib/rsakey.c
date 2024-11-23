@@ -525,7 +525,7 @@ SymCryptRsakeyGenerate(
     // Ensure only allowed flags are specified
     UINT32 allowedFlags = SYMCRYPT_FLAG_KEY_NO_FIPS | algorithmFlags;
 
-    if ( ( ( flags & ~allowedFlags ) != 0 ) || 
+    if ( ( ( flags & ~allowedFlags ) != 0 ) ||
          ( ( flags & algorithmFlags ) == 0) )
     {
         scError = SYMCRYPT_INVALID_ARGUMENT;
@@ -737,7 +737,7 @@ SymCryptRsakeyGenerate(
         // Unconditionally set the sign flag to enable SignVerify PCT on encrypt-only keypair
         pkRsakey->fAlgorithmInfo |= SYMCRYPT_FLAG_RSAKEY_SIGN;
 
-        SYMCRYPT_RUN_KEY_PCT(
+        SYMCRYPT_RUN_KEY_GEN_PCT(
             SymCryptRsaSignVerifyPct,
             pkRsakey,
             SYMCRYPT_PCT_RSA_SIGN );
@@ -759,23 +759,345 @@ cleanup:
     return scError;
 }
 
+// The maximum number of iterations we use in probabilistic prime recovery method
+// If n, e, d are valid then successful prime recover for each iteration should
+// occur with probability ~1/2; with 100 iterations we fail for a valid private
+// exponent with probability ~2^-100
+#define SYMCRYPT_MAX_PRIME_RECOVERY_ITERATIONS  (100)
+
+#define SYMCRYPT_SCRATCH_BYTES_FOR_PRIME_RECOVERY( _ndMod, _ndPubExp, _nBitsMod ) \
+    SymCryptSizeofIntFromDigits( _ndMod ) + /* Space for piPrivExp*/ \
+    SymCryptSizeofIntFromDigits( _ndPubExp ) + /* Space for piPubExp*/ \
+    SymCryptSizeofIntFromDigits( _ndMod + _ndPubExp ) + /* Space for piExpProd*/ \
+    (4*SYMCRYPT_SIZEOF_MODELEMENT_FROM_BITS( _nBitsMod )) + /* Space for peTmpY, peTmpX, peOne, peNegOne */\
+    SYMCRYPT_MAX( SYMCRYPT_SCRATCH_BYTES_FOR_INT_MUL( _ndMod + _ndPubExp ), /* Space for SymCryptIntMulMixedSize */ \
+    SYMCRYPT_MAX( SYMCRYPT_SCRATCH_BYTES_FOR_COMMON_MOD_OPERATIONS( _ndMod ), /* Space for other SymCryptMod* */ \
+    SYMCRYPT_MAX( SYMCRYPT_SCRATCH_BYTES_FOR_MODEXP( _ndMod ), /* Space for SymCryptModExp */ \
+    SYMCRYPT_MAX( SYMCRYPT_SCRATCH_BYTES_FOR_EXTENDED_GCD( _ndMod ), /* Space for SymCryptIntExtendedGcd */ \
+    SYMCRYPT_MAX( SYMCRYPT_SCRATCH_BYTES_FOR_INT_TO_MODULUS( _ndMod ), /* Space for SymCryptIntToModulus */ \
+            SYMCRYPT_SCRATCH_BYTES_FOR_INT_DIVMOD( _ndMod, _ndMod ) /* Space for SymCryptIntDivMod */ \
+        )))))
+
+static
 SYMCRYPT_ERROR
 SYMCRYPT_CALL
-SymCryptRsakeySetValue(
-    _In_reads_bytes_( cbModulus )   PCBYTE                  pbModulus,
-                                    SIZE_T                  cbModulus,
-    _In_reads_( nPubExp )           PCUINT64                pu64PubExp,
-                                    UINT32                  nPubExp,
-    _In_reads_( nPrimes )           PCBYTE *                ppPrimes,
-    _In_reads_( nPrimes )           SIZE_T *                pcbPrimes,
-                                    UINT32                  nPrimes,
-                                    SYMCRYPT_NUMBER_FORMAT  numFormat,
-                                    UINT32                  flags,
-    _Out_                           PSYMCRYPT_RSAKEY        pkRsakey )
+SymCryptRsakeyCalculatePrimesFromPrivateExponent(
+    _Inout_ PSYMCRYPT_RSAKEY        pkRsakey, // must already have modulus and public exponent set
+    _In_reads_bytes_( cbPrivateExponent )
+            PCBYTE                  pbPrivateExponent,
+            SIZE_T                  cbPrivateExponent,
+            SYMCRYPT_NUMBER_FORMAT  numFormat,
+    _Out_writes_bytes_( cbScratch )
+            PBYTE                   pbScratch,
+            UINT32                  cbScratch )
 {
     SYMCRYPT_ERROR scError = SYMCRYPT_NO_ERROR;
 
-    // 3 sizes of temporary elements:
+    // 3 digit sizes of temporary integers:
+    //  - ndMod = pkRsakey->nDigitsOfModulus
+    //  - ndPubExp = digits for a UINT64 public exponent
+    //  - ndExpProd = ndMod + ndPubExp
+
+    UINT32 ndMod = pkRsakey->nDigitsOfModulus;
+    UINT32 cbMod = SymCryptSizeofIntFromDigits( ndMod );
+
+    UINT32 ndPubExp = SymCryptDigitsFromBits( 64 );
+    UINT32 cbPubExp = SymCryptSizeofIntFromDigits( ndPubExp );
+
+    UINT32 nBitsExpProd = 0; // we compute this later before use
+    UINT32 ndExpProd = ndMod + ndPubExp;
+    UINT32 cbExpProd = SymCryptSizeofIntFromDigits( ndExpProd );
+
+    UINT32 cbModElement = SYMCRYPT_SIZEOF_MODELEMENT_FROM_BITS( pkRsakey->nBitsOfModulus );
+
+    PSYMCRYPT_INT piPrivExp = NULL;
+    PSYMCRYPT_INT piPubExp = NULL;
+    PSYMCRYPT_INT piExpProd = NULL;
+    PSYMCRYPT_MODELEMENT peTmpY = NULL;
+    PSYMCRYPT_MODELEMENT peTmpX = NULL;
+    PSYMCRYPT_MODELEMENT peTmpPtr = NULL;
+    PSYMCRYPT_MODELEMENT peOne = NULL;
+    PSYMCRYPT_MODELEMENT peNegOne = NULL;
+
+    PBYTE   pbFnScratch = pbScratch;
+    UINT32  cbFnScratch = cbScratch;
+
+    UINT64  low64ExpProd = 0;
+    UINT32  trailingZeros = 0;
+
+    BOOL bFoundNonTrivialRoot = FALSE;
+
+    //
+    // Recover primes from private exponent using probabilistic prime-factor recovery method
+    // See SP800-56B rev2 Appendix C.1 and Boneh 1999
+    //
+    SYMCRYPT_ASSERT( pkRsakey->nPrimes == 2 );
+    SYMCRYPT_ASSERT( cbScratch >= SYMCRYPT_SCRATCH_BYTES_FOR_PRIME_RECOVERY(ndMod, ndPubExp, pkRsakey->nBitsOfModulus) );
+
+    piPrivExp = SymCryptIntCreate( pbFnScratch, cbMod, ndMod );
+    SYMCRYPT_ASSERT( piPrivExp != NULL );
+    pbFnScratch += cbMod;
+    cbFnScratch -= cbMod;
+    piPubExp = SymCryptIntCreate( pbFnScratch, cbPubExp, ndPubExp );
+    SYMCRYPT_ASSERT( piPubExp != NULL );
+    pbFnScratch += cbPubExp;
+    cbFnScratch -= cbPubExp;
+    piExpProd = SymCryptIntCreate( pbFnScratch, cbExpProd, ndExpProd );
+    SYMCRYPT_ASSERT( piExpProd != NULL );
+    pbFnScratch += cbExpProd;
+    cbFnScratch -= cbExpProd;
+
+    peTmpY = SymCryptModElementCreate( pbFnScratch, cbModElement, pkRsakey->pmModulus );
+    SYMCRYPT_ASSERT( peTmpY != NULL );
+    pbFnScratch += cbModElement;
+    cbFnScratch -= cbModElement;
+    peTmpX = SymCryptModElementCreate( pbFnScratch, cbModElement, pkRsakey->pmModulus );
+    SYMCRYPT_ASSERT( peTmpX != NULL );
+    pbFnScratch += cbModElement;
+    cbFnScratch -= cbModElement;
+    peOne = SymCryptModElementCreate( pbFnScratch, cbModElement, pkRsakey->pmModulus );
+    SYMCRYPT_ASSERT( peOne != NULL );
+    pbFnScratch += cbModElement;
+    cbFnScratch -= cbModElement;
+    peNegOne = SymCryptModElementCreate( pbFnScratch, cbModElement, pkRsakey->pmModulus );
+    SYMCRYPT_ASSERT( peNegOne != NULL );
+    pbFnScratch += cbModElement;
+    cbFnScratch -= cbModElement;
+
+    // Ensure that modulus is odd - this is required for later SymCryptIntExtendedGcd
+    if( (SymCryptIntGetValueLsbits32(SymCryptIntFromModulus( pkRsakey->pmModulus ))& 1)==0 )
+    {
+        scError = SYMCRYPT_INVALID_ARGUMENT;
+        goto cleanup;
+    }
+
+    // Import private exponent
+    scError = SymCryptIntSetValue(pbPrivateExponent, cbPrivateExponent, numFormat, piPrivExp);
+    if( scError != SYMCRYPT_NO_ERROR )
+    {
+        // The integer cannot fit the private exponent (SYMCRYPT_BUFFER_TOO_SMALL),
+        // only if the caller providing a private exponent larger than the public modulus
+        scError = SYMCRYPT_INVALID_ARGUMENT;
+        goto cleanup;
+    }
+
+    // Basic range check
+    if( !SymCryptIntIsLessThan(piPrivExp, SymCryptIntFromModulus(pkRsakey->pmModulus)) )
+    {
+        scError = SYMCRYPT_INVALID_ARGUMENT;
+        goto cleanup;
+    }
+
+    // Given range check, we can guarantee to compute
+    // Private exponent (d) * Public exponent (e)
+    // In piExpProd without overflow
+    SymCryptIntSetValueUint64( pkRsakey->au64PubExp[0], piPubExp );
+
+    // compute upper bound on product bit count based on public data (nBitsOfModulus (public) >= nBitsOfPrivateExponent (private))
+    nBitsExpProd = pkRsakey->nBitsOfModulus + SymCryptIntBitsizeOfValue( piPubExp );
+
+    SymCryptIntMulMixedSize( piPrivExp, piPubExp, piExpProd, pbFnScratch, cbFnScratch );
+
+    // Ensure d*e is odd
+    low64ExpProd = SymCryptIntGetValueLsbits64( piExpProd );
+
+    if( (low64ExpProd & 1) == 0 )
+    {
+        scError = SYMCRYPT_INVALID_ARGUMENT;
+        goto cleanup;
+    }
+
+    // Compute how many trailing zeros in m = d*e - 1
+    //
+    // We are variable time w.r.t. the number of trailing (up to 64) zeroes. An attacker using
+    // sidechannels to determine the number of trailing zeroes of m can glean information about
+    // the private exponent proportionate to the number of trailing zeroes. As we bound this to
+    // 64, at most an attacker can theoretically determine 64-bits of an expected 2048-bits of
+    // private exponent - and they can only do this for 1 in 2^64 keys.
+    //
+    // It would be possible to mask the number of trailing zeroes from sidechannels by always
+    // squaring by 64 times in the inner loop below and using masked operations to select out
+    // any found non-trivial root. We can consider doing this as a hardening measure if this API
+    // does see a lot of usage, but the expectation is that this method will almost never be
+    // used and it is just not enough of a leak for an attacker to even try to measuring.
+    trailingZeros = SymCryptCountTrailingZeros64( low64ExpProd-1 );
+
+    // If there are 64 trailing zeroes then we abort because the prime factor recovery method
+    // could theoretically leak more than 64-bits of the private exponent. The likelihood of any
+    // key which has this many trailing zeroes _ever_ having being generated by a legitimate key
+    // generation process is extremely small given the cost of RSA key generation. This much more
+    // likely indicates faulty inputs or a hardware fault rather than a legitimate keypair we
+    // should try to import.
+    if( trailingZeros == 64 )
+    {
+        scError = SYMCRYPT_INVALID_ARGUMENT;
+        goto cleanup;
+    }
+
+    SymCryptIntDivPow2( piExpProd, trailingZeros, piExpProd );  // r = m >> t
+    SymCryptModElementSetValueUint32( 1, pkRsakey->pmModulus, peOne, pbFnScratch, cbFnScratch );
+    SymCryptModElementSetValueNegUint32( 1, pkRsakey->pmModulus, peNegOne, pbFnScratch, cbFnScratch );
+
+    for( UINT32 i=0; i<SYMCRYPT_MAX_PRIME_RECOVERY_ITERATIONS; i++ )
+    {
+        // y is random value g in [2,n-2]
+        SymCryptModSetRandom( pkRsakey->pmModulus, peTmpY, 0, pbFnScratch, cbFnScratch );
+
+        // ModExp y = g^r in place
+        // could make this a bit faster and leakier using trailingZeros to reduce nBitsExp, but
+        // not normally a big performance win
+        SymCryptModExp(
+            pkRsakey->pmModulus,
+            peTmpY,
+            piExpProd,
+            nBitsExpProd-1,
+            0,
+            peTmpY,
+            pbFnScratch, cbFnScratch );
+
+        // if y == 1 or y == -1, start over (we found a trivial root of 1)
+        if( SymCryptModElementIsEqual( pkRsakey->pmModulus, peTmpY, peOne ) ||
+            SymCryptModElementIsEqual( pkRsakey->pmModulus, peTmpY, peNegOne ) )
+        {
+            continue;
+        }
+
+        for( UINT32 j=1; j<=trailingZeros; j++ )
+        {
+            // x = y^2
+            SymCryptModSquare( pkRsakey->pmModulus, peTmpY, peTmpX, pbFnScratch, cbFnScratch );
+
+            // if x == 1 then y is a non-trivial root of 1 (it is not -1 or 1)
+            if( SymCryptModElementIsEqual( pkRsakey->pmModulus, peTmpX, peOne) )
+            {
+                bFoundNonTrivialRoot = TRUE;
+                break;
+            }
+
+            // if x == -1, start over
+            if( SymCryptModElementIsEqual( pkRsakey->pmModulus, peTmpX, peNegOne) )
+            {
+                break; // just break out of inner loop; continues outer loop
+            }
+
+            // swap x and y
+            peTmpPtr = peTmpY;
+            peTmpY = peTmpX;
+            peTmpX = peTmpPtr;
+        }
+        if( bFoundNonTrivialRoot )
+        {
+            break;
+        }
+    }
+
+    if( !bFoundNonTrivialRoot )
+    {
+        // we failed to find a non-trivial root of 1, so we cannot recover prime factors
+        // it is almost certain that this means that the inputs were wrong
+        scError = SYMCRYPT_INVALID_ARGUMENT;
+        goto cleanup;
+    }
+
+    // piPrivExp = y
+    SymCryptModElementToInt( pkRsakey->pmModulus, peTmpY, piPrivExp, pbFnScratch, cbFnScratch );
+    // piPrivExp = y-1 (we know this cannot borrow as y^2 is 1, so y != 0)
+    SymCryptIntSubUint32( piPrivExp, 1, piPrivExp );
+
+    // piPrivExp = p0 = GCD(y-1, n)
+    SymCryptIntExtendedGcd(
+        piPrivExp,
+        SymCryptIntFromModulus( pkRsakey->pmModulus ),
+        SYMCRYPT_FLAG_GCD_INPUTS_NOT_BOTH_EVEN,
+        piPrivExp,
+        NULL,
+        NULL,
+        NULL,
+        pbFnScratch, cbFnScratch );
+
+    // compute the sizes of the primes
+    pkRsakey->nBitsOfPrimes[0] = SymCryptIntBitsizeOfValue(piPrivExp);
+    pkRsakey->nBitsOfPrimes[1] = pkRsakey->nBitsOfModulus - pkRsakey->nBitsOfPrimes[0];
+    for( UINT32 i=0; i<2; i++ )
+    {
+        pkRsakey->nDigitsOfPrimes[i] = SymCryptDigitsFromBits(pkRsakey->nBitsOfPrimes[i]);
+        if( pkRsakey->nBitsOfPrimes[i] < SYMCRYPT_RSAKEY_MIN_BITSIZE_PRIME )
+        {
+            scError = SYMCRYPT_WRONG_KEY_SIZE;
+            goto cleanup;
+        }
+    }
+    pkRsakey->nMaxDigitsOfPrimes = SYMCRYPT_MAX(pkRsakey->nDigitsOfPrimes[0], pkRsakey->nDigitsOfPrimes[1]);
+
+    // Create all the objects
+    SymCryptRsakeyCreateAllObjects(pkRsakey);
+
+    scError = SymCryptIntCopyMixedSize( piPrivExp, SymCryptIntFromModulus( pkRsakey->pmPrimes[0] ) );
+    if( scError != SYMCRYPT_NO_ERROR )
+    {
+        // only fails if we computed the wrong bit-size for the primes above
+        scError = SYMCRYPT_HARDWARE_FAILURE;
+        goto cleanup;
+    }
+
+    SymCryptIntToModulus(   SymCryptIntFromModulus( pkRsakey->pmPrimes[0] ),
+                            pkRsakey->pmPrimes[0],
+                            pkRsakey->nBitsOfModulus,   // Average number of operations
+                            SYMCRYPT_FLAG_MODULUS_PARITY_PUBLIC | SYMCRYPT_FLAG_MODULUS_PRIME,
+                            pbFnScratch, cbFnScratch );
+
+    SymCryptIntDivMod( SymCryptIntFromModulus( pkRsakey->pmModulus ),
+                       SymCryptDivisorFromModulus( pkRsakey->pmPrimes[0] ),
+                       piExpProd, // n / p0 - use piExpProd as Quotient.nDigits must be >= Src.nDigits
+                       piPrivExp, // n % p0 - use piPrivExp as Remainder.nDigits must be >= Divisor.nDigits
+                       pbFnScratch, cbFnScratch );
+
+    // Check remainder from dividing n by p0 is 0
+    if( !SymCryptIntIsEqualUint32( piPrivExp, 0 ) )
+    {
+        // Should always be true as p0 is GCD(y-1, n) so is definitionally a divisor of n
+        // Failure here indicates something wrong in our math, or hardware failure
+        scError = SYMCRYPT_HARDWARE_FAILURE;
+        goto cleanup;
+    }
+
+    scError = SymCryptIntCopyMixedSize( piExpProd, SymCryptIntFromModulus( pkRsakey->pmPrimes[1] ) );
+    if( scError != SYMCRYPT_NO_ERROR )
+    {
+        // only fails if we computed the wrong bit-size for the primes above
+        scError = SYMCRYPT_HARDWARE_FAILURE;
+        goto cleanup;
+    }
+
+    SymCryptIntToModulus(   SymCryptIntFromModulus( pkRsakey->pmPrimes[1] ),
+                            pkRsakey->pmPrimes[1],
+                            pkRsakey->nBitsOfModulus,   // Average number of operations
+                            SYMCRYPT_FLAG_MODULUS_PARITY_PUBLIC | SYMCRYPT_FLAG_MODULUS_PRIME,
+                            pbFnScratch, cbFnScratch );
+
+cleanup:
+    return scError;
+}
+
+SYMCRYPT_ERROR
+SYMCRYPT_CALL
+SymCryptRsakeySetValueInternal(
+    _In_reads_bytes_( cbModulus )               PCBYTE                  pbModulus,
+                                                SIZE_T                  cbModulus,
+    _In_reads_( nPubExp )                       PCUINT64                pu64PubExp,
+                                                UINT32                  nPubExp,
+    _In_reads_bytes_opt_( cbPrivateExponent )   PCBYTE                  pbPrivateExponent,
+                                                SIZE_T                  cbPrivateExponent,
+    _In_reads_opt_( nPrimes )                   PCBYTE *                ppPrimes,
+    _In_reads_opt_( nPrimes )                   SIZE_T *                pcbPrimes,
+                                                UINT32                  nPrimes,
+                                                SYMCRYPT_NUMBER_FORMAT  numFormat,
+                                                UINT32                  flags,
+    _Inout_                                     PSYMCRYPT_RSAKEY        pkRsakey )
+{
+    SYMCRYPT_ERROR scError = SYMCRYPT_NO_ERROR;
+
+    // 3 digit sizes of temporary integers:
     //  - ndPrimes = max digitsize of prime buffers
     //  - ndMod = pkRsakey->nDigitsOfModulus
     //  - ndLarge = ndPrimes + ndMod
@@ -800,7 +1122,7 @@ SymCryptRsakeySetValue(
     // Ensure only allowed flags are specified
     UINT32 allowedFlags = SYMCRYPT_FLAG_KEY_NO_FIPS | SYMCRYPT_FLAG_KEY_MINIMAL_VALIDATION | algorithmFlags;
 
-    if ( ( ( flags & ~allowedFlags ) != 0 ) || 
+    if ( ( ( flags & ~allowedFlags ) != 0 ) ||
          ( ( flags & algorithmFlags ) == 0) )
     {
         scError = SYMCRYPT_INVALID_ARGUMENT;
@@ -815,10 +1137,15 @@ SymCryptRsakeySetValue(
         goto cleanup;
     }
 
+    // Internal requirement that private key is either specified by primes or by private exponent, not both
+    // This is not exposed to external API surface - if we were to dynamically check, the SYMCRYPT_ERROR
+    // should indicate internal logic error - for now just assert
+    SYMCRYPT_ASSERT( (nPrimes==0) || (pbPrivateExponent==NULL) );
+
     // Check if the arguments are correct
     if ( (pbModulus==NULL) || (cbModulus==0) ||         // Modulus is needed
          (nPubExp != 1) || (pu64PubExp==NULL) ||        // Exactly 1 public exponent is needed
-         ((nPrimes != 2) && (nPrimes!=0)) ||
+         ((nPrimes != 2) && (nPrimes != 0)) ||
          ((nPrimes == 2) && ((ppPrimes==NULL) || (pcbPrimes==NULL) ||
                              (ppPrimes[0]==NULL) || (ppPrimes[1]==NULL) ||
                              (pcbPrimes[0]==0) || (pcbPrimes[1]==0))) )
@@ -831,8 +1158,16 @@ SymCryptRsakeySetValue(
 
     // Calculate scratch spaces
 	// No integer overflows as all numbers are limited by ndMod which is checked during Create
-    if( nPrimes!=0 )
+    if ( (pbPrivateExponent != NULL) || (nPrimes > 0) )
     {
+        if( pkRsakey->nPrimes != 2 )
+        {
+            // The key was not allocated with space for private key material
+            // so we cannot set it with private key material
+            scError = SYMCRYPT_INVALID_ARGUMENT;
+            goto cleanup;
+        }
+
         cbMod = SymCryptSizeofIntFromDigits( ndMod );
         cbLarge = SymCryptSizeofIntFromDigits( 2 * ndMod ); // 2*ndMod is still < SymCryptDigitsFromBits(SYMCRYPT_INT_MAX_BITS)
         cbDivisor = SymCryptSizeofDivisorFromDigits( ndMod );
@@ -844,6 +1179,15 @@ SymCryptRsakeySetValue(
                     SYMCRYPT_MAX( SYMCRYPT_SCRATCH_BYTES_FOR_INT_TO_DIVISOR(ndMod),
                          SYMCRYPT_SCRATCH_BYTES_FOR_INT_DIVMOD( ndMod, ndMod )
                         ))));
+        
+        if( pbPrivateExponent != NULL )
+        {
+            // We use at least as much scratch space when importing by private exponent, but probably more
+            SYMCRYPT_ASSERT( SymCryptDigitsFromBits( 64 ) == 1 );
+
+            cbScratch = SYMCRYPT_MAX( cbScratch,
+                SYMCRYPT_SCRATCH_BYTES_FOR_PRIME_RECOVERY(ndMod, 1, pkRsakey->nSetBitsOfModulus) );
+        }
     }
     else
     {
@@ -859,7 +1203,7 @@ SymCryptRsakeySetValue(
 
     // Modulus
     scError = SymCryptIntSetValue( pbModulus, cbModulus, numFormat, SymCryptIntFromModulus( pkRsakey->pmModulus ) );
-    if (scError != SYMCRYPT_NO_ERROR )
+    if (scError != SYMCRYPT_NO_ERROR)
     {
         goto cleanup;
     }
@@ -895,72 +1239,95 @@ SymCryptRsakeySetValue(
         pkRsakey->au64PubExp[i] = pu64PubExp[i];
     }
 
-    // Primes i.e. private key
-    if (nPrimes > 0)
+    //  Private key import either by private exponent or primes
+    if ( (pbPrivateExponent != NULL) || (nPrimes > 0) )
     {
-        pbFnScratch = pbScratch;
-        cbFnScratch = cbScratch;
+        if (pbPrivateExponent != NULL)
+        {
+            // Private exponent
+            scError = SymCryptRsakeyCalculatePrimesFromPrivateExponent(
+                pkRsakey,
+                pbPrivateExponent, cbPrivateExponent,
+                numFormat,
+                pbScratch, cbScratch );
+            if (scError != SYMCRYPT_NO_ERROR)
+            {
+                goto cleanup;
+            }
+            
+            pbFnScratch = pbScratch;
+            cbFnScratch = cbScratch;
 
-        // Create temporaries
-        piPhi = SymCryptIntCreate( pbFnScratch, cbMod, ndMod ); pbFnScratch += cbMod; cbFnScratch -= cbMod;
+            // Create temporary piPhi
+            piPhi = SymCryptIntCreate( pbFnScratch, cbMod, ndMod ); pbFnScratch += cbMod; cbFnScratch -= cbMod;
+        }
+        else //if (nPrimes > 0)
+        {
+            // Primes
+            pbFnScratch = pbScratch;
+            cbFnScratch = cbScratch;
+
+            // Create temporary piPhi
+            piPhi = SymCryptIntCreate( pbFnScratch, cbMod, ndMod ); pbFnScratch += cbMod; cbFnScratch -= cbMod;
+
+            // First fix the tight number of digits of each prime
+            pkRsakey->nMaxDigitsOfPrimes = 0;
+            for (UINT32 i=0; i<pkRsakey->nPrimes; i++)
+            {
+#pragma warning(suppress: 26007) // "Incorrect Annotation" - cannot phrase array of pointers to arrays in SAL
+                scError = SymCryptIntSetValue( ppPrimes[i], pcbPrimes[i], numFormat, piPhi );
+                if (scError != SYMCRYPT_NO_ERROR )
+                {
+                    goto cleanup;
+                }
+
+                pkRsakey->nBitsOfPrimes[i] = SymCryptIntBitsizeOfValue(piPhi);
+                pkRsakey->nDigitsOfPrimes[i] = SymCryptDigitsFromBits(pkRsakey->nBitsOfPrimes[i]);
+
+                pkRsakey->nMaxDigitsOfPrimes = SYMCRYPT_MAX(pkRsakey->nMaxDigitsOfPrimes, pkRsakey->nDigitsOfPrimes[i]);
+
+                if (pkRsakey->nBitsOfPrimes[i] < SYMCRYPT_RSAKEY_MIN_BITSIZE_PRIME)
+                {
+                    scError = SYMCRYPT_WRONG_KEY_SIZE;
+                    goto cleanup;
+                }
+            }
+
+            // Create all the objects
+            SymCryptRsakeyCreateAllObjects(pkRsakey);
+
+            // Set the values
+            for (UINT32 i=0; i<pkRsakey->nPrimes; i++)
+            {
+#pragma warning(suppress: 26007) // "Incorrect Annotation" - cannot phrase array of pointers to arrays in SAL
+                scError = SymCryptIntSetValue( ppPrimes[i], pcbPrimes[i], numFormat, SymCryptIntFromModulus( pkRsakey->pmPrimes[i] ) );
+                if (scError != SYMCRYPT_NO_ERROR )
+                {
+                    goto cleanup;
+                }
+
+                // Check that this prime is odd (should we check for primality?)
+                if ((SymCryptIntGetValueLsbits32(SymCryptIntFromModulus( pkRsakey->pmPrimes[i] ))& 1)==0)
+                {
+                    scError = SYMCRYPT_INVALID_ARGUMENT;
+                    goto cleanup;
+                }
+
+                // IntToModulus requirement:
+                //      nBitsOfPrimes >= SYMCRYPT_RSAKEY_MIN_BITSIZE_PRIME --> pmPrimes[i] > 0
+                SymCryptIntToModulus(
+                        SymCryptIntFromModulus( pkRsakey->pmPrimes[i] ),
+                        pkRsakey->pmPrimes[i],
+                        pkRsakey->nBitsOfModulus,   // Average number of operations
+                        SYMCRYPT_FLAG_MODULUS_PARITY_PUBLIC | SYMCRYPT_FLAG_MODULUS_PRIME,
+                        pbFnScratch,
+                        cbFnScratch );
+            }
+        }
+        
+        // Create remaining temporaries
         piAcc = SymCryptIntCreate( pbFnScratch, cbLarge, 2 * ndMod ); pbFnScratch += cbLarge; cbFnScratch -= cbLarge;
         pdTmp = SymCryptDivisorCreate( pbFnScratch, cbDivisor, ndMod ); pbFnScratch += cbDivisor; cbFnScratch -= cbDivisor;
-
-        pkRsakey->nPrimes = nPrimes;
-
-        // First fix the tight number of digits of each prime
-        pkRsakey->nMaxDigitsOfPrimes = 0;
-        for (UINT32 i=0; i<pkRsakey->nPrimes; i++)
-        {
-#pragma warning(suppress: 26007) // "Incorrect Annotation" - cannot phrase array of pointers to arrays in SAL
-            scError = SymCryptIntSetValue( ppPrimes[i], pcbPrimes[i], numFormat, piPhi );
-            if (scError != SYMCRYPT_NO_ERROR )
-            {
-                goto cleanup;
-            }
-
-            pkRsakey->nBitsOfPrimes[i] = SymCryptIntBitsizeOfValue(piPhi);
-            pkRsakey->nDigitsOfPrimes[i] = SymCryptDigitsFromBits(pkRsakey->nBitsOfPrimes[i]);
-
-            pkRsakey->nMaxDigitsOfPrimes = SYMCRYPT_MAX(pkRsakey->nMaxDigitsOfPrimes, pkRsakey->nDigitsOfPrimes[i]);
-
-            if (pkRsakey->nBitsOfPrimes[i] < SYMCRYPT_RSAKEY_MIN_BITSIZE_PRIME)
-            {
-                scError = SYMCRYPT_WRONG_KEY_SIZE;
-                goto cleanup;
-            }
-        }
-
-        // Create all the objects
-        SymCryptRsakeyCreateAllObjects(pkRsakey);
-
-        // Set the values
-        for (UINT32 i=0; i<pkRsakey->nPrimes; i++)
-        {
-#pragma warning(suppress: 26007) // "Incorrect Annotation" - cannot phrase array of pointers to arrays in SAL
-            scError = SymCryptIntSetValue( ppPrimes[i], pcbPrimes[i], numFormat, SymCryptIntFromModulus( pkRsakey->pmPrimes[i] ) );
-            if (scError != SYMCRYPT_NO_ERROR )
-            {
-                goto cleanup;
-            }
-
-            // Check that this prime is odd (should we check for primality?)
-            if ((SymCryptIntGetValueLsbits32(SymCryptIntFromModulus( pkRsakey->pmPrimes[i] ))& 1)==0)
-            {
-                scError = SYMCRYPT_INVALID_ARGUMENT;
-                goto cleanup;
-            }
-
-            // IntToModulus requirement:
-            //      nBitsOfPrimes >= SYMCRYPT_RSAKEY_MIN_BITSIZE_PRIME --> pmPrimes[i] > 0
-            SymCryptIntToModulus(
-                    SymCryptIntFromModulus( pkRsakey->pmPrimes[i] ),
-                    pkRsakey->pmPrimes[i],
-                    pkRsakey->nBitsOfModulus,   // Average number of operations
-                    SYMCRYPT_FLAG_MODULUS_PARITY_PUBLIC | SYMCRYPT_FLAG_MODULUS_PRIME,
-                    pbFnScratch,
-                    cbFnScratch );
-        }
 
         // Calculate the rest of the fields
         scError = SymCryptRsakeyCalculatePrivateFields( pkRsakey, pdTmp, piPhi, piAcc, pbFnScratch, cbFnScratch );
@@ -987,16 +1354,21 @@ SymCryptRsakeySetValue(
             // Unconditionally set the sign flag to enable SignVerify PCT on encrypt-only keypair
             pkRsakey->fAlgorithmInfo |= SYMCRYPT_FLAG_RSAKEY_SIGN;
 
-            SYMCRYPT_RUN_KEY_PCT(
+            SYMCRYPT_RUN_KEY_IMPORT_PCT(
+                scError,
                 SymCryptRsaSignVerifyPct,
                 pkRsakey,
                 SYMCRYPT_PCT_RSA_SIGN );
+            if (scError != SYMCRYPT_NO_ERROR )
+            {
+                goto cleanup;
+            }
 
-                // Unset the sign flag before returning encrypt-only keypair
-                if ( ( flags & SYMCRYPT_FLAG_RSAKEY_SIGN ) == 0 )
-                {
-                    pkRsakey->fAlgorithmInfo ^= SYMCRYPT_FLAG_RSAKEY_SIGN;
-                }
+            // Unset the sign flag before returning encrypt-only keypair
+            if ( ( flags & SYMCRYPT_FLAG_RSAKEY_SIGN ) == 0 )
+            {
+                pkRsakey->fAlgorithmInfo ^= SYMCRYPT_FLAG_RSAKEY_SIGN;
+            }
         }
     }
 
@@ -1008,6 +1380,52 @@ cleanup:
     }
 
     return scError;
+}
+
+SYMCRYPT_ERROR
+SYMCRYPT_CALL
+SymCryptRsakeySetValue(
+    _In_reads_bytes_( cbModulus )   PCBYTE                  pbModulus,
+                                    SIZE_T                  cbModulus,
+    _In_reads_( nPubExp )           PCUINT64                pu64PubExp,
+                                    UINT32                  nPubExp,
+    _In_reads_opt_( nPrimes )       PCBYTE *                ppPrimes,
+    _In_reads_opt_( nPrimes )       SIZE_T *                pcbPrimes,
+                                    UINT32                  nPrimes,
+                                    SYMCRYPT_NUMBER_FORMAT  numFormat,
+                                    UINT32                  flags,
+    _Inout_                         PSYMCRYPT_RSAKEY        pkRsakey )
+{
+    return SymCryptRsakeySetValueInternal(
+        pbModulus, cbModulus,
+        pu64PubExp, nPubExp,
+        NULL, 0,
+        ppPrimes, pcbPrimes, nPrimes,
+        numFormat,
+        flags,
+        pkRsakey );
+}
+
+SYMCRYPT_ERROR
+SYMCRYPT_CALL
+SymCryptRsakeySetValueFromPrivateExponent(
+    _In_reads_bytes_( cbModulus )           PCBYTE                  pbModulus,
+                                            SIZE_T                  cbModulus,
+                                            UINT64                  u64PubExp,
+    _In_reads_bytes_( cbPrivateExponent )   PCBYTE                  pbPrivateExponent,
+                                            SIZE_T                  cbPrivateExponent,
+                                            SYMCRYPT_NUMBER_FORMAT  numFormat,
+                                            UINT32                  flags,
+    _Inout_                                 PSYMCRYPT_RSAKEY        pkRsakey )
+{
+    return SymCryptRsakeySetValueInternal(
+        pbModulus, cbModulus,
+        &u64PubExp, 1,
+        pbPrivateExponent, cbPrivateExponent,
+        NULL, NULL, 0,
+        numFormat,
+        flags,
+        pkRsakey );
 }
 
 SYMCRYPT_ERROR
@@ -1086,16 +1504,16 @@ cleanup:
 SYMCRYPT_ERROR
 SYMCRYPT_CALL
 SymCryptRsakeyGetCrtValue(
-    _In_                                    PCSYMCRYPT_RSAKEY       pkRsakey,
-    _Out_writes_(nCrtExponents)             PBYTE *                 ppCrtExponents,
-    _In_reads_(nCrtExponents)               SIZE_T *                pcbCrtExponents,
-                                            UINT32                  nCrtExponents,
-    _Out_writes_bytes_(cbCrtCoefficient)    PBYTE                   pbCrtCoefficient,
-                                            SIZE_T                  cbCrtCoefficient,
-    _Out_writes_bytes_(cbPrivateExponent)   PBYTE                   pbPrivateExponent,
-                                            SIZE_T                  cbPrivateExponent,
-                                            SYMCRYPT_NUMBER_FORMAT  numFormat,
-                                            UINT32                  flags)
+    _In_                                        PCSYMCRYPT_RSAKEY       pkRsakey,
+    _Out_writes_opt_(nCrtExponents)             PBYTE *                 ppCrtExponents,
+    _In_reads_(nCrtExponents)                   SIZE_T *                pcbCrtExponents,
+                                                UINT32                  nCrtExponents,
+    _Out_writes_bytes_opt_(cbCrtCoefficient)    PBYTE                   pbCrtCoefficient,
+                                                SIZE_T                  cbCrtCoefficient,
+    _Out_writes_bytes_opt_(cbPrivateExponent)   PBYTE                   pbPrivateExponent,
+                                                SIZE_T                  cbPrivateExponent,
+                                                SYMCRYPT_NUMBER_FORMAT  numFormat,
+                                                UINT32                  flags)
 {
     SYMCRYPT_ERROR scError = SYMCRYPT_NO_ERROR;
     PBYTE pbScratch = NULL;
@@ -1187,7 +1605,7 @@ SymCryptRsakeyExtendKeyUsage(
     // Ensure caller has specified what algorithm(s) the key will be used with
     UINT32 algorithmFlags = SYMCRYPT_FLAG_RSAKEY_SIGN | SYMCRYPT_FLAG_RSAKEY_ENCRYPT;
 
-    if ( ( ( flags & ~algorithmFlags ) != 0 ) || 
+    if ( ( ( flags & ~algorithmFlags ) != 0 ) ||
          ( ( flags & algorithmFlags ) == 0) )
     {
         scError = SYMCRYPT_INVALID_ARGUMENT;

@@ -1308,7 +1308,7 @@ SymCryptEcDhSecretAgreementSelftest(void)
     SymCryptEcurveFree( pCurve );
 }
 
-VOID
+SYMCRYPT_ERROR
 SYMCRYPT_CALL
 SymCryptDsaPct( PCSYMCRYPT_DLKEY pkDlkey )
 {
@@ -1316,7 +1316,11 @@ SymCryptDsaPct( PCSYMCRYPT_DLKEY pkDlkey )
 
     SIZE_T cbSignature = 2 * SYMCRYPT_BYTES_FROM_BITS(pkDlkey->nBitsPriv);
     PBYTE pbSignature = SymCryptCallbackAlloc( cbSignature );
-    SYMCRYPT_FIPS_ASSERT( pbSignature != NULL );
+    if( pbSignature == NULL )
+    {
+        scError = SYMCRYPT_MEMORY_ALLOCATION_FAILURE;
+        goto cleanup;
+    }
 
     scError = SymCryptDsaSign(
         pkDlkey,
@@ -1326,7 +1330,10 @@ SymCryptDsaPct( PCSYMCRYPT_DLKEY pkDlkey )
         0,
         pbSignature,
         cbSignature );
-    SYMCRYPT_FIPS_ASSERT( scError == SYMCRYPT_NO_ERROR );
+    if( scError != SYMCRYPT_NO_ERROR )
+    {
+        goto cleanup;
+    }
 
     SymCryptInjectError( pbSignature, cbSignature );
 
@@ -1338,10 +1345,19 @@ SymCryptDsaPct( PCSYMCRYPT_DLKEY pkDlkey )
         cbSignature,
         SYMCRYPT_NUMBER_FORMAT_MSB_FIRST,
         0 );
-    SYMCRYPT_FIPS_ASSERT( scError == SYMCRYPT_NO_ERROR );
+    if( scError != SYMCRYPT_NO_ERROR )
+    {
+        goto cleanup;
+    }
 
-    SymCryptWipe( pbSignature, cbSignature );
-    SymCryptCallbackFree( pbSignature );
+cleanup:
+    if( pbSignature != NULL )
+    {
+        SymCryptWipe( pbSignature, cbSignature );
+        SymCryptCallbackFree( pbSignature );
+    }
+
+    return scError;
 }
 
 VOID
@@ -1411,7 +1427,7 @@ SymCryptDsaSelftest(void)
     SymCryptDlgroupFree( pDlgroup );
 }
 
-VOID
+SYMCRYPT_ERROR
 SYMCRYPT_CALL
 SymCryptEcDsaPct( PCSYMCRYPT_ECKEY pkEckey )
 {
@@ -1419,7 +1435,11 @@ SymCryptEcDsaPct( PCSYMCRYPT_ECKEY pkEckey )
 
     SIZE_T cbSignature = 2 * SymCryptEckeySizeofPrivateKey(pkEckey);
     PBYTE pbSignature = SymCryptCallbackAlloc( cbSignature );
-    SYMCRYPT_FIPS_ASSERT( pbSignature != NULL );
+    if( pbSignature == NULL )
+    {
+        scError = SYMCRYPT_MEMORY_ALLOCATION_FAILURE;
+        goto cleanup;
+    }
 
     // Use SymCryptEcDsaSignEx to avoid infinite recursion in the PCT
     scError = SymCryptEcDsaSignEx(
@@ -1431,7 +1451,10 @@ SymCryptEcDsaPct( PCSYMCRYPT_ECKEY pkEckey )
         0,
         pbSignature,
         cbSignature );
-    SYMCRYPT_FIPS_ASSERT( scError == SYMCRYPT_NO_ERROR );
+    if( scError != SYMCRYPT_NO_ERROR )
+    {
+        goto cleanup;
+    }
 
     SymCryptInjectError( pbSignature, cbSignature );
 
@@ -1443,10 +1466,19 @@ SymCryptEcDsaPct( PCSYMCRYPT_ECKEY pkEckey )
         cbSignature,
         SYMCRYPT_NUMBER_FORMAT_MSB_FIRST,
         0 );
-    SYMCRYPT_FIPS_ASSERT( scError == SYMCRYPT_NO_ERROR );
+    if( scError != SYMCRYPT_NO_ERROR )
+    {
+        goto cleanup;
+    }
 
-    SymCryptWipe( pbSignature, cbSignature );
-    SymCryptCallbackFree( pbSignature );
+cleanup:
+    if( pbSignature != NULL )
+    {
+        SymCryptWipe( pbSignature, cbSignature );
+        SymCryptCallbackFree( pbSignature );
+    }
+
+    return scError;
 }
 
 VOID
@@ -1520,7 +1552,7 @@ SymCryptEcDsaSelftest(void)
     SymCryptEcurveFree( pCurve );
 }
 
-VOID
+SYMCRYPT_ERROR
 SYMCRYPT_CALL
 SymCryptRsaSignVerifyPct( PCSYMCRYPT_RSAKEY pkRsakey )
 {
@@ -1528,7 +1560,11 @@ SymCryptRsaSignVerifyPct( PCSYMCRYPT_RSAKEY pkRsakey )
 
     SIZE_T cbSignature = SYMCRYPT_BYTES_FROM_BITS(pkRsakey->nBitsOfModulus);
     PBYTE pbSignature = SymCryptCallbackAlloc( cbSignature );
-    SYMCRYPT_FIPS_ASSERT( pbSignature != NULL );
+    if( pbSignature == NULL )
+    {
+        scError = SYMCRYPT_MEMORY_ALLOCATION_FAILURE;
+        goto cleanup;
+    }
 
     scError = SymCryptRsaPkcs1Sign(
         pkRsakey,
@@ -1541,7 +1577,10 @@ SymCryptRsaSignVerifyPct( PCSYMCRYPT_RSAKEY pkRsakey )
         pbSignature,
         cbSignature,
         &cbSignature );
-    SYMCRYPT_FIPS_ASSERT( scError == SYMCRYPT_NO_ERROR );
+    if( scError != SYMCRYPT_NO_ERROR )
+    {
+        goto cleanup;
+    }
 
     SymCryptInjectError( pbSignature, cbSignature );
 
@@ -1555,10 +1594,19 @@ SymCryptRsaSignVerifyPct( PCSYMCRYPT_RSAKEY pkRsakey )
         SymCryptSha256OidList,
         SYMCRYPT_SHA256_OID_COUNT,
         0 );
-    SYMCRYPT_FIPS_ASSERT( scError == SYMCRYPT_NO_ERROR );
+    if( scError != SYMCRYPT_NO_ERROR )
+    {
+        goto cleanup;
+    }
 
-    SymCryptWipe( pbSignature, cbSignature );
-    SymCryptCallbackFree( pbSignature );
+cleanup:
+    if( pbSignature != NULL )
+    {
+        SymCryptWipe( pbSignature, cbSignature );
+        SymCryptCallbackFree( pbSignature );
+    }
+
+    return scError;
 }
 
 VOID

@@ -388,6 +388,8 @@ const char * g_algorithmNames[] = {
     AlgRsaSignPkcs1::name,
     //AlgRsaVerifyPkcs1::name,
     AlgRsaSignPss::name,
+    AlgRsakeySetValue::name,
+    AlgRsakeySetValueFromPrivateExponent::name,
     //AlgRsaVerifyPss::name,
     //AlgDsaSign::name,
     //AlgDsaVerify::name,

@@ -3,9 +3,13 @@
 New changes will be listed here as they are developed. The version number is determined
 prior to the creation of a new release, based on the changes contained in that release.
 
+# Version 103.6.0
+
 - Add LMS implementation
 - Add AES-KW(P) implementation
 - Add SHA224, SHA512/224, SHA512/256, and SHA3-224
+- Add SymCryptRsakeySetValueFromPrivateExponent
+- Fixed a regression in v103.5.0 which erroneously caused a fastfail in FIPS self-test when importing an invalid keypair
 
 # Version 103.5.1
 

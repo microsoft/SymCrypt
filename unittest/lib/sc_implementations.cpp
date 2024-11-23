@@ -58,6 +58,13 @@ void
 sc_RsaKeyPerf( PBYTE buf1, PBYTE buf2, SIZE_T keySize, UINT32 generateFlags );
 
 template<class Implementation>
+NTSTATUS
+sc_RsaKeySetKeyFromBlob(
+    _In_    PCRSAKEY_TESTBLOB   pcKeyBlob,
+    _Inout_ PSYMCRYPT_RSAKEY*   ppKey,
+            UINT32              flags );
+
+template<class Implementation>
 VOID
 DlgroupSetup( PBYTE buf1, SIZE_T keySize, BOOLEAN forDiffieHellman );
 
@@ -347,6 +354,9 @@ addSymCryptImplementationToGlobalList()
     addImplementationToGlobalList<RsaEncImp<ImpScVariant, AlgRsaEncRaw>>();
     addImplementationToGlobalList<RsaEncImp<ImpScVariant, AlgRsaEncPkcs1>>();
     addImplementationToGlobalList<RsaEncImp<ImpScVariant, AlgRsaEncOaep>>();
+
+    addImplementationToGlobalList<ArithImp<ImpScVariant, AlgRsakeySetValue>>();
+    addImplementationToGlobalList<ArithImp<ImpScVariant, AlgRsakeySetValueFromPrivateExponent>>();
 
     //addImplementationToGlobalList<RsaImp<ImpScVariant, AlgRsaSignPkcs1>>();
     //addImplementationToGlobalList<RsaImp<ImpScVariant, AlgRsaVerifyPkcs1>>();

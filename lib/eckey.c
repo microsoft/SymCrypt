@@ -652,10 +652,15 @@ SymCryptEckeyGetValue(
         if ( ((pEckey->fAlgorithmInfo & SYMCRYPT_FLAG_ECKEY_ECDSA) != 0) &&
              ((pEckey->fAlgorithmInfo & SYMCRYPT_FLAG_KEY_NO_FIPS) == 0) )
         {
-            SYMCRYPT_RUN_KEY_PCT(
+            SYMCRYPT_RUN_KEY_IMPORT_PCT(
+                scError,
                 SymCryptEcDsaPct,
                 pEckey,
                 SYMCRYPT_PCT_ECDSA );
+            if ( scError != SYMCRYPT_NO_ERROR )
+            {
+                goto cleanup;
+            }
         }
 
         // Copy the key into the temporary integer

@@ -510,6 +510,7 @@
 #define ScShimSymCryptRsakeyGetNumberOfPrimes(...) SCTEST_CALL_SCIMPFN(SymCryptRsakeyGetNumberOfPrimes, __VA_ARGS__)
 #define ScShimSymCryptRsakeyGenerate(...) SCTEST_CALL_SCIMPFN(SymCryptRsakeyGenerate, __VA_ARGS__)
 #define ScShimSymCryptRsakeySetValue(...) SCTEST_CALL_SCIMPFN(SymCryptRsakeySetValue, __VA_ARGS__)
+#define ScShimSymCryptRsakeySetValueFromPrivateExponent(...) SCTEST_CALL_SCIMPFN(SymCryptRsakeySetValueFromPrivateExponent, __VA_ARGS__)
 #define ScShimSymCryptRsakeyGetValue(...) SCTEST_CALL_SCIMPFN(SymCryptRsakeyGetValue, __VA_ARGS__)
 #define ScShimSymCryptRsakeyGetCrtValue(...) SCTEST_CALL_SCIMPFN(SymCryptRsakeyGetCrtValue, __VA_ARGS__)
 #define ScShimSymCryptRsakeyExtendKeyUsage(...) SCTEST_CALL_SCIMPFN(SymCryptRsakeyExtendKeyUsage, __VA_ARGS__)

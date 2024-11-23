@@ -582,6 +582,7 @@ EXPORTS
     SymCryptRsakeyHasPrivateKey
     SymCryptRsakeyModulusBits
     SymCryptRsakeySetValue
+    SymCryptRsakeySetValueFromPrivateExponent
     SymCryptRsakeySizeofModulus
     SymCryptRsakeySizeofPrime
     SymCryptRsakeySizeofPublicExponent

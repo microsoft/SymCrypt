@@ -249,12 +249,14 @@ createKatFileSingleRawEnc( FILE * f, PCRSAKEY_TESTBLOB pBlob )
     fprintf( f, "N = " );
     fprintHex( f, pBlob->abModulus, cbMod );
 
-
     UINT64 exp = pBlob->u64PubExp;
     SIZE_T cbTmp = SymCryptUint64Bytesize( exp );
     SymCryptStoreMsbFirstUint64( exp, buf, cbTmp );
     fprintf( f, "e = "  );
     fprintHex( f, buf, cbTmp );
+
+    fprintf( f, "d = " );
+    fprintHex( f, pBlob->abPrivateExp, cbMod );
 
     fprintf( f, "P1 = " );
     fprintHex( f, pBlob->abPrime1, pBlob->cbPrime1 );
@@ -344,6 +346,9 @@ createKatFileSinglePkcs1Enc( FILE * f, PCRSAKEY_TESTBLOB pBlob )
     fprintf( f, "e = "  );
     fprintHex( f, ciphertext, cbTmp );
 
+    fprintf( f, "d = " );
+    fprintHex( f, pBlob->abPrivateExp, pBlob->cbModulus );
+
     fprintf( f, "P1 = " );
     fprintHex( f, pBlob->abPrime1, pBlob->cbPrime1 );
 
@@ -407,6 +412,9 @@ createKatFileSingleOaep( FILE * f, PCRSAKEY_TESTBLOB pBlob, PCSTR hashName, PCSY
     SymCryptStoreMsbFirstUint64( pBlob->u64PubExp, ciphertext, cbTmp );
     fprintf( f, "e = "  );
     fprintHex( f, ciphertext, cbTmp );
+
+    fprintf( f, "d = " );
+    fprintHex( f, pBlob->abPrivateExp, pBlob->cbModulus );
 
     fprintf( f, "P1 = " );
     fprintHex( f, pBlob->abPrime1, pBlob->cbPrime1 );
@@ -683,6 +691,7 @@ testRsaEncKats()
             {
                 BString N = katParseData( katItem, "n" );
                 BString e = katParseData( katItem, "e" );
+                BString d = katParseData( katItem, "d" );
                 BString P1 = katParseData( katItem, "p1" );
                 BString P2 = katParseData( katItem, "p2" );
                 BString Ciphertext = katParseData( katItem, "ciphertext" );
@@ -710,6 +719,7 @@ testRsaEncKats()
                 memcpy( blob.abModulus, N.data(), blob.cbModulus );
                 memcpy( blob.abPrime1, P1.data(), blob.cbPrime1 );
                 memcpy( blob.abPrime2, P2.data(), blob.cbPrime2 );
+                memcpy( blob.abPrivateExp, d.data(), blob.cbModulus );
 
                 char acStringName[100];
                 memset( acStringName, 0, sizeof( acStringName ) );
@@ -823,6 +833,7 @@ testRsaEncPkcs1Errors()
         !SCTEST_LOOKUP_DISPATCHSYM(SymCryptRsaPkcs1Decrypt) ||
         !SCTEST_LOOKUP_DISPATCHSYM(SymCryptRsakeyAllocate) ||
         !SCTEST_LOOKUP_DISPATCHSYM(SymCryptRsakeySetValue) ||
+        !SCTEST_LOOKUP_DISPATCHSYM(SymCryptRsakeySetValueFromPrivateExponent) ||
         !SCTEST_LOOKUP_DISPATCHSYM(SymCryptRsakeyFree) )
     {
         print("    skipped\n");

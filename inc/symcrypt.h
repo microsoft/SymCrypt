@@ -7223,11 +7223,12 @@ SymCryptRsakeyAllocate(
 //
 // Allocate and create a new RSAKEY object sized according to the parameters.
 // If the SYMCRYPT_RSAKEY object will only be used for a public key, the
-// SYMCRYPT_RSA_PARAMS structure may set nPrimes = 0.
+// SYMCRYPT_RSA_PARAMS structure may set nPrimes = 0. Use of
+// SymCryptRsakeySetValueFromPrivateExponent requires nPrimes = 2.
 //
 // This call does not initialize the key. It should be
 // followed by a call to SymCryptRsakeyGenerate or
-// SymCryptRsakeySetValue.
+// SymCryptRsakeySetValue*.
 //
 // No flags are specified for this function.
 //
@@ -7251,11 +7252,12 @@ SymCryptRsakeyCreate(
 //
 // Create an RSAKEY object from a buffer, but does not initialize it.
 // If the SYMCRYPT_RSAKEY object will only be used for a public key, the
-// SYMCRYPT_RSA_PARAMS structure may set nPrimes = 0.
+// SYMCRYPT_RSA_PARAMS structure may set nPrimes = 0. Use of
+// SymCryptRsakeySetValueFromPrivateExponent requires nPrimes = 2.
 //
 // This call does not initialize the key. It should be
 // followed by a call to SymCryptRsakeyGenerate or
-// SymCryptRsakeySetValue.
+// SymCryptRsakeySetValue*.
 //
 
 VOID
@@ -7620,12 +7622,12 @@ SymCryptRsakeySetValue(
                                     SIZE_T                  cbModulus,
     _In_reads_( nPubExp )           PCUINT64                pu64PubExp,
                                     UINT32                  nPubExp,
-    _In_reads_( nPrimes )           PCBYTE *                ppPrimes,
-    _In_reads_( nPrimes )           SIZE_T *                pcbPrimes,
+    _In_reads_opt_( nPrimes )       PCBYTE *                ppPrimes,
+    _In_reads_opt_( nPrimes )       SIZE_T *                pcbPrimes,
                                     UINT32                  nPrimes,
                                     SYMCRYPT_NUMBER_FORMAT  numFormat,
                                     UINT32                  flags,
-    _Out_                           PSYMCRYPT_RSAKEY        pkRsakey );
+    _Inout_                         PSYMCRYPT_RSAKEY        pkRsakey );
 //
 // Import key material to an RSAKEY object. The arguments are the following:
 //  - pbModulus is a pointer to a byte buffer of cbModulus bytes. It cannot be NULL.
@@ -7664,6 +7666,54 @@ SymCryptRsakeySetValue(
 // into a possibly slightly larger buffer.
 //
 
+SYMCRYPT_ERROR
+SYMCRYPT_CALL
+SymCryptRsakeySetValueFromPrivateExponent(
+    _In_reads_bytes_( cbModulus )           PCBYTE                  pbModulus,
+                                            SIZE_T                  cbModulus,
+                                            UINT64                  u64PubExp,
+    _In_reads_bytes_( cbPrivateExponent )   PCBYTE                  pbPrivateExponent,
+                                            SIZE_T                  cbPrivateExponent,
+                                            SYMCRYPT_NUMBER_FORMAT  numFormat,
+                                            UINT32                  flags,
+    _Inout_                                 PSYMCRYPT_RSAKEY        pkRsakey );
+//
+// Import private key to an RSAKEY object using a private exponent. This is not generally
+// recommended - where possible it is more efficient to import a private key using primes
+// with SymCryptRsakeySetValue.
+//
+// The arguments are the following:
+//  - pbModulus is a pointer to a byte buffer of cbModulus bytes. It cannot be NULL.
+//  - u64PubExp is a UINT64 public exponent value.
+//  - pbPrivateExponent is a pointer to a byte buffer of cbPrivateExponent bytes. It
+//    cannot be NULL.
+//  - numFormat specifies the number format for all inputs
+//
+// Allowed flags:
+//
+// - SYMCRYPT_FLAG_KEY_NO_FIPS
+//   Opt-out of performing validation required for FIPS
+//
+// - SYMCRYPT_FLAG_KEY_MINIMAL_VALIDATION
+//   Opt-out of performing almost all validation - must be specified with SYMCRYPT_FLAG_KEY_NO_FIPS
+//
+// - At least one of the flags indicating what the Rsakey is to be used for must be specified:
+//      SYMCRYPT_FLAG_RSAKEY_SIGN
+//      SYMCRYPT_FLAG_RSAKEY_ENCRYPT
+//
+// Described in more detail in the "Flags for asymmetric key generation and import" section above
+//
+// Remarks:
+//
+// Modulus and Private exponent are stored in the same format specified by numFormat.
+//
+// Internally this attempts to recover a pair of primes (p1, p2) that factorize Modulus.
+// This procedure has following assumptions:
+//      Modulus (n) is the product of two prime factors, p1 and p2
+//      e*d == 1 modulo LCM(p1-1, p2-1)
+//      e*d != 1 modulo 2^64
+// If any of these assumptions are not met, then the method may fail.
+//
 
 SYMCRYPT_ERROR
 SYMCRYPT_CALL
@@ -7699,16 +7749,16 @@ SymCryptRsakeyGetValue(
 SYMCRYPT_ERROR
 SYMCRYPT_CALL
 SymCryptRsakeyGetCrtValue(
-    _In_                                    PCSYMCRYPT_RSAKEY       pkRsakey,
-    _Out_writes_(nCrtExponents)             PBYTE *                 ppCrtExponents,
-    _In_reads_(nCrtExponents)               SIZE_T *                pcbCrtExponents,
-                                            UINT32                  nCrtExponents,
-    _Out_writes_bytes_(cbCrtCoefficient)    PBYTE                   pbCrtCoefficient,
-                                            SIZE_T                  cbCrtCoefficient,
-    _Out_writes_bytes_(cbPrivateExponent)   PBYTE                   pbPrivateExponent,
-                                            SIZE_T                  cbPrivateExponent,
-                                            SYMCRYPT_NUMBER_FORMAT  numFormat,
-                                            UINT32                  flags);
+    _In_                                        PCSYMCRYPT_RSAKEY       pkRsakey,
+    _Out_writes_opt_(nCrtExponents)             PBYTE *                 ppCrtExponents,
+    _In_reads_(nCrtExponents)                   SIZE_T *                pcbCrtExponents,
+                                                UINT32                  nCrtExponents,
+    _Out_writes_bytes_opt_(cbCrtCoefficient)    PBYTE                   pbCrtCoefficient,
+                                                SIZE_T                  cbCrtCoefficient,
+    _Out_writes_bytes_opt_(cbPrivateExponent)   PBYTE                   pbPrivateExponent,
+                                                SIZE_T                  cbPrivateExponent,
+                                                SYMCRYPT_NUMBER_FORMAT  numFormat,
+                                                UINT32                  flags);
 //
 // Export Crt key material from an RSAKEY object. The arguments are the following:
 //    ppCrtExponents is an array of nCrtExponent pointers that point to byte buffers

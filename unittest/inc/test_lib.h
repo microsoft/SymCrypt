@@ -906,6 +906,17 @@ public:
     static constexpr const char * name = "RsaSignPss";
 };
 
+// Used only for performance testing
+class AlgRsakeySetValue{
+public:
+    static constexpr const char * name = "RsakeySetValue";
+};
+
+class AlgRsakeySetValueFromPrivateExponent{
+public:
+    static constexpr const char * name = "RsakeySetValueFromPrivateExponent";
+};
+
 class AlgDsaSign{
 public:
     static constexpr const char * name = "DsaSign";

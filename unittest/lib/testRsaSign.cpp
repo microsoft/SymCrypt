@@ -155,6 +155,39 @@ rsaTestKeysAddOneFunky( UINT32 nBitsOfModulus )
     scError = SymCryptIntGetValue( piPrime2, &pBlob->abPrime2[0], pBlob->cbPrime2, SYMCRYPT_NUMBER_FORMAT_MSB_FIRST );
     CHECK(scError==SYMCRYPT_NO_ERROR, "?");
 
+    {
+        SYMCRYPT_RSA_PARAMS params;
+        params.version = 1;
+        params.nBitsOfModulus = nBitsOfModulus;
+        params.nPrimes = 2;
+        params.nPubExp = 1;
+
+        PSYMCRYPT_RSAKEY pKey = SymCryptRsakeyAllocate( &params, 0 );
+
+        PCBYTE ppPrime[2] = {&pBlob->abPrime1[0], &pBlob->abPrime2[0]};
+        SIZE_T cbPrime[2] = {pBlob->cbPrime1, pBlob->cbPrime2};
+
+        scError = SymCryptRsakeySetValue(
+            &pBlob->abModulus[0], pBlob->cbModulus,
+            &pBlob->u64PubExp, 1,
+            ppPrime, cbPrime, 2,
+            SYMCRYPT_NUMBER_FORMAT_MSB_FIRST,
+            SYMCRYPT_FLAG_RSAKEY_SIGN | SYMCRYPT_FLAG_RSAKEY_ENCRYPT,
+            pKey );
+        CHECK(scError==SYMCRYPT_NO_ERROR, "?");
+
+        scError = SymCryptRsakeyGetCrtValue(
+            pKey,
+            NULL, NULL, 0,
+            NULL, 0,
+            pBlob->abPrivateExp, pBlob->cbModulus,
+            SYMCRYPT_NUMBER_FORMAT_MSB_FIRST,
+            0 );
+        CHECK(scError==SYMCRYPT_NO_ERROR, "?");
+
+        SymCryptRsakeyFree( pKey );
+    }
+
     SymCryptWipe( pbScratch, cbScratch );
     SymCryptCallbackFree( pbScratch );
 
@@ -218,6 +251,9 @@ rsaTestKeysAddOne( UINT32 bitSize )
     SIZE_T cbPrime[2] = {pBlob->cbPrime1, pBlob->cbPrime2 };
 
     scError = SymCryptRsakeyGetValue( pKey, &pBlob->abModulus[0], pBlob->cbModulus, &pBlob->u64PubExp, 1, ppPrime, cbPrime, 2, SYMCRYPT_NUMBER_FORMAT_MSB_FIRST, 0 );
+    CHECK( scError == SYMCRYPT_NO_ERROR, "?" );
+
+    scError = SymCryptRsakeyGetCrtValue( pKey, NULL, NULL, 0, NULL, 0, &pBlob->abPrivateExp[0], pBlob->cbModulus, SYMCRYPT_NUMBER_FORMAT_MSB_FIRST, 0 );
     CHECK( scError == SYMCRYPT_NO_ERROR, "?" );
 
     SymCryptRsakeyFree( pKey );
@@ -322,8 +358,11 @@ rsaKeyFromTestBlob( PCRSAKEY_TESTBLOB pBlob )
     params.nPrimes = 2;
     params.nPubExp = 1;
 
-    PSYMCRYPT_RSAKEY pKey = ScDispatchSymCryptRsakeyAllocate( &params, 0 );
-    CHECK( pKey != NULL, "?" );
+    PSYMCRYPT_RSAKEY pKeyFromPrimes = ScDispatchSymCryptRsakeyAllocate( &params, 0 );
+    CHECK( pKeyFromPrimes != NULL, "?" );
+
+    PSYMCRYPT_RSAKEY pKeyFromPrivateExponent = ScDispatchSymCryptRsakeyAllocate( &params, 0 );
+    CHECK( pKeyFromPrivateExponent != NULL, "?" );
 
     PCBYTE ppPrime[2] = {&pBlob->abPrime1[0], &pBlob->abPrime2[0] };
     SIZE_T cbPrime[2] = {pBlob->cbPrime1, pBlob->cbPrime2 };
@@ -334,10 +373,27 @@ rsaKeyFromTestBlob( PCRSAKEY_TESTBLOB pBlob )
         ppPrime, cbPrime, 2,
         SYMCRYPT_NUMBER_FORMAT_MSB_FIRST,
         SYMCRYPT_FLAG_RSAKEY_SIGN | SYMCRYPT_FLAG_RSAKEY_ENCRYPT,
-        pKey );
+        pKeyFromPrimes );
     CHECK( scError == SYMCRYPT_NO_ERROR, "?" );
 
-    return pKey;
+    scError = ScDispatchSymCryptRsakeySetValueFromPrivateExponent(
+        &pBlob->abModulus[0], pBlob->cbModulus,
+        pBlob->u64PubExp,
+        &pBlob->abPrivateExp[0], pBlob->cbModulus,
+        SYMCRYPT_NUMBER_FORMAT_MSB_FIRST,
+        SYMCRYPT_FLAG_RSAKEY_SIGN | SYMCRYPT_FLAG_RSAKEY_ENCRYPT,
+        pKeyFromPrivateExponent );
+    CHECK( scError == SYMCRYPT_NO_ERROR, "?" );
+
+    // choose a random one to return
+    if( g_rng.byte() & 1 )
+    {
+        ScDispatchSymCryptRsakeyFree( pKeyFromPrivateExponent );
+        return pKeyFromPrimes;
+    } else {
+        ScDispatchSymCryptRsakeyFree( pKeyFromPrimes );
+        return pKeyFromPrivateExponent;
+    }
 }
 
 PSYMCRYPT_RSAKEY
@@ -556,6 +612,9 @@ createKatFileSinglePkcs1( FILE * f, PCRSAKEY_TESTBLOB pBlob, PCSTR hashName, UIN
     fprintf( f, "e = "  );
     fprintHex( f, sig, cbTmp );
 
+    fprintf( f, "d = " );
+    fprintHex( f, pBlob->abPrivateExp, pBlob->cbModulus );
+
     fprintf( f, "P1 = " );
     fprintHex( f, pBlob->abPrime1, pBlob->cbPrime1 );
 
@@ -613,6 +672,9 @@ createKatFileSinglePss( FILE * f, PCRSAKEY_TESTBLOB pBlob, PCSTR hashName, PCSYM
     SymCryptStoreMsbFirstUint64( pBlob->u64PubExp, sig, cbTmp );
     fprintf( f, "e = "  );
     fprintHex( f, sig, cbTmp );
+
+    fprintf( f, "d = " );
+    fprintHex( f, pBlob->abPrivateExp, pBlob->cbModulus );
 
     fprintf( f, "P1 = " );
     fprintHex( f, pBlob->abPrime1, pBlob->cbPrime1 );
@@ -852,6 +914,7 @@ testRsaSignKats()
             {
                 BString N = katParseData( katItem, "n" );
                 BString e = katParseData( katItem, "e" );
+                BString d = katParseData( katItem, "d" );
                 BString P1 = katParseData( katItem, "p1" );
                 BString P2 = katParseData( katItem, "p2" );
                 BString hashAlg = katParseData( katItem, "hashalg" );
@@ -878,6 +941,7 @@ testRsaSignKats()
                 memcpy( blob.abModulus, N.data(), blob.cbModulus );
                 memcpy( blob.abPrime1, P1.data(), blob.cbPrime1 );
                 memcpy( blob.abPrime2, P2.data(), blob.cbPrime2 );
+                memcpy( blob.abPrivateExp, d.data(), blob.cbModulus );
 
                 char acStringName[100];
                 memset( acStringName, 0, sizeof( acStringName ) );
@@ -928,6 +992,7 @@ testRsaSignPkcs1()
         !SCTEST_LOOKUP_DISPATCHSYM(SymCryptRsaPkcs1Verify) ||
         !SCTEST_LOOKUP_DISPATCHSYM(SymCryptRsakeyAllocate) ||
         !SCTEST_LOOKUP_DISPATCHSYM(SymCryptRsakeySetValue) ||
+        !SCTEST_LOOKUP_DISPATCHSYM(SymCryptRsakeySetValueFromPrivateExponent) ||
         !SCTEST_LOOKUP_DISPATCHSYM(SymCryptRsakeyFree) )
     {
         iprint( "    RsaSignPkcs1+ skipped\n");
@@ -1069,6 +1134,7 @@ testRsaExportImport()
         !SCTEST_LOOKUP_DISPATCHSYM(SymCryptRsakeySizeofModulus) ||
         !SCTEST_LOOKUP_DISPATCHSYM(SymCryptRsakeyAllocate) ||
         !SCTEST_LOOKUP_DISPATCHSYM(SymCryptRsakeySetValue) ||
+        !SCTEST_LOOKUP_DISPATCHSYM(SymCryptRsakeySetValueFromPrivateExponent) ||
         !SCTEST_LOOKUP_DISPATCHSYM(SymCryptRsakeyGetValue) ||
         !SCTEST_LOOKUP_DISPATCHSYM(SymCryptRsakeyFree) ||
         !SCTEST_LOOKUP_DISPATCHSYM(SymCryptSha256Algorithm) )
@@ -1146,6 +1212,101 @@ testRsaExportImport()
 }
 
 VOID
+testRsaExportImportPrivate()
+{
+    if( !SCTEST_LOOKUP_DISPATCHSYM(SymCryptRsakeyAllocate) ||
+        !SCTEST_LOOKUP_DISPATCHSYM(SymCryptRsakeySetValue) ||
+        !SCTEST_LOOKUP_DISPATCHSYM(SymCryptRsakeySetValueFromPrivateExponent) ||
+        !SCTEST_LOOKUP_DISPATCHSYM(SymCryptRsakeyGetValue) ||
+        !SCTEST_LOOKUP_DISPATCHSYM(SymCryptRsakeyFree) )
+    {
+        iprint( "    RsaExportImportPrivate skipped\n");
+        return;
+    }
+
+    iprint( "    RsaExportImportPrivate" );
+
+    rsaTestKeysGenerate();
+
+    PSYMCRYPT_RSAKEY pKeyImport;
+
+    PCRSAKEY_TESTBLOB pBlob;
+    SYMCRYPT_ERROR scError;
+    SYMCRYPT_RSA_PARAMS params;
+
+    PCBYTE ppPrimes[2];
+    SIZE_T cbPrimes[2];
+    BYTE abTmp[ RSAKEY_MAXKEYSIZE ];
+
+    for( int k = 0; k<ARRAY_SIZE( g_RsaTestKeyBlobs ); k++ )
+    {
+        pBlob = &g_RsaTestKeyBlobs[ k ];
+
+        params.version = 1;
+        params.nBitsOfModulus = pBlob->nBitsModulus;
+        params.nPrimes = 2;
+        params.nPubExp = 1;
+
+        pKeyImport = ScDispatchSymCryptRsakeyAllocate( &params, 0 );
+        CHECK( pKeyImport != NULL, "?" );
+
+        ppPrimes[0] = pBlob->abPrime1;
+        ppPrimes[1] = pBlob->abPrime2;
+        cbPrimes[0] = pBlob->cbPrime1;
+        cbPrimes[1] = pBlob->cbPrime2;
+
+        scError = ScDispatchSymCryptRsakeySetValue(
+            pBlob->abModulus, pBlob->cbModulus,
+            &pBlob->u64PubExp, 1,
+            ppPrimes, cbPrimes, 2,
+            SYMCRYPT_NUMBER_FORMAT_MSB_FIRST,
+            SYMCRYPT_FLAG_RSAKEY_SIGN,
+            pKeyImport );
+        CHECK( scError == SYMCRYPT_NO_ERROR, "SymCryptRsakeySetValue failed unexpectedly" );
+
+        // flip a random bit in prime1
+        memcpy( abTmp, ppPrimes[0], cbPrimes[0] );
+        abTmp[ g_rng.sizet(cbPrimes[0]) ] ^= 1<<(g_rng.byte()&7);
+        ppPrimes[0] = abTmp;
+
+        scError = ScDispatchSymCryptRsakeySetValue(
+            pBlob->abModulus, pBlob->cbModulus,
+            &pBlob->u64PubExp, 1,
+            ppPrimes, cbPrimes, 2,
+            SYMCRYPT_NUMBER_FORMAT_MSB_FIRST,
+            SYMCRYPT_FLAG_RSAKEY_SIGN,
+            pKeyImport );
+        CHECK( scError != SYMCRYPT_NO_ERROR, "SymCryptRsakeySetValue succeeded unexpectedly" );
+
+        scError = ScDispatchSymCryptRsakeySetValueFromPrivateExponent(
+            pBlob->abModulus, pBlob->cbModulus,
+            pBlob->u64PubExp,
+            pBlob->abPrivateExp, pBlob->cbModulus,
+            SYMCRYPT_NUMBER_FORMAT_MSB_FIRST,
+            SYMCRYPT_FLAG_RSAKEY_SIGN,
+            pKeyImport );
+        CHECK( scError == SYMCRYPT_NO_ERROR, "SymCryptRsakeySetValueFromPrivateExponent failed unexpectedly" );
+
+        // flip a random bit in private exponent
+        memcpy( abTmp, pBlob->abPrivateExp, pBlob->cbModulus );
+        abTmp[ g_rng.sizet(pBlob->cbModulus) ] ^= 1<<(g_rng.byte()&7);
+
+        scError = ScDispatchSymCryptRsakeySetValueFromPrivateExponent(
+            pBlob->abModulus, pBlob->cbModulus,
+            pBlob->u64PubExp,
+            abTmp, pBlob->cbModulus,
+            SYMCRYPT_NUMBER_FORMAT_MSB_FIRST,
+            SYMCRYPT_FLAG_RSAKEY_SIGN,
+            pKeyImport );
+        CHECK( scError != SYMCRYPT_NO_ERROR, "SymCryptRsakeySetValueFromPrivateExponent succeeded unexpectedly" );
+
+        ScDispatchSymCryptRsakeyFree( pKeyImport );
+    }
+
+    iprint( "\n" );
+}
+
+VOID
 testRsaSignAlgorithms()
 {
     // Uncomment this function to generate a new KAT file
@@ -1155,26 +1316,45 @@ testRsaSignAlgorithms()
     CHECK3( nOutstandingAllocs == 0, "Memory leak %d", nOutstandingAllocs );
 
     testRsaSignKats();
+    
     nOutstandingAllocs = SYMCRYPT_INTERNAL_VOLATILE_READ64(&g_nOutstandingCheckedAllocs);
     CHECK3( nOutstandingAllocs == 0, "Memory leak %d", nOutstandingAllocs );
+
+    if( isAlgorithmPresent( "Rsa", TRUE ) )
+    {
+        testRsaExportImportPrivate();
+    }
 
     if( isAlgorithmPresent( "RsaSignPkcs1", FALSE ) )
     {
         testRsaSignPkcs1();
-
-        if( g_dynamicSymCryptModuleHandle != NULL )
-        {
-            print("    testRsaSignPkcs1 dynamic\n");
-            g_useDynamicFunctionsInTestCall = TRUE;
-            testRsaSignPkcs1();
-            g_useDynamicFunctionsInTestCall = FALSE;
-        }
     }
 
     if( isAlgorithmPresent( "RsaSignPss", FALSE ) )
     {
         testRsaSignPss();
         testRsaExportImport();
+    }
+
+    if( g_dynamicSymCryptModuleHandle != NULL )
+    {
+        print("    testRsaSign dynamic\n");
+        g_useDynamicFunctionsInTestCall = TRUE;
+        if( isAlgorithmPresent( "Rsa", TRUE ) )
+        {
+            testRsaExportImportPrivate();
+        }
+
+        if( isAlgorithmPresent( "RsaSignPkcs1", FALSE ) )
+        {
+            testRsaSignPkcs1();
+        }
+
+        if( isAlgorithmPresent( "RsaSignPss", FALSE ) )
+        {
+            testRsaExportImport();
+        }
+        g_useDynamicFunctionsInTestCall = FALSE;
     }
 
     nOutstandingAllocs = SYMCRYPT_INTERNAL_VOLATILE_READ64(&g_nOutstandingCheckedAllocs);

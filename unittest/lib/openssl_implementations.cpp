@@ -1121,11 +1121,6 @@ EVP_PKEY *createOpensslRsaKey(PRSAKEY_TESTBLOB pcKeyBlob)
     BN_CTX *bn_ctx = NULL;
     PSYMCRYPT_RSAKEY pSymCryptKey = rsaKeyFromTestBlob( pcKeyBlob );
 
-    if ( SymCryptRsakeyGetCrtValue(pSymCryptKey, NULL, NULL, 0, NULL, 0, pcKeyBlob->abPrivateExp, pcKeyBlob->cbModulus, SYMCRYPT_NUMBER_FORMAT_MSB_FIRST, 0) != SYMCRYPT_NO_ERROR )
-    {
-        goto err;
-    }
-
     bn_ctx = BN_CTX_new();
     BN_CTX_start(bn_ctx);
 

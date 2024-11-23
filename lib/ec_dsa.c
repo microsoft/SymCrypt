@@ -411,17 +411,24 @@ SymCryptEcDsaSign(
     _Out_writes_bytes_( cbSignature )   PBYTE                   pbSignature,
                                         SIZE_T                  cbSignature )
 {
+    SYMCRYPT_ERROR scError = SYMCRYPT_NO_ERROR;
+
     // We must have a private key to perform PCT or signature
     if( !pKey->hasPrivateKey || !(pKey->fAlgorithmInfo & SYMCRYPT_FLAG_ECKEY_ECDSA) )
     {
         return SYMCRYPT_INVALID_ARGUMENT;
     }
 
-    // If the key was generated and a PCT has not yet been performed - perform PCT before first use
-    SYMCRYPT_RUN_KEY_PCT(
+    // If the key has not yet had a PCT performed - perform PCT before first use
+    SYMCRYPT_RUN_KEY_IMPORT_PCT(
+        scError,
         SymCryptEcDsaPct,
         pKey,
         SYMCRYPT_PCT_ECDSA );
+    if( scError != SYMCRYPT_NO_ERROR )
+    {
+        return scError;
+    }
 
     return SymCryptEcDsaSignEx( pKey, pbHashValue, cbHashValue, NULL, format, flags, pbSignature, cbSignature );
 }

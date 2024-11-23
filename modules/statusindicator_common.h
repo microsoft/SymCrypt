@@ -25,7 +25,7 @@
         FIPS_SERVICE_DESC("PCSYMCRYPT_HASH parameter must not refer to one of SymCryptMd2Algorithm, SymCryptMd4Algorithm, SymCryptMd5Algorithm, SymCryptSha1Algorithm when calling SymCryptSshKdf, SymCryptSskdfHash.")
 
 #define FIPS_SERVICE_DESC_KEY_ENTRY_AND_OUTPUT \
-        FIPS_SERVICE_DESC("For RSA keys, flags parameter must not set SYMCRYPT_FLAG_KEY_NO_FIPS flag, cbModulus parameter must be at least 256 if ppPrimes parameter is not NULL, and at least 128 if ppPrimes parameter is NULL when calling SymCryptRsakeySetValue.") \
+        FIPS_SERVICE_DESC("For RSA keys, flags parameter must not set SYMCRYPT_FLAG_KEY_NO_FIPS flag, cbModulus parameter must be at least 256 if ppPrimes parameter is not NULL, and at least 128 if ppPrimes parameter is NULL when calling SymCryptRsakeySetValue or SymCryptRsakeySetValueFromPrivateExponent.") \
         FIPS_SERVICE_DESC("For ECDH and ECDSA keys, pEckey->pCurve parameter must refer to one of SymCryptEcurveParamsNistP256, SymCryptEcurveParamsNistP384, SymCryptEcurveParamsNistP521, and flags parameter must not set SYMCRYPT_FLAG_KEY_NO_FIPS flag when calling SymCryptEckeySetValue.") \
         FIPS_SERVICE_DESC("For Diffie-Hellman key-pairs, the call to SymCryptDlgroupSetValueSafePrime must return SYMCRYPT_NO_ERROR before calling SymCryptDlkeySetValue.") \
         FIPS_SERVICE_DESC("For DSA, SymCryptDlgroupSetValue must be called with fipsStandard parameter not equal to SYMCRYPT_DLGROUP_FIPS_NONE and pDlgroup parameter must be created with nBitsofP parameter equal to 2048 or 3072 and nBitsofQ parameter equal to 256 or 0 in a preceding call to SymCryptDlgroupAllocate or SymCryptDlgroupCreate.")
@@ -40,7 +40,7 @@
 
 #define FIPS_SERVICE_DESC_SIGNING_AND_VERIFICATION \
         FIPS_SERVICE_DESC("pkRsakey parameter must be created in a preceding call to SymCryptRsakeyAllocate, SymCryptRsakeyCreate, SymCryptRsakeyGenerate with pParams parameter pointing to a SYMCRYPT_RSA_PARAMS structure whose nBitsOfModulus member is greater than or equal to 2048 when calling SymCryptRsaPkcs1Sign and SymCryptRsaPssSign") \
-        FIPS_SERVICE_DESC("pkRsakey parameter must be created in a preceding call to SymCryptRsakeySetValue with cbModulus parameter greater than or equal to 128 when calling SymCryptRsaPkcs1Verify and SymCryptRsaPssVerify.") \
+        FIPS_SERVICE_DESC("pkRsakey parameter must be created in a preceding call to SymCryptRsakeySetValue or SymCryptRsakeySetValueFromPrivateExponent with cbModulus parameter greater than or equal to 128 when calling SymCryptRsaPkcs1Verify and SymCryptRsaPssVerify.") \
         FIPS_SERVICE_DESC("hashAlgorithm parameter may refer to SymCryptSha1Algorithm only when calling SymCryptRsaPssVerify.") \
         FIPS_SERVICE_DESC("pHashOID parameter may refer to the OID of SHA-1 only when calling SymCryptRsaPkcs1Verify.") \
         FIPS_SERVICE_DESC("For DSA, pKey parameter of SymCryptDsaSign and SymCryptDsaVerify must be created with nBitsOfP parameter set to one of 2048 or 3072, and nBitsOfQ parameter set to one of 0 or 256 in a preceding call to SymCryptDlgroupCreate.") \

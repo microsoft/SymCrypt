@@ -1182,7 +1182,7 @@ SymCryptIntExtendedGcd(
 //
 // The last two modular inverse values are not true modular inverses unless GCD( Src1, Src2 ) = 1.
 //
-// Any of the ouput pointers can be NULL and then that result is not returned.
+// Any of the output pointers can be NULL and then that result is not returned.
 // Requirements:
 //  - Src1 > 0
 //  - Src2 > 0 and  Src2 odd

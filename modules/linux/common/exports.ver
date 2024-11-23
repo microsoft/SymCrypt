@@ -642,6 +642,7 @@ VERSION_103.6
       SymCryptLmsSizeofKeyBlobFromParams;
       SymCryptLmsSizeofSignatureFromParams;
       SymCryptLmsVerify;
+      SymCryptRsakeySetValueFromPrivateExponent;
       SymCryptSha224;
       SymCryptSha224Algorithm;
       SymCryptSha224Append;

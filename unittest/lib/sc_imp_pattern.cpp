@@ -3292,6 +3292,64 @@ sc_RsaKeyPerf<ImpXxx>( PBYTE buf1, PBYTE buf2, SIZE_T keySize, UINT32 generateFl
     CHECK(scError == SYMCRYPT_NO_ERROR, "?");
 }
 
+template<>
+NTSTATUS
+sc_RsaKeySetKeyFromBlob<ImpXxx>(
+    _In_    PCRSAKEY_TESTBLOB   pcKeyBlob,
+    _Inout_ PSYMCRYPT_RSAKEY*   ppKey,
+            UINT32              flags )
+{
+    SYMCRYPT_ERROR scError;
+
+    if( *ppKey != NULL )
+    {
+        ScShimSymCryptRsakeyFree( *ppKey );
+        *ppKey = NULL;
+    }
+
+    if( pcKeyBlob == NULL )
+    {
+        // Just used to clear the key state to do leak detection
+        return STATUS_SUCCESS;
+    }
+
+    SYMCRYPT_RSA_PARAMS params;
+    params.version = 1;
+    params.nBitsOfModulus = pcKeyBlob->nBitsModulus;
+    params.nPrimes = 2;
+    params.nPubExp = 1;
+
+    *ppKey = ScShimSymCryptRsakeyAllocate( &params, 0 );
+    CHECK( *ppKey != NULL, "SymCryptRsakeyAllocate failed unexpectedly" );
+
+    // choose a random method to import rsa key
+    if( g_rng.byte() & 1 )
+    {
+        PCBYTE ppPrime[2] = {&pcKeyBlob->abPrime1[0], &pcKeyBlob->abPrime2[0] };
+        SIZE_T cbPrime[2] = {pcKeyBlob->cbPrime1, pcKeyBlob->cbPrime2 };
+
+        scError = ScShimSymCryptRsakeySetValue(
+            &pcKeyBlob->abModulus[0], pcKeyBlob->cbModulus,
+            &pcKeyBlob->u64PubExp, 1,
+            ppPrime, cbPrime, 2,
+            SYMCRYPT_NUMBER_FORMAT_MSB_FIRST,
+            flags,
+            *ppKey );
+        CHECK( scError == SYMCRYPT_NO_ERROR, "SymCryptRsakeySetValue failed unexpectedly" );
+    } else {
+        scError = ScShimSymCryptRsakeySetValueFromPrivateExponent(
+            &pcKeyBlob->abModulus[0], pcKeyBlob->cbModulus,
+            pcKeyBlob->u64PubExp,
+            &pcKeyBlob->abPrivateExp[0], pcKeyBlob->cbModulus,
+            SYMCRYPT_NUMBER_FORMAT_MSB_FIRST,
+            flags,
+            *ppKey );
+        CHECK( scError == SYMCRYPT_NO_ERROR, "SymCryptRsakeySetValueFromPrivateExponent failed unexpectedly" );
+    }
+
+    return STATUS_SUCCESS;
+}
+
 //================================================
 
 
@@ -3436,42 +3494,7 @@ template<>
 NTSTATUS
 RsaSignImp<ImpXxx, AlgRsaSignPkcs1>::setKey( PCRSAKEY_TESTBLOB pcKeyBlob )
 {
-    SYMCRYPT_ERROR scError;
-
-    if( state.pKey != NULL )
-    {
-        ScShimSymCryptRsakeyFree( state.pKey );
-        state.pKey = NULL;
-    }
-
-    if( pcKeyBlob == NULL )
-    {
-        // Just used to clear the key state to do leak detection
-        return STATUS_SUCCESS;
-    }
-
-    SYMCRYPT_RSA_PARAMS params;
-    params.version = 1;
-    params.nBitsOfModulus = pcKeyBlob->nBitsModulus;
-    params.nPrimes = 2;
-    params.nPubExp = 1;
-
-    state.pKey = ScShimSymCryptRsakeyAllocate( &params, 0 );
-    CHECK( state.pKey != NULL, "?" );
-
-    PCBYTE ppPrime[2] = {&pcKeyBlob->abPrime1[0], &pcKeyBlob->abPrime2[0] };
-    SIZE_T cbPrime[2] = {pcKeyBlob->cbPrime1, pcKeyBlob->cbPrime2 };
-
-    scError = ScShimSymCryptRsakeySetValue(
-        &pcKeyBlob->abModulus[0], pcKeyBlob->cbModulus,
-        &pcKeyBlob->u64PubExp, 1,
-        ppPrime, cbPrime, 2,
-        SYMCRYPT_NUMBER_FORMAT_MSB_FIRST,
-        SYMCRYPT_FLAG_RSAKEY_SIGN,
-        state.pKey );
-    CHECK( scError == SYMCRYPT_NO_ERROR, "?" );
-
-    return STATUS_SUCCESS;
+    return sc_RsaKeySetKeyFromBlob<ImpXxx>(pcKeyBlob, &state.pKey, SYMCRYPT_FLAG_RSAKEY_SIGN);
 }
 
 template<>
@@ -3665,42 +3688,7 @@ template<>
 NTSTATUS
 RsaSignImp<ImpXxx, AlgRsaSignPss>::setKey( PCRSAKEY_TESTBLOB pcKeyBlob )
 {
-    SYMCRYPT_ERROR scError;
-
-    if( state.pKey != NULL )
-    {
-        ScShimSymCryptRsakeyFree( state.pKey );
-        state.pKey = NULL;
-    }
-
-    if( pcKeyBlob == NULL )
-    {
-        // Just used to clear the key state to do leak detection
-        return STATUS_SUCCESS;
-    }
-
-    SYMCRYPT_RSA_PARAMS params;
-    params.version = 1;
-    params.nBitsOfModulus = pcKeyBlob->nBitsModulus;
-    params.nPrimes = 2;
-    params.nPubExp = 1;
-
-    state.pKey = ScShimSymCryptRsakeyAllocate( &params, 0 );
-    CHECK( state.pKey != NULL, "?" );
-
-    PCBYTE ppPrime[2] = {&pcKeyBlob->abPrime1[0], &pcKeyBlob->abPrime2[0] };
-    SIZE_T cbPrime[2] = {pcKeyBlob->cbPrime1, pcKeyBlob->cbPrime2 };
-
-    scError = ScShimSymCryptRsakeySetValue(
-        &pcKeyBlob->abModulus[0], pcKeyBlob->cbModulus,
-        &pcKeyBlob->u64PubExp, 1,
-        ppPrime, cbPrime, 2,
-        SYMCRYPT_NUMBER_FORMAT_MSB_FIRST,
-        SYMCRYPT_FLAG_RSAKEY_SIGN,
-        state.pKey );
-    CHECK( scError == SYMCRYPT_NO_ERROR, "?" );
-
-    return STATUS_SUCCESS;
+    return sc_RsaKeySetKeyFromBlob<ImpXxx>(pcKeyBlob, &state.pKey, SYMCRYPT_FLAG_RSAKEY_SIGN);
 }
 
 template<>
@@ -3977,42 +3965,7 @@ template<>
 NTSTATUS
 RsaEncImp<ImpXxx, AlgRsaEncRaw>::setKey( PCRSAKEY_TESTBLOB pcKeyBlob )
 {
-    SYMCRYPT_ERROR scError;
-
-    if( state.pKey != NULL )
-    {
-        ScShimSymCryptRsakeyFree( state.pKey );
-        state.pKey = NULL;
-    }
-
-    if( pcKeyBlob == NULL )
-    {
-        // Just used to clear the key state to do leak detection
-        return STATUS_SUCCESS;
-    }
-
-    SYMCRYPT_RSA_PARAMS params;
-    params.version = 1;
-    params.nBitsOfModulus = pcKeyBlob->nBitsModulus;
-    params.nPrimes = 2;
-    params.nPubExp = 1;
-
-    state.pKey = ScShimSymCryptRsakeyAllocate( &params, 0 );
-    CHECK( state.pKey != NULL, "?" );
-
-    PCBYTE ppPrime[2] = {&pcKeyBlob->abPrime1[0], &pcKeyBlob->abPrime2[0] };
-    SIZE_T cbPrime[2] = {pcKeyBlob->cbPrime1, pcKeyBlob->cbPrime2 };
-
-    scError = ScShimSymCryptRsakeySetValue(
-        &pcKeyBlob->abModulus[0], pcKeyBlob->cbModulus,
-        &pcKeyBlob->u64PubExp, 1,
-        ppPrime, cbPrime, 2,
-        SYMCRYPT_NUMBER_FORMAT_MSB_FIRST,
-        SYMCRYPT_FLAG_RSAKEY_ENCRYPT,
-        state.pKey );
-    CHECK( scError == SYMCRYPT_NO_ERROR, "?" );
-
-    return STATUS_SUCCESS;
+    return sc_RsaKeySetKeyFromBlob<ImpXxx>(pcKeyBlob, &state.pKey, SYMCRYPT_FLAG_RSAKEY_ENCRYPT);
 }
 
 template<>
@@ -4080,6 +4033,216 @@ RsaEncImp<ImpXxx, AlgRsaEncRaw>::decrypt(
     return scError == SYMCRYPT_NO_ERROR ? STATUS_SUCCESS : STATUS_UNSUCCESSFUL;
 }
 
+//============================
+
+
+template<>
+VOID
+algImpKeyPerfFunction<ImpXxx, AlgRsakeySetValue>( PBYTE pbKey, PBYTE pbPublic, PBYTE pbPrimes, SIZE_T keySize )
+{
+    SYMCRYPT_ERROR scError = SYMCRYPT_NO_ERROR;
+    PUINT64 pu64PubExp = (PUINT64)(pbPublic+sizeof(SIZE_T));
+    PBYTE pbModulus = pbPublic+sizeof(SIZE_T)+sizeof(UINT64);
+    PBYTE ppPrimes[2] = { pbPrimes, pbPrimes+keySize };
+    SIZE_T cbPrimes[2] = { keySize, keySize };
+
+    // generate and store new RSA key with keySize bytes in pbKey
+    SetupSymCryptRsaKey<ImpXxx>( pbKey, keySize, SYMCRYPT_FLAG_RSAKEY_SIGN );
+
+    // store keysize || public exponent || modulus to pbPublic
+    // store p1 || p2 to pbPrimes (padded to keySize length)
+    *((SIZE_T*)pbPublic) = keySize;
+    scError = ScShimSymCryptRsakeyGetValue(
+        *((PSYMCRYPT_RSAKEY*) pbKey),
+        pbModulus, keySize,
+        pu64PubExp, 1,
+        ppPrimes, cbPrimes, 2,
+        SYMCRYPT_NUMBER_FORMAT_MSB_FIRST,
+        0 );
+    CHECK( scError == SYMCRYPT_NO_ERROR, "SymCryptRsakeyGetValue failed unexpectedly" );
+}
+
+template<>
+VOID
+algImpDataPerfFunction<ImpXxx, AlgRsakeySetValue>( PBYTE pbKey, PBYTE pbPublic, PBYTE pbPrimes, SIZE_T cbData )
+{
+    UNREFERENCED_PARAMETER( pbPrimes );
+    UNREFERENCED_PARAMETER( cbData );
+
+    SYMCRYPT_ERROR scError = SYMCRYPT_NO_ERROR;
+    PSYMCRYPT_RSAKEY pKey = *((PSYMCRYPT_RSAKEY*) pbKey);
+
+    SIZE_T cbModulus = *((SIZE_T*)pbPublic);
+    PCUINT64 pu64PubExp = (PCUINT64)(pbPublic+sizeof(SIZE_T));
+    PCBYTE pbModulus = pbPublic+sizeof(UINT64)+sizeof(SIZE_T);
+
+    scError = ScShimSymCryptRsakeySetValue(
+        pbModulus, cbModulus,
+        pu64PubExp, 1,
+        nullptr, nullptr, 0,
+        SYMCRYPT_NUMBER_FORMAT_MSB_FIRST,
+        SYMCRYPT_FLAG_RSAKEY_ENCRYPT,
+        pKey );
+    CHECK( scError == SYMCRYPT_NO_ERROR, "SymCryptRsakeySetValue (public) failed unexpectedly" );
+}
+
+template<>
+VOID
+algImpDecryptPerfFunction<ImpXxx, AlgRsakeySetValue>( PBYTE pbKey, PBYTE pbPublic, PBYTE pbPrimes, SIZE_T cbData )
+{
+    UNREFERENCED_PARAMETER( cbData );
+
+    SYMCRYPT_ERROR scError = SYMCRYPT_NO_ERROR;
+    PSYMCRYPT_RSAKEY pKey = *((PSYMCRYPT_RSAKEY*) pbKey);
+
+    SIZE_T cbModulus = *((SIZE_T*)pbPublic);
+    PCUINT64 pu64PubExp = (PCUINT64)(pbPublic+sizeof(SIZE_T));
+    PCBYTE pbModulus = pbPublic+sizeof(SIZE_T)+sizeof(UINT64);
+
+    PCBYTE ppPrimes[2] = { (PCBYTE)pbPrimes, (PCBYTE)pbPrimes+cbModulus };
+    SIZE_T cbPrimes[2] = { cbModulus, cbModulus };
+
+    scError = ScShimSymCryptRsakeySetValue(
+        pbModulus, cbModulus,
+        pu64PubExp, 1,
+        ppPrimes, cbPrimes, 2,
+        SYMCRYPT_NUMBER_FORMAT_MSB_FIRST,
+        SYMCRYPT_FLAG_RSAKEY_ENCRYPT,
+        pKey );
+    CHECK( scError == SYMCRYPT_NO_ERROR, "SymCryptRsakeySetValue (private) failed unexpectedly" );
+}
+
+template<>
+VOID
+algImpCleanPerfFunction<ImpXxx, AlgRsakeySetValue>( PBYTE pbKey, PBYTE pbPublic, PBYTE pbPrimes )
+{
+    UNREFERENCED_PARAMETER( pbKey );
+    SIZE_T cbModulus = *((SIZE_T*)pbPublic);
+
+    ScShimSymCryptWipe( pbPublic, cbModulus+sizeof(SIZE_T)+sizeof(UINT64) );
+    ScShimSymCryptWipe( pbPrimes, 2*cbModulus );
+}
+
+template<>
+ArithImp<ImpXxx, AlgRsakeySetValue>::ArithImp()
+{
+    m_perfDataFunction      = &algImpDataPerfFunction   <ImpXxx, AlgRsakeySetValue>;
+    m_perfDecryptFunction   = &algImpDecryptPerfFunction<ImpXxx, AlgRsakeySetValue>;
+    m_perfKeyFunction       = &algImpKeyPerfFunction    <ImpXxx, AlgRsakeySetValue>;
+    m_perfCleanFunction     = &algImpCleanPerfFunction  <ImpXxx, AlgRsakeySetValue>;
+}
+
+template<>
+ArithImp<ImpXxx, AlgRsakeySetValue>::~ArithImp()
+{
+}
+
+//============================
+
+
+template<>
+VOID
+algImpKeyPerfFunction<ImpXxx, AlgRsakeySetValueFromPrivateExponent>( PBYTE pbKey, PBYTE pbPublic, PBYTE pbPrivateExponent, SIZE_T keySize )
+{
+    SYMCRYPT_ERROR scError = SYMCRYPT_NO_ERROR;
+    PUINT64 pu64PubExp = (PUINT64)(pbPublic+sizeof(SIZE_T));
+    PBYTE pbModulus = pbPublic+sizeof(SIZE_T)+sizeof(UINT64);
+
+    // generate and store new RSA key with keySize bytes in pbKey
+    SetupSymCryptRsaKey<ImpXxx>( pbKey, keySize, SYMCRYPT_FLAG_RSAKEY_SIGN );
+
+    // store keysize || public exponent || modulus to pbPublic
+    *((SIZE_T*)pbPublic) = keySize;
+    scError = ScShimSymCryptRsakeyGetValue(
+        *((PSYMCRYPT_RSAKEY*) pbKey),
+        pbModulus, keySize,
+        pu64PubExp, 1,
+        nullptr, nullptr, 0,
+        SYMCRYPT_NUMBER_FORMAT_MSB_FIRST,
+        0 );
+    CHECK( scError == SYMCRYPT_NO_ERROR, "SymCryptRsakeyGetValue failed unexpectedly" );
+
+    scError = ScShimSymCryptRsakeyGetCrtValue(
+        *((PSYMCRYPT_RSAKEY*) pbKey),
+        nullptr, nullptr, 0,
+        nullptr, 0,
+        pbPrivateExponent, keySize,
+        SYMCRYPT_NUMBER_FORMAT_MSB_FIRST,
+        0 );
+    CHECK( scError == SYMCRYPT_NO_ERROR, "SymCryptRsakeyGetCrtValue failed unexpectedly" );
+}
+
+template<>
+VOID
+algImpDataPerfFunction<ImpXxx, AlgRsakeySetValueFromPrivateExponent>( PBYTE pbKey, PBYTE pbPublic, PBYTE pbPrivateExponent, SIZE_T cbData )
+{
+    UNREFERENCED_PARAMETER( pbPrivateExponent );
+    UNREFERENCED_PARAMETER( cbData );
+
+    SYMCRYPT_ERROR scError = SYMCRYPT_NO_ERROR;
+    PSYMCRYPT_RSAKEY pKey = *((PSYMCRYPT_RSAKEY*) pbKey);
+
+    SIZE_T cbModulus = *((SIZE_T*)pbPublic);
+    PCUINT64 pu64PubExp = (PCUINT64)(pbPublic+sizeof(SIZE_T));
+    PCBYTE pbModulus = pbPublic+sizeof(UINT64)+sizeof(SIZE_T);
+
+    scError = ScShimSymCryptRsakeySetValue(
+        pbModulus, cbModulus,
+        pu64PubExp, 1,
+        nullptr, nullptr, 0,
+        SYMCRYPT_NUMBER_FORMAT_MSB_FIRST,
+        SYMCRYPT_FLAG_RSAKEY_ENCRYPT,
+        pKey );
+    CHECK( scError == SYMCRYPT_NO_ERROR, "SymCryptRsakeySetValue (public) failed unexpectedly" );
+}
+
+template<>
+VOID
+algImpDecryptPerfFunction<ImpXxx, AlgRsakeySetValueFromPrivateExponent>( PBYTE pbKey, PBYTE pbPublic, PBYTE pbPrivateExponent, SIZE_T cbData )
+{
+    UNREFERENCED_PARAMETER( cbData );
+
+    SYMCRYPT_ERROR scError = SYMCRYPT_NO_ERROR;
+    PSYMCRYPT_RSAKEY pKey = *((PSYMCRYPT_RSAKEY*) pbKey);
+
+    SIZE_T cbModulus = *((SIZE_T*)pbPublic);
+    PCUINT64 pu64PubExp = (PCUINT64)(pbPublic+sizeof(SIZE_T));
+    PCBYTE pbModulus = pbPublic+sizeof(SIZE_T)+sizeof(UINT64);
+
+    scError = ScShimSymCryptRsakeySetValueFromPrivateExponent(
+        pbModulus, cbModulus,
+        *pu64PubExp,
+        pbPrivateExponent, cbModulus,
+        SYMCRYPT_NUMBER_FORMAT_MSB_FIRST,
+        SYMCRYPT_FLAG_RSAKEY_ENCRYPT,
+        pKey );
+    CHECK( scError == SYMCRYPT_NO_ERROR, "RsakeySetValueFromPrivateExponent (private) failed unexpectedly" );
+}
+
+template<>
+VOID
+algImpCleanPerfFunction<ImpXxx, AlgRsakeySetValueFromPrivateExponent>( PBYTE pbKey, PBYTE pbPublic, PBYTE pbPrivateExponent )
+{
+    UNREFERENCED_PARAMETER( pbKey );
+    SIZE_T cbModulus = *((SIZE_T*)pbPublic);
+
+    ScShimSymCryptWipe( pbPublic, cbModulus+sizeof(SIZE_T)+sizeof(UINT64) );
+    ScShimSymCryptWipe( pbPrivateExponent, cbModulus );
+}
+
+template<>
+ArithImp<ImpXxx, AlgRsakeySetValueFromPrivateExponent>::ArithImp()
+{
+    m_perfDataFunction      = &algImpDataPerfFunction   <ImpXxx, AlgRsakeySetValueFromPrivateExponent>;
+    m_perfDecryptFunction   = &algImpDecryptPerfFunction<ImpXxx, AlgRsakeySetValueFromPrivateExponent>;
+    m_perfKeyFunction       = &algImpKeyPerfFunction    <ImpXxx, AlgRsakeySetValueFromPrivateExponent>;
+    m_perfCleanFunction     = &algImpCleanPerfFunction  <ImpXxx, AlgRsakeySetValueFromPrivateExponent>;
+}
+
+template<>
+ArithImp<ImpXxx, AlgRsakeySetValueFromPrivateExponent>::~ArithImp()
+{
+}
 
 // RSA PKCS1 encryption
 
@@ -4190,42 +4353,7 @@ template<>
 NTSTATUS
 RsaEncImp<ImpXxx, AlgRsaEncPkcs1>::setKey( PCRSAKEY_TESTBLOB pcKeyBlob )
 {
-    SYMCRYPT_ERROR scError;
-
-    if( state.pKey != NULL )
-    {
-        ScShimSymCryptRsakeyFree( state.pKey );
-        state.pKey = NULL;
-    }
-
-    if( pcKeyBlob == NULL )
-    {
-        // Just used to clear the key state to do leak detection
-        return STATUS_SUCCESS;
-    }
-
-    SYMCRYPT_RSA_PARAMS params;
-    params.version = 1;
-    params.nBitsOfModulus = pcKeyBlob->nBitsModulus;
-    params.nPrimes = 2;
-    params.nPubExp = 1;
-
-    state.pKey = ScShimSymCryptRsakeyAllocate( &params, 0 );
-    CHECK( state.pKey != NULL, "?" );
-
-    PCBYTE ppPrime[2] = {&pcKeyBlob->abPrime1[0], &pcKeyBlob->abPrime2[0] };
-    SIZE_T cbPrime[2] = {pcKeyBlob->cbPrime1, pcKeyBlob->cbPrime2 };
-
-    scError = ScShimSymCryptRsakeySetValue(
-        &pcKeyBlob->abModulus[0], pcKeyBlob->cbModulus,
-        &pcKeyBlob->u64PubExp, 1,
-        ppPrime, cbPrime, 2,
-        SYMCRYPT_NUMBER_FORMAT_MSB_FIRST,
-        SYMCRYPT_FLAG_RSAKEY_ENCRYPT,
-        state.pKey );
-    CHECK( scError == SYMCRYPT_NO_ERROR, "?" );
-
-    return STATUS_SUCCESS;
+    return sc_RsaKeySetKeyFromBlob<ImpXxx>(pcKeyBlob, &state.pKey, SYMCRYPT_FLAG_RSAKEY_ENCRYPT);
 }
 
 template<>
@@ -4421,42 +4549,7 @@ template<>
 NTSTATUS
 RsaEncImp<ImpXxx, AlgRsaEncOaep>::setKey( PCRSAKEY_TESTBLOB pcKeyBlob )
 {
-    SYMCRYPT_ERROR scError;
-
-    if( state.pKey != NULL )
-    {
-        ScShimSymCryptRsakeyFree( state.pKey );
-        state.pKey = NULL;
-    }
-
-    if( pcKeyBlob == NULL )
-    {
-        // Just used to clear the key state to do leak detection
-        return STATUS_SUCCESS;
-    }
-
-    SYMCRYPT_RSA_PARAMS params;
-    params.version = 1;
-    params.nBitsOfModulus = pcKeyBlob->nBitsModulus;
-    params.nPrimes = 2;
-    params.nPubExp = 1;
-
-    state.pKey = ScShimSymCryptRsakeyAllocate( &params, 0 );
-    CHECK( state.pKey != NULL, "?" );
-
-    PCBYTE ppPrime[2] = {&pcKeyBlob->abPrime1[0], &pcKeyBlob->abPrime2[0] };
-    SIZE_T cbPrime[2] = {pcKeyBlob->cbPrime1, pcKeyBlob->cbPrime2 };
-
-    scError = ScShimSymCryptRsakeySetValue(
-        &pcKeyBlob->abModulus[0], pcKeyBlob->cbModulus,
-        &pcKeyBlob->u64PubExp, 1,
-        ppPrime, cbPrime, 2,
-        SYMCRYPT_NUMBER_FORMAT_MSB_FIRST,
-        SYMCRYPT_FLAG_RSAKEY_ENCRYPT,
-        state.pKey );
-    CHECK( scError == SYMCRYPT_NO_ERROR, "?" );
-
-    return STATUS_SUCCESS;
+    return sc_RsaKeySetKeyFromBlob<ImpXxx>(pcKeyBlob, &state.pKey, SYMCRYPT_FLAG_RSAKEY_ENCRYPT);
 }
 
 template<>

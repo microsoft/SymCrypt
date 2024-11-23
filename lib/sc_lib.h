@@ -3673,17 +3673,28 @@ if( ( g_SymCryptFipsSelftestsPerformed & AlgorithmSelftestFlag ) == 0 ) \
     SYMCRYPT_ATOMIC_OR32_PRE_RELAXED( &g_SymCryptFipsSelftestsPerformed, AlgorithmSelftestFlag ); \
 }
 
-// Macro for executing a pairwise consistency test on a key and setting the per-key selftest flag.
+// Macros for executing a pairwise consistency test on a key and setting the per-key selftest flag.
 // Typically PCTs must be run for each key before the key is first used or exported, but the
 // specific requirements vary between algorithms.
 //
 // Note that a PCT is not considered a CAST and thus does not satisfy the aforementioned requirement
 // for algorithm selftests.
-#define SYMCRYPT_RUN_KEY_PCT(KeySelftestFunction, Key, KeySelftestFlag) \
+#define SYMCRYPT_RUN_KEY_GEN_PCT(KeySelftestFunction, Key, KeySelftestFlag) \
 if( ( Key->fAlgorithmInfo & (KeySelftestFlag | SYMCRYPT_FLAG_KEY_NO_FIPS) ) == 0 ) \
 { \
-    KeySelftestFunction( Key ); \
+    /* PCT should never fail on key generation - FIPS assert that it does not */ \
+    SYMCRYPT_FIPS_ASSERT( KeySelftestFunction( Key ) == SYMCRYPT_NO_ERROR ); \
     SYMCRYPT_ATOMIC_OR32_PRE_RELAXED(&Key->fAlgorithmInfo, KeySelftestFlag); \
+}
+#define SYMCRYPT_RUN_KEY_IMPORT_PCT(PctScError, KeySelftestFunction, Key, KeySelftestFlag) \
+if( ( Key->fAlgorithmInfo & (KeySelftestFlag | SYMCRYPT_FLAG_KEY_NO_FIPS) ) == 0 ) \
+{ \
+    /* PCT may fail on key import - return error to caller via PctScError */ \
+    PctScError = KeySelftestFunction( Key ); \
+    if( PctScError == SYMCRYPT_NO_ERROR ) \
+    { \
+        SYMCRYPT_ATOMIC_OR32_PRE_RELAXED(&Key->fAlgorithmInfo, KeySelftestFlag); \
+    } \
 }
 
 // Macro to check flag used in fAlgorithmInfo is non-zero and a power of 2
@@ -3714,21 +3725,21 @@ CHECK_ALGORITHM_INFO_FLAGS_DISTINCT(SYMCRYPT_PCT_DSA, SYMCRYPT_FLAG_KEY_NO_FIPS,
 CHECK_ALGORITHM_INFO_FLAGS_DISTINCT(SYMCRYPT_PCT_ECDSA, SYMCRYPT_FLAG_KEY_NO_FIPS, SYMCRYPT_FLAG_KEY_MINIMAL_VALIDATION, SYMCRYPT_FLAG_ECKEY_ECDSA, SYMCRYPT_FLAG_ECKEY_ECDH);
 CHECK_ALGORITHM_INFO_FLAGS_DISTINCT(SYMCRYPT_PCT_RSA_SIGN, SYMCRYPT_FLAG_KEY_NO_FIPS, SYMCRYPT_FLAG_KEY_MINIMAL_VALIDATION, SYMCRYPT_FLAG_RSAKEY_SIGN, SYMCRYPT_FLAG_RSAKEY_ENCRYPT);
 
-VOID
+SYMCRYPT_ERROR
 SYMCRYPT_CALL
 SymCryptRsaSignVerifyPct( PCSYMCRYPT_RSAKEY pkRsakey );
 //
 // FIPS pairwise consistency test for RSA sign/verify. Fastfails on error.
 //
 
-VOID
+SYMCRYPT_ERROR
 SYMCRYPT_CALL
 SymCryptDsaPct( PCSYMCRYPT_DLKEY pkDlkey );
 //
 // FIPS pairwise consistency test for DSA sign/verify. Fastfails on error.
 //
 
-VOID
+SYMCRYPT_ERROR
 SYMCRYPT_CALL
 SymCryptEcDsaPct( PCSYMCRYPT_ECKEY pkEckey );
 //
@@ -4755,6 +4766,40 @@ SymCryptCountTrailingZeros32( UINT32 value )
     _BitScanForward(&index, value);
 #elif SYMCRYPT_GNUC
     index = __builtin_ctz(value);
+#else
+    while( (value & 1) == 0 )
+    {
+        index++;
+        value >>= 1;
+    }
+#endif
+
+    return (UINT32) index;
+}
+
+FORCEINLINE
+UINT32
+SymCryptCountTrailingZeros64( UINT64 value )
+{
+    ULONG index = 0;
+    if( value == 0 )
+    {
+        return 64;
+    }
+
+#if SYMCRYPT_MS_VC && (SYMCRYPT_CPU_AMD64 | SYMCRYPT_CPU_ARM64)
+    _BitScanForward64(&index, value);
+#elif SYMCRYPT_MS_VC && (SYMCRYPT_CPU_X86 | SYMCRYPT_CPU_ARM)
+    if( ((UINT32)value) == 0 )
+    {
+        _BitScanForward(&index, (UINT32)(value>>32));
+        index += 32;
+    } else {
+        _BitScanForward(&index, (UINT32)value);
+    }
+
+#elif SYMCRYPT_GNUC
+    index = __builtin_ctzll(value);
 #else
     while( (value & 1) == 0 )
     {

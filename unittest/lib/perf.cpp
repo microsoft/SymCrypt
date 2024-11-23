@@ -219,6 +219,9 @@ const ALG_MEASURE_PARAMS g_algMeasureParams[] =
     "RsaSignPss"            , 1, {128, 256, 384, 512}, {PERF_DATASIZE_SAME_AS_KEYSIZE},
     "RsaVerifyPss"          , 1, {128, 256, 384, 512}, {PERF_DATASIZE_SAME_AS_KEYSIZE},
 
+    "RsakeySetValue"        , 1, {128, 256, 384, 512}, {PERF_DATASIZE_SAME_AS_KEYSIZE},
+    "RsakeySetValueFromPrivateExponent", 1, {128, 256, 384, 512}, {PERF_DATASIZE_SAME_AS_KEYSIZE},
+
 //    "DsaSign"               , 1, {64, 128, 256}, {},
 //    "DsaVerify"             , 1, {64, 128, 256}, {},
     "Dh"                    , 1, {64, 128, 256}, {PERF_DATASIZE_SAME_AS_KEYSIZE},
