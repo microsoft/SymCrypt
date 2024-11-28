@@ -559,10 +559,23 @@ testRsaEncSingle(
 
     if( cbMsg == cbKey || pcstrHashAlgName != NULL )            // Only for RsaRaw and OAEP
     {
-        // Modify the ciphertext, not in the first byte to avoid values > modulus
+        // Modify the ciphertext, avoiding values >= modulus
+        // Count number of most significant bytes that modulus and ciphertext have in common;
+        // Given ciphertext is valid, there is some i<cbKey, pbCiphertext[i] < abModulus[i]  
+        UINT32 cbToPreserve = 0; 
+        while( pcRsaKeyBlob->abModulus[cbToPreserve] == pbCiphertext[cbToPreserve] )
+        {
+            cbToPreserve++;
+        }
+        // Only modify the ciphertext after the most significant byte where the original
+        // ciphertext < modulus
+        // This ensures that the value of the modified ciphertext < modulus
+        cbToPreserve++;
+        CHECK( cbToPreserve < cbKey, "Unexpected KAT with ciphertext and modulus differing only in the least significant byte" );
+
         memcpy( buf, pbCiphertext, cbKey );
         UINT32 t = g_rng.uint32();
-        buf[ 1 + ((t/8) % (cbKey - 1)) ] ^= 1 << (t%8);
+        buf[ cbToPreserve + ((t/8) % (cbKey - cbToPreserve)) ] ^= 1 << (t%8);
         ntStatus = pRsaEnc->decrypt( buf, cbKey, pcstrHashAlgName, pbLabel, cbLabel, buf, cbKey, &cbRes );
         if( cbMsg == cbKey )
         {
