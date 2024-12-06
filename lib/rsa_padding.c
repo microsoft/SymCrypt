@@ -602,6 +602,12 @@ SymCryptRsaOaepRemoveEncryptionPadding(
         }
     }
 
+    if (pbDB[cnt - 1] != 0x01)
+    {
+        scError = SYMCRYPT_INVALID_ARGUMENT;
+        goto cleanup;
+    }
+
     // the rest is data
     *pcbPlaintext = cbDB - cnt;
 
