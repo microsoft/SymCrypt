@@ -237,7 +237,7 @@ SymCryptSswu(
     SymCryptIntSubUint32( SymCryptIntFromModulus( pCurve->FMod ), 2, piTmp );
     SymCryptModExp( pCurve->FMod, peM, piTmp, pCurve->FModBitsize, 0, peT, pbScratch, cbScratch );
 
-    //x1 = CSEL( l, ( b / ( z * a ) modulo p ), ( ( – b / a ) * ( 1 + t ) ) modulo p )
+    //x1 = CSEL( l, ( b / ( z * a ) modulo p ), ( ( - b / a ) * ( 1 + t ) ) modulo p )
     // where CSEL(x,y,z) operates in constant time and returns y if x is true and z otherwise.
     SymCryptModMul( pCurve->FMod, peZ, pCurve->A, peTmp, pbScratch, cbScratch ); // tmp = z * a
     SymCryptModInv( pCurve->FMod, peTmp, peTmp, SYMCRYPT_FLAG_DATA_PUBLIC | SYMCRYPT_FLAG_MODULUS_PRIME, pbScratch, cbScratch ); // tmp = 1/(z * a)
@@ -304,7 +304,7 @@ SymCryptSswu(
 
     selectionMask = SYMCRYPT_MASK32_EQ( u & 1, y & 1 );
 
-    // P = CSEL( l, ( x, y ), ( x, p – y ) )
+    // P = CSEL( l, ( x, y ), ( x, p - y ) )
     // equivalently, y = CSEL( l, y, p - y )
     // (p - y) mod p is equivalent to -y mod p, so we end up with
     // y = CSEL(l, y, -y)
@@ -1130,7 +1130,7 @@ SymCrypt802_11SaeCustomInitH2EGeneric(
     pMacAlgorithm->appendFunc( &hmacState, macBuffer, 12 );
     pMacAlgorithm->resultFunc( &hmacState, valBytes );
 
-    // val = val (#4666)modulo (q – 1) + 1
+    // val = val (#4666)modulo (q - 1) + 1
     SymCryptIntSubUint32( SymCryptIntFromModulus(pCurve->GOrd), 1, piTmp );
     SymCryptIntToModulus( piTmp, pmMod, 1, SYMCRYPT_FLAG_DATA_PUBLIC, pbScratch, cbScratch );
 

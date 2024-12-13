@@ -10481,3 +10481,395 @@ template<>
 ArithImp<ImpXxx, AlgMlKemkeySetValue>::~ArithImp()
 {
 }
+
+////////////////////////////////////////////////////////////////////////////
+// ML-DSA
+////////////////////////////////////////////////////////////////////////////
+
+// Table with the ML-DSA keys' sizes and pointers to keys
+struct {
+    SIZE_T                      keySize;
+    SYMCRYPT_MLDSA_PARAMS       params;
+    PSYMCRYPT_MLDSAKEY          pkMlDsakey;
+} CONCAT2(g_precomputedMlDsaKeys, ImpXxx)[] = {
+    { PERF_KEY_MLDSA_44,    SYMCRYPT_MLDSA_PARAMS_MLDSA44,  NULL },
+    { PERF_KEY_MLDSA_65,    SYMCRYPT_MLDSA_PARAMS_MLDSA65,  NULL },
+    { PERF_KEY_MLDSA_87,    SYMCRYPT_MLDSA_PARAMS_MLDSA87,  NULL },
+};
+
+template<>
+VOID
+SetupSymCryptMlDsaKey<ImpXxx>( PBYTE pbKey, SIZE_T keySize )
+{
+    SIZE_T i = 0;
+    BOOLEAN bFound = FALSE;
+    SYMCRYPT_MLDSA_PARAMS params = SYMCRYPT_MLDSA_PARAMS_NULL;
+
+    for( i=0; i < ARRAY_SIZE(CONCAT2(g_precomputedMlDsaKeys, ImpXxx)); i++ )
+    {
+        if ( keySize == CONCAT2(g_precomputedMlDsaKeys, ImpXxx)[i].keySize  )
+        {
+            bFound = TRUE;
+            params = CONCAT2(g_precomputedMlDsaKeys, ImpXxx)[i].params;
+
+            if ( CONCAT2(g_precomputedMlDsaKeys, ImpXxx)[i].pkMlDsakey == NULL )
+            {
+                PSYMCRYPT_MLDSAKEY pkMlDsakey = ScShimSymCryptMlDsakeyAllocate( params );
+                CHECK( pkMlDsakey != NULL, "ML-DSA key allocation failed" );
+
+                CONCAT2(g_precomputedMlDsaKeys, ImpXxx)[i].pkMlDsakey = pkMlDsakey;
+            }
+
+            break;
+        }
+    }
+
+    CHECK( bFound, "Invalid ML-DSA parameter set (key size)" );
+
+    *((PSYMCRYPT_MLDSAKEY *) pbKey) = CONCAT2(g_precomputedMlDsaKeys, ImpXxx)[i].pkMlDsakey;
+}
+
+template<>
+VOID
+algImpKeyPerfFunction<ImpXxx, AlgMlDsa>( PBYTE pbKey, PBYTE buf2, PBYTE buf3, SIZE_T keySize )
+{
+    UNREFERENCED_PARAMETER( buf2 );
+    UNREFERENCED_PARAMETER( buf3 );
+
+    SYMCRYPT_ERROR scError = SYMCRYPT_NO_ERROR;
+    SYMCRYPT_MLDSA_PARAMS params = SYMCRYPT_MLDSA_PARAMS_NULL;
+    PSYMCRYPT_MLDSAKEY* ppkMlDsakey = (PSYMCRYPT_MLDSAKEY *) pbKey;
+
+    switch( keySize )
+    {
+        case PERF_KEY_MLDSA_44:
+            params = SYMCRYPT_MLDSA_PARAMS_MLDSA44;
+            break;
+        case PERF_KEY_MLDSA_65:
+            params = SYMCRYPT_MLDSA_PARAMS_MLDSA65;
+            break;
+        case PERF_KEY_MLDSA_87:
+            params = SYMCRYPT_MLDSA_PARAMS_MLDSA87;
+            break;
+        default:
+            CHECK( FALSE, "Invalid ML-DSA parameter set (key size)" );
+            break;
+    }
+
+    SetupSymCryptMlDsaKey<ImpXxx>( pbKey, keySize );
+
+    scError = ScShimSymCryptMlDsakeyGenerate( *ppkMlDsakey, 0 );
+    CHECK( scError == SYMCRYPT_NO_ERROR, "SymCryptMlDsakeyGenerate" );
+}
+
+template<>
+VOID
+algImpDataPerfFunction<ImpXxx, AlgMlDsa>( PBYTE pbKey, PBYTE pbMessage, PBYTE pbSignature, SIZE_T cbData )
+{
+    SYMCRYPT_ERROR scError = SYMCRYPT_NO_ERROR;
+    PCSYMCRYPT_MLDSAKEY* ppkMlDsakey = (PCSYMCRYPT_MLDSAKEY*) pbKey;
+    SIZE_T cbSignature = 0;
+    
+    scError = ScShimSymCryptMlDsaSizeofSignatureFromParams( 
+        (SYMCRYPT_MLDSA_PARAMS) (*ppkMlDsakey)->pParams->params,
+        &cbSignature );
+    CHECK( scError == SYMCRYPT_NO_ERROR, "SymCryptMlDsaSizeofSignatureFromParams" );
+    CHECK( cbSignature <= PERF_BUFFER_SIZE, "Signature buffer too small" );
+
+    scError = ScShimSymCryptMlDsaSign(
+        *ppkMlDsakey,
+        pbMessage, cbData,
+        nullptr, 0, // context
+        0, // flags
+        pbSignature, cbSignature );
+    CHECK( scError == SYMCRYPT_NO_ERROR, "SymCryptMlDsaSign" );
+}
+
+template<>
+VOID
+algImpDecryptPerfFunction<ImpXxx, AlgMlDsa>( PBYTE pbKey, PBYTE pbMessage, PBYTE pbSignature, SIZE_T cbData )
+{
+    SYMCRYPT_ERROR scError = SYMCRYPT_NO_ERROR;
+    PCSYMCRYPT_MLDSAKEY* ppkMlDsakey = (PCSYMCRYPT_MLDSAKEY*) pbKey;
+    SIZE_T cbSignature = 0;
+    
+    scError = ScShimSymCryptMlDsaSizeofSignatureFromParams( 
+        (SYMCRYPT_MLDSA_PARAMS) (*ppkMlDsakey)->pParams->params,
+        &cbSignature );
+    CHECK( scError == SYMCRYPT_NO_ERROR, "SymCryptMlDsaSizeofSignatureFromParams" );
+    CHECK( cbSignature <= PERF_BUFFER_SIZE, "Signature buffer too small" );
+
+    scError = ScShimSymCryptMlDsaVerify(
+        *ppkMlDsakey,
+        pbMessage, cbData,
+        nullptr, 0, // context
+        pbSignature, cbSignature,
+        0 ); // flags
+    CHECK( scError == SYMCRYPT_NO_ERROR, "SymCryptMlDsaVerify" );
+}
+
+template<>
+VOID
+algImpCleanPerfFunction<ImpXxx, AlgMlDsa>( PBYTE pbKey, PBYTE pbMessage, PBYTE pbSignature )
+{
+    UNREFERENCED_PARAMETER( pbKey );
+    UNREFERENCED_PARAMETER( pbMessage );
+    UNREFERENCED_PARAMETER( pbSignature );
+}
+
+template<>
+_Use_decl_annotations_
+NTSTATUS
+PqDsaImp<ImpXxx, AlgMlDsa>::setKey(
+    PCPQDSAKEY_TESTBLOB  pcKeyBlob )
+{
+    SYMCRYPT_ERROR scError = SYMCRYPT_NO_ERROR;
+    auto testMldsakey = &(pcKeyBlob->mlDsakey);
+
+    if( state.pKey != nullptr )
+    {
+        ScShimSymCryptMlDsakeyFree( state.pKey );
+        state.pKey = nullptr;
+    }
+
+    if( pcKeyBlob == nullptr )
+    {
+        // Just used to clear the key state to do leak detection
+        return STATUS_SUCCESS;
+    }
+
+    state.pKey = ScShimSymCryptMlDsakeyAllocate( testMldsakey->params );
+    CHECK( state.pKey != nullptr, "SymCryptMlDsakeyAllocate" );
+
+    scError = ScShimSymCryptMlDsakeySetValue(
+        testMldsakey->abKeyBlob,
+        testMldsakey->cbKeyBlob,
+        testMldsakey->format,
+        0,
+        state.pKey );
+    CHECK( scError == SYMCRYPT_NO_ERROR, "SymCryptMlDsakeySetValue" );
+
+    return STATUS_SUCCESS;
+}
+
+template<>
+NTSTATUS
+PqDsaImp<ImpXxx, AlgMlDsa>::getBlobFromKey(
+    UINT32  keyFormat,
+    PBYTE   pbBlob,
+    SIZE_T  cbBlob )
+{
+    SYMCRYPT_ERROR scError = SYMCRYPT_NO_ERROR;
+    SIZE_T cbExpected = 0;
+
+    scError = ScShimSymCryptMlDsaSizeofKeyFormatFromParams(
+            (SYMCRYPT_MLDSA_PARAMS) state.pKey->pParams->params,
+            (SYMCRYPT_MLDSAKEY_FORMAT) keyFormat,
+            &cbExpected );
+    CHECK( scError == SYMCRYPT_NO_ERROR, "SymCryptMlDsaSizeofKeyFormatFromParams" );
+
+    CHECK( cbBlob == cbExpected, "Invalid key blob size" );
+
+    scError = ScShimSymCryptMlDsakeyGetValue(
+        state.pKey,
+        pbBlob,
+        cbBlob,
+        (SYMCRYPT_MLDSAKEY_FORMAT) keyFormat,
+        0 ); // flags
+    CHECK( scError == SYMCRYPT_NO_ERROR, "SymCryptMlDsakeyGetValue" );
+
+    return STATUS_SUCCESS;
+}
+
+template<>
+_Use_decl_annotations_
+NTSTATUS
+PqDsaImp<ImpXxx, AlgMlDsa>::sign(
+    PCBYTE pbMessage,
+    SIZE_T cbMessage,
+    PCBYTE pbContext,
+    SIZE_T cbContext,
+    PBYTE pbSignature,
+    SIZE_T cbSignature )
+{
+    SYMCRYPT_ERROR scError = SYMCRYPT_NO_ERROR;
+
+    scError = ScShimSymCryptMlDsaSign(
+        state.pKey,
+        pbMessage, cbMessage,
+        pbContext, cbContext,
+        0, // flags
+        pbSignature, cbSignature );
+    CHECK( scError == SYMCRYPT_NO_ERROR, "SymCryptMlDsaSign" );
+
+    return STATUS_SUCCESS;
+}
+
+template<>
+_Use_decl_annotations_
+NTSTATUS
+PqDsaImp<ImpXxx, AlgMlDsa>::signHash(
+    SYMCRYPT_PQDSA_HASH_ID hashId,
+    PCBYTE pbHash,
+    SIZE_T cbHash,
+    PCBYTE pbContext,
+    SIZE_T cbContext,
+    PBYTE pbSignature,
+    SIZE_T cbSignature )
+{
+    SYMCRYPT_ERROR scError = SYMCRYPT_NO_ERROR;
+
+    scError = ScShimSymCryptHashMlDsaSign(
+        state.pKey,
+        hashId,
+        pbHash, cbHash,
+        pbContext, cbContext,
+        0, // flags
+        pbSignature, cbSignature );
+    CHECK( scError == SYMCRYPT_NO_ERROR, "SymCryptHashMlDsaSign" );
+
+    return STATUS_SUCCESS;
+}
+
+template<>
+_Use_decl_annotations_
+NTSTATUS
+PqDsaImp<ImpXxx, AlgMlDsa>::signEx(
+    SYMCRYPT_PQDSA_HASH_ID hashId,
+    PCBYTE pbInput,
+    SIZE_T cbInput,
+    PCBYTE pbContext,
+    SIZE_T cbContext,
+    PCBYTE pbRandom,
+    SIZE_T cbRandom,
+    PBYTE pbSignature,
+    SIZE_T cbSignature )
+{
+    SYMCRYPT_ERROR scError = SYMCRYPT_NO_ERROR;
+    PCBYTE pbHashOid = nullptr;
+    SIZE_T cbHashOid = 0;
+
+    if (!SCTEST_LOOKUP_SCIMPSYM(SymCryptMlDsaSignEx))
+    {
+        return STATUS_NOT_SUPPORTED;
+    }
+
+    // Workaround to avoid having to expose SymCryptHashMlDsaValidateHashAlgAndGetOid
+    switch( hashId )
+    {
+        case SYMCRYPT_PQDSA_HASH_ID_NULL:
+            // NULL has ID means we're doing pure signing
+            break;
+        case SYMCRYPT_PQDSA_HASH_ID_SHA256:
+            pbHashOid = SymCryptSha256OidList[1].pbOID;
+            cbHashOid = SymCryptSha256OidList[1].cbOID;
+            break;
+        case SYMCRYPT_PQDSA_HASH_ID_SHA384:
+            pbHashOid = SymCryptSha384OidList[1].pbOID;
+            cbHashOid = SymCryptSha384OidList[1].cbOID;
+            break;
+        case SYMCRYPT_PQDSA_HASH_ID_SHA512:
+            pbHashOid = SymCryptSha512OidList[1].pbOID;
+            cbHashOid = SymCryptSha512OidList[1].cbOID;
+            break;
+        default:
+            CHECK( FALSE, "Unknown hash algorithm ID" );
+            break;
+    }
+
+    scError = ScShimSymCryptMlDsaSignEx(
+        state.pKey,
+        pbInput, cbInput,
+        pbContext, cbContext,
+        pbHashOid, cbHashOid,
+        pbRandom, cbRandom,
+        0, // flags
+        pbSignature, cbSignature );
+    CHECK( scError == SYMCRYPT_NO_ERROR, "SymCryptMlDsaSignEx" );
+
+    return STATUS_SUCCESS;
+}
+
+template<>
+_Use_decl_annotations_
+NTSTATUS
+PqDsaImp<ImpXxx, AlgMlDsa>::verify(
+    PCBYTE pbMessage,
+    SIZE_T cbMessage,
+    PCBYTE pbContext,
+    SIZE_T cbContext,
+    PCBYTE pbSignature,
+    SIZE_T cbSignature )
+
+{
+    SYMCRYPT_ERROR scError = SYMCRYPT_NO_ERROR;
+
+    scError = ScShimSymCryptMlDsaVerify(
+        state.pKey,
+        pbMessage, cbMessage,
+        pbContext, cbContext,
+        pbSignature, cbSignature,
+        0 ); // flags
+
+    if( scError == SYMCRYPT_NO_ERROR )
+    {
+        return STATUS_SUCCESS;
+    }
+    else if( scError == SYMCRYPT_SIGNATURE_VERIFICATION_FAILURE )
+    {
+        // Signature verification failure is an expected failure for some test cases
+        return STATUS_INVALID_SIGNATURE;
+    }
+    else
+    {
+        CHECK3(FALSE, "Unexpected SymCrypt error %08x", scError);
+        return STATUS_UNSUCCESSFUL; // Unreachable
+    }
+}
+
+template<>
+_Use_decl_annotations_
+NTSTATUS
+PqDsaImp<ImpXxx, AlgMlDsa>::verifyHash(
+    SYMCRYPT_PQDSA_HASH_ID hashId,
+    PCBYTE pbHash,
+    SIZE_T cbHash,
+    PCBYTE pbContext,
+    SIZE_T cbContext,
+    PCBYTE pbSignature,
+    SIZE_T cbSignature )
+{
+    SYMCRYPT_ERROR scError = SYMCRYPT_NO_ERROR;
+
+    scError = ScShimSymCryptHashMlDsaVerify(
+        state.pKey,
+        hashId,
+        pbHash, cbHash,
+        pbContext, cbContext,
+        pbSignature, cbSignature,
+        0 ); // flags
+
+    if( scError == SYMCRYPT_NO_ERROR )
+    {
+        return STATUS_SUCCESS;
+    }
+    else if( scError == SYMCRYPT_SIGNATURE_VERIFICATION_FAILURE )
+    {
+        // Signature verification failure is an expected failure for some test cases
+        return STATUS_INVALID_SIGNATURE;
+    }
+    else
+    {
+        CHECK3(FALSE, "Unexpected SymCrypt error %08x", scError);
+        return STATUS_UNSUCCESSFUL; // Unreachable
+    }
+}
+
+template<>
+PqDsaImp<ImpXxx, AlgMlDsa>::PqDsaImp()
+{
+    m_perfDataFunction      = &algImpDataPerfFunction   <ImpXxx, AlgMlDsa>;
+    m_perfDecryptFunction   = &algImpDecryptPerfFunction<ImpXxx, AlgMlDsa>;
+    m_perfKeyFunction       = &algImpKeyPerfFunction    <ImpXxx, AlgMlDsa>;
+    m_perfCleanFunction     = &algImpCleanPerfFunction  <ImpXxx, AlgMlDsa>;
+}

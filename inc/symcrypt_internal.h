@@ -1071,6 +1071,59 @@ typedef const SYMCRYPT_KMAC256_STATE* PCSYMCRYPT_KMAC256_STATE;
 //
 // Generic hashing
 //
+
+typedef struct _SYMCRYPT_OID {
+    UINT32  cbOID;
+    _Field_size_( cbOID ) PCBYTE  pbOID;
+} SYMCRYPT_OID, *PSYMCRYPT_OID;
+typedef const SYMCRYPT_OID *PCSYMCRYPT_OID;
+
+//
+// OID lists for the most commonly used hash functions
+//
+
+#define SYMCRYPT_MD5_OID_COUNT         (2)
+extern const SYMCRYPT_OID SymCryptMd5OidList[SYMCRYPT_MD5_OID_COUNT];
+
+#define SYMCRYPT_SHA1_OID_COUNT        (2)
+extern const SYMCRYPT_OID SymCryptSha1OidList[SYMCRYPT_SHA1_OID_COUNT];
+
+#define SYMCRYPT_SHA224_OID_COUNT      (2)
+extern const SYMCRYPT_OID SymCryptSha224OidList[SYMCRYPT_SHA224_OID_COUNT];
+
+#define SYMCRYPT_SHA256_OID_COUNT      (2)
+extern const SYMCRYPT_OID SymCryptSha256OidList[SYMCRYPT_SHA256_OID_COUNT];
+
+#define SYMCRYPT_SHA384_OID_COUNT      (2)
+extern const SYMCRYPT_OID SymCryptSha384OidList[SYMCRYPT_SHA384_OID_COUNT];
+
+#define SYMCRYPT_SHA512_224_OID_COUNT      (2)
+extern const SYMCRYPT_OID SymCryptSha512_224OidList[SYMCRYPT_SHA512_224_OID_COUNT];
+
+#define SYMCRYPT_SHA512_256_OID_COUNT      (2)
+extern const SYMCRYPT_OID SymCryptSha512_256OidList[SYMCRYPT_SHA512_256_OID_COUNT];
+
+#define SYMCRYPT_SHA512_OID_COUNT      (2)
+extern const SYMCRYPT_OID SymCryptSha512OidList[SYMCRYPT_SHA512_OID_COUNT];
+
+#define SYMCRYPT_SHA3_224_OID_COUNT      (2)
+extern const SYMCRYPT_OID SymCryptSha3_224OidList[SYMCRYPT_SHA3_224_OID_COUNT];
+
+#define SYMCRYPT_SHA3_256_OID_COUNT      (2)
+extern const SYMCRYPT_OID SymCryptSha3_256OidList[SYMCRYPT_SHA3_256_OID_COUNT];
+
+#define SYMCRYPT_SHA3_384_OID_COUNT      (2)
+extern const SYMCRYPT_OID SymCryptSha3_384OidList[SYMCRYPT_SHA3_384_OID_COUNT];
+
+#define SYMCRYPT_SHA3_512_OID_COUNT      (2)
+extern const SYMCRYPT_OID SymCryptSha3_512OidList[SYMCRYPT_SHA3_512_OID_COUNT];
+
+#define SYMCRYPT_SHAKE128_OID_COUNT      (2)
+extern const SYMCRYPT_OID SymCryptShake128OidList[SYMCRYPT_SHAKE128_OID_COUNT];
+
+#define SYMCRYPT_SHAKE256_OID_COUNT      (2)
+extern const SYMCRYPT_OID SymCryptShake256OidList[SYMCRYPT_SHAKE256_OID_COUNT];
+
 typedef union _SYMCRYPT_HASH_STATE
 {
     SYMCRYPT_MD2_STATE          md2State;
@@ -2557,6 +2610,14 @@ SYMCRYPT_ASYM_ALIGN_STRUCT _SYMCRYPT_MLKEMKEY;
 typedef struct _SYMCRYPT_MLKEMKEY SYMCRYPT_MLKEMKEY;
 typedef       SYMCRYPT_MLKEMKEY * PSYMCRYPT_MLKEMKEY;
 typedef const SYMCRYPT_MLKEMKEY * PCSYMCRYPT_MLKEMKEY;
+
+//
+// Forward declarations for MlDsakey types
+//
+struct _SYMCRYPT_MLDSAKEY;
+typedef struct _SYMCRYPT_MLDSAKEY SYMCRYPT_MLDSAKEY;
+typedef       SYMCRYPT_MLDSAKEY * PSYMCRYPT_MLDSAKEY;
+typedef const SYMCRYPT_MLDSAKEY * PCSYMCRYPT_MLDSAKEY;
 
 //
 // RSA padding scratch definitions

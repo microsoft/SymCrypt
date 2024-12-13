@@ -1019,8 +1019,8 @@ SymCryptMlKemPolyElementDecodeAndDecompress(
         else if( coefficient >= SYMCRYPT_MLKEM_Q )
         {
             // input validation failure - this can happen with a malformed or corrupt encapsulation
-            // or decapsulation key, but this validation failure only triggers on public data; we
-            // do not need to be constant time
+            // or decapsulation key; we do not need to be constant time because we treat the
+            // validity of an imported key as public information.
             return SYMCRYPT_INVALID_BLOB;
         }
 

@@ -104,6 +104,8 @@
     <ClCompile Include="md2.c" />
     <ClCompile Include="md4.c" />
     <ClCompile Include="md5.c" />
+    <ClCompile Include="mldsa.c" />
+    <ClCompile Include="mldsa_primitives.c" />
     <ClCompile Include="mlkem.c" />
     <ClCompile Include="mlkem_primitives.c" />
     <ClCompile Include="modexp.c" />

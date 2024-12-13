@@ -414,6 +414,7 @@ const char * g_algorithmNames[] = {
     AlgLms::name,
     AlgMlKem::name,
     AlgMlKemkeySetValue::name,
+    AlgMlDsa::name,
 
     AlgDeveloperTest::name,
     NULL,
@@ -1341,6 +1342,8 @@ runFunctionalTests()
 
     testKem();
 
+    testPqDsa();
+
     printSymCryptFipsGetSelftestsPerformed();
 
     testStatusIndicator(g_printStatusIndicator);
@@ -1410,8 +1413,18 @@ runPerfTests()
                 String name = (*i)->m_algorithmName + (*i)->m_modeName;
                 if( j->keySize > 0 )
                 {
+                    ULONG keySize = (ULONG) (j->keySize & 0xffff);
+
+                    // Hack: For ML-DSA, don't multiply the key size by 8 since it refers to a
+                    // parameter set. In the future we should refactor the performance measurement
+                    // architecture to be able to handle these types of algorithms more gracefully.
+                    if( (*i)->m_algorithmName != "MlDsa" )
+                    {
+                        keySize *= 8;
+                    }
+
                     char buf[100];
-                    SNPRINTF_S( buf, sizeof( buf ), _TRUNCATE, "-%4lu", (ULONG) (j->keySize & 0xffff) * 8 );
+                    SNPRINTF_S( buf, sizeof( buf ), _TRUNCATE, "-%4lu", keySize );
 
                     name = name + buf;
                 }

@@ -24,5 +24,4 @@ kat_dh.dat                      KAT_DH                          "..\kat_dh.dat"
 kat_dsa.dat                     KAT_DSA                         "..\kat_dsa.dat"
 kat_hbs.dat                     KAT_HBS                         "..\kat_hbs.dat"
 kat_kem.dat                     KAT_KEM                         "..\kat_kem.dat"
-
-
+kat_pqdsa.dat                   kat_pqdsa                       "..\kat_pqdsa.dat"

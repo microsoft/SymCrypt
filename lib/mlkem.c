@@ -632,7 +632,7 @@ SymCryptMlKemkeyGetValue(
 
         if( !pkMlKemkey->hasPrivateKey )
         {
-            scError = SYMCRYPT_INVALID_ARGUMENT;
+            scError = SYMCRYPT_INCOMPATIBLE_FORMAT;
             goto cleanup;
         }
 

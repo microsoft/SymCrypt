@@ -36,6 +36,7 @@
 
     #include <chrono>
     #include <vector>
+    #include <array>
     #include <string>
     #include <memory>
     #include <algorithm>
@@ -149,6 +150,7 @@
 
     #include <chrono>
     #include <vector>
+    #include <array>
     #include <string>
     #include <memory>
     #include <algorithm>
@@ -1034,6 +1036,11 @@ public:
     static constexpr const char * name = "MlKemkeySetValue";
 };
 
+class AlgMlDsa{
+public:
+    static constexpr const char * name = "MlDsa";
+};
+
 class AlgDeveloperTest{
 public:
     static constexpr const char * name = "DeveloperTest";
@@ -1486,6 +1493,9 @@ testDhAlgorithms();
 
 VOID
 testDsaAlgorithms();
+
+VOID
+testPqDsa();
 
 VOID
 testStatusIndicator(BOOL);
@@ -1980,6 +1990,13 @@ printXmmRegisters( PCSTR text );
 #define PERF_KEY_MLKEM_512  (512 / 8)   // ML-KEM-512
 #define PERF_KEY_MLKEM_768  (768 / 8)   // ML-KEM-768
 #define PERF_KEY_MLKEM_1024 (1024 / 8)  // ML-KEM-1024
+
+//
+// ML-DSA parameters. As with ML-KEM, these are not actual key sizes, but ML-KEM parameter sets.
+//
+#define PERF_KEY_MLDSA_44   (44)   // ML-DSA-44
+#define PERF_KEY_MLDSA_65   (65)   // ML-DSA-65
+#define PERF_KEY_MLDSA_87   (87)   // ML-DSA-87
 
 PCBYTE
 getPerfTestModulus( UINT32 exKeySize );

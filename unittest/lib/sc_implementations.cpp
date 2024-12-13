@@ -45,16 +45,16 @@ VOID
 setupModulus( PBYTE buf1, PBYTE buf3, SIZE_T keySize );
 
 template<class Implementation>
-void
+VOID
 setupModOperations( PBYTE buf1, PBYTE buf2, PBYTE buf3, SIZE_T keySize );
 
 
 template<class Implementation>
-void
+VOID
 SetupSymCryptRsaKey( PBYTE buf1, SIZE_T keySize, UINT32 generateFlags );
 
 template<class Implementation>
-void
+VOID
 sc_RsaKeyPerf( PBYTE buf1, PBYTE buf2, SIZE_T keySize, UINT32 generateFlags );
 
 template<class Implementation>
@@ -69,11 +69,11 @@ VOID
 DlgroupSetup( PBYTE buf1, SIZE_T keySize, BOOLEAN forDiffieHellman );
 
 template<class Implementation>
-void
+VOID
 SetupDlGroup( PBYTE buf1, SIZE_T keySize );
 
 template<class Implementation>
-void
+VOID
 SetupSymCryptDsa( PBYTE buf1, PBYTE buf2, PBYTE buf3 );
 
 template<class Implementation>
@@ -81,33 +81,37 @@ PSYMCRYPT_DLKEY
 dlkeyObjectFromTestBlob( PCSYMCRYPT_DLGROUP pGroup, PCDLKEY_TESTBLOB pBlob, UINT32 algFlags, BOOL setPrivate = TRUE );
 
 template<class Implementation>
-void
+VOID
 CleanupSymCryptCurves();
 
 template<class Implementation>
-void
+VOID
 SetupSymCryptCurves( PBYTE buf1, SIZE_T keySize );
 
 
 template<class Implementation>
-void
+VOID
 SetupSymCryptEcpoints( PBYTE buf1, PBYTE buf2, PBYTE buf3 );
 
 template<class Implementation>
-void
+VOID
 SetupSymCryptEckey( PBYTE buf1, PBYTE buf2, PBYTE buf3, UINT32 setRandomFlags );
 
 template<class Implementation>
-void
+VOID
 SetupSymCryptXmsskey( UINT32 algId );
 
 template<class Implementation>
-void
+VOID
 SetupSymCryptLmskey( UINT32 lmsAlgID, UINT32 lmsOtsAlgID);
 
 template<class Implementation>
 SYMCRYPT_MLKEM_PARAMS
 SetupSymCryptMlKemKey( PBYTE buf1, SIZE_T keySize );
+
+template<class Implementation>
+VOID
+SetupSymCryptMlDsaKey( PBYTE pbKey, SIZE_T keySize );
 
 VOID
 trialDivisionSetFakePrime( PSYMCRYPT_TRIALDIVISION_PRIME p )
@@ -401,6 +405,8 @@ addSymCryptImplementationToGlobalList()
 
     addImplementationToGlobalList<KemImp<ImpScVariant, AlgMlKem>>();
     addImplementationToGlobalList<ArithImp<ImpScVariant, AlgMlKemkeySetValue>>();
+
+    addImplementationToGlobalList<PqDsaImp<ImpScVariant, AlgMlDsa>>();
 
     addImplementationToGlobalList<ArithImp<ImpScVariant, AlgIntAdd>>();
     addImplementationToGlobalList<ArithImp<ImpScVariant, AlgIntSub>>();

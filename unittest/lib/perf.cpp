@@ -246,6 +246,8 @@ const ALG_MEASURE_PARAMS g_algMeasureParams[] =
     "MlKem"                 , 0, {PERF_KEY_MLKEM_512, PERF_KEY_MLKEM_768, PERF_KEY_MLKEM_1024}, {PERF_DATASIZE_SAME_AS_KEYSIZE},
     "MlKemkeySetValue"      , 0, {PERF_KEY_MLKEM_512, PERF_KEY_MLKEM_768, PERF_KEY_MLKEM_1024}, {PERF_DATASIZE_SAME_AS_KEYSIZE},
 
+    "MlDsa"                 , 0, {PERF_KEY_MLDSA_44, PERF_KEY_MLDSA_65, PERF_KEY_MLDSA_87}, {PERF_DATASIZE_SAME_AS_KEYSIZE},
+
     "IEEE802_11SaeCustom"   , 0, {}, {},
     "Xmss"                  , 1, { PERF_KEY_XMSS_SHA2_10_256, PERF_KEY_XMSS_SHA2_16_256, PERF_KEY_XMSS_SHA2_20_256, PERF_KEY_XMSS_SHA2_10_512,  PERF_KEY_XMSS_SHAKE256_10_256 }, { PERF_DATASIZE_SAME_AS_KEYSIZE },
     "Lms"                   , 1, { PERF_KEY_LMS_SHA256_M32_H5_W1, PERF_KEY_LMS_SHA256_M32_H5_W2, PERF_KEY_LMS_SHA256_M32_H5_W4, PERF_KEY_LMS_SHA256_M32_H5_W8, PERF_KEY_LMS_SHA256_M32_H10_W8}, { PERF_DATASIZE_SAME_AS_KEYSIZE },
@@ -917,7 +919,7 @@ VOID measurePerfData(
             perByte = sumXiYi / sumXiXi;
         }
 
-        // Note: We should consider switching to the Theil�Sen estimator because it is much less sensitive to outliers
+        // Note: We should consider switching to the Theil-Sen estimator because it is much less sensitive to outliers
 
     } else
     {
@@ -1112,6 +1114,11 @@ VOID measurePerfOneAlg( AlgorithmImplementation * pAlgImp )
                 perfInfo.operationName = "enc";
             }
 
+            if( !STRICMP(pParams->algName, "MlDsa") )
+            {
+                perfInfo.operationName = "sig";
+            }
+
             if(!g_measure_specific_sizes)
             {
                 measurePerfData( keyFn, NULL, dataFn, cleanFn, &dataSizes, *k, &perfInfo );
@@ -1133,9 +1140,11 @@ VOID measurePerfOneAlg( AlgorithmImplementation * pAlgImp )
         {
             perfInfo.operationName = "dec";
 
-            if (!STRICMP(pParams->algName, "Lms") || !STRICMP(pParams->algName, "Xmss"))
+            if (!STRICMP(pParams->algName, "Lms") ||
+                !STRICMP(pParams->algName, "Xmss") ||
+                !STRICMP(pParams->algName, "MlDsa"))
             {
-                perfInfo.operationName = "verify";
+                perfInfo.operationName = "ver";
             }
 
             if(!g_measure_specific_sizes)

@@ -62,7 +62,7 @@ extern "C" {
 //
 //
 // MEMORY STRUCTURES
-// Most SymCrypt funcitons do not allocate any memory; all memory is provided by the caller.
+// Most SymCrypt functions do not allocate any memory; all memory is provided by the caller.
 // However, callers may not copy, move, or otherwise manipulate the SymCrypt
 // data structures. In particular, a memcpy of a SymCrypt data structure is not allowed.
 // When necessary SymCrypt provides functions to perform the necessary manipulations.
@@ -785,8 +785,6 @@ SymCryptHashStateSize( _In_ PCSYMCRYPT_HASH pHash );
 // large enough to contain a hash state.
 //
 
-
-
 VOID
 SYMCRYPT_CALL
 SymCryptHash(
@@ -803,7 +801,6 @@ SymCryptHash(
 //      min( cbResult, SymCryptHashResultSize( pHash ) )
 //
 
-
 VOID
 SYMCRYPT_CALL
 SymCryptHashInit(
@@ -817,7 +814,6 @@ SymCryptHashAppend(
     _Inout_updates_bytes_( pHash->stateSize )   PVOID           pState,
     _In_reads_( cbData )                        PCBYTE          pbData,
                                                 SIZE_T          cbData );
-
 
 VOID
 SYMCRYPT_CALL
@@ -835,13 +831,16 @@ SymCryptHashResult(
 // the number of bytes written to the pbResult buffer is
 //      min( cbResult, SymCryptHashResultSize( pHash ) )
 
-
 VOID
 SYMCRYPT_CALL
 SymCryptHashStateCopy(
     _In_                            PCSYMCRYPT_HASH pHash,
     _In_reads_(pHash->stateSize)    PCVOID          pSrc,
     _Out_writes_(pHash->stateSize)  PVOID           pDst);
+//
+// SymCryptHashStateCopy
+//
+// Copies the hash state from pSrc to pDst.
 
 ////////////////////////////////////////////////////////////////////////////
 //   MD2
@@ -8571,56 +8570,6 @@ SymCryptRsaOaepDecrypt(
 
 #define SYMCRYPT_FLAG_RSA_PSS_VERIFY_WITH_MINIMUM_SALT  (0x04)
 
-typedef struct _SYMCRYPT_OID {
-    UINT32  cbOID;
-    PCBYTE  pbOID;
-} SYMCRYPT_OID, *PSYMCRYPT_OID;
-typedef const SYMCRYPT_OID *PCSYMCRYPT_OID;
-
-//
-// OID lists for the most commonly used hash functions
-// These are designed to be used with the RSA PKCS1 functions below
-// When generating a signature we use the first OID in the list, but when
-// verifying a signature we allow any of the OIDs in the provided list.
-// This ensures compatibility with other implementations.
-//
-
-#define SYMCRYPT_MD5_OID_COUNT         (2)
-extern const SYMCRYPT_OID SymCryptMd5OidList[SYMCRYPT_MD5_OID_COUNT];
-
-#define SYMCRYPT_SHA1_OID_COUNT        (2)
-extern const SYMCRYPT_OID SymCryptSha1OidList[SYMCRYPT_SHA1_OID_COUNT];
-
-#define SYMCRYPT_SHA224_OID_COUNT      (2)
-extern const SYMCRYPT_OID SymCryptSha224OidList[SYMCRYPT_SHA224_OID_COUNT];
-
-#define SYMCRYPT_SHA256_OID_COUNT      (2)
-extern const SYMCRYPT_OID SymCryptSha256OidList[SYMCRYPT_SHA256_OID_COUNT];
-
-#define SYMCRYPT_SHA384_OID_COUNT      (2)
-extern const SYMCRYPT_OID SymCryptSha384OidList[SYMCRYPT_SHA384_OID_COUNT];
-
-#define SYMCRYPT_SHA512_224_OID_COUNT      (2)
-extern const SYMCRYPT_OID SymCryptSha512_224OidList[SYMCRYPT_SHA512_224_OID_COUNT];
-
-#define SYMCRYPT_SHA512_256_OID_COUNT      (2)
-extern const SYMCRYPT_OID SymCryptSha512_256OidList[SYMCRYPT_SHA512_256_OID_COUNT];
-
-#define SYMCRYPT_SHA512_OID_COUNT      (2)
-extern const SYMCRYPT_OID SymCryptSha512OidList[SYMCRYPT_SHA512_OID_COUNT];
-
-#define SYMCRYPT_SHA3_224_OID_COUNT      (2)
-extern const SYMCRYPT_OID SymCryptSha3_224OidList[SYMCRYPT_SHA3_224_OID_COUNT];
-
-#define SYMCRYPT_SHA3_256_OID_COUNT      (2)
-extern const SYMCRYPT_OID SymCryptSha3_256OidList[SYMCRYPT_SHA3_256_OID_COUNT];
-
-#define SYMCRYPT_SHA3_384_OID_COUNT      (2)
-extern const SYMCRYPT_OID SymCryptSha3_384OidList[SYMCRYPT_SHA3_384_OID_COUNT];
-
-#define SYMCRYPT_SHA3_512_OID_COUNT      (2)
-extern const SYMCRYPT_OID SymCryptSha3_512OidList[SYMCRYPT_SHA3_512_OID_COUNT];
-
 //
 // SYMCRYPT_FLAG_RSA_PKCS1_NO_ASN1: For RSA PKCS1 to not use the OID on signing or verifying.
 //
@@ -9908,16 +9857,15 @@ SymCryptLmsSelftest(void);
 
 // MLKEM key formats
 // ==================
-//  -   The below formats apply **only to external formats**: When somebody is
-//      importing a key (from test vectors, for example) or exporting a key.
-//      The internal format of the keys is not visible to the caller.
+// The below formats apply **only to external formats**: When somebody is importing or exporting
+// a key. The internal format of the keys is not visible to the caller.
 typedef enum _SYMCRYPT_MLKEMKEY_FORMAT {
     SYMCRYPT_MLKEMKEY_FORMAT_NULL               = 0,
     SYMCRYPT_MLKEMKEY_FORMAT_PRIVATE_SEED       = 1,
         // 64-byte concatenation of d || z from FIPS 203. Smallest representation of a full
         // ML-KEM key.
-        // On its own it is ambiguous what type of ML-KEM key this represents; callers wanting to
-        // store this format must track the key type alongside the key.
+        // On its own it is ambiguous which ML-KEM parameter set this represents; callers wanting to
+        // store this format must track the parameter set alongside the key.
     SYMCRYPT_MLKEMKEY_FORMAT_DECAPSULATION_KEY  = 2,
         // Standard byte encoding of an ML-KEM Decapsulation key, per FIPS 203.
         // Size is 1632, 2400, or 3168 bytes for ML-KEM 512, 768, and 1024 respectively.
@@ -10116,19 +10064,340 @@ SymCryptMlKemSelftest(void);
 // keys with FIPS validation, so most callers should never use this function.
 //
 
+////////////////////////////////////////////////////////////
+// Module-Lattice-Based Digital Signature Algorithm (ML-DSA)
+////////////////////////////////////////////////////////////
+
+// Maximum length of the context string used in signing and verification
+#define SYMCRYPT_MLDSA_CONTEXT_MAX_LENGTH   (255)
+
+// ML-DSA key formats
+// ==================
+// The below formats apply **only to external formats**: When somebody is importing or exporting
+// a key. The internal format of the keys is not visible to the caller.
+typedef enum _SYMCRYPT_MLDSAKEY_FORMAT {
+    SYMCRYPT_MLDSAKEY_FORMAT_NULL               = 0,
+    SYMCRYPT_MLDSAKEY_FORMAT_PRIVATE_SEED        = 1,
+        // 32-byte private root seed xi from which all other parameters can be derived.
+        // On its own it is ambiguous which ML-DSA parameter set this represents; callers wanting to
+        // store this format must track the parameter set alongside the key.
+    SYMCRYPT_MLDSAKEY_FORMAT_PRIVATE_KEY        = 2,
+        // Standard byte encoding of an ML-DSA private key, per FIPS 204.
+        // Size is 2560, 4032, or 4896 bytes for ML-DSA 44, 65, and 87 respectively.
+    SYMCRYPT_MLDSAKEY_FORMAT_PUBLIC_KEY         = 3,
+        // Standard byte encoding of an ML-DSA public key, per FIPS 204.
+        // Size is 1312, 1952, or 2592 bytes for ML-DSA 44, 65, and 87 respectively.
+} SYMCRYPT_MLDSAKEY_FORMAT;
+
+typedef enum _SYMCRYPT_MLDSA_PARAMS {
+    SYMCRYPT_MLDSA_PARAMS_NULL                  = 0,
+    SYMCRYPT_MLDSA_PARAMS_MLDSA44               = 1,
+    SYMCRYPT_MLDSA_PARAMS_MLDSA65               = 2,
+    SYMCRYPT_MLDSA_PARAMS_MLDSA87               = 3,
+} SYMCRYPT_MLDSA_PARAMS;
+// Currently supported ML-DSA parameter sets are represented externally only by the enum
+
+typedef enum _SYMCRYPT_PQDSA_HASH_ID {
+    SYMCRYPT_PQDSA_HASH_ID_NULL                = 0,
+    SYMCRYPT_PQDSA_HASH_ID_SHA256              = 1,
+    SYMCRYPT_PQDSA_HASH_ID_SHA384              = 2,
+    SYMCRYPT_PQDSA_HASH_ID_SHA512              = 3,
+    SYMCRYPT_PQDSA_HASH_ID_SHA512_256          = 4,
+    SYMCRYPT_PQDSA_HASH_ID_SHA3_256            = 5,
+    SYMCRYPT_PQDSA_HASH_ID_SHA3_384            = 6,
+    SYMCRYPT_PQDSA_HASH_ID_SHA3_512            = 7,
+    SYMCRYPT_PQDSA_HASH_ID_SHAKE128            = 8,
+    SYMCRYPT_PQDSA_HASH_ID_SHAKE256            = 9,
+} SYMCRYPT_PQDSA_HASH_ID;
+// Supported hash algorithms for use with Hash-ML-DSA
+
+//========================================================================
+// MLDSAKEY objects' API
 //
-// SymCryptFatal
+
+SYMCRYPT_ERROR
+SYMCRYPT_CALL
+SymCryptMlDsaSizeofKeyFormatFromParams(
+            SYMCRYPT_MLDSA_PARAMS       params,
+            SYMCRYPT_MLDSAKEY_FORMAT    mlDsakeyFormat,
+    _Out_   SIZE_T*                     pcbKeyFormat );
 //
-// Call the Fatal routine passed to the library upon initialization
+// Gives the size in bytes of the blob of the given format for the given ML-DSA
+// parameters and the specified format via pcbKeyFormat output.
 //
+// Return values:
+// - SYMCRYPT_NO_ERROR on success.
+// - SYMCRYPT_INCOMPATIBLE_FORMAT if mlDsakeyFormat is an unsupported value.
+// - SYMCRYPT_INVALID_ARGUMENT if other parameters are invalid.
+//
+
+#define SYMCRYPT_MLDSA_SIGNATURE_SIZE_MLDSA44    (2420)
+#define SYMCRYPT_MLDSA_SIGNATURE_SIZE_MLDSA65    (3309)
+#define SYMCRYPT_MLDSA_SIGNATURE_SIZE_MLDSA87    (4627)
+
+SYMCRYPT_ERROR
+SYMCRYPT_CALL
+SymCryptMlDsaSizeofSignatureFromParams(
+            SYMCRYPT_MLDSA_PARAMS       params,
+    _Out_   SIZE_T*                     pcbSignature );
+//
+// Gives the size in bytes of the signature for the given ML-DSA parameters.
+//
+// Return values:
+// - SYMCRYPT_NO_ERROR on success.
+// - SYMCRYPT_INVALID_ARGUMENT if parameters are invalid.
+//
+
+_Success_( return != NULL )
+PSYMCRYPT_MLDSAKEY
+SYMCRYPT_CALL
+SymCryptMlDsakeyAllocate(
+            SYMCRYPT_MLDSA_PARAMS       params );
+//
+// Allocate a new ML-DSA key object sized according to the parameters.
+//
+// This call does not generate key material. It should be followed by a call to
+// SymCryptMlDsakeyGenerate or SymCryptMlDsakeySetValue.
+//
+// May return NULL if memory allocation fails.
+//
+
+VOID
+SYMCRYPT_CALL
+SymCryptMlDsakeyFree(
+    _Post_invalid_  PSYMCRYPT_MLDSAKEY  pkMlDsakey );
+//
+// Free an ML-DSA key object that was allocated with SymCryptMlDsakeyAllocate.
+//
+
+SYMCRYPT_ERROR
+SYMCRYPT_CALL
+SymCryptMlDsakeyGenerate(
+    _Inout_     PSYMCRYPT_MLDSAKEY      pkMlDsakey,
+                UINT32                  flags );
+//
+// Generate a new random ML-DSA key using the information from the
+// parameters passed to SymCryptMlDsakeyAllocate.
+//
+// Parameters:
+// - pkMlDsakey: a pointer to an ML-DSA key object allocated with SymCryptMlDsakeyAllocate
+// - flags: no flags are currently defined; must be set to 0
+//
+// Return values:
+// - SYMCRYPT_NO_ERROR on success.
+// - SYMCRYPT_MEMORY_ALLOCATION_FAILURE if memory allocation fails.
+//
+
+SYMCRYPT_ERROR
+SYMCRYPT_CALL
+SymCryptMlDsakeySetValue(
+    _In_reads_bytes_( cbSrc )   PCBYTE                      pbSrc,
+                                SIZE_T                      cbSrc,
+                                SYMCRYPT_MLDSAKEY_FORMAT    mlDsakeyFormat,
+                                UINT32                      flags,
+    _Inout_                     PSYMCRYPT_MLDSAKEY          pkMlDsakey );
+//
+// Import key material to an ML-DSA key object from a byte blob.
+//
+// Parameters:
+// - (pbSrc, cbSrc): a buffer containing a representation of an ML-DSA key, in the format specified
+//   by the format parameter.
+// - mlDsakeyFormat: format of the input
+// - flags: no flags are currently defined; must be set to 0
+// - pkMlDsakey: a pointer to an ML-DSA key object allocated with SymCryptMlDsakeyAllocate.
+//
+// Remarks:
+// - cbSrc must be equal to the cbKeyFormat returned from
+//   SymCryptMlDsaSizeofKeyFormatFromParams(params, format, &cbKeyFormat), though typically this
+//   value can be known statically (see definition of SYMCRYPT_MLDSAKEY_FORMAT)
+//
+// Return values:
+// - SYMCRYPT_NO_ERROR on success.
+// - SYMCRYPT_INCOMPATIBLE_FORMAT if the key format is invalid.
+// - SYMCRYPT_INVALID_ARGUMENT if other arguments are invalid.
+// - SYMCRYPT_WRONG_KEY_SIZE if cbSrc does not match the expected size for the key format.
+// - SYMCRYPT_INVALID_BLOB if the encoded key is invalid.
+// - SYMCRYPT_MEMORY_ALLOCATION_FAILURE if memory allocation fails.
+//
+
+SYMCRYPT_ERROR
+SYMCRYPT_CALL
+SymCryptMlDsakeyGetValue(
+    _In_                        PCSYMCRYPT_MLDSAKEY         pkMlDsakey,
+    _Out_writes_bytes_( cbDst ) PBYTE                       pbDst,
+                                SIZE_T                      cbDst,
+                                SYMCRYPT_MLDSAKEY_FORMAT    mlDsakeyFormat,
+                                UINT32                      flags );
+//
+// Export key material from an ML-DSA key object to a byte blob.
+//
+// Parameters:
+// - pkMlDsakey: pointer to a valid ML-DSA key object.
+// - (pbDst, cbDst): buffer for the exported ML-DSA key, in the format specified by the format
+//   parameter.
+// - mlDsakeyFormat: format of the output
+// - flags: no flags are currently defined; must be set to 0
+//
+// Return values:
+// - SYMCRYPT_NO_ERROR on success.
+// - SYMCRYPT_INCOMPATIBLE_FORMAT if the key object does not have the information required to export
+//   the format specified by mlDsakeyFormat.
+// - SYMCRYPT_INVALID_ARGUMENT if the output buffer size or other arguments are incorrect.
+//
+// Remarks:
+// - cbDst must be equal to the cbKeyFormat returned from
+//   SymCryptMlDsaSizeofKeyFormatFromParams(params, format, &cbKeyFormat), though typically this
+//   value can be known statically (see definition of SYMCRYPT_MLDSAKEY_FORMAT)
+//
+
+SYMCRYPT_ERROR
+SYMCRYPT_CALL
+SymCryptMlDsaSign(
+    _In_                                                PCSYMCRYPT_MLDSAKEY pkMlDsakey,
+    _In_reads_bytes_( cbMessage )                       PCBYTE              pbMessage,
+                                                        SIZE_T              cbMessage,
+    _In_reads_bytes_opt_( cbContext )                   PCBYTE              pbContext,
+    _In_range_( 0, SYMCRYPT_MLDSA_CONTEXT_MAX_LENGTH )  SIZE_T              cbContext,
+                                                        UINT32              flags,
+    _Out_writes_bytes_( cbSignature )                   PBYTE               pbSignature,
+                                                        SIZE_T              cbSignature );
+//
+// Sign a message using "pure" ML-DSA. The message can be of arbitrary length.
+//
+// Parameters:
+// - pkMlDsakey: an ML-DSA key object. Must contain the private key material.
+// - (pbMessage, cbMessage): the message to sign. May be of arbitrary length.
+// - (pbContext, cbContext): an optional context string which will be included in the message
+//   representative to be signed. Length must be <= SYMCRYPT_MLDSA_CONTEXT_MAX_LENGTH.
+// - flags: no flags are currently defined; must be set to 0
+// - (pbSignature, cbSignature): the buffer into which the signature is written.
+//
+// Return values:
+// - SYMCRYPT_NO_ERROR on success.
+// - SYMCRYPT_INVALID_ARGUMENT if the key object does not contain a private key, or if other
+//   parameters are invalid.
+// - SYMCRYPT_MEMORY_ALLOCATION_FAILURE if memory allocation fails.
+//
+// Remarks:
+//   cbSignature must be equal to the cbKeyFormat returned from
+//   SymCryptMlDsaSizeofSignatureFromParams( params, &cbSignature ), though typically this
+//   value can be known statically (see definition of SYMCRYPT_MLDSA_SIGNATURE_SIZE_*).
+//
+
+SYMCRYPT_ERROR
+SYMCRYPT_CALL
+SymCryptHashMlDsaSign(
+    _In_                                                PCSYMCRYPT_MLDSAKEY     pkMlDsakey,
+                                                        SYMCRYPT_PQDSA_HASH_ID  hashAlg,
+    _In_reads_bytes_( cbHash )                          PCBYTE                  pbHash,
+                                                        SIZE_T                  cbHash,
+    _In_reads_bytes_opt_( cbContext )                   PCBYTE                  pbContext,
+    _In_range_( 0, SYMCRYPT_MLDSA_CONTEXT_MAX_LENGTH )  SIZE_T                  cbContext,
+                                                        UINT32                  flags,
+    _Out_writes_bytes_( cbSignature )                   PBYTE                   pbSignature,
+                                                        SIZE_T                  cbSignature );
+//
+// Sign a message using "pre-hash" ML-DSA. The caller precomputes the hash of the message.
+//
+// Parameters:
+// - hashAlg: the ID of the hash algorithm used to compute pbHash.
+// - (pbHash, cbHash): the hash of the message to sign.
+// - All other parameters are the same as for SymCryptMlDsaSign.
+//
+// Return values:
+// - SYMCRYPT_NO_ERROR on success.
+// - SYMCRYPT_INVALID_ARGUMENT if the key object does not contain a private key, or if other
+//   parameters are invalid.
+// - SYMCRYPT_MEMORY_ALLOCATION_FAILURE if memory allocation fails.
+//
+// Remarks:
+//   The hash algorithm provided must meet the minimum required collision strength defined for the
+//   chosen ML-DSA parameter set. This is the lambda parameter in FIPS 204. This means that the
+//   following hash algorithms are supported:
+//
+//   ML-DSA-44 (lambda = 128): SHA-256, SHA-384, SHA-512, SHA-512/256, SHA3-256, SHA3-384, SHA3-512, SHAKE128, SHAKE256
+//   ML-DSA-65 (lambda = 192): SHA-384, SHA-512, SHA3-384, SHA3-512, SHAKE256
+//   ML-DSA-87 (lambda = 256): SHA-512, SHA3-512, SHAKE256
+//
+//   Additionally, cbHash must match the output length of the hash algorithm. 
+//   For XOFs, the any output length >= the minimum collision strength is acceptable. If this
+//   requirement is not met, the function returns SYMCRYPT_INVALID_ARGUMENT.
+//
+//   As with SymCryptMlDsaSign, cbSignature must be equal to the cbKeyFormat returned from
+//   SymCryptMlDsaSizeofSignatureFromParams( params, &cbSignature ), though typically this
+//   value can be known statically (see definition of SYMCRYPT_MLDSA_SIGNATURE_SIZE_*).
+//
+
+SYMCRYPT_ERROR
+SYMCRYPT_CALL
+SymCryptMlDsaVerify(
+    _In_                                                PCSYMCRYPT_MLDSAKEY pkMlDsakey,
+    _In_reads_bytes_( cbMessage )                       PCBYTE              pbMessage,
+                                                        SIZE_T              cbMessage,
+    _In_reads_bytes_opt_( cbContext )                   PCBYTE              pbContext,
+    _In_range_( 0, SYMCRYPT_MLDSA_CONTEXT_MAX_LENGTH )  SIZE_T              cbContext,
+    _In_reads_bytes_( cbSignature )                     PCBYTE              pbSignature,
+                                                        SIZE_T              cbSignature,
+                                                        UINT32              flags );
+//
+// Verify a signature using "pure" ML-DSA. The message can be of arbitrary length.
+//
+// Parameters:
+// - pkMlDsakey: the ML-DSA key object used to verify the signature.
+// - (pbMessage, cbMessage): the message that the signature was generated from.
+// - (pbContext, cbContext): an optional context string which will be included in the message
+//   representative to be signed. Length must be <= SYMCRYPT_MLDSA_CONTEXT_MAX_LENGTH.
+// - (pbSignature, cbSignature): the signature to verify.
+// - flags: no flags are currently defined; must be set to 0
+//
+// Return values:
+// - SYMCRYPT_NO_ERROR if the signature was verified successfully.
+// - SYMCRYPT_SIGNATURE_VERIFICATION_FAILURE if the signature is invalid.
+// - SYMCRYPT_INVALID_ARGUMENT if the parameters are invalid.
+
+SYMCRYPT_ERROR
+SYMCRYPT_CALL
+SymCryptHashMlDsaVerify(
+    _In_                                                PCSYMCRYPT_MLDSAKEY     pkMlDsakey,
+                                                        SYMCRYPT_PQDSA_HASH_ID  hashAlg,
+    _In_reads_bytes_( cbHash )                          PCBYTE                  pbHash,
+                                                        SIZE_T                  cbHash,
+    _In_reads_bytes_opt_( cbContext )                   PCBYTE                  pbContext,
+    _In_range_( 0, SYMCRYPT_MLDSA_CONTEXT_MAX_LENGTH )  SIZE_T                  cbContext,
+    _In_reads_bytes_( cbSignature )                     PCBYTE                  pbSignature,
+                                                        SIZE_T                  cbSignature,
+                                                        UINT32                  flags );
+//
+// Verify a signature using "pre-hash" ML-DSA. The caller precomputes the hash of the message.
+//
+// Parameters:
+// - hashAlg: the ID of the hash algorithm used to compute pbHash.
+// - (pbHash, cbHash): the hash of the message that the signature was generated from.
+// - All other parameters are the same as for SymCryptMlDsaVerify.
+//
+// Return values:
+// - SYMCRYPT_NO_ERROR if the signature was validated successfully.
+// - SYMCRYPT_SIGNATURE_VERIFICATION_FAILURE if the signature is invalid.
+// - SYMCRYPT_INVALID_ARGUMENT if the parameters are invalid.
+//
+// Remarks:
+//   See the remarks for SymCryptHashMlDsaSign regarding the required security strength of the hash
+//   algorithm. For unsupported hash algorithms, the function will return SYMCRYPT_INVALID_ARGUMENT.
+
+VOID
+SYMCRYPT_CALL
+SymCryptMlDsaSelftest( void );
+//
+// FIPS selftest for ML-DSA
+//
+
 _Analysis_noreturn_
 VOID
 SYMCRYPT_CALL
-SymCryptFatal(UINT32 fatalCode);
-
+SymCryptFatal( UINT32 fatalCode );
 //
-// We use an ASSERT macro to catch problems in CHKed builds
-// HARD_ASSERT checks also in FRE builds.
+// Call the Fatal routine passed to the library upon initialization
+// We use the SYMCRYPT_ASSERT macro to catch problems in Debug builds
 //
 
 

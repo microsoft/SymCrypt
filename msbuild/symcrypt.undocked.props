@@ -46,6 +46,7 @@
   <ItemDefinitionGroup Condition="'$(Configuration)|$(UndockedOfficial)'=='Debug|true'">
     <ClCompile>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
+      <PreprocessorDefinitions>DBG=1;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(UndockedOfficial)'=='Release|true'">
@@ -56,6 +57,7 @@
   <ItemDefinitionGroup Condition="'$(Configuration)|$(UndockedOfficial)'=='Debug|false'">
     <ClCompile>
       <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
+      <PreprocessorDefinitions>DBG=1;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(UndockedOfficial)'=='Release|false'">
@@ -82,6 +84,12 @@
   <PropertyGroup Condition="'$(Platform)'=='ARM64' OR '$(Platform)'=='ARM64EC'">
     <CppAsmArch>SYMCRYPT_CPU_ARM64</CppAsmArch>
   </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)'=='Debug'">
+    <CppAsmDbg>/DDBG=1</CppAsmDbg>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)'!='Debug'">
+    <CppAsmDbg></CppAsmDbg>
+  </PropertyGroup>
 
   <!-- Preprocess SymCryptAsm into CppAsm -->
   <Target Name="ProcessSymCryptAsm" BeforeTargets="_MASM;_MARMASM" Condition="'@(SymCryptAsm)' != ''">
@@ -102,9 +110,9 @@
   <Target Name="ProcessCppAsm" AfterTargets="ProcessSymcryptAsm" Condition="'@(CppAsm)' != ''">
     <MakeDir Directories="$(IntDir)" />
     <Message Importance="high" Text="Processing CppAsm" />
-    <Exec Command="cl.exe /EP /P /I..\inc /I.\ /D$(CppAsmArch) /DSYMCRYPT_MASM /Fi&quot;$(IntDir)%(CppAsm.Filename).asm&quot; &quot;%(CppAsm.Identity)&quot;" Condition="'%(CppAsm.Convention)' != 'arm64ec'"/>
+    <Exec Command="cl.exe /EP /P /I..\inc /I.\ $(CppAsmDbg) /D$(CppAsmArch) /DSYMCRYPT_MASM /Fi&quot;$(IntDir)%(CppAsm.Filename).asm&quot; &quot;%(CppAsm.Identity)&quot;" Condition="'%(CppAsm.Convention)' != 'arm64ec'"/>
     <!-- Special case for ARM64EC -->
-    <Exec Command="cl.exe /EP /P /I..\inc /I.\ /D$(CppAsmArch) /D_M_ARM64EC /DSYMCRYPT_MASM /Fi&quot;$(IntDir)%(CppAsm.Filename).asm&quot; &quot;%(CppAsm.Identity)&quot;" Condition="'%(CppAsm.Convention)' == 'arm64ec'"/>
+    <Exec Command="cl.exe /EP /P /I..\inc /I.\ $(CppAsmDbg) /D$(CppAsmArch) /D_M_ARM64EC /DSYMCRYPT_MASM /Fi&quot;$(IntDir)%(CppAsm.Filename).asm&quot; &quot;%(CppAsm.Identity)&quot;" Condition="'%(CppAsm.Convention)' == 'arm64ec'"/>
     <ItemGroup Condition="'$(Platform)'=='x64' OR '$(Platform)'=='Win32'">
       <MASM Include="$(IntDir)%(CppAsm.Filename).asm" />
     </ItemGroup>

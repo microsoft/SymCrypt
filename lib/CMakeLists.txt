@@ -73,6 +73,8 @@ set(SOURCES_COMMON
     md2.c
     md4.c
     md5.c
+    mldsa.c
+    mldsa_primitives.c
     mlkem.c
     mlkem_primitives.c
     modexp.c

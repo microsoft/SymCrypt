@@ -167,6 +167,8 @@ EXPORTS
 ;    SymCryptHashAppend
 ;    SymCryptHashInit
 ;    SymCryptHashInputBlockSize
+;    SymCryptHashMlDsaSign
+;    SymCryptHashMlDsaVerify
 ;    SymCryptHashResult
 ;    SymCryptHashResultSize
 ;    SymCryptHashStateSize
@@ -364,6 +366,16 @@ EXPORTS
 ;    SymCryptMd5StateCopy
 ;    SymCryptMd5StateExport
 ;    SymCryptMd5StateImport
+;    SymCryptMlDsakeyAllocate
+;    SymCryptMlDsakeyFree
+;    SymCryptMlDsakeyGenerate
+;    SymCryptMlDsakeyGetValue
+;    SymCryptMlDsakeySetValue
+;    SymCryptMlDsaSelftest
+;    SymCryptMlDsaSign
+;    SymCryptMlDsaSizeofKeyFormatFromParams
+;    SymCryptMlDsaSizeofSignatureFromParams
+;    SymCryptMlDsaVerify
 ;    SymCryptMlKemDecapsulate
 ;    SymCryptMlKemEncapsulate
 ;    SymCryptMlKemkeyAllocate

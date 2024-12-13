@@ -419,7 +419,6 @@ KemMultiImp::getBlobFromKey(
     
     CHECK( cbBlob < sizeof( abBlob ), "Buffer too small" );
     
-    // Process result as MSBfirst array to get errors to print correctly.
     for( ImpPtrVector::iterator i = m_comps.begin(); i != m_comps.end(); ++i )
     {
         memset( abBlob, 'b', cbBlob + 1 );
@@ -448,8 +447,8 @@ KemMultiImp::encapsulate(
                                                 SIZE_T              cbCiphertext )
 {
     // Encapsulation is not deterministic, so we do the following:
-    // - Have every implementation sign
-    // - Have every implementation verify each signature
+    // - Have every implementation encapsulate
+    // - Have every implementation decapsulate each ciphertext
     // - return a random encapsulation
     BYTE abEncapsAgreedSecret[33];
     BYTE abEncapsCiphertext[1569];
@@ -519,7 +518,6 @@ KemMultiImp::encapsulateEx(
     CHECK( cbAgreedSecret < sizeof( abEncapsAgreedSecret ), "Buffer too small" );
     CHECK( cbCiphertext   < sizeof( abEncapsCiphertext ), "Buffer too small" );
     
-    // Process result as MSBfirst array to get errors to print correctly.
     for( ImpPtrVector::iterator i = m_comps.begin(); i != m_comps.end(); ++i )
     {
         memset( abEncapsAgreedSecret, 'd', cbAgreedSecret + 1 );
@@ -561,7 +559,6 @@ KemMultiImp::decapsulate(
     CHECK( cbAgreedSecret < sizeof( abDecapsAgreedSecret ), "Buffer too small" );
     CHECK( m_canDecapsulate, "Attempt to decapsulate with a key that does not support it" );
     
-    // Process result as MSBfirst array to get errors to print correctly.
     for( ImpPtrVector::iterator i = m_comps.begin(); i != m_comps.end(); ++i )
     {
         memset( abDecapsAgreedSecret, 'd', cbAgreedSecret + 1 );
@@ -570,6 +567,7 @@ KemMultiImp::decapsulate(
             abDecapsAgreedSecret, cbAgreedSecret );
         CHECK( abDecapsAgreedSecret[ cbAgreedSecret ] == 'd', "?" );
 
+        // Process result as MSBfirst array to get errors to print correctly.
         SYMCRYPT_STORE_MSBFIRST32( b, ntStatus );
         resStatus.addResult( *i, b, 4 );
         resAgreedSecret.addResult( (*i), abDecapsAgreedSecret, cbAgreedSecret );

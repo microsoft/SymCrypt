@@ -5,14 +5,14 @@
 //
 
 //
-// This header file suppresses all SAL annotation for use in
-// environments without SAL, such as iOS or Android.
+// This header file suppresses all SAL annotation for use in compilers other than MSVC.
 //
 
 #define _Success_(x)
 #define _Analysis_noreturn_
 #define _Analysis_assume_(x)
 #define __analysis_assume(x)
+#define _When_(x,y)
 
 #define _Use_decl_annotations_
 
@@ -47,8 +47,15 @@
 #define _Inout_updates_opt_(x)
 
 #define _Field_size_(x)
+#define _Field_size_bytes_(x)
 #define _Field_range_(x,y)
 
 #define _Ret_range_(x,y)
 
 #define _Must_inspect_result_
+
+#define _Struct_size_bytes_(x)
+
+#define _Post_invalid_
+
+#define __fallthrough

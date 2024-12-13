@@ -683,3 +683,19 @@ VERSION_103.6
       SymCryptSha512_256StateExport;
       SymCryptSha512_256StateImport;
 } VERSION_103.5;
+VERSION_103.7
+{
+   global:
+      SymCryptHashMlDsaSign;
+      SymCryptHashMlDsaVerify;
+      SymCryptMlDsakeyAllocate;
+      SymCryptMlDsakeyFree;
+      SymCryptMlDsakeyGenerate;
+      SymCryptMlDsakeyGetValue;
+      SymCryptMlDsakeySetValue;
+      SymCryptMlDsaSelftest;
+      SymCryptMlDsaSign;
+      SymCryptMlDsaSizeofKeyFormatFromParams;
+      SymCryptMlDsaSizeofSignatureFromParams;
+      SymCryptMlDsaVerify;
+} VERSION_103.6;

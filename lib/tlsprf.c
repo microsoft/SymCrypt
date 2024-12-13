@@ -91,7 +91,7 @@ SymCryptTlsPrf1_1ExpandKey(
     //      read twice (when the key length is odd). This violates
     //      the standard rule that input data should only be read
     //      once. In this case, we do this for the following reasons:
-    //      -   Avoiding the dual-read is difficult; we’d have to buffer
+    //      -   Avoiding the dual-read is difficult; we'd have to buffer
     //          an arbitrary-size input, and SymCrypt avoids memory
     //          allocations for symmetric algorithms.
     //      -   The dual-reading of inputs is a problem when the

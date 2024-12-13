@@ -862,21 +862,163 @@ public:
                                 SIZE_T  cbSig ) = 0;
 };
 
-// RsaImplementation class is only used for performance measurements of RSA
-/*
-class RsaImplementation: public AlgorithmImplementation
+#define SYMCRYPT_TEST_MLDSA_MAX_KEY_SIZE (4896) // Maximum size of an encoded ML-DSA private + public key - see SymCryptMlDsaInternalParams87
+#define SYMCRYPT_TEST_MLDSA_MAX_SIG_SIZE SYMCRYPT_MLDSA_SIGNATURE_SIZE_MLDSA87
+
+typedef struct _MLDSAKEY_TESTBLOB {
+    SYMCRYPT_MLDSA_PARAMS    params;
+    SYMCRYPT_MLDSAKEY_FORMAT format;
+    BYTE                     abKeyBlob[SYMCRYPT_TEST_MLDSA_MAX_KEY_SIZE];
+    SIZE_T                   cbKeyBlob;
+} MLDSAKEY_TESTBLOB, *PMLDSAKEY_TESTBLOB;
+typedef const MLDSAKEY_TESTBLOB * PCMLDSAKEY_TESTBLOB;
+
+typedef union _PQDSAKEY_TESTBLOB {
+    MLDSAKEY_TESTBLOB   mlDsakey;
+} PQDSAKEY_TESTBLOB, *PPQDSAKEY_TESTBLOB;
+typedef const PQDSAKEY_TESTBLOB * PCPQDSAKEY_TESTBLOB;
+
+// AlgorithmImplementation base class for post-quantum digital signatures algorithms, such as
+// ML-DSA and SLH-DSA
+class PqDsaImplementation : public AlgorithmImplementation
 {
 public:
-    RsaImplementation() {};
-    virtual ~RsaImplementation() {};
+    PqDsaImplementation() = default;
+    virtual ~PqDsaImplementation() = default;
 
 private:
-    RsaImplementation( const RsaImplementation & );
-    VOID operator=( const RsaImplementation & );
+    PqDsaImplementation (const PqDsaImplementation&) = delete;
+    VOID operator= (const PqDsaImplementation&) = delete;
 
 public:
+    virtual NTSTATUS setKey(
+        _In_                    PCPQDSAKEY_TESTBLOB pcKeyBlob ) = 0;
+
+    virtual NTSTATUS getBlobFromKey(
+                                UINT32              keyFormat,
+        _Out_writes_( cbBlob )  PBYTE               pbBlob,
+                                SIZE_T              cbBlob ) = 0;
+
+    virtual NTSTATUS sign(
+        _In_reads_bytes_( cbInput )                         PCBYTE                  pbInput,
+                                                            SIZE_T                  cbInput,
+        _In_reads_bytes_opt_( cbContext )                   PCBYTE                  pbContext,
+        _In_range_( 0, SYMCRYPT_MLDSA_CONTEXT_MAX_LENGTH )  SIZE_T                  cbContext,
+        _Out_writes_bytes_( cbSignature )                   PBYTE                   pbSignature,
+                                                            SIZE_T                  cbSignature ) = 0;
+
+    virtual NTSTATUS signHash(
+                                                            SYMCRYPT_PQDSA_HASH_ID  hashId,
+        _In_reads_bytes_( cbHash )                          PCBYTE                  pbHash,
+                                                            SIZE_T                  cbHash,
+        _In_reads_bytes_opt_( cbContext )                   PCBYTE                  pbContext,
+        _In_range_( 0, SYMCRYPT_MLDSA_CONTEXT_MAX_LENGTH )  SIZE_T                  cbContext,
+        _Out_writes_bytes_( cbSignature )                   PBYTE                   pbSignature,
+                                                            SIZE_T                  cbSignature ) = 0;
+
+    virtual NTSTATUS signEx(
+                                                            SYMCRYPT_PQDSA_HASH_ID  hashId,
+        _In_reads_bytes_( cbInput )                         PCBYTE                  pbInput,
+                                                            SIZE_T                  cbInput,
+        _In_reads_bytes_opt_( cbContext )                   PCBYTE                  pbContext,
+        _In_range_( 0, SYMCRYPT_MLDSA_CONTEXT_MAX_LENGTH )  SIZE_T                  cbContext,
+        _In_reads_bytes_( cbRandom )                        PCBYTE                  pbRandom,
+                                                            SIZE_T                  cbRandom,
+        _Out_writes_bytes_( cbSignature )                   PBYTE                   pbSignature,
+                                                            SIZE_T                  cbSignature ) = 0;
+
+    virtual NTSTATUS verify(
+        _In_reads_bytes_( cbMessage )                       PCBYTE                  pbMessage,
+                                                            SIZE_T                  cbMessage,
+        _In_reads_bytes_opt_( cbContext )                   PCBYTE                  pbContext,
+        _In_range_( 0, SYMCRYPT_MLDSA_CONTEXT_MAX_LENGTH )  SIZE_T                  cbContext,
+        _In_reads_bytes_( cbSignature )                     PCBYTE                  pbSignature,
+                                                            SIZE_T                  cbSignature ) = 0;
+
+    virtual NTSTATUS verifyHash(
+                                                            SYMCRYPT_PQDSA_HASH_ID  hashId,
+        _In_reads_bytes_( cbHash )                          PCBYTE                  pbHash,
+                                                            SIZE_T                  cbHash,
+        _In_reads_bytes_opt_( cbContext )                   PCBYTE                  pbContext,
+        _In_range_( 0, SYMCRYPT_MLDSA_CONTEXT_MAX_LENGTH )  SIZE_T                  cbContext,
+        _In_reads_bytes_( cbSignature )                     PCBYTE                  pbSignature,
+                                                            SIZE_T                  cbSignature ) = 0;
 };
-*/
+
+template< class Implementation, class Algorithm> class PqDsaImpState;
+
+template< class Implementation, class Algorithm>
+class PqDsaImp : public PqDsaImplementation
+{
+public:
+    PqDsaImp();
+    virtual ~PqDsaImp() override = default;
+
+private:
+    PqDsaImp (const PqDsaImp&) = delete;
+    VOID operator= (const PqDsaImp&) = delete;
+
+public:
+    static const String s_algName;             // Algorithm name
+    static const String s_modeName;
+    static const String s_impName;             // Implementation name
+
+public:
+    virtual NTSTATUS setKey(
+        _In_                    PCPQDSAKEY_TESTBLOB pcKeyBlob ) override;
+
+    virtual NTSTATUS getBlobFromKey(
+                                UINT32              keyFormat,
+        _Out_writes_( cbBlob )  PBYTE               pbBlob,
+                                SIZE_T              cbBlob ) override;
+
+    virtual NTSTATUS sign(
+        _In_reads_bytes_( cbMessage )                       PCBYTE                  pbMessage,
+                                                            SIZE_T                  cbMessage,
+        _In_reads_bytes_opt_( cbContext )                   PCBYTE                  pbContext,
+        _In_range_( 0, SYMCRYPT_MLDSA_CONTEXT_MAX_LENGTH )  SIZE_T                  cbContext,
+        _Out_writes_bytes_( cbSignature )                   PBYTE                   pbSignature,
+                                                            SIZE_T                  cbSignature ) override;
+
+    virtual NTSTATUS signHash(
+                                                            SYMCRYPT_PQDSA_HASH_ID  hashId,
+        _In_reads_bytes_( cbHash )                          PCBYTE                  pbHash,
+                                                            SIZE_T                  cbHash,
+        _In_reads_bytes_opt_( cbContext )                   PCBYTE                  pbContext,
+        _In_range_( 0, SYMCRYPT_MLDSA_CONTEXT_MAX_LENGTH )  SIZE_T                  cbContext,
+        _Out_writes_bytes_( cbSignature )                   PBYTE                   pbSignature,
+                                                            SIZE_T                  cbSignature ) override;
+
+    virtual NTSTATUS signEx(
+                                                            SYMCRYPT_PQDSA_HASH_ID  hashId,
+        _In_reads_bytes_( cbInput )                         PCBYTE                  pbInput,
+                                                            SIZE_T                  cbInput,
+        _In_reads_bytes_opt_( cbContext )                   PCBYTE                  pbContext,
+        _In_range_( 0, SYMCRYPT_MLDSA_CONTEXT_MAX_LENGTH )  SIZE_T                  cbContext,
+        _In_reads_bytes_( cbRandom )                        PCBYTE                  pbRandom,
+                                                            SIZE_T                  cbRandom,
+        _Out_writes_bytes_( cbSignature )                   PBYTE                   pbSignature,
+                                                            SIZE_T                  cbSignature ) override;
+
+    virtual NTSTATUS verify(
+        _In_reads_bytes_( cbMessage )                       PCBYTE                  pbMessage,
+                                                            SIZE_T                  cbMessage,
+        _In_reads_bytes_opt_( cbContext )                   PCBYTE                  pbContext,
+        _In_range_( 0, SYMCRYPT_MLDSA_CONTEXT_MAX_LENGTH )  SIZE_T                  cbContext,
+        _In_reads_bytes_( cbSignature )                     PCBYTE                  pbSignature,
+                                                            SIZE_T                  cbSignature ) override;
+
+    virtual NTSTATUS verifyHash(
+                                                            SYMCRYPT_PQDSA_HASH_ID  hashId,
+        _In_reads_bytes_( cbHash )                          PCBYTE                  pbHash,
+                                                            SIZE_T                  cbHash,
+        _In_reads_bytes_opt_( cbContext )                   PCBYTE                  pbContext,
+        _In_range_( 0, SYMCRYPT_MLDSA_CONTEXT_MAX_LENGTH )  SIZE_T                  cbContext,
+        _In_reads_bytes_( cbSignature )                     PCBYTE                  pbSignature,
+                                                            SIZE_T                  cbSignature ) override;
+
+    PqDsaImpState<Implementation,Algorithm> state;
+};
 
 // DlImplementation class is only used for performance measurements of Discrete Log group algorithms
 class DlImplementation: public AlgorithmImplementation
@@ -2200,6 +2342,13 @@ template< class Imp, class Alg>
 const String KemImp<Imp,Alg>::s_algName = Alg::name;
 template< class Imp, class Alg>
 const String KemImp<Imp,Alg>::s_modeName;
+
+template< class Imp, class Alg>
+const String PqDsaImp<Imp,Alg>::s_impName = Imp::name;
+template< class Imp, class Alg>
+const String PqDsaImp<Imp,Alg>::s_algName = Alg::name;
+template< class Imp, class Alg>
+const String PqDsaImp<Imp,Alg>::s_modeName;
 
 //
 // Template declaration for performance functions (for those implementations that wish to use them)

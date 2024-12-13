@@ -30,6 +30,7 @@ set(SOURCES
     testPaddingPkcs7.cpp
     testRsaEnc.cpp
     testRsaSign.cpp
+    testPqDsa.cpp
     testScsTable.cpp
     testScsTools.cpp
     testSelftest.cpp

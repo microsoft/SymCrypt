@@ -59,6 +59,7 @@
     <ClCompile Include="testMontgomery.cpp" />
     <ClCompile Include="testMultiThread.cpp" />
     <ClCompile Include="testPaddingPkcs7.cpp" />
+    <ClCompile Include="testPqDsa.cpp" />
     <ClCompile Include="testRsaEnc.cpp" />
     <ClCompile Include="testRsaSign.cpp" />
     <ClCompile Include="testScsTable.cpp" />

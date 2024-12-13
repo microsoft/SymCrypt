@@ -508,3 +508,22 @@ class KemImpState<ImpXxx, AlgMlKem> {
 public:
     PSYMCRYPT_MLKEMKEY  pKey;
 };
+
+template<>
+class PqDsaImpState<ImpXxx, AlgMlDsa> {
+public:
+    PSYMCRYPT_MLDSAKEY  pKey;
+
+    PqDsaImpState() :
+        pKey(nullptr)
+    { }
+
+    ~PqDsaImpState()
+    {
+        if( pKey != nullptr )
+        {
+            SymCryptMlDsakeyFree( pKey );
+            pKey = nullptr;
+        }
+    }
+};
