@@ -57,7 +57,6 @@ SIZE_T  g_modeCfbShiftParam = 1;
 Rng g_rng;
 
 BOOL g_modifiedCpuFeatures = FALSE;
-BOOL g_runKernelmodeTest = FALSE;
 BOOL g_failRegisterSave = FALSE;
 BOOL g_runRsaAverageKeyPerf = FALSE;
 
@@ -465,7 +464,6 @@ usage()
             "                           output of test command with a specific string. This can enable\n"
             "                           easier concatenation of many test runs on differing platforms into\n"
             "                           a single .csv for postprocessing.\n"
-            "  kernel            Run the kernel-mode tests \n"
             "  verbose           Print detailed information for some algorithms\n"
             "  noperftests       Skip running the performance tests - only run functional tests\n"
             "  profile:xxx [key=yyy]    Run one or more algorithms in a tight loop, xxx times for\n"
@@ -731,12 +729,6 @@ processSingleOption( _In_ PSTR option )
             __analysis_assume( strlen(option) >= 11 );
 
             g_measure_sizes_stringPrefix = String( &option[11] );
-            optionHandled = TRUE;
-        }
-
-        if( STRICMP( &option[0], "kernel" ) == 0 )
-        {
-            g_runKernelmodeTest = TRUE;
             optionHandled = TRUE;
         }
 
@@ -1380,7 +1372,7 @@ runFunctionalTests()
 VOID
 runPerfTests()
 {
-    if( g_runKernelmodeTest || g_noPerfTests )
+    if( g_noPerfTests )
     {
         return;
     }

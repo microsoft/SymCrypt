@@ -513,9 +513,11 @@ template<>
 class PqDsaImpState<ImpXxx, AlgMlDsa> {
 public:
     PSYMCRYPT_MLDSAKEY  pKey;
+    SYMCRYPT_MLDSA_PARAMS params;
 
     PqDsaImpState() :
-        pKey(nullptr)
+        pKey(nullptr),
+        params(SYMCRYPT_MLDSA_PARAMS_NULL)
     { }
 
     ~PqDsaImpState()

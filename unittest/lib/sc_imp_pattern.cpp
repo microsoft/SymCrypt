@@ -10487,11 +10487,7 @@ ArithImp<ImpXxx, AlgMlKemkeySetValue>::~ArithImp()
 ////////////////////////////////////////////////////////////////////////////
 
 // Table with the ML-DSA keys' sizes and pointers to keys
-struct {
-    SIZE_T                      keySize;
-    SYMCRYPT_MLDSA_PARAMS       params;
-    PSYMCRYPT_MLDSAKEY          pkMlDsakey;
-} CONCAT2(g_precomputedMlDsaKeys, ImpXxx)[] = {
+SYMCRYPT_PERF_MLDSAKEY CONCAT2(g_precomputedMlDsaKeys, ImpXxx)[] = {
     { PERF_KEY_MLDSA_44,    SYMCRYPT_MLDSA_PARAMS_MLDSA44,  NULL },
     { PERF_KEY_MLDSA_65,    SYMCRYPT_MLDSA_PARAMS_MLDSA65,  NULL },
     { PERF_KEY_MLDSA_87,    SYMCRYPT_MLDSA_PARAMS_MLDSA87,  NULL },
@@ -10526,7 +10522,7 @@ SetupSymCryptMlDsaKey<ImpXxx>( PBYTE pbKey, SIZE_T keySize )
 
     CHECK( bFound, "Invalid ML-DSA parameter set (key size)" );
 
-    *((PSYMCRYPT_MLDSAKEY *) pbKey) = CONCAT2(g_precomputedMlDsaKeys, ImpXxx)[i].pkMlDsakey;
+    *((PSYMCRYPT_PERF_MLDSAKEY *) pbKey) = &(CONCAT2(g_precomputedMlDsaKeys, ImpXxx)[i]);
 }
 
 template<>
@@ -10538,7 +10534,7 @@ algImpKeyPerfFunction<ImpXxx, AlgMlDsa>( PBYTE pbKey, PBYTE buf2, PBYTE buf3, SI
 
     SYMCRYPT_ERROR scError = SYMCRYPT_NO_ERROR;
     SYMCRYPT_MLDSA_PARAMS params = SYMCRYPT_MLDSA_PARAMS_NULL;
-    PSYMCRYPT_MLDSAKEY* ppkMlDsakey = (PSYMCRYPT_MLDSAKEY *) pbKey;
+    PSYMCRYPT_PERF_MLDSAKEY* ppKeyInfo = (PSYMCRYPT_PERF_MLDSAKEY *) pbKey;
 
     switch( keySize )
     {
@@ -10558,7 +10554,7 @@ algImpKeyPerfFunction<ImpXxx, AlgMlDsa>( PBYTE pbKey, PBYTE buf2, PBYTE buf3, SI
 
     SetupSymCryptMlDsaKey<ImpXxx>( pbKey, keySize );
 
-    scError = ScShimSymCryptMlDsakeyGenerate( *ppkMlDsakey, 0 );
+    scError = ScShimSymCryptMlDsakeyGenerate( (*ppKeyInfo)->pkMlDsakey, 0 );
     CHECK( scError == SYMCRYPT_NO_ERROR, "SymCryptMlDsakeyGenerate" );
 }
 
@@ -10567,17 +10563,17 @@ VOID
 algImpDataPerfFunction<ImpXxx, AlgMlDsa>( PBYTE pbKey, PBYTE pbMessage, PBYTE pbSignature, SIZE_T cbData )
 {
     SYMCRYPT_ERROR scError = SYMCRYPT_NO_ERROR;
-    PCSYMCRYPT_MLDSAKEY* ppkMlDsakey = (PCSYMCRYPT_MLDSAKEY*) pbKey;
+    PSYMCRYPT_PERF_MLDSAKEY* ppKeyInfo = (PSYMCRYPT_PERF_MLDSAKEY *) pbKey;
     SIZE_T cbSignature = 0;
     
     scError = ScShimSymCryptMlDsaSizeofSignatureFromParams( 
-        (SYMCRYPT_MLDSA_PARAMS) (*ppkMlDsakey)->pParams->params,
+        (*ppKeyInfo)->params,
         &cbSignature );
     CHECK( scError == SYMCRYPT_NO_ERROR, "SymCryptMlDsaSizeofSignatureFromParams" );
     CHECK( cbSignature <= PERF_BUFFER_SIZE, "Signature buffer too small" );
 
     scError = ScShimSymCryptMlDsaSign(
-        *ppkMlDsakey,
+        (*ppKeyInfo)->pkMlDsakey,
         pbMessage, cbData,
         nullptr, 0, // context
         0, // flags
@@ -10590,17 +10586,17 @@ VOID
 algImpDecryptPerfFunction<ImpXxx, AlgMlDsa>( PBYTE pbKey, PBYTE pbMessage, PBYTE pbSignature, SIZE_T cbData )
 {
     SYMCRYPT_ERROR scError = SYMCRYPT_NO_ERROR;
-    PCSYMCRYPT_MLDSAKEY* ppkMlDsakey = (PCSYMCRYPT_MLDSAKEY*) pbKey;
+    PSYMCRYPT_PERF_MLDSAKEY* ppKeyInfo = (PSYMCRYPT_PERF_MLDSAKEY *) pbKey;
     SIZE_T cbSignature = 0;
     
     scError = ScShimSymCryptMlDsaSizeofSignatureFromParams( 
-        (SYMCRYPT_MLDSA_PARAMS) (*ppkMlDsakey)->pParams->params,
+        (*ppKeyInfo)->params,
         &cbSignature );
     CHECK( scError == SYMCRYPT_NO_ERROR, "SymCryptMlDsaSizeofSignatureFromParams" );
     CHECK( cbSignature <= PERF_BUFFER_SIZE, "Signature buffer too small" );
 
     scError = ScShimSymCryptMlDsaVerify(
-        *ppkMlDsakey,
+        (*ppKeyInfo)->pkMlDsakey,
         pbMessage, cbData,
         nullptr, 0, // context
         pbSignature, cbSignature,
@@ -10641,6 +10637,8 @@ PqDsaImp<ImpXxx, AlgMlDsa>::setKey(
     state.pKey = ScShimSymCryptMlDsakeyAllocate( testMldsakey->params );
     CHECK( state.pKey != nullptr, "SymCryptMlDsakeyAllocate" );
 
+    state.params = testMldsakey->params;
+
     scError = ScShimSymCryptMlDsakeySetValue(
         testMldsakey->abKeyBlob,
         testMldsakey->cbKeyBlob,
@@ -10663,7 +10661,7 @@ PqDsaImp<ImpXxx, AlgMlDsa>::getBlobFromKey(
     SIZE_T cbExpected = 0;
 
     scError = ScShimSymCryptMlDsaSizeofKeyFormatFromParams(
-            (SYMCRYPT_MLDSA_PARAMS) state.pKey->pParams->params,
+            state.params,
             (SYMCRYPT_MLDSAKEY_FORMAT) keyFormat,
             &cbExpected );
     CHECK( scError == SYMCRYPT_NO_ERROR, "SymCryptMlDsaSizeofKeyFormatFromParams" );

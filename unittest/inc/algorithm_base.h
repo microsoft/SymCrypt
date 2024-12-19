@@ -865,6 +865,12 @@ public:
 #define SYMCRYPT_TEST_MLDSA_MAX_KEY_SIZE (4896) // Maximum size of an encoded ML-DSA private + public key - see SymCryptMlDsaInternalParams87
 #define SYMCRYPT_TEST_MLDSA_MAX_SIG_SIZE SYMCRYPT_MLDSA_SIGNATURE_SIZE_MLDSA87
 
+typedef struct _SYMCRYPT_PERF_MLDSAKEY {
+    SIZE_T                      keySize;
+    SYMCRYPT_MLDSA_PARAMS       params;
+    PSYMCRYPT_MLDSAKEY          pkMlDsakey;
+} SYMCRYPT_PERF_MLDSAKEY, *PSYMCRYPT_PERF_MLDSAKEY;
+
 typedef struct _MLDSAKEY_TESTBLOB {
     SYMCRYPT_MLDSA_PARAMS    params;
     SYMCRYPT_MLDSAKEY_FORMAT format;
