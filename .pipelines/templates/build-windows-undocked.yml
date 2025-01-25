@@ -134,7 +134,7 @@ jobs:
       maximumCpuCount: true
       restoreNugetPackages: ${{ parameters.restoreNugetPackages }}
       msbuildArchitecture: 'x64'
-      msbuildArgs: '-p:UndockedOfficial=${{ parameters.nativeCompiler }} -p:UndockedBuildId=$(Build.BuildId) -p:VER_BUILD_ID=$(Build.BuildId) -p:VER_SUFFIX=${{ parameters.buildType }} -p:SymCryptTestLegacyImpl=true ${{ parameters.msbuildArgs }}'
+      msbuildArgs: '-p:UndockedOfficial=${{ parameters.nativeCompiler }} -p:UndockedBuildId=$(Build.BuildId) -p:VER_BUILD_ID=$(Build.BuildId) -p:VER_SUFFIX=${{ parameters.buildType }} ${{ parameters.msbuildArgs }}'
 
   - task: SDLNativeRules@3
     displayName: '🛡 Guardian: PreFast'

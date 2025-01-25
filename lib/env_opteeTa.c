@@ -29,8 +29,25 @@ SymCryptInitEnvOpteeTa( UINT32 version )
         return;
     }
     
-    // Optee module relies on the unconditional availability of certain CPU features (ASIMD, AES, PMULL, SHA256)
+#if SYMCRYPT_CPU_ARM64
+
+    // Optee on Arm64 currently relies on the unconditional availability of certain CPU features (ASIMD, AES, PMULL, SHA256)
     g_SymCryptCpuFeaturesNotPresent = (SYMCRYPT_CPU_FEATURES) ~(SYMCRYPT_CPU_FEATURE_NEON|SYMCRYPT_CPU_FEATURE_NEON_AES|SYMCRYPT_CPU_FEATURE_NEON_PMULL|SYMCRYPT_CPU_FEATURE_NEON_SHA256);
+
+#elif SYMCRYPT_CPU_AMD64
+
+    SymCryptDetectCpuFeaturesByCpuid( SYMCRYPT_CPUID_DETECT_FLAG_CHECK_OS_SUPPORT_FOR_YMM );
+
+    //
+    // Our SaveXmm function never fails because it doesn't have to do anything in User mode.
+    //
+    g_SymCryptCpuFeaturesNotPresent &= ~SYMCRYPT_CPU_FEATURE_SAVEXMM_NOFAIL;
+
+#else
+    
+    #error We only support ARM64 and AMD64 for OPTEE environment
+
+#endif
 
     SymCryptInitEnvCommon( version );
 }
@@ -76,3 +93,46 @@ SymCryptTestInjectErrorEnvOpteeTa( PBYTE pbBuf, SIZE_T cbBuf )
     UNREFERENCED_PARAMETER( cbBuf );
 }
 
+
+#if SYMCRYPT_CPU_AMD64
+
+SYMCRYPT_ERROR
+SYMCRYPT_CALL
+SymCryptSaveXmmEnvOpteeTa( _Out_ PSYMCRYPT_EXTENDED_SAVE_DATA pSaveData )
+{
+    UNREFERENCED_PARAMETER( pSaveData );
+
+    return SYMCRYPT_NO_ERROR;
+}
+
+VOID
+SYMCRYPT_CALL
+SymCryptRestoreXmmEnvOpteeTa( _Inout_ PSYMCRYPT_EXTENDED_SAVE_DATA pSaveData )
+{
+    UNREFERENCED_PARAMETER( pSaveData );
+}
+
+SYMCRYPT_ERROR
+SYMCRYPT_CALL
+SymCryptSaveYmmEnvOpteeTa( _Out_ PSYMCRYPT_EXTENDED_SAVE_DATA pSaveData )
+{
+    UNREFERENCED_PARAMETER( pSaveData );
+
+    return SYMCRYPT_NO_ERROR;
+}
+
+VOID
+SYMCRYPT_CALL
+SymCryptRestoreYmmEnvOpteeTa( _Inout_ PSYMCRYPT_EXTENDED_SAVE_DATA pSaveData )
+{
+    UNREFERENCED_PARAMETER( pSaveData );
+}
+
+VOID
+SYMCRYPT_CALL
+SymCryptCpuidExFuncEnvOpteeTa( int cpuInfo[4], int function_id, int subfunction_id )
+{
+    __cpuidex( cpuInfo, function_id, subfunction_id );
+}
+
+#endif

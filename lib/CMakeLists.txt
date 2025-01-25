@@ -415,14 +415,16 @@ if(NOT WIN32)
         set_target_properties(symcrypt_posixusermode PROPERTIES PREFIX "")
         target_link_libraries(symcrypt_posixusermode symcrypt_common)
     elseif(SYMCRYPT_TARGET_ENV MATCHES "OPTEE")
-        # Remove files from symcrypt_common that are not supported in optee env.
-        # aes-asm.c - use SymCryptAesDecryptAsm which is not defined for ARM64
-        # cpuid_um.c - include auxv.h and use getauxval
-        # session.c - use atomic operations (__atomic_compare_exchange)
-        list(REMOVE_ITEM SOURCES_COMMON
-            aes-asm.c
-            cpuid_um.c
-            session.c)
+        if(SYMCRYPT_TARGET_ARCH MATCHES "ARM64")
+            # Remove files from symcrypt_common that are not supported in ARM64 optee env.
+            # aes-asm.c - use SymCryptAesDecryptAsm which is not defined for ARM64
+            # cpuid_um.c - include auxv.h and use getauxval
+            # session.c - use atomic operations (__atomic_compare_exchange)
+            list(REMOVE_ITEM SOURCES_COMMON
+                aes-asm.c
+                cpuid_um.c
+                session.c)
+        endif()
 
         add_library(symcrypt_envOpteeTa STATIC env_opteeTa.c)
         set_target_properties(symcrypt_envOpteeTa PROPERTIES PREFIX "")

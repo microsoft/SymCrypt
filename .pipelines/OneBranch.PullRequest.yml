@@ -69,12 +69,10 @@ extends:
         parameters:
           arch: 'AMD64'
           config: 'Debug'
-          additionalArgs: '--test-legacy-impl'
       - template: .pipelines/templates/build-windows-cmake.yml@self
         parameters:
           arch: 'AMD64'
           config: 'Release'
-          additionalArgs: '--test-legacy-impl'
           libcrux: true
       - template: .pipelines/templates/build-windows-cmake.yml@self
         parameters:
@@ -95,12 +93,10 @@ extends:
         parameters:
           arch: 'X86'
           config: 'Debug'
-          additionalArgs: '--test-legacy-impl'
       - template: .pipelines/templates/build-windows-cmake.yml@self
         parameters:
           arch: 'X86'
           config: 'Release'
-          additionalArgs: '--test-legacy-impl'
           libcrux: true
       - template: .pipelines/templates/build-windows-cmake.yml@self
         parameters:

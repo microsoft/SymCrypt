@@ -81,21 +81,7 @@ if(CMAKE_SYSTEM_NAME MATCHES "Linux|Darwin")
         # Enable a baseline of features for the compiler to support everywhere
         # Assumes that the compiler will not emit crypto instructions as a result of normal C code
         set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -march=armv8-a+simd+crypto")
-        
-        if(SYMCRYPT_TARGET_ENV MATCHES "OPTEE")
-            # TA DEV KIT is require for OPTEE TA compilation 
-            if(DEFINED TA_DEV_KIT_INC)
-                # Get the compiler toolchain include
-                execute_process(COMMAND ${CMAKE_C_COMPILER} -print-file-name=include OUTPUT_VARIABLE TOOLCHAIN_INCLUDE)
-                string(STRIP "${TOOLCHAIN_INCLUDE}" TOOLCHAIN_INCLUDE)
-                # OPTEE env has a different stdlib and doesn't support atomic operations or multithreading.
-                add_compile_options(-mno-outline-atomics -nostdinc -isystem ${TOOLCHAIN_INCLUDE})
-                include_directories(${TA_DEV_KIT_INC})
-            else()
-                message(FATAL_ERROR "TA_DEV_KIT_INC must be defined for OPTEE build")
-            endif()
-        endif()
-
+    
         # GCC complains about implicit casting between ASIMD registers (i.e. uint8x16_t -> uint64x2_t) by default,
         # whereas clang and MSVC do not. Setting -flax-vector-conversions to build Arm64 intrinsics code with GCC.
         set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -flax-vector-conversions")
@@ -106,6 +92,27 @@ if(CMAKE_SYSTEM_NAME MATCHES "Linux|Darwin")
         link_libraries(-Wl,--no-undefined)
         link_libraries(c)
         link_libraries(gcc)
+    endif()
+
+    # OPTEE specific compilation options
+    if(SYMCRYPT_TARGET_ENV MATCHES "OPTEE")
+        # TA DEV KIT is require for OPTEE TA compilation 
+        if(DEFINED TA_DEV_KIT_INC)
+            # Get the compiler toolchain include
+            execute_process(COMMAND ${CMAKE_C_COMPILER} -print-file-name=include OUTPUT_VARIABLE TOOLCHAIN_INCLUDE)
+            string(STRIP "${TOOLCHAIN_INCLUDE}" TOOLCHAIN_INCLUDE)
+
+            if(SYMCRYPT_TARGET_ARCH MATCHES "ARM64")
+                # OPTEE env on Arm64 does not support atomic operations
+                add_compile_options(-mno-outline-atomics)
+            endif()
+
+            # OPTEE env has a different stdlib
+            add_compile_options(-nostdinc -isystem ${TOOLCHAIN_INCLUDE})
+            include_directories(${TA_DEV_KIT_INC})
+        else()
+            message(FATAL_ERROR "TA_DEV_KIT_INC must be defined for OPTEE build")
+        endif()
     endif()
     
     # add_compile_options(-Wall)

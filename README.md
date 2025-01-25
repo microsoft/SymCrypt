@@ -22,7 +22,7 @@ Like any engineering project, SymCrypt is a compromise between conflicting requi
 In some of our Linux modules, SymCrypt uses [Jitterentropy](https://github.com/smuellerDD/jitterentropy-library)
 as a source of FIPS-certifiable entropy. To build these modules, you will need to ensure that the
 jitterentropy-library submodule is also cloned. You can do this by running
-`git submodule update --init -- 3rdparty/jitterentropy-library` after cloning.
+`git submodule update --init` after cloning.
 
 The `unittest/SymCryptDependencies` submodule provides the RSA32 and msbignum implementations which are used as
 benchmarks in the unit tests when compiled on Windows. Due to licensing restrictions, we cannot release these

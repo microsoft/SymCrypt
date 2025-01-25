@@ -41,9 +41,9 @@ but not limited to the warranties of merchantability, fitness for a particular p
 ## Build Instructions
 For Microsoft employees building the library internally, to include msbignum and RSA32 implementation benchmarks in
 the unit tests, make sure the SymCryptDependencies submodule is initialized by following the steps above
-(`git submodule update --init`). When building, specify `/p:SymCryptTestLegacyImpl=true` for MSBuild,
-or `-DSYMCRYPT_TEST_LEGACY_IMPL=ON` for CMake. This only affects the unit tests, and does not change the
-functionality of the SymCrypt library itself.
+(`git submodule init && git submodule update --checkout unittest/SymCryptDependencies`). When building, specify
+`/p:SymCryptTestLegacyImpl=true` for MSBuild, or `-DSYMCRYPT_TEST_LEGACY_IMPL=ON` for CMake. This only affects the
+unit tests, and does not change the functionality of the SymCrypt library itself.
 
 ### Using Python scripts
 Building SymCrypt can be complicated due to the number of platforms, architectures and targets supported. To improve

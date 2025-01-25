@@ -85,25 +85,21 @@ extends:
           arch: 'AMD64'
           config: 'Debug'
           sign: true
-          additionalArgs: '--test-legacy-impl'
       - template: .pipelines/templates/build-windows-cmake.yml@self
         parameters:
           arch: 'AMD64'
           config: 'Release'
           sign: true
-          additionalArgs: '--test-legacy-impl'
       - template: .pipelines/templates/build-windows-cmake.yml@self
         parameters:
           arch: 'X86'
           config: 'Debug'
           sign: true
-          additionalArgs: '--test-legacy-impl'
       - template: .pipelines/templates/build-windows-cmake.yml@self
         parameters:
           arch: 'X86'
           config: 'Release'
           sign: true
-          additionalArgs: '--test-legacy-impl'
       - template: .pipelines/templates/build-windows-cmake.yml@self
         parameters:
           arch: 'AMD64'

@@ -1,6 +1,7 @@
 [submodule "SymCryptDependencies"]
 	path = unittest/SymCryptDependencies
 	url = https://microsoft.visualstudio.com/DefaultCollection/SymCryptDependencies/_git/SymCryptDependencies
+	update = none
 
 [submodule "jitterentropy-library"]
 	path = 3rdparty/jitterentropy-library
