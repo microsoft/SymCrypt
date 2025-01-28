@@ -1340,6 +1340,8 @@ runFunctionalTests()
 
     testStatusIndicator(g_printStatusIndicator);
 
+    testServiceIndicator();
+
     iprint( "Functional testing done.\n" );
 
     PrintTable ptResults;

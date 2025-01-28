@@ -96,6 +96,7 @@ set(SOURCES_COMMON
     ScsTable.c
     scsTools.c
     selftest.c
+    service_indicator.c
     session.c
     sha1.c
     sha256.c

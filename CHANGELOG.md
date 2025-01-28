@@ -3,6 +3,10 @@
 New changes will be listed here as they are developed. The version number is determined
 prior to the creation of a new release, based on the changes contained in that release.
 
+# Version 103.8.0
+
+- Add FIPS approved services indicator
+
 # Version 103.7.0
 
 - Add ML-DSA implementation

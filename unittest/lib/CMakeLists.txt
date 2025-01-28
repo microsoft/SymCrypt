@@ -34,6 +34,7 @@ set(SOURCES
     testScsTable.cpp
     testScsTools.cpp
     testSelftest.cpp
+    testServiceIndicator.cpp
     testStatusIndicator.cpp
     testStreamCipher.cpp
     testTlsCbcHmac.cpp

@@ -1501,6 +1501,9 @@ VOID
 testStatusIndicator(BOOL);
 
 VOID
+testServiceIndicator();
+
+VOID
 testHbs();
 
 KatData *

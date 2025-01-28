@@ -65,6 +65,7 @@
     <ClCompile Include="testScsTable.cpp" />
     <ClCompile Include="testScsTools.cpp" />
     <ClCompile Include="testSelftest.cpp" />
+    <ClCompile Include="testServiceIndicator.cpp" />
     <ClCompile Include="testStatusIndicator.cpp" />
     <ClCompile Include="testStreamCipher.cpp" />
     <ClCompile Include="testTlsCbcHmac.cpp" />

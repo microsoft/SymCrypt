@@ -113,6 +113,7 @@ EXPORTS
     SymCryptCShake256Selftest
     SymCryptCShake256StateCopy
     SymCryptCtrMsb64
+    SymCryptDeprecatedServiceIndicator
     SymCryptDeprecatedStatusIndicator
     SymCryptDesDecrypt
     SymCryptDesEncrypt

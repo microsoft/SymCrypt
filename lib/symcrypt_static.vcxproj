@@ -127,6 +127,7 @@
     <ClCompile Include="ScsTable.c" />
     <ClCompile Include="scsTools.c" />
     <ClCompile Include="selftest.c" />
+    <ClCompile Include="service_indicator.c" />
     <ClCompile Include="session.c" />
     <ClCompile Include="sha1.c" />
     <ClCompile Include="sha256-xmm.c" />

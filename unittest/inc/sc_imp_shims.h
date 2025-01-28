@@ -646,6 +646,7 @@
 #define ScShimSymCrypt802_11SaeCustomCommitCreate(...) SCTEST_CALL_SCIMPFN(SymCrypt802_11SaeCustomCommitCreate, __VA_ARGS__)
 #define ScShimSymCrypt802_11SaeCustomCommitProcess(...) SCTEST_CALL_SCIMPFN(SymCrypt802_11SaeCustomCommitProcess, __VA_ARGS__)
 
+#define ScShimSymCryptDeprecatedServiceIndicator(...) SCTEST_CALL_SCIMPFN(SymCryptDeprecatedServiceIndicator, __VA_ARGS__)
 #define ScShimSymCryptDeprecatedStatusIndicator(...) SCTEST_CALL_SCIMPFN(SymCryptDeprecatedStatusIndicator, __VA_ARGS__)
 
 #define ScShimSymCryptXmsskeyAllocate(...) SCTEST_CALL_SCIMPFN(SymCryptXmsskeyAllocate, __VA_ARGS__)

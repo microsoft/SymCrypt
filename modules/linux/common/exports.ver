@@ -699,3 +699,8 @@ VERSION_103.7
       SymCryptMlDsaSizeofSignatureFromParams;
       SymCryptMlDsaVerify;
 } VERSION_103.6;
+VERSION_103.8
+{
+   global:
+      SymCryptDeprecatedServiceIndicator;
+} VERSION_103.7;

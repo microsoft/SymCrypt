@@ -658,6 +658,7 @@
 #define ScDispatchSymCrypt802_11SaeCustomInitH2EGeneric(...) SCTEST_CALL_DISPATCHFN(SymCrypt802_11SaeCustomInitH2EGeneric, __VA_ARGS__)
 #define ScDispatchSymCrypt802_11SaeGetGroupSizes(...) SCTEST_CALL_DISPATCHFN(SymCrypt802_11SaeGetGroupSizes, __VA_ARGS__)
 
+#define ScDispatchSymCryptDeprecatedServiceIndicator(...) SCTEST_CALL_DISPATCHFN(SymCryptDeprecatedServiceIndicator, __VA_ARGS__)
 #define ScDispatchSymCryptDeprecatedStatusIndicator(...) SCTEST_CALL_DISPATCHFN(SymCryptDeprecatedStatusIndicator, __VA_ARGS__)
 
 #define ScDispatchSymCryptXmsskeyAllocate(...) SCTEST_CALL_DISPATCHFN(SymCryptXmsskeyAllocate, __VA_ARGS__)
