@@ -71,8 +71,8 @@ def configure_cmake(args : argparse.Namespace) -> None:
     args: The result of argparse.ArgumentParser.parse_args()
     """
 
-    # Starting arguments: -S <source dir> -B <build dir> -DCMAKE_BUILD_TYPE=<build type>
-    cmake_args = ["-S", str(args.source_dir), "-B", str(args.build_dir), "-DCMAKE_BUILD_TYPE=" + args.config]
+    # Starting arguments: -S <source dir> -B <build dir> -DCMAKE_BUILD_TYPE=<build type> -DPython3_EXECUTABLE=<path_to_this_python>
+    cmake_args = ["-S", str(args.source_dir), "-B", str(args.build_dir), "-DCMAKE_BUILD_TYPE=" + args.config, "-DPython3_EXECUTABLE=" + sys.executable]
 
     if args.host_os == "win32":
         cmake_args.append("-A")
