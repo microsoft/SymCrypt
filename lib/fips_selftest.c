@@ -1711,7 +1711,7 @@ SymCryptXmssVerifySelftest(void)
 
     SymCryptInjectError(pbSignature, cbSignature);
 
-    scError = SymCryptXmssVerify(
+    scError = SymCryptXmssVerifyInternal(
         pKey,
         SymCryptTestMsg3,
         sizeof(SymCryptTestMsg3),

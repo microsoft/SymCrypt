@@ -479,8 +479,8 @@ SymCryptLmsSetParams(
         goto cleanup;
     }
 
-    // Output cbHashOutput can at most be equal to the hash output size
-    if (cbHashOutput == 0 || cbHashOutput > pLmsHashFunction->resultSize)
+    // Output cbHashOutput cannot be larger than the hash output size or SYMCRYPT_LMS_MAX_N
+    if (cbHashOutput == 0 || cbHashOutput > pLmsHashFunction->resultSize || cbHashOutput > SYMCRYPT_LMS_MAX_N)
     {
         scError = SYMCRYPT_INVALID_ARGUMENT;
         goto cleanup;

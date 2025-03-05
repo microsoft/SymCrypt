@@ -9156,14 +9156,10 @@ SymCryptXmssSizeofKeyBlobFromParams(
 //      initialized before this call.
 //
 //      keyType. SYMCRYPT_XMSSKEY_TYPE_PUBLIC (resp. SYMCRYPT_XMSSKEY_TYPE_PRIVATE) to
-//      retrieve the size of the public key (resp. private key).
+//      retrieve the size of the public key (resp. private key) blob.
 //
 //      pcbKey. Pointer to the variable to store the size of a public/private
 //      key blob associated with the XMSS parameters.
-//
-//  Remarks:
-//
-//      Callers may provide a NULL pointer for the size they are not interested to query.
 //
 
 PSYMCRYPT_XMSS_KEY
@@ -9583,6 +9579,7 @@ SymCryptLmsSetParams(
 //      pLmsHashFunction: A pointer to the hash function to be used for the LMS system.
 //
 //      cbHashOutput: The number of bytes for each tree node, equal to the output length of the hash function.
+//      Must be less than or equal to 32.
 //
 //      nTreeHeight: The height of the LMS tree. Must be < 32, there are (2^nTreeHeight) leaves in the tree.
 //

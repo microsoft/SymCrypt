@@ -4439,6 +4439,20 @@ SymCryptXmsskeyVerifyRoot(
 // Verifies that the public root matches the private key by recomputing it
 //
 
+SYMCRYPT_ERROR
+SYMCRYPT_CALL
+SymCryptXmssVerifyInternal(
+    _Inout_                         PSYMCRYPT_XMSS_KEY  pKey,
+    _In_reads_bytes_( cbMessage )   PCBYTE              pbMessage,
+                                    SIZE_T              cbMessage,
+                                    UINT32              flags,
+    _In_reads_bytes_( cbSignature ) PCBYTE              pbSignature,
+                                    SIZE_T              cbSignature );
+//
+// The function that actually does the signature verification. This one doesn't
+// run the self-tests so that it can be called from the self-test function.
+//
+
 
 VOID
 SYMCRYPT_CALL
@@ -4600,6 +4614,21 @@ typedef SYMCRYPT_ASYM_ALIGN_STRUCT _SYMCRYPT_LMS_KEY{
 } SYMCRYPT_LMS_KEY;
 typedef         SYMCRYPT_LMS_KEY* PSYMCRYPT_LMS_KEY;
 typedef const   SYMCRYPT_LMS_KEY* PCSYMCRYPT_LMS_KEY;
+
+SYMCRYPT_ERROR
+SYMCRYPT_CALL
+SymCryptLmsVerifyInternal(
+    _In_                            PCSYMCRYPT_LMS_KEY  pKey,
+    _In_reads_bytes_(cbMessage)     PCBYTE              pbMessage,
+                                    SIZE_T              cbMessage,
+                                    UINT32              flags,
+    _In_reads_bytes_(cbSignature)   PCBYTE              pbSignature,
+                                    SIZE_T              cbSignature);
+//
+// This function carries out the actual LMS verification process. It's essential to prevent an infinite
+// recursive call in SymCryptLmsVerifySelftest.
+//
+
 
 // Atomics.
 //

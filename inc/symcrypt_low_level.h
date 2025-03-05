@@ -2806,23 +2806,6 @@ SymCryptMlKemEncapsulateEx(
 //   SYMCRYPT_MLKEM_CIPHERTEXT_SIZE_*).
 //
 
-//=====================================================
-// LmsVerifyInternal
-//
-
-SYMCRYPT_ERROR
-SYMCRYPT_CALL
-SymCryptLmsVerifyInternal(
-    _In_                            PCSYMCRYPT_LMS_KEY  pKey,
-    _In_reads_bytes_(cbMessage)     PCBYTE              pbMessage,
-                                    SIZE_T              cbMessage,
-                                    UINT32              flags,
-    _In_reads_bytes_(cbSignature)   PCBYTE              pbSignature,
-                                    SIZE_T              cbSignature);
-//
-// This function carries out the actual LMS verification process. It's essential to prevent an infinite
-// recursive call in SymCryptLmsVerifySelftest.
-//
 
 //===================================================================
 // 802.11 SAE protocol

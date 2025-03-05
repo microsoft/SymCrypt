@@ -1184,14 +1184,33 @@ SymCryptXmsskeyGenerate(
         goto cleanup;
     }
 
-    // Wipe private key material
+    // Wipe key material
+    SymCryptWipeKnownSize(pKey->Root, sizeof(pKey->Root));
+    SymCryptWipeKnownSize(pKey->Seed, sizeof(pKey->Seed));
     SymCryptWipeKnownSize(pKey->SkPrf, sizeof(pKey->SkPrf));
     SymCryptWipeKnownSize(pKey->SkXmss, sizeof(pKey->SkXmss));
-
     pKey->Idx = 0;
-    SymCryptCallbackRandom(pKey->SkPrf, pKey->params.cbHashOutput);
-    SymCryptCallbackRandom(pKey->SkXmss, pKey->params.cbHashOutput);
-    SymCryptCallbackRandom(pKey->Seed, pKey->params.cbHashOutput);
+
+    scError = SymCryptCallbackRandom(pKey->SkPrf, pKey->params.cbHashOutput);
+    
+    if (scError != SYMCRYPT_NO_ERROR)
+    {
+        goto cleanup;
+    }
+
+    scError = SymCryptCallbackRandom(pKey->SkXmss, pKey->params.cbHashOutput);
+
+    if (scError != SYMCRYPT_NO_ERROR)
+    {
+        goto cleanup;
+    }
+
+    scError = SymCryptCallbackRandom(pKey->Seed, pKey->params.cbHashOutput);
+
+    if (scError != SYMCRYPT_NO_ERROR)
+    {
+        goto cleanup;
+    }
 
     // Compute public root from the private key
     scError = SymCryptXmssComputePublicRoot(
@@ -1240,7 +1259,8 @@ SymCryptXmsskeySetValue(
 
     SYMCRYPT_CHECK_MAGIC(pKey);
 
-    if(flags & (~SYMCRYPT_FLAG_XMSSKEY_VERIFY_ROOT))
+    if ((flags & (~SYMCRYPT_FLAG_XMSSKEY_VERIFY_ROOT)) != 0 ||
+        (keyType != SYMCRYPT_XMSSKEY_TYPE_PUBLIC && keyType != SYMCRYPT_XMSSKEY_TYPE_PRIVATE))
     {
         scError = SYMCRYPT_INVALID_ARGUMENT;
         goto cleanup;
@@ -1295,7 +1315,7 @@ SymCryptXmsskeySetValue(
         memcpy(pKey->SkPrf, pbInput, pKey->params.cbHashOutput);
         pbInput += pKey->params.cbHashOutput;
 
-        if (flags & SYMCRYPT_FLAG_XMSSKEY_VERIFY_ROOT)
+        if ((flags & SYMCRYPT_FLAG_XMSSKEY_VERIFY_ROOT) != 0)
         {
             // pKey has been initialized by now
             scError = SymCryptXmsskeyVerifyRoot(pKey);
@@ -1337,7 +1357,15 @@ SymCryptXmsskeyGetValue(
     SYMCRYPT_CHECK_MAGIC(pKey);
 
     if (flags != 0 ||
+        (keyType != SYMCRYPT_XMSSKEY_TYPE_PUBLIC && keyType != SYMCRYPT_XMSSKEY_TYPE_PRIVATE) ||
         pKey->keyType == SYMCRYPT_XMSSKEY_TYPE_NONE)
+    {
+        scError = SYMCRYPT_INVALID_ARGUMENT;
+        goto cleanup;
+    }
+
+    // Cannot export private key from a public key object
+    if (keyType == SYMCRYPT_XMSSKEY_TYPE_PRIVATE && pKey->keyType != SYMCRYPT_XMSSKEY_TYPE_PRIVATE)
     {
         scError = SYMCRYPT_INVALID_ARGUMENT;
         goto cleanup;
@@ -1701,7 +1729,7 @@ SymCryptXmssSignatureGetAuthNodes(
 
 SYMCRYPT_ERROR
 SYMCRYPT_CALL
-SymCryptXmssVerify(
+SymCryptXmssVerifyInternal(
     _Inout_                         PSYMCRYPT_XMSS_KEY  pKey,
     _In_reads_bytes_( cbMessage )   PCBYTE              pbMessage,
                                     SIZE_T              cbMessage,
@@ -1755,27 +1783,10 @@ SymCryptXmssVerify(
         cbMessage, 
         RandomizedHash);
 
-    uLayer = 0;
-    uTree = Idx >> pParams->nLayerHeight;
-    uLeaf = (UINT32)(Idx & LeafMask);
     SymCryptWipeKnownSize(&adrs, sizeof(XMSS_ADRS));
-    SYMCRYPT_STORE_MSBFIRST32(adrs.en32Layer, uLayer);
-    SYMCRYPT_STORE_MSBFIRST64(adrs.en64Tree, uTree);
-    SymCryptXmssTreeRootFromSignature(
-        pParams,
-        &adrs,
-        pKey->Seed,
-        RandomizedHash,
-        uLeaf,
-        SymCryptXmssSignatureGetWotspSig(pParams, pbSignature, uLayer),
-        SymCryptXmssSignatureGetAuthNodes(pParams, pbSignature, uLayer),
-        ComputedRoot,
-        pbScratch,
-        cbScratch);
 
-    for (uLayer = 1; uLayer < pParams->nLayers; uLayer++)
+    for (uLayer = 0; uLayer < pParams->nLayers; uLayer++)
     {
-        Idx >>= pParams->nLayerHeight;
         uTree = Idx >> pParams->nLayerHeight;
         uLeaf = (UINT32)(Idx & LeafMask);
 
@@ -1785,13 +1796,15 @@ SymCryptXmssVerify(
             pParams,
             &adrs,
             pKey->Seed,
-            ComputedRoot,
+            uLayer == 0 ? RandomizedHash : ComputedRoot,
             uLeaf,
             SymCryptXmssSignatureGetWotspSig(pParams, pbSignature, uLayer),
             SymCryptXmssSignatureGetAuthNodes(pParams, pbSignature, uLayer),
             ComputedRoot,
             pbScratch,
             cbScratch);
+
+        Idx >>= pParams->nLayerHeight;
     }
 
     if (!SymCryptEqual(ComputedRoot, pKey->Root, pParams->cbHashOutput))
@@ -1809,6 +1822,29 @@ cleanup:
     }
 
     return scError;
+}
+
+SYMCRYPT_ERROR
+SYMCRYPT_CALL
+SymCryptXmssVerify(
+    _Inout_                         PSYMCRYPT_XMSS_KEY  pKey,
+    _In_reads_bytes_( cbMessage )   PCBYTE              pbMessage,
+                                    SIZE_T              cbMessage,
+                                    UINT32              flags,
+    _In_reads_bytes_( cbSignature ) PCBYTE              pbSignature,
+                                    SIZE_T              cbSignature )
+{
+    SYMCRYPT_RUN_SELFTEST_ONCE(
+        SymCryptXmssSelftest,
+        SYMCRYPT_SELFTEST_ALGORITHM_XMSS);
+
+    return SymCryptXmssVerifyInternal(
+        pKey,
+        pbMessage,
+        cbMessage,
+        flags,
+        pbSignature,
+        cbSignature);
 }
 
 VOID
@@ -1868,6 +1904,8 @@ SymCryptXmssWotspSign(
             adrs,
             &pbOutput[i * pParams->cbHashOutput]);
     }
+
+    SymCryptWipeKnownSize(node, sizeof(node));
 }
 
 
@@ -1994,6 +2032,9 @@ SymCryptXmssSign(
     BYTE RandomizedHash[SYMCRYPT_HASH_MAX_RESULT_SIZE];
     BYTE TreeRoot[SYMCRYPT_HASH_MAX_RESULT_SIZE];
     XMSS_ADRS adrs;
+    UINT32 uLayer;
+    UINT64 uTree;
+    UINT32 uLeaf;
     const UINT64 LeafMask = (1ULL << pParams->nLayerHeight) - 1;
 
 
@@ -2008,16 +2049,6 @@ SymCryptXmssSign(
         goto cleanup;
     }
 
-    Idx = SYMCRYPT_ATOMIC_ADD64_POST_RELAXED(&pKey->Idx, 1) - 1;
-    if (Idx >= (1ULL << pParams->nTotalTreeHeight))
-    {
-        // Set Idx to first unusable value
-        pKey->Idx = (1ULL << pParams->nTotalTreeHeight);
-
-        scError = SYMCRYPT_HBS_NO_OTS_KEYS_LEFT;
-        goto cleanup;
-    }
-
     cbScratch += SymCryptHbsSizeofScratchBytesForIncrementalTreehash(pParams->cbHashOutput, pParams->len);        // Ltree hashing
     cbScratch += SymCryptHbsSizeofScratchBytesForIncrementalTreehash(pParams->cbHashOutput, 1ULL << pParams->nTotalTreeHeight);  // Merkle-tree hashing
 
@@ -2029,6 +2060,16 @@ SymCryptXmssSign(
         goto cleanup;
     }
 
+    Idx = SYMCRYPT_ATOMIC_ADD64_POST_RELAXED(&pKey->Idx, 1) - 1;
+    if (Idx >= (1ULL << pParams->nTotalTreeHeight))
+    {
+        // Set Idx to first unusable value
+        pKey->Idx = (1ULL << pParams->nTotalTreeHeight);
+
+        scError = SYMCRYPT_HBS_NO_OTS_KEYS_LEFT;
+        goto cleanup;
+    }
+
     SYMCRYPT_STORE_MSBFIRST64(en64Idx, Idx);
     memcpy(pbSignature, &en64Idx[sizeof(en64Idx) - pParams->cbIdx], pParams->cbIdx);
 
@@ -2037,28 +2078,10 @@ SymCryptXmssSign(
 
     SymCryptXmssRandomizedHash(&pKey->params, Idx, Randomness, pKey->Root, pbMessage, cbMessage, RandomizedHash);
 
-    UINT32 uLayer = 0;
-    UINT64 uTree = Idx >> pParams->nLayerHeight;
-    UINT32 uLeaf = (UINT32)(Idx & LeafMask);
     SymCryptWipeKnownSize(&adrs, sizeof(XMSS_ADRS));
-    SYMCRYPT_STORE_MSBFIRST32(adrs.en32Layer, uLayer);
-    SYMCRYPT_STORE_MSBFIRST64(adrs.en64Tree, uTree);
-    SymCryptXmssTreeSignHash(
-        &pKey->params,
-        &adrs,
-        pKey->SkXmss,
-        pKey->Seed,
-        RandomizedHash,
-        uLeaf,
-        SymCryptXmssSignatureGetWotspSig(pParams, pbSignature, uLayer),
-        SymCryptXmssSignatureGetAuthNodes(pParams, pbSignature, uLayer),
-        pParams->nLayers == 1 ? NULL : TreeRoot,  // Compute tree root if signing for multi-tree
-        pbScratch,
-        cbScratch );
 
-    for (uLayer = 1; uLayer < pParams->nLayers; uLayer++)
+    for (uLayer = 0; uLayer < pParams->nLayers; uLayer++)
     {
-        Idx >>= pParams->nLayerHeight;
         uTree = Idx >> pParams->nLayerHeight;
         uLeaf = (UINT32)(Idx & LeafMask);
 
@@ -2070,13 +2093,15 @@ SymCryptXmssSign(
             &adrs,
             pKey->SkXmss,
             pKey->Seed,
-            TreeRoot,
+            uLayer == 0 ? RandomizedHash : TreeRoot,
             uLeaf,
             SymCryptXmssSignatureGetWotspSig(pParams, pbSignature, uLayer),
             SymCryptXmssSignatureGetAuthNodes(pParams, pbSignature, uLayer),
             uLayer == (UINT32)(pParams->nLayers - 1) ? NULL : TreeRoot, // No need to compute the root for the top layer tree
             pbScratch,
             cbScratch);
+
+        Idx >>= pParams->nLayerHeight;
     }
 
     if (scError != SYMCRYPT_NO_ERROR)
