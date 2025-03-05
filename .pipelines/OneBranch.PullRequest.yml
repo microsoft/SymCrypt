@@ -29,6 +29,7 @@ extends:
       EnableCDPxPAT: false
       needExceptionForUbuntuUsage: true # Mariner does not currently support all of our cross-compilation targets
       LinuxHostVersion:
+        Network: R1
         Distribution: Ubuntu # Mariner kernel is incompatible with Ubuntu container; causes infinite loop in ASAN https://github.com/actions/runner-images/issues/9524
     globalSdl: # https://aka.ms/obpipelines/sdl
       tsa:
