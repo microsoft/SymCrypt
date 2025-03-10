@@ -48,12 +48,14 @@ extends:
         Network: R1
         Distribution: Ubuntu # Mariner kernel is incompatible with Ubuntu container; causes infinite loop in ASAN https://github.com/actions/runner-images/issues/9524
     globalSdl: # https://aka.ms/obpipelines/sdl
+      isNativeCode: true
       tsa:
         enabled: false # Disable TSA to force build breaks
       policheck:
         break: true # always break the build on policheck issues.
       binskim:
         enabled: false # Temporarily disable binskim until we sort out BA2018 errors
+      credscanSuppressionsPath: $(Build.SourcesDirectory)/.config/CredScanSuppressions.json
 
     stages:
     - stage: Set_Version

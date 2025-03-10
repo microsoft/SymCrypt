@@ -35,8 +35,13 @@ extends:
     platform:
       name: 'windows_undocked'
     globalSdl:
+      isNativeCode: true
       tsa:
         enabled: false # Disable TSA to force build breaks
+      policheck:
+        break: true # always break the build on policheck issues.
+      binskim:
+        enabled: false # Temporarily disable binskim until we sort out BA2018 errors
       credscanSuppressionsPath: $(Build.SourcesDirectory)/.config/CredScanSuppressions.json
     featureFlags:
       EnableCDPxPAT: false
