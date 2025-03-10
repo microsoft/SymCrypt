@@ -17,11 +17,15 @@ EXPORTS
     SymCryptEcurveParamsNumsP512t1  DATA
     SymCryptHmacMd5Algorithm        DATA
     SymCryptHmacSha1Algorithm       DATA
+    SymCryptHmacSha224Algorithm     DATA
     SymCryptHmacSha256Algorithm     DATA
+    SymCryptHmacSha3_224Algorithm   DATA
     SymCryptHmacSha3_256Algorithm   DATA
     SymCryptHmacSha3_384Algorithm   DATA
     SymCryptHmacSha3_512Algorithm   DATA
     SymCryptHmacSha384Algorithm     DATA
+    SymCryptHmacSha512_224Algorithm DATA
+    SymCryptHmacSha512_256Algorithm DATA
     SymCryptHmacSha512Algorithm     DATA
     SymCryptKmac128Algorithm        DATA
     SymCryptKmac256Algorithm        DATA
@@ -33,8 +37,12 @@ EXPORTS
     SymCryptRc2BlockCipher          DATA
     SymCryptSha1Algorithm           DATA
     SymCryptSha1OidList             DATA
+    SymCryptSha224Algorithm         DATA
+    SymCryptSha224OidList           DATA
     SymCryptSha256Algorithm         DATA
     SymCryptSha256OidList           DATA
+    SymCryptSha3_224Algorithm       DATA
+    SymCryptSha3_224OidList         DATA
     SymCryptSha3_256Algorithm       DATA
     SymCryptSha3_256OidList         DATA
     SymCryptSha3_384Algorithm       DATA
@@ -43,6 +51,10 @@ EXPORTS
     SymCryptSha3_512OidList         DATA
     SymCryptSha384Algorithm         DATA
     SymCryptSha384OidList           DATA
+    SymCryptSha512_224Algorithm     DATA
+    SymCryptSha512_224OidList       DATA
+    SymCryptSha512_256Algorithm     DATA
+    SymCryptSha512_256OidList       DATA
     SymCryptSha512Algorithm         DATA
     SymCryptSha512OidList           DATA
     SymCryptShake128HashAlgorithm   DATA
@@ -230,7 +242,6 @@ EXPORTS
     SymCryptHmacSha1Selftest
     SymCryptHmacSha1StateCopy
     SymCryptHmacSha224
-    SymCryptHmacSha224Algorithm
     SymCryptHmacSha224Append
     SymCryptHmacSha224ExpandKey
     SymCryptHmacSha224Init
@@ -247,7 +258,6 @@ EXPORTS
     SymCryptHmacSha256Selftest
     SymCryptHmacSha256StateCopy
     SymCryptHmacSha3_224
-    SymCryptHmacSha3_224Algorithm
     SymCryptHmacSha3_224Append
     SymCryptHmacSha3_224ExpandKey
     SymCryptHmacSha3_224Init
@@ -288,7 +298,6 @@ EXPORTS
     SymCryptHmacSha384Selftest
     SymCryptHmacSha384StateCopy
     SymCryptHmacSha512_224
-    SymCryptHmacSha512_224Algorithm
     SymCryptHmacSha512_224Append
     SymCryptHmacSha512_224ExpandKey
     SymCryptHmacSha512_224Init
@@ -297,7 +306,6 @@ EXPORTS
     SymCryptHmacSha512_224Selftest
     SymCryptHmacSha512_224StateCopy
     SymCryptHmacSha512_256
-    SymCryptHmacSha512_256Algorithm
     SymCryptHmacSha512_256Append
     SymCryptHmacSha512_256ExpandKey
     SymCryptHmacSha512_256Init
@@ -491,10 +499,8 @@ EXPORTS
     SymCryptSha1StateExport
     SymCryptSha1StateImport
     SymCryptSha224
-    SymCryptSha224Algorithm
     SymCryptSha224Append
     SymCryptSha224Init
-    SymCryptSha224OidList
     SymCryptSha224Result
     SymCryptSha224Selftest
     SymCryptSha224StateCopy
@@ -509,10 +515,8 @@ EXPORTS
     SymCryptSha256StateExport
     SymCryptSha256StateImport
     SymCryptSha3_224
-    SymCryptSha3_224Algorithm
     SymCryptSha3_224Append
     SymCryptSha3_224Init
-    SymCryptSha3_224OidList
     SymCryptSha3_224Result
     SymCryptSha3_224StateCopy
     SymCryptSha3_224StateExport
@@ -547,20 +551,16 @@ EXPORTS
     SymCryptSha384StateExport
     SymCryptSha384StateImport
     SymCryptSha512_224
-    SymCryptSha512_224Algorithm
     SymCryptSha512_224Append
     SymCryptSha512_224Init
-    SymCryptSha512_224OidList
     SymCryptSha512_224Result
     SymCryptSha512_224Selftest
     SymCryptSha512_224StateCopy
     SymCryptSha512_224StateExport
     SymCryptSha512_224StateImport
     SymCryptSha512_256
-    SymCryptSha512_256Algorithm
     SymCryptSha512_256Append
     SymCryptSha512_256Init
-    SymCryptSha512_256OidList
     SymCryptSha512_256Result
     SymCryptSha512_256Selftest
     SymCryptSha512_256StateCopy
