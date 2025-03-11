@@ -1,5 +1,11 @@
 parameters:
-- name: arch
+- name: hostArch
+  type: string
+  values:
+  - AMD64
+  - ARM64
+  default: AMD64
+- name: targetArch
   type: string
   values:
   - AMD64
@@ -39,13 +45,21 @@ parameters:
   default: false
 
 jobs:
-- job: Linux_${{ parameters.arch}}_${{ parameters.cc }}_${{parameters.config}}_${{parameters.identifier}}
-  displayName: Linux ${{ parameters.arch}} ${{ parameters.cc }} ${{parameters.config}} ${{ parameters.identifier }}
+- job: Linux_${{ parameters.hostArch }}_${{ parameters.targetArch}}_${{ parameters.cc }}_${{parameters.config}}_${{parameters.identifier}}
+  displayName: Linux ${{ parameters.hostArch }} host ${{ parameters.targetArch}} ${{ parameters.cc }} ${{parameters.config}} ${{ parameters.identifier }}
 
   pool:
     type: linux
+    ${{ if eq(parameters.hostArch, 'AMD64') }}:
+      hostArchitecture: amd64
+    ${{ else }}:
+      hostArchitecture: arm64
 
   variables:
+    ${{ if eq(parameters.hostArch, 'AMD64') }}:
+      LinuxContainerImage: 'onebranch.azurecr.io/linux/ubuntu-2004:latest'
+    ${{ else }}:
+      LinuxContainerImage: 'onebranch.azurecr.io/linux/ubuntu-2004-arm64:latest'
     ob_outputDirectory: $(Build.SourcesDirectory)/bin
     ob_sdl_binskim_break: ${{ eq(parameters.config, 'Release') }} # Only break on binskim failures for Release binaries https://aka.ms/obpipelines/sdl
     ${{ if eq(variables['system.debug'], true) }}:
@@ -77,19 +91,18 @@ jobs:
           ln -s /usr/bin/clang++-11 /usr/bin/clang++
         displayName: 'Install clang'
 
-    - ${{ if eq(parameters.arch, 'X86') }}:
-      - script: |
-          apt-get install -y gcc-multilib g++-multilib
-        displayName: 'Install x86 headers and libraries'
+    - ${{ if eq(parameters.hostArch, 'AMD64') }}:
+      - ${{ if eq(parameters.targetArch, 'X86') }}:
+        - script: |
+            apt-get install -y gcc-multilib g++-multilib
+          displayName: 'Install x86 headers and libraries'
 
-    # Note: this assumes that the pipeline is always running on an AMD64 machine. When we have
-    # native ARM64 pipelines, we'll need to change this.
-    - ${{ if eq(parameters.arch, 'ARM64') }}:
-      - script: |
-          apt-get install -y binutils-aarch64-linux-gnu gcc-aarch64-linux-gnu g++-aarch64-linux-gnu qemu-user
-        displayName: 'Install arm64 cross-compilation tools'
+      - ${{ if eq(parameters.targetArch, 'ARM64') }}:
+        - script: |
+            apt-get install -y binutils-aarch64-linux-gnu gcc-aarch64-linux-gnu g++-aarch64-linux-gnu qemu-user
+          displayName: 'Install arm64 cross-compilation tools'
 
-    - ${{ if eq(parameters.arch, 'ARM') }}:
+    - ${{ if eq(parameters.targetArch, 'ARM') }}:
       - script: |
           apt-get install -y gcc-arm-linux-gnueabihf g++-arm-linux-gnueabihf qemu-user
         displayName: 'Install arm cross-compilation tools'
@@ -114,7 +127,7 @@ jobs:
       inputs:
         scriptSource: 'filePath'
         scriptPath: scripts/build.py
-        arguments: 'cmake bin --arch ${{ parameters.arch }} --config ${{ parameters.config }} --cc ${{ parameters.cc }} --cxx ${{ parameters.cxx }} ${{ parameters.additionalArgs }} $(verbose_build_flag) $(openssl_build_flag) $(libcrux_build_flag)'
+        arguments: 'cmake bin --arch ${{ parameters.targetArch }} --config ${{ parameters.config }} --cc ${{ parameters.cc }} --cxx ${{ parameters.cxx }} ${{ parameters.additionalArgs }} $(verbose_build_flag) $(openssl_build_flag) $(libcrux_build_flag)'
         workingDirectory: $(Build.SourcesDirectory)
 
     # Overwrite default artifact publishing with our copy (enables publishing binaries for failed runs)
@@ -130,8 +143,8 @@ jobs:
       displayName: 'Disable ASAN link order verification'
 
     - ${{ if ne(parameters.skipTests, true) }}:
-      - ${{ if ne(parameters.arch, 'ARM64') }}:
-        - ${{ if ne(parameters.arch, 'ARM') }}:
+      - ${{ if or(eq(parameters.hostArch, parameters.targetArch), and(eq(parameters.hostArch, 'AMD64'), eq(parameters.targetArch, 'X86'))) }}:
+        - ${{ if eq(parameters.config, 'Sanitize') }}:
           - task: PythonScript@0
             displayName: 'Run unit tests'
             inputs:
@@ -139,51 +152,34 @@ jobs:
               scriptPath: scripts/test.py
               arguments: 'bin noperftests'
               workingDirectory: $(Build.SourcesDirectory)
+        - ${{ else }}:
+          - task: PythonScript@0
+            displayName: 'Run dynamic unit tests'
+            inputs:
+              scriptSource: 'filePath'
+              scriptPath: scripts/test.py
+              arguments: 'bin dynamic:bin/module/generic/libsymcrypt.so noperftests'
+              workingDirectory: $(Build.SourcesDirectory)
 
-          - ${{ if ne(parameters.config, 'Sanitize') }}:
-            - task: PythonScript@0
-              displayName: 'Run dynamic unit tests'
-              inputs:
-                scriptSource: 'filePath'
-                scriptPath: scripts/test.py
-                arguments: 'bin dynamic:bin/module/generic/libsymcrypt.so noperftests'
-                workingDirectory: $(Build.SourcesDirectory)
+        - ${{ if eq(parameters.targetArch, 'AMD64') }}:
+          - task: PythonScript@0
+            displayName: 'Run unit tests (test YMM save/restore)'
+            inputs:
+              scriptSource: 'filePath'
+              scriptPath: scripts/test.py
+              arguments: '--glibc-disable-ymm bin testSaveYmm'
+              workingDirectory: $(Build.SourcesDirectory)
 
-      - ${{ if eq(parameters.arch, 'AMD64') }}:
-        - task: PythonScript@0
-          displayName: 'Run unit tests (test YMM save/restore)'
-          inputs:
-            scriptSource: 'filePath'
-            scriptPath: scripts/test.py
-            arguments: '--glibc-disable-ymm bin testSaveYmm'
-            workingDirectory: $(Build.SourcesDirectory)
+      - ${{ if and(eq(parameters.hostArch, 'AMD64'), eq(parameters.targetArch, 'ARM64')) }}:
+          - task: PythonScript@0
+            displayName: 'Run dynamic unit tests'
+            inputs:
+              scriptSource: 'filePath'
+              scriptPath: scripts/test.py
+              arguments: '--emulator qemu-aarch64 --emulator-lib-dir /usr/aarch64-linux-gnu/ bin dynamic:bin/module/generic/libsymcrypt.so noperftests +symcrypt -dh -dsa -rsa'
+              workingDirectory: $(Build.SourcesDirectory)
 
-      - ${{ if eq(parameters.arch, 'ARM64') }}:
-        - task: PythonScript@0
-          displayName: 'Run unit tests'
-          inputs:
-            scriptSource: 'filePath'
-            scriptPath: scripts/test.py
-            arguments: '--emulator qemu-aarch64 --emulator-lib-dir /usr/aarch64-linux-gnu/ bin noperftests +symcrypt -dh -dsa -rsa'
-            workingDirectory: $(Build.SourcesDirectory)
-
-        - task: PythonScript@0
-          displayName: 'Run dynamic unit tests'
-          inputs:
-            scriptSource: 'filePath'
-            scriptPath: scripts/test.py
-            arguments: '--emulator qemu-aarch64 --emulator-lib-dir /usr/aarch64-linux-gnu/ bin dynamic:bin/module/generic/libsymcrypt.so noperftests +symcrypt -dh -dsa -rsa'
-            workingDirectory: $(Build.SourcesDirectory)
-
-      - ${{ if eq(parameters.arch, 'ARM') }}:
-        - task: PythonScript@0
-          displayName: 'Run unit tests'
-          inputs:
-            scriptSource: 'filePath'
-            scriptPath: scripts/test.py
-            arguments: '--emulator qemu-arm --emulator-lib-dir /usr/arm-linux-gnueabihf/ bin noperftests +symcrypt -dh -dsa -rsa'
-            workingDirectory: $(Build.SourcesDirectory)
-
+      - ${{ if eq(parameters.targetArch, 'ARM') }}:
         - task: PythonScript@0
           displayName: 'Run dynamic unit tests'
           inputs:
@@ -197,7 +193,7 @@ jobs:
       inputs:
         scriptSource: 'filePath'
         scriptPath: scripts/package.py
-        arguments: 'bin ${{ parameters.arch }} ${{ parameters.config }} generic bin'
+        arguments: 'bin ${{ parameters.targetArch }} ${{ parameters.config }} generic bin'
         workingDirectory: $(Build.SourcesDirectory)
 
     - task: Bash@3
@@ -215,5 +211,5 @@ jobs:
       inputs:
         scriptSource: 'filePath'
         scriptPath: scripts/package.py
-        arguments: 'bin ${{ parameters.arch }} ${{ parameters.config }} oe_full bin'
+        arguments: 'bin ${{ parameters.targetArch }} ${{ parameters.config }} oe_full bin'
         workingDirectory: $(Build.SourcesDirectory)

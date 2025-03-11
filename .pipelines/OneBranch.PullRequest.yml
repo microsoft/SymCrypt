@@ -12,7 +12,6 @@ trigger: none
 
 variables:
   CDP_DEFINITION_BUILD_COUNT: $[counter('', 0)] # needed for onebranch.pipeline.version task https://aka.ms/obpipelines/versioning
-  LinuxContainerImage: 'onebranch.azurecr.io/linux/ubuntu-2004:latest' # Docker image which is used to build the project https://aka.ms/obpipelines/containers
   WindowsContainerImage: 'onebranch.azurecr.io/windows/ltsc2019/vse2022:latest'
 
 resources:
@@ -49,6 +48,7 @@ extends:
         pool:
           type: linux
         variables:
+          LinuxContainerImage: 'onebranch.azurecr.io/linux/ubuntu-2004:latest'
           ob_outputDirectory: $(Build.SourcesDirectory)/bin
         steps:
         - task: PythonScript@0
@@ -69,23 +69,23 @@ extends:
       jobs:
       - template: .pipelines/templates/build-windows-cmake.yml@self
         parameters:
-          arch: 'AMD64'
+          targetArch: 'AMD64'
           config: 'Debug'
       - template: .pipelines/templates/build-windows-cmake.yml@self
         parameters:
-          arch: 'AMD64'
+          targetArch: 'AMD64'
           config: 'Release'
           libcrux: true
       - template: .pipelines/templates/build-windows-cmake.yml@self
         parameters:
-          arch: 'ARM64'
+          targetArch: 'ARM64'
           config: 'Debug'
           skipTests: true
           additionalArgs: '--no-asm'
           identifier: 'NoAsm'
       - template: .pipelines/templates/build-windows-cmake.yml@self
         parameters:
-          arch: 'ARM64'
+          targetArch: 'ARM64'
           config: 'Release'
           skipTests: true
           additionalArgs: '--no-asm'
@@ -93,48 +93,48 @@ extends:
           libcrux: true
       - template: .pipelines/templates/build-windows-cmake.yml@self
         parameters:
-          arch: 'X86'
+          targetArch: 'X86'
           config: 'Debug'
       - template: .pipelines/templates/build-windows-cmake.yml@self
         parameters:
-          arch: 'X86'
+          targetArch: 'X86'
           config: 'Release'
           libcrux: true
       - template: .pipelines/templates/build-windows-cmake.yml@self
         parameters:
-          arch: 'AMD64'
+          targetArch: 'AMD64'
           config: 'Release'
           skipTests: true
           additionalArgs: '--no-asm'
           identifier: 'NoAsm'
       - template: .pipelines/templates/build-windows-cmake.yml@self
         parameters:
-          arch: 'X86'
+          targetArch: 'X86'
           config: 'Release'
           skipTests: true
           additionalArgs: '--no-asm'
           identifier: 'NoAsm'
 
-    - stage: Build_Linux
-      displayName: Build Linux
+    - stage: Build_Linux_AMD64_host
+      displayName: Build Linux AMD64 host
       jobs:
       - template: .pipelines/templates/build-linux.yml@self
         parameters:
-          arch: 'AMD64'
+          targetArch: 'AMD64'
           config: 'Debug'
           cc: 'gcc'
           cxx: 'g++'
           openssl: true
       - template: .pipelines/templates/build-linux.yml@self
         parameters:
-          arch: 'AMD64'
+          targetArch: 'AMD64'
           config: 'Sanitize'
           cc: 'gcc'
           cxx: 'g++'
           openssl: true
       - template: .pipelines/templates/build-linux.yml@self
         parameters:
-          arch: 'AMD64'
+          targetArch: 'AMD64'
           config: 'Release'
           cc: 'gcc'
           cxx: 'g++'
@@ -142,21 +142,21 @@ extends:
           libcrux: true
       - template: .pipelines/templates/build-linux.yml@self
         parameters:
-          arch: 'AMD64'
+          targetArch: 'AMD64'
           config: 'Debug'
           cc: 'clang'
           cxx: 'clang++'
           openssl: true
       - template: .pipelines/templates/build-linux.yml@self
         parameters:
-          arch: 'AMD64'
+          targetArch: 'AMD64'
           config: 'Sanitize'
           cc: 'clang'
           cxx: 'clang++'
           openssl: true
       - template: .pipelines/templates/build-linux.yml@self
         parameters:
-          arch: 'AMD64'
+          targetArch: 'AMD64'
           config: 'Release'
           cc: 'clang'
           cxx: 'clang++'
@@ -164,7 +164,7 @@ extends:
           libcrux: true
       - template: .pipelines/templates/build-linux.yml@self
         parameters:
-          arch: 'AMD64'
+          targetArch: 'AMD64'
           config: 'Release'
           cc: 'gcc'
           cxx: 'g++'
@@ -174,7 +174,7 @@ extends:
           identifier: 'NoAsm'
       - template: .pipelines/templates/build-linux.yml@self
         parameters:
-          arch: 'AMD64'
+          targetArch: 'AMD64'
           config: 'Release'
           cc: 'clang'
           cxx: 'clang++'
@@ -184,7 +184,7 @@ extends:
           identifier: 'NoAsm'
       - template: .pipelines/templates/build-linux.yml@self
         parameters:
-          arch: 'X86'
+          targetArch: 'X86'
           config: 'Release'
           cc: 'gcc'
           cxx: 'g++'
@@ -193,7 +193,7 @@ extends:
           identifier: 'NoAsm'
       - template: .pipelines/templates/build-linux.yml@self
         parameters:
-          arch: 'X86'
+          targetArch: 'X86'
           config: 'Release'
           cc: 'clang'
           cxx: 'clang++'
@@ -202,57 +202,87 @@ extends:
           identifier: 'NoAsm'
       - template: .pipelines/templates/build-linux.yml@self
         parameters:
-          arch: 'ARM64'
+          targetArch: 'ARM64'
           config: 'Debug'
           cc: 'clang'
           cxx: 'clang++'
+          skipTests: true # only test native Arm64 builds in PR
           additionalArgs: '--toolchain=cmake-configs/Toolchain-Clang-ARM64.cmake'
       - template: .pipelines/templates/build-linux.yml@self
         parameters:
-          arch: 'ARM64'
+          targetArch: 'ARM64'
           config: 'Release'
           cc: 'clang'
           cxx: 'clang++'
+          skipTests: true # only test native Arm64 builds in PR
           additionalArgs: '--toolchain=cmake-configs/Toolchain-Clang-ARM64.cmake'
           libcrux: true
       - template: .pipelines/templates/build-linux.yml@self
         parameters:
-          arch: 'ARM'
+          targetArch: 'ARM'
           config: 'Debug'
           cc: 'gcc'
           cxx: 'g++'
           additionalArgs: '--toolchain=cmake-configs/Toolchain-GCC-ARM.cmake'
       - template: .pipelines/templates/build-linux.yml@self
         parameters:
-          arch: 'ARM'
+          targetArch: 'ARM'
           config: 'Release'
           cc: 'gcc'
           cxx: 'g++'
           additionalArgs: '--toolchain=cmake-configs/Toolchain-GCC-ARM.cmake'
           libcrux: true
+
+    - stage: Build_Linux_ARM64_host
+      displayName: Build Linux ARM64 host
+      jobs:
+      - template: .pipelines/templates/build-linux.yml@self
+        parameters:
+          hostArch: 'ARM64'
+          targetArch: 'ARM64'
+          config: 'Debug'
+          cc: 'clang'
+          cxx: 'clang++'
+          openssl: true
+      - template: .pipelines/templates/build-linux.yml@self
+        parameters:
+          hostArch: 'ARM64'
+          targetArch: 'ARM64'
+          config: 'Sanitize'
+          cc: 'clang'
+          cxx: 'clang++'
+          openssl: true
+      - template: .pipelines/templates/build-linux.yml@self
+        parameters:
+          hostArch: 'ARM64'
+          targetArch: 'ARM64'
+          config: 'Release'
+          cc: 'clang'
+          cxx: 'clang++'
+          openssl: true
 
     - stage: Build_macOS
       displayName: Build macOS
       jobs:
       - template: .pipelines/templates/build-mac.yml@self
         parameters:
-          arch: 'AMD64'
+          targetArch: 'AMD64'
           config: 'Debug'
           additionalArgs: '--no-asm'
       - template: .pipelines/templates/build-mac.yml@self
         parameters:
-          arch: 'AMD64'
+          targetArch: 'AMD64'
           config: 'Release'
           additionalArgs: '--no-asm'
       - template: .pipelines/templates/build-mac.yml@self
         parameters:
-          arch: 'ARM64'
+          targetArch: 'ARM64'
           config: 'Debug'
           additionalArgs: '--no-asm'
           skipTests: true
       - template: .pipelines/templates/build-mac.yml@self
         parameters:
-          arch: 'ARM64'
+          targetArch: 'ARM64'
           config: 'Release'
           additionalArgs: '--no-asm'
           skipTests: true
