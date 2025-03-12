@@ -102,6 +102,9 @@ jobs:
       ob_sdl_tsa_enabled: false
     ob_sdl_binskim_break: true
     ob_sdl_policheck_break: true
+    ob_sdl_prefast_enabled: true
+    ob_sdl_prefast_runDuring: 'Guardian'
+    ob_sdl_prefast_excludedPaths: 'c:\\program files (x86)\\windows kits\\#$(Build.SourcesDirectory)\\unittest\\symcryptdependencies\\inc\\'
     ob_sdl_prefast_break: true
     ob_sdl_checkCompliantCompilerWarnings: true
     ${{ if eq(parameters.sign, true) }}:
@@ -136,17 +139,6 @@ jobs:
       restoreNugetPackages: ${{ parameters.restoreNugetPackages }}
       msbuildArchitecture: 'x64'
       msbuildArgs: '-p:UndockedOfficial=${{ parameters.nativeCompiler }} -p:UndockedBuildId=$(Build.BuildId) -p:VER_BUILD_ID=$(Build.BuildId) -p:VER_SUFFIX=${{ parameters.buildType }} ${{ parameters.msbuildArgs }}'
-
-  - task: SDLNativeRules@3
-    displayName: '🛡 Guardian: PreFast'
-    continueOnError: true
-    inputs:
-      userProvideBuildInfo: auto
-      rulesetName: Custom
-      customRuleset: '$(Build.SourcesDirectory)\tvs.ruleset'
-      excludedPaths: 'c:/program files (x86)/windows kits/#c:/__w/1/s/unittest/symcryptdependencies/inc/'
-    env:
-      SYSTEM_ACCESSTOKEN: $(System.AccessToken)
 
   # Overwrite default artifact publishing with our copy (enables publishing binaries for failed runs)
   - task: PowerShell@2
