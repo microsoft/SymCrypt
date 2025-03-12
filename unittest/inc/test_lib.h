@@ -357,14 +357,48 @@ extern "C" {
 #define INCLUDE_IMPL_REF       (1)
 #endif
 
+// Per https://github.com/llvm/llvm-project/blob/release/17.x/libcxx/docs/ReleaseNotes/17.rst#llvm-18
+// LLVM 18+ no longer implements the base template for std::char_traits
+// For BString to continue to work, we need to define our own char_traits for BYTE.
+// We only implement the functions that are currently required by the use of BString in the test code,
+// use of new BString functions may cause compile time errors which can be fixed by adding implementations
+// of missing functions.
+struct byte_char_traits
+{
+    using char_type = BYTE;
+    using int_type = unsigned int;
 
+    static void assign(BYTE& value1, const BYTE& value2)
+    {
+        value1 = value2;
+    }
 
+    static BYTE* assign(BYTE* ptr, SIZE_T count, BYTE value)
+    {
+        return static_cast<BYTE*>(memset(ptr, value, count));
+    }
+
+    static int compare(const BYTE* ptr1, const BYTE* ptr2, size_t count)
+    {
+        return memcmp(ptr1, ptr2, count);
+    }
+
+    static BYTE* move(BYTE* dest, const BYTE* src, size_t count)
+    {
+        return static_cast<BYTE*>(memmove(dest, src, count));
+    }
+
+    static BYTE* copy(BYTE* dest, const BYTE* src, size_t count)
+    {
+        return static_cast<BYTE*>(memcpy(dest, src, count));
+    }
+};
 
 //
 // Our own header info
 //
-typedef std::string String;                     // String of characters
-typedef std::basic_string<BYTE> BString;        // String of bytes
+typedef std::string String;                                 // String of characters
+typedef std::basic_string<BYTE, byte_char_traits> BString;  // String of bytes
 
 #define ARRAY_SIZE( x ) (sizeof(x)/sizeof(x[0]))
 

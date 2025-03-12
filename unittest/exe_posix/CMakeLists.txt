@@ -29,6 +29,8 @@ if(CMAKE_SYSTEM_NAME MATCHES "Darwin")
       TARGET symcryptunittest POST_BUILD
       COMMAND xcrun dsymutil $<TARGET_FILE:symcryptunittest> -o $<TARGET_FILE_DIR:symcryptunittest>/symcryptunittest.dSYM
     )
+else() # Special linking options for non-MacOS
+    target_link_libraries(symcryptunittest atomic)
 endif()
 
 # Export oe_sgx_get_additional_host_entropy from the executable so that if we dynamically load

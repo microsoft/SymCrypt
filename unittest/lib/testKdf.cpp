@@ -235,6 +235,7 @@ testKdfKats()
     BOOL skipData = TRUE;
     String sep = "    ";
     BOOL doneAnything = FALSE;
+    SYMCRYPT_ERROR scError;
 
     std::unique_ptr<KdfMultiImp> pKdfMultiImp;
 
@@ -482,13 +483,9 @@ testKdfKats()
 
                 args.uSrtpKdf.pbSalt = master_salt.data();
                 args.uSrtpKdf.cbSalt = master_salt.size();
-
-                args.uSrtpKdf.uKeyDerivationRate = 0;
-                for (auto x : kdr)
-                {
-                    args.uSrtpKdf.uKeyDerivationRate <<= 8;
-                    args.uSrtpKdf.uKeyDerivationRate |= x;
-                }
+                    
+                scError = SymCryptLoadMsbFirstUint32( kdr.data(), kdr.size(), &args.uSrtpKdf.uKeyDerivationRate );
+                CHECK( scError == SYMCRYPT_NO_ERROR, "Error reading srtp key derivation rate" );
 
                 BString katSRTPk_e = katParseData(katItem, "srtp k_e");
                 BString katSRTPk_a = katParseData(katItem, "srtp k_a");
@@ -499,13 +496,9 @@ testKdfKats()
 
                 {
                     args.uSrtpKdf.uIndexWidth = 48;
-
-                    args.uSrtpKdf.uIndex = 0;
-                    for (auto x : index)
-                    {
-                        args.uSrtpKdf.uIndex <<= 8;
-                        args.uSrtpKdf.uIndex |= x;
-                    }
+                    
+                    scError = SymCryptLoadMsbFirstUint64( index.data(), index.size(), &args.uSrtpKdf.uIndex );
+                    CHECK( scError == SYMCRYPT_NO_ERROR, "Error reading srtp index" );
 
                     args.uSrtpKdf.label = SYMCRYPT_SRTP_ENCRYPTION_KEY;
                     katKdfSingle(pKdfMultiImp.get(), k_master.data(), k_master.size(), &args, katSRTPk_e.data(), katSRTPk_e.size(), line);
@@ -519,13 +512,9 @@ testKdfKats()
 
                 {
                     args.uSrtpKdf.uIndexWidth = 32;
-
-                    args.uSrtpKdf.uIndex = 0;
-                    for (auto x : indexSRTCP)
-                    {
-                        args.uSrtpKdf.uIndex <<= 8;
-                        args.uSrtpKdf.uIndex |= x;
-                    }
+                    
+                    scError = SymCryptLoadMsbFirstUint64( indexSRTCP.data(), indexSRTCP.size(), &args.uSrtpKdf.uIndex );
+                    CHECK( scError == SYMCRYPT_NO_ERROR, "Error reading srtcp index" );
 
                     args.uSrtpKdf.label = SYMCRYPT_SRTCP_ENCRYPTION_KEY;
                     katKdfSingle(pKdfMultiImp.get(), k_master.data(), k_master.size(), &args, katSRTCPk_e.data(), katSRTCPk_e.size(), line);

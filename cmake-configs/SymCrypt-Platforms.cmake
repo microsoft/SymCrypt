@@ -115,6 +115,12 @@ if(CMAKE_SYSTEM_NAME MATCHES "Linux|Darwin")
         endif()
     endif()
     
+    # The following commented out options change the C++ standard library implementation used in SymCryptUnitTest Linux
+    # By default, GNU's libstdc++ is used, but to reproduce issues on recent OSX native builds, using LLVM's libc++ is helpful
+    # TODO: switch these flags in at least some clang build pipeline to catch C++ stdlib regressions in inner loop
+    # add_compile_options($<$<COMPILE_LANGUAGE:CXX>:--stdlib=libc++>)
+    # add_link_options(-stdlib=libc++ -lc++abi)
+
     # add_compile_options(-Wall)
     add_compile_options(-Wno-unknown-pragmas)
     add_compile_options(-Werror)
