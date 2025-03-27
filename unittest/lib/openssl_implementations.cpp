@@ -771,9 +771,8 @@ AuthEncImp<ImpOpenssl, AlgAes, ModeGcm>::encrypt(
             OSSL_PARAM_END, OSSL_PARAM_END
         };
 
-        params[0] = OSSL_PARAM_construct_size_t(OSSL_CIPHER_PARAM_AEAD_IVLEN,
-                                            &cbNonce);
-        CHECK(EVP_EncryptInit_ex2(state.encCtx, NULL, NULL, pbNonce, params) == 1, getOpensslError().data());
+        CHECK(EVP_CIPHER_CTX_ctrl(state.encCtx, EVP_CTRL_AEAD_SET_IVLEN, cbNonce, NULL) == 1, getOpensslError().data())
+        CHECK(EVP_EncryptInit_ex2(state.encCtx, NULL, NULL, pbNonce, NULL) == 1, getOpensslError().data());
         CHECK(EVP_EncryptUpdate(state.encCtx, NULL, &outlen, pbAuthData, (int)cbAuthData) == 1, getOpensslError().data());
         CHECK(EVP_EncryptUpdate(state.encCtx, pbDst, &outlen, pbSrc, (int)cbData) == 1, getOpensslError().data());
         CHECK(EVP_EncryptFinal_ex(state.encCtx, pbDst, &outlen) == 1, getOpensslError().data());
@@ -788,13 +787,8 @@ AuthEncImp<ImpOpenssl, AlgAes, ModeGcm>::encrypt(
 
     if( !state.inComputation )
     {
-        OSSL_PARAM params[2] = {
-            OSSL_PARAM_END, OSSL_PARAM_END
-        };
-
-        params[0] = OSSL_PARAM_construct_size_t(OSSL_CIPHER_PARAM_AEAD_IVLEN,
-                                            &cbNonce);
-        CHECK(EVP_EncryptInit_ex2(state.encCtx, NULL, NULL, pbNonce, params) == 1, getOpensslError().data());
+        CHECK(EVP_CIPHER_CTX_ctrl(state.encCtx, EVP_CTRL_AEAD_SET_IVLEN, cbNonce, NULL) == 1, getOpensslError().data())
+        CHECK(EVP_EncryptInit_ex2(state.encCtx, NULL, NULL, pbNonce, NULL) == 1, getOpensslError().data());
         CHECK(EVP_EncryptUpdate(state.encCtx, NULL, &outlen, pbAuthData, (int)cbAuthData) == 1, getOpensslError().data());
         state.inComputation = TRUE;
     }
@@ -854,11 +848,9 @@ AuthEncImp<ImpOpenssl, AlgAes, ModeGcm>::decrypt(
         OSSL_PARAM params[2] = {
             OSSL_PARAM_END, OSSL_PARAM_END
         };
-
-        params[0] = OSSL_PARAM_construct_size_t(OSSL_CIPHER_PARAM_AEAD_IVLEN,
-                                            &cbNonce);
-
-        CHECK(EVP_DecryptInit_ex2(state.decCtx, NULL, NULL, pbNonce, params) == 1, getOpensslError().data());
+        
+        CHECK(EVP_CIPHER_CTX_ctrl(state.decCtx, EVP_CTRL_AEAD_SET_IVLEN, cbNonce, NULL) == 1, getOpensslError().data())
+        CHECK(EVP_DecryptInit_ex2(state.decCtx, NULL, NULL, pbNonce, NULL) == 1, getOpensslError().data());
         CHECK(EVP_DecryptUpdate(state.decCtx, NULL, &outlen, pbAuthData, (int)cbAuthData) == 1, getOpensslError().data());
         CHECK(EVP_DecryptUpdate(state.decCtx, pbDst, &outlen, pbSrc, (int)cbData) == 1, getOpensslError().data());
         params[0] = OSSL_PARAM_construct_octet_string(OSSL_CIPHER_PARAM_AEAD_TAG,
@@ -872,14 +864,9 @@ AuthEncImp<ImpOpenssl, AlgAes, ModeGcm>::decrypt(
     }
 
     if( !state.inComputation )
-    {
-        OSSL_PARAM params[2] = {
-            OSSL_PARAM_END, OSSL_PARAM_END
-        };
-
-        params[0] = OSSL_PARAM_construct_size_t(OSSL_CIPHER_PARAM_AEAD_IVLEN,
-                                            &cbNonce);
-        CHECK(EVP_DecryptInit_ex2(state.decCtx, NULL, NULL, pbNonce, params) == 1, getOpensslError().data());
+    {        
+        CHECK(EVP_CIPHER_CTX_ctrl(state.decCtx, EVP_CTRL_AEAD_SET_IVLEN, cbNonce, NULL) == 1, getOpensslError().data())
+        CHECK(EVP_DecryptInit_ex2(state.decCtx, NULL, NULL, pbNonce, NULL) == 1, getOpensslError().data());
         CHECK(EVP_DecryptUpdate(state.decCtx, NULL, &outlen, pbAuthData, (int)cbAuthData) == 1, getOpensslError().data());
         state.inComputation = TRUE;
     }
@@ -1142,7 +1129,7 @@ EVP_PKEY *createOpensslRsaKey(PRSAKEY_TESTBLOB pcKeyBlob)
         || (params = OSSL_PARAM_BLD_to_param(bld)) == NULL )
         goto err;
 
-    pkey_ctx = EVP_PKEY_CTX_new_from_name(NULL, "RSA", NULL);
+    pkey_ctx = EVP_PKEY_CTX_new_from_name(NULL, "RSA", "provider!=symcryptprovider");
 
     if ( EVP_PKEY_fromdata_init(pkey_ctx) <= 0 || EVP_PKEY_fromdata(pkey_ctx, &pkey, EVP_PKEY_KEYPAIR, params) <= 0 )
     {
@@ -1201,7 +1188,7 @@ RsaSignImp<ImpOpenssl, AlgRsaSignPss>::setKey( PCRSAKEY_TESTBLOB pcKeyBlob )
 
     this->state.pkey = createOpensslRsaKey(const_cast<PRSAKEY_TESTBLOB>(pcKeyBlob));
     CHECK( this->state.pkey != NULL, "pkey is null" );
-    this->state.pkey_ctx = EVP_PKEY_CTX_new(this->state.pkey, NULL);
+    this->state.pkey_ctx = EVP_PKEY_CTX_new_from_pkey(NULL, this->state.pkey, "provider!=symcryptprovider");
     CHECK( this->state.pkey_ctx != NULL, "pkey_ctx is null" );
 
     return STATUS_SUCCESS;
@@ -1219,6 +1206,13 @@ RsaSignImp<ImpOpenssl, AlgRsaSignPss>::sign(
 {
     EVP_MD *md = EVP_MD_fetch(NULL, pcstrHashAlgName, NULL);
     CHECK( md != NULL, "Found hash alg" )
+
+    // Skip since SymCrypt provider blocks RSA + MD5 on AZL3
+    if (EVP_MD_get_type(md) == NID_md5)
+    {
+        EVP_MD_free(md);
+        return STATUS_NOT_SUPPORTED;
+    }
 
     CHECK( EVP_PKEY_sign_init(this->state.pkey_ctx) > 0,
           "EVP_PKEY_sign_init" );
@@ -1250,6 +1244,13 @@ RsaSignImp<ImpOpenssl, AlgRsaSignPss>::verify(
 {
     EVP_MD *md = EVP_MD_fetch(NULL, pcstrHashAlgName, NULL);
     CHECK( md != NULL, "Invalid hash algorithm" )
+
+    // Skip since SymCrypt provider blocks RSA + MD5 on AZL3
+    if (EVP_MD_get_type(md) == NID_md5)
+    {
+        EVP_MD_free(md);
+        return STATUS_NOT_SUPPORTED;
+    }
 
     CHECK( EVP_PKEY_verify_init(this->state.pkey_ctx) > 0,
           "EVP_PKEY_verify_init" );

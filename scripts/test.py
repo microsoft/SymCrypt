@@ -60,12 +60,21 @@ def run_unittest(build_dir : pathlib.Path, emulator : str,
     if disable_ymm:
         env["GLIBC_TUNABLES"] = "glibc.cpu.hwcaps=-AVX_Usable,-AVX_Fast_Unaligned_Load,-AVX2_Usable"
 
-    # Run the test
-    try:
-        subprocess.run(unittest_invocation, env = env, check = True)
-    except subprocess.CalledProcessError as e:
-        print("Unit test exited unsuccessfully with code " + str(e.returncode), file = sys.stderr)
-        exit(e.returncode)
+    test_proc = subprocess.Popen(unittest_invocation, env = env, text=True, stderr = subprocess.PIPE)
+
+    for line in test_proc.stderr:
+        if (line.rstrip().endswith("AddressSanitizer:DEADLYSIGNAL")):
+            print("AddressSanitizer:DEADLYSIGNAL detected", file = sys.stderr)
+            exit(-1)
+        
+        print(line, file = sys.stderr)
+
+    # Test should have finished by now, but this ensures the return code is set
+    test_proc.wait()
+            
+    if (test_proc.returncode != 0):
+        print("Unit test exited unsuccessfully with code " + str(test_proc.returncode), file = sys.stderr)
+        exit(test_proc.returncode)
 
     return 0
 

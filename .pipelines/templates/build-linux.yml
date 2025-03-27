@@ -56,32 +56,52 @@ jobs:
       hostArchitecture: arm64
 
   variables:
-    ${{ if eq(parameters.hostArch, 'AMD64') }}:
-      LinuxContainerImage: 'onebranch.azurecr.io/linux/ubuntu-2004:latest'
+    ${{ if and(eq(parameters.cc, 'gcc'), in(parameters.targetArch, 'AMD64', 'ARM64')) }}:
+      PythonPath: '/usr/bin/python3'
+      DistroFlavor: 'AzureLinux'
+      LinuxContainerImage: 'mcr.microsoft.com/onebranch/azurelinux/build:3.0'
+      ${{ if eq(parameters.openssl, true) }}:
+        openssl_build_flag: '--openssl'
+      ${{ else }}:
+        openssl_build_flag: ''
     ${{ else }}:
-      LinuxContainerImage: 'onebranch.azurecr.io/linux/ubuntu-2004-arm64:latest'
+      PythonPath: '/usr/bin/python'
+      DistroFlavor: 'Ubuntu'
+      ${{ if eq(parameters.hostArch, 'AMD64') }}:
+        LinuxContainerImage: 'onebranch.azurecr.io/linux/ubuntu-2004:latest'
+      ${{ else }}:
+        LinuxContainerImage: 'onebranch.azurecr.io/linux/ubuntu-2004-arm64:latest'
+      ${{ if eq(parameters.openssl, true) }}:
+        openssl_build_flag: '--openssl-build-from-source'
+      ${{ else }}:
+        openssl_build_flag: ''     
     ob_outputDirectory: $(Build.SourcesDirectory)/bin
     ob_sdl_binskim_break: ${{ eq(parameters.config, 'Release') }} # Only break on binskim failures for Release binaries https://aka.ms/obpipelines/sdl
     ${{ if eq(variables['system.debug'], true) }}:
       verbose_build_flag: '--verbose'
     ${{ else }}:
       verbose_build_flag: ''
-    ${{ if eq(parameters.openssl, true) }}:
-      openssl_build_flag: '--openssl-build-from-source'
-    ${{ else }}:
-      openssl_build_flag: ''
     ${{ if eq(parameters.libcrux, true) }}:
       libcrux_build_flag: '--libcrux'
     ${{ else }}:
       libcrux_build_flag: ''
 
   steps:
-    - script: |
-        apt-get update -y
-      continueOnError: true
-      displayName: 'Update package manager'
+    - ${{ if eq(variables.DistroFlavor, 'AzureLinux') }}:
+      - ${{ if and(eq(parameters.hostArch, 'AMD64'), eq(parameters.targetArch, 'ARM64')) }}:
+        - script: |
+            tdnf install -y binutils-aarch64-linux-gnu gcc-aarch64-linux-gnu gcc-c++-aarch64-linux-gnu qemu-user
+          displayName: 'Install arm64 cross-compilation tools'
+      - ${{ if eq(parameters.openssl, true) }}:
+        - script: |
+            tdnf install -y openssl-devel
+          displayName: 'Install OpenSSL'
+    - ${{ else }}:
+      - script: |
+          apt-get update -y
+        continueOnError: true
+        displayName: 'Update package manager'
 
-    - ${{ if eq(parameters.cc, 'clang') }}:
       # Install clang-11 and manually add symlinks so that it can be run via just "clang" rather
       # than clang-11. This is required because we can't explicitly specify clang-11 for
       # parameters.cc (it breaks the job name, because job names aren't allowed to have '-' in them)
@@ -91,28 +111,21 @@ jobs:
           ln -s /usr/bin/clang++-11 /usr/bin/clang++
         displayName: 'Install clang'
 
-    - ${{ if eq(parameters.hostArch, 'AMD64') }}:
-      - ${{ if eq(parameters.targetArch, 'X86') }}:
+      - ${{ if eq(parameters.hostArch, 'AMD64') }}:
+        - ${{ if eq(parameters.targetArch, 'X86') }}:
+          - script: |
+              apt-get install -y gcc-multilib g++-multilib
+            displayName: 'Install x86 headers and libraries'
+
+        - ${{ if eq(parameters.targetArch, 'ARM64') }}:
+          - script: |
+              apt-get install -y binutils-aarch64-linux-gnu gcc-aarch64-linux-gnu g++-aarch64-linux-gnu qemu-user
+            displayName: 'Install arm64 cross-compilation tools'
+
+      - ${{ if eq(parameters.targetArch, 'ARM') }}:
         - script: |
-            apt-get install -y gcc-multilib g++-multilib
-          displayName: 'Install x86 headers and libraries'
-
-      - ${{ if eq(parameters.targetArch, 'ARM64') }}:
-        - script: |
-            apt-get install -y binutils-aarch64-linux-gnu gcc-aarch64-linux-gnu g++-aarch64-linux-gnu qemu-user
-          displayName: 'Install arm64 cross-compilation tools'
-
-    - ${{ if eq(parameters.targetArch, 'ARM') }}:
-      - script: |
-          apt-get install -y gcc-arm-linux-gnueabihf g++-arm-linux-gnueabihf qemu-user
-        displayName: 'Install arm cross-compilation tools'
-
-    # TODO: Once we move to Azure Linux 3 we can use the system-provided OpenSSL package.
-    # For now we will built from source since Ubuntu 20.04 doesn't have OpenSSL 3.
-    # - ${{ if eq(parameters.openssl, true) }}:
-    #   - script: |
-    #       apt-get install -y libssl-dev
-    #     displayName: 'Install OpenSSL'
+            apt-get install -y gcc-arm-linux-gnueabihf g++-arm-linux-gnueabihf qemu-user
+          displayName: 'Install arm cross-compilation tools'
 
     - task: PipAuthenticate@1
       inputs:
@@ -129,6 +142,7 @@ jobs:
         scriptPath: scripts/build.py
         arguments: 'cmake bin --arch ${{ parameters.targetArch }} --config ${{ parameters.config }} --cc ${{ parameters.cc }} --cxx ${{ parameters.cxx }} ${{ parameters.additionalArgs }} $(verbose_build_flag) $(openssl_build_flag) $(libcrux_build_flag)'
         workingDirectory: $(Build.SourcesDirectory)
+        pythonInterpreter: $(PythonPath)
 
     # Overwrite default artifact publishing with our copy (enables publishing binaries for failed runs)
     - script: |
@@ -147,11 +161,20 @@ jobs:
         - ${{ if eq(parameters.config, 'Sanitize') }}:
           - task: PythonScript@0
             displayName: 'Run unit tests'
+            # ASAN occasionally gets stuck in an infinite loop due to an incompatibility with high-entropy ASLR
+            # This issue is fixed in gcc 14+, but will continue to repro on AZL3. For now, we just timeout and
+            # retry the test since it is not a common repro.
+            ${{ if eq(variables.DistroFlavor, 'AzureLinux') }}:
+              retryCountOnTaskFailure: 2
             inputs:
               scriptSource: 'filePath'
               scriptPath: scripts/test.py
               arguments: 'bin noperftests'
               workingDirectory: $(Build.SourcesDirectory)
+              pythonInterpreter: $(PythonPath)
+            env:
+              ASAN_OPTIONS: 'fast_unwind_on_malloc=0'
+              
         - ${{ else }}:
           - task: PythonScript@0
             displayName: 'Run dynamic unit tests'
@@ -160,8 +183,10 @@ jobs:
               scriptPath: scripts/test.py
               arguments: 'bin dynamic:bin/module/generic/libsymcrypt.so noperftests'
               workingDirectory: $(Build.SourcesDirectory)
-
-        - ${{ if eq(parameters.targetArch, 'AMD64') }}:
+              pythonInterpreter: $(PythonPath)
+        
+        # On AZL3, glibc does not respect the "-AVX2_Usable" tunable so this test fails
+        - ${{ if and(eq(variables.DistroFlavor, 'Ubuntu'), eq(parameters.targetArch, 'AMD64')) }}:
           - task: PythonScript@0
             displayName: 'Run unit tests (test YMM save/restore)'
             inputs:
@@ -169,6 +194,7 @@ jobs:
               scriptPath: scripts/test.py
               arguments: '--glibc-disable-ymm bin testSaveYmm'
               workingDirectory: $(Build.SourcesDirectory)
+              pythonInterpreter: $(PythonPath)
 
       - ${{ if and(eq(parameters.hostArch, 'AMD64'), eq(parameters.targetArch, 'ARM64')) }}:
           - task: PythonScript@0
@@ -178,6 +204,7 @@ jobs:
               scriptPath: scripts/test.py
               arguments: '--emulator qemu-aarch64 --emulator-lib-dir /usr/aarch64-linux-gnu/ bin dynamic:bin/module/generic/libsymcrypt.so noperftests +symcrypt -dh -dsa -rsa'
               workingDirectory: $(Build.SourcesDirectory)
+              pythonInterpreter: $(PythonPath)
 
       - ${{ if eq(parameters.targetArch, 'ARM') }}:
         - task: PythonScript@0
@@ -187,6 +214,7 @@ jobs:
             scriptPath: scripts/test.py
             arguments: '--emulator qemu-arm --emulator-lib-dir /usr/arm-linux-gnueabihf/ bin dynamic:bin/module/generic/libsymcrypt.so noperftests +symcrypt -dh -dsa -rsa'
             workingDirectory: $(Build.SourcesDirectory)
+            pythonInterpreter: $(PythonPath)
 
     - task: PythonScript@0
       displayName: 'Package generic Linux module'
@@ -195,6 +223,7 @@ jobs:
         scriptPath: scripts/package.py
         arguments: 'bin ${{ parameters.targetArch }} ${{ parameters.config }} generic bin'
         workingDirectory: $(Build.SourcesDirectory)
+        pythonInterpreter: $(PythonPath)
 
     - task: Bash@3
       displayName: 'Check if OpenEnclave module exists'
@@ -213,3 +242,4 @@ jobs:
         scriptPath: scripts/package.py
         arguments: 'bin ${{ parameters.targetArch }} ${{ parameters.config }} oe_full bin'
         workingDirectory: $(Build.SourcesDirectory)
+        pythonInterpreter: $(PythonPath)
