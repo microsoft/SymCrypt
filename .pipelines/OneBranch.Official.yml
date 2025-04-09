@@ -257,21 +257,21 @@ extends:
         parameters:
           targetArch: 'AMD64'
           config: 'Debug'
-          additionalArgs: '--no-asm'
+          additionalArgs: '--no-asm --no-fips'
       - template: .pipelines/templates/build-mac.yml@self
         parameters:
           targetArch: 'AMD64'
           config: 'Release'
-          additionalArgs: '--no-asm'
+          additionalArgs: '--no-asm --no-fips'
       - template: .pipelines/templates/build-mac.yml@self
         parameters:
           targetArch: 'ARM64'
           config: 'Debug'
-          additionalArgs: '--no-asm'
+          additionalArgs: '--no-asm --no-fips'
           skipTests: true
       - template: .pipelines/templates/build-mac.yml@self
         parameters:
           targetArch: 'ARM64'
           config: 'Release'
-          additionalArgs: '--no-asm'
+          additionalArgs: '--no-asm --no-fips'
           skipTests: true

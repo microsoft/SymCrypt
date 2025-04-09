@@ -1,4 +1,4 @@
-# Common build steps for all SymCrypt Linux modules
+# Common build steps for all SymCrypt Posix modules
 # Set the following variables before including this file:
 #
 # TARGET_NAME - name of the target being built. This should be the same value given to add_library
@@ -27,25 +27,43 @@ else()
     set(OBJCOPY_COMMAND objcopy)
 endif()
 
-target_link_options(${TARGET_NAME} PRIVATE
-  -Wl,--whole-archive
-  $<TARGET_FILE:symcrypt_module_linux_common>
-  $<TARGET_FILE:symcrypt_posixusermode>
-  $<TARGET_FILE:symcrypt_common>
-  -Wl,--no-whole-archive
-  -Wl,-Bsymbolic
-  -Wl,-z,relro
-  -Wl,-z,noexecstack
-  -Wl,-z,now
-  -Wl,-gc-sections
-  -Wl,--build-id
-  -Wl,--version-script=${CMAKE_CURRENT_SOURCE_DIR}/../common/exports.ver
-  -nostdlib
-  -nodefaultlibs
-  -nostartfiles
-)
+if (CMAKE_SYSTEM_NAME MATCHES "Darwin")
+  target_link_options(${TARGET_NAME} PRIVATE
+    -Wl,-all_load
+    $<TARGET_FILE:symcrypt_module_posix_common>
+    $<TARGET_FILE:symcrypt_posixusermode>
+    $<TARGET_FILE:symcrypt_common>
+    -nostdlib
+    -nodefaultlibs
+    -nostartfiles
+    -Wl,-exported_symbols_list,${CMAKE_CURRENT_SOURCE_DIR}/../common/exports.osx
+  )
+  if(SYMCRYPT_TARGET_ARCH MATCHES "AMD64" AND SYMCRYPT_USE_ASM)
+    target_link_options(${TARGET_NAME} PRIVATE
+      -Wl,-exported_symbols_list,${CMAKE_CURRENT_SOURCE_DIR}/../common/exports.osx.x86_64
+    )
+  endif()
+else()
+  target_link_options(${TARGET_NAME} PRIVATE
+    -Wl,--whole-archive
+    $<TARGET_FILE:symcrypt_module_posix_common>
+    $<TARGET_FILE:symcrypt_posixusermode>
+    $<TARGET_FILE:symcrypt_common>
+    -Wl,--no-whole-archive
+    -Wl,-Bsymbolic
+    -Wl,-z,relro
+    -Wl,-z,noexecstack
+    -Wl,-z,now
+    -Wl,-gc-sections
+    -Wl,--build-id
+    -Wl,--version-script=${CMAKE_CURRENT_SOURCE_DIR}/../common/exports.ver
+    -nostdlib
+    -nodefaultlibs
+    -nostartfiles
+  )
+endif()
 
-add_dependencies(${TARGET_NAME} symcrypt_posixusermode symcrypt_common symcrypt_module_linux_common)
+add_dependencies(${TARGET_NAME} symcrypt_posixusermode symcrypt_common symcrypt_module_posix_common)
 
 if(SYMCRYPT_TARGET_ARCH MATCHES "AMD64" AND
     CMAKE_C_COMPILER_ID MATCHES "Clang" AND
@@ -61,7 +79,7 @@ set_target_properties(${TARGET_NAME} PROPERTIES VERSION ${PROJECT_VERSION})
 set_target_properties(${TARGET_NAME} PROPERTIES SOVERSION ${PROJECT_VERSION_MAJOR})
 
 
-if(CMAKE_BUILD_TYPE MATCHES "Release|RelWithDebInfo" AND SYMCRYPT_STRIP_BINARY)
+if(CMAKE_BUILD_TYPE MATCHES "Release|RelWithDebInfo" AND SYMCRYPT_STRIP_BINARY AND NOT CMAKE_SYSTEM_NAME MATCHES "Darwin")
     add_custom_command(
         TARGET ${TARGET_NAME}
         POST_BUILD

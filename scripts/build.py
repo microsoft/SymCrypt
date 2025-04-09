@@ -223,7 +223,7 @@ def main() -> None:
     parser_cmake.add_argument("--cc", type = str, help = "Specify the C compiler to use. If not provided, uses platform default.")
     parser_cmake.add_argument("--cxx", type = str, help = "Specify the C++ compiler to use. If not provided, uses platform default.")
     parser_cmake.add_argument("--no-asm", action = "store_false", dest = "asm", help = "Disable handwritten ASM optimizations.", default = True)
-    parser_cmake.add_argument("--no-fips", action = "store_false", dest = "fips", help = "Disable FIPS selftests and postprocessing of binary. Currently only affects Linux targets.", default = True)
+    parser_cmake.add_argument("--no-fips", action = "store_false", dest = "fips", help = "Disable FIPS selftests, postprocessing of binary, and remove JitterEntropy dependency. Behavior varies by platform.", default = True)
     parser_cmake.add_argument("--no-strip-binary", action = "store_false", dest = "strip_binary", help = "Disable stripping of binary.", default = True)
     parser_cmake.add_argument("--no-fips-postprocess", action = "store_false", dest = "fips_postprocess", help = "Disable FIPS postprocessing of binary.", default = True)
     parser_cmake.add_argument("--test-legacy-impl", action = "store_true",

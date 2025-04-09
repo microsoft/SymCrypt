@@ -1,5 +1,5 @@
 //
-// SymCrypt FIPS Status Indicator common text for Linux modules
+// SymCrypt FIPS Status Indicator common text for Posix modules
 //
 // Copyright (c) Microsoft Corporation. Licensed under the MIT license.
 //

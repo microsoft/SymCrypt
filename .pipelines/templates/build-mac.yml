@@ -59,6 +59,15 @@ jobs:
             scriptPath: scripts/test.py
             arguments: 'bin noperftests'
             workingDirectory: $(Build.SourcesDirectory)
+            
+        - ${{ if ne(parameters.config, 'Sanitize') }}:
+            - task: PythonScript@0
+              displayName: 'Run dynamic unit tests'
+              inputs:
+                scriptSource: 'filePath'
+                scriptPath: scripts/test.py
+                arguments: 'bin dynamic:bin/module/generic/libsymcrypt.dylib noperftests'
+                workingDirectory: $(Build.SourcesDirectory)
 
     - task: PublishPipelineArtifact@1
       displayName: 'Publish build output'

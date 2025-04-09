@@ -3379,11 +3379,6 @@ SymCryptWipeKnownSize(_Out_writes_bytes_(cbData) PVOID pbData, SIZE_T cbData)
 
 #endif  // Platform switch for SymCryptWipeKnownSize
 
-// Set this flag to 1 to enable FIPS checks in the SymCrypt module.
-#ifndef SYMCRYPT_DO_FIPS_SELFTESTS
-#define SYMCRYPT_DO_FIPS_SELFTESTS 0
-#endif
-
 #define SYMCRYPT_FIPS_ASSERT(x) { if(!(x)){ SymCryptFatal('FIPS'); } }
 
 // Flags for FIPS on-demand selftests. When an on-demand selftest succeeds, the corresponding flag

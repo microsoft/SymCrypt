@@ -1,6 +1,6 @@
 //
 // module.c
-// Main file for SymCrypt shared object libraries on Linux-based systems
+// Main file for SymCrypt shared object libraries on Posix-based systems
 //
 // Copyright (c) Microsoft Corporation. Licensed under the MIT license.
 //
@@ -13,7 +13,7 @@ VOID __attribute__((constructor)) SymCryptModuleMain(void)
 {
     SymCryptInit();
 
-    if( SYMCRYPT_DO_FIPS_SELFTESTS )
+    if( SYMCRYPT_MODULE_DO_FIPS_SELFTESTS )
     {
         // We must test HMAC-SHA256 first since it's used by our integrity verification
         SymCryptHmacSha256Selftest();
@@ -26,10 +26,10 @@ VOID __attribute__((constructor)) SymCryptModuleMain(void)
     }
 
     // RNG must be initialized before the following selftests, but this should happen
-    // regardless of whether or SYMCRYPT_DO_FIPS_SELFTESTS is set
+    // regardless of whether or SYMCRYPT_MODULE_DO_FIPS_SELFTESTS is set
     SymCryptRngInit();
 
-    if( SYMCRYPT_DO_FIPS_SELFTESTS )
+    if( SYMCRYPT_MODULE_DO_FIPS_SELFTESTS )
     {
         SymCrypt3DesSelftest();
 

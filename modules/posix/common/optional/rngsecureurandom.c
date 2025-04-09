@@ -23,14 +23,8 @@ VOID
 SYMCRYPT_CALL
 SymCryptEntropySecureGet( _Out_writes_( cbResult ) PBYTE pbResult, SIZE_T cbResult )
 {
-    SIZE_T result;
-    result = getrandom( pbResult, cbResult, 0 );
-    if (result != cbResult )
-    {
-        // If the entropy pool has been initialized and the request size is small
-        // (buflen <= 256), then getrandom() will not fail with EINTR,
-        // but we check anyway as it's not safe to continue if we don't
-        // receive the right amount of entropy.
+    SIZE_T result = getentropy( pbResult, cbResult );
+    if ( result != 0 ) {
         SymCryptFatal( 'rngs' );
     }
 }

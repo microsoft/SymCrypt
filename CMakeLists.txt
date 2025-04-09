@@ -10,6 +10,7 @@ if(WIN32)
 endif()
 
 set(SYMCRYPT_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR})
+set(CMAKE_EXPORT_COMPILE_COMMANDS 1)
 
 # Set version number using helper script
 execute_process(
@@ -53,7 +54,8 @@ option(
     ON)
 
 if(SYMCRYPT_FIPS_BUILD)
-    add_compile_definitions(SYMCRYPT_DO_FIPS_SELFTESTS=1)
+    add_compile_definitions(SYMCRYPT_MODULE_DO_FIPS_SELFTESTS=1)
+    add_compile_definitions(SYMCRYPT_MODULE_USE_FIPS_ENTROPY=1)
 endif()
 
 option(

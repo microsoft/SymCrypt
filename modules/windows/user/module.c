@@ -14,6 +14,7 @@
 #include <bcrypt.h>
 #include <symcrypt.h>
 #include <symcrypt_low_level.h>
+#include "../modules/symcrypt_modules_common.h"
 
 SYMCRYPT_ENVIRONMENT_WINDOWS_USERMODE_LATEST;
 
@@ -91,7 +92,7 @@ DllMain(
         SymCryptInit();
 
         // TODO: We should only run these selftests once per boot, when the first process loads the DLL
-        if( SYMCRYPT_DO_FIPS_SELFTESTS )
+        if( SYMCRYPT_MODULE_DO_FIPS_SELFTESTS )
         {
             PerformStartupAlgorithmSelftests();
         }

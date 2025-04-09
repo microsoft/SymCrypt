@@ -418,11 +418,9 @@ if(NOT WIN32)
     elseif(SYMCRYPT_TARGET_ENV MATCHES "OPTEE")
         if(SYMCRYPT_TARGET_ARCH MATCHES "ARM64")
             # Remove files from symcrypt_common that are not supported in ARM64 optee env.
-            # aes-asm.c - use SymCryptAesDecryptAsm which is not defined for ARM64
             # cpuid_um.c - include auxv.h and use getauxval
             # session.c - use atomic operations (__atomic_compare_exchange)
             list(REMOVE_ITEM SOURCES_COMMON
-                aes-asm.c
                 cpuid_um.c
                 session.c)
         endif()

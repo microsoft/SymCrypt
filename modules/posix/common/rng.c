@@ -23,10 +23,10 @@ SIZE_T g_cbRandomBytesCache = 0;
 
 UINT32 g_rngCounter = 0; // reseed when counter exceeds MAX_GENERATE_BEFORE_RESEED, increments 1 per generate
 
-// This function reseeds the RNG state using the Fips entropy source and the secure entropy source.
+// This function reseeds the RNG state using the FIPS entropy source and the secure entropy source.
 // Seed is constructed as per SP800-90A for CTR_DRBG with a derivation function, that is
 // entropy_input || additional_input, where entropy input is from the SP800-90B compliant (if applicable)
-// Fips entropy source and the additional input is from the secure entropy source.
+// FIPS entropy source and the additional input is from the secure entropy source.
 VOID
 SymCryptRngReseed(void)
 {
@@ -36,8 +36,14 @@ SymCryptRngReseed(void)
     // Additional input is simply data from secure entropy source. Place directly in second half of seed buffer
     SymCryptEntropySecureGet( seed + 32, 32 );
 
-    // Fill first half of seed with SP800-90B compliant (if applicable) Fips entropy source
-    SymCryptEntropyFipsGet( seed, 32 );
+    if( SYMCRYPT_MODULE_USE_FIPS_ENTROPY )
+    {
+        // Fill first half of seed with SP800-90B compliant (if applicable) FIPS entropy source
+        SymCryptEntropyFipsGet( seed, 32 );
+    } else {
+        // Wipe the first half of the seed if we're not using FIPS entropy source
+        SymCryptWipeKnownSize( seed, 32 );
+    }
 
     // Perform the reseed
     SymCryptRngAesReseed( &g_AesRngState, seed, sizeof(seed) );
@@ -75,11 +81,20 @@ SymCryptRngInstantiate(void)
     BYTE seed[64];
 
     // Initialize both entropy sources
-    SymCryptEntropyFipsInit();
+    if( SYMCRYPT_MODULE_USE_FIPS_ENTROPY )
+    {
+        SymCryptEntropyFipsInit();
+    }
     SymCryptEntropySecureInit();
 
-    // Get entropy from Fips entropy source
-    SymCryptEntropyFipsGet( seed, 32 );
+    if( SYMCRYPT_MODULE_USE_FIPS_ENTROPY )
+    {
+        // Get entropy from Fips entropy source
+        SymCryptEntropyFipsGet( seed, 32 );
+    } else {
+        // Wipe the first half of the seed if we're not using FIPS entropy source
+        SymCryptWipeKnownSize( seed, 32 );
+    }
 
     // Get nonce and personalization string from secure entropy source
     SymCryptEntropySecureGet( seed + 32, 32 );
@@ -112,7 +127,10 @@ VOID
 SYMCRYPT_CALL
 SymCryptRngUninit(void)
 {
-    SymCryptEntropyFipsUninit();
+    if( SYMCRYPT_MODULE_USE_FIPS_ENTROPY )
+    {
+        SymCryptEntropyFipsUninit();
+    }
     SymCryptEntropySecureUninit();
     SymCryptRngAesUninstantiate( &g_AesRngState );
     SymCryptCallbackFreeMutexFastInproc( g_rngLock );

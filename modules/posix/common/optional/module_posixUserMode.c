@@ -1,6 +1,6 @@
 //
-// module_linuxUserMode.c
-// SymCrypt env defined for linux user mode
+// module_posixUserMode.c
+// SymCrypt env defined for posix user mode
 //
 // Copyright (c) Microsoft Corporation. Licensed under the MIT license.
 //

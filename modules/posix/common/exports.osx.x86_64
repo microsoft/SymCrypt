@@ -1,0 +1,6 @@
+_SymCryptRdrandGet
+_SymCryptRdrandGetBytes
+_SymCryptRdrandStatus
+_SymCryptRdseedGet
+_SymCryptRdseedGetBytes
+_SymCryptRdseedStatus

@@ -7,6 +7,8 @@
 
 #include "precomp.h"
 
+#if SYMCRYPT_CPU_X86 | SYMCRYPT_CPU_AMD64 | SYMCRYPT_CPU_ARM
+
 VOID
 SYMCRYPT_CALL
 SymCryptAesEcbEncryptAsm( 
@@ -40,3 +42,5 @@ SymCryptAesEcbDecryptAsm(
         cbData -= SYMCRYPT_AES_BLOCK_SIZE;
     }
 }
+
+#endif

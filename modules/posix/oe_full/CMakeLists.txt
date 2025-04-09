@@ -2,7 +2,7 @@ set(SOURCES
     ../common/integrity.c
     statusindicator.c
     rng.c
-    ../common/optional/module_linuxUserMode.c
+    ../common/optional/module_posixUserMode.c
     ../common/callbacks_pthread.c)
 
 include_directories(${SYMCRYPT_SOURCE_DIR}/inc ../common)
