@@ -88,6 +88,11 @@
         "platform" : "win32"
     },
     {
+        "source" : "${BIN_DIR}/lib/symcrypt_static_NoCIL.lib",
+        "dest" : "lib/symcrypt_static_NoCIL.lib",
+        "platform" : "win32"
+    },
+    {
         "source" : "${BIN_DIR}/dll/symcrypt.dll",
         "dest" : "dll/symcrypt.dll",
         "platform" : "win32"
