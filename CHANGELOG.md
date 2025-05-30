@@ -3,7 +3,11 @@
 New changes will be listed here as they are developed. The version number is determined
 prior to the creation of a new release, based on the changes contained in that release.
 
+# Version 103.8.1
+
 - LMS/XMSS fixes
+- Build fix for Clang 18+ libc++
+- Add dynamic library for macOS
 
 # Version 103.8.0
 
