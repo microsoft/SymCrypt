@@ -136,6 +136,10 @@ def configure_cmake(args : argparse.Namespace) -> None:
     if args.ta_dev_kit_inc:
         cmake_args.append("-DTA_DEV_KIT_INC=" + args.ta_dev_kit_inc)
 
+    # Experimental SymCRust link
+    if args.symcrust:
+        cmake_args.append("-DSYMCRYPT_SYMCRUST=ON")
+
     if args.clean and args.build_dir.exists():
         shutil.rmtree(args.build_dir)
 
@@ -243,6 +247,9 @@ def main() -> None:
     # OPTEE
     parser_cmake.add_argument("--optee", action = "store_true", help = "Build SymCrypt for OPTEE env.", default = False)
     parser_cmake.add_argument("--ta_dev_kit_inc", type = str, help = "TA DEV KIT include folder, needed for OPTEE TA compilation.")
+
+    # SymCRust
+    parser_cmake.add_argument("--symcrust", action = "store_true", help = "Build SymCrypt with experimental Rust (SymCRust) source.", default = False)
 
     # MSBuild build options
     parser_msbuild = subparsers.add_parser("msbuild", help = "Build using MSBuild.")

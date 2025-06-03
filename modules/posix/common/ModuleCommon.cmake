@@ -33,6 +33,7 @@ if (CMAKE_SYSTEM_NAME MATCHES "Darwin")
     $<TARGET_FILE:symcrypt_module_posix_common>
     $<TARGET_FILE:symcrypt_posixusermode>
     $<TARGET_FILE:symcrypt_common>
+    $<TARGET_FILE:symcrypt_mlkem>
     -nostdlib
     -nodefaultlibs
     -nostartfiles
@@ -49,6 +50,7 @@ else()
     $<TARGET_FILE:symcrypt_module_posix_common>
     $<TARGET_FILE:symcrypt_posixusermode>
     $<TARGET_FILE:symcrypt_common>
+    $<TARGET_FILE:symcrypt_mlkem>
     -Wl,--no-whole-archive
     -Wl,-Bsymbolic
     -Wl,-z,relro

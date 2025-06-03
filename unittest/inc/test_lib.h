@@ -357,6 +357,11 @@ extern "C" {
 #define INCLUDE_IMPL_REF       (1)
 #endif
 
+#if !defined( SYMCRUST_EXPERIMENTAL_BUILD )
+// SymCRust experimental build is disabled by default
+#define SYMCRUST_EXPERIMENTAL_BUILD (0)
+#endif
+
 // Per https://github.com/llvm/llvm-project/blob/release/17.x/libcxx/docs/ReleaseNotes/17.rst#llvm-18
 // LLVM 18+ no longer implements the base template for std::char_traits
 // For BString to continue to work, we need to define our own char_traits for BYTE.
