@@ -35,5 +35,3 @@ set_property(TARGET symcrust PROPERTY
     IMPORTED_LOCATION ${CMAKE_CURRENT_BINARY_DIR}/${SYMCRUST_CARGO_BUILD_DIR}/${SYMCRUST_LIB_NAME})
 
 target_link_libraries(symcrust INTERFACE symcrypt_common)
-  
-  
