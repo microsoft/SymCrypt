@@ -4,6 +4,7 @@
 
 #include "precomp.h"
 
+#if SYMCRUST_EXPERIMENTAL_BUILD == 0
 ////////////////////////////////////////////////
 // SymCrypt-specific testing
 ////////////////////////////////////////////////
@@ -309,6 +310,7 @@ testMlKemArithmetic()
         }
     }
 }
+#endif
 
 ////////////////////////////////////////////////
 // Multi-implementation testing
@@ -1010,7 +1012,9 @@ testKem()
     nOutstandingAllocs = SYMCRYPT_INTERNAL_VOLATILE_READ64(&g_nOutstandingCheckedAllocs);
     CHECK3( nOutstandingAllocs  == 0, "Memory leak %d outstanding", nOutstandingAllocs );
 
+#if SYMCRUST_EXPERIMENTAL_BUILD == 0
     testMlKemArithmetic();
+#endif
     testMlKemHighLevelAPI();
 
     nOutstandingAllocs = SYMCRYPT_INTERNAL_VOLATILE_READ64(&g_nOutstandingCheckedAllocs);

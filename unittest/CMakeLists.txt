@@ -142,6 +142,12 @@ if(SYMCRYPT_TEST_LIBCRUX)
     # add_compile_definitions(INCLUDE_IMPL_LIBCRUX=1)
 endif()
 
+if(SYMCRYPT_SYMCRUST MATCHES "ON")
+  # When building with experimental SymCRust implementations, some
+  # implementation-specific tests need to be disabled/changed
+  add_compile_definitions(SYMCRUST_EXPERIMENTAL_BUILD=1)
+endif()
+
 include_directories(inc)
 include_directories(lib)
 include_directories(resource)

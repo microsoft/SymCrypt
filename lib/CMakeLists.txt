@@ -75,8 +75,6 @@ set(SOURCES_COMMON
     md5.c
     mldsa.c
     mldsa_primitives.c
-    mlkem.c
-    mlkem_primitives.c
     modexp.c
     paddingPkcs7.c
     parhash.c
@@ -433,7 +431,17 @@ endif()
 
 include_directories(${SYMCRYPT_SOURCE_DIR}/inc)
 
+if(NOT SYMCRYPT_SYMCRUST MATCHES "ON")
+    add_library(symcrypt_mlkem STATIC mlkem.c mlkem_primitives.c)
+    set_target_properties(symcrypt_mlkem PROPERTIES PREFIX "")
+else()
+    add_subdirectory(rust)
+    add_library(symcrypt_mlkem ALIAS symcrust)
+endif()
+
 add_library(symcrypt_common STATIC ${SOURCES_COMMON})
+set_target_properties(symcrypt_common PROPERTIES PREFIX "")
+target_link_libraries(symcrypt_common symcrypt_mlkem)
 
 add_library(symcrypt_generic STATIC env_generic.c)
 set_target_properties(symcrypt_generic PROPERTIES PREFIX "")

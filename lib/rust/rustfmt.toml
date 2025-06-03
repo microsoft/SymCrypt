@@ -1,0 +1,4 @@
+brace_style = "SameLineWhere"
+control_brace_style = "AlwaysSameLine"
+indent_style = "Block"
+fn_params_layout = "Tall"

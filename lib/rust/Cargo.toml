@@ -1,0 +1,20 @@
+[package]
+name = "symcrust"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+libc = "0.2"
+itertools = "0.14.0"
+
+[lib]
+crate-type = ["staticlib"]
+
+[profile.dev]
+panic="abort"
+
+[profile.release]
+lto = true
+codegen-units = 1
+debug = true
+panic="abort"
