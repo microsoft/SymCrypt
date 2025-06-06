@@ -3,6 +3,8 @@
 New changes will be listed here as they are developed. The version number is determined
 prior to the creation of a new release, based on the changes contained in that release.
 
+- Fix minor interop issue in RSA PKCS1
+
 # Version 103.8.1
 
 - LMS/XMSS fixes
