@@ -63,7 +63,7 @@ extends:
         pool:
           type: linux
         variables:
-          LinuxContainerImage: 'onebranch.azurecr.io/linux/ubuntu-2004:latest'
+          LinuxContainerImage: 'onebranch.azurecr.io/linux/ubuntu-2204:latest'
           ob_outputDirectory: $(Build.SourcesDirectory)/bin
         steps:
         - task: PythonScript@0
