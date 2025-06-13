@@ -146,7 +146,7 @@ SymCryptAesEncryptC(
 
     //
     // From this point on all our data is UINT32 aligned or better on those
-    // platforms that have alignement restrictions.
+    // platforms that have alignment restrictions.
     //
 
     keyPtr = &pExpandedKey->RoundKey[0];            // First round key

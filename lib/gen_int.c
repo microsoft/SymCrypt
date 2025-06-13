@@ -86,7 +86,7 @@ Extended GCD notes.
 A side-channel safe implementation cannot effectively use Euclid's algorithm.
 The quotient is typically very small, but it can be very large. An SCS implementation
 would require the quotient to always be treated as a full-sized number, which would kill performance.
-Instead we use the binary algorihm which is easier to adapt to side-channel safety.
+Instead we use the binary algorithm which is easier to adapt to side-channel safety.
 
 Basic algorithm for inputs S1 and S2:
     Eliminate the joint factors of two. These are added later to the result

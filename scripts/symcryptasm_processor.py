@@ -314,7 +314,7 @@ def calc_amd64_stack_allocation_sizes(self, reg_count, stack_alloc_size, xmm_reg
             3 - stack_alloc_aligned_size : space required to store local variables based on the requested
                                 buffer size in stack_alloc_size, rounded to multiple of 8 and 16B aligned
             4 - shadow_space_allocation_size : space required for shadow store/home location if the function
-                                is nested, including 16B alignment padding if necesssary
+                                is nested, including 16B alignment padding if necessary
     """
 
     # Keep track of stack alignment during each step

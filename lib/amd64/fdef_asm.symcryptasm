@@ -1364,7 +1364,7 @@ MUL_FUNCTION_END(SymCryptFdefRawMul512Asm)
 // VOID
 // SYMCRYPT_CALL
 // SymCryptFdefRawSquareAsm(
-//   _In_reads_(nDgigits*SYMCRYPT_FDEF_DIGIT_NUINT32)    PCUINT32    pSrc,
+//   _In_reads_(nDigits*SYMCRYPT_FDEF_DIGIT_NUINT32)     PCUINT32    pSrc,
 //                                                       UINT32      nDigits,
 //   _Out_writes_(2*nWords)                              PUINT32     pDst )
 MUL_FUNCTION_START(SymCryptFdefRawSquare512Asm, 3, 11)
@@ -1753,7 +1753,7 @@ MUL_FUNCTION_END(SymCryptFdefRawMul1024Asm)
 // VOID
 // SYMCRYPT_CALL
 // SymCryptFdefRawSquareAsm(
-//   _In_reads_(nDgigits*SYMCRYPT_FDEF_DIGIT_NUINT32)    PCUINT32    pSrc,
+//   _In_reads_(nDigits*SYMCRYPT_FDEF_DIGIT_NUINT32)     PCUINT32    pSrc,
 //                                                       UINT32      nDigits,
 //   _Out_writes_(2*nWords)                              PUINT32     pDst )
 MUL_FUNCTION_START(SymCryptFdefRawSquare1024Asm, 3, 11)

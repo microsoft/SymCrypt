@@ -1380,7 +1380,7 @@ enum {
  */
 #define    _ELF_DEFINE_SYMBOL_FLAGS()        \
 _ELF_DEFINE_SYF(SYMINFO_FLG_DIRECT,    0x01,    \
-    "directly assocated reference")        \
+    "directly associated reference")        \
 _ELF_DEFINE_SYF(SYMINFO_FLG_COPY,    0x04,    \
     "definition by copy-relocation")    \
 _ELF_DEFINE_SYF(SYMINFO_FLG_LAZYLOAD,    0x08,    \
@@ -2646,7 +2646,7 @@ _ELF_DEFINE_OHW(OHW_R5KEOP,     0x00000004UL,                \
 _ELF_DEFINE_OHW(OHW_R5KCVTL,    0x00000008UL,                \
     "R5000 cvt.[ds].l bug: clean == 1")                \
 _ELF_DEFINE_OHW(OHW_R10KLDL,    0x00000010UL,                \
-    "needd patch for R10000 misaligned load")
+    "need patch for R10000 misaligned load")
 
 #undef    _ELF_DEFINE_OHW
 #define    _ELF_DEFINE_OHW(N, V, DESCR)    N = V ,

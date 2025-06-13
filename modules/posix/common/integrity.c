@@ -145,7 +145,7 @@ SymCryptHmacSha256AppendDbg(
 
 #endif
 
-// These placeholder vaulues must match the values in process_fips_module.py
+// These placeholder values must match the values in process_fips_module.py
 #if UINTPTR_MAX == 0xFFFFFFFF
 #define PLACEHOLDER_VALUE 0x8BADF00D
 #elif UINTPTR_MAX == 0xFFFFFFFFFFFFFFFFu

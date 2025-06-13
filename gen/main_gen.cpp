@@ -156,7 +156,7 @@ printSmallPrimeDifferences( FILE * f, UINT32 primeLimit )
         "//     if nibble != 0, next prime is p + 2*nibble\n"
         "//     if nibble == 0, set p = p + 30 and goto next nibble, no prime is specified\n"
         "//     if p == SYMCRYPT_MAX_SMALL_PRIME you've read the last nibble in the table\n"
-        "// SYMCYRPT_N_SMALL_PRIMES_ENCODED is the # primes encoded in the table\n"
+        "// SYMCRYPT_N_SMALL_PRIMES_ENCODED is the # primes encoded in the table\n"
         "//\n"
         "\n",
         primeLimit );

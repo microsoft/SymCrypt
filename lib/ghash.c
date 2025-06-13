@@ -163,7 +163,7 @@ SymCryptGHashAppendDataXmm(
 
         //
         // The amd64 compiler can't optimize array indices in a loop where
-        // you use _mm intrinics,
+        // you use _mm intrinsics,
         // so we do all the pointer arithmetic for the compiler.
         //
         p = &expandedKeyTable[0];
@@ -381,7 +381,7 @@ given a 256-bit value (C,D) representing C x^128 + D we compute
     R := D + T0 + T1 + (T1 << 1) + (T1 << 2) + (T1 << 7)
 
 (T1,T0) is just the value C x^128 reduced one step modulo p(x).The value T1 is at most 7 bits,
-so in the next step the reduciton, which computes the result R, is easy. The
+so in the next step the reduction, which computes the result R, is easy. The
 expression T1 + (T1 << 1) + (T1 << 2) + (T1 << 7) is just T1 * x^128 reduced modulo p(x).
 
 Let's first get rid of the polynomial arithmetic and write this completely using shifts on
@@ -457,7 +457,7 @@ The bits b_0, b_1, ..., b_127 represent the polynomial b_0 + b_1 * x + ... + b_1
 This means that the most significant bit in each byte is actually the least significant bit in the
 polynomial.
 
-SSE CPUs use the LSBFirst convention. This means that the bits b_0, b_1, ..., b_127 of the polynimial
+SSE CPUs use the LSBFirst convention. This means that the bits b_0, b_1, ..., b_127 of the polynomial
 end up at positions 7, 6, 5, ..., 1, 0, 15, 14, ..., 9, 8, 23, 22, ... of our XMM register.
 This is obviously not a useful representation to do arithmetic in.
 The first step is to BSWAP the value so that the bits appear in pure reverse order.

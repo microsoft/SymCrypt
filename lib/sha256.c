@@ -683,7 +683,7 @@ LSIGMA1( UINT32 x )
 //
 // r16 is the round number mod 16, r is the round number.
 // r16 is a separate macro argument because it is always a compile-time constant
-// which allows much better optimisations of the memory accesses.
+// which allows much better optimizations of the memory accesses.
 //
 // ah[ r16   &7] = h
 // ah[(r16+1)&7] = g;
@@ -1412,7 +1412,7 @@ extern __m128i _mm_sha256msg2_epu32(__m128i, __m128i);
 // For rounds 16 - 51 we execute the following macro in a loop. For all the other rounds we
 // use specific code.
 //
-// The loop invariant to be satified at the beginning of iteration i (corresponding to rounds
+// The loop invariant to be satisfied at the beginning of iteration i (corresponding to rounds
 // (16+4*i) to (19+4*i) ) is the following:
 //      _MSG_0 = ( W_(19 + 4*i), W_(18 + 4*i), W_(17 + 4*i), W_(16 + 4*i) )
 //      _MSG_1 = ( X_(23 + 4*i), X_(22 + 4*i), X_(21 + 4*i), X_(20 + 4*i) )

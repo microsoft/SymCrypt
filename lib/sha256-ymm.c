@@ -117,7 +117,7 @@ const SYMCRYPT_ALIGN_AT(32) UINT32 BYTE_REVERSE_32X2[8] = {
 // One round of message expansion, generates message word at index r ( 16 <= r < 64 ).
 //
 // Additionally adds the constant to the (r-16)^th message word. We cannot add the constants to
-// the message words with indices higher than (r-16) since they will be used in the message expansion. 
+// the message words with indices greater than (r-16) since they will be used in the message expansion.
 // Constants for the last 16 words are added after message expansion is completed.
 //
 #define SHA256_MSG_EXPAND_8BLOCKS_1ROUND(r) { \

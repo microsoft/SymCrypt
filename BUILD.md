@@ -53,7 +53,7 @@ pipelines, we have created a set of Python scripts to help with building, testin
 
 1. To build SymCrypt for Windows or Linux using the CMake build system, run `scripts/build.py cmake build_dir` where `build_dir` is the desired build output directory.
     * To see additional options, run `scripts/build.py cmake --help`.
-    * On Windows, the the build script also supports MSBuild. To use MSBuild, run `scripts\build.py msbuild`. The output directory for MSBuild is always `build\bin`.
+    * On Windows, the build script also supports MSBuild. To use MSBuild, run `scripts\build.py msbuild`. The output directory for MSBuild is always `build\bin`.
 1. To run the unit tests after a build has finished, run `scripts/test.py build_dir`.
     * Additional positional arguments will be passed directly to the unit test executable.
 1. To package up the built binaries into an archive, run `scripts/package.py build_dir arch configuration module_name release_dir`, where:
