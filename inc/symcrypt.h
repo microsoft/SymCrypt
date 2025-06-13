@@ -2265,7 +2265,7 @@ SymCryptCShake256Selftest(void);
 //      in the SYMCRYPT_PARALLEL_HASH_OPERATION structure; none of the documented fields
 //      (iHash, hashOperation, pbBuffer, cbBuffer) are modified.
 //      The scratch fields are used purely within one call to this function, their value does not have to be
-//      maintained between function calls. The scratch fields to not have to be initialized by the caller
+//      maintained between function calls. The scratch fields do not have to be initialized by the caller
 //      of this function,
 //      THREAD SAFETY: as the pOperations array is updated, it CANNOT be shared between different threads.
 //      Obviously, the same is true of pStates and pbScratch.
@@ -3917,7 +3917,7 @@ SymCryptChaCha20Poly1305Selftest(void);
 // - The seed is unpredictable and unknown to the attacker.
 // - The attacker cannot learn information about the output of the checksum function.
 // In particular, if an attacker can measure how long it takes to add each
-// element in a hash table, he might be able to determine enough information about
+// element in a hash table, they might be able to determine enough information about
 // the output of the checksum function to recover the seed. Of course,
 // once that is done the DOS attack is once again possible.
 //
@@ -9195,7 +9195,7 @@ SymCryptXmsskeyGenerate(
 // Return values:
 //
 //      - SYMCRYPT_NO_ERROR
-//      On successfully key generation
+//      On successful key generation
 //
 //      - SYMCRYPT_MEMORY_ALLOCATION_FAILURE
 //      If there is not enough memory to perform key generation
@@ -9377,7 +9377,7 @@ SymCryptXmssSign(
 //
 //  Return values:
 //
-//      - SYMCRYPT_NO_ERROR on successfully signature generation
+//      - SYMCRYPT_NO_ERROR on successful signature generation
 //
 //      - SYMCRYPT_INVALID_ARGUMENT
 //      If flags parameter is invalid,
