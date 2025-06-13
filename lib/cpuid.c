@@ -16,7 +16,7 @@
 //
 // RDRAND availability is signaled by CPUID.1.ecx[30]
 // PCLMULQDQ availability is signaled by CPUID.1.ecx[1]
-// AES_NI availablity is signaled by CPUID.1.ecx[25]
+// AES_NI availability is signaled by CPUID.1.ecx[25]
 // SSSE3 availability is signaled by CPUID.1.ecx[9]
 // SSE3 availability is signaled by CPUID.1.ecx[0]
 // SSE2 availability is signaled by CPUID.1.edx[26]

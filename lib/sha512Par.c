@@ -144,7 +144,7 @@ SymCryptParallelSha512Result1(
 
     UNREFERENCED_PARAMETER( pParHash );
     //
-    // Function is called when a Result is requested from a parallel hashs state.
+    // Function is called when a Result is requested from a parallel hash state.
     // Do the first step of the padding.
     //
     pState->buffer[bytesInBuffer++] = 0x80;
@@ -382,7 +382,7 @@ SymCryptParallelSha512AppendBlocks_xmm(
 
 
     //
-    // The chaining state can be unaligned on x86, so we use unalgned loads
+    // The chaining state can be unaligned on x86, so we use unaligned loads
     //
 
     T0 = _mm_loadu_si128( (__m128i *)&pChain[0]->H[0] );

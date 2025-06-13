@@ -49,13 +49,13 @@ _TEXT   SEGMENT PARA PUBLIC USE32 'CODE'
         ; seems to be used fairly sloppy, with lots of arguments left 0 even when
         ; they probably shouldn't be according to the spec.
         ;
-        .FPO(0,0,0,0,0,0)       ; 3 byte prolog (covers esp ajustment only)
+        .FPO(0,0,0,0,0,0)       ; 3 byte prolog (covers esp adjustment only)
         
         ; ecx = pbData
         ; edx = cbData
 
         ;       
-        ; This function will handle any alginment of pbData and any size, but it is optimized for 
+        ; This function will handle any alignment of pbData and any size, but it is optimized for
         ; the case where pbData is 4-aligned, and cbData is a multiple of 4.
         ;
         

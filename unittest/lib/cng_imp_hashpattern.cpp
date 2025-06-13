@@ -70,7 +70,7 @@ VOID HashImp<ImpXxx, AlgXxx>::result( _Out_writes_( cbResult ) PBYTE pbResult, S
 {
     CHECK( NT_SUCCESS( CngFinishHashFn( state.hHash, pbResult, (ULONG) cbResult, 0 ) ),
         "Error finalizing CNG/" STRING( ALG_Name ) );
-    CHECK( NT_SUCCESS( CngDestroyHashFn( state.hHash ) ), "Error destoring CNG/" STRING( ALG_Name ) );
+    CHECK( NT_SUCCESS( CngDestroyHashFn( state.hHash ) ), "Error destroying CNG/" STRING( ALG_Name ) );
     state.hHash = 0;
 }
 

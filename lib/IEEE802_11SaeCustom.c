@@ -505,7 +505,7 @@ SymCrypt802_11SaeCustomInit(
     // Set state to 0 so that our pointers have valid values.
     SymCryptWipe( pState, sizeof( *pState ) );
 
-    // Per IEEE 802.11-2016 section 12.4.4.1 the madatory-to-implement curve is
+    // Per IEEE 802.11-2016 section 12.4.4.1 the mandatory-to-implement curve is
     // number 19 from the IANA Group description for RFC 2409 (IKE)
     // The IANA website maps this to a 256-bit Random ECP group in RFC 5903.
     // RFC 5903 specifies this group to be identical to the NIST P256 curve.

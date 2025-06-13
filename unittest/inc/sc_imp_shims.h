@@ -10,7 +10,7 @@
 //    are shimmed to add Vector register save / restore testing, and potentially other functional
 //    checks in future
 // 2) ImpScStatic statically links SymCrypt without any additional overheads. This is used for
-//    perfomance testing
+//    performance testing
 // 3) ImpScDynamic links to the dynamic SymCrypt module if one has been loaded. All SymCrypt symbols
 //    require a dynamic lookup in the loaded module at least once before they can be used.
 //

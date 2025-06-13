@@ -125,8 +125,8 @@ SymCryptPoly1305Result(
 
         // Now we have to process the block, but the block function adds a trailing
         // 1 byte to each 16-byte block. We compensate for that by decrementing
-        // the higest word of the accumulator first; the 1 byte added by the block
-        // processing function has the effect of incrementing the hightest accumulator
+        // the highest word of the accumulator first; the 1 byte added by the block
+        // processing function has the effect of incrementing the highest accumulator
         // word so those two operations cancel each other out.
         pState->a[4] -= 1;
         SymCryptPoly1305ProcessBlocks( pState, pState->buf, 16 );
@@ -245,7 +245,7 @@ a4r3 a3r3 a2r3 a1r3 a0r3                 +
                     -------------------
                   U   V3   V2   V1   V0
 
-At the top you see A and R with the 5*4 digit products arranged in colums.
+At the top you see A and R with the 5*4 digit products arranged in columns.
 The S values are the sums of the product columns without any carries.
 Because the r values are <2^28 and a4 < L we have
 
@@ -273,7 +273,7 @@ We have bounds
     U  < 4
     T4 < 3*(2^32-1)(2^28-1) + (L-1)*(2^28-1) + 2^30, multiple of 4
 
-Now we are ready to perform the modulo reduction. Because P = 2^130 - 5 we have for any any value X 
+Now we are ready to perform the modulo reduction. Because P = 2^130 - 5 we have for any value X
     X*2^130 mod P = 5*X mod P
 because 2^130 = 5 mod P
 Or, if X is a multiple of 4 then

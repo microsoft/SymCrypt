@@ -370,7 +370,7 @@ SymCryptXmssSetParams(
             UINT32                  nWinternitzWidth,   // Winternitz parameter
             UINT32                  nTotalTreeHeight,   // total tree height
             UINT32                  nLayers,            // number of layers
-            UINT32                  cbPrefix            // domain separater prefix length
+            UINT32                  cbPrefix            // domain separator prefix length
     )
 {
     SYMCRYPT_ERROR scError = SYMCRYPT_NO_ERROR;

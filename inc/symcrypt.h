@@ -758,7 +758,7 @@ SymCryptEqual(
 // for any hash algorithm.
 // Virtual table addresses that callers can use are supplied through a const-ptr-const definition.
 // This supports an application switching the underlying implementation of one algorithm
-// without the need to re-compile all the intermediate libraries inbetween.
+// without the need to re-compile all the intermediate libraries in between.
 // For example, you could use the same signature verification library with the fast hash implementation in one binary,
 // and with a compact hash implementation in a second binary, without needing a different
 // signature verification library.
@@ -847,7 +847,7 @@ SymCryptHashStateCopy(
 //
 // Tha MD2 hash algorithm per RFC1319.
 //
-// The MD2 hash function has not received widespead analysis and is very slow
+// The MD2 hash function has not received widespread analysis and is very slow
 // compared to contemporary algorithms.
 //
 // The SymCrypt implementation of MD2 uses table lookups which leads to a side-channel
@@ -2202,7 +2202,7 @@ SymCryptCShake256Selftest(void);
 //      overlaps various hash computations and still gains efficiency when the
 //      number of parallel hash computations increases past this bound.
 //      Note that the internal parallelism that can be used might depend
-//      on the CPU features availalbe, so this value is only an upper bound.
+//      on the CPU features available, so this value is only an upper bound.
 //      We recommend that callers provide as much parallelism as practical,
 //      and let the library perform the optimal sequence of computations.
 //
@@ -2265,7 +2265,7 @@ SymCryptCShake256Selftest(void);
 //      in the SYMCRYPT_PARALLEL_HASH_OPERATION structure; none of the documented fields
 //      (iHash, hashOperation, pbBuffer, cbBuffer) are modified.
 //      The scratch fields are used purely within one call to this function, their value does not have to be
-//      maintained between function calls. The scratch fields to not have to be initialzed by the caller
+//      maintained between function calls. The scratch fields to not have to be initialized by the caller
 //      of this function,
 //      THREAD SAFETY: as the pOperations array is updated, it CANNOT be shared between different threads.
 //      Obviously, the same is true of pStates and pbScratch.
@@ -2508,7 +2508,7 @@ SymCryptParallelSha512Selftest(void);
 //      _Inout_                                     PSYMCRYPT_XXX_STATE  pState,
 //      _Out_writes_( SYMCRYPT_XXX_RESULT_SIZE )    PBYTE                pbResult );
 //
-//      Returns the MAC result of the the state.
+//      Returns the MAC result of the state.
 //      If the state was newly initialized this returns the MAC of the empty string
 //      using the key specified in the SymCryptXxxInit call.
 //      If one or more SymCryptXxxAppend function calls were made on this state
@@ -3479,7 +3479,7 @@ extern const PCSYMCRYPT_MAC SymCryptAesCmacAlgorithm;
 //    state into XOF mode and all the successive calls that generate output from the KMAC state will be
 //    from the XOF mode. SymCryptKmacXxxResult and SymCryptKmacXxxResultEx functions
 //    will also generate output in XOF mode IF they are called after a SymCryptKmacXxxExtract
-//    function with bWipe=FALSE (so that the state ramains in XOF mode). Note that
+//    function with bWipe=FALSE (so that the state remains in XOF mode). Note that
 //    SymCryptKmacXxxResult and SymCryptKmacXxxResultEx functions wipe the state afterwards,
 //    thus KMAC state can only be used to generate output in XOF mode once with these two functions.
 //
@@ -4144,7 +4144,7 @@ SymCryptMarvin32Selftest(void);
 //      The increment function treats the last 8 bytes of the pbChainingValue string as an integer
 //      in most-significant-byte-first format, and increments this integer.
 //      Thus, the last byte is incremented the fastest.
-//      The pbSrc and pbDst buffers may be identical or non-overalapping, but they may not partially overlap.
+//      The pbSrc and pbDst buffers may be identical or non-overlapping, but they may not partially overlap.
 //      cbData must be a multiple of the block size.
 //
 //
@@ -4286,7 +4286,7 @@ SymCryptAesCtrMsb64(
 // We solve this by letting the caller specify a bitmask of modes to be tested.
 // Under the following circumstances this will avoid pulling in unnecessary code:
 // - The argument is a compile-time constant.
-// - The compiler implements the usual constant propagation optimizatoins.
+// - The compiler implements the usual constant propagation optimizations.
 //
 // Note: GCM, CCM, and XTS are NOT tested by this function.
 
@@ -4619,7 +4619,7 @@ SymCryptCbcEncrypt(
 //      encryption, on return it is the last ciphertext block. A long message can be encrypted
 //      piecewise in multiple calls; at the end of one call the pbChainingValue buffer will contain
 //      the correct chaining value for encrypting the next piece of the message.
-//      Once the encryption is fininshed the value in the chaining buffer is no longer needed.
+//      Once the encryption is finished the value in the chaining buffer is no longer needed.
 // - pbSrc is the plaintext input buffer. The plaintext and ciphertext buffers may be
 //      identical (in-place encryption) or non-overlapping, but they may not partially overlap.
 // - cbData. Number of bytes to encrypt. This must be a multiple of the block size.
@@ -4817,7 +4817,7 @@ SymCryptPaddingPkcs7Remove(
 //
 // Note: Removal of PKCS7 padding is extremely sensitive to side channels.
 // For example, if a message is encrypted with AES-CBC and the attacker can modify
-// the ciphertext and then determine whether a padding error occurrs during decryption,
+// the ciphertext and then determine whether a padding error occurs during decryption,
 // then the attacker can use the presence or absence of the error to decrypt the message itself.
 // This function takes great care not to reveal whether an error occurred, and hides
 // the size of the unpadded message. This is even true when writing to pbDst. If cbDst is large
@@ -5703,7 +5703,7 @@ SymCryptSshKdfExpandKey(
 //      - pHashFunc     :   Hash function that will be used in the key derivation.
 //                          This function is saved in SYMCRYPT_SSHKDF_EXPANDED_KEY
 //                          so that it is also used by the SymCryptSshKdfDerive function.
-//      - pbKey, cbKey  :   Buffer contatining the secret key for the KDF.
+//      - pbKey, cbKey  :   Buffer containing the secret key for the KDF.
 //
 // Returns SYMCRYPT_NO_ERROR
 //
@@ -5803,7 +5803,7 @@ SymCryptSrtpKdfExpandKey(
 // Parameters:
 //      - pExpandedKey  :   Pointer to a SYMCRYPT_SRTPKDF_EXPANDED_KEY structure that
 //                          will contain the expanded key after the function returns.
-//      - pbKey, cbKey  :   Buffer contatining the secret key for the KDF. cbKey must be
+//      - pbKey, cbKey  :   Buffer containing the secret key for the KDF. cbKey must be
 //                          a valid AES key size (16-, 24-, or 32-bytes).
 //
 // Returns:
@@ -5898,7 +5898,7 @@ SymCryptSrtpKdfSelfTest(void);
 // SymCryptHkdfPrkExpandKey to produce the final (MAC) key to be used by the
 // "HKDF-Expand" function, without exposing the PRK to the caller.
 //
-// SymCryptHkdfDerive takes as inpt the final MAC key and the optional info. It
+// SymCryptHkdfDerive takes as input the final MAC key and the optional info. It
 // performs the rest of the "HKDF-Expand" function to produce the HKDF result.
 //
 
@@ -5962,7 +5962,7 @@ SymCryptHkdfSelfTest(void);
 //
 // Single-Step KDF as specified in SP800-56C section 4.
 //
-// SSKDF requires an auxilary function H. This can be approved hash function,
+// SSKDF requires an auxiliary function H. This can be approved hash function,
 // HMAC with an approved hash function, or KMAC. The approved hash functions
 // are listed in SP800-56C section 7.
 //
@@ -6718,7 +6718,7 @@ SymCryptAesKwpDecrypt(
 // - It verifies the HMAC in the data structure above.
 // - This is done in a side-channel safe manner, not revealing anything except whether the structure is valid or not.
 // This means that the HMAC computation over the plaintext is constant-time and constant-memory-access pattern
-// irrepective of the padding_length; thus this is a fixed-time implementation for variable-sized inputs.
+// irrespective of the padding_length; thus this is a fixed-time implementation for variable-sized inputs.
 // Similarly, the MAC value has to be extracted from a variable location in the input using a fixed memory access
 // pattern.
 //
@@ -6915,7 +6915,7 @@ SymCryptCallbackReleaseMutexFastInproc( _Inout_ PVOID pMutex );
 // SYMCRYPT_RSAKEY       A key that stores the information for the RSA algorithms (encryption and signing).
 //                       It always contains the RSA parameters / public key, and may or may not contain
 //                       the associated private key.
-// SYMCRYPT_DLGROUP      A discrete log group to be used for the DSA and DH algorithmms. It contains the
+// SYMCRYPT_DLGROUP      A discrete log group to be used for the DSA and DH algorithms. It contains the
 //                       group parameters (P,[Q],G) (The prime Q is optional).
 // SYMCRYPT_DLKEY        A "discrete log" key that stores the information for the DSA and DH algorithms. It
 //                       always contains a public key, and may or may not contain the associated private key.
@@ -7063,11 +7063,11 @@ typedef enum _SYMCRYPT_ECKEY_PRIVATE_FORMAT {
 //     - Bit position of the lowest bit to be specified (starting from 0 for the LSB)
 //     - The bit values
 // The bits that are specified refer to the relevant secret key format.
-// For Canonincal and DivH formats the total number of bits is the # bits of GOrd-1.
+// For Canonical and DivH formats the total number of bits is the # bits of GOrd-1.
 // For DivHTimesH and TimesH formats the total number of bits is the # bits of |E|-1.
 //
 // Note: as GOrd must be prime, #bits(Gord) == #bits(Gord-1). The same is true
-// for |E|=h*GOrd as it can not be a power of 2.
+// for |E|=h*GOrd as it cannot be a power of 2.
 //
 // The HighBitRestrictionNumOfBits field is a value between 0 and 32 (inclusive)
 // and specifies how many bits of the HighBitRestrictionValue are used (starting
@@ -7161,7 +7161,7 @@ typedef enum _SYMCRYPT_ECPOINT_FORMAT {
 //                                      SIZE_T  cbBuffer,
 //                                      <size parameters> );
 //  Create an XXX object from the provided (pbBuffer, cbBuffer) space.
-//  This function performs the necessary initializations of the object, but does not assing or set a value.
+//  This function performs the necessary initializations of the object, but does not assign or set a value.
 //  The object will be able to store values up to size determined by the <size parameters>.
 //  Requirement:
 //      - pbBuffer is aligned to SYMCRYPT_ASYM_ALIGN_VALUE. Note that this can be a stricter requirement than
@@ -7178,7 +7178,7 @@ typedef enum _SYMCRYPT_ECPOINT_FORMAT {
 //  It is always safe to choose
 //      cbBuffer = SymCryptSizeofXxxFromYyy( <size parameters> )
 //  The returned object pointer is simply a cast of the pbBuffer pointer.
-//  Callers that manage arrays of objects can reconstruct the PSYMCYRPT_XXX by casting the buffer pointer
+//  Callers that manage arrays of objects can reconstruct the PSYMCRYPT_XXX by casting the buffer pointer
 //  to the right type.
 //  An object that is created with this function should be wiped, even if it doesn't contain private data.
 //  The SymCryptXxxWipe() function also frees any associated data that the library may maintain.
@@ -7210,7 +7210,7 @@ typedef enum _SYMCRYPT_ECPOINT_FORMAT {
 
 #define SYMCRYPT_SIZEOF_RSAKEY_FROM_PARAMS( modBits, nPrimes, nPubExps ) \
     SYMCRYPT_INTERNAL_SIZEOF_RSAKEY_FROM_PARAMS( modBits, nPrimes, nPubExps )
-// Return a buffer size large enough to create an RSA key in whith the specified
+// Return a buffer size large enough to create an RSA key in which the specified
 // modulus size, # primes, # public exponents, and upper bound for the bitsize of each public exponent.
 // If the object will only contain a public key, nPrimes can be set to 0
 
@@ -8622,7 +8622,7 @@ SymCryptRsaPkcs1Verify(
 //
 // pHashOIDs points to an array of SYMCRYPT_OID and the array size is nOIDCount
 //
-// It returns SYMCRYPT_NO_ERROR if the verification suceeded or SYMCRYPT_SIGNATURE_VERIFICATION_FAILURE
+// It returns SYMCRYPT_NO_ERROR if the verification succeeded or SYMCRYPT_SIGNATURE_VERIFICATION_FAILURE
 // if it failed.
 //
 // nfSignature is the number format of the signature (i.e. the pbSignature buffer). Currently
@@ -8758,7 +8758,7 @@ SymCryptDsaVerify(
 //
 // Verifies a DSA signature using the public part of Key.
 //
-// It returns SYMCRYPT_NO_ERROR if the verification suceeded or SYMCRYPT_SIGNATURE_VERIFICATION_FAILURE
+// It returns SYMCRYPT_NO_ERROR if the verification succeeded or SYMCRYPT_SIGNATURE_VERIFICATION_FAILURE
 // if it failed.
 //
 // Allowed flags:
@@ -8856,7 +8856,7 @@ SymCryptEcDsaVerify(
 //
 // Verifies an ECDSA signature using the public part of Key.
 //
-// It returns SYMCRYPT_NO_ERROR if the verification suceeded or SYMCRYPT_SIGNATURE_VERIFICATION_FAILURE
+// It returns SYMCRYPT_NO_ERROR if the verification succeeded or SYMCRYPT_SIGNATURE_VERIFICATION_FAILURE
 // if it failed.
 //
 // Allowed flags:
@@ -8936,7 +8936,7 @@ SymCryptEcDhSecretAgreementSelftest(void);
 //  XMSS uses WOTS+ as the one-time-signature (OTS) scheme. Public key consists
 //  of two parts; Merkle-tree hash of OTS public keys called the Root, and a Seed value
 //  used in in hash computations. The private key consists of SK_XMSS which is
-//  used to deterministacally create OTS keys, SK_PRF which is used to generate
+//  used to deterministically create OTS keys, SK_PRF which is used to generate
 //  the randomizer for hashing, and an integer Idx is used to select the next OTS key
 //  for signing.
 //
@@ -9195,7 +9195,7 @@ SymCryptXmsskeyGenerate(
 // Return values:
 //
 //      - SYMCRYPT_NO_ERROR
-//      On successfull key generation
+//      On successfully key generation
 //
 //      - SYMCRYPT_MEMORY_ALLOCATION_FAILURE
 //      If there is not enough memory to perform key generation
@@ -9259,7 +9259,7 @@ SymCryptXmsskeySetValue(
 //       If an invalid flag is specified, or SYMCRYPT_FLAG_XMSSKEY_VERIFY_ROOT is
 //      specified when setting a public key
 //
-//      - SYMCRYPT_INLVALID_BLOB
+//      - SYMCRYPT_INVALID_BLOB
 //       If the XMSS algorithm ID in the key blob does not match the algorithm ID
 //      used in creating the key object pointed to by pKey
 //
@@ -9377,7 +9377,7 @@ SymCryptXmssSign(
 //
 //  Return values:
 //
-//      - SYMCRYPT_NO_ERROR on successfull signature generation
+//      - SYMCRYPT_NO_ERROR on successfully signature generation
 //
 //      - SYMCRYPT_INVALID_ARGUMENT
 //      If flags parameter is invalid,
@@ -9423,7 +9423,7 @@ SymCryptXmssVerify(
 //  Return values:
 //
 //      - SYMCRYPT_NO_ERROR
-//      If signature verification succeeeds
+//      If signature verification succeeds
 //
 //		- SYMCRYPT_INVALID_ARGUMENT
 //		If flags is invalid or cbSignature is of incorrect size

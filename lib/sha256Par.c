@@ -106,7 +106,7 @@ SymCryptParallelSha256Result1(
 
     UNREFERENCED_PARAMETER( pParHash );
     //
-    // Function is called when a Result is requested from a parallel hashs state.
+    // Function is called when a Result is requested from a parallel hash state.
     // Do the first step of the padding.
     //
     pState->buffer[bytesInBuffer++] = 0x80;
@@ -201,7 +201,7 @@ SymCryptParallelSha256SetNextWork( PSYMCRYPT_PARALLEL_HASH_SCRATCH_STATE pScratc
         // STATE_PAD2:      We are working on the next operation (a result), and have processed the first half of a 2-block padding.
         // STATE_RESULT:    We are working on the next operation (a result), and have processed all the padding.
         //
-        // The pState->dataLength is updated whenver we copy bytes from the append into the state's buffer, or when
+        // The pState->dataLength is updated whenever we copy bytes from the append into the state's buffer, or when
         //      we return TRUE and process bulk data.
         //
         pOp = pScratch->next;
@@ -385,7 +385,7 @@ SymCryptParallelSha256SetNextWork( PSYMCRYPT_PARALLEL_HASH_SCRATCH_STATE pScratc
 
                 //
                 // We don't parallelize the processing of the first block to get to the whole-block state.
-                // It would mean we get a 1-size block up front, and that interferes with the sorted schedulign
+                // It would mean we get a 1-size block up front, and that interferes with the sorted scheduling
                 // we do. This is not a common case, and we document that this is inefficient.
                 //
                 if( (pState->internalState.hashState.dataLength & (SYMCRYPT_SHA256_INPUT_BLOCK_SIZE - 1)) == 0 )
@@ -645,7 +645,7 @@ SymCryptParallelSha256AppendBlocks_xmm(
     int r;
 
     //
-    // The chaining state can be unaligned on x86, so we use unalgned loads
+    // The chaining state can be unaligned on x86, so we use unaligned loads
     //
 
     T0 = _mm_loadu_si128( (__m128i *)&pChain[0]->H[0] );

@@ -25,8 +25,8 @@
 //==============================================================================================
 
 #define SYMCRYPT_PLATFORM_WINDOWS 0
-#define SYMCRYPT_PLATFORM_APPLE   0 // MacOS and other Apple platforms
-#define SYMCRYPT_PLATFORM_UNIX    0 // Linux and other Unix-likes, besides MacOS. Must support POSIX.
+#define SYMCRYPT_PLATFORM_APPLE   0 // macOS and other Apple platforms
+#define SYMCRYPT_PLATFORM_UNIX    0 // Linux and other Unix-likes, besides macOS. Must support POSIX.
 
 #if defined(_WIN32)
     #undef  SYMCRYPT_PLATFORM_WINDOWS
@@ -1608,7 +1608,7 @@ typedef const SYMCRYPT_HMAC_SHA3_512_STATE *PCSYMCRYPT_HMAC_SHA3_512_STATE;
 //
 // SYMCRYPT_AES_EXPANDED_KEY
 //
-// Expanded key for AES operattions.
+// Expanded key for AES operations.
 //
 typedef SYMCRYPT_ALIGN_STRUCT _SYMCRYPT_AES_EXPANDED_KEY {
     SYMCRYPT_ALIGN BYTE RoundKey[29][4][4];
@@ -2334,10 +2334,10 @@ typedef const SYMCRYPT_ECPOINT * PCSYMCRYPT_ECPOINT;
 #define SYMCRYPT_BYTES_FROM_BITS(bits)          ( ( (bits) + 7 ) / 8 )
 
 // The maximum number of bits in any integer value that the library supports. If the
-// caller's input exceed this bound then the the integer object will not be created.
+// caller's input exceed this bound then the integer object will not be created.
 // The caller either must ensure the bound is not exceeded, or check for NULL before
 // using created SymCrypt objects.
-// The primary purpose of this limit is to avoid integer overlows in size computations.
+// The primary purpose of this limit is to avoid integer overflows in size computations.
 // Having a reasonable upper bound avoids all size overflows, even on 32-bit CPUs
 #define SYMCRYPT_INT_MAX_BITS       ((UINT32)(1 << 20))
 
@@ -2370,7 +2370,7 @@ typedef const SYMCRYPT_ECPOINT * PCSYMCRYPT_ECPOINT;
 
 //
 // Type fields contain the following:
-// lower 16 bits: offset into virtual table table (if any)
+// lower 16 bits: offset into virtual table (if any)
 // upper 16 bits: bits 16-23: 1-character object type. Bits 24-31: 1 char implementation type
 // The upper bits allow objects to be recognized in memory, making debugging easier.
 //
@@ -2559,7 +2559,7 @@ SYMCRYPT_ASYM_ALIGN_STRUCT _SYMCRYPT_MODELEMENT {
     SYMCRYPT_FDEF_SCRATCH_BYTES_FOR_COMMON_MOD_OPERATIONS( _nModDigits ) + \
     ((_nBases)*(1<<SYMCRYPT_FDEF_MAX_WINDOW_MODEXP) + 4)*SYMCRYPT_FDEF_SIZEOF_MODELEMENT_FROM_DIGITS( _nModDigits ) + \
     (((_nBases)*(_nBitsExp)*sizeof(UINT32) + SYMCRYPT_ASYM_ALIGN_VALUE - 1) & ~(SYMCRYPT_ASYM_ALIGN_VALUE - 1)) )
-// Note: We need +4 mutliplied with SYMCRYPT_FDEF_SIZEOF_MODELEMENT_FROM_DIGITS so that SYMCRYPT_FDEF_SCRATCH_BYTES_FOR_MODMULTIEXP
+// Note: We need +4 multiplied with SYMCRYPT_FDEF_SIZEOF_MODELEMENT_FROM_DIGITS so that SYMCRYPT_FDEF_SCRATCH_BYTES_FOR_MODMULTIEXP
 // is always at least 2 modelements bigger than SYMCRYPT_FDEF_SCRATCH_BYTES_FOR_MODEXP (see modexp.c)
 
 //
@@ -2722,7 +2722,7 @@ typedef       SYMCRYPT_RSAKEY * PSYMCRYPT_RSAKEY;
 typedef const SYMCRYPT_RSAKEY * PCSYMCRYPT_RSAKEY;
 
 //
-// The following definitions relating to trial divisoin are not needed by normal callers
+// The following definitions relating to trial division are not needed by normal callers
 // but are used by the test program to measure performance of components.
 //
 

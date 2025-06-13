@@ -3931,7 +3931,7 @@ addCngAlgs()
 
     if( CngCreateMultiHashFn != NULL )
     {
-        CHECK( CngProcessMultiOperationsFn != NULL, "Could not find BCrypProcessMultiOperations" );
+        CHECK( CngProcessMultiOperationsFn != NULL, "Could not find BCryptProcessMultiOperations" );
         addImplementationToGlobalList<ParallelHashImp<ImpCng, AlgParallelSha256>>();
         addImplementationToGlobalList<ParallelHashImp<ImpCng, AlgParallelSha384>>();
         addImplementationToGlobalList<ParallelHashImp<ImpCng, AlgParallelSha512>>();

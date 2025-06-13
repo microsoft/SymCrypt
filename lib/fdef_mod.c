@@ -1070,7 +1070,7 @@ SymCryptFdefModInvGeneric(
 
     if( SymCryptIntIsEqualUint32( piB, 2 ) )
     {
-        // Mod = 2 is a valid input. Luckilly, modular inversion is easy.
+        // Mod = 2 is a valid input. Luckily, modular inversion is easy.
         // The rest of the code assumes that Mod is odd. Other even values are not prime.
         SymCryptModElementCopy( pmMod, peSrc, peDst);
         goto cleanup;

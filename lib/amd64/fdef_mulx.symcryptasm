@@ -1080,7 +1080,7 @@ MACRO_START(MUL_AND_MONTGOMERY_REDUCE14_INTERLEAVE, T0, T1, QH, pA, Aoff, pB, pM
     // (xx, R1, R2, R3, R4, R5, R0) = K * (M0..3) + (R0, R1, R2, R3, R4, R5)
     // K = modInv * R1
     // Note K is chosen using pMod's montgomery inverse s.t. xx would get set to 0
-    // pM is a pointer the the bytes of the modulus (i.e. offset into SYMCRYPT_MODULUS structure)
+    // pM is a pointer the bytes of the modulus (i.e. offset into SYMCRYPT_MODULUS structure)
     // R5 is 0 or 1 at start
     // R0 is 0 or 1 at end
     // T0, T1 = scratch
@@ -1443,7 +1443,7 @@ MACRO_START(MONT16_P384, T0, T1, QH, pM, N4, R0, R1, R2, R3, R4, R5, R6, R7)
     // (R6, R7) = K + (R6, R7)
     //
     // Note K is chosen using pMod's montgomery inverse s.t. R0 is set to 0
-    // pM is a pointer the the bytes of the modulus (i.e. offset into SYMCRYPT_MODULUS structure)
+    // pM is a pointer the bytes of the modulus (i.e. offset into SYMCRYPT_MODULUS structure)
     // N4 is 0 or -1 at start and end
     // R7 in [0, 1] at start and in [0, 2] at end
     // R0 is 0 at end
@@ -2157,7 +2157,7 @@ MACRO_START(MUL_AND_MONTGOMERY_REDUCE14_INTERLEAVE_P256, T0, T1, QH, pA, Aoff, p
     // (xx, R1, R2, R3, R4, R5, R0) = R0 * (M0..3) + (R0, R1, R2, R3, R4, R5)
     // R1 = K = modInv * R1, as modInv == 1
     // Note K is chosen using pMod's montgomery inverse s.t. xx would get set to 0
-    // pM is a pointer the the bytes of the modulus (i.e. offset into SYMCRYPT_MODULUS structure)
+    // pM is a pointer the bytes of the modulus (i.e. offset into SYMCRYPT_MODULUS structure)
     // R5 is 0 or 1 at start
     // R0 is 0 or 1 at end
     // T0, T1 = scratch
@@ -2358,7 +2358,7 @@ MACRO_START(MUL_AND_MONTGOMERY_REDUCE16_INTERLEAVE, T0, T1, QH, pA, Aoff, pB, pM
     // (xx, R1, R2, R3, R4, R5, R6, R7, R0) = K * (M0..5) + (R0, R1, R2, R3, R4, R5, R6, R7)
     // K = modInv * R1
     // Note K is chosen using pMod's montgomery inverse s.t. xx would get set to 0
-    // pM is a pointer the the bytes of the modulus (i.e. offset into SYMCRYPT_MODULUS structure)
+    // pM is a pointer the bytes of the modulus (i.e. offset into SYMCRYPT_MODULUS structure)
     // R7 is 0 or 1 at start
     // R0 is 0 or 1 at end
     // T0, T1 = scratch

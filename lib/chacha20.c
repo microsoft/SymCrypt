@@ -15,7 +15,7 @@ SymCryptChaCha20CryptBlocks(
                             SIZE_T                      cbData );
 // Encrypt Src to Dst using whole blocks, starting at block floor(pState->offset/64).
 // # blocks processed is floor( cbData / 64 )
-// pState->offset pointis updated by 64 for each block encrypted
+// pState->offset point is updated by 64 for each block encrypted
 
 
 

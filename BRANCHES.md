@@ -46,7 +46,7 @@ The publish branch only ever takes merges from main, and never from anywhere
 else. The publishing workflow is:
 
 1. Merge main into publish 
-1. Use `PublishToGithub.cmd` to push the publish branch to Github
+1. Use `PublishToGitHub.cmd` to push the publish branch to GitHub
 
 
 

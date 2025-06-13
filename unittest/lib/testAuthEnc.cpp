@@ -341,7 +341,7 @@ testAuthEncRandom( AuthEncMultiImp * pImp, int rrep, PCBYTE pbResult, SIZE_T cbR
 
         // Kludge: previous implementations of AES-GCM only support 12-byte nonces. That doesn't
         // block this test case, as those implementations will just be ignored if a different
-        // nonce size is used, but since the nonce size is abitrary for GCM, if we choose
+        // nonce size is used, but since the nonce size is arbitrary for GCM, if we choose
         // randomly we will rarely get a 12-byte nonce, meaning that we'll have few results to
         // compare against. So, we force a 12-byte nonce 50% of the time.
         if( pImp->m_algorithmName == "AesGcm" && (rng.byte() & 1) )
