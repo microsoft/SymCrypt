@@ -1048,6 +1048,12 @@ public:
     static constexpr const char * name = "Ecdh";
 };
 
+// Used only for performance testing
+class AlgEckeySetValue{
+public:
+    static constexpr const char * name = "EckeySetValue";
+};
+
 class AlgXmss {
 public:
     static constexpr const char * name = "Xmss";
@@ -1073,6 +1079,12 @@ public:
 class AlgMlDsa{
 public:
     static constexpr const char * name = "MlDsa";
+};
+
+// Used only for performance testing
+class AlgMlDsakeySetValue{
+public:
+    static constexpr const char * name = "MlDsakeySetValue";
 };
 
 class AlgDeveloperTest{

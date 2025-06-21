@@ -8354,7 +8354,7 @@ SymCryptEckeyGetValue(
 // If (pbPrivateKey != NULL), then the function will return the private key in pbPrivateKey
 // in the format specified by the numFormat parameter **as long as** the following three
 // requirements are satisfied:
-//      1. cbPrivateKey >= SymCryptEckeyGetSizeofPrivateKey( pEckey )
+//      1. cbPrivateKey >= SymCryptEckeySizeofPrivateKey( pEckey )
 //      2. pEckey contains a private key part (If this fails the function returns SYMCRYPT_INVALID_BLOB)
 // If (pbPrivateKey == NULL) and (cbPrivateKey == 0), then these parameters are ignored
 // and no private key is returned.
@@ -8362,7 +8362,7 @@ SymCryptEckeyGetValue(
 // If (pbPublicKey != NULL), then the function will return the public key in pbPublicKey
 // in the format specified by the numFormat and the ecPointFormat parameters
 // **as long as** the following requirement is satisfied:
-//      1. cbPublicKey >= SymCryptEckeyGetSizeofPublicKey( pEckey, ecPointFormat )
+//      1. cbPublicKey >= SymCryptEckeySizeofPublicKey( pEckey, ecPointFormat )
 // If (pbPublicKey == NULL) and (cbPublicKey == 0), then these parameters are ignored
 // and no public key is returned.
 //
@@ -10074,7 +10074,7 @@ SymCryptMlKemSelftest(void);
 // a key. The internal format of the keys is not visible to the caller.
 typedef enum _SYMCRYPT_MLDSAKEY_FORMAT {
     SYMCRYPT_MLDSAKEY_FORMAT_NULL               = 0,
-    SYMCRYPT_MLDSAKEY_FORMAT_PRIVATE_SEED        = 1,
+    SYMCRYPT_MLDSAKEY_FORMAT_PRIVATE_SEED       = 1,
         // 32-byte private root seed xi from which all other parameters can be derived.
         // On its own it is ambiguous which ML-DSA parameter set this represents; callers wanting to
         // store this format must track the parameter set alongside the key.

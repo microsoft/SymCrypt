@@ -242,11 +242,13 @@ const ALG_MEASURE_PARAMS g_algMeasureParams[] =
     "EcdsaSign"             , 1, {PERF_KEY_NIST192, PERF_KEY_NIST224, PERF_KEY_NIST256, PERF_KEY_NIST384, PERF_KEY_NIST521, PERF_KEY_NUMS256, PERF_KEY_NUMS384, PERF_KEY_NUMS512, PERF_KEY_W22519, PERF_KEY_W448,}, {},
     "EcdsaVerify"           , 1, {PERF_KEY_NIST192, PERF_KEY_NIST224, PERF_KEY_NIST256, PERF_KEY_NIST384, PERF_KEY_NIST521, PERF_KEY_NUMS256, PERF_KEY_NUMS384, PERF_KEY_NUMS512, PERF_KEY_W22519, PERF_KEY_W448,}, {},
     "Ecdh"                  , 1, {PERF_KEY_NIST192, PERF_KEY_NIST224, PERF_KEY_NIST256, PERF_KEY_NIST384, PERF_KEY_NIST521, PERF_KEY_NUMS256, PERF_KEY_NUMS384, PERF_KEY_NUMS512, PERF_KEY_W22519, PERF_KEY_W448, PERF_KEY_C255_19,}, {},
+    "EckeySetValue"         , 1, {PERF_KEY_NIST192, PERF_KEY_NIST224, PERF_KEY_NIST256, PERF_KEY_NIST384, PERF_KEY_NIST521, PERF_KEY_NUMS256, PERF_KEY_NUMS384, PERF_KEY_NUMS512, PERF_KEY_W22519, PERF_KEY_W448, PERF_KEY_C255_19,}, {},
 
     "MlKem"                 , 0, {PERF_KEY_MLKEM_512, PERF_KEY_MLKEM_768, PERF_KEY_MLKEM_1024}, {PERF_DATASIZE_SAME_AS_KEYSIZE},
     "MlKemkeySetValue"      , 0, {PERF_KEY_MLKEM_512, PERF_KEY_MLKEM_768, PERF_KEY_MLKEM_1024}, {PERF_DATASIZE_SAME_AS_KEYSIZE},
 
     "MlDsa"                 , 0, {PERF_KEY_MLDSA_44, PERF_KEY_MLDSA_65, PERF_KEY_MLDSA_87}, {PERF_DATASIZE_SAME_AS_KEYSIZE},
+    "MlDsakeySetValue"      , 0, {PERF_KEY_MLDSA_44, PERF_KEY_MLDSA_65, PERF_KEY_MLDSA_87}, {PERF_DATASIZE_SAME_AS_KEYSIZE},
 
     "IEEE802_11SaeCustom"   , 0, {}, {},
     "Xmss"                  , 1, { PERF_KEY_XMSS_SHA2_10_256, PERF_KEY_XMSS_SHA2_16_256, PERF_KEY_XMSS_SHA2_20_256, PERF_KEY_XMSS_SHA2_10_512,  PERF_KEY_XMSS_SHAKE256_10_256 }, { PERF_DATASIZE_SAME_AS_KEYSIZE },
@@ -1114,9 +1116,21 @@ VOID measurePerfOneAlg( AlgorithmImplementation * pAlgImp )
                 perfInfo.operationName = "enc";
             }
 
-            if( !STRICMP(pParams->algName, "MlDsa") )
+            if( !STRICMP(pParams->algName, "Dsa") ||
+                !STRICMP(pParams->algName, "MlDsa") ||
+                !STRICMP(pParams->algName, "RsaSignPkcs1") ||
+                !STRICMP(pParams->algName, "RsaSignPss") )
             {
                 perfInfo.operationName = "sig";
+            }
+
+            if( !STRICMP(pParams->algName, "EckeySetValue") ||
+                !STRICMP(pParams->algName, "RsakeySetValue") ||
+                !STRICMP(pParams->algName, "RsakeySetValueFromPrivateExponent") ||
+                !STRICMP(pParams->algName, "MlDsakeySetValue") ||
+                !STRICMP(pParams->algName, "MlKemkeySetValue") )
+            {
+                perfInfo.operationName = "pub";
             }
 
             if(!g_measure_specific_sizes)
@@ -1140,11 +1154,23 @@ VOID measurePerfOneAlg( AlgorithmImplementation * pAlgImp )
         {
             perfInfo.operationName = "dec";
 
-            if (!STRICMP(pParams->algName, "Lms") ||
-                !STRICMP(pParams->algName, "Xmss") ||
-                !STRICMP(pParams->algName, "MlDsa"))
+            if( !STRICMP(pParams->algName, "Dsa") ||
+                !STRICMP(pParams->algName, "Lms") ||
+                !STRICMP(pParams->algName, "MlDsa") ||
+                !STRICMP(pParams->algName, "RsaSignPkcs1") ||
+                !STRICMP(pParams->algName, "RsaSignPss") ||
+                !STRICMP(pParams->algName, "Xmss") )
             {
                 perfInfo.operationName = "ver";
+            }
+
+            if( !STRICMP(pParams->algName, "EckeySetValue") ||
+                !STRICMP(pParams->algName, "RsakeySetValue") ||
+                !STRICMP(pParams->algName, "RsakeySetValueFromPrivateExponent") ||
+                !STRICMP(pParams->algName, "MlDsakeySetValue") ||
+                !STRICMP(pParams->algName, "MlKemkeySetValue") )
+            {
+                perfInfo.operationName = "pri";
             }
 
             if(!g_measure_specific_sizes)

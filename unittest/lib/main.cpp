@@ -409,11 +409,13 @@ const char * g_algorithmNames[] = {
     AlgEcdsaSign::name,
     AlgEcdsaVerify::name,
     AlgEcdh::name,
+    AlgEckeySetValue::name,
     AlgXmss::name,
     AlgLms::name,
     AlgMlKem::name,
     AlgMlKemkeySetValue::name,
     AlgMlDsa::name,
+    AlgMlDsakeySetValue::name,
 
     AlgDeveloperTest::name,
     NULL,
@@ -1412,7 +1414,7 @@ runPerfTests()
                     // Hack: For ML-DSA, don't multiply the key size by 8 since it refers to a
                     // parameter set. In the future we should refactor the performance measurement
                     // architecture to be able to handle these types of algorithms more gracefully.
-                    if( (*i)->m_algorithmName != "MlDsa" )
+                    if( (*i)->m_algorithmName.substr(0, 5) != "MlDsa" )
                     {
                         keySize *= 8;
                     }
