@@ -19,6 +19,7 @@ pr:
 
 variables:
   # https://aka.ms/obpipelines/containers
+  ONEBRANCH_AME_ACR_LOGIN: onebranch.azurecr.io
   WindowsContainerImage: 'onebranch.azurecr.io/windows/ltsc2022/vse2022:latest'
 
 resources:
