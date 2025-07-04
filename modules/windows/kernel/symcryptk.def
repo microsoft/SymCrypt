@@ -150,6 +150,8 @@ EXPORTS
 ;    SymCryptEcurveSizeofFieldElement
 ;    SymCryptEcurveSizeofScalarMultiplier
 ;    SymCryptEqual
+;    SymCryptExternalMuMlDsaSign
+;    SymCryptExternalMuMlDsaVerify
 ;    SymCryptGcmAuthPart
 ;    SymCryptGcmDecrypt
 ;    SymCryptGcmDecryptFinal

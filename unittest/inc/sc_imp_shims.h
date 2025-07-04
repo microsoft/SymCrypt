@@ -636,8 +636,10 @@
 #define ScShimSymCryptMlDsakeyGetValue(...) SCTEST_CALL_SCIMPFN(SymCryptMlDsakeyGetValue, __VA_ARGS__)
 #define ScShimSymCryptMlDsaSign(...) SCTEST_CALL_SCIMPFN(SymCryptMlDsaSign, __VA_ARGS__)
 #define ScShimSymCryptMlDsaSignEx(...) SCTEST_CALL_SCIMPFN(SymCryptMlDsaSignEx, __VA_ARGS__)
+#define ScShimSymCryptExternalMuMlDsaSign(...) SCTEST_CALL_SCIMPFN(SymCryptExternalMuMlDsaSign, __VA_ARGS__)
 #define ScShimSymCryptHashMlDsaSign(...) SCTEST_CALL_SCIMPFN(SymCryptHashMlDsaSign, __VA_ARGS__)
 #define ScShimSymCryptMlDsaVerify(...) SCTEST_CALL_SCIMPFN(SymCryptMlDsaVerify, __VA_ARGS__)
+#define ScShimSymCryptExternalMuMlDsaVerify(...) SCTEST_CALL_SCIMPFN(SymCryptExternalMuMlDsaVerify, __VA_ARGS__)
 #define ScShimSymCryptHashMlDsaVerify(...) SCTEST_CALL_SCIMPFN(SymCryptHashMlDsaVerify, __VA_ARGS__)
 #define ScShimSymCryptMlDsaSelftest(...) SCTEST_CALL_SCIMPFN(SymCryptMlDsaSelftest, __VA_ARGS__)
 

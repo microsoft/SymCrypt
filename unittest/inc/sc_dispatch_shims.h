@@ -583,9 +583,11 @@
 #define ScDispatchSymCryptMlDsakeySetValue(...) SCTEST_CALL_DISPATCHFN(SymCryptMlDsakeySetValue, __VA_ARGS__)
 #define ScDispatchSymCryptMlDsakeyGetValue(...) SCTEST_CALL_DISPATCHFN(SymCryptMlDsakeyGetValue, __VA_ARGS__)
 #define ScDispatchSymCryptMlDsaSign(...) SCTEST_CALL_DISPATCHFN(SymCryptMlDsaSign, __VA_ARGS__)
+#define ScDispatchSymCryptExternalMuMlDsaSign(...) SCTEST_CALL_DISPATCHFN(SymCryptExternalMuMlDsaSign, __VA_ARGS__)
 #define ScDispatchSymCryptMlDsaSignEx(...) SCTEST_CALL_DISPATCHFN(SymCryptMlDsaSignEx, __VA_ARGS__)
 #define ScDispatchSymCryptHashMlDsaSign(...) SCTEST_CALL_DISPATCHFN(SymCryptHashMlDsaSign, __VA_ARGS__)
 #define ScDispatchSymCryptMlDsaVerify(...) SCTEST_CALL_DISPATCHFN(SymCryptMlDsaVerify, __VA_ARGS__)
+#define ScDispatchSymCryptExternalMuMlDsaVerify(...) SCTEST_CALL_DISPATCHFN(SymCryptExternalMuMlDsaVerify, __VA_ARGS__)
 #define ScDispatchSymCryptHashMlDsaVerify(...) SCTEST_CALL_DISPATCHFN(SymCryptHashMlDsaVerify, __VA_ARGS__)
 #define ScDispatchSymCryptMlDsaSelftest(...) SCTEST_CALL_DISPATCHFN(SymCryptMlDsaSelftest, __VA_ARGS__)
 

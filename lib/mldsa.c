@@ -306,14 +306,14 @@ SymCryptMlDsaSignEx(
     PBYTE                   pbSignature,
     SIZE_T                  cbSignature )
 {
-    UNREFERENCED_PARAMETER( flags );
-
     SYMCRYPT_ASSERT( pkMlDsakey->hasPrivateKey == TRUE );
     SYMCRYPT_ASSERT( cbContext <= SYMCRYPT_MLDSA_CONTEXT_MAX_LENGTH );
     SYMCRYPT_ASSERT( cbRandom == SYMCRYPT_MLDSA_SIGNING_RANDOM_SIZE );
     SYMCRYPT_ASSERT( pbHashOid != NULL || cbHashOid == 0 );
     SYMCRYPT_ASSERT( pbContext != NULL || cbContext == 0 );
     SYMCRYPT_ASSERT( cbSignature == pkMlDsakey->pParams->cbEncodedSignature );
+    SYMCRYPT_ASSERT( (flags & ~SYMCRYPT_FLAG_MLDSA_EXTERNALMU) == 0 );
+    SYMCRYPT_ASSERT( ((flags & SYMCRYPT_FLAG_MLDSA_EXTERNALMU) == 0) || (pbContext == NULL && pbHashOid == NULL) );
 
     SYMCRYPT_ERROR scError = SYMCRYPT_NO_ERROR;
 
@@ -322,6 +322,7 @@ SymCryptMlDsaSignEx(
 
     const UINT32 beta = (UINT32) pParams->nChallengeNonZeroCoeffs * pParams->privateKeyRange;
 
+    BOOL bExternalMu = (flags & SYMCRYPT_FLAG_MLDSA_EXTERNALMU) != 0;
     UINT8 modeId = (pbHashOid == NULL) ? 0 : 1; // 0 for ML-DSA, 1 for HashML-DSA
     UINT8 cbContextByte = (UINT8) cbContext;
     BYTE messageRepresentative[SYMCRYPT_SHAKE256_RESULT_SIZE];
@@ -342,22 +343,32 @@ SymCryptMlDsaSignEx(
         scError = SYMCRYPT_MEMORY_ALLOCATION_FAILURE;
         goto cleanup;
     }
-    
-    // Line 6: calculate message representative mu
-    // = SHAKE256( public key hash || modeId || cbContextByte || context || OID? || message/hash, 64 )
-    // The OID is only included in the HashML-DSA mode
+
     PSYMCRYPT_SHAKE256_STATE pShakeState = &(pTemps->shake256State);
     SymCryptShake256Init( pShakeState );
-    SymCryptShake256Append( pShakeState, pkMlDsakey->publicKeyHash, sizeof(pkMlDsakey->publicKeyHash) );
-    SymCryptShake256Append( pShakeState, &modeId, sizeof( modeId ) );
-    SymCryptShake256Append( pShakeState, &cbContextByte, sizeof( cbContextByte ) );
 
-    // These appends are no-ops if the length is zero
-    SymCryptShake256Append( pShakeState, pbContext, cbContext );
-    SymCryptShake256Append( pShakeState, pbHashOid, cbHashOid );
+    if ( bExternalMu )
+    {
+        // Caller passes the externally-computed message representative mu
+        SYMCRYPT_ASSERT( cbInput == SYMCRYPT_SHAKE256_RESULT_SIZE );
+        memcpy( messageRepresentative, pbInput, SYMCRYPT_SHAKE256_RESULT_SIZE );
+    }
+    else
+    {
+        // Line 6: calculate message representative mu
+        // = SHAKE256( public key hash || modeId || cbContextByte || context || OID? || message/hash, 64 )
+        // The OID is only included in the HashML-DSA mode
+        SymCryptShake256Append( pShakeState, pkMlDsakey->publicKeyHash, sizeof(pkMlDsakey->publicKeyHash) );
+        SymCryptShake256Append( pShakeState, &modeId, sizeof( modeId ) );
+        SymCryptShake256Append( pShakeState, &cbContextByte, sizeof( cbContextByte ) );
 
-    SymCryptShake256Append( pShakeState, pbInput, cbInput );
-    SymCryptShake256Result( pShakeState, messageRepresentative );
+        // These appends are no-ops if the length is zero
+        SymCryptShake256Append( pShakeState, pbContext, cbContext );
+        SymCryptShake256Append( pShakeState, pbHashOid, cbHashOid );
+
+        SymCryptShake256Append( pShakeState, pbInput, cbInput );
+        SymCryptShake256Result( pShakeState, messageRepresentative );
+    }
 
     // Line 7: Calculate private random seed rho prime prime
     // = SHAKE256( private signing seed K || pbRandom || message representative mu, 64 )
@@ -563,6 +574,59 @@ cleanup:
 _Use_decl_annotations_
 SYMCRYPT_ERROR
 SYMCRYPT_CALL
+SymCryptExternalMuMlDsaSign(
+    PCSYMCRYPT_MLDSAKEY pkMlDsakey,
+    PCBYTE              pbMu,
+    SIZE_T              cbMu,
+    UINT32              flags,
+    PBYTE               pbSignature,
+    SIZE_T              cbSignature )
+{
+    SYMCRYPT_ERROR scError = SYMCRYPT_NO_ERROR;
+
+    if( (flags != 0) || // No flags currently supported
+        (pkMlDsakey->hasPrivateKey == FALSE) ||
+        (cbMu != SYMCRYPT_SHAKE256_RESULT_SIZE) ||
+        (cbSignature != pkMlDsakey->pParams->cbEncodedSignature) )
+    {
+        scError = SYMCRYPT_INVALID_ARGUMENT;
+        goto cleanup;
+    }
+
+    BYTE random[SYMCRYPT_MLDSA_SIGNING_RANDOM_SIZE];
+    scError = SymCryptCallbackRandom( random, sizeof(random) );
+    if( scError != SYMCRYPT_NO_ERROR )
+    {
+        goto cleanup;
+    }
+
+    scError = SymCryptMlDsaSignEx(
+        pkMlDsakey,
+        pbMu,
+        cbMu,
+        NULL, // pbContext
+        0, // cbContext
+        NULL, // pbHashOid
+        0, // cbHashOid
+        random,
+        sizeof(random),
+        SYMCRYPT_FLAG_MLDSA_EXTERNALMU,
+        pbSignature,
+        cbSignature );
+    if( scError != SYMCRYPT_NO_ERROR )
+    {
+        goto cleanup;
+    }
+
+cleanup:
+    SymCryptWipeKnownSize( random, sizeof(random) );
+
+    return scError;
+}
+
+_Use_decl_annotations_
+SYMCRYPT_ERROR
+SYMCRYPT_CALL
 SymCryptHashMlDsaSign(
     PCSYMCRYPT_MLDSAKEY     pkMlDsakey,
     SYMCRYPT_PQDSA_HASH_ID  hashAlg,
@@ -649,6 +713,8 @@ SymCryptMlDsaVerifyEx(
     SYMCRYPT_ASSERT( pbHashOid != NULL || cbHashOid == 0 );
     SYMCRYPT_ASSERT( pbContext != NULL || cbContext == 0 );
     SYMCRYPT_ASSERT( cbSignature == pkMlDsakey->pParams->cbEncodedSignature );
+    SYMCRYPT_ASSERT( (flags & ~SYMCRYPT_FLAG_MLDSA_EXTERNALMU) == 0 );
+    SYMCRYPT_ASSERT( ((flags & SYMCRYPT_FLAG_MLDSA_EXTERNALMU) == 0) || (pbContext == NULL && pbHashOid == NULL) );
 
     SYMCRYPT_ERROR scError = SYMCRYPT_NO_ERROR;
     PCSYMCRYPT_MLDSA_INTERNAL_PARAMS pParams = pkMlDsakey->pParams;
@@ -656,6 +722,7 @@ SymCryptMlDsaVerifyEx(
 
     const UINT32 beta = (UINT32) pParams->nChallengeNonZeroCoeffs * pParams->privateKeyRange;
 
+    BOOL bExternalMu = (flags & SYMCRYPT_FLAG_MLDSA_EXTERNALMU) != 0;
     UINT8 modeId = (pbHashOid == NULL) ? 0 : 1; // 0 for ML-DSA, 1 for HashML-DSA
     UINT8 cbContextByte = (UINT8) cbContext;
     BYTE messageRepresentative[SYMCRYPT_SHAKE256_RESULT_SIZE];
@@ -773,19 +840,30 @@ SymCryptMlDsaVerifyEx(
         0,
         pbw1Encoded );
 
-    // Line 7: calculate message representative mu
-    // = SHAKE256( public key hash || modeId || cbContextByte || context || OID? || message/hash, 64 )
-    // The OID is only included in the HashML-DSA mode
     PSYMCRYPT_SHAKE256_STATE pShakeState = &(pTemps->shake256State);
     SymCryptShake256Init( pShakeState );
-    SymCryptShake256Append( pShakeState, pkMlDsakey->publicKeyHash, sizeof(pkMlDsakey->publicKeyHash) );
-    SymCryptShake256Append( pShakeState, &modeId, sizeof( modeId ) );
-    SymCryptShake256Append( pShakeState, &cbContextByte, sizeof( cbContextByte ) );
-    SymCryptShake256Append( pShakeState, pbContext, cbContext );
-    SymCryptShake256Append( pShakeState, pbHashOid, cbHashOid );
 
-    SymCryptShake256Append( pShakeState, pbInput, cbInput );
-    SymCryptShake256Result( pShakeState, messageRepresentative );
+    if ( bExternalMu )
+    {
+        // Caller passes the externally-computed message representative mu
+        SYMCRYPT_ASSERT( cbInput == SYMCRYPT_SHAKE256_RESULT_SIZE );
+        memcpy( messageRepresentative, pbInput, SYMCRYPT_SHAKE256_RESULT_SIZE );
+    }
+    else
+    {
+        // Line 7: calculate message representative mu
+        // = SHAKE256( public key hash || modeId || cbContextByte || context || OID? || message/hash, 64 )
+        // The OID is only included in the HashML-DSA mode
+        SymCryptShake256Append( pShakeState, pkMlDsakey->publicKeyHash, sizeof(pkMlDsakey->publicKeyHash) );
+        SymCryptShake256Append( pShakeState, &modeId, sizeof( modeId ) );
+        SymCryptShake256Append( pShakeState, &cbContextByte, sizeof( cbContextByte ) );
+
+        SymCryptShake256Append( pShakeState, pbContext, cbContext );
+        SymCryptShake256Append( pShakeState, pbHashOid, cbHashOid );
+
+        SymCryptShake256Append( pShakeState, pbInput, cbInput );
+        SymCryptShake256Result( pShakeState, messageRepresentative );
+    }
 
     SymCryptShake256Append( pShakeState, messageRepresentative, sizeof(messageRepresentative) );
     SymCryptShake256Append( pShakeState, pbw1Encoded, cbw1Encoded );
@@ -840,6 +918,47 @@ SymCryptMlDsaVerify(
         pbSignature,
         cbSignature,
         flags );
+    if( scError != SYMCRYPT_NO_ERROR )
+    {
+        goto cleanup;
+    }
+
+cleanup:
+    return scError;
+}
+
+_Use_decl_annotations_
+SYMCRYPT_ERROR
+SYMCRYPT_CALL
+SymCryptExternalMuMlDsaVerify(
+    PCSYMCRYPT_MLDSAKEY pkMlDsakey,
+    PCBYTE              pbMu,
+    SIZE_T              cbMu,
+    PCBYTE              pbSignature,
+    SIZE_T              cbSignature,
+    UINT32              flags )
+{
+    SYMCRYPT_ERROR scError = SYMCRYPT_NO_ERROR;
+
+    if( (flags != 0) || // No flags currently supported
+        (cbMu != SYMCRYPT_SHAKE256_RESULT_SIZE) ||
+        (cbSignature != pkMlDsakey->pParams->cbEncodedSignature) ) 
+    {
+        scError = SYMCRYPT_INVALID_ARGUMENT;
+        goto cleanup;
+    }
+
+    scError = SymCryptMlDsaVerifyEx(
+        pkMlDsakey,
+        pbMu,
+        cbMu,
+        NULL, // pbContext
+        0, // cbContext
+        NULL, // pbHashOid
+        0, // cbHashOid
+        pbSignature,
+        cbSignature,
+        SYMCRYPT_FLAG_MLDSA_EXTERNALMU );
     if( scError != SYMCRYPT_NO_ERROR )
     {
         goto cleanup;

@@ -10805,6 +10805,27 @@ PqDsaImp<ImpXxx, AlgMlDsa>::sign(
 template<>
 _Use_decl_annotations_
 NTSTATUS
+PqDsaImp<ImpXxx, AlgMlDsa>::signExternalMu(
+    PCBYTE pbMu,
+    SIZE_T cbMu,
+    PBYTE pbSignature,
+    SIZE_T cbSignature )
+{
+    SYMCRYPT_ERROR scError = SYMCRYPT_NO_ERROR;
+
+    scError = ScShimSymCryptExternalMuMlDsaSign(
+        state.pKey,
+        pbMu, cbMu,
+        0, // flags
+        pbSignature, cbSignature );
+    CHECK( scError == SYMCRYPT_NO_ERROR, "SymCryptExternalMuMlDsaSign" );
+
+    return STATUS_SUCCESS;
+}
+
+template<>
+_Use_decl_annotations_
+NTSTATUS
 PqDsaImp<ImpXxx, AlgMlDsa>::signHash(
     SYMCRYPT_PQDSA_HASH_ID hashId,
     PCBYTE pbHash,
@@ -10839,6 +10860,7 @@ PqDsaImp<ImpXxx, AlgMlDsa>::signEx(
     SIZE_T cbContext,
     PCBYTE pbRandom,
     SIZE_T cbRandom,
+    UINT32 flags,
     PBYTE pbSignature,
     SIZE_T cbSignature )
 {
@@ -10880,7 +10902,7 @@ PqDsaImp<ImpXxx, AlgMlDsa>::signEx(
         pbContext, cbContext,
         pbHashOid, cbHashOid,
         pbRandom, cbRandom,
-        0, // flags
+        flags,
         pbSignature, cbSignature );
     CHECK( scError == SYMCRYPT_NO_ERROR, "SymCryptMlDsaSignEx" );
 
@@ -10897,7 +10919,6 @@ PqDsaImp<ImpXxx, AlgMlDsa>::verify(
     SIZE_T cbContext,
     PCBYTE pbSignature,
     SIZE_T cbSignature )
-
 {
     SYMCRYPT_ERROR scError = SYMCRYPT_NO_ERROR;
 
@@ -10905,6 +10926,39 @@ PqDsaImp<ImpXxx, AlgMlDsa>::verify(
         state.pKey,
         pbMessage, cbMessage,
         pbContext, cbContext,
+        pbSignature, cbSignature,
+        0 ); // flags
+
+    if( scError == SYMCRYPT_NO_ERROR )
+    {
+        return STATUS_SUCCESS;
+    }
+    else if( scError == SYMCRYPT_SIGNATURE_VERIFICATION_FAILURE )
+    {
+        // Signature verification failure is an expected failure for some test cases
+        return STATUS_INVALID_SIGNATURE;
+    }
+    else
+    {
+        CHECK3(FALSE, "Unexpected SymCrypt error %08x", scError);
+        return STATUS_UNSUCCESSFUL; // Unreachable
+    }
+}
+
+template<>
+_Use_decl_annotations_
+NTSTATUS
+PqDsaImp<ImpXxx, AlgMlDsa>::verifyExternalMu(
+    PCBYTE pbMu,
+    SIZE_T cbMu,
+    PCBYTE pbSignature,
+    SIZE_T cbSignature )
+{
+    SYMCRYPT_ERROR scError = SYMCRYPT_NO_ERROR;
+
+    scError = ScShimSymCryptExternalMuMlDsaVerify(
+        state.pKey,
+        pbMu, cbMu,
         pbSignature, cbSignature,
         0 ); // flags
 

@@ -704,3 +704,9 @@ VERSION_103.8
    global:
       SymCryptDeprecatedServiceIndicator;
 } VERSION_103.7;
+VERSION_103.9
+{
+   global:
+      SymCryptExternalMuMlDsaSign;
+      SymCryptExternalMuMlDsaVerify;
+} VERSION_103.8;

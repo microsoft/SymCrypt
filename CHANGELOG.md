@@ -5,6 +5,10 @@ prior to the creation of a new release, based on the changes contained in that r
 
 - Fix minor interop issue in RSA PKCS1
 
+# Version 103.9.0
+
+- Add support for ML-DSA Sign and Verify with External Mu
+
 # Version 103.8.1
 
 - LMS/XMSS fixes

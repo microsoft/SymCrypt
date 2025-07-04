@@ -196,6 +196,8 @@ EXPORTS
     SymCryptEcurveSizeofFieldElement
     SymCryptEcurveSizeofScalarMultiplier
     SymCryptEqual
+    SymCryptExternalMuMlDsaSign
+    SymCryptExternalMuMlDsaVerify
     SymCryptFipsGetSelftestsPerformed
     SymCryptGcmAuthPart
     SymCryptGcmDecrypt

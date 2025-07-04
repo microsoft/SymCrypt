@@ -54,6 +54,11 @@
 //
 #define SYMCRYPT_MLDSA_SUPPORTED_HASH_OID_SIZE (11)
 
+//
+// Flag for Sign and Verify with External Mu
+//
+#define SYMCRYPT_FLAG_MLDSA_EXTERNALMU (0x1)
+
 typedef struct _SYMCRYPT_MLDSA_POLYELEMENT {
     // PolyElements just store the coefficients without any header.
     UINT32      coeffs[SYMCRYPT_MLWE_POLYNOMIAL_COEFFICIENTS];
@@ -259,8 +264,8 @@ SymCryptMlDsaSignEx(
     _Out_writes_( cbSignature )                         PBYTE               pbSignature,
                                                         SIZE_T              cbSignature );
 //
-// Implements SymCryptMlDsaSign and SymCryptHashMlDsaSign. Takes the random value from the caller
-// so that signing can be done deterministically for testing.
+// Implements SymCryptMlDsaSign, SymCryptExternalMuMlDsaSign, and SymCryptHashMlDsaSign.
+// Takes the random value from the caller so that signing can be done deterministically for testing.
 //
 // Parameters:
 // - (pbInput, cbInput): The message to be signed. For SymCryptMlDsaSign, this is the full message.
@@ -269,6 +274,7 @@ SymCryptMlDsaSignEx(
 // - (pbHashOid, cbHashOid): The DER-encoded OID of the hash algorithm used to hash the message,
 //   when using SymCryptHashMlDsaSign. Must be NULL for SymCryptMlDsaSign.
 // - (pbRandom, cbRandom): The random value used in the signing process (rnd in FIPS 204).
+// - flags: 0 or SYMCRYPT_FLAG_MLDSA_EXTERNALMU.
 //
 
 SYMCRYPT_ERROR
@@ -285,7 +291,7 @@ SymCryptMlDsaVerifyEx(
                                                         SIZE_T              cbSignature,
                                                         UINT32              flags );
 //
-// Implements SymCryptMlDsaSign and SymCryptHashMlDsaSign.
+// Implements SymCryptMlDsaVerify, SymCryptExternalMuMlDsaVerify, and SymCryptHashMlDsaVerify.
 //
 // Parameters:
 // - (pbInput, cbInput): The message to be verified. For SymCryptMlDsaVerify, this is the full
@@ -294,6 +300,7 @@ SymCryptMlDsaVerifyEx(
 // - (pbHashOid, cbHashOid): The DER-encoded OID of the hash algorithm used to hash the message,
 //   when using SymCryptHashMlDsaVerify. Must be NULL for SymCryptMlDsaVerify.
 // - (pbSignature, cbSignature): The signature to be verified.
+// - flags: 0 or SYMCRYPT_FLAG_MLDSA_EXTERNALMU.
 //
 
 _Success_( TRUE )

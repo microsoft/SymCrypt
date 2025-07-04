@@ -10283,6 +10283,24 @@ SymCryptMlDsaSign(
 
 SYMCRYPT_ERROR
 SYMCRYPT_CALL
+SymCryptExternalMuMlDsaSign(
+    _In_                                                PCSYMCRYPT_MLDSAKEY pkMlDsakey,
+    _In_reads_bytes_( cbMu )                            PCBYTE              pbMu,
+                                                        SIZE_T              cbMu,
+                                                        UINT32              flags,
+    _Out_writes_bytes_( cbSignature )                   PBYTE               pbSignature,
+                                                        SIZE_T              cbSignature );
+//
+// Sign a precomputed message representative Mu.
+//
+// Parameters:
+// - (pbMu, cbMu): the message representative to sign,
+//   which must be of size 64 (SYMCRYPT_SHAKE256_RESULT_SIZE).
+// - All other parameters are the same as for SymCryptMlDsaSign.
+//
+
+SYMCRYPT_ERROR
+SYMCRYPT_CALL
 SymCryptHashMlDsaSign(
     _In_                                                PCSYMCRYPT_MLDSAKEY     pkMlDsakey,
                                                         SYMCRYPT_PQDSA_HASH_ID  hashAlg,
@@ -10351,6 +10369,24 @@ SymCryptMlDsaVerify(
 // - SYMCRYPT_NO_ERROR if the signature was verified successfully.
 // - SYMCRYPT_SIGNATURE_VERIFICATION_FAILURE if the signature is invalid.
 // - SYMCRYPT_INVALID_ARGUMENT if the parameters are invalid.
+
+SYMCRYPT_ERROR
+SYMCRYPT_CALL
+SymCryptExternalMuMlDsaVerify(
+    _In_                                                PCSYMCRYPT_MLDSAKEY pkMlDsakey,
+    _In_reads_bytes_( cbMu )                            PCBYTE              pbMu,
+                                                        SIZE_T              cbMu,
+    _In_reads_bytes_( cbSignature )                     PCBYTE              pbSignature,
+                                                        SIZE_T              cbSignature,
+                                                        UINT32              flags );
+//
+// Verify a signature of a precomputed message representative Mu.
+//
+// Parameters:
+// - (pbMu, cbMu): the message representative that was signed,
+//   which must be of size 64 (SYMCRYPT_SHAKE256_RESULT_SIZE).
+// - All other parameters are the same as for SymCryptMlDsaVerify.
+//
 
 SYMCRYPT_ERROR
 SYMCRYPT_CALL
