@@ -1,0 +1,516 @@
+{
+    "version": 5,
+    "configurePresets": [
+        {
+            "name": "base-linux",
+            "hidden": true,
+            "generator": "Unix Makefiles",
+            "binaryDir": "${sourceDir}/build/cmake/${presetName}",
+            "cacheVariables": {
+                "CMAKE_EXPORT_COMPILE_COMMANDS": "ON"
+            },
+            "condition": {
+                "type": "equals",
+                "lhs": "${hostSystemName}",
+                "rhs": "Linux"
+            }
+        },
+        {
+            "name": "base-windows",
+            "hidden": true,
+            "generator": "Visual Studio 17 2022",
+            "binaryDir": "${sourceDir}/build/cmake/${presetName}",
+            "cacheVariables": {
+                "CMAKE_EXPORT_COMPILE_COMMANDS": "ON"
+            },
+            "condition": {
+                "type": "equals",
+                "lhs": "${hostSystemName}",
+                "rhs": "Windows"
+            }
+        },
+        {
+            "name": "base-macos",
+            "hidden": true,
+            "generator": "Unix Makefiles",
+            "binaryDir": "${sourceDir}/build/cmake/${presetName}",
+            "cacheVariables": {
+                "CMAKE_EXPORT_COMPILE_COMMANDS": "ON"
+            },
+            "condition": {
+                "type": "equals",
+                "lhs": "${hostSystemName}",
+                "rhs": "Darwin"
+            }
+        },
+        {
+            "name": "Linux_AMD64_GCC_Debug",
+            "displayName": "Linux AMD64 GCC Debug",
+            "inherits": "base-linux",
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "Debug",
+                "CMAKE_C_COMPILER": "gcc",
+                "CMAKE_CXX_COMPILER": "g++",
+                "SYMCRYPT_TARGET_ARCH": "AMD64"
+            }
+        },
+        {
+            "name": "Linux_AMD64_GCC_Sanitize",
+            "displayName": "Linux AMD64 GCC Sanitize",
+            "inherits": "base-linux",
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "Sanitize",
+                "CMAKE_C_COMPILER": "gcc",
+                "CMAKE_CXX_COMPILER": "g++",
+                "SYMCRYPT_TARGET_ARCH": "AMD64"
+            }
+        },
+        {
+            "name": "Linux_AMD64_GCC_Release",
+            "displayName": "Linux AMD64 GCC Release",
+            "inherits": "base-linux",
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "RelWithDebInfo",
+                "CMAKE_C_COMPILER": "gcc",
+                "CMAKE_CXX_COMPILER": "g++",
+                "SYMCRYPT_TARGET_ARCH": "AMD64"
+            }
+        },
+        {
+            "name": "Linux_AMD64_GCC_Release_NoAsm",
+            "displayName": "Linux AMD64 GCC Release (No ASM)",
+            "inherits": "base-linux",
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "RelWithDebInfo",
+                "CMAKE_C_COMPILER": "gcc",
+                "CMAKE_CXX_COMPILER": "g++",
+                "SYMCRYPT_TARGET_ARCH": "AMD64",
+                "SYMCRYPT_USE_ASM": "OFF"
+            }
+        },
+        {
+            "name": "Linux_AMD64_Clang_Debug",
+            "displayName": "Linux AMD64 Clang Debug",
+            "inherits": "base-linux",
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "Debug",
+                "CMAKE_C_COMPILER": "clang",
+                "CMAKE_CXX_COMPILER": "clang++",
+                "SYMCRYPT_TARGET_ARCH": "AMD64"
+            }
+        },
+        {
+            "name": "Linux_AMD64_Clang_Sanitize",
+            "displayName": "Linux AMD64 Clang Sanitize",
+            "inherits": "base-linux",
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "Sanitize",
+                "CMAKE_C_COMPILER": "clang",
+                "CMAKE_CXX_COMPILER": "clang++",
+                "SYMCRYPT_TARGET_ARCH": "AMD64"
+            }
+        },
+        {
+            "name": "Linux_AMD64_Clang_Release",
+            "displayName": "Linux AMD64 Clang Release",
+            "inherits": "base-linux",
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "RelWithDebInfo",
+                "CMAKE_C_COMPILER": "clang",
+                "CMAKE_CXX_COMPILER": "clang++",
+                "SYMCRYPT_TARGET_ARCH": "AMD64"
+            }
+        },
+        {
+            "name": "Linux_AMD64_Clang_Release_NoAsm",
+            "displayName": "Linux AMD64 Clang Release (No ASM)",
+            "inherits": "base-linux",
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "RelWithDebInfo",
+                "CMAKE_C_COMPILER": "clang",
+                "CMAKE_CXX_COMPILER": "clang++",
+                "SYMCRYPT_TARGET_ARCH": "AMD64",
+                "SYMCRYPT_USE_ASM": "OFF"
+            }
+        },
+        {
+            "name": "Linux_X86_GCC_Release_NoAsm",
+            "displayName": "Linux X86 GCC Release (No ASM, No FIPS)",
+            "inherits": "base-linux",
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "RelWithDebInfo",
+                "CMAKE_C_COMPILER": "gcc",
+                "CMAKE_CXX_COMPILER": "g++",
+                "SYMCRYPT_TARGET_ARCH": "X86",
+                "SYMCRYPT_USE_ASM": "OFF",
+                "SYMCRYPT_FIPS_BUILD": "OFF"
+            }
+        },
+        {
+            "name": "Linux_X86_Clang_Release_NoAsm",
+            "displayName": "Linux X86 Clang Release (No ASM, No FIPS)",
+            "inherits": "base-linux",
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "RelWithDebInfo",
+                "CMAKE_C_COMPILER": "clang",
+                "CMAKE_CXX_COMPILER": "clang++",
+                "SYMCRYPT_TARGET_ARCH": "X86",
+                "SYMCRYPT_USE_ASM": "OFF",
+                "SYMCRYPT_FIPS_BUILD": "OFF"
+            }
+        },
+        {
+            "name": "Linux_ARM64_Cross_Clang_Debug",
+            "displayName": "Linux ARM64 Cross Clang Debug",
+            "inherits": "base-linux",
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "Debug",
+                "CMAKE_C_COMPILER": "clang",
+                "CMAKE_CXX_COMPILER": "clang++",
+                "SYMCRYPT_TARGET_ARCH": "ARM64",
+                "CMAKE_TOOLCHAIN_FILE": "${sourceDir}/cmake-configs/Toolchain-Clang-ARM64.cmake"
+            }
+        },
+        {
+            "name": "Linux_ARM64_Cross_Clang_Release",
+            "displayName": "Linux ARM64 Cross Clang Release",
+            "inherits": "base-linux",
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "RelWithDebInfo",
+                "CMAKE_C_COMPILER": "clang",
+                "CMAKE_CXX_COMPILER": "clang++",
+                "SYMCRYPT_TARGET_ARCH": "ARM64",
+                "CMAKE_TOOLCHAIN_FILE": "${sourceDir}/cmake-configs/Toolchain-Clang-ARM64.cmake"
+            }
+        },
+        {
+            "name": "Linux_ARM_Cross_GCC_Debug",
+            "displayName": "Linux ARM Cross GCC Debug",
+            "inherits": "base-linux",
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "Debug",
+                "CMAKE_C_COMPILER": "gcc",
+                "CMAKE_CXX_COMPILER": "g++",
+                "SYMCRYPT_TARGET_ARCH": "ARM",
+                "CMAKE_TOOLCHAIN_FILE": "${sourceDir}/cmake-configs/Toolchain-GCC-ARM.cmake"
+            }
+        },
+        {
+            "name": "Linux_ARM_Cross_GCC_Release",
+            "displayName": "Linux ARM Cross GCC Release",
+            "inherits": "base-linux",
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "RelWithDebInfo",
+                "CMAKE_C_COMPILER": "gcc",
+                "CMAKE_CXX_COMPILER": "g++",
+                "SYMCRYPT_TARGET_ARCH": "ARM",
+                "CMAKE_TOOLCHAIN_FILE": "${sourceDir}/cmake-configs/Toolchain-GCC-ARM.cmake"
+            }
+        },
+        {
+            "name": "Linux_ARM64_Clang_Debug",
+            "displayName": "Linux ARM64 Native Clang Debug",
+            "inherits": "base-linux",
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "Debug",
+                "CMAKE_C_COMPILER": "clang",
+                "CMAKE_CXX_COMPILER": "clang++",
+                "SYMCRYPT_TARGET_ARCH": "ARM64"
+            }
+        },
+        {
+            "name": "Linux_ARM64_Clang_Sanitize",
+            "displayName": "Linux ARM64 Native Clang Sanitize",
+            "inherits": "base-linux",
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "Sanitize",
+                "CMAKE_C_COMPILER": "clang",
+                "CMAKE_CXX_COMPILER": "clang++",
+                "SYMCRYPT_TARGET_ARCH": "ARM64"
+            }
+        },
+        {
+            "name": "Linux_ARM64_Clang_Release",
+            "displayName": "Linux ARM64 Native Clang Release",
+            "inherits": "base-linux",
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "RelWithDebInfo",
+                "CMAKE_C_COMPILER": "clang",
+                "CMAKE_CXX_COMPILER": "clang++",
+                "SYMCRYPT_TARGET_ARCH": "ARM64"
+            }
+        },
+        {
+            "name": "macOS_AMD64_Debug",
+            "displayName": "macOS AMD64 Debug (No ASM, No FIPS)",
+            "inherits": "base-macos",
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "Debug",
+                "CMAKE_C_COMPILER": "clang",
+                "CMAKE_CXX_COMPILER": "clang++",
+                "SYMCRYPT_TARGET_ARCH": "AMD64",
+                "SYMCRYPT_USE_ASM": "OFF",
+                "SYMCRYPT_FIPS_BUILD": "OFF"
+            }
+        },
+        {
+            "name": "macOS_AMD64_Release",
+            "displayName": "macOS AMD64 Release (No ASM, No FIPS)",
+            "inherits": "base-macos",
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "RelWithDebInfo",
+                "CMAKE_C_COMPILER": "clang",
+                "CMAKE_CXX_COMPILER": "clang++",
+                "SYMCRYPT_TARGET_ARCH": "AMD64",
+                "SYMCRYPT_USE_ASM": "OFF",
+                "SYMCRYPT_FIPS_BUILD": "OFF"
+            }
+        },
+        {
+            "name": "macOS_ARM64_Debug",
+            "displayName": "macOS ARM64 Debug (No ASM, No FIPS)",
+            "inherits": "base-macos",
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "Debug",
+                "CMAKE_C_COMPILER": "clang",
+                "CMAKE_CXX_COMPILER": "clang++",
+                "SYMCRYPT_TARGET_ARCH": "ARM64",
+                "SYMCRYPT_USE_ASM": "OFF",
+                "SYMCRYPT_FIPS_BUILD": "OFF"
+            }
+        },
+        {
+            "name": "macOS_ARM64_Release",
+            "displayName": "macOS ARM64 Release (No ASM, No FIPS)",
+            "inherits": "base-macos",
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "RelWithDebInfo",
+                "CMAKE_C_COMPILER": "clang",
+                "CMAKE_CXX_COMPILER": "clang++",
+                "SYMCRYPT_TARGET_ARCH": "ARM64",
+                "SYMCRYPT_USE_ASM": "OFF",
+                "SYMCRYPT_FIPS_BUILD": "OFF"
+            }
+        },
+        {
+            "name": "Windows_AMD64_Debug",
+            "displayName": "Windows AMD64 Debug",
+            "inherits": "base-windows",
+            "architecture": "x64",
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "Debug",
+                "SYMCRYPT_TARGET_ARCH": "AMD64"
+            }
+        },
+        {
+            "name": "Windows_AMD64_Release",
+            "displayName": "Windows AMD64 Release",
+            "inherits": "base-windows",
+            "architecture": "x64",
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "Release",
+                "SYMCRYPT_TARGET_ARCH": "AMD64"
+            }
+        },
+        {
+            "name": "Windows_AMD64_Release_NoAsm",
+            "displayName": "Windows AMD64 Release (No ASM)",
+            "inherits": "base-windows",
+            "architecture": "x64",
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "Release",
+                "SYMCRYPT_TARGET_ARCH": "AMD64",
+                "SYMCRYPT_USE_ASM": "OFF"
+            }
+        },
+        {
+            "name": "Windows_ARM64_Debug_NoAsm",
+            "displayName": "Windows ARM64 Debug (No ASM)",
+            "inherits": "base-windows",
+            "architecture": "ARM64",
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "Debug",
+                "SYMCRYPT_TARGET_ARCH": "ARM64",
+                "SYMCRYPT_USE_ASM": "OFF"
+            }
+        },
+        {
+            "name": "Windows_ARM64_Release_NoAsm",
+            "displayName": "Windows ARM64 Release (No ASM)",
+            "inherits": "base-windows",
+            "architecture": "ARM64",
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "Release",
+                "SYMCRYPT_TARGET_ARCH": "ARM64",
+                "SYMCRYPT_USE_ASM": "OFF"
+            }
+        },
+        {
+            "name": "Windows_X86_Debug",
+            "displayName": "Windows X86 Debug",
+            "inherits": "base-windows",
+            "architecture": "Win32",
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "Debug",
+                "SYMCRYPT_TARGET_ARCH": "X86"
+            }
+        },
+        {
+            "name": "Windows_X86_Release",
+            "displayName": "Windows X86 Release",
+            "inherits": "base-windows",
+            "architecture": "Win32",
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "Release",
+                "SYMCRYPT_TARGET_ARCH": "X86"
+            }
+        }
+    ],
+    "buildPresets": [
+        {
+            "name": "base-build",
+            "hidden": true,
+            "jobs": 0
+        },
+        {
+            "name": "Linux_AMD64_GCC_Debug",
+            "configurePreset": "Linux_AMD64_GCC_Debug",
+            "inherits": "base-build"
+        },
+        {
+            "name": "Linux_AMD64_GCC_Sanitize",
+            "configurePreset": "Linux_AMD64_GCC_Sanitize",
+            "inherits": "base-build"
+        },
+        {
+            "name": "Linux_AMD64_GCC_Release",
+            "configurePreset": "Linux_AMD64_GCC_Release",
+            "inherits": "base-build"
+        },
+        {
+            "name": "Linux_AMD64_GCC_Release_NoAsm",
+            "configurePreset": "Linux_AMD64_GCC_Release_NoAsm",
+            "inherits": "base-build"
+        },
+        {
+            "name": "Linux_AMD64_Clang_Debug",
+            "configurePreset": "Linux_AMD64_Clang_Debug",
+            "inherits": "base-build"
+        },
+        {
+            "name": "Linux_AMD64_Clang_Sanitize",
+            "configurePreset": "Linux_AMD64_Clang_Sanitize",
+            "inherits": "base-build"
+        },
+        {
+            "name": "Linux_AMD64_Clang_Release",
+            "configurePreset": "Linux_AMD64_Clang_Release",
+            "inherits": "base-build"
+        },
+        {
+            "name": "Linux_AMD64_Clang_Release_NoAsm",
+            "configurePreset": "Linux_AMD64_Clang_Release_NoAsm",
+            "inherits": "base-build"
+        },
+        {
+            "name": "Linux_X86_GCC_Release_NoAsm",
+            "configurePreset": "Linux_X86_GCC_Release_NoAsm",
+            "inherits": "base-build"
+        },
+        {
+            "name": "Linux_X86_Clang_Release_NoAsm",
+            "configurePreset": "Linux_X86_Clang_Release_NoAsm",
+            "inherits": "base-build"
+        },
+        {
+            "name": "Linux_ARM64_Cross_Clang_Debug",
+            "configurePreset": "Linux_ARM64_Cross_Clang_Debug",
+            "inherits": "base-build"
+        },
+        {
+            "name": "Linux_ARM64_Cross_Clang_Release",
+            "configurePreset": "Linux_ARM64_Cross_Clang_Release",
+            "inherits": "base-build"
+        },
+        {
+            "name": "Linux_ARM_Cross_GCC_Debug",
+            "configurePreset": "Linux_ARM_Cross_GCC_Debug",
+            "inherits": "base-build"
+        },
+        {
+            "name": "Linux_ARM_Cross_GCC_Release",
+            "configurePreset": "Linux_ARM_Cross_GCC_Release",
+            "inherits": "base-build"
+        },
+        {
+            "name": "Linux_ARM64_Clang_Debug",
+            "configurePreset": "Linux_ARM64_Clang_Debug",
+            "inherits": "base-build"
+        },
+        {
+            "name": "Linux_ARM64_Clang_Sanitize",
+            "configurePreset": "Linux_ARM64_Clang_Sanitize",
+            "inherits": "base-build"
+        },
+        {
+            "name": "Linux_ARM64_Clang_Release",
+            "configurePreset": "Linux_ARM64_Clang_Release",
+            "inherits": "base-build"
+        },
+        {
+            "name": "macOS_AMD64_Debug",
+            "configurePreset": "macOS_AMD64_Debug",
+            "inherits": "base-build"
+        },
+        {
+            "name": "macOS_AMD64_Release",
+            "configurePreset": "macOS_AMD64_Release",
+            "inherits": "base-build"
+        },
+        {
+            "name": "macOS_ARM64_Debug",
+            "configurePreset": "macOS_ARM64_Debug",
+            "inherits": "base-build"
+        },
+        {
+            "name": "macOS_ARM64_Release",
+            "configurePreset": "macOS_ARM64_Release",
+            "inherits": "base-build"
+        },
+        {
+            "name": "Windows_AMD64_Debug",
+            "configurePreset": "Windows_AMD64_Debug",
+            "inherits": "base-build"
+        },
+        {
+            "name": "Windows_AMD64_Release",
+            "configurePreset": "Windows_AMD64_Release",
+            "inherits": "base-build"
+        },
+        {
+            "name": "Windows_AMD64_Release_NoAsm",
+            "configurePreset": "Windows_AMD64_Release_NoAsm",
+            "inherits": "base-build"
+        },
+        {
+            "name": "Windows_ARM64_Debug_NoAsm",
+            "configurePreset": "Windows_ARM64_Debug_NoAsm",
+            "inherits": "base-build"
+        },
+        {
+            "name": "Windows_ARM64_Release_NoAsm",
+            "configurePreset": "Windows_ARM64_Release_NoAsm",
+            "inherits": "base-build"
+        },
+        {
+            "name": "Windows_X86_Debug",
+            "configurePreset": "Windows_X86_Debug",
+            "inherits": "base-build"
+        },
+        {
+            "name": "Windows_X86_Release",
+            "configurePreset": "Windows_X86_Release",
+            "inherits": "base-build"
+        }
+    ]
+}
