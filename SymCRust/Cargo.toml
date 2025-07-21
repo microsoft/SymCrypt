@@ -1,0 +1,34 @@
+[package]
+name = "symcrust"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+libc = "0.2"
+itertools = "0.14.0"
+
+[lib]
+# Adding lib for the sake of enabling benchmarks, apparently criterion won't
+# run against just staticlib
+crate-type = ["staticlib", "lib"]
+
+[profile.dev]
+panic="abort"
+
+[profile.release]
+lto = true
+codegen-units = 1
+debug = true
+panic="abort"
+
+[dev-dependencies]
+rand = { version = "0.9.1" }
+criterion = { version = "0.5", features = ["html_reports"] }
+
+[[bench]]
+name = "ntt"
+harness = false
+
+[features]
+benchmarking = ["std"]
+std = []
