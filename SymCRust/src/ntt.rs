@@ -450,7 +450,7 @@ pub(crate) fn poly_element_sub(
     });
 }
 
-fn poly_element_ntt(pe_src: &mut PolyElement) {
+pub fn poly_element_ntt(pe_src: &mut PolyElement) {
     poly_element_ntt_layer(pe_src, 1, 128);
     poly_element_ntt_layer(pe_src, 2, 64);
     poly_element_ntt_layer(pe_src, 4, 32);
@@ -466,7 +466,7 @@ fn poly_element_ntt(pe_src: &mut PolyElement) {
 const INTT_FIXUP_TIMES_RSQR: u32 = 1441;
 const INTT_FIXUP_TIMES_RSQR_TIMES_NEQ_Q_INV_MOD_R: u32 = 10079;
 
-pub(crate) fn poly_element_intt_and_mul_r(pe_src: &mut PolyElement) {
+pub fn poly_element_intt_and_mul_r(pe_src: &mut PolyElement) {
     poly_element_intt_layer(pe_src, 127, 2);
     poly_element_intt_layer(pe_src, 63, 4);
     poly_element_intt_layer(pe_src, 31, 8);

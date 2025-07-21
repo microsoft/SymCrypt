@@ -17,14 +17,31 @@
 #![allow(internal_features)]
 // To build with no_std and panic="abort" in debug build, we need to define our own empty #[lang = "eh_personality"]
 #![feature(lang_items)]
-#![no_std]
+#![cfg_attr(not(feature = "std"), no_std)]
 
 extern crate alloc;
 extern crate core;
 
 mod common;
 pub mod ffi;
+#[cfg(not(feature = "benchmarking"))]
 mod hash;
 mod key;
 mod mlkem;
+#[cfg(not(feature = "benchmarking"))]
 mod ntt;
+#[cfg(not(feature = "benchmarking"))]
+mod symcryptcommon;
+
+// For pure Rust benchmarking, we want to mock calls to SymCrypt callbacks for now
+#[cfg(feature = "benchmarking")]
+#[path = "mock/hash.rs"]
+mod hash;
+
+#[cfg(feature = "benchmarking")]
+#[path = "mock/symcryptcommon.rs"]
+mod symcryptcommon;
+
+// For pure Rust benchmarking, we want to make NTT APIs public
+#[cfg(feature = "benchmarking")]
+pub mod ntt;

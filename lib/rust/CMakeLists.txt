@@ -18,13 +18,16 @@ else()
     set(SYMCRUST_CARGO_BUILD_DIR "debug" )
 endif()
 
+set(SYMCRUST_SOURCE_DIR ${SYMCRYPT_SOURCE_DIR}/SymCRust)
+
 add_custom_target(
     symcrust_cargo ALL
     COMMAND cargo +nightly-2024-10-23
         build
-        --manifest-path ${CMAKE_CURRENT_SOURCE_DIR}/Cargo.toml
+        --manifest-path ${SYMCRUST_SOURCE_DIR}/Cargo.toml
         --target-dir ${CMAKE_CURRENT_BINARY_DIR}
         ${SYMCRUST_CARGO_BUILD_FLAGS}
+    WORKING_DIRECTORY ${SYMCRUST_SOURCE_DIR}
     BYPRODUCTS ${CMAKE_CURRENT_BINARY_DIR}/${SYMCRUST_CARGO_BUILD_DIR}/${SYMCRUST_LIB_NAME})
 
 add_library(symcrust STATIC IMPORTED GLOBAL)
