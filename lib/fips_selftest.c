@@ -1527,7 +1527,7 @@ SymCryptEcDsaSelftest(void)
         sizeof(rgbSha256Hash),
         piK,
         SYMCRYPT_NUMBER_FORMAT_MSB_FIRST,
-        0,
+        SYMCRYPT_FLAG_DATA_PUBLIC,
         rgbSignature,
         sizeof(rgbSignature) );
     SYMCRYPT_FIPS_ASSERT( scError == SYMCRYPT_NO_ERROR );

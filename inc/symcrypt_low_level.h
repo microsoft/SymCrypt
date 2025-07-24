@@ -2771,6 +2771,14 @@ SymCryptEcDsaSignEx(
 //  - If piK is not NULL and the generated signature would be 0, SYMCRYPT_INVALID_ARGUMENT is
 //    returned.
 //
+// Allowed flags:
+//      SYMCRYPT_FLAG_ECDSA_NO_TRUNCATION: If set then the hash value will
+//      not be truncated.
+//
+//      SYMCRYPT_FLAG_DATA_PUBLIC: If specified, all inputs, including the private key, are
+//      considered as public information and are not protected against side channel attacks. 
+//      This should only be used when signing with a publicly known private key (i.e. in the ECDSA self-test)
+//
 
 //=====================================================
 // ML-KEM-EX

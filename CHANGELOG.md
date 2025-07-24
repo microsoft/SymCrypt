@@ -3,6 +3,9 @@
 New changes will be listed here as they are developed. The version number is determined
 prior to the creation of a new release, based on the changes contained in that release.
 
+# Version 103.9.1
+
+- Removed dependency on external randomness in ECDSA self-test
 - Fix minor interop issue in RSA PKCS1
 
 # Version 103.9.0
