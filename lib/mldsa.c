@@ -167,24 +167,84 @@ SymCryptMlDsakeyGenerate(
     UINT32              flags)
 {
     SYMCRYPT_ERROR scError = SYMCRYPT_NO_ERROR;
+    BYTE random[SYMCRYPT_MLDSA_ROOT_SEED_SIZE];
+    PBYTE  pbPctSignature = NULL;
+    SIZE_T cbPctSignature = 0;
 
-    if( flags != 0 ) // No flags currently supported
+    // Ensure only allowed flags are specified
+    UINT32 allowedFlags = SYMCRYPT_FLAG_KEY_NO_FIPS;
+
+    if ( ( flags & ~allowedFlags ) != 0 )
     {
         scError = SYMCRYPT_INVALID_ARGUMENT;
         goto cleanup;
     }
 
-    BYTE random[SYMCRYPT_MLDSA_ROOT_SEED_SIZE];
     scError = SymCryptCallbackRandom( random, sizeof(random) );
     if( scError != SYMCRYPT_NO_ERROR )
     {
         goto cleanup;
     }
 
-    scError = SymCryptMlDsaKeyGenerateEx( pkMlDsakey, random, sizeof(random), flags );
+    scError = SymCryptMlDsakeySetValue( random, sizeof(random), SYMCRYPT_MLDSAKEY_FORMAT_PRIVATE_SEED, flags, pkMlDsakey );
+    if( scError != SYMCRYPT_NO_ERROR )
+    {
+        goto cleanup;
+    }
+
+    // SymCryptMlDsakeySetValue ensures the self-test is run before
+    // first operational use of MlDsa
+
+    if( ( flags & SYMCRYPT_FLAG_KEY_NO_FIPS ) == 0 )
+    {
+        // PCT on key generation, sign/verify the empty message with the generated key
+
+        cbPctSignature = pkMlDsakey->pParams->cbEncodedSignature;
+
+        pbPctSignature = SymCryptCallbackAlloc( cbPctSignature );
+        if( pbPctSignature == NULL )
+        {
+            scError = SYMCRYPT_MEMORY_ALLOCATION_FAILURE;
+            goto cleanup;
+        }
+
+        scError = SymCryptMlDsaSign( pkMlDsakey,
+            NULL, 0,
+            NULL, 0,
+            0,
+            pbPctSignature, cbPctSignature );
+        if( scError != SYMCRYPT_NO_ERROR )
+        {
+            scError = SYMCRYPT_FIPS_FAILURE;
+            goto cleanup;
+        }
+
+        scError = SymCryptMlDsaVerify( pkMlDsakey,
+            NULL, 0,
+            NULL, 0,
+            pbPctSignature, cbPctSignature,
+            0 );
+        if( scError != SYMCRYPT_NO_ERROR )
+        {
+            scError = SYMCRYPT_FIPS_FAILURE;
+            goto cleanup;
+        }
+
+        // could track having run the PCT with a flag in pkMlDsakey->fAlgorithmInfo,
+        // but currently no need to do that given we don't ever defer the PCT
+    }
 
 cleanup:
+    if( pbPctSignature != NULL )
+    {
+        // Wiping is not required for security, but has low relative cost
+        // and better to be on the safe side for FIPS
+        SymCryptWipe( pbPctSignature, cbPctSignature );
+        SymCryptCallbackFree( pbPctSignature );
+    }
+
     SymCryptWipeKnownSize( random, sizeof(random) );
+
     return scError;
 }
 
@@ -200,10 +260,22 @@ SymCryptMlDsakeySetValue(
 {
     SYMCRYPT_ERROR scError = SYMCRYPT_NO_ERROR;
 
-    if( flags != 0 ) // No flags currently supported
+    // Ensure only allowed flags are specified
+    UINT32 allowedFlags = SYMCRYPT_FLAG_KEY_NO_FIPS;
+
+    if ( ( flags & ~allowedFlags ) != 0 )
     {
         scError = SYMCRYPT_INVALID_ARGUMENT;
         goto cleanup;
+    }
+
+    if( ( flags & SYMCRYPT_FLAG_KEY_NO_FIPS ) == 0 )
+    {
+        // Ensure ML-DSA algorithm selftest is run before first use of ML-DSA algorithms;
+        // notably _before_ first full KeyGen
+        SYMCRYPT_RUN_SELFTEST_ONCE(
+            SymCryptMlDsaSelftest,
+            SYMCRYPT_SELFTEST_ALGORITHM_MLDSA);
     }
 
     switch( mlDsakeyFormat )
@@ -1021,11 +1093,4 @@ SymCryptHashMlDsaVerify(
 
 cleanup:
     return scError;
-}
-
-VOID
-SYMCRYPT_CALL
-SymCryptMlDsaSelftest( void )
-{
-    // Not yet implemented
 }

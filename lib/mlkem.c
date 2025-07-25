@@ -688,6 +688,8 @@ SymCryptMlKemkeyGenerate(
 {
     SYMCRYPT_ERROR scError = SYMCRYPT_NO_ERROR;
     BYTE privateSeed[SYMCRYPT_MLKEM_SIZEOF_FORMAT_PRIVATE_SEED];
+    PBYTE  pbPctCipherText = NULL;
+    SIZE_T cbPctCipherText = 0;
 
     // Ensure only allowed flags are specified
     UINT32 allowedFlags = SYMCRYPT_FLAG_KEY_NO_FIPS;
@@ -713,11 +715,72 @@ SymCryptMlKemkeyGenerate(
     // SymCryptMlKemkeySetValue ensures the self-test is run before
     // first operational use of MlKem
 
-    // Awaiting feedback from NIST for discussion from PQC forum and CMUF
-    // before implementing costly PCT on ML-KEM key generation which is
-    // not expected by FIPS 203
+    if( ( flags & SYMCRYPT_FLAG_KEY_NO_FIPS ) == 0 )
+    {
+        // PCT on key generation, encaps/decaps and check that both parties get the same shared secret with the generated key
+        SIZE_T cbU, cbV;
+        const UINT32 nRows = pkMlKemkey->params.nRows;
+        const UINT32 nBitsOfU = pkMlKemkey->params.nBitsOfU;
+        const UINT32 nBitsOfV = pkMlKemkey->params.nBitsOfV;
+
+        // u vector encoded with nBitsOfU * SYMCRYPT_MLWE_POLYNOMIAL_COEFFICIENTS bits per polynomial
+        cbU = nRows * nBitsOfU * (SYMCRYPT_MLWE_POLYNOMIAL_COEFFICIENTS / 8);
+        // v polynomial encoded with nBitsOfV * SYMCRYPT_MLWE_POLYNOMIAL_COEFFICIENTS bits
+        cbV = nBitsOfV * (SYMCRYPT_MLWE_POLYNOMIAL_COEFFICIENTS / 8);
+        cbPctCipherText = cbU + cbV;
+    
+        pbPctCipherText = SymCryptCallbackAlloc( cbPctCipherText );
+        if( pbPctCipherText == NULL )
+        {
+            scError = SYMCRYPT_MEMORY_ALLOCATION_FAILURE;
+            goto cleanup;
+        }
+
+        C_ASSERT( SYMCRYPT_MLKEM_SIZEOF_FORMAT_PRIVATE_SEED >= 2*SYMCRYPT_MLKEM_SIZEOF_AGREED_SECRET );
+
+        // reuse bytes 0..31 of privateSeed buffer for encapsulation shared secret
+        scError = SymCryptMlKemEncapsulate(
+            pkMlKemkey,
+            &privateSeed[0], SYMCRYPT_MLKEM_SIZEOF_AGREED_SECRET,
+            pbPctCipherText, cbPctCipherText );
+        if( scError != SYMCRYPT_NO_ERROR )
+        {
+            scError = SYMCRYPT_FIPS_FAILURE;
+            goto cleanup;
+        }
+
+        // reuse second 32..63 bytes of privateSeed buffer for encapsulation shared secret
+        scError = SymCryptMlKemDecapsulate(
+            pkMlKemkey,
+            pbPctCipherText, cbPctCipherText,
+            &privateSeed[SYMCRYPT_MLKEM_SIZEOF_AGREED_SECRET], SYMCRYPT_MLKEM_SIZEOF_AGREED_SECRET );
+        if( scError != SYMCRYPT_NO_ERROR )
+        {
+            scError = SYMCRYPT_FIPS_FAILURE;
+            goto cleanup;
+        }
+
+        if( !SymCryptEqual( &privateSeed[0], &privateSeed[SYMCRYPT_MLKEM_SIZEOF_AGREED_SECRET], SYMCRYPT_MLKEM_SIZEOF_AGREED_SECRET ) )
+        {
+            // Do not fatal on PCT failure here, as it is expected with very low probability that
+            // with correct keygen and encaps/decaps, the agreed secrets do not match
+            scError = SYMCRYPT_FIPS_FAILURE;
+            goto cleanup;
+        }
+
+        // could track having run the PCT with a flag in pkMlKemkey->fAlgorithmInfo,
+        // but currently no need to do that given we don't ever defer the PCT
+    }
 
 cleanup:
+    if( pbPctCipherText != NULL )
+    {
+        // Wiping is not required for security, but has low relative cost
+        // and better to be on the safe side for FIPS
+        SymCryptWipe( pbPctCipherText, cbPctCipherText );
+        SymCryptCallbackFree( pbPctCipherText );
+    }
+
     SymCryptWipeKnownSize( privateSeed, sizeof(privateSeed) );
 
     return scError;

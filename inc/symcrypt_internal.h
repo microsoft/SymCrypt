@@ -3385,16 +3385,17 @@ SymCryptWipeKnownSize(_Out_writes_bytes_(cbData) PVOID pbData, SIZE_T cbData)
 // will be set in g_SymCryptFipsSelftestsPerformed. Other selftests are performed automatically
 // when the module is loaded, so they don't have a corresponding flag.
 typedef enum _SYMCRYPT_SELFTEST_ALGORITHM {
-    SYMCRYPT_SELFTEST_ALGORITHM_NONE    =  0x0,
-    SYMCRYPT_SELFTEST_ALGORITHM_STARTUP =  0x1,
-    SYMCRYPT_SELFTEST_ALGORITHM_DSA     =  0x2,
-    SYMCRYPT_SELFTEST_ALGORITHM_ECDSA   =  0x4,
-    SYMCRYPT_SELFTEST_ALGORITHM_RSA     =  0x8,
-    SYMCRYPT_SELFTEST_ALGORITHM_DH      = 0x10,
-    SYMCRYPT_SELFTEST_ALGORITHM_ECDH    = 0x20,
-    SYMCRYPT_SELFTEST_ALGORITHM_MLKEM   = 0x40,
-    SYMCRYPT_SELFTEST_ALGORITHM_XMSS    = 0x80,
+    SYMCRYPT_SELFTEST_ALGORITHM_NONE    =   0x0,
+    SYMCRYPT_SELFTEST_ALGORITHM_STARTUP =   0x1,
+    SYMCRYPT_SELFTEST_ALGORITHM_DSA     =   0x2,
+    SYMCRYPT_SELFTEST_ALGORITHM_ECDSA   =   0x4,
+    SYMCRYPT_SELFTEST_ALGORITHM_RSA     =   0x8,
+    SYMCRYPT_SELFTEST_ALGORITHM_DH      =  0x10,
+    SYMCRYPT_SELFTEST_ALGORITHM_ECDH    =  0x20,
+    SYMCRYPT_SELFTEST_ALGORITHM_MLKEM   =  0x40,
+    SYMCRYPT_SELFTEST_ALGORITHM_XMSS    =  0x80,
     SYMCRYPT_SELFTEST_ALGORITHM_LMS     = 0x100,
+    SYMCRYPT_SELFTEST_ALGORITHM_MLDSA   = 0x200,
 } SYMCRYPT_SELFTEST_ALGORITHM;
 
 // Takes values which are some bitwise OR combination of SYMCRYPT_SELFTEST_ALGORITHM values
@@ -3427,17 +3428,17 @@ SymCryptFipsGetSelftestsPerformed(void);
 // breaking change.
 
 // Dlkey selftest flags
-// DSA Pairwise Consistency Test to be run generated keys
+// DSA Pairwise Consistency Test to be run on generated keys
 #define SYMCRYPT_SELFTEST_KEY_DSA       (0x1)
 #define SYMCRYPT_PCT_DSA                SYMCRYPT_SELFTEST_KEY_DSA
 
 // Eckey selftest flags
-// ECDSA Pairwise Consistency Test to be run generated keys
+// ECDSA Pairwise Consistency Test to be run on generated keys
 #define SYMCRYPT_SELFTEST_KEY_ECDSA     (0x1)
 #define SYMCRYPT_PCT_ECDSA              SYMCRYPT_SELFTEST_KEY_ECDSA
 
 // Rsakey selftest flags
-// RSA Pairwise Consistency Test to be run generated keys
+// RSA Pairwise Consistency Test to be run on generated keys
 #define SYMCRYPT_SELFTEST_KEY_RSA_SIGN  (0x1)
 #define SYMCRYPT_PCT_RSA_SIGN           SYMCRYPT_SELFTEST_KEY_RSA_SIGN
 

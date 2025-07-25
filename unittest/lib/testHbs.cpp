@@ -926,6 +926,12 @@ testHbs()
 {
     INT64 nOutstandingAllocs = 0;
 
+    // Skip if there is no XMSS or LMS algorithm to test.
+    if( !isAlgorithmPresent( "Xmss", FALSE ) && !isAlgorithmPresent( "Lms", FALSE ) )
+    {
+        return;
+    }
+
     testXmss();
 
     nOutstandingAllocs = SYMCRYPT_INTERNAL_VOLATILE_READ64(&g_nOutstandingCheckedAllocs);

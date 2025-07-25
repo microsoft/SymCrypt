@@ -7,6 +7,7 @@ prior to the creation of a new release, based on the changes contained in that r
 
 - Removed dependency on external randomness in ECDSA self-test
 - Fix minor interop issue in RSA PKCS1
+- Add FIPS CAST for ML-DSA and pairwise consistency tests for ML-KEM and ML-DSA on key generation
 
 # Version 103.9.0
 

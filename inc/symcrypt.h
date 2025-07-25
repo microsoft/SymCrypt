@@ -10178,7 +10178,11 @@ SymCryptMlDsakeyGenerate(
 //
 // Parameters:
 // - pkMlDsakey: a pointer to an ML-DSA key object allocated with SymCryptMlDsakeyAllocate
-// - flags: no flags are currently defined; must be set to 0
+//
+// Allowed flags:
+//
+// - SYMCRYPT_FLAG_KEY_NO_FIPS
+//   Opt-out of performing validation required for FIPS
 //
 // Return values:
 // - SYMCRYPT_NO_ERROR on success.
@@ -10200,8 +10204,12 @@ SymCryptMlDsakeySetValue(
 // - (pbSrc, cbSrc): a buffer containing a representation of an ML-DSA key, in the format specified
 //   by the format parameter.
 // - mlDsakeyFormat: format of the input
-// - flags: no flags are currently defined; must be set to 0
 // - pkMlDsakey: a pointer to an ML-DSA key object allocated with SymCryptMlDsakeyAllocate.
+//
+// Allowed flags:
+//
+// - SYMCRYPT_FLAG_KEY_NO_FIPS
+//   Opt-out of performing validation required for FIPS
 //
 // Remarks:
 // - cbSrc must be equal to the cbKeyFormat returned from
