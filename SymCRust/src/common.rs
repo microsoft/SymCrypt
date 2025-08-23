@@ -8,6 +8,10 @@
 //
 // FIXME: for now, this is manually kept in sync between Rust and C -- can we automate?
 
+#![allow(dead_code)]
+
+use core::sync::atomic::{AtomicBool, Ordering};
+
 #[derive(PartialEq, Debug, Clone)]
 #[repr(C)]
 pub enum Error {
@@ -36,6 +40,9 @@ pub enum Error {
     HbsPublicRootMismatch,
 }
 
+const SYMCRYPT_MODULE_VERSION_MAJOR : u32 = 103;
+const SYMCRYPT_MODULE_VERSION_MINOR : u32 = 8;
+
 // Allows printing errors, which is a prerequisite for using ERROR as an argument to
 // core::result::Result.
 impl core::fmt::Display for Error {
@@ -60,8 +67,23 @@ impl core::ops::FromResidual<Result<core::convert::Infallible, Error>> for Error
 
 use crate::symcryptcommon::*;
 
+pub(crate) fn init() {
+
+    static INITIALIZED: AtomicBool = AtomicBool::new(false);
+
+    if INITIALIZED.load(Ordering::Relaxed) {
+        return;
+    }
+
+    unsafe { 
+        SymCryptModuleInit(SYMCRYPT_MODULE_VERSION_MAJOR, SYMCRYPT_MODULE_VERSION_MINOR)
+    };
+
+    INITIALIZED.store(true, Ordering::Relaxed);
+}
+
 pub(crate) fn random(dst: &mut [u8]) -> Error {
-    unsafe { SymCryptCallbackRandom(dst.as_mut_ptr(), dst.len()) }
+    unsafe { SymCryptRandom(dst.as_mut_ptr(), dst.len()) }
 }
 
 pub fn wipe(pb_data: *mut u8, cb_data: usize) {
