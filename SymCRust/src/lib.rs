@@ -24,6 +24,7 @@ extern crate core;
 
 mod common;
 pub mod ffi;
+mod ghash;
 #[cfg(not(feature = "benchmarking"))]
 mod hash;
 mod key;
@@ -32,6 +33,9 @@ mod mlkem;
 mod ntt;
 #[cfg(not(feature = "benchmarking"))]
 mod symcryptcommon;
+
+#[cfg(test)]
+mod test;
 
 // For pure Rust benchmarking, we want to mock calls to SymCrypt callbacks for now
 #[cfg(feature = "benchmarking")]

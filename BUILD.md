@@ -21,6 +21,8 @@ libraries on Windows. Internally, we previously used Razzle as our legacy build 
 for Razzle builds is on a deprecation path and will be removed in a future release. Additionally, it has not been
 tested with the public open source version of Razzle, and is unlikely to work with it.
 
+Note: AMD64 is the terminology Windows uses for x86-64.
+
 ### Supported Configurations
 
 | Operating Environment | Architecture      | Supported compilers | ASM enabled | Static lib + unit tests | Dynamic lib | 
