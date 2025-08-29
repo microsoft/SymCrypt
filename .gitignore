@@ -86,3 +86,6 @@ Makefile
 
 # macOS folder attributes
 .DS_Store
+
+# NuGet packages
+*.nupkg

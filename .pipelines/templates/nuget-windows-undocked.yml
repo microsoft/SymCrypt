@@ -1,0 +1,102 @@
+parameters:
+  - name: publish
+    type: boolean
+    displayName: Publish NuGet Package
+    default: false
+
+jobs:
+- job: nuget
+  displayName: Create NuGet Package
+  pool:
+    type: windows
+
+  variables:
+    # Kind of hacky - this template must be part of a stage which depends on a Set_Version stage
+    # to produce the version numbers
+    ver_major: $[stageDependencies.Set_Version.set_version.outputs['verStep.VER_MAJOR']]
+    ver_minor: $[stageDependencies.Set_Version.set_version.outputs['verStep.VER_MINOR']]
+    ver_patch: $[stageDependencies.Set_Version.set_version.outputs['verStep.VER_PATCH']]
+    ver_hash: $[ substring(variables['Build.SourceVersion'], 0, 8) ]
+    nuget_package_version: $(ver_major).$(ver_minor).$(ver_patch)-$(ver_hash)-$(Build.BuildId)
+    ob_outputDirectory: $(Build.SourcesDirectory)/nuget
+    ob_nugetPublishing_enabled: ${{ parameters.publish }}
+    ob_nugetRepackOwnerServiceId: 'f182e443-d489-4b1d-83a9-fccded0b3325' # PlatformCrypto
+    ob_nugetRepackOwnerAdoAreaPath: 'OS\Core\ENS\Cloud Security\Cryptography Infrastructure\Crypto\Symcrypt'
+    ob_nugetRepackOwnerTeam: 'symcryptdevs'
+    ${{ if parameters.publish }}:
+      ob_nugetPublishing_compliantPackages: '*.nupkg' # We only create one package
+    ${{ else }}:
+      ob_nugetPublishing_compliantPackages: '' # When not publishing, leave this empty to avoid repacking
+
+  steps:
+  - task: DownloadPipelineArtifact@2
+    displayName: 'Download AMD64 artifacts'
+    inputs:
+      artifact: 'drop_Build_Windows_Undocked_build_sln_amd64fre'
+      path: '$(Build.SourcesDirectory)/artifacts/win-x64'
+
+  - task: DownloadPipelineArtifact@2
+    displayName: 'Download ARM64 artifacts'
+    inputs:
+      artifact: 'drop_Build_Windows_Undocked_build_sln_arm64fre'
+      path: '$(Build.SourcesDirectory)/artifacts/win-arm64'
+
+  - task: CopyFiles@2
+    displayName: 'Copy AMD64 package files'
+    inputs:
+      SourceFolder: '$(Build.SourcesDirectory)/artifacts/win-x64/pkg'
+      Contents: '**'
+      TargetFolder: '$(Build.SourcesDirectory)/pkg/win-x64'
+
+  - task: CopyFiles@2
+    displayName: 'Copy ARM64 package files'
+    inputs:
+      SourceFolder: '$(Build.SourcesDirectory)/artifacts/win-arm64/pkg'
+      Contents: '**'
+      TargetFolder: '$(Build.SourcesDirectory)/pkg/win-arm64'
+
+  - task: NuGetCommand@2
+    displayName: 'Create NuGet package'
+    inputs:
+      command: 'custom'
+      arguments: 'pack $(Build.SourcesDirectory)/nuget/symcrypt.nuspec -OutputDirectory $(ob_outputDirectory) -Version $(nuget_package_version)'
+
+  - task: PowerShell@2
+    displayName: 'Update package version in packages.config'
+    inputs:
+      targetType: 'inline'
+      script: |
+        $configPath = "$(Build.SourcesDirectory)/nuget/test/cpp/packages.config"
+        $content = Get-Content -Path $configPath -Raw
+        $content = $content -replace '%NUGET_VERSION%', '$(nuget_package_version)'
+        Set-Content -Path $configPath -Value $content
+
+  - task: NuGetCommand@2
+    displayName: 'Restore local package'
+    inputs:
+      command: 'restore'
+      restoreSolution: '$(Build.SourcesDirectory)/nuget/test/cpp/packages.config'
+      feedsToUse: 'config'
+      nugetConfigPath: '$(Build.SourcesDirectory)/nuget/nuget.config'
+      restoreDirectory: '$(Build.SourcesDirectory)/nuget/test/cpp/packages'
+
+  - task: MSBuild@1
+    displayName: 'Build NuGet test application'
+    inputs:
+      solution: '$(Build.SourcesDirectory)/nuget/test/cpp/NuGetTestApplication.sln'
+      msbuildArguments: '/p:NuGet_Version=$(nuget_package_version)'
+      platform: 'x64'
+      configuration: 'Release'
+
+  - script: |
+      .\x64\Release\NuGetTestApplication.exe
+    displayName: 'Run NuGet test application'
+    workingDirectory: '$(Build.SourcesDirectory)/nuget/test/cpp'
+
+  - task: CopyFiles@2
+    displayName: 'Copy nupkg to OneBranch publishing directory'
+    condition: ${{ parameters.publish }}
+    inputs:
+      SourceFolder: $(ob_outputDirectory)
+      Contents: '*.nupkg'
+      TargetFolder: '$(ob_outputDirectory)/packages'

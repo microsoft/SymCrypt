@@ -17,6 +17,12 @@ trigger: none # https://aka.ms/obpipelines/triggers
 pr:
 - main
 
+parameters:
+- name: lkgCompilerBranch
+  type: string
+  displayName: Branch from which to get LKG compiler
+  default: 'official/main'
+
 variables:
   # https://aka.ms/obpipelines/containers
   ONEBRANCH_AME_ACR_LOGIN: onebranch.azurecr.io
@@ -47,10 +53,12 @@ extends:
     featureFlags:
       EnableCDPxPAT: false
       WindowsHostVersion: '1ESWindows2022'
+      LinuxHostVersion:
+        Network: R1
+      needExceptionForUbuntuUsage: true # Mariner does not currently support all of our cross-compilation targets
+
     stages:
-    - stage: Build
-      jobs:
-      - template: .pipelines/templates/build-windows-undocked.yml@self
-        parameters:
-          sln: SymCrypt.sln
-          buildType: 'pr'
+    - template: OneBranch.WindowsUndocked.Core.yml@self
+      parameters:
+        lkgCompilerBranch: ${{ parameters.lkgCompilerBranch }}
+        buildType: 'PR'

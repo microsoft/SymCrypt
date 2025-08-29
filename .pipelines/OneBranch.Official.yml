@@ -17,6 +17,8 @@ trigger:
     include:
     - main
     - publish
+    - feature/*
+    - release/*
 
 schedules:
 - cron: "0 8 * * *" # Daily at 8am UTC (midnight PST/1am PDT)
@@ -44,8 +46,9 @@ extends:
     featureFlags:
       LinuxHostVersion:
         Network: R1
+      WindowsHostVersion:
+        Network: R1
       EnableCDPxPAT: false
-      needExceptionForUbuntuUsage: true # Mariner does not currently support all of our cross-compilation targets
     globalSdl: # https://aka.ms/obpipelines/sdl
       isNativeCode: true
       tsa:
@@ -65,8 +68,10 @@ extends:
           type: linux
         variables:
           ONEBRANCH_AME_ACR_LOGIN: onebranch.azurecr.io
-          LinuxContainerImage: 'onebranch.azurecr.io/linux/ubuntu-2204:latest'
-          ob_outputDirectory: $(Build.SourcesDirectory)/bin
+          LinuxContainerImage: 'mcr.microsoft.com/onebranch/azurelinux/build:3.0'
+          ob_outputDirectory: $(Build.SourcesDirectory)/does_not_exist # No outputs
+          ver_hash: $[ substring(variables['Build.SourceVersion'], 0, 8) ]
+
         steps:
         - task: PythonScript@0
           displayName: 'Set version number'
@@ -76,10 +81,11 @@ extends:
             scriptPath: scripts/version.py
             arguments: '--devops'
             workingDirectory: $(Build.SourcesDirectory)
+            pythonInterpreter: '/usr/bin/python3'
         - task: onebranch.pipeline.version@1
           inputs:
             system: 'Custom'
-            customVersion: '$(verStep.VER_MAJOR).$(verStep.VER_MINOR).$(verStep.VER_PATCH)-$(Build.BuildId)'
+            customVersion: '$(verStep.VER_MAJOR).$(verStep.VER_MINOR).$(verStep.VER_PATCH)-$(ver_hash)-$(Build.BuildId)'
 
     - stage: Build_Windows
       displayName: Build Windows
@@ -118,139 +124,6 @@ extends:
           sign: true
           additionalArgs: '--no-asm'
           identifier: 'NoAsm'
-
-    - stage: Build_Linux_AMD64_host
-      displayName: Build Linux AMD64 host
-      jobs:
-      - template: .pipelines/templates/build-linux.yml@self
-        parameters:
-          targetArch: 'AMD64'
-          config: 'Debug'
-          cc: 'gcc'
-          cxx: 'g++'
-          openssl: true
-      - template: .pipelines/templates/build-linux.yml@self
-        parameters:
-          targetArch: 'AMD64'
-          config: 'Sanitize'
-          cc: 'gcc'
-          cxx: 'g++'
-          openssl: true
-      - template: .pipelines/templates/build-linux.yml@self
-        parameters:
-          targetArch: 'AMD64'
-          config: 'Release'
-          cc: 'gcc'
-          cxx: 'g++'
-          openssl: true
-      - template: .pipelines/templates/build-linux.yml@self
-        parameters:
-          targetArch: 'AMD64'
-          config: 'Debug'
-          cc: 'clang'
-          cxx: 'clang++'
-          openssl: true
-      - template: .pipelines/templates/build-linux.yml@self
-        parameters:
-          targetArch: 'AMD64'
-          config: 'Sanitize'
-          cc: 'clang'
-          cxx: 'clang++'
-          openssl: true
-      - template: .pipelines/templates/build-linux.yml@self
-        parameters:
-          targetArch: 'AMD64'
-          config: 'Release'
-          cc: 'clang'
-          cxx: 'clang++'
-          openssl: true
-      - template: .pipelines/templates/build-linux.yml@self
-        parameters:
-          targetArch: 'AMD64'
-          config: 'Release'
-          cc: 'gcc'
-          cxx: 'g++'
-          additionalArgs: '--no-asm'
-          openssl: true
-          identifier: 'NoAsm'
-      - template: .pipelines/templates/build-linux.yml@self
-        parameters:
-          targetArch: 'AMD64'
-          config: 'Release'
-          cc: 'clang'
-          cxx: 'clang++'
-          additionalArgs: '--no-asm'
-          openssl: true
-          identifier: 'NoAsm'
-      - template: .pipelines/templates/build-linux.yml@self
-        parameters:
-          targetArch: 'X86'
-          config: 'Release'
-          cc: 'gcc'
-          cxx: 'g++'
-          additionalArgs: '--no-asm --no-fips'
-          identifier: 'NoAsm'
-      - template: .pipelines/templates/build-linux.yml@self
-        parameters:
-          targetArch: 'X86'
-          config: 'Release'
-          cc: 'clang'
-          cxx: 'clang++'
-          additionalArgs: '--no-asm --no-fips'
-          identifier: 'NoAsm'
-      - template: .pipelines/templates/build-linux.yml@self
-        parameters:
-          targetArch: 'ARM64'
-          config: 'Debug'
-          cc: 'clang'
-          cxx: 'clang++'
-          additionalArgs: '--toolchain=cmake-configs/Toolchain-Clang-ARM64.cmake'
-      - template: .pipelines/templates/build-linux.yml@self
-        parameters:
-          targetArch: 'ARM64'
-          config: 'Release'
-          cc: 'clang'
-          cxx: 'clang++'
-          additionalArgs: '--toolchain=cmake-configs/Toolchain-Clang-ARM64.cmake'
-      - template: .pipelines/templates/build-linux.yml@self
-        parameters:
-          targetArch: 'ARM'
-          config: 'Debug'
-          cc: 'gcc'
-          cxx: 'g++'
-          additionalArgs: '--toolchain=cmake-configs/Toolchain-GCC-ARM.cmake'
-      - template: .pipelines/templates/build-linux.yml@self
-        parameters:
-          targetArch: 'ARM'
-          config: 'Release'
-          cc: 'gcc'
-          cxx: 'g++'
-          additionalArgs: '--toolchain=cmake-configs/Toolchain-GCC-ARM.cmake'
-
-    - stage: Build_Linux_ARM64_host
-      displayName: Build Linux ARM64 host
-      jobs:
-      - template: .pipelines/templates/build-linux.yml@self
-        parameters:
-          hostArch: 'ARM64'
-          targetArch: 'ARM64'
-          config: 'Debug'
-          cc: 'clang'
-          cxx: 'clang++'
-      - template: .pipelines/templates/build-linux.yml@self
-        parameters:
-          hostArch: 'ARM64'
-          targetArch: 'ARM64'
-          config: 'Sanitize'
-          cc: 'clang'
-          cxx: 'clang++'
-      - template: .pipelines/templates/build-linux.yml@self
-        parameters:
-          hostArch: 'ARM64'
-          targetArch: 'ARM64'
-          config: 'Release'
-          cc: 'clang'
-          cxx: 'clang++'
 
     - stage: Build_macOS
       displayName: Build macOS

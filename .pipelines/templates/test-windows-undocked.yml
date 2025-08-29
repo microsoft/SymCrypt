@@ -1,0 +1,68 @@
+parameters:
+  buildType: 'pr'
+
+jobs:
+- job: Test
+  displayName: Run tests
+  pool:
+    type: windows
+  strategy:
+    matrix:
+      amd64chk:
+        arch: amd64
+        config: chk
+      amd64fre:
+        arch: amd64
+        config: fre
+      x86chk:
+        arch: x86
+        config: chk
+      x86fre:
+        arch: x86
+        config: fre
+
+      # We currently have no ARM64 hosts for testing :(
+      # arm64chk:
+      #   arch: arm64
+      #   config: chk
+      # arm64fre:
+      #   arch: arm64
+      #   config: fre
+
+  variables:
+    # Specify a fake artifact directory since we don't want to upload any artifacts from this job
+    ob_outputDirectory: $(Build.SourcesDirectory)/does_not_exist
+    ob_artifactSuffix: _$(arch)$(config)
+
+  steps:
+  - task: DownloadPipelineArtifact@2
+    displayName: 'Download build artifacts'
+    inputs:
+      artifact: 'drop_Build_Windows_Undocked_build_sln_$(arch)$(config)'
+      path: '$(Build.SourcesDirectory)/artifacts'
+
+  - task: PythonScript@0
+    displayName: 'Run unit tests'
+    condition: eq('${{ parameters.buildType }}', 'official')
+    inputs:
+      scriptSource: 'filePath'
+      scriptPath: scripts\test.py
+      arguments: '. noperftests'
+      workingDirectory: '$(Build.SourcesDirectory)/artifacts'
+
+  - task: PythonScript@0
+    displayName: 'Run dynamic unit tests (test module)'
+    inputs:
+      scriptSource: 'filePath'
+      scriptPath: scripts\test.py
+      arguments: '. dynamic:dll\symcrypttestmodule.dll noperftests'
+      workingDirectory: '$(Build.SourcesDirectory)/artifacts'
+
+  - task: PythonScript@0
+    displayName: 'Run dynamic unit tests (prod module)'
+    condition: eq('${{ parameters.buildType }}', 'official')
+    inputs:
+      scriptSource: 'filePath'
+      scriptPath: scripts\test.py
+      arguments: '. dynamic:dll\symcrypt.dll noperftests'
+      workingDirectory: '$(Build.SourcesDirectory)/artifacts'

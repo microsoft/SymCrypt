@@ -1,0 +1,215 @@
+jobs:
+- job: build
+  displayName: Build
+
+  strategy:
+    matrix:
+      amd64_gcc_debug:
+        targetArch: AMD64
+        config: Debug
+        preset: 'Linux_AMD64_GCC_Debug'
+        openssl: true
+        binskim_break: false
+
+      # Broken in gcc < 14, see https://github.com/actions/runner-images/issues/9491
+      # amd64_gcc_sanitize:
+      #   targetArch: AMD64
+      #   config: Sanitize
+      #   preset: 'Linux_AMD64_GCC_Sanitize'
+      #   openssl: true
+      #   binskim_break: false
+
+      amd64_gcc_release:
+        targetArch: AMD64
+        config: Release
+        preset: 'Linux_AMD64_GCC_Release'
+        openssl: true
+        libcrux: true
+        binskim_break: true
+
+      amd64_gcc_release_noasm:
+        targetArch: AMD64
+        config: Release
+        preset: 'Linux_AMD64_GCC_Release_NoAsm'
+        openssl: true
+        binskim_break: false
+
+      amd64_clang_debug:
+        targetArch: AMD64
+        config: Debug
+        preset: 'Linux_AMD64_Clang_Debug'
+        openssl: true
+        binskim_break: false
+
+      amd64_clang_sanitize:
+        targetArch: AMD64
+        config: Sanitize
+        preset: 'Linux_AMD64_Clang_Sanitize'
+        openssl: true
+        binskim_break: false
+
+      amd64_clang_release:
+        targetArch: AMD64
+        config: Release
+        preset: 'Linux_AMD64_Clang_Release'
+        openssl: true
+        libcrux: true
+        binskim_break: true
+
+      amd64_clang_release_noasm:
+        targetArch: AMD64
+        config: Release
+        preset: 'Linux_AMD64_Clang_Release_NoAsm'
+        openssl: true
+        binskim_break: false
+
+      x86_gcc_release_noasm:
+        targetArch: X86
+        config: Release
+        preset: 'Linux_X86_GCC_Release_NoAsm'
+        binskim_break: false
+
+      x86_clang_release_noasm:
+        targetArch: X86
+        config: Release
+        preset: 'Linux_X86_Clang_Release_NoAsm'
+        binskim_break: false
+
+      arm64_cross_clang_debug:
+        targetArch: ARM64
+        config: Debug
+        preset: 'Linux_ARM64_Cross_Clang_Debug'
+        binskim_break: false
+
+      arm64_cross_clang_release:
+        targetArch: ARM64
+        config: Release
+        preset: 'Linux_ARM64_Cross_Clang_Release'
+        libcrux: true
+        binskim_break: true
+
+      arm_cross_gcc_debug:
+        targetArch: ARM
+        config: Debug
+        preset: 'Linux_ARM_Cross_GCC_Debug'
+        binskim_break: false
+
+      arm_cross_gcc_release:
+        targetArch: ARM
+        config: Release
+        preset: 'Linux_ARM_Cross_GCC_Release'
+        libcrux: true
+        binskim_break: true
+
+  pool:
+    type: linux
+    hostArchitecture: AMD64
+
+  variables:
+    ONEBRANCH_AME_ACR_LOGIN: onebranch.azurecr.io
+    LinuxContainerImage: 'onebranch.azurecr.io/linux/ubuntu-2204:latest'
+
+    ob_outputDirectory: $(Build.SourcesDirectory)/build/cmake/$(preset)
+    ob_artifactSuffix: _$(preset)
+    ob_sdl_binskim_break: $(binskim_break) # Only break on binskim failures for Release binaries https://aka.ms/obpipelines/sdl
+
+    verbose_build_flag: $[ iif(eq(variables['system.debug'], true), '-DCMAKE_VERBOSE_MAKEFILE=ON', '') ]
+
+  steps:
+    - script: |
+        apt-get update -y
+      continueOnError: true
+      displayName: 'Update package manager'
+
+    - script: |
+        apt-get install -y clang
+      condition: contains(variables.preset, 'Clang')
+      displayName: 'Install Clang'
+
+    - script: |
+        apt-get install -y libssl-dev
+      condition: eq(variables.openssl, true)
+      displayName: 'Install OpenSSL development libraries'
+
+    - script: |
+        apt-get install -y gcc-multilib g++-multilib
+
+        # Create a symlink for asm-generic to work around error finding asm/errno.h on Ubuntu 22.04
+        ln -s /usr/include/asm-generic /usr/include/asm
+      condition: eq(variables.targetArch, 'X86')
+      displayName: 'Install x86 headers and libraries'
+
+    - script: |
+        apt-get install -y binutils-aarch64-linux-gnu gcc-aarch64-linux-gnu g++-aarch64-linux-gnu qemu-user
+      condition: and(eq(variables.targetArch, 'ARM64'), ${{ ne(parameters.hostArch, 'ARM64') }})
+      displayName: 'Install arm64 cross-compilation tools'
+
+    - script: |
+        apt-get install -y gcc-arm-linux-gnueabihf g++-arm-linux-gnueabihf
+      condition: eq(variables.targetArch, 'ARM')
+      displayName: 'Install ARM cross-compilation tools'
+
+    - task: PipAuthenticate@1
+      inputs:
+        artifactFeeds: 'OS/SymCrypt_PublicPackages'
+
+    - script: |
+        pip install -v -r scripts/requirements.txt --target $(Build.SourcesDirectory)/scripts
+      displayName: 'Install Python dependencies'
+
+    # Conditionally setting job variables based on matrix variables doesn't work, probably due to
+    # evaluation order. Instead, we have to configure our CMake arguments with a script.
+    - script: |
+        CMAKE_ARGS="--preset $(preset) $(verbose_build_flag)"
+        if [ "$(openssl)" = "true" ]; then
+          CMAKE_ARGS="$CMAKE_ARGS -DSYMCRYPT_TEST_WITH_OPENSSL=ON"
+        fi
+        if [ "$(libcrux)" = "true" ]; then
+          CMAKE_ARGS="$CMAKE_ARGS -DSYMCRYPT_TEST_LIBCRUX=ON"
+        fi
+        echo "Final CMake args: $CMAKE_ARGS"
+        echo "##vso[task.setvariable variable=CMAKE_CONFIG_ARGS]$CMAKE_ARGS"
+      displayName: 'Set CMake configure arguments'
+
+    - task: CMake@1
+      displayName: 'CMake configure'
+      inputs:
+        workingDirectory: $(Build.SourcesDirectory)
+        cmakeArgs: $(CMAKE_CONFIG_ARGS)
+
+    - task: CMake@1
+      displayName: 'CMake build'
+      inputs:
+        workingDirectory: $(Build.SourcesDirectory)
+        cmakeArgs: '--build --preset $(preset)'
+
+    # Overwrite default artifact publishing with our copy (enables publishing binaries for failed runs)
+    - script: |
+          cp .artifactignore "$(ob_outputDirectory)/.artifactignore"
+      displayName: 'Overwrite .artifactignore'
+
+    - task: PythonScript@0
+      displayName: 'Package generic Linux module'
+      inputs:
+        scriptSource: 'filePath'
+        scriptPath: scripts/package.py
+        arguments: '$(ob_outputDirectory) $(targetArch) $(config) generic $(ob_outputDirectory)/pkg'
+        workingDirectory: $(Build.SourcesDirectory)
+
+    - task: Bash@3
+      displayName: 'Check if OpenEnclave module exists'
+      inputs:
+        targetType: inline
+        script: |
+          if [ -d $(ob_outputDirectory)/module/oe_full ]; then
+            echo "##vso[task.setVariable variable=PACKAGE_OE]true"
+          fi
+
+    - task: PythonScript@0
+      displayName: 'Package OpenEnclave module'
+      condition: eq(variables.PACKAGE_OE, 'true')
+      inputs:
+        scriptSource: 'filePath'
+        scriptPath: scripts/package.py
+        arguments: '$(ob_outputDirectory) $(targetArch) $(config) oe_full $(ob_outputDirectory)/pkg'
+        workingDirectory: $(Build.SourcesDirectory)

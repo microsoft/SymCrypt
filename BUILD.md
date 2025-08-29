@@ -38,7 +38,7 @@ imply that it has been tested for or is actively supported by Microsoft on that 
 every effort to ensure that SymCrypt is reliable, stable and bug-free on every platform we run on, the code in this
 repository and the binaries we release are provided *as is*, without warranty of any kind, express or implied, including
 but not limited to the warranties of merchantability, fitness for a particular purpose and noninfringement
-(see our [LICENSE](./LICENSE)).
+(see our [LICENSE](./LICENSE.txt)).
 
 ## Build Instructions
 For Microsoft employees building the library internally, to include msbignum and RSA32 implementation benchmarks in

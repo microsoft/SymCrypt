@@ -23,6 +23,8 @@ trigger:
     include:
     - main
     - publish
+    - feature/*
+    - release/*
 
 schedules:
 - cron: "0 8 * * *" # Daily at 8am UTC (midnight PST/1am PDT)
@@ -32,29 +34,15 @@ schedules:
     include:
     - main
 
-# Package and ingestion are disabled by default.
-# Manual runs on the main pipeline are required for packaging/ingestion.
 parameters:
-- name: package
+- name: publish
   type: boolean
-  displayName: Create VPack
+  displayName: Publish packages
   default: false
 - name: lkgCompilerBranch
   type: string
   displayName: Branch from which to get LKG compiler
   default: 'official/main'
-# - name: ingest
-#   type: boolean
-#   displayName: Create Ingest PR
-#   default: false
-# - name: branch
-#   type: string
-#   displayName: Branch to PR to
-#   default: 'official/rs_ens1_cs1'
-# - name: title
-#   type: string
-#   displayName: PR Title
-#   default: 'Automated: Ingest SymCrypt'
 
 variables:
   # https://aka.ms/obpipelines/containers
@@ -86,22 +74,15 @@ extends:
     featureFlags:
       EnableCDPxPAT: false
       WindowsHostVersion: '1ESWindows2022'
+      LinuxHostVersion:
+        Network: R1
+    nugetPublishing:
+      feeds:
+      - name: SymCrypt.NuGet
+
     stages:
-    - stage: Build
-      jobs:
-      - template: .pipelines/templates/build-windows-undocked.yml@self
-        parameters:
-          sln: symcrypt.sln
-          buildType: 'official'
-          # Package args
-          package: ${{ parameters.package }}
-          name: 'SymCrypt'
-          description: 'SymCrypt cryptographic library'
-          owner: 'ensciacrypto@microsoft.com'
-          sign: true
-          lkgCompilerBranch: ${{ parameters.lkgCompilerBranch }}
-          # Windows ingestion args
-          # ingest: ${{ parameters.ingest }}
-          # osPath: 'onecore/ds/security/symcrypt'
-          # osBranch: ${{ parameters.branch }}
-          # osPrTitle: ${{ parameters.title }}
+    - template: OneBranch.WindowsUndocked.Core.yml@self
+      parameters:
+        lkgCompilerBranch: ${{ parameters.lkgCompilerBranch }}
+        buildType: 'Official'
+        publish: ${{ parameters.publish }}

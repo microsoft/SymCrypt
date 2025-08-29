@@ -1,0 +1,67 @@
+parameters:
+  - name: publish
+    type: boolean
+    displayName: Publish VPack
+    default: false
+
+jobs:
+- job: vpack
+  displayName: Create VPack
+  pool:
+    type: windows
+  strategy:
+    matrix:
+      x86chk:
+        arch: x86
+        config: Debug
+        config_win: chk
+      x86fre:
+        arch: x86
+        config: Release
+        config_win: fre
+      amd64chk:
+        arch: amd64
+        config: Debug
+        config_win: chk
+      amd64fre:
+        arch: amd64
+        config: Release
+        config_win: fre
+      arm64chk:
+        arch: arm64
+        config: Debug
+        config_win: chk
+      arm64fre:
+        arch: arm64
+        config: Release
+        config_win: fre
+
+
+  variables:
+    # Kind of hacky - this template must be part of a stage which depends on a Set_Version stage
+    # to produce the version numbers
+    ver_major: $[stageDependencies.Set_Version.set_version.outputs['verStep.VER_MAJOR']]
+    ver_minor: $[stageDependencies.Set_Version.set_version.outputs['verStep.VER_MINOR']]
+    ver_patch: $[stageDependencies.Set_Version.set_version.outputs['verStep.VER_PATCH']]
+    ver_hash: $[ substring(variables['Build.SourceVersion'], 0, 8) ]
+    # Specify a fake artifact directory since we don't want to upload any artifacts from this job
+    ob_outputDirectory: $(Build.SourcesDirectory)/artifacts/pkg
+    ob_artifactSuffix: _$(arch)$(config_win)
+    ob_git_checkout: false # Sources not required for this job
+    ob_sdl_codeSignValidation_excludes: -|**\*.sys # Signing is not supported for KM drivers
+    # VPack creation parameters
+    # https://www.osgwiki.com/wiki/OneBranch_Windows_Undocked_Pipelines#2._Set_feature_flags_-_createVPack_and_updateOSManifest.
+    ob_createvpack_enabled: ${{ parameters.publish }}
+    ob_createvpack_owneralias: 'symcryptdevs@microsoft.com'
+    ob_createvpack_packagename: "SymCrypt.$(arch)$(config_win)"
+    ob_createvpack_description: "SymCrypt Cryptographic Library"
+    ob_createvpack_versionAs: string
+    ob_createvpack_version: $(ver_major).$(ver_minor).$(ver_patch)-$(ver_hash)-$(Build.BuildId)
+    ob_createvpack_vpackdirectory: $(ob_outputDirectory)
+
+  steps:
+  - task: DownloadPipelineArtifact@2
+    displayName: 'Download build artifacts'
+    inputs:
+      artifact: 'drop_Build_Windows_Undocked_build_sln_$(arch)$(config_win)'
+      path: '$(Build.SourcesDirectory)/artifacts'

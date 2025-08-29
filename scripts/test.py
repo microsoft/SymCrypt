@@ -58,13 +58,19 @@ def run_unittest(build_dir : pathlib.Path, emulator : str,
 
     env = os.environ.copy()
     if disable_ymm:
-        env["GLIBC_TUNABLES"] = "glibc.cpu.hwcaps=-AVX_Usable,-AVX_Fast_Unaligned_Load,-AVX2_Usable"
+        # YMM tests require glibc to not use YMM registers. This can be configured with the
+        # GLIBC_TUNABLES environment variable, but different versions of glibc use different flags.
+        # We set all applicable flags to account for this.
+        env["GLIBC_TUNABLES"] = "glibc.cpu.hwcaps=-AVX_Fast_Unaligned_Load,-AVX,-AVX2,-AVX_Usable,-AVX2_Usable"
 
     test_proc = subprocess.Popen(unittest_invocation, env = env, text=True, stderr = subprocess.PIPE)
 
     for line in test_proc.stderr:
         if (line.rstrip().endswith("AddressSanitizer:DEADLYSIGNAL")):
-            print("AddressSanitizer:DEADLYSIGNAL detected", file = sys.stderr)
+            # On gcc < 14, ASAN occasionally gets stuck in an infinite loop due to incompatibility
+            # with high-entropy ASLR. If we detect output indicating that issue, we kill the test
+            # process and exit with an error code to avoid the infinite loop.
+            print("AddressSanitizer:DEADLYSIGNAL detected. Exiting with failure.", file = sys.stderr)
             exit(-1)
         
         print(line, file = sys.stderr)
