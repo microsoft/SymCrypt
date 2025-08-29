@@ -10,10 +10,9 @@
 use crate::common::Error;
 
 extern "C" {
-    pub fn SymCryptModuleInit(api : u32, minor : u32);
-    
+    pub fn SymCryptInit();
     pub fn SymCryptWipe(pb_data: *mut u8, cb_data: usize);
-    pub fn SymCryptRandom(pbBuffer: *mut u8, cbBuffer: usize) -> Error;
+    pub fn SymCryptCallbackRandom(pbBuffer: *mut u8, cbBuffer: usize) -> Error;
 
     #[cfg(not(feature = "std"))]
     fn SymCryptCallbackAlloc(nBytes: usize) -> *mut u8;

@@ -2,7 +2,6 @@
 name = "symcrust"
 version = "0.1.0"
 edition = "2021"
-# build = "build.rs"
 
 [dependencies]
 libc = "0.2"
@@ -28,9 +27,6 @@ criterion = { version = "0.5", features = ["html_reports"] }
 hex = "0.4.3"
 assert_hex = "0.4.1"
 ghash = "0.5.1"
-
-[build-dependencies]
-pkg-config = "0.3"
 
 [[bench]]
 name = "ntt"

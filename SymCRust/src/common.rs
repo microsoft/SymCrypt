@@ -75,15 +75,13 @@ pub(crate) fn init() {
         return;
     }
 
-    unsafe { 
-        SymCryptModuleInit(SYMCRYPT_MODULE_VERSION_MAJOR, SYMCRYPT_MODULE_VERSION_MINOR)
-    };
+    unsafe { SymCryptInit(); }
 
     INITIALIZED.store(true, Ordering::Relaxed);
 }
 
 pub(crate) fn random(dst: &mut [u8]) -> Error {
-    unsafe { SymCryptRandom(dst.as_mut_ptr(), dst.len()) }
+    unsafe { SymCryptCallbackRandom(dst.as_mut_ptr(), dst.len()) }
 }
 
 pub fn wipe(pb_data: *mut u8, cb_data: usize) {
