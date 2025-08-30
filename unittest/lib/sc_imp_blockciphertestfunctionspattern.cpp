@@ -56,7 +56,10 @@ SYMCRYPT_EncryptTest<ImpXxx, AlgXxx, ModeCbc>(
     _Out_writes_( cbData )                  PBYTE   pbDst,
                                             SIZE_T  cbData )
 {
-    SYMCRYPT_ASSERT( SymCryptBlockCipherXxx->blockSize == SCSHIM_XXX_BLOCK_SIZE );
+    if constexpr ( std::is_same<ImpXxx, ImpSc>::value || std::is_same<ImpXxx, ImpScStatic>::value )
+    {
+        SYMCRYPT_ASSERT( SymCryptBlockCipherXxx->blockSize == SCSHIM_XXX_BLOCK_SIZE );
+    }
 
     ScShimSymCryptCbcEncrypt(
         SymCryptBlockCipherXxx,
@@ -77,7 +80,10 @@ SYMCRYPT_DecryptTest<ImpXxx, AlgXxx, ModeCbc>(
     _Out_writes_( cbData )                  PBYTE   pbDst,
                                             SIZE_T  cbData )
 {
-    SYMCRYPT_ASSERT( SymCryptBlockCipherXxx->blockSize == SCSHIM_XXX_BLOCK_SIZE );
+    if constexpr ( std::is_same<ImpXxx, ImpSc>::value || std::is_same<ImpXxx, ImpScStatic>::value )
+    {
+        SYMCRYPT_ASSERT( SymCryptBlockCipherXxx->blockSize == SCSHIM_XXX_BLOCK_SIZE );
+    }
 
     ScShimSymCryptCbcDecrypt(
         SymCryptBlockCipherXxx,
@@ -98,7 +104,10 @@ SYMCRYPT_EncryptTest<ImpXxx, AlgXxx, ModeCfb>(
     _Out_writes_( cbData )                  PBYTE   pbDst,
                                             SIZE_T  cbData )
 {
-    SYMCRYPT_ASSERT( SymCryptBlockCipherXxx->blockSize == SCSHIM_XXX_BLOCK_SIZE );
+    if constexpr ( std::is_same<ImpXxx, ImpSc>::value || std::is_same<ImpXxx, ImpScStatic>::value )
+    {
+        SYMCRYPT_ASSERT( SymCryptBlockCipherXxx->blockSize == SCSHIM_XXX_BLOCK_SIZE );
+    }
 
     ScShimSymCryptCfbEncrypt(
         SymCryptBlockCipherXxx,
@@ -120,7 +129,10 @@ SYMCRYPT_DecryptTest<ImpXxx, AlgXxx, ModeCfb>(
     _Out_writes_( cbData )                  PBYTE   pbDst,
                                             SIZE_T  cbData )
 {
-    SYMCRYPT_ASSERT( SymCryptBlockCipherXxx->blockSize == SCSHIM_XXX_BLOCK_SIZE );
+    if constexpr ( std::is_same<ImpXxx, ImpSc>::value || std::is_same<ImpXxx, ImpScStatic>::value )
+    {
+        SYMCRYPT_ASSERT( SymCryptBlockCipherXxx->blockSize == SCSHIM_XXX_BLOCK_SIZE );
+    }
 
     ScShimSymCryptCfbDecrypt(
         SymCryptBlockCipherXxx,

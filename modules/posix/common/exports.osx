@@ -139,6 +139,12 @@ _SymCryptGcmKeyCopy
 _SymCryptGcmSelftest
 _SymCryptGcmStateCopy
 _SymCryptGcmValidateParameters
+_SymCryptGetBlockCipher
+_SymCryptGetEcurveParams
+_SymCryptGetHashAlgorithm
+_SymCryptGetMacAlgorithm
+_SymCryptGetMarvin32DefaultSeed
+_SymCryptGetOidList
 _SymCryptHash
 _SymCryptHashAppend
 _SymCryptHashInit

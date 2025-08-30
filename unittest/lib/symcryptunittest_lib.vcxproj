@@ -40,6 +40,7 @@
     <ClCompile Include="rng.cpp" />
     <ClCompile Include="rsa32_implementations.cpp" />
     <ClCompile Include="sc_implementations.cpp" />
+    <ClCompile Include="testAccessors.cpp" />
     <ClCompile Include="testAesCtrDrbg.cpp" />
     <ClCompile Include="testArithmetic.cpp" />
     <ClCompile Include="testAuthEnc.cpp" />

@@ -764,6 +764,35 @@ SymCryptEqual(
 // signature verification library.
 //
 
+typedef enum _SYMCRYPT_HASH_ID
+{
+    SYMCRYPT_HASH_ID_NULL                = 0,
+    SYMCRYPT_HASH_ID_MD2                 = 1,
+    SYMCRYPT_HASH_ID_MD4                 = 2,
+    SYMCRYPT_HASH_ID_MD5                 = 3,
+    SYMCRYPT_HASH_ID_SHA1                = 4,
+    SYMCRYPT_HASH_ID_SHA224              = 5,
+    SYMCRYPT_HASH_ID_SHA256              = 6,
+    SYMCRYPT_HASH_ID_SHA384              = 7,
+    SYMCRYPT_HASH_ID_SHA512              = 8,
+    SYMCRYPT_HASH_ID_SHA512_224          = 9,
+    SYMCRYPT_HASH_ID_SHA512_256          = 10,
+    SYMCRYPT_HASH_ID_SHA3_224            = 11,
+    SYMCRYPT_HASH_ID_SHA3_256            = 12,
+    SYMCRYPT_HASH_ID_SHA3_384            = 13,
+    SYMCRYPT_HASH_ID_SHA3_512            = 14,
+    SYMCRYPT_HASH_ID_SHAKE128            = 15,
+    SYMCRYPT_HASH_ID_SHAKE256            = 16
+} SYMCRYPT_HASH_ID;
+
+PCSYMCRYPT_HASH
+SYMCRYPT_CALL
+SymCryptGetHashAlgorithm( SYMCRYPT_HASH_ID hashId );
+//
+// Returns a pointer to the hash algorithm structure for the specified hash ID.
+// Returns NULL if the hash ID is invalid.
+//
+
 SIZE_T
 SYMCRYPT_CALL
 SymCryptHashResultSize( _In_ PCSYMCRYPT_HASH pHash );
@@ -2540,6 +2569,33 @@ SymCryptParallelSha512Selftest(void);
 // computation can be selected at runtime.
 //
 
+typedef enum _SYMCRYPT_MAC_ID
+{
+    SYMCRYPT_MAC_ID_NULL                = 0,
+    SYMCRYPT_MAC_ID_HMAC_MD5            = 1,
+    SYMCRYPT_MAC_ID_HMAC_SHA1           = 2,
+    SYMCRYPT_MAC_ID_HMAC_SHA224         = 3,
+    SYMCRYPT_MAC_ID_HMAC_SHA256         = 4,
+    SYMCRYPT_MAC_ID_HMAC_SHA384         = 5,
+    SYMCRYPT_MAC_ID_HMAC_SHA512         = 6,
+    SYMCRYPT_MAC_ID_HMAC_SHA512_224     = 7,
+    SYMCRYPT_MAC_ID_HMAC_SHA512_256     = 8,
+    SYMCRYPT_MAC_ID_HMAC_SHA3_224       = 9,
+    SYMCRYPT_MAC_ID_HMAC_SHA3_256       = 10,
+    SYMCRYPT_MAC_ID_HMAC_SHA3_384       = 11,
+    SYMCRYPT_MAC_ID_HMAC_SHA3_512       = 12,
+    SYMCRYPT_MAC_ID_AES_CMAC            = 13,
+    SYMCRYPT_MAC_ID_KMAC_128            = 14,
+    SYMCRYPT_MAC_ID_KMAC_256            = 15
+} SYMCRYPT_MAC_ID;
+
+PCSYMCRYPT_MAC
+SYMCRYPT_CALL
+SymCryptGetMacAlgorithm( SYMCRYPT_MAC_ID macId );
+//
+// Returns a pointer to the MAC algorithm structure for the specified MAC ID.
+// Returns NULL if the MAC ID is invalid.
+//
 
 //
 // Generic HMAC API with parametrized hash function
@@ -3948,6 +4004,13 @@ SymCryptMarvin32ExpandSeed(
 
 extern PCSYMCRYPT_MARVIN32_EXPANDED_SEED const SymCryptMarvin32DefaultSeed;
 
+PCSYMCRYPT_MARVIN32_EXPANDED_SEED
+SYMCRYPT_CALL
+SymCryptGetMarvin32DefaultSeed( void );
+//
+// Returns a pointer to the default Marvin32 seed.
+//
+
 VOID
 SYMCRYPT_CALL
 SymCryptMarvin32SeedCopy(   _In_    PCSYMCRYPT_MARVIN32_EXPANDED_SEED   pSrc,
@@ -4550,6 +4613,24 @@ extern const PCSYMCRYPT_BLOCKCIPHER SymCryptRc2BlockCipher;
 // Note that these functions will only work with SymCrypt-provided block ciphers.
 // They are not designed to be used with externally provided block ciphers.
 // (The SYMCRYPT_BLOCKCIPHER structure is a private one not available to callers.)
+//
+
+typedef enum _SYMCRYPT_BLOCKCIPHER_ID
+{
+    SYMCRYPT_BLOCKCIPHER_ID_NULL        = 0,
+    SYMCRYPT_BLOCKCIPHER_ID_AES         = 1,
+    SYMCRYPT_BLOCKCIPHER_ID_DES         = 2,
+    SYMCRYPT_BLOCKCIPHER_ID_3DES        = 3,
+    SYMCRYPT_BLOCKCIPHER_ID_DESX        = 4,
+    SYMCRYPT_BLOCKCIPHER_ID_RC2         = 5
+} SYMCRYPT_BLOCKCIPHER_ID;
+
+PCSYMCRYPT_BLOCKCIPHER
+SYMCRYPT_CALL
+SymCryptGetBlockCipher( SYMCRYPT_BLOCKCIPHER_ID blockCipherId );
+//
+// Returns a pointer to the block cipher structure for the specified block cipher ID.
+// Returns NULL if the block cipher ID is invalid.
 //
 
 VOID
@@ -8212,6 +8293,28 @@ extern const PCSYMCRYPT_ECURVE_PARAMS    SymCryptEcurveParamsNumsP384t1;
 extern const PCSYMCRYPT_ECURVE_PARAMS    SymCryptEcurveParamsNumsP512t1;
 
 extern const PCSYMCRYPT_ECURVE_PARAMS    SymCryptEcurveParamsCurve25519;
+
+typedef enum _SYMCRYPT_ECURVE_ID
+{
+    SYMCRYPT_ECURVE_ID_NULL             = 0,
+    SYMCRYPT_ECURVE_ID_NIST_P192        = 1,
+    SYMCRYPT_ECURVE_ID_NIST_P224        = 2,
+    SYMCRYPT_ECURVE_ID_NIST_P256        = 3,
+    SYMCRYPT_ECURVE_ID_NIST_P384        = 4,
+    SYMCRYPT_ECURVE_ID_NIST_P521        = 5,
+    SYMCRYPT_ECURVE_ID_NUMS_P256T1      = 6,
+    SYMCRYPT_ECURVE_ID_NUMS_P384T1      = 7,
+    SYMCRYPT_ECURVE_ID_NUMS_P512T1      = 8,
+    SYMCRYPT_ECURVE_ID_CURVE25519       = 9
+} SYMCRYPT_ECURVE_ID;
+
+PCSYMCRYPT_ECURVE_PARAMS
+SYMCRYPT_CALL
+SymCryptGetEcurveParams( SYMCRYPT_ECURVE_ID ecurveId );
+//
+// Returns a pointer to the elliptic curve parameters structure for the specified curve ID.
+// Returns NULL if the curve ID is invalid.
+//
 
 //=====================================================
 // ECC flags

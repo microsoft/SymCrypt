@@ -50,6 +50,7 @@
     <ClCompile Include="cpuid_notry.c" />
     <ClCompile Include="cpuid_um.c" />
     <ClCompile Include="crt.c" />
+    <ClCompile Include="data_accessors.c" />
     <ClCompile Include="DesTables.c" />
     <ClCompile Include="desx.c" />
     <ClCompile Include="dh.c" />

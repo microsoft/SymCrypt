@@ -710,3 +710,13 @@ VERSION_103.9
       SymCryptExternalMuMlDsaSign;
       SymCryptExternalMuMlDsaVerify;
 } VERSION_103.8;
+VERSION_103.10
+{
+   global:
+      SymCryptGetBlockCipher;
+      SymCryptGetEcurveParams;
+      SymCryptGetHashAlgorithm;
+      SymCryptGetMacAlgorithm;
+      SymCryptGetMarvin32DefaultSeed;
+      SymCryptGetOidList;
+} VERSION_103.9;

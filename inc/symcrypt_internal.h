@@ -1097,14 +1097,14 @@ extern const SYMCRYPT_OID SymCryptSha256OidList[SYMCRYPT_SHA256_OID_COUNT];
 #define SYMCRYPT_SHA384_OID_COUNT      (2)
 extern const SYMCRYPT_OID SymCryptSha384OidList[SYMCRYPT_SHA384_OID_COUNT];
 
+#define SYMCRYPT_SHA512_OID_COUNT      (2)
+extern const SYMCRYPT_OID SymCryptSha512OidList[SYMCRYPT_SHA512_OID_COUNT];
+
 #define SYMCRYPT_SHA512_224_OID_COUNT      (2)
 extern const SYMCRYPT_OID SymCryptSha512_224OidList[SYMCRYPT_SHA512_224_OID_COUNT];
 
 #define SYMCRYPT_SHA512_256_OID_COUNT      (2)
 extern const SYMCRYPT_OID SymCryptSha512_256OidList[SYMCRYPT_SHA512_256_OID_COUNT];
-
-#define SYMCRYPT_SHA512_OID_COUNT      (2)
-extern const SYMCRYPT_OID SymCryptSha512OidList[SYMCRYPT_SHA512_OID_COUNT];
 
 #define SYMCRYPT_SHA3_224_OID_COUNT      (2)
 extern const SYMCRYPT_OID SymCryptSha3_224OidList[SYMCRYPT_SHA3_224_OID_COUNT];
@@ -1123,6 +1123,34 @@ extern const SYMCRYPT_OID SymCryptShake128OidList[SYMCRYPT_SHAKE128_OID_COUNT];
 
 #define SYMCRYPT_SHAKE256_OID_COUNT      (2)
 extern const SYMCRYPT_OID SymCryptShake256OidList[SYMCRYPT_SHAKE256_OID_COUNT];
+
+typedef enum _SYMCRYPT_OID_LIST_ID
+{
+    SYMCRYPT_OID_LIST_ID_NULL           = 0,
+    SYMCRYPT_OID_LIST_ID_MD5            = 1,
+    SYMCRYPT_OID_LIST_ID_SHA1           = 2,
+    SYMCRYPT_OID_LIST_ID_SHA224         = 3,
+    SYMCRYPT_OID_LIST_ID_SHA256         = 4,
+    SYMCRYPT_OID_LIST_ID_SHA384         = 5,
+    SYMCRYPT_OID_LIST_ID_SHA512         = 6,
+    SYMCRYPT_OID_LIST_ID_SHA512_224     = 7,
+    SYMCRYPT_OID_LIST_ID_SHA512_256     = 8,
+    SYMCRYPT_OID_LIST_ID_SHA3_224       = 9,
+    SYMCRYPT_OID_LIST_ID_SHA3_256       = 10,
+    SYMCRYPT_OID_LIST_ID_SHA3_384       = 11,
+    SYMCRYPT_OID_LIST_ID_SHA3_512       = 12,
+    SYMCRYPT_OID_LIST_ID_SHAKE128       = 13,
+    SYMCRYPT_OID_LIST_ID_SHAKE256       = 14
+} SYMCRYPT_OID_LIST_ID;
+
+PCSYMCRYPT_OID
+SYMCRYPT_CALL
+SymCryptGetOidList( SYMCRYPT_OID_LIST_ID oidId, _Out_opt_ SIZE_T* pCount );
+//
+// Returns a pointer to the OID list for the specified OID list ID. If pCount is non-NULL, the
+// pointed-to value will be set to the number of elements in the OID list.
+// Returns NULL if the OID list ID is invalid.
+//
 
 typedef union _SYMCRYPT_HASH_STATE
 {

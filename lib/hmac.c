@@ -5,7 +5,6 @@
 
 #include "precomp.h"
 
-
 VOID
 SYMCRYPT_CALL
 SymCryptHmacStateCopy(

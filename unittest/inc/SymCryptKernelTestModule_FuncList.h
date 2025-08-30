@@ -1,75 +1,15 @@
 //
 // SymCryptKernelTestModule_FuncList.h
-// Lists functions and symbols that the SymCryptKernelTestModule supports, used by both the user mode
+// Lists functions that the SymCryptKernelTestModule supports, used by both the user mode
 // and kernel mode components of the test module to set up directing calls from user mode
 // unit tests to test driver.
 //
 // Copyright (c) Microsoft Corporation. Licensed under the MIT license.
 //
 
-// FUNCTION and SYMBOL macros are defined in the source files that include this header as
-// what we need to do with the listed SymCrypt symbol names is different in the user mode
+// The FUNCTION macro is defined in the source files that include this header as
+// what we need to do with the listed SymCrypt function names is different in the user mode
 // dll and the kernel mode test driver
-
-// List all symbols that unit tests need to know the address of
-SYMBOL(SymCryptMarvin32DefaultSeed)
-SYMBOL(SymCryptAesCmacAlgorithm)
-SYMBOL(SymCryptHmacMd5Algorithm)
-SYMBOL(SymCryptHmacSha1Algorithm)
-SYMBOL(SymCryptHmacSha224Algorithm)
-SYMBOL(SymCryptHmacSha256Algorithm)
-SYMBOL(SymCryptHmacSha384Algorithm)
-SYMBOL(SymCryptHmacSha512Algorithm)
-SYMBOL(SymCryptHmacSha512_224Algorithm)
-SYMBOL(SymCryptHmacSha512_256Algorithm)
-SYMBOL(SymCryptHmacSha3_224Algorithm)
-SYMBOL(SymCryptHmacSha3_256Algorithm)
-SYMBOL(SymCryptHmacSha3_384Algorithm)
-SYMBOL(SymCryptHmacSha3_512Algorithm)
-SYMBOL(SymCryptMd2Algorithm)
-SYMBOL(SymCryptMd4Algorithm)
-SYMBOL(SymCryptMd5Algorithm)
-SYMBOL(SymCryptSha1Algorithm)
-SYMBOL(SymCryptSha224Algorithm)
-SYMBOL(SymCryptSha256Algorithm)
-SYMBOL(SymCryptSha384Algorithm)
-SYMBOL(SymCryptSha512Algorithm)
-SYMBOL(SymCryptSha512_224Algorithm)
-SYMBOL(SymCryptSha512_256Algorithm)
-SYMBOL(SymCryptSha3_224Algorithm)
-SYMBOL(SymCryptSha3_256Algorithm)
-SYMBOL(SymCryptSha3_384Algorithm)
-SYMBOL(SymCryptSha3_512Algorithm)
-SYMBOL(SymCryptShake128HashAlgorithm)
-SYMBOL(SymCryptShake256HashAlgorithm)
-SYMBOL(SymCryptKmac128Algorithm)
-SYMBOL(SymCryptKmac256Algorithm)
-SYMBOL(SymCryptMd5OidList)
-SYMBOL(SymCryptSha1OidList)
-SYMBOL(SymCryptSha224OidList)
-SYMBOL(SymCryptSha256OidList)
-SYMBOL(SymCryptSha384OidList)
-SYMBOL(SymCryptSha512OidList)
-SYMBOL(SymCryptSha512_224OidList)
-SYMBOL(SymCryptSha512_256OidList)
-SYMBOL(SymCryptSha3_224OidList)
-SYMBOL(SymCryptSha3_256OidList)
-SYMBOL(SymCryptSha3_384OidList)
-SYMBOL(SymCryptSha3_512OidList)
-SYMBOL(SymCryptAesBlockCipher)
-SYMBOL(SymCrypt3DesBlockCipher)
-SYMBOL(SymCryptDesBlockCipher)
-SYMBOL(SymCryptDesxBlockCipher)
-SYMBOL(SymCryptRc2BlockCipher)
-SYMBOL(SymCryptEcurveParamsCurve25519)
-SYMBOL(SymCryptEcurveParamsNistP192)
-SYMBOL(SymCryptEcurveParamsNistP224)
-SYMBOL(SymCryptEcurveParamsNistP256)
-SYMBOL(SymCryptEcurveParamsNistP384)
-SYMBOL(SymCryptEcurveParamsNistP521)
-SYMBOL(SymCryptEcurveParamsNumsP256t1)
-SYMBOL(SymCryptEcurveParamsNumsP384t1)
-SYMBOL(SymCryptEcurveParamsNumsP512t1)
 
 // List all functions that unit tests need to call into
 FUNCTION(SymCrypt3DesCbcDecrypt)
@@ -223,6 +163,12 @@ FUNCTION(SymCryptGcmKeyCopy)
 FUNCTION(SymCryptGcmSelftest)
 FUNCTION(SymCryptGcmStateCopy)
 FUNCTION(SymCryptGcmValidateParameters)
+FUNCTION(SymCryptGetBlockCipher)
+FUNCTION(SymCryptGetEcurveParams)
+FUNCTION(SymCryptGetHashAlgorithm)
+FUNCTION(SymCryptGetMacAlgorithm)
+FUNCTION(SymCryptGetMarvin32DefaultSeed)
+FUNCTION(SymCryptGetOidList)
 FUNCTION(SymCryptHash)
 FUNCTION(SymCryptHashAppend)
 FUNCTION(SymCryptHashInit)

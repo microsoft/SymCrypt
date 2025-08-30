@@ -166,10 +166,8 @@ cleanup: \
     return functionResult.result; \
 }
 
-#define SYMBOL(SymbolName)
 #define FUNCTION(FunctionName) MAKE_KERNEL_DISPATCH_FN(FunctionName);
 #include "SymCryptKernelTestModule_FuncList.h"
-#undef SYMBOL
 #undef FUNCTION
 
 FARPROC SctestGetFunctionAddress( HMODULE hModule, LPCSTR lpProcName )

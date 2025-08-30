@@ -3,10 +3,14 @@
 New changes will be listed here as they are developed. The version number is determined
 prior to the creation of a new release, based on the changes contained in that release.
 
+# Version 103.10.0
+
+- Fixed [#51](https://github.com/microsoft/SymCrypt/issues/51): Added accessor functions for `extern const` data symbols to prevent error `LNK2001` when dynamic linking on Windows
+
 # Version 103.9.1
 
+- Fixed [#48](https://github.com/microsoft/SymCrypt/issues/48): Fix minor interop issue in RSA PKCS1
 - Removed dependency on external randomness in ECDSA self-test
-- Fix minor interop issue in RSA PKCS1
 - Add FIPS CAST for ML-DSA and pairwise consistency tests for ML-KEM and ML-DSA on key generation
 
 # Version 103.9.0

@@ -1294,6 +1294,8 @@ runFunctionalTests()
     // The tests may modify g_useDynamicFunctionsInTestCall themselves to perform specific subtests
     // with dispatch functions
 
+    testDataAccessors();
+
     testHashAlgorithms();
 
     testBlockCipherAlgorithms();

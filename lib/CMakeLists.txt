@@ -22,6 +22,7 @@ set(SOURCES_COMMON
     cpuid_um.c
     cpuid.c
     crt.c
+    data_accessors.c
     DesTables.c
     desx.c
     dh.c
