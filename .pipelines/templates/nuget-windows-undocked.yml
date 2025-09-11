@@ -89,7 +89,7 @@ jobs:
       configuration: 'Release'
 
   - script: |
-      .\x64\Release\NuGetTestApplication.exe
+      .\build\bin\amd64fre\exe\NuGetTestApplication.exe
     displayName: 'Run NuGet test application'
     workingDirectory: '$(Build.SourcesDirectory)/nuget/test/cpp'
 
