@@ -627,7 +627,7 @@ MACRO_START(MUL_AND_MONTGOMERY_REDUCE14_INTERLEAVE, T0, T1, Ai, pB, pM, K, Inv64
     // (xx, R1, R2, R3, R4, R5, R0) = K * (M0..3) + (R0, R1, R2, R3, R4, R5)
     // K = Inv64 * R1
     // Note K is chosen using pMod's montgomery inverse s.t. xx would get set to 0
-    // pM is a pointer the the bytes of the modulus (i.e. offset into SYMCRYPT_MODULUS structure)
+    // pM is a pointer to the bytes of the modulus (i.e. offset into SYMCRYPT_MODULUS structure)
     // R5 is 0 or 1 at start
     // R0 is 0 or 1 at end
     // T0, T1 = scratch

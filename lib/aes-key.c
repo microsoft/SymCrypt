@@ -111,7 +111,7 @@ SymCryptAesExpandKeyInternal(
         p = (BYTE *)&pExpandedKey->RoundKey[0] + 24;
 
         //
-        // We have 12 rounds, 13 round keys, and 13*16 = 208 bytes of encrytion key to generate.
+        // We have 12 rounds, 13 round keys, and 13*16 = 208 bytes of encryption key to generate.
         // We have 24 already, so we need 184 more.
         // Each iteration produces 24 bytes, so we need to loop 8 times.
         //
@@ -142,7 +142,7 @@ SymCryptAesExpandKeyInternal(
         p = (BYTE *)&pExpandedKey->RoundKey[0] + 32;
 
         //
-        // We have 14 rounds, 15 round keys, and 15*16 = 240 bytes of encrytion key to generate.
+        // We have 14 rounds, 15 round keys, and 15*16 = 240 bytes of encryption key to generate.
         // We have 32 already, so we need 208 more.
         // Each iteration produces 32 bytes, so we need to loop 6.5 times.
         //
@@ -307,7 +307,7 @@ SymCryptAesCreateRotatedTables( _Inout_ BYTE MatrixMult[4][256][4] )
 // Initialize a matrix multiplication table.
 // Each matrix multiplication table consists of 4 tables of 256 entries of 4 bytes each.
 // The four tables are rotated copies of each other.
-// This funciton generates the first of those four tables from the init
+// This function generates the first of those four tables from the init
 // value.
 //
 // After this call:
@@ -324,7 +324,7 @@ SymCryptAesCreateRotatedTables( _Inout_ BYTE MatrixMult[4][256][4] )
 // All invocations will write the same data to the table, and within a tread each entry is written
 // before it is read. Doing parallel initializations of the same table can be very inefficient
 // as multiple cores will be fighting over the cache lines, but the result will be correct.
-// We use this property to initialize the tables lazilly.
+// We use this property to initialize the tables lazily.
 //
 static
 VOID

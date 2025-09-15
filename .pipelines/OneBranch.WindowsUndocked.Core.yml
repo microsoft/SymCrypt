@@ -1,0 +1,124 @@
+parameters:
+- name: lkgCompilerBranch
+  type: string
+  displayName: Branch from which to get LKG compiler
+  default: 'official/main'
+- name: buildType
+  type: string
+  values:
+  - Official
+  - PR
+  default: 'PR'
+- name: publish
+  type: boolean
+  displayName: Publish packages
+  default: false
+
+stages:
+- stage: Set_Version
+  jobs:
+  - job: set_version
+    displayName: Set Version
+    pool:
+      type: linux
+    variables:
+      ONEBRANCH_AME_ACR_LOGIN: onebranch.azurecr.io
+      LinuxContainerImage: 'mcr.microsoft.com/onebranch/azurelinux/build:3.0'
+      ob_outputDirectory: $(Build.SourcesDirectory)/does_not_exist # No outputs
+      ver_hash: $[ substring(variables['Build.SourceVersion'], 0, 8) ]
+
+    steps:
+    - task: PythonScript@0
+      displayName: 'Set version number'
+      name: verStep
+      inputs:
+        scriptSource: 'filePath'
+        scriptPath: scripts/version.py
+        arguments: '--devops'
+        workingDirectory: $(Build.SourcesDirectory)
+        pythonInterpreter: '/usr/bin/python3'
+    - task: onebranch.pipeline.version@1
+      inputs:
+        system: 'Custom'
+        customVersion: '$(verStep.VER_MAJOR).$(verStep.VER_MINOR).$(verStep.VER_PATCH)-$(ver_hash)-$(Build.BuildId)'
+
+- stage: Build_Windows_Undocked
+  displayName: Build Windows Undocked
+  jobs:
+  - template: templates/build-windows-undocked.yml@self
+    parameters:
+      lkgCompilerBranch: ${{ parameters.lkgCompilerBranch }}
+      buildType: ${{ parameters.buildType }}
+      sign: ${{ eq(parameters.buildType, 'Official') }}
+
+- stage: Test_Windows_Undocked
+  displayName: Test Windows Undocked
+  dependsOn: Build_Windows_Undocked
+  jobs:
+  - template: templates/test-windows-undocked.yml@self
+
+- stage: VPack_Windows_Undocked
+  condition: or(variables['system.debug'], ${{ parameters.publish }}) # VPack stage doesn't do anything if publishing is disabled
+  displayName: Create VPack
+  dependsOn:
+  - Set_Version
+  - Test_Windows_Undocked # The real dependency is on the build stage, but we don't want to publish without successful tests
+  jobs:
+  - template: templates/vpack-windows-undocked.yml@self
+    parameters:
+      publish: ${{ parameters.publish }}
+
+- stage: NuGet_Windows_Undocked
+  displayName: Create NuGet Package
+  dependsOn:
+  - Set_Version
+  - Test_Windows_Undocked # The real dependency is on the build stage, but we don't want to publish without successful tests
+  jobs:
+  - template: templates/nuget-windows-undocked.yml@self
+    parameters:
+      publish: ${{ parameters.publish }}
+
+- stage: Build_Ubuntu
+  displayName: Build Ubuntu
+  jobs:
+  - template: templates/build-ubuntu.yml@self
+
+- stage: Test_Ubuntu
+  displayName: Test Ubuntu
+  dependsOn: Build_Ubuntu
+  jobs:
+  - template: templates/test-ubuntu.yml@self
+    parameters:
+      buildType: ${{ parameters.buildType }}
+
+- stage: Build_AzureLinux_AMD64
+  displayName: Build Azure Linux AMD64 Host
+  jobs:
+  - template: templates/build-azl.yml@self
+    parameters:
+      hostArch: 'AMD64'
+
+- stage: Test_AzureLinux_AMD64
+  displayName: Test Azure Linux AMD64 Host
+  dependsOn: Build_AzureLinux_AMD64
+  jobs:
+  - template: templates/test-azl.yml@self
+    parameters:
+      hostArch: 'AMD64'
+      buildType: ${{ parameters.buildType }}
+
+- stage: Build_AzureLinux_ARM64
+  displayName: Build Azure Linux ARM64 Host
+  jobs:
+  - template: templates/build-azl.yml@self
+    parameters:
+      hostArch: 'ARM64'
+
+- stage: Test_AzureLinux_ARM64
+  displayName: Test Azure Linux ARM64 Host
+  dependsOn: Build_AzureLinux_ARM64
+  jobs:
+  - template: templates/test-azl.yml@self
+    parameters:
+      hostArch: 'ARM64'
+      buildType: ${{ parameters.buildType }}

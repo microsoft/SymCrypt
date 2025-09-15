@@ -818,6 +818,12 @@ public:
         _Out_writes_bytes_( cbSignature )                   PBYTE                   pbSignature,
                                                             SIZE_T                  cbSignature ) override;
 
+    virtual NTSTATUS signExternalMu(
+        _In_reads_bytes_( cbMu )                            PCBYTE                  pbMu,
+                                                            SIZE_T                  cbMu,
+        _Out_writes_bytes_( cbSignature )                   PBYTE                   pbSignature,
+                                                            SIZE_T                  cbSignature ) override;
+
     virtual NTSTATUS signHash(
                                                             SYMCRYPT_PQDSA_HASH_ID  hashId,
         _In_reads_bytes_( cbHash )                          PCBYTE                  pbHash,
@@ -835,6 +841,7 @@ public:
         _In_range_( 0, SYMCRYPT_MLDSA_CONTEXT_MAX_LENGTH )  SIZE_T                  cbContext,
         _In_reads_bytes_( cbRandom )                        PCBYTE                  pbRandom,
                                                             SIZE_T                  cbRandom,
+                                                            UINT32                  flags,
         _Out_writes_bytes_( cbSignature )                   PBYTE                   pbSignature,
                                                             SIZE_T                  cbSignature ) override;
 
@@ -843,6 +850,12 @@ public:
                                                             SIZE_T                  cbMessage,
         _In_reads_bytes_opt_( cbContext )                   PCBYTE                  pbContext,
         _In_range_( 0, SYMCRYPT_MLDSA_CONTEXT_MAX_LENGTH )  SIZE_T                  cbContext,
+        _In_reads_bytes_( cbSignature )                     PCBYTE                  pbSignature,
+                                                            SIZE_T                  cbSignature ) override;
+
+    virtual NTSTATUS verifyExternalMu(
+        _In_reads_bytes_( cbMu )                            PCBYTE                  pbMu,
+                                                            SIZE_T                  cbMu,
         _In_reads_bytes_( cbSignature )                     PCBYTE                  pbSignature,
                                                             SIZE_T                  cbSignature ) override;
 
@@ -935,7 +948,7 @@ PqDsaMultiImp::sign(
 {
     // Signing is not deterministic, so we do the following:
     // - Have every implementation sign
-    // - Have every implementation verify each ciphertext
+    // - Have every implementation verify each signature
     // - Return a random signature
     NTSTATUS status;
     BYTE abSignature[SYMCRYPT_TEST_MLDSA_MAX_SIG_SIZE + 1];
@@ -954,6 +967,52 @@ PqDsaMultiImp::sign(
         {
             status = (*j)->verify( pbMessage, cbMessage, pbContext, cbContext, abSignature, cbSignature );
             CHECK4( NT_SUCCESS(status), "ML-DSA sign -> verify failed %s, %s",
+                (*i)->m_implementationName.c_str(),
+                (*j)->m_implementationName.c_str() );
+        }
+
+        // Copy a random signature to the output
+        // Note: the first iteration will always copy since anything % 1 == 0
+        nSignatures++;
+        if( g_rng.byte() % nSignatures == 0 )
+        {
+            memcpy( pbSignature, abSignature, cbSignature );
+        }
+    }
+
+    return STATUS_SUCCESS;
+}
+
+_Use_decl_annotations_
+NTSTATUS
+PqDsaMultiImp::signExternalMu(
+    PCBYTE  pbMu,
+    SIZE_T  cbMu,
+    PBYTE   pbSignature,
+    SIZE_T  cbSignature )
+{
+    // Signing is not deterministic, so we do the following:
+    // - Have every implementation sign
+    // - Have every implementation verify each signature
+    // - Return a random signature
+    NTSTATUS status;
+    BYTE abSignature[SYMCRYPT_TEST_MLDSA_MAX_SIG_SIZE + 1];
+    UINT32 nSignatures = 0;
+
+    CHECK( cbSignature < sizeof(abSignature), "Buffer too small" );
+
+    for( auto i = m_comps.begin(); i != m_comps.end(); ++i )
+    {
+        memset( abSignature, 'b', cbSignature + 1 );
+        status = (*i)->signExternalMu( pbMu, cbMu, abSignature, cbSignature );
+        CHECK3( NT_SUCCESS(status), "ExternalMu-ML-DSA sign failed %s",
+            (*i)->m_implementationName.c_str() );
+        CHECK( abSignature[cbSignature] == 'b', "Buffer overflow" );
+
+        for( auto j = m_comps.begin(); j != m_comps.end(); ++j )
+        {
+            status = (*j)->verifyExternalMu( pbMu, cbMu, abSignature, cbSignature );
+            CHECK4( NT_SUCCESS(status), "ExternalMu-ML-DSA verify failed %s, %s",
                 (*i)->m_implementationName.c_str(),
                 (*j)->m_implementationName.c_str() );
         }
@@ -1025,6 +1084,7 @@ PqDsaMultiImp::signEx(
     SIZE_T                  cbContext,
     PCBYTE                  pbRandom,
     SIZE_T                  cbRandom,
+    UINT32                  flags,
     PBYTE                   pbSignature,
     SIZE_T                  cbSignature )
 {
@@ -1044,6 +1104,7 @@ PqDsaMultiImp::signEx(
             pbInput, cbInput,
             pbContext, cbContext,
             pbRandom, cbRandom,
+            flags,
             abSignature, cbSignature );
         CHECK( abSignature[cbSignature] == 'b', "Buffer overflow" );
 
@@ -1079,6 +1140,33 @@ PqDsaMultiImp::verify(
     for( auto i = m_comps.begin(); i != m_comps.end(); ++i )
     {
         status = (*i)->verify( pbMessage, cbMessage, pbContext, cbContext, pbSignature, cbSignature );
+
+        // Store status as MSBfirst array to get errors to print correctly.
+        SYMCRYPT_STORE_MSBFIRST32( statusBuffer, status );
+        resStatus.addResult( (*i), statusBuffer, sizeof(statusBuffer) );
+    }
+
+    resStatus.getResult( statusBuffer, sizeof(statusBuffer), FALSE );
+    status = SYMCRYPT_LOAD_MSBFIRST32( statusBuffer );
+
+    return status;
+}
+
+_Use_decl_annotations_
+NTSTATUS
+PqDsaMultiImp::verifyExternalMu(
+    PCBYTE pbMu,
+    SIZE_T cbMu,
+    PCBYTE pbSignature,
+    SIZE_T cbSignature )
+{
+    ResultMerge resStatus;
+    NTSTATUS status;
+    BYTE statusBuffer[4];
+
+    for( auto i = m_comps.begin(); i != m_comps.end(); ++i )
+    {
+        status = (*i)->verifyExternalMu( pbMu, cbMu, pbSignature, cbSignature );
 
         // Store status as MSBfirst array to get errors to print correctly.
         SYMCRYPT_STORE_MSBFIRST32( statusBuffer, status );
@@ -1134,12 +1222,14 @@ testMlDsaRandom()
     SIZE_T cbSignature;
     std::vector<BYTE> signature;
     std::vector<BYTE> signature2;
+    std::vector<BYTE> muSignature;
     std::vector<BYTE> hashSignature;
 
     std::vector<BYTE> message( cbMessageMax );
     std::vector<BYTE> context( SYMCRYPT_MLDSA_CONTEXT_MAX_LENGTH );
 
     std::array<BYTE, SYMCRYPT_SHA512_RESULT_SIZE> hash;
+    std::array<BYTE, SYMCRYPT_SHAKE256_RESULT_SIZE> mu;
 
     MLDSAKEY_TESTBLOB keyTestBlobFull{};
     MLDSAKEY_TESTBLOB keyTestBlobPriv{};
@@ -1170,6 +1260,7 @@ testMlDsaRandom()
 
         signature.resize( cbSignature );
         signature2.resize( cbSignature );
+        muSignature.resize( cbSignature );
         hashSignature.resize( cbSignature );
 
         scError = SymCryptMlDsaSizeofKeyFormatFromParams( params, keyTestBlobFull.format, &keyTestBlobFull.cbKeyBlob );
@@ -1211,6 +1302,25 @@ testMlDsaRandom()
             // Hash the message for HashML-DSA signing
             SymCryptSha512( message.data(), message.size(), hash.data() );
 
+            // Pre-hash the message representative for External Mu signing
+            {
+                SYMCRYPT_SHAKE256_STATE shake256State;
+                UINT8 modeId = 0; // 0 for pure ML-DSA
+                UINT8 cbContextByte = (UINT8) context.size();
+                std::array<BYTE, SYMCRYPT_SHAKE256_RESULT_SIZE> pkHash;
+
+                SymCryptShake256Default( keyTestBlobPub.abKeyBlob, keyTestBlobPub.cbKeyBlob, pkHash.data() );
+
+                SymCryptShake256Init( &shake256State );
+                SymCryptShake256Append( &shake256State, pkHash.data(), pkHash.size() );
+                SymCryptShake256Append( &shake256State, &modeId, sizeof( modeId ) );
+                SymCryptShake256Append( &shake256State, &cbContextByte, sizeof( cbContextByte ) );
+                SymCryptShake256Append( &shake256State, context.data(), context.size() );
+                SymCryptShake256Append( &shake256State, NULL, 0 ); // pbHashOid, cbHashOid
+                SymCryptShake256Append( &shake256State, message.data(), message.size() );
+                SymCryptShake256Result( &shake256State, mu.data() );
+            }
+
             status = pMlDsaImp->sign(
                 message.data(), message.size(),
                 context.data(), context.size(),
@@ -1222,6 +1332,22 @@ testMlDsaRandom()
                 context.data(), context.size(),
                 signature.data(), signature.size() );
             CHECK( NT_SUCCESS( status ), "Failed to verify with full key" );
+
+            status = pMlDsaImp->signExternalMu(
+                mu.data(), mu.size(),
+                muSignature.data(), muSignature.size() );
+            CHECK( NT_SUCCESS( status ), "Failed to sign External Mu" );
+
+            status = pMlDsaImp->verify(
+                message.data(), message.size(),
+                context.data(), context.size(),
+                muSignature.data(), muSignature.size() );
+            CHECK( NT_SUCCESS( status ), "Failed to verify External Mu with full key" );
+
+            status = pMlDsaImp->verifyExternalMu(
+                mu.data(), mu.size(),
+                muSignature.data(), muSignature.size() );
+            CHECK( NT_SUCCESS( status ), "Failed to verify External Mu with full key" );
 
             status = pMlDsaImp->signHash(
                 SYMCRYPT_PQDSA_HASH_ID_SHA512,
@@ -1255,6 +1381,17 @@ testMlDsaRandom()
                 signature.data(), signature.size() );
             CHECK( NT_SUCCESS( status ), "Failed to verify with private key" );
 
+            status = pMlDsaImp->verify(
+                message.data(), message.size(),
+                context.data(), context.size(),
+                muSignature.data(), muSignature.size() );
+            CHECK( NT_SUCCESS( status ), "Failed to verify External Mu with private key" );
+
+            status = pMlDsaImp->verifyExternalMu(
+                mu.data(), mu.size(),
+                muSignature.data(), muSignature.size() );
+            CHECK( NT_SUCCESS( status ), "Failed to verify External Mu with private key" );
+
             status = pMlDsaImp->verifyHash(
                 SYMCRYPT_PQDSA_HASH_ID_SHA512,
                 hash.data(), hash.size(),
@@ -1274,6 +1411,17 @@ testMlDsaRandom()
                 signature.data(), signature.size() );
             CHECK( NT_SUCCESS( status ), "Failed to verify with public key" );
 
+            status = pMlDsaImp->verify(
+                message.data(), message.size(),
+                context.data(), context.size(),
+                muSignature.data(), muSignature.size() );
+            CHECK( NT_SUCCESS( status ), "Failed to verify External Mu with public key" );
+
+            status = pMlDsaImp->verifyExternalMu(
+                mu.data(), mu.size(),
+                muSignature.data(), muSignature.size() );
+            CHECK( NT_SUCCESS( status ), "Failed to verify External Mu with public key" );
+
             status = pMlDsaImp->verifyHash(
                 SYMCRYPT_PQDSA_HASH_ID_SHA512,
                 hash.data(), hash.size(),
@@ -1284,6 +1432,7 @@ testMlDsaRandom()
             // Modify the signature and ensure that verification fails
             UINT32 t = g_rng.uint32();
             signature[ (t/8) % signature.size() ] ^= 1 << (t%8);
+            muSignature[ (t/8) % muSignature.size() ] ^= 1 << (t%8);
             hashSignature[ (t/8) % hashSignature.size() ] ^= 1 << (t%8);
 
             status = pMlDsaImp->verify(
@@ -1291,6 +1440,17 @@ testMlDsaRandom()
                 context.data(), context.size(),
                 signature.data(), signature.size() );
             CHECK( status == STATUS_INVALID_SIGNATURE, "Tampered signature verified successfully?" );
+
+            status = pMlDsaImp->verify(
+                message.data(), message.size(),
+                context.data(), context.size(),
+                muSignature.data(), muSignature.size() );
+            CHECK( status == STATUS_INVALID_SIGNATURE, "Tampered External Mu signature verified successfully?" );
+
+            status = pMlDsaImp->verifyExternalMu(
+                mu.data(), mu.size(),
+                muSignature.data(), muSignature.size() );
+            CHECK( status == STATUS_INVALID_SIGNATURE, "Tampered External Mu signature verified successfully?" );
 
             status = pMlDsaImp->verifyHash(
                 SYMCRYPT_PQDSA_HASH_ID_SHA512,
@@ -1471,7 +1631,7 @@ testMlDsaSignVerify(
 
     CHECK4( katPrivKey.size() == cbPrivKey, "Invalid private key size %lld at line %lld", katPrivKey.size(), line );
     CHECK4( katPubKey.size() == cbPubKey, "Invalid public key size %lld at line %lld", katPubKey.size(), line );
-    CHECK4( katRnd.size() == 32, "Invalid random size %lld at line %lld", katPrivKey.size(), line );
+    CHECK4( katRnd.size() == SYMCRYPT_MLDSA_SIGNING_RANDOM_SIZE, "Invalid random size %lld at line %lld", katRnd.size(), line );
     CHECK4( katCtx.size() <= SYMCRYPT_MLDSA_CONTEXT_MAX_LENGTH, "Invalid context size %lld at line %lld", katCtx.size(), line );
     CHECK4( katSig.size() == cbSig, "Invalid signature size %lld at line %lld", katSig.size(), line );
 
@@ -1493,6 +1653,7 @@ testMlDsaSignVerify(
         katCtx.size(),
         katRnd.data(),
         katRnd.size(),
+        0, // flags
         signature.data(),
         signature.size() );
     CHECK3( NT_SUCCESS( status ), "Signing failed at line %lld", line );
@@ -1511,6 +1672,85 @@ testMlDsaSignVerify(
         katMsg.size(),
         katCtx.data(),
         katCtx.size(),
+        signature.data(),
+        signature.size() );
+    CHECK3( NT_SUCCESS( status ), "Verification failed at line %lld", line );
+
+    status = pPqDsaImplementation->setKey( nullptr );
+    CHECK( NT_SUCCESS(status), "Failed to free key" );
+}
+
+VOID
+testExternalMuMlDsaSignVerify(
+    PqDsaImplementation* pPqDsaImplementation,
+    SYMCRYPT_MLDSA_PARAMS params,
+    const BString& katRnd,
+    const BString& katPrivKey,
+    const BString& katPubKey,
+    const BString& katMu,
+    const BString& katSig,
+    ULONGLONG line)
+{
+    NTSTATUS status = STATUS_SUCCESS;
+    PQDSAKEY_TESTBLOB keyBlob{};
+    SIZE_T cbPrivKey = 0;
+    SIZE_T cbPubKey = 0;
+    SIZE_T cbSig = 0;
+
+    CHECK(
+        SymCryptMlDsaSizeofKeyFormatFromParams(params, SYMCRYPT_MLDSAKEY_FORMAT_PRIVATE_KEY, &cbPrivKey) == SYMCRYPT_NO_ERROR,
+        "Failed to get expected private key size" );
+
+    CHECK(
+        SymCryptMlDsaSizeofKeyFormatFromParams(params, SYMCRYPT_MLDSAKEY_FORMAT_PUBLIC_KEY, &cbPubKey) == SYMCRYPT_NO_ERROR,
+        "Failed to get expected public key size" );
+
+    CHECK(
+        SymCryptMlDsaSizeofSignatureFromParams(params, &cbSig) == SYMCRYPT_NO_ERROR,
+        "Failed to get expected signature size" );
+
+    CHECK4( katPrivKey.size() == cbPrivKey, "Invalid private key size %lld at line %lld", katPrivKey.size(), line );
+    CHECK4( katPubKey.size() == cbPubKey, "Invalid public key size %lld at line %lld", katPubKey.size(), line );
+    CHECK4( katRnd.size() == SYMCRYPT_MLDSA_SIGNING_RANDOM_SIZE, "Invalid random size %lld at line %lld", katRnd.size(), line );
+    CHECK4( katMu.size() == SYMCRYPT_SHAKE256_RESULT_SIZE, "Invalid mu size %lld at line %lld", katMu.size(), line );
+    CHECK4( katSig.size() == cbSig, "Invalid signature size %lld at line %lld", katSig.size(), line );
+
+    keyBlob.mlDsakey.params = params;
+    keyBlob.mlDsakey.format = SYMCRYPT_MLDSAKEY_FORMAT_PRIVATE_KEY;
+    keyBlob.mlDsakey.cbKeyBlob = katPrivKey.size();
+    memcpy(keyBlob.mlDsakey.abKeyBlob, katPrivKey.data(), katPrivKey.size());
+
+    status = pPqDsaImplementation->setKey( &keyBlob );
+    CHECK3( NT_SUCCESS( status ), "Failed to set private key at line %lld", line );
+
+    std::vector<BYTE> signature(cbSig);
+
+    status = pPqDsaImplementation->signEx(
+        SYMCRYPT_PQDSA_HASH_ID_NULL,
+        katMu.data(),
+        katMu.size(),
+        NULL,
+        0,
+        katRnd.data(),
+        katRnd.size(),
+        SYMCRYPT_FLAG_MLDSA_EXTERNALMU,
+        signature.data(),
+        signature.size() );
+
+    CHECK3( NT_SUCCESS( status ), "Signing failed at line %lld", line );
+    CHECK3( memcmp( signature.data(), katSig.data(), cbSig ) == 0, "Signature mismatch at line %lld", line );
+
+    // Reset the key so that we can use the public key for verification
+    keyBlob.mlDsakey.format = SYMCRYPT_MLDSAKEY_FORMAT_PUBLIC_KEY;
+    keyBlob.mlDsakey.cbKeyBlob = katPubKey.size();
+    memcpy(keyBlob.mlDsakey.abKeyBlob, katPubKey.data(), katPubKey.size());
+
+    status = pPqDsaImplementation->setKey( &keyBlob );
+    CHECK3( NT_SUCCESS( status ), "Failed to set public key at line %lld", line );
+
+    status = pPqDsaImplementation->verifyExternalMu(
+        katMu.data(),
+        katMu.size(),
         signature.data(),
         signature.size() );
     CHECK3( NT_SUCCESS( status ), "Verification failed at line %lld", line );
@@ -1560,7 +1800,7 @@ testHashMlDsaSignVerify(
 
     CHECK4( katPrivKey.size() == cbPrivKey, "Invalid private key size %lld at line %lld", katPrivKey.size(), line );
     CHECK4( katPubKey.size() == cbPubKey, "Invalid public key size %lld at line %lld", katPubKey.size(), line );
-    CHECK4( katRnd.size() == 32, "Invalid random size %lld at line %lld", katPrivKey.size(), line );
+    CHECK4( katRnd.size() == SYMCRYPT_MLDSA_SIGNING_RANDOM_SIZE, "Invalid random size %lld at line %lld", katRnd.size(), line );
     CHECK4( katCtx.size() <= SYMCRYPT_MLDSA_CONTEXT_MAX_LENGTH, "Invalid context size %lld at line %lld", katCtx.size(), line );
     CHECK4( katSig.size() == cbSig, "Invalid signature size %lld at line %lld", katSig.size(), line );
 
@@ -1599,6 +1839,7 @@ testHashMlDsaSignVerify(
         katCtx.size(),
         katRnd.data(),
         katRnd.size(),
+        0, // flags
         signature.data(),
         signature.size() );
 
@@ -1643,6 +1884,7 @@ testMlDsaKats()
     UINT32 cMlDsaKeyGenSamples = 0;
     UINT32 cMlDsaSignVerifySamples = 0;
     UINT32 cHashMlDsaSignVerifySamples = 0;
+    UINT32 cExternalMuMlDsaSignVerifySamples = 0;
 
     auto pMlDsaImp = std::make_unique<PqDsaMultiImp>("MlDsa");
 
@@ -1695,6 +1937,33 @@ testMlDsaKats()
                 cMlDsaKeyGenSamples++;
 
                 continue;
+            }
+            else if( katIsFieldPresent( katItem, "mu" ) )
+            {
+                //
+                // ExternalMu ML-DSA signing/verification
+                //
+                CHECK3( katItem.dataItems.size() == 5, "Wrong number of items in record at line %lld", line );
+
+                BString katRnd = katParseData( katItem, "rnd" );
+                BString katPrivKey = katParseData( katItem, "sk" );
+                BString katPubKey = katParseData( katItem, "pk" );
+                BString katMu = katParseData( katItem, "mu" );
+                BString katSig = katParseData( katItem, "sig" );
+
+                testExternalMuMlDsaSignVerify(
+                    pMlDsaImp.get(),
+                    params,
+                    katRnd,
+                    katPrivKey,
+                    katPubKey,
+                    katMu,
+                    katSig,
+                    line );
+
+                cExternalMuMlDsaSignVerifySamples++;
+                continue;
+
             }
             else if( katIsFieldPresent( katItem, "hash" ) )
             {
@@ -1761,8 +2030,8 @@ testMlDsaKats()
         }
     }
 
-    iprint( "\n        Total samples: %d MlDsaKeyGen, %d MlDsaSignVerify, %d HashMlDsaSignVerify\n",
-        cMlDsaKeyGenSamples, cMlDsaSignVerifySamples, cHashMlDsaSignVerifySamples );
+    iprint( "\n        Total samples: %d MlDsaKeyGen, %d MlDsaSignVerify, %d ExternalMuMlDsaSignVerify, %d HashMlDsaSignVerify\n",
+        cMlDsaKeyGenSamples, cMlDsaSignVerifySamples, cExternalMuMlDsaSignVerifySamples, cHashMlDsaSignVerifySamples );
 }
 
 VOID

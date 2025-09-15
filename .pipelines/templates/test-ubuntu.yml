@@ -1,0 +1,188 @@
+parameters:
+  # Slow tests and sanitizer tests are only run on official builds
+  - name: buildType
+    type: string
+    values:
+    - Official
+    - PR
+    default: 'PR'
+
+jobs:
+- job: test
+  displayName: Test
+
+  strategy:
+    matrix:
+      amd64_gcc_debug:
+        arch: AMD64
+        config: Debug
+        preset: 'Linux_AMD64_GCC_Debug'
+        
+      amd64_gcc_release:
+        arch: AMD64
+        config: Release
+        preset: 'Linux_AMD64_GCC_Release'
+
+      amd64_clang_debug:
+        arch: AMD64
+        config: Debug
+        preset: 'Linux_AMD64_Clang_Debug'
+        
+      amd64_clang_release:
+        arch: AMD64
+        config: Release
+        preset: 'Linux_AMD64_Clang_Release'
+
+      # The following tests are skipped in PR builds because they take a long time to execute.
+      # They are run in official builds for full coverage.
+      ${{ if eq(parameters.buildType, 'Official') }}:
+        # Broken in gcc < 14, see https://github.com/actions/runner-images/issues/9491
+        # amd64_gcc_sanitize:
+        #   arch: AMD64
+        #   config: Sanitize
+        #   preset: 'Linux_AMD64_GCC_Sanitize'
+        
+        amd64_clang_sanitize:
+          arch: AMD64
+          config: Sanitize
+          preset: 'Linux_AMD64_Clang_Sanitize'
+
+        amd64_gcc_release_noasm:
+          arch: AMD64
+          config: Release
+          preset: 'Linux_AMD64_GCC_Release_NoAsm'
+
+        amd64_clang_release_noasm:
+          arch: AMD64
+          config: Release
+          preset: 'Linux_AMD64_Clang_Release_NoAsm'
+      
+        x86_gcc_release_noasm:
+          arch: X86
+          config: Release
+          preset: 'Linux_X86_GCC_Release_NoAsm'
+      
+        x86_clang_release_noasm:
+          arch: X86
+          config: Release
+          preset: 'Linux_X86_Clang_Release_NoAsm'
+
+        arm_cross_gcc_debug:
+          arch: ARM
+          config: Debug
+          preset: 'Linux_ARM_Cross_GCC_Debug'
+        
+        arm_cross_gcc_release:
+          arch: ARM
+          config: Release
+          preset: 'Linux_ARM_Cross_GCC_Release'
+
+        arm64_cross_clang_debug:
+          arch: ARM64
+          config: Debug
+          preset: 'Linux_ARM64_Cross_Clang_Debug'
+        
+        arm64_cross_clang_release:
+          arch: ARM64
+          config: Release
+          preset: 'Linux_ARM64_Cross_Clang_Release'
+        
+  pool:
+    type: linux
+    hostArchitecture: amd64
+
+  variables:
+    ONEBRANCH_AME_ACR_LOGIN: onebranch.azurecr.io
+    LinuxContainerImage: 'onebranch.azurecr.io/linux/ubuntu-2204:latest'
+    ob_outputDirectory: $(Build.SourcesDirectory)/does_not_exist # No outputs from test job
+    ob_artifactSuffix: _$(preset) # Suffix is still needed for SDL task outputs
+    ob_sdl_binskim_break: false # No binskim checks in test job
+
+  steps:
+    # Install tools and libraries for cross-compilation. We're not compiling anything in this job,
+    # but some of the libraries from these packages are required by qemu.
+    - script: |
+        apt-get update -y
+        apt-get install -y gcc-multilib g++-multilib
+        apt-get install -y binutils-aarch64-linux-gnu gcc-aarch64-linux-gnu g++-aarch64-linux-gnu
+        apt-get install -y gcc-arm-linux-gnueabihf g++-arm-linux-gnueabihf
+        apt-get install -y qemu-user
+      continueOnError: true
+      displayName: 'Update packages'
+
+    - task: DownloadPipelineArtifact@2
+      displayName: 'Download build artifacts'
+      inputs:
+        artifact: 'drop_Build_Ubuntu_build_$(preset)'
+        path: '$(Build.SourcesDirectory)/artifacts'
+
+    # Extract the packaged test binaries from the build artifacts. Note that the artifact itself
+    # is downloaded as a zip file and automatically extracted by DownloadPipelineArtifact, but zip
+    # files don't retain Unix permissions, so we'd have to either chmod +x the test binaries, or
+    # extract the nested archive. The latter is the one we'll publish for official builds, so it
+    # makes more sense to extract it.
+    - script: |
+        archive=$(ls symcrypt-linux-generic-*.tar.gz 2>/dev/null | head -n 1)
+        if [ -z "$archive" ]; then
+          echo "Archive not found"
+          exit 1
+        fi
+        tar -xzf "$archive"
+      displayName: 'Extract archive'
+      workingDirectory: $(Build.SourcesDirectory)/artifacts/pkg
+
+    # Disable ASAN link order verification
+    # This is a workaround for intermittent failures due to "ASAN runtime does not come first in initial library list"
+    # https://github.com/google/sanitizers/issues/796
+    - script: |
+        echo '##vso[task.setvariable variable=ASAN_OPTIONS]verify_asan_link_order=0'
+      displayName: 'Disable ASAN link order verification'
+      condition: eq(variables.config, 'Sanitize')
+
+    - task: PythonScript@0
+      displayName: 'Run sanitizer unit tests'
+      condition: eq(variables.config, 'Sanitize')
+      retryCountOnTaskFailure: 2 # Sanitizer tests can be flaky
+      inputs:
+        scriptSource: 'filePath'
+        scriptPath: scripts/test.py
+        arguments: '. noperftests'
+        workingDirectory: $(Build.SourcesDirectory)/artifacts/pkg
+      env:
+        ASAN_OPTIONS: 'fast_unwind_on_malloc=0'
+            
+    - task: PythonScript@0
+      displayName: 'Run dynamic unit tests'
+      condition: and(in(variables.arch, 'AMD64', 'X86'), ne(variables.config, 'Sanitize'))
+      inputs:
+        scriptSource: 'filePath'
+        scriptPath: scripts/test.py
+        arguments: '. dynamic:lib/libsymcrypt.so noperftests'
+        workingDirectory: $(Build.SourcesDirectory)/artifacts/pkg
+      
+    - task: PythonScript@0
+      displayName: 'Run YMM save/restore unit tests'
+      condition: and(eq(variables.arch, 'AMD64'), ne(variables.config, 'Sanitize'))
+      inputs:
+        scriptSource: 'filePath'
+        scriptPath: scripts/test.py
+        arguments: '--glibc-disable-ymm . testSaveYmm'
+        workingDirectory: $(Build.SourcesDirectory)/artifacts/pkg
+
+    - task: PythonScript@0
+      displayName: 'Run ARM64 emulator dynamic unit tests'
+      condition: eq(variables.arch, 'ARM64')
+      inputs:
+        scriptSource: 'filePath'
+        scriptPath: scripts/test.py
+        arguments: '--emulator qemu-aarch64 --emulator-lib-dir /usr/aarch64-linux-gnu/ . dynamic:lib/libsymcrypt.so noperftests +symcrypt -dh -dsa -rsa'
+        workingDirectory: $(Build.SourcesDirectory)/artifacts/pkg
+
+    - task: PythonScript@0
+      displayName: 'Run ARM emulator dynamic unit tests'
+      condition: eq(variables.arch, 'ARM')
+      inputs:
+        scriptSource: 'filePath'
+        scriptPath: scripts/test.py
+        arguments: '--emulator qemu-arm --emulator-lib-dir /usr/arm-linux-gnueabihf/ . dynamic:lib/libsymcrypt.so noperftests +symcrypt -dh -dsa -rsa'
+        workingDirectory: $(Build.SourcesDirectory)/artifacts/pkg

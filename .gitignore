@@ -87,5 +87,8 @@ Makefile
 # macOS folder attributes
 .DS_Store
 
+# NuGet packages
+*.nupkg
+
 # Rust (possibly built standalone for benchmarking)
-lib/rust/target
+SymCRust/target

@@ -1,0 +1,212 @@
+parameters:
+- name: hostArch
+  type: string
+  values:
+  - AMD64
+  - ARM64
+  default: AMD64
+
+jobs:
+- job: build
+  displayName: Build
+
+  strategy:
+    matrix:
+      # We do not cross-compile on Azure Linux
+      # Note: OpenSSL tests are disabled on Azure Linux 3 for now because AzL3 OpenSSL does not
+      # support some of the ECC curves that we test with. See osgvsowi/59032866
+      ${{ if eq(parameters.hostArch, 'AMD64') }}:
+        amd64_gcc_debug:
+          targetArch: AMD64
+          config: Debug
+          preset: 'Linux_AMD64_GCC_Debug'
+          # openssl: true
+          binskim_break: false
+
+        # Broken in gcc < 14, see https://github.com/actions/runner-images/issues/9491
+        # amd64_gcc_sanitize:
+        #   targetArch: AMD64
+        #   config: Sanitize
+        #   preset: 'Linux_AMD64_GCC_Sanitize'
+        #   # openssl: true
+        #   binskim_break: false
+
+        amd64_gcc_release:
+          targetArch: AMD64
+          config: Release
+          preset: 'Linux_AMD64_GCC_Release'
+          # openssl: true
+          libcrux: true
+          binskim_break: true
+
+        amd64_gcc_release_noasm:
+          targetArch: AMD64
+          config: Release
+          preset: 'Linux_AMD64_GCC_Release_NoAsm'
+          # openssl: true
+          binskim_break: false
+
+        amd64_clang_debug:
+          targetArch: AMD64
+          config: Debug
+          preset: 'Linux_AMD64_Clang_Debug'
+          # openssl: true
+          binskim_break: false
+
+        amd64_clang_sanitize:
+          targetArch: AMD64
+          config: Sanitize
+          preset: 'Linux_AMD64_Clang_Sanitize'
+          # openssl: true
+          binskim_break: false
+
+        amd64_clang_release:
+          targetArch: AMD64
+          config: Release
+          preset: 'Linux_AMD64_Clang_Release'
+          # openssl: true
+          libcrux: true
+          binskim_break: true
+
+        amd64_clang_release_noasm:
+          targetArch: AMD64
+          config: Release
+          preset: 'Linux_AMD64_Clang_Release_NoAsm'
+          # openssl: true
+          binskim_break: false
+
+      ${{ if eq(parameters.hostArch, 'ARM64') }}:  
+        arm64_gcc_debug:
+          targetArch: ARM64
+          config: Debug
+          preset: 'Linux_ARM64_GCC_Debug'
+          # openssl: true
+          binskim_break: false
+
+        arm64_gcc_sanitize:
+          targetArch: ARM64
+          config: Sanitize
+          preset: 'Linux_ARM64_GCC_Sanitize'
+          # openssl: true
+          binskim_break: false
+
+        arm64_gcc_release:
+          targetArch: ARM64
+          config: Release
+          preset: 'Linux_ARM64_GCC_Release'
+          # openssl: true
+          binskim_break: true
+
+        arm64_clang_debug:
+          targetArch: ARM64
+          config: Debug
+          preset: 'Linux_ARM64_Clang_Debug'
+          # openssl: true
+          binskim_break: false
+
+        arm64_clang_sanitize:
+          targetArch: ARM64
+          config: Sanitize
+          preset: 'Linux_ARM64_Clang_Sanitize'
+          # openssl: true
+          binskim_break: false
+
+        arm64_clang_release:
+          targetArch: ARM64
+          config: Release
+          preset: 'Linux_ARM64_Clang_Release'
+          # openssl: true
+          binskim_break: true
+
+  pool:
+    type: linux
+    hostArchitecture: ${{ lower(parameters.hostArch) }}
+
+  variables:
+    ONEBRANCH_AME_ACR_LOGIN: onebranch.azurecr.io
+    LinuxContainerImage: 'mcr.microsoft.com/onebranch/azurelinux/build:3.0'
+    PythonPath: '/usr/bin/python3'
+
+    ob_outputDirectory: $(Build.SourcesDirectory)/build/cmake/$(preset)
+    ob_artifactSuffix: _$(preset)
+    ob_sdl_binskim_break: $(binskim_break) # Only break on binskim failures for Release binaries https://aka.ms/obpipelines/sdl
+
+    verbose_build_flag: $[ iif(eq(variables['system.debug'], true), '-DCMAKE_VERBOSE_MAKEFILE=ON', '') ]
+
+  steps:
+    - script: |
+        tdnf install -y clang
+      condition: contains(variables.preset, 'Clang')
+      displayName: 'Install Clang'
+
+    - script: |
+        tdnf install -y openssl-devel
+      condition: eq(variables.openssl, true)
+      displayName: 'Install OpenSSL development libraries'
+
+    - task: PipAuthenticate@1
+      inputs:
+        artifactFeeds: 'OS/SymCrypt_PublicPackages'
+
+    - script: |
+        pip install -v -r scripts/requirements.txt --target $(Build.SourcesDirectory)/scripts
+      displayName: 'Install Python dependencies'
+
+    # Conditionally setting job variables based on matrix variables doesn't work, probably due to
+    # evaluation order. Instead, we have to configure our CMake arguments with a script.
+    - script: |
+        CMAKE_ARGS="--preset $(preset) $(verbose_build_flag)"
+        if [ "$(openssl)" = "true" ]; then
+          CMAKE_ARGS="$CMAKE_ARGS -DSYMCRYPT_TEST_WITH_OPENSSL=ON"
+        fi
+        if [ "$(libcrux)" = "true" ]; then
+          CMAKE_ARGS="$CMAKE_ARGS -DSYMCRYPT_TEST_LIBCRUX=ON"
+        fi
+        echo "Final CMake args: $CMAKE_ARGS"
+        echo "##vso[task.setvariable variable=CMAKE_CONFIG_ARGS]$CMAKE_ARGS"
+      displayName: 'Set CMake configure arguments'
+
+    - task: CMake@1
+      displayName: 'CMake configure'
+      inputs:
+        workingDirectory: $(Build.SourcesDirectory)
+        cmakeArgs: $(CMAKE_CONFIG_ARGS)
+
+    - task: CMake@1
+      displayName: 'CMake build'
+      inputs:
+        workingDirectory: $(Build.SourcesDirectory)
+        cmakeArgs: '--build --preset $(preset)'
+
+    # Overwrite default artifact publishing with our copy (enables publishing binaries for failed runs)
+    - script: |
+          cp .artifactignore "$(ob_outputDirectory)/.artifactignore"
+      displayName: 'Overwrite .artifactignore'
+
+    - task: PythonScript@0
+      displayName: 'Package generic Linux module'
+      inputs:
+        scriptSource: 'filePath'
+        scriptPath: scripts/package.py
+        arguments: '$(ob_outputDirectory) $(targetArch) $(config) generic $(ob_outputDirectory)/pkg'
+        workingDirectory: $(Build.SourcesDirectory)
+        pythonInterpreter: $(PythonPath)
+
+    - task: Bash@3
+      displayName: 'Check if OpenEnclave module exists'
+      inputs:
+        targetType: inline
+        script: |
+          if [ -d $(ob_outputDirectory)/module/oe_full ]; then
+            echo "##vso[task.setVariable variable=PACKAGE_OE]true"
+          fi
+
+    - task: PythonScript@0
+      displayName: 'Package OpenEnclave module'
+      condition: eq(variables.PACKAGE_OE, 'true')
+      inputs:
+        scriptSource: 'filePath'
+        scriptPath: scripts/package.py
+        arguments: '$(ob_outputDirectory) $(targetArch) $(config) oe_full $(ob_outputDirectory)/pkg'
+        workingDirectory: $(Build.SourcesDirectory)
+        pythonInterpreter: $(PythonPath)

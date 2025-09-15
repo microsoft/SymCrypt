@@ -1146,6 +1146,7 @@ testRsaExportImport()
     iprint( "    RsaExportImport" );
 
     const SIZE_T cbSalt = 32;
+    const SIZE_T nBitsOfModulus = 2048; // Ensure the key is large enough for the salt + hash
 
     RSAKEY_TESTBLOB blob;
     PSYMCRYPT_RSAKEY pKeyPair;
@@ -1156,11 +1157,11 @@ testRsaExportImport()
     SYMCRYPT_ERROR scError;
     SYMCRYPT_RSA_PARAMS params;
 
-    pKeyPair = rsaTestKeyForSize( 2048 ); // Ensure the key is large enough for the salt + hash
+    pKeyPair = rsaTestKeyForSize( nBitsOfModulus ); 
     GENRANDOM( hash, sizeof( hash ) );
 
     params.version = 1;
-    params.nBitsOfModulus = pKeyPair->nBitsOfModulus;
+    params.nBitsOfModulus = nBitsOfModulus;
     params.nPrimes = 2;
     params.nPubExp = 1;
 

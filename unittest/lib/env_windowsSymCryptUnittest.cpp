@@ -51,6 +51,23 @@ SymCryptInitEnvUnittest( UINT32 version )
     }
 
     //
+    // When emulating AMD64 on Arm64 HW which has no equivalent for RDRAND, the prism emulator can indicate support for
+    // the instruction in CPUID, but fail on every call...
+    // For the unit test code, exercising emulated RDRAND is not very relevant, so we can just artificially update our
+    // SymCrypt CPU feature detection logic in this case
+    //
+    USHORT processMachine;
+    USHORT nativeMachine;
+    if (IsWow64Process2( GetCurrentProcess(), &processMachine, &nativeMachine ) == 0)
+    {
+        FATAL2("IsWow64Process2 failed, error = %08x", GetLastError() );
+    }
+    if (nativeMachine == IMAGE_FILE_MACHINE_ARM64)
+    {
+        g_SymCryptCpuFeaturesNotPresent |= (SYMCRYPT_CPU_FEATURE_RDRAND | SYMCRYPT_CPU_FEATURE_RDSEED);
+    }
+
+    //
     // By default we don't fail XMM so that we get proper performance for GCM.
     // We allow the nofail to be disabled by command-line option.
     //

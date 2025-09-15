@@ -866,7 +866,7 @@ SymCryptXtsAesEncryptDataUnitXmm(
 
         keyPtr = &pExpandedKey->RoundKey[1];
 
-        // Do 8 full rounds (AES-128|AES-192|AES-256) with stitched XTS (peformed in scalar registers)
+        // Do 8 full rounds (AES-128|AES-192|AES-256) with stitched XTS (performed in scalar registers)
         for( aesEncryptXtsLoop = 0; aesEncryptXtsLoop < 8; aesEncryptXtsLoop++ )
         {
             roundkey = _mm_loadu_si128( (__m128i *) keyPtr );
@@ -1082,7 +1082,7 @@ SymCryptXtsAesDecryptDataUnitXmm(
 
         keyPtr = pExpandedKey->lastEncRoundKey + 1;
 
-        // Do 8 full rounds (AES-128|AES-192|AES-256) with stitched XTS (peformed in scalar registers)
+        // Do 8 full rounds (AES-128|AES-192|AES-256) with stitched XTS (performed in scalar registers)
         for( aesDecryptXtsLoop = 0; aesDecryptXtsLoop < 8; aesDecryptXtsLoop++ )
         {
             roundkey = _mm_loadu_si128( (__m128i *) keyPtr );

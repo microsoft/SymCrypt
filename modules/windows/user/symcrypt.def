@@ -196,6 +196,8 @@ EXPORTS
     SymCryptEcurveSizeofFieldElement
     SymCryptEcurveSizeofScalarMultiplier
     SymCryptEqual
+    SymCryptExternalMuMlDsaSign
+    SymCryptExternalMuMlDsaVerify
     SymCryptFipsGetSelftestsPerformed
     SymCryptGcmAuthPart
     SymCryptGcmDecrypt
@@ -210,6 +212,12 @@ EXPORTS
     SymCryptGcmSelftest
     SymCryptGcmStateCopy
     SymCryptGcmValidateParameters
+    SymCryptGetBlockCipher
+    SymCryptGetEcurveParams
+    SymCryptGetHashAlgorithm
+    SymCryptGetMacAlgorithm
+    SymCryptGetMarvin32DefaultSeed
+    SymCryptGetOidList
     SymCryptHash
     SymCryptHashAppend
     SymCryptHashInit

@@ -972,7 +972,7 @@ BlockCipherImp<ImpRsa32b, AlgAes,ModeEcb>::encrypt(
     while( cbData > 0 )
     {
         //
-        // RSA32 requries that plaintext/ciphertext are aligned, though this only leads
+        // RSA32 requires that plaintext/ciphertext are aligned, though this only leads
         // to errors on IA_64 and possibly ARM.
         //
         memcpy( buf, pbSrc, RSA32_AES_BLOCK_SIZE );

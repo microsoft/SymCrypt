@@ -913,6 +913,12 @@ public:
         _Out_writes_bytes_( cbSignature )                   PBYTE                   pbSignature,
                                                             SIZE_T                  cbSignature ) = 0;
 
+    virtual NTSTATUS signExternalMu(
+        _In_reads_bytes_( cbMu )                            PCBYTE                  pbMu,
+                                                            SIZE_T                  cbMu,
+        _Out_writes_bytes_( cbSignature )                   PBYTE                   pbSignature,
+                                                            SIZE_T                  cbSignature ) = 0;
+
     virtual NTSTATUS signHash(
                                                             SYMCRYPT_PQDSA_HASH_ID  hashId,
         _In_reads_bytes_( cbHash )                          PCBYTE                  pbHash,
@@ -930,6 +936,7 @@ public:
         _In_range_( 0, SYMCRYPT_MLDSA_CONTEXT_MAX_LENGTH )  SIZE_T                  cbContext,
         _In_reads_bytes_( cbRandom )                        PCBYTE                  pbRandom,
                                                             SIZE_T                  cbRandom,
+                                                            UINT32                  flags,
         _Out_writes_bytes_( cbSignature )                   PBYTE                   pbSignature,
                                                             SIZE_T                  cbSignature ) = 0;
 
@@ -938,6 +945,12 @@ public:
                                                             SIZE_T                  cbMessage,
         _In_reads_bytes_opt_( cbContext )                   PCBYTE                  pbContext,
         _In_range_( 0, SYMCRYPT_MLDSA_CONTEXT_MAX_LENGTH )  SIZE_T                  cbContext,
+        _In_reads_bytes_( cbSignature )                     PCBYTE                  pbSignature,
+                                                            SIZE_T                  cbSignature ) = 0;
+
+    virtual NTSTATUS verifyExternalMu(
+        _In_reads_bytes_( cbMu )                            PCBYTE                  pbMu,
+                                                            SIZE_T                  cbMu,
         _In_reads_bytes_( cbSignature )                     PCBYTE                  pbSignature,
                                                             SIZE_T                  cbSignature ) = 0;
 
@@ -986,6 +999,12 @@ public:
         _Out_writes_bytes_( cbSignature )                   PBYTE                   pbSignature,
                                                             SIZE_T                  cbSignature ) override;
 
+    virtual NTSTATUS signExternalMu(
+        _In_reads_bytes_( cbMu )                            PCBYTE                  pbMu,
+                                                            SIZE_T                  cbMu,
+        _Out_writes_bytes_( cbSignature )                   PBYTE                   pbSignature,
+                                                            SIZE_T                  cbSignature ) override;
+
     virtual NTSTATUS signHash(
                                                             SYMCRYPT_PQDSA_HASH_ID  hashId,
         _In_reads_bytes_( cbHash )                          PCBYTE                  pbHash,
@@ -1003,6 +1022,7 @@ public:
         _In_range_( 0, SYMCRYPT_MLDSA_CONTEXT_MAX_LENGTH )  SIZE_T                  cbContext,
         _In_reads_bytes_( cbRandom )                        PCBYTE                  pbRandom,
                                                             SIZE_T                  cbRandom,
+                                                            UINT32                  flags,
         _Out_writes_bytes_( cbSignature )                   PBYTE                   pbSignature,
                                                             SIZE_T                  cbSignature ) override;
 
@@ -1011,6 +1031,12 @@ public:
                                                             SIZE_T                  cbMessage,
         _In_reads_bytes_opt_( cbContext )                   PCBYTE                  pbContext,
         _In_range_( 0, SYMCRYPT_MLDSA_CONTEXT_MAX_LENGTH )  SIZE_T                  cbContext,
+        _In_reads_bytes_( cbSignature )                     PCBYTE                  pbSignature,
+                                                            SIZE_T                  cbSignature ) override;
+
+    virtual NTSTATUS verifyExternalMu(
+        _In_reads_bytes_( cbMu )                            PCBYTE                  pbMu,
+                                                            SIZE_T                  cbMu,
         _In_reads_bytes_( cbSignature )                     PCBYTE                  pbSignature,
                                                             SIZE_T                  cbSignature ) override;
 

@@ -13,7 +13,7 @@
 
 
 //
-// Define _NTSYSTEM_ to supress some __declspec(dllimport) definitions, which under some circumstance lead
+// Define _NTSYSTEM_ to suppress some __declspec(dllimport) definitions, which under some circumstances lead
 // to an additional indirect function call, which adds some attack surface to kernel mode.
 //
 #define _NTSYSTEM_

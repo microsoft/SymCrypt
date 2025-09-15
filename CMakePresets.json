@@ -1,5 +1,5 @@
 {
-    "version": 5,
+    "version": 3,
     "configurePresets": [
         {
             "name": "base-linux",
@@ -205,6 +205,39 @@
                 "CMAKE_CXX_COMPILER": "g++",
                 "SYMCRYPT_TARGET_ARCH": "ARM",
                 "CMAKE_TOOLCHAIN_FILE": "${sourceDir}/cmake-configs/Toolchain-GCC-ARM.cmake"
+            }
+        },
+        {
+            "name": "Linux_ARM64_GCC_Debug",
+            "displayName": "Linux ARM64 Native GCC Debug",
+            "inherits": "base-linux",
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "Debug",
+                "CMAKE_C_COMPILER": "gcc",
+                "CMAKE_CXX_COMPILER": "g++",
+                "SYMCRYPT_TARGET_ARCH": "ARM64"
+            }
+        },
+        {
+            "name": "Linux_ARM64_GCC_Sanitize",
+            "displayName": "Linux ARM64 Native Clang Sanitize",
+            "inherits": "base-linux",
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "Sanitize",
+                "CMAKE_C_COMPILER": "gcc",
+                "CMAKE_CXX_COMPILER": "g++",
+                "SYMCRYPT_TARGET_ARCH": "ARM64"
+            }
+        },
+        {
+            "name": "Linux_ARM64_GCC_Release",
+            "displayName": "Linux ARM64 Native GCC Release",
+            "inherits": "base-linux",
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "RelWithDebInfo",
+                "CMAKE_C_COMPILER": "gcc",
+                "CMAKE_CXX_COMPILER": "g++",
+                "SYMCRYPT_TARGET_ARCH": "ARM64"
             }
         },
         {
@@ -440,6 +473,21 @@
         {
             "name": "Linux_ARM_Cross_GCC_Release",
             "configurePreset": "Linux_ARM_Cross_GCC_Release",
+            "inherits": "base-build"
+        },
+        {
+            "name": "Linux_ARM64_GCC_Debug",
+            "configurePreset": "Linux_ARM64_GCC_Debug",
+            "inherits": "base-build"
+        },
+        {
+            "name": "Linux_ARM64_GCC_Sanitize",
+            "configurePreset": "Linux_ARM64_GCC_Sanitize",
+            "inherits": "base-build"
+        },
+        {
+            "name": "Linux_ARM64_GCC_Release",
+            "configurePreset": "Linux_ARM64_GCC_Release",
             "inherits": "base-build"
         },
         {

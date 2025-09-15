@@ -673,6 +673,13 @@ SymCryptRsaPkcs1ApplySignaturePadding(
         goto cleanup;
     }
 
+    // Simple check to avoid funky behavior if cbHash is close to SIZE_MAX
+    if (cbHash >= cbPKCS1Format)
+    {
+        scError = SYMCRYPT_INVALID_ARGUMENT;
+        goto cleanup;
+    }
+
     fInsertASN1 = ((flags & SYMCRYPT_FLAG_RSA_PKCS1_NO_ASN1) == 0);
 
     if (fInsertASN1)
@@ -696,20 +703,20 @@ SymCryptRsaPkcs1ApplySignaturePadding(
             // special case for MD5 hash without OID
             cbEncoding = 2 + cbHash;
         }
+
+        // we don't support encodings longer than 128 bytes,
+        // with this check we know that the length of the OID as
+        // well as the length of the hash value will each fit in
+        // one byte
+        if (cbEncoding > 0x80)
+        {
+            scError = SYMCRYPT_INVALID_ARGUMENT;
+            goto cleanup;
+        }
     }
     else
     {
         cbEncoding = cbHash;
-    }
-
-    // we don't support encodings longer than 128 bytes,
-    // with this check we know that the length of the OID as
-    // well as the length of the hash value will each fit in
-    // one byte
-    if (cbEncoding > 0x80)
-    {
-        scError = SYMCRYPT_INVALID_ARGUMENT;
-        goto cleanup;
     }
 
     // In a few scenarios (involving small RSA keys), the new large SHA

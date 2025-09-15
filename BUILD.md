@@ -31,14 +31,14 @@ Note: AMD64 is the terminology Windows uses for x86-64.
 | Windows user mode     | AMD64, ARM64, x86 | MSVC                | ✅          | ✅                      | ✅          |
 | Linux user mode       | AMD64, ARM64      | GCC, Clang          | ✅          | ✅                      | ✅          |
 | Linux user mode       | x86               | GCC, Clang          | ❌          | ✅                      | ✅          |
-| macOS                 | AMD64, ARM64      | Apple Clang         | ❌          | ✅                      | ❌          |
+| macOS                 | AMD64, ARM64      | Apple Clang         | ❌          | ✅                      | ✅          |
 
 The ability to build SymCrypt on any particular platform or architecture, with or without ASM optimizations, does not
 imply that it has been tested for or is actively supported by Microsoft on that platform/architecture. While we make
 every effort to ensure that SymCrypt is reliable, stable and bug-free on every platform we run on, the code in this
 repository and the binaries we release are provided *as is*, without warranty of any kind, express or implied, including
 but not limited to the warranties of merchantability, fitness for a particular purpose and noninfringement
-(see our [LICENSE](./LICENSE)).
+(see our [LICENSE](./LICENSE.txt)).
 
 ## Build Instructions
 For Microsoft employees building the library internally, to include msbignum and RSA32 implementation benchmarks in
@@ -55,7 +55,7 @@ pipelines, we have created a set of Python scripts to help with building, testin
 
 1. To build SymCrypt for Windows or Linux using the CMake build system, run `scripts/build.py cmake build_dir` where `build_dir` is the desired build output directory.
     * To see additional options, run `scripts/build.py cmake --help`.
-    * On Windows, the the build script also supports MSBuild. To use MSBuild, run `scripts\build.py msbuild`. The output directory for MSBuild is always `build\bin`.
+    * On Windows, the build script also supports MSBuild. To use MSBuild, run `scripts\build.py msbuild`. The output directory for MSBuild is always `build\bin`.
 1. To run the unit tests after a build has finished, run `scripts/test.py build_dir`.
     * Additional positional arguments will be passed directly to the unit test executable.
 1. To package up the built binaries into an archive, run `scripts/package.py build_dir arch configuration module_name release_dir`, where:

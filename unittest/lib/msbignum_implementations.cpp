@@ -369,11 +369,11 @@ struct {
 };
 
 // Hash algorithms translations
-VOID testInteropScToHashContext( PCSYMCRYPT_HASH pHashAlgorithm, PBYTE rgbDigest, hash_function_context* pHashFunCxt)
+VOID testInteropScToHashContext( PCSYMCRYPT_HASH pHashAlgorithm, PBYTE rgbDigest, hash_function_context* pHashFunCtx)
 {
-    pHashFunCxt->dwVersion = HASH_FUNCTION_STRUCTURE_VERSION;
-    pHashFunCxt->pvContext = NULL;
-    pHashFunCxt->pdwDigest = (PDWORD)rgbDigest;
+    pHashFunCtx->dwVersion = HASH_FUNCTION_STRUCTURE_VERSION;
+    pHashFunCtx->pvContext = NULL;
+    pHashFunCtx->pdwDigest = (PDWORD)rgbDigest;
 
     if (pHashAlgorithm == NULL)
     {
@@ -385,8 +385,8 @@ VOID testInteropScToHashContext( PCSYMCRYPT_HASH pHashAlgorithm, PBYTE rgbDigest
         {
             if (pHashAlgorithm == g_HashAlgs[i].pHashAlgorithm)
             {
-                pHashFunCxt->pfHash = g_HashAlgs[i].msBignumHashFunc;
-                pHashFunCxt->cbDigest = (DWORD)SymCryptHashResultSize(pHashAlgorithm);
+                pHashFunCtx->pfHash = g_HashAlgs[i].msBignumHashFunc;
+                pHashFunCtx->cbDigest = (DWORD)SymCryptHashResultSize(pHashAlgorithm);
                 return;
             }
         }

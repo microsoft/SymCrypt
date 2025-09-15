@@ -10,6 +10,7 @@ set(SOURCES
     rndDriver.cpp
     rng.cpp
     sc_implementations.cpp
+    testAccessors.cpp
     testAesCtrDrbg.cpp
     testArithmetic.cpp
     testAuthEnc.cpp

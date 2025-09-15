@@ -36,5 +36,3 @@ set_property(TARGET symcrust PROPERTY
 add_dependencies(symcrust symcrust_cargo)
 
 target_link_libraries(symcrust INTERFACE symcrypt_common)
-  
-  

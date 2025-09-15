@@ -1,0 +1,164 @@
+parameters:
+  # Slow tests and sanitizer tests are only run on official builds
+  - name: buildType
+    type: string
+    values:
+    - Official
+    - PR
+    default: 'PR'
+  - name: hostArch
+    type: string
+    values:
+    - AMD64
+    - ARM64
+    default: AMD64
+
+jobs:
+- job: test
+  displayName: Test
+
+  strategy:
+    matrix:
+      ${{ if eq(parameters.hostArch, 'AMD64') }}:
+        amd64_gcc_debug:
+          arch: AMD64
+          config: Debug
+          preset: 'Linux_AMD64_GCC_Debug'
+
+        amd64_gcc_release:
+          arch: AMD64
+          config: Release
+          preset: 'Linux_AMD64_GCC_Release'
+          
+        amd64_clang_debug:
+          arch: AMD64
+          config: Debug
+          preset: 'Linux_AMD64_Clang_Debug'
+
+        amd64_clang_release:
+          arch: AMD64
+          config: Release
+          preset: 'Linux_AMD64_Clang_Release'
+
+      ${{ if eq(parameters.hostArch, 'ARM64') }}:
+        arm64_gcc_debug:
+          arch: ARM64
+          config: Debug
+          preset: 'Linux_ARM64_GCC_Debug'
+
+        arm64_gcc_release:
+          arch: ARM64
+          config: Release
+          preset: 'Linux_ARM64_GCC_Release'
+
+        arm64_clang_debug:
+          arch: ARM64
+          config: Debug
+          preset: 'Linux_ARM64_Clang_Debug'
+
+        arm64_clang_release:
+          arch: ARM64
+          config: Release
+          preset: 'Linux_ARM64_Clang_Release'
+
+      # The following tests are skipped in PR builds because they take a long time to execute.
+      # They are run in official builds for full coverage.
+      ${{ if eq(parameters.buildType, 'Official') }}:
+        ${{ if eq(parameters.hostArch, 'AMD64') }}:
+          # Broken in gcc < 14, see https://github.com/actions/runner-images/issues/9491
+          # amd64_gcc_sanitize:
+          #   arch: AMD64
+          #   config: Sanitize
+          #   preset: 'Linux_AMD64_GCC_Sanitize'
+
+          amd64_clang_sanitize:
+            arch: AMD64
+            config: Sanitize
+            preset: 'Linux_AMD64_Clang_Sanitize'
+        
+        ${{ if eq(parameters.hostArch, 'ARM64') }}:
+          arm64_gcc_sanitize:
+            arch: ARM64
+            config: Sanitize
+            preset: 'Linux_ARM64_GCC_Sanitize'
+
+          arm64_clang_sanitize:
+            arch: ARM64
+            config: Sanitize
+            preset: 'Linux_ARM64_Clang_Sanitize'
+
+  pool:
+    type: linux
+    hostArchitecture: ${{ lower(parameters.hostArch) }}
+
+  variables:
+    ONEBRANCH_AME_ACR_LOGIN: onebranch.azurecr.io
+    LinuxContainerImage: 'mcr.microsoft.com/onebranch/azurelinux/build:3.0'
+    PythonPath: '/usr/bin/python3'
+
+    ob_outputDirectory: $(Build.SourcesDirectory)/does_not_exist # No outputs from test job
+    ob_artifactSuffix: _$(preset) # Suffix is still needed for SDL task outputs
+    ob_sdl_binskim_break: false # No binskim checks in test job
+
+  steps:
+    - task: DownloadPipelineArtifact@2
+      displayName: 'Download build artifacts'
+      inputs:
+        artifact: 'drop_Build_AzureLinux_$(arch)_build_$(preset)'
+        path: '$(Build.SourcesDirectory)/artifacts'
+
+    # Extract the packaged test binaries from the build artifacts. Note that the artifact itself
+    # is downloaded as a zip file and automatically extracted by DownloadPipelineArtifact, but zip
+    # files don't retain Unix permissions, so we'd have to either chmod +x the test binaries, or
+    # extract the nested archive. The latter is the one we'll publish for official builds, so it
+    # makes more sense to extract it.
+    - script: |
+        archive=$(ls symcrypt-linux-generic-*.tar.gz 2>/dev/null | head -n 1)
+        if [ -z "$archive" ]; then
+          echo "Archive not found"
+          exit 1
+        fi
+        tar -xzf "$archive"
+      displayName: 'Extract archive'
+      workingDirectory: $(Build.SourcesDirectory)/artifacts/pkg
+
+    # Disable ASAN link order verification
+    # This is a workaround for intermittent failures due to "ASan runtime does not come first in initial library list"
+    # https://github.com/google/sanitizers/issues/796
+    - script: |
+        echo '##vso[task.setvariable variable=ASAN_OPTIONS]verify_asan_link_order=0'
+      displayName: 'Disable ASAN link order verification'
+      condition: eq(variables.config, 'Sanitize')
+
+    - task: PythonScript@0
+      displayName: 'Run sanitizer unit tests'
+      condition: eq(variables.config, 'Sanitize')
+      retryCountOnTaskFailure: 2 # Sanitizer tests can be flaky
+      inputs:
+        scriptSource: 'filePath'
+        scriptPath: scripts/test.py
+        arguments: '. noperftests'
+        workingDirectory: $(Build.SourcesDirectory)/artifacts/pkg
+        pythonInterpreter: $(PythonPath)
+      env:
+        ASAN_OPTIONS: 'fast_unwind_on_malloc=0'
+            
+    - task: PythonScript@0
+      displayName: 'Run dynamic unit tests'
+      condition: ne(variables.config, 'Sanitize')
+      inputs:
+        scriptSource: 'filePath'
+        scriptPath: scripts/test.py
+        arguments: '. dynamic:lib/libsymcrypt.so noperftests'
+        workingDirectory: $(Build.SourcesDirectory)/artifacts/pkg
+        pythonInterpreter: $(PythonPath)
+      
+    - task: PythonScript@0
+      displayName: 'Run YMM save/restore unit tests'
+      condition: and(eq(variables.arch, 'AMD64'), ne(variables.config, 'Sanitize'))
+      inputs:
+        scriptSource: 'filePath'
+        scriptPath: scripts/test.py
+        arguments: '--glibc-disable-ymm . testSaveYmm'
+        workingDirectory: $(Build.SourcesDirectory)/artifacts/pkg
+        pythonInterpreter: $(PythonPath)

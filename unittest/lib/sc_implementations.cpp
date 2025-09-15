@@ -402,11 +402,13 @@ addSymCryptImplementationToGlobalList()
     addImplementationToGlobalList<EccImp<ImpScVariant, AlgEcpointAddDiffNz>>();
     addImplementationToGlobalList<EccImp<ImpScVariant, AlgEcpointDouble>>();
     addImplementationToGlobalList<EccImp<ImpScVariant, AlgEcpointScalarMul>>();
+    addImplementationToGlobalList<ArithImp<ImpScVariant, AlgEckeySetValue>>();
 
     addImplementationToGlobalList<KemImp<ImpScVariant, AlgMlKem>>();
     addImplementationToGlobalList<ArithImp<ImpScVariant, AlgMlKemkeySetValue>>();
 
     addImplementationToGlobalList<PqDsaImp<ImpScVariant, AlgMlDsa>>();
+    addImplementationToGlobalList<ArithImp<ImpScVariant, AlgMlDsakeySetValue>>();
 
     addImplementationToGlobalList<ArithImp<ImpScVariant, AlgIntAdd>>();
     addImplementationToGlobalList<ArithImp<ImpScVariant, AlgIntSub>>();
