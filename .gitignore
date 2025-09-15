@@ -91,4 +91,4 @@ Makefile
 *.nupkg
 
 # Rust (possibly built standalone for benchmarking)
-lib/rust/target
+SymCRust/target
