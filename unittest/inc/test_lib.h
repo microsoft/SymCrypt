@@ -1053,6 +1053,12 @@ public:
     static constexpr const char * name = "Ecdh";
 };
 
+// Used only for performance testing
+class AlgEckeySetValue{
+public:
+    static constexpr const char * name = "EckeySetValue";
+};
+
 class AlgXmss {
 public:
     static constexpr const char * name = "Xmss";
@@ -1078,6 +1084,12 @@ public:
 class AlgMlDsa{
 public:
     static constexpr const char * name = "MlDsa";
+};
+
+// Used only for performance testing
+class AlgMlDsakeySetValue{
+public:
+    static constexpr const char * name = "MlDsakeySetValue";
 };
 
 class AlgDeveloperTest{
@@ -1338,6 +1350,26 @@ auto ScTestCallFunctionWithVectorRegistersTest(Functor f, Args&&... args)
 // In a template for ImpSc call statically linked function with Vector register save/restore tests
 // In a template for ImpScStatic call statically linked function directly
 // In a template for ImpScDynamic call dynamically linked function
+#define SCTEST_CALL_SCIMPFN_0(SymCryptFunction) \
+    [&]() { \
+        if constexpr ( std::is_same<ImpXxx, ImpSc>::value ) \
+        { \
+            return ScTestCallFunctionWithVectorRegistersTest(SymCryptFunction); \
+        } \
+        else if constexpr ( std::is_same<ImpXxx, ImpScStatic>::value ) \
+        { \
+            return SymCryptFunction(); \
+        } \
+        else if constexpr ( std::is_same<ImpXxx, ImpScDynamic>::value ) \
+        { \
+            return SCTEST_GET_DYNSYM(SymCryptFunction, TRUE)(); \
+        } \
+        else \
+        { \
+            CHECK(FALSE, "Instantiation of SCTEST_CALL_SCIMPFN_0 in unexpected scope"); \
+        } \
+    }()
+
 #define SCTEST_CALL_SCIMPFN(SymCryptFunction, ...) \
     [&]() { \
         if constexpr ( std::is_same<ImpXxx, ImpSc>::value ) \
@@ -1377,15 +1409,6 @@ auto ScTestCallFunctionWithVectorRegistersTest(Functor f, Args&&... args)
         } \
     }()
 
-// In a template for ImpSc or ImpScStatic return statically linked symbol
-// In a template for ImpScDynamic return dynamically linked symbol - Fatal if it cannot be found
-#define SCTEST_GET_SCIMPSYM(SymCryptSymbol) \
-    []() { \
-        decltype(&SymCryptSymbol) dynamicSymbol = SCTEST_LOOKUP_SCIMPSYM(SymCryptSymbol); \
-        CHECK3(dynamicSymbol != NULL, "Could not find symbol %s", #SymCryptSymbol); \
-        return *dynamicSymbol; \
-    }()
-
 // Some tests do not use the multi-implementation setup with templates, but instead call the SymCrypt
 // API directly. We can refactor these tests to optionally call the static or dynamic functions based
 // on the value of g_useDynamicFunctionsInTestCall, using the following SCTEST_CALL_DISPATCHFN macros
@@ -1415,13 +1438,6 @@ auto ScTestCallFunctionWithVectorRegistersTest(Functor f, Args&&... args)
             return SCTEST_LOOKUP_DYNSYM(SymCryptSymbol, FALSE); \
         } \
         return &SymCryptSymbol; \
-    }()
-
-#define SCTEST_GET_DISPATCHSYM(SymCryptSymbol) \
-    []() { \
-        decltype(&SymCryptSymbol) dynamicSymbol = SCTEST_LOOKUP_DISPATCHSYM(SymCryptSymbol); \
-        CHECK3(dynamicSymbol != NULL, "Could not find symbol %s", #SymCryptSymbol); \
-        return *dynamicSymbol; \
     }()
 
 #include "sc_dispatch_shims.h"
@@ -1460,6 +1476,9 @@ testWipe();
 
 VOID
 testUtil();
+
+VOID
+testDataAccessors();
 
 VOID
 testHashAlgorithms();

@@ -6007,6 +6007,105 @@ EccImp<ImpXxx, AlgEcdh>::~EccImp()
 {
 }
 
+template<>
+VOID
+algImpKeyPerfFunction<ImpXxx, AlgEckeySetValue>( PBYTE pbCurve, PBYTE pbKey, PBYTE pbKeyBlobs, SIZE_T keySize )
+{
+    SetupSymCryptCurves<ImpXxx>( pbCurve, keySize );
+    PCSYMCRYPT_ECURVE pCurve = *((PCSYMCRYPT_ECURVE *)pbCurve);
+
+    UINT32 eckeySize = ScShimSymCryptSizeofEckeyFromCurve( pCurve );
+    PSYMCRYPT_ECKEY pKey = ScShimSymCryptEckeyCreate( pbKey, eckeySize, pCurve );
+
+    SYMCRYPT_ERROR scError = ScShimSymCryptEckeySetRandom( SYMCRYPT_FLAG_ECKEY_ECDH, pKey );
+    CHECK( scError == SYMCRYPT_NO_ERROR, "?" );
+
+    SIZE_T cbPrivateKey = ScShimSymCryptEckeySizeofPrivateKey( pKey );
+    SIZE_T cbPublicKey = ScShimSymCryptEckeySizeofPublicKey( pKey, SYMCRYPT_ECPOINT_FORMAT_XY );
+
+    ((SIZE_T*)pbKeyBlobs)[0] = cbPrivateKey;
+    ((SIZE_T*)pbKeyBlobs)[1] = cbPublicKey;
+    scError = ScShimSymCryptEckeyGetValue(
+        pKey,
+        pbKeyBlobs+(2*sizeof(SIZE_T)), cbPrivateKey,
+        pbKeyBlobs+(2*sizeof(SIZE_T))+cbPrivateKey, cbPublicKey,
+        SYMCRYPT_NUMBER_FORMAT_MSB_FIRST,
+        SYMCRYPT_ECPOINT_FORMAT_XY,
+        0 );
+    CHECK( scError == SYMCRYPT_NO_ERROR, "?" );
+}
+
+template<>
+VOID
+algImpDataPerfFunction<ImpXxx, AlgEckeySetValue>( PBYTE pbCurve, PBYTE pbKey, PBYTE pbKeyBlobs, SIZE_T cbData )
+{
+    UNREFERENCED_PARAMETER( pbCurve );
+    UNREFERENCED_PARAMETER( cbData );
+
+    SYMCRYPT_ERROR scError = SYMCRYPT_NO_ERROR;
+    PSYMCRYPT_ECKEY pKey = (PSYMCRYPT_ECKEY)(pbKey);
+    SIZE_T cbPrivateKey = ((SIZE_T*)pbKeyBlobs)[0];
+    SIZE_T cbPublicKey = ((SIZE_T*)pbKeyBlobs)[1];
+
+    scError = ScShimSymCryptEckeySetValue(
+        nullptr, 0,
+        pbKeyBlobs+(2*sizeof(SIZE_T))+cbPrivateKey, cbPublicKey,
+        SYMCRYPT_NUMBER_FORMAT_MSB_FIRST,
+        SYMCRYPT_ECPOINT_FORMAT_XY,
+        SYMCRYPT_FLAG_ECKEY_ECDH,
+        pKey );
+    CHECK( scError == SYMCRYPT_NO_ERROR, "?" );
+}
+
+template<>
+VOID
+algImpDecryptPerfFunction<ImpXxx, AlgEckeySetValue>( PBYTE pbCurve, PBYTE pbKey, PBYTE pbKeyBlobs, SIZE_T cbData )
+{
+    UNREFERENCED_PARAMETER( pbCurve );
+    UNREFERENCED_PARAMETER( cbData );
+
+    SYMCRYPT_ERROR scError = SYMCRYPT_NO_ERROR;
+    PSYMCRYPT_ECKEY pKey = (PSYMCRYPT_ECKEY)(pbKey);
+    SIZE_T cbPrivateKey = ((SIZE_T*)pbKeyBlobs)[0];
+    SIZE_T cbPublicKey = ((SIZE_T*)pbKeyBlobs)[1];
+
+    scError = ScShimSymCryptEckeySetValue(
+        pbKeyBlobs+(2*sizeof(SIZE_T)), cbPrivateKey,
+        pbKeyBlobs+(2*sizeof(SIZE_T))+cbPrivateKey, cbPublicKey,
+        SYMCRYPT_NUMBER_FORMAT_MSB_FIRST,
+        SYMCRYPT_ECPOINT_FORMAT_XY,
+        SYMCRYPT_FLAG_ECKEY_ECDH,
+        pKey );
+    CHECK( scError == SYMCRYPT_NO_ERROR, "?" );
+}
+
+template<>
+VOID
+algImpCleanPerfFunction<ImpXxx, AlgEckeySetValue>( PBYTE pbCurve, PBYTE pbKey, PBYTE pbKeyBlobs )
+{
+    PCSYMCRYPT_ECURVE pCurve = *((PCSYMCRYPT_ECURVE *)pbCurve);
+    UINT32 eckeySize = ScShimSymCryptSizeofEckeyFromCurve( pCurve );
+    SIZE_T cbPrivateKey = ((SIZE_T*)pbKeyBlobs)[0];
+    SIZE_T cbPublicKey = ((SIZE_T*)pbKeyBlobs)[1];
+
+    ScShimSymCryptWipe( pbKey, eckeySize );
+    ScShimSymCryptWipe( pbKeyBlobs, cbPrivateKey + cbPublicKey + (2*sizeof(SIZE_T)) );
+}
+
+template<>
+ArithImp<ImpXxx, AlgEckeySetValue>::ArithImp()
+{
+    m_perfDataFunction      = &algImpDataPerfFunction   <ImpXxx, AlgEckeySetValue>;
+    m_perfDecryptFunction   = &algImpDecryptPerfFunction<ImpXxx, AlgEckeySetValue>;
+    m_perfKeyFunction       = &algImpKeyPerfFunction    <ImpXxx, AlgEckeySetValue>;
+    m_perfCleanFunction     = &algImpCleanPerfFunction  <ImpXxx, AlgEckeySetValue>;
+}
+
+template<>
+ArithImp<ImpXxx, AlgEckeySetValue>::~ArithImp()
+{
+}
+
 //============================
 #if SYMCRYPT_MS_VC
 template<>
@@ -10464,8 +10563,8 @@ algImpCleanPerfFunction<ImpXxx, AlgMlKemkeySetValue>( PBYTE pbKey, PBYTE pbEncap
 {
     UNREFERENCED_PARAMETER( pbKey );
 
-    ScShimSymCryptWipe( pbEncapsKey, *((SIZE_T*)pbEncapsKey) );
-    ScShimSymCryptWipe( pbDecapsKey, *((SIZE_T*)pbDecapsKey) );
+    ScShimSymCryptWipe( pbEncapsKey, *((SIZE_T*)pbEncapsKey) + sizeof(SIZE_T) );
+    ScShimSymCryptWipe( pbDecapsKey, *((SIZE_T*)pbDecapsKey) + sizeof(SIZE_T) );
 }
 
 template<>
@@ -10706,6 +10805,27 @@ PqDsaImp<ImpXxx, AlgMlDsa>::sign(
 template<>
 _Use_decl_annotations_
 NTSTATUS
+PqDsaImp<ImpXxx, AlgMlDsa>::signExternalMu(
+    PCBYTE pbMu,
+    SIZE_T cbMu,
+    PBYTE pbSignature,
+    SIZE_T cbSignature )
+{
+    SYMCRYPT_ERROR scError = SYMCRYPT_NO_ERROR;
+
+    scError = ScShimSymCryptExternalMuMlDsaSign(
+        state.pKey,
+        pbMu, cbMu,
+        0, // flags
+        pbSignature, cbSignature );
+    CHECK( scError == SYMCRYPT_NO_ERROR, "SymCryptExternalMuMlDsaSign" );
+
+    return STATUS_SUCCESS;
+}
+
+template<>
+_Use_decl_annotations_
+NTSTATUS
 PqDsaImp<ImpXxx, AlgMlDsa>::signHash(
     SYMCRYPT_PQDSA_HASH_ID hashId,
     PCBYTE pbHash,
@@ -10740,6 +10860,7 @@ PqDsaImp<ImpXxx, AlgMlDsa>::signEx(
     SIZE_T cbContext,
     PCBYTE pbRandom,
     SIZE_T cbRandom,
+    UINT32 flags,
     PBYTE pbSignature,
     SIZE_T cbSignature )
 {
@@ -10781,7 +10902,7 @@ PqDsaImp<ImpXxx, AlgMlDsa>::signEx(
         pbContext, cbContext,
         pbHashOid, cbHashOid,
         pbRandom, cbRandom,
-        0, // flags
+        flags,
         pbSignature, cbSignature );
     CHECK( scError == SYMCRYPT_NO_ERROR, "SymCryptMlDsaSignEx" );
 
@@ -10798,7 +10919,6 @@ PqDsaImp<ImpXxx, AlgMlDsa>::verify(
     SIZE_T cbContext,
     PCBYTE pbSignature,
     SIZE_T cbSignature )
-
 {
     SYMCRYPT_ERROR scError = SYMCRYPT_NO_ERROR;
 
@@ -10806,6 +10926,39 @@ PqDsaImp<ImpXxx, AlgMlDsa>::verify(
         state.pKey,
         pbMessage, cbMessage,
         pbContext, cbContext,
+        pbSignature, cbSignature,
+        0 ); // flags
+
+    if( scError == SYMCRYPT_NO_ERROR )
+    {
+        return STATUS_SUCCESS;
+    }
+    else if( scError == SYMCRYPT_SIGNATURE_VERIFICATION_FAILURE )
+    {
+        // Signature verification failure is an expected failure for some test cases
+        return STATUS_INVALID_SIGNATURE;
+    }
+    else
+    {
+        CHECK3(FALSE, "Unexpected SymCrypt error %08x", scError);
+        return STATUS_UNSUCCESSFUL; // Unreachable
+    }
+}
+
+template<>
+_Use_decl_annotations_
+NTSTATUS
+PqDsaImp<ImpXxx, AlgMlDsa>::verifyExternalMu(
+    PCBYTE pbMu,
+    SIZE_T cbMu,
+    PCBYTE pbSignature,
+    SIZE_T cbSignature )
+{
+    SYMCRYPT_ERROR scError = SYMCRYPT_NO_ERROR;
+
+    scError = ScShimSymCryptExternalMuMlDsaVerify(
+        state.pKey,
+        pbMu, cbMu,
         pbSignature, cbSignature,
         0 ); // flags
 
@@ -10870,4 +11023,121 @@ PqDsaImp<ImpXxx, AlgMlDsa>::PqDsaImp()
     m_perfDecryptFunction   = &algImpDecryptPerfFunction<ImpXxx, AlgMlDsa>;
     m_perfKeyFunction       = &algImpKeyPerfFunction    <ImpXxx, AlgMlDsa>;
     m_perfCleanFunction     = &algImpCleanPerfFunction  <ImpXxx, AlgMlDsa>;
+}
+
+template<>
+VOID
+algImpKeyPerfFunction<ImpXxx, AlgMlDsakeySetValue>( PBYTE pbKey, PBYTE pbPrivateKey, PBYTE pbPublicKey, SIZE_T keySize )
+{
+    SIZE_T cbPrivateKey;
+    SIZE_T cbPublicKey;
+    SYMCRYPT_ERROR scError = SYMCRYPT_NO_ERROR;
+    SYMCRYPT_MLDSA_PARAMS params = SYMCRYPT_MLDSA_PARAMS_NULL;
+    PSYMCRYPT_PERF_MLDSAKEY* ppKeyInfo = (PSYMCRYPT_PERF_MLDSAKEY *) pbKey;
+
+    switch( keySize )
+    {
+        case PERF_KEY_MLDSA_44:
+            params = SYMCRYPT_MLDSA_PARAMS_MLDSA44;
+            break;
+        case PERF_KEY_MLDSA_65:
+            params = SYMCRYPT_MLDSA_PARAMS_MLDSA65;
+            break;
+        case PERF_KEY_MLDSA_87:
+            params = SYMCRYPT_MLDSA_PARAMS_MLDSA87;
+            break;
+        default:
+            CHECK( FALSE, "Invalid ML-DSA parameter set (key size)" );
+            break;
+    }
+
+    SetupSymCryptMlDsaKey<ImpXxx>( pbKey, keySize );
+
+    scError = ScShimSymCryptMlDsakeyGenerate( (*ppKeyInfo)->pkMlDsakey, 0 );
+    CHECK( scError == SYMCRYPT_NO_ERROR, "SymCryptMlDsakeyGenerate" );
+
+    scError = ScShimSymCryptMlDsaSizeofKeyFormatFromParams( params, SYMCRYPT_MLDSAKEY_FORMAT_PRIVATE_KEY, &cbPrivateKey );
+    CHECK( scError == SYMCRYPT_NO_ERROR, "?" );
+    scError = ScShimSymCryptMlDsaSizeofKeyFormatFromParams( params, SYMCRYPT_MLDSAKEY_FORMAT_PUBLIC_KEY, &cbPublicKey );
+    CHECK( scError == SYMCRYPT_NO_ERROR, "?" );
+
+    *((SIZE_T*)pbPrivateKey) = cbPrivateKey;
+    scError = ScShimSymCryptMlDsakeyGetValue(
+        (*ppKeyInfo)->pkMlDsakey,
+        pbPrivateKey+sizeof(SIZE_T), cbPrivateKey,
+        SYMCRYPT_MLDSAKEY_FORMAT_PRIVATE_KEY,
+        0 );
+    CHECK( scError == SYMCRYPT_NO_ERROR, "?" );
+
+    *((SIZE_T*)pbPublicKey) = cbPublicKey;
+    scError = ScShimSymCryptMlDsakeyGetValue(
+        (*ppKeyInfo)->pkMlDsakey,
+        pbPublicKey+sizeof(SIZE_T), cbPublicKey,
+        SYMCRYPT_MLDSAKEY_FORMAT_PUBLIC_KEY,
+        0 );
+    CHECK( scError == SYMCRYPT_NO_ERROR, "?" );
+}
+
+template<>
+VOID
+algImpDataPerfFunction<ImpXxx, AlgMlDsakeySetValue>( PBYTE pbKey, PBYTE pbPrivateKey, PBYTE pbPublicKey, SIZE_T cbData )
+{
+    UNREFERENCED_PARAMETER( pbPrivateKey );
+    UNREFERENCED_PARAMETER( cbData );
+
+    SYMCRYPT_ERROR scError = SYMCRYPT_NO_ERROR;
+    PSYMCRYPT_PERF_MLDSAKEY* ppKeyInfo = (PSYMCRYPT_PERF_MLDSAKEY *) pbKey;
+    PSYMCRYPT_MLDSAKEY pKey = (*ppKeyInfo)->pkMlDsakey;
+    SIZE_T cbPublicKey = *((SIZE_T*)pbPublicKey);
+
+    scError = ScShimSymCryptMlDsakeySetValue(
+        pbPublicKey+sizeof(SIZE_T), cbPublicKey,
+        SYMCRYPT_MLDSAKEY_FORMAT_PUBLIC_KEY,
+        0,
+        pKey );
+    CHECK( scError == SYMCRYPT_NO_ERROR, "?" );
+}
+
+template<>
+VOID
+algImpDecryptPerfFunction<ImpXxx, AlgMlDsakeySetValue>( PBYTE pbKey, PBYTE pbPrivateKey, PBYTE pbPublicKey, SIZE_T cbData )
+{
+    UNREFERENCED_PARAMETER( pbPublicKey );
+    UNREFERENCED_PARAMETER( cbData );
+
+    SYMCRYPT_ERROR scError = SYMCRYPT_NO_ERROR;
+    PSYMCRYPT_PERF_MLDSAKEY* ppKeyInfo = (PSYMCRYPT_PERF_MLDSAKEY *) pbKey;
+    PSYMCRYPT_MLDSAKEY pKey = (*ppKeyInfo)->pkMlDsakey;
+    SIZE_T cbPrivateKey = *((SIZE_T*)pbPrivateKey);
+
+    scError = ScShimSymCryptMlDsakeySetValue(
+        pbPrivateKey+sizeof(SIZE_T), cbPrivateKey,
+        SYMCRYPT_MLDSAKEY_FORMAT_PRIVATE_KEY,
+        0,
+        pKey );
+    CHECK( scError == SYMCRYPT_NO_ERROR, "?" );
+}
+
+template<>
+VOID
+algImpCleanPerfFunction<ImpXxx, AlgMlDsakeySetValue>( PBYTE pbKey, PBYTE pbPrivateKey, PBYTE pbPublicKey )
+{
+    UNREFERENCED_PARAMETER( pbKey );
+
+    ScShimSymCryptWipe( pbPrivateKey, *((SIZE_T*)pbPrivateKey) + sizeof(SIZE_T) );
+    ScShimSymCryptWipe( pbPublicKey, *((SIZE_T*)pbPublicKey) + sizeof(SIZE_T) );
+}
+
+template<>
+ArithImp<ImpXxx, AlgMlDsakeySetValue>::ArithImp()
+{
+    m_perfDataFunction      = &algImpDataPerfFunction   <ImpXxx, AlgMlDsakeySetValue>;
+    m_perfDecryptFunction   = &algImpDecryptPerfFunction<ImpXxx, AlgMlDsakeySetValue>;
+    m_perfKeyFunction       = &algImpKeyPerfFunction    <ImpXxx, AlgMlDsakeySetValue>;
+    m_perfCleanFunction     = &algImpCleanPerfFunction  <ImpXxx, AlgMlDsakeySetValue>;
+}
+
+template<>
+ArithImp<ImpXxx, AlgMlDsakeySetValue>::~ArithImp()
+{
 }

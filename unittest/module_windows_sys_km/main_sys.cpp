@@ -106,11 +106,9 @@ typedef const SYMCRYPT_SYMBOL_INFO* PCSYMCRYPT_SYMBOL_INFO;
 
 const SYMCRYPT_SYMBOL_INFO g_SymCryptSymbolTable[] =
 {
-#define SYMBOL(SymbolName)      INFO_LINE(SymbolName),
 #define FUNCTION(FunctionName)  INFO_LINE(FunctionName),
 #include "SymCryptKernelTestModule_FuncList.h"
 #undef FUNCTION
-#undef SYMBOL
     { NULL, NULL },
 };
 

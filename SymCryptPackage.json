@@ -4,12 +4,12 @@
         "dest" : "CHANGELOG.md"
     },
     {
-        "source" : "${SOURCE_DIR}/LICENSE",
-        "dest" : "LICENSE"
+        "source" : "${SOURCE_DIR}/LICENSE.txt",
+        "dest" : "LICENSE.txt"
     },
     {
-        "source" : "${SOURCE_DIR}/NOTICE",
-        "dest" : "NOTICE"
+        "source" : "${SOURCE_DIR}/NOTICE.txt",
+        "dest" : "NOTICE.txt"
     },
     {
         "source" : "${SOURCE_DIR}/README.md",
@@ -85,6 +85,11 @@
     {
         "source" : "${BIN_DIR}/lib/symcrypt_static.lib",
         "dest" : "lib/symcrypt_static.lib",
+        "platform" : "win32"
+    },
+    {
+        "source" : "${BIN_DIR}/lib/symcrypt_static_NoCIL.lib",
+        "dest" : "lib/symcrypt_static_NoCIL.lib",
         "platform" : "win32"
     },
     {

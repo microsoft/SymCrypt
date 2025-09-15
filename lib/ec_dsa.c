@@ -183,6 +183,9 @@ SymCryptEcDsaSignEx(
     UINT32  cbX  = 0;
 
     UINT32 signatureCount = 0;
+    UINT32 allowedFlags = SYMCRYPT_FLAG_ECDSA_NO_TRUNCATION | SYMCRYPT_FLAG_DATA_PUBLIC;
+    UINT32 publicFlag = flags & SYMCRYPT_FLAG_DATA_PUBLIC;
+    UINT32 truncationFlag = flags & SYMCRYPT_FLAG_ECDSA_NO_TRUNCATION;
 
     // Make sure that the key may be used in ECDSA
     if ( ((pKey->fAlgorithmInfo & SYMCRYPT_FLAG_ECKEY_ECDSA) == 0)  )
@@ -191,9 +194,9 @@ SymCryptEcDsaSignEx(
         goto cleanup;
     }
 
-    // Make sure we only specify the correct flags and that
+    // Make sure only allowed flags are specified and
     // there is a private key
-    if ( ((flags & ~SYMCRYPT_FLAG_ECDSA_NO_TRUNCATION) != 0) ||
+    if ( ((flags & ~(allowedFlags)) != 0) ||
          (!pKey->hasPrivateKey) )
     {
         scError = SYMCRYPT_INVALID_ARGUMENT;
@@ -265,7 +268,7 @@ SymCryptEcDsaSignEx(
                     pCurve,
                     pbHashValue,
                     cbHashValue,
-                    flags,
+                    truncationFlag,
                     peMsghash,
                     piTmp,
                     pbScratch,
@@ -305,7 +308,7 @@ SymCryptEcDsaSignEx(
             }
         }
 
-        scError = SymCryptModInv( pCurve->GOrd, peTmp, peTmp, 0, pbScratch, cbScratchInternal );              // Invert k
+        scError = SymCryptModInv( pCurve->GOrd, peTmp, peTmp, publicFlag, pbScratch, cbScratchInternal );              // Invert k
         if ( scError != SYMCRYPT_NO_ERROR )
         {
             goto cleanup;
@@ -319,7 +322,7 @@ SymCryptEcDsaSignEx(
                         SYMCRYPT_ECPOINT_FORMAT_X,
                         pbX,
                         cbX,
-                        0,
+                        publicFlag,
                         pbScratch,
                         cbScratchInternal );
         if ( scError != SYMCRYPT_NO_ERROR )
@@ -412,6 +415,12 @@ SymCryptEcDsaSign(
                                         SIZE_T                  cbSignature )
 {
     SYMCRYPT_ERROR scError = SYMCRYPT_NO_ERROR;
+
+    // Make sure that only the correct flags are set
+    if ( (flags & ~SYMCRYPT_FLAG_ECDSA_NO_TRUNCATION) != 0 )
+    {
+        return SYMCRYPT_INVALID_ARGUMENT;
+    }
 
     // We must have a private key to perform PCT or signature
     if( !pKey->hasPrivateKey || !(pKey->fAlgorithmInfo & SYMCRYPT_FLAG_ECKEY_ECDSA) )

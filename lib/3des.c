@@ -8,7 +8,7 @@
 // implementation.
 // According to Andrew Tucker (atucker) there was a claim many years ago about the copyright of
 // our DES code. Working with LCA (legal) it was determined that the DES implementation in RSA32.lib
-// was a Microsoft derivitive of a public-domain implementation, and therefore is clear of
+// was a Microsoft derivative of a public-domain implementation, and therefore is clear of
 // any IP issues. To avoid any further claims we have now scrubbed this implementation from all
 // copyrightable elements derived from outside sources.
 //

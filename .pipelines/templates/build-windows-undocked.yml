@@ -1,81 +1,52 @@
 # This template is for building, signing, packaging and ingesting undocked Windows binaries.
 parameters:
-  # Build args
-  sln: ''
-  msbuildArgs: ''
-  restoreNugetPackages: false
-  lkgCompilerBranch: 'official/main'
-  config: 'Debug,Release'
-  platform: 'x86,x64,arm64'
-  nativeCompiler: true
-  buildType: 'pr'
-  sign: false # Only signs UM binaries, for external (to Windows repo) release
-  # Packaging args
-  package: false
-  name: ''
-  description: ''
-  owner: ''
+  - name: lkgCompilerBranch
+    type: string
+    default: 'official/main'
+  - name: nativeCompiler
+    type: boolean
+    default: true
+  - name: buildType
+    type: string
+    values:
+    - Official
+    - PR
+    default: 'PR'
+  - name: sign
+    type: boolean
+    default: false
 
 jobs:
-
-- job: set_version
-  displayName: Set Version
-  pool:
-    type: windows
-  variables:
-    ob_outputDirectory: $(Build.SourcesDirectory)\build
-  steps:
-  - task: PythonScript@0
-    displayName: 'Set version number'
-    name: verStep
-    inputs:
-      scriptSource: 'filePath'
-      scriptPath: scripts\version.py
-      arguments: '--devops'
-      workingDirectory: $(Build.SourcesDirectory)
-  - task: onebranch.pipeline.version@1
-    inputs:
-      system: 'Custom'
-      customVersion: '$(verStep.VER_MAJOR).$(verStep.VER_MINOR).$(verStep.VER_PATCH)-$(Build.BuildId)'
-
 # Build the solution for all the necessary configurations.
 - job: build_sln
-  displayName: ${{ parameters.sln }}
-  ${{ if eq(parameters.package, true) }}:
-    dependsOn: set_version
+  displayName: Build
   strategy:
     matrix:
-      ${{ if and(contains(parameters.config, 'Debug'), contains(parameters.platform, 'x86')) }}:
         x86chk:
           ob_build_platform: x86
           ob_build_platform_win: x86
           ob_build_config: Debug
           ob_build_config_win: chk
-      ${{ if and(contains(parameters.config, 'Release'), contains(parameters.platform, 'x86')) }}:
         x86fre:
           ob_build_platform: x86
           ob_build_platform_win: x86
           ob_build_config: Release
           ob_build_config_win: fre
-      ${{ if and(contains(parameters.config, 'Debug'), contains(parameters.platform, 'x64')) }}:
         amd64chk:
           ob_build_platform: x64
           ob_build_platform_win: amd64
           ob_build_config: Debug
           ob_build_config_win: chk
-      ${{ if and(contains(parameters.config, 'Release'), contains(parameters.platform, 'x64')) }}:
         amd64fre:
           ob_build_platform: x64
           ob_build_platform_win: amd64
           ob_build_config: Release
           ob_build_config_win: fre
-      ${{ if and(contains(parameters.config, 'Debug'), contains(parameters.platform, 'arm64')) }}:
         arm64chk:
           ob_build_platform: arm64
           ob_build_platform_win: arm64
           ob_build_config: Debug
           ob_build_config_win: chk
-      ${{ if and(contains(parameters.config, 'Release'), contains(parameters.platform, 'arm64')) }}:
         arm64fre:
           ob_build_platform: arm64
           ob_build_platform_win: arm64
@@ -86,11 +57,8 @@ jobs:
     type: windows
 
   variables:
-    ver_branch: $(Build.SourceBranchName)
-    ver_major: $[ dependencies.set_version.outputs['verStep.VER_MAJOR'] ]
-    ver_minor: $[ dependencies.set_version.outputs['verStep.VER_MINOR'] ]
-    ver_patch: $[ dependencies.set_version.outputs['verStep.VER_PATCH'] ]
-    # Build variables
+    solution_name: 'symcrypt.sln'
+    # OneBranch Variables
     ob_outputDirectory: $(Build.SourcesDirectory)\build\bin\$(ob_build_platform_win)$(ob_build_config_win)
     ob_artifactSuffix: _$(ob_build_platform_win)$(ob_build_config_win)
     # https://aka.ms/obpipelines/sdl
@@ -107,39 +75,15 @@ jobs:
     ob_sdl_prefast_excludedPaths: 'c:\\program files (x86)\\windows kits\\#$(Build.SourcesDirectory)\\unittest\\symcryptdependencies\\inc\\'
     ob_sdl_prefast_break: true
     ob_sdl_checkCompliantCompilerWarnings: true
-    ${{ if eq(parameters.sign, true) }}:
-      ob_sdl_codeSignValidation_excludes: -|**\*.sys # Signing is not supported for KM drivers
-    ${{ if eq(parameters.sign, false) }}:
-      ob_sdl_codeSignValidation_excludes: -|**\*.sys;-|**\*.dll;-|**\*.exe # Disable signing requirements for UM & KM builds
+    ob_sdl_codeSignValidation_excludes: -|**\*.sys # Signing is not supported for KM drivers
     # https://eng.ms/docs/cloud-ai-platform/azure-edge-platform-aep/aep-engineering-systems/productivity-and-experiences/onebranch-windows-undocked/onebranch-windows-undocked/test/onebranchwindowsundocked
     ob_NativeCompiler_enabled: ${{ parameters.nativeCompiler }}
     ob_NativeCompiler_TaskVerbosity: 'Detailed'
     ob_NativeCompiler_UseOSBranchVersion: true
     ob_NativeCompiler_TargetOsBranch: ${{ parameters.lkgCompilerBranch }}
     ob_NativeCompiler_UcrtPlatform: $(ob_build_platform_win)
-    # https://www.osgwiki.com/wiki/OneBranch_Windows_Undocked_Pipelines#2._Set_feature_flags_-_createVPack_and_updateOSManifest.
-    ${{ if eq(parameters.package, true) }}:
-      ob_createvpack_enabled: true
-      ob_createvpack_owneralias: ${{ parameters.owner }}
-      ob_createvpack_packagename: "${{ parameters.name }}.$(ob_build_platform_win)$(ob_build_config_win)"
-      ob_createvpack_description: "${{ parameters.name }}.$(ver_branch)"
-      ob_createvpack_versionAs: string
-      ob_createvpack_version: $(ver_major).$(ver_minor).$(ver_patch)-$(Build.BuildId)
-      ob_createvpack_vpackdirectory: $(ob_outputDirectory)\vpack
 
   steps:
-  - task: VSBuild@1
-    displayName: Build
-    target: windows_build_container
-    inputs:
-      solution: ${{ parameters.sln }}
-      platform: $(ob_build_platform)
-      configuration: $(ob_build_config)
-      maximumCpuCount: true
-      restoreNugetPackages: ${{ parameters.restoreNugetPackages }}
-      msbuildArchitecture: 'x64'
-      msbuildArgs: '-p:UndockedOfficial=${{ parameters.nativeCompiler }} -p:UndockedBuildId=$(Build.BuildId) -p:VER_BUILD_ID=$(Build.BuildId) -p:VER_SUFFIX=${{ parameters.buildType }} ${{ parameters.msbuildArgs }}'
-
   # Overwrite default artifact publishing with our copy (enables publishing binaries for failed runs)
   - task: PowerShell@2
     displayName: 'Overwrite .artifactignore'
@@ -148,49 +92,31 @@ jobs:
       script: |
         Copy-Item .artifactignore "$(ob_outputDirectory)\.artifactignore"
 
-  # Only run tests on x86/x64 builds for now
-  - task: PythonScript@0
-    displayName: 'Run unit tests'
-    condition: or(eq(variables['ob_build_platform'], 'x64'), eq(variables['ob_build_platform'], 'x86'))
+  - task: VSBuild@1
+    displayName: 'Invoke MSBuild'
+    target: windows_build_container
     inputs:
-      scriptSource: 'filePath'
-      scriptPath: scripts\test.py
-      arguments: 'build\bin noperftests'
-      workingDirectory: $(Build.SourcesDirectory)
-
-  - task: PythonScript@0
-    displayName: 'Run dynamic unit tests (test module)'
-    condition: or(eq(variables['ob_build_platform'], 'x64'), eq(variables['ob_build_platform'], 'x86'))
-    inputs:
-      scriptSource: 'filePath'
-      scriptPath: scripts\test.py
-      arguments: 'build\bin dynamic:build\bin\$(ob_build_platform_win)$(ob_build_config_win)\dll\symcrypttestmodule.dll noperftests'
-      workingDirectory: $(Build.SourcesDirectory)
-
-  - task: PythonScript@0
-    displayName: 'Run dynamic unit tests (prod module)'
-    condition: and(eq('${{ parameters.buildType }}', 'official'), or(eq(variables['ob_build_platform'], 'x64'), eq(variables['ob_build_platform'], 'x86')))
-    inputs:
-      scriptSource: 'filePath'
-      scriptPath: scripts\test.py
-      arguments: 'build\bin dynamic:build\bin\$(ob_build_platform_win)$(ob_build_config_win)\dll\symcrypt.dll noperftests'
-      workingDirectory: $(Build.SourcesDirectory)
+      solution: $(solution_name)
+      platform: $(ob_build_platform)
+      configuration: $(ob_build_config)
+      maximumCpuCount: true
+      msbuildArchitecture: 'x64'
+      msbuildArgs: '-p:UndockedOfficial=${{ parameters.nativeCompiler }} -p:UndockedBuildId=$(Build.BuildId) -p:VER_BUILD_ID=$(Build.BuildId) -p:VER_SUFFIX=${{ parameters.buildType }}'
 
   - task: onebranch.pipeline.signing@1 # https://aka.ms/obpipelines/signing
     displayName: 'Sign Binaries'
-    condition: eq('${{ parameters.sign }}', true)
+    condition: ${{ eq(parameters.sign, true) }}
     target: windows_build_container
     inputs:
       command: 'sign'
       signing_profile: 'external_distribution'
-      files_to_sign: '**\*.exe;**\*.dll' # Only supports user mode binaries
-      search_root: 'build/bin'
-    
+      files_to_sign: '**\*.exe;**\*.dll'
+      search_root: $(ob_outputDirectory)
+
   - task: PythonScript@0
     displayName: 'Copy files to package'
     inputs:
       scriptSource: 'filePath'
       scriptPath: scripts\package.py
-      arguments: --no-archive $(ob_outputDirectory) $(ob_build_platform_win) $(ob_build_config) Windows $(ob_outputDirectory)\vpack
+      arguments: --no-archive $(ob_outputDirectory) $(ob_build_platform_win) $(ob_build_config) Windows $(ob_outputDirectory)\pkg
       workingDirectory: $(Build.SourcesDirectory)
-  

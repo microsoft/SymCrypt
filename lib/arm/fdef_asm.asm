@@ -382,7 +382,7 @@ SymCryptFdefRawMulAsmLoopInner
 ; VOID
 ; SYMCRYPT_CALL
 ; SymCryptFdefRawSquareAsm(
-;   _In_reads_(nDgigits*SYMCRYPT_FDEF_DIGIT_NUINT32)    PCUINT32    pSrc,
+;   _In_reads_(nDigits*SYMCRYPT_FDEF_DIGIT_NUINT32)     PCUINT32    pSrc,
 ;                                                       UINT32      nDigits,
 ;   _Out_writes_(2*nWords)                              PUINT32     pDst )
 ;

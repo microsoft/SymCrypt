@@ -19,6 +19,12 @@
     <ClCompile>
       <AdditionalIncludeDirectories>$(ProjectDir);</AdditionalIncludeDirectories>
     </ClCompile>
+    <!-- Also Generate NoCIL static lib -->
+    <CustomBuildStep>
+      <Command>link /cvtcil $(TargetPath) /out:$(TargetDir)$(TargetName)_NoCIL$(TargetExt)</Command>
+      <Outputs>$(TargetDir)$(TargetName)_NoCIL$(TargetExt)</Outputs>
+      <Inputs>$(TargetPath)</Inputs>
+    </CustomBuildStep>
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="3des.c" />
@@ -44,6 +50,7 @@
     <ClCompile Include="cpuid_notry.c" />
     <ClCompile Include="cpuid_um.c" />
     <ClCompile Include="crt.c" />
+    <ClCompile Include="data_accessors.c" />
     <ClCompile Include="DesTables.c" />
     <ClCompile Include="desx.c" />
     <ClCompile Include="dh.c" />

@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  
+  <!-- Include directories -->
+  <ItemDefinitionGroup>
+    <ClCompile>
+      <AdditionalIncludeDirectories>$(MSBuildThisFileDirectory)..\..\lib\native\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ClCompile>
+  </ItemDefinitionGroup>
+
+  <!-- Link libraries for Windows -->
+  <ItemDefinitionGroup Condition="'$(Platform)' == 'x64' And '$(OS)' == 'Windows_NT'">
+    <Link>
+      <AdditionalLibraryDirectories>$(MSBuildThisFileDirectory)..\..\runtimes\win-x64\native;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>symcrypt.lib;%(AdditionalDependencies)</AdditionalDependencies>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Platform)' == 'ARM64' And '$(OS)' == 'Windows_NT'">
+    <Link>
+      <AdditionalLibraryDirectories>$(MSBuildThisFileDirectory)..\..\runtimes\win-arm64\native;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>symcrypt.lib;%(AdditionalDependencies)</AdditionalDependencies>
+    </Link>
+  </ItemDefinitionGroup>
+
+  <!-- Copy native libraries to output directory -->
+  <ItemGroup Condition="'$(Platform)' == 'x64' And '$(OS)' == 'Windows_NT'">
+    <None Include="$(MSBuildThisFileDirectory)..\..\runtimes\win-x64\native\symcrypt.dll">
+      <Link>symcrypt.dll</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="$(MSBuildThisFileDirectory)..\..\runtimes\win-x64\native\symcrypt.pdb">
+      <Link>symcrypt.pdb</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+  <ItemGroup Condition="'$(Platform)' == 'ARM64' And '$(OS)' == 'Windows_NT'">
+    <None Include="$(MSBuildThisFileDirectory)..\..\runtimes\win-arm64\native\symcrypt.dll">
+      <Link>symcrypt.dll</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="$(MSBuildThisFileDirectory)..\..\runtimes\win-arm64\native\symcrypt.pdb">
+      <Link>symcrypt.pdb</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+
+</Project>

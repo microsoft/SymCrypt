@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="utf-8"?>
+<package xmlns="http://schemas.microsoft.com/packaging/2013/05/nuspec.xsd">
+  <metadata>
+    <id>Microsoft.SymCrypt</id>
+    <version>0.0.0</version> <!-- Should be overridden during package creation with version flag -->
+    <title>SymCrypt</title>
+    <authors>Microsoft Corporation</authors>
+    <owners>Microsoft Corporation</owners>
+    <license type="expression">MIT</license>
+    <projectUrl>https://github.com/microsoft/SymCrypt</projectUrl>
+    <repository type="git" url="https://github.com/microsoft/SymCrypt" />
+    <requireLicenseAcceptance>false</requireLicenseAcceptance>
+    <readme>README.md</readme>
+    <description>SymCrypt cryptographic library</description>
+    <summary>SymCrypt cryptographic library</summary>
+    <copyright>Copyright (c) Microsoft Corporation. All rights reserved.</copyright>
+    <tags>symcrypt cryptography crypto native windows linux microsoft security</tags>
+    <dependencies>
+      <group targetFramework="native0.0" />
+    </dependencies>
+  </metadata>
+  <files>
+    <!-- Documentation -->
+    <file src="..\README.md" target="" />
+    <file src="..\CHANGELOG.md" target="" />
+    <file src="..\NOTICE.txt" target="" />
+    
+    <!-- Header files (taken from Windows AMD64, they're the same regardless of arch) -->
+    <file src="..\pkg\win-x64\inc\symcrypt.h" target="lib\native\include\" />
+    <file src="..\pkg\win-x64\inc\symcrypt_low_level.h" target="lib\native\include\" />
+    <file src="..\pkg\win-x64\inc\symcrypt_internal.h" target="lib\native\include\" />
+    <file src="..\pkg\win-x64\inc\symcrypt_internal_shared.inc" target="lib\native\include\" />
+    
+    <!-- Build targets -->
+    <file src="build\native\Microsoft.SymCrypt.targets" target="build\native\" />
+    
+    <!-- Windows AMD64 (x86-64) runtime -->
+    <file src="..\pkg\win-x64\dll\symcrypt.dll" target="runtimes\win-x64\native\" />
+    <file src="..\pkg\win-x64\dll\symcrypt.lib" target="runtimes\win-x64\native\" />
+    <file src="..\pkg\win-x64\dll\symcrypt.pdb" target="runtimes\win-x64\native\" />
+
+    <!-- Windows ARM64 runtime -->
+    <file src="..\pkg\win-arm64\dll\symcrypt.dll" target="runtimes\win-arm64\native\" />
+    <file src="..\pkg\win-arm64\dll\symcrypt.lib" target="runtimes\win-arm64\native\" />
+    <file src="..\pkg\win-arm64\dll\symcrypt.pdb" target="runtimes\win-arm64\native\" />
+    
+    <!-- Headers for non-MSVC compilers -->
+    <!-- <file src="..\pkg\linux-x64\inc\symcrypt_no_sal.h" target="lib\native\include\" /> -->
+
+    <!-- Linux AMD64 (x86-64) runtime -->
+    <!-- <file src="..\pkg\linux-x64\lib\libsymcrypt.so" target="runtimes\linux-x64\native\" /> -->
+
+    <!-- Linux ARM64 runtime -->
+    <!-- <file src="..\pkg\linux-arm64\lib\libsymcrypt.so" target="runtimes\linux-arm64\native\" /> -->
+
+  </files>
+</package>

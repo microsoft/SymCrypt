@@ -83,7 +83,7 @@
   </ItemGroup>
   <PropertyGroup>
     <!--
-      Have to explicitly set these properties at the end of the file, because otherwise they get overriden by other
+      Have to explicitly set these properties at the end of the file, because otherwise they get overridden by other
       imported property sheets.
     -->
     <TargetExt>.dll</TargetExt>

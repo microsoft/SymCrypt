@@ -364,7 +364,7 @@ enum{
 
 //
 // These implementations are optimized for inlining, especially when the
-// size of the data to be convered is a compile-time constant.
+// size of the data to be converted is a compile-time constant.
 //
 
 //
@@ -2214,7 +2214,7 @@ SymCryptFdefMaskedCopy(
 // Copies Src to Dst under mask.
 // Requirements:
 //  - mask == 0 or mask == 0xffffffff
-//  - cbData must be a multple of the size of a digit, or a multiple of the size of a ModElement.
+//  - cbData must be a multiple of the size of a digit, or a multiple of the size of a ModElement.
 //  - pbSrc and pbDst must be SYMCRYPT_ALIGNed
 // if mask == 0 this function does nothing.
 // if mask == 0xffffffff this function is a memcpy from Src to Dst.
@@ -2234,7 +2234,7 @@ SymCryptFdefConditionalSwap(
 // Swaps the bytes of Src1 with the bytes of Src2 under a condition.
 // Requirements:
 //  - cond = 0 or cond = 1 .
-//  - cbData must be a multple of the size of a digit, or a multiple of the size of a ModElement.
+//  - cbData must be a multiple of the size of a digit, or a multiple of the size of a ModElement.
 //  - pbSrc1 and pbSrc2 must be SYMCRYPT_ALIGNed
 // if cond == 0 this function does nothing.
 // if cond == 1 this function swaps the bytes of Src1 with the bytes of Src2.
@@ -4407,7 +4407,7 @@ typedef SYMCRYPT_ASYM_ALIGN_STRUCT _SYMCRYPT_XMSS_KEY
     SYMCRYPT_MAGIC_FIELD
         
     // Private key
-    SYMCRYPT_ALIGN_AT(16) UINT64  Idx;  // Aligning on 16-bytes to supress clang warning
+    SYMCRYPT_ALIGN_AT(16) UINT64  Idx;  // Aligning on 16-bytes to suppress clang warning
                                         // when atomic increment is performed on it.
     BYTE    SkXmss[SYMCRYPT_HASH_MAX_RESULT_SIZE];
     BYTE    SkPrf[SYMCRYPT_HASH_MAX_RESULT_SIZE];

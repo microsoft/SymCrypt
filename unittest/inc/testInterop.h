@@ -36,7 +36,7 @@ extern HASHALG_DATA g_HashAlgs[TEST_INTEROP_NUMOF_HASHALGS];
 // Helper functions
 UINT32 testInteropImplToInd( AlgorithmImplementation * pImpl );
 
-VOID testInteropScToHashContext( PCSYMCRYPT_HASH pHashAlgorithm, PBYTE rgbDigest, hash_function_context* pHashFunCxt);
+VOID testInteropScToHashContext( PCSYMCRYPT_HASH pHashAlgorithm, PBYTE rgbDigest, hash_function_context* pHashFunCtx);
 
 LPCWSTR testInteropScToCngHash( PSYMCRYPT_HASH pHashAlgorithm );
 

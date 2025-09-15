@@ -97,7 +97,7 @@ SymCryptParallelSha512AppendBlocks_ymm(
     BYTE_REVERSE_64 = _mm256_set_epi8( 8, 9, 10, 11, 12, 13, 14, 15, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 0, 1, 2, 3, 4, 5, 6, 7 );
 
     //
-    // The chaining state can be unaligned on x86, so we use unalgned loads
+    // The chaining state can be unaligned on x86, so we use unaligned loads
     //
 
     T0 = _mm256_loadu_si256( (__m256i *)&pChain[0]->H[0] );

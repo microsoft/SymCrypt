@@ -25,7 +25,7 @@ developertest()
 {
     //
     // This function is called before the main testing begins.
-    // It is primarilly used during development of new code to run the test code
+    // It is primarily used during development of new code to run the test code
     // without having to wait for all the other things to run.
     //
     // Note: there is also a DeveloperTest algorithm that can be used for developer performance
@@ -409,11 +409,13 @@ const char * g_algorithmNames[] = {
     AlgEcdsaSign::name,
     AlgEcdsaVerify::name,
     AlgEcdh::name,
+    AlgEckeySetValue::name,
     AlgXmss::name,
     AlgLms::name,
     AlgMlKem::name,
     AlgMlKemkeySetValue::name,
     AlgMlDsa::name,
+    AlgMlDsakeySetValue::name,
 
     AlgDeveloperTest::name,
     NULL,
@@ -456,7 +458,7 @@ usage()
             "  rngseed=xxxxxxxx  Set seed for test RNG algorithm, default = 0 = random\n"
             "  sizes:<startSize>,<endSize>,<sizeIncrement>,<numberOfRepetitions>\n"
             "                    Run algorithms for dataSizes specified at the command line, rather\n"
-            "                    than using using the sizes built into the unit tests and performing\n"
+            "                    than using the sizes built into the unit tests and performing\n"
             "                    a linear regression. All parameters are unsigned decimal integers.\n"
             "                    Only a prefix of the parameters needs to be specified - i.e. sizes:1024\n"
             "                    tests specified algorithms/implementations at only a dataSize of 1024\n"
@@ -870,7 +872,7 @@ getCustomResource( _In_ PSTR resourceName, _In_ PSTR resourceType )
     CHECK( resourceHandle != NULL, "Failed to find resource" );
 
     resourceDataHandle = LoadResource( NULL, resourceHandle );
-    CHECK( resourceDataHandle != NULL, "Failed to laod resource" );
+    CHECK( resourceDataHandle != NULL, "Failed to load resource" );
 
     cbData = SizeofResource( NULL, resourceHandle );
     CHECK( cbData != 0, "?" );
@@ -1292,6 +1294,8 @@ runFunctionalTests()
     // The tests may modify g_useDynamicFunctionsInTestCall themselves to perform specific subtests
     // with dispatch functions
 
+    testDataAccessors();
+
     testHashAlgorithms();
 
     testBlockCipherAlgorithms();
@@ -1412,7 +1416,7 @@ runPerfTests()
                     // Hack: For ML-DSA, don't multiply the key size by 8 since it refers to a
                     // parameter set. In the future we should refactor the performance measurement
                     // architecture to be able to handle these types of algorithms more gracefully.
-                    if( (*i)->m_algorithmName != "MlDsa" )
+                    if( (*i)->m_algorithmName.substr(0, 5) != "MlDsa" )
                     {
                         keySize *= 8;
                     }

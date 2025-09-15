@@ -994,7 +994,7 @@ testDhtestGroups( DhImplementation  * pDh, INT64 line )
 
         // We have a group; to test the DH implementation we need to create two keys
         PSYMCRYPT_DLGROUP pGroup = SymCryptDlgroupAllocate( pGroupBlob->nBitsP, 8*pGroupBlob->cbPrimeQ );
-        CHECK( pGroup != NULL, "Error allocating Symcr")
+        CHECK( pGroup != NULL, "Error allocating Symcrypt")
 
         SIZE_T cbP = pGroupBlob->cbPrimeP;
 

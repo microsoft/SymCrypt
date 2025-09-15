@@ -332,7 +332,7 @@ SymCryptModMultiExpWnafWithInterleaving(
     //      - sizeof results are upper bounded by 2^19
     //      - SYMCRYPT_SCRATCH_BYTES results are upper bounded by 2^27 (including RSA and ECURVE)
     //      - nBases, nPrecompPoints, and nRecodedDigits are bounded by SYMCRYPT_MODMULTIEXP_MAX_NBASES,
-    //        SYMCRYPT_MODMULTIEXP_MAX_NBITSEXP, and SYMCRYPT_MODMULTIEXP_MAX_NPRECOMP, repspectively.
+    //        SYMCRYPT_MODMULTIEXP_MAX_NBITSEXP, and SYMCRYPT_MODMULTIEXP_MAX_NPRECOMP, respectively.
     // Thus the following calculation does not overflow cbScratch.
     //
     SYMCRYPT_ASSERT( SYMCRYPT_MODMULTIEXP_MAX_NBASES >= nBases );

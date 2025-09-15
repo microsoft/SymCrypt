@@ -85,6 +85,9 @@ if(CMAKE_SYSTEM_NAME MATCHES "Linux|Darwin")
         # GCC complains about implicit casting between ASIMD registers (i.e. uint8x16_t -> uint64x2_t) by default,
         # whereas clang and MSVC do not. Setting -flax-vector-conversions to build Arm64 intrinsics code with GCC.
         set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -flax-vector-conversions")
+
+        # Avoid outlined atomics for ARM64 because some versions of libatomic do not have __aarch64_cas16_relax
+        add_compile_options(-mno-outline-atomics)
     elseif(SYMCRYPT_TARGET_ARCH MATCHES "ARM$")
         # Not sure if -mno-unaligned-access actually helps but here it is.
         set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -march=armv7-a+neon-vfpv4 -flax-vector-conversions -mfpu=neon -mno-unaligned-access")
@@ -101,11 +104,6 @@ if(CMAKE_SYSTEM_NAME MATCHES "Linux|Darwin")
             # Get the compiler toolchain include
             execute_process(COMMAND ${CMAKE_C_COMPILER} -print-file-name=include OUTPUT_VARIABLE TOOLCHAIN_INCLUDE)
             string(STRIP "${TOOLCHAIN_INCLUDE}" TOOLCHAIN_INCLUDE)
-
-            if(SYMCRYPT_TARGET_ARCH MATCHES "ARM64")
-                # OPTEE env on Arm64 does not support atomic operations
-                add_compile_options(-mno-outline-atomics)
-            endif()
 
             # OPTEE env has a different stdlib
             add_compile_options(-nostdinc -isystem ${TOOLCHAIN_INCLUDE})

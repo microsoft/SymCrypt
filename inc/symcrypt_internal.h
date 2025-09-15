@@ -25,8 +25,8 @@
 //==============================================================================================
 
 #define SYMCRYPT_PLATFORM_WINDOWS 0
-#define SYMCRYPT_PLATFORM_APPLE   0 // MacOS and other Apple platforms
-#define SYMCRYPT_PLATFORM_UNIX    0 // Linux and other Unix-likes, besides MacOS. Must support POSIX.
+#define SYMCRYPT_PLATFORM_APPLE   0 // macOS and other Apple platforms
+#define SYMCRYPT_PLATFORM_UNIX    0 // Linux and other Unix-likes, besides macOS. Must support POSIX.
 
 #if defined(_WIN32)
     #undef  SYMCRYPT_PLATFORM_WINDOWS
@@ -1097,14 +1097,14 @@ extern const SYMCRYPT_OID SymCryptSha256OidList[SYMCRYPT_SHA256_OID_COUNT];
 #define SYMCRYPT_SHA384_OID_COUNT      (2)
 extern const SYMCRYPT_OID SymCryptSha384OidList[SYMCRYPT_SHA384_OID_COUNT];
 
+#define SYMCRYPT_SHA512_OID_COUNT      (2)
+extern const SYMCRYPT_OID SymCryptSha512OidList[SYMCRYPT_SHA512_OID_COUNT];
+
 #define SYMCRYPT_SHA512_224_OID_COUNT      (2)
 extern const SYMCRYPT_OID SymCryptSha512_224OidList[SYMCRYPT_SHA512_224_OID_COUNT];
 
 #define SYMCRYPT_SHA512_256_OID_COUNT      (2)
 extern const SYMCRYPT_OID SymCryptSha512_256OidList[SYMCRYPT_SHA512_256_OID_COUNT];
-
-#define SYMCRYPT_SHA512_OID_COUNT      (2)
-extern const SYMCRYPT_OID SymCryptSha512OidList[SYMCRYPT_SHA512_OID_COUNT];
 
 #define SYMCRYPT_SHA3_224_OID_COUNT      (2)
 extern const SYMCRYPT_OID SymCryptSha3_224OidList[SYMCRYPT_SHA3_224_OID_COUNT];
@@ -1123,6 +1123,34 @@ extern const SYMCRYPT_OID SymCryptShake128OidList[SYMCRYPT_SHAKE128_OID_COUNT];
 
 #define SYMCRYPT_SHAKE256_OID_COUNT      (2)
 extern const SYMCRYPT_OID SymCryptShake256OidList[SYMCRYPT_SHAKE256_OID_COUNT];
+
+typedef enum _SYMCRYPT_OID_LIST_ID
+{
+    SYMCRYPT_OID_LIST_ID_NULL           = 0,
+    SYMCRYPT_OID_LIST_ID_MD5            = 1,
+    SYMCRYPT_OID_LIST_ID_SHA1           = 2,
+    SYMCRYPT_OID_LIST_ID_SHA224         = 3,
+    SYMCRYPT_OID_LIST_ID_SHA256         = 4,
+    SYMCRYPT_OID_LIST_ID_SHA384         = 5,
+    SYMCRYPT_OID_LIST_ID_SHA512         = 6,
+    SYMCRYPT_OID_LIST_ID_SHA512_224     = 7,
+    SYMCRYPT_OID_LIST_ID_SHA512_256     = 8,
+    SYMCRYPT_OID_LIST_ID_SHA3_224       = 9,
+    SYMCRYPT_OID_LIST_ID_SHA3_256       = 10,
+    SYMCRYPT_OID_LIST_ID_SHA3_384       = 11,
+    SYMCRYPT_OID_LIST_ID_SHA3_512       = 12,
+    SYMCRYPT_OID_LIST_ID_SHAKE128       = 13,
+    SYMCRYPT_OID_LIST_ID_SHAKE256       = 14
+} SYMCRYPT_OID_LIST_ID;
+
+PCSYMCRYPT_OID
+SYMCRYPT_CALL
+SymCryptGetOidList( SYMCRYPT_OID_LIST_ID oidId, _Out_opt_ SIZE_T* pCount );
+//
+// Returns a pointer to the OID list for the specified OID list ID. If pCount is non-NULL, the
+// pointed-to value will be set to the number of elements in the OID list.
+// Returns NULL if the OID list ID is invalid.
+//
 
 typedef union _SYMCRYPT_HASH_STATE
 {
@@ -1608,7 +1636,7 @@ typedef const SYMCRYPT_HMAC_SHA3_512_STATE *PCSYMCRYPT_HMAC_SHA3_512_STATE;
 //
 // SYMCRYPT_AES_EXPANDED_KEY
 //
-// Expanded key for AES operattions.
+// Expanded key for AES operations.
 //
 typedef SYMCRYPT_ALIGN_STRUCT _SYMCRYPT_AES_EXPANDED_KEY {
     SYMCRYPT_ALIGN BYTE RoundKey[29][4][4];
@@ -2334,10 +2362,10 @@ typedef const SYMCRYPT_ECPOINT * PCSYMCRYPT_ECPOINT;
 #define SYMCRYPT_BYTES_FROM_BITS(bits)          ( ( (bits) + 7 ) / 8 )
 
 // The maximum number of bits in any integer value that the library supports. If the
-// caller's input exceed this bound then the the integer object will not be created.
+// caller's input exceed this bound then the integer object will not be created.
 // The caller either must ensure the bound is not exceeded, or check for NULL before
 // using created SymCrypt objects.
-// The primary purpose of this limit is to avoid integer overlows in size computations.
+// The primary purpose of this limit is to avoid integer overflows in size computations.
 // Having a reasonable upper bound avoids all size overflows, even on 32-bit CPUs
 #define SYMCRYPT_INT_MAX_BITS       ((UINT32)(1 << 20))
 
@@ -2370,7 +2398,7 @@ typedef const SYMCRYPT_ECPOINT * PCSYMCRYPT_ECPOINT;
 
 //
 // Type fields contain the following:
-// lower 16 bits: offset into virtual table table (if any)
+// lower 16 bits: offset into virtual table (if any)
 // upper 16 bits: bits 16-23: 1-character object type. Bits 24-31: 1 char implementation type
 // The upper bits allow objects to be recognized in memory, making debugging easier.
 //
@@ -2559,7 +2587,7 @@ SYMCRYPT_ASYM_ALIGN_STRUCT _SYMCRYPT_MODELEMENT {
     SYMCRYPT_FDEF_SCRATCH_BYTES_FOR_COMMON_MOD_OPERATIONS( _nModDigits ) + \
     ((_nBases)*(1<<SYMCRYPT_FDEF_MAX_WINDOW_MODEXP) + 4)*SYMCRYPT_FDEF_SIZEOF_MODELEMENT_FROM_DIGITS( _nModDigits ) + \
     (((_nBases)*(_nBitsExp)*sizeof(UINT32) + SYMCRYPT_ASYM_ALIGN_VALUE - 1) & ~(SYMCRYPT_ASYM_ALIGN_VALUE - 1)) )
-// Note: We need +4 mutliplied with SYMCRYPT_FDEF_SIZEOF_MODELEMENT_FROM_DIGITS so that SYMCRYPT_FDEF_SCRATCH_BYTES_FOR_MODMULTIEXP
+// Note: We need +4 multiplied with SYMCRYPT_FDEF_SIZEOF_MODELEMENT_FROM_DIGITS so that SYMCRYPT_FDEF_SCRATCH_BYTES_FOR_MODMULTIEXP
 // is always at least 2 modelements bigger than SYMCRYPT_FDEF_SCRATCH_BYTES_FOR_MODEXP (see modexp.c)
 
 //
@@ -2722,7 +2750,7 @@ typedef       SYMCRYPT_RSAKEY * PSYMCRYPT_RSAKEY;
 typedef const SYMCRYPT_RSAKEY * PCSYMCRYPT_RSAKEY;
 
 //
-// The following definitions relating to trial divisoin are not needed by normal callers
+// The following definitions relating to trial division are not needed by normal callers
 // but are used by the test program to measure performance of components.
 //
 
@@ -2907,9 +2935,9 @@ typedef enum _SYMCRYPT_INTERNAL_ECURVE_TYPE {
                                                             // This condition is detected and used for all NIST prime curves
 } SYMCRYPT_INTERNAL_ECURVE_TYPE;
 
-C_ASSERT((int)SYMCRYPT_INTERNAL_ECURVE_TYPE_SHORT_WEIERSTRASS   == (int)SYMCRYPT_ECURVE_TYPE_SHORT_WEIERSTRASS );
-C_ASSERT((int)SYMCRYPT_INTERNAL_ECURVE_TYPE_TWISTED_EDWARDS     == (int)SYMCRYPT_ECURVE_TYPE_TWISTED_EDWARDS );
-C_ASSERT((int)SYMCRYPT_INTERNAL_ECURVE_TYPE_MONTGOMERY          == (int)SYMCRYPT_ECURVE_TYPE_MONTGOMERY );
+C_ASSERT((UINT32)SYMCRYPT_INTERNAL_ECURVE_TYPE_SHORT_WEIERSTRASS   == (UINT32)SYMCRYPT_ECURVE_TYPE_SHORT_WEIERSTRASS );
+C_ASSERT((UINT32)SYMCRYPT_INTERNAL_ECURVE_TYPE_TWISTED_EDWARDS     == (UINT32)SYMCRYPT_ECURVE_TYPE_TWISTED_EDWARDS );
+C_ASSERT((UINT32)SYMCRYPT_INTERNAL_ECURVE_TYPE_MONTGOMERY          == (UINT32)SYMCRYPT_ECURVE_TYPE_MONTGOMERY );
 
 typedef SYMCRYPT_ASYM_ALIGN_STRUCT _SYMCRYPT_ECURVE {
                     UINT32                  version;        // Version #
@@ -3385,16 +3413,17 @@ SymCryptWipeKnownSize(_Out_writes_bytes_(cbData) PVOID pbData, SIZE_T cbData)
 // will be set in g_SymCryptFipsSelftestsPerformed. Other selftests are performed automatically
 // when the module is loaded, so they don't have a corresponding flag.
 typedef enum _SYMCRYPT_SELFTEST_ALGORITHM {
-    SYMCRYPT_SELFTEST_ALGORITHM_NONE    =  0x0,
-    SYMCRYPT_SELFTEST_ALGORITHM_STARTUP =  0x1,
-    SYMCRYPT_SELFTEST_ALGORITHM_DSA     =  0x2,
-    SYMCRYPT_SELFTEST_ALGORITHM_ECDSA   =  0x4,
-    SYMCRYPT_SELFTEST_ALGORITHM_RSA     =  0x8,
-    SYMCRYPT_SELFTEST_ALGORITHM_DH      = 0x10,
-    SYMCRYPT_SELFTEST_ALGORITHM_ECDH    = 0x20,
-    SYMCRYPT_SELFTEST_ALGORITHM_MLKEM   = 0x40,
-    SYMCRYPT_SELFTEST_ALGORITHM_XMSS    = 0x80,
+    SYMCRYPT_SELFTEST_ALGORITHM_NONE    =   0x0,
+    SYMCRYPT_SELFTEST_ALGORITHM_STARTUP =   0x1,
+    SYMCRYPT_SELFTEST_ALGORITHM_DSA     =   0x2,
+    SYMCRYPT_SELFTEST_ALGORITHM_ECDSA   =   0x4,
+    SYMCRYPT_SELFTEST_ALGORITHM_RSA     =   0x8,
+    SYMCRYPT_SELFTEST_ALGORITHM_DH      =  0x10,
+    SYMCRYPT_SELFTEST_ALGORITHM_ECDH    =  0x20,
+    SYMCRYPT_SELFTEST_ALGORITHM_MLKEM   =  0x40,
+    SYMCRYPT_SELFTEST_ALGORITHM_XMSS    =  0x80,
     SYMCRYPT_SELFTEST_ALGORITHM_LMS     = 0x100,
+    SYMCRYPT_SELFTEST_ALGORITHM_MLDSA   = 0x200,
 } SYMCRYPT_SELFTEST_ALGORITHM;
 
 // Takes values which are some bitwise OR combination of SYMCRYPT_SELFTEST_ALGORITHM values
@@ -3427,17 +3456,17 @@ SymCryptFipsGetSelftestsPerformed(void);
 // breaking change.
 
 // Dlkey selftest flags
-// DSA Pairwise Consistency Test to be run generated keys
+// DSA Pairwise Consistency Test to be run on generated keys
 #define SYMCRYPT_SELFTEST_KEY_DSA       (0x1)
 #define SYMCRYPT_PCT_DSA                SYMCRYPT_SELFTEST_KEY_DSA
 
 // Eckey selftest flags
-// ECDSA Pairwise Consistency Test to be run generated keys
+// ECDSA Pairwise Consistency Test to be run on generated keys
 #define SYMCRYPT_SELFTEST_KEY_ECDSA     (0x1)
 #define SYMCRYPT_PCT_ECDSA              SYMCRYPT_SELFTEST_KEY_ECDSA
 
 // Rsakey selftest flags
-// RSA Pairwise Consistency Test to be run generated keys
+// RSA Pairwise Consistency Test to be run on generated keys
 #define SYMCRYPT_SELFTEST_KEY_RSA_SIGN  (0x1)
 #define SYMCRYPT_PCT_RSA_SIGN           SYMCRYPT_SELFTEST_KEY_RSA_SIGN
 

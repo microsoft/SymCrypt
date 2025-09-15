@@ -204,7 +204,7 @@ createKatFileSingleDsa( FILE * f, PCDLGROUP_TESTBLOB pBlob )
     case 1: cbHash = 32; break;
     case 2: cbHash = 48; break;
     case 3: cbHash = 64; break;
-    case 4: cbHash = (r % 59) + 6; break;   // 59 is prime, so this is orthoginal to the switch case
+    case 4: cbHash = (r % 59) + 6; break;   // 59 is prime, so this is orthogonal to the switch case
 
     case 5: case 6: case 7: case 8: case 9: case 10:
             cbHash = pBlob->cbPrimeQ;       // Customary and only size that CNG supports
@@ -335,7 +335,7 @@ testDsatestGroups( DsaImplementation  * pDsa, INT64 line )
 
         // We have a group; generate a key
         PSYMCRYPT_DLGROUP pGroup = SymCryptDlgroupAllocate( pGroupBlob->nBitsP, 8*pGroupBlob->cbPrimeQ );
-        CHECK( pGroup != NULL, "Error allocating Symcr")
+        CHECK( pGroup != NULL, "Error allocating Symcrypt")
 
         SIZE_T cbP = pGroupBlob->cbPrimeP;
 
@@ -383,7 +383,7 @@ testDsatestGroups( DsaImplementation  * pDsa, INT64 line )
         case 1: cbHash = 32; break;
         case 2: cbHash = 48; break;
         case 3: cbHash = 64; break;
-        case 4: cbHash = (r % 59) + 6; break;   // 59 is prime, so this is orthoginal to the switch case
+        case 4: cbHash = (r % 59) + 6; break;   // 59 is prime, so this is orthogonal to the switch case
 
         case 5: case 6: case 7: case 8: case 9: case 10:
                 cbHash = pGroupBlob->cbPrimeQ;       // Customary and only size that CNG supports
