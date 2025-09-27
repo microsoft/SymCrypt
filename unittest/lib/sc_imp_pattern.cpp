@@ -3322,6 +3322,11 @@ sc_RsaKeySetKeyFromBlob<ImpXxx>(
     *ppKey = ScShimSymCryptRsakeyAllocate( &params, 0 );
     CHECK( *ppKey != NULL, "SymCryptRsakeyAllocate failed unexpectedly" );
 
+    if( pcKeyBlob->nBitsModulus < SYMCRYPT_RSAKEY_FIPS_MIN_BITSIZE_MODULUS )
+    {
+        flags |= SYMCRYPT_FLAG_KEY_NO_FIPS;
+    }
+
     // choose a random method to import rsa key
     if( g_rng.byte() & 1 )
     {

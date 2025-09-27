@@ -3699,16 +3699,6 @@ if( ( Key->fAlgorithmInfo & (KeySelftestFlag | SYMCRYPT_FLAG_KEY_NO_FIPS) ) == 0
     SYMCRYPT_FIPS_ASSERT( KeySelftestFunction( Key ) == SYMCRYPT_NO_ERROR ); \
     SYMCRYPT_ATOMIC_OR32_PRE_RELAXED(&Key->fAlgorithmInfo, KeySelftestFlag); \
 }
-#define SYMCRYPT_RUN_KEY_IMPORT_PCT(PctScError, KeySelftestFunction, Key, KeySelftestFlag) \
-if( ( Key->fAlgorithmInfo & (KeySelftestFlag | SYMCRYPT_FLAG_KEY_NO_FIPS) ) == 0 ) \
-{ \
-    /* PCT may fail on key import - return error to caller via PctScError */ \
-    PctScError = KeySelftestFunction( Key ); \
-    if( PctScError == SYMCRYPT_NO_ERROR ) \
-    { \
-        SYMCRYPT_ATOMIC_OR32_PRE_RELAXED(&Key->fAlgorithmInfo, KeySelftestFlag); \
-    } \
-}
 
 // Macro to check flag used in fAlgorithmInfo is non-zero and a power of 2
 #define CHECK_ALGORITHM_INFO_FLAG_POW2( flag ) \
@@ -3742,21 +3732,21 @@ SYMCRYPT_ERROR
 SYMCRYPT_CALL
 SymCryptRsaSignVerifyPct( PCSYMCRYPT_RSAKEY pkRsakey );
 //
-// FIPS pairwise consistency test for RSA sign/verify. Fastfails on error.
+// FIPS pairwise consistency test for RSA sign/verify.
 //
 
 SYMCRYPT_ERROR
 SYMCRYPT_CALL
 SymCryptDsaPct( PCSYMCRYPT_DLKEY pkDlkey );
 //
-// FIPS pairwise consistency test for DSA sign/verify. Fastfails on error.
+// FIPS pairwise consistency test for DSA sign/verify.
 //
 
 SYMCRYPT_ERROR
 SYMCRYPT_CALL
 SymCryptEcDsaPct( PCSYMCRYPT_ECKEY pkEckey );
 //
-// FIPS pairwise consistency test for ECDSA sign/verify. Fastfails on error.
+// FIPS pairwise consistency test for ECDSA sign/verify.
 //
 
 typedef struct _SYMCRYPT_DLGROUP_DH_SAFEPRIME_PARAMS {
