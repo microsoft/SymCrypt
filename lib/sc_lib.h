@@ -1906,7 +1906,7 @@ extern const BYTE SymCryptSha512KATAnswer[64];
 // Arithmetic
 //
 
-#define SYMCRYPT_ASSERT_ASYM_ALIGNED( _p )           SYMCRYPT_ASSERT( ((ULONG_PTR)(_p) & (SYMCRYPT_ASYM_ALIGN_VALUE - 1)) == 0 );
+#define SYMCRYPT_ASSERT_ASYM_ALIGNED( _p )           SYMCRYPT_ASSERT( ((SIZE_T)(_p) & (SYMCRYPT_ASYM_ALIGN_VALUE - 1)) == 0 );
 
 
 #define SYMCRYPT_FDEF_DIGIT_NUINT32             ((UINT32)(SYMCRYPT_FDEF_DIGIT_SIZE / sizeof( UINT32 ) ))
@@ -4395,7 +4395,7 @@ typedef SYMCRYPT_ASYM_ALIGN_STRUCT _SYMCRYPT_XMSS_KEY
     BYTE    Seed[SYMCRYPT_HASH_MAX_RESULT_SIZE];
 
     SYMCRYPT_MAGIC_FIELD
-        
+
     // Private key
     SYMCRYPT_ALIGN_AT(16) UINT64  Idx;  // Aligning on 16-bytes to suppress clang warning
                                         // when atomic increment is performed on it.
@@ -4815,7 +4815,7 @@ FORCEINLINE
 UINT32
 SymCryptCountTrailingZeros32( UINT32 value )
 {
-    ULONG index = 0;
+    unsigned long index = 0;
     if( value == 0 )
     {
         return 32;
@@ -4833,14 +4833,14 @@ SymCryptCountTrailingZeros32( UINT32 value )
     }
 #endif
 
-    return (UINT32) index;
+    return (UINT32)index;
 }
 
 FORCEINLINE
 UINT32
 SymCryptCountTrailingZeros64( UINT64 value )
 {
-    ULONG index = 0;
+    unsigned long index = 0;
     if( value == 0 )
     {
         return 64;
@@ -4867,14 +4867,14 @@ SymCryptCountTrailingZeros64( UINT64 value )
     }
 #endif
 
-    return (UINT32) index;
+    return (UINT32)index;
 }
 
 FORCEINLINE
 UINT32
 SymCryptCountLeadingZeros32( UINT32 value )
 {
-    ULONG zeros = 0;
+    unsigned long zeros = 0;
 
     if(value == 0)
     {

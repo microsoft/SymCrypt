@@ -212,15 +212,7 @@ typedef size_t          SIZE_T;
 #define SIZE_T_MAX      SIZE_MAX
 #endif
 
-typedef long INT_PTR, *PINT_PTR;
-typedef unsigned long UINT_PTR, *PUINT_PTR;
-
-typedef long LONG_PTR, *PLONG_PTR;
-typedef unsigned long ULONG_PTR, *PULONG_PTR;
-
 typedef int                 BOOL;
-typedef unsigned int        UINT;
-typedef unsigned long       ULONG;
 
 typedef int8_t              INT8, *PINT8;
 typedef int16_t             INT16, *PINT16;
@@ -230,8 +222,6 @@ typedef uint8_t             UINT8, *PUINT8;
 typedef uint16_t            UINT16, *PUINT16;
 typedef uint32_t            UINT32, *PUINT32;
 typedef uint64_t            UINT64, *PUINT64;
-
-typedef uint32_t            ULONG32, *PULONG32;
 
 // minwindef.h
 typedef char CHAR;
@@ -288,7 +278,7 @@ typedef BYTE  BOOLEAN;
 #endif
 
 C_ASSERT( (SYMCRYPT_ALIGN_VALUE & (SYMCRYPT_ALIGN_VALUE - 1 )) == 0 );
-#define SYMCRYPT_ALIGN_UP( _p ) ((PBYTE) ( ((UINT_PTR) (_p) + SYMCRYPT_ALIGN_VALUE - 1) & ~(SYMCRYPT_ALIGN_VALUE - 1 ) ) )
+#define SYMCRYPT_ALIGN_UP( _p ) ((PBYTE) ( ((SIZE_T) (_p) + SYMCRYPT_ALIGN_VALUE - 1) & ~(SYMCRYPT_ALIGN_VALUE - 1 ) ) )
 
 #if SYMCRYPT_MS_VC
     #define SYMCRYPT_ALIGN_AT(alignment)                 __declspec(align(alignment))
@@ -2298,7 +2288,7 @@ typedef const SYMCRYPT_SSKDF_MAC_EXPANDED_SALT *PCSYMCRYPT_SSKDF_MAC_EXPANDED_SA
 
 #endif
 
-#define SYMCRYPT_ASYM_ALIGN_UP( _p ) ((PBYTE) ( ((UINT_PTR) (_p) + SYMCRYPT_ASYM_ALIGN_VALUE - 1) & ~(SYMCRYPT_ASYM_ALIGN_VALUE - 1 ) ) )
+#define SYMCRYPT_ASYM_ALIGN_UP( _p ) ((PBYTE) ( ((SIZE_T) (_p) + SYMCRYPT_ASYM_ALIGN_VALUE - 1) & ~(SYMCRYPT_ASYM_ALIGN_VALUE - 1 ) ) )
 
 
 //==============================================================================================
@@ -3488,7 +3478,7 @@ SymCryptDeprecatedStatusIndicator(PBYTE pbOutput, UINT32 cbOutput);
 
 
 typedef enum _SYMCRYPT_SI_TYPE {
-    
+
     // Algorithm types (specific algorithms are represented as a bitmask of a type)
     SYMCRYPT_SI_TYPE_CIPHER             = 0x01,
     SYMCRYPT_SI_TYPE_HASH               = 0x02,
@@ -3702,7 +3692,7 @@ SymCryptDeprecatedServiceIndicator(
 //  algorithm. For each algorithm, the number and type of the parameters must be provided
 //  as specified below. Any unused parameters must be passed as 0. The algorithms that require
 //  parameters to be specified are listed below, the remaining algorithms do not have any parameters.
-// 
+//
 //      Alg Id                          Param1                              Param2
 //      -----------------------------   --------------------------------    ---------------
 //      SYMCRYPT_SI_AES_XTS             SYMCRYPT_SI_KEYBITS(int)                -
@@ -3730,8 +3720,8 @@ SymCryptDeprecatedServiceIndicator(
 //      SYMCRYPT_SI_KAS_ECC_SSC         SYMCRYPT_SI_ECURVE_XXX                  SYMCRYPT_SI_SCHEME_XXX
 //      SYMCRYPT_SI_KAS_FFC             SYMCRYPT_SI_SPG_XXX                     Hash Alg Id
 //      SYMCRYPT_SI_KAS_FFC_SSC         SYMCRYPT_SI_SPG_XXX                     SYMCRYPT_SI_SCHEME_XXX
-// 
-// 
+//
+//
 // Return value:
 //  For the specified service and algorithm (and parameters if any), the function
 //  returns 0 if SymCrypt implements the algorithm in an approved manner. A non-zero

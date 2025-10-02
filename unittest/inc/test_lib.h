@@ -75,8 +75,6 @@
     #define LONGLONG    INT64
     #define ULONGLONG   UINT64
 
-    #define ULONG_PTR   UINT_PTR
-
     #define LPVOID      PVOID
     #define NTSTATUS    INT32
 
@@ -807,19 +805,19 @@ public:
 class ModeEcb{
 public:
     static constexpr const char * name = "Ecb";
-    static ULONG flags;
+    static UINT32 flags;
 };
 
 class ModeCbc{
 public:
     static constexpr const char * name = "Cbc";
-    static ULONG flags;
+    static UINT32 flags;
 };
 
 class ModeCfb{
 public:
     static constexpr const char * name = "Cfb";
-    static ULONG flags;
+    static UINT32 flags;
 };
 
 class ModeCcm{
@@ -1116,7 +1114,7 @@ extern DWORD g_osVersion;       // 0xaabb for major version aa and minor version
 
 _Analysis_noreturn_
 VOID
-fatal( _In_ PCSTR file, ULONG line, _In_ PCSTR text, ... );
+fatal( _In_ PCSTR file, UINT32 line, _In_ PCSTR text, ... );
 
 typedef CONST CHAR * PCCHAR;
 
@@ -1201,9 +1199,9 @@ extern String g_measure_sizes_stringPrefix;
 
 extern BOOL g_perfTestsRunning;
 
-extern ULONG    g_rc2EffectiveKeyLength;
+extern UINT32 g_rc2EffectiveKeyLength;
 
-extern ULONG g_cngKeySizeFlag;
+extern UINT32 g_cngKeySizeFlag;
 
 extern double g_tscFreq;
 
@@ -1448,7 +1446,7 @@ extern BOOLEAN     TestSaveYmmEnabled;
 extern ULONGLONG   TestFatalCount;
 extern ULONGLONG   TestErrorInjectionCount;
 extern ULONGLONG   TestErrorInjectionCalls;
-extern ULONG       TestErrorInjectionProb;
+extern UINT32      TestErrorInjectionProb;
 
 extern BYTE TestErrorInjectionSeed[ SYMCRYPT_SHA1_RESULT_SIZE ];
 
@@ -1956,7 +1954,7 @@ printHexArray( PCBYTE pData, SIZE_T nElements, SIZE_T elementSize );
 #define XMM_SAVE_ERR 4506
 
 extern "C" {
-extern ULONG g_nXmmSaves;
+extern UINT32 g_nXmmSaves;
 
 VOID
 printXmmRegisters( PCSTR text );

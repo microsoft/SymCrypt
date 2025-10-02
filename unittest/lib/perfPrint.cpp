@@ -62,7 +62,7 @@ formatNumber( double v )
 {
     char buf1[100];
     String res;
-    ULONG s;
+    UINT32 s;
 
     if( v < 0 )
     {

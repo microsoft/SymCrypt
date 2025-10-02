@@ -545,7 +545,7 @@ DriverEntry(
     //
     // Create and initialize the Device object.
     //
-    
+
     // Suppress leaking memory Prefast warning. deviceObject is deleted on success in DrvUnload
     #pragma prefast(push)
     #pragma prefast(suppress: 6014)
@@ -713,11 +713,14 @@ SymCryptCallbackAlloc( SIZE_T nBytes )
     ULONG offset;
     SIZE_T nAllocated;
     UINT i;
+    SIZE_T nAdditionalBytes;
 
     CHECK( g_bAllocFill != 0, "AllocFill not initialized" );
 
-    nAllocated = nBytes + SYMCRYPT_ASYM_ALIGN_VALUE + 16 + 8;   // alignment + 16 byte prefix + 8 byte postfix
-    CHECK( (ULONG) nAllocated == nAllocated, "?" );
+    nAdditionalBytes = SYMCRYPT_ASYM_ALIGN_VALUE + 16 + 8; // alignment + 16 byte prefix + 8 byte postfix
+    CHECK( nBytes <= UINT32_MAX - nAdditionalBytes, "?" );
+
+    nAllocated = nBytes + nAdditionalBytes;
 
     p = (PBYTE)ExAllocatePoolZero( NonPagedPoolNx, nAllocated, 'bCCS' );
 

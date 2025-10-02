@@ -432,11 +432,11 @@ BOOL WINAPI DllMain(
 
 _Analysis_noreturn_
 VOID
-fatal( _In_ PCSTR file, ULONG line, _In_ PCSTR format, ... )
+fatal( _In_ PCSTR file, UINT32 line, _In_ PCSTR format, ... )
 {
     va_list vl;
 
-    fprintf( stdout, "*\n\n***** FATAL ERROR %s(%lu): ", file, line );
+    fprintf( stdout, "*\n\n***** FATAL ERROR %s(%u): ", file, line );
 
     va_start( vl, format );
 

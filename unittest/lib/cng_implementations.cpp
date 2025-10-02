@@ -23,7 +23,7 @@ char * ImpCng::name = "Cng";
 #define CngHmacSha512HashAlgNameU   BCRYPT_SHA512_ALGORITHM
 #define CngAesCmacHashAlgNameU      BCRYPT_AES_CMAC_ALGORITHM
 
-ULONG g_cngKeySizeFlag = 0;
+UINT32 g_cngKeySizeFlag = 0;
 BCryptDeriveKeyPBKDF2Fn         CngPbkdf2Fn = NULL;
 BCryptKeyDerivationFn           CngKeyDerivationFn = NULL;
 BCryptCreateMultiHashFn         CngCreateMultiHashFn = NULL;

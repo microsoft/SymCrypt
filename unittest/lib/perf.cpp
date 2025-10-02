@@ -49,7 +49,7 @@ typedef VOID (SYMCRYPT_CALL * WIPE_FN)( PBYTE pbData, SIZE_T cbData );
 typedef struct _ALG_MEASURE_PARAMS
 {
     LPCSTR      algName;
-    ULONG       flags;
+    UINT32      flags;
     SIZE_T      keySizes[MAX_SIZES];
     SIZE_T      dataSizes[MAX_SIZES];
 } ALG_MEASURE_PARAMS;

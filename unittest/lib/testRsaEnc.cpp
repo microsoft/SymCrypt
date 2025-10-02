@@ -175,7 +175,7 @@ RsaEncMultiImp::encrypt(
         {
             continue;
         }
-        
+
         if( ntStatusRes == -1 )
         {
             ntStatusRes = ntStatus;
@@ -335,7 +335,7 @@ createKatFileSinglePkcs1Enc( FILE * f, PCRSAKEY_TESTBLOB pBlob )
     // Pick random message size; must be <= cbCiphertext - 11
     cbMsg = g_rng.uint32() % (cbCiphertext - 10);
 
-    GENRANDOM( msg, (ULONG) cbMsg );
+    GENRANDOM( msg, (UINT32) cbMsg );
 
     fprintf( f, "N = " );
     fprintHex( f, pBlob->abModulus, pBlob->cbModulus );
@@ -400,10 +400,10 @@ createKatFileSingleOaep( FILE * f, PCRSAKEY_TESTBLOB pBlob, PCSTR hashName, PCSY
     }
 
     cbMsg = g_rng.sizet( 0, cbCiphertext - 2 - 2 * cbHash );
-    GENRANDOM( msg, (ULONG) cbMsg );
+    GENRANDOM( msg, (UINT32) cbMsg );
 
     cbLabel = g_rng.sizet( 0, sizeof( label ) );
-    GENRANDOM( label, (ULONG) cbLabel );
+    GENRANDOM( label, (UINT32) cbLabel );
 
     fprintf( f, "N = " );
     fprintHex( f, pBlob->abModulus, pBlob->cbModulus );
@@ -561,8 +561,8 @@ testRsaEncSingle(
     {
         // Modify the ciphertext, avoiding values >= modulus
         // Count number of most significant bytes that modulus and ciphertext have in common;
-        // Given ciphertext is valid, there is some i<cbKey, pbCiphertext[i] < abModulus[i]  
-        UINT32 cbToPreserve = 0; 
+        // Given ciphertext is valid, there is some i<cbKey, pbCiphertext[i] < abModulus[i]
+        UINT32 cbToPreserve = 0;
         while( pcRsaKeyBlob->abModulus[cbToPreserve] == pbCiphertext[cbToPreserve] )
         {
             cbToPreserve++;

@@ -70,9 +70,9 @@ static const SYMCRYPT_XMSS_WOTSP_PARAMS XmssWotspParams[] =
 typedef struct _SYMCRYPT_XMSS_PARAMETER_PREDEFINED
 {
     UINT32                      idAlg;
- 
+
     SYMCRYPT_XMSS_WOTSP_ALGID   idWotsp;
-    
+
     // total tree height (each level has height h/d)
     UINT8                       h;
 
@@ -195,7 +195,7 @@ SymCryptHbsGetWinternitzLengths(
     UINT32  len1;
     UINT32  len2;
     UINT32  maxChecksum;
-    ULONG   msb;
+    UINT32  msb;
 
     SYMCRYPT_ASSERT(n > 0);
     SYMCRYPT_ASSERT(w >= 1 && w <= 8);
@@ -219,7 +219,7 @@ SymCryptHbsGetWinternitzLengths(
 SYMCRYPT_ERROR
 SYMCRYPT_CALL
 SymCryptXmssGetWotspParams(
-            SYMCRYPT_XMSS_WOTSP_ALGID   id, 
+            SYMCRYPT_XMSS_WOTSP_ALGID   id,
     _Out_   PSYMCRYPT_XMSS_PARAMS       pParams )
 {
     SYMCRYPT_ERROR scError = SYMCRYPT_NO_ERROR;
@@ -246,7 +246,7 @@ cleanup:
 
 //
 // Derive XMSS parameters that can be computed from others
-// 
+//
 // SYMCRYPT_XMSS_PARAMS structure must be initialized with either predefined
 // or user defined parameters before this function is called.
 //
@@ -337,7 +337,7 @@ SymCryptXmssParamsFromAlgIdCommon(
 SYMCRYPT_ERROR
 SYMCRYPT_CALL
 SymCryptXmssParamsFromAlgId(
-            SYMCRYPT_XMSS_ALGID     id, 
+            SYMCRYPT_XMSS_ALGID     id,
     _Out_   PSYMCRYPT_XMSS_PARAMS   pParams )
 {
     return SymCryptXmssParamsFromAlgIdCommon(id, FALSE, pParams);
@@ -390,8 +390,8 @@ SymCryptXmssSetParams(
     }
 
     // Output size n can at most be equal to the hash output size
-    if (cbHashOutput == 0 || 
-        cbHashOutput > pHash->resultSize || 
+    if (cbHashOutput == 0 ||
+        cbHashOutput > pHash->resultSize ||
         cbHashOutput > SYMCRYPT_HASH_MAX_RESULT_SIZE)
     {
         scError = SYMCRYPT_INVALID_ARGUMENT;
@@ -399,18 +399,18 @@ SymCryptXmssSetParams(
     }
 
     // Winternitz parameter must be one of 1, 2, 4, or 8
-    if (nWinternitzWidth == 0 || 
-        nWinternitzWidth > 8 || 
+    if (nWinternitzWidth == 0 ||
+        nWinternitzWidth > 8 ||
         (nWinternitzWidth & (nWinternitzWidth - 1)) != 0)
     {
         scError = SYMCRYPT_INVALID_ARGUMENT;
         goto cleanup;
     }
 
-    // nTotalTreeHeight and nLayers must both be positive and 
+    // nTotalTreeHeight and nLayers must both be positive and
     // nLayers must divide nTotalTreeHeight
-    if (nTotalTreeHeight == 0 || 
-        nLayers == 0 || 
+    if (nTotalTreeHeight == 0 ||
+        nLayers == 0 ||
         (nTotalTreeHeight % nLayers) != 0)
     {
         scError = SYMCRYPT_INVALID_ARGUMENT;
@@ -456,14 +456,14 @@ cleanup:
 //
 //  Updates the type field in ADRS structure and clears the
 //  subsequent fields.
-// 
+//
 //  Does not modify the first two fields (Layer and Tree) of
 //  the ADRS structure.
 //
 VOID
 SYMCRYPT_CALL
 SymCryptXmssSetAdrsType(
-    _Out_   PXMSS_ADRS  adrs, 
+    _Out_   PXMSS_ADRS  adrs,
             UINT32      type )
 {
     SYMCRYPT_STORE_MSBFIRST32(adrs->en32Type, type);
@@ -663,7 +663,7 @@ SymCryptHbsIncrementalTreehashProcessCommon(
 
     SymCryptHbsIncrementalTreehashGetTopNodes(pIncHash, &pNodeLeft, &pNodeRight);
 
-    while ( pNodeLeft && 
+    while ( pNodeLeft &&
             (fFinal || (pNodeLeft->height == pNodeRight->height)) )
     {
         pIncHash->funcCompressNodes(
@@ -704,7 +704,7 @@ SYMCRYPT_CALL
 SymCryptHbsIncrementalTreehashStackDepth(
     UINT32 nLeaves)
 {
-    ULONG h;
+    UINT32 h;
 
     // Minimum height binary tree that contains nLeaves many leaves is h+1
     h = 31 - SymCryptCountLeadingZeros32(nLeaves);
@@ -729,9 +729,9 @@ SymCryptHbsSizeofScratchBytesForIncrementalTreehash(
 VOID
 SYMCRYPT_CALL
 SymCryptXmssPrfInit(
-    _In_    PCSYMCRYPT_HASH         hash, 
-            BYTE                    PrfType, 
-            SIZE_T                  prefixLength, 
+    _In_    PCSYMCRYPT_HASH         hash,
+            BYTE                    PrfType,
+            SIZE_T                  prefixLength,
     _Out_   PSYMCRYPT_HASH_STATE    state )
 {
     BYTE prefix[SYMCRYPT_XMSS_MAX_PREFIX_SIZE];
@@ -761,16 +761,16 @@ SymCryptXmssPrfKey(
 VOID
 SYMCRYPT_CALL
 SymCryptXmssPrf(
-    _In_                                        PCSYMCRYPT_XMSS_PARAMS  pParams, 
-                                                BYTE                    PrfType, 
-    _In_reads_bytes_( cbKey )                   PCBYTE                  pbKey, 
-                                                SIZE_T                  cbKey, 
+    _In_                                        PCSYMCRYPT_XMSS_PARAMS  pParams,
+                                                BYTE                    PrfType,
+    _In_reads_bytes_( cbKey )                   PCBYTE                  pbKey,
+                                                SIZE_T                  cbKey,
     _In_reads_bytes_( cbMsg )                   PCBYTE                  pbMsg,
                                                 SIZE_T                  cbMsg,
     _Out_writes_bytes_( pParams->cbHashOutput ) PBYTE                   pbOutput )
 {
     SYMCRYPT_HASH_STATE state;
-    
+
     SymCryptXmssPrfInit(pParams->hash, PrfType, pParams->cbPrefix, &state);
     SymCryptHashAppend(pParams->hash, &state, pbKey, cbKey);
     SymCryptHashAppend(pParams->hash, &state, pbMsg, cbMsg);
@@ -851,7 +851,7 @@ SymCryptXmssLtreeNodeCompress(
 {
     SYMCRYPT_STORE_MSBFIRST32(pCtxIncHash->adrs.u.ltree.en32Height, pNodeLeft->height);
     SYMCRYPT_STORE_MSBFIRST32(pCtxIncHash->adrs.u.ltree.en32Index, pNodeLeft->index / 2);
-    
+
     SymCryptXmssRandHash(
         pCtxIncHash->pParams,
         &pCtxIncHash->adrs,
@@ -978,12 +978,12 @@ SymCryptXmssCreateWotspPublickey(
             pNode->value);
 
         SymCryptXmssChain(
-            pParams, 
+            pParams,
             pNode->value,
             0,
-            (1 << pParams->nWinternitzWidth) - 1, 
-            pbSeed, 
-            adrs, 
+            (1 << pParams->nWinternitzWidth) - 1,
+            pbSeed,
+            adrs,
             pNode->value);
 
         SymCryptHbsIncrementalTreehashProcess(pIncHash);
@@ -1047,17 +1047,17 @@ SymCryptXmssComputeSubtreeRoot(
         SymCryptXmssCreateWotspPublickey(pParams,
                                     adrs,
                                     nLeafIndex,
-                                    pbSkXmss, 
-                                    pbSeed, 
+                                    pbSkXmss,
+                                    pbSeed,
                                     pbScratchLtree,
-                                    cbScratchLtree, 
+                                    cbScratchLtree,
                                     pNode->value );
-      
+
         SymCryptHbsIncrementalTreehashProcess(pIncHash);
     }
 
     pNode = SymCryptHbsIncrementalTreehashFinalize(pIncHash);
-    
+
     memcpy(pbRoot, pNode->value, pParams->cbHashOutput);
 }
 
@@ -1173,7 +1173,7 @@ SYMCRYPT_CALL
 SymCryptXmsskeyGenerate(
     _Inout_ PSYMCRYPT_XMSS_KEY  pKey,
             UINT32              flags)
-{ 
+{
     SYMCRYPT_ERROR scError = SYMCRYPT_NO_ERROR;
 
     SYMCRYPT_CHECK_MAGIC(pKey);
@@ -1192,7 +1192,7 @@ SymCryptXmsskeyGenerate(
     pKey->Idx = 0;
 
     scError = SymCryptCallbackRandom(pKey->SkPrf, pKey->params.cbHashOutput);
-    
+
     if (scError != SYMCRYPT_NO_ERROR)
     {
         goto cleanup;
@@ -1423,9 +1423,9 @@ cleanup:
 UINT32
 SYMCRYPT_CALL
 SymCryptHbsGetDigit(
-            UINT32 width, 
-    _In_    PCBYTE pbBuffer, 
-            SIZE_T cbBuffer, 
+            UINT32 width,
+    _In_    PCBYTE pbBuffer,
+            SIZE_T cbBuffer,
             UINT32 index )
 {
     UNREFERENCED_PARAMETER(cbBuffer);
@@ -1450,7 +1450,7 @@ SYMCRYPT_CALL
 SymCryptXmssTreeRootFromAuthenticationPath(
     _In_    PCSYMCRYPT_XMSS_PARAMS  pParams,
     _Inout_ XMSS_ADRS              *adrs,
-            UINT32                  uLeaf, 
+            UINT32                  uLeaf,
     _In_reads_bytes_( pParams->cbHashOutput )
             PCBYTE                  pbStartingNode,
     _In_reads_bytes_( pParams->cbHashOutput * pParams->nLayerHeight )
@@ -1463,7 +1463,7 @@ SymCryptXmssTreeRootFromAuthenticationPath(
     BYTE node[SYMCRYPT_HASH_MAX_RESULT_SIZE];
     BYTE tmp[SYMCRYPT_HASH_MAX_RESULT_SIZE];
     UINT32 uNodeIndex = uLeaf;
- 
+
     memcpy(node, pbStartingNode, pParams->cbHashOutput);
 
     SymCryptXmssSetAdrsType(adrs, XMSS_ADRS_TYPE_HASH_TREE);
@@ -1544,7 +1544,7 @@ SymCryptXmssWotspPublickeyFromSignature(
     PSYMCRYPT_INCREMENTAL_TREEHASH pIncHash = NULL;
     PSYMCRYPT_TREEHASH_NODE pNode = NULL;
     SYMCRYPT_XMSS_INCREMENTAL_TREEHASH_CONTEXT ctxIncHash;
- 
+
     SymCryptXmssSetAdrsType(adrs, XMSS_ADRS_TYPE_LTREE);
     SYMCRYPT_STORE_MSBFIRST32(adrs->u.ltree.en32Leaf, idx);
 
@@ -1588,10 +1588,10 @@ SymCryptXmssWotspPublickeyFromSignature(
         SymCryptXmssChain(
             pParams,
             &pbSignature[pParams->cbHashOutput * i],
-            digit, 
-            maxChainIndex - digit, 
-            pbSeed, 
-            adrs, 
+            digit,
+            maxChainIndex - digit,
+            pbSeed,
+            adrs,
             pNode->value);
 
         SymCryptHbsIncrementalTreehashProcess(pIncHash);
@@ -1752,7 +1752,7 @@ SymCryptXmssVerifyInternal(
     SYMCRYPT_CHECK_MAGIC(pKey);
 
     if (flags != 0 ||
-        pbSignature == NULL || 
+        pbSignature == NULL ||
         cbSignature != SymCryptXmssSizeofSignatureFromParams(pParams) ||
         pKey->keyType == SYMCRYPT_XMSSKEY_TYPE_NONE )
     {
@@ -1776,11 +1776,11 @@ SymCryptXmssVerifyInternal(
 
     SymCryptXmssRandomizedHash(
         pParams,
-        Idx, 
+        Idx,
         pbRandomness,
         pKey->Root,
         pbMessage,
-        cbMessage, 
+        cbMessage,
         RandomizedHash);
 
     SymCryptWipeKnownSize(&adrs, sizeof(XMSS_ADRS));
@@ -1914,7 +1914,7 @@ SYMCRYPT_CALL
 SymCryptXmssTreeSignHash(
     _In_    PCSYMCRYPT_XMSS_PARAMS  pParams,
     _Inout_ XMSS_ADRS               *adrs,
-    _In_reads_bytes_( pParams->cbHashOutput )                  
+    _In_reads_bytes_( pParams->cbHashOutput )
             PCBYTE                  pbSkXmss,
     _In_reads_bytes_( pParams->cbHashOutput )
             PCBYTE                  pbSeed,
@@ -1960,7 +1960,7 @@ SymCryptXmssTreeSignHash(
 
     //
     // Calculate tree root if requested by the caller
-    // 
+    //
     // This is used to return the tree root to be signed with the upper
     // layer in XMSS^MT.
     if (pbRoot)

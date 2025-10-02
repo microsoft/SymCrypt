@@ -150,7 +150,7 @@ public:
     struct constants_t {
         static constexpr SIZE_T cbInputBlockLen = SYMCRYPT_SHA512_INPUT_BLOCK_SIZE;
         static constexpr SIZE_T cbResultLen = SYMCRYPT_SHA512_RESULT_SIZE;
-        static constexpr const char *const pszAlgId = "Sha2-512"; 
+        static constexpr const char *const pszAlgId = "Sha2-512";
     } constants;
 };
 
@@ -740,7 +740,7 @@ AuthEncImp<ImpOpenssl, AlgAes, ModeGcm>::encrypt(
                                     SIZE_T  cbData,
         _Out_writes_( cbTag )       PBYTE   pbTag,
                                     SIZE_T  cbTag,
-                                    ULONG   flags )
+                                    UINT32  flags )
 {
     NTSTATUS status = STATUS_SUCCESS;
     int outlen = 0;
@@ -818,7 +818,7 @@ AuthEncImp<ImpOpenssl, AlgAes, ModeGcm>::decrypt(
                                     SIZE_T  cbData,
         _In_reads_( cbTag )         PCBYTE  pbTag,
                                     SIZE_T  cbTag,
-                                    ULONG   flags )
+                                    UINT32  flags )
 {
     int scError = 1;
     int outlen = 0;
@@ -848,7 +848,7 @@ AuthEncImp<ImpOpenssl, AlgAes, ModeGcm>::decrypt(
         OSSL_PARAM params[2] = {
             OSSL_PARAM_END, OSSL_PARAM_END
         };
-        
+
         CHECK(EVP_CIPHER_CTX_ctrl(state.decCtx, EVP_CTRL_AEAD_SET_IVLEN, cbNonce, NULL) == 1, getOpensslError().data())
         CHECK(EVP_DecryptInit_ex2(state.decCtx, NULL, NULL, pbNonce, NULL) == 1, getOpensslError().data());
         CHECK(EVP_DecryptUpdate(state.decCtx, NULL, &outlen, pbAuthData, (int)cbAuthData) == 1, getOpensslError().data());
@@ -864,7 +864,7 @@ AuthEncImp<ImpOpenssl, AlgAes, ModeGcm>::decrypt(
     }
 
     if( !state.inComputation )
-    {        
+    {
         CHECK(EVP_CIPHER_CTX_ctrl(state.decCtx, EVP_CTRL_AEAD_SET_IVLEN, cbNonce, NULL) == 1, getOpensslError().data())
         CHECK(EVP_DecryptInit_ex2(state.decCtx, NULL, NULL, pbNonce, NULL) == 1, getOpensslError().data());
         CHECK(EVP_DecryptUpdate(state.decCtx, NULL, &outlen, pbAuthData, (int)cbAuthData) == 1, getOpensslError().data());

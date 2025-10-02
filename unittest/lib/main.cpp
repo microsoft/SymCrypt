@@ -43,16 +43,16 @@ extern BOOL AesDetectXmmDone;
 }
 #endif
 
-ULONG ModeEcb::flags = 0;
-ULONG ModeCbc::flags = MODE_FLAG_CHAIN;
-ULONG ModeCfb::flags = MODE_FLAG_CHAIN | MODE_FLAG_CFB;
+UINT32 ModeEcb::flags = 0;
+UINT32 ModeCbc::flags = MODE_FLAG_CHAIN;
+UINT32 ModeCfb::flags = MODE_FLAG_CHAIN | MODE_FLAG_CFB;
 
 
 BOOL AlgRc4::isRandomAccess = FALSE;
 BOOL AlgChaCha20::isRandomAccess = TRUE;
 
-ULONG   g_rc2EffectiveKeyLength = 0;
-SIZE_T  g_modeCfbShiftParam = 1;
+UINT32 g_rc2EffectiveKeyLength = 0;
+SIZE_T g_modeCfbShiftParam = 1;
 
 Rng g_rng;
 
@@ -61,7 +61,7 @@ BOOL g_failRegisterSave = FALSE;
 BOOL g_runRsaAverageKeyPerf = FALSE;
 
 DWORD g_osVersion;
-ULONG g_rngSeed = 0;
+UINT32 g_rngSeed = 0;
 
 ULONGLONG g_nTotalErrors = 0;
 
@@ -840,14 +840,14 @@ VOID printCpuidInfo();
 
 _Analysis_noreturn_
 VOID
-fatal( _In_ PCSTR file, ULONG line, _In_ PCSTR format, ... )
+fatal( _In_ PCSTR file, UINT32 line, _In_ PCSTR format, ... )
 {
     va_list vl;
 
     printCpuidInfo();
     printOutput( 0 );
 
-    fprintf( stdout, "*\n\n***** FATAL ERROR %s(%lu): ", file, line );
+    fprintf( stdout, "*\n\n***** FATAL ERROR %s(%u): ", file, line );
 
     va_start( vl, format );
 
@@ -1411,7 +1411,7 @@ runPerfTests()
                 String name = (*i)->m_algorithmName + (*i)->m_modeName;
                 if( j->keySize > 0 )
                 {
-                    ULONG keySize = (ULONG) (j->keySize & 0xffff);
+                    UINT32 keySize = (UINT32) (j->keySize & 0xffff);
 
                     // Hack: For ML-DSA, don't multiply the key size by 8 since it refers to a
                     // parameter set. In the future we should refactor the performance measurement
@@ -1422,7 +1422,7 @@ runPerfTests()
                     }
 
                     char buf[100];
-                    SNPRINTF_S( buf, sizeof( buf ), _TRUNCATE, "-%4lu", keySize );
+                    SNPRINTF_S( buf, sizeof( buf ), _TRUNCATE, "-%4u", keySize );
 
                     name = name + buf;
                 }
@@ -1442,15 +1442,15 @@ runPerfTests()
             }
             else
             {
-                print( "%s%s,%lu,%s,%s,%s,%lu,%lu\n",
+                print( "%s%s,%u,%s,%s,%s,%u,%u\n",
                     g_measure_sizes_stringPrefix.c_str(),
                     ((*i)->m_algorithmName + (*i)->m_modeName).c_str(),
-                    (ULONG) (j->keySize & 0xffff) * 8,
+                    (UINT32) (j->keySize & 0xffff) * 8,
                     j->operationName,
                     j->strPostfix,
                     ((*i)->m_implementationName).c_str(),
-                    (ULONG) j->dataSize,
-                    (ULONG) floor(j->cFixed) );
+                    (UINT32) j->dataSize,
+                    (UINT32) floor(j->cFixed) );
             }
         }
     }
@@ -1563,10 +1563,10 @@ rdrandTest()
 VOID
 printHexArray( PCBYTE pData, SIZE_T nElements, SIZE_T elementSize )
 {
-    for( ULONG i=0; i<nElements; i++ )
+    for( SIZE_T i=0; i<nElements; i++ )
     {
         print( "%2d: ", i );
-        for( ULONG j=0; j<elementSize; j++ )
+        for( SIZE_T j=0; j<elementSize; j++ )
         {
             print( "%02x", *pData++ );
             if( j % 4 == 3 )

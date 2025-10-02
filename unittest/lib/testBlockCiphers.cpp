@@ -400,7 +400,7 @@ testBlockCipherKats()
         {
             if( katIsFieldPresent( katItem, "effectivekeylength" ) )
             {
-                g_rc2EffectiveKeyLength = (ULONG)katParseInteger( katItem, "effectivekeylength" );
+                g_rc2EffectiveKeyLength = (UINT32)katParseInteger( katItem, "effectivekeylength" );
             }
 
             if( katIsFieldPresent( katItem, "shift" ) )

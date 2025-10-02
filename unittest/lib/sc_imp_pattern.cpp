@@ -742,11 +742,9 @@ AuthEncImp<ImpXxx, AlgAes, ModeCcm>::encrypt(
                                     SIZE_T  cbData,
         _Out_writes_( cbTag )       PBYTE   pbTag,
                                     SIZE_T  cbTag,
-                                    ULONG   flags )
+                                    UINT32  flags )
 {
     NTSTATUS status = STATUS_SUCCESS;
-
-    // print( "cbNonce = %d, cbAuthData = %d, cbData = %d, cbTag = %d\n", (ULONG)cbNonce, (ULONG) cbAuthData, (ULONG) cbData, (ULONG) cbTag );
 
     CHECK( (flags & ~AUTHENC_FLAG_PARTIAL) == 0, "Unknown flag" );
 
@@ -810,12 +808,10 @@ AuthEncImp<ImpXxx, AlgAes, ModeCcm>::decrypt(
                                     SIZE_T  cbData,
         _In_reads_( cbTag )         PCBYTE  pbTag,
                                     SIZE_T  cbTag,
-                                    ULONG   flags )
+                                    UINT32  flags )
 {
     NTSTATUS status = STATUS_SUCCESS;
     SYMCRYPT_ERROR scError = SYMCRYPT_NO_ERROR;
-
-    // print( "cbNonce = %d, cbAuthData = %d, cbData = %d, cbTag = %d\n", (ULONG)cbNonce, (ULONG) cbAuthData, (ULONG) cbData, (ULONG) cbTag );
 
     CHECK( (flags & ~AUTHENC_FLAG_PARTIAL) == 0, "Unknown flag" );
 
@@ -1016,7 +1012,7 @@ AuthEncImp<ImpXxx, AlgAes, ModeGcm>::encrypt(
                                     SIZE_T  cbData,
         _Out_writes_( cbTag )       PBYTE   pbTag,
                                     SIZE_T  cbTag,
-                                    ULONG   flags )
+                                    UINT32  flags )
 {
     NTSTATUS status = STATUS_SUCCESS;
 
@@ -1098,7 +1094,7 @@ AuthEncImp<ImpXxx, AlgAes, ModeGcm>::decrypt(
                                     SIZE_T  cbData,
         _In_reads_( cbTag )         PCBYTE  pbTag,
                                     SIZE_T  cbTag,
-                                    ULONG   flags )
+                                    UINT32  flags )
 {
     SYMCRYPT_ERROR scError = SYMCRYPT_NO_ERROR;
 
@@ -1292,7 +1288,7 @@ AuthEncImp<ImpXxx, AlgChaCha20Poly1305, ModeNone>::encrypt(
                                                   SIZE_T  cbData,
         _Out_writes_( cbTag )                     PBYTE   pbTag,
                                                   SIZE_T  cbTag,
-                                                  ULONG   flags )
+                                                  UINT32  flags )
 {
     UNREFERENCED_PARAMETER( flags );
 
@@ -1319,7 +1315,7 @@ AuthEncImp<ImpXxx, AlgChaCha20Poly1305, ModeNone>::decrypt(
                                                   SIZE_T  cbData,
         _In_reads_( cbTag )                       PCBYTE  pbTag,
                                                   SIZE_T  cbTag,
-                                                  ULONG   flags )
+                                                  UINT32  flags )
 {
     UNREFERENCED_PARAMETER( flags );
 
@@ -6862,7 +6858,7 @@ algImpKeyPerfFunction<ImpXxx, AlgTrialDivision>( PBYTE buf1, PBYTE buf2, PBYTE b
     PSYMCRYPT_INT piSrc = ScShimSymCryptIntCreate( buf3 + 64, PERF_BUFFER_SIZE - 64, numDigits );
 
     PBYTE p = buf3 + PERF_BUFFER_SIZE/2;
-    GENRANDOM( p, (ULONG) keySize );
+    GENRANDOM( p, (UINT32) keySize );
     p[0] |= 1;   // Make sure it is odd so we don't get zeroes...
     ScShimSymCryptIntSetValue( p, keySize, SYMCRYPT_NUMBER_FORMAT_LSB_FIRST, piSrc );
 
@@ -10669,8 +10665,8 @@ algImpDataPerfFunction<ImpXxx, AlgMlDsa>( PBYTE pbKey, PBYTE pbMessage, PBYTE pb
     SYMCRYPT_ERROR scError = SYMCRYPT_NO_ERROR;
     PSYMCRYPT_PERF_MLDSAKEY* ppKeyInfo = (PSYMCRYPT_PERF_MLDSAKEY *) pbKey;
     SIZE_T cbSignature = 0;
-    
-    scError = ScShimSymCryptMlDsaSizeofSignatureFromParams( 
+
+    scError = ScShimSymCryptMlDsaSizeofSignatureFromParams(
         (*ppKeyInfo)->params,
         &cbSignature );
     CHECK( scError == SYMCRYPT_NO_ERROR, "SymCryptMlDsaSizeofSignatureFromParams" );
@@ -10692,8 +10688,8 @@ algImpDecryptPerfFunction<ImpXxx, AlgMlDsa>( PBYTE pbKey, PBYTE pbMessage, PBYTE
     SYMCRYPT_ERROR scError = SYMCRYPT_NO_ERROR;
     PSYMCRYPT_PERF_MLDSAKEY* ppKeyInfo = (PSYMCRYPT_PERF_MLDSAKEY *) pbKey;
     SIZE_T cbSignature = 0;
-    
-    scError = ScShimSymCryptMlDsaSizeofSignatureFromParams( 
+
+    scError = ScShimSymCryptMlDsaSizeofSignatureFromParams(
         (*ppKeyInfo)->params,
         &cbSignature );
     CHECK( scError == SYMCRYPT_NO_ERROR, "SymCryptMlDsaSizeofSignatureFromParams" );

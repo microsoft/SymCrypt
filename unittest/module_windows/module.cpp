@@ -38,11 +38,14 @@ SymCryptCallbackAlloc( SIZE_T nBytes )
     PBYTE res;
     ULONG offset;
     SIZE_T nAllocated;
+    SIZE_T nAdditionalBytes;
 
     CHECK( g_bAllocFill != 0, "AllocFill not initialized" );
 
-    nAllocated = nBytes + SYMCRYPT_ASYM_ALIGN_VALUE + 16 + 8;   // alignment + 16 byte prefix + 8 byte postfix
-    CHECK( (ULONG) nAllocated == nAllocated, "?" );
+    nAdditionalBytes = SYMCRYPT_ASYM_ALIGN_VALUE + 16 + 8; // alignment + 16 byte prefix + 8 byte postfix
+    CHECK( nBytes <= UINT32_MAX - nAdditionalBytes, "?" );
+
+    nAllocated = nBytes + nAdditionalBytes;
 
     p = new BYTE[ nAllocated ];
 
@@ -145,11 +148,11 @@ SymCryptCallbackReleaseMutexFastInproc( PVOID pMutex )
 
 _Analysis_noreturn_
 VOID
-fatal( _In_ PCSTR file, ULONG line, _In_ PCSTR format, ... )
+fatal( _In_ PCSTR file, UINT32 line, _In_ PCSTR format, ... )
 {
     va_list vl;
 
-    fprintf( stdout, "*\n\n***** FATAL ERROR %s(%lu): ", file, line );
+    fprintf( stdout, "*\n\n***** FATAL ERROR %s(%u): ", file, line );
 
     va_start( vl, format );
 
