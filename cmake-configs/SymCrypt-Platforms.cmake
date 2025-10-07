@@ -4,7 +4,7 @@
 # We don't support cross-compiling from one platform to another (e.g. compiling Windows binaries on Linux)
 if(CMAKE_SYSTEM_NAME MATCHES "Linux|Darwin")
     if(SYMCRYPT_OPTEE MATCHES "ON")
-        set(SYMCRYPT_TARGET_ENV "OPTEE")
+        set(SYMCRYPT_TARGET_ENV "PosixOPTEE")
     else()
         set(SYMCRYPT_TARGET_ENV "PosixUserMode")
     endif()
@@ -98,7 +98,7 @@ if(CMAKE_SYSTEM_NAME MATCHES "Linux|Darwin")
     endif()
 
     # OPTEE specific compilation options
-    if(SYMCRYPT_TARGET_ENV MATCHES "OPTEE")
+    if(SYMCRYPT_TARGET_ENV MATCHES "PosixOPTEE")
         # TA DEV KIT is require for OPTEE TA compilation 
         if(DEFINED TA_DEV_KIT_INC)
             # Get the compiler toolchain include

@@ -416,7 +416,7 @@ if(NOT WIN32)
         add_library(symcrypt_posixusermode STATIC env_posixUserMode.c)
         set_target_properties(symcrypt_posixusermode PROPERTIES PREFIX "")
         target_link_libraries(symcrypt_posixusermode symcrypt_common)
-    elseif(SYMCRYPT_TARGET_ENV MATCHES "OPTEE")
+    elseif(SYMCRYPT_TARGET_ENV MATCHES "PosixOPTEE")
         if(SYMCRYPT_TARGET_ARCH MATCHES "ARM64")
             # Remove files from symcrypt_common that are not supported in ARM64 optee env.
             # cpuid_um.c - include auxv.h and use getauxval

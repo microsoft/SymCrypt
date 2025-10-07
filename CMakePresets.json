@@ -165,8 +165,6 @@
             "inherits": "base-linux",
             "cacheVariables": {
                 "CMAKE_BUILD_TYPE": "Debug",
-                "CMAKE_C_COMPILER": "clang",
-                "CMAKE_CXX_COMPILER": "clang++",
                 "SYMCRYPT_TARGET_ARCH": "ARM64",
                 "CMAKE_TOOLCHAIN_FILE": "${sourceDir}/cmake-configs/Toolchain-Clang-ARM64.cmake"
             }
@@ -177,8 +175,6 @@
             "inherits": "base-linux",
             "cacheVariables": {
                 "CMAKE_BUILD_TYPE": "RelWithDebInfo",
-                "CMAKE_C_COMPILER": "clang",
-                "CMAKE_CXX_COMPILER": "clang++",
                 "SYMCRYPT_TARGET_ARCH": "ARM64",
                 "CMAKE_TOOLCHAIN_FILE": "${sourceDir}/cmake-configs/Toolchain-Clang-ARM64.cmake"
             }
@@ -189,8 +185,6 @@
             "inherits": "base-linux",
             "cacheVariables": {
                 "CMAKE_BUILD_TYPE": "Debug",
-                "CMAKE_C_COMPILER": "gcc",
-                "CMAKE_CXX_COMPILER": "g++",
                 "SYMCRYPT_TARGET_ARCH": "ARM",
                 "CMAKE_TOOLCHAIN_FILE": "${sourceDir}/cmake-configs/Toolchain-GCC-ARM.cmake"
             }
@@ -201,8 +195,6 @@
             "inherits": "base-linux",
             "cacheVariables": {
                 "CMAKE_BUILD_TYPE": "RelWithDebInfo",
-                "CMAKE_C_COMPILER": "gcc",
-                "CMAKE_CXX_COMPILER": "g++",
                 "SYMCRYPT_TARGET_ARCH": "ARM",
                 "CMAKE_TOOLCHAIN_FILE": "${sourceDir}/cmake-configs/Toolchain-GCC-ARM.cmake"
             }
@@ -271,6 +263,30 @@
                 "CMAKE_C_COMPILER": "clang",
                 "CMAKE_CXX_COMPILER": "clang++",
                 "SYMCRYPT_TARGET_ARCH": "ARM64"
+            }
+        },
+        {
+            "name": "OPTEE_ARM64_Cross_GCC_Debug",
+            "displayName": "OP-TEE ARM64 Cross GCC Debug",
+            "inherits": "base-linux",
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "Debug",
+                "CMAKE_C_COMPILER": "aarch64-linux-gnu-gcc",
+                "CMAKE_CXX_COMPILER": "aarch64-linux-gnu-g++",
+                "SYMCRYPT_TARGET_ARCH": "ARM64",
+                "SYMCRYPT_OPTEE": "ON"
+            }
+        },
+        {
+            "name": "OPTEE_ARM64_Cross_GCC_Release",
+            "displayName": "OP-TEE ARM64 Cross GCC Release",
+            "inherits": "base-linux",
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "RelWithDebInfo",
+                "CMAKE_C_COMPILER": "aarch64-linux-gnu-gcc",
+                "CMAKE_CXX_COMPILER": "aarch64-linux-gnu-g++",
+                "SYMCRYPT_TARGET_ARCH": "ARM64",
+                "SYMCRYPT_OPTEE": "ON"
             }
         },
         {
@@ -504,6 +520,18 @@
             "name": "Linux_ARM64_Clang_Release",
             "configurePreset": "Linux_ARM64_Clang_Release",
             "inherits": "base-build"
+        },
+        {
+            "name": "OPTEE_ARM64_Cross_GCC_Debug",
+            "configurePreset": "OPTEE_ARM64_Cross_GCC_Debug",
+            "inherits": "base-build",
+            "targets": "symcrypt_optee"
+        },
+        {
+            "name": "OPTEE_ARM64_Cross_GCC_Release",
+            "configurePreset": "OPTEE_ARM64_Cross_GCC_Release",
+            "inherits": "base-build",
+            "targets": "symcrypt_optee"
         },
         {
             "name": "macOS_AMD64_Debug",

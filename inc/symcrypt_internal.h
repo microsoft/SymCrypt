@@ -1895,8 +1895,6 @@ typedef union _SYMCRYPT_GCM_SUPPORTED_BLOCKCIPHER_KEYS
         #define vmullq_p64( a, b )      ((__n128) vmull_p64(vgetq_lane_p64((poly64x2_t)a, 0), vgetq_lane_p64((poly64x2_t)b, 0)))
         #define vmull_p64( a, b )       ((__n128) vmull_p64( (poly64_t)a, (poly64_t)b ))
         #define vmull_high_p64( a, b )  ((__n128) vmull_high_p64( (poly64x2_t)a, (poly64x2_t)b ))
-
-        typedef uint64_t ULONG64;
     #endif
 
 #endif
