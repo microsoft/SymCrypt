@@ -187,3 +187,41 @@ pub extern "C" fn SymCryptMlKemDecapsulate(
 
     crate::mlkem::decapsulate(k, ciphertext, agreed_secret)
 }
+
+#[cfg(test)]
+#[no_mangle]
+pub extern "C" fn SymCryptInit()
+{
+    // Nothing to do here
+}
+
+#[cfg(test)]
+#[no_mangle]
+pub extern "C" fn SymCryptFatal(fatal_code: u32) -> ! {
+    panic!("SymCryptFatal called with code {:x}", fatal_code);
+}
+
+#[cfg(test)]
+#[no_mangle]
+pub extern "C" fn SymCryptInjectError(_pb_buf: *mut u8, _cb_buf: usize)
+{
+    // Not used for now, just required for linking
+}
+
+#[cfg(test)]
+#[no_mangle]
+pub extern "C" fn SymCryptWipe(pb_data: *mut u8, cb_data: usize) {
+    unsafe { pb_data.write_bytes(0, cb_data); };
+}
+
+#[cfg(test)]
+#[no_mangle]
+pub extern "C" fn SymCryptCallbackRandom(pb_buffer: *mut u8, cb_buffer: usize) -> Error {
+    use rand::rand_core::{TryRngCore, OsRng};
+    unsafe {
+        match OsRng.try_fill_bytes(slice::from_raw_parts_mut(pb_buffer, cb_buffer)) {
+            Ok(()) => Error::NoError,
+            Err(_) => Error::ExternalFailure,
+        }
+    }
+}

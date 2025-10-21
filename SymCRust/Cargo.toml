@@ -24,6 +24,7 @@ panic="abort"
 [dev-dependencies]
 rand = { version = "0.9.1" }
 criterion = { version = "0.5", features = ["html_reports"] }
+hex = "0.4.3"
 
 [[bench]]
 name = "ntt"

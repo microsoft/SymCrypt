@@ -8,6 +8,10 @@
 //
 // FIXME: for now, this is manually kept in sync between Rust and C -- can we automate?
 
+#![allow(dead_code)]
+
+use core::sync::atomic::{AtomicBool, Ordering};
+
 #[derive(PartialEq, Debug, Clone)]
 #[repr(C)]
 pub enum Error {
@@ -59,6 +63,19 @@ impl core::ops::FromResidual<Result<core::convert::Infallible, Error>> for Error
 }
 
 use crate::symcryptcommon::*;
+
+pub(crate) fn init() {
+
+    static INITIALIZED: AtomicBool = AtomicBool::new(false);
+
+    if INITIALIZED.load(Ordering::Relaxed) {
+        return;
+    }
+
+    unsafe { SymCryptInit(); }
+
+    INITIALIZED.store(true, Ordering::Relaxed);
+}
 
 pub(crate) fn random(dst: &mut [u8]) -> Error {
     unsafe { SymCryptCallbackRandom(dst.as_mut_ptr(), dst.len()) }

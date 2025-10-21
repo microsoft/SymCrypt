@@ -108,7 +108,6 @@ if(SYMCRYPT_TARGET_ARCH STREQUAL "ARM" AND CMAKE_C_COMPILER_ID MATCHES "GNU")
 endif()
 
 add_library(symcryptunittest_lib STATIC ${SOURCES})
-set_target_properties(symcryptunittest_lib PROPERTIES PREFIX "")
 
 if(SYMCRYPT_TEST_WITH_OPENSSL)
     target_include_directories(symcryptunittest_lib PRIVATE ${OPENSSL_INCLUDE_DIR})
