@@ -346,6 +346,26 @@
             }
         },
         {
+            "name": "Windows_ARM64_Debug",
+            "displayName": "Windows ARM64 Debug",
+            "inherits": "base-windows",
+            "architecture": "ARM64",
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "Debug",
+                "SYMCRYPT_TARGET_ARCH": "ARM64"
+            }
+        },
+        {
+            "name": "Windows_ARM64_Release",
+            "displayName": "Windows ARM64 Release",
+            "inherits": "base-windows",
+            "architecture": "ARM64",
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "Release",
+                "SYMCRYPT_TARGET_ARCH": "ARM64"
+            }
+        },
+        {
             "name": "Windows_AMD64_Release_NoAsm",
             "displayName": "Windows AMD64 Release (No ASM)",
             "inherits": "base-windows",
@@ -533,6 +553,16 @@
         {
             "name": "Windows_AMD64_Release",
             "configurePreset": "Windows_AMD64_Release",
+            "inherits": "base-build"
+        },
+        {
+            "name": "Windows_ARM64_Debug",
+            "configurePreset": "Windows_ARM64_Debug",
+            "inherits": "base-build"
+        },
+        {
+            "name": "Windows_ARM64_Release",
+            "configurePreset": "Windows_ARM64_Release",
             "inherits": "base-build"
         },
         {

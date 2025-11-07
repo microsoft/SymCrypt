@@ -433,6 +433,7 @@ if(NOT SYMCRYPT_SYMCRUST MATCHES "ON")
 else()
     add_subdirectory(rust)
     add_library(symcrypt_mlkem ALIAS symcrust)
+    add_compile_definitions(SYMCRUST_EXPERIMENTAL_BUILD=1)
 endif()
 
 add_library(symcrypt_common STATIC ${SOURCES_COMMON})

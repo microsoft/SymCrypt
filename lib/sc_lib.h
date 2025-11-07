@@ -1256,6 +1256,9 @@ SymCryptAesEncryptAsm(
     _In_reads_( SYMCRYPT_AES_BLOCK_SIZE )   PCBYTE                      pbSrc,
     _Out_writes_( SYMCRYPT_AES_BLOCK_SIZE ) PBYTE                       pbDst );
 
+#if SYMCRUST_EXPERIMENTAL_BUILD
+extern
+#endif
 VOID
 SYMCRYPT_CALL
 SymCryptAesEncryptXmm(
@@ -1263,6 +1266,9 @@ SymCryptAesEncryptXmm(
     _In_reads_( SYMCRYPT_AES_BLOCK_SIZE )   PCBYTE                      pbSrc,
     _Out_writes_( SYMCRYPT_AES_BLOCK_SIZE ) PBYTE                       pbDst );
 
+#if SYMCRUST_EXPERIMENTAL_BUILD
+extern
+#endif
 VOID
 SYMCRYPT_CALL
 SymCryptAesEncryptNeon(
@@ -1284,6 +1290,9 @@ SymCryptAesDecryptAsm(
     _In_reads_( SYMCRYPT_AES_BLOCK_SIZE )   PCBYTE                      pbSrc,
     _Out_writes_( SYMCRYPT_AES_BLOCK_SIZE ) PBYTE                       pbDst );
 
+#if SYMCRUST_EXPERIMENTAL_BUILD
+extern
+#endif
 VOID
 SYMCRYPT_CALL
 SymCryptAesDecryptXmm(
@@ -1291,6 +1300,9 @@ SymCryptAesDecryptXmm(
     _In_reads_( SYMCRYPT_AES_BLOCK_SIZE )   PCBYTE                      pbSrc,
     _Out_writes_( SYMCRYPT_AES_BLOCK_SIZE ) PBYTE                       pbDst );
 
+#if SYMCRUST_EXPERIMENTAL_BUILD
+extern
+#endif
 VOID
 SYMCRYPT_CALL
 SymCryptAesDecryptNeon(

@@ -329,6 +329,7 @@ SymCryptAesCreateDecryptionRoundKeyXmm(
 //
 // The EncryptXmm code is tested through the CFB mode encryption which has no further optimizations.
 //
+#ifndef SYMCRUST_EXPERIMENTAL_BUILD
 VOID
 SYMCRYPT_CALL
 SymCryptAesEncryptXmm(
@@ -363,6 +364,7 @@ SymCryptAesDecryptXmm(
 
     _mm_storeu_si128( (__m128i *) pbDst, c );
 }
+#endif // SYMCRUST_EXPERIMENTAL_BUILD
 
 // Disable warnings and VC++ runtime checks for use of uninitialized values (by design)
 #pragma warning(push)

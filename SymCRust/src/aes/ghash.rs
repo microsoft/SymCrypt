@@ -24,6 +24,7 @@ macro_rules! bit_to_mask {
     };
 }
 
+type Block = [u8; GF128_BLOCK_SIZE];
 
 ///
 /// Represents an expanded GHash key
@@ -41,7 +42,7 @@ impl GHashExpandedKey {
         Self([0u128; GHASH_SCALAR_TABLE_ENTRIES])
     }
 
-    pub(crate) fn new(h: &[u8; GF128_BLOCK_SIZE]) -> Self {
+    pub(crate) fn new(h: &Block) -> Self {
         Self::from(h)
     }
 
@@ -51,7 +52,7 @@ impl GHashExpandedKey {
 
     /// Expands a GHash key from a byte string `h`. This generic implementation works on all
     /// platforms. It computes a table of H, Hx, Hx^2, Hx^3, ..., Hx^127
-    pub(crate) fn expand_key(&mut self, h_bytes: &[u8; GF128_BLOCK_SIZE]) {
+    pub(crate) fn expand_key(&mut self, h_bytes: &Block) {
 
         let mut h = u128::from_be_bytes(*h_bytes);
         let mut t : u128;
@@ -67,8 +68,8 @@ impl GHashExpandedKey {
     }
 }
 
-impl From<&[u8; GF128_BLOCK_SIZE]> for GHashExpandedKey {
-    fn from(h: &[u8; GF128_BLOCK_SIZE]) -> Self {
+impl From<&Block> for GHashExpandedKey {
+    fn from(h: &Block) -> Self {
         let mut key = Self::zeroed();
         key.expand_key(h);
         key
@@ -125,7 +126,7 @@ impl<'a> GHash<'a> {
     }
 
     /// Returns the result of the GHash computation as a byte array. The state is not wiped.
-    pub(crate) fn result(&self) -> [u8; GF128_BLOCK_SIZE] {
+    pub(crate) fn result(&self) -> Block {
         self.state.to_be_bytes()
     }
 }
@@ -146,14 +147,14 @@ mod tests {
 fn test_ghash_expand_key() {
     crate::common::init();
     
-    const H0: [u8; GF128_BLOCK_SIZE] = [0u8; GF128_BLOCK_SIZE];
+    const H0: Block = [0u8; GF128_BLOCK_SIZE];
     let expanded_key = GHashExpandedKey::new(&H0);
 
     for elem in expanded_key.as_slice() {
         assert_eq!(*elem, 0u128);
     }
 
-    const H1: [u8; GF128_BLOCK_SIZE] = [1u8; GF128_BLOCK_SIZE];
+    const H1: Block = [1u8; GF128_BLOCK_SIZE];
     let expanded_key = GHashExpandedKey::new(&H1);
 
     const EXPECTED_KEY1 : [u128; GHASH_SCALAR_TABLE_ENTRIES] = [
@@ -299,14 +300,14 @@ fn test_ghash()
     crate::common::init();
 
     const HASH_INPUT_STRING: &str = "Hello SymCrypt";
-    const RESULT0: [u8; GF128_BLOCK_SIZE] = [0u8; GF128_BLOCK_SIZE];
+    const RESULT0: Block = [0u8; GF128_BLOCK_SIZE];
     let mut hash_input = [0u8; GF128_BLOCK_SIZE];
     let bytes = HASH_INPUT_STRING.as_bytes();
     let len = bytes.len().min(GF128_BLOCK_SIZE);
     hash_input[..len].copy_from_slice(&bytes[..len]);
 
 
-    const H0: [u8; GF128_BLOCK_SIZE] = [0u8; GF128_BLOCK_SIZE];
+    const H0: Block = [0u8; GF128_BLOCK_SIZE];
     let key0 : GHashExpandedKey = GHashExpandedKey::from(&H0);
     let mut ghash0 = super::GHash::new(&key0);
     ghash0.append_data(&hash_input);
@@ -315,12 +316,12 @@ fn test_ghash()
     assert_eq_hex!(RESULT0, result0, "GHash result does not match expected value");
 
     // Test with a different key
-    const RESULT1: [u8; GF128_BLOCK_SIZE] = [
+    const RESULT1: Block = [
         0x8e, 0xc7, 0xb1, 0xfe, 0x15, 0xfc, 0xf0, 0x0b,
         0x83, 0xbd, 0xea, 0x2c, 0xa0, 0x8d, 0x02, 0xd2
     ];
 
-    const H1: [u8; GF128_BLOCK_SIZE] = [1u8; GF128_BLOCK_SIZE];
+    const H1: Block = [1u8; GF128_BLOCK_SIZE];
     let key1 : GHashExpandedKey = GHashExpandedKey::from(&H1);
     let mut ghash1 = super::GHash::new(&key1);
     ghash1.append_data(&hash_input);

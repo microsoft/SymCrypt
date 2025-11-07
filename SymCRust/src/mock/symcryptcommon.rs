@@ -8,6 +8,13 @@ use crate::common::Error;
 
 // Mocks for SymCrypt callbacks for pure Rust test and benchmarking
 
+/// Magic value not used in benchmarking/tests
+macro_rules! symcrypt_magic_value {
+    ($p:expr) => { 0usize };
+}
+
+pub(crate) use symcrypt_magic_value;
+
 #[allow(non_snake_case)]
 pub unsafe fn SymCryptInit() {
     panic!("SymCryptInit not implemented in mock");
@@ -20,5 +27,5 @@ pub unsafe fn SymCryptCallbackRandom(_pb_buffer: *mut u8, _cb_buffer: usize) -> 
 
 #[allow(non_snake_case)]
 pub unsafe fn SymCryptWipe(_pb_data: *mut u8, _cb_data: usize) {
-    panic!("SymCryptWipe not implemented in mock");
+    // No-op for mock
 }

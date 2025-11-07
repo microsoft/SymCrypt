@@ -9,6 +9,23 @@
 
 use crate::common::Error;
 
+// TODO! These have to be kept in sync manually. Need to find a way to pull them from version.json,
+// ideally without adding a dependency like serde.
+pub(crate) const SYMCRYPT_VERSION_MAJOR : usize = 103;
+pub(crate) const SYMCRYPT_VERSION_MINOR : usize = 8;
+pub(crate) const SYMCRYPT_API_VERSION : usize = (SYMCRYPT_VERSION_MAJOR << 16) | SYMCRYPT_VERSION_MINOR;
+
+/// Macro to compute the magic value for a structure pointer
+macro_rules! symcrypt_magic_value {
+    ($p:expr) => {
+        ($p as *const _ as usize)
+            .wrapping_add(u32::from_be_bytes([b'S', b'1', b'm', b'v']) as usize)
+            .wrapping_add(crate::symcryptcommon::SYMCRYPT_API_VERSION)
+    };
+}
+
+pub(crate) use symcrypt_magic_value;
+
 extern "C" {
     pub fn SymCryptInit();
     pub fn SymCryptWipe(pb_data: *mut u8, cb_data: usize);

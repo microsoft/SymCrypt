@@ -32,6 +32,14 @@ ghash = "0.5.1"
 name = "ntt"
 harness = false
 
+[[bench]]
+name = "aes"
+harness = false
+
 [features]
 benchmarking = ["std"]
 std = []
+
+# Algorithms
+# aes = []
+# ml-kem = []

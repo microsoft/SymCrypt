@@ -22,7 +22,7 @@ set(SYMCRUST_SOURCE_DIR ${SYMCRYPT_SOURCE_DIR}/SymCRust)
 
 add_custom_target(
     symcrust_cargo ALL
-    COMMAND cargo +nightly-2024-10-23
+    COMMAND cargo
         build
         --manifest-path ${SYMCRUST_SOURCE_DIR}/Cargo.toml
         --target-dir ${CMAKE_CURRENT_BINARY_DIR}
