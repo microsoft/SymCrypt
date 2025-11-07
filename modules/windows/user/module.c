@@ -27,6 +27,10 @@ EXTERN_C IMAGE_DOS_HEADER __ImageBase;
 VOID
 PerformStartupAlgorithmSelftests()
 {
+    SymCryptRngAesInstantiateSelftest();
+    SymCryptRngAesReseedSelftest();
+    SymCryptRngAesGenerateSelftest();
+
     SymCrypt3DesSelftest();
 
     SymCryptAesSelftest( SYMCRYPT_AES_SELFTEST_ALL );
