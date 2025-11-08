@@ -25,11 +25,21 @@ panic="abort"
 rand = { version = "0.9.1" }
 criterion = { version = "0.5", features = ["html_reports"] }
 hex = "0.4.3"
+assert_hex = "0.4.1"
+ghash = "0.5.1"
 
 [[bench]]
 name = "ntt"
 harness = false
 
+[[bench]]
+name = "aes"
+harness = false
+
 [features]
 benchmarking = ["std"]
 std = []
+
+# Algorithms
+# aes = []
+# ml-kem = []

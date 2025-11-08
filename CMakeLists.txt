@@ -102,6 +102,13 @@ option(
     implementations of certain algorithms."
     OFF)
 
+option(
+    SYMCRYPT_SYMCRUST
+    "When enabled, SymCrypt will build and link the Rust implementations for supported algorithms, replacing the C implementations.
+    Requires a Rust toolchain to be installed. See the SymCRust directory for more information. "
+    OFF
+)
+
 include(${SYMCRYPT_SOURCE_DIR}/cmake-configs/SymCrypt-Platforms.cmake)
 
 if(NOT DEFINED CMAKE_BUILD_TYPE)
@@ -120,6 +127,7 @@ message(STATUS "ASM optimizations: ${SYMCRYPT_USE_ASM}")
 message(STATUS "FIPS build: ${SYMCRYPT_FIPS_BUILD}")
 message(STATUS "Strip binary: ${SYMCRYPT_STRIP_BINARY}")
 message(STATUS "FIPS postprocess: ${SYMCRYPT_FIPS_POSTPROCESS}")
+message(STATUS "Use SymCRust: ${SYMCRYPT_SYMCRUST}")
 
 # Validate compiler versions
 if("${CMAKE_CXX_COMPILER_ID}" MATCHES "GNU")

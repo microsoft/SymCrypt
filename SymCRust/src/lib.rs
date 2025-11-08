@@ -19,8 +19,19 @@
 #![feature(lang_items)]
 #![cfg_attr(not(feature = "std"), no_std)]
 
+// Enable pedantic lints (more strict)
+#![warn(clippy::pedantic)]
+
+// Enable all clippy lints
+#![warn(clippy::all)]
+
 extern crate alloc;
 extern crate core;
+
+#[path = "aes/aes.rs"]
+pub mod aes;
+
+pub mod block_cipher;
 
 mod common;
 pub mod ffi;
@@ -32,6 +43,9 @@ mod mlkem;
 mod ntt;
 #[cfg(not(feature = "benchmarking"))]
 mod symcryptcommon;
+
+#[cfg(test)]
+mod test;
 
 // For pure Rust benchmarking, we want to mock calls to SymCrypt callbacks for now
 #[cfg(feature = "benchmarking")]

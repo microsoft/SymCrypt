@@ -11,7 +11,7 @@ use alloc::boxed::Box;
 #[test]
 pub fn test_ffi() -> Result<(), Box<dyn std::error::Error>> {
     crate::common::init();
-
+    
     let mut actual = [0u8; 64];
     let expected = [
         0xa6, 0x9f, 0x73, 0xcc, 0xa2, 0x3a, 0x9a, 0xc5, 0xc8, 0xb5, 0x67, 0xdc, 0x18, 0x5a, 0x75,

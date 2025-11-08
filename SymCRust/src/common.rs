@@ -40,6 +40,9 @@ pub enum Error {
     HbsPublicRootMismatch,
 }
 
+const SYMCRYPT_MODULE_VERSION_MAJOR : u32 = 103;
+const SYMCRYPT_MODULE_VERSION_MINOR : u32 = 8;
+
 // Allows printing errors, which is a prerequisite for using ERROR as an argument to
 // core::result::Result.
 impl core::fmt::Display for Error {

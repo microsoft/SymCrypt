@@ -4254,6 +4254,9 @@ SymCryptMarvin32Selftest(void);
 
 #define SYMCRYPT_AES_BLOCK_SIZE  (16)
 
+#if SYMCRUST_EXPERIMENTAL_BUILD
+extern
+#endif
 SYMCRYPT_ERROR
 SYMCRYPT_CALL
 SymCryptAesExpandKey(
