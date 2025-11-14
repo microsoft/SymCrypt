@@ -21,7 +21,8 @@ Vast majority of work in this directory is thanks to Jonathan Protzenko!
 This build is a work in progress!
 
 - TODO: Hook up options for running proof and automated C extraction in this context. Makefile and
-  symcrust.lean are copied from experimental repo.
+  symcrust.lean are copied from experimental repo. Try to avoid bringing in a dependency on nightly
+  for verification.
 - TODO: Invoke SymCRust cargo build from SymCrypt MSBuild
 - TODO: Figure out passing along cross-compilation from SymCrypt build system (CMake / MSBuild) to
   SymCRust.
@@ -29,10 +30,10 @@ This build is a work in progress!
 - TODO: Autogenerate Rust<->C FFI (probably using bindgen) - evaluate what is good approach for
   ensuring assumptions across the boundary (currently make some assumption about KeccakState in
   hash.rs) are minimized without adding needless complexity to the internal interface
-- TODO: Reintroduce constant time comparison/copying skipped in first translation
-- TODO: Ensure allocation discipline (~single allocation per API call) is maintained by new code
-- TODO: Ensure FIPS self-tests are invoked appropriately before first use
-- TODO: Remove c_for! macro workaround
-- TODO: Add intrinsics code guarded by dynamic CPU feature detection to NTT
 - TODO: Refactor to have local arrays that automatically wipe when dropped, rather than needing
   manual calls to wipe_slice
+- TODO: Ensure that a pure-Rust SymCRust would also wipe heap allocated buffers (currently guaranteed
+  by the SymCRust global allocator which relies on the SymCrypt C code)
+- TODO: Make SymCRust clean w.r.t. cargo clippy (TBD to choose the right level of pedantic)
+  - Related - move away from Hungarian notation in ML-KEM source?
+- TODO: Port the ML-KEM CASTs to SymCRust (currently invoke the C definition of the self-tests)

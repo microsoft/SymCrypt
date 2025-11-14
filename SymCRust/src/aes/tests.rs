@@ -25,12 +25,6 @@ extern "C" {
 
 #[cfg(test)]
 #[no_mangle]
-pub extern "C" fn SymCryptInjectError(_pb_buf: *mut u8, _cb_buf: usize) {
-    // Not used for now, just required for linking
-}
-
-#[cfg(test)]
-#[no_mangle]
 pub extern "C" fn SymCryptSaveYmm(_save_data: *mut u8) {
     // Not used for now, just required for linking
 }
@@ -39,12 +33,6 @@ pub extern "C" fn SymCryptSaveYmm(_save_data: *mut u8) {
 #[no_mangle]
 pub extern "C" fn SymCryptRestoreYmm(_save_data: *mut u8) {
     // Not used for now, just required for linking
-}
-
-#[cfg(test)]
-#[no_mangle]
-pub extern "C" fn SymCryptCpuFeaturesNeverPresent() -> u32 {
-    0
 }
 
 #[test]

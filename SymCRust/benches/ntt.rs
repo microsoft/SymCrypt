@@ -8,7 +8,7 @@
 use std::hint::black_box;
 use criterion::{criterion_group, criterion_main, Criterion};
 use rand::prelude::*;
-use symcrust::ntt;
+use symcrust::mlkem::ntt;
 
 fn criterion_benchmark(c: &mut Criterion) {
     let mut r = StdRng::seed_from_u64(0);

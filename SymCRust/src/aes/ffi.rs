@@ -21,25 +21,28 @@ pub unsafe extern "C" fn SymCryptAesExpandKey(
     let expanded_key = &mut *key;
 
     // Ensures the key length is valid (and readable via num_rounds) or returns an error
-    expanded_key.set_pointers_and_magic(cb_key)?;
+    match expanded_key.set_pointers_and_magic(cb_key) {
+        Err(e) => return e,
+        Ok(()) => {}
+    };
 
     let key = unsafe { slice::from_raw_parts(pb_key, cb_key) };
 
     match key.len() {
-            16 => { 
-                expanded_key.expand_key::<16>(key.try_into().unwrap(), AesKeyUsage::EncryptAndDecrypt);
-                Error::NoError
-            },
-            24 => {
-                expanded_key.expand_key::<24>(key.try_into().unwrap(), AesKeyUsage::EncryptAndDecrypt);
-                Error::NoError
-            },
-            32 => {
-                expanded_key.expand_key::<32>(key.try_into().unwrap(), AesKeyUsage::EncryptAndDecrypt);
-                Error::NoError
-            },
-            _ => Error::WrongKeySize
-        }
+        16 => { 
+            expanded_key.expand_key::<16>(key.try_into().unwrap(), AesKeyUsage::EncryptAndDecrypt);
+            Error::NoError
+        },
+        24 => {
+            expanded_key.expand_key::<24>(key.try_into().unwrap(), AesKeyUsage::EncryptAndDecrypt);
+            Error::NoError
+        },
+        32 => {
+            expanded_key.expand_key::<32>(key.try_into().unwrap(), AesKeyUsage::EncryptAndDecrypt);
+            Error::NoError
+        },
+        _ => Error::WrongKeySize
+    }
 }
 
 /// Helper function for AES encryption via FFI. This function is the same for both XMM and NEON,

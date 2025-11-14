@@ -7,6 +7,8 @@
 // General-purpose functions that for now, remain implemented in C within SymCrypt.
 //
 
+use core::sync::atomic::AtomicU32;
+
 use crate::common::Error;
 
 // TODO! These have to be kept in sync manually. Need to find a way to pull them from version.json,
@@ -26,7 +28,7 @@ macro_rules! symcrypt_magic_value {
 
 pub(crate) use symcrypt_magic_value;
 
-extern "C" {
+unsafe extern "C" {
     pub fn SymCryptInit();
     pub fn SymCryptWipe(pb_data: *mut u8, cb_data: usize);
     pub fn SymCryptCallbackRandom(pbBuffer: *mut u8, cbBuffer: usize) -> Error;
@@ -38,6 +40,10 @@ extern "C" {
 
     #[cfg(not(feature = "std"))]
     fn SymCryptFatal(fatalCode: u32) -> !;
+
+    pub fn SymCryptCpuFeaturesNeverPresent() -> u32;
+    pub static g_SymCryptCpuFeaturesNotPresent: u32;
+    pub static g_SymCryptFipsSelftestsPerformed: AtomicU32;
 }
 
 // Hooks required for building with no_std
@@ -65,10 +71,6 @@ unsafe impl core::alloc::GlobalAlloc for SymCRustAllocator {
 #[cfg(not(feature = "std"))]
 #[global_allocator]
 static GLOBAL: SymCRustAllocator = SymCRustAllocator;
-
-#[cfg(not(feature = "std"))]
-#[lang = "eh_personality"]
-fn rust_eh_personality() {}
 
 #[cfg(not(feature = "std"))]
 #[panic_handler]
