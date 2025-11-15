@@ -165,11 +165,17 @@ function(process_cppasm filepath outformat archdefine)
 
     if(outformat STREQUAL gas)
         # assume gas => GCC compatible C compiler
+        # On macOS, add -Wno-unicode to suppress warnings about incomplete universal character names
+        # which can occur in assembly comments and are harmless
+        set(extra_flags "")
+        if(APPLE)
+            set(extra_flags "-Wno-unicode")
+        endif()
         add_custom_command(
             OUTPUT ${output_asm}
             COMMAND "${CMAKE_C_COMPILER}" -E -P -x c ${filepath} -o ${output_asm}
                 -I${CMAKE_CURRENT_SOURCE_DIR} -I${CMAKE_CURRENT_SOURCE_DIR}/${rootpath} -I${SYMCRYPT_SOURCE_DIR}/inc
-                -DSYMCRYPT_GAS -DSYMCRYPT_CPU_${archdefineupper} ${dbg_definition}
+                -DSYMCRYPT_GAS -DSYMCRYPT_CPU_${archdefineupper} ${dbg_definition} ${extra_flags}
             MAIN_DEPENDENCY ${filepath}
             DEPENDS ${SYMCRYPT_SOURCE_DIR}/inc/C_asm_shared.inc ${filepath} symcryptasm_shared.cppasm
             COMMENT "C preprocessing ${filepath} to ${outformat} (${output_asm})"
@@ -208,13 +214,20 @@ function(process_symcryptasm filepath outformat archdefine callingconvention)
     set(output_directory ${CMAKE_CURRENT_BINARY_DIR}/${rootpath})
     set(output_cppasm ${output_directory}/${filestem}-${outformat}.cppasm)
 
+    # Use gas-macho assembler for macOS (Mach-O object format)
+    if(APPLE AND outformat STREQUAL gas)
+        set(assembler_format "gas-macho")
+    else()
+        set(assembler_format ${outformat})
+    endif()
+
     add_custom_command(
         OUTPUT ${output_cppasm}
         COMMAND ${CMAKE_COMMAND} -E make_directory ${output_directory}
-        COMMAND ${Python3_EXECUTABLE} ${SYMCRYPT_SOURCE_DIR}/scripts/symcryptasm_processor.py ${outformat} ${archdefine} ${callingconvention} ${filepath} ${output_cppasm}
+        COMMAND ${Python3_EXECUTABLE} ${SYMCRYPT_SOURCE_DIR}/scripts/symcryptasm_processor.py ${assembler_format} ${archdefine} ${callingconvention} ${filepath} ${output_cppasm}
         MAIN_DEPENDENCY ${filepath}
         DEPENDS ${SYMCRYPT_SOURCE_DIR}/scripts/symcryptasm_processor.py
-        COMMENT "Python preprocessing ${filepath} to ${outformat} (${output_cppasm})"
+        COMMENT "Python preprocessing ${filepath} to ${assembler_format} (${output_cppasm})"
         VERBATIM)
 
     process_cppasm(${output_cppasm} ${outformat} ${archdefine})

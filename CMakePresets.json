@@ -317,27 +317,25 @@
         },
         {
             "name": "macOS_ARM64_Debug",
-            "displayName": "macOS ARM64 Debug (No ASM, No FIPS)",
+            "displayName": "macOS ARM64 Debug (No FIPS)",
             "inherits": "base-macos",
             "cacheVariables": {
                 "CMAKE_BUILD_TYPE": "Debug",
                 "CMAKE_C_COMPILER": "clang",
                 "CMAKE_CXX_COMPILER": "clang++",
                 "SYMCRYPT_TARGET_ARCH": "ARM64",
-                "SYMCRYPT_USE_ASM": "OFF",
                 "SYMCRYPT_FIPS_BUILD": "OFF"
             }
         },
         {
             "name": "macOS_ARM64_Release",
-            "displayName": "macOS ARM64 Release (No ASM, No FIPS)",
+            "displayName": "macOS ARM64 Release (No FIPS)",
             "inherits": "base-macos",
             "cacheVariables": {
                 "CMAKE_BUILD_TYPE": "RelWithDebInfo",
                 "CMAKE_C_COMPILER": "clang",
                 "CMAKE_CXX_COMPILER": "clang++",
                 "SYMCRYPT_TARGET_ARCH": "ARM64",
-                "SYMCRYPT_USE_ASM": "OFF",
                 "SYMCRYPT_FIPS_BUILD": "OFF"
             }
         },

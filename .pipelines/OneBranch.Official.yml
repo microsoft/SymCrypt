@@ -142,11 +142,11 @@ extends:
         parameters:
           targetArch: 'ARM64'
           config: 'Debug'
-          additionalArgs: '--no-asm --no-fips'
+          additionalArgs: '--no-fips'
           skipTests: true
       - template: .pipelines/templates/build-mac.yml@self
         parameters:
           targetArch: 'ARM64'
           config: 'Release'
-          additionalArgs: '--no-asm --no-fips'
+          additionalArgs: '--no-fips'
           skipTests: true

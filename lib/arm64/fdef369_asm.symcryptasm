@@ -24,7 +24,7 @@
 //    _Out_writes_bytes_(nDigits * SYMCRYPT_FDEF_DIGIT_SIZE ) PUINT32     Dst,
 //                                                            UINT32      nDigits )
 
-FUNCTION_START(ARM64EC_NAME_MANGLE(SymCryptFdef369RawAddAsm), 4, 8)
+FUNCTION_START(PLATFORM_NAME_MANGLE(SymCryptFdef369RawAddAsm), 4, 8)
 
     ldp     X_4, X_6, [X_0]         // Load two words of pSrc1
     ldp     X_5, X_7, [X_1]         // Load two words of pSrc2
@@ -61,7 +61,7 @@ LABEL(SymCryptFdef369RawAddAsmLoop)
 LABEL(SymCryptFdef369RawAddAsmEnd)
     cset    X_0, cs                 // Set the return value equal to the carry
 
-FUNCTION_END(ARM64EC_NAME_MANGLE(SymCryptFdef369RawAddAsm))
+FUNCTION_END(PLATFORM_NAME_MANGLE(SymCryptFdef369RawAddAsm))
 
 //UINT32
 //SYMCRYPT_CALL
@@ -71,7 +71,7 @@ FUNCTION_END(ARM64EC_NAME_MANGLE(SymCryptFdef369RawAddAsm))
 //    _Out_writes_bytes_(nDigits * SYMCRYPT_FDEF_DIGIT_SIZE ) PUINT32     pDst,
 //                                                            UINT32      nDigits )
 
-FUNCTION_START(ARM64EC_NAME_MANGLE(SymCryptFdef369RawSubAsm), 4, 8)
+FUNCTION_START(PLATFORM_NAME_MANGLE(SymCryptFdef369RawSubAsm), 4, 8)
 
     ldp     X_4, X_6, [X_0]         // Load two words of pSrc1
     ldp     X_5, X_7, [X_1]         // Load two words of pSrc2
@@ -108,7 +108,7 @@ LABEL(SymCryptFdef369RawSubAsmLoop)
 LABEL(SymCryptFdef369RawSubAsmEnd)
     cset    X_0, cc                 // If the carry is clear (borrow), set the return value to 1
 
-FUNCTION_END(ARM64EC_NAME_MANGLE(SymCryptFdef369RawSubAsm))
+FUNCTION_END(PLATFORM_NAME_MANGLE(SymCryptFdef369RawSubAsm))
 
 //VOID
 //SYMCRYPT_CALL
@@ -118,7 +118,7 @@ FUNCTION_END(ARM64EC_NAME_MANGLE(SymCryptFdef369RawSubAsm))
 //                                                                UINT32      nDigits,
 //                                                                UINT32      mask )
 
-FUNCTION_START(ARM64EC_NAME_MANGLE(SymCryptFdef369MaskedCopyAsm), 4, 7)
+FUNCTION_START(PLATFORM_NAME_MANGLE(SymCryptFdef369MaskedCopyAsm), 4, 7)
 
     subs    xzr, xzr, X_3           // If (X_3 > 0) clear the carry flag (i.e. borrow)
 
@@ -154,7 +154,7 @@ LABEL(SymCryptFdef369MaskedCopyAsmLoop)
 LABEL(SymCryptFdef369MaskedCopyAsmEnd)
     // Done, no return value
 
-FUNCTION_END(ARM64EC_NAME_MANGLE(SymCryptFdef369MaskedCopyAsm))
+FUNCTION_END(PLATFORM_NAME_MANGLE(SymCryptFdef369MaskedCopyAsm))
 
 //VOID
 //SYMCRYPT_CALL
@@ -184,7 +184,7 @@ FUNCTION_END(ARM64EC_NAME_MANGLE(SymCryptFdef369MaskedCopyAsm))
 //       X_14 = Stored digit count of pSrc2
 //       X_15 = Scratch register for holding the results of multiplies
 
-FUNCTION_START(ARM64EC_NAME_MANGLE(SymCryptFdef369RawMulAsm), 5, 16)
+FUNCTION_START(PLATFORM_NAME_MANGLE(SymCryptFdef369RawMulAsm), 5, 16)
 
     add     X_1, X_1, X_1, LSL #1       // Calculate word count (X_1 * 3)
 
@@ -287,7 +287,7 @@ LABEL(SymCryptFdef369RawMulAsmLoopInner)
 
     // Done, no return value
 
-FUNCTION_END(ARM64EC_NAME_MANGLE(SymCryptFdef369RawMulAsm))
+FUNCTION_END(PLATFORM_NAME_MANGLE(SymCryptFdef369RawMulAsm))
 
 
 //VOID
@@ -315,7 +315,7 @@ FUNCTION_END(ARM64EC_NAME_MANGLE(SymCryptFdef369RawMulAsm))
 //       X_16 = Stored pMod pointer
 //       X_17 = Stored pSrc pointer (moving forward one word every outer loop)
 
-FUNCTION_START(ARM64EC_NAME_MANGLE(SymCryptFdef369MontgomeryReduceAsm), 3, 18)
+FUNCTION_START(PLATFORM_NAME_MANGLE(SymCryptFdef369MontgomeryReduceAsm), 3, 18)
 
     ldr     W_3, [X_0, #SymCryptModulusNdigitsOffsetArm64]  // # of Digits
     ldr     X_5, [X_0, #SymCryptModulusInv64OffsetArm64]    // Inv64 of modulus
@@ -460,6 +460,6 @@ LABEL(SymCryptFdef369MontgomeryReduceMaskedCopyAsmLoop)
 
     // Done, no return value
 
-FUNCTION_END(ARM64EC_NAME_MANGLE(SymCryptFdef369MontgomeryReduceAsm))
+FUNCTION_END(PLATFORM_NAME_MANGLE(SymCryptFdef369MontgomeryReduceAsm))
 
     FILE_END()

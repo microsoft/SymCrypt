@@ -1,10 +1,10 @@
 # Version x.y.z
-
 New changes will be listed here as they are developed. The version number is determined
 prior to the creation of a new release, based on the changes contained in that release.
 
 - Remove FIPS PCTs on keypair import
 - Removed usage of datatypes with platform-dependent sizes where appropriate to ensure structure/parameter sizes are consistent across platforms
+- Added ARM64 ASM support for macOS
 
 # Version 103.10.0
 

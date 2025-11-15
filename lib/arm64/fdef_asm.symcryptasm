@@ -18,7 +18,7 @@
 //    _Out_writes_bytes_(nDigits * SYMCRYPT_FDEF_DIGIT_SIZE ) PUINT32     Dst,
 //                                                            UINT32      nDigits )
 
-FUNCTION_START(ARM64EC_NAME_MANGLE(SymCryptFdefRawAddAsm), 4, 8)
+FUNCTION_START(PLATFORM_NAME_MANGLE(SymCryptFdefRawAddAsm), 4, 8)
 
     ldp     X_4, X_6, [X_0]         // Load two words of pSrc1
     ldp     X_5, X_7, [X_1]         // Load two words of pSrc2
@@ -57,7 +57,7 @@ LABEL(SymCryptFdefRawAddAsmLoop)
 LABEL(SymCryptFdefRawAddAsmEnd)
     cset    X_0, cs                 // Set the return value equal to the carry
 
-FUNCTION_END(ARM64EC_NAME_MANGLE(SymCryptFdefRawAddAsm))
+FUNCTION_END(PLATFORM_NAME_MANGLE(SymCryptFdefRawAddAsm))
 
 //UINT32
 //SYMCRYPT_CALL
@@ -67,7 +67,7 @@ FUNCTION_END(ARM64EC_NAME_MANGLE(SymCryptFdefRawAddAsm))
 //    _Out_writes_bytes_(nDigits * SYMCRYPT_FDEF_DIGIT_SIZE ) PUINT32     pDst,
 //                                                            UINT32      nDigits )
 
-FUNCTION_START(ARM64EC_NAME_MANGLE(SymCryptFdefRawSubAsm), 4, 8)
+FUNCTION_START(PLATFORM_NAME_MANGLE(SymCryptFdefRawSubAsm), 4, 8)
 
     ldp     X_4, X_6, [X_0]         // Load two words of pSrc1
     ldp     X_5, X_7, [X_1]         // Load two words of pSrc2
@@ -106,7 +106,7 @@ LABEL(SymCryptFdefRawSubAsmLoop)
 LABEL(SymCryptFdefRawSubAsmEnd)
     cset    X_0, cc                 // If the carry is clear (borrow), set the return value to 1
 
-FUNCTION_END(ARM64EC_NAME_MANGLE(SymCryptFdefRawSubAsm))
+FUNCTION_END(PLATFORM_NAME_MANGLE(SymCryptFdefRawSubAsm))
 
 //VOID
 //SYMCRYPT_CALL
@@ -116,7 +116,7 @@ FUNCTION_END(ARM64EC_NAME_MANGLE(SymCryptFdefRawSubAsm))
 //                                                                UINT32      nDigits,
 //                                                                UINT32      mask )
 
-FUNCTION_START(ARM64EC_NAME_MANGLE(SymCryptFdefMaskedCopyAsm), 4, 4)
+FUNCTION_START(PLATFORM_NAME_MANGLE(SymCryptFdefMaskedCopyAsm), 4, 4)
 
     dup     v0.4s, W_3              // broadcast the mask to v0
 
@@ -133,7 +133,7 @@ LABEL(SymCryptFdefMaskedCopyAsmLoop)
 
     // Done, no return value
 
-FUNCTION_END(ARM64EC_NAME_MANGLE(SymCryptFdefMaskedCopyAsm))
+FUNCTION_END(PLATFORM_NAME_MANGLE(SymCryptFdefMaskedCopyAsm))
 
 //VOID
 //SYMCRYPT_CALL
@@ -163,7 +163,7 @@ FUNCTION_END(ARM64EC_NAME_MANGLE(SymCryptFdefMaskedCopyAsm))
 //       X_14 = Stored digit count of pSrc2
 //       X_15 = Scratch register for holding the results of multiplies
 
-FUNCTION_START(ARM64EC_NAME_MANGLE(SymCryptFdefRawMulAsm), 5, 16)
+FUNCTION_START(PLATFORM_NAME_MANGLE(SymCryptFdefRawMulAsm), 5, 16)
 
     lsl     X_1, X_1, #2                // Calculate word count
 
@@ -274,7 +274,7 @@ LABEL(SymCryptFdefRawMulAsmLoopInner)
 
     // Done, no return value
 
-FUNCTION_END(ARM64EC_NAME_MANGLE(SymCryptFdefRawMulAsm))
+FUNCTION_END(PLATFORM_NAME_MANGLE(SymCryptFdefRawMulAsm))
 
     // Macro for the first loop of the first pass of RawSquareAsm.
     // It takes one word from the source, multiplies it with the mulword,
@@ -368,7 +368,7 @@ MACRO_END()
 //       X_15 = Stored digit count of pSrc
 //       X_16 = Stored pDst
 
-FUNCTION_START(ARM64EC_NAME_MANGLE(SymCryptFdefRawSquareAsm), 3, 17)
+FUNCTION_START(PLATFORM_NAME_MANGLE(SymCryptFdefRawSquareAsm), 3, 17)
 
     mov     X_3, X_1                    // digit count into X_3
 
@@ -522,7 +522,7 @@ LABEL(SymCryptFdefRawSquareAsmThirdPass)
 
     // Done, no return value
 
-FUNCTION_END(ARM64EC_NAME_MANGLE(SymCryptFdefRawSquareAsm))
+FUNCTION_END(PLATFORM_NAME_MANGLE(SymCryptFdefRawSquareAsm))
 
 //VOID
 //SYMCRYPT_CALL
@@ -532,7 +532,7 @@ FUNCTION_END(ARM64EC_NAME_MANGLE(SymCryptFdefRawSquareAsm))
 //    _In_                            PCSYMCRYPT_MODELEMENT   peSrc2,
 //    _Out_                           PSYMCRYPT_MODELEMENT    peDst )
 
-FUNCTION_START(ARM64EC_NAME_MANGLE(SymCryptFdefModAdd256Asm), 4, 10)
+FUNCTION_START(PLATFORM_NAME_MANGLE(SymCryptFdefModAdd256Asm), 4, 10)
 
     add     X_0, X_0, #SymCryptModulusValueOffsetArm64 // pMod
 
@@ -576,7 +576,7 @@ FUNCTION_START(ARM64EC_NAME_MANGLE(SymCryptFdefModAdd256Asm), 4, 10)
     csel    X_7, X_7, X_0, cc
     stp     X_6, X_7, [X_3, #16]
 
-FUNCTION_END(ARM64EC_NAME_MANGLE(SymCryptFdefModAdd256Asm))
+FUNCTION_END(PLATFORM_NAME_MANGLE(SymCryptFdefModAdd256Asm))
 
 //VOID
 //SYMCRYPT_CALL
@@ -586,7 +586,7 @@ FUNCTION_END(ARM64EC_NAME_MANGLE(SymCryptFdefModAdd256Asm))
 //    _In_                            PCSYMCRYPT_MODELEMENT   peSrc2,
 //    _Out_                           PSYMCRYPT_MODELEMENT    peDst )
 
-FUNCTION_START(ARM64EC_NAME_MANGLE(SymCryptFdefModSub256Asm), 4, 10)
+FUNCTION_START(PLATFORM_NAME_MANGLE(SymCryptFdefModSub256Asm), 4, 10)
 
     add     X_0, X_0, #SymCryptModulusValueOffsetArm64 // pMod
 
@@ -619,7 +619,7 @@ FUNCTION_START(ARM64EC_NAME_MANGLE(SymCryptFdefModSub256Asm), 4, 10)
     adc     X_7, X_7, X_9
     stp     X_6, X_7, [X_3, #16]
 
-FUNCTION_END(ARM64EC_NAME_MANGLE(SymCryptFdefModSub256Asm))
+FUNCTION_END(PLATFORM_NAME_MANGLE(SymCryptFdefModSub256Asm))
 
 
 MACRO_START(MUL_AND_MONTGOMERY_REDUCE14_INTERLEAVE, T0, T1, Ai, pB, pM, K, Inv64, R0, R1, R2, R3, R4, R5)
@@ -704,7 +704,7 @@ MACRO_END()
 //    _In_                            PCSYMCRYPT_MODELEMENT   pSrc2,
 //    _Out_                           PSYMCRYPT_MODELEMENT    pDst );
 
-FUNCTION_START(ARM64EC_NAME_MANGLE(SymCryptFdefModMulMontgomery256Asm), 4, 15)
+FUNCTION_START(PLATFORM_NAME_MANGLE(SymCryptFdefModMulMontgomery256Asm), 4, 15)
 
     // X_0 = pMod
     // X_1 = pSrc1
@@ -716,7 +716,7 @@ FUNCTION_START(ARM64EC_NAME_MANGLE(SymCryptFdefModMulMontgomery256Asm), 4, 15)
     // X_8 = K
     // X_9, X_10, X_11, X_12, X_13, X_14 = R0..R5
 
-ALTERNATE_ENTRY(ARM64EC_NAME_MANGLE(SymCryptFdefModMulMontgomery256AsmInternal))
+ALTERNATE_ENTRY(PLATFORM_NAME_MANGLE(SymCryptFdefModMulMontgomery256AsmInternal))
 
     ldr     X_4, [X_1]              // Load pSrc1
 
@@ -809,7 +809,7 @@ ALTERNATE_ENTRY(ARM64EC_NAME_MANGLE(SymCryptFdefModMulMontgomery256AsmInternal))
     csel    X_10, X_10, X_7, cc
     stp      X_9, X_10, [X_3, #16]
 
-FUNCTION_END(ARM64EC_NAME_MANGLE(SymCryptFdefModMulMontgomery256Asm))
+FUNCTION_END(PLATFORM_NAME_MANGLE(SymCryptFdefModMulMontgomery256Asm))
 
 //VOID
 //SYMCRYPT_CALL
@@ -819,7 +819,7 @@ FUNCTION_END(ARM64EC_NAME_MANGLE(SymCryptFdefModMulMontgomery256Asm))
 //    _Out_                           PSYMCRYPT_MODELEMENT    pDst );
 
 // Note we specify 4 arguments to keep prolog of this and SymCryptFdefModMulMontgomery256Asm the same
-FUNCTION_START(ARM64EC_NAME_MANGLE(SymCryptFdefModSquareMontgomery256Asm), 4, 15)
+FUNCTION_START(PLATFORM_NAME_MANGLE(SymCryptFdefModSquareMontgomery256Asm), 4, 15)
 
     // X_0 = pMod
     // X_1 = pSrc
@@ -830,9 +830,9 @@ FUNCTION_START(ARM64EC_NAME_MANGLE(SymCryptFdefModSquareMontgomery256Asm), 4, 15
 
     // Just jump into multiply, similar to SymCryptWipeAsm jumping into memset.
 
-    b       ARM64EC_NAME_MANGLE(SymCryptFdefModMulMontgomery256AsmInternal)
+    b       PLATFORM_NAME_MANGLE(SymCryptFdefModMulMontgomery256AsmInternal)
 
-FUNCTION_END(ARM64EC_NAME_MANGLE(SymCryptFdefModSquareMontgomery256Asm))
+FUNCTION_END(PLATFORM_NAME_MANGLE(SymCryptFdefModSquareMontgomery256Asm))
 
 //VOID
 //SYMCRYPT_CALL
@@ -842,7 +842,7 @@ FUNCTION_END(ARM64EC_NAME_MANGLE(SymCryptFdefModSquareMontgomery256Asm))
 //    _In_                            PCSYMCRYPT_MODELEMENT   peSrc2,
 //    _Out_                           PSYMCRYPT_MODELEMENT    peDst )
 
-FUNCTION_START(ARM64EC_NAME_MANGLE(SymCryptFdefModAdd384Asm), 4, 14)
+FUNCTION_START(PLATFORM_NAME_MANGLE(SymCryptFdefModAdd384Asm), 4, 14)
 
     add     X_0, X_0, #SymCryptModulusValueOffsetArm64 // pMod
 
@@ -899,7 +899,7 @@ FUNCTION_START(ARM64EC_NAME_MANGLE(SymCryptFdefModAdd384Asm), 4, 14)
     csel    X_9, X_9, X_0,  cc
     stp     X_8, X_9, [X_3, #32]
 
-FUNCTION_END(ARM64EC_NAME_MANGLE(SymCryptFdefModAdd384Asm))
+FUNCTION_END(PLATFORM_NAME_MANGLE(SymCryptFdefModAdd384Asm))
 
 //VOID
 //SYMCRYPT_CALL
@@ -909,7 +909,7 @@ FUNCTION_END(ARM64EC_NAME_MANGLE(SymCryptFdefModAdd384Asm))
 //    _In_                            PCSYMCRYPT_MODELEMENT   peSrc2,
 //    _Out_                           PSYMCRYPT_MODELEMENT    peDst )
 
-FUNCTION_START(ARM64EC_NAME_MANGLE(SymCryptFdefModSub384Asm), 4, 13)
+FUNCTION_START(PLATFORM_NAME_MANGLE(SymCryptFdefModSub384Asm), 4, 13)
 
     add     X_0, X_0, #SymCryptModulusValueOffsetArm64 // pMod
 
@@ -955,7 +955,7 @@ FUNCTION_START(ARM64EC_NAME_MANGLE(SymCryptFdefModSub384Asm), 4, 13)
     adc     X_9, X_9, X_0
     stp     X_8, X_9, [X_3, #32]
 
-FUNCTION_END(ARM64EC_NAME_MANGLE(SymCryptFdefModSub384Asm))
+FUNCTION_END(PLATFORM_NAME_MANGLE(SymCryptFdefModSub384Asm))
 
 
 MACRO_START(MUL_AND_MONTGOMERY_REDUCE16_P384_INTERLEAVE, T0, T1, Ai, pB, K, N3, R0, R1, R2, R3, R4, R5, R6, R7)
@@ -1085,7 +1085,7 @@ MACRO_END()
 //    _In_                            PCSYMCRYPT_MODELEMENT   pSrc2,
 //    _Out_                           PSYMCRYPT_MODELEMENT    pDst );
 
-FUNCTION_START(ARM64EC_NAME_MANGLE(SymCryptFdefModMulMontgomeryP384Asm), 4, 17)
+FUNCTION_START(PLATFORM_NAME_MANGLE(SymCryptFdefModMulMontgomeryP384Asm), 4, 17)
 
     // X_0 = pMod
     // X_1 = pSrc1
@@ -1096,7 +1096,7 @@ FUNCTION_START(ARM64EC_NAME_MANGLE(SymCryptFdefModMulMontgomeryP384Asm), 4, 17)
     // X_8 = K
     // X_9, X_10, X_11, X_12, X_13, X_14, X_15, X_16 = R0..R7
 
-ALTERNATE_ENTRY(ARM64EC_NAME_MANGLE(SymCryptFdefModMulMontgomeryP384AsmInternal))
+ALTERNATE_ENTRY(PLATFORM_NAME_MANGLE(SymCryptFdefModMulMontgomeryP384AsmInternal))
 
     ldr     X_4, [X_1]              // Load pSrc1
 
@@ -1205,7 +1205,7 @@ ALTERNATE_ENTRY(ARM64EC_NAME_MANGLE(SymCryptFdefModMulMontgomeryP384AsmInternal)
     csel    X_12, X_12,  X_0, cc
     stp     X_11, X_12, [X_3, #32]
 
-FUNCTION_END(ARM64EC_NAME_MANGLE(SymCryptFdefModMulMontgomeryP384Asm))
+FUNCTION_END(PLATFORM_NAME_MANGLE(SymCryptFdefModMulMontgomeryP384Asm))
 
 //VOID
 //SYMCRYPT_CALL
@@ -1215,7 +1215,7 @@ FUNCTION_END(ARM64EC_NAME_MANGLE(SymCryptFdefModMulMontgomeryP384Asm))
 //    _Out_                           PSYMCRYPT_MODELEMENT    pDst );
 
 // Note we specify 4 arguments to keep prolog of this and SymCryptFdefModMulMontgomeryP384Asm the same
-FUNCTION_START(ARM64EC_NAME_MANGLE(SymCryptFdefModSquareMontgomeryP384Asm), 4, 17)
+FUNCTION_START(PLATFORM_NAME_MANGLE(SymCryptFdefModSquareMontgomeryP384Asm), 4, 17)
 
     // X_0 = pMod
     // X_1 = pSrc
@@ -1226,9 +1226,9 @@ FUNCTION_START(ARM64EC_NAME_MANGLE(SymCryptFdefModSquareMontgomeryP384Asm), 4, 1
 
     // Just jump into multiply, similar to SymCryptWipeAsm jumping into memset.
 
-    b       ARM64EC_NAME_MANGLE(SymCryptFdefModMulMontgomeryP384AsmInternal)
+    b       PLATFORM_NAME_MANGLE(SymCryptFdefModMulMontgomeryP384AsmInternal)
 
-FUNCTION_END(ARM64EC_NAME_MANGLE(SymCryptFdefModSquareMontgomeryP384Asm))
+FUNCTION_END(PLATFORM_NAME_MANGLE(SymCryptFdefModSquareMontgomeryP384Asm))
 
 //VOID
 //SYMCRYPT_CALL
@@ -1250,7 +1250,7 @@ FUNCTION_END(ARM64EC_NAME_MANGLE(SymCryptFdefModSquareMontgomeryP384Asm))
 //       X_20 = c
 //       X_21 = Stored byte count of pSrc
 
-FUNCTION_START(ARM64EC_NAME_MANGLE(SymCryptFdefMontgomeryReduceAsm), 3, 22)
+FUNCTION_START(PLATFORM_NAME_MANGLE(SymCryptFdefMontgomeryReduceAsm), 3, 22)
 
     ldr     W_4, [X_0, #SymCryptModulusNdigitsOffsetArm64]  // # of Digits
     ldr     X_5, [X_0, #SymCryptModulusInv64OffsetArm64]    // Inv64 of modulus
@@ -1427,7 +1427,7 @@ LABEL(SymCryptFdefMontgomeryReduceMaskedCopyAsmLoop)
 
     // Done, no return value
 
-FUNCTION_END(ARM64EC_NAME_MANGLE(SymCryptFdefMontgomeryReduceAsm))
+FUNCTION_END(PLATFORM_NAME_MANGLE(SymCryptFdefMontgomeryReduceAsm))
 
 MACRO_START(MULADD_LOADSTORE18, pS, pM, pD, K, Tc, T0, T1, T2, T3, T4, T5)
     // Tc:D[3:0] = (M[3:0] * K) + S[3:0] + Tc
@@ -1507,7 +1507,7 @@ MACRO_END()
 //    _In_range_(1, 64)               UINT32                  exp,
 //    _Out_                           PSYMCRYPT_MODELEMENT    peDst );
 
-FUNCTION_START(ARM64EC_NAME_MANGLE(SymCryptFdefModDivSmallPow2Asm), 4, 14)
+FUNCTION_START(PLATFORM_NAME_MANGLE(SymCryptFdefModDivSmallPow2Asm), 4, 14)
     ldr     X_7, [X_1]
     ldr     X_5, [X_0, #SymCryptModulusInv64OffsetArm64]    // Inv64 of modulus
 
@@ -1582,6 +1582,6 @@ LABEL(SymCryptFdefModDivSmallPow2AsmShiftRightLoop)
     sub     W_0, W_0, #1
     cbnz    W_0, SymCryptFdefModDivSmallPow2AsmShiftRightLoop
 
-FUNCTION_END(ARM64EC_NAME_MANGLE(SymCryptFdefModDivSmallPow2Asm))
+FUNCTION_END(PLATFORM_NAME_MANGLE(SymCryptFdefModDivSmallPow2Asm))
 
     FILE_END()

@@ -74,14 +74,14 @@
     #define PERF_UNIT   "cycles"
 
 #elif SYMCRYPT_GNUC
-    // Linux or macOS, not x86 or AMD64
+    // Linux, macOS, other Unix-likes
     FORCEINLINE
     ULONGLONG
     GET_PERF_CLOCK()
     {
         struct timespec time;
         clock_gettime(CLOCK_MONOTONIC, &time);
-        return time.tv_nsec;
+        return (ULONGLONG)time.tv_sec * 1000000000ULL + (ULONGLONG)time.tv_nsec;
     }
 
     // We rely on performance scaling logic to convert the raw nanoseconds readings into cycles
