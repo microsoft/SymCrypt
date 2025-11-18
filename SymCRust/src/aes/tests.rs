@@ -50,8 +50,7 @@ fn test_aes_128() {
     };
     assert_eq!(result, Error::NoError);
 
-    let mut my_expanded_key = AesExpandedKey::<16>::zeroed().unwrap();
-    my_expanded_key.expand_key(&key).unwrap();
+    let mut my_expanded_key = AesExpandedKey::new(&key);
 
     for i in 0..(my_expanded_key.inner.num_rounds() * 2 + 1) {
         assert_eq_hex!(
@@ -75,7 +74,7 @@ fn test_aes_128() {
         };
         assert_eq!(result, Error::NoError);
 
-        my_expanded_key.expand_key(&key).unwrap();
+        my_expanded_key.expand_key(&key);
 
         for i in 0..(my_expanded_key.inner.num_rounds() * 2 + 1) {
             assert_eq_hex!(
@@ -139,8 +138,7 @@ fn test_aes_192() {
     };
     assert_eq!(result, Error::NoError);
 
-    let mut my_expanded_key = AesExpandedKey::<24>::zeroed().unwrap();
-    my_expanded_key.expand_key(&key).unwrap();
+    let mut my_expanded_key = AesExpandedKey::new(&key);
 
     for i in 0..(my_expanded_key.inner.num_rounds() * 2 + 1) {
         assert_eq_hex!(
@@ -164,7 +162,7 @@ fn test_aes_192() {
         };
         assert_eq!(result, Error::NoError);
 
-        my_expanded_key.expand_key(&key).unwrap();
+        my_expanded_key.expand_key(&key);
 
         for i in 0..(my_expanded_key.inner.num_rounds() * 2 + 1) {
             assert_eq_hex!(
@@ -228,8 +226,7 @@ fn test_aes_256() {
     };
     assert_eq!(result, Error::NoError);
 
-    let mut my_expanded_key = AesExpandedKey::<32>::zeroed().unwrap();
-    my_expanded_key.expand_key(&key).unwrap();
+    let mut my_expanded_key = AesExpandedKey::new(&key);
 
     for i in 0..(my_expanded_key.inner.num_rounds() * 2 + 1) {
         assert_eq_hex!(
@@ -253,7 +250,7 @@ fn test_aes_256() {
         };
         assert_eq!(result, Error::NoError);
 
-        my_expanded_key.expand_key(&key).unwrap();
+        my_expanded_key.expand_key(&key);
 
         for i in 0..(my_expanded_key.inner.num_rounds() * 2 + 1) {
             assert_eq_hex!(

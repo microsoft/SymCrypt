@@ -33,6 +33,13 @@ pub enum AesKeyUsage {
 
 const AES_BLOCK_SIZE: usize = 16;
 
+mod sealed {
+    pub trait ValidKeySize {}
+    impl ValidKeySize for [(); 16] {}
+    impl ValidKeySize for [(); 24] {}
+    impl ValidKeySize for [(); 32] {}
+}
+
 /// Rust representation of the C `SymCryptAesExpandedKey` structure. This structure is only intended
 /// to be used via FFI and internally in this module. Rust callers should use `AesExpandedKey`.
 /// Must be pinned in memory to maintain pointer validity.
@@ -52,7 +59,7 @@ struct CSymCryptAesExpandedKey {
     round_keys: [[u8; AES_BLOCK_SIZE]; 29],
     last_enc_round_key: *const [u8; AES_BLOCK_SIZE],
     last_dec_round_key: *const [u8; AES_BLOCK_SIZE],
-    _magic: size_t,
+    magic: size_t,
 }
 
 /// Wrapper structure for AES expanded key that pins the inner C structure in memory.
@@ -139,7 +146,7 @@ impl CSymCryptAesExpandedKey {
             round_keys: [[0; AES_BLOCK_SIZE]; 29],
             last_enc_round_key: core::ptr::null(),
             last_dec_round_key: core::ptr::null(),
-            _magic: 0,
+            magic: 0,
         };
 
         let mut pinned = Box::pin(temp);
@@ -179,7 +186,7 @@ impl CSymCryptAesExpandedKey {
         self.last_enc_round_key = self.round_keys[num_rounds..].as_ptr();
         self.last_dec_round_key = self.round_keys[(num_rounds * 2)..].as_ptr();
 
-        self._magic = symcrypt_magic_value!(self);
+        self.magic = symcrypt_magic_value!(self);
 
         Ok(())
     }
@@ -202,7 +209,10 @@ impl CSymCryptAesExpandedKey {
 
     /// Create decryption round keys from encryption round keys. Must only be called after
     /// encryption round keys have been populated.
-    fn expand_decryption_round_keys<const KEY_SIZE: usize>(&mut self) {
+    fn expand_decryption_round_keys<const KEY_SIZE: usize>(&mut self) 
+    where
+        [(); KEY_SIZE]: sealed::ValidKeySize
+    {
         // rewritten in a style closer to key expansion,
         // and to avoid advanced iterators which may be hard to verify
         let key_rounds: usize = key_rounds(KEY_SIZE);
@@ -219,7 +229,10 @@ impl CSymCryptAesExpandedKey {
         &mut self,
         key: &[u8; KEY_SIZE],
         key_usage: AesKeyUsage,
-    ) {
+    )
+    where
+        [(); KEY_SIZE]: sealed::ValidKeySize,
+    {
         const ROUND_CONSTANT: [u32; 11] = [
             0, 0x01, 0x02, 0x04, 0x08, 0x10, 0x20, 0x40, 0x80, 0x1b, 0x36,
         ];
@@ -231,10 +244,10 @@ impl CSymCryptAesExpandedKey {
 
         // packs 4 32-bit sub-keys into a round key for encryption
         let round_key = |w0: u32, w1: u32, w2: u32, w3: u32| -> [u8; AES_BLOCK_SIZE] {
-            let w = (w0 as u128)
-                | ((w1 as u128) << 32)
-                | ((w2 as u128) << 64)
-                | ((w3 as u128) << 96);
+            let w = u128::from(w0)
+                | (u128::from(w1) << 32)
+                | (u128::from(w2) << 64)
+                | (u128::from(w3) << 96);
             w.to_le_bytes()
         };
 
@@ -336,24 +349,23 @@ impl Drop for CSymCryptAesExpandedKey {
     }
 }
 
-impl<const KEY_SIZE: usize> BlockCipherExpandedKey<KEY_SIZE> for AesExpandedKey<KEY_SIZE> {
-    fn zeroed() -> Result<Self, Error> {
-        let key = CSymCryptAesExpandedKey::new(KEY_SIZE)?;
-        Ok(Self { inner: key })
+impl<const KEY_SIZE: usize> BlockCipherExpandedKey<KEY_SIZE> for AesExpandedKey<KEY_SIZE>
+where
+    [(); KEY_SIZE]: sealed::ValidKeySize,
+{
+    fn zeroed() -> Self {
+        let key = CSymCryptAesExpandedKey::new(KEY_SIZE).unwrap();
+        Self { inner: key }
     }
 
-    fn expand_key(&mut self, key: &[u8; KEY_SIZE]) -> Result<(), Error> {
-        if KEY_SIZE != self.inner.key_size() {
-            return Err(Error::WrongKeySize);
-        }
-
+    fn expand_key(&mut self, key: &[u8; KEY_SIZE]) {
         self.inner
             .expand_key::<KEY_SIZE>(key, AesKeyUsage::EncryptAndDecrypt);
-
-        Ok(())
     }
 }
 
+/// Computing `KEY_ROUNDS` from `KEY_SIZE` is not yet enabled in stable rust,
+/// so instead we use a dispatch that'll be resolved at compile time
 macro_rules! dispatch {
     ($method:ident($($args:expr),*)) => {
         match KEY_SIZE {
@@ -366,8 +378,8 @@ macro_rules! dispatch {
 }
 
 impl<const KEY_SIZE: usize> BlockCipher<AES_BLOCK_SIZE, KEY_SIZE> for Aes
-// computing KEY_ROUNDS from KEY_SIZE is not yet enabled in stable rust,
-// so instead we use a dispatch that'll be resolved at compile time
+where
+    [(); KEY_SIZE]: sealed::ValidKeySize,
 {
     type Key = AesExpandedKey<KEY_SIZE>;
 
@@ -398,16 +410,16 @@ impl<const KEY_SIZE: usize> BlockCipher<AES_BLOCK_SIZE, KEY_SIZE> for Aes
 
 /// Adding helper functions for calling the 3 variants of AES
 /// This is compile-time boilerplate.
-
 pub type Aes128 = Aes;
 pub type Aes192 = Aes;
 pub type Aes256 = Aes;
 
 pub mod aes128 {
-    use super::*;
+    use super::{AesExpandedKey, BlockCipherExpandedKey, AES_BLOCK_SIZE, BlockCipher, Aes128};
 
+    #[must_use] 
     pub fn new(key: &[u8; 16]) -> AesExpandedKey<16> {
-        return AesExpandedKey::<16>::new(key).unwrap();
+        AesExpandedKey::<16>::new(key)
     }
 
     pub fn encrypt_block(
@@ -415,11 +427,11 @@ pub mod aes128 {
         plain: &[u8; AES_BLOCK_SIZE],
         cipher: &mut [u8; AES_BLOCK_SIZE],
     ) {
-        <Aes128 as BlockCipher<AES_BLOCK_SIZE, 16>>::encrypt_block(key, plain, cipher)
+        <Aes128 as BlockCipher<AES_BLOCK_SIZE, 16>>::encrypt_block(key, plain, cipher);
     }
 
     pub fn encrypt_block_in_place(key: &AesExpandedKey<16>, block: &mut [u8; AES_BLOCK_SIZE]) {
-        <Aes128 as BlockCipher<AES_BLOCK_SIZE, 16>>::encrypt_block_in_place(key, block)
+        <Aes128 as BlockCipher<AES_BLOCK_SIZE, 16>>::encrypt_block_in_place(key, block);
     }
 
     pub fn decrypt_block(
@@ -427,19 +439,20 @@ pub mod aes128 {
         cipher: &[u8; AES_BLOCK_SIZE],
         plain: &mut [u8; AES_BLOCK_SIZE],
     ) {
-        <Aes128 as BlockCipher<AES_BLOCK_SIZE, 16>>::decrypt_block(key, cipher, plain)
+        <Aes128 as BlockCipher<AES_BLOCK_SIZE, 16>>::decrypt_block(key, cipher, plain);
     }
 
     pub fn decrypt_block_in_place(key: &AesExpandedKey<16>, block: &mut [u8; AES_BLOCK_SIZE]) {
-        <Aes128 as BlockCipher<AES_BLOCK_SIZE, 16>>::decrypt_block_in_place(key, block)
+        <Aes128 as BlockCipher<AES_BLOCK_SIZE, 16>>::decrypt_block_in_place(key, block);
     }
 }
 
 pub mod aes192 {
-    use super::*;
+    use super::{AesExpandedKey, BlockCipherExpandedKey, AES_BLOCK_SIZE, BlockCipher, Aes192};
 
+    #[must_use] 
     pub fn new(key: &[u8; 24]) -> AesExpandedKey<24> {
-        return AesExpandedKey::<24>::new(key).unwrap();
+        AesExpandedKey::<24>::new(key)
     }
 
     pub fn encrypt_block(
@@ -447,11 +460,11 @@ pub mod aes192 {
         plain: &[u8; AES_BLOCK_SIZE],
         cipher: &mut [u8; AES_BLOCK_SIZE],
     ) {
-        <Aes192 as BlockCipher<AES_BLOCK_SIZE, 24>>::encrypt_block(key, plain, cipher)
+        <Aes192 as BlockCipher<AES_BLOCK_SIZE, 24>>::encrypt_block(key, plain, cipher);
     }
 
     pub fn encrypt_block_in_place(key: &AesExpandedKey<24>, block: &mut [u8; AES_BLOCK_SIZE]) {
-        <Aes192 as BlockCipher<AES_BLOCK_SIZE, 24>>::encrypt_block_in_place(key, block)
+        <Aes192 as BlockCipher<AES_BLOCK_SIZE, 24>>::encrypt_block_in_place(key, block);
     }
 
     pub fn decrypt_block(
@@ -459,19 +472,20 @@ pub mod aes192 {
         cipher: &[u8; AES_BLOCK_SIZE],
         plain: &mut [u8; AES_BLOCK_SIZE],
     ) {
-        <Aes192 as BlockCipher<AES_BLOCK_SIZE, 24>>::decrypt_block(key, cipher, plain)
+        <Aes192 as BlockCipher<AES_BLOCK_SIZE, 24>>::decrypt_block(key, cipher, plain);
     }
 
     pub fn decrypt_block_in_place(key: &AesExpandedKey<24>, block: &mut [u8; AES_BLOCK_SIZE]) {
-        <Aes192 as BlockCipher<AES_BLOCK_SIZE, 24>>::decrypt_block_in_place(key, block)
+        <Aes192 as BlockCipher<AES_BLOCK_SIZE, 24>>::decrypt_block_in_place(key, block);
     }
 }
 
 pub mod aes256 {
-    use super::*;
+    use super::{AesExpandedKey, BlockCipherExpandedKey, AES_BLOCK_SIZE, BlockCipher, Aes256};
 
+    #[must_use] 
     pub fn new(key: &[u8; 32]) -> AesExpandedKey<32> {
-        return AesExpandedKey::<32>::new(key).unwrap();
+        AesExpandedKey::<32>::new(key)
     }
 
     pub fn encrypt_block(
@@ -479,11 +493,11 @@ pub mod aes256 {
         plain: &[u8; AES_BLOCK_SIZE],
         cipher: &mut [u8; AES_BLOCK_SIZE],
     ) {
-        <Aes256 as BlockCipher<AES_BLOCK_SIZE, 32>>::encrypt_block(key, plain, cipher)
+        <Aes256 as BlockCipher<AES_BLOCK_SIZE, 32>>::encrypt_block(key, plain, cipher);
     }
 
     pub fn encrypt_block_in_place(key: &AesExpandedKey<32>, block: &mut [u8; AES_BLOCK_SIZE]) {
-        <Aes256 as BlockCipher<AES_BLOCK_SIZE, 32>>::encrypt_block_in_place(key, block)
+        <Aes256 as BlockCipher<AES_BLOCK_SIZE, 32>>::encrypt_block_in_place(key, block);
     }
 
     pub fn decrypt_block(
@@ -491,10 +505,10 @@ pub mod aes256 {
         cipher: &[u8; AES_BLOCK_SIZE],
         plain: &mut [u8; AES_BLOCK_SIZE],
     ) {
-        <Aes256 as BlockCipher<AES_BLOCK_SIZE, 32>>::decrypt_block(key, cipher, plain)
+        <Aes256 as BlockCipher<AES_BLOCK_SIZE, 32>>::decrypt_block(key, cipher, plain);
     }
 
     pub fn decrypt_block_in_place(key: &AesExpandedKey<32>, block: &mut [u8; AES_BLOCK_SIZE]) {
-        <Aes256 as BlockCipher<AES_BLOCK_SIZE, 32>>::decrypt_block_in_place(key, block)
+        <Aes256 as BlockCipher<AES_BLOCK_SIZE, 32>>::decrypt_block_in_place(key, block);
     }
 }

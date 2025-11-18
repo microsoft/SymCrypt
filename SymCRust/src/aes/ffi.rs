@@ -62,9 +62,10 @@ unsafe fn symcrypt_aes_encrypt_helper(
     let expanded_key = &*key;
     let dst_block = slice::from_raw_parts_mut(pb_dst, AES_BLOCK_SIZE).try_into().unwrap();
 
-    let src_block: Option<&[u8; AES_BLOCK_SIZE]> = match pb_src == pb_dst {
-        true => None,
-        false => Some(slice::from_raw_parts(pb_src, AES_BLOCK_SIZE).try_into().unwrap()),
+    let src_block: Option<&[u8; AES_BLOCK_SIZE]> = if pb_src == pb_dst {
+        None
+    } else {
+        Some(slice::from_raw_parts(pb_src, AES_BLOCK_SIZE).try_into().unwrap())
     };
 
     match expanded_key.key_size() {
@@ -112,9 +113,10 @@ unsafe fn symcrypt_aes_decrypt_helper(
     let expanded_key = &*key;
     let dst_block = slice::from_raw_parts_mut(pb_dst, 16).try_into().unwrap();
 
-    let src_block: Option<&[u8; AES_BLOCK_SIZE]> = match pb_src == pb_dst {
-        true => None,
-        false => Some(slice::from_raw_parts(pb_src, AES_BLOCK_SIZE).try_into().unwrap()),
+    let src_block: Option<&[u8; AES_BLOCK_SIZE]> = if pb_src == pb_dst {
+        None
+    } else {
+        Some(slice::from_raw_parts(pb_src, AES_BLOCK_SIZE).try_into().unwrap())
     };
 
     match expanded_key.key_size() {

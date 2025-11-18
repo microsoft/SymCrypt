@@ -9,7 +9,7 @@
 /// Number of elements in the expanded key table for the scalar implementation
 const GHASH_SCALAR_TABLE_ENTRIES  : usize = 128;
 
-/// Block size for GHash in bytes
+/// Block size for `GHash` in bytes
 const GF128_BLOCK_SIZE : usize = 16;
 
 /// Multiplication constant R for GF(2^128)
@@ -19,15 +19,15 @@ const GF128_FIELD_R : u128 = 0xe1 << 120;
 /// Converts a single bit to a full-width mask, i.e. 0 -> 0, 1 -> 0xffff...
 /// The signed and unsigned types of the expression must be provided as arguments
 macro_rules! bit_to_mask {
-    ($x:expr, $signed:ty, $unsigned:ty) => {
-        ((-($x as $signed)) as $unsigned)
+    ($x:expr) => {
+        ((-($x).cast_signed()).cast_unsigned())
     };
 }
 
 type Block = [u8; GF128_BLOCK_SIZE];
 
 ///
-/// Represents an expanded GHash key
+/// Represents an expanded `GHash` key
 /// 
 #[derive(Debug, Clone)]
 pub(crate) struct GHashExpandedKey([u128; GHASH_SCALAR_TABLE_ENTRIES]);
@@ -50,7 +50,7 @@ impl GHashExpandedKey {
         &self.0
     }
 
-    /// Expands a GHash key from a byte string `h`. This generic implementation works on all
+    /// Expands a `GHash` key from a byte string `h`. This generic implementation works on all
     /// platforms. It computes a table of H, Hx, Hx^2, Hx^3, ..., Hx^127
     pub(crate) fn expand_key(&mut self, h_bytes: &Block) {
 
@@ -61,7 +61,7 @@ impl GHashExpandedKey {
             self.0[i] = h;
 
             // Multiply (H1,H0) by x in the GF(2^128) field using the field encoding from SP800-38D
-            t = bit_to_mask!(h & 1, i128, u128) & (GF128_FIELD_R);
+            t = bit_to_mask!(h & 1) & (GF128_FIELD_R);
             h >>= 1;
             h ^= t;
         };
@@ -83,7 +83,7 @@ impl Drop for GHashExpandedKey {
 }
 
 ///
-/// Represents a GHash computation state
+/// Represents a `GHash` computation state
 ///
 #[derive(Debug, Clone)]
 pub(crate) struct GHash<'a> {
@@ -92,7 +92,7 @@ pub(crate) struct GHash<'a> {
 }
 
 impl<'a> GHash<'a> {
-    /// Creates a new GHash computation state with the provided key bytes.
+    /// Creates a new `GHash` computation state with the provided key bytes.
     pub(crate) fn new(key : &'a GHashExpandedKey) -> Self {
         Self {
             expanded_key: key,
@@ -100,10 +100,10 @@ impl<'a> GHash<'a> {
         }
     }
 
-    /// Appends data to the GHash computation state
+    /// Appends data to the `GHash` computation state
     pub(crate) fn append_data(&mut self, data: &[u8]) {
 
-        debug_assert!(data.len() % GF128_BLOCK_SIZE == 0, "Data length must be a multiple of GF128_BLOCK_SIZE");
+        debug_assert!(data.len().is_multiple_of(GF128_BLOCK_SIZE), "Data length must be a multiple of GF128_BLOCK_SIZE");
 
         let mut r : u128;
         let mut mask: u128;
@@ -116,7 +116,7 @@ impl<'a> GHash<'a> {
             
             
             for key_element in self.expanded_key.0.iter().rev() {
-                mask = bit_to_mask!(t & 1, i128, u128);
+                mask = bit_to_mask!(t & 1);
                 r ^= key_element & mask;
                 t >>= 1;
             }
@@ -125,7 +125,7 @@ impl<'a> GHash<'a> {
         }
     }
 
-    /// Returns the result of the GHash computation as a byte array. The state is not wiped.
+    /// Returns the result of the `GHash` computation as a byte array. The state is not wiped.
     pub(crate) fn result(&self) -> Block {
         self.state.to_be_bytes()
     }
@@ -133,7 +133,7 @@ impl<'a> GHash<'a> {
 
 impl Drop for GHash<'_> {
     fn drop(&mut self) {
-        crate::common::wipe(&raw mut self.state as *mut u8, core::mem::size_of::<u128>());
+        crate::common::wipe((&raw mut self.state).cast(), core::mem::size_of::<u128>());
     }
 }
 #[cfg(test)]

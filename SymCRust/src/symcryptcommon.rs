@@ -20,7 +20,7 @@ pub(crate) const SYMCRYPT_API_VERSION : usize = (SYMCRYPT_VERSION_MAJOR << 16) |
 /// Macro to compute the magic value for a structure pointer
 macro_rules! symcrypt_magic_value {
     ($p:expr) => {
-        ($p as *const _ as usize)
+        (core::ptr::from_ref($p) as usize)
             .wrapping_add(u32::from_be_bytes([b'S', b'1', b'm', b'v']) as usize)
             .wrapping_add(crate::symcryptcommon::SYMCRYPT_API_VERSION)
     };

@@ -4,22 +4,21 @@
 // Copyright (c) Microsoft Corporation. Licensed under the MIT license.
 //
 
-use crate::common::Error;
-
 pub trait BlockCipherExpandedKey<const KEY_SIZE: usize> {
     /// Create a zeroed instance of the expanded key
-    fn zeroed() -> Result<Self, Error>
+    fn zeroed() -> Self
     where
         Self: Sized;
 
     /// Create a new expanded key from the given key bytes
-    fn new(key: &[u8; KEY_SIZE]) -> Result<Self, Error>
+    #[must_use]
+    fn new(key: &[u8; KEY_SIZE]) -> Self
     where
         Self: Sized,
     {
-        let mut expanded_key = Self::zeroed()?;
-        expanded_key.expand_key(key)?;
-        Ok(expanded_key)
+        let mut expanded_key = Self::zeroed();
+        expanded_key.expand_key(key);
+        expanded_key
     }
 
     /// Get the key size in bytes
@@ -28,7 +27,7 @@ pub trait BlockCipherExpandedKey<const KEY_SIZE: usize> {
     }
 
     /// Expand the given key into this expanded key instance
-    fn expand_key(&mut self, key: &[u8; KEY_SIZE]) -> Result<(), Error>;
+    fn expand_key(&mut self, key: &[u8; KEY_SIZE]);
 }
 
 pub trait BlockCipher<const BLOCK_SIZE: usize, const KEY_SIZE: usize> {

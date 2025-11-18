@@ -4,18 +4,20 @@
 // Copyright (c) Microsoft Corporation. Licensed under the MIT license.
 //
 
+#[allow(clippy::wildcard_imports)]
 #[cfg(target_arch = "aarch64")]
 use core::arch::aarch64::*;
 
-use super::{AesImpl, CSymCryptAesExpandedKey};
+use super::{AES_BLOCK_SIZE, AesImpl, CSymCryptAesExpandedKey};
 
 pub(super) struct AesNeonImpl;
 
 impl AesNeonImpl {
-    /// Helper function for encryption of a single AES block. Corresponds to AES_ENCRYPT_1 in
+    /// Helper function for encryption of a single AES block. Corresponds to `AES_ENCRYPT_1` in
     /// the SymCrypt C implementation.
     /// SAFETY: The use of intrinsics requires unsafe. `expanded_key` and `c0` must be valid
     /// references.
+    #[allow(clippy::needless_range_loop)]
     #[inline]
     unsafe fn encrypt_block_impl<const KEY_ROUNDS: usize>(
         round_keys: &[[u8; 16]; KEY_ROUNDS],
@@ -38,10 +40,11 @@ impl AesNeonImpl {
         *c0 = veorq_u8(*c0, round_key); // state ⊕ round_key[KEY_ROUNDS-1]
     }
 
-    /// Helper function for decryption of a single AES block. Corresponds to AES_DECRYPT_1 in
+    /// Helper function for decryption of a single AES block. Corresponds to `AES_DECRYPT_1` in
     /// the SymCrypt C implementation.
     /// SAFETY: The use of intrinsics requires unsafe. `expanded_key` and `c0` must be valid
     /// references.
+    #[allow(clippy::needless_range_loop)]
     #[inline]
     unsafe fn decrypt_block_impl<const KEY_ROUNDS: usize>(
         round_keys: &[[u8; 16]; KEY_ROUNDS],
@@ -49,9 +52,9 @@ impl AesNeonImpl {
     ) {
         let mut round_key: uint8x16_t;
 
-        for i in 0..KEY_ROUNDS - 2 {
-            round_key = vld1q_u8(round_keys[i].as_ptr());
-            *c0 = vaesdq_u8(*c0, round_key); // InvShiftRows(InvSubBytes(state ⊕ round_key[i])
+        for r in 0..KEY_ROUNDS - 2 {
+            round_key = vld1q_u8(round_keys[r].as_ptr());
+            *c0 = vaesdq_u8(*c0, round_key); // InvShiftRows(InvSubBytes(state ⊕ round_key[r]))
             *c0 = vaesimcq_u8(*c0); // InvMixColumns(state)
         }
 
@@ -86,7 +89,7 @@ impl AesImpl for AesNeonImpl {
         unsafe {
             let mut x = vld1q_u8(enc_round_key.as_ptr());
             x = vaesimcq_u8(x);
-            vst1q_u8(&mut output as *mut u8, x);
+            vst1q_u8(output.as_mut_ptr(), x);
         }
 
         output
@@ -106,7 +109,7 @@ impl AesImpl for AesNeonImpl {
                 Some(plain) => vld1q_u8(plain.as_ptr()),
                 None => vld1q_u8(output_buffer.as_ptr()),
             };
-            AesNeonImpl::encrypt_block_impl::<KEY_ROUNDS>(&keys, &mut c);
+            AesNeonImpl::encrypt_block_impl::<KEY_ROUNDS>(keys, &mut c);
             vst1q_u8(output_buffer.as_mut_ptr(), c);
         }
     }

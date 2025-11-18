@@ -16,6 +16,7 @@ use core::alloc::Layout;
 use core::ptr;
 use core::sync::atomic::{AtomicBool, Ordering};
 
+#[allow(clippy::enum_variant_names)]
 #[derive(PartialEq, Debug, Clone)]
 #[repr(C)]
 pub enum Error {
@@ -118,7 +119,7 @@ pub fn wipe(pb_data: *mut u8, cb_data: usize) {
 
 pub fn wipe_slice<T>(pb_dst: &mut [T]) {
     wipe(
-        pb_dst.as_mut_ptr() as *mut u8,
+        pb_dst.as_mut_ptr().cast(),
         core::mem::size_of_val(pb_dst),
     );
 }
