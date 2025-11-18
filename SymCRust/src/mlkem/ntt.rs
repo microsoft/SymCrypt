@@ -67,8 +67,8 @@ pub(super) struct InternalComputationTemporaries {
     pub(super) poly_element0: PolyElement,
     pub(super) poly_element1: PolyElement,
     pub(super) poly_element_accumulator: PolyElementAccumulator,
-    pub(super) hash_state0: hash::HashState,
-    pub(super) hash_state1: hash::HashState,
+    pub(super) hash_state0: hash::CSha3HashState,
+    pub(super) hash_state1: hash::CSha3HashState,
 }
 
 impl Default for InternalComputationTemporaries {
@@ -79,8 +79,8 @@ impl Default for InternalComputationTemporaries {
             poly_element0: POLYELEMENT_ZERO,
             poly_element1: POLYELEMENT_ZERO,
             poly_element_accumulator: [0; MLWE_POLYNOMIAL_COEFFICIENTS],
-            hash_state0: hash::UNINITIALIZED_HASH_STATE,
-            hash_state1: hash::UNINITIALIZED_HASH_STATE,
+            hash_state0: hash::CSha3HashState::default(),
+            hash_state1: hash::CSha3HashState::default(),
         }
     }
 }
@@ -777,7 +777,7 @@ pub(super) fn poly_element_decode_and_decompress(
 }
 
 pub(super) fn poly_element_sample_ntt_from_shake128(
-    p_state: &mut hash::HashState,
+    p_state: &mut hash::CSha3HashState,
     pe_dst: &mut PolyElement,
 ) {
     let mut i: usize = 0;

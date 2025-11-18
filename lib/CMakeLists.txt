@@ -433,6 +433,9 @@ if(NOT SYMCRYPT_SYMCRUST MATCHES "ON")
 else()
     add_subdirectory(rust)
     add_library(symcrypt_mlkem ALIAS symcrust)
+    # FIXME: Remove the SYMCRUST_EXPERIMENTAL_BUILD flag and make compilation
+    # decisions at the source-file level.
+    # https://microsoft.visualstudio.com/OS/_workitems/edit/60192412
     add_compile_definitions(SYMCRUST_EXPERIMENTAL_BUILD=1)
 endif()
 

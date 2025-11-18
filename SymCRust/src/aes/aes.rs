@@ -21,10 +21,10 @@ mod aes_xmm;
 #[cfg(not(any(feature = "benchmarking", test)))]
 mod ffi;
 mod ghash;
-#[cfg(test)]
+#[cfg(all(test, not(feature = "benchmarking")))]
 mod tests;
 
-/// Not currently exposed in the current APIs  
+/// Not currently exposed in the current APIs
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum AesKeyUsage {
     _EncryptOnly, // Currently unused

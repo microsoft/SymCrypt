@@ -36,6 +36,10 @@ harness = false
 name = "aes"
 harness = false
 
+[[bench]]
+name = "sha3"
+harness = false
+
 [features]
 benchmarking = ["std"]
 std = []

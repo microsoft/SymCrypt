@@ -774,7 +774,7 @@ pub fn decapsulate(pk_mlkem_key: &Key, pb_ciphertext: &[u8], pb_agreed_secret: &
     {
         return Error::InvalidArgument;
     }
-    
+
     let mut local_temps_box  = match try_new_box(
         (InternalComputationTemporaries::default(),
         [0u8; SIZEOF_MAX_CIPHERTEXT],

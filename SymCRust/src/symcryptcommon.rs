@@ -4,8 +4,11 @@
 // Copyright (c) Microsoft Corporation. Licensed under the MIT license.
 //
 
+//
 // General-purpose functions that for now, remain implemented in C within SymCrypt.
 //
+
+#![cfg_attr(test, allow(unused_macros), allow(dead_code), allow(unused_imports))]
 
 use core::sync::atomic::AtomicU32;
 
@@ -14,7 +17,7 @@ use crate::common::Error;
 // TODO! These have to be kept in sync manually. Need to find a way to pull them from version.json,
 // ideally without adding a dependency like serde.
 pub(crate) const SYMCRYPT_VERSION_MAJOR : usize = 103;
-pub(crate) const SYMCRYPT_VERSION_MINOR : usize = 8;
+pub(crate) const SYMCRYPT_VERSION_MINOR : usize = 10;
 pub(crate) const SYMCRYPT_API_VERSION : usize = (SYMCRYPT_VERSION_MAJOR << 16) | SYMCRYPT_VERSION_MINOR;
 
 /// Macro to compute the magic value for a structure pointer
@@ -26,7 +29,16 @@ macro_rules! symcrypt_magic_value {
     };
 }
 
+macro_rules! symcrypt_check_magic {
+    ($p:expr) => {
+        if symcrypt_magic_value!($p) != (*($p)).magic {
+            panic!("Invalid magic value");
+        }
+    };
+}
+
 pub(crate) use symcrypt_magic_value;
+pub(crate) use symcrypt_check_magic;
 
 unsafe extern "C" {
     pub fn SymCryptInit();

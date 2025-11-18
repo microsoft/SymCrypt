@@ -27,6 +27,11 @@ pub mod block_cipher;
 
 mod common;
 
+#[path = "sha3/sha3.rs"]
+pub mod sha3;
+
+pub mod hash;
+
 // For pure Rust benchmarking, we want to mock calls to SymCrypt callbacks for now
 #[cfg(not(feature = "benchmarking"))]
 mod symcryptcommon;

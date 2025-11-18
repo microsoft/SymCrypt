@@ -130,18 +130,18 @@ pub fn try_new_box<T>(value: T) -> Result<Box<T>, Error> {
     unsafe {
         let layout = Layout::new::<T>();
         let ptr = alloc::alloc::alloc(layout) as *mut T;
-        
+
         if ptr.is_null() {
             return Err(Error::MemoryAllocationFailure);
         }
-        
+
         ptr::write(ptr, value);
         Ok(Box::from_raw(ptr))
     }
 }
 
 /// Constant-time memory comparison.
-/// 
+///
 /// Compares two byte slices in constant time, ensuring that:
 /// - All bytes from both slices are read
 /// - The comparison time does not depend on where the first difference occurs
@@ -173,13 +173,13 @@ fn const_time_slices_equal_impl(a: &[u8], b: &[u8]) -> bool {
         let bi = unsafe{ core::ptr::read_volatile(b.as_ptr().add(i)) };
         diff |= ai ^ bi;
     }
-    
+
     // Return true if no differences were found
     diff == 0
 }
 
 /// Constant-time memory copy based on a copy size.
-/// 
+///
 /// Copies bytes from source `a` to destination `b` in constant time,
 /// based on the specified `copy_size`. The function ensures that:
 /// - All bytes from both source and destination are read and all bytes in the destination slice are written
@@ -208,7 +208,7 @@ fn const_time_slice_copy_impl(a: &[u8], b: &mut [u8], copy_size: u32) {
     let len = a.len();
 
     // TODO: consider wider reads/writes for performance (may require explicit alignment)
-    
+
     for i in 0..len {
         let ai = unsafe{ core::ptr::read_volatile(a.as_ptr().add(i)) };
         let mut bi = unsafe{ core::ptr::read_volatile(b.as_ptr().add(i)) };
