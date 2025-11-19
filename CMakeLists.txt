@@ -102,6 +102,14 @@ option(
     implementations of certain algorithms."
     OFF)
 
+option(SYMCRYPT_BUILD_MODULES
+       "When enabled, builds SymCrypt shared or dynamic libraries on supported platforms."
+       ON)
+
+option(SYMCRYPT_UNIT_TESTS
+       "When enabled, builds SymCrypt unit tests. Unit tests should always be executed on the target platform before integration; this option should only be turned off for constrained environments that cannot build or run them due to hardware or OS limitations."
+       ON)
+
 include(${SYMCRYPT_SOURCE_DIR}/cmake-configs/SymCrypt-Platforms.cmake)
 
 if(NOT DEFINED CMAKE_BUILD_TYPE)
@@ -161,5 +169,13 @@ include_directories(${CMAKE_BINARY_DIR}/inc)
 configure_file(conf/symcrypt.pc.in symcrypt.pc @ONLY)
 
 add_subdirectory(lib)
-add_subdirectory(modules)
-add_subdirectory(unittest)
+
+if(SYMCRYPT_BUILD_MODULES AND NOT CMAKE_BUILD_TYPE MATCHES Sanitize)
+    # Module integrity check is seen as OOB access by sanitizers, and sanitizer instrumentation
+    # breaks integrity check assumptions. Only enable module when not running with sanitizers
+    add_subdirectory(modules)
+endif()
+
+if (SYMCRYPT_UNIT_TESTS)
+    add_subdirectory(unittest)
+endif()

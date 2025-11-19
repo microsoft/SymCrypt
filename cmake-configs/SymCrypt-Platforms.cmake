@@ -11,7 +11,8 @@ if(CMAKE_SYSTEM_NAME MATCHES "Linux|Darwin")
 elseif(CMAKE_SYSTEM_NAME MATCHES "Windows")
     set(SYMCRYPT_TARGET_ENV "WindowsUserMode")
 else()
-    message(FATAL_ERROR "Unsupported platform")
+    set(SYMCRYPT_TARGET_ENV "Unknown")
+    message(WARNING "Unsupported platform")
 endif()
 
 # Normalize architecture names, which vary across platforms. SymCrypt uses Windows architecture names.
@@ -56,7 +57,8 @@ if(CMAKE_SYSTEM_NAME MATCHES "Darwin")
     endif()
 endif()
 
-if(CMAKE_SYSTEM_NAME MATCHES "Linux|Darwin")
+# Compiler/platform/architecture specific compiler options
+if (CMAKE_C_COMPILER_ID MATCHES "GNU|Clang")
     if(SYMCRYPT_USE_ASM)
         enable_language(ASM)
         set(CMAKE_ASM_FLAGS "-x assembler-with-cpp")
@@ -192,7 +194,7 @@ if(CMAKE_SYSTEM_NAME MATCHES "Linux|Darwin")
         add_link_options(-fsanitize=vptr)
         add_link_options(-fno-sanitize-recover=all)
     endif()
-else() # Windows
+elseif (CMAKE_C_COMPILER_ID STREQUAL "MSVC")
 
     if(SYMCRYPT_USE_ASM)
         if(SYMCRYPT_TARGET_ARCH MATCHES "AMD64|X86")
