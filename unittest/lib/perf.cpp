@@ -1260,21 +1260,20 @@ measurePerfOfWipe()
 VOID
 measurePerf()
 {
+    int oldPriority;
     iprint( "\nStarting performance measurements...\n" );
 
-    #if SYMCRYPT_MS_VC
-    int oldPriority = GetThreadPriority( GetCurrentThread() );
+    #if SYMCRYPT_PLATFORM_WINDOWS
+        oldPriority = GetThreadPriority( GetCurrentThread() );
+        CHECK( SetThreadPriority( GetCurrentThread(), THREAD_PRIORITY_TIME_CRITICAL ), "Failed to set priority" );
+        //print( "Thread priority set to %d\n", GetThreadPriority( GetCurrentThread() ) );
 
-    CHECK( SetThreadPriority( GetCurrentThread(), THREAD_PRIORITY_TIME_CRITICAL ), "Failed to set priority" );
-    //print( "Thread priority set to %d\n", GetThreadPriority( GetCurrentThread() ) );
-
-    DWORD_PTR affinitymask = (DWORD_PTR)1 << GetCurrentProcessorNumber();
-    affinitymask = SetThreadAffinityMask( GetCurrentThread(), affinitymask );
-    CHECK( affinitymask != 0, "Failed to set affinity mask" );
-    #endif // SYMCRYPT_MS_VC
+        DWORD_PTR affinitymask = (DWORD_PTR)1 << GetCurrentProcessorNumber();
+        affinitymask = SetThreadAffinityMask( GetCurrentThread(), affinitymask );
+        CHECK( affinitymask != 0, "Failed to set affinity mask" );
+    #endif // SYMCRYPT_PLATFORM_WINDOWS
 
     initPerfSystem();
-
 
     measurePerfOfAlgorithms();
 
@@ -1283,12 +1282,11 @@ measurePerf()
         measurePerfOfWipe();
     }
 
-
-    #if SYMCRYPT_MS_VC
-    CHECK( SetThreadAffinityMask( GetCurrentThread(), affinitymask ) != 0, "Failed to restore affinity mask" );
-    CHECK( GetThreadPriority( GetCurrentThread() ) == THREAD_PRIORITY_TIME_CRITICAL, "Thread priority decay" );
-    CHECK( SetThreadPriority( GetCurrentThread(), oldPriority ), "Failed to set priority" );
-    #endif // SYMCRYPT_MS_VC
+    #if SYMCRYPT_PLATFORM_WINDOWS
+        CHECK( SetThreadAffinityMask( GetCurrentThread(), affinitymask ) != 0, "Failed to restore affinity mask" );
+        CHECK( GetThreadPriority( GetCurrentThread() ) == THREAD_PRIORITY_TIME_CRITICAL, "Thread priority decay" );
+        CHECK( SetThreadPriority( GetCurrentThread(), oldPriority ), "Failed to restore priority" );
+    #endif // SYMCRYPT_PLATFORM_WINDOWS
 
     print( ".%c.\n", ' ' + (g_fixedTimeLoopVariable)%(127-' '));    // DO NOT REMOVE, ensures that do-busy work isn't optimized away
 

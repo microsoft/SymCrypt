@@ -19,8 +19,8 @@
 #define ENABLE_PERF_CLOCK_SCALING ((BOOLEAN) TRUE)
 #define FIXED_TIME_LOOP() fixedTimeLoopPerfFunction( NULL, NULL, NULL, 0 )
 
-#if (SYMCRYPT_MS_VC || SYMCRYPT_GNUC) && (SYMCRYPT_CPU_AMD64 || SYMCRYPT_CPU_X86)
-    // Windows or Linux, x86 or AMD64
+#if (SYMCRYPT_CPU_AMD64 || SYMCRYPT_CPU_X86)
+    // x86 or AMD64, any platform
     #if SYMCRYPT_MS_VC
         #include <intrin.h>
     #else
@@ -42,7 +42,7 @@
 
     #define PERF_UNIT   "cycles"
 
-#elif SYMCRYPT_MS_VC && (SYMCRYPT_CPU_ARM || SYMCRYPT_CPU_ARM64)
+#elif SYMCRYPT_PLATFORM_WINDOWS && (SYMCRYPT_CPU_ARM || SYMCRYPT_CPU_ARM64)
     // Windows, Arm or Arm64
     #undef ENABLE_PERF_CLOCK_SCALING
     #define ENABLE_PERF_CLOCK_SCALING ((BOOLEAN) FALSE)
@@ -59,7 +59,21 @@
     #endif
     #define PERF_UNIT   "cycles"
 
-#elif SYMCRYPT_MS_VC
+#elif SYMCRYPT_PLATFORM_UNIX && SYMCRYPT_CPU_ARM64
+    // Linux/Unix, Arm64
+    FORCEINLINE
+    ULONGLONG
+    GET_PERF_CLOCK()
+    {
+        ULONGLONG cntvct_el0;
+        asm volatile("mrs %0, cntvct_el0" : "=r" (cntvct_el0) : : "memory");
+        return cntvct_el0;
+    }
+
+    // We rely on performance scaling logic to convert the raw nanoseconds readings into cycles
+    #define PERF_UNIT   "cycles"
+
+#elif SYMCRYPT_PLATFORM_WINDOWS
     // Windows, Generic (no architecture specified at compile time)
     FORCEINLINE
     ULONGLONG
@@ -73,7 +87,7 @@
     // We rely on performance scaling logic to convert the raw nanoseconds readings into cycles
     #define PERF_UNIT   "cycles"
 
-#elif SYMCRYPT_GNUC
+#elif (SYMCRYPT_PLATFORM_UNIX || SYMCRYPT_PLATFORM_APPLE)
     // Linux, macOS, other Unix-likes
     FORCEINLINE
     ULONGLONG
@@ -86,6 +100,8 @@
 
     // We rely on performance scaling logic to convert the raw nanoseconds readings into cycles
     #define PERF_UNIT   "cycles"
+#else
+    #error "No performance clock defined for this platform"
 #endif
 
 //
