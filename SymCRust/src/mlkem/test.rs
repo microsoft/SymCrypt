@@ -8,41 +8,7 @@
 use crate::common::Error;
 use alloc::boxed::Box;
 use super::*;
-
-#[test]
-pub fn test_ffi() -> Result<(), Box<dyn std::error::Error>> {
-    crate::common::init();
-
-    let mut actual = [0u8; 64];
-    let expected = [
-        0xa6, 0x9f, 0x73, 0xcc, 0xa2, 0x3a, 0x9a, 0xc5, 0xc8, 0xb5, 0x67, 0xdc, 0x18, 0x5a, 0x75,
-        0x6e, 0x97, 0xc9, 0x82, 0x16, 0x4f, 0xe2, 0x58, 0x59, 0xe0, 0xd1, 0xdc, 0xc1, 0x47, 0x5c,
-        0x80, 0xa6, 0x15, 0xb2, 0x12, 0x3a, 0xf1, 0xf5, 0xf9, 0x4c, 0x11, 0xe3, 0xe9, 0x40, 0x2c,
-        0x3a, 0xc5, 0x58, 0xf5, 0x00, 0x19, 0x9d, 0x95, 0xb6, 0xd3, 0xe3, 0x01, 0x75, 0x85, 0x86,
-        0x28, 0x1d, 0xcd, 0x26,
-    ];
-    hash::sha3_512(&[0u8; 0], &mut actual);
-    assert_eq!(actual, expected);
-
-    let mut actual = [0u8; 64];
-    let mut hs = hash::CSha3HashState::default();
-    // println!("hs addr: {:p}", &mut hs);
-    // println!("internal hash state: {:?}", hs.ks.state);
-    // std::io::stdout().flush();
-
-    hash::sha3_512_init(&mut hs);
-    // println!("internal hash state: {:?}", hs.ks.state);
-    hash::sha3_512_result(&mut hs, &mut actual);
-    // println!("internal hash state: {:?}", hs.ks.state);
-    assert_eq!(actual, expected);
-
-    let mut actual = [0u8; 128];
-    let dst: &mut [u8; 64] = (&mut actual[0..64]).try_into().unwrap();
-    hash::sha3_512(&[0u8; 0], dst);
-    assert_eq!(actual[0..64], expected);
-
-    Ok(())
-}
+use crate::sha3::Sha3_256;
 
 #[test]
 pub fn test_api() -> Result<(), Box<dyn std::error::Error>> {
@@ -69,7 +35,7 @@ pub fn test_api() -> Result<(), Box<dyn std::error::Error>> {
     }
     let sha3_256_hash_of_secret_key = hex::decode("7deef44965b03d76de543ad6ef9e74a2772fa5a9fa0e761120dac767cf0152ef")?;
     let mut actual_sha3_256_hash_of_secret_key = [0u8; 32];
-    hash::sha3_256(&secret_key, &mut actual_sha3_256_hash_of_secret_key);
+    Sha3_256::hash(&secret_key, &mut actual_sha3_256_hash_of_secret_key);
     assert_eq!(sha3_256_hash_of_secret_key, actual_sha3_256_hash_of_secret_key);
 
     // Read public (a.k.a. encapsulation) key
@@ -80,7 +46,7 @@ pub fn test_api() -> Result<(), Box<dyn std::error::Error>> {
     }
     let sha3_256_hash_of_public_key = hex::decode("f57262661358cde8d3ebf990e5fd1d5b896c992ccfaadb5256b68bbf5943b132")?;
     let mut actual_sha3_256_hash_of_public_key = [0u8; 32];
-    hash::sha3_256(&public_key, &mut actual_sha3_256_hash_of_public_key);
+    Sha3_256::hash(&public_key, &mut actual_sha3_256_hash_of_public_key);
     assert_eq!(sha3_256_hash_of_public_key, actual_sha3_256_hash_of_public_key);
 
     // Compute shared secret + ciphertext
@@ -93,7 +59,7 @@ pub fn test_api() -> Result<(), Box<dyn std::error::Error>> {
     }
     let sha3_256_hash_of_ciphertext = hex::decode("6e777e2cf8054659136a971d9e70252f301226930c19c470ee0688163a63c15b")?;
     let mut actual_sha3_256_hash_of_ciphertext = [0u8; 32];
-    hash::sha3_256(&cipher_text, &mut actual_sha3_256_hash_of_ciphertext);
+    Sha3_256::hash(&cipher_text, &mut actual_sha3_256_hash_of_ciphertext);
     assert_eq!(sha3_256_hash_of_ciphertext, actual_sha3_256_hash_of_ciphertext);
     let shared_secret = hex::decode("e7184a0975ee3470878d2d159ec83129c8aec253d4ee17b4810311d198cd0368")?;
     assert_eq!(shared_secret, actual_shared_secret);

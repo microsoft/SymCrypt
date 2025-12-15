@@ -47,14 +47,14 @@ testSymCryptMlKemNaivePolyMul(
     UINT32 a, b, c, ab;
     UINT16 inv;
     INT32 diff;
-    
+
     for( i=0; i<SYMCRYPT_MLWE_POLYNOMIAL_COEFFICIENTS; i++ )
     {
         peDst->coeffs[i] = 0;
     }
 
     // schoolbook polynomial modular multiplication
-    // polynomial modulo X^256 + 1; 
+    // polynomial modulo X^256 + 1;
 
     // Products which result in a coefficient < X^256 are positive
     for( i=0; i<SYMCRYPT_MLWE_POLYNOMIAL_COEFFICIENTS; i++ )
@@ -66,11 +66,11 @@ testSymCryptMlKemNaivePolyMul(
         {
             b = peSrc2->coeffs[j];
             SYMCRYPT_ASSERT( b < SYMCRYPT_MLKEM_Q );
-            
+
             SYMCRYPT_ASSERT( i+j < SYMCRYPT_MLWE_POLYNOMIAL_COEFFICIENTS );
             c = peDst->coeffs[i+j];
             SYMCRYPT_ASSERT( c < SYMCRYPT_MLKEM_Q );
-        
+
             ab = a * b;
 
             inv = (UINT16)ab * SYMCRYPT_TEST_MLKEM_NegQInvModR;
@@ -99,12 +99,12 @@ testSymCryptMlKemNaivePolyMul(
         {
             b = peSrc2->coeffs[j];
             SYMCRYPT_ASSERT( b < SYMCRYPT_MLKEM_Q );
-            
+
             SYMCRYPT_ASSERT( i+j >= SYMCRYPT_MLWE_POLYNOMIAL_COEFFICIENTS );
             SYMCRYPT_ASSERT( i+j < (2*SYMCRYPT_MLWE_POLYNOMIAL_COEFFICIENTS) );
             c = peDst->coeffs[(i + j) - SYMCRYPT_MLWE_POLYNOMIAL_COEFFICIENTS];
             SYMCRYPT_ASSERT( c < SYMCRYPT_MLKEM_Q );
-        
+
             ab = a * b;
 
             inv = (UINT16)ab * SYMCRYPT_TEST_MLKEM_NegQInvModR;
@@ -133,7 +133,7 @@ testSymCryptMlKemNaivePolyMul(
         inv = ((UINT16)c) * SYMCRYPT_TEST_MLKEM_NegQInvModR;
         c = (c + (((UINT32)inv) * SYMCRYPT_MLKEM_Q)) >> SYMCRYPT_TEST_MLKEM_Rlog2; // in range [0, 3388]
         SYMCRYPT_ASSERT( c <= 3388 );
-        
+
         diff = c - SYMCRYPT_MLKEM_Q;               // in range [-Q, 59]
         c -= SYMCRYPT_MLKEM_Q & ~(diff >> 31);     // in range [0, Q-1]
         SYMCRYPT_ASSERT( c < SYMCRYPT_MLKEM_Q );
@@ -191,7 +191,7 @@ testMlKemArithmetic()
     CHECK( testSymCryptMlKemPolyEqual( peD, peOne ), "1 + 0 != 1" );
 
     SymCryptMlKemPolyElementSub( peOne, peOne, peD );
-    
+
     CHECK( testSymCryptMlKemPolyEqual( peD, peZero ), "1 - 1 != 0" );
 
     SymCryptMlKemPolyElementMulAndAccumulate( peOneNTT, peOneNTT, paTmp );
@@ -230,7 +230,7 @@ testMlKemArithmetic()
 
         SymCryptMlKemPolyElementSub( peA, peA, peD );
         CHECK3( testSymCryptMlKemPolyEqual( peD, peZero ), "(%i): (A-A) != 0", i );
-        
+
         SymCryptMlKemPolyElementAdd( peA, peZero, peC );
         CHECK3( testSymCryptMlKemPolyEqual( peC, peA ), "(%i): (A+0) != A", i );
 
@@ -299,7 +299,7 @@ testMlKemArithmetic()
             SymCryptMlKemPolyElementMulAndAccumulate( peC, peD, paTmp );
             SymCryptMlKemPolyElementSub( peC, peC, peC );
             SymCryptMlKemMontgomeryReduceAndAddPolyElementAccumulatorToPolyElement( paTmp, peC ); // C = ((A+B) o (A-B)) ./ R;
-            
+
             SymCryptMlKemPolyElementSub( peZero, peB, peD ); // D = -B
             SymCryptMlKemPolyElementMulAndAccumulate( peA, peA, paTmp ); // Tmp = AoA
             SymCryptMlKemPolyElementMulAndAccumulate( peB, peD, paTmp ); // Tmp = (AoA) + (Bo-B)
@@ -346,7 +346,7 @@ public:
 
     virtual NTSTATUS encapsulate(
         _Out_writes_bytes_( cbAgreedSecret )    PBYTE               pbAgreedSecret,
-                                                SIZE_T              cbAgreedSecret, 
+                                                SIZE_T              cbAgreedSecret,
         _Out_writes_bytes_( cbCiphertext )      PBYTE               pbCiphertext,
                                                 SIZE_T              cbCiphertext );
 
@@ -354,7 +354,7 @@ public:
         _In_reads_bytes_( cbRandom )            PCBYTE              pbRandom,
                                                 SIZE_T              cbRandom,
         _Out_writes_bytes_( cbAgreedSecret )    PBYTE               pbAgreedSecret,
-                                                SIZE_T              cbAgreedSecret, 
+                                                SIZE_T              cbAgreedSecret,
         _Out_writes_bytes_( cbCiphertext )      PBYTE               pbCiphertext,
                                                 SIZE_T              cbCiphertext );
 
@@ -397,7 +397,7 @@ KemMultiImp::setKeyFromTestBlob(
 
     m_comps.clear();
     m_canDecapsulate = canDecapsulate;
-    
+
     for( ImpPtrVector::iterator i = m_imps.begin(); i != m_imps.end(); ++i )
     {
         if( (*i)->setKeyFromTestBlob( pcbTestKeyBlob, cbKeyBlob, canDecapsulate ) == STATUS_SUCCESS )
@@ -418,9 +418,9 @@ KemMultiImp::getBlobFromKey(
     BYTE abBlob[3169];
     ResultMerge resAgreedSecret;
     NTSTATUS ntStatus;
-    
+
     CHECK( cbBlob < sizeof( abBlob ), "Buffer too small" );
-    
+
     for( ImpPtrVector::iterator i = m_comps.begin(); i != m_comps.end(); ++i )
     {
         memset( abBlob, 'b', cbBlob + 1 );
@@ -444,7 +444,7 @@ KemMultiImp::getBlobFromKey(
 NTSTATUS
 KemMultiImp::encapsulate(
         _Out_writes_bytes_( cbAgreedSecret )    PBYTE               pbAgreedSecret,
-                                                SIZE_T              cbAgreedSecret, 
+                                                SIZE_T              cbAgreedSecret,
         _Out_writes_bytes_( cbCiphertext )      PBYTE               pbCiphertext,
                                                 SIZE_T              cbCiphertext )
 {
@@ -461,7 +461,7 @@ KemMultiImp::encapsulate(
     CHECK( cbAgreedSecret < sizeof( abEncapsAgreedSecret ), "Buffer too small" );
     CHECK( cbCiphertext   < sizeof( abEncapsCiphertext ), "Buffer too small" );
     CHECK( cbAgreedSecret < sizeof( abDecapsAgreedSecret ), "Buffer too small" );
-    
+
     for( ImpPtrVector::iterator i = m_comps.begin(); i != m_comps.end(); ++i )
     {
         memset( abEncapsAgreedSecret, 'd', cbAgreedSecret + 1 );
@@ -496,9 +496,9 @@ KemMultiImp::encapsulate(
             memcpy( pbAgreedSecret, abEncapsAgreedSecret, cbAgreedSecret );
             memcpy( pbCiphertext, abEncapsCiphertext, cbCiphertext );
         }
-        
+
     }
-    
+
     return STATUS_SUCCESS;
 }
 
@@ -507,7 +507,7 @@ KemMultiImp::encapsulateEx(
         _In_reads_bytes_( cbRandom )            PCBYTE              pbRandom,
                                                 SIZE_T              cbRandom,
         _Out_writes_bytes_( cbAgreedSecret )    PBYTE               pbAgreedSecret,
-                                                SIZE_T              cbAgreedSecret, 
+                                                SIZE_T              cbAgreedSecret,
         _Out_writes_bytes_( cbCiphertext )      PBYTE               pbCiphertext,
                                                 SIZE_T              cbCiphertext )
 {
@@ -516,10 +516,10 @@ KemMultiImp::encapsulateEx(
     ResultMerge resAgreedSecret;
     ResultMerge resCipherText;
     NTSTATUS ntStatus;
-    
+
     CHECK( cbAgreedSecret < sizeof( abEncapsAgreedSecret ), "Buffer too small" );
     CHECK( cbCiphertext   < sizeof( abEncapsCiphertext ), "Buffer too small" );
-    
+
     for( ImpPtrVector::iterator i = m_comps.begin(); i != m_comps.end(); ++i )
     {
         memset( abEncapsAgreedSecret, 'd', cbAgreedSecret + 1 );
@@ -530,7 +530,7 @@ KemMultiImp::encapsulateEx(
             abEncapsCiphertext, cbCiphertext);
         CHECK( abEncapsAgreedSecret[ cbAgreedSecret ] == 'd', "?" );
         CHECK( abEncapsCiphertext[ cbCiphertext ] == 'c', "?" );
-        
+
         if( ntStatus != STATUS_NOT_SUPPORTED )
         {
             CHECK( ntStatus == STATUS_SUCCESS, "Failure during KEM EncapsulateEx" );
@@ -557,10 +557,10 @@ KemMultiImp::decapsulate(
     ResultMerge resStatus;
     BYTE b[4];
     NTSTATUS ntStatus;
-    
+
     CHECK( cbAgreedSecret < sizeof( abDecapsAgreedSecret ), "Buffer too small" );
     CHECK( m_canDecapsulate, "Attempt to decapsulate with a key that does not support it" );
-    
+
     for( ImpPtrVector::iterator i = m_comps.begin(); i != m_comps.end(); ++i )
     {
         memset( abDecapsAgreedSecret, 'd', cbAgreedSecret + 1 );
@@ -602,6 +602,10 @@ SYMCRYPT_TEST_MLKEM_PARAMS rgTestMlKemParams[] = {
 
 #define NUM_OF_MLKEM_TEST_PARAMS       (sizeof(rgTestMlKemParams) / sizeof(rgTestMlKemParams[0]))
 
+#define SYMCRYPT_TEST_MLKEM_SIZEOF_PUBLIC_SEED  (32)
+#define SYMCRYPT_TEST_MLKEM_SIZEOF_ENCAPS_HASH  (32)
+#define SYMCRYPT_TEST_MLKEM_SIZEOF_Z            (32)
+
 VOID
 testMlKemHighLevelAPI()
 {
@@ -610,7 +614,7 @@ testMlKemHighLevelAPI()
     NTSTATUS ntStatus;
     SYMCRYPT_ERROR scError;
     UINT32 i;
-    
+
     MLKEMKEY_TESTBLOB keyTestBlobFull;
     MLKEMKEY_TESTBLOB keyTestBlobDecaps;
     MLKEMKEY_TESTBLOB keyTestBlobEncaps;
@@ -657,7 +661,7 @@ testMlKemHighLevelAPI()
 
             ntStatus = pKemImplementation->getBlobFromKey( SYMCRYPT_MLKEMKEY_FORMAT_DECAPSULATION_KEY, keyTestBlobDecaps.abKeyBlob, keyTestBlobDecaps.cbKeyBlob );
             CHECK( ntStatus == STATUS_SUCCESS, "Failure getting decapsulation key blob from full key");
-            
+
             ntStatus = pKemImplementation->getBlobFromKey( SYMCRYPT_MLKEMKEY_FORMAT_ENCAPSULATION_KEY, keyTestBlobEncaps.abKeyBlob, keyTestBlobEncaps.cbKeyBlob );
             CHECK( ntStatus == STATUS_SUCCESS, "Failure getting encapsulation key blob from full key");
 
@@ -716,7 +720,7 @@ testMlKemHighLevelAPI()
 
             ntStatus = pKemImplementation->decapsulate( abCipherText, cbCipherText, abAgreedSecretDecaps, sizeof(abAgreedSecretDecaps) );
             CHECK( (ntStatus != STATUS_SUCCESS) || memcmp(abAgreedSecretEncaps, abAgreedSecretDecaps, sizeof(abAgreedSecretEncaps)) != 0, "Modified ciphertext does not cause failure" );
-            
+
             ntStatus = pKemImplementation->setKeyFromTestBlob( (PCBYTE) &keyTestBlobDecaps, sizeof(keyTestBlobDecaps), TRUE );
             CHECK( ntStatus == STATUS_SUCCESS, "Failure setting key from decapsulation key blob");
 
@@ -724,7 +728,7 @@ testMlKemHighLevelAPI()
             CHECK( (ntStatus != STATUS_SUCCESS) || memcmp(abAgreedSecretEncaps, abAgreedSecretDecaps, sizeof(abAgreedSecretEncaps)) != 0, "Modified ciphertext does not cause failure" );
         }
     }
-    
+
     CHECK( pKemImplementation->setKeyFromTestBlob( NULL, 0, FALSE ) == STATUS_SUCCESS, "Failed to clear key" );
 }
 
@@ -909,13 +913,13 @@ testKemKats()
                 }
             }
             CHECK3( bParamsFound, "KEM header at line %lld specifies unknown KAT KEM params!", line) ;
-            
+
             params = rgTestMlKemParams[i].params;
         }
 
         if( katItem.type == KAT_TYPE_DATASET )
         {
-            
+
             if (katIsFieldPresent( katItem, "z" ) )
             {
                 //
@@ -986,12 +990,70 @@ testKemKats()
                 cKemDecapsSamples++;
                 continue;
             }
-            
+
             FATAL2( "Unknown data record at line %lld", line );
         }
     }
 
     iprint( "\n        Total samples: %d MlKemKeyGen, %d MlKemEncaps, %d MlKemDecaps\n", cKemKeyGenSamples, cKemEncapsSamples, cKemDecapsSamples);
+}
+
+VOID
+testSymCryptMlKemSetInvalidDecapsKeyBlob()
+{
+    SYMCRYPT_ERROR scError;
+    MLKEMKEY_TESTBLOB keyTestBlobFull;
+    MLKEMKEY_TESTBLOB keyTestBlobDecaps;
+
+    for( SYMCRYPT_TEST_MLKEM_PARAMS testParams : rgTestMlKemParams )
+    {
+        SYMCRYPT_MLKEM_PARAMS params = testParams.params;
+        PSYMCRYPT_MLKEMKEY pKey = SymCryptMlKemkeyAllocate( params );
+        CHECK( pKey != NULL, "SymCryptMlKemkeyAllocate failed" );
+
+        keyTestBlobFull.params = params;
+        scError = SymCryptMlKemSizeofKeyFormatFromParams( params, SYMCRYPT_MLKEMKEY_FORMAT_PRIVATE_SEED, &keyTestBlobFull.cbKeyBlob );
+        CHECK3( scError == SYMCRYPT_NO_ERROR, "SymCryptMlKemSizeofKeyFormatFromParams SYMCRYPT_MLKEMKEY_FORMAT_PRIVATE_SEED failed with 0x%x", scError );
+
+        GENRANDOM( keyTestBlobFull.abKeyBlob, (UINT32) keyTestBlobFull.cbKeyBlob );
+
+        scError = SymCryptMlKemSizeofKeyFormatFromParams( params, SYMCRYPT_MLKEMKEY_FORMAT_DECAPSULATION_KEY, &keyTestBlobDecaps.cbKeyBlob );
+        CHECK3( scError == SYMCRYPT_NO_ERROR, "SymCryptMlKemSizeofKeyFormatFromParams SYMCRYPT_MLKEMKEY_FORMAT_DECAPSULATION_KEY failed with 0x%x", scError );
+
+        keyTestBlobDecaps.params = params;
+
+        scError = SymCryptMlKemkeySetValue(
+                    &(keyTestBlobFull.abKeyBlob[0]), keyTestBlobFull.cbKeyBlob,
+                    SYMCRYPT_MLKEMKEY_FORMAT_PRIVATE_SEED,
+                    0,
+                    pKey);
+        CHECK3( scError == SYMCRYPT_NO_ERROR, "SymCryptMlKemkeySetValue SYMCRYPT_MLKEMKEY_FORMAT_PRIVATE_SEED failed with 0x%x", scError );
+
+        scError = SymCryptMlKemkeyGetValue(
+                    pKey,
+                    &(keyTestBlobDecaps.abKeyBlob[0]), keyTestBlobDecaps.cbKeyBlob,
+                    SYMCRYPT_MLKEMKEY_FORMAT_DECAPSULATION_KEY,
+                    0);
+        CHECK3( scError == SYMCRYPT_NO_ERROR, "SymCryptMlKemkeyGetValue SYMCRYPT_MLKEMKEY_FORMAT_DECAPSULATION_KEY failed with 0x%x", scError );
+
+        // ML-KEM decaps key blob format is [ s || t || public seed || H(encaps key) || z ]
+        SIZE_T decapsPublicSeedOffset = keyTestBlobDecaps.cbKeyBlob - SYMCRYPT_TEST_MLKEM_SIZEOF_Z
+                                                                    - SYMCRYPT_TEST_MLKEM_SIZEOF_ENCAPS_HASH
+                                                                    - SYMCRYPT_TEST_MLKEM_SIZEOF_PUBLIC_SEED;
+        UINT32 t = g_rng.uint32();
+        UINT32 byteIndex = t % SYMCRYPT_TEST_MLKEM_SIZEOF_PUBLIC_SEED;
+        UINT32 bitIndex = t % 8;
+
+        keyTestBlobDecaps.abKeyBlob[ decapsPublicSeedOffset + byteIndex ] ^= 1 << bitIndex;
+        scError = SymCryptMlKemkeySetValue(
+                    &(keyTestBlobDecaps.abKeyBlob[0]), keyTestBlobDecaps.cbKeyBlob,
+                    SYMCRYPT_MLKEMKEY_FORMAT_DECAPSULATION_KEY,
+                    0,
+                    pKey);
+        CHECK3( scError == SYMCRYPT_INVALID_BLOB, "SymCryptMlKemkeySetValue with corrupted public seed got something other than SYMCRYPT_INVALID_BLOB: 0x%x", scError );
+
+        SymCryptMlKemkeyFree( pKey );
+    }
 }
 
 VOID
@@ -1006,7 +1068,7 @@ testKem()
     }
 
     iprint( "    KEM\n" );
-    
+
     testKemKats();
 
     nOutstandingAllocs = SYMCRYPT_INTERNAL_VOLATILE_READ64(&g_nOutstandingCheckedAllocs);
@@ -1016,6 +1078,7 @@ testKem()
     testMlKemArithmetic();
 #endif
     testMlKemHighLevelAPI();
+    testSymCryptMlKemSetInvalidDecapsKeyBlob();
 
     nOutstandingAllocs = SYMCRYPT_INTERNAL_VOLATILE_READ64(&g_nOutstandingCheckedAllocs);
     CHECK3( nOutstandingAllocs == 0, "Memory leak, %d outstanding", nOutstandingAllocs );

@@ -82,7 +82,6 @@ SymCryptSha3_224Result(
 
 #endif // SYMCRUST_EXPERIMENTAL_BUILD
 
-
 //
 // SymCryptSha3_224StateExport
 //

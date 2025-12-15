@@ -425,7 +425,7 @@ impl KeccakState {
         // Extract full lanes
         let full_lanes: usize = rem_result_len / U64_NUM_BYTES;
         if full_lanes > 0 {
-            self.extract_lanes(result, full_lanes);
+            self.extract_lanes(&mut result[result_index..], full_lanes);
             result_index += full_lanes * U64_NUM_BYTES;
             rem_result_len -= full_lanes * U64_NUM_BYTES;
         }

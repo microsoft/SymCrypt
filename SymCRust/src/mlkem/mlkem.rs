@@ -5,6 +5,8 @@
 //
 
 use crate::common::*;
+use crate::hash::OneShotHash;
+use crate::sha3::Sha3_512;
 
 mod ffi;
 pub mod key;
@@ -13,12 +15,6 @@ pub mod key;
 mod test;
 
 // ML-KEM internal modules - not visible outside mlkem
-#[cfg(not(feature = "benchmarking"))]
-#[path = "hash.rs"]
-mod hash;
-// For pure Rust benchmarking, we want to mock hash calls
-#[cfg(feature = "benchmarking")]
-#[path = "mock/hash.rs"]
 mod hash;
 
 #[cfg(not(feature = "benchmarking"))]
@@ -31,6 +27,7 @@ pub mod ntt;
 
 use key::*;
 use ntt::*;
+use hash::*;
 
 const fn sizeof_encoded_uncompressed_vector(_n_rows: usize) -> usize {
     384 * _n_rows
@@ -107,15 +104,17 @@ fn key_expand_public_matrix_from_public_seed(
     let p_shake_state_work = &mut p_comp_temps.hash_state1;
     let n_rows = pk_mlkem_key.params.n_rows;
 
-    hash::shake128_init(p_shake_state_base);
-    hash::shake128_append(p_shake_state_base, &pk_mlkem_key.public_seed);
+    p_shake_state_base.set_alg(MlKemHashAlg::Shake128);
+    p_shake_state_base.init();
+    p_shake_state_base.append(&pk_mlkem_key.public_seed);
 
     for i in 0u8..n_rows {
         coordinates[1] = i;
         for j in 0u8..n_rows {
             coordinates[0] = j;
-            hash::shake128_state_copy(p_shake_state_base, p_shake_state_work);
-            hash::shake128_append(p_shake_state_work, &coordinates);
+            *p_shake_state_work = p_shake_state_base.clone();
+            debug_assert!(p_shake_state_work.get_alg() == MlKemHashAlg::Shake128);
+            p_shake_state_work.append(&coordinates);
 
             let a_transpose = pk_mlkem_key.a_transpose_mut();
             poly_element_sample_ntt_from_shake128(p_shake_state_work, &mut a_transpose[(i*n_rows+j) as usize]);
@@ -131,17 +130,19 @@ fn key_compute_encapsulation_key_hash(
 ) {
     let p_state = &mut p_comp_temps.hash_state0;
     let cb_encoded_vector = sizeof_encoded_uncompressed_vector(pk_mlkem_key.params.n_rows as usize);
-    hash::sha3_256_init(p_state);
-    hash::sha3_256_append(p_state, &pk_mlkem_key.encoded_t[0..cb_encoded_vector]);
-    hash::sha3_256_append(p_state, &pk_mlkem_key.public_seed);
-    hash::sha3_256_result(p_state, &mut pk_mlkem_key.encaps_key_hash);
+
+    p_state.set_alg(MlKemHashAlg::Sha3_256);
+    p_state.init();
+    p_state.append(&pk_mlkem_key.encoded_t[0..cb_encoded_vector]);
+    p_state.append(&pk_mlkem_key.public_seed);
+    p_state.result(&mut pk_mlkem_key.encaps_key_hash);
 }
 
 fn key_expand_from_private_seed(
     pk_mlkem_key: &mut Key,
     p_comp_temps: &mut InternalComputationTemporaries,
 ) {
-    let mut private_seed_hash = [0u8; hash::SHA3_512_RESULT_SIZE];
+    let mut private_seed_hash = [0u8; Sha3_512::RESULT_SIZE];
     let mut cbd_sample_buffer = [0u8; 3 * 64 + 1];
     let n_rows = pk_mlkem_key.params.n_rows;
     let n_eta1 = pk_mlkem_key.params.n_eta1;
@@ -159,7 +160,7 @@ fn key_expand_from_private_seed(
     cbd_sample_buffer[0..pk_mlkem_key.private_seed.len()]
         .copy_from_slice(&pk_mlkem_key.private_seed);
     cbd_sample_buffer[pk_mlkem_key.private_seed.len() /* == 32 */] = n_rows;
-    hash::sha3_512(
+    Sha3_512::hash(
         &cbd_sample_buffer[0..pk_mlkem_key.private_seed.len() + 1],
         &mut private_seed_hash,
     );
@@ -174,33 +175,31 @@ fn key_expand_from_private_seed(
     key_expand_public_matrix_from_public_seed(pk_mlkem_key, p_comp_temps);
 
     // Initialize p_shake_stateBase with sigma
-    hash::shake256_init(&mut p_comp_temps.hash_state0);
-    hash::shake256_append(
-        &mut p_comp_temps.hash_state0,
+    p_comp_temps.hash_state0.set_alg(MlKemHashAlg::Shake256);
+    p_comp_temps.hash_state0.init();
+    p_comp_temps.hash_state0.append(
         &private_seed_hash[pk_mlkem_key.public_seed.len()..pk_mlkem_key.public_seed.len() + 32],
     );
 
     // Expand s in place
     for i in 0u8..n_rows {
         cbd_sample_buffer[0] = i;
-        hash::shake256_state_copy( &p_comp_temps.hash_state0, &mut p_comp_temps.hash_state1 );
-        hash::shake256_append( &mut p_comp_temps.hash_state1, &cbd_sample_buffer[0..1] );
+        p_comp_temps.hash_state1 = p_comp_temps.hash_state0.clone();
+        debug_assert!(p_comp_temps.hash_state1.get_alg() == MlKemHashAlg::Shake256);
+        p_comp_temps.hash_state1.append(&cbd_sample_buffer[0..1]);
 
-        hash::shake256_extract( &mut p_comp_temps.hash_state1, &mut cbd_sample_buffer[0..64usize*(n_eta1 as usize)], false);
+        p_comp_temps.hash_state1.extract(&mut cbd_sample_buffer[0..64usize*(n_eta1 as usize)], false);
 
         poly_element_sample_cbd_from_bytes( &cbd_sample_buffer, n_eta1 as u32, &mut pk_mlkem_key.s_mut()[i as usize]);
     }
     // Expand e in t, ready for multiply-add
     for i in 0u8..n_rows {
         cbd_sample_buffer[0] = n_rows+i;
-        // Note (Rust): it is much better to borrow the hash states *here*, rather than declaring
-        // them at the beginning of the function. With the former style, the borrow lives for the
-        // duration of the function call and one can use p_comp_temps still; with the latter style,
-        // p_comp_temps is invalidated for the duration of the entire function.
-        hash::shake256_state_copy( &p_comp_temps.hash_state0, &mut p_comp_temps.hash_state1 );
-        hash::shake256_append( &mut p_comp_temps.hash_state1, &cbd_sample_buffer[0..1] );
+        p_comp_temps.hash_state1 = p_comp_temps.hash_state0.clone();
+        debug_assert!(p_comp_temps.hash_state1.get_alg() == MlKemHashAlg::Shake256);
+        p_comp_temps.hash_state1.append(&cbd_sample_buffer[0..1]);
 
-        hash::shake256_extract( &mut p_comp_temps.hash_state1, &mut cbd_sample_buffer[0..64*(n_eta1 as usize)], false );
+        p_comp_temps.hash_state1.extract(&mut cbd_sample_buffer[0..64*(n_eta1 as usize)], false);
 
         poly_element_sample_cbd_from_bytes( &cbd_sample_buffer, n_eta1 as u32, &mut pk_mlkem_key.t_mut()[i as usize]);
     }
@@ -359,11 +358,18 @@ pub fn key_set_value(
             // transpose A
             matrix_transpose(pk_mlkem_key.a_transpose_mut(), n_rows);
 
-            // copy hash of encapsulation key
+            // compute hash of encapsulation key blob
+            key_compute_encapsulation_key_hash(pk_mlkem_key, &mut p_comp_temps);
+
+            // check hash of encapsulation key matches hash in the provided blob
             let l = pk_mlkem_key.encaps_key_hash.len();
-            pk_mlkem_key
-                .encaps_key_hash
-                .copy_from_slice(&pb_src[pb_curr..pb_curr + l]);
+            if !const_time_slices_equal(
+                &pk_mlkem_key.encaps_key_hash,
+                &pb_src[pb_curr..pb_curr + l],
+            ) {
+                return Error::InvalidBlob;
+            }
+
             pb_curr += pk_mlkem_key.encaps_key_hash.len();
 
             // copy private random
@@ -609,16 +615,14 @@ fn encapsulate_internal(
     let pa_tmp = &mut p_comp_temps.poly_element_accumulator;
 
     // cbd_sample_buffer = (K || rOuter) = SHA3-512(pb_random || encapsKeyHash)
-    hash::sha3_512_init(&mut p_comp_temps.hash_state0);
-    hash::sha3_512_append(&mut p_comp_temps.hash_state0, pb_random);
-    hash::sha3_512_append(&mut p_comp_temps.hash_state0, &pk_mlkem_key.encaps_key_hash);
+    p_comp_temps.hash_state0.set_alg(MlKemHashAlg::Sha3_512);
+    p_comp_temps.hash_state0.init();
+    p_comp_temps.hash_state0.append(pb_random);
+    p_comp_temps.hash_state0.append(&pk_mlkem_key.encaps_key_hash);
     // Note (Rust): should we have a type that is less strict for the output of sha3_512_result?
     // Note (Rust): no debug_assert!(SIZEOF_AGREED_SECRET < SHA3_512_RESULT_SIZE)?
-    hash::sha3_512_result(
-        &mut p_comp_temps.hash_state0,
-        (&mut cbd_sample_buffer[0..hash::SHA3_512_RESULT_SIZE])
-            .try_into()
-            .unwrap(),
+    p_comp_temps.hash_state0.result(
+        &mut cbd_sample_buffer[0..Sha3_512::RESULT_SIZE],
     );
 
     // Write K to pb_agreed_secret
@@ -626,21 +630,20 @@ fn encapsulate_internal(
         .copy_from_slice(&cbd_sample_buffer[0..SIZEOF_AGREED_SECRET]);
 
     // Initialize p_shake_stateBase with rOuter
-    hash::shake256_init(&mut p_comp_temps.hash_state0);
-    hash::shake256_append(
-        &mut p_comp_temps.hash_state0,
-        &cbd_sample_buffer[cb_agreed_secret..cb_agreed_secret + 32],
-    );
+    p_comp_temps.hash_state0.set_alg(MlKemHashAlg::Shake256);
+    p_comp_temps.hash_state0.init();
+    p_comp_temps.hash_state0.append(&cbd_sample_buffer[cb_agreed_secret..cb_agreed_secret + 32]);
 
     assert!(n_rows >= MATRIX_MIN_NROWS as u8 && n_rows <= MATRIX_MAX_NROWS as u8);
 
     // Expand rInner vector
     for i in 0u8..n_rows {
         cbd_sample_buffer[0] = i;
-        hash::shake256_state_copy( &p_comp_temps.hash_state0, &mut p_comp_temps.hash_state1 );
-        hash::shake256_append( &mut p_comp_temps.hash_state1, &cbd_sample_buffer[0..1] );
+        p_comp_temps.hash_state1 = p_comp_temps.hash_state0.clone();
+        debug_assert!(p_comp_temps.hash_state1.get_alg() == MlKemHashAlg::Shake256);
+        p_comp_temps.hash_state1.append(&cbd_sample_buffer[0..1]);
 
-        hash::shake256_extract( &mut p_comp_temps.hash_state1, &mut cbd_sample_buffer[0..64usize*(n_eta1 as usize)], false );
+        p_comp_temps.hash_state1.extract(&mut cbd_sample_buffer[0..64usize*(n_eta1 as usize)], false);
 
         poly_element_sample_cbd_from_bytes( &cbd_sample_buffer, n_eta1 as u32, &mut pvr_inner[i as usize]);
     }
@@ -666,10 +669,11 @@ fn encapsulate_internal(
     // Expand e1 and add it to pv_tmp - do addition PolyElement-wise to reduce memory usage
     for i in 0u8..n_rows {
         cbd_sample_buffer[0] = n_rows+i;
-        hash::shake256_state_copy( &p_comp_temps.hash_state0, &mut p_comp_temps.hash_state1 );
-        hash::shake256_append( &mut p_comp_temps.hash_state1, &cbd_sample_buffer[0..1] );
+        p_comp_temps.hash_state1 = p_comp_temps.hash_state0.clone();
+        debug_assert!(p_comp_temps.hash_state1.get_alg() == MlKemHashAlg::Shake256);
+        p_comp_temps.hash_state1.append(&cbd_sample_buffer[0..1]);
 
-        hash::shake256_extract( &mut p_comp_temps.hash_state1, &mut cbd_sample_buffer[0..64*(n_eta2 as usize)], false );
+        p_comp_temps.hash_state1.extract(&mut cbd_sample_buffer[0..64*(n_eta2 as usize)], false);
 
         poly_element_sample_cbd_from_bytes( &cbd_sample_buffer, n_eta2 as u32, pe_tmp0 );
 
@@ -688,11 +692,11 @@ fn encapsulate_internal(
 
     // Expand e2 polynomial in pe_tmp1
     cbd_sample_buffer[0] = 2 * n_rows;
-    hash::shake256_state_copy(&p_comp_temps.hash_state0, &mut p_comp_temps.hash_state1);
-    hash::shake256_append(&mut p_comp_temps.hash_state1, &cbd_sample_buffer[0..1]);
+    p_comp_temps.hash_state1 = p_comp_temps.hash_state0.clone();
+    debug_assert!(p_comp_temps.hash_state1.get_alg() == MlKemHashAlg::Shake256);
+    p_comp_temps.hash_state1.append(&cbd_sample_buffer[0..1]);
 
-    hash::shake256_extract(
-        &mut p_comp_temps.hash_state1,
+    p_comp_temps.hash_state1.extract(
         &mut cbd_sample_buffer[0..64 * (n_eta2 as usize)],
         false,
     );
@@ -842,10 +846,11 @@ pub fn decapsulate(pk_mlkem_key: &Key, pb_ciphertext: &[u8], pb_agreed_secret: &
     // Compute the secret we will return if using implicit rejection
     // pbImplicitRejectionSecret = K_bar = SHAKE256( z || c )
     let p_shake_state = &mut p_comp_temps.hash_state0;
-    hash::shake256_init(p_shake_state);
-    hash::shake256_append(p_shake_state, &pk_mlkem_key.private_random);
-    hash::shake256_append(p_shake_state, pb_read_ciphertext);
-    hash::shake256_extract(p_shake_state, &mut pb_implicit_rejection_secret, false);
+    p_shake_state.set_alg(MlKemHashAlg::Shake256);
+    p_shake_state.init();
+    p_shake_state.append(&pk_mlkem_key.private_random);
+    p_shake_state.append(pb_read_ciphertext);
+    p_shake_state.extract(&mut pb_implicit_rejection_secret, false);
 
     // Constant time test if re-encryption successful
     let successful_reencrypt = const_time_slices_equal(pb_reencapsulated_ciphertext, pb_read_ciphertext);

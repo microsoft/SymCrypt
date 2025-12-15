@@ -67,8 +67,8 @@ pub(super) struct InternalComputationTemporaries {
     pub(super) poly_element0: PolyElement,
     pub(super) poly_element1: PolyElement,
     pub(super) poly_element_accumulator: PolyElementAccumulator,
-    pub(super) hash_state0: hash::CSha3HashState,
-    pub(super) hash_state1: hash::CSha3HashState,
+    pub(super) hash_state0: hash::MlKemHashState,
+    pub(super) hash_state1: hash::MlKemHashState,
 }
 
 impl Default for InternalComputationTemporaries {
@@ -79,8 +79,8 @@ impl Default for InternalComputationTemporaries {
             poly_element0: POLYELEMENT_ZERO,
             poly_element1: POLYELEMENT_ZERO,
             poly_element_accumulator: [0; MLWE_POLYNOMIAL_COEFFICIENTS],
-            hash_state0: hash::CSha3HashState::default(),
-            hash_state1: hash::CSha3HashState::default(),
+            hash_state0: hash::MlKemHashState::default(),
+            hash_state1: hash::MlKemHashState::default(),
         }
     }
 }
@@ -777,18 +777,20 @@ pub(super) fn poly_element_decode_and_decompress(
 }
 
 pub(super) fn poly_element_sample_ntt_from_shake128(
-    p_state: &mut hash::CSha3HashState,
+    p_state: &mut hash::MlKemHashState,
     pe_dst: &mut PolyElement,
 ) {
     let mut i: usize = 0;
     let mut shake_output_buf = [0u8; 3 * 8]; // Keccak likes extracting multiples of 8-bytes
     let mut curr_buf_index: usize = shake_output_buf.len();
 
+    debug_assert!(p_state.get_alg() == hash::MlKemHashAlg::Shake128);
+
     while i < MLWE_POLYNOMIAL_COEFFICIENTS {
         debug_assert!(curr_buf_index <= shake_output_buf.len());
         if curr_buf_index == shake_output_buf.len() {
             // Note (Rust): shakeOutputBuf[..] seems unnecessary and trips Eurydice (FIXME, see #14)
-            hash::shake128_extract(p_state, &mut shake_output_buf, false);
+            p_state.extract(&mut shake_output_buf, false);
             curr_buf_index = 0;
         }
 
