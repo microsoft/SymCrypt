@@ -3892,6 +3892,10 @@ typedef SYMCRYPT_ERROR (SYMCRYPT_CALL * PSYMCRYPT_ECPOINT_MULTI_SCALAR_MUL_FUNC)
     _Out_writes_bytes_( cbScratch ) PBYTE                   pbScratch,
                                     SIZE_T                  cbScratch  );
 
+typedef VOID (SYMCRYPT_CALL * PSYMCRYPT_ECURVE_FILL_SCRATCH_SPACES_FUNC) (
+    _Inout_    PSYMCRYPT_ECURVE pCurve );
+
+
 typedef struct _SYMCRYPT_ECURVE_FUNCTIONS
 {
     PSYMCRYPT_ECPOINT_SET_ZERO_FUNC             setZeroFunc;
@@ -3906,7 +3910,8 @@ typedef struct _SYMCRYPT_ECURVE_FUNCTIONS
     PSYMCRYPT_ECPOINT_NEGATE_FUNC               negateFunc;
     PSYMCRYPT_ECPOINT_SCALAR_MUL_FUNC           scalarMulFunc;
     PSYMCRYPT_ECPOINT_MULTI_SCALAR_MUL_FUNC     multiScalarMulFunc;
-    PVOID                                       slack[4];
+    PSYMCRYPT_ECURVE_FILL_SCRATCH_SPACES_FUNC   fillScratchSpacesFunc;
+    PVOID                                       slack[3];
 } SYMCRYPT_ECURVE_FUNCTIONS, *PSYMCRYPT_ECURVE_FUNCTIONS;
 typedef const SYMCRYPT_ECURVE_FUNCTIONS  *PCSYMCRYPT_ECURVE_FUNCTIONS;
 
@@ -4229,6 +4234,11 @@ SymCryptEcpointGenericSetRandom(
     _Out_                           PSYMCRYPT_ECPOINT   poDst,
     _Out_writes_bytes_( cbScratch ) PBYTE               pbScratch,
                                     SIZE_T              cbScratch );
+
+VOID
+SYMCRYPT_CALL
+SymCryptEcurveFillScratchSpaces(
+    _Inout_    PSYMCRYPT_ECURVE   pCurve);
 //--------------------------------------------------------
 //--------------------------------------------------------
 
