@@ -1059,6 +1059,11 @@ VOID measurePerfOneAlg( AlgorithmImplementation * pAlgImp )
             perfInfo.keySize = 0;
         }
 
+        if ( pAlgImp->m_perfKeySizeSupported != nullptr && !pAlgImp->m_perfKeySizeSupported( *k ) )
+        {
+            continue;
+        }
+
         //
         // First we measure the speed of the key expansion, if any
         //

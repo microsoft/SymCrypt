@@ -3259,6 +3259,380 @@ cleanup:
 }
 // DSA end
 
+// ECDH start
+
+struct CngEcContext
+{
+    BCRYPT_KEY_HANDLE hKey;
+    ULONG cbSecret;
+};
+
+static LPCWSTR
+CngGetEcdhCurveNameFromPerfKeySize( SIZE_T keySize )
+{
+    switch( (UINT32) keySize )
+    {
+    case PERF_KEY_C255_19:
+        return BCRYPT_ECC_CURVE_25519;
+    case PERF_KEY_NIST256:
+        return BCRYPT_ECC_CURVE_NISTP256;
+    case PERF_KEY_NIST384:
+        return BCRYPT_ECC_CURVE_NISTP384;
+    case PERF_KEY_NIST521:
+        return BCRYPT_ECC_CURVE_NISTP521;
+    default:
+        break;
+    }
+    return NULL;
+}
+
+BOOL
+CngEccIsPerfKeySizeSupported( SIZE_T keySize )
+{
+    LPCWSTR curveName = CngGetEcdhCurveNameFromPerfKeySize( keySize );
+    return curveName != nullptr;
+}
+
+
+template<>
+VOID
+algImpKeyPerfFunction<ImpCng, AlgEcdh>( PBYTE buf1, PBYTE buf2, PBYTE buf3, SIZE_T keySize )
+{
+    UNREFERENCED_PARAMETER( buf2 );
+    UNREFERENCED_PARAMETER( buf3 );
+
+    CngEcContext *ctx = (CngEcContext *) buf1;
+    ctx->hKey = NULL;
+    ctx->cbSecret = 0;
+
+    LPCWSTR curveName = CngGetEcdhCurveNameFromPerfKeySize( keySize );
+    CHECK( curveName != nullptr, "Failed CngGetEcdhCurveNameFromPerfKeySize (Ecdh)" );
+
+    NTSTATUS ntStatus = BCryptGenerateKeyPair(
+                            BCRYPT_ECDH_ALG_HANDLE,
+                            &ctx->hKey,
+                            0,
+                            0 );
+    CHECK( NT_SUCCESS( ntStatus ), "BCryptGenerateKeyPair failed for ECDH" );
+
+    // Select the desired curve on this key before finalizing.
+    ULONG cbCurveName = (ULONG)((wcslen( curveName ) + 1) * sizeof( WCHAR ));
+    ntStatus = BCryptSetProperty(
+                            ctx->hKey,
+                            BCRYPT_ECC_CURVE_NAME,
+                            (PUCHAR) curveName,
+                            cbCurveName,
+                            0 );
+    CHECK( NT_SUCCESS( ntStatus ), "BCryptSetProperty failed for ECDH" );
+
+    ntStatus = BCryptFinalizeKeyPair( ctx->hKey, 0 );
+    CHECK( NT_SUCCESS( ntStatus ), "BCryptFinalizeKeyPair failed for ECDH" );
+
+    // The lower 24 bits of keySize encode the field size in bytes.
+    ctx->cbSecret = (ULONG)( keySize & ~PERF_KEY_FLAGS_MASK );
+}
+
+template<>
+VOID
+algImpCleanPerfFunction<ImpCng, AlgEcdh>( PBYTE buf1, PBYTE buf2, PBYTE buf3 )
+{
+    UNREFERENCED_PARAMETER( buf2 );
+    UNREFERENCED_PARAMETER( buf3 );
+
+    CngEcContext *ctx = (CngEcContext *) buf1;
+    if( ctx->hKey != NULL )
+    {
+        BCryptDestroyKey( ctx->hKey );
+        ctx->hKey = NULL;
+    }
+    ctx->cbSecret = 0;
+}
+
+template<>
+VOID
+algImpDataPerfFunction<ImpCng, AlgEcdh>( PBYTE buf1, PBYTE buf2, PBYTE buf3, SIZE_T dataSize )
+{
+    UNREFERENCED_PARAMETER( buf2 );
+    UNREFERENCED_PARAMETER( dataSize );
+
+    CngEcContext *ctx = (CngEcContext *) buf1;
+    CHECK( ctx->hKey != NULL && ctx->cbSecret != 0, "?" );
+
+    BCRYPT_SECRET_HANDLE hSecret = NULL;
+    NTSTATUS status = BCryptSecretAgreement(
+                            ctx->hKey,
+                            ctx->hKey,
+                            &hSecret,
+                            0 );
+    CHECK( NT_SUCCESS( status ), "BCryptSecretAgreement failed for ECDH" );
+
+    SIZE_T *pcbSecret = (SIZE_T *) buf3;
+    PBYTE pbSecret = buf3 + sizeof( *pcbSecret );
+
+    ULONG cbResult = 0;
+    status = BCryptDeriveKey(
+                            hSecret,
+                            BCRYPT_KDF_RAW_SECRET,
+                            NULL,
+                            pbSecret,
+                            ctx->cbSecret,
+                            &cbResult,
+                            0 );
+    CHECK( NT_SUCCESS( status ), "BCryptDeriveKey failed for ECDH" );
+    CHECK( cbResult == ctx->cbSecret, "ECDH agreed secret wrong size" );
+
+    *pcbSecret = (SIZE_T) ctx->cbSecret;
+
+    status = BCryptDestroySecret( hSecret );
+    CHECK( NT_SUCCESS( status ), "BCryptDestroySecret failed for ECDH" );
+}
+
+template<>
+EccImp<ImpCng, AlgEcdh>::EccImp()
+{
+    m_perfKeySizeSupported  = &CngEccIsPerfKeySizeSupported;
+    m_perfDataFunction      = &algImpDataPerfFunction <ImpCng, AlgEcdh>;
+    m_perfDecryptFunction   = NULL;
+    m_perfKeyFunction       = &algImpKeyPerfFunction  <ImpCng, AlgEcdh>;
+    m_perfCleanFunction     = &algImpCleanPerfFunction<ImpCng, AlgEcdh>;
+}
+
+template<>
+EccImp<ImpCng, AlgEcdh>::~EccImp()
+{
+}
+
+// ECDH end
+
+// ECkey Set Random
+
+template<>
+VOID
+algImpKeyPerfFunction<ImpCng, AlgEckeySetRandom>( PBYTE buf1, PBYTE buf2, PBYTE buf3, SIZE_T keySize )
+{   
+    UNREFERENCED_PARAMETER( buf2 );
+    UNREFERENCED_PARAMETER( buf3 );
+
+    *((SIZE_T*)buf1) = keySize;
+}
+
+template<>
+VOID
+algImpCleanPerfFunction<ImpCng, AlgEckeySetRandom>( PBYTE buf1, PBYTE buf2, PBYTE buf3 )
+{
+    UNREFERENCED_PARAMETER( buf1 );
+    UNREFERENCED_PARAMETER( buf2 );
+    UNREFERENCED_PARAMETER( buf3 );
+}
+
+template<>
+VOID
+algImpDataPerfFunction< ImpCng, AlgEckeySetRandom>( PBYTE buf1, PBYTE buf2, PBYTE buf3, SIZE_T dataSize )
+{
+    UNREFERENCED_PARAMETER( buf2 );
+    UNREFERENCED_PARAMETER( buf3 );
+    UNREFERENCED_PARAMETER( dataSize );
+
+    SIZE_T keySize = *((SIZE_T*)buf1);
+    BCRYPT_KEY_HANDLE hKey;
+
+    LPCWSTR curveName = CngGetEcdhCurveNameFromPerfKeySize( keySize );
+    CHECK( curveName != nullptr, "Failed CngGetEcdhCurveNameFromPerfKeySize (EckeySetRandom)" );
+
+    NTSTATUS status = BCryptGenerateKeyPair(
+                            BCRYPT_ECDH_ALG_HANDLE,
+                            &hKey,
+                            0,
+                            0 );
+    CHECK( NT_SUCCESS( status ), "BCryptGenerateKeyPair (EckeySetRandom) failed" );
+
+    // Select the desired curve on this key before finalizing.
+    ULONG cbCurveName = (ULONG)((wcslen( curveName ) + 1) * sizeof( WCHAR ));
+    status = BCryptSetProperty(
+                            hKey,
+                            BCRYPT_ECC_CURVE_NAME,
+                            (PUCHAR) curveName,
+                            cbCurveName,
+                            0 );
+    CHECK( NT_SUCCESS( status ), "BCryptSetProperty (EckeySetRandom) failed" );
+
+    status = BCryptFinalizeKeyPair( hKey, 0 );
+    CHECK( NT_SUCCESS( status ), "BCryptFinalizeKeyPair (EckeySetRandom) failed" );
+
+    BCryptDestroyKey( hKey );
+}
+
+
+template<>
+EccImp<ImpCng, AlgEckeySetRandom>::EccImp()
+{
+    m_perfKeySizeSupported  = &CngEccIsPerfKeySizeSupported;
+    m_perfDataFunction      = &algImpDataPerfFunction <ImpCng, AlgEckeySetRandom>;
+    m_perfDecryptFunction   = NULL;
+    m_perfKeyFunction       = &algImpKeyPerfFunction  <ImpCng, AlgEckeySetRandom>;
+    m_perfCleanFunction     = &algImpCleanPerfFunction<ImpCng, AlgEckeySetRandom>;
+}
+
+template<>
+EccImp<ImpCng, AlgEckeySetRandom>::~EccImp()
+{
+}
+
+// ECkey Set Random end
+
+// ECkey Set Value
+
+template<>
+VOID
+algImpKeyPerfFunction<ImpCng, AlgEckeySetValue>( PBYTE pbPrivateKeyBlob, PBYTE pbPublicKeyBlob, PBYTE buf3, SIZE_T keySize )
+{   
+    UNREFERENCED_PARAMETER( buf3 );
+    
+    BCRYPT_KEY_HANDLE hKey;
+
+    LPCWSTR curveName = CngGetEcdhCurveNameFromPerfKeySize( keySize );
+    CHECK( curveName != nullptr, "Failed CngGetEcdhCurveNameFromPerfKeySize (EckeySetValue)" );
+
+    NTSTATUS status = BCryptGenerateKeyPair(
+                            BCRYPT_ECDH_ALG_HANDLE,
+                            &hKey,
+                            0,
+                            0 );
+    CHECK( NT_SUCCESS( status ), "BCryptGenerateKeyPair (EckeySetValue) failed" );
+
+    // Select the desired curve on this key before finalizing.
+    ULONG cbCurveName = (ULONG)((wcslen( curveName ) + 1) * sizeof( WCHAR ));
+    status = BCryptSetProperty(
+                            hKey,
+                            BCRYPT_ECC_CURVE_NAME,
+                            (PUCHAR) curveName,
+                            cbCurveName,
+                            0 );
+    CHECK( NT_SUCCESS( status ), "BCryptSetProperty (EckeySetValue) failed" );
+
+    status = BCryptFinalizeKeyPair( hKey, 0 );
+    CHECK( NT_SUCCESS( status ), "BCryptFinalizeKeyPair (EckeySetValue) failed" );
+
+    // Now extract public and private key blobs
+    ULONG cbPrivateKeyBlob, cbPrivateKeyBlobWritten;
+    ULONG cbPublicKeyBlob, cbPublicKeyBlobWritten;
+    
+    status = BCryptExportKey(
+                            hKey,
+                            NULL,
+                            BCRYPT_PRIVATE_KEY_BLOB,
+                            NULL, 0,
+                            &cbPrivateKeyBlob,
+                            0 );
+    CHECK( NT_SUCCESS( status ), "BCryptExportKey (EckeySetValue) failed" );
+    
+    ((ULONG*)pbPrivateKeyBlob)[0] = cbPrivateKeyBlob;
+    status = BCryptExportKey(
+                            hKey,
+                            NULL,
+                            BCRYPT_PRIVATE_KEY_BLOB,
+                            pbPrivateKeyBlob+sizeof(ULONG), cbPrivateKeyBlob,
+                            &cbPrivateKeyBlobWritten,
+                            0 );
+    CHECK( NT_SUCCESS( status ), "BCryptExportKey (EckeySetValue) failed" );
+    CHECK( cbPrivateKeyBlob == cbPrivateKeyBlobWritten, "?" );
+
+    status = BCryptExportKey(
+                            hKey,
+                            NULL,
+                            BCRYPT_PUBLIC_KEY_BLOB,
+                            NULL, 0,
+                            &cbPublicKeyBlob,
+                            0 );
+    CHECK( NT_SUCCESS( status ), "BCryptExportKey (EckeySetValue) failed" );
+
+    ((ULONG*)pbPublicKeyBlob)[0] = cbPublicKeyBlob;
+    status = BCryptExportKey(
+                            hKey,
+                            NULL,
+                            BCRYPT_PUBLIC_KEY_BLOB,
+                            pbPublicKeyBlob+sizeof(ULONG), cbPublicKeyBlob,
+                            &cbPublicKeyBlobWritten,
+                            0 );
+    CHECK( NT_SUCCESS( status ), "BCryptExportKey (EckeySetValue) failed" );
+    CHECK( cbPublicKeyBlob == cbPublicKeyBlobWritten, "?" );
+    
+    BCryptDestroyKey( hKey );
+}
+
+template<>
+VOID
+algImpCleanPerfFunction<ImpCng, AlgEckeySetValue>( PBYTE buf1, PBYTE buf2, PBYTE buf3 )
+{
+    UNREFERENCED_PARAMETER( buf1 );
+    UNREFERENCED_PARAMETER( buf2 );
+    UNREFERENCED_PARAMETER( buf3 );
+}
+
+template<>
+VOID
+algImpDataPerfFunction<ImpCng, AlgEckeySetValue>( PBYTE pbPrivateKeyBlob, PBYTE pbPublicKeyBlob, PBYTE buf3, SIZE_T dataSize )
+{
+    UNREFERENCED_PARAMETER( pbPrivateKeyBlob );
+    UNREFERENCED_PARAMETER( buf3 );
+    UNREFERENCED_PARAMETER( dataSize );
+
+    ULONG cbPublicKeyBlob = ((ULONG*)pbPublicKeyBlob)[0];
+    BCRYPT_KEY_HANDLE hKey;
+
+    NTSTATUS status = BCryptImportKeyPair(
+                    BCRYPT_ECDH_ALG_HANDLE,
+                    NULL,
+                    BCRYPT_PUBLIC_KEY_BLOB,
+                    &hKey,
+                    pbPublicKeyBlob+sizeof(ULONG), cbPublicKeyBlob,
+                    0 );
+    CHECK( NT_SUCCESS( status ), "BCryptImportKeyPair (EckeySetValue) failed" );
+
+    BCryptDestroyKey( hKey );
+}
+
+template<>
+VOID
+algImpDecryptPerfFunction<ImpCng, AlgEckeySetValue>( PBYTE pbPrivateKeyBlob, PBYTE pbPublicKeyBlob, PBYTE buf3, SIZE_T dataSize )
+{
+    UNREFERENCED_PARAMETER( pbPublicKeyBlob );
+    UNREFERENCED_PARAMETER( buf3 );
+    UNREFERENCED_PARAMETER( dataSize );
+
+    ULONG cbPrivateKeyBlob = ((ULONG*)pbPrivateKeyBlob)[0];
+    BCRYPT_KEY_HANDLE hKey;
+
+    NTSTATUS status = BCryptImportKeyPair(
+                    BCRYPT_ECDH_ALG_HANDLE,
+                    NULL,
+                    BCRYPT_PRIVATE_KEY_BLOB,
+                    &hKey,
+                    pbPrivateKeyBlob+sizeof(ULONG), cbPrivateKeyBlob,
+                    0 );
+    CHECK( NT_SUCCESS( status ), "BCryptImportKeyPair (EckeySetValue) failed" );
+
+    BCryptDestroyKey( hKey );
+}
+
+
+template<>
+ArithImp<ImpCng, AlgEckeySetValue>::ArithImp()
+{
+    m_perfKeySizeSupported  = &CngEccIsPerfKeySizeSupported;
+    m_perfDataFunction      = &algImpDataPerfFunction   <ImpCng, AlgEckeySetValue>;
+    m_perfDecryptFunction   = &algImpDecryptPerfFunction<ImpCng, AlgEckeySetValue>;
+    m_perfKeyFunction       = &algImpKeyPerfFunction    <ImpCng, AlgEckeySetValue>;
+    m_perfCleanFunction     = &algImpCleanPerfFunction  <ImpCng, AlgEckeySetValue>;
+}
+
+template<>
+ArithImp<ImpCng, AlgEckeySetValue>::~ArithImp()
+{
+}
+
+// ECkey Set Value end
+
 /*
 
 
@@ -4064,6 +4438,10 @@ addCngAlgs()
 
     addImplementationToGlobalList<DhImp<ImpCng, AlgDh>>();
     addImplementationToGlobalList<DsaImp<ImpCng, AlgDsa>>();
+
+    addImplementationToGlobalList<EccImp<ImpCng, AlgEcdh>>();
+    addImplementationToGlobalList<EccImp<ImpCng, AlgEckeySetRandom>>();
+    addImplementationToGlobalList<ArithImp<ImpCng, AlgEckeySetValue>>();
 }
 
 #endif //INCLUDE_IMPL_CNG

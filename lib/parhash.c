@@ -457,7 +457,7 @@ SymCryptParallelHashProcess(
             todo = SYMCRYPT_MIN( todo, pWork[i]->cbData );
         }
 
-        nBytes = todo & ~(pHash->inputBlockSize - 1 );
+        nBytes = todo & ~((SIZE_T)(pHash->inputBlockSize - 1));
 
         (*pParHash->parAppendFunc)( pWork, nPar, nBytes, pbFixedScratch, cbFixedScratch );
 

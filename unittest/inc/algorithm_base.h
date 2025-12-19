@@ -26,7 +26,7 @@ public:
     std::string m_modeName;                     // Name of algorithm mode
     std::string m_implementationName;           // Name of implementation
 
-    virtual VOID setPerfKeySize( SIZE_T keySize ) {UNREFERENCED_PARAMETER(keySize);};
+    PerfKeySizeSupportedFn m_perfKeySizeSupported = nullptr;
     PerfKeyFn   m_perfKeyFunction;
     PerfDataFn  m_perfDataFunction;
     PerfDataFn  m_perfDecryptFunction;
@@ -2385,6 +2385,9 @@ const String PqDsaImp<Imp,Alg>::s_modeName;
 //
 // Template declaration for performance functions (for those implementations that wish to use them)
 //
+template< class Implementation, class Algorithm >
+BOOL algImpPerfKeySizeSupportedFn( SIZE_T keySize );
+
 template< class Implementation, class Algorithm >
 VOID algImpKeyPerfFunction( PBYTE buf1, PBYTE buf2, PBYTE buf3, SIZE_T keySize );
 

@@ -120,6 +120,7 @@
 // function. The keying function should set up any necessary expanded key.
 //
 
+typedef BOOL (*PerfKeySizeSupportedFn)( SIZE_T  keySize );
 typedef VOID (*PerfKeyFn  )( PBYTE buf1, PBYTE buf2, PBYTE buf3, SIZE_T  keySize );
 typedef VOID (*PerfDataFn )( PBYTE buf1, PBYTE buf2, PBYTE buf3, SIZE_T dataSize );
 typedef VOID (*PerfCleanFn)( PBYTE buf1, PBYTE buf2, PBYTE buf3 );
