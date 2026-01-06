@@ -119,6 +119,11 @@ BOOL g_perfTestsRunning = FALSE;
 BOOL g_printStatusIndicator = FALSE;
 
 //
+// Flag to run the dev test
+//
+BOOL g_devTest = FALSE;
+
+//
 // Flag that specifies tests are running against BCrypt SGX enclave proxy.
 //
 BOOL g_sgx = FALSE;
@@ -416,6 +421,7 @@ const char * g_algorithmNames[] = {
     AlgMlKemkeySetValue::name,
     AlgMlDsa::name,
     AlgMlDsakeySetValue::name,
+    AlgTlsHandshake::name,
 
     AlgDeveloperTest::name,
     NULL,
@@ -486,6 +492,7 @@ usage()
             "                    implementation called SymCryptDynamic. By default, all calls to SymCrypt\n"
             "                    are passed to both the statically and dynamically linked SymCrypt versions\n"
             " statusindicator    Print FIPS status indicator string\n"
+            " devtest            Run developer test (normally empty)\n"
             "\n"
 #if SYMCRYPT_CPU_X86 | SYMCRYPT_CPU_AMD64
             " CPU feature:       aesni, pclmulqdq, sse2, sse3, ssse3, avx2,\n"
@@ -780,6 +787,11 @@ processSingleOption( _In_ PSTR option )
         if (STRICMP(&option[0], "statusindicator") == 0)
         {
             g_printStatusIndicator = TRUE;
+            optionHandled = TRUE;
+        }
+        if (STRICMP(&option[0], "devtest") == 0)
+        {
+            g_devTest = TRUE;
             optionHandled = TRUE;
         }
 
@@ -1254,7 +1266,10 @@ runFunctionalTests()
 {
     print( "\n\nFunctional tests:\n" );
 
-    developertest();
+    if (g_devTest)
+    {
+        developertest();
+    }
 
     // Optionally rerun tests which directly call SymCrypt APIs specifying g_useDynamicFunctionsInTestCall
     // to dispatch the calls to the dynamic SymCrypt module.

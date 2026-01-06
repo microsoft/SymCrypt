@@ -3138,6 +3138,241 @@ algImpDecryptPerfFunction<ImpXxx, AlgTlsCbcHmacSha384>( PBYTE buf1, PBYTE buf2, 
     SYMCRYPT_ASSERT( scError == SYMCRYPT_NO_ERROR );
 }
 
+// TlsHandshakePerf Test
+
+typedef struct CONCAT2(ImpXxx, _tlshandshakeperftest_t) {
+    PCSYMCRYPT_ECURVE_PARAMS pEcdsaParams;
+    PSYMCRYPT_ECURVE pEcdsaCurve;
+    PSYMCRYPT_ECKEY pEcdsaKey;
+    PCSYMCRYPT_ECURVE_PARAMS pEcdhParams;
+    PSYMCRYPT_ECURVE pEcdhCurve;
+    PSYMCRYPT_ECKEY pEcdhPeerKey;
+    PSYMCRYPT_ECKEY pEcdhEphemeralKey;
+    PCSYMCRYPT_HASH pHash;
+    PBYTE  pbSignature;
+    SIZE_T cbSignature;
+    PBYTE  pbPeerPublicBlob;
+    SIZE_T cbPeerPublicBlob;
+    PBYTE  pbEphemeralPublicBlob;
+    SIZE_T cbEphemeralPublicBlob;
+    BYTE rawSecret[66];
+    SIZE_T cbSecret;
+    BYTE hash[64];
+    SIZE_T cbHash;
+} CONCAT2(ImpXxx, tlshandshakeperftest_t);
+
+template<>
+BOOL
+SetSymCryptTlshandshakeParamsFromPerfKeySize<ImpXxx>( SIZE_T keySize, PVOID inout )
+{
+    CONCAT2(ImpXxx, tlshandshakeperftest_t)* temps = (CONCAT2(ImpXxx, tlshandshakeperftest_t)*)inout;
+    
+    switch( keySize )
+    {
+    case PERF_KEY_C255_19:
+        temps->pEcdsaParams = SymCryptEcurveParamsNistP256; // <- Best match
+        temps->pHash        = ScShimSymCryptSha256Algorithm;
+        temps->cbHash       = 32;
+        temps->cbSignature  = 64;
+        temps->pEcdhParams  = SymCryptEcurveParamsCurve25519;
+        temps->cbSecret     = 32;
+        return TRUE;
+    case PERF_KEY_NIST256:
+        temps->pEcdsaParams = SymCryptEcurveParamsNistP256;
+        temps->pHash        = ScShimSymCryptSha256Algorithm;
+        temps->cbHash       = 32;
+        temps->cbSignature  = 64;
+        temps->pEcdhParams  = SymCryptEcurveParamsNistP256;
+        temps->cbSecret     = 32;
+        return TRUE;
+    case PERF_KEY_NIST384:
+        temps->pEcdsaParams = SymCryptEcurveParamsNistP384;
+        temps->pHash        = ScShimSymCryptSha384Algorithm;
+        temps->cbHash       = 48;
+        temps->cbSignature  = 96;
+        temps->pEcdhParams  = SymCryptEcurveParamsNistP384;
+        temps->cbSecret     = 48;
+        return TRUE;
+    case PERF_KEY_NIST521:
+        temps->pEcdsaParams = SymCryptEcurveParamsNistP521;
+        temps->pHash        = ScShimSymCryptSha512Algorithm;
+        temps->cbHash       = 64;
+        temps->cbSignature  = 132;
+        temps->pEcdhParams  = SymCryptEcurveParamsNistP521;
+        temps->cbSecret     = 66;
+        return TRUE;
+    default:
+        return FALSE;
+    }
+}
+
+
+template<>
+VOID
+algImpKeyPerfFunction<ImpXxx, AlgTlsHandshake>( PBYTE buf1, PBYTE buf2, PBYTE buf3, SIZE_T keySize )
+{
+    UNREFERENCED_PARAMETER( buf2 );
+    UNREFERENCED_PARAMETER( buf3 );
+    UNREFERENCED_PARAMETER( keySize );
+
+    CONCAT2(ImpXxx, tlshandshakeperftest_t)* temps = ((CONCAT2(ImpXxx, tlshandshakeperftest_t)*)buf1);
+    SYMCRYPT_ERROR scError;
+
+    BOOL setAlgNames = SetSymCryptTlshandshakeParamsFromPerfKeySize<ImpXxx>( keySize, temps );
+    CHECK( setAlgNames, "setAlgNames?" );
+
+    temps->pEcdsaCurve = ScShimSymCryptEcurveAllocate( temps->pEcdsaParams, 0 );
+    CHECK( temps->pEcdsaCurve != NULL, "SymCryptEcurveAllocate?" );
+
+    temps->pEcdsaKey = ScShimSymCryptEckeyAllocate( temps->pEcdsaCurve );
+    CHECK( temps->pEcdsaKey != NULL, "SymCryptEckeyAllocate0?" );
+
+    scError = SymCryptEckeySetRandom( SYMCRYPT_FLAG_ECKEY_ECDSA, temps->pEcdsaKey );
+    CHECK( scError == SYMCRYPT_NO_ERROR, "SetRandomEcdsa?" );
+
+    temps->pEcdhCurve = ScShimSymCryptEcurveAllocate( temps->pEcdhParams, 0 );
+    CHECK( temps->pEcdhCurve != NULL, "SymCryptEcurveAllocate?" );
+    
+    temps->pEcdhPeerKey = ScShimSymCryptEckeyAllocate( temps->pEcdhCurve );
+    CHECK( temps->pEcdhPeerKey != NULL, "SymCryptEckeyAllocate1?" );
+
+    scError = ScShimSymCryptEckeySetRandom( SYMCRYPT_FLAG_ECKEY_ECDH, temps->pEcdhPeerKey );
+    CHECK( scError == SYMCRYPT_NO_ERROR, "SetRandomEcdh?" );
+
+    temps->cbPeerPublicBlob = ScShimSymCryptEckeySizeofPublicKey( temps->pEcdhPeerKey, SYMCRYPT_ECPOINT_FORMAT_XY );
+    
+    temps->cbEphemeralPublicBlob = temps->cbPeerPublicBlob;
+    temps->pbPeerPublicBlob = (PBYTE)malloc(temps->cbPeerPublicBlob);
+    CHECK( temps->pbPeerPublicBlob != NULL, "malloc0?" );
+
+    temps->pbEphemeralPublicBlob = (PBYTE)malloc(temps->cbPeerPublicBlob);
+    CHECK( temps->pbEphemeralPublicBlob != NULL, "malloc1?" );
+
+    scError = ScShimSymCryptEckeyGetValue( temps->pEcdhPeerKey, nullptr, 0, temps->pbPeerPublicBlob, temps->cbPeerPublicBlob, SYMCRYPT_NUMBER_FORMAT_MSB_FIRST, SYMCRYPT_ECPOINT_FORMAT_XY, 0 );
+    CHECK( scError == SYMCRYPT_NO_ERROR, "EckeyGetValue?" );
+    
+    ScShimSymCryptEckeyFree( temps->pEcdhPeerKey );
+    temps->pEcdhPeerKey = NULL;
+
+    temps->pbSignature = (PBYTE)malloc(temps->cbSignature);
+    CHECK( temps->pbSignature != NULL, "malloc2?" );
+}
+
+template<>
+VOID
+algImpCleanPerfFunction<ImpXxx,AlgTlsHandshake>( PBYTE buf1, PBYTE buf2, PBYTE buf3 )
+{
+    UNREFERENCED_PARAMETER( buf2 );
+    UNREFERENCED_PARAMETER( buf3 );
+
+    CONCAT2(ImpXxx, tlshandshakeperftest_t)* temps = ((CONCAT2(ImpXxx, tlshandshakeperftest_t)*)buf1);
+    
+    if( temps->pbEphemeralPublicBlob )
+    {
+        free(temps->pbEphemeralPublicBlob);
+        temps->pbEphemeralPublicBlob = NULL;
+        temps->cbEphemeralPublicBlob = 0;
+    }
+
+    if( temps->pbPeerPublicBlob )
+    {
+        free(temps->pbPeerPublicBlob);
+        temps->pbPeerPublicBlob = NULL;
+        temps->cbPeerPublicBlob = 0;
+    }
+
+    if( temps->pbSignature )
+    {
+        free(temps->pbSignature);
+        temps->pbSignature = NULL;
+        temps->cbSignature = 0;
+    }
+
+    if( temps->pEcdhEphemeralKey )
+    {
+        ScShimSymCryptEckeyFree( temps->pEcdhEphemeralKey );
+        temps->pEcdhEphemeralKey = NULL;
+    }
+
+    if( temps->pEcdhPeerKey )
+    {
+        ScShimSymCryptEckeyFree( temps->pEcdhPeerKey );
+        temps->pEcdhPeerKey = NULL;
+    }
+
+    if( temps->pEcdsaKey )
+    {
+        ScShimSymCryptEckeyFree( temps->pEcdsaKey );
+        temps->pEcdsaKey = NULL;
+    }
+
+    if( temps->pEcdhCurve )
+    {
+        ScShimSymCryptEcurveFree( temps->pEcdhCurve );
+        temps->pEcdhCurve = NULL;
+    }
+
+    if( temps->pEcdsaCurve )
+    {
+        ScShimSymCryptEcurveFree( temps->pEcdsaCurve );
+        temps->pEcdsaCurve = NULL;
+    }
+}
+
+template<>
+VOID
+algImpDataPerfFunction<ImpXxx, AlgTlsHandshake>( PBYTE buf1, PBYTE buf2, PBYTE buf3, SIZE_T dataSize )
+{
+    UNREFERENCED_PARAMETER( buf2 );
+    UNREFERENCED_PARAMETER( buf3 );
+    UNREFERENCED_PARAMETER( dataSize );
+
+    CONCAT2(ImpXxx, tlshandshakeperftest_t)* temps = ((CONCAT2(ImpXxx, tlshandshakeperftest_t)*)buf1);
+    SYMCRYPT_ERROR scError;
+    
+    temps->pEcdhEphemeralKey = ScShimSymCryptEckeyAllocate( temps->pEcdhCurve );
+    CHECK( temps->pEcdhEphemeralKey != NULL, "SymCryptEckeyAllocate0?" );
+
+    scError = ScShimSymCryptEckeySetRandom( SYMCRYPT_FLAG_ECKEY_ECDH, temps->pEcdhEphemeralKey );
+    CHECK( scError == SYMCRYPT_NO_ERROR, "SetRandomEcdh?" );
+
+    scError = ScShimSymCryptEckeyGetValue( temps->pEcdhEphemeralKey, nullptr, 0, temps->pbEphemeralPublicBlob, temps->cbEphemeralPublicBlob, SYMCRYPT_NUMBER_FORMAT_MSB_FIRST, SYMCRYPT_ECPOINT_FORMAT_XY, 0 );
+    CHECK( scError == SYMCRYPT_NO_ERROR, "EckeyGetValue?" );
+    
+    temps->pEcdhPeerKey = ScShimSymCryptEckeyAllocate( temps->pEcdhCurve );
+    CHECK( temps->pEcdhPeerKey != NULL, "SymCryptEckeyAllocate1?" );
+
+    scError = ScShimSymCryptEckeySetValue( nullptr, 0, temps->pbPeerPublicBlob, temps->cbPeerPublicBlob, SYMCRYPT_NUMBER_FORMAT_MSB_FIRST, SYMCRYPT_ECPOINT_FORMAT_XY, SYMCRYPT_FLAG_ECKEY_ECDH, temps->pEcdhPeerKey );
+    CHECK( scError == SYMCRYPT_NO_ERROR, "SetValueEcdh?" );
+
+    scError = ScShimSymCryptEcDhSecretAgreement( temps->pEcdhEphemeralKey, temps->pEcdhPeerKey, SYMCRYPT_NUMBER_FORMAT_MSB_FIRST, 0, temps->rawSecret, temps->cbSecret );
+    CHECK( scError == SYMCRYPT_NO_ERROR, "EcdhSecretAgreement?" );
+
+    ScShimSymCryptHash( temps->pHash, temps->pbEphemeralPublicBlob, temps->cbEphemeralPublicBlob, temps->hash, temps->cbHash );
+
+    scError = ScShimSymCryptEcDsaSign( temps->pEcdsaKey, temps->hash, temps->cbHash, SYMCRYPT_NUMBER_FORMAT_MSB_FIRST, 0, temps->pbSignature, temps->cbSignature );
+    CHECK( scError == SYMCRYPT_NO_ERROR, "EcdsaSign?" );
+
+    ScShimSymCryptEckeyFree( temps->pEcdhEphemeralKey );
+    temps->pEcdhEphemeralKey = nullptr;
+    ScShimSymCryptEckeyFree( temps->pEcdhPeerKey );
+    temps->pEcdhPeerKey = nullptr;
+}
+
+template<>
+ArithImp<ImpXxx, AlgTlsHandshake>::ArithImp()
+{
+    m_perfDataFunction      = &algImpDataPerfFunction <ImpXxx, AlgTlsHandshake>;
+    m_perfDecryptFunction   = NULL;
+    m_perfKeyFunction       = &algImpKeyPerfFunction  <ImpXxx, AlgTlsHandshake>;
+    m_perfCleanFunction     = &algImpCleanPerfFunction<ImpXxx, AlgTlsHandshake>;
+}
+
+template<>
+ArithImp<ImpXxx, AlgTlsHandshake>::~ArithImp()
+{
+}
+
 //============================
 // The DeveloperTest algorithm is just for tests during active development.
 

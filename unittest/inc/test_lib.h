@@ -1052,6 +1052,13 @@ public:
     static constexpr const char * name = "EckeySetValue";
 };
 
+// Used only for performance testing
+// Does the operations which are somewhat representative of the server-side asymmetric cryptography in a TLS handshake
+class AlgTlsHandshake{
+public:
+    static constexpr const char * name = "TlsHandshake";
+};
+
 class AlgXmss {
 public:
     static constexpr const char * name = "Xmss";

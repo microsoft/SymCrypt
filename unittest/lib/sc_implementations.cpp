@@ -113,6 +113,10 @@ template<class Implementation>
 VOID
 SetupSymCryptMlDsaKey( PBYTE pbKey, SIZE_T keySize );
 
+template<class Implementation>
+BOOL
+SetSymCryptTlshandshakeParamsFromPerfKeySize( SIZE_T keySize, PVOID inout );
+
 VOID
 trialDivisionSetFakePrime( PSYMCRYPT_TRIALDIVISION_PRIME p )
 {
@@ -427,6 +431,8 @@ addSymCryptImplementationToGlobalList()
 
     addImplementationToGlobalList<ArithImp<ImpScVariant, AlgTrialDivision>>();
     addImplementationToGlobalList<ArithImp<ImpScVariant, AlgTrialDivisionContext>>();
+    
+    addImplementationToGlobalList<ArithImp<ImpScVariant, AlgTlsHandshake>>();
 }
 
 VOID
