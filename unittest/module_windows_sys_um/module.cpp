@@ -432,16 +432,30 @@ BOOL WINAPI DllMain(
 
 _Analysis_noreturn_
 VOID
-fatal( _In_ PCSTR file, ULONG line, _In_ PCSTR format, ... )
+fatalImpl( _In_ PCSTR message )
 {
-    va_list vl;
-
-    fprintf( stdout, "*\n\n***** FATAL ERROR %s(%lu): ", file, line );
-
-    va_start( vl, format );
-
-    vfprintf( stdout, format, vl );
-    fprintf( stdout, "\n" );
+    fprintf( stdout, "%s", message );
 
     exit( -1 );
+}
+
+_Analysis_noreturn_
+VOID
+fatal( _In_ PCSTR file, ULONG line, _In_ PCSTR format, ... )
+{
+    char buffer[1024];
+    int index = 0;
+
+    index += snprintf( buffer, sizeof(buffer), "*\n\n***** FATAL ERROR: %s(%lu): ", file, line );
+    if( index >= sizeof(buffer) )
+    {
+        index = sizeof(buffer) - 1;
+    }
+
+    va_list args;
+    va_start(args, format);
+    vsnprintf(buffer + index, sizeof(buffer) - index, format, args);
+    va_end(args);
+
+    fatalImpl(buffer);
 }

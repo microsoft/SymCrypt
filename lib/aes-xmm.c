@@ -752,30 +752,6 @@ SymCryptAesCbcMacXmm(
 #pragma runtime_checks( "u", restore )
 #pragma warning(pop)
 
-/*
-    if( cbData >= 16 )
-    {
-        if( cbData >= 32 )
-        {
-            if( cbData >= 48 )
-            {
-                if( cbData >= 64 )
-                {
-                    if( cbData >= 80 )
-                    {
-                        if( cbData >= 96 )
-                        {
-                            if( cbData >= 112 )
-                            {
-                            }
-                        }
-                    }
-                }
-            }
-        }
-    }
-*/
-
 VOID
 SYMCRYPT_CALL
 SymCryptXtsAesEncryptDataUnitXmm(
@@ -1380,16 +1356,17 @@ SymCryptXtsAesDecryptDataUnitXmm(
 //                                     pState,
 //                                     pbDst,
 //                                     cbData );
+#ifndef SYMCRUST_EXPERIMENTAL_BUILD
 VOID
 SYMCRYPT_CALL
 SymCryptAesGcmEncryptStitchedXmm(
-    _In_                                    PCSYMCRYPT_AES_EXPANDED_KEY pExpandedKey,
-    _In_reads_( SYMCRYPT_AES_BLOCK_SIZE )   PBYTE                       pbChainingValue,
-    _In_reads_( SYMCRYPT_GF128_FIELD_SIZE ) PCSYMCRYPT_GF128_ELEMENT    expandedKeyTable,
-    _Inout_                                 PSYMCRYPT_GF128_ELEMENT     pState,
-    _In_reads_( cbData )                    PCBYTE                      pbSrc,
-    _Out_writes_( cbData )                  PBYTE                       pbDst,
-                                            SIZE_T                      cbData )
+    _In_                                                PCSYMCRYPT_AES_EXPANDED_KEY pExpandedKey,
+    _In_reads_( SYMCRYPT_AES_BLOCK_SIZE )               PBYTE                       pbChainingValue,
+    _In_reads_( 2*SYMCRYPT_GHASH_PCLMULQDQ_HPOWERS )    PCSYMCRYPT_GF128_ELEMENT    expandedKeyTable,
+    _Inout_                                             PSYMCRYPT_GF128_ELEMENT     pState,
+    _In_reads_( cbData )                                PCBYTE                      pbSrc,
+    _Out_writes_( cbData )                              PBYTE                       pbDst,
+                                                        SIZE_T                      cbData )
 {
     __m128i chain = _mm_loadu_si128( (__m128i *) pbChainingValue );
 
@@ -1630,13 +1607,13 @@ SymCryptAesGcmEncryptStitchedXmm(
 VOID
 SYMCRYPT_CALL
 SymCryptAesGcmDecryptStitchedXmm(
-    _In_                                    PCSYMCRYPT_AES_EXPANDED_KEY pExpandedKey,
-    _In_reads_( SYMCRYPT_AES_BLOCK_SIZE )   PBYTE                       pbChainingValue,
-    _In_reads_( SYMCRYPT_GF128_FIELD_SIZE ) PCSYMCRYPT_GF128_ELEMENT    expandedKeyTable,
-    _Inout_                                 PSYMCRYPT_GF128_ELEMENT     pState,
-    _In_reads_( cbData )                    PCBYTE                      pbSrc,
-    _Out_writes_( cbData )                  PBYTE                       pbDst,
-                                            SIZE_T                      cbData )
+    _In_                                                PCSYMCRYPT_AES_EXPANDED_KEY pExpandedKey,
+    _In_reads_( SYMCRYPT_AES_BLOCK_SIZE )               PBYTE                       pbChainingValue,
+    _In_reads_( 2*SYMCRYPT_GHASH_PCLMULQDQ_HPOWERS )    PCSYMCRYPT_GF128_ELEMENT    expandedKeyTable,
+    _Inout_                                             PSYMCRYPT_GF128_ELEMENT     pState,
+    _In_reads_( cbData )                                PCBYTE                      pbSrc,
+    _Out_writes_( cbData )                              PBYTE                       pbDst,
+                                                        SIZE_T                      cbData )
 {
     __m128i chain = _mm_loadu_si128( (__m128i *) pbChainingValue );
 
@@ -1777,5 +1754,7 @@ SymCryptAesGcmDecryptStitchedXmm(
 }
 #pragma runtime_checks( "u", restore )
 #pragma warning(pop)
+
+#endif // SYMCRUST_EXPERIMENTAL_BUILD
 
 #endif // CPU_X86 | CPU_AMD64

@@ -297,7 +297,7 @@ SymCryptRsaPkcs1RemoveEncryptionPadding(
     mPaddingError |= SymCryptMask32LtU31( iFirstZero, 10 );
 
     // Compute the # bytes of the message; 0 if there was a padding error
-    cbPlaintextResult = ~mPaddingError & (cbPkcs1Format - iFirstZero - 1);
+    cbPlaintextResult = ~mPaddingError & ((UINT32) cbPkcs1Format - iFirstZero - 1);
 
     // We're done if the caller didn't want the actual message, but only the size.
     // We do that before checking the size of the plaintext buffer so that callers who

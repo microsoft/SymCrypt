@@ -17,8 +17,6 @@ ULONG       TestErrorInjectionProb = 0;
 BYTE TestErrorInjectionSeed[ SYMCRYPT_SHA1_RESULT_SIZE ] = {0};
 
 extern "C" {
-;
-
 
 ///////////////////////////////////////////////////////
 // Start of the actual fake environment code
@@ -78,14 +76,33 @@ VOID free_align32( PVOID p )
     free( *(PVOID *) ((PBYTE)p - 8) );
 }
 
+_Analysis_noreturn_
+VOID
+fatal( _In_ PCSTR file, ULONG line, _In_ PCSTR format, ... )
+{
+    char buffer[1024];
+    int index = 0;
+
+    index += snprintf( buffer, sizeof(buffer), "*\n\n***** FATAL ERROR: %s(%lu): ", file, line );
+    if( index >= sizeof(buffer) )
+    {
+        index = sizeof(buffer) - 1;
+    }
+
+    va_list args;
+    va_start(args, format);
+    vsnprintf( buffer + index, sizeof(buffer) - index, format, args );
+    va_end(args);
+    
+    fatalImpl(buffer);
+}
+
 #if SYMCRYPT_CPU_AMD64 | SYMCRYPT_CPU_X86
 
 char g_saveInProgressTypes[16] = { 0 };
 int g_savesInProgress = 0;
 PVOID g_savePtrs[sizeof(g_saveInProgressTypes)] = { 0 };
-extern "C" {
 ULONG g_nSaves = 0;
-}
 
 #endif
 
@@ -275,7 +292,6 @@ SymCryptSaveYmmEnvUnittest( _Out_ PSYMCRYPT_EXTENDED_SAVE_DATA pSaveData )
     return SYMCRYPT_NO_ERROR;
 }
 
-
 VOID
 SYMCRYPT_CALL
 SymCryptRestoreYmmEnvUnittest( _Inout_ PSYMCRYPT_EXTENDED_SAVE_DATA pSaveData )
@@ -335,7 +351,5 @@ SymCryptCpuidExFuncEnvUnittest( int cpuInfo[4], int function_id, int subfunction
 }
 
 #endif
-}   // extern "C"
 
-
-
+}

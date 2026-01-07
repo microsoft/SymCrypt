@@ -3,6 +3,16 @@
 New changes will be listed here as they are developed. The version number is determined
 prior to the creation of a new release, based on the changes contained in that release.
 
+# Version 104.0.0
+
+This is the first official release of our Rust implementations!
+
+### Breaking Changes
+- Modified `SYMCRYPT_GHASH_EXPANDED_KEY` to no longer force additional alignment on x86 (ABI breaking)
+
+### New features
+- Added Rust implementations of ML-KEM, SHA3 and AES-GCM
+
 # Version 103.10.0
 
 - Fixed [#51](https://github.com/microsoft/SymCrypt/issues/51): Added accessor functions for `extern const` data symbols to prevent error `LNK2001` when dynamic linking on Windows

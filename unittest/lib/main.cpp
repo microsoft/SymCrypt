@@ -840,19 +840,12 @@ VOID printCpuidInfo();
 
 _Analysis_noreturn_
 VOID
-fatal( _In_ PCSTR file, ULONG line, _In_ PCSTR format, ... )
+fatalImpl( _In_ PCSTR message )
 {
-    va_list vl;
-
+    fprintf( stdout, "*\n\n***** FATAL ERROR %s\n ", message );
+    
     printCpuidInfo();
     printOutput( 0 );
-
-    fprintf( stdout, "*\n\n***** FATAL ERROR %s(%lu): ", file, line );
-
-    va_start( vl, format );
-
-    vfprintf( stdout, format, vl );
-    fprintf( stdout, "\n" );
 
     TRAP_DEBUGGER();
     exit( -1 );

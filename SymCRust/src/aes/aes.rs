@@ -14,25 +14,32 @@ use crate::block_cipher::{BlockCipher, BlockCipherExpandedKey};
 use crate::common::{wipe_slice, Error};
 use crate::symcryptcommon::symcrypt_magic_value;
 
+mod aes_gcm;
 #[cfg(target_arch = "aarch64")]
 mod aes_neon;
 #[cfg(any(target_arch = "x86_64", target_arch = "x86"))]
 mod aes_xmm;
 #[cfg(not(any(feature = "benchmarking", test)))]
 mod ffi;
+#[path = "ghash/ghash.rs"]
 mod ghash;
 #[cfg(all(test, not(feature = "benchmarking")))]
 mod tests;
 
-/// Not currently exposed in the current APIs
+/// Specifies how an AES key will be used for encryption and/or decryption operations.
+/// Some algorithms use AES for encryption only, allowing us to optimize key expansion by omitting
+/// the decryption round keys. Currently this is not used in the Rust code.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum AesKeyUsage {
     _EncryptOnly, // Currently unused
     EncryptAndDecrypt,
 }
 
+/// AES block size in bytes.
 const AES_BLOCK_SIZE: usize = 16;
 
+/// Sealed trait pattern to restrict valid AES key sizes at compile time.
+/// Only 128-bit (16 bytes), 192-bit (24 bytes), and 256-bit (32 bytes) keys are valid.
 mod sealed {
     pub trait ValidKeySize {}
     impl ValidKeySize for [(); 16] {}
@@ -43,7 +50,7 @@ mod sealed {
 /// Rust representation of the C `SymCryptAesExpandedKey` structure. This structure is only intended
 /// to be used via FFI and internally in this module. Rust callers should use `AesExpandedKey`.
 /// Must be pinned in memory to maintain pointer validity.
-#[derive(Debug)]
+#[derive(Debug, Default)]
 #[cfg_attr(any(target_arch = "x86_64", target_arch = "aarch64"), repr(align(16)))]
 #[cfg_attr(any(target_arch = "arm"), repr(align(8)))]
 #[cfg_attr(any(target_arch = "x86"), repr(align(4)))]
@@ -96,12 +103,46 @@ trait AesImpl {
     );
 }
 
+/// Trait for architecture-specific AES-GCM implementations
+trait AesGcmImpl {
+    /// Perform "stitched" AES-GCM encryption, i.e. encryption where the GHASH computations are
+    /// interleaved with the AES encryption operations for better performance.
+    /// For in-place encryption, `input_buffer` can be `None`, and the plaintext is read from, and
+    /// the ciphertext written back to, `output_buffer`.
+    fn gcm_encrypt_stitched<const KEY_ROUNDS: usize>(
+        expanded_key: &CSymCryptAesExpandedKey,
+        chaining_value: &mut [u8; AES_BLOCK_SIZE],
+        ghash_expanded_key: &ghash::GHashExpandedKey,
+        ghash_state: &mut u128,
+        input_buffer: Option<&[u8]>,
+        output_buffer: &mut [u8],
+    );
+
+    /// Perform "stitched" AES-GCM decryption, i.e. decryption where the GHASH computations are
+    /// interleaved with the AES decryption operations for better performance.
+    /// For in-place decryption, `input_buffer` can be `None`, and the ciphertext is read from, and
+    /// the plaintext written back to, `output_buffer`.
+    fn gcm_decrypt_stitched<const KEY_ROUNDS: usize>(
+        expanded_key: &CSymCryptAesExpandedKey,
+        chaining_value: &mut [u8; AES_BLOCK_SIZE],
+        ghash_expanded_key: &ghash::GHashExpandedKey,
+        ghash_state: &mut u128,
+        input_buffer: Option<&[u8]>,
+        output_buffer: &mut [u8],
+    );
+}
+
+/// Architecture-specific AES implementation type for x86/x86_64 platforms.
+/// Uses XMM (PCLMULQDQ/AES-NI) instructions.
 #[cfg(any(target_arch = "x86_64", target_arch = "x86"))]
 type AesImplType = aes_xmm::AesXmmImpl;
 
+/// Architecture-specific AES implementation type for aarch64 platforms.
+/// Uses NEON instructions.
 #[cfg(target_arch = "aarch64")]
 type AesImplType = aes_neon::AesNeonImpl;
 
+/// Zero-sized type representing the AES block cipher algorithm.
 pub struct Aes;
 
 /// Get the number of round keys for this AES key (= number of rounds + 1)
@@ -137,17 +178,22 @@ const fn key_size_from_num_rounds(num_rounds: usize) -> Result<usize, Error> {
 }
 
 impl CSymCryptAesExpandedKey {
+    /// Creates a new `CSymCryptAesExpandedKey` with the specified key size.
+    ///
+    /// # Arguments
+    /// * `key_size` - Size of the AES key in bytes (16, 24, or 32)
+    ///
+    /// # Returns
+    /// A pinned boxed expanded key structure, or an error if the key size is invalid.
+    ///
+    /// # Errors
+    /// Returns `Error::WrongKeySize` if `key_size` is not 16, 24, or 32.
     pub fn new(key_size: usize) -> Result<Pin<Box<Self>>, Error> {
         if ![16, 24, 32].contains(&key_size) {
             return Err(Error::WrongKeySize);
         }
 
-        let temp = Self {
-            round_keys: [[0; AES_BLOCK_SIZE]; 29],
-            last_enc_round_key: core::ptr::null(),
-            last_dec_round_key: core::ptr::null(),
-            magic: 0,
-        };
+        let temp = CSymCryptAesExpandedKey::default();
 
         let mut pinned = Box::pin(temp);
 
@@ -179,6 +225,15 @@ impl CSymCryptAesExpandedKey {
         key_size_from_num_rounds(self.num_rounds()).unwrap()
     }
 
+    /// Sets internal pointers and magic value for the expanded key structure. Required for
+    /// FFI compatibility. Must be called after initialization to properly configure the key for
+    /// the given size.
+    ///
+    /// # Arguments
+    /// * `key_size` - Size of the AES key in bytes
+    ///
+    /// # Errors
+    /// Returns an error if the key size is invalid.
     #[inline]
     pub(self) fn set_pointers_and_magic(&mut self, key_size: usize) -> Result<(), Error> {
         let num_rounds = num_rounds_from_key_size(key_size)?;
@@ -209,9 +264,9 @@ impl CSymCryptAesExpandedKey {
 
     /// Create decryption round keys from encryption round keys. Must only be called after
     /// encryption round keys have been populated.
-    fn expand_decryption_round_keys<const KEY_SIZE: usize>(&mut self) 
+    fn expand_decryption_round_keys<const KEY_SIZE: usize>(&mut self)
     where
-        [(); KEY_SIZE]: sealed::ValidKeySize
+        [(); KEY_SIZE]: sealed::ValidKeySize,
     {
         // rewritten in a style closer to key expansion,
         // and to avoid advanced iterators which may be hard to verify
@@ -225,12 +280,20 @@ impl CSymCryptAesExpandedKey {
         self.round_keys[2 * key_rounds - 2] = self.round_keys[0];
     }
 
+    /// Expands an AES key into the round keys required for encryption and decryption.
+    ///
+    /// # Arguments
+    /// * `key` - The AES key bytes
+    /// * `key_usage` - Specifies whether the key will be used for encryption only or both
+    ///   encryption and decryption.
+    ///
+    /// # Type Parameters
+    /// * `KEY_SIZE` - The size of the key in bytes (must be 16, 24, or 32).
     pub fn expand_key<const KEY_SIZE: usize>(
         &mut self,
         key: &[u8; KEY_SIZE],
         key_usage: AesKeyUsage,
-    )
-    where
+    ) where
         [(); KEY_SIZE]: sealed::ValidKeySize,
     {
         const ROUND_CONSTANT: [u32; 11] = [
@@ -415,9 +478,9 @@ pub type Aes192 = Aes;
 pub type Aes256 = Aes;
 
 pub mod aes128 {
-    use super::{AesExpandedKey, BlockCipherExpandedKey, AES_BLOCK_SIZE, BlockCipher, Aes128};
+    use super::{Aes128, AesExpandedKey, BlockCipher, BlockCipherExpandedKey, AES_BLOCK_SIZE};
 
-    #[must_use] 
+    #[must_use]
     pub fn new(key: &[u8; 16]) -> AesExpandedKey<16> {
         AesExpandedKey::<16>::new(key)
     }
@@ -448,9 +511,9 @@ pub mod aes128 {
 }
 
 pub mod aes192 {
-    use super::{AesExpandedKey, BlockCipherExpandedKey, AES_BLOCK_SIZE, BlockCipher, Aes192};
+    use super::{Aes192, AesExpandedKey, BlockCipher, BlockCipherExpandedKey, AES_BLOCK_SIZE};
 
-    #[must_use] 
+    #[must_use]
     pub fn new(key: &[u8; 24]) -> AesExpandedKey<24> {
         AesExpandedKey::<24>::new(key)
     }
@@ -481,9 +544,9 @@ pub mod aes192 {
 }
 
 pub mod aes256 {
-    use super::{AesExpandedKey, BlockCipherExpandedKey, AES_BLOCK_SIZE, BlockCipher, Aes256};
+    use super::{Aes256, AesExpandedKey, BlockCipher, BlockCipherExpandedKey, AES_BLOCK_SIZE};
 
-    #[must_use] 
+    #[must_use]
     pub fn new(key: &[u8; 32]) -> AesExpandedKey<32> {
         AesExpandedKey::<32>::new(key)
     }

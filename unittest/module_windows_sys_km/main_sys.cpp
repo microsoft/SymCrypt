@@ -81,17 +81,30 @@ ResetFatalGlobals()
 }
 
 VOID
-fatal(_In_ PCSTR file, ULONG line, _In_ PCSTR text, ...)
+fatalImpl( _In_ PCSTR message )
 {
     size_t remainingBytes = sizeof(g_FatalBuff) - ((PBYTE)g_FatalNext - &g_FatalBuff[0]);
-    va_list vl;
 
     // This function intercepts calls to fatal and converts them to reporting the first errors in globals.
-    RtlStringCchPrintfExA(g_FatalNext, remainingBytes, &g_FatalNext, &remainingBytes, 0, "*\n\n***** FATAL ERROR %s(%lu): ", file, line);
+    RtlStringCchPrintfExA( g_FatalNext, remainingBytes, &g_FatalNext, &remainingBytes, 0, "*\n\n***** FATAL ERROR: %s\n", message );
+}
 
-    va_start( vl, text );
-    RtlStringCchVPrintfExA( g_FatalNext, remainingBytes, &g_FatalNext, &remainingBytes, 0, text, vl );
-    va_end( vl );
+_Analysis_noreturn_
+VOID
+fatal( _In_ PCSTR file, ULONG line, _In_ PCSTR format, ... )
+{
+    char buffer[1024];
+    size_t remaining = sizeof(buffer);
+    NTSTRSAFE_PSTR bufEnd = buffer;
+
+    RtlStringCchPrintfExA( bufEnd, remaining, &bufEnd, &remaining, 0, "*\n\n***** FATAL ERROR: %s(%lu): ", file, line );
+
+    va_list args;
+    va_start(args, format);
+    RtlStringCchVPrintfExA( bufEnd, remaining, &bufEnd, &remaining, 0, format, args );
+    va_end(args);
+
+    fatalImpl(buffer);
 }
 
 typedef struct _SYMCRYPT_SYMBOL_INFO

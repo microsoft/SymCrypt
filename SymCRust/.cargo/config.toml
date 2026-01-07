@@ -20,5 +20,10 @@
 
 # To disable loop unrolling, add to rustflags: "-C", "llvm-args=-unroll-threshold=0"
 
-[build]
-rustflags = ["-C", "target-feature=+aes"]
+# x86/x86_64 targets need AES-NI, PCLMULQDQ, and SSSE3 features
+[target.'cfg(any(target_arch = "x86", target_arch = "x86_64"))']
+rustflags = ["-C", "target-feature=+aes,+pclmulqdq,+ssse3"]
+
+# ARM64 targets need AES and PMULL features
+[target.'cfg(target_arch = "aarch64")']
+rustflags = ["-C", "target-feature=+aes,+neon"]

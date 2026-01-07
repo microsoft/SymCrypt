@@ -119,8 +119,9 @@
 #undef  SYMCRYPT_CPU_X86
 #define SYMCRYPT_CPU_X86        1
 
-#define SYMCRYPT_CALL           SYMCRYPT_FASTCALL
-#define SYMCRYPT_ALIGN_VALUE    4
+#define SYMCRYPT_CALL               SYMCRYPT_FASTCALL
+#define SYMCRYPT_ALIGN_VALUE        4
+#define SYMCRYPT_VECTOR_ALIGN_VALUE 16
 
 #ifndef _PREFAST_
 #pragma warning(push)
@@ -130,31 +131,35 @@
 #elif (defined( _ARM64_ ) || defined( _ARM64EC_ ) || defined( _M_ARM64 ) || defined( __aarch64__ )) && !defined( SYMCRYPT_IGNORE_PLATFORM )
 
 #undef  SYMCRYPT_CPU_ARM64
-#define SYMCRYPT_CPU_ARM64      1
+#define SYMCRYPT_CPU_ARM64          1
 #define SYMCRYPT_CALL
-#define SYMCRYPT_ALIGN_VALUE    16
+#define SYMCRYPT_ALIGN_VALUE        16
+#define SYMCRYPT_VECTOR_ALIGN_VALUE SYMCRYPT_ALIGN_VALUE
 
 #elif (defined( _AMD64_ ) || defined( _M_AMD64 ) || defined( __amd64__ )) && !defined ( SYMCRYPT_IGNORE_PLATFORM )
 
 #undef  SYMCRYPT_CPU_AMD64
-#define SYMCRYPT_CPU_AMD64      1
+#define SYMCRYPT_CPU_AMD64          1
 
 #define SYMCRYPT_CALL
-#define SYMCRYPT_ALIGN_VALUE    16
+#define SYMCRYPT_ALIGN_VALUE        16
+#define SYMCRYPT_VECTOR_ALIGN_VALUE SYMCRYPT_ALIGN_VALUE
 
 #elif (defined( _ARM_ ) || defined( _M_ARM ) || defined( __arm__ )) && !defined( SYMCRYPT_IGNORE_PLATFORM )
 
 #undef  SYMCRYPT_CPU_ARM
-#define SYMCRYPT_CPU_ARM        1
+#define SYMCRYPT_CPU_ARM            1
 #define SYMCRYPT_CALL
-#define SYMCRYPT_ALIGN_VALUE    8
+#define SYMCRYPT_ALIGN_VALUE        8
+#define SYMCRYPT_VECTOR_ALIGN_VALUE SYMCRYPT_ALIGN_VALUE
 
 #elif defined( SYMCRYPT_IGNORE_PLATFORM )
 
 #undef  SYMCRYPT_CPU_UNKNOWN
-#define SYMCRYPT_CPU_UNKNOWN    1
+#define SYMCRYPT_CPU_UNKNOWN        1
 #define SYMCRYPT_CALL
-#define SYMCRYPT_ALIGN_VALUE    16
+#define SYMCRYPT_ALIGN_VALUE        16
+#define SYMCRYPT_VECTOR_ALIGN_VALUE SYMCRYPT_ALIGN_VALUE
 
 #ifndef _PREFAST_
 #pragma warning(push)
@@ -1857,15 +1862,6 @@ typedef union _SYMCRYPT_GCM_SUPPORTED_BLOCKCIPHER_KEYS
 #define SYMCRYPT_GCM_BLOCK_MOD_MASK      (SYMCRYPT_GCM_BLOCK_SIZE - 1)
 #define SYMCRYPT_GCM_BLOCK_ROUND_MASK    (~SYMCRYPT_GCM_BLOCK_MOD_MASK)
 
-#if SYMCRYPT_CPU_X86
-    //
-    // x86 needs extra alignment of the GHASH expanded key to support
-    // aligned (fast) XMM access. AMD64 has enough natural alignment to
-    // achieve this.
-    //
-    #define SYMCRYPT_GHASH_EXTRA_KEY_ALIGNMENT
-#endif
-
 #define SYMCRYPT_GHASH_ALLOW_XMM    (SYMCRYPT_CPU_X86 | SYMCRYPT_CPU_AMD64)
 #define SYMCRYPT_GHASH_ALLOW_NEON   (SYMCRYPT_CPU_ARM | SYMCRYPT_CPU_ARM64)
 
@@ -1940,15 +1936,12 @@ typedef SYMCRYPT_ALIGN_UNION _SYMCRYPT_GF128_ELEMENT {
 } SYMCRYPT_GF128_ELEMENT, *PSYMCRYPT_GF128_ELEMENT;
 typedef const SYMCRYPT_GF128_ELEMENT * PCSYMCRYPT_GF128_ELEMENT;
 
-
-
-typedef SYMCRYPT_ALIGN_STRUCT _SYMCRYPT_GHASH_EXPANDED_KEY {
-#if defined( SYMCRYPT_GHASH_EXTRA_KEY_ALIGNMENT )
-    UINT32  tableOffset;
-    BYTE    tableSpace[ (SYMCRYPT_GF128_FIELD_SIZE + 1) * sizeof( SYMCRYPT_GF128_ELEMENT ) ];
-#else
+// Best effort to align this structure on a 16-byte boundary for the XMM implementations (AMD64 and
+// x86). There used to be an x86-specific offset field in this structure and additional code to
+// force this alignment even when allocated at an arbitrary heap address, but this complicated the
+// ABI and made the structure difficult to interoperate with from safe Rust.
+typedef SYMCRYPT_ALIGN_TYPE_AT(struct, SYMCRYPT_VECTOR_ALIGN_VALUE) _SYMCRYPT_GHASH_EXPANDED_KEY {
     SYMCRYPT_GF128_ELEMENT  table[ SYMCRYPT_GF128_FIELD_SIZE ];
-#endif
 } SYMCRYPT_GHASH_EXPANDED_KEY, *PSYMCRYPT_GHASH_EXPANDED_KEY;
 typedef const SYMCRYPT_GHASH_EXPANDED_KEY * PCSYMCRYPT_GHASH_EXPANDED_KEY;
 

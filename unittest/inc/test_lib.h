@@ -1119,9 +1119,19 @@ extern DWORD g_osVersion;       // 0xaabb for major version aa and minor version
 #define OS_VERSION_WIN8     0x0602
 #define OS_VERSION_WIN8_1   0x0603
 
-_Analysis_noreturn_
-VOID
-fatal( _In_ PCSTR file, ULONG line, _In_ PCSTR text, ... );
+extern "C" {
+    _Analysis_noreturn_
+    VOID
+    fatalImpl(const char* message);
+
+    // fatal formats the message and calls fatalImpl. The extra indirection makes linking to
+    // Rust easier.
+    _Analysis_noreturn_
+    VOID
+    fatal( _In_ PCSTR file, ULONG line, _In_ PCSTR format, ... );
+}
+
+
 
 typedef CONST CHAR * PCCHAR;
 

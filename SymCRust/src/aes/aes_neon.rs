@@ -8,8 +8,10 @@
 #[cfg(target_arch = "aarch64")]
 use core::arch::aarch64::*;
 
-use super::{AES_BLOCK_SIZE, AesImpl, CSymCryptAesExpandedKey};
+use super::{AesImpl, CSymCryptAesExpandedKey, AES_BLOCK_SIZE};
 
+/// NEON-accelerated AES implementation for ARM64 (AArch64) platforms.
+/// Uses ARM NEON crypto extensions for hardware-accelerated AES operations.
 pub(super) struct AesNeonImpl;
 
 impl AesNeonImpl {

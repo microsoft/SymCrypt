@@ -505,19 +505,6 @@ SymCryptAesGcmEncryptPartOnePass(
     {
         bytesToProcess = cbData & SYMCRYPT_GCM_BLOCK_ROUND_MASK;
 
-        //
-        // We use a Gcm function that increments the CTR by 64 bits, rather than the 32 bits that GCM requires.
-        // As we only support 12-byte nonces, the 32-bit counter never overflows, and we can safely use
-        // the 64-bit incrementing primitive.
-        // If we ever support other nonce sizes this is going to be a big problem.
-        // You can't fake a 32-bit counter using a 64-bit counter function without side-channels that expose
-        // information about the current counter value.
-        // With other nonce sizes the actual counter value itself is not public, so we can't expose that.
-        // We can do two things:
-        // - create SymCryptAesGcmEncryptXXX32
-        // - Accept that we leak information about the counter value; after all it is not treated as a
-        //   secret when the nonce is 12 bytes.
-        //
         SYMCRYPT_ASSERT( pState->pKey->pBlockCipher->blockSize == SYMCRYPT_GCM_BLOCK_SIZE );
 
 #if SYMCRYPT_CPU_AMD64
@@ -550,7 +537,7 @@ SymCryptAesGcmEncryptPartOnePass(
         SymCryptAesGcmEncryptStitchedXmm(
             &pState->pKey->blockcipherKey.aes,
             &pState->counterBlock[0],
-            (PSYMCRYPT_GF128_ELEMENT)&pState->pKey->ghashKey.tableSpace[pState->pKey->ghashKey.tableOffset],
+            &pState->pKey->ghashKey.table[0],
             &pState->ghashState,
             pbSrc,
             pbDst,
@@ -581,7 +568,7 @@ SymCryptAesGcmEncryptPartOnePass(
         // handing over the key stream. So encryption consists of two steps:
         // - hand over the key stream
         // - MAC some ciphertext
-        // In this view (which has equivalent security properties to GCM) is obviously doesn't
+        // In this view (which has equivalent security properties to GCM) it obviously doesn't
         // matter that we read pbDst back.
         //
         SymCryptGHashAppendData(&pState->pKey->ghashKey,
@@ -724,7 +711,7 @@ SymCryptAesGcmDecryptPartOnePass(
         SymCryptAesGcmDecryptStitchedXmm(
             &pState->pKey->blockcipherKey.aes,
             &pState->counterBlock[0],
-            (PSYMCRYPT_GF128_ELEMENT)&pState->pKey->ghashKey.tableSpace[pState->pKey->ghashKey.tableOffset],
+            &pState->pKey->ghashKey.table[0],
             &pState->ghashState,
             pbSrc,
             pbDst,

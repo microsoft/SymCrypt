@@ -42,3 +42,6 @@ mod symcryptcommon;
 
 #[path = "mlkem/mlkem.rs"]
 pub mod mlkem;
+
+#[cfg(all(test, not(feature = "benchmarking")))]
+mod test_helpers;
