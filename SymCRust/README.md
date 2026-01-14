@@ -50,3 +50,7 @@ This build is a work in progress!
 - Remove dependency on C code from tests, use KATs instead
 - Make FFI optional (put it behind a feature flag)
   - Also make each algorithm have its own feature flag?
+- Find a better way to express unsafety of functions that require specific CPU features. They should
+  probably be marked as unsafe and annotated with `#[target_feature(...)]`, but this requires
+  an additional wrapping function for anything that implements a trait interface, because trait
+  functions cannot be unsafe.

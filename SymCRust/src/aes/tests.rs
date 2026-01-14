@@ -5,6 +5,7 @@ use std::vec;
 
 use super::*;
 use crate::block_cipher::BlockCipher;
+use crate::common::InPlaceOrDisjointBuffer;
 
 #[repr(C)]
 enum BlockCipherId {
@@ -34,13 +35,6 @@ extern "C" {
         cb_data: usize,
     );
     fn SymCryptGetBlockCipher(block_cipher_id: BlockCipherId) -> *const c_void;
-    fn SymCryptGHashExpandKeyPclmulqdq(expanded_key: *mut ghash::GHashExpandedKey, pb_h: *const u8);
-    fn SymCryptGHashAppendData(
-        expanded_key: *const ghash::GHashExpandedKey,
-        p_state: *mut u128,
-        pb_src: *const u8,
-        cb_data: usize,
-    );
     fn SymCryptAesGcmEncryptStitchedXmm(
         p_expanded_key: *const CSymCryptAesExpandedKey,
         pb_chaining_value: *mut u8,
@@ -429,7 +423,108 @@ fn test_aes128_module_functions() {
 
 #[cfg(all(test, target_arch = "x86_64"))]
 mod gcm_stitched_tests {
+    use rand::Rng;
+
     use super::*;
+
+    #[test]
+    fn test_gcm_encrypt_disjoint() {
+        crate::common::init();
+
+        let mut rng = rand::rng();
+
+        // Generate random key (AES-128)
+        for _ in 0..5 {
+            let mut key = [0u8; 16];
+            rng.fill_bytes(&mut key);
+
+            // Expand AES key using C implementation
+            let mut c_expanded_key = CSymCryptAesExpandedKey::new(16).unwrap();
+            let result = unsafe {
+                SymCryptAesExpandKey(
+                    c_expanded_key.as_mut().get_unchecked_mut(),
+                    key.as_ptr(),
+                    key.len(),
+                )
+            };
+            assert_eq!(result, Error::NoError);
+
+            // Expand AES key using Rust implementation
+            let rust_expanded_key = AesExpandedKey::new(&key);
+
+            // Generate random H value for GHASH
+            let mut h_bytes = [0u8; 16];
+            rng.fill_bytes(&mut h_bytes);
+
+            // Expand GHASH key
+            let ghash_key = ghash::GHashExpandedKey::from(&h_bytes);
+
+            // Generate random chaining value (counter)
+            let mut c_chaining_value = [0u8; 16];
+            rng.fill_bytes(&mut c_chaining_value);
+            let mut rust_chaining_value = c_chaining_value;
+
+            // Initialize GHASH state
+            let mut c_ghash_state = 0u128;
+            let mut rust_ghash_state = 0u128;
+
+            // Generate random plaintext
+            let buffer_size = rng.random_range(1..64) * 16;
+            let mut plaintext = vec![0u8; buffer_size];
+            rng.fill_bytes(&mut plaintext);
+
+            // Prepare output buffers
+            let mut c_ciphertext = vec![0u8; buffer_size];
+            let mut rust_ciphertext = vec![0u8; buffer_size];
+
+            // Call C implementation
+            unsafe {
+                SymCryptAesGcmEncryptStitchedXmm(
+                    c_expanded_key.as_ref().get_ref(),
+                    c_chaining_value.as_mut_ptr(),
+                    ghash_key.as_slice().as_ptr(),
+                    core::ptr::from_mut(&mut c_ghash_state),
+                    plaintext.as_ptr(),
+                    c_ciphertext.as_mut_ptr(),
+                    buffer_size,
+                );
+            }
+
+            // Call Rust implementation
+            let rust_buffer =
+                InPlaceOrDisjointBuffer::new_disjoint_from_slices(&plaintext, &mut rust_ciphertext);
+
+            aes_xmm::AesXmmImpl::gcm_encrypt_stitched::<11>(
+                &rust_expanded_key.inner,
+                &mut rust_chaining_value,
+                &ghash_key,
+                &mut rust_ghash_state,
+                rust_buffer,
+            );
+
+            // Compare results
+            assert_eq_hex!(
+                &rust_ciphertext,
+                &c_ciphertext,
+                "Ciphertext mismatch for buffer size {}",
+                buffer_size
+            );
+
+            assert_eq_hex!(
+                &rust_chaining_value,
+                &c_chaining_value,
+                "Chaining value mismatch for buffer size {}",
+                buffer_size
+            );
+
+            assert_eq_hex!(
+                rust_ghash_state,
+                c_ghash_state,
+                "GHASH state mismatch for buffer size {}",
+                buffer_size
+            );
+        }
+    }
 
     /// Test helper function to compare Rust implementation against C implementation
     fn test_gcm_encrypt_stitched_with_size(buffer_size: usize) {
@@ -493,13 +588,15 @@ mod gcm_stitched_tests {
         }
 
         // Call Rust implementation
+        let rust_buffer =
+            InPlaceOrDisjointBuffer::new_disjoint_from_slices(&plaintext, &mut rust_ciphertext);
+
         aes_xmm::AesXmmImpl::gcm_encrypt_stitched::<11>(
             &rust_expanded_key.inner,
             &mut rust_chaining_value,
             &ghash_key,
             &mut rust_ghash_state,
-            Some(&plaintext),
-            &mut rust_ciphertext,
+            rust_buffer,
         );
 
         // Compare results
@@ -672,13 +769,15 @@ mod gcm_stitched_tests {
         }
 
         // Call Rust implementation
+        let rust_buffer =
+            InPlaceOrDisjointBuffer::new_disjoint_from_slices(&ciphertext, &mut rust_plaintext);
+
         aes_xmm::AesXmmImpl::gcm_decrypt_stitched::<11>(
             &rust_expanded_key.inner,
             &mut rust_chaining_value,
             &ghash_key,
             &mut rust_ghash_state,
-            Some(&ciphertext),
-            &mut rust_plaintext,
+            rust_buffer,
         );
 
         // Compare results

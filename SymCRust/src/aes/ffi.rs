@@ -6,7 +6,7 @@
 
 use core::slice;
 
-use crate::common::Error;
+use crate::common::{Error, InPlaceOrDisjointBuffer};
 
 use super::{
     ghash, AesGcmImpl, AesImpl, AesImplType, AesKeyUsage, CSymCryptAesExpandedKey, AES_BLOCK_SIZE,
@@ -224,13 +224,7 @@ pub unsafe extern "C" fn SymCryptAesGcmEncryptStitchedXmm(
 
     let ghash_state = &mut *state;
 
-    let input_buffer: Option<&[u8]> = if src == dst {
-        None
-    } else {
-        Some(slice::from_raw_parts(src, byte_count))
-    };
-
-    let output_buffer = slice::from_raw_parts_mut(dst, byte_count);
+    let buffer = InPlaceOrDisjointBuffer::from_raw_parts(src, dst, byte_count);
 
     match expanded_key.key_size() {
         16 => AesImplType::gcm_encrypt_stitched::<11>(
@@ -238,24 +232,21 @@ pub unsafe extern "C" fn SymCryptAesGcmEncryptStitchedXmm(
             chaining_value,
             ghash_expanded_key,
             ghash_state,
-            input_buffer,
-            output_buffer,
+            buffer,
         ),
         24 => AesImplType::gcm_encrypt_stitched::<13>(
             expanded_key,
             chaining_value,
             ghash_expanded_key,
             ghash_state,
-            input_buffer,
-            output_buffer,
+            buffer,
         ),
         32 => AesImplType::gcm_encrypt_stitched::<15>(
             expanded_key,
             chaining_value,
             ghash_expanded_key,
             ghash_state,
-            input_buffer,
-            output_buffer,
+            buffer,
         ),
         _ => unreachable!("Invalid AES key size"),
     }
@@ -294,13 +285,7 @@ pub unsafe extern "C" fn SymCryptAesGcmDecryptStitchedXmm(
 
     let ghash_state = &mut *state;
 
-    let input_buffer: Option<&[u8]> = if src == dst {
-        None
-    } else {
-        Some(slice::from_raw_parts(src, byte_count))
-    };
-
-    let output_buffer = slice::from_raw_parts_mut(dst, byte_count);
+    let buffer = InPlaceOrDisjointBuffer::from_raw_parts(src, dst, byte_count);
 
     match expanded_key.key_size() {
         16 => AesImplType::gcm_decrypt_stitched::<11>(
@@ -308,24 +293,21 @@ pub unsafe extern "C" fn SymCryptAesGcmDecryptStitchedXmm(
             chaining_value,
             ghash_expanded_key,
             ghash_state,
-            input_buffer,
-            output_buffer,
+            buffer,
         ),
         24 => AesImplType::gcm_decrypt_stitched::<13>(
             expanded_key,
             chaining_value,
             ghash_expanded_key,
             ghash_state,
-            input_buffer,
-            output_buffer,
+            buffer,
         ),
         32 => AesImplType::gcm_decrypt_stitched::<15>(
             expanded_key,
             chaining_value,
             ghash_expanded_key,
             ghash_state,
-            input_buffer,
-            output_buffer,
+            buffer,
         ),
         _ => unreachable!("Invalid AES key size"),
     }

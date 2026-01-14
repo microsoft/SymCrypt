@@ -14,6 +14,8 @@ use core::arch::x86_64::*;
 #[cfg(target_arch = "x86")]
 use core::arch::x86::*;
 
+use crate::common::InPlaceOrDisjointBuffer;
+
 use super::ghash::{self, ghash_xmm};
 use super::{aes_gcm, AesGcmImpl, AesImpl, CSymCryptAesExpandedKey, AES_BLOCK_SIZE};
 
@@ -92,22 +94,20 @@ impl AesXmmImpl {
     unsafe fn aes_fullround_ghash_1<const NUM_BLOCKS: usize>(
         blocks: &mut [__m128i; NUM_BLOCKS],
         round_key: __m128i,
-        ghash_src: *const u8,
+        ghash_val: __m128i,
         byte_reverse_order: __m128i,
         h_power: __m128i,
         acc_low: __m128i,
         acc_med: __m128i,
         acc_high: __m128i,
-    ) -> (*const u8, __m128i, __m128i, __m128i) {
+    ) -> (__m128i, __m128i, __m128i) {
         // Perform AES encryption round on all blocks
         for block in blocks.iter_mut() {
             *block = _mm_aesenc_si128(*block, round_key);
         }
 
         // Load and prepare GHASH data
-        let mut r0 = _mm_loadu_si128(ghash_src.cast());
-        r0 = _mm_shuffle_epi8(r0, byte_reverse_order);
-        let ghash_src = ghash_src.add(16);
+        let r0 = _mm_shuffle_epi8(ghash_val, byte_reverse_order);
 
         // Perform GHASH multiplication (CLMUL_4)
         let mut t0 = _mm_clmulepi64_si128(r0, h_power, 0x00);
@@ -122,16 +122,21 @@ impl AesXmmImpl {
         let acc_med = _mm_xor_si128(acc_med, t0);
         let acc_med = _mm_xor_si128(acc_med, t1);
 
-        (ghash_src, acc_low, acc_med, acc_high)
+        (acc_low, acc_med, acc_high)
     }
 
     /// Generic AES-GCM encryption with stitched GHASH for N blocks.
-    /// This corresponds to `AES_GCM_ENCRYPT_4` and `AES_GCM_ENCRYPT_8` macros in the C implementation.
+    /// This corresponds to `AES_GCM_ENCRYPT_4` and `AES_GCM_ENCRYPT_8` macros in the C
+    /// implementation.
+    ///
+    /// Note: We could determine the number of GHASH rounds at runtime based on the number of blocks
+    /// in `ghash_src`, but since it is statically known in most cases, the compiler can optimize
+    /// much better if we pass it explicitly.
     #[inline]
     unsafe fn aes_gcm_encrypt_n<const KEY_ROUNDS: usize, const NUM_BLOCKS: usize>(
         round_keys: &[[u8; AES_BLOCK_SIZE]; KEY_ROUNDS],
         blocks: &mut [__m128i; NUM_BLOCKS],
-        mut ghash_src: *const u8,
+        ghash_src: &[u8],
         ghash_rounds: usize,
         byte_reverse_order: __m128i,
         ghash_expanded_key: &ghash::GHashExpandedKey,
@@ -139,7 +144,7 @@ impl AesXmmImpl {
         mut acc_low: __m128i,
         mut acc_med: __m128i,
         mut acc_high: __m128i,
-    ) -> (*const u8, usize, __m128i, __m128i, __m128i) {
+    ) -> (usize, __m128i, __m128i, __m128i) {
         // Initial round - XOR with first round key
         let mut round_key = _mm_loadu_si128(round_keys[0].as_ptr().cast());
         for block in blocks.iter_mut() {
@@ -147,7 +152,8 @@ impl AesXmmImpl {
         }
 
         // Perform ghash_rounds AES rounds with stitched GHASH
-        for round in 1..=ghash_rounds {
+        for (round, ghash_chunk) in (1..=ghash_rounds).zip(ghash_src.chunks_exact(AES_BLOCK_SIZE)) {
+            let ghash_val = _mm_loadu_si128(ghash_chunk.as_ptr().cast());
             round_key = _mm_loadu_si128(round_keys[round].as_ptr().cast());
 
             let h_power: __m128i = core::mem::transmute(ghash_expanded_key.h_power(todo));
@@ -155,7 +161,7 @@ impl AesXmmImpl {
             let result = Self::aes_fullround_ghash_1(
                 blocks,
                 round_key,
-                ghash_src,
+                ghash_val,
                 byte_reverse_order,
                 h_power,
                 acc_low,
@@ -163,10 +169,9 @@ impl AesXmmImpl {
                 acc_high,
             );
 
-            ghash_src = result.0;
-            acc_low = result.1;
-            acc_med = result.2;
-            acc_high = result.3;
+            acc_low = result.0;
+            acc_med = result.1;
+            acc_high = result.2;
             todo -= 1;
         }
 
@@ -184,7 +189,7 @@ impl AesXmmImpl {
             *block = _mm_aesenclast_si128(*block, round_key);
         }
 
-        (ghash_src, todo, acc_low, acc_med, acc_high)
+        (todo, acc_low, acc_med, acc_high)
     }
 }
 
@@ -259,8 +264,7 @@ impl AesGcmImpl for AesXmmImpl {
         chaining_value: &mut [u8; AES_BLOCK_SIZE],
         ghash_expanded_key: &ghash::GHashExpandedKey,
         ghash_state: &mut u128,
-        input_buffer: Option<&[u8]>,
-        output_buffer: &mut [u8],
+        mut buffer: InPlaceOrDisjointBuffer<u8>,
     ) {
         // SAFETY: Intrinsics
         unsafe {
@@ -273,26 +277,15 @@ impl AesGcmImpl for AesXmmImpl {
             let chain_increment_2 = _mm_set_epi32(0, 0, 0, 2);
             let chain_increment_8 = _mm_set_epi32(0, 0, 0, 8);
 
-            let mut dst = output_buffer.as_mut_ptr();
-            let dst_len = output_buffer.len();
-
-            let (mut src, src_len) = match input_buffer {
-                Some(buf) => (buf.as_ptr(), buf.len()),
-                None => (dst.cast_const(), dst_len),
-            };
-
-            let mut ghash_src: *const u8 = dst;
-
+            let buffer_len = buffer.len();
             debug_assert!(
-                src_len == dst_len,
-                "Input and output buffers must be the same length"
-            );
-            debug_assert!(
-                src_len.is_multiple_of(aes_gcm::GCM_BLOCK_SIZE),
-                "Input length must be a multiple of GCM block size"
+                buffer_len.is_multiple_of(aes_gcm::GCM_BLOCK_SIZE),
+                "Buffer length must be a multiple of GCM block size"
             );
 
-            let mut num_blocks = src_len / aes_gcm::GCM_BLOCK_SIZE;
+            let mut num_blocks = buffer_len / aes_gcm::GCM_BLOCK_SIZE;
+            let mut byte_offset: usize = 0;
+            let mut ghash_byte_offset: usize = 0;
 
             // Early return if no blocks to process
             if num_blocks == 0 {
@@ -342,65 +335,65 @@ impl AesGcmImpl for AesXmmImpl {
                 // Encrypt first 8 blocks - update chain
                 chain = _mm_add_epi32(chain, chain_increment_8);
 
-                _mm_storeu_si128(
-                    dst.add(AES_BLOCK_SIZE * 0).cast(),
+                buffer.storeu_si128(
+                    byte_offset + AES_BLOCK_SIZE * 0,
                     _mm_xor_si128(
                         blocks[0],
-                        _mm_loadu_si128(src.add(AES_BLOCK_SIZE * 0).cast()),
+                        buffer.loadu_si128_src(byte_offset + AES_BLOCK_SIZE * 0),
                     ),
                 );
-                _mm_storeu_si128(
-                    dst.add(AES_BLOCK_SIZE * 1).cast(),
+                buffer.storeu_si128(
+                    byte_offset + AES_BLOCK_SIZE * 1,
                     _mm_xor_si128(
                         blocks[1],
-                        _mm_loadu_si128(src.add(AES_BLOCK_SIZE * 1).cast()),
+                        buffer.loadu_si128_src(byte_offset + AES_BLOCK_SIZE * 1),
                     ),
                 );
-                _mm_storeu_si128(
-                    dst.add(AES_BLOCK_SIZE * 2).cast(),
+                buffer.storeu_si128(
+                    byte_offset + AES_BLOCK_SIZE * 2,
                     _mm_xor_si128(
                         blocks[2],
-                        _mm_loadu_si128(src.add(AES_BLOCK_SIZE * 2).cast()),
+                        buffer.loadu_si128_src(byte_offset + AES_BLOCK_SIZE * 2),
                     ),
                 );
-                _mm_storeu_si128(
-                    dst.add(AES_BLOCK_SIZE * 3).cast(),
+                buffer.storeu_si128(
+                    byte_offset + AES_BLOCK_SIZE * 3,
                     _mm_xor_si128(
                         blocks[3],
-                        _mm_loadu_si128(src.add(AES_BLOCK_SIZE * 3).cast()),
+                        buffer.loadu_si128_src(byte_offset + AES_BLOCK_SIZE * 3),
                     ),
                 );
-                _mm_storeu_si128(
-                    dst.add(AES_BLOCK_SIZE * 4).cast(),
+                buffer.storeu_si128(
+                    byte_offset + AES_BLOCK_SIZE * 4,
                     _mm_xor_si128(
                         blocks[4],
-                        _mm_loadu_si128(src.add(AES_BLOCK_SIZE * 4).cast()),
+                        buffer.loadu_si128_src(byte_offset + AES_BLOCK_SIZE * 4),
                     ),
                 );
-                _mm_storeu_si128(
-                    dst.add(AES_BLOCK_SIZE * 5).cast(),
+                buffer.storeu_si128(
+                    byte_offset + AES_BLOCK_SIZE * 5,
                     _mm_xor_si128(
                         blocks[5],
-                        _mm_loadu_si128(src.add(AES_BLOCK_SIZE * 5).cast()),
+                        buffer.loadu_si128_src(byte_offset + AES_BLOCK_SIZE * 5),
                     ),
                 );
-                _mm_storeu_si128(
-                    dst.add(AES_BLOCK_SIZE * 6).cast(),
+                buffer.storeu_si128(
+                    byte_offset + AES_BLOCK_SIZE * 6,
                     _mm_xor_si128(
                         blocks[6],
-                        _mm_loadu_si128(src.add(AES_BLOCK_SIZE * 6).cast()),
+                        buffer.loadu_si128_src(byte_offset + AES_BLOCK_SIZE * 6),
                     ),
                 );
-                _mm_storeu_si128(
-                    dst.add(AES_BLOCK_SIZE * 7).cast(),
+                buffer.storeu_si128(
+                    byte_offset + AES_BLOCK_SIZE * 7,
                     _mm_xor_si128(
                         blocks[7],
-                        _mm_loadu_si128(src.add(AES_BLOCK_SIZE * 7).cast()),
+                        buffer.loadu_si128_src(byte_offset + AES_BLOCK_SIZE * 7),
                     ),
                 );
 
-                dst = dst.add(AES_BLOCK_SIZE * 8);
-                src = src.add(AES_BLOCK_SIZE * 8);
+                byte_offset += AES_BLOCK_SIZE * 8;
+                // ghash_byte_offset stays at 0 - we GHASH the first 8 blocks that were just encrypted
 
                 while num_blocks >= 16 {
                     // In this loop we always have 8 blocks to encrypt and we have already encrypted the previous 8 blocks ready for GHASH
@@ -426,7 +419,7 @@ impl AesGcmImpl for AesXmmImpl {
                     let result = Self::aes_gcm_encrypt_n::<KEY_ROUNDS, 8>(
                         expanded_key.enc_round_keys::<KEY_ROUNDS>(),
                         &mut blocks,
-                        ghash_src,
+                        &buffer.dst()[ghash_byte_offset..ghash_byte_offset + 8 * AES_BLOCK_SIZE],
                         8, // ghash_rounds
                         byte_reverse_order,
                         ghash_expanded_key,
@@ -436,71 +429,70 @@ impl AesGcmImpl for AesXmmImpl {
                         a2,
                     );
 
-                    ghash_src = result.0;
-                    todo = result.1;
-                    a0 = result.2;
-                    a1 = result.3;
-                    a2 = result.4;
+                    ghash_byte_offset += AES_BLOCK_SIZE * 8; // Move GHASH index forward by ghash_rounds (8 blocks)
+                    todo = result.0;
+                    a0 = result.1;
+                    a1 = result.2;
+                    a2 = result.3;
 
-                    _mm_storeu_si128(
-                        dst.add(AES_BLOCK_SIZE * 0).cast(),
+                    buffer.storeu_si128(
+                        byte_offset + AES_BLOCK_SIZE * 0,
                         _mm_xor_si128(
                             blocks[0],
-                            _mm_loadu_si128(src.add(AES_BLOCK_SIZE * 0).cast()),
+                            buffer.loadu_si128_src(byte_offset + AES_BLOCK_SIZE * 0),
                         ),
                     );
-                    _mm_storeu_si128(
-                        dst.add(AES_BLOCK_SIZE * 1).cast(),
+                    buffer.storeu_si128(
+                        byte_offset + AES_BLOCK_SIZE * 1,
                         _mm_xor_si128(
                             blocks[1],
-                            _mm_loadu_si128(src.add(AES_BLOCK_SIZE * 1).cast()),
+                            buffer.loadu_si128_src(byte_offset + AES_BLOCK_SIZE * 1),
                         ),
                     );
-                    _mm_storeu_si128(
-                        dst.add(AES_BLOCK_SIZE * 2).cast(),
+                    buffer.storeu_si128(
+                        byte_offset + AES_BLOCK_SIZE * 2,
                         _mm_xor_si128(
                             blocks[2],
-                            _mm_loadu_si128(src.add(AES_BLOCK_SIZE * 2).cast()),
+                            buffer.loadu_si128_src(byte_offset + AES_BLOCK_SIZE * 2),
                         ),
                     );
-                    _mm_storeu_si128(
-                        dst.add(AES_BLOCK_SIZE * 3).cast(),
+                    buffer.storeu_si128(
+                        byte_offset + AES_BLOCK_SIZE * 3,
                         _mm_xor_si128(
                             blocks[3],
-                            _mm_loadu_si128(src.add(AES_BLOCK_SIZE * 3).cast()),
+                            buffer.loadu_si128_src(byte_offset + AES_BLOCK_SIZE * 3),
                         ),
                     );
-                    _mm_storeu_si128(
-                        dst.add(AES_BLOCK_SIZE * 4).cast(),
+                    buffer.storeu_si128(
+                        byte_offset + AES_BLOCK_SIZE * 4,
                         _mm_xor_si128(
                             blocks[4],
-                            _mm_loadu_si128(src.add(AES_BLOCK_SIZE * 4).cast()),
+                            buffer.loadu_si128_src(byte_offset + AES_BLOCK_SIZE * 4),
                         ),
                     );
-                    _mm_storeu_si128(
-                        dst.add(AES_BLOCK_SIZE * 5).cast(),
+                    buffer.storeu_si128(
+                        byte_offset + AES_BLOCK_SIZE * 5,
                         _mm_xor_si128(
                             blocks[5],
-                            _mm_loadu_si128(src.add(AES_BLOCK_SIZE * 5).cast()),
+                            buffer.loadu_si128_src(byte_offset + AES_BLOCK_SIZE * 5),
                         ),
                     );
-                    _mm_storeu_si128(
-                        dst.add(AES_BLOCK_SIZE * 6).cast(),
+                    buffer.storeu_si128(
+                        byte_offset + AES_BLOCK_SIZE * 6,
                         _mm_xor_si128(
                             blocks[6],
-                            _mm_loadu_si128(src.add(AES_BLOCK_SIZE * 6).cast()),
+                            buffer.loadu_si128_src(byte_offset + AES_BLOCK_SIZE * 6),
                         ),
                     );
-                    _mm_storeu_si128(
-                        dst.add(AES_BLOCK_SIZE * 7).cast(),
+                    buffer.storeu_si128(
+                        byte_offset + AES_BLOCK_SIZE * 7,
                         _mm_xor_si128(
                             blocks[7],
-                            _mm_loadu_si128(src.add(AES_BLOCK_SIZE * 7).cast()),
+                            buffer.loadu_si128_src(byte_offset + AES_BLOCK_SIZE * 7),
                         ),
                     );
 
-                    dst = dst.add(AES_BLOCK_SIZE * 8);
-                    src = src.add(AES_BLOCK_SIZE * 8);
+                    byte_offset += AES_BLOCK_SIZE * 8;
                     num_blocks -= 8;
 
                     if todo == 0 {
@@ -544,8 +536,9 @@ impl AesGcmImpl for AesXmmImpl {
                         let result = Self::aes_gcm_encrypt_n::<KEY_ROUNDS, 8>(
                             expanded_key.enc_round_keys::<KEY_ROUNDS>(),
                             &mut blocks,
-                            ghash_src,
-                            8, // ghash_rounds
+                            &buffer.dst()
+                                [ghash_byte_offset..ghash_byte_offset + 8 * AES_BLOCK_SIZE],
+                            8,
                             byte_reverse_order,
                             ghash_expanded_key,
                             todo,
@@ -554,18 +547,19 @@ impl AesGcmImpl for AesXmmImpl {
                             a2,
                         );
 
-                        todo = result.1;
-                        a0 = result.2;
-                        a1 = result.3;
-                        a2 = result.4;
+                        todo = result.0;
+                        a0 = result.1;
+                        a1 = result.2;
+                        a2 = result.3;
                     } else {
                         // Generate 4 blocks for tail
                         let (blocks_4, _) = blocks.split_at_mut(4);
                         let result = Self::aes_gcm_encrypt_n::<KEY_ROUNDS, 4>(
                             expanded_key.enc_round_keys::<KEY_ROUNDS>(),
                             blocks_4.try_into().unwrap(),
-                            ghash_src,
-                            8, // ghash_rounds
+                            &buffer.dst()
+                                [ghash_byte_offset..ghash_byte_offset + 8 * AES_BLOCK_SIZE],
+                            8,
                             byte_reverse_order,
                             ghash_expanded_key,
                             todo,
@@ -574,10 +568,10 @@ impl AesGcmImpl for AesXmmImpl {
                             a2,
                         );
 
-                        todo = result.1;
-                        a0 = result.2;
-                        a1 = result.3;
-                        a2 = result.4;
+                        todo = result.0;
+                        a0 = result.1;
+                        a1 = result.2;
+                        a2 = result.3;
                     }
 
                     if todo == 0 {
@@ -594,9 +588,11 @@ impl AesGcmImpl for AesXmmImpl {
                     }
                 } else {
                     for i in (1..=8).rev() {
-                        let r0 =
-                            _mm_shuffle_epi8(_mm_loadu_si128(ghash_src.cast()), byte_reverse_order);
-                        ghash_src = ghash_src.add(AES_BLOCK_SIZE);
+                        let r0 = _mm_shuffle_epi8(
+                            buffer.loadu_si128_dst(ghash_byte_offset),
+                            byte_reverse_order,
+                        );
+                        ghash_byte_offset += AES_BLOCK_SIZE;
 
                         let result = ghash_xmm::clmul_acc_4(
                             r0,
@@ -622,15 +618,15 @@ impl AesGcmImpl for AesXmmImpl {
 
                     let r0 = _mm_xor_si128(
                         blocks[0],
-                        _mm_loadu_si128(src.add(AES_BLOCK_SIZE * 0).cast()),
+                        buffer.loadu_si128_src(byte_offset + AES_BLOCK_SIZE * 0),
                     );
                     let r1 = _mm_xor_si128(
                         blocks[1],
-                        _mm_loadu_si128(src.add(AES_BLOCK_SIZE * 1).cast()),
+                        buffer.loadu_si128_src(byte_offset + AES_BLOCK_SIZE * 1),
                     );
 
-                    _mm_storeu_si128(dst.add(AES_BLOCK_SIZE * 0).cast(), r0);
-                    _mm_storeu_si128(dst.add(AES_BLOCK_SIZE * 1).cast(), r1);
+                    buffer.storeu_si128(byte_offset + AES_BLOCK_SIZE * 0, r0);
+                    buffer.storeu_si128(byte_offset + AES_BLOCK_SIZE * 1, r1);
 
                     let r0 = _mm_shuffle_epi8(r0, byte_reverse_order);
                     let r1 = _mm_shuffle_epi8(r1, byte_reverse_order);
@@ -657,8 +653,7 @@ impl AesGcmImpl for AesXmmImpl {
                     a1 = result.1;
                     a2 = result.2;
 
-                    dst = dst.add(2 * AES_BLOCK_SIZE);
-                    src = src.add(2 * AES_BLOCK_SIZE);
+                    byte_offset += 2 * AES_BLOCK_SIZE;
                     todo -= 2;
                     num_blocks -= 2;
 
@@ -674,9 +669,10 @@ impl AesGcmImpl for AesXmmImpl {
                 if num_blocks > 0 {
                     chain = _mm_add_epi32(chain, chain_increment_1);
 
-                    let r0 = _mm_xor_si128(blocks[0], _mm_loadu_si128(src.cast()));
+                    let r0 =
+                        _mm_xor_si128(blocks[0], buffer.loadu_si128_src(byte_offset));
 
-                    _mm_storeu_si128(dst.cast(), r0);
+                    buffer.storeu_si128(byte_offset, r0);
 
                     let r0 = _mm_shuffle_epi8(r0, byte_reverse_order);
 
@@ -707,8 +703,7 @@ impl AesGcmImpl for AesXmmImpl {
         chaining_value: &mut [u8; AES_BLOCK_SIZE],
         ghash_expanded_key: &ghash::GHashExpandedKey,
         ghash_state: &mut u128,
-        input_buffer: Option<&[u8]>,
-        output_buffer: &mut [u8],
+        mut buffer: InPlaceOrDisjointBuffer<u8>,
     ) {
         // SAFETY: Intrinsics
         unsafe {
@@ -720,26 +715,15 @@ impl AesGcmImpl for AesXmmImpl {
             let chain_increment_1 = _mm_set_epi32(0, 0, 0, 1);
             let chain_increment_2 = _mm_set_epi32(0, 0, 0, 2);
 
-            let mut dst = output_buffer.as_mut_ptr();
-            let dst_len = output_buffer.len();
-
-            let (mut src, src_len) = match input_buffer {
-                Some(buf) => (buf.as_ptr(), buf.len()),
-                None => (dst.cast_const(), dst_len),
-            };
-
-            let ghash_src: *const u8 = src;
-
+            let buffer_len = buffer.len();
             debug_assert!(
-                src_len == dst_len,
-                "Input and output buffers must be the same length"
-            );
-            debug_assert!(
-                src_len.is_multiple_of(aes_gcm::GCM_BLOCK_SIZE),
-                "Input length must be a multiple of GCM block size"
+                buffer_len.is_multiple_of(aes_gcm::GCM_BLOCK_SIZE),
+                "Buffer length must be a multiple of GCM block size"
             );
 
-            let mut num_blocks = src_len / aes_gcm::GCM_BLOCK_SIZE;
+            let mut num_blocks = buffer_len / aes_gcm::GCM_BLOCK_SIZE;
+            let mut byte_offset: usize = 0;
+            let mut ghash_byte_offset: usize = 0;
 
             // Early return if no blocks to process
             if num_blocks == 0 {
@@ -761,7 +745,6 @@ impl AesGcmImpl for AesXmmImpl {
             );
 
             let mut blocks: [__m128i; 8] = [_mm_setzero_si128(); 8];
-            let mut ghash_src_ptr = ghash_src;
 
             // Main loop: Process 8 blocks at a time
             while num_blocks >= 8 {
@@ -788,7 +771,7 @@ impl AesGcmImpl for AesXmmImpl {
                 let result = Self::aes_gcm_encrypt_n::<KEY_ROUNDS, 8>(
                     expanded_key.enc_round_keys::<KEY_ROUNDS>(),
                     &mut blocks,
-                    ghash_src_ptr,
+                    &buffer.src()[ghash_byte_offset..ghash_byte_offset + 8 * AES_BLOCK_SIZE],
                     8, // ghash_rounds
                     byte_reverse_order,
                     ghash_expanded_key,
@@ -798,71 +781,70 @@ impl AesGcmImpl for AesXmmImpl {
                     a2,
                 );
 
-                ghash_src_ptr = result.0;
-                todo = result.1;
-                a0 = result.2;
-                a1 = result.3;
-                a2 = result.4;
+                ghash_byte_offset += AES_BLOCK_SIZE * 8; // Move GHASH index forward by ghash_rounds (8 blocks)
+                todo = result.0;
+                a0 = result.1;
+                a1 = result.2;
+                a2 = result.3;
 
-                _mm_storeu_si128(
-                    dst.add(AES_BLOCK_SIZE * 0).cast(),
+                buffer.storeu_si128(
+                    byte_offset + AES_BLOCK_SIZE * 0,
                     _mm_xor_si128(
                         blocks[0],
-                        _mm_loadu_si128(src.add(AES_BLOCK_SIZE * 0).cast()),
+                        buffer.loadu_si128_src(byte_offset + AES_BLOCK_SIZE * 0),
                     ),
                 );
-                _mm_storeu_si128(
-                    dst.add(AES_BLOCK_SIZE * 1).cast(),
+                buffer.storeu_si128(
+                    byte_offset + AES_BLOCK_SIZE * 1,
                     _mm_xor_si128(
                         blocks[1],
-                        _mm_loadu_si128(src.add(AES_BLOCK_SIZE * 1).cast()),
+                        buffer.loadu_si128_src(byte_offset + AES_BLOCK_SIZE * 1),
                     ),
                 );
-                _mm_storeu_si128(
-                    dst.add(AES_BLOCK_SIZE * 2).cast(),
+                buffer.storeu_si128(
+                    byte_offset + AES_BLOCK_SIZE * 2,
                     _mm_xor_si128(
                         blocks[2],
-                        _mm_loadu_si128(src.add(AES_BLOCK_SIZE * 2).cast()),
+                        buffer.loadu_si128_src(byte_offset + AES_BLOCK_SIZE * 2),
                     ),
                 );
-                _mm_storeu_si128(
-                    dst.add(AES_BLOCK_SIZE * 3).cast(),
+                buffer.storeu_si128(
+                    byte_offset + AES_BLOCK_SIZE * 3,
                     _mm_xor_si128(
                         blocks[3],
-                        _mm_loadu_si128(src.add(AES_BLOCK_SIZE * 3).cast()),
+                        buffer.loadu_si128_src(byte_offset + AES_BLOCK_SIZE * 3),
                     ),
                 );
-                _mm_storeu_si128(
-                    dst.add(AES_BLOCK_SIZE * 4).cast(),
+                buffer.storeu_si128(
+                    byte_offset + AES_BLOCK_SIZE * 4,
                     _mm_xor_si128(
                         blocks[4],
-                        _mm_loadu_si128(src.add(AES_BLOCK_SIZE * 4).cast()),
+                        buffer.loadu_si128_src(byte_offset + AES_BLOCK_SIZE * 4),
                     ),
                 );
-                _mm_storeu_si128(
-                    dst.add(AES_BLOCK_SIZE * 5).cast(),
+                buffer.storeu_si128(
+                    byte_offset + AES_BLOCK_SIZE * 5,
                     _mm_xor_si128(
                         blocks[5],
-                        _mm_loadu_si128(src.add(AES_BLOCK_SIZE * 5).cast()),
+                        buffer.loadu_si128_src(byte_offset + AES_BLOCK_SIZE * 5),
                     ),
                 );
-                _mm_storeu_si128(
-                    dst.add(AES_BLOCK_SIZE * 6).cast(),
+                buffer.storeu_si128(
+                    byte_offset + AES_BLOCK_SIZE * 6,
                     _mm_xor_si128(
                         blocks[6],
-                        _mm_loadu_si128(src.add(AES_BLOCK_SIZE * 6).cast()),
+                        buffer.loadu_si128_src(byte_offset + AES_BLOCK_SIZE * 6),
                     ),
                 );
-                _mm_storeu_si128(
-                    dst.add(AES_BLOCK_SIZE * 7).cast(),
+                buffer.storeu_si128(
+                    byte_offset + AES_BLOCK_SIZE * 7,
                     _mm_xor_si128(
                         blocks[7],
-                        _mm_loadu_si128(src.add(AES_BLOCK_SIZE * 7).cast()),
+                        buffer.loadu_si128_src(byte_offset + AES_BLOCK_SIZE * 7),
                     ),
                 );
 
-                dst = dst.add(AES_BLOCK_SIZE * 8);
-                src = src.add(AES_BLOCK_SIZE * 8);
+                byte_offset += AES_BLOCK_SIZE * 8;
                 num_blocks -= 8;
 
                 if todo == 0 {
@@ -907,7 +889,8 @@ impl AesGcmImpl for AesXmmImpl {
                     let result = Self::aes_gcm_encrypt_n::<KEY_ROUNDS, 8>(
                         expanded_key.enc_round_keys::<KEY_ROUNDS>(),
                         &mut blocks,
-                        ghash_src_ptr,
+                        &buffer.src()
+                            [ghash_byte_offset..ghash_byte_offset + num_blocks * AES_BLOCK_SIZE],
                         num_blocks,
                         byte_reverse_order,
                         ghash_expanded_key,
@@ -917,15 +900,16 @@ impl AesGcmImpl for AesXmmImpl {
                         a2,
                     );
 
-                    a0 = result.2;
-                    a1 = result.3;
-                    a2 = result.4;
+                    a0 = result.1;
+                    a1 = result.2;
+                    a2 = result.3;
                 } else {
                     let (blocks_4, _) = blocks.split_at_mut(4);
                     let result = Self::aes_gcm_encrypt_n::<KEY_ROUNDS, 4>(
                         expanded_key.enc_round_keys::<KEY_ROUNDS>(),
                         blocks_4.try_into().unwrap(),
-                        ghash_src_ptr,
+                        &buffer.src()
+                            [ghash_byte_offset..ghash_byte_offset + num_blocks * AES_BLOCK_SIZE],
                         num_blocks,
                         byte_reverse_order,
                         ghash_expanded_key,
@@ -935,9 +919,9 @@ impl AesGcmImpl for AesXmmImpl {
                         a2,
                     );
 
-                    a0 = result.2;
-                    a1 = result.3;
-                    a2 = result.4;
+                    a0 = result.1;
+                    a1 = result.2;
+                    a2 = result.3;
                 }
 
                 state = ghash_xmm::modreduce(v_multiplication_constant, a0, a1, a2);
@@ -946,23 +930,22 @@ impl AesGcmImpl for AesXmmImpl {
                 while num_blocks >= 2 {
                     chain = _mm_add_epi32(chain, chain_increment_2);
 
-                    _mm_storeu_si128(
-                        dst.add(AES_BLOCK_SIZE * 0).cast(),
+                    buffer.storeu_si128(
+                        byte_offset + AES_BLOCK_SIZE * 0,
                         _mm_xor_si128(
                             blocks[0],
-                            _mm_loadu_si128(src.add(AES_BLOCK_SIZE * 0).cast()),
+                            buffer.loadu_si128_src(byte_offset + AES_BLOCK_SIZE * 0),
                         ),
                     );
-                    _mm_storeu_si128(
-                        dst.add(AES_BLOCK_SIZE * 1).cast(),
+                    buffer.storeu_si128(
+                        byte_offset + AES_BLOCK_SIZE * 1,
                         _mm_xor_si128(
                             blocks[1],
-                            _mm_loadu_si128(src.add(AES_BLOCK_SIZE * 1).cast()),
+                            buffer.loadu_si128_src(byte_offset + AES_BLOCK_SIZE * 1),
                         ),
                     );
 
-                    dst = dst.add(2 * AES_BLOCK_SIZE);
-                    src = src.add(2 * AES_BLOCK_SIZE);
+                    byte_offset += 2 * AES_BLOCK_SIZE;
                     num_blocks -= 2;
 
                     // Shift blocks for next iteration
@@ -976,9 +959,9 @@ impl AesGcmImpl for AesXmmImpl {
                 if num_blocks > 0 {
                     chain = _mm_add_epi32(chain, chain_increment_1);
 
-                    _mm_storeu_si128(
-                        dst.cast(),
-                        _mm_xor_si128(blocks[0], _mm_loadu_si128(src.cast())),
+                    buffer.storeu_si128(
+                        byte_offset,
+                        _mm_xor_si128(blocks[0], buffer.loadu_si128_src(byte_offset)),
                     );
                 }
             }

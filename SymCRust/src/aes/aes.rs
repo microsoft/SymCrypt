@@ -11,13 +11,24 @@ use core::ptr::addr_of;
 use libc::size_t;
 
 use crate::block_cipher::{BlockCipher, BlockCipherExpandedKey};
-use crate::common::{wipe_slice, Error};
+use crate::common::{wipe_slice, Error, InPlaceOrDisjointBuffer};
 use crate::symcryptcommon::symcrypt_magic_value;
 
 mod aes_gcm;
-#[cfg(target_arch = "aarch64")]
+#[cfg(all(
+    target_arch = "aarch64",
+    target_feature = "aes",
+    target_feature = "neon"
+))]
 mod aes_neon;
-#[cfg(any(target_arch = "x86_64", target_arch = "x86"))]
+#[cfg(all(
+    any(target_arch = "x86_64", target_arch = "x86"),
+    all(
+        target_feature = "aes",
+        target_feature = "pclmulqdq",
+        target_feature = "ssse3"
+    )
+))]
 mod aes_xmm;
 #[cfg(not(any(feature = "benchmarking", test)))]
 mod ffi;
@@ -107,39 +118,44 @@ trait AesImpl {
 trait AesGcmImpl {
     /// Perform "stitched" AES-GCM encryption, i.e. encryption where the GHASH computations are
     /// interleaved with the AES encryption operations for better performance.
-    /// For in-place encryption, `input_buffer` can be `None`, and the plaintext is read from, and
-    /// the ciphertext written back to, `output_buffer`.
     fn gcm_encrypt_stitched<const KEY_ROUNDS: usize>(
         expanded_key: &CSymCryptAesExpandedKey,
         chaining_value: &mut [u8; AES_BLOCK_SIZE],
         ghash_expanded_key: &ghash::GHashExpandedKey,
         ghash_state: &mut u128,
-        input_buffer: Option<&[u8]>,
-        output_buffer: &mut [u8],
+        buffer: InPlaceOrDisjointBuffer<u8>,
     );
 
     /// Perform "stitched" AES-GCM decryption, i.e. decryption where the GHASH computations are
     /// interleaved with the AES decryption operations for better performance.
-    /// For in-place decryption, `input_buffer` can be `None`, and the ciphertext is read from, and
-    /// the plaintext written back to, `output_buffer`.
     fn gcm_decrypt_stitched<const KEY_ROUNDS: usize>(
         expanded_key: &CSymCryptAesExpandedKey,
         chaining_value: &mut [u8; AES_BLOCK_SIZE],
         ghash_expanded_key: &ghash::GHashExpandedKey,
         ghash_state: &mut u128,
-        input_buffer: Option<&[u8]>,
-        output_buffer: &mut [u8],
+        buffer: InPlaceOrDisjointBuffer<u8>,
     );
 }
 
 /// Architecture-specific AES implementation type for x86/x86_64 platforms.
 /// Uses XMM (PCLMULQDQ/AES-NI) instructions.
-#[cfg(any(target_arch = "x86_64", target_arch = "x86"))]
+#[cfg(all(
+    any(target_arch = "x86_64", target_arch = "x86"),
+    all(
+        target_feature = "aes",
+        target_feature = "pclmulqdq",
+        target_feature = "ssse3"
+    )
+))]
 type AesImplType = aes_xmm::AesXmmImpl;
 
 /// Architecture-specific AES implementation type for aarch64 platforms.
 /// Uses NEON instructions.
-#[cfg(target_arch = "aarch64")]
+#[cfg(all(
+    target_arch = "aarch64",
+    target_feature = "aes",
+    target_feature = "neon"
+))]
 type AesImplType = aes_neon::AesNeonImpl;
 
 /// Zero-sized type representing the AES block cipher algorithm.

@@ -5,7 +5,6 @@ edition = "2021"
 
 [dependencies]
 libc = "0.2"
-itertools = "0.14.0"
 
 [lib]
 # Adding lib for the sake of enabling benchmarks, apparently criterion won't
