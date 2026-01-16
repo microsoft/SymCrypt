@@ -2,9 +2,14 @@
 New changes will be listed here as they are developed. The version number is determined
 prior to the creation of a new release, based on the changes contained in that release.
 
+# Version 103.10.1
+
 - Remove FIPS PCTs on keypair import
 - Removed usage of datatypes with platform-dependent sizes where appropriate to ensure structure/parameter sizes are consistent across platforms
 - Added ARM64 ASM support for macOS
+- Allow building for unrecognized platforms (e.g. embedded systems)
+  - Any platform not listed in [BUILD.md](BUILD.md) is still not officially supported
+- Additional minor changes
 
 # Version 103.10.0
 
