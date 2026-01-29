@@ -195,6 +195,10 @@ def build_msbuild(args : argparse.Namespace) -> None:
                 msbuild_args = ["/t:Rebuild"]
                 msbuild_args.append("/p:Platform=" + ARCH_MSBUILD_ALIASES[arch])
                 msbuild_args.append("/p:Configuration=" + config)
+
+                if args.symcrust:
+                    msbuild_args.append("/p:BuildSymCrust=true")
+                
                 msbuild_args.append(str(args.source_dir / "SymCrypt.sln"))
 
                 invoke_build_tool("msbuild", msbuild_args)
@@ -206,8 +210,11 @@ def build_msbuild(args : argparse.Namespace) -> None:
         if args.arch:
             msbuild_args.append("/p:Platform=" + ARCH_MSBUILD_ALIASES[args.arch])
 
-        msbuild_args.extend(["/p:Configuration=" + args.config, str(args.source_dir / "SymCrypt.sln")])
+        if args.symcrust:
+            msbuild_args.append("/p:BuildSymCrust=true")
 
+        msbuild_args.extend(["/p:Configuration=" + args.config, str(args.source_dir / "SymCrypt.sln")])
+        
         invoke_build_tool("msbuild", msbuild_args)
 
 def main() -> None:
@@ -257,6 +264,7 @@ def main() -> None:
     parser_msbuild.add_argument("--arch", type = str.lower, help = "Target architecture. Defaults to host architecture.", choices = ARCH_MSBUILD, default = "")
     parser_msbuild.add_argument("--config", type = str, help = "Build configuration. Defaults to Debug.", choices = CONFIG_MSBUILD, default = "Debug")
     parser_msbuild.add_argument("--all", action = "store_true", help = "Build for all architecture/configuration combinations.", default = False)
+    parser_msbuild.add_argument("--symcrust", action = "store_true", help = "Build SymCrypt with experimental Rust (SymCRust) source.", default = False)
 
     args = parser.parse_args()
 

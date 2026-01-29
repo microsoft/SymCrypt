@@ -13,8 +13,13 @@
   </PropertyGroup>
   <Import Project="$(UndockedDir)symcrypt.undocked.props" />
   <ItemGroup>
-    <ProjectReference Include="..\..\lib\symcrypt_static.vcxproj">
+    <!-- Use pure C lib when NOT building with Rust -->
+    <ProjectReference Include="..\..\lib\symcrypt_static.vcxproj" Condition="'$(BuildSymCrust)'!='true'">
       <Project>{7c3bd5d2-7213-4cfa-b6cb-eb41623601bc}</Project>
+    </ProjectReference>
+    <!-- Use Rust UM lib when building with Rust -->
+    <ProjectReference Include="..\..\lib\symcrypt_static_rust_um.vcxproj" Condition="'$(BuildSymCrust)'=='true'">
+      <Project>{c68bef36-1fc4-4545-864b-a2e9080ba196}</Project>
     </ProjectReference>
     <ProjectReference Include="..\lib\symcryptunittest_lib.vcxproj">
       <Project>{1146804c-b04f-43f1-83b0-081a5187ba02}</Project>

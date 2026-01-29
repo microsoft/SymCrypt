@@ -26,6 +26,9 @@ parameters:
 - name: libcrux # Build with libcrux testing
   type: boolean
   default: false
+- name: symcrust # Build with SymCrust
+  type: boolean
+  default: false
 
 jobs:
 
@@ -46,15 +49,33 @@ jobs:
       libcrux_build_flag: '--libcrux'
     ${{ else }}:
       libcrux_build_flag: ''
+    ${{ if eq(parameters.symcrust, true) }}:
+      symcrust_build_flag: '--symcrust'
+    ${{ else }}:
+      symcrust_build_flag: ''
 
   steps:
 
+  - ${{ if eq(parameters.symcrust, true) }}:
+    - task: NuGetAuthenticate@1
+      displayName: 'Authenticate to NuGet feeds'
+    
+    - task: RustInstaller@1
+      displayName: 'Install Rust toolchain'
+      inputs:
+        rustVersion: 'ms-prod'
+        toolchainFeed: 'https://microsoft.pkgs.visualstudio.com/OS/_packaging/SymCrypt-Rust-Prod/nuget/v3/index.json'
+    - task: CargoAuthenticate@0
+      displayName: 'Authenticate Cargo'
+      inputs:
+        configFile: 'SymCrust/.cargo/config.toml'
+    
   - task: PythonScript@0
     displayName: 'Run build script'
     inputs:
       scriptSource: 'filePath'
       scriptPath: scripts\build.py
-      arguments: 'cmake bin --arch ${{ parameters.targetArch }} --config ${{ parameters.config }} ${{ parameters.additionalArgs }} $(verbose_build_flag) $(libcrux_build_flag)'
+      arguments: 'cmake bin --arch ${{ parameters.targetArch }} --config ${{ parameters.config }} ${{ parameters.additionalArgs }} $(verbose_build_flag) $(libcrux_build_flag) $(symcrust_build_flag)'
       workingDirectory: $(Build.SourcesDirectory)
 
   # Overwrite default artifact publishing with our copy (enables publishing binaries for failed runs)
@@ -73,7 +94,7 @@ jobs:
         scriptPath: scripts\test.py
         arguments: 'bin noperftests'
         workingDirectory: $(Build.SourcesDirectory)
-
+  
     - task: PythonScript@0
       displayName: 'Run dynamic unit tests'
       inputs:

@@ -42,6 +42,7 @@ harness = false
 [features]
 benchmarking = ["std"]
 std = []
+kernel = []
 
 # Algorithms
 # aes = []

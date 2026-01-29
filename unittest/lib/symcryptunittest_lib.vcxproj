@@ -16,6 +16,7 @@
     <ClCompile>
       <AdditionalIncludeDirectories>..\;..\inc;..\SymCryptDependencies\inc;..\..\inc;..\..\lib;</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions Condition="'$(BuildSymCrust)'=='true'">SYMCRUST_EXPERIMENTAL_BUILD=1;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalOptions>/Zc:strictStrings- /bigobj /wd5252 %(AdditionalOptions)</AdditionalOptions>
       <WholeProgramOptimization>true</WholeProgramOptimization>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>

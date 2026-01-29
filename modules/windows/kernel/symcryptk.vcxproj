@@ -40,8 +40,13 @@
   </PropertyGroup>
   <Import Project="$(UndockedDir)symcrypt.undocked.props" />
   <ItemGroup>
-    <ProjectReference Include="..\..\..\lib\symcrypt_static.vcxproj">
+    <!-- Use pure C lib when NOT building with Rust -->
+    <ProjectReference Include="..\..\..\lib\symcrypt_static.vcxproj" Condition="'$(BuildSymCrust)'!='true'">
       <Project>{7c3bd5d2-7213-4cfa-b6cb-eb41623601bc}</Project>
+    </ProjectReference>
+    <!-- Use Rust KM lib when building with Rust -->
+    <ProjectReference Include="..\..\..\lib\symcrypt_static_rust_km.vcxproj" Condition="'$(BuildSymCrust)'=='true'">
+      <Project>{6fab3a2e-d75a-4ad3-8f16-49c64c0989f9}</Project>
     </ProjectReference>
   </ItemGroup>
   <ItemDefinitionGroup>
@@ -58,6 +63,8 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <LinkTimeCodeGeneration>UseLinkTimeCodeGeneration</LinkTimeCodeGeneration>
       <AdditionalDependencies>%(AdditionalDependencies);ntoskrnl.lib</AdditionalDependencies>
+      <!-- /ignore:4287 suppresses missing retpoline metadata for Rust objects. Rust applies retpoline via -Zretpoline but doesn't emit MSVC metadata -->
+      <AdditionalOptions Condition="'$(BuildSymCrust)'=='true'">/INCLUDE:_fltused /INCLUDE:fma /INCLUDE:fmaf /ignore:4287 %(AdditionalOptions)</AdditionalOptions>
       <EntryPointSymbol>GsDriverEntry</EntryPointSymbol>
     </Link>
   </ItemDefinitionGroup>

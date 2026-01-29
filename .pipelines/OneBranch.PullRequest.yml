@@ -81,6 +81,12 @@ extends:
           libcrux: true
       - template: .pipelines/templates/build-windows-cmake.yml@self
         parameters:
+          targetArch: 'AMD64'
+          config: 'Release'
+          symcrust: true
+          identifier: 'SymCRust'
+      - template: .pipelines/templates/build-windows-cmake.yml@self
+        parameters:
           targetArch: 'ARM64'
           config: 'Debug'
           skipTests: true

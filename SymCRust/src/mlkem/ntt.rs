@@ -869,7 +869,7 @@ pub(super) fn poly_element_sample_cbd_from_bytes(
 
 pub(super) fn matrix_transpose(pm_src: &mut Matrix, n_rows: u8) {
     let n_rows = n_rows as usize;
-    debug_assert!(n_rows > MATRIX_MIN_NROWS);
+    debug_assert!(n_rows >= MATRIX_MIN_NROWS);
     debug_assert!(n_rows <= MATRIX_MAX_NROWS);
 
     for i in 0usize..n_rows {

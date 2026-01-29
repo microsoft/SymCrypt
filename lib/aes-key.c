@@ -214,7 +214,8 @@ cleanup:
     return status;
 }
 
-#ifndef SYMCRUST_EXPERIMENTAL_BUILD
+// Temporarily disable rust usage until AES GCM is ready
+// #ifndef SYMCRUST_EXPERIMENTAL_BUILD
 SYMCRYPT_ERROR
 SYMCRYPT_CALL
 SymCryptAesExpandKey(
@@ -225,7 +226,8 @@ SymCryptAesExpandKey(
 {
     return SymCryptAesExpandKeyInternal( pExpandedKey, pbKey, cbKey, TRUE );
 }
-#endif // SYMCRUST_EXPERIMENTAL_BUILD
+// Temporarily disable rust usage until AES GCM is ready
+// #endif // SYMCRUST_EXPERIMENTAL_BUILD
 
 SYMCRYPT_ERROR
 SYMCRYPT_CALL

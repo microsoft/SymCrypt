@@ -93,6 +93,30 @@
         "platform" : "win32"
     },
     {
+        "source" : "${BIN_DIR}/lib/symcrust_static_um.lib",
+        "dest" : "lib/symcrust_static_um.lib",
+        "platform" : "win32",
+        "arch" : "amd64"
+    },
+    {
+        "source" : "${BIN_DIR}/lib/symcrust_static_um_NoCIL.lib",
+        "dest" : "lib/symcrust_static_um_NoCIL.lib",
+        "platform" : "win32",
+        "arch" : "amd64"
+    },
+    {
+        "source" : "${BIN_DIR}/lib/symcrust_static_km.lib",
+        "dest" : "lib/symcrust_static_km.lib",
+        "platform" : "win32",
+        "arch" : "amd64"
+    },
+    {
+        "source" : "${BIN_DIR}/lib/symcrust_static_km_NoCIL.lib",
+        "dest" : "lib/symcrust_static_km_NoCIL.lib",
+        "platform" : "win32",
+        "arch" : "amd64"
+    },
+    {
         "source" : "${BIN_DIR}/dll/symcrypt.dll",
         "dest" : "dll/symcrypt.dll",
         "platform" : "win32"

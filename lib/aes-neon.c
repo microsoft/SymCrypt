@@ -381,7 +381,8 @@ SymCryptAesCreateDecryptionRoundKeyNeon(
     ) \
 };
 
-#ifndef SYMCRUST_EXPERIMENTAL_BUILD
+// Temporarily disable rust usage until AES GCM is ready
+// #ifndef SYMCRUST_EXPERIMENTAL_BUILD
 VOID
 SYMCRYPT_CALL
 SymCryptAesEncryptNeon(
@@ -413,7 +414,8 @@ SymCryptAesDecryptNeon(
 
     *(__n128 *) pbDst = c;
 }
-#endif // SYMCRUST_EXPERIMENTAL_BUILD
+// Temporarily disable rust usage until AES GCM is ready
+// #endif // SYMCRUST_EXPERIMENTAL_BUILD
 
 VOID
 SYMCRYPT_CALL

@@ -20,8 +20,9 @@
 extern crate alloc;
 extern crate core;
 
-#[path = "aes/aes.rs"]
-pub mod aes;
+// Temporarily disable rust usage until AES GCM is ready
+// #[path = "aes/aes.rs"]
+// pub mod aes;
 
 pub mod block_cipher;
 
@@ -45,3 +46,6 @@ pub mod mlkem;
 
 #[cfg(all(test, not(feature = "benchmarking")))]
 mod test_helpers;
+
+#[cfg(feature = "kernel")]
+mod kernel_stubs;

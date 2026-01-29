@@ -119,6 +119,13 @@ extends:
           identifier: 'NoAsm'
       - template: .pipelines/templates/build-windows-cmake.yml@self
         parameters:
+          targetArch: 'AMD64'
+          config: 'Release'
+          sign: true
+          symcrust: true
+          identifier: 'SymCRust'
+      - template: .pipelines/templates/build-windows-cmake.yml@self
+        parameters:
           targetArch: 'X86'
           config: 'Release'
           sign: true

@@ -329,7 +329,8 @@ SymCryptAesCreateDecryptionRoundKeyXmm(
 //
 // The EncryptXmm code is tested through the CFB mode encryption which has no further optimizations.
 //
-#ifndef SYMCRUST_EXPERIMENTAL_BUILD
+// Temporarily disable rust usage until AES GCM is ready
+// #ifndef SYMCRUST_EXPERIMENTAL_BUILD
 VOID
 SYMCRYPT_CALL
 SymCryptAesEncryptXmm(
@@ -364,7 +365,7 @@ SymCryptAesDecryptXmm(
 
     _mm_storeu_si128( (__m128i *) pbDst, c );
 }
-#endif // SYMCRUST_EXPERIMENTAL_BUILD
+// #endif // SYMCRUST_EXPERIMENTAL_BUILD
 
 // Disable warnings and VC++ runtime checks for use of uninitialized values (by design)
 #pragma warning(push)
@@ -1356,7 +1357,8 @@ SymCryptXtsAesDecryptDataUnitXmm(
 //                                     pState,
 //                                     pbDst,
 //                                     cbData );
-#ifndef SYMCRUST_EXPERIMENTAL_BUILD
+// Temporarily disable rust usage until AES GCM is ready
+// #ifndef SYMCRUST_EXPERIMENTAL_BUILD
 VOID
 SYMCRYPT_CALL
 SymCryptAesGcmEncryptStitchedXmm(
@@ -1755,6 +1757,7 @@ SymCryptAesGcmDecryptStitchedXmm(
 #pragma runtime_checks( "u", restore )
 #pragma warning(pop)
 
-#endif // SYMCRUST_EXPERIMENTAL_BUILD
+// Temporarily disable rust usage until AES GCM is ready
+//#endif // SYMCRUST_EXPERIMENTAL_BUILD
 
 #endif // CPU_X86 | CPU_AMD64

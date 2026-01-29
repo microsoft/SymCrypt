@@ -4,6 +4,10 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 VisualStudioVersion = 17.4.33213.308
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "symcrypt_static.lib", "lib\symcrypt_static.vcxproj", "{7C3BD5D2-7213-4CFA-B6CB-EB41623601BC}"
+	ProjectSection(ProjectDependencies) = postProject
+		{39328c3a-f2e5-4884-ba57-33722282c86a} = {39328c3a-f2e5-4884-ba57-33722282c86a}
+		{3e58c852-1346-4f53-b555-15ebb2bad7cb} = {3e58c852-1346-4f53-b555-15ebb2bad7cb}
+	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "symcryptunittest_lib.lib", "unittest\lib\symcryptunittest_lib.vcxproj", "{1146804C-B04F-43F1-83B0-081A5187BA02}"
 	ProjectSection(ProjectDependencies) = postProject
@@ -41,6 +45,23 @@ EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "symcrypt.dll", "modules\windows\user\symcrypt.vcxproj", "{c75bcb09-00b2-4008-9700-e3b5e7391c69}"
 	ProjectSection(ProjectDependencies) = postProject
 		{7C3BD5D2-7213-4CFA-B6CB-EB41623601BC} = {7C3BD5D2-7213-4CFA-B6CB-EB41623601BC}
+	EndProjectSection
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "symcrypt_static_c_core.lib", "lib\symcrypt_static_c_core.vcxproj", "{39328c3a-f2e5-4884-ba57-33722282c86a}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "symcrypt_static_c_other.lib", "lib\symcrypt_static_c_other.vcxproj", "{3e58c852-1346-4f53-b555-15ebb2bad7cb}"
+	ProjectSection(ProjectDependencies) = postProject
+		{39328c3a-f2e5-4884-ba57-33722282c86a} = {39328c3a-f2e5-4884-ba57-33722282c86a}
+	EndProjectSection
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "symcrypt_static_rust_um.lib", "lib\symcrypt_static_rust_um.vcxproj", "{c68bef36-1fc4-4545-864b-a2e9080ba196}"
+	ProjectSection(ProjectDependencies) = postProject
+		{39328c3a-f2e5-4884-ba57-33722282c86a} = {39328c3a-f2e5-4884-ba57-33722282c86a}
+	EndProjectSection
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "symcrypt_static_rust_km.lib", "lib\symcrypt_static_rust_km.vcxproj", "{6fab3a2e-d75a-4ad3-8f16-49c64c0989f9}"
+	ProjectSection(ProjectDependencies) = postProject
+		{39328c3a-f2e5-4884-ba57-33722282c86a} = {39328c3a-f2e5-4884-ba57-33722282c86a}
 	EndProjectSection
 EndProject
 Global
@@ -244,6 +265,70 @@ Global
 
 		{c75bcb09-00b2-4008-9700-e3b5e7391c69}.Release|x86.ActiveCfg = Release|Win32
 		{c75bcb09-00b2-4008-9700-e3b5e7391c69}.Release|x86.Build.0 = Release|Win32
+
+		# symcrypt_static_c_core.lib
+		{39328c3a-f2e5-4884-ba57-33722282c86a}.Debug|ARM64.ActiveCfg = Debug|ARM64
+		{39328c3a-f2e5-4884-ba57-33722282c86a}.Debug|ARM64.Build.0 = Debug|ARM64
+
+		{39328c3a-f2e5-4884-ba57-33722282c86a}.Debug|ARM64EC.ActiveCfg = Debug|ARM64EC
+		{39328c3a-f2e5-4884-ba57-33722282c86a}.Debug|ARM64EC.Build.0 = Debug|ARM64EC
+
+		{39328c3a-f2e5-4884-ba57-33722282c86a}.Debug|x64.ActiveCfg = Debug|x64
+		{39328c3a-f2e5-4884-ba57-33722282c86a}.Debug|x64.Build.0 = Debug|x64
+
+		{39328c3a-f2e5-4884-ba57-33722282c86a}.Debug|x86.ActiveCfg = Debug|Win32
+		{39328c3a-f2e5-4884-ba57-33722282c86a}.Debug|x86.Build.0 = Debug|Win32
+
+		{39328c3a-f2e5-4884-ba57-33722282c86a}.Release|ARM64.ActiveCfg = Release|ARM64
+		{39328c3a-f2e5-4884-ba57-33722282c86a}.Release|ARM64.Build.0 = Release|ARM64
+
+		{39328c3a-f2e5-4884-ba57-33722282c86a}.Release|ARM64EC.ActiveCfg = Release|ARM64EC
+		{39328c3a-f2e5-4884-ba57-33722282c86a}.Release|ARM64EC.Build.0 = Release|ARM64EC
+
+		{39328c3a-f2e5-4884-ba57-33722282c86a}.Release|x64.ActiveCfg = Release|x64
+		{39328c3a-f2e5-4884-ba57-33722282c86a}.Release|x64.Build.0 = Release|x64
+
+		{39328c3a-f2e5-4884-ba57-33722282c86a}.Release|x86.ActiveCfg = Release|Win32
+		{39328c3a-f2e5-4884-ba57-33722282c86a}.Release|x86.Build.0 = Release|Win32
+
+		# symcrypt_static_c_other.lib
+		{3e58c852-1346-4f53-b555-15ebb2bad7cb}.Debug|ARM64.ActiveCfg = Debug|ARM64
+		{3e58c852-1346-4f53-b555-15ebb2bad7cb}.Debug|ARM64.Build.0 = Debug|ARM64
+
+		{3e58c852-1346-4f53-b555-15ebb2bad7cb}.Debug|ARM64EC.ActiveCfg = Debug|ARM64EC
+		{3e58c852-1346-4f53-b555-15ebb2bad7cb}.Debug|ARM64EC.Build.0 = Debug|ARM64EC
+
+		{3e58c852-1346-4f53-b555-15ebb2bad7cb}.Debug|x64.ActiveCfg = Debug|x64
+		{3e58c852-1346-4f53-b555-15ebb2bad7cb}.Debug|x64.Build.0 = Debug|x64
+
+		{3e58c852-1346-4f53-b555-15ebb2bad7cb}.Debug|x86.ActiveCfg = Debug|Win32
+		{3e58c852-1346-4f53-b555-15ebb2bad7cb}.Debug|x86.Build.0 = Debug|Win32
+
+		{3e58c852-1346-4f53-b555-15ebb2bad7cb}.Release|ARM64.ActiveCfg = Release|ARM64
+		{3e58c852-1346-4f53-b555-15ebb2bad7cb}.Release|ARM64.Build.0 = Release|ARM64
+
+		{3e58c852-1346-4f53-b555-15ebb2bad7cb}.Release|ARM64EC.ActiveCfg = Release|ARM64EC
+		{3e58c852-1346-4f53-b555-15ebb2bad7cb}.Release|ARM64EC.Build.0 = Release|ARM64EC
+
+		{3e58c852-1346-4f53-b555-15ebb2bad7cb}.Release|x64.ActiveCfg = Release|x64
+		{3e58c852-1346-4f53-b555-15ebb2bad7cb}.Release|x64.Build.0 = Release|x64
+
+		{3e58c852-1346-4f53-b555-15ebb2bad7cb}.Release|x86.ActiveCfg = Release|Win32
+		{3e58c852-1346-4f53-b555-15ebb2bad7cb}.Release|x86.Build.0 = Release|Win32
+
+		# symcrust_static_rust_um.lib 
+		{c68bef36-1fc4-4545-864b-a2e9080ba196}.Debug|x64.ActiveCfg = Debug|x64
+		{c68bef36-1fc4-4545-864b-a2e9080ba196}.Debug|x64.Build.0 = Debug|x64
+
+		{c68bef36-1fc4-4545-864b-a2e9080ba196}.Release|x64.ActiveCfg = Release|x64
+		{c68bef36-1fc4-4545-864b-a2e9080ba196}.Release|x64.Build.0 = Release|x64
+
+		# symcrust_static_rust_km.lib 
+		{6fab3a2e-d75a-4ad3-8f16-49c64c0989f9}.Debug|x64.ActiveCfg = Debug|x64
+		{6fab3a2e-d75a-4ad3-8f16-49c64c0989f9}.Debug|x64.Build.0 = Debug|x64
+
+		{6fab3a2e-d75a-4ad3-8f16-49c64c0989f9}.Release|x64.ActiveCfg = Release|x64
+		{6fab3a2e-d75a-4ad3-8f16-49c64c0989f9}.Release|x64.Build.0 = Release|x64
 
 
 	EndGlobalSection

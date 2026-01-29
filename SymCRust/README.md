@@ -21,9 +21,8 @@ The Rust code in this subdirectory will be used in two ways:
   `BUILD.md` in the parent directory), and then set the `SYMCRYPT_LIB_PATH` environment variable
   to the output directory that contains the SymCrypt static libraries.
 - To run the SymCRust benchmarks, `cargo bench --features benchmarking`
-- To build SymCrypt (static lib, dynamic modules, and tests) with SymCRust implementations, from
-  the parent directory, invoke CMake with `-DSYMCRYPT_SYMCRUST=ON`
-  (or use `build.py cmake --symcrust`)
+- To build SymCrypt (static lib, dynamic modules, and tests) with SymCRust implementations,
+  from the parent directory, invoke CMake or msbuild with `-DSYMCRYPT_SYMCRUST=ON` (or use `build.py` with `--symcrust` option)
 
 ## TODOs
 
@@ -32,10 +31,8 @@ This build is a work in progress!
 - Hook up options for running proof and automated C extraction in this context. Makefile and
   symcrust.lean are copied from experimental repo. Try to avoid bringing in a dependency on nightly
   for verification.
-- Invoke SymCRust cargo build from SymCrypt MSBuild
 - Figure out passing along cross-compilation from SymCrypt build system (CMake / MSBuild) to
   SymCRust.
-- Add Rust build to build pipeline
 - Autogenerate Rust<->C FFI (probably using bindgen) - evaluate what is good approach for
   ensuring assumptions across the boundary (currently make some assumption about KeccakState in
   hash.rs) are minimized without adding needless complexity to the internal interface
@@ -54,3 +51,9 @@ This build is a work in progress!
   probably be marked as unsafe and annotated with `#[target_feature(...)]`, but this requires
   an additional wrapping function for anything that implements a trait interface, because trait
   functions cannot be unsafe.
+- Fully enable AES-GCM when rust is ready. 
+- Enable SymCrust for non AMD64.
+- Update `symcrypt_build_property` in `build-windows-undocked.yml` to be more deterministic like `build-azl.yml`. 
+- Determine a way to configure what algos are being built with C/Rust from build time.
+- Determine a better way to turn on/off rust files rather than adding/removing from `vcxproj`.
+- Determine impact on external users with the new dependency on `ms-prod`.
