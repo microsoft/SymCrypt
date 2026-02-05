@@ -101,6 +101,15 @@ jobs:
       platform: 'x64'
       configuration: 'Release'
 
+  - task: onebranch.pipeline.signing@1 # https://aka.ms/obpipelines/signing
+    displayName: 'Sign NuGet test application'
+    target: windows_build_container
+    inputs:
+      command: 'sign'
+      cp_cope: 'CP-230072' # Test signing certificate
+      files_to_sign: '**\*.exe'
+      search_root: $(ob_outputDirectory)
+
   - script: |
       .\build\bin\amd64fre\exe\NuGetTestApplication.exe
     displayName: 'Run NuGet test application'
