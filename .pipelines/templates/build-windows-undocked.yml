@@ -82,6 +82,7 @@ jobs:
     ob_NativeCompiler_UseOSBranchVersion: true
     ob_NativeCompiler_TargetOsBranch: ${{ parameters.lkgCompilerBranch }}
     ob_NativeCompiler_UcrtPlatform: $(ob_build_platform_win)
+    lkg_branch: ${{ replace(replace(parameters.lkgCompilerBranch, 'official/', ''), '/', '-') }}
 
   steps:
   # Overwrite default artifact publishing with our copy (enables publishing binaries for failed runs)
@@ -101,7 +102,7 @@ jobs:
       configuration: $(ob_build_config)
       maximumCpuCount: true
       msbuildArchitecture: 'x64'
-      msbuildArgs: '-p:UndockedOfficial=${{ parameters.nativeCompiler }} -p:UndockedBuildId=$(Build.BuildId) -p:VER_BUILD_ID=$(Build.BuildId) -p:VER_SUFFIX=${{ parameters.buildType }}'
+      msbuildArgs: '-p:UndockedOfficial=${{ parameters.nativeCompiler }} -p:UndockedBuildId=$(Build.BuildId) -p:VER_BUILD_ID=$(Build.BuildId) -p:VER_SUFFIX=${{ parameters.buildType }}-$(lkg_branch)'
 
   - task: onebranch.pipeline.signing@1 # https://aka.ms/obpipelines/signing
     displayName: 'Sign Binaries'
