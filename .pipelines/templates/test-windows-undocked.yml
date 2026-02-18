@@ -20,6 +20,15 @@ jobs:
       x86fre:
         arch: x86
         config: fre
+      # SymCRust hybrid amd64 builds
+      amd64chk_symcrust:
+        arch: amd64
+        config: chk
+        build_variant_suffix: '_symcrust'
+      amd64fre_symcrust:
+        arch: amd64
+        config: fre
+        build_variant_suffix: '_symcrust'
 
       # We currently have no ARM64 hosts for testing :(
       # arm64chk:
@@ -32,13 +41,14 @@ jobs:
   variables:
     # Specify a fake artifact directory since we don't want to upload any artifacts from this job
     ob_outputDirectory: $(Build.SourcesDirectory)/does_not_exist
-    ob_artifactSuffix: _$(arch)$(config)
+    build_variant_suffix: ''
+    ob_artifactSuffix: _$(arch)$(config)$(build_variant_suffix)
 
   steps:
   - task: DownloadPipelineArtifact@2
     displayName: 'Download build artifacts'
     inputs:
-      artifact: 'drop_Build_Windows_Undocked_build_sln_$(arch)$(config)'
+      artifact: 'drop_Build_Windows_Undocked_build_sln$(ob_artifactSuffix)'
       path: '$(Build.SourcesDirectory)/artifacts'
 
   - task: PythonScript@0

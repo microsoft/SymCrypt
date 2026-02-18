@@ -10,6 +10,8 @@
     <UndockedType>lib</UndockedType>
     <UndockedDir>$(SolutionDir)msbuild\</UndockedDir>
     <UndockedOut>$(SolutionDir)</UndockedOut>
+    <!-- Disable ARM64X on this merge-only project, c_core and c_other already produce ARM64X libs -->
+    <ARM64X_DISABLED>1</ARM64X_DISABLED>
     <IncludePath>$(ProjectDir);$(IncludePath);</IncludePath>
     <ProjectName>symcrypt_static</ProjectName>
   </PropertyGroup>

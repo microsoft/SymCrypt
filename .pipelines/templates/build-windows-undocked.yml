@@ -37,10 +37,23 @@ jobs:
           ob_build_platform_win: amd64
           ob_build_config: Debug
           ob_build_config_win: chk
+        amd64fre:
+          ob_build_platform: x64
+          ob_build_platform_win: amd64
+          ob_build_config: Release
+          ob_build_config_win: fre
+        # SymCRust hybrid builds (Rust + C). These produce the symcrust_static_um/km
+        amd64chk_symcrust:
+          ob_build_platform: x64
+          ob_build_platform_win: amd64
+          ob_build_config: Debug
+          ob_build_config_win: chk
           symcrust_enabled: true
           symcrypt_symcrust_prop: '-p:BuildSymCrust=true'
           RUSTC_BOOTSTRAP: '1'
-        amd64fre:
+          build_variant_suffix: '_symcrust'
+          package_symcrust_arg: '--symcrust'
+        amd64fre_symcrust:
           ob_build_platform: x64
           ob_build_platform_win: amd64
           ob_build_config: Release
@@ -48,6 +61,8 @@ jobs:
           symcrust_enabled: true
           symcrypt_symcrust_prop: '-p:BuildSymCrust=true'
           RUSTC_BOOTSTRAP: '1'
+          build_variant_suffix: '_symcrust'
+          package_symcrust_arg: '--symcrust'
         arm64chk:
           ob_build_platform: arm64
           ob_build_platform_win: arm64
@@ -66,7 +81,8 @@ jobs:
     solution_name: 'symcrypt.sln'
     # OneBranch Variables
     ob_outputDirectory: $(Build.SourcesDirectory)\build\bin\$(ob_build_platform_win)$(ob_build_config_win)
-    ob_artifactSuffix: _$(ob_build_platform_win)$(ob_build_config_win)
+    build_variant_suffix: ''
+    ob_artifactSuffix: _$(ob_build_platform_win)$(ob_build_config_win)$(build_variant_suffix)
     # https://aka.ms/obpipelines/sdl
     # When TSA is enabled bugs are filed on SDL errors. When TSA is disabled, most SDL tools break the build.
     # Make official builds file bugs but PR builds just break the build.
@@ -88,8 +104,9 @@ jobs:
     ob_NativeCompiler_UseOSBranchVersion: true
     ob_NativeCompiler_TargetOsBranch: ${{ parameters.lkgCompilerBranch }}
     ob_NativeCompiler_UcrtPlatform: $(ob_build_platform_win)
-    # Default empty for symcrust build
+    # Default empty for non-symcrust builds
     symcrypt_symcrust_prop: ''
+    package_symcrust_arg: ''
 
   steps:
 
@@ -144,5 +161,5 @@ jobs:
     inputs:
       scriptSource: 'filePath'
       scriptPath: scripts\package.py
-      arguments: --no-archive $(ob_outputDirectory) $(ob_build_platform_win) $(ob_build_config) Windows $(ob_outputDirectory)\pkg
+      arguments: --no-archive $(package_symcrust_arg) $(ob_outputDirectory) $(ob_build_platform_win) $(ob_build_config) Windows $(ob_outputDirectory)\pkg
       workingDirectory: $(Build.SourcesDirectory)

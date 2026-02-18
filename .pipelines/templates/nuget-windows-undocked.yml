@@ -36,6 +36,12 @@ jobs:
       path: '$(Build.SourcesDirectory)/artifacts/win-x64'
 
   - task: DownloadPipelineArtifact@2
+    displayName: 'Download AMD64 SymCRust artifacts'
+    inputs:
+      artifact: 'drop_Build_Windows_Undocked_build_sln_amd64fre_symcrust'
+      path: '$(Build.SourcesDirectory)/artifacts/win-x64-symcrust'
+
+  - task: DownloadPipelineArtifact@2
     displayName: 'Download ARM64 artifacts'
     inputs:
       artifact: 'drop_Build_Windows_Undocked_build_sln_arm64fre'
@@ -47,6 +53,13 @@ jobs:
       SourceFolder: '$(Build.SourcesDirectory)/artifacts/win-x64/pkg'
       Contents: '**'
       TargetFolder: '$(Build.SourcesDirectory)/pkg/win-x64'
+
+  - task: CopyFiles@2
+    displayName: 'Merge SymCRust libs into AMD64 package'
+    inputs:
+      SourceFolder: '$(Build.SourcesDirectory)/artifacts/win-x64-symcrust/pkg/lib'
+      Contents: 'symcrust_*'
+      TargetFolder: '$(Build.SourcesDirectory)/pkg/win-x64/lib'
 
   - task: CopyFiles@2
     displayName: 'Copy ARM64 package files'
