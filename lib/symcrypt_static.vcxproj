@@ -31,7 +31,8 @@
   <!-- Merge c_core + c_other into symcrypt_static.lib -->
   <Target Name="MergeLibraries" AfterTargets="Build">
     <Message Importance="high" Text="Merging c_core + c_other into symcrypt_static.lib" />
-    <Exec Command="lib.exe /OUT:$(TargetPath) $(CCoreLib) $(COtherLib)" />
+    <Exec Condition="'$(Platform)'=='ARM64'" Command="lib.exe /machine:arm64x /OUT:$(TargetPath) $(CCoreLib) $(COtherLib)" />
+    <Exec Condition="'$(Platform)'!='ARM64'" Command="lib.exe /OUT:$(TargetPath) $(CCoreLib) $(COtherLib)" />
   </Target>
   <Target Name="GenerateNoCIL" AfterTargets="MergeLibraries">
     <Message Importance="high" Text="Generating NoCIL library from $(TargetPath)" />
