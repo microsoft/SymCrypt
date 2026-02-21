@@ -3227,7 +3227,7 @@ algImpKeyPerfFunction<ImpXxx, AlgTlsHandshake>( PBYTE buf1, PBYTE buf2, PBYTE bu
     temps->pEcdsaKey = ScShimSymCryptEckeyAllocate( temps->pEcdsaCurve );
     CHECK( temps->pEcdsaKey != NULL, "SymCryptEckeyAllocate0?" );
 
-    scError = SymCryptEckeySetRandom( SYMCRYPT_FLAG_ECKEY_ECDSA, temps->pEcdsaKey );
+    scError = ScShimSymCryptEckeySetRandom( SYMCRYPT_FLAG_ECKEY_ECDSA, temps->pEcdsaKey );
     CHECK( scError == SYMCRYPT_NO_ERROR, "SetRandomEcdsa?" );
 
     temps->pEcdhCurve = ScShimSymCryptEcurveAllocate( temps->pEcdhParams, 0 );
