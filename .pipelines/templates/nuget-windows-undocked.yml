@@ -20,7 +20,7 @@ jobs:
     ver_minor: $[stageDependencies.Set_Version.set_version.outputs['verStep.VER_MINOR']]
     ver_patch: $[stageDependencies.Set_Version.set_version.outputs['verStep.VER_PATCH']]
     ver_hash: $[ substring(variables['Build.SourceVersion'], 0, 8) ]
-    lkg_branch: ${{ replace(replace(replace(parameters.lkgCompilerBranch, 'official/', ''), '/', '-'), '[^a-zA-Z0-9\-]', '') }}
+    lkg_branch: ${{ replace(replace(replace(parameters.lkgCompilerBranch, 'official/', ''), '/', '-'), '_', '-') }}
     nuget_package_version: $(ver_major).$(ver_minor).$(ver_patch)-$(ver_hash)-$(Build.BuildId)-lkg-$(lkg_branch)
     ob_outputDirectory: $(Build.SourcesDirectory)/nuget
     ob_nugetPublishing_enabled: ${{ parameters.publish }}
