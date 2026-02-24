@@ -27,7 +27,7 @@
 //     _In_reads_bytes_(nDigits * SYMCRYPT_FDEF_DIGIT_SIZE )   PCUINT32    Src2,
 //     _Out_writes_bytes_(nDigits * SYMCRYPT_FDEF_DIGIT_SIZE ) PUINT32     Dst,
 //                                                             UINT32      nDigits )
-FUNCTION_START(SymCryptFdef369RawAddAsm, 4, 5)
+FUNCTION_START(PLATFORM_NAME_MANGLE(SymCryptFdef369RawAddAsm), 4, 5)
 
         inc     D4
         xor     Q0, Q0
@@ -55,7 +55,7 @@ SymCryptFdef369RawAddAsmLoop:
         mov     Q0, 0
         adc     Q0, Q0
 
-FUNCTION_END(SymCryptFdef369RawAddAsm)
+FUNCTION_END(PLATFORM_NAME_MANGLE(SymCryptFdef369RawAddAsm))
 
 // UINT32
 // SYMCRYPT_CALL
@@ -65,7 +65,7 @@ FUNCTION_END(SymCryptFdef369RawAddAsm)
 //     _Out_writes_bytes_(nDigits * SYMCRYPT_FDEF_DIGIT_SIZE ) PUINT32     pDst,
 //                                                             UINT32      nDigits )
 
-FUNCTION_START(SymCryptFdef369RawSubAsm, 4, 5)
+FUNCTION_START(PLATFORM_NAME_MANGLE(SymCryptFdef369RawSubAsm), 4, 5)
 
         inc     D4
         xor     Q0, Q0
@@ -93,7 +93,7 @@ SymCryptFdef369RawSubAsmLoop:
         mov     Q0, 0
         adc     Q0, Q0
 
-FUNCTION_END(SymCryptFdef369RawSubAsm)
+FUNCTION_END(PLATFORM_NAME_MANGLE(SymCryptFdef369RawSubAsm))
 
 // VOID
 // SYMCRYPT_CALL
@@ -103,7 +103,7 @@ FUNCTION_END(SymCryptFdef369RawSubAsm)
 //                                                                 UINT32      nDigits,
 //                                                                 UINT32      mask )
 
-FUNCTION_START(SymCryptFdef369MaskedCopyAsm, 4, 6)
+FUNCTION_START(PLATFORM_NAME_MANGLE(SymCryptFdef369MaskedCopyAsm), 4, 6)
 
         inc     D3
         movsxd  Q4, D4
@@ -137,7 +137,7 @@ SymCryptFdef369MaskedCopyAsmLoop:
         dec     D3
         jnz     SymCryptFdef369MaskedCopyAsmLoop
 
-FUNCTION_END(SymCryptFdef369MaskedCopyAsm)
+FUNCTION_END(PLATFORM_NAME_MANGLE(SymCryptFdef369MaskedCopyAsm))
 
 // VOID
 // SYMCRYPT_CALL
@@ -148,7 +148,7 @@ FUNCTION_END(SymCryptFdef369MaskedCopyAsm)
 //                                                                     UINT32      nDigits2,
 //     _Out_writes_((nDigits1+nDigits2)*SYMCRYPT_FDEF_DIGIT_NUINT32)   PUINT32     pDst )
 
-MUL_FUNCTION_START(SymCryptFdef369RawMulAsm, 5, 11)
+MUL_FUNCTION_START(PLATFORM_NAME_MANGLE(SymCryptFdef369RawMulAsm), 5, 11)
 
         // Basic structure:
         //   for each word in Src1:
@@ -267,7 +267,7 @@ SymCryptFdef369RawMulAsmLoop2:
         dec     D2
         jnz     SymCryptFdef369RawMulAsmLoopOuter
 
-MUL_FUNCTION_END(SymCryptFdef369RawMulAsm)
+MUL_FUNCTION_END(PLATFORM_NAME_MANGLE(SymCryptFdef369RawMulAsm))
 
 // VOID
 // SYMCRYPT_CALL
@@ -276,7 +276,7 @@ MUL_FUNCTION_END(SymCryptFdef369RawMulAsm)
 //     _Inout_                         PUINT32                 pSrc,
 //     _Out_                           PUINT32                 pDst )
 
-MUL_FUNCTION_START(SymCryptFdef369MontgomeryReduceAsm, 3, 13)
+MUL_FUNCTION_START(PLATFORM_NAME_MANGLE(SymCryptFdef369MontgomeryReduceAsm), 3, 13)
 
         mov     D4, [Q1 + SymCryptModulusNdigitsOffsetAmd64]    // nDigits
         inc     D4
@@ -446,6 +446,6 @@ SymCryptFdef369MontgomeryReduceAsmMaskedCopyLoop:
         dec     D4
         jnz     SymCryptFdef369MontgomeryReduceAsmMaskedCopyLoop
 
-MUL_FUNCTION_END(SymCryptFdef369MontgomeryReduceAsm)
+MUL_FUNCTION_END(PLATFORM_NAME_MANGLE(SymCryptFdef369MontgomeryReduceAsm))
 
 FILE_END()

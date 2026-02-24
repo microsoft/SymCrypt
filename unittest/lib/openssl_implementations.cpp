@@ -150,7 +150,7 @@ public:
     struct constants_t {
         static constexpr SIZE_T cbInputBlockLen = SYMCRYPT_SHA512_INPUT_BLOCK_SIZE;
         static constexpr SIZE_T cbResultLen = SYMCRYPT_SHA512_RESULT_SIZE;
-        static constexpr const char *const pszAlgId = "Sha2-512"; 
+        static constexpr const char *const pszAlgId = "Sha2-512";
     } constants;
 };
 
@@ -740,7 +740,7 @@ AuthEncImp<ImpOpenssl, AlgAes, ModeGcm>::encrypt(
                                     SIZE_T  cbData,
         _Out_writes_( cbTag )       PBYTE   pbTag,
                                     SIZE_T  cbTag,
-                                    ULONG   flags )
+                                    UINT32  flags )
 {
     NTSTATUS status = STATUS_SUCCESS;
     int outlen = 0;
@@ -818,7 +818,7 @@ AuthEncImp<ImpOpenssl, AlgAes, ModeGcm>::decrypt(
                                     SIZE_T  cbData,
         _In_reads_( cbTag )         PCBYTE  pbTag,
                                     SIZE_T  cbTag,
-                                    ULONG   flags )
+                                    UINT32  flags )
 {
     int scError = 1;
     int outlen = 0;
@@ -848,7 +848,7 @@ AuthEncImp<ImpOpenssl, AlgAes, ModeGcm>::decrypt(
         OSSL_PARAM params[2] = {
             OSSL_PARAM_END, OSSL_PARAM_END
         };
-        
+
         CHECK(EVP_CIPHER_CTX_ctrl(state.decCtx, EVP_CTRL_AEAD_SET_IVLEN, cbNonce, NULL) == 1, getOpensslError().data())
         CHECK(EVP_DecryptInit_ex2(state.decCtx, NULL, NULL, pbNonce, NULL) == 1, getOpensslError().data());
         CHECK(EVP_DecryptUpdate(state.decCtx, NULL, &outlen, pbAuthData, (int)cbAuthData) == 1, getOpensslError().data());
@@ -864,7 +864,7 @@ AuthEncImp<ImpOpenssl, AlgAes, ModeGcm>::decrypt(
     }
 
     if( !state.inComputation )
-    {        
+    {
         CHECK(EVP_CIPHER_CTX_ctrl(state.decCtx, EVP_CTRL_AEAD_SET_IVLEN, cbNonce, NULL) == 1, getOpensslError().data())
         CHECK(EVP_DecryptInit_ex2(state.decCtx, NULL, NULL, pbNonce, NULL) == 1, getOpensslError().data());
         CHECK(EVP_DecryptUpdate(state.decCtx, NULL, &outlen, pbAuthData, (int)cbAuthData) == 1, getOpensslError().data());
@@ -1563,6 +1563,12 @@ struct EcContext
     EVP_PKEY_CTX *keyCtx;
 };
 
+BOOL
+OpenSSLEccIsPerfKeySizeSupported( SIZE_T keySize )
+{
+    return ((keySize & 0xff000000) != PERF_KEY_NUMS_CURVE);
+}
+
 template<>
 VOID
 algImpKeyPerfFunction<ImpOpenssl, AlgEcdsaSign>( PBYTE buf1, PBYTE buf2, PBYTE buf3, SIZE_T keySize )
@@ -1572,14 +1578,7 @@ algImpKeyPerfFunction<ImpOpenssl, AlgEcdsaSign>( PBYTE buf1, PBYTE buf2, PBYTE b
 
     EcContext *ctx = (EcContext *)buf1;
 
-    if ((keySize & 0xff000000) == PERF_KEY_NUMS_CURVE)
-    {
-        // Not supported.
-        // TODO: add a way to signal to perf testing infrastructure that this is not supported.
-        ctx->key = NULL;
-        ctx->keyCtx = NULL;
-        return;
-    }
+    CHECK((keySize & 0xff000000) != PERF_KEY_NUMS_CURVE, "AlgEcdsaSign NUMS");
 
     ctx->key = SetupOpensslEcKeyForPerf(keySize);
     CHECK_OPENSSL_NONNULL(ctx->key);
@@ -1613,11 +1612,6 @@ algImpDataPerfFunction<ImpOpenssl, AlgEcdsaSign>( PBYTE buf1, PBYTE buf2, PBYTE 
     size_t *pcbSig = (size_t *)buf3;
     PBYTE pbSig = buf3 + sizeof(*pcbSig);
 
-    if (ctx->key == NULL)
-    {
-        return;
-    }
-
     PBYTE pbHash = (PBYTE)ctx->key;
     size_t cbHash = SYMCRYPT_SHA512_RESULT_SIZE;
     CHECK(EVP_PKEY_sign(ctx->keyCtx, NULL, pcbSig, pbHash, cbHash) > 0, "EVP_PKEY_sign get signature length");
@@ -1637,6 +1631,7 @@ algImpDataPerfFunction<ImpOpenssl, AlgEcdsaSign>( PBYTE buf1, PBYTE buf2, PBYTE 
 template<>
 EccImp<ImpOpenssl, AlgEcdsaSign>::EccImp()
 {
+    m_perfKeySizeSupported  = &OpenSSLEccIsPerfKeySizeSupported;
     m_perfDataFunction      = &algImpDataPerfFunction <ImpOpenssl, AlgEcdsaSign>;
     m_perfDecryptFunction   = NULL;
     m_perfKeyFunction       = &algImpKeyPerfFunction  <ImpOpenssl, AlgEcdsaSign>;
@@ -1660,14 +1655,7 @@ algImpKeyPerfFunction<ImpOpenssl, AlgEcdsaVerify>( PBYTE buf1, PBYTE buf2, PBYTE
     UNREFERENCED_PARAMETER( buf2 );
 
     EcContext *ctx = (EcContext *)buf1;
-    if ((keySize & 0xff000000) == PERF_KEY_NUMS_CURVE)
-    {
-        // Not supported.
-        // TODO: add a way to signal to perf testing infrastructure that this is not supported.
-        ctx->key = NULL;
-        ctx->keyCtx = NULL;
-        return;
-    }
+    CHECK((keySize & 0xff000000) != PERF_KEY_NUMS_CURVE, "AlgEcdsaVerify NUMS");
 
     ctx->key = SetupOpensslEcKeyForPerf(keySize);
     CHECK_OPENSSL_NONNULL(ctx->key);
@@ -1712,10 +1700,6 @@ algImpDataPerfFunction<ImpOpenssl, AlgEcdsaVerify>( PBYTE buf1, PBYTE buf2, PBYT
     UNREFERENCED_PARAMETER( buf2 );
 
     EcContext *ctx = (EcContext *)buf1;
-    if (ctx->key == NULL)
-    {
-        return;
-    }
 
     size_t *pcbSig = (size_t *)buf3;
     PBYTE pbSig = buf3 + sizeof(*pcbSig);
@@ -1737,6 +1721,7 @@ algImpDataPerfFunction<ImpOpenssl, AlgEcdsaVerify>( PBYTE buf1, PBYTE buf2, PBYT
 template<>
 EccImp<ImpOpenssl, AlgEcdsaVerify>::EccImp()
 {
+    m_perfKeySizeSupported  = &OpenSSLEccIsPerfKeySizeSupported;
     m_perfDataFunction      = &algImpDataPerfFunction <ImpOpenssl, AlgEcdsaVerify>;
     m_perfDecryptFunction   = NULL;
     m_perfKeyFunction       = &algImpKeyPerfFunction  <ImpOpenssl, AlgEcdsaVerify>;
@@ -1761,14 +1746,7 @@ algImpKeyPerfFunction<ImpOpenssl, AlgEcdh>( PBYTE buf1, PBYTE buf2, PBYTE buf3, 
     UNREFERENCED_PARAMETER( keySize );
 
     EcContext *ctx = (EcContext *)buf1;
-    if ((keySize & 0xff000000) == PERF_KEY_NUMS_CURVE)
-    {
-        // Not supported.
-        // TODO: add a way to signal to perf testing infrastructure that this is not supported.
-        ctx->key = NULL;
-        ctx->keyCtx = NULL;
-        return;
-    }
+    CHECK((keySize & 0xff000000) != PERF_KEY_NUMS_CURVE, "AlgEcdh NUMS");
 
     ctx->key = SetupOpensslEcKeyForPerf(keySize);
     CHECK_OPENSSL_NONNULL(ctx->key);
@@ -1799,10 +1777,6 @@ algImpDataPerfFunction<ImpOpenssl, AlgEcdh>( PBYTE buf1, PBYTE buf2, PBYTE buf3,
 {
     UNREFERENCED_PARAMETER( dataSize );
     EcContext *ctx = (EcContext *)buf1;
-    if (ctx->key == NULL)
-    {
-        return;
-    }
 
     size_t *secret_len = (size_t *)buf3;
     unsigned char *secret = buf3 + sizeof(*secret_len);
@@ -1826,6 +1800,7 @@ algImpDataPerfFunction<ImpOpenssl, AlgEcdh>( PBYTE buf1, PBYTE buf2, PBYTE buf3,
 template<>
 EccImp<ImpOpenssl, AlgEcdh>::EccImp()
 {
+    m_perfKeySizeSupported  = &OpenSSLEccIsPerfKeySizeSupported;
     m_perfDataFunction      = &algImpDataPerfFunction <ImpOpenssl, AlgEcdh>;
     m_perfDecryptFunction   = NULL;
     m_perfKeyFunction       = &algImpKeyPerfFunction  <ImpOpenssl, AlgEcdh>;

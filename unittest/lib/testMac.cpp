@@ -396,7 +396,7 @@ testMacConsistency( MacMultiImp * pMac, SIZE_T cbKey, LONGLONG megaBytes, LONGLO
 
     for( i=0; i<megaBytes; i++ )
     {
-        GENRANDOM( pbBuf, (ULONG) cbBuf );
+        GENRANDOM( pbBuf, (UINT32) cbBuf );
 
         pMac->mac( pbBuf, cbKey, pbBuf + cbKey, cbBuf - cbKey, pbBuf, pMac->resultLen() );
 

@@ -310,7 +310,7 @@ MACRO_END()
 //    _Out_                   SIZE_T*                         pcbRemaining)
 
 
-FUNCTION_START(SymCryptSha256AppendBlocks_ymm_avx2_asm, 4, 15, 64*8*4+2*8, 16)
+FUNCTION_START(PLATFORM_NAME_MANGLE(SymCryptSha256AppendBlocks_ymm_avx2_asm), 4, 15, 64*8*4+2*8, 16)
 
         // Q1 = pChain
         // Q2 = pbData
@@ -639,6 +639,6 @@ done:
 nowipe:
 
 
-FUNCTION_END(SymCryptSha256AppendBlocks_ymm_avx2_asm)
+FUNCTION_END(PLATFORM_NAME_MANGLE(SymCryptSha256AppendBlocks_ymm_avx2_asm))
 
 FILE_END()

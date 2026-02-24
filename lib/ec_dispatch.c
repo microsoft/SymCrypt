@@ -24,6 +24,7 @@ const SYMCRYPT_ECURVE_FUNCTIONS SymCryptEcurveDispatchTable[] =
         NULL,       // SymCryptEcpointNegateNotImplemented,
         NULL,       // SymCryptEcpointScalarMulNotImplemented,
         NULL,       // SymCryptEcpointMultiScalarMulNotImplemented,
+        NULL,       // SymCryptEcurveFillScratchSpacesNotImplemented,
     },
     // Short Weierstrass
     {
@@ -39,6 +40,7 @@ const SYMCRYPT_ECURVE_FUNCTIONS SymCryptEcurveDispatchTable[] =
         SymCryptShortWeierstrassNegate,
         SymCryptEcpointScalarMulFixedWindow,
         SymCryptEcpointMultiScalarMulWnafWithInterleaving,
+        SymCryptShortWeierstrassFillScratchSpaces,
     },
     // Twisted Edwards
     {
@@ -54,6 +56,7 @@ const SYMCRYPT_ECURVE_FUNCTIONS SymCryptEcurveDispatchTable[] =
         SymCryptTwistedEdwardsNegate,
         SymCryptEcpointScalarMulFixedWindow,
         SymCryptEcpointMultiScalarMulWnafWithInterleaving,
+        SymCryptTwistedEdwardsFillScratchSpaces,
     },
     // Montgomery
     {
@@ -69,6 +72,7 @@ const SYMCRYPT_ECURVE_FUNCTIONS SymCryptEcurveDispatchTable[] =
         NULL,       // SymCryptEcpointNegateNotImplemented,
         SymCryptMontgomeryPointScalarMul,
         NULL,       // SymCryptEcpointMultiScalarMulNotImplemented,
+        SymCryptMontgomeryFillScratchSpaces,
     },
     // Short Weierstrass with A==-3
     {
@@ -84,6 +88,7 @@ const SYMCRYPT_ECURVE_FUNCTIONS SymCryptEcurveDispatchTable[] =
         SymCryptShortWeierstrassNegate,
         SymCryptEcpointScalarMulFixedWindow,
         SymCryptEcpointMultiScalarMulWnafWithInterleaving,
+        SymCryptShortWeierstrassFillScratchSpaces,
     },
     // Slack to make dispatch table size a power of 2
     {NULL,},
@@ -283,4 +288,13 @@ SymCryptEcpointMultiScalarMul(
             SIZE_T                  cbScratch )
 {
     return SYMCRYPT_ECURVE_CALL( pCurve ) multiScalarMulFunc( pCurve, piSrcScalarArray, poSrcEcpointArray, nPoints, flags, poDst, pbScratch, cbScratch );
+}
+
+SYMCRYPT_DISABLE_CFG
+VOID
+SYMCRYPT_CALL
+SymCryptEcurveFillScratchSpaces(
+    _Inout_    PSYMCRYPT_ECURVE pCurve )
+{
+    SYMCRYPT_ECURVE_CALL( pCurve ) fillScratchSpacesFunc( pCurve );
 }

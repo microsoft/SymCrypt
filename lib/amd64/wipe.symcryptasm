@@ -13,7 +13,7 @@
 //SymCryptWipe( _Out_writes_bytes_( cbData )    PVOID  pbData,
 //                                              SIZE_T cbData )
 
-FUNCTION_START(SymCryptWipeAsm, 2, 4)
+FUNCTION_START(PLATFORM_NAME_MANGLE(SymCryptWipeAsm), 2, 4)
 
         // Q1 = pbData
         // Q2 = cbData
@@ -160,6 +160,6 @@ SymCryptWipeAsmSmallLessThan2:
 
 SymCryptWipeAsmSmallDone:
 
-FUNCTION_END(SymCryptWipeAsm)
+FUNCTION_END(PLATFORM_NAME_MANGLE(SymCryptWipeAsm))
 
 FILE_END()

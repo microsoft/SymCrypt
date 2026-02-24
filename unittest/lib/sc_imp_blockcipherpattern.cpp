@@ -1,11 +1,11 @@
 //
 // Pattern file for the SymCrypt block cipher implementations.
 //
-// Copyright (c) Microsoft Corporation. Licensed under the MIT license. 
+// Copyright (c) Microsoft Corporation. Licensed under the MIT license.
 //
 
 template<>
-VOID 
+VOID
 algImpKeyPerfFunction<ImpXxx, AlgXxx, ModeXxx>( PBYTE buf1, PBYTE buf2, PBYTE buf3, SIZE_T keySize )
 {
     UNREFERENCED_PARAMETER( buf3 );
@@ -74,7 +74,7 @@ BlockCipherImp<ImpXxx, AlgXxx, ModeXxx>::setKey( PCBYTE pbKey, SIZE_T cbKey )
     //
     // An ugly hack, we re-map the RC2 key expansion to use the global key size variable.
     //
-    e = ScShimSymCryptRc2ExpandKeyEx( &state.key, pbKey, cbKey, g_rc2EffectiveKeyLength ? g_rc2EffectiveKeyLength : 8 * (ULONG)cbKey);
+    e = ScShimSymCryptRc2ExpandKeyEx( &state.key, pbKey, cbKey, g_rc2EffectiveKeyLength ? g_rc2EffectiveKeyLength : 8 * (UINT32)cbKey);
 #else
     e = SCSHIM_XxxExpandKey( &state.key, pbKey, cbKey);
 #endif
@@ -91,7 +91,7 @@ template<>
 VOID
 BlockCipherImp<ImpXxx, AlgXxx, ModeXxx>::encrypt( PBYTE pbChain, SIZE_T cbChain, PCBYTE pbSrc, PBYTE pbDst, SIZE_T cbData )
 {
-    
+
     CHECK( cbData % msgBlockLen() == 0, "Wrong data length" );
     CHECK( cbChain == chainBlockLen(), "Wrong chain len" );
 
@@ -102,7 +102,7 @@ template<>
 VOID
 BlockCipherImp<ImpXxx, AlgXxx, ModeXxx>::decrypt( PBYTE pbChain, SIZE_T cbChain, PCBYTE pbSrc, PBYTE pbDst, SIZE_T cbData )
 {
-    
+
     CHECK( cbData % msgBlockLen() == 0, "Wrong data length" );
     CHECK( cbChain == chainBlockLen(), "Wrong chain len" );
 

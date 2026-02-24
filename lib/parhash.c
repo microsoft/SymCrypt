@@ -341,7 +341,7 @@ SymCryptParallelHashProcess(
     pbScratchEnd = pbScratch + cbScratch;
     pScratchState = (PSYMCRYPT_PARALLEL_HASH_SCRATCH_STATE) SYMCRYPT_ALIGN_UP( pbScratch );
     pWork = (PSYMCRYPT_PARALLEL_HASH_SCRATCH_STATE *) (pScratchState + nStates);
-    pbFixedScratch = (PBYTE)((((UINT_PTR)(pWork + nStates)) + SYMCRYPT_SIMD_ELEMENT_SIZE - 1) & ~(SYMCRYPT_SIMD_ELEMENT_SIZE - 1));
+    pbFixedScratch = (PBYTE)((((SIZE_T)(pWork + nStates)) + SYMCRYPT_SIMD_ELEMENT_SIZE - 1) & ~(SYMCRYPT_SIMD_ELEMENT_SIZE - 1));
     cbFixedScratch = pParHash->parScratchFixed;
 
     if( pbFixedScratch + cbFixedScratch > pbScratchEnd )
@@ -457,7 +457,7 @@ SymCryptParallelHashProcess(
             todo = SYMCRYPT_MIN( todo, pWork[i]->cbData );
         }
 
-        nBytes = todo & ~((SIZE_T) pHash->inputBlockSize - 1 );
+        nBytes = todo & ~((SIZE_T)(pHash->inputBlockSize - 1));
 
         (*pParHash->parAppendFunc)( pWork, nPar, nBytes, pbFixedScratch, cbFixedScratch );
 

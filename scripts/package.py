@@ -21,7 +21,7 @@ where:
 
   source: The source file path
   dest: The destination file path
-  platform: Platforms to include the file ("win32", "linux")
+  platform: Platforms to include the file ("win32", "linux", "optee")
   arch: Architectures to include the file ("x86", "amd64", "arm", "arm64")
   config: Configurations to include the file ("debug", "release", "sanitize")
   symcrust: If true, the file is only included when --symcrust is passed.
@@ -90,7 +90,7 @@ def get_file_list(bin_dir : pathlib.Path, config : str, module_name : str) -> Di
     return file_list
 
 def prepare_package(build_dir : pathlib.Path, package_dir : pathlib.Path,
-    arch : str, config : str, module_name : str, symcrust : bool = False) -> None:
+    arch : str, config : str, module_name : str, platform : str, symcrust : bool = False) -> None:
     """
     Prepares the files for packaging by copying them into a temporary directory. Does not create the archive.
 
@@ -99,6 +99,7 @@ def prepare_package(build_dir : pathlib.Path, package_dir : pathlib.Path,
     arch: Architecture of the binaries to package (for inclusion in the package name).
     config: The build configuration (Debug/Release/Sanitize).
     module_name: The name of the module to package.
+    platform: The target platform for the package.
     symcrust: If True, only include SymCRust files. If False, exclude SymCRust files.
     """
 
@@ -113,7 +114,7 @@ def prepare_package(build_dir : pathlib.Path, package_dir : pathlib.Path,
         if is_symcrust_file != symcrust:
             continue
 
-        if target_platform is not None and sys.platform not in target_platform.split(","):
+        if target_platform is not None and platform not in target_platform.split(","):
             continue
 
         if target_arch is not None and arch not in target_arch.split(","):
@@ -140,7 +141,7 @@ def prepare_package(build_dir : pathlib.Path, package_dir : pathlib.Path,
         shutil.copy(source, destination, follow_symlinks = False)
 
 def create_archive(package_dir : pathlib.Path, release_dir : pathlib.Path, 
-    arch : str, config : str, module_name : str) -> None:
+    arch : str, config : str, module_name : str, platform : str) -> None:
     """
     Creates an archive of the package by compressing the files in the package directory into a zip
     or tar.gz archive, depending on the platform.
@@ -150,12 +151,13 @@ def create_archive(package_dir : pathlib.Path, release_dir : pathlib.Path,
     arch: Architecture of the binaries to package (for inclusion in the package name).
     config: The build configuration (Debug/Release/Sanitize).
     module_name: The name of the module to package.
+    platform: The target platform for the package.
     """
 
     version = get_version_info()
 
     archive_name = "symcrypt-{}-{}-{}-{}-{}.{}.{}-{}".format(
-        sys.platform,
+        platform,
         module_name,
         arch,
         config,
@@ -167,14 +169,14 @@ def create_archive(package_dir : pathlib.Path, release_dir : pathlib.Path,
 
     archive_type = None
     archive_ext = None
-    if sys.platform == "linux":
+    if platform in ["linux", "optee"]:
         archive_type = "gztar"
         archive_ext = ".tar.gz"
-    elif sys.platform == "win32":
+    elif platform == "win32":
         archive_type = "zip"
         archive_ext = ".zip"
     else:
-        raise Exception("Unsupported platform: " + sys.platform)
+        raise Exception("Unsupported platform: " + platform)
 
     cwd = os.getcwd()
     try:
@@ -204,6 +206,7 @@ def main() -> None:
     parser.add_argument("module_name", type = str, help = "Name of the module to package.")
     parser.add_argument("release_dir", type = pathlib.Path, help = "Directory to place the release in.")
     parser.add_argument("--no-archive", action = "store_true", help = "Do not create a compressed archive, just copy the files.", default = False)
+    parser.add_argument("--platform", type = str.lower, default=sys.platform, help = "Target platform for the package.", choices = ("linux", "win32", "optee"))
     parser.add_argument("--symcrust", action = "store_true", help = "Only include SymCRust files. If omitted, SymCRust files are excluded.", default = False)
 
     args = parser.parse_args()
@@ -217,14 +220,14 @@ def main() -> None:
 
     with tempfile.TemporaryDirectory() as temp_dir:
         temp_dir = pathlib.Path(temp_dir)
-        prepare_package(args.build_dir, temp_dir, args.arch, args.config, args.module_name, args.symcrust)
+        prepare_package(args.build_dir, temp_dir, args.arch, args.config, args.module_name, args.platform, args.symcrust)
 
         if args.no_archive:
             print("Copying tree to " + str(args.release_dir.resolve()) + "...")
             shutil.copytree(temp_dir, args.release_dir, symlinks = True, dirs_exist_ok = True)
             print("Done.")
         else:
-            create_archive(temp_dir, args.release_dir, args.arch, args.config, args.module_name)
+            create_archive(temp_dir, args.release_dir, args.arch, args.config, args.module_name, args.platform)
 
 if __name__ == "__main__":
     main()

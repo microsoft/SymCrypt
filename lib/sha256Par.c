@@ -1058,7 +1058,7 @@ SymCryptParallelSha256Append(
 
     UNREFERENCED_PARAMETER( cbSimdScratch );        // not referenced on FRE builds
     SYMCRYPT_ASSERT( cbSimdScratch >= PAR_SCRATCH_ELEMENTS_256 * SYMCRYPT_SIMD_ELEMENT_SIZE );
-    SYMCRYPT_ASSERT( ((UINT_PTR)pbSimdScratch & (SYMCRYPT_SIMD_ELEMENT_SIZE - 1)) == 0 );
+    SYMCRYPT_ASSERT( ((SIZE_T)pbSimdScratch & (SYMCRYPT_SIMD_ELEMENT_SIZE - 1)) == 0 );
 
     //
     // Compute maxParallel; this is 4 if nPar <= 4, and 8 if nPar = 5, ..., 8.

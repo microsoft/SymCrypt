@@ -1,0 +1,8 @@
+schemaVersion: 0.0.1
+isProduction: true
+accountableOwners:
+  service: f182e443-d489-4b1d-83a9-fccded0b3325
+routing:
+  defaultAreaPath:
+    org: microsoft
+    path: OS\Core\ENS\Cloud Security\Cryptography Infrastructure

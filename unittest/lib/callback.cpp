@@ -39,13 +39,16 @@ AllocWithChecks( SIZE_T nBytes, volatile INT64 * pOutstandingAllocs, volatile IN
 {
     PBYTE p;
     PBYTE res;
-    ULONG offset;
+    UINT32 offset;
     SIZE_T nAllocated;
+    SIZE_T nAdditionalBytes;
 
     CHECK( g_bAllocFill != 0, "AllocFill not initialized" );
 
-    nAllocated = nBytes + SYMCRYPT_ASYM_ALIGN_VALUE + 16 + 8;   // alignment + 16 byte prefix + 8 byte postfix
-    CHECK( (ULONG) nAllocated == nAllocated, "?" );
+    nAdditionalBytes = SYMCRYPT_ASYM_ALIGN_VALUE + 16 + 8; // alignment + 16 byte prefix + 8 byte postfix
+    CHECK( nBytes <= UINT32_MAX - nAdditionalBytes, "?" );
+
+    nAllocated = nBytes + nAdditionalBytes;
 
     p = new BYTE[ nAllocated ];
 
@@ -54,9 +57,9 @@ AllocWithChecks( SIZE_T nBytes, volatile INT64 * pOutstandingAllocs, volatile IN
     memset( p, (BYTE)(g_bAllocFill ^ (g_rng.byte() & 1)), nAllocated );
 
     // Result is first aligned value at least 16 bytes into the buffer
-    res = (PBYTE) (((ULONG_PTR)p + 16 + SYMCRYPT_ASYM_ALIGN_VALUE - 1) & ~(SYMCRYPT_ASYM_ALIGN_VALUE-1) );
+    res = (PBYTE) (((SIZE_T)p + 16 + SYMCRYPT_ASYM_ALIGN_VALUE - 1) & ~(SYMCRYPT_ASYM_ALIGN_VALUE-1) );
 
-    offset = (ULONG)(res - p);
+    offset = (UINT32)(res - p);
     CHECK( offset >= 16 && offset < 256, "?" );
 
     *(UINT64 *) &res[-8] = g_magic ^ (SIZE_T) res ^ 'strt';

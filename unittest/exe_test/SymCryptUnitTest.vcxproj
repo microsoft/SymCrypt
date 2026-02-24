@@ -45,7 +45,7 @@
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <LinkTimeCodeGeneration>UseLinkTimeCodeGeneration</LinkTimeCodeGeneration>
-      <AdditionalDependencies>%(AdditionalDependencies);ntdll.lib;Bcrypt.lib</AdditionalDependencies>
+      <AdditionalDependencies>%(AdditionalDependencies);ntdll.lib;Bcrypt.lib;Ncrypt.lib</AdditionalDependencies>
       <AdditionalLibraryDirectories>..\SymCryptDependencies\$(ProcessorArchitecture)</AdditionalLibraryDirectories>
     </Link>
     <Link Condition="'$(SymCryptTestLegacyImpl)'=='true'">

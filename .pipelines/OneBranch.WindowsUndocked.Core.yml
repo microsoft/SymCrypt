@@ -9,9 +9,13 @@ parameters:
   - Official
   - PR
   default: 'PR'
-- name: publish
+- name: publishVPack
   type: boolean
-  displayName: Publish packages
+  displayName: Publish VPack packages
+  default: false
+- name: publishNuGet
+  type: boolean
+  displayName: Publish NuGet packages
   default: false
 
 stages:
@@ -26,6 +30,7 @@ stages:
       LinuxContainerImage: 'mcr.microsoft.com/onebranch/azurelinux/build:3.0'
       ob_outputDirectory: $(Build.SourcesDirectory)/does_not_exist # No outputs
       ver_hash: $[ substring(variables['Build.SourceVersion'], 0, 8) ]
+      lkg_branch: ${{ replace(replace(replace(parameters.lkgCompilerBranch, 'official/', ''), '/', '-'), '[^a-zA-Z0-9-]', '') }}
 
     steps:
     - task: PythonScript@0
@@ -40,7 +45,7 @@ stages:
     - task: onebranch.pipeline.version@1
       inputs:
         system: 'Custom'
-        customVersion: '$(verStep.VER_MAJOR).$(verStep.VER_MINOR).$(verStep.VER_PATCH)-$(ver_hash)-$(Build.BuildId)'
+        customVersion: '$(verStep.VER_MAJOR).$(verStep.VER_MINOR).$(verStep.VER_PATCH)-$(ver_hash)-$(Build.BuildId)-$(lkg_branch)'
 
 - stage: Build_Windows_Undocked
   displayName: Build Windows Undocked
@@ -58,7 +63,7 @@ stages:
   - template: templates/test-windows-undocked.yml@self
 
 - stage: VPack_Windows_Undocked
-  condition: or(variables['system.debug'], ${{ parameters.publish }}) # VPack stage doesn't do anything if publishing is disabled
+  condition: or(eq(variables['system.debug'], 'true'), ${{ parameters.publishVPack }}) # VPack stage doesn't do anything if publishing is disabled
   displayName: Create VPack
   dependsOn:
   - Set_Version
@@ -66,7 +71,8 @@ stages:
   jobs:
   - template: templates/vpack-windows-undocked.yml@self
     parameters:
-      publish: ${{ parameters.publish }}
+      publish: ${{ parameters.publishVPack }}
+      lkgCompilerBranch: ${{ parameters.lkgCompilerBranch }}
 
 - stage: NuGet_Windows_Undocked
   displayName: Create NuGet Package
@@ -76,7 +82,8 @@ stages:
   jobs:
   - template: templates/nuget-windows-undocked.yml@self
     parameters:
-      publish: ${{ parameters.publish }}
+      publish: ${{ parameters.publishNuGet }}
+      lkgCompilerBranch: ${{ parameters.lkgCompilerBranch }}
 
 - stage: Build_Ubuntu
   displayName: Build Ubuntu

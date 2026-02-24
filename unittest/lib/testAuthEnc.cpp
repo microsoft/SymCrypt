@@ -35,7 +35,7 @@ public:
                                     SIZE_T  cbData,
         _Out_writes_( cbTag )       PBYTE   pbTag,
                                     SIZE_T  cbTag,
-                                    ULONG   flags );
+                                    UINT32  flags );
 
     virtual NTSTATUS decrypt(
         _In_reads_( cbNonce )       PCBYTE  pbNonce,
@@ -47,7 +47,7 @@ public:
                                     SIZE_T  cbData,
         _In_reads_( cbTag )         PCBYTE  pbTag,
                                     SIZE_T  cbTag,
-                                    ULONG   flags );
+                                    UINT32  flags );
 
     typedef std::vector<AuthEncImplementation *> AuthEncImpPtrVector;
 
@@ -158,7 +158,7 @@ AuthEncMultiImp::encrypt(
                                     SIZE_T  cbData,
         _Out_writes_( cbTag )       PBYTE   pbTag,
                                     SIZE_T  cbTag,
-                                    ULONG   flags )
+                                    UINT32  flags )
 {
     NTSTATUS status = STATUS_SUCCESS;
     NTSTATUS res;
@@ -211,7 +211,7 @@ AuthEncMultiImp::decrypt(
                                     SIZE_T  cbData,
         _In_reads_( cbTag )         PCBYTE  pbTag,
                                     SIZE_T  cbTag,
-                                    ULONG   flags )
+                                    UINT32  flags )
 {
     BYTE bufData[1 << 13];
     ResultMerge resData;

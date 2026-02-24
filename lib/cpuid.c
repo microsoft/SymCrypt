@@ -284,7 +284,7 @@ VOID
 SYMCRYPT_CALL
 SymCryptDetectCpuFeaturesFromRegisters(void)
 {
-    ULONG result;
+    UINT32 result;
 
 #if 0   // We currently do not use any neon crypto features on ARM code, so no detection needed.
 
@@ -292,7 +292,7 @@ SymCryptDetectCpuFeaturesFromRegisters(void)
     // We start with a result that allows everything.
     // This makes the code simpler when you have one CPU feature flag that disables multiple feature bits.
     //
-    result = ~ (ULONG)(
+    result = ~ (UINT32)(
         SYMCRYPT_CPU_FEATURE_NEON           |
         SYMCRYPT_CPU_FEATURE_NEON_AES       |
         SYMCRYPT_CPU_FEATURE_NEON_PMULL     |
@@ -329,7 +329,7 @@ SymCryptDetectCpuFeaturesFromRegisters(void)
     //
     // For now we ignore the new instructions in ARM until we can get clarity on how to detect Arm32-on-Arm64.
     //
-    result = ~(ULONG)SYMCRYPT_CPU_FEATURE_NEON;
+    result = ~(UINT32)SYMCRYPT_CPU_FEATURE_NEON;
 
     g_SymCryptCpuFeaturesNotPresent = (SYMCRYPT_CPU_FEATURES) result;
 }
@@ -367,9 +367,9 @@ VOID
 SYMCRYPT_CALL
 SymCryptDetectCpuFeaturesFromRegisters(void)
 {
-    ULONG result;
+    UINT32 result;
 
-    result = ~ (ULONG)(
+    result = ~ (UINT32)(
         SYMCRYPT_CPU_FEATURE_NEON           |
         SYMCRYPT_CPU_FEATURE_NEON_AES       |
         SYMCRYPT_CPU_FEATURE_NEON_PMULL     |

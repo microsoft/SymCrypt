@@ -10,22 +10,22 @@
 
     TEXTAREA()
 
-    EXTERN(ARM64EC_NAME_MANGLE(memset))
+    EXTERN(PLATFORM_NAME_MANGLE(memset))
 
 //VOID
 //SYMCRYPT_CALL
 //SymCryptWipe( _Out_writes_bytes_( cbData )    PVOID  pbData,
 //                                              SIZE_T cbData )
 
-    FUNCTION_START(ARM64EC_NAME_MANGLE(SymCryptWipeAsm), 2, 3)
+    FUNCTION_START(PLATFORM_NAME_MANGLE(SymCryptWipeAsm), 2, 3)
 
 // we just jump to memset.
 // this is enough to stop the compiler optimizing the memset away.
 
     mov     X_2, X_1
     mov     X_1, #0
-    b       ARM64EC_NAME_MANGLE(memset)
+    b       PLATFORM_NAME_MANGLE(memset)
 
-    FUNCTION_END(ARM64EC_NAME_MANGLE(SymCryptWipeAsm))
+    FUNCTION_END(PLATFORM_NAME_MANGLE(SymCryptWipeAsm))
 
     FILE_END()

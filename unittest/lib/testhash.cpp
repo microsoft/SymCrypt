@@ -690,9 +690,9 @@ testLongMessageConsistency( HashMultiImp * pHash, int nInputBlocks,  LONGLONG li
     pBuf = new BYTE[cbBuf];
     CHECK( pBuf != NULL, "Out of memory" );
 
-    CHECK( (ULONG) cbBuf == cbBuf, "Buffer too large" );
+    CHECK( (UINT32) cbBuf == cbBuf, "Buffer too large" );
 
-    CHECK( NT_SUCCESS( GENRANDOM(pBuf, (ULONG) cbBuf) ), "?" );
+    CHECK( NT_SUCCESS( GENRANDOM(pBuf, (UINT32) cbBuf) ), "?" );
 
     pHash->hash( pBuf, cbBuf, res1, resultLen );
 
@@ -880,13 +880,13 @@ testParallelHash( String &sep, String algName )
     BYTE                                result[MAX_PAR_OPS][MAX_HASH_SIZE];
     BYTE                                expected[MAX_PAR_OPS][MAX_HASH_SIZE];
     SYMCRYPT_HASH_STATE                 scHash[MAX_PAR_HASHES];
-    ULONG                               cbResult;
-    ULONG                               cbInputBlock;
+    UINT32                              cbResult;
+    UINT32                              cbInputBlock;
     PCSYMCRYPT_HASH                     pHash;
     std::unique_ptr<ParallelHashMultiImp> pParHash;
     PBYTE                               pBuf;
-    ULONG                               i;
-    ULONG                               j;
+    UINT32                              i;
+    UINT32                              j;
     SIZE_T                              opIdx;
     SIZE_T                              nResults;
     SIZE_T                              testCnt;
@@ -905,9 +905,9 @@ testParallelHash( String &sep, String algName )
 
     CHECK( NT_SUCCESS( GENRANDOM(pBuf, BUF_SIZE) ), "?" );
 
-    cbResult = (ULONG) pParHash->resultLen();
+    cbResult = (UINT32) pParHash->resultLen();
     CHECK( cbResult == pParHash->resultLen(), "?" );
-    cbInputBlock = (ULONG) pParHash->inputBlockLen();
+    cbInputBlock = (UINT32) pParHash->inputBlockLen();
     CHECK( cbInputBlock == pParHash->inputBlockLen(), "!" );
     pHash = pParHash->SymCryptHash();
 
@@ -936,7 +936,7 @@ testParallelHash( String &sep, String algName )
     op[1].iHash = 0;
     op[1].hashOperation = BCRYPT_HASH_OPERATION_FINISH_HASH;
     op[1].pbBuffer = &result[0][0];
-    op[1].cbBuffer = (ULONG) cbResult;
+    op[1].cbBuffer = (UINT32) cbResult;
     pParHash->process( op, 2 );
     SymCryptHash( pHash, NULL, 0, &expected[0][0], cbResult );
 
@@ -1076,7 +1076,7 @@ testParallelHash( String &sep, String algName )
             op[2*i].iHash = i;
             op[2*i].hashOperation = BCRYPT_HASH_OPERATION_HASH_DATA;
             op[2*i].pbBuffer = pBuf + g_rng.sizet( BUF_SIZE / 2 );
-            op[2*i].cbBuffer = (ULONG) size;
+            op[2*i].cbBuffer = (UINT32) size;
             CHECK( size <= BUF_SIZE / 2, "Buffer too small" );
 
             op[2*i+1].iHash = i;
@@ -1136,7 +1136,7 @@ testParallelHash( String &sep, String algName )
 
         for( i=0; i < nOps; i++ )
         {
-            ULONG iHash = (ULONG) g_rng.sizet( nHashes );
+            UINT32 iHash = (UINT32) g_rng.sizet( nHashes );
             op[i].iHash = iHash;
 
             BOOLEAN fAppend = (g_rng.byte() & 5) != 0;
@@ -1145,7 +1145,7 @@ testParallelHash( String &sep, String algName )
             {
                 op[i].hashOperation = BCRYPT_HASH_OPERATION_HASH_DATA;
                 op[i].pbBuffer = pBuf + g_rng.sizet( BUF_SIZE / 2 );
-                op[i].cbBuffer = (ULONG) g_rng.sizetNonUniform( 1 << 16, 256, 1 );
+                op[i].cbBuffer = (UINT32) g_rng.sizetNonUniform( 1 << 16, 256, 1 );
                 CHECK( op[i].pbBuffer + op[i].cbBuffer < &pBuf[BUF_SIZE], "?" );
 
                 SymCryptHashAppend( pHash,  &scHash[ iHash ], op[i].pbBuffer, op[i].cbBuffer );

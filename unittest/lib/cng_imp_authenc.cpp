@@ -1,16 +1,16 @@
 //
 // cng_imp_authenc.cpp
 //
-// Copyright (c) Microsoft Corporation. Licensed under the MIT license. 
+// Copyright (c) Microsoft Corporation. Licensed under the MIT license.
 //
 
 BCRYPT_ALG_HANDLE AuthEncImpState<ImpXxx, AlgXxx, ModeXxx>::hAlg;
 
 template<>
-VOID 
+VOID
 algImpKeyPerfFunction< ImpXxx, AlgXxx, ModeXxx>( PBYTE buf1, PBYTE buf2, PBYTE buf3, SIZE_T keySize )
 {
-    BCRYPT_KEY_HANDLE hKey; 
+    BCRYPT_KEY_HANDLE hKey;
     BCRYPT_ALG_HANDLE hAlg = AuthEncImpState<ImpXxx, AlgXxx, ModeXxx>::hAlg;
     UNREFERENCED_PARAMETER( buf3 );
 
@@ -19,10 +19,10 @@ algImpKeyPerfFunction< ImpXxx, AlgXxx, ModeXxx>( PBYTE buf1, PBYTE buf2, PBYTE b
                             &hKey,
                             buf1 + 16, 1 << 12,     // 4 kB for key object
                             buf2, (ULONG) keySize,
-                            g_cngKeySizeFlag ) ), 
+                            g_cngKeySizeFlag ) ),
            "Error importing key" );
-    
-    
+
+
     *(BCRYPT_KEY_HANDLE *) buf1 = hKey;
 }
 
@@ -47,8 +47,8 @@ algImpDataPerfFunction<ImpXxx,AlgXxx, ModeXxx>( PBYTE buf1, PBYTE buf2, PBYTE bu
     //authInfo.cbAAD = 0;
     //authInfo.cbData = 0;
     //authInfo.dwFlags = 0;
-    
-    
+
+
     status = CngEncryptFn( *(BCRYPT_KEY_HANDLE *)buf1, buf2 + 32, (ULONG) dataSize, &authInfo, NULL, 0, buf3, (ULONG) dataSize, &res, 0 );
     CHECK3( NT_SUCCESS( status ), "BcryptEncrypt error %08x", status );
 }
@@ -74,7 +74,7 @@ algImpDecryptPerfFunction<ImpXxx,AlgXxx, ModeXxx>( PBYTE buf1, PBYTE buf2, PBYTE
     //authInfo.cbAAD = 0;
     //authInfo.cbData = 0;
     //authInfo.dwFlags = 0;
-    
+
 #pragma prefast( suppress: 28193, "Do not test return status as this is a performance measurement function" );
     status = CngDecryptFn( *(BCRYPT_KEY_HANDLE *)buf1, buf3, (ULONG) dataSize, &authInfo, NULL, 0, buf2+32, (ULONG) dataSize, &res, 0 );
     (void) status;
@@ -94,16 +94,16 @@ template<>
 AuthEncImp<ImpXxx, AlgXxx, ModeXxx>::AuthEncImp()
 {
     DWORD res;
-    CHECK( CngOpenAlgorithmProviderFn( &state.hAlg, BCRYPT_AES_ALGORITHM, NULL, 0 ) == STATUS_SUCCESS, 
+    CHECK( CngOpenAlgorithmProviderFn( &state.hAlg, BCRYPT_AES_ALGORITHM, NULL, 0 ) == STATUS_SUCCESS,
         "Could not open CNG/AES" );
 
-    CHECK( CngOpenAlgorithmProviderFn( &state.hAlgNoMode, BCRYPT_AES_ALGORITHM, NULL, 0 ) == STATUS_SUCCESS, 
+    CHECK( CngOpenAlgorithmProviderFn( &state.hAlgNoMode, BCRYPT_AES_ALGORITHM, NULL, 0 ) == STATUS_SUCCESS,
         "Could not open CNG/AES" );
 
     CHECK( CngGetPropertyFn( state.hAlg, BCRYPT_OBJECT_LENGTH, (PBYTE)&state.keyObjSizeSmall, sizeof( DWORD ), &res, 0 ) == STATUS_SUCCESS && res == sizeof( DWORD ),
         "Could not get Authenc small object size" );
 
-    CHECK( CngSetPropertyFn( state.hAlg, BCRYPT_CHAINING_MODE, (PBYTE) BCRYPT_CHAIN_MODE_XXX, sizeof( BCRYPT_CHAIN_MODE_XXX ), 0 ) == STATUS_SUCCESS, 
+    CHECK( CngSetPropertyFn( state.hAlg, BCRYPT_CHAINING_MODE, (PBYTE) BCRYPT_CHAIN_MODE_XXX, sizeof( BCRYPT_CHAIN_MODE_XXX ), 0 ) == STATUS_SUCCESS,
         "Could not set CNG/AES[GC]CMmode" );
 
     CHECK( CngGetPropertyFn( state.hAlg, BCRYPT_OBJECT_LENGTH, (PBYTE)&state.keyObjSizeBig, sizeof( DWORD ), &res, 0 ) == STATUS_SUCCESS && res == sizeof( DWORD ),
@@ -150,7 +150,7 @@ std::set<SIZE_T>
 AuthEncImp<ImpXxx, AlgXxx, ModeXxx>::getKeySizes()
 {
     BCRYPT_KEY_LENGTHS_STRUCT cngKeyLengths;
-    
+
     std::set<SIZE_T> res;
     ULONG resLen;
 
@@ -165,7 +165,7 @@ AuthEncImp<ImpXxx, AlgXxx, ModeXxx>::getKeySizes()
         //
         res.insert( i/8 );
     }
-    
+
     return res;
 }
 
@@ -175,7 +175,7 @@ std::set<SIZE_T>
 AuthEncImp<ImpXxx, AlgXxx, ModeXxx>::getTagSizes()
 {
     BCRYPT_AUTH_TAG_LENGTHS_STRUCT cngTagLengths;
-    
+
     std::set<SIZE_T> res;
     ULONG resLen;
 
@@ -187,7 +187,7 @@ AuthEncImp<ImpXxx, AlgXxx, ModeXxx>::getTagSizes()
     {
         res.insert( i );
     }
-    
+
     return res;
 }
 
@@ -257,7 +257,7 @@ AuthEncImp<ImpXxx, AlgXxx, ModeXxx>::setKey( PCBYTE pbKey, SIZE_T cbKey )
     //iprint( "%c", '0' + keyType );
 
     //
-    // We always place the magic marker in the key object buffer, even if we have the key object 
+    // We always place the magic marker in the key object buffer, even if we have the key object
     // elsewhere.
     //
     CHECK( cbKeyObject <= sizeof( state.keyObjectBuffer ) - 4, "?" );
@@ -301,7 +301,7 @@ AuthEncImp<ImpXxx, AlgXxx, ModeXxx>::setKey( PCBYTE pbKey, SIZE_T cbKey )
     status = STATUS_SUCCESS;
 
 cleanup:
-    return status;        
+    return status;
 }
 
 template<>
@@ -314,16 +314,16 @@ AuthEncImp<ImpXxx, AlgXxx, ModeXxx>::setTotalCbData( SIZE_T cbData )
 template<>
 NTSTATUS
 AuthEncImp<ImpXxx, AlgXxx, ModeXxx>::encrypt(
-        _In_reads_( cbNonce )       PCBYTE  pbNonce,      
-                                    SIZE_T  cbNonce, 
-        _In_reads_( cbAuthData )    PCBYTE  pbAuthData, 
-                                    SIZE_T  cbAuthData, 
-        _In_reads_( cbData )        PCBYTE  pbSrc, 
-        _Out_writes_( cbData )      PBYTE   pbDst, 
+        _In_reads_( cbNonce )       PCBYTE  pbNonce,
+                                    SIZE_T  cbNonce,
+        _In_reads_( cbAuthData )    PCBYTE  pbAuthData,
+                                    SIZE_T  cbAuthData,
+        _In_reads_( cbData )        PCBYTE  pbSrc,
+        _Out_writes_( cbData )      PBYTE   pbDst,
                                     SIZE_T  cbData,
-        _Out_writes_( cbTag )       PBYTE   pbTag, 
+        _Out_writes_( cbTag )       PBYTE   pbTag,
                                     SIZE_T  cbTag,
-                                    ULONG   flags )
+                                    UINT32  flags )
 {
     NTSTATUS status = STATUS_SUCCESS;
 
@@ -395,16 +395,16 @@ AuthEncImp<ImpXxx, AlgXxx, ModeXxx>::encrypt(
 template<>
 NTSTATUS
 AuthEncImp<ImpXxx, AlgXxx, ModeXxx>::decrypt(
-        _In_reads_( cbNonce )       PCBYTE  pbNonce,      
-                                    SIZE_T  cbNonce, 
-        _In_reads_( cbAuthData )    PCBYTE  pbAuthData, 
-                                    SIZE_T  cbAuthData, 
-        _In_reads_( cbData )        PCBYTE  pbSrc, 
-        _Out_writes_( cbData )      PBYTE   pbDst, 
+        _In_reads_( cbNonce )       PCBYTE  pbNonce,
+                                    SIZE_T  cbNonce,
+        _In_reads_( cbAuthData )    PCBYTE  pbAuthData,
+                                    SIZE_T  cbAuthData,
+        _In_reads_( cbData )        PCBYTE  pbSrc,
+        _Out_writes_( cbData )      PBYTE   pbDst,
                                     SIZE_T  cbData,
-        _In_reads_( cbTag )         PCBYTE  pbTag, 
+        _In_reads_( cbTag )         PCBYTE  pbTag,
                                     SIZE_T  cbTag,
-                                    ULONG   flags )
+                                    UINT32  flags )
 {
 
     NTSTATUS status;

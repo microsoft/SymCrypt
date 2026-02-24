@@ -35,9 +35,13 @@ schedules:
     - main
 
 parameters:
-- name: publish
+- name: publishVPack
   type: boolean
-  displayName: Publish packages
+  displayName: Publish VPack packages
+  default: false
+- name: publishNuGet
+  type: boolean
+  displayName: Publish NuGet packages
   default: false
 - name: lkgCompilerBranch
   type: string
@@ -85,4 +89,5 @@ extends:
       parameters:
         lkgCompilerBranch: ${{ parameters.lkgCompilerBranch }}
         buildType: 'Official'
-        publish: ${{ parameters.publish }}
+        publishVPack: ${{ parameters.publishVPack }}
+        publishNuGet: ${{ parameters.publishNuGet }}

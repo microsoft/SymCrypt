@@ -340,7 +340,7 @@ MACRO_END()
 //                                                                     UINT32      nDigits2,
 //     _Out_writes_((nDigits1+nDigits2)*SYMCRYPT_FDEF_DIGIT_NUINT32)   PUINT32     pDst )
 
-MUL_FUNCTION_START(SymCryptFdefRawMulMulx, 5, 14)
+MUL_FUNCTION_START(PLATFORM_NAME_MANGLE(SymCryptFdefRawMulMulx), 5, 14)
 
         shl     Q4, 6
         mov     [rsp + GET_MEMSLOT_OFFSET(slot0)], Q4
@@ -416,7 +416,7 @@ SymCryptFdefRawMulMulxInnerLoop:
         mov     [rsp + GET_MEMSLOT_OFFSET(slot1)], D2
         jnz     SymCryptFdefRawMulxOuterLoop
 
-MUL_FUNCTION_END(SymCryptFdefRawMulMulx)
+MUL_FUNCTION_END(PLATFORM_NAME_MANGLE(SymCryptFdefRawMulMulx))
 
 // VOID
 // SYMCRYPT_CALL
@@ -425,7 +425,7 @@ MUL_FUNCTION_END(SymCryptFdefRawMulMulx)
 //                                                             UINT32      nDigits,
 //     _Out_writes_(2*nDigits*SYMCRYPT_FDEF_DIGIT_NUINT32)     PUINT32     pDst )
 
-MUL_FUNCTION_START(SymCryptFdefRawSquareMulx, 3, 14)
+MUL_FUNCTION_START(PLATFORM_NAME_MANGLE(SymCryptFdefRawSquareMulx), 3, 14)
 
         // Q1 = pSrc
         // Q2 = nDigits
@@ -583,7 +583,7 @@ SymCryptFdefRawSquareMulxDiagonalsLoop:
         dec     Q2
         jnz     SymCryptFdefRawSquareMulxDiagonalsLoop
 
-MUL_FUNCTION_END(SymCryptFdefRawSquareMulx)
+MUL_FUNCTION_END(PLATFORM_NAME_MANGLE(SymCryptFdefRawSquareMulx))
 
 // VOID
 // SYMCRYPT_CALL
@@ -591,7 +591,7 @@ MUL_FUNCTION_END(SymCryptFdefRawSquareMulx)
 //     _In_                            PCSYMCRYPT_MODULUS      pmMod,
 //     _Inout_                         PUINT32                 pSrc,
 //     _Out_                           PUINT32                 pDst )
-MUL_FUNCTION_START(SymCryptFdefMontgomeryReduceMulx, 3, 14)
+MUL_FUNCTION_START(PLATFORM_NAME_MANGLE(SymCryptFdefMontgomeryReduceMulx), 3, 14)
 
         mov     [rsp + GET_MEMSLOT_OFFSET(slot0)], Q1
         mov     [rsp + GET_MEMSLOT_OFFSET(slot1)], Q2
@@ -826,7 +826,7 @@ SymCryptFdefMontgomeryReduceMulxMaskedCopyLoop:
         dec     D7
         jnz     SymCryptFdefMontgomeryReduceMulxMaskedCopyLoop
 
-MUL_FUNCTION_END(SymCryptFdefMontgomeryReduceMulx)
+MUL_FUNCTION_END(PLATFORM_NAME_MANGLE(SymCryptFdefMontgomeryReduceMulx))
 
 MACRO_START(MULADD_LOADSTORE18, pS, pM, pD, QH, Tc, T0, T1)
     // Tc:D[7:0] = (M[7:0] * K) + S[7:0] + Tc
@@ -919,7 +919,7 @@ MACRO_END()
 //    _In_range_(1, 64)               UINT32                  exp,
 //    _Out_                           PSYMCRYPT_MODELEMENT    peDst );
 
-MUL_FUNCTION_START(SymCryptFdefModDivSmallPow2Mulx, 4, 9)
+MUL_FUNCTION_START(PLATFORM_NAME_MANGLE(SymCryptFdefModDivSmallPow2Mulx), 4, 9)
 
         mov     Q7, [Q2]
         mov     QH, [Q1 + SymCryptModulusInv64OffsetAmd64]      // inv64
@@ -999,7 +999,7 @@ SymCryptFdefModDivSmallPow2MulxShiftRightLoop:
         dec     D0
         jnz     SymCryptFdefModDivSmallPow2MulxShiftRightLoop
 
-MUL_FUNCTION_END(SymCryptFdefModDivSmallPow2Mulx)
+MUL_FUNCTION_END(PLATFORM_NAME_MANGLE(SymCryptFdefModDivSmallPow2Mulx))
 
 // --------------------------------
 // 256-bit size specific functions
@@ -1015,7 +1015,7 @@ MUL_FUNCTION_END(SymCryptFdefModDivSmallPow2Mulx)
 //    _Out_writes_bytes_( cbScratch ) PBYTE                   pbScratch,
 //                                    SIZE_T                  cbScratch )
 
-FUNCTION_START(SymCryptFdefModAddMulx256Asm, 4, 9)
+FUNCTION_START(PLATFORM_NAME_MANGLE(SymCryptFdefModAddMulx256Asm), 4, 9)
 
         // Q1 = pmMod
         // Q2 = peSrc1
@@ -1073,7 +1073,7 @@ FUNCTION_START(SymCryptFdefModAddMulx256Asm, 4, 9)
         mov     [Q4 + 2*8], Q6
         mov     [Q4 + 3*8], Q2
 
-FUNCTION_END(SymCryptFdefModAddMulx256Asm)
+FUNCTION_END(PLATFORM_NAME_MANGLE(SymCryptFdefModAddMulx256Asm))
 
 MACRO_START(MUL_AND_MONTGOMERY_REDUCE14_INTERLEAVE, T0, T1, QH, pA, Aoff, pB, pM, K, R0, R1, R2, R3, R4, R5)
     // (R1, R2, R3, R4, R5) = A[Aoff] * (B0..3) + (R1, R2, R3, R4, R5)
@@ -1156,7 +1156,7 @@ altentry SymCryptFdefModMulMontgomeryMulx256AsmInternal
 #endif
 
 // Note we specify only 4 arguments as we never use arguments 5 and 6 (saves some prolog code in MSFT calling convention)
-MUL_FUNCTION_START(SymCryptFdefModMulMontgomeryMulx256Asm, 4, 13)
+MUL_FUNCTION_START(PLATFORM_NAME_MANGLE(SymCryptFdefModMulMontgomeryMulx256Asm), 4, 13)
 
         // Q1 = pMod
         // Q2 = pSrc1
@@ -1270,7 +1270,7 @@ ALTERNATE_ENTRY(SymCryptFdefModMulMontgomeryMulx256AsmInternal)
         mov     [Q4 + 2*8], Q6
         mov     [Q4 + 3*8], Q7
 
-MUL_FUNCTION_END(SymCryptFdefModMulMontgomeryMulx256Asm)
+MUL_FUNCTION_END(PLATFORM_NAME_MANGLE(SymCryptFdefModMulMontgomeryMulx256Asm))
 
 //VOID
 //SYMCRYPT_CALL
@@ -1282,7 +1282,7 @@ MUL_FUNCTION_END(SymCryptFdefModMulMontgomeryMulx256Asm)
 //                                    SIZE_T                  cbScratch )
 
 // Note we specify 4 arguments to keep prolog of this and SymCryptFdefModMulMontgomeryMulx256Asm the same
-MUL_FUNCTION_START(SymCryptFdefModSquareMontgomeryMulx256Asm, 4, 13)
+MUL_FUNCTION_START(PLATFORM_NAME_MANGLE(SymCryptFdefModSquareMontgomeryMulx256Asm), 4, 13)
 
         // Q1 = pMod
         // Q2 = pSrc
@@ -1303,7 +1303,7 @@ MUL_FUNCTION_START(SymCryptFdefModSquareMontgomeryMulx256Asm, 4, 13)
                         // error and still see the (wrong) epilogue when on the JNE instruction
                         // Best guess: the debugger starts the stack trace *after* the current instruction
 
-MUL_FUNCTION_END(SymCryptFdefModSquareMontgomeryMulx256Asm)
+MUL_FUNCTION_END(PLATFORM_NAME_MANGLE(SymCryptFdefModSquareMontgomeryMulx256Asm))
 
 // --------------------------------
 // 384-bit size specific functions
@@ -1319,7 +1319,7 @@ MUL_FUNCTION_END(SymCryptFdefModSquareMontgomeryMulx256Asm)
 //    _Out_writes_bytes_( cbScratch ) PBYTE                   pbScratch,
 //                                    SIZE_T                  cbScratch )
 
-FUNCTION_START(SymCryptFdefModAddMulx384Asm, 4, 13)
+FUNCTION_START(PLATFORM_NAME_MANGLE(SymCryptFdefModAddMulx384Asm), 4, 13)
 
         // Q1 = pmMod
         // Q2 = peSrc1
@@ -1395,7 +1395,7 @@ FUNCTION_START(SymCryptFdefModAddMulx384Asm, 4, 13)
         mov     [Q4 + 4*8], Q8
         mov     [Q4 + 5*8], Q2
 
-FUNCTION_END(SymCryptFdefModAddMulx384Asm)
+FUNCTION_END(PLATFORM_NAME_MANGLE(SymCryptFdefModAddMulx384Asm))
 
 MACRO_START(MUL16_P384, T0, T1, QH, pA, Aoff, pB, R0, R1, R2, R3, R4, R5, R6, R7)
     // (R0, R1, R2, R3, R4, R5, R6, R7) = A[Aoff] * (B0..5) + (R0, R1, R2, R3, R4, R5, R6)
@@ -1545,7 +1545,7 @@ altentry SymCryptFdefModMulMontgomeryMulxP384AsmInternal
 //                                    SIZE_T                  cbScratch )
 
 // Note we specify only 4 arguments as we never use arguments 5 and 6 (saves some prolog code in MSFT calling convention)
-MUL_FUNCTION_START(SymCryptFdefModMulMontgomeryMulxP384Asm, 4, 14)
+MUL_FUNCTION_START(PLATFORM_NAME_MANGLE(SymCryptFdefModMulMontgomeryMulxP384Asm), 4, 14)
 
         // Q1 = pMod
         // Q2 = pSrc1
@@ -1657,7 +1657,7 @@ ALTERNATE_ENTRY(SymCryptFdefModMulMontgomeryMulxP384AsmInternal)
         mov     [Q4 + 4*8], Q8
         mov     [Q4 + 5*8], Q9
 
-MUL_FUNCTION_END(SymCryptFdefModMulMontgomeryMulxP384Asm)
+MUL_FUNCTION_END(PLATFORM_NAME_MANGLE(SymCryptFdefModMulMontgomeryMulxP384Asm))
 
 //VOID
 //SYMCRYPT_CALL
@@ -1669,7 +1669,7 @@ MUL_FUNCTION_END(SymCryptFdefModMulMontgomeryMulxP384Asm)
 //                                    SIZE_T                  cbScratch )
 
 // Note we specify 4 arguments to keep prolog of this and SymCryptFdefModMulMontgomeryMulx384Asm the same
-MUL_FUNCTION_START(SymCryptFdefModSquareMontgomeryMulxP384Asm, 4, 14)
+MUL_FUNCTION_START(PLATFORM_NAME_MANGLE(SymCryptFdefModSquareMontgomeryMulxP384Asm), 4, 14)
 
         // Q1 = pMod
         // Q2 = pSrc
@@ -1690,7 +1690,7 @@ MUL_FUNCTION_START(SymCryptFdefModSquareMontgomeryMulxP384Asm, 4, 14)
                         // error and still see the (wrong) epilogue when on the JNE instruction
                         // Best guess: the debugger starts the stack trace *after* the current instruction
 
-MUL_FUNCTION_END(SymCryptFdefModSquareMontgomeryMulxP384Asm)
+MUL_FUNCTION_END(PLATFORM_NAME_MANGLE(SymCryptFdefModSquareMontgomeryMulxP384Asm))
 
 
 // --------------------------------
@@ -1705,7 +1705,7 @@ MUL_FUNCTION_END(SymCryptFdefModSquareMontgomeryMulxP384Asm)
 //                                    UINT32      nDigits,
 //    _Out_writes_(nWords1 + nWords2) PUINT32     pDst )
 
-MUL_FUNCTION_START(SymCryptFdefRawMulMulx1024, 4, 13)
+MUL_FUNCTION_START(PLATFORM_NAME_MANGLE(SymCryptFdefRawMulMulx1024), 4, 13)
 
         // First we wipe nDigits of the result (size of in)
         // Q1 = pSrc1
@@ -1785,7 +1785,7 @@ MUL_FUNCTION_START(SymCryptFdefRawMulMulx1024, 4, 13)
         mov     [Q4 + 6*8], Q11
         mov     [Q4 + 7*8], Q12
 
-MUL_FUNCTION_END(SymCryptFdefRawMulMulx1024)
+MUL_FUNCTION_END(PLATFORM_NAME_MANGLE(SymCryptFdefRawMulMulx1024))
 
 // VOID
 // SYMCRYPT_CALL
@@ -1794,7 +1794,7 @@ MUL_FUNCTION_END(SymCryptFdefRawMulMulx1024)
 //                                                             UINT32      nDigits,
 //     _Out_writes_(2*nDigits*SYMCRYPT_FDEF_DIGIT_NUINT32)     PUINT32     pDst )
 
-MUL_FUNCTION_START(SymCryptFdefRawSquareMulx1024, 3, 13)
+MUL_FUNCTION_START(PLATFORM_NAME_MANGLE(SymCryptFdefRawSquareMulx1024), 3, 13)
 
         // Wipe 128 bytes of destination
         xorps       xmm0,xmm0               // Zero register for 16-byte wipes
@@ -1875,7 +1875,7 @@ MUL_FUNCTION_START(SymCryptFdefRawSquareMulx1024, 3, 13)
         SYMCRYPT_SQUARE_DIAG 14, Q1, Q3, Q0, Q2, Q4, Q5, QH
         SYMCRYPT_SQUARE_DIAG 15, Q1, Q3, Q0, Q2, Q4, Q5, QH
 
-MUL_FUNCTION_END(SymCryptFdefRawSquareMulx1024)
+MUL_FUNCTION_END(PLATFORM_NAME_MANGLE(SymCryptFdefRawSquareMulx1024))
 
 // VOID
 // SYMCRYPT_CALL
@@ -1883,7 +1883,7 @@ MUL_FUNCTION_END(SymCryptFdefRawSquareMulx1024)
 //     _In_                            PCSYMCRYPT_MODULUS      pmMod,
 //     _Inout_                         PUINT32                 pSrc,
 //     _Out_                           PUINT32                 pDst )
-MUL_FUNCTION_START(SymCryptFdefMontgomeryReduceMulx1024, 3, 14)
+MUL_FUNCTION_START(PLATFORM_NAME_MANGLE(SymCryptFdefMontgomeryReduceMulx1024), 3, 14)
 
         mov     [rsp + GET_MEMSLOT_OFFSET(slot0)], Q3
 
@@ -2136,7 +2136,7 @@ SymCryptFdefMontgomeryReduceMulx1024OuterLoop:
         por     xmm2, xmm3
         movdqa  [Q3 + 7 * 16], xmm2
 
-MUL_FUNCTION_END(SymCryptFdefMontgomeryReduceMulx1024)
+MUL_FUNCTION_END(PLATFORM_NAME_MANGLE(SymCryptFdefMontgomeryReduceMulx1024))
 
 #if 0
 //////////////////////////////////////////////////////////////
@@ -2224,7 +2224,7 @@ MACRO_END()
 //                                    SIZE_T                  cbScratch )
 
 // Note we specify only 4 arguments as we never use arguments 5 and 6 (saves some prolog code in MSFT calling convention)
-MUL_FUNCTION_START(SymCryptFdefModMulMontgomeryMulxP256Asm, 4, 14)
+MUL_FUNCTION_START(PLATFORM_NAME_MANGLE(SymCryptFdefModMulMontgomeryMulxP256Asm), 4, 14)
 
         // Q1 = pMod
         // Q2 = pSrc1
@@ -2316,7 +2316,7 @@ ALTERNATE_ENTRY(SymCryptFdefModMulMontgomeryMulxP256AsmInternal)
         mov     [Q4 + 2*8], Q6
         mov     [Q4 + 3*8], Q7
 
-MUL_FUNCTION_END(SymCryptFdefModMulMontgomeryMulxP256Asm)
+MUL_FUNCTION_END(PLATFORM_NAME_MANGLE(SymCryptFdefModMulMontgomeryMulxP256Asm))
 
 
 //VOID
@@ -2329,7 +2329,7 @@ MUL_FUNCTION_END(SymCryptFdefModMulMontgomeryMulxP256Asm)
 //                                    SIZE_T                  cbScratch )
 
 // Note we specify 4 arguments to keep prolog of this and SymCryptFdefModMulMontgomeryMulxP256Asm the same
-MUL_FUNCTION_START(SymCryptFdefModSquareMontgomeryMulxP256Asm, 3, 14)
+MUL_FUNCTION_START(PLATFORM_NAME_MANGLE(SymCryptFdefModSquareMontgomeryMulxP256Asm), 3, 14)
 
         // Q1 = pMod
         // Q2 = pSrc
@@ -2350,7 +2350,7 @@ MUL_FUNCTION_START(SymCryptFdefModSquareMontgomeryMulxP256Asm, 3, 14)
                         // error and still see the (wrong) epilogue when on the JNE instruction
                         // Best guess: the debugger starts the stack trace *after* the current instruction
 
-MUL_FUNCTION_END(SymCryptFdefModSquareMontgomeryMulxP256Asm)
+MUL_FUNCTION_END(PLATFORM_NAME_MANGLE(SymCryptFdefModSquareMontgomeryMulxP256Asm))
 
 
 MACRO_START(MUL_AND_MONTGOMERY_REDUCE16_INTERLEAVE, T0, T1, QH, pA, Aoff, pB, pM, K, R0, R1, R2, R3, R4, R5, R6, R7)
@@ -2450,7 +2450,7 @@ altentry SymCryptFdefModMulMontgomeryMulx384AsmInternal
 //                                    SIZE_T                  cbScratch )
 
 // Note we specify only 4 arguments as we never use arguments 5 and 6 (saves some prolog code in MSFT calling convention)
-MUL_FUNCTION_START(SymCryptFdefModMulMontgomeryMulx384Asm, 4, 14)
+MUL_FUNCTION_START(PLATFORM_NAME_MANGLE(SymCryptFdefModMulMontgomeryMulx384Asm), 4, 14)
 
         // Q1 = pMod
         // Q2 = pSrc1
@@ -2577,7 +2577,7 @@ ALTERNATE_ENTRY(SymCryptFdefModMulMontgomeryMulx384AsmInternal)
         mov     [Q4 + 4*8], Q8
         mov     [Q4 + 5*8], Q9
 
-MUL_FUNCTION_END(SymCryptFdefModMulMontgomeryMulx384Asm)
+MUL_FUNCTION_END(PLATFORM_NAME_MANGLE(SymCryptFdefModMulMontgomeryMulx384Asm))
 
 //VOID
 //SYMCRYPT_CALL
@@ -2589,7 +2589,7 @@ MUL_FUNCTION_END(SymCryptFdefModMulMontgomeryMulx384Asm)
 //                                    SIZE_T                  cbScratch )
 
 // Note we specify 4 arguments to keep prolog of this and SymCryptFdefModMulMontgomeryMulx384Asm the same
-MUL_FUNCTION_START(SymCryptFdefModSquareMontgomeryMulx384Asm, 3, 14)
+MUL_FUNCTION_START(PLATFORM_NAME_MANGLE(SymCryptFdefModSquareMontgomeryMulx384Asm), 3, 14)
 
         // Q1 = pMod
         // Q2 = pSrc
@@ -2610,7 +2610,7 @@ MUL_FUNCTION_START(SymCryptFdefModSquareMontgomeryMulx384Asm, 3, 14)
                         // error and still see the (wrong) epilogue when on the JNE instruction
                         // Best guess: the debugger starts the stack trace *after* the current instruction
 
-MUL_FUNCTION_END(SymCryptFdefModSquareMontgomeryMulx384Asm)
+MUL_FUNCTION_END(PLATFORM_NAME_MANGLE(SymCryptFdefModSquareMontgomeryMulx384Asm))
 
 #endif
 

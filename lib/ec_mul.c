@@ -207,7 +207,7 @@ SymCryptEcpointScalarMulFixedWindow(
     pbScratch += nRecodedDigits * sizeof(UINT32);
     sigofKIs = (PUINT32) pbScratch;
     pbScratch += nRecodedDigits * sizeof(UINT32);
-    pbScratch = (PBYTE) ( ((ULONG_PTR)pbScratch + SYMCRYPT_ASYM_ALIGN_VALUE - 1) & ~(SYMCRYPT_ASYM_ALIGN_VALUE - 1) );
+    pbScratch = (PBYTE) ( ((SIZE_T)pbScratch + SYMCRYPT_ASYM_ALIGN_VALUE - 1) & ~(SYMCRYPT_ASYM_ALIGN_VALUE - 1) );
 
     // Fixing remaining scratch space size
     cbScratch -= ( pCurve->cbModElement + (nPrecompPoints+2)*cbEcpoint + 2*cbScalar );
@@ -451,7 +451,7 @@ SymCryptEcpointMultiScalarMulWnafWithInterleaving(
     pbScratch += nPoints * nRecodedDigits * sizeof(UINT32);
     sigofKIs = (PUINT32) pbScratch;
     pbScratch += nPoints * nRecodedDigits * sizeof(UINT32);
-    pbScratch = (PBYTE) ( ((ULONG_PTR)pbScratch + SYMCRYPT_ASYM_ALIGN_VALUE - 1) & ~(SYMCRYPT_ASYM_ALIGN_VALUE - 1) );
+    pbScratch = (PBYTE) ( ((SIZE_T)pbScratch + SYMCRYPT_ASYM_ALIGN_VALUE - 1) & ~(SYMCRYPT_ASYM_ALIGN_VALUE - 1) );
 
     // Fixing remaining scratch space size
 	// dcl - my guess is that the values here are small enough that there should not be a problem, but

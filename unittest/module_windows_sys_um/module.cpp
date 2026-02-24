@@ -441,7 +441,7 @@ fatalImpl( _In_ PCSTR message )
 
 _Analysis_noreturn_
 VOID
-fatal( _In_ PCSTR file, ULONG line, _In_ PCSTR format, ... )
+fatal( _In_ PCSTR file, UINT32 line, _In_ PCSTR format, ... )
 {
     char buffer[1024];
     int index = 0;

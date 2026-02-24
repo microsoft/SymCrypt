@@ -12,7 +12,7 @@ BOOLEAN     TestSelftestsEnabled = FALSE;
 ULONGLONG   TestFatalCount = 0;
 ULONGLONG   TestErrorInjectionCount = 0;
 ULONGLONG   TestErrorInjectionCalls = 0;
-ULONG       TestErrorInjectionProb = 0;
+UINT32      TestErrorInjectionProb = 0;
 
 BYTE TestErrorInjectionSeed[ SYMCRYPT_SHA1_RESULT_SIZE ] = {0};
 
@@ -29,7 +29,7 @@ SYMCRYPT_CPU_FEATURES SYMCRYPT_CALL SymCryptCpuFeaturesNeverPresentEnvUnittest()
 _Analysis_noreturn_
 VOID
 SYMCRYPT_CALL
-SymCryptFatalEnvUnittest( ULONG fatalCode )
+SymCryptFatalEnvUnittest( UINT32 fatalCode )
 {
     if( TestSelftestsEnabled )
     {
@@ -65,25 +65,25 @@ PVOID malloc_align32( SIZE_T size )
     {
         return pBase;
     }
-    PBYTE pAligned = (PBYTE)((((ULONG_PTR) pBase) + 8 + 31) & ~31);
+    PBYTE pAligned = (PBYTE)((((SIZE_T) pBase) + 8 + 31) & ~31);
     *(PVOID *) (pAligned - 8) = pBase;
     return pAligned;
 }
 
 VOID free_align32( PVOID p )
 {
-    CHECK( ((ULONG_PTR)p & 31) == 0, "?" );
+    CHECK( ((SIZE_T)p & 31) == 0, "?" );
     free( *(PVOID *) ((PBYTE)p - 8) );
 }
 
 _Analysis_noreturn_
 VOID
-fatal( _In_ PCSTR file, ULONG line, _In_ PCSTR format, ... )
+fatal( _In_ PCSTR file, UINT32 line, _In_ PCSTR format, ... )
 {
     char buffer[1024];
     int index = 0;
 
-    index += snprintf( buffer, sizeof(buffer), "*\n\n***** FATAL ERROR: %s(%lu): ", file, line );
+    index += snprintf( buffer, sizeof(buffer), "*\n\n***** FATAL ERROR: %s(%u): ", file, line );
     if( index >= sizeof(buffer) )
     {
         index = sizeof(buffer) - 1;
@@ -102,7 +102,9 @@ fatal( _In_ PCSTR file, ULONG line, _In_ PCSTR format, ... )
 char g_saveInProgressTypes[16] = { 0 };
 int g_savesInProgress = 0;
 PVOID g_savePtrs[sizeof(g_saveInProgressTypes)] = { 0 };
-ULONG g_nSaves = 0;
+extern "C" {
+UINT32 g_nSaves = 0;
+}
 
 #endif
 
@@ -328,7 +330,7 @@ SymCryptRestoreYmmEnvUnittest( _Inout_ PSYMCRYPT_EXTENDED_SAVE_DATA pSaveData )
 
 VOID
 SYMCRYPT_CALL
-SymCryptEnvUnittestDetectCpuFeatures( ULONG flags )
+SymCryptEnvUnittestDetectCpuFeatures( UINT32 flags )
 {
 #if SYMCRYPT_CPU_X86 | SYMCRYPT_CPU_AMD64
     SymCryptDetectCpuFeaturesByCpuid( flags );

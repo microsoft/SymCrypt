@@ -231,7 +231,7 @@ MACRO_END()
 //    _Out_writes_bytes_(nDigits * SYMCRYPT_FDEF_DIGIT_SIZE ) PUINT32     pDst,
 //                                                            UINT32      nDigits )
 
-FUNCTION_START(SymCryptFdefRawAddAsm, 4, 5)
+FUNCTION_START(PLATFORM_NAME_MANGLE(SymCryptFdefRawAddAsm), 4, 5)
 
         // loop over each half digit
         add     D4, D4
@@ -264,7 +264,7 @@ SymCryptFdefRawAddAsmLoop:
         mov     Q0, 0
         adc     Q0, Q0
 
-FUNCTION_END(SymCryptFdefRawAddAsm)
+FUNCTION_END(PLATFORM_NAME_MANGLE(SymCryptFdefRawAddAsm))
 
 //UINT32
 //SYMCRYPT_CALL
@@ -274,7 +274,7 @@ FUNCTION_END(SymCryptFdefRawAddAsm)
 //    _Out_writes_bytes_(nDigits * SYMCRYPT_FDEF_DIGIT_SIZE ) PUINT32     Dst,
 //                                                            UINT32      nDigits )
 
-FUNCTION_START(SymCryptFdefRawSubAsm, 4, 5)
+FUNCTION_START(PLATFORM_NAME_MANGLE(SymCryptFdefRawSubAsm), 4, 5)
 
         // loop over each half digit
         add     D4, D4
@@ -307,7 +307,7 @@ SymCryptFdefRawSubAsmLoop:
         mov     Q0, 0
         adc     Q0, Q0
 
-FUNCTION_END(SymCryptFdefRawSubAsm)
+FUNCTION_END(PLATFORM_NAME_MANGLE(SymCryptFdefRawSubAsm))
 
 //VOID
 //SYMCRYPT_CALL
@@ -317,7 +317,7 @@ FUNCTION_END(SymCryptFdefRawSubAsm)
 //                                                                UINT32      nDigits,
 //                                                                UINT32      mask )
 
-FUNCTION_START(SymCryptFdefMaskedCopyAsm, 4, 4)
+FUNCTION_START(PLATFORM_NAME_MANGLE(SymCryptFdefMaskedCopyAsm), 4, 4)
 
         add     D3, D3              // loop over half digits
 
@@ -348,7 +348,7 @@ SymCryptFdefMaskedCopyAsmLoop:
         dec     D3
         jnz     SymCryptFdefMaskedCopyAsmLoop
 
-FUNCTION_END(SymCryptFdefMaskedCopyAsm)
+FUNCTION_END(PLATFORM_NAME_MANGLE(SymCryptFdefMaskedCopyAsm))
 
 
 //VOID
@@ -360,7 +360,7 @@ FUNCTION_END(SymCryptFdefMaskedCopyAsm)
 //                                                                      UINT32      nDigits2,
 //    _Out_writes_((nDigits1+nDigits2)*SYMCRYPT_FDEF_DIGIT_NUINT32)     PUINT32     pDst )
 
-MUL_FUNCTION_START(SymCryptFdefRawMulAsm, 5, 12)
+MUL_FUNCTION_START(PLATFORM_NAME_MANGLE(SymCryptFdefRawMulAsm), 5, 12)
 
         shl     Q2, 3           // nDigits1 * 8 = # words in Src1 to process
 
@@ -443,7 +443,7 @@ SymCryptFdefRawMulAsmLoop2:
         dec     Q2
         jnz     SymCryptFdefRawMulAsmLoopOuter
 
-MUL_FUNCTION_END(SymCryptFdefRawMulAsm)
+MUL_FUNCTION_END(PLATFORM_NAME_MANGLE(SymCryptFdefRawMulAsm))
 
 // VOID
 // SYMCRYPT_CALL
@@ -452,7 +452,7 @@ MUL_FUNCTION_END(SymCryptFdefRawMulAsm)
 //                                                          UINT32      nDigits,
 //   _Out_writes_(2*nDigits*SYMCRYPT_FDEF_DIGIT_NUINT32)    PUINT32     pDst )
 
-MUL_FUNCTION_START(SymCryptFdefRawSquareAsm, 3, 13)
+MUL_FUNCTION_START(PLATFORM_NAME_MANGLE(SymCryptFdefRawSquareAsm), 3, 13)
 
         // Register assignments
         //
@@ -640,7 +640,7 @@ SymCryptFdefRawSquareAsmThirdPass:
         dec     Q2
         jnz     SymCryptFdefRawSquareAsmThirdPass
 
-MUL_FUNCTION_END(SymCryptFdefRawSquareAsm)
+MUL_FUNCTION_END(PLATFORM_NAME_MANGLE(SymCryptFdefRawSquareAsm))
 
 //VOID
 //SymCryptFdefMontgomeryReduceAsm(
@@ -648,7 +648,7 @@ MUL_FUNCTION_END(SymCryptFdefRawSquareAsm)
 //    _Inout_                         PUINT32                 pSrc,
 //    _Out_                           PUINT32                 pDst )
 
-MUL_FUNCTION_START(SymCryptFdefMontgomeryReduceAsm, 3, 14)
+MUL_FUNCTION_START(PLATFORM_NAME_MANGLE(SymCryptFdefMontgomeryReduceAsm), 3, 14)
 
         mov     D4, [Q1 + SymCryptModulusNdigitsOffsetAmd64]    // nDigits
         mov     Q5, [Q1 + SymCryptModulusInv64OffsetAmd64]      // inv64
@@ -831,14 +831,14 @@ SymCryptFdefMontgomeryReduceAsmMaskedCopyLoop:
         dec     D4
         jnz     SymCryptFdefMontgomeryReduceAsmMaskedCopyLoop
 
-MUL_FUNCTION_END(SymCryptFdefMontgomeryReduceAsm)
+MUL_FUNCTION_END(PLATFORM_NAME_MANGLE(SymCryptFdefMontgomeryReduceAsm))
 
 
 // --------------------------------
 // 256 and 384-bit size specific functions
 // --------------------------------
 
-FUNCTION_START(SymCryptFdefModSub256Asm, 4, 9)
+FUNCTION_START(PLATFORM_NAME_MANGLE(SymCryptFdefModSub256Asm), 4, 9)
 
         // Q1 = pmMod
         // Q2 = peSrc1
@@ -881,10 +881,10 @@ FUNCTION_START(SymCryptFdefModSub256Asm, 4, 9)
         mov     [Q4 + 2*8], Q6
         mov     [Q4 + 3*8], Q7
 
-FUNCTION_END(SymCryptFdefModSub256Asm)
+FUNCTION_END(PLATFORM_NAME_MANGLE(SymCryptFdefModSub256Asm))
 
 
-FUNCTION_START(SymCryptFdefModSub384Asm, 4, 13)
+FUNCTION_START(PLATFORM_NAME_MANGLE(SymCryptFdefModSub384Asm), 4, 13)
 
         // Q1 = pmMod
         // Q2 = peSrc1
@@ -939,7 +939,7 @@ FUNCTION_START(SymCryptFdefModSub384Asm, 4, 13)
         mov     [Q4 + 4*8], Q8
         mov     [Q4 + 5*8], Q9
 
-FUNCTION_END(SymCryptFdefModSub384Asm)
+FUNCTION_END(PLATFORM_NAME_MANGLE(SymCryptFdefModSub384Asm))
 
 //=================================================
 // Multiplication
@@ -960,7 +960,7 @@ altentry SymCryptFdefMontgomeryReduce256AsmInternal
 //                                    SIZE_T                  cbScratch )
 
 // Note we specify only 4 arguments as we never use arguments 5 and 6 (saves some prolog code in MSFT calling convention)
-MUL_FUNCTION_START(SymCryptFdefModMulMontgomery256Asm, 4, 14)
+MUL_FUNCTION_START(PLATFORM_NAME_MANGLE(SymCryptFdefModMulMontgomery256Asm), 4, 14)
 
         // Q1 = pMod
         // Q2 = pSrc1
@@ -1077,7 +1077,7 @@ ALTERNATE_ENTRY(SymCryptFdefMontgomeryReduce256AsmInternal)
         mov     [Q4 + 16], Q12
         mov     [Q4 + 24], Q13
 
-MUL_FUNCTION_END(SymCryptFdefModMulMontgomery256Asm)
+MUL_FUNCTION_END(PLATFORM_NAME_MANGLE(SymCryptFdefModMulMontgomery256Asm))
 
 
 //VOID
@@ -1088,7 +1088,7 @@ MUL_FUNCTION_END(SymCryptFdefModMulMontgomery256Asm)
 //    _Out_                           PUINT32                 pDst )
 
 // Note we specify 4 arguments so that our prolog matches SymCryptFdefModMulMontgomery256Asm
-MUL_FUNCTION_START(SymCryptFdefMontgomeryReduce256Asm, 4, 14)
+MUL_FUNCTION_START(PLATFORM_NAME_MANGLE(SymCryptFdefMontgomeryReduce256Asm), 4, 14)
 
         mov     Q4, Q3
         mov     Q6,  [Q2 +  0]
@@ -1112,7 +1112,7 @@ MUL_FUNCTION_START(SymCryptFdefMontgomeryReduce256Asm, 4, 14)
                         // error and still see the (wrong) epilogue when on the JNE instruction
                         // Best guess: the debugger starts the stack trace *after* the current instruction
 
-MUL_FUNCTION_END(SymCryptFdefMontgomeryReduce256Asm)
+MUL_FUNCTION_END(PLATFORM_NAME_MANGLE(SymCryptFdefMontgomeryReduce256Asm))
 
 #if 0
 //////////////////////////////////////////////////////////////
@@ -1134,7 +1134,7 @@ MUL_FUNCTION_END(SymCryptFdefMontgomeryReduce256Asm)
 //    _Out_writes_bytes_( cbScratch ) PBYTE                   pbScratch,
 //                                    SIZE_T                  cbScratch )
 
-FUNCTION_START(SymCryptFdefModAdd256Asm, 4, 11)
+FUNCTION_START(PLATFORM_NAME_MANGLE(SymCryptFdefModAdd256Asm), 4, 11)
 
         // Q1 = pmMod
         // Q2 = peSrc1
@@ -1186,7 +1186,7 @@ FUNCTION_START(SymCryptFdefModAdd256Asm, 4, 11)
         mov     [Q4 + 2*8], Q6
         mov     [Q4 + 3*8], Q7
 
-FUNCTION_END(SymCryptFdefModAdd256Asm)
+FUNCTION_END(PLATFORM_NAME_MANGLE(SymCryptFdefModAdd256Asm))
 
 //VOID
 //SYMCRYPT_CALL
@@ -1198,7 +1198,7 @@ FUNCTION_END(SymCryptFdefModAdd256Asm)
 //                                    SIZE_T                  cbScratch )
 
 // Note we specify 4 arguments so that our prolog matches SymCryptFdefModMulMontgomery256Asm
-MUL_FUNCTION_START(SymCryptFdefModSquareMontgomery256Asm, 4, 14)
+MUL_FUNCTION_START(PLATFORM_NAME_MANGLE(SymCryptFdefModSquareMontgomery256Asm), 4, 14)
 
         //  Result in   Q6, Q7, Q8, Q9, Q10, Q11, Q12, Q13
 
@@ -1294,7 +1294,7 @@ MUL_FUNCTION_START(SymCryptFdefModSquareMontgomery256Asm, 4, 14)
 
         int     3
 
-MUL_FUNCTION_END(SymCryptFdefModSquareMontgomery256Asm)
+MUL_FUNCTION_END(PLATFORM_NAME_MANGLE(SymCryptFdefModSquareMontgomery256Asm))
 
 // --------------------------------
 // 512-bit size specific functions
@@ -1307,7 +1307,7 @@ MUL_FUNCTION_END(SymCryptFdefModSquareMontgomery256Asm)
 //    _In_reads_(nDigits*SYMCRYPT_FDEF_DIGIT_NUINT32)     PCUINT32    pSrc2,
 //                                                        UINT32      nDigits,
 //    _Out_writes_(2*nWords)                              PUINT32     pDst )
-MUL_FUNCTION_START(SymCryptFdefRawMul512Asm, 4, 8)
+MUL_FUNCTION_START(PLATFORM_NAME_MANGLE(SymCryptFdefRawMul512Asm), 4, 8)
 
         // Basic structure:
         //   for each word in Src1:
@@ -1359,7 +1359,7 @@ SymCryptFdefRawMul512AsmLoopOuter:
         dec     Q3
         jnz     SymCryptFdefRawMul512AsmLoopOuter
 
-MUL_FUNCTION_END(SymCryptFdefRawMul512Asm)
+MUL_FUNCTION_END(PLATFORM_NAME_MANGLE(SymCryptFdefRawMul512Asm))
 
 // VOID
 // SYMCRYPT_CALL
@@ -1367,7 +1367,7 @@ MUL_FUNCTION_END(SymCryptFdefRawMul512Asm)
 //   _In_reads_(nDigits*SYMCRYPT_FDEF_DIGIT_NUINT32)     PCUINT32    pSrc,
 //                                                       UINT32      nDigits,
 //   _Out_writes_(2*nWords)                              PUINT32     pDst )
-MUL_FUNCTION_START(SymCryptFdefRawSquare512Asm, 3, 11)
+MUL_FUNCTION_START(PLATFORM_NAME_MANGLE(SymCryptFdefRawSquare512Asm), 3, 11)
 
         // Register assignments
         //
@@ -1499,7 +1499,7 @@ MUL_FUNCTION_START(SymCryptFdefRawSquare512Asm, 3, 11)
         SQR_DIAGONAL_PROP 6, Q1, Q3, Q0, QH, Q7
         SQR_DIAGONAL_PROP 7, Q1, Q3, Q0, QH, Q7
 
-MUL_FUNCTION_END(SymCryptFdefRawSquare512Asm)
+MUL_FUNCTION_END(PLATFORM_NAME_MANGLE(SymCryptFdefRawSquare512Asm))
 
 //VOID
 //SymCryptFdefMontgomeryReduce512Asm(
@@ -1507,7 +1507,7 @@ MUL_FUNCTION_END(SymCryptFdefRawSquare512Asm)
 //    _Inout_                         PUINT32                 pSrc,
 //    _Out_                           PUINT32                 pDst )
 
-MUL_FUNCTION_START(SymCryptFdefMontgomeryReduce512Asm, 3, 13)
+MUL_FUNCTION_START(PLATFORM_NAME_MANGLE(SymCryptFdefMontgomeryReduce512Asm), 3, 13)
 
         mov     D4, [Q1 + SymCryptModulusNdigitsOffsetAmd64]            // nDigits
         mov     Q5, [Q1 + SymCryptModulusInv64OffsetAmd64]              // inv64
@@ -1672,7 +1672,7 @@ SymCryptFdefMontgomeryReduce512AsmMaskedCopyLoop:
         dec     D4
         jnz     SymCryptFdefMontgomeryReduce512AsmMaskedCopyLoop
 
-MUL_FUNCTION_END(SymCryptFdefMontgomeryReduce512Asm)
+MUL_FUNCTION_END(PLATFORM_NAME_MANGLE(SymCryptFdefMontgomeryReduce512Asm))
 
 // --------------------------------
 // 1024-bit size specific functions
@@ -1685,7 +1685,7 @@ MUL_FUNCTION_END(SymCryptFdefMontgomeryReduce512Asm)
 //    _In_reads_(nDigits*SYMCRYPT_FDEF_DIGIT_NUINT32)     PCUINT32    pSrc2,
 //                                                        UINT32      nDigits,
 //    _Out_writes_(2*nWords)                              PUINT32     pDst )
-MUL_FUNCTION_START(SymCryptFdefRawMul1024Asm, 4, 8)
+MUL_FUNCTION_START(PLATFORM_NAME_MANGLE(SymCryptFdefRawMul1024Asm), 4, 8)
 
         // Basic structure:
         //   for each word in Src1:
@@ -1748,7 +1748,7 @@ SymCryptFdefRawMul1024AsmLoopOuter:
         dec     Q3
         jnz     SymCryptFdefRawMul1024AsmLoopOuter
 
-MUL_FUNCTION_END(SymCryptFdefRawMul1024Asm)
+MUL_FUNCTION_END(PLATFORM_NAME_MANGLE(SymCryptFdefRawMul1024Asm))
 
 // VOID
 // SYMCRYPT_CALL
@@ -1756,7 +1756,7 @@ MUL_FUNCTION_END(SymCryptFdefRawMul1024Asm)
 //   _In_reads_(nDigits*SYMCRYPT_FDEF_DIGIT_NUINT32)     PCUINT32    pSrc,
 //                                                       UINT32      nDigits,
 //   _Out_writes_(2*nWords)                              PUINT32     pDst )
-MUL_FUNCTION_START(SymCryptFdefRawSquare1024Asm, 3, 11)
+MUL_FUNCTION_START(PLATFORM_NAME_MANGLE(SymCryptFdefRawSquare1024Asm), 3, 11)
 
         // Register assignments
         //
@@ -1987,7 +1987,7 @@ MUL_FUNCTION_START(SymCryptFdefRawSquare1024Asm, 3, 11)
         SQR_DIAGONAL_PROP 14, Q1, Q3, Q0, QH, Q7
         SQR_DIAGONAL_PROP 15, Q1, Q3, Q0, QH, Q7
 
-MUL_FUNCTION_END(SymCryptFdefRawSquare1024Asm)
+MUL_FUNCTION_END(PLATFORM_NAME_MANGLE(SymCryptFdefRawSquare1024Asm))
 
 //VOID
 //SymCryptFdefMontgomeryReduce1024Asm(
@@ -1995,7 +1995,7 @@ MUL_FUNCTION_END(SymCryptFdefRawSquare1024Asm)
 //    _Inout_                         PUINT32                 pSrc,
 //    _Out_                           PUINT32                 pDst )
 
-MUL_FUNCTION_START(SymCryptFdefMontgomeryReduce1024Asm, 3, 13)
+MUL_FUNCTION_START(PLATFORM_NAME_MANGLE(SymCryptFdefMontgomeryReduce1024Asm), 3, 13)
 
         mov     D4, [Q1 + SymCryptModulusNdigitsOffsetAmd64]    // nDigits
         mov     Q5, [Q1 + SymCryptModulusInv64OffsetAmd64]      // inv64
@@ -2173,7 +2173,7 @@ SymCryptFdefMontgomeryReduce1024AsmMaskedCopyLoop:
         dec     D4
         jnz     SymCryptFdefMontgomeryReduce1024AsmMaskedCopyLoop
 
-MUL_FUNCTION_END(SymCryptFdefMontgomeryReduce1024Asm)
+MUL_FUNCTION_END(PLATFORM_NAME_MANGLE(SymCryptFdefMontgomeryReduce1024Asm))
 #endif
 
 FILE_END()

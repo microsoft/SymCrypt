@@ -107,6 +107,7 @@ jobs:
     # Default empty for non-symcrust builds
     symcrypt_symcrust_prop: ''
     package_symcrust_arg: ''
+    lkg_branch: ${{ replace(replace(parameters.lkgCompilerBranch, 'official/', ''), '/', '-') }}
 
   steps:
 
@@ -144,7 +145,7 @@ jobs:
       maximumCpuCount: true
       msbuildArchitecture: 'x64'
       # /nowarn:MSB4121 suppresses warnings about Rust projects not having x86/ARM64/ARM64EC configurations in symcrypt.sln
-      msbuildArgs: '-p:UndockedOfficial=${{ parameters.nativeCompiler }} -p:UndockedBuildId=$(Build.BuildId) -p:VER_BUILD_ID=$(Build.BuildId) -p:VER_SUFFIX=${{ parameters.buildType }} $(symcrypt_symcrust_prop) /nowarn:MSB4121'
+      msbuildArgs: '-p:UndockedOfficial=${{ parameters.nativeCompiler }} -p:UndockedBuildId=$(Build.BuildId) -p:VER_BUILD_ID=$(Build.BuildId) -p:VER_SUFFIX=${{ parameters.buildType }}-$(lkg_branch) $(symcrypt_symcrust_prop) /nowarn:MSB4121'
 
   - task: onebranch.pipeline.signing@1 # https://aka.ms/obpipelines/signing
     displayName: 'Sign Binaries'
