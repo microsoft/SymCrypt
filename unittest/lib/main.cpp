@@ -43,16 +43,16 @@ extern BOOL AesDetectXmmDone;
 }
 #endif
 
-ULONG ModeEcb::flags = 0;
-ULONG ModeCbc::flags = MODE_FLAG_CHAIN;
-ULONG ModeCfb::flags = MODE_FLAG_CHAIN | MODE_FLAG_CFB;
+UINT32 ModeEcb::flags = 0;
+UINT32 ModeCbc::flags = MODE_FLAG_CHAIN;
+UINT32 ModeCfb::flags = MODE_FLAG_CHAIN | MODE_FLAG_CFB;
 
 
 BOOL AlgRc4::isRandomAccess = FALSE;
 BOOL AlgChaCha20::isRandomAccess = TRUE;
 
-ULONG   g_rc2EffectiveKeyLength = 0;
-SIZE_T  g_modeCfbShiftParam = 1;
+UINT32 g_rc2EffectiveKeyLength = 0;
+SIZE_T g_modeCfbShiftParam = 1;
 
 Rng g_rng;
 
@@ -61,7 +61,7 @@ BOOL g_failRegisterSave = FALSE;
 BOOL g_runRsaAverageKeyPerf = FALSE;
 
 DWORD g_osVersion;
-ULONG g_rngSeed = 0;
+UINT32 g_rngSeed = 0;
 
 ULONGLONG g_nTotalErrors = 0;
 
@@ -117,6 +117,11 @@ BOOL g_perfTestsRunning = FALSE;
 // Flag to print the FIPS status indicator
 //
 BOOL g_printStatusIndicator = FALSE;
+
+//
+// Flag to run the dev test
+//
+BOOL g_devTest = FALSE;
 
 //
 // Flag that specifies tests are running against BCrypt SGX enclave proxy.
@@ -416,6 +421,7 @@ const char * g_algorithmNames[] = {
     AlgMlKemkeySetValue::name,
     AlgMlDsa::name,
     AlgMlDsakeySetValue::name,
+    AlgTlsHandshake::name,
 
     AlgDeveloperTest::name,
     NULL,
@@ -486,6 +492,7 @@ usage()
             "                    implementation called SymCryptDynamic. By default, all calls to SymCrypt\n"
             "                    are passed to both the statically and dynamically linked SymCrypt versions\n"
             " statusindicator    Print FIPS status indicator string\n"
+            " devtest            Run developer test (normally empty)\n"
             "\n"
 #if SYMCRYPT_CPU_X86 | SYMCRYPT_CPU_AMD64
             " CPU feature:       aesni, pclmulqdq, sse2, sse3, ssse3, avx2,\n"
@@ -780,6 +787,11 @@ processSingleOption( _In_ PSTR option )
         if (STRICMP(&option[0], "statusindicator") == 0)
         {
             g_printStatusIndicator = TRUE;
+            optionHandled = TRUE;
+        }
+        if (STRICMP(&option[0], "devtest") == 0)
+        {
+            g_devTest = TRUE;
             optionHandled = TRUE;
         }
 
@@ -1247,7 +1259,10 @@ runFunctionalTests()
 {
     print( "\n\nFunctional tests:\n" );
 
-    developertest();
+    if (g_devTest)
+    {
+        developertest();
+    }
 
     // Optionally rerun tests which directly call SymCrypt APIs specifying g_useDynamicFunctionsInTestCall
     // to dispatch the calls to the dynamic SymCrypt module.
@@ -1404,7 +1419,7 @@ runPerfTests()
                 String name = (*i)->m_algorithmName + (*i)->m_modeName;
                 if( j->keySize > 0 )
                 {
-                    ULONG keySize = (ULONG) (j->keySize & 0xffff);
+                    UINT32 keySize = (UINT32) (j->keySize & 0xffff);
 
                     // Hack: For ML-DSA, don't multiply the key size by 8 since it refers to a
                     // parameter set. In the future we should refactor the performance measurement
@@ -1415,7 +1430,7 @@ runPerfTests()
                     }
 
                     char buf[100];
-                    SNPRINTF_S( buf, sizeof( buf ), _TRUNCATE, "-%4lu", keySize );
+                    SNPRINTF_S( buf, sizeof( buf ), _TRUNCATE, "-%4u", keySize );
 
                     name = name + buf;
                 }
@@ -1435,15 +1450,15 @@ runPerfTests()
             }
             else
             {
-                print( "%s%s,%lu,%s,%s,%s,%lu,%lu\n",
+                print( "%s%s,%u,%s,%s,%s,%u,%u\n",
                     g_measure_sizes_stringPrefix.c_str(),
                     ((*i)->m_algorithmName + (*i)->m_modeName).c_str(),
-                    (ULONG) (j->keySize & 0xffff) * 8,
+                    (UINT32) (j->keySize & 0xffff) * 8,
                     j->operationName,
                     j->strPostfix,
                     ((*i)->m_implementationName).c_str(),
-                    (ULONG) j->dataSize,
-                    (ULONG) floor(j->cFixed) );
+                    (UINT32) j->dataSize,
+                    (UINT32) floor(j->cFixed) );
             }
         }
     }
@@ -1556,10 +1571,10 @@ rdrandTest()
 VOID
 printHexArray( PCBYTE pData, SIZE_T nElements, SIZE_T elementSize )
 {
-    for( ULONG i=0; i<nElements; i++ )
+    for( SIZE_T i=0; i<nElements; i++ )
     {
         print( "%2d: ", i );
-        for( ULONG j=0; j<elementSize; j++ )
+        for( SIZE_T j=0; j<elementSize; j++ )
         {
             print( "%02x", *pData++ );
             if( j % 4 == 3 )

@@ -61,7 +61,7 @@ void __stack_chk_fail_local(void)
 _Analysis_noreturn_
 VOID
 SYMCRYPT_CALL
-SymCryptFatalEnvPosixUsermode( ULONG fatalCode )
+SymCryptFatalEnvPosixUsermode( UINT32 fatalCode )
 {
     UINT32 fatalCodeVar;
 

@@ -26,7 +26,7 @@ public:
     std::string m_modeName;                     // Name of algorithm mode
     std::string m_implementationName;           // Name of implementation
 
-    virtual VOID setPerfKeySize( SIZE_T keySize ) {UNREFERENCED_PARAMETER(keySize);};
+    PerfKeySizeSupportedFn m_perfKeySizeSupported = nullptr;
     PerfKeyFn   m_perfKeyFunction;
     PerfDataFn  m_perfDataFunction;
     PerfDataFn  m_perfDecryptFunction;
@@ -406,7 +406,7 @@ public:
                                     SIZE_T  cbData,
         _Out_writes_( cbTag )       PBYTE   pbTag,
                                     SIZE_T  cbTag,
-                                    ULONG   flags ) = 0;
+                                    UINT32  flags ) = 0;
 
     virtual NTSTATUS decrypt(
         _In_reads_( cbNonce )       PCBYTE  pbNonce,
@@ -418,7 +418,7 @@ public:
                                     SIZE_T  cbData,
         _In_reads_( cbTag )         PCBYTE  pbTag,
                                     SIZE_T  cbTag,
-                                    ULONG   flags ) = 0;
+                                    UINT32  flags ) = 0;
 };
 
 class XtsImplementation: public AlgorithmImplementation
@@ -1521,7 +1521,7 @@ public:
                                     SIZE_T  cbData,
         _Out_writes_( cbTag )       PBYTE   pbTag,
                                     SIZE_T  cbTag,
-                                    ULONG   flags );
+                                    UINT32  flags );
         // returns an error only if the request is not supported; only allowed for partial requests.
 
     virtual NTSTATUS decrypt(
@@ -1534,7 +1534,7 @@ public:
                                     SIZE_T  cbData,
         _In_reads_( cbTag )         PCBYTE  pbTag,
                                     SIZE_T  cbTag,
-                                    ULONG   flags );
+                                    UINT32  flags );
         // returns STATUS_AUTH_TAG_MISMATCH if the tag is wrong.
         // returns STATUS_NOT_SUPPORTED if the request is not supported (only for partial requests)
 
@@ -1945,7 +1945,7 @@ public:
 
     virtual NTSTATUS encapsulate(
         _Out_writes_bytes_( cbAgreedSecret )    PBYTE               pbAgreedSecret,
-                                                SIZE_T              cbAgreedSecret, 
+                                                SIZE_T              cbAgreedSecret,
         _Out_writes_bytes_( cbCiphertext )      PBYTE               pbCiphertext,
                                                 SIZE_T              cbCiphertext ) = 0;
 
@@ -1953,7 +1953,7 @@ public:
         _In_reads_bytes_( cbRandom )            PCBYTE              pbRandom,
                                                 SIZE_T              cbRandom,
         _Out_writes_bytes_( cbAgreedSecret )    PBYTE               pbAgreedSecret,
-                                                SIZE_T              cbAgreedSecret, 
+                                                SIZE_T              cbAgreedSecret,
         _Out_writes_bytes_( cbCiphertext )      PBYTE               pbCiphertext,
                                                 SIZE_T              cbCiphertext ) = 0;
 
@@ -2006,7 +2006,7 @@ public:
 
     virtual NTSTATUS encapsulate(
         _Out_writes_bytes_( cbAgreedSecret )    PBYTE               pbAgreedSecret,
-                                                SIZE_T              cbAgreedSecret, 
+                                                SIZE_T              cbAgreedSecret,
         _Out_writes_bytes_( cbCiphertext )      PBYTE               pbCiphertext,
                                                 SIZE_T              cbCiphertext );
 
@@ -2014,7 +2014,7 @@ public:
         _In_reads_bytes_( cbRandom )            PCBYTE              pbRandom,
                                                 SIZE_T              cbRandom,
         _Out_writes_bytes_( cbAgreedSecret )    PBYTE               pbAgreedSecret,
-                                                SIZE_T              cbAgreedSecret, 
+                                                SIZE_T              cbAgreedSecret,
         _Out_writes_bytes_( cbCiphertext )      PBYTE               pbCiphertext,
                                                 SIZE_T              cbCiphertext );
 
@@ -2385,6 +2385,9 @@ const String PqDsaImp<Imp,Alg>::s_modeName;
 //
 // Template declaration for performance functions (for those implementations that wish to use them)
 //
+template< class Implementation, class Algorithm >
+BOOL algImpPerfKeySizeSupportedFn( SIZE_T keySize );
+
 template< class Implementation, class Algorithm >
 VOID algImpKeyPerfFunction( PBYTE buf1, PBYTE buf2, PBYTE buf3, SIZE_T keySize );
 

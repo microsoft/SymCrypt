@@ -1918,7 +1918,7 @@ extern const BYTE SymCryptSha512KATAnswer[64];
 // Arithmetic
 //
 
-#define SYMCRYPT_ASSERT_ASYM_ALIGNED( _p )           SYMCRYPT_ASSERT( ((ULONG_PTR)(_p) & (SYMCRYPT_ASYM_ALIGN_VALUE - 1)) == 0 );
+#define SYMCRYPT_ASSERT_ASYM_ALIGNED( _p )           SYMCRYPT_ASSERT( ((SIZE_T)(_p) & (SYMCRYPT_ASYM_ALIGN_VALUE - 1)) == 0 );
 
 
 #define SYMCRYPT_FDEF_DIGIT_NUINT32             ((UINT32)(SYMCRYPT_FDEF_DIGIT_SIZE / sizeof( UINT32 ) ))
@@ -3711,16 +3711,6 @@ if( ( Key->fAlgorithmInfo & (KeySelftestFlag | SYMCRYPT_FLAG_KEY_NO_FIPS) ) == 0
     SYMCRYPT_FIPS_ASSERT( KeySelftestFunction( Key ) == SYMCRYPT_NO_ERROR ); \
     SYMCRYPT_ATOMIC_OR32_PRE_RELAXED(&Key->fAlgorithmInfo, KeySelftestFlag); \
 }
-#define SYMCRYPT_RUN_KEY_IMPORT_PCT(PctScError, KeySelftestFunction, Key, KeySelftestFlag) \
-if( ( Key->fAlgorithmInfo & (KeySelftestFlag | SYMCRYPT_FLAG_KEY_NO_FIPS) ) == 0 ) \
-{ \
-    /* PCT may fail on key import - return error to caller via PctScError */ \
-    PctScError = KeySelftestFunction( Key ); \
-    if( PctScError == SYMCRYPT_NO_ERROR ) \
-    { \
-        SYMCRYPT_ATOMIC_OR32_PRE_RELAXED(&Key->fAlgorithmInfo, KeySelftestFlag); \
-    } \
-}
 
 // Macro to check flag used in fAlgorithmInfo is non-zero and a power of 2
 #define CHECK_ALGORITHM_INFO_FLAG_POW2( flag ) \
@@ -3754,21 +3744,21 @@ SYMCRYPT_ERROR
 SYMCRYPT_CALL
 SymCryptRsaSignVerifyPct( PCSYMCRYPT_RSAKEY pkRsakey );
 //
-// FIPS pairwise consistency test for RSA sign/verify. Fastfails on error.
+// FIPS pairwise consistency test for RSA sign/verify.
 //
 
 SYMCRYPT_ERROR
 SYMCRYPT_CALL
 SymCryptDsaPct( PCSYMCRYPT_DLKEY pkDlkey );
 //
-// FIPS pairwise consistency test for DSA sign/verify. Fastfails on error.
+// FIPS pairwise consistency test for DSA sign/verify.
 //
 
 SYMCRYPT_ERROR
 SYMCRYPT_CALL
 SymCryptEcDsaPct( PCSYMCRYPT_ECKEY pkEckey );
 //
-// FIPS pairwise consistency test for ECDSA sign/verify. Fastfails on error.
+// FIPS pairwise consistency test for ECDSA sign/verify.
 //
 
 typedef struct _SYMCRYPT_DLGROUP_DH_SAFEPRIME_PARAMS {
@@ -3914,6 +3904,10 @@ typedef SYMCRYPT_ERROR (SYMCRYPT_CALL * PSYMCRYPT_ECPOINT_MULTI_SCALAR_MUL_FUNC)
     _Out_writes_bytes_( cbScratch ) PBYTE                   pbScratch,
                                     SIZE_T                  cbScratch  );
 
+typedef VOID (SYMCRYPT_CALL * PSYMCRYPT_ECURVE_FILL_SCRATCH_SPACES_FUNC) (
+    _Inout_    PSYMCRYPT_ECURVE pCurve );
+
+
 typedef struct _SYMCRYPT_ECURVE_FUNCTIONS
 {
     PSYMCRYPT_ECPOINT_SET_ZERO_FUNC             setZeroFunc;
@@ -3928,7 +3922,8 @@ typedef struct _SYMCRYPT_ECURVE_FUNCTIONS
     PSYMCRYPT_ECPOINT_NEGATE_FUNC               negateFunc;
     PSYMCRYPT_ECPOINT_SCALAR_MUL_FUNC           scalarMulFunc;
     PSYMCRYPT_ECPOINT_MULTI_SCALAR_MUL_FUNC     multiScalarMulFunc;
-    PVOID                                       slack[4];
+    PSYMCRYPT_ECURVE_FILL_SCRATCH_SPACES_FUNC   fillScratchSpacesFunc;
+    PVOID                                       slack[3];
 } SYMCRYPT_ECURVE_FUNCTIONS, *PSYMCRYPT_ECURVE_FUNCTIONS;
 typedef const SYMCRYPT_ECURVE_FUNCTIONS  *PCSYMCRYPT_ECURVE_FUNCTIONS;
 
@@ -4251,6 +4246,11 @@ SymCryptEcpointGenericSetRandom(
     _Out_                           PSYMCRYPT_ECPOINT   poDst,
     _Out_writes_bytes_( cbScratch ) PBYTE               pbScratch,
                                     SIZE_T              cbScratch );
+
+VOID
+SYMCRYPT_CALL
+SymCryptEcurveFillScratchSpaces(
+    _Inout_    PSYMCRYPT_ECURVE   pCurve);
 //--------------------------------------------------------
 //--------------------------------------------------------
 
@@ -4417,7 +4417,7 @@ typedef SYMCRYPT_ASYM_ALIGN_STRUCT _SYMCRYPT_XMSS_KEY
     BYTE    Seed[SYMCRYPT_HASH_MAX_RESULT_SIZE];
 
     SYMCRYPT_MAGIC_FIELD
-        
+
     // Private key
     SYMCRYPT_ALIGN_AT(16) UINT64  Idx;  // Aligning on 16-bytes to suppress clang warning
                                         // when atomic increment is performed on it.
@@ -4837,7 +4837,7 @@ FORCEINLINE
 UINT32
 SymCryptCountTrailingZeros32( UINT32 value )
 {
-    ULONG index = 0;
+    unsigned long index = 0;
     if( value == 0 )
     {
         return 32;
@@ -4855,14 +4855,14 @@ SymCryptCountTrailingZeros32( UINT32 value )
     }
 #endif
 
-    return (UINT32) index;
+    return (UINT32)index;
 }
 
 FORCEINLINE
 UINT32
 SymCryptCountTrailingZeros64( UINT64 value )
 {
-    ULONG index = 0;
+    unsigned long index = 0;
     if( value == 0 )
     {
         return 64;
@@ -4889,14 +4889,14 @@ SymCryptCountTrailingZeros64( UINT64 value )
     }
 #endif
 
-    return (UINT32) index;
+    return (UINT32)index;
 }
 
 FORCEINLINE
 UINT32
 SymCryptCountLeadingZeros32( UINT32 value )
 {
-    ULONG zeros = 0;
+    unsigned long zeros = 0;
 
     if(value == 0)
     {

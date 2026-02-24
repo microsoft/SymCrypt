@@ -370,8 +370,8 @@ SymCryptModMultiExpWnafWithInterleaving(
     cbScratch -= nBases * nRecodedDigits * sizeof(UINT32);
 
     // Update cbScratch first using pbScratch, as the amount of scratch skipped for alignment depends upon the alignment of pbScratch
-    cbScratch -=        ( ((ULONG_PTR)pbScratch + SYMCRYPT_ASYM_ALIGN_VALUE - 1) & ~(SYMCRYPT_ASYM_ALIGN_VALUE - 1) ) - (ULONG_PTR)pbScratch;
-    pbScratch = (PBYTE) ( ((ULONG_PTR)pbScratch + SYMCRYPT_ASYM_ALIGN_VALUE - 1) & ~(SYMCRYPT_ASYM_ALIGN_VALUE - 1) );
+    cbScratch -=        ( ((SIZE_T)pbScratch + SYMCRYPT_ASYM_ALIGN_VALUE - 1) & ~(SYMCRYPT_ASYM_ALIGN_VALUE - 1) ) - (SIZE_T)pbScratch;
+    pbScratch = (PBYTE) ( ((SIZE_T)pbScratch + SYMCRYPT_ASYM_ALIGN_VALUE - 1) & ~(SYMCRYPT_ASYM_ALIGN_VALUE - 1) );
 
 
     //

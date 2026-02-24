@@ -101,6 +101,20 @@ jobs:
         libcrux: true
         binskim_break: true
 
+      arm64_cross_gcc_optee_debug:
+        targetArch: ARM64
+        config: Debug
+        preset: 'OPTEE_ARM64_Cross_GCC_Debug'
+        optee: true
+        binskim_break: false
+
+      arm64_cross_gcc_optee_release:
+        targetArch: ARM64
+        config: Release
+        preset: 'OPTEE_ARM64_Cross_GCC_Release'
+        optee: true
+        binskim_break: true
+
   pool:
     type: linux
     hostArchitecture: AMD64
@@ -157,6 +171,21 @@ jobs:
         pip install -v -r scripts/requirements.txt --target $(Build.SourcesDirectory)/scripts
       displayName: 'Install Python dependencies'
 
+    - task: UniversalPackages@0
+      displayName: 'Download OP-TEE TA dev kit'
+      condition: eq(variables.optee, true)
+      inputs:
+        command: download
+        vstsFeed: 'OS/SymCrypt-Overlake-FW-Local'
+        vstsFeedPackage: 'release-castle-fw-artifacts'
+        vstsPackageVersion: '*'
+        downloadDirectory: '$(Build.SourcesDirectory)/3rdparty/optee/'
+
+    - script: |
+        tar -xzf ./3rdparty/optee/prod/optee_ta_dev_kit.tar.gz -C ./3rdparty/optee/
+      condition: eq(variables.optee, true)
+      displayName: 'Extract OP-TEE TA dev kit'
+
     # Conditionally setting job variables based on matrix variables doesn't work, probably due to
     # evaluation order. Instead, we have to configure our CMake arguments with a script.
     - script: |
@@ -166,6 +195,9 @@ jobs:
         fi
         if [ "$(libcrux)" = "true" ]; then
           CMAKE_ARGS="$CMAKE_ARGS -DSYMCRYPT_TEST_LIBCRUX=ON"
+        fi
+        if [ "$(optee)" = "true" ]; then
+          CMAKE_ARGS="$CMAKE_ARGS -DTA_DEV_KIT_INC=3rdparty/optee/optee_ta_dev_kit/include"
         fi
         echo "Final CMake args: $CMAKE_ARGS"
         echo "##vso[task.setvariable variable=CMAKE_CONFIG_ARGS]$CMAKE_ARGS"
@@ -190,10 +222,20 @@ jobs:
 
     - task: PythonScript@0
       displayName: 'Package generic Linux module'
+      condition: ne(variables.optee, true)
       inputs:
         scriptSource: 'filePath'
         scriptPath: scripts/package.py
         arguments: '$(ob_outputDirectory) $(targetArch) $(config) generic $(ob_outputDirectory)/pkg'
+        workingDirectory: $(Build.SourcesDirectory)
+
+    - task: PythonScript@0
+      displayName: 'Package OP-TEE bits'
+      condition: eq(variables.optee, true)
+      inputs:
+        scriptSource: 'filePath'
+        scriptPath: scripts/package.py
+        arguments: '$(ob_outputDirectory) $(targetArch) $(config) static $(ob_outputDirectory)/pkg --platform optee'
         workingDirectory: $(Build.SourcesDirectory)
 
     - task: Bash@3

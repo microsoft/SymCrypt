@@ -1,6 +1,6 @@
 //
 // testSelftest.cpp
-// Copyright (c) Microsoft Corporation. Licensed under the MIT license. 
+// Copyright (c) Microsoft Corporation. Licensed under the MIT license.
 //
 
 #include "precomp.h"
@@ -33,7 +33,7 @@ VOID testSelftestOne( const SELFTEST_INFO * pSelfTestInfo, PrintTable* perfTable
     // If there are N calls to error injection, we set the probability of an injection to 1/(N+1).
     //
 
-    TestErrorInjectionProb = (ULONG)nInjectCalls + 1;
+    TestErrorInjectionProb = (UINT32)nInjectCalls + 1;
 
     ULONGLONG clockSum = 0;
 
@@ -52,7 +52,7 @@ VOID testSelftestOne( const SELFTEST_INFO * pSelfTestInfo, PrintTable* perfTable
         {
             nInject++;
 
-            CHECK3( fatalCount != TestFatalCount, 
+            CHECK3( fatalCount != TestFatalCount,
                     "Self test failure in %s, error injected but no fatal call\n", pSelfTestInfo->name );
         }
         else

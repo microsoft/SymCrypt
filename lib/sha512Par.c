@@ -576,7 +576,7 @@ SymCryptParallelSha512Append(
 
     UNREFERENCED_PARAMETER( cbSimdScratch );        // not referenced on FRE builds
     SYMCRYPT_ASSERT( cbSimdScratch >= PAR_SCRATCH_ELEMENTS_512 * SYMCRYPT_SIMD_ELEMENT_SIZE );
-    SYMCRYPT_ASSERT( ((UINT_PTR)pbSimdScratch & (SYMCRYPT_SIMD_ELEMENT_SIZE - 1)) == 0 );
+    SYMCRYPT_ASSERT( ((SIZE_T)pbSimdScratch & (SYMCRYPT_SIMD_ELEMENT_SIZE - 1)) == 0 );
 
     //
     // Compute maxParallel; this is 2 if nPar <= 2, and 4 if nPar = 3,4.

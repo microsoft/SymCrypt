@@ -31,7 +31,8 @@ Note: AMD64 is the terminology Windows uses for x86-64.
 | Windows user mode     | AMD64, ARM64, x86 | MSVC                | ✅          | ✅                      | ✅          |
 | Linux user mode       | AMD64, ARM64      | GCC, Clang          | ✅          | ✅                      | ✅          |
 | Linux user mode       | x86               | GCC, Clang          | ❌          | ✅                      | ✅          |
-| macOS                 | AMD64, ARM64      | Apple Clang         | ❌          | ✅                      | ✅          |
+| macOS                 | ARM64             | Apple Clang         | ✅          | ✅                      | ✅          |
+| macOS                 | AMD64             | Apple Clang         | ❌          | ✅                      | ✅          |
 
 The ability to build SymCrypt on any particular platform or architecture, with or without ASM optimizations, does not
 imply that it has been tested for or is actively supported by Microsoft on that platform/architecture. While we make

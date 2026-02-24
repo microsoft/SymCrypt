@@ -460,11 +460,11 @@ MACRO_END()
 //       Internal AES encryption routine with modified calling convention.
 //       This function has the exact same calling convention as the AES_ENCRYPT_MACRO
 
-FUNCTION_START(SymCryptAesEncryptAsmInternal, 0, 0)
+FUNCTION_START(PLATFORM_NAME_MANGLE(SymCryptAesEncryptAsmInternal), 0, 0)
 
         AES_ENCRYPT_MACRO SymCryptAesEncryptAsmInternalLoop
 
-FUNCTION_END(SymCryptAesEncryptAsmInternal)
+FUNCTION_END(PLATFORM_NAME_MANGLE(SymCryptAesEncryptAsmInternal))
 
 //========================================
 //       SymCryptAesDecryptAsmInternal
@@ -473,11 +473,11 @@ FUNCTION_END(SymCryptAesEncryptAsmInternal)
 //       This function has the exact same calling convention as the AES_DECRYPT_MACRO
 //
 
-FUNCTION_START(SymCryptAesDecryptAsmInternal, 0, 0)
+FUNCTION_START(PLATFORM_NAME_MANGLE(SymCryptAesDecryptAsmInternal), 0, 0)
 
         AES_DECRYPT_MACRO SymCryptAesDecryptAsmInternalLoop
 
-FUNCTION_END(SymCryptAesDecryptAsmInternal)
+FUNCTION_END(PLATFORM_NAME_MANGLE(SymCryptAesDecryptAsmInternal))
 
 #else
 
@@ -503,7 +503,7 @@ MACRO_END()
 //                    _Out_writes_bytes_( SYMCRYPT_AES_BLOCK_LEN ) PBYTE                       pbCiphertext )
 //
 
-NESTED_FUNCTION_START(SymCryptAesEncryptAsm, 3, 15)
+NESTED_FUNCTION_START(PLATFORM_NAME_MANGLE(SymCryptAesEncryptAsm), 3, 15)
 
         SYMCRYPT_CHECK_MAGIC SymCryptAesEncryptAsmCheckMagic, Q1, magicFieldOffset, Q1
 
@@ -544,7 +544,7 @@ NESTED_FUNCTION_START(SymCryptAesEncryptAsm, 3, 15)
         mov     [Q0 +  8], ebp
         mov     [Q0 + 12], r8d
 
-NESTED_FUNCTION_END(SymCryptAesEncryptAsm)
+NESTED_FUNCTION_END(PLATFORM_NAME_MANGLE(SymCryptAesEncryptAsm))
 
 
 //
@@ -554,7 +554,7 @@ NESTED_FUNCTION_END(SymCryptAesEncryptAsm)
 //                    _In_reads_bytes_( SYMCRYPT_AES_BLOCK_LEN )  PCBYTE                      pbCiphertext,
 //                    _Out_writes_bytes_( SYMCRYPT_AES_BLOCK_LEN ) PBYTE                       pbPlaintext )
 
-NESTED_FUNCTION_START(SymCryptAesDecryptAsm, 3, 15)
+NESTED_FUNCTION_START(PLATFORM_NAME_MANGLE(SymCryptAesDecryptAsm), 3, 15)
 
         SYMCRYPT_CHECK_MAGIC SymCryptAesDecryptAsmCheckMagic, Q1, magicFieldOffset, Q1
 
@@ -594,7 +594,7 @@ NESTED_FUNCTION_START(SymCryptAesDecryptAsm, 3, 15)
         mov     [Q0 +  8], ebp
         mov     [Q0 + 12], r8d
 
-NESTED_FUNCTION_END(SymCryptAesDecryptAsm)
+NESTED_FUNCTION_END(PLATFORM_NAME_MANGLE(SymCryptAesDecryptAsm))
 
 //VOID
 //SYMCRYPT_CALL
@@ -605,7 +605,7 @@ NESTED_FUNCTION_END(SymCryptAesDecryptAsm)
 //    _Out_writes_bytes_( cbData )                  PBYTE                       pbDst,
 //                                            SIZE_T                      cbData )
 
-NESTED_FUNCTION_START(SymCryptAesCbcEncryptAsm, 5, 15)
+NESTED_FUNCTION_START(PLATFORM_NAME_MANGLE(SymCryptAesCbcEncryptAsm), 5, 15)
 
         // Here we convert from whatever calling convention we are called from externally to our
         // AES internal calling convention.
@@ -698,7 +698,7 @@ SymCryptAesCbcEncryptAsmLoop:
 
 SymCryptAesCbcEncryptNoData:
 
-NESTED_FUNCTION_END(SymCryptAesCbcEncryptAsm)
+NESTED_FUNCTION_END(PLATFORM_NAME_MANGLE(SymCryptAesCbcEncryptAsm))
 
 
 //VOID
@@ -710,7 +710,7 @@ NESTED_FUNCTION_END(SymCryptAesCbcEncryptAsm)
 //    _Out_writes_bytes_( cbData )                  PBYTE                       pbDst,
 //                                            SIZE_T                      cbData )
 
-NESTED_FUNCTION_START(SymCryptAesCbcDecryptAsm, 5, 15)
+NESTED_FUNCTION_START(PLATFORM_NAME_MANGLE(SymCryptAesCbcDecryptAsm), 5, 15)
 
         // Here we convert from whatever calling convention we are called from externally to our
         // AES internal calling convention.
@@ -818,7 +818,7 @@ SymCryptAesCbcDecryptAsmLoopEntry:
 
 SymCryptAesCbcDecryptNoData:
 
-NESTED_FUNCTION_END(SymCryptAesCbcDecryptAsm)
+NESTED_FUNCTION_END(PLATFORM_NAME_MANGLE(SymCryptAesCbcDecryptAsm))
 
 //VOID
 //SYMCRYPT_CALL
@@ -829,7 +829,7 @@ NESTED_FUNCTION_END(SymCryptAesCbcDecryptAsm)
 //    _Out_writes_bytes_( cbData )                  PBYTE                       pbDst,
 //                                            SIZE_T                      cbData )
 
-NESTED_FUNCTION_START(SymCryptAesCtrMsb64Asm, 5, 15)
+NESTED_FUNCTION_START(PLATFORM_NAME_MANGLE(SymCryptAesCtrMsb64Asm), 5, 15)
 
         // Here we convert from whatever calling convention we are called from externally to our
         // AES internal calling convention.
@@ -957,6 +957,6 @@ SymCryptAesCtrMsb64AsmLoop:
 
 SymCryptAesCtrMsb64NoData:
 
-NESTED_FUNCTION_END(SymCryptAesCtrMsb64Asm)
+NESTED_FUNCTION_END(PLATFORM_NAME_MANGLE(SymCryptAesCtrMsb64Asm))
 
 FILE_END()

@@ -5,7 +5,7 @@
             "args": [
                 "-noe",
                 "-c",
-                "&{ if (test-path ${workspaceFolder}\\.venv\\profile.ps1) { . ${workspaceFolder}\\.venv\\profile.ps1 } }"
+                ". ${workspaceFolder}\\scripts\\setup-terminal.ps1"
             ],
             "source": "PowerShell",
             "icon": "terminal-powershell",

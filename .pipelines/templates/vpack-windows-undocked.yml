@@ -3,6 +3,9 @@ parameters:
     type: boolean
     displayName: Publish VPack
     default: false
+  - name: lkgCompilerBranch
+    type: string
+    default: 'official/main'
 
 jobs:
 - job: vpack
@@ -55,6 +58,7 @@ jobs:
     ver_minor: $[stageDependencies.Set_Version.set_version.outputs['verStep.VER_MINOR']]
     ver_patch: $[stageDependencies.Set_Version.set_version.outputs['verStep.VER_PATCH']]
     ver_hash: $[ substring(variables['Build.SourceVersion'], 0, 8) ]
+    lkg_branch: ${{ replace(replace(parameters.lkgCompilerBranch, 'official/', ''), '/', '-') }}
     # Specify a fake artifact directory since we don't want to upload any artifacts from this job
     ob_outputDirectory: $(Build.SourcesDirectory)/artifacts/pkg
     build_variant_suffix: ''
@@ -65,7 +69,7 @@ jobs:
     # https://www.osgwiki.com/wiki/OneBranch_Windows_Undocked_Pipelines#2._Set_feature_flags_-_createVPack_and_updateOSManifest.
     ob_createvpack_enabled: ${{ parameters.publish }}
     ob_createvpack_owneralias: 'symcryptdevs@microsoft.com'
-    ob_createvpack_packagename: "SymCrypt.$(arch)$(config_win)$(build_variant_suffix)"
+    ob_createvpack_packagename: "SymCrypt.lkg-$(lkg_branch).$(arch)$(config_win)$(build_variant_suffix)"
     ob_createvpack_description: "SymCrypt Cryptographic Library"
     ob_createvpack_versionAs: string
     ob_createvpack_version: $(ver_major).$(ver_minor).$(ver_patch)-$(ver_hash)-$(Build.BuildId)

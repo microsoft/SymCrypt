@@ -239,6 +239,12 @@ ARM32_R13 = Register(None, "r13")
 ARM32_R14 = Register(None, "r14")
 ARM32_R15 = Register(None, "r15")
 
+# Assembler constants
+ASSEMBLER_MASM      = "masm"
+ASSEMBLER_ARMASM64  = "armasm64"
+ASSEMBLER_GAS       = "gas"
+ASSEMBLER_GAS_MACHO = "gas-macho"
+
 class CallingConvention:
     """A class to represent calling conventions"""
 
@@ -844,27 +850,31 @@ MASM_FUNCTION_TEMPLATE      = "%s, _TEXT\n"
 # ARMASM64 function macros must be correctly indented
 ARMASM64_FUNCTION_TEMPLATE  = "    %s\n"
 
-GAS_FUNCTION_ENTRY    = "%s: .global %s\n.type %s, %%function\n// .func %s\n"
+GAS_FUNCTION_ENTRY_ELF    = "%s: .global %s\n.type %s, %%function\n// .func %s\n"
+GAS_FUNCTION_ENTRY_MACHO  = "%s: .global %s\n// .func %s\n"
 GAS_FUNCTION_END      = "// .endfunc // %s"
 
 def generate_prologue(assembler, calling_convention, function_name, arg_count, reg_count, stack_alloc_size, xmm_reg_count, nested):
     function_entry = None
-    if assembler in ["masm", "armasm64"]:
+    if assembler in [ASSEMBLER_MASM, ASSEMBLER_ARMASM64]:
         # need to identify and mark up frame functions in masm and armasm64
         # for masm we also consider Xmm register and local buffer use (stack_alloc_size)
-        if assembler == "masm" and (nested or (reg_count > calling_convention.volatile_registers) or (xmm_reg_count > 6) or (stack_alloc_size > 0)):
+        if assembler == ASSEMBLER_MASM and (nested or (reg_count > calling_convention.volatile_registers) or (xmm_reg_count > 6) or (stack_alloc_size > 0)):
             function_entry = MASM_FRAME_FUNCTION_ENTRY % (function_name)
         elif nested or (reg_count > calling_convention.volatile_registers):
             function_entry = MASM_FRAME_FUNCTION_ENTRY % (function_name)
         else:
             function_entry = MASM_FRAMELESS_FUNCTION_ENTRY % (function_name)
 
-        if assembler == "masm":
+        if assembler == ASSEMBLER_MASM:
             function_entry = MASM_FUNCTION_TEMPLATE % function_entry
-        elif assembler == "armasm64":
+        elif assembler == ASSEMBLER_ARMASM64:
             function_entry = ARMASM64_FUNCTION_TEMPLATE % function_entry
-    elif assembler == "gas":
-        function_entry = GAS_FUNCTION_ENTRY % (function_name, function_name, function_name, function_name)
+    elif assembler == ASSEMBLER_GAS_MACHO:
+        # macOS uses Mach-O format which doesn't support .type directive
+        function_entry = GAS_FUNCTION_ENTRY_MACHO % (function_name, function_name, function_name)
+    elif assembler == ASSEMBLER_GAS:
+        function_entry = GAS_FUNCTION_ENTRY_ELF % (function_name, function_name, function_name, function_name)
     else:
         logging.error("Unhandled assembler (%s) in generate_prologue" % assembler)
         exit(1)
@@ -877,22 +887,22 @@ def generate_prologue(assembler, calling_convention, function_name, arg_count, r
 
 def generate_epilogue(assembler, calling_convention, function_name, arg_count, reg_count, stack_alloc_size, xmm_reg_count, nested):
     function_end = None
-    if assembler in ["masm", "armasm64"]:
+    if assembler in [ASSEMBLER_MASM, ASSEMBLER_ARMASM64]:
         # need to identify and mark up frame functions in masm
         # for masm we also consider Xmm register and local buffer use (stack_alloc_size)
-        if assembler == "masm" and (nested or (reg_count > calling_convention.volatile_registers) or (xmm_reg_count > 6) or (stack_alloc_size > 0)):
+        if assembler == ASSEMBLER_MASM and (nested or (reg_count > calling_convention.volatile_registers) or (xmm_reg_count > 6) or (stack_alloc_size > 0)):
             function_end = MASM_FRAME_FUNCTION_END % (function_name)
         elif nested or (reg_count > calling_convention.volatile_registers):
             function_end = MASM_FRAME_FUNCTION_END % (function_name)
         else:
             function_end = MASM_FRAMELESS_FUNCTION_END % (function_name)
 
-        if assembler == "masm":
+        if assembler == ASSEMBLER_MASM:
             function_end = MASM_FUNCTION_TEMPLATE % function_end
-        elif assembler == "armasm64":
+        elif assembler == ASSEMBLER_ARMASM64:
             function_end = ARMASM64_FUNCTION_TEMPLATE % function_end
-    elif assembler == "gas":
-        function_end = GAS_FUNCTION_END % function_name
+    elif assembler in [ASSEMBLER_GAS, ASSEMBLER_GAS_MACHO]:
+            function_end = GAS_FUNCTION_END % function_name
     else:
         logging.error("Unhandled assembler (%s) in generate_epilogue" % assembler)
         exit(1)
@@ -912,7 +922,6 @@ GAS_MACRO_END       = ".endm\n"
 MASM_ALTERNATE_ENTRY= "ALTERNATE_ENTRY %s\n"
 GAS_ALTERNATE_ENTRY = "%s: .global %s\n"
 ARMASM64_ALTERNATE_ENTRY= "    ALTERNATE_ENTRY %s\n"
-
 
 FUNCTION_START_PATTERN  = re.compile(r"\s*(NESTED_)?(MUL_)?FUNCTION_START\s*\(\s*([a-zA-Z0-9_\(\)]+)\s*,\s*([0-9]+)\s*,\s*([0-9]+)\s*(,\s*[0-9\*\+\-]+)?\s*(,\s*[0-9]+)?\s*\)")
 FUNCTION_END_PATTERN    = re.compile(r"\s*(NESTED_)?(MUL_)?FUNCTION_END\s*\(\s*([a-zA-Z0-9_\(\)]+)\s*\)")
@@ -1053,11 +1062,11 @@ class ProcessingStateMachine:
 
         logging.info("%d: macro start %s, %s" % (line_num, self.macro_name, self.macro_args))
 
-        if self.assembler == "masm":
+        if self.assembler == ASSEMBLER_MASM:
             return MASM_MACRO_START % (self.macro_name, match.group(2))
-        elif self.assembler == "gas":
+        elif self.assembler in [ASSEMBLER_GAS, ASSEMBLER_GAS_MACHO]:
             return GAS_MACRO_START % (self.macro_name, match.group(2))
-        elif self.assembler == "armasm64":
+        elif self.assembler == ASSEMBLER_ARMASM64:
             # In armasm64 we need to escape all macro arguments with $
             prefixed_args = ", $".join(self.macro_args)
             if prefixed_args:
@@ -1071,11 +1080,11 @@ class ProcessingStateMachine:
         # Currently in a function
         match = ALTERNATE_ENTRY_PATTERN.match(line)
         if (match):
-            if self.assembler == "masm":
+            if self.assembler == ASSEMBLER_MASM:
                 return MASM_ALTERNATE_ENTRY % match.group(1)
-            elif self.assembler == "gas":
-                return GAS_ALTERNATE_ENTRY % (match.group(1), match.group(1))
-            elif self.assembler == "armasm64":
+            elif self.assembler in [ASSEMBLER_GAS, ASSEMBLER_GAS_MACHO]:
+                    return GAS_ALTERNATE_ENTRY % (match.group(1), match.group(1))
+            elif self.assembler == ASSEMBLER_ARMASM64:
                 return ARMASM64_ALTERNATE_ENTRY % match.group(1)
             else:
                 logging.error("Unhandled assembler (%s) in process_function_line" % self.assembler)
@@ -1135,21 +1144,21 @@ class ProcessingStateMachine:
             self.macro_name = None
             self.macro_args = None
 
-            if self.assembler == "masm":
+            if self.assembler == ASSEMBLER_MASM:
                 return MASM_MACRO_END
-            elif self.assembler == "gas":
+            elif self.assembler in [ASSEMBLER_GAS, ASSEMBLER_GAS_MACHO]:
                 return GAS_MACRO_END
-            elif self.assembler == "armasm64":
+            elif self.assembler == ASSEMBLER_ARMASM64:
                 return ARMASM64_MACRO_END
             else:
                 logging.error("Unhandled assembler (%s) in process_macro_line" % self.assembler)
                 exit(1)
 
         arg_prefix = ""
-        if self.assembler == "armasm64":
+        if self.assembler == ASSEMBLER_ARMASM64:
             # In armasm64 macros we need to escape all of the macro arguments with a $ in the macro body
             arg_prefix = "$"
-        elif self.assembler == "gas":
+        elif self.assembler in [ASSEMBLER_GAS, ASSEMBLER_GAS_MACHO]:
             # In GAS macros we need to escape all of the macro arguments with a backslash in the macro body
             arg_prefix = r"\\"
 
@@ -1199,7 +1208,7 @@ def gen_file_header(assembler, architecture, calling_convention):
     """ Generate header to be inserted at the beginning of each symcryptasm file"""
     header = ""
 
-    if assembler == "masm":
+    if assembler == ASSEMBLER_MASM:
         header += "// begin masm header\n"
         header += "option casemap:none\n"
         header += "// end masm header\n\n"
@@ -1209,12 +1218,12 @@ def gen_file_header(assembler, architecture, calling_convention):
 def process_file(assembler, architecture, calling_convention, infilename, outfilename):
     normal_calling_convention = None
 
-    if assembler == "masm":
+    if assembler == ASSEMBLER_MASM:
         if architecture == "amd64" and calling_convention == "msft":
             normal_calling_convention = CALLING_CONVENTION_AMD64_MSFT
             mul_calling_convention = CALLING_CONVENTION_AMD64_MSFT_MUL
             nested_calling_convention = CALLING_CONVENTION_AMD64_MSFT_NESTED
-    elif assembler == "gas":
+    elif assembler in [ASSEMBLER_GAS, ASSEMBLER_GAS_MACHO]:
         if architecture == "amd64" and calling_convention == "systemv":
             normal_calling_convention = CALLING_CONVENTION_AMD64_SYSTEMV
             mul_calling_convention = CALLING_CONVENTION_AMD64_SYSTEMV_MUL
@@ -1227,7 +1236,7 @@ def process_file(assembler, architecture, calling_convention, infilename, outfil
             normal_calling_convention = CALLING_CONVENTION_ARM32_AAPCS32
             mul_calling_convention = None
             nested_calling_convention = None
-    elif assembler == "armasm64":
+    elif assembler == ASSEMBLER_ARMASM64:
         if architecture == "arm64" and calling_convention == "aapcs64":
             normal_calling_convention = CALLING_CONVENTION_ARM64_AAPCS64_ARMASM64
             mul_calling_convention = None
@@ -1283,7 +1292,7 @@ if __name__ == "__main__":
 
     # logging.basicConfig(level=logging.INFO)
     parser = argparse.ArgumentParser(description="Preprocess symcryptasm into files that will be further processed with C preprocessor to generate MASM or GAS")
-    parser.add_argument('assembler', type=str, help='Assembler that we want to preprocess for', choices=['masm', 'gas', 'armasm64'])
+    parser.add_argument('assembler', type=str, help='Assembler that we want to preprocess for', choices=[ASSEMBLER_MASM, ASSEMBLER_ARMASM64, ASSEMBLER_GAS, ASSEMBLER_GAS_MACHO])
     parser.add_argument('architecture', type=str, help='Architecture that we want to preprocess for', choices=['amd64', 'arm64', 'arm'])
     parser.add_argument('calling_convention', type=str, help='Calling convention that we want to preprocess for', choices=['msft', 'systemv', 'aapcs64', 'arm64ec', 'aapcs32'])
     parser.add_argument('inputfile', type=str, help='Path to input file')

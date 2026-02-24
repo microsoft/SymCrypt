@@ -49,7 +49,7 @@ typedef VOID (SYMCRYPT_CALL * WIPE_FN)( PBYTE pbData, SIZE_T cbData );
 typedef struct _ALG_MEASURE_PARAMS
 {
     LPCSTR      algName;
-    ULONG       flags;
+    UINT32      flags;
     SIZE_T      keySizes[MAX_SIZES];
     SIZE_T      dataSizes[MAX_SIZES];
 } ALG_MEASURE_PARAMS;
@@ -244,6 +244,8 @@ const ALG_MEASURE_PARAMS g_algMeasureParams[] =
     "EcdsaVerify"           , 1, {PERF_KEY_NIST192, PERF_KEY_NIST224, PERF_KEY_NIST256, PERF_KEY_NIST384, PERF_KEY_NIST521, PERF_KEY_NUMS256, PERF_KEY_NUMS384, PERF_KEY_NUMS512, PERF_KEY_W22519, PERF_KEY_W448,}, {},
     "Ecdh"                  , 1, {PERF_KEY_NIST192, PERF_KEY_NIST224, PERF_KEY_NIST256, PERF_KEY_NIST384, PERF_KEY_NIST521, PERF_KEY_NUMS256, PERF_KEY_NUMS384, PERF_KEY_NUMS512, PERF_KEY_W22519, PERF_KEY_W448, PERF_KEY_C255_19,}, {},
     "EckeySetValue"         , 1, {PERF_KEY_NIST192, PERF_KEY_NIST224, PERF_KEY_NIST256, PERF_KEY_NIST384, PERF_KEY_NIST521, PERF_KEY_NUMS256, PERF_KEY_NUMS384, PERF_KEY_NUMS512, PERF_KEY_W22519, PERF_KEY_W448, PERF_KEY_C255_19,}, {},
+
+    "TlsHandshake"          , 1, {PERF_KEY_NIST256, PERF_KEY_NIST384, PERF_KEY_NIST521, PERF_KEY_C255_19 }, {},
 
     "MlKem"                 , 0, {PERF_KEY_MLKEM_512, PERF_KEY_MLKEM_768, PERF_KEY_MLKEM_1024}, {PERF_DATASIZE_SAME_AS_KEYSIZE},
     "MlKemkeySetValue"      , 0, {PERF_KEY_MLKEM_512, PERF_KEY_MLKEM_768, PERF_KEY_MLKEM_1024}, {PERF_DATASIZE_SAME_AS_KEYSIZE},
@@ -1060,6 +1062,11 @@ VOID measurePerfOneAlg( AlgorithmImplementation * pAlgImp )
             perfInfo.keySize = 0;
         }
 
+        if ( pAlgImp->m_perfKeySizeSupported != nullptr && !pAlgImp->m_perfKeySizeSupported( *k ) )
+        {
+            continue;
+        }
+
         //
         // First we measure the speed of the key expansion, if any
         //
@@ -1261,21 +1268,20 @@ measurePerfOfWipe()
 VOID
 measurePerf()
 {
+    int oldPriority;
     iprint( "\nStarting performance measurements...\n" );
 
-    #if SYMCRYPT_MS_VC
-    int oldPriority = GetThreadPriority( GetCurrentThread() );
+    #if SYMCRYPT_PLATFORM_WINDOWS
+        oldPriority = GetThreadPriority( GetCurrentThread() );
+        CHECK( SetThreadPriority( GetCurrentThread(), THREAD_PRIORITY_TIME_CRITICAL ), "Failed to set priority" );
+        //print( "Thread priority set to %d\n", GetThreadPriority( GetCurrentThread() ) );
 
-    CHECK( SetThreadPriority( GetCurrentThread(), THREAD_PRIORITY_TIME_CRITICAL ), "Failed to set priority" );
-    //print( "Thread priority set to %d\n", GetThreadPriority( GetCurrentThread() ) );
-
-    DWORD_PTR affinitymask = (DWORD_PTR)1 << GetCurrentProcessorNumber();
-    affinitymask = SetThreadAffinityMask( GetCurrentThread(), affinitymask );
-    CHECK( affinitymask != 0, "Failed to set affinity mask" );
-    #endif // SYMCRYPT_MS_VC
+        DWORD_PTR affinitymask = (DWORD_PTR)1 << GetCurrentProcessorNumber();
+        affinitymask = SetThreadAffinityMask( GetCurrentThread(), affinitymask );
+        CHECK( affinitymask != 0, "Failed to set affinity mask" );
+    #endif // SYMCRYPT_PLATFORM_WINDOWS
 
     initPerfSystem();
-
 
     measurePerfOfAlgorithms();
 
@@ -1284,12 +1290,11 @@ measurePerf()
         measurePerfOfWipe();
     }
 
-
-    #if SYMCRYPT_MS_VC
-    CHECK( SetThreadAffinityMask( GetCurrentThread(), affinitymask ) != 0, "Failed to restore affinity mask" );
-    CHECK( GetThreadPriority( GetCurrentThread() ) == THREAD_PRIORITY_TIME_CRITICAL, "Thread priority decay" );
-    CHECK( SetThreadPriority( GetCurrentThread(), oldPriority ), "Failed to set priority" );
-    #endif // SYMCRYPT_MS_VC
+    #if SYMCRYPT_PLATFORM_WINDOWS
+        CHECK( SetThreadAffinityMask( GetCurrentThread(), affinitymask ) != 0, "Failed to restore affinity mask" );
+        CHECK( GetThreadPriority( GetCurrentThread() ) == THREAD_PRIORITY_TIME_CRITICAL, "Thread priority decay" );
+        CHECK( SetThreadPriority( GetCurrentThread(), oldPriority ), "Failed to restore priority" );
+    #endif // SYMCRYPT_PLATFORM_WINDOWS
 
     print( ".%c.\n", ' ' + (g_fixedTimeLoopVariable)%(127-' '));    // DO NOT REMOVE, ensures that do-busy work isn't optimized away
 

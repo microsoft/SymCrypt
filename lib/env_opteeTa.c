@@ -55,7 +55,7 @@ SymCryptInitEnvOpteeTa( UINT32 version )
 _Analysis_noreturn_
 VOID
 SYMCRYPT_CALL
-SymCryptFatalEnvOpteeTa( ULONG fatalCode )
+SymCryptFatalEnvOpteeTa( UINT32 fatalCode )
 {
     UINT32 fatalCodeVar;
 

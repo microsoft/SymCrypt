@@ -798,18 +798,8 @@ SymCryptDlkeySetValue(
                 SymCryptDsaSelftest,
                 SYMCRYPT_SELFTEST_ALGORITHM_DSA );
 
-            if( pkDlkey->fHasPrivateKey )
-            {
-                SYMCRYPT_RUN_KEY_IMPORT_PCT(
-                    scError,
-                    SymCryptDsaPct,
-                    pkDlkey,
-                    SYMCRYPT_PCT_DSA );
-                if( scError != SYMCRYPT_NO_ERROR )
-                {
-                    goto cleanup;
-                }
-            }
+            // PCT does not need to be run on import - mark it as done
+            pkDlkey->fAlgorithmInfo |= SYMCRYPT_PCT_DSA;
         }
         
         if( ( flags & SYMCRYPT_FLAG_DLKEY_DH ) != 0 )

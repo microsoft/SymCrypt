@@ -446,21 +446,15 @@ SymCryptEcurveInitialize(
         pCurve->info.sw.window = SYMCRYPT_ECURVE_SW_DEF_WINDOW;
         pCurve->info.sw.nPrecompPoints = (1 << (SYMCRYPT_ECURVE_SW_DEF_WINDOW-2));
         pCurve->info.sw.nRecodedDigits = pCurve->GOrdBitsize + 1;               // This is the maximum - used by the wNAF Interleaving method
-
-        SymCryptShortWeierstrassFillScratchSpaces( pCurve );
     }
     else if ( pParams->type == SYMCRYPT_ECURVE_TYPE_TWISTED_EDWARDS )
     {
         pCurve->info.sw.window = SYMCRYPT_ECURVE_SW_DEF_WINDOW;
         pCurve->info.sw.nPrecompPoints = (1 << (SYMCRYPT_ECURVE_SW_DEF_WINDOW-2));
         pCurve->info.sw.nRecodedDigits = pCurve->GOrdBitsize + 1;               // This is the maximum - used by the wNAF Interleaving method
+    }
 
-        SymCryptTwistedEdwardsFillScratchSpaces( pCurve );
-    }
-    else if ( pParams->type == SYMCRYPT_ECURVE_TYPE_MONTGOMERY )
-    {
-        SymCryptMontgomeryFillScratchSpaces( pCurve );
-    }
+    SymCryptEcurveFillScratchSpaces(pCurve);
 
     // Now set the distinguished point
     pCurve->G = SymCryptEcpointCreate( pDst, pSizes->cbEcpoint, pCurve );

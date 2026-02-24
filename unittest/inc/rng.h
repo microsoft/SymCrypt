@@ -1,7 +1,7 @@
 //
 // rng.h Header file for test RNG
 //
-// Copyright (c) Microsoft Corporation. Licensed under the MIT license. 
+// Copyright (c) Microsoft Corporation. Licensed under the MIT license.
 //
 // We use our own predictable RNG so that we can be repeatable.
 //
@@ -27,7 +27,7 @@ public:
     SIZE_T sizet( SIZE_T upb );             // Return random value in range 0,...,upb-1
 
     _Ret_range_( 0, upb-1 )
-    SIZE_T sizetNonUniform( SIZE_T upb, SIZE_T UniformProbLimit, ULONG logIncrease );
+    SIZE_T sizetNonUniform( SIZE_T upb, SIZE_T UniformProbLimit, UINT32 logIncrease );
         // Return random value in range 0..upb-1
         // Distribution is nonuniform.
         // Distribution is the sum of a number of uniform distributions.
@@ -41,13 +41,13 @@ public:
     BYTE byte();
 
     UINT32 uint32();
-        
+
 private:
 
     BYTE        m_seed[SYMCRYPT_SHA1_RESULT_SIZE];
     ULONGLONG   m_blockCtr;
     SIZE_T      m_bytesInBuf;
     BYTE        m_buf[SYMCRYPT_SHA1_RESULT_SIZE];
-    
+
 };
 

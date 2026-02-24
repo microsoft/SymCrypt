@@ -414,8 +414,6 @@ SymCryptEcDsaSign(
     _Out_writes_bytes_( cbSignature )   PBYTE                   pbSignature,
                                         SIZE_T                  cbSignature )
 {
-    SYMCRYPT_ERROR scError = SYMCRYPT_NO_ERROR;
-
     // Make sure that only the correct flags are set
     if ( (flags & ~SYMCRYPT_FLAG_ECDSA_NO_TRUNCATION) != 0 )
     {
@@ -428,16 +426,11 @@ SymCryptEcDsaSign(
         return SYMCRYPT_INVALID_ARGUMENT;
     }
 
-    // If the key has not yet had a PCT performed - perform PCT before first use
-    SYMCRYPT_RUN_KEY_IMPORT_PCT(
-        scError,
+    // If the key was generated in SymCrypt and has not yet had a PCT performed - perform PCT before first use
+    SYMCRYPT_RUN_KEY_GEN_PCT(
         SymCryptEcDsaPct,
         pKey,
         SYMCRYPT_PCT_ECDSA );
-    if( scError != SYMCRYPT_NO_ERROR )
-    {
-        return scError;
-    }
 
     return SymCryptEcDsaSignEx( pKey, pbHashValue, cbHashValue, NULL, format, flags, pbSignature, cbSignature );
 }

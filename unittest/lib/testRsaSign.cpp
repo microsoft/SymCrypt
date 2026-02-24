@@ -271,6 +271,7 @@ VOID rsaTestKeysGenerate()
         (1024 << 16) + 5,
         (768  << 16) + 2,
         (512  << 16) + 2,
+        (384  << 16) + 2,
         0,
         };
     UINT32 bitSize;
@@ -317,10 +318,7 @@ VOID rsaTestKeysGenerate()
         } else if( (r % 3) == 0 ) {
             bitSize = (UINT32) g_rng.sizet( 1024, 2048 );
         } else {
-            bitSize = (UINT32) g_rng.sizet( 496, 2048 );
-            // Arguably we should generate even smaller RSA keys to catch regressions for small keys
-            // but the tests assume we can do PKCS1 signing with SHA256 for all generated keys, and
-            // this 496 is the minimum
+            bitSize = (UINT32) g_rng.sizet( 384, 2048 );
         }
 
         if( bitSize == previousSize )
@@ -413,6 +411,58 @@ rsaTestKeyForSize( SIZE_T nBits )
         }
     }
     return NULL;
+}
+
+//
+// Structure to hold hash algorithm information for RSA signing
+//
+typedef struct {
+    UINT32              cbHash;         // Hash size in bytes
+    PCSTR               pszName;        // Hash algorithm name
+    PCSYMCRYPT_OID      pOidList;       // OID list for PKCS1 signing
+    UINT32              nOidCount;      // Number of OIDs in the list
+} RSA_HASH_INFO;
+
+//
+// Get appropriate hash algorithm info for PKCS1 signing with given RSA key size
+// Normally use SHA256, but use SHA1 for small keys
+//
+static
+RSA_HASH_INFO
+rsaGetHashInfoForKey( UINT32 cbModulus )
+{
+    RSA_HASH_INFO hashInfo = {0};
+
+    // SHA256: 32 bytes hash + 13 OID bytes + 6 PKCS1 ASN1 bytes = 62 bytes total
+    // SHA1:   20 bytes hash +  9 OID bytes + 6 PKCS1 ASN1 bytes = 46 bytes total
+
+    if( cbModulus >= 62 )       // 496+ bits
+    {
+        hashInfo.cbHash = 32;
+        hashInfo.pszName = "SHA256";
+        hashInfo.pOidList = ScDispatchSymCryptSha256OidList;
+        hashInfo.nOidCount = SYMCRYPT_SHA256_OID_COUNT;
+    }
+    else if( cbModulus >= 46 )  // 368+ bits
+    {
+        hashInfo.cbHash = 20;
+        hashInfo.pszName = "SHA1";
+        hashInfo.pOidList = ScDispatchSymCryptSha1OidList;
+        hashInfo.nOidCount = SYMCRYPT_SHA1_OID_COUNT;
+    }
+
+    return hashInfo;
+}
+
+//
+// Get effective PSS format size for salt calculation, accounting for RSA bit size edge case
+// When nBitsOfModulus % 8 == 1, PSS format size is reduced by 1 byte
+//
+static
+UINT32
+rsaGetEffectivePssFormatSize( UINT32 nBitsOfModulus )
+{
+    return ((nBitsOfModulus-1) + 7) / 8;
 }
 
 class RsaSignMultiImp: public RsaSignImplementation
@@ -839,7 +889,7 @@ testRsaSignTestkeys(
 {
     NTSTATUS    ntStatus;
     BYTE        sig[RSAKEY_MAXKEYSIZE];
-    BYTE        hash[RSAKEY_MAXKEYSIZE];
+    BYTE        hash[32];
 
     UNREFERENCED_PARAMETER( line );
 
@@ -851,16 +901,20 @@ testRsaSignTestkeys(
         ntStatus = pRsaSign->setKey( pBlob );
         CHECK( ntStatus == STATUS_SUCCESS, "Error setting key" );
 
-        GENRANDOM( hash, sizeof( hash ) );
-        UINT32 cbHash = 32;
-        UINT32 cbSalt = (UINT32) g_rng.sizet( 0, pBlob->cbModulus - 48 );
+        RSA_HASH_INFO hashInfo = rsaGetHashInfoForKey( pBlob->cbModulus );
+        CHECK( hashInfo.cbHash != 0, "Key too small for signing with any hash" );
+        CHECK( hashInfo.cbHash <= sizeof( hash ), "hash buffer too small" );
 
-        // We always use the SHA256 alg for MGF as we've tested the others already
+        GENRANDOM( hash, hashInfo.cbHash );
+
+        UINT32 cbEffectivePssFormat = rsaGetEffectivePssFormatSize( pBlob->nBitsModulus );
+        UINT32 cbSalt = (UINT32) g_rng.sizet( 0, cbEffectivePssFormat - hashInfo.cbHash - 1 );
+
         // iprint( "%d, ", i );
-        ntStatus = pRsaSign->sign( hash, cbHash, "SHA256", cbSalt, &sig[0], pBlob->cbModulus );
+        ntStatus = pRsaSign->sign( hash, hashInfo.cbHash, hashInfo.pszName, cbSalt, &sig[0], pBlob->cbModulus );
         CHECK( NT_SUCCESS( ntStatus ), "Error in RSA signing validation" );
 
-        ntStatus = pRsaSign->verify( hash, cbHash, &sig[0], pBlob->cbModulus, "SHA256", cbSalt );
+        ntStatus = pRsaSign->verify( hash, hashInfo.cbHash, &sig[0], pBlob->cbModulus, hashInfo.pszName, cbSalt );
         CHECK( NT_SUCCESS( ntStatus ), "Error in RSA verification validation" );
     }
     CHECK( pRsaSign->setKey( NULL ) == STATUS_SUCCESS, "Failed to clear key" );
@@ -988,6 +1042,7 @@ testRsaSignPkcs1()
     //
     if( !SCTEST_LOOKUP_DISPATCHSYM(SymCryptRsaPkcs1Sign) ||
         !SCTEST_LOOKUP_DISPATCHSYM(SymCryptSha256OidList) ||
+        !SCTEST_LOOKUP_DISPATCHSYM(SymCryptSha1OidList) ||
         !SCTEST_LOOKUP_DISPATCHSYM(SymCryptRsakeySizeofModulus) ||
         !SCTEST_LOOKUP_DISPATCHSYM(SymCryptRsaPkcs1Verify) ||
         !SCTEST_LOOKUP_DISPATCHSYM(SymCryptRsakeyAllocate) ||
@@ -1010,66 +1065,72 @@ testRsaSignPkcs1()
     for( int i = 0; i < 20; i++ )
     {
         pKey = rsaTestKeyRandom();
+        UINT32 cbModulus = ScDispatchSymCryptRsakeySizeofModulus( pKey );
+        RSA_HASH_INFO hashInfo = rsaGetHashInfoForKey( cbModulus );
+        CHECK( hashInfo.cbHash != 0, "Key too small for signing with any hash" );
+        CHECK( hashInfo.cbHash <= sizeof( hash ), "hash buffer too small" );
 
-        GENRANDOM( hash, sizeof( hash ) );
+        PCSYMCRYPT_OID pOidList = hashInfo.pOidList;
+        UINT32 nOidCount = hashInfo.nOidCount;
+
+        GENRANDOM( hash, hashInfo.cbHash );
+
         scError = ScDispatchSymCryptRsaPkcs1Sign(
                     pKey,
-                    hash, sizeof( hash ),
-                    ScDispatchSymCryptSha256OidList, SYMCRYPT_SHA256_OID_COUNT,
+                    hash, hashInfo.cbHash,
+                    pOidList, nOidCount,
                     0,
                     SYMCRYPT_NUMBER_FORMAT_MSB_FIRST,
-                    sig, ScDispatchSymCryptRsakeySizeofModulus( pKey ),
+                    sig, cbModulus,
                     &cbSig );
         CHECK( scError == SYMCRYPT_NO_ERROR, "?" );
 
         scError = ScDispatchSymCryptRsaPkcs1Verify(
                     pKey,
-                    hash, sizeof( hash ),
+                    hash, hashInfo.cbHash,
                     sig, cbSig,
                     SYMCRYPT_NUMBER_FORMAT_MSB_FIRST,
-                    ScDispatchSymCryptSha256OidList, SYMCRYPT_SHA256_OID_COUNT,
+                    pOidList, nOidCount,
                     0 );
         CHECK3( scError == SYMCRYPT_NO_ERROR, "ScError = %08x", scError );
 
         // Now check for an error if we don't include the first OID that the signing used
-
         scError = ScDispatchSymCryptRsaPkcs1Verify(
                     pKey,
-                    hash, sizeof( hash ),
+                    hash, hashInfo.cbHash,
                     sig, cbSig,
                     SYMCRYPT_NUMBER_FORMAT_MSB_FIRST,
-                    ScDispatchSymCryptSha256OidList + 1, SYMCRYPT_SHA256_OID_COUNT - 1,
+                    pOidList + 1, nOidCount - 1,
                     0 );
         CHECK( scError != SYMCRYPT_NO_ERROR, "?" );
 
         // Sign with the second OID
         scError = ScDispatchSymCryptRsaPkcs1Sign(
                     pKey,
-                    hash, sizeof( hash ),
-                    ScDispatchSymCryptSha256OidList + 1, SYMCRYPT_SHA256_OID_COUNT - 1,
+                    hash, hashInfo.cbHash,
+                    pOidList + 1, nOidCount - 1,
                     0,
                     SYMCRYPT_NUMBER_FORMAT_MSB_FIRST,
-                    sig, ScDispatchSymCryptRsakeySizeofModulus( pKey ),
+                    sig, cbModulus,
                     &cbSig );
         CHECK( scError == SYMCRYPT_NO_ERROR, "?" );
 
         scError = ScDispatchSymCryptRsaPkcs1Verify(
                     pKey,
-                    hash, sizeof( hash ),
+                    hash, hashInfo.cbHash,
                     sig, cbSig,
                     SYMCRYPT_NUMBER_FORMAT_MSB_FIRST,
-                    ScDispatchSymCryptSha256OidList+ 1, SYMCRYPT_SHA256_OID_COUNT - 1,
+                    pOidList + 1, nOidCount - 1,
                     0 );
         CHECK3( scError == SYMCRYPT_NO_ERROR, "ScError = %08x", scError );
 
         // Now check for success if we verify with both
-
         scError = ScDispatchSymCryptRsaPkcs1Verify(
                     pKey,
-                    hash, sizeof( hash ),
+                    hash, hashInfo.cbHash,
                     sig, cbSig,
                     SYMCRYPT_NUMBER_FORMAT_MSB_FIRST,
-                    ScDispatchSymCryptSha256OidList, SYMCRYPT_SHA256_OID_COUNT,
+                    pOidList, nOidCount,
                     0 );
         CHECK( scError == SYMCRYPT_NO_ERROR, "?" );
 
@@ -1108,8 +1169,11 @@ testRsaSignPss()
         UINT32 cbHash;
         UINT32 cbSalt;
         cbHash = g_rng.uint32() % sizeof( hash );
-        cbHash = SYMCRYPT_MIN( cbHash, cbModulus - 3);
-        cbSalt = g_rng.uint32() % (cbModulus - 2 - cbHash );
+
+        UINT32 cbEffectivePssFormat = rsaGetEffectivePssFormatSize( SymCryptRsakeyModulusBits( pKey ) );
+
+        cbHash = SYMCRYPT_MIN( cbHash, cbEffectivePssFormat - 3 );
+        cbSalt = g_rng.uint32() % (cbEffectivePssFormat - 2 - cbHash);
 
         // The multi-imp sign automatically does a cross-verification of all
         // implementations
@@ -1269,7 +1333,6 @@ testRsaExportImportPrivate()
         memcpy( abTmp, ppPrimes[0], cbPrimes[0] );
         abTmp[ g_rng.sizet(cbPrimes[0]) ] ^= 1<<(g_rng.byte()&7);
         ppPrimes[0] = abTmp;
-
         scError = ScDispatchSymCryptRsakeySetValue(
             pBlob->abModulus, pBlob->cbModulus,
             &pBlob->u64PubExp, 1,
@@ -1277,7 +1340,7 @@ testRsaExportImportPrivate()
             SYMCRYPT_NUMBER_FORMAT_MSB_FIRST,
             SYMCRYPT_FLAG_RSAKEY_SIGN,
             pKeyImport );
-        CHECK( scError != SYMCRYPT_NO_ERROR, "SymCryptRsakeySetValue succeeded unexpectedly" );
+        CHECK( scError != SYMCRYPT_NO_ERROR, "SymCryptRsakeySetValue succeeded unexpectedly with prime with random flipped bit" );
 
         scError = ScDispatchSymCryptRsakeySetValueFromPrivateExponent(
             pBlob->abModulus, pBlob->cbModulus,
@@ -1299,7 +1362,7 @@ testRsaExportImportPrivate()
             SYMCRYPT_NUMBER_FORMAT_MSB_FIRST,
             SYMCRYPT_FLAG_RSAKEY_SIGN,
             pKeyImport );
-        CHECK( scError != SYMCRYPT_NO_ERROR, "SymCryptRsakeySetValueFromPrivateExponent succeeded unexpectedly" );
+        CHECK( scError != SYMCRYPT_NO_ERROR, "SymCryptRsakeySetValueFromPrivateExponent succeeded unexpectedly with prime with random flipped bit" );
 
         ScDispatchSymCryptRsakeyFree( pKeyImport );
     }
@@ -1317,7 +1380,7 @@ testRsaSignAlgorithms()
     CHECK3( nOutstandingAllocs == 0, "Memory leak %d", nOutstandingAllocs );
 
     testRsaSignKats();
-    
+
     nOutstandingAllocs = SYMCRYPT_INTERNAL_VOLATILE_READ64(&g_nOutstandingCheckedAllocs);
     CHECK3( nOutstandingAllocs == 0, "Memory leak %d", nOutstandingAllocs );
 

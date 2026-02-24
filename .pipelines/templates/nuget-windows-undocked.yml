@@ -3,6 +3,9 @@ parameters:
     type: boolean
     displayName: Publish NuGet Package
     default: false
+  - name: lkgCompilerBranch
+    type: string
+    default: 'official/main'
 
 jobs:
 - job: nuget
@@ -17,7 +20,8 @@ jobs:
     ver_minor: $[stageDependencies.Set_Version.set_version.outputs['verStep.VER_MINOR']]
     ver_patch: $[stageDependencies.Set_Version.set_version.outputs['verStep.VER_PATCH']]
     ver_hash: $[ substring(variables['Build.SourceVersion'], 0, 8) ]
-    nuget_package_version: $(ver_major).$(ver_minor).$(ver_patch)-$(ver_hash)-$(Build.BuildId)
+    lkg_branch: ${{ replace(replace(replace(parameters.lkgCompilerBranch, 'official/', ''), '/', '-'), '_', '-') }}
+    nuget_package_version: $(ver_major).$(ver_minor).$(ver_patch)-$(ver_hash)-$(Build.BuildId)-lkg-$(lkg_branch)
     ob_outputDirectory: $(Build.SourcesDirectory)/nuget
     ob_nugetPublishing_enabled: ${{ parameters.publish }}
     ob_nugetRepackOwnerServiceId: 'f182e443-d489-4b1d-83a9-fccded0b3325' # PlatformCrypto

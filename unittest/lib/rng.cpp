@@ -1,7 +1,7 @@
 //
 // rng.cpp Implementation of test RNG
 //
-// Copyright (c) Microsoft Corporation. Licensed under the MIT license. 
+// Copyright (c) Microsoft Corporation. Licensed under the MIT license.
 //
 // THIS IS NOT A CRYPTOGRAPHIC RNG.
 // We use it only to generate pseudo-random test cases.
@@ -71,7 +71,7 @@ UINT32 Rng::uint32()
 }
 
 _Ret_range_( min, upb-1 )
-SIZE_T 
+SIZE_T
 Rng::sizet( SIZE_T min, SIZE_T upb )
 {
     CHECK( upb >= min, "Can't generate random value in empty range" );
@@ -79,10 +79,10 @@ Rng::sizet( SIZE_T min, SIZE_T upb )
 }
 
 _Ret_range_( 0, upb-1 )
-SIZE_T 
+SIZE_T
 Rng::sizet( SIZE_T upb )
 {
-    ULONG msBit;
+    unsigned long msBit;
     CHECK( BitScanReverseSizeT( &msBit, upb ), "Can't generate random value in empty range" );
 
     //
@@ -90,13 +90,13 @@ Rng::sizet( SIZE_T upb )
     //
     SIZE_T mask = ((SIZE_T)1 << msBit);
     mask |= mask - 1;
-    
-    ULONG nBytes = (msBit + 8)/8;
+
+    UINT32 nBytes = ((UINT32)msBit + 8)/8;
     SIZE_T val;
     for(;;)
     {
         val = 0;
-        for( ULONG i=0; i<nBytes; i++ )
+        for( UINT32 i=0; i<nBytes; i++ )
         {
             val = (val << 8) | byte();
         }
@@ -110,11 +110,11 @@ Rng::sizet( SIZE_T upb )
 }
 
 _Ret_range_( 0, upb-1 )
-SIZE_T 
-Rng::sizetNonUniform( SIZE_T upb, SIZE_T uniformLimit, ULONG logIncrease )
+SIZE_T
+Rng::sizetNonUniform( SIZE_T upb, SIZE_T uniformLimit, UINT32 logIncrease )
 {
-    CHECK(  logIncrease != 0 
-                && logIncrease <= 4 
+    CHECK(  logIncrease != 0
+                && logIncrease <= 4
                 && upb >> (8*logIncrease) <= uniformLimit,
             "Unsuitable parameters" );
     BYTE prob = byte();

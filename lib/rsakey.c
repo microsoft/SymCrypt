@@ -361,7 +361,8 @@ SymCryptRsakeyCalculatePrivateFields(
     _Out_   PSYMCRYPT_INT     piAcc,    // Temporary of nMaxDigitsOfPrimes + nDigitsOfModulus
     _Out_writes_bytes_( cbScratch )
             PBYTE             pbScratch,
-            SIZE_T            cbScratch
+            SIZE_T            cbScratch,
+            UINT32            flags
 )
 {
     SYMCRYPT_ERROR scError = SYMCRYPT_NO_ERROR;
@@ -370,6 +371,14 @@ SymCryptRsakeyCalculatePrivateFields(
 
     // Use pdTmp as int scratch
     PSYMCRYPT_INT piScr = SymCryptIntFromDivisor(pdTmp);
+
+    UINT32 allowedFlags = SYMCRYPT_FLAG_KEY_MINIMAL_VALIDATION;
+
+    if ( ( flags & ~allowedFlags ) != 0 )
+    {
+        scError = SYMCRYPT_INVALID_ARGUMENT;
+        goto cleanup;
+    }
 
     // We need a 1-digit tmp value to store the GCD in.
     // Simpler to put it on the stack than to add full scratch size computation support to this function
@@ -471,6 +480,28 @@ SymCryptRsakeyCalculatePrivateFields(
             {
                 goto cleanup;
             }
+        }
+    }
+
+    // Check that the product of the primes is in fact the modulus
+    if( (flags & SYMCRYPT_FLAG_KEY_MINIMAL_VALIDATION) == 0 )
+    {
+        if( pkRsakey->nPrimes != 2 )
+        {
+            scError = SYMCRYPT_INVALID_ARGUMENT;
+            goto cleanup;
+        }
+
+        SymCryptIntMulMixedSize(
+            SymCryptIntFromModulus(pkRsakey->pmPrimes[0]),
+            SymCryptIntFromModulus(pkRsakey->pmPrimes[1]),
+            piAcc,
+            pbScratch, cbScratch );
+
+        if( !SymCryptIntIsEqual( piAcc, SymCryptIntFromModulus( pkRsakey->pmModulus ) ) )
+        {
+            scError = SYMCRYPT_INVALID_ARGUMENT;
+            goto cleanup;
         }
     }
 
@@ -713,7 +744,7 @@ SymCryptRsakeyGenerate(
     }
 
     // Calculate the rest of the fields
-    scError = SymCryptRsakeyCalculatePrivateFields( pkRsakey, pdTmp, piPhi, piAcc, pbFnScratch, cbFnScratch );
+    scError = SymCryptRsakeyCalculatePrivateFields( pkRsakey, pdTmp, piPhi, piAcc, pbFnScratch, cbFnScratch, 0 );
     if ( scError != SYMCRYPT_NO_ERROR )
     {
         goto cleanup;
@@ -1179,7 +1210,7 @@ SymCryptRsakeySetValueInternal(
                     SYMCRYPT_MAX( SYMCRYPT_SCRATCH_BYTES_FOR_INT_TO_DIVISOR(ndMod),
                          SYMCRYPT_SCRATCH_BYTES_FOR_INT_DIVMOD( ndMod, ndMod )
                         ))));
-        
+
         if( pbPrivateExponent != NULL )
         {
             // We use at least as much scratch space when importing by private exponent, but probably more
@@ -1254,7 +1285,7 @@ SymCryptRsakeySetValueInternal(
             {
                 goto cleanup;
             }
-            
+
             pbFnScratch = pbScratch;
             cbFnScratch = cbScratch;
 
@@ -1324,13 +1355,13 @@ SymCryptRsakeySetValueInternal(
                         cbFnScratch );
             }
         }
-        
+
         // Create remaining temporaries
         piAcc = SymCryptIntCreate( pbFnScratch, cbLarge, 2 * ndMod ); pbFnScratch += cbLarge; cbFnScratch -= cbLarge;
         pdTmp = SymCryptDivisorCreate( pbFnScratch, cbDivisor, ndMod ); pbFnScratch += cbDivisor; cbFnScratch -= cbDivisor;
 
         // Calculate the rest of the fields
-        scError = SymCryptRsakeyCalculatePrivateFields( pkRsakey, pdTmp, piPhi, piAcc, pbFnScratch, cbFnScratch );
+        scError = SymCryptRsakeyCalculatePrivateFields( pkRsakey, pdTmp, piPhi, piAcc, pbFnScratch, cbFnScratch, flags & SYMCRYPT_FLAG_KEY_MINIMAL_VALIDATION );
         if (scError != SYMCRYPT_NO_ERROR )
         {
             goto cleanup;
@@ -1349,27 +1380,8 @@ SymCryptRsakeySetValueInternal(
             SymCryptRsaSelftest,
             SYMCRYPT_SELFTEST_ALGORITHM_RSA);
 
-        if( pkRsakey->hasPrivateKey )
-        {
-            // Unconditionally set the sign flag to enable SignVerify PCT on encrypt-only keypair
-            pkRsakey->fAlgorithmInfo |= SYMCRYPT_FLAG_RSAKEY_SIGN;
-
-            SYMCRYPT_RUN_KEY_IMPORT_PCT(
-                scError,
-                SymCryptRsaSignVerifyPct,
-                pkRsakey,
-                SYMCRYPT_PCT_RSA_SIGN );
-            if (scError != SYMCRYPT_NO_ERROR )
-            {
-                goto cleanup;
-            }
-
-            // Unset the sign flag before returning encrypt-only keypair
-            if ( ( flags & SYMCRYPT_FLAG_RSAKEY_SIGN ) == 0 )
-            {
-                pkRsakey->fAlgorithmInfo ^= SYMCRYPT_FLAG_RSAKEY_SIGN;
-            }
-        }
+        // PCT does not need to be run on import - mark it as done
+        pkRsakey->fAlgorithmInfo |= SYMCRYPT_PCT_RSA_SIGN;
     }
 
 cleanup:
