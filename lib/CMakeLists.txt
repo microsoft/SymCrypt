@@ -435,6 +435,7 @@ if(NOT WIN32)
         endif()
 
         add_library(symcrypt_envOpteeTa STATIC env_opteeTa.c)
+        set_target_properties(symcrypt_envOpteeTa PROPERTIES PREFIX "")
         target_link_libraries(symcrypt_envOpteeTa symcrypt_common)
     endif()
 endif()
