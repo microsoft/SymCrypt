@@ -429,10 +429,6 @@ SymCryptModulusCopy(
 
 UINT32
 SYMCRYPT_CALL
-SymCryptModulusBitsizeOfObject( _In_ PCSYMCRYPT_MODULUS pmSrc );
-
-UINT32
-SYMCRYPT_CALL
 SymCryptModulusDigitsizeOfObject( _In_ PCSYMCRYPT_MODULUS pmSrc );
 
 //========================================================================

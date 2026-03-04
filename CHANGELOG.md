@@ -2,6 +2,8 @@
 New changes will be listed here as they are developed. The version number is determined
 prior to the creation of a new release, based on the changes contained in that release.
 
+- Removed unimplemented function `SymCryptModulusBitsizeOfObject` from `symcrypt_low_level.h`
+
 # Version 103.10.1
 
 - Remove FIPS PCTs on keypair import
