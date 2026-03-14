@@ -765,16 +765,16 @@ SymCryptMlKemMontgomeryReduceAndAddPolyElementAccumulatorToPolyElement(
 
         // montgomery reduce sum of products
         inv = (a * SYMCRYPT_MLKEM_NegQInvModR) & SYMCRYPT_MLKEM_Rmask;
-        a = (a + (inv * SYMCRYPT_MLKEM_Q)) >> SYMCRYPT_MLKEM_Rlog2; // in range [0, 4711]
-        SYMCRYPT_ASSERT( a <= 4711 );
+        a = (a + (inv * SYMCRYPT_MLKEM_Q)) >> SYMCRYPT_MLKEM_Rlog2; // in range [0, 4698]
+        SYMCRYPT_ASSERT( a <= 4698 );
 
         // add destination
         c += a;
-        SYMCRYPT_ASSERT( c <= 8039 );
+        SYMCRYPT_ASSERT( c <= 8026 );
 
         // subtraction and conditional additions for constant time range reduction
-        c -= 2*SYMCRYPT_MLKEM_Q;           // in range [-2Q, 1381]
-        SYMCRYPT_ASSERT( (c >= ((UINT32)(-2*SYMCRYPT_MLKEM_Q))) || (c < 1381) );
+        c -= 2*SYMCRYPT_MLKEM_Q;           // in range [-2Q, 1368]
+        SYMCRYPT_ASSERT( (c >= ((UINT32)(-2*SYMCRYPT_MLKEM_Q))) || (c <= 1368) );
         c += SYMCRYPT_MLKEM_Q & (c >> 16); // in range [-Q, Q-1]
         SYMCRYPT_ASSERT( (c >= ((UINT32)-SYMCRYPT_MLKEM_Q)) || (c < SYMCRYPT_MLKEM_Q) );
         c += SYMCRYPT_MLKEM_Q & (c >> 16); // in range [0, Q-1]

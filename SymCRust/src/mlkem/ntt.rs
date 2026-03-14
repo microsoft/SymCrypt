@@ -8,13 +8,13 @@
 // ML-KEM (also known as Kyber) and ML-DSA (also known as Dilithium) are Post-Quantum algorithms based on the
 // Learning-With-Errors problem over Module Lattices (or the hardness of the M-LWE problem).
 //
-// A Module is a Vector Space over a Ring. That is, elements of the vector spaces are elements in the
-// underlying ring.
+// A Module is a generalization of a Vector Space, where the scalars are defined over a Ring instead of a Field.
 // We refer to Module as MLWE in the below types to avoid naming confusion with Module as in "FIPS module".
 // Though technically components acting on MLWE types could be used outside of the MLWE problem, these types
 // are SymCrypt-internal, and are only currently intended for use in these MLWE-based algorithms.
 //
-// In ML-KEM and ML-DSA, Polynomial Rings are used. That is, a ring defined over polynomials.
+// In ML-KEM and ML-DSA, the underlying Ring of the Module is a Polynomial Ring. That is, elements of the
+// vectors and matrices of the modules are polynomials.
 // For both schemes, the polynomial ring is defined modulo the polynomial (X^256 + 1). This means there is a
 // representative of each polynomial ring element with 256 coefficients (c_255*X^255 + c_254*X^254 + ... + c_0).
 // The coefficients themselves are modulo a small prime in both schemes. For ML-KEM the small prime is 3329
@@ -186,7 +186,7 @@ const ZETA_BIT_REV_TIMES_R_TIMES_NEG_Q_INV_MOD_R: [u16; 128] = [
 //
 // zetaTwoTimesBitRevPlus1TimesR =  [ (pow(17, 2*bitRev(i)+1, 3329) << 16) % 3329 for i in range(128) ]
 #[rustfmt::skip]
-const ZETA_TO_TIMES_BIT_REV_PLUS_1_TIMES_R: [u16; 128] = [
+const ZETA_TWO_TIMES_BIT_REV_PLUS_1_TIMES_R: [u16; 128] = [
     2226, 1103,  430, 2899,  555, 2774,  843, 2486,
     2078, 1251,  871, 2458, 1550, 1779,  105, 3224,
      422, 2907,  587, 2742,  177, 3152, 3094,  235,
@@ -459,6 +459,15 @@ fn poly_element_intt_layer(pe_src: &mut PolyElement, k: usize, len: usize) {
     }
 }
 
+const MAX_COEFF: u32                = Q-1;
+const MAX_COEFF_PRODUCT: u32        = MAX_COEFF*MAX_COEFF;
+
+// max([ ((i*j) + ((((i*j)*NegQInvModR) & Rmask)*Q)) >> Rlog2 for i in range(Q) for j in range(Q) ])
+const MAX_FIRST_STEP_REDUCTION: u32 = 3494;
+// max([ ( pow(17, (2*i)+1, Q) << Rlog2 ) % Q for i in range(128) ])
+const MAX_ZETA_TWO_TIMES_BIT_REV_PLUS_1_TIMES_R: u32 = 3254;
+const MAX_A1_B1_ZETA_POW: u32       = MAX_FIRST_STEP_REDUCTION*MAX_ZETA_TWO_TIMES_BIT_REV_PLUS_1_TIMES_R;
+
 fn poly_element_mul_and_accumulate(
     pe_src1: &PolyElement,
     pe_src2: &PolyElement,
@@ -476,9 +485,9 @@ fn poly_element_mul_and_accumulate(
         debug_assert!( b1 < Q );
 
         let mut c0: u32 = pa_dst[2*i];
-        debug_assert!( c0 <= 3*((3328*3328) + (3494*3312)) );
+        debug_assert!( c0 <= 3*(MAX_COEFF_PRODUCT + MAX_A1_B1_ZETA_POW) );
         let mut c1: u32 = pa_dst[(2*i)+1];
-        debug_assert!( c1 <= 3*((3328*3328) + (3494*3312)) );
+        debug_assert!( c1 <= 3*(MAX_COEFF_PRODUCT + MAX_A1_B1_ZETA_POW) );
 
         // multiplication results in range [0, 3328*3328]
         let mut a0b0: u32 = a0 * b0;
@@ -488,29 +497,31 @@ fn poly_element_mul_and_accumulate(
 
         // we need a1*b1*zetaTwoTimesBitRevPlus1TimesR[i]
         // eagerly reduce a1*b1 with montgomery reduction
-        // a1b1 = red(a1*b1) -> range [0,3494]
+        // a1b1 = red(a1*b1) -> range [0, MAX_FIRST_STEP_REDUCTION = 3494]
         //   (3494 is maximum result of first step of montgomery reduction of x*y for x,y in [0,3328])
         // we do not need to do final reduction yet
         let inv : u32 = (a1b1.wrapping_mul(NEG_Q_INV_MOD_R)) & RMASK;
-        let a1b1: u32 = (a1b1 + (inv * Q)) >> RLOG2; // in range [0, 3494]
-        debug_assert!( a1b1 <= 3494 );
+        let a1b1: u32 = (a1b1 + (inv * Q)) >> RLOG2; // in range [0, MAX_FIRST_STEP_REDUCTION]
+        debug_assert!( a1b1 <= MAX_FIRST_STEP_REDUCTION );
 
         // now multiply a1b1 by power of zeta
-        let a1b1zetapow = a1b1 * (ZETA_TO_TIMES_BIT_REV_PLUS_1_TIMES_R[i] as u32);
+        let a1b1zetapow = a1b1 * (ZETA_TWO_TIMES_BIT_REV_PLUS_1_TIMES_R[i] as u32);
+        // MAX_ZETA_TWO_TIMES_BIT_REV_PLUS_1_TIMES_R = 3254
+        // MAX_A1_B1_ZETA_POW = MAX_FIRST_STEP_REDUCTION*MAX_ZETA_TWO_TIMES_BIT_REV_PLUS_1_TIMES_R = 3494*3254
+        debug_assert!( a1b1zetapow <= MAX_A1_B1_ZETA_POW );
 
         // sum pairs of products
-        a0b0 += a1b1zetapow;    // a0*b0 + red(a1*b1)*zetapower in range [0, 3328*3328 + 3494*3312]
-        debug_assert!( a0b0 <= (3328*3328) + (3494*3312) );
-        a0b1 += a1b0;           // a0*b1 + a1*b0                in range [0, 2*3328*3328]
-        debug_assert!( a0b1 <= 2*3328*3328 );
+        a0b0 += a1b1zetapow;    // a0*b0 + red(a1*b1)*zetapower in range [0, MAX_COEFF_PRODUCT + MAX_A1_B1_ZETA_POW]
+        debug_assert!( a0b0 <= MAX_COEFF_PRODUCT + MAX_A1_B1_ZETA_POW );
+        a0b1 += a1b0;           // a0*b1 + a1*b0                in range [0, 2*MAX_COEFF_PRODUCT]
+        debug_assert!( a0b1 <= 2*MAX_COEFF_PRODUCT );
 
         // We sum at most 4 pairs of products into an accumulator in ML-KEM
         const { assert!( MATRIX_MAX_NROWS <= 4 ) }
-        c0 += a0b0; // in range [0,4*3328*3328 + 4*3494*3312]
-        debug_assert!( c0 < (4*3328*3328) + (4*3494*3312) );
-        c1 += a0b1; // in range [0,5*3328*3328 + 3*3494*3312]
-        debug_assert!( c1 < (5*3328*3328) + (3*3494*3312) );
-
+        c0 += a0b0; // in range [0,4*MAX_COEFF_PRODUCT + 4*MAX_A1_B1_ZETA_POW]
+        debug_assert!( c0 < (4*MAX_COEFF_PRODUCT) + (4*MAX_A1_B1_ZETA_POW) );
+        c1 += a0b1; // in range [0,5*MAX_COEFF_PRODUCT + 3*MAX_A1_B1_ZETA_POW]
+        debug_assert!( c1 < (5*MAX_COEFF_PRODUCT) + (3*MAX_A1_B1_ZETA_POW) );
 
         pa_dst[2*i  ] = c0;
         pa_dst[2*i+1] = c1;
@@ -523,7 +534,7 @@ fn montgomery_reduce_and_add_poly_element_accumulator_to_poly_element(
 ) {
     for i in 0usize..MLWE_POLYNOMIAL_COEFFICIENTS {
         let mut a: u32 = pa_src[i];
-        debug_assert!( a <= 4*((3328*3328) + (3494*3312)) );
+        debug_assert!( a <= 4*(MAX_COEFF_PRODUCT + MAX_A1_B1_ZETA_POW) );
         pa_src[i] = 0;
 
         let mut c: u32 = pe_dst[i].into();
@@ -531,16 +542,16 @@ fn montgomery_reduce_and_add_poly_element_accumulator_to_poly_element(
 
         // montgomery reduce sum of products
         let inv = (a.wrapping_mul(NEG_Q_INV_MOD_R)) & RMASK;
-        a = (a + (inv * Q)) >> RLOG2; // in range [0, 4711]
-        debug_assert!( a <= 4711 );
+        a = (a + (inv * Q)) >> RLOG2; // in range [0, 4698]
+        debug_assert!( a <= 4698 );
 
         // add destination
         c += a;
-        debug_assert!( c <= 8039 );
+        debug_assert!( c <= 8026 );
 
         // subtraction and conditional additions for constant time range reduction
-        c = c.wrapping_sub(2*Q);           // in range [-2Q, 1381]
-        debug_assert!( (c >= ((-2*(Q as i32)) as u32)) || (c < 1381) );
+        c = c.wrapping_sub(2*Q);           // in range [-2Q, 1368]
+        debug_assert!( (c >= ((-2*(Q as i32)) as u32)) || (c <= 1368) );
         c = c.wrapping_add(Q & (c >> 16)); // in range [-Q, Q-1]
         debug_assert!( (c >= (-(Q as i32) as u32)) || (c < Q) );
         c = c.wrapping_add(Q & (c >> 16)); // in range [0, Q-1]
@@ -603,14 +614,14 @@ pub fn poly_element_intt_and_mul_r(pe_src: &mut PolyElement) {
     }
 }
 
-// ((1<<35) / Q)
+// ((1<<33) / Q) rounded to nearest integer
 //
-// 1<<35 is the smallest power of 2 s.t. the constant has sufficient precision to round
+// 1<<33 is the smallest power of 2 s.t. the constant has sufficient precision to round
 // all inputs correctly in compression for all n_bits_per_coefficient < 12. A smaller
 // constant could be used for smaller n_bits_per_coefficient for a small performance gain
 //
-const COMPRESS_MULCONSTANT: u32 = 0x9d7dbb;
-const COMPRESS_SHIFTCONSTANT: u32 = 35;
+const COMPRESS_MULCONSTANT: u32 = 0x275f6f;
+const COMPRESS_SHIFTCONSTANT: u32 = 33;
 
 // FIXME: can't use std::cmp::min due to required vs provided methods, tracked via https://github.com/AeneasVerif/charon/issues/180
 // use std::cmp::min;
@@ -756,7 +767,7 @@ pub(super) fn poly_element_decode_and_decompress(
             coefficient = mod_reduce( coefficient );
             debug_assert!( coefficient < Q );
         }
-        else if coefficient > Q
+        else if coefficient >= Q
         {
             // input validation failure - this can happen with a malformed or corrupt encapsulation
             // or decapsulation key, but this validation failure only triggers on public data; we
