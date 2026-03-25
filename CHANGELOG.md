@@ -2,7 +2,12 @@
 New changes will be listed here as they are developed. The version number is determined
 prior to the creation of a new release, based on the changes contained in that release.
 
+
+# Version 103.10.2
+
 - Removed unimplemented function `SymCryptModulusBitsizeOfObject` from `symcrypt_low_level.h`
+- Update service indicator
+- Replace XMSS self-test with XMSS^MT self-test
 
 # Version 103.10.1
 

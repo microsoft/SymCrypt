@@ -3741,6 +3741,7 @@ SymCryptDeprecatedServiceIndicator(
 //      SYMCRYPT_SI_KAS_FFC_SSC         SYMCRYPT_SI_SPG_XXX                     SYMCRYPT_SI_SCHEME_XXX
 //      SYMCRYPT_SI_LMS_SIGVER          SYMCRYPT_LMS_XXX                        -
 //      SYMCRYPT_SI_XMSS_SIGVER         SYMCRYPT_XMSS_XXX                       -
+//      SYMCRYPT_SI_XMSS_MT_SIGVER      SYMCRYPT_XMSSMT_XXX                     -
 //
 //
 // Return value:
