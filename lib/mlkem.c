@@ -6,13 +6,19 @@
 
 #include "precomp.h"
 
+#define NROWS_MLKEM512   (2)
+#define NROWS_MLKEM768   (3)
+#define NROWS_MLKEM1024  (4)
+
 const SYMCRYPT_MLKEM_INTERNAL_PARAMS SymCryptMlKemInternalParamsMlKem512 =
 {
     .params         = SYMCRYPT_MLKEM_PARAMS_MLKEM512,
     .cbPolyElement  = SYMCRYPT_INTERNAL_MLKEM_SIZEOF_POLYRINGELEMENT,
-    .nRows          = 2,
-    .cbVector       = sizeof(SYMCRYPT_MLKEM_VECTOR) + (2*SYMCRYPT_INTERNAL_MLKEM_SIZEOF_POLYRINGELEMENT),
-    .cbMatrix       = sizeof(SYMCRYPT_MLKEM_MATRIX) + (2*2*SYMCRYPT_INTERNAL_MLKEM_SIZEOF_POLYRINGELEMENT),
+    .nRows          = NROWS_MLKEM512,
+    .cbVector       = sizeof(SYMCRYPT_MLKEM_VECTOR) + (NROWS_MLKEM512 * SYMCRYPT_INTERNAL_MLKEM_SIZEOF_POLYRINGELEMENT),
+    .cbMatrix       = sizeof(SYMCRYPT_MLKEM_MATRIX) + (NROWS_MLKEM512 *
+                                                       NROWS_MLKEM512 *
+                                                       SYMCRYPT_INTERNAL_MLKEM_SIZEOF_POLYRINGELEMENT),
     .nEta1          = 3,
     .nEta2          = 2,
     .nBitsOfU       = 10,
@@ -23,9 +29,11 @@ const SYMCRYPT_MLKEM_INTERNAL_PARAMS SymCryptMlKemInternalParamsMlKem768 =
 {
     .params         = SYMCRYPT_MLKEM_PARAMS_MLKEM768,
     .cbPolyElement  = SYMCRYPT_INTERNAL_MLKEM_SIZEOF_POLYRINGELEMENT,
-    .nRows          = 3,
-    .cbVector       = sizeof(SYMCRYPT_MLKEM_VECTOR) + (3*SYMCRYPT_INTERNAL_MLKEM_SIZEOF_POLYRINGELEMENT),
-    .cbMatrix       = sizeof(SYMCRYPT_MLKEM_MATRIX) + (3*3*SYMCRYPT_INTERNAL_MLKEM_SIZEOF_POLYRINGELEMENT),
+    .nRows          = NROWS_MLKEM768,
+    .cbVector       = sizeof(SYMCRYPT_MLKEM_VECTOR) + (NROWS_MLKEM768 * SYMCRYPT_INTERNAL_MLKEM_SIZEOF_POLYRINGELEMENT),
+    .cbMatrix       = sizeof(SYMCRYPT_MLKEM_MATRIX) + (NROWS_MLKEM768 *
+                                                       NROWS_MLKEM768 *
+                                                       SYMCRYPT_INTERNAL_MLKEM_SIZEOF_POLYRINGELEMENT),
     .nEta1          = 2,
     .nEta2          = 2,
     .nBitsOfU       = 10,
@@ -36,9 +44,11 @@ const SYMCRYPT_MLKEM_INTERNAL_PARAMS SymCryptMlKemInternalParamsMlKem1024 =
 {
     .params         = SYMCRYPT_MLKEM_PARAMS_MLKEM1024,
     .cbPolyElement  = SYMCRYPT_INTERNAL_MLKEM_SIZEOF_POLYRINGELEMENT,
-    .nRows          = 4,
-    .cbVector       = sizeof(SYMCRYPT_MLKEM_VECTOR) + (4*SYMCRYPT_INTERNAL_MLKEM_SIZEOF_POLYRINGELEMENT),
-    .cbMatrix       = sizeof(SYMCRYPT_MLKEM_MATRIX) + (4*4*SYMCRYPT_INTERNAL_MLKEM_SIZEOF_POLYRINGELEMENT),
+    .nRows          = NROWS_MLKEM1024,
+    .cbVector       = sizeof(SYMCRYPT_MLKEM_VECTOR) + (NROWS_MLKEM1024 * SYMCRYPT_INTERNAL_MLKEM_SIZEOF_POLYRINGELEMENT),
+    .cbMatrix       = sizeof(SYMCRYPT_MLKEM_MATRIX) + (NROWS_MLKEM1024 *
+                                                       NROWS_MLKEM1024 *
+                                                       SYMCRYPT_INTERNAL_MLKEM_SIZEOF_POLYRINGELEMENT),
     .nEta1          = 2,
     .nEta2          = 2,
     .nBitsOfU       = 11,
@@ -182,14 +192,20 @@ SymCryptMlKemkeyFree(
 
 #define SYMCRYPT_MLKEM_SIZEOF_ENCODED_UNCOMPRESSED_VECTOR(_nRows)   (384UL * _nRows)
 
-// d and z are each 32 bytes
-#define SYMCRYPT_MLKEM_SIZEOF_FORMAT_PRIVATE_SEED               (2*32)
 // s and t are encoded uncompressed vectors
 // public seed, H(encapsulation key) and z are each 32 bytes
 #define SYMCRYPT_MLKEM_SIZEOF_FORMAT_DECAPSULATION_KEY(_nRows)  ((2*SYMCRYPT_MLKEM_SIZEOF_ENCODED_UNCOMPRESSED_VECTOR(_nRows)) + (3*32))
 // t is encoded uncompressed vector
 // public seed is 32 bytes
 #define SYMCRYPT_MLKEM_SIZEOF_FORMAT_ENCAPSULATION_KEY(_nRows)  (SYMCRYPT_MLKEM_SIZEOF_ENCODED_UNCOMPRESSED_VECTOR(_nRows) + 32)
+
+C_ASSERT( SYMCRYPT_MLKEM_SIZEOF_FORMAT_DECAPSULATION_KEY(NROWS_MLKEM512) == SYMCRYPT_MLKEM_DECAPSULATION_KEY_SIZE_MLKEM512 );
+C_ASSERT( SYMCRYPT_MLKEM_SIZEOF_FORMAT_DECAPSULATION_KEY(NROWS_MLKEM768) == SYMCRYPT_MLKEM_DECAPSULATION_KEY_SIZE_MLKEM768 );
+C_ASSERT( SYMCRYPT_MLKEM_SIZEOF_FORMAT_DECAPSULATION_KEY(NROWS_MLKEM1024) == SYMCRYPT_MLKEM_DECAPSULATION_KEY_SIZE_MLKEM1024 );
+
+C_ASSERT( SYMCRYPT_MLKEM_SIZEOF_FORMAT_ENCAPSULATION_KEY(NROWS_MLKEM512) == SYMCRYPT_MLKEM_ENCAPSULATION_KEY_SIZE_MLKEM512 );
+C_ASSERT( SYMCRYPT_MLKEM_SIZEOF_FORMAT_ENCAPSULATION_KEY(NROWS_MLKEM768) == SYMCRYPT_MLKEM_ENCAPSULATION_KEY_SIZE_MLKEM768 );
+C_ASSERT( SYMCRYPT_MLKEM_SIZEOF_FORMAT_ENCAPSULATION_KEY(NROWS_MLKEM1024) == SYMCRYPT_MLKEM_ENCAPSULATION_KEY_SIZE_MLKEM1024 );
 
 SYMCRYPT_ERROR
 SYMCRYPT_CALL
@@ -216,7 +232,7 @@ SymCryptMlKemSizeofKeyFormatFromParams(
     switch( mlKemkeyFormat )
     {
         case SYMCRYPT_MLKEMKEY_FORMAT_PRIVATE_SEED:
-            *pcbKeyFormat = SYMCRYPT_MLKEM_SIZEOF_FORMAT_PRIVATE_SEED;
+            *pcbKeyFormat = SYMCRYPT_MLKEM_PRIVATE_SEED_SIZE;
             break;
 
         case SYMCRYPT_MLKEMKEY_FORMAT_DECAPSULATION_KEY:
@@ -463,7 +479,7 @@ SymCryptMlKemkeySetValue(
 
     if( mlKemkeyFormat == SYMCRYPT_MLKEMKEY_FORMAT_PRIVATE_SEED )
     {
-        if( cbSrc != SYMCRYPT_MLKEM_SIZEOF_FORMAT_PRIVATE_SEED )
+        if( cbSrc != SYMCRYPT_MLKEM_PRIVATE_SEED_SIZE )
         {
             scError = SYMCRYPT_WRONG_KEY_SIZE;
             goto cleanup;
@@ -604,7 +620,7 @@ SymCryptMlKemkeyGetValue(
 
     if( mlKemkeyFormat == SYMCRYPT_MLKEMKEY_FORMAT_PRIVATE_SEED )
     {
-        if( cbDst != SYMCRYPT_MLKEM_SIZEOF_FORMAT_PRIVATE_SEED )
+        if( cbDst != SYMCRYPT_MLKEM_PRIVATE_SEED_SIZE )
         {
             scError = SYMCRYPT_WRONG_KEY_SIZE;
             goto cleanup;
@@ -687,7 +703,7 @@ SymCryptMlKemkeyGenerate(
                                 UINT32              flags )
 {
     SYMCRYPT_ERROR scError = SYMCRYPT_NO_ERROR;
-    BYTE privateSeed[SYMCRYPT_MLKEM_SIZEOF_FORMAT_PRIVATE_SEED];
+    BYTE privateSeed[SYMCRYPT_MLKEM_PRIVATE_SEED_SIZE];
     PBYTE  pbPctCipherText = NULL;
     SIZE_T cbPctCipherText = 0;
 
@@ -728,7 +744,7 @@ SymCryptMlKemkeyGenerate(
         // v polynomial encoded with nBitsOfV * SYMCRYPT_MLWE_POLYNOMIAL_COEFFICIENTS bits
         cbV = nBitsOfV * (SYMCRYPT_MLWE_POLYNOMIAL_COEFFICIENTS / 8);
         cbPctCipherText = cbU + cbV;
-    
+
         pbPctCipherText = SymCryptCallbackAlloc( cbPctCipherText );
         if( pbPctCipherText == NULL )
         {
@@ -736,7 +752,7 @@ SymCryptMlKemkeyGenerate(
             goto cleanup;
         }
 
-        C_ASSERT( SYMCRYPT_MLKEM_SIZEOF_FORMAT_PRIVATE_SEED >= 2*SYMCRYPT_MLKEM_SIZEOF_AGREED_SECRET );
+        C_ASSERT( SYMCRYPT_MLKEM_PRIVATE_SEED_SIZE >= 2*SYMCRYPT_MLKEM_SIZEOF_AGREED_SECRET );
 
         // reuse bytes 0..31 of privateSeed buffer for encapsulation shared secret
         scError = SymCryptMlKemEncapsulate(

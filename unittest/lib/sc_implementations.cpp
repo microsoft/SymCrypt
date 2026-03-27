@@ -110,6 +110,10 @@ SYMCRYPT_MLKEM_PARAMS
 SetupSymCryptMlKemKey( PBYTE buf1, SIZE_T keySize );
 
 template<class Implementation>
+SYMCRYPT_COMPOSITE_MLKEM_PARAMS
+SetupSymCryptCompositeMlKemKey( PBYTE buf1, SIZE_T keySize );
+
+template<class Implementation>
 VOID
 SetupSymCryptMlDsaKey( PBYTE pbKey, SIZE_T keySize );
 
@@ -337,7 +341,7 @@ addSymCryptImplementationToGlobalList()
     addImplementationToGlobalList<ParallelHashImp<ImpScVariant, AlgParallelSha512>>();
 
     addImplementationToGlobalList<XtsImp<ImpScVariant, AlgXtsAes>>();
-    
+
     addImplementationToGlobalList<KeyWrapImp<ImpScVariant, AlgAesKw>>();
     addImplementationToGlobalList<KeyWrapImp<ImpScVariant, AlgAesKwp>>();
 
@@ -411,6 +415,9 @@ addSymCryptImplementationToGlobalList()
     addImplementationToGlobalList<KemImp<ImpScVariant, AlgMlKem>>();
     addImplementationToGlobalList<ArithImp<ImpScVariant, AlgMlKemkeySetValue>>();
 
+    addImplementationToGlobalList<KemImp<ImpScVariant, AlgCompositeMlKem>>();
+    addImplementationToGlobalList<ArithImp<ImpScVariant, AlgCompositeMlKemkeySetValue>>();
+
     addImplementationToGlobalList<PqDsaImp<ImpScVariant, AlgMlDsa>>();
     addImplementationToGlobalList<ArithImp<ImpScVariant, AlgMlDsakeySetValue>>();
 
@@ -431,7 +438,7 @@ addSymCryptImplementationToGlobalList()
 
     addImplementationToGlobalList<ArithImp<ImpScVariant, AlgTrialDivision>>();
     addImplementationToGlobalList<ArithImp<ImpScVariant, AlgTrialDivisionContext>>();
-    
+
     addImplementationToGlobalList<ArithImp<ImpScVariant, AlgTlsHandshake>>();
 }
 

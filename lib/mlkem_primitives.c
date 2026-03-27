@@ -1412,3 +1412,15 @@ SymCryptMlKemVectorDecodeAndDecompress(
 cleanup:
     return scError;
 }
+
+VOID
+SYMCRYPT_CALL
+SymCryptMlKemkeyWipePrivateState(
+    _Inout_ PSYMCRYPT_MLKEMKEY  pkMlKemkey )
+{
+    SymCryptMlKemVectorSetZero( pkMlKemkey->pvs );
+    SymCryptWipeKnownSize( pkMlKemkey->privateRandom, sizeof(pkMlKemkey->privateRandom) );
+    SymCryptWipeKnownSize( pkMlKemkey->privateSeed, sizeof(pkMlKemkey->privateSeed) );
+    pkMlKemkey->hasPrivateKey = FALSE;
+    pkMlKemkey->hasPrivateSeed = FALSE;
+}

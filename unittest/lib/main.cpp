@@ -422,6 +422,8 @@ const char * g_algorithmNames[] = {
     AlgMlDsa::name,
     AlgMlDsakeySetValue::name,
     AlgTlsHandshake::name,
+    AlgCompositeMlKem::name,
+    AlgCompositeMlKemkeySetValue::name,
 
     AlgDeveloperTest::name,
     NULL,
@@ -1167,6 +1169,21 @@ testpbkdf2()
 }
 #endif
 
+VOID
+initCachedEcurves()
+{
+    INT64 nOutstandingAllocs = SYMCRYPT_INTERNAL_VOLATILE_READ64( &g_nOutstandingCheckedAllocs );
+
+    // Force initialization of cache curves now, and exclude them from our
+    // outstanding allocation count to avoid false positives for memory leaks.
+    for( UINT32 i = 0; i < SYMCRYPT_CACHED_ECURVE_ID_COUNT; i++ )
+    {
+        SymCryptGetCachedEcurve( (SYMCRYPT_CACHED_ECURVE_ID)i );
+    }
+
+    SYMCRYPT_INTERNAL_VOLATILE_WRITE64( &g_nOutstandingCheckedAllocs, nOutstandingAllocs );
+}
+
 //
 // Reach into the internals of SymCrypt to retrieve the build string
 extern "C" {
@@ -1257,6 +1274,8 @@ initTestInfrastructure( int argc, _In_reads_( argc ) char * argv[] )
     }
 
     AllocWithChecksInit();
+
+    initCachedEcurves();
 
     printOutput( 0 );
 }
@@ -1355,6 +1374,8 @@ runFunctionalTests()
 
     testPqDsa();
 
+    testCompositeHelpers();
+
     printSymCryptFipsGetSelftestsPerformed();
 
     testStatusIndicator(g_printStatusIndicator);
@@ -1428,10 +1449,11 @@ runPerfTests()
                 {
                     UINT32 keySize = (UINT32) (j->keySize & 0xffff);
 
-                    // Hack: For ML-DSA, don't multiply the key size by 8 since it refers to a
+                    // Hack: For ML-DSA / Composite ML-KEM, don't multiply the key size by 8 since it refers to a
                     // parameter set. In the future we should refactor the performance measurement
                     // architecture to be able to handle these types of algorithms more gracefully.
-                    if( (*i)->m_algorithmName.substr(0, 5) != "MlDsa" )
+                    if( (*i)->m_algorithmName.substr(0, 5) != "MlDsa" &&
+                        (*i)->m_algorithmName.substr(0, 14) != "CompositeMlKem")
                     {
                         keySize *= 8;
                     }

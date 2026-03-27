@@ -1092,6 +1092,18 @@ public:
     static constexpr const char * name = "MlDsakeySetValue";
 };
 
+class AlgCompositeMlKem{
+public:
+    static constexpr const char * name = "CompositeMlKem";
+};
+
+// Used only for performance testing
+class AlgCompositeMlKemkeySetValue{
+public:
+    static constexpr const char * name = "CompositeMlKemkeySetValue";
+};
+
+
 class AlgDeveloperTest{
 public:
     static constexpr const char * name = "DeveloperTest";
@@ -1527,6 +1539,9 @@ testArithmetic();
 
 VOID
 testKem();
+
+VOID
+testCompositeHelpers();
 
 VOID
 testScsTable();
@@ -2059,6 +2074,13 @@ printXmmRegisters( PCSTR text );
 #define PERF_KEY_MLDSA_65   (65)   // ML-DSA-65
 #define PERF_KEY_MLDSA_87   (87)   // ML-DSA-87
 
+//
+// Composite ML-KEM parameters. These are not key sizes, but refer to the different
+// supported Composite ML-KEM parameter sets.
+//
+#define PERF_KEY_COMPOSITE_MLKEM_768_P256   (1)
+#define PERF_KEY_COMPOSITE_MLKEM_768_X25519 (2)
+#define PERF_KEY_COMPOSITE_MLKEM_1024_P384  (3)
 PCBYTE
 getPerfTestModulus( UINT32 exKeySize );
 

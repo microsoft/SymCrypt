@@ -249,6 +249,9 @@ const ALG_MEASURE_PARAMS g_algMeasureParams[] =
     "MlKem"                 , 0, {PERF_KEY_MLKEM_512, PERF_KEY_MLKEM_768, PERF_KEY_MLKEM_1024}, {PERF_DATASIZE_SAME_AS_KEYSIZE},
     "MlKemkeySetValue"      , 0, {PERF_KEY_MLKEM_512, PERF_KEY_MLKEM_768, PERF_KEY_MLKEM_1024}, {PERF_DATASIZE_SAME_AS_KEYSIZE},
 
+    "CompositeMlKem"            , 0, {PERF_KEY_COMPOSITE_MLKEM_768_P256, PERF_KEY_COMPOSITE_MLKEM_768_X25519, PERF_KEY_COMPOSITE_MLKEM_1024_P384}, {PERF_DATASIZE_SAME_AS_KEYSIZE},
+    "CompositeMlKemkeySetValue" , 0, {PERF_KEY_COMPOSITE_MLKEM_768_P256, PERF_KEY_COMPOSITE_MLKEM_768_X25519, PERF_KEY_COMPOSITE_MLKEM_1024_P384}, {PERF_DATASIZE_SAME_AS_KEYSIZE},
+
     "MlDsa"                 , 0, {PERF_KEY_MLDSA_44, PERF_KEY_MLDSA_65, PERF_KEY_MLDSA_87}, {PERF_DATASIZE_SAME_AS_KEYSIZE},
     "MlDsakeySetValue"      , 0, {PERF_KEY_MLDSA_44, PERF_KEY_MLDSA_65, PERF_KEY_MLDSA_87}, {PERF_DATASIZE_SAME_AS_KEYSIZE},
 
@@ -1135,7 +1138,8 @@ VOID measurePerfOneAlg( AlgorithmImplementation * pAlgImp )
                 !STRICMP(pParams->algName, "RsakeySetValue") ||
                 !STRICMP(pParams->algName, "RsakeySetValueFromPrivateExponent") ||
                 !STRICMP(pParams->algName, "MlDsakeySetValue") ||
-                !STRICMP(pParams->algName, "MlKemkeySetValue") )
+                !STRICMP(pParams->algName, "MlKemkeySetValue") ||
+                !STRICMP(pParams->algName, "CompositeMlKemkeySetValue") )
             {
                 perfInfo.operationName = "pub";
             }
@@ -1175,7 +1179,8 @@ VOID measurePerfOneAlg( AlgorithmImplementation * pAlgImp )
                 !STRICMP(pParams->algName, "RsakeySetValue") ||
                 !STRICMP(pParams->algName, "RsakeySetValueFromPrivateExponent") ||
                 !STRICMP(pParams->algName, "MlDsakeySetValue") ||
-                !STRICMP(pParams->algName, "MlKemkeySetValue") )
+                !STRICMP(pParams->algName, "MlKemkeySetValue") ||
+                !STRICMP(pParams->algName, "CompositeMlKemkeySetValue") )
             {
                 perfInfo.operationName = "pri";
             }

@@ -2772,7 +2772,7 @@ SymCryptEcDsaSignEx(
 //      not be truncated.
 //
 //      SYMCRYPT_FLAG_DATA_PUBLIC: If specified, all inputs, including the private key, are
-//      considered as public information and are not protected against side channel attacks. 
+//      considered as public information and are not protected against side channel attacks.
 //      This should only be used when signing with a publicly known private key (i.e. in the ECDSA self-test)
 //
 
@@ -2810,6 +2810,43 @@ SymCryptMlKemEncapsulateEx(
 //   SYMCRYPT_MLKEM_CIPHERTEXT_SIZE_*).
 //
 
+SYMCRYPT_ERROR
+SYMCRYPT_CALL
+SymCryptCompositeMlKemEncapsulateEx(
+    _In_                                    PCSYMCRYPT_COMPOSITE_MLKEMKEY   pkCompositeMlKemkey,
+    _In_reads_bytes_opt_( cbMlKemRandom )   PCBYTE                          pbMlKemRandom,
+                                            SIZE_T                          cbMlKemRandom,
+    _In_reads_bytes_opt_( cbTradRandom )    PCBYTE                          pbTradRandom,
+                                            SIZE_T                          cbTradRandom,
+    _Out_writes_bytes_( cbAgreedSecret )    PBYTE                           pbAgreedSecret,
+                                            SIZE_T                          cbAgreedSecret,
+    _Out_writes_bytes_( cbCiphertext )      PBYTE                           pbCiphertext,
+                                            SIZE_T                          cbCiphertext );
+
+//
+// Performs the Encapsulate operation of Composite ML-KEM using caller-provided random input.
+// It is used in verifying test vectors of Composite ML-KEM.
+//
+// This uses the public information of a Composite ML-KEM keypair to generate an agreed secret
+// and a ciphertext. Only a peer with the private information of a Composite ML-KEM keypair can
+// decapsulate the ciphertext to compute the agreed secret.
+//
+// The arguments are the following:
+// - pkCompositeMlKemkey: a key which contains public information required for encapsulation.
+// - (pbMlKemRandom, cbMlKemRandom): a buffer containing the input random for the ML-KEM component.
+//   When pbMlKemRandom is NULL, cbMlKemRandom should be 0, and the function will generate the necessary random input internally.
+//   Currently when pbMlKemRandom is not NULL, cbMlKemRandom must be 32 for all parameterizations of Composite ML-KEM.
+// - (pbTradRandom, cbTradRandom): a buffer containing the input random for the traditional component.
+//   When the traditional portion is an EC key, cbTradRandom must be equal to the private key size of the EC key.
+//   If pbTradRandom is NULL, cbTradRandom should be 0, and the function will generate the necessary random input internally.
+//   Currently, only EC keys are supported for the traditional component.
+// - (pbAgreedSecret, cbAgreedSecret): a buffer into which the generated secret is written.
+//   Currently cbAgreedSecret must be 32 for all parameterizations of Composite ML-KEM.
+// - (pbCiphertext, cbCiphertext): a buffer into which the encapsulated secret is written.
+//   cbCiphertext must equal cbCiphertext given by SymCryptCompositeMlKemSizeofCiphertextFromParams,
+//   though typically this value can be known statically (see definition of
+//   SYMCRYPT_COMPOSITE_MLKEM_CIPHERTEXT_SIZE_*).
+//
 
 //===================================================================
 // 802.11 SAE protocol

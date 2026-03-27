@@ -9873,7 +9873,7 @@ SymCryptLmsSign(
 // modules. Special care must be taken to ensure that the same private key state is not used more than once to
 // sign messages. This can be done, for instance, by releasing a signature only after verifying that the private
 // key has been updated and serialized to a physical storage.
-// 
+//
 // Parameters:
 //      pKey: A pointer to a SYMCRYPT_LMS_KEY structure that represents the LMS key object to be used for signing the message.
 //      The structure must be valid and non-null, and must contain the private key values for the LMS scheme. The private key
@@ -10003,6 +10003,17 @@ SymCryptMlKemkeyFree(
     _Inout_ PSYMCRYPT_MLKEMKEY  pkMlKemkey );
 
 
+// d and z are each 32 bytes
+#define SYMCRYPT_MLKEM_PRIVATE_SEED_SIZE    (2*32)
+
+#define SYMCRYPT_MLKEM_ENCAPSULATION_KEY_SIZE_MLKEM512   (800)
+#define SYMCRYPT_MLKEM_ENCAPSULATION_KEY_SIZE_MLKEM768   (1184)
+#define SYMCRYPT_MLKEM_ENCAPSULATION_KEY_SIZE_MLKEM1024  (1568)
+
+#define SYMCRYPT_MLKEM_DECAPSULATION_KEY_SIZE_MLKEM512   (1632)
+#define SYMCRYPT_MLKEM_DECAPSULATION_KEY_SIZE_MLKEM768   (2400)
+#define SYMCRYPT_MLKEM_DECAPSULATION_KEY_SIZE_MLKEM1024  (3168)
+
 SYMCRYPT_ERROR
 SYMCRYPT_CALL
 SymCryptMlKemSizeofKeyFormatFromParams(
@@ -10011,7 +10022,7 @@ SymCryptMlKemSizeofKeyFormatFromParams(
     _Out_   SIZE_T*                     pcbKeyFormat );
 //
 // Gives the size in bytes of the blob of the given format for the given ML-KEM
-// parameters and the specified format via cbKeyFormat output.
+// parameters via pcbKeyFormat output.
 // Returns SYMCRYPT_INCOMPATIBLE_FORMAT if mlKemkeyFormat is an unsupported value,
 // or SYMCRYPT_INVALID_ARGUMENT if other parameters are invalid.
 //
@@ -10135,7 +10146,7 @@ SymCryptMlKemDecapsulate(
 //
 // Performs the Decapsulate operation of ML-KEM.
 // This uses the private information of an ML-KEM keypair to generate an agreed
-// secret and a ciphertext which can be decapsulated with the secret decapsulation key.
+// secret from a ciphertext.
 //
 // The arguments are the following:
 // - pkMlKemkey: a key which contains private information required for decapsulation.
@@ -10150,9 +10161,8 @@ SymCryptMlKemDecapsulate(
 // will "implicitly reject" the ciphertext, by returning success in equal time to a valid
 // decapsulation operation, with pseudo-random agreed secret output. This forces higher
 // level protocols to fail later when symmetric keys of peers do not match.
-// So decapsulate will only ever fail if there are programming errors (i.e. incorrect
-// size, use of uninitialized pkMlKemkey), or something fundamentally goes wrong with the
-// environment (i.e. internal memory allocation fails, or self-test detect hardware error).
+// So decapsulate will only ever return an error if there are programming errors (e.g. incorrect size),
+// or something fundamentally goes wrong with the environment (e.g. internal memory allocation fails).
 //
 
 VOID
@@ -10162,6 +10172,219 @@ SymCryptMlKemSelftest(void);
 // FIPS self-test for ML-KEM. If the self-test fails, SymCryptFatal will be called to fastfail.
 // The self-test will automatically be performed before first operational use of ML-KEM if using
 // keys with FIPS validation, so most callers should never use this function.
+//
+
+//
+// COMPOSITE MLKEMKEY objects' API
+//
+// The below formats apply **only to external formats**: When somebody is importing or exporting
+// a key. The internal format of the keys is not visible to the caller.
+typedef enum _SYMCRYPT_COMPOSITE_MLKEMKEY_FORMAT {
+    SYMCRYPT_COMPOSITE_MLKEMKEY_FORMAT_NULL              = 0,
+    SYMCRYPT_COMPOSITE_MLKEMKEY_FORMAT_IRTF_PRIVATE_SEED = 1,
+        // 32-byte seed for deriving Composite ML-KEM key, per irtf-cfrg-hybrid-kems CG framework
+    SYMCRYPT_COMPOSITE_MLKEMKEY_FORMAT_LAMPS_PRIVATE_KEY = 2,
+        // Standard byte encoding of a Composite ML-KEM private key, per LAMPS composite ML-KEM draft 12.
+        // Concatenation of ML-KEM private seed and private key of the traditional component:
+        //   mlkemSeed || tradSK
+        // Size in bytes are MLKEM768_P256: 115, MLKEM768_X25519: 96, MLKEM1024_P384: 128
+    SYMCRYPT_COMPOSITE_MLKEMKEY_FORMAT_PUBLIC_KEY        = 3,
+        // Standard byte encoding of a Composite ML-KEM public key, per irtf-cfrg-hybrid-kems CG framework
+        // and LAMPS composite ML-KEM draft 12.
+        // Concatenation of ML-KEM encapsulation key and public key of the traditional component:
+        //   mlkemPK || tradPK
+        // Size in bytes are MLKEM768_P256: 1249, MLKEM768_X25519: 1216, MLKEM1024_P384: 1665
+} SYMCRYPT_COMPOSITE_MLKEMKEY_FORMAT;
+
+
+typedef enum _SYMCRYPT_COMPOSITE_MLKEM_PARAMS {
+    SYMCRYPT_COMPOSITE_MLKEM_PARAMS_NULL            = 0,
+    SYMCRYPT_COMPOSITE_MLKEM_PARAMS_MLKEM768_P256   = 1,
+    SYMCRYPT_COMPOSITE_MLKEM_PARAMS_MLKEM768_X25519 = 2,
+    SYMCRYPT_COMPOSITE_MLKEM_PARAMS_MLKEM1024_P384  = 3,
+} SYMCRYPT_COMPOSITE_MLKEM_PARAMS;
+//
+// Currently supported Composite ML-KEM parameter sets are represented externally only by the enum
+//
+
+PSYMCRYPT_COMPOSITE_MLKEMKEY
+SYMCRYPT_CALL
+SymCryptCompositeMlKemkeyAllocate(
+    SYMCRYPT_COMPOSITE_MLKEM_PARAMS   params );
+//
+// Allocate and create a new COMPOSITE_MLKEMKEY object sized according to the specified parameters.
+//
+// This call does not initialize the key. It should be
+// followed by a call to SymCryptCompositeMlKemkeyGenerate or
+// SymCryptCompositeMlKemkeySetValue.
+//
+
+VOID
+SYMCRYPT_CALL
+SymCryptCompositeMlKemkeyFree(
+    _Inout_ PSYMCRYPT_COMPOSITE_MLKEMKEY    pkCompositeMlKemkey );
+
+
+#define SYMCRYPT_COMPOSITE_MLKEM_IRTF_PRIVATE_SEED_SIZE (32)
+
+#define SYMCRYPT_COMPOSITE_MLKEM_LAMPS_PRIVATE_KEY_SIZE_MLKEM768_P256   (115)
+#define SYMCRYPT_COMPOSITE_MLKEM_LAMPS_PRIVATE_KEY_SIZE_MLKEM768_X25519 (96)
+#define SYMCRYPT_COMPOSITE_MLKEM_LAMPS_PRIVATE_KEY_SIZE_MLKEM1024_P384  (128)
+
+#define SYMCRYPT_COMPOSITE_MLKEM_PUBLIC_KEY_SIZE_MLKEM768_P256      (1249)
+#define SYMCRYPT_COMPOSITE_MLKEM_PUBLIC_KEY_SIZE_MLKEM768_X25519    (1216)
+#define SYMCRYPT_COMPOSITE_MLKEM_PUBLIC_KEY_SIZE_MLKEM1024_P384     (1665)
+
+
+SYMCRYPT_ERROR
+SYMCRYPT_CALL
+SymCryptCompositeMlKemSizeofKeyFormatFromParams(
+            SYMCRYPT_COMPOSITE_MLKEM_PARAMS     params,
+            SYMCRYPT_COMPOSITE_MLKEMKEY_FORMAT  compositeMlKemkeyformat,
+    _Out_   SIZE_T*                             pcbKeyFormat );
+//
+// Gives the size in bytes of the blob of the given format for the given Composite ML-KEM
+// parameters via pcbKeyFormat output.
+// Returns SYMCRYPT_INCOMPATIBLE_FORMAT if compositeMlKemkeyformat is an unsupported value,
+// or SYMCRYPT_INVALID_ARGUMENT if other parameters are invalid.
+//
+
+#define SYMCRYPT_COMPOSITE_MLKEM_CIPHERTEXT_SIZE_MLKEM768_P256    (1153)
+#define SYMCRYPT_COMPOSITE_MLKEM_CIPHERTEXT_SIZE_MLKEM768_X25519  (1120)
+#define SYMCRYPT_COMPOSITE_MLKEM_CIPHERTEXT_SIZE_MLKEM1024_P384   (1665)
+
+SYMCRYPT_ERROR
+SYMCRYPT_CALL
+SymCryptCompositeMlKemSizeofCiphertextFromParams(
+            SYMCRYPT_COMPOSITE_MLKEM_PARAMS params,
+    _Out_   SIZE_T*                         pcbCiphertext );
+//
+// Gives the size in bytes of the ciphertext for the given Composite ML-KEM parameters.
+// Returns SYMCRYPT_INVALID_ARGUMENT if parameters are invalid.
+//
+
+SYMCRYPT_ERROR
+SYMCRYPT_CALL
+SymCryptCompositeMlKemkeyGenerate(
+    _Inout_ PSYMCRYPT_COMPOSITE_MLKEMKEY    pkCompositeMlKemkey,
+            UINT32                          flags );
+//
+// Generate a new random Composite ML-KEM key using the information from the
+// parameters passed to SymCryptCompositeMlKemkeyAllocate.
+//
+// Allowed flags:
+//
+// - SYMCRYPT_FLAG_KEY_NO_FIPS
+//   Opt-out of performing validation required for FIPS
+//
+// Described in more detail in the "Flags for asymmetric key generation and import" section above
+//
+
+SYMCRYPT_ERROR
+SYMCRYPT_CALL
+SymCryptCompositeMlKemkeySetValue(
+    _In_reads_bytes_( cbSrc )   PCBYTE                              pbSrc,
+                                SIZE_T                              cbSrc,
+                                SYMCRYPT_COMPOSITE_MLKEMKEY_FORMAT  compositeMlKemkeyFormat,
+                                UINT32                              flags,
+    _Inout_                     PSYMCRYPT_COMPOSITE_MLKEMKEY        pkCompositeMlKemkey );
+//
+// Import key material to a Composite ML-KEM key object. The arguments are the following:
+//  - (pbSrc, cbSrc): a buffer containing a representation of a Composite ML-KEM key,
+//    in format specified by compositeMlKemkeyFormat.
+//  - compositeMlKemkeyFormat format of the input
+//
+// Allowed flags:
+//
+// - SYMCRYPT_FLAG_KEY_NO_FIPS
+//   Opt-out of performing validation required for FIPS
+//
+// - SYMCRYPT_FLAG_KEY_MINIMAL_VALIDATION
+//   Opt-out of performing almost all validation - must be specified with SYMCRYPT_FLAG_KEY_NO_FIPS
+//
+// Remarks:
+// - cbSrc must be equal to the cbKeyFormat returned from
+//   SymCryptCompositeMlKemSizeofKeyFormatFromParams(params, compositeMlKemkeyFormat, &cbKeyFormat), though
+//   typically this value can be known statically (see definition of SYMCRYPT_COMPOSITE_MLKEMKEY_FORMAT)
+//
+
+SYMCRYPT_ERROR
+SYMCRYPT_CALL
+SymCryptCompositeMlKemkeyGetValue(
+    _In_                        PCSYMCRYPT_COMPOSITE_MLKEMKEY       pkCompositeMlKemkey,
+    _Out_writes_bytes_( cbDst ) PBYTE                               pbDst,
+                                SIZE_T                              cbDst,
+                                SYMCRYPT_COMPOSITE_MLKEMKEY_FORMAT  compositeMlKemkeyFormat,
+                                UINT32                              flags );
+//
+// Export key material from a Composite ML-KEM key object. The arguments are the following:
+//  - (pbDst, cbDst): a buffer into which a representation of a Composite ML-KEM key is
+//    written, in the format specified by compositeMlKemkeyFormat.
+//  - compositeMlKemkeyFormat format of the output
+//
+// Allowed flags:
+//      - None.
+//
+//  Remarks:
+//  - If the key object does not have the information required to export to the format
+//    specified by compositeMlKemkeyFormat this function will return SYMCRYPT_INCOMPATIBLE_FORMAT.
+//  - cbDst must be equal to the cbKeyFormat returned from
+//    SymCryptCompositeMlKemSizeofKeyFormatFromParams(params, compositeMlKemkeyFormat, &cbKeyFormat), though typically this
+//    value can be known statically (see definition of SYMCRYPT_COMPOSITE_MLKEMKEY_FORMAT)
+//
+
+SYMCRYPT_ERROR
+SYMCRYPT_CALL
+SymCryptCompositeMlKemEncapsulate(
+    _In_                                    PCSYMCRYPT_COMPOSITE_MLKEMKEY   pkCompositeMlKemkey,
+    _Out_writes_bytes_( cbAgreedSecret )    PBYTE                           pbAgreedSecret,
+                                            SIZE_T                          cbAgreedSecret,
+    _Out_writes_bytes_( cbCiphertext )      PBYTE                           pbCiphertext,
+                                            SIZE_T                          cbCiphertext );
+//
+// Performs the Encapsulate operation of Composite ML-KEM.
+// This uses the public information of a Composite ML-KEM keypair to generate an agreed secret
+// and a ciphertext. Only a peer with the private information of a Composite ML-KEM keypair can
+// decapsulate the ciphertext to compute the agreed secret.
+//
+// The arguments are the following:
+// - pkCompositeMlKemkey: a key which contains public information required for encapsulation.
+// - (pbAgreedSecret, cbAgreedSecret): a buffer into which the generated secret is written.
+//   Currently cbAgreedSecret must be 32 for all parameterizations of Composite ML-KEM.
+// - (pbCiphertext, cbCiphertext): a buffer into which the encapsulated secret is written.
+//   cbCiphertext must equal cbCiphertext given by SymCryptCompositeMlKemSizeofCiphertextFromParams,
+//   though typically this value can be known statically (see definition of
+//   SYMCRYPT_COMPOSITE_MLKEM_CIPHERTEXT_SIZE_*).
+//
+
+SYMCRYPT_ERROR
+SYMCRYPT_CALL
+SymCryptCompositeMlKemDecapsulate(
+    _In_                                    PCSYMCRYPT_COMPOSITE_MLKEMKEY   pkCompositeMlKemkey,
+    _In_reads_bytes_( cbCiphertext )        PCBYTE                          pbCiphertext,
+                                            SIZE_T                          cbCiphertext,
+    _Out_writes_bytes_( cbAgreedSecret )    PBYTE                           pbAgreedSecret,
+                                            SIZE_T                          cbAgreedSecret );
+//
+// Performs the Decapsulate operation of Composite ML-KEM.
+// This uses the private information of a Composite ML-KEM keypair to generate an agreed
+// secret from a ciphertext.
+//
+// The arguments are the following:
+// - pkCompositeMlKemkey: a key which contains private information required for decapsulation.
+// - (pbCiphertext, cbCiphertext): a buffer containing an encapsulated secret.
+//   cbCiphertext must equal cbCiphertext given by SymCryptCompositeMlKemSizeofCiphertextFromParams,
+//   though typically this value can be known statically (see definition of
+//   SYMCRYPT_COMPOSITE_MLKEM_CIPHERTEXT_SIZE_*).
+// - (pbAgreedSecret, cbAgreedSecret): a buffer into which the generated secret is written.
+//   Currently cbAgreedSecret must be 32 for all parameterizations of Composite ML-KEM.
+//
+// Note: Given an invalid, but correctly-sized, ciphertext, the Composite ML-KEM Decapsulation operation
+// will "implicitly reject" the ciphertext, by returning success in equal time to a valid
+// decapsulation operation, with pseudo-random agreed secret output. This forces higher
+// level protocols to fail later when symmetric keys of peers do not match.
+// So decapsulate will only ever return an error if there are programming errors (e.g. incorrect size),
+// or something fundamentally goes wrong with the environment (e.g. internal memory allocation fails).
 //
 
 ////////////////////////////////////////////////////////////
@@ -10445,7 +10668,7 @@ SymCryptHashMlDsaSign(
 //   ML-DSA-65 (lambda = 192): SHA-384, SHA-512, SHA3-384, SHA3-512, SHAKE256
 //   ML-DSA-87 (lambda = 256): SHA-512, SHA3-512, SHAKE256
 //
-//   Additionally, cbHash must match the output length of the hash algorithm. 
+//   Additionally, cbHash must match the output length of the hash algorithm.
 //   For XOFs, the any output length >= the minimum collision strength is acceptable. If this
 //   requirement is not met, the function returns SYMCRYPT_INVALID_ARGUMENT.
 //

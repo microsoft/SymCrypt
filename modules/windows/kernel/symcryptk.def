@@ -55,6 +55,15 @@ EXPORTS
 ;    SymCryptChaCha20Poly1305Selftest
 ;    SymCryptChaCha20Selftest
 ;    SymCryptChaCha20SetOffset
+;    SymCryptCompositeMlKemDecapsulate
+;    SymCryptCompositeMlKemEncapsulate
+;    SymCryptCompositeMlKemkeyAllocate
+;    SymCryptCompositeMlKemkeyFree
+;    SymCryptCompositeMlKemkeyGenerate
+;    SymCryptCompositeMlKemkeyGetValue
+;    SymCryptCompositeMlKemkeySetValue
+;    SymCryptCompositeMlKemSizeofCiphertextFromParams
+;    SymCryptCompositeMlKemSizeofKeyFormatFromParams
 ;    SymCryptCShake128
 ;    SymCryptCShake128Append
 ;    SymCryptCShake128Extract

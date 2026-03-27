@@ -45,6 +45,7 @@
     <ClCompile Include="testArithmetic.cpp" />
     <ClCompile Include="testAuthEnc.cpp" />
     <ClCompile Include="testBlockCiphers.cpp" />
+    <ClCompile Include="testCompositeHelpers.cpp" />
     <ClCompile Include="testCustomizableXof.cpp" />
     <ClCompile Include="testDh.cpp" />
     <ClCompile Include="testDsa.cpp" />

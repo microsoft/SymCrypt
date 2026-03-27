@@ -1964,6 +1964,18 @@ public:
                                                 SIZE_T              cbAgreedSecret ) = 0;
 };
 
+// Currently maximum key blob size is Composite ML-KEM1024 P384 public key blob
+#define MAX_COMPOSITE_MLKEMKEY_BLOB_SIZE (1665)
+
+typedef struct _COMPOSITE_MLKEMKEY_TESTBLOB
+{
+    SYMCRYPT_COMPOSITE_MLKEM_PARAMS params;               // represents the parameter set of ML-KEM
+    SYMCRYPT_COMPOSITE_MLKEMKEY_FORMAT format;            // represents the format of the ML-KEM key blob
+    BYTE    abKeyBlob[MAX_COMPOSITE_MLKEMKEY_BLOB_SIZE];  // byte blob representing an ML-KEM key
+    SIZE_T  cbKeyBlob;
+} COMPOSITE_MLKEMKEY_TESTBLOB, *PCOMPOSITE_MLKEMKEY_TESTBLOB;
+typedef const COMPOSITE_MLKEMKEY_TESTBLOB * PCCOMPOSITE_MLKEMKEY_TESTBLOB;
+
 // Currently maximum key blob size is ML-KEM1024 decapsulation key blob
 #define MAX_MLKEMKEY_BLOB_SIZE (3168)
 

@@ -103,6 +103,15 @@ SymCryptEckeyCreate(
 
 VOID
 SYMCRYPT_CALL
+SymCryptEckeyWipePrivateState(
+    _Inout_ PSYMCRYPT_ECKEY pkEckey )
+{
+    SymCryptIntSetValueUint32( 0, pkEckey->piPrivateKey );
+    pkEckey->hasPrivateKey = FALSE;
+}
+
+VOID
+SYMCRYPT_CALL
 SymCryptEckeyWipe( _Out_ PSYMCRYPT_ECKEY pkDst )
 {
     // Wipe the whole structure in one go.
@@ -732,7 +741,7 @@ SymCryptEckeySetRandom(
     UINT32              cbScratchInternal = 0;
 
     PCSYMCRYPT_ECURVE   pCurve = pEckey->pCurve;
-    
+
     PSYMCRYPT_ECPOINT   poTmp = NULL;
     UINT32              cbTmp = 0;
 
@@ -930,7 +939,7 @@ SymCryptEckeySetRandom(
             poTmp = SymCryptEcpointCreate( pbScratchInternal, cbTmp, pCurve );
             pbScratchInternal += cbTmp;
             cbScratchInternal -= cbTmp;
-            
+
             SYMCRYPT_ASSERT( poTmp != NULL );
 
             // Always multiply by the cofactor since the internal format is "DIVH"
