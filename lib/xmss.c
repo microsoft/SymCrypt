@@ -417,8 +417,8 @@ SymCryptXmssSetParams(
         goto cleanup;
     }
 
-    // Layer height (tree height of one layer) can be at most 32
-    if ((nTotalTreeHeight / nLayers) > 32)
+    // Layer height (tree height of one layer) can be at most 31
+    if ((nTotalTreeHeight / nLayers) > 31)
     {
         scError = SYMCRYPT_INVALID_ARGUMENT;
         goto cleanup;
@@ -720,9 +720,11 @@ SymCryptHbsSizeofScratchBytesForIncrementalTreehash(
     UINT32  cbNode,
     UINT32  nLeaves)
 {
-    SIZE_T nodeSize = (cbNode + 2 * sizeof(UINT32)) + sizeof(SYMCRYPT_INCREMENTAL_TREEHASH);
+    SIZE_T nodeSize = cbNode + 2 * sizeof(UINT32);
+    SIZE_T result = (sizeof(SYMCRYPT_INCREMENTAL_TREEHASH) - sizeof(SYMCRYPT_TREEHASH_NODE));
 
-    return nodeSize * SymCryptHbsIncrementalTreehashStackDepth(nLeaves);
+    result += nodeSize * SymCryptHbsIncrementalTreehashStackDepth(nLeaves);
+    return result;
 }
 
 
@@ -1015,8 +1017,8 @@ SymCryptXmssComputeSubtreeRoot(
     PSYMCRYPT_TREEHASH_NODE pNode = NULL;
     SYMCRYPT_XMSS_INCREMENTAL_TREEHASH_CONTEXT ctxIncHash;
 
-    // uLeaf must be a multiple of 2^uHeight
-    SYMCRYPT_ASSERT((uLeaf & ((1UL << uHeight) - 1)) == 0);
+    SYMCRYPT_ASSERT((uLeaf & ((1UL << uHeight) - 1)) == 0); // uLeaf must be a multiple of 2^uHeight
+    SYMCRYPT_ASSERT(pParams->nLayerHeight < 32); // Ensure nLeaves fits in 32 bits
 
     SIZE_T cbScratchTree = SymCryptHbsSizeofScratchBytesForIncrementalTreehash(pParams->cbHashOutput, 1ULL << pParams->nLayerHeight);
     SIZE_T cbScratchLtree = SymCryptHbsSizeofScratchBytesForIncrementalTreehash(pParams->cbHashOutput, pParams->len);
@@ -1077,6 +1079,8 @@ SymCryptXmssComputePublicRoot(
     PBYTE pbScratch = NULL;
     SIZE_T cbScratch = 0;
     XMSS_ADRS adrs;
+
+    SYMCRYPT_ASSERT(pParams->nLayerHeight < 32); // Ensure nLeaves fits in 32 bits
 
     if (pbRoot == NULL || cbRoot != pParams->cbHashOutput ||
         pbSeed == NULL || cbSeed != pParams->cbHashOutput ||
@@ -1751,6 +1755,8 @@ SymCryptXmssVerifyInternal(
 
     SYMCRYPT_CHECK_MAGIC(pKey);
 
+    SYMCRYPT_ASSERT(pParams->nLayerHeight < 32); // Ensure nLeaves fits in 32 bits
+
     if (flags != 0 ||
         pbSignature == NULL ||
         cbSignature != SymCryptXmssSizeofSignatureFromParams(pParams) ||
@@ -1761,7 +1767,7 @@ SymCryptXmssVerifyInternal(
     }
 
     cbScratch += SymCryptHbsSizeofScratchBytesForIncrementalTreehash(pParams->cbHashOutput, pParams->len);
-    cbScratch += SymCryptHbsSizeofScratchBytesForIncrementalTreehash(pParams->cbHashOutput, 1ULL << (pParams->nTotalTreeHeight / pParams->nLayers));
+    cbScratch += SymCryptHbsSizeofScratchBytesForIncrementalTreehash(pParams->cbHashOutput, 1ULL << pParams->nLayerHeight);
 
     pbScratch = (PBYTE)SymCryptCallbackAlloc(cbScratch);
 
@@ -2037,8 +2043,9 @@ SymCryptXmssSign(
     UINT32 uLeaf;
     const UINT64 LeafMask = (1ULL << pParams->nLayerHeight) - 1;
 
-
     SYMCRYPT_CHECK_MAGIC(pKey);
+
+    SYMCRYPT_ASSERT(pParams->nLayerHeight < 32); // Ensure nLeaves fits in 32 bits
 
     if (flags != 0 ||
         pbSignature == NULL ||
@@ -2050,7 +2057,7 @@ SymCryptXmssSign(
     }
 
     cbScratch += SymCryptHbsSizeofScratchBytesForIncrementalTreehash(pParams->cbHashOutput, pParams->len);        // Ltree hashing
-    cbScratch += SymCryptHbsSizeofScratchBytesForIncrementalTreehash(pParams->cbHashOutput, 1ULL << pParams->nTotalTreeHeight);  // Merkle-tree hashing
+    cbScratch += SymCryptHbsSizeofScratchBytesForIncrementalTreehash(pParams->cbHashOutput, 1ULL << pParams->nLayerHeight);  // Merkle-tree hashing
 
     pbScratch = (PBYTE)SymCryptCallbackAlloc(cbScratch);
 

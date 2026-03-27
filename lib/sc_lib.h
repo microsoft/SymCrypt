@@ -5096,3 +5096,39 @@ SymCryptCountLeadingZeros32( UINT32 value )
 
     return (UINT32)zeros;
 }
+
+FORCEINLINE
+UINT32
+SymCryptCountLeadingZeros64( UINT64 value )
+{
+    unsigned long zeros = 0;
+
+    if(value == 0)
+    {
+        return 64;
+    }
+
+#if SYMCRYPT_MS_VC && (SYMCRYPT_CPU_AMD64 | SYMCRYPT_CPU_ARM64)
+    _BitScanReverse64(&zeros, value);
+    zeros = 63 - zeros;
+#elif SYMCRYPT_MS_VC && (SYMCRYPT_CPU_X86 | SYMCRYPT_CPU_ARM)
+    if( (value >> 32) == 0 )
+    {
+        _BitScanReverse(&zeros, (UINT32)value);
+        zeros = 63 - zeros;
+    } else {
+        _BitScanReverse(&zeros, (UINT32)(value >> 32));
+        zeros = 31 - zeros;
+    }
+#elif SYMCRYPT_GNUC
+    zeros = __builtin_clzll(value);
+#else
+    while( (value & 0x8000000000000000) == 0 )
+    {
+        zeros++;
+        value <<= 1;
+    }
+#endif
+
+    return (UINT32)zeros;
+}

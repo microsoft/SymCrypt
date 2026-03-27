@@ -5,6 +5,8 @@ prior to the creation of a new release, based on the changes contained in that r
 # Version 103.11.0
 
 - Add Composite ML-KEM implementation
+- Fix heap buffer overflow in `SymCryptXmssSign` when signing with XMSS^MT parameter sets with a height of 32 or greater
+  - Thanks to [Federico Ponzi](https://fponzi.me) for finding this
 
 # Version 103.10.2
 
