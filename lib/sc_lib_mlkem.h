@@ -437,3 +437,11 @@ SymCryptMlKemVectorDecodeAndDecompress(
 //
 // See ML-KEM Polynomial Ring Element Decode and Decompress
 //
+
+VOID
+SYMCRYPT_CALL
+SymCryptMlKemkeyWipePrivateState(
+    _Inout_ PSYMCRYPT_MLKEMKEY  pkMlKemkey );
+//
+// Wipes the ML-KEM key's private state.
+//

@@ -121,6 +121,16 @@ EXPORTS
     SymCryptChaCha20Poly1305Selftest
     SymCryptChaCha20Selftest
     SymCryptChaCha20SetOffset
+    SymCryptCompositeMlKemDecapsulate
+    SymCryptCompositeMlKemEncapsulate
+    SymCryptCompositeMlKemEncapsulateEx
+    SymCryptCompositeMlKemkeyAllocate
+    SymCryptCompositeMlKemkeyFree
+    SymCryptCompositeMlKemkeyGenerate
+    SymCryptCompositeMlKemkeyGetValue
+    SymCryptCompositeMlKemkeySetValue
+    SymCryptCompositeMlKemSizeofCiphertextFromParams
+    SymCryptCompositeMlKemSizeofKeyFormatFromParams
     SymCryptCreateTrialDivisionContext
     SymCryptCrtGenerateInverses
     SymCryptCrtSolve

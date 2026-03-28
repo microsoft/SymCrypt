@@ -6,7 +6,7 @@
 //
 
 #![cfg_attr(test, allow(unused_macros), allow(unused_imports))]
-#![cfg_attr(feature = "benchmarking", allow(unused_macros), allow(unused_imports))]
+#![cfg_attr(feature = "benchmarking", allow(unused_macros), allow(unused_imports), allow(dead_code))]
 
 use core::slice::from_raw_parts;
 use core::slice::from_raw_parts_mut;

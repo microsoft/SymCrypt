@@ -9,8 +9,8 @@
 
 #define SYMCRYPT_SI_HAS_WEIGHT_ONE(X)   (((X) != 0) && (((X) & ((X) - 1)) == 0))
 
-// Integer greater than or equal
-#define SYMCRYPT_SI_INTGE(X)            SYMCRYPT_SI_INTRANGE((X), SYMCRYPT_SI_INTMASK)
+// Size greater than or equal (for values that must be multiples of 8)
+#define SYMCRYPT_SI_SIZE_GTE(X)         SYMCRYPT_SI_SIZERANGE((X), SYMCRYPT_SI_INTMASK)
 
 #define SYMCRYPT_SI_TYPE_BITS(X)        ((X) >> 56)
 #define SYMCRYPT_SI_DATA_BITS(X)        ((X) & ((1ULL << 56) - 1))
@@ -30,23 +30,25 @@ typedef struct _SYMCRYPT_FIPS_ALG_DATA
 
 typedef struct _SYMCRYPT_SI_ALGMAP
 {
-    SYMCRYPT_SI_ALG_DATA*   pAlgData;
+    const SYMCRYPT_SI_ALG_DATA*   pAlgData;
     UINT32                  nItems;
     UINT32                  Service;
 } SYMCRYPT_SI_ALGMAP;
 
-static SYMCRYPT_SI_ALG_DATA _Cipher[] = {
+static const SYMCRYPT_SI_ALG_DATA _Cipher[] = {
     {
         SYMCRYPT_SI_AES_CBC | SYMCRYPT_SI_AES_CCM | SYMCRYPT_SI_AES_CFB128 | SYMCRYPT_SI_AES_CFB8 | \
         SYMCRYPT_SI_AES_CTR | SYMCRYPT_SI_AES_ECB | SYMCRYPT_SI_AES_GCM,
         SYMCRYPT_SI_PARAM_NONE
     },
+
     {
         SYMCRYPT_SI_AES_XTS,
         SYMCRYPT_SI_PARAM1(
             SYMCRYPT_SI_KEYBITS(128)
         )
     },
+
     {
         SYMCRYPT_SI_AES_XTS,
         SYMCRYPT_SI_PARAM1(
@@ -55,23 +57,25 @@ static SYMCRYPT_SI_ALG_DATA _Cipher[] = {
     },
 };
 
-static SYMCRYPT_SI_ALG_DATA _Hash[] = {
+static const SYMCRYPT_SI_ALG_DATA _Hash[] = {
     {
         SYMCRYPT_SI_SHA1                                                    | \
         SYMCRYPT_SI_SHA2_256 | SYMCRYPT_SI_SHA2_384 | SYMCRYPT_SI_SHA2_512  | \
-        SYMCRYPT_SI_SHA3_256 | SYMCRYPT_SI_SHA3_384 | SYMCRYPT_SI_SHA3_512  | \
+        SYMCRYPT_SI_SHA2_224 | SYMCRYPT_SI_SHA2_512_224 | SYMCRYPT_SI_SHA2_512_256 | \
+        SYMCRYPT_SI_SHA3_224 | SYMCRYPT_SI_SHA3_256 | SYMCRYPT_SI_SHA3_384 | SYMCRYPT_SI_SHA3_512  | \
         SYMCRYPT_SI_SHAKE128 | SYMCRYPT_SI_SHAKE256 | SYMCRYPT_SI_CSHAKE128 | SYMCRYPT_SI_CSHAKE256,
         SYMCRYPT_SI_PARAM_NONE
     },
 };
 
-static SYMCRYPT_SI_ALG_DATA _Mac[] = {
+static const SYMCRYPT_SI_ALG_DATA _Mac[] = {
     {
         SYMCRYPT_SI_HMAC_SHA1                                                               | \
         SYMCRYPT_SI_HMAC_SHA2_256 | SYMCRYPT_SI_HMAC_SHA2_384 | SYMCRYPT_SI_HMAC_SHA2_512   | \
-        SYMCRYPT_SI_HMAC_SHA3_256 | SYMCRYPT_SI_HMAC_SHA3_384 | SYMCRYPT_SI_HMAC_SHA3_512,
+        SYMCRYPT_SI_HMAC_SHA2_224 | SYMCRYPT_SI_HMAC_SHA2_512_224 | SYMCRYPT_SI_HMAC_SHA2_512_256 | \
+        SYMCRYPT_SI_HMAC_SHA3_224 | SYMCRYPT_SI_HMAC_SHA3_256 | SYMCRYPT_SI_HMAC_SHA3_384 | SYMCRYPT_SI_HMAC_SHA3_512,
         SYMCRYPT_SI_PARAM1(
-            SYMCRYPT_SI_INTGE(112)
+            SYMCRYPT_SI_SIZE_GTE(112)
         )
     },
 
@@ -81,7 +85,7 @@ static SYMCRYPT_SI_ALG_DATA _Mac[] = {
     },
 };
 
-static SYMCRYPT_SI_ALG_DATA _Kdf[] = {
+static const SYMCRYPT_SI_ALG_DATA _Kdf[] = {
     {
         SYMCRYPT_SI_KDA_ONESTEP, 
         SYMCRYPT_SI_PARAM1(
@@ -140,11 +144,13 @@ static SYMCRYPT_SI_ALG_DATA _Kdf[] = {
     },
 };
 
-static SYMCRYPT_SI_ALG_DATA _Drbg[] = {
-    SYMCRYPT_SI_CTR_DRBG_AES256, SYMCRYPT_SI_PARAM_NONE
+static const SYMCRYPT_SI_ALG_DATA _Drbg[] = {
+    {
+        SYMCRYPT_SI_CTR_DRBG_AES256, SYMCRYPT_SI_PARAM_NONE
+    },
 };
 
-static SYMCRYPT_SI_ALG_DATA _KeyGen[] = {
+static const SYMCRYPT_SI_ALG_DATA _KeyGen[] = {
     {
         SYMCRYPT_SI_ECDSA_KEYGEN,
         SYMCRYPT_SI_PARAM1(
@@ -180,9 +186,19 @@ static SYMCRYPT_SI_ALG_DATA _KeyGen[] = {
             SYMCRYPT_SI_SPG_MODP_2048 | SYMCRYPT_SI_SPG_MODP_3072 | SYMCRYPT_SI_SPG_MODP_4096 | SYMCRYPT_SI_SPG_MODP_6144
         )
     },
+
+    {
+        SYMCRYPT_SI_MLKEM_KEYGEN,
+        SYMCRYPT_SI_PARAM_NONE
+    },
+
+    {   
+        SYMCRYPT_SI_MLDSA_KEYGEN,
+        SYMCRYPT_SI_PARAM_NONE
+    },
 };
 
-static SYMCRYPT_SI_ALG_DATA _KeyVer[] = {
+static const SYMCRYPT_SI_ALG_DATA _KeyVer[] = {
 
     {
         SYMCRYPT_SI_DSA_PQGVER,
@@ -206,7 +222,7 @@ static SYMCRYPT_SI_ALG_DATA _KeyVer[] = {
     },
 };
 
-static SYMCRYPT_SI_ALG_DATA _SigGen[] = {
+static const SYMCRYPT_SI_ALG_DATA _SigGen[] = {
     {
         SYMCRYPT_SI_ECDSA_SIGGEN | SYMCRYPT_SI_ECDSA_SIGGEN_COMP,
         SYMCRYPT_SI_PARAM2(
@@ -256,9 +272,14 @@ static SYMCRYPT_SI_ALG_DATA _SigGen[] = {
         SYMCRYPT_SI_RSA_SIG_PRIM,
         SYMCRYPT_SI_PARAM_NONE
     },
+
+    {
+        SYMCRYPT_SI_MLDSA_SIGGEN,
+        SYMCRYPT_SI_PARAM_NONE
+    },
 };
 
-static SYMCRYPT_SI_ALG_DATA _SigVer[] = {
+static const SYMCRYPT_SI_ALG_DATA _SigVer[] = {
     {
         SYMCRYPT_SI_DSA_SIGVER,
         SYMCRYPT_SI_PARAM2(
@@ -330,9 +351,54 @@ static SYMCRYPT_SI_ALG_DATA _SigVer[] = {
         SYMCRYPT_SI_RSA_SIG_PRIM,
         SYMCRYPT_SI_PARAM_NONE
     },
+
+    {
+        SYMCRYPT_SI_MLDSA_SIGVER,
+        SYMCRYPT_SI_PARAM_NONE
+    },
+
+    // All supported LMS parameter sets are approved
+    {
+        SYMCRYPT_SI_LMS_SIGVER,
+        SYMCRYPT_SI_PARAM1(SYMCRYPT_SI_INTRANGE(SYMCRYPT_LMS_SHA256_M32_H5, SYMCRYPT_LMS_SHAKE_M24_H25))
+    },
+
+    // Some of the supported XMSS parameter sets are not listed in SP 800-208.
+    // The two below entries specify the approved parameter sets in two algorithm ID ranges.
+    {
+        SYMCRYPT_SI_XMSS_SIGVER,
+        SYMCRYPT_SI_PARAM1(SYMCRYPT_SI_INTRANGE(SYMCRYPT_XMSS_SHA2_10_256, SYMCRYPT_XMSS_SHA2_20_256))
+    },
+
+    {
+        SYMCRYPT_SI_XMSS_SIGVER,
+        SYMCRYPT_SI_PARAM1(SYMCRYPT_SI_INTRANGE(SYMCRYPT_XMSS_SHA2_10_192, SYMCRYPT_XMSS_SHAKE256_20_192))
+    },
+
+    // XMSS^MT has some supported parameter sets that are not listed in SP 800-208.
+    // The below entries specify the ones that are in SP 800-208.
+    {
+        SYMCRYPT_SI_XMSS_MT_SIGVER,
+        SYMCRYPT_SI_PARAM1(SYMCRYPT_SI_INTRANGE(SYMCRYPT_XMSSMT_SHA2_20_2_256, SYMCRYPT_XMSSMT_SHA2_60_12_256))
+    },
+     
+    {
+        SYMCRYPT_SI_XMSS_MT_SIGVER,
+        SYMCRYPT_SI_PARAM1(SYMCRYPT_SI_INTRANGE(SYMCRYPT_XMSSMT_SHA2_20_2_192, SYMCRYPT_XMSSMT_SHA2_60_12_192))
+    },
+
+    {
+        SYMCRYPT_SI_XMSS_MT_SIGVER,
+        SYMCRYPT_SI_PARAM1(SYMCRYPT_SI_INTRANGE(SYMCRYPT_XMSSMT_SHAKE256_20_2_256, SYMCRYPT_XMSSMT_SHAKE256_60_12_256))
+    },
+
+    {
+        SYMCRYPT_SI_XMSS_MT_SIGVER,
+        SYMCRYPT_SI_PARAM1(SYMCRYPT_SI_INTRANGE(SYMCRYPT_XMSSMT_SHAKE256_20_2_192, SYMCRYPT_XMSSMT_SHAKE256_60_12_192))
+    },
 };
 
-static SYMCRYPT_SI_ALG_DATA _Kas[] = {
+static const SYMCRYPT_SI_ALG_DATA _Kas[] = {
     {
         SYMCRYPT_SI_KAS_ECC,
         SYMCRYPT_SI_PARAM2(
@@ -381,7 +447,7 @@ static SYMCRYPT_SI_ALG_DATA _Kas[] = {
     },
 };
 
-static SYMCRYPT_SI_ALG_DATA _Dec[] = {
+static const SYMCRYPT_SI_ALG_DATA _Dec[] = {
     {
         SYMCRYPT_SI_RSA_DEC_PRIM,
         SYMCRYPT_SI_PARAM1(
@@ -390,7 +456,22 @@ static SYMCRYPT_SI_ALG_DATA _Dec[] = {
     },
 };
 
-static SYMCRYPT_SI_ALGMAP _ServiceIndicatorData[] = {
+static const SYMCRYPT_SI_ALG_DATA _KemEncaps[] = {
+    {
+        SYMCRYPT_SI_MLKEM_ENCAPS,
+        SYMCRYPT_SI_PARAM_NONE
+    },
+};
+
+static const SYMCRYPT_SI_ALG_DATA _KemDecaps[] = {
+    {
+        SYMCRYPT_SI_MLKEM_DECAPS,
+        SYMCRYPT_SI_PARAM_NONE
+    },
+};
+
+
+static const SYMCRYPT_SI_ALGMAP _ServiceIndicatorData[] = {
 
     // Symmetric Ciphers
     {         
@@ -456,6 +537,18 @@ static SYMCRYPT_SI_ALGMAP _ServiceIndicatorData[] = {
     {
         _Dec, SYMCRYPT_ARRAY_SIZE(_Dec),
         SYMCRYPT_SI_SVC_DECRYPTION
+    },
+
+    // Key Encapsulation
+    {
+        _KemEncaps, SYMCRYPT_ARRAY_SIZE(_KemEncaps),
+        SYMCRYPT_SI_SVC_KEY_ENCAPSULATION
+    },
+
+    // Key Decapsulation
+    {
+        _KemDecaps, SYMCRYPT_ARRAY_SIZE(_KemDecaps),
+        SYMCRYPT_SI_SVC_KEY_DECAPSULATION
     },
 };
 
@@ -526,33 +619,78 @@ ServiceIndicatorIsParamApproved(UINT64 Input, UINT64 Rule)
     BYTE typeRule = (BYTE)SYMCRYPT_SI_TYPE_BITS(Rule);
     BYTE typeInput = (BYTE)SYMCRYPT_SI_TYPE_BITS(Input);
 
-    // Types must always match
-    if (typeInput != typeRule)
-    {
-        return FALSE;
-    }
-
     if (SYMCRYPT_SI_IS_TYPE_BITMASK(Rule))
     {
+        // Types must match for bitmask parameters
+        if (typeInput != typeRule)
+        {
+            return FALSE;
+        }
+
         // We expect the input to be a single bit set from a bitmask
         // of type specified by the rule.
         result = ServiceIndicatorIsParameterContained(Input, Rule);
     }
-    else if (typeRule == SYMCRYPT_SI_TYPE_INTRANGE)
+    else if (typeRule == SYMCRYPT_SI_TYPE_SIZERANGE)
     {
-        // If the rule is an integer range, the input must be contained in the range.
+        // If the rule is a size range, the input must also be a SIZERANGE
+        // and both low and high values must be multiples of 8.
+        if (typeInput != SYMCRYPT_SI_TYPE_SIZERANGE)
+        {
+            return FALSE;
+        }
+
         UINT64 uInputLow = SYMCRYPT_SI_INTUNPACKLO(Input);
         UINT64 uInputHigh = SYMCRYPT_SI_INTUNPACKHI(Input);
         UINT64 uRuleLow = SYMCRYPT_SI_INTUNPACKLO(Rule);
         UINT64 uRuleHigh = SYMCRYPT_SI_INTUNPACKHI(Rule);
 
-        // Only allow integers that are multiples of 8
+        // Only allow values that are multiples of 8
         if ((uInputLow % 8 != 0) || (uInputHigh % 8 != 0))
         {
             return FALSE;
         }
 
         result = (uInputLow >= uRuleLow && uInputHigh <= uRuleHigh);
+    }
+    else if (typeRule == SYMCRYPT_SI_TYPE_INTRANGE)
+    {
+        // If the rule is an integer range, the input can be either:
+        // 1. A typed INTRANGE value (e.g. SYMCRYPT_SI_INTRANGE(1, 3))
+        // 2. An integer with no type tag, i.e. type tag being 0.
+        UINT64 uRuleLow = SYMCRYPT_SI_INTUNPACKLO(Rule);
+        UINT64 uRuleHigh = SYMCRYPT_SI_INTUNPACKHI(Rule);
+
+        if (typeInput == SYMCRYPT_SI_TYPE_INTRANGE)
+        {
+            // Input is a typed INTRANGE, check that the input range is contained in the rule range
+            UINT64 uInputLow = SYMCRYPT_SI_INTUNPACKLO(Input);
+            UINT64 uInputHigh = SYMCRYPT_SI_INTUNPACKHI(Input);
+
+            result = (uInputLow >= uRuleLow && uInputHigh <= uRuleHigh);
+        }
+        else if (typeInput == 0)
+        {
+            // Input is an integer, check that it is contained in the rule range
+            UINT64 uInputVal = SYMCRYPT_SI_DATA_BITS(Input);
+
+            result = (uInputVal >= uRuleLow && uInputVal <= uRuleHigh);
+        }
+        else
+        {
+            // Type mismatch
+            return FALSE;
+        }
+    }
+    else if (typeRule == SYMCRYPT_SI_TYPE_INTPAIR)
+    {
+        // INTPAIR is used for an exact match of a pair of integers (e.g. DSA parameters)
+        if (typeInput != SYMCRYPT_SI_TYPE_INTPAIR)
+        {
+            return FALSE;
+        }
+
+        result = (Input == Rule);
     }
     else
     {
@@ -596,7 +734,7 @@ SymCryptDeprecatedServiceIndicator(
         {
             for (UINT32 j = 0; j < _ServiceIndicatorData[i].nItems; j++)
             {
-                SYMCRYPT_SI_ALG_DATA* pAlgData = &_ServiceIndicatorData[i].pAlgData[j];
+                const SYMCRYPT_SI_ALG_DATA* pAlgData = &_ServiceIndicatorData[i].pAlgData[j];
                 
                 if (ServiceIndicatorIsAlgorithmContained(Alg, pAlgData->Alg))
                 {

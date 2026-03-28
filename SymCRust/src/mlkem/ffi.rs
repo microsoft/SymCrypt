@@ -200,3 +200,9 @@ pub extern "C" fn SymCryptMlKemDecapsulate(
 
     decapsulate(k, ciphertext, agreed_secret)
 }
+
+#[no_mangle]
+pub extern "C" fn SymCryptMlKemkeyWipePrivateState(k: CMlKemKey) {
+    let k = unsafe { &mut *k };
+    k.wipe_private_state();
+}

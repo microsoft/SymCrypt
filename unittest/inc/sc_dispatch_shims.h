@@ -573,6 +573,16 @@
 #define ScDispatchSymCryptMlKemSizeofCiphertextFromParams(...) SCTEST_CALL_DISPATCHFN(SymCryptMlKemSizeofCiphertextFromParams, __VA_ARGS__)
 #define ScDispatchSymCryptMlKemSizeofKeyFormatFromParams(...) SCTEST_CALL_DISPATCHFN(SymCryptMlKemSizeofKeyFormatFromParams, __VA_ARGS__)
 
+#define ScDispatchSymCryptCompositeMlKemkeyAllocate(...) SCTEST_CALL_DISPATCHFN(SymCryptCompositeMlKemkeyAllocate, __VA_ARGS__)
+#define ScDispatchSymCryptCompositeMlKemkeyFree(...) SCTEST_CALL_DISPATCHFN(SymCryptCompositeMlKemkeyFree, __VA_ARGS__)
+#define ScDispatchSymCryptCompositeMlKemSizeofKeyFormatFromParams(...) SCTEST_CALL_DISPATCHFN(SymCryptCompositeMlKemSizeofKeyFormatFromParams, __VA_ARGS__)
+#define ScDispatchSymCryptCompositeMlKemSizeofCiphertextFromParams(...) SCTEST_CALL_DISPATCHFN(SymCryptCompositeMlKemSizeofCiphertextFromParams, __VA_ARGS__)
+#define ScDispatchSymCryptCompositeMlKemkeyGenerate(...) SCTEST_CALL_DISPATCHFN(SymCryptCompositeMlKemkeyGenerate, __VA_ARGS__)
+#define ScDispatchSymCryptCompositeMlKemEncapsulate(...) SCTEST_CALL_DISPATCHFN(SymCryptCompositeMlKemEncapsulate, __VA_ARGS__)
+#define ScDispatchSymCryptCompositeMlKemDecapsulate(...) SCTEST_CALL_DISPATCHFN(SymCryptCompositeMlKemDecapsulate, __VA_ARGS__)
+#define ScDispatchSymCryptCompositeMlKemkeySetValue(...) SCTEST_CALL_DISPATCHFN(SymCryptCompositeMlKemkeySetValue, __VA_ARGS__)
+#define ScDispatchSymCryptCompositeMlKemkeyGetValue(...) SCTEST_CALL_DISPATCHFN(SymCryptCompositeMlKemkeyGetValue, __VA_ARGS__)
+
 #define ScDispatchSymCryptMlDsaSizeofKeyFormatFromParams(...) SCTEST_CALL_DISPATCHFN(SymCryptMlDsaSizeofKeyFormatFromParams, __VA_ARGS__)
 #define ScDispatchSymCryptMlDsaSizeofSignatureFromParams(...) SCTEST_CALL_DISPATCHFN(SymCryptMlDsaSizeofSignatureFromParams, __VA_ARGS__)
 #define ScDispatchSymCryptMlDsaGetInternalParamsFromParams(...) SCTEST_CALL_DISPATCHFN(SymCryptMlDsaGetInternalParamsFromParams, __VA_ARGS__)

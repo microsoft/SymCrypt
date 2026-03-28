@@ -453,7 +453,7 @@ KemMultiImp::encapsulate(
     // - Have every implementation decapsulate each ciphertext
     // - return a random encapsulation
     BYTE abEncapsAgreedSecret[33];
-    BYTE abEncapsCiphertext[1569];
+    BYTE abEncapsCiphertext[1666];
     BYTE abDecapsAgreedSecret[33];
     NTSTATUS ntStatus;
     int nEncapsulations = 0;
@@ -512,7 +512,7 @@ KemMultiImp::encapsulateEx(
                                                 SIZE_T              cbCiphertext )
 {
     BYTE abEncapsAgreedSecret[33];
-    BYTE abEncapsCiphertext[1569];
+    BYTE abEncapsCiphertext[1666];
     ResultMerge resAgreedSecret;
     ResultMerge resCipherText;
     NTSTATUS ntStatus;
@@ -582,8 +582,6 @@ KemMultiImp::decapsulate(
     return ntStatus;
 }
 
-
-
 #define SYMCRYPT_MLKEM_512_PARAMS_NAME  "ML-KEM-512"
 #define SYMCRYPT_MLKEM_768_PARAMS_NAME  "ML-KEM-768"
 #define SYMCRYPT_MLKEM_1024_PARAMS_NAME "ML-KEM-1024"
@@ -602,54 +600,172 @@ SYMCRYPT_TEST_MLKEM_PARAMS rgTestMlKemParams[] = {
 
 #define NUM_OF_MLKEM_TEST_PARAMS       (sizeof(rgTestMlKemParams) / sizeof(rgTestMlKemParams[0]))
 
-#define SYMCRYPT_TEST_MLKEM_SIZEOF_PUBLIC_SEED  (32)
-#define SYMCRYPT_TEST_MLKEM_SIZEOF_ENCAPS_HASH  (32)
-#define SYMCRYPT_TEST_MLKEM_SIZEOF_Z            (32)
+struct MlKemDef {
+    using TestParamsType = SYMCRYPT_TEST_MLKEM_PARAMS;
+    using ParamsType     = SYMCRYPT_MLKEM_PARAMS;
+    using FormatType     = SYMCRYPT_MLKEMKEY_FORMAT;
+    using TestBlobType   = MLKEMKEY_TESTBLOB;
+    using PKeyType       = PSYMCRYPT_MLKEMKEY;
+    using PCKeyType      = PCSYMCRYPT_MLKEMKEY;
 
-VOID
-testMlKemHighLevelAPI()
+    static constexpr FormatType FormatFull   = SYMCRYPT_MLKEMKEY_FORMAT_PRIVATE_SEED;
+    static constexpr FormatType FormatDecaps = SYMCRYPT_MLKEMKEY_FORMAT_DECAPSULATION_KEY;
+    static constexpr FormatType FormatEncaps = SYMCRYPT_MLKEMKEY_FORMAT_ENCAPSULATION_KEY;
+
+    static constexpr SIZE_T MaxCiphertextSize = 1568;
+    static constexpr SIZE_T AgreedSecretSize = 32;
+    static constexpr SIZE_T MaxEncapsKeyBlobSize = 1568;
+    static constexpr SIZE_T MaxDecapsKeyBlobSize = 3168;
+    static constexpr SIZE_T PrivateSeedSize = 64;
+};
+
+#define SYMCRYPT_COMPOSITE_MLKEM_768_P256_PARAMS_NAME    "ML-KEM-768-P256"
+#define SYMCRYPT_COMPOSITE_MLKEM_768_X25519_PARAMS_NAME  "ML-KEM-768-X25519"
+#define SYMCRYPT_COMPOSITE_MLKEM_1024_P384_PARAMS_NAME   "ML-KEM-1024-P384"
+
+typedef struct _SYMCRYPT_TEST_COMPOSITE_MLKEM_PARAMS {
+    LPSTR                               pszParamsName;
+    SYMCRYPT_COMPOSITE_MLKEM_PARAMS     params;
+    SYMCRYPT_CACHED_ECURVE_ID           curveId;
+} SYMCRYPT_TEST_COMPOSITE_MLKEM_PARAMS, *PSYMCRYPT_TEST_COMPOSITE_MLKEM_PARAMS;
+
+SYMCRYPT_TEST_COMPOSITE_MLKEM_PARAMS rgTestCompositeMlKemParams[] = {
+    //pszParamsName                                     //params
+    { SYMCRYPT_COMPOSITE_MLKEM_768_P256_PARAMS_NAME,    SYMCRYPT_COMPOSITE_MLKEM_PARAMS_MLKEM768_P256, SYMCRYPT_CACHED_ECURVE_ID_NIST_P256   },
+    { SYMCRYPT_COMPOSITE_MLKEM_768_X25519_PARAMS_NAME,  SYMCRYPT_COMPOSITE_MLKEM_PARAMS_MLKEM768_X25519, SYMCRYPT_CACHED_ECURVE_ID_CURVE_25519 },
+    { SYMCRYPT_COMPOSITE_MLKEM_1024_P384_PARAMS_NAME,   SYMCRYPT_COMPOSITE_MLKEM_PARAMS_MLKEM1024_P384, SYMCRYPT_CACHED_ECURVE_ID_NIST_P384 },
+};
+
+#define NUM_OF_COMPOSITE_MLKEM_TEST_PARAMS  (sizeof(rgTestCompositeMlKemParams) / sizeof(rgTestCompositeMlKemParams[0]))
+
+struct CompositeMlKemDef {
+    using TestParamsType = SYMCRYPT_TEST_COMPOSITE_MLKEM_PARAMS;
+    using ParamsType     = SYMCRYPT_COMPOSITE_MLKEM_PARAMS;
+    using FormatType     = SYMCRYPT_COMPOSITE_MLKEMKEY_FORMAT;
+    using TestBlobType   = COMPOSITE_MLKEMKEY_TESTBLOB;
+    using PKeyType       = PSYMCRYPT_COMPOSITE_MLKEMKEY;
+    using PCKeyType      = PCSYMCRYPT_COMPOSITE_MLKEMKEY;
+
+    static constexpr FormatType FormatFull   = SYMCRYPT_COMPOSITE_MLKEMKEY_FORMAT_IRTF_PRIVATE_SEED;
+    static constexpr FormatType FormatDecaps = SYMCRYPT_COMPOSITE_MLKEMKEY_FORMAT_LAMPS_PRIVATE_KEY;
+    static constexpr FormatType FormatEncaps = SYMCRYPT_COMPOSITE_MLKEMKEY_FORMAT_PUBLIC_KEY;
+
+    static constexpr SIZE_T MaxCiphertextSize = 1665;
+    static constexpr SIZE_T AgreedSecretSize = 32;
+    static constexpr SIZE_T MaxEncapsKeyBlobSize = 1665;
+    static constexpr SIZE_T MaxDecapsKeyBlobSize = 128;
+    static constexpr SIZE_T PrivateSeedSize = 32;
+};
+
+// Function table definitions
+
+template<typename KemDef>
+struct SymCryptKemFunctionTable
 {
-    std::unique_ptr<KemMultiImp> pKemImplementation(new KemMultiImp( "MlKem" ));
+    using ParamsType = typename KemDef::ParamsType;
+    using PKeyType = typename KemDef::PKeyType;
+    using PCKeyType = typename KemDef::PCKeyType;
+    using FormatType = typename KemDef::FormatType;
+
+    PKeyType (SYMCRYPT_CALL *KeyAllocate)( ParamsType params );
+    void (SYMCRYPT_CALL *KeyFree)( PKeyType pKey );
+    SYMCRYPT_ERROR (SYMCRYPT_CALL *KeyGenerate)( PKeyType pKey, UINT32 flags );
+    SYMCRYPT_ERROR (SYMCRYPT_CALL *KeySetValue)( PCBYTE pbSrc, SIZE_T cbSrc, FormatType format, UINT32 flags, PKeyType pKey );
+    SYMCRYPT_ERROR (SYMCRYPT_CALL *KeyGetValue)( PCKeyType pKey, PBYTE pbDst, SIZE_T cbDst, FormatType format, UINT32 flags );
+    SYMCRYPT_ERROR (SYMCRYPT_CALL *SizeofKeyFormatFromParams)( ParamsType params, FormatType format, SIZE_T* pcbFormat );
+    SYMCRYPT_ERROR (SYMCRYPT_CALL *SizeofCiphertextFromParams)( ParamsType params, SIZE_T* pcbCiphertext );
+    SYMCRYPT_ERROR (SYMCRYPT_CALL *Encapsulate)( PCKeyType pKey, PBYTE pbSharedSecret, SIZE_T cbSharedSecret, PBYTE pbCiphertext, SIZE_T cbCiphertext );
+    SYMCRYPT_ERROR (SYMCRYPT_CALL *Decapsulate)( PCKeyType pKey, PCBYTE pbCiphertext, SIZE_T cbCiphertext, PBYTE pbSharedSecret, SIZE_T cbSharedSecret );
+};
+
+const SymCryptKemFunctionTable<MlKemDef> g_MlKemFunctionTable = {
+    SymCryptMlKemkeyAllocate,
+    SymCryptMlKemkeyFree,
+    SymCryptMlKemkeyGenerate,
+    SymCryptMlKemkeySetValue,
+    SymCryptMlKemkeyGetValue,
+    SymCryptMlKemSizeofKeyFormatFromParams,
+    SymCryptMlKemSizeofCiphertextFromParams,
+    SymCryptMlKemEncapsulate,
+    SymCryptMlKemDecapsulate,
+};
+
+const SymCryptKemFunctionTable<CompositeMlKemDef> g_CompositeMlKemFunctionTable = {
+    SymCryptCompositeMlKemkeyAllocate,
+    SymCryptCompositeMlKemkeyFree,
+    SymCryptCompositeMlKemkeyGenerate,
+    SymCryptCompositeMlKemkeySetValue,
+    SymCryptCompositeMlKemkeyGetValue,
+    SymCryptCompositeMlKemSizeofKeyFormatFromParams,
+    SymCryptCompositeMlKemSizeofCiphertextFromParams,
+    SymCryptCompositeMlKemEncapsulate,
+    SymCryptCompositeMlKemDecapsulate,
+};
+
+// High level API test definitions
+
+template <typename KemDef>
+struct HighLevelKemTestConfig
+{
+    using TestParamsType = typename KemDef::TestParamsType;
+    using ParamsType     = typename KemDef::ParamsType;
+    using FormatType     = typename KemDef::FormatType;
+
+    const char*     algName;
+    TestParamsType* pTestParams;
+    SIZE_T          cTestParams;
+
+    const SymCryptKemFunctionTable<KemDef>* pFunctionTable;
+};
+
+template<typename KemDef>
+VOID
+testKemHighLevelAPIGeneric( const HighLevelKemTestConfig<KemDef>& config )
+{
+    using TestBlobType = typename KemDef::TestBlobType;
+    using ParamsType = typename KemDef::ParamsType;
+
+    std::unique_ptr<KemMultiImp> pKemImplementation(new KemMultiImp( config.algName ));
 
     NTSTATUS ntStatus;
     SYMCRYPT_ERROR scError;
     UINT32 i;
 
-    MLKEMKEY_TESTBLOB keyTestBlobFull;
-    MLKEMKEY_TESTBLOB keyTestBlobDecaps;
-    MLKEMKEY_TESTBLOB keyTestBlobEncaps;
+    TestBlobType keyTestBlobFull;
+    TestBlobType keyTestBlobDecaps;
+    TestBlobType keyTestBlobEncaps;
 
-    BYTE abCipherText[1568];
-    BYTE abAgreedSecretEncaps[32];
-    BYTE abAgreedSecretDecaps[32];
+    BYTE abCipherText[KemDef::MaxCiphertextSize];
+    BYTE abAgreedSecretEncaps[KemDef::AgreedSecretSize];
+    BYTE abAgreedSecretDecaps[KemDef::AgreedSecretSize];
     SIZE_T cbCipherText;
 
-    keyTestBlobFull.format = SYMCRYPT_MLKEMKEY_FORMAT_PRIVATE_SEED;
-    keyTestBlobDecaps.format = SYMCRYPT_MLKEMKEY_FORMAT_DECAPSULATION_KEY;
-    keyTestBlobEncaps.format = SYMCRYPT_MLKEMKEY_FORMAT_ENCAPSULATION_KEY;
+    keyTestBlobFull.format = KemDef::FormatFull;
+    keyTestBlobDecaps.format = KemDef::FormatDecaps;
+    keyTestBlobEncaps.format = KemDef::FormatEncaps;
 
-    for( SYMCRYPT_TEST_MLKEM_PARAMS testParams : rgTestMlKemParams )
+    for( UINT32 paramIdx = 0; paramIdx < config.cTestParams; paramIdx++ )
     {
-        SYMCRYPT_MLKEM_PARAMS params = testParams.params;
+        ParamsType params = config.pTestParams[paramIdx].params;
 
         keyTestBlobFull.params   = params;
         keyTestBlobDecaps.params = params;
         keyTestBlobEncaps.params = params;
 
-        scError = SymCryptMlKemSizeofKeyFormatFromParams( params, SYMCRYPT_MLKEMKEY_FORMAT_PRIVATE_SEED, &keyTestBlobFull.cbKeyBlob );
-        CHECK3( scError == SYMCRYPT_NO_ERROR, "SymCryptMlKemSizeofKeyFormatFromParams SYMCRYPT_MLKEMKEY_FORMAT_PRIVATE_SEED failed with 0x%x", scError );
+        scError = (config.pFunctionTable)->SizeofKeyFormatFromParams( params, KemDef::FormatFull, &keyTestBlobFull.cbKeyBlob );
+        CHECK3( scError == SYMCRYPT_NO_ERROR, "SizeOfKeyFormatFromParams for full key failed with 0x%x", scError );
         CHECK( keyTestBlobFull.cbKeyBlob <= sizeof(keyTestBlobFull.abKeyBlob), "?" );
 
-        scError = SymCryptMlKemSizeofKeyFormatFromParams( params, SYMCRYPT_MLKEMKEY_FORMAT_DECAPSULATION_KEY, &keyTestBlobDecaps.cbKeyBlob );
-        CHECK3( scError == SYMCRYPT_NO_ERROR, "SymCryptMlKemSizeofKeyFormatFromParams SYMCRYPT_MLKEMKEY_FORMAT_DECAPSULATION_KEY failed with 0x%x", scError );
+        scError = (config.pFunctionTable)->SizeofKeyFormatFromParams( params, KemDef::FormatDecaps, &keyTestBlobDecaps.cbKeyBlob );
+        CHECK3( scError == SYMCRYPT_NO_ERROR, "SizeOfKeyFormatFromParams for decapsulation key failed with 0x%x", scError );
         CHECK( keyTestBlobDecaps.cbKeyBlob <= sizeof(keyTestBlobDecaps.abKeyBlob), "?" );
 
-        scError = SymCryptMlKemSizeofKeyFormatFromParams( params, SYMCRYPT_MLKEMKEY_FORMAT_ENCAPSULATION_KEY, &keyTestBlobEncaps.cbKeyBlob );
-        CHECK3( scError == SYMCRYPT_NO_ERROR, "SymCryptMlKemSizeofKeyFormatFromParams SYMCRYPT_MLKEMKEY_FORMAT_ENCAPSULATION_KEY failed with 0x%x", scError );
+        scError = (config.pFunctionTable)->SizeofKeyFormatFromParams( params, KemDef::FormatEncaps, &keyTestBlobEncaps.cbKeyBlob );
+        CHECK3( scError == SYMCRYPT_NO_ERROR, "SizeOfKeyFormatFromParams for encapsulation key failed with 0x%x", scError );
         CHECK( keyTestBlobEncaps.cbKeyBlob <= sizeof(keyTestBlobEncaps.abKeyBlob), "?" );
 
-        scError = SymCryptMlKemSizeofCiphertextFromParams( params, &cbCipherText );
-        CHECK3( scError == SYMCRYPT_NO_ERROR, "SymCryptMlKemSizeofCiphertextFromParams failed with 0x%x", scError );
+        scError = (config.pFunctionTable)->SizeofCiphertextFromParams( params, &cbCipherText );
+        CHECK3( scError == SYMCRYPT_NO_ERROR, "SizeOfCiphertextFromParams failed with 0x%x", scError );
         CHECK( cbCipherText <= sizeof(abCipherText), "?" );
 
         for( i=0; i<100; i++ )
@@ -659,73 +775,73 @@ testMlKemHighLevelAPI()
             ntStatus = pKemImplementation->setKeyFromTestBlob( (PCBYTE) &keyTestBlobFull, sizeof(keyTestBlobFull), TRUE );
             CHECK( ntStatus == STATUS_SUCCESS, "Failure setting key from private seed");
 
-            ntStatus = pKemImplementation->getBlobFromKey( SYMCRYPT_MLKEMKEY_FORMAT_DECAPSULATION_KEY, keyTestBlobDecaps.abKeyBlob, keyTestBlobDecaps.cbKeyBlob );
+            ntStatus = pKemImplementation->getBlobFromKey( KemDef::FormatDecaps, keyTestBlobDecaps.abKeyBlob, keyTestBlobDecaps.cbKeyBlob );
             CHECK( ntStatus == STATUS_SUCCESS, "Failure getting decapsulation key blob from full key");
 
-            ntStatus = pKemImplementation->getBlobFromKey( SYMCRYPT_MLKEMKEY_FORMAT_ENCAPSULATION_KEY, keyTestBlobEncaps.abKeyBlob, keyTestBlobEncaps.cbKeyBlob );
+            ntStatus = pKemImplementation->getBlobFromKey( KemDef::FormatEncaps, keyTestBlobEncaps.abKeyBlob, keyTestBlobEncaps.cbKeyBlob );
             CHECK( ntStatus == STATUS_SUCCESS, "Failure getting encapsulation key blob from full key");
 
-            ntStatus = pKemImplementation->encapsulate( abAgreedSecretEncaps, sizeof(abAgreedSecretEncaps), abCipherText, cbCipherText );
+            ntStatus = pKemImplementation->encapsulate( abAgreedSecretEncaps, KemDef::AgreedSecretSize, abCipherText, cbCipherText );
             CHECK( ntStatus == STATUS_SUCCESS, "Failure in encapsulate with full key");
 
-            ntStatus = pKemImplementation->decapsulate( abCipherText, cbCipherText, abAgreedSecretDecaps, sizeof(abAgreedSecretDecaps) );
+            ntStatus = pKemImplementation->decapsulate( abCipherText, cbCipherText, abAgreedSecretDecaps, KemDef::AgreedSecretSize );
             CHECK( ntStatus == STATUS_SUCCESS, "Failure in decapsulate with full key (encapsulated with full key)");
-            CHECK( memcmp(abAgreedSecretEncaps, abAgreedSecretDecaps, sizeof(abAgreedSecretEncaps)) == 0, "Agreed secret mismatch between encaps (full key) and decaps (full key)" );
+            CHECK( memcmp(abAgreedSecretEncaps, abAgreedSecretDecaps, KemDef::AgreedSecretSize) == 0, "Agreed secret mismatch between encaps (full key) and decaps (full key)" );
 
             ntStatus = pKemImplementation->setKeyFromTestBlob( (PCBYTE) &keyTestBlobDecaps, sizeof(keyTestBlobDecaps), TRUE );
             CHECK( ntStatus == STATUS_SUCCESS, "Failure setting key from decapsulation key blob");
 
-            ntStatus = pKemImplementation->decapsulate( abCipherText, cbCipherText, abAgreedSecretDecaps, sizeof(abAgreedSecretDecaps) );
+            ntStatus = pKemImplementation->decapsulate( abCipherText, cbCipherText, abAgreedSecretDecaps, KemDef::AgreedSecretSize );
             CHECK( ntStatus == STATUS_SUCCESS, "Failure in decapsulate with decapsulation key (encapsulated with full key)");
-            CHECK( memcmp(abAgreedSecretEncaps, abAgreedSecretDecaps, sizeof(abAgreedSecretEncaps)) == 0, "Agreed secret mismatch between encaps (full key) and decaps (decaps key)" );
+            CHECK( memcmp(abAgreedSecretEncaps, abAgreedSecretDecaps, KemDef::AgreedSecretSize) == 0, "Agreed secret mismatch between encaps (full key) and decaps (decaps key)" );
 
-            ntStatus = pKemImplementation->encapsulate( abAgreedSecretEncaps, sizeof(abAgreedSecretEncaps), abCipherText, cbCipherText );
+            ntStatus = pKemImplementation->encapsulate( abAgreedSecretEncaps, KemDef::AgreedSecretSize, abCipherText, cbCipherText );
             CHECK( ntStatus == STATUS_SUCCESS, "Failure in encapsulate with decapsulation key");
 
-            ntStatus = pKemImplementation->decapsulate( abCipherText, cbCipherText, abAgreedSecretDecaps, sizeof(abAgreedSecretDecaps) );
+            ntStatus = pKemImplementation->decapsulate( abCipherText, cbCipherText, abAgreedSecretDecaps, KemDef::AgreedSecretSize );
             CHECK( ntStatus == STATUS_SUCCESS, "Failure in decapsulate with decapsulation key (encapsulated with decapsulation key)");
-            CHECK( memcmp(abAgreedSecretEncaps, abAgreedSecretDecaps, sizeof(abAgreedSecretEncaps)) == 0, "Agreed secret mismatch between encaps (decaps key) and decaps (decaps key)" );
+            CHECK( memcmp(abAgreedSecretEncaps, abAgreedSecretDecaps, KemDef::AgreedSecretSize) == 0, "Agreed secret mismatch between encaps (decaps key) and decaps (decaps key)" );
 
             ntStatus = pKemImplementation->setKeyFromTestBlob( (PCBYTE) &keyTestBlobFull, sizeof(keyTestBlobFull), TRUE );
             CHECK( ntStatus == STATUS_SUCCESS, "Failure setting key from private seed");
 
-            ntStatus = pKemImplementation->decapsulate( abCipherText, cbCipherText, abAgreedSecretDecaps, sizeof(abAgreedSecretDecaps) );
+            ntStatus = pKemImplementation->decapsulate( abCipherText, cbCipherText, abAgreedSecretDecaps, KemDef::AgreedSecretSize );
             CHECK( ntStatus == STATUS_SUCCESS, "Failure in decapsulate with full key (encapsulated with decapsulation key)");
-            CHECK( memcmp(abAgreedSecretEncaps, abAgreedSecretDecaps, sizeof(abAgreedSecretEncaps)) == 0, "Agreed secret mismatch between encaps (decaps key) and decaps (full key)" );
+            CHECK( memcmp(abAgreedSecretEncaps, abAgreedSecretDecaps, KemDef::AgreedSecretSize) == 0, "Agreed secret mismatch between encaps (decaps key) and decaps (full key)" );
 
             ntStatus = pKemImplementation->setKeyFromTestBlob( (PCBYTE) &keyTestBlobEncaps, sizeof(keyTestBlobEncaps), FALSE );
             CHECK( ntStatus == STATUS_SUCCESS, "Failure setting key from encapsulation key blob");
 
-            ntStatus = pKemImplementation->encapsulate( abAgreedSecretEncaps, sizeof(abAgreedSecretEncaps), abCipherText, cbCipherText );
+            ntStatus = pKemImplementation->encapsulate( abAgreedSecretEncaps, KemDef::AgreedSecretSize, abCipherText, cbCipherText );
             CHECK( ntStatus == STATUS_SUCCESS, "Failure in encapsulate with encapsulation key");
 
             ntStatus = pKemImplementation->setKeyFromTestBlob( (PCBYTE) &keyTestBlobDecaps, sizeof(keyTestBlobDecaps), TRUE );
             CHECK( ntStatus == STATUS_SUCCESS, "Failure setting key from decapsulation key blob");
 
-            ntStatus = pKemImplementation->decapsulate( abCipherText, cbCipherText, abAgreedSecretDecaps, sizeof(abAgreedSecretDecaps) );
+            ntStatus = pKemImplementation->decapsulate( abCipherText, cbCipherText, abAgreedSecretDecaps, KemDef::AgreedSecretSize );
             CHECK( ntStatus == STATUS_SUCCESS, "Failure in decapsulate with decapsulation key (encapsulated with encapsulation key)");
-            CHECK( memcmp(abAgreedSecretEncaps, abAgreedSecretDecaps, sizeof(abAgreedSecretEncaps)) == 0, "Agreed secret mismatch between encaps (encaps key) and decaps (decaps key)" );
+            CHECK( memcmp(abAgreedSecretEncaps, abAgreedSecretDecaps, KemDef::AgreedSecretSize) == 0, "Agreed secret mismatch between encaps (encaps key) and decaps (decaps key)" );
 
             ntStatus = pKemImplementation->setKeyFromTestBlob( (PCBYTE) &keyTestBlobFull, sizeof(keyTestBlobFull), TRUE );
             CHECK( ntStatus == STATUS_SUCCESS, "Failure setting key from private seed");
 
-            ntStatus = pKemImplementation->decapsulate( abCipherText, cbCipherText, abAgreedSecretDecaps, sizeof(abAgreedSecretDecaps) );
+            ntStatus = pKemImplementation->decapsulate( abCipherText, cbCipherText, abAgreedSecretDecaps, KemDef::AgreedSecretSize );
             CHECK( ntStatus == STATUS_SUCCESS, "Failure in decapsulate with full key (encapsulated with encapsulation key)");
-            CHECK( memcmp(abAgreedSecretEncaps, abAgreedSecretDecaps, sizeof(abAgreedSecretEncaps)) == 0, "Agreed secret mismatch between encaps (encaps key) and decaps (full key)" );
+            CHECK( memcmp(abAgreedSecretEncaps, abAgreedSecretDecaps, KemDef::AgreedSecretSize) == 0, "Agreed secret mismatch between encaps (encaps key) and decaps (full key)" );
 
             // modify the ciphertext and verify errors
             // either should induce an error (modification meant that value was publicly malformed), or success with implicit rejection value != to encaps secret
             UINT32 t = g_rng.uint32();
             abCipherText[ (t/8) % cbCipherText ] ^= 1 << (t%8);
 
-            ntStatus = pKemImplementation->decapsulate( abCipherText, cbCipherText, abAgreedSecretDecaps, sizeof(abAgreedSecretDecaps) );
-            CHECK( (ntStatus != STATUS_SUCCESS) || memcmp(abAgreedSecretEncaps, abAgreedSecretDecaps, sizeof(abAgreedSecretEncaps)) != 0, "Modified ciphertext does not cause failure" );
+            ntStatus = pKemImplementation->decapsulate( abCipherText, cbCipherText, abAgreedSecretDecaps, KemDef::AgreedSecretSize );
+            CHECK( (ntStatus != STATUS_SUCCESS) || memcmp(abAgreedSecretEncaps, abAgreedSecretDecaps, KemDef::AgreedSecretSize) != 0, "Modified ciphertext does not cause failure" );
 
             ntStatus = pKemImplementation->setKeyFromTestBlob( (PCBYTE) &keyTestBlobDecaps, sizeof(keyTestBlobDecaps), TRUE );
             CHECK( ntStatus == STATUS_SUCCESS, "Failure setting key from decapsulation key blob");
 
-            ntStatus = pKemImplementation->decapsulate( abCipherText, cbCipherText, abAgreedSecretDecaps, sizeof(abAgreedSecretDecaps) );
-            CHECK( (ntStatus != STATUS_SUCCESS) || memcmp(abAgreedSecretEncaps, abAgreedSecretDecaps, sizeof(abAgreedSecretEncaps)) != 0, "Modified ciphertext does not cause failure" );
+            ntStatus = pKemImplementation->decapsulate( abCipherText, cbCipherText, abAgreedSecretDecaps, KemDef::AgreedSecretSize );
+            CHECK( (ntStatus != STATUS_SUCCESS) || memcmp(abAgreedSecretEncaps, abAgreedSecretDecaps, KemDef::AgreedSecretSize) != 0, "Modified ciphertext does not cause failure" );
         }
     }
 
@@ -733,270 +849,148 @@ testMlKemHighLevelAPI()
 }
 
 VOID
-testMlKemKeyGen(
-        KemImplementation*      pKemImplementation,
-        SYMCRYPT_MLKEM_PARAMS   params,
-    _In_reads_( cbPrivateRandom )
-        PCBYTE                  pbPrivateRandom,
-        SIZE_T                  cbPrivateRandom,
-    _In_reads_( cbPrivateSeed )
-        PCBYTE                  pbPrivateSeed,
-        SIZE_T                  cbPrivateSeed,
-    _In_reads_( cbEncapsKeyBlob )
-        PCBYTE                  pbEncapsKeyBlob,
-        SIZE_T                  cbEncapsKeyBlob,
-    _In_reads_( cbDecapsKeyBlob )
-        PCBYTE                  pbDecapsKeyBlob,
-        SIZE_T                  cbDecapsKeyBlob,
-        ULONGLONG               line )
+testMlKemHighLevelAPI()
 {
-    NTSTATUS ntStatus;
-    BYTE abComputedEncapsKeyBlob[1568];
-    BYTE abComputedDecapsKeyBlob[3168];
-    MLKEMKEY_TESTBLOB keyTestBlob;
+    HighLevelKemTestConfig<MlKemDef> config = {
+        "MlKem",
+        rgTestMlKemParams,
+        NUM_OF_MLKEM_TEST_PARAMS,
+        &g_MlKemFunctionTable,
+    };
 
-    CHECK( cbPrivateSeed == 32, "?" );
-    CHECK( cbPrivateRandom == 32, "?" );
-
-    keyTestBlob.params = params;
-    keyTestBlob.format = SYMCRYPT_MLKEMKEY_FORMAT_PRIVATE_SEED;
-    memcpy( keyTestBlob.abKeyBlob, pbPrivateSeed, 32 );
-    memcpy( keyTestBlob.abKeyBlob+32, pbPrivateRandom, 32 );
-    keyTestBlob.cbKeyBlob = 64;
-
-    ntStatus = pKemImplementation->setKeyFromTestBlob( (PCBYTE) &keyTestBlob, sizeof(keyTestBlob), TRUE );
-    CHECK3( ntStatus == STATUS_SUCCESS, "Failure setting key from private seed for ML-KEM record at line %lld", line);
-
-    ntStatus = pKemImplementation->getBlobFromKey( SYMCRYPT_MLKEMKEY_FORMAT_ENCAPSULATION_KEY, abComputedEncapsKeyBlob, cbEncapsKeyBlob );
-    CHECK3( ntStatus == STATUS_SUCCESS, "Failure getting encapsulation key blob for ML-KEM record at line %lld", line);
-    CHECK3( memcmp( pbEncapsKeyBlob, abComputedEncapsKeyBlob, cbEncapsKeyBlob ) == 0, "Encapsulation Key doesn't match for ML-KEM record at line %lld", line);
-
-    ntStatus = pKemImplementation->getBlobFromKey( SYMCRYPT_MLKEMKEY_FORMAT_DECAPSULATION_KEY, abComputedDecapsKeyBlob, cbDecapsKeyBlob );
-    CHECK3( ntStatus == STATUS_SUCCESS, "Failure getting decapsulation key blob for ML-KEM record at line %lld", line);
-    CHECK3( memcmp( pbDecapsKeyBlob, abComputedDecapsKeyBlob, cbDecapsKeyBlob ) == 0, "Decapsulation Key doesn't match for ML-KEM record at line %lld", line);
-
-    CHECK( pKemImplementation->setKeyFromTestBlob( NULL, 0, FALSE ) == STATUS_SUCCESS, "Failed to clear key" );
+    testKemHighLevelAPIGeneric<MlKemDef>( config );
 }
 
 VOID
-testMlKemEncaps(
-        KemImplementation*      pKemImplementation,
-        SYMCRYPT_MLKEM_PARAMS   params,
-    _In_reads_( cbEncapsKeyBlob )
-        PCBYTE                  pbEncapsKeyBlob,
-        SIZE_T                  cbEncapsKeyBlob,
-    _In_reads_( cbInputRandom )
-        PCBYTE                  pbInputRandom,
-        SIZE_T                  cbInputRandom,
-    _In_reads_( cbAgreedSecret )
-        PCBYTE                  pbAgreedSecret,
-        SIZE_T                  cbAgreedSecret,
-    _In_reads_( cbCipherText )
-        PCBYTE                  pbCipherText,
-        SIZE_T                  cbCipherText,
-        ULONGLONG               line )
+testCompositeMlKemHighLevelAPI()
 {
-    NTSTATUS ntStatus;
-    BYTE abComputedAgreedSecret[32];
-    BYTE abComputedCiphertext[1568];
-    MLKEMKEY_TESTBLOB keyTestBlob;
+    HighLevelKemTestConfig<CompositeMlKemDef> config = {
+        "CompositeMlKem",
+        rgTestCompositeMlKemParams,
+        NUM_OF_COMPOSITE_MLKEM_TEST_PARAMS,
+        &g_CompositeMlKemFunctionTable,
+    };
 
-    CHECK( cbAgreedSecret <= sizeof(abComputedAgreedSecret), "?" );
-    CHECK( cbCipherText <= sizeof(abComputedCiphertext), "?" );
-    CHECK( cbEncapsKeyBlob <= sizeof(keyTestBlob.abKeyBlob), "?" );
-
-    keyTestBlob.params = params;
-    keyTestBlob.format = SYMCRYPT_MLKEMKEY_FORMAT_ENCAPSULATION_KEY;
-    memcpy( keyTestBlob.abKeyBlob, pbEncapsKeyBlob, cbEncapsKeyBlob );
-    keyTestBlob.cbKeyBlob = cbEncapsKeyBlob;
-
-    ntStatus = pKemImplementation->setKeyFromTestBlob( (PCBYTE) &keyTestBlob, sizeof(keyTestBlob), FALSE );
-    CHECK3( ntStatus == STATUS_SUCCESS, "Failure setting key from encapsulation key blob for ML-KEM record at line %lld", line);
-
-    ntStatus = pKemImplementation->encapsulateEx(
-        pbInputRandom, cbInputRandom,
-        abComputedAgreedSecret, cbAgreedSecret,
-        abComputedCiphertext, cbCipherText );
-    CHECK3( ntStatus == STATUS_SUCCESS, "Failure in encapsulateEx for ML-KEM record at line %lld", line);
-    CHECK3( memcmp( pbAgreedSecret, abComputedAgreedSecret, cbAgreedSecret ) == 0, "Agreed Secret doesn't match for ML-KEM record at line %lld", line);
-    CHECK3( memcmp( pbCipherText, abComputedCiphertext, cbCipherText ) == 0, "Ciphertext doesn't match for ML-KEM record at line %lld", line);
-
-    CHECK( pKemImplementation->setKeyFromTestBlob( NULL, 0, FALSE ) == STATUS_SUCCESS, "Failed to clear key" );
+    testKemHighLevelAPIGeneric<CompositeMlKemDef>( config );
 }
 
-VOID
-testMlKemDecaps(
-        KemImplementation*      pKemImplementation,
-        SYMCRYPT_MLKEM_PARAMS   params,
-    _In_reads_( cbDecapsKeyBlob )
-        PCBYTE                  pbDecapsKeyBlob,
-        SIZE_T                  cbDecapsKeyBlob,
-    _In_reads_( cbCipherText )
-        PCBYTE                  pbCipherText,
-        SIZE_T                  cbCipherText,
-    _In_reads_( cbAgreedSecret )
-        PCBYTE                  pbAgreedSecret,
-        SIZE_T                  cbAgreedSecret,
-        ULONGLONG               line )
+////////////////////////////////////////////////
+// Negative testing
+////////////////////////////////////////////////
+
+template<typename KemDef>
+struct SymCryptKemNegativeTestConfig
 {
-    NTSTATUS ntStatus;
-    BYTE abComputedAgreedSecret[32];
-    MLKEMKEY_TESTBLOB keyTestBlob;
+    using TestParamsType = typename KemDef::TestParamsType;
 
-    CHECK( cbAgreedSecret <= sizeof(abComputedAgreedSecret), "?" );
-    CHECK( cbDecapsKeyBlob <= sizeof(keyTestBlob.abKeyBlob), "?" );
+    const SymCryptKemFunctionTable<KemDef>* pFuncTable;
+    TestParamsType* pTestParams;
+    SIZE_T cTestParams;
+};
 
-    keyTestBlob.params = params;
-    keyTestBlob.format = SYMCRYPT_MLKEMKEY_FORMAT_DECAPSULATION_KEY;
-    memcpy( keyTestBlob.abKeyBlob, pbDecapsKeyBlob, cbDecapsKeyBlob );
-    keyTestBlob.cbKeyBlob = cbDecapsKeyBlob;
-
-    ntStatus = pKemImplementation->setKeyFromTestBlob( (PCBYTE) &keyTestBlob, sizeof(keyTestBlob), TRUE );
-    CHECK3( ntStatus == STATUS_SUCCESS, "Failure setting key from decapsulation key blob for ML-KEM record at line %lld", line);
-
-    ntStatus = pKemImplementation->decapsulate(
-        pbCipherText, cbCipherText,
-        abComputedAgreedSecret, cbAgreedSecret );
-    CHECK3( ntStatus == STATUS_SUCCESS, "Failure in decapsulate for ML-KEM record at line %lld", line);
-    CHECK3( memcmp( pbAgreedSecret, abComputedAgreedSecret, cbAgreedSecret ) == 0, "Agreed Secret doesn't match for ML-KEM record at line %lld", line);
-
-    CHECK( pKemImplementation->setKeyFromTestBlob( NULL, 0, FALSE ) == STATUS_SUCCESS, "Failed to clear key" );
-}
-
+template<typename KemDef>
 VOID
-testKemKats()
+testSymCryptKemNegativeTests(
+    SymCryptKemNegativeTestConfig<KemDef> config )
 {
-    std::unique_ptr<KatData> katMlKem( getCustomResource( "kat_kem.dat", "KAT_KEM" ) );
-    KAT_ITEM katItem;
+    using ParamsType = typename KemDef::ParamsType;
+    using PKeyType = typename KemDef::PKeyType;
 
-    String sep = "";
+    const auto pFuncTable = config.pFuncTable;
 
-    SIZE_T i = 0;
-    BOOLEAN bParamsFound = FALSE;
+    SYMCRYPT_ERROR scError = SYMCRYPT_NO_ERROR;
+    PKeyType pKey = nullptr;
+    BYTE abPublicKeyBlob[KemDef::MaxEncapsKeyBlobSize];
+    BYTE abPrivateKeyBlob[KemDef::MaxDecapsKeyBlobSize];
+    BYTE abPrivateSeedBlob[KemDef::PrivateSeedSize];
+    BYTE abCiphertext[KemDef::MaxCiphertextSize];
+    BYTE abSharedSecret[KemDef::AgreedSecretSize];
+    SIZE_T cbPublicKey = 0;
+    SIZE_T cbPrivateKey = 0;
+    SIZE_T cbPrivateSeed = 0;
+    SIZE_T cbCiphertext = 0;
 
-    // NOTE - currently only supporting ML-KEM KATs; need to move to generic KEM params
-    SYMCRYPT_MLKEM_PARAMS params = SYMCRYPT_MLKEM_PARAMS_NULL;
-
-    UINT32 cKemKeyGenSamples = 0;
-    UINT32 cKemEncapsSamples = 0;
-    UINT32 cKemDecapsSamples = 0;
-
-    // For now we only support one Kem algorithm
-    // We can reset this multi-imp pointer based on category in the future
-    std::unique_ptr<KemMultiImp> pKemMultiImp(new KemMultiImp( "MlKem" ));
-
-    while( 1 )
+    for( UINT32 paramIdx = 0; paramIdx < config.cTestParams; paramIdx++ )
     {
-        katMlKem->getKatItem( & katItem );
-        ULONGLONG line = katItem.line;
+        ParamsType params = config.pTestParams[paramIdx].params;
 
-        if( katItem.type == KAT_TYPE_END )
-        {
-            break;
-        }
+        scError = pFuncTable->SizeofKeyFormatFromParams( params, KemDef::FormatEncaps, &cbPublicKey );
+        CHECK( scError == SYMCRYPT_NO_ERROR, "Failed to get public key size" );
 
-        if( katItem.type == KAT_TYPE_CATEGORY )
-        {
-            // We never skip data and the algorithm is
-            // specified by the data item.
-            iprint( "%s%s", sep.c_str(), katItem.categoryName.c_str() );
-            sep = ", ";
+        scError = pFuncTable->SizeofKeyFormatFromParams( params, KemDef::FormatDecaps, &cbPrivateKey );
+        CHECK( scError == SYMCRYPT_NO_ERROR, "Failed to get private key size" );
 
-            bParamsFound = FALSE;
-            for( i=0; i < NUM_OF_MLKEM_TEST_PARAMS; i++ )
-            {
-                // Compare with the category name with known ML-KEM params
-                if ( strcmp( katItem.categoryName.c_str(), rgTestMlKemParams[i].pszParamsName ) == 0 )
-                {
-                    bParamsFound = TRUE;
-                    break;
-                }
-            }
-            CHECK3( bParamsFound, "KEM header at line %lld specifies unknown KAT KEM params!", line) ;
+        scError = pFuncTable->SizeofKeyFormatFromParams( params, KemDef::FormatFull, &cbPrivateSeed );
+        CHECK( scError == SYMCRYPT_NO_ERROR, "Failed to get private seed size" );
 
-            params = rgTestMlKemParams[i].params;
-        }
+        scError = pFuncTable->SizeofCiphertextFromParams( params, &cbCiphertext );
+        CHECK( scError == SYMCRYPT_NO_ERROR, "Failed to get ciphertext size" );
 
-        if( katItem.type == KAT_TYPE_DATASET )
-        {
+        pKey = pFuncTable->KeyAllocate( params );
+        CHECK( pKey != NULL, "Failed to allocate key" );
 
-            if (katIsFieldPresent( katItem, "z" ) )
-            {
-                //
-                // KeyGen
-                //
-                CHECK3( katItem.dataItems.size() == 4, "Wrong number of items in KEM KeyGen record at line %lld", line );
+        // Import key blob with invalid sizes, then import correct one
 
-                BString katPrivateRandom = katParseData( katItem, "z" );
-                BString katPrivateSeed   = katParseData( katItem, "d" );
-                BString katEncapsKeyBlob = katParseData( katItem, "ek" );
-                BString katDecapsKeyBlob = katParseData( katItem, "dk" );
+        scError = pFuncTable->KeyGenerate( pKey, 0 );
+        CHECK( scError == SYMCRYPT_NO_ERROR, "Failed to generate key" );
 
-                testMlKemKeyGen(
-                    pKemMultiImp.get(),
-                    params,
-                    katPrivateRandom.data(), katPrivateRandom.size(),
-                    katPrivateSeed.data(), katPrivateSeed.size(),
-                    katEncapsKeyBlob.data(), katEncapsKeyBlob.size(),
-                    katDecapsKeyBlob.data(), katDecapsKeyBlob.size(),
-                    line );
+        scError = pFuncTable->KeyGetValue( pKey, abPublicKeyBlob, cbPublicKey, KemDef::FormatEncaps, 0 );
+        CHECK( scError == SYMCRYPT_NO_ERROR, "Failed to export public key" );
 
-                cKemKeyGenSamples++;
-                continue;
-            }
-            else if (katIsFieldPresent( katItem, "ek" ))
-            {
-                //
-                // Encapsulation
-                //
-                CHECK3( katItem.dataItems.size() == 4, "Wrong number of items in KEM Encapsulation record at line %lld", line );
+        scError = pFuncTable->KeySetValue( abPublicKeyBlob, 0, KemDef::FormatEncaps, 0, pKey );
+        CHECK( scError != SYMCRYPT_NO_ERROR, "SetValue with size 0 should fail" );
 
-                BString katEncapsKeyBlob = katParseData( katItem, "ek" );
-                BString katInputRandom   = katParseData( katItem, "m" );
-                BString katAgreedSecret  = katParseData( katItem, "k" );
-                BString katCipherText    = katParseData( katItem, "c" );
+        scError = pFuncTable->KeySetValue( abPublicKeyBlob, cbPublicKey - 1, KemDef::FormatEncaps, 0, pKey );
+        CHECK( scError != SYMCRYPT_NO_ERROR, "SetValue with size - 1 should fail" );
 
-                testMlKemEncaps(
-                    pKemMultiImp.get(),
-                    params,
-                    katEncapsKeyBlob.data(), katEncapsKeyBlob.size(),
-                    katInputRandom.data(), katInputRandom.size(),
-                    katAgreedSecret.data(), katAgreedSecret.size(),
-                    katCipherText.data(), katCipherText.size(),
-                    line );
+        scError = pFuncTable->KeySetValue( abPublicKeyBlob, cbPublicKey + 1, KemDef::FormatEncaps, 0, pKey );
+        CHECK( scError != SYMCRYPT_NO_ERROR, "SetValue with size + 1 should fail" );
 
-                cKemEncapsSamples++;
-                continue;
-            }
-            else if (katIsFieldPresent( katItem, "dk" ))
-            {
-                //
-                // Decapsulation
-                //
-                CHECK3( katItem.dataItems.size() == 3, "Wrong number of items in KEM Decapsulation record at line %lld", line );
+        scError = pFuncTable->KeySetValue( abPublicKeyBlob, cbPublicKey, KemDef::FormatEncaps, 0, pKey );
+        CHECK( scError == SYMCRYPT_NO_ERROR, "SetValue with correct size should succeed" );
 
-                BString katDecapsKeyBlob = katParseData( katItem, "dk" );
-                BString katCipherText    = katParseData( katItem, "c" );
-                BString katAgreedSecret  = katParseData( katItem, "k" );
+        // Export private seed/key from public-only key, encapsulate/decapsulate with public-only key
 
-                testMlKemDecaps(
-                    pKemMultiImp.get(),
-                    params,
-                    katDecapsKeyBlob.data(), katDecapsKeyBlob.size(),
-                    katCipherText.data(), katCipherText.size(),
-                    katAgreedSecret.data(), katAgreedSecret.size(),
-                    line );
+        scError = pFuncTable->KeyGetValue( pKey, abPrivateSeedBlob, cbPrivateSeed, KemDef::FormatFull, 0 );
+        CHECK( scError != SYMCRYPT_NO_ERROR, "Exporting private seed from public-only key should fail" );
 
-                cKemDecapsSamples++;
-                continue;
-            }
+        scError = pFuncTable->KeyGetValue( pKey, abPrivateKeyBlob, cbPrivateKey, KemDef::FormatDecaps, 0 );
+        CHECK( scError != SYMCRYPT_NO_ERROR, "Exporting private key from public-only key should fail" );
 
-            FATAL2( "Unknown data record at line %lld", line );
-        }
+        scError = pFuncTable->Encapsulate( pKey, abSharedSecret, KemDef::AgreedSecretSize, abCiphertext, cbCiphertext );
+        CHECK( scError == SYMCRYPT_NO_ERROR, "Encapsulate with public-only key should succeed" );
+
+        scError = pFuncTable->Decapsulate( pKey, abCiphertext, cbCiphertext, abSharedSecret, KemDef::AgreedSecretSize );
+        CHECK( scError != SYMCRYPT_NO_ERROR, "Decapsulate with public-only key should fail" );
+
+        // Encapsulate/Decapsulate with wrong buffer sizes
+
+        scError = pFuncTable->KeyGenerate( pKey, 0 );
+        CHECK( scError == SYMCRYPT_NO_ERROR, "Failed to generate key" );
+
+        scError = pFuncTable->Encapsulate( pKey, abSharedSecret, KemDef::AgreedSecretSize, abCiphertext, cbCiphertext - 1 );
+        CHECK( scError != SYMCRYPT_NO_ERROR, "Encapsulate with wrong ciphertext size should fail" );
+
+        scError = pFuncTable->Encapsulate( pKey, abSharedSecret, KemDef::AgreedSecretSize - 1, abCiphertext, cbCiphertext );
+        CHECK( scError != SYMCRYPT_NO_ERROR, "Encapsulate with wrong shared secret size should fail" );
+
+        scError = pFuncTable->Encapsulate( pKey, abSharedSecret, KemDef::AgreedSecretSize, abCiphertext, cbCiphertext );
+        CHECK( scError == SYMCRYPT_NO_ERROR, "Encapsulate with correct sizes should succeed" );
+
+        scError = pFuncTable->Decapsulate( pKey, abCiphertext, cbCiphertext - 1, abSharedSecret, KemDef::AgreedSecretSize );
+        CHECK( scError != SYMCRYPT_NO_ERROR, "Decapsulate with wrong ciphertext size should fail" );
+
+        scError = pFuncTable->Decapsulate( pKey, abCiphertext, cbCiphertext, abSharedSecret, KemDef::AgreedSecretSize - 1 );
+        CHECK( scError != SYMCRYPT_NO_ERROR, "Decapsulate with wrong shared secret size should fail" );
+
+        pFuncTable->KeyFree( pKey );
+        pKey = NULL;
     }
-
-    iprint( "\n        Total samples: %d MlKemKeyGen, %d MlKemEncaps, %d MlKemDecaps\n", cKemKeyGenSamples, cKemEncapsSamples, cKemDecapsSamples);
 }
+
+#define SYMCRYPT_TEST_MLKEM_SIZEOF_PUBLIC_SEED  (32)
+#define SYMCRYPT_TEST_MLKEM_SIZEOF_ENCAPS_HASH  (32)
+#define SYMCRYPT_TEST_MLKEM_SIZEOF_Z            (32)
 
 VOID
 testSymCryptMlKemSetInvalidDecapsKeyBlob()
@@ -1057,31 +1051,606 @@ testSymCryptMlKemSetInvalidDecapsKeyBlob()
 }
 
 VOID
+testSymCryptMlKemNegativeTests()
+{
+    SymCryptKemNegativeTestConfig<MlKemDef> config = {
+        &g_MlKemFunctionTable,
+        rgTestMlKemParams,
+        NUM_OF_MLKEM_TEST_PARAMS,
+    };
+
+    testSymCryptKemNegativeTests<MlKemDef>( config );
+
+    testSymCryptMlKemSetInvalidDecapsKeyBlob();
+}
+
+// Main purpose of this test is to check that setting a corrupted key blob
+// does not leave the internal representation in a broken state such that
+// subsequent correct SetValue calls fail.
+VOID
+testSymCryptCompositeMlKemCorruptEcPrivateKey()
+{
+    SYMCRYPT_ERROR scError;
+    PSYMCRYPT_COMPOSITE_MLKEMKEY pKey;
+    BYTE abPrivateKeyBlob[CompositeMlKemDef::MaxDecapsKeyBlobSize];
+    BYTE abSharedSecret[CompositeMlKemDef::AgreedSecretSize];
+    BYTE abDecapsSecret[CompositeMlKemDef::AgreedSecretSize];
+    BYTE abCiphertext[CompositeMlKemDef::MaxCiphertextSize];
+    SIZE_T cbPrivateKey = 0;
+    SIZE_T cbCiphertext = 0;
+
+    for( UINT32 paramIdx = 0; paramIdx < NUM_OF_COMPOSITE_MLKEM_TEST_PARAMS; paramIdx++ )
+    {
+        SYMCRYPT_TEST_COMPOSITE_MLKEM_PARAMS testParams = rgTestCompositeMlKemParams[paramIdx];
+        SYMCRYPT_COMPOSITE_MLKEM_PARAMS params = testParams.params;
+
+        // Skip X25519 since LAMPS private key format uses raw scalar with no special encoding
+        if( testParams.curveId == SYMCRYPT_CACHED_ECURVE_ID_CURVE_25519 )
+        {
+            continue;
+        }
+
+        scError = SymCryptCompositeMlKemSizeofKeyFormatFromParams( params, SYMCRYPT_COMPOSITE_MLKEMKEY_FORMAT_LAMPS_PRIVATE_KEY, &cbPrivateKey );
+        CHECK( scError == SYMCRYPT_NO_ERROR, "?" );
+
+        scError = SymCryptCompositeMlKemSizeofCiphertextFromParams( params, &cbCiphertext );
+        CHECK( scError == SYMCRYPT_NO_ERROR, "?" );
+
+        pKey = SymCryptCompositeMlKemkeyAllocate( params );
+        CHECK( pKey != NULL, "?" );
+
+        scError = SymCryptCompositeMlKemkeyGenerate( pKey, 0 );
+        CHECK( scError == SYMCRYPT_NO_ERROR, "?" );
+
+        scError = SymCryptCompositeMlKemkeyGetValue( pKey, abPrivateKeyBlob, cbPrivateKey, SYMCRYPT_COMPOSITE_MLKEMKEY_FORMAT_LAMPS_PRIVATE_KEY, 0 );
+        CHECK( scError == SYMCRYPT_NO_ERROR, "?" );
+
+        // Corrupt ASN.1 sequence tag byte of the EC private key
+        SIZE_T cbEcSkOffset = cbPrivateKey - SymCryptCompositeGetSizeOfEncodedEcSk( testParams.curveId );
+        abPrivateKeyBlob[cbEcSkOffset] ^= 0xFF;
+
+        scError = SymCryptCompositeMlKemkeySetValue( abPrivateKeyBlob, cbPrivateKey, SYMCRYPT_COMPOSITE_MLKEMKEY_FORMAT_LAMPS_PRIVATE_KEY, 0, pKey );
+        CHECK3( scError != SYMCRYPT_NO_ERROR,
+            "SetValue with corrupted EC private key ASN.1 header should fail for param %s", testParams.pszParamsName );
+
+        abPrivateKeyBlob[cbEcSkOffset] ^= 0xFF;  // Restore ASN.1 sequence tag byte
+        scError = SymCryptCompositeMlKemkeySetValue( abPrivateKeyBlob, cbPrivateKey, SYMCRYPT_COMPOSITE_MLKEMKEY_FORMAT_LAMPS_PRIVATE_KEY, 0, pKey );
+        CHECK3( scError == SYMCRYPT_NO_ERROR,
+            "SetValue should succeed after prior failure for param %s", testParams.pszParamsName );
+
+        // Verify the key is usable
+        scError = SymCryptCompositeMlKemEncapsulate( pKey, abSharedSecret, CompositeMlKemDef::AgreedSecretSize, abCiphertext, cbCiphertext );
+        CHECK3( scError == SYMCRYPT_NO_ERROR,
+            "Encapsulate should succeed after recovery for param %s", testParams.pszParamsName );
+
+        scError = SymCryptCompositeMlKemDecapsulate( pKey, abCiphertext, cbCiphertext, abDecapsSecret, CompositeMlKemDef::AgreedSecretSize );
+        CHECK3( scError == SYMCRYPT_NO_ERROR,
+            "Decapsulate should succeed after recovery for param %s", testParams.pszParamsName );
+
+        CHECK3( memcmp( abSharedSecret, abDecapsSecret, CompositeMlKemDef::AgreedSecretSize ) == 0,
+            "Shared secrets should match after recovery for param %s", testParams.pszParamsName );
+
+        SymCryptCompositeMlKemkeyFree( pKey );
+        pKey = NULL;
+    }
+}
+
+VOID
+testSymCryptCompositeMlKemNegativeTests()
+{
+    SymCryptKemNegativeTestConfig<CompositeMlKemDef> config = {
+        &g_CompositeMlKemFunctionTable,
+        rgTestCompositeMlKemParams,
+        NUM_OF_COMPOSITE_MLKEM_TEST_PARAMS,
+    };
+
+    testSymCryptKemNegativeTests<CompositeMlKemDef>( config );
+
+    testSymCryptCompositeMlKemCorruptEcPrivateKey();
+}
+
+////////////////////////////////////////////////
+// KATS testing
+////////////////////////////////////////////////
+
+template<typename KemDef>
+struct KemKatTester
+{
+    protected:
+        using TestParamsType = typename KemDef::TestParamsType;
+        using ParamsType     = typename KemDef::ParamsType;
+        using FormatType     = typename KemDef::FormatType;
+        using TestBlobType   = typename KemDef::TestBlobType;
+
+        const char* algName;
+        char* katResourceName;
+        char* katResourceType;
+        const TestParamsType* rgTestParams;
+        const SIZE_T cTestParams;
+
+        KemKatTester(
+            const char* algName_,
+            char* katResourceName_,
+            char* katResourceType_,
+            const TestParamsType* rgTestParams_,
+            SIZE_T cTestParams_ ) :
+
+            algName( algName_ ),
+            katResourceName( katResourceName_ ),
+            katResourceType( katResourceType_ ),
+            rgTestParams( rgTestParams_ ),
+            cTestParams( cTestParams_ )
+        {}
+
+        virtual void testKeyGen( KemImplementation* pImpl, TestParamsType testParams, KAT_ITEM& katItem, ULONGLONG line ) = 0;
+        virtual void testEncaps( KemImplementation* pImpl, TestParamsType testParams, KAT_ITEM& katItem, ULONGLONG line ) = 0;
+        virtual void testDecaps( KemImplementation* pImpl, TestParamsType testParams, KAT_ITEM& katItem, ULONGLONG line );
+
+    public:
+        virtual ~KemKatTester() {}
+        void runKatTests();
+};
+
+//
+// Default functions
+//
+
+template <typename KemDef>
+VOID
+KemKatTester<KemDef>::runKatTests()
+{
+    std::unique_ptr<KatData> katData( getCustomResource( katResourceName, katResourceType ) );
+    KAT_ITEM katItem;
+
+    String sep = "";
+    UINT32 cKeyGen = 0;
+    UINT32 cEncaps = 0;
+    UINT32 cDecaps = 0;
+    TestParamsType testParams = {};
+    BOOLEAN bParamsFound = FALSE;
+
+    SIZE_T i;
+
+    std::unique_ptr<KemMultiImp> pKemMultiImp( new KemMultiImp( algName ) );
+
+    while( 1 )
+    {
+        katData->getKatItem( &katItem );
+        ULONGLONG line = katItem.line;
+
+        if( katItem.type == KAT_TYPE_END )
+        {
+            break;
+        }
+
+        if( katItem.type == KAT_TYPE_CATEGORY )
+        {
+            // We never skip data and the algorithm is
+            // specified by the data item.
+            iprint( "%s%s", sep.c_str(), katItem.categoryName.c_str() );
+            sep = ", ";
+
+            bParamsFound = FALSE;
+            for( i=0; i < cTestParams; i++ )
+            {
+                // Compare with the category name with known ML-KEM params
+                if ( strcmp( katItem.categoryName.c_str(), rgTestParams[i].pszParamsName ) == 0 )
+                {
+                    bParamsFound = TRUE;
+                    break;
+                }
+            }
+            CHECK3( bParamsFound, "KEM header at line %lld specifies unknown KAT KEM params!", line) ;
+
+            testParams = rgTestParams[i];
+        }
+
+        if( katItem.type == KAT_TYPE_DATASET )
+        {
+            if( katIsFieldPresent( katItem, "z" ) )
+            {
+                testKeyGen( pKemMultiImp.get(), testParams, katItem, line );
+                cKeyGen++;
+            }
+            else if( katIsFieldPresent( katItem, "ek" ) )
+            {
+                testEncaps( pKemMultiImp.get(), testParams, katItem, line );
+                cEncaps++;
+            }
+            else if( katIsFieldPresent( katItem, "dk" ) )
+            {
+                testDecaps( pKemMultiImp.get(), testParams, katItem, line );
+                cDecaps++;
+            }
+            else
+            {
+                FATAL2( "Unknown data record at line %lld", line );
+            }
+        }
+    }
+
+    iprint( "\n        Total samples: %d KeyGen, %d Encaps, %d Decaps\n", cKeyGen, cEncaps, cDecaps );
+}
+
+ template <typename KemDef>
+ VOID
+ KemKatTester<KemDef>::testDecaps(
+        _In_ KemImplementation* pImpl,
+        TestParamsType testParams,
+        _Inout_ KAT_ITEM& katItem,
+        ULONGLONG line )
+{
+    CHECK3( katItem.dataItems.size() == 3, "Wrong number of items in KEM Decapsulation record at line %lld", line );
+
+    BString katDecapsKeyBlob = katParseData( katItem, "dk" );
+    BString katCipherText    = katParseData( katItem, "c" );
+    BString katAgreedSecret  = katParseData( katItem, "k" );
+
+    NTSTATUS ntStatus;
+    BYTE abComputedAgreedSecret[KemDef::AgreedSecretSize];
+    BYTE abExportedDecapsKeyBlob[KemDef::MaxDecapsKeyBlobSize];
+    TestBlobType keyTestBlob;
+
+    CHECK( katAgreedSecret.size() <= sizeof(abComputedAgreedSecret), "?" );
+    CHECK( katDecapsKeyBlob.size() <= sizeof(keyTestBlob.abKeyBlob), "?" );
+
+    keyTestBlob.params = testParams.params;
+    keyTestBlob.format = KemDef::FormatDecaps;
+    memcpy( keyTestBlob.abKeyBlob, katDecapsKeyBlob.data(), katDecapsKeyBlob.size() );
+    keyTestBlob.cbKeyBlob = katDecapsKeyBlob.size();
+
+    ntStatus = pImpl->setKeyFromTestBlob( (PCBYTE) &keyTestBlob, sizeof(keyTestBlob), TRUE );
+    CHECK3( ntStatus == STATUS_SUCCESS, "Failure setting key from decapsulation key blob at line %lld", line );
+
+    ntStatus = pImpl->decapsulate(
+        katCipherText.data(), katCipherText.size(),
+        abComputedAgreedSecret, katAgreedSecret.size() );
+    CHECK3( ntStatus == STATUS_SUCCESS, "Failure in decapsulate at line %lld", line );
+    CHECK3( memcmp( katAgreedSecret.data(), abComputedAgreedSecret, katAgreedSecret.size() ) == 0,
+            "Agreed Secret doesn't match at line %lld", line );
+
+    // Sanity check that exporting the decaps key matches the original blob
+    ntStatus = pImpl->getBlobFromKey( KemDef::FormatDecaps, abExportedDecapsKeyBlob, katDecapsKeyBlob.size() );
+    CHECK3( ntStatus == STATUS_SUCCESS, "Failure exporting decapsulation key blob at line %lld", line );
+    CHECK3( memcmp( katDecapsKeyBlob.data(), abExportedDecapsKeyBlob, katDecapsKeyBlob.size() ) == 0,
+            "Exported decapsulation key doesn't match original at line %lld", line );
+
+    CHECK( pImpl->setKeyFromTestBlob( NULL, 0, FALSE ) == STATUS_SUCCESS, "Failed to clear key" );
+}
+
+//
+// ML-KEM KAT tester definitions
+//
+
+struct MlKemKatTester : KemKatTester<MlKemDef>
+{
+    MlKemKatTester() :
+        KemKatTester<MlKemDef>(
+            "MlKem",
+            "kat_kem.dat",
+            "KAT_KEM",
+            rgTestMlKemParams,
+            NUM_OF_MLKEM_TEST_PARAMS )
+    {}
+
+    VOID testKeyGen( KemImplementation* pImpl, SYMCRYPT_TEST_MLKEM_PARAMS testParams, KAT_ITEM& katItem, ULONGLONG line ) override;
+    VOID testEncaps( KemImplementation* pImpl, SYMCRYPT_TEST_MLKEM_PARAMS testParams, KAT_ITEM& katItem, ULONGLONG line ) override;
+};
+
+VOID
+MlKemKatTester::testKeyGen(
+        KemImplementation*          pKemImplementation,
+        SYMCRYPT_TEST_MLKEM_PARAMS  testParams,
+        KAT_ITEM&                   katItem,
+        ULONGLONG                   line )
+{
+    NTSTATUS ntStatus;
+    BYTE abComputedEncapsKeyBlob[MlKemDef::MaxEncapsKeyBlobSize];
+    BYTE abComputedDecapsKeyBlob[MlKemDef::MaxDecapsKeyBlobSize];
+    MLKEMKEY_TESTBLOB keyTestBlob;
+
+    CHECK3( katItem.dataItems.size() == 4, "Wrong number of items in KEM KeyGen record at line %lld", line );
+
+    BString katPrivateRandom  = katParseData( katItem, "z" );
+    BString katPrivateSeed    = katParseData( katItem, "d" );
+    BString katEncapsKeyBlob  = katParseData( katItem, "ek" );
+    BString katDecapsKeyBlob  = katParseData( katItem, "dk" );
+
+    CHECK( katPrivateSeed.size() == 32, "?" );
+    CHECK( katPrivateRandom.size() == 32, "?" );
+
+    keyTestBlob.params = testParams.params;
+    keyTestBlob.format = SYMCRYPT_MLKEMKEY_FORMAT_PRIVATE_SEED;
+    memcpy( keyTestBlob.abKeyBlob, katPrivateSeed.data(), katPrivateSeed.size() );
+    memcpy( keyTestBlob.abKeyBlob + katPrivateSeed.size(), katPrivateRandom.data(), katPrivateRandom.size() );
+    keyTestBlob.cbKeyBlob = 64;
+
+    ntStatus = pKemImplementation->setKeyFromTestBlob( (PCBYTE) &keyTestBlob, sizeof(keyTestBlob), TRUE );
+    CHECK3( ntStatus == STATUS_SUCCESS, "Failure setting key from private seed for ML-KEM record at line %lld", line);
+
+    ntStatus = pKemImplementation->getBlobFromKey( SYMCRYPT_MLKEMKEY_FORMAT_ENCAPSULATION_KEY, abComputedEncapsKeyBlob, katEncapsKeyBlob.size() );
+    CHECK3( ntStatus == STATUS_SUCCESS, "Failure getting encapsulation key blob for ML-KEM record at line %lld", line);
+    CHECK3( memcmp( katEncapsKeyBlob.data(), abComputedEncapsKeyBlob, katEncapsKeyBlob.size() ) == 0, "Encapsulation Key doesn't match for ML-KEM record at line %lld", line);
+
+    ntStatus = pKemImplementation->getBlobFromKey( SYMCRYPT_MLKEMKEY_FORMAT_DECAPSULATION_KEY, abComputedDecapsKeyBlob, katDecapsKeyBlob.size() );
+    CHECK3( ntStatus == STATUS_SUCCESS, "Failure getting decapsulation key blob for ML-KEM record at line %lld", line);
+    CHECK3( memcmp( katDecapsKeyBlob.data(), abComputedDecapsKeyBlob, katDecapsKeyBlob.size() ) == 0, "Decapsulation Key doesn't match for ML-KEM record at line %lld", line);
+
+    CHECK( pKemImplementation->setKeyFromTestBlob( NULL, 0, FALSE ) == STATUS_SUCCESS, "Failed to clear key" );
+}
+
+VOID
+MlKemKatTester::testEncaps(
+    KemImplementation*          pKemImplementation,
+    SYMCRYPT_TEST_MLKEM_PARAMS  testParams,
+    KAT_ITEM&                   katItem,
+    ULONGLONG                   line )
+{
+    CHECK3( katItem.dataItems.size() == 4, "Wrong number of items in KEM Encapsulation record at line %lld", line );
+
+    BString katEncapsKeyBlob = katParseData( katItem, "ek" );
+    BString katInputRandom   = katParseData( katItem, "m" );
+    BString katAgreedSecret  = katParseData( katItem, "k" );
+    BString katCipherText    = katParseData( katItem, "c" );
+
+    NTSTATUS ntStatus;
+    BYTE abComputedAgreedSecret[MlKemDef::AgreedSecretSize];
+    BYTE abComputedCiphertext[MlKemDef::MaxCiphertextSize];
+    MLKEMKEY_TESTBLOB keyTestBlob;
+
+    CHECK( katAgreedSecret.size() <= sizeof(abComputedAgreedSecret), "?" );
+    CHECK( katCipherText.size() <= sizeof(abComputedCiphertext), "?" );
+    CHECK( katEncapsKeyBlob.size() <= sizeof(keyTestBlob.abKeyBlob), "?" );
+
+    keyTestBlob.params = testParams.params;
+    keyTestBlob.format = SYMCRYPT_MLKEMKEY_FORMAT_ENCAPSULATION_KEY;
+    memcpy( keyTestBlob.abKeyBlob, katEncapsKeyBlob.data(), katEncapsKeyBlob.size() );
+    keyTestBlob.cbKeyBlob = katEncapsKeyBlob.size();
+
+    ntStatus = pKemImplementation->setKeyFromTestBlob( (PCBYTE) &keyTestBlob, sizeof(keyTestBlob), FALSE );
+    CHECK3( ntStatus == STATUS_SUCCESS, "Failure setting key from encapsulation key blob at line %lld", line );
+
+    ntStatus = pKemImplementation->encapsulateEx(
+                                    katInputRandom.data(), katInputRandom.size(),
+                                    abComputedAgreedSecret, katAgreedSecret.size(),
+                                    abComputedCiphertext, katCipherText.size() );
+    CHECK3( ntStatus == STATUS_SUCCESS, "Failure in encapsulateEx at line %lld", line );
+    CHECK3( memcmp( katAgreedSecret.data(), abComputedAgreedSecret, katAgreedSecret.size() ) == 0,
+            "Agreed Secret doesn't match at line %lld", line );
+    CHECK3( memcmp( katCipherText.data(), abComputedCiphertext, katCipherText.size() ) == 0,
+            "Ciphertext doesn't match at line %lld", line );
+
+    CHECK( pKemImplementation->setKeyFromTestBlob( NULL, 0, FALSE ) == STATUS_SUCCESS, "Failed to clear key" );
+}
+
+//
+// Composite ML-KEM KAT tester definitions
+//
+
+struct CompositeMlKemKatTester : KemKatTester<CompositeMlKemDef>
+{
+    CompositeMlKemKatTester() :
+        KemKatTester<CompositeMlKemDef>(
+            "CompositeMlKem",
+            "kat_composite_kem.dat",
+            "KAT_COMPOSITE_KEM",
+            rgTestCompositeMlKemParams,
+            NUM_OF_COMPOSITE_MLKEM_TEST_PARAMS )
+    {}
+
+    VOID testKeyGen( KemImplementation* pKemImplementation, SYMCRYPT_TEST_COMPOSITE_MLKEM_PARAMS testParams, KAT_ITEM& katItem, ULONGLONG line ) override;
+    VOID testEncaps( KemImplementation* pKemImplementation, SYMCRYPT_TEST_COMPOSITE_MLKEM_PARAMS testParams, KAT_ITEM& katItem, ULONGLONG line ) override;
+};
+
+VOID
+CompositeMlKemKatTester::testEncaps(
+    KemImplementation*                      pKemImplementation,
+    SYMCRYPT_TEST_COMPOSITE_MLKEM_PARAMS    testParams,
+    KAT_ITEM&                               katItem,
+    ULONGLONG                               line )
+{
+    // Currently LAMPS doesn't have randomness in the test vectors,
+    // so we can only verify the success of the encapsulation operation.
+
+    CHECK3( katItem.dataItems.size() == 1, "Wrong number of items in Composite KEM Encapsulation record at line %lld", line );
+
+    BString katEncapsKeyBlob = katParseData( katItem, "ek" );
+
+    NTSTATUS ntStatus;
+    BYTE abComputedAgreedSecret[CompositeMlKemDef::AgreedSecretSize];
+    BYTE abComputedCiphertext[CompositeMlKemDef::MaxCiphertextSize];
+    COMPOSITE_MLKEMKEY_TESTBLOB keyTestBlob;
+    SIZE_T cbCipherText = 0;
+    SIZE_T cbAgreedSecret = CompositeMlKemDef::AgreedSecretSize;
+
+    SymCryptCompositeMlKemSizeofCiphertextFromParams( testParams.params, &cbCipherText );
+
+    CHECK( cbAgreedSecret <= sizeof(abComputedAgreedSecret), "?" );
+    CHECK( cbCipherText <= sizeof(abComputedCiphertext), "?" );
+    CHECK( katEncapsKeyBlob.size() <= sizeof(keyTestBlob.abKeyBlob), "?" );
+
+    keyTestBlob.params = testParams.params;
+    keyTestBlob.format = SYMCRYPT_COMPOSITE_MLKEMKEY_FORMAT_PUBLIC_KEY;
+    memcpy( keyTestBlob.abKeyBlob, katEncapsKeyBlob.data(), katEncapsKeyBlob.size() );
+    keyTestBlob.cbKeyBlob = katEncapsKeyBlob.size();
+
+    ntStatus = pKemImplementation->setKeyFromTestBlob( (PCBYTE) &keyTestBlob, sizeof(keyTestBlob), FALSE );
+    CHECK3( ntStatus == STATUS_SUCCESS, "Failure setting key from encapsulation key blob for Composite ML-KEM record at line %lld", line);
+
+    ntStatus = pKemImplementation->encapsulate(
+                abComputedAgreedSecret, cbAgreedSecret,
+                abComputedCiphertext, cbCipherText );
+    CHECK3( ntStatus == STATUS_SUCCESS, "Failure in encapsulate for Composite ML-KEM record at line %lld", line);
+
+    CHECK( pKemImplementation->setKeyFromTestBlob( NULL, 0, FALSE ) == STATUS_SUCCESS, "Failed to clear key" );
+}
+
+VOID
+CompositeMlKemKatTester::testKeyGen(
+        KemImplementation*                      pKemImplementation,
+        SYMCRYPT_TEST_COMPOSITE_MLKEM_PARAMS    testParams,
+        KAT_ITEM&                               katItem,
+        ULONGLONG                               line )
+{
+    CHECK3( katItem.dataItems.size() == 5, "Wrong number of items in Composite KEM KeyGen record at line %lld", line );
+
+    BString katPrivateRandom = katParseData( katItem, "z" );
+    BString katPrivateSeed   = katParseData( katItem, "d" );
+    BString katEncapsKeyBlob = katParseData( katItem, "ek" );
+    BString katCipherText    = katParseData( katItem, "c" );
+    BString katAgreedSecret  = katParseData( katItem, "k" );
+
+    NTSTATUS ntStatus;
+    SYMCRYPT_ERROR scError;
+    BYTE abComputedEncapsKeyBlob[CompositeMlKemDef::MaxEncapsKeyBlobSize];
+    BYTE abComputedCipherText[CompositeMlKemDef::MaxCiphertextSize];
+    BYTE abComputedAgreedSecret[CompositeMlKemDef::AgreedSecretSize];
+    BYTE abComputedIrtfSeed[32];
+    COMPOSITE_MLKEMKEY_TESTBLOB keyTestBlob;
+
+    SIZE_T cbMlKemRandom = 32;
+    SYMCRYPT_NUMBER_FORMAT ecNumFormat;
+    PCSYMCRYPT_ECURVE pCurve = SymCryptGetCachedEcurve( testParams.curveId );
+
+    CHECK( pCurve != NULL, "Failed to get curve for Composite ML-KEM" );
+
+    SIZE_T cbScalar = SymCryptEcurveSizeofScalarMultiplier( pCurve );
+    BYTE abEncapsRandom[32 + 48];
+
+    CHECK( katEncapsKeyBlob.size() <= sizeof(abComputedEncapsKeyBlob), "?" );
+    CHECK( katCipherText.size() <= sizeof(abComputedCipherText), "?" );
+    CHECK( katAgreedSecret.size() <= sizeof(abComputedAgreedSecret), "?" );
+    CHECK3( katPrivateSeed.size() == 32, "Unexpected private seed size for Composite ML-KEM record at line %lld", line );
+    CHECK3( katAgreedSecret.size() == CompositeMlKemDef::AgreedSecretSize, "Unexpected agreed secret size for Composite ML-KEM record at line %lld", line );
+    CHECK( cbMlKemRandom + cbScalar <= sizeof(abEncapsRandom), "?" );
+
+    // Generate key from IRTF private seed and verify encapsulation key matches
+
+    keyTestBlob.params = testParams.params;
+    keyTestBlob.format = SYMCRYPT_COMPOSITE_MLKEMKEY_FORMAT_IRTF_PRIVATE_SEED;
+    memcpy( keyTestBlob.abKeyBlob, katPrivateSeed.data(), katPrivateSeed.size() );
+    keyTestBlob.cbKeyBlob = katPrivateSeed.size();
+
+    ntStatus = pKemImplementation->setKeyFromTestBlob( (PCBYTE) &keyTestBlob, sizeof(keyTestBlob), TRUE );
+    CHECK3( ntStatus == STATUS_SUCCESS, "Failure setting key from IRTF private seed for Composite ML-KEM record at line %lld", line );
+
+    // Sanity check: verify that getting the IRTF seed matches the original KAT seed
+    ntStatus = pKemImplementation->getBlobFromKey( SYMCRYPT_COMPOSITE_MLKEMKEY_FORMAT_IRTF_PRIVATE_SEED, abComputedIrtfSeed, katPrivateSeed.size() );
+    CHECK3( ntStatus == STATUS_SUCCESS, "Failure getting IRTF private seed for Composite ML-KEM record at line %lld", line );
+    CHECK3( memcmp( katPrivateSeed.data(), abComputedIrtfSeed, katPrivateSeed.size() ) == 0,
+            "IRTF private seed doesn't match for Composite ML-KEM record at line %lld", line );
+
+    ntStatus = pKemImplementation->getBlobFromKey( SYMCRYPT_COMPOSITE_MLKEMKEY_FORMAT_PUBLIC_KEY, abComputedEncapsKeyBlob, katEncapsKeyBlob.size() );
+    CHECK3( ntStatus == STATUS_SUCCESS, "Failure getting encapsulation key blob for Composite ML-KEM record at line %lld", line );
+    CHECK3( memcmp( katEncapsKeyBlob.data(), abComputedEncapsKeyBlob, katEncapsKeyBlob.size() ) == 0,
+            "Encapsulation key doesn't match for Composite ML-KEM record at line %lld", line );
+
+    // Convert the randomness into the format expected by encapsulateEx, and then
+    // check our computed ciphertext and agreed secret against the KAT values
+
+    memcpy( abEncapsRandom, katPrivateRandom.data(), cbMlKemRandom );
+
+    switch ( testParams.curveId )
+    {
+        case SYMCRYPT_CACHED_ECURVE_ID_NIST_P256:
+        case SYMCRYPT_CACHED_ECURVE_ID_NIST_P384:
+            ecNumFormat = SYMCRYPT_NUMBER_FORMAT_MSB_FIRST;
+            break;
+        case SYMCRYPT_CACHED_ECURVE_ID_CURVE_25519:
+            // Technically ignored for getting a random scalar
+            // for Curve25519, but set it for correctness.
+            ecNumFormat = SYMCRYPT_NUMBER_FORMAT_LSB_FIRST;
+            break;
+        default:
+            CHECK( FALSE, "Unsupported curve for Composite ML-KEM KAT" );
+    }
+
+    scError = SymCryptCompositeMlKemGetRandomScalarForEcKeyEx(
+                testParams.curveId,
+                ecNumFormat,
+                katPrivateRandom.data() + cbMlKemRandom,
+                katPrivateRandom.size() - cbMlKemRandom,
+                abEncapsRandom + cbMlKemRandom,
+                cbScalar );
+    CHECK3( scError == SYMCRYPT_NO_ERROR, "GetRandomScalarForEcKey failed for Composite ML-KEM record at line %lld", line );
+
+    ntStatus = pKemImplementation->encapsulateEx(
+        abEncapsRandom, cbMlKemRandom + cbScalar,
+        abComputedAgreedSecret, katAgreedSecret.size(),
+        abComputedCipherText, katCipherText.size() );
+    CHECK3( ntStatus == STATUS_SUCCESS, "Failure in encapsulateEx for Composite ML-KEM record at line %lld", line );
+    CHECK3( memcmp( katCipherText.data(), abComputedCipherText, katCipherText.size() ) == 0,
+            "Ciphertext doesn't match for Composite ML-KEM record at line %lld", line );
+    CHECK3( memcmp( katAgreedSecret.data(), abComputedAgreedSecret, katAgreedSecret.size() ) == 0,
+            "Agreed secret from encapsulateEx doesn't match for Composite ML-KEM record at line %lld", line );
+
+    // Decapsulate provided ciphertext and check that the computed agreed secret matches the provided value
+
+    ntStatus = pKemImplementation->decapsulate(
+        katCipherText.data(), katCipherText.size(),
+        abComputedAgreedSecret, katAgreedSecret.size() );
+    CHECK3( ntStatus == STATUS_SUCCESS, "Failure in decapsulate for Composite ML-KEM record at line %lld", line );
+    CHECK3( memcmp( katAgreedSecret.data(), abComputedAgreedSecret, katAgreedSecret.size() ) == 0,
+            "Agreed secret from decapsulate doesn't match for Composite ML-KEM record at line %lld", line );
+
+    CHECK( pKemImplementation->setKeyFromTestBlob( NULL, 0, FALSE ) == STATUS_SUCCESS, "Failed to clear key" );
+}
+
+VOID
+testCompositeMlKemKats()
+{
+    CompositeMlKemKatTester katTester;
+    katTester.runKatTests();
+}
+
+VOID
+testMlKemKats()
+{
+    MlKemKatTester katTester;
+    katTester.runKatTests();
+}
+
+VOID
 testKem()
 {
     INT64 nOutstandingAllocs = 0;
 
-    // Skip if there is no Kem algorithm to test.
-    if( !isAlgorithmPresent( "MlKem", TRUE ) )
+    if ( !isAlgorithmPresent( "CompositeMlKem", TRUE ) && !isAlgorithmPresent( "MlKem", TRUE ) )
     {
         return;
     }
 
-    iprint( "    KEM\n" );
-
-    testKemKats();
-
     nOutstandingAllocs = SYMCRYPT_INTERNAL_VOLATILE_READ64(&g_nOutstandingCheckedAllocs);
     CHECK3( nOutstandingAllocs  == 0, "Memory leak %d outstanding", nOutstandingAllocs );
 
-#if SYMCRUST_EXPERIMENTAL_BUILD == 0
-    testMlKemArithmetic();
-#endif
-    testMlKemHighLevelAPI();
-    testSymCryptMlKemSetInvalidDecapsKeyBlob();
+    if ( isAlgorithmPresent( "CompositeMlKem", TRUE ) )
+    {
+        iprint( "    Composite ML-KEM\n" );
+
+        testCompositeMlKemKats();
+
+        testCompositeMlKemHighLevelAPI();
+        testSymCryptCompositeMlKemNegativeTests();
+
+        iprint("\n");
+    }
+
+    if ( isAlgorithmPresent( "MlKem", TRUE ) )
+    {
+        iprint( "    ML-KEM\n" );
+
+        testMlKemKats();
+
+        #if SYMCRUST_EXPERIMENTAL_BUILD == 0
+            testMlKemArithmetic();
+        #endif
+
+        testMlKemHighLevelAPI();
+        testSymCryptMlKemNegativeTests();
+
+        iprint("\n");
+    }
 
     nOutstandingAllocs = SYMCRYPT_INTERNAL_VOLATILE_READ64(&g_nOutstandingCheckedAllocs);
     CHECK3( nOutstandingAllocs == 0, "Memory leak, %d outstanding", nOutstandingAllocs );
-
-    iprint("\n");
 }

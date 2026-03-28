@@ -13,6 +13,7 @@ use alloc::boxed::Box;
 use core::result::Result;
 
 use super::MATRIX_MAX_NROWS;
+use super::vector_set_zero;
 
 // MLKEM key formats
 // ==================
@@ -156,7 +157,7 @@ pub struct Key {
     // allocated, but this proved inconvenient to work with over FFI. Instead, we allocate the
     // maximum size, and only use the prefix we need (using a bit more memory, but reducing complexity
     // and number of calls to the allocator). See ALLOCATIONS.md for more details.
-    
+
     pub(super) data: [PolyElement; MATRIX_MAX_NROWS * MATRIX_MAX_NROWS + 2 * MATRIX_MAX_NROWS],
 }
 
@@ -208,6 +209,14 @@ impl Key {
             &mut self.data[m_len..m_len + self.n_rows],
             &mut self.encoded_t,
         )
+    }
+
+    pub(super) fn wipe_private_state(&mut self) {
+        vector_set_zero(self.s_mut());
+        crate::common::wipe_slice(&mut self.private_random);
+        crate::common::wipe_slice(&mut self.private_seed);
+        self.has_private_seed = false;
+        self.has_private_key = false;
     }
 }
 

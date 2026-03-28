@@ -779,7 +779,6 @@ SymCryptMlDsaMatrixCreate(
     SYMCRYPT_ASSERT( nRows <= SYMCRYPT_MLDSA_MATRIX_MAX_NROWS );
     SYMCRYPT_ASSERT( nCols <= SYMCRYPT_MLDSA_MATRIX_MAX_NCOLS );
     SYMCRYPT_ASSERT( cbBuffer == SYMCRYPT_INTERNAL_MLDSA_SIZEOF_MATRIX(nRows, nCols) );
-    SYMCRYPT_ASSERT( (UINT32) nRows * nCols <= UINT8_MAX );
 
     PSYMCRYPT_MLDSA_MATRIX pMatrix = (PSYMCRYPT_MLDSA_MATRIX) pbBuffer;
     SYMCRYPT_ASSERT( pMatrix != NULL );
@@ -789,7 +788,7 @@ SymCryptMlDsaMatrixCreate(
     pMatrix->cbTotalSize = cbBuffer;
 
     PBYTE pbCurrent = pbBuffer + sizeof(SYMCRYPT_MLDSA_MATRIX);
-    for(UINT8 i = 0; i < nRows * nCols; ++i)
+    for(UINT32 i = 0; i < (UINT32) nRows * nCols; ++i)
     {
         SymCryptMlDsaPolyElementCreate( pbCurrent, SYMCRYPT_INTERNAL_MLDSA_SIZEOF_POLYELEMENT );
         pbCurrent += SYMCRYPT_INTERNAL_MLDSA_SIZEOF_POLYELEMENT;

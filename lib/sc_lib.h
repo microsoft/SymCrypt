@@ -4287,6 +4287,12 @@ SymCryptInverseMod2e64( UINT64 m );
 //--------------------------------------------------------
 //--------------------------------------------------------
 
+// Helper function for wiping the Ec key's private state (e.g. for use in layers such as composites)
+VOID
+SYMCRYPT_CALL
+SymCryptEckeyWipePrivateState(
+    _Inout_ PSYMCRYPT_ECKEY pkEckey );
+
 // Recoding algorithms
 VOID
 SYMCRYPT_CALL
@@ -4352,6 +4358,120 @@ SymCryptPositiveWidthNafRecoding(
 // MLWE internal function definitions are in their own headers
 #include "sc_lib_mlkem.h"
 #include "sc_lib_mldsa.h"
+
+//
+// Common Composite Definitions
+//
+
+typedef enum {
+    SYMCRYPT_CACHED_ECURVE_ID_NIST_P256 = 0,
+    SYMCRYPT_CACHED_ECURVE_ID_NIST_P384,
+    SYMCRYPT_CACHED_ECURVE_ID_CURVE_25519,
+    SYMCRYPT_CACHED_ECURVE_ID_COUNT
+} SYMCRYPT_CACHED_ECURVE_ID, *PSYMCRYPT_CACHED_ECURVE_ID;
+
+PCSYMCRYPT_ECURVE
+SYMCRYPT_CALL
+SymCryptGetCachedEcurve(
+    SYMCRYPT_CACHED_ECURVE_ID   curveId );
+
+#define SYMCRYPT_COMPOSITE_SIZEOF_ENCODED_EC_PUBLIC_KEY_P256        (65)
+#define SYMCRYPT_COMPOSITE_SIZEOF_ENCODED_EC_PUBLIC_KEY_P384        (97)
+#define SYMCRYPT_COMPOSITE_SIZEOF_ENCODED_EC_PUBLIC_KEY_CURVE_25519 (32)
+
+#define SYMCRYPT_COMPOSITE_SIZEOF_MAX_ENCODED_EC_PUBLIC_KEY SYMCRYPT_COMPOSITE_SIZEOF_ENCODED_EC_PUBLIC_KEY_P384
+
+#define SYMCRYPT_COMPOSITE_SIZEOF_ENCODED_EC_PRIVATE_KEY_P256           (51)
+#define SYMCRYPT_COMPOSITE_SIZEOF_ENCODED_EC_PRIVATE_KEY_P384           (64)
+#define SYMCRYPT_COMPOSITE_SIZEOF_ENCODED_EC_PRIVATE_KEY_CURVE_25519    (32)
+
+UINT32
+SYMCRYPT_CALL
+SymCryptCompositeGetSizeOfEncodedEcSk(
+    SYMCRYPT_CACHED_ECURVE_ID   curveId );
+
+UINT32
+SYMCRYPT_CALL
+SymCryptCompositeGetSizeOfEncodedEcPk(
+    SYMCRYPT_CACHED_ECURVE_ID   curveId );
+
+SYMCRYPT_ERROR
+SYMCRYPT_CALL
+SymCryptEckeyGetValueCompositeEncodingSk(
+    _In_                        PCSYMCRYPT_ECKEY            pEckey,
+                                SYMCRYPT_CACHED_ECURVE_ID   curveId,
+    _Out_writes_bytes_( cbDst ) PBYTE                       pbDst,
+                                SIZE_T                      cbDst );
+
+SYMCRYPT_ERROR
+SYMCRYPT_CALL
+SymCryptEckeyGetValueCompositeEncodingPk(
+    _In_                        PCSYMCRYPT_ECKEY            pEckey,
+                                SYMCRYPT_CACHED_ECURVE_ID   curveId,
+    _Out_writes_bytes_( cbDst ) PBYTE                       pbDst,
+                                SIZE_T                      cbDst );
+
+SYMCRYPT_ERROR
+SYMCRYPT_CALL
+SymCryptEckeySetValueCompositeEncodingPk(
+    _In_                        SYMCRYPT_CACHED_ECURVE_ID   curveId,
+    _In_reads_bytes_( cbSrc )   PCBYTE                      pbSrc,
+                                SIZE_T                      cbSrc,
+                                UINT32                      flags,
+    _Inout_                     PSYMCRYPT_ECKEY             pEckey );
+
+SYMCRYPT_ERROR
+SYMCRYPT_CALL
+SymCryptEckeySetValueCompositeEncodingSk(
+                                SYMCRYPT_CACHED_ECURVE_ID   curveId,
+    _In_reads_bytes_( cbSrc )   PCBYTE                      pbSrc,
+                                SIZE_T                      cbSrc,
+                                UINT32                      flags,
+    _Inout_                     PSYMCRYPT_ECKEY             pEckey );
+
+//
+// Composite ML-KEM definitions
+//
+
+typedef struct _SYMCRYPT_COMPOSITE_MLKEM_INTERNAL_PARAMS {
+    SYMCRYPT_COMPOSITE_MLKEM_PARAMS     params;
+    SYMCRYPT_CACHED_ECURVE_ID           ecurveId;
+    SYMCRYPT_MLKEM_PARAMS               mlKemParams;
+    PCBYTE                              pbLabel;
+    SIZE_T                              cbLabel;
+    SIZE_T                              cbCiphertext;
+    SYMCRYPT_NUMBER_FORMAT              numFormat;
+    SYMCRYPT_ECPOINT_FORMAT             ecPointFormat;
+    SIZE_T                              cbExpandedSeed;
+    SIZE_T                              cbEncodedPrivateKey;
+    SIZE_T                              cbEncodedPublicKey;
+} SYMCRYPT_COMPOSITE_MLKEM_INTERNAL_PARAMS, *PSYMCRYPT_COMPOSITE_MLKEM_INTERNAL_PARAMS;
+typedef const SYMCRYPT_COMPOSITE_MLKEM_INTERNAL_PARAMS *PCSYMCRYPT_COMPOSITE_MLKEM_INTERNAL_PARAMS;
+
+typedef SYMCRYPT_ASYM_ALIGN_STRUCT _SYMCRYPT_COMPOSITE_MLKEMKEY {
+    PCSYMCRYPT_COMPOSITE_MLKEM_INTERNAL_PARAMS  pParams;    // pointer to internal params for Composite ML-KEM being used
+    PSYMCRYPT_MLKEMKEY                          pkMlKemkey;
+    PSYMCRYPT_ECKEY                             pkEcKey;    // all composite keys with the same elliptic curve type
+                                                            // share the same lazily allocated curve object. This
+                                                            // avoids the overhead of setting up a new curve object per key.
+
+    BOOLEAN                                     hasPrivateSeed;
+    BYTE                                        privateSeed[SYMCRYPT_COMPOSITE_MLKEM_IRTF_PRIVATE_SEED_SIZE];
+
+    SYMCRYPT_MAGIC_FIELD
+} SYMCRYPT_COMPOSITE_MLKEMKEY, *PSYMCRYPT_COMPOSITE_MLKEMKEY;
+typedef const SYMCRYPT_COMPOSITE_MLKEMKEY *PCSYMCRYPT_COMPOSITE_MLKEMKEY;
+
+// Rejection sampling for generating an EC scalar from an IRTF Composite ML-KEM seed
+SYMCRYPT_ERROR
+SYMCRYPT_CALL
+SymCryptCompositeMlKemGetRandomScalarForEcKeyEx(
+                                    SYMCRYPT_CACHED_ECURVE_ID   ecurveId,
+                                    SYMCRYPT_NUMBER_FORMAT      numFormat,
+    _In_reads_bytes_( cbSeed )      PCBYTE                      pbSeed,
+                                    SIZE_T                      cbSeed,
+    _Out_writes_bytes_( cbScalar )  PBYTE                       pbScalar,
+                                    SIZE_T                      cbScalar );
 
 //
 // XMSS
@@ -4676,8 +4796,12 @@ SymCryptLmsVerifyInternal(
 
 #define SYMCRYPT_ATOMIC_ADD32_POST_SEQ_CST(_dest, _val) _InterlockedAdd( (volatile LONG *)(_dest), (LONG)(_val) )
 
-#define SYMCRYPT_ATOMIC_LOADPTR_ACQUIRE(_dest)          ((PVOID)_InterlockedOr64_acq( (volatile LONG64 *)(_dest), 0 ))
-#define SYMCRYPT_ATOMIC_STOREPTR_RELEASE(_dest, _val)   _InterlockedExchangePointer_rel( (volatile PVOID *)(_dest), (PVOID)(_val) )
+#define SYMCRYPT_ATOMIC_LOADPTR_ACQUIRE(_dest)          ((PVOID)__ldar64( (volatile UINT64 *)(_dest) ))
+#define SYMCRYPT_ATOMIC_STOREPTR_RELEASE(_dest, _val)   __stlr64( (volatile UINT64 *)(_dest), (UINT64)(_val) )
+
+// For ARM/ARM64, MSVC does not have a dedicated acquire-release CAS intrinsic.
+#define SYMCRYPT_ATOMIC_CAS_PTR_ACQUIRE_RELEASE( _dest, _exchange, _comp ) \
+    _InterlockedCompareExchangePointer( (volatile PVOID *)(_dest), (PVOID)(_exchange), (PVOID)(_comp) )
 
 #elif SYMCRYPT_CPU_ARM
 #define SYMCRYPT_ATOMIC_LOAD64_RELAXED(_dest)           _InterlockedOr64_nf( (volatile LONG64 *)(_dest), 0 )
@@ -4689,6 +4813,9 @@ SymCryptLmsVerifyInternal(
 
 #define SYMCRYPT_ATOMIC_LOADPTR_ACQUIRE(_dest)          ((PVOID)_InterlockedOr32_acq( (volatile LONG *)(_dest), 0 ))
 #define SYMCRYPT_ATOMIC_STOREPTR_RELEASE(_dest, _val)   _InterlockedExchangePointer_rel( (volatile PVOID *)(_dest), (PVOID)(_val) )
+
+#define SYMCRYPT_ATOMIC_CAS_PTR_ACQUIRE_RELEASE( _dest, _exchange, _comp ) \
+    _InterlockedCompareExchangePointer( (volatile PVOID *)(_dest), (PVOID)(_exchange), (PVOID)(_comp) )
 
 #elif SYMCRYPT_CPU_AMD64
 // For MSVC on AMD64, there are no _nf atomic intrinsics
@@ -4704,7 +4831,10 @@ SymCryptLmsVerifyInternal(
 #define SYMCRYPT_ATOMIC_LOADPTR_ACQUIRE(_dest)          ((PVOID)SYMCRYPT_FORCE_READ64(_dest))
 #define SYMCRYPT_ATOMIC_STOREPTR_RELEASE(_dest, _val)   SYMCRYPT_FORCE_WRITE64(_dest, ((UINT64)(_val)))
 
-#else
+#define SYMCRYPT_ATOMIC_CAS_PTR_ACQUIRE_RELEASE( _dest, _exchange, _comp ) \
+    _InterlockedCompareExchangePointer( (volatile PVOID *)(_dest), (PVOID)(_exchange), (PVOID)(_comp) )
+
+#elif SYMCRYPT_CPU_X86
 // For MSVC on x86, there is no 64b atomic load intrinsic - use expected to fail CAS, attempting to set from 0 to 0
 #define SYMCRYPT_ATOMIC_LOAD64_RELAXED(_dest)           _InterlockedCompareExchange64( (volatile LONG64 *)(_dest), 0, 0 )
 // For MSVC on x86, there are no _nf atomic intrinsics
@@ -4731,6 +4861,46 @@ SymCryptInlineInterlockedAdd64( volatile LONG64* destination, LONG64 value )
 // Volatile load / store are sufficient for acquire-release semantics on x86
 #define SYMCRYPT_ATOMIC_LOADPTR_ACQUIRE(_dest)          ((PVOID)SYMCRYPT_FORCE_READ32(_dest))
 #define SYMCRYPT_ATOMIC_STOREPTR_RELEASE(_dest, _val)   SYMCRYPT_FORCE_WRITE32(_dest, ((UINT32)(_val)))
+
+#define SYMCRYPT_ATOMIC_CAS_PTR_ACQUIRE_RELEASE( _dest, _exchange, _comp ) \
+    _InterlockedCompareExchangePointer( (volatile PVOID *)(_dest), (PVOID)(_exchange), (PVOID)(_comp) )
+
+#else
+
+// Fallback intended to generically work across all supported platforms for cases where
+// we do not make decisions based on CPU architecture, such as no ASM builds. For the most
+// part the same as x86 except in cases where the underlying definition relies on pointer size.
+
+#define SYMCRYPT_ATOMIC_LOAD64_RELAXED(_dest)           _InterlockedCompareExchange64( (volatile LONG64 *)(_dest), 0, 0 )
+#define SYMCRYPT_ATOMIC_OR32_PRE_RELAXED(_dest, _val)   _InterlockedOr( (volatile LONG *)(_dest), (LONG)(_val) )
+#define SYMCRYPT_ATOMIC_ADD32_PRE_RELAXED(_dest, _val)  _InterlockedExchangeAdd( (volatile LONG *)(_dest), (LONG)(_val) )
+
+FORCEINLINE
+LONG64
+SymCryptInlineInterlockedAdd64( volatile LONG64* destination, LONG64 value )
+{
+    LONG64 preValue;
+    do {
+        preValue = *destination;
+    } while (_InterlockedCompareExchange64(destination, preValue + value, preValue) != preValue);
+
+    return preValue + value;
+}
+#define SYMCRYPT_ATOMIC_ADD64_POST_RELAXED(_dest, _val) SymCryptInlineInterlockedAdd64( (volatile LONG64 *)(_dest), (LONG64)(_val) )
+
+#define SYMCRYPT_ATOMIC_ADD32_POST_SEQ_CST(_dest, _val) (_InterlockedExchangeAdd( (volatile LONG *)(_dest), (LONG)(_val) ) + (LONG)(_val))
+
+#if defined(_WIN64)
+#define SYMCRYPT_ATOMIC_LOADPTR_ACQUIRE(_dest)          ((PVOID)_InterlockedOr64( (volatile LONG64 *)(_dest), 0 ))
+#else
+#define SYMCRYPT_ATOMIC_LOADPTR_ACQUIRE(_dest)          ((PVOID)_InterlockedOr( (volatile LONG *)(_dest), 0 ))
+#endif
+
+#define SYMCRYPT_ATOMIC_STOREPTR_RELEASE(_dest, _val)   _InterlockedExchangePointer( (volatile PVOID *)(_dest), (PVOID)(_val) )
+
+#define SYMCRYPT_ATOMIC_CAS_PTR_ACQUIRE_RELEASE( _dest, _exchange, _comp ) \
+    _InterlockedCompareExchangePointer( (volatile PVOID *)(_dest), (PVOID)(_exchange), (PVOID)(_comp) )
+
 #endif
 
 #elif SYMCRYPT_GNUC
@@ -4743,6 +4913,26 @@ SymCryptInlineInterlockedAdd64( volatile LONG64* destination, LONG64 value )
 
 #define SYMCRYPT_ATOMIC_LOADPTR_ACQUIRE(_dest)          __atomic_load_n( (volatile void* *)(_dest), __ATOMIC_ACQUIRE )
 #define SYMCRYPT_ATOMIC_STOREPTR_RELEASE(_dest, _val)   __atomic_store_n( (volatile void* *)(_dest), (void*)(_val), __ATOMIC_RELEASE )
+
+FORCEINLINE
+void*
+SymCryptAtomicCasPtrAcqRel(
+    void** dest,
+    void* desired,
+    void* expected)
+{
+    __atomic_compare_exchange_n(
+        dest,               // ptr
+        &expected,
+        desired,
+        FALSE,              // weak (set to FALSE => strong)
+        __ATOMIC_RELEASE,   // success_memorder
+        __ATOMIC_ACQUIRE ); // failure_memorder
+    return expected;
+}
+
+#define SYMCRYPT_ATOMIC_CAS_PTR_ACQUIRE_RELEASE( _dest, _exchange, _comp ) \
+    SymCryptAtomicCasPtrAcqRel( (volatile void **)(_dest), (void *)(_exchange), (void *)(_comp) )
 
 #endif
 

@@ -41,6 +41,8 @@
     <ClCompile Include="ccm.c" />
     <ClCompile Include="chacha20.c" />
     <ClCompile Include="chacha20_poly1305.c" />
+    <ClCompile Include="composite_encoding.c" />
+    <ClCompile Include="composite_mlkem.c" />
     <ClCompile Include="cpuid.c" />
     <ClCompile Include="cpuid_notry.c" />
     <ClCompile Include="cpuid_um.c" />
@@ -59,6 +61,7 @@
     <ClCompile Include="ec_dh.c" />
     <ClCompile Include="ec_dispatch.c" />
     <ClCompile Include="ec_dsa.c" />
+    <ClCompile Include="ec_internal_curve_params.c" />
     <ClCompile Include="ec_internal_curves.c" />
     <ClCompile Include="ec_montgomery.c" />
     <ClCompile Include="ec_mul.c" />

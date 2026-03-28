@@ -510,6 +510,12 @@ public:
 };
 
 template<>
+class KemImpState<ImpXxx, AlgCompositeMlKem> {
+public:
+    PSYMCRYPT_COMPOSITE_MLKEMKEY  pKey;
+};
+
+template<>
 class PqDsaImpState<ImpXxx, AlgMlDsa> {
 public:
     PSYMCRYPT_MLDSAKEY  pKey;

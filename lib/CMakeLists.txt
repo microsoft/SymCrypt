@@ -18,6 +18,8 @@ set(SOURCES_COMMON
     ccm.c
     chacha20_poly1305.c
     chacha20.c
+    composite_encoding.c
+    composite_mlkem.c
     cpuid_notry.c
     cpuid_um.c
     cpuid.c
@@ -33,6 +35,7 @@ set(SOURCES_COMMON
     ec_dh.c
     ec_dispatch.c
     ec_dsa.c
+    ec_internal_curve_params.c
     ec_internal_curves.c
     ec_montgomery.c
     ec_mul.c

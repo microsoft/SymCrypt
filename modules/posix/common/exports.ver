@@ -720,3 +720,16 @@ VERSION_103.10
       SymCryptGetMarvin32DefaultSeed;
       SymCryptGetOidList;
 } VERSION_103.9;
+VERSION_103.11
+{
+   global:
+      SymCryptCompositeMlKemDecapsulate;
+      SymCryptCompositeMlKemEncapsulate;
+      SymCryptCompositeMlKemkeyAllocate;
+      SymCryptCompositeMlKemkeyFree;
+      SymCryptCompositeMlKemkeyGenerate;
+      SymCryptCompositeMlKemkeyGetValue;
+      SymCryptCompositeMlKemkeySetValue;
+      SymCryptCompositeMlKemSizeofCiphertextFromParams;
+      SymCryptCompositeMlKemSizeofKeyFormatFromParams;
+} VERSION_103.10;

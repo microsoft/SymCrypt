@@ -12,6 +12,16 @@ This is the first official release of our Rust implementations!
 ### New features
 - Added Rust implementations of ML-KEM, SHA3 and AES-GCM
 
+# Version 103.11.0
+
+- Add Composite ML-KEM implementation
+
+# Version 103.10.2
+
+- Removed unimplemented function `SymCryptModulusBitsizeOfObject` from `symcrypt_low_level.h`
+- Update service indicator
+- Replace XMSS self-test with XMSS^MT self-test
+
 # Version 103.10.1
 
 - Remove FIPS PCTs on keypair import

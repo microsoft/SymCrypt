@@ -15,6 +15,7 @@ set(SOURCES
     testArithmetic.cpp
     testAuthEnc.cpp
     testBlockCiphers.cpp
+    testCompositeHelpers.cpp
     testCustomizableXof.cpp
     testDh.cpp
     testDsa.cpp
