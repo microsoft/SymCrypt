@@ -2,6 +2,10 @@
 New changes will be listed here as they are developed. The version number is determined
 prior to the creation of a new release, based on the changes contained in that release.
 
+- Add loop bounds to ML-DSA functions which use probabilistic sampling, as defense-in-depth against denial of service by maliciously formed keys
+  - There is no known vulnerability associated with this, but adding upper bounds provides additional hardening
+  - Also fixes [#55](https://github.com/microsoft/SymCrypt/issues/55); thanks to Sunwoo Lee and Seunghyun Yoon, Korea Institute of Energy Technology (KENTECH) for filing this issue
+
 # Version 103.11.0
 
 - Add Composite ML-KEM implementation

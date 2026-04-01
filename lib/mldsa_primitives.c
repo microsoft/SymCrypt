@@ -834,13 +834,16 @@ SymCryptMlDsaMatrixVectorMontMul(
 }
 
 _Use_decl_annotations_
-VOID
+SYMCRYPT_ERROR
 SYMCRYPT_CALL
 SymCryptMlDsaRejNttPoly(
     PCBYTE                      pbRejNttPolySeed,
     SIZE_T                      cbRejNttPolySeed,
     PSYMCRYPT_MLDSA_POLYELEMENT peDst )
 {
+    SYMCRYPT_ERROR scError = SYMCRYPT_NO_ERROR;
+    UINT32 nIterations = 0;
+
     SYMCRYPT_ASSERT( cbRejNttPolySeed == SYMCRYPT_MLDSA_REJNTTPOLY_SEED_SIZE );
 
     SYMCRYPT_SHAKE128_STATE shakeState;
@@ -857,23 +860,34 @@ SymCryptMlDsaRejNttPoly(
         // CoeffFromThreeBytes from FIPS 204
         do
         {
+            if( nIterations >= SYMCRYPT_MLDSA_REJNTTPOLY_MAX_ITERATIONS )
+            {
+                scError = SYMCRYPT_EXTERNAL_FAILURE;
+                goto cleanup;
+            }
             SymCryptShake128Extract( &shakeState, shakeBytes, 3, FALSE );
             shakeBytes[2] &= 0x7F; // if b2 > 127, b2 -= 128
             coeff = SYMCRYPT_LOAD_LSBFIRST32( shakeBytes );
+            nIterations++;
         } while (coeff >= SYMCRYPT_MLDSA_Q);
         
         peDst->coeffs[i] = coeff;
     }
+
+cleanup:
+    return scError;
 }
 
 _Use_decl_annotations_
-VOID
+SYMCRYPT_ERROR
 SYMCRYPT_CALL
 SymCryptMlDsaExpandA(
     PCBYTE                  pbPublicSeed,
     SIZE_T                  cbPublicSeed,
     PSYMCRYPT_MLDSA_MATRIX  pmA )
 {
+    SYMCRYPT_ERROR scError = SYMCRYPT_NO_ERROR;
+
     SYMCRYPT_ASSERT( cbPublicSeed == SYMCRYPT_MLDSA_PUBLIC_SEED_SIZE );
     C_ASSERT( SYMCRYPT_MLDSA_REJNTTPOLY_SEED_SIZE == SYMCRYPT_MLDSA_PUBLIC_SEED_SIZE + 2 );
 
@@ -890,10 +904,16 @@ SymCryptMlDsaExpandA(
             rejNttSeed[SYMCRYPT_MLDSA_REJNTTPOLY_SEED_SIZE - 1] = i;
 
             #pragma prefast( suppress: 6385, "False warning - reading invalid data from rejNttSeed" );
-            SymCryptMlDsaRejNttPoly( rejNttSeed, sizeof(rejNttSeed), SYMCRYPT_INTERNAL_MLDSA_MATRIX_ELEMENT( i, j, pmA ) );
-
+            scError = SymCryptMlDsaRejNttPoly( rejNttSeed, sizeof(rejNttSeed), SYMCRYPT_INTERNAL_MLDSA_MATRIX_ELEMENT( i, j, pmA ) );
+            if( scError != SYMCRYPT_NO_ERROR )
+            {
+                goto cleanup;
+            }
         }
     }
+
+cleanup:
+    return scError;
 }
 
 _Use_decl_annotations_
@@ -922,7 +942,7 @@ SymCryptMlDsaCoeffFromHalfByte(
 }
 
 _Use_decl_annotations_
-VOID
+SYMCRYPT_ERROR
 SYMCRYPT_CALL
 SymCryptMlDsaRejBoundedPoly(
     PCSYMCRYPT_MLDSA_INTERNAL_PARAMS    pParams,
@@ -930,6 +950,8 @@ SymCryptMlDsaRejBoundedPoly(
     SIZE_T                              cbRejBoundedPolySeed,
     PSYMCRYPT_MLDSA_POLYELEMENT         peDst )
 {
+    SYMCRYPT_ERROR scError = SYMCRYPT_NO_ERROR;
+
     SYMCRYPT_ASSERT( cbRejBoundedPolySeed == SYMCRYPT_MLDSA_REJBOUNDEDPOLY_SEED_SIZE );
 
     SYMCRYPT_SHAKE256_STATE shakeState;
@@ -940,8 +962,16 @@ SymCryptMlDsaRejBoundedPoly(
     UINT32 i = 0;
     INT8 z0, z1;
 
+    UINT32 nIterations = 0;
+
     do
     {
+        if( nIterations >= SYMCRYPT_MLDSA_REJBOUNDEDPOLY_MAX_ITERATIONS )
+        {
+            scError = SYMCRYPT_EXTERNAL_FAILURE;
+            goto cleanup;
+        }
+
         // Note on sidechannel safety: the rejection sampling here can leak which bytes of the SHAKE
         // output are used and which are rejected. However, bytes themselves are not leaked. This
         // may allow the attacker to more quickly eliminate incorrect seed values when doing an
@@ -950,6 +980,7 @@ SymCryptMlDsaRejBoundedPoly(
         SymCryptShake256Extract( &shakeState, &shakeByte, sizeof(shakeByte), FALSE );
         z0 = SymCryptMlDsaCoeffFromHalfByte( pParams, shakeByte & 0x0F );
         z1 = SymCryptMlDsaCoeffFromHalfByte( pParams, shakeByte >> 4 );
+        nIterations++;
 
         SYMCRYPT_ASSERT( z0 == INT8_MIN || (( z0 + pParams->privateKeyRange >= 0 ) && ( z0 + pParams->privateKeyRange <= 2 * pParams->privateKeyRange )) );
         SYMCRYPT_ASSERT( z1 == INT8_MIN || (( z1 + pParams->privateKeyRange >= 0 ) && ( z1 + pParams->privateKeyRange <= 2 * pParams->privateKeyRange )) );
@@ -968,11 +999,14 @@ SymCryptMlDsaRejBoundedPoly(
 
     } while( i < SYMCRYPT_MLWE_POLYNOMIAL_COEFFICIENTS );
 
+cleanup:
     SymCryptWipeKnownSize( &shakeState, sizeof(shakeState) );
+
+    return scError;
 }
 
 _Use_decl_annotations_
-VOID
+SYMCRYPT_ERROR
 SYMCRYPT_CALL
 SymCryptMlDsaExpandS(
     PCSYMCRYPT_MLDSA_INTERNAL_PARAMS    pParams,
@@ -981,6 +1015,8 @@ SymCryptMlDsaExpandS(
     PSYMCRYPT_MLDSA_VECTOR              pvs1,
     PSYMCRYPT_MLDSA_VECTOR              pvs2 )
 {
+    SYMCRYPT_ERROR scError = SYMCRYPT_NO_ERROR;
+
     SYMCRYPT_ASSERT( cbPrivateVectorSeed == SYMCRYPT_MLDSA_PRIVATE_VECTOR_SEED_SIZE );
     C_ASSERT( SYMCRYPT_MLDSA_REJBOUNDEDPOLY_SEED_SIZE == SYMCRYPT_MLDSA_PRIVATE_VECTOR_SEED_SIZE + 2 );
 
@@ -995,23 +1031,34 @@ SymCryptMlDsaExpandS(
     for(UINT16 i = 0; i < nCols; ++i)
     {
         SYMCRYPT_STORE_LSBFIRST16( rejBoundedPolySeed + SYMCRYPT_MLDSA_REJBOUNDEDPOLY_SEED_SIZE - sizeof(UINT16), i );
-        SymCryptMlDsaRejBoundedPoly( pParams, rejBoundedPolySeed, sizeof(rejBoundedPolySeed),
+        scError = SymCryptMlDsaRejBoundedPoly( pParams, rejBoundedPolySeed, sizeof(rejBoundedPolySeed),
             SYMCRYPT_INTERNAL_MLDSA_VECTOR_ELEMENT( i, pvs1 ) );
+        if( scError != SYMCRYPT_NO_ERROR )
+        {
+            goto cleanup;
+        }
     }
 
     for(UINT16 i = 0; i < nRows; ++i)
     {
         SYMCRYPT_STORE_LSBFIRST16( rejBoundedPolySeed + SYMCRYPT_MLDSA_REJBOUNDEDPOLY_SEED_SIZE - sizeof(UINT16), (UINT16) nCols + i );
         #pragma prefast( suppress: 6385, "False warning - reading invalid data from rejBoundedPolySeed" ); // Doesn't trigger in previous loop for some reason
-        SymCryptMlDsaRejBoundedPoly( pParams, rejBoundedPolySeed, sizeof(rejBoundedPolySeed),
+        scError = SymCryptMlDsaRejBoundedPoly( pParams, rejBoundedPolySeed, sizeof(rejBoundedPolySeed),
             SYMCRYPT_INTERNAL_MLDSA_VECTOR_ELEMENT( i, pvs2 ) );
+        if( scError != SYMCRYPT_NO_ERROR )
+        {
+            goto cleanup;
+        }
     }
 
+cleanup:
     SymCryptWipeKnownSize( rejBoundedPolySeed, sizeof(rejBoundedPolySeed) );
+
+    return scError;
 }
 
 _Use_decl_annotations_
-VOID
+SYMCRYPT_ERROR
 SYMCRYPT_CALL
 SymCryptMlDsaSampleInBall(
     PCSYMCRYPT_MLDSA_INTERNAL_PARAMS    pParams,
@@ -1019,6 +1066,9 @@ SymCryptMlDsaSampleInBall(
     SIZE_T                              cbCommitmentHash,
     PSYMCRYPT_MLDSA_POLYELEMENT         peChallenge )
 {
+    SYMCRYPT_ERROR scError = SYMCRYPT_NO_ERROR;
+    
+
     SymCryptMlDsaPolyElementSetZero( peChallenge );
 
     SYMCRYPT_SHAKE256_STATE shakeState;
@@ -1038,9 +1088,16 @@ SymCryptMlDsaSampleInBall(
         ++i)
     {
         BYTE j = 0;
+        UINT32 nIterations = 0;
         do
         {
+            if( nIterations >= SYMCRYPT_MLDSA_SAMPLEINBALL_MAX_ITERATIONS )
+            {
+                scError = SYMCRYPT_EXTERNAL_FAILURE;
+                goto cleanup;
+            }
             SymCryptShake256Extract( &shakeState, &j, sizeof(j), FALSE );
+            nIterations++;
         } while( j > i );
 
         peChallenge->coeffs[i] = peChallenge->coeffs[j];
@@ -1052,7 +1109,10 @@ SymCryptMlDsaSampleInBall(
         peChallenge->coeffs[j] = ((SYMCRYPT_MLDSA_Q - 1) & negativeMask) | (1 & ~negativeMask);
     }
 
+cleanup:
     SymCryptWipeKnownSize( &shakeState, sizeof(shakeState) );
+
+    return scError;
 }
 
 _Use_decl_annotations_
@@ -1342,10 +1402,14 @@ SymCryptMlDsaPkDecode(
 
     SymCryptMlDsaVectorNTT( pkMlDsakey->pvt1 );
 
-    SymCryptMlDsaExpandA(
+    scError = SymCryptMlDsaExpandA(
         pkMlDsakey->publicSeed,
         SYMCRYPT_MLDSA_PUBLIC_SEED_SIZE,
         pkMlDsakey->pmA );
+    if( scError != SYMCRYPT_NO_ERROR )
+    {
+        goto cleanup;
+    }
 
     SymCryptShake256Result( pShakeState, pkMlDsakey->publicKeyHash );
 
@@ -1516,7 +1580,11 @@ SymCryptMlDsaSkDecode(
     pbCurr += SYMCRYPT_MLDSA_PUBLIC_KEY_HASH_SIZE;
 
     // Expand A matrix
-    SymCryptMlDsaExpandA( pkMlDsakey->publicSeed, SYMCRYPT_MLDSA_PUBLIC_SEED_SIZE, pkMlDsakey->pmA );
+    scError = SymCryptMlDsaExpandA( pkMlDsakey->publicSeed, SYMCRYPT_MLDSA_PUBLIC_SEED_SIZE, pkMlDsakey->pmA );
+    if( scError != SYMCRYPT_NO_ERROR )
+    {
+        goto cleanup;
+    }
 
     scError = SymCryptMlDsaVectorDecode(
         pbCurr,

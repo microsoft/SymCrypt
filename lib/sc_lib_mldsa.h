@@ -70,6 +70,16 @@ typedef const SYMCRYPT_MLDSA_POLYELEMENT* PCSYMCRYPT_MLDSA_POLYELEMENT;
 #define SYMCRYPT_MLDSA_MATRIX_MAX_NROWS  (8)
 #define SYMCRYPT_MLDSA_MATRIX_MAX_NCOLS  (7)
 
+//
+// FIPS 204 Table 3: Upper bounds on loop iterations for probabilistically terminating functions.
+// These limits yield a probability of approximately 2^(-256) (or less) of being reached in a
+// correct implementation.
+//
+#define SYMCRYPT_MLDSA_SIGN_INTERNAL_MAX_ITERATIONS      (814)
+#define SYMCRYPT_MLDSA_REJBOUNDEDPOLY_MAX_ITERATIONS     (481)
+#define SYMCRYPT_MLDSA_REJNTTPOLY_MAX_ITERATIONS         (298)
+#define SYMCRYPT_MLDSA_SAMPLEINBALL_MAX_ITERATIONS       (121)
+
 typedef _Struct_size_bytes_( cbTotalSize ) struct _SYMCRYPT_MLDSA_VECTOR {
     _Field_range_( 1, SYMCRYPT_MLDSA_VECTOR_MAX_LENGTH )
     UINT8       nElems;         // Number of PolyElements in the vector
@@ -613,7 +623,7 @@ SymCryptMlDsaMatrixVectorMontMul(
 // Sampling and rejection
 //////////////////////////////////////////////////////////////////////////
 
-VOID
+SYMCRYPT_ERROR
 SYMCRYPT_CALL
 SymCryptMlDsaRejNttPoly(
     _In_reads_( cbRejNttPolySeed )  PCBYTE                      pbRejNttPolySeed,
@@ -625,7 +635,7 @@ SymCryptMlDsaRejNttPoly(
 // public seed. The output polynomial is in NTT form with coefficients modulo Q.
 //
 
-VOID
+SYMCRYPT_ERROR
 SYMCRYPT_CALL
 SymCryptMlDsaExpandA(
     _In_reads_( cbPublicSeed )  PCBYTE                      pbPublicSeed,
@@ -650,7 +660,7 @@ SymCryptMlDsaCoeffFromHalfByte(
 // returns INT8_MIN.
 //
 
-VOID
+SYMCRYPT_ERROR
 SYMCRYPT_CALL
 SymCryptMlDsaRejBoundedPoly(
     _In_                                PCSYMCRYPT_MLDSA_INTERNAL_PARAMS    pParams,
@@ -663,7 +673,7 @@ SymCryptMlDsaRejBoundedPoly(
 // expanded private vector seed. Coefficients in the output polynomial are modulo Q.
 //
 
-VOID
+SYMCRYPT_ERROR
 SYMCRYPT_CALL
 SymCryptMlDsaExpandS(
     _In_                                PCSYMCRYPT_MLDSA_INTERNAL_PARAMS    pParams,
@@ -677,7 +687,7 @@ SymCryptMlDsaExpandS(
 // s2 = RejBoundedPoly(seed || i) for each index i in s2 (row vector)
 //
 
-VOID
+SYMCRYPT_ERROR
 SYMCRYPT_CALL
 SymCryptMlDsaSampleInBall(
     _In_                            PCSYMCRYPT_MLDSA_INTERNAL_PARAMS    pParams,
@@ -688,6 +698,9 @@ SymCryptMlDsaSampleInBall(
 // SampleInBall from FIPS 204
 // Samples a polynomial c in R_q with coefficients in {-1, 0, 1} and Hamming weight tau.
 // As with all polynomials, coefficients are represented as unsigned integers modulo Q.
+// 
+// Returns SYMCRYPT_EXTERNAL_FAILURE if a valid polynomial cannot be sampled after
+// SYMCRYPT_MLDSA_SAMPLEINBALL_MAX_ITERATIONS iterations.
 //
 
 VOID
