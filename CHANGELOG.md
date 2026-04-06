@@ -5,6 +5,7 @@ prior to the creation of a new release, based on the changes contained in that r
 - Add loop bounds to ML-DSA functions which use probabilistic sampling, as defense-in-depth against denial of service by maliciously formed keys
   - There is no known vulnerability associated with this, but adding upper bounds provides additional hardening
   - Also fixes [#55](https://github.com/microsoft/SymCrypt/issues/55); thanks to Sunwoo Lee and Seunghyun Yoon, Korea Institute of Energy Technology (KENTECH) for filing this issue
+- Add Elevated Debugger environment
 
 # Version 103.11.0
 

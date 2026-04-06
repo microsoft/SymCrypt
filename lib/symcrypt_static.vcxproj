@@ -172,6 +172,9 @@
     <ClCompile Include="xmss.c" />
     <ClCompile Include="xtsaes.c" />
   </ItemGroup>
+  <ItemGroup Condition="'$(Platform)'=='x64' OR '$(Platform)'=='ARM64'">
+    <ClCompile Include="env_elevatedDebugger.c" />
+  </ItemGroup>
   <ItemGroup Condition="'$(Platform)'=='x64'">
     <SymCryptAsm Include="amd64\aesasm.symcryptasm" Dialect="masm" Arch="amd64" Convention="msft" />
     <SymCryptAsm Include="amd64\fdef_asm.symcryptasm" Dialect="masm" Arch="amd64" Convention="msft" />

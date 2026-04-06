@@ -3242,6 +3242,7 @@ SYMCRYPT_EXTERN_C_END
 // But this is unlikely to be misused.
 //
 #define SYMCRYPT_ENVIRONMENT_WINDOWS_KERNELDEBUGGER             SYMCRYPT_ENVIRONMENT_DEFS( WindowsKernelDebugger )
+#define SYMCRYPT_ENVIRONMENT_ELEVATED_DEBUGGER                  SYMCRYPT_ENVIRONMENT_DEFS( ElevatedDebugger )
 
 
 
