@@ -278,18 +278,74 @@ __m256i g_ymmSaveState[16];
 __m256i g_ymmStartState[16];
 __m256i g_ymmTestState[16];
 
+// Extra space in ZMM buffers for k0-k7 mask registers (8 * 8 bytes = one extra __m512i)
+__m512i g_zmmSaveState[33];
+__m512i g_zmmStartState[33];
+__m512i g_zmmTestState[33];
+
 SYMCRYPT_EXTENDED_SAVE_DATA g_SaveData;
 BOOL g_vectorTestActive = FALSE;
+BOOL g_zmmVectorTestActive = FALSE;
 
 extern "C" {
 VOID SYMCRYPT_CALL SymCryptEnvKmTestSaveYmmRegistersAsm( __m256i* buffer );
 VOID SYMCRYPT_CALL SymCryptEnvKmTestRestoreYmmRegistersAsm( __m256i* buffer );
+VOID SYMCRYPT_CALL SymCryptEnvKmTestSaveZmmRegistersAsm( __m512i* buffer );
+VOID SYMCRYPT_CALL SymCryptEnvKmTestRestoreZmmRegistersAsm( __m512i* buffer );
 }
 
 VOID
 verifyVectorRegisters()
 {
-    if( g_vectorTestActive )
+    if( g_zmmVectorTestActive )
+    {
+        g_zmmVectorTestActive = FALSE;
+
+        SymCryptEnvKmTestSaveZmmRegistersAsm( g_zmmTestState );
+
+        //
+        // Check that ZMM0-31 are preserved, except for XMM0-XMM5 which are volatile
+        // per the Windows x64 ABI.
+        // In KM, SymCryptSaveYmm/SymCryptRestoreYmm (via KeSaveExtendedProcessorState)
+        // must not zero the upper 256 bits of ZMM registers, as that would trash
+        // user-mode AVX-512 state.
+        //
+        for( SIZE_T i=0; i<32*64; i++ )
+        {
+            SIZE_T regIndex = i / 64;
+            SIZE_T byteInReg = i % 64;
+
+            // Skip the XMM portion (lower 16 bytes) of volatile registers XMM0-XMM5
+            if( regIndex < 6 && byteInReg < 16 )
+            {
+                continue;
+            }
+
+            if( ((volatile BYTE * )&g_zmmStartState[0])[i] != ((volatile BYTE * )&g_zmmTestState[0])[i] )
+            {
+                FATAL3( "Zmm registers modified without proper save/restore Zmm%d[%d]", (int)regIndex, (int)byteInReg);
+                break;
+            }
+        }
+
+        //
+        // Check that mask registers k0-k7 are preserved.
+        // Mask registers are stored after the 32 ZMM registers in the save buffer.
+        //
+        for( SIZE_T i=0; i<8*8; i++ )
+        {
+            if( ((volatile BYTE * )&g_zmmStartState[0])[32*64 + i] != ((volatile BYTE * )&g_zmmTestState[0])[32*64 + i] )
+            {
+                FATAL3( "Mask register modified without proper save/restore k%d[%d]", (int)(i/8), (int)(i%8));
+                break;
+            }
+        }
+
+        SymCryptEnvKmTestRestoreZmmRegistersAsm( g_zmmSaveState );
+
+        SymCryptRestoreZmm(&g_SaveData);
+    }
+    else if( g_vectorTestActive )
     {
         g_vectorTestActive = FALSE;
 
@@ -319,9 +375,28 @@ verifyVectorRegisters()
 VOID
 initVectorRegisters()
 {
-    // To perform Ymm save/restore test we need to have AVX support
-    // We also need to inform the OS that we are about to manipulate the Ymm registers in kernel mode
-    if ( SYMCRYPT_CPU_FEATURES_PRESENT(SYMCRYPT_CPU_FEATURE_AVX2) &&
+    // To perform Zmm/Ymm save/restore test we need to have AVX support
+    // We also need to inform the OS that we are about to manipulate the vector registers in kernel mode
+    if ( SYMCRYPT_CPU_FEATURES_PRESENT(SYMCRYPT_CPU_FEATURE_AVX512) &&
+        SymCryptSaveZmm(&g_SaveData) == SYMCRYPT_NO_ERROR)
+    {
+        g_zmmVectorTestActive = TRUE;
+        //
+        // Explicitly save current state to local area - we are about to overwrite non-volatile registers
+        // by intentionally writing random values to all of the Zmm and mask register state (ignoring ABI),
+        // we will need to restore these values ourselves as the kernel Save/Restore mechanism still expects
+        // us to respect the ABI.
+        //
+        SymCryptEnvKmTestSaveZmmRegistersAsm( g_zmmSaveState );
+        //
+        // Do the memsets outside the save area as it might use vector registers
+        // Set the initial Zmm and mask registers to a non-trivial value.
+        //
+        memset( g_zmmTestState, 17, sizeof( g_zmmTestState ) );
+        memset( g_zmmStartState, (__rdtsc() & 255) ^ 0x42, sizeof( g_zmmStartState ) );
+        SymCryptEnvKmTestRestoreZmmRegistersAsm( g_zmmStartState );
+    }
+    else if ( SYMCRYPT_CPU_FEATURES_PRESENT(SYMCRYPT_CPU_FEATURE_AVX2) &&
         SymCryptSaveYmm(&g_SaveData) == SYMCRYPT_NO_ERROR)
     {
         g_vectorTestActive = TRUE;

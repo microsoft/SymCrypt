@@ -29,6 +29,8 @@ SymCryptInitEnvPosixUsermode( UINT32 version )
     // Our SaveXmm function never fails because it doesn't have to do anything in User mode.
     //
     g_SymCryptCpuFeaturesNotPresent &= ~SYMCRYPT_CPU_FEATURE_SAVEXMM_NOFAIL;
+    g_SymCryptCpuFeaturesNotPresent &= ~SYMCRYPT_CPU_FEATURE_SAVEYMM_NOFAIL;
+    g_SymCryptCpuFeaturesNotPresent &= ~SYMCRYPT_CPU_FEATURE_SAVEZMM_NOFAIL;
 
 #elif SYMCRYPT_CPU_ARM
 
@@ -115,6 +117,22 @@ SymCryptSaveYmmEnvPosixUsermode( _Out_ PSYMCRYPT_EXTENDED_SAVE_DATA pSaveData )
 VOID
 SYMCRYPT_CALL
 SymCryptRestoreYmmEnvPosixUsermode( _Inout_ PSYMCRYPT_EXTENDED_SAVE_DATA pSaveData )
+{
+    UNREFERENCED_PARAMETER( pSaveData );
+}
+
+SYMCRYPT_ERROR
+SYMCRYPT_CALL
+SymCryptSaveZmmEnvPosixUsermode( _Out_ PSYMCRYPT_EXTENDED_SAVE_DATA pSaveData )
+{
+    UNREFERENCED_PARAMETER( pSaveData );
+
+    return SYMCRYPT_NO_ERROR;
+}
+
+VOID
+SYMCRYPT_CALL
+SymCryptRestoreZmmEnvPosixUsermode( _Inout_ PSYMCRYPT_EXTENDED_SAVE_DATA pSaveData )
 {
     UNREFERENCED_PARAMETER( pSaveData );
 }

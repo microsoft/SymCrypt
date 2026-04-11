@@ -37,6 +37,7 @@
     <ClCompile Include="aes-selftest.c" />
     <ClCompile Include="aes-xmm.c" />
     <ClCompile Include="aes-ymm.c" />
+    <ClCompile Include="aes-zmm.c" />
     <ClCompile Include="aescmac.c" />
     <ClCompile Include="aesCtrDrbg.c" />
     <ClCompile Include="aeskw.c" />

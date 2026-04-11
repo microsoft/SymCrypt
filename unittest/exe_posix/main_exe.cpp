@@ -73,24 +73,51 @@ extern "C"
 #if SYMCRYPT_CPU_AMD64
 /////////////////////////////////////////////////////////////
 //
-// Code to set up the YMM registers for testing in SAVE_YMM mode
+// Code to set up the YMM/ZMM registers for testing in SAVE_YMM/SAVE_ZMM mode
 
 __m256i g_ymmStartState[16];
 __m256i g_ymmTestState[16];
+// Extra space in ZMM buffers for k0-k7 mask registers (8 * 8 bytes = one extra __m512i)
+__m512i g_zmmStartState[33];
+__m512i g_zmmTestState[33];
 
 VOID
 verifyVectorRegisters()
 {
 
-    if( !SYMCRYPT_CPU_FEATURES_PRESENT( SYMCRYPT_CPU_FEATURE_AVX2 ) )
+    if( TestSaveZmmEnabled && SYMCRYPT_CPU_FEATURES_PRESENT( SYMCRYPT_CPU_FEATURE_AVX512 ) )
     {
-        return;
-    }
+        SymCryptEnvUmSaveZmmRegistersAsm( g_zmmTestState );
 
-    //
-    // We know that AVX2 is present from here on
-    //
-    if( TestSaveYmmEnabled )
+        //
+        // Check that all bytes of ZMM16-31 are preserved. These registers only exist in
+        // AVX-512, so only AVX-512 code should touch them.
+        // We don't check ZMM0-15 here because the lower 32 bytes (YMM portion) are
+        // protected by the YMM save/restore mechanism (tested via TestSaveYmmEnabled),
+        // and the upper 32 bytes may be legitimately zeroed by AVX operations (e.g.
+        // vzeroupper).
+        //
+        for( SIZE_T i=16*64; i<32*64; i++ )
+        {
+            if( ((volatile BYTE * )&g_zmmStartState[0])[i] != ((volatile BYTE * )&g_zmmTestState[0])[i] )
+            {
+                FATAL3( "Zmm registers modified without proper save/restore Zmm%d[%d]", (int)(i/64), (int)(i%64));
+            }
+        }
+
+        //
+        // Check that mask registers k0-k7 are preserved.
+        // Mask registers are stored after the 32 ZMM registers in the save buffer.
+        //
+        for( SIZE_T i=0; i<8*8; i++ )
+        {
+            if( ((volatile BYTE * )&g_zmmStartState[0])[32*64 + i] != ((volatile BYTE * )&g_zmmTestState[0])[32*64 + i] )
+            {
+                FATAL3( "Mask register modified without proper save/restore k%d[%d]", (int)(i/8), (int)(i%8));
+            }
+        }
+    }
+    else if( TestSaveYmmEnabled && SYMCRYPT_CPU_FEATURES_PRESENT( SYMCRYPT_CPU_FEATURE_AVX2 ) )
     {
         SymCryptEnvUmSaveYmmRegistersAsm( g_ymmTestState );
 
@@ -113,11 +140,18 @@ verifyVectorRegisters()
 VOID
 initVectorRegisters()
 {
-    if( !SYMCRYPT_CPU_FEATURES_PRESENT( SYMCRYPT_CPU_FEATURE_AVX2 ) )
+    if( TestSaveZmmEnabled && SYMCRYPT_CPU_FEATURES_PRESENT( SYMCRYPT_CPU_FEATURE_AVX512 ) )
     {
-        return;
+        //
+        // Do the memsets outside the save area as it might use vector registers
+        // Set the initial Zmm and mask registers to a non-trivial value.
+        //
+        memset( g_zmmTestState, 17, sizeof( g_zmmTestState ) );
+        memset( g_zmmStartState, (__rdtsc() & 255) ^ 0x42, sizeof( g_zmmStartState ) );
+        SymCryptEnvUmRestoreZmmRegistersAsm( g_zmmStartState );
+        verifyVectorRegisters();
     }
-    if( TestSaveYmmEnabled )
+    else if( TestSaveYmmEnabled )
     {
         //
         // Do the memsets outside the save area as it might use vector registers

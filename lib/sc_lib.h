@@ -231,15 +231,6 @@ struct _SYMCRYPT_EXTENDED_SAVE_DATA {
                     SYMCRYPT_MAGIC_FIELD
 } SYMCRYPT_EXTENDED_SAVE_DATA, *PSYMCRYPT_EXTENDED_SAVE_DATA;
 
-
-//
-// Two functions to save/restore the XMM registers.
-// These must ALWAYS be called in pairs, even if the SaveXmm function returned an error.
-// XMM registers cannot be used if the save function returned an error.
-// If the SYMCRYPT_CPU_FEATURE_SAVEXMM_NOFAIL feature is present, then the
-// SymCryptSaveXmm function will never return an error.
-//
-
 //
 // Functions to save/restore the XMM or YMM registers.
 // If the Save*mm function is called and succeeds, then the corresponding
@@ -263,6 +254,15 @@ SymCryptSaveYmm( _Out_ PSYMCRYPT_EXTENDED_SAVE_DATA pSaveData );
 VOID
 SYMCRYPT_CALL
 SymCryptRestoreYmm( _Inout_ PSYMCRYPT_EXTENDED_SAVE_DATA pSaveData );
+
+
+SYMCRYPT_ERROR
+SYMCRYPT_CALL
+SymCryptSaveZmm( _Out_ PSYMCRYPT_EXTENDED_SAVE_DATA pSaveData );
+
+VOID
+SYMCRYPT_CALL
+SymCryptRestoreZmm( _Inout_ PSYMCRYPT_EXTENDED_SAVE_DATA pSaveData );
 #endif
 
 
@@ -1626,6 +1626,28 @@ SymCryptAesGcmEncryptStitchedYmm_2048(
 VOID
 SYMCRYPT_CALL
 SymCryptAesGcmDecryptStitchedYmm_2048(
+    _In_                                    PCSYMCRYPT_AES_EXPANDED_KEY pExpandedKey,
+    _In_reads_( SYMCRYPT_AES_BLOCK_SIZE )   PBYTE                       pbChainingValue,
+    _In_reads_( SYMCRYPT_GF128_FIELD_SIZE ) PCSYMCRYPT_GF128_ELEMENT    expandedKeyTable,
+    _Inout_                                 PSYMCRYPT_GF128_ELEMENT     pState,
+    _In_reads_( cbData )                    PCBYTE                      pbSrc,
+    _Out_writes_( cbData )                  PBYTE                       pbDst,
+                                            SIZE_T                      cbData );
+
+VOID
+SYMCRYPT_CALL
+SymCryptAesGcmEncryptStitchedZmm(
+    _In_                                    PCSYMCRYPT_AES_EXPANDED_KEY pExpandedKey,
+    _In_reads_( SYMCRYPT_AES_BLOCK_SIZE )   PBYTE                       pbChainingValue,
+    _In_reads_( SYMCRYPT_GF128_FIELD_SIZE ) PCSYMCRYPT_GF128_ELEMENT    expandedKeyTable,
+    _Inout_                                 PSYMCRYPT_GF128_ELEMENT     pState,
+    _In_reads_( cbData )                    PCBYTE                      pbSrc,
+    _Out_writes_( cbData )                  PBYTE                       pbDst,
+                                            SIZE_T                      cbData );
+
+VOID
+SYMCRYPT_CALL
+SymCryptAesGcmDecryptStitchedZmm(
     _In_                                    PCSYMCRYPT_AES_EXPANDED_KEY pExpandedKey,
     _In_reads_( SYMCRYPT_AES_BLOCK_SIZE )   PBYTE                       pbChainingValue,
     _In_reads_( SYMCRYPT_GF128_FIELD_SIZE ) PCSYMCRYPT_GF128_ELEMENT    expandedKeyTable,

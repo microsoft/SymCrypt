@@ -486,8 +486,11 @@ usage()
             "  sgx               Run CNG and symcrypt test implementations against BCrypt in SGX enclave.\n"
             "                    This option is only valid for win8_1 version and newer of the tests.\n"
             "  testSaveYmm       This option enables the unit tests to test the save/restore logic for\n"
-            "                    Ymm registers. Normally the C runtime may overwrite Ymm registers and\n"
-            "                    these tests will fail, so the test is disabled by default.\n"
+            "                    Ymm registers. Has no effect on Windows as there is no way to configure\n"
+            "                    the C runtime to not overwrite YMM registers on Windows.\n"
+            "  testSaveZmm       This option enables the unit tests to test the save/restore logic for\n"
+            "                    Zmm registers. Has no effect on Windows as there is no way to configure\n"
+            "                    the C runtime to not overwrite ZMM registers on Windows.\n"
             "  dynamic:<path_to_module>\n"
             "                    This option instructs the unit tests to load <path_to_module> as another\n"
             "                    external implementation of the SymCrypt APIs, which will be added as an\n"
@@ -605,6 +608,11 @@ VOID printTestVectorSaveOptions()
     if (TestSaveYmmEnabled)
     {
         print("%cTestSaveYmmEnabled", sep);
+        sep = ',';
+    }
+    if (TestSaveZmmEnabled)
+    {
+        print("%cTestSaveZmmEnabled", sep);
         sep = ',';
     }
     if (sep == ' ')
@@ -777,6 +785,11 @@ processSingleOption( _In_ PSTR option )
         if (STRICMP(&option[0], "testSaveYmm") == 0)
         {
             TestSaveYmmEnabled = TRUE;
+            optionHandled = TRUE;
+        }
+        if (STRICMP(&option[0], "testSaveZmm") == 0)
+        {
+            TestSaveZmmEnabled = TRUE;
             optionHandled = TRUE;
         }
         if (STRNICMP(&option[0], "dynamic:", 8) == 0)

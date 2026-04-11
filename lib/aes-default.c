@@ -504,24 +504,26 @@ SymCryptAesGcmEncryptPartOnePass(
     if( cbData >= SYMCRYPT_GCM_BLOCK_SIZE )
     {
         bytesToProcess = cbData & SYMCRYPT_GCM_BLOCK_ROUND_MASK;
-
-        //
-        // We use a Gcm function that increments the CTR by 64 bits, rather than the 32 bits that GCM requires.
-        // As we only support 12-byte nonces, the 32-bit counter never overflows, and we can safely use
-        // the 64-bit incrementing primitive.
-        // If we ever support other nonce sizes this is going to be a big problem.
-        // You can't fake a 32-bit counter using a 64-bit counter function without side-channels that expose
-        // information about the current counter value.
-        // With other nonce sizes the actual counter value itself is not public, so we can't expose that.
-        // We can do two things:
-        // - create SymCryptAesGcmEncryptXXX32
-        // - Accept that we leak information about the counter value; after all it is not treated as a
-        //   secret when the nonce is 12 bytes.
-        //
         SYMCRYPT_ASSERT( pState->pKey->pBlockCipher->blockSize == SYMCRYPT_GCM_BLOCK_SIZE );
 
 #if SYMCRYPT_CPU_AMD64
-        if( SYMCRYPT_CPU_FEATURES_PRESENT( SYMCRYPT_CPU_FEATURES_FOR_VAES_256_CODE ) &&
+        // We use SYMCRYPT_CPU_FEATURE_SAVEZMM_NOFAIL to exclude kernel mode, where the use of ZMM
+        // registers has historically caused problems. We still call SaveZmm/RestoreZmm and
+        // gracefully fall back if it fails.
+        if( SYMCRYPT_CPU_FEATURES_PRESENT( SYMCRYPT_CPU_FEATURES_FOR_VAES_512_CODE | SYMCRYPT_CPU_FEATURE_SAVEZMM_NOFAIL ) &&
+            SymCryptSaveZmm( &SaveData ) == SYMCRYPT_NO_ERROR )
+        {
+            SymCryptAesGcmEncryptStitchedZmm(
+                &pState->pKey->blockcipherKey.aes,
+                &pState->counterBlock[0],
+                &pState->pKey->ghashKey.table[0],
+                &pState->ghashState,
+                pbSrc,
+                pbDst,
+                bytesToProcess );
+
+            SymCryptRestoreZmm( &SaveData );
+        } else if( SYMCRYPT_CPU_FEATURES_PRESENT( SYMCRYPT_CPU_FEATURES_FOR_VAES_256_CODE ) &&
             (bytesToProcess >= GCM_YMM_MINBLOCKS * SYMCRYPT_GCM_BLOCK_SIZE) &&
             SymCryptSaveYmm( &SaveData ) == SYMCRYPT_NO_ERROR )
         {
@@ -679,23 +681,26 @@ SymCryptAesGcmDecryptPartOnePass(
     {
         bytesToProcess = cbData & SYMCRYPT_GCM_BLOCK_ROUND_MASK;
 
-        //
-        // We use a Gcm function that increments the CTR by 64 bits, rather than the 32 bits that GCM requires.
-        // As we only support 12-byte nonces, the 32-bit counter never overflows, and we can safely use
-        // the 64-bit incrementing primitive.
-        // If we ever support other nonce sizes this is going to be a big problem.
-        // You can't fake a 32-bit counter using a 64-bit counter function without side-channels that expose
-        // information about the current counter value.
-        // With other nonce sizes the actual counter value itself is not public, so we can't expose that.
-        // We can do two things:
-        // - create SymCryptAesGcmDecryptXXX32
-        // - Accept that we leak information about the counter value; after all it is not treated as a
-        //   secret when the nonce is 12 bytes.
-        //
         SYMCRYPT_ASSERT( pState->pKey->pBlockCipher->blockSize == SYMCRYPT_GCM_BLOCK_SIZE );
 
 #if SYMCRYPT_CPU_AMD64
-        if( SYMCRYPT_CPU_FEATURES_PRESENT( SYMCRYPT_CPU_FEATURES_FOR_VAES_256_CODE ) &&
+        // We use SYMCRYPT_CPU_FEATURE_SAVEZMM_NOFAIL to exclude kernel mode, where the use of ZMM
+        // registers has historically caused problems. We still call SaveZmm/RestoreZmm and
+        // gracefully fall back if it fails.
+        if( SYMCRYPT_CPU_FEATURES_PRESENT( SYMCRYPT_CPU_FEATURES_FOR_VAES_512_CODE | SYMCRYPT_CPU_FEATURE_SAVEZMM_NOFAIL ) &&
+            SymCryptSaveZmm( &SaveData ) == SYMCRYPT_NO_ERROR )
+        {
+            SymCryptAesGcmDecryptStitchedZmm(
+                &pState->pKey->blockcipherKey.aes,
+                &pState->counterBlock[0],
+                &pState->pKey->ghashKey.table[0],
+                &pState->ghashState,
+                pbSrc,
+                pbDst,
+                bytesToProcess );
+
+            SymCryptRestoreZmm( &SaveData );
+        } else if( SYMCRYPT_CPU_FEATURES_PRESENT( SYMCRYPT_CPU_FEATURES_FOR_VAES_256_CODE ) &&
             (bytesToProcess >= GCM_YMM_MINBLOCKS * SYMCRYPT_GCM_BLOCK_SIZE) &&
             SymCryptSaveYmm( &SaveData ) == SYMCRYPT_NO_ERROR )
         {

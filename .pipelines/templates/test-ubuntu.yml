@@ -159,14 +159,16 @@ jobs:
         scriptPath: scripts/test.py
         arguments: '. dynamic:lib/libsymcrypt.so noperftests'
         workingDirectory: $(Build.SourcesDirectory)/artifacts/pkg
-      
+    
+    # Note: ZMM and YMM save/restore tests will not run simultaneously; ZMM takes precedence.
+    # But we can't guarantee the build machine supports ZMM, so we specify both.
     - task: PythonScript@0
-      displayName: 'Run YMM save/restore unit tests'
+      displayName: 'Run YMM/ZMM save/restore unit tests'
       condition: and(eq(variables.arch, 'AMD64'), ne(variables.config, 'Sanitize'))
       inputs:
         scriptSource: 'filePath'
         scriptPath: scripts/test.py
-        arguments: '--glibc-disable-ymm . testSaveYmm'
+        arguments: '--glibc-disable-ymm --glibc-disable-zmm . testSaveYmm testSaveZmm'
         workingDirectory: $(Build.SourcesDirectory)/artifacts/pkg
 
     - task: PythonScript@0

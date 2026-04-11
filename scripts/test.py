@@ -16,7 +16,7 @@ UNITTEST_FILENAME = "symcryptunittest"
 UNITTEST_EXTENSION_WINDOWS = ".exe"
 
 def run_unittest(build_dir : pathlib.Path, emulator : str,
-    emulator_lib_dir : pathlib.Path, disable_ymm : bool = False, *additional_args : List[str]) -> int:
+    emulator_lib_dir : pathlib.Path, disable_ymm : bool = False, disable_zmm : bool = False, *additional_args : List[str]) -> int:
     """
     Runs the SymCrypt unit test executable with the given arguments and returns the exit code.
 
@@ -29,6 +29,10 @@ def run_unittest(build_dir : pathlib.Path, emulator : str,
     if sys.platform == "win32" and disable_ymm:
             print("Warning: --glibc-disable-ymm is not supported on Windows.", file = sys.stderr)
             disable_ymm = False
+
+    if sys.platform == "win32" and disable_zmm:
+            print("Warning: --glibc-disable-zmm is not supported on Windows.", file = sys.stderr)
+            disable_zmm = False
 
     # Build the path to the executable
     unittest_search_path = pathlib.Path(build_dir)
@@ -57,11 +61,18 @@ def run_unittest(build_dir : pathlib.Path, emulator : str,
     print("Running unit test: " + " ".join(unittest_invocation))
 
     env = os.environ.copy()
-    if disable_ymm:
-        # YMM tests require glibc to not use YMM registers. This can be configured with the
-        # GLIBC_TUNABLES environment variable, but different versions of glibc use different flags.
-        # We set all applicable flags to account for this.
-        env["GLIBC_TUNABLES"] = "glibc.cpu.hwcaps=-AVX_Fast_Unaligned_Load,-AVX,-AVX2,-AVX_Usable,-AVX2_Usable"
+    if disable_ymm or disable_zmm:
+        env["GLIBC_TUNABLES"] = "glibc.cpu.hwcaps="
+
+        if disable_ymm:
+            # YMM tests require glibc to not use YMM registers. This can be configured with the
+            # GLIBC_TUNABLES environment variable, but different versions of glibc use different flags.
+            # We set all applicable flags to account for this.
+            env["GLIBC_TUNABLES"] += "-AVX_Fast_Unaligned_Load,-AVX,-AVX2,-AVX_Usable,-AVX2_Usable,"
+    
+        if disable_zmm:
+            # As above, but for ZMM/AVX-512
+            env["GLIBC_TUNABLES"] += "AVX512F,-AVX512VL,-AVX512BW,-AVX512DQ,-AVX512F_Usable,-AVX512VL_Usable,-AVX512BW_Usable,-AVX512DQ_Usable"
 
     test_proc = subprocess.Popen(unittest_invocation, env = env, text=True, stderr = subprocess.PIPE)
 
@@ -92,13 +103,14 @@ def main() -> int:
     parser = argparse.ArgumentParser(description = "Testing helper script for SymCrypt.")
     parser.add_argument("build_dir", type = pathlib.Path, help = "Build output directory.")
     parser.add_argument("--glibc-disable-ymm", action = "store_true", help = "Run the unit test with the environment configured to disable the use of YMM registers by glibc. This allows validation of YMM save/restore behavior.")
+    parser.add_argument("--glibc-disable-zmm", action = "store_true", help = "Run the unit test with the environment configured to disable the use of ZMM (AVX-512) registers by glibc. This allows validation of ZMM save/restore behavior.")
     parser.add_argument("--emulator", type = str, help = "The emulator to use when executing unit test on a non-native architecture (e.g. qemu-aarch64).")
     parser.add_argument("--emulator-lib-dir", type = pathlib.Path, help = "The directory containing system libraries in the target architecture. Required when using --emulator.")
     parser.add_argument("additional_args", nargs = argparse.REMAINDER, help = "Additional arguments to pass to the unit test.")
 
     args = parser.parse_args()
 
-    result = run_unittest(args.build_dir, args.emulator, args.emulator_lib_dir, args.glibc_disable_ymm, *args.additional_args)
+    result = run_unittest(args.build_dir, args.emulator, args.emulator_lib_dir, args.glibc_disable_ymm, args.glibc_disable_zmm, *args.additional_args)
 
 if __name__ == "__main__":
     main()

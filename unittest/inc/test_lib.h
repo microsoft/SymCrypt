@@ -1291,11 +1291,13 @@ cleanVectorRegisters();
 //  On Windows AMD64 set Xmm6-Xmm15 to random values
 //    these values are non-volatile in Window x64 ABI, so should be preserved. If they are not
 //    preserved it indicates a problem with our assembly not adhering to the Windows ABI
-//  On Linux AMD64 set Ymm0-Ymm15 to random values
+//  On Linux AMD64 set Ymm0-Ymm15 or Zmm0-Zmm31 to random values
 //    these values are naturally volatile on Linux, but symcryptunittest callers may specify the
 //    following environment variable:
-//      GLIBC_TUNABLES=glibc.cpu.hwcaps=-AVX_Usable,-AVX_Fast_Unaligned_Load,-AVX2_Usable
-//    to avoid use of AVX in glibc. This means we can test the Ymm save/restore logic that is
+//      GLIBC_TUNABLES=glibc.cpu.hwcaps=-AVX_Usable,-AVX_Fast_Unaligned_Load,
+//            -AVX2_Usable,AVX512F,-AVX512VL,-AVX512BW,-AVX512DQ,-AVX512F_Usable,
+//            -AVX512VL_Usable,-AVX512BW_Usable,-AVX512DQ_Usable
+//    to avoid use of AVX in glibc. This means we can test the Ymm/Zmm save/restore logic that is
 //    used in Windows kernel using Linux user mode.
 //
 template<typename Functor, typename... Args>
@@ -1461,6 +1463,7 @@ std::unique_ptr<std::vector<AlgType *>> getAlgorithmsOfOneType( );
 extern BOOLEAN     TestSelftestsEnabled;
 extern BOOLEAN     TestSaveXmmEnabled;
 extern BOOLEAN     TestSaveYmmEnabled;
+extern BOOLEAN     TestSaveZmmEnabled;
 
 extern ULONGLONG   TestFatalCount;
 extern ULONGLONG   TestErrorInjectionCount;
@@ -1479,6 +1482,9 @@ VOID SYMCRYPT_CALL SymCryptEnvUmRestoreXmmRegistersAsm( __m128i * buffer );
 
 VOID SYMCRYPT_CALL SymCryptEnvUmSaveYmmRegistersAsm( __m256i * buffer );
 VOID SYMCRYPT_CALL SymCryptEnvUmRestoreYmmRegistersAsm( __m256i * buffer );
+
+VOID SYMCRYPT_CALL SymCryptEnvUmSaveZmmRegistersAsm( __m512i * buffer );
+VOID SYMCRYPT_CALL SymCryptEnvUmRestoreZmmRegistersAsm( __m512i * buffer );
 }
 #endif
 

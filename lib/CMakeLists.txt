@@ -10,6 +10,7 @@ set(SOURCES_COMMON
     aes-selftest.c
     aes-xmm.c
     aes-ymm.c
+    aes-zmm.c
     aescmac.c
     aesCtrDrbg.c
     aeskw.c
@@ -382,6 +383,7 @@ endif()
 if(SYMCRYPT_TARGET_ARCH MATCHES "AMD64|X86")
     if (CMAKE_C_COMPILER_ID MATCHES "Clang|GNU")
         set_source_files_properties(aes-ymm.c PROPERTIES COMPILE_OPTIONS "-mavx;-mavx2;-mvaes;-mvpclmulqdq")
+        set_source_files_properties(aes-zmm.c PROPERTIES COMPILE_OPTIONS "-mavx512f;-mavx512bw;-mavx512dq;-mavx512vl;-mvaes;-mvpclmulqdq")
         set_source_files_properties(sha256Par-ymm.c PROPERTIES COMPILE_OPTIONS "-mavx;-mavx2")
         set_source_files_properties(sha512Par-ymm.c PROPERTIES COMPILE_OPTIONS "-mavx;-mavx2")
         set_source_files_properties(sha256-xmm.c PROPERTIES COMPILE_OPTIONS "-mssse3")

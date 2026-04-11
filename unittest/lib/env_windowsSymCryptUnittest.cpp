@@ -12,6 +12,7 @@ BOOLEAN     TestSaveXmmEnabled = TRUE;  // For AMD64 we always test Xmm6-Xmm15 a
 BOOLEAN     TestSaveXmmEnabled = FALSE;
 #endif
 BOOLEAN     TestSaveYmmEnabled = FALSE;
+BOOLEAN     TestSaveZmmEnabled = FALSE;
 
 extern "C" {
 
@@ -68,10 +69,12 @@ SymCryptInitEnvUnittest( UINT32 version )
     }
 
     //
-    // By default we don't fail XMM so that we get proper performance for GCM.
+    // By default we don't fail XMM/YMM/ZMM so that we get proper performance for GCM.
     // We allow the nofail to be disabled by command-line option.
     //
     g_SymCryptCpuFeaturesNotPresent &= ~SYMCRYPT_CPU_FEATURE_SAVEXMM_NOFAIL;
+    g_SymCryptCpuFeaturesNotPresent &= ~SYMCRYPT_CPU_FEATURE_SAVEYMM_NOFAIL;
+    g_SymCryptCpuFeaturesNotPresent &= ~SYMCRYPT_CPU_FEATURE_SAVEZMM_NOFAIL;
 
 #elif SYMCRYPT_CPU_ARM
 

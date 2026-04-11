@@ -17,11 +17,11 @@ SYMCRYPT_CPU_FEATURES SYMCRYPT_CALL SymCryptCpuFeaturesNeverPresentEnvElevatedDe
 #if SYMCRYPT_CPU_AMD64
     // We explicitly opt-out of using CPU features not relating to AES / SHA256 with SSE state
     // This ensures that new features requiring new state will not be used unintentionally
-    return ~(SYMCRYPT_CPU_FEATURES_FOR_AESNI_PCLMULQDQ_CODE | SYMCRYPT_CPU_FEATURES_FOR_SHANI_CODE);
+    return (SYMCRYPT_CPU_FEATURES) ~(SYMCRYPT_CPU_FEATURES_FOR_AESNI_PCLMULQDQ_CODE | SYMCRYPT_CPU_FEATURES_FOR_SHANI_CODE);
 #elif SYMCRYPT_CPU_ARM64
     // We explicitly opt-out of using CPU features not relating to AES / SHA256 with NEON state
     // This ensures that new features requiring new state will not be used unintentionally
-    return ~(SYMCRYPT_CPU_FEATURE_NEON | SYMCRYPT_CPU_FEATURE_NEON_AES | SYMCRYPT_CPU_FEATURE_NEON_PMULL | SYMCRYPT_CPU_FEATURE_NEON_SHA256);
+    return (SYMCRYPT_CPU_FEATURES) ~(SYMCRYPT_CPU_FEATURE_NEON | SYMCRYPT_CPU_FEATURE_NEON_AES | SYMCRYPT_CPU_FEATURE_NEON_PMULL | SYMCRYPT_CPU_FEATURE_NEON_SHA256);
 #else
     #error We only support ARM64 and AMD64 for Elevated Debugger Environment
 #endif
