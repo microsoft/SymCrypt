@@ -11418,9 +11418,12 @@ PqDsaImp<ImpXxx, AlgMlDsa>::sign(
     PCBYTE pbContext,
     SIZE_T cbContext,
     PBYTE pbSignature,
-    SIZE_T cbSignature )
+    SIZE_T cbSignature,
+    SIZE_T* pcbResult )
 {
     SYMCRYPT_ERROR scError = SYMCRYPT_NO_ERROR;
+
+    CHECK( pcbResult == NULL, "pcbResult is not intended for AlgMlDsa" );
 
     scError = ScShimSymCryptMlDsaSign(
         state.pKey,
@@ -11464,9 +11467,12 @@ PqDsaImp<ImpXxx, AlgMlDsa>::signHash(
     PCBYTE pbContext,
     SIZE_T cbContext,
     PBYTE pbSignature,
-    SIZE_T cbSignature )
+    SIZE_T cbSignature,
+    SIZE_T* pcbResult )
 {
     SYMCRYPT_ERROR scError = SYMCRYPT_NO_ERROR;
+
+    CHECK( pcbResult == NULL, "pcbResult is not intended for AlgMlDsa" );
 
     scError = ScShimSymCryptHashMlDsaSign(
         state.pKey,
@@ -11770,5 +11776,530 @@ ArithImp<ImpXxx, AlgMlDsakeySetValue>::ArithImp()
 
 template<>
 ArithImp<ImpXxx, AlgMlDsakeySetValue>::~ArithImp()
+{
+}
+
+////////////////////////////////////////////////////////////////////////////
+// Composite-ML-DSA
+////////////////////////////////////////////////////////////////////////////
+
+// Table with the ML-DSA keys' sizes and pointers to keys
+SYMCRYPT_PERF_COMPOSITE_MLDSAKEY CONCAT2(g_precomputedCompositeMlDsaKeys, ImpXxx)[] = {
+    { PERF_KEY_COMPOSITE_MLDSA_MLDSA44_ECDSA_P256_SHA256,   SYMCRYPT_COMPOSITE_MLDSA_PARAMS_MLDSA44_ECDSA_P256_SHA256,  NULL },
+    { PERF_KEY_COMPOSITE_MLDSA_MLDSA65_ECDSA_P256_SHA512,   SYMCRYPT_COMPOSITE_MLDSA_PARAMS_MLDSA65_ECDSA_P256_SHA512,  NULL },
+    { PERF_KEY_COMPOSITE_MLDSA_MLDSA65_ECDSA_P384_SHA512,   SYMCRYPT_COMPOSITE_MLDSA_PARAMS_MLDSA65_ECDSA_P384_SHA512,  NULL },
+    { PERF_KEY_COMPOSITE_MLDSA_MLDSA87_ECDSA_P384_SHA512,   SYMCRYPT_COMPOSITE_MLDSA_PARAMS_MLDSA87_ECDSA_P384_SHA512,  NULL },
+};
+
+template<>
+VOID
+SetupSymCryptCompositeMlDsaKey<ImpXxx>( PBYTE pbKey, SIZE_T keySize )
+{
+    SIZE_T i = 0;
+    BOOLEAN bFound = FALSE;
+    SYMCRYPT_COMPOSITE_MLDSA_PARAMS params = SYMCRYPT_COMPOSITE_MLDSA_PARAMS_NULL;
+
+    for( i = 0; i < ARRAY_SIZE(CONCAT2(g_precomputedCompositeMlDsaKeys, ImpXxx)); i++ )
+    {
+        if ( keySize == CONCAT2(g_precomputedCompositeMlDsaKeys, ImpXxx)[i].keySize )
+        {
+            bFound = TRUE;
+            params = CONCAT2(g_precomputedCompositeMlDsaKeys, ImpXxx)[i].params;
+
+            if ( CONCAT2(g_precomputedCompositeMlDsaKeys, ImpXxx)[i].pkCompositeMlDsakey == NULL )
+            {
+                PSYMCRYPT_COMPOSITE_MLDSAKEY pkCompositeMlDsakey = ScShimSymCryptCompositeMlDsakeyAllocate( params );
+                CHECK( pkCompositeMlDsakey != NULL, "Composite-ML-DSA key allocation failed" );
+
+                CONCAT2(g_precomputedCompositeMlDsaKeys, ImpXxx)[i].pkCompositeMlDsakey = pkCompositeMlDsakey;
+            }
+
+            break;
+        }
+    }
+
+    CHECK( bFound, "Invalid Composite-ML-DSA parameter set (key size)" );
+
+    *((PSYMCRYPT_PERF_COMPOSITE_MLDSAKEY *) pbKey) = &(CONCAT2(g_precomputedCompositeMlDsaKeys, ImpXxx)[i]);
+}
+
+template<>
+VOID
+algImpKeyPerfFunction<ImpXxx, AlgCompositeMlDsa>( PBYTE pbKey, PBYTE buf2, PBYTE buf3, SIZE_T keySize )
+{
+    UNREFERENCED_PARAMETER( buf2 );
+    UNREFERENCED_PARAMETER( buf3 );
+
+    SYMCRYPT_ERROR scError = SYMCRYPT_NO_ERROR;
+    SYMCRYPT_COMPOSITE_MLDSA_PARAMS params = SYMCRYPT_COMPOSITE_MLDSA_PARAMS_NULL;
+    PSYMCRYPT_PERF_COMPOSITE_MLDSAKEY* ppKeyInfo = (PSYMCRYPT_PERF_COMPOSITE_MLDSAKEY *) pbKey;
+
+    switch( keySize )
+    {
+        case PERF_KEY_COMPOSITE_MLDSA_MLDSA44_ECDSA_P256_SHA256:
+            params = SYMCRYPT_COMPOSITE_MLDSA_PARAMS_MLDSA44_ECDSA_P256_SHA256;
+            break;
+        case PERF_KEY_COMPOSITE_MLDSA_MLDSA65_ECDSA_P256_SHA512:
+            params = SYMCRYPT_COMPOSITE_MLDSA_PARAMS_MLDSA65_ECDSA_P256_SHA512;
+            break;
+        case PERF_KEY_COMPOSITE_MLDSA_MLDSA65_ECDSA_P384_SHA512:
+            params = SYMCRYPT_COMPOSITE_MLDSA_PARAMS_MLDSA65_ECDSA_P384_SHA512;
+            break;
+        case PERF_KEY_COMPOSITE_MLDSA_MLDSA87_ECDSA_P384_SHA512:
+            params = SYMCRYPT_COMPOSITE_MLDSA_PARAMS_MLDSA87_ECDSA_P384_SHA512;
+            break;
+        default:
+            CHECK( FALSE, "Invalid Composite-ML-DSA parameter set (key size)" );
+            break;
+    }
+
+    SetupSymCryptCompositeMlDsaKey<ImpXxx>( pbKey, keySize );
+
+    scError = ScShimSymCryptCompositeMlDsakeyGenerate( (*ppKeyInfo)->pkCompositeMlDsakey, 0 );
+    CHECK( scError == SYMCRYPT_NO_ERROR, "SymCryptCompositeMlDsakeyGenerate" );
+}
+
+template<>
+VOID
+algImpDataPerfFunction<ImpXxx, AlgCompositeMlDsa>( PBYTE pbKey, PBYTE pbMessage, PBYTE pbSignature, SIZE_T cbData )
+{
+    SYMCRYPT_ERROR scError = SYMCRYPT_NO_ERROR;
+    PSYMCRYPT_PERF_COMPOSITE_MLDSAKEY* ppKeyInfo = (PSYMCRYPT_PERF_COMPOSITE_MLDSAKEY *) pbKey;
+    SIZE_T cbSignature = 0;
+    SIZE_T cbResult = 0;
+
+    scError = ScShimSymCryptCompositeMlDsaSizeofSignatureFromParams(
+        (*ppKeyInfo)->params,
+        &cbSignature );
+    CHECK( scError == SYMCRYPT_NO_ERROR, "SymCryptCompositeMlDsaSizeofSignatureFromParams" );
+    CHECK( cbSignature <= PERF_BUFFER_SIZE, "Signature buffer too small" );
+
+    scError = ScShimSymCryptCompositeMlDsaSign(
+        (*ppKeyInfo)->pkCompositeMlDsakey,
+        pbMessage, cbData,
+        nullptr, 0, // context
+        0, // flags
+        pbSignature, cbSignature,
+        &cbResult );
+    CHECK( scError == SYMCRYPT_NO_ERROR, "SymCryptCompositeMlDsaSign" );
+}
+
+template<>
+VOID
+algImpDecryptPerfFunction<ImpXxx, AlgCompositeMlDsa>( PBYTE pbKey, PBYTE pbMessage, PBYTE pbSignature, SIZE_T cbData )
+{
+    SYMCRYPT_ERROR scError = SYMCRYPT_NO_ERROR;
+    PSYMCRYPT_PERF_COMPOSITE_MLDSAKEY* ppKeyInfo = (PSYMCRYPT_PERF_COMPOSITE_MLDSAKEY *) pbKey;
+    SIZE_T cbSignature = 0;
+
+    scError = ScShimSymCryptCompositeMlDsaSizeofSignatureFromParams(
+        (*ppKeyInfo)->params,
+        &cbSignature );
+    CHECK( scError == SYMCRYPT_NO_ERROR, "SymCryptCompositeMlDsaSizeofSignatureFromParams" );
+    CHECK( cbSignature <= PERF_BUFFER_SIZE, "Signature buffer too small" );
+
+    scError = ScShimSymCryptCompositeMlDsaVerify(
+        (*ppKeyInfo)->pkCompositeMlDsakey,
+        pbMessage, cbData,
+        nullptr, 0, // context
+        pbSignature, cbSignature,
+        0 ); // flags
+    CHECK( scError == SYMCRYPT_NO_ERROR, "SymCryptCompositeMlDsaVerify" );
+}
+
+template<>
+VOID
+algImpCleanPerfFunction<ImpXxx, AlgCompositeMlDsa>( PBYTE pbKey, PBYTE pbMessage, PBYTE pbSignature )
+{
+    UNREFERENCED_PARAMETER( pbKey );
+    UNREFERENCED_PARAMETER( pbMessage );
+    UNREFERENCED_PARAMETER( pbSignature );
+}
+
+template<>
+_Use_decl_annotations_
+NTSTATUS
+PqDsaImp<ImpXxx, AlgCompositeMlDsa>::setKey(
+    PCPQDSAKEY_TESTBLOB  pcKeyBlob )
+{
+    SYMCRYPT_ERROR scError = SYMCRYPT_NO_ERROR;
+    PCCOMPOSITE_MLDSAKEY_TESTBLOB pTestBlob = &(pcKeyBlob->compositeMlDsakey);
+
+    if( state.pKey != nullptr )
+    {
+        ScShimSymCryptCompositeMlDsakeyFree( state.pKey );
+        state.pKey = nullptr;
+    }
+
+    if( pcKeyBlob == nullptr )
+    {
+        // Just used to clear the key state to do leak detection
+        return STATUS_SUCCESS;
+    }
+
+    state.pKey = ScShimSymCryptCompositeMlDsakeyAllocate( pTestBlob->params );
+    CHECK( state.pKey != nullptr, "SymCryptCompositeMlDsakeyAllocate" );
+
+    state.params = pTestBlob->params;
+
+    scError = ScShimSymCryptCompositeMlDsakeySetValue(
+        pTestBlob->abKeyBlob,
+        pTestBlob->cbKeyBlob,
+        pTestBlob->format,
+        0,
+        state.pKey );
+    CHECK( scError == SYMCRYPT_NO_ERROR, "SymCryptCompositeMlDsakeySetValue" );
+
+    return STATUS_SUCCESS;
+}
+
+template<>
+NTSTATUS
+PqDsaImp<ImpXxx, AlgCompositeMlDsa>::getBlobFromKey(
+    UINT32  keyFormat,
+    PBYTE   pbBlob,
+    SIZE_T  cbBlob )
+{
+    SYMCRYPT_ERROR scError = SYMCRYPT_NO_ERROR;
+    SIZE_T cbExpected = 0;
+
+    scError = ScShimSymCryptCompositeMlDsaSizeofKeyFormatFromParams(
+            state.params,
+            (SYMCRYPT_COMPOSITE_MLDSAKEY_FORMAT) keyFormat,
+            &cbExpected );
+    CHECK( scError == SYMCRYPT_NO_ERROR, "SymCryptCompositeMlDsaSizeofKeyFormatFromParams" );
+
+    CHECK( cbBlob == cbExpected, "Invalid key blob size" );
+
+    scError = ScShimSymCryptCompositeMlDsakeyGetValue(
+        state.pKey,
+        pbBlob,
+        cbBlob,
+        (SYMCRYPT_COMPOSITE_MLDSAKEY_FORMAT) keyFormat,
+        0 ); // flags
+    CHECK( scError == SYMCRYPT_NO_ERROR, "SymCryptCompositeMlDsakeyGetValue" );
+
+    return STATUS_SUCCESS;
+}
+
+template<>
+_Use_decl_annotations_
+NTSTATUS
+PqDsaImp<ImpXxx, AlgCompositeMlDsa>::sign(
+    PCBYTE pbMessage,
+    SIZE_T cbMessage,
+    PCBYTE pbContext,
+    SIZE_T cbContext,
+    PBYTE pbSignature,
+    SIZE_T cbSignature,
+    SIZE_T* pcbResult )
+{
+    SYMCRYPT_ERROR scError = SYMCRYPT_NO_ERROR;
+
+    scError = ScShimSymCryptCompositeMlDsaSign(
+        state.pKey,
+        pbMessage, cbMessage,
+        pbContext, cbContext,
+        0, // flags
+        pbSignature, cbSignature,
+        pcbResult );
+    CHECK( scError == SYMCRYPT_NO_ERROR, "SymCryptCompositeMlDsaSign" );
+
+    return STATUS_SUCCESS;
+}
+
+template<>
+_Use_decl_annotations_
+NTSTATUS
+PqDsaImp<ImpXxx, AlgCompositeMlDsa>::signExternalMu(
+    PCBYTE pbMu,
+    SIZE_T cbMu,
+    PBYTE pbSignature,
+    SIZE_T cbSignature )
+{
+    UNREFERENCED_PARAMETER( pbMu );
+    UNREFERENCED_PARAMETER( cbMu );
+    UNREFERENCED_PARAMETER( pbSignature );
+    UNREFERENCED_PARAMETER( cbSignature );
+
+    return STATUS_UNSUCCESSFUL;
+}
+
+template<>
+_Use_decl_annotations_
+NTSTATUS
+PqDsaImp<ImpXxx, AlgCompositeMlDsa>::signHash(
+    SYMCRYPT_PQDSA_HASH_ID hashId,
+    PCBYTE pbHash,
+    SIZE_T cbHash,
+    PCBYTE pbContext,
+    SIZE_T cbContext,
+    PBYTE pbSignature,
+    SIZE_T cbSignature,
+    SIZE_T* pcbResult )
+{
+    SYMCRYPT_ERROR scError = SYMCRYPT_NO_ERROR;
+
+    CHECK( hashId == SYMCRYPT_PQDSA_HASH_ID_NULL, "hashId is not intended for AlgCompositeMlDsa" );
+
+    scError = ScShimSymCryptCompositeMlDsaSign(
+        state.pKey,
+        pbHash, cbHash,
+        pbContext, cbContext,
+        SYMCRYPT_FLAG_COMPOSITE_MLDSA_PREHASHED, // flags
+        pbSignature, cbSignature,
+        pcbResult );
+    CHECK( scError == SYMCRYPT_NO_ERROR, "SymCryptCompositeMlDsaSign" );
+
+    return STATUS_SUCCESS;
+}
+
+template<>
+_Use_decl_annotations_
+NTSTATUS
+PqDsaImp<ImpXxx, AlgCompositeMlDsa>::signEx(
+    SYMCRYPT_PQDSA_HASH_ID hashId,
+    PCBYTE pbInput,
+    SIZE_T cbInput,
+    PCBYTE pbContext,
+    SIZE_T cbContext,
+    PCBYTE pbRandom,
+    SIZE_T cbRandom,
+    UINT32 flags,
+    PBYTE pbSignature,
+    SIZE_T cbSignature )
+{
+    UNREFERENCED_PARAMETER( hashId );
+    UNREFERENCED_PARAMETER( pbInput );
+    UNREFERENCED_PARAMETER( cbInput );
+    UNREFERENCED_PARAMETER( pbContext );
+    UNREFERENCED_PARAMETER( cbContext );
+    UNREFERENCED_PARAMETER( pbRandom );
+    UNREFERENCED_PARAMETER( cbRandom );
+    UNREFERENCED_PARAMETER( flags );
+    UNREFERENCED_PARAMETER( pbSignature );
+    UNREFERENCED_PARAMETER( cbSignature );
+
+    return STATUS_UNSUCCESSFUL;
+}
+
+template<>
+_Use_decl_annotations_
+NTSTATUS
+PqDsaImp<ImpXxx, AlgCompositeMlDsa>::verify(
+    PCBYTE pbMessage,
+    SIZE_T cbMessage,
+    PCBYTE pbContext,
+    SIZE_T cbContext,
+    PCBYTE pbSignature,
+    SIZE_T cbSignature )
+{
+    SYMCRYPT_ERROR scError = SYMCRYPT_NO_ERROR;
+
+    scError = ScShimSymCryptCompositeMlDsaVerify(
+        state.pKey,
+        pbMessage, cbMessage,
+        pbContext, cbContext,
+        pbSignature, cbSignature,
+        0 ); // flags
+
+    if( scError == SYMCRYPT_NO_ERROR )
+    {
+        return STATUS_SUCCESS;
+    }
+    else if( scError == SYMCRYPT_SIGNATURE_VERIFICATION_FAILURE )
+    {
+        // Signature verification failure is an expected failure for some test cases
+        return STATUS_INVALID_SIGNATURE;
+    }
+    else
+    {
+        CHECK3(FALSE, "Unexpected SymCrypt error %08x", scError);
+        return STATUS_UNSUCCESSFUL; // Unreachable
+    }
+}
+
+template<>
+_Use_decl_annotations_
+NTSTATUS
+PqDsaImp<ImpXxx, AlgCompositeMlDsa>::verifyExternalMu(
+    PCBYTE pbMu,
+    SIZE_T cbMu,
+    PCBYTE pbSignature,
+    SIZE_T cbSignature )
+{
+    UNREFERENCED_PARAMETER( pbMu );
+    UNREFERENCED_PARAMETER( cbMu );
+    UNREFERENCED_PARAMETER( pbSignature );
+    UNREFERENCED_PARAMETER( cbSignature );
+
+    return STATUS_UNSUCCESSFUL;
+}
+
+template<>
+_Use_decl_annotations_
+NTSTATUS
+PqDsaImp<ImpXxx, AlgCompositeMlDsa>::verifyHash(
+    SYMCRYPT_PQDSA_HASH_ID hashId,
+    PCBYTE pbHash,
+    SIZE_T cbHash,
+    PCBYTE pbContext,
+    SIZE_T cbContext,
+    PCBYTE pbSignature,
+    SIZE_T cbSignature )
+{
+    SYMCRYPT_ERROR scError = SYMCRYPT_NO_ERROR;
+
+    CHECK( hashId == SYMCRYPT_PQDSA_HASH_ID_NULL, "hashId is not intended for AlgCompositeMlDsa" );
+
+    scError = ScShimSymCryptCompositeMlDsaVerify(
+        state.pKey,
+        pbHash, cbHash,
+        pbContext, cbContext,
+        pbSignature, cbSignature,
+        SYMCRYPT_FLAG_COMPOSITE_MLDSA_PREHASHED ); // flags
+
+    if( scError == SYMCRYPT_NO_ERROR )
+    {
+        return STATUS_SUCCESS;
+    }
+    else if( scError == SYMCRYPT_SIGNATURE_VERIFICATION_FAILURE )
+    {
+        // Signature verification failure is an expected failure for some test cases
+        return STATUS_INVALID_SIGNATURE;
+    }
+    else
+    {
+        CHECK3(FALSE, "Unexpected SymCrypt error %08x", scError);
+        return STATUS_UNSUCCESSFUL; // Unreachable
+    }
+}
+
+template<>
+PqDsaImp<ImpXxx, AlgCompositeMlDsa>::PqDsaImp()
+{
+    m_perfDataFunction      = &algImpDataPerfFunction   <ImpXxx, AlgCompositeMlDsa>;
+    m_perfDecryptFunction   = &algImpDecryptPerfFunction<ImpXxx, AlgCompositeMlDsa>;
+    m_perfKeyFunction       = &algImpKeyPerfFunction    <ImpXxx, AlgCompositeMlDsa>;
+    m_perfCleanFunction     = &algImpCleanPerfFunction  <ImpXxx, AlgCompositeMlDsa>;
+}
+
+template<>
+VOID
+algImpKeyPerfFunction<ImpXxx, AlgCompositeMlDsakeySetValue>( PBYTE pbKey, PBYTE pbPrivateKey, PBYTE pbPublicKey, SIZE_T keySize )
+{
+    SIZE_T cbPrivateKey;
+    SIZE_T cbPublicKey;
+    SYMCRYPT_ERROR scError = SYMCRYPT_NO_ERROR;
+    SYMCRYPT_COMPOSITE_MLDSA_PARAMS params = SYMCRYPT_COMPOSITE_MLDSA_PARAMS_NULL;
+    PSYMCRYPT_PERF_COMPOSITE_MLDSAKEY* ppKeyInfo = (PSYMCRYPT_PERF_COMPOSITE_MLDSAKEY *) pbKey;
+
+    switch( keySize )
+    {
+        case PERF_KEY_COMPOSITE_MLDSA_MLDSA44_ECDSA_P256_SHA256:
+            params = SYMCRYPT_COMPOSITE_MLDSA_PARAMS_MLDSA44_ECDSA_P256_SHA256;
+            break;
+        case PERF_KEY_COMPOSITE_MLDSA_MLDSA65_ECDSA_P256_SHA512:
+            params = SYMCRYPT_COMPOSITE_MLDSA_PARAMS_MLDSA65_ECDSA_P256_SHA512;
+            break;
+        case PERF_KEY_COMPOSITE_MLDSA_MLDSA65_ECDSA_P384_SHA512:
+            params = SYMCRYPT_COMPOSITE_MLDSA_PARAMS_MLDSA65_ECDSA_P384_SHA512;
+            break;
+        case PERF_KEY_COMPOSITE_MLDSA_MLDSA87_ECDSA_P384_SHA512:
+            params = SYMCRYPT_COMPOSITE_MLDSA_PARAMS_MLDSA87_ECDSA_P384_SHA512;
+            break;
+        default:
+            CHECK( FALSE, "Invalid Composite-ML-DSA parameter set (key size)" );
+            break;
+    }
+
+    SetupSymCryptMlDsaKey<ImpXxx>( pbKey, keySize );
+
+    scError = ScShimSymCryptCompositeMlDsakeyGenerate( (*ppKeyInfo)->pkCompositeMlDsakey, 0 );
+    CHECK( scError == SYMCRYPT_NO_ERROR, "SymCryptCompositeMlDsakeyGenerate" );
+
+    scError = ScShimSymCryptCompositeMlDsaSizeofKeyFormatFromParams( params, SYMCRYPT_COMPOSITE_MLDSAKEY_FORMAT_PRIVATE_KEY, &cbPrivateKey );
+    CHECK( scError == SYMCRYPT_NO_ERROR, "?" );
+    scError = ScShimSymCryptCompositeMlDsaSizeofKeyFormatFromParams( params, SYMCRYPT_COMPOSITE_MLDSAKEY_FORMAT_PUBLIC_KEY, &cbPublicKey );
+    CHECK( scError == SYMCRYPT_NO_ERROR, "?" );
+
+    *((SIZE_T*)pbPrivateKey) = cbPrivateKey;
+    scError = ScShimSymCryptCompositeMlDsakeyGetValue(
+        (*ppKeyInfo)->pkCompositeMlDsakey,
+        pbPrivateKey+sizeof(SIZE_T), cbPrivateKey,
+        SYMCRYPT_COMPOSITE_MLDSAKEY_FORMAT_PRIVATE_KEY,
+        0 );
+    CHECK( scError == SYMCRYPT_NO_ERROR, "?" );
+
+    *((SIZE_T*)pbPublicKey) = cbPublicKey;
+    scError = ScShimSymCryptCompositeMlDsakeyGetValue(
+        (*ppKeyInfo)->pkCompositeMlDsakey,
+        pbPublicKey+sizeof(SIZE_T), cbPublicKey,
+        SYMCRYPT_COMPOSITE_MLDSAKEY_FORMAT_PUBLIC_KEY,
+        0 );
+    CHECK( scError == SYMCRYPT_NO_ERROR, "?" );
+}
+
+template<>
+VOID
+algImpDataPerfFunction<ImpXxx, AlgCompositeMlDsakeySetValue>( PBYTE pbKey, PBYTE pbPrivateKey, PBYTE pbPublicKey, SIZE_T cbData )
+{
+    UNREFERENCED_PARAMETER( pbPrivateKey );
+    UNREFERENCED_PARAMETER( cbData );
+
+    SYMCRYPT_ERROR scError = SYMCRYPT_NO_ERROR;
+    PSYMCRYPT_PERF_COMPOSITE_MLDSAKEY* ppKeyInfo = (PSYMCRYPT_PERF_COMPOSITE_MLDSAKEY *) pbKey;
+    PSYMCRYPT_COMPOSITE_MLDSAKEY pKey = (*ppKeyInfo)->pkCompositeMlDsakey;
+    SIZE_T cbPublicKey = *((SIZE_T*)pbPublicKey);
+
+    scError = ScShimSymCryptCompositeMlDsakeySetValue(
+        pbPublicKey+sizeof(SIZE_T), cbPublicKey,
+        SYMCRYPT_COMPOSITE_MLDSAKEY_FORMAT_PUBLIC_KEY,
+        0,
+        pKey );
+    CHECK( scError == SYMCRYPT_NO_ERROR, "?" );
+}
+
+template<>
+VOID
+algImpDecryptPerfFunction<ImpXxx, AlgCompositeMlDsakeySetValue>( PBYTE pbKey, PBYTE pbPrivateKey, PBYTE pbPublicKey, SIZE_T cbData )
+{
+    UNREFERENCED_PARAMETER( pbPublicKey );
+    UNREFERENCED_PARAMETER( cbData );
+
+    SYMCRYPT_ERROR scError = SYMCRYPT_NO_ERROR;
+    PSYMCRYPT_PERF_COMPOSITE_MLDSAKEY* ppKeyInfo = (PSYMCRYPT_PERF_COMPOSITE_MLDSAKEY *) pbKey;
+    PSYMCRYPT_COMPOSITE_MLDSAKEY pKey = (*ppKeyInfo)->pkCompositeMlDsakey;
+    SIZE_T cbPrivateKey = *((SIZE_T*)pbPrivateKey);
+
+    scError = ScShimSymCryptCompositeMlDsakeySetValue(
+        pbPrivateKey+sizeof(SIZE_T), cbPrivateKey,
+        SYMCRYPT_COMPOSITE_MLDSAKEY_FORMAT_PRIVATE_KEY,
+        0,
+        pKey );
+    CHECK( scError == SYMCRYPT_NO_ERROR, "?" );
+}
+
+template<>
+VOID
+algImpCleanPerfFunction<ImpXxx, AlgCompositeMlDsakeySetValue>( PBYTE pbKey, PBYTE pbPrivateKey, PBYTE pbPublicKey )
+{
+    UNREFERENCED_PARAMETER( pbKey );
+
+    ScShimSymCryptWipe( pbPrivateKey, *((SIZE_T*)pbPrivateKey) + sizeof(SIZE_T) );
+    ScShimSymCryptWipe( pbPublicKey, *((SIZE_T*)pbPublicKey) + sizeof(SIZE_T) );
+}
+
+template<>
+ArithImp<ImpXxx, AlgCompositeMlDsakeySetValue>::ArithImp()
+{
+    m_perfDataFunction      = &algImpDataPerfFunction   <ImpXxx, AlgCompositeMlDsakeySetValue>;
+    m_perfDecryptFunction   = &algImpDecryptPerfFunction<ImpXxx, AlgCompositeMlDsakeySetValue>;
+    m_perfKeyFunction       = &algImpKeyPerfFunction    <ImpXxx, AlgCompositeMlDsakeySetValue>;
+    m_perfCleanFunction     = &algImpCleanPerfFunction  <ImpXxx, AlgCompositeMlDsakeySetValue>;
+}
+
+template<>
+ArithImp<ImpXxx, AlgCompositeMlDsakeySetValue>::~ArithImp()
 {
 }

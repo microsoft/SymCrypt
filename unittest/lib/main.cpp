@@ -420,6 +420,7 @@ const char * g_algorithmNames[] = {
     AlgMlKem::name,
     AlgMlKemkeySetValue::name,
     AlgMlDsa::name,
+    AlgCompositeMlDsa::name,
     AlgMlDsakeySetValue::name,
     AlgTlsHandshake::name,
     AlgCompositeMlKem::name,
@@ -1460,19 +1461,21 @@ runPerfTests()
                 String name = (*i)->m_algorithmName + (*i)->m_modeName;
                 if( j->keySize > 0 )
                 {
-                    UINT32 keySize = (UINT32) (j->keySize & 0xffff);
+                    UINT32 keySize = (UINT32) (j->keySize);
 
                     // Hack: For ML-DSA / Composite ML-KEM, don't multiply the key size by 8 since it refers to a
                     // parameter set. In the future we should refactor the performance measurement
                     // architecture to be able to handle these types of algorithms more gracefully.
                     if( (*i)->m_algorithmName.substr(0, 5) != "MlDsa" &&
+                        (*i)->m_algorithmName.substr(0, 14) != "CompositeMlDsa" &&
                         (*i)->m_algorithmName.substr(0, 14) != "CompositeMlKem")
                     {
+                        keySize &= 0xffff;
                         keySize *= 8;
                     }
 
                     char buf[100];
-                    SNPRINTF_S( buf, sizeof( buf ), _TRUNCATE, "-%4u", keySize );
+                    SNPRINTF_S( buf, sizeof( buf ), _TRUNCATE, "-%5u", keySize );
 
                     name = name + buf;
                 }

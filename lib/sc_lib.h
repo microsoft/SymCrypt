@@ -4438,6 +4438,23 @@ SymCryptEckeySetValueCompositeEncodingSk(
                                 UINT32                      flags,
     _Inout_                     PSYMCRYPT_ECKEY             pEckey );
 
+SYMCRYPT_ERROR
+SYMCRYPT_CALL
+SymCryptEcdsaSigValueCompositeEncode(
+    _In_reads_bytes_( cbRawSignature )          PCBYTE  pbRawSignature,
+                                                SIZE_T  cbRawSignature,
+    _Out_writes_bytes_( cbEncodedSignature )    PBYTE   pbEncodedSignature,
+                                                SIZE_T  cbEncodedSignature,
+    _Out_                                       SIZE_T* pcbResult );
+
+SYMCRYPT_ERROR
+SYMCRYPT_CALL
+SymCryptEcdsaSigValueCompositeDecode(
+    _In_reads_bytes_( cbEncodedSignature )      PCBYTE  pbEncodedSignature,
+                                                SIZE_T  cbEncodedSignature,
+    _Out_writes_bytes_( cbRawSignature )        PBYTE   pbRawSignature,
+                                                SIZE_T  cbRawSignature );
+
 //
 // Composite ML-KEM definitions
 //
@@ -4481,6 +4498,8 @@ SymCryptCompositeMlKemGetRandomScalarForEcKeyEx(
                                     SIZE_T                      cbSeed,
     _Out_writes_bytes_( cbScalar )  PBYTE                       pbScalar,
                                     SIZE_T                      cbScalar );
+
+#include "sc_lib_composite_mldsa.h"
 
 //
 // XMSS

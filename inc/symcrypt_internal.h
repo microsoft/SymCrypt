@@ -2647,6 +2647,14 @@ typedef       SYMCRYPT_COMPOSITE_MLKEMKEY * PSYMCRYPT_COMPOSITE_MLKEMKEY;
 typedef const SYMCRYPT_COMPOSITE_MLKEMKEY * PCSYMCRYPT_COMPOSITE_MLKEMKEY;
 
 //
+// Forward declarations for CompositeMlDsakey types
+//
+struct _SYMCRYPT_COMPOSITE_MLDSAKEY;
+typedef struct _SYMCRYPT_COMPOSITE_MLDSAKEY SYMCRYPT_COMPOSITE_MLDSAKEY;
+typedef       SYMCRYPT_COMPOSITE_MLDSAKEY * PSYMCRYPT_COMPOSITE_MLDSAKEY;
+typedef const SYMCRYPT_COMPOSITE_MLDSAKEY * PCSYMCRYPT_COMPOSITE_MLDSAKEY;
+
+//
 // RSA padding scratch definitions
 //
 // The maximum sizes of the state and the result for all hash algorithms are

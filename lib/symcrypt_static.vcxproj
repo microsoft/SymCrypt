@@ -48,6 +48,7 @@
     <ClCompile Include="chacha20.c" />
     <ClCompile Include="chacha20_poly1305.c" />
     <ClCompile Include="composite_encoding.c" />
+    <ClCompile Include="composite_mldsa.c" />
     <ClCompile Include="composite_mlkem.c" />
     <ClCompile Include="cpuid.c" />
     <ClCompile Include="cpuid_notry.c" />

@@ -20,6 +20,7 @@ set(SOURCES_COMMON
     chacha20_poly1305.c
     chacha20.c
     composite_encoding.c
+    composite_mldsa.c
     composite_mlkem.c
     cpuid_notry.c
     cpuid_um.c

@@ -255,6 +255,9 @@ const ALG_MEASURE_PARAMS g_algMeasureParams[] =
     "MlDsa"                 , 0, {PERF_KEY_MLDSA_44, PERF_KEY_MLDSA_65, PERF_KEY_MLDSA_87}, {PERF_DATASIZE_SAME_AS_KEYSIZE},
     "MlDsakeySetValue"      , 0, {PERF_KEY_MLDSA_44, PERF_KEY_MLDSA_65, PERF_KEY_MLDSA_87}, {PERF_DATASIZE_SAME_AS_KEYSIZE},
 
+    "CompositeMlDsa"            , 0, {PERF_KEY_COMPOSITE_MLDSA_MLDSA44_ECDSA_P256_SHA256, PERF_KEY_COMPOSITE_MLDSA_MLDSA65_ECDSA_P256_SHA512, PERF_KEY_COMPOSITE_MLDSA_MLDSA65_ECDSA_P384_SHA512, PERF_KEY_COMPOSITE_MLDSA_MLDSA87_ECDSA_P384_SHA512}, {PERF_DATASIZE_SAME_AS_KEYSIZE},
+    "CompositeMlDsaSetValue"    , 0, {PERF_KEY_COMPOSITE_MLDSA_MLDSA44_ECDSA_P256_SHA256, PERF_KEY_COMPOSITE_MLDSA_MLDSA65_ECDSA_P256_SHA512, PERF_KEY_COMPOSITE_MLDSA_MLDSA65_ECDSA_P384_SHA512, PERF_KEY_COMPOSITE_MLDSA_MLDSA87_ECDSA_P384_SHA512}, {PERF_DATASIZE_SAME_AS_KEYSIZE},
+
     "IEEE802_11SaeCustom"   , 0, {}, {},
     "Xmss"                  , 1, { PERF_KEY_XMSS_SHA2_10_256, PERF_KEY_XMSS_SHA2_16_256, PERF_KEY_XMSS_SHA2_20_256, PERF_KEY_XMSS_SHA2_10_512,  PERF_KEY_XMSS_SHAKE256_10_256 }, { PERF_DATASIZE_SAME_AS_KEYSIZE },
     "Lms"                   , 1, { PERF_KEY_LMS_SHA256_M32_H5_W1, PERF_KEY_LMS_SHA256_M32_H5_W2, PERF_KEY_LMS_SHA256_M32_H5_W4, PERF_KEY_LMS_SHA256_M32_H5_W8, PERF_KEY_LMS_SHA256_M32_H10_W8}, { PERF_DATASIZE_SAME_AS_KEYSIZE },
@@ -847,7 +850,7 @@ VOID measurePerfData(
 
         SYMCRYPT_ASSERT( n < MAX_SIZES );
 
-        if ( dataSize == PERF_DATASIZE_SAME_AS_KEYSIZE)
+        if ( dataSize == PERF_DATASIZE_SAME_AS_KEYSIZE )
         {
             dataSize = keySize;
             x[n] = 0;           // Set this to 0 so later it will know there is only one datasize
@@ -1128,6 +1131,7 @@ VOID measurePerfOneAlg( AlgorithmImplementation * pAlgImp )
 
             if( !STRICMP(pParams->algName, "Dsa") ||
                 !STRICMP(pParams->algName, "MlDsa") ||
+                !STRICMP(pParams->algName, "CompositeMlDsa") ||
                 !STRICMP(pParams->algName, "RsaSignPkcs1") ||
                 !STRICMP(pParams->algName, "RsaSignPss") )
             {
@@ -1138,6 +1142,7 @@ VOID measurePerfOneAlg( AlgorithmImplementation * pAlgImp )
                 !STRICMP(pParams->algName, "RsakeySetValue") ||
                 !STRICMP(pParams->algName, "RsakeySetValueFromPrivateExponent") ||
                 !STRICMP(pParams->algName, "MlDsakeySetValue") ||
+                !STRICMP(pParams->algName, "CompositeMlDsakeySetValue") ||
                 !STRICMP(pParams->algName, "MlKemkeySetValue") ||
                 !STRICMP(pParams->algName, "CompositeMlKemkeySetValue") )
             {
@@ -1168,6 +1173,7 @@ VOID measurePerfOneAlg( AlgorithmImplementation * pAlgImp )
             if( !STRICMP(pParams->algName, "Dsa") ||
                 !STRICMP(pParams->algName, "Lms") ||
                 !STRICMP(pParams->algName, "MlDsa") ||
+                !STRICMP(pParams->algName, "CompositeMlDsa") ||
                 !STRICMP(pParams->algName, "RsaSignPkcs1") ||
                 !STRICMP(pParams->algName, "RsaSignPss") ||
                 !STRICMP(pParams->algName, "Xmss") )
@@ -1179,6 +1185,7 @@ VOID measurePerfOneAlg( AlgorithmImplementation * pAlgImp )
                 !STRICMP(pParams->algName, "RsakeySetValue") ||
                 !STRICMP(pParams->algName, "RsakeySetValueFromPrivateExponent") ||
                 !STRICMP(pParams->algName, "MlDsakeySetValue") ||
+                !STRICMP(pParams->algName, "CompositeMlDsakeySetValue") ||
                 !STRICMP(pParams->algName, "MlKemkeySetValue") ||
                 !STRICMP(pParams->algName, "CompositeMlKemkeySetValue") )
             {
@@ -1519,6 +1526,8 @@ runProfiling()
                     {
                         dataSize = keySize;
                     }
+
+                    CHECK4( dataSize <= PERF_BUFFER_SIZE, "Invalid test dataSize %zu > %u", dataSize, PERF_BUFFER_SIZE );
 
                     if( dataFn != NULL )
                     {

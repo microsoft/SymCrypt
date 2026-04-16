@@ -34,6 +34,52 @@ SYMCRYPT_TEST_MLDSA_PARAMS rgTestMlDsaParams[] = {
 
 #define NUM_OF_MLDSA_TEST_PARAMS       (sizeof(rgTestMlDsaParams) / sizeof(rgTestMlDsaParams[0]))
 
+#define SYMCRYPT_COMPOSITE_MLDSA_PARAMS_MLDSA44_ECDSA_P256_SHA256_NAME  "MLDSA44-ECDSA-P256-SHA256"
+#define SYMCRYPT_COMPOSITE_MLDSA_PARAMS_MLDSA65_ECDSA_P256_SHA512_NAME  "MLDSA65-ECDSA-P256-SHA512"
+#define SYMCRYPT_COMPOSITE_MLDSA_PARAMS_MLDSA65_ECDSA_P384_SHA512_NAME  "MLDSA65-ECDSA-P384-SHA512"
+#define SYMCRYPT_COMPOSITE_MLDSA_PARAMS_MLDSA87_ECDSA_P384_SHA512_NAME  "MLDSA87-ECDSA-P384-SHA512"
+
+typedef struct _SYMCRYPT_TEST_COMPOSITE_MLDSA_PARAMS {
+    LPSTR                           pszParamsName;
+    SYMCRYPT_COMPOSITE_MLDSA_PARAMS params;
+    SIZE_T                          cbMlDsaSignature;
+    PCSYMCRYPT_HASH const*          ppMessagePreHash;
+    SIZE_T                          cbMessagePreHash;
+} SYMCRYPT_TEST_COMPOSITE_MLDSA_PARAMS, *PSYMCRYPT_TEST_COMPOSITE_MLDSA_PARAMS;
+
+static const SYMCRYPT_TEST_COMPOSITE_MLDSA_PARAMS rgTestCompositeMlDsaParams[] = {
+    {
+        SYMCRYPT_COMPOSITE_MLDSA_PARAMS_MLDSA44_ECDSA_P256_SHA256_NAME,
+        SYMCRYPT_COMPOSITE_MLDSA_PARAMS_MLDSA44_ECDSA_P256_SHA256,
+        SYMCRYPT_MLDSA_SIGNATURE_SIZE_MLDSA44,
+        &SymCryptSha256Algorithm,
+        SYMCRYPT_SHA256_RESULT_SIZE
+    },
+    {
+        SYMCRYPT_COMPOSITE_MLDSA_PARAMS_MLDSA65_ECDSA_P256_SHA512_NAME,
+        SYMCRYPT_COMPOSITE_MLDSA_PARAMS_MLDSA65_ECDSA_P256_SHA512,
+        SYMCRYPT_MLDSA_SIGNATURE_SIZE_MLDSA65,
+        &SymCryptSha512Algorithm,
+        SYMCRYPT_SHA512_RESULT_SIZE
+    },
+    {
+        SYMCRYPT_COMPOSITE_MLDSA_PARAMS_MLDSA65_ECDSA_P384_SHA512_NAME,
+        SYMCRYPT_COMPOSITE_MLDSA_PARAMS_MLDSA65_ECDSA_P384_SHA512,
+        SYMCRYPT_MLDSA_SIGNATURE_SIZE_MLDSA65,
+        &SymCryptSha512Algorithm,
+        SYMCRYPT_SHA512_RESULT_SIZE
+    },
+    {
+        SYMCRYPT_COMPOSITE_MLDSA_PARAMS_MLDSA87_ECDSA_P384_SHA512_NAME,
+        SYMCRYPT_COMPOSITE_MLDSA_PARAMS_MLDSA87_ECDSA_P384_SHA512,
+        SYMCRYPT_MLDSA_SIGNATURE_SIZE_MLDSA87,
+        &SymCryptSha512Algorithm,
+        SYMCRYPT_SHA512_RESULT_SIZE
+    },
+};
+
+#define NUM_OF_COMPOSITE_MLDSA_TEST_PARAMS  (sizeof(rgTestCompositeMlDsaParams) / sizeof(rgTestCompositeMlDsaParams[0]))
+
 typedef struct _SYMCRYPT_MLWE_PARAMS {
     UINT16 nCoefficients;
     UINT8 rLog2;
@@ -211,7 +257,7 @@ testSymCryptNaivePolyMul(
             a = peA->coeffs[i];
             b = peB->coeffs[j];
             ab = ((ProductWidth) a * b) % Params->modulus;
-            
+
             c = peResult->coeffs[(i+j) % Params->nCoefficients];
 
             if(i + j < Params->nCoefficients)
@@ -534,7 +580,7 @@ testMlDsaPolyArithmetic()
         for(UINT32 j = 0; j < SYMCRYPT_MLWE_POLYNOMIAL_COEFFICIENTS; ++j)
         {
             peA->coeffs[j] = g_rng.uint32() % SYMCRYPT_MLWE_PARAMS_MLDSA.modulus;
-            peB->coeffs[j] = g_rng.uint32() % SYMCRYPT_MLWE_PARAMS_MLDSA.modulus; 
+            peB->coeffs[j] = g_rng.uint32() % SYMCRYPT_MLWE_PARAMS_MLDSA.modulus;
         }
 
         memcpy(peD, peA, sizeof(SYMCRYPT_MLDSA_POLYELEMENT)); // peD = peA
@@ -677,7 +723,7 @@ testMlDsaMatrixVectorArithmetic()
         }
 
         SymCryptMlDsaPolyElementSetZero(peOneNttTimesR);
-        
+
         peOneNttTimesR->coeffs[0] = 1;
 
         SymCryptMlDsaPolyElementNTT(peOneNttTimesR);
@@ -816,7 +862,8 @@ public:
         _In_reads_bytes_opt_( cbContext )                   PCBYTE                  pbContext,
         _In_range_( 0, SYMCRYPT_MLDSA_CONTEXT_MAX_LENGTH )  SIZE_T                  cbContext,
         _Out_writes_bytes_( cbSignature )                   PBYTE                   pbSignature,
-                                                            SIZE_T                  cbSignature ) override;
+                                                            SIZE_T                  cbSignature,
+        _Out_opt_                                           SIZE_T*                 pcbResult ) override;
 
     virtual NTSTATUS signExternalMu(
         _In_reads_bytes_( cbMu )                            PCBYTE                  pbMu,
@@ -831,7 +878,8 @@ public:
         _In_reads_bytes_opt_( cbContext )                   PCBYTE                  pbContext,
         _In_range_( 0, SYMCRYPT_MLDSA_CONTEXT_MAX_LENGTH )  SIZE_T                  cbContext,
         _Out_writes_bytes_( cbSignature )                   PBYTE                   pbSignature,
-                                                            SIZE_T                  cbSignature ) override;
+                                                            SIZE_T                  cbSignature,
+        _Out_opt_                                           SIZE_T*                 pcbResult ) override;
 
     virtual NTSTATUS signEx(
                                                             SYMCRYPT_PQDSA_HASH_ID  hashId,
@@ -944,22 +992,24 @@ PqDsaMultiImp::sign(
     PCBYTE  pbContext,
     SIZE_T  cbContext,
     PBYTE   pbSignature,
-    SIZE_T  cbSignature )
+    SIZE_T  cbSignature,
+    SIZE_T* pcbResult )
 {
-    // Signing is not deterministic, so we do the following:
+    // ML-DSA signing is not deterministic, so we do the following:
     // - Have every implementation sign
     // - Have every implementation verify each signature
     // - Return a random signature
     NTSTATUS status;
-    BYTE abSignature[SYMCRYPT_TEST_MLDSA_MAX_SIG_SIZE + 1];
+    BYTE abSignature[SYMCRYPT_TEST_PQDSA_MAX_SIG_SIZE + 1];
     UINT32 nSignatures = 0;
+    SIZE_T cbResult = 0;
 
     CHECK( cbSignature < sizeof(abSignature), "Buffer too small" );
 
     for( auto i = m_comps.begin(); i != m_comps.end(); ++i )
     {
         memset( abSignature, 'b', cbSignature + 1 );
-        status = (*i)->sign( pbMessage, cbMessage, pbContext, cbContext, abSignature, cbSignature );
+        status = (*i)->sign( pbMessage, cbMessage, pbContext, cbContext, abSignature, cbSignature, pcbResult );
         CHECK( NT_SUCCESS(status), "ML-DSA sign failed" );
         CHECK( abSignature[cbSignature] == 'b', "Buffer overflow" );
 
@@ -977,7 +1027,16 @@ PqDsaMultiImp::sign(
         if( g_rng.byte() % nSignatures == 0 )
         {
             memcpy( pbSignature, abSignature, cbSignature );
+            if ( pcbResult != NULL )
+            {
+                cbResult = *pcbResult;
+            }
         }
+    }
+
+    if ( pcbResult != NULL )
+    {
+        *pcbResult = cbResult;
     }
 
     return STATUS_SUCCESS;
@@ -996,7 +1055,7 @@ PqDsaMultiImp::signExternalMu(
     // - Have every implementation verify each signature
     // - Return a random signature
     NTSTATUS status;
-    BYTE abSignature[SYMCRYPT_TEST_MLDSA_MAX_SIG_SIZE + 1];
+    BYTE abSignature[SYMCRYPT_TEST_PQDSA_MAX_SIG_SIZE + 1];
     UINT32 nSignatures = 0;
 
     CHECK( cbSignature < sizeof(abSignature), "Buffer too small" );
@@ -1038,19 +1097,21 @@ PqDsaMultiImp::signHash(
     PCBYTE                  pbContext,
     SIZE_T                  cbContext,
     PBYTE                   pbSignature,
-    SIZE_T                  cbSignature )
+    SIZE_T                  cbSignature,
+    SIZE_T*                 pcbResult )
 {
     // As above, we cross-validate results since signing is not deterministic
     NTSTATUS status;
-    BYTE abSignature[SYMCRYPT_TEST_MLDSA_MAX_SIG_SIZE + 1];
+    BYTE abSignature[SYMCRYPT_TEST_PQDSA_MAX_SIG_SIZE + 1];
     UINT32 nSignatures = 0;
+    SIZE_T cbResult = 0;
 
     CHECK( cbSignature < sizeof(abSignature), "Buffer too small" );
 
     for( auto i = m_comps.begin(); i != m_comps.end(); ++i )
     {
         memset( abSignature, 'b', cbSignature + 1 );
-        status = (*i)->signHash( hashId, pbHash, cbHash, pbContext, cbContext, abSignature, cbSignature );
+        status = (*i)->signHash( hashId, pbHash, cbHash, pbContext, cbContext, abSignature, cbSignature, pcbResult );
         CHECK( NT_SUCCESS(status), "HashML-DSA sign failed" );
         CHECK( abSignature[cbSignature] == 'b', "Buffer overflow" );
 
@@ -1068,7 +1129,16 @@ PqDsaMultiImp::signHash(
         if( g_rng.byte() % nSignatures == 0 )
         {
             memcpy( pbSignature, abSignature, cbSignature );
+            if ( pcbResult != NULL )
+            {
+                cbResult = *pcbResult;
+            }
         }
+    }
+
+    if ( pcbResult != NULL )
+    {
+        *pcbResult = cbResult;
     }
 
     return STATUS_SUCCESS;
@@ -1091,7 +1161,7 @@ PqDsaMultiImp::signEx(
     // SignEx _is_ deterministic since it takes a caller-provided random value, so no need to
     // cross-validate here
     NTSTATUS status;
-    BYTE abSignature[SYMCRYPT_TEST_MLDSA_MAX_SIG_SIZE + 1];
+    BYTE abSignature[SYMCRYPT_TEST_PQDSA_MAX_SIG_SIZE + 1];
     ResultMerge resAgreedSignature;
 
     CHECK( cbSignature < sizeof(abSignature), "Buffer too small" );
@@ -1324,7 +1394,8 @@ testMlDsaRandom()
             status = pMlDsaImp->sign(
                 message.data(), message.size(),
                 context.data(), context.size(),
-                signature.data(), signature.size() );
+                signature.data(), signature.size(),
+                NULL ); // pcbResult
             CHECK( NT_SUCCESS( status ), "Failed to sign" );
 
             status = pMlDsaImp->verify(
@@ -1353,7 +1424,8 @@ testMlDsaRandom()
                 SYMCRYPT_PQDSA_HASH_ID_SHA512,
                 hash.data(), hash.size(),
                 context.data(), context.size(),
-                hashSignature.data(), hashSignature.size() );
+                hashSignature.data(), hashSignature.size(),
+                NULL ); // pcbResult
             CHECK( NT_SUCCESS( status ), "Failed to sign hash" );
 
             status = pMlDsaImp->verifyHash(
@@ -1372,7 +1444,8 @@ testMlDsaRandom()
             status = pMlDsaImp->sign(
                 message.data(), message.size(),
                 context.data(), context.size(),
-                signature2.data(), signature2.size() );
+                signature2.data(), signature2.size(),
+                NULL ); // pcbResult
             CHECK( NT_SUCCESS( status ), "Failed to sign with private key" );
 
             status = pMlDsaImp->verify(
@@ -1530,7 +1603,7 @@ testMlDsaNegative()
     // the vectors is (256 coefficients * 3 bits per coefficient * 8 polynomials / 8 bits per byte).
     // Encoded coefficients are in the range [0, 4]; any greater value is invalid. We'll set some
     // of the coefficients to an invalid value, which should cause an error on import.
-    const SIZE_T offset = 
+    const SIZE_T offset =
         SYMCRYPT_MLDSA_PUBLIC_SEED_SIZE +
         SYMCRYPT_MLDSA_PRIVATE_SIGNING_SEED_SIZE +
         SYMCRYPT_MLDSA_PUBLIC_KEY_HASH_SIZE +
@@ -1571,7 +1644,7 @@ testMlDsaKeyGen(
         SymCryptMlDsaSizeofKeyFormatFromParams(params, SYMCRYPT_MLDSAKEY_FORMAT_PRIVATE_KEY, &cbPrivKey) == SYMCRYPT_NO_ERROR,
         "Failed to get expected private key size" );
 
-    CHECK4( katSeed.size() == SYMCRYPT_MLDSA_ROOT_SEED_SIZE, "Invalid seed size %lld at line %lld", katSeed.size(), line );
+    CHECK4( katSeed.size() == SYMCRYPT_MLDSA_PRIVATE_SEED_SIZE, "Invalid seed size %lld at line %lld", katSeed.size(), line );
     CHECK4( katPubKey.size() == cbPubKey, "Invalid public key size %lld at line %lld", katPubKey.size(), line );
     CHECK4( katPrivKey.size() == cbPrivKey, "Invalid private key size %lld at line %lld", katPrivKey.size(), line );
 
@@ -1596,7 +1669,7 @@ testMlDsaKeyGen(
 
     status = pPqDsaImplementation->setKey( nullptr );
     CHECK( NT_SUCCESS(status), "Failed to free key" );
-    
+
 }
 
 VOID
@@ -1916,7 +1989,7 @@ testMlDsaKats()
                 }
             }
             CHECK3( bParamsFound, "ML-DSA header at line %lld specifies unknown params!", line ) ;
-            
+
             params = rgTestMlDsaParams[i].params;
         }
 
@@ -2034,8 +2107,9 @@ testMlDsaKats()
         cMlDsaKeyGenSamples, cMlDsaSignVerifySamples, cExternalMuMlDsaSignVerifySamples, cHashMlDsaSignVerifySamples );
 }
 
+static
 VOID
-testPqDsa()
+testPqDsaMlDsa()
 {
     INT64 nOutstandingAllocs = 0;
 
@@ -2060,4 +2134,544 @@ testPqDsa()
 
     nOutstandingAllocs = SYMCRYPT_INTERNAL_VOLATILE_READ64(&g_nOutstandingCheckedAllocs);
     CHECK3( nOutstandingAllocs == 0, "Memory leak, %d outstanding", nOutstandingAllocs );
+}
+
+//
+// Composite-ML-DSA tests
+//
+
+static
+VOID
+testPqDsaCompositeMlDsaFunctionalDo(
+    const std::unique_ptr<PqDsaMultiImp>& pCompositeMlDsaImp,
+    const SYMCRYPT_TEST_COMPOSITE_MLDSA_PARAMS& testParams )
+{
+    NTSTATUS status = STATUS_SUCCESS;
+    SYMCRYPT_ERROR scError = SYMCRYPT_NO_ERROR;
+
+    std::vector<BYTE> signature;
+    std::vector<BYTE> preHashSignature;
+    std::vector<BYTE> signatureWithTamperedMlDsa;
+    std::vector<BYTE> signatureWithTamperedEcDsa;
+    std::vector<BYTE> signatureWithTamperedEcDsaHeader;
+    SIZE_T cbSignature = 0;
+    SIZE_T cbSignatureResult = 0;
+    SIZE_T cbPreHashSignatureResult = 0;
+    const SIZE_T cbMessageMax = 1024;
+
+    std::vector<BYTE> message( cbMessageMax );
+    std::vector<BYTE> messageHash( testParams.cbMessagePreHash );
+    std::vector<BYTE> context( SYMCRYPT_COMPOSITE_MLDSA_CONTEXT_MAX_LENGTH );
+
+    COMPOSITE_MLDSAKEY_TESTBLOB keyTestBlobGen{};
+    COMPOSITE_MLDSAKEY_TESTBLOB keyTestBlobExportedPriv{};
+    COMPOSITE_MLDSAKEY_TESTBLOB keyTestBlobExportedPub{};
+
+    keyTestBlobGen.format = SYMCRYPT_COMPOSITE_MLDSAKEY_FORMAT_PRIVATE_KEY;
+    keyTestBlobExportedPriv.format = SYMCRYPT_COMPOSITE_MLDSAKEY_FORMAT_PRIVATE_KEY;
+    keyTestBlobExportedPub.format = SYMCRYPT_COMPOSITE_MLDSAKEY_FORMAT_PUBLIC_KEY;
+
+    // PqDsaImp functions take PQDSAKEY_TESTBLOB which is a union that includes COMPOSITE_MLDSAKEY_TESTBLOB
+    C_ASSERT( offsetof( PQDSAKEY_TESTBLOB, compositeMlDsakey ) == 0 );
+
+    PQDSAKEY_TESTBLOB* pKeyTestBlobGen = reinterpret_cast<PQDSAKEY_TESTBLOB*>(&keyTestBlobGen);
+    PQDSAKEY_TESTBLOB* pKeyTestBlobExportedPriv = reinterpret_cast<PQDSAKEY_TESTBLOB*>(&keyTestBlobExportedPriv);
+    PQDSAKEY_TESTBLOB* pKeyTestBlobExportedPub = reinterpret_cast<PQDSAKEY_TESTBLOB*>(&keyTestBlobExportedPub);
+
+    keyTestBlobGen.params = testParams.params;
+    keyTestBlobExportedPriv.params = testParams.params;
+    keyTestBlobExportedPub.params = testParams.params;
+
+    scError = SymCryptCompositeMlDsaSizeofSignatureFromParams( testParams.params, &cbSignature );
+    CHECK( scError == SYMCRYPT_NO_ERROR, "Failed to get signature size" );
+
+    signature.resize( cbSignature );
+    preHashSignature.resize( cbSignature );
+
+    scError = SymCryptCompositeMlDsaSizeofKeyFormatFromParams( testParams.params, keyTestBlobExportedPriv.format, &keyTestBlobExportedPriv.cbKeyBlob );
+    CHECK3( scError == SYMCRYPT_NO_ERROR, "SymCryptCompositeMlDsaSizeofKeyFormatFromParams SYMCRYPT_COMPOSITE_MLDSAKEY_FORMAT_PRIVATE_KEY failed with 0x%x", scError );
+    CHECK( keyTestBlobExportedPriv.cbKeyBlob <= sizeof(keyTestBlobExportedPriv.abKeyBlob), "SYMCRYPT_COMPOSITE_MLDSAKEY_FORMAT_PRIVATE_KEY size too large" );
+
+    scError = SymCryptCompositeMlDsaSizeofKeyFormatFromParams( testParams.params, keyTestBlobExportedPub.format, &keyTestBlobExportedPub.cbKeyBlob );
+    CHECK3( scError == SYMCRYPT_NO_ERROR, "SymCryptCompositeMlDsaSizeofKeyFormatFromParams SYMCRYPT_COMPOSITE_MLDSAKEY_FORMAT_PUBLIC_KEY failed with 0x%x", scError );
+    CHECK( keyTestBlobExportedPub.cbKeyBlob <= sizeof(keyTestBlobExportedPub.abKeyBlob), "SYMCRYPT_COMPOSITE_MLDSAKEY_FORMAT_PUBLIC_KEY size too large" );
+
+    keyTestBlobGen.cbKeyBlob = keyTestBlobExportedPriv.cbKeyBlob;
+
+    for( UINT32 i = 0; i < 100; i++ )
+    {
+        //
+        // Start by generating a full key pair
+        //
+        auto pKey = SymCryptCompositeMlDsakeyAllocate( testParams.params );
+        CHECK( pKey != nullptr, "SymCryptCompositeMlDsakeyAllocate failed" );
+
+        scError = SymCryptCompositeMlDsakeyGenerate( pKey, 0 );
+        CHECK3( scError == SYMCRYPT_NO_ERROR, "SymCryptCompositeMlDsakeyGenerate failed with 0x%x", scError );
+
+        scError = SymCryptCompositeMlDsakeyGetValue(
+                    pKey,
+                    pKeyTestBlobGen->compositeMlDsakey.abKeyBlob,
+                    pKeyTestBlobGen->compositeMlDsakey.cbKeyBlob,
+                    pKeyTestBlobGen->compositeMlDsakey.format,
+                    0 );
+        CHECK3( scError == SYMCRYPT_NO_ERROR, "SymCryptCompositeMlDsakeyGetValue failed with 0x%x", scError );
+
+        status = pCompositeMlDsaImp->setKey( pKeyTestBlobGen );
+        CHECK( NT_SUCCESS( status ), "Failed to set key" );
+
+        status = pCompositeMlDsaImp->getBlobFromKey( SYMCRYPT_COMPOSITE_MLDSAKEY_FORMAT_PRIVATE_KEY, keyTestBlobExportedPriv.abKeyBlob, keyTestBlobExportedPriv.cbKeyBlob );
+        CHECK( NT_SUCCESS( status ), "Failed to get private key" );
+
+        status = pCompositeMlDsaImp->getBlobFromKey( SYMCRYPT_COMPOSITE_MLDSAKEY_FORMAT_PUBLIC_KEY, keyTestBlobExportedPub.abKeyBlob, keyTestBlobExportedPub.cbKeyBlob );
+        CHECK( NT_SUCCESS( status ), "Failed to get public key" );
+
+        //
+        // Generate a random message to sign and a random context
+        //
+        message.resize( g_rng.sizet( cbMessageMax + 1 ) );
+        GENRANDOM( message.data(), (UINT32) message.size() );
+
+        SymCryptHash(
+            *(testParams.ppMessagePreHash),
+            message.data(), message.size(),
+            messageHash.data(), messageHash.size() );
+
+        context.resize( g_rng.byte() );
+        GENRANDOM( context.data(), (UINT32) context.size() );
+
+        //
+        // Sign the raw and pre-hashed message with the generated key and the exported private key
+        //
+        for( auto& keyBlob : { pKeyTestBlobGen, pKeyTestBlobExportedPriv } )
+        {
+            status = pCompositeMlDsaImp->setKey( keyBlob );
+            CHECK( NT_SUCCESS( status ), "Failed to set Sign key" );
+
+            status = pCompositeMlDsaImp->sign(
+                message.data(), message.size(),
+                context.data(), context.size(),
+                signature.data(), cbSignature,
+                &cbSignatureResult );
+            CHECK( NT_SUCCESS( status ), "Failed to sign message" );
+            CHECK4(
+                ( cbSignatureResult <= cbSignature ) && ( cbSignatureResult > testParams.cbMlDsaSignature ),
+                "Invalid cbSignatureResult=%d for cbSignature=%d", cbSignatureResult, cbSignature );
+
+            status = pCompositeMlDsaImp->signHash(
+                SYMCRYPT_PQDSA_HASH_ID_NULL,
+                messageHash.data(), messageHash.size(),
+                context.data(), context.size(),
+                preHashSignature.data(), cbSignature,
+                &cbPreHashSignatureResult );
+            CHECK( NT_SUCCESS( status ), "Failed to sign hash" );
+            CHECK4(
+                ( cbPreHashSignatureResult <= cbSignature ) && ( cbPreHashSignatureResult > testParams.cbMlDsaSignature ),
+                "Invalid cbPreHashSignatureResult=%d for cbSignature=%d", cbPreHashSignatureResult, cbSignature );
+        }
+
+        //
+        // Verify the raw and pre-hashed message signatures with the generated key and the exported private and public keys
+        //
+        for( auto& keyBlob : { pKeyTestBlobGen, pKeyTestBlobExportedPriv, pKeyTestBlobExportedPub } )
+        {
+            status = pCompositeMlDsaImp->setKey( keyBlob );
+            CHECK( NT_SUCCESS( status ), "Failed to set Verify key" );
+
+            for( auto& sig : { signature, preHashSignature } )
+            {
+                status = pCompositeMlDsaImp->verify(
+                    message.data(), message.size(),
+                    context.data(), context.size(),
+                    sig.data(), cbSignature );
+                CHECK( NT_SUCCESS( status ), "Failed to verify message" );
+
+                status = pCompositeMlDsaImp->verifyHash(
+                    SYMCRYPT_PQDSA_HASH_ID_NULL,
+                    messageHash.data(), messageHash.size(),
+                    context.data(), context.size(),
+                    sig.data(), cbSignature );
+                CHECK( NT_SUCCESS( status ), "Failed to verify hash" );
+            }
+
+            if( cbSignatureResult < cbSignature )
+            {
+                status = pCompositeMlDsaImp->verify(
+                    message.data(), message.size(),
+                    context.data(), context.size(),
+                    signature.data(), cbSignatureResult );
+                CHECK( NT_SUCCESS( status ), "Failed to verify message" );
+
+                status = pCompositeMlDsaImp->verifyHash(
+                    SYMCRYPT_PQDSA_HASH_ID_NULL,
+                    messageHash.data(), messageHash.size(),
+                    context.data(), context.size(),
+                    signature.data(), cbSignatureResult );
+                CHECK( NT_SUCCESS( status ), "Failed to verify hash" );
+            }
+
+            if( cbPreHashSignatureResult < cbSignature )
+            {
+                status = pCompositeMlDsaImp->verify(
+                    message.data(), message.size(),
+                    context.data(), context.size(),
+                    preHashSignature.data(), cbPreHashSignatureResult );
+                CHECK( NT_SUCCESS( status ), "Failed to verify message" );
+
+                status = pCompositeMlDsaImp->verifyHash(
+                    SYMCRYPT_PQDSA_HASH_ID_NULL,
+                    messageHash.data(), messageHash.size(),
+                    context.data(), context.size(),
+                    preHashSignature.data(), cbPreHashSignatureResult );
+                CHECK( NT_SUCCESS( status ), "Failed to verify hash" );
+            }
+        }
+
+        //
+        // Flip a random bit in each signature component and ensure that verification fails
+        //
+        UINT32 t = g_rng.uint32();
+        BYTE xorBit = 1 << (t%8);
+        SIZE_T mldsaIndex = (t/8) % testParams.cbMlDsaSignature;
+        SIZE_T ecdsaIndex = testParams.cbMlDsaSignature + ((t/8) % (cbSignatureResult - testParams.cbMlDsaSignature));
+        SIZE_T ecdsaHeaderIndex = testParams.cbMlDsaSignature + ((t/8) % 2); // SEQUENCE tag or byte length
+        SIZE_T trailingDataIndex = (cbSignatureResult < cbSignature)
+                                    ? (cbSignatureResult + ((t/8) % (cbSignature - cbSignatureResult))) 
+                                    : 0;
+
+        signatureWithTamperedMlDsa = signature;
+        signatureWithTamperedEcDsa = signature;
+        signatureWithTamperedEcDsaHeader = signature;
+
+        signatureWithTamperedMlDsa[ mldsaIndex ] ^= xorBit;
+        signatureWithTamperedEcDsa[ ecdsaIndex ] ^= xorBit;
+        signatureWithTamperedEcDsaHeader[ ecdsaHeaderIndex ] ^= xorBit;
+
+        status = pCompositeMlDsaImp->verify(
+            message.data(), message.size(),
+            context.data(), context.size(),
+            signatureWithTamperedMlDsa.data(), cbSignature );
+        CHECK( status == STATUS_INVALID_SIGNATURE, "Tampered ML-DSA signature verified successfully?" );
+
+        status = pCompositeMlDsaImp->verify(
+            message.data(), message.size(),
+            context.data(), context.size(),
+            signatureWithTamperedEcDsa.data(), cbSignature );
+        CHECK( status == STATUS_INVALID_SIGNATURE, "Tampered EC-DSA signature verified successfully?" );
+
+        status = pCompositeMlDsaImp->verify(
+            message.data(), message.size(),
+            context.data(), context.size(),
+            signatureWithTamperedEcDsaHeader.data(), cbSignature );
+        CHECK( status == STATUS_INVALID_SIGNATURE, "Tampered EC-DSA signature header verified successfully?" );
+
+        if( cbSignatureResult < cbSignature )
+        {
+            status = pCompositeMlDsaImp->verify(
+                message.data(), message.size(),
+                context.data(), context.size(),
+                signatureWithTamperedMlDsa.data(), cbSignatureResult );
+            CHECK( status == STATUS_INVALID_SIGNATURE, "Tampered ML-DSA signature verified successfully?" );
+
+            status = pCompositeMlDsaImp->verify(
+                message.data(), message.size(),
+                context.data(), context.size(),
+                signatureWithTamperedEcDsa.data(), cbSignatureResult );
+            CHECK( status == STATUS_INVALID_SIGNATURE, "Tampered EC-DSA signature verified successfully?" );
+
+            status = pCompositeMlDsaImp->verify(
+                message.data(), message.size(),
+                context.data(), context.size(),
+                signatureWithTamperedEcDsaHeader.data(), cbSignatureResult );
+            CHECK( status == STATUS_INVALID_SIGNATURE, "Tampered EC-DSA signature header verified successfully?" );
+
+            //
+            // Tampering with the trailing buffer data should not invalidate the signature
+            //
+            signature[ trailingDataIndex ] ^= xorBit;
+
+            status = pCompositeMlDsaImp->verify(
+                message.data(), message.size(),
+                context.data(), context.size(),
+                signature.data(), cbSignature );
+            CHECK( NT_SUCCESS( status ), "Tampered trailing data caused verification failure?" );
+        }
+
+        SymCryptCompositeMlDsakeyFree( pKey );
+    }
+
+    status = pCompositeMlDsaImp->setKey( nullptr );
+    CHECK( NT_SUCCESS( status ), "Failed to free key" );
+}
+
+static
+VOID
+testPqDsaCompositeMlDsaFunctional()
+{
+    auto pCompositeMlDsaImp = std::make_unique<PqDsaMultiImp>("CompositeMlDsa");
+
+    for( const auto& testParams : rgTestCompositeMlDsaParams )
+    {
+        printf( "        %s\n", testParams.pszParamsName );
+        testPqDsaCompositeMlDsaFunctionalDo( pCompositeMlDsaImp, testParams );
+    }
+}
+
+static
+VOID
+testPqDsaCompositeMlDsaKatSignVerify(
+    PqDsaImplementation* pPqDsaImplementation,
+    SYMCRYPT_COMPOSITE_MLDSA_PARAMS params,
+    const BString& katPubKey,
+    const BString& katPrivKey,
+    const BString& katMsg,
+    const BString& katCtx,
+    const BString& katSig,
+    ULONGLONG line )
+{
+    // - Load pk and use it to verify sig and sigwithctx
+    // - Load sk and use it to produce a new signature which can be verified with pk
+
+    NTSTATUS status = STATUS_SUCCESS;
+    PQDSAKEY_TESTBLOB pubKeyBlob{};
+    PQDSAKEY_TESTBLOB privKeyBlob{};
+    PCOMPOSITE_MLDSAKEY_TESTBLOB pPubCompositeMlDsakey = &pubKeyBlob.compositeMlDsakey;
+    PCOMPOSITE_MLDSAKEY_TESTBLOB pPrivCompositeMlDsakey = &privKeyBlob.compositeMlDsakey;
+    SIZE_T cbPubKey = 0;
+    SIZE_T cbPrivKey = 0;
+    SIZE_T cbSigMax = 0;
+    SIZE_T cbResult = 0;
+
+    CHECK(
+        SymCryptCompositeMlDsaSizeofKeyFormatFromParams(params, SYMCRYPT_COMPOSITE_MLDSAKEY_FORMAT_PRIVATE_KEY, &cbPrivKey) == SYMCRYPT_NO_ERROR,
+        "Failed to get expected private key size" );
+
+    CHECK(
+        SymCryptCompositeMlDsaSizeofKeyFormatFromParams(params, SYMCRYPT_COMPOSITE_MLDSAKEY_FORMAT_PUBLIC_KEY, &cbPubKey) == SYMCRYPT_NO_ERROR,
+        "Failed to get expected public key size" );
+
+    CHECK(
+        SymCryptCompositeMlDsaSizeofSignatureFromParams(params, &cbSigMax) == SYMCRYPT_NO_ERROR,
+        "Failed to get expected signature size" );
+
+    CHECK4( katPrivKey.size() == cbPrivKey, "Invalid private key size %lld at line %lld", katPrivKey.size(), line );
+    CHECK4( katPubKey.size() == cbPubKey, "Invalid public key size %lld at line %lld", katPubKey.size(), line );
+    CHECK4( katSig.size() <= cbSigMax, "Invalid signature size %lld at line %lld", katSig.size(), line );
+
+    std::vector<BYTE> signature( cbSigMax );
+
+    pPubCompositeMlDsakey->params = params;
+    pPubCompositeMlDsakey->format = SYMCRYPT_COMPOSITE_MLDSAKEY_FORMAT_PUBLIC_KEY;
+    pPubCompositeMlDsakey->cbKeyBlob = katPubKey.size();
+    memcpy(pPubCompositeMlDsakey->abKeyBlob, katPubKey.data(), katPubKey.size());
+
+    pPrivCompositeMlDsakey->params = params;
+    pPrivCompositeMlDsakey->format = SYMCRYPT_COMPOSITE_MLDSAKEY_FORMAT_PRIVATE_KEY;
+    pPrivCompositeMlDsakey->cbKeyBlob = katPrivKey.size();
+    memcpy(pPrivCompositeMlDsakey->abKeyBlob, katPrivKey.data(), katPrivKey.size());
+
+    //
+    // First use the KAT private key
+    //
+    status = pPqDsaImplementation->setKey( &privKeyBlob );
+    CHECK3( NT_SUCCESS( status ), "Failed to set private key at line %lld", line );
+
+    //
+    // Verify KAT signature
+    //
+    status = pPqDsaImplementation->verify(
+        katMsg.data(),
+        katMsg.size(),
+        katCtx.data(),
+        katCtx.size(),
+        katSig.data(),
+        katSig.size() );
+    CHECK3( NT_SUCCESS( status ), "Verify with private key failed at line %lld", line );
+
+    //
+    // Re-sign message and verify
+    //
+    status = pPqDsaImplementation->sign(
+        katMsg.data(),
+        katMsg.size(),
+        katCtx.data(),
+        katCtx.size(),
+        signature.data(),
+        signature.size(),
+        &cbResult );
+    CHECK3( NT_SUCCESS( status ), "Sign failed at line %lld", line );
+
+    status = pPqDsaImplementation->verify(
+        katMsg.data(),
+        katMsg.size(),
+        katCtx.data(),
+        katCtx.size(),
+        signature.data(),
+        signature.size() );
+    CHECK3( NT_SUCCESS( status ), "Verify with private key failed at line %lld", line );
+
+    //
+    // Verify the KAT signature and the new signature with the KAT public key
+    //
+    status = pPqDsaImplementation->setKey( &pubKeyBlob );
+    CHECK3( NT_SUCCESS( status ), "Failed to set public key at line %lld", line );
+
+    status = pPqDsaImplementation->verify(
+        katMsg.data(),
+        katMsg.size(),
+        katCtx.data(),
+        katCtx.size(),
+        signature.data(),
+        signature.size() );
+    CHECK3( NT_SUCCESS( status ), "Verify with public key failed at line %lld", line );
+
+    status = pPqDsaImplementation->verify(
+        katMsg.data(),
+        katMsg.size(),
+        katCtx.data(),
+        katCtx.size(),
+        katSig.data(),
+        katSig.size() );
+    CHECK3( NT_SUCCESS( status ), "Verify with public key failed at line %lld", line );
+
+    status = pPqDsaImplementation->setKey( nullptr );
+    CHECK( NT_SUCCESS(status), "Failed to free key" );
+}
+
+static
+VOID
+testPqDsaCompositeMlDsaKat()
+{
+    //
+    // Per draft-ietf-lamps-pq-composite-sigs-15:
+    //
+    // - Load pk and use it to verify sig and sigwithctx
+    // - Load sk and use it to produce a new signature which can be verified with pk
+    //
+    // m is the ASCII string "The quick brown fox jumps over the lazy dog."
+    // ctx string "The lethargic, colorless dog sat beneath the energetic, stationary fox."
+    //
+    std::unique_ptr<KatData> katCompositeMlDsa( getCustomResource( "kat_composite_mldsa.dat", "KAT_COMPOSITE_MLDSA" ) );
+    KAT_ITEM katItem;
+
+    String sep = "";
+
+    SIZE_T i = 0;
+    BOOLEAN bParamsFound = FALSE;
+
+    SYMCRYPT_COMPOSITE_MLDSA_PARAMS params = SYMCRYPT_COMPOSITE_MLDSA_PARAMS_NULL;
+
+    UINT32 cCompositeMlDsaSignVerifySamples = 0;
+    UINT32 cCompositeMlDsaSignVerifyWithContextSamples = 0;
+
+    auto pCompositeMlDsaImp = std::make_unique<PqDsaMultiImp>("CompositeMlDsa");
+
+    while( 1 )
+    {
+        katCompositeMlDsa->getKatItem( & katItem );
+        ULONGLONG line = katItem.line;
+
+        if( katItem.type == KAT_TYPE_END )
+        {
+            break;
+        }
+
+        if( katItem.type == KAT_TYPE_CATEGORY )
+        {
+            // We never skip data and the algorithm is
+            // specified by the data item.
+            iprint( "%s%s", sep.c_str(), katItem.categoryName.c_str() );
+            sep = ", ";
+
+            bParamsFound = FALSE;
+            for( i=0; i < NUM_OF_COMPOSITE_MLDSA_TEST_PARAMS; i++ )
+            {
+                if ( strcmp( katItem.categoryName.c_str(), rgTestCompositeMlDsaParams[i].pszParamsName ) == 0 )
+                {
+                    bParamsFound = TRUE;
+                    break;
+                }
+            }
+            CHECK3( bParamsFound, "Composite-ML-DSA header at line %lld specifies unknown params!", line ) ;
+
+            params = rgTestCompositeMlDsaParams[i].params;
+        }
+
+        if( katItem.type == KAT_TYPE_DATASET )
+        {
+            CHECK3( katItem.dataItems.size() == 6, "Wrong number of items in record at line %lld", line );
+            CHECK3( katIsFieldPresent( katItem, "pk" ), "Missing pk in record at line %lld", line );
+            CHECK3( katIsFieldPresent( katItem, "sk" ), "Missing sk from record at line %lld", line );
+            CHECK3( katIsFieldPresent( katItem, "msg" ), "Missing msg from record at line %lld", line );
+            CHECK3( katIsFieldPresent( katItem, "ctx" ), "Missing ctx from record at line %lld", line );
+            CHECK3( katIsFieldPresent( katItem, "sig" ), "Missing sig from record at line %lld", line );
+            CHECK3( katIsFieldPresent( katItem, "sigwithctx" ), "Missing sigwithctx from record at line %lld", line );
+
+            BString katPubKey = katParseData( katItem, "pk" );
+            BString katPrivKey = katParseData( katItem, "sk" );
+            BString katMsg = katParseData( katItem, "msg" );
+            BString katCtx = katParseData( katItem, "ctx" );
+            BString katSig = katParseData( katItem, "sig" );
+            BString katSigWithCtx = katParseData( katItem, "sigwithctx" );
+            BString emptyCtx{};
+
+            testPqDsaCompositeMlDsaKatSignVerify(
+                pCompositeMlDsaImp.get(),
+                params,
+                katPubKey,
+                katPrivKey,
+                katMsg,
+                emptyCtx,
+                katSig,
+                line );
+
+            cCompositeMlDsaSignVerifySamples++;
+
+            testPqDsaCompositeMlDsaKatSignVerify(
+                pCompositeMlDsaImp.get(),
+                params,
+                katPubKey,
+                katPrivKey,
+                katMsg,
+                katCtx,
+                katSigWithCtx,
+                line );
+
+            cCompositeMlDsaSignVerifyWithContextSamples++;
+        }
+    }
+
+    iprint( "\n        Total samples: %d CompositeMlDsaSignVerify, %d CompositeMlDsaSignVerifyWithContext\n",
+        cCompositeMlDsaSignVerifySamples, cCompositeMlDsaSignVerifyWithContextSamples );
+}
+
+static
+VOID
+testPqDsaCompositeMlDsa()
+{
+    INT64 nOutstandingAllocs = 0;
+
+    nOutstandingAllocs = SYMCRYPT_INTERNAL_VOLATILE_READ64(&g_nOutstandingCheckedAllocs);
+    CHECK3( nOutstandingAllocs  == 0, "Memory leak %d outstanding", nOutstandingAllocs );
+
+    if( !isAlgorithmPresent( "CompositeMlDsa", TRUE ) )
+    {
+        iprint( "    Skipping Composite-ML-DSA tests\n" );
+        return;
+    }
+
+    iprint( "    Composite-ML-DSA\n" );
+
+    testPqDsaCompositeMlDsaFunctional();
+    testPqDsaCompositeMlDsaKat();
+
+    nOutstandingAllocs = SYMCRYPT_INTERNAL_VOLATILE_READ64(&g_nOutstandingCheckedAllocs);
+    CHECK3( nOutstandingAllocs == 0, "Memory leak, %d outstanding", nOutstandingAllocs );
+}
+
+VOID
+testPqDsa()
+{
+    testPqDsaMlDsa();
+    testPqDsaCompositeMlDsa();
 }

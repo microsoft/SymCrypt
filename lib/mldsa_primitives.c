@@ -142,8 +142,8 @@ const SYMCRYPT_MLDSA_INTERNAL_PARAMS SymCryptMlDsaInternalParams44 =
     .commitmentRoundingRange = 95232,
     .w1EncodeCoefficientBitLength = 6, // [0, 43]
     .cbCommitmentHash = 32,
-    .cbEncodedPrivateKey = 2560,
-    .cbEncodedPublicKey = 1312,
+    .cbEncodedPrivateKey = SYMCRYPT_MLDSA_PRIVATE_KEY_SIZE_MLDSA44,
+    .cbEncodedPublicKey = SYMCRYPT_MLDSA_PUBLIC_KEY_SIZE_MLDSA44,
     .cbEncodedSignature = SYMCRYPT_MLDSA_SIGNATURE_SIZE_MLDSA44
 };
 
@@ -166,8 +166,8 @@ const SYMCRYPT_MLDSA_INTERNAL_PARAMS SymCryptMlDsaInternalParams65 =
     .commitmentRoundingRange = 261888,
     .w1EncodeCoefficientBitLength = 4, // [0, 15]
     .cbCommitmentHash = 48,
-    .cbEncodedPrivateKey = 4032,
-    .cbEncodedPublicKey = 1952,
+    .cbEncodedPrivateKey = SYMCRYPT_MLDSA_PRIVATE_KEY_SIZE_MLDSA65,
+    .cbEncodedPublicKey = SYMCRYPT_MLDSA_PUBLIC_KEY_SIZE_MLDSA65,
     .cbEncodedSignature = SYMCRYPT_MLDSA_SIGNATURE_SIZE_MLDSA65
 };
 
@@ -190,8 +190,8 @@ const SYMCRYPT_MLDSA_INTERNAL_PARAMS SymCryptMlDsaInternalParams87 =
     .commitmentRoundingRange = 261888,
     .w1EncodeCoefficientBitLength = 4, // [0, 15]
     .cbCommitmentHash = 64,
-    .cbEncodedPrivateKey = 4896,
-    .cbEncodedPublicKey = 2592,
+    .cbEncodedPrivateKey = SYMCRYPT_MLDSA_PRIVATE_KEY_SIZE_MLDSA87,
+    .cbEncodedPublicKey = SYMCRYPT_MLDSA_PUBLIC_KEY_SIZE_MLDSA87,
     .cbEncodedSignature = SYMCRYPT_MLDSA_SIGNATURE_SIZE_MLDSA87
 };
 
@@ -288,7 +288,7 @@ SymCryptMlDsaSizeofKeyFormatFromParams(
     switch( mlDsakeyFormat )
     {
         case SYMCRYPT_MLDSAKEY_FORMAT_PRIVATE_SEED:
-            *pcbKeyFormat = SYMCRYPT_MLDSA_ROOT_SEED_SIZE;
+            *pcbKeyFormat = SYMCRYPT_MLDSA_PRIVATE_SEED_SIZE;
             break;
         case SYMCRYPT_MLDSAKEY_FORMAT_PRIVATE_KEY:
             *pcbKeyFormat = pInternalParams->cbEncodedPrivateKey;
@@ -1356,7 +1356,7 @@ SymCryptMlDsaPkDecode(
     // Reset the private key state in case this key object is being reused
     if( pkMlDsakey->hasRootSeed )
     {
-        SymCryptWipeKnownSize( pkMlDsakey->rootSeed, SYMCRYPT_MLDSA_ROOT_SEED_SIZE );
+        SymCryptWipeKnownSize( pkMlDsakey->rootSeed, SYMCRYPT_MLDSA_PRIVATE_SEED_SIZE );
         pkMlDsakey->hasRootSeed = FALSE;
     }
 
@@ -1568,7 +1568,7 @@ SymCryptMlDsaSkDecode(
     // Reset the key state in case this key is being reused
     pkMlDsakey->hasRootSeed = FALSE;
     pkMlDsakey->hasPrivateKey = FALSE;
-    SymCryptWipeKnownSize( pkMlDsakey->rootSeed, SYMCRYPT_MLDSA_ROOT_SEED_SIZE );
+    SymCryptWipeKnownSize( pkMlDsakey->rootSeed, SYMCRYPT_MLDSA_PRIVATE_SEED_SIZE );
 
     memcpy( pkMlDsakey->publicSeed, pbCurr, SYMCRYPT_MLDSA_PUBLIC_SEED_SIZE );
     pbCurr += SYMCRYPT_MLDSA_PUBLIC_SEED_SIZE;
@@ -2475,4 +2475,26 @@ SymCryptMlDsaTemporariesFree(
 
     SymCryptWipe( pTemporaries, pTemporaries->cbTotalSize );
     SymCryptCallbackFree( pTemporaries );
+}
+
+_Use_decl_annotations_
+VOID
+SYMCRYPT_CALL
+SymCryptMlDsakeyWipePrivateState(
+    PSYMCRYPT_MLDSAKEY pkMlDsakey )
+{
+    if ( pkMlDsakey->hasRootSeed )
+    {
+        SymCryptWipeKnownSize( pkMlDsakey->rootSeed, SYMCRYPT_MLDSA_PRIVATE_SEED_SIZE );
+        pkMlDsakey->hasRootSeed = FALSE;
+    }
+
+    if ( pkMlDsakey->hasPrivateKey )
+    {
+        SymCryptWipeKnownSize( pkMlDsakey->privateSigningSeed, SYMCRYPT_MLDSA_PRIVATE_SIGNING_SEED_SIZE );
+        SymCryptMlDsaVectorSetZero( pkMlDsakey->pvs1 );
+        SymCryptMlDsaVectorSetZero( pkMlDsakey->pvs2 );
+        SymCryptMlDsaVectorSetZero( pkMlDsakey->pvt0 );
+        pkMlDsakey->hasPrivateKey = FALSE;
+    }
 }

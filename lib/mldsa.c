@@ -72,7 +72,7 @@ SymCryptMlDsaKeyGenerateEx(
 {
     UNREFERENCED_PARAMETER( flags );
 
-    SYMCRYPT_ASSERT( cbRootSeed == SYMCRYPT_MLDSA_ROOT_SEED_SIZE );
+    SYMCRYPT_ASSERT( cbRootSeed == SYMCRYPT_MLDSA_PRIVATE_SEED_SIZE );
 
     SYMCRYPT_ERROR scError = SYMCRYPT_NO_ERROR;
 
@@ -175,7 +175,7 @@ SymCryptMlDsakeyGenerate(
     UINT32              flags)
 {
     SYMCRYPT_ERROR scError = SYMCRYPT_NO_ERROR;
-    BYTE random[SYMCRYPT_MLDSA_ROOT_SEED_SIZE];
+    BYTE random[SYMCRYPT_MLDSA_PRIVATE_SEED_SIZE];
     PBYTE  pbPctSignature = NULL;
     SIZE_T cbPctSignature = 0;
 
@@ -289,7 +289,7 @@ SymCryptMlDsakeySetValue(
     switch( mlDsakeyFormat )
     {
         case SYMCRYPT_MLDSAKEY_FORMAT_PRIVATE_SEED:
-            if( cbSrc != SYMCRYPT_MLDSA_ROOT_SEED_SIZE )
+            if( cbSrc != SYMCRYPT_MLDSA_PRIVATE_SEED_SIZE )
             {
                 scError = SYMCRYPT_WRONG_KEY_SIZE;
                 goto cleanup;
@@ -345,7 +345,7 @@ SymCryptMlDsakeyGetValue(
                 cbDst );
             break;
         case SYMCRYPT_MLDSAKEY_FORMAT_PRIVATE_SEED:
-            if( cbDst < SYMCRYPT_MLDSA_ROOT_SEED_SIZE )
+            if( cbDst < SYMCRYPT_MLDSA_PRIVATE_SEED_SIZE )
             {
                 scError = SYMCRYPT_BUFFER_TOO_SMALL;
                 goto cleanup;
@@ -357,7 +357,7 @@ SymCryptMlDsakeyGetValue(
                 goto cleanup;
             }
 
-            memcpy( pbDst, pkMlDsakey->rootSeed, SYMCRYPT_MLDSA_ROOT_SEED_SIZE );
+            memcpy( pbDst, pkMlDsakey->rootSeed, SYMCRYPT_MLDSA_PRIVATE_SEED_SIZE );
             
             break;
         default:

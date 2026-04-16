@@ -653,6 +653,16 @@
 #define ScShimSymCryptHashMlDsaVerify(...) SCTEST_CALL_SCIMPFN(SymCryptHashMlDsaVerify, __VA_ARGS__)
 #define ScShimSymCryptMlDsaSelftest(...) SCTEST_CALL_SCIMPFN(SymCryptMlDsaSelftest, __VA_ARGS__)
 
+#define ScShimSymCryptCompositeMlDsakeyAllocate(...) SCTEST_CALL_SCIMPFN(SymCryptCompositeMlDsakeyAllocate, __VA_ARGS__)
+#define ScShimSymCryptCompositeMlDsakeyFree(...) SCTEST_CALL_SCIMPFN(SymCryptCompositeMlDsakeyFree, __VA_ARGS__)
+#define ScShimSymCryptCompositeMlDsakeyGenerate(...) SCTEST_CALL_SCIMPFN(SymCryptCompositeMlDsakeyGenerate, __VA_ARGS__)
+#define ScShimSymCryptCompositeMlDsakeyGetValue(...) SCTEST_CALL_SCIMPFN(SymCryptCompositeMlDsakeyGetValue, __VA_ARGS__)
+#define ScShimSymCryptCompositeMlDsakeySetValue(...) SCTEST_CALL_SCIMPFN(SymCryptCompositeMlDsakeySetValue, __VA_ARGS__)
+#define ScShimSymCryptCompositeMlDsaSign(...) SCTEST_CALL_SCIMPFN(SymCryptCompositeMlDsaSign, __VA_ARGS__)
+#define ScShimSymCryptCompositeMlDsaSizeofKeyFormatFromParams(...) SCTEST_CALL_SCIMPFN(SymCryptCompositeMlDsaSizeofKeyFormatFromParams, __VA_ARGS__)
+#define ScShimSymCryptCompositeMlDsaSizeofSignatureFromParams(...) SCTEST_CALL_SCIMPFN(SymCryptCompositeMlDsaSizeofSignatureFromParams, __VA_ARGS__)
+#define ScShimSymCryptCompositeMlDsaVerify(...) SCTEST_CALL_SCIMPFN(SymCryptCompositeMlDsaVerify, __VA_ARGS__)
+
 #define ScShimSymCrypt802_11SaeCustomInit(...) SCTEST_CALL_SCIMPFN(SymCrypt802_11SaeCustomInit, __VA_ARGS__)
 #define ScShimSymCrypt802_11SaeCustomDestroy(...) SCTEST_CALL_SCIMPFN(SymCrypt802_11SaeCustomDestroy, __VA_ARGS__)
 #define ScShimSymCrypt802_11SaeCustomCommitCreate(...) SCTEST_CALL_SCIMPFN(SymCrypt802_11SaeCustomCommitCreate, __VA_ARGS__)

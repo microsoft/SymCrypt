@@ -118,6 +118,10 @@ VOID
 SetupSymCryptMlDsaKey( PBYTE pbKey, SIZE_T keySize );
 
 template<class Implementation>
+VOID
+SetupSymCryptCompositeMlDsaKey( PBYTE pbKey, SIZE_T keySize );
+
+template<class Implementation>
 BOOL
 SetSymCryptTlshandshakeParamsFromPerfKeySize( SIZE_T keySize, PVOID inout );
 
@@ -420,6 +424,7 @@ addSymCryptImplementationToGlobalList()
 
     addImplementationToGlobalList<PqDsaImp<ImpScVariant, AlgMlDsa>>();
     addImplementationToGlobalList<ArithImp<ImpScVariant, AlgMlDsakeySetValue>>();
+    addImplementationToGlobalList<PqDsaImp<ImpScVariant, AlgCompositeMlDsa>>();
 
     addImplementationToGlobalList<ArithImp<ImpScVariant, AlgIntAdd>>();
     addImplementationToGlobalList<ArithImp<ImpScVariant, AlgIntSub>>();
