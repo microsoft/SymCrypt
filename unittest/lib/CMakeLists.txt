@@ -74,6 +74,8 @@ elseif(SYMCRYPT_USE_ASM) # Linux
     if(SYMCRYPT_TARGET_ARCH MATCHES "AMD64")
         list(APPEND ENV_SOURCES amd64/saveymm-gas.asm)
         set_source_files_properties(amd64/saveymm-gas.asm PROPERTIES LANGUAGE ASM)
+        list(APPEND SOURCES amd64/savezmm-gas.asm)
+        set_source_files_properties(amd64/savezmm-gas.asm PROPERTIES LANGUAGE ASM)
     endif()
 endif()
 

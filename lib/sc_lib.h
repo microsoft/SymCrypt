@@ -231,15 +231,6 @@ struct _SYMCRYPT_EXTENDED_SAVE_DATA {
                     SYMCRYPT_MAGIC_FIELD
 } SYMCRYPT_EXTENDED_SAVE_DATA, *PSYMCRYPT_EXTENDED_SAVE_DATA;
 
-
-//
-// Two functions to save/restore the XMM registers.
-// These must ALWAYS be called in pairs, even if the SaveXmm function returned an error.
-// XMM registers cannot be used if the save function returned an error.
-// If the SYMCRYPT_CPU_FEATURE_SAVEXMM_NOFAIL feature is present, then the
-// SymCryptSaveXmm function will never return an error.
-//
-
 //
 // Functions to save/restore the XMM or YMM registers.
 // If the Save*mm function is called and succeeds, then the corresponding
@@ -263,6 +254,15 @@ SymCryptSaveYmm( _Out_ PSYMCRYPT_EXTENDED_SAVE_DATA pSaveData );
 VOID
 SYMCRYPT_CALL
 SymCryptRestoreYmm( _Inout_ PSYMCRYPT_EXTENDED_SAVE_DATA pSaveData );
+
+
+SYMCRYPT_ERROR
+SYMCRYPT_CALL
+SymCryptSaveZmm( _Out_ PSYMCRYPT_EXTENDED_SAVE_DATA pSaveData );
+
+VOID
+SYMCRYPT_CALL
+SymCryptRestoreZmm( _Inout_ PSYMCRYPT_EXTENDED_SAVE_DATA pSaveData );
 #endif
 
 
@@ -1638,6 +1638,28 @@ SymCryptAesGcmEncryptStitchedYmm_2048(
 VOID
 SYMCRYPT_CALL
 SymCryptAesGcmDecryptStitchedYmm_2048(
+    _In_                                    PCSYMCRYPT_AES_EXPANDED_KEY pExpandedKey,
+    _In_reads_( SYMCRYPT_AES_BLOCK_SIZE )   PBYTE                       pbChainingValue,
+    _In_reads_( SYMCRYPT_GF128_FIELD_SIZE ) PCSYMCRYPT_GF128_ELEMENT    expandedKeyTable,
+    _Inout_                                 PSYMCRYPT_GF128_ELEMENT     pState,
+    _In_reads_( cbData )                    PCBYTE                      pbSrc,
+    _Out_writes_( cbData )                  PBYTE                       pbDst,
+                                            SIZE_T                      cbData );
+
+VOID
+SYMCRYPT_CALL
+SymCryptAesGcmEncryptStitchedZmm(
+    _In_                                    PCSYMCRYPT_AES_EXPANDED_KEY pExpandedKey,
+    _In_reads_( SYMCRYPT_AES_BLOCK_SIZE )   PBYTE                       pbChainingValue,
+    _In_reads_( SYMCRYPT_GF128_FIELD_SIZE ) PCSYMCRYPT_GF128_ELEMENT    expandedKeyTable,
+    _Inout_                                 PSYMCRYPT_GF128_ELEMENT     pState,
+    _In_reads_( cbData )                    PCBYTE                      pbSrc,
+    _Out_writes_( cbData )                  PBYTE                       pbDst,
+                                            SIZE_T                      cbData );
+
+VOID
+SYMCRYPT_CALL
+SymCryptAesGcmDecryptStitchedZmm(
     _In_                                    PCSYMCRYPT_AES_EXPANDED_KEY pExpandedKey,
     _In_reads_( SYMCRYPT_AES_BLOCK_SIZE )   PBYTE                       pbChainingValue,
     _In_reads_( SYMCRYPT_GF128_FIELD_SIZE ) PCSYMCRYPT_GF128_ELEMENT    expandedKeyTable,
@@ -4429,6 +4451,23 @@ SymCryptEckeySetValueCompositeEncodingSk(
                                 UINT32                      flags,
     _Inout_                     PSYMCRYPT_ECKEY             pEckey );
 
+SYMCRYPT_ERROR
+SYMCRYPT_CALL
+SymCryptEcdsaSigValueCompositeEncode(
+    _In_reads_bytes_( cbRawSignature )          PCBYTE  pbRawSignature,
+                                                SIZE_T  cbRawSignature,
+    _Out_writes_bytes_( cbEncodedSignature )    PBYTE   pbEncodedSignature,
+                                                SIZE_T  cbEncodedSignature,
+    _Out_                                       SIZE_T* pcbResult );
+
+SYMCRYPT_ERROR
+SYMCRYPT_CALL
+SymCryptEcdsaSigValueCompositeDecode(
+    _In_reads_bytes_( cbEncodedSignature )      PCBYTE  pbEncodedSignature,
+                                                SIZE_T  cbEncodedSignature,
+    _Out_writes_bytes_( cbRawSignature )        PBYTE   pbRawSignature,
+                                                SIZE_T  cbRawSignature );
+
 //
 // Composite ML-KEM definitions
 //
@@ -4472,6 +4511,8 @@ SymCryptCompositeMlKemGetRandomScalarForEcKeyEx(
                                     SIZE_T                      cbSeed,
     _Out_writes_bytes_( cbScalar )  PBYTE                       pbScalar,
                                     SIZE_T                      cbScalar );
+
+#include "sc_lib_composite_mldsa.h"
 
 //
 // XMSS
@@ -5101,6 +5142,42 @@ SymCryptCountLeadingZeros32( UINT32 value )
     zeros = __builtin_clz(value);
 #else
     while( (value & 0x80000000) == 0 )
+    {
+        zeros++;
+        value <<= 1;
+    }
+#endif
+
+    return (UINT32)zeros;
+}
+
+FORCEINLINE
+UINT32
+SymCryptCountLeadingZeros64( UINT64 value )
+{
+    unsigned long zeros = 0;
+
+    if(value == 0)
+    {
+        return 64;
+    }
+
+#if SYMCRYPT_MS_VC && (SYMCRYPT_CPU_AMD64 | SYMCRYPT_CPU_ARM64)
+    _BitScanReverse64(&zeros, value);
+    zeros = 63 - zeros;
+#elif SYMCRYPT_MS_VC && (SYMCRYPT_CPU_X86 | SYMCRYPT_CPU_ARM)
+    if( (value >> 32) == 0 )
+    {
+        _BitScanReverse(&zeros, (UINT32)value);
+        zeros = 63 - zeros;
+    } else {
+        _BitScanReverse(&zeros, (UINT32)(value >> 32));
+        zeros = 31 - zeros;
+    }
+#elif SYMCRYPT_GNUC
+    zeros = __builtin_clzll(value);
+#else
+    while( (value & 0x8000000000000000) == 0 )
     {
         zeros++;
         value <<= 1;

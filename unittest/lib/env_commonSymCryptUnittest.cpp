@@ -76,6 +76,24 @@ VOID free_align32( PVOID p )
     free( *(PVOID *) ((PBYTE)p - 8) );
 }
 
+PVOID malloc_align64( SIZE_T size )
+{
+    PVOID pBase = malloc( size + 8 + 63 );
+    if( pBase == NULL )
+    {
+        return pBase;
+    }
+    PBYTE pAligned = (PBYTE)((((SIZE_T) pBase) + 8 + 63) & ~63);
+    *(PVOID *) (pAligned - 8) = pBase;
+    return pAligned;
+}
+
+VOID free_align64( PVOID p )
+{
+    CHECK( ((SIZE_T)p & 63) == 0, "?" );
+    free( *(PVOID *) ((PBYTE)p - 8) );
+}
+
 _Analysis_noreturn_
 VOID
 fatal( _In_ PCSTR file, UINT32 line, _In_ PCSTR format, ... )
@@ -98,6 +116,13 @@ fatal( _In_ PCSTR file, UINT32 line, _In_ PCSTR format, ... )
 }
 
 #if SYMCRYPT_CPU_AMD64 | SYMCRYPT_CPU_X86
+
+// Probability of injecting a failure in XMM/YMM/ZMM save functions.
+// A value of N means the save will fail when __rdtsc() % N == 0, i.e. ~1/N probability.
+// YMM and ZMM use higher failure rates to exercise fallback paths more aggressively.
+#define SYMCRYPT_SAVE_XMM_FAIL_PROB     101
+#define SYMCRYPT_SAVE_YMM_FAIL_PROB     31
+#define SYMCRYPT_SAVE_ZMM_FAIL_PROB     31
 
 char g_saveInProgressTypes[16] = { 0 };
 int g_savesInProgress = 0;
@@ -142,7 +167,7 @@ SymCryptSaveXmmEnvUnittest( _Out_ PSYMCRYPT_EXTENDED_SAVE_DATA pSaveData )
         //
         // To test the fallback from the failure of the savexmm function we introduce occasional errors
         //
-        if( !SYMCRYPT_CPU_FEATURES_PRESENT( SYMCRYPT_CPU_FEATURE_SAVEXMM_NOFAIL ) && __rdtsc() % 101 == 0 )
+        if( !SYMCRYPT_CPU_FEATURES_PRESENT( SYMCRYPT_CPU_FEATURE_SAVEXMM_NOFAIL ) && __rdtsc() % SYMCRYPT_SAVE_XMM_FAIL_PROB == 0 )
         {
             return SYMCRYPT_EXTERNAL_FAILURE;
         }
@@ -229,14 +254,8 @@ SymCryptRestoreXmmEnvUnittest( _Inout_ PSYMCRYPT_EXTENDED_SAVE_DATA pSaveData )
 
 #if SYMCRYPT_CPU_AMD64 | SYMCRYPT_CPU_X86
 
-//
-// We have YMM save/restore logic even in Windows user mode so that we can test the library in user mode
-// This makes it much easier to do thorough testing.
-// We can disable these tests through a flag to get reasonable performance measurements on the same code.
-//
-
 typedef SYMCRYPT_ALIGN_TYPE_AT(struct, 32) _SYMCRYPT_ENV_YMM_SAVE_DATA_REGS {
-    __m256i ymm[16];         // 16 for the XMM registers
+    __m256i ymm[16];         // 16 for the YMM registers
     SYMCRYPT_MAGIC_FIELD
 } SYMCRYPT_ENV_YMM_SAVE_DATA_REGS, *PSYMCRYPT_ENV_YMM_SAVE_DATA_REGS;
 
@@ -259,9 +278,12 @@ SymCryptSaveYmmEnvUnittest( _Out_ PSYMCRYPT_EXTENDED_SAVE_DATA pSaveData )
     {
 
         //
-        // To test the fallback from the failure of the saveYmm function we introduce occasional errors
+        // To test the fallback from the failure of the saveYmm function we introduce occasional errors.
+        // Note: we don't currently check SYMCRYPT_CPU_FEATURE_SAVEYMM_NOFAIL here, so we may inject
+        // failures even when callers expect saves to always succeed. This is a limitation of the current
+        // test design, and may need to be changed in the future.
         //
-        if( __rdtsc() % 101 == 0 )
+        if( __rdtsc() % SYMCRYPT_SAVE_YMM_FAIL_PROB == 0 )
         {
             return SYMCRYPT_EXTERNAL_FAILURE;
         }
@@ -323,6 +345,136 @@ SymCryptRestoreYmmEnvUnittest( _Inout_ PSYMCRYPT_EXTENDED_SAVE_DATA pSaveData )
 
         SymCryptEnvUmRestoreYmmRegistersAsm( regs );
     }
+}
+
+#endif // SYMCRYPT_CPU_AMD64 | SYMCRYPT_CPU_X86
+
+#if SYMCRYPT_CPU_AMD64
+
+typedef SYMCRYPT_ALIGN_TYPE_AT(struct, 64) _SYMCRYPT_ENV_ZMM_SAVE_DATA_REGS {
+    __m512i zmm[32];         // 32 for the ZMM registers
+    UINT64  kmask[8];        // k0-k7 mask registers
+    SYMCRYPT_MAGIC_FIELD
+} SYMCRYPT_ENV_ZMM_SAVE_DATA_REGS, *PSYMCRYPT_ENV_ZMM_SAVE_DATA_REGS;
+
+typedef struct _SYMCRYPT_ENV_ZMM_SAVE_DATA {
+    PSYMCRYPT_ENV_ZMM_SAVE_DATA_REGS    pRegs;
+    SYMCRYPT_MAGIC_FIELD
+} SYMCRYPT_ENV_ZMM_SAVE_DATA, *PSYMCRYPT_ENV_ZMM_SAVE_DATA;
+
+SYMCRYPT_ERROR
+SYMCRYPT_CALL
+SymCryptSaveZmmEnvUnittest( _Out_ PSYMCRYPT_EXTENDED_SAVE_DATA pSaveData )
+{
+    PSYMCRYPT_ENV_ZMM_SAVE_DATA         p = (PSYMCRYPT_ENV_ZMM_SAVE_DATA) pSaveData;
+    PSYMCRYPT_ENV_ZMM_SAVE_DATA_REGS    pRegs;
+    __m512i regs[33]; // Extra space for k0-k7 mask registers saved by asm
+
+    CHECK( SYMCRYPT_CPU_FEATURES_PRESENT( SYMCRYPT_CPU_FEATURE_AVX512 ), "?" );
+
+    //
+    // If we are testing YMM save/restore but not ZMM save/restore, we need to fail the ZMM save
+    // so that the caller falls back to the YMM code path (which will go through the YMM
+    // save/restore test mechanism). Otherwise, ZMM code would run and clobber the YMM test state
+    // without it being saved/restored, causing spurious YMM verification failures.
+    //
+    if( !TestSaveZmmEnabled && TestSaveYmmEnabled )
+    {
+        return SYMCRYPT_EXTERNAL_FAILURE;
+    }
+
+    if( TestSaveZmmEnabled )
+    {
+        //
+        // To test the fallback from the failure of the saveZmm function we introduce occasional errors.
+        // Note: we don't currently check SYMCRYPT_CPU_FEATURE_SAVEZMM_NOFAIL here, so we may inject
+        // failures even when callers expect saves to always succeed. This is a limitation of the current
+        // test design, and may need to be changed in the future.
+        //
+        if( __rdtsc() % SYMCRYPT_SAVE_ZMM_FAIL_PROB == 0 )
+        {
+            return SYMCRYPT_EXTERNAL_FAILURE;
+        }
+
+        //
+        // Alloc can modify the regs, so save them first so that the modification happens
+        // inside the save block
+        //
+        SymCryptEnvUmSaveZmmRegistersAsm( regs );
+
+        pRegs = (PSYMCRYPT_ENV_ZMM_SAVE_DATA_REGS) malloc_align64( sizeof( *pRegs ) );
+        if( pRegs == NULL )
+        {
+            return SYMCRYPT_EXTERNAL_FAILURE;
+        }
+
+        memcpy( pRegs->zmm, regs, sizeof( pRegs->zmm ) );
+        memcpy( pRegs->kmask, (BYTE*)regs + sizeof( pRegs->zmm ), sizeof( pRegs->kmask ) );
+        SYMCRYPT_SET_MAGIC( pRegs );
+        SYMCRYPT_CHECK_MAGIC( pRegs );
+
+        p->pRegs = pRegs;
+        SYMCRYPT_SET_MAGIC( p );
+
+        CHECK(g_savesInProgress < (int) sizeof(g_saveInProgressTypes), "Too many nested saves!");
+        g_saveInProgressTypes[g_savesInProgress] = 'Z';
+        g_savePtrs[g_savesInProgress] = pSaveData;
+        g_savesInProgress++;
+    }
+
+    return SYMCRYPT_NO_ERROR;
+}
+
+VOID
+SYMCRYPT_CALL
+SymCryptRestoreZmmEnvUnittest( _Inout_ PSYMCRYPT_EXTENDED_SAVE_DATA pSaveData )
+{
+    PSYMCRYPT_ENV_ZMM_SAVE_DATA         p = (PSYMCRYPT_ENV_ZMM_SAVE_DATA) pSaveData;
+    PSYMCRYPT_ENV_ZMM_SAVE_DATA_REGS    pRegs;
+    __m512i regs[33]; // Extra space for k1-k7 mask registers saved by asm
+
+    CHECK( SYMCRYPT_CPU_FEATURES_PRESENT( SYMCRYPT_CPU_FEATURE_AVX512 ), "?" );
+
+    if( TestSaveZmmEnabled )
+    {
+        SYMCRYPT_CHECK_MAGIC( p );
+        pRegs = p->pRegs;
+        SYMCRYPT_CHECK_MAGIC( pRegs );
+
+        CHECK(g_savesInProgress > 0, "No saves in progress!");
+        g_savesInProgress--;
+        CHECK(g_saveInProgressTypes[g_savesInProgress] == 'Z', "ZMM not saved");
+        CHECK(g_savePtrs[g_savesInProgress] == pSaveData, "?" );
+
+        memcpy( regs, pRegs->zmm, sizeof( pRegs->zmm ) );
+        memcpy( (BYTE*)regs + sizeof( pRegs->zmm ), pRegs->kmask, sizeof( pRegs->kmask ) );
+        SYMCRYPT_WIPE_MAGIC( pRegs );
+        free_align64( pRegs );
+        p->pRegs = NULL;
+        SYMCRYPT_WIPE_MAGIC( p );
+
+        SymCryptEnvUmRestoreZmmRegistersAsm( regs );
+    }
+}
+
+#elif SYMCRYPT_CPU_X86
+
+// ZMM not used on X86
+SYMCRYPT_ERROR
+SYMCRYPT_CALL
+SymCryptSaveZmmEnvUnittest( _Out_ PSYMCRYPT_EXTENDED_SAVE_DATA pSaveData )
+{
+    UNREFERENCED_PARAMETER( pSaveData );
+
+    return SYMCRYPT_NO_ERROR;
+}
+
+
+VOID
+SYMCRYPT_CALL
+SymCryptRestoreZmmEnvUnittest( _Inout_ PSYMCRYPT_EXTENDED_SAVE_DATA pSaveData )
+{
+    UNREFERENCED_PARAMETER( pSaveData );
 }
 
 #endif

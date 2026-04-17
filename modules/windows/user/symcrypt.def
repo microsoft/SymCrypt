@@ -110,6 +110,15 @@ EXPORTS
     SymCryptChaCha20Poly1305Selftest
     SymCryptChaCha20Selftest
     SymCryptChaCha20SetOffset
+    SymCryptCompositeMlDsakeyAllocate
+    SymCryptCompositeMlDsakeyFree
+    SymCryptCompositeMlDsakeyGenerate
+    SymCryptCompositeMlDsakeyGetValue
+    SymCryptCompositeMlDsakeySetValue
+    SymCryptCompositeMlDsaSign
+    SymCryptCompositeMlDsaSizeofKeyFormatFromParams
+    SymCryptCompositeMlDsaSizeofSignatureFromParams
+    SymCryptCompositeMlDsaVerify
     SymCryptCompositeMlKemDecapsulate
     SymCryptCompositeMlKemEncapsulate
     SymCryptCompositeMlKemkeyAllocate

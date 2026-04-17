@@ -41,6 +41,7 @@ jobs:
   variables:
     ob_outputDirectory: $(Build.SourcesDirectory)\bin
     ob_sdl_binskim_break: ${{ eq(parameters.config, 'Release') }} # Only break on binskim failures for Release binaries https://aka.ms/obpipelines/sdl
+    ob_sdl_binskim_analyzeTargetGlob: '+:file|**\*.exe;+:file|**\*.dll;-:file|**/CMakeFiles/**' # Exclude CMakeFiles
     ${{ if eq(variables['system.debug'], true) }}:
       verbose_build_flag: '--verbose'
     ${{ else }}:

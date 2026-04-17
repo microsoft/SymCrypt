@@ -12,9 +12,20 @@ This is the first official release of our Rust implementations!
 ### New features
 - Added Rust implementations of ML-KEM, SHA3 and AES-GCM
 
+# Version 103.12.0
+
+- Add ZMM (AVX512) implementation of AES-GCM: improves performance by up to 35% on supported hardware
+- Add loop bounds to ML-DSA functions which use probabilistic sampling, as defense-in-depth against denial of service by maliciously formed keys
+  - There is no known vulnerability associated with this, but adding upper bounds provides additional hardening
+  - Also fixes [#55](https://github.com/microsoft/SymCrypt/issues/55); thanks to Sunwoo Lee and Seunghyun Yoon, Korea Institute of Energy Technology (KENTECH) for filing this issue
+- Add Elevated Debugger environment
+- Add Composite ML-DSA implementation
+
 # Version 103.11.0
 
 - Add Composite ML-KEM implementation
+- Fix heap buffer overflow in `SymCryptXmssSign` when signing with XMSS^MT parameter sets with a height of 32 or greater
+  - Thanks to [Federico Ponzi](https://fponzi.me) for finding this
 
 # Version 103.10.2
 

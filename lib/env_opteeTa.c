@@ -42,6 +42,8 @@ SymCryptInitEnvOpteeTa( UINT32 version )
     // Our SaveXmm function never fails because it doesn't have to do anything in User mode.
     //
     g_SymCryptCpuFeaturesNotPresent &= ~SYMCRYPT_CPU_FEATURE_SAVEXMM_NOFAIL;
+    g_SymCryptCpuFeaturesNotPresent &= ~SYMCRYPT_CPU_FEATURE_SAVEYMM_NOFAIL;
+    g_SymCryptCpuFeaturesNotPresent &= ~SYMCRYPT_CPU_FEATURE_SAVEZMM_NOFAIL;
 
 #else
     
@@ -124,6 +126,21 @@ SymCryptSaveYmmEnvOpteeTa( _Out_ PSYMCRYPT_EXTENDED_SAVE_DATA pSaveData )
 VOID
 SYMCRYPT_CALL
 SymCryptRestoreYmmEnvOpteeTa( _Inout_ PSYMCRYPT_EXTENDED_SAVE_DATA pSaveData )
+{
+    UNREFERENCED_PARAMETER( pSaveData );
+}
+
+SYMCRYPT_ERROR
+SYMCRYPT_CALL
+SymCryptSaveZmmEnvOpteeTa( _Out_ PSYMCRYPT_EXTENDED_SAVE_DATA pSaveData )
+{
+    UNREFERENCED_PARAMETER( pSaveData );
+    return SYMCRYPT_NO_ERROR;
+}
+
+VOID
+SYMCRYPT_CALL
+SymCryptRestoreZmmEnvOpteeTa( _Inout_ PSYMCRYPT_EXTENDED_SAVE_DATA pSaveData )
 {
     UNREFERENCED_PARAMETER( pSaveData );
 }

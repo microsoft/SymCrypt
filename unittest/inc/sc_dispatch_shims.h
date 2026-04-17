@@ -601,6 +601,16 @@
 #define ScDispatchSymCryptHashMlDsaVerify(...) SCTEST_CALL_DISPATCHFN(SymCryptHashMlDsaVerify, __VA_ARGS__)
 #define ScDispatchSymCryptMlDsaSelftest(...) SCTEST_CALL_DISPATCHFN(SymCryptMlDsaSelftest, __VA_ARGS__)
 
+#define ScDispatchSymCryptCompositeMlDsakeyAllocate(...) SCTEST_CALL_DISPATCHFN(SymCryptCompositeMlDsakeyAllocate, __VA_ARGS__)
+#define ScDispatchSymCryptCompositeMlDsakeyFree(...) SCTEST_CALL_DISPATCHFN(SymCryptCompositeMlDsakeyFree, __VA_ARGS__)
+#define ScDispatchSymCryptCompositeMlDsakeyGenerate(...) SCTEST_CALL_DISPATCHFN(SymCryptCompositeMlDsakeyGenerate, __VA_ARGS__)
+#define ScDispatchSymCryptCompositeMlDsakeyGetValue(...) SCTEST_CALL_DISPATCHFN(SymCryptCompositeMlDsakeyGetValue, __VA_ARGS__)
+#define ScDispatchSymCryptCompositeMlDsakeySetValue(...) SCTEST_CALL_DISPATCHFN(SymCryptCompositeMlDsakeySetValue, __VA_ARGS__)
+#define ScDispatchSymCryptCompositeMlDsaSign(...) SCTEST_CALL_DISPATCHFN(SymCryptCompositeMlDsaSign, __VA_ARGS__)
+#define ScDispatchSymCryptCompositeMlDsaSizeofKeyFormatFromParams(...) SCTEST_CALL_DISPATCHFN(SymCryptCompositeMlDsaSizeofKeyFormatFromParams, __VA_ARGS__)
+#define ScDispatchSymCryptCompositeMlDsaSizeofSignatureFromParams(...) SCTEST_CALL_DISPATCHFN(SymCryptCompositeMlDsaSizeofSignatureFromParams, __VA_ARGS__)
+#define ScDispatchSymCryptCompositeMlDsaVerify(...) SCTEST_CALL_DISPATCHFN(SymCryptCompositeMlDsaVerify, __VA_ARGS__)
+
 #define ScDispatchSymCryptIntAllocate(...) SCTEST_CALL_DISPATCHFN(SymCryptIntAllocate, __VA_ARGS__)
 #define ScDispatchSymCryptIntFree(...) SCTEST_CALL_DISPATCHFN(SymCryptIntFree, __VA_ARGS__)
 #define ScDispatchSymCryptIntCreate(...) SCTEST_CALL_DISPATCHFN(SymCryptIntCreate, __VA_ARGS__)

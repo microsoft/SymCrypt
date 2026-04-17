@@ -535,3 +535,24 @@ public:
         }
     }
 };
+
+template<>
+class PqDsaImpState<ImpXxx, AlgCompositeMlDsa> {
+public:
+    PSYMCRYPT_COMPOSITE_MLDSAKEY pKey;
+    SYMCRYPT_COMPOSITE_MLDSA_PARAMS params;
+
+    PqDsaImpState() :
+        pKey( nullptr ),
+        params( SYMCRYPT_COMPOSITE_MLDSA_PARAMS_NULL )
+    { }
+
+    ~PqDsaImpState()
+    {
+        if( pKey != nullptr )
+        {
+            SymCryptCompositeMlDsakeyFree( pKey );
+            pKey = nullptr;
+        }
+    }
+};

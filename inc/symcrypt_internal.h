@@ -395,6 +395,9 @@ C_ASSERT( (SYMCRYPT_ALIGN_VALUE & (SYMCRYPT_ALIGN_VALUE - 1 )) == 0 );
 
 #define SYMCRYPT_CPU_FEATURE_CMPXCHG16B         0x2000          // Compare and Swap 128b value
 
+#define SYMCRYPT_CPU_FEATURE_SAVEYMM_NOFAIL     0x4000          // if SymCryptSaveYmm() will never fail
+#define SYMCRYPT_CPU_FEATURE_SAVEZMM_NOFAIL     0x8000          // if SymCryptSaveZmm() will never fail
+
 #endif
 
 typedef UINT32 SYMCRYPT_CPU_FEATURES;
@@ -2637,6 +2640,14 @@ typedef       SYMCRYPT_COMPOSITE_MLKEMKEY * PSYMCRYPT_COMPOSITE_MLKEMKEY;
 typedef const SYMCRYPT_COMPOSITE_MLKEMKEY * PCSYMCRYPT_COMPOSITE_MLKEMKEY;
 
 //
+// Forward declarations for CompositeMlDsakey types
+//
+struct _SYMCRYPT_COMPOSITE_MLDSAKEY;
+typedef struct _SYMCRYPT_COMPOSITE_MLDSAKEY SYMCRYPT_COMPOSITE_MLDSAKEY;
+typedef       SYMCRYPT_COMPOSITE_MLDSAKEY * PSYMCRYPT_COMPOSITE_MLDSAKEY;
+typedef const SYMCRYPT_COMPOSITE_MLDSAKEY * PCSYMCRYPT_COMPOSITE_MLDSAKEY;
+
+//
 // RSA padding scratch definitions
 //
 // The maximum sizes of the state and the result for all hash algorithms are
@@ -3169,6 +3180,15 @@ typedef struct _SYMCRYPT_EXTENDED_SAVE_DATA      SYMCRYPT_EXTENDED_SAVE_DATA, *P
     VOID SYMCRYPT_CALL SymCryptRestoreYmm( _Inout_ PSYMCRYPT_EXTENDED_SAVE_DATA pSaveArea ) \
         { SymCryptRestoreYmmEnv##envName( pSaveArea ); } \
 
+#define SYMCRYPT_ENVIRONMENT_DEFS_SAVEZMM( envName ) \
+    SYMCRYPT_ERROR SYMCRYPT_CALL SymCryptSaveZmmEnv##envName( _Out_ PSYMCRYPT_EXTENDED_SAVE_DATA pSaveArea ); \
+    SYMCRYPT_ERROR SYMCRYPT_CALL SymCryptSaveZmm( _Out_ PSYMCRYPT_EXTENDED_SAVE_DATA pSaveArea ) \
+        { return SymCryptSaveZmmEnv##envName( pSaveArea ); } \
+    \
+    VOID SYMCRYPT_CALL SymCryptRestoreZmmEnv##envName( _Inout_ PSYMCRYPT_EXTENDED_SAVE_DATA pSaveArea ); \
+    VOID SYMCRYPT_CALL SymCryptRestoreZmm( _Inout_ PSYMCRYPT_EXTENDED_SAVE_DATA pSaveArea ) \
+        { SymCryptRestoreZmmEnv##envName( pSaveArea ); } \
+
 #define SYMCRYPT_ENVIRONMENT_DEFS_SAVEXMM( envName ) \
     SYMCRYPT_ERROR SYMCRYPT_CALL SymCryptSaveXmmEnv##envName( _Out_ PSYMCRYPT_EXTENDED_SAVE_DATA pSaveArea ); \
     SYMCRYPT_ERROR SYMCRYPT_CALL SymCryptSaveXmm( _Out_ PSYMCRYPT_EXTENDED_SAVE_DATA pSaveArea ) \
@@ -3181,8 +3201,10 @@ typedef struct _SYMCRYPT_EXTENDED_SAVE_DATA      SYMCRYPT_EXTENDED_SAVE_DATA, *P
 
 #else
 
-#define SYMCRYPT_ENVIRONMENT_DEFS_SAVEYMM( envName )
 #define SYMCRYPT_ENVIRONMENT_DEFS_SAVEXMM( envName )
+#define SYMCRYPT_ENVIRONMENT_DEFS_SAVEYMM( envName )
+#define SYMCRYPT_ENVIRONMENT_DEFS_SAVEZMM( envName )
+
 
 #endif
 
@@ -3212,6 +3234,7 @@ SYMCRYPT_EXTERN_C \
     \
     SYMCRYPT_ENVIRONMENT_DEFS_SAVEXMM( envName ) \
     SYMCRYPT_ENVIRONMENT_DEFS_SAVEYMM( envName ) \
+    SYMCRYPT_ENVIRONMENT_DEFS_SAVEZMM( envName ) \
     \
     VOID SYMCRYPT_CALL SymCryptTestInjectErrorEnv##envName( PBYTE pbBuf, SIZE_T cbBuf ); \
     VOID SYMCRYPT_CALL SymCryptInjectError( PBYTE pbBuf, SIZE_T cbBuf ) \
@@ -3235,6 +3258,7 @@ SYMCRYPT_EXTERN_C_END
 // But this is unlikely to be misused.
 //
 #define SYMCRYPT_ENVIRONMENT_WINDOWS_KERNELDEBUGGER             SYMCRYPT_ENVIRONMENT_DEFS( WindowsKernelDebugger )
+#define SYMCRYPT_ENVIRONMENT_ELEVATED_DEBUGGER                  SYMCRYPT_ENVIRONMENT_DEFS( ElevatedDebugger )
 
 
 

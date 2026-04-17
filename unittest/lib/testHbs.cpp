@@ -17,9 +17,6 @@ extern
         _Out_   PUINT32 puLen1, // number of w-bit digits in n
         _Out_   PUINT32 puLen2  // number of w-bit digits to store the checksum <= len1 * (2^w - 1)
     );
-
-    UINT32
-    SymCryptCountLeadingZeros32( UINT32 value );
 }
 
 typedef struct _SYMCRYPT_WINTERNITZ_LENGTHS
@@ -898,6 +895,65 @@ testXmssMultitree()
 }
 
 VOID
+testXmssMultitreeLargeTotalHeight()
+{
+    SYMCRYPT_XMSS_PARAMS params;
+    PSYMCRYPT_XMSS_KEY pKey;
+    PBYTE pbSignature;
+    SYMCRYPT_ERROR scError;
+    SIZE_T cbSignature;
+    BYTE msg[] = { 0x00, 0x01, 0x03, 0x04 };
+    PCSYMCRYPT_HASH pHash = SymCryptSha256Algorithm;
+
+    //
+    // Regression test for truncation bug when nTotalTreeHeight >= 32.
+    //
+    // Use nTotalTreeHeight=32 with nLayers=32 so that each subtree has height 1 (only 2 leaves),
+    // making key generation and signing cheap while exercising the code path that previously passed
+    // 1ULL << nTotalTreeHeight (a 64-bit value) to a 32-bit parameter, causing an undersized
+    // scratch buffer allocation and heap overflow.
+    //
+
+    scError = ScDispatchSymCryptXmssSetParams(
+        &params,
+        0,
+        pHash,
+        (UINT8)pHash->resultSize,
+        (UINT8)4,       // Winternitz w
+        (UINT8)32,      // nTotalTreeHeight
+        (UINT8)32,      // nLayers
+        (UINT8)pHash->resultSize);
+    CHECK(scError == SYMCRYPT_NO_ERROR, "?");
+
+    pKey = ScDispatchSymCryptXmsskeyAllocate(&params, 0);
+    CHECK(pKey != nullptr, "?");
+
+    scError = ScDispatchSymCryptXmsskeyGenerate(pKey, 0);
+    CHECK(scError == SYMCRYPT_NO_ERROR, "?");
+
+    cbSignature = ScDispatchSymCryptXmssSizeofSignatureFromParams(&params);
+    pbSignature = new BYTE[cbSignature];
+    CHECK(pbSignature != nullptr, "?");
+
+    // Sign and verify a single message
+    scError = ScDispatchSymCryptXmssSign(pKey, msg, sizeof(msg), 0, pbSignature, cbSignature);
+    CHECK(scError == SYMCRYPT_NO_ERROR, "?");
+
+    scError = ScDispatchSymCryptXmssVerify(pKey, msg, sizeof(msg), 0, pbSignature, cbSignature);
+    CHECK(scError == SYMCRYPT_NO_ERROR, "?");
+
+    // Modify the signature and expect verification failure
+    UINT32 nModifyPos = g_rng.uint32() % cbSignature;
+    pbSignature[nModifyPos] ^= 1;
+
+    scError = ScDispatchSymCryptXmssVerify(pKey, msg, sizeof(msg), 0, pbSignature, cbSignature);
+    CHECK(scError != SYMCRYPT_NO_ERROR, "?");
+
+    delete[] pbSignature;
+    ScDispatchSymCryptXmsskeyFree(pKey);
+}
+
+VOID
 testXmss()
 {
     testWinternitzLengths();
@@ -905,6 +961,8 @@ testXmss()
     testXmssCustomParameters();
 
     testXmssMultitree();
+
+    testXmssMultitreeLargeTotalHeight();
 
     testXmssImportExport();
 }

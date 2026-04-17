@@ -733,3 +733,16 @@ VERSION_103.11
       SymCryptCompositeMlKemSizeofCiphertextFromParams;
       SymCryptCompositeMlKemSizeofKeyFormatFromParams;
 } VERSION_103.10;
+VERSION_103.12
+{
+   global:
+      SymCryptCompositeMlDsakeyAllocate;
+      SymCryptCompositeMlDsakeyFree;
+      SymCryptCompositeMlDsakeyGenerate;
+      SymCryptCompositeMlDsakeyGetValue;
+      SymCryptCompositeMlDsakeySetValue;
+      SymCryptCompositeMlDsaSign;
+      SymCryptCompositeMlDsaSizeofKeyFormatFromParams;
+      SymCryptCompositeMlDsaSizeofSignatureFromParams;
+      SymCryptCompositeMlDsaVerify;
+} VERSION_103.11;

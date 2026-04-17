@@ -32,6 +32,7 @@
     <ClCompile Include="aes-selftest.c" />
     <ClCompile Include="aes-xmm.c" />
     <ClCompile Include="aes-ymm.c" />
+    <ClCompile Include="aes-zmm.c" />
     <ClCompile Include="aescmac.c" />
     <ClCompile Include="aesCtrDrbg.c" />
     <ClCompile Include="aeskw.c" />
@@ -42,6 +43,7 @@
     <ClCompile Include="chacha20.c" />
     <ClCompile Include="chacha20_poly1305.c" />
     <ClCompile Include="composite_encoding.c" />
+    <ClCompile Include="composite_mldsa.c" />
     <ClCompile Include="composite_mlkem.c" />
     <ClCompile Include="cpuid.c" />
     <ClCompile Include="cpuid_notry.c" />
@@ -164,6 +166,9 @@
     <ClCompile Include="tlsprf_selftest.c" />
     <ClCompile Include="xmss.c" />
     <ClCompile Include="xtsaes.c" />
+  </ItemGroup>
+  <ItemGroup Condition="'$(Platform)'=='x64' OR '$(Platform)'=='ARM64'">
+    <ClCompile Include="env_elevatedDebugger.c" />
   </ItemGroup>
   <ItemGroup Condition="'$(Platform)'=='x64'">
     <SymCryptAsm Include="amd64\aesasm.symcryptasm" Dialect="masm" Arch="amd64" Convention="msft" />

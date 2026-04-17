@@ -865,11 +865,22 @@ public:
 #define SYMCRYPT_TEST_MLDSA_MAX_KEY_SIZE (4896) // Maximum size of an encoded ML-DSA private + public key - see SymCryptMlDsaInternalParams87
 #define SYMCRYPT_TEST_MLDSA_MAX_SIG_SIZE SYMCRYPT_MLDSA_SIGNATURE_SIZE_MLDSA87
 
+#define SYMCRYPT_TEST_COMPOSITE_MLDSA_MAX_KEY_SIZE SYMCRYPT_COMPOSITE_MLDSA_PUBLIC_KEY_SIZE_MLDSA87_ECDSA_P384_SHA512
+#define SYMCRYPT_TEST_COMPOSITE_MLDSA_MAX_SIG_SIZE SYMCRYPT_COMPOSITE_MLDSA_SIGNATURE_SIZE_MLDSA87_ECDSA_P384_SHA512
+
+#define SYMCRYPT_TEST_PQDSA_MAX_SIG_SIZE           SYMCRYPT_TEST_COMPOSITE_MLDSA_MAX_SIG_SIZE
+
 typedef struct _SYMCRYPT_PERF_MLDSAKEY {
     SIZE_T                      keySize;
     SYMCRYPT_MLDSA_PARAMS       params;
     PSYMCRYPT_MLDSAKEY          pkMlDsakey;
 } SYMCRYPT_PERF_MLDSAKEY, *PSYMCRYPT_PERF_MLDSAKEY;
+
+typedef struct _SYMCRYPT_PERF_COMPOSITE_MLDSAKEY {
+    SIZE_T                          keySize;
+    SYMCRYPT_COMPOSITE_MLDSA_PARAMS params;
+    PSYMCRYPT_COMPOSITE_MLDSAKEY    pkCompositeMlDsakey;
+} SYMCRYPT_PERF_COMPOSITE_MLDSAKEY, *PSYMCRYPT_PERF_COMPOSITE_MLDSAKEY;
 
 typedef struct _MLDSAKEY_TESTBLOB {
     SYMCRYPT_MLDSA_PARAMS    params;
@@ -879,8 +890,17 @@ typedef struct _MLDSAKEY_TESTBLOB {
 } MLDSAKEY_TESTBLOB, *PMLDSAKEY_TESTBLOB;
 typedef const MLDSAKEY_TESTBLOB * PCMLDSAKEY_TESTBLOB;
 
+typedef struct _COMPOSITE_MLDSAKEY_TESTBLOB {
+    SYMCRYPT_COMPOSITE_MLDSA_PARAMS     params;
+    SYMCRYPT_COMPOSITE_MLDSAKEY_FORMAT  format;
+    BYTE                                abKeyBlob[SYMCRYPT_TEST_COMPOSITE_MLDSA_MAX_KEY_SIZE];
+    SIZE_T                              cbKeyBlob;
+} COMPOSITE_MLDSAKEY_TESTBLOB, *PCOMPOSITE_MLDSAKEY_TESTBLOB;
+typedef const COMPOSITE_MLDSAKEY_TESTBLOB * PCCOMPOSITE_MLDSAKEY_TESTBLOB;
+
 typedef union _PQDSAKEY_TESTBLOB {
-    MLDSAKEY_TESTBLOB   mlDsakey;
+    MLDSAKEY_TESTBLOB           mlDsakey;
+    COMPOSITE_MLDSAKEY_TESTBLOB compositeMlDsakey;
 } PQDSAKEY_TESTBLOB, *PPQDSAKEY_TESTBLOB;
 typedef const PQDSAKEY_TESTBLOB * PCPQDSAKEY_TESTBLOB;
 
@@ -911,7 +931,8 @@ public:
         _In_reads_bytes_opt_( cbContext )                   PCBYTE                  pbContext,
         _In_range_( 0, SYMCRYPT_MLDSA_CONTEXT_MAX_LENGTH )  SIZE_T                  cbContext,
         _Out_writes_bytes_( cbSignature )                   PBYTE                   pbSignature,
-                                                            SIZE_T                  cbSignature ) = 0;
+                                                            SIZE_T                  cbSignature,
+        _Out_opt_                                           SIZE_T*                 pcbResult ) = 0;
 
     virtual NTSTATUS signExternalMu(
         _In_reads_bytes_( cbMu )                            PCBYTE                  pbMu,
@@ -926,7 +947,8 @@ public:
         _In_reads_bytes_opt_( cbContext )                   PCBYTE                  pbContext,
         _In_range_( 0, SYMCRYPT_MLDSA_CONTEXT_MAX_LENGTH )  SIZE_T                  cbContext,
         _Out_writes_bytes_( cbSignature )                   PBYTE                   pbSignature,
-                                                            SIZE_T                  cbSignature ) = 0;
+                                                            SIZE_T                  cbSignature,
+        _Out_opt_                                           SIZE_T*                 pcbResult ) = 0;
 
     virtual NTSTATUS signEx(
                                                             SYMCRYPT_PQDSA_HASH_ID  hashId,
@@ -997,7 +1019,8 @@ public:
         _In_reads_bytes_opt_( cbContext )                   PCBYTE                  pbContext,
         _In_range_( 0, SYMCRYPT_MLDSA_CONTEXT_MAX_LENGTH )  SIZE_T                  cbContext,
         _Out_writes_bytes_( cbSignature )                   PBYTE                   pbSignature,
-                                                            SIZE_T                  cbSignature ) override;
+                                                            SIZE_T                  cbSignature,
+        _Out_opt_                                           SIZE_T*                 pcbResult ) override;
 
     virtual NTSTATUS signExternalMu(
         _In_reads_bytes_( cbMu )                            PCBYTE                  pbMu,
@@ -1012,7 +1035,8 @@ public:
         _In_reads_bytes_opt_( cbContext )                   PCBYTE                  pbContext,
         _In_range_( 0, SYMCRYPT_MLDSA_CONTEXT_MAX_LENGTH )  SIZE_T                  cbContext,
         _Out_writes_bytes_( cbSignature )                   PBYTE                   pbSignature,
-                                                            SIZE_T                  cbSignature ) override;
+                                                            SIZE_T                  cbSignature,
+        _Out_opt_                                           SIZE_T*                 pcbResult ) override;
 
     virtual NTSTATUS signEx(
                                                             SYMCRYPT_PQDSA_HASH_ID  hashId,

@@ -221,6 +221,114 @@ testUint64Gcd()
 
 
 VOID
+testCountLeadingTrailingZeros()
+{
+    //
+    // Test SymCryptCountLeadingZeros32 and SymCryptCountTrailingZeros32
+    //
+
+    // Zero input
+    CHECK( SymCryptCountLeadingZeros32( 0 ) == 32, "CLZ32(0) should be 32" );
+    CHECK( SymCryptCountTrailingZeros32( 0 ) == 32, "CTZ32(0) should be 32" );
+
+    // Single bit set at each position
+    for( UINT32 i = 0; i < 32; i++ )
+    {
+        UINT32 v = (UINT32)1 << i;
+        CHECK3( SymCryptCountLeadingZeros32( v ) == 31 - i, "CLZ32(1<<%d) wrong", i );
+        CHECK3( SymCryptCountTrailingZeros32( v ) == i, "CTZ32(1<<%d) wrong", i );
+    }
+
+    // All bits set
+    CHECK( SymCryptCountLeadingZeros32( 0xFFFFFFFF ) == 0, "CLZ32(0xFFFFFFFF) should be 0" );
+    CHECK( SymCryptCountTrailingZeros32( 0xFFFFFFFF ) == 0, "CTZ32(0xFFFFFFFF) should be 0" );
+
+    // Values with known leading/trailing structure
+    CHECK( SymCryptCountLeadingZeros32( 0x00010000 ) == 15, "CLZ32(0x00010000)" );
+    CHECK( SymCryptCountTrailingZeros32( 0x00010000 ) == 16, "CTZ32(0x00010000)" );
+
+    // Random values: verify CLZ32 and CTZ32 are consistent with bit positions
+    for( int i = 0; i < 1000; i++ )
+    {
+        UINT32 v;
+        GENRANDOM( &v, sizeof(v) );
+        if( v == 0 ) continue;
+
+        UINT32 clz = SymCryptCountLeadingZeros32( v );
+        UINT32 ctz = SymCryptCountTrailingZeros32( v );
+
+        // The bit at position (31 - clz) must be set (MSB)
+        CHECK( (v >> (31 - clz)) & 1, "CLZ32 inconsistent with value" );
+        // No higher bit should be set
+        if( clz > 0 )
+        {
+            CHECK( (v >> (32 - clz)) == 0, "CLZ32 too large" );
+        }
+
+        // The bit at position ctz must be set (LSB)
+        CHECK( (v >> ctz) & 1, "CTZ32 inconsistent with value" );
+        // No lower bit should be set
+        if( ctz > 0 )
+        {
+            CHECK( (v & (((UINT32)1 << ctz) - 1)) == 0, "CTZ32 too large" );
+        }
+    }
+
+    //
+    // Test SymCryptCountLeadingZeros64 and SymCryptCountTrailingZeros64
+    //
+
+    // Zero input
+    CHECK( SymCryptCountLeadingZeros64( 0 ) == 64, "CLZ64(0) should be 64" );
+    CHECK( SymCryptCountTrailingZeros64( 0 ) == 64, "CTZ64(0) should be 64" );
+
+    // Single bit set at each position
+    for( UINT32 i = 0; i < 64; i++ )
+    {
+        UINT64 v = (UINT64)1 << i;
+        CHECK3( SymCryptCountLeadingZeros64( v ) == 63 - i, "CLZ64(1<<%d) wrong", i );
+        CHECK3( SymCryptCountTrailingZeros64( v ) == i, "CTZ64(1<<%d) wrong", i );
+    }
+
+    // All bits set
+    CHECK( SymCryptCountLeadingZeros64( 0xFFFFFFFFFFFFFFFF ) == 0, "CLZ64(UINT64_MAX) should be 0" );
+    CHECK( SymCryptCountTrailingZeros64( 0xFFFFFFFFFFFFFFFF ) == 0, "CTZ64(UINT64_MAX) should be 0" );
+
+    // Values crossing the 32-bit boundary (exercises 32-bit fallback paths)
+    CHECK( SymCryptCountLeadingZeros64( 0x0000000100000000 ) == 31, "CLZ64(1<<32)" );
+    CHECK( SymCryptCountTrailingZeros64( 0x0000000100000000 ) == 32, "CTZ64(1<<32)" );
+    CHECK( SymCryptCountLeadingZeros64( 0x00000000FFFFFFFF ) == 32, "CLZ64(0xFFFFFFFF)" );
+    CHECK( SymCryptCountTrailingZeros64( 0x8000000000000000 ) == 63, "CTZ64(1<<63)" );
+
+    // Random values: verify CLZ64 and CTZ64 are consistent with bit positions
+    for( int i = 0; i < 1000; i++ )
+    {
+        UINT64 v;
+        GENRANDOM( &v, sizeof(v) );
+        if( v == 0 ) continue;
+
+        UINT32 clz = SymCryptCountLeadingZeros64( v );
+        UINT32 ctz = SymCryptCountTrailingZeros64( v );
+
+        // The bit at position (63 - clz) must be set (MSB)
+        CHECK( (v >> (63 - clz)) & 1, "CLZ64 inconsistent with value" );
+        // No higher bit should be set
+        if( clz > 0 )
+        {
+            CHECK( (v >> (64 - clz)) == 0, "CLZ64 too large" );
+        }
+
+        // The bit at position ctz must be set (LSB)
+        CHECK( (v >> ctz) & 1, "CTZ64 inconsistent with value" );
+        // No lower bit should be set
+        if( ctz > 0 )
+        {
+            CHECK( (v & (((UINT64)1 << ctz) - 1)) == 0, "CTZ64 too large" );
+        }
+    }
+}
+
+VOID
 testUtil()
 {
     print( "    utilities\n" );
@@ -230,6 +338,8 @@ testUtil()
     testLoadStore();
 
     testUint64Gcd();
+
+    testCountLeadingTrailingZeros();
 }
 
 

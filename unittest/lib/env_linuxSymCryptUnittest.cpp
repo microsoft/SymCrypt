@@ -8,6 +8,7 @@
 
 BOOLEAN     TestSaveXmmEnabled = FALSE;
 BOOLEAN     TestSaveYmmEnabled = FALSE;
+BOOLEAN     TestSaveZmmEnabled = FALSE;
 
 extern "C" {
 
@@ -24,10 +25,12 @@ SymCryptInitEnvUnittest( UINT32 version )
     SymCryptDetectCpuFeaturesByCpuid( SYMCRYPT_CPUID_DETECT_FLAG_CHECK_OS_SUPPORT_FOR_YMM );
 
     //
-    // By default we don't fail XMM so that we get proper performance for GCM.
+    // By default we don't fail XMM/YMM/ZMM so that we get proper performance for GCM.
     // We allow the nofail to be disabled by command-line option.
     //
     g_SymCryptCpuFeaturesNotPresent &= ~SYMCRYPT_CPU_FEATURE_SAVEXMM_NOFAIL;
+    g_SymCryptCpuFeaturesNotPresent &= ~SYMCRYPT_CPU_FEATURE_SAVEYMM_NOFAIL;
+    g_SymCryptCpuFeaturesNotPresent &= ~SYMCRYPT_CPU_FEATURE_SAVEZMM_NOFAIL;
 
 #elif SYMCRYPT_CPU_ARM
 

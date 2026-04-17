@@ -1628,7 +1628,6 @@ testKem()
         iprint( "    Composite ML-KEM\n" );
 
         testCompositeMlKemKats();
-
         testCompositeMlKemHighLevelAPI();
         testSymCryptCompositeMlKemNegativeTests();
 

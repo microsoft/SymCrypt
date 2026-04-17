@@ -1097,6 +1097,17 @@ public:
     static constexpr const char * name = "MlDsakeySetValue";
 };
 
+class AlgCompositeMlDsa{
+public:
+    static constexpr const char * name = "CompositeMlDsa";
+};
+
+// Used only for performance testing
+class AlgCompositeMlDsakeySetValue{
+public:
+    static constexpr const char * name = "CompositeMlDsakeySetValue";
+};
+
 class AlgCompositeMlKem{
 public:
     static constexpr const char * name = "CompositeMlKem";
@@ -1107,7 +1118,6 @@ class AlgCompositeMlKemkeySetValue{
 public:
     static constexpr const char * name = "CompositeMlKemkeySetValue";
 };
-
 
 class AlgDeveloperTest{
 public:
@@ -1306,11 +1316,13 @@ cleanVectorRegisters();
 //  On Windows AMD64 set Xmm6-Xmm15 to random values
 //    these values are non-volatile in Window x64 ABI, so should be preserved. If they are not
 //    preserved it indicates a problem with our assembly not adhering to the Windows ABI
-//  On Linux AMD64 set Ymm0-Ymm15 to random values
+//  On Linux AMD64 set Ymm0-Ymm15 or Zmm0-Zmm31 to random values
 //    these values are naturally volatile on Linux, but symcryptunittest callers may specify the
 //    following environment variable:
-//      GLIBC_TUNABLES=glibc.cpu.hwcaps=-AVX_Usable,-AVX_Fast_Unaligned_Load,-AVX2_Usable
-//    to avoid use of AVX in glibc. This means we can test the Ymm save/restore logic that is
+//      GLIBC_TUNABLES=glibc.cpu.hwcaps=-AVX_Usable,-AVX_Fast_Unaligned_Load,
+//            -AVX2_Usable,AVX512F,-AVX512VL,-AVX512BW,-AVX512DQ,-AVX512F_Usable,
+//            -AVX512VL_Usable,-AVX512BW_Usable,-AVX512DQ_Usable
+//    to avoid use of AVX in glibc. This means we can test the Ymm/Zmm save/restore logic that is
 //    used in Windows kernel using Linux user mode.
 //
 template<typename Functor, typename... Args>
@@ -1476,6 +1488,7 @@ std::unique_ptr<std::vector<AlgType *>> getAlgorithmsOfOneType( );
 extern BOOLEAN     TestSelftestsEnabled;
 extern BOOLEAN     TestSaveXmmEnabled;
 extern BOOLEAN     TestSaveYmmEnabled;
+extern BOOLEAN     TestSaveZmmEnabled;
 
 extern ULONGLONG   TestFatalCount;
 extern ULONGLONG   TestErrorInjectionCount;
@@ -1494,6 +1507,9 @@ VOID SYMCRYPT_CALL SymCryptEnvUmRestoreXmmRegistersAsm( __m128i * buffer );
 
 VOID SYMCRYPT_CALL SymCryptEnvUmSaveYmmRegistersAsm( __m256i * buffer );
 VOID SYMCRYPT_CALL SymCryptEnvUmRestoreYmmRegistersAsm( __m256i * buffer );
+
+VOID SYMCRYPT_CALL SymCryptEnvUmSaveZmmRegistersAsm( __m512i * buffer );
+VOID SYMCRYPT_CALL SymCryptEnvUmRestoreZmmRegistersAsm( __m512i * buffer );
 }
 #endif
 
@@ -2073,6 +2089,20 @@ printXmmRegisters( PCSTR text );
 #define PERF_KEY_LMS_SHAKE_M32_H20_W8   (SYMCRYPT_LMS_SHAKE_M32_H20 | PERF_KEY_LMOTS_W8)
 #define PERF_KEY_LMS_SHAKE_M32_H25_W8   (SYMCRYPT_LMS_SHAKE_M32_H25 | PERF_KEY_LMOTS_W8)
 
+//
+// ML-DSA parameters. As with ML-KEM, these are not actual key sizes, but ML-KEM parameter sets.
+//
+#define PERF_KEY_MLDSA_44   (44)   // ML-DSA-44
+#define PERF_KEY_MLDSA_65   (65)   // ML-DSA-65
+#define PERF_KEY_MLDSA_87   (87)   // ML-DSA-87
+
+//
+// Composite-ML-DSA parameters. These are not actual key sizes, but stand-ins for unique parameter sets.
+//
+#define PERF_KEY_COMPOSITE_MLDSA_MLDSA44_ECDSA_P256_SHA256  (44256)    // id-MLDSA44-ECDSA-P256-SHA256
+#define PERF_KEY_COMPOSITE_MLDSA_MLDSA65_ECDSA_P256_SHA512  (65256)    // id-MLDSA65-ECDSA-P256-SHA512
+#define PERF_KEY_COMPOSITE_MLDSA_MLDSA65_ECDSA_P384_SHA512  (65384)    // id-MLDSA65-ECDSA-P384-SHA512
+#define PERF_KEY_COMPOSITE_MLDSA_MLDSA87_ECDSA_P384_SHA512  (87384)    // id-MLDSA87-ECDSA-P384-SHA512
 
 //
 // For testing ML-KEM parameters. These are not the key sizes, but refer to the different
@@ -2083,19 +2113,13 @@ printXmmRegisters( PCSTR text );
 #define PERF_KEY_MLKEM_1024 (1024 / 8)  // ML-KEM-1024
 
 //
-// ML-DSA parameters. As with ML-KEM, these are not actual key sizes, but ML-KEM parameter sets.
-//
-#define PERF_KEY_MLDSA_44   (44)   // ML-DSA-44
-#define PERF_KEY_MLDSA_65   (65)   // ML-DSA-65
-#define PERF_KEY_MLDSA_87   (87)   // ML-DSA-87
-
-//
 // Composite ML-KEM parameters. These are not key sizes, but refer to the different
 // supported Composite ML-KEM parameter sets.
 //
 #define PERF_KEY_COMPOSITE_MLKEM_768_P256   (1)
 #define PERF_KEY_COMPOSITE_MLKEM_768_X25519 (2)
 #define PERF_KEY_COMPOSITE_MLKEM_1024_P384  (3)
+
 PCBYTE
 getPerfTestModulus( UINT32 exKeySize );
 
