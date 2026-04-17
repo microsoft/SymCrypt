@@ -402,7 +402,7 @@ SymCryptMlDsaSignEx(
 
     const UINT32 beta = (UINT32) pParams->nChallengeNonZeroCoeffs * pParams->privateKeyRange;
 
-    BOOL bExternalMu = (flags & SYMCRYPT_FLAG_MLDSA_EXTERNALMU) != 0;
+    BOOLEAN bExternalMu = (flags & SYMCRYPT_FLAG_MLDSA_EXTERNALMU) != 0;
     UINT8 modeId = (pbHashOid == NULL) ? 0 : 1; // 0 for ML-DSA, 1 for HashML-DSA
     UINT8 cbContextByte = (UINT8) cbContext;
     BYTE messageRepresentative[SYMCRYPT_SHAKE256_RESULT_SIZE];
@@ -814,7 +814,7 @@ SymCryptMlDsaVerifyEx(
 
     const UINT32 beta = (UINT32) pParams->nChallengeNonZeroCoeffs * pParams->privateKeyRange;
 
-    BOOL bExternalMu = (flags & SYMCRYPT_FLAG_MLDSA_EXTERNALMU) != 0;
+    BOOLEAN bExternalMu = (flags & SYMCRYPT_FLAG_MLDSA_EXTERNALMU) != 0;
     UINT8 modeId = (pbHashOid == NULL) ? 0 : 1; // 0 for ML-DSA, 1 for HashML-DSA
     UINT8 cbContextByte = (UINT8) cbContext;
     BYTE messageRepresentative[SYMCRYPT_SHAKE256_RESULT_SIZE];

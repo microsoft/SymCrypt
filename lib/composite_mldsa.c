@@ -476,7 +476,7 @@ SymCryptCompositeMlDsakeySetValue(
             }
 
             cbEncodedEcKey = SymCryptCompositeGetSizeOfEncodedEcPk( pkCompositeMlDsakey->pParams->eCurveId );
-            SYMCRYPT_ASSERT( cbEncodedMlDsaKey + cbEncodedEcKey == cbSrc );
+            SYMCRYPT_ASSERT( (cbEncodedMlDsaKey + cbEncodedEcKey) == cbSrc );
 
             scError = SymCryptMlDsakeySetValue(
                         pbSrc,
@@ -551,7 +551,7 @@ SymCryptCompositeMlDsakeyGetValue(
 
             cbEncodedMlDsaKey = SYMCRYPT_MLDSA_PRIVATE_SEED_SIZE;
             cbEncodedEcKey = SymCryptCompositeGetSizeOfEncodedEcSk( pkCompositeMlDsakey->pParams->eCurveId );
-            SYMCRYPT_ASSERT( cbEncodedMlDsaKey + cbEncodedEcKey == cbDst );
+            SYMCRYPT_ASSERT( (cbEncodedMlDsaKey + cbEncodedEcKey) == cbDst );
 
             scError = SymCryptMlDsakeyGetValue(
                         pkCompositeMlDsakey->pkMlDsakey,
@@ -592,7 +592,7 @@ SymCryptCompositeMlDsakeyGetValue(
             }
 
             cbEncodedEcKey = SymCryptCompositeGetSizeOfEncodedEcPk( pkCompositeMlDsakey->pParams->eCurveId );
-            SYMCRYPT_ASSERT( cbEncodedMlDsaKey + cbEncodedEcKey == cbDst );
+            SYMCRYPT_ASSERT( (cbEncodedMlDsaKey + cbEncodedEcKey) == cbDst );
 
             scError = SymCryptMlDsakeyGetValue(
                         pkCompositeMlDsakey->pkMlDsakey,
@@ -664,19 +664,14 @@ SymCryptCompositeMlDsaSign(
 
     // Ensure only allowed flags are specified
     UINT32 allowedFlags = SYMCRYPT_FLAG_COMPOSITE_MLDSA_PREHASHED;
-    BOOL bMessageIsPreHashed = (flags & SYMCRYPT_FLAG_COMPOSITE_MLDSA_PREHASHED) != 0;
+    BOOLEAN bMessageIsPreHashed = (flags & SYMCRYPT_FLAG_COMPOSITE_MLDSA_PREHASHED) != 0;
 
     *pcbResult = 0;
 
     SYMCRYPT_CHECK_MAGIC( pkCompositeMlDsakey );
 
-    if( (flags & ~allowedFlags) != 0 )
-    {
-        scError = SYMCRYPT_INVALID_ARGUMENT;
-        goto cleanup;
-    }
-
-    if( (cbContext > SYMCRYPT_COMPOSITE_MLDSA_CONTEXT_MAX_LENGTH) ||
+    if( ((flags & ~allowedFlags) != 0) ||
+        (cbContext > SYMCRYPT_COMPOSITE_MLDSA_CONTEXT_MAX_LENGTH) ||
         (cbSignature != pkCompositeMlDsakey->pParams->cbEncodedSignatureMax) ||
         (bMessageIsPreHashed && (cbMessage != pkCompositeMlDsakey->pParams->cbMessagePreHash)) )
     {
@@ -772,7 +767,6 @@ SymCryptCompositeMlDsaSign(
         goto cleanup;
     }
 
-    SYMCRYPT_ASSERT( cbSignature > cbMlDsaSignature );
     pbEncodedEcDsaSignature = pbSignature + cbMlDsaSignature;
     cbEncodedEcDsaSignature = cbSignature - cbMlDsaSignature;
 
@@ -829,17 +823,20 @@ SymCryptCompositeMlDsaVerify(
 
     // Ensure only allowed flags are specified
     UINT32 allowedFlags = SYMCRYPT_FLAG_COMPOSITE_MLDSA_PREHASHED;
-    BOOL bMessageIsPreHashed = (flags & SYMCRYPT_FLAG_COMPOSITE_MLDSA_PREHASHED) != 0;
+    BOOLEAN bMessageIsPreHashed = (flags & SYMCRYPT_FLAG_COMPOSITE_MLDSA_PREHASHED) != 0;
 
     SYMCRYPT_CHECK_MAGIC( pkCompositeMlDsakey );
 
-    if( (flags & ~allowedFlags) != 0 )
+    scError = SymCryptMlDsaSizeofSignatureFromParams(
+                pkCompositeMlDsakey->pParams->mldsaParams,
+                &cbMlDsaSignature );
+    if( scError != SYMCRYPT_NO_ERROR )
     {
-        scError = SYMCRYPT_INVALID_ARGUMENT;
         goto cleanup;
     }
 
-    if( (cbContext > SYMCRYPT_COMPOSITE_MLDSA_CONTEXT_MAX_LENGTH) ||
+    if( ((flags & ~allowedFlags) != 0) ||
+        (cbContext > SYMCRYPT_COMPOSITE_MLDSA_CONTEXT_MAX_LENGTH) ||
         (bMessageIsPreHashed && (cbMessage != pkCompositeMlDsakey->pParams->cbMessagePreHash)) ||
         (cbSignature <= cbMlDsaSignature) ||
         (cbSignature > pkCompositeMlDsakey->pParams->cbEncodedSignatureMax) )
@@ -851,14 +848,6 @@ SymCryptCompositeMlDsaVerify(
     cbContextU8 = (UINT8)cbContext;
     cbMessageRepresentativeHash = pkCompositeMlDsakey->pParams->cbMessageRepresentativeHash;
     cbRawEcDsaSignature = 2 * SymCryptEcurveSizeofFieldElement( pkCompositeMlDsakey->pkEckey->pCurve );
-
-    scError = SymCryptMlDsaSizeofSignatureFromParams(
-                pkCompositeMlDsakey->pParams->mldsaParams,
-                &cbMlDsaSignature );
-    if( scError != SYMCRYPT_NO_ERROR )
-    {
-        goto cleanup;
-    }
 
     //
     // M' :=  Prefix || Label || len(ctx) || ctx || PH( M )
@@ -903,7 +892,6 @@ SymCryptCompositeMlDsaVerify(
     pbMessageRepresentativeHash = rgbScratch + cbMessageRepresentative;
     pbRawEcDsaSignature = rgbScratch + cbMessageRepresentative + cbMessageRepresentativeHash;
 
-    SYMCRYPT_ASSERT( cbSignature > cbMlDsaSignature );
     pbEncodedEcDsaSignature = pbSignature + cbMlDsaSignature;
     cbEncodedEcDsaSignature = cbSignature - cbMlDsaSignature;
 

@@ -2,11 +2,14 @@
 New changes will be listed here as they are developed. The version number is determined
 prior to the creation of a new release, based on the changes contained in that release.
 
+# Version 103.12.0
+
 - Add ZMM (AVX512) implementation of AES-GCM: improves performance by up to 35% on supported hardware
 - Add loop bounds to ML-DSA functions which use probabilistic sampling, as defense-in-depth against denial of service by maliciously formed keys
   - There is no known vulnerability associated with this, but adding upper bounds provides additional hardening
   - Also fixes [#55](https://github.com/microsoft/SymCrypt/issues/55); thanks to Sunwoo Lee and Seunghyun Yoon, Korea Institute of Energy Technology (KENTECH) for filing this issue
 - Add Elevated Debugger environment
+- Add Composite ML-DSA implementation
 
 # Version 103.11.0
 
