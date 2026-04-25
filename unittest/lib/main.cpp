@@ -1323,6 +1323,7 @@ runFunctionalTests()
 
         testUtil();
 
+        testModuleInitEx();
         testScsTable();
 
         testScsTools();

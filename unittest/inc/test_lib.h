@@ -1506,6 +1506,9 @@ VOID
 testUtil();
 
 VOID
+testModuleInitEx();
+
+VOID
 testDataAccessors();
 
 VOID

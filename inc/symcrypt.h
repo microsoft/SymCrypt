@@ -536,6 +536,34 @@ SymCryptModuleInit(
 // the macro SYMCRYPT_MODULE_INIT should be used to call it with the correct arguments.
 //
 
+SYMCRYPT_ERROR
+SYMCRYPT_CALL
+SymCryptModuleInitEx(
+    _In_ UINT32 api,
+    _In_ UINT32 minor);
+
+#define SYMCRYPT_MODULE_INIT_EX() SymCryptModuleInitEx( SYMCRYPT_CODE_VERSION_API, SYMCRYPT_CODE_VERSION_MINOR )
+//
+// Initialize the SymCrypt shared object module/dynamic-link library. This function verifies
+// that the module version supports the version requested by the application.
+//
+// Returns SYMCRYPT_NO_ERROR on success, or SYMCRYPT_INVALID_ARGUMENT if the requested version
+// is not supported by this module (i.e. the requested api version does not match the module's
+// api version, or the api versions match but the requested minor version is greater than the
+// module's minor version).
+//
+// This function is intended for callers who need to fail gracefully when the module does not
+// support the requested version. It is NOT intended for dynamic feature selection based on
+// version probing.
+//
+// IMPORTANT: If this function returns an error, the caller MUST NOT use any SymCrypt
+// functionality. Doing so could result in broken functionality up to and including
+// catastrophic loss of security.
+//
+// This function is only available in user-mode (symcrypt.dll) and Posix shared library modules.
+// It is not exported from the kernel-mode module (symcryptk).
+//
+
 //==========================================================================
 //   DATA MANIPULATION
 //==========================================================================

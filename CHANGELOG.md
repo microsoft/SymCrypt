@@ -2,6 +2,10 @@
 New changes will be listed here as they are developed. The version number is determined
 prior to the creation of a new release, based on the changes contained in that release.
 
+# Version 103.13.0
+
+- Added `SymCryptModuleInitEx` function and `SYMCRYPT_MODULE_INIT_EX` macro. Unlike `SymCryptModuleInit` which calls `SymCryptFatal` on version mismatch, `SymCryptModuleInitEx` returns `SYMCRYPT_INVALID_ARGUMENT`, allowing callers to handle the error gracefully.
+
 # Version 103.12.0
 
 - Add ZMM (AVX512) implementation of AES-GCM: improves performance by up to 35% on supported hardware

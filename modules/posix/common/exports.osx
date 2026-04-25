@@ -245,6 +245,7 @@ _SymCryptMd5StateCopy
 _SymCryptMd5StateExport
 _SymCryptMd5StateImport
 _SymCryptModuleInit
+_SymCryptModuleInitEx
 _SymCryptParallelSha256Init
 _SymCryptParallelSha256Process
 _SymCryptParallelSha256Selftest

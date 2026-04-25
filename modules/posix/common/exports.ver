@@ -241,6 +241,7 @@ VERSION_101.0 {
       SymCryptMd5StateExport;
       SymCryptMd5StateImport;
       SymCryptModuleInit;
+      SymCryptModuleInitEx;
       SymCryptParallelSha256Init;
       SymCryptParallelSha256Process;
       SymCryptParallelSha256Selftest;
