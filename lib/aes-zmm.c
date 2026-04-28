@@ -948,38 +948,6 @@ SymCryptAesGcmDecryptStitchedZmm(
         PCBYTE pbGhashPartial;
         SIZE_T nPartial = nBlocks;
 
-        m0 = GCM_ZMM_MASK16( nPartial, 0 );
-        m1 = GCM_ZMM_MASK16( nPartial, 1 );
-        m2 = GCM_ZMM_MASK16( nPartial, 2 );
-        m3 = GCM_ZMM_MASK16( nPartial, 3 );
-        m4 = GCM_ZMM_MASK16( nPartial, 4 );
-        m5 = GCM_ZMM_MASK16( nPartial, 5 );
-        m6 = GCM_ZMM_MASK16( nPartial, 6 );
-        m7 = GCM_ZMM_MASK16( nPartial, 7 );
-
-        // Byte-reverse counters for AES (counters already positioned for next batch)
-        c0 = _mm512_shuffle_epi8( ctr0, BYTE_REVERSE_ORDER );
-        c1 = _mm512_shuffle_epi8( ctr1, BYTE_REVERSE_ORDER );
-        c2 = _mm512_shuffle_epi8( ctr2, BYTE_REVERSE_ORDER );
-        c3 = _mm512_shuffle_epi8( ctr3, BYTE_REVERSE_ORDER );
-        c4 = _mm512_shuffle_epi8( ctr4, BYTE_REVERSE_ORDER );
-        c5 = _mm512_shuffle_epi8( ctr5, BYTE_REVERSE_ORDER );
-        c6 = _mm512_shuffle_epi8( ctr6, BYTE_REVERSE_ORDER );
-        c7 = _mm512_shuffle_epi8( ctr7, BYTE_REVERSE_ORDER );
-
-        // AES encrypt all 8 registers (inactive registers encrypt zeros, result is discarded)
-        AES_ENCRYPT_ZMM_4096( pExpandedKey, c0, c1, c2, c3, c4, c5, c6, c7 );
-
-        // Masked XOR with ciphertext (from pbSrc) and store plaintext (to pbDst)
-        _mm512_mask_storeu_epi32( pbDst +   0, m0, _mm512_xor_si512( c0, _mm512_maskz_loadu_epi32( m0, (__m512i *)( pbSrc +   0 ) ) ) );
-        _mm512_mask_storeu_epi32( pbDst +  64, m1, _mm512_xor_si512( c1, _mm512_maskz_loadu_epi32( m1, (__m512i *)( pbSrc +  64 ) ) ) );
-        _mm512_mask_storeu_epi32( pbDst + 128, m2, _mm512_xor_si512( c2, _mm512_maskz_loadu_epi32( m2, (__m512i *)( pbSrc + 128 ) ) ) );
-        _mm512_mask_storeu_epi32( pbDst + 192, m3, _mm512_xor_si512( c3, _mm512_maskz_loadu_epi32( m3, (__m512i *)( pbSrc + 192 ) ) ) );
-        _mm512_mask_storeu_epi32( pbDst + 256, m4, _mm512_xor_si512( c4, _mm512_maskz_loadu_epi32( m4, (__m512i *)( pbSrc + 256 ) ) ) );
-        _mm512_mask_storeu_epi32( pbDst + 320, m5, _mm512_xor_si512( c5, _mm512_maskz_loadu_epi32( m5, (__m512i *)( pbSrc + 320 ) ) ) );
-        _mm512_mask_storeu_epi32( pbDst + 384, m6, _mm512_xor_si512( c6, _mm512_maskz_loadu_epi32( m6, (__m512i *)( pbSrc + 384 ) ) ) );
-        _mm512_mask_storeu_epi32( pbDst + 448, m7, _mm512_xor_si512( c7, _mm512_maskz_loadu_epi32( m7, (__m512i *)( pbSrc + 448 ) ) ) );
-
         // GHASH the partial ciphertext blocks (for decrypt, GHASH source is input ciphertext)
         pbGhashPartial = pbSrc;
         todo = nPartial;
@@ -1014,6 +982,39 @@ SymCryptAesGcmDecryptStitchedZmm(
 
         a1_xmm = TERNARY_XOR_128( a0_xmm, a1_xmm, a2_xmm ); // CLMUL_3_POST
         MODREDUCE( vMultiplicationConstant, a0_xmm, a1_xmm, a2_xmm, state );
+
+        // Decrypt the partial ciphertext blocks
+        m0 = GCM_ZMM_MASK16( nPartial, 0 );
+        m1 = GCM_ZMM_MASK16( nPartial, 1 );
+        m2 = GCM_ZMM_MASK16( nPartial, 2 );
+        m3 = GCM_ZMM_MASK16( nPartial, 3 );
+        m4 = GCM_ZMM_MASK16( nPartial, 4 );
+        m5 = GCM_ZMM_MASK16( nPartial, 5 );
+        m6 = GCM_ZMM_MASK16( nPartial, 6 );
+        m7 = GCM_ZMM_MASK16( nPartial, 7 );
+
+        // Byte-reverse counters for AES (counters already positioned for next batch)
+        c0 = _mm512_shuffle_epi8( ctr0, BYTE_REVERSE_ORDER );
+        c1 = _mm512_shuffle_epi8( ctr1, BYTE_REVERSE_ORDER );
+        c2 = _mm512_shuffle_epi8( ctr2, BYTE_REVERSE_ORDER );
+        c3 = _mm512_shuffle_epi8( ctr3, BYTE_REVERSE_ORDER );
+        c4 = _mm512_shuffle_epi8( ctr4, BYTE_REVERSE_ORDER );
+        c5 = _mm512_shuffle_epi8( ctr5, BYTE_REVERSE_ORDER );
+        c6 = _mm512_shuffle_epi8( ctr6, BYTE_REVERSE_ORDER );
+        c7 = _mm512_shuffle_epi8( ctr7, BYTE_REVERSE_ORDER );
+
+        // AES encrypt all 8 registers (inactive registers encrypt zeros, result is discarded)
+        AES_ENCRYPT_ZMM_4096( pExpandedKey, c0, c1, c2, c3, c4, c5, c6, c7 );
+
+        // Masked XOR with ciphertext (from pbSrc) and store plaintext (to pbDst)
+        _mm512_mask_storeu_epi32( pbDst +   0, m0, _mm512_xor_si512( c0, _mm512_maskz_loadu_epi32( m0, (__m512i *)( pbSrc +   0 ) ) ) );
+        _mm512_mask_storeu_epi32( pbDst +  64, m1, _mm512_xor_si512( c1, _mm512_maskz_loadu_epi32( m1, (__m512i *)( pbSrc +  64 ) ) ) );
+        _mm512_mask_storeu_epi32( pbDst + 128, m2, _mm512_xor_si512( c2, _mm512_maskz_loadu_epi32( m2, (__m512i *)( pbSrc + 128 ) ) ) );
+        _mm512_mask_storeu_epi32( pbDst + 192, m3, _mm512_xor_si512( c3, _mm512_maskz_loadu_epi32( m3, (__m512i *)( pbSrc + 192 ) ) ) );
+        _mm512_mask_storeu_epi32( pbDst + 256, m4, _mm512_xor_si512( c4, _mm512_maskz_loadu_epi32( m4, (__m512i *)( pbSrc + 256 ) ) ) );
+        _mm512_mask_storeu_epi32( pbDst + 320, m5, _mm512_xor_si512( c5, _mm512_maskz_loadu_epi32( m5, (__m512i *)( pbSrc + 320 ) ) ) );
+        _mm512_mask_storeu_epi32( pbDst + 384, m6, _mm512_xor_si512( c6, _mm512_maskz_loadu_epi32( m6, (__m512i *)( pbSrc + 384 ) ) ) );
+        _mm512_mask_storeu_epi32( pbDst + 448, m7, _mm512_xor_si512( c7, _mm512_maskz_loadu_epi32( m7, (__m512i *)( pbSrc + 448 ) ) ) );
     }
 
     // nBlocks should never be more than 31, but assert conservatively in case of

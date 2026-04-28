@@ -162,6 +162,7 @@ AuthEncMultiImp::encrypt(
 {
     NTSTATUS status = STATUS_SUCCESS;
     NTSTATUS res;
+    PCBYTE pbSrcLocal;
     BYTE bufData[1 << 13];
     BYTE bufTag[32];
     ResultMerge resData;
@@ -176,7 +177,18 @@ AuthEncMultiImp::encrypt(
     {
         memset( bufData, 'd', cbData + 1);
         memset( bufTag, 't', cbTag + 1);
-        status = (*i)->encrypt( pbNonce, cbNonce, pbAuthData, cbAuthData, pbSrc, bufData, cbData, pbTag == NULL ? NULL : bufTag, cbTag, flags );
+
+        if( pbSrc == pbDst )
+        {
+            memcpy( bufData, pbSrc, cbData );
+            pbSrcLocal = bufData;
+        }
+        else
+        {
+            pbSrcLocal = pbSrc;
+        }
+
+        status = (*i)->encrypt( pbNonce, cbNonce, pbAuthData, cbAuthData, pbSrcLocal, bufData, cbData, pbTag == NULL ? NULL : bufTag, cbTag, flags );
         CHECK( bufData[cbData] == 'd', "?" );
         CHECK( bufTag[cbTag] == 't', "?" );
         if( NT_SUCCESS( status ) )
@@ -213,6 +225,7 @@ AuthEncMultiImp::decrypt(
                                     SIZE_T  cbTag,
                                     UINT32  flags )
 {
+    PCBYTE pbSrcLocal;
     BYTE bufData[1 << 13];
     ResultMerge resData;
     ResultMerge resTagError;
@@ -224,7 +237,18 @@ AuthEncMultiImp::decrypt(
     for( AuthEncImpPtrVector::const_iterator i = m_comps.begin(); i != m_comps.end(); ++i )
     {
         memset( bufData, 'd', cbData + 1 );
-        status = (*i)->decrypt( pbNonce, cbNonce, pbAuthData, cbAuthData, pbSrc, bufData, cbData, pbTag, cbTag, flags );
+
+        if( pbSrc == pbDst )
+        {
+            memcpy( bufData, pbSrc, cbData );
+            pbSrcLocal = bufData;
+        }
+        else
+        {
+            pbSrcLocal = pbSrc;
+        }
+        
+        status = (*i)->decrypt( pbNonce, cbNonce, pbAuthData, cbAuthData, pbSrcLocal, bufData, cbData, pbTag, cbTag, flags );
         CHECK( bufData[ cbData ] == 'd', "?" );
         if( status != STATUS_NOT_SUPPORTED )
         {
@@ -371,6 +395,15 @@ testAuthEncRandom( AuthEncMultiImp * pImp, int rrep, PCBYTE pbResult, SIZE_T cbR
                         &buf[srcIdx], tmp1, cbData,
                         &tagBuf[0], cbTag, 0 );
 
+        // Encrypt again in-place
+        memcpy( &tmp2[0], &buf[srcIdx], cbData );
+        pImp->encrypt( &buf[nonceIdx], cbNonce,
+                        &buf[authDataIdx], cbAuthData,
+                        tmp2, tmp2, cbData,
+                        &tagTmp[0], cbTag, 0 );
+        CHECK( memcmp( tmp1, tmp2, cbData ) == 0, "In-place/Out-of-place encryption data mismatch" );
+        CHECK( memcmp( tagBuf, tagTmp, cbTag ) == 0, "In-place/Out-of-place encryption tag mismatch" );
+
         if ( fSupportsPartialEncryption )
         {
             // Encrypt again piecewise
@@ -422,6 +455,16 @@ testAuthEncRandom( AuthEncMultiImp * pImp, int rrep, PCBYTE pbResult, SIZE_T cbR
 
         CHECK3( NT_SUCCESS( status ), "Decryption error, line %lld", line );
         CHECK3( memcmp( tmp2, &buf[srcIdx], cbData ) == 0, "Decryption mismatch, line %lld", line );
+
+        // Decrypt again in-place
+        memcpy( &tmp2[0], &tmp1[0], cbData );
+        status = pImp->decrypt( &buf[nonceIdx], cbNonce,
+                                &buf[authDataIdx], cbAuthData,
+                                &tmp2[0], &tmp2[0], cbData,
+                                &tagBuf[0], cbTag, 0 );
+
+        CHECK3( NT_SUCCESS( status ), "In-place decryption error, line %lld", line );
+        CHECK3( memcmp( tmp2, &buf[srcIdx], cbData ) == 0, "In-place decryption mismatch, line %lld", line );
 
         if ( fSupportsPartialEncryption )
         {
