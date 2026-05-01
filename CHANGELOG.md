@@ -2,9 +2,8 @@
 New changes will be listed here as they are developed. The version number is determined
 prior to the creation of a new release, based on the changes contained in that release.
 
-# Version 103.13.0
-
 - Added `SymCryptModuleInitEx` function and `SYMCRYPT_MODULE_INIT_EX` macro. Unlike `SymCryptModuleInit` which calls `SymCryptFatal` on version mismatch, `SymCryptModuleInitEx` returns `SYMCRYPT_INVALID_ARGUMENT`, allowing callers to handle the error gracefully.
+- Removed enforcement of minimum hash collision strength for HashML-DSA. Per PQC forum discussions, FIPS 204 recommends that hash algorithms used in HashML-DSA should provide collision resistance at least equal to lambda, but this is a recommendation to the caller, not a requirement for the implementation.
 
 # Version 103.12.0
 

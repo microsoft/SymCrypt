@@ -10459,6 +10459,9 @@ typedef enum _SYMCRYPT_PQDSA_HASH_ID {
     SYMCRYPT_PQDSA_HASH_ID_SHA3_512            = 7,
     SYMCRYPT_PQDSA_HASH_ID_SHAKE128            = 8,
     SYMCRYPT_PQDSA_HASH_ID_SHAKE256            = 9,
+    SYMCRYPT_PQDSA_HASH_ID_SHA224              = 10,
+    SYMCRYPT_PQDSA_HASH_ID_SHA512_224          = 11,
+    SYMCRYPT_PQDSA_HASH_ID_SHA3_224            = 12,
 } SYMCRYPT_PQDSA_HASH_ID;
 // Supported hash algorithms for use with Hash-ML-DSA
 
@@ -10699,17 +10702,16 @@ SymCryptHashMlDsaSign(
 // - SYMCRYPT_MEMORY_ALLOCATION_FAILURE if memory allocation fails.
 //
 // Remarks:
-//   The hash algorithm provided must meet the minimum required collision strength defined for the
-//   chosen ML-DSA parameter set. This is the lambda parameter in FIPS 204. This means that the
-//   following hash algorithms are supported:
+// Any hash algorithm defined in SYMCRYPT_PQDSA_HASH_ID may be used.
+//   For traditional hash algorithms (non-XOFs), cbHash must match the output length of the hash
+//   algorithm. For XOFs (SHAKE128, SHAKE256), cbHash must be at least the default output size
+//   of the XOF (32 bytes for SHAKE128, 64 bytes for SHAKE256).
+//   If this requirement is not met, the function returns SYMCRYPT_INVALID_ARGUMENT.
 //
-//   ML-DSA-44 (lambda = 128): SHA-256, SHA-384, SHA-512, SHA-512/256, SHA3-256, SHA3-384, SHA3-512, SHAKE128, SHAKE256
-//   ML-DSA-65 (lambda = 192): SHA-384, SHA-512, SHA3-384, SHA3-512, SHAKE256
-//   ML-DSA-87 (lambda = 256): SHA-512, SHA3-512, SHAKE256
-//
-//   Additionally, cbHash must match the output length of the hash algorithm.
-//   For XOFs, the any output length >= the minimum collision strength is acceptable. If this
-//   requirement is not met, the function returns SYMCRYPT_INVALID_ARGUMENT.
+//   Note: While FIPS 204 recommends that the hash algorithm meet the minimum required collision
+//   strength (lambda) for the chosen ML-DSA parameter set, this implementation does not enforce
+//   that restriction. Callers are responsible for choosing an appropriate hash algorithm for
+//   their security requirements.
 //
 //   As with SymCryptMlDsaSign, cbSignature must be equal to the cbKeyFormat returned from
 //   SymCryptMlDsaSizeofSignatureFromParams( params, &cbSignature ), though typically this

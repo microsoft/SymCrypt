@@ -212,10 +212,13 @@ typedef struct _SYMCRYPT_HASH_OID_MAPPING
 //
 const SYMCRYPT_HASH_OID_MAPPING g_hashOidMap[] =
 {
+    { SYMCRYPT_PQDSA_HASH_ID_SHA224,        &SymCryptSha224Algorithm_default,       &SymCryptSha224OidList[1],      FALSE },
     { SYMCRYPT_PQDSA_HASH_ID_SHA256,        &SymCryptSha256Algorithm_default,       &SymCryptSha256OidList[1],      FALSE },
     { SYMCRYPT_PQDSA_HASH_ID_SHA384,        &SymCryptSha384Algorithm_default,       &SymCryptSha384OidList[1],      FALSE },
     { SYMCRYPT_PQDSA_HASH_ID_SHA512,        &SymCryptSha512Algorithm_default,       &SymCryptSha512OidList[1],      FALSE },
+    { SYMCRYPT_PQDSA_HASH_ID_SHA512_224,    &SymCryptSha512_224Algorithm_default,   &SymCryptSha512_224OidList[1],  FALSE },
     { SYMCRYPT_PQDSA_HASH_ID_SHA512_256,    &SymCryptSha512_256Algorithm_default,   &SymCryptSha512_256OidList[1],  FALSE },
+    { SYMCRYPT_PQDSA_HASH_ID_SHA3_224,      &SymCryptSha3_224Algorithm_default,     &SymCryptSha3_224OidList[1],    FALSE },
     { SYMCRYPT_PQDSA_HASH_ID_SHA3_256,      &SymCryptSha3_256Algorithm_default,     &SymCryptSha3_256OidList[1],    FALSE },
     { SYMCRYPT_PQDSA_HASH_ID_SHA3_384,      &SymCryptSha3_384Algorithm_default,     &SymCryptSha3_384OidList[1],    FALSE },
     { SYMCRYPT_PQDSA_HASH_ID_SHA3_512,      &SymCryptSha3_512Algorithm_default,     &SymCryptSha3_512OidList[1],    FALSE },
@@ -227,10 +230,13 @@ const SYMCRYPT_HASH_OID_MAPPING g_hashOidMap[] =
 // The table above relies on the OID lists having (at least) two entries, where the second one
 // is the 11-byte encoding of the OID. If this ever changes, the table needs to be updated.
 //
+C_ASSERT( SYMCRYPT_SHA224_OID_COUNT == 2 );
 C_ASSERT( SYMCRYPT_SHA256_OID_COUNT == 2 );
 C_ASSERT( SYMCRYPT_SHA384_OID_COUNT == 2 );
 C_ASSERT( SYMCRYPT_SHA512_OID_COUNT == 2 );
+C_ASSERT( SYMCRYPT_SHA512_224_OID_COUNT == 2 );
 C_ASSERT( SYMCRYPT_SHA512_256_OID_COUNT == 2 );
+C_ASSERT( SYMCRYPT_SHA3_224_OID_COUNT == 2 );
 C_ASSERT( SYMCRYPT_SHA3_256_OID_COUNT == 2 );
 C_ASSERT( SYMCRYPT_SHA3_384_OID_COUNT == 2 );
 C_ASSERT( SYMCRYPT_SHA3_512_OID_COUNT == 2 );
@@ -1865,7 +1871,6 @@ _Use_decl_annotations_
 SYMCRYPT_ERROR
 SYMCRYPT_CALL
 SymCryptHashMlDsaValidateHashAlgAndGetOid(
-    PCSYMCRYPT_MLDSA_INTERNAL_PARAMS    pParams,
     SYMCRYPT_PQDSA_HASH_ID              hashAlg,
     SIZE_T                              cbHash,
     PCSYMCRYPT_OID*                     ppOid )
@@ -1897,10 +1902,16 @@ SymCryptHashMlDsaValidateHashAlgAndGetOid(
     SYMCRYPT_ASSERT( pHashOid->cbOID == SYMCRYPT_MLDSA_SUPPORTED_HASH_OID_SIZE );
 
     // For traditional hash algorithms (non-XOFs), the hash length must exactly match the expected
-    // value. For XOFs, the output length is arbitrary, and any length is acceptable as long as it
-    // meets the minimum collision strength specified by the parameter set (cbCommitmentHash)
-    if( (!fIsXof && cbHash != cbHashExpected ) ||
-        ( cbHash < pParams->cbCommitmentHash ) )
+    // value. For XOFs, the output length must be at least the default output size.
+    if( fIsXof )
+    {
+        if( cbHash < cbHashExpected )
+        {
+            scError = SYMCRYPT_INVALID_ARGUMENT;
+            goto cleanup;
+        }
+    }
+    else if( cbHash != cbHashExpected )
     {
         scError = SYMCRYPT_INVALID_ARGUMENT;
         goto cleanup;
