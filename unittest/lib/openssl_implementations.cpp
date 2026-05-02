@@ -1566,7 +1566,32 @@ struct EcContext
 BOOL
 OpenSSLEccIsPerfKeySizeSupported( SIZE_T keySize )
 {
-    return ((keySize & 0xff000000) != PERF_KEY_NUMS_CURVE);
+    // Allowlist the ECC curves we know are supported by SCOSSL across all platforms.
+    // P-192 and P-224 are not supported in the OpenSSL build on Azure Linux 3.
+    // We focus testing on NIST-approved curves (P-256, P-384, P-521) and Curve25519,
+    // which enables comprehensive performance comparisons across all deployment environments.
+    // Other curves (W25519, W448, NUMS variants) have inconsistent platform support.
+    switch (keySize)
+    {
+        case PERF_KEY_NIST256:    // P-256
+        case PERF_KEY_NIST384:    // P-384
+        case PERF_KEY_NIST521:    // P-521
+        case PERF_KEY_C255_19:    // Curve25519
+            return TRUE;
+        
+        // Unsupported curves
+        case PERF_KEY_NIST192:    // P-192 - not supported on AzL3
+        case PERF_KEY_NIST224:    // P-224 - not supported on AzL3
+        case PERF_KEY_NUMS256:
+        case PERF_KEY_NUMS384:
+        case PERF_KEY_NUMS512:
+        case PERF_KEY_W448:
+        case PERF_KEY_W22519:
+            return FALSE;
+        
+        default:
+            return FALSE;
+    }
 }
 
 template<>
