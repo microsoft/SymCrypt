@@ -71,17 +71,12 @@ pub(super) struct InternalComputationTemporaries {
     pub(super) hash_state1: hash::MlKemHashState,
 }
 
-impl Default for InternalComputationTemporaries {
-    fn default() -> Self {
-        InternalComputationTemporaries {
-            max_size_vector0: [POLYELEMENT_ZERO; MATRIX_MAX_NROWS],
-            max_size_vector1: [POLYELEMENT_ZERO; MATRIX_MAX_NROWS],
-            poly_element0: POLYELEMENT_ZERO,
-            poly_element1: POLYELEMENT_ZERO,
-            poly_element_accumulator: [0; MLWE_POLYNOMIAL_COEFFICIENTS],
-            hash_state0: hash::MlKemHashState::default(),
-            hash_state1: hash::MlKemHashState::default(),
-        }
+unsafe impl crate::common::BoxDefault for InternalComputationTemporaries {
+    unsafe fn box_default(_ptr: *mut Self) {
+        // All fields are default 0 (MlKemHashState defaults to the 0 value in its enum).
+        // Could technically use try_alloc_zeroed instead of implementing the trait, but
+        // this is a little bit easier to reason about given it is not obvious at first glance that
+        // this struct can be zero-allocated.
     }
 }
 

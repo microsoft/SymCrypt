@@ -295,7 +295,7 @@ pub fn key_set_value(
         run_selftest_once( SymCryptMlKemSelftest, SelftestAlgorithm::MLKEM as u32 );
     }
 
-    let mut p_comp_temps = match try_new_box(InternalComputationTemporaries::default()) {
+    let mut p_comp_temps = match try_new_box_default::<InternalComputationTemporaries>() {
         Result::Err(_) => return Error::MemoryAllocationFailure,
         Result::Ok(p_comp_temps) => p_comp_temps,
     };
@@ -546,7 +546,7 @@ pub fn key_generate(pk_mlkem_key: &mut Key, flags: u32) -> Error {
         let cb_v = (n_bits_of_v as usize) * (MLWE_POLYNOMIAL_COEFFICIENTS / 8);
         let cb_ciphertext = cb_u + cb_v;
 
-        let mut pb_ciphertext_box = match try_new_box([0u8; SIZEOF_MAX_CIPHERTEXT]) {
+        let mut pb_ciphertext_box = match try_new_box_zeroed::<[u8; SIZEOF_MAX_CIPHERTEXT]>() {
             Result::Err(_) => return Error::MemoryAllocationFailure,
             Result::Ok(t) => t,
         };
@@ -726,7 +726,7 @@ pub fn encapsulate_ex(
     pb_agreed_secret: &mut [u8],
     pb_ciphertext: &mut [u8],
 ) -> Error {
-    let mut p_comp_temps = match try_new_box(InternalComputationTemporaries::default()) {
+    let mut p_comp_temps = match try_new_box_default::<InternalComputationTemporaries>() {
         Result::Err(_) => return Error::MemoryAllocationFailure,
         Result::Ok(p_comp_temps) => p_comp_temps,
     };
@@ -759,6 +759,18 @@ pub fn encapsulate(
     sc_error
 }
 
+struct DecapsulateTemps {
+    comp_temps: InternalComputationTemporaries,
+    read_ciphertext: [u8; SIZEOF_MAX_CIPHERTEXT],
+    reencapsulated_ciphertext: [u8; SIZEOF_MAX_CIPHERTEXT],
+}
+
+unsafe impl BoxDefault for DecapsulateTemps {
+    unsafe fn box_default(ptr: *mut Self) {
+        InternalComputationTemporaries::box_default(&raw mut (*ptr).comp_temps);
+    }
+}
+
 pub fn decapsulate(pk_mlkem_key: &Key, pb_ciphertext: &[u8], pb_agreed_secret: &mut [u8]) -> Error {
     let cb_ciphertext = pb_ciphertext.len();
     let cb_agreed_secret = pb_agreed_secret.len();
@@ -779,17 +791,14 @@ pub fn decapsulate(pk_mlkem_key: &Key, pb_ciphertext: &[u8], pb_agreed_secret: &
         return Error::InvalidArgument;
     }
 
-    let mut local_temps_box  = match try_new_box(
-        (InternalComputationTemporaries::default(),
-        [0u8; SIZEOF_MAX_CIPHERTEXT],
-        [0u8; SIZEOF_MAX_CIPHERTEXT],)) {
+    let mut local_temps_box = match try_new_box_default::<DecapsulateTemps>() {
         Result::Err(_) => return Error::MemoryAllocationFailure,
         Result::Ok(local_temps_box) => local_temps_box,
     };
 
-    let p_comp_temps = &mut local_temps_box.0;
-    let pb_read_ciphertext = &mut local_temps_box.1[0..cb_ciphertext];
-    let pb_reencapsulated_ciphertext = &mut local_temps_box.2[0..cb_ciphertext];
+    let p_comp_temps = &mut local_temps_box.comp_temps;
+    let pb_read_ciphertext = &mut local_temps_box.read_ciphertext[0..cb_ciphertext];
+    let pb_reencapsulated_ciphertext = &mut local_temps_box.reencapsulated_ciphertext[0..cb_ciphertext];
 
     let mut pb_decrypted_random = [0u8; SIZEOF_ENCAPS_RANDOM];
     let mut pb_decapsulated_secret = [0u8; SIZEOF_AGREED_SECRET];

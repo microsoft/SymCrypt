@@ -101,8 +101,6 @@ pub(super) const fn get_internal_params_from_params(params: Params) -> InternalP
 
 pub(super) const MLWE_POLYNOMIAL_COEFFICIENTS: usize = 256;
 
-pub(super) const POLYELEMENT_ZERO: PolyElement = [0; MLWE_POLYNOMIAL_COEFFICIENTS];
-
 // PolyElements just store the coefficients without any header.
 pub(super) type PolyElement = [u16; MLWE_POLYNOMIAL_COEFFICIENTS];
 
@@ -220,20 +218,18 @@ impl Key {
     }
 }
 
+unsafe impl crate::common::BoxDefault for Key {
+    unsafe fn box_default(ptr: *mut Self) {
+        let params = &raw mut (*ptr).params;
+        let n_rows = &raw mut (*ptr).n_rows;
+
+        params.write(INTERNAL_PARAMS_MLKEM1024);
+        n_rows.write(MATRIX_MAX_NROWS);
+    }
+}
+
 pub fn key_allocate(params: Params) -> Result<Box<Key>, Error> {
-    match try_new_box(Key{
-        algorithm_info: 0u32,
-        params: INTERNAL_PARAMS_MLKEM1024,
-        has_private_seed: false,
-        has_private_key: false,
-        private_seed: [0u8; 32],
-        private_random: [0u8; 32],
-        public_seed: [0u8; 32],
-        encoded_t: [0u8; KEY_MAX_SIZEOF_ENCODED_T],
-        encaps_key_hash: [0u8; 32],
-        n_rows: MATRIX_MAX_NROWS,
-        data: [POLYELEMENT_ZERO; MATRIX_MAX_NROWS * MATRIX_MAX_NROWS + 2 * MATRIX_MAX_NROWS],
-    }) {
+    match try_new_box_default::<Key>() {
         Result::Err(e) => Result::Err(e),
         Result::Ok(mut key) =>
             match params {

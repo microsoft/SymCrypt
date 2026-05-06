@@ -13,7 +13,6 @@
 use alloc::boxed::Box;
 use core::alloc::Layout;
 use core::marker::PhantomData;
-use core::ptr;
 use core::sync::atomic::{AtomicBool, Ordering};
 
 #[cfg(target_arch = "x86_64")]
@@ -270,18 +269,51 @@ impl<'a, T> InPlaceOrDisjointBuffer<'a, T> {
     }
 }
 
-// Workaround for lack of Box::try_new in stable Rust
-// FIXME: remove when Box::try_new is stabilized
-pub fn try_new_box<T>(value: T) -> Result<Box<T>, Error> {
+/// Trait for types that can be default-initialized directly on the heap.
+pub unsafe trait BoxDefault {
+    /// Implementors receive a raw pointer to heap memory that has been zero-initialized
+    /// via `alloc_zeroed`. The `box_default` method must write any fields whose default
+    /// value is not all-zeros. Intended to be used in conjunction with `try_new_box_default`.
+    ///
+    /// Any implementation of box_default must not panic.
+    unsafe fn box_default(ptr: *mut Self);
+}
+
+// Helper function to allocate a zero-initialized block of memory on the heap.
+// Could potentially be replaced by Box::<T>::try_new_zeroed once stabilized.
+unsafe fn try_alloc_zeroed<T>() -> Result<*mut T, Error> {
+    let layout = Layout::new::<T>();
+    let ptr = alloc::alloc::alloc_zeroed(layout).cast::<T>();
+    if ptr.is_null() {
+        return Err(Error::MemoryAllocationFailure);
+    }
+    Ok(ptr)
+}
+
+/// Allocates a `Box<T>` on the heap, initialized as all zeroes.
+///
+/// Primarily useful when only a zero-allocated buffer is needed
+/// without wanting to implement BoxDefault (e.g. zero-initializing
+/// an array on the heap)
+///
+/// T must be valid when zero-initialized.
+pub fn try_new_box_zeroed<T>() -> Result<Box<T>, Error> {
     unsafe {
-        let layout = Layout::new::<T>();
-        let ptr = alloc::alloc::alloc(layout).cast::<T>();
+        let ptr = try_alloc_zeroed::<T>()?;
+        Ok(Box::from_raw(ptr))
+    }
+}
 
-        if ptr.is_null() {
-            return Err(Error::MemoryAllocationFailure);
-        }
-
-        ptr::write(ptr, value);
+/// Allocates a `Box<T>` on the heap, initialized via `T::box_default`.
+///
+/// Relies on the type-specific BoxDefault implementation to initialize any
+/// non-zero fields. This avoids first constructing values on the stack,
+/// which is especially important when in environments like the kernel
+/// where stack space is limited.
+pub fn try_new_box_default<T: BoxDefault>() -> Result<Box<T>, Error> {
+    unsafe {
+        let ptr = try_alloc_zeroed::<T>()?;
+        T::box_default(ptr);
         Ok(Box::from_raw(ptr))
     }
 }
