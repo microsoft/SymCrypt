@@ -1141,7 +1141,7 @@ extern DWORD g_osVersion;       // 0xaabb for major version aa and minor version
 #define OS_VERSION_WIN8     0x0602
 #define OS_VERSION_WIN8_1   0x0603
 
-_Analysis_noreturn_
+[[noreturn]]
 VOID
 fatal( _In_ PCSTR file, UINT32 line, _In_ PCSTR text, ... );
 

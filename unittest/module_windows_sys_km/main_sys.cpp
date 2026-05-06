@@ -36,7 +36,7 @@ NTSTRSAFE_PSTR  g_FatalNext;
 #define FATAL3( text, a, b )    {fatal( __FILE__, __LINE__, text, a, b );}
 #define CHECK( cond, text )     { if( !(cond) ) { fatal(__FILE__, __LINE__, text );}; _Analysis_assume_( cond );}
 
-#define SCKTM_MAXIMUM_OUTSTANDING_ALLOCS (64)
+#define SCKTM_MAXIMUM_OUTSTANDING_ALLOCS (256)
 FAST_MUTEX g_AllocationMutex;
 
 // Every allocation in the driver must be kept in this array and removed when it is freed
@@ -80,6 +80,7 @@ ResetFatalGlobals()
     g_FatalNext = (NTSTRSAFE_PSTR) &g_FatalBuff[0];
 }
 
+[[noreturn]]
 VOID
 fatal(_In_ PCSTR file, ULONG line, _In_ PCSTR text, ...)
 {
@@ -92,6 +93,8 @@ fatal(_In_ PCSTR file, ULONG line, _In_ PCSTR text, ...)
     va_start( vl, text );
     RtlStringCchVPrintfExA( g_FatalNext, remainingBytes, &g_FatalNext, &remainingBytes, 0, text, vl );
     va_end( vl );
+
+    KeBugCheckEx( 'TKCS', (ULONG_PTR) file, (ULONG_PTR) line, (ULONG_PTR) text, 0 );
 }
 
 typedef struct _SYMCRYPT_SYMBOL_INFO
