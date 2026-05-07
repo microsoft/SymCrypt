@@ -507,6 +507,7 @@ SymCryptAesGcmEncryptPartOnePass(
         SYMCRYPT_ASSERT( pState->pKey->pBlockCipher->blockSize == SYMCRYPT_GCM_BLOCK_SIZE );
 
 #if SYMCRYPT_CPU_AMD64
+        #if 0 // AES-GCM ZMM temporarily disabled for backport
         // We use SYMCRYPT_CPU_FEATURE_SAVEZMM_NOFAIL to exclude kernel mode, where the use of ZMM
         // registers has historically caused problems. We still call SaveZmm/RestoreZmm and
         // gracefully fall back if it fails.
@@ -523,7 +524,9 @@ SymCryptAesGcmEncryptPartOnePass(
                 bytesToProcess );
 
             SymCryptRestoreZmm( &SaveData );
-        } else if( SYMCRYPT_CPU_FEATURES_PRESENT( SYMCRYPT_CPU_FEATURES_FOR_VAES_256_CODE ) &&
+        } else 
+        #endif // AES-GCM ZMM disabled
+        if( SYMCRYPT_CPU_FEATURES_PRESENT( SYMCRYPT_CPU_FEATURES_FOR_VAES_256_CODE ) &&
             (bytesToProcess >= GCM_YMM_MINBLOCKS * SYMCRYPT_GCM_BLOCK_SIZE) &&
             SymCryptSaveYmm( &SaveData ) == SYMCRYPT_NO_ERROR )
         {
@@ -684,6 +687,7 @@ SymCryptAesGcmDecryptPartOnePass(
         SYMCRYPT_ASSERT( pState->pKey->pBlockCipher->blockSize == SYMCRYPT_GCM_BLOCK_SIZE );
 
 #if SYMCRYPT_CPU_AMD64
+        #if 0 // AES-GCM ZMM temporarily disabled for backport
         // We use SYMCRYPT_CPU_FEATURE_SAVEZMM_NOFAIL to exclude kernel mode, where the use of ZMM
         // registers has historically caused problems. We still call SaveZmm/RestoreZmm and
         // gracefully fall back if it fails.
@@ -700,7 +704,9 @@ SymCryptAesGcmDecryptPartOnePass(
                 bytesToProcess );
 
             SymCryptRestoreZmm( &SaveData );
-        } else if( SYMCRYPT_CPU_FEATURES_PRESENT( SYMCRYPT_CPU_FEATURES_FOR_VAES_256_CODE ) &&
+        } else 
+        #endif // AES-GCM ZMM disabled
+        if( SYMCRYPT_CPU_FEATURES_PRESENT( SYMCRYPT_CPU_FEATURES_FOR_VAES_256_CODE ) &&
             (bytesToProcess >= GCM_YMM_MINBLOCKS * SYMCRYPT_GCM_BLOCK_SIZE) &&
             SymCryptSaveYmm( &SaveData ) == SYMCRYPT_NO_ERROR )
         {

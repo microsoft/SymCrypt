@@ -2,17 +2,15 @@
 New changes will be listed here as they are developed. The version number is determined
 prior to the creation of a new release, based on the changes contained in that release.
 
-- Added `SymCryptModuleInitEx` function and `SYMCRYPT_MODULE_INIT_EX` macro. Unlike `SymCryptModuleInit` which calls `SymCryptFatal` on version mismatch, `SymCryptModuleInitEx` returns `SYMCRYPT_INVALID_ARGUMENT`, allowing callers to handle the error gracefully.
-- Removed enforcement of minimum hash collision strength for HashML-DSA. Per PQC forum discussions, FIPS 204 recommends that hash algorithms used in HashML-DSA should provide collision resistance at least equal to lambda, but this is a recommendation to the caller, not a requirement for the implementation.
-
 # Version 103.12.0
 
-- Add ZMM (AVX512) implementation of AES-GCM: improves performance by up to 35% on supported hardware
 - Add loop bounds to ML-DSA functions which use probabilistic sampling, as defense-in-depth against denial of service by maliciously formed keys
   - There is no known vulnerability associated with this, but adding upper bounds provides additional hardening
   - Also fixes [#55](https://github.com/microsoft/SymCrypt/issues/55); thanks to Sunwoo Lee and Seunghyun Yoon, Korea Institute of Energy Technology (KENTECH) for filing this issue
 - Add Elevated Debugger environment
 - Add Composite ML-DSA implementation
+- Added `SymCryptModuleInitEx` function and `SYMCRYPT_MODULE_INIT_EX` macro. Unlike `SymCryptModuleInit` which calls `SymCryptFatal` on version mismatch, `SymCryptModuleInitEx` returns `SYMCRYPT_INVALID_ARGUMENT`, allowing callers to handle the error gracefully.
+- Removed enforcement of minimum hash collision strength for HashML-DSA. Per PQC forum discussions, FIPS 204 recommends that hash algorithms used in HashML-DSA should provide collision resistance at least equal to lambda, but this is a recommendation to the caller, not a requirement for the implementation.
 
 # Version 103.11.0
 
