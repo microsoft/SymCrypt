@@ -49,6 +49,32 @@
     c3 = _mm512_aesenclast_epi128( c3, roundkeys ); \
 };
 
+#define AES_ENCRYPT_ZMM_512( pExpandedKey, c0 ) \
+{ \
+    const BYTE (*keyPtr)[4][4]; \
+    const BYTE (*keyLimit)[4][4]; \
+    __m512i roundkeys; \
+\
+    keyPtr = pExpandedKey->RoundKey; \
+    keyLimit = pExpandedKey->lastEncRoundKey; \
+\
+    roundkeys = _mm512_broadcast_i32x4( _mm_loadu_si128( (__m128i *) keyPtr ) ); \
+    keyPtr ++; \
+\
+    c0 = _mm512_xor_si512( c0, roundkeys ); \
+\
+    do \
+    { \
+        roundkeys = _mm512_broadcast_i32x4( _mm_loadu_si128( (__m128i *) keyPtr ) ); \
+        keyPtr ++; \
+        c0 = _mm512_aesenc_epi128( c0, roundkeys ); \
+    } while( keyPtr < keyLimit ); \
+\
+    roundkeys = _mm512_broadcast_i32x4( _mm_loadu_si128( (__m128i *) keyPtr ) ); \
+\
+    c0 = _mm512_aesenclast_epi128( c0, roundkeys ); \
+};
+
 #define AES_DECRYPT_ZMM_2048( pExpandedKey, c0, c1, c2, c3 ) \
 { \
     const BYTE (*keyPtr)[4][4]; \
@@ -568,12 +594,12 @@ SymCryptAesGcmEncryptStitchedZmm(
     __m512i ctr0, ctr1, ctr2, ctr3, ctr4, ctr5, ctr6, ctr7;
     __m512i c0, c1, c2, c3, c4, c5, c6, c7;
     __m512i r0, r1, r2, r3, r4, r5, r6, r7;
+    __m512i Hi, Hix, Hi2, Hix2;
 
     __m128i state;
     __m128i a0_xmm, a1_xmm, a2_xmm;
     __m512i a0, a1, a2;
     SIZE_T nBlocks = cbData / SYMCRYPT_GF128_BLOCK_SIZE;
-    SIZE_T todo;
     PCBYTE pbGhashSrc = pbDst;
 
     SYMCRYPT_ASSERT( (cbData & SYMCRYPT_GCM_BLOCK_MOD_MASK) == 0 ); // cbData is multiple of block size
@@ -597,7 +623,7 @@ SymCryptAesGcmEncryptStitchedZmm(
 
     if( nBlocks >= GCM_ZMM_FULLROUND_BLOCKS )
     {
-        todo = SYMCRYPT_MIN( nBlocks, SYMCRYPT_GHASH_PCLMULQDQ_HPOWERS ) & ~(GCM_ZMM_FULLROUND_BLOCKS-1);
+        SIZE_T todo = SYMCRYPT_MIN( nBlocks, SYMCRYPT_GHASH_PCLMULQDQ_HPOWERS ) & ~(GCM_ZMM_FULLROUND_BLOCKS-1);
 
         CLMUL_3( state, GHASH_H_POWER(expandedKeyTable, todo), GHASH_Hx_POWER(expandedKeyTable, todo), a0_xmm, a1_xmm, a2_xmm );
         a0 = _mm512_zextsi128_si512( a0_xmm );
@@ -698,34 +724,29 @@ SymCryptAesGcmEncryptStitchedZmm(
         r7 = _mm512_shuffle_epi8( _mm512_loadu_si512( pbGhashSrc + 448 ), BYTE_REVERSE_ORDER );
 
         // Use paired CLMUL_2ACC_3_Zmm with vpternlogq for 3-way XOR accumulation
-        CLMUL_2ACC_3_Zmm( r0,
-                        _mm512_loadu_si512( (__m512i *)  &GHASH_H_POWER(expandedKeyTable, todo -  0) ),
-                        _mm512_loadu_si512( (__m512i *) &GHASH_Hx_POWER(expandedKeyTable, todo -  0) ),
-                        r1,
-                        _mm512_loadu_si512( (__m512i *)  &GHASH_H_POWER(expandedKeyTable, todo -  4) ),
-                        _mm512_loadu_si512( (__m512i *) &GHASH_Hx_POWER(expandedKeyTable, todo -  4) ),
-                        a0, a1, a2 );
-        CLMUL_2ACC_3_Zmm( r2,
-                        _mm512_loadu_si512( (__m512i *)  &GHASH_H_POWER(expandedKeyTable, todo -  8) ),
-                        _mm512_loadu_si512( (__m512i *) &GHASH_Hx_POWER(expandedKeyTable, todo -  8) ),
-                        r3,
-                        _mm512_loadu_si512( (__m512i *)  &GHASH_H_POWER(expandedKeyTable, todo - 12) ),
-                        _mm512_loadu_si512( (__m512i *) &GHASH_Hx_POWER(expandedKeyTable, todo - 12) ),
-                        a0, a1, a2 );
-        CLMUL_2ACC_3_Zmm( r4,
-                        _mm512_loadu_si512( (__m512i *)  &GHASH_H_POWER(expandedKeyTable, todo - 16) ),
-                        _mm512_loadu_si512( (__m512i *) &GHASH_Hx_POWER(expandedKeyTable, todo - 16) ),
-                        r5,
-                        _mm512_loadu_si512( (__m512i *)  &GHASH_H_POWER(expandedKeyTable, todo - 20) ),
-                        _mm512_loadu_si512( (__m512i *) &GHASH_Hx_POWER(expandedKeyTable, todo - 20) ),
-                        a0, a1, a2 );
-        CLMUL_2ACC_3_Zmm( r6,
-                        _mm512_loadu_si512( (__m512i *)  &GHASH_H_POWER(expandedKeyTable, todo - 24) ),
-                        _mm512_loadu_si512( (__m512i *) &GHASH_Hx_POWER(expandedKeyTable, todo - 24) ),
-                        r7,
-                        _mm512_loadu_si512( (__m512i *)  &GHASH_H_POWER(expandedKeyTable, todo - 28) ),
-                        _mm512_loadu_si512( (__m512i *) &GHASH_Hx_POWER(expandedKeyTable, todo - 28) ),
-                        a0, a1, a2 );
+        Hi   = _mm512_loadu_si512( (__m512i *)  &GHASH_H_POWER(expandedKeyTable, todo -  0) );
+        Hix  = _mm512_loadu_si512( (__m512i *) &GHASH_Hx_POWER(expandedKeyTable, todo -  0) );
+        Hi2  = _mm512_loadu_si512( (__m512i *)  &GHASH_H_POWER(expandedKeyTable, todo -  4) );
+        Hix2 = _mm512_loadu_si512( (__m512i *) &GHASH_Hx_POWER(expandedKeyTable, todo -  4) );
+        CLMUL_2ACC_3_Zmm( r0, Hi, Hix, r1, Hi2, Hix2, a0, a1, a2 );
+
+        Hi   = _mm512_loadu_si512( (__m512i *)  &GHASH_H_POWER(expandedKeyTable, todo -  8) );
+        Hix  = _mm512_loadu_si512( (__m512i *) &GHASH_Hx_POWER(expandedKeyTable, todo -  8) );
+        Hi2  = _mm512_loadu_si512( (__m512i *)  &GHASH_H_POWER(expandedKeyTable, todo - 12) );
+        Hix2 = _mm512_loadu_si512( (__m512i *) &GHASH_Hx_POWER(expandedKeyTable, todo - 12) );
+        CLMUL_2ACC_3_Zmm( r2, Hi, Hix, r3, Hi2, Hix2, a0, a1, a2 );
+
+        Hi   = _mm512_loadu_si512( (__m512i *)  &GHASH_H_POWER(expandedKeyTable, todo - 16) );
+        Hix  = _mm512_loadu_si512( (__m512i *) &GHASH_Hx_POWER(expandedKeyTable, todo - 16) );
+        Hi2  = _mm512_loadu_si512( (__m512i *)  &GHASH_H_POWER(expandedKeyTable, todo - 20) );
+        Hix2 = _mm512_loadu_si512( (__m512i *) &GHASH_Hx_POWER(expandedKeyTable, todo - 20) );
+        CLMUL_2ACC_3_Zmm( r4, Hi, Hix, r5, Hi2, Hix2, a0, a1, a2 );
+
+        Hi   = _mm512_loadu_si512( (__m512i *)  &GHASH_H_POWER(expandedKeyTable, todo - 24) );
+        Hix  = _mm512_loadu_si512( (__m512i *) &GHASH_Hx_POWER(expandedKeyTable, todo - 24) );
+        Hi2  = _mm512_loadu_si512( (__m512i *)  &GHASH_H_POWER(expandedKeyTable, todo - 28) );
+        Hix2 = _mm512_loadu_si512( (__m512i *) &GHASH_Hx_POWER(expandedKeyTable, todo - 28) );
+        CLMUL_2ACC_3_Zmm( r6, Hi, Hix, r7, Hi2, Hix2, a0, a1, a2 );
 
         REDUCE_ZMM_TO_XMM_3( a0, a1, a2, a0_xmm, a1_xmm, a2_xmm );
 
@@ -735,86 +756,76 @@ SymCryptAesGcmEncryptStitchedZmm(
         nBlocks -= GCM_ZMM_FULLROUND_BLOCKS; // Account for first iteration
     }
 
-    // Partial tail: encrypt and GHASH remaining 0-31 blocks using masked ZMM operations
+    // Partial tail: encrypt and GHASH remaining 1-31 blocks. Loop over 4-block chunks using 1 ZMM
+    // register; handle the 1-3 block residue via a single masked ZMM register + XMM GHASH.
     if ( nBlocks > 0 )
     {
-        __mmask16 m0, m1, m2, m3, m4, m5, m6, m7;
-        PCBYTE pbGhashPartial;
+        // The main full-round path (if taken) leaves pbGhashSrc lagging pbDst by
+        // GCM_ZMM_FULLROUND_BLOCKS due to its 1-iteration pipeline lag. The tail has no such lag,
+        // so resync pbGhashSrc to the current pbDst.
+        pbGhashSrc = pbDst;
 
-        m0 = GCM_ZMM_MASK16( nBlocks, 0 );
-        m1 = GCM_ZMM_MASK16( nBlocks, 1 );
-        m2 = GCM_ZMM_MASK16( nBlocks, 2 );
-        m3 = GCM_ZMM_MASK16( nBlocks, 3 );
-        m4 = GCM_ZMM_MASK16( nBlocks, 4 );
-        m5 = GCM_ZMM_MASK16( nBlocks, 5 );
-        m6 = GCM_ZMM_MASK16( nBlocks, 6 );
-        m7 = GCM_ZMM_MASK16( nBlocks, 7 );
-
-        // Byte-reverse counters for AES (counters already positioned for next batch)
-        c0 = _mm512_shuffle_epi8( ctr0, BYTE_REVERSE_ORDER );
-        c1 = _mm512_shuffle_epi8( ctr1, BYTE_REVERSE_ORDER );
-        c2 = _mm512_shuffle_epi8( ctr2, BYTE_REVERSE_ORDER );
-        c3 = _mm512_shuffle_epi8( ctr3, BYTE_REVERSE_ORDER );
-        c4 = _mm512_shuffle_epi8( ctr4, BYTE_REVERSE_ORDER );
-        c5 = _mm512_shuffle_epi8( ctr5, BYTE_REVERSE_ORDER );
-        c6 = _mm512_shuffle_epi8( ctr6, BYTE_REVERSE_ORDER );
-        c7 = _mm512_shuffle_epi8( ctr7, BYTE_REVERSE_ORDER );
-
-        // AES encrypt all 8 registers (inactive registers encrypt zeros, result is discarded)
-        AES_ENCRYPT_ZMM_4096( pExpandedKey, c0, c1, c2, c3, c4, c5, c6, c7 );
-
-        // Masked XOR with plaintext and store ciphertext
-        _mm512_mask_storeu_epi32( pbDst +   0, m0, _mm512_xor_si512( c0, _mm512_maskz_loadu_epi32( m0, (__m512i *)( pbSrc +   0 ) ) ) );
-        _mm512_mask_storeu_epi32( pbDst +  64, m1, _mm512_xor_si512( c1, _mm512_maskz_loadu_epi32( m1, (__m512i *)( pbSrc +  64 ) ) ) );
-        _mm512_mask_storeu_epi32( pbDst + 128, m2, _mm512_xor_si512( c2, _mm512_maskz_loadu_epi32( m2, (__m512i *)( pbSrc + 128 ) ) ) );
-        _mm512_mask_storeu_epi32( pbDst + 192, m3, _mm512_xor_si512( c3, _mm512_maskz_loadu_epi32( m3, (__m512i *)( pbSrc + 192 ) ) ) );
-        _mm512_mask_storeu_epi32( pbDst + 256, m4, _mm512_xor_si512( c4, _mm512_maskz_loadu_epi32( m4, (__m512i *)( pbSrc + 256 ) ) ) );
-        _mm512_mask_storeu_epi32( pbDst + 320, m5, _mm512_xor_si512( c5, _mm512_maskz_loadu_epi32( m5, (__m512i *)( pbSrc + 320 ) ) ) );
-        _mm512_mask_storeu_epi32( pbDst + 384, m6, _mm512_xor_si512( c6, _mm512_maskz_loadu_epi32( m6, (__m512i *)( pbSrc + 384 ) ) ) );
-        _mm512_mask_storeu_epi32( pbDst + 448, m7, _mm512_xor_si512( c7, _mm512_maskz_loadu_epi32( m7, (__m512i *)( pbSrc + 448 ) ) ) );
-
-        // GHASH the partial ciphertext blocks (for encrypt, GHASH source is output ciphertext)
-        pbGhashPartial = pbDst;
-        todo = nBlocks;
-
-        CLMUL_3( state, GHASH_H_POWER(expandedKeyTable, todo), GHASH_Hx_POWER(expandedKeyTable, todo), a0_xmm, a1_xmm, a2_xmm );
+        // Initialize tail GHASH accumulator: state * H^nBlocks
+        CLMUL_3( state, GHASH_H_POWER(expandedKeyTable, nBlocks), GHASH_Hx_POWER(expandedKeyTable, nBlocks), a0_xmm, a1_xmm, a2_xmm );
         a0 = _mm512_zextsi128_si512( a0_xmm );
         a1 = _mm512_zextsi128_si512( a1_xmm );
         a2 = _mm512_zextsi128_si512( a2_xmm );
 
-        // ZMM GHASH: process 4 blocks at a time
-        while ( todo >= 4 )
+        // 4-block-at-a-time ZMM loop
+        while ( nBlocks >= 4 )
         {
-            r0 = _mm512_shuffle_epi8( _mm512_loadu_si512( (__m512i *)pbGhashPartial ), BYTE_REVERSE_ORDER );
-            CLMUL_ACC_3_Zmm( r0,
-                _mm512_loadu_si512( (__m512i *) &GHASH_H_POWER(expandedKeyTable, todo) ),
-                _mm512_loadu_si512( (__m512i *) &GHASH_Hx_POWER(expandedKeyTable, todo) ),
-                a0, a1, a2 );
-            pbGhashPartial += 64;
-            todo -= 4;
+            c0 = _mm512_shuffle_epi8( ctr0, BYTE_REVERSE_ORDER );
+            ctr0 = _mm512_add_epi32( ctr0, chainIncrement4 );
+
+            AES_ENCRYPT_ZMM_512( pExpandedKey, c0 );
+
+            _mm512_storeu_si512( pbDst, _mm512_xor_si512( c0, _mm512_loadu_si512( pbSrc ) ) );
+
+            r0  = _mm512_shuffle_epi8( _mm512_loadu_si512( (__m512i *)pbGhashSrc ), BYTE_REVERSE_ORDER );
+            Hi  = _mm512_loadu_si512( (__m512i *)  &GHASH_H_POWER(expandedKeyTable, nBlocks) );
+            Hix = _mm512_loadu_si512( (__m512i *) &GHASH_Hx_POWER(expandedKeyTable, nBlocks) );
+            CLMUL_ACC_3_Zmm( r0, Hi, Hix, a0, a1, a2 );
+
+            pbGhashSrc += 4 * SYMCRYPT_AES_BLOCK_SIZE;
+            pbDst      += 4 * SYMCRYPT_AES_BLOCK_SIZE;
+            pbSrc      += 4 * SYMCRYPT_AES_BLOCK_SIZE;
+            nBlocks    -= 4;
         }
 
+        // Reduce ZMM accumulator down to XMM. Residue (1-3 blocks) GHASHes in XMM (cheaper than
+        // masked ZMM clmul for so few blocks).
         REDUCE_ZMM_TO_XMM_3( a0, a1, a2, a0_xmm, a1_xmm, a2_xmm );
 
-        // XMM GHASH for remaining 1-3 blocks
-        while ( todo > 0 )
+        // 1-3 block residue using 1 masked ZMM register for AES, and XMM CLMUL for GHASH (one
+        // block at a time). nBlocks is preserved here so it can advance the chain counter below.
+        if ( nBlocks > 0 )
         {
-            __m128i r_xmm = _mm_shuffle_epi8( _mm_loadu_si128( (__m128i *)pbGhashPartial ), BYTE_REVERSE_ORDER_xmm );
-            CLMUL_ACC_3( r_xmm, GHASH_H_POWER(expandedKeyTable, todo), GHASH_Hx_POWER(expandedKeyTable, todo), a0_xmm, a1_xmm, a2_xmm );
-            pbGhashPartial += SYMCRYPT_AES_BLOCK_SIZE;
-            todo -= 1;
+            __mmask16 m0 = (__mmask16)( (1u << ((unsigned)nBlocks * 4)) - 1 );
+
+            c0 = _mm512_shuffle_epi8( ctr0, BYTE_REVERSE_ORDER );
+
+            AES_ENCRYPT_ZMM_512( pExpandedKey, c0 );
+
+            _mm512_mask_storeu_epi32( pbDst, m0,
+                _mm512_xor_si512( c0, _mm512_maskz_loadu_epi32( m0, (__m512i *)pbSrc ) ) );
+
+            // XMM GHASH for the 1-3 residue blocks; ciphertext is in pbDst (output).
+            for ( SIZE_T i = nBlocks; i > 0; i-- )
+            {
+                __m128i r_xmm = _mm_shuffle_epi8( _mm_loadu_si128( (__m128i *)pbGhashSrc ), BYTE_REVERSE_ORDER_xmm );
+                CLMUL_ACC_3( r_xmm, GHASH_H_POWER(expandedKeyTable, i), GHASH_Hx_POWER(expandedKeyTable, i), a0_xmm, a1_xmm, a2_xmm );
+                pbGhashSrc += SYMCRYPT_AES_BLOCK_SIZE;
+            }
         }
 
         a1_xmm = TERNARY_XOR_128( a0_xmm, a1_xmm, a2_xmm ); // CLMUL_3_POST
         MODREDUCE( vMultiplicationConstant, a0_xmm, a1_xmm, a2_xmm, state );
     }
 
-    // nBlocks should never be more than 31, but assert conservatively in case of
-    // implementation changes
-    SYMCRYPT_ASSERT( nBlocks <= UINT32_MAX );
-
-    // Extract chain counter and advance by the number of blocks processed
-    chain = _mm512_extracti64x2_epi64( ctr0, 0 ); // Extract lowest 128 bits
+    // Extract the chain counter (low 128 bits of ctr0). The 4-block tail loop advanced ctr0 by 4
+    // per iteration; nBlocks now holds the residue count (0-3) which the masked-residue path did
+    // not advance ctr0 by.
+    chain = _mm512_extracti64x2_epi64( ctr0, 0 );
     chain = _mm_add_epi32( chain, _mm_set_epi32( 0, 0, 0, (UINT32) nBlocks ) );
     _mm256_zeroupper();
 
@@ -851,12 +862,12 @@ SymCryptAesGcmDecryptStitchedZmm(
     __m512i ctr0, ctr1, ctr2, ctr3, ctr4, ctr5, ctr6, ctr7;
     __m512i c0, c1, c2, c3, c4, c5, c6, c7;
     __m512i r0;
+    __m512i Hi, Hix;
 
     __m128i state;
     __m128i a0_xmm, a1_xmm, a2_xmm;
     __m512i a0, a1, a2;
     SIZE_T nBlocks = cbData / SYMCRYPT_GF128_BLOCK_SIZE;
-    SIZE_T todo;
     PCBYTE pbGhashSrc = pbSrc; // Decrypt: GHASH runs on source (ciphertext)
 
     SYMCRYPT_ASSERT( (cbData & SYMCRYPT_GCM_BLOCK_MOD_MASK) == 0 ); // cbData is multiple of block size
@@ -879,7 +890,7 @@ SymCryptAesGcmDecryptStitchedZmm(
 
     if( nBlocks >= GCM_ZMM_FULLROUND_BLOCKS )
     {
-        todo = SYMCRYPT_MIN( nBlocks, SYMCRYPT_GHASH_PCLMULQDQ_HPOWERS ) & ~(GCM_ZMM_FULLROUND_BLOCKS-1);
+        SIZE_T todo = SYMCRYPT_MIN( nBlocks, SYMCRYPT_GHASH_PCLMULQDQ_HPOWERS ) & ~(GCM_ZMM_FULLROUND_BLOCKS-1);
 
         CLMUL_3( state, GHASH_H_POWER(expandedKeyTable, todo), GHASH_Hx_POWER(expandedKeyTable, todo), a0_xmm, a1_xmm, a2_xmm );
         a0 = _mm512_zextsi128_si512( a0_xmm );
@@ -941,88 +952,73 @@ SymCryptAesGcmDecryptStitchedZmm(
         }
     }
 
-    // Partial tail: decrypt and GHASH remaining 0-31 blocks using masked ZMM operations
+    // Partial tail: GHASH and decrypt remaining 1-31 blocks. Loop over 4-block chunks using 1 ZMM
+    // register; handle the 1-3 block residue via a single masked ZMM register + XMM GHASH.
     if ( nBlocks > 0 )
     {
-        __mmask16 m0, m1, m2, m3, m4, m5, m6, m7;
-        PCBYTE pbGhashPartial;
-        SIZE_T nPartial = nBlocks;
+        // Decrypt's main loop keeps pbGhashSrc == pbSrc (no lag), but resync here for symmetry
+        // with the encrypt path.
+        pbGhashSrc = pbSrc;
 
-        // GHASH the partial ciphertext blocks (for decrypt, GHASH source is input ciphertext)
-        pbGhashPartial = pbSrc;
-        todo = nPartial;
-
-        CLMUL_3( state, GHASH_H_POWER(expandedKeyTable, todo), GHASH_Hx_POWER(expandedKeyTable, todo), a0_xmm, a1_xmm, a2_xmm );
+        // Initialize tail GHASH accumulator: state * H^nBlocks
+        CLMUL_3( state, GHASH_H_POWER(expandedKeyTable, nBlocks), GHASH_Hx_POWER(expandedKeyTable, nBlocks), a0_xmm, a1_xmm, a2_xmm );
         a0 = _mm512_zextsi128_si512( a0_xmm );
         a1 = _mm512_zextsi128_si512( a1_xmm );
         a2 = _mm512_zextsi128_si512( a2_xmm );
 
-        // ZMM GHASH: process 4 blocks at a time
-        while ( todo >= 4 )
+        // 4-block-at-a-time ZMM loop
+        while ( nBlocks >= 4 )
         {
-            r0 = _mm512_shuffle_epi8( _mm512_loadu_si512( (__m512i *)pbGhashPartial ), BYTE_REVERSE_ORDER );
-            CLMUL_ACC_3_Zmm( r0,
-                _mm512_loadu_si512( (__m512i *) &GHASH_H_POWER(expandedKeyTable, todo) ),
-                _mm512_loadu_si512( (__m512i *) &GHASH_Hx_POWER(expandedKeyTable, todo) ),
-                a0, a1, a2 );
-            pbGhashPartial += 64;
-            todo -= 4;
+            c0 = _mm512_shuffle_epi8( ctr0, BYTE_REVERSE_ORDER );
+            ctr0 = _mm512_add_epi32( ctr0, chainIncrement4 );
+
+            AES_ENCRYPT_ZMM_512( pExpandedKey, c0 );
+
+            r0  = _mm512_shuffle_epi8( _mm512_loadu_si512( (__m512i *)pbGhashSrc ), BYTE_REVERSE_ORDER );
+            Hi  = _mm512_loadu_si512( (__m512i *)  &GHASH_H_POWER(expandedKeyTable, nBlocks) );
+            Hix = _mm512_loadu_si512( (__m512i *) &GHASH_Hx_POWER(expandedKeyTable, nBlocks) );
+            CLMUL_ACC_3_Zmm( r0, Hi, Hix, a0, a1, a2 );
+
+            _mm512_storeu_si512( pbDst, _mm512_xor_si512( c0, _mm512_loadu_si512( pbSrc ) ) );
+
+            pbGhashSrc += 4 * SYMCRYPT_AES_BLOCK_SIZE;
+            pbDst      += 4 * SYMCRYPT_AES_BLOCK_SIZE;
+            pbSrc      += 4 * SYMCRYPT_AES_BLOCK_SIZE;
+            nBlocks    -= 4;
         }
 
         REDUCE_ZMM_TO_XMM_3( a0, a1, a2, a0_xmm, a1_xmm, a2_xmm );
 
-        // XMM GHASH for remaining 1-3 blocks
-        while ( todo > 0 )
+        // 1-3 block residue using 1 masked ZMM register for AES, and XMM CLMUL for GHASH (one
+        // block at a time). nBlocks is preserved here so it can advance the chain counter below.
+        if ( nBlocks > 0 )
         {
-            __m128i r_xmm = _mm_shuffle_epi8( _mm_loadu_si128( (__m128i *)pbGhashPartial ), BYTE_REVERSE_ORDER_xmm );
-            CLMUL_ACC_3( r_xmm, GHASH_H_POWER(expandedKeyTable, todo), GHASH_Hx_POWER(expandedKeyTable, todo), a0_xmm, a1_xmm, a2_xmm );
-            pbGhashPartial += SYMCRYPT_AES_BLOCK_SIZE;
-            todo -= 1;
+            __mmask16 m0 = (__mmask16)( (1u << ((unsigned)nBlocks * 4)) - 1 );
+
+            c0 = _mm512_shuffle_epi8( ctr0, BYTE_REVERSE_ORDER );
+
+            AES_ENCRYPT_ZMM_512( pExpandedKey, c0 );
+
+            // XMM GHASH for the 1-3 residue blocks; ciphertext is in pbSrc (input).
+            for ( SIZE_T i = nBlocks; i > 0; i-- )
+            {
+                __m128i r_xmm = _mm_shuffle_epi8( _mm_loadu_si128( (__m128i *)pbGhashSrc ), BYTE_REVERSE_ORDER_xmm );
+                CLMUL_ACC_3( r_xmm, GHASH_H_POWER(expandedKeyTable, i), GHASH_Hx_POWER(expandedKeyTable, i), a0_xmm, a1_xmm, a2_xmm );
+                pbGhashSrc += SYMCRYPT_AES_BLOCK_SIZE;
+            }
+
+            _mm512_mask_storeu_epi32( pbDst, m0,
+                _mm512_xor_si512( c0, _mm512_maskz_loadu_epi32( m0, (__m512i *)pbSrc ) ) );
         }
 
         a1_xmm = TERNARY_XOR_128( a0_xmm, a1_xmm, a2_xmm ); // CLMUL_3_POST
         MODREDUCE( vMultiplicationConstant, a0_xmm, a1_xmm, a2_xmm, state );
-
-        // Decrypt the partial ciphertext blocks
-        m0 = GCM_ZMM_MASK16( nPartial, 0 );
-        m1 = GCM_ZMM_MASK16( nPartial, 1 );
-        m2 = GCM_ZMM_MASK16( nPartial, 2 );
-        m3 = GCM_ZMM_MASK16( nPartial, 3 );
-        m4 = GCM_ZMM_MASK16( nPartial, 4 );
-        m5 = GCM_ZMM_MASK16( nPartial, 5 );
-        m6 = GCM_ZMM_MASK16( nPartial, 6 );
-        m7 = GCM_ZMM_MASK16( nPartial, 7 );
-
-        // Byte-reverse counters for AES (counters already positioned for next batch)
-        c0 = _mm512_shuffle_epi8( ctr0, BYTE_REVERSE_ORDER );
-        c1 = _mm512_shuffle_epi8( ctr1, BYTE_REVERSE_ORDER );
-        c2 = _mm512_shuffle_epi8( ctr2, BYTE_REVERSE_ORDER );
-        c3 = _mm512_shuffle_epi8( ctr3, BYTE_REVERSE_ORDER );
-        c4 = _mm512_shuffle_epi8( ctr4, BYTE_REVERSE_ORDER );
-        c5 = _mm512_shuffle_epi8( ctr5, BYTE_REVERSE_ORDER );
-        c6 = _mm512_shuffle_epi8( ctr6, BYTE_REVERSE_ORDER );
-        c7 = _mm512_shuffle_epi8( ctr7, BYTE_REVERSE_ORDER );
-
-        // AES encrypt all 8 registers (inactive registers encrypt zeros, result is discarded)
-        AES_ENCRYPT_ZMM_4096( pExpandedKey, c0, c1, c2, c3, c4, c5, c6, c7 );
-
-        // Masked XOR with ciphertext (from pbSrc) and store plaintext (to pbDst)
-        _mm512_mask_storeu_epi32( pbDst +   0, m0, _mm512_xor_si512( c0, _mm512_maskz_loadu_epi32( m0, (__m512i *)( pbSrc +   0 ) ) ) );
-        _mm512_mask_storeu_epi32( pbDst +  64, m1, _mm512_xor_si512( c1, _mm512_maskz_loadu_epi32( m1, (__m512i *)( pbSrc +  64 ) ) ) );
-        _mm512_mask_storeu_epi32( pbDst + 128, m2, _mm512_xor_si512( c2, _mm512_maskz_loadu_epi32( m2, (__m512i *)( pbSrc + 128 ) ) ) );
-        _mm512_mask_storeu_epi32( pbDst + 192, m3, _mm512_xor_si512( c3, _mm512_maskz_loadu_epi32( m3, (__m512i *)( pbSrc + 192 ) ) ) );
-        _mm512_mask_storeu_epi32( pbDst + 256, m4, _mm512_xor_si512( c4, _mm512_maskz_loadu_epi32( m4, (__m512i *)( pbSrc + 256 ) ) ) );
-        _mm512_mask_storeu_epi32( pbDst + 320, m5, _mm512_xor_si512( c5, _mm512_maskz_loadu_epi32( m5, (__m512i *)( pbSrc + 320 ) ) ) );
-        _mm512_mask_storeu_epi32( pbDst + 384, m6, _mm512_xor_si512( c6, _mm512_maskz_loadu_epi32( m6, (__m512i *)( pbSrc + 384 ) ) ) );
-        _mm512_mask_storeu_epi32( pbDst + 448, m7, _mm512_xor_si512( c7, _mm512_maskz_loadu_epi32( m7, (__m512i *)( pbSrc + 448 ) ) ) );
     }
 
-    // nBlocks should never be more than 31, but assert conservatively in case of
-    // implementation changes
-    SYMCRYPT_ASSERT( nBlocks <= UINT32_MAX );
-
-    // Extract chain counter and advance by the number of partial blocks processed
-    chain = _mm512_extracti64x2_epi64( ctr0, 0 ); // Extract lowest 128 bits
+    // Extract the chain counter (low 128 bits of ctr0). The 4-block tail loop advanced ctr0 by 4
+    // per iteration; nBlocks now holds the residue count (0-3) which the masked-residue path did
+    // not advance ctr0 by.
+    chain = _mm512_extracti64x2_epi64( ctr0, 0 );
     chain = _mm_add_epi32( chain, _mm_set_epi32( 0, 0, 0, (UINT32) nBlocks ) );
     _mm256_zeroupper();
 

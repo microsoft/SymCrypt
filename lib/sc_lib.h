@@ -1634,6 +1634,14 @@ SymCryptAesGcmDecryptStitchedYmm_2048(
     _Out_writes_( cbData )                  PBYTE                       pbDst,
                                             SIZE_T                      cbData );
 
+// Minimum number of AES blocks to dispatch through the ZMM AES-GCM encrypt path. Below this
+// threshold the ZMM path's overhead outweighs its throughput advantage over YMM. The decrypt
+// path has a lower floor because it lacks the 1-iteration AES-only lag that encrypt incurs,
+// so it is competitive with YMM down to a small number of blocks. Note that these thresholds may
+// vary between microarchitectures, but the chosen values should be a reasonable baseline.
+#define GCM_ZMM_ENCRYPT_MINBLOCKS 32
+#define GCM_ZMM_DECRYPT_MINBLOCKS 8
+
 VOID
 SYMCRYPT_CALL
 SymCryptAesGcmEncryptStitchedZmm(

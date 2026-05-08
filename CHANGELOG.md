@@ -2,6 +2,10 @@
 New changes will be listed here as they are developed. The version number is determined
 prior to the creation of a new release, based on the changes contained in that release.
 
+# Version 103.12.1
+
+- Add ZMM (AVX512) implementation of AES-GCM: improves performance by up to 35% on supported hardware
+
 # Version 103.12.0
 
 - Add loop bounds to ML-DSA functions which use probabilistic sampling, as defense-in-depth against denial of service by maliciously formed keys

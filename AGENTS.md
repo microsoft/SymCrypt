@@ -200,14 +200,17 @@ SymCryptAesExpandKey(
                         SIZE_T                      cbKey );
 ```
 
-### Code Structure Conventions
+### Code Style/Structure
 
-- Every `.c` file in `lib/` includes `precomp.h` (typically as the first non-comment line, after the copyright header)
+- Every `.c` file in `lib/` includes `precomp.h` (typically as the first non-comment line, after the copyright header).
 - Copyright header: `// Copyright (c) Microsoft Corporation. Licensed under the MIT license.`
-- Use `SYMCRYPT_NOINLINE` to prevent inlining of security-sensitive functions
-- Use `SYMCRYPT_FORCE_READ*` / `SYMCRYPT_FORCE_WRITE*` to ensure the compiler does not optimize away memory accesses (e.g. for side channel safety)
-- Multi-character constants are used for fatal error codes: `SymCryptFatal( 'init' )`
+- Use `SYMCRYPT_NOINLINE` to prevent inlining of security-sensitive functions.
+- Use `SYMCRYPT_FORCE_READ*` / `SYMCRYPT_FORCE_WRITE*` to ensure the compiler does not optimize away memory accesses (e.g. for side channel safety).
+- Multi-character constants are used for fatal error codes: `SymCryptFatal( 'init' )`.
+- Line length is 100 characters. This may be exceeded slightly when using a single line results in better readability, but avoid extremely long lines (>120 characters).
+- When breaking a function call or macro invocation across multiple lines, use one line per parameter. Exceptions may be made for multiple consecutive related parameters, e.g. `a0`, `a1`, `a2` for accumulators in CLMUL code.
 - Spaces should be used after opening parentheses and before closing parentheses, e.g. `foo( bar )`. However, these can be omitted when many nested parentheses would make it unwieldy.
+- Unless it's important to understanding the function of the code, do not include comments explaining what a previous iteration of the code did, especially if that iteration only existed during development and was never checked in to the main branch.
 
 ---
 
