@@ -176,7 +176,7 @@ fatal( _In_ PCSTR file, UINT32 line, _In_ PCSTR format, ... )
     fatalImpl(buffer);
 }
 
-VOID SYMCRYPT_CALL SymCryptModuleInit( UINT32 api, UINT32 minor )
+SYMCRYPT_ERROR SYMCRYPT_CALL SymCryptModuleInitEx( UINT32 api, UINT32 minor )
 {
     SymCryptInit();
 
