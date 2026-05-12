@@ -8877,7 +8877,7 @@ NTSTATUS XmssImp<ImpXxx, AlgXmss>::verify(
         status = STATUS_INVALID_PARAMETER;
         break;
     default:
-        iprint("Unexpected SymCrypt error %08x, %d, %d, %s\n", scError);
+        iprint("Unexpected SymCrypt error %08x\n", scError);
         CHECK(FALSE, "?");
         status = STATUS_UNSUCCESSFUL;
     }
@@ -10434,7 +10434,7 @@ NTSTATUS LmsImp<ImpXxx, AlgLms>::verify(
         status = STATUS_INVALID_PARAMETER;
         break;
     default:
-        iprint("Unexpected SymCrypt error %08x, %d, %d, %s\n", scError);
+        iprint("Unexpected SymCrypt error %08x\n", scError);
         CHECK(FALSE, "?");
         status = STATUS_UNSUCCESSFUL;
     }
