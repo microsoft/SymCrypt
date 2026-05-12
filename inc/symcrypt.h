@@ -536,6 +536,34 @@ SymCryptModuleInit(
 // the macro SYMCRYPT_MODULE_INIT should be used to call it with the correct arguments.
 //
 
+SYMCRYPT_ERROR
+SYMCRYPT_CALL
+SymCryptModuleInitEx(
+    _In_ UINT32 api,
+    _In_ UINT32 minor);
+
+#define SYMCRYPT_MODULE_INIT_EX() SymCryptModuleInitEx( SYMCRYPT_CODE_VERSION_API, SYMCRYPT_CODE_VERSION_MINOR )
+//
+// Initialize the SymCrypt shared object module/dynamic-link library. This function verifies
+// that the module version supports the version requested by the application.
+//
+// Returns SYMCRYPT_NO_ERROR on success, or SYMCRYPT_INVALID_ARGUMENT if the requested version
+// is not supported by this module (i.e. the requested api version does not match the module's
+// api version, or the api versions match but the requested minor version is greater than the
+// module's minor version).
+//
+// This function is intended for callers who need to fail gracefully when the module does not
+// support the requested version. It is NOT intended for dynamic feature selection based on
+// version probing.
+//
+// IMPORTANT: If this function returns an error, the caller MUST NOT use any SymCrypt
+// functionality. Doing so could result in broken functionality up to and including
+// catastrophic loss of security.
+//
+// This function is only available in user-mode (symcrypt.dll) and Posix shared library modules.
+// It is not exported from the kernel-mode module (symcryptk).
+//
+
 //==========================================================================
 //   DATA MANIPULATION
 //==========================================================================
@@ -10433,6 +10461,9 @@ typedef enum _SYMCRYPT_PQDSA_HASH_ID {
     SYMCRYPT_PQDSA_HASH_ID_SHA3_512            = 7,
     SYMCRYPT_PQDSA_HASH_ID_SHAKE128            = 8,
     SYMCRYPT_PQDSA_HASH_ID_SHAKE256            = 9,
+    SYMCRYPT_PQDSA_HASH_ID_SHA224              = 10,
+    SYMCRYPT_PQDSA_HASH_ID_SHA512_224          = 11,
+    SYMCRYPT_PQDSA_HASH_ID_SHA3_224            = 12,
 } SYMCRYPT_PQDSA_HASH_ID;
 // Supported hash algorithms for use with Hash-ML-DSA
 
@@ -10673,17 +10704,16 @@ SymCryptHashMlDsaSign(
 // - SYMCRYPT_MEMORY_ALLOCATION_FAILURE if memory allocation fails.
 //
 // Remarks:
-//   The hash algorithm provided must meet the minimum required collision strength defined for the
-//   chosen ML-DSA parameter set. This is the lambda parameter in FIPS 204. This means that the
-//   following hash algorithms are supported:
+// Any hash algorithm defined in SYMCRYPT_PQDSA_HASH_ID may be used.
+//   For traditional hash algorithms (non-XOFs), cbHash must match the output length of the hash
+//   algorithm. For XOFs (SHAKE128, SHAKE256), cbHash must be at least the default output size
+//   of the XOF (32 bytes for SHAKE128, 64 bytes for SHAKE256).
+//   If this requirement is not met, the function returns SYMCRYPT_INVALID_ARGUMENT.
 //
-//   ML-DSA-44 (lambda = 128): SHA-256, SHA-384, SHA-512, SHA-512/256, SHA3-256, SHA3-384, SHA3-512, SHAKE128, SHAKE256
-//   ML-DSA-65 (lambda = 192): SHA-384, SHA-512, SHA3-384, SHA3-512, SHAKE256
-//   ML-DSA-87 (lambda = 256): SHA-512, SHA3-512, SHAKE256
-//
-//   Additionally, cbHash must match the output length of the hash algorithm.
-//   For XOFs, the any output length >= the minimum collision strength is acceptable. If this
-//   requirement is not met, the function returns SYMCRYPT_INVALID_ARGUMENT.
+//   Note: While FIPS 204 recommends that the hash algorithm meet the minimum required collision
+//   strength (lambda) for the chosen ML-DSA parameter set, this implementation does not enforce
+//   that restriction. Callers are responsible for choosing an appropriate hash algorithm for
+//   their security requirements.
 //
 //   As with SymCryptMlDsaSign, cbSignature must be equal to the cbKeyFormat returned from
 //   SymCryptMlDsaSizeofSignatureFromParams( params, &cbSignature ), though typically this

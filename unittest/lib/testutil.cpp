@@ -342,6 +342,37 @@ testUtil()
     testCountLeadingTrailingZeros();
 }
 
+VOID
+testModuleInitEx()
+{
+    if( !g_dynamicSymCryptModuleHandle )
+    {
+        print("    testModuleInitEx skipped (no dynamic module loaded)\n");
+        return;
+    }
+
+    auto pfnSymCryptModuleInitEx = SCTEST_LOOKUP_DYNSYM(SymCryptModuleInitEx, FALSE);
+    if( pfnSymCryptModuleInitEx == NULL )
+    {
+        print("    testModuleInitEx skipped (symbol not available)\n");
+        return;
+    }
+
+    // Success: requesting the current version should succeed
+    CHECK( pfnSymCryptModuleInitEx( SYMCRYPT_CODE_VERSION_API, SYMCRYPT_CODE_VERSION_MINOR ) == SYMCRYPT_NO_ERROR,
+           "SymCryptModuleInitEx should succeed with current version" );
+
+    // Failure: requesting a newer API version should return SYMCRYPT_INVALID_ARGUMENT
+    CHECK( pfnSymCryptModuleInitEx( SYMCRYPT_CODE_VERSION_API + 1, 0 ) == SYMCRYPT_INVALID_ARGUMENT,
+           "SymCryptModuleInitEx should fail when requested API version is newer than module" );
+
+    // Failure: requesting a newer minor version should return SYMCRYPT_INVALID_ARGUMENT
+    CHECK( pfnSymCryptModuleInitEx( SYMCRYPT_CODE_VERSION_API, SYMCRYPT_CODE_VERSION_MINOR + 1 ) == SYMCRYPT_INVALID_ARGUMENT,
+           "SymCryptModuleInitEx should fail when requested minor version is newer than module" );
+
+    print("    testModuleInitEx passed\n");
+}
+
 
 
 

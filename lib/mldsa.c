@@ -750,7 +750,6 @@ SymCryptHashMlDsaSign(
     }
 
     scError = SymCryptHashMlDsaValidateHashAlgAndGetOid(
-        pkMlDsakey->pParams,
         hashAlg,
         cbHash,
         &pHashOid );
@@ -1090,7 +1089,6 @@ SymCryptHashMlDsaVerify(
     }
 
     scError = SymCryptHashMlDsaValidateHashAlgAndGetOid(
-        pkMlDsakey->pParams,
         hashAlg,
         cbHash,
         &pHashOid );

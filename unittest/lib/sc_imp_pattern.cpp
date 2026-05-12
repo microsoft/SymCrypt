@@ -11505,32 +11505,43 @@ PqDsaImp<ImpXxx, AlgMlDsa>::signEx(
     PCBYTE pbHashOid = nullptr;
     SIZE_T cbHashOid = 0;
 
+    const std::pair<SYMCRYPT_PQDSA_HASH_ID, PCSYMCRYPT_OID> hashOids[] =
+    {
+        { SYMCRYPT_PQDSA_HASH_ID_SHA224,     &SymCryptSha224OidList[1]     },
+        { SYMCRYPT_PQDSA_HASH_ID_SHA256,     &SymCryptSha256OidList[1]     },
+        { SYMCRYPT_PQDSA_HASH_ID_SHA384,     &SymCryptSha384OidList[1]     },
+        { SYMCRYPT_PQDSA_HASH_ID_SHA512,     &SymCryptSha512OidList[1]     },
+        { SYMCRYPT_PQDSA_HASH_ID_SHA512_224, &SymCryptSha512_224OidList[1] },
+        { SYMCRYPT_PQDSA_HASH_ID_SHA512_256, &SymCryptSha512_256OidList[1] },
+        { SYMCRYPT_PQDSA_HASH_ID_SHA3_224,   &SymCryptSha3_224OidList[1]   },
+        { SYMCRYPT_PQDSA_HASH_ID_SHA3_256,   &SymCryptSha3_256OidList[1]   },
+        { SYMCRYPT_PQDSA_HASH_ID_SHA3_384,   &SymCryptSha3_384OidList[1]   },
+        { SYMCRYPT_PQDSA_HASH_ID_SHA3_512,   &SymCryptSha3_512OidList[1]   },
+        { SYMCRYPT_PQDSA_HASH_ID_SHAKE128,   &SymCryptShake128OidList[1]   },
+        { SYMCRYPT_PQDSA_HASH_ID_SHAKE256,   &SymCryptShake256OidList[1]   }
+    };
+
     if (!SCTEST_LOOKUP_SCIMPSYM(SymCryptMlDsaSignEx))
     {
         return STATUS_NOT_SUPPORTED;
     }
 
-    // Workaround to avoid having to expose SymCryptHashMlDsaValidateHashAlgAndGetOid
-    switch( hashId )
+    // Workaround to avoid having to expose SymCryptHashMlDsaValidateHashAlgAndGetOid.
+    // NULL hashId is used for pure ML-DSA (no pre-hash). Any other value should map to a known
+    // algorithm.
+    if( hashId != SYMCRYPT_PQDSA_HASH_ID_NULL )
     {
-        case SYMCRYPT_PQDSA_HASH_ID_NULL:
-            // NULL has ID means we're doing pure signing
-            break;
-        case SYMCRYPT_PQDSA_HASH_ID_SHA256:
-            pbHashOid = SymCryptSha256OidList[1].pbOID;
-            cbHashOid = SymCryptSha256OidList[1].cbOID;
-            break;
-        case SYMCRYPT_PQDSA_HASH_ID_SHA384:
-            pbHashOid = SymCryptSha384OidList[1].pbOID;
-            cbHashOid = SymCryptSha384OidList[1].cbOID;
-            break;
-        case SYMCRYPT_PQDSA_HASH_ID_SHA512:
-            pbHashOid = SymCryptSha512OidList[1].pbOID;
-            cbHashOid = SymCryptSha512OidList[1].cbOID;
-            break;
-        default:
-            CHECK( FALSE, "Unknown hash algorithm ID" );
-            break;
+        for( const auto& hashOid : hashOids )
+        {
+            if( hashId == hashOid.first )
+            {
+                pbHashOid = hashOid.second->pbOID;
+                cbHashOid = hashOid.second->cbOID;
+                break;
+            }
+        }
+
+        CHECK3( pbHashOid != nullptr, "Unknown hash algorithm ID %d", hashId );
     }
 
     scError = ScShimSymCryptMlDsaSignEx(

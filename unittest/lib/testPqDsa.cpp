@@ -1854,10 +1854,21 @@ testHashMlDsaSignVerify(
 
     // KAT infrastructure treats all values as non-null-terminated byte strings, so these need
     // to be the same
-    // TODO: Add KATs for SHAKE
-    const BString sha256 = {'s', 'h', 'a', '2', '5', '6'};
-    const BString sha384 = {'s', 'h', 'a', '3', '8', '4'};
-    const BString sha512 = {'s', 'h', 'a', '5', '1', '2'};
+    const std::pair<BString, SYMCRYPT_PQDSA_HASH_ID> hashAlgs[] =
+    {
+        { {'s', 'h', 'a', '2', '2', '4'}, SYMCRYPT_PQDSA_HASH_ID_SHA224 },
+        { {'s', 'h', 'a', '2', '5', '6'}, SYMCRYPT_PQDSA_HASH_ID_SHA256 },
+        { {'s', 'h', 'a', '3', '8', '4'}, SYMCRYPT_PQDSA_HASH_ID_SHA384 },
+        { {'s', 'h', 'a', '5', '1', '2'}, SYMCRYPT_PQDSA_HASH_ID_SHA512 },
+        { {'s', 'h', 'a', '5', '1', '2', '_', '2', '2', '4'}, SYMCRYPT_PQDSA_HASH_ID_SHA512_224 },
+        { {'s', 'h', 'a', '5', '1', '2', '_', '2', '5', '6'}, SYMCRYPT_PQDSA_HASH_ID_SHA512_256 },
+        { {'s', 'h', 'a', '3', '_', '2', '2', '4'}, SYMCRYPT_PQDSA_HASH_ID_SHA3_224 },
+        { {'s', 'h', 'a', '3', '_', '2', '5', '6'}, SYMCRYPT_PQDSA_HASH_ID_SHA3_256 },
+        { {'s', 'h', 'a', '3', '_', '3', '8', '4'}, SYMCRYPT_PQDSA_HASH_ID_SHA3_384 },
+        { {'s', 'h', 'a', '3', '_', '5', '1', '2'}, SYMCRYPT_PQDSA_HASH_ID_SHA3_512 },
+        { {'s', 'h', 'a', 'k', 'e', '_', '1', '2', '8'}, SYMCRYPT_PQDSA_HASH_ID_SHAKE128 },
+        { {'s', 'h', 'a', 'k', 'e', '_', '2', '5', '6'}, SYMCRYPT_PQDSA_HASH_ID_SHAKE256 },
+    };
 
     CHECK(
         SymCryptMlDsaSizeofKeyFormatFromParams(params, SYMCRYPT_MLDSAKEY_FORMAT_PRIVATE_KEY, &cbPrivKey) == SYMCRYPT_NO_ERROR,
@@ -1877,22 +1888,16 @@ testHashMlDsaSignVerify(
     CHECK4( katCtx.size() <= SYMCRYPT_MLDSA_CONTEXT_MAX_LENGTH, "Invalid context size %lld at line %lld", katCtx.size(), line );
     CHECK4( katSig.size() == cbSig, "Invalid signature size %lld at line %lld", katSig.size(), line );
 
-    if( katHashAlg == sha256 )
+    for( const auto& hashAlg : hashAlgs )
     {
-        hashId = SYMCRYPT_PQDSA_HASH_ID_SHA256;
+        if ( katHashAlg == hashAlg.first )
+        {
+            hashId = hashAlg.second;
+            break;
+        }
     }
-    else if( katHashAlg == sha384 )
-    {
-        hashId = SYMCRYPT_PQDSA_HASH_ID_SHA384;
-    }
-    else if( katHashAlg == sha512 )
-    {
-        hashId = SYMCRYPT_PQDSA_HASH_ID_SHA512;
-    }
-    else
-    {
-        CHECK4( FALSE, "Unknown hash algorithm %s at line %lld", katHashAlg.c_str(), line );
-    }
+
+    CHECK4( hashId != SYMCRYPT_PQDSA_HASH_ID_NULL, "Unknown hash algorithm %s at line %lld", katHashAlg.c_str(), line );
 
     keyBlob.mlDsakey.params = params;
     keyBlob.mlDsakey.format = SYMCRYPT_MLDSAKEY_FORMAT_PRIVATE_KEY;

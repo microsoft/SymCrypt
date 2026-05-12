@@ -509,8 +509,12 @@ SymCryptAesGcmEncryptPartOnePass(
 #if SYMCRYPT_CPU_AMD64
         // We use SYMCRYPT_CPU_FEATURE_SAVEZMM_NOFAIL to exclude kernel mode, where the use of ZMM
         // registers has historically caused problems. We still call SaveZmm/RestoreZmm and
-        // gracefully fall back if it fails.
+        // gracefully fall back if it fails. We also gate on a minimum input size:
+        // for encrypt, the ZMM path's setup overhead and AES-only first iteration outweigh
+        // its throughput advantage over the YMM path for inputs smaller than one full
+        // 32-block ZMM round (512 bytes).
         if( SYMCRYPT_CPU_FEATURES_PRESENT( SYMCRYPT_CPU_FEATURES_FOR_VAES_512_CODE | SYMCRYPT_CPU_FEATURE_SAVEZMM_NOFAIL ) &&
+            (bytesToProcess >= GCM_ZMM_ENCRYPT_MINBLOCKS * SYMCRYPT_GCM_BLOCK_SIZE) &&
             SymCryptSaveZmm( &SaveData ) == SYMCRYPT_NO_ERROR )
         {
             SymCryptAesGcmEncryptStitchedZmm(
@@ -523,7 +527,8 @@ SymCryptAesGcmEncryptPartOnePass(
                 bytesToProcess );
 
             SymCryptRestoreZmm( &SaveData );
-        } else if( SYMCRYPT_CPU_FEATURES_PRESENT( SYMCRYPT_CPU_FEATURES_FOR_VAES_256_CODE ) &&
+        }
+        else if( SYMCRYPT_CPU_FEATURES_PRESENT( SYMCRYPT_CPU_FEATURES_FOR_VAES_256_CODE ) &&
             (bytesToProcess >= GCM_YMM_MINBLOCKS * SYMCRYPT_GCM_BLOCK_SIZE) &&
             SymCryptSaveYmm( &SaveData ) == SYMCRYPT_NO_ERROR )
         {
@@ -688,6 +693,7 @@ SymCryptAesGcmDecryptPartOnePass(
         // registers has historically caused problems. We still call SaveZmm/RestoreZmm and
         // gracefully fall back if it fails.
         if( SYMCRYPT_CPU_FEATURES_PRESENT( SYMCRYPT_CPU_FEATURES_FOR_VAES_512_CODE | SYMCRYPT_CPU_FEATURE_SAVEZMM_NOFAIL ) &&
+            (bytesToProcess >= GCM_ZMM_DECRYPT_MINBLOCKS * SYMCRYPT_GCM_BLOCK_SIZE) &&
             SymCryptSaveZmm( &SaveData ) == SYMCRYPT_NO_ERROR )
         {
             SymCryptAesGcmDecryptStitchedZmm(
@@ -700,7 +706,8 @@ SymCryptAesGcmDecryptPartOnePass(
                 bytesToProcess );
 
             SymCryptRestoreZmm( &SaveData );
-        } else if( SYMCRYPT_CPU_FEATURES_PRESENT( SYMCRYPT_CPU_FEATURES_FOR_VAES_256_CODE ) &&
+        }
+        else if( SYMCRYPT_CPU_FEATURES_PRESENT( SYMCRYPT_CPU_FEATURES_FOR_VAES_256_CODE ) &&
             (bytesToProcess >= GCM_YMM_MINBLOCKS * SYMCRYPT_GCM_BLOCK_SIZE) &&
             SymCryptSaveYmm( &SaveData ) == SYMCRYPT_NO_ERROR )
         {

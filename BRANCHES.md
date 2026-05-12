@@ -40,16 +40,3 @@ Note: the reason for having confidential changes is that a fix for a security
 weakness cannot be published until the patch is available and deployed for all
 downlevel platforms. As soon as the fix is deployed, the confidential change
 must be merged into main so that it can be published.
-
-## Work flow for publishing
-The publish branch only ever takes merges from main, and never from anywhere
-else. The publishing workflow is:
-
-1. Merge main into publish 
-1. Use `PublishToGitHub.cmd` to push the publish branch to GitHub
-
-
-
-
-
-

@@ -1,6 +1,6 @@
 ## Prerequisites
-SymCrypt can be compiled with CMake >= 3.13.0 and Visual Studio 2019 (with Windows 10 SDK version 18362) on Windows
-or gcc 7.4.0 or clang 10.0.0 on Linux. Note that CMake ships with Visual Studio 2019; you can use Visual Studio's
+SymCrypt can be compiled with CMake >= 3.13.0 and Visual Studio 2019 or newer (with Windows 10 SDK version 18362) on Windows
+or gcc >= 9.4.0 or clang >= 10.0.0 on Linux. Note that CMake ships with Visual Studio 2019; you can use Visual Studio's
 included CMake by setting `$env:PATH="C:\Program Files (x86)\Microsoft Visual Studio\2019\Enterprise\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\bin\;${env:PATH}"`.
 
 Python 3 is also required for translation of SymCryptAsm, and for building the SymCrypt module with integrity check.
@@ -16,23 +16,22 @@ combinations.
 
 SymCrypt supports a variety of operating systems, CPU architectures, and runtime environments, but due to functionality
 gaps in the build systems we use, not every combination is supported by every build system. Specifically, because
-CMake does not currently support building kernel mode components, we also support MSBuild for building kernel-mode
-libraries on Windows. Internally, we previously used Razzle as our legacy build system, but SymCrypt's support
-for Razzle builds is on a deprecation path and will be removed in a future release. Additionally, it has not been
-tested with the public open source version of Razzle, and is unlikely to work with it.
-
-Note: AMD64 is the terminology Windows uses for x86-64.
+CMake does not currently support building kernel mode components, use MSBuild for official Windows builds, which must
+support the Windows kernel.
 
 ### Supported Configurations
 
 | Operating Environment | Architecture      | Supported compilers | ASM enabled | Static lib + unit tests | Dynamic lib | 
 | --------------------- | ----------------- | ------------------- | ----------- | ----------------------- | ----------- |
-| Windows kernel mode   | AMD64, ARM64      | MSVC                | ✅          | ✅                      | ✅          |
-| Windows user mode     | AMD64, ARM64, x86 | MSVC                | ✅          | ✅                      | ✅          |
-| Linux user mode       | AMD64, ARM64      | GCC, Clang          | ✅          | ✅                      | ✅          |
-| Linux user mode       | x86               | GCC, Clang          | ❌          | ✅                      | ✅          |
-| macOS                 | ARM64             | Apple Clang         | ✅          | ✅                      | ✅          |
-| macOS                 | AMD64             | Apple Clang         | ❌          | ✅                      | ✅          |
+| Windows kernel mode   | AMD64, ARM64      | MSVC                | ✅          | ✅                      | ✅         |
+| Windows user mode     | AMD64, ARM64, x86 | MSVC                | ✅          | ✅                      | ✅         |
+| Linux user mode       | AMD64, ARM64      | GCC, Clang          | ✅          | ✅                      | ✅         |
+| Linux user mode       | x86               | GCC, Clang          | ❌          | ✅                      | ✅         |
+| macOS                 | ARM64             | Apple Clang         | ✅          | ✅                      | ✅         |
+| macOS                 | AMD64¹            | Apple Clang         | ❌          | ✅                      | ✅         |
+
+Note: AMD64 is the terminology Windows uses for x86-64.
+¹: macOS AMD64 support will be deprecated soon.
 
 The ability to build SymCrypt on any particular platform or architecture, with or without ASM optimizations, does not
 imply that it has been tested for or is actively supported by Microsoft on that platform/architecture. While we make
@@ -71,7 +70,9 @@ If you don't want to use the Python helper scripts, or if they do not support th
 you can build SymCrypt by directly invoking CMake. Note that Python is still required for translating SymCryptAsm
 and building the Linux modules with FIPS integrity checks.
 
-1. Run `cmake -S . -B bin` to configure your build. You can add the following optional CMake arguments to change build options:
+1. If your platform is supported by our CMake presets (requires CMake >= 3.21), this is the easiest way to build. Run `cmake --list-presets` to view presets supported by the host machine.
+1. To build with a preset, run `cmake --preset <name>` and then `cmake --build --preset <name>`. You may also pass additional arguments as described below.
+1. For targets with no preset, or to further customize your build, run `cmake -S . -B bin` to configure your build. You can add the following optional CMake arguments to change build options:
     * `-DSYMCRYPT_TARGET_ARCH=<AMD64|X86|ARM64>` to choose a target architecture. If not specified, it will default to the host system architecture.
       * To cross-compile for Windows X86 from Windows AMD64, you must also use `-A Win32`
       * To cross-compile for Linux ARM64, you must also use `--toolchain=cmake-configs/Toolchain-Clang-ARM64.cmake`
@@ -99,26 +100,27 @@ and all compiled outputs are placed in this directory.
 
 ## Building for Linux
 
-Requires the following packages on Debian-based systems to build:
+SymCrypt requires the following tools to build on Linux:
+
+- CMake >= 3.13
+- Python 3
+- gcc >= 7.4.0 or clang >= 10.0.0
+
+For example, on Debian-based systems, you can install the required packages via apt:
+
 ```
 apt update
 apt -y install --no-install-recommends \
     cmake \
     python3-pyelftools \
     build-essential \
-    gcc-arm-linux-gnueabihf g++-arm-linux-gnueabihf
-```
-`python3-pyelftools` is for integrity verification and `gcc-arm-linux-gnueabihf` `g++-arm-linux-gnueabihf` are for ARM cross compile
-And for running the test:
-```
-apt -y install --no-install-recommends qemu-user
 ```
 
-To build and test for example for arm:
-```
-python3 scripts/build.py cmake --arch arm --toolchain cmake-configs/Toolchain-GCC-ARM.cmake bin_arm
-qemu-arm -L /usr/arm-linux-gnueabihf/ ./bin_arm/exe/symcryptunittest -rsa -dsa -dh -ec -int -mod dynamic:bin_arm/module/generic/libsymcrypt.so
-```
+`python3-pyelftools` is used for building the FIPS module with integrity verification. On non-Debian distributions,
+it can be installed via `pip install -r scripts/requirements.txt`; you may want to create a Python virtual environment
+first.
+
+Additional dependencies may be required for cross-compilation.
 
 ## Building for macOS
 Building on macOS requires the following prerequisites:
@@ -126,27 +128,26 @@ Building on macOS requires the following prerequisites:
 - CMake
 - Python 3 (for build scripts)
 
-As described above, the easiest way to build for macOS is to use the Python build script. As we don't currently support ASM
-optimizations on Mac, you must set the `--no-asm` flag. If you are instead building directly with CMake, you must set `-DSYMCRYPT_USE_ASM=OFF`.
+As described above, the easiest way to build for macOS is to use the Python build script or CMake presets.
 
 ## Performance comparison with OpenSSL
 `symcryptunittest.exe` can be used to compare and measure performance of algorithms provided by SymCrypt and OpenSSL.
-On Windows `symcryptunittest.exe` would have to be compiled with OpenSSL. `nasm` and  `strawberryperl` are
-prerequisites to building OpenSSL.
+On Windows, OpenSSL must be built from source as part of the SymCrypt build. `nasm` and  `strawberryperl` are
+prerequisites for building OpenSSL.
 
 ```
 winget install nasm strawberryperl
 python3 .\scripts\build.py cmake bin --config Release --openssl-build-from-source
 ```
 
-And on Linux we can use OpenSSL installed by system's package manager.
+On Linux, you can use `libssl-dev` if it is available from your system's package manager.
 
 ```
 sudo apt install -y libssl-dev
 python3 ./scripts/build.py cmake bin --config Release --openssl
 ```
 
-To build OpenSSL on Linux we need to install following prerequisites.
+To build OpenSSL from source on Linux, install following prerequisites.
 
 ```
 sudo apt install -y nasm perl

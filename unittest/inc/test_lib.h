@@ -1147,13 +1147,13 @@ extern DWORD g_osVersion;       // 0xaabb for major version aa and minor version
 #define OS_VERSION_WIN8_1   0x0603
 
 extern "C" {
-    _Analysis_noreturn_
+    [[noreturn]]
     VOID
     fatalImpl(const char* message);
 
     // fatal formats the message and calls fatalImpl. The extra indirection makes linking to
     // Rust easier.
-    _Analysis_noreturn_
+    [[noreturn]]
     VOID
     fatal( _In_ PCSTR file, UINT32 line, _In_ PCSTR format, ... );
 }
@@ -1519,6 +1519,9 @@ testWipe();
 
 VOID
 testUtil();
+
+VOID
+testModuleInitEx();
 
 VOID
 testDataAccessors();
