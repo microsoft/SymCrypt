@@ -36,7 +36,7 @@ NTSTRSAFE_PSTR  g_FatalNext;
 #define FATAL3( text, a, b )    {fatal( __FILE__, __LINE__, text, a, b );}
 #define CHECK( cond, text )     { if( !(cond) ) { fatal(__FILE__, __LINE__, text );}; _Analysis_assume_( cond );}
 
-#define SCKTM_MAXIMUM_OUTSTANDING_ALLOCS (64)
+#define SCKTM_MAXIMUM_OUTSTANDING_ALLOCS (256)
 FAST_MUTEX g_AllocationMutex;
 
 // Every allocation in the driver must be kept in this array and removed when it is freed
@@ -80,6 +80,7 @@ ResetFatalGlobals()
     g_FatalNext = (NTSTRSAFE_PSTR) &g_FatalBuff[0];
 }
 
+[[noreturn]]
 VOID
 fatalImpl( _In_ PCSTR message )
 {
@@ -87,9 +88,11 @@ fatalImpl( _In_ PCSTR message )
 
     // This function intercepts calls to fatal and converts them to reporting the first errors in globals.
     RtlStringCchPrintfExA( g_FatalNext, remainingBytes, &g_FatalNext, &remainingBytes, 0, "*\n\n***** FATAL ERROR: %s\n", message );
+
+    KeBugCheckEx( 'TKCS', (ULONG_PTR) message, 0, 0, 0 );
 }
 
-_Analysis_noreturn_
+[[noreturn]]
 VOID
 fatal( _In_ PCSTR file, ULONG line, _In_ PCSTR format, ... )
 {

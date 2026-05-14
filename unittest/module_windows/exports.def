@@ -570,6 +570,7 @@ EXPORTS
     SymCryptModSquare
     SymCryptModSub
     SymCryptModuleInit
+    SymCryptModuleInitEx
     SymCryptModulusAllocate
     SymCryptModulusCopy
     SymCryptModulusCreate

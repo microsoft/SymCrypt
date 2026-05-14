@@ -12,7 +12,7 @@ SYMCRYPT_ENVIRONMENT_DEFS(Unittest);
 #include <dlfcn.h>
 #include <sys/random.h>
 
-#if SYMCRYPT_PLATFORM_APPLE
+#ifndef RTLD_DEEPBIND
     #define DLOPEN_FLAGS (RTLD_NOW)
 #else
     #define DLOPEN_FLAGS (RTLD_NOW | RTLD_DEEPBIND)

@@ -441,6 +441,7 @@ EXPORTS
     SymCryptMlKemSizeofCiphertextFromParams
     SymCryptMlKemSizeofKeyFormatFromParams
     SymCryptModuleInit
+    SymCryptModuleInitEx
     SymCryptPaddingPkcs7Add
     SymCryptPaddingPkcs7Remove
     SymCryptParallelSha256Init

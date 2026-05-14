@@ -176,7 +176,7 @@ fatal( _In_ PCSTR file, UINT32 line, _In_ PCSTR format, ... )
     fatalImpl(buffer);
 }
 
-VOID SYMCRYPT_CALL SymCryptModuleInit( UINT32 api, UINT32 minor )
+SYMCRYPT_ERROR SYMCRYPT_CALL SymCryptModuleInitEx( UINT32 api, UINT32 minor )
 {
     SymCryptInit();
 
@@ -185,11 +185,21 @@ VOID SYMCRYPT_CALL SymCryptModuleInit( UINT32 api, UINT32 minor )
     if (api != SYMCRYPT_CODE_VERSION_API ||
         (api == SYMCRYPT_CODE_VERSION_API && minor > SYMCRYPT_CODE_VERSION_MINOR) )
     {
-        SymCryptFatal( 'vers' );
+        return SYMCRYPT_INVALID_ARGUMENT;
     }
 
     // Save the original CPU features flags.
     g_originalSymCryptCpuFeaturesNotPresent = g_SymCryptCpuFeaturesNotPresent;
+
+    return SYMCRYPT_NO_ERROR;
+}
+
+VOID SYMCRYPT_CALL SymCryptModuleInit( UINT32 api, UINT32 minor )
+{
+    if (SymCryptModuleInitEx( api, minor ) != SYMCRYPT_NO_ERROR)
+    {
+        SymCryptFatal( 'vers' );
+    }
 }
 
 SYMCRYPT_CPU_FEATURES SctestDisableCpuFeatures(SYMCRYPT_CPU_FEATURES disable)

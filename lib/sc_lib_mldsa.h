@@ -946,14 +946,13 @@ SymCryptMlDsaGetInternalParamsFromParams(
 SYMCRYPT_ERROR
 SYMCRYPT_CALL
 SymCryptHashMlDsaValidateHashAlgAndGetOid(
-    _In_    PCSYMCRYPT_MLDSA_INTERNAL_PARAMS    pParams,
             SYMCRYPT_PQDSA_HASH_ID              hashAlg,
             SIZE_T                              cbHash,
     _Out_   PCSYMCRYPT_OID*                     ppOid );
 //
-// Validates that the given hash algorithm meets the required collision strength for the ML-DSA
-// parameter set, as defined in FIPS 204. Also validates that cbHash matches the expected length
-// for the hash algorithm, or for XOFs, is >= the required collision strength.
+// Validates that the hash algorithm ID is recognized and that cbHash matches the expected length
+// for the hash algorithm. For XOFs (SHAKE128, SHAKE256), cbHash must be at least the default
+// output size of the XOF.
 // See comments on the definition of SymCryptHashMlDsaSign
 //
 
