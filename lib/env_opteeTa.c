@@ -39,7 +39,7 @@ SymCryptInitEnvOpteeTa( UINT32 version )
     SymCryptDetectCpuFeaturesByCpuid( SYMCRYPT_CPUID_DETECT_FLAG_CHECK_OS_SUPPORT_FOR_YMM );
 
     //
-    // Our SaveXmm function never fails because it doesn't have to do anything in User mode.
+    // Saving extended register state never fails because it doesn't have to do anything in User mode.
     //
     g_SymCryptCpuFeaturesNotPresent &= ~SYMCRYPT_CPU_FEATURE_SAVEXMM_NOFAIL;
     g_SymCryptCpuFeaturesNotPresent &= ~SYMCRYPT_CPU_FEATURE_SAVEYMM_NOFAIL;

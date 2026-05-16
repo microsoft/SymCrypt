@@ -1190,6 +1190,9 @@ C_ASSERT(sizeof(SYMCRYPT_SHA3_512_STATE_EXPORT_BLOB) == SYMCRYPT_SHA3_512_STATE_
 /////////////////////////////////////////////
 // AES internal functions
 
+#define GCM_YMM_MINBLOCKS 16
+#define CBC_YMM_MINBLOCKS 16
+
 extern const SYMCRYPT_BLOCKCIPHER SymCryptAesBlockCipherNoOpt;
 
 VOID
@@ -1387,6 +1390,16 @@ SymCryptAesCbcDecryptNeon(
     _Inout_updates_( SYMCRYPT_AES_BLOCK_SIZE )  PBYTE                       pbChainingValue,
     _In_reads_( cbData )                        PCBYTE                      pbSrc,
     _Out_writes_( cbData )                      PBYTE                       pbDst,
+                                                SIZE_T                      cbData );
+
+VOID
+SYMCRYPT_CALL
+SymCryptAesCbcDecryptYmm(
+    _In_                                        PCSYMCRYPT_AES_EXPANDED_KEY pExpandedKey,
+    _Inout_updates_( SYMCRYPT_AES_BLOCK_SIZE )  PBYTE                       pbChainingValue,
+    _In_reads_( cbData )                        PCBYTE                      pbSrc,
+    _Out_writes_( cbData )                      PBYTE                       pbDst,
+    _In_range_( CBC_YMM_MINBLOCKS * SYMCRYPT_AES_BLOCK_SIZE, SIZE_MAX )
                                                 SIZE_T                      cbData );
 
 VOID
@@ -1608,9 +1621,6 @@ SymCryptAesGcmDecryptStitchedXmm(
     _Out_writes_( cbData )                  PBYTE                       pbDst,
                                             SIZE_T                      cbData );
 
-#define GCM_YMM_MINBLOCKS 16
-
-// Caller must check cbData >= GCM_YMM_MINBLOCKS * SYMCRYPT_GCM_BLOCK_SIZE
 VOID
 SYMCRYPT_CALL
 SymCryptAesGcmEncryptStitchedYmm_2048(
@@ -1620,9 +1630,9 @@ SymCryptAesGcmEncryptStitchedYmm_2048(
     _Inout_                                 PSYMCRYPT_GF128_ELEMENT     pState,
     _In_reads_( cbData )                    PCBYTE                      pbSrc,
     _Out_writes_( cbData )                  PBYTE                       pbDst,
+    _In_range_( GCM_YMM_MINBLOCKS * SYMCRYPT_GCM_BLOCK_SIZE, SYMCRYPT_GCM_MAX_DATA_SIZE )
                                             SIZE_T                      cbData );
 
-// Caller must check cbData >= GCM_YMM_MINBLOCKS * SYMCRYPT_GCM_BLOCK_SIZE
 VOID
 SYMCRYPT_CALL
 SymCryptAesGcmDecryptStitchedYmm_2048(
@@ -1632,6 +1642,7 @@ SymCryptAesGcmDecryptStitchedYmm_2048(
     _Inout_                                 PSYMCRYPT_GF128_ELEMENT     pState,
     _In_reads_( cbData )                    PCBYTE                      pbSrc,
     _Out_writes_( cbData )                  PBYTE                       pbDst,
+    _In_range_( GCM_YMM_MINBLOCKS * SYMCRYPT_GCM_BLOCK_SIZE, SYMCRYPT_GCM_MAX_DATA_SIZE )
                                             SIZE_T                      cbData );
 
 // Minimum number of AES blocks to dispatch through the ZMM AES-GCM encrypt path. Below this
@@ -1639,6 +1650,8 @@ SymCryptAesGcmDecryptStitchedYmm_2048(
 // path has a lower floor because it lacks the 1-iteration AES-only lag that encrypt incurs,
 // so it is competitive with YMM down to a small number of blocks. Note that these thresholds may
 // vary between microarchitectures, but the chosen values should be a reasonable baseline.
+// Note: `cbData` on the ZMM functions has no SAL annotation for range beacause unlike YMM, the
+// ZMM implementations still work on smaller sizes; they just do not perform as well.
 #define GCM_ZMM_ENCRYPT_MINBLOCKS 32
 #define GCM_ZMM_DECRYPT_MINBLOCKS 8
 
