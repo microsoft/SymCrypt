@@ -352,7 +352,11 @@ Version management should normally be done by human maintainers. Do not modify t
 3. List all changes as bullet points under the version heading
 4. During development, changes accumulate under the placeholder `# Version x.y.z` header
 
-### Changelog Format
+### Changelog File
+
+The changelog must be updated when adding new externally visible functionality (e.g. new APIs) or fixing bugs. It does not need to be updated for internal-only changes, such as build system changes, file reorganization, CodeQL bugfixes that have no functional impact, etc.
+
+The format of entries in the changelog file is as follows.
 
 ```markdown
 # Version 103.12.0

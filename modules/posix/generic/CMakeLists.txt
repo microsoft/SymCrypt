@@ -29,6 +29,7 @@ endif()
 # Link pthread and libatomic
 target_link_libraries(symcrypt_generic_posix pthread)
 if (CMAKE_SYSTEM_NAME MATCHES "Linux")
+    target_link_options(symcrypt_generic_posix PRIVATE "LINKER:--as-needed")
     target_link_libraries(symcrypt_generic_posix atomic)
 endif()
 
