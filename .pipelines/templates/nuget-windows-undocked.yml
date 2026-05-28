@@ -206,20 +206,6 @@ jobs:
       platform: 'x64'
       configuration: 'Release'
 
-  - task: onebranch.pipeline.signing@1 # https://aka.ms/obpipelines/signing
-    displayName: 'Sign NuGet test application'
-    target: windows_build_container
-    inputs:
-      command: 'sign'
-      cp_cope: 'CP-230072' # Test signing certificate
-      files_to_sign: '**\*.exe'
-      search_root: $(ob_outputDirectory)
-
-  - script: |
-      .\build\bin\amd64fre\exe\NuGetTestApplication.exe
-    displayName: 'Run NuGet test application'
-    workingDirectory: '$(Build.SourcesDirectory)/nuget/test/cpp'
-
   # Smoke test for Linux runtime assets without spinning up a Linux VM. 
   # `dotnet publish -r linux-{x64,arm64}` runs entirely on this Windows host;
   # the .NET SDK extracts runtimes/<rid>/native/libsymcrypt.so from the just-built
@@ -260,11 +246,11 @@ jobs:
       script: |
         $ErrorActionPreference = 'Stop'
         $proj      = "$(Build.SourcesDirectory)/nuget/test/dotnet/SymCryptNuGetLinuxTest.csproj"
-        $projDir   = Split-Path -Parent $proj
+        $outputDir = "$(ob_outputDirectory)/test/dotnet/publish"
         foreach ($rid in @('linux-x64', 'linux-arm64')) {
             Write-Host ""
             Write-Host "=== dotnet publish -r $rid ==="
-            $publishDir = Join-Path $projDir "publish/$rid"
+            $publishDir = Join-Path $outputDir "$rid"
             & dotnet publish $proj -c Release -r $rid --self-contained false -o $publishDir --nologo -v minimal
             if ($LASTEXITCODE -ne 0) {
                 throw "dotnet publish failed for $rid (exit $LASTEXITCODE)"
@@ -289,6 +275,20 @@ jobs:
             }
             Write-Host "OK: $rid publish contains libsymcrypt.so ($len bytes), ELF magic verified"
         }
+
+  - task: onebranch.pipeline.signing@1 # https://aka.ms/obpipelines/signing
+    displayName: 'Sign NuGet test application'
+    target: windows_build_container
+    inputs:
+      command: 'sign'
+      cp_cope: 'CP-230072' # Test signing certificate
+      files_to_sign: '**\*.exe;**\*.dll'
+      search_root: $(ob_outputDirectory)
+
+  - script: |
+      .\build\bin\amd64fre\exe\NuGetTestApplication.exe
+    displayName: 'Run NuGet test application'
+    workingDirectory: '$(ob_outputDirectory)/test/cpp'
 
   - task: CopyFiles@2
     displayName: 'Copy nupkg to OneBranch publishing directory'
