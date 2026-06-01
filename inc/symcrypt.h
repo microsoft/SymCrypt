@@ -10212,13 +10212,13 @@ typedef enum _SYMCRYPT_COMPOSITE_MLKEMKEY_FORMAT {
     SYMCRYPT_COMPOSITE_MLKEMKEY_FORMAT_IRTF_PRIVATE_SEED = 1,
         // 32-byte seed for deriving Composite ML-KEM key, per irtf-cfrg-hybrid-kems CG framework
     SYMCRYPT_COMPOSITE_MLKEMKEY_FORMAT_LAMPS_PRIVATE_KEY = 2,
-        // Standard byte encoding of a Composite ML-KEM private key, per LAMPS composite ML-KEM draft 12.
+        // Standard byte encoding of a Composite ML-KEM private key, per draft-ietf-lamps-pq-composite-kem-12.
         // Concatenation of ML-KEM private seed and private key of the traditional component:
         //   mlkemSeed || tradSK
         // Size in bytes are MLKEM768_P256: 115, MLKEM768_X25519: 96, MLKEM1024_P384: 128
     SYMCRYPT_COMPOSITE_MLKEMKEY_FORMAT_PUBLIC_KEY        = 3,
         // Standard byte encoding of a Composite ML-KEM public key, per irtf-cfrg-hybrid-kems CG framework
-        // and LAMPS composite ML-KEM draft 12.
+        // and draft-ietf-lamps-pq-composite-kem-12.
         // Concatenation of ML-KEM encapsulation key and public key of the traditional component:
         //   mlkemPK || tradPK
         // Size in bytes are MLKEM768_P256: 1249, MLKEM768_X25519: 1216, MLKEM1024_P384: 1665
@@ -10407,12 +10407,8 @@ SymCryptCompositeMlKemDecapsulate(
 // - (pbAgreedSecret, cbAgreedSecret): a buffer into which the generated secret is written.
 //   Currently cbAgreedSecret must be 32 for all parameterizations of Composite ML-KEM.
 //
-// Note: Given an invalid, but correctly-sized, ciphertext, the Composite ML-KEM Decapsulation operation
-// will "implicitly reject" the ciphertext, by returning success in equal time to a valid
-// decapsulation operation, with pseudo-random agreed secret output. This forces higher
-// level protocols to fail later when symmetric keys of peers do not match.
-// So decapsulate will only ever return an error if there are programming errors (e.g. incorrect size),
-// or something fundamentally goes wrong with the environment (e.g. internal memory allocation fails).
+// Note: While ML-KEM decapsulation by itself is implicitly rejecting, Composite ML-KEM decapsulation
+// forwards any errors that can arise from its subcomponent calls (as per draft-ietf-lamps-pq-composite-kem).
 //
 
 ////////////////////////////////////////////////////////////
