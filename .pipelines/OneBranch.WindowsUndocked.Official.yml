@@ -33,6 +33,7 @@ schedules:
   branches:
     include:
     - main
+    - feature/verifiedcrypto
 
 parameters:
 - name: publishVPack

@@ -20,9 +20,9 @@
 extern crate alloc;
 extern crate core;
 
-// Temporarily disable rust usage until AES GCM is ready
-// #[path = "aes/aes.rs"]
-// pub mod aes;
+#[cfg(feature = "aes")]
+#[path = "aes/aes.rs"]
+pub mod aes;
 
 pub mod block_cipher;
 

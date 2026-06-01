@@ -2,15 +2,9 @@
 New changes will be listed here as they are developed. The version number is determined
 prior to the creation of a new release, based on the changes contained in that release.
 
-# Version 104.0.0
 
-This is the first official release of our Rust implementations!
-
-### Breaking Changes
-- Modified `SYMCRYPT_GHASH_EXPANDED_KEY` to no longer force additional alignment on x86 (ABI breaking)
-
-### New features
-- Added Rust implementations of ML-KEM, SHA3 and AES-GCM
+- Added Rust implementations of ML-KEM and SHA3
+- Rust AES-GCM work in progress: XMM implementation is staged in the tree but is not enabled yet
 
 # Version 103.12.1
 

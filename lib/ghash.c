@@ -139,10 +139,10 @@ SymCryptGHashExpandKeyXmm(
 VOID
 SYMCRYPT_CALL
 SymCryptGHashAppendDataXmm(
-    _In_reads_( SYMCRYPT_GF128_FIELD_SIZE )  PCSYMCRYPT_GF128_ELEMENT    expandedKeyTable,
-    _Inout_                                         PSYMCRYPT_GF128_ELEMENT     pState,
-    _In_reads_( cbData )                            PCBYTE                      pbData,
-                                                    SIZE_T                      cbData )
+    _In_reads_( SYMCRYPT_GF128_FIELD_SIZE ) PCSYMCRYPT_GF128_ELEMENT    expandedKeyTable,
+    _Inout_                                 PSYMCRYPT_GF128_ELEMENT     pState,
+    _In_reads_( cbData )                    PCBYTE                      pbData,
+                                            SIZE_T                      cbData )
 {
     __m128i R;
     __m128i cmpValue;
@@ -238,10 +238,10 @@ SymCryptGHashAppendDataXmm(
 VOID
 SYMCRYPT_CALL
 SymCryptGHashAppendDataNeon(
-    _In_reads_( SYMCRYPT_GF128_FIELD_SIZE )  PCSYMCRYPT_GF128_ELEMENT    expandedKeyTable,
-    _Inout_                                     PSYMCRYPT_GF128_ELEMENT     pState,
-    _In_reads_( cbData )                        PCBYTE                      pbData,
-                                                SIZE_T                      cbData )
+    _In_reads_( SYMCRYPT_GF128_FIELD_SIZE ) PCSYMCRYPT_GF128_ELEMENT    expandedKeyTable,
+    _Inout_                                 PSYMCRYPT_GF128_ELEMENT     pState,
+    _In_reads_( cbData )                    PCBYTE                      pbData,
+                                            SIZE_T                      cbData )
 {
     // Room for improvement: replace non-crypto NEON code below, based on a bit by bit lookup with
     // pmull on 8b elements - 8x(8bx8b) -> 8x(16b) pmull is NEON instruction since Armv7
@@ -776,10 +776,16 @@ SymCryptGHashExpandKey(
     _Out_                                       PSYMCRYPT_GHASH_EXPANDED_KEY    expandedKey,
     _In_reads_( SYMCRYPT_GF128_BLOCK_SIZE )     PCBYTE                          pH )
 {
-    PSYMCRYPT_GF128_ELEMENT pExpandedKeyTable = &expandedKey->table[0];
-
 #if  SYMCRYPT_CPU_X86
+    PSYMCRYPT_GF128_ELEMENT pExpandedKeyTable;
     SYMCRYPT_EXTENDED_SAVE_DATA  SaveData;
+
+    //
+    // Initialize offset into table space for 16-alignment.
+    //
+    expandedKey->tableOffset = (0 -((UINT_PTR) &expandedKey->tableSpace[0])) % sizeof(SYMCRYPT_GF128_ELEMENT);
+
+    pExpandedKeyTable = (PSYMCRYPT_GF128_ELEMENT)&expandedKey->tableSpace[expandedKey->tableOffset];
 
     if( SYMCRYPT_CPU_FEATURES_PRESENT( SYMCRYPT_CPU_FEATURES_FOR_PCLMULQDQ_CODE ) )
     {
@@ -803,6 +809,9 @@ SymCryptGHashExpandKey(
     }
 
 #elif SYMCRYPT_CPU_AMD64
+    PSYMCRYPT_GF128_ELEMENT pExpandedKeyTable;
+    pExpandedKeyTable = &expandedKey->table[0];
+
     if( SYMCRYPT_CPU_FEATURES_PRESENT( SYMCRYPT_CPU_FEATURES_FOR_PCLMULQDQ_CODE ) )
     {
         SymCryptGHashExpandKeyPclmulqdq( pExpandedKeyTable, pH );
@@ -814,14 +823,18 @@ SymCryptGHashExpandKey(
     }
 
 #elif SYMCRYPT_CPU_ARM64
+    PSYMCRYPT_GF128_ELEMENT pExpandedKeyTable;
+    pExpandedKeyTable = &expandedKey->table[0];
+
     if( SYMCRYPT_CPU_FEATURES_PRESENT( SYMCRYPT_CPU_FEATURE_NEON_PMULL ) )
     {
         SymCryptGHashExpandKeyPmull( pExpandedKeyTable, pH );
     } else {
         SymCryptGHashExpandKeyC( pExpandedKeyTable, pH );
     }
+
 #else
-    SymCryptGHashExpandKeyC( pExpandedKeyTable, pH );
+    SymCryptGHashExpandKeyC( &expandedKey->table[0], pH );      // Default expansion (does not need alignment)
 #endif
 }
 
@@ -833,10 +846,11 @@ SymCryptGHashAppendData(
     _In_reads_( cbData )            PCBYTE                          pbData,
                                     SIZE_T                          cbData )
 {
-    PCSYMCRYPT_GF128_ELEMENT pExpandedKeyTable = &expandedKey->table[0];
-
 #if SYMCRYPT_CPU_X86
+    PCSYMCRYPT_GF128_ELEMENT pExpandedKeyTable;
     SYMCRYPT_EXTENDED_SAVE_DATA  SaveData;
+
+    pExpandedKeyTable = (PSYMCRYPT_GF128_ELEMENT)&expandedKey->tableSpace[expandedKey->tableOffset];
 
     if( SYMCRYPT_CPU_FEATURES_PRESENT( SYMCRYPT_CPU_FEATURES_FOR_PCLMULQDQ_CODE ) )
     {
@@ -855,6 +869,9 @@ SymCryptGHashAppendData(
     }
 
 #elif SYMCRYPT_CPU_AMD64
+    PCSYMCRYPT_GF128_ELEMENT pExpandedKeyTable;
+
+    pExpandedKeyTable = &expandedKey->table[0];
     if( SYMCRYPT_CPU_FEATURES_PRESENT( SYMCRYPT_CPU_FEATURES_FOR_PCLMULQDQ_CODE ) )
     {
         SymCryptGHashAppendDataPclmulqdq( pExpandedKeyTable, pState, pbData, cbData );
@@ -865,6 +882,9 @@ SymCryptGHashAppendData(
         SymCryptGHashAppendDataC( pExpandedKeyTable, pState, pbData, cbData );
     }
 #elif SYMCRYPT_CPU_ARM
+    PCSYMCRYPT_GF128_ELEMENT pExpandedKeyTable;
+
+    pExpandedKeyTable = &expandedKey->table[0];
     if( SYMCRYPT_CPU_FEATURES_PRESENT( SYMCRYPT_CPU_FEATURE_NEON ) )
     {
         SymCryptGHashAppendDataNeon( pExpandedKeyTable, pState, pbData, cbData );
@@ -872,6 +892,9 @@ SymCryptGHashAppendData(
         SymCryptGHashAppendDataC( pExpandedKeyTable, pState, pbData, cbData );
     }
 #elif SYMCRYPT_CPU_ARM64
+    PCSYMCRYPT_GF128_ELEMENT pExpandedKeyTable;
+
+    pExpandedKeyTable = &expandedKey->table[0];
     if( SYMCRYPT_CPU_FEATURES_PRESENT( SYMCRYPT_CPU_FEATURE_NEON_PMULL ) )
     {
         SymCryptGHashAppendDataPmull( pExpandedKeyTable, pState, pbData, cbData );
@@ -882,6 +905,6 @@ SymCryptGHashAppendData(
         SymCryptGHashAppendDataC( pExpandedKeyTable, pState, pbData, cbData );
     }
 #else
-    SymCryptGHashAppendDataC( pExpandedKeyTable, pState, pbData, cbData );
+    SymCryptGHashAppendDataC( &expandedKey->table[0], pState, pbData, cbData );
 #endif
 }

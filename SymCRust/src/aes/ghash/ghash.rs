@@ -7,6 +7,7 @@
 #[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
 pub(super) mod ghash_xmm;
 
+#[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
 use crate::common::{cpu_features_present, SYMCRYPT_CPU_FEATURE_PCLMULQDQ};
 
 /// GHASH arithmetic is done in the Galois field GF(2^128). In the platform-agnostic implementation,
@@ -60,6 +61,14 @@ type Block = [u8; GF128_BLOCK_SIZE];
 #[cfg_attr(any(target_arch = "arm"), repr(align(8)))]
 #[repr(C)]
 pub(super) struct GHashExpandedKey([u128; GF128_FIELD_SIZE]);
+
+// GHashExpandedKey must match SYMCRYPT_GHASH_EXPANDED_KEY.table on AMD64 / ARM64
+// (the non-SYMCRYPT_GHASH_EXTRA_KEY_ALIGNMENT layout in inc/symcrypt_internal.h). The x86 C
+// struct uses tableOffset + tableSpace instead and is intentionally not supported here.
+const _: () = {
+    assert!(core::mem::size_of::<GHashExpandedKey>() == GF128_FIELD_SIZE * 16);
+    assert!(core::mem::align_of::<GHashExpandedKey>() == 16);
+};
 
 impl Default for GHashExpandedKey {
     fn default() -> Self {

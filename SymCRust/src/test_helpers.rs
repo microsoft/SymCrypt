@@ -13,10 +13,16 @@ extern "C" {
     fn SymCryptInitEnvUnittest(version: u32);
     fn SymCryptCpuFeaturesNeverPresentEnvUnittest() -> u32;
     fn SymCryptTestInjectErrorEnvUnittest(pb_buf: *mut u8, cb_buf: usize);
+}
+
+#[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
+extern "C" {
     fn SymCryptSaveXmmEnvUnittest(save_data: *mut u8);
     fn SymCryptRestoreXmmEnvUnittest(save_data: *const u8);
     fn SymCryptSaveYmmEnvUnittest(save_data: *mut u8);
     fn SymCryptRestoreYmmEnvUnittest(save_data: *const u8);
+    fn SymCryptSaveZmmEnvUnittest(save_data: *mut u8);
+    fn SymCryptRestoreZmmEnvUnittest(save_data: *const u8);
     fn SymCryptCpuidExFuncEnvUnittest(cpu_info: *mut i32, function_id: i32, subfunction_id: i32);
 }
 
@@ -59,30 +65,49 @@ unsafe extern "C" fn SymCryptCpuFeaturesNeverPresent() -> u32 {
     SymCryptCpuFeaturesNeverPresentEnvUnittest()
 }
 #[cfg(test)]
+#[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
 #[no_mangle]
 unsafe extern "C" fn SymCryptSaveXmm(save_data: *mut u8) {
     SymCryptSaveXmmEnvUnittest(save_data);
 }
 
 #[cfg(test)]
+#[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
 #[no_mangle]
 unsafe extern "C" fn SymCryptRestoreXmm(save_data: *const u8) {
     SymCryptRestoreXmmEnvUnittest(save_data);
 }
 
 #[cfg(test)]
+#[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
 #[no_mangle]
 unsafe extern "C" fn SymCryptSaveYmm(save_data: *mut u8) {
     SymCryptSaveYmmEnvUnittest(save_data);
 }
 
 #[cfg(test)]
+#[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
 #[no_mangle]
 unsafe extern "C" fn SymCryptRestoreYmm(save_data: *const u8) {
     SymCryptRestoreYmmEnvUnittest(save_data);
 }
 
 #[cfg(test)]
+#[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
+#[no_mangle]
+unsafe extern "C" fn SymCryptSaveZmm(save_data: *mut u8) {
+    SymCryptSaveZmmEnvUnittest(save_data);
+}
+
+#[cfg(test)]
+#[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
+#[no_mangle]
+unsafe extern "C" fn SymCryptRestoreZmm(save_data: *const u8) {
+    SymCryptRestoreZmmEnvUnittest(save_data);
+}
+
+#[cfg(test)]
+#[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
 #[no_mangle]
 unsafe extern "C" fn SymCryptCpuidExFunc(
     cpu_info: *mut i32,

@@ -557,7 +557,7 @@ SymCryptAesGcmEncryptPartOnePass(
         SymCryptAesGcmEncryptStitchedXmm(
             &pState->pKey->blockcipherKey.aes,
             &pState->counterBlock[0],
-            &pState->pKey->ghashKey.table[0],
+            (PSYMCRYPT_GF128_ELEMENT)&pState->pKey->ghashKey.tableSpace[pState->pKey->ghashKey.tableOffset],
             &pState->ghashState,
             pbSrc,
             pbDst,
@@ -736,7 +736,7 @@ SymCryptAesGcmDecryptPartOnePass(
         SymCryptAesGcmDecryptStitchedXmm(
             &pState->pKey->blockcipherKey.aes,
             &pState->counterBlock[0],
-            &pState->pKey->ghashKey.table[0],
+            (PSYMCRYPT_GF128_ELEMENT)&pState->pKey->ghashKey.tableSpace[pState->pKey->ghashKey.tableOffset],
             &pState->ghashState,
             pbSrc,
             pbDst,

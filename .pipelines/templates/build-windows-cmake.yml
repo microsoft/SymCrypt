@@ -64,7 +64,7 @@ jobs:
     - task: RustInstaller@1
       displayName: 'Install Rust toolchain'
       inputs:
-        rustVersion: 'ms-prod'
+        rustVersion: 'ms-prod-1.93'
         toolchainFeed: 'https://microsoft.pkgs.visualstudio.com/OS/_packaging/SymCrypt-Rust-Prod/nuget/v3/index.json'
     - task: CargoAuthenticate@0
       displayName: 'Authenticate Cargo'

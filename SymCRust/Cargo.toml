@@ -42,8 +42,6 @@ harness = false
 [features]
 benchmarking = ["std"]
 std = []
-kernel = []
-
-# Algorithms
-# aes = []
-# ml-kem = []
+kernel = []     # Stubs for kernel-mode linking
+aes = []        # AES implementation
+ffi = []        # FFI bindings (currently only applies to AES)

@@ -316,19 +316,49 @@ Global
 		{3e58c852-1346-4f53-b555-15ebb2bad7cb}.Release|x86.ActiveCfg = Release|Win32
 		{3e58c852-1346-4f53-b555-15ebb2bad7cb}.Release|x86.Build.0 = Release|Win32
 
-		# symcrust_static_rust_um.lib 
+		# symcrust_static_rust_um.lib
+		# SymCRust is only built for x64 today; map the other solution
+		# configurations to project configurations without Build.0 so they
+		# resolve cleanly (no MSB4121) but are skipped at build time.
+		{c68bef36-1fc4-4545-864b-a2e9080ba196}.Debug|ARM64.ActiveCfg = Debug|ARM64
+
+		{c68bef36-1fc4-4545-864b-a2e9080ba196}.Debug|ARM64EC.ActiveCfg = Debug|ARM64EC
+
 		{c68bef36-1fc4-4545-864b-a2e9080ba196}.Debug|x64.ActiveCfg = Debug|x64
 		{c68bef36-1fc4-4545-864b-a2e9080ba196}.Debug|x64.Build.0 = Debug|x64
+
+		{c68bef36-1fc4-4545-864b-a2e9080ba196}.Debug|x86.ActiveCfg = Debug|Win32
+
+		{c68bef36-1fc4-4545-864b-a2e9080ba196}.Release|ARM64.ActiveCfg = Release|ARM64
+
+		{c68bef36-1fc4-4545-864b-a2e9080ba196}.Release|ARM64EC.ActiveCfg = Release|ARM64EC
 
 		{c68bef36-1fc4-4545-864b-a2e9080ba196}.Release|x64.ActiveCfg = Release|x64
 		{c68bef36-1fc4-4545-864b-a2e9080ba196}.Release|x64.Build.0 = Release|x64
 
-		# symcrust_static_rust_km.lib 
+		{c68bef36-1fc4-4545-864b-a2e9080ba196}.Release|x86.ActiveCfg = Release|Win32
+
+		# symcrust_static_rust_km.lib
+		# SymCRust is only built for x64 today; map the other solution
+		# configurations to project configurations without Build.0 so they
+		# resolve cleanly (no MSB4121) but are skipped at build time.
+		{6fab3a2e-d75a-4ad3-8f16-49c64c0989f9}.Debug|ARM64.ActiveCfg = Debug|ARM64
+
+		{6fab3a2e-d75a-4ad3-8f16-49c64c0989f9}.Debug|ARM64EC.ActiveCfg = Debug|ARM64EC
+
 		{6fab3a2e-d75a-4ad3-8f16-49c64c0989f9}.Debug|x64.ActiveCfg = Debug|x64
 		{6fab3a2e-d75a-4ad3-8f16-49c64c0989f9}.Debug|x64.Build.0 = Debug|x64
 
+		{6fab3a2e-d75a-4ad3-8f16-49c64c0989f9}.Debug|x86.ActiveCfg = Debug|Win32
+
+		{6fab3a2e-d75a-4ad3-8f16-49c64c0989f9}.Release|ARM64.ActiveCfg = Release|ARM64
+
+		{6fab3a2e-d75a-4ad3-8f16-49c64c0989f9}.Release|ARM64EC.ActiveCfg = Release|ARM64EC
+
 		{6fab3a2e-d75a-4ad3-8f16-49c64c0989f9}.Release|x64.ActiveCfg = Release|x64
 		{6fab3a2e-d75a-4ad3-8f16-49c64c0989f9}.Release|x64.Build.0 = Release|x64
+
+		{6fab3a2e-d75a-4ad3-8f16-49c64c0989f9}.Release|x86.ActiveCfg = Release|Win32
 
 
 	EndGlobalSection

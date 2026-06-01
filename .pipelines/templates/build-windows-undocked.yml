@@ -116,7 +116,7 @@ jobs:
     displayName: 'Install Rust toolchain'
     condition: eq(variables['symcrust_enabled'], true)
     inputs:
-      rustVersion: 'ms-prod'
+      rustVersion: 'ms-prod-1.93'
       toolchainFeed: 'https://microsoft.pkgs.visualstudio.com/OS/_packaging/SymCrypt-Rust-Prod/nuget/v3/index.json'
       additionalTargets: 'x86_64-pc-windows-msvc'
   

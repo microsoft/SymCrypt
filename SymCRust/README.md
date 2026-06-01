@@ -19,10 +19,21 @@ The Rust code in this subdirectory will be used in two ways:
 - To run the SymCRust unit tests, `cargo test --features std`. Currently these tests rely on some
   functionality from the SymCrypt C library, so you must build that first using CMake (see
   `BUILD.md` in the parent directory), and then set the `SYMCRYPT_LIB_PATH` environment variable
-  to the output directory that contains the SymCrypt static libraries.
+  to the output directory that contains the SymCrypt static libraries. If you want to run the
+  AES tests as well, also pass `--features aes` (e.g. `cargo test --features aes,std`).
 - To run the SymCRust benchmarks, `cargo bench --features benchmarking`
 - To build SymCrypt (static lib, dynamic modules, and tests) with SymCRust implementations,
   from the parent directory, invoke CMake or msbuild with `-DSYMCRYPT_SYMCRUST=ON` (or use `build.py` with `--symcrust` option)
+
+## Cargo features
+
+| Feature | Default | Description |
+| --- | --- | --- |
+| `std` | off | Link against `std`. Required for running unit tests and for some benchmarking paths. |
+| `kernel` | off | Enable stubs required for linking to Windows kernel-mode components. |
+| `benchmarking` | off | Mock out external dependencies for pure-Rust criterion benchmarks; implies `std`. |
+| `aes` | off | Enable AES implementations. **x86_64 and aarch64 only**. |
+| `ffi` | off | Enable FFI functions. Currently only applies to AES. |
 
 ## TODOs
 
@@ -45,13 +56,14 @@ This build is a work in progress!
 - Port the ML-KEM CASTs to SymCRust (currently invoke the C definition of the self-tests)
 - Update build.rs to parse version.json so that magic values can be set correctly
 - Remove dependency on C code from tests, use KATs instead
-- Make FFI optional (put it behind a feature flag)
-  - Also make each algorithm have its own feature flag?
+- Extend the per-algorithm feature gating to SHA-3 and ML-KEM (currently only AES is gated by the
+  `aes`/`ffi` features).
 - Find a better way to express unsafety of functions that require specific CPU features. They should
   probably be marked as unsafe and annotated with `#[target_feature(...)]`, but this requires
   an additional wrapping function for anything that implements a trait interface, because trait
   functions cannot be unsafe.
-- Fully enable AES-GCM when rust is ready. 
+- Fully enable AES-GCM in hybrid C+Rust builds (wire `SYMCRUST_AES_GCM` on the C side to suppress
+  the C definitions, then enable the `aes,ffi` Cargo features in the SymCRust CI build).
 - Enable SymCrust for non AMD64.
 - Update `symcrypt_build_property` in `build-windows-undocked.yml` to be more deterministic like `build-azl.yml`. 
 - Determine a way to configure what algos are being built with C/Rust from build time.

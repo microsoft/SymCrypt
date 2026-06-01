@@ -214,6 +214,7 @@ impl<'a, T> InPlaceOrDisjointBuffer<'a, T> {
     ///
     /// # Safety
     /// Caller must ensure offset < self.len() and offset * sizeof(T) + 16 <= self.len * sizeof(T)
+    #[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
     #[target_feature(enable = "sse2")]
     #[inline]
     pub unsafe fn loadu_si128_src(&self, offset: usize) -> __m128i {
@@ -235,6 +236,7 @@ impl<'a, T> InPlaceOrDisjointBuffer<'a, T> {
     ///
     /// # Safety
     /// Caller must ensure offset < self.len() and offset * sizeof(T) + 16 <= self.len * sizeof(T)
+    #[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
     #[target_feature(enable = "sse2")]
     #[inline]
     pub unsafe fn loadu_si128_dst(&self, offset: usize) -> __m128i {
@@ -251,6 +253,7 @@ impl<'a, T> InPlaceOrDisjointBuffer<'a, T> {
     ///
     /// # Safety
     /// Caller must ensure offset < self.len() and offset * sizeof(T) + 16 <= self.len * sizeof(T)
+    #[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
     #[target_feature(enable = "sse2")]
     #[inline]
     pub unsafe fn storeu_si128(&mut self, offset: usize, value: __m128i) {

@@ -4,6 +4,11 @@
 // Copyright (c) Microsoft Corporation. Licensed under the MIT license.
 //
 
+#[cfg(target_arch = "x86")]
+compile_error!(
+    "SymCRust AES does not support x86. Use the C SymCrypt implementation instead."
+);
+
 use alloc::boxed::Box;
 use core::ops::Drop;
 use core::pin::Pin;
@@ -30,7 +35,7 @@ mod aes_neon;
     )
 ))]
 mod aes_xmm;
-#[cfg(not(any(feature = "benchmarking", test)))]
+#[cfg(all(feature = "ffi", not(any(feature = "benchmarking", test))))]
 mod ffi;
 #[path = "ghash/ghash.rs"]
 mod ghash;
