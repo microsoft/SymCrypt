@@ -69,7 +69,7 @@ SymCryptInitEnvUnittest( UINT32 version )
     }
 
     //
-    // By default we don't fail XMM/YMM/ZMM so that we get proper performance for GCM.
+    // By default we don't fail XMM/YMM/ZMM so that we can test our optimized implementations.
     // We allow the nofail to be disabled by command-line option.
     //
     g_SymCryptCpuFeaturesNotPresent &= ~SYMCRYPT_CPU_FEATURE_SAVEXMM_NOFAIL;

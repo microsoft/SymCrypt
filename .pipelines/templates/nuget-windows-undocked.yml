@@ -51,6 +51,18 @@ jobs:
       artifact: 'drop_Build_Windows_Undocked_build_sln_arm64fre'
       path: '$(Build.SourcesDirectory)/artifacts/win-arm64'
 
+  - task: DownloadPipelineArtifact@2
+    displayName: 'Download Linux AMD64 artifacts'
+    inputs:
+      artifact: 'drop_Build_AzureLinux_AMD64_build_Linux_AMD64_Clang_Release'
+      path: '$(Build.SourcesDirectory)/artifacts/linux-x64'
+
+  - task: DownloadPipelineArtifact@2
+    displayName: 'Download Linux ARM64 artifacts'
+    inputs:
+      artifact: 'drop_Build_AzureLinux_ARM64_build_Linux_ARM64_Clang_Release'
+      path: '$(Build.SourcesDirectory)/artifacts/linux-arm64'
+
   - task: CopyFiles@2
     displayName: 'Copy AMD64 package files'
     inputs:
@@ -72,11 +84,113 @@ jobs:
       Contents: '**'
       TargetFolder: '$(Build.SourcesDirectory)/pkg/win-arm64'
 
+  # The Linux build artifacts contain a symcrypt-linux-generic-*.tar.gz with the headers
+  # and libsymcrypt.so* files. We extract it on the Windows VM using the built-in tar.exe.
+  # The unversioned libsymcrypt.so is a symlink in the tarball; on Windows it may extract
+  # as a 0-byte stub or fail to create the symlink, so we always overwrite it with a real
+  # copy of the SONAME-versioned binary. We then verify ELF magic bytes as a sanity check
+  # before nuget pack picks the file up.
+  - task: PowerShell@2
+    displayName: 'Extract and stage Linux package files'
+    inputs:
+      targetType: 'inline'
+      script: |
+        $ErrorActionPreference = 'Stop'
+        foreach ($archDir in @('linux-x64', 'linux-arm64')) {
+            $artifactPkgDir = Join-Path '$(Build.SourcesDirectory)/artifacts' "$archDir/pkg"
+            $stageDir       = Join-Path '$(Build.SourcesDirectory)/pkg' $archDir
+
+            if (Test-Path $stageDir) { Remove-Item $stageDir -Recurse -Force }
+            New-Item -ItemType Directory -Path $stageDir -Force | Out-Null
+
+            $tarball = Get-ChildItem -Path $artifactPkgDir -Filter 'symcrypt-linux-generic-*.tar.gz' -ErrorAction Stop | Select-Object -First 1
+            if (-not $tarball) {
+                throw "No symcrypt-linux-generic-*.tar.gz found under $artifactPkgDir"
+            }
+            Write-Host "Extracting $($tarball.FullName) -> $stageDir"
+            & tar.exe -xzf $tarball.FullName -C $stageDir
+            if ($LASTEXITCODE -ne 0) {
+                throw "tar.exe failed with exit code $LASTEXITCODE while extracting $($tarball.Name)"
+            }
+
+            # Find the SONAME-versioned real binary, e.g. libsymcrypt.so.103.12.1
+            $realLib = Get-ChildItem -Path (Join-Path $stageDir 'lib') -Filter 'libsymcrypt.so.*' -File |
+                Where-Object { $_.Name -match '^libsymcrypt\.so\.\d+\.\d+\.\d+$' } |
+                Sort-Object Length -Descending |
+                Select-Object -First 1
+            if (-not $realLib) {
+                Get-ChildItem -Path (Join-Path $stageDir 'lib') | Format-List | Out-String | Write-Host
+                throw "Could not find the SONAME-versioned libsymcrypt.so.X.Y.Z under $stageDir/lib"
+            }
+
+            $unversioned = Join-Path $stageDir 'lib/libsymcrypt.so'
+            if (Test-Path $unversioned) { Remove-Item $unversioned -Force }
+            Copy-Item -Path $realLib.FullName -Destination $unversioned -Force
+            Write-Host "Staged libsymcrypt.so from $($realLib.Name) ($($realLib.Length) bytes)"
+
+            # Sanity check: the staged file must be a real ELF binary
+            $fs = [System.IO.File]::OpenRead($unversioned)
+            try {
+                $hdr = New-Object byte[] 4
+                $read = $fs.Read($hdr, 0, 4)
+            } finally { $fs.Dispose() }
+            if ($read -ne 4 -or $hdr[0] -ne 0x7F -or $hdr[1] -ne 0x45 -or $hdr[2] -ne 0x4C -or $hdr[3] -ne 0x46) {
+                throw "Staged $unversioned does not start with ELF magic (0x7F 'E' 'L' 'F')"
+            }
+            Write-Host "Verified ELF magic on $archDir/lib/libsymcrypt.so"
+        }
+
   - task: NuGetCommand@2
     displayName: 'Create NuGet package'
     inputs:
       command: 'custom'
       arguments: 'pack $(Build.SourcesDirectory)/nuget/symcrypt.nuspec -OutputDirectory $(ob_outputDirectory) -Version $(nuget_package_version)'
+
+  # Sanity check that the produced package contains real ELF binaries at the expected
+  # runtimes/<rid>/native/ paths. Guards against pipeline regressions in the Linux
+  # staging step (e.g. a tar.exe symlink-handling change leaving a 0-byte file).
+  - task: PowerShell@2
+    displayName: 'Verify Linux runtimes in produced .nupkg'
+    inputs:
+      targetType: 'inline'
+      script: |
+        $ErrorActionPreference = 'Stop'
+        Add-Type -AssemblyName System.IO.Compression.FileSystem
+
+        $nupkg = Get-ChildItem -Path '$(ob_outputDirectory)' -Filter 'Microsoft.SymCrypt.*.nupkg' -File | Select-Object -First 1
+        if (-not $nupkg) {
+            throw "No Microsoft.SymCrypt.*.nupkg found under $(ob_outputDirectory)"
+        }
+        Write-Host "Verifying $($nupkg.FullName)"
+
+        $expectedEntries = @(
+            'runtimes/linux-x64/native/libsymcrypt.so',
+            'runtimes/linux-arm64/native/libsymcrypt.so'
+        )
+
+        $zip = [System.IO.Compression.ZipFile]::OpenRead($nupkg.FullName)
+        try {
+            foreach ($name in $expectedEntries) {
+                $entry = $zip.Entries | Where-Object { $_.FullName -eq $name } | Select-Object -First 1
+                if (-not $entry) {
+                    throw "Expected entry '$name' not found in $($nupkg.Name)"
+                }
+                if ($entry.Length -lt 1024) {
+                    throw "Entry '$name' is suspiciously small ($($entry.Length) bytes)"
+                }
+                $stream = $entry.Open()
+                try {
+                    $hdr = New-Object byte[] 4
+                    $read = $stream.Read($hdr, 0, 4)
+                } finally { $stream.Dispose() }
+                if ($read -ne 4 -or $hdr[0] -ne 0x7F -or $hdr[1] -ne 0x45 -or $hdr[2] -ne 0x4C -or $hdr[3] -ne 0x46) {
+                    throw "Entry '$name' does not start with ELF magic"
+                }
+                Write-Host "OK: $name ($($entry.Length) bytes, ELF magic verified)"
+            }
+        } finally {
+            $zip.Dispose()
+        }
 
   - task: PowerShell@2
     displayName: 'Update package version in packages.config'
@@ -105,19 +219,89 @@ jobs:
       platform: 'x64'
       configuration: 'Release'
 
+  # Smoke test for Linux runtime assets without spinning up a Linux VM. 
+  # `dotnet publish -r linux-{x64,arm64}` runs entirely on this Windows host;
+  # the .NET SDK extracts runtimes/<rid>/native/libsymcrypt.so from the just-built
+  # .nupkg into the publish folder using its standard RID asset-resolver. We never
+  # execute the .so (that's covered by the Test_AzureLinux stages), we only assert
+  # the asset lands where .NET consumers (e.g. MISE) will expect it.
+  #
+  # NU1202 failures here typically mean the nuspec is missing a managed-TFM
+  # dependency group + lib/<tfm>/_._ placeholder. NU1604/NU1605 mean the RID
+  # asset-resolver didn't pick up runtimes/<rid>/native/libsymcrypt.so. Missing
+  # file after publish means the runtime layout in the .nupkg is wrong.
+  - task: PowerShell@2
+    displayName: 'Stage .NET test project for Linux publish'
+    inputs:
+      targetType: 'inline'
+      script: |
+        $ErrorActionPreference = 'Stop'
+        $csproj = "$(Build.SourcesDirectory)/nuget/test/dotnet/SymCryptNuGetLinuxTest.csproj"
+        $content = Get-Content -Path $csproj -Raw
+        $content = $content -replace '%NUGET_VERSION%', '$(nuget_package_version)'
+        Set-Content -Path $csproj -Value $content
+
+        # Make the freshly-packed .nupkg discoverable via the test's Local feed
+        # (nuget/test/dotnet/nuget.config has Local value=".").
+        Copy-Item -Path "$(ob_outputDirectory)/Microsoft.SymCrypt.*.nupkg" `
+                  -Destination "$(Build.SourcesDirectory)/nuget/test/dotnet/" -Force
+
+  - task: UseDotNet@2
+    displayName: 'Install .NET 8 SDK'
+    inputs:
+      packageType: 'sdk'
+      version: '8.0.x'
+
+  - task: PowerShell@2
+    displayName: 'Validate Linux publish layout (linux-x64, linux-arm64)'
+    inputs:
+      targetType: 'inline'
+      script: |
+        $ErrorActionPreference = 'Stop'
+        $proj      = "$(Build.SourcesDirectory)/nuget/test/dotnet/SymCryptNuGetLinuxTest.csproj"
+        $outputDir = "$(ob_outputDirectory)/test/dotnet/publish"
+        foreach ($rid in @('linux-x64', 'linux-arm64')) {
+            Write-Host ""
+            Write-Host "=== dotnet publish -r $rid ==="
+            $publishDir = Join-Path $outputDir "$rid"
+            & dotnet publish $proj -c Release -r $rid --self-contained false -o $publishDir --nologo -v minimal
+            if ($LASTEXITCODE -ne 0) {
+                throw "dotnet publish failed for $rid (exit $LASTEXITCODE)"
+            }
+
+            $so = Join-Path $publishDir 'libsymcrypt.so'
+            if (-not (Test-Path $so)) {
+                Get-ChildItem $publishDir | Out-String | Write-Host
+                throw "libsymcrypt.so NOT FOUND in publish output for $rid"
+            }
+            $fs = [System.IO.File]::OpenRead($so)
+            try {
+                $hdr  = New-Object byte[] 4
+                $read = $fs.Read($hdr, 0, 4)
+                $len  = $fs.Length
+            } finally { $fs.Dispose() }
+            if ($len -lt 1024) {
+                throw "Published libsymcrypt.so for $rid is suspiciously small ($len bytes)"
+            }
+            if ($read -ne 4 -or $hdr[0] -ne 0x7F -or $hdr[1] -ne 0x45 -or $hdr[2] -ne 0x4C -or $hdr[3] -ne 0x46) {
+                throw "Published libsymcrypt.so for $rid does not start with ELF magic"
+            }
+            Write-Host "OK: $rid publish contains libsymcrypt.so ($len bytes), ELF magic verified"
+        }
+
   - task: onebranch.pipeline.signing@1 # https://aka.ms/obpipelines/signing
     displayName: 'Sign NuGet test application'
     target: windows_build_container
     inputs:
       command: 'sign'
       cp_cope: 'CP-230072' # Test signing certificate
-      files_to_sign: '**\*.exe'
+      files_to_sign: '**\*.exe;**\*.dll'
       search_root: $(ob_outputDirectory)
 
   - script: |
       .\build\bin\amd64fre\exe\NuGetTestApplication.exe
     displayName: 'Run NuGet test application'
-    workingDirectory: '$(Build.SourcesDirectory)/nuget/test/cpp'
+    workingDirectory: '$(ob_outputDirectory)/test/cpp'
 
   - task: CopyFiles@2
     displayName: 'Copy nupkg to OneBranch publishing directory'

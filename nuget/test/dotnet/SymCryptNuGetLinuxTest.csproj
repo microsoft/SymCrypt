@@ -1,0 +1,26 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    Layout-validation test for the Linux runtime assets in the Microsoft.SymCrypt
+    NuGet package. The CI pipeline runs `dotnet publish -r linux-x64` and
+    `-r linux-arm64` against this project on the Windows VM that just produced the
+    .nupkg, and asserts libsymcrypt.so lands in the publish output for each RID.
+
+    The pipeline replaces %NUGET_VERSION% with the version computed for the build
+    before invoking dotnet (mirroring the pattern used by test/cpp/packages.config).
+  -->
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net8.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <RootNamespace>SymCryptNuGetLinuxTest</RootNamespace>
+    <AssemblyName>SymCryptNuGetLinuxTest</AssemblyName>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.SymCrypt" Version="%NUGET_VERSION%" />
+  </ItemGroup>
+
+</Project>

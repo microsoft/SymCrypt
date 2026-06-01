@@ -16,7 +16,14 @@
     <copyright>Copyright (c) Microsoft Corporation. All rights reserved.</copyright>
     <tags>symcrypt cryptography crypto native windows linux microsoft security</tags>
     <dependencies>
+      <!-- "native0.0" makes this package consumable from C++ vcxproj via the
+           build\native\Microsoft.SymCrypt.targets file. "netstandard2.0" + the
+           empty lib\netstandard2.0\_._ placeholder file below makes the package
+           consumable from managed .NET projects (SDK-style PackageReference), so
+           callers can resolve native runtime assets under runtimes\<rid>\native\
+           via [DllImport]. -->
       <group targetFramework="native0.0" />
+      <group targetFramework="netstandard2.0" />
     </dependencies>
   </metadata>
   <files>
@@ -25,7 +32,13 @@
     <file src="..\CHANGELOG.md" target="" />
     <file src="..\NOTICE.txt" target="" />
     
-    <!-- Header files (taken from Windows AMD64, they're the same regardless of arch) -->
+    <!-- Header files. By NuGet convention all native headers go into the single,
+         platform/arch-agnostic target directory lib\native\include\ (one copy per
+         header). The MSBuild C++ NuGet integration adds this directory to
+         AdditionalIncludeDirectories automatically, regardless of $(Platform) or
+         $(OS). The src= path is just our local staging path; the four shared
+         headers below are identical across architectures and platforms, so
+         we pick the Windows AMD64 staging tree arbitrarily. -->
     <file src="..\pkg\win-x64\inc\symcrypt.h" target="lib\native\include\" />
     <file src="..\pkg\win-x64\inc\symcrypt_low_level.h" target="lib\native\include\" />
     <file src="..\pkg\win-x64\inc\symcrypt_internal.h" target="lib\native\include\" />
@@ -33,6 +46,12 @@
     
     <!-- Build targets -->
     <file src="build\native\Microsoft.SymCrypt.targets" target="build\native\" />
+
+    <!-- Empty placeholder under lib\netstandard2.0\ to mark managed-TFM compatibility.
+         This is the conventional pattern for native-only NuGet packages that ship
+         runtime assets under runtimes\<rid>\native\ and need to be consumable from
+         .NET. -->
+    <file src="_._" target="lib\netstandard2.0\" />
     
     <!-- Windows AMD64 (x86-64) runtime -->
     <file src="..\pkg\win-x64\dll\symcrypt.dll" target="runtimes\win-x64\native\" />
@@ -43,15 +62,23 @@
     <file src="..\pkg\win-arm64\dll\symcrypt.dll" target="runtimes\win-arm64\native\" />
     <file src="..\pkg\win-arm64\dll\symcrypt.lib" target="runtimes\win-arm64\native\" />
     <file src="..\pkg\win-arm64\dll\symcrypt.pdb" target="runtimes\win-arm64\native\" />
-    
-    <!-- Headers for non-MSVC compilers -->
-    <!-- <file src="..\pkg\linux-x64\inc\symcrypt_no_sal.h" target="lib\native\include\" /> -->
 
-    <!-- Linux AMD64 (x86-64) runtime -->
-    <!-- <file src="..\pkg\linux-x64\lib\libsymcrypt.so" target="runtimes\linux-x64\native\" /> -->
+    <!-- symcrypt_no_sal.h: header for non-MSVC compilers, joins the other headers in
+         lib\native\include\. Unlike the four headers above, this one is only emitted
+         by package.py for Linux/OPTEE targets (see SymCryptPackage.json), so it must
+         be sourced from a Linux staging tree. The file itself is platform/arch-agnostic. -->
+    <file src="..\pkg\linux-x64\inc\symcrypt_no_sal.h" target="lib\native\include\" />
 
-    <!-- Linux ARM64 runtime -->
-    <!-- <file src="..\pkg\linux-arm64\lib\libsymcrypt.so" target="runtimes\linux-arm64\native\" /> -->
+    <!-- Linux AMD64 (x86-64) runtime.
+         NOTE: NuGet packages are zip-based and do not preserve Unix symlinks or the
+         SONAME chain. The pipeline stages a real copy of the SONAME-versioned binary
+         (libsymcrypt.so.<MAJOR>.<MINOR>.<PATCH>) as plain "libsymcrypt.so" so that
+         [DllImport("symcrypt")] in .NET resolves it from runtimes/linux-x64/native/.
+         Linux consumers needing libsymcrypt.so.<MAJOR> can symlink it after publish. -->
+    <file src="..\pkg\linux-x64\lib\libsymcrypt.so" target="runtimes\linux-x64\native\" />
+
+    <!-- Linux ARM64 runtime. Same staging caveat as linux-x64 above. -->
+    <file src="..\pkg\linux-arm64\lib\libsymcrypt.so" target="runtimes\linux-arm64\native\" />
 
   </files>
 </package>

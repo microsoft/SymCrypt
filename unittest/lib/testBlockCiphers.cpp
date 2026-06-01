@@ -119,6 +119,7 @@ NTSTATUS BlockCipherMultiImp::setKey( PCBYTE pbKey, SIZE_T cbKey )
 VOID
 BlockCipherMultiImp::encrypt( PBYTE pbChain, SIZE_T cbChain, PCBYTE pbSrc, PBYTE pbDst, SIZE_T cbData )
 {
+    PCBYTE pbSrcLocal;
     BYTE bufData[512];
     BYTE bufChain[32];
     ResultMerge resData;
@@ -130,8 +131,19 @@ BlockCipherMultiImp::encrypt( PBYTE pbChain, SIZE_T cbChain, PCBYTE pbSrc, PBYTE
     for( BlockCipherImpPtrVector::const_iterator i = m_comps.begin(); i != m_comps.end(); ++i )
     {
         memcpy( bufChain, pbChain, cbChain );
-        SymCryptWipe( bufData, cbData );
-        (*i)->encrypt( bufChain, cbChain, pbSrc, bufData, cbData );
+
+        if( pbSrc == pbDst )
+        {
+            memcpy( bufData, pbSrc, cbData );
+            pbSrcLocal = bufData;
+        }
+        else
+        {
+            SymCryptWipe( bufData, cbData );
+            pbSrcLocal = pbSrc;
+        }
+
+        (*i)->encrypt( bufChain, cbChain, pbSrcLocal, bufData, cbData );
         resData.addResult( (*i), bufData, cbData );
         resChain.addResult( (*i), bufChain, cbChain );
     }
@@ -143,6 +155,7 @@ BlockCipherMultiImp::encrypt( PBYTE pbChain, SIZE_T cbChain, PCBYTE pbSrc, PBYTE
 VOID
 BlockCipherMultiImp::decrypt( PBYTE pbChain, SIZE_T cbChain, PCBYTE pbSrc, PBYTE pbDst, SIZE_T cbData )
 {
+    PCBYTE pbSrcLocal;
     BYTE bufData[512];
     BYTE bufChain[32];
     ResultMerge resData;
@@ -154,8 +167,19 @@ BlockCipherMultiImp::decrypt( PBYTE pbChain, SIZE_T cbChain, PCBYTE pbSrc, PBYTE
    for( BlockCipherImpPtrVector::const_iterator i = m_comps.begin(); i != m_comps.end(); ++i )
    {
         memcpy( bufChain, pbChain, cbChain );
-        SymCryptWipe( bufData, cbData );
-        (*i)->decrypt( bufChain, cbChain, pbSrc, bufData, cbData );
+
+        if( pbSrc == pbDst )
+        {
+            memcpy( bufData, pbSrc, cbData );
+            pbSrcLocal = bufData;
+        }
+        else
+        {
+            SymCryptWipe( bufData, cbData );
+            pbSrcLocal = pbSrc;
+        }
+
+        (*i)->decrypt( bufChain, cbChain, pbSrcLocal, bufData, cbData );
         resData.addResult( (*i), bufData, cbData );
         resChain.addResult( (*i), bufChain, cbChain );
     }
@@ -243,6 +267,30 @@ katBlockCipherSingle(
         offset += nBytes;
     }
     CHECK3( memcmp( bufData, pbPlaintext, cbPlaintext ) == 0, "Plaintext 2 mismatch in line %lld", line );
+
+    //
+    // Do in-place encryption: copy plaintext into bufData and encrypt with src == dst.
+    // This catches regressions in modes (or implementations) where the output write
+    // could clobber an unread input byte.
+    //
+    memcpy( bufData, pbPlaintext, cbPlaintext );
+    if (cbChain > 0)
+    {
+        memcpy( bufChain, pbChain, cbChain );
+    }
+    pImp->encrypt( bufChain, cbChain, bufData, bufData, cbPlaintext );
+    CHECK3( memcmp( bufData, pbCiphertext, cbPlaintext ) == 0, "In-place ciphertext mismatch in line %lld", line );
+
+    //
+    // Do in-place decryption: copy ciphertext into bufData and decrypt with src == dst.
+    //
+    memcpy( bufData, pbCiphertext, cbCiphertext );
+    if (cbChain > 0)
+    {
+        memcpy( bufChain, pbChain, cbChain );
+    }
+    pImp->decrypt( bufChain, cbChain, bufData, bufData, cbCiphertext );
+    CHECK3( memcmp( bufData, pbPlaintext, cbCiphertext ) == 0, "In-place plaintext mismatch in line %lld", line );
 
 }
 

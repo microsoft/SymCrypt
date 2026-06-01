@@ -74,17 +74,6 @@ stages:
       publish: ${{ parameters.publishVPack }}
       lkgCompilerBranch: ${{ parameters.lkgCompilerBranch }}
 
-- stage: NuGet_Windows_Undocked
-  displayName: Create NuGet Package
-  dependsOn:
-  - Set_Version
-  - Test_Windows_Undocked # The real dependency is on the build stage, but we don't want to publish without successful tests
-  jobs:
-  - template: templates/nuget-windows-undocked.yml@self
-    parameters:
-      publish: ${{ parameters.publishNuGet }}
-      lkgCompilerBranch: ${{ parameters.lkgCompilerBranch }}
-
 - stage: Build_Ubuntu
   displayName: Build Ubuntu
   jobs:
@@ -129,3 +118,17 @@ stages:
     parameters:
       hostArch: 'ARM64'
       buildType: ${{ parameters.buildType }}
+
+- stage: NuGet_Windows_Undocked
+  displayName: Create NuGet Package
+  dependsOn:
+  - Set_Version
+  # The real dependencies are on the build stages, but we don't want to publish without successful tests
+  - Test_Windows_Undocked
+  - Test_AzureLinux_AMD64
+  - Test_AzureLinux_ARM64
+  jobs:
+  - template: templates/nuget-windows-undocked.yml@self
+    parameters:
+      publish: ${{ parameters.publishNuGet }}
+      lkgCompilerBranch: ${{ parameters.lkgCompilerBranch }}

@@ -30,6 +30,7 @@ if(CMAKE_SYSTEM_NAME MATCHES "Darwin")
       COMMAND xcrun dsymutil $<TARGET_FILE:symcryptunittest> -o $<TARGET_FILE_DIR:symcryptunittest>/symcryptunittest.dSYM
     )
 else() # Special linking options for non-MacOS
+    target_link_options(symcryptunittest PRIVATE "LINKER:--as-needed")
     target_link_libraries(symcryptunittest atomic)
 endif()
 

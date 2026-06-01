@@ -9,6 +9,7 @@ prior to the creation of a new release, based on the changes contained in that r
 # Version 103.12.1
 
 - Add ZMM (AVX512) implementation of AES-GCM: improves performance by up to 35% on supported hardware
+- Add YMM (AVX256) implementation of AES-CBC: improves performance by up to 45% on supported hardware
 
 # Version 103.12.0
 
