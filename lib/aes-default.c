@@ -596,7 +596,7 @@ SymCryptAesGcmEncryptPartOnePass(
         // handing over the key stream. So encryption consists of two steps:
         // - hand over the key stream
         // - MAC some ciphertext
-        // In this view (which has equivalent security properties to GCM) is obviously doesn't
+        // In this view (which has equivalent security properties to GCM) it obviously doesn't
         // matter that we read pbDst back.
         //
         SymCryptGHashAppendData(&pState->pKey->ghashKey,

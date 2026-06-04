@@ -355,6 +355,11 @@ extern "C" {
 #define INCLUDE_IMPL_REF       (1)
 #endif
 
+#if !defined( SYMCRUST_EXPERIMENTAL_BUILD )
+// SymCRust experimental build is disabled by default
+#define SYMCRUST_EXPERIMENTAL_BUILD (0)
+#endif
+
 // Per https://github.com/llvm/llvm-project/blob/release/17.x/libcxx/docs/ReleaseNotes/17.rst#llvm-18
 // LLVM 18+ no longer implements the base template for std::char_traits
 // For BString to continue to work, we need to define our own char_traits for BYTE.
@@ -1141,9 +1146,19 @@ extern DWORD g_osVersion;       // 0xaabb for major version aa and minor version
 #define OS_VERSION_WIN8     0x0602
 #define OS_VERSION_WIN8_1   0x0603
 
-[[noreturn]]
-VOID
-fatal( _In_ PCSTR file, UINT32 line, _In_ PCSTR text, ... );
+extern "C" {
+    [[noreturn]]
+    VOID
+    fatalImpl(const char* message);
+
+    // fatal formats the message and calls fatalImpl. The extra indirection makes linking to
+    // Rust easier.
+    [[noreturn]]
+    VOID
+    fatal( _In_ PCSTR file, UINT32 line, _In_ PCSTR format, ... );
+}
+
+
 
 typedef CONST CHAR * PCCHAR;
 

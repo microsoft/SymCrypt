@@ -1,0 +1,40 @@
+# Registry configuration for internal Microsoft builds
+[source.crates-io]
+replace-with = 'ms-crates-io'
+
+[registries.ms-crates-io]
+index = "sparse+https://microsoft.pkgs.visualstudio.com/OS/_packaging/SymCrypt-Rust-Prod/Cargo/index/"
+
+# Due to https://github.com/rust-lang/rust/issues/139160, we must explicitly specify that our target
+# architecture supports AES instructions; otherwise the intrinsics are not inlined.
+#
+# SymCrypt does runtime CPU feature detection (currently this lives in the C code), so we can
+# safely inline the intrinsics and rely on our own runtime detection to choose the best
+# implementation for the CPU we're running on.
+#
+# There are some potential pitfalls to explicitly specifying target features:
+# https://doc.rust-lang.org/rustc/targets/known-issues.html
+#
+# "Most target-feature problems arise, when mixing code that have the target-feature enabled with
+# code that have it disabled. If you want to avoid undefined behavior, it is recommended to build
+# all code (including the standard library and imported crates) with a common set of
+# target-features."
+#
+# "By default, compiling your code with the -C target-feature flag will not recompile the entire
+# standard library and/or imported crates with matching target features. Therefore, target features
+# are generally considered as unsafe. Using #[target_feature] on individual functions makes the
+# function unsafe."
+
+# To disable loop unrolling, add to rustflags: "-C", "llvm-args=-unroll-threshold=0"
+
+[build]
+# For building documentation, assume all CPU features are present
+rustdocflags = ["-C", "target-feature=+aes,+pclmulqdq,+ssse3,+neon"]
+
+# x86/x86_64 targets need AES-NI, PCLMULQDQ, and SSSE3 features
+[target.'cfg(any(target_arch = "x86", target_arch = "x86_64"))']
+rustflags = ["-C", "target-feature=+aes,+pclmulqdq,+ssse3"]
+
+# ARM64 targets need AES and PMULL features
+[target.'cfg(target_arch = "aarch64")']
+rustflags = ["-C", "target-feature=+aes,+neon"]

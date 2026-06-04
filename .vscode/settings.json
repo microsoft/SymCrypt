@@ -25,4 +25,7 @@
             "overrideName": true,
         }
     },
+    "files.associations": {
+        "*.inc": "cpp"
+    },
 }

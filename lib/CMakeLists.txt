@@ -81,8 +81,6 @@ set(SOURCES_COMMON
     md5.c
     mldsa.c
     mldsa_primitives.c
-    mlkem.c
-    mlkem_primitives.c
     modexp.c
     paddingPkcs7.c
     parhash.c
@@ -398,11 +396,9 @@ if(WIN32)
     add_compile_options($<$<COMPILE_LANGUAGE:C,CXX>:/GR->)
 
     add_library(symcrypt_usermodewin7 STATIC env_windowsUserModeWin7.c)
-    set_target_properties(symcrypt_usermodewin7 PROPERTIES PREFIX "")
     target_link_libraries(symcrypt_usermodewin7 symcrypt_common)
 
     add_library(symcrypt_usermodewin8_1 STATIC env_windowsUserModeWin8_1.c)
-    set_target_properties(symcrypt_usermodewin8_1 PROPERTIES PREFIX "")
     target_link_libraries(symcrypt_usermodewin8_1 symcrypt_common)
 endif()
 
@@ -433,7 +429,6 @@ if(NOT WIN32)
 
     if(SYMCRYPT_TARGET_ENV MATCHES "PosixUserMode")
         add_library(symcrypt_posixusermode STATIC env_posixUserMode.c)
-        set_target_properties(symcrypt_posixusermode PROPERTIES PREFIX "")
         target_link_libraries(symcrypt_posixusermode symcrypt_common)
     elseif(SYMCRYPT_TARGET_ENV MATCHES "PosixOPTEE")
         if(SYMCRYPT_TARGET_ARCH MATCHES "ARM64")
@@ -453,8 +448,28 @@ endif()
 
 include_directories(${SYMCRYPT_SOURCE_DIR}/inc)
 
+if(NOT SYMCRYPT_SYMCRUST MATCHES "ON")
+    add_library(symcrypt_mlkem STATIC mlkem.c mlkem_primitives.c)
+else()
+    add_subdirectory(rust)
+    add_library(symcrypt_mlkem ALIAS symcrust)
+    # FIXME: Remove the SYMCRUST_EXPERIMENTAL_BUILD flag and make compilation
+    # decisions at the source-file level.
+    # https://microsoft.visualstudio.com/OS/_workitems/edit/60192412
+    add_compile_definitions(SYMCRUST_EXPERIMENTAL_BUILD=1)
+endif()
+
 add_library(symcrypt_common STATIC ${SOURCES_COMMON})
+target_link_libraries(symcrypt_common PUBLIC symcrypt_mlkem)
+
+# session.c uses __atomic_compare_exchange_16 which on some toolchains/architectures
+# (notably ARM64 Linux with GCC) is not inlined and requires linking against libatomic.
+# Expose libatomic as an INTERFACE dependency so it appears after symcrypt_common on
+# the link line, which is required for --as-needed to keep the dependency when it is
+# actually needed.
+if(CMAKE_SYSTEM_NAME MATCHES "Linux")
+    target_link_libraries(symcrypt_common INTERFACE atomic)
+endif()
 
 add_library(symcrypt_generic STATIC env_generic.c)
-set_target_properties(symcrypt_generic PROPERTIES PREFIX "")
 target_link_libraries(symcrypt_generic symcrypt_common)

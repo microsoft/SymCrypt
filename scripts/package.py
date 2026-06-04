@@ -13,7 +13,8 @@ contains a list of files in the following format:
        "dest" : "...",
        "platform" : "...",
        "arch"  : "...",
-       "config" : "..."
+       "config" : "...",
+       "symcrust" : true
    }
 
 where:
@@ -23,6 +24,7 @@ where:
   platform: Platforms to include the file ("win32", "linux", "optee")
   arch: Architectures to include the file ("x86", "amd64", "arm", "arm64")
   config: Configurations to include the file ("debug", "release", "sanitize")
+  symcrust: If true, the file is only included when --symcrust is passed.
 
 Multiple platforms, architectures, and configurations can be specified by separating them with commas,
 e.g. "windows,linux" or "x86,amd64". If platform, arch or config are omitted, the file will be included
@@ -88,7 +90,7 @@ def get_file_list(bin_dir : pathlib.Path, config : str, module_name : str) -> Di
     return file_list
 
 def prepare_package(build_dir : pathlib.Path, package_dir : pathlib.Path,
-    arch : str, config : str, module_name : str, platform : str) -> None:
+    arch : str, config : str, module_name : str, platform : str, symcrust : bool = False) -> None:
     """
     Prepares the files for packaging by copying them into a temporary directory. Does not create the archive.
 
@@ -98,6 +100,7 @@ def prepare_package(build_dir : pathlib.Path, package_dir : pathlib.Path,
     config: The build configuration (Debug/Release/Sanitize).
     module_name: The name of the module to package.
     platform: The target platform for the package.
+    symcrust: If True, only include SymCRust files. If False, exclude SymCRust files.
     """
 
     file_list = get_file_list(build_dir, config, module_name)
@@ -106,6 +109,10 @@ def prepare_package(build_dir : pathlib.Path, package_dir : pathlib.Path,
         target_platform = file.get("platform")
         target_arch = file.get("arch")
         target_config = file.get("config")
+
+        is_symcrust_file = file.get("symcrust", False)
+        if is_symcrust_file != symcrust:
+            continue
 
         if target_platform is not None and platform not in target_platform.split(","):
             continue
@@ -200,6 +207,7 @@ def main() -> None:
     parser.add_argument("release_dir", type = pathlib.Path, help = "Directory to place the release in.")
     parser.add_argument("--no-archive", action = "store_true", help = "Do not create a compressed archive, just copy the files.", default = False)
     parser.add_argument("--platform", type = str.lower, default=sys.platform, help = "Target platform for the package.", choices = ("linux", "win32", "optee"))
+    parser.add_argument("--symcrust", action = "store_true", help = "Only include SymCRust files. If omitted, SymCRust files are excluded.", default = False)
 
     args = parser.parse_args()
 
@@ -212,7 +220,7 @@ def main() -> None:
 
     with tempfile.TemporaryDirectory() as temp_dir:
         temp_dir = pathlib.Path(temp_dir)
-        prepare_package(args.build_dir, temp_dir, args.arch, args.config, args.module_name, args.platform)
+        prepare_package(args.build_dir, temp_dir, args.arch, args.config, args.module_name, args.platform, args.symcrust)
 
         if args.no_archive:
             print("Copying tree to " + str(args.release_dir.resolve()) + "...")

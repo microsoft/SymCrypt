@@ -4282,6 +4282,9 @@ SymCryptMarvin32Selftest(void);
 
 #define SYMCRYPT_AES_BLOCK_SIZE  (16)
 
+#if SYMCRUST_EXPERIMENTAL_BUILD
+extern
+#endif
 SYMCRYPT_ERROR
 SYMCRYPT_CALL
 SymCryptAesExpandKey(
@@ -5165,9 +5168,8 @@ SymCryptGcmEncrypt(
 //      - pExpandedKey points to the expanded key for GCM.
 //      - pbNonce: Pointer to the nonce for this encryption. For a single key, each nonce
 //          value may be used at most once to encrypt data. Re-using nonce values leads
-//          to catastrophic loss of security. Only 12-byte nonces are supported,
-//          per the SP800-38D section 5.2.1.1 recommendation.
-//      - cbNonce: number of bytes in the nonce, must be 12.
+//          to catastrophic loss of security.
+//      - cbNonce: number of bytes in the nonce.
 //      - pbAuthData: pointer to the associated authentication data. This data is not encrypted
 //          but it is included in the authentication. Use NULL if not used.
 //      - cbAuthData: # bytes of associated authentication data. (0 if not used)

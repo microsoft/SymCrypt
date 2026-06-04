@@ -49,36 +49,38 @@ set(SOURCES
 # Append Windows-specific sources
 if(WIN32)
     list(APPEND SOURCES
-        env_windowsSymCryptUnittest.cpp
         rsa32_implementations.cpp
         capi_implementations.cpp
         cng_implementations.cpp
         msbignum_implementations.cpp
         testIEEE802_11SaeCustom.cpp
     )
+
+    set(ENV_SOURCES env_windowsSymCryptUnittest.cpp)
 else()
-    list(APPEND SOURCES
-        env_linuxSymCryptUnittest.cpp
-    )
+    set(ENV_SOURCES env_linuxSymCryptUnittest.cpp)
 endif()
 
 if(WIN32 AND SYMCRYPT_USE_ASM)
     if(SYMCRYPT_TARGET_ARCH MATCHES "AMD64")
-        list(APPEND SOURCES amd64/savevectors.asm)
+        list(APPEND ENV_SOURCES amd64/savevectors.asm)
         set_source_files_properties(amd64/savevectors.asm PROPERTIES LANGUAGE ASM_MASM)
     elseif(SYMCRYPT_TARGET_ARCH MATCHES "X86")
-        list(APPEND SOURCES i386/savevectors.asm)
+        list(APPEND ENV_SOURCES i386/savevectors.asm)
         set_source_files_properties(i386/savevectors.asm PROPERTIES LANGUAGE ASM_MASM)
         set_source_files_properties(i386/savevectors.asm PROPERTIES COMPILE_OPTIONS "/safeseh")
     endif()
 elseif(SYMCRYPT_USE_ASM) # Linux
     if(SYMCRYPT_TARGET_ARCH MATCHES "AMD64")
-        list(APPEND SOURCES amd64/saveymm-gas.asm)
+        list(APPEND ENV_SOURCES amd64/saveymm-gas.asm)
         set_source_files_properties(amd64/saveymm-gas.asm PROPERTIES LANGUAGE ASM)
         list(APPEND SOURCES amd64/savezmm-gas.asm)
         set_source_files_properties(amd64/savezmm-gas.asm PROPERTIES LANGUAGE ASM)
     endif()
 endif()
+
+add_library(symcryptunittest_env_lib STATIC ${ENV_SOURCES})
+target_link_libraries(symcryptunittest_env_lib PUBLIC symcrypt_common)
 
 if(SYMCRYPT_TEST_WITH_OPENSSL)
     list(APPEND SOURCES
@@ -111,7 +113,7 @@ if(SYMCRYPT_TARGET_ARCH STREQUAL "ARM" AND CMAKE_C_COMPILER_ID MATCHES "GNU")
 endif()
 
 add_library(symcryptunittest_lib STATIC ${SOURCES})
-set_target_properties(symcryptunittest_lib PROPERTIES PREFIX "")
+target_link_libraries(symcryptunittest_lib PUBLIC symcryptunittest_env_lib)
 
 if(SYMCRYPT_TEST_WITH_OPENSSL)
     target_include_directories(symcryptunittest_lib PRIVATE ${OPENSSL_INCLUDE_DIR})

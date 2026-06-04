@@ -224,6 +224,7 @@ elseif (CMAKE_C_COMPILER_ID STREQUAL "MSVC")
     add_compile_options($<$<COMPILE_LANGUAGE:C,CXX>:/guard:cf>)
     add_link_options(/guard:cf)
     add_link_options(/dynamicbase)
+    add_link_options(/opt:ref)
     add_compile_options($<$<COMPILE_LANGUAGE:C,CXX>:/WX>)
 
     # Disable warning caused by Windows SDK headers

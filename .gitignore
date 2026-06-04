@@ -89,3 +89,6 @@ Makefile
 
 # NuGet packages
 *.nupkg
+
+# Rust (possibly built standalone for benchmarking)
+SymCRust/target

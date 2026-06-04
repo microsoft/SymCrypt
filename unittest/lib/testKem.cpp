@@ -4,6 +4,7 @@
 
 #include "precomp.h"
 
+#if SYMCRUST_EXPERIMENTAL_BUILD == 0
 ////////////////////////////////////////////////
 // SymCrypt-specific testing
 ////////////////////////////////////////////////
@@ -309,6 +310,7 @@ testMlKemArithmetic()
         }
     }
 }
+#endif
 
 ////////////////////////////////////////////////
 // Multi-implementation testing
@@ -598,7 +600,6 @@ SYMCRYPT_TEST_MLKEM_PARAMS rgTestMlKemParams[] = {
 
 #define NUM_OF_MLKEM_TEST_PARAMS       (sizeof(rgTestMlKemParams) / sizeof(rgTestMlKemParams[0]))
 
-
 struct MlKemDef {
     using TestParamsType = SYMCRYPT_TEST_MLKEM_PARAMS;
     using ParamsType     = SYMCRYPT_MLKEM_PARAMS;
@@ -873,7 +874,9 @@ testCompositeMlKemHighLevelAPI()
     testKemHighLevelAPIGeneric<CompositeMlKemDef>( config );
 }
 
-// Negative test definitions
+////////////////////////////////////////////////
+// Negative testing
+////////////////////////////////////////////////
 
 template<typename KemDef>
 struct SymCryptKemNegativeTestConfig
@@ -985,6 +988,68 @@ testSymCryptKemNegativeTests(
     }
 }
 
+#define SYMCRYPT_TEST_MLKEM_SIZEOF_PUBLIC_SEED  (32)
+#define SYMCRYPT_TEST_MLKEM_SIZEOF_ENCAPS_HASH  (32)
+#define SYMCRYPT_TEST_MLKEM_SIZEOF_Z            (32)
+
+VOID
+testSymCryptMlKemSetInvalidDecapsKeyBlob()
+{
+    SYMCRYPT_ERROR scError;
+    MLKEMKEY_TESTBLOB keyTestBlobFull;
+    MLKEMKEY_TESTBLOB keyTestBlobDecaps;
+
+    for( SYMCRYPT_TEST_MLKEM_PARAMS testParams : rgTestMlKemParams )
+    {
+        SYMCRYPT_MLKEM_PARAMS params = testParams.params;
+        PSYMCRYPT_MLKEMKEY pKey = SymCryptMlKemkeyAllocate( params );
+        CHECK( pKey != NULL, "SymCryptMlKemkeyAllocate failed" );
+
+        keyTestBlobFull.params = params;
+        scError = SymCryptMlKemSizeofKeyFormatFromParams( params, SYMCRYPT_MLKEMKEY_FORMAT_PRIVATE_SEED, &keyTestBlobFull.cbKeyBlob );
+        CHECK3( scError == SYMCRYPT_NO_ERROR, "SymCryptMlKemSizeofKeyFormatFromParams SYMCRYPT_MLKEMKEY_FORMAT_PRIVATE_SEED failed with 0x%x", scError );
+
+        GENRANDOM( keyTestBlobFull.abKeyBlob, (UINT32) keyTestBlobFull.cbKeyBlob );
+
+        scError = SymCryptMlKemSizeofKeyFormatFromParams( params, SYMCRYPT_MLKEMKEY_FORMAT_DECAPSULATION_KEY, &keyTestBlobDecaps.cbKeyBlob );
+        CHECK3( scError == SYMCRYPT_NO_ERROR, "SymCryptMlKemSizeofKeyFormatFromParams SYMCRYPT_MLKEMKEY_FORMAT_DECAPSULATION_KEY failed with 0x%x", scError );
+
+        keyTestBlobDecaps.params = params;
+
+        scError = SymCryptMlKemkeySetValue(
+                    &(keyTestBlobFull.abKeyBlob[0]), keyTestBlobFull.cbKeyBlob,
+                    SYMCRYPT_MLKEMKEY_FORMAT_PRIVATE_SEED,
+                    0,
+                    pKey);
+        CHECK3( scError == SYMCRYPT_NO_ERROR, "SymCryptMlKemkeySetValue SYMCRYPT_MLKEMKEY_FORMAT_PRIVATE_SEED failed with 0x%x", scError );
+
+        scError = SymCryptMlKemkeyGetValue(
+                    pKey,
+                    &(keyTestBlobDecaps.abKeyBlob[0]), keyTestBlobDecaps.cbKeyBlob,
+                    SYMCRYPT_MLKEMKEY_FORMAT_DECAPSULATION_KEY,
+                    0);
+        CHECK3( scError == SYMCRYPT_NO_ERROR, "SymCryptMlKemkeyGetValue SYMCRYPT_MLKEMKEY_FORMAT_DECAPSULATION_KEY failed with 0x%x", scError );
+
+        // ML-KEM decaps key blob format is [ s || t || public seed || H(encaps key) || z ]
+        SIZE_T decapsPublicSeedOffset = keyTestBlobDecaps.cbKeyBlob - SYMCRYPT_TEST_MLKEM_SIZEOF_Z
+                                                                    - SYMCRYPT_TEST_MLKEM_SIZEOF_ENCAPS_HASH
+                                                                    - SYMCRYPT_TEST_MLKEM_SIZEOF_PUBLIC_SEED;
+        UINT32 t = g_rng.uint32();
+        UINT32 byteIndex = t % SYMCRYPT_TEST_MLKEM_SIZEOF_PUBLIC_SEED;
+        UINT32 bitIndex = t % 8;
+
+        keyTestBlobDecaps.abKeyBlob[ decapsPublicSeedOffset + byteIndex ] ^= 1 << bitIndex;
+        scError = SymCryptMlKemkeySetValue(
+                    &(keyTestBlobDecaps.abKeyBlob[0]), keyTestBlobDecaps.cbKeyBlob,
+                    SYMCRYPT_MLKEMKEY_FORMAT_DECAPSULATION_KEY,
+                    0,
+                    pKey);
+        CHECK3( scError == SYMCRYPT_INVALID_BLOB, "SymCryptMlKemkeySetValue with corrupted public seed got something other than SYMCRYPT_INVALID_BLOB: 0x%x", scError );
+
+        SymCryptMlKemkeyFree( pKey );
+    }
+}
+
 VOID
 testSymCryptMlKemNegativeTests()
 {
@@ -995,6 +1060,8 @@ testSymCryptMlKemNegativeTests()
     };
 
     testSymCryptKemNegativeTests<MlKemDef>( config );
+
+    testSymCryptMlKemSetInvalidDecapsKeyBlob();
 }
 
 // Main purpose of this test is to check that setting a corrupted key blob
@@ -1081,6 +1148,10 @@ testSymCryptCompositeMlKemNegativeTests()
 
     testSymCryptCompositeMlKemCorruptEcPrivateKey();
 }
+
+////////////////////////////////////////////////
+// Known Answer Tests
+////////////////////////////////////////////////
 
 template<typename KemDef>
 struct KemKatTester
@@ -1569,7 +1640,10 @@ testKem()
 
         testMlKemKats();
 
-        testMlKemArithmetic();
+        #if SYMCRUST_EXPERIMENTAL_BUILD == 0
+            testMlKemArithmetic();
+        #endif
+
         testMlKemHighLevelAPI();
         testSymCryptMlKemNegativeTests();
 

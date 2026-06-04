@@ -17,8 +17,6 @@ UINT32      TestErrorInjectionProb = 0;
 BYTE TestErrorInjectionSeed[ SYMCRYPT_SHA1_RESULT_SIZE ] = {0};
 
 extern "C" {
-;
-
 
 ///////////////////////////////////////////////////////
 // Start of the actual fake environment code
@@ -94,6 +92,27 @@ VOID free_align64( PVOID p )
 {
     CHECK( ((SIZE_T)p & 63) == 0, "?" );
     free( *(PVOID *) ((PBYTE)p - 8) );
+}
+
+_Analysis_noreturn_
+VOID
+fatal( _In_ PCSTR file, UINT32 line, _In_ PCSTR format, ... )
+{
+    char buffer[1024];
+    int index = 0;
+
+    index += snprintf( buffer, sizeof(buffer), "*\n\n***** FATAL ERROR: %s(%u): ", file, line );
+    if( index >= sizeof(buffer) )
+    {
+        index = sizeof(buffer) - 1;
+    }
+
+    va_list args;
+    va_start(args, format);
+    vsnprintf( buffer + index, sizeof(buffer) - index, format, args );
+    va_end(args);
+    
+    fatalImpl(buffer);
 }
 
 #if SYMCRYPT_CPU_AMD64 | SYMCRYPT_CPU_X86
@@ -486,7 +505,5 @@ SymCryptCpuidExFuncEnvUnittest( int cpuInfo[4], int function_id, int subfunction
 }
 
 #endif
-}   // extern "C"
 
-
-
+}

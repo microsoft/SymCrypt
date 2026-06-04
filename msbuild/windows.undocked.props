@@ -59,6 +59,21 @@
     <WinPlat Condition="'$(Platform)' == 'ARM64EC'">arm64ec</WinPlat>
   </PropertyGroup>
 
+  <!-- Rust build configuration -->
+  <PropertyGroup Condition="'$(BuildSymCrust)' == 'true'">
+    <!-- Map MSBuild Platform to Rust target triple -->
+    <RustTargetTriple Condition="'$(Platform)' == 'x64'">x86_64-pc-windows-msvc</RustTargetTriple>
+    
+    <!-- Map MSBuild Configuration to Rust profile -->
+    <RustProfile Condition="'$(Configuration)' == 'Release'">release</RustProfile>
+    <RustProfile Condition="'$(Configuration)' == 'Debug'">debug</RustProfile>
+    <RustBuildFlag Condition="'$(Configuration)' == 'Release'">--release</RustBuildFlag>
+    <RustBuildFlag Condition="'$(Configuration)' == 'Debug'"></RustBuildFlag>
+    
+    <!-- Error for unsupported architectures -->
+    <Error Condition="'$(Platform)' != 'x64'">Architecture '$(Platform)' not supported for Rust build</Error>
+  </PropertyGroup>
+
   <!-- Default global properties -->
   <PropertyGroup Condition="'$(UndockedSdkOnly)' != 'true'">
     <TargetVersion>Windows10</TargetVersion>

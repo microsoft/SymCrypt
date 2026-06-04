@@ -33,6 +33,7 @@ if (CMAKE_SYSTEM_NAME MATCHES "Darwin")
     $<TARGET_FILE:symcrypt_module_posix_common>
     $<TARGET_FILE:symcrypt_posixusermode>
     $<TARGET_FILE:symcrypt_common>
+    $<TARGET_FILE:symcrypt_mlkem>
     -nostdlib
     -nodefaultlibs
     -nostartfiles
@@ -49,6 +50,7 @@ else()
     $<TARGET_FILE:symcrypt_module_posix_common>
     $<TARGET_FILE:symcrypt_posixusermode>
     $<TARGET_FILE:symcrypt_common>
+    $<TARGET_FILE:symcrypt_mlkem>
     -Wl,--no-whole-archive
     -Wl,-Bsymbolic
     -Wl,-z,relro
@@ -61,6 +63,20 @@ else()
     -nodefaultlibs
     -nostartfiles
   )
+
+  # The TARGET_FILE references in target_link_options above only contribute the static
+  # archive files to the link line — they do not propagate the libraries' INTERFACE link
+  # dependencies (e.g. libatomic on Linux). Add a redundant target_link_libraries here so
+  # transitive INTERFACE deps are picked up. The duplicate static-archive reference on the
+  # link line is a no-op since --whole-archive/--no-whole-archive above has already pulled
+  # in all objects, so the second reference will only resolve undefined symbols (of which
+  # there are none).
+  #
+  # This is NOT safe to do on Darwin, where -Wl,-all_load applies globally to every static
+  # archive on the link line and would cause every object in symcrypt_common to be loaded
+  # twice, producing duplicate symbol errors. libatomic is also not needed on Darwin, so
+  # there is nothing to propagate there.
+  target_link_libraries(${TARGET_NAME} PRIVATE symcrypt_common)
 endif()
 
 add_dependencies(${TARGET_NAME} symcrypt_posixusermode symcrypt_common symcrypt_module_posix_common)

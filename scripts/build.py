@@ -136,6 +136,10 @@ def configure_cmake(args : argparse.Namespace) -> None:
     if args.ta_dev_kit_inc:
         cmake_args.append("-DTA_DEV_KIT_INC=" + args.ta_dev_kit_inc)
 
+    # Experimental SymCRust link
+    if args.symcrust:
+        cmake_args.append("-DSYMCRYPT_SYMCRUST=ON")
+
     if args.clean and args.build_dir.exists():
         shutil.rmtree(args.build_dir)
 
@@ -191,6 +195,10 @@ def build_msbuild(args : argparse.Namespace) -> None:
                 msbuild_args = ["/t:Rebuild"]
                 msbuild_args.append("/p:Platform=" + ARCH_MSBUILD_ALIASES[arch])
                 msbuild_args.append("/p:Configuration=" + config)
+
+                if args.symcrust:
+                    msbuild_args.append("/p:BuildSymCrust=true")
+                
                 msbuild_args.append(str(args.source_dir / "SymCrypt.sln"))
 
                 invoke_build_tool("msbuild", msbuild_args)
@@ -202,8 +210,11 @@ def build_msbuild(args : argparse.Namespace) -> None:
         if args.arch:
             msbuild_args.append("/p:Platform=" + ARCH_MSBUILD_ALIASES[args.arch])
 
-        msbuild_args.extend(["/p:Configuration=" + args.config, str(args.source_dir / "SymCrypt.sln")])
+        if args.symcrust:
+            msbuild_args.append("/p:BuildSymCrust=true")
 
+        msbuild_args.extend(["/p:Configuration=" + args.config, str(args.source_dir / "SymCrypt.sln")])
+        
         invoke_build_tool("msbuild", msbuild_args)
 
 def main() -> None:
@@ -244,12 +255,16 @@ def main() -> None:
     parser_cmake.add_argument("--optee", action = "store_true", help = "Build SymCrypt for OPTEE env.", default = False)
     parser_cmake.add_argument("--ta_dev_kit_inc", type = str, help = "TA DEV KIT include folder, needed for OPTEE TA compilation.")
 
+    # SymCRust
+    parser_cmake.add_argument("--symcrust", action = "store_true", help = "Build SymCrypt with experimental Rust (SymCRust) source.", default = False)
+
     # MSBuild build options
     parser_msbuild = subparsers.add_parser("msbuild", help = "Build using MSBuild.")
 
     parser_msbuild.add_argument("--arch", type = str.lower, help = "Target architecture. Defaults to host architecture.", choices = ARCH_MSBUILD, default = "")
     parser_msbuild.add_argument("--config", type = str, help = "Build configuration. Defaults to Debug.", choices = CONFIG_MSBUILD, default = "Debug")
     parser_msbuild.add_argument("--all", action = "store_true", help = "Build for all architecture/configuration combinations.", default = False)
+    parser_msbuild.add_argument("--symcrust", action = "store_true", help = "Build SymCrypt with experimental Rust (SymCRust) source.", default = False)
 
     args = parser.parse_args()
 

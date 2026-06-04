@@ -38,6 +38,17 @@ jobs:
         arch: arm64
         config: Release
         config_win: fre
+      # SymCRust VPacks, will only include symcrust_static_*.lib
+      amd64chk_symcrust:
+        arch: amd64
+        config: Debug
+        config_win: chk
+        build_variant_suffix: '_symcrust'
+      amd64fre_symcrust:
+        arch: amd64
+        config: Release
+        config_win: fre
+        build_variant_suffix: '_symcrust'
 
 
   variables:
@@ -50,14 +61,15 @@ jobs:
     lkg_branch: ${{ replace(replace(parameters.lkgCompilerBranch, 'official/', ''), '/', '-') }}
     # Specify a fake artifact directory since we don't want to upload any artifacts from this job
     ob_outputDirectory: $(Build.SourcesDirectory)/artifacts/pkg
-    ob_artifactSuffix: _$(arch)$(config_win)
+    build_variant_suffix: ''
+    ob_artifactSuffix: _$(arch)$(config_win)$(build_variant_suffix)
     ob_git_checkout: false # Sources not required for this job
     ob_sdl_codeSignValidation_excludes: -|**\*.sys # Signing is not supported for KM drivers
     # VPack creation parameters
     # https://www.osgwiki.com/wiki/OneBranch_Windows_Undocked_Pipelines#2._Set_feature_flags_-_createVPack_and_updateOSManifest.
     ob_createvpack_enabled: ${{ parameters.publish }}
     ob_createvpack_owneralias: 'symcryptdevs@microsoft.com'
-    ob_createvpack_packagename: "SymCrypt.lkg-$(lkg_branch).$(arch)$(config_win)"
+    ob_createvpack_packagename: "SymCrypt.lkg-$(lkg_branch).$(arch)$(config_win)$(build_variant_suffix)"
     ob_createvpack_description: "SymCrypt Cryptographic Library"
     ob_createvpack_versionAs: string
     ob_createvpack_version: $(ver_major).$(ver_minor).$(ver_patch)-$(ver_hash)-$(Build.BuildId)
@@ -67,5 +79,5 @@ jobs:
   - task: DownloadPipelineArtifact@2
     displayName: 'Download build artifacts'
     inputs:
-      artifact: 'drop_Build_Windows_Undocked_build_sln_$(arch)$(config_win)'
+      artifact: 'drop_Build_Windows_Undocked_build_sln$(ob_artifactSuffix)'
       path: '$(Build.SourcesDirectory)/artifacts'

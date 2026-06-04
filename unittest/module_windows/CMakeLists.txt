@@ -8,4 +8,4 @@ add_compile_definitions(INCLUDE_IMPL_RSA32=0)
 
 add_library(symcrypttestmodule SHARED ${SOURCES})
 
-target_link_libraries(symcrypttestmodule symcrypt_common symcrypt_usermodewin8_1 bcrypt)
+target_link_libraries(symcrypttestmodule symcrypt_usermodewin8_1 bcrypt)

@@ -1,0 +1,1 @@
+doc-valid-idents = ["SymCrypt", "McGrew", "x86", "x86_64", "x86/x86_64", "XORing", "XORed", "..", ]

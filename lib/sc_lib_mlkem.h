@@ -400,27 +400,6 @@ SymCryptMlKemVectorMulR(
 // pvDst = pvSrc .* R
 //
 
-
-VOID
-SYMCRYPT_CALL
-SymCryptMlKemVectorAdd(
-    _In_    PCSYMCRYPT_MLKEM_VECTOR pvSrc1,
-    _In_    PCSYMCRYPT_MLKEM_VECTOR pvSrc2,
-    _Out_   PSYMCRYPT_MLKEM_VECTOR  pvDst );
-//
-// pvDst = pvSrc1 + pvSrc2
-//
-
-VOID
-SYMCRYPT_CALL
-SymCryptMlKemVectorSub(
-    _In_    PCSYMCRYPT_MLKEM_VECTOR pvSrc1,
-    _In_    PCSYMCRYPT_MLKEM_VECTOR pvSrc2,
-    _Out_   PSYMCRYPT_MLKEM_VECTOR  pvDst );
-//
-// pvDst = pvSrc1 - pvSrc2
-//
-
 VOID
 SYMCRYPT_CALL
 SymCryptMlKemVectorNTT(

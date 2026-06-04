@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="Current" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup Label="Globals">
+    <ProjectGuid>{c68bef36-1fc4-4545-864b-a2e9080ba196}</ProjectGuid>
+    <TemplateGuid>{0a049372-4c4d-4ea0-a64e-dc6ad88ceca1}</TemplateGuid>
+    <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
+    <MinimumVisualStudioVersion>12.0</MinimumVisualStudioVersion>
+    <UseInternalMSUniCrtPackage>true</UseInternalMSUniCrtPackage>
+    <TargetName>symcrust_static_um</TargetName>
+    <UndockedType>lib</UndockedType>
+    <UndockedDir>$(SolutionDir)msbuild\</UndockedDir>
+    <UndockedOut>$(SolutionDir)</UndockedOut>
+    <IncludePath>$(ProjectDir);$(IncludePath);</IncludePath>
+    <ProjectName>symcrypt_static_rust_um</ProjectName>
+  </PropertyGroup>
+  <Import Project="$(UndockedDir)symcrypt.undocked.props" />
+  <ItemDefinitionGroup>
+    <ClCompile>
+      <PreprocessorDefinitions Condition="'$(BuildSymCrust)'=='true'">SYMCRUST_EXPERIMENTAL_BUILD=1;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+    </ClCompile>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <ProjectReference Include="symcrypt_static_c_core.vcxproj">
+      <Project>{39328c3a-f2e5-4884-ba57-33722282c86a}</Project>
+      <LinkLibraryDependencies>false</LinkLibraryDependencies>
+    </ProjectReference>
+  </ItemGroup>
+  <PropertyGroup>
+    <CCoreLib>$(OutDir)symcrypt_static_c_core$(TargetExt)</CCoreLib>
+    <SymCRustSourceDir>$(SolutionDir)SymCRust</SymCRustSourceDir>
+    <SymCRustTargetDir>$(IntDir)rust_um</SymCRustTargetDir>
+    <SymCrustLib>$(SymCRustTargetDir)\$(RustTargetTriple)\$(RustProfile)\symcrust.lib</SymCrustLib>
+  </PropertyGroup>
+  <!-- Build Rust and merge c_core + symcrust into symcrust_static_um.lib -->
+  <Target Name="BuildAndMergeRust" AfterTargets="Build" Condition="'$(BuildSymCrust)'=='true'">
+    <Message Importance="high" Text="Building SymCRust (User Mode) for $(Platform) $(Configuration)" />
+    <Exec Command="cargo build --manifest-path $(SymCRustSourceDir)\Cargo.toml --target-dir $(SymCRustTargetDir) --target $(RustTargetTriple) $(RustBuildFlag)"
+          WorkingDirectory="$(SymCRustSourceDir)"
+          EnvironmentVariables="RUSTFLAGS=-C ehcont-guard" />
+    <Message Importance="high" Text="Merging symcrust + c_core into symcrust_static_um.lib" />
+    <Exec Command="lib.exe /OUT:$(TargetPath) $(SymCrustLib) $(CCoreLib)" />
+  </Target>
+  <Target Name="GenerateNoCIL" AfterTargets="BuildAndMergeRust" Condition="'$(BuildSymCrust)'=='true'">
+    <Message Importance="high" Text="Generating NoCIL library from $(TargetPath)" />
+    <Exec Command="link /cvtcil $(TargetPath) /out:$(TargetDir)$(TargetName)_NoCIL$(TargetExt)" />
+  </Target>
+  <Target Name="GetDriverProjectAttributes" Returns="@(DriverProjectAttributes)" />
+  <Target Name="GetPackageFiles" Returns="@(FullyQualifiedFilesToPackage)" />
+</Project>

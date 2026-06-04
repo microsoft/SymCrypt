@@ -14,8 +14,13 @@
   </PropertyGroup>
   <Import Project="$(UndockedDir)symcrypt.undocked.props" />
   <ItemGroup>
-    <ProjectReference Include="..\..\lib\symcrypt_static.vcxproj">
+    <!-- Use pure C lib when NOT building with Rust -->
+    <ProjectReference Include="..\..\lib\symcrypt_static.vcxproj" Condition="'$(BuildSymCrust)'!='true'">
       <Project>{7c3bd5d2-7213-4cfa-b6cb-eb41623601bc}</Project>
+    </ProjectReference>
+    <!-- Use Rust KM lib when building with Rust -->
+    <ProjectReference Include="..\..\lib\symcrypt_static_rust_km.vcxproj" Condition="'$(BuildSymCrust)'=='true'">
+      <Project>{6fab3a2e-d75a-4ad3-8f16-49c64c0989f9}</Project>
     </ProjectReference>
     <ProjectReference Include="..\lib\symcryptunittest_lib.vcxproj">
       <Project>{1146804c-b04f-43f1-83b0-081a5187ba02}</Project>
@@ -36,6 +41,11 @@
       <LinkTimeCodeGeneration>UseLinkTimeCodeGeneration</LinkTimeCodeGeneration>
       <AdditionalDependencies>%(AdditionalDependencies);cng.lib;ntoskrnl.lib</AdditionalDependencies>
       <EntryPointSymbol>GsDriverEntry</EntryPointSymbol>
+      <!-- /ignore:4287 suppresses missing retpoline metadata for Rust objects. Rust applies retpoline via -Zretpoline but doesn't emit MSVC metadata. -->
+      <!-- /ignore:4257 suppresses "object file was not compiled for kernel mode" for two distinct sources:
+             (1) Rust objects: rustc has no equivalent to MSVC /kernel to emit the kernel-mode marker. The SymCRust crate is no_std with panic=abort and uses callback-based allocation, so it is kernel-safe by construction.
+             (2) Some LTCG anonymous C objects from symcrypt_static_c_core.lib (e.g. composite_mldsa.obj): pre-existing toolchain regression that also reproduces in the pure-C build (UndockedOfficial=true, BuildSymCrust=false). The c_core project sets UndockedKernelModeBuild=true and is compiled with /kernel; the marker is just not surviving the LTCG anonymous-obj round-trip. Track separately. -->
+      <AdditionalOptions Condition="'$(BuildSymCrust)'=='true'">/INCLUDE:_fltused /INCLUDE:fma /INCLUDE:fmaf /ignore:4287 /ignore:4257 %(AdditionalOptions)</AdditionalOptions>
     </Link>
   </ItemDefinitionGroup>
   <PropertyGroup Label="DbgEng">

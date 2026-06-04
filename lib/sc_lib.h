@@ -1259,6 +1259,9 @@ SymCryptAesEncryptAsm(
     _In_reads_( SYMCRYPT_AES_BLOCK_SIZE )   PCBYTE                      pbSrc,
     _Out_writes_( SYMCRYPT_AES_BLOCK_SIZE ) PBYTE                       pbDst );
 
+#if SYMCRUST_EXPERIMENTAL_BUILD
+extern
+#endif
 VOID
 SYMCRYPT_CALL
 SymCryptAesEncryptXmm(
@@ -1266,6 +1269,9 @@ SymCryptAesEncryptXmm(
     _In_reads_( SYMCRYPT_AES_BLOCK_SIZE )   PCBYTE                      pbSrc,
     _Out_writes_( SYMCRYPT_AES_BLOCK_SIZE ) PBYTE                       pbDst );
 
+#if SYMCRUST_EXPERIMENTAL_BUILD
+extern
+#endif
 VOID
 SYMCRYPT_CALL
 SymCryptAesEncryptNeon(
@@ -1287,6 +1293,9 @@ SymCryptAesDecryptAsm(
     _In_reads_( SYMCRYPT_AES_BLOCK_SIZE )   PCBYTE                      pbSrc,
     _Out_writes_( SYMCRYPT_AES_BLOCK_SIZE ) PBYTE                       pbDst );
 
+#if SYMCRUST_EXPERIMENTAL_BUILD
+extern
+#endif
 VOID
 SYMCRYPT_CALL
 SymCryptAesDecryptXmm(
@@ -1294,6 +1303,9 @@ SymCryptAesDecryptXmm(
     _In_reads_( SYMCRYPT_AES_BLOCK_SIZE )   PCBYTE                      pbSrc,
     _Out_writes_( SYMCRYPT_AES_BLOCK_SIZE ) PBYTE                       pbDst );
 
+#if SYMCRUST_EXPERIMENTAL_BUILD
+extern
+#endif
 VOID
 SYMCRYPT_CALL
 SymCryptAesDecryptNeon(
@@ -1654,6 +1666,28 @@ SymCryptAesGcmDecryptStitchedYmm_2048(
 // ZMM implementations still work on smaller sizes; they just do not perform as well.
 #define GCM_ZMM_ENCRYPT_MINBLOCKS 32
 #define GCM_ZMM_DECRYPT_MINBLOCKS 8
+
+VOID
+SYMCRYPT_CALL
+SymCryptAesGcmEncryptStitchedZmm(
+    _In_                                    PCSYMCRYPT_AES_EXPANDED_KEY pExpandedKey,
+    _In_reads_( SYMCRYPT_AES_BLOCK_SIZE )   PBYTE                       pbChainingValue,
+    _In_reads_( SYMCRYPT_GF128_FIELD_SIZE ) PCSYMCRYPT_GF128_ELEMENT    expandedKeyTable,
+    _Inout_                                 PSYMCRYPT_GF128_ELEMENT     pState,
+    _In_reads_( cbData )                    PCBYTE                      pbSrc,
+    _Out_writes_( cbData )                  PBYTE                       pbDst,
+                                            SIZE_T                      cbData );
+
+VOID
+SYMCRYPT_CALL
+SymCryptAesGcmDecryptStitchedZmm(
+    _In_                                    PCSYMCRYPT_AES_EXPANDED_KEY pExpandedKey,
+    _In_reads_( SYMCRYPT_AES_BLOCK_SIZE )   PBYTE                       pbChainingValue,
+    _In_reads_( SYMCRYPT_GF128_FIELD_SIZE ) PCSYMCRYPT_GF128_ELEMENT    expandedKeyTable,
+    _Inout_                                 PSYMCRYPT_GF128_ELEMENT     pState,
+    _In_reads_( cbData )                    PCBYTE                      pbSrc,
+    _Out_writes_( cbData )                  PBYTE                       pbDst,
+                                            SIZE_T                      cbData );
 
 VOID
 SYMCRYPT_CALL
@@ -4364,14 +4398,15 @@ SymCryptPositiveWidthNafRecoding(
 // based on the Learning-With-Errors problem over Module Lattices (or the hardness of the M-LWE
 // problem).
 //
-// A Module is a Vector Space over a Ring. That is, elements of the vector spaces are elements in
-// the underlying ring.
+// A Module is a generalization of a Vector Space, where the scalars are defined over a Ring
+// instead of a Field.
 // We refer to Module as MLWE in the below types to avoid naming confusion with Module as in
 // "FIPS module". Though technically components acting on MLWE types could be used outside of the
 // MLWE problem, these types are SymCrypt-internal, and are only currently intended for use in
 // these MLWE-based algorithms.
 //
-// In ML-KEM and ML-DSA, Polynomial Rings are used. That is, a ring defined over polynomials.
+// In ML-KEM and ML-DSA, the underlying Ring of the Module is a Polynomial Ring. That is, elements
+// of the vectors and matrices of the modules are polynomials.
 // For both schemes, the polynomial ring is defined modulo the polynomial (X^256 + 1). This means
 // there is a representative of each polynomial ring element with 256 coefficients
 // (c_255*X^255 + c_254*X^254 + ... + c_0). The coefficients themselves are modulo a small prime
