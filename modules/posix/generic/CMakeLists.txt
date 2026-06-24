@@ -22,14 +22,15 @@ add_library(symcrypt_generic_posix SHARED ${SOURCES})
 
 if(SYMCRYPT_FIPS_BUILD)
     # Link jitterentropy
-    target_link_libraries(symcrypt_generic_posix ${SYMCRYPT_SOURCE_DIR}/3rdparty/jitterentropy-library/libjitterentropy.a)
+    target_link_libraries(symcrypt_generic_posix PRIVATE ${SYMCRYPT_SOURCE_DIR}/3rdparty/jitterentropy-library/libjitterentropy.a)
     add_dependencies(symcrypt_generic_posix jitterentropy_lib)
 endif()
 
-# Link pthread and libatomic
-target_link_libraries(symcrypt_generic_posix pthread)
+# Link pthread (libatomic is pulled in transitively via symcrypt_common's INTERFACE deps
+# when it is actually needed by the contained objects).
+target_link_libraries(symcrypt_generic_posix PRIVATE pthread)
 if (CMAKE_SYSTEM_NAME MATCHES "Linux")
-    target_link_libraries(symcrypt_generic_posix atomic)
+    target_link_options(symcrypt_generic_posix PRIVATE "LINKER:--as-needed")
 endif()
 
 set(TARGET_NAME symcrypt_generic_posix)

@@ -219,7 +219,18 @@ SymCryptAesCbcDecrypt(
                                                 SIZE_T                      cbData )
 {
 #if SYMCRYPT_CPU_AMD64
-    if( SYMCRYPT_CPU_FEATURES_PRESENT( SYMCRYPT_CPU_FEATURES_FOR_AESNI_CODE ) )
+    SYMCRYPT_EXTENDED_SAVE_DATA  SaveData;
+
+    // To enable testing of fallback paths, we still call SaveYmm gracefully fall back if it fails.
+    // In (production) user mode, this function is a no-op and will be compiled out. In the unit
+    // tests, SaveYmm may fail even when SYMCRYPT_CPU_FEATURE_SAVEYMM_NOFAIL is present.
+    if( SYMCRYPT_CPU_FEATURES_PRESENT( SYMCRYPT_CPU_FEATURES_FOR_VAES_256_CODE | SYMCRYPT_CPU_FEATURE_SAVEYMM_NOFAIL ) &&
+        cbData >= CBC_YMM_MINBLOCKS * SYMCRYPT_AES_BLOCK_SIZE &&
+        SymCryptSaveYmm( &SaveData ) == SYMCRYPT_NO_ERROR )
+    {
+        SymCryptAesCbcDecryptYmm( pExpandedKey, pbChainingValue, pbSrc, pbDst, cbData );
+        SymCryptRestoreYmm( &SaveData );
+    } else if( SYMCRYPT_CPU_FEATURES_PRESENT( SYMCRYPT_CPU_FEATURES_FOR_AESNI_CODE ) )
     {
         SymCryptAesCbcDecryptXmm( pExpandedKey, pbChainingValue, pbSrc, pbDst, cbData );
     } else {
@@ -507,10 +518,7 @@ SymCryptAesGcmEncryptPartOnePass(
         SYMCRYPT_ASSERT( pState->pKey->pBlockCipher->blockSize == SYMCRYPT_GCM_BLOCK_SIZE );
 
 #if SYMCRYPT_CPU_AMD64
-        // We use SYMCRYPT_CPU_FEATURE_SAVEZMM_NOFAIL to exclude kernel mode, where the use of ZMM
-        // registers has historically caused problems. We still call SaveZmm/RestoreZmm and
-        // gracefully fall back if it fails. We also gate on a minimum input size:
-        // for encrypt, the ZMM path's setup overhead and AES-only first iteration outweigh
+        // For encrypt, the ZMM path's setup overhead and AES-only first iteration outweigh
         // its throughput advantage over the YMM path for inputs smaller than one full
         // 32-block ZMM round (512 bytes).
         if( SYMCRYPT_CPU_FEATURES_PRESENT( SYMCRYPT_CPU_FEATURES_FOR_VAES_512_CODE | SYMCRYPT_CPU_FEATURE_SAVEZMM_NOFAIL ) &&
@@ -689,9 +697,9 @@ SymCryptAesGcmDecryptPartOnePass(
         SYMCRYPT_ASSERT( pState->pKey->pBlockCipher->blockSize == SYMCRYPT_GCM_BLOCK_SIZE );
 
 #if SYMCRYPT_CPU_AMD64
-        // We use SYMCRYPT_CPU_FEATURE_SAVEZMM_NOFAIL to exclude kernel mode, where the use of ZMM
-        // registers has historically caused problems. We still call SaveZmm/RestoreZmm and
-        // gracefully fall back if it fails.
+        // Decryption has less overhead than encryption because it does not have the one-round
+        // lag from the AES-only first iteration, but there is still a minimum size below which it
+        // is outperformed by YMM.
         if( SYMCRYPT_CPU_FEATURES_PRESENT( SYMCRYPT_CPU_FEATURES_FOR_VAES_512_CODE | SYMCRYPT_CPU_FEATURE_SAVEZMM_NOFAIL ) &&
             (bytesToProcess >= GCM_ZMM_DECRYPT_MINBLOCKS * SYMCRYPT_GCM_BLOCK_SIZE) &&
             SymCryptSaveZmm( &SaveData ) == SYMCRYPT_NO_ERROR )

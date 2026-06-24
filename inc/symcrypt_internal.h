@@ -390,6 +390,15 @@ C_ASSERT( (SYMCRYPT_ALIGN_VALUE & (SYMCRYPT_ALIGN_VALUE - 1 )) == 0 );
 
 #define SYMCRYPT_CPU_FEATURE_CMPXCHG16B         0x2000          // Compare and Swap 128b value
 
+//
+// In the Windows kernel, YMM and ZMM registers must be explicitly saved and restored, but we
+// have had problems with callers catching SEH exceptions thrown in between Save/Restore calls,
+// which prevents us from properly restoring the registers, resulting in invalid register states.
+// This can lead to data corruption. We cannot easily solve this in a cross-platform library,
+// so we normally only use YMM/ZMM registers when saving and restoring are done automatically for us
+// (i.e. in user mode).
+//
+
 #define SYMCRYPT_CPU_FEATURE_SAVEYMM_NOFAIL     0x4000          // if SymCryptSaveYmm() will never fail
 #define SYMCRYPT_CPU_FEATURE_SAVEZMM_NOFAIL     0x8000          // if SymCryptSaveZmm() will never fail
 

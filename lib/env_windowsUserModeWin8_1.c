@@ -52,7 +52,7 @@ SymCryptInitEnvWindowsUsermodeWin8_1nLater( UINT32 version )
     }
 
     //
-    // Our SaveXmm function never fails because it doesn't have to do anything in User mode.
+    // Saving extended register state never fails because it doesn't have to do anything in User mode.
     //
     g_SymCryptCpuFeaturesNotPresent &= ~SYMCRYPT_CPU_FEATURE_SAVEXMM_NOFAIL;
     g_SymCryptCpuFeaturesNotPresent &= ~SYMCRYPT_CPU_FEATURE_SAVEYMM_NOFAIL;

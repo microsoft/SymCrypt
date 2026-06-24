@@ -460,7 +460,16 @@ else()
 endif()
 
 add_library(symcrypt_common STATIC ${SOURCES_COMMON})
-target_link_libraries(symcrypt_common symcrypt_mlkem)
+target_link_libraries(symcrypt_common PUBLIC symcrypt_mlkem)
+
+# session.c uses __atomic_compare_exchange_16 which on some toolchains/architectures
+# (notably ARM64 Linux with GCC) is not inlined and requires linking against libatomic.
+# Expose libatomic as an INTERFACE dependency so it appears after symcrypt_common on
+# the link line, which is required for --as-needed to keep the dependency when it is
+# actually needed.
+if(CMAKE_SYSTEM_NAME MATCHES "Linux")
+    target_link_libraries(symcrypt_common INTERFACE atomic)
+endif()
 
 add_library(symcrypt_generic STATIC env_generic.c)
 target_link_libraries(symcrypt_generic symcrypt_common)

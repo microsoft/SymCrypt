@@ -25,7 +25,7 @@ SymCryptInitEnvUnittest( UINT32 version )
     SymCryptDetectCpuFeaturesByCpuid( SYMCRYPT_CPUID_DETECT_FLAG_CHECK_OS_SUPPORT_FOR_YMM );
 
     //
-    // By default we don't fail XMM/YMM/ZMM so that we get proper performance for GCM.
+    // By default we don't fail XMM/YMM/ZMM so that we can test our optimized implementations.
     // We allow the nofail to be disabled by command-line option.
     //
     g_SymCryptCpuFeaturesNotPresent &= ~SYMCRYPT_CPU_FEATURE_SAVEXMM_NOFAIL;
