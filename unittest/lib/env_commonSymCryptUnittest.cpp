@@ -124,9 +124,10 @@ fatal( _In_ PCSTR file, UINT32 line, _In_ PCSTR format, ... )
 #define SYMCRYPT_SAVE_YMM_FAIL_PROB     31
 #define SYMCRYPT_SAVE_ZMM_FAIL_PROB     31
 
-char g_saveInProgressTypes[16] = { 0 };
-int g_savesInProgress = 0;
-PVOID g_savePtrs[sizeof(g_saveInProgressTypes)] = { 0 };
+// Per-thread save/restore tracking.
+thread_local char  t_saveInProgressTypes[16] = { 0 };
+thread_local int   t_savesInProgress = 0;
+thread_local PVOID t_savePtrs[sizeof(t_saveInProgressTypes)] = { 0 };
 extern "C" {
 UINT32 g_nSaves = 0;
 }
@@ -189,10 +190,10 @@ SymCryptSaveXmmEnvUnittest( _Out_ PSYMCRYPT_EXTENDED_SAVE_DATA pSaveData )
         p->pRegs = pRegs;
         SYMCRYPT_SET_MAGIC( p );
 
-        CHECK(g_savesInProgress < (int) sizeof(g_saveInProgressTypes), "Too many nested saves!");
-        g_saveInProgressTypes[g_savesInProgress] = 'X';
-        g_savePtrs[g_savesInProgress] = pSaveData;
-        g_savesInProgress++;
+        CHECK(t_savesInProgress < (int) sizeof(t_saveInProgressTypes), "Too many nested saves!");
+        t_saveInProgressTypes[t_savesInProgress] = 'X';
+        t_savePtrs[t_savesInProgress] = pSaveData;
+        t_savesInProgress++;
     }
 
     return SYMCRYPT_NO_ERROR;
@@ -215,10 +216,10 @@ SymCryptRestoreXmmEnvUnittest( _Inout_ PSYMCRYPT_EXTENDED_SAVE_DATA pSaveData )
         pRegs = p->pRegs;
         SYMCRYPT_CHECK_MAGIC( pRegs );
 
-        CHECK(g_savesInProgress > 0, "No saves in progress!");
-        g_savesInProgress--;
-        CHECK(g_saveInProgressTypes[g_savesInProgress] == 'X', "XMM not saved");
-        CHECK(g_savePtrs[g_savesInProgress] == pSaveData, "?" );
+        CHECK(t_savesInProgress > 0, "No saves in progress!");
+        t_savesInProgress--;
+        CHECK(t_saveInProgressTypes[t_savesInProgress] == 'X', "XMM not saved");
+        CHECK(t_savePtrs[t_savesInProgress] == pSaveData, "?" );
 
         memcpy( &regs[0], &pRegs->xmm[0], sizeof( regs ) );
         SYMCRYPT_WIPE_MAGIC( pRegs );
@@ -307,10 +308,10 @@ SymCryptSaveYmmEnvUnittest( _Out_ PSYMCRYPT_EXTENDED_SAVE_DATA pSaveData )
         p->pRegs = pRegs;
         SYMCRYPT_SET_MAGIC( p );
 
-        CHECK(g_savesInProgress < (int) sizeof(g_saveInProgressTypes), "Too many nested saves!");
-        g_saveInProgressTypes[g_savesInProgress] = 'Y';
-        g_savePtrs[g_savesInProgress] = pSaveData;
-        g_savesInProgress++;
+        CHECK(t_savesInProgress < (int) sizeof(t_saveInProgressTypes), "Too many nested saves!");
+        t_saveInProgressTypes[t_savesInProgress] = 'Y';
+        t_savePtrs[t_savesInProgress] = pSaveData;
+        t_savesInProgress++;
     }
 
     return SYMCRYPT_NO_ERROR;
@@ -332,10 +333,10 @@ SymCryptRestoreYmmEnvUnittest( _Inout_ PSYMCRYPT_EXTENDED_SAVE_DATA pSaveData )
         pRegs = p->pRegs;
         SYMCRYPT_CHECK_MAGIC( pRegs );
 
-        CHECK(g_savesInProgress > 0, "No saves in progress!");
-        g_savesInProgress--;
-        CHECK(g_saveInProgressTypes[g_savesInProgress] == 'Y', "YMM not saved");
-        CHECK(g_savePtrs[g_savesInProgress] == pSaveData, "?" );
+        CHECK(t_savesInProgress > 0, "No saves in progress!");
+        t_savesInProgress--;
+        CHECK(t_saveInProgressTypes[t_savesInProgress] == 'Y', "YMM not saved");
+        CHECK(t_savePtrs[t_savesInProgress] == pSaveData, "?" );
 
         memcpy( regs, pRegs->ymm, sizeof( regs ) );
         SYMCRYPT_WIPE_MAGIC( pRegs );
@@ -416,10 +417,10 @@ SymCryptSaveZmmEnvUnittest( _Out_ PSYMCRYPT_EXTENDED_SAVE_DATA pSaveData )
         p->pRegs = pRegs;
         SYMCRYPT_SET_MAGIC( p );
 
-        CHECK(g_savesInProgress < (int) sizeof(g_saveInProgressTypes), "Too many nested saves!");
-        g_saveInProgressTypes[g_savesInProgress] = 'Z';
-        g_savePtrs[g_savesInProgress] = pSaveData;
-        g_savesInProgress++;
+        CHECK(t_savesInProgress < (int) sizeof(t_saveInProgressTypes), "Too many nested saves!");
+        t_saveInProgressTypes[t_savesInProgress] = 'Z';
+        t_savePtrs[t_savesInProgress] = pSaveData;
+        t_savesInProgress++;
     }
 
     return SYMCRYPT_NO_ERROR;
@@ -441,10 +442,10 @@ SymCryptRestoreZmmEnvUnittest( _Inout_ PSYMCRYPT_EXTENDED_SAVE_DATA pSaveData )
         pRegs = p->pRegs;
         SYMCRYPT_CHECK_MAGIC( pRegs );
 
-        CHECK(g_savesInProgress > 0, "No saves in progress!");
-        g_savesInProgress--;
-        CHECK(g_saveInProgressTypes[g_savesInProgress] == 'Z', "ZMM not saved");
-        CHECK(g_savePtrs[g_savesInProgress] == pSaveData, "?" );
+        CHECK(t_savesInProgress > 0, "No saves in progress!");
+        t_savesInProgress--;
+        CHECK(t_saveInProgressTypes[t_savesInProgress] == 'Z', "ZMM not saved");
+        CHECK(t_savePtrs[t_savesInProgress] == pSaveData, "?" );
 
         memcpy( regs, pRegs->zmm, sizeof( pRegs->zmm ) );
         memcpy( (BYTE*)regs + sizeof( pRegs->zmm ), pRegs->kmask, sizeof( pRegs->kmask ) );

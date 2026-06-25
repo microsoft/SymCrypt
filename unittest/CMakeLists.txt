@@ -151,6 +151,7 @@ endif()
 include_directories(inc)
 include_directories(lib)
 include_directories(resource)
+include_directories(${SYMCRYPT_SOURCE_DIR}/inc/symcrypt_plus)
 
 if(SYMCRYPT_TEST_LEGACY_IMPL)
   find_library(RSA32_LIB rsa32.lib HINTS SymCryptDependencies/${SYMCRYPT_TARGET_ARCH})
@@ -174,3 +175,6 @@ if(WIN32)
 else()
   add_subdirectory(exe_posix)
 endif()
+
+# Plus testmodule: dynamic-dispatch test harness for symcrypt_plus.
+add_subdirectory(module_plus)

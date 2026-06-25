@@ -83,6 +83,12 @@
         "config" : "release"
     },
     {
+        "source" : "${BIN_DIR}/module/libsymcrypt_plus_testmodule.so",
+        "dest" : "test/libsymcrypt_plus_testmodule.so",
+        "platform" : "linux",
+        "config" : "debug,release"
+    },
+    {
         "source" : "${BIN_DIR}/lib/symcrypt_static.lib",
         "dest" : "lib/symcrypt_static.lib",
         "platform" : "win32"
@@ -121,6 +127,16 @@
         "symcrust" : true
     },
     {
+        "source" : "${BIN_DIR}/lib/symcrypt_plus.lib",
+        "dest" : "lib/symcrypt_plus.lib",
+        "platform" : "win32"
+    },
+    {
+        "source" : "${BIN_DIR}/lib/symcrypt_plus_NoCIL.lib",
+        "dest" : "lib/symcrypt_plus_NoCIL.lib",
+        "platform" : "win32"
+    },
+    {
         "source" : "${BIN_DIR}/dll/symcrypt.dll",
         "dest" : "dll/symcrypt.dll",
         "platform" : "win32"
@@ -151,6 +167,11 @@
     {
         "source" : "${BIN_DIR}/dll/symcrypttestmodule.dll",
         "dest" : "test/symcrypttestmodule.dll",
+        "platform" : "win32"
+    },
+    {
+        "source" : "${BIN_DIR}/dll/symcrypt_plus_testmodule.dll",
+        "dest" : "test/symcrypt_plus_testmodule.dll",
         "platform" : "win32"
     },
     {
@@ -190,6 +211,11 @@
     {
         "source" : "${BIN_DIR}/dll/symcrypttestmodule.pdb",
         "dest" : "test/symcrypttestmodule.pdb",
+        "platform" : "win32"
+    },
+    {
+        "source" : "${BIN_DIR}/dll/symcrypt_plus_testmodule.pdb",
+        "dest" : "test/symcrypt_plus_testmodule.pdb",
         "platform" : "win32"
     },
     {

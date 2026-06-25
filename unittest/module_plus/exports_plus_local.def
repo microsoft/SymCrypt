@@ -1,0 +1,30 @@
+; Local exports for symcrypt_plus_testmodule - see README.md for design rationale.
+; This is the single hand-maintained list of symbols provided by the plus test
+; module. gen_combined_def.py generates the Windows DEF, ELF version script,
+; and Darwin exported-symbols list from this file.
+;
+LIBRARY symcrypt_plus_testmodule
+EXPORTS
+    ; Locally-defined
+    SymCryptModuleInit
+
+    ; Statically linked from symcrypt_plus.lib
+    SymCryptHpkekeyAllocate
+    SymCryptHpkekeyFree
+    SymCryptHpkekeyGenerate
+    SymCryptHpkekeyDerive
+    SymCryptHpkekeySetValue
+    SymCryptHpkekeyGetValue
+    SymCryptHpkeSizeofKeyFormatFromParams
+    SymCryptHpkeSizeofEncapsCiphertextFromParams
+    SymCryptHpkeSizeofAeadOverheadFromParams
+    SymCryptHpkeContextAllocate
+    SymCryptHpkeContextFree
+    SymCryptHpkeSetupSender
+    SymCryptHpkeSetupRecipient
+    SymCryptHpkeSeal
+    SymCryptHpkeOpen
+    SymCryptHpkeOpenUnordered
+    SymCryptHpkeSecretExport
+    SymCryptHpkeSealSingleShot
+    SymCryptHpkeOpenSingleShot

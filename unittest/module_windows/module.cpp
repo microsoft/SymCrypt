@@ -150,9 +150,20 @@ _Analysis_noreturn_
 VOID
 fatalImpl( _In_ PCSTR message )
 {
-    fprintf( stdout, "%s", message );
+    // See unittest/lib/main.cpp::fatalImpl for the multi-thread rationale.
+    static std::atomic<bool> alreadyFatal{ false };
+    if( alreadyFatal.exchange( true ) )
+    {
+        while(true)
+        {
+            Sleep( 10000 );
+        }
+    }
 
-    exit( -1 );
+    fprintf( stdout, "%s", message );
+    fflush( stdout );
+
+    _Exit( -1 );
 }
 
 _Analysis_noreturn_
@@ -202,7 +213,7 @@ VOID SYMCRYPT_CALL SymCryptModuleInit( UINT32 api, UINT32 minor )
     }
 }
 
-SYMCRYPT_CPU_FEATURES SctestDisableCpuFeatures(SYMCRYPT_CPU_FEATURES disable)
+extern "C" SYMCRYPT_CPU_FEATURES SctestDisableCpuFeatures(SYMCRYPT_CPU_FEATURES disable)
 {
     // Ugly hack, directly manipulate the CPU features flags.
     g_SymCryptCpuFeaturesNotPresent = g_originalSymCryptCpuFeaturesNotPresent | disable;

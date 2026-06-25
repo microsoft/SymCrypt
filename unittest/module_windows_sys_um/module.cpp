@@ -434,9 +434,20 @@ _Analysis_noreturn_
 VOID
 fatalImpl( _In_ PCSTR message )
 {
-    fprintf( stdout, "%s", message );
+    // See unittest/lib/main.cpp::fatalImpl for the multi-thread rationale.
+    static std::atomic<bool> alreadyFatal{ false };
+    if( alreadyFatal.exchange( true ) )
+    {
+        while(true)
+        {
+            Sleep( 10000 );
+        }
+    }
 
-    exit( -1 );
+    fprintf( stdout, "%s", message );
+    fflush( stdout );
+
+    _Exit( -1 );
 }
 
 _Analysis_noreturn_

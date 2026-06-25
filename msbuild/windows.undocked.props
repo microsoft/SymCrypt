@@ -145,7 +145,7 @@
     </ClCompile>
     <Link>
       <SubSystem Condition="'$(UndockedType)' == 'exe'">Console</SubSystem>
-      <CETCompat Condition="'$(Platform)'!='ARM64' And '$(Platform)'!='ARM'">true</CETCompat>
+      <CETCompat Condition="'$(Platform)'!='ARM64' And '$(Platform)'!='ARM' And '$(Platform)'!='ARM64EC'">true</CETCompat>
     </Link>
   </ItemDefinitionGroup>
 

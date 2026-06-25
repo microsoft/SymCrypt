@@ -13,7 +13,18 @@
 #include <openssl/ec.h>
 #include <openssl/sha.h>
 #include <openssl/hmac.h>
+#include <openssl/opensslv.h>
 #include <algorithm>
+#include <vector>
+#include <string>
+
+// Only compile the HPKE backend when the headers are new enough.
+#if OPENSSL_VERSION_NUMBER >= 0x30200000L
+#  include <openssl/hpke.h>
+#  define SCTEST_OPENSSL_HAS_HPKE 1
+#else
+#  define SCTEST_OPENSSL_HAS_HPKE 0
+#endif
 
 template<>
 class XtsImpState<ImpOpenssl, AlgXtsAes> {
@@ -1841,6 +1852,1045 @@ EccImp<ImpOpenssl, AlgEcdh>::~EccImp()
 // Pattern file for Hmac and Sha algorithms
 #include "openssl_imp_pattern.cpp"
 
+#if SCTEST_OPENSSL_HAS_HPKE
+// ============================================================================
+// HPKE (RFC 9180) backend backed by OpenSSL's OSSL_HPKE_* API.
+//
+// OpenSSL only supports the classical DHKEM KEMs (P-256/384/521, X25519) with
+// HKDF KDFs. ML-KEM / hybrid KEMs and SHAKE KDFs are not supported and are
+// filtered out in setKey() (returning STATUS_NOT_SUPPORTED), which removes this
+// implementation from the multi-imp active set for those ciphersuites.
+//
+// Capability gaps that surface per-operation (e.g. OpenSSL's 32-octet minimum
+// PSK length) are also reported as STATUS_NOT_SUPPORTED so the multi-imp
+// framework skips this implementation for that operation while still
+// cross-validating the rest.
+// ============================================================================
+
+template<>
+class HpkeImpState<ImpOpenssl, AlgHpke> {
+public:
+    SYMCRYPT_HPKE_CIPHERSUITE   ciphersuite;
+    OSSL_HPKE_SUITE             suite;
+    EVP_PKEY *                  pPrivKey;       // recipient private key (NULL if public-only)
+    std::vector<BYTE>           privateKey;     // raw private blob as imported (for getKey)
+    std::vector<BYTE>           publicKey;      // raw public key (RFC 9180 SerializePublicKey)
+    OSSL_HPKE_CTX *             pSenderCtx;
+    OSSL_HPKE_CTX *             pRecipientCtx;
+};
+
+//
+// Map a SymCrypt ciphersuite to an OSSL_HPKE_SUITE. Returns false for any
+// KEM/KDF/AEAD OpenSSL does not support. SymCrypt and OpenSSL use the same
+// IANA codepoints, but we map explicitly to avoid coupling to that fact.
+//
+static bool
+OpenSSLHpkeMapSuite(
+    SYMCRYPT_HPKE_CIPHERSUITE   ciphersuite,
+    OSSL_HPKE_SUITE *           pSuite )
+{
+    uint16_t kem, kdf, aead;
+
+    switch( ciphersuite.kemId )
+    {
+    case SYMCRYPT_HPKE_KEM_ID_DHKEM_P256:   kem = OSSL_HPKE_KEM_ID_P256;   break;
+    case SYMCRYPT_HPKE_KEM_ID_DHKEM_P384:   kem = OSSL_HPKE_KEM_ID_P384;   break;
+    case SYMCRYPT_HPKE_KEM_ID_DHKEM_P521:   kem = OSSL_HPKE_KEM_ID_P521;   break;
+    case SYMCRYPT_HPKE_KEM_ID_DHKEM_X25519: kem = OSSL_HPKE_KEM_ID_X25519; break;
+    default: return false;
+    }
+
+    switch( ciphersuite.kdfId )
+    {
+    case SYMCRYPT_HPKE_KDF_ID_HKDF_SHA256: kdf = OSSL_HPKE_KDF_ID_HKDF_SHA256; break;
+    case SYMCRYPT_HPKE_KDF_ID_HKDF_SHA384: kdf = OSSL_HPKE_KDF_ID_HKDF_SHA384; break;
+    case SYMCRYPT_HPKE_KDF_ID_HKDF_SHA512: kdf = OSSL_HPKE_KDF_ID_HKDF_SHA512; break;
+    default: return false;
+    }
+
+    switch( ciphersuite.aeadId )
+    {
+    case SYMCRYPT_HPKE_AEAD_ID_AESGCM128:        aead = OSSL_HPKE_AEAD_ID_AES_GCM_128;     break;
+    case SYMCRYPT_HPKE_AEAD_ID_AESGCM256:        aead = OSSL_HPKE_AEAD_ID_AES_GCM_256;     break;
+    case SYMCRYPT_HPKE_AEAD_ID_CHACHA20POLY1305: aead = OSSL_HPKE_AEAD_ID_CHACHA_POLY1305; break;
+    case SYMCRYPT_HPKE_AEAD_ID_EXPORT_ONLY:      aead = OSSL_HPKE_AEAD_ID_EXPORTONLY;      break;
+    default: return false;
+    }
+
+    pSuite->kem_id  = kem;
+    pSuite->kdf_id  = kdf;
+    pSuite->aead_id = aead;
+
+    return OSSL_HPKE_suite_check( *pSuite ) == 1;
+}
+
+//
+// EC curve metadata for a DHKEM P-curve KEM.
+//
+static bool
+OpenSSLHpkeEcCurve(
+    UINT16          kemId,
+    const char **   ppGroupName,
+    int *           pNid )
+{
+    switch( kemId )
+    {
+    case SYMCRYPT_HPKE_KEM_ID_DHKEM_P256: *ppGroupName = "P-256"; *pNid = NID_X9_62_prime256v1; return true;
+    case SYMCRYPT_HPKE_KEM_ID_DHKEM_P384: *ppGroupName = "P-384"; *pNid = NID_secp384r1;        return true;
+    case SYMCRYPT_HPKE_KEM_ID_DHKEM_P521: *ppGroupName = "P-521"; *pNid = NID_secp521r1;        return true;
+    default: return false;
+    }
+}
+
+//
+// Build an EVP_PKEY (private) for a DHKEM P-curve from the RFC 9180 raw scalar.
+// We compute the public point pub = priv*G explicitly and supply it alongside
+// the scalar, because stock OpenSSL's EC keymgmt does not derive the public key
+// from a private-scalar-only fromdata import (a private-only key then fails when
+// used for KEM decapsulation). Also returns the serialized public point
+// (RFC 9180 SerializePublicKey, uncompressed) in pubOut for the sender's encap.
+//
+static EVP_PKEY *
+OpenSSLHpkeImportEcPrivate(
+    UINT16                  kemId,
+    PCBYTE                  pbPriv,
+    SIZE_T                  cbPriv,
+    std::vector<BYTE> &     pubOut )
+{
+    const char *    groupName = NULL;
+    int             nid = 0;
+    EVP_PKEY *      pkey = NULL;
+    EC_GROUP *      group = NULL;
+    BIGNUM *        priv = NULL;
+    EC_POINT *      pub = NULL;
+    BN_CTX *        bnCtx = NULL;
+    OSSL_PARAM_BLD *bld = NULL;
+    OSSL_PARAM *    params = NULL;
+    EVP_PKEY_CTX *  pkeyCtx = NULL;
+    size_t          pubLen = 0;
+
+    if( !OpenSSLHpkeEcCurve( kemId, &groupName, &nid ) )
+    {
+        goto cleanup;
+    }
+
+    group = EC_GROUP_new_by_curve_name( nid );
+    bnCtx = BN_CTX_new();
+    if( group == NULL || bnCtx == NULL )
+    {
+        goto cleanup;
+    }
+
+    priv = BN_bin2bn( pbPriv, (int) cbPriv, NULL );
+    if( priv == NULL )
+    {
+        goto cleanup;
+    }
+
+    pub = EC_POINT_new( group );
+    if( pub == NULL ||
+        EC_POINT_mul( group, pub, priv, NULL, NULL, bnCtx ) != 1 )
+    {
+        goto cleanup;
+    }
+
+    pubLen = EC_POINT_point2oct( group, pub, POINT_CONVERSION_UNCOMPRESSED, NULL, 0, bnCtx );
+    if( pubLen == 0 )
+    {
+        goto cleanup;
+    }
+    pubOut.resize( pubLen );
+    if( EC_POINT_point2oct( group, pub, POINT_CONVERSION_UNCOMPRESSED, pubOut.data(), pubLen, bnCtx ) != pubLen )
+    {
+        goto cleanup;
+    }
+
+    bld = OSSL_PARAM_BLD_new();
+    if( bld == NULL ||
+        OSSL_PARAM_BLD_push_utf8_string( bld, OSSL_PKEY_PARAM_GROUP_NAME, groupName, 0 ) != 1 ||
+        OSSL_PARAM_BLD_push_BN( bld, OSSL_PKEY_PARAM_PRIV_KEY, priv ) != 1 ||
+        OSSL_PARAM_BLD_push_octet_string( bld, OSSL_PKEY_PARAM_PUB_KEY, pubOut.data(), pubLen ) != 1 )
+    {
+        goto cleanup;
+    }
+    params = OSSL_PARAM_BLD_to_param( bld );
+    if( params == NULL )
+    {
+        goto cleanup;
+    }
+
+    pkeyCtx = EVP_PKEY_CTX_new_from_name( NULL, "EC", NULL );
+    if( pkeyCtx == NULL ||
+        EVP_PKEY_fromdata_init( pkeyCtx ) != 1 ||
+        EVP_PKEY_fromdata( pkeyCtx, &pkey, EVP_PKEY_KEYPAIR, params ) != 1 )
+    {
+        iprint( "\n[OpenSSL HPKE] EC private key import (%s) failed: %s\n",
+            groupName != NULL ? groupName : "?", getOpensslError().c_str() );
+        pkey = NULL;        // EVP_PKEY_fromdata may have left a partial object
+    }
+
+cleanup:
+    if( params != NULL )    OSSL_PARAM_free( params );
+    if( bld != NULL )       OSSL_PARAM_BLD_free( bld );
+    if( pkeyCtx != NULL )   EVP_PKEY_CTX_free( pkeyCtx );
+    if( pub != NULL )       EC_POINT_free( pub );
+    if( priv != NULL )      BN_clear_free( priv );
+    if( bnCtx != NULL )     BN_CTX_free( bnCtx );
+    if( group != NULL )     EC_GROUP_free( group );
+    return pkey;
+}
+
+//
+// Build an EVP_PKEY (private) for X25519 from the RFC 9180 raw private key, and
+// return the corresponding raw public key in pubOut.
+//
+static EVP_PKEY *
+OpenSSLHpkeImportX25519Private(
+    PCBYTE                  pbPriv,
+    SIZE_T                  cbPriv,
+    std::vector<BYTE> &     pubOut )
+{
+    EVP_PKEY * pkey = EVP_PKEY_new_raw_private_key( EVP_PKEY_X25519, NULL, pbPriv, cbPriv );
+    if( pkey == NULL )
+    {
+        return NULL;
+    }
+
+    size_t pubLen = 0;
+    if( EVP_PKEY_get_raw_public_key( pkey, NULL, &pubLen ) != 1 )
+    {
+        EVP_PKEY_free( pkey );
+        return NULL;
+    }
+    pubOut.resize( pubLen );
+    if( EVP_PKEY_get_raw_public_key( pkey, pubOut.data(), &pubLen ) != 1 )
+    {
+        EVP_PKEY_free( pkey );
+        return NULL;
+    }
+
+    return pkey;
+}
+
+//
+// OSSL_HPKE_CTX_set1_psk() accepts a PSK whose length is in
+// [OSSL_HPKE_MIN_PSKLEN, OSSL_HPKE_MAX_PARMLEN] and a PSK id passed as a
+// non-empty, NUL-terminated C string bounded by OSSL_HPKE_MAX_PARMLEN. SymCrypt
+// (per RFC 9180) treats the PSK id as an arbitrary byte string of explicit
+// length, so an id that is empty, over-long, or contains an embedded NUL cannot
+// be passed to OpenSSL without changing its value. When the PSK / PSK id fall
+// outside what the OpenSSL API accepts, this backend reports
+// STATUS_NOT_SUPPORTED so the multi-imp framework skips it for that operation.
+//
+static bool
+OpenSSLHpkePskAcceptable( PCBYTE pbPsk, SIZE_T cbPsk, PCBYTE pbPskId, SIZE_T cbPskId )
+{
+    if( pbPsk == NULL || cbPsk == 0 )
+    {
+        return true;        // base mode
+    }
+
+    if( cbPsk < OSSL_HPKE_MIN_PSKLEN || cbPsk > OSSL_HPKE_MAX_PARMLEN )
+    {
+        return false;
+    }
+
+    // PSK mode requires a non-empty id within the parameter-length limit.
+    if( pbPskId == NULL || cbPskId == 0 || cbPskId > OSSL_HPKE_MAX_PARMLEN )
+    {
+        return false;
+    }
+    if( memchr( pbPskId, 0, cbPskId ) != NULL )
+    {
+        return false;       // embedded NUL not representable in a C-string id
+    }
+
+    return true;
+}
+
+static int
+OpenSSLHpkeMode( PCBYTE pbPsk, SIZE_T cbPsk )
+{
+    return ( pbPsk != NULL && cbPsk != 0 ) ? OSSL_HPKE_MODE_PSK : OSSL_HPKE_MODE_BASE;
+}
+
+//
+// Record the OpenSSL error queue (with operation context) into the
+// implementation's m_lastError. This is uniform across all HPKE operations:
+// the multi-imp harness surfaces m_lastError only when an operation fails
+// unexpectedly (a CHECK fires), so negative tests that deliberately induce
+// failures do not spam the log. Returns STATUS_UNSUCCESSFUL for convenience.
+//
+static NTSTATUS
+OpenSSLHpkeRecordFailure( String & dst, const char * op )
+{
+    dst = String( "[OpenSSL HPKE] " ) + op + " failed: " + getOpensslError();
+    return STATUS_UNSUCCESSFUL;
+}
+
+//
+// Apply the PSK (if any) to a freshly-created HPKE context. OpenSSL takes the
+// PSK id as a C string, so make a null-terminated copy.
+//
+static bool
+OpenSSLHpkeApplyPsk(
+    OSSL_HPKE_CTX * ctx,
+    PCBYTE pbPsk, SIZE_T cbPsk,
+    PCBYTE pbPskId, SIZE_T cbPskId )
+{
+    if( pbPsk == NULL || cbPsk == 0 )
+    {
+        return true;
+    }
+
+    std::string pskId( (const char *) pbPskId, pbPskId == NULL ? (SIZE_T) 0 : cbPskId );
+    return OSSL_HPKE_CTX_set1_psk( ctx, pskId.c_str(), pbPsk, cbPsk ) == 1;
+}
+
+template<>
+HpkeImp<ImpOpenssl, AlgHpke>::HpkeImp()
+{
+    //
+    // OpenSSL's HPKE backend supports only classical DHKEM + HKDF suites; the
+    // perf test matrix is ML-KEM only, so this implementation is not perf-tested
+    // (all perf function pointers are NULL, which measurePerfOneAlg tolerates).
+    //
+    m_perfDataFunction    = NULL;
+    m_perfDecryptFunction = NULL;
+    m_perfKeyFunction     = NULL;
+    m_perfCleanFunction   = NULL;
+
+    state.pPrivKey      = NULL;
+    state.pSenderCtx    = NULL;
+    state.pRecipientCtx = NULL;
+    state.ciphersuite   = {};
+    state.suite         = {};
+}
+
+template<>
+HpkeImp<ImpOpenssl, AlgHpke>::~HpkeImp()
+{
+    if( state.pSenderCtx != NULL )
+    {
+        OSSL_HPKE_CTX_free( state.pSenderCtx );
+        state.pSenderCtx = NULL;
+    }
+    if( state.pRecipientCtx != NULL )
+    {
+        OSSL_HPKE_CTX_free( state.pRecipientCtx );
+        state.pRecipientCtx = NULL;
+    }
+    if( state.pPrivKey != NULL )
+    {
+        EVP_PKEY_free( state.pPrivKey );
+        state.pPrivKey = NULL;
+    }
+}
+
+template<>
+NTSTATUS
+HpkeImp<ImpOpenssl, AlgHpke>::setKey(
+                                                SYMCRYPT_HPKE_CIPHERSUITE   ciphersuite,
+                                                UINT32                      format,
+        _In_reads_bytes_( cbKey )               PCBYTE                      pbKey,
+                                                SIZE_T                      cbKey )
+{
+    // Re-keying invalidates any existing stateful contexts.
+    if( state.pSenderCtx != NULL )
+    {
+        OSSL_HPKE_CTX_free( state.pSenderCtx );
+        state.pSenderCtx = NULL;
+    }
+    if( state.pRecipientCtx != NULL )
+    {
+        OSSL_HPKE_CTX_free( state.pRecipientCtx );
+        state.pRecipientCtx = NULL;
+    }
+    if( state.pPrivKey != NULL )
+    {
+        EVP_PKEY_free( state.pPrivKey );
+        state.pPrivKey = NULL;
+    }
+    state.privateKey.clear();
+    state.publicKey.clear();
+
+    if( pbKey == NULL )
+    {
+        // Just used to clear the key state for leak detection.
+        return STATUS_SUCCESS;
+    }
+
+    OSSL_HPKE_SUITE suite;
+    if( !OpenSSLHpkeMapSuite( ciphersuite, &suite ) )
+    {
+        return STATUS_NOT_SUPPORTED;
+    }
+
+    state.ciphersuite = ciphersuite;
+    state.suite = suite;
+
+    if( format == SYMCRYPT_HPKEKEY_FORMAT_PRIVATE_KEY )
+    {
+        std::vector<BYTE> pub;
+        EVP_PKEY * pkey;
+
+        if( ciphersuite.kemId == SYMCRYPT_HPKE_KEM_ID_DHKEM_X25519 )
+        {
+            pkey = OpenSSLHpkeImportX25519Private( pbKey, cbKey, pub );
+        }
+        else
+        {
+            pkey = OpenSSLHpkeImportEcPrivate( ciphersuite.kemId, pbKey, cbKey, pub );
+        }
+
+        if( pkey == NULL )
+        {
+            return OpenSSLHpkeRecordFailure( m_lastError, "setKey private key import" );
+        }
+
+        state.pPrivKey = pkey;
+        state.privateKey.assign( pbKey, pbKey + cbKey );
+        state.publicKey = std::move( pub );
+        return STATUS_SUCCESS;
+    }
+    else if( format == SYMCRYPT_HPKEKEY_FORMAT_PUBLIC_KEY )
+    {
+        state.publicKey.assign( pbKey, pbKey + cbKey );
+        return STATUS_SUCCESS;
+    }
+
+    return STATUS_NOT_SUPPORTED;
+}
+
+template<>
+NTSTATUS
+HpkeImp<ImpOpenssl, AlgHpke>::deriveKeyPair(
+                                                SYMCRYPT_HPKE_CIPHERSUITE   ciphersuite,
+        _In_reads_bytes_( cbIkm )               PCBYTE                      pbIkm,
+                                                SIZE_T                      cbIkm )
+{
+    // Re-keying invalidates any existing stateful contexts.
+    if( state.pSenderCtx != NULL )
+    {
+        OSSL_HPKE_CTX_free( state.pSenderCtx );
+        state.pSenderCtx = NULL;
+    }
+    if( state.pRecipientCtx != NULL )
+    {
+        OSSL_HPKE_CTX_free( state.pRecipientCtx );
+        state.pRecipientCtx = NULL;
+    }
+    if( state.pPrivKey != NULL )
+    {
+        EVP_PKEY_free( state.pPrivKey );
+        state.pPrivKey = NULL;
+    }
+    state.privateKey.clear();
+    state.publicKey.clear();
+
+    OSSL_HPKE_SUITE suite;
+    if( !OpenSSLHpkeMapSuite( ciphersuite, &suite ) )
+    {
+        return STATUS_NOT_SUPPORTED;
+    }
+
+    state.ciphersuite = ciphersuite;
+    state.suite = suite;
+
+    BYTE        abPub[256];     // max RFC 9180 SerializePublicKey is P-521 (133 bytes)
+    size_t      cbPub = sizeof( abPub );
+    EVP_PKEY *  pPrivKey = NULL;
+
+    if( OSSL_HPKE_keygen( suite, abPub, &cbPub, &pPrivKey,
+                          pbIkm, cbIkm, NULL, NULL ) != 1 || pPrivKey == NULL )
+    {
+        return OpenSSLHpkeRecordFailure( m_lastError, "deriveKeyPair OSSL_HPKE_keygen" );
+    }
+
+    state.pPrivKey  = pPrivKey;
+    state.publicKey.assign( abPub, abPub + cbPub );
+
+    //
+    // Extract the raw private key (RFC 9180 SerializePrivateKey) so getKey can
+    // cross-validate derivation across implementations. Best-effort: if the
+    // extraction fails the private blob is left empty (getKey(PRIVATE) then
+    // reports NOT_SUPPORTED), but the derived public key and key object remain
+    // usable.
+    //
+    if( ciphersuite.kemId == SYMCRYPT_HPKE_KEM_ID_DHKEM_X25519 )
+    {
+        size_t cbRaw = 0;
+        if( EVP_PKEY_get_raw_private_key( pPrivKey, NULL, &cbRaw ) == 1 )
+        {
+            state.privateKey.resize( cbRaw );
+            if( EVP_PKEY_get_raw_private_key( pPrivKey, state.privateKey.data(), &cbRaw ) != 1 )
+            {
+                state.privateKey.clear();
+            }
+        }
+    }
+    else
+    {
+        // Uncompressed EC point is 1 + 2*fieldLen; the scalar is fieldLen bytes.
+        SIZE_T   cbField = ( cbPub - 1 ) / 2;
+        BIGNUM * bnPriv = NULL;
+        if( cbPub >= 1 &&
+            EVP_PKEY_get_bn_param( pPrivKey, OSSL_PKEY_PARAM_PRIV_KEY, &bnPriv ) == 1 )
+        {
+            state.privateKey.resize( cbField );
+            if( BN_bn2binpad( bnPriv, state.privateKey.data(), (int) cbField ) != (int) cbField )
+            {
+                state.privateKey.clear();
+            }
+        }
+        if( bnPriv != NULL )
+        {
+            BN_clear_free( bnPriv );
+        }
+    }
+
+    return STATUS_SUCCESS;
+}
+
+template<>
+NTSTATUS
+HpkeImp<ImpOpenssl, AlgHpke>::getKey(
+                                                UINT32                      format,
+        _Out_writes_bytes_( cbKey )             PBYTE                       pbKey,
+                                                SIZE_T                      cbKey )
+{
+    const std::vector<BYTE> * pSrc;
+
+    if( format == SYMCRYPT_HPKEKEY_FORMAT_PUBLIC_KEY )
+    {
+        pSrc = &state.publicKey;
+    }
+    else if( format == SYMCRYPT_HPKEKEY_FORMAT_PRIVATE_KEY )
+    {
+        pSrc = &state.privateKey;
+    }
+    else
+    {
+        return STATUS_NOT_SUPPORTED;
+    }
+
+    if( pSrc->empty() )
+    {
+        return STATUS_NOT_SUPPORTED;
+    }
+
+    CHECK( pSrc->size() == cbKey, "HPKE OpenSSL getKey size mismatch" );
+    memcpy( pbKey, pSrc->data(), cbKey );
+    return STATUS_SUCCESS;
+}
+
+template<>
+NTSTATUS
+HpkeImp<ImpOpenssl, AlgHpke>::sealSingleShot(
+        _In_reads_bytes_opt_( cbInfo )          PCBYTE                      pbInfo,
+                                                SIZE_T                      cbInfo,
+        _In_reads_bytes_opt_( cbPsk )           PCBYTE                      pbPsk,
+                                                SIZE_T                      cbPsk,
+        _In_reads_bytes_opt_( cbPskId )         PCBYTE                      pbPskId,
+                                                SIZE_T                      cbPskId,
+        _In_reads_bytes_opt_( cbAad )           PCBYTE                      pbAad,
+                                                SIZE_T                      cbAad,
+        _In_reads_bytes_( cbPlaintext )         PCBYTE                      pbPlaintext,
+                                                SIZE_T                      cbPlaintext,
+        _Out_writes_bytes_( cbEnc )             PBYTE                       pbEnc,
+                                                SIZE_T                      cbEnc,
+        _Out_writes_bytes_( cbCiphertext )      PBYTE                       pbCiphertext,
+                                                SIZE_T                      cbCiphertext )
+{
+    NTSTATUS ntStatus = STATUS_UNSUCCESSFUL;
+    OSSL_HPKE_CTX * ctx = NULL;
+    size_t encLen = cbEnc;
+    size_t ctLen = cbCiphertext;
+
+    if( state.ciphersuite.aeadId == SYMCRYPT_HPKE_AEAD_ID_EXPORT_ONLY ||
+        state.publicKey.empty() ||
+        cbPlaintext == 0 ||                 // OpenSSL rejects zero-length plaintext
+        !OpenSSLHpkePskAcceptable( pbPsk, cbPsk, pbPskId, cbPskId ) )
+    {
+        return STATUS_NOT_SUPPORTED;
+    }
+
+    ctx = OSSL_HPKE_CTX_new( OpenSSLHpkeMode( pbPsk, cbPsk ), state.suite, OSSL_HPKE_ROLE_SENDER, NULL, NULL );
+    if( ctx == NULL )
+    {
+        return OpenSSLHpkeRecordFailure( m_lastError, "sealSingleShot CTX_new" );
+    }
+
+    if( !OpenSSLHpkeApplyPsk( ctx, pbPsk, cbPsk, pbPskId, cbPskId ) )
+    {
+        ntStatus = OpenSSLHpkeRecordFailure( m_lastError, "sealSingleShot CTX_set1_psk" );
+        goto cleanup;
+    }
+    if( OSSL_HPKE_encap( ctx, pbEnc, &encLen, state.publicKey.data(), state.publicKey.size(), pbInfo, cbInfo ) != 1 )
+    {
+        ntStatus = OpenSSLHpkeRecordFailure( m_lastError, "sealSingleShot encap" );
+        goto cleanup;
+    }
+    if( OSSL_HPKE_seal( ctx, pbCiphertext, &ctLen, pbAad, cbAad, pbPlaintext, cbPlaintext ) != 1 )
+    {
+        ntStatus = OpenSSLHpkeRecordFailure( m_lastError, "sealSingleShot seal" );
+        goto cleanup;
+    }
+
+    CHECK( encLen == cbEnc, "HPKE OpenSSL seal enc size mismatch" );
+    CHECK( ctLen == cbCiphertext, "HPKE OpenSSL seal ciphertext size mismatch" );
+    ntStatus = STATUS_SUCCESS;
+
+cleanup:
+    OSSL_HPKE_CTX_free( ctx );
+    return ntStatus;
+}
+
+template<>
+NTSTATUS
+HpkeImp<ImpOpenssl, AlgHpke>::openSingleShot(
+        _In_reads_bytes_( cbEnc )               PCBYTE                      pbEnc,
+                                                SIZE_T                      cbEnc,
+        _In_reads_bytes_opt_( cbInfo )          PCBYTE                      pbInfo,
+                                                SIZE_T                      cbInfo,
+        _In_reads_bytes_opt_( cbPsk )           PCBYTE                      pbPsk,
+                                                SIZE_T                      cbPsk,
+        _In_reads_bytes_opt_( cbPskId )         PCBYTE                      pbPskId,
+                                                SIZE_T                      cbPskId,
+        _In_reads_bytes_opt_( cbAad )           PCBYTE                      pbAad,
+                                                SIZE_T                      cbAad,
+        _In_reads_bytes_( cbCiphertext )        PCBYTE                      pbCiphertext,
+                                                SIZE_T                      cbCiphertext,
+        _Out_writes_bytes_( cbPlaintext )       PBYTE                       pbPlaintext,
+                                                SIZE_T                      cbPlaintext )
+{
+    NTSTATUS ntStatus = STATUS_UNSUCCESSFUL;
+    OSSL_HPKE_CTX * ctx = NULL;
+    size_t ptLen = cbPlaintext;
+
+    //
+    // OpenSSL's OSSL_HPKE_open rejects a zero-length plaintext (and a tag-only
+    // ciphertext). SymCrypt allows empty plaintext, so skip this implementation
+    // for that case rather than treating it as a failure.
+    //
+    if( state.ciphersuite.aeadId == SYMCRYPT_HPKE_AEAD_ID_EXPORT_ONLY ||
+        state.pPrivKey == NULL ||
+        cbPlaintext == 0 ||
+        !OpenSSLHpkePskAcceptable( pbPsk, cbPsk, pbPskId, cbPskId ) )
+    {
+        return STATUS_NOT_SUPPORTED;
+    }
+
+    ERR_clear_error();
+    ctx = OSSL_HPKE_CTX_new( OpenSSLHpkeMode( pbPsk, cbPsk ), state.suite, OSSL_HPKE_ROLE_RECEIVER, NULL, NULL );
+    if( ctx == NULL )
+    {
+        return OpenSSLHpkeRecordFailure( m_lastError, "openSingleShot CTX_new" );
+    }
+
+    if( !OpenSSLHpkeApplyPsk( ctx, pbPsk, cbPsk, pbPskId, cbPskId ) )
+    {
+        ntStatus = OpenSSLHpkeRecordFailure( m_lastError, "openSingleShot CTX_set1_psk" );
+        goto cleanup;
+    }
+    if( OSSL_HPKE_decap( ctx, pbEnc, cbEnc, state.pPrivKey, pbInfo, cbInfo ) != 1 )
+    {
+        ntStatus = OpenSSLHpkeRecordFailure( m_lastError, "openSingleShot decap" );
+        goto cleanup;
+    }
+    if( OSSL_HPKE_open( ctx, pbPlaintext, &ptLen, pbAad, cbAad, pbCiphertext, cbCiphertext ) != 1 )
+    {
+        ntStatus = OpenSSLHpkeRecordFailure( m_lastError, "openSingleShot open" );
+        goto cleanup;
+    }
+
+    CHECK( ptLen == cbPlaintext, "HPKE OpenSSL open plaintext size mismatch" );
+    ntStatus = STATUS_SUCCESS;
+
+cleanup:
+    OSSL_HPKE_CTX_free( ctx );
+    return ntStatus;
+}
+
+template<>
+NTSTATUS
+HpkeImp<ImpOpenssl, AlgHpke>::secretExportSingleShot(
+        _In_reads_bytes_( cbEnc )               PCBYTE                      pbEnc,
+                                                SIZE_T                      cbEnc,
+        _In_reads_bytes_opt_( cbInfo )          PCBYTE                      pbInfo,
+                                                SIZE_T                      cbInfo,
+        _In_reads_bytes_opt_( cbPsk )           PCBYTE                      pbPsk,
+                                                SIZE_T                      cbPsk,
+        _In_reads_bytes_opt_( cbPskId )         PCBYTE                      pbPskId,
+                                                SIZE_T                      cbPskId,
+        _In_reads_bytes_( cbExporterContext )   PCBYTE                      pbExporterContext,
+                                                SIZE_T                      cbExporterContext,
+        _Out_writes_bytes_( cbExportedValue )   PBYTE                       pbExportedValue,
+                                                UINT16                      cbExportedValue )
+{
+    NTSTATUS ntStatus = STATUS_UNSUCCESSFUL;
+    OSSL_HPKE_CTX * ctx = NULL;
+
+    //
+    // OpenSSL's OSSL_HPKE_export limits the exporter context (label) to
+    // OSSL_HPKE_MAX_PARMLEN octets; SymCrypt permits much larger. Skip this
+    // implementation for over-long contexts rather than treating it as failure.
+    //
+    if( state.pPrivKey == NULL ||
+        cbExporterContext > OSSL_HPKE_MAX_PARMLEN ||
+        !OpenSSLHpkePskAcceptable( pbPsk, cbPsk, pbPskId, cbPskId ) )
+    {
+        return STATUS_NOT_SUPPORTED;
+    }
+
+    ERR_clear_error();
+    ctx = OSSL_HPKE_CTX_new( OpenSSLHpkeMode( pbPsk, cbPsk ), state.suite, OSSL_HPKE_ROLE_RECEIVER, NULL, NULL );
+    if( ctx == NULL )
+    {
+        return STATUS_UNSUCCESSFUL;
+    }
+
+    if( !OpenSSLHpkeApplyPsk( ctx, pbPsk, cbPsk, pbPskId, cbPskId ) )
+    {
+        ntStatus = OpenSSLHpkeRecordFailure( m_lastError, "secretExportSingleShot CTX_set1_psk" );
+        goto cleanup;
+    }
+    if( OSSL_HPKE_decap( ctx, pbEnc, cbEnc, state.pPrivKey, pbInfo, cbInfo ) != 1 )
+    {
+        ntStatus = OpenSSLHpkeRecordFailure( m_lastError, "secretExportSingleShot decap" );
+        goto cleanup;
+    }
+    if( OSSL_HPKE_export( ctx, pbExportedValue, cbExportedValue, pbExporterContext, cbExporterContext ) != 1 )
+    {
+        ntStatus = OpenSSLHpkeRecordFailure( m_lastError, "secretExportSingleShot export" );
+        goto cleanup;
+    }
+
+    ntStatus = STATUS_SUCCESS;
+
+cleanup:
+    OSSL_HPKE_CTX_free( ctx );
+    return ntStatus;
+}
+
+template<>
+NTSTATUS
+HpkeImp<ImpOpenssl, AlgHpke>::setupSender(
+        _In_reads_bytes_opt_( cbInfo )          PCBYTE                      pbInfo,
+                                                SIZE_T                      cbInfo,
+        _In_reads_bytes_opt_( cbPsk )           PCBYTE                      pbPsk,
+                                                SIZE_T                      cbPsk,
+        _In_reads_bytes_opt_( cbPskId )         PCBYTE                      pbPskId,
+                                                SIZE_T                      cbPskId,
+        _Out_writes_bytes_( cbEnc )             PBYTE                       pbEnc,
+                                                SIZE_T                      cbEnc )
+{
+    size_t encLen = cbEnc;
+
+    if( state.pSenderCtx != NULL )
+    {
+        OSSL_HPKE_CTX_free( state.pSenderCtx );
+        state.pSenderCtx = NULL;
+    }
+
+    if( state.publicKey.empty() ||
+        !OpenSSLHpkePskAcceptable( pbPsk, cbPsk, pbPskId, cbPskId ) )
+    {
+        return STATUS_NOT_SUPPORTED;
+    }
+
+    state.pSenderCtx = OSSL_HPKE_CTX_new( OpenSSLHpkeMode( pbPsk, cbPsk ), state.suite, OSSL_HPKE_ROLE_SENDER, NULL, NULL );
+    if( state.pSenderCtx == NULL )
+    {
+        return STATUS_UNSUCCESSFUL;
+    }
+
+    if( !OpenSSLHpkeApplyPsk( state.pSenderCtx, pbPsk, cbPsk, pbPskId, cbPskId ) ||
+        OSSL_HPKE_encap( state.pSenderCtx, pbEnc, &encLen, state.publicKey.data(), state.publicKey.size(), pbInfo, cbInfo ) != 1 )
+    {
+        OSSL_HPKE_CTX_free( state.pSenderCtx );
+        state.pSenderCtx = NULL;
+        return OpenSSLHpkeRecordFailure( m_lastError, "setupSender encap" );
+    }
+
+    CHECK( encLen == cbEnc, "HPKE OpenSSL setupSender enc size mismatch" );
+    return STATUS_SUCCESS;
+}
+
+template<>
+NTSTATUS
+HpkeImp<ImpOpenssl, AlgHpke>::setupSenderDeterministic(
+        _In_reads_bytes_( cbRandom )            PCBYTE                      pbRandom,
+                                                SIZE_T                      cbRandom,
+        _In_reads_bytes_opt_( cbInfo )          PCBYTE                      pbInfo,
+                                                SIZE_T                      cbInfo,
+        _In_reads_bytes_opt_( cbPsk )           PCBYTE                      pbPsk,
+                                                SIZE_T                      cbPsk,
+        _In_reads_bytes_opt_( cbPskId )         PCBYTE                      pbPskId,
+                                                SIZE_T                      cbPskId,
+        _Out_writes_bytes_( cbEnc )             PBYTE                       pbEnc,
+                                                SIZE_T                      cbEnc )
+{
+    size_t encLen = cbEnc;
+
+    if( state.pSenderCtx != NULL )
+    {
+        OSSL_HPKE_CTX_free( state.pSenderCtx );
+        state.pSenderCtx = NULL;
+    }
+
+    if( state.publicKey.empty() ||
+        !OpenSSLHpkePskAcceptable( pbPsk, cbPsk, pbPskId, cbPskId ) )
+    {
+        return STATUS_NOT_SUPPORTED;
+    }
+
+    state.pSenderCtx = OSSL_HPKE_CTX_new( OpenSSLHpkeMode( pbPsk, cbPsk ), state.suite, OSSL_HPKE_ROLE_SENDER, NULL, NULL );
+    if( state.pSenderCtx == NULL )
+    {
+        return STATUS_UNSUCCESSFUL;
+    }
+
+    if( !OpenSSLHpkeApplyPsk( state.pSenderCtx, pbPsk, cbPsk, pbPskId, cbPskId ) ||
+        OSSL_HPKE_CTX_set1_ikme( state.pSenderCtx, pbRandom, cbRandom ) != 1 ||
+        OSSL_HPKE_encap( state.pSenderCtx, pbEnc, &encLen, state.publicKey.data(), state.publicKey.size(), pbInfo, cbInfo ) != 1 )
+    {
+        OSSL_HPKE_CTX_free( state.pSenderCtx );
+        state.pSenderCtx = NULL;
+        return OpenSSLHpkeRecordFailure( m_lastError, "setupSenderDeterministic encap" );
+    }
+
+    CHECK( encLen == cbEnc, "HPKE OpenSSL setupSenderDeterministic enc size mismatch" );
+    return STATUS_SUCCESS;
+}
+
+template<>
+NTSTATUS
+HpkeImp<ImpOpenssl, AlgHpke>::setupRecipient(
+        _In_reads_bytes_( cbEnc )               PCBYTE                      pbEnc,
+                                                SIZE_T                      cbEnc,
+        _In_reads_bytes_opt_( cbInfo )          PCBYTE                      pbInfo,
+                                                SIZE_T                      cbInfo,
+        _In_reads_bytes_opt_( cbPsk )           PCBYTE                      pbPsk,
+                                                SIZE_T                      cbPsk,
+        _In_reads_bytes_opt_( cbPskId )         PCBYTE                      pbPskId,
+                                                SIZE_T                      cbPskId )
+{
+    if( state.pRecipientCtx != NULL )
+    {
+        OSSL_HPKE_CTX_free( state.pRecipientCtx );
+        state.pRecipientCtx = NULL;
+    }
+
+    if( state.pPrivKey == NULL ||
+        !OpenSSLHpkePskAcceptable( pbPsk, cbPsk, pbPskId, cbPskId ) )
+    {
+        return STATUS_NOT_SUPPORTED;
+    }
+
+    state.pRecipientCtx = OSSL_HPKE_CTX_new( OpenSSLHpkeMode( pbPsk, cbPsk ), state.suite, OSSL_HPKE_ROLE_RECEIVER, NULL, NULL );
+    if( state.pRecipientCtx == NULL )
+    {
+        return STATUS_UNSUCCESSFUL;
+    }
+
+    if( !OpenSSLHpkeApplyPsk( state.pRecipientCtx, pbPsk, cbPsk, pbPskId, cbPskId ) ||
+        OSSL_HPKE_decap( state.pRecipientCtx, pbEnc, cbEnc, state.pPrivKey, pbInfo, cbInfo ) != 1 )
+    {
+        OSSL_HPKE_CTX_free( state.pRecipientCtx );
+        state.pRecipientCtx = NULL;
+        return OpenSSLHpkeRecordFailure( m_lastError, "setupRecipient decap" );
+    }
+
+    return STATUS_SUCCESS;
+}
+
+template<>
+NTSTATUS
+HpkeImp<ImpOpenssl, AlgHpke>::seal(
+        _In_reads_bytes_opt_( cbAuthData )      PCBYTE                      pbAuthData,
+                                                SIZE_T                      cbAuthData,
+        _In_reads_bytes_opt_( cbSrc )           PCBYTE                      pbSrc,
+                                                SIZE_T                      cbSrc,
+        _Out_writes_bytes_( cbDst )             PBYTE                       pbDst,
+                                                SIZE_T                      cbDst,
+        _Out_opt_                               UINT64 *                    pu64SeqNumber )
+{
+    uint64_t seq = 0;
+    size_t ctLen = cbDst;
+
+    // OpenSSL rejects a zero-length plaintext; SymCrypt allows it.
+    if( state.pSenderCtx == NULL ||
+        state.ciphersuite.aeadId == SYMCRYPT_HPKE_AEAD_ID_EXPORT_ONLY ||
+        cbSrc == 0 )
+    {
+        return STATUS_NOT_SUPPORTED;
+    }
+
+    // Capture the sequence number that will be used for this seal.
+    ERR_clear_error();
+    if( pu64SeqNumber != NULL &&
+        OSSL_HPKE_CTX_get_seq( state.pSenderCtx, &seq ) != 1 )
+    {
+        return OpenSSLHpkeRecordFailure( m_lastError, "seal CTX_get_seq" );
+    }
+
+    if( OSSL_HPKE_seal( state.pSenderCtx, pbDst, &ctLen, pbAuthData, cbAuthData, pbSrc, cbSrc ) != 1 )
+    {
+        return OpenSSLHpkeRecordFailure( m_lastError, "seal" );
+    }
+
+    CHECK( ctLen == cbDst, "HPKE OpenSSL seal ciphertext size mismatch" );
+
+    if( pu64SeqNumber != NULL )
+    {
+        *pu64SeqNumber = seq;
+    }
+
+    return STATUS_SUCCESS;
+}
+
+template<>
+NTSTATUS
+HpkeImp<ImpOpenssl, AlgHpke>::open(
+        _In_reads_bytes_opt_( cbAuthData )      PCBYTE                      pbAuthData,
+                                                SIZE_T                      cbAuthData,
+        _In_reads_bytes_( cbSrc )               PCBYTE                      pbSrc,
+                                                SIZE_T                      cbSrc,
+        _Out_writes_bytes_( cbDst )             PBYTE                       pbDst,
+                                                SIZE_T                      cbDst )
+{
+    size_t ptLen = cbDst;
+
+    //
+    // OpenSSL rejects a zero-length plaintext; SymCrypt allows it. Since this is
+    // an in-order open that advances the running AEAD sequence number, we cannot
+    // simply skip it (that would desync this context from the other
+    // implementations). Report NOT_SUPPORTED and let the multi-imp wrapper drop
+    // this implementation from the active set for the remainder of the context.
+    //
+    if( state.pRecipientCtx == NULL || cbDst == 0 )
+    {
+        return STATUS_NOT_SUPPORTED;
+    }
+
+    ERR_clear_error();
+    if( OSSL_HPKE_open( state.pRecipientCtx, pbDst, &ptLen, pbAuthData, cbAuthData, pbSrc, cbSrc ) != 1 )
+    {
+        return OpenSSLHpkeRecordFailure( m_lastError, "open" );
+    }
+
+    CHECK( ptLen == cbDst, "HPKE OpenSSL open plaintext size mismatch" );
+    return STATUS_SUCCESS;
+}
+
+template<>
+NTSTATUS
+HpkeImp<ImpOpenssl, AlgHpke>::openUnordered(
+                                                UINT64                      u64SeqNumber,
+        _In_reads_bytes_opt_( cbAuthData )      PCBYTE                      pbAuthData,
+                                                SIZE_T                      cbAuthData,
+        _In_reads_bytes_( cbSrc )               PCBYTE                      pbSrc,
+                                                SIZE_T                      cbSrc,
+        _Out_writes_bytes_( cbDst )             PBYTE                       pbDst,
+                                                SIZE_T                      cbDst )
+{
+    uint64_t savedSeq = 0;
+    size_t ptLen = cbDst;
+    int openResult;
+
+    // OpenSSL rejects a zero-length plaintext; SymCrypt allows it.
+    if( state.pRecipientCtx == NULL || cbDst == 0 )
+    {
+        return STATUS_NOT_SUPPORTED;
+    }
+
+    //
+    // Save the running sequence number, set the requested one for this open,
+    // then restore it so an out-of-order open does not perturb subsequent
+    // in-order opens (state invariance).
+    //
+    ERR_clear_error();
+    if( OSSL_HPKE_CTX_get_seq( state.pRecipientCtx, &savedSeq ) != 1 ||
+        OSSL_HPKE_CTX_set_seq( state.pRecipientCtx, u64SeqNumber ) != 1 )
+    {
+        return OpenSSLHpkeRecordFailure( m_lastError, "openUnordered CTX_set_seq" );
+    }
+
+    openResult = OSSL_HPKE_open( state.pRecipientCtx, pbDst, &ptLen, pbAuthData, cbAuthData, pbSrc, cbSrc );
+    if( openResult != 1 )
+    {
+        // Record before restoring the seq so the error queue reflects the open.
+        OpenSSLHpkeRecordFailure( m_lastError, "openUnordered" );
+    }
+
+    OSSL_HPKE_CTX_set_seq( state.pRecipientCtx, savedSeq );
+
+    if( openResult != 1 )
+    {
+        return STATUS_UNSUCCESSFUL;
+    }
+
+    CHECK( ptLen == cbDst, "HPKE OpenSSL openUnordered plaintext size mismatch" );
+    return STATUS_SUCCESS;
+}
+
+template<>
+NTSTATUS
+HpkeImp<ImpOpenssl, AlgHpke>::secretExportSender(
+        _In_reads_bytes_opt_( cbExporterContext )   PCBYTE                  pbExporterContext,
+                                                    SIZE_T                  cbExporterContext,
+        _Out_writes_bytes_( cbResult )              PBYTE                   pbResult,
+                                                    UINT16                  cbResult )
+{
+    // OpenSSL limits the exporter context (label) to OSSL_HPKE_MAX_PARMLEN.
+    if( state.pSenderCtx == NULL || cbExporterContext > OSSL_HPKE_MAX_PARMLEN )
+    {
+        return STATUS_NOT_SUPPORTED;
+    }
+
+    ERR_clear_error();
+    if( OSSL_HPKE_export( state.pSenderCtx, pbResult, cbResult, pbExporterContext, cbExporterContext ) != 1 )
+    {
+        return OpenSSLHpkeRecordFailure( m_lastError, "secretExportSender export" );
+    }
+
+    return STATUS_SUCCESS;
+}
+
+template<>
+NTSTATUS
+HpkeImp<ImpOpenssl, AlgHpke>::secretExportRecipient(
+        _In_reads_bytes_opt_( cbExporterContext )   PCBYTE                  pbExporterContext,
+                                                    SIZE_T                  cbExporterContext,
+        _Out_writes_bytes_( cbResult )              PBYTE                   pbResult,
+                                                    UINT16                  cbResult )
+{
+    // OpenSSL limits the exporter context (label) to OSSL_HPKE_MAX_PARMLEN.
+    if( state.pRecipientCtx == NULL || cbExporterContext > OSSL_HPKE_MAX_PARMLEN )
+    {
+        return STATUS_NOT_SUPPORTED;
+    }
+
+    ERR_clear_error();
+    if( OSSL_HPKE_export( state.pRecipientCtx, pbResult, cbResult, pbExporterContext, cbExporterContext ) != 1 )
+    {
+        return OpenSSLHpkeRecordFailure( m_lastError, "secretExportRecipient export" );
+    }
+
+    return STATUS_SUCCESS;
+}
+
+template<>
+SIZE_T
+HpkeImp<ImpOpenssl, AlgHpke>::encSize()
+{
+    size_t cbEnc = OSSL_HPKE_get_public_encap_size( state.suite );
+    CHECK( cbEnc > 0, "HPKE OpenSSL encSize failed" );
+    return cbEnc;
+}
+#endif // SCTEST_OPENSSL_HAS_HPKE
+
 VOID
 addOpensslAlgs()
 {
@@ -1862,4 +2912,7 @@ addOpensslAlgs()
     addImplementationToGlobalList<MacImp<ImpOpenssl, AlgHmacSha3_256>>();
     addImplementationToGlobalList<MacImp<ImpOpenssl, AlgHmacSha3_384>>();
     addImplementationToGlobalList<MacImp<ImpOpenssl, AlgHmacSha3_512>>();
+#if SCTEST_OPENSSL_HAS_HPKE
+    addImplementationToGlobalList<HpkeImp<ImpOpenssl, AlgHpke>>();
+#endif
 }

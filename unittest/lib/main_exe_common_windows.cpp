@@ -4,7 +4,14 @@
 
 PVOID loadDynamicModuleFromPath(PCSTR dynamicModulePath)
 {
-    return (PVOID) LoadLibraryExA(dynamicModulePath, NULL, 0);
+    //
+    // LOAD_WITH_ALTERED_SEARCH_PATH causes the loader to search the *target
+    // DLL's* directory (in addition to the EXE's directory, system dirs, etc.)
+    // when resolving dependent DLLs. This is needed for test modules that
+    // depend on sibling DLLs in the same directory, e.g.
+    // symcrypt_plus_testmodule.dll depending on symcrypttestmodule.dll.
+    //
+    return (PVOID) LoadLibraryExA(dynamicModulePath, NULL, LOAD_WITH_ALTERED_SEARCH_PATH);
 }
 
 PVOID getDynamicSymbolPointerFromString(PVOID hModule, PCSTR pSymbolName, SCTEST_DYNSYM_TYPE symbolType)

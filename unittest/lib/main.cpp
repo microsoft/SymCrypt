@@ -422,6 +422,7 @@ const char * g_algorithmNames[] = {
     AlgMlDsa::name,
     AlgCompositeMlDsa::name,
     AlgMlDsakeySetValue::name,
+    AlgHpke::name,
     AlgTlsHandshake::name,
     AlgCompositeMlKem::name,
     AlgCompositeMlKemkeySetValue::name,
@@ -870,13 +871,29 @@ _Analysis_noreturn_
 VOID
 fatalImpl( _In_ PCSTR message )
 {
-    fprintf( stdout, "*\n\n***** FATAL ERROR %s\n ", message );
-    
+    //
+    // First thread to enter prints the diagnostics and terminates the process. Subsequent
+    // threads (e.g. concurrent CHECK failures from multi-thread tests) park here and let the
+    // winner's _Exit() tear them down.
+    //
+    static std::atomic<bool> alreadyFatal{ false };
+    if( alreadyFatal.exchange( true ) )
+    {
+        while(true)
+        {
+            Sleep( 10000 );
+        }
+    }
+
+    fprintf( stdout, "%s", message );
+    fflush( stdout );
+
     printCpuidInfo();
     printOutput( 0 );
+    fflush( stdout );
 
     TRAP_DEBUGGER();
-    exit( -1 );
+    _Exit( -1 );
 }
 
 #if SYMCRYPT_MS_VC
@@ -1380,9 +1397,13 @@ runFunctionalTests()
 
     testKem();
 
+    testHpke();
+
     testPqDsa();
 
     testCompositeHelpers();
+
+    testEcEncoding();
 
     printSymCryptFipsGetSelftestsPerformed();
 

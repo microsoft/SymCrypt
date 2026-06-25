@@ -176,6 +176,7 @@ include_directories(${CMAKE_BINARY_DIR}/inc)
 configure_file(conf/symcrypt.pc.in symcrypt.pc @ONLY)
 
 add_subdirectory(lib)
+add_subdirectory(lib_plus)
 
 if(SYMCRYPT_BUILD_MODULES AND NOT CMAKE_BUILD_TYPE MATCHES Sanitize)
     # Module integrity check is seen as OOB access by sanitizers, and sanitizer instrumentation

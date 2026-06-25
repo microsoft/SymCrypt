@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="Current" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup Label="Globals">
+    <ProjectGuid>{28EF1379-FE63-4CC2-AD53-05E9A809AABE}</ProjectGuid>
+    <TemplateGuid>{0a049372-4c4d-4ea0-a64e-dc6ad88ceca1}</TemplateGuid>
+    <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
+    <MinimumVisualStudioVersion>12.0</MinimumVisualStudioVersion>
+    <UseInternalMSUniCrtPackage>true</UseInternalMSUniCrtPackage>
+    <TargetName>symcrypt_plus</TargetName>
+    <UndockedType>lib</UndockedType>
+    <UndockedDir>$(SolutionDir)msbuild\</UndockedDir>
+    <UndockedOut>$(SolutionDir)</UndockedOut>
+    <IncludePath>$(ProjectDir);$(IncludePath);</IncludePath>
+    <ProjectName>symcrypt_plus</ProjectName>
+  </PropertyGroup>
+  <Import Project="$(UndockedDir)symcrypt.undocked.props" />
+  <ItemDefinitionGroup>
+    <ClCompile>
+      <AdditionalIncludeDirectories>$(ProjectDir);..\inc;..\inc\symcrypt_plus;..\lib;</AdditionalIncludeDirectories>
+    </ClCompile>
+    <!-- Also Generate NoCIL static lib -->
+    <CustomBuildStep>
+      <Command>link /cvtcil $(TargetPath) /out:$(TargetDir)$(TargetName)_NoCIL$(TargetExt)</Command>
+      <Outputs>$(TargetDir)$(TargetName)_NoCIL$(TargetExt)</Outputs>
+      <Inputs>$(TargetPath)</Inputs>
+    </CustomBuildStep>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <ClCompile Include="ec_encoding.c" />
+    <ClCompile Include="hpke.c" />
+    <ClCompile Include="hpke_aead.c" />
+    <ClCompile Include="hpke_kdf.c" />
+    <ClCompile Include="hpke_kem.c" />
+    <ClCompile Include="hpke_kem_dhkem.c" />
+  </ItemGroup>
+  <PropertyGroup Label="Configuration">
+    <TargetVersion>Windows10</TargetVersion>
+    <PlatformToolset>v143</PlatformToolset>
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+  </PropertyGroup>
+  <Target Name="GetDriverProjectAttributes" Returns="@(DriverProjectAttributes)" />
+  <Target Name="GetPackageFiles" Returns="@(FullyQualifiedFilesToPackage)" />
+</Project>

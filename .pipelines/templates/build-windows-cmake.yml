@@ -101,7 +101,7 @@ jobs:
       inputs:
         scriptSource: 'filePath'
         scriptPath: scripts\test.py
-        arguments: 'bin dynamic:bin\exe\symcrypttestmodule.dll noperftests'
+        arguments: 'bin dynamic:bin\exe\symcrypt_plus_testmodule.dll noperftests'
         workingDirectory: $(Build.SourcesDirectory)
 
     - task: onebranch.pipeline.signing@1 # https://aka.ms/obpipelines/signing

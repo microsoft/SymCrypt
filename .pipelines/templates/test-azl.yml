@@ -152,7 +152,17 @@ jobs:
         arguments: '. dynamic:lib/libsymcrypt.so noperftests'
         workingDirectory: $(Build.SourcesDirectory)/artifacts/pkg
         pythonInterpreter: $(PythonPath)
-      
+
+    - task: PythonScript@0
+      displayName: 'Run symcrypt_plus dynamic unit tests'
+      condition: ne(variables.config, 'Sanitize')
+      inputs:
+        scriptSource: 'filePath'
+        scriptPath: scripts/test.py
+        arguments: '. noperftests dynamic:test/libsymcrypt_plus_testmodule.so'
+        workingDirectory: $(Build.SourcesDirectory)/artifacts/pkg
+        pythonInterpreter: $(PythonPath)
+
     # Note: ZMM and YMM save/restore tests will not run simultaneously; ZMM takes precedence.
     # But we don't know if the build machine supports ZMM, so we specify both.
     - task: PythonScript@0

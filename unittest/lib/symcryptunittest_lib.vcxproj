@@ -14,7 +14,7 @@
   <Import Project="$(UndockedDir)symcrypt.undocked.props" />
   <ItemDefinitionGroup>
     <ClCompile>
-      <AdditionalIncludeDirectories>..\;..\inc;..\SymCryptDependencies\inc;..\..\inc;..\..\lib;</AdditionalIncludeDirectories>
+<AdditionalIncludeDirectories>.\;..\inc;..\SymCryptDependencies\inc;..\..\inc;..\..\inc\symcrypt_plus;..\..\lib;..\..\lib_plus;</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <PreprocessorDefinitions Condition="'$(BuildSymCrust)'=='true'">SYMCRUST_EXPERIMENTAL_BUILD=1;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalOptions>/Zc:strictStrings- /bigobj /wd5252 %(AdditionalOptions)</AdditionalOptions>
@@ -51,8 +51,10 @@
     <ClCompile Include="testDh.cpp" />
     <ClCompile Include="testDsa.cpp" />
     <ClCompile Include="testEcc.cpp" />
+    <ClCompile Include="testEcEncoding.cpp" />
     <ClCompile Include="testhash.cpp" />
     <ClCompile Include="testHbs.cpp" />
+    <ClCompile Include="testHpke.cpp" />
     <ClCompile Include="testIEEE802_11SaeCustom.cpp" />
     <ClCompile Include="testKdf.cpp" />
     <ClCompile Include="testKem.cpp" />

@@ -42,6 +42,7 @@
 #define _Out_writes_bytes_opt_(x)
 
 #define _Inout_
+#define _Inout_opt_
 #define _Inout_updates_(x)
 #define _Inout_updates_bytes_(x)
 #define _Inout_updates_opt_(x)

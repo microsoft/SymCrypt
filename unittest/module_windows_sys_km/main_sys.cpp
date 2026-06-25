@@ -87,7 +87,7 @@ fatalImpl( _In_ PCSTR message )
     size_t remainingBytes = sizeof(g_FatalBuff) - ((PBYTE)g_FatalNext - &g_FatalBuff[0]);
 
     // This function intercepts calls to fatal and converts them to reporting the first errors in globals.
-    RtlStringCchPrintfExA( g_FatalNext, remainingBytes, &g_FatalNext, &remainingBytes, 0, "*\n\n***** FATAL ERROR: %s\n", message );
+    RtlStringCchPrintfExA( g_FatalNext, remainingBytes, &g_FatalNext, &remainingBytes, 0, "%s", message );
 
     KeBugCheckEx( 'TKCS', (ULONG_PTR) message, 0, 0, 0 );
 }

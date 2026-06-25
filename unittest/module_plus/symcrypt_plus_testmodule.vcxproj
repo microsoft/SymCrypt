@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- symcrypt_plus_testmodule.vcxproj - see README.md for design rationale. -->
+<Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup Label="Globals">
+    <ProjectGuid>{31C88375-7798-488A-A623-AB660403D875}</ProjectGuid>
+    <TemplateGuid>{0a049372-4c4d-4ea0-a64e-dc6ad88ceca1}</TemplateGuid>
+    <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
+    <MinimumVisualStudioVersion>12.0</MinimumVisualStudioVersion>
+    <UseInternalMSUniCrtPackage>true</UseInternalMSUniCrtPackage>
+    <TargetName>symcrypt_plus_testmodule</TargetName>
+    <UndockedType>dll</UndockedType>
+    <UndockedDir>$(SolutionDir)msbuild\</UndockedDir>
+    <UndockedOut>$(SolutionDir)</UndockedOut>
+  </PropertyGroup>
+  <Import Project="$(UndockedDir)symcrypt.undocked.props" />
+  <ItemGroup>
+    <ProjectReference Include="..\..\lib_plus\symcrypt_plus.vcxproj">
+      <Project>{28EF1379-FE63-4CC2-AD53-05E9A809AABE}</Project>
+    </ProjectReference>
+    <ProjectReference Include="..\module_windows\symcrypttestmodule.vcxproj">
+      <Project>{e5919189-a4af-40c4-81cb-a3685485276e}</Project>
+    </ProjectReference>
+  </ItemGroup>
+  <ItemDefinitionGroup>
+    <ClCompile>
+      <PreprocessorDefinitions>_WINDOWS;_USRDLL;%(PreprocessorDefinitions);</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>..\..\inc;..\..\inc\symcrypt_plus;</AdditionalIncludeDirectories>
+      <!--
+        Disable warnings
+        C4324  'structname': structure was padded due to __declspec(align())
+        C4714: function 'function' marked as __forceinline not inlined
+        C5252: Multiple different types resulted in the same XFG type-hash hash-value; the PDB will only record information for one of them
+      -->
+      <DisableSpecificWarnings>4324;4714;5252;%(DisableSpecificWarnings)</DisableSpecificWarnings>
+      <AdditionalOptions>/Zc:strictStrings- %(AdditionalOptions)</AdditionalOptions>
+      <WholeProgramOptimization>true</WholeProgramOptimization>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
+      <ExceptionHandling>Sync</ExceptionHandling>
+    </ClCompile>
+    <Link>
+      <SubSystem>Windows</SubSystem>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <EnableUAC>false</EnableUAC>
+      <LinkTimeCodeGeneration>UseLinkTimeCodeGeneration</LinkTimeCodeGeneration>
+      <AdditionalDependencies>%(AdditionalDependencies);ntdll.lib;Bcrypt.lib;$(OutDir)symcrypttestmodule.lib</AdditionalDependencies>
+      <AdditionalLibraryDirectories>..\SymCryptDependencies\$(ProcessorArchitecture)</AdditionalLibraryDirectories>
+      <ModuleDefinitionFile>$(SolutionDir)build\generated\exports_plus.def</ModuleDefinitionFile>
+    </Link>
+  </ItemDefinitionGroup>
+  <Target Name="GenerateCombinedDef" BeforeTargets="Link"
+          Inputs="..\module_windows\exports.def;exports_plus_local.def;gen_combined_def.py"
+          Outputs="$(SolutionDir)build\generated\exports_plus.def">
+    <MakeDir Directories="$(SolutionDir)build\generated" />
+    <Exec Command="python gen_combined_def.py --base ..\module_windows\exports.def --local exports_plus_local.def --out $(SolutionDir)build\generated\exports_plus.def" />
+  </Target>
+  <ItemGroup>
+    <ClCompile Include="module_plus.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="exports_plus_local.def" />
+    <None Include="gen_combined_def.py" />
+  </ItemGroup>
+</Project>

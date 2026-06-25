@@ -97,11 +97,17 @@ testSelftest()
 
     for( int i=0; g_selfTests[i].f != NULL; i++ )
     {
-        testSelftestOne( &g_selfTests[i], &selftestPerfTable );
+        if( setContainsPrefix( g_algorithmsToTest, g_selfTests[i].name ) )
+        {
+            testSelftestOne( &g_selfTests[i], &selftestPerfTable );
+        }
     }
     for( int i=0; g_selfTests_allocating[i].f != NULL; i++ )
     {
-        testSelftestOne( &g_selfTests_allocating[i], &selftestPerfTable );
+        if( setContainsPrefix( g_algorithmsToTest, g_selfTests_allocating[i].name ) )
+        {
+            testSelftestOne( &g_selfTests_allocating[i], &selftestPerfTable );
+        }
     }
 
     selftestPerfTable.print( "Self test performance" );

@@ -62,10 +62,19 @@ jobs:
 
   - task: PythonScript@0
     displayName: 'Run dynamic unit tests (test module)'
+    condition: eq('${{ parameters.buildType }}', 'official')
     inputs:
       scriptSource: 'filePath'
       scriptPath: scripts\test.py
       arguments: '. dynamic:dll\symcrypttestmodule.dll noperftests'
+      workingDirectory: '$(Build.SourcesDirectory)/artifacts'
+
+  - task: PythonScript@0
+    displayName: 'Run symcrypt_plus dynamic unit tests (test module)'
+    inputs:
+      scriptSource: 'filePath'
+      scriptPath: scripts\test.py
+      arguments: '. dynamic:dll\symcrypt_plus_testmodule.dll noperftests'
       workingDirectory: '$(Build.SourcesDirectory)/artifacts'
 
   - task: PythonScript@0

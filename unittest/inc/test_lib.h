@@ -45,6 +45,8 @@
     #include <set>
     #include <cstdarg>
     #include <type_traits>
+    #include <thread>
+    #include <atomic>
 
     #include "symcrypt_no_sal.h"
 
@@ -157,6 +159,8 @@
     #include <set>
     #include <strsafe.h>
     #include <type_traits>
+    #include <thread>
+    #include <atomic>
 
     #ifndef PRIx64
     #define PRIx64       "llx"
@@ -172,6 +176,8 @@
 
 #include "symcrypt.h"
 #include "symcrypt_low_level.h"
+#include "symcrypt_ec_encoding.h"
+#include "symcrypt_hpke.h"
 extern "C" {
 #include "../../lib/sc_lib.h"
 }
@@ -1119,6 +1125,11 @@ public:
     static constexpr const char * name = "CompositeMlKemkeySetValue";
 };
 
+class AlgHpke{
+public:
+    static constexpr const char * name = "Hpke";
+};
+
 class AlgDeveloperTest{
 public:
     static constexpr const char * name = "DeveloperTest";
@@ -1284,7 +1295,7 @@ PVOID getDynamicSymbolPointerFromString(PVOID hModule, PCSTR pSymbolName, SCTEST
 // address space which contains a value of the pointer which is consumed by the SymCrypt module under
 // test
 
-SYMCRYPT_CPU_FEATURES SctestDisableCpuFeatures(SYMCRYPT_CPU_FEATURES disable);
+extern "C" SYMCRYPT_CPU_FEATURES SctestDisableCpuFeatures(SYMCRYPT_CPU_FEATURES disable);
 // Optional function that dynamic test modules may expose to enable the unit tests to disable certain
 // CPU features from being used.
 //
@@ -1576,6 +1587,12 @@ testKem();
 
 VOID
 testCompositeHelpers();
+
+VOID
+testEcEncoding();
+
+VOID
+testHpke();
 
 VOID
 testScsTable();
@@ -2122,6 +2139,22 @@ printXmmRegisters( PCSTR text );
 #define PERF_KEY_COMPOSITE_MLKEM_768_P256   (1)
 #define PERF_KEY_COMPOSITE_MLKEM_768_X25519 (2)
 #define PERF_KEY_COMPOSITE_MLKEM_1024_P384  (3)
+
+//
+// HPKE parameters. Values are arbitrary identifiers for the different
+// HPKE ciphersuites used in performance testing.
+//
+#define PERF_KEY_HPKE_MLKEM512_SHA256_AESGCM128       (201)
+#define PERF_KEY_HPKE_MLKEM768_SHA256_AESGCM128       (202)
+#define PERF_KEY_HPKE_MLKEM1024_SHA256_AESGCM256      (203)
+#define PERF_KEY_HPKE_MLKEM768P256_SHA256_AESGCM128   (204)
+#define PERF_KEY_HPKE_MLKEM1024P384_SHA384_AESGCM256  (205)
+#define PERF_KEY_HPKE_MLKEM768X25519_SHA256_AESGCM128 (206)
+#define PERF_KEY_HPKE_MLKEM768X25519_SHAKE256_CHACHA  (207)
+#define PERF_KEY_HPKE_P256_SHA256_AESGCM128           (208)
+#define PERF_KEY_HPKE_P384_SHA384_AESGCM256           (209)
+#define PERF_KEY_HPKE_P521_SHA512_AESGCM256           (210)
+#define PERF_KEY_HPKE_X25519_SHA256_AESGCM128         (211)
 
 PCBYTE
 getPerfTestModulus( UINT32 exKeySize );

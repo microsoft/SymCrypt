@@ -12314,3 +12314,890 @@ template<>
 ArithImp<ImpXxx, AlgCompositeMlDsakeySetValue>::~ArithImp()
 {
 }
+
+
+//============================
+// HPKE Perf Test
+//
+// Measures end-to-end HPKE performance including KEM, key schedule, and AEAD.
+// - Key:     generate HPKE recipient keypair
+// - Data:    SealSingleShot (SetupSender + Seal)
+// - Decrypt: OpenSingleShot (SetupRecipient + Open)
+// - Clean:   free all HPKE objects
+//
+
+typedef struct CONCAT2(ImpXxx, _hpkeperftest_t) {
+    SYMCRYPT_HPKE_CIPHERSUITE   ciphersuite;
+    PSYMCRYPT_HPKEKEY           pKey;
+    SIZE_T                      cbEnc;
+    SIZE_T                      cbTag;
+    SIZE_T                      dataSize;       // plaintext size for Seal/Open
+} CONCAT2(ImpXxx, hpkeperftest_t);
+
+template<>
+VOID
+algImpKeyPerfFunction<ImpXxx, AlgHpke>( PBYTE buf1, PBYTE buf2, PBYTE buf3, SIZE_T keySize )
+{
+    UNREFERENCED_PARAMETER( buf3 );
+
+    CONCAT2(ImpXxx, hpkeperftest_t)* temps = ((CONCAT2(ImpXxx, hpkeperftest_t)*)buf1);
+    SYMCRYPT_ERROR scError;
+
+    switch( keySize )
+    {
+    case PERF_KEY_HPKE_MLKEM512_SHA256_AESGCM128:
+        temps->ciphersuite = { SYMCRYPT_HPKE_KEM_ID_MLKEM_512,
+                               SYMCRYPT_HPKE_KDF_ID_HKDF_SHA256,
+                               SYMCRYPT_HPKE_AEAD_ID_AESGCM128 };
+        break;
+    case PERF_KEY_HPKE_MLKEM768_SHA256_AESGCM128:
+        temps->ciphersuite = { SYMCRYPT_HPKE_KEM_ID_MLKEM_768,
+                               SYMCRYPT_HPKE_KDF_ID_HKDF_SHA256,
+                               SYMCRYPT_HPKE_AEAD_ID_AESGCM128 };
+        break;
+    case PERF_KEY_HPKE_MLKEM1024_SHA256_AESGCM256:
+        temps->ciphersuite = { SYMCRYPT_HPKE_KEM_ID_MLKEM_1024,
+                               SYMCRYPT_HPKE_KDF_ID_HKDF_SHA256,
+                               SYMCRYPT_HPKE_AEAD_ID_AESGCM256 };
+        break;
+    case PERF_KEY_HPKE_MLKEM768P256_SHA256_AESGCM128:
+        temps->ciphersuite = { SYMCRYPT_HPKE_KEM_ID_MLKEM768_P256,
+                               SYMCRYPT_HPKE_KDF_ID_HKDF_SHA256,
+                               SYMCRYPT_HPKE_AEAD_ID_AESGCM128 };
+        break;
+    case PERF_KEY_HPKE_MLKEM1024P384_SHA384_AESGCM256:
+        temps->ciphersuite = { SYMCRYPT_HPKE_KEM_ID_MLKEM1024_P384,
+                               SYMCRYPT_HPKE_KDF_ID_HKDF_SHA384,
+                               SYMCRYPT_HPKE_AEAD_ID_AESGCM256 };
+        break;
+    case PERF_KEY_HPKE_MLKEM768X25519_SHA256_AESGCM128:
+        temps->ciphersuite = { SYMCRYPT_HPKE_KEM_ID_MLKEM768_X25519,
+                               SYMCRYPT_HPKE_KDF_ID_HKDF_SHA256,
+                               SYMCRYPT_HPKE_AEAD_ID_AESGCM128 };
+        break;
+    case PERF_KEY_HPKE_MLKEM768X25519_SHAKE256_CHACHA:
+        temps->ciphersuite = { SYMCRYPT_HPKE_KEM_ID_MLKEM768_X25519,
+                               SYMCRYPT_HPKE_KDF_ID_SHAKE256,
+                               SYMCRYPT_HPKE_AEAD_ID_CHACHA20POLY1305 };
+        break;
+    case PERF_KEY_HPKE_P256_SHA256_AESGCM128:
+        temps->ciphersuite = { SYMCRYPT_HPKE_KEM_ID_DHKEM_P256,
+                               SYMCRYPT_HPKE_KDF_ID_HKDF_SHA256,
+                               SYMCRYPT_HPKE_AEAD_ID_AESGCM128 };
+        break;
+    case PERF_KEY_HPKE_P384_SHA384_AESGCM256:
+        temps->ciphersuite = { SYMCRYPT_HPKE_KEM_ID_DHKEM_P384,
+                               SYMCRYPT_HPKE_KDF_ID_HKDF_SHA384,
+                               SYMCRYPT_HPKE_AEAD_ID_AESGCM256 };
+        break;
+    case PERF_KEY_HPKE_P521_SHA512_AESGCM256:
+        temps->ciphersuite = { SYMCRYPT_HPKE_KEM_ID_DHKEM_P521,
+                               SYMCRYPT_HPKE_KDF_ID_HKDF_SHA512,
+                               SYMCRYPT_HPKE_AEAD_ID_AESGCM256 };
+        break;
+    case PERF_KEY_HPKE_X25519_SHA256_AESGCM128:
+        temps->ciphersuite = { SYMCRYPT_HPKE_KEM_ID_DHKEM_X25519,
+                               SYMCRYPT_HPKE_KDF_ID_HKDF_SHA256,
+                               SYMCRYPT_HPKE_AEAD_ID_AESGCM128 };
+        break;
+    default:
+        CHECK( FALSE, "Invalid HPKE perf key size" );
+        return;
+    }
+
+    //
+    // Generate the recipient keypair
+    //
+    temps->pKey = ScShimSymCryptHpkekeyAllocate( temps->ciphersuite );
+    CHECK( temps->pKey != NULL, "HPKE perf: key allocate failed" );
+    
+    scError = ScShimSymCryptHpkekeyGenerate( temps->pKey, 0 );
+    CHECK( scError == SYMCRYPT_NO_ERROR, "HPKE perf: key generate failed" );
+    
+    //
+    // Store metadata about the operation to measure in the temps struct
+    //
+    temps->dataSize = *((SIZE_T*)buf2);
+
+    scError = ScShimSymCryptHpkeSizeofEncapsCiphertextFromParams( temps->ciphersuite, &temps->cbEnc );
+    CHECK( scError == SYMCRYPT_NO_ERROR, "HPKE perf: SizeofEncapsCiphertext failed" );
+
+    scError = ScShimSymCryptHpkeSizeofAeadOverheadFromParams( temps->ciphersuite, &temps->cbTag );
+    CHECK( scError == SYMCRYPT_NO_ERROR, "HPKE perf: SizeofAeadOverhead failed" );
+}
+
+template<>
+VOID
+algImpDataPerfFunction<ImpXxx, AlgHpke>( PBYTE buf1, PBYTE buf2, PBYTE buf3, SIZE_T dataSize )
+{
+    UNREFERENCED_PARAMETER( dataSize );
+
+    CONCAT2(ImpXxx, hpkeperftest_t)* temps = ((CONCAT2(ImpXxx, hpkeperftest_t)*)buf1);
+    SYMCRYPT_ERROR scError;
+
+    SIZE_T cbPlaintext = 64;
+    //
+    // buf2 carries decrypt metadata followed by enc:
+    //   SIZE_T cbCiphertext || SIZE_T cbPlaintext || enc
+    // buf3 is used for:
+    //   - plaintext input (first 64 bytes, just leave as random data)
+    //   - ciphertext output
+    //
+    SIZE_T cbCiphertext = cbPlaintext + temps->cbTag;
+    PBYTE pbEnc = buf2 + (2 * sizeof(SIZE_T));
+    PBYTE pbCiphertext = buf3;
+
+    CHECK( (2 * sizeof(SIZE_T)) + temps->cbEnc <= PERF_BUFFER_SIZE, "HPKE perf: enc buffer too small" );
+
+    ((SIZE_T*) buf2)[0] = cbCiphertext;
+    ((SIZE_T*) buf2)[1] = cbPlaintext;
+
+    scError = ScShimSymCryptHpkeSealSingleShot(
+        temps->pKey,
+        (PCBYTE) nullptr, (SIZE_T) 0,        // no info
+        (PCBYTE) nullptr, (SIZE_T) 0,        // no PSK
+        (PCBYTE) nullptr, (SIZE_T) 0,        // no PSK ID
+        (PCBYTE) nullptr, (SIZE_T) 0,        // no AAD
+        buf3 + PERF_BUFFER_SIZE / 2, cbPlaintext,  // plaintext from second half of buf3
+        pbEnc, temps->cbEnc,
+        pbCiphertext, cbPlaintext + temps->cbTag,       // exact ciphertext output
+        0 );
+    CHECK( scError == SYMCRYPT_NO_ERROR, "HPKE perf: SealSingleShot failed" );
+}
+
+template<>
+VOID
+algImpDecryptPerfFunction<ImpXxx, AlgHpke>( PBYTE buf1, PBYTE buf2, PBYTE buf3, SIZE_T dataSize )
+{
+    UNREFERENCED_PARAMETER( dataSize );
+
+    CONCAT2(ImpXxx, hpkeperftest_t)* temps = ((CONCAT2(ImpXxx, hpkeperftest_t)*)buf1);
+    SYMCRYPT_ERROR scError;
+
+    PBYTE pbEnc = buf2 + (2 * sizeof(SIZE_T));
+    SIZE_T cbCiphertext = ((SIZE_T*) buf2)[0];
+    SIZE_T cbPlaintext = ((SIZE_T*) buf2)[1];
+    PBYTE pbCiphertext = buf3;
+    BYTE decrypted[4096];
+
+    CHECK( cbPlaintext <= sizeof(decrypted), "HPKE perf: plaintext too large" );
+
+    scError = ScShimSymCryptHpkeOpenSingleShot(
+        temps->pKey,
+        pbEnc, temps->cbEnc,
+        (PCBYTE) nullptr, (SIZE_T) 0,        // no info
+        (PCBYTE) nullptr, (SIZE_T) 0,        // no PSK
+        (PCBYTE) nullptr, (SIZE_T) 0,        // no PSK ID
+        (PCBYTE) nullptr, (SIZE_T) 0,        // no AAD
+        pbCiphertext, cbCiphertext,
+        decrypted, cbPlaintext,
+        0 );
+    CHECK( scError == SYMCRYPT_NO_ERROR, "HPKE perf: OpenSingleShot failed" );
+}
+
+template<>
+VOID
+algImpCleanPerfFunction<ImpXxx, AlgHpke>( PBYTE buf1, PBYTE buf2, PBYTE buf3 )
+{
+    UNREFERENCED_PARAMETER( buf2 );
+    UNREFERENCED_PARAMETER( buf3 );
+
+    CONCAT2(ImpXxx, hpkeperftest_t)* temps = ((CONCAT2(ImpXxx, hpkeperftest_t)*)buf1);
+
+    if( temps->pKey != NULL )
+    {
+        ScShimSymCryptHpkekeyFree( temps->pKey );
+        temps->pKey = NULL;
+    }
+}
+
+//============================
+// HPKE Multi-Imp Methods
+//
+
+template<>
+HpkeImp<ImpXxx, AlgHpke>::HpkeImp()
+{
+    m_perfDataFunction      = &algImpDataPerfFunction   <ImpXxx, AlgHpke>;
+    m_perfDecryptFunction   = &algImpDecryptPerfFunction<ImpXxx, AlgHpke>;
+    m_perfKeyFunction       = &algImpKeyPerfFunction    <ImpXxx, AlgHpke>;
+    m_perfCleanFunction     = &algImpCleanPerfFunction  <ImpXxx, AlgHpke>;
+
+    state.pKey = NULL;
+    state.pSenderCtx = NULL;
+    state.pRecipientCtx = NULL;
+    state.ciphersuite = {};
+}
+
+template<>
+HpkeImp<ImpXxx, AlgHpke>::~HpkeImp()
+{
+    if( state.pSenderCtx != NULL )
+    {
+        ScShimSymCryptHpkeContextFree( state.pSenderCtx );
+        state.pSenderCtx = NULL;
+    }
+    if( state.pRecipientCtx != NULL )
+    {
+        ScShimSymCryptHpkeContextFree( state.pRecipientCtx );
+        state.pRecipientCtx = NULL;
+    }
+    if( state.pKey != NULL )
+    {
+        ScShimSymCryptHpkekeyFree( state.pKey );
+        state.pKey = NULL;
+    }
+}
+
+template<>
+NTSTATUS
+HpkeImp<ImpXxx, AlgHpke>::setKey(
+                                                SYMCRYPT_HPKE_CIPHERSUITE    ciphersuite,
+                                                UINT32                      format,
+        _In_reads_bytes_( cbKey )               PCBYTE                      pbKey,
+                                                SIZE_T                      cbKey )
+{
+    SYMCRYPT_ERROR scError;
+
+    // Re-keying invalidates any existing stateful contexts.
+    if( state.pSenderCtx != NULL )
+    {
+        ScShimSymCryptHpkeContextFree( state.pSenderCtx );
+        state.pSenderCtx = NULL;
+    }
+    if( state.pRecipientCtx != NULL )
+    {
+        ScShimSymCryptHpkeContextFree( state.pRecipientCtx );
+        state.pRecipientCtx = NULL;
+    }
+
+    if( state.pKey != NULL )
+    {
+        ScShimSymCryptHpkekeyFree( state.pKey );
+        state.pKey = NULL;
+    }
+
+    if( pbKey == NULL )
+    {
+        // Just used to clear the key state for leak detection
+        return STATUS_SUCCESS;
+    }
+
+    state.ciphersuite = ciphersuite;
+
+    state.pKey = ScShimSymCryptHpkekeyAllocate( ciphersuite );
+    if( state.pKey == NULL )
+    {
+        return STATUS_NOT_SUPPORTED;
+    }
+
+    scError = ScShimSymCryptHpkekeySetValue(
+        pbKey, cbKey,
+        (SYMCRYPT_HPKEKEY_FORMAT) format,
+        0,
+        state.pKey );
+    if( scError != SYMCRYPT_NO_ERROR )
+    {
+        ScShimSymCryptHpkekeyFree( state.pKey );
+        state.pKey = NULL;
+        return STATUS_UNSUCCESSFUL;
+    }
+
+    return STATUS_SUCCESS;
+}
+
+template<>
+NTSTATUS
+HpkeImp<ImpXxx, AlgHpke>::getKey(
+                                                UINT32                      format,
+        _Out_writes_bytes_( cbKey )             PBYTE                       pbKey,
+                                                SIZE_T                      cbKey )
+{
+    SYMCRYPT_ERROR scError;
+
+    CHECK( state.pKey != NULL, "HPKE getKey called without key" );
+
+    scError = ScShimSymCryptHpkekeyGetValue(
+        state.pKey,
+        pbKey, cbKey,
+        (SYMCRYPT_HPKEKEY_FORMAT) format,
+        0 );
+    CHECK( scError == SYMCRYPT_NO_ERROR, "HPKE getKey failed" );
+
+    return STATUS_SUCCESS;
+}
+
+template<>
+NTSTATUS
+HpkeImp<ImpXxx, AlgHpke>::deriveKeyPair(
+                                                SYMCRYPT_HPKE_CIPHERSUITE   ciphersuite,
+        _In_reads_bytes_( cbIkm )               PCBYTE                      pbIkm,
+                                                SIZE_T                      cbIkm )
+{
+    SYMCRYPT_ERROR scError;
+
+    // Re-keying invalidates any existing stateful contexts.
+    if( state.pSenderCtx != NULL )
+    {
+        ScShimSymCryptHpkeContextFree( state.pSenderCtx );
+        state.pSenderCtx = NULL;
+    }
+    if( state.pRecipientCtx != NULL )
+    {
+        ScShimSymCryptHpkeContextFree( state.pRecipientCtx );
+        state.pRecipientCtx = NULL;
+    }
+    if( state.pKey != NULL )
+    {
+        ScShimSymCryptHpkekeyFree( state.pKey );
+        state.pKey = NULL;
+    }
+
+    state.ciphersuite = ciphersuite;
+
+    state.pKey = ScShimSymCryptHpkekeyAllocate( ciphersuite );
+    if( state.pKey == NULL )
+    {
+        return STATUS_NOT_SUPPORTED;
+    }
+
+    scError = ScShimSymCryptHpkekeyDerive( pbIkm, cbIkm, state.pKey, 0 );
+    if( scError != SYMCRYPT_NO_ERROR )
+    {
+        ScShimSymCryptHpkekeyFree( state.pKey );
+        state.pKey = NULL;
+        return STATUS_UNSUCCESSFUL;
+    }
+
+    return STATUS_SUCCESS;
+}
+
+template<>
+NTSTATUS
+HpkeImp<ImpXxx, AlgHpke>::sealSingleShot(
+        _In_reads_bytes_opt_( cbInfo )          PCBYTE                      pbInfo,
+                                                SIZE_T                      cbInfo,
+        _In_reads_bytes_opt_( cbPsk )           PCBYTE                      pbPsk,
+                                                SIZE_T                      cbPsk,
+        _In_reads_bytes_opt_( cbPskId )         PCBYTE                      pbPskId,
+                                                SIZE_T                      cbPskId,
+        _In_reads_bytes_opt_( cbAad )           PCBYTE                      pbAad,
+                                                SIZE_T                      cbAad,
+        _In_reads_bytes_( cbPlaintext )         PCBYTE                      pbPlaintext,
+                                                SIZE_T                      cbPlaintext,
+        _Out_writes_bytes_( cbEnc )             PBYTE                       pbEnc,
+                                                SIZE_T                      cbEnc,
+        _Out_writes_bytes_( cbCiphertext )      PBYTE                       pbCiphertext,
+                                                SIZE_T                      cbCiphertext )
+{
+    SYMCRYPT_ERROR scError;
+    NTSTATUS ntStatus = STATUS_SUCCESS;
+    SIZE_T cbTag;
+
+    CHECK( state.pKey != NULL, "HPKE seal called without key" );
+
+    scError = ScShimSymCryptHpkeSizeofAeadOverheadFromParams( state.ciphersuite, &cbTag );
+    CHECK( scError == SYMCRYPT_NO_ERROR, "HPKE: SizeofAeadOverhead failed" );
+    CHECK4( cbPlaintext + cbTag == cbCiphertext, "HPKE: AeadOverhead calculation went wrong. "
+        " cbPlaintext+cbTag (%d) but cbCiphertext (%d)", (cbPlaintext + cbTag), cbCiphertext);
+
+    scError = ScShimSymCryptHpkeSealSingleShot(
+        state.pKey,
+        pbInfo, cbInfo,
+        pbPsk, cbPsk,
+        pbPskId, cbPskId,
+        pbAad, cbAad,
+        pbPlaintext, cbPlaintext,
+        pbEnc, cbEnc,
+        pbCiphertext, cbCiphertext, 
+        0 );
+    if( scError != SYMCRYPT_NO_ERROR )
+    {
+        ntStatus = STATUS_UNSUCCESSFUL;
+    }
+
+    return ntStatus;
+}
+
+template<>
+NTSTATUS
+HpkeImp<ImpXxx, AlgHpke>::openSingleShot(
+        _In_reads_bytes_( cbEnc )               PCBYTE                      pbEnc,
+                                                SIZE_T                      cbEnc,
+        _In_reads_bytes_opt_( cbInfo )          PCBYTE                      pbInfo,
+                                                SIZE_T                      cbInfo,
+        _In_reads_bytes_opt_( cbPsk )           PCBYTE                      pbPsk,
+                                                SIZE_T                      cbPsk,
+        _In_reads_bytes_opt_( cbPskId )         PCBYTE                      pbPskId,
+                                                SIZE_T                      cbPskId,
+        _In_reads_bytes_opt_( cbAad )           PCBYTE                      pbAad,
+                                                SIZE_T                      cbAad,
+        _In_reads_bytes_( cbCiphertext )        PCBYTE                      pbCiphertext,
+                                                SIZE_T                      cbCiphertext,
+        _Out_writes_bytes_( cbPlaintext )       PBYTE                       pbPlaintext,
+                                                SIZE_T                      cbPlaintext )
+{
+    SYMCRYPT_ERROR scError;
+    NTSTATUS ntStatus = STATUS_SUCCESS;
+    SIZE_T cbTag;
+
+    CHECK( state.pKey != NULL, "HPKE open called without key" );
+
+    scError = ScShimSymCryptHpkeSizeofAeadOverheadFromParams( state.ciphersuite, &cbTag );
+    CHECK( scError == SYMCRYPT_NO_ERROR, "HPKE: SizeofAeadOverhead failed" );
+    CHECK4( cbPlaintext + cbTag == cbCiphertext, "HPKE: AeadOverhead calculation went wrong. "
+        " cbPlaintext+cbTag (%d) but cbCiphertext (%d)", (cbPlaintext + cbTag), cbCiphertext);
+
+    scError = ScShimSymCryptHpkeOpenSingleShot(
+        state.pKey,
+        pbEnc, cbEnc,
+        pbInfo, cbInfo,
+        pbPsk, cbPsk,
+        pbPskId, cbPskId,
+        pbAad, cbAad,
+        pbCiphertext, cbCiphertext,
+        pbPlaintext, cbPlaintext,
+        0 );
+    if( scError != SYMCRYPT_NO_ERROR )
+    {
+        ntStatus = STATUS_UNSUCCESSFUL;
+    }
+
+    return ntStatus;
+}
+
+template<>
+NTSTATUS
+HpkeImp<ImpXxx, AlgHpke>::secretExportSingleShot(
+        _In_reads_bytes_( cbEnc )               PCBYTE                      pbEnc,
+                                                SIZE_T                      cbEnc,
+        _In_reads_bytes_opt_( cbInfo )          PCBYTE                      pbInfo,
+                                                SIZE_T                      cbInfo,
+        _In_reads_bytes_opt_( cbPsk )           PCBYTE                      pbPsk,
+                                                SIZE_T                      cbPsk,
+        _In_reads_bytes_opt_( cbPskId )         PCBYTE                      pbPskId,
+                                                SIZE_T                      cbPskId,
+        _In_reads_bytes_( cbExporterContext )   PCBYTE                      pbExporterContext,
+                                                SIZE_T                      cbExporterContext,
+        _Out_writes_bytes_( cbExportedValue )   PBYTE                       pbExportedValue,
+                                                UINT16                      cbExportedValue )
+{
+    SYMCRYPT_ERROR scError;
+    NTSTATUS ntStatus = STATUS_SUCCESS;
+
+    CHECK( state.pKey != NULL, "HPKE secretExport called without key" );
+
+    PSYMCRYPT_HPKECONTEXT pCtx = ScShimSymCryptHpkeContextAllocate( state.ciphersuite );
+    CHECK( pCtx != NULL, "HPKE secretExport: context alloc failed" );
+
+    scError = ScShimSymCryptHpkeSetupRecipient(
+        pCtx, state.pKey,
+        pbEnc, cbEnc,
+        pbInfo, cbInfo,
+        pbPsk, cbPsk,
+        pbPskId, cbPskId,
+        (UINT32) 0 );
+
+    if( scError != SYMCRYPT_NO_ERROR )
+    {
+        ntStatus = STATUS_UNSUCCESSFUL;
+        goto cleanup;
+    }
+
+    scError = ScShimSymCryptHpkeSecretExport(
+        pCtx,
+        pbExporterContext, cbExporterContext,
+        pbExportedValue, cbExportedValue );
+
+    if( scError != SYMCRYPT_NO_ERROR )
+    {
+        ntStatus = STATUS_UNSUCCESSFUL;
+    }
+
+cleanup:
+    ScShimSymCryptHpkeContextFree( pCtx );
+    return ntStatus;
+}
+
+template<>
+NTSTATUS
+HpkeImp<ImpXxx, AlgHpke>::setupSender(
+        _In_reads_bytes_opt_( cbInfo )          PCBYTE                      pbInfo,
+                                                SIZE_T                      cbInfo,
+        _In_reads_bytes_opt_( cbPsk )           PCBYTE                      pbPsk,
+                                                SIZE_T                      cbPsk,
+        _In_reads_bytes_opt_( cbPskId )         PCBYTE                      pbPskId,
+                                                SIZE_T                      cbPskId,
+        _Out_writes_bytes_( cbEnc )             PBYTE                       pbEnc,
+                                                SIZE_T                      cbEnc )
+{
+    SYMCRYPT_ERROR scError;
+
+    CHECK( state.pKey != NULL, "HPKE setupSender called without key" );
+
+    if( state.pSenderCtx != NULL )
+    {
+        ScShimSymCryptHpkeContextFree( state.pSenderCtx );
+        state.pSenderCtx = NULL;
+    }
+
+    state.pSenderCtx = ScShimSymCryptHpkeContextAllocate( state.ciphersuite );
+    CHECK( state.pSenderCtx != NULL, "HPKE setupSender: context alloc failed" );
+
+    scError = ScShimSymCryptHpkeSetupSender(
+        state.pSenderCtx, state.pKey,
+        pbInfo, cbInfo,
+        pbPsk, cbPsk,
+        pbPskId, cbPskId,
+        pbEnc, cbEnc,
+        0 );
+
+    if( scError != SYMCRYPT_NO_ERROR )
+    {
+        ScShimSymCryptHpkeContextFree( state.pSenderCtx );
+        state.pSenderCtx = NULL;
+        return STATUS_UNSUCCESSFUL;
+    }
+
+    return STATUS_SUCCESS;
+}
+
+template<>
+NTSTATUS
+HpkeImp<ImpXxx, AlgHpke>::setupSenderDeterministic(
+        _In_reads_bytes_( cbRandom )            PCBYTE                      pbRandom,
+                                                SIZE_T                      cbRandom,
+        _In_reads_bytes_opt_( cbInfo )          PCBYTE                      pbInfo,
+                                                SIZE_T                      cbInfo,
+        _In_reads_bytes_opt_( cbPsk )           PCBYTE                      pbPsk,
+                                                SIZE_T                      cbPsk,
+        _In_reads_bytes_opt_( cbPskId )         PCBYTE                      pbPskId,
+                                                SIZE_T                      cbPskId,
+        _Out_writes_bytes_( cbEnc )             PBYTE                       pbEnc,
+                                                SIZE_T                      cbEnc )
+{
+    CHECK( state.pKey != NULL, "HPKE setupSenderDeterministic called without key" );
+
+    if( state.pSenderCtx != NULL )
+    {
+        ScShimSymCryptHpkeContextFree( state.pSenderCtx );
+        state.pSenderCtx = NULL;
+    }
+
+    // Deterministic SetupSender drives the test-only derandomized-encaps
+    // helper and the internal SymCryptHpkeFinishSetup, neither of which is
+    // exposed through the dynamic module.
+    if constexpr ( std::is_same<ImpXxx, ImpScDynamic>::value )
+    {
+        return STATUS_NOT_SUPPORTED;
+    }
+
+    SYMCRYPT_ERROR scError;
+    SYMCRYPT_HPKE_KEM_PARAMS kemParams;
+
+    scError = SymCryptHpkeValidateCiphersuite( state.ciphersuite, &kemParams, NULL );
+    CHECK( scError == SYMCRYPT_NO_ERROR, "HPKE setupSenderDeterministic: ValidateCiphersuite failed" );
+
+    UINT16 cbSharedSecret = kemParams.cbSharedSecret;
+    BYTE abSharedSecret[SYMCRYPT_HPKE_KEM_MAX_SHARED_SECRET_SIZE];
+    CHECK( cbSharedSecret <= sizeof(abSharedSecret),
+        "HPKE setupSenderDeterministic: shared secret too large" );
+
+    //
+    // Derive the KEM shared secret + enc deterministically from ikmE, dispatched
+    // per KEM family. Production HPKE Encap never carries this derandomized
+    // variant, so it lives here in test code:
+    //   - DHKEM : ikmE drives HPKE DeriveKeyPair (SymCryptHpkeDhkemEncapsulateEx).
+    //   - ML-KEM: ikmE is the encapsulation randomness (SymCryptMlKemEncapsulateEx).
+    //   - Composite (IRTF EncapsDerand): ikmE[0:32] is the ML-KEM randomness and
+    //     ikmE[32:] is expanded into the EC ephemeral scalar via
+    //     SymCryptCompositeMlKemGetRandomScalarForEcKeyEx.
+    //
+    switch( state.pKey->ciphersuite.kemId )
+    {
+    case SYMCRYPT_HPKE_KEM_ID_DHKEM_P256:
+    case SYMCRYPT_HPKE_KEM_ID_DHKEM_P384:
+    case SYMCRYPT_HPKE_KEM_ID_DHKEM_P521:
+    case SYMCRYPT_HPKE_KEM_ID_DHKEM_X25519:
+        scError = SymCryptHpkeDhkemEncapsulateEx(
+            state.pKey,
+            pbRandom, cbRandom,
+            abSharedSecret, cbSharedSecret,
+            pbEnc, cbEnc );
+        break;
+
+    case SYMCRYPT_HPKE_KEM_ID_MLKEM_512:
+    case SYMCRYPT_HPKE_KEM_ID_MLKEM_768:
+    case SYMCRYPT_HPKE_KEM_ID_MLKEM_1024:
+        scError = SymCryptMlKemEncapsulateEx(
+            (PCSYMCRYPT_MLKEMKEY) state.pKey->pKemKeyData,
+            pbRandom, cbRandom,
+            abSharedSecret, cbSharedSecret,
+            pbEnc, cbEnc );
+        break;
+
+    case SYMCRYPT_HPKE_KEM_ID_MLKEM768_P256:
+    case SYMCRYPT_HPKE_KEM_ID_MLKEM1024_P384:
+    case SYMCRYPT_HPKE_KEM_ID_MLKEM768_X25519:
+    {
+        SYMCRYPT_CACHED_ECURVE_ID   curveId;
+        SYMCRYPT_NUMBER_FORMAT      numFormat;
+        SIZE_T                      cbScalar;
+        BYTE                        abScalar[48];   // max EC scalar (P-384)
+
+        switch( state.pKey->ciphersuite.kemId )
+        {
+        case SYMCRYPT_HPKE_KEM_ID_MLKEM768_P256:
+            curveId = SYMCRYPT_CACHED_ECURVE_ID_NIST_P256;
+            numFormat = SYMCRYPT_NUMBER_FORMAT_MSB_FIRST;
+            cbScalar = 32;
+            break;
+        case SYMCRYPT_HPKE_KEM_ID_MLKEM1024_P384:
+            curveId = SYMCRYPT_CACHED_ECURVE_ID_NIST_P384;
+            numFormat = SYMCRYPT_NUMBER_FORMAT_MSB_FIRST;
+            cbScalar = 48;
+            break;
+        default: // SYMCRYPT_HPKE_KEM_ID_MLKEM768_X25519
+            curveId = SYMCRYPT_CACHED_ECURVE_ID_CURVE_25519;
+            numFormat = SYMCRYPT_NUMBER_FORMAT_LSB_FIRST;
+            cbScalar = 32;
+            break;
+        }
+
+        if( cbRandom < (SIZE_T) SYMCRYPT_MLKEM_SIZEOF_ENCAPS_RANDOM + cbScalar )
+        {
+            scError = SYMCRYPT_INVALID_ARGUMENT;
+            break;
+        }
+
+        scError = SymCryptCompositeMlKemGetRandomScalarForEcKeyEx(
+            curveId, numFormat,
+            pbRandom + SYMCRYPT_MLKEM_SIZEOF_ENCAPS_RANDOM,
+            cbRandom - SYMCRYPT_MLKEM_SIZEOF_ENCAPS_RANDOM,
+            abScalar, cbScalar );
+        if( scError != SYMCRYPT_NO_ERROR )
+        {
+            SymCryptWipeKnownSize( abScalar, sizeof(abScalar) );
+            break;
+        }
+
+        scError = SymCryptCompositeMlKemEncapsulateEx(
+            (PCSYMCRYPT_COMPOSITE_MLKEMKEY) state.pKey->pKemKeyData,
+            pbRandom, SYMCRYPT_MLKEM_SIZEOF_ENCAPS_RANDOM,
+            abScalar, cbScalar,
+            abSharedSecret, cbSharedSecret,
+            pbEnc, cbEnc );
+
+        SymCryptWipeKnownSize( abScalar, sizeof(abScalar) );
+        break;
+    }
+
+    default:
+        scError = SYMCRYPT_NOT_IMPLEMENTED;
+        break;
+    }
+
+    if( scError != SYMCRYPT_NO_ERROR )
+    {
+        SymCryptWipeKnownSize( abSharedSecret, sizeof(abSharedSecret) );
+        return scError == SYMCRYPT_NOT_IMPLEMENTED ? STATUS_NOT_SUPPORTED : STATUS_UNSUCCESSFUL;
+    }
+
+    state.pSenderCtx = SymCryptHpkeContextAllocate( state.ciphersuite );
+    CHECK( state.pSenderCtx != NULL, "HPKE setupSenderDeterministic: context alloc failed" );
+
+    scError = SymCryptHpkeFinishSetup(
+        state.pSenderCtx,
+        SYMCRYPT_HPKE_CONTEXT_STATE_SENDER,
+        pbInfo, cbInfo,
+        pbPsk, cbPsk,
+        pbPskId, cbPskId,
+        abSharedSecret, cbSharedSecret );
+
+    SymCryptWipeKnownSize( abSharedSecret, sizeof(abSharedSecret) );
+
+    if( scError != SYMCRYPT_NO_ERROR )
+    {
+        SymCryptHpkeContextFree( state.pSenderCtx );
+        state.pSenderCtx = NULL;
+        return STATUS_UNSUCCESSFUL;
+    }
+
+    return STATUS_SUCCESS;
+}
+
+template<>
+NTSTATUS
+HpkeImp<ImpXxx, AlgHpke>::setupRecipient(
+        _In_reads_bytes_( cbEnc )               PCBYTE                      pbEnc,
+                                                SIZE_T                      cbEnc,
+        _In_reads_bytes_opt_( cbInfo )          PCBYTE                      pbInfo,
+                                                SIZE_T                      cbInfo,
+        _In_reads_bytes_opt_( cbPsk )           PCBYTE                      pbPsk,
+                                                SIZE_T                      cbPsk,
+        _In_reads_bytes_opt_( cbPskId )         PCBYTE                      pbPskId,
+                                                SIZE_T                      cbPskId )
+{
+    SYMCRYPT_ERROR scError;
+
+    CHECK( state.pKey != NULL, "HPKE setupRecipient called without key" );
+
+    if( state.pRecipientCtx != NULL )
+    {
+        ScShimSymCryptHpkeContextFree( state.pRecipientCtx );
+        state.pRecipientCtx = NULL;
+    }
+
+    state.pRecipientCtx = ScShimSymCryptHpkeContextAllocate( state.ciphersuite );
+    CHECK( state.pRecipientCtx != NULL, "HPKE setupRecipient: context alloc failed" );
+
+    scError = ScShimSymCryptHpkeSetupRecipient(
+        state.pRecipientCtx, state.pKey,
+        pbEnc, cbEnc,
+        pbInfo, cbInfo,
+        pbPsk, cbPsk,
+        pbPskId, cbPskId,
+        0 );
+
+    if( scError != SYMCRYPT_NO_ERROR )
+    {
+        ScShimSymCryptHpkeContextFree( state.pRecipientCtx );
+        state.pRecipientCtx = NULL;
+        return scError == SYMCRYPT_NOT_IMPLEMENTED ? STATUS_NOT_SUPPORTED : STATUS_UNSUCCESSFUL;
+    }
+
+    return STATUS_SUCCESS;
+}
+
+template<>
+NTSTATUS
+HpkeImp<ImpXxx, AlgHpke>::seal(
+        _In_reads_bytes_opt_( cbAuthData )      PCBYTE                      pbAuthData,
+                                                SIZE_T                      cbAuthData,
+        _In_reads_bytes_opt_( cbSrc )           PCBYTE                      pbSrc,
+                                                SIZE_T                      cbSrc,
+        _Out_writes_bytes_( cbDst )             PBYTE                       pbDst,
+                                                SIZE_T                      cbDst,
+        _Out_opt_                               UINT64 *                    pu64SeqNumber )
+{
+    SYMCRYPT_ERROR scError;
+
+    CHECK( state.pSenderCtx != NULL, "HPKE seal called without sender context" );
+
+    scError = ScShimSymCryptHpkeSeal(
+        state.pSenderCtx,
+        pbAuthData, cbAuthData,
+        pbSrc, cbSrc,
+        pbDst, cbDst,
+        pu64SeqNumber );
+
+    return scError == SYMCRYPT_NO_ERROR ? STATUS_SUCCESS : STATUS_UNSUCCESSFUL;
+}
+
+template<>
+NTSTATUS
+HpkeImp<ImpXxx, AlgHpke>::open(
+        _In_reads_bytes_opt_( cbAuthData )      PCBYTE                      pbAuthData,
+                                                SIZE_T                      cbAuthData,
+        _In_reads_bytes_( cbSrc )               PCBYTE                      pbSrc,
+                                                SIZE_T                      cbSrc,
+        _Out_writes_bytes_( cbDst )             PBYTE                       pbDst,
+                                                SIZE_T                      cbDst )
+{
+    SYMCRYPT_ERROR scError;
+
+    CHECK( state.pRecipientCtx != NULL, "HPKE open called without recipient context" );
+
+    scError = ScShimSymCryptHpkeOpen(
+        state.pRecipientCtx,
+        pbAuthData, cbAuthData,
+        pbSrc, cbSrc,
+        pbDst, cbDst );
+
+    return scError == SYMCRYPT_NO_ERROR ? STATUS_SUCCESS : STATUS_UNSUCCESSFUL;
+}
+
+template<>
+NTSTATUS
+HpkeImp<ImpXxx, AlgHpke>::openUnordered(
+                                                UINT64                      u64SeqNumber,
+        _In_reads_bytes_opt_( cbAuthData )      PCBYTE                      pbAuthData,
+                                                SIZE_T                      cbAuthData,
+        _In_reads_bytes_( cbSrc )               PCBYTE                      pbSrc,
+                                                SIZE_T                      cbSrc,
+        _Out_writes_bytes_( cbDst )             PBYTE                       pbDst,
+                                                SIZE_T                      cbDst )
+{
+    SYMCRYPT_ERROR scError;
+
+    CHECK( state.pRecipientCtx != NULL, "HPKE openUnordered called without recipient context" );
+
+    scError = ScShimSymCryptHpkeOpenUnordered(
+        state.pRecipientCtx,
+        u64SeqNumber,
+        pbAuthData, cbAuthData,
+        pbSrc, cbSrc,
+        pbDst, cbDst );
+
+    if( scError == SYMCRYPT_NO_ERROR )
+    {
+        return STATUS_SUCCESS;
+    }
+
+    return scError == SYMCRYPT_NOT_IMPLEMENTED ? STATUS_NOT_SUPPORTED : STATUS_UNSUCCESSFUL;
+}
+
+template<>
+NTSTATUS
+HpkeImp<ImpXxx, AlgHpke>::secretExportSender(
+        _In_reads_bytes_opt_( cbExporterContext )   PCBYTE                  pbExporterContext,
+                                                    SIZE_T                  cbExporterContext,
+        _Out_writes_bytes_( cbResult )              PBYTE                   pbResult,
+                                                    UINT16                  cbResult )
+{
+    SYMCRYPT_ERROR scError;
+
+    CHECK( state.pSenderCtx != NULL, "HPKE secretExportSender called without sender context" );
+
+    scError = ScShimSymCryptHpkeSecretExport(
+        state.pSenderCtx,
+        pbExporterContext, cbExporterContext,
+        pbResult, cbResult );
+
+    return scError == SYMCRYPT_NO_ERROR ? STATUS_SUCCESS : STATUS_UNSUCCESSFUL;
+}
+
+template<>
+NTSTATUS
+HpkeImp<ImpXxx, AlgHpke>::secretExportRecipient(
+        _In_reads_bytes_opt_( cbExporterContext )   PCBYTE                  pbExporterContext,
+                                                    SIZE_T                  cbExporterContext,
+        _Out_writes_bytes_( cbResult )              PBYTE                   pbResult,
+                                                    UINT16                  cbResult )
+{
+    SYMCRYPT_ERROR scError;
+
+    CHECK( state.pRecipientCtx != NULL, "HPKE secretExportRecipient called without recipient context" );
+
+    scError = ScShimSymCryptHpkeSecretExport(
+        state.pRecipientCtx,
+        pbExporterContext, cbExporterContext,
+        pbResult, cbResult );
+
+    return scError == SYMCRYPT_NO_ERROR ? STATUS_SUCCESS : STATUS_UNSUCCESSFUL;
+}
+
+template<>
+SIZE_T
+HpkeImp<ImpXxx, AlgHpke>::encSize()
+{
+    SIZE_T cbEnc = 0;
+    SYMCRYPT_ERROR scError;
+
+    CHECK( state.pKey != NULL, "HPKE encSize called without key" );
+
+    scError = ScShimSymCryptHpkeSizeofEncapsCiphertextFromParams( state.ciphersuite, &cbEnc );
+    CHECK( scError == SYMCRYPT_NO_ERROR, "HPKE encSize failed" );
+
+    return cbEnc;
+}

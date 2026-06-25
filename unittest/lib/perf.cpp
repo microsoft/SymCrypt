@@ -259,6 +259,11 @@ const ALG_MEASURE_PARAMS g_algMeasureParams[] =
     "CompositeMlDsa"            , 0, {PERF_KEY_COMPOSITE_MLDSA_MLDSA44_ECDSA_P256_SHA256, PERF_KEY_COMPOSITE_MLDSA_MLDSA65_ECDSA_P256_SHA512, PERF_KEY_COMPOSITE_MLDSA_MLDSA65_ECDSA_P384_SHA512, PERF_KEY_COMPOSITE_MLDSA_MLDSA87_ECDSA_P384_SHA512}, {PERF_DATASIZE_SAME_AS_KEYSIZE},
     "CompositeMlDsaSetValue"    , 0, {PERF_KEY_COMPOSITE_MLDSA_MLDSA44_ECDSA_P256_SHA256, PERF_KEY_COMPOSITE_MLDSA_MLDSA65_ECDSA_P256_SHA512, PERF_KEY_COMPOSITE_MLDSA_MLDSA65_ECDSA_P384_SHA512, PERF_KEY_COMPOSITE_MLDSA_MLDSA87_ECDSA_P384_SHA512}, {PERF_DATASIZE_SAME_AS_KEYSIZE},
 
+    "Hpke"                  , 0, {PERF_KEY_HPKE_MLKEM512_SHA256_AESGCM128, PERF_KEY_HPKE_MLKEM768_SHA256_AESGCM128, PERF_KEY_HPKE_MLKEM1024_SHA256_AESGCM256,
+                                  PERF_KEY_HPKE_MLKEM768P256_SHA256_AESGCM128, PERF_KEY_HPKE_MLKEM1024P384_SHA384_AESGCM256, PERF_KEY_HPKE_MLKEM768X25519_SHA256_AESGCM128,
+                                  PERF_KEY_HPKE_MLKEM768X25519_SHAKE256_CHACHA,
+                                  PERF_KEY_HPKE_P256_SHA256_AESGCM128, PERF_KEY_HPKE_P384_SHA384_AESGCM256, PERF_KEY_HPKE_P521_SHA512_AESGCM256, PERF_KEY_HPKE_X25519_SHA256_AESGCM128}, {},
+
     "IEEE802_11SaeCustom"   , 0, {}, {},
     "Xmss"                  , 1, { PERF_KEY_XMSS_SHA2_10_256, PERF_KEY_XMSS_SHA2_16_256, PERF_KEY_XMSS_SHA2_20_256, PERF_KEY_XMSS_SHA2_10_512,  PERF_KEY_XMSS_SHAKE256_10_256 }, { PERF_DATASIZE_SAME_AS_KEYSIZE },
     "Lms"                   , 1, { PERF_KEY_LMS_SHA256_M32_H5_W1, PERF_KEY_LMS_SHA256_M32_H5_W2, PERF_KEY_LMS_SHA256_M32_H5_W4, PERF_KEY_LMS_SHA256_M32_H5_W8, PERF_KEY_LMS_SHA256_M32_H10_W8}, { PERF_DATASIZE_SAME_AS_KEYSIZE },
@@ -1019,6 +1024,23 @@ const struct {
     { PERF_KEY_LMS_SHAKE_M32_H25_W8,  "SHAKE_M32_H25_W8"  },
 };
 
+const struct {
+    UINT32  algId;
+    char*   name;
+} g_HpkeIdNameMappings[] = {
+    { PERF_KEY_HPKE_MLKEM512_SHA256_AESGCM128,       "       MlKem512/HKDF-SHA256/ AesGcm128" },
+    { PERF_KEY_HPKE_MLKEM768_SHA256_AESGCM128,       "       MlKem768/HKDF-SHA256/ AesGcm128" },
+    { PERF_KEY_HPKE_MLKEM1024_SHA256_AESGCM256,      "      MlKem1024/HKDF-SHA256/ AesGcm256" },
+    { PERF_KEY_HPKE_MLKEM768P256_SHA256_AESGCM128,   "  MlKem768-P256/HKDF-SHA256/ AesGcm128" },
+    { PERF_KEY_HPKE_MLKEM1024P384_SHA384_AESGCM256,  " MlKem1024-P384/HKDF-SHA384/ AesGcm256" },
+    { PERF_KEY_HPKE_MLKEM768X25519_SHA256_AESGCM128, "MlKem768-X25519/HKDF-SHA256/ AesGcm128" },
+    { PERF_KEY_HPKE_MLKEM768X25519_SHAKE256_CHACHA,  "MlKem768-X25519/   SHAKE256/ChaChaPoly" },
+    { PERF_KEY_HPKE_P256_SHA256_AESGCM128,           "     DhKem-P256/HKDF-SHA256/ AesGcm128" },
+    { PERF_KEY_HPKE_P384_SHA384_AESGCM256,           "     DhKem-P384/HKDF-SHA384/ AesGcm256" },
+    { PERF_KEY_HPKE_P521_SHA512_AESGCM256,           "     DhKem-P521/HKDF-SHA512/ AesGcm256" },
+    { PERF_KEY_HPKE_X25519_SHA256_AESGCM128,         "   DhKem-X25519/HKDF-SHA256/ AesGcm128" },
+};
+
 VOID measurePerfOneAlg( AlgorithmImplementation * pAlgImp )
 {
     PerfDataFn dataFn = pAlgImp->m_perfDataFunction;
@@ -1074,19 +1096,10 @@ VOID measurePerfOneAlg( AlgorithmImplementation * pAlgImp )
         }
 
         //
-        // First we measure the speed of the key expansion, if any
+        // Compute the postfix display name for this key size variant.
+        // This is done before the key measurement so that the postfix
+        // is available for the key perf result as well.
         //
-        if( keyFn != NULL && (pParams->flags & PERF_NO_KEYPERF) == 0 )
-        {
-            perfInfo.dataSize = 0;
-            perfInfo.cPerByte = 0;
-            perfInfo.cFixed = measurePerfOneSize( *k, 0, keyFn, NULL, NULL, cleanFn, TRUE );
-            perfInfo.operationName = "key";
-            perfInfo.strPostfix = "";
-
-            pAlgImp->m_perfInfo.push_back( perfInfo );
-        }
-
         perfInfo.strPostfix = "";
 
         for (SIZE_T i = 0; i < ARRAY_SIZE(g_exKeyParamMapping); i++)
@@ -1120,6 +1133,33 @@ VOID measurePerfOneAlg( AlgorithmImplementation * pAlgImp )
                     break;
                 }
             }
+        }
+
+        if (STRICMP(pParams->algName, "Hpke") == 0)
+        {
+            for (SIZE_T i = 0; i < ARRAY_SIZE(g_HpkeIdNameMappings); i++)
+            {
+                if (*k == g_HpkeIdNameMappings[i].algId)
+                {
+                    perfInfo.strPostfix = g_HpkeIdNameMappings[i].name;
+                    break;
+                }
+            }
+            // Suppress the raw key size number; the postfix already identifies the variant
+            perfInfo.keySize = 0;
+        }
+
+        //
+        // First we measure the speed of the key expansion, if any
+        //
+        if( keyFn != NULL && (pParams->flags & PERF_NO_KEYPERF) == 0 )
+        {
+            perfInfo.dataSize = 0;
+            perfInfo.cPerByte = 0;
+            perfInfo.cFixed = measurePerfOneSize( *k, 0, keyFn, NULL, NULL, cleanFn, TRUE );
+            perfInfo.operationName = "key";
+
+            pAlgImp->m_perfInfo.push_back( perfInfo );
         }
 
         if( dataFn != NULL )

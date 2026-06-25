@@ -516,6 +516,15 @@ public:
 };
 
 template<>
+class HpkeImpState<ImpXxx, AlgHpke> {
+public:
+    PSYMCRYPT_HPKEKEY           pKey;
+    PSYMCRYPT_HPKECONTEXT       pSenderCtx;
+    PSYMCRYPT_HPKECONTEXT       pRecipientCtx;
+    SYMCRYPT_HPKE_CIPHERSUITE   ciphersuite;
+};
+
+template<>
 class PqDsaImpState<ImpXxx, AlgMlDsa> {
 public:
     PSYMCRYPT_MLDSAKEY  pKey;

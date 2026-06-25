@@ -21,6 +21,9 @@
     <ProjectReference Include="..\..\lib\symcrypt_static_rust_um.vcxproj" Condition="'$(BuildSymCrust)'=='true'">
       <Project>{c68bef36-1fc4-4545-864b-a2e9080ba196}</Project>
     </ProjectReference>
+    <ProjectReference Include="..\..\lib_plus\symcrypt_plus.vcxproj">
+      <Project>{28EF1379-FE63-4CC2-AD53-05E9A809AABE}</Project>
+    </ProjectReference>
     <ProjectReference Include="..\lib\symcryptunittest_lib.vcxproj">
       <Project>{1146804c-b04f-43f1-83b0-081a5187ba02}</Project>
     </ProjectReference>
@@ -28,7 +31,7 @@
   <ItemDefinitionGroup>
     <ClCompile>
       <PreprocessorDefinitions>_WINDOWS;_USRDLL;%(PreprocessorDefinitions);</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>..\;..\inc;..\lib;..\SymCryptDependencies\inc;..\..\inc;</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\;..\inc;..\lib;..\SymCryptDependencies\inc;..\..\inc;..\..\inc\symcrypt_plus;</AdditionalIncludeDirectories>
       <!--
         Disable warnings
         C4324	'structname': structure was padded due to __declspec(align())

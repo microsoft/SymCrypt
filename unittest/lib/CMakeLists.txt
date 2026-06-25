@@ -20,10 +20,12 @@ set(SOURCES
     testDh.cpp
     testDsa.cpp
     testEcc.cpp
+    testEcEncoding.cpp
     testhash.cpp
     testHbs.cpp
     testKdf.cpp
     testKem.cpp
+    testHpke.cpp
     testKeyWrap.cpp
     testKmac.cpp
     testMac.cpp
@@ -114,6 +116,12 @@ endif()
 
 add_library(symcryptunittest_lib STATIC ${SOURCES})
 target_link_libraries(symcryptunittest_lib PUBLIC symcryptunittest_env_lib)
+target_link_libraries(symcryptunittest_lib PUBLIC symcrypt_plus)
+
+# SymCrypt plus tests need access to hpke_internal.h (symcrypt_hpke.h is in global include path)
+target_include_directories(symcryptunittest_lib PRIVATE 
+    ${SYMCRYPT_SOURCE_DIR}/lib_plus
+)
 
 if(SYMCRYPT_TEST_WITH_OPENSSL)
     target_include_directories(symcryptunittest_lib PRIVATE ${OPENSSL_INCLUDE_DIR})

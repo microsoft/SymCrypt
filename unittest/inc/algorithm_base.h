@@ -2063,6 +2063,342 @@ public:
     KemImpState<Implementation,Algorithm> state;
 };
 
+//
+// HPKE (Hybrid Public Key Encryption) multi-imp framework
+//
+// Virtual interface for cross-implementation testing of HPKE. Methods mirror
+// the SymCrypt HPKE API one-for-one with two exceptions:
+//   - SecretExport is split into secretExportSender / secretExportRecipient
+//     so the multi-imp wrapper knows which HpkeImpState context to use.
+//   - OpenUnordered is intentionally omitted; not every plausible backend
+//     (CNG / OpenSSL) exposes an equivalent.
+// Single-shot wrappers (sealSingleShot etc.) are used for cross-validation:
+//   randomized seal -> cross-open; deterministic open/secretExport -> ResultMerge.
+//
+class HpkeImplementation : public AlgorithmImplementation
+{
+public:
+    HpkeImplementation() {};
+    virtual ~HpkeImplementation() {};
+
+private:
+    HpkeImplementation( const HpkeImplementation & );
+    VOID operator=( const HpkeImplementation & );
+
+public:
+    //
+    // Optional per-implementation diagnostic detail for the most recent failed
+    // operation. Implementations that wrap a foreign library (e.g. OpenSSL)
+    // record a human-readable error here; the multi-imp harness surfaces it when
+    // an operation fails unexpectedly. Implementations that do not populate it
+    // leave it empty.
+    //
+    const String & getLastError() const { return m_lastError; }
+
+protected:
+    String m_lastError;
+
+public:
+    virtual NTSTATUS setKey(
+                                                SYMCRYPT_HPKE_CIPHERSUITE   ciphersuite,
+                                                UINT32                      format,
+        _In_reads_bytes_( cbKey )               PCBYTE                      pbKey,
+                                                SIZE_T                      cbKey ) = 0;
+
+    virtual NTSTATUS getKey(
+                                                UINT32                      format,
+        _Out_writes_bytes_( cbKey )             PBYTE                       pbKey,
+                                                SIZE_T                      cbKey ) = 0;
+
+    virtual NTSTATUS deriveKeyPair(
+                                                SYMCRYPT_HPKE_CIPHERSUITE   ciphersuite,
+        _In_reads_bytes_( cbIkm )               PCBYTE                      pbIkm,
+                                                SIZE_T                      cbIkm ) = 0;
+
+    virtual NTSTATUS sealSingleShot(
+        _In_reads_bytes_opt_( cbInfo )          PCBYTE                      pbInfo,
+                                                SIZE_T                      cbInfo,
+        _In_reads_bytes_opt_( cbPsk )           PCBYTE                      pbPsk,
+                                                SIZE_T                      cbPsk,
+        _In_reads_bytes_opt_( cbPskId )         PCBYTE                      pbPskId,
+                                                SIZE_T                      cbPskId,
+        _In_reads_bytes_opt_( cbAad )           PCBYTE                      pbAad,
+                                                SIZE_T                      cbAad,
+        _In_reads_bytes_( cbPlaintext )         PCBYTE                      pbPlaintext,
+                                                SIZE_T                      cbPlaintext,
+        _Out_writes_bytes_( cbEnc )             PBYTE                       pbEnc,
+                                                SIZE_T                      cbEnc,
+        _Out_writes_bytes_( cbCiphertext )      PBYTE                       pbCiphertext,
+                                                SIZE_T                      cbCiphertext ) = 0;
+
+    virtual NTSTATUS openSingleShot(
+        _In_reads_bytes_( cbEnc )               PCBYTE                      pbEnc,
+                                                SIZE_T                      cbEnc,
+        _In_reads_bytes_opt_( cbInfo )          PCBYTE                      pbInfo,
+                                                SIZE_T                      cbInfo,
+        _In_reads_bytes_opt_( cbPsk )           PCBYTE                      pbPsk,
+                                                SIZE_T                      cbPsk,
+        _In_reads_bytes_opt_( cbPskId )         PCBYTE                      pbPskId,
+                                                SIZE_T                      cbPskId,
+        _In_reads_bytes_opt_( cbAad )           PCBYTE                      pbAad,
+                                                SIZE_T                      cbAad,
+        _In_reads_bytes_( cbCiphertext )        PCBYTE                      pbCiphertext,
+                                                SIZE_T                      cbCiphertext,
+        _Out_writes_bytes_( cbPlaintext )       PBYTE                       pbPlaintext,
+                                                SIZE_T                      cbPlaintext ) = 0;
+
+    //
+    // No native SymCryptHpkeSecretExportSingleShot exists; this wraps
+    // SetupRecipient + SecretExport and takes the SetupRecipient PSK params
+    // for parity with openSingleShot.
+    //
+    virtual NTSTATUS secretExportSingleShot(
+        _In_reads_bytes_( cbEnc )               PCBYTE                      pbEnc,
+                                                SIZE_T                      cbEnc,
+        _In_reads_bytes_opt_( cbInfo )          PCBYTE                      pbInfo,
+                                                SIZE_T                      cbInfo,
+        _In_reads_bytes_opt_( cbPsk )           PCBYTE                      pbPsk,
+                                                SIZE_T                      cbPsk,
+        _In_reads_bytes_opt_( cbPskId )         PCBYTE                      pbPskId,
+                                                SIZE_T                      cbPskId,
+        _In_reads_bytes_( cbExporterContext )   PCBYTE                      pbExporterContext,
+                                                SIZE_T                      cbExporterContext,
+        _Out_writes_bytes_( cbExportedValue )   PBYTE                       pbExportedValue,
+                                                UINT16                      cbExportedValue ) = 0;
+
+    virtual NTSTATUS setupSender(
+        _In_reads_bytes_opt_( cbInfo )          PCBYTE                      pbInfo,
+                                                SIZE_T                      cbInfo,
+        _In_reads_bytes_opt_( cbPsk )           PCBYTE                      pbPsk,
+                                                SIZE_T                      cbPsk,
+        _In_reads_bytes_opt_( cbPskId )         PCBYTE                      pbPskId,
+                                                SIZE_T                      cbPskId,
+        _Out_writes_bytes_( cbEnc )             PBYTE                       pbEnc,
+                                                SIZE_T                      cbEnc ) = 0;
+
+    //
+    // Deterministic SetupSender: derive the ephemeral from caller-supplied randomness
+    // so the produced enc is reproducible against a KAT vector.
+    //
+    virtual NTSTATUS setupSenderDeterministic(
+        _In_reads_bytes_( cbRandom )            PCBYTE                      pbRandom,
+                                                SIZE_T                      cbRandom,
+        _In_reads_bytes_opt_( cbInfo )          PCBYTE                      pbInfo,
+                                                SIZE_T                      cbInfo,
+        _In_reads_bytes_opt_( cbPsk )           PCBYTE                      pbPsk,
+                                                SIZE_T                      cbPsk,
+        _In_reads_bytes_opt_( cbPskId )         PCBYTE                      pbPskId,
+                                                SIZE_T                      cbPskId,
+        _Out_writes_bytes_( cbEnc )             PBYTE                       pbEnc,
+                                                SIZE_T                      cbEnc ) = 0;
+
+    virtual NTSTATUS setupRecipient(
+        _In_reads_bytes_( cbEnc )               PCBYTE                      pbEnc,
+                                                SIZE_T                      cbEnc,
+        _In_reads_bytes_opt_( cbInfo )          PCBYTE                      pbInfo,
+                                                SIZE_T                      cbInfo,
+        _In_reads_bytes_opt_( cbPsk )           PCBYTE                      pbPsk,
+                                                SIZE_T                      cbPsk,
+        _In_reads_bytes_opt_( cbPskId )         PCBYTE                      pbPskId,
+                                                SIZE_T                      cbPskId ) = 0;
+
+    virtual NTSTATUS seal(
+        _In_reads_bytes_opt_( cbAuthData )      PCBYTE                      pbAuthData,
+                                                SIZE_T                      cbAuthData,
+        _In_reads_bytes_opt_( cbSrc )           PCBYTE                      pbSrc,
+                                                SIZE_T                      cbSrc,
+        _Out_writes_bytes_( cbDst )             PBYTE                       pbDst,
+                                                SIZE_T                      cbDst,
+        _Out_opt_                               UINT64 *                    pu64SeqNumber ) = 0;
+
+    virtual NTSTATUS open(
+        _In_reads_bytes_opt_( cbAuthData )      PCBYTE                      pbAuthData,
+                                                SIZE_T                      cbAuthData,
+        _In_reads_bytes_( cbSrc )               PCBYTE                      pbSrc,
+                                                SIZE_T                      cbSrc,
+        _Out_writes_bytes_( cbDst )             PBYTE                       pbDst,
+                                                SIZE_T                      cbDst ) = 0;
+
+    virtual NTSTATUS openUnordered(
+                                                UINT64                      u64SeqNumber,
+        _In_reads_bytes_opt_( cbAuthData )      PCBYTE                      pbAuthData,
+                                                SIZE_T                      cbAuthData,
+        _In_reads_bytes_( cbSrc )               PCBYTE                      pbSrc,
+                                                SIZE_T                      cbSrc,
+        _Out_writes_bytes_( cbDst )             PBYTE                       pbDst,
+                                                SIZE_T                      cbDst ) = 0;
+
+    virtual NTSTATUS secretExportSender(
+        _In_reads_bytes_opt_( cbExporterContext )   PCBYTE                  pbExporterContext,
+                                                    SIZE_T                  cbExporterContext,
+        _Out_writes_bytes_( cbResult )              PBYTE                   pbResult,
+                                                    UINT16                  cbResult ) = 0;
+
+    virtual NTSTATUS secretExportRecipient(
+        _In_reads_bytes_opt_( cbExporterContext )   PCBYTE                  pbExporterContext,
+                                                    SIZE_T                  cbExporterContext,
+        _Out_writes_bytes_( cbResult )              PBYTE                   pbResult,
+                                                    UINT16                  cbResult ) = 0;
+
+    virtual SIZE_T encSize() = 0;
+};
+
+
+template< class Implementation, class Algorithm > class HpkeImpState;
+
+template< class Implementation, class Algorithm >
+class HpkeImp : public HpkeImplementation
+{
+public:
+    HpkeImp();
+    virtual ~HpkeImp();
+
+private:
+    HpkeImp( const HpkeImp & );
+    VOID operator=( const HpkeImp & );
+
+public:
+    static const String s_algName;
+    static const String s_modeName;
+    static const String s_impName;
+
+    virtual NTSTATUS setKey(
+                                                SYMCRYPT_HPKE_CIPHERSUITE   ciphersuite,
+                                                UINT32                      format,
+        _In_reads_bytes_( cbKey )               PCBYTE                      pbKey,
+                                                SIZE_T                      cbKey );
+
+    virtual NTSTATUS getKey(
+                                                UINT32                      format,
+        _Out_writes_bytes_( cbKey )             PBYTE                       pbKey,
+                                                SIZE_T                      cbKey );
+
+    virtual NTSTATUS deriveKeyPair(
+                                                SYMCRYPT_HPKE_CIPHERSUITE   ciphersuite,
+        _In_reads_bytes_( cbIkm )               PCBYTE                      pbIkm,
+                                                SIZE_T                      cbIkm );
+
+    virtual NTSTATUS sealSingleShot(
+        _In_reads_bytes_opt_( cbInfo )          PCBYTE                      pbInfo,
+                                                SIZE_T                      cbInfo,
+        _In_reads_bytes_opt_( cbPsk )           PCBYTE                      pbPsk,
+                                                SIZE_T                      cbPsk,
+        _In_reads_bytes_opt_( cbPskId )         PCBYTE                      pbPskId,
+                                                SIZE_T                      cbPskId,
+        _In_reads_bytes_opt_( cbAad )           PCBYTE                      pbAad,
+                                                SIZE_T                      cbAad,
+        _In_reads_bytes_( cbPlaintext )         PCBYTE                      pbPlaintext,
+                                                SIZE_T                      cbPlaintext,
+        _Out_writes_bytes_( cbEnc )             PBYTE                       pbEnc,
+                                                SIZE_T                      cbEnc,
+        _Out_writes_bytes_( cbCiphertext )      PBYTE                       pbCiphertext,
+                                                SIZE_T                      cbCiphertext );
+
+    virtual NTSTATUS openSingleShot(
+        _In_reads_bytes_( cbEnc )               PCBYTE                      pbEnc,
+                                                SIZE_T                      cbEnc,
+        _In_reads_bytes_opt_( cbInfo )          PCBYTE                      pbInfo,
+                                                SIZE_T                      cbInfo,
+        _In_reads_bytes_opt_( cbPsk )           PCBYTE                      pbPsk,
+                                                SIZE_T                      cbPsk,
+        _In_reads_bytes_opt_( cbPskId )         PCBYTE                      pbPskId,
+                                                SIZE_T                      cbPskId,
+        _In_reads_bytes_opt_( cbAad )           PCBYTE                      pbAad,
+                                                SIZE_T                      cbAad,
+        _In_reads_bytes_( cbCiphertext )        PCBYTE                      pbCiphertext,
+                                                SIZE_T                      cbCiphertext,
+        _Out_writes_bytes_( cbPlaintext )       PBYTE                       pbPlaintext,
+                                                SIZE_T                      cbPlaintext );
+
+    virtual NTSTATUS secretExportSingleShot(
+        _In_reads_bytes_( cbEnc )               PCBYTE                      pbEnc,
+                                                SIZE_T                      cbEnc,
+        _In_reads_bytes_opt_( cbInfo )          PCBYTE                      pbInfo,
+                                                SIZE_T                      cbInfo,
+        _In_reads_bytes_opt_( cbPsk )           PCBYTE                      pbPsk,
+                                                SIZE_T                      cbPsk,
+        _In_reads_bytes_opt_( cbPskId )         PCBYTE                      pbPskId,
+                                                SIZE_T                      cbPskId,
+        _In_reads_bytes_( cbExporterContext )   PCBYTE                      pbExporterContext,
+                                                SIZE_T                      cbExporterContext,
+        _Out_writes_bytes_( cbExportedValue )   PBYTE                       pbExportedValue,
+                                                UINT16                      cbExportedValue );
+
+    virtual NTSTATUS setupSender(
+        _In_reads_bytes_opt_( cbInfo )          PCBYTE                      pbInfo,
+                                                SIZE_T                      cbInfo,
+        _In_reads_bytes_opt_( cbPsk )           PCBYTE                      pbPsk,
+                                                SIZE_T                      cbPsk,
+        _In_reads_bytes_opt_( cbPskId )         PCBYTE                      pbPskId,
+                                                SIZE_T                      cbPskId,
+        _Out_writes_bytes_( cbEnc )             PBYTE                       pbEnc,
+                                                SIZE_T                      cbEnc );
+
+    virtual NTSTATUS setupSenderDeterministic(
+        _In_reads_bytes_( cbRandom )            PCBYTE                      pbRandom,
+                                                SIZE_T                      cbRandom,
+        _In_reads_bytes_opt_( cbInfo )          PCBYTE                      pbInfo,
+                                                SIZE_T                      cbInfo,
+        _In_reads_bytes_opt_( cbPsk )           PCBYTE                      pbPsk,
+                                                SIZE_T                      cbPsk,
+        _In_reads_bytes_opt_( cbPskId )         PCBYTE                      pbPskId,
+                                                SIZE_T                      cbPskId,
+        _Out_writes_bytes_( cbEnc )             PBYTE                       pbEnc,
+                                                SIZE_T                      cbEnc );
+
+    virtual NTSTATUS setupRecipient(
+        _In_reads_bytes_( cbEnc )               PCBYTE                      pbEnc,
+                                                SIZE_T                      cbEnc,
+        _In_reads_bytes_opt_( cbInfo )          PCBYTE                      pbInfo,
+                                                SIZE_T                      cbInfo,
+        _In_reads_bytes_opt_( cbPsk )           PCBYTE                      pbPsk,
+                                                SIZE_T                      cbPsk,
+        _In_reads_bytes_opt_( cbPskId )         PCBYTE                      pbPskId,
+                                                SIZE_T                      cbPskId );
+
+    virtual NTSTATUS seal(
+        _In_reads_bytes_opt_( cbAuthData )      PCBYTE                      pbAuthData,
+                                                SIZE_T                      cbAuthData,
+        _In_reads_bytes_opt_( cbSrc )           PCBYTE                      pbSrc,
+                                                SIZE_T                      cbSrc,
+        _Out_writes_bytes_( cbDst )             PBYTE                       pbDst,
+                                                SIZE_T                      cbDst,
+        _Out_opt_                               UINT64 *                    pu64SeqNumber );
+
+    virtual NTSTATUS open(
+        _In_reads_bytes_opt_( cbAuthData )      PCBYTE                      pbAuthData,
+                                                SIZE_T                      cbAuthData,
+        _In_reads_bytes_( cbSrc )               PCBYTE                      pbSrc,
+                                                SIZE_T                      cbSrc,
+        _Out_writes_bytes_( cbDst )             PBYTE                       pbDst,
+                                                SIZE_T                      cbDst );
+
+    virtual NTSTATUS openUnordered(
+                                                UINT64                      u64SeqNumber,
+        _In_reads_bytes_opt_( cbAuthData )      PCBYTE                      pbAuthData,
+                                                SIZE_T                      cbAuthData,
+        _In_reads_bytes_( cbSrc )               PCBYTE                      pbSrc,
+                                                SIZE_T                      cbSrc,
+        _Out_writes_bytes_( cbDst )             PBYTE                       pbDst,
+                                                SIZE_T                      cbDst );
+
+    virtual NTSTATUS secretExportSender(
+        _In_reads_bytes_opt_( cbExporterContext )   PCBYTE                  pbExporterContext,
+                                                    SIZE_T                  cbExporterContext,
+        _Out_writes_bytes_( cbResult )              PBYTE                   pbResult,
+                                                    UINT16                  cbResult );
+
+    virtual NTSTATUS secretExportRecipient(
+        _In_reads_bytes_opt_( cbExporterContext )   PCBYTE                  pbExporterContext,
+                                                    SIZE_T                  cbExporterContext,
+        _Out_writes_bytes_( cbResult )              PBYTE                   pbResult,
+                                                    UINT16                  cbResult );
+
+    virtual SIZE_T encSize();
+
+    HpkeImpState<Implementation,Algorithm> state;
+};
+
 // Hash-Based Signatures
 class HbsImplementation : public AlgorithmImplementation
 {
@@ -2410,6 +2746,13 @@ template< class Imp, class Alg>
 const String KemImp<Imp,Alg>::s_algName = Alg::name;
 template< class Imp, class Alg>
 const String KemImp<Imp,Alg>::s_modeName;
+
+template< class Imp, class Alg>
+const String HpkeImp<Imp,Alg>::s_impName = Imp::name;
+template< class Imp, class Alg>
+const String HpkeImp<Imp,Alg>::s_algName = Alg::name;
+template< class Imp, class Alg>
+const String HpkeImp<Imp,Alg>::s_modeName;
 
 template< class Imp, class Alg>
 const String PqDsaImp<Imp,Alg>::s_impName = Imp::name;

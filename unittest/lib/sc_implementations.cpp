@@ -6,6 +6,10 @@
 
 #include "precomp.h"
 
+extern "C" {
+#include "hpke_internal.h"
+}
+
 #define SYMCRYPT_2DES_EXPANDED_KEY  SYMCRYPT_3DES_EXPANDED_KEY
 
 #define SCRATCH_BUF_OFFSET  (1 << 15)
@@ -453,11 +457,22 @@ addSymCryptAlgs()
     SymCryptInit();
 
     addSymCryptImplementationToGlobalList<ImpSc>();
+    addImplementationToGlobalList<HpkeImp<ImpSc, AlgHpke>>();
 
     if (g_dynamicSymCryptModuleHandle)
     {
         addSymCryptImplementationToGlobalList<ImpScDynamic>();
         addImplementationToGlobalList<RngSp800_90Imp<ImpScDynamic, AlgDynamicRandom>>();
+
+        // HPKE lives in symcrypt_plus, which may or may not be exported by
+        // the loaded dynamic module.
+        if (getDynamicSymbolPointerFromString(
+                g_dynamicSymCryptModuleHandle,
+                "SymCryptHpkekeyAllocate",
+                SCTEST_DYNSYM_FUNCTION_PTR) != NULL)
+        {
+            addImplementationToGlobalList<HpkeImp<ImpScDynamic, AlgHpke>>();
+        }
     }
 }
 
@@ -482,4 +497,5 @@ updateSymCryptStaticAlgs()
 
     // Add implementations from ImpScStatic
     addSymCryptImplementationToGlobalList<ImpScStatic>();
+    addImplementationToGlobalList<HpkeImp<ImpScStatic, AlgHpke>>();
 }

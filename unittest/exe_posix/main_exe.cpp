@@ -73,13 +73,14 @@ extern "C"
 #if SYMCRYPT_CPU_AMD64
 /////////////////////////////////////////////////////////////
 //
-// Code to set up the YMM/ZMM registers for testing in SAVE_YMM/SAVE_ZMM mode
+// Code to set up the per-thread state for testing in SAVE_YMM/SAVE_ZMM mode.
+//
 
-__m256i g_ymmStartState[16];
-__m256i g_ymmTestState[16];
+thread_local __m256i t_ymmStartState[16];
+thread_local __m256i t_ymmTestState[16];
 // Extra space in ZMM buffers for k0-k7 mask registers (8 * 8 bytes = one extra __m512i)
-__m512i g_zmmStartState[33];
-__m512i g_zmmTestState[33];
+thread_local __m512i t_zmmStartState[33];
+thread_local __m512i t_zmmTestState[33];
 
 VOID
 verifyVectorRegisters()
@@ -87,7 +88,7 @@ verifyVectorRegisters()
 
     if( TestSaveZmmEnabled && SYMCRYPT_CPU_FEATURES_PRESENT( SYMCRYPT_CPU_FEATURE_AVX512 ) )
     {
-        SymCryptEnvUmSaveZmmRegistersAsm( g_zmmTestState );
+        SymCryptEnvUmSaveZmmRegistersAsm( t_zmmTestState );
 
         //
         // Check that all bytes of ZMM16-31 are preserved. These registers only exist in
@@ -99,7 +100,7 @@ verifyVectorRegisters()
         //
         for( SIZE_T i=16*64; i<32*64; i++ )
         {
-            if( ((volatile BYTE * )&g_zmmStartState[0])[i] != ((volatile BYTE * )&g_zmmTestState[0])[i] )
+            if( ((volatile BYTE * )&t_zmmStartState[0])[i] != ((volatile BYTE * )&t_zmmTestState[0])[i] )
             {
                 FATAL3( "Zmm registers modified without proper save/restore Zmm%d[%d]", (int)(i/64), (int)(i%64));
             }
@@ -111,7 +112,7 @@ verifyVectorRegisters()
         //
         for( SIZE_T i=0; i<8*8; i++ )
         {
-            if( ((volatile BYTE * )&g_zmmStartState[0])[32*64 + i] != ((volatile BYTE * )&g_zmmTestState[0])[32*64 + i] )
+            if( ((volatile BYTE * )&t_zmmStartState[0])[32*64 + i] != ((volatile BYTE * )&t_zmmTestState[0])[32*64 + i] )
             {
                 FATAL3( "Mask register modified without proper save/restore k%d[%d]", (int)(i/8), (int)(i%8));
             }
@@ -119,15 +120,15 @@ verifyVectorRegisters()
     }
     else if( TestSaveYmmEnabled && SYMCRYPT_CPU_FEATURES_PRESENT( SYMCRYPT_CPU_FEATURE_AVX2 ) )
     {
-        SymCryptEnvUmSaveYmmRegistersAsm( g_ymmTestState );
+        SymCryptEnvUmSaveYmmRegistersAsm( t_ymmTestState );
 
         //
         // It is perfectly fine for the XMM register values to have been modified.
         // We just test that the top half of the Ymm registers have been preserved.
         //
-        for( SIZE_T i=0; i<sizeof( g_ymmStartState ); i++ )
+        for( SIZE_T i=0; i<sizeof( t_ymmStartState ); i++ )
         {
-            if( ((volatile BYTE * )&g_ymmStartState[0])[i] != ((volatile BYTE * )&g_ymmTestState[0])[i] &&
+            if( ((volatile BYTE * )&t_ymmStartState[0])[i] != ((volatile BYTE * )&t_ymmTestState[0])[i] &&
                 ((i & 16) == 16 )
                 )
             {
@@ -146,9 +147,9 @@ initVectorRegisters()
         // Do the memsets outside the save area as it might use vector registers
         // Set the initial Zmm and mask registers to a non-trivial value.
         //
-        memset( g_zmmTestState, 17, sizeof( g_zmmTestState ) );
-        memset( g_zmmStartState, (__rdtsc() & 255) ^ 0x42, sizeof( g_zmmStartState ) );
-        SymCryptEnvUmRestoreZmmRegistersAsm( g_zmmStartState );
+        memset( t_zmmTestState, 17, sizeof( t_zmmTestState ) );
+        memset( t_zmmStartState, (__rdtsc() & 255) ^ 0x42, sizeof( t_zmmStartState ) );
+        SymCryptEnvUmRestoreZmmRegistersAsm( t_zmmStartState );
         verifyVectorRegisters();
     }
     else if( TestSaveYmmEnabled )
@@ -159,9 +160,9 @@ initVectorRegisters()
         // reasons) that the upper halves are already zero-ed and will be re-zeroed by any function
         // we call.
         //
-        memset( g_ymmTestState, 17, sizeof( g_ymmTestState ) );
-        memset( g_ymmStartState, (__rdtsc() & 255) ^ 0x42, sizeof( g_ymmStartState ) );
-        SymCryptEnvUmRestoreYmmRegistersAsm( g_ymmStartState );
+        memset( t_ymmTestState, 17, sizeof( t_ymmTestState ) );
+        memset( t_ymmStartState, (__rdtsc() & 255) ^ 0x42, sizeof( t_ymmStartState ) );
+        SymCryptEnvUmRestoreYmmRegistersAsm( t_ymmStartState );
         verifyVectorRegisters();
     }
 }

@@ -13,8 +13,10 @@ add_compile_definitions(INCLUDE_IMPL_CNG=0)
 add_compile_definitions(INCLUDE_IMPL_MSBIGNUM=0)
 add_compile_definitions(INCLUDE_IMPL_RSA32=0)
 
+find_package(Threads REQUIRED)
+
 add_executable(symcryptunittest ${SOURCES})
-target_link_libraries(symcryptunittest symcryptunittest_lib dl)
+target_link_libraries(symcryptunittest symcryptunittest_lib dl Threads::Threads)
 
 # Special linking options for macOS
 if(CMAKE_SYSTEM_NAME MATCHES "Darwin")

@@ -5,6 +5,7 @@ prior to the creation of a new release, based on the changes contained in that r
 
 - Added Rust implementations of ML-KEM and SHA3
 - Rust AES-GCM work in progress: XMM implementation is staged in the tree but is not enabled yet
+- Add HPKE implementation in new SymCrypt_plus library
 
 # Version 103.12.1
 
