@@ -8469,6 +8469,46 @@ SymCryptEckeySetRandom(
 
 SYMCRYPT_ERROR
 SYMCRYPT_CALL
+SymCryptEckeyDerive(
+    _Inout_                     PSYMCRYPT_ECKEY         pEckey,
+    _In_reads_bytes_( cbSeed )  PCBYTE                  pbSeed,
+                                SIZE_T                  cbSeed,
+    _In_                        UINT32                  flags );
+//
+// Derive a deterministic ECC public/private key pair from the caller-provided
+// seed material, using the curve the key object was created with.
+//
+// Only curves whose default private-key format is canonical (all NIST prime curves)
+// are supported. Other curves (e.g. Curve25519) return SYMCRYPT_NOT_IMPLEMENTED.
+//
+// Parameters:
+// - pEckey: Key object to populate with the derived key. Must already be
+//   created via SymCryptEckeyAllocate or SymCryptEckeyCreate with the desired key parameters.
+// - pbSeed: Pointer to seed material buffer.
+// - cbSeed: must be in [SYMCRYPT_RNG_AES_MIN_INSTANTIATE_SIZE, SYMCRYPT_RNG_AES_MAX_SEED_SIZE].
+//
+// Returns:
+// - SYMCRYPT_NO_ERROR on success.
+// - SYMCRYPT_INVALID_ARGUMENT if pbSeed is NULL, cbSeed is 0, or no valid scalar is
+//   found within the candidate limit. The latter is statistically negligible.
+// - SYMCRYPT_NOT_IMPLEMENTED if the curve's private-key format is not canonical.
+//
+// Allowed flags (as for SymCryptEckeySetRandom):
+//
+// - SYMCRYPT_FLAG_KEY_NO_FIPS
+//   Opt-out of performing validation required for FIPS
+//
+// - At least one of the flags indicating what the Eckey is to be used for must be specified:
+//      SYMCRYPT_FLAG_ECKEY_ECDSA
+//      SYMCRYPT_FLAG_ECKEY_ECDH
+//
+// Remarks:
+// - Seed entropy is the caller's responsibility. SymCrypt does not add entropy and
+//   cannot assess the quality of the seed.
+//
+
+SYMCRYPT_ERROR
+SYMCRYPT_CALL
 SymCryptEckeyGetValue(
     _In_    PCSYMCRYPT_ECKEY        pEckey,
     _Out_writes_bytes_( cbPrivateKey )

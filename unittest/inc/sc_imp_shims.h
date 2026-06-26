@@ -496,6 +496,7 @@
 #define ScShimSymCryptEcurveAllocate(...) SCTEST_CALL_SCIMPFN(SymCryptEcurveAllocate, __VA_ARGS__)
 #define ScShimSymCryptEcurveFree(...) SCTEST_CALL_SCIMPFN(SymCryptEcurveFree, __VA_ARGS__)
 #define ScShimSymCryptEckeyAllocate(...) SCTEST_CALL_SCIMPFN(SymCryptEckeyAllocate, __VA_ARGS__)
+#define ScShimSymCryptEckeyDerive(...) SCTEST_CALL_SCIMPFN(SymCryptEckeyDerive, __VA_ARGS__)
 #define ScShimSymCryptEckeyFree(...) SCTEST_CALL_SCIMPFN(SymCryptEckeyFree, __VA_ARGS__)
 #define ScShimSymCryptSizeofEckeyFromCurve(...) SCTEST_CALL_SCIMPFN(SymCryptSizeofEckeyFromCurve, __VA_ARGS__)
 #define ScShimSymCryptEckeyCreate(...) SCTEST_CALL_SCIMPFN(SymCryptEckeyCreate, __VA_ARGS__)

@@ -747,3 +747,8 @@ VERSION_103.12
       SymCryptCompositeMlDsaSizeofSignatureFromParams;
       SymCryptCompositeMlDsaVerify;
 } VERSION_103.11;
+VERSION_103.13
+{
+   global:
+      SymCryptEckeyDerive;
+} VERSION_103.12;

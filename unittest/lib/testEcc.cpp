@@ -7,6 +7,9 @@
 VOID
 testEccEcdsaKats();
 
+VOID
+createKatFileEccSeededKeygen();
+
 ////////////////////////////////////////////////////////////////////
 //
 //  SymCrypt Internal Curves
@@ -839,6 +842,8 @@ testEcc()
 
     iprint("\n    > KAT testing       : ");
     skippedKats = 0;
+    // Uncomment to regenerate the seeded ECC keygen KAT vectors
+    // createKatFileEccSeededKeygen();
     testEccEcdsaKats();
     print( "    %d skipped KATS\n", skippedKats);
 
@@ -1313,6 +1318,271 @@ testEcdh(
     ScDispatchSymCryptEckeyFree( pkPrivate );
 }
 
+#define ECKEY_MAXPUBKEYSIZE     (2 * ((SYMCRYPT_BITSIZE_P521 + 7) / 8))
+#define ECKEY_SEEDED_KEYGEN_MIN_SEED_SIZE   SYMCRYPT_RNG_AES_MIN_INSTANTIATE_SIZE
+#define ECKEY_SEEDED_KEYGEN_MAX_SEED_SIZE   SYMCRYPT_RNG_AES_MAX_SEED_SIZE
+
+//
+// Derive a key from the seed on pCurve and export its public key as a Weierstrass XY point.
+// Returns the public key length in bytes.
+//
+static
+SIZE_T
+eccSeededKeygenDerivePublicKey(
+    _In_                                PCSYMCRYPT_ECURVE   pCurve,
+    _In_reads_bytes_( cbSeed )          PCBYTE              pbSeed,
+                                        SIZE_T              cbSeed,
+    _Out_writes_( ECKEY_MAXPUBKEYSIZE ) PBYTE               pbPublicKey )
+{
+    SYMCRYPT_ERROR scError;
+    PSYMCRYPT_ECKEY pKey;
+    SIZE_T cbPublicKey;
+
+    pKey = ScDispatchSymCryptEckeyAllocate( pCurve );
+    CHECK( pKey != NULL, "Seeded ECC keygen allocation failed" );
+
+    scError = ScDispatchSymCryptEckeyDerive( pKey, pbSeed, cbSeed, SYMCRYPT_FLAG_ECKEY_ECDH );
+    CHECK( scError == SYMCRYPT_NO_ERROR, "Seeded ECC keygen derivation failed" );
+
+    cbPublicKey = ScDispatchSymCryptEckeySizeofPublicKey( pKey, SYMCRYPT_ECPOINT_FORMAT_XY );
+    CHECK( cbPublicKey <= ECKEY_MAXPUBKEYSIZE, "Seeded ECC keygen public key too large" );
+
+    scError = ScDispatchSymCryptEckeyGetValue(
+        pKey,
+        (PBYTE)NULL,
+        0,
+        pbPublicKey,
+        cbPublicKey,
+        SYMCRYPT_NUMBER_FORMAT_MSB_FIRST,
+        SYMCRYPT_ECPOINT_FORMAT_XY,
+        0 );
+    CHECK( scError == SYMCRYPT_NO_ERROR, "Seeded ECC keygen public key export failed" );
+
+    ScDispatchSymCryptEckeyFree( pKey );
+    return cbPublicKey;
+}
+
+//
+// Derive a sequence of keys over pseudo-random curves and seed lengths from a deterministic Rng,
+// hashing all of their public keys together into a single digest.
+//
+static
+VOID
+eccSeededKeygenAggregateDigest(
+    _In_reads_bytes_( cbSeed )                          PCBYTE  pbSeed,
+                                                        SIZE_T  cbSeed,
+                                                        SIZE_T  nIterations,
+    _Out_writes_bytes_( SYMCRYPT_SHA256_RESULT_SIZE )   PBYTE   pbDigest )
+{
+    Rng rng;
+    SYMCRYPT_SHA256_STATE sha256;
+    BYTE seed[ECKEY_SEEDED_KEYGEN_MAX_SEED_SIZE];
+    BYTE publicKey[ECKEY_MAXPUBKEYSIZE];
+
+    // Restrict to curves SymCryptEckeyDerive supports (canonical private-key format).
+    SIZE_T supportedCurves[NUM_OF_INTERNAL_CURVES];
+    SIZE_T nSupportedCurves = 0;
+    for( SIZE_T i = 0; i < NUM_OF_INTERNAL_CURVES; i++ )
+    {
+        if( ScDispatchSymCryptEcurvePrivateKeyDefaultFormat( rgbInternalCurves[i].pCurve ) ==
+                SYMCRYPT_ECKEY_PRIVATE_FORMAT_CANONICAL )
+        {
+            supportedCurves[nSupportedCurves++] = i;
+        }
+    }
+    CHECK( nSupportedCurves > 0, "No curve supports seeded ECC keygen" );
+
+    rng.reset( pbSeed, cbSeed );
+    ScDispatchSymCryptSha256Init( &sha256 );
+
+    for( SIZE_T i = 0; i < nIterations; i++ )
+    {
+        SIZE_T curveIndex = supportedCurves[ rng.sizet( nSupportedCurves ) ];
+        PCSYMCRYPT_ECURVE pCurve = rgbInternalCurves[curveIndex].pCurve;
+
+        SIZE_T cbIterSeed = ECKEY_SEEDED_KEYGEN_MIN_SEED_SIZE +
+            rng.sizet( ECKEY_SEEDED_KEYGEN_MAX_SEED_SIZE - ECKEY_SEEDED_KEYGEN_MIN_SEED_SIZE + 1 );
+
+        for( SIZE_T j = 0; j < cbIterSeed; j++ )
+        {
+            seed[j] = rng.byte();
+        }
+
+        SIZE_T cbPublicKey = eccSeededKeygenDerivePublicKey( pCurve, seed, cbIterSeed, publicKey );
+        ScDispatchSymCryptSha256Append( &sha256, publicKey, cbPublicKey );
+    }
+
+    ScDispatchSymCryptSha256Result( &sha256, pbDigest );
+}
+
+//
+// Generate a fresh random seed for KAT-file generation.
+//
+static
+SIZE_T
+createKatFileEccGenerateSeed(
+    _Out_writes_to_( ECKEY_SEEDED_KEYGEN_MAX_SEED_SIZE, return )
+        PBYTE   pbSeed )
+{
+    BYTE lenSelector;
+    SIZE_T cbSeed;
+
+    GENRANDOM( &lenSelector, 1 );
+    cbSeed = ECKEY_SEEDED_KEYGEN_MIN_SEED_SIZE +
+        ( lenSelector % ( ECKEY_SEEDED_KEYGEN_MAX_SEED_SIZE - ECKEY_SEEDED_KEYGEN_MIN_SEED_SIZE + 1 ) );
+
+    GENRANDOM( pbSeed, (UINT32) cbSeed );
+    return cbSeed;
+}
+
+//
+// Generate a single seeded ECC key for the given curve and write its KAT record.
+//
+VOID
+createKatFileSingleEccSeededKeygen( FILE* f, SIZE_T curveIndex )
+{
+    PCSYMCRYPT_ECURVE pCurve = rgbInternalCurves[curveIndex].pCurve;
+    BYTE seed[ECKEY_SEEDED_KEYGEN_MAX_SEED_SIZE];
+    SIZE_T cbSeed = createKatFileEccGenerateSeed( seed );
+    BYTE publicKey[ECKEY_MAXPUBKEYSIZE];
+    SIZE_T cbPublicKey = eccSeededKeygenDerivePublicKey( pCurve, seed, cbSeed, publicKey );
+
+    fprintf( f, "curve = \"%s\"\n", rgbInternalCurves[curveIndex].pszCurveName );
+    fprintf( f, "Seed  = " );
+    fprintHex( f, seed, cbSeed );
+    fprintf( f, "Pub   = " );
+    fprintHex( f, publicKey, cbPublicKey );
+    fprintf( f, "\n" );
+}
+
+//
+// Generate the randomized aggregate-hash KAT and write its record.
+//
+VOID
+createKatFileEccSeededKeygenHash( FILE* f )
+{
+#define ECC_SEEDED_KEYGEN_HASH_ITERATIONS   64
+    const UINT32 nIterations = ECC_SEEDED_KEYGEN_HASH_ITERATIONS;
+    BYTE aggregateSeed[ECKEY_SEEDED_KEYGEN_MAX_SEED_SIZE];
+    SIZE_T cbAggregateSeed = createKatFileEccGenerateSeed( aggregateSeed );
+    BYTE aggregateDigest[SYMCRYPT_SHA256_RESULT_SIZE];
+
+    eccSeededKeygenAggregateDigest( aggregateSeed, cbAggregateSeed, nIterations, aggregateDigest );
+
+    fprintf( f, "Seed = " );
+    fprintHex( f, aggregateSeed, cbAggregateSeed );
+    fprintf( f, "Iter = %u\n", nIterations );
+    fprintf( f, "MD = " );
+    fprintHex( f, aggregateDigest, sizeof( aggregateDigest ) );
+    fprintf( f, "\n" );
+}
+
+//
+// Generate a KAT file for seeded ECC key generation. Run once to refresh vectors, then copy the
+// output into the seeded-keygen section of kat_ecdsa.dat.
+//
+VOID
+createKatFileEccSeededKeygen()
+{
+    FILE * f = fopen( "generated_kat_eccseededkeygen.dat", "wt" );
+    CHECK( f != NULL, "Could not create output file" );
+
+    fprintf( f, "\n\n[EcSeededKeygen]\n\n" );
+
+    // Only curves SymCryptEckeyDerive supports (canonical private-key format) are emitted.
+    for( SIZE_T i = 0; i < NUM_OF_INTERNAL_CURVES; i++ )
+    {
+        if( ScDispatchSymCryptEcurvePrivateKeyDefaultFormat( rgbInternalCurves[i].pCurve ) ==
+                SYMCRYPT_ECKEY_PRIVATE_FORMAT_CANONICAL )
+        {
+            createKatFileSingleEccSeededKeygen( f, i );
+        }
+    }
+
+    fprintf( f, "\n[EcSeededKeygenHash]\n\n" );
+
+    createKatFileEccSeededKeygenHash( f );
+
+    fclose( f );
+}
+
+//
+// Smoke test: derive the public key from a recorded seed and check it matches the recorded value.
+//
+static
+VOID
+testEccSeededKeygenFixedKat(
+    _Inout_ KAT_ITEM& katItem )
+{
+    if( !SCTEST_LOOKUP_DISPATCHSYM( SymCryptEckeyAllocate ) ||
+        !SCTEST_LOOKUP_DISPATCHSYM( SymCryptEckeyDerive ) ||
+        !SCTEST_LOOKUP_DISPATCHSYM( SymCryptEckeySizeofPublicKey ) ||
+        !SCTEST_LOOKUP_DISPATCHSYM( SymCryptEckeyGetValue ) ||
+        !SCTEST_LOOKUP_DISPATCHSYM( SymCryptEckeyFree ) ||
+        !SCTEST_LOOKUP_DISPATCHSYM( SymCryptEcurvePrivateKeyDefaultFormat ) )
+    {
+        return;
+    }
+
+    const KAT_DATA_ITEM * pKatCurve = findDataItem( katItem, "curve" );
+    CHECK3( pKatCurve != NULL, "No curve in EcSeededKeygen record at line %lld", katItem.line );
+
+    // The recorded curve name is wrapped in quotes, drop the first and last character.
+    String curveName = pKatCurve->data.substr( 1, pKatCurve->data.size() - 2 );
+
+    SIZE_T curveIndex = 0;
+    BOOLEAN bCurveFound = FALSE;
+    for( SIZE_T i = 0; i < NUM_OF_INTERNAL_CURVES; i++ )
+    {
+        if( strcmp( curveName.c_str(), rgbInternalCurves[i].pszCurveName ) == 0 )
+        {
+            curveIndex = i;
+            bCurveFound = TRUE;
+            break;
+        }
+    }
+    CHECK4( bCurveFound,
+            "Unknown curve %s in EcSeededKeygen record at line %lld", curveName.c_str(), katItem.line );
+
+    BString seed = katParseData( katItem, "seed" );
+    BString expectedPub = katParseData( katItem, "pub" );
+    BYTE publicKey[ECKEY_MAXPUBKEYSIZE];
+    SIZE_T cbPublicKey = eccSeededKeygenDerivePublicKey(
+        rgbInternalCurves[curveIndex].pCurve, seed.data(), seed.size(), publicKey );
+
+    CHECK4( cbPublicKey == expectedPub.size() && memcmp( publicKey, expectedPub.data(), cbPublicKey ) == 0,
+            "Seeded ECC KAT public key mismatch for %s at line %lld", curveName.c_str(), katItem.line );
+}
+
+static
+VOID
+testEccSeededKeygenAggregateKat(
+    _Inout_ KAT_ITEM& katItem )
+{
+    if( !SCTEST_LOOKUP_DISPATCHSYM( SymCryptEckeyAllocate ) ||
+        !SCTEST_LOOKUP_DISPATCHSYM( SymCryptEckeyDerive ) ||
+        !SCTEST_LOOKUP_DISPATCHSYM( SymCryptEckeySizeofPublicKey ) ||
+        !SCTEST_LOOKUP_DISPATCHSYM( SymCryptEckeyGetValue ) ||
+        !SCTEST_LOOKUP_DISPATCHSYM( SymCryptEckeyFree ) ||
+        !SCTEST_LOOKUP_DISPATCHSYM( SymCryptEcurvePrivateKeyDefaultFormat ) )
+    {
+        return;
+    }
+
+    BString seed = katParseData( katItem, "seed" );
+    BString expectedDigest = katParseData( katItem, "md" );
+    LONGLONG nIterations = katParseInteger( katItem, "iter" );
+    BYTE digest[SYMCRYPT_SHA256_RESULT_SIZE];
+
+    CHECK3( expectedDigest.size() == sizeof( digest ),
+            "Seeded ECC aggregate KAT digest size mismatch at line %lld", katItem.line );
+
+    eccSeededKeygenAggregateDigest( seed.data(), seed.size(), (SIZE_T) nIterations, digest );
+
+    CHECK3( memcmp( digest, expectedDigest.data(), sizeof( digest ) ) == 0,
+            "Seeded ECC aggregate KAT digest mismatch at line %lld", katItem.line );
+}
+
 VOID
 testEccEcdsaKats()
 {
@@ -1350,6 +1620,17 @@ testEccEcdsaKats()
 
         if( katItem.type == KAT_TYPE_DATASET )
         {
+            if( katItem.categoryName == "EcSeededKeygen" )
+            {
+                testEccSeededKeygenFixedKat( katItem );
+                continue;
+            }
+            if( katItem.categoryName == "EcSeededKeygenHash" )
+            {
+                testEccSeededKeygenAggregateKat( katItem );
+                continue;
+            }
+
             // Find the curve (it has to be pre-allocated)
             const KAT_DATA_ITEM * pKatCurve = findDataItem( katItem, "curve" );
             CHECK3( pKatCurve != NULL, "No curve data item in ECDSA record at line %lld", line );

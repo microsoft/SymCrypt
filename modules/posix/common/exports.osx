@@ -98,6 +98,7 @@ _SymCryptEcbEncrypt
 _SymCryptEckeyAllocate
 _SymCryptEckeyCopy
 _SymCryptEckeyCreate
+_SymCryptEckeyDerive
 _SymCryptEckeyFree
 _SymCryptEckeyGetValue
 _SymCryptEckeyHasPrivateKey

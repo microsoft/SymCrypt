@@ -193,6 +193,7 @@ EXPORTS
     SymCryptEckeyAllocate
     SymCryptEckeyCopy
     SymCryptEckeyCreate
+    SymCryptEckeyDerive
     SymCryptEckeyExtendKeyUsage
     SymCryptEckeyFree
     SymCryptEckeyGetValue

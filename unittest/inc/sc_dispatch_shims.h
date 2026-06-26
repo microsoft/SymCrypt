@@ -489,6 +489,7 @@
 #define ScDispatchSymCryptEcurveAllocate(...) SCTEST_CALL_DISPATCHFN(SymCryptEcurveAllocate, __VA_ARGS__)
 #define ScDispatchSymCryptEcurveFree(...) SCTEST_CALL_DISPATCHFN(SymCryptEcurveFree, __VA_ARGS__)
 #define ScDispatchSymCryptEckeyAllocate(...) SCTEST_CALL_DISPATCHFN(SymCryptEckeyAllocate, __VA_ARGS__)
+#define ScDispatchSymCryptEckeyDerive(...) SCTEST_CALL_DISPATCHFN(SymCryptEckeyDerive, __VA_ARGS__)
 #define ScDispatchSymCryptEckeySetValue(...) SCTEST_CALL_DISPATCHFN(SymCryptEckeySetValue, __VA_ARGS__)
 #define ScDispatchSymCryptEckeyFree(...) SCTEST_CALL_DISPATCHFN(SymCryptEckeyFree, __VA_ARGS__)
 #define ScDispatchSymCryptSizeofEckeyFromCurve(...) SCTEST_CALL_DISPATCHFN(SymCryptSizeofEckeyFromCurve, __VA_ARGS__)
