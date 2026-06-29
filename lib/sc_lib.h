@@ -3403,6 +3403,40 @@ SymCryptModMultiExpGeneric(
     _Out_writes_bytes_( cbScratch ) PBYTE                   pbScratch,
                                     SIZE_T                  cbScratch );
 
+SYMCRYPT_ERROR
+SYMCRYPT_CALL
+SymCryptIntGenerateRandomPrimeEx(
+    _In_                            PCSYMCRYPT_INT          piLow,
+    _In_                            PCSYMCRYPT_INT          piHigh,
+    _In_reads_opt_( nPubExp )       PCUINT64                pu64PubExp,
+                                    UINT32                  nPubExp,
+                                    UINT32                  nTries,
+                                    UINT32                  flags,
+    _Inout_opt_                     PSYMCRYPT_RNG_AES_STATE pRngState,
+    _Inout_                         PSYMCRYPT_INT           piDst,
+    _Out_writes_bytes_( cbScratch ) PBYTE                   pbScratch,
+                                    SIZE_T                  cbScratch );
+
+VOID
+SYMCRYPT_CALL
+SymCryptModSetRandomEx(
+    _In_                            PCSYMCRYPT_MODULUS      pmMod,
+    _Out_                           PSYMCRYPT_MODELEMENT    peDst,
+                                    UINT32                  flags,
+    _Inout_opt_                     PSYMCRYPT_RNG_AES_STATE pRngState,
+    _Out_writes_bytes_( cbScratch ) PBYTE                   pbScratch,
+                                    SIZE_T                  cbScratch );
+
+VOID
+SYMCRYPT_CALL
+SymCryptFdefModSetRandomGenericEx(
+    _In_                            PCSYMCRYPT_MODULUS      pmMod,
+    _Out_                           PSYMCRYPT_MODELEMENT    peDst,
+                                    UINT32                  flags,
+    _Inout_opt_                     PSYMCRYPT_RNG_AES_STATE pRngState,
+    _Out_writes_bytes_( cbScratch ) PBYTE                   pbScratch,
+                                    SIZE_T                  cbScratch );
+
 VOID
 SYMCRYPT_CALL
 SymCryptFdefModSetRandomGeneric(

@@ -504,6 +504,7 @@
 #define ScDispatchSymCryptRsakeyGetNumberOfPublicExponents(...) SCTEST_CALL_DISPATCHFN(SymCryptRsakeyGetNumberOfPublicExponents, __VA_ARGS__)
 #define ScDispatchSymCryptRsakeyGetNumberOfPrimes(...) SCTEST_CALL_DISPATCHFN(SymCryptRsakeyGetNumberOfPrimes, __VA_ARGS__)
 #define ScDispatchSymCryptRsakeyGenerate(...) SCTEST_CALL_DISPATCHFN(SymCryptRsakeyGenerate, __VA_ARGS__)
+#define ScDispatchSymCryptRsakeyDerive(...) SCTEST_CALL_DISPATCHFN(SymCryptRsakeyDerive, __VA_ARGS__)
 #define ScDispatchSymCryptRsakeySetValue(...) SCTEST_CALL_DISPATCHFN(SymCryptRsakeySetValue, __VA_ARGS__)
 #define ScDispatchSymCryptRsakeySetValueFromPrivateExponent(...) SCTEST_CALL_DISPATCHFN(SymCryptRsakeySetValueFromPrivateExponent, __VA_ARGS__)
 #define ScDispatchSymCryptRsakeyGetValue(...) SCTEST_CALL_DISPATCHFN(SymCryptRsakeyGetValue, __VA_ARGS__)

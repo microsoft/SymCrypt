@@ -7727,6 +7727,37 @@ SymCryptRsakeyGenerate(
 
 SYMCRYPT_ERROR
 SYMCRYPT_CALL
+SymCryptRsakeyDerive(
+    _Inout_                         PSYMCRYPT_RSAKEY    pkRsakey,
+    _In_reads_bytes_( cbSeed )      PCBYTE              pbSeed,
+                                    SIZE_T              cbSeed,
+    _In_                            UINT32              flags );
+//
+// Derive an RSA key using the default public exponent, caller-provided seed material,
+// and the information from the parameters passed to SymCryptRsaKeyAllocate/SymCryptRsaKeyCreate.
+//
+// Parameters:
+// - pkRsakey: Key object to populate with the derived key. Must already be
+//   created via SymCryptRsaKeyAllocate/SymCryptRsaKeyCreate with the desired key parameters.
+// - pbSeed: Pointer to seed material buffer.
+// - cbSeed: must be in [SYMCRYPT_RNG_AES_MIN_INSTANTIATE_SIZE, SYMCRYPT_RNG_AES_MAX_SEED_SIZE].
+// - flags: Same flags as SymCryptRsakeyGenerate.
+//
+// Remarks:
+// - Seed entropy is the caller's responsibility. SymCrypt does not add entropy and cannot assess 
+//   the quality of the seed. The caller must ensure the seed has sufficient entropy for the security 
+//   level of the RSA key being generated.
+//
+// - Determinism scope: for a fixed seed and key parameters, a given build of
+//   SymCrypt always produces the same key. This guarantee is frozen only within
+//   a SymCrypt version, and only for a fixed target architecture and build
+//   configuration. The byte stream consumed from the DRBG depends on internal
+//   representation choices that may differ across architectures (e.g. 32-bit vs
+//   64-bit) and may change across SymCrypt versions.
+//
+
+SYMCRYPT_ERROR
+SYMCRYPT_CALL
 SymCryptRsakeySetValue(
     _In_reads_bytes_( cbModulus )   PCBYTE                  pbModulus,
                                     SIZE_T                  cbModulus,

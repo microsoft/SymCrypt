@@ -622,6 +622,7 @@ EXPORTS
     SymCryptRoundUpPow2Sizet
     SymCryptRsakeyAllocate
     SymCryptRsakeyCreate
+    SymCryptRsakeyDerive
     SymCryptRsakeyExtendKeyUsage
     SymCryptRsakeyFree
     SymCryptRsakeyGenerate

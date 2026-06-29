@@ -345,6 +345,132 @@ cleanup:
     return;
 }
 
+//
+// Derive a key from the seed and export its public modulus into pbModulus.
+//
+static
+SIZE_T
+rsaSeededKeygenDeriveModulus(
+    _In_reads_bytes_( cbSeed )          PCBYTE  pbSeed,
+                                        SIZE_T  cbSeed,
+                                        UINT32  bitSize,
+    _Out_writes_( RSAKEY_MAXKEYSIZE )   PBYTE   pbModulus )
+{
+    SYMCRYPT_ERROR scError;
+    SYMCRYPT_RSA_PARAMS params;
+    PSYMCRYPT_RSAKEY pKey;
+    SIZE_T cbModulus;
+    UINT32 flags = SYMCRYPT_FLAG_RSAKEY_SIGN | SYMCRYPT_FLAG_RSAKEY_ENCRYPT;
+
+    if( bitSize < SYMCRYPT_RSAKEY_FIPS_MIN_BITSIZE_MODULUS )
+    {
+        flags |= SYMCRYPT_FLAG_KEY_NO_FIPS;
+    }
+
+    params.version = 1;
+    params.nBitsOfModulus = bitSize;
+    params.nPrimes = 2;
+    params.nPubExp = 1;
+
+    pKey = ScDispatchSymCryptRsakeyAllocate( &params, 0 );
+    CHECK( pKey != NULL, "Seeded RSA keygen allocation failed" );
+
+    scError = ScDispatchSymCryptRsakeyDerive( pKey, pbSeed, cbSeed, flags );
+    CHECK( scError == SYMCRYPT_NO_ERROR, "Seeded RSA keygen derivation failed" );
+
+    cbModulus = ScDispatchSymCryptRsakeySizeofModulus( pKey );
+    CHECK( cbModulus <= RSAKEY_MAXKEYSIZE, "Seeded RSA keygen modulus too large" );
+
+    scError = ScDispatchSymCryptRsakeyGetValue(
+        pKey, pbModulus, cbModulus, (PUINT64)NULL, 0,
+        (PBYTE*)NULL, (SIZE_T*)NULL, 0, SYMCRYPT_NUMBER_FORMAT_MSB_FIRST, 0 );
+    CHECK( scError == SYMCRYPT_NO_ERROR, "Seeded RSA keygen modulus export failed" );
+
+    ScDispatchSymCryptRsakeyFree( pKey );
+    return cbModulus;
+}
+
+//
+// Smoke test: derive the public key from a recorded seed and check its modulus matches the
+// recorded value.
+//
+static
+VOID
+testRsaSeededKeygenFixedKat(
+    _Inout_ KAT_ITEM& katItem )
+{
+    BString seed = katParseData( katItem, "seed" );
+    BString expectedN = katParseData( katItem, "n" );
+    UINT32 bitSize = (UINT32) katParseInteger( katItem, "bits" );
+    BYTE modulus[RSAKEY_MAXKEYSIZE];
+    SIZE_T cbModulus = rsaSeededKeygenDeriveModulus( seed.data(), seed.size(), bitSize, modulus );
+
+    CHECK4( cbModulus == expectedN.size() && memcmp( modulus, expectedN.data(), cbModulus ) == 0,
+            "Seeded RSA KAT modulus changed for %u-bit key at line %lld", bitSize, katItem.line );
+}
+
+//
+// Randomized regression test: seed a deterministic test Rng, derive a sequence of keys with
+// pseudo-random bit sizes and seed lengths, and hash all of their public moduli together.
+// Any change to the deterministic derivation changes the digest.
+static
+VOID
+rsaSeededKeygenAggregateDigest(
+    _In_reads_bytes_( cbSeed )                          PCBYTE  pbSeed,
+                                                        SIZE_T  cbSeed,
+                                                        SIZE_T  nIterations,
+    _Out_writes_bytes_( SYMCRYPT_SHA256_RESULT_SIZE )   PBYTE   pbDigest )
+{
+
+#define RSA_SEEDED_KEYGEN_HASH_BITSIZE_GRANULARITY  1024
+#define RSA_SEEDED_KEYGEN_HASH_MAX_MULTIPLE         4       // 1024..4096 in steps of 1024
+
+    Rng rng;
+    SYMCRYPT_SHA256_STATE sha256;
+    BYTE seed[SYMCRYPT_RNG_AES_MAX_SEED_SIZE];
+    BYTE modulus[RSAKEY_MAXKEYSIZE];
+
+    rng.reset( pbSeed, cbSeed );
+    ScDispatchSymCryptSha256Init( &sha256 );
+
+    for( SIZE_T i=0; i<nIterations; i++ )
+    {
+        UINT32 bitSize = RSA_SEEDED_KEYGEN_HASH_BITSIZE_GRANULARITY *
+            (UINT32)( 1 + rng.sizet( RSA_SEEDED_KEYGEN_HASH_MAX_MULTIPLE ) );
+        SIZE_T cbIterSeed = SYMCRYPT_RNG_AES_MIN_INSTANTIATE_SIZE +
+            rng.sizet( SYMCRYPT_RNG_AES_MAX_SEED_SIZE - SYMCRYPT_RNG_AES_MIN_INSTANTIATE_SIZE + 1 );
+
+        for( SIZE_T j=0; j<cbIterSeed; j++ )
+        {
+            seed[j] = rng.byte();
+        }
+
+        SIZE_T cbModulus = rsaSeededKeygenDeriveModulus( seed, cbIterSeed, bitSize, modulus );
+        ScDispatchSymCryptSha256Append( &sha256, modulus, cbModulus );
+    }
+
+    ScDispatchSymCryptSha256Result( &sha256, pbDigest );
+}
+
+static
+VOID
+testRsaSeededKeygenAggregateKat(
+    _Inout_ KAT_ITEM& katItem )
+{
+    BString seed = katParseData( katItem, "seed" );
+    BString expectedDigest = katParseData( katItem, "md" );
+    LONGLONG nIterations = katParseInteger( katItem, "iter" );
+    BYTE digest[SYMCRYPT_SHA256_RESULT_SIZE];
+
+    CHECK3( expectedDigest.size() == sizeof( digest ),
+            "Seeded RSA aggregate KAT digest size mismatch at line %lld", katItem.line );
+
+    rsaSeededKeygenAggregateDigest( seed.data(), seed.size(), (SIZE_T) nIterations, digest );
+
+    CHECK3( memcmp( digest, expectedDigest.data(), sizeof( digest ) ) == 0,
+            "Seeded RSA aggregate KAT digest changed at line %lld", katItem.line );
+}
+
 PSYMCRYPT_RSAKEY
 rsaKeyFromTestBlob( PCRSAKEY_TESTBLOB pBlob )
 {
@@ -756,6 +882,97 @@ cleanup:
     }
 }
 
+//
+// Generate a fresh random seed for KAT-file generation.
+//
+static
+SIZE_T
+createKatFileGenerateSeed(
+    _Out_writes_to_( SYMCRYPT_RNG_AES_MAX_SEED_SIZE, return )   PBYTE   pbSeed )
+{
+    BYTE lenSelector;
+    SIZE_T cbSeed;
+
+    GENRANDOM( &lenSelector, 1 );
+    cbSeed = SYMCRYPT_RNG_AES_MIN_INSTANTIATE_SIZE +
+        ( lenSelector % ( SYMCRYPT_RNG_AES_MAX_SEED_SIZE - SYMCRYPT_RNG_AES_MIN_INSTANTIATE_SIZE + 1 ) );
+
+    GENRANDOM( pbSeed, (UINT32) cbSeed );
+    return cbSeed;
+}
+
+//
+// Generate a single seeded RSA key and write the relevant KAT information to the given file.
+//
+VOID
+createKatFileSingleSeededKeygen( FILE* f, UINT32 bitSize )
+{
+    BYTE seed[SYMCRYPT_RNG_AES_MAX_SEED_SIZE];
+    SIZE_T cbSeed = createKatFileGenerateSeed( seed );
+    BYTE modulus[RSAKEY_MAXKEYSIZE];
+    SIZE_T cbModulus = rsaSeededKeygenDeriveModulus( seed, cbSeed, bitSize, modulus );
+
+    fprintf( f, "Bits = %u\n", bitSize );
+    fprintf( f, "Seed = " );
+    fprintHex( f, seed, cbSeed );
+    fprintf( f, "N    = " );
+    fprintHex( f, modulus, cbModulus );
+    fprintf( f, "\n" );
+}
+
+//
+// Generate the randomized aggregate-hash KAT and write its record to the given file.
+//
+VOID
+createKatFileSeededKeygenHash( FILE* f )
+{
+#define RSA_SEEDED_KEYGEN_HASH_ITERATIONS   32
+    const UINT32 nIterations = RSA_SEEDED_KEYGEN_HASH_ITERATIONS;
+    BYTE aggregateSeed[SYMCRYPT_RNG_AES_MAX_SEED_SIZE];
+    SIZE_T cbAggregateSeed = createKatFileGenerateSeed( aggregateSeed );
+    BYTE aggregateDigest[SYMCRYPT_SHA256_RESULT_SIZE];
+
+    rsaSeededKeygenAggregateDigest(
+        aggregateSeed,
+        cbAggregateSeed,
+        nIterations,
+        aggregateDigest );
+
+    fprintf( f, "Seed = " );
+    fprintHex( f, aggregateSeed, cbAggregateSeed );
+
+    fprintf( f, "Iter = %u\n", nIterations );
+
+    fprintf( f, "MD   = " );
+    fprintHex( f, aggregateDigest, sizeof( aggregateDigest ) );
+
+    fprintf( f, "\n" );
+}
+
+//
+// Generate a KAT file for seeded RSA key generation.
+//
+VOID
+createKatFileRsaSeededKeygen()
+{
+    FILE * f = fopen( "generated_kat_rsaseededkeygen.dat", "wt" );
+    CHECK( f != NULL, "Could not create output file" );
+
+    fprintf( f, "\n\n[RsaSeededKeygen]\n\n" );
+
+    createKatFileSingleSeededKeygen( f, 2048 );
+    createKatFileSingleSeededKeygen( f, 3072 );
+    createKatFileSingleSeededKeygen( f, 4096 );
+
+    fprintf( f, "\n[RsaSeededKeygenHash]\n\n" );
+
+    createKatFileSeededKeygenHash( f );
+
+    fclose( f );
+
+    CHECK( FALSE, "Written seeded RSA test vector file" );
+}
+
 VOID
 createKatFileRsaSign()
 // This function is not normally used, but available for use whenever we want to re-generate
@@ -918,6 +1135,68 @@ testRsaSignTestkeys(
         CHECK( NT_SUCCESS( ntStatus ), "Error in RSA verification validation" );
     }
     CHECK( pRsaSign->setKey( NULL ) == STATUS_SUCCESS, "Failed to clear key" );
+}
+
+//
+// KAT testing for seeded RSA key generation. We have a separate function for this since it requires
+// different test vectors and exercises different code paths than the signature KATs.
+//
+static
+VOID
+testRsaSeededKeygenKats()
+{
+    if( !SCTEST_LOOKUP_DISPATCHSYM( SymCryptRsakeyAllocate ) ||
+        !SCTEST_LOOKUP_DISPATCHSYM( SymCryptRsakeyDerive ) ||
+        !SCTEST_LOOKUP_DISPATCHSYM( SymCryptRsakeySizeofModulus ) ||
+        !SCTEST_LOOKUP_DISPATCHSYM( SymCryptRsakeyGetValue ) ||
+        !SCTEST_LOOKUP_DISPATCHSYM( SymCryptRsakeyFree ) )
+    {
+        return;
+    }
+
+    KatData *katRsaSign = getCustomResource( "kat_rsaSign.dat", "KAT_RSA_SIGN" );
+    KAT_ITEM katItem;
+    String category;
+    String sep = "    ";
+    BOOL doneAnything = FALSE;
+
+    while( 1 )
+    {
+        katRsaSign->getKatItem( &katItem );
+        if( katItem.type == KAT_TYPE_END )
+        {
+            break;
+        }
+
+        if( katItem.type == KAT_TYPE_CATEGORY )
+        {
+            category = katItem.categoryName;
+            if( category == "RsaSeededKeygen" || category == "RsaSeededKeygenHash" )
+            {
+                iprint( "%s%s", sep.c_str(), category.c_str() );
+                sep = ", ";
+                doneAnything = TRUE;
+            }
+        }
+        else if( katItem.type == KAT_TYPE_DATASET )
+        {
+            if( category == "RsaSeededKeygen" )
+            {
+                testRsaSeededKeygenFixedKat( katItem );
+            }
+            else if( category == "RsaSeededKeygenHash" )
+            {
+                testRsaSeededKeygenAggregateKat( katItem );
+            }
+        }
+    }
+
+    if( doneAnything )
+    {
+        iprint( "\n" );
+    }
+
+    delete katRsaSign;
 }
 
 VOID
@@ -1221,7 +1500,7 @@ testRsaExportImport()
     SYMCRYPT_ERROR scError;
     SYMCRYPT_RSA_PARAMS params;
 
-    pKeyPair = rsaTestKeyForSize( nBitsOfModulus ); 
+    pKeyPair = rsaTestKeyForSize( nBitsOfModulus );
     GENRANDOM( hash, sizeof( hash ) );
 
     params.version = 1;
@@ -1373,8 +1652,9 @@ testRsaExportImportPrivate()
 VOID
 testRsaSignAlgorithms()
 {
-    // Uncomment this function to generate a new KAT file
+    // Uncomment these functions to generate a new KAT files
     // createKatFileRsaSign();
+    // createKatFileRsaSeededKeygen();
 
     INT64 nOutstandingAllocs = SYMCRYPT_INTERNAL_VOLATILE_READ64(&g_nOutstandingCheckedAllocs);
     CHECK3( nOutstandingAllocs == 0, "Memory leak %d", nOutstandingAllocs );
@@ -1386,6 +1666,7 @@ testRsaSignAlgorithms()
 
     if( isAlgorithmPresent( "Rsa", TRUE ) )
     {
+        testRsaSeededKeygenKats();
         testRsaExportImportPrivate();
     }
 
@@ -1406,6 +1687,7 @@ testRsaSignAlgorithms()
         g_useDynamicFunctionsInTestCall = TRUE;
         if( isAlgorithmPresent( "Rsa", TRUE ) )
         {
+            testRsaSeededKeygenKats();
             testRsaExportImportPrivate();
         }
 

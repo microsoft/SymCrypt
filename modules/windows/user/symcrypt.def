@@ -487,6 +487,7 @@ EXPORTS
     SymCryptRngAesUninstantiate
     SymCryptRsakeyAllocate
     SymCryptRsakeyCreate
+    SymCryptRsakeyDerive
     SymCryptRsakeyExtendKeyUsage
     SymCryptRsakeyFree
     SymCryptRsakeyGenerate

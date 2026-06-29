@@ -751,4 +751,5 @@ VERSION_103.13
 {
    global:
       SymCryptEckeyDerive;
+      SymCryptRsakeyDerive;
 } VERSION_103.12;
