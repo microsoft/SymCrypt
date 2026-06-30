@@ -3,11 +3,12 @@ New changes will be listed here as they are developed. The version number is det
 prior to the creation of a new release, based on the changes contained in that release.
 
 
-- Add `SymCryptEckeyDerive` for deterministic ECC key generation from caller-provided seed material.
 - Added Rust implementations of ML-KEM and SHA3
 - Rust AES-GCM work in progress: XMM implementation is staged in the tree but is not enabled yet
 - Add HPKE implementation in new SymCrypt_plus library
+- Add `SymCryptEckeyDerive` for deterministic ECC key generation from caller-provided seed material.
 - Add `SymCryptRsakeyDerive` for deterministic RSA key generation from caller-provided seed material.
+- LMS/XMSS fixes including a fix for [#56](https://github.com/microsoft/SymCrypt/issues/56) reported by [Wowblk](https://github.com/Wowblk). 
 
 # Version 103.12.1
 
