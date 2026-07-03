@@ -130,6 +130,23 @@ SymCryptRestoreYmmEnvElevatedDebugger( _Inout_ PSYMCRYPT_EXTENDED_SAVE_DATA pSav
     UNREFERENCED_PARAMETER( pSaveArea );
 }
 
+SYMCRYPT_ERROR
+SYMCRYPT_CALL
+SymCryptSaveZmmEnvElevatedDebugger( _Out_ PSYMCRYPT_EXTENDED_SAVE_DATA pSaveArea )
+{
+    UNREFERENCED_PARAMETER( pSaveArea );
+    SymCryptFatal( 'mmzs' );
+    return SYMCRYPT_NO_ERROR;
+}
+
+VOID
+SYMCRYPT_CALL
+SymCryptRestoreZmmEnvElevatedDebugger( _Inout_ PSYMCRYPT_EXTENDED_SAVE_DATA pSaveArea )
+{
+    SymCryptFatal( 'mmzs' );
+    UNREFERENCED_PARAMETER( pSaveArea );
+}
+
 #endif
 
 VOID
