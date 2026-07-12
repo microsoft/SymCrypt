@@ -71,11 +71,11 @@ pub enum SelftestAlgorithm {
     MLDSA = 0x200,
 }
 
-#[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
+#[cfg(any(target_arch = "x86", target_arch = "x86_64", feature = "verify"))]
 pub const SYMCRYPT_CPU_FEATURE_SSE2: u32 = 0x1;
 #[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
 pub const SYMCRYPT_CPU_FEATURE_PCLMULQDQ: u32 = 0x8;
-#[cfg(target_arch = "aarch64")]
+#[cfg(any(target_arch = "aarch64", feature = "verify"))]
 pub const SYMCRYPT_CPU_FEATURE_NEON: u32 = 0x1;
 
 // Allows printing errors, which is a prerequisite for using ERROR as an argument to
@@ -89,6 +89,7 @@ impl core::fmt::Display for Error {
 // Allows using errors within core::result::Result.
 impl core::error::Error for Error {}
 
+#[cfg(not(feature = "verify"))]
 pub(crate) fn init() {
     static INITIALIZED: AtomicBool = AtomicBool::new(false);
 
@@ -103,6 +104,7 @@ pub(crate) fn init() {
     INITIALIZED.store(true, Ordering::Relaxed);
 }
 
+#[cfg_attr(feature = "verify", verify::opaque)]
 pub fn cpu_features_present(feature_mask: u32) -> bool {
     unsafe {
         ((SymCryptCpuFeaturesNeverPresent() & feature_mask) == 0)
@@ -110,6 +112,7 @@ pub fn cpu_features_present(feature_mask: u32) -> bool {
     }
 }
 
+#[cfg(not(feature = "verify"))]
 pub fn run_selftest_once(selftest_fn: unsafe extern "C" fn(), selftest_flag: u32) {
     unsafe {
         if (g_SymCryptFipsSelftestsPerformed.load(Ordering::Relaxed) & selftest_flag) == 0 {
@@ -119,14 +122,17 @@ pub fn run_selftest_once(selftest_fn: unsafe extern "C" fn(), selftest_flag: u32
     }
 }
 
+#[cfg_attr(feature = "verify", verify::opaque)]
 pub(crate) fn random(dst: &mut [u8]) -> Error {
     unsafe { SymCryptCallbackRandom(dst.as_mut_ptr(), dst.len()) }
 }
 
+#[cfg_attr(feature = "verify", verify::exclude)]
 pub fn wipe(pb_data: *mut u8, cb_data: usize) {
     unsafe { SymCryptWipe(pb_data, cb_data) }
 }
 
+#[cfg_attr(feature = "verify", verify::opaque)]
 pub fn wipe_slice<T>(pb_dst: &mut [T]) {
     wipe(pb_dst.as_mut_ptr().cast(), core::mem::size_of_val(pb_dst));
 }
@@ -142,6 +148,7 @@ pub fn wipe_slice<T>(pb_dst: &mut [T]) {
 ///
 /// Note: the struct does not own the buffers, so it is the caller's responsibility to wipe any
 /// sensitive data after use.
+#[cfg_attr(feature = "verify", verify::opaque)]
 pub struct InPlaceOrDisjointBuffer<'a, T> {
     src: *const T,
     dst: *mut T,
@@ -151,6 +158,7 @@ pub struct InPlaceOrDisjointBuffer<'a, T> {
 
 impl<'a, T> InPlaceOrDisjointBuffer<'a, T> {
     /// Create an `InPlaceOrDisjointBuffer` from a single mutable slice for in-place operations.
+    #[cfg_attr(feature = "verify", verify::opaque)]
     pub fn new_in_place(buffer: &'a mut [T]) -> Self {
         let ptr = buffer.as_mut_ptr();
         Self {
@@ -162,6 +170,7 @@ impl<'a, T> InPlaceOrDisjointBuffer<'a, T> {
     }
 
     /// Create an `InPlaceOrDisjointBuffer` from two separate slices for disjoint operations.
+    #[cfg_attr(feature = "verify", verify::opaque)]
     pub fn new_disjoint<const N: usize>(src: &'a [T; N], dst: &'a mut [T; N]) -> Self {
         Self {
             src: src.as_ptr(),
@@ -174,6 +183,7 @@ impl<'a, T> InPlaceOrDisjointBuffer<'a, T> {
     /// Create an `InPlaceOrDisjointBuffer` from two separate slices for disjoint operations.
     /// This function is for use when the size of the slices is not known at compile time. For
     /// fixed-size arrays, prefer `new_disjoint`.
+    #[cfg_attr(feature = "verify", verify::opaque)]
     pub fn new_disjoint_from_slices(src: &'a [T], dst: &'a mut [T]) -> Self {
         assert_eq!(src.len(), dst.len());
         Self {
@@ -192,6 +202,7 @@ impl<'a, T> InPlaceOrDisjointBuffer<'a, T> {
     /// - `src` and `dst` must be either equal or completely disjoint
     /// - When `src` and `dst` are disjoint, they must have the same length
     /// - Both `src` and `dst` must be valid for the lifetime of the returned buffer
+    #[cfg_attr(feature = "verify", verify::exclude)]
     pub unsafe fn from_raw_parts(src: *const T, dst: *mut T, len: usize) -> Self {
         Self {
             src,
@@ -201,6 +212,7 @@ impl<'a, T> InPlaceOrDisjointBuffer<'a, T> {
         }
     }
 
+    #[cfg_attr(feature = "verify", verify::opaque)]
     #[inline]
     pub fn len(&self) -> usize {
         self.len
@@ -214,6 +226,7 @@ impl<'a, T> InPlaceOrDisjointBuffer<'a, T> {
     ///
     /// # Safety
     /// Caller must ensure offset < self.len() and offset * sizeof(T) + 16 <= self.len * sizeof(T)
+    #[cfg_attr(feature = "verify", verify::opaque)]
     #[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
     #[target_feature(enable = "sse2")]
     #[inline]
@@ -236,6 +249,7 @@ impl<'a, T> InPlaceOrDisjointBuffer<'a, T> {
     ///
     /// # Safety
     /// Caller must ensure offset < self.len() and offset * sizeof(T) + 16 <= self.len * sizeof(T)
+    #[cfg_attr(feature = "verify", verify::opaque)]
     #[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
     #[target_feature(enable = "sse2")]
     #[inline]
@@ -253,6 +267,7 @@ impl<'a, T> InPlaceOrDisjointBuffer<'a, T> {
     ///
     /// # Safety
     /// Caller must ensure offset < self.len() and offset * sizeof(T) + 16 <= self.len * sizeof(T)
+    #[cfg_attr(feature = "verify", verify::opaque)]
     #[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
     #[target_feature(enable = "sse2")]
     #[inline]
@@ -262,11 +277,13 @@ impl<'a, T> InPlaceOrDisjointBuffer<'a, T> {
     }
 
     /// Get a reference to the source buffer as a slice.
+    #[cfg_attr(feature = "verify", verify::opaque)]
     pub fn src(&self) -> &[T] {
         unsafe { core::slice::from_raw_parts(self.src, self.len) }
     }
 
     /// Get a mutable reference to the destination buffer as a mutable slice.
+    #[cfg_attr(feature = "verify", verify::opaque)]
     pub fn dst(&mut self) -> &mut [T] {
         unsafe { core::slice::from_raw_parts_mut(self.dst, self.len) }
     }
@@ -284,6 +301,7 @@ pub unsafe trait BoxDefault {
 
 // Helper function to allocate a zero-initialized block of memory on the heap.
 // Could potentially be replaced by Box::<T>::try_new_zeroed once stabilized.
+#[cfg_attr(feature = "verify", verify::exclude)]
 unsafe fn try_alloc_zeroed<T>() -> Result<*mut T, Error> {
     let layout = Layout::new::<T>();
     let ptr = alloc::alloc::alloc_zeroed(layout).cast::<T>();
@@ -300,6 +318,7 @@ unsafe fn try_alloc_zeroed<T>() -> Result<*mut T, Error> {
 /// an array on the heap)
 ///
 /// T must be valid when zero-initialized.
+#[cfg_attr(feature = "verify", verify::opaque)]
 pub fn try_new_box_zeroed<T>() -> Result<Box<T>, Error> {
     unsafe {
         let ptr = try_alloc_zeroed::<T>()?;
@@ -313,6 +332,7 @@ pub fn try_new_box_zeroed<T>() -> Result<Box<T>, Error> {
 /// non-zero fields. This avoids first constructing values on the stack,
 /// which is especially important when in environments like the kernel
 /// where stack space is limited.
+#[cfg_attr(feature = "verify", verify::opaque)]
 pub fn try_new_box_default<T: BoxDefault>() -> Result<Box<T>, Error> {
     unsafe {
         let ptr = try_alloc_zeroed::<T>()?;
@@ -330,17 +350,23 @@ pub fn try_new_box_default<T: BoxDefault>() -> Result<Box<T>, Error> {
 
 /// Wrapper function for static-length arrays, with length equality enforced at compile time.
 pub fn const_time_arrays_equal<const N: usize>(a: &[u8; N], b: &[u8; N]) -> bool {
-    const_time_slices_equal_impl(a.as_slice(), b.as_slice())
+    unsafe {
+        const_time_slices_equal_impl(a.as_slice(), b.as_slice())
+    }
 }
 
 /// Wrapper function for runtime-sized slices, with length equality checked at runtime, generating a panic if lengths differ.
 pub fn const_time_slices_equal(a: &[u8], b: &[u8]) -> bool {
     assert_eq!(a.len(), b.len());
-    const_time_slices_equal_impl(a, b)
+    unsafe {
+        const_time_slices_equal_impl(a, b)
+    }
 }
 
+// This function is unsafe because it will trigger UB in release mode if b.len() < a.len().
 #[inline(never)] // Prevent inlining to help ensure constant-time behavior
-fn const_time_slices_equal_impl(a: &[u8], b: &[u8]) -> bool {
+#[cfg_attr(feature = "verify", verify::opaque)]
+unsafe fn const_time_slices_equal_impl(a: &[u8], b: &[u8]) -> bool {
     debug_assert_eq!(a.len(), b.len());
 
     let len = a.len();
@@ -373,17 +399,23 @@ pub fn const_time_array_copy<const N: usize>(a: &[u8; N], b: &mut [u8; N], copy_
     const {
         assert!(N <= u32::MAX as usize, "Array length exceeds u32::MAX");
     }
-    const_time_slice_copy_impl(a.as_slice(), b.as_mut_slice(), copy_size);
+    unsafe {
+        const_time_slice_copy_impl(a.as_slice(), b.as_mut_slice(), copy_size);
+    }
 }
 
 /// Wrapper function for runtime-sized slices, with length equality checked at runtime, generating a panic if lengths differ.
 pub fn const_time_slice_copy(a: &[u8], b: &mut [u8], copy_size: u32) {
     assert_eq!(a.len(), b.len());
-    const_time_slice_copy_impl(a, b, copy_size);
+    unsafe {
+        const_time_slice_copy_impl(a, b, copy_size);
+    }
 }
 
+// This function is unsafe because it will trigger UB in release mode if b.len() < a.len().
 #[inline(never)] // Prevent inlining to help ensure constant-time behavior
-fn const_time_slice_copy_impl(a: &[u8], b: &mut [u8], copy_size: u32) {
+#[cfg_attr(feature = "verify", verify::opaque)]
+unsafe fn const_time_slice_copy_impl(a: &[u8], b: &mut [u8], copy_size: u32) {
     debug_assert_eq!(a.len(), b.len());
     debug_assert!(
         u32::try_from(a.len()).is_ok(),

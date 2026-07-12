@@ -23,7 +23,12 @@ The Rust code in this subdirectory will be used in two ways:
   AES tests as well, also pass `--features aes` (e.g. `cargo test --features aes,std`).
 - To run the SymCRust benchmarks, `cargo bench --features benchmarking`
 - To build SymCrypt (static lib, dynamic modules, and tests) with SymCRust implementations,
-  from the parent directory, invoke CMake or msbuild with `-DSYMCRYPT_SYMCRUST=ON` (or use `build.py` with `--symcrust` option)
+  from the parent directory, invoke CMake with `-DSYMCRUST_CONFIG=<config>` (msbuild:
+  `/p:SymCRustConfig=<config>`), or use `build.py` with the `--symcrust-config <config>` option. `<config>`
+  is one of:
+  - `Off` (default): use the C implementations.
+  - `Public`: build SymCRust with the public Rust toolchain and default cargo config.
+  - `MSRust`: build SymCRust with the Microsoft internal Rust toolchain and cargo config.
 
 ## Cargo features
 
@@ -42,8 +47,6 @@ This build is a work in progress!
 - Hook up options for running proof and automated C extraction in this context. Makefile and
   symcrust.lean are copied from experimental repo. Try to avoid bringing in a dependency on nightly
   for verification.
-- Figure out passing along cross-compilation from SymCrypt build system (CMake / MSBuild) to
-  SymCRust.
 - Autogenerate Rust<->C FFI (probably using bindgen) - evaluate what is good approach for
   ensuring assumptions across the boundary (currently make some assumption about KeccakState in
   hash.rs) are minimized without adding needless complexity to the internal interface

@@ -1,4 +1,4 @@
-if(NOT SYMCRYPT_SYMCRUST MATCHES "ON")
+if(SYMCRUST_CONFIG STREQUAL "Off")
     message(FATAL_ERROR "We should not be invoking cargo unless we are doing a SymCrypt/SymCRust build!")
 endif()
 
@@ -44,11 +44,18 @@ if(DEFINED TARGET_TRIPLE)
     # build-std seems to be required for cross-compiling
     # this does take around a minute to build the first time
     set(SYMCRUST_CARGO_BUILD_FLAGS "-Zbuild-std=std" ${SYMCRUST_CARGO_BUILD_FLAGS})
+elseif(CMAKE_SYSTEM_NAME MATCHES "Linux")
+    # SymCRust is linked into the C++ unit test. The prebuilt core/alloc shipped with the toolchain
+    # are compiled with panic=unwind and reference rust_eh_personality, which is undefined when our
+    # panic=abort staticlib is linked into C++. Rebuild core/alloc from source (nightly feature) so
+    # they inherit our panic=abort profile and drop the personality reference.
+    set(SYMCRUST_CARGO_BUILD_FLAGS "-Zbuild-std=core,alloc" ${SYMCRUST_CARGO_BUILD_FLAGS})
 endif()
 
 add_custom_target(
     symcrust_cargo ALL
-    COMMAND cargo
+    COMMAND ${Python3_EXECUTABLE} symcrust_cargo.py
+        ${SYMCRUST_CONFIG}
         build
         --manifest-path ${SYMCRUST_SOURCE_DIR}/Cargo.toml
         --target-dir ${CMAKE_CURRENT_BINARY_DIR}

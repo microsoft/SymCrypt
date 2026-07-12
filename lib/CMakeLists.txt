@@ -448,7 +448,7 @@ endif()
 
 include_directories(${SYMCRYPT_SOURCE_DIR}/inc)
 
-if(NOT SYMCRYPT_SYMCRUST MATCHES "ON")
+if(SYMCRUST_CONFIG STREQUAL "Off")
     add_library(symcrypt_mlkem STATIC mlkem.c mlkem_primitives.c)
 else()
     add_subdirectory(rust)

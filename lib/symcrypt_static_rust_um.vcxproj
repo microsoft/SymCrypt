@@ -34,7 +34,7 @@
   <!-- Build Rust and merge c_core + symcrust into symcrust_static_um.lib -->
   <Target Name="BuildAndMergeRust" AfterTargets="Build" Condition="'$(BuildSymCrust)'=='true'">
     <Message Importance="high" Text="Building SymCRust (User Mode) for $(Platform) $(Configuration)" />
-    <Exec Command="cargo build --manifest-path $(SymCRustSourceDir)\Cargo.toml --target-dir $(SymCRustTargetDir) --target $(RustTargetTriple) $(RustBuildFlag)"
+    <Exec Command="python $(SymCRustSourceDir)\symcrust_cargo.py $(SymCRustConfig) build --manifest-path $(SymCRustSourceDir)\Cargo.toml --target-dir $(SymCRustTargetDir) --target $(RustTargetTriple) $(RustBuildFlag)"
           WorkingDirectory="$(SymCRustSourceDir)"
           EnvironmentVariables="RUSTFLAGS=-C ehcont-guard" />
     <Message Importance="high" Text="Merging symcrust + c_core into symcrust_static_um.lib" />

@@ -42,8 +42,13 @@ pub(crate) use symcrypt_check_magic;
 pub(crate) use symcrypt_magic_value;
 
 unsafe extern "C" {
+    #[cfg_attr(feature = "verify", verify::exclude)]
     pub fn SymCryptInit();
+
+    #[cfg_attr(feature = "verify", verify::exclude)]
     pub fn SymCryptWipe(pb_data: *mut u8, cb_data: usize);
+
+    #[cfg_attr(feature = "verify", verify::exclude)]
     pub fn SymCryptCallbackRandom(pbBuffer: *mut u8, cbBuffer: usize) -> Error;
 
     #[cfg(not(feature = "std"))]
@@ -54,8 +59,13 @@ unsafe extern "C" {
     #[cfg(not(feature = "std"))]
     fn SymCryptFatal(fatalCode: u32) -> !;
 
+    #[cfg_attr(feature = "verify", verify::exclude)]
     pub fn SymCryptCpuFeaturesNeverPresent() -> u32;
+
+    #[cfg_attr(feature = "verify", verify::exclude)]
     pub static g_SymCryptCpuFeaturesNotPresent: u32;
+
+    #[cfg_attr(feature = "verify", verify::exclude)]
     pub static g_SymCryptFipsSelftestsPerformed: AtomicU32;
 }
 

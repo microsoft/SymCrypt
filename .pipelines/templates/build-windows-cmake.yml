@@ -26,9 +26,13 @@ parameters:
 - name: libcrux # Build with libcrux testing
   type: boolean
   default: false
-- name: symcrust # Build with SymCrust
-  type: boolean
-  default: false
+- name: symcrust_config # Build with SymCrust
+  type: string
+  values:
+  - Off
+  - Public
+  - MSRust
+  default: 'Off'
 
 jobs:
 
@@ -50,14 +54,10 @@ jobs:
       libcrux_build_flag: '--libcrux'
     ${{ else }}:
       libcrux_build_flag: ''
-    ${{ if eq(parameters.symcrust, true) }}:
-      symcrust_build_flag: '--symcrust'
-    ${{ else }}:
-      symcrust_build_flag: ''
 
   steps:
 
-  - ${{ if eq(parameters.symcrust, true) }}:
+  - ${{ if ne(parameters.symcrust_config, 'Off') }}:
     - task: NuGetAuthenticate@1
       displayName: 'Authenticate to NuGet feeds'
     
@@ -69,14 +69,14 @@ jobs:
     - task: CargoAuthenticate@0
       displayName: 'Authenticate Cargo'
       inputs:
-        configFile: 'SymCrust/.cargo/config.toml'
+        configFile: 'SymCrust/.cargo/config_internal.toml'
     
   - task: PythonScript@0
     displayName: 'Run build script'
     inputs:
       scriptSource: 'filePath'
       scriptPath: scripts\build.py
-      arguments: 'cmake bin --arch ${{ parameters.targetArch }} --config ${{ parameters.config }} ${{ parameters.additionalArgs }} $(verbose_build_flag) $(libcrux_build_flag) $(symcrust_build_flag)'
+      arguments: 'cmake bin --arch ${{ parameters.targetArch }} --config ${{ parameters.config }} ${{ parameters.additionalArgs }} $(verbose_build_flag) $(libcrux_build_flag) --symcrust-config ${{ parameters.symcrust_config }}'
       workingDirectory: $(Build.SourcesDirectory)
 
   # Overwrite default artifact publishing with our copy (enables publishing binaries for failed runs)

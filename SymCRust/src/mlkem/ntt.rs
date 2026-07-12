@@ -28,18 +28,9 @@
 use crate::common::*;
 use super::hash;
 use super::key::*;
+use core::cmp::min;
 
-#[cfg(target_arch = "x86_64")]
-use core::arch::x86_64::*;
-#[cfg(target_arch = "x86")]
-use core::arch::x86::*;
-#[cfg(any(target_arch = "x86_64", target_arch = "x86"))]
-type Vec128 = __m128i;
 
-#[cfg(target_arch = "aarch64")]
-use core::arch::aarch64::*;
-#[cfg(target_arch = "aarch64")]
-type Vec128 = uint16x8_t;
 
 //=====================================================
 //  ML-KEM internal high level types
@@ -56,7 +47,7 @@ pub(super) const MATRIX_MAX_NROWS: usize = 4;
 //  ML-KEM primitives
 //
 
-const Q: u32 = 3329;
+pub(super) const Q: u32 = 3329;
 
 // Note (Rust): caller allocates these temporaries whichever way they want, and passes us a mutable
 // reference to such a struct. If we need to use several fields at once, we can use a `ref mut`
@@ -133,7 +124,7 @@ const RSQR_TIMES_NEG_Q_INV_MOD_R: u32 = 44983;
 //
 // MlKemZetaBitRevTimesR = [ (pow(17, bitRev(i), 3329) << 16) % 3329 for i in range(128) ]
 #[rustfmt::skip]
-const ZETA_BIT_REV_TIMES_R: [u16; 128] = [
+pub(super) const ZETA_BIT_REV_TIMES_R: [u16; 128] = [
     2285, 2571, 2970, 1812, 1493, 1422,  287,  202,
     3158,  622, 1577,  182,  962, 2127, 1855, 1468,
      573, 2004,  264,  383, 2500, 1458, 1727, 3199,
@@ -157,7 +148,7 @@ const ZETA_BIT_REV_TIMES_R: [u16; 128] = [
 //
 // MlKemZetaBitRevTimesRTimesNegQInvModR = [ (((pow(17, bitRev(i), Q) << 16) % Q) * 3327) & 0xffff for i in range(128) ]
 #[rustfmt::skip]
-const ZETA_BIT_REV_TIMES_R_TIMES_NEG_Q_INV_MOD_R: [u16; 128] = [
+pub(super) const ZETA_BIT_REV_TIMES_R_TIMES_NEG_Q_INV_MOD_R: [u16; 128] = [
        19, 34037, 50790, 64748, 52011, 12402, 37345, 16694,
     20906, 37778,  3799, 15690, 54846, 64177, 11201, 34372,
      5827, 48172, 26360, 29057, 59964,  1102, 44097, 26241,
@@ -260,70 +251,72 @@ fn mont_mul(a: u32, b: u32, b_mont: u32) -> u32 {
 }
 
 trait NttIntrinsicsInterface {
-    fn vec128_load_u16x8(elem: &PolyElement, index: usize) -> Vec128;
-    fn vec64_load_u16x4(elem: &PolyElement, index: usize) -> Vec128;
-    fn vec32_load_u16x2(elem: &PolyElement, index: usize) -> Vec128;
+    type Vec128: Copy;
 
-    fn vec128_store_u16x8(elem: &mut PolyElement, index: usize, val: Vec128);
-    fn vec64_store_u16x4(elem: &mut PolyElement, index: usize, val: Vec128);
-    fn vec32_store_u16x2(elem: &mut PolyElement, index: usize, val: Vec128);
+    fn vec128_load_u16x8(elem: &PolyElement, index: usize) -> Self::Vec128;
+    fn vec64_load_u16x4(elem: &PolyElement, index: usize) -> Self::Vec128;
+    fn vec32_load_u16x2(elem: &PolyElement, index: usize) -> Self::Vec128;
 
-    fn vec128_set_u16x8(val: u16) -> Vec128;
+    fn vec128_store_u16x8(elem: &mut PolyElement, index: usize, val: Self::Vec128);
+    fn vec64_store_u16x4(elem: &mut PolyElement, index: usize, val: Self::Vec128);
+    fn vec32_store_u16x2(elem: &mut PolyElement, index: usize, val: Self::Vec128);
 
-    fn vec128_mod_sub(a: Vec128, b: Vec128) -> Vec128;
-    fn vec128_mod_add(a: Vec128, b: Vec128) -> Vec128;
-    fn vec128_mont_mul(a: Vec128, b: Vec128, b_mont: Vec128) -> Vec128;
+    fn vec128_set_u16x8(val: u16) -> Self::Vec128;
+
+    fn vec128_mod_sub(a: Self::Vec128, b: Self::Vec128) -> Self::Vec128;
+    fn vec128_mod_add(a: Self::Vec128, b: Self::Vec128) -> Self::Vec128;
+    fn vec128_mont_mul(a: Self::Vec128, b: Self::Vec128, b_mont: Self::Vec128) -> Self::Vec128;
 }
 
 
-#[cfg(any(target_arch = "x86_64", target_arch = "x86"))]
+#[cfg(any(feature = "verify", target_arch = "x86_64", target_arch = "x86"))]
 #[path = "ntt_xmm.rs"]
 mod ntt_xmm;
-#[cfg(any(target_arch = "x86_64", target_arch = "x86"))]
-type NttIntrinsics = ntt_xmm::NttIntrinsicsXmm;
-#[cfg(target_arch = "aarch64")]
+#[cfg(any(feature = "verify", target_arch = "aarch64"))]
 #[path = "ntt_neon.rs"]
 mod ntt_neon;
-#[cfg(target_arch = "aarch64")]
-type NttIntrinsics = ntt_neon::NttIntrinsicsNeon;
+
+#[cfg(any(feature = "verify", target_arch = "x86_64"))]
+#[path = "ntt_avx2.rs"]
+mod ntt_avx2;
 
 
-fn poly_element_ntt_layer_vec128(pe_src: &mut PolyElement, mut k: usize, len: usize) {
+fn poly_element_ntt_layer_vec128<T: NttIntrinsicsInterface>(pe_src: &mut PolyElement, mut k: usize, len: usize) {
     for start in (0usize..256).step_by(2*len) {
-        let v_twiddle_factor      = NttIntrinsics::vec128_set_u16x8( ZETA_BIT_REV_TIMES_R[k] );
-        let v_twiddle_factor_mont = NttIntrinsics::vec128_set_u16x8( ZETA_BIT_REV_TIMES_R_TIMES_NEG_Q_INV_MOD_R[k] );
+        let v_twiddle_factor      = T::vec128_set_u16x8( ZETA_BIT_REV_TIMES_R[k] );
+        let v_twiddle_factor_mont = T::vec128_set_u16x8( ZETA_BIT_REV_TIMES_R_TIMES_NEG_Q_INV_MOD_R[k] );
         k += 1;
 
         for j in (0usize..len).step_by(8) {
-            let mut v_c0 : Vec128;
-            let mut v_c1 : Vec128;
+            let mut v_c0 : T::Vec128;
+            let mut v_c1 : T::Vec128;
             if len >= 8 {
-                v_c0 = NttIntrinsics::vec128_load_u16x8( pe_src, start+j );
-                v_c1 = NttIntrinsics::vec128_load_u16x8( pe_src, start+j+len );
+                v_c0 = T::vec128_load_u16x8( pe_src, start+j );
+                v_c1 = T::vec128_load_u16x8( pe_src, start+j+len );
             } else if len == 4 {
-                v_c0 = NttIntrinsics::vec64_load_u16x4( pe_src, start+j );
-                v_c1 = NttIntrinsics::vec64_load_u16x4( pe_src, start+j+len );
+                v_c0 = T::vec64_load_u16x4( pe_src, start+j );
+                v_c1 = T::vec64_load_u16x4( pe_src, start+j+len );
             } else /*if ( len == 2 )*/ {
-                v_c0 = NttIntrinsics::vec32_load_u16x2( pe_src, start+j );
-                v_c1 = NttIntrinsics::vec32_load_u16x2( pe_src, start+j+len );
+                v_c0 = T::vec32_load_u16x2( pe_src, start+j );
+                v_c1 = T::vec32_load_u16x2( pe_src, start+j+len );
             }
 
             // c1TimesTwiddle = twiddleFactor * c1 mod Q;
-            let v_c1_times_twiddle = NttIntrinsics::vec128_mont_mul( v_c1, v_twiddle_factor, v_twiddle_factor_mont );
+            let v_c1_times_twiddle = T::vec128_mont_mul( v_c1, v_twiddle_factor, v_twiddle_factor_mont );
             // c1 = c0 - c1TimesTwiddle mod Q
-            v_c1 = NttIntrinsics::vec128_mod_sub( v_c0, v_c1_times_twiddle );
+            v_c1 = T::vec128_mod_sub( v_c0, v_c1_times_twiddle );
             // c0 = c0 + c1TimesTwiddle mod Q
-            v_c0 = NttIntrinsics::vec128_mod_add( v_c0, v_c1_times_twiddle );
+            v_c0 = T::vec128_mod_add( v_c0, v_c1_times_twiddle );
 
             if len >= 8 {
-                NttIntrinsics::vec128_store_u16x8( pe_src, start+j,     v_c0 );
-                NttIntrinsics::vec128_store_u16x8( pe_src, start+j+len, v_c1 );
+                T::vec128_store_u16x8( pe_src, start+j,     v_c0 );
+                T::vec128_store_u16x8( pe_src, start+j+len, v_c1 );
             } else if len == 4 {
-                NttIntrinsics::vec64_store_u16x4( pe_src, start+j,     v_c0 );
-                NttIntrinsics::vec64_store_u16x4( pe_src, start+j+len, v_c1 );
+                T::vec64_store_u16x4( pe_src, start+j,     v_c0 );
+                T::vec64_store_u16x4( pe_src, start+j+len, v_c1 );
             } else /*if ( len == 2 )*/ {
-                NttIntrinsics::vec32_store_u16x2( pe_src, start+j,     v_c0 );
-                NttIntrinsics::vec32_store_u16x2( pe_src, start+j+len, v_c1 );
+                T::vec32_store_u16x2( pe_src, start+j,     v_c0 );
+                T::vec32_store_u16x2( pe_src, start+j+len, v_c1 );
             }
         }
     }
@@ -351,42 +344,42 @@ fn poly_element_ntt_layer_generic(pe_src: &mut PolyElement, mut k: usize, len: u
     }
 }
 
-fn poly_element_intt_layer_vec128(pe_src: &mut PolyElement, mut k: usize, len: usize) {
+fn poly_element_intt_layer_vec128<T: NttIntrinsicsInterface>(pe_src: &mut PolyElement, mut k: usize, len: usize) {
     for start in (0usize..256).step_by(2*len) {
-        let v_twiddle_factor      = NttIntrinsics::vec128_set_u16x8( ZETA_BIT_REV_TIMES_R[k] );
-        let v_twiddle_factor_mont = NttIntrinsics::vec128_set_u16x8( ZETA_BIT_REV_TIMES_R_TIMES_NEG_Q_INV_MOD_R[k] );
+        let v_twiddle_factor      = T::vec128_set_u16x8( ZETA_BIT_REV_TIMES_R[k] );
+        let v_twiddle_factor_mont = T::vec128_set_u16x8( ZETA_BIT_REV_TIMES_R_TIMES_NEG_Q_INV_MOD_R[k] );
         k -= 1;
 
         for j in (0usize..len).step_by(8) {
-            let v_c0 : Vec128;
-            let mut v_c1 : Vec128;
+            let v_c0 : T::Vec128;
+            let mut v_c1 : T::Vec128;
             if len >= 8 {
-                v_c0 = NttIntrinsics::vec128_load_u16x8( pe_src, start+j );
-                v_c1 = NttIntrinsics::vec128_load_u16x8( pe_src, start+j+len );
+                v_c0 = T::vec128_load_u16x8( pe_src, start+j );
+                v_c1 = T::vec128_load_u16x8( pe_src, start+j+len );
             } else if len == 4 {
-                v_c0 = NttIntrinsics::vec64_load_u16x4( pe_src, start+j );
-                v_c1 = NttIntrinsics::vec64_load_u16x4( pe_src, start+j+len );
+                v_c0 = T::vec64_load_u16x4( pe_src, start+j );
+                v_c1 = T::vec64_load_u16x4( pe_src, start+j+len );
             } else /*if ( len == 2 )*/ {
-                v_c0 = NttIntrinsics::vec32_load_u16x2( pe_src, start+j );
-                v_c1 = NttIntrinsics::vec32_load_u16x2( pe_src, start+j+len );
+                v_c0 = T::vec32_load_u16x2( pe_src, start+j );
+                v_c1 = T::vec32_load_u16x2( pe_src, start+j+len );
             }
 
             // tmp = c0 + c1 mod Q
-            let v_tmp = NttIntrinsics::vec128_mod_add( v_c0, v_c1 );
+            let v_tmp = T::vec128_mod_add( v_c0, v_c1 );
             // c1 = c1 - c0 mod Q
-            v_c1 = NttIntrinsics::vec128_mod_sub( v_c1, v_c0 );
+            v_c1 = T::vec128_mod_sub( v_c1, v_c0 );
             // c1 = twiddleFactor * c1 mod Q
-            v_c1 = NttIntrinsics::vec128_mont_mul( v_c1, v_twiddle_factor, v_twiddle_factor_mont );
+            v_c1 = T::vec128_mont_mul( v_c1, v_twiddle_factor, v_twiddle_factor_mont );
 
             if len >= 8 {
-                NttIntrinsics::vec128_store_u16x8( pe_src, start+j,     v_tmp );
-                NttIntrinsics::vec128_store_u16x8( pe_src, start+j+len, v_c1 );
+                T::vec128_store_u16x8( pe_src, start+j,     v_tmp );
+                T::vec128_store_u16x8( pe_src, start+j+len, v_c1 );
             } else if len == 4 {
-                NttIntrinsics::vec64_store_u16x4( pe_src, start+j,     v_tmp );
-                NttIntrinsics::vec64_store_u16x4( pe_src, start+j+len, v_c1 );
+                T::vec64_store_u16x4( pe_src, start+j,     v_tmp );
+                T::vec64_store_u16x4( pe_src, start+j+len, v_c1 );
             } else /*if ( len == 2 )*/ {
-                NttIntrinsics::vec32_store_u16x2( pe_src, start+j,     v_tmp );
-                NttIntrinsics::vec32_store_u16x2( pe_src, start+j+len, v_c1 );
+                T::vec32_store_u16x2( pe_src, start+j,     v_tmp );
+                T::vec32_store_u16x2( pe_src, start+j+len, v_c1 );
             }
         }
     }
@@ -416,42 +409,49 @@ fn poly_element_intt_layer_generic(pe_src: &mut PolyElement, mut k: usize, len: 
 
 #[inline(always)]
 fn poly_element_ntt_layer(pe_src: &mut PolyElement, k: usize, len: usize) {
+    // AVX2 fast path currently disabled
+    // #[cfg(all(target_arch = "x86_64", feature = "std"))]
+    // if len >= 16 && cpu_features_present(SYMCRYPT_CPU_FEATURE_AVX2) {
+    //   unsafe { ntt_avx2::ntt_layer_avx2(pe_src, k, len); }
+    //   return;
+    // }
     #[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
     {
         if cpu_features_present(SYMCRYPT_CPU_FEATURE_SSE2) {
-            poly_element_ntt_layer_vec128(pe_src, k, len);
-        } else {
-            poly_element_ntt_layer_generic(pe_src, k, len);
-        }
+            poly_element_ntt_layer_vec128::<ntt_xmm::NttIntrinsicsXmm>(pe_src, k, len);
+            return;
+        } 
     }
+
     #[cfg(target_arch = "aarch64")]
     {
         if cpu_features_present(SYMCRYPT_CPU_FEATURE_NEON) {
-            poly_element_ntt_layer_vec128(pe_src, k, len);
-        } else {
-            poly_element_ntt_layer_generic(pe_src, k, len);
+            poly_element_ntt_layer_vec128::<ntt_neon::NttIntrinsicsNeon>(pe_src, k, len);
+            return;
         }
     }
+    poly_element_ntt_layer_generic(pe_src, k, len);
 }
 
 #[inline(always)]
 fn poly_element_intt_layer(pe_src: &mut PolyElement, k: usize, len: usize) {
+    // AVX2 fast path currently disabled
+    // #[cfg(all(target_arch = "x86_64", feature = "std"))]
+    // if len >= 16 && cpu_features_present(SYMCRYPT_CPU_FEATURE_AVX2) {
+    //   unsafe { ntt_avx2::intt_layer_avx2(pe_src, k, len); }
+    //   return;
+    // }
     #[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
-    {
-        if cpu_features_present(SYMCRYPT_CPU_FEATURE_SSE2) {
-            poly_element_intt_layer_vec128(pe_src, k, len);
-        } else {
-            poly_element_intt_layer_generic(pe_src, k, len);
-        }
+    if cpu_features_present(SYMCRYPT_CPU_FEATURE_SSE2) {
+        poly_element_intt_layer_vec128::<ntt_xmm::NttIntrinsicsXmm>(pe_src, k, len);
+        return;
     }
     #[cfg(target_arch = "aarch64")]
-    {
-        if cpu_features_present(SYMCRYPT_CPU_FEATURE_NEON) {
-            poly_element_intt_layer_vec128(pe_src, k, len);
-        } else {
-            poly_element_intt_layer_generic(pe_src, k, len);
-        }
+    if cpu_features_present(SYMCRYPT_CPU_FEATURE_NEON) {
+        poly_element_intt_layer_vec128::<ntt_neon::NttIntrinsicsNeon>(pe_src, k, len);
+        return;
     }
+    poly_element_intt_layer_generic(pe_src, k, len);
 }
 
 const MAX_COEFF: u32                = Q-1;
@@ -514,7 +514,7 @@ fn poly_element_mul_and_accumulate(
         // We sum at most 4 pairs of products into an accumulator in ML-KEM
         const { assert!( MATRIX_MAX_NROWS <= 4 ) }
         c0 += a0b0; // in range [0,4*MAX_COEFF_PRODUCT + 4*MAX_A1_B1_ZETA_POW]
-        debug_assert!( c0 < (4*MAX_COEFF_PRODUCT) + (4*MAX_A1_B1_ZETA_POW) );
+        debug_assert!( c0 <= (4*MAX_COEFF_PRODUCT) + (4*MAX_A1_B1_ZETA_POW) );
         c1 += a0b1; // in range [0,5*MAX_COEFF_PRODUCT + 3*MAX_A1_B1_ZETA_POW]
         debug_assert!( c1 < (5*MAX_COEFF_PRODUCT) + (3*MAX_A1_B1_ZETA_POW) );
 
@@ -618,16 +618,6 @@ pub fn poly_element_intt_and_mul_r(pe_src: &mut PolyElement) {
 const COMPRESS_MULCONSTANT: u32 = 0x275f6f;
 const COMPRESS_SHIFTCONSTANT: u32 = 33;
 
-// FIXME: can't use std::cmp::min due to required vs provided methods, tracked via https://github.com/AeneasVerif/charon/issues/180
-// use std::cmp::min;
-fn min(x: u32, y: u32) -> u32 {
-    if x <= y {
-        x
-    } else {
-        y
-    }
-}
-
 pub(super) fn poly_element_compress_and_encode(
     pe_src: &PolyElement,
     n_bits_per_coefficient: u32,
@@ -641,7 +631,6 @@ pub(super) fn poly_element_compress_and_encode(
     debug_assert!(n_bits_per_coefficient <= 12);
 
     for src_coeff in pe_src.iter() {
-        let mut n_bits_in_coefficient = n_bits_per_coefficient;
         let mut coefficient: u32 = (*src_coeff).into(); // in range [0, Q-1]
         debug_assert!( coefficient < Q );
 
@@ -666,24 +655,26 @@ pub(super) fn poly_element_compress_and_encode(
         }
 
         // encode the coefficient
-        // simple loop to add bits to accumulator and write accumulator to output
-        while n_bits_in_coefficient > 0
+        // Note that the number of bits to encode is <= 12 while the accumulator has 32 bits,
+        // which means that if the accumulator is full, we only need to flush it once before
+        // encoding the remaining bits.
+        let n_bits_to_encode = min(n_bits_per_coefficient, 32 - n_bits_in_accumulator);
+        let n_bits_in_coefficient = n_bits_per_coefficient - n_bits_to_encode;
+
+        let bits_to_encode = coefficient & ((1<<n_bits_to_encode)-1);
+
+        accumulator |= bits_to_encode << n_bits_in_accumulator;
+        n_bits_in_accumulator += n_bits_to_encode;
+
+        // Flush the accumulator, if necessary
+        if n_bits_in_accumulator == 32
         {
-            let n_bits_to_encode = min(n_bits_in_coefficient, 32-n_bits_in_accumulator);
+            pb_dst[cb_dst_written..cb_dst_written+4].copy_from_slice(&u32::to_le_bytes(accumulator));
+            cb_dst_written += 4;
 
-            let bits_to_encode = coefficient & ((1<<n_bits_to_encode)-1);
-            coefficient >>= n_bits_to_encode;
-            n_bits_in_coefficient -= n_bits_to_encode;
-
-            accumulator |= bits_to_encode << n_bits_in_accumulator;
-            n_bits_in_accumulator += n_bits_to_encode;
-            if n_bits_in_accumulator == 32
-            {
-                pb_dst[cb_dst_written..cb_dst_written+4].copy_from_slice(&u32::to_le_bytes(accumulator));
-                cb_dst_written += 4;
-                accumulator = 0;
-                n_bits_in_accumulator = 0;
-            }
+            // Encode the remaining bits, if there are any
+            accumulator = coefficient >> n_bits_to_encode;
+            n_bits_in_accumulator = n_bits_in_coefficient;
         }
     }
 
@@ -914,7 +905,8 @@ pub(super) fn matrix_vector_mont_mul_and_add(
     // Zero pa_tmp
     crate::common::wipe_slice(pa_tmp);
 
-    for (i, pe_dst) in pv_dst.iter_mut().enumerate() {
+    for i in 0..n_rows {
+        let pe_dst = &mut pv_dst[i];
         for (j, pe_src2) in pv_src2.iter().enumerate() {
             poly_element_mul_and_accumulate_aux(pm_src1, n_rows, i, j, pe_src2, pa_tmp);
         }
@@ -1032,7 +1024,8 @@ pub(super) fn vector_decode_and_decompress(
             == n_rows * (n_bits_per_coefficient as usize) * (MLWE_POLYNOMIAL_COEFFICIENTS / 8)
     );
 
-    for (i, pe_dst) in pv_dst.iter_mut().enumerate() {
+    for i in 0usize..n_rows {
+        let pe_dst = &mut pv_dst[i];
         let pb_src_index = i * (n_bits_per_coefficient as usize)*(MLWE_POLYNOMIAL_COEFFICIENTS / 8);
         let sc_error = poly_element_decode_and_decompress( &pb_src[pb_src_index..], n_bits_per_coefficient, pe_dst );
         match sc_error { Error::NoError => (), _ => return sc_error };

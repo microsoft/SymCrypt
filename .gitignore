@@ -92,3 +92,6 @@ Makefile
 
 # Rust (possibly built standalone for benchmarking)
 SymCRust/target
+
+# LEAN Verification temporaries
+.lake

@@ -59,6 +59,23 @@
     <WinPlat Condition="'$(Platform)' == 'ARM64EC'">arm64ec</WinPlat>
   </PropertyGroup>
 
+  <!-- SymCRust (Rust) build configuration. SymCRustConfig is a multi-state string:
+    Off    - Do not build SymCRust; use the C implementations (default).
+    Public - Build SymCRust using the public Rust toolchain and default cargo config.
+    MSRust - Build SymCRust using the Microsoft internal Rust toolchain and cargo config.
+    Additional configurations may be added here in the future. -->
+  <PropertyGroup>
+    <SymCRustConfig Condition="'$(SymCRustConfig)' == ''">Off</SymCRustConfig>
+
+    <!-- Derived helper consumed by the SymCRust vcxproj build steps. -->
+    <BuildSymCrust Condition="'$(SymCRustConfig)' != 'Off'">true</BuildSymCrust>
+  </PropertyGroup>
+
+  <Target Name="ValidateSymCRustConfig" BeforeTargets="PrepareForBuild"
+          Condition="'$(SymCRustConfig)' != 'Off' and '$(SymCRustConfig)' != 'Public' and '$(SymCRustConfig)' != 'MSRust'">
+    <Error Text="Invalid SymCRustConfig '$(SymCRustConfig)'. Valid values: Off, Public, MSRust." />
+  </Target>
+
   <!-- Rust build configuration -->
   <PropertyGroup Condition="'$(BuildSymCrust)' == 'true'">
     <!-- Map MSBuild Platform to Rust target triple -->
@@ -69,7 +86,7 @@
     <RustProfile Condition="'$(Configuration)' == 'Debug'">debug</RustProfile>
     <RustBuildFlag Condition="'$(Configuration)' == 'Release'">--release</RustBuildFlag>
     <RustBuildFlag Condition="'$(Configuration)' == 'Debug'"></RustBuildFlag>
-    
+
     <!-- Error for unsupported architectures -->
     <Error Condition="'$(Platform)' != 'x64'">Architecture '$(Platform)' not supported for Rust build</Error>
   </PropertyGroup>

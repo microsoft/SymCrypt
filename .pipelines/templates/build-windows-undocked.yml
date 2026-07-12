@@ -49,7 +49,7 @@ jobs:
           ob_build_config: Debug
           ob_build_config_win: chk
           symcrust_enabled: true
-          symcrypt_symcrust_prop: '-p:BuildSymCrust=true'
+          symcrypt_symcrust_prop: '-p:SymCRustConfig=MSRust'
           RUSTC_BOOTSTRAP: '1'
           build_variant_suffix: '_symcrust'
           package_symcrust_arg: '--symcrust'
@@ -59,7 +59,7 @@ jobs:
           ob_build_config: Release
           ob_build_config_win: fre
           symcrust_enabled: true
-          symcrypt_symcrust_prop: '-p:BuildSymCrust=true'
+          symcrypt_symcrust_prop: '-p:SymCRustConfig=MSRust'
           RUSTC_BOOTSTRAP: '1'
           build_variant_suffix: '_symcrust'
           package_symcrust_arg: '--symcrust'
@@ -125,7 +125,7 @@ jobs:
     displayName: 'Authenticate to Rust feed'
     condition: eq(variables['symcrust_enabled'], true)
     inputs:
-      configFile: 'SymCrust/.cargo/config.toml'
+      configFile: 'SymCrust/.cargo/config_internal.toml'
 
   # Overwrite default artifact publishing with our copy (enables publishing binaries for failed runs)
   - task: PowerShell@2

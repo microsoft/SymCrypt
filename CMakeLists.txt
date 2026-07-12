@@ -102,11 +102,22 @@ option(
     implementations of certain algorithms."
     OFF)
 
-option(
-    SYMCRYPT_SYMCRUST
-    "When enabled, SymCrypt will build and link the Rust implementations for supported algorithms, replacing the C implementations.
-    Requires a Rust toolchain to be installed. See the SymCRust directory for more information. "
-    OFF)
+# SYMCRUST_CONFIG is a multi-state string describing the SymCRust (Rust) build configuration:
+#   Off    - Do not build SymCRust; use the C implementations (default).
+#   Public - Build SymCRust using the public Rust toolchain (rust-toolchain.toml) and the default
+#            cargo config (.cargo/config.toml).
+#   MSRust - Build SymCRust using the Microsoft internal Rust toolchain and cargo config
+#            (.cargo/config_internal.toml). For official internal builds and development.
+# Additional configurations may be added here in the future.
+set(SYMCRUST_CONFIG "Off" CACHE STRING
+    "SymCRust (Rust implementation) build configuration: Off, Public, or MSRust. See CMakeLists.txt for details.")
+set_property(CACHE SYMCRUST_CONFIG PROPERTY STRINGS Off Public MSRust)
+
+if(NOT SYMCRUST_CONFIG STREQUAL "Off" AND
+   NOT SYMCRUST_CONFIG STREQUAL "Public" AND
+   NOT SYMCRUST_CONFIG STREQUAL "MSRust")
+    message(FATAL_ERROR "Invalid SYMCRUST_CONFIG value '${SYMCRUST_CONFIG}'. Valid values: Off, Public, MSRust.")
+endif()
 
 option(SYMCRYPT_BUILD_MODULES
     "When enabled, builds SymCrypt shared or dynamic libraries on supported platforms."
@@ -134,7 +145,7 @@ message(STATUS "ASM optimizations: ${SYMCRYPT_USE_ASM}")
 message(STATUS "FIPS build: ${SYMCRYPT_FIPS_BUILD}")
 message(STATUS "Strip binary: ${SYMCRYPT_STRIP_BINARY}")
 message(STATUS "FIPS postprocess: ${SYMCRYPT_FIPS_POSTPROCESS}")
-message(STATUS "Use SymCRust: ${SYMCRYPT_SYMCRUST}")
+message(STATUS "SymCRust config: ${SYMCRUST_CONFIG}")
 
 # Validate compiler versions
 if("${CMAKE_CXX_COMPILER_ID}" MATCHES "GNU")

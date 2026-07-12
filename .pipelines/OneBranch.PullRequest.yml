@@ -82,7 +82,7 @@ extends:
         parameters:
           targetArch: 'AMD64'
           config: 'Release'
-          symcrust: true
+          symcrust_config: MSRust
           identifier: 'SymCRust'
       - template: .pipelines/templates/build-windows-cmake.yml@self
         parameters:

@@ -142,7 +142,7 @@ if(SYMCRYPT_TEST_LIBCRUX)
     # add_compile_definitions(INCLUDE_IMPL_LIBCRUX=1)
 endif()
 
-if(SYMCRYPT_SYMCRUST MATCHES "ON")
+if(NOT SYMCRUST_CONFIG STREQUAL "Off")
   # When building with experimental SymCRust implementations, some
   # implementation-specific tests need to be disabled/changed
   add_compile_definitions(SYMCRUST_EXPERIMENTAL_BUILD=1)

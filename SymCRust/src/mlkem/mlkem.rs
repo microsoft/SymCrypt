@@ -8,11 +8,18 @@ use crate::common::*;
 use crate::hash::OneShotHash;
 use crate::sha3::Sha3_512;
 
+#[cfg(not(feature = "verify"))]
 mod ffi;
 pub mod key;
 
 #[cfg(all(test, not(feature = "benchmarking")))]
 mod test;
+
+// End-to-end usability workflows over the public API. Compiled for tests and
+// for the `verify` extraction surface (see `workflow.rs`), but excluded from
+// plain production builds.
+#[cfg(any(all(test, not(feature = "benchmarking")), feature = "verify"))]
+pub mod workflow;
 
 // ML-KEM internal modules - not visible outside mlkem
 mod hash;
@@ -291,7 +298,7 @@ pub fn key_set_value(
         // Ensure ML-KEM algorithm selftest is run before first use of ML-KEM algorithms;
         // notably _before_ first full KeyGen
         // FIXME: Skip FIPS self-test in pure-Rust testing
-        #[cfg(not(any(feature = "benchmarking", test)))]
+        #[cfg(not(any(feature = "benchmarking", test, feature = "verify")))]
         run_selftest_once( SymCryptMlKemSelftest, SelftestAlgorithm::MLKEM as u32 );
     }
 
@@ -766,6 +773,7 @@ struct DecapsulateTemps {
 }
 
 unsafe impl BoxDefault for DecapsulateTemps {
+    #[cfg_attr(feature = "verify", verify::opaque)]
     unsafe fn box_default(ptr: *mut Self) {
         InternalComputationTemporaries::box_default(&raw mut (*ptr).comp_temps);
     }

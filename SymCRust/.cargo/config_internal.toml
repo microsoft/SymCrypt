@@ -1,0 +1,6 @@
+# Registry configuration for internal Microsoft builds.
+[source.crates-io]
+replace-with = 'ms-crates-io'
+
+[registries.ms-crates-io]
+index = "sparse+https://microsoft.pkgs.visualstudio.com/OS/_packaging/SymCrypt-Rust-Prod/Cargo/index/"

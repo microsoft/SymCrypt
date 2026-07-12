@@ -34,7 +34,7 @@
   <!-- Build Rust and merge c_core + symcrust into symcrust_static_km.lib -->
   <Target Name="BuildAndMergeRust" AfterTargets="Build" Condition="'$(BuildSymCrust)'=='true'">
     <Message Importance="high" Text="Building SymCRust (Kernel Mode) for $(Platform) $(Configuration)" />
-    <Exec Command="cargo build --manifest-path $(SymCRustSourceDir)\Cargo.toml --target-dir $(SymCRustTargetDir) --target $(RustTargetTriple) --features kernel -Z build-std=core,alloc $(RustBuildFlag)"
+    <Exec Command="python $(SymCRustSourceDir)\symcrust_cargo.py $(SymCRustConfig) build --manifest-path $(SymCRustSourceDir)\Cargo.toml --target-dir $(SymCRustTargetDir) --target $(RustTargetTriple) --features kernel -Z build-std=core,alloc $(RustBuildFlag)"
           WorkingDirectory="$(SymCRustSourceDir)"
           EnvironmentVariables="RUSTC_BOOTSTRAP=1;RUSTFLAGS=-Zretpoline -C ehcont-guard -Ctarget-feature=+aes,+pclmulqdq,+ssse3" />
     <Message Importance="high" Text="Merging symcrust + c_core into symcrust_static_km.lib" />

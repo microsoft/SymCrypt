@@ -39,9 +39,20 @@ harness = false
 name = "sha3"
 harness = false
 
+# Intrinsic test harnesses for rust verification modelling.
+[[test]]
+name = "intrinsics_verify_tests"
+path = "src/verify/tests/mod.rs"
+
 [features]
 benchmarking = ["std"]
 std = []
 kernel = []     # Stubs for kernel-mode linking
 aes = []        # AES implementation
 ffi = []        # FFI bindings (currently only applies to AES)
+# `verify` enables the Aeneas extraction path: cfg-gates the SIMD intrinsic
+# bodies in favour of trait-based dispatch and turns on the `verify::*`
+# tool-level attributes consumed by Charon. Charon is invoked with
+# `--features verify` from SymCRust/Makefile for the active proof tree
+# (SHA-3 + ML-KEM).
+verify = ["std"]

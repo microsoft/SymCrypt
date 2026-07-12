@@ -219,6 +219,7 @@ impl Key {
 }
 
 unsafe impl crate::common::BoxDefault for Key {
+    #[cfg_attr(feature = "verify", verify::opaque)]
     unsafe fn box_default(ptr: *mut Self) {
         let params = &raw mut (*ptr).params;
         let n_rows = &raw mut (*ptr).n_rows;

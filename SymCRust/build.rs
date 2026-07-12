@@ -1,5 +1,9 @@
 fn main() {
-    #[cfg(all(feature = "std", not(feature = "benchmarking")))]
+    // `not(verify)`: the Charon/Aeneas extraction build (`--features verify`) compiles
+    // the crate with a public toolchain and never links libsymcrypt, so skip the
+    // SYMCRYPT_LIB_PATH requirement and link directives there. This is the only
+    // deviation from `feature/verifiedcrypto`'s build.rs, and it is verification-required.
+    #[cfg(all(feature = "std", not(any(feature = "benchmarking", feature = "verify"))))]
     {
         use std::env;
 

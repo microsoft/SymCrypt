@@ -4,11 +4,6 @@
 // Copyright (c) Microsoft Corporation. Licensed under the MIT license.
 //
 
-// FIXME: figure out how to build with stable Rust and also have Charon based on build config
-// // Allows using the `charon` attributes
-// #![feature(register_tool)]
-// #![register_tool(charon)]
-
 #![cfg_attr(not(feature = "std"), no_std)]
 
 // Enable pedantic lints (more strict)
@@ -17,8 +12,18 @@
 // Enable all clippy lints
 #![warn(clippy::all)]
 
+// Activate attributes specific to verification such as #[verify::opaque] and #[verify::exclude].
+// Gated on `feature = "verify"`, so the production (ms-prod) build never requests this nightly feature.
+#![cfg_attr(feature = "verify", feature(register_tool), register_tool(verify))]
+
 extern crate alloc;
 extern crate core;
+
+// Verify-only scaffolding (intrinsic shims, hand-rolled trait impls, opaque
+// stubs). Compiled exclusively under `--features verify`; production builds
+// are bit-identical with this directory removed. See INTRINSICS.md.
+#[cfg(feature = "verify")]
+pub mod verify;
 
 #[cfg(feature = "aes")]
 #[path = "aes/aes.rs"]

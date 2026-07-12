@@ -177,10 +177,21 @@ fn keccak_perm_round(state: &mut Keccak1600, rnd: usize) {
     keccak_iota(state, rnd);
 }
 
-fn keccak_permute(p_state: &mut Keccak1600) {
+/// Textbook Keccak-f[1600]: the 24-round loop from FIPS 202 §3.3, in terms of
+/// the five explicit step mappings (θ, ρ, π, χ, ι).
+///
+/// This is the production permutation: `keccak_permute` below routes through it.
+/// `keccak_permute_opt` is the optimized variant, kept and proved functionally
+/// equivalent in Lean (`keccak_permute_textbook_eq_opt`); it is reached only via
+/// the proof harness and the in-crate cross-validation test.
+fn keccak_permute_textbook(p_state: &mut Keccak1600) {
     for r in 0usize..24 {
         keccak_perm_round(p_state, r)
     }
+}
+
+fn keccak_permute(p_state: &mut Keccak1600) {
+    keccak_permute_textbook(p_state);
 }
 
 //
@@ -188,7 +199,7 @@ fn keccak_permute(p_state: &mut Keccak1600) {
 // access it from our benchmarking code we expose
 // a public wrapper.
 //
-#[cfg(feature = "benchmarking")]
+#[cfg(any(feature = "benchmarking", test))]
 #[inline(always)]
 pub fn keccak_permute_pub_wrapper(p_state: &mut Keccak1600) {
     keccak_permute(p_state);
@@ -487,6 +498,23 @@ mod tests {
         keccak_permute(&mut rust_impl_state);
         unsafe { SymCryptKeccakPermute(c_impl_state.as_mut_ptr()) };
         assert_eq!(rust_impl_state, c_impl_state);
+    }
+
+    /// Cross-validate the textbook FIPS 202 permutation against the optimized
+    /// scalar permutation. Both must produce bit-identical state on a range of
+    /// seeds; the Lean side proves the same equivalence.
+    #[test]
+    fn test_keccak_permute_textbook_matches_opt() {
+        use rand::RngCore;
+        let mut rng = rand::rng();
+        for _ in 0..32 {
+            let mut s_textbook: Keccak1600 = [0; 25];
+            for w in s_textbook.iter_mut() { *w = rng.next_u64(); }
+            let mut s_opt = s_textbook;
+            keccak_permute_textbook(&mut s_textbook);
+            super::super::keccak_opt::keccak_permute_opt(&mut s_opt);
+            assert_eq!(s_textbook, s_opt);
+        }
     }
 
     #[test]

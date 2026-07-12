@@ -78,7 +78,7 @@ if %NEED_BUILD%==1 (
     echo ========================================
     echo Building Rust implementation...
     echo ========================================
-    cmake --preset %PRESET_NAME% -B %RUST_BUILD_DIR% -DSYMCRYPT_SYMCRUST=ON
+    cmake --preset %PRESET_NAME% -B %RUST_BUILD_DIR% -DSYMCRUST_CONFIG=MSRust
     if errorlevel 1 (
         echo Error: CMake configure failed for Rust implementation
         exit /b 1
