@@ -605,6 +605,8 @@ EXPORTS
 ;    SymCryptShake128Result
 ;    SymCryptShake128Selftest
 ;    SymCryptShake128StateCopy
+;    SymCryptShake128StateExport
+;    SymCryptShake128StateImport
 ;    SymCryptShake256
 ;    SymCryptShake256Append
 ;    SymCryptShake256Default
@@ -614,6 +616,8 @@ EXPORTS
 ;    SymCryptShake256Result
 ;    SymCryptShake256Selftest
 ;    SymCryptShake256StateCopy
+;    SymCryptShake256StateExport
+;    SymCryptShake256StateImport
 ;    SymCryptSizeofDlgroupFromBitsizes
 ;    SymCryptSizeofDlkeyFromDlgroup
 ;    SymCryptSizeofEckeyFromCurve

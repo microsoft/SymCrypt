@@ -30,6 +30,41 @@
 
 #endif // SYMCRUST_EXPERIMENTAL_BUILD
 
+//
+// SymCryptShake128StateExport
+//
+VOID
+SYMCRYPT_CALL
+SymCryptShake128StateExport(
+    _In_                                                    PCSYMCRYPT_SHAKE128_STATE   pState,
+    _Out_writes_bytes_(SYMCRYPT_SHAKE128_STATE_EXPORT_SIZE) PBYTE                       pbBlob)
+{
+    SYMCRYPT_CHECK_MAGIC(pState);
+    SymCryptKeccakStateExport(SymCryptBlobTypeShake128State, &pState->ks, pbBlob);
+}
+
+
+//
+// SymCryptShake128StateImport
+//
+SYMCRYPT_ERROR
+SYMCRYPT_CALL
+SymCryptShake128StateImport(
+    _Out_                                                   PSYMCRYPT_SHAKE128_STATE    pState,
+    _In_reads_bytes_(SYMCRYPT_SHAKE128_STATE_EXPORT_SIZE)   PCBYTE                      pbBlob)
+{
+    SYMCRYPT_ERROR scError = SymCryptKeccakStateImport(SymCryptBlobTypeShake128State,
+                                                        &pState->ks,
+                                                        pbBlob);
+
+    if (scError == SYMCRYPT_NO_ERROR)
+    {
+        SYMCRYPT_SET_MAGIC(pState);
+    }
+
+    return scError;
+}
+
 const SYMCRYPT_HASH SymCryptShake128HashAlgorithm_default = {
     &SymCryptShake128Init,
     &SymCryptShake128Append,
@@ -86,6 +121,40 @@ SymCryptShake128Selftest(void)
 #undef Alg
 
 #endif // SYMCRUST_EXPERIMENTAL_BUILD
+
+//
+// SymCryptShake256StateExport
+//
+VOID
+SYMCRYPT_CALL
+SymCryptShake256StateExport(
+    _In_                                                    PCSYMCRYPT_SHAKE256_STATE   pState,
+    _Out_writes_bytes_(SYMCRYPT_SHAKE256_STATE_EXPORT_SIZE) PBYTE                       pbBlob)
+{
+    SYMCRYPT_CHECK_MAGIC(pState);
+    SymCryptKeccakStateExport(SymCryptBlobTypeShake256State, &pState->ks, pbBlob);
+}
+
+//
+// SymCryptShake256StateImport
+//
+SYMCRYPT_ERROR
+SYMCRYPT_CALL
+SymCryptShake256StateImport(
+    _Out_                                                   PSYMCRYPT_SHAKE256_STATE    pState,
+    _In_reads_bytes_(SYMCRYPT_SHAKE256_STATE_EXPORT_SIZE)   PCBYTE                      pbBlob)
+{
+    SYMCRYPT_ERROR scError = SymCryptKeccakStateImport(SymCryptBlobTypeShake256State,
+                                                        &pState->ks,
+                                                        pbBlob);
+
+    if (scError == SYMCRYPT_NO_ERROR)
+    {
+        SYMCRYPT_SET_MAGIC(pState);
+    }
+
+    return scError;
+}
 
 const SYMCRYPT_HASH SymCryptShake256HashAlgorithm_default = {
     &SymCryptShake256Init,

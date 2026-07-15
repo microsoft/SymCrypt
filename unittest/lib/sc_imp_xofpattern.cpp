@@ -21,6 +21,27 @@ XofImp< ImpXxx, AlgXxx >::XofImp()
     m_perfKeyFunction  = &algImpKeyPerfFunction  <ImpXxx, AlgXxx>;
     m_perfCleanFunction= &algImpCleanPerfFunction<ImpXxx, AlgXxx>;
 
+    //
+    // Check SymCrypt state import errors
+    //
+    SCSHIM_XXX_STATE hashState;
+    BYTE exportBlob[SCSHIM_XXX_STATE_EXPORT_SIZE];
+
+    SCSHIM_XxxInit( &hashState );
+    for( int i=0; i<200; i++ )
+    {
+        SCSHIM_XxxAppend( &hashState, (PCBYTE) &i, sizeof( i ) );
+    }
+    SCSHIM_XxxStateExport( &hashState, &exportBlob[0] );
+
+    for( int i=0; i<SCSHIM_XXX_STATE_EXPORT_SIZE; i++ )
+    {
+        exportBlob[i]++;
+        CHECK3( SCSHIM_XxxStateImport( &hashState, &exportBlob[0] ) == SYMCRYPT_INVALID_BLOB, "SymCrypt hash state import success on corrupt blob %d", i );
+        exportBlob[i]--;
+    }
+    CHECK( SCSHIM_XxxStateImport( &hashState, &exportBlob[0] ) == SYMCRYPT_NO_ERROR, "??" );
+
     state.isReset = FALSE;
 }
 

@@ -440,6 +440,8 @@ _SymCryptShake128Init
 _SymCryptShake128Append
 _SymCryptShake128Result
 _SymCryptShake128StateCopy
+_SymCryptShake128StateExport
+_SymCryptShake128StateImport
 _SymCryptShake128Selftest
 _SymCryptShake256HashAlgorithm
 _SymCryptShake256
@@ -449,6 +451,8 @@ _SymCryptShake256Init
 _SymCryptShake256Append
 _SymCryptShake256Result
 _SymCryptShake256StateCopy
+_SymCryptShake256StateExport
+_SymCryptShake256StateImport
 _SymCryptShake256Selftest
 _SymCryptCShake128
 _SymCryptCShake128Init

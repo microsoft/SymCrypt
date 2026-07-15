@@ -3,6 +3,7 @@ New changes will be listed here as they are developed. The version number is det
 prior to the creation of a new release, based on the changes contained in that release.
 
 
+- Add state export and import APIs for SHAKE128 and SHAKE256.
 - Added Rust implementations of ML-KEM and SHA3
 - Rust AES-GCM work in progress: XMM implementation is staged in the tree but is not enabled yet
 - Add HPKE implementation in new SymCrypt_plus library

@@ -1982,6 +1982,18 @@ SymCryptShake128StateCopy(_In_ PCSYMCRYPT_SHAKE128_STATE pSrc, _Out_ PSYMCRYPT_S
 
 VOID
 SYMCRYPT_CALL
+SymCryptShake128StateExport(
+    _In_                                                      PCSYMCRYPT_SHAKE128_STATE pState,
+    _Out_writes_bytes_(SYMCRYPT_SHAKE128_STATE_EXPORT_SIZE)   PBYTE                     pbBlob);
+
+SYMCRYPT_ERROR
+SYMCRYPT_CALL
+SymCryptShake128StateImport(
+    _Out_                                                   PSYMCRYPT_SHAKE128_STATE pState,
+    _In_reads_bytes_(SYMCRYPT_SHAKE128_STATE_EXPORT_SIZE)   PCBYTE                   pbBlob);
+
+VOID
+SYMCRYPT_CALL
 SymCryptShake128Selftest(void);
 
 extern const PCSYMCRYPT_HASH SymCryptShake128HashAlgorithm;
@@ -2036,6 +2048,18 @@ SymCryptShake256Result(
 VOID
 SYMCRYPT_CALL
 SymCryptShake256StateCopy(_In_ PCSYMCRYPT_SHAKE256_STATE pSrc, _Out_ PSYMCRYPT_SHAKE256_STATE pDst);
+
+VOID
+SYMCRYPT_CALL
+SymCryptShake256StateExport(
+    _In_                                                      PCSYMCRYPT_SHAKE256_STATE pState,
+    _Out_writes_bytes_(SYMCRYPT_SHAKE256_STATE_EXPORT_SIZE)   PBYTE                     pbBlob);
+
+SYMCRYPT_ERROR
+SYMCRYPT_CALL
+SymCryptShake256StateImport(
+    _Out_                                                   PSYMCRYPT_SHAKE256_STATE pState,
+    _In_reads_bytes_(SYMCRYPT_SHAKE256_STATE_EXPORT_SIZE)   PCBYTE                   pbBlob);
 
 VOID
 SYMCRYPT_CALL
